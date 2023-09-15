@@ -6,6 +6,7 @@ use std::task::{ready, Context, Poll};
 
 use hyper::server::accept::Accept as HyperAccept;
 use hyper::Uri;
+use hyper_rustls::acceptor::TlsStream;
 use pin_project_lite::pin_project;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tonic::transport::server::{Connected, TcpConnectInfo};
@@ -31,12 +32,13 @@ where
     type Err = Self::Error;
 }
 
-pub trait Conn:
-    AsyncRead + AsyncWrite + Unpin + Send + 'static + Connected<ConnectInfo = TcpConnectInfo>
-{
+pub trait Conn: AsyncRead + AsyncWrite + Unpin + Send + 'static {
+    fn connect_info(&self) -> TcpConnectInfo;
 }
 
-pub trait Accept: HyperAccept<Conn = Self::Connection, Error = IoError> + Send + 'static {
+pub trait Accept:
+    HyperAccept<Conn = Self::Connection, Error = IoError> + Unpin + Send + 'static
+{
     type Connection: Conn;
 }
 
@@ -87,7 +89,17 @@ impl Accept for AddrIncoming {
     type Connection = AddrStream;
 }
 
-impl Conn for AddrStream {}
+impl Conn for AddrStream {
+    fn connect_info(&self) -> TcpConnectInfo {
+        <Self as Connected>::connect_info(self)
+    }
+}
+
+impl<C: Conn> Conn for TlsStream<C> {
+    fn connect_info(&self) -> TcpConnectInfo {
+        self.io().unwrap().connect_info()
+    }
+}
 
 impl AsyncRead for AddrStream {
     fn poll_read(

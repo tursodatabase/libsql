@@ -7,7 +7,6 @@ use anyhow::Result;
 use enclose::enclose;
 use tokio::pin;
 use tokio::sync::{mpsc, oneshot};
-use tonic::transport::server::Connected;
 
 use crate::auth::Auth;
 use crate::namespace::{MakeNamespace, NamespaceStore};

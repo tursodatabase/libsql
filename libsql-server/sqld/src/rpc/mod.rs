@@ -1,5 +1,10 @@
+use std::sync::Arc;
+
 use anyhow::Context;
 use bytes::Bytes;
+use hyper_rustls::TlsAcceptor;
+use rustls::server::AllowAnyAuthenticatedClient;
+use rustls::RootCertStore;
 use tonic::Status;
 use tower::util::option_layer;
 
@@ -39,33 +44,62 @@ pub async fn run_rpc_server<A: crate::net::Accept>(
 
     // tracing::info!("serving write proxy server at {addr}");
 
-    let mut builder = tonic::transport::Server::builder();
     if let Some(tls_config) = maybe_tls {
-        let cert_pem = std::fs::read_to_string(&tls_config.cert)?;
-        let key_pem = std::fs::read_to_string(&tls_config.key)?;
-        let identity = tonic::transport::Identity::from_pem(cert_pem, key_pem);
+        let cert_pem = tokio::fs::read_to_string(&tls_config.cert).await?;
+        let certs = rustls_pemfile::certs(&mut cert_pem.as_bytes())?;
+        let certs = certs
+            .into_iter()
+            .map(rustls::Certificate)
+            .collect::<Vec<_>>();
+
+        let key_pem = tokio::fs::read_to_string(&tls_config.key).await?;
+        let keys = rustls_pemfile::pkcs8_private_keys(&mut key_pem.as_bytes())?;
+        let key = rustls::PrivateKey(keys[0].clone());
 
         let ca_cert_pem = std::fs::read_to_string(&tls_config.ca_cert)?;
-        let ca_cert = tonic::transport::Certificate::from_pem(ca_cert_pem);
+        let ca_certs = rustls_pemfile::certs(&mut ca_cert_pem.as_bytes())?;
+        let ca_certs = ca_certs
+            .into_iter()
+            .map(rustls::Certificate)
+            .collect::<Vec<_>>();
 
-        let tls_config = tonic::transport::ServerTlsConfig::new()
-            .identity(identity)
-            .client_ca_root(ca_cert);
-        builder = builder
-            .tls_config(tls_config)
-            .context("Failed to read the TSL config of RPC server")?;
+        let mut roots = RootCertStore::empty();
+        ca_certs.iter().try_for_each(|c| roots.add(c))?;
+        let verifier = AllowAnyAuthenticatedClient::new(roots);
+        let config = rustls::server::ServerConfig::builder()
+            .with_safe_defaults()
+            .with_client_cert_verifier(Arc::new(verifier))
+            .with_single_cert(certs, key)?;
+
+        let acceptor = TlsAcceptor::builder()
+            .with_tls_config(config)
+            .with_all_versions_alpn()
+            .with_acceptor(acceptor);
+
+        let router = tonic::transport::Server::builder()
+            .layer(&option_layer(idle_shutdown_layer))
+            .add_service(ProxyServer::new(proxy_service))
+            .add_service(ReplicationLogServer::new(logger_service))
+            .into_router();
+
+        let h2c = crate::h2c::H2cMaker::new(router);
+        hyper::server::Server::builder(acceptor)
+            .serve(h2c)
+            .await
+            .context("http server")?;
+    } else {
+        let router = tonic::transport::Server::builder()
+            .layer(&option_layer(idle_shutdown_layer))
+            .add_service(ProxyServer::new(proxy_service))
+            .add_service(ReplicationLogServer::new(logger_service))
+            .into_router();
+
+        let h2c = crate::h2c::H2cMaker::new(router);
+        hyper::server::Server::builder(acceptor)
+            .serve(h2c)
+            .await
+            .context("http server")?;
     }
-    let router = builder
-        .layer(&option_layer(idle_shutdown_layer))
-        .add_service(ProxyServer::new(proxy_service))
-        .add_service(ReplicationLogServer::new(logger_service))
-        .into_router();
-
-    let h2c = crate::h2c::H2cMaker::new(router);
-    hyper::server::Server::builder(acceptor)
-        .serve(h2c)
-        .await
-        .context("http server")?;
     Ok(())
 }
 
