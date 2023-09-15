@@ -117,22 +117,23 @@ static void resolveAlias(
 ** SF_NestedFrom subqueries also store an entry for the implicit rowid (or
 ** _rowid_, or oid) column by setting ExprList.a[].fg.eEName to ENAME_ROWID,
 ** and setting zSpan to "DATABASE.TABLE.<rowid-alias>". This type of pItem
-** argument matches if bRowidOk is true, zTab is not NULL, zCol is a rowid
-** alias, and zDb matches as for the usual case.
+** argument matches if zCol is a rowid alias. If it is not NULL, (*pbRowid)
+** is set to 1 if there is this kind of match.
 */
 int sqlite3MatchEName(
   const struct ExprList_item *pItem,
   const char *zCol,
   const char *zTab,
   const char *zDb,
-  int bRowidOk
+  int *pbRowid
 ){
   int n;
   const char *zSpan;
   int eEName = pItem->fg.eEName;
-  if( eEName!=ENAME_TAB && (eEName!=ENAME_ROWID || bRowidOk==0 || zTab==0) ){
+  if( eEName!=ENAME_TAB && (eEName!=ENAME_ROWID || pbRowid==0) ){
     return 0;
   }
+  assert( pbRowid==0 || *pbRowid==0 );
   zSpan = pItem->zEName;
   for(n=0; ALWAYS(zSpan[n]) && zSpan[n]!='.'; n++){}
   if( zDb && (sqlite3StrNICmp(zSpan, zDb, n)!=0 || zDb[n]!=0) ){
@@ -148,6 +149,7 @@ int sqlite3MatchEName(
     if( eEName==ENAME_TAB && sqlite3StrICmp(zSpan, zCol)!=0 ) return 0;
     if( eEName==ENAME_ROWID && sqlite3IsRowid(zCol)==0 ) return 0;
   }
+  if( eEName==ENAME_ROWID ) *pbRowid = 1;
   return 1;
 }
 
@@ -357,39 +359,44 @@ static int lookupName(
           assert( pEList!=0 );
           assert( pEList->nExpr==pTab->nCol );
           for(j=0; j<pEList->nExpr; j++){
-            if( !sqlite3MatchEName(&pEList->a[j], zCol, zTab, zDb, cnt==0) ){
+            int bRowid = 0;       /* True if possible rowid match */
+            if( !sqlite3MatchEName(&pEList->a[j], zCol, zTab, zDb, &bRowid) ){
               continue;
             }
-            if( cnt>0 ){
-              if( pItem->fg.isUsing==0
-               || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
-              ){
-                /* Two or more tables have the same column name which is
-                ** not joined by USING.  This is an error.  Signal as much
-                ** by clearing pFJMatch and letting cnt go above 1. */
-                sqlite3ExprListDelete(db, pFJMatch);
-                pFJMatch = 0;
-              }else
-              if( (pItem->fg.jointype & JT_RIGHT)==0 ){
-                /* An INNER or LEFT JOIN.  Use the left-most table */
-                continue;
-              }else
-              if( (pItem->fg.jointype & JT_LEFT)==0 ){
-                /* A RIGHT JOIN.  Use the right-most table */
-                cnt = 0;
-                sqlite3ExprListDelete(db, pFJMatch);
-                pFJMatch = 0;
-              }else{
-                /* For a FULL JOIN, we must construct a coalesce() func */
-                extendFJMatch(pParse, &pFJMatch, pMatch, pExpr->iColumn);
+            if( bRowid==0 ){
+              if( cnt>0 ){
+                if( pItem->fg.isUsing==0
+                 || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
+                ){
+                  /* Two or more tables have the same column name which is
+                  ** not joined by USING.  This is an error.  Signal as much
+                  ** by clearing pFJMatch and letting cnt go above 1. */
+                  sqlite3ExprListDelete(db, pFJMatch);
+                  pFJMatch = 0;
+                }else
+                if( (pItem->fg.jointype & JT_RIGHT)==0 ){
+                  /* An INNER or LEFT JOIN.  Use the left-most table */
+                  continue;
+                }else
+                if( (pItem->fg.jointype & JT_LEFT)==0 ){
+                  /* A RIGHT JOIN.  Use the right-most table */
+                  cnt = 0;
+                  sqlite3ExprListDelete(db, pFJMatch);
+                  pFJMatch = 0;
+                }else{
+                  /* For a FULL JOIN, we must construct a coalesce() func */
+                  extendFJMatch(pParse, &pFJMatch, pMatch, pExpr->iColumn);
+                }
               }
+              cnt++;
+              hit = 1;
+            }else if( cnt>0 ){
+              continue;
             }
-            cnt++;
-            cntTab = 2;
+            cntTab++;
             pMatch = pItem;
             pExpr->iColumn = j;
             pEList->a[j].fg.bUsed = 1;
-            hit = 1;
             if( pEList->a[j].fg.bUsingTerm ) break;
           }
           if( hit || zTab==0 ) continue;
@@ -584,10 +591,10 @@ static int lookupName(
      && pMatch
      && (pNC->ncFlags & (NC_IdxExpr|NC_GenCol))==0
      && sqlite3IsRowid(zCol)
-     && ALWAYS(VisibleRowid(pMatch->pTab))
+     && ALWAYS(VisibleRowid(pMatch->pTab) || pMatch->fg.isNestedFrom)
     ){
       cnt = 1;
-      pExpr->iColumn = -1;
+      if( pMatch->fg.isNestedFrom==0 ) pExpr->iColumn = -1;
       pExpr->affExpr = SQLITE_AFF_INTEGER;
     }
 

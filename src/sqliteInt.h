@@ -5284,7 +5284,7 @@ int sqlite3MatchEName(
   const char*,
   const char*,
   const char*,
-  int
+  int*
 );
 Bitmask sqlite3ExprColUsed(Expr*);
 u8 sqlite3StrIHash(const char*);

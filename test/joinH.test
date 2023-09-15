@@ -176,6 +176,7 @@ do_execsql_test 8.1 {
   SELECT x3.oid FROM x1 JOIN (x2 JOIN x3 ON c='c')
 } 43
 
+breakpoint
 do_execsql_test 8.2 {
   SELECT x3.rowid FROM x1 JOIN (x2 JOIN x3 ON c='c')
 } {hello}
@@ -195,17 +196,30 @@ do_execsql_test 9.0 {
 
   CREATE TABLE wo1(a PRIMARY KEY, b) WITHOUT ROWID;
   CREATE TABLE wo2(a PRIMARY KEY, rowid) WITHOUT ROWID;
+  CREATE TABLE wo3(a PRIMARY KEY, b) WITHOUT ROWID;
 }
 
-# Should an error.
 do_catchsql_test 9.1 {
+  SELECT rowid FROM wo1, x1, x2;
+} {1 {no such column: rowid}}
+do_catchsql_test 9.2 {
+  SELECT rowid FROM wo1, (x1, x2);
+} {1 {no such column: rowid}}
+do_catchsql_test 9.3 {
   SELECT rowid FROM wo1 JOIN (x1 JOIN x2);
 } {1 {no such column: rowid}}
-
-# Should not be an error.
-do_catchsql_test 9.2 {
+do_catchsql_test 9.4 {
+  SELECT a FROM wo1, x1, x2;
+} {1 {ambiguous column name: a}}
+do_catchsql_test 9.5 {
   SELECT rowid FROM x1 JOIN (x2 JOIN wo2);
 } {0 {}}
+
+do_catchsql_test 9.6 {
+  SELECT _rowid_ FROM wo1 JOIN (wo3 JOIN x3)
+} {0 {}}
+
+
 
 
 finish_test
