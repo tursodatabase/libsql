@@ -123,7 +123,9 @@ impl MakeNamespace for PrimaryNamespaceMaker {
             }
         }
 
-        tokio::fs::remove_dir_all(ns_path).await?;
+        if ns_path.try_exists()? {
+            tokio::fs::remove_dir_all(ns_path).await?;
+        }
 
         Ok(())
     }
