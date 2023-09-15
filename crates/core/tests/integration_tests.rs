@@ -172,6 +172,17 @@ async fn prepare_and_query() {
 async fn prepare_and_query_named_params() {
     let conn = setup().await;
 
+    conn.query("SELECT 1", named_params![]).await.unwrap();
+    conn.query("SELECT 1", params![]).await.unwrap();
+    conn.query("SELECT 1", ()).await.unwrap();
+
+    check_insert(
+        &conn,
+        "INSERT INTO users (id, name) VALUES (:a, :b)",
+        ((":a", 2), (":b", "Alice")),
+    )
+    .await;
+
     check_insert(
         &conn,
         "INSERT INTO users (id, name) VALUES (:a, :b)",
