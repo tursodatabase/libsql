@@ -361,7 +361,8 @@ struct sqlite3_api_routines {
   int (*value_encoding)(sqlite3_value*);
   /* Version 3.41.0 and later */
   int (*is_interrupted)(sqlite3*);
-
+  /* Version 3.43.0 and later */
+  int (*stmt_explain)(sqlite3_stmt*,int);
 };
 
 struct libsql_api_routines {
@@ -698,6 +699,8 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_value_encoding         sqlite3_api->value_encoding
 /* Version 3.41.0 and later */
 #define sqlite3_is_interrupted         sqlite3_api->is_interrupted
+/* Version 3.43.0 and later */
+#define sqlite3_stmt_explain           sqlite3_api->stmt_explain
 /* libSQL 0.1.1 */
 #define libsql_wal_methods_find        libsql_api->wal_methods_find
 #define libsql_wal_methods_register    libsql_api->wal_methods_register

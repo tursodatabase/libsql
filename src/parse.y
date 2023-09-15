@@ -15,7 +15,7 @@
 ** The canonical source code to this file ("parse.y") is a Lemon grammar 
 ** file that specifies the input grammar and actions to take while parsing.
 ** That input file is processed by Lemon to generate a C-language 
-** implementation of a parser for the given grammer.  You might be reading
+** implementation of a parser for the given grammar.  You might be reading
 ** this comment as part of the translated C-code.  Edits should be made
 ** to the original parse.y sources.
 */
@@ -148,8 +148,8 @@ ecmd ::= SEMI.
 ecmd ::= cmdx SEMI.
 %ifndef SQLITE_OMIT_EXPLAIN
 ecmd ::= explain cmdx SEMI.       {NEVER-REDUCE}
-explain ::= EXPLAIN.              { pParse->explain = 1; }
-explain ::= EXPLAIN QUERY PLAN.   { pParse->explain = 2; }
+explain ::= EXPLAIN.              { if( pParse->pReprepare==0 ) pParse->explain = 1; }
+explain ::= EXPLAIN QUERY PLAN.   { if( pParse->pReprepare==0 ) pParse->explain = 2; }
 %endif  SQLITE_OMIT_EXPLAIN
 cmdx ::= cmd.           { sqlite3FinishCoding(pParse); }
 
@@ -275,7 +275,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
 %wildcard ANY.
 
 // Define operator precedence early so that this is the first occurrence
-// of the operator tokens in the grammer.  Keeping the operators together
+// of the operator tokens in the grammar.  Keeping the operators together
 // causes them to be assigned integer values that are close together,
 // which keeps parser tables smaller.
 //
@@ -580,12 +580,11 @@ select(A) ::= WITH wqlist(W) selectnowith(X). {A = attachWithToSelect(pParse,X,W
 select(A) ::= WITH RECURSIVE wqlist(W) selectnowith(X).
                                               {A = attachWithToSelect(pParse,X,W);}
 %endif /* SQLITE_OMIT_CTE */
-select(A) ::= selectnowith(X). {
-  Select *p = X;
+select(A) ::= selectnowith(A). {
+  Select *p = A;
   if( p ){
     parserDoubleLinkSelect(pParse, p);
   }
-  A = p; /*A-overwrites-X*/
 }
 
 selectnowith(A) ::= oneselect(A).
@@ -681,14 +680,17 @@ selcollist(A) ::= sclp(A) scanpt(B) expr(X) scanpt(Z) as(Y).     {
    if( Y.n>0 ) sqlite3ExprListSetName(pParse, A, &Y, 1);
    sqlite3ExprListSetSpan(pParse,A,B,Z);
 }
-selcollist(A) ::= sclp(A) scanpt STAR. {
+selcollist(A) ::= sclp(A) scanpt STAR(X). {
   Expr *p = sqlite3Expr(pParse->db, TK_ASTERISK, 0);
+  sqlite3ExprSetErrorOffset(p, (int)(X.z - pParse->zTail));
   A = sqlite3ExprListAppend(pParse, A, p);
 }
-selcollist(A) ::= sclp(A) scanpt nm(X) DOT STAR. {
-  Expr *pRight = sqlite3PExpr(pParse, TK_ASTERISK, 0, 0);
-  Expr *pLeft = tokenExpr(pParse, TK_ID, X);
-  Expr *pDot = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight);
+selcollist(A) ::= sclp(A) scanpt nm(X) DOT STAR(Y). {
+  Expr *pRight, *pLeft, *pDot;
+  pRight = sqlite3PExpr(pParse, TK_ASTERISK, 0, 0);
+  sqlite3ExprSetErrorOffset(pRight, (int)(Y.z - pParse->zTail));
+  pLeft = tokenExpr(pParse, TK_ID, X);
+  pDot = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight);
   A = sqlite3ExprListAppend(pParse,A, pDot);
 }
 
@@ -1788,7 +1790,7 @@ wqlist(A) ::= wqlist(A) COMMA wqitem(X). {
 %ifndef SQLITE_OMIT_WINDOWFUNC
 %type windowdefn_list {Window*}
 %destructor windowdefn_list {sqlite3WindowListDelete(pParse->db, $$);}
-windowdefn_list(A) ::= windowdefn(Z). { A = Z; }
+windowdefn_list(A) ::= windowdefn(A).
 windowdefn_list(A) ::= windowdefn_list(Y) COMMA windowdefn(Z). {
   assert( Z!=0 );
   sqlite3WindowChain(pParse, Z, Y);
@@ -1844,9 +1846,7 @@ window(A) ::= ORDER BY sortlist(Y) frame_opt(Z). {
 window(A) ::= nm(W) ORDER BY sortlist(Y) frame_opt(Z). {
   A = sqlite3WindowAssemble(pParse, Z, 0, Y, &W);
 }
-window(A) ::= frame_opt(Z). {
-  A = Z;
-}
+window(A) ::= frame_opt(A).
 window(A) ::= nm(W) frame_opt(Z). {
   A = sqlite3WindowAssemble(pParse, Z, 0, 0, &W);
 }

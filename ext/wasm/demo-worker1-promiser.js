@@ -64,15 +64,17 @@
       callback = msgArgs;
       msgArgs = undefined;
     }
-    const p = workerPromise({type: msgType, args:msgArgs});
+    const p = 1
+          ? workerPromise({type: msgType, args:msgArgs})
+          : workerPromise(msgType, msgArgs);
     return callback ? p.then(callback).finally(testCount) : p;
   };
 
+  let sqConfig;
   const runTests = async function(){
     const dbFilename = '/testing2.sqlite3';
     startTime = performance.now();
 
-    let sqConfig;
     await wtest('config-get', (ev)=>{
       const r = ev.result;
       log('sqlite3.config subset:', r);
@@ -102,12 +104,15 @@
       sql: ["create table t(a,b)",
             "insert into t(a,b) values(1,2),(3,4),(5,6)"
            ].join(';'),
-      multi: true,
-      resultRows: [], columnNames: []
+      resultRows: [], columnNames: [],
+      countChanges: sqConfig.bigIntEnabled ? 64 : true
     }, function(ev){
       ev = ev.result;
       T.assert(0===ev.resultRows.length)
-        .assert(0===ev.columnNames.length);
+        .assert(0===ev.columnNames.length)
+        .assert(sqConfig.bigIntEnabled
+                ? (3n===ev.changeCount)
+                : (3===ev.changeCount));
     });
 
     await wtest('exec',{
@@ -125,12 +130,14 @@
     await wtest('exec',{
       sql: 'select a a, b b from t order by a',
       resultRows: [], columnNames: [],
-      rowMode: 'object'
+      rowMode: 'object',
+      countChanges: true
     }, function(ev){
       ev = ev.result;
       T.assert(3===ev.resultRows.length)
         .assert(1===ev.resultRows[0].a)
         .assert(6===ev.resultRows[2].b)
+        .assert(0===ev.changeCount);
     });
 
     await wtest(
@@ -143,12 +150,13 @@
 
     await wtest('exec',{
       sql:'select 1 union all select 3',
-      resultRows: [],
+      resultRows: []
     }, function(ev){
       ev = ev.result;
       T.assert(2 === ev.resultRows.length)
         .assert(1 === ev.resultRows[0][0])
-        .assert(3 === ev.resultRows[1][0]);
+        .assert(3 === ev.resultRows[1][0])
+        .assert(undefined === ev.changeCount);
     });
 
     const resultRowTest1 = function f(ev){
@@ -218,13 +226,12 @@
     });
 
     await wtest('exec',{
-      multi: true,
       sql:[
         'pragma foreign_keys=0;',
         // ^^^ arbitrary query with no result columns
         'select a, b from t order by a desc; select a from t;'
-        // multi-exec only honors results from the first
-        // statement with result columns (regardless of whether)
+        // exec() only honors SELECT results from the first
+        // statement with result columns (regardless of whether
         // it has any rows).
       ],
       rowMode: 1,

@@ -330,6 +330,10 @@ static int seriesColumn(
   return SQLITE_OK;
 }
 
+#ifndef LARGEST_UINT64
+#define LARGEST_UINT64 (0xffffffff|(((sqlite3_uint64)0xffffffff)<<32))
+#endif
+
 /*
 ** Return the rowid for the current row, logically equivalent to n+1 where
 ** "n" is the ascending integer in the aforesaid production definition.
@@ -337,7 +341,7 @@ static int seriesColumn(
 static int seriesRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   series_cursor *pCur = (series_cursor*)cur;
   sqlite3_uint64 n = pCur->ss.uSeqIndexNow;
-  *pRowid = (sqlite3_int64)((n<0xffffffffffffffff)? n+1 : 0);
+  *pRowid = (sqlite3_int64)((n<LARGEST_UINT64)? n+1 : 0);
   return SQLITE_OK;
 }
 

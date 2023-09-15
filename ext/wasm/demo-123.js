@@ -235,10 +235,10 @@
 
        - get change count (total or statement-local, 32- or 64-bit)
        - get a DB's file name
-    
+
        Misc. Stmt features:
 
-       - Various forms of bind() 
+       - Various forms of bind()
        - clearBindings()
        - reset()
        - Various forms of step()

@@ -93,9 +93,13 @@
           <ul>
             <li><a href='speedtest1.html'>speedtest1</a>: a main-thread WASM build of speedtest1.</li>
             <li><a href='speedtest1.html?vfs=kvvfs'>speedtest1?vfs=kvvfs</a>: speedtest1 with the kvvfs.</li>
-            <li><a href='speedtest1-worker.html?size=25'>speedtest1-worker</a>: an interactive Worker-thread variant of speedtest1.</li>
-            <li><a href='speedtest1-worker.html?vfs=opfs&size=25'>speedtest1-worker?vfs=opfs</a>: speedtest1-worker with the
+            <li><a href='speedtest1-worker.html?size=15'>speedtest1-worker</a>: an interactive Worker-thread variant of speedtest1.</li>
+            <li><a href='speedtest1-worker.html?vfs=opfs&size=10'>speedtest1-worker?vfs=opfs</a>: speedtest1-worker with the
               OPFS VFS preselected and configured for a moderate workload.</li>
+            <li><a href='speedtest1-worker.html?vfs=opfs-sahpool&size=10'>speedtest1-worker?vfs=opfs-sahpool</a>:
+              speedtest1-worker with the OPFS-SAHPOOL VFS preselected
+              and configured for a moderate workload.
+            </li>
           </ul>
         </li>
         <li>The obligatory "misc." category...
@@ -103,7 +107,8 @@
             <li><a href='module-symbols.html'>module-symbols</a> gives
               a high-level overview of the symbols exposed by the JS
               module.</li>
-            <li><a href='batch-runner.html'>batch-runner</a>: runs batches of SQL exported from speedtest1.</li>
+            <!--li><a href='batch-runner.html'>batch-runner</a>: runs batches of
+                SQL exported from speedtest1.</li-->
             <li><a href='test-opfs-vfs.html'>test-opfs-vfs</a>
               (<a href='test-opfs-vfs.html?opfs-sanity-check&opfs-verbose'>same
               with verbose output and sanity-checking tests</a>) is an
@@ -117,18 +122,19 @@
             </li>
           </ul>
         </li>
-        <!--li>WASMFS-specific tests which currently do not work due to incompatible changes
-          made to the WASMFS+OPFS combination.
+        <li><strong>WASMFS</strong>-specific tests which require that
+          the WASMFS build is available on this server (it is not by
+          default) and that this server emits the COOP/COEP headers.
           <ul>
-            <li><a href='speedtest1-wasmfs.html?flags=--size,25'>speedtest1-wasmfs</a>:
+            <li><a href='scratchpad-wasmfs.html'>scratchpad-wasmfs</a>:
+              experimenting with WASMFS/OPFS-based persistence.
+            </li>
+            <li><a href='speedtest1-wasmfs.html?flags=--size,15'>speedtest1-wasmfs</a>:
               a variant of speedtest1 built solely for the wasmfs/opfs
-              feature.</li>
-            <li><a href='scratchpad-wasmfs-main.html'>scratchpad-wasmfs-main</a>:
-              experimenting with WASMFS/OPFS-based persistence. Maintenance
-              reminder: we cannot currently (2022-09-15) load WASMFS in a
-              worker due to an Emscripten wasm loader limitation.</li>
+              feature.
+            </li>
           </ul>
-        </li-->
+        </li>
         <!--li><a href='x.html'></a></li-->
       </ul>
     </div>

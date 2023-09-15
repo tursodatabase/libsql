@@ -408,18 +408,6 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "foreignkey", "1", TCL_GLOBAL_ONLY);
 #endif
 
-#ifdef SQLITE_ENABLE_FTS1
-  Tcl_SetVar2(interp, "sqlite_options", "fts1", "1", TCL_GLOBAL_ONLY);
-#else
-  Tcl_SetVar2(interp, "sqlite_options", "fts1", "0", TCL_GLOBAL_ONLY);
-#endif
-
-#ifdef SQLITE_ENABLE_FTS2
-  Tcl_SetVar2(interp, "sqlite_options", "fts2", "1", TCL_GLOBAL_ONLY);
-#else
-  Tcl_SetVar2(interp, "sqlite_options", "fts2", "0", TCL_GLOBAL_ONLY);
-#endif
-
 #ifdef SQLITE_ENABLE_FTS3
   Tcl_SetVar2(interp, "sqlite_options", "fts3", "1", TCL_GLOBAL_ONLY);
 #else

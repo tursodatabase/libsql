@@ -69,7 +69,7 @@ foreach {tn script} {
   # Because it uses so much data, this test can take 12-13 seconds even on
   # a modern workstation. So it is omitted from "veryquick" and other
   # permutations.test tests.
-  if {[isquick]==0} {
+  if {[isquick]==0 && [clang_sanitize_address]==0} {
     do_execsql_test $tn.3 {
       PRAGMA cache_size = 5;
       WITH r(x,y) AS (

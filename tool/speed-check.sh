@@ -99,6 +99,9 @@ while test "$1" != ""; do
     --stmtcache)
         shift; SPEEDTEST_OPTS="$SPEEDTEST_OPTS --stmtcache $1"
         ;;
+    --nolongdouble)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --nolongdouble"
+        ;;
     --checkpoint)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --checkpoint"
         ;;

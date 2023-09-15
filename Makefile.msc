@@ -52,6 +52,13 @@ MINIMAL_AMALGAMATION = 0
 USE_STDCALL = 0
 !ENDIF
 
+# Set this non-0 to use structured exception handling (SEH) for WAL mode
+# in the core library.
+#
+!IFNDEF USE_SEH
+USE_SEH = 1
+!ENDIF
+
 # Set this non-0 to have the shell executable link against the core dynamic
 # link library.
 #
@@ -216,6 +223,12 @@ WIN32HEAP = 0
 #
 !IFNDEF OSTRACE
 OSTRACE = 0
+!ENDIF
+
+# enable address sanitizer using ASAN=1 on the command-line.
+#
+!IFNDEF ASAN
+ASAN = 0
 !ENDIF
 
 # Set this to one of the following values to enable various debugging
@@ -387,6 +400,13 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_MATH_FUNCTIONS
 #
 !IF $(RBU)!=0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RBU=1
+!ENDIF
+
+# Should structured exception handling (SEH) be enabled for WAL mode in
+# the core library?
+#
+!IF $(USE_SEH)!=0
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_USE_SEH=1
 !ENDIF
 
 # These are the "extended" SQLite compilation options used when compiling for
@@ -875,6 +895,13 @@ RCC = $(RCC) -DSQLITE_WIN32_MALLOC=1
 TCC = $(TCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 RCC = $(RCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 !ENDIF
+!ENDIF
+
+
+# Address sanitizer if ASAN=1
+#
+!IF $(ASAN)>0
+TCC = $(TCC) /fsanitize=address
 !ENDIF
 
 # <<mark>>
@@ -1807,6 +1834,12 @@ srcck1.exe:	$(TOP)\tool\srcck1.c
 sourcetest:	srcck1.exe $(SQLITE3C)
 	srcck1.exe $(SQLITE3C)
 
+src-verify.exe:	$(TOP)\tool\src-verify.c
+	$(LTLINK) $(NO_WARN) $(TOP)\tool\src-verify.c
+
+verify-source:	src-verify.exe
+	src-verify.exe $(TOP)
+
 fuzzershell.exe:	$(TOP)\tool\fuzzershell.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZERSHELL_COMPILE_OPTS) $(TOP)\tool\fuzzershell.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
@@ -1870,7 +1903,7 @@ mptest:	mptester.exe
 	move vdbe.new tsrc\vdbe.c
 	echo > .target_source
 
-sqlite3.c:	.target_source sqlite3ext.h sqlite3session.h $(MKSQLITE3C_TOOL)
+sqlite3.c:	.target_source sqlite3ext.h sqlite3session.h $(MKSQLITE3C_TOOL) src-verify.exe
 	$(TCLSH_CMD) $(MKSQLITE3C_TOOL) $(MKSQLITE3C_ARGS)
 
 sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl
@@ -2226,8 +2259,8 @@ SHELL_SRC = \
 	$(TOP)\src\shell.c.in \
 	$(TOP)\ext\misc\appendvfs.c \
 	$(TOP)\ext\misc\completion.c \
-        $(TOP)\ext\misc\base64.c \
-        $(TOP)\ext\misc\base85.c \
+	$(TOP)\ext\misc\base64.c \
+	$(TOP)\ext\misc\base85.c \
 	$(TOP)\ext\misc\decimal.c \
 	$(TOP)\ext\misc\fileio.c \
 	$(TOP)\ext\misc\ieee754.c \
@@ -2238,9 +2271,10 @@ SHELL_SRC = \
 	$(TOP)\ext\expert\sqlite3expert.c \
 	$(TOP)\ext\expert\sqlite3expert.h \
 	$(TOP)\ext\misc\memtrace.c \
-	$(TOP)/ext/recover/dbdata.c \
-	$(TOP)/ext/recover/sqlite3recover.c \
-	$(TOP)/ext/recover/sqlite3recover.h \
+	$(TOP)\ext\misc\pcachetrace.c \
+	$(TOP)\ext\recover\dbdata.c \
+	$(TOP)\ext\recover\sqlite3recover.c \
+	$(TOP)\ext\recover\sqlite3recover.h \
 	$(TOP)\src\test_windirent.c
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
@@ -2484,10 +2518,13 @@ testrunner:	testfixture.exe
 #
 devtest:	testfixture.exe fuzztest testrunner
 
+mdevtest:
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl mdevtest
+
 # Testing for a release
 #
 releasetest: testfixture.exe fuzztest
-	testfixture.exe $(TOP)/test/testrunner.tcl release
+	testfixture.exe $(TOP)\test\testrunner.tcl release
 
 
 smoketest:	$(TESTPROGS)
@@ -2515,14 +2552,14 @@ sqlite3_expert.exe: $(SQLITE3C) $(TOP)\ext\expert\sqlite3expert.h $(TOP)\ext\exp
 	$(LTLINK) $(NO_WARN)	$(TOP)\ext\expert\sqlite3expert.c $(TOP)\ext\expert\expert.c $(SQLITE3C) $(TLIBS)
 
 CHECKER_DEPS =\
-  $(TOP)/tool/mkccode.tcl \
+  $(TOP)\tool\mkccode.tcl \
   sqlite3.c \
-  $(TOP)/src/tclsqlite.c \
-  $(TOP)/ext/repair/sqlite3_checker.tcl \
-  $(TOP)/ext/repair/checkindex.c \
-  $(TOP)/ext/repair/checkfreelist.c \
-  $(TOP)/ext/misc/btreeinfo.c \
-  $(TOP)/ext/repair/sqlite3_checker.c.in
+  $(TOP)\src\tclsqlite.c \
+  $(TOP)\ext\repair\sqlite3_checker.tcl \
+  $(TOP)\ext\repair\checkindex.c \
+  $(TOP)\ext\repair\checkfreelist.c \
+  $(TOP)\ext\misc\btreeinfo.c \
+  $(TOP)\ext\repair\sqlite3_checker.c.in
 
 sqlite3_checker.c:	$(CHECKER_DEPS)
 	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\ext\repair\sqlite3_checker.c.in > $@
@@ -2661,4 +2698,5 @@ clean:
 	del /Q showshm.exe sqlite3_checker.* sqlite3_expert.exe 2>NUL
 	del /Q fts5.* fts5parse.* 2>NUL
 	del /Q lsm.h lsm1.c 2>NUL
+	del /q src-verify.exe 2>NUL
 # <</mark>>

@@ -256,6 +256,37 @@ static void ieee754func_to_blob(
   }
 }
 
+/*
+** SQL Function:   ieee754_inc(r,N)
+**
+** Move the floating point value r by N quantums and return the new
+** values.
+**
+** Behind the scenes: this routine merely casts r into a 64-bit unsigned
+** integer, adds N, then casts the value back into float.
+**
+** Example:  To find the smallest positive number:
+**
+**     SELECT ieee754_inc(0.0,+1);
+*/
+static void ieee754inc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  double r;
+  sqlite3_int64 N;
+  sqlite3_uint64 m1, m2;
+  double r2;
+  UNUSED_PARAMETER(argc);
+  r = sqlite3_value_double(argv[0]);
+  N = sqlite3_value_int64(argv[1]);
+  memcpy(&m1, &r, 8);
+  m2 = m1 + N;
+  memcpy(&r2, &m2, 8);
+  sqlite3_result_double(context, r2);
+}
+
 
 #ifdef _WIN32
 __declspec(dllexport)
@@ -277,7 +308,7 @@ int sqlite3_ieee_init(
     { "ieee754_exponent",  1,   2, ieee754func },
     { "ieee754_to_blob",   1,   0, ieee754func_to_blob },
     { "ieee754_from_blob", 1,   0, ieee754func_from_blob },
-
+    { "ieee754_inc",       2,   0, ieee754inc  },
   };
   unsigned int i;
   int rc = SQLITE_OK;

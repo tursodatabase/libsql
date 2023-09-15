@@ -764,5 +764,27 @@ do_execsql_test update-21.4 {
   SELECT * FROM t1 ORDER BY vkey, c5;
   ROLLBACK;
 } {6 -54 100 NULL}
+# Follow-up on 2023-07-31 (forum post https://sqlite.org/forum/forumpost/8ab195fd44e75ed0):
+# Only disable one-pass if the subquery is in the WHERE clause.  The SET expressions
+# do not count.
+do_execsql_test update-21.11 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT);
+  CREATE TABLE t2(d INT);
+}
+do_eqp_test update-21.12 {
+  WITH t3(x,y) AS (SELECT d, row_number()OVER() FROM t2)
+    UPDATE t1 SET b=(SELECT y FROM t3 WHERE t1.a=t3.x);
+} {
+  QUERY PLAN
+  |--SCAN t1
+  `--CORRELATED SCALAR SUBQUERY xxxxxx
+     |--CO-ROUTINE t3
+     |  |--CO-ROUTINE (subquery-xxxxxx)
+     |  |  `--SCAN t2
+     |  `--SCAN (subquery-xxxxxx)
+     |--BLOOM FILTER ON t3 (x=?)
+     `--SEARCH t3 USING AUTOMATIC COVERING INDEX (x=?)
+}
 
 finish_test

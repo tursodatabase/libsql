@@ -433,7 +433,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       testcase( z[0]=='0' );  testcase( z[0]=='1' );  testcase( z[0]=='2' );
       testcase( z[0]=='3' );  testcase( z[0]=='4' );  testcase( z[0]=='5' );
       testcase( z[0]=='6' );  testcase( z[0]=='7' );  testcase( z[0]=='8' );
-      testcase( z[0]=='9' );
+      testcase( z[0]=='9' );  testcase( z[0]=='.' );
       *tokenType = TK_INTEGER;
 #ifndef SQLITE_OMIT_HEX_INTEGER
       if( z[0]=='0' && (z[1]=='x' || z[1]=='X') && sqlite3Isxdigit(z[2]) ){
@@ -505,7 +505,8 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       return i;
     }
     case CC_KYWD0: {
-      for(i=1; aiClass[z[i]]<=CC_KYWD; i++){}
+      if( aiClass[z[1]]>CC_KYWD ){ i = 1;  break; }
+      for(i=2; aiClass[z[i]]<=CC_KYWD; i++){}
       if( IdChar(z[i]) ){
         /* This token started out using characters that can appear in keywords,
         ** but z[i] is a character not allowed within keywords, so this must

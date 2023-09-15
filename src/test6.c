@@ -33,25 +33,25 @@ typedef struct WriteBuffer WriteBuffer;
 /*
 ** Method:
 **
-**   This layer is implemented as a wrapper around the "real" 
-**   sqlite3_file object for the host system. Each time data is 
+**   This layer is implemented as a wrapper around the "real"
+**   sqlite3_file object for the host system. Each time data is
 **   written to the file object, instead of being written to the
-**   underlying file, the write operation is stored in an in-memory 
+**   underlying file, the write operation is stored in an in-memory
 **   structure (type WriteBuffer). This structure is placed at the
 **   end of a global ordered list (the write-list).
 **
 **   When data is read from a file object, the requested region is
-**   first retrieved from the real file. The write-list is then 
-**   traversed and data copied from any overlapping WriteBuffer 
+**   first retrieved from the real file. The write-list is then
+**   traversed and data copied from any overlapping WriteBuffer
 **   structures to the output buffer. i.e. a read() operation following
 **   one or more write() operations works as expected, even if no
 **   data has actually been written out to the real file.
 **
-**   When a fsync() operation is performed, an operating system crash 
-**   may be simulated, in which case exit(-1) is called (the call to 
+**   When a fsync() operation is performed, an operating system crash
+**   may be simulated, in which case exit(-1) is called (the call to
 **   xSync() never returns). Whether or not a crash is simulated,
-**   the data associated with a subset of the WriteBuffer structures 
-**   stored in the write-list is written to the real underlying files 
+**   the data associated with a subset of the WriteBuffer structures
+**   stored in the write-list is written to the real underlying files
 **   and the entries removed from the write-list. If a crash is simulated,
 **   a subset of the buffers may be corrupted before the data is written.
 **
@@ -63,13 +63,13 @@ typedef struct WriteBuffer WriteBuffer;
 **   Normal mode is used when the simulated device has none of the
 **   SQLITE_IOCAP_XXX flags set.
 **
-**   In normal mode, if the fsync() is not a simulated crash, the 
+**   In normal mode, if the fsync() is not a simulated crash, the
 **   write-list is traversed from beginning to end. Each WriteBuffer
 **   structure associated with the file handle used to call xSync()
 **   is written to the real file and removed from the write-list.
 **
-**   If a crash is simulated, one of the following takes place for 
-**   each WriteBuffer in the write-list, regardless of which 
+**   If a crash is simulated, one of the following takes place for
+**   each WriteBuffer in the write-list, regardless of which
 **   file-handle it is associated with:
 **
 **     1. The buffer is correctly written to the file, just as if
@@ -77,14 +77,14 @@ typedef struct WriteBuffer WriteBuffer;
 **
 **     2. Nothing is done.
 **
-**     3. Garbage data is written to all sectors of the file that 
+**     3. Garbage data is written to all sectors of the file that
 **        overlap the region specified by the WriteBuffer. Or garbage
-**        data is written to some contiguous section within the 
+**        data is written to some contiguous section within the
 **        overlapped sectors.
 **
 ** Device Characteristic flag handling:
 **
-**   If the IOCAP_ATOMIC flag is set, then option (3) above is 
+**   If the IOCAP_ATOMIC flag is set, then option (3) above is
 **   never selected.
 **
 **   If the IOCAP_ATOMIC512 flag is set, and the WriteBuffer represents
@@ -96,11 +96,11 @@ typedef struct WriteBuffer WriteBuffer;
 **
 **   If either the IOCAP_SAFEAPPEND or IOCAP_SEQUENTIAL flags are set
 **   and a crash is being simulated, then an entry of the write-list is
-**   selected at random. Everything in the list after the selected entry 
+**   selected at random. Everything in the list after the selected entry
 **   is discarded before processing begins.
 **
-**   If IOCAP_SEQUENTIAL is set and a crash is being simulated, option 
-**   (1) is selected for all write-list entries except the last. If a 
+**   If IOCAP_SEQUENTIAL is set and a crash is being simulated, option
+**   (1) is selected for all write-list entries except the last. If a
 **   crash is not being simulated, then all entries in the write-list
 **   that occur before at least one write() on the file-handle specified
 **   as part of the xSync() are written to their associated real files.
@@ -114,7 +114,7 @@ typedef struct WriteBuffer WriteBuffer;
 ** Each write operation in the write-list is represented by an instance
 ** of the following structure.
 **
-** If zBuf is 0, then this structure represents a call to xTruncate(), 
+** If zBuf is 0, then this structure represents a call to xTruncate(),
 ** not xWrite(). In that case, iOffset is the size that the file is
 ** truncated to.
 */
@@ -133,7 +133,7 @@ struct CrashFile {
   char *zName;
   int flags;                           /* Flags the file was opened with */
 
-  /* Cache of the entire file. This is used to speed up OsRead() and 
+  /* Cache of the entire file. This is used to speed up OsRead() and
   ** OsFileSize() calls. Although both could be done by traversing the
   ** write-list, in practice this is impractically slow.
   */
@@ -150,7 +150,7 @@ struct CrashGlobal {
   int iDeviceCharacteristics;  /* Value of simulated device characteristics */
 
   int iCrash;                  /* Crash on the iCrash'th call to xSync() */
-  char zCrashFile[500];        /* Crash during an xSync() on this file */ 
+  char zCrashFile[500];        /* Crash during an xSync() on this file */
 };
 
 static CrashGlobal g = {0, 0, SQLITE_DEFAULT_SECTOR_SIZE, 0, 0};
@@ -172,7 +172,7 @@ static void *crash_realloc(void *p, int n){
 
 /*
 ** Wrapper around the sqlite3OsWrite() function that avoids writing to the
-** 512 byte block begining at offset PENDING_BYTE.
+** 512 byte block beginning at offset PENDING_BYTE.
 */
 static int writeDbFile(CrashFile *p, u8 *z, i64 iAmt, i64 iOff){
   int rc = SQLITE_OK;
@@ -194,7 +194,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
   WriteBuffer *pWrite;
   WriteBuffer **ppPtr;
 
-  /* If this is not a crash simulation, set pFinal to point to the 
+  /* If this is not a crash simulation, set pFinal to point to the
   ** last element of the write-list that is associated with file handle
   ** pFile.
   **
@@ -242,7 +242,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
       char random;
       sqlite3_randomness(1, &random);
 
-      /* Do not select option 3 (sector trashing) if the IOCAP_ATOMIC flag 
+      /* Do not select option 3 (sector trashing) if the IOCAP_ATOMIC flag
       ** is set or this is an OsTruncate(), not an Oswrite().
       */
       if( (iDc&SQLITE_IOCAP_ATOMIC) || (pWrite->zBuf==0) ){
@@ -288,7 +288,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
         *ppPtr = pWrite->pNext;
 #ifdef TRACE_CRASHTEST
         if( isCrash ){
-          printf("Writing %d bytes @ %d (%s)\n", 
+          printf("Writing %d bytes @ %d (%s)\n",
             pWrite->nBuf, (int)pWrite->iOffset, pWrite->pFile->zName
           );
         }
@@ -300,7 +300,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
         ppPtr = &pWrite->pNext;
 #ifdef TRACE_CRASHTEST
         if( isCrash ){
-          printf("Omiting %d bytes @ %d (%s)\n", 
+          printf("Omiting %d bytes @ %d (%s)\n",
             pWrite->nBuf, (int)pWrite->iOffset, pWrite->pFile->zName
           );
         }
@@ -315,7 +315,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
         assert(pWrite->zBuf);
 
 #ifdef TRACE_CRASHTEST
-        printf("Trashing %d sectors (%d bytes) @ %lld (sector %d) (%s)\n", 
+        printf("Trashing %d sectors (%d bytes) @ %lld (sector %d) (%s)\n",
             1+iLast-iFirst, (1+iLast-iFirst)*g.iSectorSize,
             pWrite->iOffset, iFirst, pWrite->pFile->zName
         );
@@ -325,7 +325,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
         if( zGarbage ){
           sqlite3_int64 i;
           for(i=iFirst; rc==SQLITE_OK && i<=iLast; i++){
-            sqlite3_randomness(g.iSectorSize, zGarbage); 
+            sqlite3_randomness(g.iSectorSize, zGarbage);
             rc = writeDbFile(
               pWrite->pFile, zGarbage, g.iSectorSize, i*g.iSectorSize
             );
@@ -389,7 +389,7 @@ static int writeListAppend(
     g.pWriteList = pNew;
   }
   g.pWriteListEnd = pNew;
-  
+ 
   return SQLITE_OK;
 }
 
@@ -407,9 +407,9 @@ static int cfClose(sqlite3_file *pFile){
 ** Read data from a crash-file.
 */
 static int cfRead(
-  sqlite3_file *pFile, 
-  void *zBuf, 
-  int iAmt, 
+  sqlite3_file *pFile,
+  void *zBuf,
+  int iAmt,
   sqlite_int64 iOfst
 ){
   CrashFile *pCrash = (CrashFile *)pFile;
@@ -431,9 +431,9 @@ static int cfRead(
 ** Write data to a crash-file.
 */
 static int cfWrite(
-  sqlite3_file *pFile, 
-  const void *zBuf, 
-  int iAmt, 
+  sqlite3_file *pFile,
+  const void *zBuf,
+  int iAmt,
   sqlite_int64 iOfst
 ){
   CrashFile *pCrash = (CrashFile *)pFile;
@@ -604,7 +604,7 @@ struct crashAppData {
 **
 ** The caller will have allocated pVfs->szOsFile bytes of space
 ** at pFile. This file uses this space for the CrashFile structure
-** and allocates space for the "real" file structure using 
+** and allocates space for the "real" file structure using
 ** sqlite3_malloc(). The assumption here is (pVfs->szOsFile) is
 ** equal or greater than sizeof(CrashFile).
 */
@@ -667,17 +667,17 @@ static int cfDelete(sqlite3_vfs *pCfVfs, const char *zPath, int dirSync){
   return pVfs->xDelete(pVfs, zPath, dirSync);
 }
 static int cfAccess(
-  sqlite3_vfs *pCfVfs, 
-  const char *zPath, 
-  int flags, 
+  sqlite3_vfs *pCfVfs,
+  const char *zPath,
+  int flags,
   int *pResOut
 ){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
   return pVfs->xAccess(pVfs, zPath, flags, pResOut);
 }
 static int cfFullPathname(
-  sqlite3_vfs *pCfVfs, 
-  const char *zPath, 
+  sqlite3_vfs *pCfVfs,
+  const char *zPath,
   int nPathOut,
   char *zPathOut
 ){
@@ -754,11 +754,11 @@ static int processDevSymArgs(
     int nOpt;
     char *zOpt = Tcl_GetStringFromObj(objv[i], &nOpt);
 
-    if( (nOpt>11 || nOpt<2 || strncmp("-sectorsize", zOpt, nOpt)) 
+    if( (nOpt>11 || nOpt<2 || strncmp("-sectorsize", zOpt, nOpt))
      && (nOpt>16 || nOpt<2 || strncmp("-characteristics", zOpt, nOpt))
     ){
-      Tcl_AppendResult(interp, 
-        "Bad option: \"", zOpt, 
+      Tcl_AppendResult(interp,
+        "Bad option: \"", zOpt,
         "\" - must be \"-characteristics\" or \"-sectorsize\"", 0
       );
       return TCL_ERROR;
@@ -786,7 +786,7 @@ static int processDevSymArgs(
         Tcl_Obj *pFlag = Tcl_DuplicateObj(apObj[j]);
         Tcl_IncrRefCount(pFlag);
         Tcl_UtfToLower(Tcl_GetString(pFlag));
- 
+
         rc = Tcl_GetIndexFromObjStruct(
             interp, pFlag, aFlag, sizeof(aFlag[0]), "no such flag", 0, &iChoice
         );
@@ -814,7 +814,7 @@ static int processDevSymArgs(
 /*
 ** tclcmd:   sqlite3_crash_now
 **
-** Simulate a crash immediately. This function does not return 
+** Simulate a crash immediately. This function does not return
 ** (writeListSync() calls exit(-1)).
 */
 static int SQLITE_TCLAPI crashNowCmd(
@@ -853,7 +853,7 @@ static int SQLITE_TCLAPI crashEnableCmd(
     0,                  /* pNext */
     "crash",            /* zName */
     0,                  /* pAppData */
-  
+ 
     cfOpen,               /* xOpen */
     cfDelete,             /* xDelete */
     cfAccess,             /* xAccess */
@@ -909,7 +909,7 @@ static int SQLITE_TCLAPI crashEnableCmd(
 ** an argument. For -sectorsize, this is the simulated sector size in
 ** bytes. For -characteristics, the argument must be a list of io-capability
 ** flags to simulate. Valid flags are "atomic", "atomic512", "atomic1K",
-** "atomic2K", "atomic4K", "atomic8K", "atomic16K", "atomic32K", 
+** "atomic2K", "atomic4K", "atomic8K", "atomic16K", "atomic32K",
 ** "atomic64K", "sequential" and "safe_append".
 **
 ** Example:
@@ -1046,7 +1046,7 @@ static int SQLITE_TCLAPI jtObjCmd(
   zParent = Tcl_GetString(objv[1]);
   if( objc==3 ){
     if( strcmp(zParent, "-default") ){
-      Tcl_AppendResult(interp, 
+      Tcl_AppendResult(interp,
           "bad option \"", zParent, "\": must be -default", 0
       );
       return TCL_ERROR;

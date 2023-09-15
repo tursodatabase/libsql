@@ -5,6 +5,7 @@ namespace eval trd {
   variable tcltest
   variable extra
   variable all_configs
+  variable build
 
 
   # Tcl tests to run for various builds.
@@ -35,6 +36,7 @@ namespace eval trd {
   set tcltest(win.Have-Not)               veryquick
   set tcltest(win.Windows-Memdebug)       veryquick
   set tcltest(win.Windows-Win32Heap)      veryquick
+  set tcltest(win.Windows-Sanitize)       veryquick
   set tcltest(win.Default)                full
 
   # Extra [make xyz] tests that should be run for various builds.
@@ -63,6 +65,7 @@ namespace eval trd {
   set extra(win.Stdcall)                  {fuzztest sourcetest}
   set extra(win.Windows-Memdebug)         {fuzztest sourcetest}
   set extra(win.Windows-Win32Heap)        {fuzztest sourcetest}
+  set extra(win.Windows-Sanitize)         fuzztest
   set extra(win.Have-Not)                 {fuzztest sourcetest}
 
   # The following mirrors the set of test suites invoked by "all.test".
@@ -75,6 +78,247 @@ namespace eval trd {
     inmemory_journal pcache0 pcache10 pcache50 pcache90 
     pcache100 prepare mmap
   }
+
+  #-----------------------------------------------------------------------
+  # Start of build() definitions.
+  #
+  set build(Default) {
+    -O2
+    --disable-amalgamation --disable-shared
+    --enable-session
+    -DSQLITE_ENABLE_RBU
+  }
+
+  # These two are used by [testrunner.tcl mdevtest] (All-O0) and 
+  # [testrunner.tcl sdevtest] (All-Sanitize).
+  #
+  set build(All-Debug) {
+    --enable-debug --enable-all
+  }
+  set build(All-O0) {
+    -O0 --enable-all
+  }
+  set build(All-Sanitize) { --enable-all -fsanitize=address,undefined }
+
+  set build(Sanitize) {
+    CC=clang -fsanitize=address,undefined
+    -DSQLITE_ENABLE_STAT4
+    -DCONFIG_SLOWDOWN_FACTOR=5.0
+    --enable-debug
+    --enable-all
+  }
+  set build(Stdcall) {
+    -DUSE_STDCALL=1
+    -O2
+  }
+
+  # The "Have-Not" configuration sets all possible -UHAVE_feature options
+  # in order to verify that the code works even on platforms that lack
+  # these support services.
+  set build(Have-Not) {
+    -DHAVE_FDATASYNC=0
+    -DHAVE_GMTIME_R=0
+    -DHAVE_ISNAN=0
+    -DHAVE_LOCALTIME_R=0
+    -DHAVE_LOCALTIME_S=0
+    -DHAVE_MALLOC_USABLE_SIZE=0
+    -DHAVE_STRCHRNUL=0
+    -DHAVE_USLEEP=0
+    -DHAVE_UTIME=0
+  }
+  set build(Unlock-Notify) {
+    -O2
+    -DSQLITE_ENABLE_UNLOCK_NOTIFY
+    -DSQLITE_THREADSAFE
+    -DSQLITE_TCL_DEFAULT_FULLMUTEX=1
+  }
+  set build(User-Auth) {
+    -O2
+    -DSQLITE_USER_AUTHENTICATION=1
+  }
+  set build(Secure-Delete) {
+    -O2
+    -DSQLITE_SECURE_DELETE=1
+    -DSQLITE_SOUNDEX=1
+  }
+  set build(Update-Delete-Limit) {
+    -O2
+    -DSQLITE_DEFAULT_FILE_FORMAT=4
+    -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1
+    -DSQLITE_ENABLE_STMT_SCANSTATUS
+    -DSQLITE_LIKE_DOESNT_MATCH_BLOBS
+    -DSQLITE_ENABLE_CURSOR_HINTS
+  }
+  set build(Check-Symbols) {
+    -DSQLITE_MEMDEBUG=1
+    -DSQLITE_ENABLE_FTS3_PARENTHESIS=1
+    -DSQLITE_ENABLE_FTS3=1
+    -DSQLITE_ENABLE_RTREE=1
+    -DSQLITE_ENABLE_MEMSYS5=1
+    -DSQLITE_ENABLE_MEMSYS3=1
+    -DSQLITE_ENABLE_COLUMN_METADATA=1
+    -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1
+    -DSQLITE_SECURE_DELETE=1
+    -DSQLITE_SOUNDEX=1
+    -DSQLITE_ENABLE_ATOMIC_WRITE=1
+    -DSQLITE_ENABLE_MEMORY_MANAGEMENT=1
+    -DSQLITE_ENABLE_OVERSIZE_CELL_CHECK=1
+    -DSQLITE_ENABLE_STAT4
+    -DSQLITE_ENABLE_STMT_SCANSTATUS
+    --enable-fts5 --enable-session
+  }
+  set build(Debug-One) {
+    --disable-shared
+    -O2 -funsigned-char
+    -DSQLITE_DEBUG=1
+    -DSQLITE_MEMDEBUG=1
+    -DSQLITE_MUTEX_NOOP=1
+    -DSQLITE_TCL_DEFAULT_FULLMUTEX=1
+    -DSQLITE_ENABLE_FTS3=1
+    -DSQLITE_ENABLE_RTREE=1
+    -DSQLITE_ENABLE_MEMSYS5=1
+    -DSQLITE_ENABLE_COLUMN_METADATA=1
+    -DSQLITE_ENABLE_STAT4
+    -DSQLITE_ENABLE_HIDDEN_COLUMNS
+    -DSQLITE_MAX_ATTACHED=125
+    -DSQLITE_MUTATION_TEST
+    --enable-fts5
+  }
+  set build(Debug-Two) {
+    -DSQLITE_DEFAULT_MEMSTATUS=0
+    -DSQLITE_MAX_EXPR_DEPTH=0
+    --enable-debug
+  }
+  set build(Fast-One) {
+    -O6
+    -DSQLITE_ENABLE_FTS4=1
+    -DSQLITE_ENABLE_RTREE=1
+    -DSQLITE_ENABLE_STAT4
+    -DSQLITE_ENABLE_RBU
+    -DSQLITE_MAX_ATTACHED=125
+    -DSQLITE_MAX_MMAP_SIZE=12884901888
+    -DSQLITE_ENABLE_SORTER_MMAP=1
+    -DLONGDOUBLE_TYPE=double
+    --enable-session
+  }
+  set build(Device-One) {
+    -O2
+    -DSQLITE_DEBUG=1
+    -DSQLITE_DEFAULT_AUTOVACUUM=1
+    -DSQLITE_DEFAULT_CACHE_SIZE=64
+    -DSQLITE_DEFAULT_PAGE_SIZE=1024
+    -DSQLITE_DEFAULT_TEMP_CACHE_SIZE=32
+    -DSQLITE_DISABLE_LFS=1
+    -DSQLITE_ENABLE_ATOMIC_WRITE=1
+    -DSQLITE_ENABLE_IOTRACE=1
+    -DSQLITE_ENABLE_MEMORY_MANAGEMENT=1
+    -DSQLITE_MAX_PAGE_SIZE=4096
+    -DSQLITE_OMIT_LOAD_EXTENSION=1
+    -DSQLITE_OMIT_PROGRESS_CALLBACK=1
+    -DSQLITE_OMIT_VIRTUALTABLE=1
+    -DSQLITE_ENABLE_HIDDEN_COLUMNS
+    -DSQLITE_TEMP_STORE=3
+  }
+  set build(Device-Two) {
+    -DSQLITE_4_BYTE_ALIGNED_MALLOC=1
+    -DSQLITE_DEFAULT_AUTOVACUUM=1
+    -DSQLITE_DEFAULT_CACHE_SIZE=1000
+    -DSQLITE_DEFAULT_LOCKING_MODE=0
+    -DSQLITE_DEFAULT_PAGE_SIZE=1024
+    -DSQLITE_DEFAULT_TEMP_CACHE_SIZE=1000
+    -DSQLITE_DISABLE_LFS=1
+    -DSQLITE_ENABLE_FTS3=1
+    -DSQLITE_ENABLE_MEMORY_MANAGEMENT=1
+    -DSQLITE_ENABLE_RTREE=1
+    -DSQLITE_MAX_COMPOUND_SELECT=50
+    -DSQLITE_MAX_PAGE_SIZE=32768
+    -DSQLITE_OMIT_TRACE=1
+    -DSQLITE_TEMP_STORE=3
+    -DSQLITE_THREADSAFE=2
+    --enable-fts5 --enable-session
+  }
+  set build(Locking-Style) {
+    -O2
+    -DSQLITE_ENABLE_LOCKING_STYLE=1
+  }
+  set build(Apple) {
+    -Os
+    -DHAVE_GMTIME_R=1
+    -DHAVE_ISNAN=1
+    -DHAVE_LOCALTIME_R=1
+    -DHAVE_PREAD=1
+    -DHAVE_PWRITE=1
+    -DHAVE_UTIME=1
+    -DSQLITE_DEFAULT_CACHE_SIZE=1000
+    -DSQLITE_DEFAULT_CKPTFULLFSYNC=1
+    -DSQLITE_DEFAULT_MEMSTATUS=1
+    -DSQLITE_DEFAULT_PAGE_SIZE=1024
+    -DSQLITE_DISABLE_PAGECACHE_OVERFLOW_STATS=1
+    -DSQLITE_ENABLE_API_ARMOR=1
+    -DSQLITE_ENABLE_AUTO_PROFILE=1
+    -DSQLITE_ENABLE_FLOCKTIMEOUT=1
+    -DSQLITE_ENABLE_FTS3=1
+    -DSQLITE_ENABLE_FTS3_PARENTHESIS=1
+    -DSQLITE_ENABLE_FTS3_TOKENIZER=1
+    -DSQLITE_ENABLE_PERSIST_WAL=1
+    -DSQLITE_ENABLE_PURGEABLE_PCACHE=1
+    -DSQLITE_ENABLE_RTREE=1
+    -DSQLITE_ENABLE_SNAPSHOT=1
+    -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1
+    -DSQLITE_MAX_LENGTH=2147483645
+    -DSQLITE_MAX_VARIABLE_NUMBER=500000
+    -DSQLITE_NO_SYNC=1
+    -DSQLITE_OMIT_AUTORESET=1
+    -DSQLITE_OMIT_LOAD_EXTENSION=1
+    -DSQLITE_PREFER_PROXY_LOCKING=1
+    -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
+    -DSQLITE_THREADSAFE=2
+    -DSQLITE_USE_URI=1
+    -DSQLITE_WRITE_WALFRAME_PREBUFFERED=1
+    -DUSE_GUARDED_FD=1
+    -DUSE_PREAD=1
+    --enable-fts5
+  }
+  set build(Extra-Robustness) {
+    -DSQLITE_ENABLE_OVERSIZE_CELL_CHECK=1
+    -DSQLITE_MAX_ATTACHED=62
+  }
+  set build(Devkit) {
+    -DSQLITE_DEFAULT_FILE_FORMAT=4
+    -DSQLITE_MAX_ATTACHED=30
+    -DSQLITE_ENABLE_COLUMN_METADATA
+    -DSQLITE_ENABLE_FTS4
+    -DSQLITE_ENABLE_FTS5
+    -DSQLITE_ENABLE_FTS4_PARENTHESIS
+    -DSQLITE_DISABLE_FTS4_DEFERRED
+    -DSQLITE_ENABLE_RTREE
+    --enable-fts5
+  }
+  set build(No-lookaside) {
+    -DSQLITE_TEST_REALLOC_STRESS=1
+    -DSQLITE_OMIT_LOOKASIDE=1
+  }
+  set build(Valgrind) {
+    -DSQLITE_ENABLE_STAT4
+    -DSQLITE_ENABLE_FTS4
+    -DSQLITE_ENABLE_RTREE
+    -DSQLITE_ENABLE_HIDDEN_COLUMNS
+    -DLONGDOUBLE_TYPE=double
+    -DCONFIG_SLOWDOWN_FACTOR=8.0
+  }
+
+  set build(Windows-Memdebug) {
+    MEMDEBUG=1
+    DEBUG=3
+  }
+  set build(Windows-Win32Heap) {
+    WIN32HEAP=1
+    DEBUG=4
+  }
+  set build(Windows-Sanitize) {
+    ASAN=1
+  }
+
 }
 
 
@@ -84,6 +328,7 @@ proc trd_import {} {
     variable ::trd::tcltest
     variable ::trd::extra
     variable ::trd::all_configs
+    variable ::trd::build
   }
 }
 
@@ -106,13 +351,13 @@ proc trd_builds {platform} {
   set ret
 }
 
-proc trd_configs {platform build} {
+proc trd_configs {platform bld} {
   trd_import
 
   set clist [list]
 
-  if {[info exists tcltest($platform.$build)]} {
-    set clist $tcltest($platform.$build)
+  if {[info exists tcltest($platform.$bld)]} {
+    set clist $tcltest($platform.$bld)
     if {$clist=="all"} {
       set clist $all_configs
     } elseif {$clist=="all_plus_autovacuum_crash"} {
@@ -123,12 +368,12 @@ proc trd_configs {platform build} {
   set clist
 }
 
-proc trd_extras {platform build} {
+proc trd_extras {platform bld} {
   trd_import
 
   set elist [list]
-  if {[info exists extra($platform.$build)]} {
-    set elist $extra($platform.$build)
+  if {[info exists extra($platform.$bld)]} {
+    set elist $extra($platform.$bld)
   }
 
   set elist
@@ -139,5 +384,180 @@ proc trd_all_configs {} {
   set all_configs
 }
 
+proc trimscript {text} {
+  set text [string map {"\n    " "\n"} [string trim $text]]
+}
+
+proc make_sh_script {srcdir opts cflags makeOpts configOpts} {
+
+  set tcldir [::tcl::pkgconfig get libdir,install]
+  set myopts ""
+  if {[info exists ::env(OPTS)]} {
+    append myopts "# From environment variable:\n"
+    append myopts "OPTS=$::env(OPTS)\n"
+  }
+  foreach o [lsort $opts] { 
+    append myopts "OPTS=\"\$OPTS $o\"\n"
+  }
+
+  return [trimscript [subst -nocommands {
+    set -e
+    if [ "\$#" -ne 1 ] ; then
+      echo "Usage: \$0 <target>"
+      exit -1
+    fi
+    
+    SRCDIR="$srcdir"
+    TCLDIR="$tcldir"
+    
+    if [ ! -f Makefile ] ; then
+      \$SRCDIR/configure --with-tcl=\$TCL $configOpts 
+    fi
+    
+    $myopts
+    CFLAGS="$cflags"
+    
+    make \$1 "CFLAGS=\$CFLAGS" "OPTS=\$OPTS" $makeOpts
+  }]]
+}
+
+# Generate the text of a *.bat script.
+#
+proc make_bat_file {srcdir opts cflags makeOpts} {
+  set srcdir [file nativename [file normalize $srcdir]]
+
+  return [trimscript [subst -nocommands {
+    set TARGET=%1
+    set TMP=%CD%
+    nmake /f $srcdir\\Makefile.msc TOP="$srcdir" %TARGET% "CCOPTS=$cflags" "OPTS=$opts" $makeOpts
+  }]]
+}
+
+
+# Generate the text of a shell script.
+#
+proc make_script {cfg srcdir bMsvc} {
+  set opts       [list]                         ;# OPTS value
+  set cflags     [expr {$bMsvc ? "-Zi" : "-g"}] ;# CFLAGS value
+  set makeOpts   [list]                         ;# Extra args for [make]
+  set configOpts [list]                         ;# Extra args for [configure]
+
+  # Define either SQLITE_OS_WIN or SQLITE_OS_UNIX, as appropriate.
+  if {$::tcl_platform(platform)=="windows"} {
+    lappend opts -DSQLITE_OS_WIN=1
+  } else {
+    lappend opts -DSQLITE_OS_UNIX=1
+  }
+
+  # Unless the configuration specifies -DHAVE_USLEEP=0, set -DHAVE_USLEEP=1.
+  #
+  if {[lsearch $cfg "-DHAVE_USLEEP=0"]<0} {
+    lappend cfg -DHAVE_USLEEP=1
+  }
+
+  # Loop through the parameters of the nominated configuration, updating
+  # $opts, $cflags, $makeOpts and $configOpts along the way. Rules are as
+  # follows:
+  #
+  #   1. If the parameter begins with "-D", add it to $opts.
+  #
+  #   2. If the parameter begins with "--" add it to $configOpts. Unless
+  #      this command is preparing a script for MSVC - then add an 
+  #      equivalent to $makeOpts or $opts.
+  #
+  #   3. If the parameter begins with "-" add it to $cflags. If in MSVC
+  #      mode and the parameter is an -O<integer> option, instead add
+  #      an OPTIMIZATIONS=<integer> switch to $makeOpts.
+  #
+  #   4. If none of the above apply, add the parameter to $makeOpts
+  #
+  foreach param $cfg {
+
+    if {[string range $param 0 1]=="-D"} {
+      lappend opts $param
+      continue
+    }
+
+    if {[string range $param 0 1]=="--"} {
+      if {$bMsvc==0} {
+        lappend configOpts $param
+      } else {
+
+        switch -- $param {
+          --disable-amalgamation {
+            lappend makeOpts USE_AMALGAMATION=0
+          }
+          --disable-shared {
+            lappend makeOpts USE_CRT_DLL=0 DYNAMIC_SHELL=0
+          }
+          --enable-fts5 {
+            lappend opts -DSQLITE_ENABLE_FTS5
+          } 
+          --enable-shared {
+            lappend makeOpts USE_CRT_DLL=1 DYNAMIC_SHELL=1
+          }
+          --enable-session {
+            lappend opts -DSQLITE_ENABLE_PREUPDATE_HOOK
+            lappend opts -DSQLITE_ENABLE_SESSION
+          }
+          --enable-all {
+          }
+          --enable-debug {
+            # lappend makeOpts OPTIMIZATIONS=0
+            lappend opts -DSQLITE_DEBUG
+          }
+          default {
+            error "Cannot translate $param for MSVC"
+          }
+
+        }
+      }
+
+      continue
+    }
+
+    if {[string range $param 0 0]=="-"} {
+      if {$bMsvc && [regexp -- {^-O(\d+)$} $param -> level]} {
+        lappend makeOpts OPTIMIZATIONS=$level
+      } else {
+        lappend cflags $param
+      }
+      continue
+    }
+
+    lappend makeOpts $param
+  }
+
+  if {$bMsvc==0} {
+    set zRet [make_sh_script $srcdir $opts $cflags $makeOpts $configOpts]
+  } else {
+    set zRet [make_bat_file $srcdir $opts $cflags $makeOpts]
+  }
+}
+
+# Usage:
+#
+#    trd_buildscript CONFIG SRCDIR MSVC
+#
+# This command returns the full text of a script (either a shell script or
+# an ms-dos bat file) that may be used to build SQLite source code according
+# to a nominated configuration.
+#
+# Parameter CONFIG must be a configuration defined above in the ::trd::build
+# array. SRCDIR is the root directory of an SQLite source tree (the parent
+# directory of that containing this script). MSVC is a boolean - true to
+# use the MSVC compiler, false otherwise.
+#
+proc trd_buildscript {config srcdir bMsvc} {
+  trd_import
+
+  # Ensure that the named configuration exists.
+  if {![info exists build($config)]} {
+    error "No such build config: $config"
+  }
+
+  # Generate and return the script.
+  return [make_script $build($config) $srcdir $bMsvc]
+}
 
 

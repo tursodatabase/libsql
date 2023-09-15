@@ -17,7 +17,7 @@
 #define SQLITE_HWTIME_H
 
 /*
-** The following routine only works on pentium-class (or newer) processors.
+** The following routine only works on Pentium-class (or newer) processors.
 ** It uses the RDTSC opcode to read the cycle count value out of the
 ** processor and returns that value.  This can be used for high-res
 ** profiling.

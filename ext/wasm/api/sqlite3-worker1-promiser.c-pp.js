@@ -196,10 +196,9 @@ globalThis.sqlite3Worker1Promiser = function callee(config = callee.defaultConfi
     if(1===arguments.length){
       msg = arguments[0];
     }else if(2===arguments.length){
-      msg = {
-        type: arguments[0],
-        args: arguments[1]
-      };
+      msg = Object.create(null);
+      msg.type = arguments[0];
+      msg.args = arguments[1];
     }else{
       toss("Invalid arugments for sqlite3Worker1Promiser()-created factory.");
     }

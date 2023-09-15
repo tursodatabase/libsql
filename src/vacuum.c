@@ -208,7 +208,7 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   ** (possibly synchronous) transaction opened on the main database before
   ** sqlite3BtreeCopyFile() is called.
   **
-  ** An optimisation would be to use a non-journaled pager.
+  ** An optimization would be to use a non-journaled pager.
   ** (Later:) I tried setting "PRAGMA vacuum_db.journal_mode=OFF" but
   ** that actually made the VACUUM run slower.  Very little journalling
   ** actually occurs when doing a vacuum since the vacuum_db is initially

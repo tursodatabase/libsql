@@ -9,17 +9,17 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** 
+**
 ** This file contains code used for testing the SQLite system.
 ** None of the code in this file goes into a deliverable build.
-** 
+**
 ** This file contains an application-defined pager cache
 ** implementation that can be plugged in in place of the
 ** default pcache.  This alternative pager cache will throw
 ** some errors that the default cache does not.
 **
 ** This pagecache implementation is designed for simplicity
-** not speed.  
+** not speed.
 */
 #include "sqlite3.h"
 #include <string.h>
@@ -36,7 +36,7 @@ struct testpcacheGlobalType {
   int nInstance;            /* Number of current instances */
   unsigned discardChance;   /* Chance of discarding on an unpin (0-100) */
   unsigned prngSeed;        /* Seed for the PRNG */
-  unsigned highStress;      /* Call xStress agressively */
+  unsigned highStress;      /* Call xStress aggressively */
 };
 static testpcacheGlobalType testpcacheGlobal;
 
@@ -131,8 +131,8 @@ static unsigned testpcacheRandom(testpcache *p){
 ** Allocate a new page cache instance.
 */
 static sqlite3_pcache *testpcacheCreate(
-  int szPage, 
-  int szExtra, 
+  int szPage,
+  int szExtra,
   int bPurgeable
 ){
   int nMem;
@@ -225,7 +225,7 @@ static sqlite3_pcache_page *testpcacheFetch(
     return 0;
   }
 
-  /* Do not allocate if highStress is enabled and createFlag is not 2.  
+  /* Do not allocate if highStress is enabled and createFlag is not 2.
   **
   ** The highStress setting causes pagerStress() to be called much more
   ** often, which exercises the pager logic more intensely.
@@ -428,7 +428,7 @@ void installTestPCache(
   int installFlag,            /* True to install.  False to uninstall. */
   unsigned discardChance,     /* 0-100.  Chance to discard on unpin */
   unsigned prngSeed,          /* Seed for the PRNG */
-  unsigned highStress         /* Call xStress agressively */
+  unsigned highStress         /* Call xStress aggressively */
 ){
   static const sqlite3_pcache_methods2 testPcache = {
     1,
