@@ -1061,7 +1061,7 @@ dependencies = [
 [[package]]
 name = "console-api"
 version = "0.5.0"
-source = "git+https://github.com/MarinPostma/console.git?branch=bump-tonic#d5a103a24da9a55b039310ad5623a5923a9857b6"
+source = "git+https://github.com/tokio-rs/console.git?rev=5a80b98#5a80b98c0488018015b025b895bde0c715f1601e"
 dependencies = [
  "futures-core",
  "prost",
@@ -1073,7 +1073,7 @@ dependencies = [
 [[package]]
 name = "console-subscriber"
 version = "0.1.10"
-source = "git+https://github.com/MarinPostma/console.git?branch=bump-tonic#d5a103a24da9a55b039310ad5623a5923a9857b6"
+source = "git+https://github.com/tokio-rs/console.git?rev=5a80b98#5a80b98c0488018015b025b895bde0c715f1601e"
 dependencies = [
  "console-api",
  "crossbeam-channel",
@@ -4411,9 +4411,9 @@ dependencies = [
 
 [[package]]
 name = "typenum"
-version = "1.16.0"
+version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "497961ef93d974e23eb6f433eb5fe1b7930b659f06d12dec6fc44a8f554c0bba"
+checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
 
 [[package]]
 name = "unarray"

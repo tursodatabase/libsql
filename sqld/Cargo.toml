@@ -18,7 +18,7 @@ bytes = { version = "1.2.1", features = ["serde"] }
 bytesize = "1.2.0"
 clap = { version = "4.0.23", features = [ "derive", "env", "string" ] }
 # console-subscriber = { version = "0.1.10", optional = true }
-console-subscriber = { git = "https://github.com/MarinPostma/console.git", branch = "bump-tonic", optional = true }
+console-subscriber = { git = "https://github.com/tokio-rs/console.git", rev = "5a80b98", optional = true }
 crc = "3.0.0"
 crossbeam = "0.8.2"
 enclose = "1.1"
