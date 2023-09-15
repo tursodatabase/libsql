@@ -976,9 +976,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "chrono"
-version = "0.4.30"
+version = "0.4.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "defd4e7873dbddba6c7c91e199c7fcb946abc4a6a4ac3195400bcfb01b5de877"
+checksum = "7f2c685bad3eb3d45a01354cedb7d5faa66194d1d58ba6e267a8de788f79db38"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
@@ -1061,7 +1061,7 @@ dependencies = [
 [[package]]
 name = "console-api"
 version = "0.5.0"
-source = "git+https://github.com/MarinPostma/console.git?branch=bump-tonic#b9e11175b81adf7b1ed9024a7ed938b74bbeb590"
+source = "git+https://github.com/MarinPostma/console.git?branch=bump-tonic#d5a103a24da9a55b039310ad5623a5923a9857b6"
 dependencies = [
  "futures-core",
  "prost",
@@ -1073,7 +1073,7 @@ dependencies = [
 [[package]]
 name = "console-subscriber"
 version = "0.1.10"
-source = "git+https://github.com/MarinPostma/console.git?branch=bump-tonic#b9e11175b81adf7b1ed9024a7ed938b74bbeb590"
+source = "git+https://github.com/MarinPostma/console.git?branch=bump-tonic#d5a103a24da9a55b039310ad5623a5923a9857b6"
 dependencies = [
  "console-api",
  "crossbeam-channel",
