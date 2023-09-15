@@ -1,4 +1,4 @@
-use libsql::{params, try_params, Database};
+use libsql::Database;
 
 #[tokio::main]
 async fn main() {
@@ -18,13 +18,13 @@ async fn main() {
     .unwrap();
     conn.execute(
         "INSERT INTO test1 (t, i, f, b) VALUES (?, ?, ?, ?)",
-        params!("a", 1, 1.0, vec![1, 2, 3]),
+        ("a", 1, 1.0, vec![1, 2, 3]),
     )
     .await
     .unwrap();
     conn.execute(
         "INSERT INTO test1 (t, i, f, b) VALUES (?, ?, ?, ?)",
-        try_params!("b", 2_u64, 2.0, vec![4, 5, 6]).unwrap(),
+        ("b", 2_u64, 2.0, vec![4, 5, 6]),
     )
     .await
     .unwrap();
