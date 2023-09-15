@@ -16,6 +16,7 @@ use hyper::Uri;
 use rusqlite::ErrorCode;
 use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
 use tokio::io::AsyncBufReadExt;
+use tokio::sync::watch;
 use tokio::task::{block_in_place, JoinSet};
 use tokio_util::io::StreamReader;
 use tonic::transport::Channel;
@@ -29,7 +30,7 @@ use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
 use crate::replication::primary::logger::{ReplicationLoggerHookCtx, REPLICATION_METHODS};
 use crate::replication::replica::Replicator;
-use crate::replication::{NamespacedSnapshotCallback, ReplicationLogger};
+use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
     run_periodic_checkpoint, StatsSender, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT,
@@ -476,6 +477,7 @@ impl Namespace<ReplicaDatabase> {
             &mut join_set,
             config.stats_sender.clone(),
             name.clone(),
+            replicator.current_frame_no_notifier.clone(),
         )
         .await?;
 
@@ -619,6 +621,7 @@ impl Namespace<PrimaryDatabase> {
             &mut join_set,
             config.stats_sender.clone(),
             name.clone(),
+            logger.new_frame_notifier.subscribe(),
         )
         .await?;
 
@@ -679,6 +682,7 @@ async fn make_stats(
     join_set: &mut JoinSet<anyhow::Result<()>>,
     stats_sender: StatsSender,
     name: Bytes,
+    mut current_frame_no: watch::Receiver<FrameNo>,
 ) -> anyhow::Result<Arc<Stats>> {
     let stats = Stats::new(db_path, join_set).await?;
 
@@ -686,6 +690,18 @@ async fn make_stats(
     let _ = stats_sender
         .send((name.clone(), Arc::downgrade(&stats)))
         .await;
+
+    join_set.spawn({
+        let stats = stats.clone();
+        // initialize the current_frame_no value
+        stats.set_current_frame_no(*current_frame_no.borrow_and_update());
+        async move {
+            while current_frame_no.changed().await.is_ok() {
+                stats.set_current_frame_no(*current_frame_no.borrow_and_update());
+            }
+            Ok(())
+        }
+    });
 
     join_set.spawn(run_storage_monitor(db_path.into(), Arc::downgrade(&stats)));
 
