@@ -1,5 +1,5 @@
 use crate::v1::rows::{MappedRows, Row};
-use crate::v1::{Connection, Params, Rows, ValueRef};
+use crate::v1::{params::Params, Connection, Rows, ValueRef};
 use crate::{errors, Error, Result};
 
 use std::cell::RefCell;

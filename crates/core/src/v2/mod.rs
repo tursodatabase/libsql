@@ -5,7 +5,8 @@ pub mod transaction;
 
 use std::sync::Arc;
 
-use crate::v1::{Params, TransactionBehavior};
+use crate::params::IntoParams;
+use crate::v1::{params::Params, TransactionBehavior};
 use crate::Result;
 pub use hrana::{Client, HranaError};
 
@@ -182,8 +183,8 @@ pub struct Connection {
 
 // TODO(lucio): Convert to using tryinto params
 impl Connection {
-    pub async fn execute(&self, sql: &str, params: impl Into<Params>) -> Result<u64> {
-        self.conn.execute(sql, params.into()).await
+    pub async fn execute(&self, sql: &str, params: impl IntoParams) -> Result<u64> {
+        self.conn.execute(sql, params.into_params()?).await
     }
 
     pub async fn execute_batch(&self, sql: &str) -> Result<()> {
@@ -194,10 +195,10 @@ impl Connection {
         self.conn.prepare(sql).await
     }
 
-    pub async fn query(&self, sql: &str, params: impl Into<Params>) -> Result<Rows> {
+    pub async fn query(&self, sql: &str, params: impl IntoParams) -> Result<Rows> {
         let mut stmt = self.prepare(sql).await?;
 
-        stmt.query(&params.into()).await
+        stmt.query(params).await
     }
 
     /// Begin a new transaction in DEFERRED mode, which is the default.

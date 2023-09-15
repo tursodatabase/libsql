@@ -1,4 +1,8 @@
-use libsql::{named_params, params, Connection, Database, Params, Value};
+use libsql::{
+    named_params, params,
+    params::{IntoParams, IntoValue},
+    Connection, Database, Value,
+};
 
 async fn setup() -> Connection {
     let db = Database::open(":memory:").unwrap();
@@ -109,7 +113,7 @@ async fn statement_query() {
         .await
         .unwrap();
 
-    let params = Params::from(vec![libsql::Value::from(2)]);
+    let params = [2];
 
     let mut stmt = conn
         .prepare("SELECT * FROM users WHERE id = ?1")
@@ -147,7 +151,7 @@ async fn prepare_and_query() {
     check_insert(
         &conn,
         "INSERT INTO users (id, name) VALUES (2, 'Alice')",
-        ().into(),
+        (),
     )
     .await;
     check_insert(
@@ -159,7 +163,7 @@ async fn prepare_and_query() {
     check_insert(
         &conn,
         "INSERT INTO users (id, name) VALUES (?1, ?2)",
-        (vec![2.into(), "Alice".into()] as Vec<params::Value>).into(),
+        params![2, "Alice"],
     )
     .await;
 }
@@ -171,11 +175,10 @@ async fn prepare_and_query_named_params() {
     check_insert(
         &conn,
         "INSERT INTO users (id, name) VALUES (:a, :b)",
-        vec![
-            (":a".to_string(), 2.into()),
-            (":b".to_string(), "Alice".into()),
-        ]
-        .into(),
+        named_params! {
+            ":a": 2,
+            ":b": "Alice"
+        },
     )
     .await;
 
@@ -192,17 +195,6 @@ async fn prepare_and_query_named_params() {
     check_insert(
         &conn,
         "INSERT INTO users (id, name) VALUES (@a, @b)",
-        vec![
-            ("@a".to_string(), 2.into()),
-            ("@b".to_string(), "Alice".into()),
-        ]
-        .into(),
-    )
-    .await;
-
-    check_insert(
-        &conn,
-        "INSERT INTO users (id, name) VALUES (@a, @b)",
         named_params! {
             "@a": 2,
             "@b": "Alice",
@@ -213,11 +205,10 @@ async fn prepare_and_query_named_params() {
     check_insert(
         &conn,
         "INSERT INTO users (id, name) VALUES ($a, $b)",
-        vec![
-            ("$a".to_string(), 2.into()),
-            ("$b".to_string(), "Alice".into()),
-        ]
-        .into(),
+        named_params! {
+            "$a": 2,
+            "$b": "Alice",
+        },
     )
     .await;
 
@@ -247,7 +238,7 @@ async fn prepare_and_dont_query() {
     drop(conn);
 }
 
-async fn check_insert(conn: &Connection, sql: &str, params: Params) {
+async fn check_insert(conn: &Connection, sql: &str, params: impl IntoParams) {
     let _ = conn.execute(sql, params).await.unwrap();
     let mut rows = conn.query("SELECT * FROM users", ()).await.unwrap();
     let row = rows.next().unwrap().unwrap();
@@ -279,9 +270,8 @@ async fn blob() {
         .unwrap();
 
     let bytes = vec![2u8; 64];
-    let value = Value::from(bytes.clone());
     let _ = conn
-        .execute("INSERT INTO bbb (data) VALUES (?1)", vec![value])
+        .execute("INSERT INTO bbb (data) VALUES (?1)", [bytes.clone()])
         .await
         .unwrap();
 
@@ -319,10 +309,8 @@ async fn custom_params() {
         Int(i64),
     }
 
-    impl TryInto<libsql::Value> for MyValue {
-        type Error = std::io::Error;
-
-        fn try_into(self) -> Result<libsql::Value, Self::Error> {
+    impl IntoValue for MyValue {
+        fn into_value(self) -> libsql::Result<Value> {
             match self {
                 MyValue::Text(s) => Ok(Value::Text(s)),
                 MyValue::Int(i) => Ok(Value::Integer(i)),
@@ -334,7 +322,7 @@ async fn custom_params() {
 
     conn.execute(
         "INSERT INTO users (id, name) VALUES (?1, ?2)",
-        libsql::params_from_iter(params).unwrap(),
+        libsql::params_from_iter(params),
     )
     .await
     .unwrap();

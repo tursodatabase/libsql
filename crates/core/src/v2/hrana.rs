@@ -14,7 +14,7 @@ use hyper::StatusCode;
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 
 // use crate::client::Config;
-use crate::{Column, Params, Result};
+use crate::{params::Params, Column, Result};
 use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};
@@ -282,7 +282,7 @@ impl Client {
 impl Conn for Client {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64> {
         let mut stmt = self.prepare(sql).await?;
-        let rows = stmt.execute(&params).await?;
+        let rows = stmt.execute(params).await?;
 
         Ok(rows as u64)
     }
