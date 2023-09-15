@@ -72,24 +72,24 @@ impl Database {
     pub async fn open_with_opts(db_path: impl Into<String>, opts: Opts) -> Result<Database> {
         let db_path = db_path.into();
         let mut db = Database::open(&db_path, OpenFlags::default())?;
-        let mut replicator =
-            Replicator::new(db_path).map_err(|e| ConnectionFailed(format!("{e}")))?;
+
         match opts.sync {
             Sync::Http {
                 endpoint,
                 auth_token,
             } => {
-                let meta = replicator
-                    .init_metadata(&endpoint, &auth_token)
-                    .await
-                    .map_err(|e| ConnectionFailed(format!("{e}")))?;
-                *replicator.meta.lock() = Some(meta);
+                let replicator =
+                    Replicator::with_http_sync(db_path, endpoint.clone(), auth_token.clone())
+                        .map_err(|e| ConnectionFailed(format!("{e}")))?;
+
                 db.replication_ctx = Some(ReplicationContext {
                     replicator,
                     endpoint,
                 });
             }
             Sync::Frame => {
+                let replicator =
+                    Replicator::new(db_path).map_err(|e| ConnectionFailed(format!("{e}")))?;
                 db.replication_ctx = Some(ReplicationContext {
                     replicator,
                     endpoint: "".to_string(),
@@ -155,6 +155,21 @@ impl Database {
     #[cfg(feature = "replication")]
     pub async fn sync_oneshot(&self) -> Result<usize> {
         if let Some(ctx) = &self.replication_ctx {
+            // TODO: Unfortunate that we need to lock then unlock
+            // then lock again creating potential race conditions.
+            // This for now is fine since DB is the only user
+            // of the replicator but we should refactor it such that we
+            // can avoid having to do these weird locking patterns.
+            if ctx.replicator.meta.lock().is_none() {
+                let meta = ctx
+                    .replicator
+                    .init_metadata()
+                    .await
+                    .map_err(|e| ConnectionFailed(format!("{e}")))?;
+
+                *ctx.replicator.meta.lock() = Some(meta);
+            }
+
             ctx.replicator
                 .sync_from_http()
                 .await
