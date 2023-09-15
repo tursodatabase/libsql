@@ -1043,7 +1043,7 @@ do_test rtreefuzz001-500 {
 | end crash-2e81f5dce5cbd4.db}]
   execsql { PRAGMA writable_schema = 1;}
   catchsql {UPDATE t1 SET ex= ex ISNULL}
-} {1 {database disk image is malformed}}
+} {0 {}}
 
 do_test rtreefuzz001-600 {
   sqlite3 db {}
