@@ -7,6 +7,7 @@ use std::{fs, io};
 use crate::error::Error;
 use crate::Result;
 
+#[derive(Debug)]
 pub struct DatabaseConfigStore {
     config_path: PathBuf,
     tmp_config_path: PathBuf,

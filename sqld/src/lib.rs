@@ -32,7 +32,6 @@ use url::Url;
 use utils::services::idle_shutdown::IdleShutdownKicker;
 
 use crate::auth::Auth;
-use crate::connection::config::DatabaseConfigStore;
 use crate::connection::{Connection, MakeConnection};
 use crate::error::Error;
 use crate::migration::maybe_migrate;
@@ -91,7 +90,6 @@ pub struct Server<C = HttpConnector, A = AddrIncoming> {
 struct Services<M: MakeNamespace, A, P, S> {
     namespaces: NamespaceStore<M>,
     idle_shutdown_kicker: Option<IdleShutdownKicker>,
-    db_config_store: Arc<DatabaseConfigStore>,
     proxy_service: P,
     replication_service: S,
     user_api_config: UserApiConfig<A>,
@@ -130,11 +128,7 @@ where
         user_http.configure(join_set);
 
         if let Some(AdminApiConfig { acceptor }) = self.admin_api_config {
-            join_set.spawn(http::admin::run(
-                acceptor,
-                self.db_config_store,
-                self.namespaces,
-            ));
+            join_set.spawn(http::admin::run(acceptor, self.namespaces));
         }
     }
 }
@@ -316,9 +310,6 @@ where
         let db_is_dirty = init_sentinel_file(&self.path)?;
         let idle_shutdown_kicker = self.setup_shutdown();
 
-        let db_config_store = Arc::new(
-            DatabaseConfigStore::load(&self.path).context("Could not load database config")?,
-        );
         let snapshot_callback = self.make_snapshot_callback();
         let auth = self.user_api_config.get_auth()?.into();
         let extensions = self.db_config.validate_extensions()?;
@@ -328,7 +319,6 @@ where
                 let replica = Replica {
                     rpc_config,
                     stats_sender,
-                    db_config_store: db_config_store.clone(),
                     extensions,
                     db_config: self.db_config.clone(),
                     base_path: self.path.clone(),
@@ -337,7 +327,6 @@ where
                 let services = Services {
                     namespaces,
                     idle_shutdown_kicker,
-                    db_config_store,
                     proxy_service,
                     replication_service,
                     user_api_config: self.user_api_config,
@@ -357,7 +346,6 @@ where
                     db_config: self.db_config.clone(),
                     idle_shutdown_kicker: idle_shutdown_kicker.clone(),
                     stats_sender,
-                    db_config_store: db_config_store.clone(),
                     db_is_dirty,
                     snapshot_callback,
                     extensions,
@@ -371,7 +359,6 @@ where
                 let services = Services {
                     namespaces,
                     idle_shutdown_kicker,
-                    db_config_store,
                     proxy_service,
                     replication_service,
                     user_api_config: self.user_api_config,
@@ -415,7 +402,6 @@ struct Primary<'a, A> {
     db_config: DbConfig,
     idle_shutdown_kicker: Option<IdleShutdownKicker>,
     stats_sender: StatsSender,
-    db_config_store: Arc<DatabaseConfigStore>,
     db_is_dirty: bool,
     snapshot_callback: NamespacedSnapshotCallback,
     extensions: Arc<[PathBuf]>,
@@ -445,7 +431,6 @@ where
             bottomless_replication: self.db_config.bottomless_replication,
             extensions: self.extensions,
             stats_sender: self.stats_sender.clone(),
-            config_store: self.db_config_store,
             max_response_size: self.db_config.max_response_size,
             max_total_response_size: self.db_config.max_total_response_size,
             checkpoint_interval: self.db_config.checkpoint_interval,
@@ -491,7 +476,6 @@ where
 struct Replica<C> {
     rpc_config: RpcClientConfig<C>,
     stats_sender: StatsSender,
-    db_config_store: Arc<DatabaseConfigStore>,
     extensions: Arc<[PathBuf]>,
     db_config: DbConfig,
     base_path: Arc<Path>,
@@ -512,7 +496,6 @@ impl<C: Connector> Replica<C> {
             uri: uri.clone(),
             extensions: self.extensions.clone(),
             stats_sender: self.stats_sender.clone(),
-            config_store: self.db_config_store.clone(),
             base_path: self.base_path,
             max_response_size: self.db_config.max_response_size,
             max_total_response_size: self.db_config.max_total_response_size,
