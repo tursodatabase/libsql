@@ -403,8 +403,15 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         Ok(())
     }
 
-    pub async fn stats(&self, namespace: Bytes) -> crate::Result<Arc<Stats>> {
+    pub(crate) async fn stats(&self, namespace: Bytes) -> crate::Result<Arc<Stats>> {
         self.with(namespace, |ns| ns.stats.clone()).await
+    }
+
+    pub(crate) async fn config_store(
+        &self,
+        namespace: Bytes,
+    ) -> crate::Result<Arc<DatabaseConfigStore>> {
+        self.with(namespace, |ns| ns.db_config_store.clone()).await
     }
 }
 
@@ -415,6 +422,7 @@ pub struct Namespace<T: Database> {
     /// The set of tasks associated with this namespace
     tasks: JoinSet<anyhow::Result<()>>,
     stats: Arc<Stats>,
+    db_config_store: Arc<DatabaseConfigStore>,
 }
 
 impl<T: Database> Namespace<T> {
@@ -438,8 +446,6 @@ pub struct ReplicaNamespaceConfig {
     pub extensions: Arc<[PathBuf]>,
     /// Stats monitor
     pub stats_sender: StatsSender,
-    /// Reference to the config store
-    pub config_store: Arc<DatabaseConfigStore>,
 }
 
 impl Namespace<ReplicaDatabase> {
@@ -458,6 +464,10 @@ impl Namespace<ReplicaDatabase> {
                 String::from_utf8(name.to_vec()).unwrap_or_default(),
             ));
         }
+
+        let db_config_store = Arc::new(
+            DatabaseConfigStore::load(&db_path).context("Could not load database config")?,
+        );
 
         let mut join_set = JoinSet::new();
         let replicator = Replicator::new(
@@ -489,7 +499,7 @@ impl Namespace<ReplicaDatabase> {
             config.channel.clone(),
             config.uri.clone(),
             stats.clone(),
-            config.config_store.clone(),
+            db_config_store.clone(),
             applied_frame_no_receiver,
             config.max_response_size,
             config.max_total_response_size,
@@ -507,6 +517,7 @@ impl Namespace<ReplicaDatabase> {
                 connection_maker: Arc::new(connection_maker),
             },
             stats,
+            db_config_store,
         })
     }
 }
@@ -520,7 +531,6 @@ pub struct PrimaryNamespaceConfig {
     pub bottomless_replication: Option<bottomless::replicator::Options>,
     pub extensions: Arc<[PathBuf]>,
     pub stats_sender: StatsSender,
-    pub config_store: Arc<DatabaseConfigStore>,
     pub max_response_size: u64,
     pub max_total_response_size: u64,
     pub checkpoint_interval: Option<Duration>,
@@ -625,12 +635,16 @@ impl Namespace<PrimaryDatabase> {
         )
         .await?;
 
+        let db_config_store = Arc::new(
+            DatabaseConfigStore::load(&db_path).context("Could not load database config")?,
+        );
+
         let connection_maker: Arc<_> = LibSqlDbFactory::new(
             db_path.clone(),
             &REPLICATION_METHODS,
             ctx_builder.clone(),
             stats.clone(),
-            config.config_store.clone(),
+            db_config_store.clone(),
             config.extensions.clone(),
             config.max_response_size,
             config.max_total_response_size,
@@ -673,6 +687,7 @@ impl Namespace<PrimaryDatabase> {
                 connection_maker,
             },
             stats,
+            db_config_store,
         })
     }
 }
