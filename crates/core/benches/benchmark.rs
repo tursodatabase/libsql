@@ -3,20 +3,45 @@ use libsql::Database;
 use pprof::criterion::{Output, PProfProfiler};
 use tokio::runtime;
 
-fn bench_db() -> Database {
+fn open_in_memory() -> Database {
     Database::open(":memory:").unwrap()
 }
 
+async fn open_local_replica() -> Option<Database> {
+    let db_path = match std::env::var("DB_PATH") {
+        Ok(db_path) => db_path,
+        Err(_) => {
+            println!("The DB_PATH environment variable is not set, skipping local replica benchmarks.");
+            return None;
+        }
+    };
+    let url = match std::env::var("URL") {
+        Ok(url) => url,
+        Err(_) => {
+            println!("The URL environment variable is not set, skipping local replica benchmarks.");
+            return None;
+        }
+    };
+    let auth_token = match std::env::var("AUTH_TOKEN") {
+        Ok(auth_token) => auth_token,
+        Err(_) => {
+            println!("The AUTH_TOKEN environment variable is not set, skipping local replica benchmarks.");
+            return None;
+        }
+    };
+    Some(Database::open_with_remote_sync(db_path, url, auth_token).await.unwrap())
+}
+
 fn bench(c: &mut Criterion) {
-    let rt = runtime::Builder::new_current_thread().build().unwrap();
+    let rt = runtime::Builder::new_current_thread().enable_time().enable_io().build().unwrap();
 
     let mut group = c.benchmark_group("libsql");
     group.throughput(Throughput::Elements(1));
 
-    let db = bench_db();
+    let db = open_in_memory();
     let conn = db.connect().unwrap();
 
-    group.bench_function("select 1", |b| {
+    group.bench_function("in-memory-select-1-unprepared", |b| {
         b.to_async(&rt).iter(|| async {
             let mut rows = conn.query("SELECT 1", ()).await.unwrap();
             let row = rows.next().unwrap().unwrap();
@@ -53,7 +78,7 @@ fn bench(c: &mut Criterion) {
         }
     }
 
-    group.bench_function("select 1 (prepared)", |b| {
+    group.bench_function("in-memory-select-1-prepared", |b| {
         b.to_async(&rt).iter_batched(
             || block_on(conn.prepare("SELECT 1")).unwrap(),
             |mut stmt| async move {
@@ -73,7 +98,7 @@ fn bench(c: &mut Criterion) {
             .unwrap();
     }
 
-    group.bench_function("SELECT * FROM users LIMIT 1", |b| {
+    group.bench_function("in-memory-select-star-from-users-limit-1-unprepared", |b| {
         b.to_async(&rt).iter_batched(
             || block_on(conn.prepare("SELECT * FROM users LIMIT 1")).unwrap(),
             |mut stmt| async move {
@@ -86,7 +111,7 @@ fn bench(c: &mut Criterion) {
         );
     });
 
-    group.bench_function("SELECT * FROM users LIMIT 100", |b| {
+    group.bench_function("in-memory-select-star-from-users-limit-100-unprepared", |b| {
         b.to_async(&rt).iter_batched(
             || block_on(conn.prepare("SELECT * FROM users LIMIT 100")).unwrap(),
             |mut stmt| async move {
@@ -98,6 +123,77 @@ fn bench(c: &mut Criterion) {
             BatchSize::SmallInput,
         );
     });
+
+    let db = match rt.block_on(open_local_replica()) {
+        Some(db) => db,
+        None => return,
+    };
+    let conn = db.connect().unwrap();
+
+    group.bench_function("local-replica-select-1-unprepared", |b| {
+        b.to_async(&rt).iter(|| async {
+            let mut rows = conn.query("SELECT 1", ()).await.unwrap();
+            let row = rows.next().unwrap().unwrap();
+            assert_eq!(row.get::<i32>(0).unwrap(), 1);
+        });
+    });
+
+    group.bench_function("local-replica-select-1-prepared", |b| {
+        b.to_async(&rt).iter_batched(
+            || block_on(conn.prepare("SELECT 1")).unwrap(),
+            |mut stmt| async move {
+                let mut rows = stmt.query(()).await.unwrap();
+                let row = rows.next().unwrap().unwrap();
+                assert_eq!(row.get::<i32>(0).unwrap(), 1);
+                stmt.reset();
+            },
+            BatchSize::SmallInput,
+        );
+    });
+
+    rt.block_on(conn.execute("DROP TABLE IF EXISTS users", ()))
+        .unwrap();
+
+    rt.block_on(db.sync()).unwrap();
+
+    rt.block_on(conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)", ()))
+        .unwrap();
+
+    rt.block_on(db.sync()).unwrap();
+
+    for _ in 0..1000 {
+        rt.block_on(conn.execute("INSERT INTO users (name) VALUES ('FOO')", ()))
+            .unwrap();
+    }
+
+    rt.block_on(db.sync()).unwrap();
+
+    group.bench_function("local-replica-select-star-from-users-limit-1-unprepared", |b| {
+        b.to_async(&rt).iter_batched(
+            || block_on(conn.prepare("SELECT * FROM users LIMIT 1")).unwrap(),
+            |mut stmt| async move {
+                let mut rows = stmt.query(()).await.unwrap();
+                let row = rows.next().unwrap().unwrap();
+                assert_eq!(row.get::<i32>(0).unwrap(), 1);
+                stmt.reset();
+            },
+            BatchSize::SmallInput,
+        );
+    });
+
+    group.bench_function("local-replica-select-star-from-users-limit-100-unprepared", |b| {
+        b.to_async(&rt).iter_batched(
+            || block_on(conn.prepare("SELECT * FROM users LIMIT 100")).unwrap(),
+            |mut stmt| async move {
+                let mut rows = stmt.query(()).await.unwrap();
+                let row = rows.next().unwrap().unwrap();
+                assert_eq!(row.get::<i32>(0).unwrap(), 1);
+                stmt.reset();
+            },
+            BatchSize::SmallInput,
+        );
+    });
+
 }
 
 criterion_group! {
