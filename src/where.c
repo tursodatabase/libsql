@@ -3700,9 +3700,6 @@ static int whereLoopAddBtree(
 #else
       pNew->rRun = rSize + 16;
 #endif
-      if( IsView(pTab) || (pTab->tabFlags & TF_Ephemeral)!=0 ){
-        pNew->wsFlags |= WHERE_VIEWSCAN;
-      }
       ApplyCostMultiplier(pNew->rRun, pTab->costMult);
       whereLoopOutputAdjust(pWC, pNew, rSize);
       rc = whereLoopInsert(pBuilder, pNew);
@@ -5119,14 +5116,6 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         }else{
           rCost = rUnsorted;
           rUnsorted -= 2;  /* TUNING:  Slight bias in favor of no-sort plans */
-        }
-
-        /* TUNING:  A full-scan of a VIEW or subquery in the outer loop
-        ** is not so bad. */
-        if( iLoop==0 && (pWLoop->wsFlags & WHERE_VIEWSCAN)!=0 && nLoop>1 ){
-          rCost += -10;
-          nOut += -30;
-          WHERETRACE(0x80,("VIEWSCAN cost reduction for %c\n",pWLoop->cId));
         }
 
         /* Check to see if pWLoop should be added to the set of

@@ -132,8 +132,8 @@ do_eqp_test 3.2.2 {
   |  |  `--SCALAR SUBQUERY xxxxxx
   |  |     `--SCAN w2
   |  `--RECURSIVE STEP
-  |     |--SCAN c
-  |     `--SCAN w1
+  |     |--SCAN w1
+  |     `--SCAN c
   |--SCAN c
   |--SEARCH w2 USING INTEGER PRIMARY KEY (rowid=?)
   `--SEARCH w1 USING INTEGER PRIMARY KEY (rowid=?)

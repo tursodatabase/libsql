@@ -1,5 +1,5 @@
-C Do\snot\stry\sto\sconvert\sa\sdouble\sinto\san\sunsigned\s64-bit\sinteger,\sas\sthat\sdoes\nnot\swork\son\sall\splatforms.\s\sA\sdouble\scan\sonly\sbe\sconverted\sinto\sa\ssigned\n64-bit\sinteger.
-D 2023-09-15T10:24:29.345
+C The\sview-scan\soptimization\swas\sadded\sto\senhance\sthe\sperformance\sof\sone\sspecific\nquery,\sbut\sit\scauses\sperformance\sregressions\son\sa\shost\sof\sothers.\s\sDisable\sit\n(at\sleast\stemporarily)\sin\sorder\sto\stry\sto\sfind\san\salternative\sway\sof\sfixing\sthe\none\sspecific\squery\sthat\sit\swas\screated\sto\sfix\s-\san\salternative\sway\sthat\sdoes\nnot\scause\sperformance\sproblems\sfor\sother\sunrelated\squeries.
+D 2023-09-15T14:06:44.625
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -795,8 +795,8 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 01e051a1e713d9eabdb25df38602837cec8f4c2cae448ce2cf6accc87af903e9
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 86f901cdbc80bd8fd50c89f72c16a0ae8501c5df03caaa9a99ca72676ad79b56
-F src/whereInt.h c7d19902863beadec1d04e66aca39c0bcd60b74f05f0eaa7422c7005dfc5d51a
+F src/where.c faa2798d7607827a21758802949033934adfd4414e3360ecf3ac603cd2906929
+F src/whereInt.h 4b38c5889514e3aead3f27d0ee9a26e47c3f150efc59e2a8b4e3bc8835e4d7a1
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
 F src/window.c b7ad9cff3ce8ae6f8cc25e18e1a258426cb6bd2999aace6f5248d781b2a74098
@@ -1991,7 +1991,7 @@ F test/windowfault.test 15094c1529424e62f798bc679e3fe9dfab6e8ba2f7dfe8c923b6248c
 F test/windowpushd.test d8895d08870b7226f7693665bd292eb177e62ca06799184957b3ca7dc03067df
 F test/with1.test b93833890e5d2a368e78747f124503a0159aa029b98e9ed4795ebf630b2efd3d
 F test/with2.test a1df41b987198383b9b70bf5e5fda390582e46398653858dbc6ceb24253b28df
-F test/with3.test fe15975c0b53c9098a757902a908e3f8d6d80ce47c5363ac600f28a79ef8c0ca
+F test/with3.test e30369ea27aa27eb1bda4c5e510c8a9f782c8afd2ab99d1a02b8a7f25a5d3e65
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
 F test/with5.test 6248213c41fab36290b5b73aa3f937309dfba337004d9d8434c3fabc8c7d4be8
 F test/with6.test e097a03e5c898a8cd8f3a2d6a994ec510ea4376b5d484c2b669a41001e7758c8
@@ -2121,9 +2121,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 858fa236f8b673eb03cf2242e8202cd33ae1f13a43b59bdbb2eecdb21d42ef55 0ab05871ba36e2a0eddfbc700c1d39891c54c453727a4effcdac3327efec163b
-R 471f1110fdf5d26a5080351103b3b730
-T +closed 0ab05871ba36e2a0eddfbc700c1d39891c54c453727a4effcdac3327efec163b
+P ce339046416e9ddeffe77f71a8bfb8c5b302160c3207f919aebd62902618ed59
+R babd19c6e7de52d779b950e0bf75e81a
+T *branch * rethink-viewscan
+T *sym-rethink-viewscan *
+T -sym-trunk *
 U drh
-Z 5b5a1b021f1cd0ac8b138bf678d74c57
+Z a05c488a130b226d147d3f39ce159578
 # Remove this line to create a well-formed Fossil manifest.
