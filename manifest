@@ -1,5 +1,5 @@
-C The\sview-scan\soptimization\swas\sadded\sto\senhance\sthe\sperformance\sof\sone\sspecific\nquery,\sbut\sit\scauses\sperformance\sregressions\son\sa\shost\sof\sothers.\s\sDisable\sit\n(at\sleast\stemporarily)\sin\sorder\sto\stry\sto\sfind\san\salternative\sway\sof\sfixing\sthe\none\sspecific\squery\sthat\sit\swas\screated\sto\sfix\s-\san\salternative\sway\sthat\sdoes\nnot\scause\sperformance\sproblems\sfor\sother\sunrelated\squeries.
-D 2023-09-15T14:06:44.625
+C Experimental:\s\sAssume\sthat\sa\sDISTINCT\sclause\son\sa\ssubquery\sreduces\sthe\snumber\nof\srows\sreturned\sby\sthat\ssubquery\sby\sa\sfactor\sof\s8.
+D 2023-09-15T16:15:33.055
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -795,7 +795,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 01e051a1e713d9eabdb25df38602837cec8f4c2cae448ce2cf6accc87af903e9
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c faa2798d7607827a21758802949033934adfd4414e3360ecf3ac603cd2906929
+F src/where.c 6cdf686c80cea6bf01983714e8fa291976072429dc3d5f9f0ee63340ff31c20a
 F src/whereInt.h 4b38c5889514e3aead3f27d0ee9a26e47c3f150efc59e2a8b4e3bc8835e4d7a1
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
@@ -2121,11 +2121,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ce339046416e9ddeffe77f71a8bfb8c5b302160c3207f919aebd62902618ed59
-R babd19c6e7de52d779b950e0bf75e81a
-T *branch * rethink-viewscan
-T *sym-rethink-viewscan *
-T -sym-trunk *
+P d9625a9eafe88859c3255849ee750cc6322d5a13ddad45107f9b2085c20eff50
+R 4ef1ee11935ce0c2e4bd33d7caf58576
 U drh
-Z a05c488a130b226d147d3f39ce159578
+Z 02839c7f0b57c458709ba0da92bf6fc7
 # Remove this line to create a well-formed Fossil manifest.
