@@ -104,21 +104,35 @@ static void resolveAlias(
 }
 
 /*
-** Subqueries stores the original database, table and column names for their
-** result sets in ExprList.a[].zSpan, in the form "DATABASE.TABLE.COLUMN".
-** Check to see if the zSpan given to this routine matches the zDb, zTab,
-** and zCol.  If any of zDb, zTab, and zCol are NULL then those fields will
-** match anything.
+** Subqueries store the original database, table and column names for their
+** result sets in ExprList.a[].zSpan, in the form "DATABASE.TABLE.COLUMN",
+** and mark the expression-list item by setting ExprList.a[].fg.eEName
+** to ENAME_TAB.
+**
+** Check to see if the zSpan/eEName of the expression-list item passed to this
+** routine matches the zDb, zTab, and zCol.  If any of zDb, zTab, and zCol are
+** NULL then those fields will match anything. Return true if there is a match,
+** or false otherwise.
+**
+** SF_NestedFrom subqueries also store an entry for the implicit rowid (or
+** _rowid_, or oid) column by setting ExprList.a[].fg.eEName to ENAME_ROWID,
+** and setting zSpan to "DATABASE.TABLE.<rowid-alias>". This type of pItem
+** argument matches if bRowidOk is true, zTab is not NULL, zCol is a rowid
+** alias, and zDb matches as for the usual case.
 */
 int sqlite3MatchEName(
   const struct ExprList_item *pItem,
   const char *zCol,
   const char *zTab,
-  const char *zDb
+  const char *zDb,
+  int bRowidOk
 ){
   int n;
   const char *zSpan;
-  if( pItem->fg.eEName!=ENAME_TAB ) return 0;
+  int eEName = pItem->fg.eEName;
+  if( eEName!=ENAME_TAB && (eEName!=ENAME_ROWID || bRowidOk==0 || zTab==0) ){
+    return 0;
+  }
   zSpan = pItem->zEName;
   for(n=0; ALWAYS(zSpan[n]) && zSpan[n]!='.'; n++){}
   if( zDb && (sqlite3StrNICmp(zSpan, zDb, n)!=0 || zDb[n]!=0) ){
@@ -130,8 +144,9 @@ int sqlite3MatchEName(
     return 0;
   }
   zSpan += n+1;
-  if( zCol && sqlite3StrICmp(zSpan, zCol)!=0 ){
-    return 0;
+  if( zCol ){
+    if( eEName==ENAME_TAB && sqlite3StrICmp(zSpan, zCol)!=0 ) return 0;
+    if( eEName==ENAME_ROWID && sqlite3IsRowid(zCol)==0 ) return 0;
   }
   return 1;
 }
@@ -342,7 +357,7 @@ static int lookupName(
           assert( pEList!=0 );
           assert( pEList->nExpr==pTab->nCol );
           for(j=0; j<pEList->nExpr; j++){
-            if( !sqlite3MatchEName(&pEList->a[j], zCol, zTab, zDb) ){
+            if( !sqlite3MatchEName(&pEList->a[j], zCol, zTab, zDb, cnt==0) ){
               continue;
             }
             if( cnt>0 ){

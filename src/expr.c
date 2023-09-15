@@ -2695,6 +2695,27 @@ int sqlite3IsRowid(const char *z){
 }
 
 /*
+** Return a pointer to a buffer containing a usable rowid alias for table
+** pTab. An alias is usable if there is not an explicit user-defined column 
+** of the same name.
+*/
+const char *sqlite3RowidAlias(Table *pTab){
+  const char *azOpt[] = {"_ROWID_", "ROWID", "OID"};
+  int ii;
+  assert( VisibleRowid(pTab) );
+  for(ii=0; ii<ArraySize(azOpt); ii++){
+    int iCol;
+    for(iCol=0; iCol<pTab->nCol; iCol++){
+      if( sqlite3_stricmp(azOpt[ii], pTab->aCol[iCol].zCnName)==0 ) break;
+    }
+    if( iCol==pTab->nCol ){
+      return azOpt[ii];
+    }
+  }
+  return 0;
+}
+
+/*
 ** pX is the RHS of an IN operator.  If pX is a SELECT statement
 ** that can be simplified to a direct table access, then return
 ** a pointer to the SELECT statement.  If pX is not a SELECT statement,
