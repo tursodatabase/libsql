@@ -691,7 +691,7 @@ pub struct LogFileHeader {
 
 impl LogFileHeader {
     pub fn last_frame_no(&self) -> FrameNo {
-        self.start_frame_no + self.frame_count
+        self.start_frame_no + self.frame_count - 1
     }
 
     fn sqld_version(&self) -> Version {

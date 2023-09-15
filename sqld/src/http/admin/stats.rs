@@ -6,6 +6,7 @@ use axum::extract::{Path, State};
 use axum::Json;
 
 use crate::namespace::MakeNamespace;
+use crate::replication::FrameNo;
 use crate::stats::Stats;
 
 use super::AppState;
@@ -16,6 +17,7 @@ pub struct StatsResponse {
     pub rows_written_count: u64,
     pub storage_bytes_used: u64,
     pub write_requests_delegated: u64,
+    pub current_frame_no: FrameNo,
 }
 
 impl From<&Stats> for StatsResponse {
@@ -25,6 +27,7 @@ impl From<&Stats> for StatsResponse {
             rows_written_count: stats.rows_written(),
             storage_bytes_used: stats.storage_bytes_used(),
             write_requests_delegated: stats.write_requests_delegated(),
+            current_frame_no: stats.get_current_frame_no(),
         }
     }
 }

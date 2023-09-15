@@ -7,13 +7,21 @@ use serde::{Deserialize, Serialize};
 use tokio::io::AsyncWriteExt;
 use tokio::task::JoinSet;
 
+use crate::replication::FrameNo;
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Stats {
+    #[serde(default)]
     rows_written: AtomicU64,
+    #[serde(default)]
     rows_read: AtomicU64,
+    #[serde(default)]
     storage_bytes_used: AtomicU64,
     // number of write requests delegated from a replica to primary
+    #[serde(default)]
     write_requests_delegated: AtomicU64,
+    #[serde(default)]
+    current_frame_no: AtomicU64,
 }
 
 impl Stats {
@@ -74,6 +82,14 @@ impl Stats {
 
     pub fn write_requests_delegated(&self) -> u64 {
         self.write_requests_delegated.load(Ordering::Relaxed)
+    }
+
+    pub fn set_current_frame_no(&self, fno: FrameNo) {
+        self.current_frame_no.store(fno, Ordering::Relaxed);
+    }
+
+    pub(crate) fn get_current_frame_no(&self) -> FrameNo {
+        self.current_frame_no.load(Ordering::Relaxed)
     }
 }
 
