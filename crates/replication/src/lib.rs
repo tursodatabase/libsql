@@ -15,6 +15,7 @@ pub use replica::hook::{Frames, InjectorHookCtx};
 use replica::snapshot::SnapshotFileHeader;
 pub use replica::snapshot::TempSnapshot;
 
+use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
@@ -58,7 +59,7 @@ pub struct Hello {
 // END COPYPASTA
 
 impl Replicator {
-    pub fn new(path: impl AsRef<std::path::Path>) -> anyhow::Result<Self> {
+    pub fn new(path: impl AsRef<Path>) -> anyhow::Result<Self> {
         let (applied_frame_notifier, current_frame_no_notifier) =
             tokio::sync::watch::channel(FrameNo::MAX);
         let meta = Arc::new(parking_lot::Mutex::new(None));
@@ -122,16 +123,25 @@ impl Replicator {
         })
     }
 
-    pub async fn init_metadata(
-        &mut self,
+    pub fn with_http_sync(
+        path: impl AsRef<Path>,
         endpoint: impl AsRef<str>,
         auth_token: impl AsRef<str>,
-    ) -> anyhow::Result<replica::meta::WalIndexMeta> {
+    ) -> anyhow::Result<Self> {
+        let mut me = Self::new(path)?;
+
         let client = Client::new(endpoint.as_ref().try_into()?, auth_token)?;
+        me.client = Some(client);
+
+        Ok(me)
+    }
+
+    pub async fn init_metadata(&self) -> anyhow::Result<replica::meta::WalIndexMeta> {
+        let Some(client) = self.client.as_ref() else {
+            anyhow::bail!("HTTP sync not configured");
+        };
 
         let meta = client.hello().await?;
-
-        self.client = Some(client);
 
         tracing::debug!("init_metadata: {meta:?}");
         Ok(meta)
