@@ -282,7 +282,7 @@ static int lookupName(
 ){
   int i, j;                         /* Loop counters */
   int cnt = 0;                      /* Number of matching column names */
-  int cntTab = 0;                   /* Number of matching table names */
+  int cntTab = 0;                   /* Number of potential "rowid" matches */
   int nSubquery = 0;                /* How many levels of subquery */
   sqlite3 *db = pParse->db;         /* The database connection */
   SrcItem *pItem;                   /* Use for looping over pSrcList items */
@@ -391,12 +391,17 @@ static int lookupName(
               cnt++;
               hit = 1;
             }else if( cnt>0 ){
+              /* This is a potential rowid match, but there has already been
+              ** a real match found. So this can be ignored.  */
               continue;
             }
             cntTab++;
             pMatch = pItem;
             pExpr->iColumn = j;
             pEList->a[j].fg.bUsed = 1;
+
+            /* rowid cannot be part of a USING clause - assert() this. */
+            assert( bRowid==0 || pEList->a[j].fg.bUsingTerm==0 );
             if( pEList->a[j].fg.bUsingTerm ) break;
           }
           if( hit || zTab==0 ) continue;

@@ -211,15 +211,44 @@ do_catchsql_test 9.3 {
 do_catchsql_test 9.4 {
   SELECT a FROM wo1, x1, x2;
 } {1 {ambiguous column name: a}}
+
+
+# It is not possible to use "rowid" in a USING clause.
+#
 do_catchsql_test 9.5 {
-  SELECT rowid FROM x1 JOIN (x2 JOIN wo2);
-} {0 {}}
-
+  SELECT * FROM x1 JOIN x2 USING (rowid);
+} {1 {cannot join using column rowid - column not present in both tables}}
 do_catchsql_test 9.6 {
+  SELECT * FROM wo2 JOIN x2 USING (rowid);
+} {1 {cannot join using column rowid - column not present in both tables}}
+
+# "rowid" columns are not matched by NATURAL JOIN. If they were, then
+# the SELECT below would return zero rows.
+do_execsql_test 9.7 {
+  INSERT INTO x1(rowid, a) VALUES(101, 'A');
+  INSERT INTO x2(rowid, b) VALUES(55, 'B');
+  SELECT * FROM x1 NATURAL JOIN x2;
+} {A B}
+
+do_execsql_test 9.8 {
+  INSERT INTO wo1(a, b) VALUES('mya', 'myb');
+  INSERT INTO wo2(a, rowid) VALUES('mypk', 'myrowid');
+  INSERT INTO wo3(a, b) VALUES('MYA', 'MYB');
+  INSERT INTO x3(rowid, c) VALUES(99, 'x3B');
+}
+
+do_catchsql_test 9.8 {
+  SELECT rowid FROM x1 JOIN (x2 JOIN wo2);
+} {0 myrowid}
+do_catchsql_test 9.9 {
   SELECT _rowid_ FROM wo1 JOIN (wo3 JOIN x3)
-} {0 {}}
-
-
+} {0 99}
+do_catchsql_test 9.10 {
+  SELECT oid FROM wo1 JOIN (wo3 JOIN x3)
+} {0 99}
+do_catchsql_test 9.11 {
+  SELECT oid FROM wo2 JOIN (wo3 JOIN x3)
+} {0 99}
 
 
 finish_test
