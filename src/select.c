@@ -6193,9 +6193,9 @@ static int selectExpander(Walker *pWalker, Select *p){
               }
 
               if( zTName
-                  && pNestedFrom
-                  && sqlite3MatchEName(&pNestedFrom->a[j], 0, zTName, 0, 0)==0
-                ){
+               && pNestedFrom
+               && sqlite3MatchEName(&pNestedFrom->a[j], 0, zTName, 0, 0)==0
+              ){
                 continue;
               }
 
@@ -6204,14 +6204,14 @@ static int selectExpander(Walker *pWalker, Select *p){
               ** bit set.
               */
               if( (p->selFlags & SF_IncludeHidden)==0
-                  && IsHiddenColumn(&pTab->aCol[j])
-                ){
+                && IsHiddenColumn(&pTab->aCol[j])
+              ){
                 continue;
               }
               if( (pTab->aCol[j].colFlags & COLFLAG_NOEXPAND)!=0
-                  && zTName==0
-                  && (selFlags & (SF_NestedFrom))==0
-                ){
+               && zTName==0
+               && (selFlags & (SF_NestedFrom))==0
+              ){
                 continue;
               }
             }
