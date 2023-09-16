@@ -6177,7 +6177,7 @@ static int selectExpander(Walker *pWalker, Select *p){
 
           nAdd = pTab->nCol + (VisibleRowid(pTab) && (selFlags&SF_NestedFrom));
           for(j=0; j<nAdd; j++){
-            char *zName; 
+            const char *zName; 
             struct ExprList_item *pX; /* Newly added ExprList term */
 
             if( j==pTab->nCol ){
