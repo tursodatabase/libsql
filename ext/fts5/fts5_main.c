@@ -405,6 +405,10 @@ static int fts5InitVtab(
     pConfig->pzErrmsg = 0;
   }
 
+  if( rc==SQLITE_OK && pConfig->eContent==FTS5_CONTENT_NORMAL ){
+    rc = sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, (int)1);
+  }
+
   if( rc!=SQLITE_OK ){
     fts5FreeVtab(pTab);
     pTab = 0;
@@ -1689,7 +1693,7 @@ static int fts5UpdateMethod(
     assert( nArg!=1 || eType0==SQLITE_INTEGER );
 
     /* Filter out attempts to run UPDATE or DELETE on contentless tables.
-    ** This is not suported. Except - DELETE is supported if the CREATE
+    ** This is not suported. Except - they are both supported if the CREATE
     ** VIRTUAL TABLE statement contained "contentless_delete=1". */
     if( eType0==SQLITE_INTEGER 
      && pConfig->eContent==FTS5_CONTENT_NONE 
@@ -1718,7 +1722,8 @@ static int fts5UpdateMethod(
       }
 
       else if( eType0!=SQLITE_INTEGER ){     
-        /* If this is a REPLACE, first remove the current entry (if any) */
+        /* An INSERT statement. If the conflict-mode is REPLACE, first remove
+        ** the current entry (if any). */
         if( eConflict==SQLITE_REPLACE && eType1==SQLITE_INTEGER ){
           i64 iNew = sqlite3_value_int64(apVal[1]);  /* Rowid to delete */
           rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew, 0);
