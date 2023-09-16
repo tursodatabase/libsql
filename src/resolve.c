@@ -130,7 +130,7 @@ int sqlite3MatchEName(
   int n;
   const char *zSpan;
   int eEName = pItem->fg.eEName;
-  if( eEName!=ENAME_TAB && (eEName!=ENAME_ROWID || pbRowid==0) ){
+  if( eEName!=ENAME_TAB && (eEName!=ENAME_ROWID || NEVER(pbRowid==0)) ){
     return 0;
   }
   assert( pbRowid==0 || *pbRowid==0 );
