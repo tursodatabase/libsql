@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use anyhow::Context;
-use bytes::Bytes;
 use hyper_rustls::TlsAcceptor;
 use rustls::server::AllowAnyAuthenticatedClient;
 use rustls::RootCertStore;
@@ -9,13 +8,12 @@ use tonic::Status;
 use tower::util::option_layer;
 
 use crate::config::TlsConfig;
-use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
+use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
 use crate::rpc::proxy::rpc::proxy_server::ProxyServer;
 use crate::rpc::proxy::ProxyService;
 pub use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLogServer;
 use crate::rpc::replication_log::ReplicationLogService;
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
-use crate::DEFAULT_NAMESPACE_NAME;
 
 pub mod proxy;
 pub mod replica_proxy;
@@ -106,15 +104,17 @@ pub async fn run_rpc_server<A: crate::net::Accept>(
 fn extract_namespace<T>(
     disable_namespaces: bool,
     req: &tonic::Request<T>,
-) -> Result<Bytes, Status> {
+) -> Result<NamespaceName, Status> {
     if disable_namespaces {
-        return Ok(Bytes::from_static(DEFAULT_NAMESPACE_NAME.as_bytes()));
+        return Ok(NamespaceName::default());
     }
 
     if let Some(namespace) = req.metadata().get_bin(NAMESPACE_METADATA_KEY) {
-        namespace
+        let bytes = namespace
             .to_bytes()
-            .map_err(|_| Status::invalid_argument("Metadata can't be converted into Bytes"))
+            .map_err(|_| Status::invalid_argument("Metadata can't be converted into Bytes"))?;
+        NamespaceName::from_bytes(bytes)
+            .map_err(|_| Status::invalid_argument("Invalid namespace name"))
     } else {
         Err(Status::invalid_argument("Missing x-namespace-bin metadata"))
     }

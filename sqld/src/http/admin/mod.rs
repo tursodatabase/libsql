@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::connection::config::DatabaseConfig;
 use crate::error::LoadDumpError;
-use crate::namespace::{DumpStream, MakeNamespace, NamespaceStore, RestoreOption};
+use crate::namespace::{DumpStream, MakeNamespace, NamespaceName, NamespaceStore, RestoreOption};
 
 pub mod stats;
 
@@ -64,7 +64,10 @@ async fn handle_get_config<M: MakeNamespace>(
     State(app_state): State<Arc<AppState<M>>>,
     Path(namespace): Path<String>,
 ) -> crate::Result<Json<Arc<DatabaseConfig>>> {
-    let store = app_state.namespaces.config_store(namespace.into()).await?;
+    let store = app_state
+        .namespaces
+        .config_store(NamespaceName::from_string(namespace)?)
+        .await?;
     Ok(Json(store.get()))
 }
 
@@ -86,7 +89,10 @@ async fn handle_post_config<M: MakeNamespace>(
     Path(namespace): Path<String>,
     Json(req): Json<BlockReq>,
 ) -> crate::Result<()> {
-    let store = app_state.namespaces.config_store(namespace.into()).await?;
+    let store = app_state
+        .namespaces
+        .config_store(NamespaceName::from_string(namespace)?)
+        .await?;
     let mut config = (*store.get()).clone();
     config.block_reads = req.block_reads;
     config.block_writes = req.block_writes;
@@ -107,7 +113,10 @@ async fn handle_create_namespace<M: MakeNamespace>(
         None => RestoreOption::Latest,
     };
 
-    app_state.namespaces.create(namespace.into(), dump).await?;
+    app_state
+        .namespaces
+        .create(NamespaceName::from_string(namespace)?, dump)
+        .await?;
     Ok(())
 }
 
@@ -115,7 +124,9 @@ async fn handle_fork_namespace<M: MakeNamespace>(
     State(app_state): State<Arc<AppState<M>>>,
     Path((from, to)): Path<(String, String)>,
 ) -> crate::Result<()> {
-    app_state.namespaces.fork(from.into(), to.into()).await?;
+    let from = NamespaceName::from_string(from)?;
+    let to = NamespaceName::from_string(to)?;
+    app_state.namespaces.fork(from, to).await?;
     Ok(())
 }
 
@@ -157,7 +168,10 @@ async fn handle_delete_namespace<F: MakeNamespace>(
     State(app_state): State<Arc<AppState<F>>>,
     Path(namespace): Path<String>,
 ) -> crate::Result<()> {
-    app_state.namespaces.destroy(namespace.into()).await?;
+    app_state
+        .namespaces
+        .destroy(NamespaceName::from_string(namespace)?)
+        .await?;
     Ok(())
 }
 
@@ -180,7 +194,7 @@ async fn handle_restore_namespace<F: MakeNamespace>(
     };
     app_state
         .namespaces
-        .reset(namespace.into(), restore_option)
+        .reset(NamespaceName::from_string(namespace)?, restore_option)
         .await?;
     Ok(())
 }

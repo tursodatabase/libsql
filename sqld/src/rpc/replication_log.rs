@@ -8,7 +8,6 @@ use std::net::SocketAddr;
 use std::pin::Pin;
 use std::sync::{Arc, RwLock};
 
-use bytes::Bytes;
 use futures::stream::BoxStream;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
@@ -16,7 +15,7 @@ use tokio_stream::StreamExt;
 use tonic::Status;
 
 use crate::auth::Auth;
-use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
+use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::LogReadError;
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
@@ -28,7 +27,7 @@ use super::NAMESPACE_DOESNT_EXIST;
 
 pub struct ReplicationLogService {
     namespaces: NamespaceStore<PrimaryNamespaceMaker>,
-    replicas_with_hello: RwLock<HashSet<(SocketAddr, Bytes)>>,
+    replicas_with_hello: RwLock<HashSet<(SocketAddr, NamespaceName)>>,
     idle_shutdown_layer: Option<IdleShutdownKicker>,
     auth: Option<Arc<Auth>>,
     disable_namespaces: bool,

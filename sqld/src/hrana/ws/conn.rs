@@ -5,7 +5,6 @@ use std::sync::Arc;
 use std::task::{Context, Poll};
 
 use anyhow::{bail, Context as _, Result};
-use bytes::Bytes;
 use futures::stream::FuturesUnordered;
 use futures::{ready, FutureExt as _, StreamExt as _};
 use tokio::sync::oneshot;
@@ -14,7 +13,7 @@ use tungstenite::protocol::frame::coding::CloseCode;
 
 use crate::connection::MakeConnection;
 use crate::database::Database;
-use crate::namespace::MakeNamespace;
+use crate::namespace::{MakeNamespace, NamespaceName};
 
 use super::super::{Encoding, ProtocolError, Version};
 use super::handshake::WebSocket;
@@ -94,7 +93,7 @@ async fn handle_ws<F: MakeNamespace>(
     version: Version,
     encoding: Encoding,
     conn_id: u64,
-    namespace: Bytes,
+    namespace: NamespaceName,
 ) -> Result<()> {
     let connection_maker = server
         .namespaces

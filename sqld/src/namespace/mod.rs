@@ -1,5 +1,6 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Weak};
 use std::time::Duration;
@@ -34,7 +35,7 @@ use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger}
 use crate::stats::Stats;
 use crate::{
     run_periodic_checkpoint, StatsSender, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT,
-    DEFAULT_NAMESPACE_NAME, MAX_CONCURRENT_DBS,
+    MAX_CONCURRENT_DBS,
 };
 
 pub use fork::ForkError;
@@ -44,9 +45,53 @@ use self::fork::ForkTask;
 mod fork;
 pub type ResetCb = Box<dyn Fn(ResetOp) -> BoxFuture<'static, crate::Result<()>> + Send + Sync>;
 
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct NamespaceName(Bytes);
+
+impl Default for NamespaceName {
+    fn default() -> Self {
+        Self(Bytes::from_static(b"default"))
+    }
+}
+
+impl NamespaceName {
+    pub fn from_string(s: String) -> crate::Result<Self> {
+        Self::validate(&s)?;
+        Ok(Self(Bytes::from(s)))
+    }
+
+    fn validate(s: &str) -> crate::Result<()> {
+        if s.is_empty() {
+            return Err(crate::error::Error::InvalidNamespace);
+        }
+
+        Ok(())
+    }
+
+    pub fn as_str(&self) -> &str {
+        std::str::from_utf8(&self.0).unwrap()
+    }
+
+    pub fn from_bytes(bytes: Bytes) -> crate::Result<Self> {
+        let s = std::str::from_utf8(&bytes).map_err(|_| Error::InvalidNamespace)?;
+        Self::validate(s)?;
+        Ok(Self(bytes))
+    }
+
+    pub fn as_slice(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl fmt::Display for NamespaceName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.as_str().fmt(f)
+    }
+}
+
 pub enum ResetOp {
-    Reset(Bytes),
-    Destroy(Bytes),
+    Reset(NamespaceName),
+    Destroy(NamespaceName),
 }
 
 /// Creates a new `Namespace` for database of the `Self::Database` type.
@@ -57,7 +102,7 @@ pub trait MakeNamespace: Sync + Send + 'static {
     /// Create a new Namespace instance
     async fn create(
         &self,
-        name: Bytes,
+        name: NamespaceName,
         restore_option: RestoreOption,
         allow_creation: bool,
         reset: ResetCb,
@@ -66,11 +111,11 @@ pub trait MakeNamespace: Sync + Send + 'static {
     /// Destroy all resources associated with `namespace`.
     /// When `prune_all` is false, remove only files from local disk.
     /// When `prune_all` is true remove local database files as well as remote backup.
-    async fn destroy(&self, namespace: &Bytes, prune_all: bool) -> crate::Result<()>;
+    async fn destroy(&self, namespace: NamespaceName, prune_all: bool) -> crate::Result<()>;
     async fn fork(
         &self,
         from: &Namespace<Self::Database>,
-        to: Bytes,
+        to: NamespaceName,
         reset: ResetCb,
     ) -> crate::Result<Namespace<Self::Database>>;
 }
@@ -93,7 +138,7 @@ impl MakeNamespace for PrimaryNamespaceMaker {
 
     async fn create(
         &self,
-        name: Bytes,
+        name: NamespaceName,
         restore_option: RestoreOption,
         allow_creation: bool,
         _reset: ResetCb,
@@ -101,12 +146,8 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         Namespace::new_primary(&self.config, name, restore_option, allow_creation).await
     }
 
-    async fn destroy(&self, namespace: &Bytes, prune_all: bool) -> crate::Result<()> {
-        let ns_path = self
-            .config
-            .base_path
-            .join("dbs")
-            .join(std::str::from_utf8(namespace).unwrap());
+    async fn destroy(&self, namespace: NamespaceName, prune_all: bool) -> crate::Result<()> {
+        let ns_path = self.config.base_path.join("dbs").join(namespace.as_str());
 
         if prune_all {
             if let Some(ref options) = self.config.bottomless_replication {
@@ -133,7 +174,7 @@ impl MakeNamespace for PrimaryNamespaceMaker {
     async fn fork(
         &self,
         from: &Namespace<Self::Database>,
-        to: Bytes,
+        to: NamespaceName,
         reset_cb: ResetCb,
     ) -> crate::Result<Namespace<Self::Database>> {
         let fork_task = ForkTask {
@@ -166,7 +207,7 @@ impl MakeNamespace for ReplicaNamespaceMaker {
 
     async fn create(
         &self,
-        name: Bytes,
+        name: NamespaceName,
         restore_option: RestoreOption,
         allow_creation: bool,
         reset: ResetCb,
@@ -179,12 +220,8 @@ impl MakeNamespace for ReplicaNamespaceMaker {
         Namespace::new_replica(&self.config, name, allow_creation, reset).await
     }
 
-    async fn destroy(&self, namespace: &Bytes, _prune_all: bool) -> crate::Result<()> {
-        let ns_path = self
-            .config
-            .base_path
-            .join("dbs")
-            .join(std::str::from_utf8(namespace).unwrap());
+    async fn destroy(&self, namespace: NamespaceName, _prune_all: bool) -> crate::Result<()> {
+        let ns_path = self.config.base_path.join("dbs").join(namespace.as_str());
         tokio::fs::remove_dir_all(ns_path).await?;
         Ok(())
     }
@@ -192,7 +229,7 @@ impl MakeNamespace for ReplicaNamespaceMaker {
     async fn fork(
         &self,
         _from: &Namespace<Self::Database>,
-        _to: Bytes,
+        _to: NamespaceName,
         _reset: ResetCb,
     ) -> crate::Result<Namespace<Self::Database>> {
         return Err(ForkError::ForkReplica.into());
@@ -213,7 +250,7 @@ impl<M: MakeNamespace> Clone for NamespaceStore<M> {
 }
 
 struct NamespaceStoreInner<M: MakeNamespace> {
-    store: RwLock<HashMap<Bytes, Namespace<M::Database>>>,
+    store: RwLock<HashMap<NamespaceName, Namespace<M::Database>>>,
     /// The namespace factory, to create new namespaces.
     make_namespace: M,
     allow_lazy_creation: bool,
@@ -230,7 +267,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         }
     }
 
-    pub async fn destroy(&self, namespace: Bytes) -> crate::Result<()> {
+    pub async fn destroy(&self, namespace: NamespaceName) -> crate::Result<()> {
         let mut lock = self.inner.store.write().await;
         if let Some(ns) = lock.remove(&namespace) {
             // FIXME: when destroying, we are waiting for all the tasks associated with the
@@ -242,19 +279,19 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         }
 
         // destroy on-disk database and backups
-        self.inner.make_namespace.destroy(&namespace, true).await?;
+        self.inner
+            .make_namespace
+            .destroy(namespace.clone(), true)
+            .await?;
 
-        tracing::info!(
-            "destroyed namespace: {}",
-            std::str::from_utf8(&namespace).unwrap_or_default()
-        );
+        tracing::info!("destroyed namespace: {namespace}");
 
         Ok(())
     }
 
     pub async fn reset(
         &self,
-        namespace: Bytes,
+        namespace: NamespaceName,
         restore_option: RestoreOption,
     ) -> anyhow::Result<()> {
         let mut lock = self.inner.store.write().await;
@@ -268,7 +305,10 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         }
 
         // destroy on-disk database
-        self.inner.make_namespace.destroy(&namespace, false).await?;
+        self.inner
+            .make_namespace
+            .destroy(namespace.clone(), false)
+            .await?;
         let ns = self
             .inner
             .make_namespace
@@ -291,10 +331,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             Box::pin(async move {
                 match op {
                     ResetOp::Reset(ns) => {
-                        tracing::warn!(
-                            "received reset signal for: {:?}",
-                            std::str::from_utf8(&ns).ok()
-                        );
+                        tracing::warn!("received reset signal for: {}", ns.as_str());
                         this.reset(ns, RestoreOption::Latest).await?;
                     }
                     ResetOp::Destroy(ns) => {
@@ -306,11 +343,11 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         })
     }
 
-    pub async fn fork(&self, from: Bytes, to: Bytes) -> crate::Result<()> {
+    pub async fn fork(&self, from: NamespaceName, to: NamespaceName) -> crate::Result<()> {
         let mut lock = self.inner.store.write().await;
         if lock.contains_key(&to) {
             return Err(crate::error::Error::NamespaceAlreadyExist(
-                String::from_utf8(to.to_vec()).unwrap_or_default(),
+                to.as_str().to_string(),
             ));
         }
 
@@ -343,7 +380,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         Ok(())
     }
 
-    pub async fn with<Fun, R>(&self, namespace: Bytes, f: Fun) -> crate::Result<R>
+    pub async fn with<Fun, R>(&self, namespace: NamespaceName, f: Fun) -> crate::Result<R>
     where
         Fun: FnOnce(&Namespace<M::Database>) -> R,
     {
@@ -363,10 +400,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                 )
                 .await?;
             let ret = f(&ns);
-            tracing::info!(
-                "loaded namespace: `{}`",
-                std::str::from_utf8(&namespace).unwrap_or_default()
-            );
+            tracing::info!("loaded namespace: `{namespace}`");
             lock.insert(namespace, ns);
             Ok(ret)
         }
@@ -374,13 +408,13 @@ impl<M: MakeNamespace> NamespaceStore<M> {
 
     pub async fn create(
         &self,
-        namespace: Bytes,
+        namespace: NamespaceName,
         restore_option: RestoreOption,
     ) -> crate::Result<()> {
         let lock = self.inner.store.upgradable_read().await;
         if lock.contains_key(&namespace) {
             return Err(crate::error::Error::NamespaceAlreadyExist(
-                String::from_utf8(namespace.to_vec()).unwrap_or_default(),
+                namespace.as_str().to_owned(),
             ));
         }
 
@@ -396,22 +430,19 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             .await?;
 
         let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
-        tracing::info!(
-            "loaded namespace: `{}`",
-            std::str::from_utf8(&namespace).unwrap_or_default()
-        );
+        tracing::info!("loaded namespace: `{namespace}`");
         lock.insert(namespace, ns);
 
         Ok(())
     }
 
-    pub(crate) async fn stats(&self, namespace: Bytes) -> crate::Result<Arc<Stats>> {
+    pub(crate) async fn stats(&self, namespace: NamespaceName) -> crate::Result<Arc<Stats>> {
         self.with(namespace, |ns| ns.stats.clone()).await
     }
 
     pub(crate) async fn config_store(
         &self,
-        namespace: Bytes,
+        namespace: NamespaceName,
     ) -> crate::Result<Arc<DatabaseConfigStore>> {
         self.with(namespace, |ns| ns.db_config_store.clone()).await
     }
@@ -453,17 +484,16 @@ pub struct ReplicaNamespaceConfig {
 impl Namespace<ReplicaDatabase> {
     async fn new_replica(
         config: &ReplicaNamespaceConfig,
-        name: Bytes,
+        name: NamespaceName,
         allow_creation: bool,
         reset: ResetCb,
     ) -> crate::Result<Self> {
-        let name_str = std::str::from_utf8(&name).map_err(|_| Error::InvalidNamespace)?;
-        let db_path = config.base_path.join("dbs").join(name_str);
+        let db_path = config.base_path.join("dbs").join(name.as_str());
 
         // there isn't a database folder for this database, and we're not allowed to create it.
         if !allow_creation && !db_path.exists() {
             return Err(crate::error::Error::NamespaceDoesntExist(
-                String::from_utf8(name.to_vec()).unwrap_or_default(),
+                name.as_str().to_owned(),
             ));
         }
 
@@ -542,11 +572,10 @@ pub struct PrimaryNamespaceConfig {
 pub type DumpStream =
     Box<dyn Stream<Item = std::io::Result<Bytes>> + Send + Sync + 'static + Unpin>;
 
-fn make_bottomless_options(options: &Options, name: &Bytes) -> Options {
+fn make_bottomless_options(options: &Options, name: NamespaceName) -> Options {
     let mut options = options.clone();
-    let namespace = std::str::from_utf8(name).unwrap();
     let db_id = options.db_id.unwrap_or_default();
-    let db_id = format!("ns-{db_id}:{namespace}");
+    let db_id = format!("ns-{db_id}:{name}");
     options.db_id = Some(db_id);
     options
 }
@@ -554,31 +583,28 @@ fn make_bottomless_options(options: &Options, name: &Bytes) -> Options {
 impl Namespace<PrimaryDatabase> {
     async fn new_primary(
         config: &PrimaryNamespaceConfig,
-        name: Bytes,
+        name: NamespaceName,
         restore_option: RestoreOption,
         allow_creation: bool,
     ) -> crate::Result<Self> {
         // if namespaces are disabled, then we allow creation for the default namespace.
         let allow_creation =
-            allow_creation || (config.disable_namespace && name == DEFAULT_NAMESPACE_NAME);
+            allow_creation || (config.disable_namespace && name == NamespaceName::default());
 
         let mut join_set = JoinSet::new();
-        let name_str = std::str::from_utf8(&name).map_err(|_| Error::InvalidNamespace)?;
-        let db_path = config.base_path.join("dbs").join(name_str);
+        let db_path = config.base_path.join("dbs").join(name.as_str());
 
         // The database folder doesn't exist, bottomless replication is disabled (no db to recover)
         // and we're not allowed to create a new database, return an error.
         if !allow_creation && config.bottomless_replication.is_none() && !db_path.try_exists()? {
-            return Err(crate::error::Error::NamespaceDoesntExist(
-                String::from_utf8(name.to_vec()).unwrap_or_default(),
-            ));
+            return Err(crate::error::Error::NamespaceDoesntExist(name.to_string()));
         }
         let mut is_dirty = config.db_is_dirty;
 
         tokio::fs::create_dir_all(&db_path).await?;
 
         let bottomless_replicator = if let Some(options) = &config.bottomless_replication {
-            let options = make_bottomless_options(options, &name);
+            let options = make_bottomless_options(options, name.clone());
             let (replicator, did_recover) =
                 init_bottomless_replicator(db_path.join("data"), options, &restore_option).await?;
 
@@ -589,9 +615,7 @@ impl Namespace<PrimaryDatabase> {
                 // FIXME: this is not atomic, we could be left with a stale directory. Maybe do
                 // setup in a temp directory and then atomically rename it?
                 let _ = tokio::fs::remove_dir_all(&db_path).await;
-                return Err(crate::error::Error::NamespaceDoesntExist(
-                    String::from_utf8(name.to_vec()).unwrap_or_default(),
-                ));
+                return Err(crate::error::Error::NamespaceDoesntExist(name.to_string()));
             }
 
             is_dirty |= did_recover;
@@ -698,7 +722,7 @@ async fn make_stats(
     db_path: &Path,
     join_set: &mut JoinSet<anyhow::Result<()>>,
     stats_sender: StatsSender,
-    name: Bytes,
+    name: NamespaceName,
     mut current_frame_no: watch::Receiver<FrameNo>,
 ) -> anyhow::Result<Arc<Stats>> {
     let stats = Stats::new(db_path, join_set).await?;

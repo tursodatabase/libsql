@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use bytes::Bytes;
 use parking_lot::Mutex as PMutex;
 use rusqlite::types::ValueRef;
 use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
@@ -13,6 +12,7 @@ use uuid::Uuid;
 
 use crate::auth::Authenticated;
 use crate::error::Error;
+use crate::namespace::NamespaceName;
 use crate::query::Value;
 use crate::query_analysis::State;
 use crate::query_result_builder::{
@@ -42,7 +42,7 @@ pub struct MakeWriteProxyConnection {
     applied_frame_no_receiver: watch::Receiver<FrameNo>,
     max_response_size: u64,
     max_total_response_size: u64,
-    namespace: Bytes,
+    namespace: NamespaceName,
 }
 
 impl MakeWriteProxyConnection {
@@ -57,7 +57,7 @@ impl MakeWriteProxyConnection {
         applied_frame_no_receiver: watch::Receiver<FrameNo>,
         max_response_size: u64,
         max_total_response_size: u64,
-        namespace: Bytes,
+        namespace: NamespaceName,
     ) -> Self {
         let client = ProxyClient::with_origin(channel, uri);
         Self {
@@ -111,8 +111,7 @@ pub struct WriteProxyConnection {
     applied_frame_no_receiver: watch::Receiver<FrameNo>,
     builder_config: QueryBuilderConfig,
     stats: Arc<Stats>,
-    /// bytes representing the namespace name
-    namespace: Bytes,
+    namespace: NamespaceName,
 }
 
 fn execute_results_to_builder<B: QueryResultBuilder>(
@@ -170,7 +169,7 @@ impl WriteProxyConnection {
         config_store: Arc<DatabaseConfigStore>,
         applied_frame_no_receiver: watch::Receiver<FrameNo>,
         builder_config: QueryBuilderConfig,
-        namespace: Bytes,
+        namespace: NamespaceName,
     ) -> Result<Self> {
         let read_conn = LibSqlConnection::new(
             db_path,
@@ -211,7 +210,7 @@ impl WriteProxyConnection {
             pgm: Some(pgm.into()),
         });
 
-        let namespace = BinaryMetadataValue::from_bytes(&self.namespace[..]);
+        let namespace = BinaryMetadataValue::from_bytes(self.namespace.as_slice());
         req.metadata_mut()
             .insert_bin(NAMESPACE_METADATA_KEY, namespace);
         auth.upgrade_grpc_request(&mut req);
@@ -328,6 +327,7 @@ impl Drop for WriteProxyConnection {
 #[cfg(test)]
 pub mod test {
     use arbitrary::{Arbitrary, Unstructured};
+    use bytes::Bytes;
     use rand::Fill;
 
     use super::*;
