@@ -1288,7 +1288,7 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1data_1count
  * Method:    sqlite3_db_config
  * Signature: (Lorg/sqlite/jni/sqlite3;IILorg/sqlite/jni/OutputPointer/Int32;)I
  */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_Int32_2
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_00024Int32_2
   (JNIEnv *, jclass, jobject, jint, jint, jobject);
 
 /*
