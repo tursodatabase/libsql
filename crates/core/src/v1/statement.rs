@@ -56,7 +56,7 @@ impl Statement {
         #[cfg(feature = "replication")]
         {
             if !self.is_readonly() && self.conn.writer.is_some() {
-                use libsql_replication::pb;
+                use crate::replication::pb;
                 let params: pb::query::Params = params.into();
                 let rows = self
                     .conn
@@ -148,7 +148,7 @@ impl Statement {
         #[cfg(feature = "replication")]
         {
             if !self.is_readonly() && self.conn.writer.is_some() {
-                use libsql_replication::pb;
+                use crate::replication::pb;
                 let params: pb::query::Params = params.into();
                 return self
                     .conn

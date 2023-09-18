@@ -16,7 +16,7 @@ pub struct Connection {
     drop_ref: Arc<()>,
 
     #[cfg(feature = "replication")]
-    pub(crate) writer: Option<libsql_replication::Writer>,
+    pub(crate) writer: Option<crate::replication::Writer>,
 }
 
 impl Drop for Connection {

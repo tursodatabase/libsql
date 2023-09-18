@@ -1,12 +1,12 @@
 use std::sync::Once;
 
+#[cfg(feature = "replication")]
+use crate::replication::Replicator;
+#[cfg(feature = "replication")]
+pub use crate::replication::{Frames, TempSnapshot};
 use crate::v1::connection::Connection;
 use crate::OpenFlags;
 use crate::{Error::ConnectionFailed, Result};
-#[cfg(feature = "replication")]
-use libsql_replication::Replicator;
-#[cfg(feature = "replication")]
-pub use libsql_replication::{Frames, TempSnapshot};
 use libsql_sys::ffi;
 
 #[cfg(feature = "replication")]
@@ -137,7 +137,7 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub fn writer(&self) -> Result<Option<libsql_replication::Writer>> {
+    pub fn writer(&self) -> Result<Option<crate::replication::Writer>> {
         if let Some(ctx) = &self.replication_ctx {
             if ctx.endpoint.is_empty() {
                 return Ok(None);

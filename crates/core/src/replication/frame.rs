@@ -6,7 +6,7 @@ use std::ops::Deref;
 use bytemuck::{bytes_of, pod_read_unaligned, try_from_bytes, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
 
-use crate::WAL_PAGE_SIZE;
+use super::WAL_PAGE_SIZE;
 
 use super::FrameNo;
 

@@ -4,7 +4,6 @@ members = [
   "core",
   "bindings/c",
   "bindings/wasm",
-  "replication",
   "libsql-sys",
   "libsql-shell",
   "wasmtime-bindings",

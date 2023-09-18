@@ -199,7 +199,7 @@ impl RowInner for LibsqlRow {
 }
 
 pub(crate) struct LibsqlRemoteRows(
-    pub(crate) libsql_replication::pb::ResultRows,
+    pub(crate) crate::replication::pb::ResultRows,
     pub(crate) usize,
 );
 
@@ -247,7 +247,7 @@ impl RowsInner for LibsqlRemoteRows {
     }
 }
 
-struct LibsqlRemoteRow(Vec<Value>, Vec<libsql_replication::pb::Column>);
+struct LibsqlRemoteRow(Vec<Value>, Vec<crate::replication::pb::Column>);
 
 impl RowInner for LibsqlRemoteRow {
     fn column_value(&self, idx: i32) -> Result<Value> {

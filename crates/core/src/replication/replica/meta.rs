@@ -6,15 +6,17 @@ use std::path::Path;
 
 use bytemuck::{try_pod_read_unaligned, Pod, Zeroable};
 
+use crate::replication::FrameNo;
+
 #[repr(C)]
 #[derive(Debug, Pod, Zeroable, Clone, Copy)]
 pub struct WalIndexMeta {
     /// This is the anticipated next frame_no to request
-    pub pre_commit_frame_no: crate::FrameNo,
+    pub pre_commit_frame_no: FrameNo,
     /// After we have written the frames back to the wal, we set this value to the same value as
     /// pre_commit_index
     /// On startup we check this value against the pre-commit value to check for consistency
-    pub post_commit_frame_no: crate::FrameNo,
+    pub post_commit_frame_no: FrameNo,
     /// Generation Uuid
     /// This number is generated on each primary restart. This let's us know that the primary, and
     /// we need to make sure that we are not ahead of the primary.
