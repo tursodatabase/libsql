@@ -23,15 +23,15 @@ use tokio::sync::mpsc::Sender;
 use client::Client;
 
 pub struct Replicator {
-    pub frames_sender: Sender<Frames>,
-    pub current_frame_no_notifier: tokio::sync::watch::Receiver<FrameNo>,
+    pub(crate) frames_sender: Sender<Frames>,
+    pub(crate) current_frame_no_notifier: tokio::sync::watch::Receiver<FrameNo>,
     // The hook context needs to live as long as the injector and have a stable memory address.
     // Safety: it must never ever be used directly! Ever. Really.
     _hook_ctx: Arc<parking_lot::Mutex<InjectorHookCtx>>,
-    pub meta: Arc<parking_lot::Mutex<Option<replica::meta::WalIndexMeta>>>,
-    pub injector: replica::injector::FrameInjector<'static>,
-    pub client: Option<Client>,
-    pub next_offset: AtomicU64,
+    pub(crate) meta: Arc<parking_lot::Mutex<Option<replica::meta::WalIndexMeta>>>,
+    pub(crate) injector: replica::injector::FrameInjector<'static>,
+    pub(crate) client: Option<Client>,
+    pub(crate) next_offset: AtomicU64,
 }
 
 #[derive(Debug, Clone)]

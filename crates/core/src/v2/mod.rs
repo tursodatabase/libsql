@@ -6,8 +6,8 @@ pub mod transaction;
 use std::sync::Arc;
 
 use crate::box_clone_service::BoxCloneService;
-use crate::params::IntoParams;
-use crate::v1::{params::Params, TransactionBehavior};
+use crate::params::{IntoParams, Params};
+use crate::v1::TransactionBehavior;
 use crate::Result;
 pub use hrana::{Client, HranaError};
 

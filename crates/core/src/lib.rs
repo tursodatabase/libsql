@@ -24,12 +24,12 @@
 //! Embedded replica is libSQL database that's running in your application process, which keeps a local copy of a remote database.
 //! They are useful if you want to move data in the memory space of your application for fast access.
 //!
-//! You can open an embedded read-only replica by using the [`Database::with_replicator`] constructor:
+//! You can open an embedded read-only replica by using the [`Database::open_with_local_sync`] constructor:
 //!
 //! ```rust,no_run
 //! # async fn run() {
 //! use libsql::{Database, Opts};
-//! use libsql::replication::{Frame, Frames, Replicator};
+//! use libsql::replication::{Frame, Frames};
 //!
 //! let mut db = Database::open_with_local_sync("/tmp/test.db").await.unwrap();
 //!
@@ -49,8 +49,10 @@
 mod v1;
 mod v2;
 
+pub mod params;
+
 #[cfg(feature = "replication")]
-pub mod replication;
+mod replication;
 
 mod box_clone_service;
 pub mod errors;
@@ -58,11 +60,9 @@ pub use errors::Error;
 
 pub use v1::database::Opts;
 
-pub use v1::{
-    params,
-    params::{params_from_iter, Value, ValueRef},
-    version, version_number, RowsFuture,
-};
+pub use params::{params_from_iter, Value, ValueRef};
+
+pub use v1::{version, version_number, RowsFuture};
 
 pub use v2::{
     hrana, rows,
@@ -73,6 +73,8 @@ pub use v2::{
     transaction::{Transaction, TransactionBehavior},
     Connection, Database, OpenFlags,
 };
+
+pub use replication::{FrameNo, Frames, TempSnapshot};
 
 pub use libsql_sys::ffi;
 
