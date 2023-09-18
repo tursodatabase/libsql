@@ -12,6 +12,7 @@ use proto::{Batch, BatchResult, Col, Stmt, StmtResult};
 use hyper::client::HttpConnector;
 use hyper::StatusCode;
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
+use tower::ServiceExt;
 
 // use crate::client::Config;
 use crate::{params::Params, Column, Result};
@@ -20,7 +21,7 @@ use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};
 
 use super::rows::{RowInner, RowsInner};
-use super::{Conn, Transaction};
+use super::{Conn, ConnectorService, Socket, Transaction};
 
 /// Information about the current session: the server-generated cookie
 /// and the URL that should be used for further communication.
@@ -44,16 +45,16 @@ pub struct Client {
 
 #[derive(Clone, Debug)]
 struct InnerClient {
-    inner: hyper::Client<HttpsConnector<HttpConnector>, hyper::Body>,
+    inner: hyper::Client<HttpsConnector<ConnectorService>, hyper::Body>,
 }
 
 impl InnerClient {
-    fn new() -> Self {
+    fn new(connector: ConnectorService) -> Self {
         let https = HttpsConnectorBuilder::new()
             .with_native_roots()
             .https_or_http()
             .enable_http1()
-            .build();
+            .wrap_connector(connector);
         let inner = hyper::Client::builder().build(https);
 
         Self { inner }
@@ -110,7 +111,29 @@ impl Client {
     /// * `url` - URL of the database endpoint
     /// * `token` - auth token
     pub fn new(url: impl Into<String>, token: impl Into<String>) -> Self {
-        let inner = InnerClient::new();
+        let connector = HttpConnector::new()
+            .map_response(|s| Box::new(s) as Box<dyn Socket>)
+            .map_err(|e| Box::new(e) as Box<_>);
+        Self::new_with_connector(url, token, ConnectorService::new(connector))
+    }
+
+    pub fn from_env() -> Result<Client> {
+        let url = std::env::var("LIBSQL_CLIENT_URL").map_err(|_| {
+            HranaError::MissingEnv(
+                "LIBSQL_CLIENT_URL variable should point to your sqld database".into(),
+            )
+        })?;
+
+        let token = std::env::var("LIBSQL_CLIENT_TOKEN").unwrap_or_default();
+        Ok(Client::new(url, token))
+    }
+
+    pub(crate) fn new_with_connector(
+        url: impl Into<String>,
+        token: impl Into<String>,
+        connector: ConnectorService,
+    ) -> Self {
+        let inner = InnerClient::new(connector);
 
         let token = token.into();
         let url = url.into();
@@ -131,17 +154,6 @@ impl Client {
             affected_row_count: Arc::new(AtomicU64::new(0)),
             last_insert_rowid: Arc::new(AtomicI64::new(0)),
         }
-    }
-
-    pub fn from_env() -> Result<Client> {
-        let url = std::env::var("LIBSQL_CLIENT_URL").map_err(|_| {
-            HranaError::MissingEnv(
-                "LIBSQL_CLIENT_URL variable should point to your sqld database".into(),
-            )
-        })?;
-
-        let token = std::env::var("LIBSQL_CLIENT_TOKEN").unwrap_or_default();
-        Ok(Client::new(url, token))
     }
 }
 

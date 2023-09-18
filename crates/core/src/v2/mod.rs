@@ -8,11 +8,17 @@ use std::sync::Arc;
 use crate::params::IntoParams;
 use crate::v1::{params::Params, TransactionBehavior};
 use crate::Result;
+use crate::box_clone_service::BoxCloneService;
 pub use hrana::{Client, HranaError};
 
+use hyper::client::HttpConnector;
+use hyper::service::Service;
+use hyper::Uri;
 pub use rows::{Row, Rows};
 use statement::LibsqlStmt;
 pub use statement::Statement;
+use tokio::io::{AsyncRead, AsyncWrite};
+use tower::ServiceExt;
 use transaction::LibsqlTx;
 pub use transaction::Transaction;
 
@@ -38,10 +44,38 @@ impl Default for OpenFlags {
 //      2) Support replication setup
 enum DbType {
     Memory,
-    File { path: String, flags: OpenFlags },
-    Sync { db: crate::v1::Database },
-    Remote { url: String, auth_token: String },
+    File {
+        path: String,
+        flags: OpenFlags,
+    },
+    Sync {
+        db: crate::v1::Database,
+    },
+    Remote {
+        url: String,
+        auth_token: String,
+        connector: ConnectorService,
+    },
 }
+
+pub(crate) trait Socket:
+    hyper::client::connect::Connection + AsyncRead + AsyncWrite + Send + Unpin + 'static + Sync
+{
+}
+
+impl<T> Socket for T where
+    T: hyper::client::connect::Connection + AsyncRead + AsyncWrite + Send + Unpin + 'static + Sync
+{
+}
+
+impl hyper::client::connect::Connection for Box<dyn Socket> {
+    fn connected(&self) -> hyper::client::connect::Connected {
+        self.as_ref().connected()
+    }
+}
+
+pub(crate) type ConnectorService =
+    BoxCloneService<Uri, Box<dyn Socket>, Box<dyn std::error::Error + Sync + Send + 'static>>;
 
 pub struct Database {
     db_type: DbType,
@@ -92,10 +126,36 @@ impl Database {
     }
 
     pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
+        Self::open_remote_with_connector(url, auth_token, HttpConnector::new())
+    }
+
+    // For now, only expose this for sqld testing purposes
+    #[doc(hidden)]
+    pub fn open_remote_with_connector<C>(
+        url: impl Into<String>,
+        auth_token: impl Into<String>,
+        connector: C,
+    ) -> Result<Self>
+    where
+        C: Service<Uri> + Send + Clone + Sync + 'static,
+        C::Response: hyper::client::connect::Connection
+            + AsyncRead
+            + AsyncWrite
+            + Send
+            + Unpin
+            + 'static
+            + Sync,
+        C::Future: Send + 'static,
+        C::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
+    {
+        let svc = connector
+            .map_err(|e| e.into())
+            .map_response(|s| Box::new(s) as Box<dyn Socket>);
         Ok(Database {
             db_type: DbType::Remote {
                 url: url.into(),
                 auth_token: auth_token.into(),
+                connector: ConnectorService::new(svc),
             },
         })
     }
@@ -128,8 +188,16 @@ impl Database {
                 Ok(Connection { conn })
             }
 
-            DbType::Remote { url, auth_token } => {
-                let conn = Arc::new(hrana::Client::new(url, auth_token));
+            DbType::Remote {
+                url,
+                auth_token,
+                connector,
+            } => {
+                let conn = Arc::new(hrana::Client::new_with_connector(
+                    url,
+                    auth_token,
+                    connector.clone(),
+                ));
 
                 Ok(Connection { conn })
             }
