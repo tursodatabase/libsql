@@ -141,13 +141,29 @@ foreach {id data1 data2 jointype onclause whereclause answer} {
   {coalesce(y,4)==4}
   {3 4 3 4}
 
-  5
+  5.1
   VALUES(1,2),(3,4),(NULL,4)
   VALUES(1,2),(3,4)
   {LEFT JOIN}
   a=x
   {y=4 OR y IS NULL}
   {3 4 3 4 {} 4 {} {}}
+
+  5.2
+  VALUES(1,2),(3,4),(NULL,4)
+  VALUES(1,2),(3,4)
+  {LEFT JOIN}
+  a=x
+  {y NOT IN ()}
+  {1 2 1 2 3 4 3 4 {} 4 {} {}}
+
+  5.3
+  VALUES(1,2),(3,4),(NULL,4)
+  VALUES(1,2),(3,4)
+  {LEFT JOIN}
+  a=x
+  {y NOT IN (SELECT 1 WHERE false)}
+  {1 2 1 2 3 4 3 4 {} 4 {} {}}
 
   6
   VALUES(1,2),(3,4)
@@ -193,6 +209,12 @@ foreach {id data1 data2 jointype onclause whereclause answer} {
     db eval {PRAGMA automatic_index=OFF;}
     db eval $sql
   } $answer
+  do_test autoindex4-4.$id.3 {
+    db eval {PRAGMA automatic_index=ON;}
+    optimization_control db all 0
+    db eval $sql
+  } $answer
+  optimization_control db all 1
 }
 
 

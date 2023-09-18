@@ -22,12 +22,6 @@ TOP = ../sqlite
 BCC = gcc -g -O0
 #BCC = /opt/ancic/bin/c89 -0
 
-#### If the target operating system supports the "usleep()" system
-#    call, then define the HAVE_USLEEP macro for all C modules.
-#
-#USLEEP = 
-USLEEP = -DHAVE_USLEEP=1
-
 #### If you want the SQLite library to be safe for use within a 
 #    multi-threaded program, then define the following macro
 #    appropriately:

@@ -61,7 +61,7 @@ static int walkWindowList(Walker *pWalker, Window *pList, int bOneOnly){
 ** The return value from this routine is WRC_Abort to abandon the tree walk
 ** and WRC_Continue to continue.
 */
-static SQLITE_NOINLINE int walkExpr(Walker *pWalker, Expr *pExpr){
+SQLITE_NOINLINE int sqlite3WalkExprNN(Walker *pWalker, Expr *pExpr){
   int rc;
   testcase( ExprHasProperty(pExpr, EP_TokenOnly) );
   testcase( ExprHasProperty(pExpr, EP_Reduced) );
@@ -70,7 +70,9 @@ static SQLITE_NOINLINE int walkExpr(Walker *pWalker, Expr *pExpr){
     if( rc ) return rc & WRC_Abort;
     if( !ExprHasProperty(pExpr,(EP_TokenOnly|EP_Leaf)) ){
       assert( pExpr->x.pList==0 || pExpr->pRight==0 );
-      if( pExpr->pLeft && walkExpr(pWalker, pExpr->pLeft) ) return WRC_Abort;
+      if( pExpr->pLeft && sqlite3WalkExprNN(pWalker, pExpr->pLeft) ){
+        return WRC_Abort;
+      }
       if( pExpr->pRight ){
         assert( !ExprHasProperty(pExpr, EP_WinFunc) );
         pExpr = pExpr->pRight;
@@ -94,7 +96,7 @@ static SQLITE_NOINLINE int walkExpr(Walker *pWalker, Expr *pExpr){
   return WRC_Continue;
 }
 int sqlite3WalkExpr(Walker *pWalker, Expr *pExpr){
-  return pExpr ? walkExpr(pWalker,pExpr) : WRC_Continue;
+  return pExpr ? sqlite3WalkExprNN(pWalker,pExpr) : WRC_Continue;
 }
 
 /*
@@ -220,7 +222,7 @@ int sqlite3WalkSelect(Walker *pWalker, Select *p){
 }
 
 /* Increase the walkerDepth when entering a subquery, and
-** descrease when leaving the subquery.
+** decrease when leaving the subquery.
 */
 int sqlite3WalkerDepthIncrease(Walker *pWalker, Select *pSelect){
   UNUSED_PARAMETER(pSelect);

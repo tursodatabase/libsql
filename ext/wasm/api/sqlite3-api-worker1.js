@@ -278,6 +278,19 @@
   The arguments are in the same form accepted by oo1.DB.exec(), with
   the exceptions noted below.
 
+  If the `countChanges` arguments property (added in version 3.43) is
+  truthy then the `result` property contained by the returned object
+  will have a `changeCount` property which holds the number of changes
+  made by the provided SQL. Because the SQL may contain an arbitrary
+  number of statements, the `changeCount` is calculated by calling
+  `sqlite3_total_changes()` before and after the SQL is evaluated. If
+  the value of `countChanges` is 64 then the `changeCount` property
+  will be returned as a 64-bit integer in the form of a BigInt (noting
+  that that will trigger an exception if used in a BigInt-incapable
+  build).  In the latter case, the number of changes is calculated by
+  calling `sqlite3_total_changes64()` before and after the SQL is
+  evaluated.
+
   A function-type args.callback property cannot cross
   the window/Worker boundary, so is not useful here. If
   args.callback is a string then it is assumed to be a
@@ -523,7 +536,13 @@ sqlite3.initWorker1API = function(){
         }
       }
       try {
+        const changeCount = !!rc.countChanges
+              ? db.changes(true,(64===rc.countChanges))
+              : undefined;
         db.exec(rc);
+        if(undefined !== changeCount){
+          rc.changeCount = db.changes(true,64===rc.countChanges) - changeCount;
+        }
         if(rc.callback instanceof Function){
           rc.callback = theCallback;
           /* Post a sentinel message to tell the client that the end

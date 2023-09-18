@@ -154,8 +154,7 @@ fn test_update_forbidden() {
     assert!(conn
         .execute("ALTER TABLE t3 ALTER COLUMN id TO id UNIQUE", ())
         .is_err());
-    conn.execute("CREATE TABLE t4(id int UNIQUE)", ())
-        .unwrap();
+    conn.execute("CREATE TABLE t4(id int UNIQUE)", ()).unwrap();
     assert!(conn
         .execute("ALTER TABLE t4 ALTER COLUMN id TO id", ())
         .is_err());

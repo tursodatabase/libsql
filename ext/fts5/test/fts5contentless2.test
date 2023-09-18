@@ -1,0 +1,208 @@
+# 2023 July 19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file contains tests for the content= and content_rowid= options.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5contentless2
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+proc vocab {} {
+  list aaa bbb ccc ddd eee fff ggg hhh iii jjj kkk lll mmm nnn ooo ppp
+}
+
+proc document {nToken} {
+  set doc [list]
+  set vocab [vocab]
+  for {set ii 0} {$ii < $nToken} {incr ii} {
+    lappend doc [lindex $vocab [expr int(rand()*[llength $vocab])]]
+  }
+  set doc
+}
+db func document document
+
+proc contains {doc token} {
+  expr {[lsearch $doc $token]>=0}
+}
+db func contains contains
+
+proc do_compare_tables_test {tn} {
+  uplevel [list do_test $tn {
+    foreach v [vocab] {
+      set l1 [execsql { SELECT rowid FROM t1 WHERE contains(doc, $v) }]
+      set l2 [execsql { SELECT rowid FROM t2($v) }]
+      if {$l1!=$l2} { error "1: query mismatch ($l1) ($l2)" }
+
+      set w "[string range $v 0 1]*"
+      set l1 [execsql { SELECT rowid FROM t1 WHERE contains(doc, $w) }]
+      set l2 [execsql { SELECT rowid FROM t2($w) }]
+      if {$l1!=$l2} { error "2: query mismatch ($l1) ($l2)" }
+
+      set w "[string range $v 0 0]*"
+      set l1 [execsql { SELECT rowid FROM t1 WHERE contains(doc, $w) }]
+      set l2 [execsql { SELECT rowid FROM t2($w) }]
+      if {$l1!=$l2} { error "2: query mismatch ($l1) ($l2)" }
+
+      set l1 [execsql { 
+        SELECT rowid FROM t1 WHERE contains(doc, $v) ORDER BY rowid DESC 
+      }]
+      set l2 [execsql { SELECT rowid FROM t2($v) ORDER BY rowid DESC }]
+      if {$l1!=$l2} { error "1: query mismatch ($l1) ($l2)" }
+    }
+    set {} {}
+  } {}]
+}
+
+proc lshuffle {in} {
+  set L [list]
+  set ret [list]
+  foreach elem $in { lappend L [list [expr rand()] $elem] }
+  foreach pair [lsort -index 0 $L] { lappend ret [lindex $pair 1] }
+  set ret
+}
+
+expr srand(0)
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t2 USING fts5(
+      doc, prefix=2, content=, contentless_delete=1
+  );
+
+  CREATE TABLE t1(doc);
+  CREATE TRIGGER tr1 AFTER DELETE ON t1 BEGIN
+    DELETE FROM t2 WHERE rowid = old.rowid;
+  END;
+}
+
+set SMALLEST64 -9223372036854775808
+set LARGEST64   9223372036854775807
+
+foreach {tn r1 r2} {
+  1   0               50
+  2   $SMALLEST64     $SMALLEST64+50
+  3   $LARGEST64-50   $LARGEST64
+  4   -50             -1
+} {
+  set r1 [expr $r1]
+  set r2 [expr $r2]
+
+  do_test 1.1.$tn {
+    execsql BEGIN
+    for {set ii $r1} {$ii <= $r2} {incr ii} {
+      execsql { INSERT INTO t1(rowid, doc) VALUES ($ii, document(8)); }
+    }
+    execsql COMMIT
+  } {}
+}
+do_test 1.2 {
+  db eval { SELECT rowid, doc FROM t1 } {
+    execsql { INSERT INTO t2(rowid, doc) VALUES($rowid, $doc) }
+  }
+} {}
+
+foreach {tn rowid} {
+  1  $SMALLEST64
+  2  0
+  3  -5
+  4  -30
+  5  $LARGEST64
+  6  $LARGEST64-1
+} {
+  set rowid [expr $rowid]
+  do_execsql_test 1.3.$tn.1 {
+    DELETE FROM t1 WHERE rowid=$rowid
+  }
+  do_compare_tables_test 1.3.$tn.2
+}
+
+set iTest 1
+foreach r [lshuffle [execsql {SELECT rowid FROM t1}]] {
+  if {($iTest % 50)==0} {
+    execsql { INSERT INTO t2(t2) VALUES('optimize') }
+  }
+  if {($iTest % 5)==0} {
+    execsql { INSERT INTO t2(t2, rank) VALUES('merge', 5) }
+  }
+  do_execsql_test 1.4.$iTest.1($r) {
+    DELETE FROM t1 WHERE rowid=$r
+  }
+  do_compare_tables_test 1.4.$iTest.2
+  incr iTest
+}
+
+do_execsql_test 1.5 {
+  SELECT * FROM t1
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+db func document document
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t2 USING fts5(doc, content=, contentless_delete=1);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO t2(rowid, doc) SELECT i, i || ' ' || i FROM s;
+}
+
+do_execsql_test 2.1 {
+  BEGIN;
+    DELETE FROM t2 WHERE rowid=32;
+    DELETE FROM t2 WHERE rowid=64;
+    DELETE FROM t2 WHERE rowid=96;
+    DELETE FROM t2 WHERE rowid=128;
+    DELETE FROM t2 WHERE rowid=160;
+    DELETE FROM t2 WHERE rowid=192;
+  COMMIT;
+}
+
+do_execsql_test 2.2 {
+  SELECT * FROM t2('128');
+} {}
+
+#-------------------------------------------------------------------------
+
+foreach {tn step} {
+  1     3 
+  2     7
+  3     15
+} {
+  set step [expr $step]
+
+  reset_db
+  db func document document
+  do_execsql_test 3.$tn.0 {
+    CREATE VIRTUAL TABLE t2 USING fts5(doc, content=, contentless_delete=1);
+    INSERT INTO t2(t2, rank) VALUES('pgsz', 100);
+    WITH s(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+    )
+    INSERT INTO t2(rowid, doc) SELECT i, i || ' ' || i FROM s;
+  }
+  do_execsql_test 3.$tn.1 {
+    DELETE FROM t2 WHERE (rowid % $step)==0
+  }
+  do_execsql_test 3.$tn.2 {
+    SELECT * FROM t2( $step * 5 )
+  } {}
+}
+
+
+
+finish_test
+

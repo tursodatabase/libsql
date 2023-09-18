@@ -95,6 +95,9 @@ do_execsql_test 3.3 {
   SELECT rowid, bm25(e1) FROM e1 WHERE e1 MATCH '"/" OR "just"' ORDER BY rank;
 } {1 -1e-06}
 
+do_execsql_test 3.4 "
+  SELECT fts5_expr_tcl('e AND \" \"');
+" {{AND [nearset -- {e}] [{}]}}
 
 
 finish_test

@@ -52,6 +52,13 @@ MINIMAL_AMALGAMATION = 0
 USE_STDCALL = 0
 !ENDIF
 
+# Set this non-0 to use structured exception handling (SEH) for WAL mode
+# in the core library.
+#
+!IFNDEF USE_SEH
+USE_SEH = 1
+!ENDIF
+
 # Set this non-0 to have the shell executable link against the core dynamic
 # link library.
 #
@@ -178,6 +185,12 @@ WIN32HEAP = 0
 #
 !IFNDEF OSTRACE
 OSTRACE = 0
+!ENDIF
+
+# enable address sanitizer using ASAN=1 on the command-line.
+#
+!IFNDEF ASAN
+ASAN = 0
 !ENDIF
 
 # Set this to one of the following values to enable various debugging
@@ -309,6 +322,13 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_MATH_FUNCTIONS
 #
 !IF $(RBU)!=0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RBU=1
+!ENDIF
+
+# Should structured exception handling (SEH) be enabled for WAL mode in
+# the core library?
+#
+!IF $(USE_SEH)!=0
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_USE_SEH=1
 !ENDIF
 
 # These are the "extended" SQLite compilation options used when compiling for
@@ -715,6 +735,13 @@ RCC = $(RCC) -DSQLITE_WIN32_MALLOC=1
 TCC = $(TCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 RCC = $(RCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 !ENDIF
+!ENDIF
+
+
+# Address sanitizer if ASAN=1
+#
+!IF $(ASAN)>0
+TCC = $(TCC) /fsanitize=address
 !ENDIF
 
 

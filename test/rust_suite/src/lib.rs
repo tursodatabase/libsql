@@ -101,10 +101,7 @@ mod tests {
             conn.execute("INSERT INTO test values (1)", ()).unwrap();
         }
         assert_eq!(get_read_written(&conn, "SELECT * FROM test"), (16, 0));
-        assert_eq!(
-            get_read_written(&conn, "SELECT count(*) FROM test"),
-            (16, 0)
-        );
+        assert_eq!(get_read_written(&conn, "SELECT count(*) FROM test"), (1, 0));
         assert_eq!(
             get_read_written(&conn, "SELECT min(id), max(id) FROM test where 1 = 1"),
             (16, 0)
@@ -135,12 +132,20 @@ mod tests {
         );
         assert_eq!(
             get_read_written(&conn, "INSERT INTO test(id) SELECT id FROM test"),
-            (34, 34)
+            (34, 17)
+        );
+        assert_eq!(
+            get_read_written(
+                &conn,
+                "SELECT * FROM test WHERE id IN (SELECT id FROM test)"
+            ),
+            (68, 0)
         );
         assert_eq!(
             get_read_written(&conn, "INSERT INTO test VALUES (1), (2), (3), (4)"),
             (0, 4)
         );
+        assert_eq!(get_read_written(&conn, "SELECT COUNT(*) FROM test"), (1, 0));
     }
 
     #[test]

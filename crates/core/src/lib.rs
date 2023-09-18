@@ -31,7 +31,7 @@
 //! use libsql::{Database, Opts};
 //! use libsql_replication::{Frame, Frames, Replicator};
 //!
-//! let mut db = Database::open_with_sync("/tmp/test.db", "http://localhost:8080", "").await.unwrap();
+//! let mut db = Database::open_with_local_sync("/tmp/test.db").await.unwrap();
 //!
 //! let frames = Frames::Vec(vec![]);
 //! db.sync_frames(frames).unwrap();
@@ -52,6 +52,7 @@ mod v1;
 mod v2;
 
 pub mod errors;
+mod box_clone_service;
 pub use errors::Error;
 
 #[cfg(all(feature = "core", feature = "replication"))]
@@ -60,7 +61,7 @@ pub use v1::database::Opts;
 #[cfg(feature = "core")]
 pub use v1::{
     params,
-    params::{params_from_iter, Params, Value, ValueRef},
+    params::{params_from_iter, Value, ValueRef},
     version, version_number, RowsFuture,
 };
 
@@ -72,7 +73,7 @@ pub use v2::{
     statement::{Column, Statement},
     transaction,
     transaction::{Transaction, TransactionBehavior},
-    Connection, Database,
+    Connection, Database, OpenFlags,
 };
 
 #[cfg(feature = "core")]

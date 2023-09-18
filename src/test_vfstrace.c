@@ -787,7 +787,7 @@ static int vfstraceCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTimeOut){
 }
 
 /*
-** Return th3 emost recent error code and message
+** Return th3 most recent error code and message
 */
 static int vfstraceGetLastError(sqlite3_vfs *pVfs, int iErr, char *zErr){
   vfstrace_info *pInfo = (vfstrace_info*)pVfs->pAppData;

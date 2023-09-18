@@ -512,7 +512,9 @@ static const sqlite3_api_routines sqlite3Apis = {
   /* Version 3.40.0 and later */
   sqlite3_value_encoding,
   /* Version 3.41.0 and later */
-  sqlite3_is_interrupted
+  sqlite3_is_interrupted,
+  /* Version 3.43.0 and later */
+  sqlite3_stmt_explain
 };
 
 static const libsql_api_routines libsqlApis = {
@@ -597,6 +599,10 @@ static int sqlite3LoadExtension(
   ** See https://sqlite.org/forum/forumpost/24083b579d.
   */
   if( nMsg>SQLITE_MAX_PATHLEN ) goto extension_not_found;
+
+  /* Do not allow sqlite3_load_extension() to link to a copy of the
+  ** running application, by passing in an empty filename. */
+  if( nMsg==0 ) goto extension_not_found;
     
   handle = sqlite3OsDlOpen(pVfs, zFile);
 #if SQLITE_OS_UNIX || SQLITE_OS_WIN

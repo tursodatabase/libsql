@@ -1,5 +1,8 @@
+#![allow(dead_code)]
+
 use crate::v1::{
-    Database, Error, Params, Result, Rows, RowsFuture, Statement, Transaction, TransactionBehavior,
+    params::Params, Database, Error, Result, Rows, RowsFuture, Statement, Transaction,
+    TransactionBehavior,
 };
 
 use libsql_sys::ffi;
@@ -41,7 +44,7 @@ impl Connection {
                     .as_c_str()
                     .as_ptr() as *const _,
                 &mut raw,
-                ffi::SQLITE_OPEN_READWRITE as c_int | ffi::SQLITE_OPEN_CREATE as c_int,
+                db.flags.bits() as c_int,
                 std::ptr::null(),
             )
         };
@@ -51,6 +54,7 @@ impl Connection {
                 return Err(Error::ConnectionFailed(db_path));
             }
         }
+
         Ok(Connection {
             raw,
             drop_ref: Arc::new(()),
@@ -138,6 +142,63 @@ impl Connection {
     {
         let sql = sql.into();
         let mut sql = sql.as_str();
+
+        while !sql.is_empty() {
+            let stmt = self.prepare(sql)?;
+
+            if !stmt.inner.raw_stmt.is_null() {
+                stmt.step()?;
+            }
+
+            let tail = stmt.tail();
+
+            if tail == 0 || tail >= sql.len() {
+                break;
+            }
+
+            sql = &sql[tail..];
+        }
+
+        Ok(())
+    }
+
+    pub(crate) async fn execute_batch2<S>(&self, sql: S) -> Result<()>
+    where
+        S: Into<String>,
+    {
+        let sql = sql.into();
+        let mut sql = sql.as_str();
+
+        #[cfg(feature = "replication")]
+        {
+            if self.writer.is_some() {
+                let mut steps = Vec::new();
+                while !sql.is_empty() {
+                    let stmt = self.prepare(sql)?;
+                    let tail = stmt.tail();
+
+                    if tail == 0 || tail >= sql.len() {
+                        if !stmt.inner.raw_stmt.is_null() {
+                            steps.push(sql[..].to_string());
+                        }
+                        break;
+                    }
+
+                    let step = &sql[..tail];
+                    steps.push(step.to_string());
+
+                    sql = &sql[tail..];
+                }
+
+                let writer = self.writer.as_ref().unwrap();
+
+                writer
+                    .execute_batch(steps)
+                    .await
+                    .map_err(|e| Error::WriteDelegation(e.into()))?;
+                return Ok(());
+            }
+        }
 
         while !sql.is_empty() {
             let stmt = self.prepare(sql)?;

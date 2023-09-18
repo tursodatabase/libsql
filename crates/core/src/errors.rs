@@ -25,6 +25,18 @@ pub enum Error {
     Hrana(#[from] crate::v2::HranaError), // Not in rusqlite
     #[error("Write delegation: `{0}`")]
     WriteDelegation(crate::BoxError), // Not in rusqlite
+    #[error("bincode: `{0}`")]
+    Bincode(#[from] bincode::Error),
+    #[error("invalid column index")]
+    InvalidColumnIndex,
+    #[error("invalid column type")]
+    InvalidColumnType,
+}
+
+impl From<std::convert::Infallible> for Error {
+    fn from(_: std::convert::Infallible) -> Self {
+        unreachable!()
+    }
 }
 
 #[cfg(feature = "core")]

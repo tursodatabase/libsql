@@ -127,4 +127,30 @@ do_execsql_test 400 {
   1000 -    -   -
 }
 
+# Forum post https://sqlite.org/forum/forumpost/36ff78b2a3
+#
+ifcapable update_delete_limit {
+  reset_db
+  do_execsql_test 500 {
+    CREATE TABLE t1(abc INT, def INT);  
+    INSERT INTO t1 VALUES(0,0);
+    INSERT INTO t1 VALUES(0,0);
+    INSERT INTO t1 VALUES(0,0);
+    CREATE TABLE dual(dummy TEXT);  
+    INSERT INTO dual(dummy) VALUES('X');
+  } {}
+  
+  do_execsql_test 510 {
+    UPDATE t1
+      SET (abc, def)=(SELECT  x, 123)
+      FROM dual LEFT JOIN (SELECT 789 AS 'x' FROM dual) AS d2
+      LIMIT 2
+  }
+  
+  do_execsql_test 520 {
+    SELECT * FROM t1
+  } {789 123 789 123 0 0}
+}
+
+
 finish_test

@@ -57,13 +57,31 @@
 #define FTS5_MAX_LEVEL 64
 
 /*
+** There are two versions of the format used for the structure record:
+**
+**   1. the legacy format, that may be read by all fts5 versions, and
+**
+**   2. the V2 format, which is used by contentless_delete=1 databases.
+**
+** Both begin with a 4-byte "configuration cookie" value. Then, a legacy
+** format structure record contains a varint - the number of levels in
+** the structure. Whereas a V2 structure record contains the constant
+** 4 bytes [0xff 0x00 0x00 0x01]. This is unambiguous as the value of a
+** varint has to be at least 16256 to begin with "0xFF". And the default
+** maximum number of levels is 64. 
+**
+** See below for more on structure record formats.
+*/
+#define FTS5_STRUCTURE_V2 "\xFF\x00\x00\x01"
+
+/*
 ** Details:
 **
 ** The %_data table managed by this module,
 **
 **     CREATE TABLE %_data(id INTEGER PRIMARY KEY, block BLOB);
 **
-** , contains the following 5 types of records. See the comments surrounding
+** , contains the following 6 types of records. See the comments surrounding
 ** the FTS5_*_ROWID macros below for a description of how %_data rowids are 
 ** assigned to each fo them.
 **
@@ -71,13 +89,13 @@
 **
 **   The set of segments that make up an index - the index structure - are
 **   recorded in a single record within the %_data table. The record consists
-**   of a single 32-bit configuration cookie value followed by a list of 
-**   SQLite varints. If the FTS table features more than one index (because
-**   there are one or more prefix indexes), it is guaranteed that all share
-**   the same cookie value.
+**   of a single 32-bit configuration cookie value followed by a list of
+**   SQLite varints. 
 **
-**   Immediately following the configuration cookie, the record begins with
-**   three varints:
+**   If the structure record is a V2 record, the configuration cookie is 
+**   followed by the following 4 bytes: [0xFF 0x00 0x00 0x01]. 
+**
+**   Next, the record continues with three varints:
 **
 **     + number of levels,
 **     + total number of segments on all levels,
@@ -91,6 +109,12 @@
 **         + segment id (always > 0)
 **         + first leaf page number (often 1, always greater than 0)
 **         + final leaf page number
+**
+**      Then, for V2 structures only:
+**
+**         + lower origin counter value,
+**         + upper origin counter value,
+**         + the number of tombstone hash pages.
 **
 ** 2. The Averages Record:
 **
@@ -207,6 +231,38 @@
 **     * A list of delta-encoded varints - the first rowid on each subsequent
 **       child page. 
 **
+** 6. Tombstone Hash Page
+**
+**   These records are only ever present in contentless_delete=1 tables. 
+**   There are zero or more of these associated with each segment. They
+**   are used to store the tombstone rowids for rows contained in the
+**   associated segments.
+**
+**   The set of nHashPg tombstone hash pages associated with a single 
+**   segment together form a single hash table containing tombstone rowids.
+**   To find the page of the hash on which a key might be stored:
+**
+**       iPg = (rowid % nHashPg)
+**
+**   Then, within page iPg, which has nSlot slots:
+**
+**       iSlot = (rowid / nHashPg) % nSlot
+**
+**   Each tombstone hash page begins with an 8 byte header: 
+**
+**     1-byte:  Key-size (the size in bytes of each slot). Either 4 or 8.
+**     1-byte:  rowid-0-tombstone flag. This flag is only valid on the 
+**              first tombstone hash page for each segment (iPg=0). If set,
+**              the hash table contains rowid 0. If clear, it does not.
+**              Rowid 0 is handled specially.
+**     2-bytes: unused.
+**     4-bytes: Big-endian integer containing number of entries on page.
+**
+**   Following this are nSlot 4 or 8 byte slots (depending on the key-size
+**   in the first byte of the page header). The number of slots may be
+**   determined based on the size of the page record and the key-size:
+**
+**     nSlot = (nByte - 8) / key-size
 */
 
 /*
@@ -240,6 +296,7 @@
 
 #define FTS5_SEGMENT_ROWID(segid, pgno)       fts5_dri(segid, 0, 0, pgno)
 #define FTS5_DLIDX_ROWID(segid, height, pgno) fts5_dri(segid, 1, height, pgno)
+#define FTS5_TOMBSTONE_ROWID(segid,ipg)       fts5_dri(segid+(1<<16), 0, 0, ipg)
 
 #ifdef SQLITE_DEBUG
 int sqlite3Fts5Corrupt() { return SQLITE_CORRUPT_VTAB; }
@@ -275,6 +332,12 @@ struct Fts5Data {
 
 /*
 ** One object per %_data table.
+**
+** nContentlessDelete:
+**   The number of contentless delete operations since the most recent
+**   call to fts5IndexFlush() or fts5IndexDiscardData(). This is tracked
+**   so that extra auto-merge work can be done by fts5IndexFlush() to
+**   account for the delete operations.
 */
 struct Fts5Index {
   Fts5Config *pConfig;            /* Virtual table configuration */
@@ -289,6 +352,8 @@ struct Fts5Index {
   int nPendingData;               /* Current bytes of pending data */
   i64 iWriteRowid;                /* Rowid for current doc being written */
   int bDelete;                    /* Current write is a delete */
+  int nContentlessDelete;         /* Number of contentless delete ops */
+  int nPendingRow;                /* Number of INSERT in hash table */
 
   /* Error state. */
   int rc;                         /* Current error code */
@@ -323,11 +388,23 @@ struct Fts5DoclistIter {
 ** The contents of the "structure" record for each index are represented
 ** using an Fts5Structure record in memory. Which uses instances of the 
 ** other Fts5StructureXXX types as components.
+**
+** nOriginCntr:
+**   This value is set to non-zero for structure records created for
+**   contentlessdelete=1 tables only. In that case it represents the
+**   origin value to apply to the next top-level segment created.
 */
 struct Fts5StructureSegment {
   int iSegid;                     /* Segment id */
   int pgnoFirst;                  /* First leaf page number in segment */
   int pgnoLast;                   /* Last leaf page number in segment */
+
+  /* contentlessdelete=1 tables only: */
+  u64 iOrigin1;
+  u64 iOrigin2;
+  int nPgTombstone;               /* Number of tombstone hash table pages */
+  u64 nEntryTombstone;            /* Number of tombstone entries that "count" */
+  u64 nEntry;                     /* Number of rows in this segment */
 };
 struct Fts5StructureLevel {
   int nMerge;                     /* Number of segments in incr-merge */
@@ -337,6 +414,7 @@ struct Fts5StructureLevel {
 struct Fts5Structure {
   int nRef;                       /* Object reference count */
   u64 nWriteCounter;              /* Total leaves written to level 0 */
+  u64 nOriginCntr;                /* Origin value for next top-level segment */
   int nSegment;                   /* Total segments in this structure */
   int nLevel;                     /* Number of levels in this index */
   Fts5StructureLevel aLevel[1];   /* Array of nLevel level objects */
@@ -425,6 +503,13 @@ struct Fts5CResult {
 **
 ** iTermIdx:
 **     Index of current term on iTermLeafPgno.
+**
+** apTombstone/nTombstone:
+**     These are used for contentless_delete=1 tables only. When the cursor
+**     is first allocated, the apTombstone[] array is allocated so that it
+**     is large enough for all tombstones hash pages associated with the
+**     segment. The pages themselves are loaded lazily from the database as
+**     they are required.
 */
 struct Fts5SegIter {
   Fts5StructureSegment *pSeg;     /* Segment to iterate through */
@@ -433,6 +518,8 @@ struct Fts5SegIter {
   Fts5Data *pLeaf;                /* Current leaf data */
   Fts5Data *pNextLeaf;            /* Leaf page (iLeafPgno+1) */
   i64 iLeafOffset;                /* Byte offset within current leaf */
+  Fts5Data **apTombstone;         /* Array of tombstone pages */
+  int nTombstone;
 
   /* Next method */
   void (*xNext)(Fts5Index*, Fts5SegIter*, int*);
@@ -561,6 +648,60 @@ static void fts5PutU16(u8 *aOut, u16 iVal){
 static u16 fts5GetU16(const u8 *aIn){
   return ((u16)aIn[0] << 8) + aIn[1];
 } 
+
+/*
+** The only argument points to a buffer at least 8 bytes in size. This
+** function interprets the first 8 bytes of the buffer as a 64-bit big-endian
+** unsigned integer and returns the result.
+*/
+static u64 fts5GetU64(u8 *a){
+  return ((u64)a[0] << 56)
+       + ((u64)a[1] << 48)
+       + ((u64)a[2] << 40)
+       + ((u64)a[3] << 32)
+       + ((u64)a[4] << 24)
+       + ((u64)a[5] << 16)
+       + ((u64)a[6] << 8)
+       + ((u64)a[7] << 0);
+}
+
+/*
+** The only argument points to a buffer at least 4 bytes in size. This
+** function interprets the first 4 bytes of the buffer as a 32-bit big-endian
+** unsigned integer and returns the result.
+*/
+static u32 fts5GetU32(const u8 *a){
+  return ((u32)a[0] << 24)
+       + ((u32)a[1] << 16)
+       + ((u32)a[2] << 8)
+       + ((u32)a[3] << 0);
+} 
+
+/*
+** Write iVal, formated as a 64-bit big-endian unsigned integer, to the
+** buffer indicated by the first argument.
+*/
+static void fts5PutU64(u8 *a, u64 iVal){
+  a[0] = ((iVal >> 56) & 0xFF);
+  a[1] = ((iVal >> 48) & 0xFF);
+  a[2] = ((iVal >> 40) & 0xFF);
+  a[3] = ((iVal >> 32) & 0xFF);
+  a[4] = ((iVal >> 24) & 0xFF);
+  a[5] = ((iVal >> 16) & 0xFF);
+  a[6] = ((iVal >>  8) & 0xFF);
+  a[7] = ((iVal >>  0) & 0xFF);
+}
+
+/*
+** Write iVal, formated as a 32-bit big-endian unsigned integer, to the
+** buffer indicated by the first argument.
+*/
+static void fts5PutU32(u8 *a, u32 iVal){
+  a[0] = ((iVal >> 24) & 0xFF);
+  a[1] = ((iVal >> 16) & 0xFF);
+  a[2] = ((iVal >>  8) & 0xFF);
+  a[3] = ((iVal >>  0) & 0xFF);
+}
 
 /*
 ** Allocate and return a buffer at least nByte bytes in size.
@@ -789,10 +930,17 @@ static void fts5DataDelete(Fts5Index *p, i64 iFirst, i64 iLast){
 /*
 ** Remove all records associated with segment iSegid.
 */
-static void fts5DataRemoveSegment(Fts5Index *p, int iSegid){
+static void fts5DataRemoveSegment(Fts5Index *p, Fts5StructureSegment *pSeg){
+  int iSegid = pSeg->iSegid;
   i64 iFirst = FTS5_SEGMENT_ROWID(iSegid, 0);
   i64 iLast = FTS5_SEGMENT_ROWID(iSegid+1, 0)-1;
   fts5DataDelete(p, iFirst, iLast);
+
+  if( pSeg->nPgTombstone ){
+    i64 iTomb1 = FTS5_TOMBSTONE_ROWID(iSegid, 0);
+    i64 iTomb2 = FTS5_TOMBSTONE_ROWID(iSegid, pSeg->nPgTombstone-1);
+    fts5DataDelete(p, iTomb1, iTomb2);
+  }
   if( p->pIdxDeleter==0 ){
     Fts5Config *pConfig = p->pConfig;
     fts5IndexPrepareStmt(p, &p->pIdxDeleter, sqlite3_mprintf(
@@ -903,10 +1051,18 @@ static int fts5StructureDecode(
   int nSegment = 0;
   sqlite3_int64 nByte;            /* Bytes of space to allocate at pRet */
   Fts5Structure *pRet = 0;        /* Structure object to return */
+  int bStructureV2 = 0;           /* True for FTS5_STRUCTURE_V2 */
+  u64 nOriginCntr = 0;            /* Largest origin value seen so far */
 
   /* Grab the cookie value */
   if( piCookie ) *piCookie = sqlite3Fts5Get32(pData);
   i = 4;
+
+  /* Check if this is a V2 structure record. Set bStructureV2 if it is. */
+  if( 0==memcmp(&pData[i], FTS5_STRUCTURE_V2, 4) ){
+    i += 4;
+    bStructureV2 = 1;
+  }
 
   /* Read the total number of levels and segments from the start of the
   ** structure record.  */
@@ -958,6 +1114,14 @@ static int fts5StructureDecode(
           i += fts5GetVarint32(&pData[i], pSeg->iSegid);
           i += fts5GetVarint32(&pData[i], pSeg->pgnoFirst);
           i += fts5GetVarint32(&pData[i], pSeg->pgnoLast);
+          if( bStructureV2 ){
+            i += fts5GetVarint(&pData[i], &pSeg->iOrigin1);
+            i += fts5GetVarint(&pData[i], &pSeg->iOrigin2);
+            i += fts5GetVarint32(&pData[i], pSeg->nPgTombstone);
+            i += fts5GetVarint(&pData[i], &pSeg->nEntryTombstone);
+            i += fts5GetVarint(&pData[i], &pSeg->nEntry);
+            nOriginCntr = MAX(nOriginCntr, pSeg->iOrigin2);
+          }
           if( pSeg->pgnoLast<pSeg->pgnoFirst ){
             rc = FTS5_CORRUPT;
             break;
@@ -968,6 +1132,9 @@ static int fts5StructureDecode(
       }
     }
     if( nSegment!=0 && rc==SQLITE_OK ) rc = FTS5_CORRUPT;
+    if( bStructureV2 ){
+      pRet->nOriginCntr = nOriginCntr+1;
+    }
 
     if( rc!=SQLITE_OK ){
       fts5StructureRelease(pRet);
@@ -1180,6 +1347,7 @@ static void fts5StructureWrite(Fts5Index *p, Fts5Structure *pStruct){
     Fts5Buffer buf;               /* Buffer to serialize record into */
     int iLvl;                     /* Used to iterate through levels */
     int iCookie;                  /* Cookie value to store */
+    int nHdr = (pStruct->nOriginCntr>0 ? (4+4+9+9+9) : (4+9+9));
 
     assert( pStruct->nSegment==fts5StructureCountSegments(pStruct) );
     memset(&buf, 0, sizeof(Fts5Buffer));
@@ -1188,9 +1356,12 @@ static void fts5StructureWrite(Fts5Index *p, Fts5Structure *pStruct){
     iCookie = p->pConfig->iCookie;
     if( iCookie<0 ) iCookie = 0;
 
-    if( 0==sqlite3Fts5BufferSize(&p->rc, &buf, 4+9+9+9) ){
+    if( 0==sqlite3Fts5BufferSize(&p->rc, &buf, nHdr) ){
       sqlite3Fts5Put32(buf.p, iCookie);
       buf.n = 4;
+      if( pStruct->nOriginCntr>0 ){
+        fts5BufferSafeAppendBlob(&buf, FTS5_STRUCTURE_V2, 4);
+      }
       fts5BufferSafeAppendVarint(&buf, pStruct->nLevel);
       fts5BufferSafeAppendVarint(&buf, pStruct->nSegment);
       fts5BufferSafeAppendVarint(&buf, (i64)pStruct->nWriteCounter);
@@ -1204,9 +1375,17 @@ static void fts5StructureWrite(Fts5Index *p, Fts5Structure *pStruct){
       assert( pLvl->nMerge<=pLvl->nSeg );
 
       for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
-        fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iSegid);
-        fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].pgnoFirst);
-        fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].pgnoLast);
+        Fts5StructureSegment *pSeg = &pLvl->aSeg[iSeg];
+        fts5BufferAppendVarint(&p->rc, &buf, pSeg->iSegid);
+        fts5BufferAppendVarint(&p->rc, &buf, pSeg->pgnoFirst);
+        fts5BufferAppendVarint(&p->rc, &buf, pSeg->pgnoLast);
+        if( pStruct->nOriginCntr>0 ){
+          fts5BufferAppendVarint(&p->rc, &buf, pSeg->iOrigin1);
+          fts5BufferAppendVarint(&p->rc, &buf, pSeg->iOrigin2);
+          fts5BufferAppendVarint(&p->rc, &buf, pSeg->nPgTombstone);
+          fts5BufferAppendVarint(&p->rc, &buf, pSeg->nEntryTombstone);
+          fts5BufferAppendVarint(&p->rc, &buf, pSeg->nEntry);
+        }
       }
     }
 
@@ -1730,6 +1909,23 @@ static void fts5SegIterSetNext(Fts5Index *p, Fts5SegIter *pIter){
 }
 
 /*
+** Allocate a tombstone hash page array (pIter->apTombstone) for the 
+** iterator passed as the second argument. If an OOM error occurs, leave
+** an error in the Fts5Index object.
+*/
+static void fts5SegIterAllocTombstone(Fts5Index *p, Fts5SegIter *pIter){
+  const int nTomb = pIter->pSeg->nPgTombstone;
+  if( nTomb>0 ){
+    Fts5Data **apTomb = 0;
+    apTomb = (Fts5Data**)sqlite3Fts5MallocZero(&p->rc, sizeof(Fts5Data)*nTomb);
+    if( apTomb ){
+      pIter->apTombstone = apTomb;
+      pIter->nTombstone = nTomb;
+    }
+  }
+}
+
+/*
 ** Initialize the iterator object pIter to iterate through the entries in
 ** segment pSeg. The iterator is left pointing to the first entry when 
 ** this function returns.
@@ -1770,6 +1966,7 @@ static void fts5SegIterInit(
     pIter->iPgidxOff = pIter->pLeaf->szLeaf+1;
     fts5SegIterLoadTerm(p, pIter, 0);
     fts5SegIterLoadNPos(p, pIter);
+    fts5SegIterAllocTombstone(p, pIter);
   }
 }
 
@@ -2471,6 +2668,7 @@ static void fts5SegIterSeekInit(
   }
 
   fts5SegIterSetNext(p, pIter);
+  fts5SegIterAllocTombstone(p, pIter);
 
   /* Either:
   **
@@ -2552,12 +2750,27 @@ static void fts5SegIterHashInit(
 }
 
 /*
+** Array ap[] contains n elements. Release each of these elements using
+** fts5DataRelease(). Then free the array itself using sqlite3_free().
+*/
+static void fts5IndexFreeArray(Fts5Data **ap, int n){
+  if( ap ){
+    int ii;
+    for(ii=0; ii<n; ii++){
+      fts5DataRelease(ap[ii]);
+    }
+    sqlite3_free(ap);
+  }
+}
+
+/*
 ** Zero the iterator passed as the only argument.
 */
 static void fts5SegIterClear(Fts5SegIter *pIter){
   fts5BufferFree(&pIter->term);
   fts5DataRelease(pIter->pLeaf);
   fts5DataRelease(pIter->pNextLeaf);
+  fts5IndexFreeArray(pIter->apTombstone, pIter->nTombstone);
   fts5DlidxIterFree(pIter->pDlidx);
   sqlite3_free(pIter->aRowidOffset);
   memset(pIter, 0, sizeof(Fts5SegIter));
@@ -2896,6 +3109,84 @@ static void fts5MultiIterSetEof(Fts5Iter *pIter){
 }
 
 /*
+** The argument to this macro must be an Fts5Data structure containing a
+** tombstone hash page. This macro returns the key-size of the hash-page.
+*/
+#define TOMBSTONE_KEYSIZE(pPg) (pPg->p[0]==4 ? 4 : 8)
+
+#define TOMBSTONE_NSLOT(pPg)   \
+  ((pPg->nn > 16) ? ((pPg->nn-8) / TOMBSTONE_KEYSIZE(pPg)) : 1)
+
+/*
+** Query a single tombstone hash table for rowid iRowid. Return true if
+** it is found or false otherwise. The tombstone hash table is one of
+** nHashTable tables.
+*/
+static int fts5IndexTombstoneQuery(
+  Fts5Data *pHash,                /* Hash table page to query */
+  int nHashTable,                 /* Number of pages attached to segment */
+  u64 iRowid                      /* Rowid to query hash for */
+){
+  const int szKey = TOMBSTONE_KEYSIZE(pHash);
+  const int nSlot = TOMBSTONE_NSLOT(pHash);
+  int iSlot = (iRowid / nHashTable) % nSlot;
+  int nCollide = nSlot;
+
+  if( iRowid==0 ){
+    return pHash->p[1];
+  }else if( szKey==4 ){
+    u32 *aSlot = (u32*)&pHash->p[8];
+    while( aSlot[iSlot] ){
+      if( fts5GetU32((u8*)&aSlot[iSlot])==iRowid ) return 1;
+      if( nCollide--==0 ) break;
+      iSlot = (iSlot+1)%nSlot;
+    }
+  }else{
+    u64 *aSlot = (u64*)&pHash->p[8];
+    while( aSlot[iSlot] ){
+      if( fts5GetU64((u8*)&aSlot[iSlot])==iRowid ) return 1;
+      if( nCollide--==0 ) break;
+      iSlot = (iSlot+1)%nSlot;
+    }
+  }
+
+  return 0;
+}
+
+/*
+** Return true if the iterator passed as the only argument points
+** to an segment entry for which there is a tombstone. Return false
+** if there is no tombstone or if the iterator is already at EOF.
+*/
+static int fts5MultiIterIsDeleted(Fts5Iter *pIter){
+  int iFirst = pIter->aFirst[1].iFirst;
+  Fts5SegIter *pSeg = &pIter->aSeg[iFirst];
+
+  if( pSeg->pLeaf && pSeg->nTombstone ){
+    /* Figure out which page the rowid might be present on. */
+    int iPg = ((u64)pSeg->iRowid) % pSeg->nTombstone;
+    assert( iPg>=0 );
+
+    /* If tombstone hash page iPg has not yet been loaded from the 
+    ** database, load it now. */
+    if( pSeg->apTombstone[iPg]==0 ){
+      pSeg->apTombstone[iPg] = fts5DataRead(pIter->pIndex,
+          FTS5_TOMBSTONE_ROWID(pSeg->pSeg->iSegid, iPg)
+      );
+      if( pSeg->apTombstone[iPg]==0 ) return 0;
+    }
+
+    return fts5IndexTombstoneQuery(
+        pSeg->apTombstone[iPg],
+        pSeg->nTombstone,
+        pSeg->iRowid
+    );
+  }
+
+  return 0;
+}
+
+/*
 ** Move the iterator to the next entry. 
 **
 ** If an error occurs, an error code is left in Fts5Index.rc. It is not 
@@ -2932,7 +3223,9 @@ static void fts5MultiIterNext(
 
     fts5AssertMultiIterSetup(p, pIter);
     assert( pSeg==&pIter->aSeg[pIter->aFirst[1].iFirst] && pSeg->pLeaf );
-    if( pIter->bSkipEmpty==0 || pSeg->nPos ){
+    if( (pIter->bSkipEmpty==0 || pSeg->nPos) 
+      && 0==fts5MultiIterIsDeleted(pIter)
+    ){
       pIter->xSetOutputs(pIter, pSeg);
       return;
     }
@@ -2964,7 +3257,9 @@ static void fts5MultiIterNext2(
       }
       fts5AssertMultiIterSetup(p, pIter);
 
-    }while( fts5MultiIterIsEmpty(p, pIter) );
+    }while( (fts5MultiIterIsEmpty(p, pIter) || fts5MultiIterIsDeleted(pIter)) 
+         && (p->rc==SQLITE_OK)
+    );
   }
 }
 
@@ -3519,7 +3814,9 @@ static void fts5MultiIterNew(
     fts5MultiIterSetEof(pNew);
     fts5AssertMultiIterSetup(p, pNew);
 
-    if( pNew->bSkipEmpty && fts5MultiIterIsEmpty(p, pNew) ){
+    if( (pNew->bSkipEmpty && fts5MultiIterIsEmpty(p, pNew))
+     || fts5MultiIterIsDeleted(pNew)
+    ){
       fts5MultiIterNext(p, pNew, 0, 0);
     }else if( pNew->base.bEof==0 ){
       Fts5SegIter *pSeg = &pNew->aSeg[pNew->aFirst[1].iFirst];
@@ -3697,7 +3994,9 @@ static void fts5IndexDiscardData(Fts5Index *p){
   if( p->pHash ){
     sqlite3Fts5HashClear(p->pHash);
     p->nPendingData = 0;
+    p->nPendingRow = 0;
   }
+  p->nContentlessDelete = 0;
 }
 
 /*
@@ -4334,6 +4633,12 @@ static void fts5IndexMergeLevel(
 
     /* Read input from all segments in the input level */
     nInput = pLvl->nSeg;
+
+    /* Set the range of origins that will go into the output segment. */
+    if( pStruct->nOriginCntr>0 ){
+      pSeg->iOrigin1 = pLvl->aSeg[0].iOrigin1;
+      pSeg->iOrigin2 = pLvl->aSeg[pLvl->nSeg-1].iOrigin2;
+    }
   }
   bOldest = (pLvlOut->nSeg==1 && pStruct->nLevel==iLvl+2);
 
@@ -4393,8 +4698,11 @@ static void fts5IndexMergeLevel(
     int i;
 
     /* Remove the redundant segments from the %_data table */
+    assert( pSeg->nEntry==0 );
     for(i=0; i<nInput; i++){
-      fts5DataRemoveSegment(p, pLvl->aSeg[i].iSegid);
+      Fts5StructureSegment *pOld = &pLvl->aSeg[i];
+      pSeg->nEntry += (pOld->nEntry - pOld->nEntryTombstone);
+      fts5DataRemoveSegment(p, pOld);
     }
 
     /* Remove the redundant segments from the input level */
@@ -4421,6 +4729,43 @@ static void fts5IndexMergeLevel(
 }
 
 /*
+** If this is not a contentless_delete=1 table, or if the 'deletemerge'
+** configuration option is set to 0, then this function always returns -1.
+** Otherwise, it searches the structure object passed as the second argument
+** for a level suitable for merging due to having a large number of 
+** tombstones in the tombstone hash. If one is found, its index is returned.
+** Otherwise, if there is no suitable level, -1.
+*/
+static int fts5IndexFindDeleteMerge(Fts5Index *p, Fts5Structure *pStruct){
+  Fts5Config *pConfig = p->pConfig;
+  int iRet = -1;
+  if( pConfig->bContentlessDelete && pConfig->nDeleteMerge>0 ){
+    int ii;
+    int nBest = 0;
+
+    for(ii=0; ii<pStruct->nLevel; ii++){
+      Fts5StructureLevel *pLvl = &pStruct->aLevel[ii];
+      i64 nEntry = 0;
+      i64 nTomb = 0;
+      int iSeg;
+      for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
+        nEntry += pLvl->aSeg[iSeg].nEntry;
+        nTomb += pLvl->aSeg[iSeg].nEntryTombstone;
+      }
+      assert_nc( nEntry>0 || pLvl->nSeg==0 );
+      if( nEntry>0 ){
+        int nPercent = (nTomb * 100) / nEntry;
+        if( nPercent>=pConfig->nDeleteMerge && nPercent>nBest ){
+          iRet = ii;
+          nBest = nPercent;
+        }
+      }
+    }
+  }
+  return iRet;
+}
+
+/*
 ** Do up to nPg pages of automerge work on the index.
 **
 ** Return true if any changes were actually made, or false otherwise.
@@ -4439,14 +4784,15 @@ static int fts5IndexMerge(
     int iBestLvl = 0;           /* Level offering the most input segments */
     int nBest = 0;              /* Number of input segments on best level */
 
-    /* Set iBestLvl to the level to read input segments from. */
+    /* Set iBestLvl to the level to read input segments from. Or to -1 if
+    ** there is no level suitable to merge segments from.  */
     assert( pStruct->nLevel>0 );
     for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
       Fts5StructureLevel *pLvl = &pStruct->aLevel[iLvl];
       if( pLvl->nMerge ){
         if( pLvl->nMerge>nBest ){
           iBestLvl = iLvl;
-          nBest = pLvl->nMerge;
+          nBest = nMin;
         }
         break;
       }
@@ -4455,22 +4801,18 @@ static int fts5IndexMerge(
         iBestLvl = iLvl;
       }
     }
-
-    /* If nBest is still 0, then the index must be empty. */
-#ifdef SQLITE_DEBUG
-    for(iLvl=0; nBest==0 && iLvl<pStruct->nLevel; iLvl++){
-      assert( pStruct->aLevel[iLvl].nSeg==0 );
+    if( nBest<nMin ){
+      iBestLvl = fts5IndexFindDeleteMerge(p, pStruct);
     }
-#endif
 
-    if( nBest<nMin && pStruct->aLevel[iBestLvl].nMerge==0 ){
-      break;
-    }
+    if( iBestLvl<0 ) break;
     bRet = 1;
     fts5IndexMergeLevel(p, &pStruct, iBestLvl, &nRem);
     if( p->rc==SQLITE_OK && pStruct->aLevel[iBestLvl].nMerge==0 ){
       fts5StructurePromote(p, iBestLvl+1, pStruct);
     }
+
+    if( nMin==1 ) nMin = 2;
   }
   *ppStruct = pStruct;
   return bRet;
@@ -4655,9 +4997,13 @@ static void fts5SecureDeleteOverflow(
         int i1 = pLeaf->szLeaf;
         int i2 = 0;
 
+        i1 += fts5GetVarint32(&aPg[i1], iFirst);
+        if( iFirst<iNext ){
+          p->rc = FTS5_CORRUPT;
+          break;
+        }
         aIdx = sqlite3Fts5MallocZero(&p->rc, (pLeaf->nn-pLeaf->szLeaf)+2);
         if( aIdx==0 ) break;
-        i1 += fts5GetVarint32(&aPg[i1], iFirst);
         i2 = sqlite3Fts5PutVarint(aIdx, iFirst-nShift);
         if( i1<pLeaf->nn ){
           memcpy(&aIdx[i2], &aPg[i1], pLeaf->nn-i1);
@@ -4840,7 +5186,9 @@ static void fts5DoSecureDelete(
           iOff += sqlite3Fts5PutVarint(&aPg[iOff], nPrefix);
         }
         iOff += sqlite3Fts5PutVarint(&aPg[iOff], nSuffix);
-        if( nPrefix2>nPrefix ){
+        if( nPrefix2>pSeg->term.n ){
+          p->rc = FTS5_CORRUPT;
+        }else if( nPrefix2>nPrefix ){
           memcpy(&aPg[iOff], &pSeg->term.p[nPrefix], nPrefix2-nPrefix);
           iOff += (nPrefix2-nPrefix);
         }
@@ -4977,187 +5325,197 @@ static void fts5FlushOneHash(Fts5Index *p){
   /* Obtain a reference to the index structure and allocate a new segment-id
   ** for the new level-0 segment.  */
   pStruct = fts5StructureRead(p);
-  iSegid = fts5AllocateSegid(p, pStruct);
   fts5StructureInvalidate(p);
 
-  if( iSegid ){
-    const int pgsz = p->pConfig->pgsz;
-    int eDetail = p->pConfig->eDetail;
-    int bSecureDelete = p->pConfig->bSecureDelete;
-    Fts5StructureSegment *pSeg;   /* New segment within pStruct */
-    Fts5Buffer *pBuf;             /* Buffer in which to assemble leaf page */
-    Fts5Buffer *pPgidx;           /* Buffer in which to assemble pgidx */
-
-    Fts5SegWriter writer;
-    fts5WriteInit(p, &writer, iSegid);
-
-    pBuf = &writer.writer.buf;
-    pPgidx = &writer.writer.pgidx;
-
-    /* fts5WriteInit() should have initialized the buffers to (most likely)
-    ** the maximum space required. */
-    assert( p->rc || pBuf->nSpace>=(pgsz + FTS5_DATA_PADDING) );
-    assert( p->rc || pPgidx->nSpace>=(pgsz + FTS5_DATA_PADDING) );
-
-    /* Begin scanning through hash table entries. This loop runs once for each
-    ** term/doclist currently stored within the hash table. */
-    if( p->rc==SQLITE_OK ){
-      p->rc = sqlite3Fts5HashScanInit(pHash, 0, 0);
-    }
-    while( p->rc==SQLITE_OK && 0==sqlite3Fts5HashScanEof(pHash) ){
-      const char *zTerm;          /* Buffer containing term */
-      int nTerm;                  /* Size of zTerm in bytes */
-      const u8 *pDoclist;         /* Pointer to doclist for this term */
-      int nDoclist;               /* Size of doclist in bytes */
-
-      /* Get the term and doclist for this entry. */
-      sqlite3Fts5HashScanEntry(pHash, &zTerm, &pDoclist, &nDoclist);
-      nTerm = (int)strlen(zTerm);
-      if( bSecureDelete==0 ){
-        fts5WriteAppendTerm(p, &writer, nTerm, (const u8*)zTerm);
-        if( p->rc!=SQLITE_OK ) break;
-        assert( writer.bFirstRowidInPage==0 );
+  if( sqlite3Fts5HashIsEmpty(pHash)==0 ){
+    iSegid = fts5AllocateSegid(p, pStruct);
+    if( iSegid ){
+      const int pgsz = p->pConfig->pgsz;
+      int eDetail = p->pConfig->eDetail;
+      int bSecureDelete = p->pConfig->bSecureDelete;
+      Fts5StructureSegment *pSeg; /* New segment within pStruct */
+      Fts5Buffer *pBuf;           /* Buffer in which to assemble leaf page */
+      Fts5Buffer *pPgidx;         /* Buffer in which to assemble pgidx */
+  
+      Fts5SegWriter writer;
+      fts5WriteInit(p, &writer, iSegid);
+  
+      pBuf = &writer.writer.buf;
+      pPgidx = &writer.writer.pgidx;
+  
+      /* fts5WriteInit() should have initialized the buffers to (most likely)
+      ** the maximum space required. */
+      assert( p->rc || pBuf->nSpace>=(pgsz + FTS5_DATA_PADDING) );
+      assert( p->rc || pPgidx->nSpace>=(pgsz + FTS5_DATA_PADDING) );
+  
+      /* Begin scanning through hash table entries. This loop runs once for each
+      ** term/doclist currently stored within the hash table. */
+      if( p->rc==SQLITE_OK ){
+        p->rc = sqlite3Fts5HashScanInit(pHash, 0, 0);
       }
-
-      if( !bSecureDelete && pgsz>=(pBuf->n + pPgidx->n + nDoclist + 1) ){
-        /* The entire doclist will fit on the current leaf. */
-        fts5BufferSafeAppendBlob(pBuf, pDoclist, nDoclist);
-      }else{
-        int bTermWritten = !bSecureDelete;
-        i64 iRowid = 0;
-        i64 iPrev = 0;
-        int iOff = 0;
-
-        /* The entire doclist will not fit on this leaf. The following 
-        ** loop iterates through the poslists that make up the current 
-        ** doclist.  */
-        while( p->rc==SQLITE_OK && iOff<nDoclist ){
-          u64 iDelta = 0;
-          iOff += fts5GetVarint(&pDoclist[iOff], &iDelta);
-          iRowid += iDelta;
-
-          /* If in secure delete mode, and if this entry in the poslist is
-          ** in fact a delete, then edit the existing segments directly
-          ** using fts5FlushSecureDelete().  */
-          if( bSecureDelete ){
-            if( eDetail==FTS5_DETAIL_NONE ){
-              if( iOff<nDoclist && pDoclist[iOff]==0x00 ){
-                fts5FlushSecureDelete(p, pStruct, zTerm, iRowid);
-                iOff++;
+      while( p->rc==SQLITE_OK && 0==sqlite3Fts5HashScanEof(pHash) ){
+        const char *zTerm;        /* Buffer containing term */
+        int nTerm;                /* Size of zTerm in bytes */
+        const u8 *pDoclist;       /* Pointer to doclist for this term */
+        int nDoclist;             /* Size of doclist in bytes */
+  
+        /* Get the term and doclist for this entry. */
+        sqlite3Fts5HashScanEntry(pHash, &zTerm, &pDoclist, &nDoclist);
+        nTerm = (int)strlen(zTerm);
+        if( bSecureDelete==0 ){
+          fts5WriteAppendTerm(p, &writer, nTerm, (const u8*)zTerm);
+          if( p->rc!=SQLITE_OK ) break;
+          assert( writer.bFirstRowidInPage==0 );
+        }
+  
+        if( !bSecureDelete && pgsz>=(pBuf->n + pPgidx->n + nDoclist + 1) ){
+          /* The entire doclist will fit on the current leaf. */
+          fts5BufferSafeAppendBlob(pBuf, pDoclist, nDoclist);
+        }else{
+          int bTermWritten = !bSecureDelete;
+          i64 iRowid = 0;
+          i64 iPrev = 0;
+          int iOff = 0;
+  
+          /* The entire doclist will not fit on this leaf. The following 
+          ** loop iterates through the poslists that make up the current 
+          ** doclist.  */
+          while( p->rc==SQLITE_OK && iOff<nDoclist ){
+            u64 iDelta = 0;
+            iOff += fts5GetVarint(&pDoclist[iOff], &iDelta);
+            iRowid += iDelta;
+  
+            /* If in secure delete mode, and if this entry in the poslist is
+            ** in fact a delete, then edit the existing segments directly
+            ** using fts5FlushSecureDelete().  */
+            if( bSecureDelete ){
+              if( eDetail==FTS5_DETAIL_NONE ){
                 if( iOff<nDoclist && pDoclist[iOff]==0x00 ){
+                  fts5FlushSecureDelete(p, pStruct, zTerm, iRowid);
                   iOff++;
-                  nDoclist = 0;
-                }else{
+                  if( iOff<nDoclist && pDoclist[iOff]==0x00 ){
+                    iOff++;
+                    nDoclist = 0;
+                  }else{
+                    continue;
+                  }
+                }
+              }else if( (pDoclist[iOff] & 0x01) ){
+                fts5FlushSecureDelete(p, pStruct, zTerm, iRowid);
+                if( p->rc!=SQLITE_OK || pDoclist[iOff]==0x01 ){
+                  iOff++;
                   continue;
                 }
               }
-            }else if( (pDoclist[iOff] & 0x01) ){
-              fts5FlushSecureDelete(p, pStruct, zTerm, iRowid);
-              if( p->rc!=SQLITE_OK || pDoclist[iOff]==0x01 ){
-                iOff++;
-                continue;
-              }
             }
-          }
-
-          if( p->rc==SQLITE_OK && bTermWritten==0 ){
-            fts5WriteAppendTerm(p, &writer, nTerm, (const u8*)zTerm);
-            bTermWritten = 1;
-            assert( p->rc!=SQLITE_OK || writer.bFirstRowidInPage==0 );
-          }
-          
-          if( writer.bFirstRowidInPage ){
-            fts5PutU16(&pBuf->p[0], (u16)pBuf->n);   /* first rowid on page */
-            pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid);
-            writer.bFirstRowidInPage = 0;
-            fts5WriteDlidxAppend(p, &writer, iRowid);
-          }else{
-            pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid-iPrev);
-          }
-          if( p->rc!=SQLITE_OK ) break;
-          assert( pBuf->n<=pBuf->nSpace );
-          iPrev = iRowid;
-
-          if( eDetail==FTS5_DETAIL_NONE ){
-            if( iOff<nDoclist && pDoclist[iOff]==0 ){
-              pBuf->p[pBuf->n++] = 0;
-              iOff++;
+  
+            if( p->rc==SQLITE_OK && bTermWritten==0 ){
+              fts5WriteAppendTerm(p, &writer, nTerm, (const u8*)zTerm);
+              bTermWritten = 1;
+              assert( p->rc!=SQLITE_OK || writer.bFirstRowidInPage==0 );
+            }
+            
+            if( writer.bFirstRowidInPage ){
+              fts5PutU16(&pBuf->p[0], (u16)pBuf->n);   /* first rowid on page */
+              pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid);
+              writer.bFirstRowidInPage = 0;
+              fts5WriteDlidxAppend(p, &writer, iRowid);
+            }else{
+              u64 iRowidDelta = (u64)iRowid - (u64)iPrev;
+              pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowidDelta);
+            }
+            if( p->rc!=SQLITE_OK ) break;
+            assert( pBuf->n<=pBuf->nSpace );
+            iPrev = iRowid;
+  
+            if( eDetail==FTS5_DETAIL_NONE ){
               if( iOff<nDoclist && pDoclist[iOff]==0 ){
                 pBuf->p[pBuf->n++] = 0;
                 iOff++;
+                if( iOff<nDoclist && pDoclist[iOff]==0 ){
+                  pBuf->p[pBuf->n++] = 0;
+                  iOff++;
+                }
               }
-            }
-            if( (pBuf->n + pPgidx->n)>=pgsz ){
-              fts5WriteFlushLeaf(p, &writer);
-            }
-          }else{
-            int bDummy;
-            int nPos;
-            int nCopy = fts5GetPoslistSize(&pDoclist[iOff], &nPos, &bDummy);
-            nCopy += nPos;
-            if( (pBuf->n + pPgidx->n + nCopy) <= pgsz ){
-              /* The entire poslist will fit on the current leaf. So copy
-              ** it in one go. */
-              fts5BufferSafeAppendBlob(pBuf, &pDoclist[iOff], nCopy);
+              if( (pBuf->n + pPgidx->n)>=pgsz ){
+                fts5WriteFlushLeaf(p, &writer);
+              }
             }else{
-              /* The entire poslist will not fit on this leaf. So it needs
-              ** to be broken into sections. The only qualification being
-              ** that each varint must be stored contiguously.  */
-              const u8 *pPoslist = &pDoclist[iOff];
-              int iPos = 0;
-              while( p->rc==SQLITE_OK ){
-                int nSpace = pgsz - pBuf->n - pPgidx->n;
-                int n = 0;
-                if( (nCopy - iPos)<=nSpace ){
-                  n = nCopy - iPos;
-                }else{
-                  n = fts5PoslistPrefix(&pPoslist[iPos], nSpace);
+              int bDummy;
+              int nPos;
+              int nCopy = fts5GetPoslistSize(&pDoclist[iOff], &nPos, &bDummy);
+              nCopy += nPos;
+              if( (pBuf->n + pPgidx->n + nCopy) <= pgsz ){
+                /* The entire poslist will fit on the current leaf. So copy
+                ** it in one go. */
+                fts5BufferSafeAppendBlob(pBuf, &pDoclist[iOff], nCopy);
+              }else{
+                /* The entire poslist will not fit on this leaf. So it needs
+                ** to be broken into sections. The only qualification being
+                ** that each varint must be stored contiguously.  */
+                const u8 *pPoslist = &pDoclist[iOff];
+                int iPos = 0;
+                while( p->rc==SQLITE_OK ){
+                  int nSpace = pgsz - pBuf->n - pPgidx->n;
+                  int n = 0;
+                  if( (nCopy - iPos)<=nSpace ){
+                    n = nCopy - iPos;
+                  }else{
+                    n = fts5PoslistPrefix(&pPoslist[iPos], nSpace);
+                  }
+                  assert( n>0 );
+                  fts5BufferSafeAppendBlob(pBuf, &pPoslist[iPos], n);
+                  iPos += n;
+                  if( (pBuf->n + pPgidx->n)>=pgsz ){
+                    fts5WriteFlushLeaf(p, &writer);
+                  }
+                  if( iPos>=nCopy ) break;
                 }
-                assert( n>0 );
-                fts5BufferSafeAppendBlob(pBuf, &pPoslist[iPos], n);
-                iPos += n;
-                if( (pBuf->n + pPgidx->n)>=pgsz ){
-                  fts5WriteFlushLeaf(p, &writer);
-                }
-                if( iPos>=nCopy ) break;
               }
+              iOff += nCopy;
             }
-            iOff += nCopy;
           }
         }
+  
+        /* TODO2: Doclist terminator written here. */
+        /* pBuf->p[pBuf->n++] = '\0'; */
+        assert( pBuf->n<=pBuf->nSpace );
+        if( p->rc==SQLITE_OK ) sqlite3Fts5HashScanNext(pHash);
       }
-
-      /* TODO2: Doclist terminator written here. */
-      /* pBuf->p[pBuf->n++] = '\0'; */
-      assert( pBuf->n<=pBuf->nSpace );
-      if( p->rc==SQLITE_OK ) sqlite3Fts5HashScanNext(pHash);
-    }
-    sqlite3Fts5HashClear(pHash);
-    fts5WriteFinish(p, &writer, &pgnoLast);
-
-    assert( p->rc!=SQLITE_OK || bSecureDelete || pgnoLast>0 );
-    if( pgnoLast>0 ){
-      /* Update the Fts5Structure. It is written back to the database by the
-      ** fts5StructureRelease() call below.  */
-      if( pStruct->nLevel==0 ){
-        fts5StructureAddLevel(&p->rc, &pStruct);
+      sqlite3Fts5HashClear(pHash);
+      fts5WriteFinish(p, &writer, &pgnoLast);
+  
+      assert( p->rc!=SQLITE_OK || bSecureDelete || pgnoLast>0 );
+      if( pgnoLast>0 ){
+        /* Update the Fts5Structure. It is written back to the database by the
+        ** fts5StructureRelease() call below.  */
+        if( pStruct->nLevel==0 ){
+          fts5StructureAddLevel(&p->rc, &pStruct);
+        }
+        fts5StructureExtendLevel(&p->rc, pStruct, 0, 1, 0);
+        if( p->rc==SQLITE_OK ){
+          pSeg = &pStruct->aLevel[0].aSeg[ pStruct->aLevel[0].nSeg++ ];
+          pSeg->iSegid = iSegid;
+          pSeg->pgnoFirst = 1;
+          pSeg->pgnoLast = pgnoLast;
+          if( pStruct->nOriginCntr>0 ){
+            pSeg->iOrigin1 = pStruct->nOriginCntr;
+            pSeg->iOrigin2 = pStruct->nOriginCntr;
+            pSeg->nEntry = p->nPendingRow;
+            pStruct->nOriginCntr++;
+          }
+          pStruct->nSegment++;
+        }
+        fts5StructurePromote(p, 0, pStruct);
       }
-      fts5StructureExtendLevel(&p->rc, pStruct, 0, 1, 0);
-      if( p->rc==SQLITE_OK ){
-        pSeg = &pStruct->aLevel[0].aSeg[ pStruct->aLevel[0].nSeg++ ];
-        pSeg->iSegid = iSegid;
-        pSeg->pgnoFirst = 1;
-        pSeg->pgnoLast = pgnoLast;
-        pStruct->nSegment++;
-      }
-      fts5StructurePromote(p, 0, pStruct);
     }
   }
 
-  fts5IndexAutomerge(p, &pStruct, pgnoLast);
+  fts5IndexAutomerge(p, &pStruct, pgnoLast + p->nContentlessDelete);
   fts5IndexCrisismerge(p, &pStruct);
   fts5StructureWrite(p, pStruct);
   fts5StructureRelease(pStruct);
+  p->nContentlessDelete = 0;
 }
 
 /*
@@ -5165,10 +5523,11 @@ static void fts5FlushOneHash(Fts5Index *p){
 */
 static void fts5IndexFlush(Fts5Index *p){
   /* Unless it is empty, flush the hash table to disk */
-  if( p->nPendingData ){
+  if( p->nPendingData || p->nContentlessDelete ){
     assert( p->pHash );
-    p->nPendingData = 0;
     fts5FlushOneHash(p);
+    p->nPendingData = 0;
+    p->nPendingRow = 0;
   }
 }
 
@@ -5184,17 +5543,22 @@ static Fts5Structure *fts5IndexOptimizeStruct(
   /* Figure out if this structure requires optimization. A structure does
   ** not require optimization if either:
   **
-  **  + it consists of fewer than two segments, or 
-  **  + all segments are on the same level, or
-  **  + all segments except one are currently inputs to a merge operation.
+  **  1. it consists of fewer than two segments, or 
+  **  2. all segments are on the same level, or
+  **  3. all segments except one are currently inputs to a merge operation.
   **
-  ** In the first case, return NULL. In the second, increment the ref-count
-  ** on *pStruct and return a copy of the pointer to it.
+  ** In the first case, if there are no tombstone hash pages, return NULL. In
+  ** the second, increment the ref-count on *pStruct and return a copy of the
+  ** pointer to it.
   */
-  if( nSeg<2 ) return 0;
+  if( nSeg==0 ) return 0;
   for(i=0; i<pStruct->nLevel; i++){
     int nThis = pStruct->aLevel[i].nSeg;
-    if( nThis==nSeg || (nThis==nSeg-1 && pStruct->aLevel[i].nMerge==nThis) ){
+    int nMerge = pStruct->aLevel[i].nMerge;
+    if( nThis>0 && (nThis==nSeg || (nThis==nSeg-1 && nMerge==nThis)) ){
+      if( nSeg==1 && nThis==1 && pStruct->aLevel[i].aSeg[0].nPgTombstone==0 ){
+        return 0;
+      }
       fts5StructureRef(pStruct);
       return pStruct;
     }
@@ -5210,6 +5574,7 @@ static Fts5Structure *fts5IndexOptimizeStruct(
     pNew->nLevel = MIN(pStruct->nLevel+1, FTS5_MAX_LEVEL);
     pNew->nRef = 1;
     pNew->nWriteCounter = pStruct->nWriteCounter;
+    pNew->nOriginCntr = pStruct->nOriginCntr;
     pLvl = &pNew->aLevel[pNew->nLevel-1];
     pLvl->aSeg = (Fts5StructureSegment*)sqlite3Fts5MallocZero(&p->rc, nByte);
     if( pLvl->aSeg ){
@@ -5240,6 +5605,7 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p){
 
   assert( p->rc==SQLITE_OK );
   fts5IndexFlush(p);
+  assert( p->nContentlessDelete==0 );
   pStruct = fts5StructureRead(p);
   fts5StructureInvalidate(p);
 
@@ -5269,7 +5635,10 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p){
 ** INSERT command.
 */
 int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge){
-  Fts5Structure *pStruct = fts5StructureRead(p);
+  Fts5Structure *pStruct = 0;
+
+  fts5IndexFlush(p);
+  pStruct = fts5StructureRead(p);
   if( pStruct ){
     int nMin = p->pConfig->nUsermerge;
     fts5StructureInvalidate(p);
@@ -5277,7 +5646,7 @@ int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge){
       Fts5Structure *pNew = fts5IndexOptimizeStruct(p, pStruct);
       fts5StructureRelease(pStruct);
       pStruct = pNew;
-      nMin = 2;
+      nMin = 1;
       nMerge = nMerge*-1;
     }
     if( pStruct && pStruct->nLevel ){
@@ -5791,6 +6160,9 @@ int sqlite3Fts5IndexBeginWrite(Fts5Index *p, int bDelete, i64 iRowid){
 
   p->iWriteRowid = iRowid;
   p->bDelete = bDelete;
+  if( bDelete==0 ){
+    p->nPendingRow++;
+  }
   return fts5IndexReturn(p);
 }
 
@@ -5828,6 +6200,9 @@ int sqlite3Fts5IndexReinit(Fts5Index *p){
   fts5StructureInvalidate(p);
   fts5IndexDiscardData(p);
   memset(&s, 0, sizeof(Fts5Structure));
+  if( p->pConfig->bContentlessDelete ){
+    s.nOriginCntr = 1;
+  }
   fts5DataWrite(p, FTS5_AVERAGES_ROWID, (const u8*)"", 0);
   fts5StructureWrite(p, &s);
   return fts5IndexReturn(p);
@@ -6219,6 +6594,347 @@ int sqlite3Fts5IndexLoadConfig(Fts5Index *p){
   return fts5IndexReturn(p);
 }
 
+/*
+** Retrieve the origin value that will be used for the segment currently
+** being accumulated in the in-memory hash table when it is flushed to
+** disk. If successful, SQLITE_OK is returned and (*piOrigin) set to
+** the queried value. Or, if an error occurs, an error code is returned
+** and the final value of (*piOrigin) is undefined.
+*/
+int sqlite3Fts5IndexGetOrigin(Fts5Index *p, i64 *piOrigin){
+  Fts5Structure *pStruct;
+  pStruct = fts5StructureRead(p);
+  if( pStruct ){
+    *piOrigin = pStruct->nOriginCntr;
+    fts5StructureRelease(pStruct);
+  }
+  return fts5IndexReturn(p);
+}
+
+/*
+** Buffer pPg contains a page of a tombstone hash table - one of nPg pages
+** associated with the same segment. This function adds rowid iRowid to
+** the hash table. The caller is required to guarantee that there is at
+** least one free slot on the page.
+**
+** If parameter bForce is false and the hash table is deemed to be full
+** (more than half of the slots are occupied), then non-zero is returned
+** and iRowid not inserted. Or, if bForce is true or if the hash table page
+** is not full, iRowid is inserted and zero returned.
+*/
+static int fts5IndexTombstoneAddToPage(
+  Fts5Data *pPg, 
+  int bForce,
+  int nPg, 
+  u64 iRowid
+){
+  const int szKey = TOMBSTONE_KEYSIZE(pPg);
+  const int nSlot = TOMBSTONE_NSLOT(pPg);
+  const int nElem = fts5GetU32(&pPg->p[4]);
+  int iSlot = (iRowid / nPg) % nSlot;
+  int nCollide = nSlot;
+
+  if( szKey==4 && iRowid>0xFFFFFFFF ) return 2;
+  if( iRowid==0 ){
+    pPg->p[1] = 0x01;
+    return 0;
+  }
+
+  if( bForce==0 && nElem>=(nSlot/2) ){
+    return 1;
+  }
+
+  fts5PutU32(&pPg->p[4], nElem+1);
+  if( szKey==4 ){
+    u32 *aSlot = (u32*)&pPg->p[8];
+    while( aSlot[iSlot] ){
+      iSlot = (iSlot + 1) % nSlot;
+      if( nCollide--==0 ) return 0;
+    }
+    fts5PutU32((u8*)&aSlot[iSlot], (u32)iRowid);
+  }else{
+    u64 *aSlot = (u64*)&pPg->p[8];
+    while( aSlot[iSlot] ){
+      iSlot = (iSlot + 1) % nSlot;
+      if( nCollide--==0 ) return 0;
+    }
+    fts5PutU64((u8*)&aSlot[iSlot], iRowid);
+  }
+
+  return 0;
+}
+
+/*
+** This function attempts to build a new hash containing all the keys 
+** currently in the tombstone hash table for segment pSeg. The new
+** hash will be stored in the nOut buffers passed in array apOut[].
+** All pages of the new hash use key-size szKey (4 or 8).
+**
+** Return 0 if the hash is successfully rebuilt into the nOut pages. 
+** Or non-zero if it is not (because one page became overfull). In this 
+** case the caller should retry with a larger nOut parameter.
+**
+** Parameter pData1 is page iPg1 of the hash table being rebuilt.
+*/
+static int fts5IndexTombstoneRehash(
+  Fts5Index *p,
+  Fts5StructureSegment *pSeg,     /* Segment to rebuild hash of */
+  Fts5Data *pData1,               /* One page of current hash - or NULL */
+  int iPg1,                       /* Which page of the current hash is pData1 */
+  int szKey,                      /* 4 or 8, the keysize */
+  int nOut,                       /* Number of output pages */
+  Fts5Data **apOut                /* Array of output hash pages */
+){
+  int ii;
+  int res = 0;
+
+  /* Initialize the headers of all the output pages */
+  for(ii=0; ii<nOut; ii++){
+    apOut[ii]->p[0] = szKey;
+    fts5PutU32(&apOut[ii]->p[4], 0);
+  }
+
+  /* Loop through the current pages of the hash table. */ 
+  for(ii=0; res==0 && ii<pSeg->nPgTombstone; ii++){
+    Fts5Data *pData = 0;          /* Page ii of the current hash table */
+    Fts5Data *pFree = 0;          /* Free this at the end of the loop */
+
+    if( iPg1==ii ){
+      pData = pData1;
+    }else{
+      pFree = pData = fts5DataRead(p, FTS5_TOMBSTONE_ROWID(pSeg->iSegid, ii));
+    }
+
+    if( pData ){
+      int szKeyIn = TOMBSTONE_KEYSIZE(pData);
+      int nSlotIn = (pData->nn - 8) / szKeyIn;
+      int iIn;
+      for(iIn=0; iIn<nSlotIn; iIn++){
+        u64 iVal = 0;
+
+        /* Read the value from slot iIn of the input page into iVal. */
+        if( szKeyIn==4 ){
+          u32 *aSlot = (u32*)&pData->p[8];
+          if( aSlot[iIn] ) iVal = fts5GetU32((u8*)&aSlot[iIn]);
+        }else{
+          u64 *aSlot = (u64*)&pData->p[8];
+          if( aSlot[iIn] ) iVal = fts5GetU64((u8*)&aSlot[iIn]);
+        }
+
+        /* If iVal is not 0 at this point, insert it into the new hash table */
+        if( iVal ){
+          Fts5Data *pPg = apOut[(iVal % nOut)];
+          res = fts5IndexTombstoneAddToPage(pPg, 0, nOut, iVal);
+          if( res ) break;
+        }
+      }
+
+      /* If this is page 0 of the old hash, copy the rowid-0-flag from the
+      ** old hash to the new.  */
+      if( ii==0 ){
+        apOut[0]->p[1] = pData->p[1];
+      }
+    }
+    fts5DataRelease(pFree);
+  }
+
+  return res;
+}
+
+/*
+** This is called to rebuild the hash table belonging to segment pSeg.
+** If parameter pData1 is not NULL, then one page of the existing hash table
+** has already been loaded - pData1, which is page iPg1. The key-size for
+** the new hash table is szKey (4 or 8).
+**
+** If successful, the new hash table is not written to disk. Instead, 
+** output parameter (*pnOut) is set to the number of pages in the new
+** hash table, and (*papOut) to point to an array of buffers containing
+** the new page data.
+**
+** If an error occurs, an error code is left in the Fts5Index object and
+** both output parameters set to 0 before returning.
+*/
+static void fts5IndexTombstoneRebuild(
+  Fts5Index *p,
+  Fts5StructureSegment *pSeg,     /* Segment to rebuild hash of */
+  Fts5Data *pData1,               /* One page of current hash - or NULL */
+  int iPg1,                       /* Which page of the current hash is pData1 */
+  int szKey,                      /* 4 or 8, the keysize */
+  int *pnOut,                     /* OUT: Number of output pages */
+  Fts5Data ***papOut              /* OUT: Output hash pages */
+){
+  const int MINSLOT = 32;
+  int nSlotPerPage = MAX(MINSLOT, (p->pConfig->pgsz - 8) / szKey);
+  int nSlot = 0;                  /* Number of slots in each output page */
+  int nOut = 0;
+
+  /* Figure out how many output pages (nOut) and how many slots per 
+  ** page (nSlot).  There are three possibilities: 
+  **
+  **   1. The hash table does not yet exist. In this case the new hash
+  **      table will consist of a single page with MINSLOT slots.
+  **
+  **   2. The hash table exists but is currently a single page. In this
+  **      case an attempt is made to grow the page to accommodate the new
+  **      entry. The page is allowed to grow up to nSlotPerPage (see above)
+  **      slots.
+  **
+  **   3. The hash table already consists of more than one page, or of
+  **      a single page already so large that it cannot be grown. In this
+  **      case the new hash consists of (nPg*2+1) pages of nSlotPerPage
+  **      slots each, where nPg is the current number of pages in the 
+  **      hash table.
+  */
+  if( pSeg->nPgTombstone==0 ){
+    /* Case 1. */
+    nOut = 1;
+    nSlot = MINSLOT;
+  }else if( pSeg->nPgTombstone==1 ){
+    /* Case 2. */
+    int nElem = (int)fts5GetU32(&pData1->p[4]);
+    assert( pData1 && iPg1==0 );
+    nOut = 1;
+    nSlot = MAX(nElem*4, MINSLOT);
+    if( nSlot>nSlotPerPage ) nOut = 0; 
+  }
+  if( nOut==0 ){
+    /* Case 3. */
+    nOut = (pSeg->nPgTombstone * 2 + 1);
+    nSlot = nSlotPerPage;
+  }
+
+  /* Allocate the required array and output pages */
+  while( 1 ){
+    int res = 0;
+    int ii = 0;
+    int szPage = 0;
+    Fts5Data **apOut = 0;
+
+    /* Allocate space for the new hash table */
+    assert( nSlot>=MINSLOT );
+    apOut = (Fts5Data**)sqlite3Fts5MallocZero(&p->rc, sizeof(Fts5Data*) * nOut);
+    szPage = 8 + nSlot*szKey;
+    for(ii=0; ii<nOut; ii++){
+      Fts5Data *pNew = (Fts5Data*)sqlite3Fts5MallocZero(&p->rc, 
+          sizeof(Fts5Data)+szPage
+      );
+      if( pNew ){
+        pNew->nn = szPage;
+        pNew->p = (u8*)&pNew[1];
+        apOut[ii] = pNew;
+      }
+    }
+
+    /* Rebuild the hash table. */
+    if( p->rc==SQLITE_OK ){
+      res = fts5IndexTombstoneRehash(p, pSeg, pData1, iPg1, szKey, nOut, apOut);
+    }
+    if( res==0 ){
+      if( p->rc ){
+        fts5IndexFreeArray(apOut, nOut);
+        apOut = 0;
+        nOut = 0;
+      }
+      *pnOut = nOut;
+      *papOut = apOut;
+      break;
+    }
+    
+    /* If control flows to here, it was not possible to rebuild the hash
+    ** table. Free all buffers and then try again with more pages. */
+    assert( p->rc==SQLITE_OK );
+    fts5IndexFreeArray(apOut, nOut);
+    nSlot = nSlotPerPage;
+    nOut = nOut*2 + 1;
+  }
+}
+
+
+/*
+** Add a tombstone for rowid iRowid to segment pSeg.
+*/
+static void fts5IndexTombstoneAdd(
+  Fts5Index *p, 
+  Fts5StructureSegment *pSeg, 
+  u64 iRowid
+){
+  Fts5Data *pPg = 0;
+  int iPg = -1;
+  int szKey = 0;
+  int nHash = 0;
+  Fts5Data **apHash = 0;
+
+  p->nContentlessDelete++;
+
+  if( pSeg->nPgTombstone>0 ){
+    iPg = iRowid % pSeg->nPgTombstone;
+    pPg = fts5DataRead(p, FTS5_TOMBSTONE_ROWID(pSeg->iSegid,iPg));
+    if( pPg==0 ){
+      assert( p->rc!=SQLITE_OK );
+      return;
+    }
+
+    if( 0==fts5IndexTombstoneAddToPage(pPg, 0, pSeg->nPgTombstone, iRowid) ){
+      fts5DataWrite(p, FTS5_TOMBSTONE_ROWID(pSeg->iSegid,iPg), pPg->p, pPg->nn);
+      fts5DataRelease(pPg);
+      return;
+    }
+  }
+
+  /* Have to rebuild the hash table. First figure out the key-size (4 or 8). */
+  szKey = pPg ? TOMBSTONE_KEYSIZE(pPg) : 4;
+  if( iRowid>0xFFFFFFFF ) szKey = 8;
+
+  /* Rebuild the hash table */
+  fts5IndexTombstoneRebuild(p, pSeg, pPg, iPg, szKey, &nHash, &apHash);
+  assert( p->rc==SQLITE_OK || (nHash==0 && apHash==0) );
+
+  /* If all has succeeded, write the new rowid into one of the new hash
+  ** table pages, then write them all out to disk. */
+  if( nHash ){
+    int ii = 0;
+    fts5IndexTombstoneAddToPage(apHash[iRowid % nHash], 1, nHash, iRowid);
+    for(ii=0; ii<nHash; ii++){
+      i64 iTombstoneRowid = FTS5_TOMBSTONE_ROWID(pSeg->iSegid, ii);
+      fts5DataWrite(p, iTombstoneRowid, apHash[ii]->p, apHash[ii]->nn);
+    }
+    pSeg->nPgTombstone = nHash;
+    fts5StructureWrite(p, p->pStruct);
+  }
+
+  fts5DataRelease(pPg);
+  fts5IndexFreeArray(apHash, nHash);
+}
+
+/*
+** Add iRowid to the tombstone list of the segment or segments that contain
+** rows from origin iOrigin. Return SQLITE_OK if successful, or an SQLite
+** error code otherwise.
+*/
+int sqlite3Fts5IndexContentlessDelete(Fts5Index *p, i64 iOrigin, i64 iRowid){
+  Fts5Structure *pStruct;
+  pStruct = fts5StructureRead(p);
+  if( pStruct ){
+    int bFound = 0;               /* True after pSeg->nEntryTombstone incr. */
+    int iLvl;
+    for(iLvl=pStruct->nLevel-1; iLvl>=0; iLvl--){
+      int iSeg;
+      for(iSeg=pStruct->aLevel[iLvl].nSeg-1; iSeg>=0; iSeg--){
+        Fts5StructureSegment *pSeg = &pStruct->aLevel[iLvl].aSeg[iSeg];
+        if( pSeg->iOrigin1<=(u64)iOrigin && pSeg->iOrigin2>=(u64)iOrigin ){
+          if( bFound==0 ){
+            pSeg->nEntryTombstone++;
+            bFound = 1;
+          }
+          fts5IndexTombstoneAdd(p, pSeg, iRowid);
+        }
+      }
+    }
+    fts5StructureRelease(pStruct);
+  }
+  return fts5IndexReturn(p);
+}
 
 /*************************************************************************
 **************************************************************************
@@ -6770,13 +7486,14 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
 ** function only.
 */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 /*
 ** Decode a segment-data rowid from the %_data table. This function is
 ** the opposite of macro FTS5_SEGMENT_ROWID().
 */
 static void fts5DecodeRowid(
   i64 iRowid,                     /* Rowid from %_data table */
+  int *pbTombstone,               /* OUT: Tombstone hash flag */
   int *piSegid,                   /* OUT: Segment id */
   int *pbDlidx,                   /* OUT: Dlidx flag */
   int *piHeight,                  /* OUT: Height */
@@ -6792,13 +7509,16 @@ static void fts5DecodeRowid(
   iRowid >>= FTS5_DATA_DLI_B;
 
   *piSegid = (int)(iRowid & (((i64)1 << FTS5_DATA_ID_B) - 1));
-}
-#endif /* SQLITE_TEST */
+  iRowid >>= FTS5_DATA_ID_B;
 
-#ifdef SQLITE_TEST
+  *pbTombstone = (int)(iRowid & 0x0001);
+}
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
+
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 static void fts5DebugRowid(int *pRc, Fts5Buffer *pBuf, i64 iKey){
-  int iSegid, iHeight, iPgno, bDlidx;       /* Rowid compenents */
-  fts5DecodeRowid(iKey, &iSegid, &bDlidx, &iHeight, &iPgno);
+  int iSegid, iHeight, iPgno, bDlidx, bTomb;     /* Rowid compenents */
+  fts5DecodeRowid(iKey, &bTomb, &iSegid, &bDlidx, &iHeight, &iPgno);
 
   if( iSegid==0 ){
     if( iKey==FTS5_AVERAGES_ROWID ){
@@ -6808,14 +7528,16 @@ static void fts5DebugRowid(int *pRc, Fts5Buffer *pBuf, i64 iKey){
     }
   }
   else{
-    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "{%ssegid=%d h=%d pgno=%d}",
-        bDlidx ? "dlidx " : "", iSegid, iHeight, iPgno
+    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "{%s%ssegid=%d h=%d pgno=%d}",
+        bDlidx ? "dlidx " : "", 
+        bTomb ? "tombstone " : "", 
+        iSegid, iHeight, iPgno
     );
   }
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 static void fts5DebugStructure(
   int *pRc,                       /* IN/OUT: error code */
   Fts5Buffer *pBuf,
@@ -6830,16 +7552,22 @@ static void fts5DebugStructure(
     );
     for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
       Fts5StructureSegment *pSeg = &pLvl->aSeg[iSeg];
-      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " {id=%d leaves=%d..%d}", 
+      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " {id=%d leaves=%d..%d",
           pSeg->iSegid, pSeg->pgnoFirst, pSeg->pgnoLast
       );
+      if( pSeg->iOrigin1>0 ){
+        sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " origin=%lld..%lld",
+            pSeg->iOrigin1, pSeg->iOrigin2
+        );
+      }
+      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "}");
     }
     sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "}");
   }
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 /*
 ** This is part of the fts5_decode() debugging aid.
 **
@@ -6864,9 +7592,9 @@ static void fts5DecodeStructure(
   fts5DebugStructure(pRc, pBuf, p);
   fts5StructureRelease(p);
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 /*
 ** This is part of the fts5_decode() debugging aid.
 **
@@ -6889,9 +7617,9 @@ static void fts5DecodeAverages(
     zSpace = " ";
   }
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 /*
 ** Buffer (a/n) is assumed to contain a list of serialized varints. Read
 ** each varint and append its string representation to buffer pBuf. Return
@@ -6908,9 +7636,9 @@ static int fts5DecodePoslist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
   }
   return iOff;
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 /*
 ** The start of buffer (a/n) contains the start of a doclist. The doclist
 ** may or may not finish within the buffer. This function appends a text
@@ -6943,9 +7671,9 @@ static int fts5DecodeDoclist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
 
   return iOff;
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 /*
 ** This function is part of the fts5_decode() debugging function. It is 
 ** only ever used with detail=none tables.
@@ -6986,9 +7714,9 @@ static void fts5DecodeRowidList(
     sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " %lld%s", iRowid, zApp);
   }
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 /*
 ** The implementation of user-defined scalar function fts5_decode().
 */
@@ -6999,6 +7727,7 @@ static void fts5DecodeFunction(
 ){
   i64 iRowid;                     /* Rowid for record being decoded */
   int iSegid,iHeight,iPgno,bDlidx;/* Rowid components */
+  int bTomb;
   const u8 *aBlob; int n;         /* Record to decode */
   u8 *a = 0;
   Fts5Buffer s;                   /* Build up text to return here */
@@ -7021,7 +7750,7 @@ static void fts5DecodeFunction(
   if( a==0 ) goto decode_out;
   if( n>0 ) memcpy(a, aBlob, n);
 
-  fts5DecodeRowid(iRowid, &iSegid, &bDlidx, &iHeight, &iPgno);
+  fts5DecodeRowid(iRowid, &bTomb, &iSegid, &bDlidx, &iHeight, &iPgno);
 
   fts5DebugRowid(&rc, &s, iRowid);
   if( bDlidx ){
@@ -7039,6 +7768,28 @@ static void fts5DecodeFunction(
       sqlite3Fts5BufferAppendPrintf(&rc, &s, 
           " %d(%lld)", lvl.iLeafPgno, lvl.iRowid
       );
+    }
+  }else if( bTomb ){
+    u32 nElem  = fts5GetU32(&a[4]);
+    int szKey = (aBlob[0]==4 || aBlob[0]==8) ? aBlob[0] : 8;
+    int nSlot = (n - 8) / szKey;
+    int ii;
+    sqlite3Fts5BufferAppendPrintf(&rc, &s, " nElem=%d", (int)nElem);
+    if( aBlob[1] ){
+      sqlite3Fts5BufferAppendPrintf(&rc, &s, " 0");
+    }
+    for(ii=0; ii<nSlot; ii++){
+      u64 iVal = 0;
+      if( szKey==4 ){
+        u32 *aSlot = (u32*)&aBlob[8];
+        if( aSlot[ii] ) iVal = fts5GetU32((u8*)&aSlot[ii]);
+      }else{
+        u64 *aSlot = (u64*)&aBlob[8];
+        if( aSlot[ii] ) iVal = fts5GetU64((u8*)&aSlot[ii]);
+      }
+      if( iVal!=0 ){
+        sqlite3Fts5BufferAppendPrintf(&rc, &s, " %lld", (i64)iVal);
+      }
     }
   }else if( iSegid==0 ){
     if( iRowid==FTS5_AVERAGES_ROWID ){
@@ -7065,7 +7816,7 @@ static void fts5DecodeFunction(
     fts5DecodeRowidList(&rc, &s, &a[4], iTermOff-4);
 
     iOff = iTermOff;
-    while( iOff<szLeaf ){
+    while( iOff<szLeaf && rc==SQLITE_OK ){
       int nAppend;
 
       /* Read the term data for the next term*/
@@ -7085,8 +7836,11 @@ static void fts5DecodeFunction(
       }else{
         iTermOff = szLeaf;
       }
-
-      fts5DecodeRowidList(&rc, &s, &a[iOff], iTermOff-iOff);
+      if( iTermOff>szLeaf ){
+        rc = FTS5_CORRUPT;
+      }else{
+        fts5DecodeRowidList(&rc, &s, &a[iOff], iTermOff-iOff);
+      }
       iOff = iTermOff;
       if( iOff<szLeaf ){
         iOff += fts5GetVarint32(&a[iOff], nKeep);
@@ -7197,9 +7951,9 @@ static void fts5DecodeFunction(
   }
   fts5BufferFree(&s);
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST 
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG) 
 /*
 ** The implementation of user-defined scalar function fts5_rowid().
 */
@@ -7233,7 +7987,235 @@ static void fts5RowidFunction(
     }
   }
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
+
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
+
+typedef struct Fts5StructVtab Fts5StructVtab;
+struct Fts5StructVtab {
+  sqlite3_vtab base;
+};
+
+typedef struct Fts5StructVcsr Fts5StructVcsr;
+struct Fts5StructVcsr {
+  sqlite3_vtab_cursor base;
+  Fts5Structure *pStruct;
+  int iLevel;
+  int iSeg;
+  int iRowid;
+};
+
+/*
+** Create a new fts5_structure() table-valued function.
+*/
+static int fts5structConnectMethod(
+  sqlite3 *db,
+  void *pAux,
+  int argc, const char *const*argv,
+  sqlite3_vtab **ppVtab,
+  char **pzErr
+){
+  Fts5StructVtab *pNew = 0;
+  int rc = SQLITE_OK;
+
+  rc = sqlite3_declare_vtab(db, 
+      "CREATE TABLE xyz("
+          "level, segment, merge, segid, leaf1, leaf2, loc1, loc2, "
+          "npgtombstone, nentrytombstone, nentry, struct HIDDEN);"
+  );
+  if( rc==SQLITE_OK ){
+    pNew = sqlite3Fts5MallocZero(&rc, sizeof(*pNew));
+  }
+
+  *ppVtab = (sqlite3_vtab*)pNew;
+  return rc;
+}
+
+/*
+** We must have a single struct=? constraint that will be passed through
+** into the xFilter method.  If there is no valid stmt=? constraint,
+** then return an SQLITE_CONSTRAINT error.
+*/
+static int fts5structBestIndexMethod(
+  sqlite3_vtab *tab,
+  sqlite3_index_info *pIdxInfo
+){
+  int i;
+  int rc = SQLITE_CONSTRAINT;
+  struct sqlite3_index_constraint *p;
+  pIdxInfo->estimatedCost = (double)100;
+  pIdxInfo->estimatedRows = 100;
+  pIdxInfo->idxNum = 0;
+  for(i=0, p=pIdxInfo->aConstraint; i<pIdxInfo->nConstraint; i++, p++){
+    if( p->usable==0 ) continue;
+    if( p->op==SQLITE_INDEX_CONSTRAINT_EQ && p->iColumn==11 ){
+      rc = SQLITE_OK;
+      pIdxInfo->aConstraintUsage[i].omit = 1;
+      pIdxInfo->aConstraintUsage[i].argvIndex = 1;
+      break;
+    }
+  }
+  return rc;
+}
+
+/*
+** This method is the destructor for bytecodevtab objects.
+*/
+static int fts5structDisconnectMethod(sqlite3_vtab *pVtab){
+  Fts5StructVtab *p = (Fts5StructVtab*)pVtab;
+  sqlite3_free(p);
+  return SQLITE_OK;
+}
+
+/*
+** Constructor for a new bytecodevtab_cursor object.
+*/
+static int fts5structOpenMethod(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCsr){
+  int rc = SQLITE_OK;
+  Fts5StructVcsr *pNew = 0;
+
+  pNew = sqlite3Fts5MallocZero(&rc, sizeof(*pNew));
+  *ppCsr = (sqlite3_vtab_cursor*)pNew;
+
+  return SQLITE_OK;
+}
+
+/*
+** Destructor for a bytecodevtab_cursor.
+*/
+static int fts5structCloseMethod(sqlite3_vtab_cursor *cur){
+  Fts5StructVcsr *pCsr = (Fts5StructVcsr*)cur;
+  fts5StructureRelease(pCsr->pStruct);
+  sqlite3_free(pCsr);
+  return SQLITE_OK;
+}
+
+
+/*
+** Advance a bytecodevtab_cursor to its next row of output.
+*/
+static int fts5structNextMethod(sqlite3_vtab_cursor *cur){
+  Fts5StructVcsr *pCsr = (Fts5StructVcsr*)cur;
+  Fts5Structure *p = pCsr->pStruct;
+
+  assert( pCsr->pStruct );
+  pCsr->iSeg++;
+  pCsr->iRowid++;
+  while( pCsr->iLevel<p->nLevel && pCsr->iSeg>=p->aLevel[pCsr->iLevel].nSeg ){
+    pCsr->iLevel++;
+    pCsr->iSeg = 0;
+  }
+  if( pCsr->iLevel>=p->nLevel ){
+    fts5StructureRelease(pCsr->pStruct);
+    pCsr->pStruct = 0;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Return TRUE if the cursor has been moved off of the last
+** row of output.
+*/
+static int fts5structEofMethod(sqlite3_vtab_cursor *cur){
+  Fts5StructVcsr *pCsr = (Fts5StructVcsr*)cur;
+  return pCsr->pStruct==0;
+}
+
+static int fts5structRowidMethod(
+  sqlite3_vtab_cursor *cur, 
+  sqlite_int64 *piRowid
+){
+  Fts5StructVcsr *pCsr = (Fts5StructVcsr*)cur;
+  *piRowid = pCsr->iRowid;
+  return SQLITE_OK;
+}
+
+/*
+** Return values of columns for the row at which the bytecodevtab_cursor
+** is currently pointing.
+*/
+static int fts5structColumnMethod(
+  sqlite3_vtab_cursor *cur,   /* The cursor */
+  sqlite3_context *ctx,       /* First argument to sqlite3_result_...() */
+  int i                       /* Which column to return */
+){
+  Fts5StructVcsr *pCsr = (Fts5StructVcsr*)cur;
+  Fts5Structure *p = pCsr->pStruct;
+  Fts5StructureSegment *pSeg = &p->aLevel[pCsr->iLevel].aSeg[pCsr->iSeg];
+
+  switch( i ){
+    case 0: /* level */
+      sqlite3_result_int(ctx, pCsr->iLevel);
+      break;
+    case 1: /* segment */
+      sqlite3_result_int(ctx, pCsr->iSeg);
+      break;
+    case 2: /* merge */
+      sqlite3_result_int(ctx, pCsr->iSeg < p->aLevel[pCsr->iLevel].nMerge);
+      break;
+    case 3: /* segid */
+      sqlite3_result_int(ctx, pSeg->iSegid);
+      break;
+    case 4: /* leaf1 */
+      sqlite3_result_int(ctx, pSeg->pgnoFirst);
+      break;
+    case 5: /* leaf2 */
+      sqlite3_result_int(ctx, pSeg->pgnoLast);
+      break;
+    case 6: /* origin1 */
+      sqlite3_result_int64(ctx, pSeg->iOrigin1);
+      break;
+    case 7: /* origin2 */
+      sqlite3_result_int64(ctx, pSeg->iOrigin2);
+      break;
+    case 8: /* npgtombstone */
+      sqlite3_result_int(ctx, pSeg->nPgTombstone);
+      break;
+    case 9: /* nentrytombstone */
+      sqlite3_result_int64(ctx, pSeg->nEntryTombstone);
+      break;
+    case 10: /* nentry */
+      sqlite3_result_int64(ctx, pSeg->nEntry);
+      break;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Initialize a cursor.
+**
+**    idxNum==0     means show all subprograms
+**    idxNum==1     means show only the main bytecode and omit subprograms.
+*/
+static int fts5structFilterMethod(
+  sqlite3_vtab_cursor *pVtabCursor, 
+  int idxNum, const char *idxStr,
+  int argc, sqlite3_value **argv
+){
+  Fts5StructVcsr *pCsr = (Fts5StructVcsr *)pVtabCursor;
+  int rc = SQLITE_OK;
+
+  const u8 *aBlob = 0;
+  int nBlob = 0;
+
+  assert( argc==1 );
+  fts5StructureRelease(pCsr->pStruct);
+  pCsr->pStruct = 0;
+
+  nBlob = sqlite3_value_bytes(argv[0]);
+  aBlob = (const u8*)sqlite3_value_blob(argv[0]);
+  rc = fts5StructureDecode(aBlob, nBlob, 0, &pCsr->pStruct);
+  if( rc==SQLITE_OK ){
+    pCsr->iLevel = 0;
+    pCsr->iRowid = 0;
+    pCsr->iSeg = -1;
+    rc = fts5structNextMethod(pVtabCursor);
+  }
+
+  return rc;
+}
+
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
 /*
 ** This is called as part of registering the FTS5 module with database
@@ -7244,7 +8226,7 @@ static void fts5RowidFunction(
 ** SQLite error code is returned instead.
 */
 int sqlite3Fts5IndexInit(sqlite3 *db){
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
   int rc = sqlite3_create_function(
       db, "fts5_decode", 2, SQLITE_UTF8, 0, fts5DecodeFunction, 0, 0
   );
@@ -7260,6 +8242,36 @@ int sqlite3Fts5IndexInit(sqlite3 *db){
     rc = sqlite3_create_function(
         db, "fts5_rowid", -1, SQLITE_UTF8, 0, fts5RowidFunction, 0, 0
     );
+  }
+
+  if( rc==SQLITE_OK ){
+    static const sqlite3_module fts5structure_module = {
+      0,                           /* iVersion      */
+      0,                           /* xCreate       */
+      fts5structConnectMethod,     /* xConnect      */
+      fts5structBestIndexMethod,   /* xBestIndex    */
+      fts5structDisconnectMethod,  /* xDisconnect   */
+      0,                           /* xDestroy      */
+      fts5structOpenMethod,        /* xOpen         */
+      fts5structCloseMethod,       /* xClose        */
+      fts5structFilterMethod,      /* xFilter       */
+      fts5structNextMethod,        /* xNext         */
+      fts5structEofMethod,         /* xEof          */
+      fts5structColumnMethod,      /* xColumn       */
+      fts5structRowidMethod,       /* xRowid        */
+      0,                           /* xUpdate       */
+      0,                           /* xBegin        */
+      0,                           /* xSync         */
+      0,                           /* xCommit       */
+      0,                           /* xRollback     */
+      0,                           /* xFindFunction */
+      0,                           /* xRename       */
+      0,                           /* xSavepoint    */
+      0,                           /* xRelease      */
+      0,                           /* xRollbackTo   */
+      0                            /* xShadowName   */
+    };
+    rc = sqlite3_create_module(db, "fts5_structure", &fts5structure_module, 0);
   }
   return rc;
 #else

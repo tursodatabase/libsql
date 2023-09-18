@@ -14,8 +14,8 @@ pub use frame::{Frame, FrameHeader};
 pub use replica::hook::{Frames, InjectorHookCtx};
 use replica::snapshot::SnapshotFileHeader;
 pub use replica::snapshot::TempSnapshot;
-use tokio::sync::watch::Receiver;
 
+use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
@@ -37,7 +37,6 @@ pub struct Replicator {
 #[derive(Debug, Clone)]
 pub struct Writer {
     client: Client,
-    frame_no_notifier: Receiver<u64>,
 }
 
 // FIXME: copy-pasted from sqld, it should be deduplicated in a single place
@@ -60,7 +59,7 @@ pub struct Hello {
 // END COPYPASTA
 
 impl Replicator {
-    pub fn new(path: impl AsRef<std::path::Path>) -> anyhow::Result<Self> {
+    pub fn new(path: impl AsRef<Path>) -> anyhow::Result<Self> {
         let (applied_frame_notifier, current_frame_no_notifier) =
             tokio::sync::watch::channel(FrameNo::MAX);
         let meta = Arc::new(parking_lot::Mutex::new(None));
@@ -124,25 +123,35 @@ impl Replicator {
         })
     }
 
-    pub async fn init_metadata(
-        &mut self,
+    pub fn with_http_sync(
+        path: impl AsRef<Path>,
         endpoint: impl AsRef<str>,
         auth_token: impl AsRef<str>,
-    ) -> anyhow::Result<replica::meta::WalIndexMeta> {
+    ) -> anyhow::Result<Self> {
+        let mut me = Self::new(path)?;
+
         let client = Client::new(endpoint.as_ref().try_into()?, auth_token)?;
+        me.client = Some(client);
+
+        Ok(me)
+    }
+
+    pub async fn init_metadata(&self) -> anyhow::Result<replica::meta::WalIndexMeta> {
+        let Some(client) = self.client.as_ref() else {
+            anyhow::bail!("HTTP sync not configured");
+        };
 
         let meta = client.hello().await?;
-
-        self.client = Some(client);
 
         tracing::debug!("init_metadata: {meta:?}");
         Ok(meta)
     }
 
+    // Return the number of frames that will be applied
     pub fn update_metadata_from_snapshot_header(
         &self,
         path: impl AsRef<std::path::Path>,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<usize> {
         // FIXME: I guess we should consider allowing async reads here
         use std::io::Read;
         let path = path.as_ref();
@@ -155,27 +164,31 @@ impl Replicator {
         let mut meta = self.meta.lock();
 
         if let Some(meta) = &*meta {
-            if meta.post_commit_frame_no != snapshot_header.start_frame_no {
-                tracing::warn!(
-                    "Snapshot header frame number {} does not match post-commit frame number {}",
+            let expected_frame_no = meta.post_commit_frame_no + 1;
+
+            if snapshot_header.start_frame_no < expected_frame_no {
+                tracing::trace!("Received snapshot header with old frame number {} but expected frame number {}",
                     snapshot_header.start_frame_no,
-                    meta.post_commit_frame_no
+                    expected_frame_no
+                );
+                return Ok(0);
+            } else if snapshot_header.start_frame_no > expected_frame_no {
+                tracing::warn!(
+                    "Snapshot header frame number {} does not match expected post-commit frame number {}",
+                    snapshot_header.start_frame_no,
+                    meta.post_commit_frame_no + 1
                 );
                 anyhow::bail!(
-                    "Snapshot header frame number {} does not match post-commit frame number {}",
+                    "Snapshot header frame number {} does not match expected post-commit frame number {}",
                     snapshot_header.start_frame_no,
-                    meta.post_commit_frame_no
+                    meta.post_commit_frame_no + 1
                 )
             }
         } else if snapshot_header.start_frame_no != 0 {
-            tracing::warn!(
-                "Cannot initialize metadata from snapshot header with frame number {} instead of 0",
+            tracing::info!(
+                "Initializing metadata from snapshot header with frame number {}. Make sure your snapshots are applied in order",
                 snapshot_header.start_frame_no
             );
-            anyhow::bail!(
-                "Cannot initialize metadata from snapshot header with frame number {} instead of 0",
-                snapshot_header.start_frame_no
-            )
         }
         // Metadata is loaded straight from the snapshot header and overwrites any previous values
         *meta = Some(replica::meta::WalIndexMeta {
@@ -184,7 +197,7 @@ impl Replicator {
             generation_id: 1, // FIXME: where to obtain generation id from? Do we need it?
             database_id: snapshot_header.db_id,
         });
-        Ok(())
+        Ok(snapshot_header.frame_count as usize)
     }
 
     pub fn writer(&self) -> anyhow::Result<Writer> {
@@ -193,23 +206,27 @@ impl Replicator {
             .clone()
             .context("FATAL trying to sync with no client, you need to call init_metadata first")?;
 
-        Ok(Writer {
-            client,
-            frame_no_notifier: self.current_frame_no_notifier.clone(),
-        })
+        Ok(Writer { client })
     }
 
-    pub fn sync(&self, frames: Frames) -> anyhow::Result<()> {
-        if let Frames::Snapshot(snapshot) = &frames {
-            tracing::debug!(
-                "Updating metadata from snapshot header {}",
-                snapshot.path().display()
-            );
-            self.update_metadata_from_snapshot_header(snapshot.path())?;
+    pub fn sync(&self, frames: Frames) -> anyhow::Result<usize> {
+        let frames_to_apply = match &frames {
+            Frames::Snapshot(snapshot) => {
+                tracing::debug!(
+                    "Updating metadata from snapshot header {}",
+                    snapshot.path().display()
+                );
+                self.update_metadata_from_snapshot_header(snapshot.path())?
+            }
+            Frames::Vec(v) => v.len(),
+        };
+        if frames_to_apply == 0 {
+            tracing::debug!("Skipping snapshot sync - frames already applied");
+            return Ok(0);
         }
         let _ = self.frames_sender.blocking_send(frames);
         self.injector.step()?;
-        Ok(())
+        Ok(frames_to_apply)
     }
 
     // Syncs frames from HTTP, returns how many frames were applied
@@ -238,9 +255,9 @@ impl Replicator {
             }
 
             let len = frames.len();
-            self.next_offset.fetch_add(len as u64, Ordering::Relaxed);
             self.frames_sender.send(Frames::Vec(frames)).await?;
             self.injector.step()?;
+            self.next_offset.fetch_add(len as u64, Ordering::Relaxed);
 
             applied_frames += len;
         }
@@ -271,21 +288,33 @@ impl Writer {
         sql: &str,
         params: impl Into<pb::query::Params> + Send,
     ) -> anyhow::Result<u64> {
-        tracing::trace!("executing remote sql statement");
+        tracing::trace!("executing remote sql statement: {sql}");
         let (write_frame_no, rows_affected) = self.client.execute(sql, params.into()).await?;
 
         tracing::trace!(
-            "statment executed on remote waiting for frame_no: {}",
+            "statement executed on remote waiting for frame_no: {}",
+            write_frame_no
+        );
+        Ok(rows_affected)
+    }
+
+    pub async fn query(
+        &self,
+        sql: &str,
+        params: impl Into<pb::query::Params> + Send,
+    ) -> anyhow::Result<pb::ResultRows> {
+        let (write_frame_no, rows) = self.client.query(sql, params.into()).await?;
+
+        tracing::trace!(
+            "statement executed on remote waiting for frame_no: {}",
             write_frame_no
         );
 
-        self.frame_no_notifier
-            .clone()
-            .wait_for(|latest_frame_no| latest_frame_no >= &(write_frame_no - 1))
-            .await?;
+        Ok(rows)
+    }
 
-        tracing::trace!("received frame_no: {} for delegated write", write_frame_no);
-
-        Ok(rows_affected)
+    pub async fn execute_batch(&self, sql: Vec<String>) -> anyhow::Result<()> {
+        self.client.execute_batch(sql).await?;
+        Ok(())
     }
 }

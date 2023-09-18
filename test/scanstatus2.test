@@ -55,11 +55,12 @@ proc get_cycles {stmt} {
   dict get $r nCycle
 }
 
-proc foreach_scan {varname stmt body} {
+proc foreach_scan {varname stmt body {debug 0}} {
   upvar $varname var
-
   for {set ii 0} {1} {incr ii} {
-    set r [sqlite3_stmt_scanstatus -flags complex $stmt $ii]
+    set f "complex"
+    if {$debug} { set f "complex debug" }
+    set r [sqlite3_stmt_scanstatus -flags $f $stmt $ii]
     if {[llength $r]==0} break
     array set var $r
     uplevel $body
@@ -102,6 +103,15 @@ proc puts_graph {sql} {
   puts [string trim [get_graph $stmt]]
 }
 
+proc puts_debug_info {sql} {
+  db eval $sql
+  set stmt [db version -last-stmt-ptr]
+  foreach_scan X $stmt {
+    puts -nonewline "$X(debug_explain) $X(zExplain): "
+    puts -nonewline "loop=$X(debug_loop) visit=$X(debug_visit) "
+    puts            "csr=$X(debug_csr) range=$X(debug_range)"
+  } 1
+}
 
 do_zexplain_test 0 1.1 {
   SELECT (SELECT a FROM t1 WHERE b=x) FROM t2 WHERE y=2
@@ -235,7 +245,7 @@ do_graph_test 4.5 {
 QUERY (nCycle=nnn)
 --CO-ROUTINE v1
 ----SCAN rt2 (nCycle=nnn)
-----USE TEMP B-TREE FOR GROUP BY
+----USE TEMP B-TREE FOR GROUP BY (nCycle=nnn)
 --SCAN rt1 (nCycle=nnn)
 --CREATE AUTOMATIC INDEX ON v1(x1, cnt) (nCycle=nnn)
 --BLOOM FILTER ON v1 (x1=?)
@@ -269,6 +279,57 @@ ifcapable trace {
     set ::trace_explain
   } {{SCAN t1} {SCAN t1} {SCAN t1}}
 }
+
+#-------------------------------------------------------------------------
+reset_db
+sqlite3_db_config db STMT_SCANSTATUS 1
+
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  INSERT INTO t1 VALUES(3, 'three');
+  INSERT INTO t1 VALUES(4, 'four');
+  INSERT INTO t1 VALUES(5, 'five');
+  INSERT INTO t1 VALUES(6, 'six');
+  INSERT INTO t1 VALUES(7, 'seven');
+  INSERT INTO t1 VALUES(8, 'eight');
+}
+
+do_graph_test 6.1 {
+  SELECT (a % 2), group_concat(b) FROM t1 GROUP BY 1
+} {
+QUERY (nCycle=nnn)
+--SCAN t1 (nCycle=nnn)
+--USE TEMP B-TREE FOR GROUP BY (nCycle=nnn)
+}
+
+set sql {
+  WITH xy(x, y) AS ( SELECT (a % 2), group_concat(b) FROM t1 GROUP BY 1)
+  SELECT * FROM xy WHERE x=1
+}
+do_graph_test 6.2 $sql {
+QUERY (nCycle=nnn)
+--CO-ROUTINE xy
+----SCAN t1 (nCycle=nnn)
+----USE TEMP B-TREE FOR GROUP BY (nCycle=nnn)
+--SCAN xy (nCycle=nnn)
+}
+
+do_graph_test 6.3 {
+  WITH xy(x, y) AS ( SELECT (a % 2), group_concat(b) FROM t1 GROUP BY 1)
+  SELECT * FROM xy, xy AS xy2
+} {
+QUERY (nCycle=nnn)
+--MATERIALIZE xy (nCycle=nnn)
+----SCAN t1 (nCycle=nnn)
+----USE TEMP B-TREE FOR GROUP BY (nCycle=nnn)
+--SCAN xy (nCycle=nnn)
+--SCAN xy2 (nCycle=nnn)
+}
+
+#explain_i { SELECT (a % 2), group_concat(b) FROM t1 GROUP BY 1 }
+#puts_debug_info { SELECT (a % 2), group_concat(b) FROM t1 GROUP BY 1 }
 
 finish_test
 

@@ -42,6 +42,10 @@ do_test func-0.1 {
 do_test func-1.0 {
   execsql {SELECT length(t1) FROM tbl1 ORDER BY t1}
 } {4 2 7 8 4}
+set isutf16 [regexp 16 [db one {PRAGMA encoding}]]
+do_execsql_test func-1.0b {
+  SELECT octet_length(t1) FROM tbl1 ORDER BY t1;
+} [expr {$isutf16?"8 4 14 16 8":"4 2 7 8 4"}]
 do_test func-1.1 {
   set r [catch {execsql {SELECT length(*) FROM tbl1 ORDER BY t1}} msg]
   lappend r $msg
@@ -57,9 +61,29 @@ do_test func-1.3 {
 do_test func-1.4 {
   execsql {SELECT coalesce(length(a),-1) FROM t2}
 } {1 -1 3 -1 5}
+do_execsql_test func-1.5 {
+  SELECT octet_length(12345);
+} [expr {(1+($isutf16!=0))*5}]
+db null NULL
+do_execsql_test func-1.6 {
+  SELECT octet_length(NULL);
+} {NULL}
+do_execsql_test func-1.7 {
+  SELECT octet_length(7.5);
+} [expr {(1+($isutf16!=0))*3}]
+do_execsql_test func-1.8 {
+  SELECT octet_length(x'30313233');
+} {4}
+do_execsql_test func-1.9 {
+  WITH c(x) AS (VALUES(char(350,351,352,353,354)))
+  SELECT length(x), octet_length(x) FROM c;
+} {5 10}
+
+
 
 # Check out the substr() function
 #
+db null {}
 do_test func-2.0 {
   execsql {SELECT substr(t1,1,2) FROM tbl1 ORDER BY t1}
 } {fr is pr so th}
@@ -839,30 +863,13 @@ do_test func-18.11 {
   }
 } integer
 ifcapable floatingpoint {
-  do_test func-18.12 {
-    catchsql {
-      INSERT INTO t6 VALUES(1<<62);
-      SELECT sum(x) - ((1<<62)*2.0+1) from t6;
-    }
+  do_catchsql_test func-18.12 {
+    INSERT INTO t6 VALUES(1<<62);
+    SELECT sum(x) - ((1<<62)*2.0+1) from t6;
   } {1 {integer overflow}}
-  do_test func-18.13 {
-    execsql {
-      SELECT total(x) - ((1<<62)*2.0+1) FROM t6
-    }
-  } 0.0
-}
-ifcapable !floatingpoint {
-  do_test func-18.12 {
-    catchsql {
-      INSERT INTO t6 VALUES(1<<62);
-      SELECT sum(x) - ((1<<62)*2+1) from t6;
-    }
-  } {1 {integer overflow}}
-  do_test func-18.13 {
-    execsql {
-      SELECT total(x) - ((1<<62)*2+1) FROM t6
-    }
-  } 0.0
+  do_catchsql_test func-18.13 {
+    SELECT total(x) - ((1<<62)*2.0+1) FROM t6
+  } {0 0.0}
 }
 if {[working_64bit_int]} {
   do_test func-18.14 {
@@ -1520,6 +1527,22 @@ do_execsql_test func-36.110 {
   SELECT 123 ->> 456
 } {123->>456}
 
-
+# 2023-06-26
+# Enhanced precision of SUM().
+#
+reset_db
+do_catchsql_test func-37.100 {
+  WITH c(x) AS (VALUES(9223372036854775807),(9223372036854775807),
+                      (123),(-9223372036854775807),(-9223372036854775807))
+  SELECT sum(x) FROM c;
+} {1 {integer overflow}}
+do_catchsql_test func-37.110 {
+  WITH c(x) AS (VALUES(9223372036854775807),(1))
+  SELECT sum(x) FROM c;
+} {1 {integer overflow}}
+do_catchsql_test func-37.120 {
+  WITH c(x) AS (VALUES(9223372036854775807),(10000),(-10010))
+  SELECT sum(x) FROM c;
+} {1 {integer overflow}}
 
 finish_test

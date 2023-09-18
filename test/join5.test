@@ -302,14 +302,34 @@ do_execsql_test 7.3 {
   ANALYZE sqlite_schema;
 }
 
+# If both sides of the OR reference the right-hand side of the LEFT JOIN
+# then simplify the LEFT JOIN.
+#
 do_eqp_test 7.4 {
   SELECT * FROM t3 LEFT JOIN t4 ON (t4.x = t3.x) WHERE (t4.y = ? OR t4.z = ?);
+} {
+  QUERY PLAN
+  |--SCAN t4
+  `--SEARCH t3 USING COVERING INDEX t3x (x=?)
+} 
+# If only one side of the OR references the right-hand side of the LEFT JOIN
+# then do not do the simplification
+#
+do_eqp_test 7.4b {
+  SELECT * FROM t3 LEFT JOIN t4 ON (t4.x = t3.x) WHERE (t4.y = ? OR t3.x = ?);
 } {
   QUERY PLAN
   |--SCAN t3
   `--SEARCH t4 USING INDEX t4xz (x=?) LEFT-JOIN
 } 
-do_eqp_test 7.4b {
+do_eqp_test 7.4c {
+  SELECT * FROM t3 LEFT JOIN t4 ON (t4.x = t3.x) WHERE (t3.x = ? OR t4.z = ?);
+} {
+  QUERY PLAN
+  |--SCAN t3
+  `--SEARCH t4 USING INDEX t4xz (x=?) LEFT-JOIN
+} 
+do_eqp_test 7.4d {
   SELECT * FROM t3 CROSS JOIN t4 ON (t4.x = t3.x) WHERE (+t4.y = ? OR t4.z = ?);
 } {
   QUERY PLAN

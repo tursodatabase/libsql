@@ -1,8 +1,9 @@
+use crate::params::IntoParams;
+use crate::v1::params::Params;
 pub use crate::v1::Column;
-use crate::v1::Params;
 use crate::{Error, Result};
 
-use crate::{rows::LibsqlRows, Row, Rows};
+use crate::{Row, Rows};
 
 // TODO(lucio): Add `column_*` based fn
 #[async_trait::async_trait]
@@ -33,21 +34,21 @@ impl Statement {
         self.inner.finalize();
     }
 
-    pub async fn execute(&mut self, params: &Params) -> Result<usize> {
-        self.inner.execute(params).await
+    pub async fn execute(&mut self, params: impl IntoParams) -> Result<usize> {
+        self.inner.execute(&params.into_params()?).await
     }
 
-    pub async fn query(&mut self, params: &Params) -> Result<Rows> {
-        self.inner.query(params).await
+    pub async fn query(&mut self, params: impl IntoParams) -> Result<Rows> {
+        self.inner.query(&params.into_params()?).await
     }
 
-    pub async fn query_map<F>(&mut self, params: &Params, map: F) -> Result<MappedRows<F>> {
+    pub async fn query_map<F>(&mut self, params: impl IntoParams, map: F) -> Result<MappedRows<F>> {
         let rows = self.query(params).await?;
 
         Ok(MappedRows { rows, map })
     }
 
-    pub async fn query_row(&mut self, params: &Params) -> Result<Row> {
+    pub async fn query_row(&mut self, params: impl IntoParams) -> Result<Row> {
         let mut rows = self.query(params).await?;
 
         let row = rows.next()?.ok_or(Error::QueryReturnedNoRows)?;
@@ -111,16 +112,16 @@ impl Stmt for LibsqlStmt {
         let params = params.clone();
         let stmt = self.0.clone();
 
-        stmt.execute(&params).map(|i| i as usize)
+        stmt.execute2(params).await.map(|i| i as usize)
     }
 
     async fn query(&mut self, params: &Params) -> Result<Rows> {
         let params = params.clone();
         let stmt = self.0.clone();
 
-        stmt.query(&params).map(|rows| Rows {
-            inner: Box::new(LibsqlRows(rows)),
-        })
+        stmt.query2(params.clone())
+            .await
+            .map(|inner| Rows { inner })
     }
 
     fn reset(&mut self) {

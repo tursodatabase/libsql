@@ -18,7 +18,10 @@ use anyhow::Context as _;
 use http::Uri;
 use hyper_rustls::HttpsConnectorBuilder;
 use tonic::{
-    body::BoxBody, codegen::InterceptedService, metadata::AsciiMetadataValue, service::Interceptor,
+    body::BoxBody,
+    codegen::InterceptedService,
+    metadata::{AsciiMetadataValue, BinaryMetadataValue},
+    service::Interceptor,
 };
 use tonic_web::{GrpcWebCall, GrpcWebClientService};
 use tower::{Service, ServiceBuilder};
@@ -42,8 +45,8 @@ type ResponseBody = trace::ResponseBody<
 #[derive(Debug, Clone)]
 pub struct Client {
     client_id: Uuid,
-    replication: pb::ReplicationLogClient<InterceptedService<GrpcChannel, AuthInterceptor>>,
-    proxy: pb::ProxyClient<InterceptedService<GrpcChannel, AuthInterceptor>>,
+    replication: pb::ReplicationLogClient<InterceptedService<GrpcChannel, GrpcInterceptor>>,
+    proxy: pb::ProxyClient<InterceptedService<GrpcChannel, GrpcInterceptor>>,
 }
 
 impl Client {
@@ -52,17 +55,20 @@ impl Client {
             .try_into()
             .context("Invalid auth token must be ascii")?;
 
+        let ns = split_namespace(origin.host().unwrap()).unwrap_or_else(|_| "default".to_string());
+        let namespace = BinaryMetadataValue::from_bytes(ns.as_bytes());
+
         let channel = GrpcChannel::new();
 
+        let interceptor = GrpcInterceptor(auth_token, namespace);
+
         let replication = pb::ReplicationLogClient::with_origin(
-            InterceptedService::new(channel.clone(), AuthInterceptor(auth_token.clone())),
+            InterceptedService::new(channel.clone(), interceptor.clone()),
             origin.clone(),
         );
 
-        let proxy = pb::ProxyClient::with_origin(
-            InterceptedService::new(channel, AuthInterceptor(auth_token)),
-            origin,
-        );
+        let proxy =
+            pb::ProxyClient::with_origin(InterceptedService::new(channel, interceptor), origin);
 
         // Remove default tonic `8mb` message limits since fly may buffer
         // messages causing the msg len to be longer.
@@ -153,13 +159,91 @@ impl Client {
 
         let affected_row_count = match &result.row_result {
             Some(RowResult::Row(row)) => row.affected_row_count,
-            Some(RowResult::Error(e)) => {
-                todo!("handle row result error: {:?}", e)
-            }
-            None => todo!("handle empty row result"),
+            Some(RowResult::Error(e)) => anyhow::bail!(e.message.clone()),
+
+            None => panic!("unexpected empty result row"),
         };
 
         Ok((res.current_frame_no, affected_row_count))
+    }
+
+    pub async fn execute_batch(&self, sql: Vec<String>) -> anyhow::Result<()> {
+        let mut proxy = self.proxy.clone();
+
+        let steps = sql
+            .into_iter()
+            .map(|sql| pb::Step {
+                query: Some(pb::Query {
+                    stmt: sql,
+                    params: Some(pb::query::Params::Positional(pb::Positional::default())),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            })
+            .collect();
+
+        let res = proxy
+            .execute(pb::ProgramReq {
+                client_id: self.client_id.to_string(),
+                pgm: Some(pb::Program { steps }),
+            })
+            .await?
+            .into_inner();
+
+        let result = res
+            .results
+            .iter()
+            .next()
+            .expect("Expected at least one result");
+
+        let affected_row_count = match &result.row_result {
+            Some(RowResult::Row(row)) => row.affected_row_count,
+            Some(RowResult::Error(e)) => anyhow::bail!(e.message.clone()),
+
+            None => panic!("unexpected empty result row"),
+        };
+
+        tracing::trace!("execute_batch: affected row count: {}", affected_row_count);
+
+        Ok(())
+    }
+
+    pub async fn query(
+        &self,
+        sql: &str,
+        params: pb::query::Params,
+    ) -> anyhow::Result<(u64, pb::ResultRows)> {
+        let mut proxy = self.proxy.clone();
+
+        let res = proxy
+            .execute(pb::ProgramReq {
+                client_id: self.client_id.to_string(),
+                pgm: Some(pb::Program {
+                    steps: vec![pb::Step {
+                        query: Some(pb::Query {
+                            stmt: sql.to_string(),
+                            params: Some(params),
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    }],
+                }),
+            })
+            .await?
+            .into_inner();
+
+        let result = res
+            .results
+            .into_iter()
+            .next()
+            .expect("Expected at least one result");
+
+        let row_result = match result.row_result.unwrap() {
+            RowResult::Error(error) => anyhow::bail!(error.message),
+            RowResult::Row(rows) => rows,
+        };
+
+        Ok((res.current_frame_no, row_result))
     }
 }
 
@@ -204,13 +288,29 @@ impl Service<http::Request<BoxBody>> for GrpcChannel {
 }
 
 #[derive(Clone)]
-pub struct AuthInterceptor(AsciiMetadataValue);
+/// Contains token and namespace headers to append to every request.
+pub struct GrpcInterceptor(AsciiMetadataValue, BinaryMetadataValue);
 
-impl Interceptor for AuthInterceptor {
+impl Interceptor for GrpcInterceptor {
     fn call(&mut self, mut req: tonic::Request<()>) -> Result<tonic::Request<()>, tonic::Status> {
         req.metadata_mut().insert("x-authorization", self.0.clone());
+        req.metadata_mut()
+            .insert_bin("x-namespace-bin", self.1.clone());
         Ok(req)
     }
+}
+
+fn split_namespace(host: &str) -> anyhow::Result<String> {
+    let (ns, _) = host
+        .split_once('.')
+        .ok_or_else(|| anyhow::anyhow!("host header should be in the format <namespace>.<...>"))?;
+
+    if ns.is_empty() {
+        anyhow::bail!("Invalid namespace as its empty");
+    }
+
+    let ns = ns.to_owned();
+    Ok(ns)
 }
 
 // Copied from https://docs.rs/tower/latest/tower/util/struct.BoxCloneService.html

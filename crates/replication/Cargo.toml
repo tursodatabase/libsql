@@ -14,7 +14,7 @@ bincode = "1"
 bytemuck = { version = "1.13.1", features = ["derive"] }
 bytes = { version = "1.4.0", features = ["serde"] }
 thiserror = "1.0.41"
-libsql-sys = { version = "0", path = "../libsql-sys" }
+libsql-sys = { version = "0.2.13", path = "../libsql-sys" }
 uuid = { version = "1.4.0", features = ["v4", "serde"] }
 parking_lot = "0.12.1"
 tempfile = "3.6.0"

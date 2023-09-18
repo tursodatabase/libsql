@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH SQLITE3 1 "Fri Oct 31 10:41:31 EDT 2014"
+.TH SQLITE3 1 "Fri Aug 11 23:50:12 CET 2023"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -49,9 +49,9 @@ a table named "memos" and insert a couple of records into that table:
 $ 
 .B sqlite3 mydata.db
 .br
-SQLite version 3.8.8
+SQLite version 3.43.0 2023-08-11 17:45:23
 .br
-Enter ".help" for instructions
+Enter ".help" for usage hints.
 .br
 sqlite>
 .B create table memos(text, priority INTEGER);
@@ -108,141 +108,13 @@ sqlite>
 .B .help
 .nf
 .tr %.
-%backup ?DB? FILE      Backup DB (default "main") to FILE
-%bail on|off           Stop after hitting an error.  Default OFF
-%clone NEWDB           Clone data into NEWDB from the existing database
-%databases             List names and files of attached databases
-%dump ?TABLE? ...      Dump the database in an SQL text format
-                         If TABLE specified, only dump tables matching
-                         LIKE pattern TABLE.
-%echo on|off           Turn command echo on or off
-%eqp on|off            Enable or disable automatic EXPLAIN QUERY PLAN
-%exit                  Exit this program
-%explain ?on|off?      Turn output mode suitable for EXPLAIN on or off.
-                         With no args, it turns EXPLAIN on.
-%fullschema            Show schema and the content of sqlite_stat tables
-%headers on|off        Turn display of headers on or off
-%help                  Show this message
-%import FILE TABLE     Import data from FILE into TABLE
-%indices ?TABLE?       Show names of all indices
-                         If TABLE specified, only show indices for tables
-                         matching LIKE pattern TABLE.
-%load FILE ?ENTRY?     Load an extension library
-%log FILE|off          Turn logging on or off.  FILE can be stderr/stdout
-%mode MODE ?TABLE?     Set output mode where MODE is one of:
-                         csv      Comma-separated values
-                         column   Left-aligned columns.  (See .width)
-                         html     HTML <table> code
-                         insert   SQL insert statements for TABLE
-                         line     One value per line
-                         list     Values delimited by .separator string
-                         tabs     Tab-separated values
-                         tcl      TCL list elements
-%nullvalue STRING      Use STRING in place of NULL values
-%once FILENAME         Output for the next SQL command only to FILENAME
-%open ?FILENAME?       Close existing database and reopen FILENAME
-%output ?FILENAME?     Send output to FILENAME or stdout
-%print STRING...       Print literal STRING
-%prompt MAIN CONTINUE  Replace the standard prompts
-%quit                  Exit this program
-%read FILENAME         Execute SQL in FILENAME
-%restore ?DB? FILE     Restore content of DB (default "main") from FILE
-%save FILE             Write in-memory database into FILE
-%schema ?TABLE?        Show the CREATE statements
-                         If TABLE specified, only show tables matching
-                         LIKE pattern TABLE.
-%separator STRING ?NL? Change separator used by output mode and .import
-                         NL is the end-of-line mark for CSV
-%shell CMD ARGS...     Run CMD ARGS... in a system shell
-%show                  Show the current values for various settings
-%stats on|off          Turn stats on or off
-%system CMD ARGS...    Run CMD ARGS... in a system shell
-%tables ?TABLE?        List names of tables
-                         If TABLE specified, only list tables matching
-                         LIKE pattern TABLE.
-%timeout MS            Try opening locked tables for MS milliseconds
-%timer on|off          Turn SQL timer on or off
-%trace FILE|off        Output each SQL statement as it is run
-%vfsname ?AUX?         Print the name of the VFS stack
-%width NUM1 NUM2 ...   Set column widths for "column" mode
-                         Negative values right-justify
-sqlite>
+...
 .sp
 .fi
-.SH OPTIONS
-.B sqlite3
-has the following options:
-.TP
-.B \-bail
-Stop after hitting an error.
-.TP
-.B \-batch
-Force batch I/O.
-.TP
-.B \-column
-Query results will be displayed in a table like form, using
-whitespace characters to separate the columns and align the
-output.
-.TP
-.BI \-cmd\  command
-run
-.I command
-before reading stdin
-.TP
-.B \-csv
-Set output mode to CSV (comma separated values).
-.TP
-.B \-echo
-Print commands before execution.
-.TP
-.BI \-init\  file
-Read and execute commands from
-.I file
-, which can contain a mix of SQL statements and meta-commands.
-.TP
-.B \-[no]header
-Turn headers on or off.
-.TP
-.B \-help
-Show help on options and exit.
-.TP
-.B \-html
-Query results will be output as simple HTML tables.
-.TP
-.B \-interactive
-Force interactive I/O.
-.TP
-.B \-line
-Query results will be displayed with one value per line, rows
-separated by a blank line.  Designed to be easily parsed by
-scripts or other programs
-.TP
-.B \-list
-Query results will be displayed with the separator (|, by default)
-character between each field value.  The default.
-.TP
-.BI \-mmap\  N
-Set default mmap size to
-.I N
-\.
-.TP
-.BI \-nullvalue\  string
-Set string used to represent NULL values.  Default is ''
-(empty string).
-.TP
-.BI \-separator\  separator
-Set output field separator.  Default is '|'.
-.TP
-.B \-stats
-Print memory stats before each finalize.
-.TP
-.B \-version
-Show SQLite version.
-.TP
-.BI \-vfs\  name
-Use
-.I name
-as the default VFS.
+
+The available commands differ by version and build options, so they
+are not listed here. Please refer to your local copy for all available
+options.
 
 
 .SH INIT FILE
@@ -265,22 +137,25 @@ continue prompt = "   ...> "
 .sp
 .fi
 
-o If the file 
+o If the file
+.B ${XDG_CONFIG_HOME}/sqlite3/sqliterc
+or
 .B ~/.sqliterc
-exists, it is processed first.
-can be found in the user's home directory, it is
-read and processed.  It should generally only contain meta-commands.
+exists, the first of those to be found is processed during startup.
+It should generally only contain meta-commands.
 
 o If the -init option is present, the specified file is processed.
 
 o All other command line options are processed.
 
 .SH SEE ALSO
-http://www.sqlite.org/cli.html
+https://sqlite.org/cli.html
+.br
+https://sqlite.org/fiddle (a WebAssembly build of the CLI app)
 .br
 The sqlite3-doc package.
 .SH AUTHOR
 This manual page was originally written by Andreas Rottmann
 <rotty@debian.org>, for the Debian GNU/Linux system (but may be used
-by others). It was subsequently revised by Bill Bumgarner <bbum@mac.com> and
-further updated by Laszlo Boszormenyi <gcs@debian.hu> .
+by others). It was subsequently revised by Bill Bumgarner <bbum@mac.com>,
+Laszlo Boszormenyi <gcs@debian.hu>, and the sqlite3 developers.

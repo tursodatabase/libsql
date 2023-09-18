@@ -23,10 +23,7 @@ const toExportForESM =
      impls which Emscripten installs at some point in the file above
      this.
   */
-  const originalInit =
-        /* Maintenance reminder: DO NOT use `self.` here. It's correct
-           for non-ES6 Module cases but wrong for ES6 modules because those
-           resolve this symbol differently. */ sqlite3InitModule;
+  const originalInit = sqlite3InitModule;
   if(!originalInit){
     throw new Error("Expecting globalThis.sqlite3InitModule to be defined by the Emscripten build.");
   }
@@ -65,19 +62,19 @@ const toExportForESM =
   globalThis.sqlite3InitModule = function ff(...args){
     //console.warn("Using replaced sqlite3InitModule()",globalThis.location);
     return originalInit(...args).then((EmscriptenModule)=>{
+//#if wasmfs
       if('undefined'!==typeof WorkerGlobalScope &&
-         (EmscriptenModule['ENVIRONMENT_IS_PTHREAD']
-          || EmscriptenModule['_pthread_self']
-          || 'function'===typeof threadAlert
-          || globalThis?.location?.pathname?.endsWith?.('.worker.js')
-         )){
+         EmscriptenModule['ENVIRONMENT_IS_PTHREAD']){
         /** Workaround for wasmfs-generated worker, which calls this
             routine from each individual thread and requires that its
-            argument be returned. All of the criteria above are fragile,
-            based solely on inspection of the offending code, not public
-            Emscripten details. */
+            argument be returned. The conditional criteria above are
+            fragile, based solely on inspection of the offending code,
+            not public Emscripten details. */
+        //console.warn("sqlite3InitModule() returning E-module.",EmscriptenModule);
         return EmscriptenModule;
       }
+//#endif
+      //console.warn("sqlite3InitModule() returning sqlite3 object.");
       const s = EmscriptenModule.sqlite3;
       s.scriptInfo = initModuleState;
       //console.warn("sqlite3.scriptInfo =",s.scriptInfo);
@@ -124,5 +121,6 @@ const toExportForESM =
   return globalThis.sqlite3InitModule /* required for ESM */;
 })();
 //#if target=es6-module
-export default toExportForESM;
+sqlite3InitModule = toExportForESM;
+export default sqlite3InitModule;
 //#endif

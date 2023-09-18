@@ -1130,6 +1130,44 @@ static int runDbSql(sqlite3 *db, const char *zSql, unsigned int *pBtsFlags){
   return sqlite3_finalize(pStmt);
 }
 
+/* Mappings into dbconfig settings for bits taken from bytes 72..75 of
+** the input database.
+**
+** This should be the same as in dbsqlfuzz.c.  Make sure those codes stay
+** in sync.
+*/
+static const struct {
+  unsigned int mask;
+  int iSetting;
+  char *zName;
+} aDbConfigSettings[] = {
+  {  0x0001, SQLITE_DBCONFIG_ENABLE_FKEY,        "enable_fkey"        },
+  {  0x0002, SQLITE_DBCONFIG_ENABLE_TRIGGER,     "enable_trigger"     },
+  {  0x0004, SQLITE_DBCONFIG_ENABLE_VIEW,        "enable_view"        },
+  {  0x0008, SQLITE_DBCONFIG_ENABLE_QPSG,        "enable_qpsg"        },
+  {  0x0010, SQLITE_DBCONFIG_TRIGGER_EQP,        "trigger_eqp"        },
+  {  0x0020, SQLITE_DBCONFIG_DEFENSIVE,          "defensive"          },
+  {  0x0040, SQLITE_DBCONFIG_WRITABLE_SCHEMA,    "writable_schema"    },
+  {  0x0080, SQLITE_DBCONFIG_LEGACY_ALTER_TABLE, "legacy_alter_table" },
+  {  0x0100, SQLITE_DBCONFIG_STMT_SCANSTATUS,    "stmt_scanstatus"    },
+  {  0x0200, SQLITE_DBCONFIG_REVERSE_SCANORDER,  "reverse_scanorder"  },
+#ifdef SQLITE_DBCONFIG_STRICT_AGGREGATE
+  {  0x0400, SQLITE_DBCONFIG_STRICT_AGGREGATE,   "strict_aggregate"   },
+#endif
+  {  0x0800, SQLITE_DBCONFIG_DQS_DML,            "dqs_dml"            },
+  {  0x1000, SQLITE_DBCONFIG_DQS_DDL,            "dqs_ddl"            },
+  {  0x2000, SQLITE_DBCONFIG_TRUSTED_SCHEMA,     "trusted_schema"     },
+};
+
+/* Toggle a dbconfig setting
+*/
+static void toggleDbConfig(sqlite3 *db, int iSetting){
+  int v = 0;
+  sqlite3_db_config(db, iSetting, -1, &v);
+  v = !v;
+  sqlite3_db_config(db, iSetting, v, 0);
+}
+
 /* Invoke this routine to run a single test case */
 int runCombinedDbSqlInput(
   const uint8_t *aData,      /* Combined DB+SQL content */
@@ -1148,6 +1186,9 @@ int runCombinedDbSqlInput(
   int nSql;                  /* Bytes of SQL text */
   FuzzCtx cx;                /* Fuzzing context */
   unsigned int btsFlags = 0; /* Parsing flags */
+  unsigned int dbFlags = 0;  /* Flag values from db offset 72..75 */
+  unsigned int dbOpt = 0;    /* Flag values from db offset 76..79 */
+
 
   if( nByte<10 ) return 0;
   if( sqlite3_initialize() ) return 0;
@@ -1163,6 +1204,14 @@ int runCombinedDbSqlInput(
   memset(&cx, 0, sizeof(cx));
   iSql = decodeDatabase((unsigned char*)aData, (int)nByte, &aDb, &nDb);
   if( iSql<0 ) return 0;
+  if( nDb>=75 ){
+    dbFlags = ((unsigned int)aDb[72]<<24) + ((unsigned int)aDb[73]<<16) +
+              ((unsigned int)aDb[74]<<8) + (unsigned int)aDb[75];
+  }
+  if( nDb>=79 ){
+    dbOpt = ((unsigned int)aDb[76]<<24) + ((unsigned int)aDb[77]<<16) +
+            ((unsigned int)aDb[78]<<8) + (unsigned int)aDb[79];
+  }
   nSql = (int)(nByte - iSql);
   if( bScript ){
     char zName[100];
@@ -1183,7 +1232,12 @@ int runCombinedDbSqlInput(
     sqlite3_free(aDb);
     return 1;
   }
-  sqlite3_db_config(cx.db, SQLITE_DBCONFIG_STMT_SCANSTATUS, 1, 0);
+  sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, cx.db, dbOpt);
+  for(i=0; i<sizeof(aDbConfigSettings)/sizeof(aDbConfigSettings[0]); i++){
+    if( dbFlags & aDbConfigSettings[i].mask ){
+      toggleDbConfig(cx.db, aDbConfigSettings[i].iSetting);
+    }
+  }
   if( bVdbeDebug ){
     sqlite3_exec(cx.db, "PRAGMA vdbe_debug=ON", 0, 0, 0);
   }
@@ -1979,7 +2033,9 @@ int main(int argc, char **argv){
       if( strcmp(z,"version")==0 ){
         int ii;
         const char *zz;
-        printf("SQLite %s %s\n", sqlite3_libversion(), sqlite3_sourceid());
+        printf("SQLite %s %s (%d-bit)\n",
+            sqlite3_libversion(), sqlite3_sourceid(),
+            8*(int)sizeof(char*));
         for(ii=0; (zz = sqlite3_compileoption_get(ii))!=0; ii++){
           printf("%s\n", zz);
         }
@@ -2484,9 +2540,10 @@ int main(int argc, char **argv){
       printf("fuzzcheck: %u query invariants checked\n", g.nInvariant);
     }
     printf("fuzzcheck: 0 errors out of %d tests in %d.%03d seconds\n"
-           "SQLite %s %s\n",
+           "SQLite %s %s (%d-bit)\n",
            nTest, (int)(iElapse/1000), (int)(iElapse%1000),
-           sqlite3_libversion(), sqlite3_sourceid());
+           sqlite3_libversion(), sqlite3_sourceid(),
+           8*(int)sizeof(char*));
   }
   free(azSrcDb);
   free(pHeap);

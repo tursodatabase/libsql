@@ -25,7 +25,6 @@ impl<'a> FrameInjector<'a> {
     }
 
     pub fn step(&self) -> anyhow::Result<bool> {
-        // pragma writable_schema=on
         unsafe {
             libsql_sys::ffi::sqlite3_exec(
                 self.conn.conn,
@@ -48,11 +47,10 @@ impl<'a> FrameInjector<'a> {
         match rc as u32 {
             libsql_sys::ffi::SQLITE_OK => panic!("replication hook was not called"),
             LIBSQL_EXIT_REPLICATION => {
-                // pragma writable_schema=off
                 unsafe {
                     libsql_sys::ffi::sqlite3_exec(
                         self.conn.conn,
-                        "pragma writable_schema=off\0".as_ptr() as *const _,
+                        "pragma writable_schema=reset\0".as_ptr() as *const _,
                         None,
                         std::ptr::null_mut(),
                         std::ptr::null_mut(),

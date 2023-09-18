@@ -28,9 +28,9 @@
 **
 ** The procedure call above will create and register a new VFS shim named
 ** "multiplex".  The multiplex VFS will use the VFS named by zOrigVfsName to
-** do the actual disk I/O.  (The zOrigVfsName parameter may be NULL, in 
+** do the actual disk I/O.  (The zOrigVfsName parameter may be NULL, in
 ** which case the default VFS at the moment sqlite3_multiplex_initialize()
-** is called will be used as the underlying real VFS.)  
+** is called will be used as the underlying real VFS.)
 **
 ** If the makeDefault parameter is TRUE then multiplex becomes the new
 ** default VFS.  Otherwise, you can use the multiplex VFS by specifying
@@ -39,7 +39,7 @@
 ** URI.
 **
 ** The multiplex VFS allows databases up to 32 GiB in size.  But it splits
-** the files up into smaller pieces, so that they will work even on 
+** the files up into smaller pieces, so that they will work even on
 ** filesystems that do not support large files.  The default chunk size
 ** is 2147418112 bytes (which is 64KiB less than 2GiB) but this can be
 ** changed at compile-time by defining the SQLITE_MULTIPLEX_CHUNK_SIZE
@@ -58,10 +58,10 @@
 #endif
 #include "sqlite3ext.h"
 
-/* 
-** These should be defined to be the same as the values in 
+/*
+** These should be defined to be the same as the values in
 ** sqliteInt.h.  They are defined separately here so that
-** the multiplex VFS shim can be built as a loadable 
+** the multiplex VFS shim can be built as a loadable
 ** module.
 */
 #define UNUSED_PARAMETER(x) (void)(x)
@@ -83,7 +83,7 @@
 #endif
 
 /* This is the limit on the chunk size.  It may be changed by calling
-** the xFileControl() interface.  It will be rounded up to a 
+** the xFileControl() interface.  It will be rounded up to a
 ** multiple of MAX_PAGE_SIZE.  We default it here to 2GiB less 64KiB.
 */
 #ifndef SQLITE_MULTIPLEX_CHUNK_SIZE
@@ -130,7 +130,7 @@ struct multiplexGroup {
 
 /*
 ** An instance of the following object represents each open connection
-** to a file that is multiplex'ed.  This object is a 
+** to a file that is multiplex'ed.  This object is a
 ** subclass of sqlite3_file.  The sqlite3_file object for the underlying
 ** VFS is appended to this structure.
 */
@@ -157,11 +157,11 @@ static struct {
   */
   sqlite3_vfs sThisVfs;
 
-  /* The sIoMethods defines the methods used by sqlite3_file objects 
+  /* The sIoMethods defines the methods used by sqlite3_file objects
   ** associated with this shim.  It is initialized at start-time and does
   ** not require a mutex.
   **
-  ** When the underlying VFS is called to open a file, it might return 
+  ** When the underlying VFS is called to open a file, it might return
   ** either a version 1 or a version 2 sqlite3_file object.  This shim
   ** has to create a wrapper sqlite3_file of the same version.  Hence
   ** there are two I/O method structures, one for version 1 and the other
@@ -199,16 +199,16 @@ static int multiplexStrlen30(const char *z){
 ** nul-terminator.
 **
 ** If iChunk is 0 (or 400 - the number for the first journal file chunk),
-** the output is a copy of the input string. Otherwise, if 
+** the output is a copy of the input string. Otherwise, if
 ** SQLITE_ENABLE_8_3_NAMES is not defined or the input buffer does not contain
-** a "." character, then the output is a copy of the input string with the 
-** three-digit zero-padded decimal representation if iChunk appended to it. 
+** a "." character, then the output is a copy of the input string with the
+** three-digit zero-padded decimal representation if iChunk appended to it.
 ** For example:
 **
 **   zBase="test.db", iChunk=4  ->  zOut="test.db004"
 **
 ** Or, if SQLITE_ENABLE_8_3_NAMES is defined and the input buffer contains
-** a "." character, then everything after the "." is replaced by the 
+** a "." character, then everything after the "." is replaced by the
 ** three-digit representation of iChunk.
 **
 **   zBase="test.db", iChunk=4  ->  zOut="test.004"
@@ -232,12 +232,12 @@ static void multiplexFilename(
     if( i>=n-4 ) n = i+1;
     if( flags & SQLITE_OPEN_MAIN_JOURNAL ){
       /* The extensions on overflow files for main databases are 001, 002,
-      ** 003 and so forth.  To avoid name collisions, add 400 to the 
+      ** 003 and so forth.  To avoid name collisions, add 400 to the
       ** extensions of journal files so that they are 401, 402, 403, ....
       */
       iChunk += SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET;
     }else if( flags & SQLITE_OPEN_WAL ){
-      /* To avoid name collisions, add 700 to the 
+      /* To avoid name collisions, add 700 to the
       ** extensions of WAL files so that they are 701, 702, 703, ....
       */
       iChunk += SQLITE_MULTIPLEX_WAL_8_3_OFFSET;
@@ -297,8 +297,8 @@ static sqlite3_file *multiplexSubOpen(
   sqlite3_vfs *pOrigVfs = gMultiplex.pOrigVfs;        /* Real VFS */
 
 #ifdef SQLITE_ENABLE_8_3_NAMES
-  /* If JOURNAL_8_3_OFFSET is set to (say) 400, then any overflow files are 
-  ** part of a database journal are named db.401, db.402, and so on. A 
+  /* If JOURNAL_8_3_OFFSET is set to (say) 400, then any overflow files are
+  ** part of a database journal are named db.401, db.402, and so on. A
   ** database may therefore not grow to larger than 400 chunks. Attempting
   ** to open chunk 401 indicates the database is full. */
   if( iChunk>=SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET ){
@@ -351,8 +351,8 @@ static sqlite3_file *multiplexSubOpen(
 
 /*
 ** Return the size, in bytes, of chunk number iChunk.  If that chunk
-** does not exist, then return 0.  This function does not distingish between
-** non-existant files and zero-length files.
+** does not exist, then return 0.  This function does not distinguish between
+** non-existent files and zero-length files.
 */
 static sqlite3_int64 multiplexSubSize(
   multiplexGroup *pGroup,    /* The multiplexor group */
@@ -367,7 +367,7 @@ static sqlite3_int64 multiplexSubSize(
   if( pSub==0 ) return 0;
   *rc = pSub->pMethods->xFileSize(pSub, &sz);
   return sz;
-}    
+}  
 
 /*
 ** This is the implementation of the multiplex_control() SQL function.
@@ -382,22 +382,22 @@ static void multiplexControlFunc(
   int op = 0;
   int iVal;
 
-  if( !db || argc!=2 ){ 
-    rc = SQLITE_ERROR; 
+  if( !db || argc!=2 ){
+    rc = SQLITE_ERROR;
   }else{
     /* extract params */
     op = sqlite3_value_int(argv[0]);
     iVal = sqlite3_value_int(argv[1]);
     /* map function op to file_control op */
     switch( op ){
-      case 1: 
-        op = MULTIPLEX_CTRL_ENABLE; 
+      case 1:
+        op = MULTIPLEX_CTRL_ENABLE;
         break;
-      case 2: 
-        op = MULTIPLEX_CTRL_SET_CHUNK_SIZE; 
+      case 2:
+        op = MULTIPLEX_CTRL_SET_CHUNK_SIZE;
         break;
-      case 3: 
-        op = MULTIPLEX_CTRL_SET_MAX_CHUNKS; 
+      case 3:
+        op = MULTIPLEX_CTRL_SET_MAX_CHUNKS;
         break;
       default:
         rc = SQLITE_NOTFOUND;
@@ -411,16 +411,16 @@ static void multiplexControlFunc(
 }
 
 /*
-** This is the entry point to register the auto-extension for the 
+** This is the entry point to register the auto-extension for the
 ** multiplex_control() function.
 */
 static int multiplexFuncInit(
-  sqlite3 *db, 
-  char **pzErrMsg, 
+  sqlite3 *db,
+  char **pzErrMsg,
   const sqlite3_api_routines *pApi
 ){
   int rc;
-  rc = sqlite3_create_function(db, "multiplex_control", 2, SQLITE_ANY, 
+  rc = sqlite3_create_function(db, "multiplex_control", 2, SQLITE_ANY,
       0, multiplexControlFunc, 0, 0);
   return rc;
 }
@@ -508,7 +508,7 @@ static int multiplexOpen(
     memset(pGroup, 0, sz);
     pMultiplexOpen->pGroup = pGroup;
     pGroup->bEnabled = (unsigned char)-1;
-    pGroup->bTruncate = (unsigned char)sqlite3_uri_boolean(zUri, "truncate", 
+    pGroup->bTruncate = (unsigned char)sqlite3_uri_boolean(zUri, "truncate",
                                    (flags & SQLITE_OPEN_MAIN_DB)==0);
     pGroup->szChunk = (int)sqlite3_uri_int64(zUri, "chunksize",
                                         SQLITE_MULTIPLEX_CHUNK_SIZE);
@@ -551,11 +551,11 @@ static int multiplexOpen(
         if( sz64==0 ){
           if( flags & SQLITE_OPEN_MAIN_JOURNAL ){
             /* If opening a main journal file and the first chunk is zero
-            ** bytes in size, delete any subsequent chunks from the 
+            ** bytes in size, delete any subsequent chunks from the
             ** file-system. */
             int iChunk = 1;
             do {
-              rc = pOrigVfs->xAccess(pOrigVfs, 
+              rc = pOrigVfs->xAccess(pOrigVfs,
                   pGroup->aReal[iChunk].z, SQLITE_ACCESS_EXISTS, &bExists
               );
               if( rc==SQLITE_OK && bExists ){
@@ -573,8 +573,8 @@ static int multiplexOpen(
           **
           ** Or, if the first overflow file does not exist and the main file is
           ** larger than the chunk size, that means the chunk size is too small.
-          ** But we have no way of determining the intended chunk size, so 
-          ** just disable the multiplexor all togethre.
+          ** But we have no way of determining the intended chunk size, so
+          ** just disable the multiplexor all together.
           */
           rc = pOrigVfs->xAccess(pOrigVfs, pGroup->aReal[1].z,
               SQLITE_ACCESS_EXISTS, &bExists);
@@ -618,7 +618,7 @@ static int multiplexDelete(
   rc = pOrigVfs->xDelete(pOrigVfs, zName, syncDir);
   if( rc==SQLITE_OK ){
     /* If the main chunk was deleted successfully, also delete any subsequent
-    ** chunks - starting with the last (highest numbered). 
+    ** chunks - starting with the last (highest numbered).
     */
     int nName = (int)strlen(zName);
     char *z;
@@ -695,7 +695,7 @@ static int multiplexCurrentTimeInt64(sqlite3_vfs *a, sqlite3_int64 *b){
 
 /* xClose requests get passed through to the original VFS.
 ** We loop over all open chunk handles and close them.
-** The group structure for this file is unlinked from 
+** The group structure for this file is unlinked from
 ** our list of groups and freed.
 */
 static int multiplexClose(sqlite3_file *pConn){
@@ -1008,7 +1008,7 @@ static int multiplexFileControl(sqlite3_file *pConn, int op, void *pArg){
         /*
         ** PRAGMA multiplex_chunksize;
         **
-        ** Return the chunksize for the multiplexor, or no-op if the 
+        ** Return the chunksize for the multiplexor, or no-op if the
         ** multiplexor is not active.
         */
         if( sqlite3_stricmp(aFcntl[1],"multiplex_chunksize")==0
@@ -1138,8 +1138,8 @@ static int multiplexShmUnmap(sqlite3_file *pConn, int deleteFlag){
 /*
 ** CAPI: Initialize the multiplex VFS shim - sqlite3_multiplex_initialize()
 **
-** Use the VFS named zOrigVfsName as the VFS that does the actual work.  
-** Use the default if zOrigVfsName==NULL.  
+** Use the VFS named zOrigVfsName as the VFS that does the actual work.
+** Use the default if zOrigVfsName==NULL.
 **
 ** The multiplex VFS shim is named "multiplex".  It will become the default
 ** VFS if makeDefault is non-zero.

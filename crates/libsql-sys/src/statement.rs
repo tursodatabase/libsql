@@ -26,8 +26,13 @@ impl Drop for Statement {
 
 impl Statement {
     pub fn finalize(&self) {
-        if !self.finalized.swap(true, std::sync::atomic::Ordering::SeqCst) {
-            unsafe { crate::ffi::sqlite3_finalize(self.raw_stmt); }
+        if !self
+            .finalized
+            .swap(true, std::sync::atomic::Ordering::SeqCst)
+        {
+            unsafe {
+                crate::ffi::sqlite3_finalize(self.raw_stmt);
+            }
         }
     }
 
@@ -210,7 +215,11 @@ pub unsafe fn prepare_stmt(raw: *mut crate::ffi::sqlite3, sql: &str) -> Result<S
     };
 
     match err as u32 {
-        crate::ffi::SQLITE_OK => Ok(Statement { raw_stmt, tail, finalized: AtomicBool::new(false) }),
+        crate::ffi::SQLITE_OK => Ok(Statement {
+            raw_stmt,
+            tail,
+            finalized: AtomicBool::new(false),
+        }),
         _ => Err(err.into()),
     }
 }

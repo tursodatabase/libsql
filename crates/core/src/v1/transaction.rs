@@ -1,5 +1,5 @@
 use crate::v1::Connection;
-use crate::Result;
+use crate::{params::Params, Result};
 use std::ops::Deref;
 
 pub enum TransactionBehavior {
@@ -59,7 +59,7 @@ impl Transaction {
             TransactionBehavior::Immediate => "BEGIN IMMEDIATE",
             TransactionBehavior::Exclusive => "BEGIN EXCLUSIVE",
         };
-        let _ = conn.execute(begin_stmt, ())?;
+        let _ = conn.execute(begin_stmt, Params::None)?;
         Ok(Self {
             conn,
             drop_behavior: DropBehavior::Rollback,
@@ -72,7 +72,7 @@ impl Transaction {
     }
 
     fn do_commit(&self) -> Result<()> {
-        let _ = self.conn.execute("COMMIT", ())?;
+        let _ = self.conn.execute("COMMIT", Params::None)?;
         Ok(())
     }
 
@@ -82,7 +82,7 @@ impl Transaction {
     }
 
     fn do_rollback(&self) -> Result<()> {
-        let _ = self.conn.execute("ROLLBACK", ())?;
+        let _ = self.conn.execute("ROLLBACK", Params::None)?;
         Ok(())
     }
 }
