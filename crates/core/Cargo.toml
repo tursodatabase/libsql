@@ -24,7 +24,7 @@ serde_json = "1"
 async-trait = "0.1"
 crossbeam-channel = "0.5"
 bitflags = "2.4.0"
-tower = "0.4"
+tower = { version = "0.4", features = ["util"] }
 
 bincode = { version = "1", optional = true }
 anyhow = { version = "1.0.71", optional = true }
