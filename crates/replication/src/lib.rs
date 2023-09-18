@@ -249,9 +249,9 @@ impl Replicator {
         }?;
 
         let len = frames.len();
-        self.next_offset.fetch_add(len as u64, Ordering::Relaxed);
         self.frames_sender.send(Frames::Vec(frames)).await?;
         self.injector.step()?;
+        self.next_offset.fetch_add(len as u64, Ordering::Relaxed);
         Ok(len)
     }
 
