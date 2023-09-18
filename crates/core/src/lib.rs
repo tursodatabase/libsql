@@ -28,8 +28,7 @@
 //!
 //! ```rust,no_run
 //! # async fn run() {
-//! use libsql::{Database, Opts};
-//! use libsql::replication::{Frame, Frames};
+//! use libsql::{Database, Opts, Frames};
 //!
 //! let mut db = Database::open_with_local_sync("/tmp/test.db").await.unwrap();
 //!
@@ -74,7 +73,7 @@ pub use v2::{
     Connection, Database, OpenFlags,
 };
 
-pub use replication::{FrameNo, Frames, TempSnapshot};
+pub use replication::{Frame, FrameNo, Frames, TempSnapshot};
 
 pub use libsql_sys::ffi;
 

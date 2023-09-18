@@ -26,6 +26,7 @@ pub struct WalIndexMeta {
 }
 
 impl WalIndexMeta {
+    #[allow(dead_code)]
     pub fn read_from_path(db_path: &Path) -> anyhow::Result<(Option<Self>, File)> {
         let path = db_path.join("client_wal_index");
         let file = OpenOptions::new()

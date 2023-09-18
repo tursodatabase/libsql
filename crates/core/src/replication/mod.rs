@@ -5,7 +5,7 @@ pub mod replica;
 pub use client::pb;
 
 pub const WAL_PAGE_SIZE: i32 = 4096;
-pub const WAL_MAGIC: u64 = u64::from_le_bytes(*b"SQLDWAL\0");
+// pub const WAL_MAGIC: u64 = u64::from_le_bytes(*b"SQLDWAL\0");
 
 /// The frame uniquely identifying, monotonically increasing number
 pub type FrameNo = u64;
@@ -24,6 +24,7 @@ use client::Client;
 
 pub struct Replicator {
     pub(crate) frames_sender: Sender<Frames>,
+    #[allow(dead_code)]
     pub(crate) current_frame_no_notifier: tokio::sync::watch::Receiver<FrameNo>,
     // The hook context needs to live as long as the injector and have a stable memory address.
     // Safety: it must never ever be used directly! Ever. Really.
