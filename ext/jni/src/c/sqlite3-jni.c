@@ -5310,9 +5310,12 @@ static int s3jni_xTokenize_xToken(void *p, int tFlags, const char* z,
   struct s3jni_xQueryPhraseState * const s = p;
   jbyteArray jba;
 
+#if 0
   if( s->tok.zPrev == z && s->tok.nPrev == nZ ){
     jba = s->tok.jba;
-  }else{
+  }else
+#endif
+  {
     S3JniUnrefLocal(s->tok.jba);
     s->tok.zPrev = z;
     s->tok.nPrev = nZ;
