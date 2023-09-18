@@ -1,15 +1,13 @@
 use std::sync::Arc;
 
 use axum::extract::FromRequestParts;
-use bytes::Bytes;
 use hyper::http::request::Parts;
 use hyper::HeaderMap;
 
 use crate::connection::MakeConnection;
 use crate::database::Database;
 use crate::error::Error;
-use crate::namespace::MakeNamespace;
-use crate::DEFAULT_NAMESPACE_NAME;
+use crate::namespace::{MakeNamespace, NamespaceName};
 
 use super::AppState;
 
@@ -45,9 +43,9 @@ pub fn namespace_from_headers(
     headers: &HeaderMap,
     disable_default_namespace: bool,
     disable_namespaces: bool,
-) -> crate::Result<Bytes> {
+) -> crate::Result<NamespaceName> {
     if disable_namespaces {
-        return Ok(DEFAULT_NAMESPACE_NAME.into());
+        return Ok(NamespaceName::default());
     }
 
     let host = headers
@@ -59,15 +57,15 @@ pub fn namespace_from_headers(
 
     match split_namespace(host_str) {
         Ok(ns) => Ok(ns),
-        Err(_) if !disable_default_namespace => Ok(DEFAULT_NAMESPACE_NAME.into()),
+        Err(_) if !disable_default_namespace => Ok(NamespaceName::default()),
         Err(e) => Err(e),
     }
 }
 
-fn split_namespace(host: &str) -> crate::Result<Bytes> {
+fn split_namespace(host: &str) -> crate::Result<NamespaceName> {
     let (ns, _) = host.split_once('.').ok_or_else(|| {
         Error::InvalidHost("host header should be in the format <namespace>.<...>".into())
     })?;
-    let ns = Bytes::copy_from_slice(ns.as_bytes());
+    let ns = NamespaceName::from_string(ns.to_owned())?;
     Ok(ns)
 }

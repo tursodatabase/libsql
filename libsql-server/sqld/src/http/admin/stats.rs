@@ -5,7 +5,7 @@ use serde::Serialize;
 use axum::extract::{Path, State};
 use axum::Json;
 
-use crate::namespace::MakeNamespace;
+use crate::namespace::{MakeNamespace, NamespaceName};
 use crate::replication::FrameNo;
 use crate::stats::Stats;
 
@@ -42,7 +42,10 @@ pub(super) async fn handle_stats<M: MakeNamespace>(
     State(app_state): State<Arc<AppState<M>>>,
     Path(namespace): Path<String>,
 ) -> crate::Result<Json<StatsResponse>> {
-    let stats = app_state.namespaces.stats(namespace.into()).await?;
+    let stats = app_state
+        .namespaces
+        .stats(NamespaceName::from_string(namespace)?)
+        .await?;
     let resp: StatsResponse = stats.as_ref().into();
 
     Ok(Json(resp))

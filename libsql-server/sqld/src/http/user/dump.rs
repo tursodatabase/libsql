@@ -78,11 +78,7 @@ pub(super) async fn handle_dump<F: MakeNamespace>(
         state.disable_namespaces,
     )?;
 
-    let db_path = state
-        .path
-        .join("dbs")
-        .join(std::str::from_utf8(namespace.as_ref()).expect("namespace to be a utf-8 string"))
-        .join("data");
+    let db_path = state.path.join("dbs").join(namespace.as_str()).join("data");
 
     let connection = rusqlite::Connection::open(db_path)?;
 

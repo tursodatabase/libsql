@@ -1,10 +1,10 @@
 use anyhow::{anyhow, bail, Context as _, Result};
-use bytes::Bytes;
 use futures::{SinkExt as _, StreamExt as _};
 use tokio_tungstenite::tungstenite;
 use tungstenite::http;
 
 use crate::http::user::db_factory::namespace_from_headers;
+use crate::namespace::NamespaceName;
 use crate::net::Conn;
 
 use super::super::{Encoding, Version};
@@ -27,7 +27,7 @@ pub struct Output {
     pub ws: WebSocket,
     pub version: Version,
     pub encoding: Encoding,
-    pub namespace: Bytes,
+    pub namespace: NamespaceName,
 }
 
 pub async fn handshake_tcp(

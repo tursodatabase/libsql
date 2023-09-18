@@ -7,14 +7,13 @@ use std::sync::{Arc, Weak};
 use std::time::Duration;
 
 use anyhow::Context as AnyhowContext;
-use bytes::Bytes;
 use config::{
     AdminApiConfig, DbConfig, HeartbeatConfig, RpcClientConfig, RpcServerConfig, UserApiConfig,
 };
 use http::user::UserApi;
 use hyper::client::HttpConnector;
 use namespace::{
-    MakeNamespace, NamespaceStore, PrimaryNamespaceConfig, PrimaryNamespaceMaker,
+    MakeNamespace, NamespaceName, NamespaceStore, PrimaryNamespaceConfig, PrimaryNamespaceMaker,
     ReplicaNamespaceConfig, ReplicaNamespaceMaker,
 };
 use net::Connector;
@@ -66,11 +65,10 @@ mod utils;
 
 const MAX_CONCURRENT_DBS: usize = 128;
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
-const DEFAULT_NAMESPACE_NAME: &str = "default";
 const DEFAULT_AUTO_CHECKPOINT: u32 = 1000;
 
 type Result<T, E = Error> = std::result::Result<T, E>;
-type StatsSender = mpsc::Sender<(Bytes, Weak<Stats>)>;
+type StatsSender = mpsc::Sender<(NamespaceName, Weak<Stats>)>;
 
 pub struct Server<C = HttpConnector, A = AddrIncoming> {
     pub path: Arc<Path>,
@@ -247,10 +245,12 @@ where
 
     pub fn make_snapshot_callback(&self) -> NamespacedSnapshotCallback {
         let snapshot_exec = self.db_config.snapshot_exec.clone();
-        Arc::new(move |snapshot_file: &Path, namespace: &Bytes| {
+        Arc::new(move |snapshot_file: &Path, namespace: &NamespaceName| {
             if let Some(exec) = snapshot_exec.as_ref() {
-                let ns = std::str::from_utf8(namespace)?;
-                let status = Command::new(exec).arg(snapshot_file).arg(ns).status()?;
+                let status = Command::new(exec)
+                    .arg(snapshot_file)
+                    .arg(namespace.as_str())
+                    .status()?;
                 anyhow::ensure!(
                     status.success(),
                     "Snapshot exec process failed with status {status}"
@@ -263,7 +263,7 @@ where
     fn spawn_monitoring_tasks(
         &self,
         join_set: &mut JoinSet<anyhow::Result<()>>,
-        stats_receiver: mpsc::Receiver<(Bytes, Weak<Stats>)>,
+        stats_receiver: mpsc::Receiver<(NamespaceName, Weak<Stats>)>,
     ) -> anyhow::Result<()> {
         match self.heartbeat_config {
             Some(ref config) => {
@@ -442,10 +442,7 @@ where
         // eagerly load the default namespace when namespaces are disabled
         if self.disable_namespaces {
             namespaces
-                .create(
-                    DEFAULT_NAMESPACE_NAME.into(),
-                    namespace::RestoreOption::Latest,
-                )
+                .create(NamespaceName::default(), namespace::RestoreOption::Latest)
                 .await?;
         }
 

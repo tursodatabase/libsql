@@ -1,4 +1,5 @@
-use bytes::Bytes;
+#![allow(clippy::mutable_key_type)]
+
 use std::collections::HashMap;
 use std::sync::Weak;
 use std::time::Duration;
@@ -6,13 +7,14 @@ use tokio::sync::mpsc;
 use url::Url;
 
 use crate::http::admin::stats::StatsResponse;
+use crate::namespace::NamespaceName;
 use crate::stats::Stats;
 
 pub async fn server_heartbeat(
     url: Url,
     auth: Option<String>,
     update_period: Duration,
-    mut stats_subs: mpsc::Receiver<(Bytes, Weak<Stats>)>,
+    mut stats_subs: mpsc::Receiver<(NamespaceName, Weak<Stats>)>,
 ) {
     let mut watched = HashMap::new();
     let client = reqwest::Client::new();
@@ -31,7 +33,7 @@ pub async fn server_heartbeat(
 }
 
 async fn send_stats(
-    watched: &mut HashMap<Bytes, Weak<Stats>>,
+    watched: &mut HashMap<NamespaceName, Weak<Stats>>,
     client: &reqwest::Client,
     url: &Url,
     auth: Option<&str>,
@@ -41,9 +43,7 @@ async fn send_stats(
         if let Some(stats) = stats.upgrade() {
             let body = StatsResponse::from(stats.as_ref());
             let mut url = url.clone();
-            url.path_segments_mut()
-                .unwrap()
-                .push(std::str::from_utf8(ns).unwrap());
+            url.path_segments_mut().unwrap().push(ns.as_str());
             let request = client.post(url);
             let request = if let Some(ref auth) = auth {
                 request.header("Authorization", auth.to_string())

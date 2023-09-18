@@ -12,12 +12,14 @@ use std::thread::JoinHandle;
 
 use anyhow::Context;
 use bytemuck::{bytes_of, pod_read_unaligned, Pod, Zeroable};
-use bytes::{Bytes, BytesMut};
+use bytes::BytesMut;
 use crossbeam::channel::bounded;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use tempfile::NamedTempFile;
 use uuid::Uuid;
+
+use crate::namespace::NamespaceName;
 
 use super::frame::Frame;
 use super::primary::logger::LogFile;
@@ -168,7 +170,7 @@ pub struct LogCompactor {
 
 pub type SnapshotCallback = Box<dyn Fn(&Path) -> anyhow::Result<()> + Send + Sync>;
 pub type NamespacedSnapshotCallback =
-    Arc<dyn Fn(&Path, &Bytes) -> anyhow::Result<()> + Send + Sync>;
+    Arc<dyn Fn(&Path, &NamespaceName) -> anyhow::Result<()> + Send + Sync>;
 
 impl LogCompactor {
     pub fn new(db_path: &Path, db_id: u128, callback: SnapshotCallback) -> anyhow::Result<Self> {

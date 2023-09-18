@@ -4,7 +4,6 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use bytemuck::bytes_of;
-use bytes::Bytes;
 use futures::StreamExt;
 use tokio::sync::{mpsc, oneshot, watch, Mutex};
 use tokio::task::JoinSet;
@@ -12,7 +11,7 @@ use tonic::metadata::BinaryMetadataValue;
 use tonic::transport::Channel;
 use tonic::{Code, Request};
 
-use crate::namespace::{ResetCb, ResetOp};
+use crate::namespace::{NamespaceName, ResetCb, ResetOp};
 use crate::replication::frame::Frame;
 use crate::replication::replica::error::ReplicationError;
 use crate::replication::replica::snapshot::TempSnapshot;
@@ -36,8 +35,7 @@ type Client = ReplicationLogClient<Channel>;
 pub struct Replicator {
     client: Client,
     db_path: PathBuf,
-    /// bytes representing the namespace name
-    namespace: Bytes,
+    namespace: NamespaceName,
     meta: Arc<Mutex<Option<WalIndexMeta>>>,
     pub current_frame_no_notifier: watch::Receiver<FrameNo>,
     frames_sender: mpsc::Sender<Frames>,
@@ -50,7 +48,7 @@ impl Replicator {
         db_path: PathBuf,
         channel: Channel,
         uri: tonic::transport::Uri,
-        namespace: Bytes,
+        namespace: NamespaceName,
         join_set: &mut JoinSet<anyhow::Result<()>>,
         reset: ResetCb,
     ) -> anyhow::Result<Self> {
@@ -130,7 +128,7 @@ impl Replicator {
         let mut req = Request::new(msg);
         req.metadata_mut().insert_bin(
             NAMESPACE_METADATA_KEY,
-            BinaryMetadataValue::from_bytes(&self.namespace[..]),
+            BinaryMetadataValue::from_bytes(self.namespace.as_slice()),
         );
 
         req
@@ -163,10 +161,7 @@ impl Replicator {
         }
 
         if let Err(e) = (self.reset)(ResetOp::Reset(self.namespace.clone())).await {
-            tracing::error!(
-                "failed to reset namespace {}: {e}",
-                std::str::from_utf8(&self.namespace).unwrap_or_default()
-            );
+            tracing::error!("failed to reset namespace {}: {e}", self.namespace);
         }
 
         error.into()
@@ -204,13 +199,10 @@ impl Replicator {
                     if e.code() == Code::FailedPrecondition
                         && e.message() == NAMESPACE_DOESNT_EXIST =>
                 {
-                    tracing::info!(
-                        "namespace `{}` doesn't exist, cleaning...",
-                        std::str::from_utf8(&self.namespace).unwrap_or_default()
-                    );
+                    tracing::info!("namespace `{}` doesn't exist, cleaning...", self.namespace);
                     (self.reset)(ResetOp::Destroy(self.namespace.clone())).await?;
                     return Err(crate::error::Error::NamespaceDoesntExist(
-                        String::from_utf8(self.namespace.to_vec()).unwrap_or_default(),
+                        self.namespace.to_string(),
                     ));
                 }
                 Err(e) if !error_printed => {

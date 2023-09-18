@@ -3,7 +3,6 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
-use bytes::Bytes;
 use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 use tokio_stream::StreamExt;
 
@@ -12,7 +11,7 @@ use crate::replication::frame::Frame;
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 
-use super::{MakeNamespace, ResetCb, RestoreOption};
+use super::{MakeNamespace, NamespaceName, ResetCb, RestoreOption};
 
 // FIXME: get this const from somewhere else (crate wide)
 const PAGE_SIZE: usize = 4096;
@@ -51,7 +50,7 @@ async fn write_frame(frame: Frame, temp_file: &mut tokio::fs::File) -> Result<()
 pub struct ForkTask<'a> {
     pub base_path: Arc<Path>,
     pub logger: Arc<ReplicationLogger>,
-    pub dest_namespace: Bytes,
+    pub dest_namespace: NamespaceName,
     pub make_namespace: &'a dyn MakeNamespace<Database = PrimaryDatabase>,
     pub reset_cb: ResetCb,
 }
@@ -62,12 +61,9 @@ impl ForkTask<'_> {
         let dest_namespace = self.dest_namespace.clone();
         match self.try_fork().await {
             Err(e) => {
-                let _ = tokio::fs::remove_dir_all(
-                    base_path
-                        .join("dbs")
-                        .join(std::str::from_utf8(&dest_namespace).unwrap()),
-                )
-                .await;
+                let _ =
+                    tokio::fs::remove_dir_all(base_path.join("dbs").join(dest_namespace.as_str()))
+                        .await;
                 Err(e)
             }
             Ok(ns) => Ok(ns),
@@ -124,7 +120,7 @@ impl ForkTask<'_> {
         let dest_path = self
             .base_path
             .join("dbs")
-            .join(std::str::from_utf8(&self.dest_namespace).unwrap());
+            .join(self.dest_namespace.as_str());
         tokio::fs::rename(temp_dir.path(), dest_path).await?;
 
         self.make_namespace
