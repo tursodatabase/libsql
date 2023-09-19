@@ -90,10 +90,13 @@ pub fn libsql_wasm_engine_new() -> *const c_void {
 
 #[no_mangle]
 pub fn libsql_wasm_engine_free(engine: *mut c_void) {
-    unsafe { Box::from_raw(engine as *mut Engine) };
+    unsafe {
+        let _ = Box::from_raw(engine as *mut Engine);
+    }
 }
 
 #[repr(C)]
+#[allow(non_camel_case_types)]
 pub struct libsql_wasm_udf_api {
     libsql_value_type: unsafe extern "C" fn(*const c_void) -> i32,
     libsql_value_int: unsafe extern "C" fn(*const c_void) -> i32,
@@ -315,5 +318,7 @@ pub fn libsql_run_wasm(
 
 #[no_mangle]
 pub fn libsql_free_wasm_module(module: *mut *mut Module) {
-    unsafe { Box::from_raw(*module) };
+    unsafe {
+        let _ = Box::from_raw(*module);
+    }
 }

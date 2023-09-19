@@ -1,11 +1,10 @@
 use crate::params::IntoParams;
-use crate::v1::params::Params;
+use crate::params::Params;
 pub use crate::v1::Column;
 use crate::{Error, Result};
 
 use crate::{Row, Rows};
 
-// TODO(lucio): Add `column_*` based fn
 #[async_trait::async_trait]
 pub(super) trait Stmt {
     fn finalize(&mut self);

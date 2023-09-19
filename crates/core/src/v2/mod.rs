@@ -5,10 +5,10 @@ pub mod transaction;
 
 use std::sync::Arc;
 
-use crate::params::IntoParams;
-use crate::v1::{params::Params, TransactionBehavior};
-use crate::Result;
 use crate::box_clone_service::BoxCloneService;
+use crate::params::{IntoParams, Params};
+use crate::v1::TransactionBehavior;
+use crate::Result;
 pub use hrana::{Client, HranaError};
 
 use hyper::client::HttpConnector;
@@ -215,7 +215,7 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub fn sync_frames(&self, frames: libsql_replication::Frames) -> Result<usize> {
+    pub fn sync_frames(&self, frames: crate::replication::Frames) -> Result<usize> {
         match &self.db_type {
             DbType::Sync { db } => db.sync_frames(frames),
             DbType::Memory => Err(crate::Error::SyncNotSupported("in-memory".into())),

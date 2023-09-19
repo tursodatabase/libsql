@@ -7,8 +7,8 @@ use libsql_sys::types::Wal;
 use libsql_sys::{types::XWalFrameFn, wal_hook::WalHook};
 use tokio::sync::mpsc::error::TryRecvError;
 
-use crate::frame::{Frame, FrameBorrowed};
-use crate::{FrameNo, WAL_PAGE_SIZE};
+use super::super::frame::{Frame, FrameBorrowed};
+use super::super::{FrameNo, WAL_PAGE_SIZE};
 
 use super::snapshot::TempSnapshot;
 

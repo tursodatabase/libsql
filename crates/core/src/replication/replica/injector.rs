@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use crate::replica::hook::{LIBSQL_CONTINUE_REPLICATION, LIBSQL_EXIT_REPLICATION};
-
-use super::hook::{InjectorHookCtx, INJECTOR_METHODS};
+use super::hook::{
+    InjectorHookCtx, INJECTOR_METHODS, LIBSQL_CONTINUE_REPLICATION, LIBSQL_EXIT_REPLICATION,
+};
 
 pub struct FrameInjector<'a> {
     conn: libsql_sys::Connection<'a>,

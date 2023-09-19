@@ -635,9 +635,9 @@ impl<'a> From<libsql_sys::Value> for ValueRef<'a> {
 }
 
 #[cfg(feature = "replication")]
-impl From<Params> for libsql_replication::pb::query::Params {
+impl From<Params> for crate::replication::pb::query::Params {
     fn from(params: Params) -> Self {
-        use libsql_replication::pb;
+        use crate::replication::pb;
 
         match params {
             Params::None => pb::query::Params::Positional(pb::Positional::default()),
@@ -666,10 +666,10 @@ impl From<Params> for libsql_replication::pb::query::Params {
 }
 
 #[cfg(feature = "replication")]
-impl TryFrom<libsql_replication::pb::Value> for Value {
+impl TryFrom<crate::replication::pb::Value> for Value {
     type Error = Error;
 
-    fn try_from(value: libsql_replication::pb::Value) -> Result<Self> {
+    fn try_from(value: crate::replication::pb::Value) -> Result<Self> {
         bincode::deserialize(&value.data[..]).map_err(Error::from)
     }
 }

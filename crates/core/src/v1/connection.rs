@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 
+use crate::params::Params;
+
 use crate::v1::{
-    params::Params, Database, Error, Result, Rows, RowsFuture, Statement, Transaction,
-    TransactionBehavior,
+    Database, Error, Result, Rows, RowsFuture, Statement, Transaction, TransactionBehavior,
 };
 
 use libsql_sys::ffi;
@@ -16,7 +17,7 @@ pub struct Connection {
     drop_ref: Arc<()>,
 
     #[cfg(feature = "replication")]
-    pub(crate) writer: Option<libsql_replication::Writer>,
+    pub(crate) writer: Option<crate::replication::Writer>,
 }
 
 impl Drop for Connection {

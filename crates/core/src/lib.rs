@@ -24,12 +24,11 @@
 //! Embedded replica is libSQL database that's running in your application process, which keeps a local copy of a remote database.
 //! They are useful if you want to move data in the memory space of your application for fast access.
 //!
-//! You can open an embedded read-only replica by using the [`Database::with_replicator`] constructor:
+//! You can open an embedded read-only replica by using the [`Database::open_with_local_sync`] constructor:
 //!
 //! ```rust,no_run
 //! # async fn run() {
-//! use libsql::{Database, Opts};
-//! use libsql_replication::{Frame, Frames, Replicator};
+//! use libsql::{Database, Opts, Frames};
 //!
 //! let mut db = Database::open_with_local_sync("/tmp/test.db").await.unwrap();
 //!
@@ -44,28 +43,50 @@
 //!
 //! You can find more examples in the [`examples`](https://github.com/penberg/libsql-experimental/tree/libsql-api/crates/core/examples) directory.
 
+macro_rules! cfg_core {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "core")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
+            $item
+        )*
+    }
+}
+
+macro_rules! cfg_replication {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "core")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
+            $item
+        )*
+    }
+}
+
+cfg_core! {
+    mod v1;
+
+    pub use v1::{version, version_number, RowsFuture, Opts};
+}
+
 // Legacy mode, for compatibility with the old libsql API, it is doc hidden so
 // that new users do not use this api as its deprecated in favor of the v2 api.
-#[cfg(feature = "core")]
-mod v1;
-#[cfg(feature = "core")]
 mod v2;
 
-pub mod errors;
+pub mod params;
+
+cfg_replication! {
+    mod replication;
+    pub use replication::{Frame, FrameNo, Frames, TempSnapshot};
+}
+
 mod box_clone_service;
+
+pub mod errors;
 pub use errors::Error;
 
-#[cfg(all(feature = "core", feature = "replication"))]
-pub use v1::database::Opts;
+pub use params::{params_from_iter, Value, ValueRef};
 
-#[cfg(feature = "core")]
-pub use v1::{
-    params,
-    params::{params_from_iter, Value, ValueRef},
-    version, version_number, RowsFuture,
-};
-
-#[cfg(feature = "core")]
 pub use v2::{
     hrana, rows,
     rows::{Row, Rows},
@@ -76,7 +97,6 @@ pub use v2::{
     Connection, Database, OpenFlags,
 };
 
-#[cfg(feature = "core")]
 pub use libsql_sys::ffi;
 
 pub type Result<T> = std::result::Result<T, errors::Error>;

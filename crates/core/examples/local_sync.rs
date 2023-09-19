@@ -1,5 +1,4 @@
-use libsql::Database;
-use libsql_replication::{Frames, TempSnapshot};
+use libsql::{Database, Frames, TempSnapshot};
 use std::sync::{Arc, Mutex};
 
 #[tokio::main]

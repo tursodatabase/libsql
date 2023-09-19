@@ -1,5 +1,6 @@
+use crate::params::{Params, ValueRef};
 use crate::v1::rows::{MappedRows, Row};
-use crate::v1::{params::Params, Connection, Rows, ValueRef};
+use crate::v1::{Connection, Rows};
 use crate::{errors, Error, Result};
 
 use std::cell::RefCell;
@@ -56,7 +57,7 @@ impl Statement {
         #[cfg(feature = "replication")]
         {
             if !self.is_readonly() && self.conn.writer.is_some() {
-                use libsql_replication::pb;
+                use crate::replication::pb;
                 let params: pb::query::Params = params.into();
                 let rows = self
                     .conn
@@ -148,7 +149,7 @@ impl Statement {
         #[cfg(feature = "replication")]
         {
             if !self.is_readonly() && self.conn.writer.is_some() {
-                use libsql_replication::pb;
+                use crate::replication::pb;
                 let params: pb::query::Params = params.into();
                 return self
                     .conn

@@ -28,7 +28,7 @@ use tower::{Service, ServiceBuilder};
 use tower_http::{classify, trace, ServiceBuilderExt};
 use uuid::Uuid;
 
-use crate::{replica::meta::WalIndexMeta, Frame};
+use super::{replica::meta::WalIndexMeta, Frame};
 
 use box_clone_service::BoxCloneService;
 
@@ -255,7 +255,7 @@ pub struct GrpcChannel {
 impl GrpcChannel {
     pub fn new() -> Self {
         let https = HttpsConnectorBuilder::new()
-            .with_webpki_roots()
+            .with_native_roots()
             .https_or_http()
             .enable_http1()
             .build();

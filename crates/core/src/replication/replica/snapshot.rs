@@ -4,7 +4,7 @@ use futures::{Stream, StreamExt};
 use tempfile::NamedTempFile;
 use tokio::io::{AsyncWriteExt, BufWriter};
 
-use crate::frame::{Frame, FrameBorrowed};
+use super::super::frame::{Frame, FrameBorrowed};
 
 #[derive(Debug)]
 pub struct TempSnapshot {
