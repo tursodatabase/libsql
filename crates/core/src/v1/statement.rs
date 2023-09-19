@@ -4,6 +4,7 @@ use crate::{errors, Error, Result};
 
 use std::cell::RefCell;
 use std::ffi::c_int;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 /// A prepared statement.
@@ -144,17 +145,28 @@ impl Statement {
         self.inner.readonly()
     }
 
+    fn looks_like_begin(&self) -> bool {
+        self.sql.trim().to_lowercase().starts_with("begin")
+    }
+
+    fn looks_like_commit_or_rollback(&self) -> bool {
+        let sql = self.sql.trim().to_lowercase();
+        sql.starts_with("commit") || sql.starts_with("rollback")
+    }
+
     pub async fn execute2(&self, params: Params) -> Result<u64> {
         #[cfg(feature = "replication")]
         {
             if !self.is_readonly() && self.conn.writer.is_some() {
+                let writer = self.conn.writer.as_ref().unwrap();
+                if self.looks_like_begin() {
+                    writer.in_tx.store(true, Ordering::Relaxed);
+                } else if self.looks_like_commit_or_rollback() {
+                    writer.in_tx.store(false, Ordering::Relaxed);
+                }
                 use libsql_replication::pb;
                 let params: pb::query::Params = params.into();
-                return self
-                    .conn
-                    .writer
-                    .as_ref()
-                    .unwrap() // Unwrap is safe since we check if there is a writer
+                return writer
                     .execute(&self.sql, params)
                     .await
                     .map_err(|e| Error::WriteDelegation(e.into()));

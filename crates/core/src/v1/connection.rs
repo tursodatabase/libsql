@@ -284,6 +284,13 @@ impl Connection {
     }
 
     pub fn is_autocommit(&self) -> bool {
+        #[cfg(feature = "replication")]
+        {
+            if let Some(writer) = &self.writer {
+                // is_autocommit <=> not in transaction
+                return !writer.in_tx.load(std::sync::atomic::Ordering::Relaxed);
+            }
+        }
         unsafe { ffi::sqlite3_get_autocommit(self.raw) != 0 }
     }
 

@@ -16,7 +16,7 @@ use replica::snapshot::SnapshotFileHeader;
 pub use replica::snapshot::TempSnapshot;
 
 use std::path::Path;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
@@ -34,9 +34,10 @@ pub struct Replicator {
     pub next_offset: AtomicU64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Writer {
     client: Client,
+    pub in_tx: Arc<AtomicBool>,
 }
 
 // FIXME: copy-pasted from sqld, it should be deduplicated in a single place
@@ -206,7 +207,7 @@ impl Replicator {
             .clone()
             .context("FATAL trying to sync with no client, you need to call init_metadata first")?;
 
-        Ok(Writer { client })
+        Ok(Writer { client, in_tx: Arc::new(AtomicBool::new(false)) })
     }
 
     pub fn sync(&self, frames: Frames) -> anyhow::Result<usize> {
