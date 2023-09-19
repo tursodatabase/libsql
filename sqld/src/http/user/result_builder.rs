@@ -10,6 +10,7 @@ use crate::query_result_builder::{
     Column, JsonFormatter, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
     TOTAL_RESPONSE_SIZE,
 };
+use crate::replication::FrameNo;
 
 pub struct JsonHttpPayloadBuilder {
     formatter: JsonFormatter<CompactFormatter>,
@@ -291,7 +292,8 @@ impl QueryResultBuilder for JsonHttpPayloadBuilder {
         Ok(())
     }
 
-    fn finish(&mut self) -> Result<(), QueryResultBuilderError> {
+    // TODO: how do we return last_frame_no?
+    fn finish(&mut self, _last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError> {
         self.formatter.end_array(&mut self.buffer)?;
 
         Ok(())

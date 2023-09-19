@@ -13,6 +13,7 @@ use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
 };
+use crate::replication::FrameNo;
 
 use self::rpc::proxy_server::Proxy;
 use self::rpc::query_result::RowResult;
@@ -428,7 +429,7 @@ impl QueryResultBuilder for ExecuteResultBuilder {
         Ok(())
     }
 
-    fn finish(&mut self) -> Result<(), QueryResultBuilderError> {
+    fn finish(&mut self, _last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError> {
         Ok(())
     }
 

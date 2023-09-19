@@ -12,7 +12,7 @@ use crate::replication::{FrameNo, LogReadError, ReplicationLogger};
 /// Only stops if the current frame is not in the log anymore.
 pub struct FrameStream {
     pub(crate) current_frame_no: FrameNo,
-    pub(crate) max_available_frame_no: FrameNo,
+    pub(crate) max_available_frame_no: Option<FrameNo>,
     logger: Arc<ReplicationLogger>,
     state: FrameStreamState,
     wait_for_more: bool,
@@ -79,7 +79,7 @@ impl FrameStream {
 enum FrameStreamState {
     Init,
     /// waiting for new frames to replicate
-    WaitingFrameNo(BoxFuture<'static, anyhow::Result<FrameNo>>),
+    WaitingFrameNo(BoxFuture<'static, anyhow::Result<Option<FrameNo>>>),
     WaitingFrame(BoxFuture<'static, Result<Frame, LogReadError>>),
     Closed,
 }
@@ -115,6 +115,7 @@ impl Stream for FrameStream {
                     self.current_frame_no += 1;
                     self.produced_frames += 1;
                     self.transition_state_next_frame();
+                    tracing::trace!("sending frame_no {}", frame.header().frame_no);
                     Poll::Ready(Some(Ok(frame)))
                 }
 

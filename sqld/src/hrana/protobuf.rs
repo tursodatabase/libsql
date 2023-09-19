@@ -1,11 +1,13 @@
-use super::proto::{BatchCond, BatchCondList, BatchResult, CursorEntry, Value};
+use std::mem::replace;
+use std::sync::Arc;
+
 use ::bytes::{Buf, BufMut, Bytes};
 use prost::encoding::{
     bytes, double, message, sint64, skip_field, string, uint32, DecodeContext, WireType,
 };
 use prost::DecodeError;
-use std::mem::replace;
-use std::sync::Arc;
+
+use super::proto::{BatchCond, BatchCondList, BatchResult, CursorEntry, Value};
 
 impl prost::Message for BatchResult {
     fn encode_raw<B>(&self, buf: &mut B)
@@ -130,6 +132,11 @@ impl prost::Message for CursorEntry {
             CursorEntry::StepError(entry) => message::encode(3, entry, buf),
             CursorEntry::Row { row } => message::encode(4, row, buf),
             CursorEntry::Error { error } => message::encode(5, error, buf),
+            CursorEntry::ReplicationIndex { replication_index } => {
+                if let Some(replication_index) = replication_index {
+                    message::encode(6, replication_index, buf)
+                }
+            }
         }
     }
 
@@ -141,6 +148,13 @@ impl prost::Message for CursorEntry {
             CursorEntry::StepError(entry) => message::encoded_len(3, entry),
             CursorEntry::Row { row } => message::encoded_len(4, row),
             CursorEntry::Error { error } => message::encoded_len(5, error),
+            CursorEntry::ReplicationIndex { replication_index } => {
+                if let Some(replication_index) = replication_index {
+                    message::encoded_len(6, replication_index)
+                } else {
+                    0
+                }
+            }
         }
     }
 

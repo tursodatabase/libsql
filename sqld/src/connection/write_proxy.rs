@@ -39,7 +39,7 @@ pub struct MakeWriteProxyConnection {
     extensions: Arc<[PathBuf]>,
     stats: Arc<Stats>,
     config_store: Arc<DatabaseConfigStore>,
-    applied_frame_no_receiver: watch::Receiver<FrameNo>,
+    applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
     max_response_size: u64,
     max_total_response_size: u64,
     namespace: NamespaceName,
@@ -54,7 +54,7 @@ impl MakeWriteProxyConnection {
         uri: tonic::transport::Uri,
         stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
-        applied_frame_no_receiver: watch::Receiver<FrameNo>,
+        applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         max_response_size: u64,
         max_total_response_size: u64,
         namespace: NamespaceName,
@@ -106,9 +106,9 @@ pub struct WriteProxyConnection {
     /// FrameNo of the last write performed by this connection on the primary.
     /// any subsequent read on this connection must wait for the replicator to catch up with this
     /// frame_no
-    last_write_frame_no: PMutex<FrameNo>,
+    last_write_frame_no: PMutex<Option<FrameNo>>,
     /// Notifier from the repliator of the currently applied frameno
-    applied_frame_no_receiver: watch::Receiver<FrameNo>,
+    applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
     builder_config: QueryBuilderConfig,
     stats: Arc<Stats>,
     namespace: NamespaceName,
@@ -154,7 +154,7 @@ fn execute_results_to_builder<B: QueryResultBuilder>(
         }
     }
 
-    builder.finish()?;
+    builder.finish(execute_result.current_frame_no)?;
 
     Ok(builder)
 }
@@ -167,7 +167,7 @@ impl WriteProxyConnection {
         extensions: Arc<[PathBuf]>,
         stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
-        applied_frame_no_receiver: watch::Receiver<FrameNo>,
+        applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         builder_config: QueryBuilderConfig,
         namespace: NamespaceName,
     ) -> Result<Self> {
@@ -179,6 +179,7 @@ impl WriteProxyConnection {
             stats.clone(),
             config_store,
             builder_config,
+            applied_frame_no_receiver.clone(),
         )
         .await?;
 
@@ -187,7 +188,7 @@ impl WriteProxyConnection {
             write_proxy,
             state: Mutex::new(State::Init),
             client_id: Uuid::new_v4(),
-            last_write_frame_no: PMutex::new(FrameNo::MAX),
+            last_write_frame_no: PMutex::new(None),
             applied_frame_no_receiver,
             builder_config,
             stats,
@@ -222,7 +223,9 @@ impl WriteProxyConnection {
                 let current_frame_no = execute_result.current_frame_no;
                 let builder =
                     execute_results_to_builder(execute_result, builder, &self.builder_config)?;
-                self.update_last_write_frame_no(current_frame_no);
+                if let Some(current_frame_no) = current_frame_no {
+                    self.update_last_write_frame_no(current_frame_no);
+                }
 
                 Ok((builder, *state))
             }
@@ -237,31 +240,29 @@ impl WriteProxyConnection {
 
     fn update_last_write_frame_no(&self, new_frame_no: FrameNo) {
         let mut last_frame_no = self.last_write_frame_no.lock();
-        if *last_frame_no == FrameNo::MAX || new_frame_no > *last_frame_no {
-            *last_frame_no = new_frame_no
+        if last_frame_no.is_none() || new_frame_no > last_frame_no.unwrap() {
+            *last_frame_no = Some(new_frame_no);
         }
     }
 
     /// wait for the replicator to have caught up with our current write frame_no
     async fn wait_replication_sync(&self) -> Result<()> {
-        let current_frame_no = *self.last_write_frame_no.lock();
+        let current_fno = *self.last_write_frame_no.lock();
+        match current_fno {
+            Some(current_frame_no) => {
+                let mut receiver = self.applied_frame_no_receiver.clone();
+                receiver
+                    .wait_for(|last_applied| match last_applied {
+                        Some(x) => *x >= current_frame_no,
+                        None => true,
+                    })
+                    .await
+                    .map_err(|_| Error::ReplicatorExited)?;
 
-        if current_frame_no == FrameNo::MAX {
-            return Ok(());
+                Ok(())
+            }
+            None => Ok(()),
         }
-
-        let mut receiver = self.applied_frame_no_receiver.clone();
-        let mut last_applied = *receiver.borrow_and_update();
-
-        while last_applied < current_frame_no {
-            receiver
-                .changed()
-                .await
-                .map_err(|_| Error::ReplicatorExited)?;
-            last_applied = *receiver.borrow_and_update();
-        }
-
-        Ok(())
     }
 }
 

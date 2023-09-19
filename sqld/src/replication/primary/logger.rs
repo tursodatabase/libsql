@@ -301,6 +301,7 @@ impl ReplicationLoggerHookCtx {
 
     fn commit(&self) -> anyhow::Result<()> {
         let new_frame_no = self.logger.commit()?;
+        tracing::trace!("new frame commited {new_frame_no:?}");
         self.logger.new_frame_notifier.send_replace(new_frame_no);
         Ok(())
     }
@@ -569,6 +570,7 @@ impl LogFile {
         }
     }
 
+    /// perform the log compaction.
     fn do_compaction(
         &mut self,
         compactor: LogCompactor,
@@ -576,6 +578,11 @@ impl LogFile {
         path: &Path,
     ) -> anyhow::Result<()> {
         assert_eq!(self.uncommitted_frame_count, 0);
+
+        // nothing to compact
+        if self.header().frame_count == 0 {
+            return Ok(());
+        }
 
         tracing::info!("performing log compaction");
         let temp_log_path = path.join("temp_log");
@@ -586,7 +593,7 @@ impl LogFile {
             .open(&temp_log_path)?;
         let mut new_log_file = LogFile::new(file, self.max_log_frame_count, self.max_log_duration)?;
         let new_header = LogFileHeader {
-            start_frame_no: self.header.start_frame_no + self.header.frame_count,
+            start_frame_no: self.header.last_frame_no().unwrap() + 1,
             frame_count: 0,
             start_checksum: self.commited_checksum,
             ..self.header
@@ -690,8 +697,13 @@ pub struct LogFileHeader {
 }
 
 impl LogFileHeader {
-    pub fn last_frame_no(&self) -> FrameNo {
-        self.start_frame_no + self.frame_count - 1
+    pub fn last_frame_no(&self) -> Option<FrameNo> {
+        if self.start_frame_no == 0 && self.frame_count == 0 {
+            // The log does not contain any frame yet
+            None
+        } else {
+            Some(self.start_frame_no + self.frame_count - 1)
+        }
     }
 
     fn sqld_version(&self) -> Version {
@@ -720,7 +732,7 @@ pub struct ReplicationLogger {
     db_path: PathBuf,
     /// a notifier channel other tasks can subscribe to, and get notified when new frames become
     /// available.
-    pub new_frame_notifier: watch::Sender<FrameNo>,
+    pub new_frame_notifier: watch::Sender<Option<FrameNo>>,
     pub closed_signal: watch::Sender<bool>,
     pub auto_checkpoint: u32,
 }
@@ -776,7 +788,7 @@ impl ReplicationLogger {
         auto_checkpoint: u32,
     ) -> anyhow::Result<Self> {
         let header = log_file.header();
-        let generation_start_frame_no = header.start_frame_no + header.frame_count;
+        let generation_start_frame_no = header.last_frame_no();
 
         let (new_frame_notifier, _) = watch::channel(generation_start_frame_no);
         unsafe {
@@ -796,7 +808,7 @@ impl ReplicationLogger {
         let (closed_signal, _) = watch::channel(false);
 
         Ok(Self {
-            generation: Generation::new(generation_start_frame_no),
+            generation: Generation::new(generation_start_frame_no.unwrap_or(0)),
             compactor: LogCompactor::new(&db_path, log_file.header.db_id, callback)?,
             log_file: RwLock::new(log_file),
             db_path,
@@ -879,7 +891,7 @@ impl ReplicationLogger {
     }
 
     /// commit the current transaction and returns the new top frame number
-    fn commit(&self) -> anyhow::Result<FrameNo> {
+    fn commit(&self) -> anyhow::Result<Option<FrameNo>> {
         let mut log_file = self.log_file.write();
         log_file.commit()?;
         Ok(log_file.header().last_frame_no())

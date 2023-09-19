@@ -11,7 +11,6 @@ use bottomless::replicator::Options;
 use bytes::Bytes;
 use chrono::NaiveDateTime;
 use enclose::enclose;
-use futures_core::future::BoxFuture;
 use futures_core::Stream;
 use hyper::Uri;
 use rusqlite::ErrorCode;
@@ -43,7 +42,7 @@ pub use fork::ForkError;
 use self::fork::ForkTask;
 
 mod fork;
-pub type ResetCb = Box<dyn Fn(ResetOp) -> BoxFuture<'static, crate::Result<()>> + Send + Sync>;
+pub type ResetCb = Box<dyn Fn(ResetOp) + Send + Sync + 'static>;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct NamespaceName(Bytes);
@@ -328,18 +327,21 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         let this = self.clone();
         Box::new(move |op| {
             let this = this.clone();
-            Box::pin(async move {
+            tokio::spawn(async move {
                 match op {
                     ResetOp::Reset(ns) => {
-                        tracing::warn!("received reset signal for: {}", ns.as_str());
-                        this.reset(ns, RestoreOption::Latest).await?;
+                        tracing::info!("received reset signal for: {ns}");
+                        if let Err(e) = this.reset(ns.clone(), RestoreOption::Latest).await {
+                            tracing::error!("error reseting namespace `{ns}`: {e}");
+                        }
                     }
                     ResetOp::Destroy(ns) => {
-                        this.destroy(ns).await?;
+                        if let Err(e) = this.destroy(ns.clone()).await {
+                            tracing::error!("error destroying namesace `{ns}`: {e}",);
+                        }
                     }
                 }
-                Ok(())
-            })
+            });
         })
     }
 
@@ -675,6 +677,7 @@ impl Namespace<PrimaryDatabase> {
             config.max_response_size,
             config.max_total_response_size,
             auto_checkpoint,
+            logger.new_frame_notifier.subscribe(),
         )
         .await?
         .throttled(
@@ -723,7 +726,7 @@ async fn make_stats(
     join_set: &mut JoinSet<anyhow::Result<()>>,
     stats_sender: StatsSender,
     name: NamespaceName,
-    mut current_frame_no: watch::Receiver<FrameNo>,
+    mut current_frame_no: watch::Receiver<Option<FrameNo>>,
 ) -> anyhow::Result<Arc<Stats>> {
     let stats = Stats::new(db_path, join_set).await?;
 
@@ -735,10 +738,14 @@ async fn make_stats(
     join_set.spawn({
         let stats = stats.clone();
         // initialize the current_frame_no value
-        stats.set_current_frame_no(*current_frame_no.borrow_and_update());
+        current_frame_no
+            .borrow_and_update()
+            .map(|fno| stats.set_current_frame_no(fno));
         async move {
             while current_frame_no.changed().await.is_ok() {
-                stats.set_current_frame_no(*current_frame_no.borrow_and_update());
+                current_frame_no
+                    .borrow_and_update()
+                    .map(|fno| stats.set_current_frame_no(fno));
             }
             Ok(())
         }
