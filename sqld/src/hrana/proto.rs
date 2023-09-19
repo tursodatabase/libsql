@@ -50,8 +50,8 @@ pub struct StmtResult {
     #[serde(with = "option_i64_as_str")]
     #[prost(sint64, optional, tag = "4")]
     pub last_insert_rowid: Option<i64>,
-    #[prost(uint64, tag = "5")]
-    pub replication_index: u64,
+    #[prost(uint64, optional, tag = "5")]
+    pub replication_index: Option<u64>,
 }
 
 #[derive(Serialize, prost::Message)]
