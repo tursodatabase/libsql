@@ -37,7 +37,7 @@ pub struct Replicator {
     db_path: PathBuf,
     namespace: NamespaceName,
     meta: Arc<Mutex<Option<WalIndexMeta>>>,
-    pub current_frame_no_notifier: watch::Receiver<FrameNo>,
+    pub current_frame_no_notifier: watch::Receiver<Option<FrameNo>>,
     frames_sender: mpsc::Sender<Frames>,
     /// hard reset channel: send the namespace there, to reset it
     reset: ResetCb,
@@ -53,7 +53,7 @@ impl Replicator {
         reset: ResetCb,
     ) -> anyhow::Result<Self> {
         let client = Client::with_origin(channel, uri);
-        let (applied_frame_notifier, current_frame_no_notifier) = watch::channel(FrameNo::MAX);
+        let (applied_frame_notifier, current_frame_no_notifier) = watch::channel(None);
         let (frames_sender, receiver) = tokio::sync::mpsc::channel(1);
 
         let mut this = Self {
@@ -98,7 +98,7 @@ impl Replicator {
                 assert_eq!(meta.pre_commit_frame_no, fno);
                 meta.post_commit_frame_no = fno;
                 meta_file.write_all_at(bytes_of(meta), 0)?;
-                let _ = notifier.send(fno);
+                let _ = notifier.send(Some(fno));
 
                 Ok(())
             }
@@ -160,9 +160,7 @@ impl Replicator {
             _ => return error.into(),
         }
 
-        if let Err(e) = (self.reset)(ResetOp::Reset(self.namespace.clone())).await {
-            tracing::error!("failed to reset namespace {}: {e}", self.namespace);
-        }
+        (self.reset)(ResetOp::Reset(self.namespace.clone()));
 
         error.into()
     }
@@ -200,7 +198,8 @@ impl Replicator {
                         && e.message() == NAMESPACE_DOESNT_EXIST =>
                 {
                     tracing::info!("namespace `{}` doesn't exist, cleaning...", self.namespace);
-                    (self.reset)(ResetOp::Destroy(self.namespace.clone())).await?;
+                    (self.reset)(ResetOp::Destroy(self.namespace.clone()));
+
                     return Err(crate::error::Error::NamespaceDoesntExist(
                         self.namespace.to_string(),
                     ));
@@ -282,7 +281,6 @@ impl Replicator {
     }
 
     fn current_frame_no(&mut self) -> Option<FrameNo> {
-        let current = *self.current_frame_no_notifier.borrow_and_update();
-        (current != FrameNo::MAX).then_some(current)
+        *self.current_frame_no_notifier.borrow_and_update()
     }
 }

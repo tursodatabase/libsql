@@ -5,7 +5,7 @@ use std::time::{Duration, Instant};
 use crossbeam::channel::RecvTimeoutError;
 use rusqlite::{ErrorCode, OpenFlags, StatementStatus};
 use sqld_libsql_bindings::wal_hook::WalMethodsHook;
-use tokio::sync::oneshot;
+use tokio::sync::{oneshot, watch};
 use tracing::warn;
 
 use crate::auth::{Authenticated, Authorized};
@@ -14,6 +14,7 @@ use crate::libsql::wal_hook::WalHook;
 use crate::query::Query;
 use crate::query_analysis::{State, StmtKind};
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
+use crate::replication::FrameNo;
 use crate::stats::Stats;
 use crate::Result;
 
@@ -34,6 +35,7 @@ pub struct LibSqlDbFactory<W: WalHook + 'static> {
     max_response_size: u64,
     max_total_response_size: u64,
     auto_checkpoint: u32,
+    current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
     /// In wal mode, closing the last database takes time, and causes other databases creation to
     /// return sqlite busy. To mitigate that, we hold on to one connection
     _db: Option<LibSqlConnection>,
@@ -55,6 +57,7 @@ where
         max_response_size: u64,
         max_total_response_size: u64,
         auto_checkpoint: u32,
+        current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
     ) -> Result<Self>
     where
         F: Fn() -> W::Context + Sync + Send + 'static,
@@ -69,6 +72,7 @@ where
             max_response_size,
             max_total_response_size,
             auto_checkpoint,
+            current_frame_no_receiver,
             _db: None,
         };
 
@@ -120,6 +124,7 @@ where
                 max_total_size: Some(self.max_total_response_size),
                 auto_checkpoint: self.auto_checkpoint,
             },
+            self.current_frame_no_receiver.clone(),
         )
         .await
     }
@@ -171,6 +176,7 @@ impl LibSqlConnection {
         stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
         builder_config: QueryBuilderConfig,
+        current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
     ) -> crate::Result<Self>
     where
         W: WalHook,
@@ -189,6 +195,7 @@ impl LibSqlConnection {
                 stats,
                 config_store,
                 builder_config,
+                current_frame_no_receiver,
             ) {
                 Ok(conn) => {
                     let Ok(_) = init_sender.send(Ok(())) else { return };
@@ -245,6 +252,7 @@ struct Connection<'a> {
     stats: Arc<Stats>,
     config_store: Arc<DatabaseConfigStore>,
     builder_config: QueryBuilderConfig,
+    current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
 }
 
 impl<'a> Connection<'a> {
@@ -256,6 +264,7 @@ impl<'a> Connection<'a> {
         stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
         builder_config: QueryBuilderConfig,
+        current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
     ) -> Result<Self> {
         let this = Self {
             conn: open_db(
@@ -270,6 +279,7 @@ impl<'a> Connection<'a> {
             stats,
             config_store,
             builder_config,
+            current_frame_no_receiver,
         };
 
         for ext in extensions.iter() {
@@ -302,7 +312,7 @@ impl<'a> Connection<'a> {
             self.timeout_deadline = Some(Instant::now() + TXN_TIMEOUT)
         }
 
-        builder.finish()?;
+        builder.finish(*self.current_frame_no_receiver.borrow_and_update())?;
 
         Ok(builder)
     }
@@ -615,6 +625,7 @@ mod test {
             stats: Arc::new(Stats::default()),
             config_store: Arc::new(DatabaseConfigStore::new_test()),
             builder_config: QueryBuilderConfig::default(),
+            current_frame_no_receiver: watch::channel(None).1,
         };
 
         let stmts = std::iter::once("create table test (x)")

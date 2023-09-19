@@ -8,6 +8,8 @@ use serde::Serialize;
 use serde_json::ser::Formatter;
 use std::sync::atomic::AtomicUsize;
 
+use crate::replication::FrameNo;
+
 pub static TOTAL_RESPONSE_SIZE: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug)]
@@ -118,7 +120,7 @@ pub trait QueryResultBuilder: Send + 'static {
     /// end adding rows
     fn finish_rows(&mut self) -> Result<(), QueryResultBuilderError>;
     /// finish serialization.
-    fn finish(&mut self) -> Result<(), QueryResultBuilderError>;
+    fn finish(&mut self, last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError>;
     /// returns the inner ret
     fn into_ret(self) -> Self::Ret;
     /// Returns a `QueryResultBuilder` that wraps Self and takes at most `n` steps
@@ -309,7 +311,7 @@ impl QueryResultBuilder for StepResultsBuilder {
         Ok(())
     }
 
-    fn finish(&mut self) -> Result<(), QueryResultBuilderError> {
+    fn finish(&mut self, _last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError> {
         Ok(())
     }
 
@@ -370,7 +372,7 @@ impl QueryResultBuilder for IgnoreResult {
         Ok(())
     }
 
-    fn finish(&mut self) -> Result<(), QueryResultBuilderError> {
+    fn finish(&mut self, _last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError> {
         Ok(())
     }
 
@@ -479,8 +481,8 @@ impl<B: QueryResultBuilder> QueryResultBuilder for Take<B> {
         }
     }
 
-    fn finish(&mut self) -> Result<(), QueryResultBuilderError> {
-        self.inner.finish()
+    fn finish(&mut self, last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError> {
+        self.inner.finish(last_frame_no)
     }
 
     fn into_ret(self) -> Self::Ret {
@@ -629,7 +631,7 @@ pub mod test {
                 FinishRow => b.finish_row().unwrap(),
                 FinishRows => b.finish_rows().unwrap(),
                 Finish => {
-                    b.finish().unwrap();
+                    b.finish(Some(0)).unwrap();
                     break;
                 }
                 BuilderError => return b,
@@ -774,7 +776,10 @@ pub mod test {
             self.transition(FinishRows)
         }
 
-        fn finish(&mut self) -> Result<(), QueryResultBuilderError> {
+        fn finish(
+            &mut self,
+            _last_frame_no: Option<FrameNo>,
+        ) -> Result<(), QueryResultBuilderError> {
             self.maybe_inject_error()?;
             self.transition(Finish)
         }
@@ -822,7 +827,7 @@ pub mod test {
         builder.finish_rows().unwrap();
         builder.finish_step(0, None).unwrap();
 
-        builder.finish().unwrap();
+        builder.finish(Some(0)).unwrap();
     }
 
     #[test]

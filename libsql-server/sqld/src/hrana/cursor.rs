@@ -11,6 +11,7 @@ use crate::connection::Connection;
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
 };
+use crate::replication::FrameNo;
 
 use super::result_builder::{estimate_cols_json_size, value_json_size, value_to_proto};
 use super::{batch, proto, stmt};
@@ -239,7 +240,14 @@ impl QueryResultBuilder for CursorResultBuilder {
         Ok(())
     }
 
-    fn finish(&mut self) -> Result<(), QueryResultBuilderError> {
+    fn finish(&mut self, last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError> {
+        self.emit_entry(Ok(SizedEntry {
+            entry: proto::CursorEntry::ReplicationIndex {
+                replication_index: last_frame_no,
+            },
+            size: std::mem::size_of::<FrameNo>() as u64,
+        }));
+
         Ok(())
     }
 

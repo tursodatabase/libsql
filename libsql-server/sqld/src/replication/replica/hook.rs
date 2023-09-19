@@ -156,6 +156,8 @@ unsafe impl WalHook for InjectorHook {
                 Some(frames) => {
                     let (headers, last_frame_no, size_after) = frames.to_headers();
 
+                    tracing::trace!("applying frame {}", last_frame_no);
+
                     let ret = ctx.inject_pages(
                         headers,
                         last_frame_no,
