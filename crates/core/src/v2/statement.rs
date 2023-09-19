@@ -1,14 +1,16 @@
 use crate::params::IntoParams;
 use crate::params::Params;
+use crate::rows::LibsqlRows;
 pub use crate::v1::Column;
 use crate::{Error, Result};
 
 use crate::{Row, Rows};
 
 #[async_trait::async_trait]
-pub(super) trait Stmt {
+pub(crate) trait Stmt {
     fn finalize(&mut self);
 
+    // TODO(lucio): Update trait to take owned params
     async fn execute(&mut self, params: &Params) -> Result<usize>;
 
     async fn query(&mut self, params: &Params) -> Result<Rows>;
@@ -23,7 +25,7 @@ pub(super) trait Stmt {
 }
 
 pub struct Statement {
-    pub(super) inner: Box<dyn Stmt + Send + Sync>,
+    pub(crate) inner: Box<dyn Stmt + Send + Sync>,
 }
 
 // TODO(lucio): Unify param usage, here we use & and in conn we use
@@ -99,7 +101,7 @@ where
     }
 }
 
-pub(super) struct LibsqlStmt(pub(super) crate::v1::Statement);
+pub(crate) struct LibsqlStmt(pub(super) crate::v1::Statement);
 
 #[async_trait::async_trait]
 impl Stmt for LibsqlStmt {
@@ -111,16 +113,16 @@ impl Stmt for LibsqlStmt {
         let params = params.clone();
         let stmt = self.0.clone();
 
-        stmt.execute2(params).await.map(|i| i as usize)
+        stmt.execute(&params).map(|i| i as usize)
     }
 
     async fn query(&mut self, params: &Params) -> Result<Rows> {
         let params = params.clone();
         let stmt = self.0.clone();
 
-        stmt.query2(params.clone())
-            .await
-            .map(|inner| Rows { inner })
+        stmt.query(&params)
+            .map(|r| LibsqlRows(r))
+            .map(|r| Rows { inner: Box::new(r) })
     }
 
     fn reset(&mut self) {

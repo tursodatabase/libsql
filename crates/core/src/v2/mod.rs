@@ -183,7 +183,12 @@ impl Database {
             DbType::Sync { db } => {
                 let conn = db.connect()?;
 
-                let conn = Arc::new(LibsqlConnection { conn });
+                let local = LibsqlConnection { conn };
+                let writer = local.conn.writer().unwrap().clone();
+
+                let remote = crate::replication::RemoteConnection::new(local, writer);
+
+                let conn = Arc::new(remote);
 
                 Ok(Connection { conn })
             }
@@ -226,7 +231,7 @@ impl Database {
 }
 
 #[async_trait::async_trait]
-trait Conn {
+pub(crate) trait Conn {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64>;
 
     async fn execute_batch(&self, sql: &str) -> Result<()>;
@@ -246,7 +251,7 @@ trait Conn {
 
 #[derive(Clone)]
 pub struct Connection {
-    conn: Arc<dyn Conn + Send + Sync>,
+    pub(crate) conn: Arc<dyn Conn + Send + Sync>,
 }
 
 // TODO(lucio): Convert to using tryinto params
@@ -301,18 +306,18 @@ impl Connection {
 }
 
 #[derive(Clone)]
-struct LibsqlConnection {
+pub(crate) struct LibsqlConnection {
     conn: crate::v1::Connection,
 }
 
 #[async_trait::async_trait]
 impl Conn for LibsqlConnection {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64> {
-        self.conn.execute2(sql, params).await
+        self.conn.execute(sql, params)
     }
 
     async fn execute_batch(&self, sql: &str) -> Result<()> {
-        self.conn.execute_batch2(sql).await
+        self.conn.execute_batch(sql)
     }
 
     async fn prepare(&self, sql: &str) -> Result<Statement> {

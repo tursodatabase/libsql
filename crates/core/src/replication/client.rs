@@ -32,7 +32,7 @@ use super::{replica::meta::WalIndexMeta, Frame};
 
 use box_clone_service::BoxCloneService;
 
-use self::pb::query_result::RowResult;
+use self::pb::{ExecuteResults, ProgramReq};
 
 type ResponseBody = trace::ResponseBody<
     GrpcWebCall<hyper::Body>,
@@ -84,6 +84,10 @@ impl Client {
         })
     }
 
+    pub fn client_id(&self) -> String {
+        self.client_id.to_string()
+    }
+
     pub async fn hello(&self) -> anyhow::Result<WalIndexMeta> {
         let mut replication = self.replication.clone();
         let response = replication
@@ -122,128 +126,14 @@ impl Client {
         Ok(frames)
     }
 
-    // TODO(lucio):
-    // 1) Implement errors when a row is returned on a non returning query (execute)
-    // 2) support row returns aka convert the row result in pb to the Rows struct in libsql
-    //          (Should this be a trait object that impls RowInner or should we bake it into
-    //          the old one?)
-    pub async fn execute(
-        &self,
-        sql: &str,
-        params: pb::query::Params,
-    ) -> anyhow::Result<(u64, u64)> {
-        let mut proxy = self.proxy.clone();
-
-        let res = proxy
-            .execute(pb::ProgramReq {
-                client_id: self.client_id.to_string(),
-                pgm: Some(pb::Program {
-                    steps: vec![pb::Step {
-                        query: Some(pb::Query {
-                            stmt: sql.to_string(),
-                            params: Some(params),
-                            ..Default::default()
-                        }),
-                        ..Default::default()
-                    }],
-                }),
-            })
-            .await?
-            .into_inner();
-
-        let result = res
-            .results
-            .iter()
-            .next()
-            .expect("Expected at least one result");
-
-        let affected_row_count = match &result.row_result {
-            Some(RowResult::Row(row)) => row.affected_row_count,
-            Some(RowResult::Error(e)) => anyhow::bail!(e.message.clone()),
-
-            None => panic!("unexpected empty result row"),
-        };
-
-        Ok((res.current_frame_no, affected_row_count))
-    }
-
-    pub async fn execute_batch(&self, sql: Vec<String>) -> anyhow::Result<()> {
-        let mut proxy = self.proxy.clone();
-
-        let steps = sql
-            .into_iter()
-            .map(|sql| pb::Step {
-                query: Some(pb::Query {
-                    stmt: sql,
-                    params: Some(pb::query::Params::Positional(pb::Positional::default())),
-                    ..Default::default()
-                }),
-                ..Default::default()
-            })
-            .collect();
-
-        let res = proxy
-            .execute(pb::ProgramReq {
-                client_id: self.client_id.to_string(),
-                pgm: Some(pb::Program { steps }),
-            })
-            .await?
-            .into_inner();
-
-        let result = res
-            .results
-            .iter()
-            .next()
-            .expect("Expected at least one result");
-
-        let affected_row_count = match &result.row_result {
-            Some(RowResult::Row(row)) => row.affected_row_count,
-            Some(RowResult::Error(e)) => anyhow::bail!(e.message.clone()),
-
-            None => panic!("unexpected empty result row"),
-        };
-
-        tracing::trace!("execute_batch: affected row count: {}", affected_row_count);
-
-        Ok(())
-    }
-
-    pub async fn query(
-        &self,
-        sql: &str,
-        params: pb::query::Params,
-    ) -> anyhow::Result<(u64, pb::ResultRows)> {
-        let mut proxy = self.proxy.clone();
-
-        let res = proxy
-            .execute(pb::ProgramReq {
-                client_id: self.client_id.to_string(),
-                pgm: Some(pb::Program {
-                    steps: vec![pb::Step {
-                        query: Some(pb::Query {
-                            stmt: sql.to_string(),
-                            params: Some(params),
-                            ..Default::default()
-                        }),
-                        ..Default::default()
-                    }],
-                }),
-            })
-            .await?
-            .into_inner();
-
-        let result = res
-            .results
-            .into_iter()
-            .next()
-            .expect("Expected at least one result");
-
-        let row_result = match result.row_result.unwrap() {
-            RowResult::Error(error) => anyhow::bail!(error.message),
-            RowResult::Row(rows) => rows,
-        };
-
-        Ok((res.current_frame_no, row_result))
+    pub async fn execute_program(&self, program: ProgramReq) -> anyhow::Result<ExecuteResults> {
+        // TODO(lucio): Map errors correctly
+        self.proxy
+            .clone()
+            .execute(program)
+            .await
+            .map(|r| r.into_inner())
+            .map_err(Into::into)
     }
 }
 
