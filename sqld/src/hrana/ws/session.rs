@@ -8,9 +8,9 @@ use tokio::sync::{mpsc, oneshot};
 use super::super::{batch, cursor, stmt, ProtocolError, Version};
 use super::{proto, Server};
 use crate::auth::{AuthError, Authenticated};
-use crate::connection::{Connection, MakeConnection};
+use crate::connection::Connection;
 use crate::database::Database;
-use crate::namespace::MakeNamespace;
+use crate::namespace::{MakeNamespace, NamespaceName};
 
 /// Session-level state of an authenticated Hrana connection.
 pub struct Session<D> {
@@ -71,7 +71,7 @@ pub(super) fn handle_initial_hello<F: MakeNamespace>(
 ) -> Result<Session<<F::Database as Database>::Connection>> {
     let authenticated = server
         .auth
-        .authenticate_jwt(jwt.as_deref())
+        .authenticate_jwt(jwt.as_deref(), server.disable_namespaces)
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
 
     Ok(Session {
@@ -97,7 +97,7 @@ pub(super) fn handle_repeated_hello<F: MakeNamespace>(
 
     session.authenticated = server
         .auth
-        .authenticate_jwt(jwt.as_deref())
+        .authenticate_jwt(jwt.as_deref(), server.disable_namespaces)
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
     Ok(())
 }
@@ -107,7 +107,7 @@ pub(super) async fn handle_request<F: MakeNamespace>(
     session: &mut Session<<F::Database as Database>::Connection>,
     join_set: &mut tokio::task::JoinSet<()>,
     req: proto::Request,
-    connection_maker: Arc<dyn MakeConnection<Connection = <F::Database as Database>::Connection>>,
+    namespace: NamespaceName,
 ) -> Result<oneshot::Receiver<Result<proto::Response>>> {
     // TODO: this function has rotten: it is too long and contains too much duplicated code. It
     // should be refactored at the next opportunity, together with code in stmt.rs and batch.rs
@@ -188,8 +188,12 @@ pub(super) async fn handle_request<F: MakeNamespace>(
                 },
             );
 
+            let namespaces = server.namespaces.clone();
+            let authenticated = session.authenticated.clone();
             stream_respond!(&mut stream_hnd, async move |stream| {
-                let db = connection_maker
+                let db = namespaces
+                    .with_authenticated(namespace, authenticated, |ns| ns.db.connection_maker())
+                    .await?
                     .create()
                     .await
                     .context("Could not create a database connection")?;
@@ -218,7 +222,7 @@ pub(super) async fn handle_request<F: MakeNamespace>(
 
             let query = stmt::proto_stmt_to_query(&req.stmt, &session.sqls, session.version)
                 .map_err(catch_stmt_error)?;
-            let auth = session.authenticated;
+            let auth = session.authenticated.clone();
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
@@ -234,7 +238,7 @@ pub(super) async fn handle_request<F: MakeNamespace>(
 
             let pgm = batch::proto_batch_to_program(&req.batch, &session.sqls, session.version)
                 .map_err(catch_stmt_error)?;
-            let auth = session.authenticated;
+            let auth = session.authenticated.clone();
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
@@ -256,7 +260,7 @@ pub(super) async fn handle_request<F: MakeNamespace>(
                 session.version,
             )?;
             let pgm = batch::proto_sequence_to_program(sql).map_err(catch_stmt_error)?;
-            let auth = session.authenticated;
+            let auth = session.authenticated.clone();
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
@@ -279,7 +283,7 @@ pub(super) async fn handle_request<F: MakeNamespace>(
                 session.version,
             )?
             .into();
-            let auth = session.authenticated;
+            let auth = session.authenticated.clone();
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
@@ -324,7 +328,7 @@ pub(super) async fn handle_request<F: MakeNamespace>(
 
             let pgm = batch::proto_batch_to_program(&req.batch, &session.sqls, session.version)
                 .map_err(catch_stmt_error)?;
-            let auth = session.authenticated;
+            let auth = session.authenticated.clone();
 
             let mut cursor_hnd = cursor::CursorHandle::spawn(join_set);
             stream_respond!(stream_hnd, async move |stream| {

@@ -11,7 +11,6 @@ use tokio::sync::oneshot;
 use tokio_tungstenite::tungstenite;
 use tungstenite::protocol::frame::coding::CloseCode;
 
-use crate::connection::MakeConnection;
 use crate::database::Database;
 use crate::namespace::{MakeNamespace, NamespaceName};
 
@@ -35,7 +34,8 @@ struct Conn<F: MakeNamespace> {
     join_set: tokio::task::JoinSet<()>,
     /// Future responses to requests that we have received but are evaluating asynchronously.
     responses: FuturesUnordered<ResponseFuture>,
-    connection_maker: Arc<dyn MakeConnection<Connection = <F::Database as Database>::Connection>>,
+    /// Namespace queried by this connections
+    namespace: NamespaceName,
 }
 
 /// A `Future` that stores a handle to a future response to request which is being evaluated
@@ -95,10 +95,6 @@ async fn handle_ws<F: MakeNamespace>(
     conn_id: u64,
     namespace: NamespaceName,
 ) -> Result<()> {
-    let connection_maker = server
-        .namespaces
-        .with(namespace, |ns| ns.db.connection_maker())
-        .await?;
     let mut conn = Conn {
         conn_id,
         server,
@@ -109,7 +105,7 @@ async fn handle_ws<F: MakeNamespace>(
         session: None,
         join_set: tokio::task::JoinSet::new(),
         responses: FuturesUnordered::new(),
-        connection_maker,
+        namespace,
     };
 
     loop {
@@ -259,7 +255,7 @@ async fn handle_request_msg<F: MakeNamespace>(
         session,
         &mut conn.join_set,
         request,
-        conn.connection_maker.clone(),
+        conn.namespace.clone(),
     )
     .await
     .unwrap_or_else(|err| {

@@ -282,10 +282,10 @@ impl Connection for WriteProxyConnection {
             // transaction, so we rollback the replica, and execute again on the primary.
             let (builder, new_state) = self
                 .read_conn
-                .execute_program(pgm.clone(), auth, builder)
+                .execute_program(pgm.clone(), auth.clone(), builder)
                 .await?;
             if new_state != State::Init {
-                self.read_conn.rollback(auth).await?;
+                self.read_conn.rollback(auth.clone()).await?;
                 self.execute_remote(pgm, &mut state, auth, builder).await
             } else {
                 Ok((builder, new_state))

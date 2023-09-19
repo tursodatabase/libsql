@@ -8,7 +8,7 @@ use sqld_libsql_bindings::wal_hook::WalMethodsHook;
 use tokio::sync::{oneshot, watch};
 use tracing::warn;
 
-use crate::auth::{Authenticated, Authorized};
+use crate::auth::{Authenticated, Authorized, Permission};
 use crate::error::Error;
 use crate::libsql::wal_hook::WalHook;
 use crate::query::Query;
@@ -507,7 +507,13 @@ fn check_program_auth(auth: Authenticated, pgm: &Program) -> Result<()> {
             }
             (StmtKind::Read, Authenticated::Authorized(_)) => (),
             (StmtKind::TxnBegin, _) | (StmtKind::TxnEnd, _) => (),
-            (_, Authenticated::Authorized(Authorized::FullAccess)) => (),
+            (
+                _,
+                Authenticated::Authorized(Authorized {
+                    permission: Permission::FullAccess,
+                    ..
+                }),
+            ) => (),
             _ => {
                 return Err(Error::NotAuthorized(format!(
                     "Current session is not authorized to run: {}",

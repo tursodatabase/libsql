@@ -56,7 +56,7 @@ impl ReplicationLogService {
 
     fn authenticate<T>(&self, req: &tonic::Request<T>) -> Result<(), Status> {
         if let Some(auth) = &self.auth {
-            let _ = auth.authenticate_grpc(req)?;
+            let _ = auth.authenticate_grpc(req, self.disable_namespaces)?;
         }
 
         Ok(())

@@ -445,9 +445,9 @@ impl Proxy for ProxyService {
         req: tonic::Request<rpc::ProgramReq>,
     ) -> Result<tonic::Response<ExecuteResults>, tonic::Status> {
         let auth = if let Some(auth) = &self.auth {
-            auth.authenticate_grpc(&req)?
+            auth.authenticate_grpc(&req, self.disable_namespaces)?
         } else {
-            Authenticated::from_proxy_grpc_request(&req)?
+            Authenticated::from_proxy_grpc_request(&req, self.disable_namespaces)?
         };
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
         let req = req.into_inner();

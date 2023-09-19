@@ -4,6 +4,7 @@ use axum::extract::FromRequestParts;
 use hyper::http::request::Parts;
 use hyper::HeaderMap;
 
+use crate::auth::Authenticated;
 use crate::connection::MakeConnection;
 use crate::database::Database;
 use crate::error::Error;
@@ -25,6 +26,7 @@ where
         parts: &mut Parts,
         state: &AppState<F>,
     ) -> Result<Self, Self::Rejection> {
+        let auth = Authenticated::from_request_parts(parts, state).await?;
         let ns = namespace_from_headers(
             &parts.headers,
             state.disable_default_namespace,
@@ -33,7 +35,7 @@ where
         Ok(Self(
             state
                 .namespaces
-                .with(ns, |ns| ns.db.connection_maker())
+                .with_authenticated(ns, auth, |ns| ns.db.connection_maker())
                 .await?,
         ))
     }
