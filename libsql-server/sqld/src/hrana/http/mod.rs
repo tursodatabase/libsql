@@ -112,7 +112,7 @@ async fn handle_pipeline<C: Connection>(
     let mut results = Vec::with_capacity(req_body.requests.len());
     for request in req_body.requests.into_iter() {
         tracing::debug!("pipeline:{{ {:?}, {:?} }}", version, request);
-        let result = request::handle(&mut stream_guard, auth, request, version).await?;
+        let result = request::handle(&mut stream_guard, auth.clone(), request, version).await?;
         results.push(result);
     }
 

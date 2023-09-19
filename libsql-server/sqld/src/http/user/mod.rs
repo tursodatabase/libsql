@@ -421,18 +421,20 @@ where
 
 /// Axum authenticated extractor
 #[tonic::async_trait]
-impl<S> FromRequestParts<S> for Authenticated
+impl<M> FromRequestParts<AppState<M>> for Authenticated
 where
-    Arc<Auth>: FromRef<S>,
-    S: Send + Sync,
+    M: MakeNamespace,
 {
     type Rejection = Error;
 
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let auth = <Arc<Auth> as FromRef<S>>::from_ref(state);
-
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState<M>,
+    ) -> Result<Self, Self::Rejection> {
         let auth_header = parts.headers.get(hyper::header::AUTHORIZATION);
-        let auth = auth.authenticate_http(auth_header)?;
+        let auth = state
+            .auth
+            .authenticate_http(auth_header, state.disable_namespaces)?;
 
         Ok(auth)
     }
