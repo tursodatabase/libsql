@@ -51,6 +51,24 @@ message ResultRows {
     optional int64    last_insert_rowid = 4;
 }
 
+message DescribeRequest {
+    string client_id = 1;
+    string stmt = 2;
+}
+
+message DescribeResult {
+    oneof describe_result {
+        Error       error = 1;
+        Description description = 2;
+    }
+}
+
+message Description {
+    repeated Column   column_descriptions = 1;
+    repeated string   param_names = 2;
+    uint64            param_count = 3;
+}
+
 message Value {
     /// bincode encoded Value
     bytes   data = 1;
@@ -134,5 +152,6 @@ message ProgramReq {
 
 service Proxy {
   rpc Execute(ProgramReq) returns (ExecuteResults) {}
+  rpc Describe(DescribeRequest) returns (DescribeResult) {}
   rpc Disconnect(DisconnectMessage) returns (Ack) {}
 }
