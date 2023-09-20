@@ -126,15 +126,17 @@ impl Conn for RemoteConnection {
         let res = self.execute_program(stmts, params).await?;
 
         let result = res
-            .results.first()
+            .results
+            .into_iter()
+            .next()
             .expect("Expected atleast one result");
 
-        let affected_row_count = match &result.row_result {
+        let affected_row_count = match result.row_result {
             Some(RowResult::Row(row)) => {
                 self.update_state(row);
                 row.affected_row_count
             }
-            Some(RowResult::Error(e)) => todo!("error: {:?}", e),
+            Some(RowResult::Error(e)) => return Err(Error::RemoteSqliteFailure(e.code, e.message)),
             None => panic!("unexpected empty result row"),
         };
 
@@ -155,9 +157,11 @@ impl Conn for RemoteConnection {
         let res = self.execute_program(stmts, Params::None).await?;
 
         for result in res.results {
-            match &result.row_result {
-                Some(RowResult::Row(row)) => self.update_state(row),
-                Some(RowResult::Error(e)) => todo!("error: {:?}", e),
+            match result.row_result {
+                Some(RowResult::Row(row)) => self.update_state(&row),
+                Some(RowResult::Error(e)) => {
+                    return Err(Error::RemoteSqliteFailure(e.code, e.message))
+                }
                 None => panic!("unexpected empty result row"),
             };
         }
@@ -321,15 +325,17 @@ impl Stmt for RemoteStatement {
             .await?;
 
         let result = res
-            .results.first()
+            .results
+            .into_iter()
+            .next()
             .expect("Expected atleast one result");
 
-        let affected_row_count = match &result.row_result {
+        let affected_row_count = match result.row_result {
             Some(RowResult::Row(row)) => {
                 self.conn.update_state(row);
                 row.affected_row_count
             }
-            Some(RowResult::Error(e)) => todo!("error: {:?}", e),
+            Some(RowResult::Error(e)) => return Err(Error::RemoteSqliteFailure(e.code, e.message)),
             None => panic!("unexpected empty result row"),
         };
 
@@ -357,7 +363,7 @@ impl Stmt for RemoteStatement {
                 self.conn.update_state(&row);
                 row
             }
-            Some(RowResult::Error(e)) => todo!("error: {:?}", e),
+            Some(RowResult::Error(e)) => return Err(Error::RemoteSqliteFailure(e.code, e.message)),
             None => panic!("unexpected empty result row"),
         };
 
