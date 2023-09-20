@@ -147,101 +147,66 @@ impl Options {
     }
 
     pub fn from_env() -> Result<Self> {
-        let mut options = Self::default();
-        if let Ok(key) = std::env::var("LIBSQL_BOTTOMLESS_ENDPOINT") {
-            options.aws_endpoint = Some(key);
-        }
-        if let Ok(bucket_name) = std::env::var("LIBSQL_BOTTOMLESS_BUCKET") {
-            options.bucket_name = bucket_name;
-        }
-        if let Ok(seconds) = std::env::var("LIBSQL_BOTTOMLESS_BATCH_INTERVAL_SECS") {
-            if let Ok(seconds) = seconds.parse::<u64>() {
-                options.max_batch_interval = Duration::from_secs(seconds);
+        fn env_var(key: &str) -> Result<String> {
+            match std::env::var(key) {
+                Ok(res) => Ok(res),
+                Err(_) => bail!("{} environment variable not set", key),
             }
         }
-        if let Ok(access_key_id) = std::env::var("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID") {
-            options.access_key_id = Some(access_key_id);
-        }
-        if let Ok(secret_access_key) = std::env::var("LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY") {
-            options.secret_access_key = Some(secret_access_key);
-        }
-        if let Ok(region) = std::env::var("LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION") {
-            options.region = Some(region);
-        }
-        if let Ok(count) = std::env::var("LIBSQL_BOTTOMLESS_BATCH_MAX_FRAMES") {
-            match count.parse::<usize>() {
-                Ok(count) => options.max_frames_per_batch = count,
-                Err(e) => {
-                    bail!(
-                        "Invalid LIBSQL_BOTTOMLESS_BATCH_MAX_FRAMES environment variable: {}",
-                        e
-                    )
-                }
+        fn env_var_or<S: ToString>(key: &str, default_value: S) -> String {
+            match std::env::var(key) {
+                Ok(res) => res,
+                Err(_) => default_value.to_string(),
             }
         }
-        if let Ok(parallelism) = std::env::var("LIBSQL_BOTTOMLESS_S3_PARALLEL_MAX") {
-            match parallelism.parse::<usize>() {
-                Ok(parallelism) => options.s3_upload_max_parallelism = parallelism,
-                Err(e) => bail!(
-                    "Invalid LIBSQL_BOTTOMLESS_S3_PARALLEL_MAX environment variable: {}",
-                    e
-                ),
-            }
-        }
-        if let Ok(swap_after) = std::env::var("LIBSQL_BOTTOMLESS_RESTORE_TXN_SWAP_THRESHOLD") {
-            match swap_after.parse::<u32>() {
-                Ok(swap_after) => options.restore_transaction_page_swap_after = swap_after,
-                Err(e) => bail!(
-                    "Invalid LIBSQL_BOTTOMLESS_RESTORE_TXN_SWAP_THRESHOLD environment variable: {}",
-                    e
-                ),
-            }
-        }
-        if let Ok(fpath) = std::env::var("LIBSQL_BOTTOMLESS_RESTORE_TXN_FILE") {
-            options.restore_transaction_cache_fpath = fpath;
-        }
-        if let Ok(compression) = std::env::var("LIBSQL_BOTTOMLESS_COMPRESSION") {
-            match CompressionKind::parse(&compression) {
-                Ok(compression) => options.use_compression = compression,
-                Err(e) => bail!(
-                    "Invalid LIBSQL_BOTTOMLESS_COMPRESSION environment variable: {}",
-                    e
-                ),
-            }
-        }
-        if let Ok(verify) = std::env::var("LIBSQL_BOTTOMLESS_VERIFY_CRC") {
-            match verify.to_lowercase().as_ref() {
-                "yes" | "true" | "1" | "y" | "t" => options.verify_crc = true,
-                "no" | "false" | "0" | "n" | "f" => options.verify_crc = false,
-                other => bail!(
-                    "Invalid LIBSQL_BOTTOMLESS_VERIFY_CRC environment variable: {}",
-                    other
-                ),
-            }
-        }
-        Ok(options)
-    }
-}
 
-impl Default for Options {
-    fn default() -> Self {
-        let db_id = std::env::var("LIBSQL_BOTTOMLESS_DATABASE_ID").ok();
-        Options {
-            create_bucket_if_not_exists: true,
-            verify_crc: true,
-            use_compression: CompressionKind::Gzip,
-            max_batch_interval: Duration::from_secs(15),
-            max_frames_per_batch: 500, // basically half of the default SQLite checkpoint size
-            s3_upload_max_parallelism: 32,
-            restore_transaction_page_swap_after: 1000,
+        let db_id = env_var("LIBSQL_BOTTOMLESS_DATABASE_ID").ok();
+        let aws_endpoint = env_var("LIBSQL_BOTTOMLESS_ENDPOINT").ok();
+        let bucket_name = env_var_or("LIBSQL_BOTTOMLESS_BUCKET", "bottomless");
+        let max_batch_interval = Duration::from_secs(
+            env_var_or("LIBSQL_BOTTOMLESS_BATCH_INTERVAL_SECS", 15).parse::<u64>()?,
+        );
+        let access_key_id = env_var("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID").ok();
+        let secret_access_key = env_var("LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY").ok();
+        let region = env_var("LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION").ok();
+        let max_frames_per_batch =
+            env_var_or("LIBSQL_BOTTOMLESS_BATCH_MAX_FRAMES", 500).parse::<usize>()?;
+        let s3_upload_max_parallelism =
+            env_var_or("LIBSQL_BOTTOMLESS_S3_PARALLEL_MAX", 32).parse::<usize>()?;
+        let restore_transaction_page_swap_after =
+            env_var_or("LIBSQL_BOTTOMLESS_RESTORE_TXN_SWAP_THRESHOLD", 1000).parse::<u32>()?;
+        let restore_transaction_cache_fpath =
+            env_var_or("LIBSQL_BOTTOMLESS_RESTORE_TXN_FILE", ".bottomless.restore");
+        let use_compression =
+            CompressionKind::parse(&env_var_or("LIBSQL_BOTTOMLESS_COMPRESSION", "gz"))
+                .map_err(|e| anyhow!("unknown compression kind: {}", e))?;
+        let verify_crc = match env_var_or("LIBSQL_BOTTOMLESS_VERIFY_CRC", true)
+            .to_lowercase()
+            .as_ref()
+        {
+            "yes" | "true" | "1" | "y" | "t" => true,
+            "no" | "false" | "0" | "n" | "f" => false,
+            other => bail!(
+                "Invalid LIBSQL_BOTTOMLESS_VERIFY_CRC environment variable: {}",
+                other
+            ),
+        };
+        Ok(Options {
             db_id,
-            aws_endpoint: None,
-            access_key_id: None,
-            secret_access_key: None,
-            region: None,
-            restore_transaction_cache_fpath: ".bottomless.restore".to_string(),
-            bucket_name: "bottomless".to_string(),
-        }
+            create_bucket_if_not_exists: true,
+            verify_crc,
+            use_compression,
+            max_batch_interval,
+            max_frames_per_batch,
+            s3_upload_max_parallelism,
+            restore_transaction_page_swap_after,
+            aws_endpoint,
+            access_key_id,
+            secret_access_key,
+            region,
+            restore_transaction_cache_fpath,
+            bucket_name,
+        })
     }
 }
 
@@ -276,13 +241,10 @@ impl Replicator {
         }
 
         let db_path = db_path.into();
-        let db_name = {
-            let db_id = options.db_id.unwrap_or_default();
-            let name = match db_path.find('/') {
-                Some(index) => &db_path[..index],
-                None => &db_path,
-            };
-            db_id + ":" + name
+        let db_name = if let Some(db_id) = options.db_id.clone() {
+            db_id
+        } else {
+            bail!("database id was not set")
         };
         tracing::debug!("Database path: '{}', name: '{}'", db_path, db_name);
 
@@ -963,7 +925,7 @@ impl Replicator {
     async fn restore_from(
         &mut self,
         generation: Uuid,
-        utc_time: Option<NaiveDateTime>,
+        timestamp: Option<NaiveDateTime>,
     ) -> Result<(RestoreAction, bool)> {
         if let Some(tombstone) = self.get_tombstone().await? {
             if let Some(timestamp) = Self::generation_to_timestamp(&generation) {
@@ -991,11 +953,31 @@ impl Replicator {
 
         // at this point we know, we should do a full restore
 
-        tokio::fs::rename(&self.db_path, format!("{}.bottomless.backup", self.db_path))
-            .await
-            .ok(); // Best effort
+        let backup_path = format!("{}.bottomless.backup", self.db_path);
+        tokio::fs::rename(&self.db_path, &backup_path).await.ok(); // Best effort
+        match self.full_restore(generation, timestamp, last_frame).await {
+            Ok(result) => {
+                let elapsed = Instant::now() - start_ts;
+                tracing::info!("Finished database restoration in {:?}", elapsed);
+                tokio::fs::remove_file(backup_path).await.ok();
+                Ok(result)
+            }
+            Err(e) => {
+                tracing::error!("failed to restore the database: {}. Rollback", e);
+                tokio::fs::rename(&backup_path, &self.db_path).await.ok();
+                Err(e)
+            }
+        }
+    }
+
+    async fn full_restore(
+        &mut self,
+        generation: Uuid,
+        timestamp: Option<NaiveDateTime>,
+        last_frame: u32,
+    ) -> Result<(RestoreAction, bool)> {
         let _ = self.remove_wal_files().await; // best effort, WAL files may not exists
-        let mut db = tokio::fs::OpenOptions::new()
+        let mut db = OpenOptions::new()
             .create(true)
             .read(true)
             .write(true)
@@ -1052,7 +1034,7 @@ impl Replicator {
                     page_size as usize,
                     last_frame,
                     checksum,
-                    utc_time,
+                    timestamp,
                     &mut db,
                 )
                 .await?;
@@ -1063,8 +1045,6 @@ impl Replicator {
         }
 
         db.shutdown().await?;
-        let elapsed = Instant::now() - start_ts;
-        tracing::info!("Finished database restoration in {:?}", elapsed);
 
         if applied_wal_frame {
             tracing::info!("WAL file has been applied onto database file in generation {}. Requesting snapshot.", generation);

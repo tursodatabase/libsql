@@ -38,6 +38,7 @@ use crate::{
     MAX_CONCURRENT_DBS,
 };
 
+use crate::namespace::fork::PointInTimeRestore;
 pub use fork::ForkError;
 
 use self::fork::ForkTask;
@@ -123,6 +124,7 @@ pub trait MakeNamespace: Sync + Send + 'static {
         from: &Namespace<Self::Database>,
         to: NamespaceName,
         reset: ResetCb,
+        timestamp: Option<NaiveDateTime>,
     ) -> crate::Result<Namespace<Self::Database>>;
 }
 
@@ -182,13 +184,27 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         from: &Namespace<Self::Database>,
         to: NamespaceName,
         reset_cb: ResetCb,
+        timestamp: Option<NaiveDateTime>,
     ) -> crate::Result<Namespace<Self::Database>> {
+        let restore_to = if let Some(timestamp) = timestamp {
+            if let Some(ref options) = self.config.bottomless_replication {
+                Some(PointInTimeRestore {
+                    timestamp,
+                    replicator_options: make_bottomless_options(options, from.name().clone()),
+                })
+            } else {
+                return Err(Error::Fork(ForkError::BackupServiceNotConfigured));
+            }
+        } else {
+            None
+        };
         let fork_task = ForkTask {
             base_path: self.config.base_path.clone(),
             dest_namespace: to,
             logger: from.db.logger.clone(),
             make_namespace: self,
             reset_cb,
+            restore_to,
         };
         let ns = fork_task.fork().await?;
         Ok(ns)
@@ -237,6 +253,7 @@ impl MakeNamespace for ReplicaNamespaceMaker {
         _from: &Namespace<Self::Database>,
         _to: NamespaceName,
         _reset: ResetCb,
+        _timestamp: Option<NaiveDateTime>,
     ) -> crate::Result<Namespace<Self::Database>> {
         return Err(ForkError::ForkReplica.into());
     }
@@ -352,7 +369,12 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         })
     }
 
-    pub async fn fork(&self, from: NamespaceName, to: NamespaceName) -> crate::Result<()> {
+    pub async fn fork(
+        &self,
+        from: NamespaceName,
+        to: NamespaceName,
+        timestamp: Option<NaiveDateTime>,
+    ) -> crate::Result<()> {
         let mut lock = self.inner.store.write().await;
         if lock.contains_key(&to) {
             return Err(crate::error::Error::NamespaceAlreadyExist(
@@ -382,7 +404,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         let forked = self
             .inner
             .make_namespace
-            .fork(from_ns, to.clone(), self.make_reset_cb())
+            .fork(from_ns, to.clone(), self.make_reset_cb(), timestamp)
             .await?;
         lock.insert(to.clone(), forked);
 
@@ -477,6 +499,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
 #[derive(Debug)]
 pub struct Namespace<T: Database> {
     pub db: T,
+    name: NamespaceName,
     /// The set of tasks associated with this namespace
     tasks: JoinSet<anyhow::Result<()>>,
     stats: Arc<Stats>,
@@ -484,6 +507,10 @@ pub struct Namespace<T: Database> {
 }
 
 impl<T: Database> Namespace<T> {
+    pub(crate) fn name(&self) -> &NamespaceName {
+        &self.name
+    }
+
     async fn destroy(mut self) -> anyhow::Result<()> {
         self.db.shutdown();
         self.tasks.shutdown().await;
@@ -573,6 +600,7 @@ impl Namespace<ReplicaDatabase> {
             db: ReplicaDatabase {
                 connection_maker: Arc::new(connection_maker),
             },
+            name,
             stats,
             db_config_store,
         })
@@ -738,6 +766,7 @@ impl Namespace<PrimaryDatabase> {
                 logger,
                 connection_maker,
             },
+            name,
             stats,
             db_config_store,
         })

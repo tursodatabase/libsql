@@ -193,6 +193,7 @@ impl IntoResponse for ForkError {
             ForkError::Internal(_)
             | ForkError::Io(_)
             | ForkError::LogRead(_)
+            | ForkError::BackupServiceNotConfigured
             | ForkError::CreateNamespace(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             ForkError::ForkReplica => self.format_err(StatusCode::BAD_REQUEST),
         }
