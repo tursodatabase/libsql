@@ -75,6 +75,7 @@ async fn configure_server(
 #[tokio::test]
 async fn backup_restore() {
     let _ = env_logger::builder().is_test(true).try_init();
+    const DB_ID: &str = "testbackuprestore";
     const BUCKET: &str = "testbackuprestore";
     const PATH: &str = "backup_restore.sqld";
     const PORT: u16 = 15001;
@@ -85,6 +86,7 @@ async fn backup_restore() {
     assert_bucket_occupancy(BUCKET, true).await;
 
     let options = bottomless::replicator::Options {
+        db_id: Some(DB_ID.to_string()),
         create_bucket_if_not_exists: true,
         verify_crc: true,
         use_compression: bottomless::replicator::CompressionKind::Gzip,
@@ -201,6 +203,7 @@ async fn backup_restore() {
 #[tokio::test]
 async fn rollback_restore() {
     let _ = env_logger::builder().is_test(true).try_init();
+    const DB_ID: &str = "testrollbackrestore";
     const BUCKET: &str = "testrollbackrestore";
     const PATH: &str = "rollback_restore.sqld";
     const PORT: u16 = 15002;
@@ -229,6 +232,7 @@ async fn rollback_restore() {
         .unwrap();
     let conn = Url::parse(&format!("http://localhost:{}", PORT)).unwrap();
     let options = bottomless::replicator::Options {
+        db_id: Some(DB_ID.to_string()),
         create_bucket_if_not_exists: true,
         verify_crc: true,
         use_compression: bottomless::replicator::CompressionKind::Gzip,

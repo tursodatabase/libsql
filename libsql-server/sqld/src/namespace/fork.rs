@@ -1,8 +1,11 @@
+use chrono::NaiveDateTime;
 use std::io::SeekFrom;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::fs::File;
 
+use bottomless::replicator::Replicator;
 use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 use tokio_stream::StreamExt;
 
@@ -30,6 +33,8 @@ pub enum ForkError {
     CreateNamespace(Box<crate::error::Error>),
     #[error("cannot fork a replica, try again with the primary.")]
     ForkReplica,
+    #[error("backup service not configured")]
+    BackupServiceNotConfigured,
 }
 
 impl From<tokio::task::JoinError> for ForkError {
@@ -53,6 +58,12 @@ pub struct ForkTask<'a> {
     pub dest_namespace: NamespaceName,
     pub make_namespace: &'a dyn MakeNamespace<Database = PrimaryDatabase>,
     pub reset_cb: ResetCb,
+    pub restore_to: Option<PointInTimeRestore>,
+}
+
+pub struct PointInTimeRestore {
+    pub timestamp: NaiveDateTime,
+    pub replicator_options: bottomless::replicator::Options,
 }
 
 impl ForkTask<'_> {
@@ -75,9 +86,39 @@ impl ForkTask<'_> {
         let base_path = self.base_path.clone();
         let temp_dir =
             tokio::task::spawn_blocking(move || tempfile::tempdir_in(base_path)).await??;
-        let mut data_file = tokio::fs::File::create(temp_dir.path().join("data")).await?;
+        let db_path = temp_dir.path().join("data");
 
-        let logger = self.logger.clone();
+        if let Some(restore) = self.restore_to {
+            Self::restore_from_backup(restore, db_path)
+                .await
+                .map_err(ForkError::Internal)?;
+        } else {
+            Self::restore_from_log_file(&self.logger, db_path).await?;
+        }
+
+        let dest_path = self
+            .base_path
+            .join("dbs")
+            .join(self.dest_namespace.as_str());
+        tokio::fs::rename(temp_dir.path(), dest_path).await?;
+
+        self.make_namespace
+            .create(
+                self.dest_namespace.clone(),
+                RestoreOption::Latest,
+                true,
+                self.reset_cb,
+            )
+            .await
+            .map_err(|e| ForkError::CreateNamespace(Box::new(e)))
+    }
+
+    /// Restores the database state from a local log file.
+    async fn restore_from_log_file(
+        logger: &Arc<ReplicationLogger>,
+        db_path: PathBuf,
+    ) -> Result<()> {
+        let mut data_file = File::create(db_path).await?;
         let end_frame_no = *logger.new_frame_notifier.borrow();
         if let Some(end_frame_no) = end_frame_no {
             let mut next_frame_no = 0;
@@ -117,21 +158,19 @@ impl ForkTask<'_> {
                     }
                 }
             }
-            let dest_path = self
-                .base_path
-                .join("dbs")
-                .join(self.dest_namespace.as_str());
-            tokio::fs::rename(temp_dir.path(), dest_path).await?;
         }
+        data_file.shutdown().await?;
+        Ok(())
+    }
 
-        self.make_namespace
-            .create(
-                self.dest_namespace.clone(),
-                RestoreOption::Latest,
-                true,
-                self.reset_cb,
-            )
-            .await
-            .map_err(|e| ForkError::CreateNamespace(Box::new(e)))
+    async fn restore_from_backup(
+        restore_to: PointInTimeRestore,
+        db_path: PathBuf,
+    ) -> anyhow::Result<()> {
+        let mut replicator =
+            Replicator::with_options(db_path.display().to_string(), restore_to.replicator_options)
+                .await?;
+        replicator.restore(None, Some(restore_to.timestamp)).await?;
+        Ok(())
     }
 }
