@@ -127,14 +127,12 @@ impl Conn for RemoteConnection {
         let res = self.execute_program(stmts, params).await?;
 
         let result = res
-            .results
-            .iter()
-            .next()
+            .results.first()
             .expect("Expected atleast one result");
 
         let affected_row_count = match &result.row_result {
             Some(RowResult::Row(row)) => {
-                self.update_state(&row);
+                self.update_state(row);
                 row.affected_row_count
             }
             Some(RowResult::Error(e)) => todo!("error: {:?}", e),
@@ -159,7 +157,7 @@ impl Conn for RemoteConnection {
 
         for result in res.results {
             match &result.row_result {
-                Some(RowResult::Row(row)) => self.update_state(&row),
+                Some(RowResult::Row(row)) => self.update_state(row),
                 Some(RowResult::Error(e)) => todo!("error: {:?}", e),
                 None => panic!("unexpected empty result row"),
             };
@@ -212,14 +210,14 @@ pub struct ColumnMeta {
     decl_type: Option<String>,
 }
 
-impl<'a> From<crate::replication::pb::Column> for ColumnMeta {
+impl From<crate::replication::pb::Column> for ColumnMeta {
     fn from(col: crate::replication::pb::Column) -> Self {
         Self {
             name: col.name.clone(),
             origin_name: None,
             table_name: None,
             database_name: None,
-            decl_type: col.decltype.clone(),
+            decl_type: col.decltype,
         }
     }
 }
@@ -293,7 +291,7 @@ async fn fetch_meta(conn: &RemoteConnection, stmt: &parser::Statement) -> Result
                 })
             },
             DescribeResult{ describe_result: Some(describe_result::DescribeResult::Error(e))} => {
-                Err(Error::SqliteFailure(e.code, e.message).into())
+                Err(Error::SqliteFailure(e.code, e.message))
             },
             _ => Err(Error::Misuse("unexpected describe result".into()))
         }
@@ -324,14 +322,12 @@ impl Stmt for RemoteStatement {
             .await?;
 
         let result = res
-            .results
-            .iter()
-            .next()
+            .results.first()
             .expect("Expected atleast one result");
 
         let affected_row_count = match &result.row_result {
             Some(RowResult::Row(row)) => {
-                self.conn.update_state(&row);
+                self.conn.update_state(row);
                 row.affected_row_count
             }
             Some(RowResult::Error(e)) => todo!("error: {:?}", e),
@@ -445,9 +441,7 @@ impl RowsInner for RemoteRows {
 
     fn column_type(&self, idx: i32) -> Result<ValueType> {
         let col = self.0.column_descriptions.get(idx as usize).unwrap();
-        col.decltype
-            .as_ref()
-            .map(|s| s.as_str())
+        col.decltype.as_deref()
             .and_then(ValueType::from_str)
             .ok_or(Error::InvalidColumnType)
     }
@@ -478,9 +472,7 @@ impl RowInner for RemoteRow {
 
     fn column_type(&self, idx: i32) -> Result<ValueType> {
         let col = self.1.get(idx as usize).unwrap();
-        col.decltype
-            .as_ref()
-            .map(|s| s.as_str())
+        col.decltype.as_deref()
             .and_then(ValueType::from_str)
             .ok_or(Error::InvalidColumnType)
     }
