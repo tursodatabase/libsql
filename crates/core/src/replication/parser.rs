@@ -1,6 +1,6 @@
 use crate::{Error, Result};
 use fallible_iterator::FallibleIterator;
-use sqlite3_parser::ast::{Cmd, PragmaBody, QualifiedName, Stmt};
+use sqlite3_parser::ast::{Cmd, PragmaBody, QualifiedName, Stmt, TransactionType};
 use sqlite3_parser::lexer::sql::{Parser, ParserError};
 
 /// A group of statements to be executed together.
