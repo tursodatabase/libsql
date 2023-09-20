@@ -17,7 +17,10 @@ use crate::replication::FrameNo;
 
 use self::rpc::proxy_server::Proxy;
 use self::rpc::query_result::RowResult;
-use self::rpc::{Ack, DisconnectMessage, ExecuteResults, QueryResult, ResultRows, Row};
+use self::rpc::{
+    describe_result, Ack, DescribeRequest, DescribeResult, Description, DisconnectMessage,
+    ExecuteResults, QueryResult, ResultRows, Row,
+};
 use super::NAMESPACE_DOESNT_EXIST;
 
 pub mod rpc {
@@ -518,5 +521,84 @@ impl Proxy for ProxyService {
         self.clients.write().await.remove(&client_id);
 
         Ok(tonic::Response::new(Ack {}))
+    }
+
+    async fn describe(
+        &self,
+        msg: tonic::Request<DescribeRequest>,
+    ) -> Result<tonic::Response<DescribeResult>, tonic::Status> {
+        let auth = if let Some(auth) = &self.auth {
+            auth.authenticate_grpc(&msg, self.disable_namespaces)?
+        } else {
+            Authenticated::from_proxy_grpc_request(&msg, self.disable_namespaces)?
+        };
+
+        // FIXME: copypasta from execute(), creatively extract to a helper function
+        let namespace = super::extract_namespace(self.disable_namespaces, &msg)?;
+        let lock = self.clients.upgradable_read().await;
+        let (connection_maker, _new_frame_notifier) = self
+            .namespaces
+            .with(namespace, |ns| {
+                let connection_maker = ns.db.connection_maker();
+                let notifier = ns.db.logger.new_frame_notifier.subscribe();
+                (connection_maker, notifier)
+            })
+            .await
+            .map_err(|e| {
+                if let crate::error::Error::NamespaceDoesntExist(_) = e {
+                    tonic::Status::failed_precondition(NAMESPACE_DOESNT_EXIST)
+                } else {
+                    tonic::Status::internal(e.to_string())
+                }
+            })?;
+
+        let DescribeRequest { client_id, stmt } = msg.into_inner();
+        let client_id = Uuid::from_str(&client_id).unwrap();
+
+        let db = match lock.get(&client_id) {
+            Some(db) => db.clone(),
+            None => {
+                tracing::debug!("connected: {client_id}");
+                match connection_maker.create().await {
+                    Ok(db) => {
+                        let db = Arc::new(db);
+                        let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
+                        lock.insert(client_id, db.clone());
+                        db
+                    }
+                    Err(e) => return Err(tonic::Status::new(tonic::Code::Internal, e.to_string())),
+                }
+            }
+        };
+
+        let description = db
+            .describe(stmt, auth)
+            .await
+            // TODO: this is no necessarily a permission denied error!
+            // FIXME: the double map_err looks off
+            .map_err(|e| tonic::Status::new(tonic::Code::PermissionDenied, e.to_string()))?
+            .map_err(|e| tonic::Status::new(tonic::Code::PermissionDenied, e.to_string()))?;
+
+        let param_count = description.params.len() as u64;
+        let param_names = description
+            .params
+            .into_iter()
+            .filter_map(|p| p.name)
+            .collect::<Vec<_>>();
+
+        Ok(tonic::Response::new(DescribeResult {
+            describe_result: Some(describe_result::DescribeResult::Description(Description {
+                column_descriptions: description
+                    .cols
+                    .into_iter()
+                    .map(|c| crate::rpc::proxy::rpc::Column {
+                        name: c.name,
+                        decltype: c.decltype,
+                    })
+                    .collect(),
+                param_names,
+                param_count,
+            })),
+        }))
     }
 }
