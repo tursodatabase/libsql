@@ -313,7 +313,7 @@ impl Writer {
             .await
     }
 
-    pub async fn describe(&self, stmt: impl Into<String>) {
+    pub async fn describe(&self, stmt: impl Into<String>) -> anyhow::Result<DescribeResult> {
         let stmt = stmt.into();
         let result = self
             .client
@@ -323,5 +323,6 @@ impl Writer {
             })
             .await;
         println!("{:#?}", result);
+        result
     }
 }
