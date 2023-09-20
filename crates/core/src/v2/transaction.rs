@@ -7,8 +7,8 @@ use super::Connection;
 pub use crate::v1::TransactionBehavior;
 
 pub struct Transaction {
-    pub(super) inner: Box<dyn Tx + Send + Sync>,
-    pub(super) conn: Connection,
+    pub(crate) inner: Box<dyn Tx + Send + Sync>,
+    pub(crate) conn: Connection,
 }
 
 impl Transaction {
@@ -31,7 +31,7 @@ impl Deref for Transaction {
 }
 
 #[async_trait::async_trait]
-pub(super) trait Tx {
+pub(crate) trait Tx {
     async fn commit(&mut self) -> Result<()>;
     async fn rollback(&mut self) -> Result<()>;
 }

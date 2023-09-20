@@ -31,6 +31,12 @@ pub enum Error {
     InvalidColumnIndex,
     #[error("invalid column type")]
     InvalidColumnType,
+    #[error("syntax error around L{0}:{1}: `{2}`")]
+    Sqlite3SyntaxError(u64, usize, String),
+    #[error("unsupported statement")]
+    Sqlite3UnsupportedStatement,
+    #[error("sqlite3 parser error: `{0}`")]
+    Sqlite3ParserError(crate::BoxError),
 }
 
 impl From<std::convert::Infallible> for Error {

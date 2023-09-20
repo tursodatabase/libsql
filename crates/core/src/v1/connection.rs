@@ -163,63 +163,6 @@ impl Connection {
         Ok(())
     }
 
-    pub(crate) async fn execute_batch2<S>(&self, sql: S) -> Result<()>
-    where
-        S: Into<String>,
-    {
-        let sql = sql.into();
-        let mut sql = sql.as_str();
-
-        #[cfg(feature = "replication")]
-        {
-            if self.writer.is_some() {
-                let mut steps = Vec::new();
-                while !sql.is_empty() {
-                    let stmt = self.prepare(sql)?;
-                    let tail = stmt.tail();
-
-                    if tail == 0 || tail >= sql.len() {
-                        if !stmt.inner.raw_stmt.is_null() {
-                            steps.push(sql[..].to_string());
-                        }
-                        break;
-                    }
-
-                    let step = &sql[..tail];
-                    steps.push(step.to_string());
-
-                    sql = &sql[tail..];
-                }
-
-                let writer = self.writer.as_ref().unwrap();
-
-                writer
-                    .execute_batch(steps)
-                    .await
-                    .map_err(|e| Error::WriteDelegation(e.into()))?;
-                return Ok(());
-            }
-        }
-
-        while !sql.is_empty() {
-            let stmt = self.prepare(sql)?;
-
-            if !stmt.inner.raw_stmt.is_null() {
-                stmt.step()?;
-            }
-
-            let tail = stmt.tail();
-
-            if tail == 0 || tail >= sql.len() {
-                break;
-            }
-
-            sql = &sql[tail..];
-        }
-
-        Ok(())
-    }
-
     /// Execute the SQL statement synchronously.
     ///
     /// If you execute a SQL query statement (e.g. `SELECT` statement) that
@@ -261,21 +204,6 @@ impl Connection {
         self.transaction_with_behavior(TransactionBehavior::Deferred)
     }
 
-    pub(crate) async fn execute2<S, P>(&self, sql: S, params: P) -> Result<u64>
-    where
-        S: Into<String>,
-        P: TryInto<Params>,
-        P::Error: Into<crate::BoxError>,
-    {
-        let sql = sql.into();
-        let stmt = Statement::prepare(self.clone(), self.raw, &sql)?;
-
-        let params = params
-            .try_into()
-            .map_err(|e| Error::ToSqlConversionFailure(e.into()))?;
-        stmt.execute2(params).await
-    }
-
     /// Begin a new transaction in the given mode.
     pub fn transaction_with_behavior(
         &self,
@@ -294,5 +222,10 @@ impl Connection {
 
     pub fn last_insert_rowid(&self) -> i64 {
         unsafe { ffi::sqlite3_last_insert_rowid(self.raw) }
+    }
+
+    #[cfg(feature = "replication")]
+    pub fn writer(&self) -> Option<&crate::replication::Writer> {
+        self.writer.as_ref()
     }
 }

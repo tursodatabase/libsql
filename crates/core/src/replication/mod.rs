@@ -1,8 +1,11 @@
 mod client;
+mod connection;
 pub mod frame;
+mod parser;
 pub mod replica;
 
 pub use client::pb;
+pub use connection::RemoteConnection;
 
 pub const WAL_PAGE_SIZE: i32 = 4096;
 // pub const WAL_MAGIC: u64 = u64::from_le_bytes(*b"SQLDWAL\0");
@@ -21,6 +24,10 @@ use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
 use client::Client;
+
+use self::parser::Statement;
+use self::pb::query::Params;
+use self::pb::{ExecuteResults, Positional, Program, ProgramReq};
 
 pub struct Replicator {
     pub(crate) frames_sender: Sender<Frames>,
@@ -274,38 +281,35 @@ impl Replicator {
 }
 
 impl Writer {
-    pub async fn execute(
+    pub async fn execute_program(
         &self,
-        sql: &str,
-        params: impl Into<pb::query::Params> + Send,
-    ) -> anyhow::Result<u64> {
-        tracing::trace!("executing remote sql statement: {sql}");
-        let (write_frame_no, rows_affected) = self.client.execute(sql, params.into()).await?;
+        steps: Vec<Statement>,
+        params: impl Into<pb::query::Params>,
+    ) -> anyhow::Result<ExecuteResults> {
+        let mut params = Some(params.into());
 
-        tracing::trace!(
-            "statement executed on remote waiting for frame_no: {}",
-            write_frame_no
-        );
-        Ok(rows_affected)
-    }
+        let steps = steps
+            .into_iter()
+            .map(|stmt| pb::Step {
+                query: Some(pb::Query {
+                    stmt: stmt.stmt,
+                    // TODO(lucio): Pass params
+                    params: Some(
+                        params
+                            .take()
+                            .unwrap_or(Params::Positional(Positional::default())),
+                    ),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            })
+            .collect();
 
-    pub async fn query(
-        &self,
-        sql: &str,
-        params: impl Into<pb::query::Params> + Send,
-    ) -> anyhow::Result<pb::ResultRows> {
-        let (write_frame_no, rows) = self.client.query(sql, params.into()).await?;
-
-        tracing::trace!(
-            "statement executed on remote waiting for frame_no: {}",
-            write_frame_no
-        );
-
-        Ok(rows)
-    }
-
-    pub async fn execute_batch(&self, sql: Vec<String>) -> anyhow::Result<()> {
-        self.client.execute_batch(sql).await?;
-        Ok(())
+        self.client
+            .execute_program(ProgramReq {
+                client_id: self.client.client_id(),
+                pgm: Some(Program { steps }),
+            })
+            .await
     }
 }
