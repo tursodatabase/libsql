@@ -1,4 +1,3 @@
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Queries {
@@ -8,7 +7,6 @@ pub struct Queries {
     #[prost(string, tag = "2")]
     pub client_id: ::prost::alloc::string::String,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Query {
@@ -21,7 +19,6 @@ pub struct Query {
 }
 /// Nested message and enum types in `Query`.
 pub mod query {
-    #[cfg_attr(test, derive(arbitrary::Arbitrary))]
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Params {
@@ -31,14 +28,12 @@ pub mod query {
         Named(super::Named),
     }
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Positional {
     #[prost(message, repeated, tag = "1")]
     pub values: ::prost::alloc::vec::Vec<Value>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Named {
@@ -47,7 +42,6 @@ pub struct Named {
     #[prost(message, repeated, tag = "2")]
     pub values: ::prost::alloc::vec::Vec<Value>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryResult {
@@ -56,7 +50,6 @@ pub struct QueryResult {
 }
 /// Nested message and enum types in `QueryResult`.
 pub mod query_result {
-    #[cfg_attr(test, derive(arbitrary::Arbitrary))]
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum RowResult {
@@ -66,7 +59,6 @@ pub mod query_result {
         Row(super::ResultRows),
     }
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Error {
@@ -77,7 +69,6 @@ pub struct Error {
 }
 /// Nested message and enum types in `Error`.
 pub mod error {
-    #[cfg_attr(test, derive(arbitrary::Arbitrary))]
     #[derive(
         Clone,
         Copy,
@@ -121,7 +112,6 @@ pub mod error {
         }
     }
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ResultRows {
@@ -134,7 +124,6 @@ pub struct ResultRows {
     #[prost(int64, optional, tag = "4")]
     pub last_insert_rowid: ::core::option::Option<i64>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DescribeRequest {
@@ -143,7 +132,6 @@ pub struct DescribeRequest {
     #[prost(string, tag = "2")]
     pub stmt: ::prost::alloc::string::String,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DescribeResult {
@@ -152,7 +140,6 @@ pub struct DescribeResult {
 }
 /// Nested message and enum types in `DescribeResult`.
 pub mod describe_result {
-    #[cfg_attr(test, derive(arbitrary::Arbitrary))]
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum DescribeResult {
@@ -162,7 +149,6 @@ pub mod describe_result {
         Description(super::Description),
     }
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Description {
@@ -173,7 +159,6 @@ pub struct Description {
     #[prost(uint64, tag = "3")]
     pub param_count: u64,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Value {
@@ -181,14 +166,12 @@ pub struct Value {
     #[prost(bytes = "vec", tag = "1")]
     pub data: ::prost::alloc::vec::Vec<u8>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Row {
     #[prost(message, repeated, tag = "1")]
     pub values: ::prost::alloc::vec::Vec<Value>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Column {
@@ -197,18 +180,15 @@ pub struct Column {
     #[prost(string, optional, tag = "3")]
     pub decltype: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DisconnectMessage {
     #[prost(string, tag = "1")]
     pub client_id: ::prost::alloc::string::String,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Ack {}
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ExecuteResults {
@@ -218,12 +198,11 @@ pub struct ExecuteResults {
     #[prost(enumeration = "execute_results::State", tag = "2")]
     pub state: i32,
     /// / Primary frame_no after executing the request.
-    #[prost(uint64, optional, tag = "3")]
-    pub current_frame_no: ::core::option::Option<u64>,
+    #[prost(uint64, tag = "3")]
+    pub current_frame_no: u64,
 }
 /// Nested message and enum types in `ExecuteResults`.
 pub mod execute_results {
-    #[cfg_attr(test, derive(arbitrary::Arbitrary))]
     #[derive(
         Clone,
         Copy,
@@ -264,14 +243,12 @@ pub mod execute_results {
         }
     }
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Program {
     #[prost(message, repeated, tag = "1")]
     pub steps: ::prost::alloc::vec::Vec<Step>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Step {
@@ -280,7 +257,6 @@ pub struct Step {
     #[prost(message, optional, tag = "2")]
     pub query: ::core::option::Option<Query>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Cond {
@@ -289,7 +265,6 @@ pub struct Cond {
 }
 /// Nested message and enum types in `Cond`.
 pub mod cond {
-    #[cfg_attr(test, derive(arbitrary::Arbitrary))]
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Cond {
@@ -307,46 +282,39 @@ pub mod cond {
         IsAutocommit(super::IsAutocommitCond),
     }
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OkCond {
     #[prost(int64, tag = "1")]
     pub step: i64,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ErrCond {
     #[prost(int64, tag = "1")]
     pub step: i64,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct NotCond {
     #[prost(message, optional, boxed, tag = "1")]
     pub cond: ::core::option::Option<::prost::alloc::boxed::Box<Cond>>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AndCond {
     #[prost(message, repeated, tag = "1")]
     pub conds: ::prost::alloc::vec::Vec<Cond>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OrCond {
     #[prost(message, repeated, tag = "1")]
     pub conds: ::prost::alloc::vec::Vec<Cond>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct IsAutocommitCond {}
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ProgramReq {
