@@ -229,9 +229,6 @@ impl Statement {
     }
 
     pub fn is_read_only(&self) -> bool {
-        matches!(
-            self.kind,
-            StmtKind::Read | StmtKind::TxnEnd | StmtKind::TxnBegin
-        )
+        matches!(self.kind, StmtKind::Read)
     }
 }
