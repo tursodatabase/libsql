@@ -44,7 +44,6 @@ impl RemoteConnection {
     }
 
     fn is_state_init(&self) -> bool {
-        println!("State is {:?}", self.state.lock());
         matches!(self.state.lock().remote_state, RemoteState::Init)
     }
 

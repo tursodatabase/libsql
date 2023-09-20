@@ -322,7 +322,6 @@ impl Writer {
                 stmt,
             })
             .await;
-        println!("{:#?}", result);
         result
     }
 }
