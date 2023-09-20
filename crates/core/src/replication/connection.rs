@@ -255,27 +255,33 @@ impl RemoteStatement {
     pub async fn prepare(conn: RemoteConnection, sql: &str) -> Result<Self> {
         let stmts = parser::Statement::parse(sql).collect::<Result<Vec<_>>>()?;
 
-        if conn.should_execute_local(&stmts[..]) {
-            let stmt = conn.local.prepare(sql).await?;
-            Ok(Self {
-                conn,
-                stmts,
-                local_statement: Some(stmt),
-                metas: vec![]
-            })
-        } else {
-            let metas = fetch_metas(&conn, &stmts).await?;
-            Ok(Self {
-                conn,
-                stmts,
-                local_statement: None,
-                metas
-            })
-        }
+        // FIXME(sarna): this condition was originally there, but should it? We're in RemoteStatement,
+        // so it's kind of assumed now we're not executing locally
+        //
+        // if conn.should_execute_local(&stmts[..]) {
+        //     println!("Preparing {sql} locally");
+        //     let stmt = conn.local.prepare(sql).await?;
+        //     return Ok(Self {
+        //         conn,
+        //         stmts,
+        //         local_statement: Some(stmt),
+        //         metas: vec![]
+        //     })
+        // }
+
+        let metas = fetch_metas(&conn, &stmts).await?;
+        Ok(Self {
+            conn,
+            stmts,
+            local_statement: None,
+            metas
+        })
+
     }
 }
 
 async fn fetch_meta(conn: &RemoteConnection, stmt: &parser::Statement) -> Result<StatementMeta> {
+    tracing::trace!("Fetching metadata of statement {}", stmt.stmt);
     match conn
         .describe(&stmt.stmt)
         .await? {
