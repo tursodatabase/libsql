@@ -179,10 +179,6 @@ pub struct Description {
 pub struct Value {
     /// / bincode encoded Value
     #[prost(bytes = "vec", tag = "1")]
-    #[cfg_attr(
-        test,
-        arbitrary(with = crate::connection::write_proxy::test::arbitrary_rpc_value)
-    )]
     pub data: ::prost::alloc::vec::Vec<u8>,
 }
 #[cfg_attr(test, derive(arbitrary::Arbitrary))]
