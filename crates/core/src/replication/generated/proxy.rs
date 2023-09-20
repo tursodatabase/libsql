@@ -126,6 +126,41 @@ pub struct ResultRows {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DescribeRequest {
+    #[prost(string, tag = "1")]
+    pub client_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub stmt: ::prost::alloc::string::String,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DescribeResult {
+    #[prost(oneof = "describe_result::DescribeResult", tags = "1, 2")]
+    pub describe_result: ::core::option::Option<describe_result::DescribeResult>,
+}
+/// Nested message and enum types in `DescribeResult`.
+pub mod describe_result {
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum DescribeResult {
+        #[prost(message, tag = "1")]
+        Error(super::Error),
+        #[prost(message, tag = "2")]
+        Description(super::Description),
+    }
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Description {
+    #[prost(message, repeated, tag = "1")]
+    pub column_descriptions: ::prost::alloc::vec::Vec<Column>,
+    #[prost(string, repeated, tag = "2")]
+    pub param_names: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(uint64, tag = "3")]
+    pub param_count: u64,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Value {
     /// / bincode encoded Value
     #[prost(bytes = "vec", tag = "1")]
@@ -392,6 +427,25 @@ pub mod proxy_client {
             req.extensions_mut().insert(GrpcMethod::new("proxy.Proxy", "Execute"));
             self.inner.unary(req, path, codec).await
         }
+        pub async fn describe(
+            &mut self,
+            request: impl tonic::IntoRequest<super::DescribeRequest>,
+        ) -> std::result::Result<tonic::Response<super::DescribeResult>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/proxy.Proxy/Describe");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("proxy.Proxy", "Describe"));
+            self.inner.unary(req, path, codec).await
+        }
         pub async fn disconnect(
             &mut self,
             request: impl tonic::IntoRequest<super::DisconnectMessage>,
@@ -424,6 +478,10 @@ pub mod proxy_server {
             &self,
             request: tonic::Request<super::ProgramReq>,
         ) -> std::result::Result<tonic::Response<super::ExecuteResults>, tonic::Status>;
+        async fn describe(
+            &self,
+            request: tonic::Request<super::DescribeRequest>,
+        ) -> std::result::Result<tonic::Response<super::DescribeResult>, tonic::Status>;
         async fn disconnect(
             &self,
             request: tonic::Request<super::DisconnectMessage>,
@@ -537,6 +595,50 @@ pub mod proxy_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = ExecuteSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/proxy.Proxy/Describe" => {
+                    #[allow(non_camel_case_types)]
+                    struct DescribeSvc<T: Proxy>(pub Arc<T>);
+                    impl<T: Proxy> tonic::server::UnaryService<super::DescribeRequest>
+                    for DescribeSvc<T> {
+                        type Response = super::DescribeResult;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DescribeRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as Proxy>::describe(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = DescribeSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

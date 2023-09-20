@@ -5,7 +5,9 @@ use std::sync::Arc;
 use libsql_sys::ValueType;
 use parking_lot::Mutex;
 
-use crate::replication::pb::{execute_results::State as RemoteState, query_result::RowResult};
+use crate::replication::pb::{
+    describe_result, execute_results::State as RemoteState, query_result::RowResult, DescribeResult,
+};
 use crate::rows::{RowInner, RowsInner};
 use crate::statement::Stmt;
 use crate::transaction::Tx;
@@ -65,6 +67,16 @@ impl RemoteConnection {
             let mut state = self.state.lock();
             state.remote_state = RemoteState::try_from(res.state).expect("Invalid state enum");
         }
+
+        Ok(res)
+    }
+
+    pub(self) async fn describe(&self, stmt: impl Into<String>) -> Result<DescribeResult> {
+        let res = self
+            .writer
+            .describe(stmt)
+            .await
+            .map_err(|e| Error::WriteDelegation(e.into()))?;
 
         Ok(res)
     }
@@ -195,9 +207,49 @@ impl Conn for RemoteConnection {
     }
 }
 
+pub struct ColumnMeta {
+    name: String,
+    origin_name: Option<String>,
+    table_name: Option<String>,
+    database_name: Option<String>,
+    decl_type: Option<String>,
+}
+
+impl From<crate::replication::pb::Column> for ColumnMeta {
+    fn from(col: crate::replication::pb::Column) -> Self {
+        Self {
+            name: col.name.clone(),
+            origin_name: None,
+            table_name: None,
+            database_name: None,
+            decl_type: col.decltype,
+        }
+    }
+}
+
+impl<'a> From<&'a ColumnMeta> for Column<'a> {
+    fn from(col: &'a ColumnMeta) -> Self {
+        Self {
+            name: col.name.as_str(),
+            origin_name: col.origin_name.as_deref(),
+            table_name: col.table_name.as_deref(),
+            database_name: col.database_name.as_deref(),
+            decl_type: col.decl_type.as_deref(),
+        }
+    }
+}
+
+pub struct StatementMeta {
+    columns: Vec<ColumnMeta>,
+    param_names: Vec<String>,
+    param_count: u64,
+}
+
 pub struct RemoteStatement {
     conn: RemoteConnection,
     stmts: Vec<parser::Statement>,
+    /// Empty if we should execute locally
+    metas: Vec<StatementMeta>,
     /// Set to `Some` when we should execute this locally
     local_statement: Option<v2::Statement>,
 }
@@ -206,19 +258,62 @@ impl RemoteStatement {
     pub async fn prepare(conn: RemoteConnection, sql: &str) -> Result<Self> {
         let stmts = parser::Statement::parse(sql).collect::<Result<Vec<_>>>()?;
 
-        let local_statement = if conn.should_execute_local(&stmts[..]) {
-            let stmt = conn.local.prepare(sql).await?;
-            Some(stmt)
-        } else {
-            None
-        };
+        // FIXME(sarna): this condition was originally there, but should it? We're in RemoteStatement,
+        // so it's kind of assumed now we're not executing locally
+        //
+        // if conn.should_execute_local(&stmts[..]) {
+        //     println!("Preparing {sql} locally");
+        //     let stmt = conn.local.prepare(sql).await?;
+        //     return Ok(Self {
+        //         conn,
+        //         stmts,
+        //         local_statement: Some(stmt),
+        //         metas: vec![]
+        //     })
+        // }
 
+        let metas = fetch_metas(&conn, &stmts).await?;
         Ok(Self {
             conn,
             stmts,
-            local_statement,
+            local_statement: None,
+            metas,
         })
     }
+}
+
+async fn fetch_meta(conn: &RemoteConnection, stmt: &parser::Statement) -> Result<StatementMeta> {
+    tracing::trace!("Fetching metadata of statement {}", stmt.stmt);
+    match conn.describe(&stmt.stmt).await? {
+        DescribeResult {
+            describe_result: Some(describe_result::DescribeResult::Description(d)),
+        } => Ok(StatementMeta {
+            columns: d
+                .column_descriptions
+                .into_iter()
+                .map(|c| c.into())
+                .collect(),
+            param_names: d.param_names.into_iter().collect(),
+            param_count: d.param_count,
+        }),
+        DescribeResult {
+            describe_result: Some(describe_result::DescribeResult::Error(e)),
+        } => Err(Error::SqliteFailure(e.code, e.message)),
+        _ => Err(Error::Misuse("unexpected describe result".into())),
+    }
+}
+
+// FIXME(sarna): do we ever want to fetch metadata about multiple statements at one go?
+async fn fetch_metas(
+    conn: &RemoteConnection,
+    stmts: &[parser::Statement],
+) -> Result<Vec<StatementMeta>> {
+    let mut metas = vec![];
+    for stmt in stmts {
+        let meta = fetch_meta(conn, stmt).await?;
+        metas.push(meta);
+    }
+    Ok(metas)
 }
 
 #[async_trait::async_trait]
@@ -286,15 +381,37 @@ impl Stmt for RemoteStatement {
     fn reset(&mut self) {}
 
     fn parameter_count(&self) -> usize {
-        todo!()
+        // FIXME: we need to decide if we keep RemoteStatement as a single statement, or else how to handle this
+        match self.metas.first() {
+            Some(meta) => meta.param_count as usize,
+            None => 0,
+        }
     }
 
-    fn parameter_name(&self, _idx: i32) -> Option<&str> {
-        todo!()
+    fn parameter_name(&self, idx: i32) -> Option<&str> {
+        // FIXME: we need to decide if we keep RemoteStatement as a single statement, or else how to handle this
+        match self.metas.first() {
+            Some(meta) => meta.param_names.get(idx as usize).map(|s| s.as_str()),
+            None => None,
+        }
     }
 
     fn columns(&self) -> Vec<Column> {
-        todo!()
+        // FIXME: we need to decide if we keep RemoteStatement as a single statement, or else how to handle this
+        match self.metas.first() {
+            Some(meta) => meta
+                .columns
+                .iter()
+                .map(|c| Column {
+                    name: &c.name,
+                    origin_name: c.origin_name.as_deref(),
+                    database_name: c.database_name.as_deref(),
+                    table_name: c.table_name.as_deref(),
+                    decl_type: c.decl_type.as_deref(),
+                })
+                .collect(),
+            None => vec![],
+        }
     }
 }
 
@@ -340,8 +457,7 @@ impl RowsInner for RemoteRows {
     fn column_type(&self, idx: i32) -> Result<ValueType> {
         let col = self.0.column_descriptions.get(idx as usize).unwrap();
         col.decltype
-            .as_ref()
-            .map(|s| s.as_str())
+            .as_deref()
             .and_then(ValueType::from_str)
             .ok_or(Error::InvalidColumnType)
     }
@@ -373,8 +489,7 @@ impl RowInner for RemoteRow {
     fn column_type(&self, idx: i32) -> Result<ValueType> {
         let col = self.1.get(idx as usize).unwrap();
         col.decltype
-            .as_ref()
-            .map(|s| s.as_str())
+            .as_deref()
             .and_then(ValueType::from_str)
             .ok_or(Error::InvalidColumnType)
     }

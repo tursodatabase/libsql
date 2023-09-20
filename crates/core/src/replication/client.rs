@@ -32,7 +32,7 @@ use super::{replica::meta::WalIndexMeta, Frame};
 
 use box_clone_service::BoxCloneService;
 
-use self::pb::{ExecuteResults, ProgramReq};
+use self::pb::{ExecuteResults, ProgramReq, DescribeRequest, DescribeResult};
 
 type ResponseBody = trace::ResponseBody<
     GrpcWebCall<hyper::Body>,
@@ -131,6 +131,15 @@ impl Client {
         self.proxy
             .clone()
             .execute(program)
+            .await
+            .map(|r| r.into_inner())
+            .map_err(Into::into)
+    }
+
+    pub async fn describe(&self, describe_req: DescribeRequest) -> anyhow::Result<DescribeResult> {
+        self.proxy
+            .clone()
+            .describe(describe_req)
             .await
             .map(|r| r.into_inner())
             .map_err(Into::into)

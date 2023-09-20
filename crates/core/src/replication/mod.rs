@@ -27,7 +27,7 @@ use client::Client;
 
 use self::parser::Statement;
 use self::pb::query::Params;
-use self::pb::{ExecuteResults, Positional, Program, ProgramReq};
+use self::pb::{ExecuteResults, Positional, Program, ProgramReq, DescribeRequest, DescribeResult};
 
 pub struct Replicator {
     pub(crate) frames_sender: Sender<Frames>,
@@ -311,5 +311,17 @@ impl Writer {
                 pgm: Some(Program { steps }),
             })
             .await
+    }
+
+    pub async fn describe(&self, stmt: impl Into<String>) -> anyhow::Result<DescribeResult> {
+        let stmt = stmt.into();
+        let result = self
+            .client
+            .describe(DescribeRequest {
+                client_id: self.client.client_id(),
+                stmt,
+            })
+            .await;
+        result
     }
 }

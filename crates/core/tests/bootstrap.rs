@@ -1,16 +1,13 @@
 use std::{path::PathBuf, process::Command};
 
 #[test]
-// TODO(lucio): This broke when moving the replication crate
-// into core but we don't need it right now since we are not
-// updating our protofiles anytime soon.
-#[ignore]
 fn bootstrap() {
     let iface_files = &["proto/replication_log.proto", "proto/proxy.proto"];
     let dirs = &["proto"];
 
     let out_dir = PathBuf::from(std::env!("CARGO_MANIFEST_DIR"))
         .join("src")
+        .join("replication")
         .join("generated");
 
     let mut config = prost_build::Config::new();

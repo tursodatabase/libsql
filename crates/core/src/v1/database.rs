@@ -79,7 +79,7 @@ impl Database {
                 auth_token,
             } => {
                 let replicator =
-                    Replicator::with_http_sync(db_path, endpoint.clone(), auth_token.clone())
+                    Replicator::with_http_sync(db_path, endpoint.clone(), auth_token)
                         .map_err(|e| ConnectionFailed(format!("{e}")))?;
 
                 db.replication_ctx = Some(ReplicationContext {

@@ -121,7 +121,7 @@ impl Stmt for LibsqlStmt {
         let stmt = self.0.clone();
 
         stmt.query(&params)
-            .map(|r| LibsqlRows(r))
+            .map(LibsqlRows)
             .map(|r| Rows { inner: Box::new(r) })
     }
 
