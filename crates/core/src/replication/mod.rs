@@ -346,13 +346,13 @@ impl Writer {
 
     pub async fn describe(&self, stmt: impl Into<String>) -> anyhow::Result<DescribeResult> {
         let stmt = stmt.into();
-        let result = self
+        
+        self
             .client
             .describe(DescribeRequest {
                 client_id: self.client.client_id(),
                 stmt,
             })
-            .await;
-        result
+            .await
     }
 }

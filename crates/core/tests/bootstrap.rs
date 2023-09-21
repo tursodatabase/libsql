@@ -11,7 +11,7 @@ fn bootstrap() {
         .join("generated");
 
     let mut config = prost_build::Config::new();
-    config.bytes(&[".wal_log.Frame"]);
+    config.bytes([".wal_log.Frame"]);
 
     tonic_build::configure()
         .build_client(true)
