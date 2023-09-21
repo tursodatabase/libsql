@@ -27,7 +27,7 @@ use client::Client;
 
 use self::parser::Statement;
 use self::pb::query::Params;
-use self::pb::{ExecuteResults, Positional, Program, ProgramReq, DescribeRequest, DescribeResult};
+use self::pb::{DescribeRequest, DescribeResult, ExecuteResults, Positional, Program, ProgramReq};
 
 pub struct Replicator {
     pub(crate) frames_sender: Sender<Frames>,
@@ -291,23 +291,21 @@ impl Replicator {
         tracing::trace!("Syncing snapshot from HTTP");
         let next_offset = self.next_offset.load(Ordering::Relaxed);
 
-        let (snap, frames_to_apply) = self
+        let (snap, max_frame_no) = self
             .client
             .clone()
             .context("FATAL trying to sync with no client, you need to call init_metadata first")?
             .snapshot(next_offset)
             .await?;
-
-        if frames_to_apply == 0 {
-            tracing::debug!("Skipping snapshot sync - frames already applied");
-            return Ok(0);
-        }
-
         self.frames_sender.send(Frames::Snapshot(snap)).await?;
 
         self.injector.step()?;
-        self.next_offset.fetch_add(frames_to_apply as u64, Ordering::Relaxed);
-        Ok(frames_to_apply)
+        let applied_frames = max_frame_no - next_offset + 1;
+        let mut meta = self.meta.lock().unwrap();
+        meta.pre_commit_frame_no = max_frame_no;
+        meta.post_commit_frame_no = max_frame_no;
+        self.next_offset.store(max_frame_no + 1, Ordering::Relaxed);
+        Ok(applied_frames as usize)
     }
 }
 
@@ -346,9 +344,8 @@ impl Writer {
 
     pub async fn describe(&self, stmt: impl Into<String>) -> anyhow::Result<DescribeResult> {
         let stmt = stmt.into();
-        
-        self
-            .client
+
+        self.client
             .describe(DescribeRequest {
                 client_id: self.client.client_id(),
                 stmt,
