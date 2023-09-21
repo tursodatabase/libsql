@@ -46,20 +46,24 @@ impl TempSnapshot {
         })
     }
 
+    // Returns the temporary snapshot and the max frame number in the snapshot
     pub async fn from_stream(
         db_path: &Path,
         mut s: impl Stream<Item = anyhow::Result<Frame>> + Unpin,
-    ) -> anyhow::Result<Self> {
+    ) -> anyhow::Result<(Self, u64)> {
         let temp_dir = db_path.join("temp");
         tokio::fs::create_dir_all(&temp_dir).await?;
         let file = NamedTempFile::new_in(temp_dir)?;
         let tokio_file = tokio::fs::File::from_std(file.as_file().try_clone()?);
 
         let mut tokio_file = BufWriter::new(tokio_file);
+        let mut max_frame_no = 0;
         while let Some(frame) = s.next().await {
             let frame = frame?;
             tokio_file.write_all(frame.as_slice()).await?;
+            max_frame_no = std::cmp::max(max_frame_no, frame.header().frame_no);
         }
+        tracing::trace!("Detected snapshot max frame number: {max_frame_no}");
 
         tokio_file.flush().await?;
 
@@ -67,11 +71,14 @@ impl TempSnapshot {
 
         let map = unsafe { memmap::Mmap::map(&file)? };
 
-        Ok(Self {
-            path,
-            map,
-            delete_on_drop: true,
-        })
+        Ok((
+            Self {
+                path,
+                map,
+                delete_on_drop: true,
+            },
+            max_frame_no,
+        ))
     }
 
     pub fn path(&self) -> &Path {

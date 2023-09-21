@@ -32,7 +32,7 @@ use super::{replica::meta::WalIndexMeta, Frame};
 
 use box_clone_service::BoxCloneService;
 
-use self::pb::{ExecuteResults, ProgramReq, DescribeRequest, DescribeResult};
+use self::pb::{DescribeRequest, DescribeResult, ExecuteResults, ProgramReq};
 
 type ResponseBody = trace::ResponseBody<
     GrpcWebCall<hyper::Body>,
@@ -143,6 +143,21 @@ impl Client {
             .await
             .map(|r| r.into_inner())
             .map_err(Into::into)
+    }
+
+    // Returns the temporary snapshot and the max frame number in the snapshot
+    pub async fn snapshot(&self, next_offset: u64) -> anyhow::Result<(crate::TempSnapshot, u64)> {
+        use futures::StreamExt;
+        let mut client = self.replication.clone();
+        let frames = client
+            .snapshot(pb::LogOffset { next_offset })
+            .await?
+            .into_inner();
+        let stream = frames.map(|data| match data {
+            Ok(frame) => Frame::try_from_bytes(frame.data),
+            Err(e) => anyhow::bail!(e),
+        });
+        crate::TempSnapshot::from_stream(std::env::temp_dir().as_ref(), stream).await
     }
 }
 

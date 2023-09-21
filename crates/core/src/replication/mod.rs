@@ -27,7 +27,7 @@ use client::Client;
 
 use self::parser::Statement;
 use self::pb::query::Params;
-use self::pb::{ExecuteResults, Positional, Program, ProgramReq, DescribeRequest, DescribeResult};
+use self::pb::{DescribeRequest, DescribeResult, ExecuteResults, Positional, Program, ProgramReq};
 
 pub struct Replicator {
     pub(crate) frames_sender: Sender<Frames>,
@@ -217,6 +217,11 @@ impl Replicator {
         Ok(Writer { client })
     }
 
+    // FIXME(sarna): it looks like we abused the TempSnapshot interface a little,
+    // because we assume here that the file is an actual snapshot file from sqld
+    // and it contains a header. Meanwhile, originally, TempSnapshot skipped the header
+    // and only contained raw frames. The code still works, it's just a little misleading
+    // to use TempSnapshot to map a file that *does* have a header, and thus also metadata.
     pub fn sync(&self, frames: Frames) -> anyhow::Result<usize> {
         let frames_to_apply = match &frames {
             Frames::Snapshot(snapshot) => {
@@ -245,6 +250,9 @@ impl Replicator {
             Ok(frames) => Ok(frames),
             Err(e) => {
                 if let Some(status) = e.downcast_ref::<tonic::Status>() {
+                    if status.message() == "NEED_SNAPSHOT" {
+                        return self.sync_snapshot().await;
+                    }
                     if status.code() == tonic::Code::FailedPrecondition {
                         self.fetch_log_entries(true).await
                     } else {
@@ -277,6 +285,27 @@ impl Replicator {
         client
             .batch_log_entries(self.next_offset.load(Ordering::Relaxed))
             .await
+    }
+
+    async fn sync_snapshot(&self) -> anyhow::Result<usize> {
+        tracing::trace!("Syncing snapshot from HTTP");
+        let next_offset = self.next_offset.load(Ordering::Relaxed);
+
+        let (snap, max_frame_no) = self
+            .client
+            .clone()
+            .context("FATAL trying to sync with no client, you need to call init_metadata first")?
+            .snapshot(next_offset)
+            .await?;
+        self.frames_sender.send(Frames::Snapshot(snap)).await?;
+
+        self.injector.step()?;
+        let applied_frames = max_frame_no - next_offset + 1;
+        let mut meta = self.meta.lock().unwrap();
+        meta.pre_commit_frame_no = max_frame_no;
+        meta.post_commit_frame_no = max_frame_no;
+        self.next_offset.store(max_frame_no + 1, Ordering::Relaxed);
+        Ok(applied_frames as usize)
     }
 }
 
@@ -315,13 +344,12 @@ impl Writer {
 
     pub async fn describe(&self, stmt: impl Into<String>) -> anyhow::Result<DescribeResult> {
         let stmt = stmt.into();
-        let result = self
-            .client
+
+        self.client
             .describe(DescribeRequest {
                 client_id: self.client.client_id(),
                 stmt,
             })
-            .await;
-        result
+            .await
     }
 }
