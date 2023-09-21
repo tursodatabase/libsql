@@ -144,6 +144,20 @@ impl Client {
             .map(|r| r.into_inner())
             .map_err(Into::into)
     }
+
+    pub async fn snapshot(&self, next_offset: u64) -> anyhow::Result<(crate::TempSnapshot, usize)> {
+        use futures::StreamExt;
+        let mut client = self.replication.clone();
+        let frames = client
+            .snapshot(pb::LogOffset { next_offset })
+            .await?
+            .into_inner();
+        let stream = frames.map(|data| match data {
+            Ok(frame) => Frame::try_from_bytes(frame.data),
+            Err(e) => anyhow::bail!(e),
+        });
+        crate::TempSnapshot::from_stream(std::env::temp_dir().as_ref(), stream).await
+    }
 }
 
 #[derive(Debug, Clone)]
