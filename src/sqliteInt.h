@@ -3790,6 +3790,7 @@ struct Parse {
   int *aLabel;         /* Space to hold the labels */
   ExprList *pConstExpr;/* Constant expressions */
   IndexedExpr *pIdxEpr;/* List of expressions used by active indexes */
+  IndexedExpr *pIdxPartExpr; /* Exprs constrained by index WHERE clauses */
   Token constraintName;/* Name of the constraint currently being parsed */
   yDbMask writeMask;   /* Start a write transaction on these databases */
   yDbMask cookieMask;  /* Bitmask of schema verified databases */
@@ -4939,6 +4940,7 @@ int sqlite3WhereOkOnePass(WhereInfo*, int*);
 #define ONEPASS_SINGLE   1        /* ONEPASS valid for a single row update */
 #define ONEPASS_MULTI    2        /* ONEPASS is valid for multiple rows */
 int sqlite3WhereUsesDeferredSeek(WhereInfo*);
+void sqlite3WherePartIdxExpr(Parse*, Index*, Expr*, int, SrcItem*);
 void sqlite3ExprCodeLoadIndexColumn(Parse*, Index*, int, int, int);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, u8);
 void sqlite3ExprCodeGetColumnOfTable(Vdbe*, Table*, int, int, int);

@@ -5672,10 +5672,10 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
 ** free the Parse->pIdxEpr list when the Parse object is destroyed.
 */
 static void whereIndexedExprCleanup(sqlite3 *db, void *pObject){
-  Parse *pParse = (Parse*)pObject;
-  while( pParse->pIdxEpr!=0 ){
-    IndexedExpr *p = pParse->pIdxEpr;
-    pParse->pIdxEpr = p->pIENext;
+  IndexedExpr **pp = (IndexedExpr**)pObject;
+  while( *pp!=0 ){
+    IndexedExpr *p = *pp;
+    *pp = p->pIENext;
     sqlite3ExprDelete(db, p->pExpr);
     sqlite3DbFreeNN(db, p);
   }
@@ -5742,7 +5742,87 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
 #endif
     pParse->pIdxEpr = p;
     if( p->pIENext==0 ){
-      sqlite3ParserAddCleanup(pParse, whereIndexedExprCleanup, pParse);
+      void *pArg = (void*)&pParse->pIdxEpr;
+      sqlite3ParserAddCleanup(pParse, whereIndexedExprCleanup, pArg);
+    }
+  }
+}
+
+/*
+** This function is called for a partial index - one with a WHERE clause - in 
+** two scenarios. In both cases, it determines whether or not the WHERE 
+** clause on the index implies that a column of the table may be safely
+** replaced by a constant expression. For example, in the following 
+** SELECT:
+**
+**   CREATE INDEX i1 ON t1(b, c) WHERE a=<expr>;
+**   SELECT a, b, c FROM t1 WHERE a=<expr> AND b=?;
+**
+** The "a" in the select-list may be replaced by <expr>, iff:
+**
+**    (a) <expr> is a constant expression, and
+**    (b) The (a=<expr>) comparison uses the BINARY collation sequence, and
+**    (c) Column "a" has an affinity other than NONE or BLOB.
+**
+** If argument pTabItem is NULL, then this function is being called as part
+** of parsing the CREATE INDEX statement. In that case the Index.colNotIdxed
+** mask is updated to mark any columns that will be replaced by constant 
+** values as indexed.
+**
+** Otherwise, if pTabItem is not NULL, then this function is being called
+** as part of coding a loop that uses index pIdx. In this case, add entries
+** to the Parse.pIdxPartExpr list for each column that can be replaced
+** by a constant.
+*/
+void sqlite3WherePartIdxExpr(
+  Parse *pParse,                  /* Parse context */
+  Index *pIdx,                    /* Partial index being processed */
+  Expr *pPart,                    /* WHERE clause being processed */
+  int iIdxCur,                    /* Cursor number for index */
+  SrcItem *pTabItem               /* The FROM clause entry for the table */
+){
+  assert( pTabItem==0 || (pTabItem->fg.jointype & JT_RIGHT)==0 );
+  if( pPart->op==TK_AND ){
+    sqlite3WherePartIdxExpr(pParse, pIdx, pPart->pRight, iIdxCur, pTabItem);
+    pPart = pPart->pLeft;
+  }
+
+  if( (pPart->op==TK_EQ || pPart->op==TK_IS) ){
+    Expr *pLeft = pPart->pLeft;
+    Expr *pRight = pPart->pRight;
+    u8 aff;
+
+    if( pRight->op==TK_COLUMN ){
+      SWAP(Expr*, pLeft, pRight);
+    }
+
+    if( pLeft->op!=TK_COLUMN ) return;
+    if( !sqlite3ExprIsConstant(pRight) ) return;
+    if( !sqlite3IsBinary(sqlite3ExprCompareCollSeq(pParse, pPart)) ) return;
+    if( pLeft->iColumn<0 ) return;
+    aff = pIdx->pTable->aCol[pLeft->iColumn].affinity;
+    if( aff>=SQLITE_AFF_TEXT ){
+      if( pTabItem ){
+        sqlite3 *db = pParse->db;
+        IndexedExpr *p = (IndexedExpr*)sqlite3DbMallocZero(db, sizeof(*p));
+        if( p ){
+          int bNullRow = (pTabItem->fg.jointype&(JT_LEFT|JT_LTORJ))!=0;
+          p->pExpr = sqlite3ExprDup(db, pRight, 0);
+          p->iDataCur = pTabItem->iCursor;
+          p->iIdxCur = iIdxCur;
+          p->iIdxCol = pLeft->iColumn;
+          p->bMaybeNullRow = bNullRow;
+          p->pIENext = pParse->pIdxPartExpr;
+          p->aff = aff;
+          pParse->pIdxPartExpr = p;
+          if( p->pIENext==0 ){
+            void *pArg = (void*)&pParse->pIdxPartExpr;
+            sqlite3ParserAddCleanup(pParse, whereIndexedExprCleanup, pArg);
+          }
+        }
+      }else if( pLeft->iColumn<(BMS-1) ){
+        pIdx->colNotIdxed &= ~((Bitmask)1 << pLeft->iColumn);
+      }
     }
   }
 }
@@ -6353,6 +6433,11 @@ WhereInfo *sqlite3WhereBegin(
         iIndexCur = pParse->nTab++;
         if( pIx->bHasExpr && OptimizationEnabled(db, SQLITE_IndexedExpr) ){
           whereAddIndexedExpr(pParse, pIx, iIndexCur, pTabItem);
+        }
+        if( pIx->pPartIdxWhere && (pTabItem->fg.jointype & JT_RIGHT)==0 ){
+          sqlite3WherePartIdxExpr(
+              pParse, pIx, pIx->pPartIdxWhere, iIndexCur, pTabItem
+          );
         }
       }
       pLevel->iIdxCur = iIndexCur;
