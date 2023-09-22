@@ -85,6 +85,8 @@ pub use crate::statement::{Statement, StatementStatus};
 pub use crate::transaction::{DropBehavior, Savepoint, Transaction, TransactionBehavior};
 pub use crate::types::ToSql;
 pub use crate::version::*;
+#[cfg(feature = "modern_sqlite")]
+pub use crate::transaction::TransactionState;
 
 mod error;
 
