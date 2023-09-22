@@ -16,6 +16,7 @@ use std::{
 
 use anyhow::Context as _;
 use http::Uri;
+use hyper::client::HttpConnector;
 use hyper_rustls::HttpsConnectorBuilder;
 use tonic::{
     body::BoxBody,
@@ -168,11 +169,15 @@ pub struct GrpcChannel {
 
 impl GrpcChannel {
     pub fn new() -> Self {
+        let mut http = HttpConnector::new();
+        http.set_nodelay(true);
+        http.enforce_http(false);
+
         let https = HttpsConnectorBuilder::new()
             .with_webpki_roots()
             .https_or_http()
             .enable_http1()
-            .build();
+            .wrap_connector(http);
 
         let client = hyper::Client::builder().build(https);
         let client = GrpcWebClientService::new(client);
