@@ -1,6 +1,6 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/libsql/libsql/blob/master/LICENSE.md)
-[![Discord](https://img.shields.io/discord/1026540227218640906?color=5865F2&label=discord&logo=discord&logoColor=8a9095)](https://discord.gg/TxwbQTWHSr)
+[![Discord](https://img.shields.io/discord/1026540227218640906?color=5865F2&label=discord&logo=discord&logoColor=8a9095)](https://discord.gg/VzbXemj6Rg)
 
 <p align="center">
 <img src="https://user-images.githubusercontent.com/331197/205099307-3f20b4e5-96cf-466c-be62-73907e9f2325.png">
@@ -8,7 +8,7 @@
 
 # What is libSQL?
 
-[libSQL](https://libsql.org) is an open source, open contribution fork of SQLite. We aim to evolve it to suit many more use cases than SQLite was originally designed for, and plan to use third-party OSS code wherever it makes sense.
+[libSQL](https://turso.tech/libsql) is an open source, open contribution fork of SQLite, created and maintained by [Turso](https://turso.tech). We aim to evolve it to suit many more use cases than SQLite was originally designed for, and plan to use third-party OSS code wherever it makes sense.
 
 libSQL is licensed under an [Open Source License](LICENSE.md), and we adhere to a clear [Code of Conduct](CODE_OF_CONDUCT.md)
 
@@ -67,7 +67,7 @@ There have been other forks in the past, but they all focus on a specific techni
 
 We want to see a world where everyone can benefit from all of the great ideas and hard work that the SQLite community contributes back to the codebase. Community contributions work well, because we’ve done it before. If this was possible, what do you think SQLite could become?
 
-You can read more about our goals an motivation in our [product vision](https://libsql.org/about) and our [announcement article](https://glaubercosta-11125.medium.com/sqlite-qemu-all-over-again-aedad19c9a1c)
+You can read more about our goals an motivation in our [product vision](https://turso.tech/libsql-manifesto) and our [announcement article](https://glaubercosta-11125.medium.com/sqlite-qemu-all-over-again-aedad19c9a1c)
 
 ## Compatibility with SQLite
 
