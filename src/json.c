@@ -2480,7 +2480,7 @@ json_parse_restart:
       if( x<=0 ){
         if( x==(-2) ){
           j = pParse->iErr;
-          if( pParse->nBlob!=(u32)iThis+1 ) pParse->hasNonstd = 1;
+          if( pParse->nBlob!=(u32)iStart ) pParse->hasNonstd = 1;
           break;
         }
         j += json5Whitespace(&z[j]);
@@ -2560,7 +2560,7 @@ json_parse_restart:
       pParse->iErr = j;
       return -1;
     }
-    if( pParse->nErr==0 ){
+    if( pParse->oom==0 ){
       jsonBlobChangePayloadSize(pParse, iThis, pParse->nBlob - iStart);
     }
     pParse->iDepth--;
@@ -2581,7 +2581,7 @@ json_parse_restart:
       if( x<=0 ){
         if( x==(-3) ){
           j = pParse->iErr;
-          if( pParse->nBlob!=iThis+4 ) pParse->hasNonstd = 1;
+          if( pParse->nBlob!=iStart ) pParse->hasNonstd = 1;
           break;
         }
         if( x!=(-1) ) pParse->iErr = j;
@@ -2614,7 +2614,7 @@ json_parse_restart:
       pParse->iErr = j;
       return -1;
     }
-    if( pParse->iErr==0 ){
+    if( pParse->oom==0 ){
       jsonBlobChangePayloadSize(pParse, iThis, pParse->nBlob - iStart);
     }
     pParse->iDepth--;
@@ -3148,11 +3148,11 @@ static u32 jsonRenderBlob(
       n = jsonbPayloadSize(pParse, i, &sz);
       j = i+n;
       iEnd = j+sz;
-      while( 1 /* exit by break */ ){
+      while( j<iEnd ){
         j = jsonRenderBlob(pParse, j, pOut);
-        if( j>=iEnd ) break;
         jsonAppendChar(pOut, ',');
       }
+      if( sz>0 ) pOut->nUsed--;
       jsonAppendChar(pOut, ']');
       break;
     }
@@ -3162,11 +3162,11 @@ static u32 jsonRenderBlob(
       n = jsonbPayloadSize(pParse, i, &sz);
       j = i+n;
       iEnd = j+sz;
-      while( 1 /* edit by break */ ){
+      while( j<iEnd ){
         j = jsonRenderBlob(pParse, j, pOut);
-        if( j>=iEnd ) break;
         jsonAppendChar(pOut, (x++ & 1) ? ',' : ':');
       }
+      if( sz>0 ) pOut->nUsed--;
       jsonAppendChar(pOut, '}');
       break;
     }
