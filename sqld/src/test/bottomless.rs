@@ -7,8 +7,8 @@ use itertools::Itertools;
 use libsql_client::{Connection, QueryResult, Statement, Value};
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::path::PathBuf;
-use std::time::Duration;
 use tokio::time::sleep;
+use tokio::time::Duration;
 use url::Url;
 
 use crate::config::{DbConfig, UserApiConfig};

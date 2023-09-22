@@ -5,7 +5,6 @@ members = [
     "bottomless-cli",
     "sqld",
     "sqld-libsql-bindings",
-    "testing/end-to-end",
 ]
 
 [workspace.dependencies]
@@ -38,8 +37,11 @@ create-release = false
 tonic = { git = "https://github.com/hyperium/tonic" }
 tonic-build = { git = "https://github.com/hyperium/tonic" }
 console-api = { git = "https://github.com/tokio-rs/console", branch = "lucio/tonic-fix" }
+libsql = { git = "https://github.com/libsql/libsql.git", rev = "61b4f5b" }
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
 inherits = "release"
 lto = "thin"
+
+

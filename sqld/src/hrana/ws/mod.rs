@@ -87,7 +87,7 @@ pub async fn serve<F: MakeNamespace>(
                     }
                 }});
             },
-            Some(task_res) = join_set.join_next() => {
+            Some(task_res) = join_set.join_next(), if !join_set.is_empty() => {
                 task_res.expect("Hrana connection task failed")
             },
             else => {

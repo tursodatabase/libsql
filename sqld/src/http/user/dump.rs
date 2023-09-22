@@ -10,6 +10,7 @@ use pin_project_lite::pin_project;
 use crate::connection::dump::exporter::export_dump;
 use crate::error::Error;
 use crate::namespace::MakeNamespace;
+use crate::BLOCKING_RT;
 
 use super::db_factory::namespace_from_headers;
 use super::AppState;
@@ -84,7 +85,7 @@ pub(super) async fn handle_dump<F: MakeNamespace>(
 
     let (reader, writer) = tokio::io::duplex(8 * 1024);
 
-    let join_handle = tokio::task::spawn_blocking(move || {
+    let join_handle = BLOCKING_RT.spawn_blocking(move || {
         let writer = tokio_util::io::SyncIoBridge::new(writer);
         export_dump(connection, writer).map_err(Into::into)
     });

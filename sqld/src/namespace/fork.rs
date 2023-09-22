@@ -1,18 +1,19 @@
-use chrono::NaiveDateTime;
 use std::io::SeekFrom;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::Duration;
-use tokio::fs::File;
 
 use bottomless::replicator::Replicator;
+use chrono::NaiveDateTime;
+use tokio::fs::File;
 use tokio::io::{AsyncSeekExt, AsyncWriteExt};
+use tokio::time::Duration;
 use tokio_stream::StreamExt;
 
 use crate::database::PrimaryDatabase;
 use crate::replication::frame::Frame;
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
+use crate::BLOCKING_RT;
 
 use super::{MakeNamespace, NamespaceName, ResetCb, RestoreOption};
 
@@ -84,8 +85,9 @@ impl ForkTask<'_> {
     async fn try_fork(self) -> Result<super::Namespace<PrimaryDatabase>> {
         // until what index to replicate
         let base_path = self.base_path.clone();
-        let temp_dir =
-            tokio::task::spawn_blocking(move || tempfile::tempdir_in(base_path)).await??;
+        let temp_dir = BLOCKING_RT
+            .spawn_blocking(move || tempfile::tempdir_in(base_path))
+            .await??;
         let db_path = temp_dir.path().join("data");
 
         if let Some(restore) = self.restore_to {

@@ -69,6 +69,8 @@ chrono = { version = "0.4.26", features = ["serde"] }
 hyper-rustls = { git = "https://github.com/rustls/hyper-rustls.git", rev = "163b3f5" }
 rustls-pemfile = "1.0.3"
 rustls = "0.21.7"
+async-stream = "0.3.5"
+libsql = { version = "0.1", optional = true }
 
 [dev-dependencies]
 proptest = "1.0.0"
@@ -81,6 +83,8 @@ url = "2.3"
 env_logger = "0.10"
 aws-config = "0.55"
 aws-sdk-s3 = "0.28"
+turmoil = "0.5.6"
+hyper = { version = "0.14", features = ["client"] }
 
 [build-dependencies]
 prost-build = "0.12.0"
@@ -91,5 +95,6 @@ vergen = { version = "8", features = ["build", "git", "gitcl"] }
 [features]
 unix-excl-vfs = ["sqld-libsql-bindings/unix-excl-vfs"]
 debug-tools = ["console-subscriber", "rusqlite/trace", "tokio/tracing"]
+sim-tests = ["libsql"]
 
 

@@ -3,8 +3,9 @@
 use std::collections::HashMap;
 use std::sync::Weak;
 use std::time::Duration;
-use tokio::sync::mpsc;
 use url::Url;
+
+use tokio::sync::mpsc;
 
 use crate::http::admin::stats::StatsResponse;
 use crate::namespace::NamespaceName;
