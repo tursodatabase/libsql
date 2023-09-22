@@ -124,18 +124,19 @@ struct JsonCleanup {
 
 /* JSON BLOB node types
 */
-#define JSONB_NULL    0
-#define JSONB_TRUE    1
-#define JSONB_FALSE   2
-#define JSONB_INT     3
-#define JSONB_INT5    4
-#define JSONB_FLOAT   5
-#define JSONB_FLOAT5  6
-#define JSONB_TEXT    7
-#define JSONB_TEXTJ   8
-#define JSONB_TEXT5   9
-#define JSONB_ARRAY  10
-#define JSONB_OBJECT 11
+#define JSONB_NULL     0   /* "null" */
+#define JSONB_TRUE     1   /* "true" */
+#define JSONB_FALSE    2   /* "false" */
+#define JSONB_INT      3   /* integer acceptable to JSON and SQL */
+#define JSONB_INT5     4   /* integer in 0x000 notation */
+#define JSONB_FLOAT    5   /* float acceptable to JSON and SQL */
+#define JSONB_FLOAT5   6   /* float with JSON5 extensions */
+#define JSONB_TEXT     7   /* Text compatible with both JSON and SQL */
+#define JSONB_TEXTJ    8   /* Text with JSON escapes */
+#define JSONB_TEXT5    9   /* Text with JSON-5 escape */
+#define JSONB_TEXTRAW 10   /* SQL text that needs escaping for JSON */
+#define JSONB_ARRAY   11   /* An array */
+#define JSONB_OBJECT  12   /* An object */
 
 /* The "subtype" set for JSON values */
 #define JSON_SUBTYPE  74    /* Ascii for "J" */
@@ -2493,7 +2494,7 @@ json_parse_restart:
             k++;
           }
           assert( iBlob==pParse->nBlob );
-          jsonBlobAppendNodeType(pParse, JSONB_TEXT5, k-j);
+          jsonBlobAppendNodeType(pParse, JSONB_TEXTJ, k-j);
           jsonBlobAppendNBytes(pParse, (const u8*)&z[j], k-j);
           pParse->hasNonstd = 1;
           x = k;
@@ -2504,7 +2505,7 @@ json_parse_restart:
       }
       if( pParse->oom ) return -1;
       t = pParse->aBlob[iBlob] & 0x0f;
-      if( t<JSONB_TEXT || t>JSONB_TEXT5 ){
+      if( t<JSONB_TEXT || t>JSONB_TEXTRAW ){
         pParse->iErr = j;
         return -1;
       }
@@ -2661,8 +2662,8 @@ json_parse_restart:
         return -1;
       }
     }
-    jsonBlobAppendNodeType(pParse, opcode, j+1-i);
-    jsonBlobAppendNBytes(pParse, (const u8*)&z[i], j+1-i);
+    jsonBlobAppendNodeType(pParse, opcode, j-1-i);
+    jsonBlobAppendNBytes(pParse, (const u8*)&z[i+1], j-1-i);
     return j+1;
   }
   case 't': {
@@ -2684,7 +2685,7 @@ json_parse_restart:
   case '+': {
     u8 seenE;
     pParse->hasNonstd = 1;
-    t = 0x01;            /* Bit 0x01:  JSON5.   Bit 0x02:  FLOAT */
+    t = 0x00;            /* Bit 0x01:  JSON5.   Bit 0x02:  FLOAT */
     goto parse_number;
   case '.':
     if( sqlite3Isdigit(z[i+1]) ){
@@ -2820,6 +2821,7 @@ json_parse_restart:
     assert( JSONB_INT+0x01==JSONB_INT5 );
     assert( JSONB_FLOAT+0x01==JSONB_FLOAT5 );
     assert( JSONB_INT+0x02==JSONB_FLOAT );
+    if( z[i]=='+' ) i++;
     jsonBlobAppendNodeType(pParse, JSONB_INT+t, j-i);
     jsonBlobAppendNBytes(pParse, (const u8*)&z[i], j-i);
     return j;
@@ -2948,10 +2950,8 @@ static int jsonParseB(
 
 /* The byte at index i is a node type-code.  This routine
 ** determines the payload size for that node and writes that
-** payload size in to *pSz.  It returns the number of additional
-** bytes following the typecode that are used to hold size information.
-** Enhance, if the return value is N, then the start of the payload
-** is at i+N+1.
+** payload size in to *pSz.  It returns the offset from i to the
+** beginning of the payload.
 */
 static u32 jsonbPayloadSize(JsonParse *pParse, u32 i, u32 *pSz){
   u8 x;
@@ -2960,37 +2960,37 @@ static u32 jsonbPayloadSize(JsonParse *pParse, u32 i, u32 *pSz){
   if( i>pParse->nBlob ){
     pParse->iErr = 1;
     *pSz = 0;
-    return 0;
+    return 1;
   }
   x = pParse->aBlob[i]>>4;
   if( x<=11 ){
     sz = x;
-    n = 0;
+    n = 1;
   }else if( x==12 ){
     if( i+1>pParse->nBlob ){
       pParse->iErr = 1;
       *pSz = 0;
-      return 0;
+      return 1;
     }
     sz = pParse->aBlob[i+1];
-    n = 1;
+    n = 2;
   }else if( x==13 ){
     if( i+2>pParse->nBlob ){
       pParse->iErr = 1;
       *pSz = 0;
-      return 0;
+      return 1;
     }
     sz = (pParse->aBlob[i+1]<<8) + pParse->aBlob[i+2];
-    n = 2;
+    n = 3;
   }else{
     if( i+4>pParse->nBlob ){
       pParse->iErr = 1;
       *pSz = 0;
-      return 0;
+      return 1;
     }
     sz = (pParse->aBlob[i+1]<<24) + (pParse->aBlob[i+2]<<16) +
          (pParse->aBlob[i+3]<<8) + pParse->aBlob[i+4];
-    n = 4;
+    n = 5;
   }
   if( i+sz+n>pParse->nBlob ){
     sz = pParse->nBlob - (i+n);
@@ -3011,6 +3011,8 @@ static u32 jsonRenderBlob(
   u32 i,                         /* Start rendering at this index */
   JsonString *pOut               /* Write JSON here */
 ){
+  u32 sz, n, j, iEnd;
+
   if( i>=pParse->nBlob ){
     pOut->bErr = 1;
     return 0;
@@ -3029,19 +3031,152 @@ static u32 jsonRenderBlob(
       return i+1;
     }
     case JSONB_INT:
-    case JSONB_FLOAT:
-    case JSONB_TEXTJ: {
-      u32 sz, n;
+    case JSONB_FLOAT: {
       n = jsonbPayloadSize(pParse, i, &sz);
-      jsonAppendRaw(pOut, (const char*)&pParse->aBlob[i+n+1], sz);
-      return i+n+sz;
+      jsonAppendRaw(pOut, (const char*)&pParse->aBlob[i+n], sz);
+      break;
+    }
+    case JSONB_INT5: {  /* Integer literal in hexadecimal notation */
+      int k;
+      sqlite3_uint64 u = 0;
+      n = jsonbPayloadSize(pParse, i, &sz);
+      const char *zIn = (const char*)&pParse->aBlob[i+n];
+      if( zIn[0]=='-' ){
+        zIn++;
+        sz--;
+        jsonAppendChar(pOut, '-');
+      }
+      for(k=2; k<sz; k++){
+        u = u*16 + sqlite3HexToInt(zIn[k]);
+      }
+      jsonPrintf(100,pOut,"%llu",u);
+      break;
+    }
+    case JSONB_FLOAT5: { /* Float literal missing digits beside "." */
+      int k;
+      n = jsonbPayloadSize(pParse, i, &sz);
+      const char *zIn = (const char*)&pParse->aBlob[i+n];
+      if( zIn[0]=='-' ){
+        zIn++;
+        sz--;
+        jsonAppendChar(pOut, '-');
+      }
+      if( zIn[0]=='.' ){
+        jsonAppendChar(pOut, '0');
+      }
+      for(k=0; k<sz; k++){
+        if( zIn[k]=='.' && (k+1==sz || !sqlite3Isdigit(zIn[k+1])) ){
+          k++;
+          jsonAppendRaw(pOut, zIn, k);
+          zIn += k;
+          sz -= k;
+          jsonAppendChar(pOut, '0');
+          break;
+        }
+      }
+      if( sz>0 ){
+        jsonAppendRawNZ(pOut, zIn, sz);
+      }
+      break;
+    }
+    case JSONB_TEXT:
+    case JSONB_TEXTJ: {
+      n = jsonbPayloadSize(pParse, i, &sz);
+      jsonAppendChar(pOut, '"');
+      jsonAppendRaw(pOut, (const char*)&pParse->aBlob[i+n], sz);
+      jsonAppendChar(pOut, '"');
+      break;
+    }
+    case JSONB_TEXT5: {
+      const char *zIn;
+      u32 k;
+      n = jsonbPayloadSize(pParse, i, &sz);
+      zIn = (const char*)&pParse->aBlob[i+n];
+      jsonAppendChar(pOut, '"');
+      while( sz>0 ){
+        for(k=0; k<sz && zIn[k]!='\\'; k++){}
+        if( k>0 ){
+          jsonAppendRawNZ(pOut, zIn, k);
+          zIn += k;
+          sz -= k;
+          if( sz==0 ) break;
+        }
+        assert( zIn[0]=='\\' );
+        switch( (u8)zIn[1] ){
+          case '\'':
+            jsonAppendChar(pOut, '\'');
+            break;
+          case 'v':
+            jsonAppendRawNZ(pOut, "\\u0009", 6);
+            break;
+          case 'x':
+            jsonAppendRawNZ(pOut, "\\u00", 4);
+            jsonAppendRawNZ(pOut, &zIn[2], 2);
+            zIn += 2;
+            sz -= 2;
+            break;
+          case '0':
+            jsonAppendRawNZ(pOut, "\\u0000", 6);
+            break;
+          case '\r':
+            if( zIn[2]=='\n' ){
+              zIn++;
+              sz--;
+            }
+            break;
+          case '\n':
+            break;
+          case 0xe2:
+            assert( sz>=4 );
+            assert( 0x80==(u8)zIn[2] );
+            assert( 0xa8==(u8)zIn[3] || 0xa9==(u8)zIn[3] );
+            zIn += 2;
+            sz -= 2;
+            break;
+          default:
+            jsonAppendRawNZ(pOut, zIn, 2);
+            break;
+        }
+        zIn += 2;
+        sz -= 2;
+      }
+      jsonAppendChar(pOut, '"');
+      break;
+    }
+    case JSONB_ARRAY: {
+      jsonAppendChar(pOut, '[');
+      n = jsonbPayloadSize(pParse, i, &sz);
+      j = i+n;
+      iEnd = j+sz;
+      while( 1 /* exit by break */ ){
+        j = jsonRenderBlob(pParse, j, pOut);
+        if( j>=iEnd ) break;
+        jsonAppendChar(pOut, ',');
+      }
+      jsonAppendChar(pOut, ']');
+      break;
+    }
+    case JSONB_OBJECT: {
+      int x = 0;
+      jsonAppendChar(pOut, '{');
+      n = jsonbPayloadSize(pParse, i, &sz);
+      j = i+n;
+      iEnd = j+sz;
+      while( 1 /* edit by break */ ){
+        j = jsonRenderBlob(pParse, j, pOut);
+        if( j>=iEnd ) break;
+        jsonAppendChar(pOut, (x++ & 1) ? ',' : ':');
+      }
+      jsonAppendChar(pOut, '}');
+      break;
     }
 
     default: {
+      n = jsonbPayloadSize(pParse, i, &sz);
       break;
     }
   }
-  return 0;
+  return i+n+sz;
 }
 
 
