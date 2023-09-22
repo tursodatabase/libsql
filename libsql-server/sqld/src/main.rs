@@ -4,7 +4,6 @@ use std::io::{stdout, Write};
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::Duration;
 
 use anyhow::{bail, Context as _, Result};
 use bytesize::ByteSize;
@@ -12,6 +11,7 @@ use clap::Parser;
 use hyper::client::HttpConnector;
 use mimalloc::MiMalloc;
 use tokio::sync::Notify;
+use tokio::time::Duration;
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::Layer;
@@ -386,7 +386,6 @@ async fn make_rpc_server_config(config: &Cli) -> anyhow::Result<Option<RpcServer
 
             Ok(Some(RpcServerConfig {
                 acceptor,
-                addr,
                 tls_config,
             }))
         }

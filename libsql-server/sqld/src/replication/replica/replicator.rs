@@ -1,12 +1,12 @@
 use std::os::unix::prelude::FileExt;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::Duration;
 
 use bytemuck::bytes_of;
 use futures::StreamExt;
 use tokio::sync::{mpsc, oneshot, watch, Mutex};
 use tokio::task::JoinSet;
+use tokio::time::Duration;
 use tonic::metadata::BinaryMetadataValue;
 use tonic::transport::Channel;
 use tonic::{Code, Request};
@@ -21,6 +21,7 @@ use crate::rpc::replication_log::rpc::{
 };
 use crate::rpc::replication_log::NEED_SNAPSHOT_ERROR_MSG;
 use crate::rpc::{NAMESPACE_DOESNT_EXIST, NAMESPACE_METADATA_KEY};
+use crate::BLOCKING_RT;
 
 use super::hook::{Frames, InjectorHookCtx};
 use super::injector::FrameInjector;
@@ -105,7 +106,7 @@ impl Replicator {
         };
 
         let (snd, rcv) = oneshot::channel();
-        join_set.spawn_blocking({
+        let handle = BLOCKING_RT.spawn_blocking({
             let db_path = db_path;
             move || -> anyhow::Result<()> {
                 let mut ctx = InjectorHookCtx::new(receiver, pre_commit, post_commit);
@@ -116,6 +117,11 @@ impl Replicator {
 
                 Ok(())
             }
+        });
+
+        join_set.spawn(async move {
+            handle.await??;
+            Ok(())
         });
 
         // injector is ready:

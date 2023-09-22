@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Weak};
-use std::time::Duration;
 
 use anyhow::{bail, Context as _};
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
@@ -18,6 +17,7 @@ use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
 use tokio::io::AsyncBufReadExt;
 use tokio::sync::watch;
 use tokio::task::{block_in_place, JoinSet};
+use tokio::time::Duration;
 use tokio_util::io::StreamReader;
 use tonic::transport::Channel;
 use uuid::Uuid;
@@ -34,7 +34,7 @@ use crate::replication::replica::Replicator;
 use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
-    run_periodic_checkpoint, StatsSender, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT,
+    run_periodic_checkpoint, StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT,
     MAX_CONCURRENT_DBS,
 };
 
@@ -938,12 +938,12 @@ pub async fn init_bottomless_replicator(
 async fn run_periodic_compactions(logger: Arc<ReplicationLogger>) -> anyhow::Result<()> {
     // calling `ReplicationLogger::maybe_compact()` is cheap if the compaction does not actually
     // take place, so we can affort to poll it very often for simplicity
-    let mut interval = tokio::time::interval(Duration::from_millis(1000));
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(1000));
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
 
     loop {
         interval.tick().await;
-        let handle = tokio::task::spawn_blocking(enclose! {(logger) move || {
+        let handle = BLOCKING_RT.spawn_blocking(enclose! {(logger) move || {
             logger.maybe_compact()
         }});
         handle

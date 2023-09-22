@@ -1,10 +1,10 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::time::Duration;
 
 use hyper::http;
 use tokio::sync::{watch, Notify};
 use tokio::time::timeout;
+use tokio::time::Duration;
 use tower::{Layer, Service};
 
 #[derive(Clone)]

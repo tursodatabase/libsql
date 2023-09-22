@@ -4,8 +4,21 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
 use std::sync::{Arc, Weak};
-use std::time::Duration;
 
+use crate::auth::Auth;
+use crate::connection::{Connection, MakeConnection};
+use crate::error::Error;
+use crate::migration::maybe_migrate;
+use crate::net::Accept;
+use crate::net::AddrIncoming;
+use crate::rpc::proxy::rpc::proxy_server::Proxy;
+use crate::rpc::proxy::ProxyService;
+use crate::rpc::replica_proxy::ReplicaProxyService;
+use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLog;
+use crate::rpc::replication_log::ReplicationLogService;
+use crate::rpc::replication_log_proxy::ReplicationLogProxyService;
+use crate::rpc::run_rpc_server;
+use crate::stats::Stats;
 use anyhow::Context as AnyhowContext;
 use config::{
     AdminApiConfig, DbConfig, HeartbeatConfig, RpcClientConfig, RpcServerConfig, UserApiConfig,
@@ -17,27 +30,15 @@ use namespace::{
     ReplicaNamespaceConfig, ReplicaNamespaceMaker,
 };
 use net::Connector;
+use once_cell::sync::Lazy;
 use replication::NamespacedSnapshotCallback;
-use rpc::proxy::rpc::proxy_server::Proxy;
-use rpc::proxy::ProxyService;
-use rpc::replica_proxy::ReplicaProxyService;
-use rpc::replication_log::rpc::replication_log_server::ReplicationLog;
-use rpc::replication_log::ReplicationLogService;
-use rpc::replication_log_proxy::ReplicationLogProxyService;
-use rpc::run_rpc_server;
+pub use sqld_libsql_bindings as libsql_bindings;
+use tokio::runtime::Runtime;
 use tokio::sync::{mpsc, Notify};
 use tokio::task::JoinSet;
+use tokio::time::Duration;
 use url::Url;
 use utils::services::idle_shutdown::IdleShutdownKicker;
-
-use crate::auth::Auth;
-use crate::connection::{Connection, MakeConnection};
-use crate::error::Error;
-use crate::migration::maybe_migrate;
-use crate::net::Accept;
-use crate::net::AddrIncoming;
-use crate::stats::Stats;
-pub use sqld_libsql_bindings as libsql;
 
 pub mod config;
 pub mod connection;
@@ -67,6 +68,13 @@ const MAX_CONCURRENT_DBS: usize = 128;
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 const DEFAULT_AUTO_CHECKPOINT: u32 = 1000;
 
+pub(crate) static BLOCKING_RT: Lazy<Runtime> = Lazy::new(|| {
+    tokio::runtime::Builder::new_current_thread()
+        .max_blocking_threads(50_000)
+        .build()
+        .unwrap()
+});
+
 type Result<T, E = Error> = std::result::Result<T, E>;
 type StatsSender = mpsc::Sender<(NamespaceName, Weak<Stats>)>;
 
@@ -83,6 +91,25 @@ pub struct Server<C = HttpConnector, A = AddrIncoming> {
     pub heartbeat_config: Option<HeartbeatConfig>,
     pub disable_namespaces: bool,
     pub shutdown: Arc<Notify>,
+}
+
+impl<C, A> Default for Server<C, A> {
+    fn default() -> Self {
+        Self {
+            path: PathBuf::from("data.sqld").into(),
+            db_config: Default::default(),
+            user_api_config: Default::default(),
+            admin_api_config: Default::default(),
+            rpc_server_config: Default::default(),
+            rpc_client_config: Default::default(),
+            idle_shutdown_timeout: Default::default(),
+            initial_idle_shutdown_timeout: Default::default(),
+            disable_default_namespace: false,
+            heartbeat_config: Default::default(),
+            disable_namespaces: true,
+            shutdown: Default::default(),
+        }
+    }
 }
 
 struct Services<M: MakeNamespace, A, P, S> {

@@ -7,6 +7,7 @@ use futures::{FutureExt, Stream};
 
 use crate::replication::frame::Frame;
 use crate::replication::{FrameNo, LogReadError, ReplicationLogger};
+use crate::BLOCKING_RT;
 
 /// Streams frames from the replication log starting at `current_frame_no`.
 /// Only stops if the current frame is not in the log anymore.
@@ -64,7 +65,9 @@ impl FrameStream {
         let next_frameno = self.current_frame_no;
         let logger = self.logger.clone();
         let fut = async move {
-            let res = tokio::task::spawn_blocking(move || logger.get_frame(next_frameno)).await;
+            let res = BLOCKING_RT
+                .spawn_blocking(move || logger.get_frame(next_frameno))
+                .await;
             match res {
                 Ok(Ok(frame)) => Ok(frame),
                 Ok(Err(e)) => Err(e),

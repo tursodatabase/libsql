@@ -16,13 +16,13 @@ use tokio::sync::watch;
 use tokio::time::{Duration, Instant};
 use uuid::Uuid;
 
-use crate::libsql::ffi::SQLITE_IOERR_WRITE;
-use crate::libsql::ffi::{
+use crate::libsql_bindings::ffi::SQLITE_IOERR_WRITE;
+use crate::libsql_bindings::ffi::{
     sqlite3,
     types::{XWalCheckpointFn, XWalFrameFn, XWalSavePointUndoFn, XWalUndoFn},
     PageHdrIter, PgHdr, Wal, SQLITE_CHECKPOINT_TRUNCATE, SQLITE_IOERR, SQLITE_OK,
 };
-use crate::libsql::wal_hook::WalHook;
+use crate::libsql_bindings::wal_hook::WalHook;
 use crate::replication::frame::{Frame, FrameHeader};
 use crate::replication::snapshot::{find_snapshot_file, LogCompactor, SnapshotFile};
 use crate::replication::{FrameNo, SnapshotCallback, CRC_64_GO_ISO, WAL_MAGIC, WAL_PAGE_SIZE};
@@ -271,7 +271,9 @@ impl ReplicationLoggerHookCtx {
         logger: Arc<ReplicationLogger>,
         bottomless_replicator: Option<Arc<std::sync::Mutex<bottomless::replicator::Replicator>>>,
     ) -> Self {
-        tracing::trace!("bottomless replication enabled");
+        if bottomless_replicator.is_some() {
+            tracing::trace!("bottomless replication enabled");
+        }
         Self {
             buffer: Default::default(),
             logger,

@@ -77,11 +77,11 @@ impl HyperAccept for AddrIncoming {
 }
 
 pin_project! {
-    pub struct AddrStream {
+    pub struct AddrStream<S = tokio::net::TcpStream> {
         #[pin]
-        stream: tokio::net::TcpStream,
-        remote_addr: SocketAddr,
-        local_addr: SocketAddr,
+        pub stream: S,
+        pub remote_addr: SocketAddr,
+        pub local_addr: SocketAddr,
     }
 }
 
@@ -89,9 +89,15 @@ impl Accept for AddrIncoming {
     type Connection = AddrStream;
 }
 
-impl Conn for AddrStream {
+impl<T> Conn for AddrStream<T>
+where
+    T: AsyncRead + AsyncWrite + Unpin + Send + 'static,
+{
     fn connect_info(&self) -> TcpConnectInfo {
-        <Self as Connected>::connect_info(self)
+        TcpConnectInfo {
+            local_addr: Some(self.local_addr),
+            remote_addr: Some(self.remote_addr),
+        }
     }
 }
 
@@ -101,7 +107,10 @@ impl<C: Conn> Conn for TlsStream<C> {
     }
 }
 
-impl AsyncRead for AddrStream {
+impl<S> AsyncRead for AddrStream<S>
+where
+    S: AsyncRead + AsyncWrite,
+{
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
@@ -111,7 +120,10 @@ impl AsyncRead for AddrStream {
     }
 }
 
-impl AsyncWrite for AddrStream {
+impl<S> AsyncWrite for AddrStream<S>
+where
+    S: AsyncRead + AsyncWrite,
+{
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
@@ -135,10 +147,13 @@ impl AsyncWrite for AddrStream {
     }
 }
 
-impl Connected for AddrStream {
+impl<S> Connected for AddrStream<S> {
     type ConnectInfo = TcpConnectInfo;
 
     fn connect_info(&self) -> Self::ConnectInfo {
-        self.stream.connect_info()
+        TcpConnectInfo {
+            local_addr: Some(self.local_addr),
+            remote_addr: Some(self.remote_addr),
+        }
     }
 }

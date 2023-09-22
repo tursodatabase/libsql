@@ -19,6 +19,7 @@ use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::LogReadError;
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
+use crate::BLOCKING_RT;
 
 use self::rpc::replication_log_server::ReplicationLog;
 use self::rpc::{Frame, Frames, HelloRequest, HelloResponse, LogOffset};
@@ -261,9 +262,12 @@ impl ReplicationLog for ReplicationLogService {
             .await
             .unwrap();
         let offset = req.next_offset;
-        match tokio::task::spawn_blocking(move || logger.get_snapshot_file(offset)).await {
+        match BLOCKING_RT
+            .spawn_blocking(move || logger.get_snapshot_file(offset))
+            .await
+        {
             Ok(Ok(Some(snapshot))) => {
-                tokio::task::spawn_blocking(move || {
+                BLOCKING_RT.spawn_blocking(move || {
                     let mut frames = snapshot.frames_iter_from(offset);
                     loop {
                         match frames.next() {

@@ -1,16 +1,16 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::{Duration, Instant};
 
 use crossbeam::channel::RecvTimeoutError;
 use rusqlite::{ErrorCode, OpenFlags, StatementStatus};
 use sqld_libsql_bindings::wal_hook::WalMethodsHook;
 use tokio::sync::{oneshot, watch};
+use tokio::time::{Duration, Instant};
 use tracing::warn;
 
 use crate::auth::{Authenticated, Authorized, Permission};
 use crate::error::Error;
-use crate::libsql::wal_hook::WalHook;
+use crate::libsql_bindings::wal_hook::WalHook;
 use crate::query::Query;
 use crate::query_analysis::{State, StmtKind};
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
@@ -185,7 +185,7 @@ impl LibSqlConnection {
         let (sender, receiver) = crossbeam::channel::unbounded::<ExecCallback>();
         let (init_sender, init_receiver) = oneshot::channel();
 
-        tokio::task::spawn_blocking(move || {
+        std::thread::spawn(move || {
             let mut ctx = hook_ctx;
             let mut connection = match Connection::new(
                 path.as_ref(),
@@ -209,7 +209,7 @@ impl LibSqlConnection {
 
             loop {
                 let exec = match connection.timeout_deadline {
-                    Some(deadline) => match receiver.recv_deadline(deadline) {
+                    Some(deadline) => match receiver.recv_deadline(deadline.into()) {
                         Ok(msg) => msg,
                         Err(RecvTimeoutError::Timeout) => {
                             warn!("transaction timed out");

@@ -1,11 +1,10 @@
-use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::Duration;
 
 use anyhow::Context;
 use hyper::client::HttpConnector;
 use sha256::try_digest;
+use tokio::time::Duration;
 use tonic::transport::Channel;
 
 use crate::auth::{self, Auth};
@@ -51,7 +50,6 @@ pub struct TlsConfig {
 
 pub struct RpcServerConfig<A = AddrIncoming> {
     pub acceptor: A,
-    pub addr: SocketAddr,
     pub tls_config: Option<TlsConfig>,
 }
 
@@ -62,6 +60,19 @@ pub struct UserApiConfig<A = AddrIncoming> {
     pub self_url: Option<String>,
     pub http_auth: Option<String>,
     pub auth_jwt_key: Option<String>,
+}
+
+impl<A> Default for UserApiConfig<A> {
+    fn default() -> Self {
+        Self {
+            hrana_ws_acceptor: Default::default(),
+            http_acceptor: Default::default(),
+            enable_http_console: Default::default(),
+            self_url: Default::default(),
+            http_auth: Default::default(),
+            auth_jwt_key: Default::default(),
+        }
+    }
 }
 
 impl<A> UserApiConfig<A> {
@@ -109,6 +120,23 @@ pub struct DbConfig {
     pub max_total_response_size: u64,
     pub snapshot_exec: Option<String>,
     pub checkpoint_interval: Option<Duration>,
+}
+
+impl Default for DbConfig {
+    fn default() -> Self {
+        Self {
+            extensions_path: None,
+            bottomless_replication: None,
+            max_log_size: bytesize::mb(200u64),
+            max_log_duration: None,
+            soft_heap_limit_mb: None,
+            hard_heap_limit_mb: None,
+            max_response_size: bytesize::mb(10u64),
+            max_total_response_size: bytesize::mb(10u64),
+            snapshot_exec: None,
+            checkpoint_interval: None,
+        }
+    }
 }
 
 impl DbConfig {
