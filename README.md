@@ -12,7 +12,32 @@
 
 libSQL is licensed under an [Open Source License](LICENSE.md), and we adhere to a clear [Code of Conduct](CODE_OF_CONDUCT.md)
 
+## Features
+
+* Embedded replicas that allow you to have replicated database inside your app.
+* Supports Rust, JavaScript, Python, Go, and more.
+
+There are also various improvements and extensions to the core SQLite:
+
+* [`ALTER TABLE` extension for modifying column types and constraints](https://github.com/libsql/libsql/blob/main/doc/libsql_extensions.md#altering-columns)
+* [Randomized ROWID](https://github.com/libsql/libsql/issues/12)
+* [WebAssembly User Defined Functions](https://blog.turso.tech/webassembly-functions-for-your-sqlite-compatible-database-7e1ad95a2aa7)
+* [Pass down SQL string to virtual table implementation](https://github.com/libsql/libsql/pull/87)
+* [Virtual write-ahead log interface](https://github.com/libsql/libsql/pull/53)
+
+The comprehensive description can be found [here](doc/libsql_extensions.md)
+
 ## Getting Started
+
+The project provides two interfaces: the libSQL API, which supports all the features, and the SQLite C API for compatibility.
+
+To get started with the libSQL API:
+
+* [JavaScript](https://github.com/libsql/libsql-experimental-node)
+* [Rust](core) 
+* [Python](https://github.com/libsql/libsql-experimental-python) (experimental)
+* [Go](bindings/go) (experimental)
+* [C](bindings/c) (experimantal)
 
 To build the SQLite-compatible C library and tools, run:
 
@@ -52,18 +77,3 @@ Compatibility with SQLite is of great importance for us. But it can mean many th
 * **The file format**: libSQL will always be able to ingest and write the SQLite file format. We would love to add extensions like encryption, and CRC that require the file to be changed. But we commit to always doing so in a way that generates standard sqlite files if those features are not used.
 * **The API**: libSQL will keep 100% compatibility with the SQLite API, but we may add additional APIs.
 * **Embedded**: SQLite is an embedded database that can be consumed as a single .c file with its accompanying header. libSQL will always be embeddable, meaning it runs inside your process without needing a network connection. But we may change the distribution, so that object files are generated, instead of a single .c file.
-
-## Feature set
-
-libSQL is a fork of SQLite, and we keep their original README [here](README-SQLite.md).
-
-Aside from all the goodies already provided by SQLite, libSQL adds:
-
-* [randomized ROWID](https://github.com/libsql/libsql/issues/12)
-* [WebAssembly User Defined Functions](https://blog.turso.tech/webassembly-functions-for-your-sqlite-compatible-database-7e1ad95a2aa7)
-* [Pass down SQL string to virtual table implementation](https://github.com/libsql/libsql/pull/87)
-* [Virtual write-ahead log interface](https://github.com/libsql/libsql/pull/53)
-* [`ALTER TABLE` extension for modifying column types and constraints](https://github.com/libsql/libsql/blob/main/doc/libsql_extensions.md#altering-columns)
-
-The comprehensive description can be found [here](doc/libsql_extensions.md)
-
