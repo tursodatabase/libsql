@@ -258,19 +258,16 @@ impl RemoteStatement {
     pub async fn prepare(conn: RemoteConnection, sql: &str) -> Result<Self> {
         let stmts = parser::Statement::parse(sql).collect::<Result<Vec<_>>>()?;
 
-        // FIXME(sarna): this condition was originally there, but should it? We're in RemoteStatement,
-        // so it's kind of assumed now we're not executing locally
-        //
-        // if conn.should_execute_local(&stmts[..]) {
-        //     println!("Preparing {sql} locally");
-        //     let stmt = conn.local.prepare(sql).await?;
-        //     return Ok(Self {
-        //         conn,
-        //         stmts,
-        //         local_statement: Some(stmt),
-        //         metas: vec![]
-        //     })
-        // }
+        if conn.should_execute_local(&stmts[..]) {
+            tracing::trace!("Preparing {sql} locally");
+            let stmt = conn.local.prepare(sql).await?;
+            return Ok(Self {
+                conn,
+                stmts,
+                local_statement: Some(stmt),
+                metas: vec![]
+            })
+        }
 
         let metas = fetch_metas(&conn, &stmts).await?;
         Ok(Self {
@@ -381,6 +378,9 @@ impl Stmt for RemoteStatement {
     fn reset(&mut self) {}
 
     fn parameter_count(&self) -> usize {
+        if let Some(stmt) = self.local_statement.as_ref() {
+            return stmt.parameter_count();
+        }
         // FIXME: we need to decide if we keep RemoteStatement as a single statement, or else how to handle this
         match self.metas.first() {
             Some(meta) => meta.param_count as usize,
@@ -389,6 +389,9 @@ impl Stmt for RemoteStatement {
     }
 
     fn parameter_name(&self, idx: i32) -> Option<&str> {
+        if let Some(stmt) = self.local_statement.as_ref() {
+            return stmt.parameter_name(idx);
+        }
         // FIXME: we need to decide if we keep RemoteStatement as a single statement, or else how to handle this
         match self.metas.first() {
             Some(meta) => meta.param_names.get(idx as usize).map(|s| s.as_str()),
@@ -397,6 +400,9 @@ impl Stmt for RemoteStatement {
     }
 
     fn columns(&self) -> Vec<Column> {
+        if let Some(stmt) = self.local_statement.as_ref() {
+            return stmt.columns();
+        }
         // FIXME: we need to decide if we keep RemoteStatement as a single statement, or else how to handle this
         match self.metas.first() {
             Some(meta) => meta
