@@ -169,7 +169,7 @@ pub struct GrpcChannel {
 impl GrpcChannel {
     pub fn new() -> Self {
         let https = HttpsConnectorBuilder::new()
-            .with_native_roots()
+            .with_webpki_roots()
             .https_or_http()
             .enable_http1()
             .build();
