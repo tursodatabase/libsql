@@ -2946,292 +2946,104 @@ static int jsonParseB(
   return 0;
 }
 
-#if 0
+/* The byte at index i is a node type-code.  This routine
+** determines the payload size for that node and writes that
+** payload size in to *pSz.  It returns the number of additional
+** bytes following the typecode that are used to hold size information.
+** Enhance, if the return value is N, then the start of the payload
+** is at i+N+1.
+*/
+static u32 jsonbPayloadSize(JsonParse *pParse, u32 i, u32 *pSz){
+  u8 x;
+  u32 sz;
+  u32 n;
+  if( i>pParse->nBlob ){
+    pParse->iErr = 1;
+    *pSz = 0;
+    return 0;
+  }
+  x = pParse->aBlob[i]>>4;
+  if( x<=11 ){
+    sz = x;
+    n = 0;
+  }else if( x==12 ){
+    if( i+1>pParse->nBlob ){
+      pParse->iErr = 1;
+      *pSz = 0;
+      return 0;
+    }
+    sz = pParse->aBlob[i+1];
+    n = 1;
+  }else if( x==13 ){
+    if( i+2>pParse->nBlob ){
+      pParse->iErr = 1;
+      *pSz = 0;
+      return 0;
+    }
+    sz = (pParse->aBlob[i+1]<<8) + pParse->aBlob[i+2];
+    n = 2;
+  }else{
+    if( i+4>pParse->nBlob ){
+      pParse->iErr = 1;
+      *pSz = 0;
+      return 0;
+    }
+    sz = (pParse->aBlob[i+1]<<24) + (pParse->aBlob[i+2]<<16) +
+         (pParse->aBlob[i+3]<<8) + pParse->aBlob[i+4];
+    n = 4;
+  }
+  if( i+sz+n>pParse->nBlob ){
+    sz = pParse->nBlob - (i+n);
+    pParse->iErr = 1;
+  }
+  *pSz = sz;
+  return n;
+}
+
+
 /*
 ** Convert the binary BLOB representation of JSON beginning at
 ** aBlob[0] (and extending for no more than nBlob bytes) into
 ** a pure JSON string.  The string is appended to pOut.
 */
-static void jsonRenderBlob(
+static u32 jsonRenderBlob(
   JsonParse *pParse,             /* the complete parse of the JSON */
-  u8 *aBlob,                     /* The binary encoded JSON to be rendered */
-  u32 nBlob,                     /* Maximum size of aBlob[...] */
+  u32 i,                         /* Start rendering at this index */
   JsonString *pOut               /* Write JSON here */
 ){
-  u32 i;
-  if( nBlob<1 ){
+  if( i>=pParse->nBlob ){
     pOut->bErr = 1;
-    return;
+    return 0;
   }
-  switch( aBlob[0] ){
-    case JSONB_NULL:
+  switch( pParse->aBlob[i] & 0x0f ){
+    case JSONB_NULL: {
       jsonAppendRawNZ(pOut, "null", 4);
-      break;
+      return i+1;
     }
     case JSONB_TRUE: {
       jsonAppendRawNZ(pOut, "true", 4);
-      break;
+      return i+1;
     }
     case JSONB_FALSE: {
       jsonAppendRawNZ(pOut, "false", 5);
-      break;
+      return i+1;
     }
-    case JSONB_NUMBER:
+    case JSONB_INT:
+    case JSONB_FLOAT:
     case JSONB_TEXTJ: {
       u32 sz, n;
-      n = jsonbDecodeVarint(&aBlob[1], nBlob-1, &sz);
-      if( 1+n+sz>nBlob ){
-        pOut->bErr = 1;
-        return;
-      }
-      jsonAppendRaw(pOut, &aBlob[1+n], sz);
-      break;
+      n = jsonbPayloadSize(pParse, i, &sz);
+      jsonAppendRaw(pOut, (const char*)&pParse->aBlob[i+n+1], sz);
+      return i+n+sz;
+    }
 
-    case JSON_STRING: {
-      assert( pNode->eU==1 );
-      if( pNode->jnFlags & JNODE_RAW ){
-        if( pNode->jnFlags & JNODE_LABEL ){
-          jsonAppendChar(pOut, '"');
-          jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
-          jsonAppendChar(pOut, '"');
-        }else{
-          jsonAppendString(pOut, pNode->u.zJContent, pNode->n);
-        }
-      }else if( pNode->jnFlags & JNODE_JSON5 ){
-        jsonAppendNormalizedString(pOut, pNode->u.zJContent, pNode->n);
-      }else{
-        assert( pNode->n>0 );
-        jsonAppendRawNZ(pOut, pNode->u.zJContent, pNode->n);
-      }
-      break;
-    }
-    case JSON_REAL: {
-      assert( pNode->eU==1 );
-      if( pNode->jnFlags & JNODE_JSON5 ){
-        jsonAppendNormalizedReal(pOut, pNode->u.zJContent, pNode->n);
-      }else{
-        assert( pNode->n>0 );
-        jsonAppendRawNZ(pOut, pNode->u.zJContent, pNode->n);
-      }
-      break;
-    }
-    case JSON_INT: {
-      assert( pNode->eU==1 );
-      if( pNode->jnFlags & JNODE_JSON5 ){
-        jsonAppendNormalizedInt(pOut, pNode->u.zJContent, pNode->n);
-      }else{
-        assert( pNode->n>0 );
-        jsonAppendRawNZ(pOut, pNode->u.zJContent, pNode->n);
-      }
-      break;
-    }
-    case JSON_ARRAY: {
-      u32 j = 1;
-      jsonAppendChar(pOut, '[');
-      for(;;){
-        while( j<=pNode->n ){
-          if( (pNode[j].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ){
-            jsonAppendSeparator(pOut);
-            jsonRenderNode(pParse, &pNode[j], pOut);
-          }
-          j += jsonNodeSize(&pNode[j]);
-        }
-        if( (pNode->jnFlags & JNODE_APPEND)==0 ) break;
-        if( pParse->useMod==0 ) break;
-        assert( pNode->eU==2 );
-        pNode = &pParse->aNode[pNode->u.iAppend];
-        j = 1;
-      }
-      jsonAppendChar(pOut, ']');
-      break;
-    }
-    case JSON_OBJECT: {
-      u32 j = 1;
-      jsonAppendChar(pOut, '{');
-      for(;;){
-        while( j<=pNode->n ){
-          if( (pNode[j+1].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ){
-            jsonAppendSeparator(pOut);
-            jsonRenderNode(pParse, &pNode[j], pOut);
-            jsonAppendChar(pOut, ':');
-            jsonRenderNode(pParse, &pNode[j+1], pOut);
-          }
-          j += 1 + jsonNodeSize(&pNode[j+1]);
-        }
-        if( (pNode->jnFlags & JNODE_APPEND)==0 ) break;
-        if( pParse->useMod==0 ) break;
-        assert( pNode->eU==2 );
-        pNode = &pParse->aNode[pNode->u.iAppend];
-        j = 1;
-      }
-      jsonAppendChar(pOut, '}');
-      break;
-    }
-  }
-}
-#endif /* 0 */
-
-
-#if 0
-/*
-** Convert the JSON BLOB node an aBlob (size no greater than nBlob)
-** into the return value from the function call.
-*/
-static void jsonReturnFromBlob(
-  JsonParse *pParse,          /* Complete JSON parse tree */
-  JsonNode *pNode,            /* Node to return */
-  sqlite3_context *pCtx       /* Return value for this function */
-){
-  switch( pNode->eType ){
     default: {
-      assert( pNode->eType==JSON_NULL );
-      sqlite3_result_null(pCtx);
-      break;
-    }
-    case JSON_TRUE: {
-      sqlite3_result_int(pCtx, 1);
-      break;
-    }
-    case JSON_FALSE: {
-      sqlite3_result_int(pCtx, 0);
-      break;
-    }
-    case JSON_INT: {
-      sqlite3_int64 i = 0;
-      int rc;
-      int bNeg = 0;
-      const char *z;
-
-      assert( pNode->eU==1 );
-      z = pNode->u.zJContent;
-      if( z[0]=='-' ){ z++; bNeg = 1; }
-      else if( z[0]=='+' ){ z++; }
-      rc = sqlite3DecOrHexToI64(z, &i);
-      if( rc<=1 ){
-        sqlite3_result_int64(pCtx, bNeg ? -i : i);
-      }else if( rc==3 && bNeg ){
-        sqlite3_result_int64(pCtx, SMALLEST_INT64);
-      }else{
-        goto to_double;
-      }
-      break;
-    }
-    case JSON_REAL: {
-      double r;
-      const char *z;
-      assert( pNode->eU==1 );
-    to_double:
-      z = pNode->u.zJContent;
-      sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
-      sqlite3_result_double(pCtx, r);
-      break;
-    }
-    case JSON_STRING: {
-      if( pNode->jnFlags & JNODE_RAW ){
-        assert( pNode->eU==1 );
-        sqlite3_result_text(pCtx, pNode->u.zJContent, pNode->n,
-                            SQLITE_TRANSIENT);
-      }else if( (pNode->jnFlags & JNODE_ESCAPE)==0 ){
-        /* JSON formatted without any backslash-escapes */
-        assert( pNode->eU==1 );
-        sqlite3_result_text(pCtx, pNode->u.zJContent+1, pNode->n-2,
-                            SQLITE_TRANSIENT);
-      }else{
-        /* Translate JSON formatted string into raw text */
-        u32 i;
-        u32 n = pNode->n;
-        const char *z;
-        char *zOut;
-        u32 j;
-        u32 nOut = n;
-        assert( pNode->eU==1 );
-        z = pNode->u.zJContent;
-        zOut = sqlite3_malloc( nOut+1 );
-        if( zOut==0 ){
-          sqlite3_result_error_nomem(pCtx);
-          break;
-        }
-        for(i=1, j=0; i<n-1; i++){
-          char c = z[i];
-          if( c=='\\' ){
-            c = z[++i];
-            if( c=='u' ){
-              u32 v = jsonHexToInt4(z+i+1);
-              i += 4;
-              if( v==0 ) break;
-              if( v<=0x7f ){
-                zOut[j++] = (char)v;
-              }else if( v<=0x7ff ){
-                zOut[j++] = (char)(0xc0 | (v>>6));
-                zOut[j++] = 0x80 | (v&0x3f);
-              }else{
-                u32 vlo;
-                if( (v&0xfc00)==0xd800
-                  && i<n-6
-                  && z[i+1]=='\\'
-                  && z[i+2]=='u'
-                  && ((vlo = jsonHexToInt4(z+i+3))&0xfc00)==0xdc00
-                ){
-                  /* We have a surrogate pair */
-                  v = ((v&0x3ff)<<10) + (vlo&0x3ff) + 0x10000;
-                  i += 6;
-                  zOut[j++] = 0xf0 | (v>>18);
-                  zOut[j++] = 0x80 | ((v>>12)&0x3f);
-                  zOut[j++] = 0x80 | ((v>>6)&0x3f);
-                  zOut[j++] = 0x80 | (v&0x3f);
-                }else{
-                  zOut[j++] = 0xe0 | (v>>12);
-                  zOut[j++] = 0x80 | ((v>>6)&0x3f);
-                  zOut[j++] = 0x80 | (v&0x3f);
-                }
-              }
-              continue;
-            }else if( c=='b' ){
-              c = '\b';
-            }else if( c=='f' ){
-              c = '\f';
-            }else if( c=='n' ){
-              c = '\n';
-            }else if( c=='r' ){
-              c = '\r';
-            }else if( c=='t' ){
-              c = '\t';
-            }else if( c=='v' ){
-              c = '\v';
-            }else if( c=='\'' || c=='"' || c=='/' || c=='\\' ){
-              /* pass through unchanged */
-            }else if( c=='0' ){
-              c = 0;
-            }else if( c=='x' ){
-              c = (jsonHexToInt(z[i+1])<<4) | jsonHexToInt(z[i+2]);
-              i += 2;
-            }else if( c=='\r' && z[i+1]=='\n' ){
-              i++;
-              continue;
-            }else if( 0xe2==(u8)c ){
-              assert( 0x80==(u8)z[i+1] );
-              assert( 0xa8==(u8)z[i+2] || 0xa9==(u8)z[i+2] );
-              i += 2;
-              continue;
-            }else{
-              continue;
-            }
-          } /* end if( c=='\\' ) */
-          zOut[j++] = c;
-        } /* end for() */
-        zOut[j] = 0;
-        sqlite3_result_text(pCtx, zOut, j, sqlite3_free);
-      }
-      break;
-    }
-    case JSON_ARRAY:
-    case JSON_OBJECT: {
-      jsonReturnJson(pParse, pNode, pCtx, 0);
       break;
     }
   }
+  return 0;
 }
-#endif /* 0 */
+
 
 /****************************************************************************
 ** SQL functions used for testing and debugging
@@ -3342,7 +3154,7 @@ static void jsonTest1Func(
 ** Scalar SQL function implementations
 ****************************************************************************/
 
-/* SQL Function:  jsonb_test(TEXT_JSON)
+/* SQL Function:  jsonb_test1(TEXT_JSON)
 **
 ** Parse TEXT JSON into the BLOB format and return the resulting BLOB.
 ** Development testing only.
@@ -3372,6 +3184,35 @@ static void jsonbTest1(
     pParse->nBlobAlloc = 0;
   }
   jsonParseReset(pParse);
+}
+
+/* SQL Function:  jsonb_test2(BLOB_JSON)
+**
+** Render BLOB_JSON back into text.
+** Development testing only.
+*/
+static void jsonbTest2(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonParse *pParse;
+  const u8 *aBlob;
+  int nBlob;
+  JsonParse x;
+  JsonString s;
+  UNUSED_PARAMETER(argc);
+
+  aBlob = (const u8*)sqlite3_value_blob(argv[0]);
+  if( aBlob==0 ) return;
+  nBlob = sqlite3_value_bytes(argv[0]);
+  pParse = &x;
+  memset(&x, 0, sizeof(x));
+  x.aBlob = (u8*)aBlob;
+  x.nBlob = nBlob;
+  jsonInit(&s, ctx);
+  jsonRenderBlob(pParse, 0, &s);
+  jsonResult(&s);
 }
 
 /*
@@ -4782,6 +4623,7 @@ void sqlite3RegisterJsonFunctions(void){
     JFUNCTION(json_type,          2, 0,  jsonTypeFunc),
     JFUNCTION(json_valid,         1, 0,  jsonValidFunc),
     JFUNCTION(jsonb_test1,        1, 0,  jsonbTest1),
+    JFUNCTION(jsonb_test2,        1, 0,  jsonbTest2),
 #if SQLITE_DEBUG
     JFUNCTION(json_parse,         1, 0,  jsonParseFunc),
     JFUNCTION(json_test1,         1, 0,  jsonTest1Func),
