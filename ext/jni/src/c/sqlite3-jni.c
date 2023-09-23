@@ -5260,8 +5260,8 @@ JniDeclFtsXA(jint,xQueryPhrase)(JniArgsEnvObj,jobject jFcx, jint iPhrase,
   s.jFcx = jFcx;
   s.ext = ext;
   s.midCallback = (*env)->GetMethodID(env, klazz, "call",
-                                      "(Lorg.sqlite.jni.Fts5ExtensionApi;"
-                                      "Lorg.sqlite.jni.Fts5Context;)I");
+                                      "(Lorg/sqlite/jni/fts5/Fts5ExtensionApi;"
+                                      "Lorg/sqlite/jni/fts5/Fts5Context;)I");
   S3JniUnrefLocal(klazz);
   S3JniExceptionIsFatal("Could not extract xQueryPhraseCallback.call() method.");
   return (jint)ext->xQueryPhrase(PtrGet_Fts5Context(jFcx), iPhrase, &s,
