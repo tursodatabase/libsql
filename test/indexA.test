@@ -255,18 +255,18 @@ do_catchsql_test 5.1 {
   CREATE INDEX ex1 ON t1(c) WHERE b IS 'abc' COLLATE g;
 } {1 {no such collation sequence: g}}
 
-#proc xyz {lhs rhs} {
-#  return [string compare $lhs $rhs]
-#}
-#db collate xyz xyz
-#do_execsql_test 5.2 {
-#  CREATE INDEX ex1 ON t1(c) WHERE b IS 'abc' COLLATE xyz;
-#}
-#db close
-#sqlite3 db test.db
-#do_execsql_test 5.3 {
-#  SELECT * FROM t1
-#}
+proc xyz {lhs rhs} {
+  return [string compare $lhs $rhs]
+}
+db collate xyz xyz
+do_execsql_test 5.2 {
+  CREATE INDEX ex1 ON t1(c) WHERE b IS 'abc' COLLATE xyz;
+}
+db close
+sqlite3 db test.db
+do_execsql_test 5.3 {
+  SELECT * FROM t1
+}
 
 
 

@@ -2315,9 +2315,6 @@ static void recomputeColumnsNotIndexed(Parse *pParse, Index *pIdx){
     }
   }
   pIdx->colNotIdxed = ~m;
-  if( pIdx->pPartIdxWhere ){
-    sqlite3WherePartIdxExpr(pParse, pIdx, pIdx->pPartIdxWhere, 0, 0);
-  }
   assert( (pIdx->colNotIdxed>>63)==1 );  /* See note-20221022-a */
 }
 
@@ -4277,7 +4274,6 @@ void sqlite3CreateIndex(
   assert( HasRowid(pTab)
       || pTab->iPKey<0 || sqlite3TableColumnToIndex(pIndex, pTab->iPKey)>=0 );
   recomputeColumnsNotIndexed(pParse, pIndex);
-  if( pParse->nErr ) goto exit_create_index;
   if( pTblName!=0 && pIndex->nColumn>=pTab->nCol ){
     pIndex->isCovering = 1;
     for(j=0; j<pTab->nCol; j++){
