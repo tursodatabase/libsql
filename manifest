@@ -1,5 +1,5 @@
-C Add\sextra\stests\sfor\sjava\sFts5ExtensionApi\sAPI.
-D 2023-09-18T20:42:06.838
+C Remove\san\sinvalid\soptimization\sfrom\sJNI\scode\sand\sadd\sa\smissing\scheck\scheck\sfor\sJava-side\sexception.
+D 2023-09-23T06:37:18.242
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -238,7 +238,7 @@ F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a3
 F ext/jni/GNUmakefile 42e00052401b6dd41c0cdd53b31450606ea37486283abdb038dff9be74bff71e
 F ext/jni/README.md 9fceaeb17cecdc5d699dfc83c0cbc3a03fdb3b86bf676381894166c73375ee75
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
-F ext/jni/src/c/sqlite3-jni.c 71c430225cb6ac8f708a3538eb3f66452d87bb01257ae9c8a202940d4d658964
+F ext/jni/src/c/sqlite3-jni.c b96f62acfb9a92730a6df67fa3b1a2049c7eadbd2e47ffb86551b7f0bc7b117c
 F ext/jni/src/c/sqlite3-jni.h c934b646b62c0fd13dfceea7a54d8fc0d1274d0520d0edc58ad220753f4c4f7d
 F ext/jni/src/org/sqlite/jni/AbstractCollationCallback.java 95e88ba04f4aac51ffec65693e878e234088b2f21b387f4e4285c8b72b33e436
 F ext/jni/src/org/sqlite/jni/AggregateFunction.java 7312486bc65fecdb91753c0a4515799194e031f45edbe16a6373cea18f404dc4
@@ -2121,8 +2121,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c923893f3604b278277de1bb919ef713bf7a4296b7ff71451cfe19bc2ff03190
-R dce10d8ae94249d41d42f7dff2440548
-U dan
-Z 7d6c76f5fce3d6a1618c1597ed085ea5
+P f9d62b853ce8bfbfdc9f137e984e7a1b51d70e88c38b136b4fad1e8ae6ee8913
+R f4776698a0a6411d333d1643cd922af5
+U stephan
+Z 82a97ef605bf74c34144af80497956b4
 # Remove this line to create a well-formed Fossil manifest.

@@ -5310,22 +5310,19 @@ static int s3jni_xTokenize_xToken(void *p, int tFlags, const char* z,
   struct s3jni_xQueryPhraseState * const s = p;
   jbyteArray jba;
 
-#if 0
-  if( s->tok.zPrev == z && s->tok.nPrev == nZ ){
-    jba = s->tok.jba;
-  }else
-#endif
-  {
-    S3JniUnrefLocal(s->tok.jba);
-    s->tok.zPrev = z;
-    s->tok.nPrev = nZ;
-    s->tok.jba = s3jni_new_jbyteArray(z, nZ);
-    if( !s->tok.jba ) return SQLITE_NOMEM;
-    jba = s->tok.jba;
-  }
+  S3JniUnrefLocal(s->tok.jba);
+  s->tok.zPrev = z;
+  s->tok.nPrev = nZ;
+  s->tok.jba = s3jni_new_jbyteArray(z, nZ);
+  if( !s->tok.jba ) return SQLITE_NOMEM;
+  jba = s->tok.jba;
   rc = (int)(*env)->CallIntMethod(env, s->jCallback, s->midCallback,
                                   (jint)tFlags, jba, (jint)iStart,
                                   (jint)iEnd);
+  S3JniIfThrew {
+    S3JniExceptionWarnCallbackThrew("xTokenize() callback");
+    rc = SQLITE_ERROR;
+  }
   return rc;
 }
 
