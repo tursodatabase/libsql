@@ -1149,6 +1149,7 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
   assert( pLoop!=0 );
   assert( v!=0 );
   assert( pLoop->wsFlags & WHERE_BLOOMFILTER );
+  assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 );
 
   addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
   do{
