@@ -268,6 +268,39 @@ do_execsql_test 5.3 {
   SELECT * FROM t1
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE TABLE t2(x INTEGER PRIMARY KEY, y INTEGER, z INTEGER);
+  INSERT INTO t1 VALUES(1, 1, 1);
+  INSERT INTO t1 VALUES(2, 1, 2);
+  INSERT INTO t2 VALUES(1, 5, 1);
+  INSERT INTO t2 VALUES(2, 5, 2);
+
+  CREATE INDEX t2z ON t2(z) WHERE y=5;
+}
+
+do_execsql_test 6.1 {
+  ANALYZE;
+  UPDATE sqlite_stat1 SET stat = '50 1' WHERE idx='t2z';
+  UPDATE sqlite_stat1 SET stat = '50' WHERE tbl='t2' AND idx IS NULL;
+  UPDATE sqlite_stat1 SET stat = '5000' WHERE tbl='t1' AND idx IS NULL;
+  ANALYZE sqlite_schema;
+}
+
+do_execsql_test 6.2 {
+  SELECT * FROM t1, t2 WHERE b=1 AND z=c AND y=5;
+} {
+  1 1 1  1 5 1
+  2 1 2  2 5 2
+}
+
+do_eqp_test 6.3 {
+  SELECT * FROM t1, t2 WHERE b=1 AND z=c AND y=5;
+} {BLOOM FILTER ON t2}
+
+
 
 
 finish_test

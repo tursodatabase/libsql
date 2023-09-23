@@ -1,5 +1,5 @@
-C Avoid\san\serror\swhen\sparsing\sa\sschema\sthat\scontains\sindexes\swith\sWHERE\sclauses\scontaining\sunknown\scollation\ssequences.
-D 2023-09-23T19:25:03.559
+C Add\sextra\stests\sfor\schanges\son\sthis\sbranch.
+D 2023-09-23T21:31:40.366
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1249,7 +1249,7 @@ F test/index6.test b376a648e85aa71c50074382784e6cb0c126ec46e43d1ad15af9a4d234c52
 F test/index7.test b238344318e0b4e42126717f6554f0e7dfd0b39cecad4b736039b43e1e3b6eb3
 F test/index8.test caa097735c91dbc23d8a402f5e63a2a03c83840ba3928733ed7f9a03f8a912a3
 F test/index9.test 2ac891806a4136ef3e91280477e23114e67575207dc331e6797fa0ed9379f997
-F test/indexA.test 3ae5e98564c3a36d68942b218e53126a6996a48b95a5eb38b9aa7adf19784949
+F test/indexA.test 40ee9c0321a0db4fcc4b4720abc67eef4b5c753c2cf5d450bf3d6ee525515dae
 F test/indexedby.test f21eca4f7a6ffe14c8500a7ad6cd53166666c99e5ccd311842a28bc94a195fe0
 F test/indexexpr1.test 62558b1cfd7ccbe7bc015849cc6d1a13ef124e80cbd5b3a98dc66c3c9cce0cf4
 F test/indexexpr2.test 1c382e81ef996d8ae8b834a74f2a9013dddf59214c32201d7c8a656d739f999a
@@ -2122,8 +2122,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d0e21f20bd8643d21c4b88fb75b83939d68e9b7118f7289a164656f11d2ee555
-R 2173ec5daddfa5c65583f3ffe032fd88
+P d5dd39e37ab994ce5d75688a40c6494c17807431529e85eb2b11d58f367fe232
+R fc316cee29f41380d2034199c99fe845
 U dan
-Z 5d069b0b0f770f8e55162243a5db6bc9
+Z f093f2e68a237398410a6367f52214b7
 # Remove this line to create a well-formed Fossil manifest.
