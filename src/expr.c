@@ -4274,7 +4274,8 @@ static int exprPartidxExprLookup(Parse *pParse, Expr *pExpr, int iTarget){
         addr = sqlite3VdbeAddOp1(v, OP_IfNullRow, p->iIdxCur);
       }
       ret = sqlite3ExprCodeTarget(pParse, p->pExpr, iTarget);
-      sqlite3VdbeAddOp4(pParse->pVdbe, OP_Affinity, ret, 1, 0, &p->aff, 1);
+      sqlite3VdbeAddOp4(pParse->pVdbe, OP_Affinity, ret, 1, 0,
+                        (const char*)&p->aff, 1);
       if( addr ){
         sqlite3VdbeJumpHere(v, addr);
         sqlite3VdbeChangeP3(v, addr, ret);
