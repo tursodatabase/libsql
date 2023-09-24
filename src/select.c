@@ -6114,6 +6114,7 @@ static int selectExpander(Walker *pWalker, Select *p){
         char *zTName = 0;       /* text of name of TABLE */
         int iErrOfst;
         if( pE->op==TK_DOT ){
+          assert( (selFlags & SF_NestedFrom)==0 );
           assert( pE->pLeft!=0 );
           assert( !ExprHasProperty(pE->pLeft, EP_IntValue) );
           zTName = pE->pLeft->u.zToken;
@@ -6124,6 +6125,7 @@ static int selectExpander(Walker *pWalker, Select *p){
           iErrOfst = pE->w.iOfst;
         }
         for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
+          int nAdd;                    /* Number of cols including rowid */
           Table *pTab = pFrom->pTab;   /* Table for this data source */
           ExprList *pNestedFrom;       /* Result-set of a nested FROM clause */
           char *zTabName;              /* AS name for this data source */
@@ -6141,6 +6143,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             pNestedFrom = pFrom->pSelect->pEList;
             assert( pNestedFrom!=0 );
             assert( pNestedFrom->nExpr==pTab->nCol );
+            assert( VisibleRowid(pTab)==0 );
           }else{
             if( zTName && sqlite3StrICmp(zTName, zTabName)!=0 ){
               continue;
@@ -6171,33 +6174,48 @@ static int selectExpander(Walker *pWalker, Select *p){
           }else{
             pUsing = 0;
           }
-          for(j=0; j<pTab->nCol; j++){
-            char *zName = pTab->aCol[j].zCnName;
+
+          nAdd = pTab->nCol + (VisibleRowid(pTab) && (selFlags&SF_NestedFrom));
+          for(j=0; j<nAdd; j++){
+            const char *zName; 
             struct ExprList_item *pX; /* Newly added ExprList term */
 
-            assert( zName );
-            if( zTName
-             && pNestedFrom
-             && sqlite3MatchEName(&pNestedFrom->a[j], 0, zTName, 0)==0
-            ){
-              continue;
-            }
+            if( j==pTab->nCol ){
+              zName = sqlite3RowidAlias(pTab);
+              if( zName==0 ) continue;
+            }else{
+              zName = pTab->aCol[j].zCnName;
 
-            /* If a column is marked as 'hidden', omit it from the expanded
-            ** result-set list unless the SELECT has the SF_IncludeHidden
-            ** bit set.
-            */
-            if( (p->selFlags & SF_IncludeHidden)==0
-             && IsHiddenColumn(&pTab->aCol[j])
-            ){
-              continue;
+              /* If pTab is actually an SF_NestedFrom sub-select, do not
+              ** expand any ENAME_ROWID columns.  */
+              if( pNestedFrom && pNestedFrom->a[j].fg.eEName==ENAME_ROWID ){
+                continue;
+              }
+
+              if( zTName
+               && pNestedFrom
+               && sqlite3MatchEName(&pNestedFrom->a[j], 0, zTName, 0, 0)==0
+              ){
+                continue;
+              }
+
+              /* If a column is marked as 'hidden', omit it from the expanded
+              ** result-set list unless the SELECT has the SF_IncludeHidden
+              ** bit set.
+              */
+              if( (p->selFlags & SF_IncludeHidden)==0
+                && IsHiddenColumn(&pTab->aCol[j])
+              ){
+                continue;
+              }
+              if( (pTab->aCol[j].colFlags & COLFLAG_NOEXPAND)!=0
+               && zTName==0
+               && (selFlags & (SF_NestedFrom))==0
+              ){
+                continue;
+              }
             }
-            if( (pTab->aCol[j].colFlags & COLFLAG_NOEXPAND)!=0
-             && zTName==0
-             && (selFlags & (SF_NestedFrom))==0
-            ){
-              continue;
-            }
+            assert( zName );
             tableSeen = 1;
 
             if( i>0 && zTName==0 && (selFlags & SF_NestedFrom)==0 ){
@@ -6247,11 +6265,11 @@ static int selectExpander(Walker *pWalker, Select *p){
                                            zSchemaName, zTabName, zName);
                 testcase( pX->zEName==0 );
               }
-              pX->fg.eEName = ENAME_TAB;
+              pX->fg.eEName = (j==pTab->nCol ? ENAME_ROWID : ENAME_TAB);
               if( (pFrom->fg.isUsing
                    && sqlite3IdListIndex(pFrom->u3.pUsing, zName)>=0)
                || (pUsing && sqlite3IdListIndex(pUsing, zName)>=0)
-               || (pTab->aCol[j].colFlags & COLFLAG_NOEXPAND)!=0
+               || (j<pTab->nCol && (pTab->aCol[j].colFlags & COLFLAG_NOEXPAND))
               ){
                 pX->fg.bNoExpand = 1;
               }

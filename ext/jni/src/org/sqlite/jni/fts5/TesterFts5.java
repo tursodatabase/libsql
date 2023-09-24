@@ -275,7 +275,272 @@ public class TesterFts5 {
       public void xDestroy(){ }
     };
 
-    fts5_aux fts5_aux1 = new fts5_aux();
+    /*
+    ** fts5_inst(<fts>);
+    **
+    ** This is used to test the xInstCount() and xInst() APIs. It returns a
+    ** text value containing a Tcl list with xInstCount() elements. Each
+    ** element is itself a list of 3 integers - the phrase number, column
+    ** number and token offset returned by each call to xInst().
+    */
+    fts5_extension_function fts5_inst = new fts5_extension_function(){
+      @Override public void call(
+          Fts5ExtensionApi ext, 
+          Fts5Context fCx,
+          sqlite3_context pCx, 
+          sqlite3_value argv[]
+      ){
+        if( argv.length!=0 ){
+          throw new RuntimeException("fts5_inst: wrong number of args");
+        }
+
+        OutputPointer.Int32 pnInst = new OutputPointer.Int32();
+        OutputPointer.Int32 piPhrase = new OutputPointer.Int32();
+        OutputPointer.Int32 piCol = new OutputPointer.Int32();
+        OutputPointer.Int32 piOff = new OutputPointer.Int32();
+        String ret = new String();
+
+        int rc = ext.xInstCount(fCx, pnInst);
+        int nInst = pnInst.get();
+        int ii;
+
+        for(ii=0; rc==SQLITE_OK && ii<nInst; ii++){
+          ext.xInst(fCx, ii, piPhrase, piCol, piOff);
+          if( ii>0 ) ret += " ";
+          ret += "{"+piPhrase.get()+" "+piCol.get()+" "+piOff.get()+"}";
+        }
+
+        sqlite3_result_text(pCx, ret);
+      }
+      public void xDestroy(){ }
+    };
+
+    /*
+    ** fts5_pinst(<fts>);
+    **
+    ** Like SQL function fts5_inst(), except using the following
+    **
+    **     xPhraseCount
+    **     xPhraseFirst
+    **     xPhraseNext
+    */
+    fts5_extension_function fts5_pinst = new fts5_extension_function(){
+      @Override public void call(
+          Fts5ExtensionApi ext, 
+          Fts5Context fCx,
+          sqlite3_context pCx, 
+          sqlite3_value argv[]
+      ){
+        if( argv.length!=0 ){
+          throw new RuntimeException("fts5_pinst: wrong number of args");
+        }
+
+        OutputPointer.Int32 piCol = new OutputPointer.Int32();
+        OutputPointer.Int32 piOff = new OutputPointer.Int32();
+        String ret = new String();
+        int rc = SQLITE_OK;
+
+        int nPhrase = ext.xPhraseCount(fCx);
+        int ii;
+
+        for(ii=0; rc==SQLITE_OK && ii<nPhrase; ii++){
+          Fts5PhraseIter pIter = new Fts5PhraseIter();
+          for(rc = ext.xPhraseFirst(fCx, ii, pIter, piCol, piOff);
+              rc==SQLITE_OK && piCol.get()>=0;
+              ext.xPhraseNext(fCx, pIter, piCol, piOff)
+          ){
+            if( !ret.equals("") ) ret += " ";
+            ret += "{"+ii+" "+piCol.get()+" "+piOff.get()+"}";
+          }
+        }
+
+        if( rc!=SQLITE_OK ){
+          throw new RuntimeException("fts5_pinst: rc=" + rc);
+        }else{
+          sqlite3_result_text(pCx, ret);
+        }
+      }
+      public void xDestroy(){ }
+    };
+
+    /*
+    ** fts5_pcolinst(<fts>);
+    **
+    ** Like SQL function fts5_pinst(), except using the following
+    **
+    **     xPhraseFirstColumn
+    **     xPhraseNextColumn
+    */
+    fts5_extension_function fts5_pcolinst = new fts5_extension_function(){
+      @Override public void call(
+          Fts5ExtensionApi ext, 
+          Fts5Context fCx,
+          sqlite3_context pCx, 
+          sqlite3_value argv[]
+      ){
+        if( argv.length!=0 ){
+          throw new RuntimeException("fts5_pcolinst: wrong number of args");
+        }
+
+        OutputPointer.Int32 piCol = new OutputPointer.Int32();
+        String ret = new String();
+        int rc = SQLITE_OK;
+
+        int nPhrase = ext.xPhraseCount(fCx);
+        int ii;
+
+        for(ii=0; rc==SQLITE_OK && ii<nPhrase; ii++){
+          Fts5PhraseIter pIter = new Fts5PhraseIter();
+          for(rc = ext.xPhraseFirstColumn(fCx, ii, pIter, piCol);
+              rc==SQLITE_OK && piCol.get()>=0;
+              ext.xPhraseNextColumn(fCx, pIter, piCol)
+          ){
+            if( !ret.equals("") ) ret += " ";
+            ret += "{"+ii+" "+piCol.get()+"}";
+          }
+        }
+
+        if( rc!=SQLITE_OK ){
+          throw new RuntimeException("fts5_pcolinst: rc=" + rc);
+        }else{
+          sqlite3_result_text(pCx, ret);
+        }
+      }
+      public void xDestroy(){ }
+    };
+
+    /*
+    ** fts5_rowcount(<fts>);
+    */
+    fts5_extension_function fts5_rowcount = new fts5_extension_function(){
+      @Override public void call(
+          Fts5ExtensionApi ext, 
+          Fts5Context fCx,
+          sqlite3_context pCx, 
+          sqlite3_value argv[]
+      ){
+        if( argv.length!=0 ){
+          throw new RuntimeException("fts5_rowcount: wrong number of args");
+        }
+        OutputPointer.Int64 pnRow = new OutputPointer.Int64();
+
+        int rc = ext.xRowCount(fCx, pnRow);
+        if( rc==SQLITE_OK ){
+          sqlite3_result_int64(pCx, pnRow.get());
+        }else{
+          throw new RuntimeException("fts5_rowcount: rc=" + rc);
+        }
+      }
+      public void xDestroy(){ }
+    };
+
+    /*
+    ** fts5_phrasesize(<fts>);
+    */
+    fts5_extension_function fts5_phrasesize = new fts5_extension_function(){
+      @Override public void call(
+          Fts5ExtensionApi ext, 
+          Fts5Context fCx,
+          sqlite3_context pCx, 
+          sqlite3_value argv[]
+      ){
+        if( argv.length!=1 ){
+          throw new RuntimeException("fts5_phrasesize: wrong number of args");
+        }
+        int iPhrase = sqlite3_value_int(argv[0]);
+
+        int sz = ext.xPhraseSize(fCx, iPhrase);
+        sqlite3_result_int(pCx, sz);
+      }
+      public void xDestroy(){ }
+    };
+
+    /*
+    ** fts5_phrasehits(<fts>, <phrase-number>);
+    **
+    ** Use the xQueryPhrase() API to determine how many hits, in total,
+    ** there are for phrase <phrase-number> in the database.
+    */
+    fts5_extension_function fts5_phrasehits = new fts5_extension_function(){
+      @Override public void call(
+          Fts5ExtensionApi ext, 
+          Fts5Context fCx,
+          sqlite3_context pCx, 
+          sqlite3_value argv[]
+      ){
+        if( argv.length!=1 ){
+          throw new RuntimeException("fts5_phrasesize: wrong number of args");
+        }
+        int iPhrase = sqlite3_value_int(argv[0]);
+        int rc = SQLITE_OK;
+
+        class MyCallback implements Fts5ExtensionApi.XQueryPhraseCallback {
+          public int nRet = 0;
+          public int getRet() { return nRet; }
+
+          @Override
+          public int call(Fts5ExtensionApi fapi, Fts5Context cx){
+            OutputPointer.Int32 pnInst = new OutputPointer.Int32();
+            int rc = fapi.xInstCount(cx, pnInst);
+            nRet += pnInst.get();
+            return rc;
+          }
+        };
+
+        MyCallback xCall = new MyCallback();
+        rc = ext.xQueryPhrase(fCx, iPhrase, xCall);
+        if( rc!=SQLITE_OK ){
+          throw new RuntimeException("fts5_phrasehits: rc=" + rc);
+        }
+        sqlite3_result_int(pCx, xCall.getRet());
+      }
+      public void xDestroy(){ }
+    };
+
+    /*
+    ** fts5_tokenize(<fts>, <text>)
+    */
+    fts5_extension_function fts5_tokenize = new fts5_extension_function(){
+      @Override public void call(
+          Fts5ExtensionApi ext, 
+          Fts5Context fCx,
+          sqlite3_context pCx, 
+          sqlite3_value argv[]
+      ){
+        if( argv.length!=1 ){
+          throw new RuntimeException("fts5_tokenize: wrong number of args");
+        }
+        byte[] utf8 = sqlite3_value_text(argv[0]);
+        int rc = SQLITE_OK;
+
+        class MyCallback implements XTokenizeCallback {
+          private List<String> myList = new ArrayList<String>();
+
+          public String getval() {
+            return String.join("+", myList);
+          }
+
+          @Override
+          public int call(int tFlags, byte[] txt, int iStart, int iEnd){
+            try {
+              String str = new String(txt, "UTF-8");
+              myList.add(str);
+            } catch (Exception e) {
+            }
+            return SQLITE_OK;
+          }
+        };
+
+        MyCallback xCall = new MyCallback();
+        ext.xTokenize(fCx, utf8, xCall);
+        sqlite3_result_text16(pCx, xCall.getval());
+
+        if( rc!=SQLITE_OK ){
+          throw new RuntimeException("fts5_tokenize: rc=" + rc);
+        }
+      }
+      public void xDestroy(){ }
+    };
 
     fts5_api api = fts5_api.getInstanceForDb(db);
     api.xCreateFunction("fts5_rowid", fts5_rowid);
@@ -286,8 +551,15 @@ public class TesterFts5 {
 
     api.xCreateFunction("fts5_aux1", new fts5_aux());
     api.xCreateFunction("fts5_aux2", new fts5_aux());
-  }
 
+    api.xCreateFunction("fts5_inst", fts5_inst);
+    api.xCreateFunction("fts5_pinst", fts5_pinst);
+    api.xCreateFunction("fts5_pcolinst", fts5_pcolinst);
+    api.xCreateFunction("fts5_rowcount", fts5_rowcount);
+    api.xCreateFunction("fts5_phrasesize", fts5_phrasesize);
+    api.xCreateFunction("fts5_phrasehits", fts5_phrasehits);
+    api.xCreateFunction("fts5_tokenize", fts5_tokenize);
+  }
   /* 
   ** Test of various Fts5ExtensionApi methods 
   */
@@ -381,6 +653,11 @@ public class TesterFts5 {
       affirm( e.getMessage().matches(".*column index out of range") );
     }
 
+    do_execsql_test(db, 
+      "SELECT rowid, fts5_rowcount(ft) FROM ft('z')",
+      "[1, 6, 2, 6, 3, 6]"
+    );
+
     sqlite3_close_v2(db);
   }
 
@@ -417,13 +694,135 @@ public class TesterFts5 {
       "SELECT fts5_aux1(ft, b), fts5_aux1(ft) FROM ft('the')",
       "[null, 1, 1, 2, 2, 3, 3, null]"
     );
+  }
 
+  /* 
+  ** Test of various Fts5ExtensionApi methods 
+  */
+  private static void test4(){
+
+    /* Open db and populate an fts5 table */
+    sqlite3 db = createNewDb();
+    create_test_functions(db);
+    do_execsql_test(db, 
+      "CREATE VIRTUAL TABLE ft USING fts5(a, b);" +
+      "INSERT INTO ft(a, b) VALUES('one two three', 'two three four');" +
+      "INSERT INTO ft(a, b) VALUES('two three four', 'three four five');" +
+      "INSERT INTO ft(a, b) VALUES('three four five', 'four five six');" 
+    );
+
+
+    do_execsql_test(db,
+      "SELECT fts5_inst(ft) FROM ft('two')",
+      "[{0 0 1} {0 1 0}, {0 0 0}]"
+    );
+    do_execsql_test(db,
+      "SELECT fts5_inst(ft) FROM ft('four')",
+      "[{0 1 2}, {0 0 2} {0 1 1}, {0 0 1} {0 1 0}]"
+    );
+
+    do_execsql_test(db,
+      "SELECT fts5_inst(ft) FROM ft('a OR b OR four')",
+      "[{2 1 2}, {2 0 2} {2 1 1}, {2 0 1} {2 1 0}]"
+    );
+    do_execsql_test(db,
+      "SELECT fts5_inst(ft) FROM ft('two four')",
+      "[{0 0 1} {0 1 0} {1 1 2}, {0 0 0} {1 0 2} {1 1 1}]"
+    );
+
+    do_execsql_test(db,
+      "SELECT fts5_pinst(ft) FROM ft('two')",
+      "[{0 0 1} {0 1 0}, {0 0 0}]"
+    );
+    do_execsql_test(db,
+      "SELECT fts5_pinst(ft) FROM ft('four')",
+      "[{0 1 2}, {0 0 2} {0 1 1}, {0 0 1} {0 1 0}]"
+    );
+    do_execsql_test(db,
+      "SELECT fts5_pinst(ft) FROM ft('a OR b OR four')",
+      "[{2 1 2}, {2 0 2} {2 1 1}, {2 0 1} {2 1 0}]"
+    );
+    do_execsql_test(db,
+      "SELECT fts5_pinst(ft) FROM ft('two four')",
+      "[{0 0 1} {0 1 0} {1 1 2}, {0 0 0} {1 0 2} {1 1 1}]"
+    );
+
+    do_execsql_test(db,
+      "SELECT fts5_pcolinst(ft) FROM ft('two')",
+      "[{0 0} {0 1}, {0 0}]"
+    );
+    do_execsql_test(db,
+      "SELECT fts5_pcolinst(ft) FROM ft('four')",
+      "[{0 1}, {0 0} {0 1}, {0 0} {0 1}]"
+    );
+    do_execsql_test(db,
+      "SELECT fts5_pcolinst(ft) FROM ft('a OR b OR four')",
+      "[{2 1}, {2 0} {2 1}, {2 0} {2 1}]"
+    );
+    do_execsql_test(db,
+      "SELECT fts5_pcolinst(ft) FROM ft('two four')",
+      "[{0 0} {0 1} {1 1}, {0 0} {1 0} {1 1}]"
+    );
+
+    do_execsql_test(db,
+      "SELECT fts5_phrasesize(ft, 0) FROM ft('four five six') LIMIT 1;",
+      "[1]"
+    );
+    do_execsql_test(db,
+      "SELECT fts5_phrasesize(ft, 0) FROM ft('four + five + six') LIMIT 1;",
+      "[3]"
+    );
+
+
+    sqlite3_close_v2(db);
+  }
+
+  private static void test5(){
+    /* Open db and populate an fts5 table */
+    sqlite3 db = createNewDb();
+    create_test_functions(db);
+    do_execsql_test(db, 
+      "CREATE VIRTUAL TABLE ft USING fts5(x, b);" +
+      "INSERT INTO ft(x) VALUES('one two three four five six seven eight');" +
+      "INSERT INTO ft(x) VALUES('one two one four one six one eight');" +
+      "INSERT INTO ft(x) VALUES('one two three four five six seven eight');"
+    );
+
+    do_execsql_test(db,
+      "SELECT fts5_phrasehits(ft, 0) FROM ft('one') LIMIT 1",
+      "[6]"
+    );
+
+    sqlite3_close_v2(db);
+  }
+
+  private static void test6(){
+    sqlite3 db = createNewDb();
+    create_test_functions(db);
+    do_execsql_test(db, 
+      "CREATE VIRTUAL TABLE ft USING fts5(x, b);" +
+      "INSERT INTO ft(x) VALUES('one two three four five six seven eight');" 
+    );
+
+    do_execsql_test(db,
+      "SELECT fts5_tokenize(ft, 'abc def ghi') FROM ft('one')",
+      "[abc+def+ghi]"
+    );
+    do_execsql_test(db,
+      "SELECT fts5_tokenize(ft, 'it''s BEEN a...') FROM ft('one')",
+      "[it+s+been+a]"
+    );
+
+    sqlite3_close_v2(db);
   }
 
   private static synchronized void runTests(){
     test1();
     test2();
     test3();
+    test4();
+    test5();
+    test6();
   }
 
   public TesterFts5(){
