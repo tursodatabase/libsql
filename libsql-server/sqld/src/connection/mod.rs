@@ -10,6 +10,7 @@ use crate::error::Error;
 use crate::query::{Params, Query};
 use crate::query_analysis::{State, Statement};
 use crate::query_result_builder::{IgnoreResult, QueryResultBuilder};
+use crate::replication::FrameNo;
 use crate::Result;
 
 use self::program::{Cond, DescribeResult, Program, Step};
@@ -29,7 +30,8 @@ pub trait Connection: Send + Sync + 'static {
         &self,
         pgm: Program,
         auth: Authenticated,
-        reponse_builder: B,
+        response_builder: B,
+        replication_index: Option<FrameNo>,
     ) -> Result<(B, State)>;
 
     /// Execute all the queries in the batch sequentially.
@@ -40,6 +42,7 @@ pub trait Connection: Send + Sync + 'static {
         batch: Vec<Query>,
         auth: Authenticated,
         result_builder: B,
+        replication_index: Option<FrameNo>,
     ) -> Result<(B, State)> {
         let batch_len = batch.len();
         let mut steps = make_batch_program(batch);
@@ -64,7 +67,9 @@ pub trait Connection: Send + Sync + 'static {
 
         // ignore the rollback result
         let builder = result_builder.take(batch_len);
-        let (builder, state) = self.execute_program(pgm, auth, builder).await?;
+        let (builder, state) = self
+            .execute_program(pgm, auth, builder, replication_index)
+            .await?;
 
         Ok((builder.into_inner(), state))
     }
@@ -76,10 +81,12 @@ pub trait Connection: Send + Sync + 'static {
         batch: Vec<Query>,
         auth: Authenticated,
         result_builder: B,
+        replication_index: Option<FrameNo>,
     ) -> Result<(B, State)> {
         let steps = make_batch_program(batch);
         let pgm = Program::new(steps);
-        self.execute_program(pgm, auth, result_builder).await
+        self.execute_program(pgm, auth, result_builder, replication_index)
+            .await
     }
 
     async fn rollback(&self, auth: Authenticated) -> Result<()> {
@@ -91,6 +98,7 @@ pub trait Connection: Send + Sync + 'static {
             }],
             auth,
             IgnoreResult,
+            None,
         )
         .await?;
 
@@ -98,7 +106,12 @@ pub trait Connection: Send + Sync + 'static {
     }
 
     /// Parse the SQL statement and return information about it.
-    async fn describe(&self, sql: String, auth: Authenticated) -> Result<DescribeResult>;
+    async fn describe(
+        &self,
+        sql: String,
+        auth: Authenticated,
+        replication_index: Option<FrameNo>,
+    ) -> Result<DescribeResult>;
 
     /// Check whether the connection is in autocommit mode.
     async fn is_autocommit(&self) -> Result<bool>;
@@ -271,13 +284,21 @@ impl<DB: Connection> Connection for TrackedConnection<DB> {
         pgm: Program,
         auth: Authenticated,
         builder: B,
+        replication_index: Option<FrameNo>,
     ) -> crate::Result<(B, State)> {
-        self.inner.execute_program(pgm, auth, builder).await
+        self.inner
+            .execute_program(pgm, auth, builder, replication_index)
+            .await
     }
 
     #[inline]
-    async fn describe(&self, sql: String, auth: Authenticated) -> crate::Result<DescribeResult> {
-        self.inner.describe(sql, auth).await
+    async fn describe(
+        &self,
+        sql: String,
+        auth: Authenticated,
+        replication_index: Option<FrameNo>,
+    ) -> crate::Result<DescribeResult> {
+        self.inner.describe(sql, auth, replication_index).await
     }
 
     #[inline]
@@ -304,6 +325,7 @@ mod test {
             _pgm: Program,
             _auth: Authenticated,
             _builder: B,
+            _replication_index: Option<FrameNo>,
         ) -> crate::Result<(B, State)> {
             unreachable!()
         }
@@ -312,6 +334,7 @@ mod test {
             &self,
             _sql: String,
             _auth: Authenticated,
+            _replication_index: Option<FrameNo>,
         ) -> crate::Result<DescribeResult> {
             unreachable!()
         }

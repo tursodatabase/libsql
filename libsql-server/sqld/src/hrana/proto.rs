@@ -29,6 +29,9 @@ pub struct Stmt {
     #[serde(default)]
     #[prost(bool, optional, tag = "5")]
     pub want_rows: Option<bool>,
+    #[serde(default)]
+    #[prost(uint64, optional, tag = "6")]
+    pub replication_index: Option<u64>,
 }
 
 #[derive(Deserialize, prost::Message)]
@@ -73,6 +76,9 @@ pub struct Row {
 pub struct Batch {
     #[prost(message, repeated, tag = "1")]
     pub steps: Vec<BatchStep>,
+    #[prost(uint64, optional, tag = "2")]
+    #[serde(default)]
+    pub replication_index: Option<u64>,
 }
 
 #[derive(Deserialize, prost::Message)]

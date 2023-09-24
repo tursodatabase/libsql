@@ -245,9 +245,10 @@ impl WriteProxyConnection {
         }
     }
 
-    /// wait for the replicator to have caught up with our current write frame_no
-    async fn wait_replication_sync(&self) -> Result<()> {
-        let current_fno = *self.last_write_frame_no.lock();
+    /// wait for the replicator to have caught up with the replication_index if `Some` or our
+    /// current write frame_no
+    async fn wait_replication_sync(&self, replication_index: Option<FrameNo>) -> Result<()> {
+        let current_fno = replication_index.or_else(|| *self.last_write_frame_no.lock());
         match current_fno {
             Some(current_frame_no) => {
                 let mut receiver = self.applied_frame_no_receiver.clone();
@@ -273,16 +274,17 @@ impl Connection for WriteProxyConnection {
         pgm: Program,
         auth: Authenticated,
         builder: B,
+        replication_index: Option<FrameNo>,
     ) -> Result<(B, State)> {
         let mut state = self.state.lock().await;
         if *state == State::Init && pgm.is_read_only() {
-            self.wait_replication_sync().await?;
+            self.wait_replication_sync(replication_index).await?;
             // We know that this program won't perform any writes. We attempt to run it on the
             // replica. If it leaves an open transaction, then this program is an interactive
             // transaction, so we rollback the replica, and execute again on the primary.
             let (builder, new_state) = self
                 .read_conn
-                .execute_program(pgm.clone(), auth.clone(), builder)
+                .execute_program(pgm.clone(), auth.clone(), builder, replication_index)
                 .await?;
             if new_state != State::Init {
                 self.read_conn.rollback(auth.clone()).await?;
@@ -295,9 +297,14 @@ impl Connection for WriteProxyConnection {
         }
     }
 
-    async fn describe(&self, sql: String, auth: Authenticated) -> Result<DescribeResult> {
-        self.wait_replication_sync().await?;
-        self.read_conn.describe(sql, auth).await
+    async fn describe(
+        &self,
+        sql: String,
+        auth: Authenticated,
+        replication_index: Option<FrameNo>,
+    ) -> Result<DescribeResult> {
+        self.wait_replication_sync(replication_index).await?;
+        self.read_conn.describe(sql, auth, replication_index).await
     }
 
     async fn is_autocommit(&self) -> Result<bool> {
@@ -309,7 +316,7 @@ impl Connection for WriteProxyConnection {
     }
 
     async fn checkpoint(&self) -> Result<()> {
-        self.wait_replication_sync().await?;
+        self.wait_replication_sync(None).await?;
         self.read_conn.checkpoint().await
     }
 }

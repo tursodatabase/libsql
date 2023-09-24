@@ -31,6 +31,7 @@ struct OpenReq<C> {
     db: Arc<C>,
     auth: Authenticated,
     pgm: Program,
+    replication_index: Option<FrameNo>,
 }
 
 impl<C> CursorHandle<C> {
@@ -48,9 +49,20 @@ impl<C> CursorHandle<C> {
         }
     }
 
-    pub fn open(&mut self, db: Arc<C>, auth: Authenticated, pgm: Program) {
+    pub fn open(
+        &mut self,
+        db: Arc<C>,
+        auth: Authenticated,
+        pgm: Program,
+        replication_index: Option<FrameNo>,
+    ) {
         let open_tx = self.open_tx.take().unwrap();
-        let _: Result<_, _> = open_tx.send(OpenReq { db, auth, pgm });
+        let _: Result<_, _> = open_tx.send(OpenReq {
+            db,
+            auth,
+            pgm,
+            replication_index,
+        });
     }
 
     pub async fn fetch(&mut self) -> Result<Option<SizedEntry>> {
@@ -78,7 +90,12 @@ async fn run_cursor<C: Connection>(
 
     if let Err(err) = open_req
         .db
-        .execute_program(open_req.pgm, open_req.auth, result_builder)
+        .execute_program(
+            open_req.pgm,
+            open_req.auth,
+            result_builder,
+            open_req.replication_index,
+        )
         .await
     {
         let entry = match batch::batch_error_from_sqld_error(err) {

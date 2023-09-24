@@ -46,7 +46,7 @@ pub(crate) async fn handle_execute<D: Connection>(
             hrana::Version::Hrana1,
         )
         .map_err(catch_stmt_error)?;
-        hrana::stmt::execute_stmt(&db, auth, query)
+        hrana::stmt::execute_stmt(&db, auth, query, req_body.stmt.replication_index)
             .await
             .map(|result| RespBody { result })
             .map_err(catch_stmt_error)
@@ -79,7 +79,7 @@ pub(crate) async fn handle_batch<D: Connection>(
             hrana::Version::Hrana1,
         )
         .map_err(catch_stmt_error)?;
-        hrana::batch::execute_batch(&db, auth, pgm)
+        hrana::batch::execute_batch(&db, auth, pgm, req_body.batch.replication_index)
             .await
             .map(|result| RespBody { result })
             .context("Could not execute batch")

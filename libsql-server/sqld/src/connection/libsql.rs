@@ -541,6 +541,7 @@ impl super::Connection for LibSqlConnection {
         pgm: Program,
         auth: Authenticated,
         builder: B,
+        _replication_index: Option<FrameNo>,
     ) -> Result<(B, State)> {
         check_program_auth(auth, &pgm)?;
         let (resp, receiver) = oneshot::channel();
@@ -568,7 +569,12 @@ impl super::Connection for LibSqlConnection {
         Ok(receiver.await??)
     }
 
-    async fn describe(&self, sql: String, auth: Authenticated) -> Result<DescribeResult> {
+    async fn describe(
+        &self,
+        sql: String,
+        auth: Authenticated,
+        _replication_index: Option<FrameNo>,
+    ) -> Result<DescribeResult> {
         check_describe_auth(auth)?;
         let (resp, receiver) = oneshot::channel();
         let cb = Box::new(move |maybe_conn: Result<&mut Connection>| {

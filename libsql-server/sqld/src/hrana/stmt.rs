@@ -11,6 +11,7 @@ use crate::hrana;
 use crate::query::{Params, Query, Value};
 use crate::query_analysis::Statement;
 use crate::query_result_builder::{QueryResultBuilder, QueryResultBuilderError};
+use crate::replication::FrameNo;
 
 /// An error during execution of an SQL statement.
 #[derive(thiserror::Error, Debug)]
@@ -54,10 +55,11 @@ pub async fn execute_stmt(
     db: &impl Connection,
     auth: Authenticated,
     query: Query,
+    replication_index: Option<FrameNo>,
 ) -> Result<proto::StmtResult> {
     let builder = SingleStatementBuilder::default();
     let (stmt_res, _) = db
-        .execute_batch(vec![query], auth, builder)
+        .execute_batch(vec![query], auth, builder, replication_index)
         .await
         .map_err(catch_stmt_error)?;
     stmt_res.into_ret().map_err(catch_stmt_error)
@@ -67,8 +69,9 @@ pub async fn describe_stmt(
     db: &impl Connection,
     auth: Authenticated,
     sql: String,
+    replication_index: Option<FrameNo>,
 ) -> Result<proto::DescribeResult> {
-    match db.describe(sql, auth).await? {
+    match db.describe(sql, auth, replication_index).await? {
         Ok(describe_response) => Ok(proto_describe_result_from_describe_response(
             describe_response,
         )),

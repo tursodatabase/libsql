@@ -121,7 +121,9 @@ async fn handle_query<C: Connection>(
     let db = connection_maker.create().await?;
 
     let builder = JsonHttpPayloadBuilder::new();
-    let (builder, _) = db.execute_batch_or_rollback(batch, auth, builder).await?;
+    let (builder, _) = db
+        .execute_batch_or_rollback(batch, auth, builder, query.replication_index)
+        .await?;
 
     let res = (
         [(header::CONTENT_TYPE, "application/json")],

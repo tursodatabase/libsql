@@ -140,7 +140,7 @@ async fn handle_cursor<C: Connection>(
     let db = stream_guard.get_db_owned()?;
     let sqls = stream_guard.sqls();
     let pgm = batch::proto_batch_to_program(&req_body.batch, sqls, version)?;
-    cursor_hnd.open(db, auth, pgm);
+    cursor_hnd.open(db, auth, pgm, req_body.batch.replication_index);
 
     let resp_body = proto::CursorRespBody {
         baton: stream_guard.release(),

@@ -34,5 +34,5 @@ expression: found
       }
     }
   ],
-  "replication_index": null
+  "replication_index": 1
 }

@@ -495,7 +495,7 @@ impl Proxy for ProxyService {
 
         let builder = ExecuteResultBuilder::default();
         let (results, state) = db
-            .execute_program(pgm, auth, builder)
+            .execute_program(pgm, auth, builder, None)
             .await
             // TODO: this is no necessarily a permission denied error!
             .map_err(|e| tonic::Status::new(tonic::Code::PermissionDenied, e.to_string()))?;
@@ -572,7 +572,7 @@ impl Proxy for ProxyService {
         };
 
         let description = db
-            .describe(stmt, auth)
+            .describe(stmt, auth, None)
             .await
             // TODO: this is no necessarily a permission denied error!
             // FIXME: the double map_err looks off
