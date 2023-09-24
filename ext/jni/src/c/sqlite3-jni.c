@@ -242,6 +242,8 @@ static void * s3jni_malloc_or_die(JNIEnv * const env, size_t n){
 #define s3jni_malloc(SIZE) s3jni_malloc_or_die(env, SIZE)
 #else
 #define s3jni_malloc(SIZE) sqlite3_malloc(((void)env,(SIZE)))
+/* the ((void)env) trickery here is to avoid ^^^^^^ an otherwise
+   unused arg in at least one place. */
 #endif
 
 /*
@@ -5218,10 +5220,13 @@ JniDeclFtsXA(jint,xPhraseSize)(JniArgsEnvObj,jobject jCtx, jint iPhrase){
 /* State for use with xQueryPhrase() and xTokenize(). */
 struct s3jni_xQueryPhraseState {
   Fts5ExtensionApi const * ext;
-  S3JniEnv const * jc;
-  jmethodID midCallback;
-  jobject jCallback;
-  jobject jFcx;
+  jmethodID midCallback; /* jCallback->call() method */
+  jobject jCallback;   /* Fts5ExtensionApi.XQueryPhraseCallback instance */
+  jobject jFcx;        /* (Fts5Context*) for xQueryPhrase()
+                          callback. This is NOT the instance that is
+                          passed to xQueryPhrase(), it's the one
+                          created by xQueryPhrase() for use by its
+                          callback. */
   /* State for xTokenize() */
   struct {
     const char * zPrev;
@@ -5232,11 +5237,13 @@ struct s3jni_xQueryPhraseState {
 
 static int s3jni_xQueryPhrase(const Fts5ExtensionApi *xapi,
                               Fts5Context * pFcx, void *pData){
-  /* TODO: confirm that the Fts5Context passed to this function is
-     guaranteed to be the same one passed to xQueryPhrase(). If it's
-     not, we'll have to create a new wrapper object on every call. */
-  struct s3jni_xQueryPhraseState const * s = pData;
+  struct s3jni_xQueryPhraseState * const s = pData;
   S3JniDeclLocal_env;
+
+  if( !s->jFcx ){
+    s->jFcx = new_java_Fts5Context(env, pFcx);
+    if( !s->jFcx ) return SQLITE_NOMEM;
+  }
   int rc = (int)(*env)->CallIntMethod(env, s->jCallback, s->midCallback,
                                       SJG.fts5.jExt, s->jFcx);
   S3JniIfThrew{
@@ -5250,22 +5257,23 @@ static int s3jni_xQueryPhrase(const Fts5ExtensionApi *xapi,
 JniDeclFtsXA(jint,xQueryPhrase)(JniArgsEnvObj,jobject jFcx, jint iPhrase,
                             jobject jCallback){
   Fts5ExtDecl;
-  S3JniEnv * const jc = S3JniEnv_get();
+  int rc;
   struct s3jni_xQueryPhraseState s;
   jclass klazz = jCallback ? (*env)->GetObjectClass(env, jCallback) : NULL;
 
   if( !klazz ) return SQLITE_MISUSE;
-  s.jc = jc;
   s.jCallback = jCallback;
-  s.jFcx = jFcx;
+  s.jFcx = 0;
   s.ext = ext;
   s.midCallback = (*env)->GetMethodID(env, klazz, "call",
                                       "(Lorg/sqlite/jni/fts5/Fts5ExtensionApi;"
                                       "Lorg/sqlite/jni/fts5/Fts5Context;)I");
   S3JniUnrefLocal(klazz);
   S3JniExceptionIsFatal("Could not extract xQueryPhraseCallback.call() method.");
-  return (jint)ext->xQueryPhrase(PtrGet_Fts5Context(jFcx), iPhrase, &s,
-                                  s3jni_xQueryPhrase);
+  rc = ext->xQueryPhrase(PtrGet_Fts5Context(jFcx), iPhrase, &s,
+                         s3jni_xQueryPhrase);
+  S3JniUnrefLocal(s.jFcx);
+  return (jint)rc;
 }
 
 
@@ -5334,7 +5342,6 @@ static jint s3jni_fts5_xTokenize(JniArgsEnvObj, S3JniNphOp const *pRef,
                                  jint tokFlags, jobject jFcx,
                                  jbyteArray jbaText, jobject jCallback){
   Fts5ExtDecl;
-  S3JniEnv * const jc = S3JniEnv_get();
   struct s3jni_xQueryPhraseState s;
   int rc = 0;
   jbyte * const pText = jCallback ? s3jni_jbyteArray_bytes(jbaText) : 0;
@@ -5343,7 +5350,6 @@ static jint s3jni_fts5_xTokenize(JniArgsEnvObj, S3JniNphOp const *pRef,
 
   if( !klazz ) return SQLITE_MISUSE;
   memset(&s, 0, sizeof(s));
-  s.jc = jc;
   s.jCallback = jCallback;
   s.jFcx = jFcx;
   s.ext = ext;
