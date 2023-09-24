@@ -1818,9 +1818,20 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
   return rc;
 }
 
+/*
+** Define and possibly pretend to use a useless collation sequence.
+** This pretense allows expert to accept SQL using custom collations.
+*/
+int dummyCompare(void*, int, const void*, int, const void*){
+  return 0;
+}
+/* And a callback to register above upon actual need */
+void useDummyCS(void *, sqlite3 *db, int etr, const char *zName){
+  sqlite3_create_collation_v2(db, zName, etr, 0, dummyCompare, 0);
+}
+
 #if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS) \
   && !defined(SQLITE_OMIT_INTROSPECTION_PRAGMAS)
-
 /*
 ** dummy functions for no-op implementation of UDFs during expert's work
 */
@@ -1919,6 +1930,10 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
     idxFinalize(&rc, pSql);
   }
 
+  /* Allow custom collations to be dealt with through prepare. */
+  if( rc==SQLITE_OK ) rc = sqlite3_collation_needed(pNew->dbm,0,useDummyCS);
+  if( rc==SQLITE_OK ) rc = sqlite3_collation_needed(pNew->dbv,0,useDummyCS);
+
 #if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS) \
   && !defined(SQLITE_OMIT_INTROSPECTION_PRAGMAS)
   /* Register UDFs from database [db] with [dbm] and [dbv]. */
@@ -1990,6 +2005,10 @@ int sqlite3_expert_sql(
 
   while( rc==SQLITE_OK && zStmt && zStmt[0] ){
     sqlite3_stmt *pStmt = 0;
+    /* Ensure that the provided statement compiles against user's DB. */
+    rc = idxPrepareStmt(p->db, &pStmt, pzErr, zStmt);
+    if( rc!=SQLITE_OK ) break;
+    sqlite3_finalize(pStmt);
     rc = sqlite3_prepare_v2(p->dbv, zStmt, -1, &pStmt, &zStmt);
     if( rc==SQLITE_OK ){
       if( pStmt ){
