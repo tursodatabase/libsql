@@ -117,6 +117,9 @@ pub struct SequenceStreamReq {
     #[serde(default)]
     #[prost(int32, optional, tag = "2")]
     pub sql_id: Option<i32>,
+    #[serde(default)]
+    #[prost(uint64, optional, tag = "3")]
+    pub replication_index: Option<u64>,
 }
 
 #[derive(Serialize, prost::Message)]
@@ -130,6 +133,9 @@ pub struct DescribeStreamReq {
     #[serde(default)]
     #[prost(int32, optional, tag = "2")]
     pub sql_id: Option<i32>,
+    #[serde(default)]
+    #[prost(uint64, optional, tag = "3")]
+    pub replication_index: Option<u64>,
 }
 
 #[derive(Serialize, prost::Message)]

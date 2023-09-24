@@ -226,7 +226,7 @@ pub(super) async fn handle_request<F: MakeNamespace>(
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                let result = stmt::execute_stmt(&**db, auth, query)
+                let result = stmt::execute_stmt(&**db, auth, query, req.replication_index)
                     .await
                     .map_err(catch_stmt_error)?;
                 Ok(proto::Response::Execute(proto::ExecuteResp { result }))
@@ -242,7 +242,7 @@ pub(super) async fn handle_request<F: MakeNamespace>(
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                let result = batch::execute_batch(&**db, auth, pgm)
+                let result = batch::execute_batch(&**db, auth, pgm, req.batch.replication_index)
                     .await
                     .map_err(catch_batch_error)?;
                 Ok(proto::Response::Batch(proto::BatchResp { result }))
@@ -264,7 +264,7 @@ pub(super) async fn handle_request<F: MakeNamespace>(
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                batch::execute_sequence(&**db, auth, pgm)
+                batch::execute_sequence(&**db, auth, pgm, req.replication_index)
                     .await
                     .map_err(catch_stmt_error)
                     .map_err(catch_batch_error)?;
@@ -287,7 +287,7 @@ pub(super) async fn handle_request<F: MakeNamespace>(
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                let result = stmt::describe_stmt(&**db, auth, sql)
+                let result = stmt::describe_stmt(&**db, auth, sql, req.replication_index)
                     .await
                     .map_err(catch_stmt_error)?;
                 Ok(proto::Response::Describe(proto::DescribeResp { result }))
@@ -333,7 +333,7 @@ pub(super) async fn handle_request<F: MakeNamespace>(
             let mut cursor_hnd = cursor::CursorHandle::spawn(join_set);
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                cursor_hnd.open(db.clone(), auth, pgm);
+                cursor_hnd.open(db.clone(), auth, pgm, req.batch.replication_index);
                 stream.cursor_hnd = Some(cursor_hnd);
                 Ok(proto::Response::OpenCursor(proto::OpenCursorResp {}))
             });

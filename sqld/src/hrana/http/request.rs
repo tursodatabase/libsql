@@ -64,7 +64,7 @@ async fn try_handle<D: Connection>(
             let sqls = stream_guard.sqls();
             let query =
                 stmt::proto_stmt_to_query(&req.stmt, sqls, version).map_err(catch_stmt_error)?;
-            let result = stmt::execute_stmt(db, auth, query)
+            let result = stmt::execute_stmt(db, auth, query, req.stmt.replication_index)
                 .await
                 .map_err(catch_stmt_error)?;
             proto::StreamResponse::Execute(proto::ExecuteStreamResp { result })
@@ -73,7 +73,7 @@ async fn try_handle<D: Connection>(
             let db = stream_guard.get_db()?;
             let sqls = stream_guard.sqls();
             let pgm = batch::proto_batch_to_program(&req.batch, sqls, version)?;
-            let result = batch::execute_batch(db, auth, pgm)
+            let result = batch::execute_batch(db, auth, pgm, req.batch.replication_index)
                 .await
                 .map_err(catch_batch_error)?;
             proto::StreamResponse::Batch(proto::BatchStreamResp { result })
@@ -83,7 +83,7 @@ async fn try_handle<D: Connection>(
             let sqls = stream_guard.sqls();
             let sql = stmt::proto_sql_to_sql(req.sql.as_deref(), req.sql_id, sqls, version)?;
             let pgm = batch::proto_sequence_to_program(sql).map_err(catch_stmt_error)?;
-            batch::execute_sequence(db, auth, pgm)
+            batch::execute_sequence(db, auth, pgm, req.replication_index)
                 .await
                 .map_err(catch_stmt_error)
                 .map_err(catch_batch_error)?;
@@ -93,7 +93,7 @@ async fn try_handle<D: Connection>(
             let db = stream_guard.get_db()?;
             let sqls = stream_guard.sqls();
             let sql = stmt::proto_sql_to_sql(req.sql.as_deref(), req.sql_id, sqls, version)?;
-            let result = stmt::describe_stmt(db, auth, sql.into())
+            let result = stmt::describe_stmt(db, auth, sql.into(), req.replication_index)
                 .await
                 .map_err(catch_stmt_error)?;
             proto::StreamResponse::Describe(proto::DescribeStreamResp { result })

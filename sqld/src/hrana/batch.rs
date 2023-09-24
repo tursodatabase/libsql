@@ -12,6 +12,7 @@ use crate::query_analysis::Statement;
 use crate::query_result_builder::{
     QueryResultBuilder, QueryResultBuilderError, StepResult, StepResultsBuilder,
 };
+use crate::replication::FrameNo;
 
 use super::result_builder::HranaBatchProtoBuilder;
 use super::stmt::{proto_stmt_to_query, stmt_error_from_sqld_error};
@@ -106,10 +107,11 @@ pub async fn execute_batch(
     db: &impl Connection,
     auth: Authenticated,
     pgm: Program,
+    replication_index: Option<u64>,
 ) -> Result<proto::BatchResult> {
     let batch_builder = HranaBatchProtoBuilder::default();
     let (builder, _state) = db
-        .execute_program(pgm, auth, batch_builder)
+        .execute_program(pgm, auth, batch_builder, replication_index)
         .await
         .map_err(catch_batch_error)?;
 
@@ -146,10 +148,11 @@ pub async fn execute_sequence(
     db: &impl Connection,
     auth: Authenticated,
     pgm: Program,
+    replication_index: Option<FrameNo>,
 ) -> Result<()> {
     let builder = StepResultsBuilder::default();
     let (builder, _state) = db
-        .execute_program(pgm, auth, builder)
+        .execute_program(pgm, auth, builder, replication_index)
         .await
         .map_err(catch_batch_error)?;
     builder
