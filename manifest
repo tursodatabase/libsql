@@ -1,5 +1,5 @@
-C Merge\sexpert\schanges\sto\saccept\sUDFs\sand\scustom\scollations.
-D 2023-09-24T19:47:37.560
+C Make\sexpert\schanges\sacceptable\sto\sC89.
+D 2023-09-24T22:51:56.382
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -53,7 +53,7 @@ F ext/async/sqlite3async.h 46b47c79357b97ad85d20d2795942c0020dc20c532114a4980828
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
 F ext/expert/expert1.test 77eaa3efd906e245a8948cb496174724b867b43b5c0fd9bb4fe7f77f27c64517
-F ext/expert/sqlite3expert.c b07038a5e312f8e5f81dce7c7885bff8ae76e6bd5d63a2cea524c329a0987733
+F ext/expert/sqlite3expert.c 7b6b40b87aed69761b07231b563c96aa717e946224ffcfc035ce3e06e961516a
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c7cc3bf59ee
@@ -2121,8 +2121,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5655c51f103c6dfade799ffb5ca2eb21b4360ada598741f373c952ae732535aa 0f6bbb79cbb52f5ddf38840898ab6789a4e108353918296df20b332117e6a148
-R 3a0526e4c02c825c8cc29dc1d63531db
+P 8ead1b5ed6693c0e3c30428033049c95a1fe636d1d1eff1734d0a896b5ff1f5a
+R b8f5b37eed5734a4c2ba7d4bb590bf8a
 U larrybr
-Z a1c976c0a741d8b5b62201d4f47baf77
+Z cf1f60c591077eb093264126cb0986ef
 # Remove this line to create a well-formed Fossil manifest.

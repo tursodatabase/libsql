@@ -1822,11 +1822,18 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
 ** Define and possibly pretend to use a useless collation sequence.
 ** This pretense allows expert to accept SQL using custom collations.
 */
-int dummyCompare(void*, int, const void*, int, const void*){
+int dummyCompare(void *up1, int up2, const void *up3, int up4, const void *up5){
+  (void)up1;
+  (void)up2;
+  (void)up3;
+  (void)up4;
+  (void)up5;
+  assert(0); /* VDBE should never be run. */
   return 0;
 }
 /* And a callback to register above upon actual need */
-void useDummyCS(void *, sqlite3 *db, int etr, const char *zName){
+void useDummyCS(void *up1, sqlite3 *db, int etr, const char *zName){
+  (void)up1;
   sqlite3_create_collation_v2(db, zName, etr, 0, dummyCompare, 0);
 }
 
@@ -1835,10 +1842,14 @@ void useDummyCS(void *, sqlite3 *db, int etr, const char *zName){
 /*
 ** dummy functions for no-op implementation of UDFs during expert's work
 */
-void dummyUDF(sqlite3_context*,int,sqlite3_value**){
+void dummyUDF(sqlite3_context *up1, int up2, sqlite3_value **up3){
+  (void)up1;
+  (void)up2;
+  (void)up3;
   assert(0); /* VDBE should never be run. */
 }
-void dummyUDFvalue(sqlite3_context*){
+void dummyUDFvalue(sqlite3_context *up1){
+  (void)up1;
   assert(0); /* VDBE should never be run. */
 }
 
