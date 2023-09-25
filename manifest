@@ -1,5 +1,5 @@
-C Resolve\sthe\sJNI\sFTS5\stest5()\sfailure\sand\sremove\ssome\snearby\sdead\scode.
-D 2023-09-24T19:13:31.100
+C Enable\s-Wall\sfor\sthe\scompiler\son\s--enable-debug\sbuilds.
+D 2023-09-25T14:20:07.380
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -33,8 +33,8 @@ F autoconf/tea/win/nmakehlp.c b01f822eabbe1ed2b64e70882d97d48402b42d2689a1ea0034
 F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure 060cfb6cea3bd34b9c6fd573791c5f30961dd2cafeccc8940b6f3404b884bdc8 x
-F configure.ac 64b353b3f56b432e77041d86c83c86782a1df96af28fe9b4d845b00d042137e0
+F configure 1d9cbcb416cb5387b3f750ae6db63cfedb703a2e46bf8ca61daecff31d208252 x
+F configure.ac de31fea7d975bb7ebafbe0e2190a855cc80d48558bf0c9a6578a1836daf1cd3a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/compile-for-windows.md c52f2903f1cb11b2308798feecca2e44701b037b78f467a538ac5c46c28ee250
@@ -2121,8 +2121,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b5edea16317ccc896394011f45442af44d5ea1041b6abfe152c90412c78bfc5b
-R e953b1803753c8b191ad714c0d30fec2
-U stephan
-Z 3ee8d5bd34ec986d01785356a75c837f
+P 5655c51f103c6dfade799ffb5ca2eb21b4360ada598741f373c952ae732535aa
+R 1fdce7fde8f7912c67e4883b280923da
+U drh
+Z 0b02ef336b3df456883148d78452b947
 # Remove this line to create a well-formed Fossil manifest.
