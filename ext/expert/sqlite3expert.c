@@ -1925,21 +1925,6 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
       sqlite3_db_config(pNew->dbm, SQLITE_DBCONFIG_TRIGGER_EQP, 1, (int*)0);
     }
   }
-  
-
-  /* Copy the entire schema of database [db] into [dbm]. */
-  if( rc==SQLITE_OK ){
-    sqlite3_stmt *pSql = 0;
-    rc = idxPrintfPrepareStmt(pNew->db, &pSql, pzErrmsg, 
-        "SELECT sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%%'"
-        " AND sql NOT LIKE 'CREATE VIRTUAL %%'"
-    );
-    while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
-      const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
-      if( zSql ) rc = sqlite3_exec(pNew->dbm, zSql, 0, 0, pzErrmsg);
-    }
-    idxFinalize(&rc, pSql);
-  }
 
   /* Allow custom collations to be dealt with through prepare. */
   if( rc==SQLITE_OK ) rc = sqlite3_collation_needed(pNew->dbm,0,useDummyCS);
@@ -1955,6 +1940,20 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
     rc = registerUDFs(pNew->db, pNew->dbv);
   }
 #endif
+
+  /* Copy the entire schema of database [db] into [dbm]. */
+  if( rc==SQLITE_OK ){
+    sqlite3_stmt *pSql = 0;
+    rc = idxPrintfPrepareStmt(pNew->db, &pSql, pzErrmsg, 
+        "SELECT sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%%'"
+        " AND sql NOT LIKE 'CREATE VIRTUAL %%'"
+    );
+    while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
+      const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
+      if( zSql ) rc = sqlite3_exec(pNew->dbm, zSql, 0, 0, pzErrmsg);
+    }
+    idxFinalize(&rc, pSql);
+  }
 
   /* Create the vtab schema */
   if( rc==SQLITE_OK ){
