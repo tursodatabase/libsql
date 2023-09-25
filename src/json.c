@@ -2466,6 +2466,21 @@ static void jsonBlobChangePayloadSize(
 }
 
 /*
+** If z[0] is 'u' and is followed by exactly 4 hexadecimal character,
+** then set *pOp to JSONB_TEXTJ and return true.  If not, do not make
+** any changes to *pOp and return false.
+*/
+static int jsonIs4HexB(const char *z, int *pOp){
+  if( z[0]!='u' ) return 0;
+  if( !sqlite3Isxdigit(z[1]) ) return 0;
+  if( !sqlite3Isxdigit(z[2]) ) return 0;
+  if( !sqlite3Isxdigit(z[3]) ) return 0;
+  if( !sqlite3Isxdigit(z[4]) ) return 0;
+  *pOp = JSONB_TEXTJ;
+  return 1;
+}
+
+/*
 ** Parse a single JSON text value which begins at pParse->zJson[i] into
 ** its equivalent BLOB representation in pParse->aBlob[].  The parse is
 ** appended to pParse->aBlob[] beginning at pParse->nBlob.  The size of
@@ -2503,23 +2518,25 @@ json_parse_restart:
       u32 iBlob = pParse->nBlob;
       x = jsonParseValueB(pParse, j);
       if( x<=0 ){
+        int op;
         if( x==(-2) ){
           j = pParse->iErr;
           if( pParse->nBlob!=(u32)iStart ) pParse->hasNonstd = 1;
           break;
         }
         j += json5Whitespace(&z[j]);
-        if( sqlite3JsonId1(z[j])
-         || (z[j]=='\\' && z[j+1]=='u' && jsonIs4Hex(&z[j+2]))
+        op = JSONB_TEXT;
+        if( sqlite3JsonId1(z[j]) 
+         || (z[j]=='\\' && jsonIs4HexB(&z[j+1], &op))
         ){
           int k = j+1;
           while( (sqlite3JsonId2(z[k]) && json5Whitespace(&z[k])==0)
-            || (z[k]=='\\' && z[k+1]=='u' && jsonIs4Hex(&z[k+2]))
+            || (z[k]=='\\' && jsonIs4HexB(&z[k+1], &op))
           ){
             k++;
           }
           assert( iBlob==pParse->nBlob );
-          jsonBlobAppendNodeType(pParse, JSONB_TEXTJ, k-j);
+          jsonBlobAppendNodeType(pParse, op, k-j);
           jsonBlobAppendNBytes(pParse, (const u8*)&z[j], k-j);
           pParse->hasNonstd = 1;
           x = k;
@@ -3276,7 +3293,7 @@ static int jsonParseValueFromBinary(JsonParse *pParse, u32 i){
       break;
     }
     case JSONB_TEXTJ: {
-      jsonParseAddNode(pParse, JSON_STRING | (JNODE_RAW<<8), sz, zPayload);
+      jsonParseAddNode(pParse, JSON_STRING | (JNODE_ESCAPE<<8), sz, zPayload);
       break;
     }
     case JSONB_TEXT5: {
