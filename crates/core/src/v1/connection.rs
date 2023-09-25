@@ -22,9 +22,7 @@ pub struct Connection {
 
 impl Drop for Connection {
     fn drop(&mut self) {
-        if Arc::get_mut(&mut self.drop_ref).is_some() {
-            unsafe { libsql_sys::ffi::sqlite3_close(self.raw) };
-        }
+        self.disconnect()
     }
 }
 
@@ -80,9 +78,9 @@ impl Connection {
     }
 
     /// Disconnect from the database.
-    pub fn disconnect(&self) {
-        unsafe {
-            ffi::sqlite3_close_v2(self.raw);
+    pub fn disconnect(&mut self) {
+        if Arc::get_mut(&mut self.drop_ref).is_some() {
+            unsafe { libsql_sys::ffi::sqlite3_close_v2(self.raw) };
         }
     }
 

@@ -202,7 +202,7 @@ impl Conn for RemoteConnection {
         self.state.lock().last_insert_rowid
     }
 
-    fn close(&self) {
+    fn close(&mut self) {
         self.local.close()
     }
 }

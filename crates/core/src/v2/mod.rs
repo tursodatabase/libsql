@@ -246,7 +246,7 @@ pub(crate) trait Conn {
 
     fn last_insert_rowid(&self) -> i64;
 
-    fn close(&self);
+    fn close(&mut self);
 }
 
 #[derive(Clone)]
@@ -300,8 +300,10 @@ impl Connection {
         self.conn.last_insert_rowid()
     }
 
-    pub fn close(&self) {
-        self.conn.close()
+    pub fn close(&mut self) {
+        if let Some(conn) = Arc::get_mut(&mut self.conn) {
+            conn.close()
+        }
     }
 }
 
@@ -353,7 +355,7 @@ impl Conn for LibsqlConnection {
         self.conn.last_insert_rowid()
     }
 
-    fn close(&self) {
+    fn close(&mut self) {
         self.conn.disconnect()
     }
 }
