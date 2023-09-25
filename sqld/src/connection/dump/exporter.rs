@@ -84,7 +84,7 @@ impl<W: Write> DumpState<W> {
 
                 let mut iter = colss.iter().peekable();
                 while let Some(col) = iter.next() {
-                    write!(&mut select, "{col}")?;
+                    write!(&mut select, "{}", Quoted(col))?;
                     if iter.peek().is_some() {
                         select.push(',');
                     }
@@ -462,6 +462,9 @@ AND type IN ('index','trigger','view')";
 
 #[cfg(test)]
 mod test {
+    use rusqlite::Connection;
+    use tempfile::tempdir;
+
     use super::*;
 
     #[test]
@@ -486,5 +489,17 @@ mod test {
     fn blob_formatter() {
         assert_eq!("X'68656c6c6f0a'", Blob(b"hello\n").to_string());
         assert_eq!("X''", Blob(b"").to_string());
+    }
+
+    #[test]
+    fn table_col_is_keyword() {
+        let tmp = tempdir().unwrap();
+        let conn = Connection::open(tmp.path().join("data")).unwrap();
+        conn.execute(r#"create table test ("limit")"#, ()).unwrap();
+
+        let mut out = Vec::new();
+        export_dump(conn, &mut out).unwrap();
+
+        insta::assert_snapshot!(std::str::from_utf8(&out).unwrap());
     }
 }
