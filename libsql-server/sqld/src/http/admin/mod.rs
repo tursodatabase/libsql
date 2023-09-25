@@ -4,6 +4,7 @@ use axum::routing::delete;
 use axum::Json;
 use chrono::NaiveDateTime;
 use futures::TryStreamExt;
+use hyper::Body;
 use serde::Deserialize;
 use std::io::ErrorKind;
 use std::sync::Arc;
@@ -134,8 +135,13 @@ async fn handle_fork_namespace<M: MakeNamespace>(
 
 async fn dump_stream_from_url(url: &Url) -> Result<DumpStream, LoadDumpError> {
     match url.scheme() {
-        "http" => {
-            let client = hyper::client::Client::new();
+        "http" | "https" => {
+            let connector = hyper_rustls::HttpsConnectorBuilder::new()
+                .with_native_roots()
+                .https_or_http()
+                .enable_http1()
+                .build();
+            let client = hyper::client::Client::builder().build::<_, Body>(connector);
             let uri = url
                 .as_str()
                 .parse()
