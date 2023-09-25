@@ -22,7 +22,7 @@ pub struct Connection {
 
 impl Drop for Connection {
     fn drop(&mut self) {
-        if Arc::get_mut(&mut self.drop_ref).is_some() {
+        if Arc::into_inner(std::mem::take(&mut self.drop_ref)).is_some() {
             unsafe { libsql_sys::ffi::sqlite3_close(self.raw) };
         }
     }
