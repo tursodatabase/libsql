@@ -1142,9 +1142,12 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
   WhereLoop *pLoop = pLevel->pWLoop;   /* The loop being coded */
   int iCur;                            /* Cursor for table getting the filter */
   IndexedExpr *saved_pIdxEpr;          /* saved copy of Parse.pIdxEpr */
+  IndexedExpr *saved_pIdxPartExpr;     /* saved copy of Parse.pIdxPartExpr */
 
   saved_pIdxEpr = pParse->pIdxEpr;
+  saved_pIdxPartExpr = pParse->pIdxPartExpr;
   pParse->pIdxEpr = 0;
+  pParse->pIdxPartExpr = 0;
 
   assert( pLoop!=0 );
   assert( v!=0 );
@@ -1239,6 +1242,7 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
   }while( iLevel < pWInfo->nLevel );
   sqlite3VdbeJumpHere(v, addrOnce);
   pParse->pIdxEpr = saved_pIdxEpr;
+  pParse->pIdxPartExpr = saved_pIdxPartExpr;
 }
 
 

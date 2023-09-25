@@ -300,8 +300,27 @@ do_eqp_test 6.3 {
   SELECT * FROM t1, t2 WHERE b=1 AND z=c AND y=5;
 } {BLOOM FILTER ON t2}
 
+do_execsql_test 6.4 {
+  SELECT * FROM t1 LEFT JOIN t2 ON (y=5) WHERE b=1 AND z IS c;
+} {
+  1 1 1  1 5 1
+  2 1 2  2 5 2
+}
 
+do_eqp_test 6.5 {
+  SELECT * FROM t1 LEFT JOIN t2 ON (y=5) WHERE b=1 AND z IS c;
+} {BLOOM FILTER ON t2}
 
+do_execsql_test 6.6 {
+  CREATE INDEX t2yz ON t2(y, z) WHERE y=5;
+}
+
+do_execsql_test 6.7 {
+  SELECT * FROM t1 LEFT JOIN t2 ON (y=5) WHERE b=1 AND z IS c;
+} {
+  1 1 1  1 5 1
+  2 1 2  2 5 2
+}
 
 finish_test
 
