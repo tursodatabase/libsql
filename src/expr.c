@@ -4253,6 +4253,41 @@ static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
 
 
 /*
+** Expresion pExpr is guaranteed to be a TK_COLUMN or equivalent. This
+** function checks the Parse.pIdxPartExpr list to see if this column
+** can be replaced with a constant value. If so, it generates code to
+** put the constant value in a register (ideally, but not necessarily, 
+** register iTarget) and returns the register number.
+**
+** Or, if the TK_COLUMN cannot be replaced by a constant, zero is 
+** returned.
+*/
+static int exprPartidxExprLookup(Parse *pParse, Expr *pExpr, int iTarget){
+  IndexedExpr *p;
+  for(p=pParse->pIdxPartExpr; p; p=p->pIENext){
+    if( pExpr->iColumn==p->iIdxCol && pExpr->iTable==p->iDataCur ){
+      Vdbe *v = pParse->pVdbe;
+      int addr = 0;
+      int ret;
+
+      if( p->bMaybeNullRow ){
+        addr = sqlite3VdbeAddOp1(v, OP_IfNullRow, p->iIdxCur);
+      }
+      ret = sqlite3ExprCodeTarget(pParse, p->pExpr, iTarget);
+      sqlite3VdbeAddOp4(pParse->pVdbe, OP_Affinity, ret, 1, 0,
+                        (const char*)&p->aff, 1);
+      if( addr ){
+        sqlite3VdbeJumpHere(v, addr);
+        sqlite3VdbeChangeP3(v, addr, ret);
+      }
+      return ret;
+    }
+  }
+  return 0;
+}
+
+
+/*
 ** Generate code into the current Vdbe to evaluate the given
 ** expression.  Attempt to store the results in register "target".
 ** Return the register where results are stored.
@@ -4408,6 +4443,11 @@ expr_code_doover:
           ** in the index refer to the table to which the index belongs */
           iTab = pParse->iSelfTab - 1;
         }
+      }
+      else if( pParse->pIdxPartExpr 
+       && 0!=(r1 = exprPartidxExprLookup(pParse, pExpr, target))
+      ){
+        return r1;
       }
       assert( ExprUseYTab(pExpr) );
       assert( pExpr->y.pTab!=0 );
