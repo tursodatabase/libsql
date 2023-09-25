@@ -3576,7 +3576,7 @@ static void wherePartIdxExpr(
     if( aff>=SQLITE_AFF_TEXT ){
       if( pItem ){
         sqlite3 *db = pParse->db;
-        IndexedExpr *p = (IndexedExpr*)sqlite3DbMallocZero(db, sizeof(*p));
+        IndexedExpr *p = (IndexedExpr*)sqlite3DbMallocRaw(db, sizeof(*p));
         if( p ){
           int bNullRow = (pItem->fg.jointype&(JT_LEFT|JT_LTORJ))!=0;
           p->pExpr = sqlite3ExprDup(db, pRight, 0);
