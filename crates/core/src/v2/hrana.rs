@@ -330,7 +330,7 @@ impl Conn for Client {
         self.last_insert_rowid.load(Ordering::SeqCst)
     }
 
-    fn close(&self) {
+    fn close(&mut self) {
         todo!()
     }
 }
