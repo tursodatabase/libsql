@@ -3816,7 +3816,9 @@ static int whereLoopAddBtree(
       }else{
         m = pSrc->colUsed & pProbe->colNotIdxed;
         if( pProbe->pPartIdxWhere ){
-          wherePartIdxExpr(pWInfo->pParse, pProbe, pProbe->pPartIdxWhere, &m, 0, 0);
+          wherePartIdxExpr(
+              pWInfo->pParse, pProbe, pProbe->pPartIdxWhere, &m, 0, 0
+          );
         }
         pNew->wsFlags = WHERE_INDEXED;
         if( m==TOPBIT || (pProbe->bHasExpr && !pProbe->bHasVCol && m!=0) ){

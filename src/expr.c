@@ -4393,11 +4393,6 @@ expr_code_doover:
         }
         return iReg;
       }
-      if( pParse->pIdxPartExpr 
-       && 0!=(r1 = exprPartidxExprLookup(pParse, pExpr, target))
-      ){
-        return r1;
-      }
       if( iTab<0 ){
         if( pParse->iSelfTab<0 ){
           /* Other columns in the same row for CHECK constraints or
@@ -4448,6 +4443,11 @@ expr_code_doover:
           ** in the index refer to the table to which the index belongs */
           iTab = pParse->iSelfTab - 1;
         }
+      }
+      else if( pParse->pIdxPartExpr 
+       && 0!=(r1 = exprPartidxExprLookup(pParse, pExpr, target))
+      ){
+        return r1;
       }
       assert( ExprUseYTab(pExpr) );
       assert( pExpr->y.pTab!=0 );
