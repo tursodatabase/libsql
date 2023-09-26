@@ -1,5 +1,5 @@
-C Remove\ssome\soutdated\sJNI\sdocs.
-D 2023-09-26T09:46:04.382
+C Remove\sunreachable\scode\sfrom\sthe\spartial-index\sconstant\svalue\soptimization\n([8d4160910d651246]).
+D 2023-09-26T14:57:30.688
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -795,7 +795,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 01e051a1e713d9eabdb25df38602837cec8f4c2cae448ce2cf6accc87af903e9
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 8e4f2d16c6fe0f6e6905876096298bc25bf5405e9c937f2c5c4120d519253d71
+F src/where.c 2897a7fd5a3557d249773fd3644f67fb8c7d6e1c630534308648bcef6789a12f
 F src/whereInt.h 4b38c5889514e3aead3f27d0ee9a26e47c3f150efc59e2a8b4e3bc8835e4d7a1
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
@@ -2122,8 +2122,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 63687cc659f06a1f6aa9d4496ef01d9f0adbee6184b8e265fb8feec1ad30449b
-R 79774d481d761efa96dd932535775ed1
-U stephan
-Z 8b8248ff30ccbd23578424f6868ae39a
+P 2ca5cbbb2a8ee94fe9f4888dea695a4429aefa17611fd9ebe59bf4866290ab0c
+R 7fc2efddbfed5290d0fd8b34e469e9ec
+U drh
+Z 2254e5e49bb8f0388e0f9a972f9f0c10
 # Remove this line to create a well-formed Fossil manifest.
