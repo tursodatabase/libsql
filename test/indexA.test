@@ -322,5 +322,14 @@ do_execsql_test 6.7 {
   2 1 2  2 5 2
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE t1(i INTEGER PRIMARY KEY, b TEXT, c TEXT);
+  CREATE INDEX i1 ON t1(c) WHERE b='abc' AND i=5;
+  INSERT INTO t1 VALUES(5, 'abc', 'xyz');
+  SELECT * FROM t1 INDEXED BY i1 WHERE b='abc' AND i=5 ORDER BY c;
+} {5 abc xyz}
+
 finish_test
 
