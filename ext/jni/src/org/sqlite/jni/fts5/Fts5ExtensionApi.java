@@ -17,10 +17,6 @@ import org.sqlite.jni.*;
 import org.sqlite.jni.annotation.*;
 
 /**
-   ALMOST COMPLETELY UNTESTED.
-
-   FAR FROM COMPLETE and the feasibility of binding this to Java
-   is still undetermined. This might be removed.
 */
 public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi> {
   //! Only called from JNI

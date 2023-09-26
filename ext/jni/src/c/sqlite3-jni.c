@@ -5612,11 +5612,8 @@ Java_org_sqlite_jni_tester_SQLTester_installCustomExtensions(JniArgsEnvClass){
 ////////////////////////////////////////////////////////////////////////
 
 /*
-** Called during static init of the SQLite3Jni class to sync certain
-** compile-time constants to Java-space.
-**
-** This routine is part of the reason why we have to #include
-** sqlite3.c instead of sqlite3.h.
+** Called during static init of the SQLite3Jni class to set up global
+** state.
 */
 JNIEXPORT void JNICALL
 Java_org_sqlite_jni_SQLite3Jni_init(JniArgsEnvClass){

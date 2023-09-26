@@ -16,8 +16,6 @@ import org.sqlite.jni.NativePointerHolder;
 import org.sqlite.jni.annotation.NotNull;
 
 /**
-   INCOMPLETE AND COMPLETELY UNTESTED.
-
    A wrapper for communicating C-level (fts5_tokenizer*) instances with
    Java. These wrappers do not own their associated pointer, they
    simply provide a type-safe way to communicate it between Java and C
