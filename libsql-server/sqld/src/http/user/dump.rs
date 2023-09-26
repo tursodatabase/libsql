@@ -7,6 +7,7 @@ use futures::StreamExt;
 use hyper::HeaderMap;
 use pin_project_lite::pin_project;
 
+use crate::auth::Authenticated;
 use crate::connection::dump::exporter::export_dump;
 use crate::error::Error;
 use crate::namespace::MakeNamespace;
@@ -72,15 +73,20 @@ where
 }
 
 pub(super) async fn handle_dump<F: MakeNamespace>(
+    auth: Authenticated,
     AxumState(state): AxumState<AppState<F>>,
     headers: HeaderMap,
-) -> Result<axum::body::StreamBody<impl futures::Stream<Item = Result<bytes::Bytes, Error>>>, Error>
+) -> crate::Result<axum::body::StreamBody<impl futures::Stream<Item = Result<bytes::Bytes, Error>>>>
 {
     let namespace = namespace_from_headers(
         &headers,
         state.disable_default_namespace,
         state.disable_namespaces,
     )?;
+
+    if !auth.is_namespace_authorized(&namespace) | auth.is_anonymous() {
+        return Err(Error::NamespaceDoesntExist(namespace.to_string()));
+    }
 
     let db_path = state.path.join("dbs").join(namespace.as_str()).join("data");
 
