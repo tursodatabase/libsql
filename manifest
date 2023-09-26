@@ -1,5 +1,5 @@
-C Fix\syet\sanother\sassert()\sin\sthe\spartial-index\sconstant\svalue\soptimization.
-D 2023-09-26T19:38:24.673
+C JNI:\simplement\sAutoCloseable\sfor\sthe\ssqlite3\sand\ssqlite3_stmt\sclasses,\sand\sadjust\sa\sfew\stests\sto\suse\sit.\sOverride\sObject.finalize()\sfor\ssqlite3\sclass\sbut\snot\ssqlite3_stmt\s(where\sit\striggers\sa\sJVM\scrash\sfor\sas-yet-unknown\sreasons).
+D 2023-09-26T19:49:35.180
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -262,7 +262,7 @@ F ext/jni/src/org/sqlite/jni/SQLFunction.java 544a875d33fd160467d82e2397ac33157b
 F ext/jni/src/org/sqlite/jni/SQLite3Jni.java 73571d69420a72fa656097925acfbc3f670bb72685882094565303dcdfed71b5
 F ext/jni/src/org/sqlite/jni/ScalarFunction.java 6d387bb499fbe3bc13c53315335233dbf6a0c711e8fa7c521683219b041c614c
 F ext/jni/src/org/sqlite/jni/TableColumnMetadata.java 54511b4297fa28dcb3f49b24035e34ced10e3fd44fd0e458e784f4d6b0096dab
-F ext/jni/src/org/sqlite/jni/Tester1.java 30627199744e2c80b03d8d2ac439b2270a7050bedaa6d4b293cd08a2817741f4
+F ext/jni/src/org/sqlite/jni/Tester1.java 25be176398cf08cb9c0879ba33fd866cb8f579729dd4d44a4065421e1b899af4
 F ext/jni/src/org/sqlite/jni/TraceV2Callback.java beb0b064c1a5f8bfe585a324ed39a4e33edbe379a3fc60f1401661620d3ca7c0
 F ext/jni/src/org/sqlite/jni/UpdateHookCallback.java 8376f4a931f2d5612b295c003c9515ba933ee76d8f95610e89c339727376e36c
 F ext/jni/src/org/sqlite/jni/WindowFunction.java 488980f4dbb6bdd7067d6cb9c43e4075475e51c54d9b74a5834422654b126246
@@ -282,11 +282,11 @@ F ext/jni/src/org/sqlite/jni/fts5/fts5_api.java e2ad9bc06a9d307e0a6221c116457838
 F ext/jni/src/org/sqlite/jni/fts5/fts5_extension_function.java 1fe0f5692c1d67475d12b067f0469949073446f18c56eba5ee5da6ddd06db9b9
 F ext/jni/src/org/sqlite/jni/fts5/fts5_tokenizer.java ea993738b851038c16d98576abd0db3d6028a231f075a394fb8a78c7834d0f6c
 F ext/jni/src/org/sqlite/jni/package-info.java a3946db2504de747a1993c4f6e8ce604bec5a8e5a134b292c3b07527bc321a99
-F ext/jni/src/org/sqlite/jni/sqlite3.java 62b1b81935ccf3393472d17cb883dc5ff39c388ec3bc1de547f098a0217158fc
+F ext/jni/src/org/sqlite/jni/sqlite3.java 5e56a799ced58ea69e8bcad20c29a61fce32f21a7f4fb3e2702337cf8aa1a06e
 F ext/jni/src/org/sqlite/jni/sqlite3_backup.java d0bb06dd6225e76999ff6b7ab20f2643b1c4d4167431b3a93ea41943e41f094b
 F ext/jni/src/org/sqlite/jni/sqlite3_blob.java f28a30134f2e524eb7d5ab87f57f86c90140341a6e8369ee54509ac8bb96fa82
 F ext/jni/src/org/sqlite/jni/sqlite3_context.java 66ca95ce904044263a4aff684abe262d56f73e6b06bca6cf650761d79d7779ad
-F ext/jni/src/org/sqlite/jni/sqlite3_stmt.java 78e6d1b95ac600a9475e9db4623f69449322b0c93d1bd4e1616e76ed547ed9fc
+F ext/jni/src/org/sqlite/jni/sqlite3_stmt.java 36ecee9bdde2e70c7276d1c22b48fd9c40a77412e8e0694e9c09910997d6fb4f
 F ext/jni/src/org/sqlite/jni/sqlite3_value.java 3d1d4903e267bc0bc81d57d21f5e85978eff389a1a6ed46726dbe75f85e6914a
 F ext/jni/src/org/sqlite/jni/tester/SQLTester.java 9892797db57c6e01f0c1601b5866474b6c046f0fd6c5b64f411e5815c941040e
 F ext/jni/src/org/sqlite/jni/tester/test-script-interpreter.md f9f25126127045d051e918fe59004a1485311c50a13edbf18c79a6ff9160030e
@@ -2122,8 +2122,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 63aea8c3e0605edcf49ad1e5ce1a56d2690dcb8c4857043997545daab46ca035
-R dde20269cd95793e2cf58d6b66b4965e
-U drh
-Z 9624e2e51b9eb60e25af33993d2976c5
+P f459d0806cf044fd07743e4c91d0a5a6ddf45b3b41004bde4278f190d99a4cf5
+R 7e350d02408f55cc22e8200c238dad8b
+U stephan
+Z 5d6f98871a0b5c1c9a053c0258a32258
 # Remove this line to create a well-formed Fossil manifest.
