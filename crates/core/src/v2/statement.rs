@@ -36,10 +36,12 @@ impl Statement {
     }
 
     pub async fn execute(&mut self, params: impl IntoParams) -> Result<usize> {
+        tracing::trace!("execute for prepared statement");
         self.inner.execute(&params.into_params()?).await
     }
 
     pub async fn query(&mut self, params: impl IntoParams) -> Result<Rows> {
+        tracing::trace!("query for prepared statement");
         self.inner.query(&params.into_params()?).await
     }
 

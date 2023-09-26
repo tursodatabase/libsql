@@ -282,6 +282,7 @@ static Keyword aKeywordTable[] = {
   { "RAISE",            "TK_RAISE",        TRIGGER,          1      },
   { "RANDOM",           "TK_RANDOM",       ALWAYS,           1      },
   { "RANGE",            "TK_RANGE",        WINDOWFUNC,       3      },
+  { "READONLY",         "TK_READONLY",     ALWAYS,           1      },
   { "RECURSIVE",        "TK_RECURSIVE",    CTE,              3      },
   { "REFERENCES",       "TK_REFERENCES",   FKEY,             1      },
   { "REGEXP",           "TK_LIKE_KW",      ALWAYS,           3      },

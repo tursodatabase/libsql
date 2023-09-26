@@ -165,6 +165,12 @@ transtype(A) ::= .             {A = TK_DEFERRED;}
 transtype(A) ::= DEFERRED(X).  {A = @X; /*A-overwrites-X*/}
 transtype(A) ::= IMMEDIATE(X). {A = @X; /*A-overwrites-X*/}
 transtype(A) ::= EXCLUSIVE(X). {A = @X; /*A-overwrites-X*/}
+// FIXME: READONLY transactions map directly to DEFERRED transactions
+// as currently the syntax is only used by libsql's rust library to 
+// force the connection to be in an interactive read local mode. In the
+// future we should extend this by impmenting readonly features within
+// the database impl of libsql.
+transtype(A) ::= READONLY.     {A = TK_DEFERRED; /*A-overwrites-X*/}
 cmd ::= COMMIT|END(X) trans_opt.   {sqlite3EndTransaction(pParse,@X);}
 cmd ::= ROLLBACK(X) trans_opt.     {sqlite3EndTransaction(pParse,@X);}
 
@@ -256,7 +262,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
   CONFLICT DATABASE DEFERRED DESC DETACH DO
   EACH END EXCLUSIVE EXPLAIN FAIL FOR FUNCTION
   IGNORE IMMEDIATE INITIALLY INSTEAD LANGUAGE LIKE_KW MATCH NO PLAN
-  QUERY KEY OF OFFSET PRAGMA RAISE RANDOM RECURSIVE RELEASE REPLACE RESTRICT ROW ROWS
+  QUERY KEY OF OFFSET PRAGMA RAISE RANDOM READONLY RECURSIVE RELEASE REPLACE RESTRICT ROW ROWS
   ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHOUT
   NULLS FIRST LAST
 %ifdef SQLITE_OMIT_COMPOUND_SELECT

@@ -19,14 +19,23 @@ async fn main() {
     )
     .await
     .unwrap();
+
+    db.sync().await.unwrap();
+
     let conn = db.connect().unwrap();
+
+    conn.execute("BEGIN READONLY", ()).await.unwrap();
+    conn.query("SELECT 1", ()).await.unwrap();
+    conn.query("COMMIT", ()).await.unwrap();
 
     let tx = conn
         .transaction_with_behavior(libsql::TransactionBehavior::Immediate)
         .await
         .unwrap();
 
-    tx.execute("SELECT 1", ()).await.unwrap();
+    tx.execute("INSERT INTO foo (x) VALUES (?1)", ["hello world"])
+        .await
+        .unwrap();
 
     tx.commit().await.unwrap();
 }

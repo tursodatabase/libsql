@@ -18,35 +18,144 @@ use crate::{v2, Column, Row, Rows, Value};
 
 use crate::v2::{Conn, LibsqlConnection};
 
-use super::parser;
+use super::parser::{self, StmtKind};
 use super::pb::{ExecuteResults, ResultRows};
 
 #[derive(Clone)]
 pub struct RemoteConnection {
     pub(self) local: LibsqlConnection,
     writer: Writer,
-    state: Arc<Mutex<State>>,
+    inner: Arc<Mutex<Inner>>,
 }
 
 #[derive(Default, Debug)]
-struct State {
-    remote_state: RemoteState,
+struct Inner {
+    state: State,
     changes: u64,
     last_insert_rowid: i64,
 }
 
+#[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
+enum State {
+    #[default]
+    Init,
+    Invalid,
+    Txn,
+    TxnReadOnly,
+}
+
+impl State {
+    pub fn step(&self, kind: StmtKind) -> State {
+        use State;
+
+        match (*self, kind) {
+            (State::TxnReadOnly, StmtKind::TxnBegin)
+            | (State::Txn, StmtKind::TxnBegin)
+            | (State::Init, StmtKind::TxnEnd) => State::Invalid,
+
+            (State::TxnReadOnly, StmtKind::TxnEnd) | (State::Txn, StmtKind::TxnEnd) => State::Init,
+
+            (state, StmtKind::Other | StmtKind::Write | StmtKind::Read) => state,
+            (State::Invalid, _) => State::Invalid,
+
+            (State::Init, StmtKind::TxnBegin) => State::Txn,
+            (State::Init, StmtKind::TxnBeginReadOnly) => State::TxnReadOnly,
+
+            (State::Txn, StmtKind::TxnBeginReadOnly)
+            | (State::TxnReadOnly, StmtKind::TxnBeginReadOnly) => State::Invalid,
+        }
+    }
+}
+
+/// Given a an initial state and an array of queries, attempts to predict what the final state will
+/// be
+fn predict_final_state<'a>(
+    mut state: State,
+    stmts: impl Iterator<Item = &'a parser::Statement>,
+) -> State {
+    for stmt in stmts {
+        state = state.step(stmt.kind);
+    }
+    state
+}
+
+/// Determines if a set of statements should be executed locally or remotely. It takes into
+/// account the current state of the connection and the potential final state of the statements
+/// parsed. This means that we only take into account the entire passed sql statement set and
+/// for example will reject writes if we are in a readonly txn to start with even if we commit
+/// and start a new transaction with the write in it.
+fn should_execute_local(state: &mut State, stmts: &[parser::Statement]) -> Result<bool> {
+    let predicted_end_state = predict_final_state(*state, stmts.iter());
+
+    let should_execute_local = match (*state, predicted_end_state) {
+        (State::Init, State::Init) => {
+            *state = State::Init;
+            stmts.iter().all(parser::Statement::is_read_only)
+        }
+
+        (State::Init, State::TxnReadOnly) | (State::TxnReadOnly, State::TxnReadOnly) => {
+            let is_read_only = stmts.iter().all(parser::Statement::is_read_only);
+
+            if !is_read_only {
+                return Err(Error::Misuse(
+                    "Invalid write in a readonly transaction".into(),
+                ));
+            }
+
+            *state = State::TxnReadOnly;
+            true
+        }
+
+        (State::TxnReadOnly, State::Init) => {
+            let is_read_only = stmts.iter().all(parser::Statement::is_read_only);
+
+            if !is_read_only {
+                return Err(Error::Misuse(
+                    "Invalid write in a readonly transaction".into(),
+                ));
+            }
+
+            *state = State::Init;
+            true
+        }
+
+        (init, State::Invalid) => {
+            // Panic here because the connection has become invalid and it can no longer be
+            // used
+            panic!(
+                "replication connection has reached an invalid state, started with {:?}",
+                init
+            );
+        }
+
+        _ => false,
+    };
+
+    Ok(should_execute_local)
+}
+
+impl From<RemoteState> for State {
+    fn from(value: RemoteState) -> Self {
+        match value {
+            RemoteState::Init => State::Init,
+            RemoteState::Invalid => State::Invalid,
+            RemoteState::Txn => State::Txn,
+        }
+    }
+}
+
 impl RemoteConnection {
     pub(crate) fn new(local: LibsqlConnection, writer: Writer) -> Self {
-        let state = Arc::new(Mutex::new(State::default()));
+        let state = Arc::new(Mutex::new(Inner::default()));
         Self {
             local,
             writer,
-            state,
+            inner: state,
         }
     }
 
     fn is_state_init(&self) -> bool {
-        matches!(self.state.lock().remote_state, RemoteState::Init)
+        matches!(self.inner.lock().state, State::Init)
     }
 
     pub(self) async fn execute_program(
@@ -64,8 +173,10 @@ impl RemoteConnection {
             .map_err(|e| Error::WriteDelegation(e.into()))?;
 
         {
-            let mut state = self.state.lock();
-            state.remote_state = RemoteState::try_from(res.state).expect("Invalid state enum");
+            let mut inner = self.inner.lock();
+            inner.state = RemoteState::try_from(res.state)
+                .expect("Invalid state enum")
+                .into();
         }
 
         Ok(res)
@@ -82,7 +193,7 @@ impl RemoteConnection {
     }
 
     pub(self) fn update_state(&self, row: &ResultRows) {
-        let mut state = self.state.lock();
+        let mut state = self.inner.lock();
 
         if let Some(rowid) = &row.last_insert_rowid {
             state.last_insert_rowid = *rowid;
@@ -91,17 +202,17 @@ impl RemoteConnection {
         state.changes = row.affected_row_count;
     }
 
-    pub(self) fn should_execute_local(&self, stmts: &[parser::Statement]) -> bool {
-        let is_read_only = stmts.iter().all(|s| s.is_read_only());
+    pub(self) fn should_execute_local(&self, stmts: &[parser::Statement]) -> Result<bool> {
+        let mut inner = self.inner.lock();
 
-        self.is_state_init() && is_read_only
+        should_execute_local(&mut inner.state, stmts)
     }
 
     // Will execute a rollback if the local conn is in TXN state
     // and will return false if no rollback happened and the
     // execute was valid.
     pub(self) async fn maybe_execute_rollback(&self) -> Result<bool> {
-        if !self.local.is_autocommit() {
+        if !self.local.is_autocommit() && self.inner.lock().state != State::TxnReadOnly {
             self.local.execute("ROLLBACK", Params::None).await?;
             Ok(true)
         } else {
@@ -115,7 +226,7 @@ impl Conn for RemoteConnection {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64> {
         let stmts = parser::Statement::parse(sql).collect::<Result<Vec<_>>>()?;
 
-        if self.should_execute_local(&stmts[..]) {
+        if self.should_execute_local(&stmts[..])? {
             // TODO(lucio): See if we can arc the params here to cheaply clone
             // or convert the inner bytes type to an Arc<[u8]>
             let changes = self.local.execute(sql, params.clone()).await?;
@@ -148,7 +259,7 @@ impl Conn for RemoteConnection {
     async fn execute_batch(&self, sql: &str) -> Result<()> {
         let stmts = parser::Statement::parse(sql).collect::<Result<Vec<_>>>()?;
 
-        if self.should_execute_local(&stmts[..]) {
+        if self.should_execute_local(&stmts[..])? {
             self.local.execute_batch(sql).await?;
 
             if !self.maybe_execute_rollback().await? {
@@ -195,11 +306,11 @@ impl Conn for RemoteConnection {
     }
 
     fn changes(&self) -> u64 {
-        self.state.lock().changes
+        self.inner.lock().changes
     }
 
     fn last_insert_rowid(&self) -> i64 {
-        self.state.lock().last_insert_rowid
+        self.inner.lock().last_insert_rowid
     }
 
     fn close(&mut self) {
@@ -258,15 +369,15 @@ impl RemoteStatement {
     pub async fn prepare(conn: RemoteConnection, sql: &str) -> Result<Self> {
         let stmts = parser::Statement::parse(sql).collect::<Result<Vec<_>>>()?;
 
-        if conn.should_execute_local(&stmts[..]) {
+        if conn.should_execute_local(&stmts[..])? {
             tracing::trace!("Preparing {sql} locally");
             let stmt = conn.local.prepare(sql).await?;
             return Ok(Self {
                 conn,
                 stmts,
                 local_statement: Some(stmt),
-                metas: vec![]
-            })
+                metas: vec![],
+            });
         }
 
         let metas = fetch_metas(&conn, &stmts).await?;
@@ -512,6 +623,7 @@ impl RemoteTx {
             TransactionBehavior::Deferred => "BEGIN DEFERRED",
             TransactionBehavior::Immediate => "BEGIN IMMEDIATE",
             TransactionBehavior::Exclusive => "BEGIN EXCLUSIVE",
+            TransactionBehavior::ReadOnly => "BEGIN READONLY",
         };
 
         let _ = conn.execute(begin_stmt, Params::None).await?;
@@ -531,5 +643,98 @@ impl Tx for RemoteTx {
         let conn = self.0.take().expect("Tx already dropped");
         conn.execute("ROLLBACK", Params::None).await?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::replication::parser::Statement;
+
+    use super::{should_execute_local, State};
+
+    #[track_caller]
+    fn assert_should_execute_local(
+        sql: &str,
+        mut state: State,
+        expected_final_state: State,
+        expected_final_output: Result<bool, ()>,
+    ) {
+        let stmts = Statement::parse(sql)
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        let out = should_execute_local(&mut state, &stmts[..]);
+        assert_eq!(state, expected_final_state);
+        assert_eq!(out.map_err(|_| ()), expected_final_output);
+    }
+
+    #[test]
+    #[should_panic]
+    fn invalid() {
+        assert_should_execute_local(
+            "
+            BEGIN READONLY;
+            SELECT 1;
+            COMMIT;
+            ",
+            State::Txn,
+            State::Invalid,
+            Err(()),
+        );
+    }
+
+    #[test]
+    fn valid() {
+        assert_should_execute_local(
+            "
+            BEGIN READONLY;
+            SELECT 1;
+            COMMIT;
+            ",
+            State::Init,
+            State::Init,
+            Ok(true),
+        );
+
+        assert_should_execute_local(
+            "
+            BEGIN READONLY;
+            ",
+            State::Init,
+            State::TxnReadOnly,
+            Ok(true),
+        );
+
+        assert_should_execute_local(
+            "
+            SELECT 1;
+            ",
+            State::TxnReadOnly,
+            State::TxnReadOnly,
+            Ok(true),
+        );
+
+        assert_should_execute_local(
+            "
+           COMMIT; 
+            ",
+            State::TxnReadOnly,
+            State::Init,
+            Ok(true),
+        );
+
+        assert_should_execute_local(
+            "
+            BEGIN READONLY;
+            SELECT 1;
+            COMMIT;
+            BEGIN IMMEDIATE;
+            SELECT 1; 
+            COMMIT;
+            ",
+            State::Init,
+            State::Init,
+            Ok(false),
+        );
     }
 }

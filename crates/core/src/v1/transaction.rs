@@ -2,10 +2,12 @@ use crate::v1::Connection;
 use crate::{params::Params, Result};
 use std::ops::Deref;
 
+#[derive(Debug)]
 pub enum TransactionBehavior {
     Deferred,
     Immediate,
     Exclusive,
+    ReadOnly,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -58,6 +60,7 @@ impl Transaction {
             TransactionBehavior::Deferred => "BEGIN DEFERRED",
             TransactionBehavior::Immediate => "BEGIN IMMEDIATE",
             TransactionBehavior::Exclusive => "BEGIN EXCLUSIVE",
+            TransactionBehavior::ReadOnly => "BEGIN READONLY",
         };
         let _ = conn.execute(begin_stmt, Params::None)?;
         Ok(Self {
