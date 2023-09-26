@@ -48,12 +48,6 @@ import java.util.Arrays;
   #sqlite3_result_int}, and sqlite3_result_set() has many
   type-specific overloads.
 
-  <p>Though most of the {@code SQLITE_abc...} C macros represented by
-  this class are defined as final, a few are necessarily non-final
-  because they cannot be set until static class-level initialization
-  is run. Modifying them at runtime has no effect on the library but
-  may confuse any client-level code which uses them.
-
   <p>Notes regarding Java's Modified UTF-8 vs standard UTF-8:
 
   <p>SQLite internally uses UTF-8 encoding, whereas Java natively uses

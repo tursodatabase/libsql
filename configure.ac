@@ -632,7 +632,7 @@ AC_SEARCH_LIBS(fdatasync, [rt])
 AC_ARG_ENABLE(debug, AS_HELP_STRING([--enable-debug],[enable debugging & verbose explain]))
 AC_MSG_CHECKING([build type])
 if test "${enable_debug}" = "yes" ; then
-  TARGET_DEBUG="-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0"
+  TARGET_DEBUG="-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall"
   AC_MSG_RESULT([debug])
 else
   TARGET_DEBUG="-DNDEBUG"

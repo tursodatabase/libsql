@@ -2302,7 +2302,7 @@ static int isDupColumn(Index *pIdx, int nKey, Index *pPk, int iCol){
 ** The colNotIdxed mask is AND-ed with the SrcList.a[].colUsed mask
 ** to determine if the index is covering index.
 */
-static void recomputeColumnsNotIndexed(Index *pIdx){
+static void recomputeColumnsNotIndexed(Parse *pParse, Index *pIdx){
   Bitmask m = 0;
   int j;
   Table *pTab = pIdx->pTable;
@@ -2493,7 +2493,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   }
   assert( pPk->nColumn==j );
   assert( pTab->nNVCol<=j );
-  recomputeColumnsNotIndexed(pPk);
+  recomputeColumnsNotIndexed(pParse, pPk);
 }
 
 
@@ -4273,7 +4273,7 @@ void sqlite3CreateIndex(
   ** it as a covering index */
   assert( HasRowid(pTab)
       || pTab->iPKey<0 || sqlite3TableColumnToIndex(pIndex, pTab->iPKey)>=0 );
-  recomputeColumnsNotIndexed(pIndex);
+  recomputeColumnsNotIndexed(pParse, pIndex);
   if( pTblName!=0 && pIndex->nColumn>=pTab->nCol ){
     pIndex->isCovering = 1;
     for(j=0; j<pTab->nCol; j++){
