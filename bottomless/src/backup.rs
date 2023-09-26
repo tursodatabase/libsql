@@ -56,7 +56,7 @@ impl WalCopier {
             if let Some(wal) = self.wal.as_mut() {
                 wal
             } else {
-                return Err(anyhow!("WAL file not found: \"{:?}\"", self.wal_path));
+                return Err(anyhow!("WAL file not found: `{}`", self.wal_path));
             }
         };
         let generation = if let Some(generation) = self.generation.load_full() {

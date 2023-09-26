@@ -69,8 +69,9 @@ const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 const DEFAULT_AUTO_CHECKPOINT: u32 = 1000;
 
 pub(crate) static BLOCKING_RT: Lazy<Runtime> = Lazy::new(|| {
-    tokio::runtime::Builder::new_current_thread()
+    tokio::runtime::Builder::new_multi_thread()
         .max_blocking_threads(50_000)
+        .enable_all()
         .build()
         .unwrap()
 });

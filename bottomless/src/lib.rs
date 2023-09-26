@@ -314,6 +314,31 @@ pub extern "C" fn xCheckpoint(
         tracing::trace!("Ignoring a checkpoint request weaker than TRUNCATE");
         return ffi::SQLITE_OK;
     }
+
+    let ctx = get_replicator_context(wal);
+    let last_known_frame = ctx.replicator.last_known_frame();
+    ctx.replicator.request_flush();
+    if last_known_frame == 0 {
+        tracing::debug!("No committed changes in this generation, not snapshotting");
+        ctx.replicator.skip_snapshot_for_current_generation();
+        return ffi::SQLITE_OK;
+    }
+    if let Err(e) = block_on!(
+        ctx.runtime,
+        ctx.replicator.wait_until_committed(last_known_frame)
+    ) {
+        tracing::error!(
+            "Failed to finalize frame {} replication: {}",
+            last_known_frame,
+            e
+        );
+        return ffi::SQLITE_IOERR_WRITE;
+    }
+    if let Err(e) = block_on!(ctx.runtime, ctx.replicator.wait_until_snapshotted()) {
+        tracing::error!("Failed to finalize snapshot replication: {}", e);
+        return ffi::SQLITE_IOERR_WRITE;
+    }
+
     /* If there's no busy handler, let's provide a default one,
      ** since we auto-upgrade the passive checkpoint
      */
@@ -342,31 +367,19 @@ pub extern "C" fn xCheckpoint(
         return rc;
     }
 
-    let ctx = get_replicator_context(wal);
-    let last_known_frame = ctx.replicator.last_known_frame();
-    ctx.replicator.request_flush();
-    if last_known_frame == 0 {
-        tracing::debug!("No committed changes in this generation, not snapshotting");
-        ctx.replicator.skip_snapshot_for_current_generation();
-        return ffi::SQLITE_OK;
-    }
-    if let Err(e) = block_on!(
-        ctx.runtime,
-        ctx.replicator.wait_until_committed(last_known_frame)
-    ) {
-        tracing::error!("Failed to finalize replication: {}", e);
-        return ffi::SQLITE_IOERR_WRITE;
-    }
-
-    let prev = ctx.replicator.new_generation();
+    let _prev = ctx.replicator.new_generation();
     tracing::debug!("Snapshotting after checkpoint");
-    let result = block_on!(ctx.runtime, ctx.replicator.snapshot_main_db_file(prev));
-    if let Err(e) = result {
-        tracing::error!(
-            "Failed to snapshot the main db file during checkpoint: {}",
-            e
-        );
-        return ffi::SQLITE_IOERR_WRITE;
+    match block_on!(ctx.runtime, ctx.replicator.snapshot_main_db_file()) {
+        Ok(_handle) => {
+            tracing::trace!("got snapshot handle");
+        }
+        Err(e) => {
+            tracing::error!(
+                "Failed to snapshot the main db file during checkpoint: {}",
+                e
+            );
+            return ffi::SQLITE_IOERR_WRITE;
+        }
     }
     tracing::debug!("Checkpoint completed in {:?}", Instant::now() - start);
 
@@ -417,7 +430,7 @@ async fn try_restore(replicator: &mut replicator::Replicator) -> i32 {
     match replicator.restore(None, None).await {
         Ok((replicator::RestoreAction::SnapshotMainDbFile, _)) => {
             replicator.new_generation();
-            match replicator.snapshot_main_db_file(None).await {
+            match replicator.snapshot_main_db_file().await {
                 Ok(Some(h)) => {
                     if let Err(e) = h.await {
                         tracing::error!("Failed to join snapshot main db file task: {}", e);
