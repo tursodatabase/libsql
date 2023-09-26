@@ -219,7 +219,7 @@ impl Authenticated {
 
     pub fn is_namespace_authorized(&self, namespace: &NamespaceName) -> bool {
         match self {
-            Authenticated::Anonymous => true,
+            Authenticated::Anonymous => false,
             Authenticated::Authorized(Authorized {
                 namespace: Some(ns),
                 ..
@@ -229,6 +229,14 @@ impl Authenticated {
                 namespace: None, ..
             }) => true,
         }
+    }
+
+    /// Returns `true` if the authenticated is [`Anonymous`].
+    ///
+    /// [`Anonymous`]: Authenticated::Anonymous
+    #[must_use]
+    pub fn is_anonymous(&self) -> bool {
+        matches!(self, Self::Anonymous)
     }
 }
 
