@@ -1,5 +1,5 @@
-C Remove\sa\sNEVER()\sfrom\sa\scondition\sin\sthe\spartial-index\sconstant\svalue\soptimization\sthat\scan\ssometimes\sbe\strue.
-D 2023-09-26T19:26:47.309
+C Fix\syet\sanother\sassert()\sin\sthe\spartial-index\sconstant\svalue\soptimization.
+D 2023-09-26T19:38:24.673
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -795,7 +795,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 01e051a1e713d9eabdb25df38602837cec8f4c2cae448ce2cf6accc87af903e9
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 22eae55cac95ab11164b694985cceac0113470ab287e597af5f09919e7dc6dfc
+F src/where.c c21ee2abe9af331381109f6fb2de1a384c07a12b191ffb3b3280f5a881a29b5a
 F src/whereInt.h 4b38c5889514e3aead3f27d0ee9a26e47c3f150efc59e2a8b4e3bc8835e4d7a1
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
@@ -2122,8 +2122,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7ad38254c37153efa72291d09800693ca60894359548eda877d59defa8c70d49
-R 14aee6671f245655903579a9af34d089
-U dan
-Z 7af5d6b54f8f162571b7c14a7d1c052a
+P 63aea8c3e0605edcf49ad1e5ce1a56d2690dcb8c4857043997545daab46ca035
+R dde20269cd95793e2cf58d6b66b4965e
+U drh
+Z 9624e2e51b9eb60e25af33993d2976c5
 # Remove this line to create a well-formed Fossil manifest.

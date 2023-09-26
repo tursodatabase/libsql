@@ -3564,7 +3564,9 @@ static void wherePartIdxExpr(
     Expr *pRight = pPart->pRight;
     u8 aff;
 
-    assert( pRight->op!=TK_COLUMN );
+    /* Commuting the term is pointless */
+    assert( pRight->op!=TK_COLUMN || !sqlite3ExprIsConstant(pLeft) );
+
     if( pLeft->op!=TK_COLUMN ) return;
     if( !sqlite3ExprIsConstant(pRight) ) return;
     if( !sqlite3IsBinary(sqlite3ExprCompareCollSeq(pParse, pPart)) ) return;
