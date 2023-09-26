@@ -4222,9 +4222,11 @@ static int SQLITE_TCLAPI test_bind_value_from_preupdate(
   sqlite3_stmt *pStmt;
   int idx;
   int bidx;
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   const char *z3 = 0;
   sqlite3 *db = 0;
   sqlite3_value *pVal = 0;
+#endif
 
   if( objc!=5 ){
     Tcl_WrongNumArgs(interp, 1, objv, "STMT N NEW|OLD IDX");
@@ -4233,11 +4235,11 @@ static int SQLITE_TCLAPI test_bind_value_from_preupdate(
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
-  z3 = Tcl_GetString(objv[3]);
   if( Tcl_GetIntFromObj(interp, objv[4], &bidx) ) return TCL_ERROR;
-  db = sqlite3_db_handle(pStmt);
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+  z3 = Tcl_GetString(objv[3]);
+  db = sqlite3_db_handle(pStmt);
   if( z3[0]=='n' ){
     sqlite3_preupdate_new(db, bidx, &pVal);
   }else if( z3[0]=='o' ){
