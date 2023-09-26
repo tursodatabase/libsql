@@ -3568,7 +3568,7 @@ static void wherePartIdxExpr(
     if( pLeft->op!=TK_COLUMN ) return;
     if( !sqlite3ExprIsConstant(pRight) ) return;
     if( !sqlite3IsBinary(sqlite3ExprCompareCollSeq(pParse, pPart)) ) return;
-    if( NEVER(pLeft->iColumn<0) ) return;
+    if( pLeft->iColumn<0 ) return;
     aff = pIdx->pTable->aCol[pLeft->iColumn].affinity;
     if( aff>=SQLITE_AFF_TEXT ){
       if( pItem ){
