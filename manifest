@@ -1,5 +1,5 @@
-C Merge\sall\sthe\slatest\strunk\senhancements\sinto\sjsonb\sbranch.
-D 2023-09-26T15:13:04.116
+C Add\sin\smany\sjsonb_xxxx()\sinterfaces.\s\sStill\suses\sthe\sinternal\sJsonNode\nrepresentation\sfor\stransformations\sand\ssearch,\sbut\sit\sdoes\sat\sleast\sconform\nto\sthe\sdesired\sAPI\sdesign.\s\sLargely\suntested.
+D 2023-09-26T19:30:46.857
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -670,7 +670,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c ee823133ed6f56ffb42c99fa78814667be70cd1b8106714cff459ee35f5a063e
+F src/json.c 6fb31345d252dc6992c707ec7e826ec9f2283b026092e5105f9905664a2210c5
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 98cfba10989b3da6f1807ad42444017742db7f100a54f1032af7a8b1295912c0
 F src/main.c 618aeb399e993cf561864f4b0cf6a331ee4f355cf663635f8d9da3193a46aa40
@@ -2122,8 +2122,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a82ebbac3c542ec7f86d1e8414d7fd166db48450115ee3b26d12b5bb445f5896 7ad38254c37153efa72291d09800693ca60894359548eda877d59defa8c70d49
-R 2f21564c602d3b30115c3421d174134f
+P ac242c4d47ec36aab1c2fa5e65e7b595e686f49473b75bd63708d05c59ce3f0f
+R 3743d1571a08e262e44d6bfa0fe7cd5d
 U drh
-Z bdae2aab159970d0c164367006c6960b
+Z 4bd7fe1646cada0525f1a26ea76a3776
 # Remove this line to create a well-formed Fossil manifest.
