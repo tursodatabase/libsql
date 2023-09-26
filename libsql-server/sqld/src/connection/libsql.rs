@@ -185,7 +185,7 @@ impl LibSqlConnection {
         let (sender, receiver) = crossbeam::channel::unbounded::<ExecCallback>();
         let (init_sender, init_receiver) = oneshot::channel();
 
-        std::thread::spawn(move || {
+        crate::BLOCKING_RT.spawn_blocking(move || {
             let mut ctx = hook_ctx;
             let mut connection = match Connection::new(
                 path.as_ref(),
