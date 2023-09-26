@@ -373,18 +373,28 @@ impl Replicator {
         self.last_sent_frame_no.load(Ordering::Acquire)
     }
 
-    pub async fn wait_until_snapshotted(&mut self, generation: Uuid) -> Result<()> {
-        let res = self
-            .snapshot_waiter
-            .wait_for(|result| match result {
-                Ok(Some(gen)) => *gen == generation,
-                Ok(None) => false,
-                Err(_) => true,
-            })
-            .await?;
-        match res.deref() {
-            Ok(_) => Ok(()),
-            Err(e) => Err(anyhow!("Failed snapshot generation {}: {}", generation, e)),
+    pub async fn wait_until_snapshotted(&mut self) -> Result<bool> {
+        if let Ok(generation) = self.generation() {
+            if !self.main_db_exists_and_not_empty().await {
+                tracing::debug!("Not snapshotting, the main db file does not exist or is empty");
+                let _ = self.snapshot_notifier.send(Ok(Some(generation)));
+                return Ok(false);
+            }
+            tracing::debug!("waiting for generation snapshot {} to complete", generation);
+            let res = self
+                .snapshot_waiter
+                .wait_for(|result| match result {
+                    Ok(Some(gen)) => *gen == generation,
+                    Ok(None) => false,
+                    Err(_) => true,
+                })
+                .await?;
+            match res.deref() {
+                Ok(_) => Ok(true),
+                Err(e) => Err(anyhow!("Failed snapshot generation {}: {}", generation, e)),
+            }
+        } else {
+            Ok(false)
         }
     }
 
@@ -706,23 +716,18 @@ impl Replicator {
     // Sends the main database file to S3 - if -wal file is present, it's replicated
     // too - it means that the local file was detected to be newer than its remote
     // counterpart.
-    pub async fn snapshot_main_db_file(
-        &mut self,
-        prev_generation: Option<Uuid>,
-    ) -> Result<Option<JoinHandle<()>>> {
+    pub async fn snapshot_main_db_file(&mut self) -> Result<Option<JoinHandle<()>>> {
         if !self.main_db_exists_and_not_empty().await {
-            tracing::debug!("Not snapshotting, the main db file does not exist or is empty");
-            let _ = self.snapshot_notifier.send(Ok(prev_generation));
+            let generation = self.generation()?;
+            tracing::debug!(
+                "Not snapshotting {}, the main db file does not exist or is empty",
+                generation
+            );
+            let _ = self.snapshot_notifier.send(Ok(Some(generation)));
             return Ok(None);
         }
         let generation = self.generation()?;
-        tracing::debug!("Snapshotting generation {}", generation);
         let start_ts = Instant::now();
-        if let Some(prev) = prev_generation {
-            tracing::debug!("waiting for previous generation {} to complete", prev);
-            self.wait_until_snapshotted(prev).await?;
-        }
-
         let client = self.client.clone();
         let mut db_file = File::open(&self.db_path).await?;
         let change_counter = Self::read_change_counter(&mut db_file).await?;
@@ -749,6 +754,7 @@ impl Replicator {
         let snapshot_notifier = self.snapshot_notifier.clone();
         let compression = self.use_compression;
         let handle = tokio::spawn(async move {
+            tracing::trace!("Start snapshotting generation {}", generation);
             let start = Instant::now();
             let body = match Self::maybe_compress_main_db_file(db_file, compression).await {
                 Ok(file) => file,
@@ -788,7 +794,7 @@ impl Replicator {
             let _ = tokio::fs::remove_file(format!("db.{}", compression)).await;
         });
         let elapsed = Instant::now() - start_ts;
-        tracing::debug!("Scheduled DB snapshot (took {:?})", elapsed);
+        tracing::debug!("Scheduled DB snapshot {} (took {:?})", generation, elapsed);
 
         Ok(Some(handle))
     }

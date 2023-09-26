@@ -922,7 +922,9 @@ pub async fn init_bottomless_replicator(
     match action {
         bottomless::replicator::RestoreAction::SnapshotMainDbFile => {
             replicator.new_generation();
-            replicator.snapshot_main_db_file(None).await?;
+            if let Some(_handle) = replicator.snapshot_main_db_file().await? {
+                tracing::trace!("got snapshot handle after restore with generation upgrade");
+            }
             // Restoration process only leaves the local WAL file if it was
             // detected to be newer than its remote counterpart.
             replicator.maybe_replicate_wal().await?

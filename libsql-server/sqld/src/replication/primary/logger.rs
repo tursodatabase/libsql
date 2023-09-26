@@ -203,6 +203,39 @@ unsafe impl WalHook for ReplicationLoggerHook {
                 return SQLITE_BUSY;
             }
         }
+
+        #[allow(clippy::await_holding_lock)]
+        // uncontended -> only gets called under a libSQL write lock
+        {
+            let ctx = Self::wal_extract_ctx(wal);
+            let runtime = tokio::runtime::Handle::current();
+            if let Some(replicator) = ctx.bottomless_replicator.as_mut() {
+                let mut replicator = replicator.lock().unwrap();
+                let last_known_frame = replicator.last_known_frame();
+                replicator.request_flush();
+                if last_known_frame == 0 {
+                    tracing::debug!("No comitted changes in this generation, not snapshotting");
+                    replicator.skip_snapshot_for_current_generation();
+                    return SQLITE_OK;
+                }
+                if let Err(e) = runtime.block_on(replicator.wait_until_committed(last_known_frame))
+                {
+                    tracing::error!(
+                        "Failed to wait for S3 replicator to confirm {} frames backup: {}",
+                        last_known_frame,
+                        e
+                    );
+                    return SQLITE_IOERR_WRITE;
+                }
+                if let Err(e) = runtime.block_on(replicator.wait_until_snapshotted()) {
+                    tracing::error!(
+                        "Failed to wait for S3 replicator to confirm database snapshot backup: {}",
+                        e
+                    );
+                    return SQLITE_IOERR_WRITE;
+                }
+            }
+        }
         let rc = unsafe {
             orig(
                 wal,
@@ -229,25 +262,9 @@ unsafe impl WalHook for ReplicationLoggerHook {
             let runtime = tokio::runtime::Handle::current();
             if let Some(replicator) = ctx.bottomless_replicator.as_mut() {
                 let mut replicator = replicator.lock().unwrap();
-                let last_known_frame = replicator.last_known_frame();
-                replicator.request_flush();
-                if last_known_frame == 0 {
-                    tracing::debug!("No comitted changes in this generation, not snapshotting");
-                    replicator.skip_snapshot_for_current_generation();
-                    return SQLITE_OK;
-                }
-                if let Err(e) = runtime.block_on(replicator.wait_until_committed(last_known_frame))
-                {
-                    tracing::error!(
-                        "Failed to wait for S3 replicator to confirm {} frames backup: {}",
-                        last_known_frame,
-                        e
-                    );
-                    return SQLITE_IOERR_WRITE;
-                }
-                let prev = replicator.new_generation();
+                let _prev = replicator.new_generation();
                 if let Err(e) =
-                    runtime.block_on(async move { replicator.snapshot_main_db_file(prev).await })
+                    runtime.block_on(async move { replicator.snapshot_main_db_file().await })
                 {
                     tracing::error!("Failed to snapshot the main db file during checkpoint: {e}");
                     return SQLITE_IOERR_WRITE;
