@@ -1441,26 +1441,9 @@ static void * NativePointerHolder__get(JNIEnv * env, jobject jNph,
 #define PtrGet_sqlite3_stmt(OBJ) PtrGet_T(sqlite3_stmt, OBJ)
 #define PtrGet_sqlite3_value(OBJ) PtrGet_T(sqlite3_value, OBJ)
 
-#if 0
-/*
-** Enters the S3JniDb mutex and PtrGet_sqlite3()'s jObj. If that's
-** NULL then it leaves the mutex, else the mutex is still entered
-** when this returns and the caller is obligated to leave it.
-*/
-static sqlite3* PtrGet__sqlite3_lock(JNIEnv * const env, jobject jObj){
-  sqlite3 *rv;
-  S3JniDb_mutex_enter;
-  rv = PtrGet_sqlite3(jObj);
-  if( !rv ){ S3JniDb_mutex_leave; }
-  return rv;
-}
-#undef PtrGet_sqlite3
-#define PtrGet_sqlite3(JOBJ) PtrGet__sqlite3_lock(env, (JOBJ))
-#endif
-
 /*
 ** Extracts the new S3JniDb instance from the free-list, or allocates
-** one if needed, associats it with pDb, and returns.  Returns NULL on
+** one if needed, associates it with pDb, and returns.  Returns NULL on
 ** OOM. pDb MUST, on success of the calling operation, subsequently be
 ** associated with jDb via NativePointerHolder_set().
 */
@@ -1475,7 +1458,7 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, jobject jDb){
   }
   S3JniDb_mutex_leave;
   if( 0==rv ){
-    rv = s3jni_malloc( sizeof(S3JniDb));
+    rv = s3jni_malloc(sizeof(S3JniDb));
     if( rv ){
       s3jni_incr( &SJG.metrics.nPdbAlloc );
     }
@@ -3408,13 +3391,12 @@ S3JniApi(sqlite3_extended_result_codes(),jboolean,1extended_1result_1codes)(
 }
 
 S3JniApi(sqlite3_finalize(),jint,1finalize)(
-  JniArgsEnvClass, jobject jpStmt
+  JniArgsEnvClass, jlong jpStmt
 ){
   int rc = 0;
-  sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
-  if( pStmt ){
+  if( jpStmt ){
+    sqlite3_stmt * const pStmt = (void*)jpStmt;
     rc = sqlite3_finalize(pStmt);
-    NativePointerHolder_set(S3JniNph(sqlite3_stmt), jpStmt, 0);
   }
   return rc;
 }
@@ -3637,7 +3619,7 @@ S3JniApi(sqlite3_open_v2(),jint,1open_1v2)(
 
 /* Proxy for the sqlite3_prepare[_v2/3]() family. */
 jint sqlite3_jni_prepare_v123( int prepVersion, JNIEnv * const env, jclass self,
-                               jobject jDb, jbyteArray baSql,
+                               jlong jpDb, jbyteArray baSql,
                                jint nMax, jint prepFlags,
                                jobject jOutStmt, jobject outTail){
   sqlite3_stmt * pStmt = 0;
@@ -3656,13 +3638,13 @@ jint sqlite3_jni_prepare_v123( int prepVersion, JNIEnv * const env, jclass self,
     goto end;
   }
   switch( prepVersion ){
-    case 1: rc = sqlite3_prepare(PtrGet_sqlite3(jDb), (const char *)pBuf,
+    case 1: rc = sqlite3_prepare((sqlite3*)jpDb, (const char *)pBuf,
                                  (int)nMax, &pStmt, &zTail);
       break;
-    case 2: rc = sqlite3_prepare_v2(PtrGet_sqlite3(jDb), (const char *)pBuf,
+    case 2: rc = sqlite3_prepare_v2((sqlite3*)jpDb, (const char *)pBuf,
                                     (int)nMax, &pStmt, &zTail);
       break;
-    case 3: rc = sqlite3_prepare_v3(PtrGet_sqlite3(jDb), (const char *)pBuf,
+    case 3: rc = sqlite3_prepare_v3((sqlite3*)jpDb, (const char *)pBuf,
                                     (int)nMax, (unsigned int)prepFlags,
                                     &pStmt, &zTail);
       break;
@@ -3697,24 +3679,24 @@ end:
   return (jint)rc;
 }
 S3JniApi(sqlite3_prepare(),jint,1prepare)(
-  JNIEnv * const env, jclass self, jobject jDb, jbyteArray baSql,
+  JNIEnv * const env, jclass self, jlong jpDb, jbyteArray baSql,
                      jint nMax, jobject jOutStmt, jobject outTail
 ){
-  return sqlite3_jni_prepare_v123(1, env, self, jDb, baSql, nMax, 0,
+  return sqlite3_jni_prepare_v123(1, env, self, jpDb, baSql, nMax, 0,
                                   jOutStmt, outTail);
 }
 S3JniApi(sqlite3_prepare_v2(),jint,1prepare_1v2)(
-  JNIEnv * const env, jclass self, jobject jDb, jbyteArray baSql,
+  JNIEnv * const env, jclass self, jlong jpDb, jbyteArray baSql,
                          jint nMax, jobject jOutStmt, jobject outTail
 ){
-  return sqlite3_jni_prepare_v123(2, env, self, jDb, baSql, nMax, 0,
+  return sqlite3_jni_prepare_v123(2, env, self, jpDb, baSql, nMax, 0,
                                   jOutStmt, outTail);
 }
 S3JniApi(sqlite3_prepare_v3(),jint,1prepare_1v3)(
-  JNIEnv * const env, jclass self, jobject jDb, jbyteArray baSql,
+  JNIEnv * const env, jclass self, jlong jpDb, jbyteArray baSql,
                          jint nMax, jint prepFlags, jobject jOutStmt, jobject outTail
 ){
-  return sqlite3_jni_prepare_v123(3, env, self, jDb, baSql, nMax,
+  return sqlite3_jni_prepare_v123(3, env, self, jpDb, baSql, nMax,
                                   prepFlags, jOutStmt, outTail);
 }
 

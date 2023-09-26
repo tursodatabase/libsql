@@ -1406,10 +1406,10 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1error_1offset
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_finalize
- * Signature: (Lorg/sqlite/jni/sqlite3_stmt;)I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1finalize
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1510,26 +1510,26 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1open_1v2
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_prepare
- * Signature: (Lorg/sqlite/jni/sqlite3;[BILorg/sqlite/jni/OutputPointer/sqlite3_stmt;Lorg/sqlite/jni/OutputPointer/Int32;)I
+ * Signature: (J[BILorg/sqlite/jni/OutputPointer/sqlite3_stmt;Lorg/sqlite/jni/OutputPointer/Int32;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1prepare
-  (JNIEnv *, jclass, jobject, jbyteArray, jint, jobject, jobject);
+  (JNIEnv *, jclass, jlong, jbyteArray, jint, jobject, jobject);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_prepare_v2
- * Signature: (Lorg/sqlite/jni/sqlite3;[BILorg/sqlite/jni/OutputPointer/sqlite3_stmt;Lorg/sqlite/jni/OutputPointer/Int32;)I
+ * Signature: (J[BILorg/sqlite/jni/OutputPointer/sqlite3_stmt;Lorg/sqlite/jni/OutputPointer/Int32;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1prepare_1v2
-  (JNIEnv *, jclass, jobject, jbyteArray, jint, jobject, jobject);
+  (JNIEnv *, jclass, jlong, jbyteArray, jint, jobject, jobject);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_prepare_v3
- * Signature: (Lorg/sqlite/jni/sqlite3;[BIILorg/sqlite/jni/OutputPointer/sqlite3_stmt;Lorg/sqlite/jni/OutputPointer/Int32;)I
+ * Signature: (J[BIILorg/sqlite/jni/OutputPointer/sqlite3_stmt;Lorg/sqlite/jni/OutputPointer/Int32;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1prepare_1v3
-  (JNIEnv *, jclass, jobject, jbyteArray, jint, jint, jobject, jobject);
+  (JNIEnv *, jclass, jlong, jbyteArray, jint, jint, jobject, jobject);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni

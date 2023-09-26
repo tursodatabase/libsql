@@ -738,7 +738,12 @@ public final class SQLite3Jni {
   public static native int sqlite3_error_offset(@NotNull sqlite3 db);
 
   @Canonical
-  public static native int sqlite3_finalize(@NotNull sqlite3_stmt stmt);
+  private static native int sqlite3_finalize(long ptrToStmt);
+
+  @Canonical
+  public static int sqlite3_finalize(@NotNull sqlite3_stmt stmt){
+    return null==stmt ? 0 : sqlite3_finalize(stmt.clearNativePointer());
+  }
 
   @Canonical
   public static native int sqlite3_initialize();
@@ -850,7 +855,7 @@ public final class SQLite3Jni {
   */
   @Canonical
   private static native int sqlite3_prepare(
-    @NotNull sqlite3 db, @NotNull byte[] sqlUtf8, int maxBytes,
+    @NotNull long ptrToDb, @NotNull byte[] sqlUtf8, int maxBytes,
     @NotNull OutputPointer.sqlite3_stmt outStmt,
     @Nullable OutputPointer.Int32 pTailOffset
   );
@@ -869,14 +874,16 @@ public final class SQLite3Jni {
     @NotNull OutputPointer.sqlite3_stmt outStmt,
     @Nullable OutputPointer.Int32 pTailOffset
   ){
-    return sqlite3_prepare(db, sqlUtf8, sqlUtf8.length, outStmt, pTailOffset);
+    return sqlite3_prepare(db.getNativePointer(), sqlUtf8, sqlUtf8.length,
+                           outStmt, pTailOffset);
   }
 
   public static int sqlite3_prepare(
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8,
     @NotNull OutputPointer.sqlite3_stmt outStmt
   ){
-    return sqlite3_prepare(db, sqlUtf8, sqlUtf8.length, outStmt, null);
+    return sqlite3_prepare(db.getNativePointer(), sqlUtf8, sqlUtf8.length,
+                           outStmt, null);
   }
 
   public static int sqlite3_prepare(
@@ -884,7 +891,8 @@ public final class SQLite3Jni {
     @NotNull OutputPointer.sqlite3_stmt outStmt
   ){
     final byte[] utf8 = sql.getBytes(StandardCharsets.UTF_8);
-    return sqlite3_prepare(db, utf8, utf8.length, outStmt, null);
+    return sqlite3_prepare(db.getNativePointer(), utf8, utf8.length,
+                           outStmt, null);
   }
 
   /**
@@ -907,7 +915,7 @@ public final class SQLite3Jni {
   */
   @Canonical
   private static native int sqlite3_prepare_v2(
-    @NotNull sqlite3 db, @NotNull byte[] sqlUtf8, int maxBytes,
+    @NotNull long ptrToDb, @NotNull byte[] sqlUtf8, int maxBytes,
     @NotNull OutputPointer.sqlite3_stmt outStmt,
     @Nullable OutputPointer.Int32 pTailOffset
   );
@@ -923,14 +931,16 @@ public final class SQLite3Jni {
     @NotNull OutputPointer.sqlite3_stmt outStmt,
     @Nullable OutputPointer.Int32 pTailOffset
   ){
-    return sqlite3_prepare_v2(db, sqlUtf8, sqlUtf8.length, outStmt, pTailOffset);
+    return sqlite3_prepare_v2(db.getNativePointer(), sqlUtf8, sqlUtf8.length,
+                              outStmt, pTailOffset);
   }
 
   public static int sqlite3_prepare_v2(
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8,
     @NotNull OutputPointer.sqlite3_stmt outStmt
   ){
-    return sqlite3_prepare_v2(db, sqlUtf8, sqlUtf8.length, outStmt, null);
+    return sqlite3_prepare_v2(db.getNativePointer(), sqlUtf8, sqlUtf8.length,
+                              outStmt, null);
   }
 
   public static int sqlite3_prepare_v2(
@@ -938,7 +948,8 @@ public final class SQLite3Jni {
     @NotNull OutputPointer.sqlite3_stmt outStmt
   ){
     final byte[] utf8 = sql.getBytes(StandardCharsets.UTF_8);
-    return sqlite3_prepare_v2(db, utf8, utf8.length, outStmt, null);
+    return sqlite3_prepare_v2(db.getNativePointer(), utf8, utf8.length,
+                              outStmt, null);
   }
 
   /**
@@ -958,7 +969,7 @@ public final class SQLite3Jni {
   */
   @Canonical
   private static native int sqlite3_prepare_v3(
-    @NotNull sqlite3 db, @NotNull byte[] sqlUtf8, int maxBytes,
+    @NotNull long ptrToDb, @NotNull byte[] sqlUtf8, int maxBytes,
     int prepFlags, @NotNull OutputPointer.sqlite3_stmt outStmt,
     @Nullable OutputPointer.Int32 pTailOffset
   );
@@ -974,7 +985,8 @@ public final class SQLite3Jni {
     @NotNull OutputPointer.sqlite3_stmt outStmt,
     @Nullable OutputPointer.Int32 pTailOffset
   ){
-    return sqlite3_prepare_v3(db, sqlUtf8, sqlUtf8.length, prepFlags, outStmt, pTailOffset);
+    return sqlite3_prepare_v3(db.getNativePointer(), sqlUtf8, sqlUtf8.length,
+                              prepFlags, outStmt, pTailOffset);
   }
 
   /**
@@ -985,7 +997,8 @@ public final class SQLite3Jni {
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8, int prepFlags,
     @NotNull OutputPointer.sqlite3_stmt outStmt
   ){
-    return sqlite3_prepare_v3(db, sqlUtf8, sqlUtf8.length, prepFlags, outStmt, null);
+    return sqlite3_prepare_v3(db.getNativePointer(), sqlUtf8, sqlUtf8.length,
+                              prepFlags, outStmt, null);
   }
 
   /**
@@ -998,7 +1011,8 @@ public final class SQLite3Jni {
     @NotNull OutputPointer.sqlite3_stmt outStmt
   ){
     final byte[] utf8 = sql.getBytes(StandardCharsets.UTF_8);
-    return sqlite3_prepare_v3(db, utf8, utf8.length, prepFlags, outStmt, null);
+    return sqlite3_prepare_v3(db.getNativePointer(), utf8, utf8.length,
+                              prepFlags, outStmt, null);
   }
 
   /**
