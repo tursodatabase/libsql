@@ -1,5 +1,5 @@
-C Merge\spartial-index\sconstant\svalue\sfixes\sfrom\strunk\sinto\sthe\sjsonb\sbranch.
-D 2023-09-26T19:46:38.407
+C Performance\stests\sfor\sJSONB\sadded.
+D 2023-09-27T16:55:13.845
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1300,8 +1300,9 @@ F test/jrnlmode2.test 8759a1d4657c064637f8b079592651530db738419e1d649c6df7048cd7
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/json/README.md 63e3e589e1df8fd3cc1588ba1faaff659214003f8b77a15af5c6452b35e30ee2
 F test/json/json-generator.tcl dc0dd0f393800c98658fc4c47eaa6af29d4e17527380cd28656fb261bddc8a3f
+F test/json/json-q1-b.txt d1394d4ade1c9617539b19b48e0dd2df4f6ea918860978722e7a97d60618ca83
 F test/json/json-q1.txt 65f9d1cdcc4cffa9823fb73ed936aae5658700cd001fde448f68bfb91c807307
-F test/json/json-speed-check.sh 8b7babf530faa58bd59d6d362cec8e9036a68c5457ff46f3b1f1511d21af6737 x
+F test/json/json-speed-check.sh b060a9a6c696c0a807d8929400fa11bd7113edc58b0d66b9795f424f8d0db326 x
 F test/json101.test dc9d5a2a5b1fd1b54dbd71c538b17933cc98d84b4c1f821ead754933663dca55
 F test/json102.test 4c69694773a470f1fda34e5f4ba24920b35184fb66050b450fc2ef9ab5ad310b
 F test/json103.test 53df87f83a4e5fa0c0a56eb29ff6c94055c6eb919f33316d62161a8880112dbe
@@ -2122,8 +2123,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e6045b4e1bf3a8e33926fc12b3c039f5e1002eaecbe277ffa82b0ec271a29d17 f459d0806cf044fd07743e4c91d0a5a6ddf45b3b41004bde4278f190d99a4cf5
-R 1d55abb00dbf638a471cf92ac6ee2784
+P 700bdbd7383f66a0da675c197204da4e7b6ed757155145ee98d572de32a5d0ae
+R cd229cd0127bc955a2b70dc896603e55
 U drh
-Z 2f2ccec484af750dd462546f4baf8eb1
+Z 76a0e61dc557712a0090ea7a119c4cd2
 # Remove this line to create a well-formed Fossil manifest.
