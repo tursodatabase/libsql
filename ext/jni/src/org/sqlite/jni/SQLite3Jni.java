@@ -161,24 +161,51 @@ public final class SQLite3Jni {
   public static native int sqlite3_auto_extension(@NotNull AutoExtensionCallback callback);
 
   @Canonical
-  public static native int sqlite3_backup_finish(@NotNull sqlite3_backup b);
+  private static native int sqlite3_backup_finish(@NotNull long ptrToBackup);
 
   @Canonical
-  public static native sqlite3_backup sqlite3_backup_init(
+  public static int sqlite3_backup_finish(@NotNull sqlite3_backup b){
+    return sqlite3_backup_finish(b.clearNativePointer());
+  }
+
+  @Canonical
+  private static native sqlite3_backup sqlite3_backup_init(
+    @NotNull long ptrToDbDest, @NotNull String destTableName,
+    @NotNull long ptrToDbSrc, @NotNull String srcTableName
+  );
+
+  @Canonical
+  public static sqlite3_backup sqlite3_backup_init(
     @NotNull sqlite3 dbDest, @NotNull String destTableName,
     @NotNull sqlite3 dbSrc, @NotNull String srcTableName
-  );
+  ){
+    return sqlite3_backup_init( dbDest.getNativePointer(), destTableName,
+                                dbSrc.getNativePointer(), srcTableName );
+  }
 
   @Canonical
-  public static native int sqlite3_backup_pagecount(@NotNull sqlite3_backup b);
+  private static native int sqlite3_backup_pagecount(@NotNull long ptrToBackup);
 
   @Canonical
-  public static native int sqlite3_backup_remaining(@NotNull sqlite3_backup b);
+  public static int sqlite3_backup_pagecount(@NotNull sqlite3_backup b){
+    return sqlite3_backup_pagecount(b.getNativePointer());
+  }
 
   @Canonical
-  public static native int sqlite3_backup_step(
-    @NotNull sqlite3_backup b, int nPage
-  );
+  private static native int sqlite3_backup_remaining(@NotNull long ptrToBackup);
+
+  @Canonical
+  public static int sqlite3_backup_remaining(@NotNull sqlite3_backup b){
+    return sqlite3_backup_remaining(b.getNativePointer());
+  }
+
+  @Canonical
+  private static native int sqlite3_backup_step(@NotNull long ptrToBackup, int nPage);
+
+  @Canonical
+  public static int sqlite3_backup_step(@NotNull sqlite3_backup b, int nPage){
+    return sqlite3_backup_step(b.getNativePointer(), nPage);
+  }
 
   /**
      Results are undefined if data is not null and n<0 || n>=data.length.

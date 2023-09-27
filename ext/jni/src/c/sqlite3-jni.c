@@ -1176,6 +1176,8 @@ static void S3JniHook__unref(JNIEnv * const env, S3JniHook * const s){
     }
     S3JniUnrefGlobal(s->jObj);
     S3JniUnrefGlobal(s->jExtra);
+  }else{
+    assert( !s->jExtra );
   }
   *s = S3JniHook_empty;
 }
@@ -1183,8 +1185,8 @@ static void S3JniHook__unref(JNIEnv * const env, S3JniHook * const s){
 
 /*
 ** Allocates one blank S3JniHook object from the recycling bin, if
-** available, else from the heap. Returns NULL or dies on OOM.  Locks
-** the global mutex.
+** available, else from the heap. Returns NULL or dies on OOM,
+** depending on build options.  Locks on SJG.hooks.mutex.
 */
 static S3JniHook *S3JniHook__alloc(JNIEnv  * const env){
   S3JniHook * p = 0;
@@ -1211,7 +1213,7 @@ static S3JniHook *S3JniHook__alloc(JNIEnv  * const env){
 
 /*
 ** The rightful fate of all results from S3JniHook_alloc(). Locks on
-** SJG>hooks.mutex.
+** SJG.hook.mutex.
 */
 static void S3JniHook__free(JNIEnv  * const env, S3JniHook * const p){
   if(p){
@@ -1290,10 +1292,11 @@ static void S3JniDb__set_aside(JNIEnv * const env, S3JniDb * const s){
 /*
 ** Uncache any state for the given JNIEnv, clearing all Java
 ** references the cache owns. Returns true if env was cached and false
-** if it was not found in the cache. Ownership of the given object is
-** passed over to this function, which makes it free for re-use.
+** if it was not found in the cache. Ownership of the S3JniEnv object
+** associated with the given argument is transferred to this function,
+** which makes it free for re-use.
 **
-** Requires that the Env mutex be locked.
+** Requires that the env mutex be locked.
 */
 static int S3JniEnv_uncache(JNIEnv * const env){
   struct S3JniEnv * row;
@@ -1307,7 +1310,7 @@ static int S3JniEnv_uncache(JNIEnv * const env){
     }
   }
   if( !row ){
-      return 0;
+    return 0;
   }
   if( pPrev) pPrev->pNext = row->pNext;
   else{
@@ -1432,6 +1435,13 @@ static void * NativePointerHolder__get(JNIEnv * env, jobject jNph,
 ** will work, despite the incorrect macro name, so long as the
 ** argument is a Java sqlite3 object, as this operation only has void
 ** pointers to work with.
+**
+** PtrCast_T(X,Y) variant expects X to be an unqualified sqlite3
+** struct type name and Y to be a native pointer to such an object in
+** the form of a jlong value. The jlong is simply cast to (X*). This
+** approach is, as of 2023-09-27, supplanting the former approach. We
+** now do the native pointer extraction in the Java side, rather than
+** the C side, because it's reportedly significantly faster.
 */
 #define PtrGet_T(T,OBJ) (T*)NativePointerHolder_get(OBJ, S3JniNph(T))
 #define PtrGet_sqlite3(OBJ) PtrGet_T(sqlite3, OBJ)
@@ -1440,12 +1450,14 @@ static void * NativePointerHolder__get(JNIEnv * env, jobject jNph,
 #define PtrGet_sqlite3_context(OBJ) PtrGet_T(sqlite3_context, OBJ)
 #define PtrGet_sqlite3_stmt(OBJ) PtrGet_T(sqlite3_stmt, OBJ)
 #define PtrGet_sqlite3_value(OBJ) PtrGet_T(sqlite3_value, OBJ)
+#define PtrCast_T(T,JLongPtr) (T*)(JLongPtr)
 
 /*
 ** Extracts the new S3JniDb instance from the free-list, or allocates
-** one if needed, associates it with pDb, and returns.  Returns NULL on
-** OOM. pDb MUST, on success of the calling operation, subsequently be
-** associated with jDb via NativePointerHolder_set().
+** one if needed, associates it with pDb, and returns.  Returns NULL
+** on OOM. The returned object MUST, on success of the calling
+** operation, subsequently be associated with jDb via
+** NativePointerHolder_set() or freed using S3JniDb_set_aside().
 */
 static S3JniDb * S3JniDb_alloc(JNIEnv * const env, jobject jDb){
   S3JniDb * rv = 0;
@@ -2219,19 +2231,21 @@ S3JniApi(sqlite3_auto_extension(),jint,1auto_1extension)(
 }
 
 S3JniApi(sqlite3_backup_finish(),jint,1backup_1finish)(
-  JniArgsEnvClass, jobject jBack
+  JniArgsEnvClass, jlong jpBack
 ){
-  sqlite3_backup * const pB = PtrGet_sqlite3_backup(jBack);
-  NativePointerHolder_set(S3JniNph(sqlite3_backup), jBack, 0);
-  return sqlite3_backup_finish(pB);
+  int rc = 0;
+  if( jpBack!=0 ){
+    rc = sqlite3_backup_finish( PtrCast_T(sqlite3_backup,jpBack) );
+  }
+  return rc;
 }
 
 S3JniApi(sqlite3_backup_init(),jobject,1backup_1init)(
-  JniArgsEnvClass, jobject jDbDest, jstring jTDest,
-  jobject jDbSrc, jstring jTSrc
+  JniArgsEnvClass, jlong jpDbDest, jstring jTDest,
+  jlong jpDbSrc, jstring jTSrc
 ){
-  sqlite3 * const pDest = PtrGet_sqlite3(jDbDest);
-  sqlite3 * const pSrc = PtrGet_sqlite3(jDbSrc);
+  sqlite3 * const pDest = PtrCast_T(sqlite3,jpDbDest);
+  sqlite3 * const pSrc = PtrCast_T(sqlite3,jpDbSrc);
   char * const zDest = s3jni_jstring_to_utf8(jTDest, 0);
   char * const zSrc = s3jni_jstring_to_utf8(jTSrc, 0);
   jobject rv = 0;
@@ -2252,21 +2266,21 @@ S3JniApi(sqlite3_backup_init(),jobject,1backup_1init)(
 }
 
 S3JniApi(sqlite3_backup_pagecount(),jint,1backup_1pagecount)(
-  JniArgsEnvClass, jobject jBack
+  JniArgsEnvClass, jlong jpBack
 ){
-  return sqlite3_backup_pagecount(PtrGet_sqlite3_backup(jBack));
+  return sqlite3_backup_pagecount(PtrCast_T(sqlite3_backup,jpBack));
 }
 
 S3JniApi(sqlite3_backup_remaining(),jint,1backup_1remaining)(
-  JniArgsEnvClass, jobject jBack
+  JniArgsEnvClass, jlong jpBack
 ){
-  return sqlite3_backup_remaining(PtrGet_sqlite3_backup(jBack));
+  return sqlite3_backup_remaining(PtrCast_T(sqlite3_backup,jpBack));
 }
 
 S3JniApi(sqlite3_backup_step(),jint,1backup_1step)(
-  JniArgsEnvClass, jobject jBack, jint nPage
+  JniArgsEnvClass, jlong jpBack, jint nPage
 ){
-  return sqlite3_backup_step(PtrGet_sqlite3_backup(jBack), (int)nPage);
+  return sqlite3_backup_step(PtrCast_T(sqlite3_backup,jpBack), (int)nPage);
 }
 
 S3JniApi(sqlite3_bind_blob(),jint,1bind_1blob)(
@@ -3393,12 +3407,9 @@ S3JniApi(sqlite3_extended_result_codes(),jboolean,1extended_1result_1codes)(
 S3JniApi(sqlite3_finalize(),jint,1finalize)(
   JniArgsEnvClass, jlong jpStmt
 ){
-  int rc = 0;
-  if( jpStmt ){
-    sqlite3_stmt * const pStmt = (void*)jpStmt;
-    rc = sqlite3_finalize(pStmt);
-  }
-  return rc;
+  return jpStmt
+    ? sqlite3_finalize(PtrCast_T(sqlite3_stmt,jpStmt))
+    : 0;
 }
 
 S3JniApi(sqlite3_get_auxdata(),jobject,1get_1auxdata)(
@@ -3638,18 +3649,18 @@ jint sqlite3_jni_prepare_v123( int prepVersion, JNIEnv * const env, jclass self,
     goto end;
   }
   switch( prepVersion ){
-    case 1: rc = sqlite3_prepare((sqlite3*)jpDb, (const char *)pBuf,
+    case 1: rc = sqlite3_prepare(PtrCast_T(sqlite3,jpDb), (const char *)pBuf,
                                  (int)nMax, &pStmt, &zTail);
       break;
-    case 2: rc = sqlite3_prepare_v2((sqlite3*)jpDb, (const char *)pBuf,
+    case 2: rc = sqlite3_prepare_v2(PtrCast_T(sqlite3,jpDb), (const char *)pBuf,
                                     (int)nMax, &pStmt, &zTail);
       break;
-    case 3: rc = sqlite3_prepare_v3((sqlite3*)jpDb, (const char *)pBuf,
+    case 3: rc = sqlite3_prepare_v3(PtrCast_T(sqlite3,jpDb), (const char *)pBuf,
                                     (int)nMax, (unsigned int)prepFlags,
                                     &pStmt, &zTail);
       break;
     default:
-      assert(0 && "Invalid prepare() version");
+      assert(!"Invalid prepare() version");
   }
 end:
   s3jni_jbyteArray_release(baSql,pBuf);
