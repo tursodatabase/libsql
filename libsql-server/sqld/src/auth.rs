@@ -191,7 +191,7 @@ impl Authenticated {
                     level
                 )))
             }
-            None => return Err(Status::invalid_argument("unable to convert to ascii")),
+            None => return Err(Status::invalid_argument("x-proxy-authorization not set")),
         };
 
         Ok(auth)
