@@ -958,66 +958,66 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1bind_1zeroblob64
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_blob_bytes
- * Signature: (Lorg/sqlite/jni/sqlite3_blob;)I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1blob_1bytes
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_blob_close
- * Signature: (Lorg/sqlite/jni/sqlite3_blob;)I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1blob_1close
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_blob_open
- * Signature: (Lorg/sqlite/jni/sqlite3;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JILorg/sqlite/jni/OutputPointer/sqlite3_blob;)I
+ * Signature: (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;JILorg/sqlite/jni/OutputPointer/sqlite3_blob;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1blob_1open
-  (JNIEnv *, jclass, jobject, jstring, jstring, jstring, jlong, jint, jobject);
+  (JNIEnv *, jclass, jlong, jstring, jstring, jstring, jlong, jint, jobject);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_blob_read
- * Signature: (Lorg/sqlite/jni/sqlite3_blob;[BI)I
+ * Signature: (J[BI)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1blob_1read
-  (JNIEnv *, jclass, jobject, jbyteArray, jint);
+  (JNIEnv *, jclass, jlong, jbyteArray, jint);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_blob_reopen
- * Signature: (Lorg/sqlite/jni/sqlite3_blob;J)I
+ * Signature: (JJ)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1blob_1reopen
-  (JNIEnv *, jclass, jobject, jlong);
+  (JNIEnv *, jclass, jlong, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_blob_write
- * Signature: (Lorg/sqlite/jni/sqlite3_blob;[BI)I
+ * Signature: (J[BI)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1blob_1write
-  (JNIEnv *, jclass, jobject, jbyteArray, jint);
+  (JNIEnv *, jclass, jlong, jbyteArray, jint);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_busy_handler
- * Signature: (Lorg/sqlite/jni/sqlite3;Lorg/sqlite/jni/BusyHandlerCallback;)I
+ * Signature: (JLorg/sqlite/jni/BusyHandlerCallback;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1busy_1handler
-  (JNIEnv *, jclass, jobject, jobject);
+  (JNIEnv *, jclass, jlong, jobject);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_busy_timeout
- * Signature: (Lorg/sqlite/jni/sqlite3;I)I
+ * Signature: (JI)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1busy_1timeout
-  (JNIEnv *, jclass, jobject, jint);
+  (JNIEnv *, jclass, jlong, jint);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1054,18 +1054,18 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1clear_1bindings
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_close
- * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1close
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_close_v2
- * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1close_1v2
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni

@@ -436,17 +436,37 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  public static native int sqlite3_blob_bytes(@NotNull sqlite3_blob blob);
+  private static native int sqlite3_blob_bytes(@NotNull long ptrToBlob);
 
   @Canonical
-  public static native int sqlite3_blob_close(@Nullable sqlite3_blob blob);
+  public static int sqlite3_blob_bytes(@NotNull sqlite3_blob blob){
+    return sqlite3_blob_bytes(blob.getNativePointer());
+  }
 
   @Canonical
-  public static native int sqlite3_blob_open(
-    @NotNull sqlite3 db, @NotNull String dbName,
+  static native int sqlite3_blob_close(@Nullable long ptrToBlob);
+
+  @Canonical
+  public static int sqlite3_blob_close(@Nullable sqlite3_blob blob){
+    return sqlite3_blob_close(blob.clearNativePointer());
+  }
+
+  @Canonical
+  private static native int sqlite3_blob_open(
+    @NotNull long ptrToDb, @NotNull String dbName,
     @NotNull String tableName, @NotNull String columnName,
     long iRow, int flags, @NotNull OutputPointer.sqlite3_blob out
   );
+
+  @Canonical
+  public static int sqlite3_blob_open(
+    @NotNull sqlite3 db, @NotNull String dbName,
+    @NotNull String tableName, @NotNull String columnName,
+    long iRow, int flags, @NotNull OutputPointer.sqlite3_blob out
+  ){
+    return sqlite3_blob_open(db.getNativePointer(), dbName, tableName,
+                             columnName, iRow, flags, out);
+  }
 
   /**
      Convenience overload.
@@ -456,23 +476,48 @@ public final class SQLite3Jni {
     @NotNull String tableName, @NotNull String columnName,
     long iRow, int flags ){
     final OutputPointer.sqlite3_blob out = new OutputPointer.sqlite3_blob();
-    sqlite3_blob_open(db, dbName, tableName, columnName, iRow, flags, out);
+    sqlite3_blob_open(db.getNativePointer(), dbName, tableName, columnName,
+                      iRow, flags, out);
     return out.take();
   };
 
   @Canonical
-  public static native int sqlite3_blob_read(
+  private static native int sqlite3_blob_read(
+    @NotNull long ptrToBlob, @NotNull byte[] target, int iOffset
+  );
+
+  @Canonical
+  public static int sqlite3_blob_read(
     @NotNull sqlite3_blob b, @NotNull byte[] target, int iOffset
+  ){
+    return sqlite3_blob_read(b.getNativePointer(), target, iOffset);
+  }
+
+  @Canonical
+  private static native int sqlite3_blob_reopen(
+    @NotNull long ptrToBlob, long newRowId
   );
 
   @Canonical
-  public static native int sqlite3_blob_reopen(
-    @NotNull sqlite3_blob out, long newRowId
+  public static int sqlite3_blob_reopen(@NotNull sqlite3_blob b, long newRowId){
+    return sqlite3_blob_reopen(b.getNativePointer(), newRowId);
+  }
+
+  @Canonical
+  private static native int sqlite3_blob_write(
+    @NotNull long ptrToBlob, @NotNull byte[] bytes, int iOffset
   );
 
   @Canonical
-  public static native int sqlite3_blob_write(
-    @NotNull sqlite3_blob out, @NotNull byte[] bytes, int iOffset
+  public static int sqlite3_blob_write(
+    @NotNull sqlite3_blob b, @NotNull byte[] bytes, int iOffset
+  ){
+    return sqlite3_blob_write(b.getNativePointer(), bytes, iOffset);
+  }
+
+  @Canonical
+  private static native int sqlite3_busy_handler(
+    @NotNull long ptrToDb, @Nullable BusyHandlerCallback handler
   );
 
   /**
@@ -481,14 +526,19 @@ public final class SQLite3Jni {
      function. Pass it a null handler to clear the busy handler.
   */
   @Canonical
-  public static native int sqlite3_busy_handler(
+  public static int sqlite3_busy_handler(
     @NotNull sqlite3 db, @Nullable BusyHandlerCallback handler
-  );
+  ){
+    return sqlite3_busy_handler(db.getNativePointer(), handler);
+  }
 
   @Canonical
-  public static native int sqlite3_busy_timeout(
-    @NotNull sqlite3 db, int ms
-  );
+  private static native int sqlite3_busy_timeout(@NotNull long ptrToDb, int ms);
+
+  @Canonical
+  public static int sqlite3_busy_timeout(@NotNull sqlite3 db, int ms){
+    return sqlite3_busy_timeout(db.getNativePointer(), ms);
+  }
 
   @Canonical
   public static native boolean sqlite3_cancel_auto_extension(
@@ -511,14 +561,22 @@ public final class SQLite3Jni {
   );
 
   @Canonical
-  public static native int sqlite3_close(
-    @Nullable sqlite3 db
-  );
+  private static native int sqlite3_close(@Nullable long ptrToDb);
 
   @Canonical
-  public static native int sqlite3_close_v2(
-    @Nullable sqlite3 db
-  );
+  public static int sqlite3_close(@Nullable sqlite3 db){
+    final int rc = sqlite3_close(db.getNativePointer());
+    if( 0==rc ) db.clearNativePointer();
+    return rc;
+  }
+
+  @Canonical
+  static native int sqlite3_close_v2(@Nullable long ptrToDb);
+
+  @Canonical
+  public static int sqlite3_close_v2(@Nullable sqlite3 db){
+    return sqlite3_close_v2(db.clearNativePointer());
+  }
 
   @Canonical
   public static native byte[] sqlite3_column_blob(
@@ -831,7 +889,7 @@ public final class SQLite3Jni {
   public static native int sqlite3_error_offset(@NotNull sqlite3 db);
 
   @Canonical
-  private static native int sqlite3_finalize(long ptrToStmt);
+  static native int sqlite3_finalize(long ptrToStmt);
 
   @Canonical
   public static int sqlite3_finalize(@NotNull sqlite3_stmt stmt){
