@@ -339,7 +339,7 @@ where
         let idle_shutdown_kicker = self.setup_shutdown();
 
         let snapshot_callback = self.make_snapshot_callback();
-        let auth = self.user_api_config.get_auth()?.into();
+        let auth = self.user_api_config.get_auth().map(Arc::new)?;
         let extensions = self.db_config.validate_extensions()?;
 
         match self.rpc_client_config {
@@ -350,6 +350,7 @@ where
                     extensions,
                     db_config: self.db_config.clone(),
                     base_path: self.path.clone(),
+                    auth: auth.clone(),
                 };
                 let (namespaces, proxy_service, replication_service) = replica.configure().await?;
                 let services = Services {
@@ -504,6 +505,7 @@ struct Replica<C> {
     extensions: Arc<[PathBuf]>,
     db_config: DbConfig,
     base_path: Arc<Path>,
+    auth: Arc<Auth>,
 }
 
 impl<C: Connector> Replica<C> {
@@ -528,7 +530,7 @@ impl<C: Connector> Replica<C> {
         let factory = ReplicaNamespaceMaker::new(conf);
         let namespaces = NamespaceStore::new(factory, true);
         let replication_service = ReplicationLogProxyService::new(channel.clone(), uri.clone());
-        let proxy_service = ReplicaProxyService::new(channel, uri);
+        let proxy_service = ReplicaProxyService::new(channel, uri, self.auth.clone());
 
         Ok((namespaces, proxy_service, replication_service))
     }
