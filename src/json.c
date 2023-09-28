@@ -3508,6 +3508,21 @@ static void jsonRenderNodeAsBlob(
 }
 
 /*
+** Given that a JSONB_ARRAY object starts at offset i, return
+** the number of entries in that array.
+*/
+static u32 jsonbArrayCount(JsonParse *pParse, u32 iRoot){
+  u32 n, sz, i, iEnd;
+  u32 k = 0;
+  n = jsonbPayloadSize(pParse, iRoot, &sz);
+  iEnd = iRoot+n+sz;
+  for(i=iRoot+n; i<iEnd; i+=sz+n, k++){
+    n = jsonbPayloadSize(pParse, i, &sz);
+  }
+  return k;
+}
+
+/*
 ** Error returns from jsonLookupBlobStep()
 */
 #define JSON_BLOB_ERROR      0xffffffff
@@ -3579,6 +3594,9 @@ static u32 jsonLookupBlobStep(
     }
     if( j>iEnd ) return JSON_BLOB_ERROR;
   }else if( zPath[0]=='[' ){
+    x = pParse->aBlob[iRoot] & 0x0f;
+    if( x!=JSONB_ARRAY )  return JSON_BLOB_NOTFOUND;
+    n = jsonbPayloadSize(pParse, iRoot, &sz);
     k = 0;
     i = 1;
     while( sqlite3Isdigit(zPath[i]) ){
@@ -3586,49 +3604,28 @@ static u32 jsonLookupBlobStep(
       i++;
     }
     if( i<2 || zPath[i]!=']' ){
-#if 0
       if( zPath[1]=='#' ){
-        JsonNode *pBase = pRoot;
-        int iBase = iRoot;
-        if( pRoot->eType!=JSON_ARRAY ) return 0;
-        for(;;){
-          while( j<=pBase->n ){
-            if( (pBase[j].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ) i++;
-            j += jsonNodeSize(&pBase[j]);
-          }
-          if( (pBase->jnFlags & JNODE_APPEND)==0 ) break;
-          if( pParse->useMod==0 ) break;
-          assert( pBase->eU==2 );
-          iBase = pBase->u.iAppend;
-          pBase = &pParse->aNode[iBase];
-          j = 1;
-        }
-        j = 2;
+        k = jsonbArrayCount(pParse, iRoot);
+        i = 2;
         if( zPath[2]=='-' && sqlite3Isdigit(zPath[3]) ){
           unsigned int x = 0;
-          j = 3;
+          i = 3;
           do{
-            x = x*10 + zPath[j] - '0';
-            j++;
-          }while( sqlite3Isdigit(zPath[j]) );
-          if( x>i ) return 0;
-          i -= x;
+            x = x*10 + zPath[i] - '0';
+            i++;
+          }while( sqlite3Isdigit(zPath[i]) );
+          if( x>k ) return 0;
+          k -= x;
         }
-        if( zPath[j]!=']' ){
+        if( zPath[i]!=']' ){
           *pzErr = zPath;
-          return 0;
+          return JSON_BLOB_PATHERROR;
         }
       }else{
         *pzErr = zPath;
-        return 0;
+        return JSON_BLOB_PATHERROR;
       }
-#endif
-      *pzErr = zPath;
-      return JSON_BLOB_PATHERROR;
     }
-    x = pParse->aBlob[iRoot] & 0x0f;
-    if( x!=JSONB_ARRAY )  return JSON_BLOB_NOTFOUND;
-    n = jsonbPayloadSize(pParse, iRoot, &sz);
     j = iRoot+n;
     iEnd = j+sz;
     while( j<iEnd ){
