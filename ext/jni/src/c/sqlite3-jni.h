@@ -1030,18 +1030,18 @@ JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1cancel_1auto_
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_changes
- * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1changes
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_changes64
- * Signature: (Lorg/sqlite/jni/sqlite3;)J
+ * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1changes64
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1349,6 +1349,14 @@ JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errmsg16
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_error_offset
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1error_1offset
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_errstr
  * Signature: (I)Ljava/lang/String;
  */
@@ -1366,10 +1374,10 @@ JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1expanded_1sql
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_extended_errcode
- * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1extended_1errcode
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1382,10 +1390,10 @@ JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1extended_1res
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_get_autocommit
- * Signature: (Lorg/sqlite/jni/sqlite3;)Z
+ * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1get_1autocommit
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1394,14 +1402,6 @@ JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1get_1autocomm
  */
 JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1get_1auxdata
   (JNIEnv *, jclass, jobject, jint);
-
-/*
- * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_error_offset
- * Signature: (Lorg/sqlite/jni/sqlite3;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1error_1offset
-  (JNIEnv *, jclass, jobject);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1534,26 +1534,26 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1prepare_1v3
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_preupdate_blobwrite
- * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1preupdate_1blobwrite
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_preupdate_count
- * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1preupdate_1count
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_preupdate_depth
- * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1preupdate_1depth
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1886,10 +1886,10 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1strlike
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_system_errno
- * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1system_1errno
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1910,18 +1910,18 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1threadsafe
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_total_changes
- * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1total_1changes
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_total_changes64
- * Signature: (Lorg/sqlite/jni/sqlite3;)J
+ * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1total_1changes64
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni

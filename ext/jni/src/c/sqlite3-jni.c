@@ -2012,23 +2012,23 @@ static void udf_xInverse(sqlite3_context* cx, int argc,
 #define WRAP_STR_STMT_INT(JniNameSuffix,CName)                              \
   JniDecl(jstring,JniNameSuffix)(JniArgsEnvClass, jobject pStmt, jint ndx){ \
     return s3jni_utf8_to_jstring(                                       \
-                                 CName(PtrGet_sqlite3_stmt(pStmt), (int)ndx), \
-                                 -1);                                       \
-  }
-/** Create a trivial JNI wrapper for (int CName(sqlite3*)). */
-#define WRAP_INT_DB(JniNameSuffix,CName)                     \
-  JniDecl(jint,JniNameSuffix)(JniArgsEnvClass, jobject pDb){ \
-    return (jint)CName(PtrGet_sqlite3(pDb));                 \
+      CName(PtrGet_sqlite3_stmt(pStmt), (int)ndx),                      \
+      -1);                                                              \
   }
 /** Create a trivial JNI wrapper for (boolean CName(sqlite3*)). */
-#define WRAP_BOOL_DB(JniNameSuffix,CName)                     \
-  JniDecl(jboolean,JniNameSuffix)(JniArgsEnvClass, jobject pDb){ \
-    return CName(PtrGet_sqlite3(pDb)) ? JNI_TRUE : JNI_FALSE; \
+#define WRAP_BOOL_DB(JniNameSuffix,CName)                           \
+  JniDecl(jboolean,JniNameSuffix)(JniArgsEnvClass, jlong jpDb){     \
+    return CName(S3JniLongPtr_sqlite3(jpDb)) ? JNI_TRUE : JNI_FALSE; \
+  }
+/** Create a trivial JNI wrapper for (int CName(sqlite3*)). */
+#define WRAP_INT_DB(JniNameSuffix,CName)                    \
+  JniDecl(jint,JniNameSuffix)(JniArgsEnvClass, jlong jpDb){ \
+  return (jint)CName(S3JniLongPtr_sqlite3(jpDb)); \
   }
 /** Create a trivial JNI wrapper for (int64 CName(sqlite3*)). */
-#define WRAP_INT64_DB(JniNameSuffix,CName)                    \
-  JniDecl(jlong,JniNameSuffix)(JniArgsEnvClass, jobject pDb){ \
-    return (jlong)CName(PtrGet_sqlite3(pDb));                 \
+#define WRAP_INT64_DB(JniNameSuffix,CName)                   \
+  JniDecl(jlong,JniNameSuffix)(JniArgsEnvClass, jlong jpDb){ \
+  return (jlong)CName(S3JniLongPtr_sqlite3(jpDb));  \
   }
 /** Create a trivial JNI wrapper for (int CName(sqlite3_value*)). */
 #define WRAP_INT_SVALUE(JniNameSuffix,CName)                      \

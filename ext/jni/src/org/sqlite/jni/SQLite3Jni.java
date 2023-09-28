@@ -546,14 +546,20 @@ public final class SQLite3Jni {
   );
 
   @Canonical
-  public static native int sqlite3_changes(
-    @NotNull sqlite3 db
-  );
+  private static native int sqlite3_changes(@NotNull long ptrToDb);
 
   @Canonical
-  public static native long sqlite3_changes64(
-    @NotNull sqlite3 db
-  );
+  public static int sqlite3_changes(@NotNull sqlite3 db){
+    return sqlite3_changes(db.getNativePointer());
+  }
+
+  @Canonical
+  private static native long sqlite3_changes64(@NotNull long ptrToDb);
+
+  @Canonical
+  public static long sqlite3_changes64(@NotNull sqlite3 db){
+    return sqlite3_changes64(db.getNativePointer());
+  }
 
   @Canonical
   public static native int sqlite3_clear_bindings(
@@ -860,13 +866,30 @@ public final class SQLite3Jni {
   public static native String sqlite3_errmsg16(@NotNull sqlite3 db);
 
   @Canonical
+  private static native int sqlite3_error_offset(@NotNull long ptrToDb);
+
+  /**
+     Note that the returned byte offset values assume UTF-8-encoded
+     inputs, so won't always match character offsets in Java Strings.
+  */
+  @Canonical
+  public static int sqlite3_error_offset(@NotNull sqlite3 db){
+    return sqlite3_error_offset(db.getNativePointer());
+  }
+
+  @Canonical
   public static native String sqlite3_errstr(int resultCode);
 
   @Canonical
   public static native String sqlite3_expanded_sql(@NotNull sqlite3_stmt stmt);
 
   @Canonical
-  public static native int sqlite3_extended_errcode(@NotNull sqlite3 db);
+  private static native int sqlite3_extended_errcode(@NotNull long ptrToDb);
+
+  @Canonical
+  public static int sqlite3_extended_errcode(@NotNull sqlite3 db){
+    return sqlite3_extended_errcode(db.getNativePointer());
+  }
 
   @Canonical
   public static native boolean sqlite3_extended_result_codes(
@@ -874,19 +897,17 @@ public final class SQLite3Jni {
   );
 
   @Canonical
-  public static native boolean sqlite3_get_autocommit(@NotNull sqlite3 db);
+  private static native boolean sqlite3_get_autocommit(@NotNull long ptrToDb);
+
+  @Canonical
+  public static boolean sqlite3_get_autocommit(@NotNull sqlite3 db){
+    return sqlite3_get_autocommit(db.getNativePointer());
+  }
 
   @Canonical
   public static native Object sqlite3_get_auxdata(
     @NotNull sqlite3_context cx, int n
   );
-
-  /**
-     Note that the returned byte offset values assume UTF-8-encoded
-     inputs, so won't always match character offsets in Java Strings.
-  */
-  @Canonical
-  public static native int sqlite3_error_offset(@NotNull sqlite3 db);
 
   @Canonical
   static native int sqlite3_finalize(long ptrToStmt);
@@ -1274,6 +1295,8 @@ public final class SQLite3Jni {
     return sqlite3_prepare_multi(db, sql, 0, p);
   }
 
+  @Canonical
+  private static native int sqlite3_preupdate_blobwrite(@NotNull long ptrToDb);
 
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this
@@ -1281,21 +1304,35 @@ public final class SQLite3Jni {
      SQLITE_MISUSE with no side effects.
   */
   @Canonical
-  public static native int sqlite3_preupdate_blobwrite(@NotNull sqlite3 db);
+  public static int sqlite3_preupdate_blobwrite(@NotNull sqlite3 db){
+    return sqlite3_preupdate_blobwrite(db.getNativePointer());
+  }
+
+  @Canonical
+  private static native int sqlite3_preupdate_count(@NotNull long ptrToDb);
+
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this
      acts as a proxy for C's sqlite3_preupdate_count(), else it returns
      SQLITE_MISUSE with no side effects.
   */
   @Canonical
-  public static native int sqlite3_preupdate_count(@NotNull sqlite3 db);
+  public static int sqlite3_preupdate_count(@NotNull sqlite3 db){
+    return sqlite3_preupdate_count(db.getNativePointer());
+  }
+
+  @Canonical
+  private static native int sqlite3_preupdate_depth(@NotNull long ptrToDb);
+
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this
      acts as a proxy for C's sqlite3_preupdate_depth(), else it returns
      SQLITE_MISUSE with no side effects.
   */
   @Canonical
-  public static native int sqlite3_preupdate_depth(@NotNull sqlite3 db);
+  public static int sqlite3_preupdate_depth(@NotNull sqlite3 db){
+    return sqlite3_preupdate_depth(db.getNativePointer());
+  }
 
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this
@@ -1793,7 +1830,12 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  public static native int sqlite3_system_errno(@NotNull sqlite3 db);
+  private static native int sqlite3_system_errno(@NotNull long ptrToDb);
+
+  @Canonical
+  public static int sqlite3_system_errno(@NotNull sqlite3 db){
+    return sqlite3_system_errno(db.getNativePointer());
+  }
 
   @Canonical
   public static native int sqlite3_table_column_metadata(
@@ -1838,10 +1880,20 @@ public final class SQLite3Jni {
   public static native int sqlite3_threadsafe();
 
   @Canonical
-  public static native int sqlite3_total_changes(@NotNull sqlite3 db);
+  private static native int sqlite3_total_changes(@NotNull long ptrToDb);
 
   @Canonical
-  public static native long sqlite3_total_changes64(@NotNull sqlite3 db);
+  public static int sqlite3_total_changes(@NotNull sqlite3 db){
+    return sqlite3_total_changes(db.getNativePointer());
+  }
+
+  @Canonical
+  private static native long sqlite3_total_changes64(@NotNull long ptrToDb);
+
+  @Canonical
+  public static long sqlite3_total_changes64(@NotNull sqlite3 db){
+    return sqlite3_total_changes64(db.getNativePointer());
+  }
 
   /**
      Works like C's sqlite3_trace_v2() except that the 3rd argument to that
