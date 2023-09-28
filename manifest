@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\stestfixture\stesting\sutility.
-D 2023-09-26T21:22:46.800
+C Clarify\sserialization\sAPI\sdoc\sw.r.t.\sbuffer\svalidity\sand\susage,\sinstigated\sby\s[forum:/forumpost/8922e2ad2ad41205|forum\spost\s8922e2ad2ad41205].\sNo\scode\schanges.
+D 2023-09-28T15:00:25.435
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -712,7 +712,7 @@ F src/resolve.c 0c3046b88901336709cd09f474303a16fc54bce13a2befcab66d0fa6b44ca869
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 7f9155185be78902818b21c2cd3e33f01b4306279a15d6719eb1bbb9779034aa
 F src/shell.c.in 62708bea44d4e43aa7b1270ed422d1d29e82297924d4e0f223c39336a3f582f8
-F src/sqlite.h.in 931a58d119d5cf87110648f39fa0bb9f1738b0068cb68250d893304a471bd6c0
+F src/sqlite.h.in 4f39f61c35348f0c56dd2c7a2294d1f0564389a0086dab80ce0960bfd772dc1b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2f30b2671f4c03cd27a43f039e11251391066c97d11385f5f963bb40b03038ac
 F src/sqliteInt.h 1fc2a2ee3016dd3ce433db8432bef50b8266d017527d38ccb8abed87c8305d76
@@ -2122,8 +2122,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b633d8bbdbd43464ee03058c273e5188117b9538ed5d5148a1a3851e4adf6410
-R eced8690afdbfb647f02413884f65126
-U drh
-Z 45b315c34cd6350047553b4dd70ecf3a
+P 5a39a02d2dfd9ed6171cd0bd434b2bc268d0ed8ead6e1a396d1603266d9493ef
+R 414329bf52df990dae021d41224235ff
+U larrybr
+Z 0d5cdadb62efac32ee8f7d7af101cd86
 # Remove this line to create a well-formed Fossil manifest.
