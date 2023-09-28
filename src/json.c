@@ -518,6 +518,14 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
 ** features.
 */
 static void jsonAppendNormalizedInt(JsonString *p, const char *zIn, u32 N){
+  char *zBuf = sqlite3_malloc64( N+1 );
+  if( zBuf==0 ){
+    p->bErr = 1;
+    return;
+  }
+  memcpy(zBuf, zIn, N);
+  zBuf[N] = 0;
+  zIn = zBuf;
   if( zIn[0]=='+' ){
     zIn++;
     N--;
@@ -539,6 +547,7 @@ static void jsonAppendNormalizedInt(JsonString *p, const char *zIn, u32 N){
   }
   assert( N>0 );
   jsonAppendRawNZ(p, zIn, N);
+  sqlite3_free(zBuf);
 }
 
 /*
@@ -958,12 +967,16 @@ static void jsonReturn(
       int rc;
       int bNeg = 0;
       const char *z;
+      char *zz;
+      sqlite3 *db = sqlite3_context_db_handle(pCtx);
 
       assert( pNode->eU==1 );
-      z = pNode->u.zJContent;
+      zz = sqlite3DbStrNDup(db, pNode->u.zJContent, pNode->n);
+      z = zz;
       if( z[0]=='-' ){ z++; bNeg = 1; }
       else if( z[0]=='+' ){ z++; }
       rc = sqlite3DecOrHexToI64(z, &i);
+      sqlite3DbFree(db, zz);
       if( rc<=1 ){
         sqlite3_result_int64(pCtx, bNeg ? -i : i);
       }else if( rc==3 && bNeg ){
@@ -1862,7 +1875,7 @@ static int jsonParse(
     i = jsonParseValue(pParse, 0);
   }
   if( pParse->oom ) i = -1;
-  if( i>0 ){
+  if( !pParse->isBinary && i>0 ){
     assert( pParse->iDepth==0 );
     while( fast_isspace(zJson[i]) ) i++;
     if( zJson[i] ){
@@ -3359,6 +3372,7 @@ static int jsonParseValueFromBlob(JsonParse *pParse, u32 i){
       break;
     }
   }
+  pParse->aBlob[i] = 0;
   return i+x+sz;
 }
 
@@ -3450,7 +3464,7 @@ static void jsonRenderNodeAsBlob(
     case JSON_ARRAY: {
       u32 j = 1;
       u32 iStart, iThis = pOut->nBlob;
-      jsonBlobAppendNodeType(pOut, JSONB_ARRAY, 0x7fffffff);
+      jsonBlobAppendNodeType(pOut, JSONB_ARRAY, pParse->nJson*2);
       iStart = pOut->nBlob;
       for(;;){
         while( j<=pNode->n ){
@@ -3471,7 +3485,7 @@ static void jsonRenderNodeAsBlob(
     case JSON_OBJECT: {
       u32 j = 1;
       u32 iStart, iThis = pOut->nBlob;
-      jsonBlobAppendNodeType(pOut, JSONB_OBJECT, 0x7fffffff);
+      jsonBlobAppendNodeType(pOut, JSONB_OBJECT, pParse->nJson*2);
       iStart = pOut->nBlob;
       for(;;){
         while( j<=pNode->n ){
