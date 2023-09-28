@@ -1372,15 +1372,26 @@ public final class SQLite3Jni {
     return sqlite3_preupdate_depth(db.getNativePointer());
   }
 
+  @Canonical
+  private static native PreupdateHookCallback sqlite3_preupdate_hook(
+    @NotNull long ptrToDb, @Nullable PreupdateHookCallback hook
+  );
+
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this
      acts as a proxy for C's sqlite3_preupdate_hook(), else it returns null
      with no side effects.
   */
   @Canonical
-  public static native PreupdateHookCallback sqlite3_preupdate_hook(
+  public static PreupdateHookCallback sqlite3_preupdate_hook(
     @NotNull sqlite3 db, @Nullable PreupdateHookCallback hook
-  );
+  ){
+    return sqlite3_preupdate_hook(db.getNativePointer(), hook);
+  }
+
+  @Canonical
+  private static native int sqlite3_preupdate_new(@NotNull long ptrToDb, int col,
+                                                 @NotNull OutputPointer.sqlite3_value out);
 
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined,
@@ -1388,8 +1399,10 @@ public final class SQLite3Jni {
      returns SQLITE_MISUSE with no side effects.
   */
   @Canonical
-  public static native int sqlite3_preupdate_new(@NotNull sqlite3 db, int col,
-                                                 @NotNull OutputPointer.sqlite3_value out);
+  public static int sqlite3_preupdate_new(@NotNull sqlite3 db, int col,
+                                          @NotNull OutputPointer.sqlite3_value out){
+    return sqlite3_preupdate_new(db.getNativePointer(), col, out);
+  }
 
   /**
      Convenience wrapper for the 3-arg sqlite3_preupdate_new() which returns
@@ -1397,9 +1410,13 @@ public final class SQLite3Jni {
   */
   public static sqlite3_value sqlite3_preupdate_new(@NotNull sqlite3 db, int col){
     final OutputPointer.sqlite3_value out = new OutputPointer.sqlite3_value();
-    sqlite3_preupdate_new(db, col, out);
+    sqlite3_preupdate_new(db.getNativePointer(), col, out);
     return out.take();
   }
+
+  @Canonical
+  private static native int sqlite3_preupdate_old(@NotNull long ptrToDb, int col,
+                                                 @NotNull OutputPointer.sqlite3_value out);
 
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined,
@@ -1407,8 +1424,10 @@ public final class SQLite3Jni {
      returns SQLITE_MISUSE with no side effects.
   */
   @Canonical
-  public static native int sqlite3_preupdate_old(@NotNull sqlite3 db, int col,
-                                                 @NotNull OutputPointer.sqlite3_value out);
+  public static int sqlite3_preupdate_old(@NotNull sqlite3 db, int col,
+                                          @NotNull OutputPointer.sqlite3_value out){
+    return sqlite3_preupdate_old(db.getNativePointer(), col, out);
+  }
 
   /**
      Convenience wrapper for the 3-arg sqlite3_preupdate_old() which returns
@@ -1416,7 +1435,7 @@ public final class SQLite3Jni {
   */
   public static sqlite3_value sqlite3_preupdate_old(@NotNull sqlite3 db, int col){
     final OutputPointer.sqlite3_value out = new OutputPointer.sqlite3_value();
-    sqlite3_preupdate_old(db, col, out);
+    sqlite3_preupdate_old(db.getNativePointer(), col, out);
     return out.take();
   }
 
@@ -1966,9 +1985,16 @@ public final class SQLite3Jni {
   );
 
   @Canonical
-  public static native UpdateHookCallback sqlite3_update_hook(
-    @NotNull sqlite3 db, @Nullable UpdateHookCallback hook
+  private static native UpdateHookCallback sqlite3_update_hook(
+    @NotNull long ptrToDb, @Nullable UpdateHookCallback hook
   );
+
+  @Canonical
+  public static UpdateHookCallback sqlite3_update_hook(
+    @NotNull sqlite3 db, @Nullable UpdateHookCallback hook
+  ){
+    return sqlite3_update_hook(db.getNativePointer(), hook);
+  }
 
   /*
      Note that:
@@ -1981,7 +2007,12 @@ public final class SQLite3Jni {
   */
 
   @Canonical
-  public static native byte[] sqlite3_value_blob(@NotNull sqlite3_value v);
+  private static native byte[] sqlite3_value_blob(@NotNull long ptrToValue);
+
+  @Canonical
+  public static byte[] sqlite3_value_blob(@NotNull sqlite3_value v){
+    return sqlite3_value_blob(v.getNativePointer());
+  }
 
   @Canonical
   private static native int sqlite3_value_bytes(@NotNull long ptrToValue);
@@ -2000,12 +2031,20 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  public static native double sqlite3_value_double(@NotNull sqlite3_value v);
+  private static native double sqlite3_value_double(@NotNull long ptrToValue);
 
   @Canonical
-  public static native sqlite3_value sqlite3_value_dup(
-    @NotNull sqlite3_value v
-  );
+  public static double sqlite3_value_double(@NotNull sqlite3_value v){
+    return sqlite3_value_double(v.getNativePointer());
+  }
+
+  @Canonical
+  private static native sqlite3_value sqlite3_value_dup(@NotNull long ptrToValue);
+
+  @Canonical
+  public static sqlite3_value sqlite3_value_dup(@NotNull sqlite3_value v){
+    return sqlite3_value_dup(v.getNativePointer());
+  }
 
   @Canonical
   private static native int sqlite3_value_encoding(@NotNull long ptrToValue);
@@ -2016,7 +2055,12 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  public static native void sqlite3_value_free(@Nullable sqlite3_value v);
+  private static native void sqlite3_value_free(@Nullable long ptrToValue);
+
+  @Canonical
+  public static void sqlite3_value_free(@Nullable sqlite3_value v){
+    sqlite3_value_free(v.getNativePointer());
+  }
 
   @Canonical
   private static native int sqlite3_value_frombind(@NotNull long ptrToValue);
@@ -2027,10 +2071,22 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  public static native int sqlite3_value_int(@NotNull sqlite3_value v);
+  private static native int sqlite3_value_int(@NotNull long ptrToValue);
 
   @Canonical
-  public static native long sqlite3_value_int64(@NotNull sqlite3_value v);
+  public static int sqlite3_value_int(@NotNull sqlite3_value v){
+    return sqlite3_value_int(v.getNativePointer());
+  }
+
+  @Canonical
+  private static native long sqlite3_value_int64(@NotNull long ptrToValue);
+
+  @Canonical
+  public static long sqlite3_value_int64(@NotNull sqlite3_value v){
+    return sqlite3_value_int64(v.getNativePointer());
+  }
+
+  private static native Object sqlite3_value_java_object(@NotNull long ptrToValue);
 
   /**
      If the given value was set using {@link
@@ -2040,9 +2096,9 @@ public final class SQLite3Jni {
      <p>It is up to the caller to inspect the object to determine its
      type, and cast it if necessary.
   */
-  public static native Object sqlite3_value_java_object(
-    @NotNull sqlite3_value v
-  );
+  public static Object sqlite3_value_java_object(@NotNull sqlite3_value v){
+    return sqlite3_value_java_object(v.getNativePointer());
+  }
 
   /**
      A variant of sqlite3_value_java_object() which returns the
@@ -2080,6 +2136,9 @@ public final class SQLite3Jni {
     return sqlite3_value_subtype(v.getNativePointer());
   }
 
+  @Canonical
+  private static native byte[] sqlite3_value_text(@NotNull long ptrToValue);
+
   /**
      Functions identially to the C API, and this note is just to
      stress that the returned bytes are encoded as UTF-8. It returns
@@ -2087,10 +2146,17 @@ public final class SQLite3Jni {
      or on allocation error.
   */
   @Canonical
-  public static native byte[] sqlite3_value_text(@NotNull sqlite3_value v);
+  public static byte[] sqlite3_value_text(@NotNull sqlite3_value v){
+    return sqlite3_value_text(v.getNativePointer());
+  }
 
   @Canonical
-  public static native String sqlite3_value_text16(@NotNull sqlite3_value v);
+  private static native String sqlite3_value_text16(@NotNull long ptrToValue);
+
+  @Canonical
+  public static String sqlite3_value_text16(@NotNull sqlite3_value v){
+    return sqlite3_value_text16(v.getNativePointer());
+  }
 
   @Canonical
   private static native int sqlite3_value_type(@NotNull long ptrToValue);
