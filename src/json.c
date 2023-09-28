@@ -3634,7 +3634,34 @@ static u32 jsonLookupBlobStep(
 }
 
 /*
-** 
+** Convert a JSON BLOB into text and make that text the return value
+** of an SQL function.
+*/
+static void jsonReturnTextJsonFromBlob(
+  sqlite3_context *ctx,
+  const u8 *aBlob,
+  u32 nBlob
+){
+  JsonParse x;
+  JsonString s;
+
+  if( aBlob==0 ) return;
+  memset(&x, 0, sizeof(x));
+  x.aBlob = (u8*)aBlob;
+  x.nBlob = nBlob;
+  jsonInit(&s, ctx);
+  jsonRenderBlob(&x, 0, &s);
+  jsonResult(&s);
+}
+
+
+/*
+** Return the value of the BLOB node at index i.
+**
+** If the value is a primitive, return it as an SQL value.
+** If the value is an array or object, return it as either
+** JSON text or the BLOB encoding, depending on the JSON_B flag
+** on the userdata.
 */
 static void jsonReturnFromBlob(
   JsonParse *pParse,          /* Complete JSON parse tree */
@@ -3785,7 +3812,12 @@ static void jsonReturnFromBlob(
     }
     case JSONB_ARRAY:
     case JSONB_OBJECT: {
-      sqlite3_result_blob(pCtx, &pParse->aBlob[i+n], sz, SQLITE_TRANSIENT);
+      int flags = SQLITE_PTR_TO_INT(sqlite3_user_data(pCtx));
+      if( flags & JSON_BLOB ){
+        sqlite3_result_blob(pCtx, &pParse->aBlob[i], sz+n, SQLITE_TRANSIENT);
+      }else{
+        jsonReturnTextJsonFromBlob(pCtx, &pParse->aBlob[i], sz+n);
+      }
       break;
     }
   }
@@ -3992,23 +4024,13 @@ static void jsonbTest2(
   int argc,
   sqlite3_value **argv
 ){
-  JsonParse *pParse;
   const u8 *aBlob;
   int nBlob;
-  JsonParse x;
-  JsonString s;
   UNUSED_PARAMETER(argc);
 
   aBlob = (const u8*)sqlite3_value_blob(argv[0]);
-  if( aBlob==0 ) return;
   nBlob = sqlite3_value_bytes(argv[0]);
-  pParse = &x;
-  memset(&x, 0, sizeof(x));
-  x.aBlob = (u8*)aBlob;
-  x.nBlob = nBlob;
-  jsonInit(&s, ctx);
-  jsonRenderBlob(pParse, 0, &s);
-  jsonResult(&s);
+  jsonReturnTextJsonFromBlob(ctx, aBlob, nBlob);
 }
 
 /*
@@ -5401,6 +5423,7 @@ void sqlite3RegisterJsonFunctions(void){
     JFUNCTION(json_array_length,  2, 0,                    jsonArrayLengthFunc),
     JFUNCTION(json_error_position,1, 0,                    jsonErrorFunc),
     JFUNCTION(json_extract,      -1, 0,                    jsonExtractFunc),
+    JFUNCTION(jsonb_extract,     -1, JSON_BLOB,            jsonExtractFunc),
     JFUNCTION(->,                 2, JSON_JSON,            jsonExtractFunc),
     JFUNCTION(->>,                2, JSON_SQL,             jsonExtractFunc),
     JFUNCTION(json_insert,       -1, 0,                    jsonSetFunc),
