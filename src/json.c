@@ -3493,6 +3493,335 @@ static void jsonRenderNodeAsBlob(
   }
 }
 
+/*
+** Error returns from jsonLookupBlobStep()
+*/
+#define JSON_BLOB_ERROR      0xffffffff
+#define JSON_BLOB_NOTFOUND   0xfffffffe
+#define JSON_BLOB_PATHERROR  0xfffffffd
+
+/*
+** Search along zPath to find the Json element specified.  Return an
+** index into pParse->aBlob[] for the start of that element's value.
+**
+** Return JSON_BLOB_NOTFOUND if no such element exists.
+*/
+static u32 jsonLookupBlobStep(
+  JsonParse *pParse,      /* The JSON to search */
+  u32 iRoot,              /* Begin the search at this element of aBlob[] */
+  const char *zPath,      /* The path to search */
+  const char **pzErr      /* Make *pzErr point to any syntax error in zPath */
+){
+  u32 i, j, k, nKey, sz, n, iEnd;
+  const char *zKey;
+  u8 x;
+
+  if( pParse->oom ) return 0;
+  if( zPath[0]==0 ) return iRoot;
+  if( zPath[0]=='.' ){
+    x = pParse->aBlob[iRoot];
+    if( (x & 0x0f)!=JSONB_OBJECT ) return JSON_BLOB_NOTFOUND;
+    zPath++;
+    if( zPath[0]=='"' ){
+      zKey = zPath + 1;
+      for(i=1; zPath[i] && zPath[i]!='"'; i++){}
+      nKey = i-1;
+      if( zPath[i] ){
+        i++;
+      }else{
+        *pzErr = zPath;
+        return 0;
+      }
+      testcase( nKey==0 );
+    }else{
+      zKey = zPath;
+      for(i=0; zPath[i] && zPath[i]!='.' && zPath[i]!='['; i++){}
+      nKey = i;
+      if( nKey==0 ){
+        *pzErr = zPath;
+        return 0;
+      }
+    }
+    n = jsonbPayloadSize(pParse, iRoot, &sz);
+    j = iRoot + n;
+    iEnd = j+sz;
+    while( j<iEnd ){
+      x = pParse->aBlob[j] & 0x0f;
+      if( x<JSONB_TEXT || x>JSONB_TEXTRAW ) return JSON_BLOB_ERROR;
+      n = jsonbPayloadSize(pParse, j, &sz);
+      k = j+n;
+      if( k+sz>=iEnd ) return JSON_BLOB_ERROR;
+      if( sz==nKey && memcmp(&pParse->aBlob[k], zKey, nKey)==0 ){
+        j = k+sz;        
+        if( ((pParse->aBlob[j])&0x0f)>JSONB_OBJECT ) return JSON_BLOB_ERROR;
+        n = jsonbPayloadSize(pParse, j, &sz);
+        if( j+n+sz>iEnd ) return JSON_BLOB_ERROR;
+        return jsonLookupBlobStep(pParse, j, &zPath[i], pzErr);
+      }
+      j = k+sz;
+      if( ((pParse->aBlob[j])&0x0f)>JSONB_OBJECT ) return JSON_BLOB_ERROR;
+      n = jsonbPayloadSize(pParse, j, &sz);
+      j += n+sz;
+    }
+    if( j>iEnd ) return JSON_BLOB_ERROR;
+  }else if( zPath[0]=='[' ){
+    k = 0;
+    i = 1;
+    while( sqlite3Isdigit(zPath[i]) ){
+      k = k*10 + zPath[i] - '0';
+      i++;
+    }
+    if( i<2 || zPath[i]!=']' ){
+#if 0
+      if( zPath[1]=='#' ){
+        JsonNode *pBase = pRoot;
+        int iBase = iRoot;
+        if( pRoot->eType!=JSON_ARRAY ) return 0;
+        for(;;){
+          while( j<=pBase->n ){
+            if( (pBase[j].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ) i++;
+            j += jsonNodeSize(&pBase[j]);
+          }
+          if( (pBase->jnFlags & JNODE_APPEND)==0 ) break;
+          if( pParse->useMod==0 ) break;
+          assert( pBase->eU==2 );
+          iBase = pBase->u.iAppend;
+          pBase = &pParse->aNode[iBase];
+          j = 1;
+        }
+        j = 2;
+        if( zPath[2]=='-' && sqlite3Isdigit(zPath[3]) ){
+          unsigned int x = 0;
+          j = 3;
+          do{
+            x = x*10 + zPath[j] - '0';
+            j++;
+          }while( sqlite3Isdigit(zPath[j]) );
+          if( x>i ) return 0;
+          i -= x;
+        }
+        if( zPath[j]!=']' ){
+          *pzErr = zPath;
+          return 0;
+        }
+      }else{
+        *pzErr = zPath;
+        return 0;
+      }
+#endif
+      *pzErr = zPath;
+      return JSON_BLOB_PATHERROR;
+    }
+    x = pParse->aBlob[iRoot] & 0x0f;
+    if( x!=JSONB_ARRAY )  return JSON_BLOB_NOTFOUND;
+    n = jsonbPayloadSize(pParse, iRoot, &sz);
+    j = iRoot+n;
+    iEnd = j+sz;
+    while( j<iEnd ){
+      if( k==0 ){
+        return jsonLookupBlobStep(pParse, j, &zPath[i+1], pzErr);
+      }
+      k--;
+      n = jsonbPayloadSize(pParse, j, &sz);
+      j += n+sz;
+    }
+    if( j>iEnd ) return JSON_BLOB_ERROR;
+  }else{
+    *pzErr = zPath;
+    return JSON_BLOB_PATHERROR; 
+  }
+  return JSON_BLOB_NOTFOUND;
+}
+
+/*
+** 
+*/
+static void jsonReturnFromBlob(
+  JsonParse *pParse,          /* Complete JSON parse tree */
+  u32 i,                      /* Index of the node */
+  sqlite3_context *pCtx       /* Return value for this function */
+){
+  u32 n, sz;
+  int rc;
+  sqlite3 *db = sqlite3_context_db_handle(pCtx);
+
+  n = jsonbPayloadSize(pParse, i, &sz);
+  switch( pParse->aBlob[i] & 0x0f ){
+    case JSONB_NULL: {
+      sqlite3_result_null(pCtx);
+      break;
+    }
+    case JSONB_TRUE: {
+      sqlite3_result_int(pCtx, 1);
+      break;
+    }
+    case JSONB_FALSE: {
+      sqlite3_result_int(pCtx, 0);
+      break;
+    }
+    case JSONB_INT5:
+    case JSONB_INT: {
+      sqlite3_int64 iRes = 0;
+      char *z;
+      int bNeg = 0;
+      char x = (char)pParse->aBlob[i+n];
+      if( x=='-' && ALWAYS(sz>0) ){ n++; sz--; bNeg = 1; }
+      else if( x=='+' && ALWAYS(sz>0) ){ n++; sz--; }
+      z = sqlite3DbStrNDup(db, (const char*)&pParse->aBlob[i+n], (int)sz);
+      if( z==0 ) return;
+      rc = sqlite3DecOrHexToI64(z, &iRes);
+      sqlite3DbFree(db, z);
+      if( rc<=1 ){
+        sqlite3_result_int64(pCtx, bNeg ? -iRes : iRes);
+      }else if( rc==3 && bNeg ){
+        sqlite3_result_int64(pCtx, SMALLEST_INT64);
+      }else{
+        goto to_double;
+      }
+      break;
+    }
+    case JSONB_FLOAT5:
+    case JSONB_FLOAT: {
+      double r;
+      char *z;
+    to_double:
+      z = sqlite3DbStrNDup(db, (const char*)&pParse->aBlob[i+n], (int)sz);
+      if( z==0 ) return;
+      sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
+      sqlite3DbFree(db, z);
+      sqlite3_result_double(pCtx, r);
+      break;
+    }
+    case JSONB_TEXTRAW:
+    case JSONB_TEXT: {
+      sqlite3_result_text(pCtx, (char*)&pParse->aBlob[i+n], sz,
+                          SQLITE_TRANSIENT);
+      break;
+    }
+    case JSONB_TEXT5:
+    case JSONB_TEXTJ: {
+      /* Translate JSON formatted string into raw text */
+      u32 iIn, iOut;
+      const char *z;
+      char *zOut;
+      u32 nOut = sz;
+      z = (const char*)&pParse->aBlob[i+n];
+      zOut = sqlite3_malloc( nOut+1 );
+      if( zOut==0 ){
+        sqlite3_result_error_nomem(pCtx);
+        break;
+      }
+      for(iIn=iOut=0; iIn<sz; iIn++){
+        char c = z[iIn];
+        if( c=='\\' ){
+          c = z[++iIn];
+          if( c=='u' ){
+            u32 v = jsonHexToInt4(z+iIn+1);
+            i += 4;
+            if( v==0 ) break;
+            if( v<=0x7f ){
+              zOut[iOut++] = (char)v;
+            }else if( v<=0x7ff ){
+              zOut[iOut++] = (char)(0xc0 | (v>>6));
+              zOut[iOut++] = 0x80 | (v&0x3f);
+            }else{
+              u32 vlo;
+              if( (v&0xfc00)==0xd800
+                && i<n-6
+                && z[iIn+1]=='\\'
+                && z[iIn+2]=='u'
+                && ((vlo = jsonHexToInt4(z+iIn+3))&0xfc00)==0xdc00
+              ){
+                /* We have a surrogate pair */
+                v = ((v&0x3ff)<<10) + (vlo&0x3ff) + 0x10000;
+                iIn += 6;
+                zOut[iOut++] = 0xf0 | (v>>18);
+                zOut[iOut++] = 0x80 | ((v>>12)&0x3f);
+                zOut[iOut++] = 0x80 | ((v>>6)&0x3f);
+                zOut[iOut++] = 0x80 | (v&0x3f);
+              }else{
+                zOut[iOut++] = 0xe0 | (v>>12);
+                zOut[iOut++] = 0x80 | ((v>>6)&0x3f);
+                zOut[iOut++] = 0x80 | (v&0x3f);
+              }
+            }
+            continue;
+          }else if( c=='b' ){
+            c = '\b';
+          }else if( c=='f' ){
+            c = '\f';
+          }else if( c=='n' ){
+            c = '\n';
+          }else if( c=='r' ){
+            c = '\r';
+          }else if( c=='t' ){
+            c = '\t';
+          }else if( c=='v' ){
+            c = '\v';
+          }else if( c=='\'' || c=='"' || c=='/' || c=='\\' ){
+            /* pass through unchanged */
+          }else if( c=='0' ){
+            c = 0;
+          }else if( c=='x' ){
+            c = (jsonHexToInt(z[iIn+1])<<4) | jsonHexToInt(z[iIn+2]);
+            iIn += 2;
+          }else if( c=='\r' && z[i+1]=='\n' ){
+            iIn++;
+            continue;
+          }else if( 0xe2==(u8)c ){
+            assert( 0x80==(u8)z[i+1] );
+            assert( 0xa8==(u8)z[i+2] || 0xa9==(u8)z[i+2] );
+            iIn += 2;
+            continue;
+          }else{
+            continue;
+          }
+        } /* end if( c=='\\' ) */
+        zOut[iOut++] = c;
+      } /* end for() */
+      zOut[iOut] = 0;
+      sqlite3_result_text(pCtx, zOut, iOut, sqlite3_free);
+      break;
+    }
+    case JSONB_ARRAY:
+    case JSONB_OBJECT: {
+      sqlite3_result_blob(pCtx, &pParse->aBlob[i+n], sz, SQLITE_TRANSIENT);
+      break;
+    }
+  }
+}
+
+/* Do a JSON_EXTRACT(JSON, PATH) on a when JSON is a BLOB.
+*/
+static void jsonExtractFromBlob(
+  sqlite3_context *ctx,
+  sqlite3_value *pJson,
+  sqlite3_value *pPath,
+  int flags
+){
+  const char *zPath = (const char*)sqlite3_value_text(pPath);
+  const char *zErr = 0;
+  u32 i;
+  JsonParse px;
+  if( zPath==0 ) return;
+  if( zPath[0]=='$' ) zPath++;
+  memset(&px, 0, sizeof(px));
+  px.nBlob = sqlite3_value_bytes(pJson);
+  px.aBlob = (u8*)sqlite3_value_blob(pJson);
+  if( px.aBlob==0 ) return;
+  i = jsonLookupBlobStep(&px, 0, zPath, &zErr);
+  if( i<px.nBlob ){
+    jsonReturnFromBlob(&px, i, ctx);
+  }else if( i==JSON_BLOB_NOTFOUND ){
+    return;  /* Return NULL if not found */
+  }else if( i==JSON_BLOB_ERROR ){
+    sqlite3_result_error(ctx, "malformed JSONB", -1);
+  }else{
+    sqlite3_result_error(ctx, zErr, -1);
+  }
+}
+  
+
 /****************************************************************************
 ** SQL functions used for testing and debugging
 ****************************************************************************/
@@ -3804,6 +4133,10 @@ static void jsonExtractFunc(
   JsonString jx;
 
   if( argc<2 ) return;
+  if( sqlite3_value_type(argv[0])==SQLITE_BLOB && argc==2 ){
+    jsonExtractFromBlob(ctx, argv[0], argv[1], flags);
+    return;
+  }
   p = jsonParseCached(ctx, argv[0], ctx, 0);
   if( p==0 ) return;
   if( argc==2 ){
