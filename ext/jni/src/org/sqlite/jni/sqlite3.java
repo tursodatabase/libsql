@@ -19,19 +19,30 @@ package org.sqlite.jni;
    simply provide a type-safe way to communicate it between Java
    and C via JNI.
 */
-public final class sqlite3 extends NativePointerHolder<sqlite3> {
+public final class sqlite3 extends NativePointerHolder<sqlite3>
+ implements AutoCloseable {
+
   // Only invoked from JNI
   private sqlite3(){}
 
   public String toString(){
-    long ptr = getNativePointer();
+    final long ptr = getNativePointer();
     if( 0==ptr ){
       return sqlite3.class.getSimpleName()+"@null";
     }
-    String fn = SQLite3Jni.sqlite3_db_filename(this, "main");
+    final String fn = SQLite3Jni.sqlite3_db_filename(this, "main");
     return sqlite3.class.getSimpleName()
       +"@"+String.format("0x%08x",ptr)
       +"["+((null == fn) ? "<unnamed>" : fn)+"]"
       ;
+  }
+
+  @Override protected void finalize(){
+    //System.out.println(this+".finalize()");
+    SQLite3Jni.sqlite3_close_v2(this);
+  }
+
+  @Override public void close(){
+    SQLite3Jni.sqlite3_close_v2(this);
   }
 }

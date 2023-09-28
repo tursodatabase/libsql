@@ -404,50 +404,52 @@ public class Tester1 implements Runnable {
   }
 
   private void testBindFetchInt64(){
-    sqlite3 db = createNewDb();
-    execSql(db, "CREATE TABLE t(a)");
-    sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
-    long total1 = 0;
-    for(long i = 0xffffffff; i < 0xffffffff + 3; ++i ){
-      total1 += i;
-      sqlite3_bind_int64(stmt, 1, i);
-      sqlite3_step(stmt);
-      sqlite3_reset(stmt);
+    try (sqlite3 db = createNewDb()){
+      execSql(db, "CREATE TABLE t(a)");
+      sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
+      long total1 = 0;
+      for(long i = 0xffffffff; i < 0xffffffff + 3; ++i ){
+        total1 += i;
+        sqlite3_bind_int64(stmt, 1, i);
+        sqlite3_step(stmt);
+        sqlite3_reset(stmt);
+      }
+      sqlite3_finalize(stmt);
+      stmt = prepare(db, "SELECT a FROM t ORDER BY a DESC;");
+      long total2 = 0;
+      while( SQLITE_ROW == sqlite3_step(stmt) ){
+        total2 += sqlite3_column_int64(stmt, 0);
+      }
+      sqlite3_finalize(stmt);
+      affirm(total1 == total2);
+      //sqlite3_close_v2(db);
     }
-    sqlite3_finalize(stmt);
-    stmt = prepare(db, "SELECT a FROM t ORDER BY a DESC;");
-    long total2 = 0;
-    while( SQLITE_ROW == sqlite3_step(stmt) ){
-      total2 += sqlite3_column_int64(stmt, 0);
-    }
-    sqlite3_finalize(stmt);
-    affirm(total1 == total2);
-    sqlite3_close_v2(db);
   }
 
   private void testBindFetchDouble(){
-    sqlite3 db = createNewDb();
-    execSql(db, "CREATE TABLE t(a)");
-    sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
-    double total1 = 0;
-    for(double i = 1.5; i < 5.0; i = i + 1.0 ){
-      total1 += i;
-      sqlite3_bind_double(stmt, 1, i);
-      sqlite3_step(stmt);
-      sqlite3_reset(stmt);
+    try (sqlite3 db = createNewDb()){
+      execSql(db, "CREATE TABLE t(a)");
+      sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
+      double total1 = 0;
+      for(double i = 1.5; i < 5.0; i = i + 1.0 ){
+        total1 += i;
+        sqlite3_bind_double(stmt, 1, i);
+        sqlite3_step(stmt);
+        sqlite3_reset(stmt);
+      }
+      sqlite3_finalize(stmt);
+      stmt = prepare(db, "SELECT a FROM t ORDER BY a DESC;");
+      double total2 = 0;
+      int counter = 0;
+      while( SQLITE_ROW == sqlite3_step(stmt) ){
+        ++counter;
+        total2 += sqlite3_column_double(stmt, 0);
+      }
+      affirm(4 == counter);
+      sqlite3_finalize(stmt);
+      affirm(total2<=total1+0.01 && total2>=total1-0.01);
+      //sqlite3_close_v2(db);
     }
-    sqlite3_finalize(stmt);
-    stmt = prepare(db, "SELECT a FROM t ORDER BY a DESC;");
-    double total2 = 0;
-    int counter = 0;
-    while( SQLITE_ROW == sqlite3_step(stmt) ){
-      ++counter;
-      total2 += sqlite3_column_double(stmt, 0);
-    }
-    affirm(4 == counter);
-    sqlite3_finalize(stmt);
-    affirm(total2<=total1+0.01 && total2>=total1-0.01);
-    sqlite3_close_v2(db);
   }
 
   private void testBindFetchText(){
@@ -491,20 +493,25 @@ public class Tester1 implements Runnable {
     affirm(3 == n);
     affirm("w😃rldhell🤩!🤩".equals(sbuf.toString()));
 
-    stmt = prepare(db, "SELECT ?, ?");
-    rc = sqlite3_bind_text(stmt, 1, "");
-    affirm( 0==rc );
-    rc = sqlite3_bind_text(stmt, 2, (String)null);
-    affirm( 0==rc );
-    rc = sqlite3_step(stmt);
-    affirm( SQLITE_ROW==rc );
-    byte[] colBa = sqlite3_column_text(stmt, 0);
-    affirm( 0==colBa.length );
-    colBa = sqlite3_column_text(stmt, 1);
-    affirm( null==colBa );
-    sqlite3_finalize(stmt);
+    try( sqlite3_stmt stmt2 = prepare(db, "SELECT ?, ?") ){
+      rc = sqlite3_bind_text(stmt2, 1, "");
+      affirm( 0==rc );
+      rc = sqlite3_bind_text(stmt2, 2, (String)null);
+      affirm( 0==rc );
+      rc = sqlite3_step(stmt2);
+      affirm( SQLITE_ROW==rc );
+      byte[] colBa = sqlite3_column_text(stmt2, 0);
+      affirm( 0==colBa.length );
+      colBa = sqlite3_column_text(stmt2, 1);
+      affirm( null==colBa );
+      //sqlite3_finalize(stmt);
+    }
 
-    sqlite3_close_v2(db);
+    if(true){
+      sqlite3_close_v2(db);
+    }else{
+      // Let the Object.finalize() override deal with it.
+    }
   }
 
   private void testBindFetchBlob(){
