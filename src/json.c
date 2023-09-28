@@ -543,10 +543,10 @@ static void jsonAppendNormalizedInt(JsonString *p, const char *zIn, u32 N){
       assert( rc==2 );
       jsonAppendRawNZ(p, "9.0e999", 7);
     }
-    return;
+  }else{
+    assert( N>0 );
+    jsonAppendRawNZ(p, zIn, N);
   }
-  assert( N>0 );
-  jsonAppendRawNZ(p, zIn, N);
   sqlite3_free(zBuf);
 }
 
@@ -972,6 +972,10 @@ static void jsonReturn(
 
       assert( pNode->eU==1 );
       zz = sqlite3DbStrNDup(db, pNode->u.zJContent, pNode->n);
+      if( zz==0 ){
+        sqlite3_result_error_nomem(pCtx);
+        return;
+      }
       z = zz;
       if( z[0]=='-' ){ z++; bNeg = 1; }
       else if( z[0]=='+' ){ z++; }
