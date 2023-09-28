@@ -574,8 +574,11 @@ public final class SQLite3Jni {
 
   @Canonical
   public static int sqlite3_close(@Nullable sqlite3 db){
-    final int rc = sqlite3_close(db.getNativePointer());
-    if( 0==rc ) db.clearNativePointer();
+    int rc = 0;
+    if( null!=db ){
+      rc = sqlite3_close(db.getNativePointer());
+      if( 0==rc ) db.clearNativePointer();
+    }
     return rc;
   }
 
@@ -584,7 +587,7 @@ public final class SQLite3Jni {
 
   @Canonical
   public static int sqlite3_close_v2(@Nullable sqlite3 db){
-    return sqlite3_close_v2(db.clearNativePointer());
+    return db==null ? 0 : sqlite3_close_v2(db.clearNativePointer());
   }
 
   @Canonical
