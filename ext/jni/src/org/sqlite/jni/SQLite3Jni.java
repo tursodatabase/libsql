@@ -562,9 +562,12 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  public static native int sqlite3_clear_bindings(
-    @NotNull sqlite3_stmt stmt
-  );
+  public static native int sqlite3_clear_bindings(@NotNull long ptrToStmt);
+
+  @Canonical
+  public static int sqlite3_clear_bindings(@NotNull sqlite3_stmt stmt){
+    return sqlite3_clear_bindings(stmt.getNativePointer());
+  }
 
   @Canonical
   private static native int sqlite3_close(@Nullable long ptrToDb);
@@ -590,19 +593,36 @@ public final class SQLite3Jni {
   );
 
   @Canonical
-  public static native int sqlite3_column_bytes(
-    @NotNull sqlite3_stmt stmt, int ndx
-  );
+  private static native int sqlite3_column_bytes(@NotNull long ptrToStmt, int ndx);
 
   @Canonical
-  public static native int sqlite3_column_bytes16(
-    @NotNull sqlite3_stmt stmt, int ndx
-  );
+  public static int sqlite3_column_bytes(@NotNull sqlite3_stmt stmt, int ndx){
+    return sqlite3_column_bytes(stmt.getNativePointer(), ndx);
+  }
 
   @Canonical
-  public static native int sqlite3_column_count(
-    @NotNull sqlite3_stmt stmt
-  );
+  private static native int sqlite3_column_bytes16(@NotNull long ptrToStmt, int ndx);
+
+  @Canonical
+  public static int sqlite3_column_bytes16(@NotNull sqlite3_stmt stmt, int ndx){
+    return sqlite3_column_bytes16(stmt.getNativePointer(), ndx);
+  }
+
+  @Canonical
+  private static native int sqlite3_column_count(@NotNull long ptrToStmt);
+
+  @Canonical
+  public static int sqlite3_column_count(@NotNull sqlite3_stmt stmt){
+    return sqlite3_column_count(stmt.getNativePointer());
+  }
+
+  @Canonical
+  private static native String sqlite3_column_decltype(@NotNull long ptrToStmt, int ndx);
+
+  @Canonical
+  public static String sqlite3_column_decltype(@NotNull sqlite3_stmt stmt, int ndx){
+    return sqlite3_column_decltype(stmt.getNativePointer(), ndx);
+  }
 
   @Canonical
   public static native double sqlite3_column_double(
@@ -620,24 +640,36 @@ public final class SQLite3Jni {
   );
 
   @Canonical
-  public static native String sqlite3_column_name(
-    @NotNull sqlite3_stmt stmt, int ndx
-  );
+  private static native String sqlite3_column_name(@NotNull long ptrToStmt, int ndx);
 
   @Canonical
-  public static native String sqlite3_column_database_name(
-    @NotNull sqlite3_stmt stmt, int ndx
-  );
+  public static String sqlite3_column_name(@NotNull sqlite3_stmt stmt, int ndx){
+    return sqlite3_column_name(stmt.getNativePointer(), ndx);
+  }
 
   @Canonical
-  public static native String sqlite3_column_origin_name(
-    @NotNull sqlite3_stmt stmt, int ndx
-  );
+  private static native String sqlite3_column_database_name(@NotNull long ptrToStmt, int ndx);
 
   @Canonical
-  public static native String sqlite3_column_table_name(
-    @NotNull sqlite3_stmt stmt, int ndx
-  );
+  public static String sqlite3_column_database_name(@NotNull sqlite3_stmt stmt, int ndx){
+    return sqlite3_column_database_name(stmt.getNativePointer(), ndx);
+  }
+
+  @Canonical
+  private static native String sqlite3_column_origin_name(@NotNull long ptrToStmt, int ndx);
+
+  @Canonical
+  public static String sqlite3_column_origin_name(@NotNull sqlite3_stmt stmt, int ndx){
+    return sqlite3_column_origin_name(stmt.getNativePointer(), ndx);
+  }
+
+  @Canonical
+  private static native String sqlite3_column_table_name(@NotNull long ptrToStmt, int ndx);
+
+  @Canonical
+  public static String sqlite3_column_table_name(@NotNull sqlite3_stmt stmt, int ndx){
+    return sqlite3_column_table_name(stmt.getNativePointer(), ndx);
+  }
 
   /**
      Functions identially to the C API, and this note is just to
@@ -695,9 +727,12 @@ public final class SQLite3Jni {
   // }
 
   @Canonical
-  public static native int sqlite3_column_type(
-    @NotNull sqlite3_stmt stmt, int ndx
-  );
+  private static native int sqlite3_column_type(@NotNull long ptrToStmt, int ndx);
+
+  @Canonical
+  public static int sqlite3_column_type(@NotNull sqlite3_stmt stmt, int ndx){
+    return sqlite3_column_type(stmt.getNativePointer(), ndx);
+  }
 
   @Canonical
   public static native sqlite3_value sqlite3_column_value(
@@ -816,9 +851,12 @@ public final class SQLite3Jni {
   );
 
   @Canonical
-  public static native int sqlite3_data_count(
-    @NotNull sqlite3_stmt stmt
-  );
+  private static native int sqlite3_data_count(@NotNull long ptrToStmt);
+
+  @Canonical
+  public static int sqlite3_data_count(@NotNull sqlite3_stmt stmt){
+    return sqlite3_data_count(stmt.getNativePointer());
+  }
 
   /**
      Overload for sqlite3_db_config() calls which take (int,int*)
@@ -1768,15 +1806,28 @@ public final class SQLite3Jni {
   public static native int sqlite3_step(@NotNull sqlite3_stmt stmt);
 
   @Canonical
-  public static native int sqlite3_stmt_explain(
-    @NotNull sqlite3_stmt stmt, int op
-  );
+  private static native int sqlite3_stmt_explain(@NotNull long ptrToStmt, int op);
 
   @Canonical
-  public static native int sqlite3_stmt_isexplain(@NotNull sqlite3_stmt stmt);
+  public static int sqlite3_stmt_explain(@NotNull sqlite3_stmt stmt, int op){
+    return sqlite3_stmt_explain(stmt.getNativePointer(), op);
+  }
 
   @Canonical
-  public static native boolean sqlite3_stmt_readonly(@NotNull sqlite3_stmt stmt);
+  private static native int sqlite3_stmt_isexplain(@NotNull long ptrToStmt);
+
+  @Canonical
+  public static int sqlite3_stmt_isexplain(@NotNull sqlite3_stmt stmt){
+    return sqlite3_stmt_isexplain(stmt.getNativePointer());
+  }
+
+  @Canonical
+  private static native boolean sqlite3_stmt_readonly(@NotNull long ptrToStmt);
+
+  @Canonical
+  public static boolean sqlite3_stmt_readonly(@NotNull sqlite3_stmt stmt){
+    return sqlite3_stmt_readonly(stmt.getNativePointer());
+  }
 
   @Canonical
   public static native int sqlite3_stmt_status(
@@ -1933,10 +1984,20 @@ public final class SQLite3Jni {
   public static native byte[] sqlite3_value_blob(@NotNull sqlite3_value v);
 
   @Canonical
-  public static native int sqlite3_value_bytes(@NotNull sqlite3_value v);
+  private static native int sqlite3_value_bytes(@NotNull long ptrToValue);
 
   @Canonical
-  public static native int sqlite3_value_bytes16(@NotNull sqlite3_value v);
+  public static int sqlite3_value_bytes(@NotNull sqlite3_value v){
+    return sqlite3_value_bytes(v.getNativePointer());
+  }
+
+  @Canonical
+  private static native int sqlite3_value_bytes16(@NotNull long ptrToValue);
+
+  @Canonical
+  public static int sqlite3_value_bytes16(@NotNull sqlite3_value v){
+    return sqlite3_value_bytes16(v.getNativePointer());
+  }
 
   @Canonical
   public static native double sqlite3_value_double(@NotNull sqlite3_value v);
@@ -1947,10 +2008,23 @@ public final class SQLite3Jni {
   );
 
   @Canonical
-  public static native int sqlite3_value_encoding(@NotNull sqlite3_value v);
+  private static native int sqlite3_value_encoding(@NotNull long ptrToValue);
+
+  @Canonical
+  public static int sqlite3_value_encoding(@NotNull sqlite3_value v){
+    return sqlite3_value_encoding(v.getNativePointer());
+  }
 
   @Canonical
   public static native void sqlite3_value_free(@Nullable sqlite3_value v);
+
+  @Canonical
+  private static native int sqlite3_value_frombind(@NotNull long ptrToValue);
+
+  @Canonical
+  public static int sqlite3_value_frombind(@NotNull sqlite3_value v){
+    return sqlite3_value_frombind(v.getNativePointer());
+  }
 
   @Canonical
   public static native int sqlite3_value_int(@NotNull sqlite3_value v);
@@ -1982,6 +2056,30 @@ public final class SQLite3Jni {
     return type.isInstance(o) ? (T)o : null;
   }
 
+  @Canonical
+  private static native int sqlite3_value_nochange(@NotNull long ptrToValue);
+
+  @Canonical
+  public static int sqlite3_value_nochange(@NotNull sqlite3_value v){
+    return sqlite3_value_nochange(v.getNativePointer());
+  }
+
+  @Canonical
+  private static native int sqlite3_value_numeric_type(@NotNull long ptrToValue);
+
+  @Canonical
+  public static int sqlite3_value_numeric_type(@NotNull sqlite3_value v){
+    return sqlite3_value_numeric_type(v.getNativePointer());
+  }
+
+  @Canonical
+  private static native int sqlite3_value_subtype(@NotNull long ptrToValue);
+
+  @Canonical
+  public static int sqlite3_value_subtype(@NotNull sqlite3_value v){
+    return sqlite3_value_subtype(v.getNativePointer());
+  }
+
   /**
      Functions identially to the C API, and this note is just to
      stress that the returned bytes are encoded as UTF-8. It returns
@@ -1995,19 +2093,12 @@ public final class SQLite3Jni {
   public static native String sqlite3_value_text16(@NotNull sqlite3_value v);
 
   @Canonical
-  public static native int sqlite3_value_type(@NotNull sqlite3_value v);
+  private static native int sqlite3_value_type(@NotNull long ptrToValue);
 
   @Canonical
-  public static native int sqlite3_value_numeric_type(@NotNull sqlite3_value v);
-
-  @Canonical
-  public static native int sqlite3_value_nochange(@NotNull sqlite3_value v);
-
-  @Canonical
-  public static native int sqlite3_value_frombind(@NotNull sqlite3_value v);
-
-  @Canonical
-  public static native int sqlite3_value_subtype(@NotNull sqlite3_value v);
+  public static int sqlite3_value_type(@NotNull sqlite3_value v){
+    return sqlite3_value_type(v.getNativePointer());
+  }
 
   /**
      This is NOT part of the public API. It exists solely as a place

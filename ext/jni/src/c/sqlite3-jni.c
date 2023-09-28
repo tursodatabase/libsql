@@ -1456,6 +1456,7 @@ static void * NativePointerHolder__get(JNIEnv * env, jobject jNph,
 #define S3JniLongPtr_sqlite3_backup(JLongPtr) S3JniLongPtr_T(sqlite3_backup,JLongPtr)
 #define S3JniLongPtr_sqlite3_blob(JLongPtr) S3JniLongPtr_T(sqlite3_blob,JLongPtr)
 #define S3JniLongPtr_sqlite3_stmt(JLongPtr) S3JniLongPtr_T(sqlite3_stmt,JLongPtr)
+#define S3JniLongPtr_sqlite3_value(JLongPtr) S3JniLongPtr_T(sqlite3_value,JLongPtr)
 
 /*
 ** Extracts the new S3JniDb instance from the free-list, or allocates
@@ -1992,27 +1993,25 @@ static void udf_xInverse(sqlite3_context* cx, int argc,
     return rv;                                                 \
   }
 /** Create a trivial JNI wrapper for (int CName(sqlite3_stmt*)). */
-#define WRAP_INT_STMT(JniNameSuffix,CName)                      \
-  JniDecl(jint,JniNameSuffix)(JniArgsEnvClass, jobject jpStmt){ \
-    jint const rc = (jint)CName(PtrGet_sqlite3_stmt(jpStmt));   \
-    S3JniExceptionIgnore /* squelch -Xcheck:jni */;             \
-    return rc; \
+#define WRAP_INT_STMT(JniNameSuffix,CName)                    \
+  JniDecl(jint,JniNameSuffix)(JniArgsEnvClass, jlong jpStmt){ \
+    return (jint)CName(S3JniLongPtr_sqlite3_stmt(jpStmt));    \
   }
 /** Create a trivial JNI wrapper for (int CName(sqlite3_stmt*,int)). */
 #define WRAP_INT_STMT_INT(JniNameSuffix,CName)                         \
-  JniDecl(jint,JniNameSuffix)(JniArgsEnvClass, jobject pStmt, jint n){ \
-    return (jint)CName(PtrGet_sqlite3_stmt(pStmt), (int)n);            \
+  JniDecl(jint,JniNameSuffix)(JniArgsEnvClass, jlong jpStmt, jint n){ \
+    return (jint)CName(S3JniLongPtr_sqlite3_stmt(jpStmt), (int)n);            \
   }
 /** Create a trivial JNI wrapper for (boolish-int CName(sqlite3_stmt*)). */
 #define WRAP_BOOL_STMT(JniNameSuffix,CName)                         \
-  JniDecl(jboolean,JniNameSuffix)(JniArgsEnvClass, jobject pStmt){ \
-    return CName(PtrGet_sqlite3_stmt(pStmt)) ? JNI_TRUE : JNI_FALSE; \
+  JniDecl(jboolean,JniNameSuffix)(JniArgsEnvClass, jlong jpStmt){ \
+    return CName(S3JniLongPtr_sqlite3_stmt(jpStmt)) ? JNI_TRUE : JNI_FALSE; \
   }
 /** Create a trivial JNI wrapper for (jstring CName(sqlite3_stmt*,int)). */
-#define WRAP_STR_STMT_INT(JniNameSuffix,CName)                              \
-  JniDecl(jstring,JniNameSuffix)(JniArgsEnvClass, jobject pStmt, jint ndx){ \
+#define WRAP_STR_STMT_INT(JniNameSuffix,CName)                             \
+  JniDecl(jstring,JniNameSuffix)(JniArgsEnvClass, jlong jpStmt, jint ndx){ \
     return s3jni_utf8_to_jstring(                                       \
-      CName(PtrGet_sqlite3_stmt(pStmt), (int)ndx),                      \
+      CName(S3JniLongPtr_sqlite3_stmt(jpStmt), (int)ndx),               \
       -1);                                                              \
   }
 /** Create a trivial JNI wrapper for (boolean CName(sqlite3*)). */
@@ -2032,8 +2031,8 @@ static void udf_xInverse(sqlite3_context* cx, int argc,
   }
 /** Create a trivial JNI wrapper for (int CName(sqlite3_value*)). */
 #define WRAP_INT_SVALUE(JniNameSuffix,CName)                      \
-  JniDecl(jint,JniNameSuffix)(JniArgsEnvClass, jobject jpSValue){ \
-    return (jint)CName(PtrGet_sqlite3_value(jpSValue));           \
+  JniDecl(jint,JniNameSuffix)(JniArgsEnvClass, jlong jpSValue){ \
+    return (jint)CName(S3JniLongPtr_sqlite3_value(jpSValue));   \
   }
 
 WRAP_INT_DB(1changes,                  sqlite3_changes)
