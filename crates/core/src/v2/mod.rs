@@ -126,7 +126,10 @@ impl Database {
     }
 
     pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
-        Self::open_remote_with_connector(url, auth_token, HttpConnector::new())
+        let mut connector = HttpConnector::new();
+        connector.enforce_http(false);
+
+        Self::open_remote_with_connector(url, auth_token, connector)
     }
 
     // For now, only expose this for sqld testing purposes
