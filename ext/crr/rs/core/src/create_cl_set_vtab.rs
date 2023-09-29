@@ -259,6 +259,7 @@ static MODULE: sqlite_nostd::module = sqlite_nostd::module {
     xRelease: None,
     xRollbackTo: None,
     xShadowName: None,
+    xPreparedSql: None,
 };
 
 pub fn create_module(db: *mut sqlite::sqlite3) -> Result<ResultCode, ResultCode> {

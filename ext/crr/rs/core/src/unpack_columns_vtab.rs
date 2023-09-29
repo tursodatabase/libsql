@@ -253,6 +253,7 @@ static MODULE: sqlite_nostd::module = sqlite_nostd::module {
     xRelease: None,
     xRollbackTo: None,
     xShadowName: None,
+    xPreparedSql: None,
 };
 
 /**
