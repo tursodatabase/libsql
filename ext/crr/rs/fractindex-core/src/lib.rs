@@ -169,7 +169,7 @@ pub extern "C" fn sqlite3_crsqlfractionalindex_init(
     if let Err(rc) = db.create_function_v2(
         "crsql_fract_fix_conflict_return_old_key",
         -1,
-        sqlite::UTF8,
+        sqlite::UTF8 | sqlite::INNOCUOUS,
         None,
         Some(crsql_fract_fix_conflict_return_old_key),
         None,
