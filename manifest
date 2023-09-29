@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\sassert().
-D 2023-09-29T15:53:55.211
+C Add\stest\scase\sto\sensure\sthe\sassert()\sremoved\sby\s[f090af77]\sno\slonger\sfails.
+D 2023-09-29T15:56:40.552
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1249,7 +1249,7 @@ F test/index6.test b376a648e85aa71c50074382784e6cb0c126ec46e43d1ad15af9a4d234c52
 F test/index7.test b238344318e0b4e42126717f6554f0e7dfd0b39cecad4b736039b43e1e3b6eb3
 F test/index8.test caa097735c91dbc23d8a402f5e63a2a03c83840ba3928733ed7f9a03f8a912a3
 F test/index9.test 2ac891806a4136ef3e91280477e23114e67575207dc331e6797fa0ed9379f997
-F test/indexA.test 35e23e75b975b8620394e7ac6ede2b1cb90eeb2e260fe9f8b81d5e1be2c147b2
+F test/indexA.test a9194b0d4aa04f8bab4f800951f783d0240f9369f13336ccc40bb3a03fdf6d52
 F test/indexedby.test f21eca4f7a6ffe14c8500a7ad6cd53166666c99e5ccd311842a28bc94a195fe0
 F test/indexexpr1.test 62558b1cfd7ccbe7bc015849cc6d1a13ef124e80cbd5b3a98dc66c3c9cce0cf4
 F test/indexexpr2.test 1c382e81ef996d8ae8b834a74f2a9013dddf59214c32201d7c8a656d739f999a
@@ -2122,8 +2122,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b488b9fb71652eca90d2bf73d32f3d748badf517859dc833c58e021b0e017194
-R 80dcda22c4693c721b3a31f2adece944
-U drh
-Z e1833f0229e67d9f6fbf3f53a8d32693
+P f090af775f6d2ce8b50850f5c9e33546bcb9cff5467d99ca210530cb7ca83d5b
+R f51ac3149d0d82cdeb16ecb943c18226
+U dan
+Z 47eb0b07d7471e6df082d31971a82a19
 # Remove this line to create a well-formed Fossil manifest.
