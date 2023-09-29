@@ -15,11 +15,105 @@
 ** This file began as an extension in ext/misc/json1.c in 2015.  That
 ** extension proved so useful that it has now been moved into the core.
 **
-** For the time being, all JSON is stored as pure text.  (We might add
-** a JSONB type in the future which stores a binary encoding of JSON in
-** a BLOB, but there is no support for JSONB in the current implementation.
-** This implementation parses JSON text at 250 MB/s, so it is hard to see
-** how JSONB might improve on that.)
+** The original design stored all JSON as pure text, canonical RFC-8259.
+** Support for JSON-5 extensions was added with version 3.42.0 (2023-05-16).
+** All generated JSON text still conforms strictly to RFC-8259, but text
+** with JSON-5 extensions is accepted as input.
+**
+** Beginning with version 3.44.0 (pending), these routines also accept
+** BLOB values that have JSON encoded using a binary representation we
+** call JSONB.  The name JSONB comes from PostgreSQL, however the on-disk
+** format SQLite JSONB is completely different and incompatible with
+** PostgreSQL JSONB.
+**
+** Decoding and interpreting JSONB is still O(N) where N is the size of
+** the input, the same as text JSON.  However, the constant of proportionality
+** for JSONB is much smaller due to faster parsing.  The size of each
+** element in JSONB is encoded in its header, so there is no need to search
+** for delimiters using persnickety syntax rules.  JSONB seems to be about
+** 3x faster than text JSON as a result.  JSONB is also tends to be slightly
+** smaller than text JSON, by 5% or 10%, but there are corner cases where
+** JSONB can be slightly larger.  Roughtly speaking, though, a JSONB blob
+** and the equivalent RFC-8259 text string take up the same amount of space
+** on disk.
+**
+**
+** THE JSONB ENCODING:
+**
+** Every JSON element is encoded in JSONB as a header and a payload.
+** The header is between 1 and 9 bytes in size.  The payload is zero
+** or more bytes.
+**
+** The lower 4 bits of the first byte of the header determines the
+** element type:
+**
+**    0:   NULL
+**    1:   TRUE
+**    2:   FALSE
+**    3:   INT        -- RFC-8259 integer literal
+**    4:   INT5       -- JSON5 integer literal
+**    5:   FLOAT      -- RFC-8259 floating point literal
+**    6:   FLOAT5     -- JSON5 floating point literal
+**    7:   TEXT       -- Text literal acceptable to both SQL and JSON
+**    8:   TEXTJ      -- Text literal with RFC-8259 escape codes
+**    9:   TEXT5      -- Text literal with JSON5 and RFC-8259 escapes
+**   10:   TEXTRAW    -- Text literal with unescaped ', ", or \ characters
+**   11:   ARRAY
+**   12:   OBJECT
+**
+** The other three possible values (13-15) are reserved for future
+** enhancements.
+**
+** The upper 4 bits of the first byte determine the size of the header
+** and sometimes also the size of the payload.  If X is the first byte
+** of the element and if X>>4 is between 0 and 11, then the payload
+** will be that many bytes in size and the header is exactly one byte
+** in size.  Other four values for X>>4 (12-15) indicate that the header
+** is more than one byte in size and that the payload size is determined
+** by the remainder of the header, interpreted as a unsigned big-endian
+** integer.
+**
+**   Value of X>>4         Size integer        Total header size
+**   -------------     --------------------    -----------------
+**        12           1 byte (0-255)                2
+**        13           2 byte (0-65535)              3
+**        14           4 byte (0-4294967295)         5
+**        15           8 byte (0-1.8e19)             9
+**
+** The payload size need not be expressed in its minimal form.  For example,
+** if the payload size is 10, the size can be expressed in any of 5 different
+** ways: (1) (X>>4)==10, (2) (X>>4)==12 following by on 0x0a byte,
+** (3) (X>>4)==13 followed by 0x00 and 0x0a, (4) (X>>4)==14 followed by
+** 0x00 0x00 0x00 0x0a, or (5) (X>>4)==15 followed by 7 bytes of 0x00 and
+** a single byte of 0x0a.  The shorter forms are preferred, of course, but
+** sometimes when generating JSONB, the payload size is not known in advance
+** and it is convenient to reserve sufficient header space to cover the
+** largest possible payload size and then come back later and patch up
+** the size when it becomes known, resulting in a non-minimal encoding.
+**
+** The value (X>>4)==15 is not actually used in the current implementation
+** (as SQLite is currently unable handle BLOBs larger than about 2GB)
+** but is included in the design to allow for future enhancements.
+**
+** The payload follows the header.  NULL, TRUE, and FALSE have no payload and
+** their payload size must always be zero.  The payload for INT, INT5,
+** FLOAT, FLOAT5, TEXT, TEXTJ, TEXT5, and TEXTROW is text.  Note that the
+** "..." or '...' delimiters are omitted from the various text encodings.
+** The payload for ARRAY and OBJECT is a list of additional elements that
+** are the content for the array or object.  The payload for an OBJECT
+** must be an even number of elements.  The first element of each pair is
+** the label and must be of type TEXT, TEXTJ, TEXT5, or TEXTRAW.
+**
+** A valid JSONB blob consists of a single element, as described above.
+** Usually this will be an ARRAY or OBJECT element which has many more
+** elements as its content.  But the overall blob is just a single element.
+**
+** Input validation for JSONB blobs simply checks that the element type
+** code is between 0 and 12 and that the total size of the element
+** (header plus payload) is the same as the size of the BLOB.  If those
+** checks are true, the BLOB is assumed to be JSONB and processing continues.
+** Errors are only raised if some other miscoding is discovered during
+** processing.
 */
 #ifndef SQLITE_OMIT_JSON
 #include "sqliteInt.h"
