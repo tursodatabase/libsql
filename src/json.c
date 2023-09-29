@@ -5402,12 +5402,19 @@ static int jsonEachFilter(
   const char *z;
   const char *zRoot = 0;
   sqlite3_int64 n;
+  int isBinary;
 
   UNUSED_PARAMETER(idxStr);
   UNUSED_PARAMETER(argc);
   jsonEachCursorReset(p);
   if( idxNum==0 ) return SQLITE_OK;
-  z = (const char*)sqlite3_value_text(argv[0]);
+  if( jsonFuncArgMightBeBinary(argv[0]) ){
+    z = (const char*)sqlite3_value_blob(argv[0]);
+    isBinary = 1;
+  }else{
+    z = (const char*)sqlite3_value_text(argv[0]);
+    isBinary = 0;
+  }
   if( z==0 ) return SQLITE_OK;
   memset(&p->sParse, 0, sizeof(p->sParse));
   p->sParse.nJPRef = 1;
@@ -5417,9 +5424,11 @@ static int jsonEachFilter(
     n = sqlite3_value_bytes(argv[0]);
     p->sParse.zJson = sqlite3RCStrNew( n+1 );
     if( p->sParse.zJson==0 ) return SQLITE_NOMEM;
-    memcpy(p->sParse.zJson, z, (size_t)n+1);
+    memcpy(p->sParse.zJson, z, (size_t)n+(isBinary==0));
+    p->sParse.nJson = n;
   }
   p->sParse.bJsonIsRCStr = 1;
+  p->sParse.isBinary = isBinary;
   p->zJson = p->sParse.zJson;
   if( jsonParse(&p->sParse, 0) ){
     int rc = SQLITE_NOMEM;
