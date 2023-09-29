@@ -1,5 +1,5 @@
-C Clarify\sserialization\sAPI\sdoc\sw.r.t.\sbuffer\svalidity\sand\susage,\sinstigated\sby\s[forum:/forumpost/8922e2ad2ad41205|forum\spost\s8922e2ad2ad41205].\sNo\scode\schanges.
-D 2023-09-28T15:00:25.435
+C Remove\san\sincorrect\sassert().
+D 2023-09-29T15:53:55.211
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -795,7 +795,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 01e051a1e713d9eabdb25df38602837cec8f4c2cae448ce2cf6accc87af903e9
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c c21ee2abe9af331381109f6fb2de1a384c07a12b191ffb3b3280f5a881a29b5a
+F src/where.c 313ce81270d2a414672370e1ee74e65949ad620519193d4cac2986d073cbc8a0
 F src/whereInt.h 4b38c5889514e3aead3f27d0ee9a26e47c3f150efc59e2a8b4e3bc8835e4d7a1
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
@@ -2122,8 +2122,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a39a02d2dfd9ed6171cd0bd434b2bc268d0ed8ead6e1a396d1603266d9493ef
-R 414329bf52df990dae021d41224235ff
-U larrybr
-Z 0d5cdadb62efac32ee8f7d7af101cd86
+P b488b9fb71652eca90d2bf73d32f3d748badf517859dc833c58e021b0e017194
+R 80dcda22c4693c721b3a31f2adece944
+U drh
+Z e1833f0229e67d9f6fbf3f53a8d32693
 # Remove this line to create a well-formed Fossil manifest.
