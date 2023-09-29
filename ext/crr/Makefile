@@ -120,6 +120,10 @@ ubsan: clean $(TARGET_TEST)
 fuzz: $(TARGET_FUZZ)
 	$(prefix)/fuzz
 
+sqlite_src = ../../
+shell.c = $(sqlite_src)shell.c
+sqlite3.c = $(sqlite_src)sqlite3.c
+
 rs_lib_static = ./rs/bundle/target/release/libcrsql_bundle.a
 rs_lib_static_cpy = ./dist/libcrsql_bundle-static.a
 
@@ -148,6 +152,12 @@ ifdef CI_MAYBE_TARGET
 	endif
 endif
 
+$(shell.c):
+	cd $(sqlite_src) && make shell.c
+
+$(sqlite3.c):
+	cd $(sqlite_src) && make sqlite3.c
+
 $(rs_lib_dbg_static_cpy): FORCE $(dbg_prefix)
 	cd ./rs/bundle && cargo build $(RS_TARGET) --features static,omit_load_extension $(rs_build_flags)
 	cp $(rs_lib_dbg_static) $(rs_lib_dbg_static_cpy)
@@ -165,15 +175,15 @@ $(rs_lib_dbg_loadable_cpy): FORCE $(dbg_prefix)
 	cp $(rs_lib_dbg_loadable) $(rs_lib_dbg_loadable_cpy)
 
 # Build the loadable extension.
-$(TARGET_LOADABLE): $(prefix) $(ext_files) $(rs_lib_loadable_cpy)
-	$(CC) -O2 -I./src/ -I./src/sqlite \
+$(TARGET_LOADABLE): $(prefix) $(ext_files) $(sqlite3.c) $(rs_lib_loadable_cpy)
+	$(CC) -O2 -I./src/ -I$(sqlite_src) \
 	$(LOADABLE_CFLAGS) \
 	$(C_TARGET) \
 	$(sysroot_option) \
 	$(ext_files) $(rs_lib_loadable_cpy) -o $@
 
-$(TARGET_DBG_LOADABLE): $(dbg_prefix) $(ext_files) $(rs_lib_dbg_loadable_cpy)
-	$(CC) -g -I./src/ -I./src/sqlite \
+$(TARGET_DBG_LOADABLE): $(dbg_prefix) $(ext_files) $(sqlite3.c) $(rs_lib_dbg_loadable_cpy)
+	$(CC) -g -I./src/ -I$(sqlite_src) \
 	$(LOADABLE_CFLAGS) \
 	$(C_TARGET) \
 	$(sysroot_option) \
@@ -181,21 +191,21 @@ $(TARGET_DBG_LOADABLE): $(dbg_prefix) $(ext_files) $(rs_lib_dbg_loadable_cpy)
 
 # Build a SQLite CLI that pre-loads cr-sqlite.
 # Useful for debugging.
-$(TARGET_SQLITE3): $(prefix) $(TARGET_SQLITE3_EXTRA_C) $(rs_lib_dbg_static_cpy) src/sqlite/shell.c $(ext_files)
+$(TARGET_SQLITE3): $(prefix) $(TARGET_SQLITE3_EXTRA_C) $(rs_lib_dbg_static_cpy) $(shell.c) $(ext_files)
 	$(CC) -g \
 	-DSQLITE_THREADSAFE=0 \
 	-DSQLITE_OMIT_LOAD_EXTENSION=1 \
 	-DSQLITE_EXTRA_INIT=core_init \
 	-DSQLITE_ENABLE_BYTECODE_VTAB \
-	-I./src/ -I./src/sqlite \
-	$(TARGET_SQLITE3_EXTRA_C) src/sqlite/shell.c $(ext_files) $(rs_lib_dbg_static_cpy) \
+	-I./src/ -I$(sqlite_src) \
+	$(TARGET_SQLITE3_EXTRA_C) $(shell.c) $(ext_files) $(rs_lib_dbg_static_cpy) \
 	$(LDLIBS) -o $@
 
 # Build the SQLite library w/ cr-sqlite statically linked in
-$(TARGET_STATIC): $(prefix) $(ext_files) $(rs_lib_static_cpy)
+$(TARGET_STATIC): $(prefix) $(ext_files) $(sqlite3.c) $(rs_lib_static_cpy)
 	$(CC) -g \
 	-DHAVE_GETHOSTUUID=0 \
-	-I./src/ -I./src/sqlite \
+	-I./src/ -I$(sqlite_src) \
 	$(STATIC_CFLAGS) \
 	$(C_TARGET) \
 	$(sysroot_option) \
@@ -208,16 +218,16 @@ $(TARGET_STATIC): $(prefix) $(ext_files) $(rs_lib_static_cpy)
 # Build a normal SQLite CLI that does not include cr-sqlite.
 # cr-sqlite can be laoded in via the `.load` pragma.
 # Useful for debugging.
-$(TARGET_SQLITE3_VANILLA): $(prefix) src/sqlite/shell.c
+$(TARGET_SQLITE3_VANILLA): $(prefix) $(sqlite3.c) $(shell.c)
 	$(CC) -g \
 	$(DEFINE_SQLITE_PATH) \
 	-DSQLITE_THREADSAFE=0 \
-	-I./src/ -I./src/sqlite \
-	src/sqlite/sqlite3.c src/sqlite/shell.c \
+	-I./src/ -I$(sqlite_src) \
+	$(sqlite3.c) $(shell.c) \
 	-o $@
 
-$(TARGET_SQLITE3_EXTRA_C): src/sqlite/sqlite3.c src/core_init.c
-	cat src/sqlite/sqlite3.c src/core_init.c > $@
+$(TARGET_SQLITE3_EXTRA_C): $(sqlite3.c) src/core_init.c
+	cat $(sqlite3.c) src/core_init.c > $@
 
 # run tests
 $(TARGET_TEST): $(prefix) $(TARGET_SQLITE3_EXTRA_C) src/tests.c src/*.test.c $(ext_files) $(rs_lib_dbg_static_cpy)
@@ -226,7 +236,7 @@ $(TARGET_TEST): $(prefix) $(TARGET_SQLITE3_EXTRA_C) src/tests.c src/*.test.c $(e
 	-DSQLITE_OMIT_LOAD_EXTENSION=1 \
 	-DSQLITE_EXTRA_INIT=core_init \
 	-DUNIT_TEST=1 \
-	-I./src/ -I./src/sqlite \
+	-I./src/ -I$(sqlite_src) \
 	$(TARGET_SQLITE3_EXTRA_C) src/tests.c src/*.test.c $(ext_files) $(rs_lib_dbg_static_cpy) \
 	$(LDLIBS) -o $@
 
@@ -236,7 +246,7 @@ $(TARGET_TEST_ASAN): $(prefix) $(TARGET_SQLITE3_EXTRA_C) src/tests.c src/*.test.
 	-DSQLITE_OMIT_LOAD_EXTENSION=1 \
 	-DSQLITE_EXTRA_INIT=core_init \
 	-DUNIT_TEST=1 \
-	-I./src/ -I./src/sqlite \
+	-I./src/ -I$(sqlite_src) \
 	$(TARGET_SQLITE3_EXTRA_C) src/tests.c src/*.test.c $(ext_files) $(rs_lib_dbg_static_cpy) \
 	$(LDLIBS) -o $@
 
@@ -245,7 +255,7 @@ $(TARGET_FUZZ): $(prefix) $(TARGET_SQLITE3_EXTRA_C) src/fuzzer.cc $(ext_files)
 	-DSQLITE_THREADSAFE=0 \
 	-DSQLITE_OMIT_LOAD_EXTENSION=1 \
 	-DSQLITE_EXTRA_INIT=core_init \
-	-I./src/ -I./src/sqlite \
+	-I./src/ -I$(sqlite_src) \
 	$(TARGET_SQLITE3_EXTRA_C) src/fuzzer.cc $(ext_files) $(rs_lib_dbg_static_cpy) \
 	$(LDLIBS) -o $@
 
