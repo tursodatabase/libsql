@@ -2657,7 +2657,7 @@ static int jsonIs4HexB(const char *z, int *pOp){
 **     -4    ',' seen
 **     -5    ':' seen
 */
-static int jsonParseValueB(JsonParse *pParse, u32 i){
+static int jsonTranslateTextValueToBlob(JsonParse *pParse, u32 i){
   char c;
   u32 j;
   u32 iThis, iStart;
@@ -2677,7 +2677,7 @@ json_parse_restart:
     iStart = pParse->nBlob;
     for(j=i+1;;j++){
       u32 iBlob = pParse->nBlob;
-      x = jsonParseValueB(pParse, j);
+      x = jsonTranslateTextValueToBlob(pParse, j);
       if( x<=0 ){
         int op;
         if( x==(-2) ){
@@ -2723,7 +2723,7 @@ json_parse_restart:
             goto parse_object_value;
           }
         }
-        x = jsonParseValueB(pParse, j);
+        x = jsonTranslateTextValueToBlob(pParse, j);
         if( x!=(-5) ){
           if( x!=(-1) ) pParse->iErr = j;
           return -1;
@@ -2731,7 +2731,7 @@ json_parse_restart:
         j = pParse->iErr+1;
       }
     parse_object_value:
-      x = jsonParseValueB(pParse, j);
+      x = jsonTranslateTextValueToBlob(pParse, j);
       if( x<=0 ){
         if( x!=(-1) ) pParse->iErr = j;
         return -1;
@@ -2750,7 +2750,7 @@ json_parse_restart:
             break;
           }
         }
-        x = jsonParseValueB(pParse, j);
+        x = jsonTranslateTextValueToBlob(pParse, j);
         if( x==(-4) ){
           j = pParse->iErr;
           continue;
@@ -2780,7 +2780,7 @@ json_parse_restart:
       return -1;
     }
     for(j=i+1;;j++){
-      x = jsonParseValueB(pParse, j);
+      x = jsonTranslateTextValueToBlob(pParse, j);
       if( x<=0 ){
         if( x==(-3) ){
           j = pParse->iErr;
@@ -2804,7 +2804,7 @@ json_parse_restart:
             break;
           }
         }
-        x = jsonParseValueB(pParse, j);
+        x = jsonTranslateTextValueToBlob(pParse, j);
         if( x==(-4) ){
           j = pParse->iErr;
           continue;
@@ -3117,13 +3117,13 @@ json_parse_restart:
 ** pParse must be initialized to an empty parse object prior to calling
 ** this routine.
 */
-static int jsonParseB(
+static int jsonConvertTextToBlob(
   JsonParse *pParse,           /* Initialize and fill this JsonParse object */
   sqlite3_context *pCtx        /* Report errors here */
 ){
   int i;
   const char *zJson = pParse->zJson;
-  i = jsonParseValueB(pParse, 0);
+  i = jsonTranslateTextValueToBlob(pParse, 0);
   if( pParse->oom ) i = -1;
   if( i>0 ){
     assert( pParse->iDepth==0 );
@@ -4089,6 +4089,25 @@ static void jsonTest1Func(
   UNUSED_PARAMETER(argc);
   sqlite3_result_int(ctx, sqlite3_value_subtype(argv[0])==JSON_SUBTYPE);
 }
+
+/* SQL Function:  jsonb_test2(BLOB_JSON)
+**
+** Render BLOB_JSON back into text.
+** Development testing only.
+*/
+static void jsonbTest2(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  const u8 *aBlob;
+  int nBlob;
+  UNUSED_PARAMETER(argc);
+
+  aBlob = (const u8*)sqlite3_value_blob(argv[0]);
+  nBlob = sqlite3_value_bytes(argv[0]);
+  jsonReturnTextJsonFromBlob(ctx, aBlob, nBlob);
+}
 #endif /* SQLITE_DEBUG */
 
 /****************************************************************************
@@ -4134,7 +4153,7 @@ static void jsonbFunc(
     memset(&x, 0, sizeof(x));
     x.zJson = (char*)zJson;
     x.nJson = nJson;
-    if( jsonParseB(pParse, ctx) ){
+    if( jsonConvertTextToBlob(pParse, ctx) ){
       sqlite3_result_error(ctx, "malformed JSON", -1);
     }else{
       sqlite3_result_blob(ctx, pParse->aBlob, pParse->nBlob, sqlite3_free);
@@ -4144,25 +4163,6 @@ static void jsonbFunc(
     }
     jsonParseReset(pParse);
   }
-}
-
-/* SQL Function:  jsonb_test2(BLOB_JSON)
-**
-** Render BLOB_JSON back into text.
-** Development testing only.
-*/
-static void jsonbTest2(
-  sqlite3_context *ctx,
-  int argc,
-  sqlite3_value **argv
-){
-  const u8 *aBlob;
-  int nBlob;
-  UNUSED_PARAMETER(argc);
-
-  aBlob = (const u8*)sqlite3_value_blob(argv[0]);
-  nBlob = sqlite3_value_bytes(argv[0]);
-  jsonReturnTextJsonFromBlob(ctx, aBlob, nBlob);
 }
 
 /*
@@ -5549,36 +5549,35 @@ static sqlite3_module jsonTreeModule = {
 void sqlite3RegisterJsonFunctions(void){
 #ifndef SQLITE_OMIT_JSON
   static FuncDef aJsonFunc[] = {
-    JFUNCTION(json,               1, 0,                    jsonRemoveFunc),
-    JFUNCTION(json_array,        -1, 0,                    jsonArrayFunc),
-    JFUNCTION(json_array_length,  1, 0,                    jsonArrayLengthFunc),
-    JFUNCTION(json_array_length,  2, 0,                    jsonArrayLengthFunc),
-    JFUNCTION(json_error_position,1, 0,                    jsonErrorFunc),
-    JFUNCTION(json_extract,      -1, 0,                    jsonExtractFunc),
-    JFUNCTION(jsonb_extract,     -1, JSON_BLOB,            jsonExtractFunc),
-    JFUNCTION(->,                 2, JSON_JSON,            jsonExtractFunc),
-    JFUNCTION(->>,                2, JSON_SQL,             jsonExtractFunc),
-    JFUNCTION(json_insert,       -1, 0,                    jsonSetFunc),
-    JFUNCTION(json_object,       -1, 0,                    jsonObjectFunc),
-    JFUNCTION(json_patch,         2, 0,                    jsonPatchFunc),
-    JFUNCTION(json_quote,         1, 0,                    jsonQuoteFunc),
-    JFUNCTION(json_remove,       -1, 0,                    jsonRemoveFunc),
-    JFUNCTION(json_replace,      -1, 0,                    jsonReplaceFunc),
-    JFUNCTION(json_set,          -1, JSON_ISSET,           jsonSetFunc),
-    JFUNCTION(json_type,          1, 0,                    jsonTypeFunc),
-    JFUNCTION(json_type,          2, 0,                    jsonTypeFunc),
-    JFUNCTION(json_valid,         1, 0,                    jsonValidFunc),
-    JFUNCTION(jsonb,              1, JSON_BLOB,            jsonbFunc),
-    JFUNCTION(jsonb_test2,        1, 0,                    jsonbTest2),
-    JFUNCTION(jsonb_insert,      -1, JSON_BLOB,            jsonSetFunc),
-    JFUNCTION(jsonb_patch,        2, JSON_BLOB,            jsonPatchFunc),
-    JFUNCTION(jsonb_quote,        1, JSON_BLOB,            jsonQuoteFunc),
-    JFUNCTION(jsonb_remove,      -1, JSON_BLOB,            jsonRemoveFunc),
-    JFUNCTION(jsonb_replace,     -1, JSON_BLOB,            jsonReplaceFunc),
+    JFUNCTION(json,               1, 0,                   jsonRemoveFunc),
+    JFUNCTION(jsonb,              1, JSON_BLOB,           jsonbFunc),
+    JFUNCTION(json_array,        -1, 0,                   jsonArrayFunc),
+    JFUNCTION(json_array_length,  1, 0,                   jsonArrayLengthFunc),
+    JFUNCTION(json_array_length,  2, 0,                   jsonArrayLengthFunc),
+    JFUNCTION(json_error_position,1, 0,                   jsonErrorFunc),
+    JFUNCTION(json_extract,      -1, 0,                   jsonExtractFunc),
+    JFUNCTION(jsonb_extract,     -1, JSON_BLOB,           jsonExtractFunc),
+    JFUNCTION(->,                 2, JSON_JSON,           jsonExtractFunc),
+    JFUNCTION(->>,                2, JSON_SQL,            jsonExtractFunc),
+    JFUNCTION(json_insert,       -1, 0,                   jsonSetFunc),
+    JFUNCTION(jsonb_insert,      -1, JSON_BLOB,           jsonSetFunc),
+    JFUNCTION(json_object,       -1, 0,                   jsonObjectFunc),
+    JFUNCTION(json_patch,         2, 0,                   jsonPatchFunc),
+    JFUNCTION(jsonb_patch,        2, JSON_BLOB,           jsonPatchFunc),
+    JFUNCTION(json_quote,         1, 0,                   jsonQuoteFunc),
+    JFUNCTION(json_remove,       -1, 0,                   jsonRemoveFunc),
+    JFUNCTION(jsonb_remove,      -1, JSON_BLOB,           jsonRemoveFunc),
+    JFUNCTION(json_replace,      -1, 0,                   jsonReplaceFunc),
+    JFUNCTION(jsonb_replace,     -1, JSON_BLOB,           jsonReplaceFunc),
+    JFUNCTION(json_set,          -1, JSON_ISSET,          jsonSetFunc),
     JFUNCTION(jsonb_set,         -1, JSON_ISSET|JSON_BLOB, jsonSetFunc),
+    JFUNCTION(json_type,          1, 0,                   jsonTypeFunc),
+    JFUNCTION(json_type,          2, 0,                   jsonTypeFunc),
+    JFUNCTION(json_valid,         1, 0,                   jsonValidFunc),
 #if SQLITE_DEBUG
-    JFUNCTION(json_parse,         1, 0,  jsonParseFunc),
-    JFUNCTION(json_test1,         1, 0,  jsonTest1Func),
+    JFUNCTION(json_parse,         1, 0,                   jsonParseFunc),
+    JFUNCTION(json_test1,         1, 0,                   jsonTest1Func),
+    JFUNCTION(jsonb_test2,        1, 0,                   jsonbTest2),
 #endif
     WAGGREGATE(json_group_array,  1, 0, 0,
        jsonArrayStep, jsonArrayFinal, jsonArrayValue, jsonGroupInverse,
