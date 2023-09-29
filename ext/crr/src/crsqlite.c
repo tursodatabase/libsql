@@ -352,6 +352,11 @@ static void rollbackHook(void *pUserData) {
   pExtData->seq = 0;
 }
 
+static void closeHook(void *pUserData, sqlite3 *db) {
+  crsql_ExtData *pExtData = (crsql_ExtData *)pUserData;
+  crsql_finalize(pExtData);
+}
+
 int sqlite3_crsqlrustbundle_init(sqlite3 *db, char **pzErrMsg,
                                  const sqlite3_api_routines *pApi);
 
@@ -483,6 +488,7 @@ __declspec(dllexport)
   if (rc == SQLITE_OK) {
     // TODO: get the prior callback so we can call it rather than replace
     // it?
+    libsql_close_hook(db, closeHook, pExtData);
     sqlite3_commit_hook(db, commitHook, pExtData);
     sqlite3_rollback_hook(db, rollbackHook, pExtData);
   }

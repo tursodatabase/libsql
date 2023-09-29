@@ -225,7 +225,7 @@ pub fn randomness(blob: &mut [u8]) {
 }
 
 pub struct ManagedConnection {
-    db: *mut sqlite3,
+    pub db: *mut sqlite3,
 }
 
 pub trait Connection {
