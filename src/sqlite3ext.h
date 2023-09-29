@@ -370,6 +370,7 @@ struct libsql_api_routines {
   struct libsql_wal_methods *(*wal_methods_find)(const char *);
   int (*wal_methods_register)(struct libsql_wal_methods*);
   int (*wal_methods_unregister)(struct libsql_wal_methods*);
+  /* libSQL 0.2.3 */
   void *(*close_hook)(sqlite3*, void(*)(void*,sqlite3*), void *pArg);
 };
 

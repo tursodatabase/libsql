@@ -1,5 +1,6 @@
 #include "crsqlite.h"
 SQLITE_EXTENSION_INIT1
+LIBSQL_EXTENSION_INIT1
 
 #include <assert.h>
 #include <ctype.h>
@@ -364,10 +365,12 @@ int sqlite3_crsqlrustbundle_init(sqlite3 *db, char **pzErrMsg,
 __declspec(dllexport)
 #endif
     int sqlite3_crsqlite_init(sqlite3 *db, char **pzErrMsg,
-                              const sqlite3_api_routines *pApi) {
+                              const sqlite3_api_routines *pApi,
+                              const libsql_api_routines *pLibsqlApi) {
   int rc = SQLITE_OK;
 
   SQLITE_EXTENSION_INIT2(pApi);
+  LIBSQL_EXTENSION_INIT2(pLibsqlApi)
 
   // TODO: should be moved lower once we finish migrating to rust.
   // RN it is safe here since the rust bundle init is largely just reigstering

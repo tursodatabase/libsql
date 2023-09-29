@@ -3,6 +3,7 @@
 
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT3
+LIBSQL_EXTENSION_INIT3
 
 #include <stdint.h>
 
