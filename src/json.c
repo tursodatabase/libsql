@@ -435,7 +435,7 @@ static void jsonAppendRaw(JsonString *p, const char *zIn, u32 N){
   }
 }
 static void jsonAppendRawNZ(JsonString *p, const char *zIn, u32 N){
-  assert( N>0 );
+  if( N==0 ) return;
   if( N+p->nUsed >= p->nAlloc ){
     jsonStringExpandAndAppend(p,zIn,N);
   }else{
@@ -557,8 +557,6 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
 static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
   u32 i;
   jsonAppendChar(p, '"');
-  zIn++;
-  N -= 2;
   while( N>0 ){
     for(i=0; i<N && zIn[i]!='\\'; i++){}
     if( i>0 ){
@@ -894,8 +892,9 @@ static void jsonRenderNodeAsText(
       }else if( pNode->jnFlags & JNODE_JSON5 ){
         jsonAppendNormalizedString(pOut, pNode->u.zJContent, pNode->n);
       }else{
-        assert( pNode->n>0 );
+        jsonAppendChar(pOut, '"');
         jsonAppendRawNZ(pOut, pNode->u.zJContent, pNode->n);
+        jsonAppendChar(pOut, '"');
       }
       break;
     }
@@ -1118,7 +1117,7 @@ static void jsonReturnNodeAsSql(
       }else if( (pNode->jnFlags & JNODE_ESCAPE)==0 ){
         /* JSON formatted without any backslash-escapes */
         assert( pNode->eU==1 );
-        sqlite3_result_text(pCtx, pNode->u.zJContent+1, pNode->n-2,
+        sqlite3_result_text(pCtx, pNode->u.zJContent, pNode->n,
                             SQLITE_TRANSIENT);
       }else{
         /* Translate JSON formatted string into raw text */
@@ -1135,7 +1134,7 @@ static void jsonReturnNodeAsSql(
           sqlite3_result_error_nomem(pCtx);
           break;
         }
-        for(i=1, j=0; i<n-1; i++){
+        for(i=0, j=0; i<n; i++){
           char c = z[i];
           if( c=='\\' ){
             c = z[++i];
@@ -1705,7 +1704,7 @@ json_parse_restart:
         return -1;
       }
     }
-    jsonParseAddNode(pParse, JSON_STRING | (jnFlags<<8), j+1-i, &z[i]);
+    jsonParseAddNode(pParse, JSON_STRING | (jnFlags<<8), j-1-i, &z[i+1]);
     return j+1;
   }
   case 't': {
@@ -2183,13 +2182,8 @@ static JsonParse *jsonParseCached(
 */
 static int jsonLabelCompare(const JsonNode *pNode, const char *zKey, u32 nKey){
   assert( pNode->eU==1 );
-  if( pNode->jnFlags & JNODE_RAW ){
-    if( pNode->n!=nKey ) return 0;
-    return strncmp(pNode->u.zJContent, zKey, nKey)==0;
-  }else{
-    if( pNode->n!=nKey+2 ) return 0;
-    return strncmp(pNode->u.zJContent+1, zKey, nKey)==0;
-  }
+  if( pNode->n!=nKey ) return 0;
+  return strncmp(pNode->u.zJContent, zKey, nKey)==0;
 }
 static int jsonSameLabel(const JsonNode *p1, const JsonNode *p2){
   if( p1->jnFlags & JNODE_RAW ){
@@ -5169,26 +5163,28 @@ static void jsonAppendObjectPathElement(
   JsonString *pStr,
   JsonNode *pNode
 ){
-  int jj, nn;
+  int nn;
   const char *z;
+  int bNeedQuote = 0;
   assert( pNode->eType==JSON_STRING );
   assert( pNode->jnFlags & JNODE_LABEL );
   assert( pNode->eU==1 );
   z = pNode->u.zJContent;
   nn = pNode->n;
-  if( (pNode->jnFlags & JNODE_RAW)==0 ){
-    assert( nn>=2 );
-    assert( z[0]=='"' || z[0]=='\'' );
-    assert( z[nn-1]=='"' || z[0]=='\'' );
-    if( nn>2 && sqlite3Isalpha(z[1]) ){
-      for(jj=2; jj<nn-1 && sqlite3Isalnum(z[jj]); jj++){}
-      if( jj==nn-1 ){
-        z++;
-        nn -= 2;
-      }
-    }
+  if( pNode->jnFlags & JNODE_RAW ){
+    /* no-op */
+  }else if( nn==0 || !sqlite3Isalpha(z[0]) ){
+    bNeedQuote = 1;
+  }else{
+    int jj;
+    for(jj=1; jj<nn && sqlite3Isalnum(z[jj]); jj++){}
+    bNeedQuote = jj<nn;
   }
-  jsonPrintf(nn+2, pStr, ".%.*s", nn, z);
+  if( bNeedQuote ){
+    jsonPrintf(nn+4, pStr, ".\"%.*s\"", nn, z);
+  }else{
+    jsonPrintf(nn+2, pStr, ".%.*s", nn, z);
+  }
 }
 
 /* Append the name of the path for element i to pStr
