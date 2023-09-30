@@ -3781,14 +3781,14 @@ static void s3jni_update_hook_impl(void * pState, int opId, const char *zDb,
   return s3jni_updatepre_hook_impl(pState, NULL, opId, zDb, zTable, nRowid, 0);
 }
 
-#ifndef SQLITE_ENABLE_PREUPDATE_HOOK
+#if !defined(SQLITE_ENABLE_PREUPDATE_HOOK)
 /* We need no-op impls for preupdate_{count,depth,blobwrite}() */
 S3JniApi(sqlite3_preupdate_blobwrite(),int,1preupdate_1blobwrite)(
-  JniArgsEnvClass, jobject jDb){ return SQLITE_MISUSE; }
+  JniArgsEnvClass, jlong jDb){ return SQLITE_MISUSE; }
 S3JniApi(sqlite3_preupdate_count(),int,1preupdate_1count)(
-  JniArgsEnvClass, jobject jDb){ return SQLITE_MISUSE; }
+  JniArgsEnvClass, jlong jDb){ return SQLITE_MISUSE; }
 S3JniApi(sqlite3_preupdate_depth(),int,1preupdate_1depth)(
-  JniArgsEnvClass, jobject jDb){ return SQLITE_MISUSE; }
+  JniArgsEnvClass, jlong jDb){ return SQLITE_MISUSE; }
 #endif /* !SQLITE_ENABLE_PREUPDATE_HOOK */
 
 /*
