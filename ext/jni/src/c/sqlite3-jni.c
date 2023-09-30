@@ -2906,17 +2906,13 @@ S3JniApi(sqlite3_complete(),int,1complete)(
 S3JniApi(sqlite3_compileoption_used(),jboolean,1compileoption_1used)(
   JniArgsEnvClass, jstring name
 ){
-  if( name ){
-    const char *zUtf8 = s3jni_jstring_to_mutf8(name)
-      /* We know these to be ASCII, so MUTF-8 is fine (and
-         hypothetically faster to convert). */;
-    const jboolean rc =
-      0==sqlite3_compileoption_used(zUtf8) ? JNI_FALSE : JNI_TRUE;
-    s3jni_mutf8_release(name, zUtf8);
-    return rc;
-  }else{
-    return JNI_FALSE;
-  }
+  const char *zUtf8 = s3jni_jstring_to_mutf8(name)
+    /* We know these to be ASCII, so MUTF-8 is fine (and
+       hypothetically faster to convert). */;
+  const jboolean rc =
+    0==sqlite3_compileoption_used(zUtf8) ? JNI_FALSE : JNI_TRUE;
+  s3jni_mutf8_release(name, zUtf8);
+  return rc;
 }
 
 S3JniApi(sqlite3_config() /*for a small subset of options.*/,
@@ -5573,7 +5569,7 @@ static int SQLTester_strnotglob(const char *zGlob, const char *z){
 }
 
 JNIEXPORT jint JNICALL
-Java_org_sqlite_jni_tester_SQLTester_strglob(
+Java_org_sqlite_jni_SQLTester_strglob(
   JniArgsEnvClass, jbyteArray baG, jbyteArray baT
 ){
   int rc = 0;
@@ -5600,7 +5596,7 @@ static int SQLTester_auto_extension(sqlite3 *pDb, const char **pzErr,
 }
 
 JNIEXPORT void JNICALL
-Java_org_sqlite_jni_tester_SQLTester_installCustomExtensions(JniArgsEnvClass){
+Java_org_sqlite_jni_SQLTester_installCustomExtensions(JniArgsEnvClass){
   sqlite3_auto_extension( (void(*)(void))SQLTester_auto_extension );
 }
 

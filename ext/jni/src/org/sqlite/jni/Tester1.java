@@ -1283,7 +1283,7 @@ public class Tester1 implements Runnable {
     }
     Exception err = null;
     try {
-      Class t = Class.forName("org.sqlite.jni.fts5.TesterFts5");
+      Class t = Class.forName("org.sqlite.jni.TesterFts5");
       java.lang.reflect.Constructor ctor = t.getConstructor();
       ctor.setAccessible(true);
       final long timeStart = System.currentTimeMillis();
