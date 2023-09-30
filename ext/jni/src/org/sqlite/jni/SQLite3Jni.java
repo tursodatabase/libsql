@@ -93,6 +93,14 @@ public final class SQLite3Jni {
   private static native void init();
 
   /**
+     Returns a nul-terminated copy of s as a byte array, or null if s
+     is null.
+  */
+  private static byte[] nulTerminateUtf8(String s){
+    return null==s ? null : (s+"\0").getBytes(StandardCharsets.UTF_8);
+  }
+
+  /**
      Each thread which uses the SQLite3 JNI APIs should call
      sqlite3_jni_uncache_thread() when it is done with the library -
      either right before it terminates or when it finishes using the
@@ -315,8 +323,8 @@ public final class SQLite3Jni {
   public static int sqlite3_bind_parameter_index(
     @NotNull sqlite3_stmt stmt, @NotNull String paramName
   ){
-    final byte[] utf8 = (paramName+"\0").getBytes(StandardCharsets.UTF_8);
-    return sqlite3_bind_parameter_index(stmt.getNativePointer(), utf8);
+    final byte[] utf8 = nulTerminateUtf8(paramName);
+    return null==utf8 ? 0 : sqlite3_bind_parameter_index(stmt.getNativePointer(), utf8);
   }
 
   @Canonical
@@ -742,29 +750,43 @@ public final class SQLite3Jni {
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
+  @Canonical
+  static native int sqlite3_collation_needed(
+    @NotNull long ptrToDb, @Nullable CollationNeededCallback callback
+  );
+
   /**
      This functions like C's sqlite3_collation_needed16() because
      Java's string type is inherently compatible with that interface.
   */
   @Canonical
-  public static native int sqlite3_collation_needed(
+  public static int sqlite3_collation_needed(
     @NotNull sqlite3 db, @Nullable CollationNeededCallback callback
+  ){
+    return sqlite3_collation_needed(db.getNativePointer(), callback);
+  }
+
+  @Canonical
+  static native CommitHookCallback sqlite3_commit_hook(
+    @NotNull long ptrToDb, @Nullable CommitHookCallback hook
   );
 
   @Canonical
-  public static native CommitHookCallback sqlite3_commit_hook(
+  public static CommitHookCallback sqlite3_commit_hook(
     @NotNull sqlite3 db, @Nullable CommitHookCallback hook
-  );
+  ){
+    return sqlite3_commit_hook(db.getNativePointer(), hook);
+  }
 
   @Canonical
-  public static native String sqlite3_compileoption_get(
-    int n
-  );
+  public static native String sqlite3_compileoption_get(int n);
 
+  /**
+     Unlike the C API, returns false if its argument is NULL (as
+     opposed to invoking UB).
+  */
   @Canonical
-  public static native boolean sqlite3_compileoption_used(
-    @NotNull String optName
-  );
+  public static native boolean sqlite3_compileoption_used(String optName);
 
   /**
      This implementation is private because it's too easy to pass it
@@ -775,12 +797,13 @@ public final class SQLite3Jni {
     @NotNull byte[] nulTerminatedUtf8Sql
   );
 
+  /**
+     Unlike this C API, this returns SQLITE_MISUSE if its argument is
+     null (as opposed to invoking UB).
+  */
   @Canonical()
-  public static int sqlite3_complete(@NotNull String sql){
-    /* Design note: we don't implement this in native code because we
-       won't get a NUL-terminated string there unless we make our own
-       copy to add a terminator. That's much easier to do here. */
-    return sqlite3_complete( (sql+"\0").getBytes(StandardCharsets.UTF_8) );
+  public static int sqlite3_complete(String sql){
+    return null==sql ? SQLITE_MISUSE : sqlite3_complete( nulTerminateUtf8(sql) );
   }
 
 
@@ -828,11 +851,19 @@ public final class SQLite3Jni {
   @Canonical(comment="Option subset: SQLITE_CONFIG_LOG")
   public static native int sqlite3_config( @Nullable ConfigLogCallback logger );
 
+  /**
+     Unlike this C API, this returns null if its argument is
+     null (as opposed to invoking UB).
+  */
   @Canonical
   public static native sqlite3 sqlite3_context_db_handle(
     @NotNull sqlite3_context cx
   );
 
+  /**
+     Unlike this C API, this returns SQLITE_MISUSE if its db or name
+     arguments are null (as opposed to invoking UB).
+  */
   @Canonical
   public static native int sqlite3_create_collation(
     @NotNull sqlite3 db, @NotNull String name, int eTextRep,
@@ -846,6 +877,9 @@ public final class SQLite3Jni {
      depends on which methods the final argument implements. See
      SQLFunction's subclasses (ScalarFunction, AggregateFunction<T>,
      and WindowFunction<T>) for details.
+
+     Unlike this C API, this returns SQLITE_MISUSE null if its db or
+     functionName arguments are null (as opposed to invoking UB).
   */
   @Canonical
   public static native int sqlite3_create_function(
@@ -865,6 +899,9 @@ public final class SQLite3Jni {
      Overload for sqlite3_db_config() calls which take (int,int*)
      variadic arguments. Returns SQLITE_MISUSE if op is not one of the
      SQLITE_DBCONFIG_... options which uses this call form.
+
+     Unlike this C API, this returns SQLITE_MISUSE if its db argument
+     are null (as opposed to invoking UB).
   */
   @Canonical
   public static native int sqlite3_db_config(
@@ -1771,9 +1808,16 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  public static native RollbackHookCallback sqlite3_rollback_hook(
-    @NotNull sqlite3 db, @Nullable RollbackHookCallback hook
+  static native RollbackHookCallback sqlite3_rollback_hook(
+    @NotNull long ptrToDb, @Nullable RollbackHookCallback hook
   );
+
+  @Canonical
+  public static RollbackHookCallback sqlite3_rollback_hook(
+    @NotNull sqlite3 db, @Nullable RollbackHookCallback hook
+  ){
+    return sqlite3_rollback_hook(db.getNativePointer(), hook);
+  }
 
   @Canonical
   public static native int sqlite3_set_authorizer(
@@ -1876,10 +1920,8 @@ public final class SQLite3Jni {
   public static int sqlite3_strglob(
     @NotNull String glob, @NotNull String txt
   ){
-    return sqlite3_strglob(
-      (glob+"\0").getBytes(StandardCharsets.UTF_8),
-      (txt+"\0").getBytes(StandardCharsets.UTF_8)
-    );
+    return sqlite3_strglob(nulTerminateUtf8(glob),
+                           nulTerminateUtf8(txt));
   }
 
   /**
@@ -1895,11 +1937,9 @@ public final class SQLite3Jni {
   public static int sqlite3_strlike(
     @NotNull String glob, @NotNull String txt, char escChar
   ){
-    return sqlite3_strlike(
-      (glob+"\0").getBytes(StandardCharsets.UTF_8),
-      (txt+"\0").getBytes(StandardCharsets.UTF_8),
-      (int)escChar
-    );
+    return sqlite3_strlike(nulTerminateUtf8(glob),
+                           nulTerminateUtf8(txt),
+                           (int)escChar);
   }
 
   @Canonical

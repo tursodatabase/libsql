@@ -811,13 +811,13 @@ static void s3jni_incr( volatile unsigned int * const p ){
 #endif
 
 /* Helpers for jstring and jbyteArray. */
-static const char * s3jni__jstring_to_mutf8_bytes(JNIEnv * const env, jstring v ){
+static const char * s3jni__jstring_to_mutf8(JNIEnv * const env, jstring v ){
   const char *z = v ? (*env)->GetStringUTFChars(env, v, NULL) : 0;
   s3jni_oom_check( v ? !!z : !z );
   return z;
 }
 
-#define s3jni_jstring_to_mutf8(ARG) s3jni__jstring_to_mutf8_bytes(env, (ARG))
+#define s3jni_jstring_to_mutf8(ARG) s3jni__jstring_to_mutf8(env, (ARG))
 #define s3jni_mutf8_release(ARG,VAR) if( VAR ) (*env)->ReleaseStringUTFChars(env, ARG, VAR)
 
 static jbyte * s3jni__jbyteArray_bytes(JNIEnv * const env, jbyteArray jBA ){
@@ -1515,6 +1515,8 @@ static void S3JniDb_xDestroy(void *p){
 */
 #define S3JniDb_from_c(sqlite3Ptr) \
   ((sqlite3Ptr) ? S3JniDb_from_clientdata(sqlite3Ptr) : 0)
+#define S3JniDb_from_jlong(sqlite3PtrAsLong) \
+  S3JniDb_from_c(S3JniLongPtr_T(sqlite3,sqlite3PtrAsLong))
 
 /*
 ** Unref any Java-side state in (S3JniAutoExtension*) AX and zero out
@@ -2520,7 +2522,7 @@ static int s3jni_busy_handler(void* pState, int n){
 S3JniApi(sqlite3_busy_handler(),jint,1busy_1handler)(
   JniArgsEnvClass, jlong jpDb, jobject jBusy
 ){
-  S3JniDb * const ps = S3JniDb_from_c(S3JniLongPtr_sqlite3(jpDb));
+  S3JniDb * const ps = S3JniDb_from_jlong(jpDb);
   S3JniHook * const pHook = ps ? &ps->hooks.busyHandler : 0;
   S3JniHook hook = S3JniHook_empty;
   int rc = 0;
@@ -2565,7 +2567,7 @@ S3JniApi(sqlite3_busy_handler(),jint,1busy_1handler)(
 S3JniApi(sqlite3_busy_timeout(),jint,1busy_1timeout)(
   JniArgsEnvClass, jlong jpDb, jint ms
 ){
-  S3JniDb * const ps = S3JniDb_from_c(S3JniLongPtr_sqlite3(jpDb));
+  S3JniDb * const ps = S3JniDb_from_jlong(jpDb);
   int rc = SQLITE_MISUSE;
   if( ps ){
     S3JniDb_mutex_enter;
@@ -2604,7 +2606,7 @@ S3JniApi(sqlite3_cancel_auto_extension(),jboolean,1cancel_1auto_1extension)(
 /* Wrapper for sqlite3_close(_v2)(). */
 static jint s3jni_close_db(JNIEnv * const env, jlong jpDb, int version){
   int rc = 0;
-  S3JniDb * const ps = S3JniDb_from_c(S3JniLongPtr_sqlite3(jpDb));
+  S3JniDb * const ps = S3JniDb_from_jlong(jpDb);
 
   assert(version == 1 || version == 2);
   if( ps ){
@@ -2666,14 +2668,14 @@ static void s3jni_collation_needed_impl16(void *pState, sqlite3 *pDb,
 }
 
 S3JniApi(sqlite3_collation_needed(),jint,1collation_1needed)(
-  JniArgsEnvClass, jobject jDb, jobject jHook
+  JniArgsEnvClass, jlong jpDb, jobject jHook
 ){
   S3JniDb * ps;
   S3JniCollationNeeded * pHook;
   int rc = 0;
 
   S3JniDb_mutex_enter;
-  ps = S3JniDb_from_java(jDb);
+  ps = S3JniDb_from_jlong(jpDb);
   if( !ps ){
     S3JniDb_mutex_leave;
     return SQLITE_MISUSE;
@@ -2816,13 +2818,13 @@ static void s3jni_rollback_hook_impl(void *pP){
 ** sqlite3_rollback_hook().
 */
 static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv * const env,
-                                          jobject jDb, jobject jHook){
+                                          jlong jpDb, jobject jHook){
   S3JniDb * ps;
   jobject pOld = 0;  /* previous hoook */
   S3JniHook * pHook; /* ps->hooks.commit|rollback */
 
   S3JniDb_mutex_enter;
-  ps = S3JniDb_from_java(jDb);
+  ps = S3JniDb_from_jlong(jpDb);
   if( !ps ){
     s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
     S3JniDb_mutex_leave;
@@ -2870,9 +2872,9 @@ static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv * const env,
 }
 
 S3JniApi(sqlite3_commit_hook(),jobject,1commit_1hook)(
-  JniArgsEnvClass,jobject jDb, jobject jHook
+  JniArgsEnvClass, jlong jpDb, jobject jHook
 ){
-  return s3jni_commit_rollback_hook(1, env, jDb, jHook);
+  return s3jni_commit_rollback_hook(1, env, jpDb, jHook);
 }
 
 S3JniApi(sqlite3_compileoption_get(),jstring,1compileoption_1get)(
@@ -2904,12 +2906,17 @@ S3JniApi(sqlite3_complete(),int,1complete)(
 S3JniApi(sqlite3_compileoption_used(),jboolean,1compileoption_1used)(
   JniArgsEnvClass, jstring name
 ){
-  const char *zUtf8 = s3jni_jstring_to_mutf8(name)
-    /* We know these to be ASCII, so MUTF-8 is fine. */;
-  const jboolean rc =
-    0==sqlite3_compileoption_used(zUtf8) ? JNI_FALSE : JNI_TRUE;
-  s3jni_mutf8_release(name, zUtf8);
-  return rc;
+  if( name ){
+    const char *zUtf8 = s3jni_jstring_to_mutf8(name)
+      /* We know these to be ASCII, so MUTF-8 is fine (and
+         hypothetically faster to convert). */;
+    const jboolean rc =
+      0==sqlite3_compileoption_used(zUtf8) ? JNI_FALSE : JNI_TRUE;
+    s3jni_mutf8_release(name, zUtf8);
+    return rc;
+  }else{
+    return JNI_FALSE;
+  }
 }
 
 S3JniApi(sqlite3_config() /*for a small subset of options.*/,
@@ -3118,7 +3125,7 @@ S3JniApi(sqlite3_create_collation() sqlite3_create_collation_v2(),
 
   S3JniDb_mutex_enter;
   ps = S3JniDb_from_java(jDb);
-  if( !ps ){
+  if( !ps || !name ){
     rc = SQLITE_MISUSE;
   }else{
     jclass const klazz = (*env)->GetObjectClass(env, oCollation);
@@ -3164,7 +3171,9 @@ S3JniApi(sqlite3_create_function() sqlite3_create_function_v2()
   sqlite3 * const pDb = PtrGet_sqlite3(jDb);
   char * zFuncName = 0;
 
-  if( !encodingTypeIsValid(eTextRep) ){
+  if( !pDb || !jFuncName ){
+    return SQLITE_MISUSE;
+  }else if( !encodingTypeIsValid(eTextRep) ){
     return s3jni_db_error(pDb, SQLITE_FORMAT,
                           "Invalid function encoding option.");
   }
@@ -3793,7 +3802,7 @@ S3JniApi(sqlite3_preupdate_depth(),int,1preupdate_1depth)(
 ** sqlite3_preupdate_hook() (if isPre is true).
 */
 static jobject s3jni_updatepre_hook(JNIEnv * env, int isPre, jlong jpDb, jobject jHook){
-  S3JniDb * const ps = S3JniDb_from_c(S3JniLongPtr_sqlite3(jpDb));
+  S3JniDb * const ps = S3JniDb_from_jlong(jpDb);
   jclass klazz;
   jobject pOld = 0;
   jmethodID xCallback;
@@ -4211,9 +4220,9 @@ S3JniApi(sqlite3_result_zeroblob64(),jint,1result_1zeroblob64)(
 }
 
 S3JniApi(sqlite3_rollback_hook(),jobject,1rollback_1hook)(
-  JniArgsEnvClass, jobject jDb, jobject jHook
+  JniArgsEnvClass, jlong jpDb, jobject jHook
 ){
-  return s3jni_commit_rollback_hook(0, env, jDb, jHook);
+  return s3jni_commit_rollback_hook(0, env, jpDb, jHook);
 }
 
 /* Callback for sqlite3_set_authorizer(). */
