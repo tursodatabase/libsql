@@ -845,7 +845,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
 ** pointer to it.
 */
 void *sqlite3_user_data(sqlite3_context *p){
-  return (p && p->pFunc) ? p->pFunc->pUserData : 0;
+  return p->pFunc->pUserData;
 }
 
 /*
