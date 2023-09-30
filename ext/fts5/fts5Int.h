@@ -645,6 +645,7 @@ void sqlite3Fts5HashScanNext(Fts5Hash*);
 int sqlite3Fts5HashScanEof(Fts5Hash*);
 void sqlite3Fts5HashScanEntry(Fts5Hash *,
   const char **pzTerm,            /* OUT: term (nul-terminated) */
+  int *pnTerm,                    /* OUT: Size of term in bytes */
   const u8 **ppDoclist,           /* OUT: pointer to doclist */
   int *pnDoclist                  /* OUT: size of doclist in bytes */
 );

@@ -1,0 +1,116 @@
+# 2014 Jan 08
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests focused on phrase queries.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5origintext
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+sqlite3_fts5_register_origintext db
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, tokenize="origintext unicode61");
+  CREATE VIRTUAL TABLE vocab USING fts5vocab(ft, instance);
+}
+
+do_execsql_test 1.1 {
+  INSERT INTO ft VALUES('Hello world');
+}
+
+do_execsql_test 1.2 {
+  INSERT INTO ft(ft) VALUES('integrity-check');
+}
+
+proc b {x} { string map [list "\0" "."] $x }
+db func b b
+
+do_execsql_test 1.3 {
+  select b(term) from vocab;
+} {
+  hello.Hello
+  world
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+# Return a random integer between 0 and n-1.
+#
+proc random {n} {
+  expr {abs(int(rand()*$n))}
+}
+
+proc select_one {list} {
+  set n [llength $list]
+  lindex $list [random $n]
+}
+
+proc term {} {
+  set first_letter {
+    a b c d e f g h i j k l m n o p q r s t u v w x y z
+    A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+  }
+
+  set term [select_one $first_letter]
+  append term [random 100]
+}
+
+proc document {} {
+  set nTerm [expr [random 5] + 5]
+  set doc ""
+  for {set ii 0} {$ii < $nTerm} {incr ii} {
+    lappend doc [term]
+  }
+  set doc
+}
+db func document document
+
+sqlite3_fts5_register_origintext db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, tokenize="origintext unicode61");
+  INSERT INTO ft(ft, rank) VALUES('pgsz', 128);
+  CREATE VIRTUAL TABLE vocab USING fts5vocab(ft, instance);
+}
+
+do_test 2.1 {
+  for {set ii 0} {$ii < 500} {incr ii} {
+    execsql { INSERT INTO ft VALUES( document() ) }
+  }
+} {}
+
+do_execsql_test 2.2 {
+  INSERT INTO ft(ft) VALUES('integrity-check');
+}
+
+do_execsql_test 2.3 {
+  INSERT INTO ft(ft, rank) VALUES('merge', 16);
+}
+
+do_execsql_test 2.4 {
+  INSERT INTO ft(ft) VALUES('integrity-check');
+}
+
+do_execsql_test 2.5 {
+  INSERT INTO ft(ft) VALUES('optimize');
+}
+
+proc b {x} { string map [list "\0" "."] $x }
+db func b b
+#execsql_pp { SELECT b(term) FROM vocab }
+
+finish_test
+
