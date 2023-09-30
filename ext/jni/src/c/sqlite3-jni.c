@@ -2898,7 +2898,7 @@ S3JniApi(sqlite3_complete(),int,1complete)(
           && "Byte array is not NUL-terminated." );
   rc = (pBuf && 0==pBuf[(nBa ? nBa-1 : 0)])
     ? sqlite3_complete( (const char *)pBuf )
-    : (jSql ? SQLITE_NOMEM : SQLITE_ERROR);
+    : (jSql ? SQLITE_NOMEM : SQLITE_MISUSE);
   s3jni_jbyteArray_release(jSql, pBuf);
   return rc;
 }
@@ -3121,37 +3121,33 @@ S3JniApi(sqlite3_create_collation() sqlite3_create_collation_v2(),
 
   S3JniDb_mutex_enter;
   ps = S3JniDb_from_java(jDb);
-  if( !ps || !name ){
-    rc = SQLITE_MISUSE;
+  jclass const klazz = (*env)->GetObjectClass(env, oCollation);
+  jmethodID const midCallback =
+    (*env)->GetMethodID(env, klazz, "call", "([B[B)I");
+  S3JniUnrefLocal(klazz);
+  S3JniIfThrew{
+    rc = s3jni_db_error(ps->pDb, SQLITE_ERROR,
+                        "Could not get call() method from "
+                        "CollationCallback object.");
   }else{
-    jclass const klazz = (*env)->GetObjectClass(env, oCollation);
-    jmethodID const midCallback =
-      (*env)->GetMethodID(env, klazz, "call", "([B[B)I");
-    S3JniUnrefLocal(klazz);
-    S3JniIfThrew{
-      rc = s3jni_db_error(ps->pDb, SQLITE_ERROR,
-                          "Could not get call() method from "
-                          "CollationCallback object.");
-    }else{
-      char * const zName = s3jni_jstring_to_utf8(name, 0);
-      S3JniCollationCallback * const pCC =
-        zName ? S3JniHook_alloc() : 0;
-      if( pCC ){
-        rc = sqlite3_create_collation_v2(ps->pDb, zName, (int)eTextRep,
-                                         pCC, CollationCallback_xCompare,
-                                         CollationCallback_xDestroy);
-        if( 0==rc ){
-          pCC->midCallback = midCallback;
-          pCC->jObj = S3JniRefGlobal(oCollation);
-          pCC->doXDestroy = 1;
-        }else{
-          CollationCallback_xDestroy(pCC);
-        }
+    char * const zName = s3jni_jstring_to_utf8(name, 0);
+    S3JniCollationCallback * const pCC =
+      zName ? S3JniHook_alloc() : 0;
+    if( pCC ){
+      rc = sqlite3_create_collation_v2(ps->pDb, zName, (int)eTextRep,
+                                       pCC, CollationCallback_xCompare,
+                                       CollationCallback_xDestroy);
+      if( 0==rc ){
+        pCC->midCallback = midCallback;
+        pCC->jObj = S3JniRefGlobal(oCollation);
+        pCC->doXDestroy = 1;
       }else{
-        rc = SQLITE_NOMEM;
+        CollationCallback_xDestroy(pCC);
       }
-      sqlite3_free(zName);
+    }else{
+      rc = SQLITE_NOMEM;
     }
+    sqlite3_free(zName);
   }
   S3JniDb_mutex_leave;
   return (jint)rc;

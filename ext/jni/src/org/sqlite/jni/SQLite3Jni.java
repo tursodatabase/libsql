@@ -32,6 +32,13 @@ import java.util.Arrays;
 
   <p>The C-side part can be found in sqlite3-jni.c.
 
+  <p>This class is package-private in order to keep Java clients from
+  having direct access to the low-level C-style APIs, a design
+  decision made by Java developers based on the C-style API being
+  riddled with opportunities for other Java to proverbially shoot
+  themselves in the foot with. Third-party copies of this code may
+  eliminate that guard by simply changing this class from
+  package-private to public.
 
   <p>Only functions which materially differ from their C counterparts
   are documented here, and only those material differences are
@@ -83,7 +90,7 @@ import java.util.Arrays;
   <p><a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html#modified-utf-8">https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html#modified-utf-8</a>
 
 */
-public final class SQLite3Jni {
+final class SQLite3Jni {
   static {
     System.loadLibrary("sqlite3-jni");
   }
@@ -123,7 +130,7 @@ public final class SQLite3Jni {
      which client-level code should use to make any informed
      decisions.
   */
-  static native boolean sqlite3_java_uncache_thread();
+  public static native boolean sqlite3_java_uncache_thread();
 
   //////////////////////////////////////////////////////////////////////
   // Maintenance reminder: please keep the sqlite3_.... functions
@@ -147,7 +154,7 @@ public final class SQLite3Jni {
      "not a key" value.
   */
   @Canonical
-  static native long sqlite3_aggregate_context(sqlite3_context cx, boolean initialize);
+  public static native long sqlite3_aggregate_context(sqlite3_context cx, boolean initialize);
 
   /**
      Functions almost as documented for the C API, with these
@@ -166,10 +173,10 @@ public final class SQLite3Jni {
      <p>See the AutoExtension class docs for more information.
   */
   @Canonical
-  static native int sqlite3_auto_extension(@NotNull AutoExtensionCallback callback);
+  public static native int sqlite3_auto_extension(@NotNull AutoExtensionCallback callback);
 
   @Canonical
-  static native int sqlite3_backup_finish(@NotNull long ptrToBackup);
+  public static native int sqlite3_backup_finish(@NotNull long ptrToBackup);
 
   @Canonical
   public static int sqlite3_backup_finish(@NotNull sqlite3_backup b){
@@ -177,7 +184,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native sqlite3_backup sqlite3_backup_init(
+  public static native sqlite3_backup sqlite3_backup_init(
     @NotNull long ptrToDbDest, @NotNull String destTableName,
     @NotNull long ptrToDbSrc, @NotNull String srcTableName
   );
@@ -192,7 +199,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_backup_pagecount(@NotNull long ptrToBackup);
+  public static native int sqlite3_backup_pagecount(@NotNull long ptrToBackup);
 
   @Canonical
   public static int sqlite3_backup_pagecount(@NotNull sqlite3_backup b){
@@ -200,7 +207,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_backup_remaining(@NotNull long ptrToBackup);
+  public static native int sqlite3_backup_remaining(@NotNull long ptrToBackup);
 
   @Canonical
   public static int sqlite3_backup_remaining(@NotNull sqlite3_backup b){
@@ -208,7 +215,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_backup_step(@NotNull long ptrToBackup, int nPage);
+  public static native int sqlite3_backup_step(@NotNull long ptrToBackup, int nPage);
 
   @Canonical
   public static int sqlite3_backup_step(@NotNull sqlite3_backup b, int nPage){
@@ -216,7 +223,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_bind_blob(
+  public static native int sqlite3_bind_blob(
     @NotNull long ptrToStmt, int ndx, @Nullable byte[] data, int n
   );
 
@@ -239,7 +246,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_bind_double(
+  public static native int sqlite3_bind_double(
     @NotNull long ptrToStmt, int ndx, double v
   );
 
@@ -251,7 +258,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_bind_int(
+  public static native int sqlite3_bind_int(
     @NotNull long ptrToStmt, int ndx, int v
   );
 
@@ -263,7 +270,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_bind_int64(
+  public static native int sqlite3_bind_int64(
     @NotNull long ptrToStmt, int ndx, long v
   );
 
@@ -272,7 +279,7 @@ public final class SQLite3Jni {
     return sqlite3_bind_int64( stmt.getNativePointer(), ndx, v );
   }
 
-  static native int sqlite3_bind_java_object(
+  public static native int sqlite3_bind_java_object(
     @NotNull long ptrToStmt, int ndx, @Nullable Object o
   );
 
@@ -289,7 +296,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_bind_null(@NotNull long ptrToStmt, int ndx);
+  public static native int sqlite3_bind_null(@NotNull long ptrToStmt, int ndx);
 
   @Canonical
   public static int sqlite3_bind_null(@NotNull sqlite3_stmt stmt, int ndx){
@@ -297,7 +304,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_bind_parameter_count(@NotNull long ptrToStmt);
+  public static native int sqlite3_bind_parameter_count(@NotNull long ptrToStmt);
 
   @Canonical
   public static int sqlite3_bind_parameter_count(@NotNull sqlite3_stmt stmt){
@@ -328,7 +335,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native String sqlite3_bind_parameter_name(
+  public static native String sqlite3_bind_parameter_name(
     @NotNull long ptrToStmt, int index
   );
 
@@ -338,7 +345,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_bind_text(
+  public static native int sqlite3_bind_text(
     @NotNull long ptrToStmt, int ndx, @Nullable byte[] utf8, int maxBytes
   );
 
@@ -383,7 +390,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_bind_text16(
+  public static native int sqlite3_bind_text16(
     @NotNull long ptrToStmt, int ndx, @Nullable byte[] data, int maxBytes
   );
 
@@ -426,7 +433,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_bind_zeroblob(@NotNull long ptrToStmt, int ndx, int n);
+  public static native int sqlite3_bind_zeroblob(@NotNull long ptrToStmt, int ndx, int n);
 
   @Canonical
   public static int sqlite3_bind_zeroblob(@NotNull sqlite3_stmt stmt, int ndx, int n){
@@ -434,7 +441,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_bind_zeroblob64(
+  public static native int sqlite3_bind_zeroblob64(
     @NotNull long ptrToStmt, int ndx, long n
   );
 
@@ -444,7 +451,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_blob_bytes(@NotNull long ptrToBlob);
+  public static native int sqlite3_blob_bytes(@NotNull long ptrToBlob);
 
   @Canonical
   public static int sqlite3_blob_bytes(@NotNull sqlite3_blob blob){
@@ -452,7 +459,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_blob_close(@Nullable long ptrToBlob);
+  public static native int sqlite3_blob_close(@Nullable long ptrToBlob);
 
   @Canonical
   public static int sqlite3_blob_close(@Nullable sqlite3_blob blob){
@@ -460,7 +467,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_blob_open(
+  public static native int sqlite3_blob_open(
     @NotNull long ptrToDb, @NotNull String dbName,
     @NotNull String tableName, @NotNull String columnName,
     long iRow, int flags, @NotNull OutputPointer.sqlite3_blob out
@@ -490,7 +497,7 @@ public final class SQLite3Jni {
   };
 
   @Canonical
-  static native int sqlite3_blob_read(
+  public static native int sqlite3_blob_read(
     @NotNull long ptrToBlob, @NotNull byte[] target, int iOffset
   );
 
@@ -502,7 +509,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_blob_reopen(
+  public static native int sqlite3_blob_reopen(
     @NotNull long ptrToBlob, long newRowId
   );
 
@@ -512,7 +519,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_blob_write(
+  public static native int sqlite3_blob_write(
     @NotNull long ptrToBlob, @NotNull byte[] bytes, int iOffset
   );
 
@@ -524,7 +531,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_busy_handler(
+  public static native int sqlite3_busy_handler(
     @NotNull long ptrToDb, @Nullable BusyHandlerCallback handler
   );
 
@@ -541,7 +548,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_busy_timeout(@NotNull long ptrToDb, int ms);
+  public static native int sqlite3_busy_timeout(@NotNull long ptrToDb, int ms);
 
   @Canonical
   public static int sqlite3_busy_timeout(@NotNull sqlite3 db, int ms){
@@ -549,12 +556,12 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native boolean sqlite3_cancel_auto_extension(
+  public static native boolean sqlite3_cancel_auto_extension(
     @NotNull AutoExtensionCallback ax
   );
 
   @Canonical
-  static native int sqlite3_changes(@NotNull long ptrToDb);
+  public static native int sqlite3_changes(@NotNull long ptrToDb);
 
   @Canonical
   public static int sqlite3_changes(@NotNull sqlite3 db){
@@ -562,7 +569,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native long sqlite3_changes64(@NotNull long ptrToDb);
+  public static native long sqlite3_changes64(@NotNull long ptrToDb);
 
   @Canonical
   public static long sqlite3_changes64(@NotNull sqlite3 db){
@@ -570,7 +577,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_clear_bindings(@NotNull long ptrToStmt);
+  public static native int sqlite3_clear_bindings(@NotNull long ptrToStmt);
 
   @Canonical
   public static int sqlite3_clear_bindings(@NotNull sqlite3_stmt stmt){
@@ -578,7 +585,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_close(@Nullable long ptrToDb);
+  public static native int sqlite3_close(@Nullable long ptrToDb);
 
   @Canonical
   public static int sqlite3_close(@Nullable sqlite3 db){
@@ -591,7 +598,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_close_v2(@Nullable long ptrToDb);
+  public static native int sqlite3_close_v2(@Nullable long ptrToDb);
 
   @Canonical
   public static int sqlite3_close_v2(@Nullable sqlite3 db){
@@ -599,12 +606,12 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native byte[] sqlite3_column_blob(
+  public static native byte[] sqlite3_column_blob(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
   @Canonical
-  static native int sqlite3_column_bytes(@NotNull long ptrToStmt, int ndx);
+  public static native int sqlite3_column_bytes(@NotNull long ptrToStmt, int ndx);
 
   @Canonical
   public static int sqlite3_column_bytes(@NotNull sqlite3_stmt stmt, int ndx){
@@ -612,7 +619,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_column_bytes16(@NotNull long ptrToStmt, int ndx);
+  public static native int sqlite3_column_bytes16(@NotNull long ptrToStmt, int ndx);
 
   @Canonical
   public static int sqlite3_column_bytes16(@NotNull sqlite3_stmt stmt, int ndx){
@@ -620,7 +627,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_column_count(@NotNull long ptrToStmt);
+  public static native int sqlite3_column_count(@NotNull long ptrToStmt);
 
   @Canonical
   public static int sqlite3_column_count(@NotNull sqlite3_stmt stmt){
@@ -628,7 +635,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native String sqlite3_column_decltype(@NotNull long ptrToStmt, int ndx);
+  public static native String sqlite3_column_decltype(@NotNull long ptrToStmt, int ndx);
 
   @Canonical
   public static String sqlite3_column_decltype(@NotNull sqlite3_stmt stmt, int ndx){
@@ -636,22 +643,22 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native double sqlite3_column_double(
+  public static native double sqlite3_column_double(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
   @Canonical
-  static native int sqlite3_column_int(
+  public static native int sqlite3_column_int(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
   @Canonical
-  static native long sqlite3_column_int64(
+  public static native long sqlite3_column_int64(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
   @Canonical
-  static native String sqlite3_column_name(@NotNull long ptrToStmt, int ndx);
+  public static native String sqlite3_column_name(@NotNull long ptrToStmt, int ndx);
 
   @Canonical
   public static String sqlite3_column_name(@NotNull sqlite3_stmt stmt, int ndx){
@@ -659,7 +666,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native String sqlite3_column_database_name(@NotNull long ptrToStmt, int ndx);
+  public static native String sqlite3_column_database_name(@NotNull long ptrToStmt, int ndx);
 
   @Canonical
   public static String sqlite3_column_database_name(@NotNull sqlite3_stmt stmt, int ndx){
@@ -667,7 +674,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native String sqlite3_column_origin_name(@NotNull long ptrToStmt, int ndx);
+  public static native String sqlite3_column_origin_name(@NotNull long ptrToStmt, int ndx);
 
   @Canonical
   public static String sqlite3_column_origin_name(@NotNull sqlite3_stmt stmt, int ndx){
@@ -675,7 +682,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native String sqlite3_column_table_name(@NotNull long ptrToStmt, int ndx);
+  public static native String sqlite3_column_table_name(@NotNull long ptrToStmt, int ndx);
 
   @Canonical
   public static String sqlite3_column_table_name(@NotNull sqlite3_stmt stmt, int ndx){
@@ -691,12 +698,12 @@ public final class SQLite3Jni {
      @see #sqlite3_column_text16(sqlite3_stmt,int)
   */
   @Canonical
-  static native byte[] sqlite3_column_text(
+  public static native byte[] sqlite3_column_text(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
   @Canonical
-  static native String sqlite3_column_text16(
+  public static native String sqlite3_column_text16(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
@@ -738,7 +745,7 @@ public final class SQLite3Jni {
   // }
 
   @Canonical
-  static native int sqlite3_column_type(@NotNull long ptrToStmt, int ndx);
+  public static native int sqlite3_column_type(@NotNull long ptrToStmt, int ndx);
 
   @Canonical
   public static int sqlite3_column_type(@NotNull sqlite3_stmt stmt, int ndx){
@@ -746,12 +753,12 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native sqlite3_value sqlite3_column_value(
+  public static native sqlite3_value sqlite3_column_value(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
   @Canonical
-  static native int sqlite3_collation_needed(
+  public static native int sqlite3_collation_needed(
     @NotNull long ptrToDb, @Nullable CollationNeededCallback callback
   );
 
@@ -767,7 +774,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native CommitHookCallback sqlite3_commit_hook(
+  public static native CommitHookCallback sqlite3_commit_hook(
     @NotNull long ptrToDb, @Nullable CommitHookCallback hook
   );
 
@@ -779,22 +786,22 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native String sqlite3_compileoption_get(int n);
+  public static native String sqlite3_compileoption_get(int n);
 
   @Canonical
-  static native boolean sqlite3_compileoption_used(String optName);
+  public static native boolean sqlite3_compileoption_used(String optName);
 
   /**
      This implementation is private because it's too easy to pass it
      non-NUL-terminated byte arrays from client code.
   */
   @Canonical
-  static native int sqlite3_complete(
+  public static native int sqlite3_complete(
     @NotNull byte[] nulTerminatedUtf8Sql
   );
 
   /**
-     Unlike this C API, this returns SQLITE_MISUSE if its argument is
+     Unlike the C API, this returns SQLITE_MISUSE if its argument is
      null (as opposed to invoking UB).
   */
   @Canonical()
@@ -821,7 +828,7 @@ public final class SQLite3Jni {
   @Canonical(comment="Option subset: "+
              "SQLITE_CONFIG_SINGLETHREAD, SQLITE_CONFIG_MULTITHREAD, "+
              "SQLITE_CONFIG_SERIALIZED")
-  static native int sqlite3_config(int op);
+  public static native int sqlite3_config(int op);
 
   /**
      If the native library was built with SQLITE_ENABLE_SQLLOG defined
@@ -838,30 +845,26 @@ public final class SQLite3Jni {
      library APIs are being called.
   */
   @Canonical(comment="Option subset: SQLITE_CONFIG_SQLLOG")
-  static native int sqlite3_config( @Nullable ConfigSqllogCallback logger );
+  public static native int sqlite3_config( @Nullable ConfigSqllogCallback logger );
 
   /**
      The sqlite3_config() overload for handling the SQLITE_CONFIG_LOG
      option.
   */
   @Canonical(comment="Option subset: SQLITE_CONFIG_LOG")
-  static native int sqlite3_config( @Nullable ConfigLogCallback logger );
+  public static native int sqlite3_config( @Nullable ConfigLogCallback logger );
 
   /**
-     Unlike this C API, this returns null if its argument is
+     Unlike the C API, this returns null if its argument is
      null (as opposed to invoking UB).
   */
   @Canonical
-  static native sqlite3 sqlite3_context_db_handle(
+  public static native sqlite3 sqlite3_context_db_handle(
     @NotNull sqlite3_context cx
   );
 
-  /**
-     Unlike this C API, this returns SQLITE_MISUSE if its db or name
-     arguments are null (as opposed to invoking UB).
-  */
   @Canonical
-  static native int sqlite3_create_collation(
+  public static native int sqlite3_create_collation(
     @NotNull sqlite3 db, @NotNull String name, int eTextRep,
     @NotNull CollationCallback col
   );
@@ -874,17 +877,17 @@ public final class SQLite3Jni {
      SQLFunction's subclasses (ScalarFunction, AggregateFunction<T>,
      and WindowFunction<T>) for details.
 
-     Unlike this C API, this returns SQLITE_MISUSE null if its db or
+     <p>Unlike the C API, this returns SQLITE_MISUSE null if its db or
      functionName arguments are null (as opposed to invoking UB).
   */
   @Canonical
-  static native int sqlite3_create_function(
+  public static native int sqlite3_create_function(
     @NotNull sqlite3 db, @NotNull String functionName,
     int nArg, int eTextRep, @NotNull SQLFunction func
   );
 
   @Canonical
-  static native int sqlite3_data_count(@NotNull long ptrToStmt);
+  public static native int sqlite3_data_count(@NotNull long ptrToStmt);
 
   @Canonical
   public static int sqlite3_data_count(@NotNull sqlite3_stmt stmt){
@@ -896,11 +899,11 @@ public final class SQLite3Jni {
      variadic arguments. Returns SQLITE_MISUSE if op is not one of the
      SQLITE_DBCONFIG_... options which uses this call form.
 
-     Unlike this C API, this returns SQLITE_MISUSE if its db argument
+     <p>Unlike the C API, this returns SQLITE_MISUSE if its db argument
      are null (as opposed to invoking UB).
   */
   @Canonical
-  static native int sqlite3_db_config(
+  public static native int sqlite3_db_config(
     @NotNull sqlite3 db, int op, int onOff, @Nullable OutputPointer.Int32 out
   );
 
@@ -912,35 +915,35 @@ public final class SQLite3Jni {
      extended in future versions.
   */
   @Canonical(comment="Supports only a subset of options.")
-  static native int sqlite3_db_config(
+  public static native int sqlite3_db_config(
     @NotNull sqlite3 db, int op, @NotNull String val
   );
 
   @Canonical
-  static native String sqlite3_db_filename(
+  public static native String sqlite3_db_filename(
     @NotNull sqlite3 db, @NotNull String dbName
   );
 
   @Canonical
-  static native sqlite3 sqlite3_db_handle(@NotNull sqlite3_stmt stmt);
+  public static native sqlite3 sqlite3_db_handle(@NotNull sqlite3_stmt stmt);
 
   @Canonical
-  static native int sqlite3_db_release_memory(sqlite3 db);
+  public static native int sqlite3_db_release_memory(sqlite3 db);
 
   @Canonical
-  static native int sqlite3_db_status(
+  public static native int sqlite3_db_status(
     @NotNull sqlite3 db, int op, @NotNull OutputPointer.Int32 pCurrent,
     @NotNull OutputPointer.Int32 pHighwater, boolean reset
   );
 
   @Canonical
-  static native int sqlite3_errcode(@NotNull sqlite3 db);
+  public static native int sqlite3_errcode(@NotNull sqlite3 db);
 
   @Canonical
-  static native String sqlite3_errmsg16(@NotNull sqlite3 db);
+  public static native String sqlite3_errmsg16(@NotNull sqlite3 db);
 
   @Canonical
-  static native int sqlite3_error_offset(@NotNull long ptrToDb);
+  public static native int sqlite3_error_offset(@NotNull long ptrToDb);
 
   /**
      Note that the returned byte offset values assume UTF-8-encoded
@@ -952,13 +955,13 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native String sqlite3_errstr(int resultCode);
+  public static native String sqlite3_errstr(int resultCode);
 
   @Canonical
-  static native String sqlite3_expanded_sql(@NotNull sqlite3_stmt stmt);
+  public static native String sqlite3_expanded_sql(@NotNull sqlite3_stmt stmt);
 
   @Canonical
-  static native int sqlite3_extended_errcode(@NotNull long ptrToDb);
+  public static native int sqlite3_extended_errcode(@NotNull long ptrToDb);
 
   @Canonical
   public static int sqlite3_extended_errcode(@NotNull sqlite3 db){
@@ -966,12 +969,12 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native boolean sqlite3_extended_result_codes(
+  public static native boolean sqlite3_extended_result_codes(
     @NotNull sqlite3 db, boolean onoff
   );
 
   @Canonical
-  static native boolean sqlite3_get_autocommit(@NotNull long ptrToDb);
+  public static native boolean sqlite3_get_autocommit(@NotNull long ptrToDb);
 
   @Canonical
   public static boolean sqlite3_get_autocommit(@NotNull sqlite3 db){
@@ -979,12 +982,12 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native Object sqlite3_get_auxdata(
+  public static native Object sqlite3_get_auxdata(
     @NotNull sqlite3_context cx, int n
   );
 
   @Canonical
-  static native int sqlite3_finalize(long ptrToStmt);
+  public static native int sqlite3_finalize(long ptrToStmt);
 
   @Canonical
   public static int sqlite3_finalize(@NotNull sqlite3_stmt stmt){
@@ -992,35 +995,35 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_initialize();
+  public static native int sqlite3_initialize();
 
   @Canonical
-  static native void sqlite3_interrupt(@NotNull sqlite3 db);
+  public static native void sqlite3_interrupt(@NotNull sqlite3 db);
 
   @Canonical
-  static native boolean sqlite3_is_interrupted(@NotNull sqlite3 db);
+  public static native boolean sqlite3_is_interrupted(@NotNull sqlite3 db);
 
   @Canonical
-  static native boolean sqlite3_keyword_check(@NotNull String word);
+  public static native boolean sqlite3_keyword_check(@NotNull String word);
 
   @Canonical
-  static native int sqlite3_keyword_count();
+  public static native int sqlite3_keyword_count();
 
   @Canonical
-  static native String sqlite3_keyword_name(int index);
+  public static native String sqlite3_keyword_name(int index);
 
 
   @Canonical
-  static native long sqlite3_last_insert_rowid(@NotNull sqlite3 db);
+  public static native long sqlite3_last_insert_rowid(@NotNull sqlite3 db);
 
   @Canonical
-  static native String sqlite3_libversion();
+  public static native String sqlite3_libversion();
 
   @Canonical
-  static native int sqlite3_libversion_number();
+  public static native int sqlite3_libversion_number();
 
   @Canonical
-  static native int sqlite3_limit(@NotNull sqlite3 db, int id, int newVal);
+  public static native int sqlite3_limit(@NotNull sqlite3 db, int id, int newVal);
 
   /**
      Works like its C counterpart and makes the native pointer of the
@@ -1036,7 +1039,7 @@ public final class SQLite3Jni {
      db handle.
   */
   @Canonical
-  static native int sqlite3_open(
+  public static native int sqlite3_open(
     @Nullable String filename, @NotNull OutputPointer.sqlite3 ppDb
   );
 
@@ -1055,7 +1058,7 @@ public final class SQLite3Jni {
   };
 
   @Canonical
-  static native int sqlite3_open_v2(
+  public static native int sqlite3_open_v2(
     @Nullable String filename, @NotNull OutputPointer.sqlite3 ppDb,
     int flags, @Nullable String zVfs
   );
@@ -1100,7 +1103,7 @@ public final class SQLite3Jni {
      real utility.
   */
   @Canonical
-  static native int sqlite3_prepare(
+  public static native int sqlite3_prepare(
     @NotNull long ptrToDb, @NotNull byte[] sqlUtf8, int maxBytes,
     @NotNull OutputPointer.sqlite3_stmt outStmt,
     @Nullable OutputPointer.Int32 pTailOffset
@@ -1160,7 +1163,7 @@ public final class SQLite3Jni {
      @see #sqlite3_prepare
   */
   @Canonical
-  static native int sqlite3_prepare_v2(
+  public static native int sqlite3_prepare_v2(
     @NotNull long ptrToDb, @NotNull byte[] sqlUtf8, int maxBytes,
     @NotNull OutputPointer.sqlite3_stmt outStmt,
     @Nullable OutputPointer.Int32 pTailOffset
@@ -1214,7 +1217,7 @@ public final class SQLite3Jni {
      @see #sqlite3_prepare
   */
   @Canonical
-  static native int sqlite3_prepare_v3(
+  public static native int sqlite3_prepare_v3(
     @NotNull long ptrToDb, @NotNull byte[] sqlUtf8, int maxBytes,
     int prepFlags, @NotNull OutputPointer.sqlite3_stmt outStmt,
     @Nullable OutputPointer.Int32 pTailOffset
@@ -1370,7 +1373,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_preupdate_blobwrite(@NotNull long ptrToDb);
+  public static native int sqlite3_preupdate_blobwrite(@NotNull long ptrToDb);
 
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this
@@ -1383,7 +1386,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_preupdate_count(@NotNull long ptrToDb);
+  public static native int sqlite3_preupdate_count(@NotNull long ptrToDb);
 
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this
@@ -1396,7 +1399,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_preupdate_depth(@NotNull long ptrToDb);
+  public static native int sqlite3_preupdate_depth(@NotNull long ptrToDb);
 
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this
@@ -1409,7 +1412,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native PreupdateHookCallback sqlite3_preupdate_hook(
+  public static native PreupdateHookCallback sqlite3_preupdate_hook(
     @NotNull long ptrToDb, @Nullable PreupdateHookCallback hook
   );
 
@@ -1426,7 +1429,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_preupdate_new(@NotNull long ptrToDb, int col,
+  public static native int sqlite3_preupdate_new(@NotNull long ptrToDb, int col,
                                                  @NotNull OutputPointer.sqlite3_value out);
 
   /**
@@ -1451,7 +1454,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_preupdate_old(@NotNull long ptrToDb, int col,
+  public static native int sqlite3_preupdate_old(@NotNull long ptrToDb, int col,
                                                  @NotNull OutputPointer.sqlite3_value out);
 
   /**
@@ -1476,18 +1479,18 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native void sqlite3_progress_handler(
+  public static native void sqlite3_progress_handler(
     @NotNull sqlite3 db, int n, @Nullable ProgressHandlerCallback h
   );
 
   @Canonical
-  static native void sqlite3_randomness(byte[] target);
+  public static native void sqlite3_randomness(byte[] target);
 
   @Canonical
-  static native int sqlite3_release_memory(int n);
+  public static native int sqlite3_release_memory(int n);
 
   @Canonical
-  static native int sqlite3_reset(@NotNull sqlite3_stmt stmt);
+  public static native int sqlite3_reset(@NotNull sqlite3_stmt stmt);
 
   /**
      Works like the C API except that it has no side effects if auto
@@ -1495,10 +1498,10 @@ public final class SQLite3Jni {
      extensions cannot be manipulated while it is being traversed.)
   */
   @Canonical
-  static native void sqlite3_reset_auto_extension();
+  public static native void sqlite3_reset_auto_extension();
 
   @Canonical
-  static native void sqlite3_result_double(
+  public static native void sqlite3_result_double(
     @NotNull sqlite3_context cx, double v
   );
 
@@ -1555,32 +1558,32 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native void sqlite3_result_error_toobig(
+  public static native void sqlite3_result_error_toobig(
     @NotNull sqlite3_context cx
   );
 
   @Canonical
-  static native void sqlite3_result_error_nomem(
+  public static native void sqlite3_result_error_nomem(
     @NotNull sqlite3_context cx
   );
 
   @Canonical
-  static native void sqlite3_result_error_code(
+  public static native void sqlite3_result_error_code(
     @NotNull sqlite3_context cx, int c
   );
 
   @Canonical
-  static native void sqlite3_result_null(
+  public static native void sqlite3_result_null(
     @NotNull sqlite3_context cx
   );
 
   @Canonical
-  static native void sqlite3_result_int(
+  public static native void sqlite3_result_int(
     @NotNull sqlite3_context cx, int v
   );
 
   @Canonical
-  static native void sqlite3_result_int64(
+  public static native void sqlite3_result_int64(
     @NotNull sqlite3_context cx, long v
   );
 
@@ -1600,7 +1603,7 @@ public final class SQLite3Jni {
      @see #sqlite3_value_java_object
      @see #sqlite3_bind_java_object
   */
-  static native void sqlite3_result_java_object(
+  public static native void sqlite3_result_java_object(
     @NotNull sqlite3_context cx, @NotNull Object o
   );
 
@@ -1665,17 +1668,17 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native void sqlite3_result_value(
+  public static native void sqlite3_result_value(
     @NotNull sqlite3_context cx, @NotNull sqlite3_value v
   );
 
   @Canonical
-  static native void sqlite3_result_zeroblob(
+  public static native void sqlite3_result_zeroblob(
     @NotNull sqlite3_context cx, int n
   );
 
   @Canonical
-  static native int sqlite3_result_zeroblob64(
+  public static native int sqlite3_result_zeroblob64(
     @NotNull sqlite3_context cx, long n
   );
 
@@ -1684,7 +1687,7 @@ public final class SQLite3Jni {
      unnecessary in Java.
   */
   @Canonical
-  static native void sqlite3_result_blob(
+  public static native void sqlite3_result_blob(
     @NotNull sqlite3_context cx, @Nullable byte[] blob, int maxLen
   );
 
@@ -1714,7 +1717,7 @@ public final class SQLite3Jni {
      arguably unnecessary in Java.</p>
   */
   @Canonical
-  static native void sqlite3_result_blob64(
+  public static native void sqlite3_result_blob64(
     @NotNull sqlite3_context cx, @Nullable byte[] blob, long maxLen
   );
 
@@ -1730,7 +1733,7 @@ public final class SQLite3Jni {
      arguably unnecessary in Java.
   */
   @Canonical
-  static native void sqlite3_result_text(
+  public static native void sqlite3_result_text(
     @NotNull sqlite3_context cx, @Nullable byte[] utf8, int maxLen
   );
 
@@ -1776,7 +1779,7 @@ public final class SQLite3Jni {
      arguably unnecessary in Java.
   */
   @Canonical
-  static native void sqlite3_result_text64(
+  public static native void sqlite3_result_text64(
     @NotNull sqlite3_context cx, @Nullable byte[] text,
     long maxLength, int encoding
   );
@@ -1804,7 +1807,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native RollbackHookCallback sqlite3_rollback_hook(
+  public static native RollbackHookCallback sqlite3_rollback_hook(
     @NotNull long ptrToDb, @Nullable RollbackHookCallback hook
   );
 
@@ -1816,17 +1819,17 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_set_authorizer(
+  public static native int sqlite3_set_authorizer(
     @NotNull sqlite3 db, @Nullable AuthorizerCallback auth
   );
 
   @Canonical
-  static native void sqlite3_set_auxdata(
+  public static native void sqlite3_set_auxdata(
     @NotNull sqlite3_context cx, int n, @Nullable Object data
   );
 
   @Canonical
-  static native void sqlite3_set_last_insert_rowid(
+  public static native void sqlite3_set_last_insert_rowid(
     @NotNull sqlite3 db, long rowid
   );
 
@@ -1844,31 +1847,31 @@ public final class SQLite3Jni {
   public static synchronized native int sqlite3_shutdown();
 
   @Canonical
-  static native int sqlite3_sleep(int ms);
+  public static native int sqlite3_sleep(int ms);
 
   @Canonical
-  static native String sqlite3_sourceid();
+  public static native String sqlite3_sourceid();
 
   @Canonical
-  static native String sqlite3_sql(@NotNull sqlite3_stmt stmt);
+  public static native String sqlite3_sql(@NotNull sqlite3_stmt stmt);
 
   @Canonical
-  static native int sqlite3_status(
+  public static native int sqlite3_status(
     int op, @NotNull OutputPointer.Int32 pCurrent,
     @NotNull OutputPointer.Int32 pHighwater, boolean reset
   );
 
   @Canonical
-  static native int sqlite3_status64(
+  public static native int sqlite3_status64(
     int op, @NotNull OutputPointer.Int64 pCurrent,
     @NotNull OutputPointer.Int64 pHighwater, boolean reset
   );
 
   @Canonical
-  static native int sqlite3_step(@NotNull sqlite3_stmt stmt);
+  public static native int sqlite3_step(@NotNull sqlite3_stmt stmt);
 
   @Canonical
-  static native int sqlite3_stmt_explain(@NotNull long ptrToStmt, int op);
+  public static native int sqlite3_stmt_explain(@NotNull long ptrToStmt, int op);
 
   @Canonical
   public static int sqlite3_stmt_explain(@NotNull sqlite3_stmt stmt, int op){
@@ -1876,7 +1879,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_stmt_isexplain(@NotNull long ptrToStmt);
+  public static native int sqlite3_stmt_isexplain(@NotNull long ptrToStmt);
 
   @Canonical
   public static int sqlite3_stmt_isexplain(@NotNull sqlite3_stmt stmt){
@@ -1884,7 +1887,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native boolean sqlite3_stmt_readonly(@NotNull long ptrToStmt);
+  public static native boolean sqlite3_stmt_readonly(@NotNull long ptrToStmt);
 
   @Canonical
   public static boolean sqlite3_stmt_readonly(@NotNull sqlite3_stmt stmt){
@@ -1892,7 +1895,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_stmt_status(
+  public static native int sqlite3_stmt_status(
     @NotNull sqlite3_stmt stmt, int op, boolean reset
   );
 
@@ -1908,7 +1911,7 @@ public final class SQLite3Jni {
      signature is the public-facing one.
   */
   @Canonical
-  static native int sqlite3_strglob(
+  public static native int sqlite3_strglob(
     @NotNull byte[] glob, @NotNull byte[] nullTerminatedUtf8
   );
 
@@ -1924,7 +1927,7 @@ public final class SQLite3Jni {
      The LIKE counterpart of the private sqlite3_strglob() method.
   */
   @Canonical
-  static native int sqlite3_strlike(
+  public static native int sqlite3_strlike(
     @NotNull byte[] glob, @NotNull byte[] nullTerminatedUtf8,
     int escChar
   );
@@ -1939,7 +1942,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_system_errno(@NotNull long ptrToDb);
+  public static native int sqlite3_system_errno(@NotNull long ptrToDb);
 
   @Canonical
   public static int sqlite3_system_errno(@NotNull sqlite3 db){
@@ -1947,7 +1950,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_table_column_metadata(
+  public static native int sqlite3_table_column_metadata(
     @NotNull sqlite3 db, @NotNull String zDbName,
     @NotNull String zTableName, @NotNull String zColumnName,
     @Nullable OutputPointer.String pzDataType,
@@ -1986,10 +1989,10 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_threadsafe();
+  public static native int sqlite3_threadsafe();
 
   @Canonical
-  static native int sqlite3_total_changes(@NotNull long ptrToDb);
+  public static native int sqlite3_total_changes(@NotNull long ptrToDb);
 
   @Canonical
   public static int sqlite3_total_changes(@NotNull sqlite3 db){
@@ -1997,7 +2000,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native long sqlite3_total_changes64(@NotNull long ptrToDb);
+  public static native long sqlite3_total_changes64(@NotNull long ptrToDb);
 
   @Canonical
   public static long sqlite3_total_changes64(@NotNull sqlite3 db){
@@ -2009,22 +2012,22 @@ public final class SQLite3Jni {
      function is elided here because the roles of that functions' 3rd and 4th
      arguments are encapsulated in the final argument to this function.
 
-     <p>Unlike the C API, which is documented as always returning 0, this
-     implementation returns non-0 if initialization of the tracer
-     mapping state fails.
+     <p>Unlike the C API, which is documented as always returning 0,
+     this implementation returns non-0 if initialization of the tracer
+     mapping state fails (e.g. on OOM).
   */
   @Canonical
-  static native int sqlite3_trace_v2(
+  public static native int sqlite3_trace_v2(
     @NotNull sqlite3 db, int traceMask, @Nullable TraceV2Callback tracer
   );
 
   @Canonical
-  static native int sqlite3_txn_state(
+  public static native int sqlite3_txn_state(
     @NotNull sqlite3 db, @Nullable String zSchema
   );
 
   @Canonical
-  static native UpdateHookCallback sqlite3_update_hook(
+  public static native UpdateHookCallback sqlite3_update_hook(
     @NotNull long ptrToDb, @Nullable UpdateHookCallback hook
   );
 
@@ -2046,7 +2049,7 @@ public final class SQLite3Jni {
   */
 
   @Canonical
-  static native byte[] sqlite3_value_blob(@NotNull long ptrToValue);
+  public static native byte[] sqlite3_value_blob(@NotNull long ptrToValue);
 
   @Canonical
   public static byte[] sqlite3_value_blob(@NotNull sqlite3_value v){
@@ -2054,7 +2057,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_value_bytes(@NotNull long ptrToValue);
+  public static native int sqlite3_value_bytes(@NotNull long ptrToValue);
 
   @Canonical
   public static int sqlite3_value_bytes(@NotNull sqlite3_value v){
@@ -2062,7 +2065,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_value_bytes16(@NotNull long ptrToValue);
+  public static native int sqlite3_value_bytes16(@NotNull long ptrToValue);
 
   @Canonical
   public static int sqlite3_value_bytes16(@NotNull sqlite3_value v){
@@ -2070,7 +2073,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native double sqlite3_value_double(@NotNull long ptrToValue);
+  public static native double sqlite3_value_double(@NotNull long ptrToValue);
 
   @Canonical
   public static double sqlite3_value_double(@NotNull sqlite3_value v){
@@ -2078,7 +2081,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native sqlite3_value sqlite3_value_dup(@NotNull long ptrToValue);
+  public static native sqlite3_value sqlite3_value_dup(@NotNull long ptrToValue);
 
   @Canonical
   public static sqlite3_value sqlite3_value_dup(@NotNull sqlite3_value v){
@@ -2086,7 +2089,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_value_encoding(@NotNull long ptrToValue);
+  public static native int sqlite3_value_encoding(@NotNull long ptrToValue);
 
   @Canonical
   public static int sqlite3_value_encoding(@NotNull sqlite3_value v){
@@ -2094,7 +2097,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native void sqlite3_value_free(@Nullable long ptrToValue);
+  public static native void sqlite3_value_free(@Nullable long ptrToValue);
 
   @Canonical
   public static void sqlite3_value_free(@Nullable sqlite3_value v){
@@ -2102,7 +2105,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_value_frombind(@NotNull long ptrToValue);
+  public static native int sqlite3_value_frombind(@NotNull long ptrToValue);
 
   @Canonical
   public static int sqlite3_value_frombind(@NotNull sqlite3_value v){
@@ -2110,7 +2113,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_value_int(@NotNull long ptrToValue);
+  public static native int sqlite3_value_int(@NotNull long ptrToValue);
 
   @Canonical
   public static int sqlite3_value_int(@NotNull sqlite3_value v){
@@ -2118,14 +2121,14 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native long sqlite3_value_int64(@NotNull long ptrToValue);
+  public static native long sqlite3_value_int64(@NotNull long ptrToValue);
 
   @Canonical
   public static long sqlite3_value_int64(@NotNull sqlite3_value v){
     return sqlite3_value_int64(v.getNativePointer());
   }
 
-  static native Object sqlite3_value_java_object(@NotNull long ptrToValue);
+  public static native Object sqlite3_value_java_object(@NotNull long ptrToValue);
 
   /**
      If the given value was set using {@link
@@ -2152,7 +2155,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_value_nochange(@NotNull long ptrToValue);
+  public static native int sqlite3_value_nochange(@NotNull long ptrToValue);
 
   @Canonical
   public static int sqlite3_value_nochange(@NotNull sqlite3_value v){
@@ -2160,7 +2163,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_value_numeric_type(@NotNull long ptrToValue);
+  public static native int sqlite3_value_numeric_type(@NotNull long ptrToValue);
 
   @Canonical
   public static int sqlite3_value_numeric_type(@NotNull sqlite3_value v){
@@ -2168,7 +2171,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_value_subtype(@NotNull long ptrToValue);
+  public static native int sqlite3_value_subtype(@NotNull long ptrToValue);
 
   @Canonical
   public static int sqlite3_value_subtype(@NotNull sqlite3_value v){
@@ -2176,7 +2179,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native byte[] sqlite3_value_text(@NotNull long ptrToValue);
+  public static native byte[] sqlite3_value_text(@NotNull long ptrToValue);
 
   /**
      Functions identially to the C API, and this note is just to
@@ -2190,7 +2193,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native String sqlite3_value_text16(@NotNull long ptrToValue);
+  public static native String sqlite3_value_text16(@NotNull long ptrToValue);
 
   @Canonical
   public static String sqlite3_value_text16(@NotNull sqlite3_value v){
@@ -2198,7 +2201,7 @@ public final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_value_type(@NotNull long ptrToValue);
+  public static native int sqlite3_value_type(@NotNull long ptrToValue);
 
   @Canonical
   public static int sqlite3_value_type(@NotNull sqlite3_value v){
@@ -2211,7 +2214,7 @@ public final class SQLite3Jni {
      It has no stable interface. It may go way or change behavior at
      any time.
   */
-  static native void sqlite3_jni_internal_details();
+  public static native void sqlite3_jni_internal_details();
 
   //////////////////////////////////////////////////////////////////////
   // SQLITE_... constants follow...
