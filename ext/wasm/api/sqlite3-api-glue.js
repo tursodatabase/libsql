@@ -888,9 +888,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      consistency with non-special-case wrappings.
   */
   const __dbArgcMismatch = (pDb,f,n)=>{
-    return sqlite3.util.sqlite3_wasm_db_error(pDb, capi.SQLITE_MISUSE,
-                                              f+"() requires "+n+" argument"+
-                                              (1===n?"":'s')+".");
+    return util.sqlite3_wasm_db_error(pDb, capi.SQLITE_MISUSE,
+                                      f+"() requires "+n+" argument"+
+                                      (1===n?"":'s')+".");
   };
 
   /** Code duplication reducer for functions which take an encoding
