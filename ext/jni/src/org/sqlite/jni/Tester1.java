@@ -146,7 +146,7 @@ public class Tester1 implements Runnable {
     sqlite3 db = out.take();
     if( 0!=rc ){
       final String msg =
-        null==db ? sqlite3_errstr(rc) : sqlite3_errmsg16(db);
+        null==db ? sqlite3_errstr(rc) : sqlite3_errmsg(db);
       sqlite3_close(db);
       throw new RuntimeException("Opening db failed: "+msg);
     }
@@ -197,7 +197,7 @@ public class Tester1 implements Runnable {
     if(SQLITE_ROW==rc || SQLITE_DONE==rc) rc = 0;
     if( 0!=rc && throwOnError){
       throw new RuntimeException("db op failed with rc="
-                                 +rc+": "+sqlite3_errmsg16(db));
+                                 +rc+": "+sqlite3_errmsg(db));
     }
     return rc;
   }
@@ -343,7 +343,7 @@ public class Tester1 implements Runnable {
     stmt = sqlite3_prepare(db, "intentional error");
     affirm( null==stmt );
     affirm( 0!=sqlite3_errcode(db) );
-    affirm( 0==sqlite3_errmsg16(db).indexOf("near \"intentional\"") );
+    affirm( 0==sqlite3_errmsg(db).indexOf("near \"intentional\"") );
     sqlite3_finalize(stmt);
     stmt = sqlite3_prepare(db, "/* empty input*/\n-- comments only");
     affirm( null==stmt );
@@ -736,7 +736,7 @@ public class Tester1 implements Runnable {
     rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
     affirm( 0 != rc );
-    affirm( sqlite3_errmsg16(db).indexOf("an xFinal") > 0 );
+    affirm( sqlite3_errmsg(db).indexOf("an xFinal") > 0 );
 
     SQLFunction funcSc = new ScalarFunction(){
         @Override public void xFunc(sqlite3_context cx, sqlite3_value[] args){
@@ -750,7 +750,7 @@ public class Tester1 implements Runnable {
     rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
     affirm( 0 != rc );
-    affirm( sqlite3_errmsg16(db).indexOf("an xFunc") > 0 );
+    affirm( sqlite3_errmsg(db).indexOf("an xFunc") > 0 );
     rc = sqlite3_create_function(db, "mysca", 1, -1, funcSc);
     affirm( SQLITE_FORMAT==rc, "invalid encoding value." );
     sqlite3_close_v2(db);

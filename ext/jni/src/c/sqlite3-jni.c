@@ -3359,7 +3359,7 @@ S3JniApi(sqlite3_errcode(),jint,1errcode)(
   return pDb ? sqlite3_errcode(pDb) : SQLITE_MISUSE;
 }
 
-S3JniApi(sqlite3_errmsg16(),jstring,1errmsg16)(
+S3JniApi(sqlite3_errmsg(),jstring,1errmsg)(
   JniArgsEnvClass, jobject jpDb
 ){
   sqlite3 * const pDb = PtrGet_sqlite3(jpDb);

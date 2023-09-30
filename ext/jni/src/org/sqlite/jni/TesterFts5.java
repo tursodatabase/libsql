@@ -104,7 +104,7 @@ public class TesterFts5 {
       }
     });
     if( rc!=SQLITE_OK ){
-      throw new RuntimeException(sqlite3_errmsg16(db));
+      throw new RuntimeException(sqlite3_errmsg(db));
     }
 
     /* Convert to array and return */

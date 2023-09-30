@@ -1349,10 +1349,10 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errcode
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_errmsg16
+ * Method:    sqlite3_errmsg
  * Signature: (Lorg/sqlite/jni/sqlite3;)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errmsg16
+JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errmsg
   (JNIEnv *, jclass, jobject);
 
 /*

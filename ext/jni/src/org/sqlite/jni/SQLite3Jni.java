@@ -940,7 +940,7 @@ final class SQLite3Jni {
   public static native int sqlite3_errcode(@NotNull sqlite3 db);
 
   @Canonical
-  public static native String sqlite3_errmsg16(@NotNull sqlite3 db);
+  public static native String sqlite3_errmsg(@NotNull sqlite3 db);
 
   @Canonical
   public static native int sqlite3_error_offset(@NotNull long ptrToDb);
