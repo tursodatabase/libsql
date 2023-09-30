@@ -724,6 +724,8 @@ static void jsonAppendSqlValue(
   }
 }
 
+/* Forward reference */
+static void jsonReturnStringAsBlob(JsonString*);
 
 /* Make the text in p (which is probably a generated JSON text string)
 ** the result of the SQL function.
@@ -732,7 +734,10 @@ static void jsonAppendSqlValue(
 */
 static void jsonReturnString(JsonString *p){
   if( p->bErr==0 ){
-    if( p->bStatic ){
+    int flags = SQLITE_PTR_TO_INT(sqlite3_user_data(p->pCtx));
+    if( flags & JSON_BLOB ){
+      jsonReturnStringAsBlob(p);
+    }else if( p->bStatic ){
       sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
                             SQLITE_TRANSIENT, SQLITE_UTF8);
     }else if( jsonForceRCStr(p) ){
@@ -3145,6 +3150,25 @@ static int jsonConvertTextToBlob(
   return 0;
 }
 
+/*
+** The input string pStr is a well-formed JSON text string.  Convert
+** this into the JSONB format and make it the return value of the
+** SQL function.
+*/
+static void jsonReturnStringAsBlob(JsonString *pStr){
+  JsonParse px;
+  memset(&px, 0, sizeof(px));
+  px.zJson = pStr->zBuf;
+  px.nJson = pStr->nUsed;
+  (void)jsonTranslateTextValueToBlob(&px, 0);
+  if( px.oom ){
+    sqlite3_free(px.aBlob);
+    sqlite3_result_error_nomem(pStr->pCtx);
+  }else{
+    sqlite3_result_blob(pStr->pCtx, px.aBlob, px.nBlob, sqlite3_free);
+  }
+}
+
 /* The byte at index i is a node type-code.  This routine
 ** determines the payload size for that node and writes that
 ** payload size in to *pSz.  It returns the offset from i to the
@@ -4860,11 +4884,16 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
   JsonString *pStr;
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
   if( pStr ){
+    int flags;
     pStr->pCtx = ctx;
     jsonAppendChar(pStr, ']');
+    flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
     if( pStr->bErr ){
       if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
+    }else if( flags & JSON_BLOB ){
+      jsonReturnStringAsBlob(pStr);
+      return;
     }else if( isFinal ){
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
                           pStr->bStatic ? SQLITE_TRANSIENT :
@@ -4970,10 +4999,16 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
   JsonString *pStr;
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
   if( pStr ){
+    int flags;
     jsonAppendChar(pStr, '}');
+    pStr->pCtx = ctx;
+    flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
     if( pStr->bErr ){
       if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
+    }else if( flags & JSON_BLOB ){
+      jsonReturnStringAsBlob(pStr);
+      return;
     }else if( isFinal ){
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
                           pStr->bStatic ? SQLITE_TRANSIENT :
@@ -5557,6 +5592,7 @@ void sqlite3RegisterJsonFunctions(void){
     JFUNCTION(json,               1, 0,                   jsonRemoveFunc),
     JFUNCTION(jsonb,              1, JSON_BLOB,           jsonbFunc),
     JFUNCTION(json_array,        -1, 0,                   jsonArrayFunc),
+    JFUNCTION(jsonb_array,       -1, JSON_BLOB,           jsonArrayFunc),
     JFUNCTION(json_array_length,  1, 0,                   jsonArrayLengthFunc),
     JFUNCTION(json_array_length,  2, 0,                   jsonArrayLengthFunc),
     JFUNCTION(json_error_position,1, 0,                   jsonErrorFunc),
@@ -5567,6 +5603,7 @@ void sqlite3RegisterJsonFunctions(void){
     JFUNCTION(json_insert,       -1, 0,                   jsonSetFunc),
     JFUNCTION(jsonb_insert,      -1, JSON_BLOB,           jsonSetFunc),
     JFUNCTION(json_object,       -1, 0,                   jsonObjectFunc),
+    JFUNCTION(jsonb_object,      -1, JSON_BLOB,           jsonObjectFunc),
     JFUNCTION(json_patch,         2, 0,                   jsonPatchFunc),
     JFUNCTION(jsonb_patch,        2, JSON_BLOB,           jsonPatchFunc),
     JFUNCTION(json_quote,         1, 0,                   jsonQuoteFunc),
@@ -5587,7 +5624,13 @@ void sqlite3RegisterJsonFunctions(void){
     WAGGREGATE(json_group_array,  1, 0, 0,
        jsonArrayStep, jsonArrayFinal, jsonArrayValue, jsonGroupInverse,
        SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC),
+    WAGGREGATE(jsonb_group_array, 1, JSON_BLOB, 0,
+       jsonArrayStep, jsonArrayFinal, jsonArrayValue, jsonGroupInverse,
+       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC),
     WAGGREGATE(json_group_object, 2, 0, 0,
+       jsonObjectStep, jsonObjectFinal, jsonObjectValue, jsonGroupInverse,
+       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC),
+    WAGGREGATE(jsonb_group_object,2, JSON_BLOB, 0,
        jsonObjectStep, jsonObjectFinal, jsonObjectValue, jsonGroupInverse,
        SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC)
   };
