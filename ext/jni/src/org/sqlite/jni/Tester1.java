@@ -1283,7 +1283,7 @@ public class Tester1 implements Runnable {
     }
     Exception err = null;
     try {
-      Class t = Class.forName("org.sqlite.jni.fts5.TesterFts5");
+      Class t = Class.forName("org.sqlite.jni.TesterFts5");
       java.lang.reflect.Constructor ctor = t.getConstructor();
       ctor.setAccessible(true);
       final long timeStart = System.currentTimeMillis();
@@ -1515,35 +1515,34 @@ public class Tester1 implements Runnable {
   }
 
   private void testBackup(){
-    final sqlite3 db1 = createNewDb();
-    final sqlite3 db2 = createNewDb();
+    final sqlite3 dbDest = createNewDb();
 
-    execSql(db1, new String[]{
-        "pragma page_size=512; VACUUM;",
-        "create table t(a);",
-        "insert into t(a) values(1),(2),(3);"
-      });
-    affirm( null==sqlite3_backup_init(db1,"main",db1,"main") );
-    final sqlite3_backup b = sqlite3_backup_init(db2,"main",db1,"main");
-    affirm( null!=b );
-    affirm( b.getNativePointer()!=0 );
-    int rc;
-    while( SQLITE_DONE!=(rc = sqlite3_backup_step(b, 1)) ){
-      affirm( 0==rc );
+    try (sqlite3 dbSrc = createNewDb()) {
+      execSql(dbSrc, new String[]{
+          "pragma page_size=512; VACUUM;",
+          "create table t(a);",
+          "insert into t(a) values(1),(2),(3);"
+        });
+      affirm( null==sqlite3_backup_init(dbSrc,"main",dbSrc,"main") );
+      try (sqlite3_backup b = sqlite3_backup_init(dbDest,"main",dbSrc,"main")) {
+        affirm( null!=b );
+        affirm( b.getNativePointer()!=0 );
+        int rc;
+        while( SQLITE_DONE!=(rc = sqlite3_backup_step(b, 1)) ){
+          affirm( 0==rc );
+        }
+        affirm( sqlite3_backup_pagecount(b) > 0 );
+        rc = sqlite3_backup_finish(b);
+        affirm( 0==rc );
+        affirm( b.getNativePointer()==0 );
+      }
     }
-    affirm( sqlite3_backup_pagecount(b) > 0 );
-    rc = sqlite3_backup_finish(b);
-    affirm( 0==rc );
-    affirm( b.getNativePointer()==0 );
 
-    sqlite3_close_v2(db1);
-
-    final sqlite3_stmt stmt = prepare(db2,"SELECT sum(a) from t");
-    sqlite3_step(stmt);
-    affirm( sqlite3_column_int(stmt,0) == 6 );
-
-    sqlite3_finalize(stmt);
-    sqlite3_close_v2(db2);
+    try (sqlite3_stmt stmt = prepare(dbDest,"SELECT sum(a) from t")) {
+      sqlite3_step(stmt);
+      affirm( sqlite3_column_int(stmt,0) == 6 );
+    }
+    sqlite3_close_v2(dbDest);
   }
 
   private void testRandomness(){
