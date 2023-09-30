@@ -1871,6 +1871,9 @@ final class SQLite3Jni {
   public static native int sqlite3_step(@NotNull sqlite3_stmt stmt);
 
   @Canonical
+  public static native boolean sqlite3_stmt_busy(@NotNull sqlite3_stmt stmt);
+
+  @Canonical
   public static native int sqlite3_stmt_explain(@NotNull long ptrToStmt, int op);
 
   @Canonical
@@ -1887,12 +1890,7 @@ final class SQLite3Jni {
   }
 
   @Canonical
-  public static native boolean sqlite3_stmt_readonly(@NotNull long ptrToStmt);
-
-  @Canonical
-  public static boolean sqlite3_stmt_readonly(@NotNull sqlite3_stmt stmt){
-    return sqlite3_stmt_readonly(stmt.getNativePointer());
-  }
+  public static native boolean sqlite3_stmt_readonly(@NotNull sqlite3_stmt stmt);
 
   @Canonical
   public static native int sqlite3_stmt_status(

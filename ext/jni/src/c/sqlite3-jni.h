@@ -1845,6 +1845,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1step
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_stmt_busy
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1stmt_1busy
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_stmt_explain
  * Signature: (JI)I
  */
@@ -1862,10 +1870,10 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1stmt_1isexplain
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_stmt_readonly
- * Signature: (J)Z
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1stmt_1readonly
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jclass, jobject);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni

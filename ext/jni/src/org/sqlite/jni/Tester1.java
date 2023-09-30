@@ -289,9 +289,6 @@ public class Tester1 implements Runnable {
     affirm( !sqlite3_stmt_readonly(stmt) );
     affirm( db == sqlite3_db_handle(stmt) );
     rc = sqlite3_step(stmt);
-    if( SQLITE_DONE != rc ){
-      outln("step failed ??? ",rc, " ",sqlite3_errmsg16(db));
-    }
     affirm(SQLITE_DONE == rc);
     sqlite3_finalize(stmt);
     affirm( null == sqlite3_db_handle(stmt) );
@@ -389,14 +386,17 @@ public class Tester1 implements Runnable {
     affirm(sqlite3_total_changes64(db) > changesT64);
     stmt = prepare(db, "SELECT a FROM t ORDER BY a DESC;");
     affirm( sqlite3_stmt_readonly(stmt) );
+    affirm( !sqlite3_stmt_busy(stmt) );
     int total2 = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
+      affirm( sqlite3_stmt_busy(stmt) );
       total2 += sqlite3_column_int(stmt, 0);
       sqlite3_value sv = sqlite3_column_value(stmt, 0);
       affirm( null != sv );
       affirm( 0 != sv.getNativePointer() );
       affirm( SQLITE_INTEGER == sqlite3_value_type(sv) );
     }
+    affirm( !sqlite3_stmt_busy(stmt) );
     sqlite3_finalize(stmt);
     affirm(total1 == total2);
     sqlite3_close_v2(db);
@@ -1032,7 +1032,7 @@ public class Tester1 implements Runnable {
     execSql(db1, "BEGIN EXCLUSIVE");
     rc = sqlite3_prepare_v2(db2, "SELECT * from t", outStmt);
     affirm( SQLITE_BUSY == rc);
-    assert( null == outStmt.get() );
+    affirm( null == outStmt.get() );
     affirm( 3 == xBusyCalled.value );
     sqlite3_close_v2(db1);
     sqlite3_close_v2(db2);

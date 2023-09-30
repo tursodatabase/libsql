@@ -2004,10 +2004,10 @@ static void udf_xInverse(sqlite3_context* cx, int argc,
   JniDecl(jint,JniNameSuffix)(JniArgsEnvClass, jlong jpStmt, jint n){ \
     return (jint)CName(S3JniLongPtr_sqlite3_stmt(jpStmt), (int)n);            \
   }
-/** Create a trivial JNI wrapper for (boolish-int CName(sqlite3_stmt*)). */
-#define WRAP_BOOL_STMT(JniNameSuffix,CName)                         \
-  JniDecl(jboolean,JniNameSuffix)(JniArgsEnvClass, jlong jpStmt){ \
-    return CName(S3JniLongPtr_sqlite3_stmt(jpStmt)) ? JNI_TRUE : JNI_FALSE; \
+/** Create a trivial JNI wrapper for (boolean CName(sqlite3_stmt*)). */
+#define WRAP_BOOL_STMT(JniNameSuffix,CName)                           \
+  JniDecl(jboolean,JniNameSuffix)(JniArgsEnvClass, jobject jStmt){     \
+    return CName(PtrGet_sqlite3_stmt(jStmt)) ? JNI_TRUE : JNI_FALSE; \
   }
 /** Create a trivial JNI wrapper for (jstring CName(sqlite3_stmt*,int)). */
 #define WRAP_STR_STMT_INT(JniNameSuffix,CName)                             \
@@ -2064,6 +2064,7 @@ WRAP_INT_DB(1preupdate_1depth,         sqlite3_preupdate_depth)
 WRAP_INT_INT(1release_1memory,         sqlite3_release_memory)
 WRAP_INT_INT(1sleep,                   sqlite3_sleep)
 WRAP_MUTF8_VOID(1sourceid,             sqlite3_sourceid)
+WRAP_BOOL_STMT(1stmt_1busy,            sqlite3_stmt_busy)
 WRAP_INT_STMT_INT(1stmt_1explain,      sqlite3_stmt_explain)
 WRAP_INT_STMT(1stmt_1isexplain,        sqlite3_stmt_isexplain)
 WRAP_BOOL_STMT(1stmt_1readonly,        sqlite3_stmt_readonly)
@@ -2081,6 +2082,7 @@ WRAP_INT_SVALUE(1value_1subtype,       sqlite3_value_subtype)
 WRAP_INT_SVALUE(1value_1type,          sqlite3_value_type)
 
 #undef WRAP_BOOL_DB
+#undef WRAP_BOOL_STMT
 #undef WRAP_INT64_DB
 #undef WRAP_INT_DB
 #undef WRAP_INT_INT
