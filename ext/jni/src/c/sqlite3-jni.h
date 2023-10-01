@@ -1501,6 +1501,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1limit
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_normalized_sql
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1normalized_1sql
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_open
  * Signature: (Ljava/lang/String;Lorg/sqlite/jni/OutputPointer/sqlite3;)I
  */

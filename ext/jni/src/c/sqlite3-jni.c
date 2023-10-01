@@ -3386,20 +3386,51 @@ S3JniApi(sqlite3_errstr(),jstring,1errstr)(
   return rv;
 }
 
-S3JniApi(sqlite3_expanded_sql(),jstring,1expanded_1sql)(
-  JniArgsEnvClass, jobject jpStmt
-){
+#ifndef SQLITE_ENABLE_NORMALIZE
+/* Dummy stub for sqlite3_normalized_sql(). Never called. */
+static const char * sqlite3_normalized_sql(sqlite3_stmt *s){
+  S3JniDeclLocal_env;
+  (*env)->FatalError(env, "dummy sqlite3_normalized_sql() was "
+                     "impossibly called.") /* does not return */;
+  return 0;
+}
+#endif
+
+/*
+** Impl for sqlite3_expanded_sql() (if isExpanded is true) and
+** sqlite3_normalized_sql().
+*/
+static jstring s3jni_xn_sql(int isExpanded, JNIEnv *env, jobject jpStmt){
   jstring rv = 0;
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
+
   if( pStmt ){
-    char * zSql = sqlite3_expanded_sql(pStmt);
+    char * zSql = isExpanded
+      ? sqlite3_expanded_sql(pStmt)
+      : (char*)sqlite3_normalized_sql(pStmt);
     s3jni_oom_fatal(zSql);
     if( zSql ){
-      rv = s3jni_utf8_to_jstring( zSql, -1);
-      sqlite3_free(zSql);
+      rv = s3jni_utf8_to_jstring(zSql, -1);
+      if( isExpanded ) sqlite3_free(zSql);
     }
   }
   return rv;
+}
+
+S3JniApi(sqlite3_expanded_sql(),jstring,1expanded_1sql)(
+  JniArgsEnvClass, jobject jpStmt
+){
+  return s3jni_xn_sql(1, env, jpStmt);
+}
+
+S3JniApi(sqlite3_normalized_sql(),jstring,1normalized_1sql)(
+  JniArgsEnvClass, jobject jpStmt
+){
+#ifdef SQLITE_ENABLE_NORMALIZE
+  return s3jni_xn_sql(0, env, jpStmt);
+#else
+  return 0;
+#endif
 }
 
 S3JniApi(sqlite3_extended_result_codes(),jboolean,1extended_1result_1codes)(

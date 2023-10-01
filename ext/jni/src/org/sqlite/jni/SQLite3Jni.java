@@ -1026,6 +1026,13 @@ final class SQLite3Jni {
   public static native int sqlite3_limit(@NotNull sqlite3 db, int id, int newVal);
 
   /**
+     Only available if built with SQLITE_ENABLE_NORMALIZE. If not, it always
+     returns null.
+  */
+  @Canonical
+  public static native String sqlite3_normalized_sql(@NotNull sqlite3_stmt stmt);
+
+  /**
      Works like its C counterpart and makes the native pointer of the
      underling (sqlite3*) object available via
      ppDb.getNativePointer(). That pointer is necessary for looking up

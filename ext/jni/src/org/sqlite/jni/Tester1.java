@@ -560,7 +560,10 @@ public class Tester1 implements Runnable {
     sqlite3_finalize(stmt);
     stmt = prepare(db, "SELECT ?");
     sqlite3_bind_text(stmt, 1, "hell😃");
-    affirm( "SELECT 'hell😃'".equals(sqlite3_expanded_sql(stmt)) );
+    final String expect = "SELECT 'hell😃'";
+    affirm( expect.equals(sqlite3_expanded_sql(stmt)) );
+    String n = sqlite3_normalized_sql(stmt);
+    affirm( null==n || expect.equals(n) );
     sqlite3_finalize(stmt);
     sqlite3_close(db);
   }
