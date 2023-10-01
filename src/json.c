@@ -1612,7 +1612,9 @@ json_parse_restart:
       pParse->iErr = j;
       return -1;
     }
-    pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
+    if( !pParse->oom ){
+      pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
+    }
     pParse->iDepth--;
     return j+1;
   }
@@ -3493,7 +3495,9 @@ static int jsonParseValueFromBlob(JsonParse *pParse, u32 i){
         if( r<=0 ) return -1;
         j = (u32)r;
       }
-      pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
+      if( !pParse->oom ){
+        pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
+      }
       break;
     }
     case JSONB_OBJECT: {
@@ -3507,7 +3511,9 @@ static int jsonParseValueFromBlob(JsonParse *pParse, u32 i){
         }
         j = (u32)r;
       }
-      pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
+      if( !pParse->oom ){
+        pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
+      }
       break;
     }
   }
