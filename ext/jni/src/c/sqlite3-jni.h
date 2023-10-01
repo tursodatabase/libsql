@@ -2022,9 +2022,9 @@ JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1free
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_value_frombind
- * Signature: (J)I
+ * Signature: (J)Z
  */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1frombind
+JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1frombind
   (JNIEnv *, jclass, jlong);
 
 /*

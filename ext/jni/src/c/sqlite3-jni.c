@@ -2036,6 +2036,12 @@ static void udf_xInverse(sqlite3_context* cx, int argc,
   JniDecl(jint,JniNameSuffix)(JniArgsEnvClass, jlong jpSValue){ \
     return (jint)CName(S3JniLongPtr_sqlite3_value(jpSValue));   \
   }
+/** Create a trivial JNI wrapper for (boolean CName(sqlite3_value*)). */
+#define WRAP_BOOL_SVALUE(JniNameSuffix,CName)                       \
+  JniDecl(jboolean,JniNameSuffix)(JniArgsEnvClass, jlong jpSValue){ \
+    return (jint)CName(S3JniLongPtr_sqlite3_value(jpSValue))        \
+      ? JNI_TRUE : JNI_FALSE;                                       \
+  }
 
 WRAP_INT_DB(1changes,                  sqlite3_changes)
 WRAP_INT64_DB(1changes64,              sqlite3_changes64)
@@ -2075,7 +2081,7 @@ WRAP_INT64_DB(1total_1changes64,       sqlite3_total_changes64)
 WRAP_INT_SVALUE(1value_1bytes,         sqlite3_value_bytes)
 WRAP_INT_SVALUE(1value_1bytes16,       sqlite3_value_bytes16)
 WRAP_INT_SVALUE(1value_1encoding,      sqlite3_value_encoding)
-WRAP_INT_SVALUE(1value_1frombind,      sqlite3_value_frombind)
+WRAP_BOOL_SVALUE(1value_1frombind,     sqlite3_value_frombind)
 WRAP_INT_SVALUE(1value_1nochange,      sqlite3_value_nochange)
 WRAP_INT_SVALUE(1value_1numeric_1type, sqlite3_value_numeric_type)
 WRAP_INT_SVALUE(1value_1subtype,       sqlite3_value_subtype)
@@ -2083,6 +2089,7 @@ WRAP_INT_SVALUE(1value_1type,          sqlite3_value_type)
 
 #undef WRAP_BOOL_DB
 #undef WRAP_BOOL_STMT
+#undef WRAP_BOOL_SVALUE
 #undef WRAP_INT64_DB
 #undef WRAP_INT_DB
 #undef WRAP_INT_INT

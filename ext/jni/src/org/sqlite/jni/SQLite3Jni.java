@@ -2105,10 +2105,10 @@ final class SQLite3Jni {
   }
 
   @Canonical
-  static native int sqlite3_value_frombind(@NotNull long ptrToValue);
+  static native boolean sqlite3_value_frombind(@NotNull long ptrToValue);
 
   @Canonical
-  public static int sqlite3_value_frombind(@NotNull sqlite3_value v){
+  public static boolean sqlite3_value_frombind(@NotNull sqlite3_value v){
     return sqlite3_value_frombind(v.getNativePointer());
   }
 
