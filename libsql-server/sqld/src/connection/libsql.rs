@@ -420,7 +420,9 @@ impl<'a> Connection<'a> {
     }
 
     fn rollback(&self) {
-        let _ = self.conn.execute("ROLLBACK", ());
+        if let Err(e) = self.conn.execute("ROLLBACK", ()) {
+            tracing::error!("failed to rollback: {e}");
+        }
     }
 
     fn checkpoint(&self) -> Result<()> {

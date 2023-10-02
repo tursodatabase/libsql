@@ -214,8 +214,8 @@ impl Statement {
             has_more_stmts: bool,
             c: Cmd,
         ) -> Result<Statement> {
-            let kind =
-                StmtKind::kind(&c).ok_or_else(|| anyhow::anyhow!("unsupported statement"))?;
+            let kind = StmtKind::kind(&c)
+                .ok_or_else(|| anyhow::anyhow!("unsupported statement: {original}"))?;
 
             if stmt_count == 1 && !has_more_stmts {
                 // XXX: Temporary workaround for integration with Atlas
