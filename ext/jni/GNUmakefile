@@ -254,6 +254,7 @@ $(sqlite3-jni.h.in): $(dir.bld.c)
 
 #package.dll.cfiles :=
 package.dll.cflags = \
+  -std=c99 \
   -fPIC \
   -I. \
   -I$(dir $(sqlite3.h)) \
