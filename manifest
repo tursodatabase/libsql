@@ -1,5 +1,5 @@
-C Fix\sjsonb_insert()\sso\sthat\sit\sdoes\snot\sbehave\slike\sjsonb_set().\nNew\stest\scases\sadded.
-D 2023-10-02T20:16:06.301
+C New\stest\scases\sfor\sJSONB.
+D 2023-10-02T23:56:46.985
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1304,7 +1304,7 @@ F test/json/json-q1-b.txt 606818a5fba6d9e418c9f4ea7d8418af026775042dad81439b7244
 F test/json/json-q1.txt 65f9d1cdcc4cffa9823fb73ed936aae5658700cd001fde448f68bfb91c807307
 F test/json/json-speed-check.sh b060a9a6c696c0a807d8929400fa11bd7113edc58b0d66b9795f424f8d0db326 x
 F test/json101.test e8ccd09f965c594f38ef486ddf7913f0fcac97be20a785a41c3d7cd4289e82de
-F test/json102.test d89476e2fb515c8c2660b1dcdd9772ac8f17bb538d12e7b7f44dfa46fc899aa8
+F test/json102.test 557a46e16df1aa9bdbc4076a71a45814ea0e7503d6621d87d42a8c04cbc2b0ef
 F test/json103.test 53df87f83a4e5fa0c0a56eb29ff6c94055c6eb919f33316d62161a8880112dbe
 F test/json104.test 1b844a70cddcfa2e4cd81a5db0657b2e61e7f00868310f24f56a9ba0114348c1
 F test/json105.test 11670a4387f4308ae0318cadcbd6a918ea7edcd19fbafde020720a073952675d
@@ -2123,8 +2123,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d624c31e5c49e1ce63b4b72caa42a61c5167866f47d842fbcfe4e826fd079d7c
-R f84ac9b23e77db6a3aeb1eb8d5ee202d
+P 54197149b811d30b6c4487eedf5692b164ed0f90cfcc541aa3157094f5f17f6a
+R f7716cc560ac345b0556f46a68783d4e
 U drh
-Z 7bfe4ac791f85f5c6a70ea3c48417630
+Z aa79deaa2b4777d46e48ea5272670f4a
 # Remove this line to create a well-formed Fossil manifest.
