@@ -1,5 +1,5 @@
-C Pointer-casting-related\sfixes\sfor\sJNI\son\s32-bit\sARM\s(pi4\sarmv7l).
-D 2023-10-02T14:44:28.216
+C Remove\san\sALWAYS()\sfrom\sa\sbranch\sthat\scan\sin\sfact\sbe\sfalse\sfollowing\san\sOOM\nfault.
+D 2023-10-02T15:56:37.362
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -663,7 +663,7 @@ F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
 F src/expr.c 8a5045ac7aae5ecebe7236ec05841693b5a0012af70a4d73933333172546c50d
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c a7fcbf7e66d14dbb73cf49f31489ebf66d0e6006c62b95246924a3bae9f37b36
-F src/func.c 154f08966f8a3a7cad6c438205df1abf58fb2826961a0683e82e120fa647e84c
+F src/func.c cd41873c29844259e398aace8d621a2274a3b970b0484410071e98489b8f857a
 F src/global.c 29f56a330ed9d1b5cd9b79ac0ca36f97ac3afc730ff8bfa987b0db9e559d684d
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -2122,8 +2122,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2532e5662a2bbb3e6b4c4be3fad035734b684bdf59b178cb64b444ca6d8b956b
-R a83650bf5f7797eddfc74482addb44c4
-U stephan
-Z c1992b9ab6d0229ceafa8f585205277d
+P 54441039ae3ebe39e42f008f77ce1be117cbda6daeed8b01739ad42a3c1f0754
+R 03d39c2bd65cb3c107b80e6759b94891
+U drh
+Z f222c844cfd76eaa67420178c722b5b4
 # Remove this line to create a well-formed Fossil manifest.

@@ -1580,7 +1580,7 @@ static void concatFuncCore(
     k = sqlite3_value_bytes(argv[i]);
     if( k>0 ){
       const char *v = (const char*)sqlite3_value_text(argv[i]);
-      if( ALWAYS(v!=0) ){
+      if( v!=0 ){
         if( j>0 && nSep>0 ){
           memcpy(&z[j], zSep, nSep);
           j += nSep;
