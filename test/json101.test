@@ -99,8 +99,14 @@ do_execsql_test json101-2.5 {
 do_execsql_test json101-3.1 {
   SELECT json_replace('{"a":1,"b":2}','$.a','[3,4,5]');
 } {{{"a":"[3,4,5]","b":2}}}
+do_execsql_test json101-3.1b {
+  SELECT json(jsonb_replace('{"a":1,"b":2}','$.a','[3,4,5]'));
+} {{{"a":"[3,4,5]","b":2}}}
 do_execsql_test json101-3.2 {
   SELECT json_replace('{"a":1,"b":2}','$.a',json('[3,4,5]'));
+} {{{"a":[3,4,5],"b":2}}}
+do_execsql_test json101-3.2b {
+  SELECT json_replace('{"a":1,"b":2}','$.a',jsonb('[3,4,5]'));
 } {{{"a":[3,4,5],"b":2}}}
 do_execsql_test json101-3.3 {
   SELECT json_type(json_set('{"a":1,"b":2}','$.b','{"x":3,"y":4}'),'$.b');

@@ -4620,7 +4620,10 @@ static void jsonReplaceNode(
         k = jsonParseAddNode(p, JSON_STRING, n, zCopy);
         assert( k>0 || p->oom );
         if( p->oom==0 ) p->aNode[k].jnFlags |= JNODE_RAW;
-      }else{
+        break;
+      }
+    replace_with_json:
+      {
         JsonParse *pPatch = jsonParseCached(pCtx, pValue, pCtx, 1);
         if( pPatch==0 ){
           p->oom = 1;
@@ -4637,9 +4640,13 @@ static void jsonReplaceNode(
       break;
     }
     default: {
-      jsonParseAddNode(p, JSON_NULL, 0, 0);
-      sqlite3_result_error(pCtx, "JSON cannot hold BLOB values", -1);
-      p->nErr++;
+      if( jsonFuncArgMightBeBinary(pValue) ){
+        goto replace_with_json;
+      }else{
+        jsonParseAddNode(p, JSON_NULL, 0, 0);
+        sqlite3_result_error(pCtx, "JSON cannot hold BLOB values", -1);
+        p->nErr++;
+      }
       break;
     }
   }
