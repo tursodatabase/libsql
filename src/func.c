@@ -1592,7 +1592,7 @@ static void concatFuncCore(
   }
   z[j] = 0;
   assert( j<=n );
-  sqlite3_result_text64(context, z, n, sqlite3_free, SQLITE_UTF8);
+  sqlite3_result_text64(context, z, j, sqlite3_free, SQLITE_UTF8);
 }
 
 /*
