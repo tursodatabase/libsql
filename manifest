@@ -1,5 +1,5 @@
-C Fix\sthe\slength\sof\sthe\sstring\sin\sthe\snew\sconcat()\sand\sconcat_ws()\sfunctions.
-D 2023-10-02T17:06:28.465
+C JNI:\swhen\sfetching\stext-or-blob/length\spairs,\sfetch\sthe\stext-or-blob\sfirst,\sthen\sthe\slength,\sas\sthe\sAPI\sdocs\ssuggest.
+D 2023-10-02T17:12:16.304
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -238,7 +238,7 @@ F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a3
 F ext/jni/GNUmakefile 7278812b41ced95fe67a9e5823aee027d641fd26fdfabe66c62b102a3a4e0631
 F ext/jni/README.md 9fceaeb17cecdc5d699dfc83c0cbc3a03fdb3b86bf676381894166c73375ee75
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
-F ext/jni/src/c/sqlite3-jni.c 8710e78156b35f5e79d96c0d317bb203317c9976af99fd124d0b2ce4ad7093e0
+F ext/jni/src/c/sqlite3-jni.c 2c4948634fd7f6460b074b72328b9c885ec11333bbc98144f745e4d6203a7ac2
 F ext/jni/src/c/sqlite3-jni.h 74e3da791f748f02d0d684562126cf6bfdd2a85cbb6a5d1354b14fcd46e187bc
 F ext/jni/src/org/sqlite/jni/AbstractCollationCallback.java 95e88ba04f4aac51ffec65693e878e234088b2f21b387f4e4285c8b72b33e436
 F ext/jni/src/org/sqlite/jni/AggregateFunction.java 7312486bc65fecdb91753c0a4515799194e031f45edbe16a6373cea18f404dc4
@@ -2122,8 +2122,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3a1feb1c469d3dd50e2558581199b16bfd59b9d5bcb0de5f1a8f0ec30a17b4d1
-R 1612d597de54e1c9956c6bcdc588fe33
-U drh
-Z 2af91933ac5e23ad24b4f2c2921203ef
+P 325243226520376f4a142864ae3fb98866f25bff4dc50a6b648ef98428a7169f
+R 46fa2dcc5034c47ceb71e3721ad57fae
+U stephan
+Z c507ea20def3bb46f7fb137790b2fa35
 # Remove this line to create a well-formed Fossil manifest.

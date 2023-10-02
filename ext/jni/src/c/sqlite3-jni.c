@@ -2770,8 +2770,8 @@ S3JniApi(sqlite3_column_text(),jbyteArray,1column_1text)(
   JniArgsEnvClass, jobject jpStmt, jint ndx
 ){
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
-  const int n = sqlite3_column_bytes(stmt, (int)ndx);
   const unsigned char * const p = sqlite3_column_text(stmt, (int)ndx);
+  const int n = sqlite3_column_bytes(stmt, (int)ndx);
   return p ? s3jni_new_jbyteArray(p, n) : NULL;
 }
 
@@ -2781,8 +2781,8 @@ S3JniApi(sqlite3_column_text(),jstring,1column_1text)(
   JniArgsEnvClass, jobject jpStmt, jint ndx
 ){
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
-  const int n = sqlite3_column_bytes(stmt, (int)ndx);
   const unsigned char * const p = sqlite3_column_text(stmt, (int)ndx);
+  const int n = sqlite3_column_bytes(stmt, (int)ndx);
   return p ? s3jni_utf8_to_jstring( (const char *)p, n) : 0;
 }
 #endif
@@ -2791,8 +2791,8 @@ S3JniApi(sqlite3_column_text16(),jstring,1column_1text16)(
   JniArgsEnvClass, jobject jpStmt, jint ndx
 ){
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
-  const int n = sqlite3_column_bytes16(stmt, (int)ndx);
   const void * const p = sqlite3_column_text16(stmt, (int)ndx);
+  const int n = sqlite3_column_bytes16(stmt, (int)ndx);
   return s3jni_text16_to_jstring(env, p, n);
 }
 
@@ -4685,8 +4685,8 @@ S3JniApi(sqlite3_value_blob(),jbyteArray,1value_1blob)(
   JniArgsEnvClass, jlong jpSVal
 ){
   sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
-  int const nLen = sqlite3_value_bytes(sv);
   const jbyte * pBytes = sqlite3_value_blob(sv);
+  int const nLen = sqlite3_value_bytes(sv);
 
   s3jni_oom_check( nLen ? !!pBytes : 1 );
   return pBytes
@@ -4738,8 +4738,8 @@ S3JniApi(sqlite3_value_text(),jbyteArray,1value_1text)(
   JniArgsEnvClass, jlong jpSVal
 ){
   sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
-  int const n = sqlite3_value_bytes(sv);
   const unsigned char * const p = sqlite3_value_text(sv);
+  int const n = sqlite3_value_bytes(sv);
   return p ? s3jni_new_jbyteArray(p, n) : 0;
 }
 
@@ -4749,8 +4749,8 @@ S3JniApi(sqlite3_value_text(),jstring,1value_1text)(
   JniArgsEnvClass, jlong jpSVal
 ){
   sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
-  int const n = sqlite3_value_bytes(sv);
   const unsigned char * const p = sqlite3_value_text(sv);
+  int const n = sqlite3_value_bytes(sv);
   return p ? s3jni_utf8_to_jstring( (const char *)p, n) : 0;
 }
 #endif
