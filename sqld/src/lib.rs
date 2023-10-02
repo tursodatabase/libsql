@@ -185,12 +185,16 @@ where
         }
         retry = match connection_maker.create().await {
             Ok(conn) => {
-                tracing::trace!("database checkpoint");
+                tracing::info!("database checkpoint starts");
                 let start = Instant::now();
                 match conn.checkpoint().await {
                     Ok(_) => {
                         let elapsed = Instant::now() - start;
-                        tracing::info!("database checkpoint finished (took: {:?})", elapsed);
+                        if elapsed >= Duration::from_secs(10) {
+                            tracing::warn!("database checkpoint finished (took: {:?})", elapsed);
+                        } else {
+                            tracing::info!("database checkpoint finished (took: {:?})", elapsed);
+                        }
                         None
                     }
                     Err(err) => {
