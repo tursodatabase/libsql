@@ -3207,7 +3207,8 @@ static u32 jsonbPayloadSize(JsonParse *pParse, u32 i, u32 *pSz){
     n = 5;
   }
   if( i+sz+n>pParse->nBlob ){
-    sz = pParse->nBlob - (i+n);
+    sz = 0;
+    n = 0;
   }
   *pSz = sz;
   return n;
@@ -3226,9 +3227,10 @@ static u32 jsonRenderBlob(
 ){
   u32 sz, n, j, iEnd;
 
-  if( i>=pParse->nBlob ){
+  n = jsonbPayloadSize(pParse, i, &sz);
+  if( n==0 ){
     pOut->bErr = 1;
-    return 0;
+    return pParse->nBlob+1;
   }
   switch( pParse->aBlob[i] & 0x0f ){
     case JSONB_NULL: {
@@ -3245,14 +3247,12 @@ static u32 jsonRenderBlob(
     }
     case JSONB_INT:
     case JSONB_FLOAT: {
-      n = jsonbPayloadSize(pParse, i, &sz);
       jsonAppendRaw(pOut, (const char*)&pParse->aBlob[i+n], sz);
       break;
     }
     case JSONB_INT5: {  /* Integer literal in hexadecimal notation */
       int k;
       sqlite3_uint64 u = 0;
-      n = jsonbPayloadSize(pParse, i, &sz);
       const char *zIn = (const char*)&pParse->aBlob[i+n];
       if( zIn[0]=='-' ){
         zIn++;
@@ -3267,7 +3267,6 @@ static u32 jsonRenderBlob(
     }
     case JSONB_FLOAT5: { /* Float literal missing digits beside "." */
       int k;
-      n = jsonbPayloadSize(pParse, i, &sz);
       const char *zIn = (const char*)&pParse->aBlob[i+n];
       if( zIn[0]=='-' ){
         zIn++;
@@ -3294,7 +3293,6 @@ static u32 jsonRenderBlob(
     }
     case JSONB_TEXT:
     case JSONB_TEXTJ: {
-      n = jsonbPayloadSize(pParse, i, &sz);
       jsonAppendChar(pOut, '"');
       jsonAppendRaw(pOut, (const char*)&pParse->aBlob[i+n], sz);
       jsonAppendChar(pOut, '"');
@@ -3303,7 +3301,6 @@ static u32 jsonRenderBlob(
     case JSONB_TEXT5: {
       const char *zIn;
       u32 k;
-      n = jsonbPayloadSize(pParse, i, &sz);
       zIn = (const char*)&pParse->aBlob[i+n];
       jsonAppendChar(pOut, '"');
       while( sz>0 ){
@@ -3358,7 +3355,6 @@ static u32 jsonRenderBlob(
     }
     case JSONB_ARRAY: {
       jsonAppendChar(pOut, '[');
-      n = jsonbPayloadSize(pParse, i, &sz);
       j = i+n;
       iEnd = j+sz;
       while( j<iEnd ){
@@ -3372,7 +3368,6 @@ static u32 jsonRenderBlob(
     case JSONB_OBJECT: {
       int x = 0;
       jsonAppendChar(pOut, '{');
-      n = jsonbPayloadSize(pParse, i, &sz);
       j = i+n;
       iEnd = j+sz;
       while( j<iEnd ){
@@ -3385,7 +3380,6 @@ static u32 jsonRenderBlob(
     }
 
     default: {
-      n = jsonbPayloadSize(pParse, i, &sz);
       break;
     }
   }
@@ -3656,7 +3650,7 @@ static u32 jsonbArrayCount(JsonParse *pParse, u32 iRoot){
   u32 k = 0;
   n = jsonbPayloadSize(pParse, iRoot, &sz);
   iEnd = iRoot+n+sz;
-  for(i=iRoot+n; i<iEnd; i+=sz+n, k++){
+  for(i=iRoot+n; n>0 && i<iEnd; i+=sz+n, k++){
     n = jsonbPayloadSize(pParse, i, &sz);
   }
   return k;
@@ -3824,6 +3818,7 @@ static void jsonReturnFromBlob(
   sqlite3 *db = sqlite3_context_db_handle(pCtx);
 
   n = jsonbPayloadSize(pParse, i, &sz);
+  if( n==0 ) return;
   switch( pParse->aBlob[i] & 0x0f ){
     case JSONB_NULL: {
       sqlite3_result_null(pCtx);

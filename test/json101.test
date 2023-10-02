@@ -86,13 +86,15 @@ do_execsql_test json101-2.2.3 {
 do_execsql_test json101-2.2.3b {
   SELECT json(jsonb_object('a',jsonb_array('xyx',77,4.5),'x',2.5));
 } {{{"a":["xyx",77,4.5],"x":2.5}}}
-exit
 do_catchsql_test json101-2.3 {
   SELECT json_object('a',1,'b');
 } {1 {json_object() requires an even number of arguments}}
 do_catchsql_test json101-2.4 {
   SELECT json_object('a',printf('%.1000c','x'),'b',x'abcd');
 } {1 {JSON cannot hold BLOB values}}
+do_execsql_test json101-2.5 {
+  SELECT json_object('a',printf('%.10c','x'),'b',jsonb_array(1,2,3));
+} {{{"a":"xxxxxxxxxx","b":[1,2,3]}}}
 
 do_execsql_test json101-3.1 {
   SELECT json_replace('{"a":1,"b":2}','$.a','[3,4,5]');
@@ -431,7 +433,7 @@ do_execsql_test json101-9.4 {
   SELECT json_quote(null);
 } {"null"}
 do_catchsql_test json101-9.5 {
-  SELECT json_quote(x'30313233');
+  SELECT json_quote(x'3031323334');
 } {1 {JSON cannot hold BLOB values}}
 do_catchsql_test json101-9.6 {
   SELECT json_quote(123,456)
