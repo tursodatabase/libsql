@@ -3890,7 +3890,7 @@ static void jsonReturnFromBlob(
           c = z[++iIn];
           if( c=='u' ){
             u32 v = jsonHexToInt4(z+iIn+1);
-            i += 4;
+            iIn += 4;
             if( v==0 ) break;
             if( v<=0x7f ){
               zOut[iOut++] = (char)v;

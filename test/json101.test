@@ -111,13 +111,22 @@ do_execsql_test json101-3.2b {
 do_execsql_test json101-3.3 {
   SELECT json_type(json_set('{"a":1,"b":2}','$.b','{"x":3,"y":4}'),'$.b');
 } {text}
+do_execsql_test json101-3.3b {
+  SELECT json_type(jsonb_set('{"a":1,"b":2}','$.b','{"x":3,"y":4}'),'$.b');
+} {text}
 do_execsql_test json101-3.4 {
   SELECT json_type(json_set('{"a":1,"b":2}','$.b',json('{"x":3,"y":4}')),'$.b');
 } {object}
+do_execsql_test json101-3.4b {
+  SELECT json_type(jsonb_set('{"a":1,"b":2}','$.b',jsonb('{"x":3,"y":4}')),'$.b');
+} {object}
 ifcapable vtab {
-do_execsql_test json101-3.5 {
-  SELECT fullkey, atom, '|' FROM json_tree(json_set('{}','$.x',123,'$.x',456));
-} {{$} {} | {$.x} 456 |}
+  do_execsql_test json101-3.5 {
+    SELECT fullkey, atom, '|' FROM json_tree(json_set('{}','$.x',123,'$.x',456));
+  } {{$} {} | {$.x} 456 |}
+  do_execsql_test json101-3.5b {
+    SELECT fullkey, atom, '|' FROM json_tree(jsonb_set('{}','$.x',123,'$.x',456));
+  } {{$} {} | {$.x} 456 |}
 }
 
 # Per rfc7159, any JSON value is allowed at the top level, and whitespace
@@ -167,6 +176,13 @@ do_execsql_test json101-4.10 {
   SELECT count(*) FROM j1 WHERE json_type(x) IN ('object','array');
   SELECT x FROM j1
    WHERE json_extract(x,'$')<>x
+     AND json_type(x) IN ('object','array');
+} {4}
+do_execsql_test json101-4.10b {
+  CREATE TABLE j1b AS SELECT jsonb(x) AS "x" FROM j1;
+  SELECT count(*) FROM j1b WHERE json_type(x) IN ('object','array');
+  SELECT json(x) FROM j1b
+   WHERE json_extract(x,'$')<>json(x)
      AND json_type(x) IN ('object','array');
 } {4}
 
@@ -296,10 +312,16 @@ do_execsql_test json101-5.1 {
 	}
    ]','https://adobe.github.io/Spry/samples/data_region/JSONDataSetSample.html');
    SELECT count(*) FROM j2;
-} {3}
+   CREATE TABLE j2b(id INTEGER PRIMARY KEY, json, src);
+   INSERT INTO J2b(id,json,src) SELECT id, jsonb(json), src FROM j2;
+   SELECT count(*) FROM j2b;
+} {3 3}
 
 do_execsql_test json101-5.2 {
   SELECT id, json_valid(json), json_type(json), '|' FROM j2 ORDER BY id;
+} {1 1 object | 2 1 object | 3 1 array |}
+do_execsql_test json101-5.2b {
+  SELECT id, json_valid(json), json_type(json), '|' FROM j2b ORDER BY id;
 } {1 1 object | 2 1 object | 3 1 array |}
 
 ifcapable !vtab {
@@ -312,6 +334,12 @@ ifcapable !vtab {
 do_execsql_test json101-5.3 {
   SELECT j2.rowid, jx.rowid, fullkey, path, key
     FROM j2, json_tree(j2.json) AS jx
+   WHERE fullkey!=(path || CASE WHEN typeof(key)=='integer' THEN '['||key||']'
+                                ELSE '.'||key END);
+} {}
+do_execsql_test json101-5.3b {
+  SELECT j2b.rowid, jx.rowid, fullkey, path, key
+    FROM j2b, json_tree(j2b.json) AS jx
    WHERE fullkey!=(path || CASE WHEN typeof(key)=='integer' THEN '['||key||']'
                                 ELSE '.'||key END);
 } {}
@@ -408,6 +436,13 @@ do_execsql_test json101-8.1 {
   INSERT INTO t8(a) VALUES('abc' || char(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35) || 'xyz');
   UPDATE t8 SET b=json_array(a);
   SELECT b FROM t8;
+} {{["abc\u0001\u0002\u0003\u0004\u0005\u0006\u0007\b\t\n\u000b\f\r\u000e\u000f\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f !\"#xyz"]}}
+do_execsql_test json101-8.1b {
+  DROP TABLE IF EXISTS t8;
+  CREATE TABLE t8(a,b);
+  INSERT INTO t8(a) VALUES('abc' || char(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35) || 'xyz');
+  UPDATE t8 SET b=jsonb_array(a);
+  SELECT json(b) FROM t8;
 } {{["abc\u0001\u0002\u0003\u0004\u0005\u0006\u0007\b\t\n\u000b\f\r\u000e\u000f\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f !\"#xyz"]}}
 do_execsql_test json101-8.2 {
   SELECT a=json_extract(b,'$[0]') FROM t8;
@@ -807,12 +842,21 @@ do_execsql_test json101-12.100 {
         }
      }');
 } {}
+
 do_execsql_test json101-12.110 {
   SELECT json_remove(x, '$.settings.layer2."dis.legomenon".forceDisplay')
     FROM t12;
 } {{{"settings":{"layer2":{"hapax.legomenon":{"forceDisplay":true,"transliterate":true,"add.footnote":true,"summary.report":true},"dis.legomenon":{"transliterate":false,"add.footnote":false,"summary.report":true},"tris.legomenon":{"forceDisplay":true,"transliterate":false,"add.footnote":false,"summary.report":false}}}}}}
+do_execsql_test json101-12.110b {
+  SELECT json_remove(jsonb(x), '$.settings.layer2."dis.legomenon".forceDisplay')
+    FROM t12;
+} {{{"settings":{"layer2":{"hapax.legomenon":{"forceDisplay":true,"transliterate":true,"add.footnote":true,"summary.report":true},"dis.legomenon":{"transliterate":false,"add.footnote":false,"summary.report":true},"tris.legomenon":{"forceDisplay":true,"transliterate":false,"add.footnote":false,"summary.report":false}}}}}}
 do_execsql_test json101-12.120 {
   SELECT json_extract(x, '$.settings.layer2."tris.legomenon"."summary.report"')
+    FROM t12;
+} {0}
+do_execsql_test json101-12.120b {
+  SELECT json_extract(jsonb(x), '$.settings.layer2."tris.legomenon"."summary.report"')
     FROM t12;
 } {0}
 
@@ -1053,9 +1097,5 @@ do_execsql_test json101-21.27 {
   WITH c(x,y) AS (VALUES('a',1),('b',2.0),('c',NULL),(NULL,'three'),('e','four'))
   SELECT json_group_object(x,y) FROM c;
 } {{{"a":1,"b":2.0,"c":null,:"three","e":"four"}}}
-
-
-
-
 
 finish_test
