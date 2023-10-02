@@ -21,74 +21,203 @@ source $testdir/tester.tcl
 do_execsql_test json102-100 {
   SELECT json_object('ex','[52,3.14159]');
 } {{{"ex":"[52,3.14159]"}}}
+do_execsql_test json102-100b {
+  SELECT json(jsonb_object('ex','[52,3.14159]'));
+} {{{"ex":"[52,3.14159]"}}}
 do_execsql_test json102-110 {
   SELECT json_object('ex',json('[52,3.14159]'));
+} {{{"ex":[52,3.14159]}}}
+do_execsql_test json102-110-2 {
+  SELECT json(jsonb_object('ex',json('[52,3.14159]')));
+} {{{"ex":[52,3.14159]}}}
+do_execsql_test json102-110-3 {
+  SELECT json_object('ex',jsonb('[52,3.14159]'));
+} {{{"ex":[52,3.14159]}}}
+do_execsql_test json102-110-3 {
+  SELECT json(jsonb_object('ex',jsonb('[52,3.14159]')));
 } {{{"ex":[52,3.14159]}}}
 do_execsql_test json102-120 {
   SELECT json_object('ex',json_array(52,3.14159));
 } {{{"ex":[52,3.14159]}}}
+do_execsql_test json102-120-2 {
+  SELECT json(jsonb_object('ex',json_array(52,3.14159)));
+} {{{"ex":[52,3.14159]}}}
+do_execsql_test json102-120-3 {
+  SELECT json_object('ex',jsonb_array(52,3.14159));
+} {{{"ex":[52,3.14159]}}}
+do_execsql_test json102-120-4 {
+  SELECT json(jsonb_object('ex',jsonb_array(52,3.14159)));
+} {{{"ex":[52,3.14159]}}}
 do_execsql_test json102-130 {
   SELECT json(' { "this" : "is", "a": [ "test" ] } ');
+} {{{"this":"is","a":["test"]}}}
+do_execsql_test json102-130b {
+  SELECT json(jsonb(' { "this" : "is", "a": [ "test" ] } '));
 } {{{"this":"is","a":["test"]}}}
 do_execsql_test json102-140 {
   SELECT json_array(1,2,'3',4);
 } {{[1,2,"3",4]}}
+do_execsql_test json102-140b {
+  SELECT json(jsonb_array(1,2,'3',4));
+} {{[1,2,"3",4]}}
 do_execsql_test json102-150 {
   SELECT json_array('[1,2]');
+} {{["[1,2]"]}}
+do_execsql_test json102-150b {
+  SELECT json(jsonb_array('[1,2]'));
 } {{["[1,2]"]}}
 do_execsql_test json102-160 {
   SELECT json_array(json_array(1,2));
 } {{[[1,2]]}}
+do_execsql_test json102-160-2 {
+  SELECT json_array(jsonb_array(1,2));
+} {{[[1,2]]}}
+do_execsql_test json102-160-3 {
+  SELECT json(jsonb_array(json_array(1,2)));
+} {{[[1,2]]}}
+do_execsql_test json102-160-4 {
+  SELECT json(jsonb_array(jsonb_array(1,2)));
+} {{[[1,2]]}}
 do_execsql_test json102-170 {
   SELECT json_array(1,null,'3','[4,5]','{"six":7.7}');
+} {{[1,null,"3","[4,5]","{\"six\":7.7}"]}}
+do_execsql_test json102-170b {
+  SELECT json(jsonb_array(1,null,'3','[4,5]','{"six":7.7}'));
 } {{[1,null,"3","[4,5]","{\"six\":7.7}"]}}
 do_execsql_test json102-180 {
   SELECT json_array(1,null,'3',json('[4,5]'),json('{"six":7.7}'));
 } {{[1,null,"3",[4,5],{"six":7.7}]}}
+do_execsql_test json102-180-2 {
+  SELECT json_array(1,null,'3',jsonb('[4,5]'),json('{"six":7.7}'));
+} {{[1,null,"3",[4,5],{"six":7.7}]}}
+do_execsql_test json102-180-3 {
+  SELECT json(jsonb_array(1,null,'3',json('[4,5]'),json('{"six":7.7}')));
+} {{[1,null,"3",[4,5],{"six":7.7}]}}
+do_execsql_test json102-180-4 {
+  SELECT json(jsonb_array(1,null,'3',jsonb('[4,5]'),jsonb('{"six":7.7}')));
+} {{[1,null,"3",[4,5],{"six":7.7}]}}
 do_execsql_test json102-190 {
   SELECT json_array_length('[1,2,3,4]');
+} {{4}}
+do_execsql_test json102-190b {
+  SELECT json_array_length(jsonb('[1,2,3,4]'));
 } {{4}}
 do_execsql_test json102-191 {
   SELECT json_array_length( json_remove('[1,2,3,4]','$[2]') );
 } {{3}}
+do_execsql_test json102-191b {
+  SELECT json_array_length( jsonb_remove('[1,2,3,4]','$[2]') );
+} {{3}}
 do_execsql_test json102-200 {
   SELECT json_array_length('[1,2,3,4]', '$');
+} {{4}}
+do_execsql_test json102-200b {
+  SELECT json_array_length(jsonb('[1,2,3,4]'), '$');
 } {{4}}
 do_execsql_test json102-210 {
   SELECT json_array_length('[1,2,3,4]', '$[2]');
 } {{0}}
+do_execsql_test json102-210b {
+  SELECT json_array_length(jsonb('[1,2,3,4]'), '$[2]');
+} {{0}}
 do_execsql_test json102-220 {
   SELECT json_array_length('{"one":[1,2,3]}');
 } {{0}}
-do_execsql_test json102-230 {
-  SELECT json_array_length('{"one":[1,2,3]}', '$.one');
+do_execsql_test json102-220 {
+  SELECT json_array_length('{"one":[1,2,3]}');
+} {{0}}
+do_execsql_test json102-230b {
+  SELECT json_array_length(jsonb('{"one":[1,2,3]}'), '$.one');
 } {{3}}
 do_execsql_test json102-240 {
   SELECT json_array_length('{"one":[1,2,3]}', '$.two');
 } {{}}
+do_execsql_test json102-240b {
+  SELECT json_array_length(jsonb('{"one":[1,2,3]}'), '$.two');
+} {{}}
 do_execsql_test json102-250 {
   SELECT json_extract('{"a":2,"c":[4,5,{"f":7}]}', '$');
+} {{{"a":2,"c":[4,5,{"f":7}]}}}
+do_execsql_test json102-250-2 {
+  SELECT json_extract(jsonb('{"a":2,"c":[4,5,{"f":7}]}'), '$');
+} {{{"a":2,"c":[4,5,{"f":7}]}}}
+do_execsql_test json102-250-3 {
+  SELECT json(jsonb_extract('{"a":2,"c":[4,5,{"f":7}]}', '$'));
+} {{{"a":2,"c":[4,5,{"f":7}]}}}
+do_execsql_test json102-250-4 {
+  SELECT json(jsonb_extract(jsonb('{"a":2,"c":[4,5,{"f":7}]}'), '$'));
 } {{{"a":2,"c":[4,5,{"f":7}]}}}
 do_execsql_test json102-260 {
   SELECT json_extract('{"a":2,"c":[4,5,{"f":7}]}', '$.c');
 } {{[4,5,{"f":7}]}}
+do_execsql_test json102-260-2 {
+  SELECT json_extract(jsonb('{"a":2,"c":[4,5,{"f":7}]}'), '$.c');
+} {{[4,5,{"f":7}]}}
+do_execsql_test json102-260-3 {
+  SELECT json(jsonb_extract('{"a":2,"c":[4,5,{"f":7}]}', '$.c'));
+} {{[4,5,{"f":7}]}}
+do_execsql_test json102-260-4 {
+  SELECT json(jsonb_extract(jsonb('{"a":2,"c":[4,5,{"f":7}]}'), '$.c'));
+} {{[4,5,{"f":7}]}}
 do_execsql_test json102-270 {
   SELECT json_extract('{"a":2,"c":[4,5,{"f":7}]}', '$.c[2]');
+} {{{"f":7}}}
+do_execsql_test json102-270-2 {
+  SELECT json_extract(jsonb('{"a":2,"c":[4,5,{"f":7}]}'), '$.c[2]');
+} {{{"f":7}}}
+do_execsql_test json102-270-3 {
+  SELECT json(jsonb_extract(jsonb('{"a":2,"c":[4,5,{"f":7}]}'), '$.c[2]'));
+} {{{"f":7}}}
+do_execsql_test json102-270-4 {
+  SELECT json(jsonb_extract('{"a":2,"c":[4,5,{"f":7}]}', '$.c[2]'));
 } {{{"f":7}}}
 do_execsql_test json102-280 {
   SELECT json_extract('{"a":2,"c":[4,5,{"f":7}]}', '$.c[2].f');
 } {{7}}
+do_execsql_test json102-280b {
+  SELECT jsonb_extract('{"a":2,"c":[4,5,{"f":7}]}', '$.c[2].f');
+} {{7}}
 do_execsql_test json102-290 {
   SELECT json_extract('{"a":2,"c":[4,5],"f":7}','$.c','$.a');
+} {{[[4,5],2]}}
+do_execsql_test json102-290-2 {
+  SELECT json_extract(jsonb('{"a":2,"c":[4,5],"f":7}'),'$.c','$.a');
+} {{[[4,5],2]}}
+do_execsql_test json102-290-3 {
+  SELECT json(jsonb_extract('{"a":2,"c":[4,5],"f":7}','$.c','$.a'));
+} {{[[4,5],2]}}
+do_execsql_test json102-290-4 {
+  SELECT json(jsonb_extract(jsonb('{"a":2,"c":[4,5],"f":7}'),'$.c','$.a'));
 } {{[[4,5],2]}}
 do_execsql_test json102-300 {
   SELECT json_extract('{"a":2,"c":[4,5,{"f":7}]}', '$.x');
 } {{}}
+do_execsql_test json102-300b {
+  SELECT jsonb_extract('{"a":2,"c":[4,5,{"f":7}]}', '$.x');
+} {{}}
 do_execsql_test json102-310 {
   SELECT json_extract('{"a":2,"c":[4,5,{"f":7}]}', '$.x', '$.a');
 } {{[null,2]}}
+do_execsql_test json102-310-2 {
+  SELECT json_extract(jsonb('{"a":2,"c":[4,5,{"f":7}]}'), '$.x', '$.a');
+} {{[null,2]}}
+do_execsql_test json102-310-3 {
+  SELECT json(jsonb_extract(jsonb('{"a":2,"c":[4,5,{"f":7}]}'), '$.x', '$.a'));
+} {{[null,2]}}
+do_execsql_test json102-310-43 {
+  SELECT json(jsonb_extract('{"a":2,"c":[4,5,{"f":7}]}', '$.x', '$.a'));
+} {{[null,2]}}
 do_execsql_test json102-320 {
   SELECT json_insert('{"a":2,"c":4}', '$.a', 99);
+} {{{"a":2,"c":4}}}
+do_execsql_test json102-320-2 {
+  SELECT json_insert(jsonb('{"a":2,"c":4}'), '$.a', 99);
+} {{{"a":2,"c":4}}}
+do_execsql_test json102-320-3 {
+  SELECT json(jsonb_insert('{"a":2,"c":4}', '$.a', 99));
+} {{{"a":2,"c":4}}}
+do_execsql_test json102-320-4 {
+  SELECT json(jsonb_insert(jsonb('{"a":2,"c":4}'), '$.a', 99));
 } {{{"a":2,"c":4}}}
 do_execsql_test json102-330 {
   SELECT json_insert('{"a":2,"c":4}', '$.e', 99);

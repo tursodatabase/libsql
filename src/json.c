@@ -4712,7 +4712,8 @@ static void jsonSetFunc(
   const char *zPath;
   u32 i;
   int bApnd;
-  int bIsSet = sqlite3_user_data(ctx)!=0;
+  int flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
+  int bIsSet = (flags&JSON_ISSET)!=0;
 
   if( argc<1 ) return;
   if( (argc&1)==0 ) {
