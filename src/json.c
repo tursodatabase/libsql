@@ -348,6 +348,17 @@ struct JsonParse {
 #define JSON_MAX_DEPTH  1000
 
 /**************************************************************************
+** Forward references
+**************************************************************************/
+static void jsonReturnStringAsBlob(JsonString*);
+static void jsonRenderNodeAsBlob(JsonParse*,JsonNode*,JsonParse*);
+static int jsonParseAddNode(JsonParse*,u32,u32,const char*);
+static int jsonParseValueFromBlob(JsonParse *pParse, u32 i);
+static int jsonFuncArgMightBeBinary(sqlite3_value *pJson);
+static JsonNode *jsonLookupAppend(JsonParse*,const char*,int*,const char**);
+static u32 jsonRenderBlob(JsonParse*,u32,JsonString*);
+
+/**************************************************************************
 ** Utility routines for dealing with JsonString objects
 **************************************************************************/
 
@@ -714,7 +725,13 @@ static void jsonAppendSqlValue(
       break;
     }
     default: {
-      if( p->bErr==0 ){
+      if( jsonFuncArgMightBeBinary(pValue) ){
+        JsonParse px;
+        memset(&px, 0, sizeof(px));
+        px.aBlob = (u8*)sqlite3_value_blob(pValue);
+        px.nBlob = sqlite3_value_bytes(pValue);
+        jsonRenderBlob(&px, 0, p);
+      }else if( p->bErr==0 ){
         sqlite3_result_error(p->pCtx, "JSON cannot hold BLOB values", -1);
         p->bErr = 2;
         jsonStringReset(p);
@@ -724,8 +741,6 @@ static void jsonAppendSqlValue(
   }
 }
 
-/* Forward reference */
-static void jsonReturnStringAsBlob(JsonString*);
 
 /* Make the text in p (which is probably a generated JSON text string)
 ** the result of the SQL function.
@@ -967,13 +982,6 @@ static void jsonRenderNodeAsText(
     }
   }
 }
-
-/* Forward reference */
-static void jsonRenderNodeAsBlob(
-  JsonParse *pParse,             /* the complete parse of the JSON */
-  JsonNode *pNode,               /* The node to render */
-  JsonParse *pOut                /* Write the BLOB rendering of JSON here */
-);
 
 /*
 ** Make the return value of an SQL function be the JSON encoded by pNode.
@@ -1219,9 +1227,6 @@ static void jsonReturnNodeAsSql(
     }
   }
 }
-
-/* Forward reference */
-static int jsonParseAddNode(JsonParse*,u32,u32,const char*);
 
 /*
 ** A macro to hint to the compiler that a function should not be
@@ -1973,9 +1978,6 @@ static void jsonParseFillInParentage(JsonParse *pParse, u32 i, u32 iParent){
   }
 }
 
-/* Forward reference */
-static int jsonParseValueFromBlob(JsonParse *pParse, u32 i);
-
 /*
 ** Parse JSON (either pure RFC-8259 JSON text, or JSON-5 text, or a JSONB
 ** blob) into the JsonNode representation.
@@ -2046,10 +2048,6 @@ static int jsonParseFindParents(JsonParse *pParse){
 */
 #define JSON_CACHE_ID  (-429938)  /* First cache entry */
 #define JSON_CACHE_SZ  4          /* Max number of cache entries */
-
-/* Forward reference */
-static int jsonFuncArgMightBeBinary(sqlite3_value *pJson);
-
 
 /*
 ** Obtain a complete parse of the JSON found in the pJson argument
@@ -2201,9 +2199,6 @@ static int jsonSameLabel(const JsonNode *p1, const JsonNode *p2){
     return p1->n==p2->n && strncmp(p1->u.zJContent,p2->u.zJContent,p1->n)==0;
   }
 }
-
-/* forward declaration */
-static JsonNode *jsonLookupAppend(JsonParse*,const char*,int*,const char**);
 
 /*
 ** Search along zPath to find the node specified.  Return a pointer
