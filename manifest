@@ -1,5 +1,5 @@
-C Changes\sso\sthat\sfts5\scan\shandle\stokens\swith\sembedded\s'\\0'\sbytes.
-D 2023-09-30T18:13:35.306
+C Update\sfts5_decode()\sto\sallow\sfor\sembedded\s0x00\sbytes\sin\stokens.
+D 2023-10-03T17:07:54.562
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -94,7 +94,7 @@ F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b7292
 F ext/fts5/fts5_config.c 054359543566cbff1ba65a188330660a5457299513ac71c53b3a07d934c7b081
 F ext/fts5/fts5_expr.c bd3b81ce669c4104e34ffe66570af1999a317b142c15fccb112de9fb0caa57a6
 F ext/fts5/fts5_hash.c 76765856397eff56f526b0640b23a1677d737d35e07bc00e4b4b2e0fc5fda60d
-F ext/fts5/fts5_index.c 16d775ecbccf7d3698a03bcae3c3fbee0749df748b93b29d0e82a37e02eaaa94
+F ext/fts5/fts5_index.c e472083d371f420d52ec80445b9d2a99b16b23548205cb4064ddcd41bd79f63e
 F ext/fts5/fts5_main.c 799ec88d2309055f6406bddb0bd6ed80148c5da5eb14594c3c5309a6e944d489
 F ext/fts5/fts5_storage.c 3c9b41fce41b6410f2e8f82eb035c6a29b2560483f773e6dc98cf3cb2e4ddbb5
 F ext/fts5/fts5_tcl.c 0d2bb0ff7bf6ee136015be118167f0bd956ddd05a8f02c68bd34299b50648f9f
@@ -2123,11 +2123,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c04022b7407f77eaf0175e831ebcd6bbdc0af1cef0d42c5c11102aa8484f24ca
-R ee3b13ddf778c77c1640cd7c7844c1f5
-T *branch * fts5-token-data
-T *sym-fts5-token-data *
-T -sym-trunk *
+P c027c092c4af53bd6ae3cc6e2b4439167d9eeb0f9de549b6a2c2a72a67ee886c
+R 9e81ed5ff713a928831c6c73df8f7a54
 U dan
-Z 7d5bd217a552215de3d888e155abaef5
+Z 0a0daf2566a3400fafbefb55947df637
 # Remove this line to create a well-formed Fossil manifest.

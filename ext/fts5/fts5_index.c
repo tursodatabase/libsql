@@ -7746,6 +7746,24 @@ static void fts5DecodeRowidList(
 #endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
 #if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
+static void fts5BufferAppendTerm(int *pRc, Fts5Buffer *pBuf, Fts5Buffer *pTerm){
+  int ii;
+  fts5BufferGrow(pRc, pBuf, pTerm->n*2 + 1);
+  if( *pRc==SQLITE_OK ){
+    for(ii=0; ii<pTerm->n; ii++){
+      if( pTerm->p[ii]==0x00 ){
+        pBuf->p[pBuf->n++] = '\\';
+        pBuf->p[pBuf->n++] = '0';
+      }else{
+        pBuf->p[pBuf->n++] = pTerm->p[ii];
+      }
+    }
+    pBuf->p[pBuf->n] = 0x00;
+  }
+}
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
+
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 /*
 ** The implementation of user-defined scalar function fts5_decode().
 */
@@ -7852,9 +7870,8 @@ static void fts5DecodeFunction(
       iOff += fts5GetVarint32(&a[iOff], nAppend);
       term.n = nKeep;
       fts5BufferAppendBlob(&rc, &term, nAppend, &a[iOff]);
-      sqlite3Fts5BufferAppendPrintf(
-          &rc, &s, " term=%.*s", term.n, (const char*)term.p
-      );
+      sqlite3Fts5BufferAppendPrintf(&rc, &s, " term=");
+      fts5BufferAppendTerm(&rc, &s, &term);
       iOff += nAppend;
 
       /* Figure out where the doclist for this term ends */
@@ -7962,9 +7979,8 @@ static void fts5DecodeFunction(
       fts5BufferAppendBlob(&rc, &term, nByte, &a[iOff]);
       iOff += nByte;
 
-      sqlite3Fts5BufferAppendPrintf(
-          &rc, &s, " term=%.*s", term.n, (const char*)term.p
-      );
+      sqlite3Fts5BufferAppendPrintf(&rc, &s, " term=");
+      fts5BufferAppendTerm(&rc, &s, &term);
       iOff += fts5DecodeDoclist(&rc, &s, &a[iOff], iEnd-iOff);
     }
 
