@@ -1302,8 +1302,11 @@ impl Replicator {
             },
         };
 
-        tracing::info!("Restoring from generation {}", generation);
-        self.restore_from(generation, timestamp).await
+        let (action, recovered) = self.restore_from(generation, timestamp).await?;
+        tracing::info!(
+            "Restoring from generation {generation}: action={action:?}, recovered={recovered}"
+        );
+        Ok((action, recovered))
     }
 
     pub async fn get_last_consistent_frame(&self, generation: &Uuid) -> Result<u32> {
