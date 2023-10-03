@@ -4897,6 +4897,7 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
       assert( pStr->bStatic );
     }else if( flags & JSON_BLOB ){
       jsonReturnStringAsBlob(pStr);
+      if( !isFinal ) pStr->nUsed--;
       return;
     }else if( isFinal ){
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
@@ -5012,6 +5013,7 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
       assert( pStr->bStatic );
     }else if( flags & JSON_BLOB ){
       jsonReturnStringAsBlob(pStr);
+      if( !isFinal ) pStr->nUsed--;
       return;
     }else if( isFinal ){
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
