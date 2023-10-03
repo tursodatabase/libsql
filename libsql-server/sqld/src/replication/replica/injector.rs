@@ -5,14 +5,14 @@ use rusqlite::OpenFlags;
 
 use crate::replication::replica::hook::{SQLITE_CONTINUE_REPLICATION, SQLITE_EXIT_REPLICATION};
 
-use super::hook::{InjectorHookCtx, INJECTOR_METHODS};
+use super::hook::{InjectorHook, InjectorHookCtx, INJECTOR_METHODS};
 
-pub struct FrameInjector<'a> {
-    conn: sqld_libsql_bindings::Connection<'a>,
+pub struct FrameInjector {
+    conn: sqld_libsql_bindings::Connection<InjectorHook>,
 }
 
-impl<'a> FrameInjector<'a> {
-    pub fn new(db_path: &Path, hook_ctx: &'a mut InjectorHookCtx) -> anyhow::Result<Self> {
+impl FrameInjector {
+    pub fn new(db_path: &Path, hook_ctx: InjectorHookCtx) -> anyhow::Result<Self> {
         let conn = sqld_libsql_bindings::Connection::open(
             db_path,
             OpenFlags::SQLITE_OPEN_READ_WRITE

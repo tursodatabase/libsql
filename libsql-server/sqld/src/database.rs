@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::connection::libsql::LibSqlConnection;
 use crate::connection::write_proxy::WriteProxyConnection;
 use crate::connection::{Connection, MakeConnection, TrackedConnection};
-use crate::replication::ReplicationLogger;
+use crate::replication::{ReplicationLogger, ReplicationLoggerHook};
 
 pub trait Database: Sync + Send + 'static {
     /// The connection type of the database
@@ -28,13 +28,15 @@ impl Database for ReplicaDatabase {
     fn shutdown(&self) {}
 }
 
+pub type PrimaryConnection = TrackedConnection<LibSqlConnection<ReplicationLoggerHook>>;
+
 pub struct PrimaryDatabase {
     pub logger: Arc<ReplicationLogger>,
-    pub connection_maker: Arc<dyn MakeConnection<Connection = TrackedConnection<LibSqlConnection>>>,
+    pub connection_maker: Arc<dyn MakeConnection<Connection = PrimaryConnection>>,
 }
 
 impl Database for PrimaryDatabase {
-    type Connection = TrackedConnection<LibSqlConnection>;
+    type Connection = PrimaryConnection;
 
     fn connection_maker(&self) -> Arc<dyn MakeConnection<Connection = Self::Connection>> {
         self.connection_maker.clone()

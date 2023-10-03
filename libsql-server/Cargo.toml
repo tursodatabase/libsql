@@ -8,11 +8,12 @@ members = [
 ]
 
 [workspace.dependencies]
-rusqlite = { version = "0.29.0", git = "https://github.com/psarna/rusqlite", rev = "2e28bca6", default-features = false, features = [
+rusqlite = { version = "0.29.0", git = "https://github.com/tursodatabase/rusqlite.git", rev = "a72d529", default-features = false, features = [
     "buildtime_bindgen",
     "bundled-libsql-wasm-experimental",
     "column_decltype",
-    "load_extension"
+    "load_extension",
+    "modern_sqlite"
 ] }
 
 # Config for 'cargo dist'

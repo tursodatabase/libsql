@@ -503,7 +503,110 @@ pub mod test {
     };
     use FsmState::*;
 
+    use crate::query::Value;
+
     use super::*;
+
+    #[derive(Default)]
+    pub struct TestBuilder {
+        steps: Vec<StepResult>,
+        current_step: StepResultBuilder,
+    }
+
+    pub type Row = Vec<Value>;
+    pub type StepResult = crate::Result<Vec<Row>>;
+
+    #[derive(Default)]
+    pub struct StepResultBuilder {
+        rows: Vec<Row>,
+        current_row: Row,
+        err: Option<crate::Error>,
+    }
+
+    impl QueryResultBuilder for TestBuilder {
+        type Ret = Vec<StepResult>;
+
+        fn init(&mut self, _config: &QueryBuilderConfig) -> Result<(), QueryResultBuilderError> {
+            self.steps.clear();
+            self.current_step = Default::default();
+            Ok(())
+        }
+
+        fn begin_step(&mut self) -> Result<(), QueryResultBuilderError> {
+            Ok(())
+        }
+
+        fn finish_step(
+            &mut self,
+            _affected_row_count: u64,
+            _last_insert_rowid: Option<i64>,
+        ) -> Result<(), QueryResultBuilderError> {
+            let current = std::mem::take(&mut self.current_step);
+            if let Some(err) = current.err {
+                self.steps.push(Err(err));
+            } else {
+                self.steps.push(Ok(current.rows));
+            }
+
+            Ok(())
+        }
+
+        fn step_error(
+            &mut self,
+            error: crate::error::Error,
+        ) -> Result<(), QueryResultBuilderError> {
+            self.current_step.err = Some(error);
+            Ok(())
+        }
+
+        fn cols_description<'a>(
+            &mut self,
+            _cols: impl IntoIterator<Item = impl Into<Column<'a>>>,
+        ) -> Result<(), QueryResultBuilderError> {
+            Ok(())
+        }
+
+        fn begin_rows(&mut self) -> Result<(), QueryResultBuilderError> {
+            Ok(())
+        }
+
+        fn begin_row(&mut self) -> Result<(), QueryResultBuilderError> {
+            Ok(())
+        }
+
+        fn add_row_value(&mut self, v: ValueRef) -> Result<(), QueryResultBuilderError> {
+            let v = match v {
+                ValueRef::Null => Value::Null,
+                ValueRef::Integer(i) => Value::Integer(i),
+                ValueRef::Real(x) => Value::Real(x),
+                ValueRef::Text(s) => Value::Text(String::from_utf8(s.to_vec()).unwrap()),
+                ValueRef::Blob(x) => Value::Blob(x.to_vec()),
+            };
+            self.current_step.current_row.push(v);
+            Ok(())
+        }
+
+        fn finish_row(&mut self) -> Result<(), QueryResultBuilderError> {
+            let row = std::mem::take(&mut self.current_step.current_row);
+            self.current_step.rows.push(row);
+            Ok(())
+        }
+
+        fn finish_rows(&mut self) -> Result<(), QueryResultBuilderError> {
+            Ok(())
+        }
+
+        fn finish(
+            &mut self,
+            _last_frame_no: Option<FrameNo>,
+        ) -> Result<(), QueryResultBuilderError> {
+            Ok(())
+        }
+
+        fn into_ret(self) -> Self::Ret {
+            self.steps
+        }
+    }
 
     /// a dummy QueryResultBuilder that encodes the QueryResultBuilder FSM. It can be passed to a
     /// driver to ensure that it is not mis-used
