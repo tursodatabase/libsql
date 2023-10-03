@@ -143,7 +143,7 @@ where
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct LibSqlConnection {
     sender: crossbeam::channel::Sender<ExecCallback>,
 }
