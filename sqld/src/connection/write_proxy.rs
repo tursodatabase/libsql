@@ -277,7 +277,11 @@ impl Connection for WriteProxyConnection {
         replication_index: Option<FrameNo>,
     ) -> Result<(B, State)> {
         let mut state = self.state.lock().await;
-        if *state == State::Init && pgm.is_read_only() {
+
+        // This is a fresh namespace, and it is not replicated yet, proxy the first request.
+        if self.applied_frame_no_receiver.borrow().is_none() {
+            self.execute_remote(pgm, &mut state, auth, builder).await
+        } else if *state == State::Init && pgm.is_read_only() {
             self.wait_replication_sync(replication_index).await?;
             // We know that this program won't perform any writes. We attempt to run it on the
             // replica. If it leaves an open transaction, then this program is an interactive
