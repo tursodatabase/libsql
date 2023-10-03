@@ -29,5 +29,18 @@ package org.sqlite.jni;
 public class NativePointerHolder<ContextType> {
   //! Only set from JNI, where access permissions don't matter.
   private volatile long nativePointer = 0;
+  /**
+     For use ONLY by package-level APIs which act as proxies for
+     close/finalize operations. Such ops must call this to zero out
+     the pointer so that this object is not carrying a stale
+     pointer. This function returns the prior value of the pointer and
+     sets it to 0.
+  */
+  final long clearNativePointer() {
+    final long rv = nativePointer;
+    nativePointer= 0;
+    return rv;
+  }
+
   public final long getNativePointer(){ return nativePointer; }
 }

@@ -11,10 +11,11 @@
 *************************************************************************
 ** This file contains a set of tests for the sqlite3 JNI bindings.
 */
-package org.sqlite.jni.fts5;
+package org.sqlite.jni;
 import static org.sqlite.jni.SQLite3Jni.*;
 import static org.sqlite.jni.Tester1.*;
 import org.sqlite.jni.*;
+import org.sqlite.jni.fts5.*;
 
 import java.util.*;
 
@@ -103,7 +104,7 @@ public class TesterFts5 {
       }
     });
     if( rc!=SQLITE_OK ){
-      throw new RuntimeException(sqlite3_errmsg16(db));
+      throw new RuntimeException(sqlite3_errmsg(db));
     }
 
     /* Convert to array and return */

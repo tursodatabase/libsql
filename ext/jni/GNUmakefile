@@ -26,8 +26,8 @@ dir.src.c   := $(dir.src)/c
 dir.bld     := $(dir.jni)/bld
 dir.bld.c   := $(dir.bld)
 dir.src.jni := $(dir.src)/org/sqlite/jni
-dir.src.jni.tester := $(dir.src.jni)/tester
 dir.src.fts5 := $(dir.src.jni)/fts5
+dir.tests   := $(dir.src)/tests
 mkdir       ?= mkdir -p
 $(dir.bld.c):
 	$(mkdir) $@
@@ -46,7 +46,7 @@ DISTCLEAN_FILES := $(dir.jni)/*~ $(dir.src.c)/*~ $(dir.src.jni)/*~
 sqlite3-jni.h := $(dir.src.c)/sqlite3-jni.h
 .NOTPARALLEL: $(sqlite3-jni.h)
 SQLite3Jni.java := src/org/sqlite/jni/SQLite3Jni.java
-SQLTester.java := src/org/sqlite/jni/tester/SQLTester.java
+SQLTester.java := src/org/sqlite/jni/SQLTester.java
 SQLite3Jni.class := $(SQLite3Jni.java:.java=.class)
 SQLTester.class := $(SQLTester.java:.java=.class)
 
@@ -61,8 +61,12 @@ SQLTester.class := $(SQLTester.java:.java=.class)
 # which the fts5 APIs have been stripped unless that feature is
 # intended to be stripped for good.
 enable.fts5 ?= 1
-# If enable.tester is 0, the org/sqlite/jni/tester/* bits are elided.
-enable.tester ?= $(if $(wildcard $(dir.src.jni.tester)/SQLTester.java),1,0)
+
+ifeq (,$(wildcard $(dir.tests)/*))
+  enable.tester := 0
+else
+  enable.tester := 1
+endif
 
 # bin.version-info = binary to output various sqlite3 version info
 # building the distribution zip file.
@@ -112,6 +116,9 @@ JAVA_FILES.unittest := $(patsubst %,$(dir.src.jni)/%,\
   Tester1.java \
 )
 ifeq (1,$(enable.fts5))
+  JAVA_FILES.unittest += $(patsubst %,$(dir.src.jni)/%,\
+    TesterFts5.java \
+  )
   JAVA_FILES.main += $(patsubst %,$(dir.src.fts5)/%,\
     fts5_api.java \
     fts5_extension_function.java \
@@ -121,11 +128,10 @@ ifeq (1,$(enable.fts5))
     Fts5ExtensionApi.java \
     Fts5PhraseIter.java \
     Fts5Tokenizer.java \
-    TesterFts5.java \
     XTokenizeCallback.java \
   )
 endif
-JAVA_FILES.tester := $(dir.src.jni.tester)/SQLTester.java
+JAVA_FILES.tester := $(SQLTester.java)
 JAVA_FILES.package.info := \
   $(dir.src.jni)/package-info.java \
   $(dir.src.jni)/annotation/package-info.java
@@ -188,7 +194,19 @@ opt.fatal-oom ?= 1
 opt.debug ?= 1
 opt.metrics ?= 1
 SQLITE_OPT = \
-  -DSQLITE_ENABLE_RTREE \
+  -DSQLITE_THREADSAFE=$(opt.threadsafe) \
+  -DSQLITE_TEMP_STORE=2 \
+  -DSQLITE_USE_URI=1 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_OMIT_DEPRECATED \
+  -DSQLITE_OMIT_SHARED_CACHE \
+  -DSQLITE_C=$(sqlite3.c) \
+  -DSQLITE_JNI_FATAL_OOM=$(opt.fatal-oom) \
+  -DSQLITE_JNI_ENABLE_METRICS=$(opt.metrics)
+
+opt.extras ?= 0
+ifeq (1,$(opt.extras))
+SQLITE_OPT += -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
   -DSQLITE_ENABLE_STMTVTAB \
   -DSQLITE_ENABLE_DBPAGE_VTAB \
@@ -196,21 +214,14 @@ SQLITE_OPT = \
   -DSQLITE_ENABLE_BYTECODE_VTAB \
   -DSQLITE_ENABLE_OFFSET_SQL_FUNC \
   -DSQLITE_ENABLE_PREUPDATE_HOOK \
-  -DSQLITE_ENABLE_SQLLOG \
-  -DSQLITE_OMIT_LOAD_EXTENSION \
-  -DSQLITE_OMIT_DEPRECATED \
-  -DSQLITE_OMIT_SHARED_CACHE \
-  -DSQLITE_THREADSAFE=$(opt.threadsafe) \
-  -DSQLITE_TEMP_STORE=2 \
-  -DSQLITE_USE_URI=1 \
-  -DSQLITE_C=$(sqlite3.c) \
-  -DSQLITE_JNI_FATAL_OOM=$(opt.fatal-oom) \
-  -DSQLITE_JNI_ENABLE_METRICS=$(opt.metrics)
+  -DSQLITE_ENABLE_NORMALIZE \
+  -DSQLITE_ENABLE_SQLLOG
+endif
 
 ifeq (1,$(opt.debug))
   SQLITE_OPT += -DSQLITE_DEBUG -g -DDEBUG -UNDEBUG
 else
-  SQLITE_OPT += -O2
+  SQLITE_OPT += -Os
 endif
 
 ifeq (1,$(enable.fts5))
@@ -233,18 +244,17 @@ endef
 # Invoke ADD_JNI_H once for each Java file which includes JNI
 # declarations:
 $(eval $(call ADD_JNI_H,$(dir.src.jni),SQLite3Jni,))
+$(eval $(call ADD_JNI_H,$(dir.src.jni),SQLTester,))
 ifeq (1,$(enable.fts5))
  $(eval $(call ADD_JNI_H,$(dir.src.fts5),Fts5ExtensionApi,_fts5))
  $(eval $(call ADD_JNI_H,$(dir.src.fts5),fts5_api,_fts5))
  $(eval $(call ADD_JNI_H,$(dir.src.fts5),fts5_tokenizer,_fts5))
 endif
-ifeq (1,$(enable.tester))
-  $(eval $(call ADD_JNI_H,$(dir.src.jni.tester),SQLTester,_tester))
-endif
 $(sqlite3-jni.h.in): $(dir.bld.c)
 
 #package.dll.cfiles :=
 package.dll.cflags = \
+  -std=c99 \
   -fPIC \
   -I. \
   -I$(dir $(sqlite3.h)) \
@@ -252,17 +262,18 @@ package.dll.cflags = \
   -I$(JDK_HOME)/include \
   $(patsubst %,-I%,$(patsubst %.h,,$(wildcard $(JDK_HOME)/include/*))) \
   -Wall
-# Using (-Wall -Wextra) triggers an untennable number of
-# gcc warnings from sqlite3.c for mundane things like
-# unused parameters.
-#
 # The gross $(patsubst...) above is to include the platform-specific
 # subdir which lives under $(JDK_HOME)/include and is a required
 # include path for client-level code.
+#
+# Using (-Wall -Wextra) triggers an untennable number of
+# gcc warnings from sqlite3.c for mundane things like
+# unused parameters.
 ########################################################################
 ifeq (1,$(enable.tester))
   package.dll.cflags += -DSQLITE_JNI_ENABLE_SQLTester
 endif
+
 $(sqlite3-jni.h): $(sqlite3-jni.h.in) $(MAKEFILE)
 	@cat $(sqlite3-jni.h.in) > $@.tmp
 	@if cmp $@ $@.tmp >/dev/null; then \
@@ -308,21 +319,21 @@ ifeq (1,$(enable.tester))
 tester-local: $(CLASS_FILES.tester) $(package.dll)
 	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
 		$(java.flags) -cp $(classpath) \
-		org.sqlite.jni.tester.SQLTester $(tester.flags) $(tester.scripts)
+		org.sqlite.jni.SQLTester $(tester.flags) $(tester.scripts)
 tester: tester-local
 else
 tester:
-	@echo "SQLTester support is disabled. Build with enable.tester=1 to enable it."
+	@echo "SQLTester support is disabled."
 endif
 
-tester.extdir.default := src/tests/ext
+tester.extdir.default := $(dir.tests)/ext
 tester.extdir ?= $(tester.extdir.default)
 tester.extern-scripts := $(wildcard $(tester.extdir)/*.test)
 ifneq (,$(tester.extern-scripts))
 tester-ext:
 	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
 		$(java.flags) -cp $(classpath) \
-		org.sqlite.jni.tester.SQLTester $(tester.flags) $(tester.extern-scripts)
+		org.sqlite.jni.SQLTester $(tester.flags) $(tester.extern-scripts)
 else
 tester-ext:
 	@echo "******************************************************"; \
@@ -381,8 +392,7 @@ run-jar: $(package.jar) $(package.dll)
 # javadoc...
 dir.doc   := $(dir.jni)/javadoc
 doc.index := $(dir.doc)/index.html
-javadoc.exclude := -exclude org.sqlite.jni.tester \
-                   -exclude org.sqlite.jni.fts5
+javadoc.exclude := -exclude org.sqlite.jni.fts5
 # ^^^^ 2023-09-13: elide the fts5 parts from the public docs for
 # the time being, as it's not clear where the Java bindings for
 # those bits are going.

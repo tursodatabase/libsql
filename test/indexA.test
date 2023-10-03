@@ -331,5 +331,21 @@ do_execsql_test 7.0 {
   SELECT * FROM t1 INDEXED BY i1 WHERE b='abc' AND i=5 ORDER BY c;
 } {5 abc xyz}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE INDEX ex2 ON t1(a, 4);
+  CREATE INDEX ex1 ON t1(a) WHERE 4=b;
+  INSERT INTO t1 VALUES(1, 4, 1);
+  INSERT INTO t1 VALUES(1, 5, 1);
+  INSERT INTO t1 VALUES(2, 4, 2);
+}
+do_execsql_test 8.1 {
+  SELECT * FROM t1 WHERE b=4;
+} {
+  1 4 1  2 4 2
+}
+
 finish_test
 

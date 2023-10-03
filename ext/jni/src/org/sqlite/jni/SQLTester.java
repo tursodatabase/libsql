@@ -12,16 +12,13 @@
 ** This file contains the main application entry pointer for the
 ** SQLTester framework.
 */
-package org.sqlite.jni.tester;
+package org.sqlite.jni;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.*;
-import org.sqlite.jni.*;
 import static org.sqlite.jni.SQLite3Jni.*;
-import org.sqlite.jni.sqlite3;
-
 
 /**
    Modes for how to escape (or not) column values and names from
@@ -71,7 +68,7 @@ class SQLTesterException extends RuntimeException {
 
 class DbException extends SQLTesterException {
   DbException(sqlite3 db, int rc, boolean closeDb){
-    super("DB error #"+rc+": "+sqlite3_errmsg16(db),true);
+    super("DB error #"+rc+": "+sqlite3_errmsg(db),true);
     if( closeDb ) sqlite3_close_v2(db);
   }
   DbException(sqlite3 db, int rc){
@@ -150,12 +147,15 @@ class Outer {
 }
 
 /**
-   This class provides an application which aims to implement the
+   <p>This class provides an application which aims to implement the
    rudimentary SQL-driven test tool described in the accompanying
    {@code test-script-interpreter.md}.
 
-   <p>This is a work in progress.
-
+   <p>This class is an internal testing tool, not part of the public
+   interface but is (A) in the same package as the library because
+   access permissions require it to be so and (B) the JDK8 javadoc
+   offers no way to filter individual classes out of the doc
+   generation process (it can only exclude packages, but see (A)).
 
    <p>An instance of this application provides a core set of services
    which TestScript instances use for processing testing logic.
@@ -458,7 +458,7 @@ public class SQLTester {
 
   private void appendDbErr(sqlite3 db, StringBuilder sb, int rc){
     sb.append(org.sqlite.jni.ResultCode.getEntryForInt(rc)).append(' ');
-    final String msg = escapeSqlValue(sqlite3_errmsg16(db));
+    final String msg = escapeSqlValue(sqlite3_errmsg(db));
     if( '{' == msg.charAt(0) ){
       sb.append(msg);
     }else{
@@ -932,7 +932,7 @@ class RunCommand extends Command {
     final int rc = t.execSql(db, false, ResultBufferMode.NONE,
                              ResultRowMode.ONELINE, sql);
     if( 0!=rc && t.isVerbose() ){
-      String msg = sqlite3_errmsg16(db);
+      String msg = sqlite3_errmsg(db);
       ts.verbose1(argv[0]," non-fatal command error #",rc,": ",
                   msg,"\nfor SQL:\n",sql);
     }
