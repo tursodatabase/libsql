@@ -3,10 +3,12 @@
 pub mod ffi;
 pub mod wal_hook;
 
-use std::{ffi::CString, marker::PhantomData, ops::Deref, time::Duration};
+use std::{ffi::CString, ops::Deref, time::Duration};
 
 pub use crate::wal_hook::WalMethodsHook;
 pub use once_cell::sync::Lazy;
+use rusqlite::ffi::sqlite3;
+use wal_hook::TransparentMethods;
 
 use self::{
     ffi::{libsql_wal_methods, libsql_wal_methods_find},
@@ -22,12 +24,14 @@ pub fn get_orig_wal_methods() -> anyhow::Result<*mut libsql_wal_methods> {
     Ok(orig)
 }
 
-pub struct Connection<'a> {
+pub struct Connection<W: WalHook> {
     conn: rusqlite::Connection,
-    _pth: PhantomData<&'a mut ()>,
+    // Safety: _ctx MUST be dropped after the connection, because the connection has a pointer
+    // This pointer MUST NOT move out of the connection
+    _ctx: Box<W::Context>,
 }
 
-impl Deref for Connection<'_> {
+impl<W: WalHook> Deref for Connection<W> {
     type Target = rusqlite::Connection;
 
     fn deref(&self) -> &Self::Target {
@@ -35,27 +39,30 @@ impl Deref for Connection<'_> {
     }
 }
 
-impl<'a> Connection<'a> {
+impl Connection<TransparentMethods> {
     /// returns a dummy, in-memory connection. For testing purposes only
-    pub fn test(_: &mut ()) -> Self {
+    pub fn test() -> Self {
         let conn = rusqlite::Connection::open_in_memory().unwrap();
         Self {
             conn,
-            _pth: PhantomData,
+            _ctx: Box::new(()),
         }
     }
+}
 
+impl<W: WalHook> Connection<W> {
     /// Opens a database with the regular wal methods in the directory pointed to by path
-    pub fn open<W: WalHook>(
+    pub fn open(
         path: impl AsRef<std::path::Path>,
         flags: rusqlite::OpenFlags,
         // we technically _only_ need to know about W, but requiring a static ref to the wal_hook ensures that
         // it has been instanciated and lives for long enough
         _wal_hook: &'static WalMethodsHook<W>,
-        hook_ctx: &'a mut W::Context,
+        hook_ctx: W::Context,
         auto_checkpoint: u32,
     ) -> Result<Self, rusqlite::Error> {
         let path = path.as_ref().join("data");
+        let mut _ctx = Box::new(hook_ctx);
         tracing::trace!(
             "Opening a connection with regular WAL at {}",
             path.display()
@@ -75,7 +82,7 @@ impl<'a> Connection<'a> {
                 flags.bits(),
                 std::ptr::null_mut(),
                 W::name().as_ptr(),
-                hook_ctx as *mut _ as *mut _,
+                _ctx.as_mut() as *mut _ as *mut _,
             );
 
             if rc == 0 {
@@ -96,9 +103,14 @@ impl<'a> Connection<'a> {
         let conn = unsafe { rusqlite::Connection::from_handle_owned(db)? };
         conn.busy_timeout(Duration::from_millis(5000))?;
 
-        Ok(Connection {
-            conn,
-            _pth: PhantomData,
-        })
+        Ok(Connection { conn, _ctx })
+    }
+
+    /// Returns the raw sqlite handle
+    ///
+    /// # Safety
+    /// The caller is responsible for the returned pointer.
+    pub unsafe fn handle(&mut self) -> *mut sqlite3 {
+        self.conn.handle()
     }
 }

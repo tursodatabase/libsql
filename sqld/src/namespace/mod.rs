@@ -24,8 +24,8 @@ use uuid::Uuid;
 
 use crate::auth::Authenticated;
 use crate::connection::config::DatabaseConfigStore;
-use crate::connection::libsql::{open_db, LibSqlDbFactory};
-use crate::connection::write_proxy::MakeWriteProxyConnection;
+use crate::connection::libsql::{open_conn, MakeLibSqlConn};
+use crate::connection::write_proxy::MakeWriteProxyConn;
 use crate::connection::MakeConnection;
 use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
@@ -577,7 +577,7 @@ impl Namespace<ReplicaDatabase> {
 
         join_set.spawn(replicator.run());
 
-        let connection_maker = MakeWriteProxyConnection::new(
+        let connection_maker = MakeWriteProxyConn::new(
             db_path.clone(),
             config.extensions.clone(),
             config.channel.clone(),
@@ -589,6 +589,7 @@ impl Namespace<ReplicaDatabase> {
             config.max_total_response_size,
             name.clone(),
         )
+        .await?
         .throttled(
             MAX_CONCURRENT_DBS,
             Some(DB_CREATE_TIMEOUT),
@@ -718,7 +719,7 @@ impl Namespace<PrimaryDatabase> {
             DatabaseConfigStore::load(&db_path).context("Could not load database config")?,
         );
 
-        let connection_maker: Arc<_> = LibSqlDbFactory::new(
+        let connection_maker: Arc<_> = MakeLibSqlConn::new(
             db_path.clone(),
             &REPLICATION_METHODS,
             ctx_builder.clone(),
@@ -738,13 +739,12 @@ impl Namespace<PrimaryDatabase> {
         )
         .into();
 
-        let mut ctx = ctx_builder();
         match restore_option {
             RestoreOption::Dump(_) if !is_fresh_db => {
                 Err(LoadDumpError::LoadDumpExistingDb)?;
             }
             RestoreOption::Dump(dump) => {
-                load_dump(&db_path, dump, &mut ctx).await?;
+                load_dump(&db_path, dump, ctx_builder, logger.auto_checkpoint).await?;
             }
             _ => { /* other cases were already handled when creating bottomless */ }
         }
@@ -828,17 +828,24 @@ const WASM_TABLE_CREATE: &str =
 async fn load_dump<S>(
     db_path: &Path,
     dump: S,
-    ctx: &mut ReplicationLoggerHookCtx,
+    mk_ctx: impl Fn() -> ReplicationLoggerHookCtx,
+    auto_checkpoint: u32,
 ) -> anyhow::Result<()>
 where
     S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     let mut retries = 0;
-    let auto_checkpoint = ctx.logger().auto_checkpoint;
     // there is a small chance we fail to acquire the lock right away, so we perform a few retries
     let conn = loop {
-        match block_in_place(|| open_db(db_path, &REPLICATION_METHODS, ctx, None, auto_checkpoint))
-        {
+        match block_in_place(|| {
+            open_conn(
+                db_path,
+                &REPLICATION_METHODS,
+                mk_ctx(),
+                None,
+                auto_checkpoint,
+            )
+        }) {
             Ok(conn) => {
                 break conn;
             }
@@ -977,10 +984,9 @@ async fn run_storage_monitor(db_path: PathBuf, stats: Weak<Stats>) -> anyhow::Re
             // because closing the last connection interferes with opening a new one, we lazily
             // initialize a connection here, and keep it alive for the entirety of the program. If we
             // fail to open it, we wait for `duration` and try again later.
-            let ctx = &mut ();
             // We can safely open db with DEFAULT_AUTO_CHECKPOINT, since monitor is read-only: it 
             // won't produce new updates, frames or generate checkpoints.
-            match open_db(&db_path, &TRANSPARENT_METHODS, ctx, Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), DEFAULT_AUTO_CHECKPOINT) {
+            match open_conn(&db_path, &TRANSPARENT_METHODS, (), Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), DEFAULT_AUTO_CHECKPOINT) {
                 Ok(conn) => {
                     if let Ok(storage_bytes_used) =
                         conn.query_row("select sum(pgsize) from dbstat;", [], |row| {

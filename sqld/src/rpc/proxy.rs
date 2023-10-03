@@ -6,9 +6,8 @@ use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use uuid::Uuid;
 
 use crate::auth::{Auth, Authenticated};
-use crate::connection::libsql::LibSqlConnection;
-use crate::connection::{Connection, TrackedConnection};
-use crate::database::Database;
+use crate::connection::Connection;
+use crate::database::{Database, PrimaryConnection};
 use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
@@ -265,7 +264,7 @@ pub mod rpc {
 }
 
 pub struct ProxyService {
-    clients: Arc<RwLock<HashMap<Uuid, Arc<TrackedConnection<LibSqlConnection>>>>>,
+    clients: Arc<RwLock<HashMap<Uuid, Arc<PrimaryConnection>>>>,
     namespaces: NamespaceStore<PrimaryNamespaceMaker>,
     auth: Option<Arc<Auth>>,
     disable_namespaces: bool,
@@ -277,17 +276,15 @@ impl ProxyService {
         auth: Option<Arc<Auth>>,
         disable_namespaces: bool,
     ) -> Self {
-        let clients: Arc<RwLock<HashMap<Uuid, Arc<TrackedConnection<LibSqlConnection>>>>> =
-            Default::default();
         Self {
-            clients,
+            clients: Default::default(),
             namespaces,
             auth,
             disable_namespaces,
         }
     }
 
-    pub fn clients(&self) -> Arc<RwLock<HashMap<Uuid, Arc<TrackedConnection<LibSqlConnection>>>>> {
+    pub fn clients(&self) -> Arc<RwLock<HashMap<Uuid, Arc<PrimaryConnection>>>> {
         self.clients.clone()
     }
 }
@@ -451,13 +448,11 @@ impl QueryResultBuilder for ExecuteResultBuilder {
 // FIXME: we should also keep a list of recently disconnected clients,
 // and if one should arrive with a late message, it should be rejected
 // with an error. A similar mechanism is already implemented in hrana-over-http.
-pub async fn garbage_collect(
-    clients: &mut HashMap<Uuid, Arc<TrackedConnection<LibSqlConnection>>>,
-) {
+pub async fn garbage_collect(clients: &mut HashMap<Uuid, Arc<PrimaryConnection>>) {
     let limit = std::time::Duration::from_secs(30);
 
     clients.retain(|_, db| db.idle_time() < limit);
-    tracing::trace!("gc: remaining client handles: {:?}", clients);
+    tracing::trace!("gc: remaining client handles count: {}", clients.len());
 }
 
 #[tonic::async_trait]

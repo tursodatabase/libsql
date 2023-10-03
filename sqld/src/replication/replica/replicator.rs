@@ -109,8 +109,8 @@ impl Replicator {
         let handle = BLOCKING_RT.spawn_blocking({
             let db_path = db_path;
             move || -> anyhow::Result<()> {
-                let mut ctx = InjectorHookCtx::new(receiver, pre_commit, post_commit);
-                let mut injector = FrameInjector::new(&db_path, &mut ctx)?;
+                let ctx = InjectorHookCtx::new(receiver, pre_commit, post_commit);
+                let mut injector = FrameInjector::new(&db_path, ctx)?;
                 let _ = snd.send(());
 
                 while injector.step()? {}

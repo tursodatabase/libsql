@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use parking_lot::Mutex as PMutex;
 use rusqlite::types::ValueRef;
-use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
+use sqld_libsql_bindings::wal_hook::{TransparentMethods, TRANSPARENT_METHODS};
 use tokio::sync::{watch, Mutex};
 use tonic::metadata::BinaryMetadataValue;
 use tonic::transport::Channel;
@@ -27,27 +27,24 @@ use crate::stats::Stats;
 use crate::{Result, DEFAULT_AUTO_CHECKPOINT};
 
 use super::config::DatabaseConfigStore;
-use super::libsql::LibSqlConnection;
+use super::libsql::{LibSqlConnection, MakeLibSqlConn};
 use super::program::DescribeResult;
 use super::Connection;
 use super::{MakeConnection, Program};
 
-#[derive(Clone)]
-pub struct MakeWriteProxyConnection {
+pub struct MakeWriteProxyConn {
     client: ProxyClient<Channel>,
-    db_path: PathBuf,
-    extensions: Arc<[PathBuf]>,
     stats: Arc<Stats>,
-    config_store: Arc<DatabaseConfigStore>,
     applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
     max_response_size: u64,
     max_total_response_size: u64,
     namespace: NamespaceName,
+    make_read_only_conn: MakeLibSqlConn<TransparentMethods>,
 }
 
-impl MakeWriteProxyConnection {
+impl MakeWriteProxyConn {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(
+    pub async fn new(
         db_path: PathBuf,
         extensions: Arc<[PathBuf]>,
         channel: Channel,
@@ -58,32 +55,41 @@ impl MakeWriteProxyConnection {
         max_response_size: u64,
         max_total_response_size: u64,
         namespace: NamespaceName,
-    ) -> Self {
+    ) -> crate::Result<Self> {
         let client = ProxyClient::with_origin(channel, uri);
-        Self {
+        let make_read_only_conn = MakeLibSqlConn::new(
+            db_path.clone(),
+            &TRANSPARENT_METHODS,
+            || (),
+            stats.clone(),
+            config_store.clone(),
+            extensions.clone(),
+            max_response_size,
+            max_total_response_size,
+            DEFAULT_AUTO_CHECKPOINT,
+            applied_frame_no_receiver.clone(),
+        )
+        .await?;
+
+        Ok(Self {
             client,
-            db_path,
-            extensions,
             stats,
-            config_store,
             applied_frame_no_receiver,
             max_response_size,
             max_total_response_size,
             namespace,
-        }
+            make_read_only_conn,
+        })
     }
 }
 
 #[async_trait::async_trait]
-impl MakeConnection for MakeWriteProxyConnection {
+impl MakeConnection for MakeWriteProxyConn {
     type Connection = WriteProxyConnection;
     async fn create(&self) -> Result<Self::Connection> {
         let db = WriteProxyConnection::new(
             self.client.clone(),
-            self.db_path.clone(),
-            self.extensions.clone(),
             self.stats.clone(),
-            self.config_store.clone(),
             self.applied_frame_no_receiver.clone(),
             QueryBuilderConfig {
                 max_size: Some(self.max_response_size),
@@ -91,6 +97,7 @@ impl MakeConnection for MakeWriteProxyConnection {
                 auto_checkpoint: DEFAULT_AUTO_CHECKPOINT,
             },
             self.namespace.clone(),
+            self.make_read_only_conn.create().await?,
         )
         .await?;
         Ok(db)
@@ -99,7 +106,7 @@ impl MakeConnection for MakeWriteProxyConnection {
 
 pub struct WriteProxyConnection {
     /// Lazily initialized read connection
-    read_conn: LibSqlConnection,
+    read_conn: LibSqlConnection<TransparentMethods>,
     write_proxy: ProxyClient<Channel>,
     state: Mutex<State>,
     client_id: Uuid,
@@ -163,26 +170,12 @@ impl WriteProxyConnection {
     #[allow(clippy::too_many_arguments)]
     async fn new(
         write_proxy: ProxyClient<Channel>,
-        db_path: PathBuf,
-        extensions: Arc<[PathBuf]>,
         stats: Arc<Stats>,
-        config_store: Arc<DatabaseConfigStore>,
         applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         builder_config: QueryBuilderConfig,
         namespace: NamespaceName,
+        read_conn: LibSqlConnection<TransparentMethods>,
     ) -> Result<Self> {
-        let read_conn = LibSqlConnection::new(
-            db_path,
-            extensions,
-            &TRANSPARENT_METHODS,
-            (),
-            stats.clone(),
-            config_store,
-            builder_config,
-            applied_frame_no_receiver.clone(),
-        )
-        .await?;
-
         Ok(Self {
             read_conn,
             write_proxy,

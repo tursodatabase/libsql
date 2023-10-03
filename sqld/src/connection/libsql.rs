@@ -1,12 +1,13 @@
+use std::ffi::{c_int, c_void};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use crossbeam::channel::RecvTimeoutError;
-use rusqlite::{ErrorCode, OpenFlags, StatementStatus};
-use sqld_libsql_bindings::wal_hook::WalMethodsHook;
-use tokio::sync::{oneshot, watch};
+use parking_lot::{Mutex, RwLock};
+use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus};
+use sqld_libsql_bindings::wal_hook::{TransparentMethods, WalMethodsHook};
+use tokio::sync::{watch, Notify};
 use tokio::time::{Duration, Instant};
-use tracing::warn;
 
 use crate::auth::{Authenticated, Authorized, Permission};
 use crate::error::Error;
@@ -22,10 +23,7 @@ use super::config::DatabaseConfigStore;
 use super::program::{Cond, DescribeCol, DescribeParam, DescribeResponse, DescribeResult};
 use super::{MakeConnection, Program, Step, TXN_TIMEOUT};
 
-/// Internal message used to communicate between the database thread and the `LibSqlDb` handle.
-type ExecCallback = Box<dyn FnOnce(Result<&mut Connection>) -> anyhow::Result<()> + Send + 'static>;
-
-pub struct LibSqlDbFactory<W: WalHook + 'static> {
+pub struct MakeLibSqlConn<W: WalHook + 'static> {
     db_path: PathBuf,
     hook: &'static WalMethodsHook<W>,
     ctx_builder: Box<dyn Fn() -> W::Context + Sync + Send + 'static>,
@@ -36,12 +34,13 @@ pub struct LibSqlDbFactory<W: WalHook + 'static> {
     max_total_response_size: u64,
     auto_checkpoint: u32,
     current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+    state: Arc<TxnState<W>>,
     /// In wal mode, closing the last database takes time, and causes other databases creation to
     /// return sqlite busy. To mitigate that, we hold on to one connection
-    _db: Option<LibSqlConnection>,
+    _db: Option<LibSqlConnection<W>>,
 }
 
-impl<W: WalHook + 'static> LibSqlDbFactory<W>
+impl<W: WalHook + 'static> MakeLibSqlConn<W>
 where
     W: WalHook + 'static + Sync + Send,
     W::Context: Send + 'static,
@@ -74,6 +73,7 @@ where
             auto_checkpoint,
             current_frame_no_receiver,
             _db: None,
+            state: Default::default(),
         };
 
         let db = this.try_create_db().await?;
@@ -83,11 +83,11 @@ where
     }
 
     /// Tries to create a database, retrying if the database is busy.
-    async fn try_create_db(&self) -> Result<LibSqlConnection> {
+    async fn try_create_db(&self) -> Result<LibSqlConnection<W>> {
         // try 100 times to acquire initial db connection.
         let mut retries = 0;
         loop {
-            match self.create_database().await {
+            match self.make_connection().await {
                 Ok(conn) => return Ok(conn),
                 Err(
                     err @ Error::RusqliteError(rusqlite::Error::SqliteFailure(
@@ -111,7 +111,7 @@ where
         }
     }
 
-    async fn create_database(&self) -> Result<LibSqlConnection> {
+    async fn make_connection(&self) -> Result<LibSqlConnection<W>> {
         LibSqlConnection::new(
             self.db_path.clone(),
             self.extensions.clone(),
@@ -125,36 +125,37 @@ where
                 auto_checkpoint: self.auto_checkpoint,
             },
             self.current_frame_no_receiver.clone(),
+            self.state.clone(),
         )
         .await
     }
 }
 
 #[async_trait::async_trait]
-impl<W> MakeConnection for LibSqlDbFactory<W>
+impl<W> MakeConnection for MakeLibSqlConn<W>
 where
     W: WalHook + 'static + Sync + Send,
     W::Context: Send + 'static,
 {
-    type Connection = LibSqlConnection;
+    type Connection = LibSqlConnection<W>;
 
     async fn create(&self) -> Result<Self::Connection, Error> {
-        self.create_database().await
+        self.make_connection().await
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct LibSqlConnection {
-    sender: crossbeam::channel::Sender<ExecCallback>,
+#[derive(Clone)]
+pub struct LibSqlConnection<W: WalHook> {
+    inner: Arc<Mutex<Connection<W>>>,
 }
 
-pub fn open_db<'a, W>(
+pub fn open_conn<W>(
     path: &Path,
     wal_methods: &'static WalMethodsHook<W>,
-    hook_ctx: &'a mut W::Context,
+    hook_ctx: W::Context,
     flags: Option<OpenFlags>,
     auto_checkpoint: u32,
-) -> Result<sqld_libsql_bindings::Connection<'a>, rusqlite::Error>
+) -> Result<sqld_libsql_bindings::Connection<W>, rusqlite::Error>
 where
     W: WalHook,
 {
@@ -167,8 +168,12 @@ where
     sqld_libsql_bindings::Connection::open(path, flags, wal_methods, hook_ctx, auto_checkpoint)
 }
 
-impl LibSqlConnection {
-    pub async fn new<W>(
+impl<W> LibSqlConnection<W>
+where
+    W: WalHook,
+    W::Context: Send,
+{
+    pub async fn new(
         path: impl AsRef<Path> + Send + 'static,
         extensions: Arc<[PathBuf]>,
         wal_hook: &'static WalMethodsHook<W>,
@@ -177,109 +182,170 @@ impl LibSqlConnection {
         config_store: Arc<DatabaseConfigStore>,
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
-    ) -> crate::Result<Self>
-    where
-        W: WalHook,
-        W::Context: Send,
-    {
-        let (sender, receiver) = crossbeam::channel::unbounded::<ExecCallback>();
-        let (init_sender, init_receiver) = oneshot::channel();
-
-        crate::BLOCKING_RT.spawn_blocking(move || {
-            let mut ctx = hook_ctx;
-            let mut connection = match Connection::new(
+        state: Arc<TxnState<W>>,
+    ) -> crate::Result<Self> {
+        let conn = tokio::task::spawn_blocking(move || {
+            Connection::new(
                 path.as_ref(),
                 extensions,
                 wal_hook,
-                &mut ctx,
+                hook_ctx,
                 stats,
                 config_store,
                 builder_config,
                 current_frame_no_receiver,
-            ) {
-                Ok(conn) => {
-                    let Ok(_) = init_sender.send(Ok(())) else { return };
-                    conn
-                }
-                Err(e) => {
-                    let _ = init_sender.send(Err(e));
-                    return;
-                }
-            };
+                state,
+            )
+        })
+        .await
+        .unwrap()?;
 
-            loop {
-                let exec = match connection.timeout_deadline {
-                    Some(deadline) => match receiver.recv_deadline(deadline.into()) {
-                        Ok(msg) => msg,
-                        Err(RecvTimeoutError::Timeout) => {
-                            warn!("transaction timed out");
-                            connection.rollback();
-                            connection.timed_out = true;
-                            connection.timeout_deadline = None;
-                            continue;
-                        }
-                        Err(RecvTimeoutError::Disconnected) => break,
-                    },
-                    None => match receiver.recv() {
-                        Ok(msg) => msg,
-                        Err(_) => break,
-                    },
-                };
-
-                let maybe_conn = if !connection.timed_out {
-                    Ok(&mut connection)
-                } else {
-                    Err(Error::LibSqlTxTimeout)
-                };
-
-                if exec(maybe_conn).is_err() {
-                    tracing::warn!("Database connection closed unexpectedly");
-                    return;
-                };
-            }
-        });
-
-        init_receiver.await??;
-
-        Ok(Self { sender })
+        Ok(Self {
+            inner: Arc::new(Mutex::new(conn)),
+        })
     }
 }
 
-struct Connection<'a> {
-    timeout_deadline: Option<Instant>,
-    conn: sqld_libsql_bindings::Connection<'a>,
-    timed_out: bool,
+struct Connection<W: WalHook = TransparentMethods> {
+    conn: sqld_libsql_bindings::Connection<W>,
     stats: Arc<Stats>,
     config_store: Arc<DatabaseConfigStore>,
     builder_config: QueryBuilderConfig,
     current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+    // must be dropped after the connection because the connection refers to it
+    state: Arc<TxnState<W>>,
+    // current txn slot if any
+    slot: Option<Arc<TxnSlot<W>>>,
 }
 
-impl<'a> Connection<'a> {
-    fn new<W: WalHook>(
+/// A slot for holding the state of a transaction lock permit
+struct TxnSlot<T: WalHook> {
+    /// Pointer to the connection holding the lock. Used to rollback the transaction when the lock
+    /// is stolen.
+    conn: Arc<Mutex<Connection<T>>>,
+    /// Time at which the transaction can be stolen
+    timeout_at: tokio::time::Instant,
+    /// The transaction lock was stolen
+    is_stolen: AtomicBool,
+}
+
+/// The transaction state shared among all connections to the same database
+pub struct TxnState<T: WalHook> {
+    /// Slot for the connection currently holding the transaction lock
+    slot: RwLock<Option<Arc<TxnSlot<T>>>>,
+    /// Notifier for when the lock gets dropped
+    notify: Notify,
+}
+
+impl<W: WalHook> Default for TxnState<W> {
+    fn default() -> Self {
+        Self {
+            slot: Default::default(),
+            notify: Default::default(),
+        }
+    }
+}
+
+/// The lock-stealing busy handler.
+/// Here is a detailed description of the algorithm:
+/// - all connections to a database share a `TxnState`, that contains a `TxnSlot`
+/// - when a connection acquire a write lock to the database, this is detected by monitoring the state of the
+///   connection before and after the call thanks to [sqlite3_txn_state()](https://www.sqlite.org/c3ref/c_txn_none.html)
+/// - if the connection acquired a write lock (txn state none/read -> write), a new txn slot is created. A clone of the
+///   `TxnSlot` is placed in the `TxnState` shared with other connections to this database, while another clone is kept in
+///   the transaction state. The TxnSlot contains: the instant at which the txn should timeout, a `is_stolen` flag, and a
+///   pointer to the connection currently holding the lock.
+/// - when another connection attempts to acquire the lock, the `busy_handler` callback will be called. The callback is being
+///   passed the `TxnState` for the connection. The handler looks at the current slot to determine when the current txn will
+///   timeout, and waits for that instant before retrying. The waiting handler can also be notified that the transaction has
+///   been finished early.
+/// - If the handler waits until the txn timeout and isn't notified of the termination of the txn, it will attempt to steal the lock.
+///   This is done by calling rollback on the slot's txn, and marking the slot as stolen.
+/// - When a connection notices that it's slot has been stolen, it returns a timedout error to the next request.
+unsafe extern "C" fn busy_handler<W: WalHook>(state: *mut c_void, _retries: c_int) -> c_int {
+    let state = &*(state as *mut TxnState<W>);
+    let lock = state.slot.read();
+    // we take a reference to the slot we will attempt to steal. this is to make sure that we
+    // actually steal the correct lock.
+    let slot = match &*lock {
+        Some(slot) => slot.clone(),
+        // fast path: there is no slot, try to acquire the lock again
+        None => return 1,
+    };
+
+    tokio::runtime::Handle::current().block_on(async move {
+        let timeout = {
+            let slot = lock.as_ref().unwrap();
+            let timeout_at = slot.timeout_at;
+            drop(lock);
+            tokio::time::sleep_until(timeout_at)
+        };
+
+        tokio::select! {
+            // The connection has notified us that it's txn has terminated, try to acquire again
+            _ = state.notify.notified() => 1,
+            // the current holder of the transaction has timedout, we will attempt to steal their
+            // lock.
+            _ = timeout => {
+                // only a single connection gets to steal the lock, others retry
+                if let Some(mut lock) = state.slot.try_write() {
+                    // We check that slot wasn't already stolen, and that their is still a slot.
+                    // The ordering is relaxed because the atomic is only set under the slot lock.
+                    if slot.is_stolen.compare_exchange(false, true, Ordering::Relaxed, Ordering::Relaxed).is_ok() {
+                        // The connection holding the current txn will sets itsef as stolen when it
+                        // detects a timeout, so if we arrive to this point, then there is
+                        // necessarily a slot, and this slot has to be the one we attempted to
+                        // steal.
+                        assert!(lock.take().is_some());
+
+                        let conn = slot.conn.lock();
+                        // we have a lock on the connection, we don't need mode than a
+                        // Relaxed store.
+                        conn.rollback();
+
+                        tracing::info!("stole transaction lock");
+                    }
+                }
+                1
+            }
+        }
+    })
+}
+
+impl<W: WalHook> Connection<W> {
+    fn new(
         path: &Path,
         extensions: Arc<[PathBuf]>,
         wal_methods: &'static WalMethodsHook<W>,
-        hook_ctx: &'a mut W::Context,
+        hook_ctx: W::Context,
         stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+        state: Arc<TxnState<W>>,
     ) -> Result<Self> {
+        let mut conn = open_conn(
+            path,
+            wal_methods,
+            hook_ctx,
+            None,
+            builder_config.auto_checkpoint,
+        )?;
+
+        // register the lock-stealing busy handler
+        unsafe {
+            let ptr = Arc::as_ptr(&state) as *mut _;
+            rusqlite::ffi::sqlite3_busy_handler(conn.handle(), Some(busy_handler::<W>), ptr);
+        }
+
         let this = Self {
-            conn: open_db(
-                path,
-                wal_methods,
-                hook_ctx,
-                None,
-                builder_config.auto_checkpoint,
-            )?,
-            timeout_deadline: None,
-            timed_out: false,
+            conn,
             stats,
             config_store,
             builder_config,
             current_frame_no_receiver,
+            state,
+            slot: None,
         };
 
         for ext in extensions.iter() {
@@ -296,25 +362,88 @@ impl<'a> Connection<'a> {
         Ok(this)
     }
 
-    fn run<B: QueryResultBuilder>(&mut self, pgm: Program, mut builder: B) -> Result<B> {
+    fn run<B: QueryResultBuilder>(
+        this: Arc<Mutex<Self>>,
+        pgm: Program,
+        mut builder: B,
+    ) -> Result<(B, State)> {
+        use rusqlite::TransactionState as Tx;
+
+        let state = this.lock().state.clone();
+
         let mut results = Vec::with_capacity(pgm.steps.len());
+        builder.init(&this.lock().builder_config)?;
+        let mut previous_state = this
+            .lock()
+            .conn
+            .transaction_state(Some(DatabaseName::Main))?;
 
-        builder.init(&self.builder_config)?;
-        let is_autocommit_before = self.conn.is_autocommit();
-
+        let mut has_timeout = false;
         for step in pgm.steps() {
-            let res = self.execute_step(step, &results, &mut builder)?;
+            let mut lock = this.lock();
+
+            if let Some(slot) = &lock.slot {
+                if slot.is_stolen.load(Ordering::Relaxed) || Instant::now() > slot.timeout_at {
+                    // we mark ourselves as stolen to notify any waiting lock thief.
+                    slot.is_stolen.store(true, Ordering::Relaxed);
+                    lock.rollback();
+                    has_timeout = true;
+                }
+            }
+
+            // once there was a timeout, invalidate all the program steps
+            if has_timeout {
+                lock.slot = None;
+                builder.begin_step()?;
+                builder.step_error(Error::LibSqlTxTimeout)?;
+                builder.finish_step(0, None)?;
+                continue;
+            }
+
+            let res = lock.execute_step(step, &results, &mut builder)?;
+
+            let new_state = lock.conn.transaction_state(Some(DatabaseName::Main))?;
+            match (previous_state, new_state) {
+                // lock was upgraded, claim the slot
+                (Tx::None | Tx::Read, Tx::Write) => {
+                    let slot = Arc::new(TxnSlot {
+                        conn: this.clone(),
+                        timeout_at: Instant::now() + TXN_TIMEOUT,
+                        is_stolen: AtomicBool::new(false),
+                    });
+
+                    lock.slot.replace(slot.clone());
+                    state.slot.write().replace(slot);
+                }
+                // lock was downgraded, notify a waiter
+                (Tx::Write, Tx::None | Tx::Read) => {
+                    state.slot.write().take();
+                    lock.slot.take();
+                    state.notify.notify_one();
+                }
+                // nothing to do
+                (_, _) => (),
+            }
+
+            previous_state = new_state;
+
             results.push(res);
         }
 
-        // A transaction is still open, set up a timeout
-        if is_autocommit_before && !self.conn.is_autocommit() {
-            self.timeout_deadline = Some(Instant::now() + TXN_TIMEOUT)
-        }
+        builder.finish(*this.lock().current_frame_no_receiver.borrow_and_update())?;
 
-        builder.finish(*self.current_frame_no_receiver.borrow_and_update())?;
+        let state = if matches!(
+            this.lock()
+                .conn
+                .transaction_state(Some(DatabaseName::Main))?,
+            Tx::Read | Tx::Write
+        ) {
+            State::Txn
+        } else {
+            State::Init
+        };
 
-        Ok(builder)
+        Ok((builder, state))
     }
 
     fn execute_step(
@@ -537,7 +666,11 @@ fn check_describe_auth(auth: Authenticated) -> Result<()> {
 }
 
 #[async_trait::async_trait]
-impl super::Connection for LibSqlConnection {
+impl<W> super::Connection for LibSqlConnection<W>
+where
+    W: WalHook + 'static,
+    W::Context: Send,
+{
     async fn execute_program<B: QueryResultBuilder>(
         &self,
         pgm: Program,
@@ -546,29 +679,10 @@ impl super::Connection for LibSqlConnection {
         _replication_index: Option<FrameNo>,
     ) -> Result<(B, State)> {
         check_program_auth(auth, &pgm)?;
-        let (resp, receiver) = oneshot::channel();
-        let cb = Box::new(move |maybe_conn: Result<&mut Connection>| {
-            let res = maybe_conn.and_then(|c| {
-                let b = c.run(pgm, builder)?;
-                let state = if c.conn.is_autocommit() {
-                    State::Init
-                } else {
-                    State::Txn
-                };
-
-                Ok((b, state))
-            });
-
-            if resp.send(res).is_err() {
-                anyhow::bail!("connection closed");
-            }
-
-            Ok(())
-        });
-
-        let _: Result<_, _> = self.sender.send(cb);
-
-        Ok(receiver.await??)
+        let conn = self.inner.clone();
+        tokio::task::spawn_blocking(move || Connection::run(conn, pgm, builder))
+            .await
+            .unwrap()
     }
 
     async fn describe(
@@ -578,74 +692,57 @@ impl super::Connection for LibSqlConnection {
         _replication_index: Option<FrameNo>,
     ) -> Result<DescribeResult> {
         check_describe_auth(auth)?;
-        let (resp, receiver) = oneshot::channel();
-        let cb = Box::new(move |maybe_conn: Result<&mut Connection>| {
-            let res = maybe_conn.and_then(|c| c.describe(&sql));
+        let conn = self.inner.clone();
+        let res = tokio::task::spawn_blocking(move || conn.lock().describe(&sql))
+            .await
+            .unwrap();
 
-            if resp.send(res).is_err() {
-                anyhow::bail!("connection closed");
-            }
-
-            Ok(())
-        });
-
-        let _: Result<_, _> = self.sender.send(cb);
-
-        Ok(receiver.await?)
+        Ok(res)
     }
 
     async fn is_autocommit(&self) -> Result<bool> {
-        let (resp, receiver) = oneshot::channel();
-        let cb = Box::new(move |maybe_conn: Result<&mut Connection>| {
-            let res = maybe_conn.map(|c| c.is_autocommit());
-            if resp.send(res).is_err() {
-                anyhow::bail!("connection closed");
-            }
-            Ok(())
-        });
-
-        let _: Result<_, _> = self.sender.send(cb);
-        receiver.await?
+        Ok(self.inner.lock().is_autocommit())
     }
 
     async fn checkpoint(&self) -> Result<()> {
-        let (resp, receiver) = oneshot::channel();
-        let cb = Box::new(move |maybe_conn: Result<&mut Connection>| {
-            let res = maybe_conn.and_then(|c| c.checkpoint());
-            if resp.send(res).is_err() {
-                anyhow::bail!("connection closed");
-            }
-            Ok(())
-        });
-
-        let _: Result<_, _> = self.sender.send(cb);
-        receiver.await?
+        let conn = self.inner.clone();
+        tokio::task::spawn_blocking(move || conn.lock().checkpoint())
+            .await
+            .unwrap()?;
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod test {
     use itertools::Itertools;
+    use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
+    use tempfile::tempdir;
+    use tokio::task::JoinSet;
 
-    use crate::query_result_builder::{test::test_driver, IgnoreResult};
+    use crate::query_result_builder::test::{test_driver, TestBuilder};
+    use crate::query_result_builder::QueryResultBuilder;
+    use crate::DEFAULT_AUTO_CHECKPOINT;
 
     use super::*;
 
-    fn setup_test_conn(ctx: &mut ()) -> Connection {
-        let mut conn = Connection {
-            timeout_deadline: None,
-            conn: sqld_libsql_bindings::Connection::test(ctx),
-            timed_out: false,
+    fn setup_test_conn() -> Arc<Mutex<Connection>> {
+        let conn = Connection {
+            conn: sqld_libsql_bindings::Connection::test(),
             stats: Arc::new(Stats::default()),
             config_store: Arc::new(DatabaseConfigStore::new_test()),
             builder_config: QueryBuilderConfig::default(),
             current_frame_no_receiver: watch::channel(None).1,
+            state: Default::default(),
+            slot: None,
         };
+
+        let conn = Arc::new(Mutex::new(conn));
 
         let stmts = std::iter::once("create table test (x)")
             .chain(std::iter::repeat("insert into test values ('hello world')").take(100))
             .collect_vec();
-        conn.run(Program::seq(&stmts), IgnoreResult).unwrap();
+        Connection::run(conn.clone(), Program::seq(&stmts), TestBuilder::default()).unwrap();
 
         conn
     }
@@ -653,9 +750,167 @@ mod test {
     #[test]
     fn test_libsql_conn_builder_driver() {
         test_driver(1000, |b| {
-            let ctx = &mut ();
-            let mut conn = setup_test_conn(ctx);
-            conn.run(Program::seq(&["select * from test"]), b)
+            let conn = setup_test_conn();
+            Connection::run(conn, Program::seq(&["select * from test"]), b).map(|x| x.0)
         })
+    }
+
+    #[tokio::test]
+    async fn txn_timeout_no_stealing() {
+        let tmp = tempdir().unwrap();
+        let make_conn = MakeLibSqlConn::new(
+            tmp.path().into(),
+            &TRANSPARENT_METHODS,
+            || (),
+            Default::default(),
+            Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
+            Arc::new([]),
+            100000000,
+            100000000,
+            DEFAULT_AUTO_CHECKPOINT,
+            watch::channel(None).1,
+        )
+        .await
+        .unwrap();
+
+        tokio::time::pause();
+        let conn = make_conn.make_connection().await.unwrap();
+        let (_builder, state) = Connection::run(
+            conn.inner.clone(),
+            Program::seq(&["BEGIN IMMEDIATE"]),
+            TestBuilder::default(),
+        )
+        .unwrap();
+        assert_eq!(state, State::Txn);
+
+        tokio::time::advance(TXN_TIMEOUT * 2).await;
+
+        let (builder, state) = Connection::run(
+            conn.inner.clone(),
+            Program::seq(&["BEGIN IMMEDIATE"]),
+            TestBuilder::default(),
+        )
+        .unwrap();
+        assert_eq!(state, State::Init);
+        assert!(matches!(builder.into_ret()[0], Err(Error::LibSqlTxTimeout)));
+    }
+
+    #[tokio::test]
+    /// A bunch of txn try to acquire the lock, and never release it. They will try to steal the
+    /// lock one after the other. All txn should eventually acquire the write lock
+    async fn serialized_txn_timeouts() {
+        let tmp = tempdir().unwrap();
+        let make_conn = MakeLibSqlConn::new(
+            tmp.path().into(),
+            &TRANSPARENT_METHODS,
+            || (),
+            Default::default(),
+            Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
+            Arc::new([]),
+            100000000,
+            100000000,
+            DEFAULT_AUTO_CHECKPOINT,
+            watch::channel(None).1,
+        )
+        .await
+        .unwrap();
+
+        let mut set = JoinSet::new();
+        for _ in 0..10 {
+            let conn = make_conn.make_connection().await.unwrap();
+            set.spawn_blocking(move || {
+                let (builder, state) = Connection::run(
+                    conn.inner,
+                    Program::seq(&["BEGIN IMMEDIATE"]),
+                    TestBuilder::default(),
+                )
+                .unwrap();
+                assert_eq!(state, State::Txn);
+                assert!(builder.into_ret()[0].is_ok());
+            });
+        }
+
+        tokio::time::pause();
+
+        while let Some(ret) = set.join_next().await {
+            assert!(ret.is_ok());
+            // advance time by a bit more than the txn timeout
+            tokio::time::advance(TXN_TIMEOUT + Duration::from_millis(100)).await;
+        }
+    }
+
+    #[tokio::test]
+    /// verify that releasing a txn before the timeout
+    async fn release_before_timeout() {
+        let tmp = tempdir().unwrap();
+        let make_conn = MakeLibSqlConn::new(
+            tmp.path().into(),
+            &TRANSPARENT_METHODS,
+            || (),
+            Default::default(),
+            Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
+            Arc::new([]),
+            100000000,
+            100000000,
+            DEFAULT_AUTO_CHECKPOINT,
+            watch::channel(None).1,
+        )
+        .await
+        .unwrap();
+
+        let conn1 = make_conn.make_connection().await.unwrap();
+        tokio::task::spawn_blocking({
+            let conn = conn1.inner.clone();
+            move || {
+                let (builder, state) = Connection::run(
+                    conn,
+                    Program::seq(&["BEGIN IMMEDIATE"]),
+                    TestBuilder::default(),
+                )
+                .unwrap();
+                assert_eq!(state, State::Txn);
+                assert!(builder.into_ret()[0].is_ok());
+            }
+        })
+        .await
+        .unwrap();
+
+        let conn2 = make_conn.make_connection().await.unwrap();
+        let handle = tokio::task::spawn_blocking({
+            let conn = conn2.inner.clone();
+            move || {
+                let before = Instant::now();
+                let (builder, state) = Connection::run(
+                    conn,
+                    Program::seq(&["BEGIN IMMEDIATE"]),
+                    TestBuilder::default(),
+                )
+                .unwrap();
+                assert_eq!(state, State::Txn);
+                assert!(builder.into_ret()[0].is_ok());
+                before.elapsed()
+            }
+        });
+
+        let wait_time = TXN_TIMEOUT / 10;
+        tokio::time::sleep(wait_time).await;
+
+        tokio::task::spawn_blocking({
+            let conn = conn1.inner.clone();
+            move || {
+                let (builder, state) =
+                    Connection::run(conn, Program::seq(&["COMMIT"]), TestBuilder::default())
+                        .unwrap();
+                assert_eq!(state, State::Init);
+                assert!(builder.into_ret()[0].is_ok());
+            }
+        })
+        .await
+        .unwrap();
+
+        let elapsed = handle.await.unwrap();
+
+        let epsilon = Duration::from_millis(100);
+        assert!((wait_time..wait_time + epsilon).contains(&elapsed));
     }
 }
