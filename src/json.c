@@ -3495,7 +3495,7 @@ static int jsonParseValueFromBlob(JsonParse *pParse, u32 i){
       while( j<i+x+sz ){
         int r = jsonParseValueFromBlob(pParse, j);
         if( r<=0 ) return -1;
-        if( (k++&1)==0 ){
+        if( (k++&1)==0 && !pParse->oom ){
           pParse->aNode[pParse->nNode-1].jnFlags |= JNODE_LABEL;
         }
         j = (u32)r;

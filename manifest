@@ -1,5 +1,5 @@
-C Fix\san\sissue\swith\sthe\suse\sof\sjsonb_group_array()\sand\sjsonb_group_object()\nwhen\sused\sby\swindow\sfunctions.
-D 2023-10-03T10:43:30.961
+C Fix\sa\sproblem\sin\sthe\sJSONB\sparser\sthat\scomes\sup\sfollowing\san\sOOM.
+D 2023-10-03T10:59:01.269
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -670,7 +670,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 87218d0698545f668879e2a0f51dc5e3982de7d8cccfc0d0a27ede23f26f68d7
+F src/json.c 7ed190ae57c81674e978a420f4d1ba2293d09fc5dff8c26801e9e2303346981d
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 98cfba10989b3da6f1807ad42444017742db7f100a54f1032af7a8b1295912c0
 F src/main.c 618aeb399e993cf561864f4b0cf6a331ee4f355cf663635f8d9da3193a46aa40
@@ -2123,8 +2123,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6d4aeff5751722c83ebb0e1f21072b72be418c64dcf28ee032d3a548e1b3a951
-R d0d4e794647619bd04667ee02e2f09dc
+P 808bd349ba587fbcdc4aea3f9c08e0df01ba08dec181c5af5ea157e89d86ff7b
+R 807c8cfa37036711ec0caf325260119e
 U drh
-Z 873b50f85fdb68283d7ad2c516b8f579
+Z 88d0db789da116a139a304208f9109e5
 # Remove this line to create a well-formed Fossil manifest.
