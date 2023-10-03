@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sjsonReturnFromBlob()\sfunction\sthat\scauses\sa\spositive\sresult\nfor\sa\snegative\svalue\sfor\swhen\sa\sJSON\sinteger\sis\stoo\slarge\sand\sneeds\sto\sbe\nconverted\sinto\sdouble.
-D 2023-10-03T21:54:09.421
+C Fix\sa\smemory\sleak\sin\sJSON\sgroup-aggregates\swhen\sthe\soutput\sis\sJSONB.
+D 2023-10-03T22:40:22.299
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -670,7 +670,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 62de483f16a54d30fb98b1ff85a344cb945cfa65a4056dc8950f2b101f0413ec
+F src/json.c 52e4fa529ca0a727ece05607fc3641a7ba6734e39ecc1f3e9ba8c1a7caa1f0cc
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 98cfba10989b3da6f1807ad42444017742db7f100a54f1032af7a8b1295912c0
 F src/main.c 618aeb399e993cf561864f4b0cf6a331ee4f355cf663635f8d9da3193a46aa40
@@ -2123,8 +2123,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fefa4475c496aab32fe7b9cc203747ce4faf7448da4f29b807e5486c7686238d
-R f94f7ac8eca40bde91714a188c3f89b5
+P dca684da0c29ec78460362f972ea7747be42c13c4d1325da9d62c1ea58022e39
+R 29d5fdb97c89ceaf3767b5ff5eb276bd
 U drh
-Z 6b6f54adde231acb6a7cd797b978cce1
+Z 573dbd4dc43601643579851c7ec5201b
 # Remove this line to create a well-formed Fossil manifest.
