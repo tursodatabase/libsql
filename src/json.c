@@ -3514,7 +3514,6 @@ static int jsonParseValueFromBlob(JsonParse *pParse, u32 i){
       break;
     }
   }
-  pParse->aBlob[i] = 0;
   return i+x+sz;
 }
 
@@ -5356,8 +5355,12 @@ static int jsonEachColumn(
       break;
     }
     case JEACH_JSON: {
-      assert( i==JEACH_JSON );
-      sqlite3_result_text(ctx, p->sParse.zJson, -1, SQLITE_STATIC);
+      if( p->sParse.isBinary ){
+        sqlite3_result_blob(ctx, p->sParse.aBlob, p->sParse.nBlob,
+                            SQLITE_STATIC);
+      }else{
+        sqlite3_result_text(ctx, p->sParse.zJson, -1, SQLITE_STATIC);
+      }
       break;
     }
   }
