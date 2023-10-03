@@ -1078,7 +1078,9 @@ impl Replicator {
                 if let Ok(page_size) = Self::read_page_size(&mut db).await {
                     self.set_page_size(page_size)?;
                 }
-                Self::read_change_counter(&mut db).await.unwrap_or([0u8; 4])
+                // if database file exists always treat it as new and more up to date, skipping the
+                // restoration process and calling for a new generation to be made
+                return Ok(Some(RestoreAction::SnapshotMainDbFile));
             }
             Err(_) => [0u8; 4],
         };
