@@ -100,7 +100,8 @@ struct Fts5ExprNode {
 struct Fts5ExprTerm {
   u8 bPrefix;                     /* True for a prefix term */
   u8 bFirst;                      /* True if token must be first in column */
-  char *zTerm;                    /* nul-terminated term */
+  char *pTerm;                    /* Term data */
+  int nTerm;                      /* Size of term in bytes */
   Fts5IndexIter *pIter;           /* Iterator for this term */
   Fts5ExprTerm *pSynonym;         /* Pointer to first in list of synonyms */
 };
@@ -967,7 +968,7 @@ static int fts5ExprNearInitAll(
             p->pIter = 0;
           }
           rc = sqlite3Fts5IndexQuery(
-              pExpr->pIndex, p->zTerm, (int)strlen(p->zTerm),
+              pExpr->pIndex, p->pTerm, p->nTerm,
               (pTerm->bPrefix ? FTS5INDEX_QUERY_PREFIX : 0) |
               (pExpr->bDesc ? FTS5INDEX_QUERY_DESC : 0),
               pNear->pColset,
@@ -1604,7 +1605,7 @@ static void fts5ExprPhraseFree(Fts5ExprPhrase *pPhrase){
       Fts5ExprTerm *pSyn;
       Fts5ExprTerm *pNext;
       Fts5ExprTerm *pTerm = &pPhrase->aTerm[i];
-      sqlite3_free(pTerm->zTerm);
+      sqlite3_free(pTerm->pTerm);
       sqlite3Fts5IterClose(pTerm->pIter);
       for(pSyn=pTerm->pSynonym; pSyn; pSyn=pNext){
         pNext = pSyn->pSynonym;
@@ -1735,8 +1736,9 @@ static int fts5ParseTokenize(
       rc = SQLITE_NOMEM;
     }else{
       memset(pSyn, 0, (size_t)nByte);
-      pSyn->zTerm = ((char*)pSyn) + sizeof(Fts5ExprTerm) + sizeof(Fts5Buffer);
-      memcpy(pSyn->zTerm, pToken, nToken);
+      pSyn->pTerm = ((char*)pSyn) + sizeof(Fts5ExprTerm) + sizeof(Fts5Buffer);
+      pSyn->nTerm = nToken;
+      memcpy(pSyn->pTerm, pToken, nToken);
       pSyn->pSynonym = pPhrase->aTerm[pPhrase->nTerm-1].pSynonym;
       pPhrase->aTerm[pPhrase->nTerm-1].pSynonym = pSyn;
     }
@@ -1761,7 +1763,8 @@ static int fts5ParseTokenize(
     if( rc==SQLITE_OK ){
       pTerm = &pPhrase->aTerm[pPhrase->nTerm++];
       memset(pTerm, 0, sizeof(Fts5ExprTerm));
-      pTerm->zTerm = sqlite3Fts5Strndup(&rc, pToken, nToken);
+      pTerm->pTerm = sqlite3Fts5Strndup(&rc, pToken, nToken);
+      pTerm->nTerm = nToken;
     }
   }
 
@@ -1913,9 +1916,7 @@ int sqlite3Fts5ExprClonePhrase(
       int tflags = 0;
       Fts5ExprTerm *p;
       for(p=&pOrig->aTerm[i]; p && rc==SQLITE_OK; p=p->pSynonym){
-        const char *zTerm = p->zTerm;
-        rc = fts5ParseTokenize((void*)&sCtx, tflags, zTerm, (int)strlen(zTerm),
-            0, 0);
+        rc = fts5ParseTokenize((void*)&sCtx, tflags, p->pTerm, p->nTerm, 0, 0);
         tflags = FTS5_TOKEN_COLOCATED;
       }
       if( rc==SQLITE_OK ){
@@ -2296,11 +2297,13 @@ static Fts5ExprNode *fts5ParsePhraseToAnd(
         if( parseGrowPhraseArray(pParse) ){
           fts5ExprPhraseFree(pPhrase);
         }else{
+          Fts5ExprTerm *p = &pNear->apPhrase[0]->aTerm[ii];
           pParse->apPhrase[pParse->nPhrase++] = pPhrase;
           pPhrase->nTerm = 1;
-          pPhrase->aTerm[0].zTerm = sqlite3Fts5Strndup(
-              &pParse->rc, pNear->apPhrase[0]->aTerm[ii].zTerm, -1
+          pPhrase->aTerm[0].pTerm = sqlite3Fts5Strndup(
+              &pParse->rc, p->pTerm, p->nTerm
           );
+          pPhrase->aTerm[0].nTerm = p->nTerm;
           pRet->apChild[ii] = sqlite3Fts5ParseNode(pParse, FTS5_STRING, 
               0, 0, sqlite3Fts5ParseNearset(pParse, 0, pPhrase)
           );
@@ -2485,16 +2488,17 @@ static char *fts5ExprTermPrint(Fts5ExprTerm *pTerm){
 
   /* Determine the maximum amount of space required. */
   for(p=pTerm; p; p=p->pSynonym){
-    nByte += (int)strlen(pTerm->zTerm) * 2 + 3 + 2;
+    nByte += pTerm->nTerm * 2 + 3 + 2;
   }
   zQuoted = sqlite3_malloc64(nByte);
 
   if( zQuoted ){
     int i = 0;
     for(p=pTerm; p; p=p->pSynonym){
-      char *zIn = p->zTerm;
+      char *zIn = p->pTerm;
+      char *zEnd = &zIn[p->nTerm];
       zQuoted[i++] = '"';
-      while( *zIn ){
+      while( zIn<zEnd ){
         if( *zIn=='"' ) zQuoted[i++] = '"';
         zQuoted[i++] = *zIn++;
       }
@@ -2572,8 +2576,10 @@ static char *fts5ExprPrintTcl(
 
       zRet = fts5PrintfAppend(zRet, " {");
       for(iTerm=0; zRet && iTerm<pPhrase->nTerm; iTerm++){
-        char *zTerm = pPhrase->aTerm[iTerm].zTerm;
-        zRet = fts5PrintfAppend(zRet, "%s%s", iTerm==0?"":" ", zTerm);
+        Fts5ExprTerm *p = &pPhrase->aTerm[iTerm];
+        zRet = fts5PrintfAppend(zRet, "%s%.*s", iTerm==0?"":" ", 
+            p->nTerm, p->pTerm
+        );
         if( pPhrase->aTerm[iTerm].bPrefix ){
           zRet = fts5PrintfAppend(zRet, "*");
         }
@@ -2994,9 +3000,8 @@ static int fts5ExprPopulatePoslistsCb(
     Fts5ExprTerm *pTerm;
     if( p->aPopulator[i].bOk==0 ) continue;
     for(pTerm=&pExpr->apExprPhrase[i]->aTerm[0]; pTerm; pTerm=pTerm->pSynonym){
-      int nTerm = (int)strlen(pTerm->zTerm);
-      if( (nTerm==nToken || (nTerm<nToken && pTerm->bPrefix))
-       && memcmp(pTerm->zTerm, pToken, nTerm)==0
+      if( (pTerm->nTerm==nToken || (pTerm->nTerm<nToken && pTerm->bPrefix))
+       && memcmp(pTerm->pTerm, pToken, pTerm->nTerm)==0
       ){
         int rc = sqlite3Fts5PoslistWriterAppend(
             &pExpr->apExprPhrase[i]->poslist, &p->aPopulator[i].writer, p->iOff
