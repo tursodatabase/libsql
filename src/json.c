@@ -1011,7 +1011,12 @@ static void jsonReturnNodeAsJson(
     JsonParse x;
     memset(&x, 0, sizeof(x));
     jsonRenderNodeAsBlob(pParse, pNode, &x);
-    sqlite3_result_blob(pCtx, x.aBlob, x.nBlob, sqlite3_free);
+    if( x.oom ){
+      sqlite3_result_error_nomem(pCtx);
+      sqlite3_free(x.aBlob);
+    }else{
+      sqlite3_result_blob(pCtx, x.aBlob, x.nBlob, sqlite3_free);
+    }
   }else{
     jsonStringInit(&s, pCtx);
     jsonRenderNodeAsText(pParse, pNode, &s);
@@ -2598,8 +2603,11 @@ static void jsonBlobChangePayloadSize(
   u32 i,
   u32 szPayload
 ){
-  u8 *a = &pParse->aBlob[i];
-  u8 szType = a[0]>>4;
+  u8 *a;
+  u8 szType;
+  if( pParse->oom ) return;
+  a = &pParse->aBlob[i];
+  szType = a[0]>>4;
   if( szType<=11 ){
     assert( szPayload<=11 );
     a[0] = (a[0] & 0x0f) | (szPayload<<4);
