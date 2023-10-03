@@ -3856,6 +3856,7 @@ static void jsonReturnFromBlob(
       }else if( rc==3 && bNeg ){
         sqlite3_result_int64(pCtx, SMALLEST_INT64);
       }else{
+        if( bNeg ){ n--; sz++; }
         goto to_double;
       }
       break;
