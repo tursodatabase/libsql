@@ -480,7 +480,20 @@ where
         }
 
         if let Some(config) = self.rpc_config.take() {
+            let proxy_service =
+                ProxyService::new(namespaces.clone(), None, self.disable_namespaces);
+            // Garbage collect proxy clients every 30 seconds
+            self.join_set.spawn({
+                let clients = proxy_service.clients();
+                async move {
+                    loop {
+                        tokio::time::sleep(Duration::from_secs(30)).await;
+                        rpc::proxy::garbage_collect(&mut *clients.write().await).await;
+                    }
+                }
+            });
             self.join_set.spawn(run_rpc_server(
+                proxy_service,
                 config.acceptor,
                 config.tls_config,
                 self.idle_shutdown_kicker.clone(),
@@ -498,7 +511,16 @@ where
 
         let proxy_service =
             ProxyService::new(namespaces.clone(), Some(self.auth), self.disable_namespaces);
-
+        // Garbage collect proxy clients every 30 seconds
+        self.join_set.spawn({
+            let clients = proxy_service.clients();
+            async move {
+                loop {
+                    tokio::time::sleep(Duration::from_secs(30)).await;
+                    rpc::proxy::garbage_collect(&mut *clients.write().await).await;
+                }
+            }
+        });
         Ok((namespaces, proxy_service, logger_service))
     }
 }

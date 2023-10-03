@@ -24,15 +24,14 @@ pub mod replication_log_proxy;
 pub const NAMESPACE_DOESNT_EXIST: &str = "NAMESPACE_DOESNT_EXIST";
 pub(crate) const NAMESPACE_METADATA_KEY: &str = "x-namespace-bin";
 
-#[allow(clippy::too_many_arguments)]
 pub async fn run_rpc_server<A: crate::net::Accept>(
+    proxy_service: ProxyService,
     acceptor: A,
     maybe_tls: Option<TlsConfig>,
     idle_shutdown_layer: Option<IdleShutdownKicker>,
     namespaces: NamespaceStore<PrimaryNamespaceMaker>,
     disable_namespaces: bool,
 ) -> anyhow::Result<()> {
-    let proxy_service = ProxyService::new(namespaces.clone(), None, disable_namespaces);
     let logger_service = ReplicationLogService::new(
         namespaces.clone(),
         idle_shutdown_layer.clone(),

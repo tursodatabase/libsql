@@ -265,7 +265,7 @@ pub mod rpc {
 }
 
 pub struct ProxyService {
-    clients: RwLock<HashMap<Uuid, Arc<TrackedConnection<LibSqlConnection>>>>,
+    clients: Arc<RwLock<HashMap<Uuid, Arc<TrackedConnection<LibSqlConnection>>>>>,
     namespaces: NamespaceStore<PrimaryNamespaceMaker>,
     auth: Option<Arc<Auth>>,
     disable_namespaces: bool,
@@ -277,12 +277,18 @@ impl ProxyService {
         auth: Option<Arc<Auth>>,
         disable_namespaces: bool,
     ) -> Self {
+        let clients: Arc<RwLock<HashMap<Uuid, Arc<TrackedConnection<LibSqlConnection>>>>> =
+            Default::default();
         Self {
-            clients: Default::default(),
+            clients,
             namespaces,
             auth,
             disable_namespaces,
         }
+    }
+
+    pub fn clients(&self) -> Arc<RwLock<HashMap<Uuid, Arc<TrackedConnection<LibSqlConnection>>>>> {
+        self.clients.clone()
     }
 }
 
@@ -439,6 +445,19 @@ impl QueryResultBuilder for ExecuteResultBuilder {
     fn into_ret(self) -> Self::Ret {
         self.results
     }
+}
+
+// Disconnects all clients that have been idle for more than 30 seconds.
+// FIXME: we should also keep a list of recently disconnected clients,
+// and if one should arrive with a late message, it should be rejected
+// with an error. A similar mechanism is already implemented in hrana-over-http.
+pub async fn garbage_collect(
+    clients: &mut HashMap<Uuid, Arc<TrackedConnection<LibSqlConnection>>>,
+) {
+    let limit = std::time::Duration::from_secs(30);
+
+    clients.retain(|_, db| db.idle_time() < limit);
+    tracing::trace!("gc: remaining client handles: {:?}", clients);
 }
 
 #[tonic::async_trait]
