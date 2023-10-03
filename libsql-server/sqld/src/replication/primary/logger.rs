@@ -77,6 +77,7 @@ unsafe impl WalHook for ReplicationLoggerHook {
         assert_eq!(page_size, 4096);
         let wal_ptr = wal as *mut _;
         let last_valid_frame = wal.hdr.mxFrame;
+        tracing::trace!("Last valid frame before applying: {last_valid_frame}");
         let ctx = Self::wal_extract_ctx(wal);
 
         let mut frame_count = 0;
@@ -948,7 +949,9 @@ impl ReplicationLogger {
     }
 }
 
-fn checkpoint_db(data_path: &Path) -> anyhow::Result<()> {
+// FIXME: calling rusqlite::Connection's checkpoint here is a bug,
+// we need to always call our virtual WAL methods.
+pub fn checkpoint_db(data_path: &Path) -> anyhow::Result<()> {
     let wal_path = match data_path.parent() {
         Some(path) => path.join("data-wal"),
         None => return Ok(()),

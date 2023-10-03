@@ -657,6 +657,18 @@ impl Namespace<PrimaryDatabase> {
 
         tokio::fs::create_dir_all(&db_path).await?;
 
+        // FIXME: due to a bug in logger::checkpoint_db we call regular checkpointing code
+        // instead of our virtual WAL one. It's a bit tangled to fix right now, because
+        // we need WAL context for checkpointing, and WAL context needs the ReplicationLogger...
+        // So instead we checkpoint early, *before* bottomless gets initialized. That way
+        // we're sure bottomless won't try to back up any existing WAL frames and will instead
+        // treat the existing db file as the source of truth.
+        if config.bottomless_replication.is_some() {
+            tracing::debug!("Checkpointing before initializing bottomless");
+            crate::replication::primary::logger::checkpoint_db(&db_path.join("data"))?;
+            tracing::debug!("Checkpointed before initializing bottomless");
+        }
+
         let bottomless_replicator = if let Some(options) = &config.bottomless_replication {
             let options = make_bottomless_options(options, name.clone());
             let (replicator, did_recover) =
