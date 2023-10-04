@@ -676,6 +676,12 @@ impl Replicator {
         gzip_path.join("db.gz")
     }
 
+    fn restore_db_path(&self) -> PathBuf {
+        let mut gzip_path = PathBuf::from(&self.db_path);
+        gzip_path.pop();
+        gzip_path.join("data.tmp")
+    }
+
     // Replicates local WAL pages to S3, if local WAL is present.
     // This function is called under the assumption that if local WAL
     // file is present, it was already detected to be newer than its
@@ -976,18 +982,22 @@ impl Replicator {
 
         // at this point we know, we should do a full restore
 
-        let backup_path = format!("{}.bottomless.backup", self.db_path);
-        tokio::fs::rename(&self.db_path, &backup_path).await.ok(); // Best effort
-        match self.full_restore(generation, timestamp, last_frame).await {
+        let restore_path = self.restore_db_path();
+        let _ = tokio::fs::remove_file(&restore_path).await; // remove previous (failed) restoration
+        match self
+            .full_restore(&restore_path, generation, timestamp, last_frame)
+            .await
+        {
             Ok(result) => {
                 let elapsed = Instant::now() - start_ts;
                 tracing::info!("Finished database restoration in {:?}", elapsed);
-                tokio::fs::remove_file(backup_path).await.ok();
+                tokio::fs::rename(&restore_path, &self.db_path).await?;
+                let _ = self.remove_wal_files().await; // best effort, WAL files may not exists
                 Ok(result)
             }
             Err(e) => {
                 tracing::error!("failed to restore the database: {}. Rollback", e);
-                tokio::fs::rename(&backup_path, &self.db_path).await.ok();
+                let _ = tokio::fs::remove_file(restore_path).await;
                 Err(e)
             }
         }
@@ -995,16 +1005,17 @@ impl Replicator {
 
     async fn full_restore(
         &mut self,
+        restore_path: &Path,
         generation: Uuid,
         timestamp: Option<NaiveDateTime>,
         last_frame: u32,
     ) -> Result<(RestoreAction, bool)> {
-        let _ = self.remove_wal_files().await; // best effort, WAL files may not exists
+        tracing::debug!("Restoring database to `{}`", restore_path.display());
         let mut db = OpenOptions::new()
             .create(true)
             .read(true)
             .write(true)
-            .open(&self.db_path)
+            .open(restore_path)
             .await?;
 
         let mut restore_stack = Vec::new();
