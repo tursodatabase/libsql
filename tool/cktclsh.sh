@@ -1,8 +1,11 @@
-# Fail with an error if the TCLSH named in $1 is not tclsh 8.5 or later.
+# Fail with an error if the TCLSH named in $2 is not tclsh version $1 or later.
 #
-echo 'if {$tcl_version<"8.5"} {exit 1}' >cktclsh.tcl
-if ! $1 cktclsh.tcl
+echo "set vers $1" >cktclsh$1.tcl
+echo 'if {$tcl_version<$vers} {exit 1}' >>cktclsh$1.tcl
+if ! $2 cktclsh$1.tcl
 then
-   echo 'ERROR: This makefile target requires tclsh 8.5 or later.'
+   echo "ERROR: This makefile target requires tclsh $1 or later."
+   rm cktclsh$1.tcl
    exit 1
 fi
+rm cktclsh$1.tcl
