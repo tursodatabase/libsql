@@ -59,9 +59,13 @@ impl Database {
     /// Open a local database file.
     pub fn open<S: Into<String>>(db_path: S, flags: OpenFlags) -> Result<Database> {
         let db_path = db_path.into();
-        if db_path.starts_with("libsql:") || db_path.starts_with("http:") {
+
+        if db_path.starts_with("libsql:")
+            || db_path.starts_with("http:")
+            || db_path.starts_with("https:")
+        {
             Err(ConnectionFailed(format!(
-                "Unable to open remote database {db_path} with Database::open()"
+                "Unable to open local database {db_path} with Database::open()"
             )))
         } else {
             Ok(Database::new(db_path, flags))
@@ -78,9 +82,8 @@ impl Database {
                 endpoint,
                 auth_token,
             } => {
-                let replicator =
-                    Replicator::with_http_sync(db_path, endpoint.clone(), auth_token)
-                        .map_err(|e| ConnectionFailed(format!("{e}")))?;
+                let replicator = Replicator::with_http_sync(db_path, endpoint.clone(), auth_token)
+                    .map_err(|e| ConnectionFailed(format!("{e}")))?;
 
                 db.replication_ctx = Some(ReplicationContext {
                     replicator,
