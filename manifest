@@ -1,5 +1,5 @@
-C The\sMakefile\sdistinguishes\sbetween\stcl8.4\sand\stcl8.5.\s\sSome\smakefile\stargets\nrequire\stcl8.5,\sbut\sothers\s(ex:\s"sqlite3.c",\s"shell.c",\sand\s"sqlite3")\srequire\nonly\stcl8.4.
-D 2023-10-04T12:49:08.687
+C Allow\sa\ssession\sobject\sto\sgenerate\sa\schangeset,\seven\sif\scolumns\swere\sadded\sto\sone\sof\sthe\stables\susing\sALTER\sTABLE\sADD\sCOLUMN\swhile\sthe\schangeset\swas\sbeing\scollected.
+D 2023-10-04T21:15:24.286
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -513,7 +513,7 @@ F ext/session/changesetfuzz.c 227076ab0ae4447d742c01ee88a564da6478bbf26b65108bf8
 F ext/session/changesetfuzz1.test 2e1b90d888fbf0eea5e1bd2f1e527a48cc85f8e0ff75df1ec4e320b21f580b3a
 F ext/session/session1.test e94f764fbfb672147c0ef7026b195988133b371dc8cf9e52423eba6cad69717e
 F ext/session/session2.test ee83bb973b9ce17ccce4db931cdcdae65eb40bbb22089b2fe6aa4f6be3b9303f
-F ext/session/session3.test ce9ce3dfa489473987f899e9f6a0f2db9bde3479
+F ext/session/session3.test 2cc1629cfb880243aec1a7251145e07b78411d851b39b2aa1390704550db8e6a
 F ext/session/session4.test 6778997065b44d99c51ff9cece047ff9244a32856b328735ae27ddef68979c40
 F ext/session/session5.test 716bc6fafd625ce60dfa62ae128971628c1a1169
 F ext/session/session6.test 35279f2ec45448cd2e24a61688219dc6cf7871757716063acf4a8b5455e1e926
@@ -529,6 +529,7 @@ F ext/session/sessionG.test 3efe388282d641b65485b5462e67851002cd91a282dc95b685d0
 F ext/session/sessionH.test 71bbff6b1abb2c4ac62b84dee53273c37e0b21e5fde3aed80929403e091ef859
 F ext/session/session_common.tcl e5598096425486b363718e2cda48ee85d660c96b4f8ea9d9d7a4c3ef514769da
 F ext/session/session_speed_test.c dcf0ef58d76b70c8fbd9eab3be77cf9deb8bc1638fed8be518b62d6cbdef88b3
+F ext/session/sessionalter.test 2623023075c51707026a90b9b59674e88c6f467098219d8d71f9a6320d122c61
 F ext/session/sessionat.test 00c8badb35e43a2f12a716d2734a44d614ff62361979b6b85419035bc04b45ee
 F ext/session/sessionbig.test 47c381e7acfabeef17d98519a3080d69151723354d220afa2053852182ca7adf
 F ext/session/sessiondiff.test ad13dd65664bae26744e1f18eb3cbd5588349b7e9118851d8f9364248d67bcec
@@ -543,8 +544,8 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test b039e38e2ba83767b464baf39b297cc0b1cc6f3292255cb467ea7e12d0d0280c
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c 0fe9107318140cefa1b50f2e1e0f330ab359022599e5976820db349f33efae11
-F ext/session/sqlite3session.h 653e9d49c4edae231df8a4c8d69c2145195aedb32462d4b44229dbee7d2680fb
+F ext/session/sqlite3session.c a6ede47e1dbb2ff61180858559502020738e2f978a9648b07fa74a8ce5a776b4
+F ext/session/sqlite3session.h 4d1f69f1d8bfd4798e8f6431de301d17bb2e4097de2f77ca4dad494bb6c60dc0
 F ext/session/test_session.c 5285482f83cd92b4c1fe12fcf88210566a18312f4f2aa110f6399dae46aeccbb
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
@@ -2123,8 +2124,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1765f3b5a00a8ca20a7b9e18ac7f9d7de0679470b234b83aea83aa5b4d4d34e6
-R 76bba9834a6ace5da9d64340bca161b1
-U drh
-Z 0c0b3b63d38231e8da1135c2ad119350
+P 770308db9776b8c0a70b8807463e89a9eddfe5552e25e67324cd303dc974f50e
+R 649352ef20ed525adadedc4edb926bc7
+T *branch * session-alter
+T *sym-session-alter *
+T -sym-trunk *
+U dan
+Z 220e071d4024660dea84b49e6cbcfb2f
 # Remove this line to create a well-formed Fossil manifest.

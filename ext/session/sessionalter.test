@@ -1,0 +1,109 @@
+# 2023 October 02
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements that the sessions module interacts well with
+# the ALTER TABLE ADD COLUMN command.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+
+ifcapable !session {finish_test; return}
+set testprefix sessionalter
+
+
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+}
+
+do_execsql_test -db db2 1.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c DEFAULT 1234);
+}
+
+do_then_apply_sql {
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+}
+
+do_execsql_test -db db2 1.2 {
+  SELECT * FROM t1
+} {
+  1 one 1234
+  2 two 1234
+}
+
+do_then_apply_sql {
+  UPDATE t1 SET b='four' WHERE a=2;
+}
+
+do_execsql_test -db db2 1.3 {
+  SELECT * FROM t1
+} {
+  1 one 1234
+  2 four 1234
+}
+
+do_then_apply_sql {
+  DELETE FROM t1 WHERE a=1;
+}
+
+do_execsql_test -db db2 1.4 {
+  SELECT * FROM t1
+} {
+  2 four 1234
+}
+
+
+#--------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+}
+
+do_test 2.1 {
+  sqlite3session S db main
+  S attach t1
+  set {} {}
+} {} 
+do_execsql_test 2.2 {
+  INSERT INTO t1 VALUES(1, 2);
+  ALTER TABLE t1 ADD COLUMN c DEFAULT 'abcd';
+  INSERT INTO t1 VALUES(2, 3, 4);
+}
+do_changeset_test 2.3 S {
+  {INSERT t1 0 X.. {} {i 1 i 2 t abcd}} 
+  {INSERT t1 0 X.. {} {i 2 i 3 i 4}}
+}
+
+do_iterator_test 2.4 {} {
+  DELETE FROM t1 WHERE a=2;
+  ALTER TABLE t1 ADD COLUMN d DEFAULT 'abcd';
+  ALTER TABLE t1 ADD COLUMN e DEFAULT 5;
+  ALTER TABLE t1 ADD COLUMN f DEFAULT 7.2;
+  -- INSERT INTO t1 VALUES(9, 9, 9, 9);
+} {
+  {DELETE t1 0 X..... {i 2 i 3 i 4 t abcd i 5 f 7.2} {}}
+}
+
+
+
+
+
+
+
+
+finish_test
