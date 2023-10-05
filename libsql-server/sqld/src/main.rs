@@ -317,7 +317,7 @@ async fn make_user_api_config(config: &Cli) -> anyhow::Result<UserApiConfig> {
     let http_acceptor =
         AddrIncoming::new(tokio::net::TcpListener::bind(config.http_listen_addr).await?);
     tracing::info!(
-        "listening for incomming user HTTP connection on {}",
+        "listening for incoming user HTTP connection on {}",
         config.http_listen_addr
     );
 
@@ -326,7 +326,7 @@ async fn make_user_api_config(config: &Cli) -> anyhow::Result<UserApiConfig> {
             let incoming = AddrIncoming::new(tokio::net::TcpListener::bind(addr).await?);
 
             tracing::info!(
-                "listening for incomming user hrana websocket connection on {}",
+                "listening for incoming user hrana websocket connection on {}",
                 addr
             );
 
@@ -350,7 +350,7 @@ async fn make_admin_api_config(config: &Cli) -> anyhow::Result<Option<AdminApiCo
         Some(addr) => {
             let acceptor = AddrIncoming::new(tokio::net::TcpListener::bind(addr).await?);
 
-            tracing::info!("listening for incomming adming HTTP connection on {}", addr);
+            tracing::info!("listening for incoming admin HTTP connection on {}", addr);
 
             Ok(Some(AdminApiConfig { acceptor }))
         }
@@ -363,7 +363,7 @@ async fn make_rpc_server_config(config: &Cli) -> anyhow::Result<Option<RpcServer
         Some(addr) => {
             let acceptor = AddrIncoming::new(tokio::net::TcpListener::bind(addr).await?);
 
-            tracing::info!("listening for incomming gRPC connection on {}", addr);
+            tracing::info!("listening for incoming gRPC connection on {}", addr);
 
             let tls_config = if config.grpc_tls {
                 Some(TlsConfig {

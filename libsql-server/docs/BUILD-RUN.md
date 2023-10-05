@@ -170,12 +170,6 @@ Clone this repo using your preferred mechanism. You may want to use one of the
 
 Change to the `sqld` directory.
 
-Install git submodules:
-
-```bash
-git submodule update --init --force --recursive --depth 1
-```
-
 ### 3. Build with cargo
 
 ```bash
