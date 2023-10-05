@@ -599,6 +599,23 @@ impl<W: WalHook> Connection<W> {
         Ok(())
     }
 
+    fn vacuum_if_needed(&self) -> Result<()> {
+        let page_count = self
+            .conn
+            .query_row("PRAGMA page_count", (), |row| row.get::<_, i64>(0))?;
+        let freelist_count = self
+            .conn
+            .query_row("PRAGMA freelist_count", (), |row| row.get::<_, i64>(0))?;
+        // NOTICE: don't bother vacuuming if we don't have at least 128MiB of data
+        if page_count >= 8192 && freelist_count * 2 > page_count {
+            tracing::debug!("Vacuuming: pages={page_count} freelist={freelist_count}");
+            self.conn.execute("VACUUM", ())?;
+        } else {
+            tracing::debug!("Not vacuuming: pages={page_count} freelist={freelist_count}");
+        }
+        Ok(())
+    }
+
     fn update_stats(&self, stmt: &rusqlite::Statement) {
         let rows_read = stmt.get_status(StatementStatus::RowsRead);
         let rows_written = stmt.get_status(StatementStatus::RowsWritten);
@@ -746,6 +763,14 @@ where
     async fn checkpoint(&self) -> Result<()> {
         let conn = self.inner.clone();
         tokio::task::spawn_blocking(move || conn.lock().checkpoint())
+            .await
+            .unwrap()?;
+        Ok(())
+    }
+
+    async fn vacuum_if_needed(&self) -> Result<()> {
+        let conn = self.inner.clone();
+        tokio::task::spawn_blocking(move || conn.lock().vacuum_if_needed())
             .await
             .unwrap()?;
         Ok(())

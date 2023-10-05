@@ -119,6 +119,9 @@ pub trait Connection: Send + Sync + 'static {
     /// Calls for database checkpoint (if supported).
     async fn checkpoint(&self) -> Result<()>;
 
+    // Calls for database vacuum (if supported).
+    async fn vacuum_if_needed(&self) -> Result<()>;
+
     fn diagnostics(&self) -> String;
 }
 
@@ -339,6 +342,11 @@ impl<DB: Connection> Connection for TrackedConnection<DB> {
     }
 
     #[inline]
+    async fn vacuum_if_needed(&self) -> Result<()> {
+        self.inner.vacuum_if_needed().await
+    }
+
+    #[inline]
     fn diagnostics(&self) -> String {
         self.inner.diagnostics()
     }
@@ -377,6 +385,10 @@ mod test {
         }
 
         async fn checkpoint(&self) -> Result<()> {
+            unreachable!()
+        }
+
+        async fn vacuum_if_needed(&self) -> Result<()> {
             unreachable!()
         }
 
