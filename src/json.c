@@ -4812,8 +4812,14 @@ static void jsonTypeFunc(
 /*
 ** json_valid(JSON)
 **
-** Return 1 if JSON is a well-formed canonical JSON string according
-** to RFC-7159. Return 0 otherwise.
+** Return 1 if the argument is one of:
+**
+**    *   A well-formed canonical JSON string according to RFC-8259
+**        (without JSON5 enhancements), or
+**
+**    *   A BLOB that plausibly could be a JSONB value.
+**
+** Return 0 otherwise.
 */
 static void jsonValidFunc(
   sqlite3_context *ctx,
@@ -4827,6 +4833,10 @@ static void jsonValidFunc(
     /* Incorrect legacy behavior was to return FALSE for a NULL input */
     sqlite3_result_int(ctx, 0);
 #endif
+    return;
+  }
+  if( jsonFuncArgMightBeBinary(argv[0]) ){
+    sqlite3_result_int(ctx, 1);
     return;
   }
   p = jsonParseCached(ctx, argv[0], 0, 0);
