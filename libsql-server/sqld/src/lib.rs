@@ -151,10 +151,14 @@ where
             path: self.path.clone(),
         };
 
-        user_http.configure(join_set);
+        let user_http_service = user_http.configure(join_set);
 
         if let Some(AdminApiConfig { acceptor }) = self.admin_api_config {
-            join_set.spawn(http::admin::run(acceptor, self.namespaces));
+            join_set.spawn(http::admin::run(
+                acceptor,
+                user_http_service,
+                self.namespaces,
+            ));
         }
     }
 }

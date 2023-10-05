@@ -233,7 +233,10 @@ where
     P: Proxy,
     S: ReplicationLog,
 {
-    pub fn configure(self, join_set: &mut JoinSet<anyhow::Result<()>>) {
+    pub fn configure(
+        self,
+        join_set: &mut JoinSet<anyhow::Result<()>>,
+    ) -> Arc<hrana::http::Server<<<M as MakeNamespace>::Database as Database>::Connection>> {
         let (hrana_accept_tx, hrana_accept_rx) = mpsc::channel(8);
         let (hrana_upgrade_tx, hrana_upgrade_rx) = mpsc::channel(8);
         let hrana_http_srv = Arc::new(hrana::http::Server::new(self.self_url.clone()));
@@ -283,7 +286,7 @@ where
             let state = AppState {
                 auth: self.auth,
                 upgrade_tx: hrana_upgrade_tx,
-                hrana_http_srv,
+                hrana_http_srv: hrana_http_srv.clone(),
                 enable_console: self.enable_console,
                 namespaces: self.namespaces,
                 disable_default_namespace: self.disable_default_namespace,
@@ -418,6 +421,7 @@ where
                 Ok(())
             });
         }
+        hrana_http_srv
     }
 }
 

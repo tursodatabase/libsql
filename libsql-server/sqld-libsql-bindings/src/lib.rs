@@ -24,6 +24,7 @@ pub fn get_orig_wal_methods() -> anyhow::Result<*mut libsql_wal_methods> {
     Ok(orig)
 }
 
+#[derive(Debug)]
 pub struct Connection<W: WalHook> {
     conn: rusqlite::Connection,
     // Safety: _ctx MUST be dropped after the connection, because the connection has a pointer

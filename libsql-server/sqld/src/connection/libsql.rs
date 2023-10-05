@@ -149,6 +149,17 @@ pub struct LibSqlConnection<W: WalHook> {
     inner: Arc<Mutex<Connection<W>>>,
 }
 
+impl<W: WalHook> std::fmt::Debug for LibSqlConnection<W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.inner.try_lock() {
+            Some(conn) => {
+                write!(f, "{conn:?}")
+            }
+            None => write!(f, "<locked>"),
+        }
+    }
+}
+
 pub fn open_conn<W>(
     path: &Path,
     wal_methods: &'static WalMethodsHook<W>,
@@ -218,6 +229,14 @@ struct Connection<W: WalHook = TransparentMethods> {
     slot: Option<Arc<TxnSlot<W>>>,
 }
 
+impl<W: WalHook> std::fmt::Debug for Connection<W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Connection")
+            .field("slot", &self.slot)
+            .finish()
+    }
+}
+
 /// A slot for holding the state of a transaction lock permit
 struct TxnSlot<T: WalHook> {
     /// Pointer to the connection holding the lock. Used to rollback the transaction when the lock
@@ -229,7 +248,23 @@ struct TxnSlot<T: WalHook> {
     is_stolen: AtomicBool,
 }
 
+impl<T: WalHook> std::fmt::Debug for TxnSlot<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let stolen = self.is_stolen.load(Ordering::Relaxed);
+        let time_left = self
+            .timeout_at
+            .duration_since(tokio::time::Instant::now())
+            .as_millis();
+        write!(
+            f,
+            "(conn: {:?}, timeout_ms: {time_left}, stolen: {stolen})",
+            self.conn
+        )
+    }
+}
+
 /// The transaction state shared among all connections to the same database
+#[derive(Debug)]
 pub struct TxnState<T: WalHook> {
     /// Slot for the connection currently holding the transaction lock
     slot: RwLock<Option<Arc<TxnSlot<T>>>>,
@@ -710,6 +745,16 @@ where
             .await
             .unwrap()?;
         Ok(())
+    }
+
+    fn diagnostics(&self) -> String {
+        match self.inner.try_lock() {
+            Some(conn) => match conn.slot {
+                Some(ref slot) => format!("{slot:?}"),
+                None => "<no-transaction>".to_string(),
+            },
+            None => "[BUG] connection busy".to_string(),
+        }
     }
 }
 

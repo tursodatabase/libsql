@@ -34,7 +34,8 @@ pub struct ServerStreamState<D> {
 }
 
 /// Handle to a stream, owned by the [`ServerStreamState`].
-enum Handle<D> {
+#[derive(Debug)]
+pub(crate) enum Handle<D> {
     /// A stream that is open and ready to be used by requests. [`Stream::db`] should always be
     /// `Some`.
     Available(Box<Stream<D>>),
@@ -51,10 +52,11 @@ enum Handle<D> {
 ///
 /// The stream is either owned by [`Handle::Available`] (when it's not in use) or by [`Guard`]
 /// (when it's being used by a request).
-struct Stream<D> {
+#[derive(Debug)]
+pub(crate) struct Stream<D> {
     /// The database connection that corresponds to this stream. This is `None` after the `"close"`
     /// request was executed.
-    db: Option<Arc<D>>,
+    pub(crate) db: Option<Arc<D>>,
     /// The cache of SQL texts stored on the server with `"store_sql"` requests.
     sqls: HashMap<i32, String>,
     /// Stream id of this stream. The id is generated randomly (it should be unguessable).
@@ -97,6 +99,10 @@ impl<D> ServerStreamState<D> {
             expire_waker: None,
             expire_round_base: Instant::now(),
         }
+    }
+
+    pub(crate) fn handles(&self) -> &HashMap<u64, Handle<D>> {
+        &self.handles
     }
 }
 

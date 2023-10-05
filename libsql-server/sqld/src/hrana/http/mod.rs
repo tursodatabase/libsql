@@ -13,7 +13,7 @@ use crate::connection::{Connection, MakeConnection};
 mod proto;
 mod protobuf;
 mod request;
-mod stream;
+pub(crate) mod stream;
 
 pub struct Server<C> {
     self_url: Option<String>,
@@ -68,6 +68,10 @@ impl<C: Connection> Server<C> {
                 .map(|err| stream_error_response(err, encoding))
         })
         .or_else(|err| err.downcast::<ProtocolError>().map(protocol_error_response))
+    }
+
+    pub(crate) fn stream_state(&self) -> &Mutex<stream::ServerStreamState<C>> {
+        &self.stream_state
     }
 }
 

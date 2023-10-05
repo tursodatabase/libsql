@@ -104,6 +104,7 @@ impl MakeConnection for MakeWriteProxyConn {
     }
 }
 
+#[derive(Debug)]
 pub struct WriteProxyConnection {
     /// Lazily initialized read connection
     read_conn: LibSqlConnection<TransparentMethods>,
@@ -315,6 +316,10 @@ impl Connection for WriteProxyConnection {
     async fn checkpoint(&self) -> Result<()> {
         self.wait_replication_sync(None).await?;
         self.read_conn.checkpoint().await
+    }
+
+    fn diagnostics(&self) -> String {
+        format!("{:?}", self.state)
     }
 }
 
