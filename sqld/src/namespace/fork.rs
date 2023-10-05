@@ -13,12 +13,9 @@ use crate::database::PrimaryDatabase;
 use crate::replication::frame::Frame;
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
-use crate::BLOCKING_RT;
+use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};
 
 use super::{MakeNamespace, NamespaceName, ResetCb, RestoreOption};
-
-// FIXME: get this const from somewhere else (crate wide)
-const PAGE_SIZE: usize = 4096;
 
 type Result<T> = crate::Result<T, ForkError>;
 
@@ -46,7 +43,7 @@ impl From<tokio::task::JoinError> for ForkError {
 
 async fn write_frame(frame: Frame, temp_file: &mut tokio::fs::File) -> Result<()> {
     let page_no = frame.header().page_no;
-    let page_pos = (page_no - 1) as usize * PAGE_SIZE;
+    let page_pos = (page_no - 1) as usize * LIBSQL_PAGE_SIZE as usize;
     temp_file.seek(SeekFrom::Start(page_pos as u64)).await?;
     temp_file.write_all(frame.page()).await?;
 

@@ -25,7 +25,8 @@ use crate::libsql_bindings::ffi::{
 use crate::libsql_bindings::wal_hook::WalHook;
 use crate::replication::frame::{Frame, FrameHeader};
 use crate::replication::snapshot::{find_snapshot_file, LogCompactor, SnapshotFile};
-use crate::replication::{FrameNo, SnapshotCallback, CRC_64_GO_ISO, WAL_MAGIC, WAL_PAGE_SIZE};
+use crate::replication::{FrameNo, SnapshotCallback, CRC_64_GO_ISO, WAL_MAGIC};
+use crate::LIBSQL_PAGE_SIZE;
 
 init_static_wal_method!(REPLICATION_METHODS, ReplicationLoggerHook);
 
@@ -375,7 +376,7 @@ pub enum LogReadError {
 
 impl LogFile {
     /// size of a single frame
-    pub const FRAME_SIZE: usize = size_of::<FrameHeader>() + WAL_PAGE_SIZE as usize;
+    pub const FRAME_SIZE: usize = size_of::<FrameHeader>() + LIBSQL_PAGE_SIZE as usize;
 
     pub fn new(
         file: File,
@@ -392,7 +393,7 @@ impl LogFile {
                 version: 2,
                 start_frame_no: 0,
                 magic: WAL_MAGIC,
-                page_size: WAL_PAGE_SIZE,
+                page_size: LIBSQL_PAGE_SIZE as i32,
                 start_checksum: 0,
                 db_id: db_id.as_u128(),
                 frame_count: 0,
@@ -858,14 +859,14 @@ impl ReplicationLogger {
         let data_file = File::open(&data_path)?;
         let size = data_path.metadata()?.len();
         assert!(
-            size % WAL_PAGE_SIZE as u64 == 0,
+            size % LIBSQL_PAGE_SIZE == 0,
             "database file size is not a multiple of page size"
         );
-        let num_page = size / WAL_PAGE_SIZE as u64;
-        let mut buf = [0; WAL_PAGE_SIZE as usize];
+        let num_page = size / LIBSQL_PAGE_SIZE;
+        let mut buf = [0; LIBSQL_PAGE_SIZE as usize];
         let mut page_no = 1; // page numbering starts at 1
         for i in 0..num_page {
-            data_file.read_exact_at(&mut buf, i * WAL_PAGE_SIZE as u64)?;
+            data_file.read_exact_at(&mut buf, i * LIBSQL_PAGE_SIZE)?;
             log_file.push_page(&WalPage {
                 page_no,
                 size_after: if i == num_page - 1 { num_page as _ } else { 0 },
@@ -977,9 +978,9 @@ pub fn checkpoint_db(data_path: &Path) -> anyhow::Result<()> {
         conn.pragma_query(None, "page_size", |row| {
             let page_size = row.get::<_, i32>(0).unwrap();
             assert_eq!(
-                page_size, WAL_PAGE_SIZE,
+                page_size, LIBSQL_PAGE_SIZE as i32,
                 "invalid database file, expected page size to be {}, but found {} instead",
-                WAL_PAGE_SIZE, page_size
+                LIBSQL_PAGE_SIZE, page_size
             );
             Ok(())
         })?;

@@ -5,17 +5,17 @@ use axum::Json;
 use chrono::NaiveDateTime;
 use futures::TryStreamExt;
 use hyper::Body;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::io::ErrorKind;
 use std::sync::Arc;
 use tokio_util::io::ReaderStream;
 use url::Url;
 
-use crate::connection::config::DatabaseConfig;
 use crate::database::Database;
 use crate::error::LoadDumpError;
 use crate::hrana;
 use crate::namespace::{DumpStream, MakeNamespace, NamespaceName, NamespaceStore, RestoreOption};
+use crate::LIBSQL_PAGE_SIZE;
 
 pub mod stats;
 
@@ -73,12 +73,21 @@ async fn handle_get_index() -> &'static str {
 async fn handle_get_config<M: MakeNamespace>(
     State(app_state): State<Arc<AppState<M>>>,
     Path(namespace): Path<String>,
-) -> crate::Result<Json<Arc<DatabaseConfig>>> {
+) -> crate::Result<Json<HttpDatabaseConfig>> {
     let store = app_state
         .namespaces
         .config_store(NamespaceName::from_string(namespace)?)
         .await?;
-    Ok(Json(store.get()))
+    let config = store.get();
+    let max_db_size = bytesize::ByteSize::b(config.max_db_pages * LIBSQL_PAGE_SIZE);
+    let resp = HttpDatabaseConfig {
+        block_reads: config.block_reads,
+        block_writes: config.block_writes,
+        block_reason: config.block_reason.clone(),
+        max_db_size: Some(max_db_size),
+    };
+
+    Ok(Json(resp))
 }
 
 async fn handle_diagnostics<M: MakeNamespace>(
@@ -108,23 +117,20 @@ async fn handle_diagnostics<M: MakeNamespace>(
     Ok(Json(diagnostics))
 }
 
-#[derive(Debug, Deserialize)]
-struct BlockReq {
+#[derive(Debug, Deserialize, Serialize)]
+struct HttpDatabaseConfig {
     block_reads: bool,
     block_writes: bool,
     #[serde(default)]
     block_reason: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct CreateNamespaceReq {
-    dump_url: Option<Url>,
+    #[serde(default)]
+    max_db_size: Option<bytesize::ByteSize>,
 }
 
 async fn handle_post_config<M: MakeNamespace>(
     State(app_state): State<Arc<AppState<M>>>,
     Path(namespace): Path<String>,
-    Json(req): Json<BlockReq>,
+    Json(req): Json<HttpDatabaseConfig>,
 ) -> crate::Result<()> {
     let store = app_state
         .namespaces
@@ -134,10 +140,19 @@ async fn handle_post_config<M: MakeNamespace>(
     config.block_reads = req.block_reads;
     config.block_writes = req.block_writes;
     config.block_reason = req.block_reason;
+    if let Some(size) = req.max_db_size {
+        config.max_db_pages = size.as_u64() / LIBSQL_PAGE_SIZE;
+    }
 
     store.store(config)?;
 
     Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+struct CreateNamespaceReq {
+    dump_url: Option<Url>,
+    max_db_size: Option<bytesize::ByteSize>,
 }
 
 async fn handle_create_namespace<M: MakeNamespace>(
@@ -150,10 +165,16 @@ async fn handle_create_namespace<M: MakeNamespace>(
         None => RestoreOption::Latest,
     };
 
-    app_state
-        .namespaces
-        .create(NamespaceName::from_string(namespace)?, dump)
-        .await?;
+    let namespace = NamespaceName::from_string(namespace)?;
+    app_state.namespaces.create(namespace.clone(), dump).await?;
+
+    if let Some(max_db_size) = req.max_db_size {
+        let store = app_state.namespaces.config_store(namespace).await?;
+        let mut config = (*store.get()).clone();
+        config.max_db_pages = max_db_size.as_u64() / LIBSQL_PAGE_SIZE;
+        store.store(config)?;
+    }
+
     Ok(())
 }
 
