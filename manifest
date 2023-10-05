@@ -1,9 +1,9 @@
-C Fix\sa\smemory\sleak\sin\sJSON\sgroup-aggregates\swhen\sthe\soutput\sis\sJSONB.
-D 2023-10-03T22:40:22.299
+C Merge\strunk\senhancements\sinto\sthe\sjsonb\sbranch.
+D 2023-10-05T11:22:16.707
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 3150cc65edc3643ab243282b404d242b19b447365bfd7f3eda73d71349424f89
+F Makefile.in bbf02cb8a9fb22d1cb78da7e5fb5e7e85a5b18cf5cb9e14c1b624db07029916d
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc f926abe4737ffa3303aeb67d8ea74857f4038754a95605c332be1c9dbf8b96c7
 F README.md 963d30019abf0cc06b263cd2824bce022893f3f93a531758f6f04ff2194a16a8
@@ -575,7 +575,7 @@ F ext/wasm/api/sqlite3-api-worker1.js 9f32af64df1a031071912eea7a201557fe39b17386
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 8cf8a897726f14071fae6be6648125162b256dfb4f96555b865dbb7a6b65e379
 F ext/wasm/api/sqlite3-v-helper.js 7daa0eab0a513a25b05e9abae7b5beaaa39209b3ed12f86aeae9ef8d2719ed25
-F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 327a8c363a8c84c61770dc3c46cc83d7cc0eb6b59a3b29728bddf087651d3b77
+F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js f7c965cf9ac0b66a538cd8f6c156f3f2a235e089821ca78cabd7bce41ce16bf7
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 46c4afa6c50d7369252c104f274ad977a97e91ccfafc38b400fe36e90bdda88e
 F ext/wasm/api/sqlite3-wasm.c 65d60439671e24d50d9119ca805ac1c68fb36129e164377eb46f8d037bd88b07
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bc06df0d599e625bde6a10a394e326dc68da9ff07fa5404354580f81566e591f
@@ -649,7 +649,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c d2e73513d382e6e4829b823fb41b5f2eddd9c5984b1492a7a6333cd91be15601
+F src/btree.c fbbbfc51d2fed03c29f20960857d97659d9c682523f32911d5a8e7c5be6436be
 F src/btree.h 03e3356f5208bcab8eed4e094240fdac4a7f9f5ddf5e91045ce589f67d47c240
 F src/btreeInt.h 91a9e0c41a0e71fa91a742ec285c63dd8dcb38b73d14fae0ed7209174ff0fdc1
 F src/build.c a08d098ad1bfd5d46a5f3a6e29a822897e9a021ddba7c021c7c1ae5d4366d1a0
@@ -2020,6 +2020,7 @@ F tool/build-all-msvc.bat c817b716e0edeecaf265a6775b63e5f45c34a6544f1d4114a22270
 F tool/build-shell.sh f193b5e3eb4afcb4abbf96bf1475be6cfb74763ee2e50c82bc7ca105e8a136c5
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
+F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
 F tool/custom.txt 6cdf298f43e1db4bb91406d14777669b8fb1df790837823fa6754c4308decc27
 F tool/dbhash.c 5da0c61032d23d74f2ab84ffc5740f0e8abec94f2c45c0b4306be7eb3ae96df0
 F tool/dbtotxt.c ca48d34eaca6d6b6e4bd6a7be2b72caf34475869054240244c60fa7e69a518d6
@@ -2123,8 +2124,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dca684da0c29ec78460362f972ea7747be42c13c4d1325da9d62c1ea58022e39
-R 29d5fdb97c89ceaf3767b5ff5eb276bd
+P 08e7db138b636890cb29a76d65c2069c6e2ff44470fa4bca14f4526fe5f195ae a2464bbb825b5976ef974a2e6c17ea150f5e6fcd0dd0f144b9f9c1c22a9c9c82
+R 84b74e4fd51ca93386cc67654677da5e
 U drh
-Z 573dbd4dc43601643579851c7ec5201b
+Z 4d31c96be6e146821c899c0f24a5a9d8
 # Remove this line to create a well-formed Fossil manifest.
