@@ -1,7 +1,7 @@
+use crate::local::rows::{MappedRows, Row};
+use crate::local::{Connection, Rows};
 use crate::params::{Params, ValueRef};
-use crate::v1::rows::{MappedRows, Row};
-use crate::v1::{Connection, Rows};
-use crate::{errors, Error, Result};
+use crate::{errors, Column, Error, Result};
 
 use std::cell::RefCell;
 use std::ffi::c_int;
@@ -226,43 +226,6 @@ impl Statement {
 
     pub(crate) fn is_readonly(&self) -> bool {
         self.inner.readonly()
-    }
-}
-
-// NOTICE: Column is blatantly copy-pasted from rusqlite
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
-pub struct Column<'stmt> {
-    pub name: &'stmt str,
-    pub origin_name: Option<&'stmt str>,
-    pub table_name: Option<&'stmt str>,
-    pub database_name: Option<&'stmt str>,
-    pub decl_type: Option<&'stmt str>,
-}
-
-impl Column<'_> {
-    /// Returns the name assigned to the column in the result set.
-    pub fn name(&self) -> &str {
-        self.name
-    }
-
-    /// Returns the name of the column in the origin table.
-    pub fn origin_name(&self) -> Option<&str> {
-        self.origin_name
-    }
-
-    /// Returns the name of the origin table.
-    pub fn table_name(&self) -> Option<&str> {
-        self.table_name
-    }
-
-    /// Returns the name of the origin database.
-    pub fn database_name(&self) -> Option<&str> {
-        self.database_name
-    }
-
-    /// Returns the type of the column (`None` for expression).
-    pub fn decl_type(&self) -> Option<&str> {
-        self.decl_type
     }
 }
 

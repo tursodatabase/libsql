@@ -1,5 +1,5 @@
+use crate::local::{Connection, Statement};
 use crate::params::{Params, Value};
-use crate::v1::{Connection, Statement};
 use crate::{errors, Error, Result};
 use libsql_sys::ValueType;
 
@@ -143,7 +143,7 @@ impl Row {
     }
 
     pub fn get_ref(&self, idx: i32) -> Result<crate::params::ValueRef<'_>> {
-        Ok(crate::v1::Statement::value_ref(
+        Ok(crate::local::Statement::value_ref(
             &self.stmt.inner,
             idx as usize,
         ))

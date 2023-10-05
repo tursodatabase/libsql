@@ -1,7 +1,7 @@
 use crate::params::IntoParams;
 use crate::params::Params;
 use crate::rows::LibsqlRows;
-pub use crate::v1::Column;
+pub use crate::Column;
 use crate::{Error, Result};
 
 use crate::{Row, Rows};
@@ -103,7 +103,7 @@ where
     }
 }
 
-pub(crate) struct LibsqlStmt(pub(super) crate::v1::Statement);
+pub(crate) struct LibsqlStmt(pub(super) crate::local::Statement);
 
 #[async_trait::async_trait]
 impl Stmt for LibsqlStmt {

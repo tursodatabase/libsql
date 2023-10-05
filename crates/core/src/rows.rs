@@ -2,6 +2,43 @@ use crate::{Result, Value};
 
 use libsql_sys::ValueType;
 
+// NOTICE: Column is blatantly copy-pasted from rusqlite
+#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+pub struct Column<'stmt> {
+    pub name: &'stmt str,
+    pub origin_name: Option<&'stmt str>,
+    pub table_name: Option<&'stmt str>,
+    pub database_name: Option<&'stmt str>,
+    pub decl_type: Option<&'stmt str>,
+}
+
+impl Column<'_> {
+    /// Returns the name assigned to the column in the result set.
+    pub fn name(&self) -> &str {
+        self.name
+    }
+
+    /// Returns the name of the column in the origin table.
+    pub fn origin_name(&self) -> Option<&str> {
+        self.origin_name
+    }
+
+    /// Returns the name of the origin table.
+    pub fn table_name(&self) -> Option<&str> {
+        self.table_name
+    }
+
+    /// Returns the name of the origin database.
+    pub fn database_name(&self) -> Option<&str> {
+        self.database_name
+    }
+
+    /// Returns the type of the column (`None` for expression).
+    pub fn decl_type(&self) -> Option<&str> {
+        self.decl_type
+    }
+}
+
 pub(crate) trait RowsInner {
     fn next(&mut self) -> Result<Option<Row>>;
 
@@ -35,7 +72,7 @@ impl Rows {
     }
 }
 
-pub(crate) struct LibsqlRows(pub(crate) crate::v1::Rows);
+pub(crate) struct LibsqlRows(pub(crate) crate::local::Rows);
 
 impl RowsInner for LibsqlRows {
     fn next(&mut self) -> Result<Option<Row>> {
@@ -178,7 +215,7 @@ pub(crate) trait RowInner {
     fn column_type(&self, idx: i32) -> Result<ValueType>;
 }
 
-struct LibsqlRow(crate::v1::Row);
+struct LibsqlRow(crate::local::Row);
 
 impl RowInner for LibsqlRow {
     fn column_value(&self, idx: i32) -> Result<Value> {

@@ -1,26 +1,18 @@
-pub mod hrana;
-pub mod rows;
-pub mod statement;
-pub mod transaction;
-
 use std::sync::Arc;
 
-use crate::box_clone_service::BoxCloneService;
 use crate::params::{IntoParams, Params};
-use crate::v1::TransactionBehavior;
-use crate::Result;
-pub use hrana::{Client, HranaError};
+use crate::rows::Rows;
+use crate::statement::LibsqlStmt;
+use crate::statement::Statement;
+use crate::transaction::{LibsqlTx, Transaction};
+use crate::util::box_clone_service::BoxCloneService;
+use crate::{Result, TransactionBehavior};
 
 use hyper::client::HttpConnector;
 use hyper::service::Service;
 use hyper::Uri;
-pub use rows::{Row, Rows};
-use statement::LibsqlStmt;
-pub use statement::Statement;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tower::ServiceExt;
-use transaction::LibsqlTx;
-pub use transaction::Transaction;
 
 bitflags::bitflags! {
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -49,7 +41,7 @@ enum DbType {
         flags: OpenFlags,
     },
     Sync {
-        db: crate::v1::Database,
+        db: crate::local::Database,
     },
     Remote {
         url: String,
@@ -104,8 +96,7 @@ impl Database {
     /// Open a local database file with the ability to sync from snapshots from local filesystem.
     #[cfg(feature = "replication")]
     pub async fn open_with_local_sync(db_path: impl Into<String>) -> Result<Database> {
-        let opts = crate::Opts::with_sync();
-        let db = crate::v1::Database::open_with_opts(db_path, opts).await?;
+        let db = crate::local::Database::open_local_sync(db_path)?;
         Ok(Database {
             db_type: DbType::Sync { db },
         })
@@ -118,8 +109,7 @@ impl Database {
         url: impl Into<String>,
         token: impl Into<String>,
     ) -> Result<Database> {
-        let opts = crate::Opts::with_http_sync(url, token);
-        let db = crate::v1::Database::open_with_opts(db_path, opts).await?;
+        let db = crate::local::Database::open_http_sync(db_path.into(), url.into(), token.into())?;
         Ok(Database {
             db_type: DbType::Sync { db },
         })
@@ -166,7 +156,7 @@ impl Database {
     pub fn connect(&self) -> Result<Connection> {
         match &self.db_type {
             DbType::Memory => {
-                let db = crate::v1::Database::open(":memory:", OpenFlags::default())?;
+                let db = crate::local::Database::open(":memory:", OpenFlags::default())?;
                 let conn = db.connect()?;
 
                 let conn = Arc::new(LibsqlConnection { conn });
@@ -175,7 +165,7 @@ impl Database {
             }
 
             DbType::File { path, flags } => {
-                let db = crate::v1::Database::open(path, *flags)?;
+                let db = crate::local::Database::open(path, *flags)?;
                 let conn = db.connect()?;
 
                 let conn = Arc::new(LibsqlConnection { conn });
@@ -201,7 +191,7 @@ impl Database {
                 auth_token,
                 connector,
             } => {
-                let conn = Arc::new(hrana::Client::new_with_connector(
+                let conn = Arc::new(crate::hrana::Client::new_with_connector(
                     url,
                     auth_token,
                     connector.clone(),
@@ -317,7 +307,7 @@ impl Connection {
 
 #[derive(Clone)]
 pub(crate) struct LibsqlConnection {
-    conn: crate::v1::Connection,
+    conn: crate::local::Connection,
 }
 
 #[async_trait::async_trait]
@@ -341,7 +331,7 @@ impl Conn for LibsqlConnection {
     }
 
     async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction> {
-        let tx = crate::v1::Transaction::begin(self.conn.clone(), tx_behavior)?;
+        let tx = crate::local::Transaction::begin(self.conn.clone(), tx_behavior)?;
         // TODO(lucio): Can we just use the conn passed to the transaction?
         Ok(Transaction {
             inner: Box::new(LibsqlTx(Some(tx))),

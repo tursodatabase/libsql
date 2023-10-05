@@ -4,7 +4,13 @@ use crate::Result;
 
 use super::Connection;
 
-pub use crate::v1::TransactionBehavior;
+#[derive(Debug)]
+pub enum TransactionBehavior {
+    Deferred,
+    Immediate,
+    Exclusive,
+    ReadOnly,
+}
 
 pub struct Transaction {
     pub(crate) inner: Box<dyn Tx + Send + Sync>,
@@ -36,7 +42,7 @@ pub(crate) trait Tx {
     async fn rollback(&mut self) -> Result<()>;
 }
 
-pub(super) struct LibsqlTx(pub(super) Option<crate::v1::Transaction>);
+pub(super) struct LibsqlTx(pub(super) Option<crate::local::Transaction>);
 
 #[async_trait::async_trait]
 impl Tx for LibsqlTx {

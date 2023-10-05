@@ -15,6 +15,8 @@ async fn main() {
 
     let conn = db.connect().unwrap();
 
+    conn.query("select 1; select 1;", ()).await.unwrap();
+
     conn.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)", ())
         .await
         .unwrap();

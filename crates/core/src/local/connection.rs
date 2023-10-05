@@ -2,9 +2,9 @@
 
 use crate::params::Params;
 
-use crate::v1::{
-    Database, Error, Result, Rows, RowsFuture, Statement, Transaction, TransactionBehavior,
-};
+use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
+
+use crate::TransactionBehavior;
 
 use libsql_sys::ffi;
 use std::{ffi::c_int, sync::Arc};

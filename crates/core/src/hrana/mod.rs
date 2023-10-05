@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 mod pipeline;
 mod proto;
 
@@ -9,19 +11,20 @@ use pipeline::{
 };
 use proto::{Batch, BatchResult, Col, Stmt, StmtResult};
 
-use hyper::client::HttpConnector;
 use hyper::StatusCode;
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
-use tower::ServiceExt;
 
-// use crate::client::Config;
-use crate::{params::Params, Column, Result};
+use crate::Error;
+use crate::{params::Params, Column};
 use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};
 
 use super::rows::{RowInner, RowsInner};
-use super::{Conn, ConnectorService, Socket, Transaction};
+use crate::connection::{Conn, ConnectorService};
+use crate::transaction::Transaction;
+
+type Result<T> = std::result::Result<T, HranaError>;
 
 /// Information about the current session: the server-generated cookie
 /// and the URL that should be used for further communication.
@@ -88,8 +91,6 @@ impl InnerClient {
 
 #[derive(Debug, thiserror::Error)]
 pub enum HranaError {
-    #[error("missing environment variable: `{0}`")]
-    MissingEnv(String),
     #[error("unexpected response: `{0}`")]
     UnexpectedResponse(String),
     #[error("stream closed: `{0}`")]
@@ -105,29 +106,6 @@ pub enum HranaError {
 }
 
 impl Client {
-    /// Creates a database client with JWT authentication.
-    ///
-    /// # Arguments
-    /// * `url` - URL of the database endpoint
-    /// * `token` - auth token
-    pub fn new(url: impl Into<String>, token: impl Into<String>) -> Self {
-        let connector = HttpConnector::new()
-            .map_response(|s| Box::new(s) as Box<dyn Socket>)
-            .map_err(|e| Box::new(e) as Box<_>);
-        Self::new_with_connector(url, token, ConnectorService::new(connector))
-    }
-
-    pub fn from_env() -> Result<Client> {
-        let url = std::env::var("LIBSQL_CLIENT_URL").map_err(|_| {
-            HranaError::MissingEnv(
-                "LIBSQL_CLIENT_URL variable should point to your sqld database".into(),
-            )
-        })?;
-
-        let token = std::env::var("LIBSQL_CLIENT_TOKEN").unwrap_or_default();
-        Ok(Client::new(url, token))
-    }
-
     pub(crate) fn new_with_connector(
         url: impl Into<String>,
         token: impl Into<String>,
@@ -292,18 +270,18 @@ impl Client {
 
 #[async_trait::async_trait]
 impl Conn for Client {
-    async fn execute(&self, sql: &str, params: Params) -> Result<u64> {
+    async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
         let mut stmt = self.prepare(sql).await?;
         let rows = stmt.execute(params).await?;
 
         Ok(rows as u64)
     }
 
-    async fn execute_batch(&self, _sql: &str) -> Result<()> {
+    async fn execute_batch(&self, _sql: &str) -> crate::Result<()> {
         todo!()
     }
 
-    async fn prepare(&self, sql: &str) -> Result<super::Statement> {
+    async fn prepare(&self, sql: &str) -> crate::Result<super::Statement> {
         let stmt = Statement {
             client: self.clone(),
             inner: Stmt::new(sql, true),
@@ -313,7 +291,10 @@ impl Conn for Client {
         })
     }
 
-    async fn transaction(&self, _tx_behavior: crate::TransactionBehavior) -> Result<Transaction> {
+    async fn transaction(
+        &self,
+        _tx_behavior: crate::TransactionBehavior,
+    ) -> crate::Result<Transaction> {
         todo!()
     }
 
@@ -344,11 +325,15 @@ pub struct Statement {
 impl super::statement::Stmt for Statement {
     fn finalize(&mut self) {}
 
-    async fn execute(&mut self, params: &Params) -> Result<usize> {
+    async fn execute(&mut self, params: &Params) -> crate::Result<usize> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
-        let v = self.client.execute_inner(stmt, 0).await?;
+        let v = self
+            .client
+            .execute_inner(stmt, 0)
+            .await
+            .map_err(|e| Error::Hrana(e.into()))?;
         let affected_row_count = v.affected_row_count as usize;
         self.client
             .affected_row_count
@@ -361,11 +346,15 @@ impl super::statement::Stmt for Statement {
         Ok(affected_row_count)
     }
 
-    async fn query(&mut self, params: &Params) -> Result<super::Rows> {
+    async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
-        let StmtResult { rows, cols, .. } = self.client.execute_inner(stmt, 0).await?;
+        let StmtResult { rows, cols, .. } = self
+            .client
+            .execute_inner(stmt, 0)
+            .await
+            .map_err(|e| Error::Hrana(e.into()))?;
 
         Ok(super::Rows {
             inner: Box::new(Rows {
@@ -396,7 +385,7 @@ pub struct Rows {
 }
 
 impl RowsInner for Rows {
-    fn next(&mut self) -> Result<Option<super::Row>> {
+    fn next(&mut self) -> crate::Result<Option<super::Row>> {
         let row = match self.rows.pop_front() {
             Some(row) => Row {
                 cols: self.cols.clone(),
@@ -421,7 +410,7 @@ impl RowsInner for Rows {
             .map(|s| s.as_str())
     }
 
-    fn column_type(&self, _idx: i32) -> Result<ValueType> {
+    fn column_type(&self, _idx: i32) -> crate::Result<ValueType> {
         todo!("implement")
     }
 }
@@ -432,7 +421,7 @@ pub struct Row {
 }
 
 impl RowInner for Row {
-    fn column_value(&self, idx: i32) -> Result<crate::Value> {
+    fn column_value(&self, idx: i32) -> crate::Result<crate::Value> {
         let v = self.inner.get(idx as usize).cloned().unwrap();
         Ok(into_value2(v))
     }
@@ -444,11 +433,11 @@ impl RowInner for Row {
             .map(|s| s.as_str())
     }
 
-    fn column_str(&self, _idx: i32) -> Result<&str> {
+    fn column_str(&self, _idx: i32) -> crate::Result<&str> {
         todo!()
     }
 
-    fn column_type(&self, idx: i32) -> Result<ValueType> {
+    fn column_type(&self, idx: i32) -> crate::Result<ValueType> {
         if let Some(value) = self.inner.get(idx as usize) {
             Ok(match value {
                 proto::Value::Null => ValueType::Null,
