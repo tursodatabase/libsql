@@ -129,6 +129,7 @@ pub unsafe trait WalHook {
 init_static_wal_method!(TRANSPARENT_METHODS, TransparentMethods);
 
 /// Wal implemementation that just proxies calls to the wrapped WAL methods implementation
+#[derive(Debug)]
 pub enum TransparentMethods {}
 
 unsafe impl WalHook for TransparentMethods {

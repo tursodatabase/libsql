@@ -118,6 +118,8 @@ pub trait Connection: Send + Sync + 'static {
 
     /// Calls for database checkpoint (if supported).
     async fn checkpoint(&self) -> Result<()>;
+
+    fn diagnostics(&self) -> String;
 }
 
 fn make_batch_program(batch: Vec<Query>) -> Vec<Step> {
@@ -290,7 +292,7 @@ pub struct TrackedConnection<DB> {
     atime: AtomicU64,
 }
 
-impl<DB> TrackedConnection<DB> {
+impl<DB: Connection> TrackedConnection<DB> {
     pub fn idle_time(&self) -> Duration {
         let now = now_millis();
         let atime = self.atime.load(Ordering::Relaxed);
@@ -335,12 +337,18 @@ impl<DB: Connection> Connection for TrackedConnection<DB> {
         self.atime.store(now_millis(), Ordering::Relaxed);
         self.inner.checkpoint().await
     }
+
+    #[inline]
+    fn diagnostics(&self) -> String {
+        self.inner.diagnostics()
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
 
+    #[derive(Debug)]
     struct DummyDb;
 
     #[async_trait::async_trait]
@@ -370,6 +378,10 @@ mod test {
 
         async fn checkpoint(&self) -> Result<()> {
             unreachable!()
+        }
+
+        fn diagnostics(&self) -> String {
+            "dummy".into()
         }
     }
 

@@ -163,7 +163,7 @@ impl SnapshotFile {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct LogCompactor {
     sender: crossbeam::channel::Sender<(LogFile, PathBuf, u32)>,
 }

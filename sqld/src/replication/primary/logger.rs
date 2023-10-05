@@ -41,9 +41,10 @@ impl Version {
     }
 }
 
+#[derive(Debug)]
 pub enum ReplicationLoggerHook {}
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ReplicationLoggerHookCtx {
     buffer: Vec<WalPage>,
     logger: Arc<ReplicationLogger>,
@@ -276,7 +277,7 @@ unsafe impl WalHook for ReplicationLoggerHook {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct WalPage {
     pub page_no: u32,
     /// 0 for non-commit frames
@@ -731,6 +732,7 @@ impl LogFileHeader {
     }
 }
 
+#[derive(Debug)]
 pub struct Generation {
     pub id: Uuid,
     pub start_index: u64,
@@ -745,6 +747,7 @@ impl Generation {
     }
 }
 
+#[derive(Debug)]
 pub struct ReplicationLogger {
     pub generation: Generation,
     pub log_file: RwLock<LogFile>,

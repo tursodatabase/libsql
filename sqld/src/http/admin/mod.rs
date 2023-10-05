@@ -12,16 +12,26 @@ use tokio_util::io::ReaderStream;
 use url::Url;
 
 use crate::connection::config::DatabaseConfig;
+use crate::database::Database;
 use crate::error::LoadDumpError;
+use crate::hrana;
 use crate::namespace::{DumpStream, MakeNamespace, NamespaceName, NamespaceStore, RestoreOption};
 
 pub mod stats;
 
+type UserHttpServer<M> =
+    Arc<hrana::http::Server<<<M as MakeNamespace>::Database as Database>::Connection>>;
+
 struct AppState<M: MakeNamespace> {
     namespaces: NamespaceStore<M>,
+    user_http_server: UserHttpServer<M>,
 }
 
-pub async fn run<M, A>(acceptor: A, namespaces: NamespaceStore<M>) -> anyhow::Result<()>
+pub async fn run<M, A>(
+    acceptor: A,
+    user_http_server: UserHttpServer<M>,
+    namespaces: NamespaceStore<M>,
+) -> anyhow::Result<()>
 where
     A: crate::net::Accept,
     M: MakeNamespace,
@@ -43,7 +53,11 @@ where
         )
         .route("/v1/namespaces/:namespace", delete(handle_delete_namespace))
         .route("/v1/namespaces/:namespace/stats", get(stats::handle_stats))
-        .with_state(Arc::new(AppState { namespaces }));
+        .route("/v1/diagnostics", get(handle_diagnostics))
+        .with_state(Arc::new(AppState {
+            namespaces,
+            user_http_server,
+        }));
 
     hyper::server::Server::builder(acceptor)
         .serve(router.into_make_service())
@@ -65,6 +79,33 @@ async fn handle_get_config<M: MakeNamespace>(
         .config_store(NamespaceName::from_string(namespace)?)
         .await?;
     Ok(Json(store.get()))
+}
+
+async fn handle_diagnostics<M: MakeNamespace>(
+    State(app_state): State<Arc<AppState<M>>>,
+) -> crate::Result<Json<Vec<String>>> {
+    use crate::connection::Connection;
+    use hrana::http::stream;
+
+    let server = app_state.user_http_server.as_ref();
+    let stream_state = server.stream_state().lock();
+    let handles = stream_state.handles();
+    let mut diagnostics: Vec<String> = Vec::with_capacity(handles.len());
+    for handle in handles.values() {
+        let handle_info: String = match handle {
+            stream::Handle::Available(stream) => match &stream.db {
+                Some(db) => db.diagnostics(),
+                None => "[BUG] available-but-closed".into(),
+            },
+            stream::Handle::Acquired => "acquired".into(),
+            stream::Handle::Expired => "expired".into(),
+        };
+        diagnostics.push(handle_info);
+    }
+    drop(stream_state);
+
+    tracing::trace!("diagnostics: {diagnostics:?}");
+    Ok(Json(diagnostics))
 }
 
 #[derive(Debug, Deserialize)]
