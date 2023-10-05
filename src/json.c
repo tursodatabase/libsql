@@ -2955,7 +2955,7 @@ json_parse_restart:
           }
           if( z[i+1]=='.' ){
             pParse->hasNonstd = 1;
-            t |= 0x03;
+            t |= 0x01;
             goto parse_number_2;
           }
           pParse->iErr = i;
