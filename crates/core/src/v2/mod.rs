@@ -260,14 +260,17 @@ pub struct Connection {
 // TODO(lucio): Convert to using tryinto params
 impl Connection {
     pub async fn execute(&self, sql: &str, params: impl IntoParams) -> Result<u64> {
+        tracing::trace!("executing `{}`", sql);
         self.conn.execute(sql, params.into_params()?).await
     }
 
     pub async fn execute_batch(&self, sql: &str) -> Result<()> {
+        tracing::trace!("executing batch `{}`", sql);
         self.conn.execute_batch(sql).await
     }
 
     pub async fn prepare(&self, sql: &str) -> Result<Statement> {
+        tracing::trace!("preparing `{}`", sql);
         self.conn.prepare(sql).await
     }
 
@@ -279,6 +282,7 @@ impl Connection {
 
     /// Begin a new transaction in DEFERRED mode, which is the default.
     pub async fn transaction(&self) -> Result<Transaction> {
+        tracing::trace!("starting deferred transaction");
         self.transaction_with_behavior(TransactionBehavior::Deferred)
             .await
     }
@@ -288,6 +292,7 @@ impl Connection {
         &self,
         tx_behavior: TransactionBehavior,
     ) -> Result<Transaction> {
+        tracing::trace!("starting {:?} transaction", tx_behavior);
         self.conn.transaction(tx_behavior).await
     }
 

@@ -1,6 +1,6 @@
 use crate::{Error, Result};
 use fallible_iterator::FallibleIterator;
-use sqlite3_parser::ast::{Cmd, PragmaBody, QualifiedName, Stmt};
+use sqlite3_parser::ast::{Cmd, PragmaBody, QualifiedName, Stmt, TransactionType};
 use sqlite3_parser::lexer::sql::{Parser, ParserError};
 
 /// A group of statements to be executed together.
@@ -21,6 +21,7 @@ impl Default for Statement {
 pub enum StmtKind {
     /// The begining of a transaction
     TxnBegin,
+    TxnBeginReadOnly,
     /// The end of a transaction
     TxnEnd,
     Read,
@@ -47,6 +48,9 @@ impl StmtKind {
             Cmd::Explain(Stmt::Pragma(name, body)) => Self::pragma_kind(name, body.as_ref()),
             Cmd::Explain(_) => Some(Self::Other),
             Cmd::ExplainQueryPlan(_) => Some(Self::Other),
+            Cmd::Stmt(Stmt::Begin(Some(TransactionType::ReadOnly), _)) => {
+                Some(Self::TxnBeginReadOnly)
+            }
             Cmd::Stmt(Stmt::Begin { .. }) => Some(Self::TxnBegin),
             Cmd::Stmt(Stmt::Commit { .. } | Stmt::Rollback { .. }) => Some(Self::TxnEnd),
             Cmd::Stmt(
@@ -229,6 +233,9 @@ impl Statement {
     }
 
     pub fn is_read_only(&self) -> bool {
-        matches!(self.kind, StmtKind::Read)
+        matches!(
+            self.kind,
+            StmtKind::Read | StmtKind::TxnBeginReadOnly | StmtKind::TxnEnd
+        )
     }
 }
