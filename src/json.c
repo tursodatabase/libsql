@@ -3990,12 +3990,38 @@ static void jsonExtractFromBlob(
   u32 i;
   JsonParse px;
   if( zPath==0 ) return;
-  if( zPath[0]=='$' ) zPath++;
   memset(&px, 0, sizeof(px));
   px.nBlob = sqlite3_value_bytes(pJson);
   px.aBlob = (u8*)sqlite3_value_blob(pJson);
   if( px.aBlob==0 ) return;
-  i = jsonLookupBlobStep(&px, 0, zPath, &zErr);
+  if( zPath[0]=='$' ){
+    zPath++;
+    i = jsonLookupBlobStep(&px, 0, zPath, &zErr);
+  }else if( (flags & JSON_ABPATH) ){
+    /* The -> and ->> operators accept abbreviated PATH arguments.  This
+    ** is mostly for compatibility with PostgreSQL, but also for
+    ** convenience.
+    **
+    **     NUMBER   ==>  $[NUMBER]     // PG compatible
+    **     LABEL    ==>  $.LABEL       // PG compatible
+    **     [NUMBER] ==>  $[NUMBER]     // Not PG.  Purely for convenience
+    */
+    JsonString jx;
+    jsonStringInit(&jx, ctx);
+    if( sqlite3Isdigit(zPath[0]) ){
+      jsonAppendRawNZ(&jx, "[", 1);
+      jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
+      jsonAppendRawNZ(&jx, "]", 2);
+      zPath = jx.zBuf;
+    }else if( zPath[0]!='[' ){
+      jsonAppendRawNZ(&jx, ".", 1);
+      jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
+      jsonAppendChar(&jx, 0);
+      zPath = jx.zBuf;
+    }
+    i = jsonLookupBlobStep(&px, 0, zPath, &zErr);
+    jsonStringReset(&jx);
+  }
   if( i<px.nBlob ){
     jsonReturnFromBlob(&px, i, ctx);
   }else if( i==JSON_BLOB_NOTFOUND ){
