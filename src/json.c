@@ -1515,10 +1515,10 @@ static const struct NanInfName {
 **
 **      0    End of input
 **     -1    Syntax error
-**     -2    '}' seen
-**     -3    ']' seen
-**     -4    ',' seen
-**     -5    ':' seen
+**     -2    '}' seen   \
+**     -3    ']' seen    \___  For these returns, pParse->iErr is set to
+**     -4    ',' seen    /     the index in zJson[] of the seen character
+**     -5    ':' seen   /
 */
 static int jsonParseValueFromText(JsonParse *pParse, u32 i){
   char c;
@@ -2656,10 +2656,10 @@ static int jsonIs4HexB(const char *z, int *pOp){
 **
 **      0    End of input
 **     -1    Syntax error
-**     -2    '}' seen
-**     -3    ']' seen
-**     -4    ',' seen
-**     -5    ':' seen
+**     -2    '}' seen   \
+**     -3    ']' seen    \___  For these returns, pParse->iErr is set to
+**     -4    ',' seen    /     the index in zJson[] of the seen character
+**     -5    ':' seen   /
 */
 static int jsonTranslateTextValueToBlob(JsonParse *pParse, u32 i){
   char c;
