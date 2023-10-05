@@ -7,7 +7,8 @@ use sqld_libsql_bindings::init_static_wal_method;
 use sqld_libsql_bindings::{ffi::types::XWalFrameFn, wal_hook::WalHook};
 
 use crate::replication::frame::{Frame, FrameBorrowed};
-use crate::replication::{FrameNo, WAL_PAGE_SIZE};
+use crate::replication::FrameNo;
+use crate::LIBSQL_PAGE_SIZE;
 
 use super::snapshot::TempSnapshot;
 
@@ -123,7 +124,7 @@ impl InjectorHookCtx {
         let ret = unsafe {
             orig(
                 wal,
-                WAL_PAGE_SIZE,
+                LIBSQL_PAGE_SIZE as i32,
                 page_headers.as_ptr(),
                 size_after,
                 (size_after != 0) as _,

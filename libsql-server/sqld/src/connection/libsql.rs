@@ -195,8 +195,9 @@ where
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
     ) -> crate::Result<Self> {
-        let conn = tokio::task::spawn_blocking(move || {
-            Connection::new(
+        let max_db_size = config_store.get().max_db_pages;
+        let conn = tokio::task::spawn_blocking(move || -> crate::Result<_> {
+            let conn = Connection::new(
                 path.as_ref(),
                 extensions,
                 wal_hook,
@@ -206,7 +207,10 @@ where
                 builder_config,
                 current_frame_no_receiver,
                 state,
-            )
+            )?;
+            conn.conn
+                .pragma_update(None, "max_page_count", max_db_size)?;
+            Ok(conn)
         })
         .await
         .unwrap()?;

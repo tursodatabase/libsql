@@ -6,7 +6,7 @@ use std::ops::Deref;
 use bytemuck::{bytes_of, pod_read_unaligned, try_from_bytes, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
 
-use crate::replication::WAL_PAGE_SIZE;
+use crate::LIBSQL_PAGE_SIZE;
 
 use super::FrameNo;
 
@@ -45,10 +45,10 @@ impl fmt::Debug for Frame {
 
 impl Frame {
     /// size of a single frame
-    pub const SIZE: usize = size_of::<FrameHeader>() + WAL_PAGE_SIZE as usize;
+    pub const SIZE: usize = size_of::<FrameHeader>() + LIBSQL_PAGE_SIZE as usize;
 
     pub fn from_parts(header: &FrameHeader, data: &[u8]) -> Self {
-        assert_eq!(data.len(), WAL_PAGE_SIZE as usize);
+        assert_eq!(data.len(), LIBSQL_PAGE_SIZE as usize);
         let mut buf = BytesMut::with_capacity(Self::SIZE);
         buf.extend_from_slice(bytes_of(header));
         buf.extend_from_slice(data);
