@@ -3415,6 +3415,8 @@ static int jsonFuncArgMightBeBinary(sqlite3_value *pJson){
   s.nBlob = nBlob;
   n = jsonbPayloadSize(&s, 0, &sz);
   if( n==0 ) return 0;
+  if( sz+n!=(u32)nBlob ) return 0;
+  if( (aBlob[0] & 0x0f)<=JSONB_FALSE && sz>0 ) return 0;
   return sz+n==(u32)nBlob;
 }
 
