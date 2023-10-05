@@ -3097,8 +3097,7 @@ json_parse_restart:
       }
       if( sqlite3Isalnum(z[i+nn]) ) continue;
       if( aNanInfName[k].eType==JSON_REAL ){
-        jsonBlobAppendOneByte(pParse, JSONB_FLOAT);
-        jsonBlobAppendOneByte(pParse, 5);
+        jsonBlobAppendOneByte(pParse, JSONB_FLOAT | 0x50);
         jsonBlobAppendNBytes(pParse, (const u8*)"9e999", 5);
       }else{
         jsonBlobAppendOneByte(pParse, JSONB_NULL);
