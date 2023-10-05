@@ -2517,7 +2517,7 @@ static void jsonRemoveAllNulls(JsonNode *pNode){
 static int jsonBlobExpand(JsonParse *pParse, u32 N){
   u8 *aNew;
   u32 t;
-  if( N<=pParse->nBlobAlloc ) return 0;
+  assert( N>pParse->nBlobAlloc );
   if( pParse->nBlobAlloc==0 ){
     t = 100;
   }else{
