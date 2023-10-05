@@ -3720,6 +3720,7 @@ static u32 jsonLookupBlobStep(
       x = pParse->aBlob[j] & 0x0f;
       if( x<JSONB_TEXT || x>JSONB_TEXTRAW ) return JSON_BLOB_ERROR;
       n = jsonbPayloadSize(pParse, j, &sz);
+      if( n==0 ) return JSON_BLOB_ERROR;
       k = j+n;
       if( k+sz>=iEnd ) return JSON_BLOB_ERROR;
       if( sz==nKey && memcmp(&pParse->aBlob[k], zKey, nKey)==0 ){
@@ -3732,6 +3733,7 @@ static u32 jsonLookupBlobStep(
       j = k+sz;
       if( ((pParse->aBlob[j])&0x0f)>JSONB_OBJECT ) return JSON_BLOB_ERROR;
       n = jsonbPayloadSize(pParse, j, &sz);
+      if( n==0 ) return JSON_BLOB_ERROR;
       j += n+sz;
     }
     if( j>iEnd ) return JSON_BLOB_ERROR;
@@ -3776,6 +3778,7 @@ static u32 jsonLookupBlobStep(
       }
       k--;
       n = jsonbPayloadSize(pParse, j, &sz);
+      if( n==0 ) return JSON_BLOB_ERROR;
       j += n+sz;
     }
     if( j>iEnd ) return JSON_BLOB_ERROR;
