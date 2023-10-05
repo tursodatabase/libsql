@@ -190,6 +190,9 @@ where
         }
         retry = match connection_maker.create().await {
             Ok(conn) => {
+                if let Err(e) = conn.vacuum_if_needed().await {
+                    tracing::warn!("vacuum failed: {}", e);
+                }
                 tracing::info!("database checkpoint starts");
                 let start = Instant::now();
                 match conn.checkpoint().await {

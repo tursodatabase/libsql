@@ -587,7 +587,10 @@ impl Replicator {
     pub fn register_last_valid_frame(&mut self, frame: u32) {
         let last_valid_frame = self.peek_last_valid_frame();
         if frame != last_valid_frame {
-            if last_valid_frame != 0 {
+            // If frame >=  last_valid_frame, it comes from a transaction large enough
+            // that it got split to multiple xFrames calls. In this case, we just
+            // update the last_valid_frame to this one, all good.
+            if last_valid_frame != 0 && frame < last_valid_frame {
                 tracing::error!(
                     "[BUG] Local max valid frame is {}, while replicator thinks it's {}",
                     frame,

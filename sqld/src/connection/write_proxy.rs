@@ -318,6 +318,11 @@ impl Connection for WriteProxyConnection {
         self.read_conn.checkpoint().await
     }
 
+    async fn vacuum_if_needed(&self) -> Result<()> {
+        tracing::warn!("vacuum is not supported on write proxy");
+        Ok(())
+    }
+
     fn diagnostics(&self) -> String {
         format!("{:?}", self.state)
     }
