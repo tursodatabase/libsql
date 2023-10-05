@@ -4203,12 +4203,13 @@ static void jsonbFunc(
     x.nJson = nJson;
     if( jsonConvertTextToBlob(pParse, ctx) ){
       sqlite3_result_error(ctx, "malformed JSON", -1);
+      sqlite3_free(pParse->aBlob);
     }else{
       sqlite3_result_blob(ctx, pParse->aBlob, pParse->nBlob, sqlite3_free);
-      pParse->aBlob = 0;
-      pParse->nBlob = 0;
-      pParse->nBlobAlloc = 0;
     }
+    pParse->aBlob = 0;
+    pParse->nBlob = 0;
+    pParse->nBlobAlloc = 0;
     jsonParseReset(pParse);
   }
 }
