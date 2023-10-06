@@ -8299,7 +8299,8 @@ int sqlite3Fts5IndexInit(sqlite3 *db){
       0,                           /* xSavepoint    */
       0,                           /* xRelease      */
       0,                           /* xRollbackTo   */
-      0                            /* xShadowName   */
+      0,                           /* xShadowName   */
+      0                            /* xIntegrity    */
     };
     rc = sqlite3_create_module(db, "fts5_structure", &fts5structure_module, 0);
   }

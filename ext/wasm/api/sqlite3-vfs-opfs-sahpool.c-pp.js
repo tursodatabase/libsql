@@ -900,6 +900,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }/*force db out of WAL mode*/);
       }catch(e){
         this.setAssociatedPath(sah, '', 0);
+        throw e;
       }
       this.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
       return nWrote;

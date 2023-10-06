@@ -3253,4 +3253,3 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     TestUtil.runTests(sqlite3);
   });
 })(self);
-

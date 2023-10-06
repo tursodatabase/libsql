@@ -1061,6 +1061,11 @@ static sqlite3_module lsm1Module = {
   lsm1Rollback,            /* xRollback */
   0,                       /* xFindMethod */
   0,                       /* xRename */
+  0,                       /* xSavepoint */
+  0,                       /* xRelease */
+  0,                       /* xRollbackTo */
+  0,                       /* xShadowName */
+  0                        /* xIntegrity */
 };
 
 
