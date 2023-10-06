@@ -3284,8 +3284,10 @@ static u32 jsonRenderBlob(
       for(; k<sz; k++){
         if( !sqlite3Isxdigit(zIn[k]) ){
           pOut->eErr |= JSTRING_MALFORMED;
+          break;
+        }else{
+          u = u*16 + sqlite3HexToInt(zIn[k]);
         }
-        u = u*16 + sqlite3HexToInt(zIn[k]);
       }
       jsonPrintf(100,pOut,"%llu",u);
       break;
