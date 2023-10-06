@@ -3308,15 +3308,16 @@ static u32 jsonRenderBlob(
     case JSONB_TEXT5: {
       const char *zIn;
       u32 k;
+      u32 sz2 = sz;
       zIn = (const char*)&pParse->aBlob[i+n];
       jsonAppendChar(pOut, '"');
-      while( sz>0 ){
-        for(k=0; k<sz && zIn[k]!='\\'; k++){}
+      while( sz2>0 ){
+        for(k=0; k<sz2 && zIn[k]!='\\'; k++){}
         if( k>0 ){
           jsonAppendRawNZ(pOut, zIn, k);
           zIn += k;
-          sz -= k;
-          if( sz==0 ) break;
+          sz2 -= k;
+          if( sz2==0 ) break;
         }
         assert( zIn[0]=='\\' );
         switch( (u8)zIn[1] ){
@@ -3330,7 +3331,7 @@ static u32 jsonRenderBlob(
             jsonAppendRawNZ(pOut, "\\u00", 4);
             jsonAppendRawNZ(pOut, &zIn[2], 2);
             zIn += 2;
-            sz -= 2;
+            sz2 -= 2;
             break;
           case '0':
             jsonAppendRawNZ(pOut, "\\u0000", 6);
@@ -3338,24 +3339,24 @@ static u32 jsonRenderBlob(
           case '\r':
             if( zIn[2]=='\n' ){
               zIn++;
-              sz--;
+              sz2--;
             }
             break;
           case '\n':
             break;
           case 0xe2:
-            assert( sz>=4 );
+            assert( sz2>=4 );
             assert( 0x80==(u8)zIn[2] );
             assert( 0xa8==(u8)zIn[3] || 0xa9==(u8)zIn[3] );
             zIn += 2;
-            sz -= 2;
+            sz2 -= 2;
             break;
           default:
             jsonAppendRawNZ(pOut, zIn, 2);
             break;
         }
         zIn += 2;
-        sz -= 2;
+        sz2 -= 2;
       }
       jsonAppendChar(pOut, '"');
       break;
@@ -3387,6 +3388,7 @@ static u32 jsonRenderBlob(
     }
 
     default: {
+      pOut->eErr |= JSTRING_MALFORMED;
       break;
     }
   }
