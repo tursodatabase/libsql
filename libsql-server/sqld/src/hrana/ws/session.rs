@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use anyhow::{anyhow, bail, Context as _, Result};
+use anyhow::{anyhow, bail, Result};
 use futures::future::BoxFuture;
 use tokio::sync::{mpsc, oneshot};
 
@@ -195,8 +195,7 @@ pub(super) async fn handle_request<F: MakeNamespace>(
                     .with_authenticated(namespace, authenticated, |ns| ns.db.connection_maker())
                     .await?
                     .create()
-                    .await
-                    .context("Could not create a database connection")?;
+                    .await?;
                 stream.db = Some(Arc::new(db));
                 Ok(proto::Response::OpenStream(proto::OpenStreamResp {}))
             });

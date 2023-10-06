@@ -106,10 +106,7 @@ where
         let req_body = serde_json::from_slice(&req_body)
             .map_err(|e| hrana::ProtocolError::JsonDeserialize { source: e })?;
 
-        let db = db_factory
-            .create()
-            .await
-            .context("Could not create a database connection")?;
+        let db = db_factory.create().await?;
         let resp_body = f(db, req_body).await?;
 
         Ok(json_response(hyper::StatusCode::OK, &resp_body))
