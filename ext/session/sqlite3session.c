@@ -122,7 +122,15 @@ struct sqlite3_changeset_iter {
 **
 ** pDfltStmt:
 **   This is only used by the sqlite3changegroup_xxx() APIs, not by
-**   regular sqlite3_session objects.
+**   regular sqlite3_session objects. It is a SELECT statement that
+**   selects the default value for each table column. For example,
+**   if the table is 
+**
+**      CREATE TABLE xx(a DEFAULT 1, b, c DEFAULT 'abc')
+**
+**   then this variable is the compiled version of:
+**
+**      SELECT 1, NULL, 'abc'
 */
 struct SessionTable {
   SessionTable *pNext;
@@ -136,7 +144,6 @@ struct SessionTable {
   int nEntry;                     /* Total number of entries in hash table */
   int nChange;                    /* Size of apChange[] array */
   SessionChange **apChange;       /* Hash table buckets */
-
   sqlite3_stmt *pDfltStmt;
 };
 
@@ -1002,13 +1009,14 @@ static int sessionGrowHash(
 **
 ** For example, if the table is declared as:
 **
-**     CREATE TABLE tbl1(w, x, y, z, PRIMARY KEY(w, z));
+**     CREATE TABLE tbl1(w, x DEFAULT 'abc', y, z, PRIMARY KEY(w, z));
 **
-** Then the four output variables are populated as follows:
+** Then the five output variables are populated as follows:
 **
 **     *pnCol  = 4
 **     *pzTab  = "tbl1"
 **     *pazCol = {"w", "x", "y", "z"}
+**     *pazDflt = {NULL, 'abc', NULL, NULL}
 **     *pabPK  = {1, 0, 0, 1}
 **
 ** All returned buffers are part of the same single allocation, which must
@@ -1156,10 +1164,9 @@ static int sessionTableInfo(
 }
 
 /*
-** This function is only called from within a pre-update handler for a
-** write to table pTab, part of session pSession. If this is the first
-** write to this table, initalize the SessionTable.nCol, azCol[] and
-** abPK[] arrays accordingly.
+** This function is called to initialize the SessionTable.nCol, azCol[]
+** abPK[] and azDflt[] members of SessionTable object pTab. If these
+** fields are already initilialized, this function is a no-op.
 **
 ** If an error occurs, an error code is stored in sqlite3_session.rc and
 ** non-zero returned. Or, if no error occurs but the table has no primary
@@ -1168,10 +1175,10 @@ static int sessionTableInfo(
 ** is set to NULL in this case.
 */
 static int sessionInitTable(
-  sqlite3_session *pSession,
-  SessionTable *pTab,
-  sqlite3 *db,
-  const char *zDb
+  sqlite3_session *pSession,      /* Optional session handle */
+  SessionTable *pTab,             /* Table object to initialize */
+  sqlite3 *db,                    /* Database handle to read schema from */
+  const char *zDb                 /* Name of db - "main", "temp" etc. */
 ){
   int rc = SQLITE_OK;
 
@@ -1209,6 +1216,9 @@ static int sessionInitTable(
   return rc;
 }
 
+/*
+** Re-initialize table object pTab.
+*/
 static int sessionReinitTable(sqlite3_session *pSession, SessionTable *pTab){
   int nCol = 0;
   const char **azCol = 0;
@@ -1258,12 +1268,17 @@ static int sessionReinitTable(sqlite3_session *pSession, SessionTable *pTab){
   return pSession->rc;
 }
 
+/*
+** Session-change object (*pp) contains an old.* record with fewer than
+** nCol fields. This function updates it with the default values for
+** the missing fields.
+*/
 static void sessionUpdateOneChange(
-  sqlite3_session *pSession,
-  int *pRc,
-  SessionChange **pp, 
-  int nCol, 
-  sqlite3_stmt *pDflt
+  sqlite3_session *pSession,      /* For memory accounting */
+  int *pRc,                       /* IN/OUT: Error code */
+  SessionChange **pp,             /* IN/OUT: Change object to update */
+  int nCol,                       /* Number of columns now in table */
+  sqlite3_stmt *pDflt             /* SELECT <default-values...> */
 ){
   SessionChange *pOld = *pp;
 
@@ -1414,6 +1429,10 @@ static void sessionAppendStr(
   }
 }
 
+/*
+** Format a string using printf() style formatting and then append it to the
+** buffer using sessionAppendString().
+*/
 static void sessionAppendPrintf(
   SessionBuffer *p,               /* Buffer to append to */
   int *pRc, 
@@ -1471,6 +1490,11 @@ static int sessionPrepareDfltStmt(
   return rc;
 }
 
+/*
+** Table pTab has one or more existing change-records with old.* records
+** with fewer than pTab->nCol columns. This function updates all such 
+** change-records with the default values for the missing columns.
+*/
 static int sessionUpdateChanges(sqlite3_session *pSession, SessionTable *pTab){
   sqlite3_stmt *pStmt = 0;
   int rc = pSession->rc;
@@ -2969,13 +2993,6 @@ static int sessionGenerateChangeset(
   for(pTab=pSession->pTable; rc==SQLITE_OK && pTab; pTab=pTab->pNext){
     if( pTab->nEntry ){
       const char *zName = pTab->zName;
-
-#if 0
-      int nCol = 0;               /* Number of columns in table */
-      u8 *abPK = 0;               /* Primary key array */
-      int bRowid = 0;
-      const char **azCol = 0;     /* Table columns */
-#endif
       int i;                      /* Used to iterate through hash buckets */
       sqlite3_stmt *pSel = 0;     /* SELECT statement to query table pTab */
       int nRewind = buf.nBuf;     /* Initial size of write buffer */
@@ -5904,6 +5921,9 @@ int sqlite3changegroup_new(sqlite3_changegroup **pp){
   return rc;
 }
 
+/*
+** Provide a database schema to the changegroup object.
+*/
 int sqlite3changegroup_schema(
   sqlite3_changegroup *pGrp, 
   sqlite3 *db, 

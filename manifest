@@ -1,5 +1,5 @@
-C Update\sthis\sbranch\swith\slatest\schanges\sfrom\sthe\strunk.
-D 2023-10-06T19:46:19.137
+C Add\smissing\ssource\scode\scomments\sand\sfix\sother\sissues\swith\sthe\snew\scode\son\sthis\sbranch.
+D 2023-10-06T20:39:42.133
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test b039e38e2ba83767b464baf39b297cc0b1cc6f3292255cb467ea7e12d0d0280c
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c fdf5d63f7e2f722938ce4aee18d472a8fae90f134b63d3f3a3c1c69185d6ef62
+F ext/session/sqlite3session.c 26ea9b58ccd9fdfd211163bb637833d12c2beb491160e04fd415fd0519aa2685
 F ext/session/sqlite3session.h 4d1f69f1d8bfd4798e8f6431de301d17bb2e4097de2f77ca4dad494bb6c60dc0
 F ext/session/test_session.c 0b4bc954e5e411baa723e52abd46380ca428797dff39ed62c610001777a2b70f
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -2125,8 +2125,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5dab481c101b1523b1cfde92678cbc654ea26d946bf29da372d71c1f89cbaf46 9bf4bfd68080367b58594e0d44b110b3ee9766420f648537fd7bc638dacefb72
-R 7b6d525c7f2c0f50a5d58ccf5673fd6f
+P 897e926a5eaa0eab7e09e5003e4c15c974897be298a18ae85345962dc3f410a1
+R 99b1a1d1e6fc326e3288fb4d2006c57d
 U dan
-Z 3397358e9f4504085d0516dbc6df4e33
+Z 6d17292d226b837db6fc5d0737e14243
 # Remove this line to create a well-formed Fossil manifest.
