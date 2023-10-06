@@ -207,9 +207,14 @@ struct JsonString {
   u64 nAlloc;              /* Bytes of storage available in zBuf[] */
   u64 nUsed;               /* Bytes of zBuf[] currently used */
   u8 bStatic;              /* True if zBuf is static space */
-  u8 bErr;                 /* True if an error has been encountered */
+  u8 eErr;                 /* True if an error has been encountered */
   char zSpace[100];        /* Initial static space */
 };
+
+/* Allowed values for JsonString.eErr */
+#define JSTRING_OOM         0x01   /* Out of memory */
+#define JSTRING_MALFORMED   0x02   /* Malformed JSONB */
+#define JSTRING_ERR         0x04   /* Error already sent to sqlite3_result */
 
 /* A deferred cleanup task.  A list of JsonCleanup objects might be
 ** run when the JsonParse object is destroyed.
@@ -376,7 +381,7 @@ static void jsonStringZero(JsonString *p){
 */
 static void jsonStringInit(JsonString *p, sqlite3_context *pCtx){
   p->pCtx = pCtx;
-  p->bErr = 0;
+  p->eErr = 0;
   jsonStringZero(p);
 }
 
@@ -391,7 +396,7 @@ static void jsonStringReset(JsonString *p){
 /* Report an out-of-memory (OOM) condition
 */
 static void jsonStringOom(JsonString *p){
-  p->bErr = 1;
+  p->eErr |= JSTRING_OOM;
   sqlite3_result_error_nomem(p->pCtx);
   jsonStringReset(p);
 }
@@ -403,7 +408,7 @@ static int jsonStringGrow(JsonString *p, u32 N){
   u64 nTotal = N<p->nAlloc ? p->nAlloc*2 : p->nAlloc+N+10;
   char *zNew;
   if( p->bStatic ){
-    if( p->bErr ) return 1;
+    if( p->eErr ) return 1;
     zNew = sqlite3RCStrNew(nTotal);
     if( zNew==0 ){
       jsonStringOom(p);
@@ -415,7 +420,7 @@ static int jsonStringGrow(JsonString *p, u32 N){
   }else{
     p->zBuf = sqlite3RCStrResize(p->zBuf, nTotal);
     if( p->zBuf==0 ){
-      p->bErr = 1;
+      p->eErr |= JSTRING_OOM;
       jsonStringZero(p);
       return SQLITE_NOMEM;
     }
@@ -488,7 +493,7 @@ static void jsonAppendChar(JsonString *p, char c){
 */
 static int jsonForceRCStr(JsonString *p){
   jsonAppendChar(p, 0);
-  if( p->bErr ) return 0;
+  if( p->eErr ) return 0;
   p->nUsed--;
   if( p->bStatic==0 ) return 1;
   p->nAlloc = 0;
@@ -626,7 +631,7 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
 static void jsonAppendNormalizedInt(JsonString *p, const char *zIn, u32 N){
   char *zBuf = sqlite3_malloc64( N+1 );
   if( zBuf==0 ){
-    p->bErr = 1;
+    p->eErr |= JSTRING_OOM;
     return;
   }
   memcpy(zBuf, zIn, N);
@@ -731,9 +736,9 @@ static void jsonAppendSqlValue(
         px.aBlob = (u8*)sqlite3_value_blob(pValue);
         px.nBlob = sqlite3_value_bytes(pValue);
         jsonRenderBlob(&px, 0, p);
-      }else if( p->bErr==0 ){
+      }else if( p->eErr==0 ){
         sqlite3_result_error(p->pCtx, "JSON cannot hold BLOB values", -1);
-        p->bErr = 2;
+        p->eErr = JSTRING_ERR;
         jsonStringReset(p);
       }
       break;
@@ -748,7 +753,7 @@ static void jsonAppendSqlValue(
 ** The JsonString is reset.
 */
 static void jsonReturnString(JsonString *p){
-  if( p->bErr==0 ){
+  if( p->eErr==0 ){
     int flags = SQLITE_PTR_TO_INT(sqlite3_user_data(p->pCtx));
     if( flags & JSON_BLOB ){
       jsonReturnStringAsBlob(p);
@@ -760,10 +765,13 @@ static void jsonReturnString(JsonString *p){
       sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
                             (void(*)(void*))sqlite3RCStrUnref,
                             SQLITE_UTF8);
+    }else{
+      sqlite3_result_error_nomem(p->pCtx);
     }
-  }
-  if( p->bErr==1 ){
+  }else if( p->eErr & JSTRING_OOM ){
     sqlite3_result_error_nomem(p->pCtx);
+  }else if( p->eErr & JSTRING_MALFORMED ){
+    sqlite3_result_error(p->pCtx, "malformed JSON", -1);
   }
   jsonStringReset(p);
 }
@@ -2974,6 +2982,7 @@ json_parse_restart:
         }
       }
     }
+
   parse_number_2:
     for(j=i+1;; j++){
       c = z[j];
@@ -3236,7 +3245,7 @@ static u32 jsonRenderBlob(
 
   n = jsonbPayloadSize(pParse, i, &sz);
   if( n==0 ){
-    pOut->bErr = 1;
+    pOut->eErr |= JSTRING_MALFORMED;
     return pParse->nBlob+1;
   }
   switch( pParse->aBlob[i] & 0x0f ){
@@ -3258,43 +3267,34 @@ static u32 jsonRenderBlob(
       break;
     }
     case JSONB_INT5: {  /* Integer literal in hexadecimal notation */
-      int k;
+      int k = 2;
       sqlite3_uint64 u = 0;
       const char *zIn = (const char*)&pParse->aBlob[i+n];
-      if( zIn[0]=='-' ){
-        zIn++;
-        sz--;
-        jsonAppendChar(pOut, '-');
+      if( zIn[0]=='+' || zIn[0]=='-' ){
+        if( zIn[0]=='-' ) jsonAppendChar(pOut, '-');
+        k++;
       }
-      for(k=2; k<sz; k++){
+      for(; k<sz; k++){
         u = u*16 + sqlite3HexToInt(zIn[k]);
       }
       jsonPrintf(100,pOut,"%llu",u);
       break;
     }
     case JSONB_FLOAT5: { /* Float literal missing digits beside "." */
-      int k;
+      int k = 0;
       const char *zIn = (const char*)&pParse->aBlob[i+n];
-      if( zIn[0]=='-' ){
-        zIn++;
-        sz--;
-        jsonAppendChar(pOut, '-');
+      if( zIn[0]=='+' || zIn[0]=='-' ){
+        if( zIn[0]=='-' ) jsonAppendChar(pOut, '-');
+        k++;
       }
-      if( zIn[0]=='.' ){
+      if( zIn[k]=='.' ){
         jsonAppendChar(pOut, '0');
       }
-      for(k=0; k<sz; k++){
+      for(; k<sz; k++){
+        jsonAppendChar(pOut, zIn[k]);
         if( zIn[k]=='.' && (k+1==sz || !sqlite3Isdigit(zIn[k+1])) ){
-          k++;
-          jsonAppendRaw(pOut, zIn, k);
-          zIn += k;
-          sz -= k;
           jsonAppendChar(pOut, '0');
-          break;
         }
-      }
-      if( sz>0 ){
-        jsonAppendRawNZ(pOut, zIn, sz);
       }
       break;
     }
@@ -3808,7 +3808,12 @@ static void jsonReturnTextJsonFromBlob(
   x.nBlob = nBlob;
   jsonStringInit(&s, ctx);
   jsonRenderBlob(&x, 0, &s);
-  jsonReturnString(&s);
+  if( x.nErr ){
+    sqlite3_result_error(ctx, "malformed JSON", -1);
+    jsonStringReset(&s);
+  }else{
+    jsonReturnString(&s);
+  }
 }
 
 
@@ -4371,7 +4376,7 @@ static void jsonExtractFunc(
           jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
           jsonAppendChar(&jx, 0);
         }
-        pNode = jx.bErr ? 0 : jsonLookup(p, jx.zBuf, 0, ctx);
+        pNode = jx.eErr ? 0 : jsonLookup(p, jx.zBuf, 0, ctx);
         jsonStringReset(&jx);
       }else{
         pNode = jsonLookup(p, zPath, 0, ctx);
@@ -4942,9 +4947,9 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
     pStr->pCtx = ctx;
     jsonAppendChar(pStr, ']');
     flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
-    if( pStr->bErr ){
-      if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
-      assert( pStr->bStatic );
+    if( pStr->eErr ){
+      jsonReturnString(pStr);
+      return;
     }else if( flags & JSON_BLOB ){
       jsonReturnStringAsBlob(pStr);
       if( isFinal ){
@@ -5062,9 +5067,9 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
     jsonAppendChar(pStr, '}');
     pStr->pCtx = ctx;
     flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
-    if( pStr->bErr ){
-      if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
-      assert( pStr->bStatic );
+    if( pStr->eErr ){
+      jsonReturnString(pStr);
+      return;
     }else if( flags & JSON_BLOB ){
       jsonReturnStringAsBlob(pStr);
       if( isFinal ){
