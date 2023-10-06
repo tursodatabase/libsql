@@ -940,7 +940,7 @@ impl ReplicationLogger {
             let mut frames_iter = log_file.rev_frames_iter()?;
             let Some(last_frame_res) = frames_iter.next() else {
                 // the log file is empty, nothing to compact
-                return Ok(false)
+                return Ok(false);
             };
             last_frame_res?
         };

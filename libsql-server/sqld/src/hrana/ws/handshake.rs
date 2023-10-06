@@ -153,7 +153,10 @@ fn negotiate_subproto(
                 .map(|s| s.as_str())
                 .collect::<Vec<_>>()
                 .join(" ");
-            return Err(format!("Only these WebSocket subprotocols are supported: {}", supported))
+            return Err(format!(
+                "Only these WebSocket subprotocols are supported: {}",
+                supported
+            ));
         };
 
         tracing::debug!(

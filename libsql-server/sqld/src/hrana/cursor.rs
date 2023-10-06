@@ -78,9 +78,7 @@ async fn run_cursor<C: Connection>(
     open_rx: oneshot::Receiver<OpenReq<C>>,
     entry_tx: mpsc::Sender<Result<SizedEntry>>,
 ) {
-    let Ok(open_req) = open_rx.await else {
-        return
-    };
+    let Ok(open_req) = open_rx.await else { return };
 
     let result_builder = CursorResultBuilder {
         entry_tx: entry_tx.clone(),

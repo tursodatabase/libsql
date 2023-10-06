@@ -142,7 +142,8 @@ pub async fn acquire<'srv, D: Connection>(
                 }
             };
 
-            let Handle::Available(mut stream) = mem::replace(handle.unwrap(), Handle::Acquired) else {
+            let Handle::Available(mut stream) = mem::replace(handle.unwrap(), Handle::Acquired)
+            else {
                 unreachable!()
             };
 
@@ -235,8 +236,10 @@ impl<'srv, D> Drop for Guard<'srv, D> {
 
         let mut state = self.server.stream_state.lock();
         let Some(handle) = state.handles.remove(&stream_id) else {
-            panic!("Dropped a Guard for stream {stream_id}, \
-                but Server does not contain a handle to it");
+            panic!(
+                "Dropped a Guard for stream {stream_id}, \
+                but Server does not contain a handle to it"
+            );
         };
         if !matches!(handle, Handle::Acquired) {
             panic!(

@@ -24,9 +24,15 @@ impl<W: Write> DumpState<W> {
         let mut stmt = txn.prepare(stmt)?;
         let mut rows = stmt.query(())?;
         while let Some(row) = rows.next()? {
-            let ValueRef::Text(table) = row.get_ref(0)? else { bail!("invalid schema table") };
-            let ValueRef::Text(ty) = row.get_ref(1)? else { bail!("invalid schema table") };
-            let ValueRef::Text(sql) = row.get_ref(2)? else { bail!("invalid schema table") };
+            let ValueRef::Text(table) = row.get_ref(0)? else {
+                bail!("invalid schema table")
+            };
+            let ValueRef::Text(ty) = row.get_ref(1)? else {
+                bail!("invalid schema table")
+            };
+            let ValueRef::Text(sql) = row.get_ref(2)? else {
+                bail!("invalid schema table")
+            };
 
             if table == b"sqlite_sequence" {
                 writeln!(self.writer, "DELETE FROM sqlite_sequence;")?;
@@ -120,10 +126,14 @@ impl<W: Write> DumpState<W> {
         let col_count = stmt.column_count();
         let mut rows = stmt.query(())?;
         while let Some(row) = rows.next()? {
-            let ValueRef::Text(sql) = row.get_ref(0)? else { bail!("the first row in a table dump query should be of type text") };
+            let ValueRef::Text(sql) = row.get_ref(0)? else {
+                bail!("the first row in a table dump query should be of type text")
+            };
             self.writer.write_all(sql)?;
             for i in 1..col_count {
-                let ValueRef::Text(s) = row.get_ref(i)? else { bail!("row {i} in table dump query should be of type text") };
+                let ValueRef::Text(s) = row.get_ref(i)? else {
+                    bail!("row {i} in table dump query should be of type text")
+                };
                 let s = std::str::from_utf8(s)?;
                 write!(self.writer, ",{s}")?;
             }
@@ -258,7 +268,7 @@ impl Display for Quoted<'_> {
         let s = &self.0;
         let Some(first) = s.chars().next() else {
             write!(f, "{s}")?;
-            return Ok(())
+            return Ok(());
         };
         if !first.is_alphabetic() && first != '_' {
             write!(f, r#""{s}""#)?;

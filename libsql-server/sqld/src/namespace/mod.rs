@@ -991,7 +991,9 @@ async fn run_storage_monitor(db_path: PathBuf, stats: Weak<Stats>) -> anyhow::Re
     let db_path: Arc<Path> = db_path.into();
     loop {
         let db_path = db_path.clone();
-        let Some(stats) = stats.upgrade() else { return Ok(()) };
+        let Some(stats) = stats.upgrade() else {
+            return Ok(());
+        };
         let _ = tokio::task::spawn_blocking(move || {
             // because closing the last connection interferes with opening a new one, we lazily
             // initialize a connection here, and keep it alive for the entirety of the program. If we
