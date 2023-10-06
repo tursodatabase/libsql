@@ -983,7 +983,9 @@ const sqlite3_module vt02Module = {
   /* xRename       */  0,
   /* xSavepoint    */  0,
   /* xRelease      */  0,
-  /* xRollbackTo   */  0
+  /* xRollbackTo   */  0,
+  /* xShadowName   */  0,
+  /* xIntegrity    */  0
 };
 
 static void vt02CoreInit(sqlite3 *db){

@@ -1782,7 +1782,8 @@ static sqlite3_module geopolyModule = {
   rtreeSavepoint,             /* xSavepoint */
   0,                          /* xRelease */
   0,                          /* xRollbackTo */
-  rtreeShadowName             /* xShadowName */
+  rtreeShadowName,            /* xShadowName */
+  rtreeIntegrity              /* xIntegrity */
 };
 
 static int sqlite3_geopoly_init(sqlite3 *db){

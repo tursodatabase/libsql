@@ -186,7 +186,7 @@ struct SorterFile {
 struct SorterList {
   SorterRecord *pList;            /* Linked list of records */
   u8 *aMemory;                    /* If non-NULL, bulk memory to hold pList */
-  int szPMA;                      /* Size of pList as PMA in bytes */
+  i64 szPMA;                      /* Size of pList as PMA in bytes */
 };
 
 /*
@@ -295,10 +295,10 @@ typedef int (*SorterCompare)(SortSubtask*,int*,const void*,int,const void*,int);
 struct SortSubtask {
   SQLiteThread *pThread;          /* Background thread, if any */
   int bDone;                      /* Set if thread is finished but not joined */
+  int nPMA;                       /* Number of PMAs currently in file */
   VdbeSorter *pSorter;            /* Sorter that owns this sub-task */
   UnpackedRecord *pUnpacked;      /* Space to unpack a record */
   SorterList list;                /* List for thread to write to a PMA */
-  int nPMA;                       /* Number of PMAs currently in file */
   SorterCompare xCompare;         /* Compare function to use */
   SorterFile file;                /* Temp file for level-0 PMAs */
   SorterFile file2;               /* Space for other PMAs */
@@ -1772,8 +1772,8 @@ int sqlite3VdbeSorterWrite(
   int rc = SQLITE_OK;             /* Return Code */
   SorterRecord *pNew;             /* New list element */
   int bFlush;                     /* True to flush contents of memory to PMA */
-  int nReq;                       /* Bytes of memory required */
-  int nPMA;                       /* Bytes of PMA space required */
+  i64 nReq;                       /* Bytes of memory required */
+  i64 nPMA;                       /* Bytes of PMA space required */
   int t;                          /* serial type of first record field */
 
   assert( pCsr->eCurType==CURTYPE_SORTER );
