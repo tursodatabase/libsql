@@ -606,7 +606,7 @@ impl<W: WalHook> Connection<W> {
         let freelist_count = self
             .conn
             .query_row("PRAGMA freelist_count", (), |row| row.get::<_, i64>(0))?;
-        // NOTICE: don't bother vacuuming if we don't have at least 128MiB of data
+        // NOTICE: don't bother vacuuming if we don't have at least 32MiB of data
         if page_count >= 8192 && freelist_count * 2 > page_count {
             tracing::debug!("Vacuuming: pages={page_count} freelist={freelist_count}");
             self.conn.execute("VACUUM", ())?;
