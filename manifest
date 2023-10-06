@@ -1,5 +1,5 @@
-C Ensure\sthat\sall\sfields\sof\sstatic\ssqlite3_module\sobjects\sare\sexplicitly\ninitialized,\sin\sorder\sto\shush-up\snuisance\scompiler\swarnings.
-D 2023-10-06T12:51:05.861
+C Remove\san\sunused\sparameter\sfrom\sthe\srecomputeColumnsNotIndexed()\sroutine\sin\norder\sto\ssquash\sa\sharmless\scompiler\swarning.
+D 2023-10-06T12:55:53.957
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -652,7 +652,7 @@ F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c fbbbfc51d2fed03c29f20960857d97659d9c682523f32911d5a8e7c5be6436be
 F src/btree.h 03e3356f5208bcab8eed4e094240fdac4a7f9f5ddf5e91045ce589f67d47c240
 F src/btreeInt.h 91a9e0c41a0e71fa91a742ec285c63dd8dcb38b73d14fae0ed7209174ff0fdc1
-F src/build.c a08d098ad1bfd5d46a5f3a6e29a822897e9a021ddba7c021c7c1ae5d4366d1a0
+F src/build.c 79a4edcee69df5f20963d7b11faf0820d25e6f8c11ef3a9f868d14be87834711
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c db847fac81837ff5e5028a5f7505147ac645ae676104adc5bc08e356f243de40
@@ -2123,8 +2123,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 477577120b897bf15edc2a85e220d5c64a1d5a245354939269f6753d8140ac95
-R 7195f5fe69c4f14686e7282cf613bdb3
+P f3b3d712d6e58b1cb8fdebd2b6b3125080b6b3ac8c7c849a8cc1e5e778d62fe7
+R 463f7e96293ba99be8baedd81f7591d2
 U drh
-Z 6667762ace3fc2d31532a93194fa5042
+Z 7437dee9dbbbd713eb415ce0acb82a90
 # Remove this line to create a well-formed Fossil manifest.
