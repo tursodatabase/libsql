@@ -3009,6 +3009,11 @@ static sqlite3_module spellfix1Module = {
   0,                       /* xRollback */
   0,                       /* xFindMethod */
   spellfix1Rename,         /* xRename */
+  0,                       /* xSavepoint */
+  0,                       /* xRelease */
+  0,                       /* xRollbackTo */
+  0,                       /* xShadowName */
+  0                        /* xIntegrity */
 };
 
 /*
