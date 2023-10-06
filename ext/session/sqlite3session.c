@@ -1472,9 +1472,7 @@ static int sessionPrepareDfltStmt(
 }
 
 static int sessionUpdateChanges(sqlite3_session *pSession, SessionTable *pTab){
-  sqlite3 *db = pSession->db;
   sqlite3_stmt *pStmt = 0;
-  int ii = 0;
   int rc = pSession->rc;
 
   rc = sessionPrepareDfltStmt(pSession->db, pTab, &pStmt);
@@ -2289,6 +2287,7 @@ static void sessionDeleteTable(sqlite3_session *pSession, SessionTable *pList){
         sessionFree(pSession, p);
       }
     }
+    sqlite3_finalize(pTab->pDfltStmt);
     sessionFree(pSession, (char*)pTab->azCol);  /* cast works around VC++ bug */
     sessionFree(pSession, pTab->apChange);
     sessionFree(pSession, pTab);
@@ -5398,7 +5397,7 @@ struct sqlite3_changegroup {
   SessionTable *pList;            /* List of tables in current patch */
 
   sqlite3 *db;                    /* Configured by changegroup_schema() */
-  const char *zDb;                /* Configured by changegroup_schema() */
+  char *zDb;                      /* Configured by changegroup_schema() */
 };
 
 /*
@@ -5625,7 +5624,7 @@ static int sessionChangesetExtendRecord(
   if( op==SQLITE_INSERT || (op==SQLITE_DELETE && pGrp->bPatch==0) ){
     /* Append the missing default column values to the record. */
     sessionAppendBlob(pOut, aRec, nRec, &rc);
-    if( pTab->pDfltStmt==0 ){
+    if( rc==SQLITE_OK && pTab->pDfltStmt==0 ){
       rc = sessionPrepareDfltStmt(pGrp->db, pTab, &pTab->pDfltStmt);
     }
     for(ii=nCol; rc==SQLITE_OK && ii<pTab->nCol; ii++){
@@ -5752,6 +5751,11 @@ static int sessionChangesetToHash(
         if( pGrp->db ){
           pTab->nCol = 0;
           rc = sessionInitTable(0, pTab, pGrp->db, pGrp->zDb);
+          if( rc ){
+            assert( pTab->azCol==0 );
+            sqlite3_free(pTab);
+            break;
+          }
         }
 
         /* The new object must be linked on to the end of the list, not
@@ -5985,6 +5989,7 @@ int sqlite3changegroup_output_strm(
 */
 void sqlite3changegroup_delete(sqlite3_changegroup *pGrp){
   if( pGrp ){
+    sqlite3_free(pGrp->zDb);
     sessionDeleteTable(0, pGrp->pList);
     sqlite3_free(pGrp);
   }
