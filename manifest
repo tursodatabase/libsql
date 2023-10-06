@@ -1,5 +1,5 @@
-C Fixes\sto\srendering\sJSON5\sextensions\sencoded\sas\sJSONB.
-D 2023-10-06T15:35:42.574
+C Incremental\simprovements\sto\sthe\sJSONB\slogic.
+D 2023-10-06T18:21:47.497
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -670,7 +670,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 07cbae93a65485082e3a2b7900b0c5e3912a5dd37ea0d948af54fec0fe39855c
+F src/json.c 7a37b75ae7a31399af464627f923232f88bdee093af5148445f0df42ee85bd77
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 98cfba10989b3da6f1807ad42444017742db7f100a54f1032af7a8b1295912c0
 F src/main.c 618aeb399e993cf561864f4b0cf6a331ee4f355cf663635f8d9da3193a46aa40
@@ -2124,8 +2124,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5227add3c8d509de2e081249163fafdf30ac3173a6d710957f3c3b6f03e7017e
-R 4cd522c574d0ec5aee66d5dc3b63f485
+P 5a17e4479aad2d8313170e5de83a1c52f30b55d9d4fb776024fa6622e175c63b
+R 83990e8b89665f4fb2543aa74cc93235
 U drh
-Z 9624fe80ac16daaa792bb7c1f316d34b
+Z e604af5f00b43366ef6886bc95452ede
 # Remove this line to create a well-formed Fossil manifest.

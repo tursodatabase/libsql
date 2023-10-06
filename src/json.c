@@ -3150,7 +3150,7 @@ static int jsonConvertTextToBlob(
     }
   }
   if( i<=0 ){
-    if( pCtx!=0 ){
+    if( ALWAYS(pCtx!=0) ){
       if( pParse->oom ){
         sqlite3_result_error_nomem(pCtx);
       }else{
@@ -3191,7 +3191,7 @@ static u32 jsonbPayloadSize(JsonParse *pParse, u32 i, u32 *pSz){
   u8 x;
   u32 sz;
   u32 n;
-  if( i>pParse->nBlob ){
+  if( NEVER(i>pParse->nBlob) ){
     *pSz = 0;
     return 0;
   }
@@ -3200,21 +3200,21 @@ static u32 jsonbPayloadSize(JsonParse *pParse, u32 i, u32 *pSz){
     sz = x;
     n = 1;
   }else if( x==12 ){
-    if( i+1>pParse->nBlob ){
+    if( i+1>=pParse->nBlob ){
       *pSz = 0;
       return 0;
     }
     sz = pParse->aBlob[i+1];
     n = 2;
   }else if( x==13 ){
-    if( i+2>pParse->nBlob ){
+    if( i+2>=pParse->nBlob ){
       *pSz = 0;
       return 0;
     }
     sz = (pParse->aBlob[i+1]<<8) + pParse->aBlob[i+2];
     n = 3;
   }else{
-    if( i+4>pParse->nBlob ){
+    if( i+4>=pParse->nBlob ){
       *pSz = 0;
       return 0;
     }
@@ -3233,8 +3233,15 @@ static u32 jsonbPayloadSize(JsonParse *pParse, u32 i, u32 *pSz){
 
 /*
 ** Convert the binary BLOB representation of JSON beginning at
-** aBlob[0] (and extending for no more than nBlob bytes) into
+** aBlob[0] and extending for no more than nBlob bytes into
 ** a pure JSON string.  The string is appended to pOut.
+**
+** If an error is detected in the BLOB input, the pOut->eErr flag
+** might get set to JSTRING_MALFORMED.  But not all BLOB input errors
+** are detected.  So a malformed JSONB input might either result
+** in an error, or in incorrect JSON.
+**
+** The pOut->eErr JSTRING_OOM flag is set on a OOM.
 */
 static u32 jsonRenderBlob(
   JsonParse *pParse,             /* the complete parse of the JSON */
@@ -3270,11 +3277,14 @@ static u32 jsonRenderBlob(
       u32 k = 2;
       sqlite3_uint64 u = 0;
       const char *zIn = (const char*)&pParse->aBlob[i+n];
-      if( zIn[0]=='+' || zIn[0]=='-' ){
-        if( zIn[0]=='-' ) jsonAppendChar(pOut, '-');
+      if( zIn[0]=='-' ){
+        jsonAppendChar(pOut, '-');
         k++;
       }
       for(; k<sz; k++){
+        if( !sqlite3Isxdigit(zIn[k]) ){
+          pOut->eErr |= JSTRING_MALFORMED;
+        }
         u = u*16 + sqlite3HexToInt(zIn[k]);
       }
       jsonPrintf(100,pOut,"%llu",u);
@@ -3283,8 +3293,8 @@ static u32 jsonRenderBlob(
     case JSONB_FLOAT5: { /* Float literal missing digits beside "." */
       u32 k = 0;
       const char *zIn = (const char*)&pParse->aBlob[i+n];
-      if( zIn[0]=='+' || zIn[0]=='-' ){
-        if( zIn[0]=='-' ) jsonAppendChar(pOut, '-');
+      if( zIn[0]=='-' ){
+        jsonAppendChar(pOut, '-');
         k++;
       }
       if( zIn[k]=='.' ){
@@ -3761,7 +3771,7 @@ static u32 jsonLookupBlobStep(
             nn = nn*10 + zPath[i] - '0';
             i++;
           }while( sqlite3Isdigit(zPath[i]) );
-          if( nn>k ) return 0;
+          if( nn>k ) return JSON_BLOB_NOTFOUND;
           k -= nn;
         }
         if( zPath[i]!=']' ){
