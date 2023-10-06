@@ -155,10 +155,7 @@ pub async fn acquire<'srv, D: Connection>(
             stream
         }
         None => {
-            let db = connection_maker
-                .create()
-                .await
-                .context("Could not create a database connection")?;
+            let db = connection_maker.create().await?;
 
             let mut state = server.stream_state.lock();
             let stream = Box::new(Stream {
