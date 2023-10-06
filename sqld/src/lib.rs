@@ -10,7 +10,6 @@ use crate::connection::{Connection, MakeConnection};
 use crate::error::Error;
 use crate::migration::maybe_migrate;
 use crate::net::Accept;
-use crate::net::AddrIncoming;
 use crate::rpc::proxy::rpc::proxy_server::Proxy;
 use crate::rpc::proxy::ProxyService;
 use crate::rpc::replica_proxy::ReplicaProxyService;
@@ -25,6 +24,7 @@ use config::{
 };
 use http::user::UserApi;
 use hyper::client::HttpConnector;
+use hyper_rustls::HttpsConnector;
 use namespace::{
     MakeNamespace, NamespaceName, NamespaceStore, PrimaryNamespaceConfig, PrimaryNamespaceMaker,
     ReplicaNamespaceConfig, ReplicaNamespaceMaker,
@@ -39,6 +39,8 @@ use tokio::task::JoinSet;
 use tokio::time::Duration;
 use url::Url;
 use utils::services::idle_shutdown::IdleShutdownKicker;
+
+use self::net::AddrIncoming;
 
 pub mod config;
 pub mod connection;
@@ -80,11 +82,11 @@ pub(crate) static BLOCKING_RT: Lazy<Runtime> = Lazy::new(|| {
 type Result<T, E = Error> = std::result::Result<T, E>;
 type StatsSender = mpsc::Sender<(NamespaceName, Weak<Stats>)>;
 
-pub struct Server<C = HttpConnector, A = AddrIncoming> {
+pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpConnector>> {
     pub path: Arc<Path>,
     pub db_config: DbConfig,
     pub user_api_config: UserApiConfig<A>,
-    pub admin_api_config: Option<AdminApiConfig<A>>,
+    pub admin_api_config: Option<AdminApiConfig<A, D>>,
     pub rpc_server_config: Option<RpcServerConfig<A>>,
     pub rpc_client_config: Option<RpcClientConfig<C>>,
     pub idle_shutdown_timeout: Option<Duration>,
@@ -95,7 +97,7 @@ pub struct Server<C = HttpConnector, A = AddrIncoming> {
     pub shutdown: Arc<Notify>,
 }
 
-impl<C, A> Default for Server<C, A> {
+impl<C, A, D> Default for Server<C, A, D> {
     fn default() -> Self {
         Self {
             path: PathBuf::from("data.sqld").into(),
@@ -114,13 +116,13 @@ impl<C, A> Default for Server<C, A> {
     }
 }
 
-struct Services<M: MakeNamespace, A, P, S> {
+struct Services<M: MakeNamespace, A, P, S, C> {
     namespaces: NamespaceStore<M>,
     idle_shutdown_kicker: Option<IdleShutdownKicker>,
     proxy_service: P,
     replication_service: S,
     user_api_config: UserApiConfig<A>,
-    admin_api_config: Option<AdminApiConfig<A>>,
+    admin_api_config: Option<AdminApiConfig<A, C>>,
     disable_namespaces: bool,
     disable_default_namespace: bool,
     db_config: DbConfig,
@@ -128,12 +130,13 @@ struct Services<M: MakeNamespace, A, P, S> {
     path: Arc<Path>,
 }
 
-impl<M, A, P, S> Services<M, A, P, S>
+impl<M, A, P, S, C> Services<M, A, P, S, C>
 where
     M: MakeNamespace,
     A: crate::net::Accept,
     P: Proxy,
     S: ReplicationLog,
+    C: Connector,
 {
     fn configure(self, join_set: &mut JoinSet<anyhow::Result<()>>) {
         let user_http = UserApi {
@@ -154,11 +157,16 @@ where
 
         let user_http_service = user_http.configure(join_set);
 
-        if let Some(AdminApiConfig { acceptor }) = self.admin_api_config {
+        if let Some(AdminApiConfig {
+            acceptor,
+            connector,
+        }) = self.admin_api_config
+        {
             join_set.spawn(http::admin::run(
                 acceptor,
                 user_http_service,
                 self.namespaces,
+                connector,
             ));
         }
     }
@@ -254,10 +262,11 @@ fn init_version_file(db_path: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
-impl<C, A> Server<C, A>
+impl<C, A, D> Server<C, A, D>
 where
     C: Connector,
     A: Accept,
+    D: Connector,
 {
     /// Setup sqlite global environment
     fn init_sqlite_globals(&self) {

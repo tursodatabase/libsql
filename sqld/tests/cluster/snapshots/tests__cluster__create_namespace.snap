@@ -1,0 +1,5 @@
+---
+source: sqld/tests/cluster/mod.rs
+expression: e.to_string()
+---
+Hrana: `api error: `{"error":"Namespace `foo` doesn't exist"}``

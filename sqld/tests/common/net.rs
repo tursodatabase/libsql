@@ -130,7 +130,7 @@ impl Service<Uri> for TurmoilConnector {
     }
 }
 
-pub type TestServer = Server<TurmoilConnector, TurmoilAcceptor>;
+pub type TestServer = Server<TurmoilConnector, TurmoilAcceptor, TurmoilConnector>;
 
 pub fn init_tracing() {
     static INIT_TRACING: Once = Once::new();

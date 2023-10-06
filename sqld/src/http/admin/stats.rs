@@ -38,8 +38,8 @@ impl From<Stats> for StatsResponse {
     }
 }
 
-pub(super) async fn handle_stats<M: MakeNamespace>(
-    State(app_state): State<Arc<AppState<M>>>,
+pub(super) async fn handle_stats<M: MakeNamespace, C>(
+    State(app_state): State<Arc<AppState<M, C>>>,
     Path(namespace): Path<String>,
 ) -> crate::Result<Json<StatsResponse>> {
     let stats = app_state

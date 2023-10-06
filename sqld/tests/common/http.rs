@@ -16,6 +16,15 @@ impl Response {
         Ok(v)
     }
 
+    pub async fn json_value(self) -> anyhow::Result<serde_json::Value> {
+        self.json().await
+    }
+
+    pub async fn body_string(self) -> anyhow::Result<String> {
+        let bytes = hyper::body::to_bytes(self.0.into_body()).await?;
+        Ok(String::from_utf8(bytes.to_vec())?)
+    }
+
     pub fn status(&self) -> hyper::http::StatusCode {
         self.0.status()
     }

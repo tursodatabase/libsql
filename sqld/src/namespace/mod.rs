@@ -4,7 +4,7 @@ use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Weak};
 
-use anyhow::{bail, Context as _};
+use anyhow::Context as _;
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use bottomless::replicator::Options;
 use bytes::Bytes;
@@ -12,11 +12,12 @@ use chrono::NaiveDateTime;
 use enclose::enclose;
 use futures_core::Stream;
 use hyper::Uri;
+use parking_lot::Mutex;
 use rusqlite::ErrorCode;
 use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
 use tokio::io::AsyncBufReadExt;
 use tokio::sync::watch;
-use tokio::task::{block_in_place, JoinSet};
+use tokio::task::JoinSet;
 use tokio::time::Duration;
 use tokio_util::io::StreamReader;
 use tonic::transport::Channel;
@@ -76,7 +77,8 @@ impl NamespaceName {
     }
 
     pub fn as_str(&self) -> &str {
-        std::str::from_utf8(&self.0).unwrap()
+        // Safety: the namespace is always valid UTF8
+        unsafe { std::str::from_utf8_unchecked(&self.0) }
     }
 
     pub fn from_bytes(bytes: Bytes) -> crate::Result<Self> {
@@ -641,6 +643,25 @@ impl Namespace<PrimaryDatabase> {
         restore_option: RestoreOption,
         allow_creation: bool,
     ) -> crate::Result<Self> {
+        // FIXME: make that truly atomic. explore the idea of using temp directories, and it's implications
+        match Self::try_new_primary(config, name.clone(), restore_option, allow_creation).await {
+            Ok(ns) => Ok(ns),
+            Err(e) => {
+                let path = config.base_path.join("dbs").join(name.as_str());
+                if let Err(e) = tokio::fs::remove_dir_all(path).await {
+                    tracing::error!("failed to clean dirty namespace: {e}");
+                }
+                Err(e)
+            }
+        }
+    }
+
+    async fn try_new_primary(
+        config: &PrimaryNamespaceConfig,
+        name: NamespaceName,
+        restore_option: RestoreOption,
+        allow_creation: bool,
+    ) -> crate::Result<Self> {
         // if namespaces are disabled, then we allow creation for the default namespace.
         let allow_creation =
             allow_creation || (config.disable_namespace && name == NamespaceName::default());
@@ -842,22 +863,20 @@ async fn load_dump<S>(
     dump: S,
     mk_ctx: impl Fn() -> ReplicationLoggerHookCtx,
     auto_checkpoint: u32,
-) -> anyhow::Result<()>
+) -> crate::Result<(), LoadDumpError>
 where
     S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     let mut retries = 0;
     // there is a small chance we fail to acquire the lock right away, so we perform a few retries
     let conn = loop {
-        match block_in_place(|| {
-            open_conn(
-                db_path,
-                &REPLICATION_METHODS,
-                mk_ctx(),
-                None,
-                auto_checkpoint,
-            )
-        }) {
+        let ctx = mk_ctx();
+        let db_path = db_path.to_path_buf();
+        match tokio::task::spawn_blocking(move || {
+            open_conn(&db_path, &REPLICATION_METHODS, ctx, None, auto_checkpoint)
+        })
+        .await?
+        {
             Ok(conn) => {
                 break conn;
             }
@@ -874,16 +893,17 @@ where
                 retries += 1;
                 tokio::time::sleep(Duration::from_millis(100)).await;
             }
-            Err(e) => {
-                bail!(e);
-            }
+            Err(e) => Err(e)?,
         }
     };
+
+    let conn = Arc::new(Mutex::new(conn));
 
     let mut reader = tokio::io::BufReader::new(StreamReader::new(dump));
     let mut curr = String::new();
     let mut line = String::new();
     let mut skipped_wasm_table = false;
+    let mut n_stmt = 0;
 
     while let Ok(n) = reader.read_line(&mut curr).await {
         if n == 0 {
@@ -908,11 +928,29 @@ where
         }
 
         if line.ends_with(';') {
-            block_in_place(|| conn.execute(&line, ()))?;
+            n_stmt += 1;
+            // dump must be performd within a txn
+            if n_stmt > 2 && conn.lock().is_autocommit() {
+                return Err(LoadDumpError::NoTxn);
+            }
+
+            line = tokio::task::spawn_blocking({
+                let conn = conn.clone();
+                move || -> crate::Result<String, LoadDumpError> {
+                    conn.lock().execute(&line, ())?;
+                    Ok(line)
+                }
+            })
+            .await??;
             line.clear();
         } else {
             line.push(' ');
         }
+    }
+
+    if !conn.lock().is_autocommit() {
+        let _ = conn.lock().execute("rollback", ());
+        return Err(LoadDumpError::NoCommit);
     }
 
     Ok(())

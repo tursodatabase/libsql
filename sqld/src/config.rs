@@ -3,17 +3,19 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use hyper::client::HttpConnector;
+use hyper_rustls::HttpsConnector;
 use sha256::try_digest;
 use tokio::time::Duration;
 use tonic::transport::Channel;
+use tower::ServiceExt;
 
 use crate::auth::{self, Auth};
 use crate::net::{AddrIncoming, Connector};
 
 pub struct RpcClientConfig<C = HttpConnector> {
     pub remote_url: String,
-    pub connector: C,
     pub tls_config: Option<TlsConfig>,
+    pub connector: C,
 }
 
 impl<C: Connector> RpcClientConfig<C> {
@@ -35,7 +37,7 @@ impl<C: Connector> RpcClientConfig<C> {
             builder = builder.tls_config(tls_config)?;
         }
 
-        let channel = builder.connect_with_connector_lazy(self.connector);
+        let channel = builder.connect_with_connector_lazy(self.connector.map_err(Into::into));
 
         Ok((channel, uri))
     }
@@ -104,8 +106,9 @@ impl<A> UserApiConfig<A> {
     }
 }
 
-pub struct AdminApiConfig<A = AddrIncoming> {
+pub struct AdminApiConfig<A = AddrIncoming, C = HttpsConnector<HttpConnector>> {
     pub acceptor: A,
+    pub connector: C,
 }
 
 #[derive(Clone)]
