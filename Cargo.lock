@@ -819,6 +819,7 @@ dependencies = [
  "bottomless",
  "chrono",
  "clap",
+ "rusqlite",
  "tokio",
  "tracing",
  "tracing-subscriber",

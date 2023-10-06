@@ -72,7 +72,9 @@ async fn try_handle<D: Connection>(
         proto::StreamRequest::Batch(req) => {
             let db = stream_guard.get_db()?;
             let sqls = stream_guard.sqls();
-            let pgm = batch::proto_batch_to_program(&req.batch, sqls, version)?;
+            let pgm = batch::proto_batch_to_program(&req.batch, sqls, version)
+                .map_err(catch_stmt_error)
+                .map_err(catch_batch_error)?;
             let result = batch::execute_batch(db, auth, pgm, req.batch.replication_index)
                 .await
                 .map_err(catch_batch_error)?;
