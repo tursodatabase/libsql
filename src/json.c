@@ -3267,7 +3267,7 @@ static u32 jsonRenderBlob(
       break;
     }
     case JSONB_INT5: {  /* Integer literal in hexadecimal notation */
-      int k = 2;
+      u32 k = 2;
       sqlite3_uint64 u = 0;
       const char *zIn = (const char*)&pParse->aBlob[i+n];
       if( zIn[0]=='+' || zIn[0]=='-' ){
@@ -3281,7 +3281,7 @@ static u32 jsonRenderBlob(
       break;
     }
     case JSONB_FLOAT5: { /* Float literal missing digits beside "." */
-      int k = 0;
+      u32 k = 0;
       const char *zIn = (const char*)&pParse->aBlob[i+n];
       if( zIn[0]=='+' || zIn[0]=='-' ){
         if( zIn[0]=='-' ) jsonAppendChar(pOut, '-');
@@ -3753,14 +3753,14 @@ static u32 jsonLookupBlobStep(
         k = jsonbArrayCount(pParse, iRoot);
         i = 2;
         if( zPath[2]=='-' && sqlite3Isdigit(zPath[3]) ){
-          unsigned int x = 0;
+          unsigned int nn = 0;
           i = 3;
           do{
-            x = x*10 + zPath[i] - '0';
+            nn = nn*10 + zPath[i] - '0';
             i++;
           }while( sqlite3Isdigit(zPath[i]) );
-          if( x>k ) return 0;
-          k -= x;
+          if( nn>k ) return 0;
+          k -= nn;
         }
         if( zPath[i]!=']' ){
           *pzErr = zPath;
@@ -3997,7 +3997,7 @@ static void jsonExtractFromBlob(
 ){
   const char *zPath = (const char*)sqlite3_value_text(pPath);
   const char *zErr = 0;
-  u32 i;
+  u32 i = 0;
   JsonParse px;
   if( zPath==0 ) return;
   memset(&px, 0, sizeof(px));
@@ -4031,6 +4031,9 @@ static void jsonExtractFromBlob(
     }
     i = jsonLookupBlobStep(&px, 0, zPath, &zErr);
     jsonStringReset(&jx);
+  }else{
+    sqlite3_result_error(ctx, "bad path", -1);
+    return;
   }
   if( i<px.nBlob ){
     jsonReturnFromBlob(&px, i, ctx);
