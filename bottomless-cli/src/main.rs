@@ -71,6 +71,22 @@ enum Commands {
         )]
         utc_time: Option<NaiveDateTime>,
     },
+    #[clap(about = "Verify integrity of the database")]
+    Verify {
+        #[clap(
+            long,
+            short,
+            long_help = "Generation to verify.\nSkip this parameter to verify the newest generation."
+        )]
+        generation: Option<uuid::Uuid>,
+        #[clap(
+            long,
+            short,
+            conflicts_with = "generation",
+            long_help = "UTC timestamp which is an upper bound for the transactions to be verified."
+        )]
+        utc_time: Option<NaiveDateTime>,
+    },
     #[clap(about = "Remove given generation from remote storage")]
     Rm {
         #[clap(long, short)]
@@ -125,7 +141,8 @@ async fn run() -> Result<()> {
             }
         }
     };
-    let database = database + "/dbs/" + namespace.strip_prefix("ns-").unwrap() + "/data";
+    let database_dir = database + "/dbs/" + namespace.strip_prefix("ns-").unwrap();
+    let database = database_dir.clone() + "/data";
     tracing::info!("Database: '{}' (namespace: {})", database, namespace);
 
     let mut client = Replicator::new(database.clone()).await?;
@@ -149,8 +166,28 @@ async fn run() -> Result<()> {
             generation,
             utc_time,
         } => {
-            tokio::fs::create_dir_all(&database).await?;
+            tokio::fs::create_dir_all(&database_dir).await?;
             client.restore(generation, utc_time).await?;
+        }
+        Commands::Verify {
+            generation,
+            utc_time,
+        } => {
+            let temp = std::env::temp_dir().join("bottomless-verification-do-not-touch");
+            let mut client = Replicator::new(temp.display().to_string()).await?;
+            let _ = tokio::fs::remove_file(&temp).await;
+            client.restore(generation, utc_time).await?;
+            let size = tokio::fs::metadata(&temp).await?.len();
+            println!("Snapshot size: {size}");
+            let conn = rusqlite::Connection::open(&temp)?;
+            let mut stmt = conn.prepare("PRAGMA integrity_check")?;
+            let mut rows = stmt.query(())?;
+            let result: String = rows.next()?.unwrap().get(0)?;
+            println!("Verification: {result}");
+            let _ = tokio::fs::remove_file(&temp).await;
+            if result != "ok" {
+                std::process::exit(1)
+            }
         }
         Commands::Rm {
             generation,
