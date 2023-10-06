@@ -85,10 +85,14 @@ pub async fn run_rpc_server<A: crate::net::Accept>(
             .await
             .context("http server")?;
     } else {
+        let proxy = ProxyServer::new(proxy_service).max_encoding_message_size(usize::MAX);
+        let replication =
+            ReplicationLogServer::new(logger_service).max_encoding_message_size(usize::MAX);
+
         let router = tonic::transport::Server::builder()
             .layer(&option_layer(idle_shutdown_layer))
-            .add_service(ProxyServer::new(proxy_service))
-            .add_service(ReplicationLogServer::new(logger_service))
+            .add_service(proxy)
+            .add_service(replication)
             .into_router();
 
         let h2c = crate::h2c::H2cMaker::new(router);
