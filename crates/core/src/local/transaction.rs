@@ -1,14 +1,7 @@
-use crate::v1::Connection;
+use crate::local::Connection;
+use crate::TransactionBehavior;
 use crate::{params::Params, Result};
 use std::ops::Deref;
-
-#[derive(Debug)]
-pub enum TransactionBehavior {
-    Deferred,
-    Immediate,
-    Exclusive,
-    ReadOnly,
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DropBehavior {

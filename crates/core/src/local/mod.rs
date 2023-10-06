@@ -14,13 +14,11 @@ pub use libsql_sys::ValueType;
 pub use crate::{errors, Error, Result};
 pub use connection::Connection;
 pub use database::Database;
-#[cfg(feature = "replication")]
-pub use database::Opts;
 pub use rows::Row;
 pub use rows::Rows;
 pub use rows::RowsFuture;
-pub use statement::{Column, Statement};
-pub use transaction::{Transaction, TransactionBehavior};
+pub use statement::Statement;
+pub use transaction::Transaction;
 
 /// Return the version of the underlying SQLite library as a number.
 pub fn version_number() -> i32 {

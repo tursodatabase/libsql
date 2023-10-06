@@ -28,7 +28,7 @@
 //!
 //! ```rust,no_run
 //! # async fn run() {
-//! use libsql::{Database, Opts, Frames};
+//! use libsql::{Database, Frames};
 //!
 //! let mut db = Database::open_with_local_sync("/tmp/test.db").await.unwrap();
 //!
@@ -64,14 +64,10 @@ macro_rules! cfg_replication {
 }
 
 cfg_core! {
-    mod v1;
+    mod local;
 
-    pub use v1::{version, version_number, RowsFuture, Opts};
+    pub use local::{version, version_number, RowsFuture};
 }
-
-// Legacy mode, for compatibility with the old libsql API, it is doc hidden so
-// that new users do not use this api as its deprecated in favor of the v2 api.
-mod v2;
 
 pub mod params;
 
@@ -80,21 +76,24 @@ cfg_replication! {
     pub use replication::{Frame, FrameNo, Frames, TempSnapshot};
 }
 
-mod box_clone_service;
+mod util;
 
 pub mod errors;
 pub use errors::Error;
 
 pub use params::{params_from_iter, Value, ValueRef};
 
-pub use v2::{
-    hrana, rows,
-    rows::{Row, Rows},
-    statement,
-    statement::{Column, Statement},
-    transaction,
+mod connection;
+mod hrana;
+mod rows;
+mod statement;
+mod transaction;
+
+pub use self::{
+    connection::{Connection, Database, OpenFlags},
+    rows::{Column, Row, Rows},
+    statement::Statement,
     transaction::{Transaction, TransactionBehavior},
-    Connection, Database, OpenFlags,
 };
 
 pub use libsql_sys::ffi;

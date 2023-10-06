@@ -20,9 +20,8 @@ pub enum Error {
     SyncNotSupported(String), // Not in rusqlite
     #[error("Column not found: {0}")]
     ColumnNotFound(i32), // Not in rusqlite
-    #[cfg(feature = "core")]
     #[error("Hrana: `{0}`")]
-    Hrana(#[from] crate::v2::HranaError), // Not in rusqlite
+    Hrana(crate::BoxError), // Not in rusqlite
     #[error("Write delegation: `{0}`")]
     WriteDelegation(crate::BoxError), // Not in rusqlite
     #[error("bincode: `{0}`")]

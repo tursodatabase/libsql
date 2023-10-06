@@ -1,10 +1,10 @@
 use std::sync::Once;
 
+use crate::local::connection::Connection;
 #[cfg(feature = "replication")]
 use crate::replication::Replicator;
 #[cfg(feature = "replication")]
 pub use crate::replication::{Frames, TempSnapshot};
-use crate::v1::connection::Connection;
 use crate::OpenFlags;
 use crate::{Error::ConnectionFailed, Result};
 use libsql_sys::ffi;
@@ -13,38 +13,6 @@ use libsql_sys::ffi;
 pub struct ReplicationContext {
     pub replicator: Replicator,
     pub endpoint: String,
-}
-
-#[cfg(feature = "replication")]
-pub(crate) enum Sync {
-    Frame,
-    Http {
-        endpoint: String,
-        auth_token: String,
-    },
-}
-
-#[cfg(feature = "replication")]
-pub struct Opts {
-    pub(crate) sync: Sync,
-}
-
-#[cfg(feature = "replication")]
-impl Opts {
-    pub fn with_sync() -> Opts {
-        Opts { sync: Sync::Frame }
-    }
-
-    pub fn with_http_sync(endpoint: impl Into<String>, auth_token: impl Into<String>) -> Opts {
-        // The `libsql://` protocol is an alias for `https://`.
-        let endpoint = endpoint.into().replace("libsql://", "https://");
-        Opts {
-            sync: Sync::Http {
-                endpoint,
-                auth_token: auth_token.into(),
-            },
-        }
-    }
 }
 
 // A libSQL database.
@@ -73,32 +41,34 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub async fn open_with_opts(db_path: impl Into<String>, opts: Opts) -> Result<Database> {
+    pub fn open_http_sync(
+        db_path: String,
+        endpoint: String,
+        auth_token: String,
+    ) -> Result<Database> {
+        let mut db = Database::open(&db_path, OpenFlags::default())?;
+
+        let replicator = Replicator::with_http_sync(db_path, endpoint.clone(), auth_token)
+            .map_err(|e| ConnectionFailed(format!("{e}")))?;
+
+        db.replication_ctx = Some(ReplicationContext {
+            replicator,
+            endpoint,
+        });
+
+        Ok(db)
+    }
+
+    #[cfg(feature = "replication")]
+    pub fn open_local_sync(db_path: impl Into<String>) -> Result<Database> {
         let db_path = db_path.into();
         let mut db = Database::open(&db_path, OpenFlags::default())?;
 
-        match opts.sync {
-            Sync::Http {
-                endpoint,
-                auth_token,
-            } => {
-                let replicator = Replicator::with_http_sync(db_path, endpoint.clone(), auth_token)
-                    .map_err(|e| ConnectionFailed(format!("{e}")))?;
-
-                db.replication_ctx = Some(ReplicationContext {
-                    replicator,
-                    endpoint,
-                });
-            }
-            Sync::Frame => {
-                let replicator =
-                    Replicator::new(db_path).map_err(|e| ConnectionFailed(format!("{e}")))?;
-                db.replication_ctx = Some(ReplicationContext {
-                    replicator,
-                    endpoint: "".to_string(),
-                });
-            }
-        }
+        let replicator = Replicator::new(db_path).map_err(|e| ConnectionFailed(format!("{e}")))?;
+        db.replication_ctx = Some(ReplicationContext {
+            replicator,
+            endpoint: "".to_string(),
+        });
 
         Ok(db)
     }

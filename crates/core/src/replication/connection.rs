@@ -14,9 +14,9 @@ use crate::transaction::Tx;
 use crate::{
     params::Params, replication::Writer, Error, Result, Statement, Transaction, TransactionBehavior,
 };
-use crate::{v2, Column, Row, Rows, Value};
+use crate::{Column, Row, Rows, Value};
 
-use crate::v2::{Conn, LibsqlConnection};
+use crate::connection::{Conn, LibsqlConnection};
 
 use super::parser::{self, StmtKind};
 use super::pb::{ExecuteResults, ResultRows};
@@ -285,7 +285,7 @@ impl Conn for RemoteConnection {
     async fn prepare(&self, sql: &str) -> Result<Statement> {
         let stmt = RemoteStatement::prepare(self.clone(), sql).await?;
 
-        Ok(v2::Statement {
+        Ok(crate::Statement {
             inner: Box::new(stmt),
         })
     }
@@ -293,9 +293,9 @@ impl Conn for RemoteConnection {
     async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction> {
         let tx = RemoteTx::begin(self.clone(), tx_behavior).await?;
 
-        Ok(v2::Transaction {
+        Ok(crate::Transaction {
             inner: Box::new(tx),
-            conn: v2::Connection {
+            conn: crate::Connection {
                 conn: Arc::new(self.clone()),
             },
         })
@@ -362,7 +362,7 @@ pub struct RemoteStatement {
     /// Empty if we should execute locally
     metas: Vec<StatementMeta>,
     /// Set to `Some` when we should execute this locally
-    local_statement: Option<v2::Statement>,
+    local_statement: Option<crate::Statement>,
 }
 
 impl RemoteStatement {
