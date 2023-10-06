@@ -1,0 +1,13 @@
+---
+source: sqld/tests/namespaces/load_dump.rs
+expression: resp.body_string().await?
+---
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE IF NOT EXISTS libsql_wasm_func_table (name text PRIMARY KEY, body text) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS test (x);
+INSERT INTO test VALUES(42);
+INSERT INTO test VALUES('foo');
+INSERT INTO test VALUES('bar');
+COMMIT;
+

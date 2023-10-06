@@ -4,30 +4,35 @@ use std::net::SocketAddr;
 use std::pin::Pin;
 use std::task::{ready, Context, Poll};
 
+use hyper::client::connect::Connection;
 use hyper::server::accept::Accept as HyperAccept;
 use hyper::Uri;
 use hyper_rustls::acceptor::TlsStream;
 use pin_project_lite::pin_project;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tonic::transport::server::{Connected, TcpConnectInfo};
-use tower::make::MakeConnection;
+use tower::Service;
 
 pub trait Connector:
-    MakeConnection<Uri, Connection = Self::Conn, Future = Self::Fut, Error = Self::Err> + Send + 'static
+    Service<Uri, Response = Self::Conn, Future = Self::Fut, Error = Self::Err>
+    + Send
+    + Sync
+    + 'static
+    + Clone
 {
-    type Conn: Unpin + Send + 'static;
-    type Fut: Send + 'static;
-    type Err: StdError + Send + Sync;
+    type Conn: Unpin + Send + 'static + AsyncRead + AsyncWrite + Connection;
+    type Fut: Send + 'static + Unpin;
+    type Err: Into<Box<dyn StdError + Send + Sync>> + Send + Sync;
 }
 
 impl<T> Connector for T
 where
-    T: MakeConnection<Uri> + Send + 'static,
-    T::Connection: Unpin + Send + 'static,
-    T::Future: Send + 'static,
-    T::Error: StdError + Send + Sync,
+    T: Service<Uri> + Send + Sync + 'static + Clone,
+    T::Response: Unpin + Send + 'static + AsyncRead + AsyncWrite + Connection,
+    T::Future: Send + 'static + Unpin,
+    T::Error: Into<Box<dyn StdError + Send + Sync>> + Send + Sync,
 {
-    type Conn = Self::Connection;
+    type Conn = Self::Response;
     type Fut = Self::Future;
     type Err = Self::Error;
 }

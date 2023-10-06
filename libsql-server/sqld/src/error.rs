@@ -147,10 +147,32 @@ impl From<bincode::Error> for Error {
     }
 }
 
+macro_rules! internal_from {
+    ($to:ty  => { $($from:ty,)* }) => {
+        $(
+            impl From<$from> for $to {
+                fn from(v: $from) -> Self {
+                    <$to>::Internal(v.to_string())
+                }
+            }
+        )*
+
+    };
+}
+
+internal_from! {
+    LoadDumpError => {
+        std::io::Error,
+        rusqlite::Error,
+        hyper::Error,
+        tokio::task::JoinError,
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum LoadDumpError {
-    #[error("IO error: {0}")]
-    Io(#[from] std::io::Error),
+    #[error("internal error: {0}")]
+    Internal(String),
     #[error("Cannot load a dump on a replica")]
     ReplicaLoadDump,
     #[error("cannot load from a dump if a database already exists")]
@@ -161,10 +183,12 @@ pub enum LoadDumpError {
     DumpFileDoesntExist,
     #[error("invalid dump url")]
     InvalidDumpUrl,
-    #[error("error fetching dump: {0}")]
-    Fetch(#[from] hyper::Error),
     #[error("unsupported dump url scheme `{0}`, supported schemes are: `http`, `file`")]
     UnsupportedUrlScheme(String),
+    #[error("a dump should execute within a transaction.")]
+    NoTxn,
+    #[error("the dump should commit the transaction.")]
+    NoCommit,
 }
 
 impl ResponseError for LoadDumpError {}
@@ -174,12 +198,14 @@ impl IntoResponse for LoadDumpError {
         use LoadDumpError::*;
 
         match &self {
-            Io(_) | Fetch(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            Internal(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             ReplicaLoadDump
             | LoadDumpExistingDb
             | InvalidDumpUrl
             | DumpFileDoesntExist
             | UnsupportedUrlScheme(_)
+            | NoTxn
+            | NoCommit
             | DumpFilePathNotAbsolute => self.format_err(StatusCode::BAD_REQUEST),
         }
     }

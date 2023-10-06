@@ -12,7 +12,7 @@ use hyper::client::HttpConnector;
 use mimalloc::MiMalloc;
 use tokio::sync::Notify;
 use tokio::time::Duration;
-use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
+use tracing_subscriber::prelude::*;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::Layer;
 
@@ -350,9 +350,17 @@ async fn make_admin_api_config(config: &Cli) -> anyhow::Result<Option<AdminApiCo
         Some(addr) => {
             let acceptor = AddrIncoming::new(tokio::net::TcpListener::bind(addr).await?);
 
-            tracing::info!("listening for incoming admin HTTP connection on {}", addr);
+            tracing::info!("listening for incoming adming HTTP connection on {}", addr);
+            let connector = hyper_rustls::HttpsConnectorBuilder::new()
+                .with_native_roots()
+                .https_or_http()
+                .enable_http1()
+                .build();
 
-            Ok(Some(AdminApiConfig { acceptor }))
+            Ok(Some(AdminApiConfig {
+                acceptor,
+                connector,
+            }))
         }
         None => Ok(None),
     }

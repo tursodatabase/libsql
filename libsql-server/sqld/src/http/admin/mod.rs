@@ -7,6 +7,7 @@ use futures::TryStreamExt;
 use hyper::Body;
 use serde::{Deserialize, Serialize};
 use std::io::ErrorKind;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio_util::io::ReaderStream;
 use url::Url;
@@ -15,6 +16,7 @@ use crate::database::Database;
 use crate::error::LoadDumpError;
 use crate::hrana;
 use crate::namespace::{DumpStream, MakeNamespace, NamespaceName, NamespaceStore, RestoreOption};
+use crate::net::Connector;
 use crate::LIBSQL_PAGE_SIZE;
 
 pub mod stats;
@@ -22,19 +24,22 @@ pub mod stats;
 type UserHttpServer<M> =
     Arc<hrana::http::Server<<<M as MakeNamespace>::Database as Database>::Connection>>;
 
-struct AppState<M: MakeNamespace> {
+struct AppState<M: MakeNamespace, C> {
     namespaces: NamespaceStore<M>,
     user_http_server: UserHttpServer<M>,
+    connector: C,
 }
 
-pub async fn run<M, A>(
+pub async fn run<M, A, C>(
     acceptor: A,
     user_http_server: UserHttpServer<M>,
     namespaces: NamespaceStore<M>,
+    connector: C,
 ) -> anyhow::Result<()>
 where
     A: crate::net::Accept,
     M: MakeNamespace,
+    C: Connector,
 {
     use axum::routing::{get, post};
     let router = axum::Router::new()
@@ -56,6 +61,7 @@ where
         .route("/v1/diagnostics", get(handle_diagnostics))
         .with_state(Arc::new(AppState {
             namespaces,
+            connector,
             user_http_server,
         }));
 
@@ -70,8 +76,8 @@ async fn handle_get_index() -> &'static str {
     "Welcome to the sqld admin API"
 }
 
-async fn handle_get_config<M: MakeNamespace>(
-    State(app_state): State<Arc<AppState<M>>>,
+async fn handle_get_config<M: MakeNamespace, C: Connector>(
+    State(app_state): State<Arc<AppState<M, C>>>,
     Path(namespace): Path<String>,
 ) -> crate::Result<Json<HttpDatabaseConfig>> {
     let store = app_state
@@ -90,8 +96,8 @@ async fn handle_get_config<M: MakeNamespace>(
     Ok(Json(resp))
 }
 
-async fn handle_diagnostics<M: MakeNamespace>(
-    State(app_state): State<Arc<AppState<M>>>,
+async fn handle_diagnostics<M: MakeNamespace, C>(
+    State(app_state): State<Arc<AppState<M, C>>>,
 ) -> crate::Result<Json<Vec<String>>> {
     use crate::connection::Connection;
     use hrana::http::stream;
@@ -127,8 +133,8 @@ struct HttpDatabaseConfig {
     max_db_size: Option<bytesize::ByteSize>,
 }
 
-async fn handle_post_config<M: MakeNamespace>(
-    State(app_state): State<Arc<AppState<M>>>,
+async fn handle_post_config<M: MakeNamespace, C>(
+    State(app_state): State<Arc<AppState<M, C>>>,
     Path(namespace): Path<String>,
     Json(req): Json<HttpDatabaseConfig>,
 ) -> crate::Result<()> {
@@ -155,13 +161,15 @@ struct CreateNamespaceReq {
     max_db_size: Option<bytesize::ByteSize>,
 }
 
-async fn handle_create_namespace<M: MakeNamespace>(
-    State(app_state): State<Arc<AppState<M>>>,
+async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
+    State(app_state): State<Arc<AppState<M, C>>>,
     Path(namespace): Path<String>,
     Json(req): Json<CreateNamespaceReq>,
 ) -> crate::Result<()> {
     let dump = match req.dump_url {
-        Some(ref url) => RestoreOption::Dump(dump_stream_from_url(url).await?),
+        Some(ref url) => {
+            RestoreOption::Dump(dump_stream_from_url(url, app_state.connector.clone()).await?)
+        }
         None => RestoreOption::Latest,
     };
 
@@ -183,8 +191,8 @@ struct ForkNamespaceReq {
     timestamp: NaiveDateTime,
 }
 
-async fn handle_fork_namespace<M: MakeNamespace>(
-    State(app_state): State<Arc<AppState<M>>>,
+async fn handle_fork_namespace<M: MakeNamespace, C>(
+    State(app_state): State<Arc<AppState<M, C>>>,
     Path((from, to)): Path<(String, String)>,
     req: Option<Json<ForkNamespaceReq>>,
 ) -> crate::Result<()> {
@@ -195,14 +203,12 @@ async fn handle_fork_namespace<M: MakeNamespace>(
     Ok(())
 }
 
-async fn dump_stream_from_url(url: &Url) -> Result<DumpStream, LoadDumpError> {
+async fn dump_stream_from_url<C>(url: &Url, connector: C) -> Result<DumpStream, LoadDumpError>
+where
+    C: Connector,
+{
     match url.scheme() {
         "http" | "https" => {
-            let connector = hyper_rustls::HttpsConnectorBuilder::new()
-                .with_native_roots()
-                .https_or_http()
-                .enable_http1()
-                .build();
             let client = hyper::client::Client::builder().build::<_, Body>(connector);
             let uri = url
                 .as_str()
@@ -215,9 +221,7 @@ async fn dump_stream_from_url(url: &Url) -> Result<DumpStream, LoadDumpError> {
             Ok(Box::new(body))
         }
         "file" => {
-            let path = url
-                .to_file_path()
-                .map_err(|_| LoadDumpError::InvalidDumpUrl)?;
+            let path = PathBuf::from(url.path());
             if !path.is_absolute() {
                 return Err(LoadDumpError::DumpFilePathNotAbsolute);
             }
@@ -234,8 +238,8 @@ async fn dump_stream_from_url(url: &Url) -> Result<DumpStream, LoadDumpError> {
     }
 }
 
-async fn handle_delete_namespace<F: MakeNamespace>(
-    State(app_state): State<Arc<AppState<F>>>,
+async fn handle_delete_namespace<F: MakeNamespace, C>(
+    State(app_state): State<Arc<AppState<F, C>>>,
     Path(namespace): Path<String>,
 ) -> crate::Result<()> {
     app_state
