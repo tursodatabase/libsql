@@ -910,13 +910,7 @@ static void jsonRenderNodeAsText(
     case JSON_STRING: {
       assert( pNode->eU==1 );
       if( pNode->jnFlags & JNODE_RAW ){
-        if( pNode->jnFlags & JNODE_LABEL ){
-          jsonAppendChar(pOut, '"');
-          jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
-          jsonAppendChar(pOut, '"');
-        }else{
-          jsonAppendString(pOut, pNode->u.zJContent, pNode->n);
-        }
+        jsonAppendString(pOut, pNode->u.zJContent, pNode->n);
       }else if( pNode->jnFlags & JNODE_JSON5 ){
         jsonAppendNormalizedString(pOut, pNode->u.zJContent, pNode->n);
       }else{
@@ -1564,7 +1558,7 @@ json_parse_restart:
           ){
             k++;
           }
-          jsonParseAddNode(pParse, JSON_STRING | (JNODE_RAW<<8), k-j, &z[j]);
+          jsonParseAddNode(pParse, JSON_STRING, k-j, &z[j]);
           pParse->hasNonstd = 1;
           x = k;
         }else{
@@ -3373,6 +3367,10 @@ static u32 jsonRenderBlob(
       jsonAppendChar(pOut, '"');
       break;
     }
+    case JSONB_TEXTRAW: {
+      jsonAppendString(pOut, (const char*)&pParse->aBlob[i+n], sz);
+      break;
+    }
     case JSONB_ARRAY: {
       jsonAppendChar(pOut, '[');
       j = i+n;
@@ -3481,8 +3479,12 @@ static int jsonParseValueFromBlob(JsonParse *pParse, u32 i){
       jsonParseAddNode(pParse, JSON_REAL | (JNODE_JSON5<<8), sz, zPayload);
       break;
     }
-    case JSONB_TEXT: {
+    case JSONB_TEXTRAW: {
       jsonParseAddNode(pParse, JSON_STRING | (JNODE_RAW<<8), sz, zPayload);
+      break;
+    }
+    case JSONB_TEXT: {
+      jsonParseAddNode(pParse, JSON_STRING, sz, zPayload);
       break;
     }
     case JSONB_TEXTJ: {
@@ -3493,10 +3495,6 @@ static int jsonParseValueFromBlob(JsonParse *pParse, u32 i){
       pParse->hasNonstd = 1;
       jsonParseAddNode(pParse, JSON_STRING | ((JNODE_ESCAPE|JNODE_JSON5)<<8),
                        sz, zPayload);
-      break;
-    }
-    case JSONB_TEXTRAW: {
-      jsonParseAddNode(pParse, JSON_STRING | (JNODE_RAW<<8), sz, zPayload);
       break;
     }
     case JSONB_ARRAY: {
@@ -3527,6 +3525,10 @@ static int jsonParseValueFromBlob(JsonParse *pParse, u32 i){
         pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
       }
       if( k&1 ) return -1;
+      break;
+    }
+    default: {
+      pParse->nErr++;
       break;
     }
   }
