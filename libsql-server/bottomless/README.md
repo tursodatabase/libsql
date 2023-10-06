@@ -33,12 +33,9 @@ From libSQL/SQLite shell, load the extension and open a database file with `bott
 ```sql
 .load ../target/debug/bottomless
 .open file:test.db?wal=bottomless
-PRAGMA page_size=65536;
 PRAGMA journal_mode=wal;
 ```
 Remember to set the journaling mode to `WAL`, which needs to be done at least once, before writing any content, otherwise the custom WAL implementation will not be used.
-
-The recommended page size for replicated WAL is the maximum - 64KiB. Most S3-compatible storage vendors have minimum billable object size set to ~128KiB anyway.
 
 In order to customize logging, use `RUST_LOG` env variable, e.g. `RUST_LOG=info ./libsql`.
 
