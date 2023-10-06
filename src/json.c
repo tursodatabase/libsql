@@ -3512,6 +3512,7 @@ static int jsonParseValueFromBlob(JsonParse *pParse, u32 i){
       if( !pParse->oom ){
         pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
       }
+      if( k&1 ) return -1;
       break;
     }
   }
@@ -3724,10 +3725,10 @@ static u32 jsonLookupBlobStep(
       k = j+n;
       if( k+sz>=iEnd ) return JSON_BLOB_ERROR;
       if( sz==nKey && memcmp(&pParse->aBlob[k], zKey, nKey)==0 ){
-        j = k+sz;        
+        j = k+sz;
         if( ((pParse->aBlob[j])&0x0f)>JSONB_OBJECT ) return JSON_BLOB_ERROR;
         n = jsonbPayloadSize(pParse, j, &sz);
-        if( j+n+sz>iEnd ) return JSON_BLOB_ERROR;
+        if( n==0 || j+n+sz>iEnd ) return JSON_BLOB_ERROR;
         return jsonLookupBlobStep(pParse, j, &zPath[i], pzErr);
       }
       j = k+sz;
@@ -4031,7 +4032,7 @@ static void jsonExtractFromBlob(
   }else if( i==JSON_BLOB_NOTFOUND ){
     return;  /* Return NULL if not found */
   }else if( i==JSON_BLOB_ERROR ){
-    sqlite3_result_error(ctx, "malformed JSONB", -1);
+    sqlite3_result_error(ctx, "malformed JSON", -1);
   }else{
     sqlite3_result_error(ctx, zErr, -1);
   }
@@ -4340,7 +4341,7 @@ static void jsonExtractFunc(
   JsonString jx;
 
   if( argc<2 ) return;
-  if( sqlite3_value_type(argv[0])==SQLITE_BLOB && argc==2 ){
+  if( jsonFuncArgMightBeBinary(argv[0]) && argc==2 ){
     jsonExtractFromBlob(ctx, argv[0], argv[1], flags);
     return;
   }
