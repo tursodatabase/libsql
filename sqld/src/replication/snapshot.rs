@@ -56,17 +56,19 @@ pub struct SnapshotFile {
 fn parse_snapshot_name(name: &str) -> Option<(Uuid, u64, u64)> {
     static SNAPSHOT_FILE_MATCHER: Lazy<Regex> = Lazy::new(|| {
         Regex::new(
-            r#"(?x)
+            r"(?x)
             # match database id
             (\w{8}-\w{4}-\w{4}-\w{4}-\w{12})-
             # match start frame_no
             (\d*)-
             # match end frame_no
-            (\d*).snap"#,
+            (\d*).snap",
         )
         .unwrap()
     });
-    let Some(captures) = SNAPSHOT_FILE_MATCHER.captures(name) else { return None};
+    let Some(captures) = SNAPSHOT_FILE_MATCHER.captures(name) else {
+        return None;
+    };
     let db_id = captures.get(1).unwrap();
     let start_index: u64 = captures.get(2).unwrap().as_str().parse().unwrap();
     let end_index: u64 = captures.get(3).unwrap().as_str().parse().unwrap();
@@ -82,10 +84,16 @@ fn snapshot_list(db_path: &Path) -> anyhow::Result<impl Iterator<Item = String>>
     let mut entries = std::fs::read_dir(snapshot_dir_path(db_path))?;
     Ok(std::iter::from_fn(move || {
         for entry in entries.by_ref() {
-            let Ok(entry) = entry else { continue; };
+            let Ok(entry) = entry else {
+                continue;
+            };
             let path = entry.path();
-            let Some(name) = path.file_name() else {continue;};
-            let Some(name_str) = name.to_str() else { continue;};
+            let Some(name) = path.file_name() else {
+                continue;
+            };
+            let Some(name_str) = name.to_str() else {
+                continue;
+            };
 
             return Some(name_str.to_string());
         }
@@ -100,7 +108,9 @@ pub fn find_snapshot_file(
 ) -> anyhow::Result<Option<SnapshotFile>> {
     let snapshot_dir_path = snapshot_dir_path(db_path);
     for name in snapshot_list(db_path)? {
-        let Some((_, start_frame_no, end_frame_no)) = parse_snapshot_name(&name) else { continue; };
+        let Some((_, start_frame_no, end_frame_no)) = parse_snapshot_name(&name) else {
+            continue;
+        };
         // we're looking for the frame right after the last applied frame on the replica
         if (start_frame_no..=end_frame_no).contains(&frame_no) {
             let snapshot_path = snapshot_dir_path.join(&name);

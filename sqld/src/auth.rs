@@ -79,13 +79,13 @@ impl Auth {
         }
 
         let Some(auth_header) = auth_header else {
-            return Err(AuthError::HttpAuthHeaderMissing)
+            return Err(AuthError::HttpAuthHeaderMissing);
         };
 
         match parse_http_auth_header(auth_header)? {
             HttpAuthHeader::Basic(actual_value) => {
                 let Some(expected_value) = self.http_basic.as_ref() else {
-                    return Err(AuthError::BasicNotAllowed)
+                    return Err(AuthError::BasicNotAllowed);
                 };
                 // NOTE: this naive comparison may leak information about the `expected_value`
                 // using a timing attack
@@ -133,7 +133,7 @@ impl Auth {
         }
 
         let Some(jwt) = jwt else {
-            return Err(AuthError::JwtMissing)
+            return Err(AuthError::JwtMissing);
         };
 
         self.validate_jwt(jwt, disable_namespaces)
@@ -145,7 +145,7 @@ impl Auth {
         disable_namespaces: bool,
     ) -> Result<Authenticated, AuthError> {
         let Some(jwt_key) = self.jwt_key.as_ref() else {
-            return Err(AuthError::JwtNotAllowed)
+            return Err(AuthError::JwtNotAllowed);
         };
         validate_jwt(jwt_key, jwt, disable_namespaces)
     }
@@ -250,11 +250,11 @@ fn parse_http_auth_header(
     header: &hyper::header::HeaderValue,
 ) -> Result<HttpAuthHeader, AuthError> {
     let Ok(header) = header.to_str() else {
-        return Err(AuthError::HttpAuthHeaderInvalid)
+        return Err(AuthError::HttpAuthHeaderInvalid);
     };
 
     let Some((scheme, param)) = header.split_once(' ') else {
-        return Err(AuthError::HttpAuthHeaderInvalid)
+        return Err(AuthError::HttpAuthHeaderInvalid);
     };
 
     if scheme.eq_ignore_ascii_case("basic") {

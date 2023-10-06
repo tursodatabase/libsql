@@ -6,7 +6,7 @@ mod test {
 
     use super::common;
 
-    use libsql::{hrana::HranaError, Database, Value};
+    use libsql::{Database, Value};
     use serde_json::json;
     use sqld::config::{AdminApiConfig, RpcClientConfig, RpcServerConfig, UserApiConfig};
     use tempfile::tempdir;
@@ -215,9 +215,13 @@ mod test {
             )?;
             let conn = db.connect()?;
 
-            let Err(e) = conn.execute("create table test (x)", ()).await else { panic!() };
-            let libsql::Error::Hrana(HranaError::Api(msg)) = e else { panic!() };
-            assert_eq!(msg, "{\"error\":\"Namespace `foo` doesn't exist\"}");
+            let Err(e) = conn.execute("create table test (x)", ()).await else {
+                panic!()
+            };
+            assert_eq!(
+                e.to_string(),
+                "Hrana: `api error: `{\"error\":\"Namespace `foo` doesn't exist\"}``"
+            );
 
             let client = Client::new();
             let resp = client

@@ -583,7 +583,9 @@ pub mod static_init {
         INIT.call_once(|| {
             crate::bottomless_init();
             let orig_methods = unsafe { libsql_wal_methods_find(std::ptr::null()) };
-            if orig_methods.is_null() {}
+            if orig_methods.is_null() {
+                panic!("failed to locate default WAL methods")
+            }
             let methods = crate::bottomless_methods(orig_methods);
             let rc = unsafe { libsql_wal_methods_register(methods) };
             if rc != crate::ffi::SQLITE_OK {

@@ -1,5 +1,6 @@
 [workspace]
 
+resolver = "2"
 members = [
     "bottomless",
     "bottomless-cli",
@@ -33,12 +34,8 @@ publish-jobs = ["homebrew"]
 # Whether cargo-dist should create a Github Release or use an existing draft
 create-release = false
 
-# TODO(lucio): Remove this once tonic has released a new version with fixes
 [patch.crates-io]
-tonic = { git = "https://github.com/hyperium/tonic" }
-tonic-build = { git = "https://github.com/hyperium/tonic" }
-console-api = { git = "https://github.com/tokio-rs/console", branch = "lucio/tonic-fix" }
-libsql = { git = "https://github.com/libsql/libsql.git", rev = "61b4f5b" }
+sqlite3-parser = { git = "https://github.com/LucioFranco/lemon-rs" }
 
 # The profile that 'cargo dist' will build with
 [profile.dist]

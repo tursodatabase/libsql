@@ -379,7 +379,7 @@ pub(super) async fn handle_request<F: MakeNamespace>(
                 while entries.len() < max_count && total_size < max_total_size {
                     let Some(sized_entry) = cursor_hnd.fetch().await? else {
                         done = true;
-                        break
+                        break;
                     };
                     entries.push(sized_entry.entry);
                     total_size += sized_entry.size;
