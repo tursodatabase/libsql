@@ -1,5 +1,5 @@
-C Improved\sdetection\sof\scorrupt\sdatabases\sin\sbalance_nonroot().\ndbsqlfuzz\sd1cf013c50a620b68c2a5bd240d29afd65e5f58e.
-D 2023-10-05T11:06:10.790
+C Increase\sthe\ssize\sof\ssome\svariables\sassociated\swith\sthe\sPMA\ssorter\sin\sorder\nto\savoid\sany\spossibility\sof\sa\ssigned\sinteger\soverflow.\n[https://bugs.chromium.org/p/chromium/issues/detail?id=1489025|Chromium\sfuzzer\sissue\s1489025].
+D 2023-10-06T12:15:01.126
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -787,7 +787,7 @@ F src/vdbeapi.c 4184402246172220418c0ef49ff4cf1a19ced9a4ac6c843c2f0773fb5c543f37
 F src/vdbeaux.c 5b415e09b5b9d5be6c0f4fcbf18ea9d7d16f6a29ced2f14a3b2041020f63e9c1
 F src/vdbeblob.c 2516697b3ee8154eb8915f29466fb5d4f1ae39ee8b755ea909cefaf57ec5e2ce
 F src/vdbemem.c 317b9f48708139db6239ade40c7980b4bc8233168383690d588dad6d8437f722
-F src/vdbesort.c 0d40dca073c94e158ead752ef4225f4fee22dee84145e8c00ca2309afb489015
+F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c 57fa8f56478e5b5cb558cb425e7878515e0a105c54f96f1d1bbf4b9433529254
 F src/vtab.c 154725ebecd3bc02f7fbd7ad3974334f73fff76e02a964e828e48a7c5fb7efff
@@ -2123,8 +2123,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 325bcdea4a436e514d83095d3893caf07a714b718e1b643507179b101c108e3b
-R 30f43ae2972b7eeb2a422e3f17ecbd1a
+P a2464bbb825b5976ef974a2e6c17ea150f5e6fcd0dd0f144b9f9c1c22a9c9c82
+R d4dbf5f4ac62b99dade7d05b682773ba
 U drh
-Z f02a428d25ebde125df5f15b29c884ab
+Z 00019479dba428369c8d2c81fe6aa8ba
 # Remove this line to create a well-formed Fossil manifest.
