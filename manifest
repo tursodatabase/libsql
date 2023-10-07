@@ -1,5 +1,5 @@
-C Add\smissing\ssource\scode\scomments\sand\sfix\sother\sissues\swith\sthe\snew\scode\son\sthis\sbranch.
-D 2023-10-06T20:39:42.133
+C Fix\sa\sproblem\swith\sthe\schanges\son\sthis\sbranch\sand\stables\sthat\suse\san\simplicit\sprimary\skey.
+D 2023-10-07T16:07:02.856
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -529,7 +529,7 @@ F ext/session/sessionG.test 3efe388282d641b65485b5462e67851002cd91a282dc95b685d0
 F ext/session/sessionH.test 71bbff6b1abb2c4ac62b84dee53273c37e0b21e5fde3aed80929403e091ef859
 F ext/session/session_common.tcl e5598096425486b363718e2cda48ee85d660c96b4f8ea9d9d7a4c3ef514769da
 F ext/session/session_speed_test.c dcf0ef58d76b70c8fbd9eab3be77cf9deb8bc1638fed8be518b62d6cbdef88b3
-F ext/session/sessionalter.test 29d77c44087263c63d69be69219734d636ea68635307500d5b0f07a056e4d432
+F ext/session/sessionalter.test 06ac2da2f14fd722409b91d865c840caea4d7670eb759eeb6b64581f37737f4f
 F ext/session/sessionat.test 00c8badb35e43a2f12a716d2734a44d614ff62361979b6b85419035bc04b45ee
 F ext/session/sessionbig.test 47c381e7acfabeef17d98519a3080d69151723354d220afa2053852182ca7adf
 F ext/session/sessiondiff.test ad13dd65664bae26744e1f18eb3cbd5588349b7e9118851d8f9364248d67bcec
@@ -545,7 +545,7 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test b039e38e2ba83767b464baf39b297cc0b1cc6f3292255cb467ea7e12d0d0280c
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c 26ea9b58ccd9fdfd211163bb637833d12c2beb491160e04fd415fd0519aa2685
+F ext/session/sqlite3session.c a371d74dd1b545d43c40363ecfc52cece93521db61a90c152034b47f125de451
 F ext/session/sqlite3session.h 4d1f69f1d8bfd4798e8f6431de301d17bb2e4097de2f77ca4dad494bb6c60dc0
 F ext/session/test_session.c 0b4bc954e5e411baa723e52abd46380ca428797dff39ed62c610001777a2b70f
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -2125,8 +2125,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 897e926a5eaa0eab7e09e5003e4c15c974897be298a18ae85345962dc3f410a1
-R 99b1a1d1e6fc326e3288fb4d2006c57d
+P df39fbe9ab87937beb77af353cd55602290b185e222e0a92a3ebf9a9a0b9e2e7
+R 87820a64ef2d678a0a08630e2b1112e2
 U dan
-Z 6d17292d226b837db6fc5d0737e14243
+Z 7f46b239846dc0ee500d5b995bf91280
 # Remove this line to create a well-formed Fossil manifest.

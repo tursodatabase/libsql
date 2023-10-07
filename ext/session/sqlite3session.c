@@ -1101,6 +1101,8 @@ static int sessionTableInfo(
     pAlloc = sessionMalloc64(pSession, nByte);
     if( pAlloc==0 ){
       rc = SQLITE_NOMEM;
+    }else{
+      memset(pAlloc, 0, nByte);
     }
   }
   if( rc==SQLITE_OK ){
