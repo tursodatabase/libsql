@@ -1,5 +1,5 @@
-C Merge\sthe\smemory\sleak\sfix\sfrom\strunk.
-D 2023-10-07T11:37:00.963
+C Improvements\sto\serror\smessages\sreturned\swhen\sthe\s->>\soperator\sfails.
+D 2023-10-07T17:50:06.014
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -670,7 +670,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 969f4897a681aa786f77ed7122db07475cf95f473d3a2de2572ffae600ec0ac1
+F src/json.c a5d273004e0b0d4b961efe59b403c5b118218b3db2c2d61b4512ea2815ada8b2
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 98cfba10989b3da6f1807ad42444017742db7f100a54f1032af7a8b1295912c0
 F src/main.c 618aeb399e993cf561864f4b0cf6a331ee4f355cf663635f8d9da3193a46aa40
@@ -2124,8 +2124,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 96cfdc31e305406123f6ef1b920423f71902dc4b34381c3efb720274343d37cc f99ff655d09763c4a22d065041644ece793d84c82c644931e89ccf50c4f4564a
-R 9cb62826bab57bac8933243b48ca592e
+P 358de1b09f3d5ec0fe459775b0a2a99dfa235817327016b472aaa1ed56d952e6
+R 65b1837fdcd2785b2dbe03dd6bcb09bb
 U drh
-Z cdf0570fe999933e060b2c73f0eb1dc1
+Z f25f60a6b37a3fc4a80bb7878104ebfa
 # Remove this line to create a well-formed Fossil manifest.

@@ -3696,8 +3696,7 @@ static u32 jsonbArrayCount(JsonParse *pParse, u32 iRoot){
 static u32 jsonLookupBlobStep(
   JsonParse *pParse,      /* The JSON to search */
   u32 iRoot,              /* Begin the search at this element of aBlob[] */
-  const char *zPath,      /* The path to search */
-  const char **pzErr      /* Make *pzErr point to any syntax error in zPath */
+  const char *zPath       /* The path to search */
 ){
   u32 i, j, k, nKey, sz, n, iEnd;
   const char *zKey;
@@ -3707,7 +3706,6 @@ static u32 jsonLookupBlobStep(
   if( zPath[0]==0 ) return iRoot;
   if( zPath[0]=='.' ){
     x = pParse->aBlob[iRoot];
-    if( (x & 0x0f)!=JSONB_OBJECT ) return JSON_BLOB_NOTFOUND;
     zPath++;
     if( zPath[0]=='"' ){
       zKey = zPath + 1;
@@ -3716,7 +3714,6 @@ static u32 jsonLookupBlobStep(
       if( zPath[i] ){
         i++;
       }else{
-        *pzErr = "unterminated \"";
         return JSON_BLOB_PATHERROR;
       }
       testcase( nKey==0 );
@@ -3725,10 +3722,10 @@ static u32 jsonLookupBlobStep(
       for(i=0; zPath[i] && zPath[i]!='.' && zPath[i]!='['; i++){}
       nKey = i;
       if( nKey==0 ){
-        *pzErr = zPath;
-        return 0;
+        return JSON_BLOB_PATHERROR;
       }
     }
+    if( (x & 0x0f)!=JSONB_OBJECT ) return JSON_BLOB_NOTFOUND;
     n = jsonbPayloadSize(pParse, iRoot, &sz);
     j = iRoot + n;
     iEnd = j+sz;
@@ -3744,7 +3741,7 @@ static u32 jsonLookupBlobStep(
         if( ((pParse->aBlob[j])&0x0f)>JSONB_OBJECT ) return JSON_BLOB_ERROR;
         n = jsonbPayloadSize(pParse, j, &sz);
         if( n==0 || j+n+sz>iEnd ) return JSON_BLOB_ERROR;
-        return jsonLookupBlobStep(pParse, j, &zPath[i], pzErr);
+        return jsonLookupBlobStep(pParse, j, &zPath[i]);
       }
       j = k+sz;
       if( ((pParse->aBlob[j])&0x0f)>JSONB_OBJECT ) return JSON_BLOB_ERROR;
@@ -3778,11 +3775,9 @@ static u32 jsonLookupBlobStep(
           k -= nn;
         }
         if( zPath[i]!=']' ){
-          *pzErr = "unterminated [";
           return JSON_BLOB_PATHERROR;
         }
       }else{
-        *pzErr = "bad argument to []";
         return JSON_BLOB_PATHERROR;
       }
     }
@@ -3790,7 +3785,7 @@ static u32 jsonLookupBlobStep(
     iEnd = j+sz;
     while( j<iEnd ){
       if( k==0 ){
-        return jsonLookupBlobStep(pParse, j, &zPath[i+1], pzErr);
+        return jsonLookupBlobStep(pParse, j, &zPath[i+1]);
       }
       k--;
       n = jsonbPayloadSize(pParse, j, &sz);
@@ -3799,7 +3794,6 @@ static u32 jsonLookupBlobStep(
     }
     if( j>iEnd ) return JSON_BLOB_ERROR;
   }else{
-    *pzErr = "syntax error";
     return JSON_BLOB_PATHERROR; 
   }
   return JSON_BLOB_NOTFOUND;
@@ -4011,7 +4005,6 @@ static void jsonExtractFromBlob(
   int flags
 ){
   const char *zPath = (const char*)sqlite3_value_text(pPath);
-  const char *zErr = 0;
   u32 i = 0;
   JsonParse px;
   if( zPath==0 ) return;
@@ -4021,7 +4014,7 @@ static void jsonExtractFromBlob(
   if( px.aBlob==0 ) return;
   if( zPath[0]=='$' ){
     zPath++;
-    i = jsonLookupBlobStep(&px, 0, zPath, &zErr);
+    i = jsonLookupBlobStep(&px, 0, zPath);
   }else if( (flags & JSON_ABPATH) ){
     /* The -> and ->> operators accept abbreviated PATH arguments.  This
     ** is mostly for compatibility with PostgreSQL, but also for
@@ -4044,7 +4037,7 @@ static void jsonExtractFromBlob(
       jsonAppendChar(&jx, 0);
       zPath = jx.zBuf;
     }
-    i = jsonLookupBlobStep(&px, 0, zPath, &zErr);
+    i = jsonLookupBlobStep(&px, 0, zPath);
     jsonStringReset(&jx);
   }else{
     sqlite3_result_error(ctx, "bad path", -1);
@@ -4056,13 +4049,11 @@ static void jsonExtractFromBlob(
     return;  /* Return NULL if not found */
   }else if( i==JSON_BLOB_ERROR ){
     sqlite3_result_error(ctx, "malformed JSON", -1);
-  }else if( i==JSON_BLOB_PATHERROR ){
-    char *zMsg = sqlite3_mprintf("in JSON path '%s': %s",
-                    sqlite3_value_text(pPath), zErr);
+  }else{
+    char *zMsg = sqlite3_mprintf("bad path syntax: %s",
+                    sqlite3_value_text(pPath));
     sqlite3_result_error(ctx, zMsg, -1);
     sqlite3_free(zMsg);
-  }else{
-    sqlite3_result_error(ctx, zErr, -1);
   }
 }
   
