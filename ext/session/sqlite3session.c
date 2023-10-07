@@ -5684,11 +5684,11 @@ static int sessionChangesetExtendRecord(
           break;
       }
     }
-  }else{
+  }else if( op==SQLITE_UPDATE ){
     /* Append missing "undefined" entries to the old.* record. And, if this
     ** is an UPDATE, to the new.* record as well.  */
     int iOff = 0;
-    if( op==SQLITE_UPDATE ){
+    if( pGrp->bPatch==0 ){
       for(ii=0; ii<nCol; ii++){
         iOff += sessionSerialLen(&aRec[iOff]);
       }
@@ -5702,6 +5702,9 @@ static int sessionChangesetExtendRecord(
     for(ii=0; ii<(pTab->nCol-nCol); ii++){
       sessionAppendByte(pOut, 0x00, &rc);
     }
+  }else{
+    assert( op==SQLITE_DELETE && pGrp->bPatch );
+    sessionAppendBlob(pOut, aRec, nRec, &rc);
   }
 
   return rc;

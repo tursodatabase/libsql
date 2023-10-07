@@ -189,44 +189,49 @@ foreach {tn sql1 at sql2} {
     INSERT INTO t4(x, y, c) VALUES(9, 10, 11);
   }
 } {
-  db_restore_and_reopen
-
-  set C1 [changeset_from_sql $sql1]
-  execsql $at
-  set C2 [changeset_from_sql $sql2]
-
-  sqlite3changegroup grp
-  grp schema db main
-  grp add $C1
-  grp add $C2
-  set T1 [grp output]
-  grp delete
-
-  db_restore_and_reopen
-  execsql $at
-  set T2 [changeset_from_sql "$sql1 ; $sql2"]
-
-  if {[string range $tn end end]!="*"} {
-    do_test 3.1.$tn.1 { changeset_to_list $T1 } [changeset_to_list $T2]
-  } else {
-    set tn [string range $tn 0 end-1]
+  foreach {tn2 cmd} {
+    1 changeset_from_sql
+    2 patchset_from_sql
+  } {
+    db_restore_and_reopen
+  
+    set C1 [$cmd $sql1]
+    execsql $at
+    set C2 [$cmd $sql2]
+  
+    sqlite3changegroup grp
+    grp schema db main
+    grp add $C1
+    grp add $C2
+    set T1 [grp output]
+    grp delete
+  
+    db_restore_and_reopen
+    execsql $at
+    set T2 [$cmd "$sql1 ; $sql2"]
+  
+    if {[string range $tn end end]!="*"} {
+      do_test 3.1.$tn.$tn2.1 { changeset_to_list $T1 } [changeset_to_list $T2]
+      set testname "$tn.$tn2"
+    } else {
+      set testname "[string range $tn 0 end-1].$tn2"
+    }
+  
+    db_restore_and_reopen
+    proc xConflict {args} { return "REPLACE" }
+    sqlite3changeset_apply_v2 db $T1 xConflict
+    set S1 [scksum db main]
+  
+    db_restore_and_reopen
+    sqlite3changeset_apply_v2 db $T2 xConflict
+    set S2 [scksum db main]
+  
+    # if { $tn==7 } { puts [changeset_to_list $T1] }
+  
+    do_test 3.1.$tn.2 { set S1 } $S2
   }
-
-  db_restore_and_reopen
-  proc xConflict {args} { return "REPLACE" }
-  sqlite3changeset_apply_v2 db $T1 xConflict
-  set S1 [scksum db main]
-
-  db_restore_and_reopen
-  sqlite3changeset_apply_v2 db $T2 xConflict
-  set S2 [scksum db main]
-
-  # if { $tn==7 } { puts [changeset_to_list $T1] }
-
-  do_test 3.1.$tn.2 { set S1 } $S2
 }
 
 
-
-
 finish_test
+
