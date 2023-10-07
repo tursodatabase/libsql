@@ -3451,7 +3451,7 @@ static int jsonFuncArgMightBeBinary(sqlite3_value *pJson){
   nBlob = sqlite3_value_bytes(pJson);
   if( nBlob<1 ) return 0;
   aBlob = sqlite3_value_blob(pJson);
-  if( (aBlob[0] & 0x0f)>JSONB_OBJECT ) return 0;
+  if( aBlob==0 || (aBlob[0] & 0x0f)>JSONB_OBJECT ) return 0;
   memset(&s, 0, sizeof(s));
   s.aBlob = (u8*)aBlob;
   s.nBlob = nBlob;
