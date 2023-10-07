@@ -2607,24 +2607,55 @@ static void jsonBlobChangePayloadSize(
 ){
   u8 *a;
   u8 szType;
+  u8 nExtra;
+  u8 nNeeded;
+  i8 delta;
   if( pParse->oom ) return;
   a = &pParse->aBlob[i];
   szType = a[0]>>4;
   if( szType<=11 ){
-    assert( szPayload<=11 );
+    nExtra = 0;
+  }else if( szType==12 ){
+    nExtra = 1;
+  }else if( szType==13 ){
+    nExtra = 2;
+  }else{
+    nExtra = 4;
+  }
+  if( szPayload<=11 ){
+    nNeeded = 0;
+  }else if( szPayload<=0xff ){
+    nNeeded = 1;
+  }else if( szPayload<=0xffff ){
+    nNeeded = 2;
+  }else{
+    nNeeded = 4;
+  }
+  delta = nNeeded - nExtra;
+  if( delta ){
+    u32 newSize = pParse->nBlob + delta;
+    if( delta>0 ){
+      if( newSize>pParse->nBlobAlloc && jsonBlobExpand(pParse, newSize) ){
+        return;  /* OOM error.  Error state recorded in pParse->oom. */
+      }
+      a = &pParse->aBlob[i];
+      memmove(&a[1+delta], &a[1], pParse->nBlob - (i+1));
+    }else{
+      memmove(&a[1], &a[1-delta], pParse->nBlob - (i+1-delta));
+    }
+    pParse->nBlob = newSize;
+  }
+  if( nNeeded==0 ){
     a[0] = (a[0] & 0x0f) | (szPayload<<4);
-  }else if( szType==0xc ){
-    assert( szPayload<=0xff );
-    assert( i+1<pParse->nBlob );
+  }else if( nNeeded==1 ){
+    a[0] = (a[0] & 0x0f) | 0xc0;
     a[1] = szPayload & 0xff;
-  }else if( szType==0xd ){
-    assert( szPayload<=0xffff );
-    assert( i+2<pParse->nBlob );
+  }else if( nNeeded==2 ){
+    a[0] = (a[0] & 0x0f) | 0xd0;
     a[1] = (szPayload >> 8) & 0xff;
     a[2] = szPayload & 0xff;
   }else{
-    assert( szType==0xe );
-    assert( i+4<pParse->nBlob );
+    a[0] = (a[0] & 0x0f) | 0xe0;
     a[1] = (szPayload >> 24) & 0xff;
     a[2] = (szPayload >> 16) & 0xff;
     a[3] = (szPayload >> 8) & 0xff;
