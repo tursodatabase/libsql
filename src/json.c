@@ -3716,8 +3716,8 @@ static u32 jsonLookupBlobStep(
       if( zPath[i] ){
         i++;
       }else{
-        *pzErr = zPath;
-        return 0;
+        *pzErr = "unterminated \"";
+        return JSON_BLOB_PATHERROR;
       }
       testcase( nKey==0 );
     }else{
@@ -3778,11 +3778,11 @@ static u32 jsonLookupBlobStep(
           k -= nn;
         }
         if( zPath[i]!=']' ){
-          *pzErr = zPath;
+          *pzErr = "unterminated [";
           return JSON_BLOB_PATHERROR;
         }
       }else{
-        *pzErr = zPath;
+        *pzErr = "bad argument to []";
         return JSON_BLOB_PATHERROR;
       }
     }
@@ -3799,7 +3799,7 @@ static u32 jsonLookupBlobStep(
     }
     if( j>iEnd ) return JSON_BLOB_ERROR;
   }else{
-    *pzErr = zPath;
+    *pzErr = "syntax error";
     return JSON_BLOB_PATHERROR; 
   }
   return JSON_BLOB_NOTFOUND;
@@ -4056,6 +4056,11 @@ static void jsonExtractFromBlob(
     return;  /* Return NULL if not found */
   }else if( i==JSON_BLOB_ERROR ){
     sqlite3_result_error(ctx, "malformed JSON", -1);
+  }else if( i==JSON_BLOB_PATHERROR ){
+    char *zMsg = sqlite3_mprintf("in JSON path '%s': %s",
+                    sqlite3_value_text(pPath), zErr);
+    sqlite3_result_error(ctx, zMsg, -1);
+    sqlite3_free(zMsg);
   }else{
     sqlite3_result_error(ctx, zErr, -1);
   }

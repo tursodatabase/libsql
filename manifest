@@ -1,5 +1,5 @@
-C Report\sunknown\sJSONB\selement\stype\swhen\sparsing\sJSONB\sinto\sJsonNode.
-D 2023-10-07T09:13:59.445
+C Improved\serror\smessages\sfrom\ssearch\son\sJSONB.
+D 2023-10-07T11:36:16.795
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -670,7 +670,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c e1a1da1393d89d9845dccb57cb1e37fa9b753294946c2779d2c94dddbdee799b
+F src/json.c 969f4897a681aa786f77ed7122db07475cf95f473d3a2de2572ffae600ec0ac1
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 98cfba10989b3da6f1807ad42444017742db7f100a54f1032af7a8b1295912c0
 F src/main.c 618aeb399e993cf561864f4b0cf6a331ee4f355cf663635f8d9da3193a46aa40
@@ -2124,8 +2124,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ab2bf3e3596dfa7566f4a130adeccbef4056c7321181112a875477193583f30c
-R 6dab506825da64397c11d8b8419cab92
+P 1f4d3268257bda234c66c3767451b3d39d7b4c7c73a779ad396d9dfc5315905c
+R 473fbbc9196350cff1fe0e5f952691b5
 U drh
-Z be12a743f89d2812c7cba83b03ca7a82
+Z ebe282f031d63d9584408df2f4948927
 # Remove this line to create a well-formed Fossil manifest.
