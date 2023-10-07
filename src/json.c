@@ -2800,9 +2800,7 @@ json_parse_restart:
       pParse->iErr = j;
       return -1;
     }
-    if( pParse->oom==0 ){
-      jsonBlobChangePayloadSize(pParse, iThis, pParse->nBlob - iStart);
-    }
+    jsonBlobChangePayloadSize(pParse, iThis, pParse->nBlob - iStart);
     pParse->iDepth--;
     return j+1;
   }
@@ -2854,9 +2852,7 @@ json_parse_restart:
       pParse->iErr = j;
       return -1;
     }
-    if( pParse->oom==0 ){
-      jsonBlobChangePayloadSize(pParse, iThis, pParse->nBlob - iStart);
-    }
+    jsonBlobChangePayloadSize(pParse, iThis, pParse->nBlob - iStart);
     pParse->iDepth--;
     return j+1;
   }
@@ -3855,12 +3851,7 @@ static void jsonReturnTextJsonFromBlob(
   x.nBlob = nBlob;
   jsonStringInit(&s, ctx);
   jsonRenderBlob(&x, 0, &s);
-  if( x.nErr ){
-    sqlite3_result_error(ctx, "malformed JSON", -1);
-    jsonStringReset(&s);
-  }else{
-    jsonReturnString(&s);
-  }
+  jsonReturnString(&s);
 }
 
 
@@ -3903,7 +3894,6 @@ static void jsonReturnFromBlob(
       int bNeg = 0;
       char x = (char)pParse->aBlob[i+n];
       if( x=='-' && ALWAYS(sz>0) ){ n++; sz--; bNeg = 1; }
-      else if( x=='+' && ALWAYS(sz>0) ){ n++; sz--; }
       z = sqlite3DbStrNDup(db, (const char*)&pParse->aBlob[i+n], (int)sz);
       if( z==0 ) return;
       rc = sqlite3DecOrHexToI64(z, &iRes);
@@ -4029,6 +4019,10 @@ static void jsonReturnFromBlob(
       }else{
         jsonReturnTextJsonFromBlob(pCtx, &pParse->aBlob[i], sz+n);
       }
+      break;
+    }
+    default: {
+      sqlite3_result_error(pCtx, "malformed JSON", -1);
       break;
     }
   }
