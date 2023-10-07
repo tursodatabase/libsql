@@ -3481,31 +3481,38 @@ static int jsonParseValueFromBlob(JsonParse *pParse, u32 i){
   zPayload = &pParse->zJson[i+x];
   switch( t ){
     case JSONB_NULL: {
+      if( sz>0 ) return -1;
       jsonParseAddNode(pParse, JSON_NULL, 0, 0);
       break;
     }
     case JSONB_TRUE: {
+      if( sz>0 ) return -1;
       jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
       break;
     }
     case JSONB_FALSE: {
+      if( sz>0 ) return -1;
       jsonParseAddNode(pParse, JSON_FALSE, 0, 0);
       break;
     }
     case JSONB_INT: {
+      if( sz==0 ) return -1;
       jsonParseAddNode(pParse, JSON_INT, sz, zPayload);
       break;
     }
     case JSONB_INT5: {
+      if( sz==0 ) return -1;
       pParse->hasNonstd = 1;
       jsonParseAddNode(pParse, JSON_INT | (JNODE_JSON5<<8), sz, zPayload);
       break;
     }
     case JSONB_FLOAT: {
+      if( sz==0 ) return -1;
       jsonParseAddNode(pParse, JSON_REAL, sz, zPayload);
       break;
     }
     case JSONB_FLOAT5: {
+      if( sz==0 ) return -1;
       pParse->hasNonstd = 1;
       jsonParseAddNode(pParse, JSON_REAL | (JNODE_JSON5<<8), sz, zPayload);
       break;
