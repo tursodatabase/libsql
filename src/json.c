@@ -3528,8 +3528,7 @@ static int jsonParseValueFromBlob(JsonParse *pParse, u32 i){
       break;
     }
     default: {
-      pParse->nErr++;
-      break;
+      return -1;
     }
   }
   return i+x+sz;
