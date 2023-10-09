@@ -1328,17 +1328,23 @@ testrunner:	testfixture$(TEXE)
 
 # Runs both fuzztest and testrunner, consecutively.
 #
-devtest:	testfixture$(TEXE) fuzztest testrunner
+devtest:	srctree-check testfixture$(TEXE) fuzztest testrunner
 
-mdevtest: has_tclsh85
+mdevtest: srctree-check has_tclsh85
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest
 
 sdevtest: has_tclsh85
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl sdevtest
 
+# Validate that various generated files in the source tree
+# are up-to-date.
+#
+srctree-check:	$(TOP)/tool/srctree-check.tcl
+	$(TCLSH_CMD) $(TOP)/tool/srctree-check.tcl
+
 # Testing for a release
 #
-releasetest: testfixture$(TEXE)
+releasetest: srctree-check testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl release
 
 # Minimal testing that runs in less than 3 minutes
@@ -1349,7 +1355,7 @@ quicktest:	./testfixture$(TEXE)
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	fuzztest sourcetest $(TESTPROGS) tcltest
+test:	srctree-check fuzztest sourcetest $(TESTPROGS) tcltest
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
