@@ -97,6 +97,17 @@ fn parse_queries(queries: Vec<QueryObject>) -> crate::Result<Vec<Query>> {
         out.push(query);
     }
 
+    // It's too complicated to predict the state of a transaction with savepoints in legacy http,
+    // forbid them instead.
+    if out
+        .iter()
+        .any(|q| q.stmt.kind.is_release() || q.stmt.kind.is_release())
+    {
+        return Err(Error::QueryError(
+            "savepoints are not supported in HTTP API, use hrana protocol instead".to_string(),
+        ));
+    }
+
     match predict_final_state(State::Init, out.iter().map(|q| &q.stmt)) {
         State::Txn => {
             return Err(Error::QueryError(
