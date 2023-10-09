@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.*;
-import static org.sqlite.jni.SQLite3Jni.*;
+import static org.sqlite.jni.CApi.*;
 
 /**
    Modes for how to escape (or not) column values and names from
@@ -668,7 +668,7 @@ public class SQLTester {
   static {
     System.loadLibrary("sqlite3-jni")
       /* Interestingly, when SQLTester is the main app, we have to
-         load that lib from here. The same load from SQLite3Jni does
+         load that lib from here. The same load from CApi does
          not happen early enough. Without this,
          installCustomExtensions() is an unresolved symbol. */;
   }

@@ -24,12 +24,7 @@ public final class sqlite3_stmt extends NativePointerHolder<sqlite3_stmt>
   // Only invoked from JNI.
   private sqlite3_stmt(){}
 
-  //For as-yet-unknown reasons, this triggers a JVM crash.
-  //@Override protected void finalize(){
-  //  SQLite3Jni.sqlite3_finalize(this.clearNativePointer());
-  //}
-
   @Override public void close(){
-    SQLite3Jni.sqlite3_finalize(this.clearNativePointer());
+    CApi.sqlite3_finalize(this.clearNativePointer());
   }
 }

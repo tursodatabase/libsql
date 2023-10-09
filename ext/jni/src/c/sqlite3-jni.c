@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** This file implements the JNI bindings declared in
-** org.sqlite.jni.SQLiteJni (from which sqlite3-jni.h is generated).
+** org.sqlite.jni.CApi (from which sqlite3-jni.h is generated).
 */
 
 /*
@@ -161,7 +161,7 @@
 ** prefix seen in this macro.
 */
 #define JniFuncName(Suffix) \
-  Java_org_sqlite_jni_SQLite3Jni_sqlite3_ ## Suffix
+  Java_org_sqlite_jni_CApi_sqlite3_ ## Suffix
 
 /* Prologue for JNI function declarations and definitions. */
 #define JniDecl(ReturnType,Suffix) \
@@ -5661,11 +5661,11 @@ Java_org_sqlite_jni_SQLTester_installCustomExtensions(JniArgsEnvClass){
 ////////////////////////////////////////////////////////////////////////
 
 /*
-** Called during static init of the SQLite3Jni class to set up global
+** Called during static init of the CApi class to set up global
 ** state.
 */
 JNIEXPORT void JNICALL
-Java_org_sqlite_jni_SQLite3Jni_init(JniArgsEnvClass){
+Java_org_sqlite_jni_CApi_init(JniArgsEnvClass){
   jclass klazz;
 
   memset(&S3JniGlobal, 0, sizeof(S3JniGlobal));

@@ -2,7 +2,7 @@
    This package houses a JNI binding to the SQLite3 C API.
 
    <p>The primary interfaces are in {@link
-   org.sqlite.jni.SQLite3Jni}.</p>
+   org.sqlite.jni.CApi}.</p>
 
    <h1>API Goals and Requirements</h1>
 

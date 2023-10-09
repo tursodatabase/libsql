@@ -45,9 +45,9 @@ DISTCLEAN_FILES := $(dir.jni)/*~ $(dir.src.c)/*~ $(dir.src.jni)/*~
 
 sqlite3-jni.h := $(dir.src.c)/sqlite3-jni.h
 .NOTPARALLEL: $(sqlite3-jni.h)
-SQLite3Jni.java := src/org/sqlite/jni/SQLite3Jni.java
+CApi.java := src/org/sqlite/jni/CApi.java
 SQLTester.java := src/org/sqlite/jni/SQLTester.java
-SQLite3Jni.class := $(SQLite3Jni.java:.java=.class)
+CApi.class := $(CApi.java:.java=.class)
 SQLTester.class := $(SQLTester.java:.java=.class)
 
 ########################################################################
@@ -78,7 +78,6 @@ $(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
 # Be explicit about which Java files to compile so that we can work on
 # in-progress files without requiring them to be in a compilable statae.
 JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
-  annotation/Canonical.java \
   annotation/NotNull.java \
   annotation/Nullable.java \
   AbstractCollationCallback.java \
@@ -99,9 +98,11 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   ResultCode.java \
   RollbackHookCallback.java \
   ScalarFunction.java \
+  Sqlite.java \
+  SqliteException.java \
   SQLFunction.java \
   CallbackProxy.java \
-  SQLite3Jni.java \
+  CApi.java \
   TableColumnMetadata.java \
   TraceV2Callback.java \
   UpdateHookCallback.java \
@@ -114,6 +115,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
 )
 JAVA_FILES.unittest := $(patsubst %,$(dir.src.jni)/%,\
   Tester1.java \
+  Tester2.java \
 )
 ifeq (1,$(enable.fts5))
   JAVA_FILES.unittest += $(patsubst %,$(dir.src.jni)/%,\
@@ -243,7 +245,7 @@ $$(dir.bld.c)/org_sqlite_jni$(3)_$(2).h: $(1)/$(2).java
 endef
 # Invoke ADD_JNI_H once for each Java file which includes JNI
 # declarations:
-$(eval $(call ADD_JNI_H,$(dir.src.jni),SQLite3Jni,))
+$(eval $(call ADD_JNI_H,$(dir.src.jni),CApi,))
 $(eval $(call ADD_JNI_H,$(dir.src.jni),SQLTester,))
 ifeq (1,$(enable.fts5))
  $(eval $(call ADD_JNI_H,$(dir.src.fts5),Fts5ExtensionApi,_fts5))
@@ -295,19 +297,23 @@ $(package.dll): $(sqlite3-jni.c) $(MAKEFILE)
 all: $(package.dll)
 
 .PHONY: test test-one
-test.flags ?=
-test.main.flags = -ea -Djava.library.path=$(dir.bld.c) \
-                  $(java.flags) -cp $(classpath) \
-                  org.sqlite.jni.Tester1
+Tester1.flags ?=
+Tester2.flags ?=
+test.flags.jvm = -ea -Djava.library.path=$(dir.bld.c) \
+                  $(java.flags) -cp $(classpath)
 test.deps := $(CLASS_FILES) $(package.dll)
 test-one: $(test.deps)
-	$(bin.java) $(test.main.flags) $(test.flags)
+	$(bin.java) $(test.flags.jvm) org.sqlite.jni.Tester1 $(Tester1.flags)
+#	$(bin.java) $(test.flags.jvm) org.sqlite.jni.Tester2 $(Tester2.flags)
 test-sqllog: $(test.deps)
 	@echo "Testing with -sqllog..."
-	$(bin.java) $(test.main.flags) -sqllog
+	$(bin.java) $(test.flags.jvm) -sqllog
 test-mt: $(test.deps)
 	@echo "Testing in multi-threaded mode:";
-	$(bin.java) $(test.main.flags) -t 7 -r 50 -shuffle $(test.flags)
+	$(bin.java) $(test.flags.jvm) org.sqlite.jni.Tester1 \
+    -t 7 -r 50 -shuffle $(Tester1.flags)
+	$(bin.java) $(test.flags.jvm) org.sqlite.jni.Tester2 \
+    -t 7 -r 50 -shuffle $(Tester2.flags)
 
 test: test-one test-mt
 tests: test test-sqllog

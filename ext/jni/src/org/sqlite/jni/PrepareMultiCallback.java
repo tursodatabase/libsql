@@ -14,7 +14,7 @@
 package org.sqlite.jni;
 
 /**
-   Callback for use with {@link SQLite3Jni#sqlite3_prepare_multi}.
+   Callback for use with {@link CApi#sqlite3_prepare_multi}.
 */
 public interface PrepareMultiCallback extends CallbackProxy {
 
@@ -53,7 +53,7 @@ public interface PrepareMultiCallback extends CallbackProxy {
       try {
         return this.p.call(st);
       }finally{
-        SQLite3Jni.sqlite3_finalize(st);
+        CApi.sqlite3_finalize(st);
       }
     }
   }
@@ -70,9 +70,9 @@ public interface PrepareMultiCallback extends CallbackProxy {
        else the result of the final step is returned.
     */
     @Override public int call(sqlite3_stmt st){
-      int rc = SQLite3Jni.SQLITE_DONE;
-      while( SQLite3Jni.SQLITE_ROW == (rc = SQLite3Jni.sqlite3_step(st)) ){}
-      return SQLite3Jni.SQLITE_DONE==rc ? 0 : rc;
+      int rc = CApi.SQLITE_DONE;
+      while( CApi.SQLITE_ROW == (rc = CApi.sqlite3_step(st)) ){}
+      return CApi.SQLITE_DONE==rc ? 0 : rc;
     }
   }
 }

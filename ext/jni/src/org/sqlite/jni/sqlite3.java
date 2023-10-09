@@ -30,19 +30,14 @@ public final class sqlite3 extends NativePointerHolder<sqlite3>
     if( 0==ptr ){
       return sqlite3.class.getSimpleName()+"@null";
     }
-    final String fn = SQLite3Jni.sqlite3_db_filename(this, "main");
+    final String fn = CApi.sqlite3_db_filename(this, "main");
     return sqlite3.class.getSimpleName()
       +"@"+String.format("0x%08x",ptr)
       +"["+((null == fn) ? "<unnamed>" : fn)+"]"
       ;
   }
 
-  @Override protected void finalize(){
-    //System.out.println(this+".finalize()");
-    SQLite3Jni.sqlite3_close_v2(this.clearNativePointer());
-  }
-
   @Override public void close(){
-    SQLite3Jni.sqlite3_close_v2(this.clearNativePointer());
+    CApi.sqlite3_close_v2(this.clearNativePointer());
   }
 }

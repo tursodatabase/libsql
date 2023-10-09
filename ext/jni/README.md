@@ -55,7 +55,7 @@ Hello World
 
 ```java
 import org.sqlite.jni.*;
-import static org.sqlite.jni.SQLite3Jni.*;
+import static org.sqlite.jni.CApi.*;
 
 ...
 

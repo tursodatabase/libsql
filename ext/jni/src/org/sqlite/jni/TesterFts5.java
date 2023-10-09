@@ -12,7 +12,7 @@
 ** This file contains a set of tests for the sqlite3 JNI bindings.
 */
 package org.sqlite.jni;
-import static org.sqlite.jni.SQLite3Jni.*;
+import static org.sqlite.jni.CApi.*;
 import static org.sqlite.jni.Tester1.*;
 import org.sqlite.jni.*;
 import org.sqlite.jni.fts5.*;

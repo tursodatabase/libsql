@@ -4766,6 +4766,7 @@ static void jsonReplaceFunc(
   }
   pParse = jsonParseCached(ctx, argv[0], ctx, argc>1);
   if( pParse==0 ) return;
+  pParse->nJPRef++;
   for(i=1; i<(u32)argc; i+=2){
     zPath = (const char*)sqlite3_value_text(argv[i]);
     pParse->useMod = 1;
@@ -4778,6 +4779,7 @@ static void jsonReplaceFunc(
   jsonReturnNodeAsJson(pParse, pParse->aNode, ctx, 1);
 replace_err:
   jsonDebugPrintParse(pParse);
+  jsonParseFree(pParse);
 }
 
 
@@ -4813,6 +4815,7 @@ static void jsonSetFunc(
   }
   pParse = jsonParseCached(ctx, argv[0], ctx, argc>1);
   if( pParse==0 ) return;
+  pParse->nJPRef++;
   for(i=1; i<(u32)argc; i+=2){
     zPath = (const char*)sqlite3_value_text(argv[i]);
     bApnd = 0;
@@ -4829,9 +4832,8 @@ static void jsonSetFunc(
   }
   jsonDebugPrintParse(pParse);
   jsonReturnNodeAsJson(pParse, pParse->aNode, ctx, 1);
-
 jsonSetDone:
-  /* no cleanup required */;
+  jsonParseFree(pParse);
 }
 
 /*
