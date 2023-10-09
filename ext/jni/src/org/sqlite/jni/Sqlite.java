@@ -29,9 +29,14 @@ public final class Sqlite implements AutoCloseable  {
     this.db = db;
   }
 
-  public static Sqlite open(String filename, int flags, String zVfs){
+  /**
+     Returns a newly-opened db connection or throws SqliteException if
+     opening fails. All arguments are as documented for
+     sqlite3_open_v2().
+  */
+  public static Sqlite open(String filename, int flags, String vfsName){
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
-    final int rc = sqlite3_open_v2(filename, out, flags, zVfs);
+    final int rc = sqlite3_open_v2(filename, out, flags, vfsName);
     final sqlite3 n = out.take();
     if( 0!=rc ){
       if( null==n ) throw new SqliteException(rc);
@@ -55,6 +60,10 @@ public final class Sqlite implements AutoCloseable  {
     }
   }
 
+  /**
+     Returns this object's underlying native db handle, or null if
+     this instance has been closed.
+  */
   sqlite3 dbHandle(){ return this.db; }
 
 }
