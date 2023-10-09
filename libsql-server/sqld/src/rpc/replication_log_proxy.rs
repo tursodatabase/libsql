@@ -12,7 +12,9 @@ pub struct ReplicationLogProxyService {
 
 impl ReplicationLogProxyService {
     pub fn new(channel: Channel, uri: Uri) -> Self {
-        let client = ReplicationLogClient::with_origin(channel, uri);
+        let client =
+            ReplicationLogClient::with_origin(channel, uri).max_decoding_message_size(usize::MAX);
+
         Self { client }
     }
 }

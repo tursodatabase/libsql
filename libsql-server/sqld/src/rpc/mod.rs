@@ -85,9 +85,8 @@ pub async fn run_rpc_server<A: crate::net::Accept>(
             .await
             .context("http server")?;
     } else {
-        let proxy = ProxyServer::new(proxy_service).max_encoding_message_size(usize::MAX);
-        let replication =
-            ReplicationLogServer::new(logger_service).max_encoding_message_size(usize::MAX);
+        let proxy = ProxyServer::new(proxy_service);
+        let replication = ReplicationLogServer::new(logger_service);
 
         let router = tonic::transport::Server::builder()
             .layer(&option_layer(idle_shutdown_layer))
