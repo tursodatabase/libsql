@@ -142,6 +142,7 @@ impl Options {
                 None,
                 "Static",
             ))
+            .retry_config(aws_sdk_s3::config::retry::RetryConfig::standard().with_max_attempts(6))
             .build();
         Ok(conf)
     }
