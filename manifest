@@ -1,5 +1,5 @@
-C Turn\son\sSEH\sby\sdefault\swhen\sbuilding\susing\sMSVC.
-D 2023-10-09T14:05:21.110
+C Fix\sa\scompiler\swarning\scaused\sby\sthe\sprevious\scheck-in.
+D 2023-10-09T14:47:25.814
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -719,7 +719,7 @@ F src/shell.c.in b34146fe139a7d0f5f49de5059e7bbe6892f9d5dce952c6f9f7a602e5df8646
 F src/sqlite.h.in 4f39f61c35348f0c56dd2c7a2294d1f0564389a0086dab80ce0960bfd772dc1b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2f30b2671f4c03cd27a43f039e11251391066c97d11385f5f963bb40b03038ac
-F src/sqliteInt.h c387a6d478db286330e611a97eb2beecbea1181b2a04abb30c5b90de74c26810
+F src/sqliteInt.h 3c8a3f1bf889a632dbbaecbd3334e9e8d7fdb63b26ee09d6d384af0cc757d64c
 F src/sqliteLimit.h 33b1c9baba578d34efe7dfdb43193b366111cdf41476b1e82699e14c11ee1fb6
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2127,8 +2127,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a163fecca90cab9d1b7bf8ebac78d498775eed7b6d81e7920e3401633c3a4b60
-R d8e67e543c6bc2983d62b297a1d54a3f
+P f57e8275cf1ab3ad8027044cda0893282d1c403a5aa9fabbb1c7de280597b5cd
+R 7d888a965eb459cec17310ccf81e043c
 U drh
-Z d910e6ddf87b0ff9b9f8c8908129c67e
+Z 6f1f41a6145e7a01f70d3d3a152db721
 # Remove this line to create a well-formed Fossil manifest.

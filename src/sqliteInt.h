@@ -325,7 +325,7 @@
 #if defined(_MSC_VER) && !defined(SQLITE_OMIT_SEH)
 # define SQLITE_USE_SEH 1
 #else
-# undef SQLITE_USE_SEH 0
+# undef SQLITE_USE_SEH
 #endif
 
 /*
