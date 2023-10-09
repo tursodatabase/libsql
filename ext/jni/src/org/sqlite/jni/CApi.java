@@ -35,10 +35,11 @@ import java.util.Arrays;
   <p>This class is package-private in order to keep Java clients from
   having direct access to the low-level C-style APIs, a design
   decision made by Java developers based on the C-style API being
-  riddled with opportunities for other Java to proverbially shoot
+  riddled with opportunities for Java developers to proverbially shoot
   themselves in the foot with. Third-party copies of this code may
   eliminate that guard by simply changing this class from
-  package-private to public.
+  package-private to public. Its methods which are intended to be
+  exposed that way are all public.
 
   <p>Only functions which materially differ from their C counterparts
   are documented here, and only those material differences are
@@ -100,8 +101,8 @@ final class CApi {
   private static native void init();
 
   /**
-     Returns a nul-terminated copy of s as a byte array, or null if s
-     is null.
+     Returns a nul-terminated copy of s as a UTF-8-encoded byte array,
+     or null if s is null.
   */
   private static byte[] nulTerminateUtf8(String s){
     return null==s ? null : (s+"\0").getBytes(StandardCharsets.UTF_8);
@@ -127,8 +128,7 @@ final class CApi {
      <p>This routine returns false without side effects if the current
      JNIEnv is not cached, else returns true, but this information is
      primarily for testing of the JNI bindings and is not information
-     which client-level code should use to make any informed
-     decisions.
+     which client-level code can use to make any informed decisions.
   */
   public static native boolean sqlite3_java_uncache_thread();
 
@@ -159,15 +159,15 @@ final class CApi {
      Functions almost as documented for the C API, with these
      exceptions:
 
-     <p>- The callback interface is is shorter because of
+     <p>- The callback interface is shorter because of
      cross-language differences. Specifically, 3rd argument to the C
      auto-extension callback interface is unnecessary here.
-
 
      <p>The C API docs do not specifically say so, but if the list of
      auto-extensions is manipulated from an auto-extension, it is
      undefined which, if any, auto-extensions will subsequently
-     execute for the current database.
+     execute for the current database. That is, doing so will result
+     in unpredictable, but not undefined, behavior.
 
      <p>See the AutoExtension class docs for more information.
   */
@@ -297,7 +297,7 @@ final class CApi {
      overload than to do that in C, so that signature is the
      public-facing one.
   */
-  static native int sqlite3_bind_parameter_index(
+  private static native int sqlite3_bind_parameter_index(
     @NotNull long ptrToStmt, @NotNull byte[] paramName
   );
 
@@ -701,7 +701,7 @@ final class CApi {
      This implementation is private because it's too easy to pass it
      non-NUL-terminated byte arrays from client code.
   */
-  public static native int sqlite3_complete(
+  private static native int sqlite3_complete(
     @NotNull byte[] nulTerminatedUtf8Sql
   );
 
@@ -709,7 +709,7 @@ final class CApi {
      Unlike the C API, this returns SQLITE_MISUSE if its argument is
      null (as opposed to invoking UB).
   */
-  static int sqlite3_complete(@NotNull String sql){
+  public static int sqlite3_complete(@NotNull String sql){
     return sqlite3_complete( nulTerminateUtf8(sql) );
   }
 
@@ -970,7 +970,7 @@ final class CApi {
      more ways to shoot themselves in the foot without providing any
      real utility.
   */
-  static native int sqlite3_prepare(
+  private static native int sqlite3_prepare(
     @NotNull long ptrToDb, @NotNull byte[] sqlUtf8, int maxBytes,
     @NotNull OutputPointer.sqlite3_stmt outStmt,
     @Nullable OutputPointer.Int32 pTailOffset
@@ -1028,7 +1028,7 @@ final class CApi {
   /**
      @see #sqlite3_prepare
   */
-  static native int sqlite3_prepare_v2(
+  private static native int sqlite3_prepare_v2(
     @NotNull long ptrToDb, @NotNull byte[] sqlUtf8, int maxBytes,
     @NotNull OutputPointer.sqlite3_stmt outStmt,
     @Nullable OutputPointer.Int32 pTailOffset
@@ -1080,7 +1080,7 @@ final class CApi {
   /**
      @see #sqlite3_prepare
   */
-  static native int sqlite3_prepare_v3(
+  private static native int sqlite3_prepare_v3(
     @NotNull long ptrToDb, @NotNull byte[] sqlUtf8, int maxBytes,
     int prepFlags, @NotNull OutputPointer.sqlite3_stmt outStmt,
     @Nullable OutputPointer.Int32 pTailOffset
@@ -1518,7 +1518,7 @@ final class CApi {
      This overload is private because its final parameter is arguably
      unnecessary in Java.
   */
-  public static native void sqlite3_result_blob(
+  private static native void sqlite3_result_blob(
     @NotNull sqlite3_context cx, @Nullable byte[] blob, int maxLen
   );
 
@@ -1546,7 +1546,7 @@ final class CApi {
      <p>This overload is private because its final parameter is
      arguably unnecessary in Java.</p>
   */
-  public static native void sqlite3_result_blob64(
+  private static native void sqlite3_result_blob64(
     @NotNull sqlite3_context cx, @Nullable byte[] blob, long maxLen
   );
 
@@ -1560,7 +1560,7 @@ final class CApi {
      This overload is private because its final parameter is
      arguably unnecessary in Java.
   */
-  public static native void sqlite3_result_text(
+  private static native void sqlite3_result_text(
     @NotNull sqlite3_context cx, @Nullable byte[] utf8, int maxLen
   );
 
@@ -1603,7 +1603,7 @@ final class CApi {
      This overload is private because its maxLength parameter is
      arguably unnecessary in Java.
   */
-  public static native void sqlite3_result_text64(
+  private static native void sqlite3_result_text64(
     @NotNull sqlite3_context cx, @Nullable byte[] text,
     long maxLength, int encoding
   );
@@ -1713,7 +1713,7 @@ final class CApi {
      (sqlite3_strglob(String,String)) than to do that in C, so that
      signature is the public-facing one.
   */
-  public static native int sqlite3_strglob(
+  private static native int sqlite3_strglob(
     @NotNull byte[] glob, @NotNull byte[] nullTerminatedUtf8
   );
 
@@ -1727,7 +1727,7 @@ final class CApi {
   /**
      The LIKE counterpart of the private sqlite3_strglob() method.
   */
-  public static native int sqlite3_strlike(
+  private static native int sqlite3_strlike(
     @NotNull byte[] glob, @NotNull byte[] nullTerminatedUtf8,
     int escChar
   );
