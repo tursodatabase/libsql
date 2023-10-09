@@ -337,7 +337,7 @@ struct JsonParse {
   u32 iErr;          /* Error location in zJson[] */
   u32 iSubst;        /* Last JSON_SUBST entry in aNode[] */
   u32 iHold;         /* Age of this entry in the cache for LRU replacement */
-  /* Binary format */
+  /* Storage for the binary JSONB format */
   u32 nBlob;         /* Bytes of aBlob[] actually used */
   u32 nBlobAlloc;    /* Bytes allocated to aBlob[] */
   u8 *aBlob;         /* BLOB representation of zJson */
@@ -356,12 +356,12 @@ struct JsonParse {
 ** Forward references
 **************************************************************************/
 static void jsonReturnStringAsBlob(JsonString*);
-static void jsonRenderNodeAsBlob(JsonParse*,JsonNode*,JsonParse*);
+static void jsonXlateNodeToBlob(JsonParse*,JsonNode*,JsonParse*);
 static int jsonParseAddNode(JsonParse*,u32,u32,const char*);
-static int jsonParseValueFromBlob(JsonParse *pParse, u32 i);
+static int jsonXlateBlobToNode(JsonParse *pParse, u32 i);
 static int jsonFuncArgMightBeBinary(sqlite3_value *pJson);
 static JsonNode *jsonLookupAppend(JsonParse*,const char*,int*,const char**);
-static u32 jsonRenderBlob(JsonParse*,u32,JsonString*);
+static u32 jsonXlateBlobToText(JsonParse*,u32,JsonString*);
 
 /**************************************************************************
 ** Utility routines for dealing with JsonString objects
@@ -735,7 +735,7 @@ static void jsonAppendSqlValue(
         memset(&px, 0, sizeof(px));
         px.aBlob = (u8*)sqlite3_value_blob(pValue);
         px.nBlob = sqlite3_value_bytes(pValue);
-        jsonRenderBlob(&px, 0, p);
+        jsonXlateBlobToText(&px, 0, p);
       }else if( p->eErr==0 ){
         sqlite3_result_error(p->pCtx, "JSON cannot hold BLOB values", -1);
         p->eErr = JSTRING_ERR;
@@ -868,11 +868,10 @@ static int jsonParseAddCleanup(
 }
 
 /*
-** Convert the JsonNode pNode into a pure JSON string and
-** append to pOut.  Subsubstructure is also included.  Return
-** the number of JsonNode objects that are encoded.
+** Translate the JsonNode pNode into a pure JSON string and
+** append that string on pOut.  Subsubstructure is also included.
 */
-static void jsonRenderNodeAsText(
+static void jsonXlateNodeToText(
   JsonParse *pParse,             /* the complete parse of the JSON */
   JsonNode *pNode,               /* The node to render */
   JsonString *pOut               /* Write JSON here */
@@ -947,7 +946,7 @@ static void jsonRenderNodeAsText(
         while( j<=pNode->n ){
           if( (pNode[j].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ){
             jsonAppendSeparator(pOut);
-            jsonRenderNodeAsText(pParse, &pNode[j], pOut);
+            jsonXlateNodeToText(pParse, &pNode[j], pOut);
           }
           j += jsonNodeSize(&pNode[j]);
         }
@@ -967,9 +966,9 @@ static void jsonRenderNodeAsText(
         while( j<=pNode->n ){
           if( (pNode[j+1].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ){
             jsonAppendSeparator(pOut);
-            jsonRenderNodeAsText(pParse, &pNode[j], pOut);
+            jsonXlateNodeToText(pParse, &pNode[j], pOut);
             jsonAppendChar(pOut, ':');
-            jsonRenderNodeAsText(pParse, &pNode[j+1], pOut);
+            jsonXlateNodeToText(pParse, &pNode[j+1], pOut);
           }
           j += 1 + jsonNodeSize(&pNode[j+1]);
         }
@@ -1012,7 +1011,7 @@ static void jsonReturnNodeAsJson(
   if( flags & JSON_BLOB ){
     JsonParse x;
     memset(&x, 0, sizeof(x));
-    jsonRenderNodeAsBlob(pParse, pNode, &x);
+    jsonXlateNodeToBlob(pParse, pNode, &x);
     if( x.oom ){
       sqlite3_result_error_nomem(pCtx);
       sqlite3_free(x.aBlob);
@@ -1021,7 +1020,7 @@ static void jsonReturnNodeAsJson(
     }
   }else{
     jsonStringInit(&s, pCtx);
-    jsonRenderNodeAsText(pParse, pNode, &s);
+    jsonXlateNodeToText(pParse, pNode, &s);
     if( bGenerateAlt && pParse->zAlt==0 && jsonForceRCStr(&s) ){
       pParse->zAlt = sqlite3RCStrRef(s.zBuf);
       pParse->nAlt = s.nUsed;
@@ -1072,7 +1071,7 @@ static u32 jsonHexToInt4(const char *z){
 ** value returned is either RFC-8259 JSON text or a BLOB in the JSONB
 ** format, depending on the JSON_BLOB flag of the function user-data.
 */
-static void jsonReturnNodeAsSql(
+static void jsonReturnFromNode(
   JsonParse *pParse,          /* Complete JSON parse tree */
   JsonNode *pNode,            /* Node to return */
   sqlite3_context *pCtx       /* Return value for this function */
@@ -1510,8 +1509,11 @@ static const struct NanInfName {
 };
 
 /*
-** Parse a single JSON value which begins at pParse->zJson[i].  Return the
-** index of the first character past the end of the value parsed.
+** Translate a single element of JSON text beginning at pParse->zJson[i] into
+** its JsonNode representation.  Append the translation onto the 
+** pParse->aNode[] array, which is increased in size as necessary.
+** Return the pJson->zJson[] index of the first character past the end of
+** the element that was parsed.
 **
 ** Special return values:
 **
@@ -1522,7 +1524,7 @@ static const struct NanInfName {
 **     -4    ',' seen    /     the index in zJson[] of the seen character
 **     -5    ':' seen   /
 */
-static int jsonParseValueFromText(JsonParse *pParse, u32 i){
+static int jsonXlateTextToNode(JsonParse *pParse, u32 i){
   char c;
   u32 j;
   int iThis;
@@ -1541,7 +1543,7 @@ json_parse_restart:
     }
     for(j=i+1;;j++){
       u32 nNode = pParse->nNode;
-      x = jsonParseValueFromText(pParse, j);
+      x = jsonXlateTextToNode(pParse, j);
       if( x<=0 ){
         if( x==(-2) ){
           j = pParse->iErr;
@@ -1584,7 +1586,7 @@ json_parse_restart:
             goto parse_object_value;
           }
         }
-        x = jsonParseValueFromText(pParse, j);
+        x = jsonXlateTextToNode(pParse, j);
         if( x!=(-5) ){
           if( x!=(-1) ) pParse->iErr = j;
           return -1;
@@ -1592,7 +1594,7 @@ json_parse_restart:
         j = pParse->iErr+1;
       }
     parse_object_value:
-      x = jsonParseValueFromText(pParse, j);
+      x = jsonXlateTextToNode(pParse, j);
       if( x<=0 ){
         if( x!=(-1) ) pParse->iErr = j;
         return -1;
@@ -1611,7 +1613,7 @@ json_parse_restart:
             break;
           }
         }
-        x = jsonParseValueFromText(pParse, j);
+        x = jsonXlateTextToNode(pParse, j);
         if( x==(-4) ){
           j = pParse->iErr;
           continue;
@@ -1640,7 +1642,7 @@ json_parse_restart:
     }
     memset(&pParse->aNode[iThis].u, 0, sizeof(pParse->aNode[iThis].u));
     for(j=i+1;;j++){
-      x = jsonParseValueFromText(pParse, j);
+      x = jsonXlateTextToNode(pParse, j);
       if( x<=0 ){
         if( x==(-3) ){
           j = pParse->iErr;
@@ -1664,7 +1666,7 @@ json_parse_restart:
             break;
           }
         }
-        x = jsonParseValueFromText(pParse, j);
+        x = jsonXlateTextToNode(pParse, j);
         if( x==(-4) ){
           j = pParse->iErr;
           continue;
@@ -2004,9 +2006,9 @@ static int jsonParse(
   if( pParse->isBinary ){
     pParse->aBlob = (u8*)pParse->zJson;
     pParse->nBlob = pParse->nJson;
-    i = jsonParseValueFromBlob(pParse, 0);
+    i = jsonXlateBlobToNode(pParse, 0);
   }else{
-    i = jsonParseValueFromText(pParse, 0);
+    i = jsonXlateTextToNode(pParse, 0);
   }
   if( pParse->oom ) i = -1;
   if( !pParse->isBinary && i>0 ){
@@ -2679,12 +2681,12 @@ static int jsonIs4HexB(const char *z, int *pOp){
 }
 
 /*
-** Parse a single JSON text value which begins at pParse->zJson[i] into
-** its equivalent BLOB representation in pParse->aBlob[].  The parse is
-** appended to pParse->aBlob[] beginning at pParse->nBlob.  The size of
+** Translate a single element of JSON text at pParse->zJson[i] into
+** its equivalent binary JSONB representation.  Append the translation into
+** pParse->aBlob[] beginning at pParse->nBlob.  The size of
 ** pParse->aBlob[] is increased as necessary.
 **
-** Return the index of the first character past the end of the value parsed,
+** Return the index of the first character past the end of the element parsed,
 ** or one of the following special result codes:
 **
 **      0    End of input
@@ -2694,7 +2696,7 @@ static int jsonIs4HexB(const char *z, int *pOp){
 **     -4    ',' seen    /     the index in zJson[] of the seen character
 **     -5    ':' seen   /
 */
-static int jsonTranslateTextValueToBlob(JsonParse *pParse, u32 i){
+static int jsonXlateTextToBlob(JsonParse *pParse, u32 i){
   char c;
   u32 j;
   u32 iThis, iStart;
@@ -2714,7 +2716,7 @@ json_parse_restart:
     iStart = pParse->nBlob;
     for(j=i+1;;j++){
       u32 iBlob = pParse->nBlob;
-      x = jsonTranslateTextValueToBlob(pParse, j);
+      x = jsonXlateTextToBlob(pParse, j);
       if( x<=0 ){
         int op;
         if( x==(-2) ){
@@ -2760,7 +2762,7 @@ json_parse_restart:
             goto parse_object_value;
           }
         }
-        x = jsonTranslateTextValueToBlob(pParse, j);
+        x = jsonXlateTextToBlob(pParse, j);
         if( x!=(-5) ){
           if( x!=(-1) ) pParse->iErr = j;
           return -1;
@@ -2768,7 +2770,7 @@ json_parse_restart:
         j = pParse->iErr+1;
       }
     parse_object_value:
-      x = jsonTranslateTextValueToBlob(pParse, j);
+      x = jsonXlateTextToBlob(pParse, j);
       if( x<=0 ){
         if( x!=(-1) ) pParse->iErr = j;
         return -1;
@@ -2787,7 +2789,7 @@ json_parse_restart:
             break;
           }
         }
-        x = jsonTranslateTextValueToBlob(pParse, j);
+        x = jsonXlateTextToBlob(pParse, j);
         if( x==(-4) ){
           j = pParse->iErr;
           continue;
@@ -2815,7 +2817,7 @@ json_parse_restart:
       return -1;
     }
     for(j=i+1;;j++){
-      x = jsonTranslateTextValueToBlob(pParse, j);
+      x = jsonXlateTextToBlob(pParse, j);
       if( x<=0 ){
         if( x==(-3) ){
           j = pParse->iErr;
@@ -2839,7 +2841,7 @@ json_parse_restart:
             break;
           }
         }
-        x = jsonTranslateTextValueToBlob(pParse, j);
+        x = jsonXlateTextToBlob(pParse, j);
         if( x==(-4) ){
           j = pParse->iErr;
           continue;
@@ -3156,7 +3158,7 @@ static int jsonConvertTextToBlob(
 ){
   int i;
   const char *zJson = pParse->zJson;
-  i = jsonTranslateTextValueToBlob(pParse, 0);
+  i = jsonXlateTextToBlob(pParse, 0);
   if( pParse->oom ) i = -1;
   if( i>0 ){
     assert( pParse->iDepth==0 );
@@ -3194,7 +3196,7 @@ static void jsonReturnStringAsBlob(JsonString *pStr){
   memset(&px, 0, sizeof(px));
   px.zJson = pStr->zBuf;
   px.nJson = pStr->nUsed;
-  (void)jsonTranslateTextValueToBlob(&px, 0);
+  (void)jsonXlateTextToBlob(&px, 0);
   if( px.oom ){
     sqlite3_free(px.aBlob);
     sqlite3_result_error_nomem(pStr->pCtx);
@@ -3253,9 +3255,10 @@ static u32 jsonbPayloadSize(JsonParse *pParse, u32 i, u32 *pSz){
 
 
 /*
-** Convert the binary BLOB representation of JSON beginning at
-** aBlob[0] and extending for no more than nBlob bytes into
-** a pure JSON string.  The string is appended to pOut.
+** Translate the binary JSONB representation of JSON beginning at
+** pParse->aBlob[i] into a JSON text string.  Append the JSON
+** text onto the end of pOut.  Return the index in pParse->aBlob[]
+** of the first byte past the end of the element that is translated.
 **
 ** If an error is detected in the BLOB input, the pOut->eErr flag
 ** might get set to JSTRING_MALFORMED.  But not all BLOB input errors
@@ -3264,7 +3267,7 @@ static u32 jsonbPayloadSize(JsonParse *pParse, u32 i, u32 *pSz){
 **
 ** The pOut->eErr JSTRING_OOM flag is set on a OOM.
 */
-static u32 jsonRenderBlob(
+static u32 jsonXlateBlobToText(
   JsonParse *pParse,             /* the complete parse of the JSON */
   u32 i,                         /* Start rendering at this index */
   JsonString *pOut               /* Write JSON here */
@@ -3403,7 +3406,7 @@ static u32 jsonRenderBlob(
       j = i+n;
       iEnd = j+sz;
       while( j<iEnd ){
-        j = jsonRenderBlob(pParse, j, pOut);
+        j = jsonXlateBlobToText(pParse, j, pOut);
         jsonAppendChar(pOut, ',');
       }
       if( sz>0 ) pOut->nUsed--;
@@ -3416,7 +3419,7 @@ static u32 jsonRenderBlob(
       j = i+n;
       iEnd = j+sz;
       while( j<iEnd ){
-        j = jsonRenderBlob(pParse, j, pOut);
+        j = jsonXlateBlobToText(pParse, j, pOut);
         jsonAppendChar(pOut, (x++ & 1) ? ',' : ':');
       }
       if( sz>0 ) pOut->nUsed--;
@@ -3458,14 +3461,13 @@ static int jsonFuncArgMightBeBinary(sqlite3_value *pJson){
   return sz+n==(u32)nBlob;
 }
 
-/* Parse a single element of binary JSON into the legacy Node structure.  
-** Return the index of the first byte past the end of the binary JSON element.
-**
-** This routine is a temporary translator while the legacy Node encoding
-** is still in use.  It will be removed after all processing translates
-** to the new BLOB encoding.
+/* Translate a single element of JSONB into the JsonNode format.  The
+** first byte of the element to be translated is at pParse->aBlob[i].
+** Return the index in pParse->aBlob[] of the first byte past the end
+** of the JSONB element.  Append the JsonNode translation in
+** pParse->aNode[], which is increased in size as necessary.
 */
-static int jsonParseValueFromBlob(JsonParse *pParse, u32 i){
+static int jsonXlateBlobToNode(JsonParse *pParse, u32 i){
   u8 t;     /* Node type */
   u32 sz;   /* Node size */
   u32 x;    /* Index of payload start */
@@ -3535,7 +3537,7 @@ static int jsonParseValueFromBlob(JsonParse *pParse, u32 i){
       int iThis = jsonParseAddNode(pParse, JSON_ARRAY, 0, 0);
       u32 j = i+x;
       while( j<i+x+sz ){
-        int r = jsonParseValueFromBlob(pParse, j);
+        int r = jsonXlateBlobToNode(pParse, j);
         if( r<=0 ) return -1;
         j = (u32)r;
       }
@@ -3548,7 +3550,7 @@ static int jsonParseValueFromBlob(JsonParse *pParse, u32 i){
       int iThis = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
       u32 j = i+x, k = 0;
       while( j<i+x+sz ){
-        int r = jsonParseValueFromBlob(pParse, j);
+        int r = jsonXlateBlobToNode(pParse, j);
         if( r<=0 ) return -1;
         if( (k++&1)==0 && !pParse->oom ){
           pParse->aNode[pParse->nNode-1].jnFlags |= JNODE_LABEL;
@@ -3569,10 +3571,11 @@ static int jsonParseValueFromBlob(JsonParse *pParse, u32 i){
 }
 
 /*
-** Convert pNode that belongs to pParse into the BLOB representation.
-** The BLOB representation is added to the pOut->aBlob[] array.
+** Translate pNode (which is always a node found in pParse->aNode[]) into 
+** the JSONB representation and append the translation onto the end of the
+** pOut->aBlob[] array.
 */
-static void jsonRenderNodeAsBlob(
+static void jsonXlateNodeToBlob(
   JsonParse *pParse,             /* the complete parse of the JSON */
   JsonNode *pNode,               /* The node to render */
   JsonParse *pOut                /* Write the BLOB rendering of JSON here */
@@ -3661,7 +3664,7 @@ static void jsonRenderNodeAsBlob(
       for(;;){
         while( j<=pNode->n ){
           if( (pNode[j].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ){
-            jsonRenderNodeAsBlob(pParse, &pNode[j], pOut);
+            jsonXlateNodeToBlob(pParse, &pNode[j], pOut);
           }
           j += jsonNodeSize(&pNode[j]);
         }
@@ -3682,8 +3685,8 @@ static void jsonRenderNodeAsBlob(
       for(;;){
         while( j<=pNode->n ){
           if( (pNode[j+1].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ){
-            jsonRenderNodeAsBlob(pParse, &pNode[j], pOut);
-            jsonRenderNodeAsBlob(pParse, &pNode[j+1], pOut);
+            jsonXlateNodeToBlob(pParse, &pNode[j], pOut);
+            jsonXlateNodeToBlob(pParse, &pNode[j+1], pOut);
           }
           j += 1 + jsonNodeSize(&pNode[j+1]);
         }
@@ -3850,7 +3853,7 @@ static void jsonReturnTextJsonFromBlob(
   x.aBlob = (u8*)aBlob;
   x.nBlob = nBlob;
   jsonStringInit(&s, ctx);
-  jsonRenderBlob(&x, 0, &s);
+  jsonXlateBlobToText(&x, 0, &s);
   jsonReturnString(&s);
 }
 
@@ -4431,13 +4434,13 @@ static void jsonExtractFunc(
         if( flags & JSON_JSON ){
           jsonReturnNodeAsJson(p, pNode, ctx, 0);
         }else{
-          jsonReturnNodeAsSql(p, pNode, ctx);
+          jsonReturnFromNode(p, pNode, ctx);
           sqlite3_result_subtype(ctx, 0);
         }
       }
     }else{
       pNode = jsonLookup(p, zPath, 0, ctx);
-      if( p->nErr==0 && pNode ) jsonReturnNodeAsSql(p, pNode, ctx);
+      if( p->nErr==0 && pNode ) jsonReturnFromNode(p, pNode, ctx);
     }
   }else{
     /* Two or more PATH arguments results in a JSON array with each
@@ -4451,7 +4454,7 @@ static void jsonExtractFunc(
       if( p->nErr ) break;
       jsonAppendSeparator(&jx);
       if( pNode ){
-        jsonRenderNodeAsText(p, pNode, &jx);
+        jsonXlateNodeToText(p, pNode, &jx);
       }else{
         jsonAppendRawNZ(&jx, "null", 4);
       }
@@ -5379,7 +5382,7 @@ static int jsonEachColumn(
     case JEACH_KEY: {
       if( p->i==0 ) break;
       if( p->eType==JSON_OBJECT ){
-        jsonReturnNodeAsSql(&p->sParse, pThis, ctx);
+        jsonReturnFromNode(&p->sParse, pThis, ctx);
       }else if( p->eType==JSON_ARRAY ){
         u32 iKey;
         if( p->bRecursive ){
@@ -5395,7 +5398,7 @@ static int jsonEachColumn(
     }
     case JEACH_VALUE: {
       if( pThis->jnFlags & JNODE_LABEL ) pThis++;
-      jsonReturnNodeAsSql(&p->sParse, pThis, ctx);
+      jsonReturnFromNode(&p->sParse, pThis, ctx);
       break;
     }
     case JEACH_TYPE: {
@@ -5406,7 +5409,7 @@ static int jsonEachColumn(
     case JEACH_ATOM: {
       if( pThis->jnFlags & JNODE_LABEL ) pThis++;
       if( pThis->eType>=JSON_ARRAY ) break;
-      jsonReturnNodeAsSql(&p->sParse, pThis, ctx);
+      jsonReturnFromNode(&p->sParse, pThis, ctx);
       break;
     }
     case JEACH_ID: {

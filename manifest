@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\sfixes\sand\senhancements\sinto\sthe\sjsonb\sbranch,\sand\nespecially\sthe\sJSON\scache\sspill\sUAF\sfix.
-D 2023-10-09T12:57:03.290
+C Systematize\sthe\snames\sof\ssome\sof\sthe\stranslation\sfunction\sin\sthe\sJSON\nimplementation.
+D 2023-10-09T18:33:01.568
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -245,7 +245,7 @@ F ext/jni/src/org/sqlite/jni/AggregateFunction.java 7312486bc65fecdb91753c0a4515
 F ext/jni/src/org/sqlite/jni/AuthorizerCallback.java fde5f758ad170ca45ae00b12194c8ba8d8f3090bd64cc3e002dd9c5e7dff8568
 F ext/jni/src/org/sqlite/jni/AutoExtensionCallback.java c0fbfd3779fc92982c7935325a7484dee43eeb80d716989ed31218f453addb94
 F ext/jni/src/org/sqlite/jni/BusyHandlerCallback.java 4cb7fc70efd55583fed6033c34a8719da42975ca97ef4781dda0b9f6cc8ec2e8
-F ext/jni/src/org/sqlite/jni/CApi.java c1dde485a3a3f43c46c8d9c527f9ba5bf303fe0409b2c0de253fb7b6e1055f7e w ext/jni/src/org/sqlite/jni/SQLite3Jni.java
+F ext/jni/src/org/sqlite/jni/CApi.java c1dde485a3a3f43c46c8d9c527f9ba5bf303fe0409b2c0de253fb7b6e1055f7e
 F ext/jni/src/org/sqlite/jni/CallbackProxy.java 064a8a00e4c63cc501c30504f93ca996d422c5f010067f969b2d0a10f0868153
 F ext/jni/src/org/sqlite/jni/CollationCallback.java 8cf57cb014a645ecc12609eed17308852a597bc5e83d82a4fdb90f7fadc25f9d
 F ext/jni/src/org/sqlite/jni/CollationNeededCallback.java 0c62245e000d5db52576c728cac20f6a31f31f5cf40ca4cbcd64b22964e82ae5
@@ -674,7 +674,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 8717fe7a6461f24ba7b92ccd323c8e2417f44f2a959704c5a05a7aac1ca0df12
+F src/json.c bbf52181d04e09852e273f11cf31544a8030ffc911359cb7f77e39f252cce7a6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 98cfba10989b3da6f1807ad42444017742db7f100a54f1032af7a8b1295912c0
 F src/main.c 618aeb399e993cf561864f4b0cf6a331ee4f355cf663635f8d9da3193a46aa40
@@ -2128,8 +2128,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cbea16c29eb0507f39b5a1cf744a3bb9bb7c71ac156e84a19d03a37cb1816891 a163fecca90cab9d1b7bf8ebac78d498775eed7b6d81e7920e3401633c3a4b60
-R 1dd322f61ae3b783d06705b01094df38
+P 9422c24f4a8b290dcae61e50ec81be5b314b22c61a2bca1e194e47da1316b6e6
+R 3ec6096d3289810ffc9770092e31c712
 U drh
-Z 41e410a665a938a0454df231f95bd4b4
+Z 411045c6779d7c6439ce2a3295f7e71a
 # Remove this line to create a well-formed Fossil manifest.
