@@ -8,6 +8,8 @@ pub mod rows;
 pub mod statement;
 pub mod transaction;
 
+pub(crate) mod impls;
+
 pub use libsql_sys::ffi;
 pub use libsql_sys::ValueType;
 

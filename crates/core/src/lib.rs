@@ -47,7 +47,7 @@ macro_rules! cfg_core {
     ($($item:item)*) => {
         $(
             #[cfg(feature = "core")]
-            #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
+            #[cfg_attr(docsrs, doc(cfg(feature = "core")))]
             $item
         )*
     }
@@ -56,8 +56,18 @@ macro_rules! cfg_core {
 macro_rules! cfg_replication {
     ($($item:item)*) => {
         $(
-            #[cfg(feature = "core")]
-            #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
+            #[cfg(feature = "replication")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "replication")))]
+            $item
+        )*
+    }
+}
+
+macro_rules! cfg_hrana {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "hrana")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "replication")))]
             $item
         )*
     }
@@ -76,27 +86,37 @@ cfg_replication! {
     pub use replication::{Frame, FrameNo, Frames, TempSnapshot};
 }
 
+cfg_core! {
+    pub use libsql_sys::ffi;
+}
+
 mod util;
 
 pub mod errors;
 pub use errors::Error;
 
-pub use params::{params_from_iter, Value, ValueRef};
+pub use params::params_from_iter;
 
 mod connection;
-mod hrana;
+mod database;
 mod rows;
 mod statement;
 mod transaction;
+mod value;
+
+pub use value::{Value, ValueRef};
+
+cfg_hrana! {
+    mod hrana;
+}
 
 pub use self::{
-    connection::{Connection, Database, OpenFlags},
+    connection::Connection,
+    database::Database,
     rows::{Column, Row, Rows},
     statement::Statement,
     transaction::{Transaction, TransactionBehavior},
 };
-
-pub use libsql_sys::ffi;
 
 pub type Result<T> = std::result::Result<T, errors::Error>;
 pub(crate) type BoxError = Box<dyn std::error::Error + Send + Sync>;

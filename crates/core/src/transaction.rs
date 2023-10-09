@@ -41,18 +41,3 @@ pub(crate) trait Tx {
     async fn commit(&mut self) -> Result<()>;
     async fn rollback(&mut self) -> Result<()>;
 }
-
-pub(super) struct LibsqlTx(pub(super) Option<crate::local::Transaction>);
-
-#[async_trait::async_trait]
-impl Tx for LibsqlTx {
-    async fn commit(&mut self) -> Result<()> {
-        let tx = self.0.take().expect("Tx already dropped");
-        tx.commit()
-    }
-
-    async fn rollback(&mut self) -> Result<()> {
-        let tx = self.0.take().expect("Tx already dropped");
-        tx.rollback()
-    }
-}

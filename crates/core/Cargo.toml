@@ -10,17 +10,16 @@ license = "MIT"
 futures = "0.3.28"
 libsql-sys = { version = "0.2.13", path = "../libsql-sys", optional = true }
 thiserror = "1.0.40"
-# libsql_replication = { version = "0.0.5", path = "../replication", optional = true }
 tokio = { version = "1.29.1", features = ["macros", "fs", "sync"] }
 tracing-subscriber = "0.3.17"
 tracing = "0.1.37"
 parking_lot = "0.12.1"
 hrana-client-proto = "0.2"
-hyper = "0.14"
-hyper-rustls = { version = "0.24", features = ["webpki-roots"] }
+hyper = { version = "0.14", optional = true }
+hyper-rustls = { version = "0.24", features = ["webpki-roots"], optional = true }
 base64 = "0.21"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
 async-trait = "0.1"
 crossbeam-channel = "0.5"
 bitflags = "2.4.0"
@@ -61,9 +60,11 @@ prost-build = "0.12"
 
 
 [features]
-default = ["core", "replication"]
+default = ["core", "replication", "hrana"]
 core = ["libsql-sys"]
 replication = [
+  "serde",
+  "core",
   "dep:bincode",
   "dep:anyhow",
   "dep:bytemuck",
@@ -81,8 +82,18 @@ replication = [
   "dep:tonic-web",
   "dep:tower-http",
   "dep:prost",
-  "dep:http"
+  "dep:http",
+  "dep:hyper",
+  "dep:hyper-rustls"
 ]
+hrana = [
+  "serde",
+  "dep:hyper",
+  "dep:hyper-rustls",
+  "dep:http",
+  "dep:serde_json",
+]
+serde = ["dep:serde"]
 
 [[bench]]
 name = "benchmark"

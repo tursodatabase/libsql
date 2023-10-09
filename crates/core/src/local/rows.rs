@@ -1,6 +1,7 @@
 use crate::local::{Connection, Statement};
-use crate::params::{Params, Value};
+use crate::params::Params;
 use crate::{errors, Error, Result};
+use crate::{Value, ValueRef};
 use libsql_sys::ValueType;
 
 use std::cell::RefCell;
@@ -142,7 +143,7 @@ impl Row {
         self.stmt.inner.column_name(idx)
     }
 
-    pub fn get_ref(&self, idx: i32) -> Result<crate::params::ValueRef<'_>> {
+    pub fn get_ref(&self, idx: i32) -> Result<ValueRef<'_>> {
         Ok(crate::local::Statement::value_ref(
             &self.stmt.inner,
             idx as usize,

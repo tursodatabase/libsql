@@ -1,7 +1,7 @@
 use crate::local::rows::{MappedRows, Row};
 use crate::local::{Connection, Rows};
-use crate::params::{Params, ValueRef};
-use crate::{errors, Column, Error, Result};
+use crate::params::Params;
+use crate::{errors, Column, Error, Result, ValueRef};
 
 use std::cell::RefCell;
 use std::ffi::c_int;

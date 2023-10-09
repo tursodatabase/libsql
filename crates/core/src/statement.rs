@@ -1,6 +1,5 @@
 use crate::params::IntoParams;
 use crate::params::Params;
-use crate::rows::LibsqlRows;
 pub use crate::Column;
 use crate::{Error, Result};
 
@@ -100,46 +99,5 @@ where
             .next()
             .transpose()
             .map(|row_result| row_result.and_then(map))
-    }
-}
-
-pub(crate) struct LibsqlStmt(pub(super) crate::local::Statement);
-
-#[async_trait::async_trait]
-impl Stmt for LibsqlStmt {
-    fn finalize(&mut self) {
-        self.0.finalize();
-    }
-
-    async fn execute(&mut self, params: &Params) -> Result<usize> {
-        let params = params.clone();
-        let stmt = self.0.clone();
-
-        stmt.execute(&params).map(|i| i as usize)
-    }
-
-    async fn query(&mut self, params: &Params) -> Result<Rows> {
-        let params = params.clone();
-        let stmt = self.0.clone();
-
-        stmt.query(&params)
-            .map(LibsqlRows)
-            .map(|r| Rows { inner: Box::new(r) })
-    }
-
-    fn reset(&mut self) {
-        self.0.reset();
-    }
-
-    fn parameter_count(&self) -> usize {
-        self.0.parameter_count()
-    }
-
-    fn parameter_name(&self, idx: i32) -> Option<&str> {
-        self.0.parameter_name(idx)
-    }
-
-    fn columns(&self) -> Vec<Column> {
-        self.0.columns()
     }
 }

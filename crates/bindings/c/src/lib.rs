@@ -339,7 +339,7 @@ pub unsafe extern "C" fn libsql_get_string(
 ) -> std::ffi::c_int {
     let res = res.get_ref();
     match res.get_value(col) {
-        Ok(libsql::params::Value::Text(s)) => {
+        Ok(libsql::Value::Text(s)) => {
             *out_value = translate_string(s);
             0
         }
@@ -370,7 +370,7 @@ pub unsafe extern "C" fn libsql_get_int(
 ) -> std::ffi::c_int {
     let res = res.get_ref();
     match res.get_value(col) {
-        Ok(libsql::params::Value::Integer(i)) => {
+        Ok(libsql::Value::Integer(i)) => {
             *out_value = i;
             0
         }
@@ -394,7 +394,7 @@ pub unsafe extern "C" fn libsql_get_float(
 ) -> std::ffi::c_int {
     let res = res.get_ref();
     match res.get_value(col) {
-        Ok(libsql::params::Value::Real(f)) => {
+        Ok(libsql::Value::Real(f)) => {
             *out_value = f;
             0
         }
@@ -418,7 +418,7 @@ pub unsafe extern "C" fn libsql_get_blob(
 ) -> std::ffi::c_int {
     let res = res.get_ref();
     match res.get_value(col) {
-        Ok(libsql::params::Value::Blob(v)) => {
+        Ok(libsql::Value::Blob(v)) => {
             let len: i32 = v.len().try_into().unwrap();
             let buf = v.into_boxed_slice();
             let data = buf.as_ptr();

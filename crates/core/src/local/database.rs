@@ -1,11 +1,10 @@
 use std::sync::Once;
 
-use crate::local::connection::Connection;
 #[cfg(feature = "replication")]
 use crate::replication::Replicator;
 #[cfg(feature = "replication")]
 pub use crate::replication::{Frames, TempSnapshot};
-use crate::OpenFlags;
+use crate::{database::OpenFlags, local::connection::Connection};
 use crate::{Error::ConnectionFailed, Result};
 use libsql_sys::ffi;
 
