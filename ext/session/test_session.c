@@ -1529,7 +1529,7 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
 
     case 2: {      /* output */
       int nByte = 0;
-      const u8 *aByte = 0;
+      u8 *aByte = 0;
       rc = sqlite3changegroup_output(p->pGrp, &nByte, (void**)&aByte);
       if( rc!=SQLITE_OK ){
         rc = test_session_error(interp, rc, 0);

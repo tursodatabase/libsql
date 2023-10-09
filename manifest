@@ -1,5 +1,5 @@
-C Add\sJNI\sSqlite\sand\sSqliteException\sclasses.\sAdd\sTester2.java\sas\sthe\smain\stest\sapp\sfor\sthe\shigh-level\sAPI.
-D 2023-10-09T11:46:32.020
+C Fix\sharmless\scompiler\swarning\sin\sthe\stest\smodule\sfor\ssessions.
+D 2023-10-09T12:39:59.903
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -549,7 +549,7 @@ F ext/session/sessionstat1.test b039e38e2ba83767b464baf39b297cc0b1cc6f3292255cb4
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
 F ext/session/sqlite3session.c ea28d07a280dc82efd4e98417a10b582058dc11a0f2a6ac3b194aa20d233d758
 F ext/session/sqlite3session.h 4d1f69f1d8bfd4798e8f6431de301d17bb2e4097de2f77ca4dad494bb6c60dc0
-F ext/session/test_session.c 0b4bc954e5e411baa723e52abd46380ca428797dff39ed62c610001777a2b70f
+F ext/session/test_session.c be0610a8ab717c3f9c898576d8b4c43e5eb75384a47fed0a0b22768067552778
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
@@ -2127,8 +2127,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c49d36ece283274963ce2e5a4db1e8f586dffa22e47f4adb93c625f918c3fd5d
-R fe6b079fd83fb48b0f0881df379b853e
-U stephan
-Z 8f2bcd17cd435607663eb211630fda5f
+P 6acf52be7abce8dcf434c5ebf0d5e88859b033e6418077846247ecf00ccf9381
+R b6511d973ff6f4fe2616bdecdd85eae3
+U drh
+Z a23b7d6675008bfc1be60599cdc88bc0
 # Remove this line to create a well-formed Fossil manifest.
