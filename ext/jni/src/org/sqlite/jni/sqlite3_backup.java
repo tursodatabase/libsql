@@ -25,7 +25,7 @@ public final class sqlite3_backup extends NativePointerHolder<sqlite3_backup>
   private sqlite3_backup(){}
 
   @Override public void close(){
-    SQLite3Jni.sqlite3_backup_finish(this);
+    CApi.sqlite3_backup_finish(this);
   }
 
 }

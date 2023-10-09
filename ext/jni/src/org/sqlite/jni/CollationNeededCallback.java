@@ -14,7 +14,7 @@
 package org.sqlite.jni;
 
 /**
-   Callback for use with {@link SQLite3Jni#sqlite3_collation_needed}.
+   Callback for use with {@link CApi#sqlite3_collation_needed}.
 */
 public interface CollationNeededCallback extends CallbackProxy {
   /**

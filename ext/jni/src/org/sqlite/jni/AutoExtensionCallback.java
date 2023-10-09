@@ -14,7 +14,7 @@
 package org.sqlite.jni;
 
 /**
-   Callback for use with the {@link SQLite3Jni#sqlite3_auto_extension}
+   Callback for use with the {@link CApi#sqlite3_auto_extension}
    family of APIs.
 */
 public interface AutoExtensionCallback extends CallbackProxy {

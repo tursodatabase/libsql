@@ -15,7 +15,7 @@ package org.sqlite.jni;
 import org.sqlite.jni.annotation.Nullable;
 
 /**
-   Callback for use with {@link SQLite3Jni#sqlite3_trace_v2}.
+   Callback for use with {@link CApi#sqlite3_trace_v2}.
 */
 public interface TraceV2Callback extends CallbackProxy {
   /**

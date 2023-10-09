@@ -14,7 +14,7 @@
 package org.sqlite.jni;
 
 /**
-   Callback for use with {@link SQLite3Jni#sqlite3_busy_handler}.
+   Callback for use with {@link CApi#sqlite3_busy_handler}.
 */
 public interface BusyHandlerCallback extends CallbackProxy {
   /**

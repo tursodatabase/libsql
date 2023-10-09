@@ -71,7 +71,7 @@ public final class sqlite3_context extends NativePointerHolder<sqlite3_context> 
   */
   public synchronized Long getAggregateContext(boolean initIfNeeded){
       if( aggregateContext==null ){
-        aggregateContext = SQLite3Jni.sqlite3_aggregate_context(this, initIfNeeded);
+        aggregateContext = CApi.sqlite3_aggregate_context(this, initIfNeeded);
         if( !initIfNeeded && null==aggregateContext ) aggregateContext = 0L;
       }
       return (null==aggregateContext || 0!=aggregateContext) ? aggregateContext : null;

@@ -15,7 +15,7 @@ package org.sqlite.jni;
 import org.sqlite.jni.annotation.NotNull;
 
 /**
-   Callback for use with {@link SQLite3Jni#sqlite3_create_collation}.
+   Callback for use with {@link CApi#sqlite3_create_collation}.
 
    @see AbstractCollationCallback
 */

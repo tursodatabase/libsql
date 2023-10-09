@@ -19,7 +19,7 @@ package org.sqlite.jni;
 public interface ConfigSqllogCallback {
   /**
      Must function as described for a C-level callback for
-     {@link SQLite3Jni#sqlite3_config(ConfigSqllogCallback)}, with the slight signature change.
+     {@link CApi#sqlite3_config(ConfigSqllogCallback)}, with the slight signature change.
   */
   void call(sqlite3 db, String msg, int msgType );
 }

@@ -45,9 +45,9 @@ DISTCLEAN_FILES := $(dir.jni)/*~ $(dir.src.c)/*~ $(dir.src.jni)/*~
 
 sqlite3-jni.h := $(dir.src.c)/sqlite3-jni.h
 .NOTPARALLEL: $(sqlite3-jni.h)
-SQLite3Jni.java := src/org/sqlite/jni/SQLite3Jni.java
+CApi.java := src/org/sqlite/jni/CApi.java
 SQLTester.java := src/org/sqlite/jni/SQLTester.java
-SQLite3Jni.class := $(SQLite3Jni.java:.java=.class)
+CApi.class := $(CApi.java:.java=.class)
 SQLTester.class := $(SQLTester.java:.java=.class)
 
 ########################################################################
@@ -78,7 +78,6 @@ $(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
 # Be explicit about which Java files to compile so that we can work on
 # in-progress files without requiring them to be in a compilable statae.
 JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
-  annotation/Canonical.java \
   annotation/NotNull.java \
   annotation/Nullable.java \
   AbstractCollationCallback.java \
@@ -101,7 +100,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   ScalarFunction.java \
   SQLFunction.java \
   CallbackProxy.java \
-  SQLite3Jni.java \
+  CApi.java \
   TableColumnMetadata.java \
   TraceV2Callback.java \
   UpdateHookCallback.java \
@@ -243,7 +242,7 @@ $$(dir.bld.c)/org_sqlite_jni$(3)_$(2).h: $(1)/$(2).java
 endef
 # Invoke ADD_JNI_H once for each Java file which includes JNI
 # declarations:
-$(eval $(call ADD_JNI_H,$(dir.src.jni),SQLite3Jni,))
+$(eval $(call ADD_JNI_H,$(dir.src.jni),CApi,))
 $(eval $(call ADD_JNI_H,$(dir.src.jni),SQLTester,))
 ifeq (1,$(enable.fts5))
  $(eval $(call ADD_JNI_H,$(dir.src.fts5),Fts5ExtensionApi,_fts5))

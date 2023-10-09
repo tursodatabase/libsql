@@ -12,7 +12,7 @@
 ** This file contains a set of tests for the sqlite3 JNI bindings.
 */
 package org.sqlite.jni;
-import static org.sqlite.jni.SQLite3Jni.*;
+import static org.sqlite.jni.CApi.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -934,7 +934,7 @@ public class Tester1 implements Runnable {
   private void listBoundMethods(){
     if(false){
       final java.lang.reflect.Field[] declaredFields =
-        SQLite3Jni.class.getDeclaredFields();
+        CApi.class.getDeclaredFields();
       outln("Bound constants:\n");
       for(java.lang.reflect.Field field : declaredFields) {
         if(java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
@@ -943,7 +943,7 @@ public class Tester1 implements Runnable {
       }
     }
     final java.lang.reflect.Method[] declaredMethods =
-      SQLite3Jni.class.getDeclaredMethods();
+      CApi.class.getDeclaredMethods();
     final java.util.List<String> funcList = new java.util.ArrayList<>();
     for(java.lang.reflect.Method m : declaredMethods){
       if((m.getModifiers() & java.lang.reflect.Modifier.STATIC) != 0){
@@ -1927,7 +1927,7 @@ public class Tester1 implements Runnable {
     int nNatives = 0;
     int nCanonical = 0;
     final java.lang.reflect.Method[] declaredMethods =
-      SQLite3Jni.class.getDeclaredMethods();
+      CApi.class.getDeclaredMethods();
     for(java.lang.reflect.Method m : declaredMethods){
       final int mod = m.getModifiers();
       if( 0!=(mod & java.lang.reflect.Modifier.STATIC) ){
