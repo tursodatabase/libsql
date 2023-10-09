@@ -1925,7 +1925,6 @@ public class Tester1 implements Runnable {
     sqlite3_shutdown();
     int nMethods = 0;
     int nNatives = 0;
-    int nCanonical = 0;
     final java.lang.reflect.Method[] declaredMethods =
       CApi.class.getDeclaredMethods();
     for(java.lang.reflect.Method m : declaredMethods){
@@ -1934,20 +1933,16 @@ public class Tester1 implements Runnable {
         final String name = m.getName();
         if(name.startsWith("sqlite3_")){
           ++nMethods;
-          if( m.isAnnotationPresent( org.sqlite.jni.annotation.Canonical.class ) ){
-            ++nCanonical;
-          }
           if( 0!=(mod & java.lang.reflect.Modifier.NATIVE) ){
             ++nNatives;
           }
         }
       }
     }
-    outln("\tSQLite3Jni.sqlite3_*() methods: "+
+    outln("\tCApi.sqlite3_*() methods: "+
           nMethods+" total, with "+
           nNatives+" native, "+
-          (nMethods - nNatives)+" Java, ",
-          nCanonical," @Canonical"
+          (nMethods - nNatives)+" Java"
     );
     outln("\tTotal test time = "
           +(timeEnd - timeStart)+"ms");

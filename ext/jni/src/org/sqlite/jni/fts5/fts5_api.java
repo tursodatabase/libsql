@@ -33,7 +33,6 @@ public final class fts5_api extends NativePointerHolder<fts5_api> {
   */
   public static synchronized native fts5_api getInstanceForDb(@NotNull sqlite3 db);
 
-  @Canonical
   public synchronized native int xCreateFunction(@NotNull String name,
                                                  @Nullable Object userData,
                                                  @NotNull fts5_extension_function xFunction);

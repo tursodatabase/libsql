@@ -98,6 +98,8 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   ResultCode.java \
   RollbackHookCallback.java \
   ScalarFunction.java \
+  Sqlite.java \
+  SqliteException.java \
   SQLFunction.java \
   CallbackProxy.java \
   CApi.java \
@@ -113,6 +115,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
 )
 JAVA_FILES.unittest := $(patsubst %,$(dir.src.jni)/%,\
   Tester1.java \
+  Tester2.java \
 )
 ifeq (1,$(enable.fts5))
   JAVA_FILES.unittest += $(patsubst %,$(dir.src.jni)/%,\
@@ -294,19 +297,23 @@ $(package.dll): $(sqlite3-jni.c) $(MAKEFILE)
 all: $(package.dll)
 
 .PHONY: test test-one
-test.flags ?=
-test.main.flags = -ea -Djava.library.path=$(dir.bld.c) \
-                  $(java.flags) -cp $(classpath) \
-                  org.sqlite.jni.Tester1
+Tester1.flags ?=
+Tester2.flags ?=
+test.flags.jvm = -ea -Djava.library.path=$(dir.bld.c) \
+                  $(java.flags) -cp $(classpath)
 test.deps := $(CLASS_FILES) $(package.dll)
 test-one: $(test.deps)
-	$(bin.java) $(test.main.flags) $(test.flags)
+	$(bin.java) $(test.flags.jvm) org.sqlite.jni.Tester1 $(Tester1.flags)
+#	$(bin.java) $(test.flags.jvm) org.sqlite.jni.Tester2 $(Tester2.flags)
 test-sqllog: $(test.deps)
 	@echo "Testing with -sqllog..."
-	$(bin.java) $(test.main.flags) -sqllog
+	$(bin.java) $(test.flags.jvm) -sqllog
 test-mt: $(test.deps)
 	@echo "Testing in multi-threaded mode:";
-	$(bin.java) $(test.main.flags) -t 7 -r 50 -shuffle $(test.flags)
+	$(bin.java) $(test.flags.jvm) org.sqlite.jni.Tester1 \
+    -t 7 -r 50 -shuffle $(Tester1.flags)
+	$(bin.java) $(test.flags.jvm) org.sqlite.jni.Tester2 \
+    -t 7 -r 50 -shuffle $(Tester2.flags)
 
 test: test-one test-mt
 tests: test test-sqllog
