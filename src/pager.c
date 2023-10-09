@@ -1492,9 +1492,32 @@ static int writeJournalHdr(Pager *pPager){
     memset(zHeader, 0, sizeof(aJournalMagic)+4);
   }
 
+
+
   /* The random check-hash initializer */
-  sqlite3_randomness(sizeof(pPager->cksumInit), &pPager->cksumInit);
+  if( pPager->journalMode!=PAGER_JOURNALMODE_MEMORY ){
+    sqlite3_randomness(sizeof(pPager->cksumInit), &pPager->cksumInit);
+  }
+#ifdef SQLITE_DEBUG
+  else{
+    /* The Pager.cksumInit variable is usually randomized above to protect
+    ** against there being existing records in the journal file. This is
+    ** dangerous, as following a crash they may be mistaken for records
+    ** written by the current transaction and rolled back into the database
+    ** file, causing corruption. The following assert statements verify
+    ** that this is not required in "journal_mode=memory" mode, as in that
+    ** case the journal file is always 0 bytes in size at this point. 
+    ** It is advantageous to avoid the sqlite3_randomness() call if possible 
+    ** as it takes the global PRNG mutex.  */
+    i64 sz = 0;
+    sqlite3OsFileSize(pPager->jfd, &sz);
+    assert( sz==0 );
+    assert( pPager->journalOff==journalHdrOffset(pPager) );
+    assert( sqlite3JournalIsInMemory(pPager->jfd) );
+  }
+#endif
   put32bits(&zHeader[sizeof(aJournalMagic)+4], pPager->cksumInit);
+
   /* The initial database size */
   put32bits(&zHeader[sizeof(aJournalMagic)+8], pPager->dbOrigSize);
   /* The assumed sector size for this process */
