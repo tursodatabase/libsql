@@ -126,6 +126,13 @@ public class Tester2 implements Runnable {
     }
   }
 
+  void testOpenDb1(){
+    Sqlite db = Sqlite.open(":memory:");
+    affirm( 0!=db.dbHandle().getNativePointer() );
+    db.close();
+    affirm( null==db.dbHandle() );
+  }
+
   @ManualTest /* because we only want to run this test on demand */
   private void testFail(){
     affirm( false, "Intentional failure." );

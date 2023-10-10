@@ -50,7 +50,7 @@ public final class Sqlite implements AutoCloseable  {
   }
 
   public static Sqlite open(String filename){
-    return open(filename, 0, null);
+    return open(filename, SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, null);
   }
 
   @Override public void close(){
