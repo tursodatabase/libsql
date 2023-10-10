@@ -3354,7 +3354,7 @@ static u32 jsonXlateBlobToText(
         if( k>0 ){
           jsonAppendRawNZ(pOut, zIn, k);
           if( sz2<=k ){
-            pOut->eErr |= JSTRING_MALFORMED;
+            if( sz2<k ) pOut->eErr |= JSTRING_MALFORMED;
             break;
           }
           zIn += k;
