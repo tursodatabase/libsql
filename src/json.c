@@ -577,9 +577,13 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
     for(i=0; i<N && zIn[i]!='\\'; i++){}
     if( i>0 ){
       jsonAppendRawNZ(p, zIn, i);
+      if( i>=N ) break;
       zIn += i;
       N -= i;
-      if( N==0 ) break;
+    }
+    if( N<2 ){
+      p->eErr |= JSTRING_MALFORMED;
+      break;
     }
     assert( zIn[0]=='\\' );
     switch( (u8)zIn[1] ){
@@ -590,6 +594,11 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
         jsonAppendRawNZ(p, "\\u0009", 6);
         break;
       case 'x':
+        if( N<4 ){
+          N = 2;
+          p->eErr |= JSTRING_MALFORMED;
+          break;
+        }
         jsonAppendRawNZ(p, "\\u00", 4);
         jsonAppendRawNZ(p, &zIn[2], 2);
         zIn += 2;
@@ -599,14 +608,22 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
         jsonAppendRawNZ(p, "\\u0000", 6);
         break;
       case '\r':
-        if( zIn[2]=='\n' ){
+        if( N>2 && zIn[2]=='\n' ){
           zIn++;
           N--;
         }
         break;
       case '\n':
         break;
-      case 0xe2:
+      case 0xe2:  /* \ followed by U+2028 or U+2029 line terminator ignored */
+        if( N<4
+         || 0x80!=(u8)zIn[2]
+         || (0xa8!=(u8)zIn[3] && 0xa9!=(u8)zIn[3])
+        ){
+          N = 2;
+          p->eErr |= JSTRING_MALFORMED;
+          break;
+        }
         assert( N>=4 );
         assert( 0x80==(u8)zIn[2] );
         assert( 0xa8==(u8)zIn[3] || 0xa9==(u8)zIn[3] );
@@ -617,6 +634,7 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
         jsonAppendRawNZ(p, zIn, 2);
         break;
     }
+    assert( N>=2 );
     zIn += 2;
     N -= 2;
   }
@@ -3353,12 +3371,15 @@ static u32 jsonXlateBlobToText(
         for(k=0; k<sz2 && zIn[k]!='\\'; k++){}
         if( k>0 ){
           jsonAppendRawNZ(pOut, zIn, k);
-          if( sz2<=k ){
-            if( sz2<k ) pOut->eErr |= JSTRING_MALFORMED;
+          if( k>=sz2 ){
             break;
           }
           zIn += k;
           sz2 -= k;
+        }
+        if( sz2<2 ){
+          if( sz2>0 ) pOut->eErr |= JSTRING_MALFORMED;
+          if( sz2==0 ) break;
         }
         assert( zIn[0]=='\\' );
         switch( (u8)zIn[1] ){
@@ -3369,21 +3390,21 @@ static u32 jsonXlateBlobToText(
             jsonAppendRawNZ(pOut, "\\u0009", 6);
             break;
           case 'x':
-            jsonAppendRawNZ(pOut, "\\u00", 4);
-            jsonAppendRawNZ(pOut, &zIn[2], 2);
             if( sz2<2 ){
               pOut->eErr |= JSTRING_MALFORMED;
               sz2 = 0;
-            }else{
-              zIn += 2;
-              sz2 -= 2;
+              break;
             }
+            jsonAppendRawNZ(pOut, "\\u00", 4);
+            jsonAppendRawNZ(pOut, &zIn[2], 2);
+            zIn += 2;
+            sz2 -= 2;
             break;
           case '0':
             jsonAppendRawNZ(pOut, "\\u0000", 6);
             break;
           case '\r':
-            if( zIn[2]=='\n' ){
+            if( sz2>2 && zIn[2]=='\n' ){
               zIn++;
               sz2--;
             }
@@ -3391,6 +3412,9 @@ static u32 jsonXlateBlobToText(
           case '\n':
             break;
           case 0xe2:
+            /* '\' followed by either U+2028 or U+2029 is ignored as
+            ** whitespace.  Not that in UTF8, U+2028 is 0xe2 0x80 0x29.
+            ** U+2029 is the same except for the last byte */
             if( sz2<4
              || 0x80!=(u8)zIn[2]
              || (0xa8!=(u8)zIn[3] && 0xa9!=(u8)zIn[3])
@@ -3407,6 +3431,7 @@ static u32 jsonXlateBlobToText(
             break;
         }
         if( sz2<2 ){
+          sz2 = 0;
           pOut->eErr |= JSTRING_MALFORMED;
           break;
         }
