@@ -1124,7 +1124,7 @@ static void jsonReturnFromNode(
       assert( pNode->eU==1 );
     to_double:
       z = pNode->u.zJContent;
-      sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
+      sqlite3AtoF(z, &r, pNode->n, SQLITE_UTF8);
       sqlite3_result_double(pCtx, r);
       break;
     }
