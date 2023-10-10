@@ -1,5 +1,5 @@
-C Start\sadding\stests\sfor\sthe\ssecond\sJNI\slayer.
-D 2023-10-10T12:16:04.095
+C Fix\sa\sbug\sin\sthe\smkautoconfamal.sh\sscript,\sintroduced\sby\scheck-in\s[3308fdda4b81c110]\nso\sthat\sthe\s"snapshot-tarball"\sand\s"amalgamation-tarball"\smakefile\stargets\nwork\sagain\swhen\srun\sfrom\soutside\sof\sthe\ssource\stree.
+D 2023-10-10T15:33:05.058
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2046,7 +2046,7 @@ F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c c34e5944318415de513d29a6098df247a9618c96d83c38d4abd88641fe46e669
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a1914b176
-F tool/mkautoconfamal.sh 7077151b62ecb2848c5b2d36cdbcd8caa0b58f2c12dcdac6e982da39d29d213c
+F tool/mkautoconfamal.sh cbdcf993fa83dccbef7fb77b39cdeb31ef9f77d9d88c9e343b58d35ca3898a6a
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
 F tool/mkctimec.tcl 372452e24267dfe1b496eec3992d10c6e5e7d7870a152560cdcfe5404bc8cc04 x
 F tool/mkkeywordhash.c b9faa0ae7e14e4dbbcd951cddd786bf46b8a65bb07b129ba8c0cfade723aaffd
@@ -2128,8 +2128,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5e5e4d2b4958c329578d1e5af4ed25c1b774f0ed2d15fa6747d7d7fbbba4fa46
-R 5e127cc43d17bc7acef7ac6f70b2b0dd
-U stephan
-Z 249ac2e75c5aef6851d9f60a37635ecd
+P 0177f4dfe8a5c03c1d5dd279c6babe5a87b596c2351373f845b89fc6abf7947b
+R 37373df44eb3bf4c68a7092e403d96f0
+U drh
+Z 33418d47ecf8795ddbe386dcc10d96d2
 # Remove this line to create a well-formed Fossil manifest.

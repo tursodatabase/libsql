@@ -28,7 +28,7 @@ DATETIME=`grep '^D' $TOP/manifest | sed -e 's/[^0-9]//g' -e 's/\(............\).
 # Verify that the version number in the TEA autoconf file is correct.
 # Fail with an error if not.
 #
-if grep $VERSION autoconf/tea/configure.ac
+if grep $VERSION $TOP/autoconf/tea/configure.ac
 then echo "TEA version number ok"
 else echo "TEA version number mismatch.  Should be $VERSION"; exit 1
 fi
