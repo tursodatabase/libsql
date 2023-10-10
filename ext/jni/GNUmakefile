@@ -304,7 +304,7 @@ test.flags.jvm = -ea -Djava.library.path=$(dir.bld.c) \
 test.deps := $(CLASS_FILES) $(package.dll)
 test-one: $(test.deps)
 	$(bin.java) $(test.flags.jvm) org.sqlite.jni.Tester1 $(Tester1.flags)
-#	$(bin.java) $(test.flags.jvm) org.sqlite.jni.Tester2 $(Tester2.flags)
+	$(bin.java) $(test.flags.jvm) org.sqlite.jni.Tester2 $(Tester2.flags)
 test-sqllog: $(test.deps)
 	@echo "Testing with -sqllog..."
 	$(bin.java) $(test.flags.jvm) -sqllog
