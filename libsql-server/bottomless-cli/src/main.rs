@@ -2,6 +2,7 @@ use anyhow::Result;
 use aws_sdk_s3::Client;
 use chrono::NaiveDateTime;
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
 mod replicator_extras;
 use crate::replicator_extras::detect_db;
@@ -168,6 +169,12 @@ async fn run() -> Result<()> {
         } => {
             tokio::fs::create_dir_all(&database_dir).await?;
             client.restore(generation, utc_time).await?;
+            let db_path = PathBuf::from(&database);
+            if let Err(e) = verify_db(&db_path) {
+                println!("Verification failed: {e}");
+                std::process::exit(1)
+            }
+            println!("Verification: ok");
         }
         Commands::Verify {
             generation,
@@ -179,15 +186,13 @@ async fn run() -> Result<()> {
             client.restore(generation, utc_time).await?;
             let size = tokio::fs::metadata(&temp).await?.len();
             println!("Snapshot size: {size}");
-            let conn = rusqlite::Connection::open(&temp)?;
-            let mut stmt = conn.prepare("PRAGMA integrity_check")?;
-            let mut rows = stmt.query(())?;
-            let result: String = rows.next()?.unwrap().get(0)?;
-            println!("Verification: {result}");
+            let result = verify_db(&temp);
             let _ = tokio::fs::remove_file(&temp).await;
-            if result != "ok" {
+            if let Err(e) = result {
+                println!("Verification failed: {e}");
                 std::process::exit(1)
             }
+            println!("Verification: ok");
         }
         Commands::Rm {
             generation,
@@ -203,6 +208,18 @@ async fn run() -> Result<()> {
         },
     };
     Ok(())
+}
+
+fn verify_db(path: &PathBuf) -> Result<()> {
+    let conn = rusqlite::Connection::open(path)?;
+    let mut stmt = conn.prepare("PRAGMA integrity_check")?;
+    let mut rows = stmt.query(())?;
+    let result: String = rows.next()?.unwrap().get(0)?;
+    if result == "ok" {
+        Ok(())
+    } else {
+        Err(anyhow::anyhow!(result.to_string()))
+    }
 }
 
 #[tokio::main]
