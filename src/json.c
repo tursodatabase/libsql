@@ -3353,7 +3353,10 @@ static u32 jsonXlateBlobToText(
         for(k=0; k<sz2 && zIn[k]!='\\'; k++){}
         if( k>0 ){
           jsonAppendRawNZ(pOut, zIn, k);
-          if( sz2<=k ) break;
+          if( sz2<=k ){
+            pOut->eErr |= JSTRING_MALFORMED;
+            break;
+          }
           zIn += k;
           sz2 -= k;
         }
@@ -3369,6 +3372,7 @@ static u32 jsonXlateBlobToText(
             jsonAppendRawNZ(pOut, "\\u00", 4);
             jsonAppendRawNZ(pOut, &zIn[2], 2);
             if( sz2<2 ){
+              pOut->eErr |= JSTRING_MALFORMED;
               sz2 = 0;
             }else{
               zIn += 2;
@@ -3387,9 +3391,14 @@ static u32 jsonXlateBlobToText(
           case '\n':
             break;
           case 0xe2:
-            assert( sz2>=4 );
-            assert( 0x80==(u8)zIn[2] );
-            assert( 0xa8==(u8)zIn[3] || 0xa9==(u8)zIn[3] );
+            if( sz2<4
+             || 0x80!=(u8)zIn[2]
+             || (0xa8!=(u8)zIn[3] && 0xa9!=(u8)zIn[3])
+            ){
+              pOut->eErr |= JSTRING_MALFORMED;
+              k = sz2;
+              break;
+            }
             zIn += 2;
             sz2 -= 2;
             break;
@@ -3397,7 +3406,10 @@ static u32 jsonXlateBlobToText(
             jsonAppendRawNZ(pOut, zIn, 2);
             break;
         }
-        if( sz2<2 ) break;
+        if( sz2<2 ){
+          pOut->eErr |= JSTRING_MALFORMED;
+          break;
+        }
         zIn += 2;
         sz2 -= 2;
       }
