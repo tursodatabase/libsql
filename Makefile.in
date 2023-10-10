@@ -842,7 +842,8 @@ libsqlapi: sqlite3.h
 
 testlibsql: sqlite3.h
 	cd $(APITOP) && LIBSQL_SRC_DIR=$(TOP) cargo test --all --all-targets --all-features &&\
-		cargo test --all --doc --all-features
+		cargo test --all --doc --all-features &&\
+		cargo install cargo-hack && cargo hack check --each-feature --no-dev-deps
 
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)

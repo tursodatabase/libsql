@@ -1,6 +1,6 @@
 use crate::{Result, Value};
 
-use libsql_sys::ValueType;
+use crate::value::ValueType;
 
 // NOTICE: Column is blatantly copy-pasted from rusqlite
 #[cfg_attr(test, derive(arbitrary::Arbitrary))]
@@ -69,30 +69,6 @@ impl Rows {
 
     pub fn column_type(&self, idx: i32) -> Result<ValueType> {
         self.inner.column_type(idx)
-    }
-}
-
-pub(crate) struct LibsqlRows(pub(crate) crate::local::Rows);
-
-impl RowsInner for LibsqlRows {
-    fn next(&mut self) -> Result<Option<Row>> {
-        let row = self.0.next()?.map(|r| Row {
-            inner: Box::new(LibsqlRow(r)),
-        });
-
-        Ok(row)
-    }
-
-    fn column_count(&self) -> i32 {
-        self.0.column_count()
-    }
-
-    fn column_name(&self, idx: i32) -> Option<&str> {
-        self.0.column_name(idx)
-    }
-
-    fn column_type(&self, idx: i32) -> Result<ValueType> {
-        self.0.column_type(idx)
     }
 }
 
@@ -213,24 +189,4 @@ pub(crate) trait RowInner {
     fn column_str(&self, idx: i32) -> Result<&str>;
     fn column_name(&self, idx: i32) -> Option<&str>;
     fn column_type(&self, idx: i32) -> Result<ValueType>;
-}
-
-struct LibsqlRow(crate::local::Row);
-
-impl RowInner for LibsqlRow {
-    fn column_value(&self, idx: i32) -> Result<Value> {
-        self.0.get_value(idx)
-    }
-
-    fn column_name(&self, idx: i32) -> Option<&str> {
-        self.0.column_name(idx)
-    }
-
-    fn column_str(&self, idx: i32) -> Result<&str> {
-        self.0.get::<&str>(idx)
-    }
-
-    fn column_type(&self, idx: i32) -> Result<ValueType> {
-        self.0.column_type(idx)
-    }
 }

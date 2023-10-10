@@ -1,1 +1,3 @@
-pub mod box_clone_service;
+cfg_hrana! {
+    pub mod box_clone_service;
+}
