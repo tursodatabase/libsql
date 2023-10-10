@@ -2861,6 +2861,7 @@ json_parse_restart:
   case '\'': {
     u8 opcode;
     char cDelim;
+    int nn;
     pParse->hasNonstd = 1;
     opcode = JSONB_TEXT;
     goto parse_string;
@@ -2869,7 +2870,8 @@ json_parse_restart:
     opcode = JSONB_TEXT;
   parse_string:
     cDelim = z[i];
-    for(j=i+1; 1; j++){
+    nn = pParse->nJson;
+    for(j=i+1; j<nn; j++){
       if( jsonIsOk[(unsigned char)z[j]] ) continue;
       c = z[j];
       if( c==cDelim ){
@@ -3351,9 +3353,9 @@ static u32 jsonXlateBlobToText(
         for(k=0; k<sz2 && zIn[k]!='\\'; k++){}
         if( k>0 ){
           jsonAppendRawNZ(pOut, zIn, k);
+          if( sz2<=k ) break;
           zIn += k;
           sz2 -= k;
-          if( sz2==0 ) break;
         }
         assert( zIn[0]=='\\' );
         switch( (u8)zIn[1] ){
@@ -3366,8 +3368,12 @@ static u32 jsonXlateBlobToText(
           case 'x':
             jsonAppendRawNZ(pOut, "\\u00", 4);
             jsonAppendRawNZ(pOut, &zIn[2], 2);
-            zIn += 2;
-            sz2 -= 2;
+            if( sz2<2 ){
+              sz2 = 0;
+            }else{
+              zIn += 2;
+              sz2 -= 2;
+            }
             break;
           case '0':
             jsonAppendRawNZ(pOut, "\\u0000", 6);
@@ -3391,6 +3397,7 @@ static u32 jsonXlateBlobToText(
             jsonAppendRawNZ(pOut, zIn, 2);
             break;
         }
+        if( sz2<2 ) break;
         zIn += 2;
         sz2 -= 2;
       }
