@@ -706,6 +706,7 @@ typedef int (*sqlite3_loadext_entry)(
 #define libsql_wal_methods_find        libsql_api->wal_methods_find
 #define libsql_wal_methods_register    libsql_api->wal_methods_register
 #define libsql_wal_methods_unregister  libsql_api->wal_methods_unregister
+/* libSQL 0.2.3 */
 #define libsql_close_hook              libsql_api->close_hook
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
