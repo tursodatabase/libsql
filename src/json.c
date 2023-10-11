@@ -2843,11 +2843,13 @@ static void jsonReplaceNode(
          break;
       }
       if( sqlite3_value_subtype(pValue)!=JSON_SUBTYPE ){
-        char *zCopy = sqlite3DbStrDup(0, z);
+        char *zCopy = sqlite3_malloc64( n+1 );
         int k;
         if( zCopy ){
+          memcpy(zCopy, z, n);
+          zCopy[n] = 0;
           jsonParseAddCleanup(p, sqlite3_free, zCopy);
-       }else{
+        }else{
           p->oom = 1;
           sqlite3_result_error_nomem(pCtx);
         }

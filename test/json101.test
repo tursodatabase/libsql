@@ -119,6 +119,9 @@ do_execsql_test json101-4.7 {
 do_execsql_test json101-4.8 {
   SELECT x FROM j1 WHERE json_insert(x)<>x;
 } {}
+do_execsql_test json101-4.9 {
+  SELECT json_insert('{"a":1}','$.b',CAST(x'0000' AS text));
+} {{{"a":1,"b":"\u0000\u0000"}}}
 
 # json_extract(JSON,'$') will return objects and arrays without change.
 #
