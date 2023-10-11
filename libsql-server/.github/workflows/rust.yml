@@ -19,46 +19,52 @@ jobs:
       RUSTFLAGS: -D warnings --cfg=uuid_unstable
     steps:
       - uses: hecrj/setup-rust-action@v1
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
-      - name: Check format
+
+      - name: Set up cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Cargo fmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --check
+
+      - name: Cargo check
         uses: actions-rs/cargo@v1
         with:
           command: check
           args: --all-targets --all-features
-  clippy:
-    runs-on: ubuntu-latest
-    name: Run Clippy
-    steps:
-      - uses: hecrj/setup-rust-action@v1
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+
+      - name: Test openssl
+        shell: bash {0}
+        run: cargo tree -p sqld -i openssl; [ $? = 101 ]
+
       - name: Clippy
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-targets --all-features -- -D warnings
-  rust-fmt:
-    runs-on: ubuntu-latest
-    name: Run Rustfmt
-    steps:
-      - uses: hecrj/setup-rust-action@v1
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Check format
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --check
+
   test:
     runs-on: ubuntu-latest
     name: Run Tests
+    env:
+      RUSTFLAGS: -D warnings --cfg=uuid_unstable
     services:
       minio:
         image: lazybit/minio
@@ -72,19 +78,25 @@ jobs:
           - /data
         options: --name=minio --health-cmd "curl http://localhost:9000/minio/health/live"
     steps:
-    - name: Make some room available
-      run: "sudo rm -rf /usr/local/lib/android && sudo rm -rf /usr/share/dotnet"
-    - name: Install Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: 2.6
-        bundler-cache: true
     - uses: hecrj/setup-rust-action@v1
-    - name: Install foundationdb-clients
-      run: wget https://github.com/apple/foundationdb/releases/download/7.1.25/foundationdb-clients_7.1.25-1_amd64.deb && sudo dpkg -i foundationdb-clients_7.1.25-1_amd64.deb
+
     - uses: actions/checkout@v3
       with:
         submodules: recursive
+
+    - name: Set up cargo cache
+      uses: actions/cache@v3
+      continue-on-error: false
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo-
+
     - name: Run tests
       uses: actions-rs/cargo@v1
       with:
@@ -96,16 +108,3 @@ jobs:
         LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION: eu-central-2
         LIBSQL_BOTTOMLESS_BUCKET: bottomless
         LIBSQL_BOTTOMLESS_ENDPOINT: http://localhost:9000
-
-  check-openssl:
-    runs-on: ubuntu-latest
-    name: Check that we don't depend on openssl
-    steps:
-    - uses: hecrj/setup-rust-action@v1
-    - name: Checkout
-      uses: actions/checkout@v3
-      with:
-        submodules: recursive
-    - name: Test openssl
-      shell: bash {0}
-      run: cargo tree -p sqld -i openssl; [ $? = 101 ]
