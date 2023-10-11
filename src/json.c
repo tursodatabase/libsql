@@ -486,6 +486,14 @@ static void jsonAppendChar(JsonString *p, char c){
   }
 }
 
+/* Make sure there is a zero terminator on p->zBuf[]
+*/
+static void jsonStringTerminate(JsonString *p){
+  if( p->nUsed<p->nAlloc || jsonStringGrow(p,1) ){
+    p->zBuf[p->nUsed] = 0;
+  }   
+}
+
 /* Try to force the string to be a zero-terminated RCStr string.
 **
 ** Return true on success.  Return false if an OOM prevents this
@@ -3210,6 +3218,7 @@ static int jsonConvertTextToBlob(
 static void jsonReturnStringAsBlob(JsonString *pStr){
   JsonParse px;
   memset(&px, 0, sizeof(px));
+  jsonStringTerminate(pStr);
   px.zJson = pStr->zBuf;
   px.nJson = pStr->nUsed;
   (void)jsonXlateTextToBlob(&px, 0);
