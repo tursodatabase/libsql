@@ -2209,7 +2209,7 @@ static JsonParse *jsonParseCached(
 ** a match.
 */
 static int jsonLabelCompare(const JsonNode *pNode, const char *zKey, u32 nKey){
-  assert( pNode->eU==1 );
+  if( pNode->eType!=JSON_STRING ) return 0;
   if( pNode->n!=nKey ) return 0;
   return strncmp(pNode->u.zJContent, zKey, nKey)==0;
 }
