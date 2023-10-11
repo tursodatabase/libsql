@@ -218,7 +218,7 @@ fn verify_db(path: &PathBuf) -> Result<()> {
     if result == "ok" {
         Ok(())
     } else {
-        Err(anyhow::anyhow!(result.to_string()))
+        anyhow::bail!("{result}")
     }
 }
 
