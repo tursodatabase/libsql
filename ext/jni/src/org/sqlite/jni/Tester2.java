@@ -126,16 +126,51 @@ public class Tester2 implements Runnable {
     }
   }
 
-  void testOpenDb1(){
-    Sqlite db = Sqlite.open(":memory:");
-    affirm( 0!=db.dbHandle().getNativePointer() );
-    db.close();
-    affirm( null==db.dbHandle() );
+  Sqlite openDb(String name){
+    return Sqlite.open(name, SQLITE_OPEN_READWRITE|
+                       SQLITE_OPEN_CREATE|
+                       SQLITE_OPEN_EXRESCODE);
   }
 
-  @ManualTest /* because we only want to run this test on demand */
-  private void testFail(){
-    affirm( false, "Intentional failure." );
+  Sqlite openDb(){ return openDb(":memory:"); }
+
+  void testOpenDb1(){
+    Sqlite db = openDb();
+    affirm( 0!=db.nativeHandle().getNativePointer() );
+    db.close();
+    affirm( null==db.nativeHandle() );
+
+    SqliteException ex = null;
+    try {
+      db = openDb("/no/such/dir/.../probably");
+    }catch(SqliteException e){
+      ex = e;
+    }
+    affirm( ex!=null );
+    affirm( ex.errcode() != 0 );
+    affirm( ex.extendedErrcode() != 0 );
+    affirm( ex.errorOffset() < 0 );
+    // there's no reliable way to predict what ex.systemErrno() might be
+  }
+
+  void testPrepare1(){
+    try (Sqlite db = openDb()) {
+      Sqlite.Stmt stmt = db.prepare("SELECT 1");
+      affirm( null!=stmt.nativeHandle() );
+      affirm( SQLITE_ROW == stmt.step() );
+      affirm( SQLITE_DONE == stmt.step() );
+      stmt.reset();
+      affirm( SQLITE_ROW == stmt.step() );
+      affirm( SQLITE_DONE == stmt.step() );
+      affirm( 0 == stmt.finalizeStmt() );
+      affirm( null==stmt.nativeHandle() );
+
+      stmt = db.prepare("SELECT 1");
+      affirm( SQLITE_ROW == stmt.step() );
+      affirm( 0 == stmt.finalizeStmt() )
+        /* getting a non-0 out of sqlite3_finalize() is tricky */;
+      affirm( null==stmt.nativeHandle() );
+    }
   }
 
   private void runTests(boolean fromThread) throws Exception {
