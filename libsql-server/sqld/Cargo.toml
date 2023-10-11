@@ -93,8 +93,10 @@ tonic-build = "0.10"
 vergen = { version = "8", features = ["build", "git", "gitcl"] }
 
 [features]
+default = ["wasm-udfs"]
 unix-excl-vfs = ["sqld-libsql-bindings/unix-excl-vfs"]
 debug-tools = ["console-subscriber", "rusqlite/trace", "tokio/tracing"]
 sim-tests = ["libsql"]
+wasm-udfs = ["rusqlite/bundled-libsql-wasm-experimental"]
 
 
