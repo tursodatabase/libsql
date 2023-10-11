@@ -981,7 +981,7 @@ static void jsonXlateNodeToText(
       u32 j = 1;
       jsonAppendChar(pOut, '{');
       for(;;){
-        while( j<=pNode->n ){
+        while( j<pNode->n ){
           if( (pNode[j+1].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ){
             jsonAppendSeparator(pOut);
             jsonXlateNodeToText(pParse, &pNode[j], pOut);
@@ -1054,7 +1054,7 @@ static void jsonReturnNodeAsJson(
 ** character:  0..9a..fA..F
 */
 static u8 jsonHexToInt(int h){
-  assert( (h>='0' && h<='9') ||  (h>='a' && h<='f') ||  (h>='A' && h<='F') );
+  if( !sqlite3Isxdigit(h) ) return 0;
 #ifdef SQLITE_EBCDIC
   h += 9*(1&~(h>>4));
 #else
@@ -1068,10 +1068,6 @@ static u8 jsonHexToInt(int h){
 */
 static u32 jsonHexToInt4(const char *z){
   u32 v;
-  assert( sqlite3Isxdigit(z[0]) );
-  assert( sqlite3Isxdigit(z[1]) );
-  assert( sqlite3Isxdigit(z[2]) );
-  assert( sqlite3Isxdigit(z[3]) );
   v = (jsonHexToInt(z[0])<<12)
     + (jsonHexToInt(z[1])<<8)
     + (jsonHexToInt(z[2])<<4)
