@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\smkautoconfamal.sh\sscript,\sintroduced\sby\scheck-in\s[3308fdda4b81c110]\nso\sthat\sthe\s"snapshot-tarball"\sand\s"amalgamation-tarball"\smakefile\stargets\nwork\sagain\swhen\srun\sfrom\soutside\sof\sthe\ssource\stree.
-D 2023-10-10T15:33:05.058
+C Simplification\sto\ssqlite3ApiExit().\s\sGenerates\sidentical\smachine\scode,\sbut\neasier\sfor\shumans\sto\sread.
+D 2023-10-11T13:34:18.514
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -678,7 +678,7 @@ F src/json.c 82b9cef53ebc00069d516a06be4aa971e2e70caffe3417bd6001bf00177bb1bf
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 98cfba10989b3da6f1807ad42444017742db7f100a54f1032af7a8b1295912c0
 F src/main.c 618aeb399e993cf561864f4b0cf6a331ee4f355cf663635f8d9da3193a46aa40
-F src/malloc.c 47b82c5daad557d9b963e3873e99c22570fb470719082c6658bf64e3012f7d23
+F src/malloc.c f016922435dc7d1f1f5083a03338a3e91f8c67ce2c5bdcfa4cdef62e612f5fcc
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
 F src/mem2.c c8bfc9446fd0798bddd495eb5d9dbafa7d4b7287d8c22d50a83ac9daa26d8a75
@@ -2128,8 +2128,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0177f4dfe8a5c03c1d5dd279c6babe5a87b596c2351373f845b89fc6abf7947b
-R 37373df44eb3bf4c68a7092e403d96f0
+P 65ccf5fef812d43aed9e00af36c90e1a499d197e30148753790445e25ee1324c
+R af91c5cebf078db7ff8defd10c43084e
 U drh
-Z 33418d47ecf8795ddbe386dcc10d96d2
+Z ee511a7822e958c17cba502a0e5ae3ed
 # Remove this line to create a well-formed Fossil manifest.

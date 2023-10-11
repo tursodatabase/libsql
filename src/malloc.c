@@ -896,5 +896,5 @@ int sqlite3ApiExit(sqlite3* db, int rc){
   if( db->mallocFailed || rc ){
     return apiHandleError(db, rc);
   }
-  return rc & db->errMask;
+  return 0;
 }
