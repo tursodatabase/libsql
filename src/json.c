@@ -4536,8 +4536,10 @@ static JsonNode *jsonMergePatch(
   for(i=1; i<pPatch->n; i += jsonNodeSize(&pPatch[i+1])+1){
     u32 nKey;
     const char *zKey;
-    assert( pPatch[i].eType==JSON_STRING );
-    assert( pPatch[i].jnFlags & JNODE_LABEL );
+    if( pPatch[i].eType!=JSON_STRING ){
+      pParse->nErr = 1;
+      return 0;
+    }
     assert( pPatch[i].eU==1 );
     nKey = pPatch[i].n;
     zKey = pPatch[i].u.zJContent;
@@ -4606,13 +4608,15 @@ static void jsonPatchFunc(
   pX->useMod = 1;
   pY->useMod = 1;
   pResult = jsonMergePatch(pX, 0, pY->aNode);
-  assert( pResult!=0 || pX->oom );
-  if( pResult && pX->oom==0 ){
+  assert( pResult!=0 || pX->oom || pX->nErr );
+  if( pX->oom ){
+    sqlite3_result_error_nomem(ctx);
+  }else if( pX->nErr ){
+    sqlite3_result_error(ctx, "malformed JSON", -1);
+  }else if( pResult ){
     jsonDebugPrintParse(pX);
     jsonDebugPrintNode(pResult);
     jsonReturnNodeAsJson(pX, pResult, ctx, 0);
-  }else{
-    sqlite3_result_error_nomem(ctx);
   }
 }
 
