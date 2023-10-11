@@ -26,6 +26,8 @@ pub enum StmtKind {
     TxnEnd,
     Read,
     Write,
+    Savepoint,
+    Release,
     Other,
 }
 
@@ -52,7 +54,13 @@ impl StmtKind {
                 Some(Self::TxnBeginReadOnly)
             }
             Cmd::Stmt(Stmt::Begin { .. }) => Some(Self::TxnBegin),
-            Cmd::Stmt(Stmt::Commit { .. } | Stmt::Rollback { .. }) => Some(Self::TxnEnd),
+            Cmd::Stmt(
+                Stmt::Commit { .. }
+                | Stmt::Rollback {
+                    savepoint_name: None,
+                    ..
+                },
+            ) => Some(Self::TxnEnd),
             Cmd::Stmt(
                 Stmt::CreateVirtualTable { tbl_name, .. }
                 | Stmt::CreateTable {
@@ -100,6 +108,12 @@ impl StmtKind {
                 temporary: false, ..
             }) => Some(Self::Write),
             Cmd::Stmt(Stmt::DropView { .. }) => Some(Self::Write),
+            Cmd::Stmt(Stmt::Savepoint(_)) => Some(Self::Savepoint),
+            Cmd::Stmt(Stmt::Release(_))
+            | Cmd::Stmt(Stmt::Rollback {
+                savepoint_name: Some(_),
+                ..
+            }) => Some(Self::Release),
             _ => None,
         }
     }
