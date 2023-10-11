@@ -6037,11 +6037,12 @@ static void fts5MergePrefixLists(
 static void fts5SetupPrefixIter(
   Fts5Index *p,                   /* Index to read from */
   int bDesc,                      /* True for "ORDER BY rowid DESC" */
+  int bTokenscan,
   int iIdx,                       /* Index to scan for data */
   u8 *pToken,                     /* Buffer containing prefix to match */
   int nToken,                     /* Size of buffer pToken in bytes */
   Fts5Colset *pColset,            /* Restrict matches to these columns */
-  Fts5Iter **ppIter          /* OUT: New iterator */
+  Fts5Iter **ppIter               /* OUT: New iterator */
 ){
   Fts5Structure *pStruct;
   Fts5Buffer *aBuf;
@@ -6060,6 +6061,8 @@ static void fts5SetupPrefixIter(
     xAppend = fts5AppendPoslist;
   }
 
+  assert( bTokenscan==0 || iIdx==0 );
+
   aBuf = (Fts5Buffer*)fts5IdxMalloc(p, sizeof(Fts5Buffer)*nBuf);
   pStruct = fts5StructureRead(p);
 
@@ -6075,6 +6078,12 @@ static void fts5SetupPrefixIter(
     int bNewTerm = 1;
 
     memset(&doclist, 0, sizeof(doclist));
+
+    /* If iIdx is non-zero, then it is the number of a prefix-index for
+    ** prefixes 1 character longer than the prefix being queried for. That
+    ** index contains all the doclists required, except for the one
+    ** corresponding to the prefix itself. That one is extracted from the
+    ** main term index here.  */
     if( iIdx!=0 ){
       int dummy = 0;
       const int f2 = FTS5INDEX_QUERY_SKIPEMPTY|FTS5INDEX_QUERY_NOOUTPUT;
@@ -6110,6 +6119,7 @@ static void fts5SetupPrefixIter(
       assert_nc( memcmp(pToken, pTerm, MIN(nToken, nTerm))<=0 );
       if( bNewTerm ){
         if( nTerm<nToken || memcmp(pToken, pTerm, nToken) ) break;
+        if( bTokenscan && nTerm>nToken && pTerm[nToken]!=0x00 ) break;
       }
 
       if( p1->base.nData==0 ) continue;
@@ -6438,7 +6448,7 @@ int sqlite3Fts5IndexQuery(
       }
     }
 
-    if( iIdx<=pConfig->nPrefix ){
+    if( iIdx<=pConfig->nPrefix && (pConfig->bTokendata==0 || iIdx!=0) ){
       /* Straight index lookup */
       Fts5Structure *pStruct = fts5StructureRead(p);
       buf.p[0] = (u8)(FTS5_MAIN_PREFIX + iIdx);
@@ -6451,7 +6461,10 @@ int sqlite3Fts5IndexQuery(
     }else{
       /* Scan multiple terms in the main index */
       int bDesc = (flags & FTS5INDEX_QUERY_DESC)!=0;
-      fts5SetupPrefixIter(p, bDesc, iPrefixIdx, buf.p, nToken+1, pColset,&pRet);
+      int bTokenscan = (iIdx==0);
+      fts5SetupPrefixIter(
+          p, bDesc, bTokenscan, iPrefixIdx, buf.p, nToken+1, pColset, &pRet
+      );
       if( pRet==0 ){
         assert( p->rc!=SQLITE_OK );
       }else{
