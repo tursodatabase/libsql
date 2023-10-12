@@ -2904,7 +2904,6 @@ static int fts5MultiIterDoCompare(Fts5Iter *pIter, int iOut){
       assert_nc( i2!=0 );
       pRes->bTermEq = 1;
       if( p1->iRowid==p2->iRowid ){
-        p1->bDel = p2->bDel;
         return i2;
       }
       res = ((p1->iRowid > p2->iRowid)==pIter->bRev) ? -1 : +1;
@@ -5132,34 +5131,39 @@ static void fts5DoSecureDelete(
 
   /* Set variable bLastInDoclist to true if this entry happens to be
   ** the last rowid in the doclist for its term.  */
-  if( iNextOff>=iPgIdx ){
-    int pgno = pSeg->iLeafPgno+1;
-    fts5SecureDeleteOverflow(p, pSeg->pSeg, pgno, &bLastInDoclist);
-    iNextOff = iPgIdx;
-  }else{
-    /* Loop through the page-footer. If iNextOff (offset of the
-    ** entry following the one we are removing) is equal to the 
-    ** offset of a key on this page, then the entry is the last 
-    ** in its doclist.  */
-    int iKeyOff = 0;
-    for(iIdx=0; iIdx<nIdx; /* no-op */){
-      u32 iVal = 0;
-      iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
-      iKeyOff += iVal;
-      if( iKeyOff==iNextOff ){
-        bLastInDoclist = 1;
+  if( pSeg->bDel==0 ){
+    if( iNextOff>=iPgIdx ){
+      int pgno = pSeg->iLeafPgno+1;
+      fts5SecureDeleteOverflow(p, pSeg->pSeg, pgno, &bLastInDoclist);
+      iNextOff = iPgIdx;
+    }else{
+      /* Loop through the page-footer. If iNextOff (offset of the
+      ** entry following the one we are removing) is equal to the 
+      ** offset of a key on this page, then the entry is the last 
+      ** in its doclist.  */
+      int iKeyOff = 0;
+      for(iIdx=0; iIdx<nIdx; /* no-op */){
+        u32 iVal = 0;
+        iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
+        iKeyOff += iVal;
+        if( iKeyOff==iNextOff ){
+          bLastInDoclist = 1;
+        }
       }
+    }
+
+    /* If this is (a) the first rowid on a page and (b) is not followed by
+    ** another position list on the same page, set the "first-rowid" field
+    ** of the header to 0.  */
+    if( fts5GetU16(&aPg[0])==iStart && (bLastInDoclist || iNextOff==iPgIdx) ){
+      fts5PutU16(&aPg[0], 0);
     }
   }
 
-  /* If this is (a) the first rowid on a page and (b) is not followed by
-  ** another position list on the same page, set the "first-rowid" field
-  ** of the header to 0.  */
-  if( fts5GetU16(&aPg[0])==iStart && (bLastInDoclist || iNextOff==iPgIdx) ){
-    fts5PutU16(&aPg[0], 0);
-  }
-
-  if( bLastInDoclist==0 ){
+  if( pSeg->bDel ){
+    iOff += sqlite3Fts5PutVarint(&aPg[iOff], iDelta);
+    aPg[iOff++] = 0x01;
+  }else if( bLastInDoclist==0 ){
     if( iNextOff!=iPgIdx ){
       u64 iNextDelta = 0;
       iNextOff += fts5GetVarint(&aPg[iNextOff], &iNextDelta);
@@ -5271,6 +5275,15 @@ static void fts5DoSecureDelete(
     }
   }
 
+  /* Assuming no error has occurred, this block does final edits to the
+  ** leaf page before writing it back to disk. Input variables are:
+  **
+  **   nPg: Total initial size of leaf page.
+  **   iPgIdx: Initial offset of page footer.
+  **
+  **   iOff: Offset to move data to
+  **   iNextOff: Offset to move data from
+  */
   if( p->rc==SQLITE_OK ){
     const int nMove = nPg - iNextOff;     /* Number of bytes to move */
     int nShift = iNextOff - iOff;         /* Distance to move them */
@@ -5471,10 +5484,16 @@ static void fts5FlushOneHash(Fts5Index *p){
                 fts5WriteFlushLeaf(p, &writer);
               }
             }else{
-              int bDummy;
-              int nPos;
-              int nCopy = fts5GetPoslistSize(&pDoclist[iOff], &nPos, &bDummy);
-              nCopy += nPos;
+              int bDel = 0;
+              int nPos = 0;
+              int nCopy = fts5GetPoslistSize(&pDoclist[iOff], &nPos, &bDel);
+              if( bDel && bSecureDelete ){
+                fts5BufferAppendVarint(&p->rc, pBuf, nPos*2);
+                iOff += nCopy;
+                nCopy = nPos;
+              }else{
+                nCopy += nPos;
+              }
               if( (pBuf->n + pPgidx->n + nCopy) <= pgsz ){
                 /* The entire poslist will fit on the current leaf. So copy
                 ** it in one go. */
