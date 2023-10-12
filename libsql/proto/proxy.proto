@@ -42,6 +42,7 @@ message Error {
 
     ErrorCode code = 1;
     string message = 2;
+    int32 extended_code = 3;
 }
 
 message ResultRows {
@@ -99,7 +100,7 @@ message ExecuteResults {
     /// State after executing the queries
     State state = 2;
     /// Primary frame_no after executing the request.
-    uint64 current_frame_no = 3;
+    optional uint64 current_frame_no = 3;
 }
 
 message Program {

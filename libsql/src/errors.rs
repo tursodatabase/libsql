@@ -36,8 +36,8 @@ pub enum Error {
     Sqlite3UnsupportedStatement,
     #[error("sqlite3 parser error: `{0}`")]
     Sqlite3ParserError(crate::BoxError),
-    #[error("Remote SQlite failure: `{0}:{1}`")]
-    RemoteSqliteFailure(i32, String),
+    #[error("Remote SQlite failure: `{0}:{1}:{2}`")]
+    RemoteSqliteFailure(i32, i32, String),
 }
 
 impl From<std::convert::Infallible> for Error {

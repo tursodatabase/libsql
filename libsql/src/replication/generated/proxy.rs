@@ -66,6 +66,8 @@ pub struct Error {
     pub code: i32,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub extended_code: i32,
 }
 /// Nested message and enum types in `Error`.
 pub mod error {
@@ -198,8 +200,8 @@ pub struct ExecuteResults {
     #[prost(enumeration = "execute_results::State", tag = "2")]
     pub state: i32,
     /// / Primary frame_no after executing the request.
-    #[prost(uint64, tag = "3")]
-    pub current_frame_no: u64,
+    #[prost(uint64, optional, tag = "3")]
+    pub current_frame_no: ::core::option::Option<u64>,
 }
 /// Nested message and enum types in `ExecuteResults`.
 pub mod execute_results {
