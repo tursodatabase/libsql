@@ -408,6 +408,9 @@ static int fts5InitVtab(
   if( rc==SQLITE_OK && pConfig->eContent==FTS5_CONTENT_NORMAL ){
     rc = sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, (int)1);
   }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
+  }
 
   if( rc!=SQLITE_OK ){
     fts5FreeVtab(pTab);

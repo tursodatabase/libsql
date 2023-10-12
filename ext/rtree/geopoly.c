@@ -1252,6 +1252,7 @@ static int geopolyInit(
   (void)pAux;
 
   sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
+  sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
 
   /* Allocate the sqlite3_vtab structure */
   nDb = strlen(argv[1]);

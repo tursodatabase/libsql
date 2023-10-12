@@ -3615,6 +3615,8 @@ static int rtreeInit(
   }
 
   sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
+  sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
+
 
   /* Allocate the sqlite3_vtab structure */
   nDb = (int)strlen(argv[1]);
