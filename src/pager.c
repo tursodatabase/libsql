@@ -7369,7 +7369,7 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
         }
         assert( state==pPager->eState );
       }
-    }else if( eMode==PAGER_JOURNALMODE_OFF ){
+    }else if( eMode==PAGER_JOURNALMODE_OFF || eMode==PAGER_JOURNALMODE_MEMORY ){
       sqlite3OsClose(pPager->jfd);
     }
   }
