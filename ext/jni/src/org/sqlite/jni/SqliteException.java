@@ -46,7 +46,12 @@ public final class SqliteException extends java.lang.RuntimeException {
 
   /**
      Records the current error state of db (which must not be null and
-     must refer to an opened db object) then closes it.
+     must refer to an opened db object). Note that this does NOT close
+     the db.
+
+     Design note: closing the db on error is likely only useful during
+     a failed db-open operation, and the place(s) where that can
+     happen are inside this library, not client-level code.
   */
   public SqliteException(sqlite3 db){
     super(sqlite3_errmsg(db));
@@ -54,7 +59,6 @@ public final class SqliteException extends java.lang.RuntimeException {
     xerrCode = sqlite3_extended_errcode(db);
     errOffset = sqlite3_error_offset(db);
     sysErrno = sqlite3_system_errno(db);
-    db.close();
   }
 
   /**
@@ -62,7 +66,11 @@ public final class SqliteException extends java.lang.RuntimeException {
      refer to an open database) then closes it.
   */
   public SqliteException(Sqlite db){
-    this(db.dbHandle());
+    this(db.nativeHandle());
+  }
+
+  public SqliteException(Sqlite.Stmt stmt){
+    this( stmt.db() );
   }
 
   public int errcode(){ return errCode; }
