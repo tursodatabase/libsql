@@ -25,7 +25,10 @@ use tonic::{
 };
 use tonic_web::{GrpcWebCall, GrpcWebClientService};
 use tower::{Service, ServiceBuilder};
-use tower_http::{classify, trace, ServiceBuilderExt};
+use tower_http::{
+    classify::{self, GrpcCode, GrpcErrorsAsFailures, SharedClassifier},
+    trace::{self, TraceLayer},
+};
 use uuid::Uuid;
 
 use crate::util::ConnectorService;
@@ -183,7 +186,11 @@ impl GrpcChannel {
         let client = hyper::Client::builder().build(https);
         let client = GrpcWebClientService::new(client);
 
-        let svc = ServiceBuilder::new().trace_for_grpc().service(client);
+        let classifier = GrpcErrorsAsFailures::new().with_success(GrpcCode::FailedPrecondition);
+
+        let svc = ServiceBuilder::new()
+            .layer(TraceLayer::new(SharedClassifier::new(classifier)))
+            .service(client);
 
         let client = BoxCloneService::new(svc);
 
