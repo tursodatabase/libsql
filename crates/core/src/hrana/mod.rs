@@ -15,7 +15,7 @@ use proto::{Batch, BatchResult, Col, Stmt, StmtResult};
 use hyper::StatusCode;
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 
-use crate::database::ConnectorService;
+use crate::util::ConnectorService;
 use crate::Error;
 use crate::{params::Params, Column};
 use std::collections::{HashMap, VecDeque};

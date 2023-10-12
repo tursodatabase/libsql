@@ -63,8 +63,9 @@ prost-build = "0.12"
 default = ["core", "replication", "hrana"]
 core = ["libsql-sys"]
 replication = [
-  "serde",
   "core",
+  "serde",
+  "http",
   "dep:bincode",
   "dep:anyhow",
   "dep:bytemuck",
@@ -82,18 +83,14 @@ replication = [
   "dep:tonic-web",
   "dep:tower-http",
   "dep:prost",
-  "dep:http",
-  "dep:hyper",
-  "dep:hyper-rustls"
 ]
 hrana = [
   "serde",
-  "dep:hyper",
-  "dep:hyper-rustls",
-  "dep:http",
+  "http",
   "dep:serde_json",
 ]
 serde = ["dep:serde"]
+http = ["dep:hyper", "dep:hyper-rustls", "dep:http"]
 
 [[bench]]
 name = "benchmark"

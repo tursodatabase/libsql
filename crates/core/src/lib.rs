@@ -67,7 +67,17 @@ macro_rules! cfg_hrana {
     ($($item:item)*) => {
         $(
             #[cfg(feature = "hrana")]
-            #[cfg_attr(docsrs, doc(cfg(feature = "replication")))]
+            #[cfg_attr(docsrs, doc(cfg(feature = "hrana")))]
+            $item
+        )*
+    }
+}
+
+macro_rules! cfg_http {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "http")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "http")))]
             $item
         )*
     }

@@ -21,30 +21,6 @@ cfg_core! {
     }
 }
 
-cfg_hrana! {
-    use crate::util::box_clone_service::BoxCloneService;
-    use tokio::io::{AsyncRead, AsyncWrite};
-
-    pub(crate) trait Socket:
-        hyper::client::connect::Connection + AsyncRead + AsyncWrite + Send + Unpin + 'static + Sync
-    {
-    }
-
-    impl<T> Socket for T where
-        T: hyper::client::connect::Connection + AsyncRead + AsyncWrite + Send + Unpin + 'static + Sync
-    {
-    }
-
-    impl hyper::client::connect::Connection for Box<dyn Socket> {
-        fn connected(&self) -> hyper::client::connect::Connected {
-            self.as_ref().connected()
-        }
-    }
-
-    pub(crate) type ConnectorService =
-        BoxCloneService<http::Uri, Box<dyn Socket>, Box<dyn std::error::Error + Sync + Send + 'static>>;
-}
-
 // TODO(lucio): Improve construction via
 //      1) Move open errors into open fn rather than connect
 //      2) Support replication setup
@@ -59,7 +35,7 @@ enum DbType {
     Remote {
         url: String,
         auth_token: String,
-        connector: ConnectorService,
+        connector: crate::util::ConnectorService,
     },
 }
 
@@ -127,7 +103,40 @@ cfg_replication! {
             url: impl Into<String>,
             token: impl Into<String>,
         ) -> Result<Database> {
-            let db = crate::local::Database::open_http_sync(db_path.into(), url.into(), token.into())?;
+            let mut http = hyper::client::HttpConnector::new();
+            http.enforce_http(false);
+            http.set_nodelay(true);
+
+            Self::open_with_remote_sync_connector(db_path, url, token, http)
+        }
+
+        #[doc(hidden)]
+        pub fn open_with_remote_sync_connector<C>(
+            db_path: impl Into<String>,
+            url: impl Into<String>,
+            token: impl Into<String>,
+            connector: C,
+        ) -> Result<Database>
+        where
+            C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
+            C::Response: crate::util::Socket,
+            C::Future: Send + 'static,
+            C::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
+        {
+            use tower::ServiceExt;
+
+            let svc = connector
+                .map_err(|e| e.into())
+                .map_response(|s| Box::new(s) as Box<dyn crate::util::Socket>);
+
+            let svc = crate::util::ConnectorService::new(svc);
+
+            let db = crate::local::Database::open_http_sync(
+                svc,
+                db_path.into(),
+                url.into(),
+                token.into()
+            )?;
             Ok(Database {
                 db_type: DbType::Sync { db },
             })
@@ -170,13 +179,7 @@ cfg_hrana! {
         ) -> Result<Self>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
-            C::Response: hyper::client::connect::Connection
-                + AsyncRead
-                + AsyncWrite
-                + Send
-                + Unpin
-                + 'static
-                + Sync,
+            C::Response: crate::util::Socket,
             C::Future: Send + 'static,
             C::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
         {
@@ -184,12 +187,12 @@ cfg_hrana! {
 
             let svc = connector
                 .map_err(|e| e.into())
-                .map_response(|s| Box::new(s) as Box<dyn Socket>);
+                .map_response(|s| Box::new(s) as Box<dyn crate::util::Socket>);
             Ok(Database {
                 db_type: DbType::Remote {
                     url: url.into(),
                     auth_token: auth_token.into(),
-                    connector: ConnectorService::new(svc),
+                    connector: crate::util::ConnectorService::new(svc),
                 },
             })
         }

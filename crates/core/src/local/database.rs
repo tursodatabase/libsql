@@ -41,6 +41,7 @@ impl Database {
 
     #[cfg(feature = "replication")]
     pub fn open_http_sync(
+        connector: crate::util::ConnectorService,
         db_path: String,
         endpoint: String,
         auth_token: String,
@@ -51,8 +52,9 @@ impl Database {
 
         let endpoint = coerce_url_scheme(&endpoint);
 
-        let replicator = Replicator::with_http_sync(db_path, endpoint.clone(), auth_token)
-            .map_err(|e| ConnectionFailed(format!("{e}")))?;
+        let replicator =
+            Replicator::with_http_sync(connector, db_path, endpoint.clone(), auth_token)
+                .map_err(|e| ConnectionFailed(format!("{e}")))?;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,
