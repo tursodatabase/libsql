@@ -1,10 +1,11 @@
 use anyhow::Context as _;
-use axum::extract::{Path, State};
+use axum::extract::{FromRef, Path, State};
 use axum::routing::delete;
 use axum::Json;
 use chrono::NaiveDateTime;
 use futures::TryStreamExt;
 use hyper::Body;
+use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use serde::{Deserialize, Serialize};
 use std::io::ErrorKind;
 use std::path::PathBuf;
@@ -24,10 +25,24 @@ pub mod stats;
 type UserHttpServer<M> =
     Arc<hrana::http::Server<<<M as MakeNamespace>::Database as Database>::Connection>>;
 
+#[derive(Clone)]
+struct Metrics {
+    handle: PrometheusHandle,
+}
+
 struct AppState<M: MakeNamespace, C> {
     namespaces: NamespaceStore<M>,
     user_http_server: UserHttpServer<M>,
     connector: C,
+    metrics: PrometheusHandle,
+}
+
+impl<M: MakeNamespace, C> FromRef<Arc<AppState<M, C>>> for Metrics {
+    fn from_ref(input: &Arc<AppState<M, C>>) -> Self {
+        Metrics {
+            handle: input.metrics.clone(),
+        }
+    }
 }
 
 pub async fn run<M, A, C>(
@@ -59,10 +74,12 @@ where
         .route("/v1/namespaces/:namespace", delete(handle_delete_namespace))
         .route("/v1/namespaces/:namespace/stats", get(stats::handle_stats))
         .route("/v1/diagnostics", get(handle_diagnostics))
+        .route("/metrics", get(handle_metrics))
         .with_state(Arc::new(AppState {
             namespaces,
             connector,
             user_http_server,
+            metrics: PrometheusBuilder::new().install_recorder().unwrap(),
         }));
 
     hyper::server::Server::builder(acceptor)
@@ -74,6 +91,10 @@ where
 
 async fn handle_get_index() -> &'static str {
     "Welcome to the sqld admin API"
+}
+
+async fn handle_metrics(State(metrics): State<Metrics>) -> String {
+    metrics.handle.render()
 }
 
 async fn handle_get_config<M: MakeNamespace, C: Connector>(

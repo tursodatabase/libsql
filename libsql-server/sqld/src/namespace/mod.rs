@@ -12,13 +12,14 @@ use chrono::NaiveDateTime;
 use enclose::enclose;
 use futures_core::Stream;
 use hyper::Uri;
+use metrics::histogram;
 use parking_lot::Mutex;
 use rusqlite::ErrorCode;
 use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
 use tokio::io::AsyncBufReadExt;
 use tokio::sync::watch;
 use tokio::task::JoinSet;
-use tokio::time::Duration;
+use tokio::time::{Duration, Instant};
 use tokio_util::io::StreamReader;
 use tonic::transport::Channel;
 use uuid::Uuid;
@@ -433,6 +434,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
     where
         Fun: FnOnce(&Namespace<M::Database>) -> R,
     {
+        let before_load = Instant::now();
         let lock = self.inner.store.upgradable_read().await;
         if let Some(ns) = lock.get(&namespace) {
             Ok(f(ns))
@@ -451,6 +453,10 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             let ret = f(&ns);
             tracing::info!("loaded namespace: `{namespace}`");
             lock.insert(namespace, ns);
+
+            // NAMESPACE_LOAD_LATENCY.record(before_load.elapsed());
+            histogram!("namespace_load_latency", before_load.elapsed());
+
             Ok(ret)
         }
     }

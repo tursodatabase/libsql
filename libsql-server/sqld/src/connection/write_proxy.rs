@@ -12,6 +12,7 @@ use uuid::Uuid;
 
 use crate::auth::Authenticated;
 use crate::error::Error;
+use crate::metrics::REQUESTS_PROXIED;
 use crate::namespace::NamespaceName;
 use crate::query::Value;
 use crate::query_analysis::State;
@@ -197,6 +198,8 @@ impl WriteProxyConnection {
         auth: Authenticated,
         builder: B,
     ) -> Result<(B, State)> {
+        REQUESTS_PROXIED.increment(1);
+
         self.stats.inc_write_requests_delegated();
         let mut client = self.write_proxy.clone();
 

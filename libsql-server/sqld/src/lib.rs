@@ -55,6 +55,7 @@ mod h2c;
 mod heartbeat;
 mod hrana;
 mod http;
+mod metrics;
 mod migration;
 mod namespace;
 mod query;

@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
+use metrics::histogram;
 use parking_lot::{Mutex, RwLock};
 use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus};
 use sqld_libsql_bindings::wal_hook::{TransparentMethods, WalMethodsHook};
@@ -12,6 +13,7 @@ use tokio::time::{Duration, Instant};
 use crate::auth::{Authenticated, Authorized, Permission};
 use crate::error::Error;
 use crate::libsql_bindings::wal_hook::WalHook;
+use crate::metrics::{READ_QUERY_COUNT, WRITE_QUERY_COUNT};
 use crate::query::Query;
 use crate::query_analysis::{State, StmtKind};
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
@@ -247,21 +249,34 @@ struct TxnSlot<T: WalHook> {
     /// is stolen.
     conn: Arc<Mutex<Connection<T>>>,
     /// Time at which the transaction can be stolen
-    timeout_at: tokio::time::Instant,
+    created_at: tokio::time::Instant,
     /// The transaction lock was stolen
     is_stolen: AtomicBool,
+}
+
+impl<T: WalHook> TxnSlot<T> {
+    #[inline]
+    fn expires_at(&self) -> Instant {
+        self.created_at + TXN_TIMEOUT
+    }
+
+    fn abort(&self) {
+        let conn = self.conn.lock();
+        // we have a lock on the connection, we don't need mode than a
+        // Relaxed store.
+        conn.rollback();
+        histogram!("write_txn_duration", self.created_at.elapsed())
+        // WRITE_TXN_DURATION.record(self.created_at.elapsed());
+    }
 }
 
 impl<T: WalHook> std::fmt::Debug for TxnSlot<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let stolen = self.is_stolen.load(Ordering::Relaxed);
-        let time_left = self
-            .timeout_at
-            .duration_since(tokio::time::Instant::now())
-            .as_millis();
+        let time_left = self.expires_at().duration_since(Instant::now());
         write!(
             f,
-            "(conn: {:?}, timeout_ms: {time_left}, stolen: {stolen})",
+            "(conn: {:?}, timeout: {time_left:?}, stolen: {stolen})",
             self.conn
         )
     }
@@ -315,7 +330,7 @@ unsafe extern "C" fn busy_handler<W: WalHook>(state: *mut c_void, _retries: c_in
     tokio::runtime::Handle::current().block_on(async move {
         let timeout = {
             let slot = lock.as_ref().unwrap();
-            let timeout_at = slot.timeout_at;
+            let timeout_at = slot.expires_at();
             drop(lock);
             tokio::time::sleep_until(timeout_at)
         };
@@ -337,11 +352,7 @@ unsafe extern "C" fn busy_handler<W: WalHook>(state: *mut c_void, _retries: c_in
                         // steal.
                         assert!(lock.take().is_some());
 
-                        let conn = slot.conn.lock();
-                        // we have a lock on the connection, we don't need mode than a
-                        // Relaxed store.
-                        conn.rollback();
-
+                        slot.abort();
                         tracing::info!("stole transaction lock");
                     }
                 }
@@ -422,7 +433,7 @@ impl<W: WalHook> Connection<W> {
             let mut lock = this.lock();
 
             if let Some(slot) = &lock.slot {
-                if slot.is_stolen.load(Ordering::Relaxed) || Instant::now() > slot.timeout_at {
+                if slot.is_stolen.load(Ordering::Relaxed) || Instant::now() > slot.expires_at() {
                     // we mark ourselves as stolen to notify any waiting lock thief.
                     slot.is_stolen.store(true, Ordering::Relaxed);
                     lock.rollback();
@@ -447,7 +458,7 @@ impl<W: WalHook> Connection<W> {
                 (Tx::None | Tx::Read, Tx::Write) => {
                     let slot = Arc::new(TxnSlot {
                         conn: this.clone(),
-                        timeout_at: Instant::now() + TXN_TIMEOUT,
+                        created_at: Instant::now(),
                         is_stolen: AtomicBool::new(false),
                     });
 
@@ -542,6 +553,11 @@ impl<W: WalHook> Connection<W> {
         }
 
         let mut stmt = self.conn.prepare(&query.stmt.stmt)?;
+        if stmt.readonly() {
+            READ_QUERY_COUNT.increment(1);
+        } else {
+            WRITE_QUERY_COUNT.increment(1);
+        }
 
         let cols = stmt.columns();
         let cols_count = cols.len();
