@@ -15,7 +15,7 @@ async fn main() {
 
     let db = Database::open_with_remote_sync(
         db_file.path().to_str().unwrap(),
-        "http://localhost:8080",
+        "libsql://localhost:8080",
         auth_token,
     )
     .await

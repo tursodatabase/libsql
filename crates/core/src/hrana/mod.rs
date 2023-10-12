@@ -3,6 +3,7 @@
 mod pipeline;
 mod proto;
 
+use crate::util::coerce_url_scheme;
 use crate::value::ValueType;
 use hyper::header::AUTHORIZATION;
 use pipeline::{
@@ -117,13 +118,7 @@ impl Client {
         let token = token.into();
         let url = url.into();
         // The `libsql://` protocol is an alias for `https://`.
-        let url = url.replace("libsql://", "https://");
-        // Auto-update the URL to start with https:// if no protocol was specified
-        let base_url = if !url.contains("://") {
-            format!("https://{}", &url)
-        } else {
-            url
-        };
+        let base_url = coerce_url_scheme(&url);
         let url_for_queries = format!("{base_url}/v2/pipeline");
         Self {
             inner,
