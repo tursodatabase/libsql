@@ -16,7 +16,6 @@ use std::{
 
 use anyhow::Context as _;
 use http::Uri;
-use hyper::client::HttpConnector;
 use hyper_rustls::HttpsConnectorBuilder;
 use tonic::{
     body::BoxBody,
@@ -28,6 +27,8 @@ use tonic_web::{GrpcWebCall, GrpcWebClientService};
 use tower::{Service, ServiceBuilder};
 use tower_http::{classify, trace, ServiceBuilderExt};
 use uuid::Uuid;
+
+use crate::util::ConnectorService;
 
 use super::{replica::meta::WalIndexMeta, Frame};
 
@@ -51,7 +52,11 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(origin: Uri, auth_token: impl AsRef<str>) -> anyhow::Result<Self> {
+    pub fn new(
+        connector: ConnectorService,
+        origin: Uri,
+        auth_token: impl AsRef<str>,
+    ) -> anyhow::Result<Self> {
         let auth_token: AsciiMetadataValue = format!("Bearer {}", auth_token.as_ref())
             .try_into()
             .context("Invalid auth token must be ascii")?;
@@ -59,7 +64,7 @@ impl Client {
         let ns = split_namespace(origin.host().unwrap()).unwrap_or_else(|_| "default".to_string());
         let namespace = BinaryMetadataValue::from_bytes(ns.as_bytes());
 
-        let channel = GrpcChannel::new();
+        let channel = GrpcChannel::new(connector);
 
         let interceptor = GrpcInterceptor(auth_token, namespace);
 
@@ -168,16 +173,12 @@ pub struct GrpcChannel {
 }
 
 impl GrpcChannel {
-    pub fn new() -> Self {
-        let mut http = HttpConnector::new();
-        http.set_nodelay(true);
-        http.enforce_http(false);
-
+    pub fn new(connector: ConnectorService) -> Self {
         let https = HttpsConnectorBuilder::new()
             .with_webpki_roots()
             .https_or_http()
             .enable_http1()
-            .wrap_connector(http);
+            .wrap_connector(connector);
 
         let client = hyper::Client::builder().build(https);
         let client = GrpcWebClientService::new(client);

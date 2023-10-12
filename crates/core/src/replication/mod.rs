@@ -25,6 +25,8 @@ use tokio::sync::mpsc::Sender;
 
 use client::Client;
 
+use crate::util::ConnectorService;
+
 use self::parser::Statement;
 use self::pb::query::Params;
 use self::pb::{DescribeRequest, DescribeResult, ExecuteResults, Positional, Program, ProgramReq};
@@ -132,13 +134,14 @@ impl Replicator {
     }
 
     pub fn with_http_sync(
+        connector: ConnectorService,
         path: impl AsRef<Path>,
         endpoint: impl AsRef<str>,
         auth_token: impl AsRef<str>,
     ) -> anyhow::Result<Self> {
         let mut me = Self::new(path)?;
 
-        let client = Client::new(endpoint.as_ref().try_into()?, auth_token)?;
+        let client = Client::new(connector, endpoint.as_ref().try_into()?, auth_token)?;
         me.client = Some(client);
 
         Ok(me)
