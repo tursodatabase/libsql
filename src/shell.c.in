@@ -8772,8 +8772,10 @@ static int do_meta_command(char *zLine, ShellState *p){
                "SELECT rowid FROM sqlite_schema"
                " WHERE name GLOB 'sqlite_stat[134]'",
                -1, &pStmt, 0);
-      doStats = sqlite3_step(pStmt)==SQLITE_ROW;
-      sqlite3_finalize(pStmt);
+      if( rc==SQLITE_OK ){
+        doStats = sqlite3_step(pStmt)==SQLITE_ROW;
+        sqlite3_finalize(pStmt);
+      }
     }
     if( doStats==0 ){
       raw_printf(p->out, "/* No STAT tables available */\n");
