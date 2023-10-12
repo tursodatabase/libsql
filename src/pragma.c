@@ -1762,6 +1762,7 @@ void sqlite3Pragma(
           sqlite3_vtab *pVTab;
           int a1;
           if( !IsVirtual(pTab) ) continue;
+          sqlite3ViewGetColumnNames(pParse, pTab);
           if( pTab->u.vtab.p==0 ) continue;
           pVTab = pTab->u.vtab.p->pVtab;
           if( NEVER(pVTab==0) ) continue;
