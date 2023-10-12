@@ -10,6 +10,7 @@ members = [
   "bottomless",
   "bottomless-cli",
   "libsql-sys-tmp",
+  "libsql-categorizer",
 
   "vendored/rusqlite",
 ]

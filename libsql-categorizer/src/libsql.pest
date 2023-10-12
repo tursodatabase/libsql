@@ -1,0 +1,99 @@
+// *Simplified* libSQL grammar for a *single* query.
+// Parses just enough to be able to qualify if an operation is a read, write, transaction start, etc.
+// Accepts a superset of SQL, including incorrect libSQL/SQLite statements!
+// Inspired by https://github.com/gwenn/sqlpest
+
+stmt = { explain_query_plan | explain | cmd }
+explain_query_plan = { ^"explain" ~ ^"query" ~ ^"plan" ~ cmd }
+explain = { ^"explain" ~ cmd }
+
+cmd = {
+    alter_table |
+    analyze |
+    attach |
+    begin |
+    commit |
+    create_function |
+    create_index |
+    create_table |
+    create_trigger |
+    create_view |
+    delete |
+    detach |
+    drop_function |
+    drop_index |
+    drop_table |
+    drop_trigger |
+    drop_view |
+    insert |
+    pragma |
+    reindex |
+    release |
+    rollback |
+    savepoint |
+    select |
+    update |
+    vacuum
+}
+
+transaction = { ^"transaction" ~ name? }
+transaction_type = { ^"deferred" | ^"immediate" | ^"exclusive" | ^"readonly" }
+begin = { ^"begin" ~ transaction_type? ~ transaction? }
+commit = { (^"commit" | ^"end") ~ transaction? }
+to_savepoint = { ^"to" ~ ^"savepoint"? ~ name }
+rollback = { ^"rollback" ~ transaction? ~ to_savepoint? }
+savepoint = { ^"savepoint" ~ name }
+release = { ^"release" ~ ^"savepoint"? ~ name }
+
+temp = { ^"temporary" | ^"temp" }
+
+create_table = { ^"create" ~ temp? ~ ^"table" ~ ANY* }
+drop_table = { ^"drop" ~ ^"table" ~ ANY* }
+
+create_view = { ^"create" ~ temp? ~ ^"view" ~ ANY* }
+drop_view = { ^"drop" ~ ^"view" ~ ANY* }
+
+select = { with? ~ ^"select" ~ ANY* }
+delete = { with? ~ ^"delete" ~ ^"from" ~ name ~ ANY* }
+update = { with? ~ ^"update" ~ name ~ ANY* }
+insert = { with? ~ ^"insert" ~^"into" ~ name ~ ANY* }
+
+create_index = { ^"create" ~ ^"unique"? ~ ^"index" ~ ANY*}
+drop_index = { ^"drop" ~ ^"index" ~ ANY* }
+
+create_function = { ^"create" ~ ^"function" ~ ANY* }
+drop_function = { ^"drop" ~ ^"function" ~ ANY* }
+
+vacuum = { ^"vacuum" ~ name? }
+
+qualified_name = ${ (name ~ ".")? ~ name }
+pragma = { ^"pragma" ~ qualified_name ~ pragma_body? }
+pragma_body = { "=" ~ ANY* }
+
+create_trigger = { ^"create" ~ temp? ~ ^"trigger" ~ ANY* }
+drop_trigger = { ^"drop" ~ ^"trigger" ~ ANY* }
+
+attach = { ^"attach" ~ ^"database"? ~ ANY* }
+detach = { ^"detach" ~ ^"database"? ~ ANY* }
+reindex = { ^"reindex" ~ ANY* }
+analyze = { ^"analyze" ~ ANY* }
+alter_table = { ^"alter" ~ ^"table" ~ ANY* }
+
+create_vtab = { ^"create" ~ ^"virtual" ~ ^"table" ~ ANY*}
+
+sort_order = { ^"asc" | ^"desc" }
+indexed_column = { name ~ (^"collate" ~ name)? ~ sort_order? }
+with = { ^"with" ~ ^"recursive"? ~ with_query ~ ("," ~ with_query)* }
+with_query = { name ~ ("(" ~ indexed_column ~ ("," ~ indexed_column)* ~ ")")? ~ ^"as" ~ "(" ~ select ~ ")" }
+
+name = @{
+    ('A'..'Z' | "_" | 'a'..'z') ~ ("$" | '0'..'9' | 'A'..'Z' | "_" | 'a'..'z')* |
+    // empty Id ("") is OK
+    // A keyword in double-quotes is an identifier.
+    "\"" ~ ("\"\"" | !"\"" ~ ANY)* ~ "\"" |
+    // A keyword enclosed in grave accents (ASCII code 96) is an identifier. This is not standard SQL.
+    "`" ~ ("``" | !"`" ~ ANY)* ~ "`" |
+    // A keyword enclosed in square brackets is an identifier. This is not standard SQL.
+    "[" ~ (!"]" ~ ANY)* ~ "]"
+}
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
