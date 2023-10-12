@@ -45,7 +45,11 @@ impl Database {
         endpoint: String,
         auth_token: String,
     ) -> Result<Database> {
+        use crate::util::coerce_url_scheme;
+
         let mut db = Database::open(&db_path, OpenFlags::default())?;
+
+        let endpoint = coerce_url_scheme(&endpoint);
 
         let replicator = Replicator::with_http_sync(db_path, endpoint.clone(), auth_token)
             .map_err(|e| ConnectionFailed(format!("{e}")))?;
