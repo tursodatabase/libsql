@@ -972,6 +972,7 @@ static jstring s3jni__utf8_to_jstring(JNIEnv * const env,
        hypothetically do this for any strings where n<4 and z is
        NUL-terminated and none of z[0..3] are NUL bytes. */
     rv = (*env)->NewStringUTF(env, "");
+    s3jni_oom_check( rv );
   }else if( z ){
     jbyteArray jba;
     if( n<0 ) n = sqlite3Strlen30(z);
@@ -985,8 +986,8 @@ static jstring s3jni__utf8_to_jstring(JNIEnv * const env,
       }
       S3JniUnrefLocal(jba);
     }
+    s3jni_oom_check( rv );
   }
-  s3jni_oom_check( rv );
   return rv;
 }
 #define s3jni_utf8_to_jstring(CStr,n) s3jni__utf8_to_jstring(env, CStr, n)
@@ -1468,12 +1469,14 @@ static void * NativePointerHolder__get(JNIEnv * env, jobject jNph,
 #define PtrGet_sqlite3_stmt(OBJ) PtrGet_T(sqlite3_stmt, OBJ)
 #define PtrGet_sqlite3_value(OBJ) PtrGet_T(sqlite3_value, OBJ)
 /*
-** S3JniLongPtr_T(X,Y) expects X to be an unqualified sqlite3
-** struct type name and Y to be a native pointer to such an object in
-** the form of a jlong value. The jlong is simply cast to (X*). This
+** S3JniLongPtr_T(X,Y) expects X to be an unqualified sqlite3 struct
+** type name and Y to be a native pointer to such an object in the
+** form of a jlong value. The jlong is simply cast to (X*). This
 ** approach is, as of 2023-09-27, supplanting the former approach. We
 ** now do the native pointer extraction in the Java side, rather than
-** the C side, because it's reportedly significantly faster.
+** the C side, because it's reportedly significantly faster. The
+** intptr_t part here is necessary for compatibility with (at least)
+** ARM32.
 */
 #define S3JniLongPtr_T(T,JLongAsPtr) (T*)((intptr_t)(JLongAsPtr))
 #define S3JniLongPtr_sqlite3(JLongAsPtr) S3JniLongPtr_T(sqlite3,JLongAsPtr)
@@ -2616,6 +2619,10 @@ S3JniApi(sqlite3_cancel_auto_extension(),jboolean,1cancel_1auto_1extension)(
   S3JniAutoExtension * ax;
   jboolean rc = JNI_FALSE;
   int i;
+
+  if( !jAutoExt ){
+    return rc;
+  }
   S3JniAutoExt_mutex_enter;
   /* This algo corresponds to the one in the core. */
   for( i = SJG.autoExt.nExt-1; i >= 0; --i ){
@@ -2778,8 +2785,8 @@ S3JniApi(sqlite3_column_text(),jbyteArray,1column_1text)(
   JniArgsEnvClass, jobject jpStmt, jint ndx
 ){
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
-  const unsigned char * const p = sqlite3_column_text(stmt, (int)ndx);
-  const int n = sqlite3_column_bytes(stmt, (int)ndx);
+  const unsigned char * const p = stmt ? sqlite3_column_text(stmt, (int)ndx) : 0;
+  const int n = p ? sqlite3_column_bytes(stmt, (int)ndx) : 0;
   return p ? s3jni_new_jbyteArray(p, n) : NULL;
 }
 
@@ -2789,8 +2796,8 @@ S3JniApi(sqlite3_column_text(),jstring,1column_1text)(
   JniArgsEnvClass, jobject jpStmt, jint ndx
 ){
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
-  const unsigned char * const p = sqlite3_column_text(stmt, (int)ndx);
-  const int n = sqlite3_column_bytes(stmt, (int)ndx);
+  const unsigned char * const p = stmt ? sqlite3_column_text(stmt, (int)ndx) : 0;
+  const int n = p ? sqlite3_column_bytes(stmt, (int)ndx) : 0;
   return p ? s3jni_utf8_to_jstring( (const char *)p, n) : 0;
 }
 #endif
@@ -2799,8 +2806,8 @@ S3JniApi(sqlite3_column_text16(),jstring,1column_1text16)(
   JniArgsEnvClass, jobject jpStmt, jint ndx
 ){
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
-  const void * const p = sqlite3_column_text16(stmt, (int)ndx);
-  const int n = sqlite3_column_bytes16(stmt, (int)ndx);
+  const void * const p = stmt ? sqlite3_column_text16(stmt, (int)ndx) : 0;
+  const int n = p ? sqlite3_column_bytes16(stmt, (int)ndx) : 0;
   return s3jni_text16_to_jstring(env, p, n);
 }
 
@@ -2808,7 +2815,8 @@ S3JniApi(sqlite3_column_value(),jobject,1column_1value)(
   JniArgsEnvClass, jobject jpStmt, jint ndx
 ){
   sqlite3_value * const sv =
-    sqlite3_column_value(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
+    sqlite3_column_value(PtrGet_sqlite3_stmt(jpStmt), (int)ndx)
+    /* reminder: returns an SQL NULL if jpStmt==NULL */;
   return new_java_sqlite3_value(env, sv);
 }
 
@@ -2919,6 +2927,18 @@ S3JniApi(sqlite3_compileoption_get(),jstring,1compileoption_1get)(
   return rv;
 }
 
+S3JniApi(sqlite3_compileoption_used(),jboolean,1compileoption_1used)(
+  JniArgsEnvClass, jstring name
+){
+  const char *zUtf8 = s3jni_jstring_to_mutf8(name)
+    /* We know these to be ASCII, so MUTF-8 is fine (and
+       hypothetically faster to convert). */;
+  const jboolean rc =
+    0==sqlite3_compileoption_used(zUtf8) ? JNI_FALSE : JNI_TRUE;
+  s3jni_mutf8_release(name, zUtf8);
+  return rc;
+}
+
 S3JniApi(sqlite3_complete(),int,1complete)(
   JniArgsEnvClass, jbyteArray jSql
 ){
@@ -2932,18 +2952,6 @@ S3JniApi(sqlite3_complete(),int,1complete)(
     ? sqlite3_complete( (const char *)pBuf )
     : (jSql ? SQLITE_NOMEM : SQLITE_MISUSE);
   s3jni_jbyteArray_release(jSql, pBuf);
-  return rc;
-}
-
-S3JniApi(sqlite3_compileoption_used(),jboolean,1compileoption_1used)(
-  JniArgsEnvClass, jstring name
-){
-  const char *zUtf8 = s3jni_jstring_to_mutf8(name)
-    /* We know these to be ASCII, so MUTF-8 is fine (and
-       hypothetically faster to convert). */;
-  const jboolean rc =
-    0==sqlite3_compileoption_used(zUtf8) ? JNI_FALSE : JNI_TRUE;
-  s3jni_mutf8_release(name, zUtf8);
   return rc;
 }
 
@@ -3151,6 +3159,9 @@ S3JniApi(sqlite3_create_collation() sqlite3_create_collation_v2(),
   int rc;
   S3JniDb * ps;
 
+  if( !jDb || !name || !encodingTypeIsValid(eTextRep) ){
+    return (jint)SQLITE_MISUSE;
+  }
   S3JniDb_mutex_enter;
   ps = S3JniDb_from_java(jDb);
   jclass const klazz = (*env)->GetObjectClass(env, oCollation);
@@ -3574,6 +3585,7 @@ static int s3jni_open_pre(JNIEnv * const env, S3JniEnv **jc,
                           S3JniDb ** ps){
   int rc = 0;
   jobject jDb = 0;
+
   *jc = S3JniEnv_get();
   if( !*jc ){
     rc = SQLITE_NOMEM;
@@ -3650,6 +3662,8 @@ S3JniApi(sqlite3_open(),jint,1open)(
   S3JniDb * ps = 0;
   S3JniEnv * jc = 0;
   int rc;
+
+  if( 0==jOut ) return SQLITE_MISUSE;
   rc = s3jni_open_pre(env, &jc, strName, &zName, &ps);
   if( 0==rc ){
     rc = s3jni_open_post(env, jc, ps, &pOut, jOut,
@@ -3662,14 +3676,17 @@ S3JniApi(sqlite3_open(),jint,1open)(
 
 S3JniApi(sqlite3_open_v2(),jint,1open_1v2)(
   JniArgsEnvClass, jstring strName,
-                      jobject jOut, jint flags, jstring strVfs
+  jobject jOut, jint flags, jstring strVfs
 ){
   sqlite3 * pOut = 0;
   char *zName = 0;
   S3JniDb * ps = 0;
   S3JniEnv * jc = 0;
   char *zVfs = 0;
-  int rc = s3jni_open_pre(env, &jc, strName, &zName, &ps);
+  int rc;
+
+  if( 0==jOut ) return SQLITE_MISUSE;
+  rc = s3jni_open_pre(env, &jc, strName, &zName, &ps);
   if( 0==rc ){
     if( strVfs ){
       zVfs = s3jni_jstring_to_utf8( strVfs, 0);
@@ -4469,7 +4486,6 @@ static int s3jni_strlike_glob(int isLike, JNIEnv *const env,
   jbyte * const pG = s3jni_jbyteArray_bytes(baG);
   jbyte * const pT = pG ? s3jni_jbyteArray_bytes(baT) : 0;
 
-  s3jni_oom_fatal(pT);
   /* Note that we're relying on the byte arrays having been
      NUL-terminated on the Java side. */
   rc = isLike
@@ -4509,12 +4525,8 @@ S3JniApi(sqlite3_sql(),jstring,1sql)(
 S3JniApi(sqlite3_step(),jint,1step)(
   JniArgsEnvClass,jobject jStmt
 ){
-  int rc = SQLITE_MISUSE;
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jStmt);
-  if( pStmt ){
-    rc = sqlite3_step(pStmt);
-  }
-  return rc;
+  return pStmt ? (jint)sqlite3_step(pStmt) : (jint)SQLITE_MISUSE;
 }
 
 S3JniApi(sqlite3_table_column_metadata(),int,1table_1column_1metadata)(

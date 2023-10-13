@@ -2029,10 +2029,16 @@ static UnpackedRecord *vdbeUnpackRecord(
 ** a field of the row currently being updated or deleted.
 */
 int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
-  PreUpdate *p = db->pPreUpdate;
+  PreUpdate *p;
   Mem *pMem;
   int rc = SQLITE_OK;
 
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( db==0 || ppValue==0 ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
+  p = db->pPreUpdate;
   /* Test that this call is being made from within an SQLITE_DELETE or
   ** SQLITE_UPDATE pre-update callback, and that iIdx is within range. */
   if( !p || p->op==SQLITE_INSERT ){
@@ -2093,7 +2099,12 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
 ** the number of columns in the row being updated, deleted or inserted.
 */
 int sqlite3_preupdate_count(sqlite3 *db){
-  PreUpdate *p = db->pPreUpdate;
+  PreUpdate *p;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  p = db!=0 ? db->pPreUpdate : 0;
+#else
+  p = db->pPreUpdate;
+#endif
   return (p ? p->keyinfo.nKeyField : 0);
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
@@ -2111,7 +2122,12 @@ int sqlite3_preupdate_count(sqlite3 *db){
 ** or SET DEFAULT action is considered a trigger.
 */
 int sqlite3_preupdate_depth(sqlite3 *db){
-  PreUpdate *p = db->pPreUpdate;
+  PreUpdate *p;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  p = db!=0 ? db->pPreUpdate : 0;
+#else
+  p = db->pPreUpdate;
+#endif
   return (p ? p->v->nFrame : 0);
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
@@ -2122,7 +2138,12 @@ int sqlite3_preupdate_depth(sqlite3 *db){
 ** only.
 */
 int sqlite3_preupdate_blobwrite(sqlite3 *db){
-  PreUpdate *p = db->pPreUpdate;
+  PreUpdate *p;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  p = db!=0 ? db->pPreUpdate : 0;
+#else
+  p = db->pPreUpdate;
+#endif
   return (p ? p->iBlobWrite : -1);
 }
 #endif
@@ -2133,10 +2154,16 @@ int sqlite3_preupdate_blobwrite(sqlite3 *db){
 ** a field of the row currently being updated or inserted.
 */
 int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
-  PreUpdate *p = db->pPreUpdate;
+  PreUpdate *p;
   int rc = SQLITE_OK;
   Mem *pMem;
 
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( db==0 || ppValue==0 ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
+  p = db->pPreUpdate;
   if( !p || p->op==SQLITE_DELETE ){
     rc = SQLITE_MISUSE_BKPT;
     goto preupdate_new_out;
