@@ -1,5 +1,5 @@
-C Fix\san\sfts5\sproblem\scaused\sby\sa\s'rebuild'\sfollowed\sby\sa\sDELETE\sin\ssecure-delete\smode.
-D 2023-10-13T15:59:11.452
+C Do\snot\sallow\striggers\son\sshadow\stables\sunder\sdefensive\smode.
+D 2023-10-13T18:29:18.041
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -778,7 +778,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 23d9f4539880b40226254ad9072f4ecf12eb1902e62aea47aac29928afafcfd5
 F src/treeview.c 1d52fbc4e97161e65858d36e3424ea6e3fc045dd8a679c82b4b9593dc30de3bd
-F src/trigger.c ad6ab9452715fa9a8075442e15196022275b414b9141b566af8cdb7a1605f2b0
+F src/trigger.c 5286019b152f622a38900284109e4aae1e5f566deb7ad9ba7e931f0660771f32
 F src/update.c 6904814dd62a7a93bbb86d9f1419c7f134a9119582645854ab02b36b676d9f92
 F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -2128,8 +2128,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3237bf964117c1ef71143042837ef21872bb3d04bfd682075672e768953ec802
-R 8c9ca99981e8bfe505c808816a46e21d
-U dan
-Z 7d08aebab325ced76a3693b193b8d8cb
+P 18be505c628d9b13431ca6cfe822d4aeae119c53ae08aef26a67f310a8bd7bd3
+R e5fc1c8bca38142f52450113ed88aad4
+U drh
+Z 4766bec696af50a50338444506de89e1
 # Remove this line to create a well-formed Fossil manifest.
