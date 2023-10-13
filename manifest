@@ -1,5 +1,5 @@
-C Make\ssure\svirtual\stables\shave\sbeen\sconnected\sbefore\strying\sto\sinvoke\nthe\sxIntegrity\smethod\sduring\sPRAGMA\sintegrity_check.
-D 2023-10-12T20:51:17.229
+C Avoid\spotential\soverflow\sin\shex().\s[forum:/forumpost/7ac0c9c5ea|See\sforum\spost\s7ac0c9c5ea.]
+D 2023-10-13T01:39:47.068
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -667,7 +667,7 @@ F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
 F src/expr.c 8a5045ac7aae5ecebe7236ec05841693b5a0012af70a4d73933333172546c50d
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c a7fcbf7e66d14dbb73cf49f31489ebf66d0e6006c62b95246924a3bae9f37b36
-F src/func.c 490341f0ad2d0a937ce03c9fd3d9396fd3be9b5a6b90228011830b3a7bf0dca2
+F src/func.c e8d7b3587a225f4f1116f720b72090511fe9feb936e960bd26a053cea6a17a63
 F src/global.c 29f56a330ed9d1b5cd9b79ac0ca36f97ac3afc730ff8bfa987b0db9e559d684d
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -1834,7 +1834,7 @@ F test/tt3_vacuum.c 71b254cde1fc49d6c8c44efd54f4668f3e57d7b3a8f4601ade069f75a999
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 1aeb81976841a91eef292723649b5c4fe3bc3cac
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
-F test/unhex.test 47b547f4b35e4f6525ecac7c7839bd3ae4eb4613d4e8932592eff55da83308f1
+F test/unhex.test 777af0bad767e4ab6219e6086ea073f8836d8c34de12f9507bd39c442e89fcf2
 F test/unionall.test eb9afa030897af75fd2f0dd28354ef63c8a5897b6c76aa1f15acae61a12eabcf
 F test/unionall2.test 71e8fa08d5699d50dc9f9dc0c9799c2e7a6bb7931a330d369307a4df7f157fa1
 F test/unionallfault.test 652bfbb630e6c43135965dc1e8f0a9a791da83aec885d626a632fe1909c56f73
@@ -2128,8 +2128,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 579aea0c28e01a79620ac758edc02db3a01baaa073e7773b8f0b6f610479520b
-R f6cfb323187380b15d71317c15cb2d7b
-U drh
-Z b1397a2832808c4669dcf4c9bd643e96
+P 4a4eccb681741917c6771101d4e329f91eae9b035f4d345218e522bb55fff6da
+R b8db52c4af481f11a25564ae1b4169f0
+U larrybr
+Z e40ad0deba084d2d357f307fa10fdd72
 # Remove this line to create a well-formed Fossil manifest.
