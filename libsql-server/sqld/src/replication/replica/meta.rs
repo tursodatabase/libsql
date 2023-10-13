@@ -19,7 +19,7 @@ use super::error::ReplicationError;
 pub struct WalIndexMetaData {
     /// id of the replicated log
     log_id: u128,
-    /// commited frame index
+    /// committed frame index
     pub committed_frame_no: FrameNo,
     _padding: u64,
 }

@@ -85,9 +85,9 @@ pub async fn describe_stmt(
 pub fn proto_stmt_to_query(
     proto_stmt: &proto::Stmt,
     sqls: &HashMap<i32, String>,
-    verion: Version,
+    version: Version,
 ) -> Result<Query> {
-    let sql = proto_sql_to_sql(proto_stmt.sql.as_deref(), proto_stmt.sql_id, sqls, verion)?;
+    let sql = proto_sql_to_sql(proto_stmt.sql.as_deref(), proto_stmt.sql_id, sqls, version)?;
 
     let mut stmt_iter = Statement::parse(sql);
     let stmt = match stmt_iter.next() {
@@ -132,9 +132,9 @@ pub fn proto_sql_to_sql<'s>(
     proto_sql: Option<&'s str>,
     proto_sql_id: Option<i32>,
     sqls: &'s HashMap<i32, String>,
-    verion: Version,
+    version: Version,
 ) -> Result<&'s str, ProtocolError> {
-    if proto_sql_id.is_some() && verion < Version::Hrana2 {
+    if proto_sql_id.is_some() && version < Version::Hrana2 {
         return Err(ProtocolError::NotSupported {
             what: "`sql_id`",
             min_version: Version::Hrana2,

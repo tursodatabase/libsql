@@ -22,7 +22,7 @@ impl Default for Statement {
 /// Classify statement in categories of interest.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum StmtKind {
-    /// The begining of a transaction
+    /// The beginning of a transaction
     TxnBegin,
     /// The end of a transaction
     TxnEnd,

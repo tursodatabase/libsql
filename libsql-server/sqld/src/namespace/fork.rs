@@ -27,7 +27,7 @@ pub enum ForkError {
     Io(#[from] std::io::Error),
     #[error("failed to read frame from replication log: {0}")]
     LogRead(anyhow::Error),
-    #[error("an error occured creating the namespace: {0}")]
+    #[error("an error occurred creating the namespace: {0}")]
     CreateNamespace(Box<crate::error::Error>),
     #[error("cannot fork a replica, try again with the primary.")]
     ForkReplica,

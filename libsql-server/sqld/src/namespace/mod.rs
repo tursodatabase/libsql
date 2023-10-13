@@ -359,7 +359,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                     ResetOp::Reset(ns) => {
                         tracing::info!("received reset signal for: {ns}");
                         if let Err(e) = this.reset(ns.clone(), RestoreOption::Latest).await {
-                            tracing::error!("error reseting namespace `{ns}`: {e}");
+                            tracing::error!("error resetting namespace `{ns}`: {e}");
                         }
                     }
                     ResetOp::Destroy(ns) => {
@@ -503,7 +503,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
     }
 }
 
-/// A namspace isolates the resources pertaining to a database of type T
+/// A namespace isolates the resources pertaining to a database of type T
 #[derive(Debug)]
 pub struct Namespace<T: Database> {
     pub db: T,
@@ -883,7 +883,7 @@ where
             Ok(conn) => {
                 break conn;
             }
-            // Creating the loader database can, in rare occurences, return sqlite busy,
+            // Creating the loader database can, in rare occurrences, return sqlite busy,
             // because of a race condition opening the monitor thread db. This is there to
             // retry a bunch of times if that happens.
             Err(rusqlite::Error::SqliteFailure(
@@ -999,7 +999,7 @@ pub async fn init_bottomless_replicator(
 
 async fn run_periodic_compactions(logger: Arc<ReplicationLogger>) -> anyhow::Result<()> {
     // calling `ReplicationLogger::maybe_compact()` is cheap if the compaction does not actually
-    // take place, so we can affort to poll it very often for simplicity
+    // take place, so we can afford to poll it very often for simplicity
     let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(1000));
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
 

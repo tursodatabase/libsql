@@ -185,7 +185,7 @@ impl<W: Write> DumpState<W> {
                 "SELECT 1 FROM pragma_index_list(?)  WHERE origin='pk'",
                 [table],
                 |_| {
-                    // re-set preserve_row_id iif there is a row
+                    // re-set preserve_row_id if there is a row
                     preserve_row_id = true;
                     Ok(())
                 },

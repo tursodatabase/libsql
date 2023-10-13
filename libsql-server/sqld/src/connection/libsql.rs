@@ -346,7 +346,7 @@ unsafe extern "C" fn busy_handler<W: WalHook>(state: *mut c_void, _retries: c_in
                     // We check that slot wasn't already stolen, and that their is still a slot.
                     // The ordering is relaxed because the atomic is only set under the slot lock.
                     if slot.is_stolen.compare_exchange(false, true, Ordering::Relaxed, Ordering::Relaxed).is_ok() {
-                        // The connection holding the current txn will sets itsef as stolen when it
+                        // The connection holding the current txn will set itself as stolen when it
                         // detects a timeout, so if we arrive to this point, then there is
                         // necessarily a slot, and this slot has to be the one we attempted to
                         // steal.
@@ -517,7 +517,7 @@ impl<W: WalHook> Connection<W> {
 
         let (affected_row_count, last_insert_rowid) = if enabled {
             match self.execute_query(&step.query, builder) {
-                // builder error interupt the execution of query. we should exit immediately.
+                // builder error interrupt the execution of query. we should exit immediately.
                 Err(e @ Error::BuilderError(_)) => return Err(e),
                 Err(e) => {
                     builder.step_error(e)?;

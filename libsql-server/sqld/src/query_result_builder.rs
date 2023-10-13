@@ -658,12 +658,12 @@ pub mod test {
                 .filter_map(|(i, ss)| ss[self as usize].then_some(i))
                 .collect_vec();
             // distribution is somewhat tweaked to be biased towards more real-world test cases
-            let weigths = valid_next_states
+            let weights = valid_next_states
                 .iter()
                 .enumerate()
                 .map(|(p, i)| i.pow(p as _))
                 .collect_vec();
-            let dist = WeightedIndex::new(weigths).unwrap();
+            let dist = WeightedIndex::new(weights).unwrap();
             unsafe { std::mem::transmute(valid_next_states[dist.sample(&mut thread_rng())]) }
         }
 
@@ -751,7 +751,7 @@ pub mod test {
             max_steps = max_steps.saturating_sub(1);
         }
 
-        // this can be usefull to help debug the generated test case
+        // this can be useful to help debug the generated test case
         dbg!(trace);
 
         b

@@ -50,7 +50,7 @@ pub trait Connection: Send + Sync + 'static {
         let mut steps = make_batch_program(batch);
 
         if !steps.is_empty() {
-            // We add a conditional rollback step if the last step was not sucessful.
+            // We add a conditional rollback step if the last step was not successful.
             steps.push(Step {
                 query: Query {
                     stmt: Statement::parse("ROLLBACK").next().unwrap().unwrap(),

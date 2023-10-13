@@ -351,14 +351,14 @@ pub mod test {
     use super::*;
     use crate::query_result_builder::test::test_driver;
 
-    /// generate an arbitraty rpc value. see build.rs for usage.
+    /// generate an arbitrary rpc value. see build.rs for usage.
     pub fn arbitrary_rpc_value(u: &mut Unstructured) -> arbitrary::Result<Vec<u8>> {
         let data = bincode::serialize(&crate::query::Value::arbitrary(u)?).unwrap();
 
         Ok(data)
     }
 
-    /// generate an arbitraty `Bytes` value. see build.rs for usage.
+    /// generate an arbitrary `Bytes` value. see build.rs for usage.
     pub fn arbitrary_bytes(u: &mut Unstructured) -> arbitrary::Result<Bytes> {
         let v: Vec<u8> = Arbitrary::arbitrary(u)?;
 

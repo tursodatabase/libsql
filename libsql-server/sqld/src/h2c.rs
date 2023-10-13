@@ -49,7 +49,7 @@ use tower::Service;
 
 type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
-/// A `MakeService` adapater for [`H2c`] that injects connection
+/// A `MakeService` adapter for [`H2c`] that injects connection
 /// info into the request extensions.
 #[derive(Debug, Clone)]
 pub struct H2cMaker<S> {
@@ -92,7 +92,7 @@ where
 }
 
 /// A service that can perform `h2c` upgrades and will
-/// delegate calls to the inner service once a protocl
+/// delegate calls to the inner service once a protocol
 /// has been selected.
 #[derive(Debug, Clone)]
 pub struct H2c<S> {

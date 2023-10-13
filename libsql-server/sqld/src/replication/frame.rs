@@ -22,7 +22,7 @@ pub struct FrameHeader {
     pub checksum: u64,
     /// page number, if frame_type is FrameType::Page
     pub page_no: u32,
-    /// Size of the database (in page) after commiting the transaction. This is passed from sqlite,
+    /// Size of the database (in page) after committing the transaction. This is passed from sqlite,
     /// and serves as commit transaction boundary
     pub size_after: u32,
 }
@@ -80,7 +80,7 @@ impl TryFrom<&[u8]> for FrameMut {
 impl From<FrameMut> for Frame {
     fn from(value: FrameMut) -> Self {
         // transmute the FrameBorrowed into a Box<[u8; _]>. This is safe because the alignment of
-        // [u8] divides the alignement of FrameBorrowed
+        // [u8] divides the alignment of FrameBorrowed
         let data = unsafe {
             Vec::from_raw_parts(
                 Box::into_raw(value.inner) as *mut u8,

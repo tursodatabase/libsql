@@ -56,7 +56,7 @@ pub struct ReplicationLoggerHookCtx {
 /// shadow wal. Writing to the shadow wal is done in three steps:
 /// i. append the new pages at the offset pointed by header.start_frame_no + header.frame_count
 /// ii. call the underlying implementation of on_frames
-/// iii. if the call of the underlying method was successfull, update the log header to the new
+/// iii. if the call of the underlying method was successful, update the log header to the new
 /// frame count.
 ///
 /// If either writing to the database of to the shadow wal fails, it must be noop.
@@ -106,7 +106,7 @@ unsafe impl WalHook for ReplicationLoggerHook {
 
         if is_commit != 0 && rc == 0 {
             if let Err(e) = ctx.commit() {
-                // If we reach this point, it means that we have commited a transaction to sqlite wal,
+                // If we reach this point, it means that we have committed a transaction to sqlite wal,
                 // but failed to commit it to the shadow WAL, which leaves us in an inconsistent state.
                 tracing::error!(
                     "fatal error: log failed to commit: inconsistent replication log: {e}"
@@ -217,7 +217,7 @@ unsafe impl WalHook for ReplicationLoggerHook {
                 let last_known_frame = replicator.last_known_frame();
                 replicator.request_flush();
                 if last_known_frame == 0 {
-                    tracing::debug!("No comitted changes in this generation, not snapshotting");
+                    tracing::debug!("No committed changes in this generation, not snapshotting");
                     replicator.skip_snapshot_for_current_generation();
                     return SQLITE_OK;
                 }
@@ -310,7 +310,7 @@ impl ReplicationLoggerHookCtx {
         self.buffer.push(entry);
     }
 
-    /// write buffered pages to the logger, without commiting.
+    /// write buffered pages to the logger, without committing.
     fn flush(&mut self, size_after: u32) -> anyhow::Result<()> {
         if !self.buffer.is_empty() {
             self.buffer.last_mut().unwrap().size_after = size_after;
@@ -323,7 +323,7 @@ impl ReplicationLoggerHookCtx {
 
     fn commit(&self) -> anyhow::Result<()> {
         let new_frame_no = self.logger.commit()?;
-        tracing::trace!("new frame commited {new_frame_no:?}");
+        tracing::trace!("new frame committed {new_frame_no:?}");
         self.logger.new_frame_notifier.send_replace(new_frame_no);
         Ok(())
     }
@@ -352,15 +352,15 @@ pub struct LogFile {
     /// the time of the last compaction
     last_compact_instant: Instant,
 
-    /// number of frames in the log that have not been commited yet. On commit the header's frame
-    /// count is incremented by that ammount. New pages are written after the last
+    /// number of frames in the log that have not been committed yet. On commit the header's frame
+    /// count is incremented by that amount. New pages are written after the last
     /// header.frame_count + uncommit_frame_count.
     /// On rollback, this is reset to 0, so that everything that was written after the previous
     /// header.frame_count is ignored and can be overwritten
     uncommitted_frame_count: u64,
     uncommitted_checksum: u64,
 
-    /// checksum of the last commited frame
+    /// checksum of the last committed frame
     commited_checksum: u64,
 }
 
@@ -555,7 +555,7 @@ impl LogFile {
         Ok(Self::absolute_byte_offset(id - self.header.start_frame_no).into())
     }
 
-    /// Returns bytes represening a WalFrame for frame `frame_no`
+    /// Returns bytes representing a WalFrame for frame `frame_no`
     ///
     /// If the requested frame is before the first frame in the log, or after the last frame,
     /// Ok(None) is returned.
