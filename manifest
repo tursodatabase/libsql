@@ -1,5 +1,5 @@
-C Actually\sprevent\sPRAGMA\swritable_schema=ON\sfrom\sbeing\sset\sin\sdefensive\smode,\nrather\sthan\sjust\spreventing\sit\sfrom\sfunctioning.
-D 2023-10-13T12:57:23.459
+C Immediately\sfail\sa\sCREATE\sTABLE\sstatement\sthat\sattempts\sto\screate\sa\ntable\sthat\shas\sa\sgenerated\scolumn\sloop.\s\sLegacy\sallows\sthe\stable\sto\sbe\ncreated\sbut\sthe\stable\swould\snot\sbe\susable\sfor\sanything.
+D 2023-10-13T13:49:46.914
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -656,7 +656,7 @@ F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c fbbbfc51d2fed03c29f20960857d97659d9c682523f32911d5a8e7c5be6436be
 F src/btree.h 03e3356f5208bcab8eed4e094240fdac4a7f9f5ddf5e91045ce589f67d47c240
 F src/btreeInt.h 91a9e0c41a0e71fa91a742ec285c63dd8dcb38b73d14fae0ed7209174ff0fdc1
-F src/build.c 79a4edcee69df5f20963d7b11faf0820d25e6f8c11ef3a9f868d14be87834711
+F src/build.c 4b1d6f8d2b2fcd3267ec54254ad78383c6e758f2be479f849e763947344f68d8
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 23331529e654be40ca97d171cbbffe9b3d4c71cc53b78fe5501230675952da8b
@@ -784,7 +784,7 @@ F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c e87f66258c37f87724f46e849572c3ece4c74ef5614ba41eb221e98f0dbc95de
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
-F src/vdbe.c cd112eb00d20fc5cc44f631d0e713838602637328b0f127c2f3c2aa8cea3cc91
+F src/vdbe.c 4c688500c530ba8b62a4bb8f561be34a4afe7175fbdaa890b046cb15fb383c19
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c 4184402246172220418c0ef49ff4cf1a19ced9a4ac6c843c2f0773fb5c543f37
@@ -1217,7 +1217,7 @@ F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
 F test/fuzzinvariants.c b34530e8431f2cf3591eff588fc7684d6fdef466916fb46141c8c5374a3d8099
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
-F test/gencol1.test aef8b0670abd4b1ae4cae786b15a43758d86f6cd9f12b381d45d96bb51e597c9
+F test/gencol1.test e169bdfa11c7ed5e9f322a98a7db3afe9e66235750b68c923efee8e1876b46ec
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/having.test a89236dd8d55aa50c4805f82ac9daf64d477a44d712d8209c118978d0ca21ec9
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
@@ -2128,8 +2128,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2e968114fd0e60eebcc088dec02684e10b06ac1ec42d6bedb5287362f5cbf032
-R 7b01763f55834ca6495d297b6d47ecf8
+P 2b574d9e7e922d0961ea27bfc0148d3098157ff8d4feefba469489c81d43f3e0
+R 2fc76f86f477974c5358ee799986121c
 U drh
-Z e23aaad11f5de862bcdfc4d2c2927a81
+Z 113df2c1f11316814ff8cfbf0e8ca298
 # Remove this line to create a well-formed Fossil manifest.

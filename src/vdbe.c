@@ -6908,11 +6908,18 @@ case OP_CreateBtree: {          /* out2 */
 ** Run the SQL statement or statements specified in the P4 string.
 */
 case OP_SqlExec: {
+  char *zErr;
+
   sqlite3VdbeIncrWriteCounter(p, 0);
   db->nSqlExec++;
-  rc = sqlite3_exec(db, pOp->p4.z, 0, 0, 0);
+  zErr = 0;
+  rc = sqlite3_exec(db, pOp->p4.z, 0, 0, &zErr);
   db->nSqlExec--;
-  if( rc ) goto abort_due_to_error;
+  if( rc || zErr ){
+    sqlite3VdbeError(p, "%s", zErr);
+    sqlite3_free(zErr);
+    goto abort_due_to_error;
+  }
   break;
 }
 
