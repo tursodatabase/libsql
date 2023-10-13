@@ -1,5 +1,5 @@
-C Do\snot\sallow\striggers\son\sshadow\stables\sunder\sdefensive\smode.
-D 2023-10-13T18:29:18.041
+C Apply\sthe\scorrect\saffinity\sto\sDEFAULT\svalues\sthat\sare\sTRUE\sor\sFALSE.
+D 2023-10-13T19:41:20.296
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -790,7 +790,7 @@ F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c 4184402246172220418c0ef49ff4cf1a19ced9a4ac6c843c2f0773fb5c543f37
 F src/vdbeaux.c 5b415e09b5b9d5be6c0f4fcbf18ea9d7d16f6a29ced2f14a3b2041020f63e9c1
 F src/vdbeblob.c 4cf5aa130e96e3b52ba3fb54b7f9606c942ab988dbb32cb19cff4db24e06aeec
-F src/vdbemem.c 317b9f48708139db6239ade40c7980b4bc8233168383690d588dad6d8437f722
+F src/vdbemem.c ba9e21c579b58979a63d85e79088c9a9860b0ff4359f59a0db37427fb7807f66
 F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c 2143db7db0ceed69b21422581f434baffc507a08d831565193a7a02882a1b6a7
@@ -2128,8 +2128,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 18be505c628d9b13431ca6cfe822d4aeae119c53ae08aef26a67f310a8bd7bd3
-R e5fc1c8bca38142f52450113ed88aad4
+P 44b932ff16e35814febd842d11215cf243393f173aade33ceded473598221e88
+R 47a32fc26da21940b710878ed0c79b18
 U drh
-Z 4766bec696af50a50338444506de89e1
+Z 63c76777fa129ac386380e87c8a0efdb
 # Remove this line to create a well-formed Fossil manifest.
