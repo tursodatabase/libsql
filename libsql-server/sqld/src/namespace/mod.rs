@@ -561,29 +561,26 @@ impl Namespace<ReplicaDatabase> {
             DatabaseConfigStore::load(&db_path).context("Could not load database config")?,
         );
 
-        let mut join_set = JoinSet::new();
         let replicator = Replicator::new(
             db_path.clone(),
             config.channel.clone(),
             config.uri.clone(),
             name.clone(),
-            &mut join_set,
             reset,
         )
         .await?;
-
-        let applied_frame_no_receiver = replicator.current_frame_no_notifier.clone();
+        let applied_frame_no_receiver = replicator.current_frame_no_notifier.subscribe();
+        let mut join_set = JoinSet::new();
+        join_set.spawn(replicator.run());
 
         let stats = make_stats(
             &db_path,
             &mut join_set,
             config.stats_sender.clone(),
             name.clone(),
-            replicator.current_frame_no_notifier.clone(),
+            applied_frame_no_receiver.clone(),
         )
         .await?;
-
-        join_set.spawn(replicator.run());
 
         let connection_maker = MakeWriteProxyConn::new(
             db_path.clone(),

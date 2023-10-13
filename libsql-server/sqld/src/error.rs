@@ -79,6 +79,8 @@ pub enum Error {
     ConflictingRestoreParameters,
     #[error("failed to fork database: {0}")]
     Fork(#[from] ForkError),
+    #[error("fatal replication error")]
+    FatalReplicationError,
 }
 
 trait ResponseError: std::error::Error {
@@ -129,6 +131,7 @@ impl IntoResponse for Error {
             LoadDumpExistingDb => self.format_err(StatusCode::BAD_REQUEST),
             ConflictingRestoreParameters => self.format_err(StatusCode::BAD_REQUEST),
             Fork(e) => e.into_response(),
+            FatalReplicationError => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }

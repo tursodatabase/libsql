@@ -1,11 +1,10 @@
-use std::os::unix::prelude::FileExt;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use bytemuck::bytes_of;
 use futures::StreamExt;
-use tokio::sync::{mpsc, oneshot, watch, Mutex};
-use tokio::task::JoinSet;
+use parking_lot::Mutex;
+use tokio::sync::watch;
+use tokio::task::spawn_blocking;
 use tokio::time::Duration;
 use tonic::metadata::BinaryMetadataValue;
 use tonic::transport::Channel;
@@ -14,17 +13,14 @@ use tonic::{Code, Request};
 use crate::namespace::{NamespaceName, ResetCb, ResetOp};
 use crate::replication::frame::Frame;
 use crate::replication::replica::error::ReplicationError;
-use crate::replication::replica::snapshot::TempSnapshot;
 use crate::replication::FrameNo;
 use crate::rpc::replication_log::rpc::{
     replication_log_client::ReplicationLogClient, HelloRequest, LogOffset,
 };
 use crate::rpc::replication_log::NEED_SNAPSHOT_ERROR_MSG;
 use crate::rpc::{NAMESPACE_DOESNT_EXIST, NAMESPACE_METADATA_KEY};
-use crate::BLOCKING_RT;
 
-use super::hook::{Frames, InjectorHookCtx};
-use super::injector::FrameInjector;
+use super::injector::Injector;
 use super::meta::WalIndexMeta;
 
 const HANDSHAKE_MAX_RETRIES: usize = 100;
@@ -35,14 +31,14 @@ type Client = ReplicationLogClient<Channel>;
 /// transaction boundaries.
 pub struct Replicator {
     client: Client,
-    db_path: PathBuf,
     namespace: NamespaceName,
-    meta: Arc<Mutex<Option<WalIndexMeta>>>,
-    pub current_frame_no_notifier: watch::Receiver<Option<FrameNo>>,
-    frames_sender: mpsc::Sender<Frames>,
-    /// hard reset channel: send the namespace there, to reset it
+    meta: WalIndexMeta,
+    injector: Arc<Mutex<Injector>>,
+    pub current_frame_no_notifier: watch::Sender<Option<FrameNo>>,
     reset: ResetCb,
 }
+
+const INJECTOR_BUFFER_CAPACITY: usize = 10;
 
 impl Replicator {
     pub async fn new(
@@ -50,81 +46,26 @@ impl Replicator {
         channel: Channel,
         uri: tonic::transport::Uri,
         namespace: NamespaceName,
-        join_set: &mut JoinSet<anyhow::Result<()>>,
         reset: ResetCb,
     ) -> anyhow::Result<Self> {
+        let (current_frame_no_notifier, _) = watch::channel(None);
+        let injector = {
+            let db_path = db_path.clone();
+            spawn_blocking(move || Injector::new(&db_path, INJECTOR_BUFFER_CAPACITY)).await??
+        };
         let client = Client::with_origin(channel, uri);
-        let (applied_frame_notifier, current_frame_no_notifier) = watch::channel(None);
-        let (frames_sender, receiver) = tokio::sync::mpsc::channel(1);
+        let meta = WalIndexMeta::open(&db_path).await?;
 
         let mut this = Self {
             namespace,
             client,
-            db_path: db_path.clone(),
             current_frame_no_notifier,
-            meta: Arc::new(Mutex::new(None)),
-            frames_sender,
+            meta,
+            injector: Arc::new(Mutex::new(injector)),
             reset,
         };
 
         this.try_perform_handshake().await?;
-
-        let meta_file = Arc::new(WalIndexMeta::open(&db_path)?);
-        let meta = this.meta.clone();
-
-        let pre_commit = {
-            let meta = meta.clone();
-            let meta_file = meta_file.clone();
-            move |fno| {
-                let mut lock = meta.blocking_lock();
-                let meta = lock
-                    .as_mut()
-                    .expect("commit called before meta inialization");
-                meta.pre_commit_frame_no = fno;
-                meta_file.write_all_at(bytes_of(meta), 0)?;
-
-                Ok(())
-            }
-        };
-
-        let post_commit = {
-            let meta = meta.clone();
-            let meta_file = meta_file;
-            let notifier = applied_frame_notifier;
-            move |fno| {
-                let mut lock = meta.blocking_lock();
-                let meta = lock
-                    .as_mut()
-                    .expect("commit called before meta inialization");
-                assert_eq!(meta.pre_commit_frame_no, fno);
-                meta.post_commit_frame_no = fno;
-                meta_file.write_all_at(bytes_of(meta), 0)?;
-                let _ = notifier.send(Some(fno));
-
-                Ok(())
-            }
-        };
-
-        let (snd, rcv) = oneshot::channel();
-        let handle = BLOCKING_RT.spawn_blocking({
-            move || -> anyhow::Result<()> {
-                let ctx = InjectorHookCtx::new(receiver, pre_commit, post_commit);
-                let mut injector = FrameInjector::new(&db_path, ctx)?;
-                let _ = snd.send(());
-
-                while injector.step()? {}
-
-                Ok(())
-            }
-        });
-
-        join_set.spawn(async move {
-            handle.await??;
-            Ok(())
-        });
-
-        // injector is ready:
-        rcv.await?;
 
         Ok(this)
     }
@@ -143,10 +84,13 @@ impl Replicator {
         loop {
             self.try_perform_handshake().await?;
 
-            if let Err(e) = self.replicate().await {
-                // Replication encountered an error. We log the error, and then shut down the
-                // injector and propagate a potential panic from there.
-                tracing::warn!("replication error: {e}");
+            loop {
+                if let Err(e) = self.replicate().await {
+                    // Replication encountered an error. We log the error, and then shut down the
+                    // injector and propagate a potential panic from there.
+                    tracing::warn!("replication error: {e}");
+                    break;
+                }
             }
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
@@ -154,20 +98,13 @@ impl Replicator {
 
     async fn handle_replication_error(&self, error: ReplicationError) -> crate::error::Error {
         match error {
-            ReplicationError::Lagging => {
-                tracing::error!("Replica ahead of primary: hard-reseting replica");
+            ReplicationError::LogIncompatible => {
+                tracing::error!("Primary's replication log incompatible with ours: repairing.");
+                (self.reset)(ResetOp::Reset(self.namespace.clone()));
+                error.into()
             }
-            ReplicationError::DbIncompatible => {
-                tracing::error!(
-                    "Primary is attempting to replicate a different database, overwriting replica."
-                );
-            }
-            _ => return error.into(),
+            _ => error.into(),
         }
-
-        (self.reset)(ResetOp::Reset(self.namespace.clone()));
-
-        error.into()
     }
 
     async fn try_perform_handshake(&mut self) -> crate::Result<()> {
@@ -179,22 +116,12 @@ impl Replicator {
                 Ok(resp) => {
                     let hello = resp.into_inner();
 
-                    let mut lock = self.meta.lock().await;
-                    let meta = match *lock {
-                        Some(meta) => match meta.merge_from_hello(hello) {
-                            Ok(meta) => meta,
-                            Err(e) => return Err(self.handle_replication_error(e).await),
-                        },
-                        None => match WalIndexMeta::read_from_path(&self.db_path)? {
-                            Some(meta) => match meta.merge_from_hello(hello) {
-                                Ok(meta) => meta,
-                                Err(e) => return Err(self.handle_replication_error(e).await),
-                            },
-                            None => WalIndexMeta::new_from_hello(hello)?,
-                        },
-                    };
+                    if let Err(e) = self.meta.merge_hello(hello) {
+                        return Err(self.handle_replication_error(e).await);
+                    }
 
-                    *lock = Some(meta);
+                    self.current_frame_no_notifier
+                        .send_replace(self.meta.current_frame_no());
 
                     return Ok(());
                 }
@@ -222,9 +149,7 @@ impl Replicator {
     }
 
     async fn replicate(&mut self) -> anyhow::Result<()> {
-        const MAX_REPLICA_REPLICATION_BUFFER_LEN: usize = 10_000_000 / 4096; // ~10MB
         let offset = LogOffset {
-            // if current == FrameNo::Max then it means that we're starting fresh
             next_offset: self.next_offset(),
         };
 
@@ -232,20 +157,11 @@ impl Replicator {
 
         let mut stream = self.client.log_entries(req).await?.into_inner();
 
-        let mut buffer = Vec::new();
         loop {
             match stream.next().await {
                 Some(Ok(frame)) => {
-                    let frame = Frame::try_from_bytes(frame.data)?;
-                    buffer.push(frame.clone());
-                    if frame.header().size_after != 0
-                        || buffer.len() > MAX_REPLICA_REPLICATION_BUFFER_LEN
-                    {
-                        let _ = self
-                            .frames_sender
-                            .send(Frames::Vec(std::mem::take(&mut buffer)))
-                            .await;
-                    }
+                    let frame = Frame::try_from(&*frame.data)?;
+                    self.inject_frame(frame).await?;
                 }
                 Some(Err(err))
                     if err.code() == tonic::Code::FailedPrecondition
@@ -254,7 +170,6 @@ impl Replicator {
                     tracing::debug!("loading snapshot");
                     // remove any outstanding frames in the buffer that are not part of a
                     // transaction: they are now part of the snapshot.
-                    buffer.clear();
                     self.load_snapshot().await?;
                 }
                 Some(Err(e)) => return Err(e.into()),
@@ -264,19 +179,48 @@ impl Replicator {
     }
 
     async fn load_snapshot(&mut self) -> anyhow::Result<()> {
+        self.injector.lock().clear_buffer();
         let next_offset = self.next_offset();
 
         let req = self.make_request(LogOffset { next_offset });
 
+        // FIXME: check for unavailable snapshot and try again, or make primary wait for snapshot
+        // to become available
         let frames = self.client.snapshot(req).await?.into_inner();
 
-        let stream = frames.map(|data| match data {
-            Ok(frame) => Frame::try_from_bytes(frame.data),
+        let mut stream = frames.map(|data| match data {
+            Ok(frame) => Frame::try_from(&*frame.data),
             Err(e) => anyhow::bail!(e),
         });
-        let snap = TempSnapshot::from_stream(&self.db_path, stream).await?;
 
-        let _ = self.frames_sender.send(Frames::Snapshot(snap)).await;
+        while let Some(frame) = stream.next().await {
+            let frame = frame?;
+            self.inject_frame(frame).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn inject_frame(&mut self, frame: Frame) -> anyhow::Result<()> {
+        let injector = self.injector.clone();
+        match spawn_blocking(move || injector.lock().inject_frame(frame)).await? {
+            Ok(Some(commit_fno)) => {
+                self.meta.set_commit_frame_no(commit_fno).await?;
+                self.current_frame_no_notifier
+                    .send_replace(Some(commit_fno));
+            }
+            Ok(None) => (),
+            Err(e @ crate::Error::FatalReplicationError) => {
+                // we conservatively nuke the replica and start replicating from scractch
+                tracing::error!(
+                    "fatal error replicating `{}` from primary, reseting namespace...",
+                    self.namespace
+                );
+                (self.reset)(ResetOp::Destroy(self.namespace.clone()));
+                Err(e)?
+            }
+            Err(e) => Err(e)?,
+        }
 
         Ok(())
     }
@@ -286,6 +230,6 @@ impl Replicator {
     }
 
     fn current_frame_no(&mut self) -> Option<FrameNo> {
-        *self.current_frame_no_notifier.borrow_and_update()
+        self.meta.current_frame_no()
     }
 }

@@ -1,12 +1,13 @@
-use std::fs::{File, OpenOptions};
-use std::io::ErrorKind;
+use std::io::{ErrorKind, SeekFrom};
 use std::mem::size_of;
-use std::os::unix::prelude::FileExt;
 use std::path::Path;
 use std::str::FromStr;
 
 use anyhow::Context;
-use bytemuck::{try_pod_read_unaligned, Pod, Zeroable};
+use bytemuck::{bytes_of, try_pod_read_unaligned, Pod, Zeroable};
+use tokio::fs::File;
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
+use tokio::pin;
 use uuid::Uuid;
 
 use crate::{replication::FrameNo, rpc::replication_log::rpc::HelloResponse};
@@ -15,43 +16,20 @@ use super::error::ReplicationError;
 
 #[repr(C)]
 #[derive(Debug, Pod, Zeroable, Clone, Copy)]
-pub struct WalIndexMeta {
-    /// This is the anticipated next frame_no to request
-    pub pre_commit_frame_no: FrameNo,
-    /// After we have written the frames back to the wal, we set this value to the same value as
-    /// pre_commit_index
-    /// On startup we check this value against the pre-commit value to check for consistency
-    pub post_commit_frame_no: FrameNo,
-    /// Generation Uuid
-    /// This number is generated on each primary restart. This let's us know that the primary, and
-    /// we need to make sure that we are not ahead of the primary.
-    generation_id: u128,
-    /// Uuid of the database this instance is a replica of
-    database_id: u128,
+pub struct WalIndexMetaData {
+    /// id of the replicated log
+    log_id: u128,
+    /// commited frame index
+    pub committed_frame_no: FrameNo,
+    _padding: u64,
 }
 
-impl WalIndexMeta {
-    pub fn open(db_path: &Path) -> crate::Result<File> {
-        let path = db_path.join("client_wal_index");
-        std::fs::create_dir_all(db_path)?;
-
-        Ok(OpenOptions::new()
-            .create(true)
-            .read(true)
-            .write(true)
-            .open(path)?)
-    }
-
-    pub fn read_from_path(db_path: &Path) -> anyhow::Result<Option<Self>> {
-        let file = Self::open(db_path)?;
-        Ok(Self::read(&file)?)
-    }
-
-    fn read(file: &File) -> crate::Result<Option<Self>> {
-        let mut buf = [0; size_of::<WalIndexMeta>()];
-        let meta = match file.read_exact_at(&mut buf, 0) {
-            Ok(()) => {
-                file.read_exact_at(&mut buf, 0)?;
+impl WalIndexMetaData {
+    async fn read(file: impl AsyncRead) -> crate::Result<Option<Self>> {
+        pin!(file);
+        let mut buf = [0; size_of::<WalIndexMetaData>()];
+        let meta = match file.read_exact(&mut buf).await {
+            Ok(_) => {
                 let meta: Self = try_pod_read_unaligned(&buf)
                     .map_err(|_| anyhow::anyhow!("invalid index meta file"))?;
                 Some(meta)
@@ -62,44 +40,94 @@ impl WalIndexMeta {
 
         Ok(meta)
     }
+}
+
+pub struct WalIndexMeta {
+    file: File,
+    data: Option<WalIndexMetaData>,
+}
+
+impl WalIndexMeta {
+    pub async fn open(db_path: &Path) -> crate::Result<Self> {
+        let path = db_path.join("client_wal_index");
+
+        tokio::fs::create_dir_all(db_path).await?;
+
+        let mut file = tokio::fs::OpenOptions::new()
+            .create(true)
+            .read(true)
+            .write(true)
+            .open(&path)
+            .await?;
+
+        let data = WalIndexMetaData::read(&mut file).await?;
+
+        Ok(Self { file, data })
+    }
 
     /// attempts to merge two meta files.
-    pub fn merge_from_hello(mut self, hello: HelloResponse) -> Result<Self, ReplicationError> {
-        let hello_db_id = Uuid::from_str(&hello.database_id)
+    pub fn merge_hello(&mut self, hello: HelloResponse) -> Result<(), ReplicationError> {
+        let hello_log_id = Uuid::from_str(&hello.log_id)
             .context("invalid database id from primary")?
             .as_u128();
-        let hello_gen_id = Uuid::from_str(&hello.generation_id)
-            .context("invalid generation id from primary")?
-            .as_u128();
 
-        if hello_db_id != self.database_id {
-            return Err(ReplicationError::DbIncompatible);
-        }
-
-        if self.generation_id == hello_gen_id {
-            Ok(self)
-        } else if self.pre_commit_frame_no <= hello.generation_start_index {
-            // Ok: generation changed, but we aren't ahead of primary
-            self.generation_id = hello_gen_id;
-            Ok(self)
-        } else {
-            Err(ReplicationError::Lagging)
+        match self.data {
+            Some(meta) => {
+                if meta.log_id != hello_log_id {
+                    Err(ReplicationError::LogIncompatible)
+                } else {
+                    Ok(())
+                }
+            }
+            None => {
+                self.data = Some(WalIndexMetaData {
+                    log_id: hello_log_id,
+                    committed_frame_no: FrameNo::MAX,
+                    _padding: 0,
+                });
+                Ok(())
+            }
         }
     }
 
-    pub fn new_from_hello(hello: HelloResponse) -> anyhow::Result<WalIndexMeta> {
-        let database_id = Uuid::from_str(&hello.database_id)
-            .context("invalid database id from primary")?
-            .as_u128();
-        let generation_id = Uuid::from_str(&hello.generation_id)
-            .context("invalid generation id from primary")?
-            .as_u128();
+    pub async fn flush(&mut self) -> crate::Result<()> {
+        if let Some(data) = self.data {
+            // FIXME: we can save a syscall by calling read_exact_at, but let's use tokio API for now
+            self.file.seek(SeekFrom::Start(0)).await?;
+            let s = self.file.write(bytes_of(&data)).await?;
+            // WalIndexMeta is smaller than a page size, and aligned at the beginning of the file, if
+            // should always be written in a single call
+            assert_eq!(s, size_of::<WalIndexMetaData>());
+            self.file.flush().await?;
+        }
 
-        Ok(Self {
-            pre_commit_frame_no: FrameNo::MAX,
-            post_commit_frame_no: FrameNo::MAX,
-            generation_id,
-            database_id,
+        Ok(())
+    }
+
+    /// Apply the last commit frame no to the meta file.
+    /// This function must be called after each injection, because it's idempotent to re-apply the
+    /// last transaction, but not idempotent if we lose track of more than one.
+    pub async fn set_commit_frame_no(&mut self, commit_fno: FrameNo) -> crate::Result<()> {
+        {
+            let data = self
+                .data
+                .as_mut()
+                .expect("call set_commit_frame_no before initializing meta");
+            data.committed_frame_no = commit_fno;
+        }
+
+        self.flush().await?;
+
+        Ok(())
+    }
+
+    pub(crate) fn current_frame_no(&self) -> Option<FrameNo> {
+        self.data.and_then(|d| {
+            if d.committed_frame_no == FrameNo::MAX {
+                None
+            } else {
+                Some(d.committed_frame_no)
+            }
         })
     }
 }

@@ -1,10 +1,10 @@
-use std::borrow::Cow;
+use std::alloc::Layout;
 use std::fmt;
-use std::mem::{size_of, transmute};
-use std::ops::Deref;
+use std::mem::size_of;
+use std::ops::{Deref, DerefMut};
 
-use bytemuck::{bytes_of, pod_read_unaligned, try_from_bytes, Pod, Zeroable};
-use bytes::{Bytes, BytesMut};
+use bytemuck::{bytes_of, from_bytes, Pod, Zeroable};
+use bytes::Bytes;
 
 use crate::LIBSQL_PAGE_SIZE;
 
@@ -28,10 +28,18 @@ pub struct FrameHeader {
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
-/// The owned version of a replication frame.
+/// The shared version of a replication frame.
 /// Cloning this is cheap.
 pub struct Frame {
-    data: Bytes,
+    inner: Bytes,
+}
+
+impl TryFrom<&[u8]> for Frame {
+    type Error = anyhow::Error;
+
+    fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
+        Ok(FrameMut::try_from(data)?.into())
+    }
 }
 
 impl fmt::Debug for Frame {
@@ -43,57 +51,108 @@ impl fmt::Debug for Frame {
     }
 }
 
-impl Frame {
-    /// size of a single frame
-    pub const SIZE: usize = size_of::<FrameHeader>() + LIBSQL_PAGE_SIZE as usize;
+/// Owned version of a frame, on the heap
+pub struct FrameMut {
+    inner: Box<FrameBorrowed>,
+}
 
-    pub fn from_parts(header: &FrameHeader, data: &[u8]) -> Self {
-        assert_eq!(data.len(), LIBSQL_PAGE_SIZE as usize);
-        let mut buf = BytesMut::with_capacity(Self::SIZE);
-        buf.extend_from_slice(bytes_of(header));
-        buf.extend_from_slice(data);
+impl TryFrom<&[u8]> for FrameMut {
+    type Error = anyhow::Error;
 
-        Self { data: buf.freeze() }
+    fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
+        anyhow::ensure!(
+            data.len() == size_of::<FrameBorrowed>(),
+            "invalid frame size"
+        );
+        // frames are relatively large (~4ko), we want to avoid allocating them on the stack and
+        // then copying them to the heap, and instead copy them to the heap directly.
+        let inner = unsafe {
+            let layout = Layout::new::<FrameBorrowed>();
+            let ptr = std::alloc::alloc(layout);
+            ptr.copy_from(data.as_ptr(), data.len());
+            Box::from_raw(ptr as *mut FrameBorrowed)
+        };
+
+        Ok(Self { inner })
     }
+}
 
-    pub fn try_from_bytes(data: Bytes) -> anyhow::Result<Self> {
-        anyhow::ensure!(data.len() == Self::SIZE, "invalid frame size");
-        Ok(Self { data })
+impl From<FrameMut> for Frame {
+    fn from(value: FrameMut) -> Self {
+        // transmute the FrameBorrowed into a Box<[u8; _]>. This is safe because the alignment of
+        // [u8] divides the alignement of FrameBorrowed
+        let data = unsafe {
+            Vec::from_raw_parts(
+                Box::into_raw(value.inner) as *mut u8,
+                size_of::<FrameBorrowed>(),
+                size_of::<FrameBorrowed>(),
+            )
+        };
+
+        Self {
+            inner: Bytes::from(data),
+        }
+    }
+}
+
+impl From<FrameBorrowed> for FrameMut {
+    fn from(inner: FrameBorrowed) -> Self {
+        Self {
+            inner: Box::new(inner),
+        }
+    }
+}
+
+impl Frame {
+    pub fn from_parts(header: &FrameHeader, data: &[u8]) -> Self {
+        FrameBorrowed::from_parts(header, data).into()
     }
 
     pub fn bytes(&self) -> Bytes {
-        self.data.clone()
+        self.inner.clone()
+    }
+}
+
+impl From<FrameBorrowed> for Frame {
+    fn from(value: FrameBorrowed) -> Self {
+        FrameMut::from(value).into()
     }
 }
 
 /// The borrowed version of Frame
-#[repr(transparent)]
+#[repr(C)]
+#[derive(Pod, Zeroable, Copy, Clone)]
 pub struct FrameBorrowed {
-    data: [u8],
+    header: FrameHeader,
+    page: [u8; LIBSQL_PAGE_SIZE as usize],
 }
 
 impl FrameBorrowed {
-    pub fn header(&self) -> Cow<FrameHeader> {
-        let data = &self.data[..size_of::<FrameHeader>()];
-        try_from_bytes(data)
-            .map(Cow::Borrowed)
-            .unwrap_or_else(|_| Cow::Owned(pod_read_unaligned(data)))
-    }
-
     /// Returns the bytes for this frame. Includes the header bytes.
     pub fn as_slice(&self) -> &[u8] {
-        &self.data
-    }
-
-    pub fn from_bytes(data: &[u8]) -> &Self {
-        assert_eq!(data.len(), Frame::SIZE);
-        // SAFETY: &FrameBorrowed is equivalent to &[u8]
-        unsafe { transmute(data) }
+        bytes_of(self)
     }
 
     /// returns this frame's page data.
     pub fn page(&self) -> &[u8] {
-        &self.data[size_of::<FrameHeader>()..]
+        &self.page
+    }
+
+    pub fn header(&self) -> &FrameHeader {
+        &self.header
+    }
+
+    pub fn header_mut(&mut self) -> &mut FrameHeader {
+        &mut self.header
+    }
+
+    pub fn from_parts(header: &FrameHeader, page: &[u8]) -> Self {
+        assert_eq!(page.len(), LIBSQL_PAGE_SIZE as usize);
+
+        FrameBorrowed {
+            header: *header,
+            page: page.try_into().unwrap(),
+        }
     }
 }
 
@@ -101,6 +160,20 @@ impl Deref for Frame {
     type Target = FrameBorrowed;
 
     fn deref(&self) -> &Self::Target {
-        FrameBorrowed::from_bytes(&self.data)
+        from_bytes(&self.inner)
+    }
+}
+
+impl Deref for FrameMut {
+    type Target = FrameBorrowed;
+
+    fn deref(&self) -> &Self::Target {
+        self.inner.as_ref()
+    }
+}
+
+impl DerefMut for FrameMut {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.inner.as_mut()
     }
 }
