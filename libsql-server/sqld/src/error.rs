@@ -38,7 +38,7 @@ pub enum Error {
     NotAuthorized(String),
     #[error("The replicator exited, instance cannot make any progress.")]
     ReplicatorExited,
-    #[error("Timed out while openning database connection")]
+    #[error("Timed out while opening database connection")]
     DbCreateTimeout,
     #[error(transparent)]
     BuilderError(#[from] QueryResultBuilderError),
@@ -65,7 +65,7 @@ pub enum Error {
     NamespaceAlreadyExist(String),
     #[error("Invalid namespace")]
     InvalidNamespace,
-    #[error("replication error: {0}")]
+    #[error("Replication error: {0}")]
     ReplicationError(#[from] ReplicationError),
     #[error("Failed to connect to primary")]
     PrimaryConnectionTimeout,
@@ -75,13 +75,13 @@ pub enum Error {
     InvalidMetadataBytes(#[from] InvalidMetadataValueBytes),
     #[error("Cannot call parametrized restore over replica")]
     ReplicaRestoreError,
-    #[error("cannot load from a dump if a database already exists.")]
+    #[error("Cannot load from a dump if a database already exists.")]
     LoadDumpExistingDb,
-    #[error("cannot restore database when conflicting params were provided")]
+    #[error("Cannot restore database when conflicting params were provided")]
     ConflictingRestoreParameters,
-    #[error("failed to fork database: {0}")]
+    #[error("Failed to fork database: {0}")]
     Fork(#[from] ForkError),
-    #[error("fatal replication error")]
+    #[error("Fatal replication error")]
     FatalReplicationError,
 }
 
@@ -177,23 +177,23 @@ internal_from! {
 
 #[derive(Debug, thiserror::Error)]
 pub enum LoadDumpError {
-    #[error("internal error: {0}")]
+    #[error("Internal error: {0}")]
     Internal(String),
     #[error("Cannot load a dump on a replica")]
     ReplicaLoadDump,
-    #[error("cannot load from a dump if a database already exists")]
+    #[error("Cannot load from a dump if a database already exists")]
     LoadDumpExistingDb,
-    #[error("the passed dump file path is not absolute")]
+    #[error("The passed dump file path is not absolute")]
     DumpFilePathNotAbsolute,
-    #[error("the passed dump file path doesn't exist")]
+    #[error("The passed dump file path doesn't exist")]
     DumpFileDoesntExist,
-    #[error("invalid dump url")]
+    #[error("Invalid dump url")]
     InvalidDumpUrl,
-    #[error("unsupported dump url scheme `{0}`, supported schemes are: `http`, `file`")]
+    #[error("Unsupported dump url scheme `{0}`, supported schemes are: `http`, `file`")]
     UnsupportedUrlScheme(String),
-    #[error("a dump should execute within a transaction.")]
+    #[error("A dump should execute within a transaction.")]
     NoTxn,
-    #[error("the dump should commit the transaction.")]
+    #[error("The dump should commit the transaction.")]
     NoCommit,
 }
 
