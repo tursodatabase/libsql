@@ -109,6 +109,7 @@ impl<A> UserApiConfig<A> {
 pub struct AdminApiConfig<A = AddrIncoming, C = HttpsConnector<HttpConnector>> {
     pub acceptor: A,
     pub connector: C,
+    pub disable_metrics: bool,
 }
 
 #[derive(Clone)]

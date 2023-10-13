@@ -161,6 +161,7 @@ where
         if let Some(AdminApiConfig {
             acceptor,
             connector,
+            disable_metrics,
         }) = self.admin_api_config
         {
             join_set.spawn(http::admin::run(
@@ -168,6 +169,7 @@ where
                 user_http_service,
                 self.namespaces,
                 connector,
+                disable_metrics,
             ));
         }
     }

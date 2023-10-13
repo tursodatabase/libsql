@@ -29,6 +29,7 @@ fn make_cluster(sim: &mut Sim, num_replica: usize, disable_namespaces: bool) {
                 admin_api_config: Some(AdminApiConfig {
                     acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await?,
                     connector: TurmoilConnector,
+                    disable_metrics: true,
                 }),
                 rpc_server_config: Some(RpcServerConfig {
                     acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 4567)).await?,
@@ -59,6 +60,7 @@ fn make_cluster(sim: &mut Sim, num_replica: usize, disable_namespaces: bool) {
                     admin_api_config: Some(AdminApiConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await?,
                         connector: TurmoilConnector,
+                        disable_metrics: true,
                     }),
                     rpc_client_config: Some(RpcClientConfig {
                         remote_url: "http://primary:4567".into(),

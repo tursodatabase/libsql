@@ -360,6 +360,7 @@ async fn make_admin_api_config(config: &Cli) -> anyhow::Result<Option<AdminApiCo
             Ok(Some(AdminApiConfig {
                 acceptor,
                 connector,
+                disable_metrics: false,
             }))
         }
         None => Ok(None),

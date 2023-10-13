@@ -27,21 +27,25 @@ type UserHttpServer<M> =
 
 #[derive(Clone)]
 struct Metrics {
-    handle: PrometheusHandle,
+    handle: Option<PrometheusHandle>,
+}
+
+impl Metrics {
+    fn render(&self) -> String {
+        self.handle.as_ref().map(|h| h.render()).unwrap_or_default()
+    }
 }
 
 struct AppState<M: MakeNamespace, C> {
     namespaces: NamespaceStore<M>,
     user_http_server: UserHttpServer<M>,
     connector: C,
-    metrics: PrometheusHandle,
+    metrics: Metrics,
 }
 
 impl<M: MakeNamespace, C> FromRef<Arc<AppState<M, C>>> for Metrics {
     fn from_ref(input: &Arc<AppState<M, C>>) -> Self {
-        Metrics {
-            handle: input.metrics.clone(),
-        }
+        input.metrics.clone()
     }
 }
 
@@ -50,6 +54,7 @@ pub async fn run<M, A, C>(
     user_http_server: UserHttpServer<M>,
     namespaces: NamespaceStore<M>,
     connector: C,
+    disable_metrics: bool,
 ) -> anyhow::Result<()>
 where
     A: crate::net::Accept,
@@ -57,6 +62,12 @@ where
     C: Connector,
 {
     use axum::routing::{get, post};
+    let metrics = Metrics {
+        handle: (!disable_metrics)
+            .then(|| PrometheusBuilder::new().install_recorder())
+            .transpose()
+            .unwrap(),
+    };
     let router = axum::Router::new()
         .route("/", get(handle_get_index))
         .route(
@@ -79,7 +90,7 @@ where
             namespaces,
             connector,
             user_http_server,
-            metrics: PrometheusBuilder::new().install_recorder().unwrap(),
+            metrics,
         }));
 
     hyper::server::Server::builder(acceptor)
@@ -94,7 +105,7 @@ async fn handle_get_index() -> &'static str {
 }
 
 async fn handle_metrics(State(metrics): State<Metrics>) -> String {
-    metrics.handle.render()
+    metrics.render()
 }
 
 async fn handle_get_config<M: MakeNamespace, C: Connector>(
