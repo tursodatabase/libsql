@@ -1,5 +1,5 @@
-C Avoid\spotential\soverflow\sin\shex().\s[forum:/forumpost/7ac0c9c5ea|See\sforum\spost\s7ac0c9c5ea.]
-D 2023-10-13T01:39:47.068
+C Actually\sprevent\sPRAGMA\swritable_schema=ON\sfrom\sbeing\sset\sin\sdefensive\smode,\nrather\sthan\sjust\spreventing\sit\sfrom\sfunctioning.
+D 2023-10-13T12:57:23.459
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -707,7 +707,7 @@ F src/parse.y aeb7760d41cfa86465e3adba506500c021597049fd55f82a30e5b7045862c28c
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
-F src/pragma.c db6ce4f9d67722a5d46428d21dc1eaff919a92a9e009168fbb6ad227a5d781be
+F src/pragma.c 9f9b8828624ee98de22a2a9793a651daa39bc06cd9e701b6eda23c6d75260f1d
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c bde74add20fc0e8ce0c4e937a1f70a36d17413afe4f71d3e103f5cb74b17c8d9
 F src/printf.c e3ba080e2f409f9bfcc8d34724e6fc160e9c718dc92d0548f6b71b8b6f860ce2
@@ -2128,8 +2128,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4a4eccb681741917c6771101d4e329f91eae9b035f4d345218e522bb55fff6da
-R b8db52c4af481f11a25564ae1b4169f0
-U larrybr
-Z e40ad0deba084d2d357f307fa10fdd72
+P 2e968114fd0e60eebcc088dec02684e10b06ac1ec42d6bedb5287362f5cbf032
+R 7b01763f55834ca6495d297b6d47ecf8
+U drh
+Z e23aaad11f5de862bcdfc4d2c2927a81
 # Remove this line to create a well-formed Fossil manifest.
