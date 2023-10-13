@@ -230,3 +230,9 @@ For example, if you have the following entries in your `/etc/hosts` file:
 
 You can access `db1` with the `http://db1.local:8080`URL and `db2` with `http://db2.local:8080`.
 The database files for the databases are stored in `<data dir>/dbs/db1` and `<data dir/dbs/db2`, respectively.
+
+### Wildcard domain for development
+
+If you don't feel like editing `/etc/hosts` each time you want to test a new namespace, you can use any domain
+that returns `127.0.0.1` for all subdomains. One of such domains is `*.db.sarna.dev`, which you can use to access
+your local `db1` and `db2` as `http://db1.db.sarna.dev` and `http://db2.db.sarna.dev` respectively.
