@@ -109,5 +109,33 @@ do_execsql_test 4.3 {
   INSERT INTO t1(t1) VALUES('integrity-check');
 }
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(content);
+
+  INSERT INTO t1(t1,rank) VALUES('secure-delete',1);
+  INSERT INTO t1 VALUES('active'),('boomer'),('atom'),('atomic'),
+         ('alpha channel backup abandon test aback boomer atom alpha active');
+  DELETE FROM t1 WHERE t1 MATCH 'abandon';
+} 
+
+do_execsql_test 5.1 {
+  INSERT INTO t1(t1) VALUES('rebuild');
+}
+
+do_execsql_test 5.2 {
+  DELETE FROM t1 WHERE rowid NOTNULL<5;
+}
+
+db close
+sqlite3 db test.db
+
+do_execsql_test 5.3 {
+  PRAGMA integrity_check;
+} {ok}
+
+
 finish_test
 
