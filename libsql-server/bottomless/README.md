@@ -121,7 +121,7 @@ Removed 4 generations
 ```
 
 ## Details
-All page writes committed to the database end up being synchronously replicated to S3-compatible storage.
+All page writes committed to the database end up being asynchronously replicated to S3-compatible storage.
 On boot, if the main database file is empty, it will be restored with data coming from the remote storage.
 If the database file is newer, it will be uploaded to the remote location with a new generation number.
 If a local WAL file is present and detected to be newer than remote data, it will be uploaded as well.
