@@ -2921,12 +2921,16 @@ void sqlite3EndTable(
     sqlite3VdbeAddParseSchemaOp(v, iDb,
            sqlite3MPrintf(db, "tbl_name='%q' AND type!='trigger'", p->zName),0);
 
-    /* Test for cycles in generated columns */
+    /* Test for cycles in generated columns and illegal expressions
+    ** in CHECK constraints and in DEFAULT clauses. */
     if( p->tabFlags & TF_HasGenerated ){
-      sqlite3VdbeAddOp4(v, OP_SqlExec, 0, 0, 0,
-             sqlite3MPrintf(db, "SELECT*FROM\"%w\".\"%s\"",
+      sqlite3VdbeAddOp4(v, OP_SqlExec, 1, 0, 0,
+             sqlite3MPrintf(db, "SELECT*FROM\"%w\".\"%w\"",
                    db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
     }
+    sqlite3VdbeAddOp4(v, OP_SqlExec, 1, 0, 0,
+           sqlite3MPrintf(db, "PRAGMA \"%w\".integrity_check(%Q)",
+                 db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
   }
 
   /* Add the table to the in-memory representation of the database.

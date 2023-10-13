@@ -6906,18 +6906,31 @@ case OP_CreateBtree: {          /* out2 */
 /* Opcode: SqlExec * * * P4 *
 **
 ** Run the SQL statement or statements specified in the P4 string.
+** Disable Auth and Trace callbacks while those statements are running if
+** P1 is true.
 */
 case OP_SqlExec: {
   char *zErr;
+  sqlite3_xauth xAuth;
+  u8 mTrace;
 
   sqlite3VdbeIncrWriteCounter(p, 0);
   db->nSqlExec++;
   zErr = 0;
+  xAuth = db->xAuth;
+  mTrace = db->mTrace;
+  if( pOp->p1 ){
+    db->xAuth = 0;
+    db->mTrace = 0;
+  }
   rc = sqlite3_exec(db, pOp->p4.z, 0, 0, &zErr);
   db->nSqlExec--;
+  db->xAuth = xAuth;
+  db->mTrace = mTrace;
   if( rc || zErr ){
     sqlite3VdbeError(p, "%s", zErr);
     sqlite3_free(zErr);
+    if( rc==SQLITE_NOMEM ) goto no_mem;
     goto abort_due_to_error;
   }
   break;
