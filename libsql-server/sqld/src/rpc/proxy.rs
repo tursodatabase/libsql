@@ -37,20 +37,23 @@ pub mod rpc {
 
     impl From<SqldError> for Error {
         fn from(other: SqldError) -> Self {
-            Error {
-                message: other.to_string(),
-                code: ErrorCode::from(other).into(),
-            }
-        }
-    }
-
-    impl From<SqldError> for ErrorCode {
-        fn from(other: SqldError) -> Self {
-            match other {
+            let code = match other {
                 SqldError::LibSqlInvalidQueryParams(_) => ErrorCode::SqlError,
                 SqldError::LibSqlTxTimeout => ErrorCode::TxTimeout,
                 SqldError::LibSqlTxBusy => ErrorCode::TxBusy,
                 _ => ErrorCode::Internal,
+            };
+
+            let extended_code = if let SqldError::RusqliteErrorExtended(_, code) = &other {
+                *code
+            } else {
+                0
+            };
+
+            Error {
+                message: other.to_string(),
+                code: code as i32,
+                extended_code,
             }
         }
     }

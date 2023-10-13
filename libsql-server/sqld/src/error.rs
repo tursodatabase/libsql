@@ -20,6 +20,8 @@ pub enum Error {
     IOError(#[from] std::io::Error),
     #[error(transparent)]
     RusqliteError(#[from] rusqlite::Error),
+    #[error("{0}")]
+    RusqliteErrorExtended(rusqlite::Error, i32),
     #[error("Failed to execute query via RPC. Error code: {}, message: {}", .0.code, .0.message)]
     RpcQueryError(crate::rpc::proxy::rpc::Error),
     #[error("Failed to execute queries via RPC protocol: `{0}`")]
@@ -106,6 +108,7 @@ impl IntoResponse for Error {
             LibSqlTxBusy => self.format_err(StatusCode::TOO_MANY_REQUESTS),
             IOError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             RusqliteError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            RusqliteErrorExtended(_, _) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             RpcQueryError(_) => self.format_err(StatusCode::BAD_REQUEST),
             RpcQueryExecutionError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             DbValueError(_) => self.format_err(StatusCode::BAD_REQUEST),

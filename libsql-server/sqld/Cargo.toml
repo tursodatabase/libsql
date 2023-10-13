@@ -69,7 +69,7 @@ hyper-rustls = { git = "https://github.com/rustls/hyper-rustls.git", rev = "163b
 rustls-pemfile = "1.0.3"
 rustls = "0.21.7"
 async-stream = "0.3.5"
-libsql = { git = "https://github.com/tursodatabase/libsql.git", rev = "bea8863", optional = true }
+libsql = { git = "https://github.com/tursodatabase/libsql", rev = "8847ca05c", optional = true }
 metrics = "0.21.1"
 metrics-exporter-prometheus = "0.12.1"
 

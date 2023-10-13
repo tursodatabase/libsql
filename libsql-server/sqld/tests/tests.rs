@@ -3,5 +3,6 @@
 
 mod cluster;
 mod common;
+mod embedded_replica;
 mod namespaces;
 mod standalone;

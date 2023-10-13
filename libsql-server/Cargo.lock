@@ -2353,7 +2353,7 @@ dependencies = [
 [[package]]
 name = "libsql"
 version = "0.1.11"
-source = "git+https://github.com/tursodatabase/libsql.git?rev=bea8863#bea88634dbdf1f578c5187196e7e311f5aa8a67c"
+source = "git+https://github.com/tursodatabase/libsql?rev=8847ca05c#8847ca05cf2df9811d8151230b008850694ebe31"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2411,7 +2411,7 @@ dependencies = [
 [[package]]
 name = "libsql-sys"
 version = "0.2.14"
-source = "git+https://github.com/tursodatabase/libsql.git?rev=bea8863#bea88634dbdf1f578c5187196e7e311f5aa8a67c"
+source = "git+https://github.com/tursodatabase/libsql?rev=8847ca05c#8847ca05cf2df9811d8151230b008850694ebe31"
 dependencies = [
  "bindgen 0.66.1",
  "cc",

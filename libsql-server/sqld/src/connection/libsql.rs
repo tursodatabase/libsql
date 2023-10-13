@@ -374,7 +374,7 @@ impl<W: WalHook> Connection<W> {
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
     ) -> Result<Self> {
-        let mut conn = open_conn(
+        let conn = open_conn(
             path,
             wal_methods,
             hook_ctx,
@@ -519,7 +519,14 @@ impl<W: WalHook> Connection<W> {
             match self.execute_query(&step.query, builder) {
                 // builder error interrupt the execution of query. we should exit immediately.
                 Err(e @ Error::BuilderError(_)) => return Err(e),
-                Err(e) => {
+                Err(mut e) => {
+                    if let Error::RusqliteError(err) = e {
+                        let extended_code =
+                            unsafe { rusqlite::ffi::sqlite3_extended_errcode(self.conn.handle()) };
+
+                        e = Error::RusqliteErrorExtended(err, extended_code as i32);
+                    };
+
                     builder.step_error(e)?;
                     enabled = false;
                     (0, None)
@@ -570,6 +577,7 @@ impl<W: WalHook> Connection<W> {
             .map_err(Error::LibSqlInvalidQueryParams)?;
 
         let mut qresult = stmt.raw_query();
+
         builder.begin_rows()?;
         while let Some(row) = qresult.next()? {
             builder.begin_row()?;

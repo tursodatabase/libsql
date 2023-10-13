@@ -42,6 +42,7 @@ message Error {
 
     ErrorCode code = 1;
     string message = 2;
+    int32 extended_code = 3;
 }
 
 message ResultRows {

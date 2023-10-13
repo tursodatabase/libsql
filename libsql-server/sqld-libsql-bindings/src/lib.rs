@@ -111,7 +111,7 @@ impl<W: WalHook> Connection<W> {
     ///
     /// # Safety
     /// The caller is responsible for the returned pointer.
-    pub unsafe fn handle(&mut self) -> *mut sqlite3 {
+    pub unsafe fn handle(&self) -> *mut sqlite3 {
         self.conn.handle()
     }
 }
