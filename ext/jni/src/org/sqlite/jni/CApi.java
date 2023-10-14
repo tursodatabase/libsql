@@ -400,6 +400,17 @@ final class CApi {
       : sqlite3_bind_text16(stmt.getNativePointer(), ndx, data, data.length);
   }
 
+  static native int sqlite3_bind_value(@NotNull long ptrToStmt, int ndx, long ptrToValue);
+
+  /**
+     Functions like the C-level sqlite3_bind_value(), or
+     sqlite3_bind_null() if val is null.
+  */
+  public static int sqlite3_bind_value(@NotNull sqlite3_stmt stmt, int ndx, sqlite3_value val){
+    return sqlite3_bind_value(stmt.getNativePointer(), ndx,
+                              null==val ? 0L : val.getNativePointer());
+  }
+
   static native int sqlite3_bind_zeroblob(@NotNull long ptrToStmt, int ndx, int n);
 
   public static int sqlite3_bind_zeroblob(@NotNull sqlite3_stmt stmt, int ndx, int n){

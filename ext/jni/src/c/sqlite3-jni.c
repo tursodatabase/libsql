@@ -2378,7 +2378,7 @@ S3JniApi(sqlite3_bind_java_object(),jint,1bind_1java_1object)(
   int rc = SQLITE_MISUSE;
 
   if(pStmt){
-    jobject const rv = val ? S3JniRefGlobal(val) : 0;
+    jobject const rv = S3JniRefGlobal(val);
     if( rv ){
       rc = sqlite3_bind_pointer(pStmt, ndx, rv, ResultJavaValuePtrStr,
                                 S3Jni_jobject_finalizer);
@@ -2442,6 +2442,24 @@ S3JniApi(sqlite3_bind_text16(),jint,1bind_1text16)(
   int const rc = sqlite3_bind_text16(S3JniLongPtr_sqlite3_stmt(jpStmt), (int)ndx,
                                      pBuf, (int)nMax, SQLITE_TRANSIENT);
   s3jni_jbyteArray_release(baData, pBuf);
+  return (jint)rc;
+}
+
+S3JniApi(sqlite3_bind_value(),jint,1bind_1value)(
+  JniArgsEnvClass, jlong jpStmt, jint ndx, jlong jpValue
+){
+  int rc = 0;
+  sqlite3_stmt * pStmt = S3JniLongPtr_sqlite3_stmt(jpStmt);
+  if( pStmt ){
+    sqlite3_value *v = S3JniLongPtr_sqlite3_value(jpValue);
+    if( v ){
+      rc = sqlite3_bind_value(pStmt, (int)ndx, v);
+    }else{
+      sqlite3_bind_null(pStmt, (int)ndx);
+    }
+  }else{
+    rc = SQLITE_MISUSE;
+  }
   return (jint)rc;
 }
 
@@ -3731,10 +3749,15 @@ jint sqlite3_jni_prepare_v123( int prepVersion, JNIEnv * const env, jclass self,
   sqlite3_stmt * pStmt = 0;
   jobject jStmt = 0;
   const char * zTail = 0;
-  jbyte * const pBuf = s3jni_jbyteArray_bytes(baSql);
+  sqlite3 * const pDb = S3JniLongPtr_sqlite3(jpDb);
+  jbyte * const pBuf = pDb ? s3jni_jbyteArray_bytes(baSql)  : 0;
   int rc = SQLITE_ERROR;
+
   assert(prepVersion==1 || prepVersion==2 || prepVersion==3);
-  if( !pBuf ){
+  if( !pDb || !jOutStmt ){
+    rc = SQLITE_MISUSE;
+    goto end;
+  }else if( !pBuf ){
     rc = baSql ? SQLITE_NOMEM : SQLITE_MISUSE;
     goto end;
   }
@@ -3744,13 +3767,13 @@ jint sqlite3_jni_prepare_v123( int prepVersion, JNIEnv * const env, jclass self,
     goto end;
   }
   switch( prepVersion ){
-    case 1: rc = sqlite3_prepare(S3JniLongPtr_sqlite3(jpDb), (const char *)pBuf,
+    case 1: rc = sqlite3_prepare(pDb, (const char *)pBuf,
                                  (int)nMax, &pStmt, &zTail);
       break;
-    case 2: rc = sqlite3_prepare_v2(S3JniLongPtr_sqlite3(jpDb), (const char *)pBuf,
+    case 2: rc = sqlite3_prepare_v2(pDb, (const char *)pBuf,
                                     (int)nMax, &pStmt, &zTail);
       break;
-    case 3: rc = sqlite3_prepare_v3(S3JniLongPtr_sqlite3(jpDb), (const char *)pBuf,
+    case 3: rc = sqlite3_prepare_v3(pDb, (const char *)pBuf,
                                     (int)nMax, (unsigned int)prepFlags,
                                     &pStmt, &zTail);
       break;
@@ -3780,8 +3803,10 @@ end:
     S3JniUnrefLocal(jStmt);
     jStmt = 0;
   }
-  OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3_stmt),
-                        jOutStmt, jStmt);
+  if( jOutStmt ){
+    OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3_stmt),
+                          jOutStmt, jStmt);
+  }
   return (jint)rc;
 }
 S3JniApi(sqlite3_prepare(),jint,1prepare)(
@@ -4105,7 +4130,10 @@ static void result_blob_text(int as64     /* true for text64/blob64() mode */,
                              JNIEnv * const env, sqlite3_context *pCx,
                              jbyteArray jBa, jlong nMax){
   int const asBlob = 0==eTextRep;
-  if( jBa ){
+  if( !pCx ){
+    /* We should arguably emit a warning here. But where to log it? */
+    return;
+  }else if( jBa ){
     jbyte * const pBuf = s3jni_jbyteArray_bytes(jBa);
     jsize nBa = (*env)->GetArrayLength(env, jBa);
     if( nMax>=0 && nBa>(jsize)nMax ){
@@ -4121,7 +4149,7 @@ static void result_blob_text(int as64     /* true for text64/blob64() mode */,
          Note that the text64() interfaces take an unsigned value for
          the length, which Java does not support. This binding takes
          the approach of passing on negative values to the C API,
-         which will, in turn fail with SQLITE_TOOBIG at some later
+         which will in turn fail with SQLITE_TOOBIG at some later
          point (recall that the sqlite3_result_xyz() family do not
          have result values).
       */
@@ -4255,10 +4283,12 @@ S3JniApi(sqlite3_result_int64(),void,1result_1int64)(
 S3JniApi(sqlite3_result_java_object(),void,1result_1java_1object)(
   JniArgsEnvClass, jobject jpCx, jobject v
 ){
-  if( v ){
+  sqlite3_context * pCx = PtrGet_sqlite3_context(jpCx);
+  if( !pCx ) return;
+  else if( v ){
     jobject const rjv = S3JniRefGlobal(v);
     if( rjv ){
-      sqlite3_result_pointer(PtrGet_sqlite3_context(jpCx), rjv,
+      sqlite3_result_pointer(pCx, rjv,
                              ResultJavaValuePtrStr, S3Jni_jobject_finalizer);
     }else{
       sqlite3_result_error_nomem(PtrGet_sqlite3_context(jpCx));

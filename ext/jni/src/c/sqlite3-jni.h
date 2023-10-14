@@ -941,6 +941,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_CApi_sqlite3_1bind_1text16
 
 /*
  * Class:     org_sqlite_jni_CApi
+ * Method:    sqlite3_bind_value
+ * Signature: (JIJ)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_CApi_sqlite3_1bind_1value
+  (JNIEnv *, jclass, jlong, jint, jlong);
+
+/*
+ * Class:     org_sqlite_jni_CApi
  * Method:    sqlite3_bind_zeroblob
  * Signature: (JII)I
  */
