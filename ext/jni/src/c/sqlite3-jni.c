@@ -2455,7 +2455,7 @@ S3JniApi(sqlite3_bind_value(),jint,1bind_1value)(
     if( v ){
       rc = sqlite3_bind_value(pStmt, (int)ndx, v);
     }else{
-      sqlite3_bind_null(pStmt, (int)ndx);
+      rc = sqlite3_bind_null(pStmt, (int)ndx);
     }
   }else{
     rc = SQLITE_MISUSE;
