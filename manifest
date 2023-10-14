@@ -1,5 +1,5 @@
-C JNI:\smake\sthe\ssqlite3_value_...()\sfamily\sof\sbindings\sresistent\sto\sNULL\sarguments.
-D 2023-10-14T20:34:40.465
+C JNI:\sextend\s[baf220e78a46246c47]\sto\sinclude\smacro-generated\ssqlite3_value_...()\sbindings.
+D 2023-10-14T20:44:13.117
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -238,7 +238,7 @@ F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a3
 F ext/jni/GNUmakefile 6da240c9a11701f3ed569384cd15ef611e8b3c5e3897d265923b14bf0e1eb272
 F ext/jni/README.md ef9ac115e97704ea995d743b4a8334e23c659e5534c3b64065a5405256d5f2f4
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
-F ext/jni/src/c/sqlite3-jni.c 2cd46892020bd9ff62fbd80e0205ab731e2a12c1427b5f2b616493fcd0f41ed7
+F ext/jni/src/c/sqlite3-jni.c ff7720536758ab952ed025a0a32a0e9d467d0b9a6bc7801dbdef56d56e074ea2
 F ext/jni/src/c/sqlite3-jni.h fefcf0a7116d0c0f097c7ac71ca9ab4d092bf661ac40dd9dafb415d929f9b26d
 F ext/jni/src/org/sqlite/jni/AbstractCollationCallback.java 95e88ba04f4aac51ffec65693e878e234088b2f21b387f4e4285c8b72b33e436
 F ext/jni/src/org/sqlite/jni/AggregateFunction.java 7312486bc65fecdb91753c0a4515799194e031f45edbe16a6373cea18f404dc4
@@ -2128,8 +2128,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2f3101f016d5f8d954a262befdf5e0f938a223e444bc534e1d3655b733f4663d
-R 9e7d93ca57652f3f6459c7a72e2073a8
+P baf220e78a46246c476cd429ac131698db5fa66f62fb5725d4f736fe5246283c
+R 0ed9579f1b44c31a901370da9158e25e
 U stephan
-Z 389ca2ce91b537dc36ab3381ff35287f
+Z 40c95daefe505f2af1f470e995f85f56
 # Remove this line to create a well-formed Fossil manifest.

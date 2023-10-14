@@ -2065,14 +2065,16 @@ static void udf_xInverse(sqlite3_context* cx, int argc,
       -1);                                                              \
   }
 /** Create a trivial JNI wrapper for (int CName(sqlite3_value*)). */
-#define WRAP_INT_SVALUE(JniNameSuffix,CName)                      \
+#define WRAP_INT_SVALUE(JniNameSuffix,CName,DfltOnNull)         \
   JniDecl(jint,JniNameSuffix)(JniArgsEnvClass, jlong jpSValue){ \
-    return (jint)CName(S3JniLongPtr_sqlite3_value(jpSValue));   \
+    sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSValue); \
+    return (jint)(sv ? CName(sv): DfltOnNull);                      \
   }
 /** Create a trivial JNI wrapper for (boolean CName(sqlite3_value*)). */
-#define WRAP_BOOL_SVALUE(JniNameSuffix,CName)                       \
+#define WRAP_BOOL_SVALUE(JniNameSuffix,CName,DfltOnNull)            \
   JniDecl(jboolean,JniNameSuffix)(JniArgsEnvClass, jlong jpSValue){ \
-    return (jint)CName(S3JniLongPtr_sqlite3_value(jpSValue))        \
+    sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSValue); \
+    return (jint)(sv ? CName(sv) : DfltOnNull)                       \
       ? JNI_TRUE : JNI_FALSE;                                       \
   }
 
@@ -2112,12 +2114,12 @@ WRAP_INT_DB(1system_1errno,            sqlite3_system_errno)
 WRAP_INT_VOID(1threadsafe,             sqlite3_threadsafe)
 WRAP_INT_DB(1total_1changes,           sqlite3_total_changes)
 WRAP_INT64_DB(1total_1changes64,       sqlite3_total_changes64)
-WRAP_INT_SVALUE(1value_1encoding,      sqlite3_value_encoding)
-WRAP_BOOL_SVALUE(1value_1frombind,     sqlite3_value_frombind)
-WRAP_INT_SVALUE(1value_1nochange,      sqlite3_value_nochange)
-WRAP_INT_SVALUE(1value_1numeric_1type, sqlite3_value_numeric_type)
-WRAP_INT_SVALUE(1value_1subtype,       sqlite3_value_subtype)
-WRAP_INT_SVALUE(1value_1type,          sqlite3_value_type)
+WRAP_INT_SVALUE(1value_1encoding,      sqlite3_value_encoding,SQLITE_UTF8)
+WRAP_BOOL_SVALUE(1value_1frombind,     sqlite3_value_frombind,0)
+WRAP_INT_SVALUE(1value_1nochange,      sqlite3_value_nochange,0)
+WRAP_INT_SVALUE(1value_1numeric_1type, sqlite3_value_numeric_type,SQLITE_NULL)
+WRAP_INT_SVALUE(1value_1subtype,       sqlite3_value_subtype,0)
+WRAP_INT_SVALUE(1value_1type,          sqlite3_value_type,SQLITE_NULL)
 
 #undef WRAP_BOOL_DB
 #undef WRAP_BOOL_STMT
