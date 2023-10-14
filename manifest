@@ -1,5 +1,5 @@
-C Add\smissing\sJNI\sbindings\sfor\ssqlite3_db_readonly()\sand\ssqlite3_db_name().\sCode-adjacent\stweaks\sfor\sthe\sAPI_ARMOR\saudit.
-D 2023-10-14T12:19:59.876
+C Extend\sAPI_ARMOR\schecks\son\ssqlite3_commit/rollback_hook()\sto\sinclude\sa\scheck\sfor\sthe\scallback\spointer.
+D 2023-10-14T12:20:55.441
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -677,7 +677,7 @@ F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
 F src/json.c 799430345d16fed21713416318e6ca616f1264224f708555f387bfa2ab2496c7
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7d56c6f28aaf9b42e2772289e0d0a12a77b57c2baed021dbfd1fcafec69c156a
-F src/main.c 7a91b372dd1bada07c5b5e36082dc0d695161c3807efe2386f563a5b32446ae6
+F src/main.c be4dbe864b9ae973f5611aa6fb478541235ea3eef64f7d3d37bbe96334f556a3
 F src/malloc.c f016922435dc7d1f1f5083a03338a3e91f8c67ce2c5bdcfa4cdef62e612f5fcc
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2128,8 +2128,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8c25c4b18ad07861bf0e47f99f3db04b569b9b859ad0690602f748ddf3576939
-R 540c998e288c6bc086b36558f89d784a
+P e5eace747ae656f1e05a346e53a2827242e57107567d2c3470e292cf0b40858d
+R 30e2307f7d3debecac19515663c6942d
 U stephan
-Z 6aa47de4921539f80453f46d0771c8db
+Z 7173d279e961708051d9b4ee103a0383
 # Remove this line to create a well-formed Fossil manifest.

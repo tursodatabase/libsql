@@ -2294,7 +2294,7 @@ void *sqlite3_commit_hook(
   void *pOld;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( !sqlite3SafetyCheckOk(db) ){
+  if( !sqlite3SafetyCheckOk(db) || xCallback==0 ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;
   }
@@ -2344,7 +2344,7 @@ void *sqlite3_rollback_hook(
   void *pRet;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( !sqlite3SafetyCheckOk(db) ){
+  if( !sqlite3SafetyCheckOk(db) || xCallback==0 ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;
   }
