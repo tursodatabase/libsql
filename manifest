@@ -1,5 +1,5 @@
-C Bug\sfix\sin\ssqlite3_analyzer:\sfor\sdatabases\slarger\sthan\s1GiB,\stake\sinto\naccount\sthe\slock-byte\spage\swhen\scalculating\sthe\snumber\sof\sfreelist\spages.
-D 2023-10-14T10:54:37.378
+C The\srtreecheck()\sSQL\sfunction\sshould\snot\sinvoke\sBEGIN\sor\sCOMMIT\sas\sthis\ncauses\sissues\sfor\sstatement\stransactions.
+D 2023-10-14T17:14:53.738
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -475,9 +475,9 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 0dd4775e896cee6067979d67aff7c998e75c2c9d9cd8d62a1a790c09cde7adca
-F ext/rtree/rtree.c 9fdb03b602ca128c4b5b786c10675cf97cd0990d18db3b8c7a312551c3cf2f59
+F ext/rtree/rtree.c da842644466b84391e9fa1b1d5a17f461b475b8e36f1217117d1d98ad5f437e3
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
-F ext/rtree/rtree1.test 877d40b8b61b1f88cec9d4dc0ff8334f5b05299fac12a35141532e2881860e9d
+F ext/rtree/rtree1.test ecc881fdd1bc10fc390faa988ad93343739af84384e4cf3619fed7afada66a30
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
 F ext/rtree/rtree3.test 272594f88c344e973864008bbe4c71fd3a41a264c097d568593ee7886d83d409
 F ext/rtree/rtree4.test 304de65d484540111b896827e4261815e5dca4ce28eeecd58be648cd73452c4b
@@ -2128,8 +2128,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 348fa7aaf7958b3fb689ed023d946064ae8d92718a497a346e95114a2410cbf5
-R 491b395fcb54d24388cea619b1896c53
+P 26a909cdd32afee0f15968ca6f611eb259373b2a2195d0b3d47cfba103f1e6d6
+R ad487958c6df4b6717bccb543e9d7836
 U drh
-Z 11377a3945484d066aca86a95198dde7
+Z de59a6958b8ef06ef4ebd517456df8ae
 # Remove this line to create a well-formed Fossil manifest.
