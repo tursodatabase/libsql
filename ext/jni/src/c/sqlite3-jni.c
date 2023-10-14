@@ -3583,12 +3583,7 @@ S3JniApi(sqlite3_keyword_name(),jstring,1keyword_1name)(
 S3JniApi(sqlite3_last_insert_rowid(),jlong,1last_1insert_1rowid)(
   JniArgsEnvClass, jobject jpDb
 ){
-  jlong rc = 0;
-  sqlite3 * const pDb = PtrGet_sqlite3(jpDb);
-  if( pDb ){
-    rc = (jlong)sqlite3_last_insert_rowid(pDb);
-  }
-  return rc;
+  return (jlong)sqlite3_last_insert_rowid(PtrGet_sqlite3(jpDb));
 }
 
 S3JniApi(sqlite3_limit(),jint,1limit)(
@@ -4564,11 +4559,12 @@ S3JniApi(sqlite3_table_column_metadata(),int,1table_1column_1metadata)(
   int pNotNull = 0, pPrimaryKey = 0, pAutoinc = 0;
   int rc;
 
-  if( !db || !jDbName || !jTableName || !jColumnName ) return SQLITE_MISUSE;
+  if( !db || !jDbName || !jTableName ) return SQLITE_MISUSE;
   zDbName = s3jni_jstring_to_utf8(jDbName,0);
   zTableName = zDbName ? s3jni_jstring_to_utf8(jTableName,0) : 0;
-  zColumnName = zTableName ? s3jni_jstring_to_utf8(jColumnName,0) : 0;
-  rc = zColumnName
+  zColumnName = (zTableName && jColumnName)
+    ? s3jni_jstring_to_utf8(jColumnName,0) : 0;
+  rc = zTableName
     ? sqlite3_table_column_metadata(db, zDbName, zTableName,
                                     zColumnName, &pzDataType, &pzCollSeq,
                                     &pNotNull, &pPrimaryKey, &pAutoinc)

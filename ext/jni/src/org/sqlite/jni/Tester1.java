@@ -259,6 +259,7 @@ public class Tester1 implements Runnable {
     affirm( 0==sqlite3_db_readonly(db,null) );
     affirm( 0>sqlite3_db_readonly(db,"nope") );
     affirm( 0>sqlite3_db_readonly(null,null) );
+    affirm( 0==sqlite3_last_insert_rowid(null) );
 
     // These interrupt checks are only to make sure that the JNI binding
     // has the proper exported symbol names. They don't actually test
@@ -1464,7 +1465,7 @@ public class Tester1 implements Runnable {
     affirm( "noCase".equals(zCollSeq.value) );
     affirm( "duck".equals(zDataType.value) );
 
-    final TableColumnMetadata m =
+    TableColumnMetadata m =
       sqlite3_table_column_metadata(db, "main", "t", "a");
     affirm( null != m );
     affirm( bPrimaryKey.value == m.isPrimaryKey() );
@@ -1474,6 +1475,16 @@ public class Tester1 implements Runnable {
     affirm( zDataType.value.equals(m.getDataType()) );
 
     affirm( null == sqlite3_table_column_metadata(db, "nope", "t", "a") );
+    affirm( null == sqlite3_table_column_metadata(db, "main", "nope", "a") );
+
+    m = sqlite3_table_column_metadata(db, "main", "t", null)
+      /* Check only for existence of table */;
+    affirm( null != m );
+    affirm( m.isPrimaryKey() );
+    affirm( !m.isAutoincrement() );
+    affirm( !m.isNotNull() );
+    affirm( "BINARY".equalsIgnoreCase(m.getCollation()) );
+    affirm( "INTEGER".equalsIgnoreCase(m.getDataType()) );
 
     sqlite3_close_v2(db);
   }
