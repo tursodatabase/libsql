@@ -2112,8 +2112,6 @@ WRAP_INT_DB(1system_1errno,            sqlite3_system_errno)
 WRAP_INT_VOID(1threadsafe,             sqlite3_threadsafe)
 WRAP_INT_DB(1total_1changes,           sqlite3_total_changes)
 WRAP_INT64_DB(1total_1changes64,       sqlite3_total_changes64)
-WRAP_INT_SVALUE(1value_1bytes,         sqlite3_value_bytes)
-WRAP_INT_SVALUE(1value_1bytes16,       sqlite3_value_bytes16)
 WRAP_INT_SVALUE(1value_1encoding,      sqlite3_value_encoding)
 WRAP_BOOL_SVALUE(1value_1frombind,     sqlite3_value_frombind)
 WRAP_INT_SVALUE(1value_1nochange,      sqlite3_value_nochange)
@@ -4754,8 +4752,8 @@ S3JniApi(sqlite3_value_blob(),jbyteArray,1value_1blob)(
   JniArgsEnvClass, jlong jpSVal
 ){
   sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
-  const jbyte * pBytes = sqlite3_value_blob(sv);
-  int const nLen = sqlite3_value_bytes(sv);
+  const jbyte * pBytes = sv ? sqlite3_value_blob(sv) : 0;
+  int const nLen = pBytes ? sqlite3_value_bytes(sv) : 0;
 
   s3jni_oom_check( nLen ? !!pBytes : 1 );
   return pBytes
@@ -4763,52 +4761,80 @@ S3JniApi(sqlite3_value_blob(),jbyteArray,1value_1blob)(
     : NULL;
 }
 
+S3JniApi(sqlite3_value_bytes(),int,1value_1bytes)(
+  JniArgsEnvClass, jlong jpSVal
+){
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  return sv ? sqlite3_value_bytes(sv) : 0;
+}
+
+S3JniApi(sqlite3_value_bytes16(),int,1value_1bytes16)(
+  JniArgsEnvClass, jlong jpSVal
+){
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  return sv ? sqlite3_value_bytes16(sv) : 0;
+}
+
 
 S3JniApi(sqlite3_value_double(),jdouble,1value_1double)(
   JniArgsEnvClass, jlong jpSVal
 ){
-  return (jdouble) sqlite3_value_double(S3JniLongPtr_sqlite3_value(jpSVal));
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  return (jdouble) (sv ? sqlite3_value_double(sv) : 0.0);
 }
 
 
 S3JniApi(sqlite3_value_dup(),jobject,1value_1dup)(
   JniArgsEnvClass, jlong jpSVal
 ){
-  sqlite3_value * const sv = sqlite3_value_dup(S3JniLongPtr_sqlite3_value(jpSVal));
-  return sv ? new_java_sqlite3_value(env, sv) : 0;
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  sqlite3_value * const sd = sv ? sqlite3_value_dup(sv) : 0;
+  jobject rv = sd ? new_java_sqlite3_value(env, sd) : 0;
+  if( sd && !rv ) {
+    /* OOM */
+    sqlite3_value_free(sd);
+  }
+  return rv;
 }
 
 S3JniApi(sqlite3_value_free(),void,1value_1free)(
   JniArgsEnvClass, jlong jpSVal
 ){
-  sqlite3_value_free(S3JniLongPtr_sqlite3_value(jpSVal));
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  if( sv ){
+    sqlite3_value_free(sv);
+  }
 }
 
 S3JniApi(sqlite3_value_int(),jint,1value_1int)(
   JniArgsEnvClass, jlong jpSVal
 ){
-  return (jint) sqlite3_value_int(S3JniLongPtr_sqlite3_value(jpSVal));
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  return (jint) (sv ? sqlite3_value_int(sv) : 0);
 }
 
 S3JniApi(sqlite3_value_int64(),jlong,1value_1int64)(
   JniArgsEnvClass, jlong jpSVal
 ){
-  return (jlong) sqlite3_value_int64(S3JniLongPtr_sqlite3_value(jpSVal));
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  return (jlong) (sv ? sqlite3_value_int64(sv) : 0LL);
 }
 
 S3JniApi(sqlite3_value_java_object(),jobject,1value_1java_1object)(
   JniArgsEnvClass, jlong jpSVal
 ){
-  return sqlite3_value_pointer(S3JniLongPtr_sqlite3_value(jpSVal),
-                               ResultJavaValuePtrStr);
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  return sv
+    ? sqlite3_value_pointer(sv, ResultJavaValuePtrStr)
+    : 0;
 }
 
 S3JniApi(sqlite3_value_text(),jbyteArray,1value_1text)(
   JniArgsEnvClass, jlong jpSVal
 ){
   sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
-  const unsigned char * const p = sqlite3_value_text(sv);
-  int const n = sqlite3_value_bytes(sv);
+  const unsigned char * const p = sv ? sqlite3_value_text(sv) : 0;
+  int const n = p ? sqlite3_value_bytes(sv) : 0;
   return p ? s3jni_new_jbyteArray(p, n) : 0;
 }
 
@@ -4818,8 +4844,8 @@ S3JniApi(sqlite3_value_text(),jstring,1value_1text)(
   JniArgsEnvClass, jlong jpSVal
 ){
   sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
-  const unsigned char * const p = sqlite3_value_text(sv);
-  int const n = sqlite3_value_bytes(sv);
+  const unsigned char * const p = sv ? sqlite3_value_text(sv) : 0;
+  int const n = p ? sqlite3_value_bytes(sv) : 0;
   return p ? s3jni_utf8_to_jstring( (const char *)p, n) : 0;
 }
 #endif
@@ -4828,9 +4854,9 @@ S3JniApi(sqlite3_value_text16(),jstring,1value_1text16)(
   JniArgsEnvClass, jlong jpSVal
 ){
   sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
-  const int n = sqlite3_value_bytes16(sv);
-  const void * const p = sqlite3_value_text16(sv);
-  return s3jni_text16_to_jstring(env, p, n);
+  const int n = sv ? sqlite3_value_bytes16(sv) : 0;
+  const void * const p = sv ? sqlite3_value_text16(sv) : 0;
+  return p ? s3jni_text16_to_jstring(env, p, n) : 0;
 }
 
 JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){
