@@ -1,5 +1,5 @@
-C Add\scolumn\sname\sto\sAPI_ARMOR\scheck\sin\ssqlite3_blob_open()\sto\savoid\sa\snull-pointer\sderef.
-D 2023-10-14T13:24:30.111
+C More\sAPI_ARMOR\sadditions.
+D 2023-10-14T14:53:18.394
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -787,7 +787,7 @@ F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
 F src/vdbe.c cd112eb00d20fc5cc44f631d0e713838602637328b0f127c2f3c2aa8cea3cc91
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
-F src/vdbeapi.c be7d88a05df51cb3940304f74e4b0534817b51213b3406143a67eecd6f82fe21
+F src/vdbeapi.c dbada91cc9f2e0b76ad4c76aad7b92fbe80c4a439b5dd8d7fa990d4e34b9831c
 F src/vdbeaux.c 5b415e09b5b9d5be6c0f4fcbf18ea9d7d16f6a29ced2f14a3b2041020f63e9c1
 F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe5
 F src/vdbemem.c 317b9f48708139db6239ade40c7980b4bc8233168383690d588dad6d8437f722
@@ -2128,8 +2128,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 718ab67607895176e529eb7469832d262a347d030e83e7ee66d3b4704bf933de
-R 6939314c5aa83ebb51a4869d1b741b9d
+P 0114a6622afc4588c47e98d804340449417b603dc4831513eab4d8e4ccb15d42
+R 376130abd753bb410df401995b876336
 U stephan
-Z 1c92c68280e405080d393332e7ff98bd
+Z fbd9ca46d7a725fcd4bdd4a5ef9f230a
 # Remove this line to create a well-formed Fossil manifest.

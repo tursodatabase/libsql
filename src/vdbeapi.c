@@ -547,7 +547,16 @@ void sqlite3_result_text16le(
 }
 #endif /* SQLITE_OMIT_UTF16 */
 void sqlite3_result_value(sqlite3_context *pCtx, sqlite3_value *pValue){
-  Mem *pOut = pCtx->pOut;
+  Mem *pOut;
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ) return;
+  if( pValue==0 ){
+    sqlite3_result_null(pCtx);
+    return;
+  }
+#endif
+  pOut = pCtx->pOut;
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemCopy(pOut, pValue);
   sqlite3VdbeChangeEncoding(pOut, pCtx->enc);
@@ -845,7 +854,11 @@ int sqlite3_step(sqlite3_stmt *pStmt){
 ** pointer to it.
 */
 void *sqlite3_user_data(sqlite3_context *p){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( p==0 ) return 0;
+#else
   assert( p && p->pFunc );
+#endif
   return p->pFunc->pUserData;
 }
 
@@ -860,7 +873,11 @@ void *sqlite3_user_data(sqlite3_context *p){
 ** application defined function.
 */
 sqlite3 *sqlite3_context_db_handle(sqlite3_context *p){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( p==0 ) return 0;
+#else
   assert( p && p->pOut );
+#endif
   return p->pOut->db;
 }
 
@@ -879,7 +896,11 @@ sqlite3 *sqlite3_context_db_handle(sqlite3_context *p){
 ** value, as a signal to the xUpdate routine that the column is unchanged.
 */
 int sqlite3_vtab_nochange(sqlite3_context *p){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( p==0 ) return 0;
+#else
   assert( p );
+#endif
   return sqlite3_value_nochange(p->pOut);
 }
 
@@ -1038,6 +1059,9 @@ void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
 void *sqlite3_get_auxdata(sqlite3_context *pCtx, int iArg){
   AuxData *pAuxData;
 
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ) return 0;
+#endif
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
 #if SQLITE_ENABLE_STAT4
   if( pCtx->pVdbe==0 ) return 0;
@@ -1070,8 +1094,12 @@ void sqlite3_set_auxdata(
   void (*xDelete)(void*)
 ){
   AuxData *pAuxData;
-  Vdbe *pVdbe = pCtx->pVdbe;
+  Vdbe *pVdbe;
 
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ) return;
+#endif
+  pVdbe= pCtx->pVdbe;
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
 #ifdef SQLITE_ENABLE_STAT4
   if( pVdbe==0 ) goto failed;
