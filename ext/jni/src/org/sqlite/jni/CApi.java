@@ -811,11 +811,20 @@ final class CApi {
     @NotNull sqlite3 db, int op, @NotNull String val
   );
 
+  private static native String sqlite3_db_name(@NotNull long ptrToDb, int ndx);
+
+  public static String sqlite3_db_name(@NotNull sqlite3 db, int ndx){
+    return null==db ? null : sqlite3_db_name(db.getNativePointer(), ndx);
+  }
+
+
   public static native String sqlite3_db_filename(
     @NotNull sqlite3 db, @NotNull String dbName
   );
 
   public static native sqlite3 sqlite3_db_handle(@NotNull sqlite3_stmt stmt);
+
+  public static native int sqlite3_db_readonly(@NotNull sqlite3 db, String dbName);
 
   public static native int sqlite3_db_release_memory(sqlite3 db);
 

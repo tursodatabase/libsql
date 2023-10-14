@@ -255,6 +255,11 @@ public class Tester1 implements Runnable {
          and this call is here to ensure that the build fails
          if it cannot find both names. */;
 
+    affirm( 0==sqlite3_db_readonly(db,"main") );
+    affirm( 0==sqlite3_db_readonly(db,null) );
+    affirm( 0>sqlite3_db_readonly(db,"nope") );
+    affirm( 0>sqlite3_db_readonly(null,null) );
+
     // These interrupt checks are only to make sure that the JNI binding
     // has the proper exported symbol names. They don't actually test
     // anything useful.
@@ -1028,8 +1033,11 @@ public class Tester1 implements Runnable {
     affirm( 0 == rc );
     affirm( outDb.get() != db1 );
     final sqlite3 db2 = outDb.get();
+
+    affirm( "main".equals( sqlite3_db_name(db1, 0) ) );
     rc = sqlite3_db_config(db1, SQLITE_DBCONFIG_MAINDBNAME, "foo");
     affirm( sqlite3_db_filename(db1, "foo").endsWith(dbName) );
+    affirm( "foo".equals( sqlite3_db_name(db1, 0) ) );
 
     final ValueHolder<Integer> xBusyCalled = new ValueHolder<>(0);
     BusyHandlerCallback handler = new BusyHandlerCallback(){

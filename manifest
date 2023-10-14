@@ -1,5 +1,5 @@
-C Round\sone\sof\san\saudit\sfor\sSQLITE_ENABLE_API_ARMOR\sfor\sfunctions\sexposed\sby\sJNI\sand\sthose\sfunctions\smissing\sarmor,\sas\s[forum:5e3fc453a69b49ca|reported\sin\sseveral\sforum\sposts].
-D 2023-10-13T12:48:35.298
+C Add\smissing\sJNI\sbindings\sfor\ssqlite3_db_readonly()\sand\ssqlite3_db_name().\sCode-adjacent\stweaks\sfor\sthe\sAPI_ARMOR\saudit.
+D 2023-10-14T12:19:59.876
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -238,14 +238,14 @@ F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a3
 F ext/jni/GNUmakefile 6da240c9a11701f3ed569384cd15ef611e8b3c5e3897d265923b14bf0e1eb272
 F ext/jni/README.md ef9ac115e97704ea995d743b4a8334e23c659e5534c3b64065a5405256d5f2f4
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
-F ext/jni/src/c/sqlite3-jni.c eabd48ced29954fb4f6173c4f350f7f1fce218ce19f48a75367cb560cf2da77e
-F ext/jni/src/c/sqlite3-jni.h be1fdff7ab3a2bb357197271c8ac5d2bf6ff59380c106dde3a13be88724bad22
+F ext/jni/src/c/sqlite3-jni.c 2a01d42df24718d69eafe836643de272b14fca57135ce0f1f6521fecf9002e29
+F ext/jni/src/c/sqlite3-jni.h 8bd34a6fe3b51059690be31ac5bd6e454a738dd1ff9916f490e05cf63c4f8e37
 F ext/jni/src/org/sqlite/jni/AbstractCollationCallback.java 95e88ba04f4aac51ffec65693e878e234088b2f21b387f4e4285c8b72b33e436
 F ext/jni/src/org/sqlite/jni/AggregateFunction.java 7312486bc65fecdb91753c0a4515799194e031f45edbe16a6373cea18f404dc4
 F ext/jni/src/org/sqlite/jni/AuthorizerCallback.java fde5f758ad170ca45ae00b12194c8ba8d8f3090bd64cc3e002dd9c5e7dff8568
 F ext/jni/src/org/sqlite/jni/AutoExtensionCallback.java c0fbfd3779fc92982c7935325a7484dee43eeb80d716989ed31218f453addb94
 F ext/jni/src/org/sqlite/jni/BusyHandlerCallback.java 4cb7fc70efd55583fed6033c34a8719da42975ca97ef4781dda0b9f6cc8ec2e8
-F ext/jni/src/org/sqlite/jni/CApi.java c1dde485a3a3f43c46c8d9c527f9ba5bf303fe0409b2c0de253fb7b6e1055f7e
+F ext/jni/src/org/sqlite/jni/CApi.java 6f878d291642568a06d9a36c15b420f5f867dcc44cee0cc56e8f02b542f67ec4
 F ext/jni/src/org/sqlite/jni/CallbackProxy.java 064a8a00e4c63cc501c30504f93ca996d422c5f010067f969b2d0a10f0868153
 F ext/jni/src/org/sqlite/jni/CollationCallback.java 8cf57cb014a645ecc12609eed17308852a597bc5e83d82a4fdb90f7fadc25f9d
 F ext/jni/src/org/sqlite/jni/CollationNeededCallback.java 0c62245e000d5db52576c728cac20f6a31f31f5cf40ca4cbcd64b22964e82ae5
@@ -265,7 +265,7 @@ F ext/jni/src/org/sqlite/jni/ScalarFunction.java 6d387bb499fbe3bc13c53315335233d
 F ext/jni/src/org/sqlite/jni/Sqlite.java 1617ea2bf3dfa493b7f031a3187cbfd6837c39bc1d406c4b3edcf9aab941639d
 F ext/jni/src/org/sqlite/jni/SqliteException.java e17500e8bca2c68c260d8d0163fe4b7dc8bd0b1b90211201325c4a5566ce75ca
 F ext/jni/src/org/sqlite/jni/TableColumnMetadata.java 54511b4297fa28dcb3f49b24035e34ced10e3fd44fd0e458e784f4d6b0096dab
-F ext/jni/src/org/sqlite/jni/Tester1.java f7b85fe24cf6c3e43bdf7e390617657e8137359f804d76921829c2a8c41b6df1
+F ext/jni/src/org/sqlite/jni/Tester1.java 92d4e9dcf9268e6e2588c1cbd808454926ee40287eb9126b0e5eb823918e538d
 F ext/jni/src/org/sqlite/jni/Tester2.java 70e005d41060e398ec0f69bd39a8e1c376fd51f81629cf25e877889ec9cb6ec6
 F ext/jni/src/org/sqlite/jni/TesterFts5.java d60fe9944a81156b3b5325dd1b0e8e92a1547468f39fd1266d06f7bb6a95fa70
 F ext/jni/src/org/sqlite/jni/TraceV2Callback.java f157edd9c72e7d2243c169061487cd7bb51a0d50f3ac976dbcbbacf748ab1fc2
@@ -2128,11 +2128,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2e968114fd0e60eebcc088dec02684e10b06ac1ec42d6bedb5287362f5cbf032
-R 64d7e862f198f312cf375ff0e1b4824a
-T *branch * api-armor-audit
-T *sym-api-armor-audit *
-T -sym-trunk * Cancelled\sby\sbranch.
+P 8c25c4b18ad07861bf0e47f99f3db04b569b9b859ad0690602f748ddf3576939
+R 540c998e288c6bc086b36558f89d784a
 U stephan
-Z fb0f8b82a9c86be7bcd5823447ca13df
+Z 6aa47de4921539f80453f46d0771c8db
 # Remove this line to create a well-formed Fossil manifest.
