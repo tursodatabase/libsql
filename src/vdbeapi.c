@@ -405,7 +405,7 @@ static void setResultStrOrError(
 static int invokeValueDestructor(
   const void *p,             /* Value to destroy */
   void (*xDel)(void*),       /* The destructor */
-  sqlite3_context *pCtx      /* Set a SQLITE_TOOBIG error if no NULL */
+  sqlite3_context *pCtx      /* Set a SQLITE_TOOBIG error if not NULL */
 ){
   assert( xDel!=SQLITE_DYNAMIC );
   if( xDel==0 ){
@@ -415,7 +415,9 @@ static int invokeValueDestructor(
   }else{
     xDel((void*)p);
   }
-  sqlite3_result_error_toobig(pCtx);
+  if( pCtx!=0 ){
+    sqlite3_result_error_toobig(pCtx);
+  }
   return SQLITE_TOOBIG;
 }
 void sqlite3_result_blob(
@@ -424,6 +426,12 @@ void sqlite3_result_blob(
   int n,
   void (*xDel)(void *)
 ){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 || n<0 ){
+    invokeValueDestructor(z, xDel, pCtx);
+    return;
+  }
+#endif
   assert( n>=0 );
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   setResultStrOrError(pCtx, z, n, 0, xDel);
@@ -434,8 +442,14 @@ void sqlite3_result_blob64(
   sqlite3_uint64 n,
   void (*xDel)(void *)
 ){
-  assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   assert( xDel!=SQLITE_DYNAMIC );
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ){
+    invokeValueDestructor(z, xDel, 0);
+    return;
+  }
+#endif
+  assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   if( n>0x7fffffff ){
     (void)invokeValueDestructor(z, xDel, pCtx);
   }else{
@@ -443,30 +457,48 @@ void sqlite3_result_blob64(
   }
 }
 void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ) return;
+#endif
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemSetDouble(pCtx->pOut, rVal);
 }
 void sqlite3_result_error(sqlite3_context *pCtx, const char *z, int n){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ) return;
+#endif
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   pCtx->isError = SQLITE_ERROR;
   sqlite3VdbeMemSetStr(pCtx->pOut, z, n, SQLITE_UTF8, SQLITE_TRANSIENT);
 }
 #ifndef SQLITE_OMIT_UTF16
 void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ) return;
+#endif
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   pCtx->isError = SQLITE_ERROR;
   sqlite3VdbeMemSetStr(pCtx->pOut, z, n, SQLITE_UTF16NATIVE, SQLITE_TRANSIENT);
 }
 #endif
 void sqlite3_result_int(sqlite3_context *pCtx, int iVal){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ) return;
+#endif
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemSetInt64(pCtx->pOut, (i64)iVal);
 }
 void sqlite3_result_int64(sqlite3_context *pCtx, i64 iVal){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ) return;
+#endif
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemSetInt64(pCtx->pOut, iVal);
 }
 void sqlite3_result_null(sqlite3_context *pCtx){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ) return;
+#endif
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemSetNull(pCtx->pOut);
 }
@@ -476,14 +508,25 @@ void sqlite3_result_pointer(
   const char *zPType,
   void (*xDestructor)(void*)
 ){
-  Mem *pOut = pCtx->pOut;
+  Mem *pOut;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ){
+    invokeValueDestructor(pPtr, xDestructor, 0);
+    return;
+  }
+#endif
+  pOut = pCtx->pOut;
   assert( sqlite3_mutex_held(pOut->db->mutex) );
   sqlite3VdbeMemRelease(pOut);
   pOut->flags = MEM_Null;
   sqlite3VdbeMemSetPointer(pOut, pPtr, zPType, xDestructor);
 }
 void sqlite3_result_subtype(sqlite3_context *pCtx, unsigned int eSubtype){
-  Mem *pOut = pCtx->pOut;
+  Mem *pOut;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ) return;
+#endif
+  pOut = pCtx->pOut;
   assert( sqlite3_mutex_held(pOut->db->mutex) );
   pOut->eSubtype = eSubtype & 0xff;
   pOut->flags |= MEM_Subtype;
@@ -494,6 +537,12 @@ void sqlite3_result_text(
   int n,
   void (*xDel)(void *)
 ){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ){
+    invokeValueDestructor(z, xDel, 0);
+    return;
+  }
+#endif
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   setResultStrOrError(pCtx, z, n, SQLITE_UTF8, xDel);
 }
@@ -504,6 +553,12 @@ void sqlite3_result_text64(
   void (*xDel)(void *),
   unsigned char enc
 ){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ){
+    invokeValueDestructor(z, xDel, 0);
+    return;
+  }
+#endif
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   assert( xDel!=SQLITE_DYNAMIC );
   if( enc!=SQLITE_UTF8 ){
@@ -568,7 +623,12 @@ void sqlite3_result_zeroblob(sqlite3_context *pCtx, int n){
   sqlite3_result_zeroblob64(pCtx, n>0 ? n : 0);
 }
 int sqlite3_result_zeroblob64(sqlite3_context *pCtx, u64 n){
-  Mem *pOut = pCtx->pOut;
+  Mem *pOut;
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ) return SQLITE_MISUSE_BKPT;
+#endif
+  pOut = pCtx->pOut;
   assert( sqlite3_mutex_held(pOut->db->mutex) );
   if( n>(u64)pOut->db->aLimit[SQLITE_LIMIT_LENGTH] ){
     sqlite3_result_error_toobig(pCtx);
@@ -582,6 +642,9 @@ int sqlite3_result_zeroblob64(sqlite3_context *pCtx, u64 n){
 #endif
 }
 void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ) return;
+#endif
   pCtx->isError = errCode ? errCode : -1;
 #ifdef SQLITE_DEBUG
   if( pCtx->pVdbe ) pCtx->pVdbe->rcApp = errCode;
@@ -594,6 +657,9 @@ void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
 
 /* Force an SQLITE_TOOBIG error. */
 void sqlite3_result_error_toobig(sqlite3_context *pCtx){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ) return;
+#endif
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   pCtx->isError = SQLITE_TOOBIG;
   sqlite3VdbeMemSetStr(pCtx->pOut, "string or blob too big", -1,
@@ -602,6 +668,9 @@ void sqlite3_result_error_toobig(sqlite3_context *pCtx){
 
 /* An SQLITE_NOMEM error. */
 void sqlite3_result_error_nomem(sqlite3_context *pCtx){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ) return;
+#endif
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemSetNull(pCtx->pOut);
   pCtx->isError = SQLITE_NOMEM_BKPT;
@@ -1765,6 +1834,9 @@ int sqlite3_bind_zeroblob(sqlite3_stmt *pStmt, int i, int n){
 int sqlite3_bind_zeroblob64(sqlite3_stmt *pStmt, int i, sqlite3_uint64 n){
   int rc;
   Vdbe *p = (Vdbe *)pStmt;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( p==0 ) return SQLITE_MISUSE_BKPT;
+#endif
   sqlite3_mutex_enter(p->db->mutex);
   if( n>(u64)p->db->aLimit[SQLITE_LIMIT_LENGTH] ){
     rc = SQLITE_TOOBIG;
