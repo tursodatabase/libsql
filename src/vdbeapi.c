@@ -1963,6 +1963,9 @@ int sqlite3_stmt_isexplain(sqlite3_stmt *pStmt){
 int sqlite3_stmt_explain(sqlite3_stmt *pStmt, int eMode){
   Vdbe *v = (Vdbe*)pStmt;
   int rc;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pStmt==0 ) return SQLITE_MISUSE_BKPT;
+#endif
   sqlite3_mutex_enter(v->db->mutex);
   if( ((int)v->explain)==eMode ){
     rc = SQLITE_OK;
@@ -2342,11 +2345,16 @@ int sqlite3_stmt_scanstatus_v2(
   void *pOut                      /* OUT: Write the answer here */
 ){
   Vdbe *p = (Vdbe*)pStmt;
-  VdbeOp *aOp = p->aOp;
-  int nOp = p->nOp;
+  VdbeOp *aOp;
+  int nOp;
   ScanStatus *pScan = 0;
   int idx;
 
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( p==0 ) return 1;
+#endif
+  aOp = p->aOp;
+  nOp = p->nOp;
   if( p->pFrame ){
     VdbeFrame *pFrame;
     for(pFrame=p->pFrame; pFrame->pParent; pFrame=pFrame->pParent);
@@ -2493,7 +2501,7 @@ int sqlite3_stmt_scanstatus(
 void sqlite3_stmt_scanstatus_reset(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe*)pStmt;
   int ii;
-  for(ii=0; ii<p->nOp; ii++){
+  for(ii=0; p!=0 && ii<p->nOp; ii++){
     Op *pOp = &p->aOp[ii];
     pOp->nExec = 0;
     pOp->nCycle = 0;
