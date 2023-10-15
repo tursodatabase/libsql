@@ -400,6 +400,17 @@ final class CApi {
       : sqlite3_bind_text16(stmt.getNativePointer(), ndx, data, data.length);
   }
 
+  static native int sqlite3_bind_value(@NotNull long ptrToStmt, int ndx, long ptrToValue);
+
+  /**
+     Functions like the C-level sqlite3_bind_value(), or
+     sqlite3_bind_null() if val is null.
+  */
+  public static int sqlite3_bind_value(@NotNull sqlite3_stmt stmt, int ndx, sqlite3_value val){
+    return sqlite3_bind_value(stmt.getNativePointer(), ndx,
+                              null==val ? 0L : val.getNativePointer());
+  }
+
   static native int sqlite3_bind_zeroblob(@NotNull long ptrToStmt, int ndx, int n);
 
   public static int sqlite3_bind_zeroblob(@NotNull sqlite3_stmt stmt, int ndx, int n){
@@ -811,11 +822,20 @@ final class CApi {
     @NotNull sqlite3 db, int op, @NotNull String val
   );
 
+  private static native String sqlite3_db_name(@NotNull long ptrToDb, int ndx);
+
+  public static String sqlite3_db_name(@NotNull sqlite3 db, int ndx){
+    return null==db ? null : sqlite3_db_name(db.getNativePointer(), ndx);
+  }
+
+
   public static native String sqlite3_db_filename(
     @NotNull sqlite3 db, @NotNull String dbName
   );
 
   public static native sqlite3 sqlite3_db_handle(@NotNull sqlite3_stmt stmt);
+
+  public static native int sqlite3_db_readonly(@NotNull sqlite3 db, String dbName);
 
   public static native int sqlite3_db_release_memory(sqlite3 db);
 

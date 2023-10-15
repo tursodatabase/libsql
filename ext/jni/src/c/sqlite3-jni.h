@@ -941,6 +941,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_CApi_sqlite3_1bind_1text16
 
 /*
  * Class:     org_sqlite_jni_CApi
+ * Method:    sqlite3_bind_value
+ * Signature: (JIJ)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_CApi_sqlite3_1bind_1value
+  (JNIEnv *, jclass, jlong, jint, jlong);
+
+/*
+ * Class:     org_sqlite_jni_CApi
  * Method:    sqlite3_bind_zeroblob
  * Signature: (JII)I
  */
@@ -1309,6 +1317,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_CApi_sqlite3_1db_1config__Lorg_sqlite
 
 /*
  * Class:     org_sqlite_jni_CApi
+ * Method:    sqlite3_db_name
+ * Signature: (JI)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_sqlite_jni_CApi_sqlite3_1db_1name
+  (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     org_sqlite_jni_CApi
  * Method:    sqlite3_db_filename
  * Signature: (Lorg/sqlite/jni/sqlite3;Ljava/lang/String;)Ljava/lang/String;
  */
@@ -1322,6 +1338,14 @@ JNIEXPORT jstring JNICALL Java_org_sqlite_jni_CApi_sqlite3_1db_1filename
  */
 JNIEXPORT jobject JNICALL Java_org_sqlite_jni_CApi_sqlite3_1db_1handle
   (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_CApi
+ * Method:    sqlite3_db_readonly
+ * Signature: (Lorg/sqlite/jni/sqlite3;Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_CApi_sqlite3_1db_1readonly
+  (JNIEnv *, jclass, jobject, jstring);
 
 /*
  * Class:     org_sqlite_jni_CApi
