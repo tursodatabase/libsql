@@ -206,7 +206,7 @@ SQLITE_OPT = \
   -DSQLITE_JNI_FATAL_OOM=$(opt.fatal-oom) \
   -DSQLITE_JNI_ENABLE_METRICS=$(opt.metrics)
 
-opt.extras ?= 0
+opt.extras ?= 1
 ifeq (1,$(opt.extras))
 SQLITE_OPT += -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
