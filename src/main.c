@@ -2372,7 +2372,7 @@ void *sqlite3_preupdate_hook(
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( db==0 || xCallback==0 ){
-    return;
+    return 0;
   }
 #endif
   sqlite3_mutex_enter(db->mutex);
