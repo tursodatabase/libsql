@@ -1,5 +1,5 @@
-C JNI:\senable\sall\soptional\scomponents\sin\sthe\sdefault\sbuild\sand\sfix\sa\stest\sbroken\sby\san\soption\stoggle.
-D 2023-10-15T13:32:38.959
+C Change\s3\sinstance\sof\s#if\sSQLITE_ENABLE_API_ARMOR\sto\s#ifdef\sfor\sconsistency\swith\show\sit\sis\snormally\sused.
+D 2023-10-15T13:36:21.836
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -677,7 +677,7 @@ F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
 F src/json.c 799430345d16fed21713416318e6ca616f1264224f708555f387bfa2ab2496c7
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7d56c6f28aaf9b42e2772289e0d0a12a77b57c2baed021dbfd1fcafec69c156a
-F src/main.c b252cd436f6ae873ba115cff62462932d4c50ebbe4ab49767b0b500471789446
+F src/main.c 73ae4cab166b0fd36352446de7f7d91f89bde86686ae18f0bb7b245173479831
 F src/malloc.c f016922435dc7d1f1f5083a03338a3e91f8c67ce2c5bdcfa4cdef62e612f5fcc
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -687,10 +687,10 @@ F src/mem5.c b7da5c10a726aacacc9ad7cdcb0667deec643e117591cc69cf9b4b9e7f3e96ff
 F src/memdb.c 559c42e61eb70cd6d4bc692b042497133c6d96c09a3d514d92f3dac72268e223
 F src/memjournal.c c283c6c95d940eb9dc70f1863eef3ee40382dbd35e5a1108026e7817c206e8a0
 F src/msvc.h 80b35f95d93bf996ccb3e498535255f2ef1118c78764719a7cd15ab4106ccac9
-F src/mutex.c 5e3409715552348732e97b9194abe92fdfcd934cfb681df4ba0ab87ac6c18d25
+F src/mutex.c 1b4c7e5e3621b510e0c18397210be27cd54c8084141144fbbafd003fde948e88
 F src/mutex.h a7b2293c48db5f27007c3bdb21d438873637d12658f5a0bf8ad025bb96803c4a
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
-F src/mutex_unix.c bd52ec50e44a41fe1e3deb5a6e3fe98edb6f2059da3e46d196363d0fa3192cda
+F src/mutex_unix.c f7ee5a2061a4c11815a2bf4fc0e2bfa6fb8d9dc89390eb613ca0cec32fc9a3d1
 F src/mutex_w32.c 38b56d0bc8d54c17c20cbaaad3719b0c36b92fd07a7e34360d0c6a18d5589912
 F src/notify.c 57c2d1a2805d6dee32acd5d250d928ab94e02d76369ae057dee7d445fd64e878
 F src/os.c 509452169d5ea739723e213b8e2481cf0e587f0e88579a912d200db5269f5f6d
@@ -2128,8 +2128,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 40f5906f48d3f1f44d54e5b271fe04e7082166e50e3ed250bb57a4760f112e8a
-R f3587d7c5ef3f59e820876cab93a9847
+P 5586a9df58a400c20a6815e8b0fbc7a7c49e5ef89daf92c452f1990586ca78ae
+R b045a4bd60ecbc07c24e8195605c8e45
 U stephan
-Z da5fb0c5e59fff6d3dac9695a0f0123e
+Z b22c2adb863c74eddbb30d84bd9e9ef0
 # Remove this line to create a well-formed Fossil manifest.

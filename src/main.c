@@ -5012,7 +5012,7 @@ int sqlite3_compileoption_used(const char *zOptName){
   int nOpt;
   const char **azCompileOpt;
 
-#if SQLITE_ENABLE_API_ARMOR
+#ifdef SQLITE_ENABLE_API_ARMOR
   if( zOptName==0 ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;
