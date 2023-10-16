@@ -719,12 +719,11 @@ impl Namespace<PrimaryDatabase> {
 
         let is_fresh_db = check_fresh_db(&db_path)?;
         // switch frame-count checkpoint to time-based one
-        let auto_checkpoint =
-            if config.checkpoint_interval.is_some() && config.bottomless_replication.is_some() {
-                0
-            } else {
-                DEFAULT_AUTO_CHECKPOINT
-            };
+        let auto_checkpoint = if config.checkpoint_interval.is_some() {
+            0
+        } else {
+            DEFAULT_AUTO_CHECKPOINT
+        };
 
         let logger = Arc::new(ReplicationLogger::open(
             &db_path,
@@ -790,13 +789,11 @@ impl Namespace<PrimaryDatabase> {
 
         join_set.spawn(run_periodic_compactions(logger.clone()));
 
-        if config.bottomless_replication.is_some() {
-            if let Some(checkpoint_interval) = config.checkpoint_interval {
-                join_set.spawn(run_periodic_checkpoint(
-                    connection_maker.clone(),
-                    checkpoint_interval,
-                ));
-            }
+        if let Some(checkpoint_interval) = config.checkpoint_interval {
+            join_set.spawn(run_periodic_checkpoint(
+                connection_maker.clone(),
+                checkpoint_interval,
+            ));
         }
 
         Ok(Self {
