@@ -37,10 +37,7 @@ pub unsafe extern "C" fn libsql_sync(
     match RT.block_on(db.sync()) {
         Ok(_) => 0,
         Err(e) => {
-            set_err_msg(
-                format!("Error syncing database: {e}"),
-                out_err_msg,
-            );
+            set_err_msg(format!("Error syncing database: {e}"), out_err_msg);
             1
         }
     }
@@ -119,10 +116,7 @@ pub unsafe extern "C" fn libsql_open_ext(
             0
         }
         Err(e) => {
-            set_err_msg(
-                format!("Error opening URL {url}: {e}"),
-                out_err_msg,
-            );
+            set_err_msg(format!("Error opening URL {url}: {e}"), out_err_msg);
             1
         }
     }
