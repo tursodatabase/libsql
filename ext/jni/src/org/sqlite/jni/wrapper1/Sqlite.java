@@ -195,7 +195,6 @@ public final class Sqlite implements AutoCloseable  {
     return prepare(sql, 0);
   }
 
-
   public void createFunction(String name, int nArg, int eTextRep, ScalarFunction f ){
     int rc = CApi.sqlite3_create_function(affirmOpen(), name, nArg, eTextRep,
                                            new SqlFunction.ScalarAdapter(f));
@@ -203,6 +202,16 @@ public final class Sqlite implements AutoCloseable  {
   }
 
   public void createFunction(String name, int nArg, ScalarFunction f){
+    this.createFunction(name, nArg, CApi.SQLITE_UTF8, f);
+  }
+
+  public void createFunction(String name, int nArg, int eTextRep, AggregateFunction f ){
+    int rc = CApi.sqlite3_create_function(affirmOpen(), name, nArg, eTextRep,
+                                           new SqlFunction.AggregateAdapter(f));
+    if( 0!=rc ) throw new SqliteException(db);
+  }
+
+  public void createFunction(String name, int nArg, AggregateFunction f){
     this.createFunction(name, nArg, CApi.SQLITE_UTF8, f);
   }
 

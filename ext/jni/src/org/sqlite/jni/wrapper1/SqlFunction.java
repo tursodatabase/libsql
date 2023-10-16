@@ -13,22 +13,20 @@
 */
 package org.sqlite.jni.wrapper1;
 import org.sqlite.jni.capi.CApi;
-import org.sqlite.jni.annotation.*;
 import org.sqlite.jni.capi.sqlite3_context;
 import org.sqlite.jni.capi.sqlite3_value;
 
 /**
-   EXPERIMENTAL/INCOMPLETE/UNTESTED
+   Base marker interface for SQLite's three types of User-Defined SQL
+   Functions (UDFs): Scalar, Aggregate, and Window functions.
 */
 public interface SqlFunction  {
 
   /**
-     EXPERIMENTAL/INCOMPLETE/UNTESTED. An attempt at hiding UDF-side
-     uses of the sqlite3_context and sqlite3_value classes from a
-     high-level wrapper.  This level of indirection requires more than
-     twice as much Java code (in this API, not client-side) as using
-     the lower-level API. Client-side it's roughly the same amount of
-     code.
+     The Arguments type is an abstraction on top of the lower-level
+     UDF function argument types. It provides _most_ of the functionality
+     of the lower-level interface, insofar as possible without "leaking"
+     those types into this API.
   */
   public final static class Arguments implements Iterable<SqlFunction.Arguments.Arg>{
     private final sqlite3_context cx;
@@ -37,29 +35,34 @@ public interface SqlFunction  {
 
     /**
        Must be passed the context and arguments for the UDF call this
-       object is wrapping.
+       object is wrapping. Intended to be used by internal proxy
+       classes which "convert" the lower-level interface into this
+       package's higher-level interface, e.g. ScalarAdapter and
+       AggregateAdapter.
+
+       Passing null for the args is equivalent to passing a length-0
+       array.
     */
-    Arguments(@NotNull sqlite3_context cx, @NotNull sqlite3_value args[]){
+    Arguments(sqlite3_context cx, sqlite3_value args[]){
       this.cx = cx;
-      this.args = args;
-      this.length = args.length;
+      this.args = args==null ? new sqlite3_value[0] : args;;
+      this.length = this.args.length;
     }
 
     /**
        Wrapper for a single SqlFunction argument. Primarily intended
-       for eventual use with the Arguments class's Iterable interface.
+       for use with the Arguments class's Iterable interface.
     */
     public final static class Arg {
       private final Arguments a;
       private final int ndx;
       /* Only for use by the Arguments class. */
-      private Arg(@NotNull Arguments a, int ndx){
+      private Arg(Arguments a, int ndx){
         this.a = a;
         this.ndx = ndx;
       }
       /** Returns this argument's index in its parent argument list. */
       public int getIndex(){return ndx;}
-
       public int getInt(){return a.getInt(ndx);}
       public long getInt64(){return a.getInt64(ndx);}
       public double getDouble(){return a.getDouble(ndx);}
@@ -75,10 +78,9 @@ public interface SqlFunction  {
       public void setAuxData(Object o){a.setAuxData(ndx, o);}
     }
 
-    //! Untested!
     @Override
     public java.util.Iterator<SqlFunction.Arguments.Arg> iterator(){
-      Arg[] proxies = new Arg[args.length];
+      final Arg[] proxies = new Arg[args.length];
       for( int i = 0; i < args.length; ++i ){
         proxies[i] = new Arg(this, i);
       }
@@ -97,6 +99,8 @@ public interface SqlFunction  {
       }
       return args[ndx];
     }
+
+    sqlite3_context getContext(){return cx;}
 
     public int getArgCount(){ return args.length; }
 
@@ -160,6 +164,73 @@ public interface SqlFunction  {
   }
 
   /**
+     PerContextState assists aggregate and window functions in
+     managing their accumulator state across calls to the UDF's
+     callbacks.
+
+     <p>T must be of a type which can be legally stored as a value in
+     java.util.HashMap<KeyType,T>.
+
+     <p>If a given aggregate or window function is called multiple times
+     in a single SQL statement, e.g. SELECT MYFUNC(A), MYFUNC(B)...,
+     then the clients need some way of knowing which call is which so
+     that they can map their state between their various UDF callbacks
+     and reset it via xFinal(). This class takes care of such
+     mappings.
+
+     <p>This class works by mapping
+     sqlite3_context.getAggregateContext() to a single piece of
+     state, of a client-defined type (the T part of this class), which
+     persists across a "matching set" of the UDF's callbacks.
+
+     <p>This class is a helper providing commonly-needed functionality
+     - it is not required for use with aggregate or window functions.
+     Client UDFs are free to perform such mappings using custom
+     approaches. The provided {@link AggregateFunction} and {@link
+     WindowFunction} classes use this.
+  */
+  public static final class PerContextState<T> {
+    private final java.util.Map<Long,ValueHolder<T>> map
+      = new java.util.HashMap<>();
+
+    /**
+       Should be called from a UDF's xStep(), xValue(), and xInverse()
+       methods, passing it that method's first argument and an initial
+       value for the persistent state. If there is currently no
+       mapping for the given context within the map, one is created
+       using the given initial value, else the existing one is used
+       and the 2nd argument is ignored.  It returns a ValueHolder<T>
+       which can be used to modify that state directly without
+       requiring that the client update the underlying map's entry.
+
+       <p>The caller is obligated to eventually call
+       takeAggregateState() to clear the mapping.
+    */
+    public ValueHolder<T> getAggregateState(SqlFunction.Arguments args, T initialValue){
+      final Long key = args.getContext().getAggregateContext(true);
+      ValueHolder<T> rc = null==key ? null : map.get(key);
+      if( null==rc ){
+        map.put(key, rc = new ValueHolder<>(initialValue));
+      }
+      return rc;
+    }
+
+    /**
+       Should be called from a UDF's xFinal() method and passed that
+       method's first argument. This function removes the value
+       associated with with the arguments' aggregate context from the
+       map and returns it, returning null if no other UDF method has
+       been called to set up such a mapping. The latter condition will
+       be the case if a UDF is used in a statement which has no result
+       rows.
+    */
+    public T takeAggregateState(SqlFunction.Arguments args){
+      final ValueHolder<T> h = map.remove(args.getContext().getAggregateContext(false));
+      return null==h ? null : h.value;
+    }
+  }
+
+  /**
      Internal-use adapter for wrapping this package's ScalarFunction
      for use with the org.sqlite.jni.capi.ScalarFunction interface.
   */
@@ -169,11 +240,57 @@ public interface SqlFunction  {
       this.impl = impl;
     }
     /**
-       Proxies this.f.xFunc(), adapting the call arguments to that
-       function's signature.
+       Proxies this.impl.xFunc(), adapting the call arguments to that
+       function's signature. If the proxy throws, it's translated to
+       sqlite_result_error() with the exception's message.
     */
     public void xFunc(sqlite3_context cx, sqlite3_value[] args){
-      impl.xFunc( new SqlFunction.Arguments(cx, args) );
+      try{
+        impl.xFunc( new SqlFunction.Arguments(cx, args) );
+      }catch(Exception e){
+        CApi.sqlite3_result_error(cx, e);
+      }
+    }
+
+    public void xDestroy(){
+      impl.xDestroy();
+    }
+  }
+
+  /**
+     Internal-use adapter for wrapping this package's AggregateFunction
+     for use with the org.sqlite.jni.capi.AggregateFunction interface.
+  */
+  static final class AggregateAdapter extends org.sqlite.jni.capi.AggregateFunction {
+    final AggregateFunction impl;
+    AggregateAdapter(AggregateFunction impl){
+      this.impl = impl;
+    }
+
+    /**
+       Proxies this.impl.xStep(), adapting the call arguments to that
+       function's signature. If the proxied function throws, it is
+       translated to sqlite_result_error() with the exception's
+       message.
+    */
+    public void xStep(sqlite3_context cx, sqlite3_value[] args){
+      try{
+        impl.xStep( new SqlFunction.Arguments(cx, args) );
+      }catch(Exception e){
+        CApi.sqlite3_result_error(cx, e);
+      }
+    }
+
+    /**
+       As for the xFinal() argument of the C API's sqlite3_create_function().
+       If the proxied function throws, it is translated into a sqlite3_result_error().
+    */
+    public void xFinal(sqlite3_context cx){
+      try{
+        impl.xFinal( new SqlFunction.Arguments(cx, null) );
+      }catch(Exception e){
+        CApi.sqlite3_result_error(cx, e);
+      }
     }
 
     public void xDestroy(){

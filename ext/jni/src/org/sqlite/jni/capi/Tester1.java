@@ -38,17 +38,6 @@ import java.util.concurrent.Future;
 @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD})
 @interface SingleThreadOnly{}
 
-/**
-   A helper class which simply holds a single value. Its current use
-   is for communicating values out of anonymous classes, as doing so
-   requires a "final" reference.
-*/
-class ValueHolder<T> {
-  public T value;
-  public ValueHolder(){}
-  public ValueHolder(T v){value = v;}
-}
-
 public class Tester1 implements Runnable {
   //! True when running in multi-threaded mode.
   private static boolean mtMode = false;

@@ -106,6 +106,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/annotation/%,\
   TableColumnMetadata.java \
   TraceV2Callback.java \
   UpdateHookCallback.java \
+  ValueHolder.java \
   WindowFunction.java \
   XDestroyCallback.java \
   sqlite3.java \
@@ -113,9 +114,12 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/annotation/%,\
   sqlite3_stmt.java \
   sqlite3_value.java \
 ) $(patsubst %,$(dir.src.jni)/wrapper1/%,\
+  AggregateFunction.java \
+  ScalarFunction.java \
   SqlFunction.java \
   Sqlite.java \
   SqliteException.java \
+  ValueHolder.java \
 )
 
 JAVA_FILES.unittest := $(patsubst %,$(dir.src.jni)/%,\

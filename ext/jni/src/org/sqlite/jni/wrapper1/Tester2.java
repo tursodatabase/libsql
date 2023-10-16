@@ -38,17 +38,6 @@ import org.sqlite.jni.capi.*;
 @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD})
 @interface SingleThreadOnly{}
 
-/**
-   A helper class which simply holds a single value. Its current use
-   is for communicating values out of anonymous classes, as doing so
-   requires a "final" reference.
-*/
-class ValueHolder<T> {
-  public T value;
-  public ValueHolder(){}
-  public ValueHolder(T v){value = v;}
-}
-
 public class Tester2 implements Runnable {
   //! True when running in multi-threaded mode.
   private static boolean mtMode = false;
@@ -274,6 +263,36 @@ public class Tester2 implements Runnable {
       vh.value = 0;
       execSql(db, "select myfunc(-1,-2,-3)");
       affirm( -6 == vh.value );
+      affirm( 0 == xDestroyCalled.value );
+    }
+    affirm( 1 == xDestroyCalled.value );
+  }
+
+  void testUdfAggregate(){
+    final ValueHolder<Integer> xDestroyCalled = new ValueHolder<>(0);
+    final ValueHolder<Integer> vh = new ValueHolder<>(0);
+    try (Sqlite db = openDb()) {
+      execSql(db, "create table t(a); insert into t(a) values(1),(2),(3)");
+      final AggregateFunction f = new AggregateFunction<Integer>(){
+          public void xStep(SqlFunction.Arguments args){
+            final ValueHolder<Integer> agg = this.getAggregateState(args, 0);
+            for( SqlFunction.Arguments.Arg arg : args ){
+              agg.value += arg.getInt();
+            }
+          }
+          public void xFinal(SqlFunction.Arguments args){
+            final Integer v = this.takeAggregateState(args);
+            if( null==v ) args.resultNull();
+            else args.resultInt(v);
+            vh.value = v;
+          }
+          public void xDestroy(){
+            ++xDestroyCalled.value;
+          }
+        };
+      db.createFunction("myagg", -1, f);
+      execSql(db, "select myagg(a) from t");
+      affirm( 6 == vh.value );
       affirm( 0 == xDestroyCalled.value );
     }
     affirm( 1 == xDestroyCalled.value );
