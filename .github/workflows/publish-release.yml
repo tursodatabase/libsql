@@ -89,6 +89,7 @@ jobs:
           path-type: inherit
 
       - name: run configure
+        working-directory: libsql-sqlite3
         run: |
           set -ex
           mkdir build
