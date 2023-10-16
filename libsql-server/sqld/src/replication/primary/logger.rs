@@ -23,7 +23,7 @@ use crate::libsql_bindings::ffi::{
     PageHdrIter, PgHdr, Wal, SQLITE_CHECKPOINT_TRUNCATE, SQLITE_IOERR, SQLITE_OK,
 };
 use crate::libsql_bindings::wal_hook::WalHook;
-use crate::replication::frame::{Frame, FrameHeader, FrameMut};
+use crate::replication::frame::{Frame, FrameHeader};
 use crate::replication::snapshot::{find_snapshot_file, LogCompactor, SnapshotFile};
 use crate::replication::{FrameNo, SnapshotCallback, CRC_64_GO_ISO, WAL_MAGIC};
 use crate::LIBSQL_PAGE_SIZE;
@@ -388,14 +388,14 @@ impl LogFile {
         let file_end = file.metadata()?.len();
 
         let header = if file_end == 0 {
-            let log_id = Uuid::new_v4();
+            let db_id = Uuid::new_v4();
             LogFileHeader {
                 version: 2,
                 start_frame_no: 0,
                 magic: WAL_MAGIC,
                 page_size: LIBSQL_PAGE_SIZE as i32,
                 start_checksum: 0,
-                log_id: log_id.as_u128(),
+                db_id: db_id.as_u128(),
                 frame_count: 0,
                 sqld_version: Version::current().0,
             }
@@ -467,9 +467,8 @@ impl LogFile {
     }
 
     /// Returns an iterator over the WAL frame headers
-    pub(crate) fn frames_iter(
-        &self,
-    ) -> anyhow::Result<impl Iterator<Item = anyhow::Result<Frame>> + '_> {
+    #[allow(dead_code)]
+    fn frames_iter(&self) -> anyhow::Result<impl Iterator<Item = anyhow::Result<Frame>> + '_> {
         let mut current_frame_offset = 0;
         Ok(std::iter::from_fn(move || {
             if current_frame_offset >= self.header.frame_count {
@@ -477,17 +476,14 @@ impl LogFile {
             }
             let read_byte_offset = Self::absolute_byte_offset(current_frame_offset);
             current_frame_offset += 1;
-            Some(
-                self.read_frame_byte_offset_mut(read_byte_offset)
-                    .map(|f| f.into()),
-            )
+            Some(self.read_frame_byte_offset(read_byte_offset))
         }))
     }
 
     /// Returns an iterator over the WAL frame headers
-    pub fn rev_frames_iter_mut(
+    pub fn rev_frames_iter(
         &self,
-    ) -> anyhow::Result<impl Iterator<Item = anyhow::Result<FrameMut>> + '_> {
+    ) -> anyhow::Result<impl Iterator<Item = anyhow::Result<Frame>> + '_> {
         let mut current_frame_offset = self.header.frame_count;
 
         Ok(std::iter::from_fn(move || {
@@ -496,7 +492,7 @@ impl LogFile {
             }
             current_frame_offset -= 1;
             let read_byte_offset = Self::absolute_byte_offset(current_frame_offset);
-            let frame = self.read_frame_byte_offset_mut(read_byte_offset);
+            let frame = self.read_frame_byte_offset(read_byte_offset);
             Some(frame)
         }))
     }
@@ -568,9 +564,9 @@ impl LogFile {
             return Err(LogReadError::Ahead);
         }
 
-        let frame = self.read_frame_byte_offset_mut(self.byte_offset(frame_no)?.unwrap())?;
+        let frame = self.read_frame_byte_offset(self.byte_offset(frame_no)?.unwrap())?;
 
-        Ok(frame.into())
+        Ok(frame)
     }
 
     fn should_compact(&self) -> bool {
@@ -634,11 +630,12 @@ impl LogFile {
         Ok(())
     }
 
-    fn read_frame_byte_offset_mut(&self, offset: u64) -> anyhow::Result<FrameMut> {
+    fn read_frame_byte_offset(&self, offset: u64) -> anyhow::Result<Frame> {
         let mut buffer = BytesMut::zeroed(LogFile::FRAME_SIZE);
         self.file.read_exact_at(&mut buffer, offset)?;
+        let buffer = buffer.freeze();
 
-        FrameMut::try_from(&*buffer)
+        Frame::try_from_bytes(buffer)
     }
 
     fn last_commited_frame_no(&self) -> Option<FrameNo> {
@@ -707,8 +704,8 @@ pub struct LogFileHeader {
     /// Initial checksum value for the rolling CRC checksum
     /// computed with the 64 bits CRC_64_GO_ISO
     pub start_checksum: u64,
-    /// Uuid of the this log.
-    pub log_id: u128,
+    /// Uuid of the database associated with this log.
+    pub db_id: u128,
     /// Frame_no of the first frame in the log
     pub start_frame_no: FrameNo,
     /// entry count in file
@@ -836,11 +833,7 @@ impl ReplicationLogger {
 
         Ok(Self {
             generation: Generation::new(generation_start_frame_no.unwrap_or(0)),
-            compactor: LogCompactor::new(
-                &db_path,
-                Uuid::from_u128(log_file.header.log_id),
-                callback,
-            )?,
+            compactor: LogCompactor::new(&db_path, log_file.header.db_id, callback)?,
             log_file: RwLock::new(log_file),
             db_path,
             closed_signal,
@@ -889,8 +882,8 @@ impl ReplicationLogger {
         Self::from_log_file(data_path, log_file, callback, auto_checkpoint)
     }
 
-    pub fn log_id(&self) -> Uuid {
-        Uuid::from_u128((self.log_file.read()).header().log_id)
+    pub fn database_id(&self) -> anyhow::Result<Uuid> {
+        Ok(Uuid::from_u128((self.log_file.read()).header().db_id))
     }
 
     /// Write pages to the log, without updating the file header.
@@ -944,7 +937,7 @@ impl ReplicationLogger {
         }
 
         let last_frame = {
-            let mut frames_iter = log_file.rev_frames_iter_mut()?;
+            let mut frames_iter = log_file.rev_frames_iter()?;
             let Some(last_frame_res) = frames_iter.next() else {
                 // the log file is empty, nothing to compact
                 return Ok(false);

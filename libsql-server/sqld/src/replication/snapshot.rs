@@ -21,7 +21,7 @@ use uuid::Uuid;
 
 use crate::namespace::NamespaceName;
 
-use super::frame::FrameMut;
+use super::frame::Frame;
 use super::primary::logger::LogFile;
 use super::FrameNo;
 
@@ -35,7 +35,7 @@ const MAX_SNAPSHOT_NUMBER: usize = 32;
 #[repr(C)]
 pub struct SnapshotFileHeader {
     /// id of the database
-    pub log_id: u128,
+    pub db_id: u128,
     /// first frame in the snapshot
     pub start_frame_no: u64,
     /// end frame in the snapshot
@@ -134,7 +134,7 @@ impl SnapshotFile {
     }
 
     /// Iterator on the frames contained in the snapshot file, in reverse frame_no order.
-    pub fn frames_iter_mut(&self) -> impl Iterator<Item = anyhow::Result<FrameMut>> + '_ {
+    pub fn frames_iter(&self) -> impl Iterator<Item = anyhow::Result<Frame>> + '_ {
         let mut current_offset = 0;
         std::iter::from_fn(move || {
             if current_offset >= self.header.frame_count {
@@ -145,7 +145,7 @@ impl SnapshotFile {
             current_offset += 1;
             let mut buf = BytesMut::zeroed(LogFile::FRAME_SIZE);
             match self.file.read_exact_at(&mut buf, read_offset as _) {
-                Ok(_) => match FrameMut::try_from(&*buf) {
+                Ok(_) => match Frame::try_from_bytes(buf.freeze()) {
                     Ok(frame) => Some(Ok(frame)),
                     Err(e) => Some(Err(e)),
                 },
@@ -154,14 +154,12 @@ impl SnapshotFile {
         })
     }
 
-    /// Like `frames_iter`, but stops as soon as a frame with frame_no <= `frame_no` is reached.
-    /// The frames are returned in monotonically strictly decreasing frame_no. In other words, the
-    /// most recent frames come first.
+    /// Like `frames_iter`, but stops as soon as a frame with frame_no <= `frame_no` is reached
     pub fn frames_iter_from(
         &self,
         frame_no: u64,
-    ) -> impl Iterator<Item = anyhow::Result<FrameMut>> + '_ {
-        let mut iter = self.frames_iter_mut();
+    ) -> impl Iterator<Item = anyhow::Result<Frame>> + '_ {
+        let mut iter = self.frames_iter();
         std::iter::from_fn(move || match iter.next() {
             Some(Ok(frame)) => {
                 if frame.header().frame_no < frame_no {
@@ -172,10 +170,6 @@ impl SnapshotFile {
             }
             other => other,
         })
-    }
-
-    pub fn header(&self) -> &SnapshotFileHeader {
-        &self.header
     }
 }
 
@@ -189,19 +183,18 @@ pub type NamespacedSnapshotCallback =
     Arc<dyn Fn(&Path, &NamespaceName) -> anyhow::Result<()> + Send + Sync>;
 
 impl LogCompactor {
-    pub fn new(db_path: &Path, log_id: Uuid, callback: SnapshotCallback) -> anyhow::Result<Self> {
+    pub fn new(db_path: &Path, db_id: u128, callback: SnapshotCallback) -> anyhow::Result<Self> {
         // we create a 0 sized channel, in order to create backpressure when we can't
         // keep up with snapshop creation: if there isn't any ongoind comptaction task processing,
         // the compact does not block, and the log is compacted in the background. Otherwise, the
         // block until there is a free slot to perform compaction.
         let (sender, receiver) = bounded::<(LogFile, PathBuf, u32)>(0);
-        let mut merger = SnapshotMerger::new(db_path, log_id)?;
+        let mut merger = SnapshotMerger::new(db_path, db_id)?;
         let db_path = db_path.to_path_buf();
         let snapshot_dir_path = snapshot_dir_path(&db_path);
-        // FIXME: use tokio task for compaction
         let _handle = std::thread::spawn(move || {
             while let Ok((file, log_path, size_after)) = receiver.recv() {
-                match perform_compaction(&db_path, file, log_id) {
+                match perform_compaction(&db_path, file, db_id) {
                     Ok((snapshot_name, snapshot_frame_count)) => {
                         tracing::info!("snapshot `{snapshot_name}` successfully created");
 
@@ -259,12 +252,12 @@ struct SnapshotMerger {
 }
 
 impl SnapshotMerger {
-    fn new(db_path: &Path, log_id: Uuid) -> anyhow::Result<Self> {
+    fn new(db_path: &Path, db_id: u128) -> anyhow::Result<Self> {
         let (sender, receiver) = mpsc::channel();
 
         let db_path = db_path.to_path_buf();
         let handle =
-            std::thread::spawn(move || Self::run_snapshot_merger_loop(receiver, &db_path, log_id));
+            std::thread::spawn(move || Self::run_snapshot_merger_loop(receiver, &db_path, db_id));
 
         Ok(Self {
             sender,
@@ -281,13 +274,13 @@ impl SnapshotMerger {
     fn run_snapshot_merger_loop(
         receiver: mpsc::Receiver<(String, u64, u32)>,
         db_path: &Path,
-        log_id: Uuid,
+        db_id: u128,
     ) -> anyhow::Result<()> {
         let mut snapshots = Self::init_snapshot_info_list(db_path)?;
         while let Ok((name, size, db_page_count)) = receiver.recv() {
             snapshots.push((name, size));
             if Self::should_compact(&snapshots, db_page_count) {
-                let compacted_snapshot_info = Self::merge_snapshots(&snapshots, db_path, log_id)?;
+                let compacted_snapshot_info = Self::merge_snapshots(&snapshots, db_path, db_id)?;
                 snapshots.clear();
                 snapshots.push(compacted_snapshot_info);
             }
@@ -330,18 +323,13 @@ impl SnapshotMerger {
     fn merge_snapshots(
         snapshots: &[(String, u64)],
         db_path: &Path,
-        log_id: Uuid,
+        db_id: u128,
     ) -> anyhow::Result<(String, u64)> {
-        let mut builder = SnapshotBuilder::new(db_path, log_id)?;
+        let mut builder = SnapshotBuilder::new(db_path, db_id)?;
         let snapshot_dir_path = snapshot_dir_path(db_path);
-        let mut size_after = None;
         for (name, _) in snapshots.iter().rev() {
             let snapshot = SnapshotFile::open(&snapshot_dir_path.join(name))?;
-            // The size after the merged snapshot is the size after the first snapshot to be merged
-            if size_after.is_none() {
-                size_after.replace(snapshot.header.size_after);
-            }
-            let iter = snapshot.frames_iter_mut();
+            let iter = snapshot.frames_iter();
             builder.append_frames(iter)?;
         }
 
@@ -350,7 +338,6 @@ impl SnapshotMerger {
 
         builder.header.start_frame_no = start_frame_no;
         builder.header.end_frame_no = end_frame_no;
-        builder.header.size_after = size_after.unwrap();
 
         let compacted_snapshot_infos = builder.finish()?;
 
@@ -399,7 +386,7 @@ fn snapshot_dir_path(db_path: &Path) -> PathBuf {
 }
 
 impl SnapshotBuilder {
-    fn new(db_path: &Path, log_id: Uuid) -> anyhow::Result<Self> {
+    fn new(db_path: &Path, db_id: u128) -> anyhow::Result<Self> {
         let snapshot_dir_path = snapshot_dir_path(db_path);
         std::fs::create_dir_all(&snapshot_dir_path)?;
         let mut target = BufWriter::new(NamedTempFile::new_in(&snapshot_dir_path)?);
@@ -409,7 +396,7 @@ impl SnapshotBuilder {
         Ok(Self {
             seen_pages: HashSet::new(),
             header: SnapshotFileHeader {
-                log_id: log_id.as_u128(),
+                db_id,
                 start_frame_no: u64::MAX,
                 end_frame_no: u64::MIN,
                 frame_count: 0,
@@ -425,7 +412,7 @@ impl SnapshotBuilder {
     /// append frames to the snapshot. Frames must be in decreasing frame_no order.
     fn append_frames(
         &mut self,
-        frames: impl Iterator<Item = anyhow::Result<FrameMut>>,
+        frames: impl Iterator<Item = anyhow::Result<Frame>>,
     ) -> anyhow::Result<()> {
         // We iterate on the frames starting from the end of the log and working our way backward. We
         // make sure that only the most recent version of each file is present in the resulting
@@ -434,7 +421,7 @@ impl SnapshotBuilder {
         // The snapshot file contains the most recent version of each page, in descending frame
         // number order. That last part is important for when we read it later on.
         for frame in frames {
-            let mut frame = frame?;
+            let frame = frame?;
             assert!(frame.header().frame_no < self.last_seen_frame_no);
             self.last_seen_frame_no = frame.header().frame_no;
             if frame.header().frame_no < self.header.start_frame_no {
@@ -445,11 +432,6 @@ impl SnapshotBuilder {
                 self.header.end_frame_no = frame.header().frame_no;
                 self.header.size_after = frame.header().size_after;
             }
-
-            // set all frames as non-commit frame in a snapshot, and let the client decide when to
-            // commit. This is ok because the client will stream frames backward until caught up,
-            // and then commit.
-            frame.header_mut().size_after = 0;
 
             if !self.seen_pages.contains(&frame.header().page_no) {
                 self.seen_pages.insert(frame.header().page_no);
@@ -468,7 +450,7 @@ impl SnapshotBuilder {
         file.as_file().write_all_at(bytes_of(&self.header), 0)?;
         let snapshot_name = format!(
             "{}-{}-{}.snap",
-            Uuid::from_u128(self.header.log_id),
+            Uuid::from_u128(self.header.db_id),
             self.header.start_frame_no,
             self.header.end_frame_no,
         );
@@ -482,10 +464,10 @@ impl SnapshotBuilder {
 fn perform_compaction(
     db_path: &Path,
     file_to_compact: LogFile,
-    log_id: Uuid,
+    db_id: u128,
 ) -> anyhow::Result<(String, u64)> {
-    let mut builder = SnapshotBuilder::new(db_path, log_id)?;
-    builder.append_frames(file_to_compact.rev_frames_iter_mut()?)?;
+    let mut builder = SnapshotBuilder::new(db_path, db_id)?;
+    builder.append_frames(file_to_compact.rev_frames_iter()?)?;
     builder.finish()
 }
 
@@ -498,7 +480,6 @@ mod test {
     use bytes::Bytes;
     use tempfile::tempdir;
 
-    use crate::replication::frame::Frame;
     use crate::replication::primary::logger::WalPage;
     use crate::replication::snapshot::SnapshotFile;
 
@@ -508,8 +489,8 @@ mod test {
     fn compact_file_create_snapshot() {
         let temp = tempfile::NamedTempFile::new().unwrap();
         let mut log_file = LogFile::new(temp.as_file().try_clone().unwrap(), 0, None).unwrap();
-        let log_id = Uuid::new_v4();
-        log_file.header.log_id = log_id.as_u128();
+        let db_id = Uuid::new_v4();
+        log_file.header.db_id = db_id.as_u128();
         log_file.write_header().unwrap();
 
         // add 50 pages, each one in two versions
@@ -528,7 +509,8 @@ mod test {
         log_file.commit().unwrap();
 
         let dump_dir = tempdir().unwrap();
-        let compactor = LogCompactor::new(dump_dir.path(), log_id, Box::new(|_| Ok(()))).unwrap();
+        let compactor =
+            LogCompactor::new(dump_dir.path(), db_id.as_u128(), Box::new(|_| Ok(()))).unwrap();
         compactor
             .compact(log_file, temp.path().to_path_buf(), 25)
             .unwrap();
@@ -536,7 +518,7 @@ mod test {
         thread::sleep(Duration::from_secs(1));
 
         let snapshot_path =
-            snapshot_dir_path(dump_dir.path()).join(format!("{}-{}-{}.snap", log_id, 0, 49));
+            snapshot_dir_path(dump_dir.path()).join(format!("{}-{}-{}.snap", db_id, 0, 49));
         let snapshot = read(&snapshot_path).unwrap();
         let header: SnapshotFileHeader =
             pod_read_unaligned(&snapshot[..std::mem::size_of::<SnapshotFileHeader>()]);
@@ -544,14 +526,14 @@ mod test {
         assert_eq!(header.start_frame_no, 0);
         assert_eq!(header.end_frame_no, 49);
         assert_eq!(header.frame_count, 25);
-        assert_eq!(header.log_id, log_id.as_u128());
+        assert_eq!(header.db_id, db_id.as_u128());
         assert_eq!(header.size_after, 25);
 
         let mut seen_frames = HashSet::new();
         let mut seen_page_no = HashSet::new();
         let data = &snapshot[std::mem::size_of::<SnapshotFileHeader>()..];
         data.chunks(LogFile::FRAME_SIZE).for_each(|f| {
-            let frame = Frame::try_from(f).unwrap();
+            let frame = Frame::try_from_bytes(Bytes::copy_from_slice(f)).unwrap();
             assert!(!seen_frames.contains(&frame.header().frame_no));
             assert!(!seen_page_no.contains(&frame.header().page_no));
             seen_page_no.insert(frame.header().page_no);

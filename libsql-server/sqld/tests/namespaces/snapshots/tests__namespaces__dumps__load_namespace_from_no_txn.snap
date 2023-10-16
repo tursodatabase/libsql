@@ -3,5 +3,5 @@ source: sqld/tests/namespaces/dumps.rs
 expression: resp.json_value().await.unwrap()
 ---
 {
-  "error": "a dump should execute within a transaction."
+  "error": "A dump should execute within a transaction."
 }

@@ -7,7 +7,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::env::set_var("PROTOC", protobuf_src::protoc());
 
     let mut config = Config::new();
-    config.bytes([".wal_log"]);
+    config.bytes([".wal_log", ".proxy.ProgramReq.namespace"]);
     tonic_build::configure()
         .protoc_arg("--experimental_allow_proto3_optional")
         .type_attribute(".proxy", "#[cfg_attr(test, derive(arbitrary::Arbitrary))]")
