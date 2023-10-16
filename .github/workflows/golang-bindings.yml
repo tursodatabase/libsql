@@ -39,5 +39,5 @@ jobs:
       run: cargo build
 
     - name: Run Go bindings tests
-      working-directory: libsql/bindings/go
-      run: LD_LIBRARY_PATH=../../../target/debug go test
+      working-directory: bindings/go
+      run: LD_LIBRARY_PATH=../../target/debug go test

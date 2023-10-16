@@ -1,10 +1,10 @@
 [workspace]
 resolver = "2"
 members = [
-  "libsql/core",
-  "libsql/bindings/c",
-  "libsql/bindings/wasm",
-  "libsql/libsql-sys",
+  "libsql",
+  "bindings/c",
+  "bindings/wasm",
+  "libsql-sys",
   "libsql-shell",
 ]
 
