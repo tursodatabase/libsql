@@ -2226,27 +2226,29 @@ final class CApi {
   public static final int SQLITE_LIMIT_WORKER_THREADS = 11;
 
   // open flags
-  public static final int SQLITE_OPEN_READONLY = 1;
-  public static final int SQLITE_OPEN_READWRITE = 2;
-  public static final int SQLITE_OPEN_CREATE = 4;
-  public static final int SQLITE_OPEN_URI = 64;
-  public static final int SQLITE_OPEN_MEMORY = 128;
-  public static final int SQLITE_OPEN_NOMUTEX = 32768;
-  public static final int SQLITE_OPEN_FULLMUTEX = 65536;
-  public static final int SQLITE_OPEN_SHAREDCACHE = 131072;
-  public static final int SQLITE_OPEN_PRIVATECACHE = 262144;
-  public static final int SQLITE_OPEN_EXRESCODE = 33554432;
-  public static final int SQLITE_OPEN_NOFOLLOW = 16777216;
-  public static final int SQLITE_OPEN_MAIN_DB = 256;
-  public static final int SQLITE_OPEN_MAIN_JOURNAL = 2048;
-  public static final int SQLITE_OPEN_TEMP_DB = 512;
-  public static final int SQLITE_OPEN_TEMP_JOURNAL = 4096;
-  public static final int SQLITE_OPEN_TRANSIENT_DB = 1024;
-  public static final int SQLITE_OPEN_SUBJOURNAL = 8192;
-  public static final int SQLITE_OPEN_SUPER_JOURNAL = 16384;
-  public static final int SQLITE_OPEN_WAL = 524288;
-  public static final int SQLITE_OPEN_DELETEONCLOSE = 8;
-  public static final int SQLITE_OPEN_EXCLUSIVE = 16;
+
+  public static final int SQLITE_OPEN_READONLY     = 0x00000001  /* Ok for sqlite3_open_v2() */;
+  public static final int SQLITE_OPEN_READWRITE    = 0x00000002  /* Ok for sqlite3_open_v2() */;
+  public static final int SQLITE_OPEN_CREATE       = 0x00000004  /* Ok for sqlite3_open_v2() */;
+  //public static final int SQLITE_OPEN_DELETEONCLOSE  = 0x00000008  /* VFS only */;
+  //public static final int SQLITE_OPEN_EXCLUSIVE  = 0x00000010  /* VFS only */;
+  //public static final int SQLITE_OPEN_AUTOPROXY  = 0x00000020  /* VFS only */;
+  public static final int SQLITE_OPEN_URI          = 0x00000040  /* Ok for sqlite3_open_v2() */;
+  public static final int SQLITE_OPEN_MEMORY       = 0x00000080  /* Ok for sqlite3_open_v2() */;
+  //public static final int SQLITE_OPEN_MAIN_DB    = 0x00000100  /* VFS only */;
+  //public static final int SQLITE_OPEN_TEMP_DB    = 0x00000200  /* VFS only */;
+  //public static final int SQLITE_OPEN_TRANSIENT_DB  = 0x00000400  /* VFS only */;
+  //public static final int SQLITE_OPEN_MAIN_JOURNAL  = 0x00000800  /* VFS only */;
+  //public static final int SQLITE_OPEN_TEMP_JOURNAL  = 0x00001000  /* VFS only */;
+  //public static final int SQLITE_OPEN_SUBJOURNAL    = 0x00002000  /* VFS only */;
+  //public static final int SQLITE_OPEN_SUPER_JOURNAL = 0x00004000  /* VFS only */;
+  public static final int SQLITE_OPEN_NOMUTEX       = 0x00008000  /* Ok for sqlite3_open_v2() */;
+  public static final int SQLITE_OPEN_FULLMUTEX     = 0x00010000  /* Ok for sqlite3_open_v2() */;
+  public static final int SQLITE_OPEN_SHAREDCACHE   = 0x00020000  /* Ok for sqlite3_open_v2() */;
+  public static final int SQLITE_OPEN_PRIVATECACHE  = 0x00040000  /* Ok for sqlite3_open_v2() */;
+  //public static final int SQLITE_OPEN_WAL         = 0x00080000  /* VFS only */;
+  public static final int SQLITE_OPEN_NOFOLLOW      = 0x01000000  /* Ok for sqlite3_open_v2() */;
+  public static final int SQLITE_OPEN_EXRESCODE     = 0x02000000  /* Extended result codes */;
 
   // prepare flags
   public static final int SQLITE_PREPARE_PERSISTENT = 1;
@@ -2406,9 +2408,9 @@ final class CApi {
   public static final int SQLITE_TXN_WRITE = 2;
 
   // udf flags
-  public static final int SQLITE_DETERMINISTIC = 2048;
-  public static final int SQLITE_DIRECTONLY = 524288;
-  public static final int SQLITE_INNOCUOUS = 2097152;
+  public static final int SQLITE_DETERMINISTIC = 0x000000800;
+  public static final int SQLITE_DIRECTONLY    = 0x000080000;
+  public static final int SQLITE_INNOCUOUS     = 0x000200000;
 
   // virtual tables
   public static final int SQLITE_INDEX_SCAN_UNIQUE = 1;
