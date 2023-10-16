@@ -59,6 +59,18 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-targets --all-features -- -D warnings
 
+
+  features:
+    name: Check features and unused dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: taiki-e/install-action@cargo-hack
+      - uses: taiki-e/install-action@cargo-udeps
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo hack udeps --workspace --each-feature ${{ matrix.option }}
+
   test:
     runs-on: ubuntu-latest
     name: Run Tests

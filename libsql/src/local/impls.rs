@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use libsql_sys::ValueType;
-
 use crate::{
     connection::Conn,
     params::Params,
@@ -9,6 +7,7 @@ use crate::{
     statement::Stmt,
     transaction::Tx,
     Column, Connection, Result, Row, Rows, Statement, Transaction, TransactionBehavior, Value,
+    ValueType,
 };
 
 #[derive(Clone)]

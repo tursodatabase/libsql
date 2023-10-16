@@ -1,4 +1,4 @@
-use libsql_sys::ValueType;
+use std::str::FromStr;
 
 use crate::{Error, Result};
 
@@ -10,6 +10,30 @@ pub enum Value {
     Real(f64),
     Text(String),
     Blob(Vec<u8>),
+}
+
+#[derive(Debug)]
+pub enum ValueType {
+    Integer = 1,
+    Real,
+    Text,
+    Blob,
+    Null,
+}
+
+impl FromStr for ValueType {
+    type Err = ();
+
+    fn from_str(s: &str) -> std::result::Result<ValueType, Self::Err> {
+        match s {
+            "TEXT" => Ok(ValueType::Text),
+            "INTEGER" => Ok(ValueType::Integer),
+            "BLOB" => Ok(ValueType::Blob),
+            "NULL" => Ok(ValueType::Null),
+            "REAL" => Ok(ValueType::Real),
+            _ => Err(()),
+        }
+    }
 }
 
 impl Value {
@@ -157,7 +181,7 @@ impl From<Vec<u8>> for Value {
 #[cfg(feature = "core")]
 impl From<libsql_sys::Value> for Value {
     fn from(value: libsql_sys::Value) -> Value {
-        match value.value_type() {
+        match value.value_type().into() {
             ValueType::Null => Value::Null,
             ValueType::Integer => Value::Integer(value.int64()),
             ValueType::Real => Value::Real(value.double()),
@@ -332,7 +356,7 @@ where
 #[cfg(feature = "core")]
 impl<'a> From<libsql_sys::Value> for ValueRef<'a> {
     fn from(value: libsql_sys::Value) -> ValueRef<'a> {
-        match value.value_type() {
+        match value.value_type().into() {
             ValueType::Null => ValueRef::Null,
             ValueType::Integer => ValueRef::Integer(value.int64()),
             ValueType::Real => ValueRef::Real(value.double()),
@@ -358,6 +382,19 @@ impl<'a> From<libsql_sys::Value> for ValueRef<'a> {
                     ValueRef::Blob(&[])
                 }
             }
+        }
+    }
+}
+
+#[cfg(feature = "core")]
+impl From<libsql_sys::ValueType> for ValueType {
+    fn from(other: libsql_sys::ValueType) -> Self {
+        match other {
+            libsql_sys::ValueType::Integer => ValueType::Integer,
+            libsql_sys::ValueType::Real => ValueType::Real,
+            libsql_sys::ValueType::Text => ValueType::Text,
+            libsql_sys::ValueType::Blob => ValueType::Blob,
+            libsql_sys::ValueType::Null => ValueType::Null,
         }
     }
 }
