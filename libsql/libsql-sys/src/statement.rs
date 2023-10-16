@@ -177,7 +177,7 @@ impl Statement {
     }
 
     pub fn get_status(&self, status: i32) -> i32 {
-        unsafe { crate::ffi::sqlite3_stmt_status(self.raw_stmt, status as i32, 0) }
+        unsafe { crate::ffi::sqlite3_stmt_status(self.raw_stmt, status, 0) }
     }
 
     pub fn is_explain(&self) -> i32 {

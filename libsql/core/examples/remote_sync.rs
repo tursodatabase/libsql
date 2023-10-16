@@ -74,13 +74,8 @@ async fn main() {
         .await
         .unwrap();
     println!("Guest book entries:");
-    loop {
-        match results.next().unwrap() {
-            Some(row) => {
-                let text: String = row.get(0).unwrap();
-                println!("  {}", text);
-            }
-            None => break,
-        };
+    while let Some(row) = results.next().unwrap() {
+        let text: String = row.get(0).unwrap();
+        println!("  {}", text);
     }
 }

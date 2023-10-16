@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
+use libsql_sys::ValueType;
+
 use crate::{
     connection::Conn,
     params::Params,
     rows::{RowInner, RowsInner},
     statement::Stmt,
     transaction::Tx,
-    value::ValueType,
     Column, Connection, Result, Row, Rows, Statement, Transaction, TransactionBehavior, Value,
 };
 

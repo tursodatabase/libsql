@@ -4,8 +4,8 @@ mod pipeline;
 mod proto;
 
 use crate::util::coerce_url_scheme;
-use crate::value::ValueType;
 use hyper::header::AUTHORIZATION;
+use libsql_sys::ValueType;
 use pipeline::{
     ClientMsg, Response, ServerMsg, StreamBatchReq, StreamExecuteReq, StreamRequest,
     StreamResponse, StreamResponseError, StreamResponseOk,
@@ -78,7 +78,7 @@ impl InnerClient {
                 .await
                 .map_err(HranaError::from)?;
             let body = String::from_utf8(body.into()).unwrap();
-            return Err(HranaError::Api(body).into());
+            return Err(HranaError::Api(body));
         }
 
         let body = hyper::body::to_bytes(res.into_body())
@@ -171,9 +171,8 @@ impl Client {
             Response::Ok(_) => Err(HranaError::UnexpectedResponse(format!(
                 "Unexpected response from server: {:?}",
                 response.results
-            ))
-            .into()),
-            Response::Error(e) => Err(HranaError::StreamError(e).into()),
+            ))),
+            Response::Error(e) => Err(HranaError::StreamError(e)),
         }
     }
 
@@ -236,9 +235,8 @@ impl Client {
             Response::Ok(_) => Err(HranaError::UnexpectedResponse(format!(
                 "Unexpected response from server: {:?}",
                 response.results
-            ))
-            .into()),
-            Response::Error(e) => Err(HranaError::StreamError(e).into()),
+            ))),
+            Response::Error(e) => Err(HranaError::StreamError(e)),
         }
     }
 

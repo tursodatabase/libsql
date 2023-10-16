@@ -1,7 +1,9 @@
 // TODO(lucio): Move this to `remote/mod.rs`
 
 use std::sync::Arc;
+use std::str::FromStr;
 
+use libsql_sys::ValueType;
 use parking_lot::Mutex;
 
 use crate::replication::pb::{
@@ -10,7 +12,6 @@ use crate::replication::pb::{
 use crate::rows::{RowInner, RowsInner};
 use crate::statement::Stmt;
 use crate::transaction::Tx;
-use crate::value::ValueType;
 use crate::{
     params::Params, replication::Writer, Error, Result, Statement, Transaction, TransactionBehavior,
 };
@@ -576,7 +577,7 @@ impl RowsInner for RemoteRows {
         let col = self.0.column_descriptions.get(idx as usize).unwrap();
         col.decltype
             .as_deref()
-            .and_then(libsql_sys::ValueType::from_str)
+            .and_then(|v| ValueType::from_str(v).ok())
             .map(ValueType::from)
             .ok_or(Error::InvalidColumnType)
     }
@@ -609,7 +610,7 @@ impl RowInner for RemoteRow {
         let col = self.1.get(idx as usize).unwrap();
         col.decltype
             .as_deref()
-            .and_then(libsql_sys::ValueType::from_str)
+            .and_then(|v| ValueType::from_str(v).ok())
             .map(ValueType::from)
             .ok_or(Error::InvalidColumnType)
     }

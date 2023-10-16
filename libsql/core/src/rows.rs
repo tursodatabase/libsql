@@ -1,6 +1,6 @@
-use crate::{Result, Value};
+use libsql_sys::ValueType;
 
-use crate::value::ValueType;
+use crate::{Result, Value};
 
 // NOTICE: Column is blatantly copy-pasted from rusqlite
 #[cfg_attr(test, derive(arbitrary::Arbitrary))]

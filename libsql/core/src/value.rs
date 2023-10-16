@@ -1,3 +1,5 @@
+use libsql_sys::ValueType;
+
 use crate::{Error, Result};
 
 #[derive(Clone, Debug)]
@@ -8,15 +10,6 @@ pub enum Value {
     Real(f64),
     Text(String),
     Blob(Vec<u8>),
-}
-
-#[derive(Debug)]
-pub enum ValueType {
-    Integer,
-    Real,
-    Text,
-    Blob,
-    Null,
 }
 
 impl Value {
@@ -164,7 +157,7 @@ impl From<Vec<u8>> for Value {
 #[cfg(feature = "core")]
 impl From<libsql_sys::Value> for Value {
     fn from(value: libsql_sys::Value) -> Value {
-        match value.value_type().into() {
+        match value.value_type() {
             ValueType::Null => Value::Null,
             ValueType::Integer => Value::Integer(value.int64()),
             ValueType::Real => Value::Real(value.double()),
@@ -339,7 +332,7 @@ where
 #[cfg(feature = "core")]
 impl<'a> From<libsql_sys::Value> for ValueRef<'a> {
     fn from(value: libsql_sys::Value) -> ValueRef<'a> {
-        match value.value_type().into() {
+        match value.value_type() {
             ValueType::Null => ValueRef::Null,
             ValueType::Integer => ValueRef::Integer(value.int64()),
             ValueType::Real => ValueRef::Real(value.double()),
@@ -365,19 +358,6 @@ impl<'a> From<libsql_sys::Value> for ValueRef<'a> {
                     ValueRef::Blob(&[])
                 }
             }
-        }
-    }
-}
-
-#[cfg(feature = "core")]
-impl From<libsql_sys::ValueType> for ValueType {
-    fn from(value: libsql_sys::ValueType) -> Self {
-        match value {
-            libsql_sys::ValueType::Integer => ValueType::Integer,
-            libsql_sys::ValueType::Real => ValueType::Real,
-            libsql_sys::ValueType::Text => ValueType::Text,
-            libsql_sys::ValueType::Blob => ValueType::Blob,
-            libsql_sys::ValueType::Null => ValueType::Null,
         }
     }
 }

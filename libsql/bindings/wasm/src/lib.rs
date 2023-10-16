@@ -20,3 +20,9 @@ impl Database {
         let _ = f.call0(&this);
     }
 }
+
+impl Default for Database {
+    fn default() -> Self {
+        Self::new()
+    }
+}

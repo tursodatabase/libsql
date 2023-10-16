@@ -38,7 +38,7 @@ pub unsafe extern "C" fn libsql_sync(
         Ok(_) => 0,
         Err(e) => {
             set_err_msg(
-                format!("Error syncing database: {}", e.to_string()),
+                format!("Error syncing database: {e}"),
                 out_err_msg,
             );
             1
@@ -58,7 +58,7 @@ pub unsafe extern "C" fn libsql_open_sync(
     let db_path = match db_path.to_str() {
         Ok(url) => url,
         Err(e) => {
-            set_err_msg(format!("Wrong URL: {}", e.to_string()), out_err_msg);
+            set_err_msg(format!("Wrong URL: {e}"), out_err_msg);
             return 1;
         }
     };
@@ -66,7 +66,7 @@ pub unsafe extern "C" fn libsql_open_sync(
     let primary_url = match primary_url.to_str() {
         Ok(url) => url,
         Err(e) => {
-            set_err_msg(format!("Wrong URL: {}", e.to_string()), out_err_msg);
+            set_err_msg(format!("Wrong URL: {e}"), out_err_msg);
             return 2;
         }
     };
@@ -74,7 +74,7 @@ pub unsafe extern "C" fn libsql_open_sync(
     let auth_token = match auth_token.to_str() {
         Ok(token) => token,
         Err(e) => {
-            set_err_msg(format!("Wrong Auth Token: {}", e.to_string()), out_err_msg);
+            set_err_msg(format!("Wrong Auth Token: {e}"), out_err_msg);
             return 3;
         }
     };
@@ -90,12 +90,7 @@ pub unsafe extern "C" fn libsql_open_sync(
         }
         Err(e) => {
             set_err_msg(
-                format!(
-                    "Error opening db path {}, primary url {}: {}",
-                    db_path.to_string(),
-                    primary_url.to_string(),
-                    e.to_string()
-                ),
+                format!("Error opening db path {db_path}, primary url {primary_url}: {e}"),
                 out_err_msg,
             );
             1
@@ -113,7 +108,7 @@ pub unsafe extern "C" fn libsql_open_ext(
     let url = match url.to_str() {
         Ok(url) => url,
         Err(e) => {
-            set_err_msg(format!("Wrong URL: {}", e.to_string()), out_err_msg);
+            set_err_msg(format!("Wrong URL: {e}"), out_err_msg);
             return 1;
         }
     };
@@ -125,7 +120,7 @@ pub unsafe extern "C" fn libsql_open_ext(
         }
         Err(e) => {
             set_err_msg(
-                format!("Error opening URL {}: {}", url.to_string(), e.to_string()),
+                format!("Error opening URL {url}: {e}"),
                 out_err_msg,
             );
             1
@@ -344,11 +339,11 @@ pub unsafe extern "C" fn libsql_get_string(
             0
         }
         Ok(_) => {
-            set_err_msg(format!("Value not a string"), out_err_msg);
+            set_err_msg("Value not a string".into(), out_err_msg);
             1
         }
         Err(e) => {
-            set_err_msg(format!("Error fetching value: {}", e), out_err_msg);
+            set_err_msg(format!("Error fetching value: {e}"), out_err_msg);
             2
         }
     }
@@ -375,11 +370,11 @@ pub unsafe extern "C" fn libsql_get_int(
             0
         }
         Ok(_) => {
-            set_err_msg(format!("Value not an integer"), out_err_msg);
+            set_err_msg("Value not an integer".into(), out_err_msg);
             1
         }
         Err(e) => {
-            set_err_msg(format!("Error fetching value: {}", e), out_err_msg);
+            set_err_msg(format!("Error fetching value: {e}"), out_err_msg);
             2
         }
     }
@@ -399,11 +394,11 @@ pub unsafe extern "C" fn libsql_get_float(
             0
         }
         Ok(_) => {
-            set_err_msg(format!("Value not a float"), out_err_msg);
+            set_err_msg("Value not a float".into(), out_err_msg);
             1
         }
         Err(e) => {
-            set_err_msg(format!("Error fetching value: {}", e), out_err_msg);
+            set_err_msg(format!("Error fetching value: {e}"), out_err_msg);
             2
         }
     }
@@ -430,7 +425,7 @@ pub unsafe extern "C" fn libsql_get_blob(
             0
         }
         Ok(_) => {
-            set_err_msg(format!("Value not a float"), out_err_msg);
+            set_err_msg("Value not a float".into(), out_err_msg);
             1
         }
         Err(e) => {

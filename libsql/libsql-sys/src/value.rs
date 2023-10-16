@@ -1,5 +1,7 @@
 #![allow(clippy::missing_safety_doc)]
 
+use std::str::FromStr;
+
 #[derive(Debug)]
 pub enum ValueType {
     Integer = 1,
@@ -9,26 +11,32 @@ pub enum ValueType {
     Null,
 }
 
-impl ValueType {
-    pub fn from(val_type: i32) -> ValueType {
-        match val_type as u32 {
-            crate::ffi::SQLITE_INTEGER => ValueType::Integer,
-            crate::ffi::SQLITE_FLOAT => ValueType::Real,
-            crate::ffi::SQLITE_BLOB => ValueType::Blob,
-            crate::ffi::SQLITE_TEXT => ValueType::Text,
-            crate::ffi::SQLITE_NULL => ValueType::Null,
-            _ => panic!("value type not supported"),
+impl FromStr for ValueType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<ValueType, Self::Err> {
+        match s {
+            "TEXT" => Ok(ValueType::Text),
+            "INTEGER" => Ok(ValueType::Integer),
+            "BLOB" => Ok(ValueType::Blob),
+            "NULL" => Ok(ValueType::Null),
+            "REAL" => Ok(ValueType::Real),
+            _ => Err(()),
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Option<ValueType> {
-        match s {
-            "TEXT" => Some(ValueType::Text),
-            "INTEGER" => Some(ValueType::Integer),
-            "BLOB" => Some(ValueType::Blob),
-            "NULL" => Some(ValueType::Null),
-            "REAL" => Some(ValueType::Real),
-            _ => None,
+impl TryFrom<i32> for ValueType {
+    type Error = ();
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value as u32 {
+            crate::ffi::SQLITE_INTEGER => Ok(ValueType::Integer),
+            crate::ffi::SQLITE_FLOAT => Ok(ValueType::Real),
+            crate::ffi::SQLITE_BLOB => Ok(ValueType::Blob),
+            crate::ffi::SQLITE_TEXT => Ok(ValueType::Text),
+            crate::ffi::SQLITE_NULL => Ok(ValueType::Null),
+            _ => Err(()),
         }
     }
 }
@@ -59,7 +67,7 @@ sqlite3_value_frombind  	→  	True if value originated from a bound parameter
 impl Value {
     pub fn value_type(&self) -> ValueType {
         let raw_type = unsafe { crate::ffi::sqlite3_value_type(self.raw_value) };
-        ValueType::from(raw_type)
+        ValueType::try_from(raw_type).expect("invalid value type")
     }
 
     pub fn int(&self) -> i32 {

@@ -163,6 +163,8 @@ impl Replicator {
         &self,
         path: impl AsRef<std::path::Path>,
     ) -> anyhow::Result<usize> {
+        use std::cmp::Ordering;
+
         // FIXME: I guess we should consider allowing async reads here
         use std::io::Read;
         let path = path.as_ref();
@@ -177,23 +179,27 @@ impl Replicator {
         if let Some(meta) = &*meta {
             let expected_frame_no = meta.post_commit_frame_no + 1;
 
-            if snapshot_header.start_frame_no < expected_frame_no {
-                tracing::trace!("Received snapshot header with old frame number {} but expected frame number {}",
-                    snapshot_header.start_frame_no,
-                    expected_frame_no
-                );
-                return Ok(0);
-            } else if snapshot_header.start_frame_no > expected_frame_no {
-                tracing::warn!(
-                    "Snapshot header frame number {} does not match expected post-commit frame number {}",
-                    snapshot_header.start_frame_no,
-                    meta.post_commit_frame_no + 1
-                );
-                anyhow::bail!(
-                    "Snapshot header frame number {} does not match expected post-commit frame number {}",
-                    snapshot_header.start_frame_no,
-                    meta.post_commit_frame_no + 1
-                )
+            match snapshot_header.start_frame_no.cmp(&expected_frame_no) {
+                Ordering::Less => {
+                    tracing::trace!("Received snapshot header with old frame number {} but expected frame number {}",
+                        snapshot_header.start_frame_no,
+                        expected_frame_no
+                    );
+                    return Ok(0);
+                }
+                Ordering::Greater => {
+                    tracing::warn!(
+                        "Snapshot header frame number {} does not match expected post-commit frame number {}",
+                        snapshot_header.start_frame_no,
+                        meta.post_commit_frame_no + 1
+                    );
+                    anyhow::bail!(
+                        "Snapshot header frame number {} does not match expected post-commit frame number {}",
+                        snapshot_header.start_frame_no,
+                        meta.post_commit_frame_no + 1
+                    )
+                }
+                Ordering::Equal => (),
             }
         } else if snapshot_header.start_frame_no != 0 {
             tracing::info!(
