@@ -383,8 +383,7 @@ JAVA_FILES.jar := $(JAVA_FILES.main) $(JAVA_FILES.unittest) $(JAVA_FILES.package
 CLASS_FILES.jar := $(filter-out %/package-info.class,$(JAVA_FILES.jar:.java=.class))
 $(package.jar.in): $(package.dll) $(MAKEFILE)
 	ls -1 \
-		$(dir.src.jni)/*.java $(dir.src.jni)/*.class \
-		$(dir.src.jni)/annotation/*.java $(dir.src.jni)/annotation/*.class \
+		$(dir.src.jni)/*/*.java $(dir.src.jni)/*/*.class \
 	| sed -e 's,^$(dir.src)/,,' | sort > $@
 
 $(package.jar): $(CLASS_FILES.jar) $(MAKEFILE) $(package.jar.in)
