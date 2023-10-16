@@ -1,0 +1,2 @@
+libsqlite3-sys/sqlite3/* linguist-vendored
+libsqlite3-sys/sqlcipher/* linguist-vendored

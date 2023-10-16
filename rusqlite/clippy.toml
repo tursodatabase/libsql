@@ -1,0 +1,2 @@
+doc-valid-idents = ["SQLite", "lang_transaction"]
+msrv = "1.55.0"
