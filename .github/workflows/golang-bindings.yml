@@ -40,4 +40,4 @@ jobs:
 
     - name: Run Go bindings tests
       working-directory: libsql/bindings/go
-      run: go test
+      run: LD_LIBRARY_PATH=../../../target/debug go test
