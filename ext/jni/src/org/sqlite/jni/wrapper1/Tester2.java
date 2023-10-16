@@ -38,6 +38,17 @@ import org.sqlite.jni.capi.*;
 @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD})
 @interface SingleThreadOnly{}
 
+/**
+   A helper class which simply holds a single value. Its current use
+   is for communicating values out of anonymous classes, as doing so
+   requires a "final" reference.
+*/
+class ValueHolder<T> {
+  public T value;
+  public ValueHolder(){}
+  public ValueHolder(T v){value = v;}
+}
+
 public class Tester2 implements Runnable {
   //! True when running in multi-threaded mode.
   private static boolean mtMode = false;
@@ -124,6 +135,56 @@ public class Tester2 implements Runnable {
     affirm(v, "Affirmation failed.");
   }
 
+
+  public static void execSql(Sqlite db, String[] sql){
+    execSql(db, String.join("", sql));
+  }
+
+  public static int execSql(Sqlite dbw, boolean throwOnError, String sql){
+    final sqlite3 db = dbw.nativeHandle();
+    OutputPointer.Int32 oTail = new OutputPointer.Int32();
+    final byte[] sqlUtf8 = sql.getBytes(StandardCharsets.UTF_8);
+    int pos = 0, n = 1;
+    byte[] sqlChunk = sqlUtf8;
+    int rc = 0;
+    sqlite3_stmt stmt = null;
+    final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
+    while(pos < sqlChunk.length){
+      if(pos > 0){
+        sqlChunk = Arrays.copyOfRange(sqlChunk, pos,
+                                      sqlChunk.length);
+      }
+      if( 0==sqlChunk.length ) break;
+      rc = CApi.sqlite3_prepare_v2(db, sqlChunk, outStmt, oTail);
+      if(throwOnError) affirm(0 == rc);
+      else if( 0!=rc ) break;
+      pos = oTail.value;
+      stmt = outStmt.take();
+      if( null == stmt ){
+        // empty statement was parsed.
+        continue;
+      }
+      affirm(0 != stmt.getNativePointer());
+      while( CApi.SQLITE_ROW == (rc = CApi.sqlite3_step(stmt)) ){
+      }
+      CApi.sqlite3_finalize(stmt);
+      affirm(0 == stmt.getNativePointer());
+      if(0!=rc && CApi.SQLITE_ROW!=rc && CApi.SQLITE_DONE!=rc){
+        break;
+      }
+    }
+    CApi.sqlite3_finalize(stmt);
+    if(CApi.SQLITE_ROW==rc || CApi.SQLITE_DONE==rc) rc = 0;
+    if( 0!=rc && throwOnError){
+      throw new SqliteException(db);
+    }
+    return rc;
+  }
+
+  static void execSql(Sqlite db, String sql){
+    execSql(db, true, sql);
+  }
+
   @SingleThreadOnly /* because it's thread-agnostic */
   private void test1(){
     affirm(CApi.sqlite3_libversion_number() == CApi.SQLITE_VERSION_NUMBER);
@@ -144,9 +205,11 @@ public class Tester2 implements Runnable {
   }
 
   Sqlite openDb(String name){
-    return Sqlite.open(name, CApi.SQLITE_OPEN_READWRITE|
-                       CApi.SQLITE_OPEN_CREATE|
-                       CApi.SQLITE_OPEN_EXRESCODE);
+    final Sqlite db = Sqlite.open(name, CApi.SQLITE_OPEN_READWRITE|
+                                  CApi.SQLITE_OPEN_CREATE|
+                                  CApi.SQLITE_OPEN_EXRESCODE);
+    ++metrics.dbOpen;
+    return db;
   }
 
   Sqlite openDb(){ return openDb(":memory:"); }
@@ -188,6 +251,32 @@ public class Tester2 implements Runnable {
         /* getting a non-0 out of sqlite3_finalize() is tricky */;
       affirm( null==stmt.nativeHandle() );
     }
+  }
+
+  void testUdfScalar(){
+    final ValueHolder<Integer> xDestroyCalled = new ValueHolder<>(0);
+    try (Sqlite db = openDb()) {
+      execSql(db, "create table t(a); insert into t(a) values(1),(2),(3)");
+      final ValueHolder<Integer> vh = new ValueHolder<>(0);
+      final ScalarFunction f = new ScalarFunction(){
+          public void xFunc(SqlFunction.Arguments args){
+            for( SqlFunction.Arguments.Arg arg : args ){
+              vh.value += arg.getInt();
+            }
+          }
+          public void xDestroy(){
+            ++xDestroyCalled.value;
+          }
+        };
+      db.createFunction("myfunc", -1, f);
+      execSql(db, "select myfunc(1,2,3)");
+      affirm( 6 == vh.value );
+      vh.value = 0;
+      execSql(db, "select myfunc(-1,-2,-3)");
+      affirm( -6 == vh.value );
+      affirm( 0 == xDestroyCalled.value );
+    }
+    affirm( 1 == xDestroyCalled.value );
   }
 
   private void runTests(boolean fromThread) throws Exception {

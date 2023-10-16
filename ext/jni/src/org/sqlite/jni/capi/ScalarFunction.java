@@ -27,7 +27,7 @@ public abstract class ScalarFunction implements SQLFunction {
 
   /**
      Optionally override to be notified when the UDF is finalized by
-     SQLite. This implementation does nothing.
+     SQLite. This default implementation does nothing.
   */
   public void xDestroy() {}
 }

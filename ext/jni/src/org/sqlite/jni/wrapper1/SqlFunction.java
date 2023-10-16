@@ -33,6 +33,7 @@ public interface SqlFunction  {
   public final static class Arguments implements Iterable<SqlFunction.Arguments.Arg>{
     private final sqlite3_context cx;
     private final sqlite3_value args[];
+    public final int length;
 
     /**
        Must be passed the context and arguments for the UDF call this
@@ -41,6 +42,7 @@ public interface SqlFunction  {
     Arguments(@NotNull sqlite3_context cx, @NotNull sqlite3_value args[]){
       this.cx = cx;
       this.args = args;
+      this.length = args.length;
     }
 
     /**
@@ -112,6 +114,11 @@ public interface SqlFunction  {
     }
 
     public int getType(int arg){return CApi.sqlite3_value_type(valueAt(arg));}
+    public int getSubtype(int arg){return CApi.sqlite3_value_subtype(valueAt(arg));}
+    public int getNumericType(int arg){return CApi.sqlite3_value_numeric_type(valueAt(arg));}
+    public int getNoChange(int arg){return CApi.sqlite3_value_nochange(valueAt(arg));}
+    public boolean getFromBind(int arg){return CApi.sqlite3_value_frombind(valueAt(arg));}
+    public int getEncoding(int arg){return CApi.sqlite3_value_encoding(valueAt(arg));}
 
     public void resultInt(int v){ CApi.sqlite3_result_int(cx, v); }
     public void resultInt64(long v){ CApi.sqlite3_result_int64(cx, v); }
@@ -121,6 +128,7 @@ public interface SqlFunction  {
     public void resultErrorTooBig(){CApi.sqlite3_result_error_toobig(cx);}
     public void resultErrorCode(int rc){CApi.sqlite3_result_error_code(cx, rc);}
     public void resultObject(Object o){CApi.sqlite3_result_java_object(cx, o);}
+    public void resultNull(){CApi.sqlite3_result_null(cx);}
     public void resultArg(int argNdx){CApi.sqlite3_result_value(cx, valueAt(argNdx));}
     public void resultZeroBlob(long n){
       // Throw on error? If n is too big,
@@ -150,4 +158,27 @@ public interface SqlFunction  {
       return CApi.sqlite3_get_auxdata(cx, arg);
     }
   }
+
+  /**
+     Internal-use adapter for wrapping this package's ScalarFunction
+     for use with the org.sqlite.jni.capi.ScalarFunction interface.
+  */
+  static final class ScalarAdapter extends org.sqlite.jni.capi.ScalarFunction {
+    final ScalarFunction impl;
+    ScalarAdapter(ScalarFunction impl){
+      this.impl = impl;
+    }
+    /**
+       Proxies this.f.xFunc(), adapting the call arguments to that
+       function's signature.
+    */
+    public void xFunc(sqlite3_context cx, sqlite3_value[] args){
+      impl.xFunc( new SqlFunction.Arguments(cx, args) );
+    }
+
+    public void xDestroy(){
+      impl.xDestroy();
+    }
+  }
+
 }

@@ -14,6 +14,7 @@
 package org.sqlite.jni.wrapper1;
 import java.nio.charset.StandardCharsets;
 import static org.sqlite.jni.capi.CApi.*;
+import org.sqlite.jni.capi.CApi;
 import org.sqlite.jni.capi.sqlite3;
 import org.sqlite.jni.capi.sqlite3_stmt;
 import org.sqlite.jni.capi.OutputPointer;
@@ -71,14 +72,16 @@ public final class Sqlite implements AutoCloseable  {
 
   /**
      Returns this object's underlying native db handle, or null if
-     this instance has been closed.
+     this instance has been closed. This is very specifically not
+     public.
   */
   sqlite3 nativeHandle(){ return this.db; }
 
-  private void affirmOpen(){
+  private sqlite3 affirmOpen(){
     if( null==db || 0==db.getNativePointer() ){
       throw new IllegalArgumentException("This database instance is closed.");
     }
+    return this.db;
   }
 
   // private byte[] stringToUtf8(String s){
@@ -91,6 +94,10 @@ public final class Sqlite implements AutoCloseable  {
     }
   }
 
+  /**
+     Corresponds to the sqlite3_stmt class. Use Sqlite.prepare() to
+     create new instances.
+  */
   public final class Stmt implements AutoCloseable {
     private Sqlite _db = null;
     private sqlite3_stmt stmt = null;
@@ -114,7 +121,7 @@ public final class Sqlite implements AutoCloseable  {
     /**
        Corresponds to sqlite3_finalize(), but we cannot override the
        name finalize() here because this one requires a different
-       signature. We do not throw on error here because "destructors
+       signature. It does not throw on error here because "destructors
        do not throw." If it returns non-0, the object is still
        finalized.
     */
@@ -178,15 +185,25 @@ public final class Sqlite implements AutoCloseable  {
      rather than the sqlite3_stmt class.
   */
   public Stmt prepare(String sql, int prepFlags){
-    affirmOpen();
     final OutputPointer.sqlite3_stmt out = new OutputPointer.sqlite3_stmt();
-    final int rc = sqlite3_prepare_v3(this.db, sql, prepFlags, out);
+    final int rc = sqlite3_prepare_v3(affirmOpen(), sql, prepFlags, out);
     affirmRcOk(rc);
     return new Stmt(this, out.take());
   }
 
   public Stmt prepare(String sql){
     return prepare(sql, 0);
+  }
+
+
+  public void createFunction(String name, int nArg, int eTextRep, ScalarFunction f ){
+    int rc = CApi.sqlite3_create_function(affirmOpen(), name, nArg, eTextRep,
+                                           new SqlFunction.ScalarAdapter(f));
+    if( 0!=rc ) throw new SqliteException(db);
+  }
+
+  public void createFunction(String name, int nArg, ScalarFunction f){
+    this.createFunction(name, nArg, CApi.SQLITE_UTF8, f);
   }
 
 }
