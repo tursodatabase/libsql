@@ -1835,7 +1835,7 @@ typedef struct {
 ** final 2 arguments. Returns 0 on success, SQLITE_NOMEM on allocation
 ** error. On error *jCx and *jArgv will be set to 0. The output
 ** objects are of type org.sqlite.jni.sqlite3_context and
-** array-of-org.sqlite3.jni.sqlite3_value, respectively.
+** array-of-org.sqlite.jni.sqlite3_value, respectively.
 */
 static int udf_args(JNIEnv *env,
                     sqlite3_context * const cx,
@@ -1866,6 +1866,28 @@ error_oom:
   S3JniUnrefLocal(ja);
   return SQLITE_NOMEM;
 }
+
+/*
+** Requires that jCx and jArgv are sqlite3_context
+** resp. array-of-sqlite3_value values initialized by udf_args(). This
+** function zeroes out the nativePointer member of jCx and each entry
+** in jArgv. This is a safety-net precaution to avoid undefined
+** behavior if a Java-side UDF holds a reference to one of its
+** arguments. This MUST be called from any function which successfully
+** calls udf_args(), after calling the corresponding UDF and checking
+** its exception status. It MUST NOT be called in any other case.
+*/
+static void udf_unargs(JNIEnv *env, jobject jCx, int argc, jobjectArray jArgv){
+  int i = 0;
+  assert(jCx);
+  NativePointerHolder_set(S3JniNph(sqlite3_context), jCx, 0);
+  for( ; i < argc; ++i ){
+    jobject jsv = (*env)->GetObjectArrayElement(env, jArgv, i);
+    assert(jsv);
+    NativePointerHolder_set(S3JniNph(sqlite3_value), jsv, 0);
+  }
+}
+
 
 /*
 ** Must be called immediately after a Java-side UDF callback throws.
@@ -1926,6 +1948,7 @@ static int udf_xFSI(sqlite3_context* const pCx, int argc,
       rc = udf_report_exception(env, 'F'==zFuncType[1]/*xFunc*/, pCx,
                                 s->zFuncName, zFuncType);
     }
+    udf_unargs(env, args.jcx, argc, args.jargv);
   }
   S3JniUnrefLocal(args.jcx);
   S3JniUnrefLocal(args.jargv);
@@ -5168,6 +5191,7 @@ static void s3jni_fts5_extension_function(Fts5ExtensionApi const *pApi,
   S3JniIfThrew{
     udf_report_exception(env, 1, pCx, pAux->zFuncName, "call");
   }
+  udf_unargs(env, jpCx, argc, jArgv);
   S3JniUnrefLocal(jpFts);
   S3JniUnrefLocal(jpCx);
   S3JniUnrefLocal(jArgv);

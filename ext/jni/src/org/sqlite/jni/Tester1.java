@@ -694,6 +694,8 @@ public class Tester1 implements Runnable {
     // These ValueHolders are just to confirm that the func did what we want...
     final ValueHolder<Boolean> xDestroyCalled = new ValueHolder<>(false);
     final ValueHolder<Integer> xFuncAccum = new ValueHolder<>(0);
+    final ValueHolder<sqlite3_value[]> neverEverDoThisInClientCode = new ValueHolder<>(null);
+    final ValueHolder<sqlite3_context> neverEverDoThisInClientCode2 = new ValueHolder<>(null);
 
     // Create an SQLFunction instance using one of its 3 subclasses:
     // Scalar, Aggregate, or Window:
@@ -704,6 +706,15 @@ public class Tester1 implements Runnable {
       new ScalarFunction(){
         public void xFunc(sqlite3_context cx, sqlite3_value[] args){
           affirm(db == sqlite3_context_db_handle(cx));
+          if( null==neverEverDoThisInClientCode.value ){
+            neverEverDoThisInClientCode2.value = cx;
+            neverEverDoThisInClientCode.value = args
+              /* !!!NEVER!!! hold a reference to an sqlite3_value
+                 object like this in client code! They are ONLY legal
+                 for the duration of their single call. We do it here
+                 ONLY to test that the defenses against clients doing
+                 this are working. */;
+          }
           int result = 0;
           for( sqlite3_value v : args ) result += sqlite3_value_int(v);
           xFuncAccum.value += result;// just for post-run testing
@@ -729,6 +740,13 @@ public class Tester1 implements Runnable {
     affirm(1 == n);
     affirm(6 == xFuncAccum.value);
     affirm( !xDestroyCalled.value );
+    affirm( null!=neverEverDoThisInClientCode.value );
+    affirm( null!=neverEverDoThisInClientCode2.value );
+    affirm( 0<neverEverDoThisInClientCode.value.length );
+    affirm( 0==neverEverDoThisInClientCode2.value.getNativePointer() );
+    for( sqlite3_value sv : neverEverDoThisInClientCode.value ){
+      affirm( 0==sv.getNativePointer() );
+    }
     sqlite3_close_v2(db);
     affirm( xDestroyCalled.value );
   }
