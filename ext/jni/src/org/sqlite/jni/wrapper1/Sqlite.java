@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file is part of the JNI bindings for the sqlite3 C API.
+** This file is part of the wrapper1 interface for sqlite3.
 */
 package org.sqlite.jni.wrapper1;
 import java.nio.charset.StandardCharsets;

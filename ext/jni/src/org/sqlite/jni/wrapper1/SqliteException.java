@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file is part of the JNI bindings for the sqlite3 C API.
+** This file is part of the wrapper1 interface for sqlite3.
 */
 package org.sqlite.jni.wrapper1;
 import static org.sqlite.jni.capi.CApi.*;
@@ -54,7 +54,7 @@ public final class SqliteException extends java.lang.RuntimeException {
      a failed db-open operation, and the place(s) where that can
      happen are inside this library, not client-level code.
   */
-  public SqliteException(sqlite3 db){
+  SqliteException(sqlite3 db){
     super(sqlite3_errmsg(db));
     errCode = sqlite3_errcode(db);
     xerrCode = sqlite3_extended_errcode(db);
@@ -63,8 +63,8 @@ public final class SqliteException extends java.lang.RuntimeException {
   }
 
   /**
-     Records the current error state of db (which must not be null and must
-     refer to an open database) then closes it.
+     Records the current error state of db (which must not be null and
+     must refer to an open database).
   */
   public SqliteException(Sqlite db){
     this(db.nativeHandle());

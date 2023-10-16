@@ -1635,7 +1635,8 @@ public final class CApi {
   public static void sqlite3_result_text16(
     @NotNull sqlite3_context cx, @Nullable byte[] utf16
   ){
-    sqlite3_result_text64(cx, utf16, utf16.length, SQLITE_UTF16);
+    if(null == utf16) sqlite3_result_null(cx);
+    else sqlite3_result_text64(cx, utf16, utf16.length, SQLITE_UTF16);
   }
 
   public static void sqlite3_result_text16(

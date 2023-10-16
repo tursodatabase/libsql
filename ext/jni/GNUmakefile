@@ -113,6 +113,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/annotation/%,\
   sqlite3_stmt.java \
   sqlite3_value.java \
 ) $(patsubst %,$(dir.src.jni)/wrapper1/%,\
+  SqlFunction.java \
   Sqlite.java \
   SqliteException.java \
 )
