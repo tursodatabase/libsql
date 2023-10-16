@@ -6,16 +6,16 @@ autom4te.cache/
 config.h
 config.log
 config.status
-fts5.c
-fts5.h
-fts5parse.c
-fts5parse.h
+/fts5.c
+/fts5.h
+/fts5parse.c
+/fts5parse.h
 fts5parse.out
 fts5parse.sql
-fts5parse.y
+/fts5parse.y
 keywordhash.h
 lemon
-lempar.c
+/lempar.c
 libsqlite3.la
 liblibsql.la
 libtclsqlite3.la
@@ -28,7 +28,7 @@ parse.c
 parse.h
 parse.out
 parse.sql
-parse.y
+/parse.y
 shell.c
 sqlite3
 /sqlite3.c
@@ -38,7 +38,7 @@ sqlite3.o
 sqlite3.pc
 libsql.pc
 /sqlite3ext.h
-sqlite3session.h
+/sqlite3session.h
 tclsqlite.lo
 tclsqlite.o
 testdir/
@@ -59,3 +59,4 @@ test-out.txt
 testfixture
 libsql
 /src-verify
+/crates/target/

@@ -1,12 +1,11 @@
 [workspace]
 resolver = "2"
 members = [
-  "core",
-  "bindings/c",
-  "bindings/wasm",
-  "libsql-sys",
+  "libsql/core",
+  "libsql/bindings/c",
+  "libsql/bindings/wasm",
+  "libsql/libsql-sys",
   "libsql-shell",
-  "wasmtime-bindings",
 ]
 
 [profile.release]

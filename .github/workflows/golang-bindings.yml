@@ -28,13 +28,16 @@ jobs:
         version: 'latest'
 
     - name: configure
+      working-directory: libsql-sqlite3
       run: ./configure
 
     - name: Build
+      working-directory: libsql-sqlite3
       run: make
 
     - name: Build crates
-      run: cd crates && cargo build
+      run: cargo build
 
     - name: Run Go bindings tests
-      run: cd crates/bindings/go && LD_LIBRARY_PATH=/home/runner/work/libsql/libsql/crates/target/debug go test
+      working-directory: libsql/bindings/go
+      run: LD_LIBRARY_PATH=/home/runner/work/libsql/target/debug go test

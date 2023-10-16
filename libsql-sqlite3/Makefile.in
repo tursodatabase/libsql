@@ -379,9 +379,6 @@ APITOP = $(TOP)/crates
 #
 WBTOP = $(TOP)/crates/wasmtime-bindings
 
-# Path to Rust bindings
-BINDTOP = $(TOP)/crates/libsql-sys
-
 # Source code of the wasm bindings
 #
 WBSRC = \
@@ -690,7 +687,7 @@ SQLITE3_SHELL_TARGET   = $(SQLITE3_SHELL_TARGET_@HAVE_WASI_SDK@)
 # are what get build when you type just "make" with no arguments.
 #
 all:	sqlite3.h libsqlite3.la liblibsql.la $(SQLITE3_SHELL_TARGET) \
-  $(HAVE_TCL:1=libtclsqlite3.la) rust_bindings
+  $(HAVE_TCL:1=libtclsqlite3.la)
 
 Makefile: $(TOP)/Makefile.in
 	./config.status
@@ -833,9 +830,6 @@ mptest:	mptester$(TEXE)
 
 liblibsql_wasm:	$(WBSRC)
 	cd $(WBTOP) && cargo build --release --lib && mkdir -p $(TOP)/.libs && cp ../target/release/liblibsql_wasm.* $(TOP)/.libs/
-
-rust_bindings: sqlite3.h
-	cd $(BINDTOP) && LIBSQL_SRC_DIR=$(TOP) cargo build --release --lib
 
 libsqlapi: sqlite3.h
 	cd $(APITOP) && LIBSQL_SRC_DIR=$(TOP) cargo test --all --release --lib
