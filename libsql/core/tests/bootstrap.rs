@@ -1,5 +1,6 @@
 use std::{path::PathBuf, process::Command};
 
+#[ignore = "won't be necessary as soon as sqld had moved to lilbsql"]
 #[test]
 fn bootstrap() {
     let iface_files = &["proto/replication_log.proto", "proto/proxy.proto"];
