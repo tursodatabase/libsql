@@ -1,9 +1,8 @@
 // TODO(lucio): Move this to `remote/mod.rs`
 
-use std::sync::Arc;
 use std::str::FromStr;
+use std::sync::Arc;
 
-use libsql_sys::ValueType;
 use parking_lot::Mutex;
 
 use crate::replication::pb::{
@@ -13,7 +12,8 @@ use crate::rows::{RowInner, RowsInner};
 use crate::statement::Stmt;
 use crate::transaction::Tx;
 use crate::{
-    params::Params, replication::Writer, Error, Result, Statement, Transaction, TransactionBehavior,
+    params::Params, replication::Writer, Error, Result, Statement, Transaction,
+    TransactionBehavior, ValueType,
 };
 use crate::{Column, Row, Rows, Value};
 

@@ -114,7 +114,7 @@ mod statement;
 mod transaction;
 mod value;
 
-pub use value::{Value, ValueRef};
+pub use value::{Value, ValueRef, ValueType};
 
 cfg_hrana! {
     mod hrana;

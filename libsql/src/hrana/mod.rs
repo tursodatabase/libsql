@@ -5,7 +5,6 @@ mod proto;
 
 use crate::util::coerce_url_scheme;
 use hyper::header::AUTHORIZATION;
-use libsql_sys::ValueType;
 use pipeline::{
     ClientMsg, Response, ServerMsg, StreamBatchReq, StreamExecuteReq, StreamRequest,
     StreamResponse, StreamResponseError, StreamResponseOk,
@@ -17,7 +16,7 @@ use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 
 use crate::util::ConnectorService;
 use crate::Error;
-use crate::{params::Params, Column};
+use crate::{params::Params, Column, ValueType};
 use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};

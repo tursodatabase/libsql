@@ -7,23 +7,20 @@ repository = "https://github.com/libsql/libsql"
 license = "MIT"
 
 [dependencies]
-futures = "0.3.28"
+futures = { version = "0.3.28", optional = true }
 libsql-sys = { version = "0.2.13", path = "../libsql-sys", optional = true }
 thiserror = "1.0.40"
-tokio = { version = "1.29.1", features = ["macros", "fs", "sync"] }
-tracing-subscriber = "0.3.17"
+tokio = { version = "1.29.1", features = ["fs", "sync"], optional = true }
 tracing = "0.1.37"
-parking_lot = "0.12.1"
-hrana-client-proto = "0.2"
-hyper = { version = "0.14", optional = true }
+parking_lot = { version = "0.12.1", optional = true }
+hyper = { version = "0.14", features = ["client"], optional = true }
 hyper-rustls = { version = "0.24", features = ["webpki-roots"], optional = true }
-base64 = "0.21"
+base64 = { version = "0.21", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true }
 async-trait = "0.1"
-crossbeam-channel = "0.5"
-bitflags = "2.4.0"
-tower = { version = "0.4", features = ["util"] }
+bitflags = { version = "2.4.0", optional = true }
+tower = { version = "0.4", features = ["util"], optional = true }
 
 bincode = { version = "1", optional = true }
 anyhow = { version = "1.0.71", optional = true }
@@ -32,19 +29,16 @@ bytes = { version = "1.4.0", features = ["serde"], optional = true }
 uuid = { version = "1.4.0", features = ["v4", "serde"], optional = true }
 tempfile = { version = "3.6.0", optional = true }
 memmap = { version = "0.7.0", optional = true }
-crossbeam = { version = "0.8.2", optional = true }
 once_cell = { version = "1.18.0", optional = true }
-nix = { version = "0.26.2", optional = true }
 tokio-stream = { version = "0.1.14", optional = true }
-regex = { version = "1.9.0", optional = true }
 tonic = { version = "0.10.2", features = ["tls", "tls-roots", "tls-webpki-roots"], optional = true}
 tonic-web = { version = "0.10.2" , optional = true }
 tower-http = { version = "0.4.4", features = ["trace", "util"], optional = true }
 prost = { version = "0.12", optional = true }
 http = { version = "0.2", optional = true }
 
-sqlite3-parser = { version = "0.11" }
-fallible-iterator = { version = "0.3" }
+sqlite3-parser = { version = "0.11", optional = true }
+fallible-iterator = { version = "0.3", optional = true }
 
 
 [dev-dependencies]
@@ -54,6 +48,7 @@ pprof = { version = "0.12.1", features = ["criterion", "flamegraph"] }
 tempfile = "3.7.0"
 tokio = { version = "1.29.1", features = ["full"] }
 tokio-test = "0.4"
+tracing-subscriber = "0.3"
 
 tonic-build = "0.10"
 prost-build = "0.12"
@@ -61,36 +56,46 @@ prost-build = "0.12"
 
 [features]
 default = ["core", "replication", "hrana"]
-core = ["libsql-sys"]
+core = [
+  "libsql-sys",
+  "dep:bitflags",
+  "dep:futures"
+]
 replication = [
   "core",
   "serde",
   "http",
-  "dep:bincode",
   "dep:anyhow",
+  "dep:bincode",
   "dep:bytemuck",
   "dep:bytes",
-  "dep:bytes",
+  "dep:fallible-iterator",
   "dep:uuid",
   "dep:tempfile",
   "dep:memmap",
-  "dep:crossbeam",
   "dep:once_cell",
-  "dep:nix",
   "dep:tokio-stream",
-  "dep:regex",
+  "dep:sqlite3-parser",
+  "dep:parking_lot",
+  "dep:tokio",
   "dep:tonic",
   "dep:tonic-web",
   "dep:tower-http",
   "dep:prost",
+  "dep:tower",
+  "dep:hyper-rustls",
+  "dep:futures"
 ]
 hrana = [
   "serde",
   "http",
+  "dep:base64",
   "dep:serde_json",
+  "dep:tower",
+  "dep:hyper-rustls"
 ]
 serde = ["dep:serde"]
-http = ["dep:hyper", "dep:hyper-rustls", "dep:http"]
+http = ["dep:tower", "dep:hyper", "dep:http", "dep:tokio"]
 
 [[bench]]
 name = "benchmark"
