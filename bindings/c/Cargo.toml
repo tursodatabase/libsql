@@ -1,0 +1,16 @@
+[package]
+name = "sql-experimental"
+version = "0.0.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+doc = false
+
+[build-dependencies]
+cbindgen = "0.24.0"
+
+[dependencies]
+lazy_static = "1.4.0"
+libsql = { path = "../../libsql" }
+tokio = { version = "1.29.1", features = [ "rt-multi-thread" ] }

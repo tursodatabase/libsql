@@ -11,6 +11,9 @@ jobs:
   maketestwasm:
 
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: libsql-sqlite3
 
     steps:
     - uses: actions/checkout@v3

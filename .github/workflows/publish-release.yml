@@ -89,6 +89,7 @@ jobs:
           path-type: inherit
 
       - name: run configure
+        working-directory: libsql-sqlite3
         run: |
           set -ex
           mkdir build
@@ -119,6 +120,7 @@ jobs:
           popd
 
       - name: build
+        working-directory: libsql-sqlite3
         run: |
           set -ex
           if [[ "${{ matrix.variant }}" == "wasm-udf-wasmedge" ]]; then 
@@ -131,6 +133,7 @@ jobs:
           popd
 
       - name: package artefacts (for named variants)
+        working-directory: libsql-sqlite3
         if: matrix.variant != ''
         run: |
           set -ex
@@ -144,6 +147,7 @@ jobs:
           cd ..
 
       - name: package artefacts
+        working-directory: libsql-sqlite3
         if: matrix.variant == ''
         run: |
           set -ex
@@ -157,6 +161,7 @@ jobs:
           cd ..
 
       - name: Push artefacts into release draft
+        working-directory: libsql-sqlite3
         uses: softprops/action-gh-release@v1
         if: ${{startsWith(github.ref, 'refs/tags/') }}
         with:
