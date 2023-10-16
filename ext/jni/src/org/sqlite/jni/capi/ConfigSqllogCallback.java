@@ -1,5 +1,5 @@
 /*
-** 2023-08-04
+** 2023-08-23
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -11,14 +11,15 @@
 *************************************************************************
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
-package org.sqlite.jni.fts5;
-import org.sqlite.jni.capi.*;
+package org.sqlite.jni.capi;
 
 /**
-   A wrapper for communicating C-level (Fts5Context*) instances with
-   Java. These wrappers do not own their associated pointer, they
-   simply provide a type-safe way to communicate it between Java and C
-   via JNI.
+   A callback for use with sqlite3_config().
 */
-public final class Fts5Context extends NativePointerHolder<Fts5Context> {
+public interface ConfigSqllogCallback {
+  /**
+     Must function as described for a C-level callback for
+     {@link CApi#sqlite3_config(ConfigSqllogCallback)}, with the slight signature change.
+  */
+  void call(sqlite3 db, String msg, int msgType );
 }

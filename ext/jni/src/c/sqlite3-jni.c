@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** This file implements the JNI bindings declared in
-** org.sqlite.jni.CApi (from which sqlite3-jni.h is generated).
+** org.sqlite.jni.capi.CApi (from which sqlite3-jni.h is generated).
 */
 
 /*
@@ -169,7 +169,7 @@
 ** prefix seen in this macro.
 */
 #define JniFuncName(Suffix) \
-  Java_org_sqlite_jni_CApi_sqlite3_ ## Suffix
+  Java_org_sqlite_jni_capi_CApi_sqlite3_ ## Suffix
 
 /* Prologue for JNI function declarations and definitions. */
 #define JniDecl(ReturnType,Suffix) \
@@ -386,26 +386,26 @@ static const struct {
 #define RefN(INDEX, KLAZZ) MkRef(INDEX, KLAZZ, "nativePointer", "J")
 /* OutputPointer.T ref */
 #define RefO(INDEX, KLAZZ, SIG) MkRef(INDEX, KLAZZ, "value", SIG)
-  RefN(0,  "sqlite3"),
-  RefN(1,  "sqlite3_backup"),
-  RefN(2,  "sqlite3_blob"),
-  RefN(3,  "sqlite3_context"),
-  RefN(4,  "sqlite3_stmt"),
-  RefN(5,  "sqlite3_value"),
-  RefO(6,  "OutputPointer$Bool",  "Z"),
-  RefO(7,  "OutputPointer$Int32", "I"),
-  RefO(8,  "OutputPointer$Int64", "J"),
-  RefO(9,  "OutputPointer$sqlite3",
-           "Lorg/sqlite/jni/sqlite3;"),
-  RefO(10, "OutputPointer$sqlite3_blob",
-           "Lorg/sqlite/jni/sqlite3_blob;"),
-  RefO(11, "OutputPointer$sqlite3_stmt",
-           "Lorg/sqlite/jni/sqlite3_stmt;"),
-  RefO(12, "OutputPointer$sqlite3_value",
-           "Lorg/sqlite/jni/sqlite3_value;"),
-  RefO(13, "OutputPointer$String", "Ljava/lang/String;"),
+  RefN(0,  "capi/sqlite3"),
+  RefN(1,  "capi/sqlite3_backup"),
+  RefN(2,  "capi/sqlite3_blob"),
+  RefN(3,  "capi/sqlite3_context"),
+  RefN(4,  "capi/sqlite3_stmt"),
+  RefN(5,  "capi/sqlite3_value"),
+  RefO(6,  "capi/OutputPointer$Bool",  "Z"),
+  RefO(7,  "capi/OutputPointer$Int32", "I"),
+  RefO(8,  "capi/OutputPointer$Int64", "J"),
+  RefO(9,  "capi/OutputPointer$sqlite3",
+           "Lorg/sqlite/jni/capi/sqlite3;"),
+  RefO(10, "capi/OutputPointer$sqlite3_blob",
+           "Lorg/sqlite/jni/capi/sqlite3_blob;"),
+  RefO(11, "capi/OutputPointer$sqlite3_stmt",
+           "Lorg/sqlite/jni/capi/sqlite3_stmt;"),
+  RefO(12, "capi/OutputPointer$sqlite3_value",
+           "Lorg/sqlite/jni/capi/sqlite3_value;"),
+  RefO(13, "capi/OutputPointer$String", "Ljava/lang/String;"),
 #ifdef SQLITE_ENABLE_FTS5
-  RefO(14, "OutputPointer$ByteArray", "[B"),
+  RefO(14, "capi/OutputPointer$ByteArray", "[B"),
   RefN(15, "fts5/Fts5Context"),
   RefN(16, "fts5/Fts5ExtensionApi"),
   RefN(17, "fts5/fts5_api"),
@@ -660,7 +660,7 @@ struct S3JniGlobalType {
   } g;
   /*
   ** The list of Java-side auto-extensions
-  ** (org.sqlite.jni.AutoExtensionCallback objects).
+  ** (org.sqlite.jni.capi.AutoExtensionCallback objects).
   */
   struct {
     S3JniAutoExtension *aExt /* The auto-extension list. It is
@@ -1371,6 +1371,7 @@ static S3JniNphOp * s3jni__nphop(JNIEnv * const env, S3JniNphOp const* pRef){
     S3JniNph_mutex_enter;
     if( !pNC->klazz ){
       jclass const klazz = (*env)->FindClass(env, pRef->zName);
+      //printf("FindClass %s\n", pRef->zName);
       S3JniExceptionIsFatal("FindClass() unexpectedly threw");
       pNC->klazz = S3JniRefGlobal(klazz);
     }
@@ -1515,7 +1516,7 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, jobject jDb){
 }
 
 /*
-** Returns the S3JniDb object for the given org.sqlite.jni.sqlite3
+** Returns the S3JniDb object for the given org.sqlite.jni.capi.sqlite3
 ** object, or NULL if jDb is NULL, no pointer can be extracted
 ** from it, or no matching entry can be found.
 */
@@ -1564,7 +1565,7 @@ static int S3JniAutoExtension_init(JNIEnv *const env,
   S3JniAutoExt_mutex_assertLocker;
   *ax = S3JniHook_empty;
   ax->midCallback = (*env)->GetMethodID(env, klazz, "call",
-                                        "(Lorg/sqlite/jni/sqlite3;)I");
+                                        "(Lorg/sqlite/jni/capi/sqlite3;)I");
   S3JniUnrefLocal(klazz);
   S3JniExceptionWarnIgnore;
   if( !ax->midCallback ){
@@ -1660,7 +1661,7 @@ static int encodingTypeIsValid(int eTextRep){
 }
 
 /* For use with sqlite3_result/value_pointer() */
-static const char * const ResultJavaValuePtrStr = "org.sqlite.jni.ResultJavaVal";
+static const char * const ResultJavaValuePtrStr = "org.sqlite.jni.capi.ResultJavaVal";
 
 /*
 ** If v is not NULL, it must be a jobject global reference. Its
@@ -1758,9 +1759,9 @@ static S3JniUdf * S3JniUdf_alloc(JNIEnv * const env, jobject jObj){
   }
   if( s ){
     const char * zFSI = /* signature for xFunc, xStep, xInverse */
-      "(Lorg/sqlite/jni/sqlite3_context;[Lorg/sqlite/jni/sqlite3_value;)V";
+      "(Lorg/sqlite/jni/capi/sqlite3_context;[Lorg/sqlite/jni/capi/sqlite3_value;)V";
     const char * zFV = /* signature for xFinal, xValue */
-      "(Lorg/sqlite/jni/sqlite3_context;)V";
+      "(Lorg/sqlite/jni/capi/sqlite3_context;)V";
     jclass const klazz = (*env)->GetObjectClass(env, jObj);
 
     memset(s, 0, sizeof(*s));
@@ -1834,8 +1835,8 @@ typedef struct {
 ** UDF, writing the result (Java wrappers for cx and argv) in the
 ** final 2 arguments. Returns 0 on success, SQLITE_NOMEM on allocation
 ** error. On error *jCx and *jArgv will be set to 0. The output
-** objects are of type org.sqlite.jni.sqlite3_context and
-** array-of-org.sqlite.jni.sqlite3_value, respectively.
+** objects are of type org.sqlite.jni.capi.sqlite3_context and
+** array-of-org.sqlite.jni.capi.sqlite3_value, respectively.
 */
 static int udf_args(JNIEnv *env,
                     sqlite3_context * const cx,
@@ -2781,7 +2782,7 @@ S3JniApi(sqlite3_collation_needed(),jint,1collation_1needed)(
   }else{
     jclass const klazz = (*env)->GetObjectClass(env, jHook);
     jmethodID const xCallback = (*env)->GetMethodID(
-      env, klazz, "call", "(Lorg/sqlite/jni/sqlite3;ILjava/lang/String;)I"
+      env, klazz, "call", "(Lorg/sqlite/jni/capi/sqlite3;ILjava/lang/String;)I"
     );
     S3JniUnrefLocal(klazz);
     S3JniIfThrew {
@@ -3131,7 +3132,7 @@ S3JniApi(sqlite3_config() /* for SQLITE_CONFIG_SQLLOG */,
   }else {
     jclass const klazz = (*env)->GetObjectClass(env, jLog);
     jmethodID const midCallback = (*env)->GetMethodID(env, klazz, "call",
-                                                      "(Lorg/sqlite/jni/sqlite3;"
+                                                      "(Lorg/sqlite/jni/capi/sqlite3;"
                                                       "Ljava/lang/String;"
                                                       "I)V");
     S3JniUnrefLocal(klazz);
@@ -3304,7 +3305,7 @@ error_cleanup:
 
 
 S3JniApi(sqlite3_db_config() /*for MAINDBNAME*/,
-         jint,1db_1config__Lorg_sqlite_jni_sqlite3_2ILjava_lang_String_2
+         jint,1db_1config__Lorg_sqlite_jni_capi_sqlite3_2ILjava_lang_String_2
 )(JniArgsEnvClass, jobject jDb, jint op, jstring jStr){
   S3JniDb * const ps = S3JniDb_from_java(jDb);
   int rc;
@@ -3341,7 +3342,7 @@ S3JniApi(
   /* WARNING: openjdk v19 creates a different mangled name for this
   ** function than openjdk v8 does. We account for that by exporting
   ** both versions of the name. */
-  jint,1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_Int32_2
+  jint,1db_1config__Lorg_sqlite_jni_capi_sqlite3_2IILorg_sqlite_jni_capi_OutputPointer_Int32_2
 )(
   JniArgsEnvClass, jobject jDb, jint op, jint onOff, jobject jOut
 ){
@@ -3386,10 +3387,10 @@ S3JniApi(
 ** install both names for this function then Java will not be able to
 ** find the function in both environments.
 */
-JniDecl(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_00024Int32_2)(
+JniDecl(jint,1db_1config__Lorg_sqlite_jni_capi_sqlite3_2IILorg_sqlite_jni_capi_OutputPointer_00024Int32_2)(
   JniArgsEnvClass, jobject jDb, jint op, jint onOff, jobject jOut
 ){
-  return JniFuncName(1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_Int32_2)(
+  return JniFuncName(1db_1config__Lorg_sqlite_jni_capi_sqlite3_2IILorg_sqlite_jni_capi_OutputPointer_Int32_2)(
     env, jKlazz, jDb, op, onOff, jOut
   );
 }
@@ -3676,7 +3677,7 @@ end:
 /*
 ** Post-open() code common to both the sqlite3_open() and
 ** sqlite3_open_v2() bindings. ps->jDb must be the
-** org.sqlite.jni.sqlite3 object which will hold the db's native
+** org.sqlite.jni.capi.sqlite3 object which will hold the db's native
 ** pointer. theRc must be the result code of the open() op. If
 ** *ppDb is NULL then ps is set aside and its state cleared,
 ** else ps is associated with *ppDb. If *ppDb is not NULL then
@@ -3979,7 +3980,7 @@ static jobject s3jni_updatepre_hook(JNIEnv * env, int isPre, jlong jpDb, jobject
   klazz = (*env)->GetObjectClass(env, jHook);
   xCallback = isPre
     ? (*env)->GetMethodID(env, klazz, "call",
-                          "(Lorg/sqlite/jni/sqlite3;"
+                          "(Lorg/sqlite/jni/capi/sqlite3;"
                           "I"
                           "Ljava/lang/String;"
                           "Ljava/lang/String;"
@@ -5027,8 +5028,8 @@ static Fts5JniAux * Fts5JniAux_alloc(JNIEnv * const env, jobject jObj){
     s->jmid = (*env)->GetMethodID(env, klazz, "call",
                                   "(Lorg/sqlite/jni/fts5/Fts5ExtensionApi;"
                                   "Lorg/sqlite/jni/fts5/Fts5Context;"
-                                  "Lorg/sqlite/jni/sqlite3_context;"
-                                  "[Lorg/sqlite/jni/sqlite3_value;)V");
+                                  "Lorg/sqlite/jni/capi/sqlite3_context;"
+                                  "[Lorg/sqlite/jni/capi/sqlite3_value;)V");
     S3JniUnrefLocal(klazz);
     S3JniIfThrew{
       S3JniExceptionReport;
@@ -5745,7 +5746,7 @@ static int SQLTester_strnotglob(const char *zGlob, const char *z){
 }
 
 JNIEXPORT jint JNICALL
-Java_org_sqlite_jni_SQLTester_strglob(
+Java_org_sqlite_jni_capi_SQLTester_strglob(
   JniArgsEnvClass, jbyteArray baG, jbyteArray baT
 ){
   int rc = 0;
@@ -5772,7 +5773,7 @@ static int SQLTester_auto_extension(sqlite3 *pDb, const char **pzErr,
 }
 
 JNIEXPORT void JNICALL
-Java_org_sqlite_jni_SQLTester_installCustomExtensions(JniArgsEnvClass){
+Java_org_sqlite_jni_capi_SQLTester_installCustomExtensions(JniArgsEnvClass){
   sqlite3_auto_extension( (void(*)(void))SQLTester_auto_extension );
 }
 
@@ -5786,7 +5787,7 @@ Java_org_sqlite_jni_SQLTester_installCustomExtensions(JniArgsEnvClass){
 ** state.
 */
 JNIEXPORT void JNICALL
-Java_org_sqlite_jni_CApi_init(JniArgsEnvClass){
+Java_org_sqlite_jni_capi_CApi_init(JniArgsEnvClass){
   jclass klazz;
 
   memset(&S3JniGlobal, 0, sizeof(S3JniGlobal));
@@ -5828,7 +5829,7 @@ Java_org_sqlite_jni_CApi_init(JniArgsEnvClass){
 
 #ifdef SQLITE_ENABLE_FTS5
   klazz = (*env)->FindClass(env, "org/sqlite/jni/fts5/Fts5PhraseIter");
-  S3JniExceptionIsFatal("Error getting reference to org.sqlite.jni.Fts5PhraseIter.");
+  S3JniExceptionIsFatal("Error getting reference to org.sqlite.jni.fts5.Fts5PhraseIter.");
   SJG.fts5.jPhraseIter.fidA = (*env)->GetFieldID(env, klazz, "a", "J");
   S3JniExceptionIsFatal("Cannot get Fts5PhraseIter.a field.");
   SJG.fts5.jPhraseIter.fidB = (*env)->GetFieldID(env, klazz, "b", "J");

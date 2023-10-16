@@ -1,5 +1,5 @@
 /*
-** 2023-08-04
+** 2023-08-25
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -11,14 +11,17 @@
 *************************************************************************
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
-package org.sqlite.jni.fts5;
-import org.sqlite.jni.capi.*;
+package org.sqlite.jni.capi;
 
 /**
-   A wrapper for communicating C-level (Fts5Context*) instances with
-   Java. These wrappers do not own their associated pointer, they
-   simply provide a type-safe way to communicate it between Java and C
-   via JNI.
+   Callback for use with {@link CApi#sqlite3_progress_handler}.
 */
-public final class Fts5Context extends NativePointerHolder<Fts5Context> {
+public interface ProgressHandlerCallback extends CallbackProxy {
+  /**
+     Works as documented for the C-level sqlite3_progress_handler() callback.
+
+     <p>If it throws, the exception message is passed on to the db and
+     the exception is suppressed.
+  */
+  int call();
 }

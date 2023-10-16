@@ -13,7 +13,7 @@
 */
 package org.sqlite.jni.fts5;
 import java.nio.charset.StandardCharsets;
-import org.sqlite.jni.*;
+import org.sqlite.jni.capi.*;
 import org.sqlite.jni.annotation.*;
 
 /**

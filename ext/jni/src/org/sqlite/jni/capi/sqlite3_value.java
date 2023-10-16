@@ -1,5 +1,5 @@
 /*
-** 2023-08-04
+** 2023-07-21
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -11,14 +11,9 @@
 *************************************************************************
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
-package org.sqlite.jni.fts5;
-import org.sqlite.jni.capi.*;
+package org.sqlite.jni.capi;
 
-/**
-   A wrapper for communicating C-level (Fts5Context*) instances with
-   Java. These wrappers do not own their associated pointer, they
-   simply provide a type-safe way to communicate it between Java and C
-   via JNI.
-*/
-public final class Fts5Context extends NativePointerHolder<Fts5Context> {
+public final class sqlite3_value extends NativePointerHolder<sqlite3_value> {
+  //! Invoked only from JNI.
+  private sqlite3_value(){}
 }
