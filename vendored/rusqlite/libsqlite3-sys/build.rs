@@ -11,7 +11,7 @@ fn run_make() {
         return;
     }
 
-    Command::new(format!("./configure"))
+    Command::new("./configure")
         .current_dir(SQLITE_DIR)
         .output()
         .unwrap();
