@@ -39,7 +39,7 @@ winsqlite3 = []
 
 [dependencies]
 openssl-sys = { version = "0.9", optional = true }
-libsql-wasmtime-bindings = { version = "0.2.1", optional = true }
+libsql-wasmtime-bindings = { version = "0.2.2", optional = true }
 
 [build-dependencies]
 bindgen = { version = "0.65", default-features = false, features = ["runtime"] }

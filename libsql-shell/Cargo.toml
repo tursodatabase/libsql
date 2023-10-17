@@ -13,7 +13,7 @@ anyhow = "1.0.69"
 base64 = "0.21.0"
 clap = { version = "4.1.8", features = [ "derive", "env"] }
 home = "0.5.4"
-rusqlite = "0.28.0"
+rusqlite = { workspace = true }
 rustyline = "11.0.0"
 rustyline-derive = "0.9.0"
 tabled = "0.12.2"
