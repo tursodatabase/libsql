@@ -69,7 +69,7 @@ jobs:
       - uses: taiki-e/install-action@cargo-hack
       - uses: taiki-e/install-action@cargo-udeps
       - uses: Swatinem/rust-cache@v2
-      - run: cargo hack udeps --workspace --each-feature ${{ matrix.option }}
+      - run: cargo +nightly hack udeps --workspace --each-feature 
 
   test:
     runs-on: ubuntu-latest
