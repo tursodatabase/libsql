@@ -1,0 +1,110 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main", "trying", "staging" ]
+  pull_request:
+  merge_group:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: --cfg=uuid_unstable
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    name: Run Checks
+    env:
+      RUSTFLAGS: -D warnings --cfg=uuid_unstable
+    steps:
+      - uses: hecrj/setup-rust-action@v1
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Set up cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Cargo fmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --check
+
+      - name: Cargo check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --all-targets --all-features
+
+      - name: Test openssl
+        shell: bash {0}
+        run: cargo tree -p sqld -i openssl; [ $? = 101 ]
+
+      - name: Clippy
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-targets --all-features -- -D warnings
+
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests
+    env:
+      RUSTFLAGS: -D warnings --cfg=uuid_unstable
+    services:
+      minio:
+        image: lazybit/minio
+        ports:
+          - 9000:9000
+          - 9090:9090
+        env:
+          MINIO_ACCESS_KEY: minioadmin
+          MINIO_SECRET_KEY: minioadmin
+        volumes:
+          - /data
+        options: --name=minio --health-cmd "curl http://localhost:9000/minio/health/live"
+    steps:
+    - uses: hecrj/setup-rust-action@v1
+
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Set up cargo cache
+      uses: actions/cache@v3
+      continue-on-error: false
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo-
+
+    - name: Run tests
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --verbose
+      env:
+        LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID: minioadmin
+        LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY: minioadmin
+        LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION: eu-central-2
+        LIBSQL_BOTTOMLESS_BUCKET: bottomless
+        LIBSQL_BOTTOMLESS_ENDPOINT: http://localhost:9000

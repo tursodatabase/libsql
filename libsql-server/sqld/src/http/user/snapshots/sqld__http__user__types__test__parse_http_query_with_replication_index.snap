@@ -1,0 +1,38 @@
+---
+source: sqld/src/http/user/types.rs
+expression: found
+---
+{
+  "statements": [
+    {
+      "q": "select * from test",
+      "params": {
+        "Positional": []
+      }
+    },
+    {
+      "q": "select ?",
+      "params": {
+        "Positional": [
+          {
+            "Integer": 12
+          },
+          {
+            "Integer": 1
+          }
+        ]
+      }
+    },
+    {
+      "q": "select ?",
+      "params": {
+        "Named": {
+          ":foo": {
+            "Text": "bar"
+          }
+        }
+      }
+    }
+  ],
+  "replication_index": 1
+}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <title>sqld</title>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.terminal/2.35.2/js/jquery.terminal.min.js"
+        integrity="sha512-p8htw5zxzQbPLJlmZyejtfkbxFplLATETwPtqOvvINFeQWclXzIPCpCDIE7qCEfTdtqiIJmIthahTCfx6Oz2IA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/jquery.terminal/2.35.2/css/jquery.terminal.min.css"
+        integrity="sha512-8VWSg5zXhQ4rsThoS0aHmSbOZIwypQw8C+Y7BbURMVOikfXyVVRtDgucZEb+IJTW+UQ+fgg6x/9VL2AwSMlbeg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+</head>
+
+<body>
+    <script>
+        function json2table(json) {
+            if (Object.keys(json).length == 0) {
+                return ''
+            }
+            const error = json[0].error;
+            if (error) {
+                return "Error: " + error.message
+            }
+            // FIXME: support multiple statements
+            let result = json[0].results;
+            let headers = result.columns;
+            let html = '<tr>'
+            for (var i = 0; i < headers.length; i++) {
+                html += '<th style = "padding: 5px">' + headers[i] + '</th>'
+            }
+            html += '</tr>';
+            for (var i = 0; i < result.rows.length; i++) {
+                html += '<tr>'
+                for (var j = 0; j < headers.length; j++) {
+                    html += '<td style = "padding: 5px">' + result.rows[i][j] + '</td>'
+                }
+                html += '</tr>'
+            }
+            return html
+        }
+
+        $('body').terminal(function (cmd, term) {
+            if (!cmd) {
+                return
+            }
+            term.pause();
+            $.post('/', JSON.stringify({ statements: [cmd] })).then(response => {
+                if (response) {
+                    term.echo(json2table(response), { raw: true })
+                    term.resume()
+                }
+            }).catch(error => {
+                term.echo("Error: " + JSON.stringify(error, null, 2))
+                term.resume()
+            });
+        }, {
+            greetings: 'sqld'
+        });
+    </script>
+</body>
+
+</html>

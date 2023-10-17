@@ -1,0 +1,5 @@
+---
+source: sqld/tests/namespaces/dumps.rs
+expression: resp.body_string().await.unwrap()
+---
+
