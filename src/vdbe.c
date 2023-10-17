@@ -762,11 +762,11 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
     sqlite3RCStrRef(pBuf);
     if( t&1 ){
       rc = sqlite3VdbeMemSetStr(pDest, pBuf, len, encoding,
-                                (void(*)(void*))sqlite3RCStrUnref);
+                                sqlite3RCStrUnref);
       pDest->flags |= MEM_Term;
     }else{
       rc = sqlite3VdbeMemSetStr(pDest, pBuf, len, 0,
-                                (void(*)(void*))sqlite3RCStrUnref);
+                                sqlite3RCStrUnref);
     }
   }else{
     rc = sqlite3VdbeMemFromBtree(pC->uc.pCursor, iOffset, len, pDest);

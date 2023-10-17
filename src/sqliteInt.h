@@ -5352,7 +5352,7 @@ int sqlite3ApiExit(sqlite3 *db, int);
 int sqlite3OpenTempDatabase(Parse *);
 
 char *sqlite3RCStrRef(char*);
-void sqlite3RCStrUnref(char*);
+void sqlite3RCStrUnref(void*);
 char *sqlite3RCStrNew(u64);
 char *sqlite3RCStrResize(char*,u64);
 
