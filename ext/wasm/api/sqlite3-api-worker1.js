@@ -333,7 +333,6 @@ sqlite3.initWorker1API = function(){
   if(!(globalThis.WorkerGlobalScope instanceof Function)){
     toss("initWorker1API() must be run from a Worker thread.");
   }
-  const self = this.self;
   const sqlite3 = this.sqlite3 || toss("Missing this.sqlite3 object.");
   const DB = sqlite3.oo1.DB;
 
@@ -657,5 +656,5 @@ sqlite3.initWorker1API = function(){
     }, wState.xfer);
   };
   globalThis.postMessage({type:'sqlite3-api',result:'worker1-ready'});
-}.bind({self, sqlite3});
+}.bind({sqlite3});
 });
