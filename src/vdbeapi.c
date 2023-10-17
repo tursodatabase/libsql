@@ -2351,7 +2351,11 @@ int sqlite3_stmt_scanstatus_v2(
   int idx;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( p==0 ) return 1;
+  if( p==0 || pOut==0
+      || iScanStatusOp<SQLITE_SCANSTAT_NLOOP
+      || iScanStatusOp>SQLITE_SCANSTAT_NCYCLE ){
+    return 1;
+  }
 #endif
   aOp = p->aOp;
   nOp = p->nOp;
