@@ -178,6 +178,15 @@ impl From<Vec<u8>> for Value {
     }
 }
 
+impl<T: Into<Value>> From<Option<T>> for Value {
+    fn from(value: Option<T>) -> Self {
+        match value {
+            Some(inner) => inner.into(),
+            None => Value::Null,
+        }
+    }
+}
+
 #[cfg(feature = "core")]
 impl From<libsql_sys::Value> for Value {
     fn from(value: libsql_sys::Value) -> Value {
