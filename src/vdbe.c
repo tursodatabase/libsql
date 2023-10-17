@@ -6927,7 +6927,7 @@ case OP_SqlExec: {
   db->nSqlExec--;
   db->xAuth = xAuth;
   db->mTrace = mTrace;
-  if( rc || zErr ){
+  if( zErr || rc ){
     sqlite3VdbeError(p, "%s", zErr);
     sqlite3_free(zErr);
     if( rc==SQLITE_NOMEM ) goto no_mem;
