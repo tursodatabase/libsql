@@ -45,12 +45,6 @@ functions = []
 trace = []
 # sqlite3_db_release_memory: 3.7.10 (2012-01-16)
 release_memory = []
-bundled = ["libsqlite3-sys/bundled", "modern_sqlite"]
-bundled-sqlcipher = ["libsqlite3-sys/bundled-sqlcipher", "bundled"]
-bundled-libsql-experimental = ["libsqlite3-sys/bundled-libsql-experimental", "bundled", "libsql-experimental"]
-bundled-libsql-wasm-experimental = ["libsqlite3-sys/bundled-libsql-wasm-experimental", "bundled", "libsql-wasm-experimental"]
-bundled-sqlcipher-vendored-openssl = ["libsqlite3-sys/bundled-sqlcipher-vendored-openssl", "bundled-sqlcipher"]
-buildtime_bindgen = ["libsqlite3-sys/buildtime_bindgen"]
 limits = []
 hooks = []
 i128_blob = []
@@ -72,9 +66,8 @@ series = ["vtab"]
 # check for invalid query.
 extra_check = []
 # ]3.14.0, last]
-modern_sqlite = ["libsqlite3-sys/bundled_bindings"]
+modern_sqlite = []
 in_gecko = ["modern_sqlite", "libsqlite3-sys/in_gecko"]
-bundled-windows = ["libsqlite3-sys/bundled-windows"]
 # Build bundled sqlite with -fsanitize=address
 with-asan = ["libsqlite3-sys/with-asan"]
 column_decltype = []
@@ -111,8 +104,6 @@ modern-full = [
     "vtab",
     "window",
 ]
-
-bundled-full = ["modern-full", "bundled"]
 
 [dependencies]
 time = { version = "0.3.0", features = ["formatting", "macros", "parsing"], optional = true }
