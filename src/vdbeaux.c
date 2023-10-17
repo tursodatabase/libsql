@@ -4461,6 +4461,16 @@ SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
   return n1 - n2;
 }
 
+/* The following two functions are used only within testcase() to prove
+** test coverage.  These functions do no exist for production builds.
+** We must use separate SQLITE_NOINLINE functions here, since otherwise
+** optimizer code movement causes gcov to become very confused.
+*/
+#if  defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_DEBUG)
+static int SQLITE_NOINLINE doubleLt(double a, double b){ return a<b; }
+static int SQLITE_NOINLINE doubleEq(double a, double b){ return a=b; }
+#endif
+
 /*
 ** Do a comparison between a 64-bit signed integer and a 64-bit floating-point
 ** number.  Return negative, zero, or positive if the first (i64) is less than,
@@ -4472,8 +4482,7 @@ int sqlite3IntFloatCompare(i64 i, double r){
     testcase( x<r );
     testcase( x>r );
     testcase( x==r );
-    if( x<r ) return -1;
-    return x>r;   /*NO_TEST*/ /* work around bug in gcov */
+    return (x<r) ? -1 : (x>r);
   }else{
     i64 y;
     double s;
@@ -4482,12 +4491,11 @@ int sqlite3IntFloatCompare(i64 i, double r){
     y = (i64)r;
     if( i<y ) return -1;
     if( i>y ) return +1;
-    testcase( r<(double)i );
-    testcase( r>(double)i );
-    testcase( r==(double)i );
     s = (double)i;
-    if( s<r ) return -1;
-    return s>r;   /*NO_TEST*/ /* work around bug in gcov */
+    testcase( doubleLt(s,r) );
+    testcase( doubleLt(r,s) );
+    testcase( doubleEq(r,s) );
+    return (s<r) ? -1 : (s>r);
   }
 }
 
