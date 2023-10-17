@@ -82,11 +82,11 @@ pub use crate::load_extension_guard::LoadExtensionGuard;
 pub use crate::params::{params_from_iter, Params, ParamsFromIter};
 pub use crate::row::{AndThenRows, Map, MappedRows, Row, RowIndex, Rows};
 pub use crate::statement::{Statement, StatementStatus};
+#[cfg(feature = "modern_sqlite")]
+pub use crate::transaction::TransactionState;
 pub use crate::transaction::{DropBehavior, Savepoint, Transaction, TransactionBehavior};
 pub use crate::types::ToSql;
 pub use crate::version::*;
-#[cfg(feature = "modern_sqlite")]
-pub use crate::transaction::TransactionState;
 
 mod error;
 
