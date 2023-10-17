@@ -4,11 +4,11 @@ on:
   push:
     branches: ['main']
     tags:
-      - v*.*.*
+      - libsql-server-v*.*.*
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository }}-server
 
 jobs:
   # docker image build and upload to ghcr
