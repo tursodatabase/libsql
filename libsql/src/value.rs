@@ -178,6 +178,12 @@ impl From<Vec<u8>> for Value {
     }
 }
 
+impl From<bool> for Value {
+    fn from(value: bool) -> Value {
+        Value::Integer(value as i64)
+    }
+}
+
 impl<T> From<Option<T>> for Value
 where
     T: Into<Value>,
