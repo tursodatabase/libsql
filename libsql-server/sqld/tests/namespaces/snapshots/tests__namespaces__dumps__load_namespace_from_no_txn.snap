@@ -1,0 +1,7 @@
+---
+source: sqld/tests/namespaces/dumps.rs
+expression: resp.json_value().await.unwrap()
+---
+{
+  "error": "A dump should execute within a transaction."
+}

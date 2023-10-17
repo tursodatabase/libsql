@@ -1,0 +1,45 @@
+[workspace]
+
+resolver = "2"
+members = [
+    "bottomless",
+    "bottomless-cli",
+    "sqld",
+    "sqld-libsql-bindings",
+]
+
+[workspace.dependencies]
+rusqlite = { version = "0.29.0", git = "https://github.com/tursodatabase/rusqlite.git", rev = "a72d529", default-features = false, features = [
+    "buildtime_bindgen",
+    "bundled-libsql-experimental",
+    "column_decltype",
+    "load_extension",
+    "modern_sqlite"
+] }
+
+# Config for 'cargo dist'
+[workspace.metadata.dist]
+# The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.2.0-prerelease.6"
+# CI backends to support (see 'cargo dist generate-ci')
+ci = ["github"]
+# The installers to generate for each app
+installers = ["shell", "homebrew"]
+# A GitHub repo to push Homebrew formulas to
+tap = "libsql/homebrew-sqld"
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["x86_64-unknown-linux-gnu", "x86_64-apple-darwin", "aarch64-apple-darwin"]
+# Publish jobs to run in CI
+publish-jobs = ["homebrew"]
+# Whether cargo-dist should create a Github Release or use an existing draft
+create-release = false
+
+[patch.crates-io]
+sqlite3-parser = { git = "https://github.com/LucioFranco/lemon-rs" }
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+

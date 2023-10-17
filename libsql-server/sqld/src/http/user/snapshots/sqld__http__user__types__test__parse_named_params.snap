@@ -1,0 +1,31 @@
+---
+source: sqld/src/http/user/types.rs
+expression: found
+---
+{
+  "Named": {
+    "$real": {
+      "Real": 1.23
+    },
+    ":blob": {
+      "Blob": [
+        104,
+        101,
+        108,
+        108,
+        111,
+        10
+      ]
+    },
+    ":bool": {
+      "Integer": 0
+    },
+    ":int": {
+      "Integer": 1
+    },
+    ":null": "Null",
+    ":str": {
+      "Text": "hello"
+    }
+  }
+}

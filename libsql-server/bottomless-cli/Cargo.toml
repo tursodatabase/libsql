@@ -1,0 +1,24 @@
+[package]
+name = "bottomless-cli"
+version = "0.1.14"
+edition = "2021"
+license = "MIT"
+keywords = ["libsql", "sqlite", "s3", "cli", "replication"]
+repository = "https://github.com/libsql/sqld"
+description = "Command-line interface for bottomless replication for libSQL"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.66"
+aws-config = "0.55"
+aws-sdk-s3 = "0.28"
+aws-smithy-types = "0.55"
+bottomless = { version = "0", path = "../bottomless" }
+chrono = "0.4.23"
+clap = { version = "4.0.29", features = ["derive"] }
+tokio = { version = "1.23.0", features = ["macros", "rt", "rt-multi-thread"] }
+tracing = "0.1.37"
+tracing-subscriber = "0.3.16"
+uuid = "1.4.1"
+rusqlite = { workspace = true }

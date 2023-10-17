@@ -1,0 +1,1 @@
+{"statements": ["CREATE TABLE IF NOT EXISTS users (email TEXT)", "DELETE FROM users", "INSERT INTO users (email) VALUES ('alice@example.com')"]}
