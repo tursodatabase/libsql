@@ -1,5 +1,5 @@
-C Enhance\sthe\sdocumentation\sof\ssqlite3_deserialize()\sto\smake\sit\sclear\sthat\nthe\sinput\sdatabase\smay\snot\sbe\sin\sWAL\smode.\n[forum:/forumpost/a7e272cee9ac469f|Forum\spost\sa7e272cee9ac469f]
-D 2023-10-17T11:57:36.538
+C Fix\sa\sJSON\sbug\sintroduced\sby\sthe\soptimization\sof\s[df099ad713011b67]\sand\nfirst\sappearing\sin\s3.43.0.\s\sThe\sproblem\soccurs\swhen\sdoing\sa\sJSON_EXTRACT()\non\san\sarray\selement\sthat\swas\sadded\sby\sJSON_SET()\swithout\sfirst\sreparsing.\nReported\sby\s[forum:/forumpost/fc0e3f1e2a|forum\spost\sfc0e3f1e2a].
+D 2023-10-17T13:41:41.074
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -678,7 +678,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 799430345d16fed21713416318e6ca616f1264224f708555f387bfa2ab2496c7
+F src/json.c a803f6eb684a8e24e99761138ee233e6d3140f8691146e4667a8fe700c0c16a5
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7d56c6f28aaf9b42e2772289e0d0a12a77b57c2baed021dbfd1fcafec69c156a
 F src/main.c 73ae4cab166b0fd36352446de7f7d91f89bde86686ae18f0bb7b245173479831
@@ -1310,7 +1310,7 @@ F test/json/README.md 63e3e589e1df8fd3cc1588ba1faaff659214003f8b77a15af5c6452b35
 F test/json/json-generator.tcl dc0dd0f393800c98658fc4c47eaa6af29d4e17527380cd28656fb261bddc8a3f
 F test/json/json-q1.txt 65f9d1cdcc4cffa9823fb73ed936aae5658700cd001fde448f68bfb91c807307
 F test/json/json-speed-check.sh 8b7babf530faa58bd59d6d362cec8e9036a68c5457ff46f3b1f1511d21af6737 x
-F test/json101.test 1ad070e5616dee76bffbe9724e6add16ab7ad506d5af9e606627b163baf1a7b4
+F test/json101.test bc05d2476fd6f7ead31ec05b43d1b24b2b193ae112fd8f0d2ed56d9a904f9fa5
 F test/json102.test 4c69694773a470f1fda34e5f4ba24920b35184fb66050b450fc2ef9ab5ad310b
 F test/json103.test 53df87f83a4e5fa0c0a56eb29ff6c94055c6eb919f33316d62161a8880112dbe
 F test/json104.test 1b844a70cddcfa2e4cd81a5db0657b2e61e7f00868310f24f56a9ba0114348c1
@@ -2132,8 +2132,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1d67f75de259e5a26b751a50432822a268ebe367cda6510891ab81a15e5daa1c
-R 6102819ec8d73f007027205c9baa6482
+P e754789971e019647e7068f76dc6f9778675e4849fe51d8b25b39d3edf2379e5
+R 3f9b22b9a01bc799e241ff3ddd4c2083
 U drh
-Z fed638031c498e74c10adafc1fcef571
+Z 0e3dd3d1b219ba9ab7384c8b1f01954c
 # Remove this line to create a well-formed Fossil manifest.

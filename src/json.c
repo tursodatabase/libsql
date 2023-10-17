@@ -2156,6 +2156,7 @@ static JsonNode *jsonLookupStep(
         if( (pRoot[j].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ) i--;
         j += jsonNodeSize(&pRoot[j]);
       }
+      if( i==0 && j<=pRoot->n ) break;
       if( (pRoot->jnFlags & JNODE_APPEND)==0 ) break;
       if( pParse->useMod==0 ) break;
       assert( pRoot->eU==2 );

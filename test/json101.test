@@ -1042,5 +1042,18 @@ do_execsql_test json101-22.2 {
   );
 } {{{"a":2,"b":4,"c":6}}}
 
+# 2023-10-17 https://sqlite.org/forum/forumpost/fc0e3f1e2a
+# Incorrect accesss to '$[0]' in parsed + edited JSON.
+#
+do_execsql_test json101-23.1 {
+  SELECT j, j->>0, j->>1
+    FROM (SELECT json_set(json_set('[]','$[#]',0), '$[#]',1) AS j);
+} {{[0,1]} 0 1}
+do_execsql_test json101-23.2 {
+  SELECT j, j->>0, j->>1
+    FROM (SELECT json_set('[]','$[#]',0,'$[#]',1) AS j);
+} {{[0,1]} 0 1}
+
+
 
 finish_test
