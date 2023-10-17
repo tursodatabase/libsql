@@ -2165,18 +2165,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hrana-client-proto"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f16b4e41e289da3fd60e64f245246a97e78fab7b3788c6d8147b3ae7d9f5e533"
-dependencies = [
- "anyhow",
- "base64 0.21.4",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "http"
 version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2607,7 +2595,7 @@ dependencies = [
  "http",
  "hyper",
  "hyper-rustls 0.24.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "libsql-sys 0.2.14",
+ "libsql-sys",
  "memmap",
  "once_cell",
  "parking_lot",
@@ -2624,49 +2612,6 @@ dependencies = [
  "tokio-test",
  "tonic",
  "tonic-build",
- "tonic-web",
- "tower",
- "tower-http 0.4.4",
- "tracing",
- "tracing-subscriber",
- "uuid",
-]
-
-[[package]]
-name = "libsql"
-version = "0.1.11"
-source = "git+https://github.com/tursodatabase/libsql?rev=8847ca05c#8847ca05cf2df9811d8151230b008850694ebe31"
-dependencies = [
- "anyhow",
- "async-trait",
- "base64 0.21.4",
- "bincode",
- "bitflags 2.4.1",
- "bytemuck",
- "bytes",
- "crossbeam",
- "crossbeam-channel",
- "fallible-iterator 0.3.0",
- "futures",
- "hrana-client-proto",
- "http",
- "hyper",
- "hyper-rustls 0.24.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "libsql-sys 0.2.14 (git+https://github.com/tursodatabase/libsql?rev=8847ca05c)",
- "memmap",
- "nix",
- "once_cell",
- "parking_lot",
- "prost",
- "regex",
- "serde",
- "serde_json",
- "sqlite3-parser",
- "tempfile",
- "thiserror",
- "tokio",
- "tokio-stream",
- "tonic",
  "tonic-web",
  "tower",
  "tower-http 0.4.4",
@@ -2717,23 +2662,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "libsql-sys"
-version = "0.2.14"
-source = "git+https://github.com/tursodatabase/libsql?rev=8847ca05c#8847ca05cf2df9811d8151230b008850694ebe31"
-dependencies = [
- "bindgen 0.66.1",
- "cc",
- "default-env",
- "once_cell",
- "tracing",
-]
-
-[[package]]
 name = "libsql-wasm"
 version = "0.1.0"
 dependencies = [
  "js-sys",
- "libsql 0.1.11",
+ "libsql",
  "wasm-bindgen",
 ]
 
@@ -4341,7 +4274,7 @@ version = "0.0.0"
 dependencies = [
  "cbindgen",
  "lazy_static",
- "libsql 0.1.11",
+ "libsql",
  "tokio",
 ]
 
@@ -4381,7 +4314,7 @@ dependencies = [
  "insta",
  "itertools 0.10.5",
  "jsonwebtoken",
- "libsql 0.1.11 (git+https://github.com/tursodatabase/libsql?rev=8847ca05c)",
+ "libsql",
  "libsql-client",
  "memmap",
  "metrics",

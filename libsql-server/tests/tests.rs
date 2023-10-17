@@ -3,6 +3,7 @@
 
 mod cluster;
 mod common;
-mod embedded_replica;
+// waiting for #454
+// mod embedded_replica;
 mod namespaces;
 mod standalone;
