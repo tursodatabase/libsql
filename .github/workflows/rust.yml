@@ -76,18 +76,18 @@ jobs:
     name: Run Tests
     env:
       RUSTFLAGS: -D warnings
-    # services:
-    #   minio:
-    #     image: lazybit/minio
-    #     ports:
-    #       - 9000:9000
-    #       - 9090:9090
-    #     env:
-    #       MINIO_ACCESS_KEY: minioadmin
-    #       MINIO_SECRET_KEY: minioadmin
-    #     volumes:
-    #       - /data
-    #     options: --name=minio --health-cmd "curl http://localhost:9000/minio/health/live"
+    services:
+      minio:
+        image: lazybit/minio
+        ports:
+          - 9000:9000
+          - 9090:9090
+        env:
+          MINIO_ACCESS_KEY: minioadmin
+          MINIO_SECRET_KEY: minioadmin
+        volumes:
+          - /data
+        options: --name=minio --health-cmd "curl http://localhost:9000/minio/health/live"
     steps:
     - uses: hecrj/setup-rust-action@v1
 
@@ -111,9 +111,9 @@ jobs:
       with:
         command: test
         args: --verbose
-      # env:
-      #   LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID: minioadmin
-      #   LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY: minioadmin
-      #   LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION: eu-central-2
-      #   LIBSQL_BOTTOMLESS_BUCKET: bottomless
-      #   LIBSQL_BOTTOMLESS_ENDPOINT: http://localhost:9000
+      env:
+        LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID: minioadmin
+        LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY: minioadmin
+        LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION: eu-central-2
+        LIBSQL_BOTTOMLESS_BUCKET: bottomless
+        LIBSQL_BOTTOMLESS_ENDPOINT: http://localhost:9000
