@@ -14,6 +14,7 @@ fn run_make() {
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
+    println!("cargo:rerun-if-changed={SQLITE_DIR}/src/");
     run_make();
     build_bundled(&out_dir, &out_path);
 }
@@ -21,10 +22,7 @@ fn main() {
 pub fn build_bundled(out_dir: &str, out_path: &Path) {
     let header = HeaderLocation::FromPath(dbg!(format!("{SQLITE_DIR}/sqlite3.h")));
     bindings::write_to_out_dir(header, out_path);
-    // println!("cargo:rerun-if-changed=sqlite3/sqlite3.c");
-    // println!("cargo:rerun-if-changed=sqlcipher/sqlite3.c");
     println!("cargo:rerun-if-changed={SQLITE_DIR}/sqlite3.c");
-    println!("cargo:rerun-if-changed={SQLITE_DIR}/wasm32-wasi-vfs.c");
     let mut cfg = cc::Build::new();
     cfg.file(format!("{SQLITE_DIR}/sqlite3.c"))
         .flag("-DSQLITE_CORE")
