@@ -2161,6 +2161,9 @@ static int pager_end_transaction(Pager *pPager, int hasSuper, int bCommit){
   return (rc==SQLITE_OK?rc2:rc);
 }
 
+/* Forward reference */
+static int pager_playback(Pager *pPager, int isHot);
+
 /*
 ** Execute a rollback if a transaction is active and unlock the
 ** database file.
@@ -2189,6 +2192,21 @@ static void pagerUnlockAndRollback(Pager *pPager){
       assert( pPager->eState==PAGER_READER );
       pager_end_transaction(pPager, 0, 0);
     }
+  }else if( pPager->eState==PAGER_ERROR
+         && pPager->journalMode==PAGER_JOURNALMODE_MEMORY
+         && isOpen(pPager->jfd)
+  ){
+    /* Special case for a ROLLBACK due to I/O error with an in-memory
+    ** journal:  We have to rollback immediately, before the journal is
+    ** closed, because once it is closed, all content is forgotten. */
+    int errCode = pPager->errCode;
+    u8 eLock = pPager->eLock;
+    pPager->eState = PAGER_OPEN;
+    pPager->errCode = SQLITE_OK;
+    pPager->eLock = EXCLUSIVE_LOCK;
+    pager_playback(pPager, 1);
+    pPager->errCode = errCode;
+    pPager->eLock = eLock;
   }
   pager_unlock(pPager);
 }
@@ -5681,8 +5699,20 @@ int sqlite3PagerGet(
   DbPage **ppPage,    /* Write a pointer to the page here */
   int flags           /* PAGER_GET_XXX flags */
 ){
-  /* printf("PAGE %u\n", pgno); fflush(stdout); */
+#if 0   /* Trace page fetch by setting to 1 */
+  int rc;
+  printf("PAGE %u\n", pgno);
+  fflush(stdout);
+  rc = pPager->xGet(pPager, pgno, ppPage, flags);
+  if( rc ){ 
+    printf("PAGE %u failed with 0x%02x\n", pgno, rc);
+    fflush(stdout);
+  }
+  return rc;
+#else
+  /* Normal, high-speed version of sqlite3PagerGet() */
   return pPager->xGet(pPager, pgno, ppPage, flags);
+#endif
 }
 
 /*

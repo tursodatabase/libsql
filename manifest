@@ -1,5 +1,5 @@
-C Harden\sAPI_ARMOR\schecks\sfor\ssqlite3_stmt_scanstatus_v2().
-D 2023-10-17T02:15:49.601
+C When\san\sI/O\sor\ssimilar\serror\soccurs\sduring\sa\stransaction\swith\njournal_mode=MEMORY,\sattempt\sto\srollback\sbefore\sclosing\sthe\sjournal,\sas\nall\srollback\sinformation\sis\sforgotten\swhen\sa\smemory\srollback\sjournal\sis\nclosed.
+D 2023-10-17T10:47:42.224
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -705,7 +705,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c 2e8b12107f75d1bd16412f312b4c5d5103191807a37836d3b81beb26436ad81b
 F src/os_win.c 4a50a154aeebc66a1f8fb79c1ff6dd5fe3d005556533361e0d460d41cb6a45a8
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 4aa388e47138551c83ae265e2efd4e01f0aa5afb6a958f45579658847b3430ff
+F src/pager.c 2188897e1102a776dcb1bbe8b2eb70ac7de8863c9cb95ef09d35e9bad406cf45
 F src/pager.h f4d33fec8052603758792045493423b8871a996da2d0973927b7d36cd6070473
 F src/parse.y aeb7760d41cfa86465e3adba506500c021597049fd55f82a30e5b7045862c28c
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
@@ -2132,8 +2132,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 15b28b340a5c5efdbfe3fbed16ee0b699561edaeebb77446addf2374bdf9357e
-R 6b89fd1d08788235ad034998751967c3
-U stephan
-Z f2c535ed4796a207a0fd6c4ff4bf7413
+P d3f38e813ba3b887e973af034713cd58fdfbe07da375b154accc7b5790cfaeda
+R b56a9057afb3315b9dbeaacc1714889d
+U drh
+Z 10639baf7980722d71051df0aed0a0d8
 # Remove this line to create a well-formed Fossil manifest.
