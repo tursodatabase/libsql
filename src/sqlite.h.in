@@ -10676,6 +10676,13 @@ unsigned char *sqlite3_serialize(
 ** S argument to sqlite3_deserialize(D,S,P,N,M,F) is "temp" then the
 ** function returns SQLITE_ERROR.
 **
+** The deserialized database should not be in [WAL mode].  If the database
+** is in WAL mode, then any attempt to use the database file will result
+** in an [SQLITE_CANTOPEN] error.  The application can set the
+** [file format version numbers] (bytes 18 and 19) of the input database P
+** to 0x01 prior to invoking sqlite3_deserialize(D,S,P,N,M,F) to force the
+** database file into rollback mode and work around this limitation.
+**
 ** If sqlite3_deserialize(D,S,P,N,M,F) fails for any reason and if the
 ** SQLITE_DESERIALIZE_FREEONCLOSE bit is set in argument F, then
 ** [sqlite3_free()] is invoked on argument P prior to returning.
