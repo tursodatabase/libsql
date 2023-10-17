@@ -53,11 +53,13 @@ jobs:
         shell: bash {0}
         run: cargo tree -p sqld -i openssl; [ $? = 101 ]
 
-      - name: Clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-targets --all-features -- -D warnings
+      # Disabled because we vendor rusqlite which does not use
+      # clippy so it warns.
+      # - name: Clippy
+      #   uses: actions-rs/clippy-check@v1
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     args: --all-targets --all-features -- -D warnings
 
 
   features:
