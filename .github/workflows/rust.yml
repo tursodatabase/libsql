@@ -13,6 +13,7 @@ env:
 jobs:
   checks:
     runs-on: ["self-hosted", "Linux"]
+    container: ubuntu:latest
     name: Run Checks
     env:
       RUSTFLAGS: -D warnings
@@ -75,6 +76,7 @@ jobs:
 
   test:
     runs-on: ["self-hosted", "Linux"]
+    container: ubuntu:latest
     name: Run Tests
     env:
       RUSTFLAGS: -D warnings
