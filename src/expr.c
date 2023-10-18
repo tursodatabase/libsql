@@ -4361,6 +4361,7 @@ expr_code_doover:
     assert( !ExprHasVVAProperty(pExpr,EP_Immutable) );
     op = pExpr->op;
   }
+  assert( op!=TK_ORDER );
   switch( op ){
     case TK_AGG_COLUMN: {
       AggInfo *pAggInfo = pExpr->pAggInfo;
