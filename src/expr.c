@@ -1208,7 +1208,7 @@ void sqlite3ExprAddFunctionOrderBy(
 ){
   Expr *pOB;
   sqlite3 *db = pParse->db;
-  if( pOrderBy==0 ){
+  if( NEVER(pOrderBy==0) ){
     assert( db->mallocFailed );
     return;
   }
@@ -6757,10 +6757,10 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
                                pExpr->x.pList->a[0].pExpr,0)==0
               ){
                 pItem->bOBPayload = 0;
-                pItem->bOBUnique = ExprHasProperty(pExpr, EP_Distinct);
               }else{
                 pItem->bOBPayload = 1;
               }
+              pItem->bOBUnique = ExprHasProperty(pExpr, EP_Distinct);
             }else{
               pItem->iOBTab = -1;
             }

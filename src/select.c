@@ -6716,14 +6716,14 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
         nKey = pF->pFExpr->pLeft->x.pList->nExpr;
         if( !pF->bOBUnique ) nKey++;
       }
-      iTop = sqlite3VdbeAddOp1(v, OP_Rewind, pF->iOBTab);
+      iTop = sqlite3VdbeAddOp1(v, OP_Rewind, pF->iOBTab); VdbeCoverage(v);
       for(j=nArg-1; j>=0; j--){
         sqlite3VdbeAddOp3(v, OP_Column, pF->iOBTab, nKey+j, regAgg+j);
       }
       sqlite3VdbeAddOp3(v, OP_AggStep, 0, regAgg, AggInfoFuncReg(pAggInfo,i));
       sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
       sqlite3VdbeChangeP5(v, (u8)nArg);
-      sqlite3VdbeAddOp2(v, OP_Next, pF->iOBTab, iTop+1);
+      sqlite3VdbeAddOp2(v, OP_Next, pF->iOBTab, iTop+1); VdbeCoverage(v);
       sqlite3VdbeJumpHere(v, iTop);
       sqlite3ReleaseTempRange(pParse, regAgg, nArg);
     }
