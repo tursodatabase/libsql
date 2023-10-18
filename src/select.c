@@ -6669,7 +6669,7 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
         nExtra += pFunc->pFExpr->x.pList->nExpr;
       }
       pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pOBList, 0, nExtra);
-      if( !pFunc->bOBUnique ){
+      if( !pFunc->bOBUnique && pParse->nErr==0 ){
         pKeyInfo->nKeyField++;
       }
       sqlite3VdbeAddOp4(v, OP_OpenEphemeral,
