@@ -116,10 +116,10 @@ impl WalCopier {
                     wal.copy_frames(&mut gzip, len).await?;
                     gzip.shutdown().await?;
                 }
-                CompressionKind::Xz => {
-                    let mut xz = async_compression::tokio::write::XzEncoder::new(&mut out);
-                    wal.copy_frames(&mut xz, len).await?;
-                    xz.shutdown().await?;
+                CompressionKind::Zstd => {
+                    let mut zstd = async_compression::tokio::write::ZstdEncoder::new(&mut out);
+                    wal.copy_frames(&mut zstd, len).await?;
+                    zstd.shutdown().await?;
                 }
             }
             if tracing::enabled!(tracing::Level::DEBUG) {
