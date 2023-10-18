@@ -1,5 +1,5 @@
-C JS:\sreplace\sone\serrant\sreference\sto\s'self'\swith\s'globalThis'\sand\sremove\sa\sseparate\sdead-code\s'self'\sreference.
-D 2023-10-17T23:35:47.218
+C Enhance\sthe\sparser\sso\sthat\sit\scan\saccept\san\sORDER\sBY\sclause\son\sa\sfunction\ninvocation.\s\sFor\sthis\sincremental\scheck-in,\sthe\sORDER\sBY\sclause\sis\scurrently\nignored.
+D 2023-10-18T13:18:52.383
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -668,7 +668,7 @@ F src/date.c eebc54a00e888d3c56147779e9f361b77d62fd69ff2008c5373946aa1ba1d574
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
 F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
-F src/expr.c 8a5045ac7aae5ecebe7236ec05841693b5a0012af70a4d73933333172546c50d
+F src/expr.c c1a2aa866a146a5329d562ad1cf7bc53a6e08aeb6d350a5766269a3f22f08ace
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c a7fcbf7e66d14dbb73cf49f31489ebf66d0e6006c62b95246924a3bae9f37b36
 F src/func.c e8d7b3587a225f4f1116f720b72090511fe9feb936e960bd26a053cea6a17a63
@@ -707,7 +707,7 @@ F src/os_win.c 4a50a154aeebc66a1f8fb79c1ff6dd5fe3d005556533361e0d460d41cb6a45a8
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 2188897e1102a776dcb1bbe8b2eb70ac7de8863c9cb95ef09d35e9bad406cf45
 F src/pager.h f4d33fec8052603758792045493423b8871a996da2d0973927b7d36cd6070473
-F src/parse.y aeb7760d41cfa86465e3adba506500c021597049fd55f82a30e5b7045862c28c
+F src/parse.y 020d80386eb216ec9520549106353c517d2bbc89be28752ffdca649a9eaf56ec
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
@@ -723,7 +723,7 @@ F src/shell.c.in cf0a3387c5bb05ca2fe6073fa7df21aaa11e749ca5b3846b80b586a447e728a
 F src/sqlite.h.in 60e5698417e674f44be17d5ceeb4c2d395ccedba18d6de05435dec0135d9eff1
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2f30b2671f4c03cd27a43f039e11251391066c97d11385f5f963bb40b03038ac
-F src/sqliteInt.h 2784a4c7cd99c21290a3c6608827ab18af82f2774bd3d3d74b510f792912317d
+F src/sqliteInt.h bc1da6f5605dd0f8433904c2b4e6f9960f6cf327b42f00d1885dc11a290e0641
 F src/sqliteLimit.h 33b1c9baba578d34efe7dfdb43193b366111cdf41476b1e82699e14c11ee1fb6
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -781,7 +781,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 23d9f4539880b40226254ad9072f4ecf12eb1902e62aea47aac29928afafcfd5
-F src/treeview.c 1d52fbc4e97161e65858d36e3424ea6e3fc045dd8a679c82b4b9593dc30de3bd
+F src/treeview.c 6c441500139d46c147216dac667510987ecd0e91a27735cd6d9dd77f81e465a7
 F src/trigger.c 5286019b152f622a38900284109e4aae1e5f566deb7ad9ba7e931f0660771f32
 F src/update.c 6904814dd62a7a93bbb86d9f1419c7f134a9119582645854ab02b36b676d9f92
 F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
@@ -2132,8 +2132,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 37ff0d8e7f91c32e8c53bb015280be47c66bf599281b640a8d3fd41335b55289
-R 02d0e707fb1cf1d9efb28ab84c90dee6
-U stephan
-Z 455d6debd64ad95ee72e444517f71e6f
+P da1a47932ea96755b1e11fc2547ce11780b87846af6885857318ff18f1e62c31
+R 4d323de4f6e44235324bfe080b4895e2
+T *branch * agg-orderby
+T *sym-agg-orderby *
+T -sym-trunk *
+U drh
+Z 1ba4c9d9b0d3f5c9086b8a02e3617a21
 # Remove this line to create a well-formed Fossil manifest.

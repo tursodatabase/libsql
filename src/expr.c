@@ -1182,6 +1182,44 @@ Expr *sqlite3ExprFunction(
 }
 
 /*
+** Attach an ORDER BY clause to a function call.
+**
+**     functionname( arguments ORDER BY sortlist )
+**     \_____________________/          \______/
+**             pExpr                    pOrderBy
+**
+** The ORDER BY clause is inserted into a new Expr node of type TK_ORDER
+** and added to the Expr.pLeft field of the parent TK_FUNCTION node.
+*/
+void sqlite3ExprAddFunctionOrderBy(
+  Parse *pParse,        /* Parsing context */
+  Expr *pExpr,          /* The function call to which ORDER BY is to be added */
+  ExprList *pOrderBy    /* The ORDER BY clause to add */
+){
+  Expr *pOB;
+  sqlite3 *db = pParse->db;
+  if( pOrderBy==0 ){
+    assert( db->mallocFailed );
+    return;
+  }
+  if( pExpr==0 ){
+    assert( db->mallocFailed );
+    sqlite3ExprListDelete(db, pOrderBy);
+    return;
+  }
+  assert( pExpr->op==TK_FUNCTION );
+  assert( pExpr->pLeft==0 );
+  pOB = sqlite3ExprAlloc(db, TK_ORDER, 0, 0);
+  if( pOB==0 ){
+    sqlite3ExprListDelete(db, pOrderBy);
+    return;
+  }
+  pOB->x.pList = pOrderBy;
+  assert( ExprUseXList(pOB) );
+  pExpr->pLeft = pOB;
+}
+
+/*
 ** Check to see if a function is usable according to current access
 ** rules:
 **
