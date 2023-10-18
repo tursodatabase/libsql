@@ -1209,6 +1209,12 @@ void sqlite3ExprAddFunctionOrderBy(
   }
   assert( pExpr->op==TK_FUNCTION );
   assert( pExpr->pLeft==0 );
+  assert( ExprUseXList(pExpr) );
+  if( pExpr->x.pList==0 || NEVER(pExpr->x.pList->nExpr==0) ){
+    /* Ignore ORDER BY on zero-argument aggregates */
+    sqlite3ExprListDelete(db, pOrderBy);
+    return;
+  }
   pOB = sqlite3ExprAlloc(db, TK_ORDER, 0, 0);
   if( pOB==0 ){
     sqlite3ExprListDelete(db, pOrderBy);
@@ -1902,11 +1908,7 @@ Select *sqlite3SelectDup(sqlite3 *db, const Select *p, int flags){
 ** initially NULL, then create a new expression list.
 **
 ** The pList argument must be either NULL or a pointer to an ExprList
-** obtained from a prior call to sqlite3ExprListAppend().  This routine
-** may not be used with an ExprList obtained from sqlite3ExprListDup().
-** Reason:  This routine assumes that the number of slots in pList->a[]
-** is a power of two.  That is true for sqlite3ExprListAppend() returns
-** but is not necessarily true from the return value of sqlite3ExprListDup().
+** obtained from a prior call to sqlite3ExprListAppend().
 **
 ** If a memory allocation error occurs, the entire list is freed and
 ** NULL is returned.  If non-NULL is returned, then it is guaranteed
@@ -6712,14 +6714,37 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
           u8 enc = ENC(pParse->db);
           i = addAggInfoFunc(pParse->db, pAggInfo);
           if( i>=0 ){
+            int nArg;
             assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
             pItem = &pAggInfo->aFunc[i];
             pItem->pFExpr = pExpr;
             assert( ExprUseUToken(pExpr) );
+            nArg = pExpr->x.pList ? pExpr->x.pList->nExpr : 0;
             pItem->pFunc = sqlite3FindFunction(pParse->db,
-                   pExpr->u.zToken,
-                   pExpr->x.pList ? pExpr->x.pList->nExpr : 0, enc, 0);
-            if( pExpr->flags & EP_Distinct ){
+                                         pExpr->u.zToken, nArg, enc, 0);
+            assert( pItem->bOBUnique==0 );
+            if( pExpr->pLeft ){
+              ExprList *pOBList;
+              assert( nArg>0 );
+              assert( pExpr->pLeft->op==TK_ORDER );
+              assert( ExprUseXList(pExpr->pLeft) );
+              pItem->iOBTab = pParse->nTab++;
+              pOBList = pExpr->pLeft->x.pList;
+              assert( pOBList->nExpr>0 );
+              if( pOBList->nExpr==1
+               && nArg==1
+               && sqlite3ExprCompare(0,pOBList->a[0].pExpr,
+                               pExpr->x.pList->a[0].pExpr,0)==0
+              ){
+                pItem->bOBPayload = 0;
+                pItem->bOBUnique = ExprHasProperty(pExpr, EP_Distinct);
+              }else{
+                pItem->bOBPayload = 1;
+              }
+            }else{
+              pItem->iOBTab = -1;
+            }
+            if( ExprHasProperty(pExpr, EP_Distinct) && !pItem->bOBUnique ){
               pItem->iDistinct = pParse->nTab++;
             }else{
               pItem->iDistinct = -1;
