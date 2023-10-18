@@ -1195,10 +1195,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
 #endif
         else if( is_agg==0 && pExpr->pLeft ){
-          sqlite3ErrorMsg(pParse,
-              "ORDER BY may not be used with non-aggregate %#T()",
-              pExpr
-          );
+          sqlite3ExprOrderByAggregateError(pParse, pExpr);
           pNC->nNcErr++;
         }
         if( is_agg ){

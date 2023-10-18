@@ -6490,8 +6490,14 @@ static void analyzeAggFuncArgs(
   pNC->ncFlags |= NC_InAggFunc;
   for(i=0; i<pAggInfo->nFunc; i++){
     Expr *pExpr = pAggInfo->aFunc[i].pFExpr;
+    assert( pExpr->op==TK_FUNCTION || pExpr->op==TK_AGG_FUNCTION );
     assert( ExprUseXList(pExpr) );
     sqlite3ExprAnalyzeAggList(pNC, pExpr->x.pList);
+    if( pExpr->pLeft ){
+      assert( pExpr->pLeft->op==TK_ORDER );
+      assert( ExprUseXList(pExpr->pLeft) );
+      sqlite3ExprAnalyzeAggList(pNC, pExpr->pLeft->x.pList);
+    }
 #ifndef SQLITE_OMIT_WINDOWFUNC
     assert( !IsWindowFunc(pExpr) );
     if( ExprHasProperty(pExpr, EP_WinFunc) ){

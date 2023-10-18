@@ -1182,6 +1182,16 @@ Expr *sqlite3ExprFunction(
 }
 
 /*
+** Report an error when attempting to use an ORDER BY clause within
+** the arguments of a non-aggregate function.
+*/
+void sqlite3ExprOrderByAggregateError(Parse *pParse, Expr *p){
+  sqlite3ErrorMsg(pParse,
+     "ORDER BY may not be used with non-aggregate %#T()", p
+  );
+}
+
+/*
 ** Attach an ORDER BY clause to a function call.
 **
 **     functionname( arguments ORDER BY sortlist )
@@ -1215,6 +1225,12 @@ void sqlite3ExprAddFunctionOrderBy(
     sqlite3ExprListDelete(db, pOrderBy);
     return;
   }
+  if( IsWindowFunc(pExpr) ){
+    sqlite3ExprOrderByAggregateError(pParse, pExpr);
+    sqlite3ExprListDelete(db, pOrderBy);
+    return;
+  }
+
   pOB = sqlite3ExprAlloc(db, TK_ORDER, 0, 0);
   if( pOB==0 ){
     sqlite3ExprListDelete(db, pOrderBy);
