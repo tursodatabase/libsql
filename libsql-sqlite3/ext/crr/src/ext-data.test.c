@@ -16,7 +16,9 @@ static void textNewExtData() {
   int rc = SQLITE_OK;
   rc = sqlite3_open(":memory:", &db);
   assert(rc == SQLITE_OK);
-  crsql_ExtData *pExtData = crsql_newExtData(db);
+  unsigned char *siteIdBuffer =
+      sqlite3_malloc(SITE_ID_LEN * sizeof *(siteIdBuffer));
+  crsql_ExtData *pExtData = crsql_newExtData(db, siteIdBuffer);
 
   assert(pExtData->dbVersion == -1);
   // statement used to determine schema version
@@ -52,7 +54,8 @@ static void testFreeExtData() {
   int rc;
   rc = sqlite3_open(":memory:", &db);
   assert(rc == SQLITE_OK);
-  crsql_ExtData *pExtData = crsql_newExtData(db);
+  unsigned char *siteIdBuffer = sqlite3_malloc(SITE_ID_LEN * sizeof(char *));
+  crsql_ExtData *pExtData = crsql_newExtData(db, siteIdBuffer);
 
   crsql_finalize(pExtData);
   crsql_freeExtData(pExtData);
@@ -66,7 +69,8 @@ static void testFinalize() {
   int rc;
   rc = sqlite3_open(":memory:", &db);
   assert(rc == SQLITE_OK);
-  crsql_ExtData *pExtData = crsql_newExtData(db);
+  unsigned char *siteIdBuffer = sqlite3_malloc(SITE_ID_LEN * sizeof(char *));
+  crsql_ExtData *pExtData = crsql_newExtData(db, siteIdBuffer);
 
   crsql_finalize(pExtData);
   assert(pExtData->pDbVersionStmt == 0);
@@ -86,7 +90,8 @@ static void testFetchPragmaSchemaVersion() {
   int didChange = 0;
   rc = sqlite3_open(":memory:", &db);
   assert(rc == SQLITE_OK);
-  crsql_ExtData *pExtData = crsql_newExtData(db);
+  unsigned char *siteIdBuffer = sqlite3_malloc(SITE_ID_LEN * sizeof(char *));
+  crsql_ExtData *pExtData = crsql_newExtData(db, siteIdBuffer);
 
   // fetch the schema info for db version update
   didChange = crsql_fetchPragmaSchemaVersion(db, pExtData, 0);
@@ -153,8 +158,10 @@ static void testFetchPragmaDataVersion() {
   rc = sqlite3_exec(db1, "CREATE TABLE fpdv (a)", 0, 0, &errmsg);
   assert(rc == SQLITE_OK);
 
-  crsql_ExtData *pExtData1 = crsql_newExtData(db1);
-  crsql_ExtData *pExtData2 = crsql_newExtData(db2);
+  unsigned char *siteIdBuffer = sqlite3_malloc(SITE_ID_LEN * sizeof(char *));
+  crsql_ExtData *pExtData1 = crsql_newExtData(db1, siteIdBuffer);
+  siteIdBuffer = sqlite3_malloc(SITE_ID_LEN * sizeof(char *));
+  crsql_ExtData *pExtData2 = crsql_newExtData(db2, siteIdBuffer);
 
   // should not change after init
   rc = crsql_fetchPragmaDataVersion(db1, pExtData1);
@@ -204,7 +211,8 @@ static void testRecreateDbVersionStmt() {
   sqlite3 *db;
   int rc;
   rc = sqlite3_open(":memory:", &db);
-  crsql_ExtData *pExtData = crsql_newExtData(db);
+  unsigned char *siteIdBuffer = sqlite3_malloc(SITE_ID_LEN * sizeof(char *));
+  crsql_ExtData *pExtData = crsql_newExtData(db, siteIdBuffer);
 
   rc = crsql_recreateDbVersionStmt(db, pExtData);
 
@@ -237,7 +245,8 @@ static void fetchDbVersionFromStorage() {
   int rc;
   char *errmsg;
   rc = sqlite3_open(":memory:", &db);
-  crsql_ExtData *pExtData = crsql_newExtData(db);
+  unsigned char *siteIdBuffer = sqlite3_malloc(SITE_ID_LEN * sizeof(char *));
+  crsql_ExtData *pExtData = crsql_newExtData(db, siteIdBuffer);
 
   rc = crsql_fetchDbVersionFromStorage(db, pExtData, &errmsg);
   // no clock tables, no version.

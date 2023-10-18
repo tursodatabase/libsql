@@ -13,6 +13,8 @@ size_t crsql_strnlen(const char *s, size_t n) {
   return p ? p - s : n;
 }
 
+// TODO: I don't think we need these crsql_ specific ones anymore now that we've
+// set the allocator symbol in the WASM builds
 char *crsql_strndup(const char *s, size_t n) {
   size_t l = crsql_strnlen(s, n);
   char *d = sqlite3_malloc(l + 1);
@@ -107,188 +109,6 @@ char *crsql_join2(char *(*map)(const char *), char **in, size_t len,
 }
 
 /**
- * Given a pointer to the inside of a string literal,
- * scan until we get to the end of the literal.
- *
- * Fails if we hit the end of the string without finding an unescaped
- * literal termination.
- */
-const char *crsql_scanToEndOfLiteral(const char *in) {
-  while (*in != '\0') {
-    // hit a quote
-    if (*in == '\'') {
-      // with no quote after?
-      // it is unescaped
-      if (*(in + 1) != '\'') {
-        return (in + 1);
-      } else {
-        // was a quote after? move into that quote
-        // then past the quote at end of loop.
-        in += 1;
-      }
-    }
-    in += 1;
-  }
-
-  // we made it to the end of the string? well then
-  // there was a bare quote which is an error case.
-  return 0;
-}
-
-/**
- * Advance len characters through the string.
- * Fails (returns 0) if we cannot advance at least that much.
- */
-const char *crsql_safelyAdvanceThroughString(const char *in, int len) {
-  for (int i = 0; i < len; ++i) {
-    if (*in == '\0') {
-      return 0;
-    }
-
-    in += 1;
-  }
-  return in;
-}
-
-/**
- * Looks for the provided delimiter and returns a pointer to the character
- * after that delim.
- *
- * The technically allows many `e` and `.` characters in a number.
- * We can improve this to only allow them where they should occur but
- * this is good enough for our purposes of ensuring safe input.
- *
- * If no delim is found, returns a pointer to the end of the string.
- */
-const char *crsql_consumeDigitsToDelimiter(const char *in, char delim) {
-  int decimalCount = 0;
-  int exponentCount = 0;
-  while (*in != '\0' && *in != delim) {
-    if (*in < 48 || *in > 57) {
-      if (*in == '.') {
-        if (decimalCount > 0) {
-          return 0;
-        }
-        ++decimalCount;
-      } else if (*in == 'e') {
-        if (exponentCount > 0) {
-          return 0;
-        }
-        ++exponentCount;
-        if (*(in + 1) == '-' || *(in + 1) == '+') {
-          in += 1;
-        }
-      } else {
-        return 0;
-      }
-    }
-    in += 1;
-  }
-  return in;
-}
-
-char **crsql_splitQuoteConcat(const char *in, int partsLen) {
-  const char *curr = in;
-  const char *last = in;
-  char **zzParts = sqlite3_malloc(partsLen * sizeof(char *));
-  int partIdx = 0;
-  while (curr != 0 && *curr != '\0' && partIdx < partsLen) {
-    if (*curr == '\'') {
-      // scan till consumed string literal
-      curr += 1;
-      curr = crsql_scanToEndOfLiteral(curr);
-    } else if (*curr == 'X') {
-      // scan till consumed hex
-      curr += 1;
-      if (*curr != '\'') {
-        // unexpected result
-        // set curr = 0 so we can cleanup and exit
-        curr = 0;
-      } else {
-        curr += 1;
-        curr = crsql_scanToEndOfLiteral(curr);
-      }
-    } else if (*curr == 'N') {
-      // scan till consumed NULL
-      curr = crsql_safelyAdvanceThroughString(curr, 4);
-    } else {
-      if (*curr == '-') {
-        curr += 1;
-      }
-      // scan till we hit the delimiter, consuming the digits
-      curr = crsql_consumeDigitsToDelimiter(curr, QC_DELIM);
-    }
-
-    if (curr == 0) {
-      // we had an error in scanning
-      // free what we've allocated thus far and return null.
-      for (int i = 0; i < partIdx; ++i) {
-        sqlite3_free(zzParts[i]);
-      }
-      sqlite3_free(zzParts);
-      return 0;
-    }
-
-    // pull from last to curr
-    // advance last
-    zzParts[partIdx] = sqlite3_malloc(((curr - last) + 1) * sizeof(char *));
-    strncpy(zzParts[partIdx], last, curr - last);
-    zzParts[partIdx][curr - last] = '\0';
-
-    // pointing at a delim? Move off it.
-    if (*curr == QC_DELIM) {
-      curr += 1;
-    }
-
-    last = curr;
-    partIdx += 1;
-  }
-
-  if (partIdx != partsLen || *curr != '\0') {
-    // we did not consume the whole string or get the number of parts
-    // expected. this is an error case.
-    for (int i = 0; i < partIdx; ++i) {
-      sqlite3_free(zzParts[i]);
-    }
-    sqlite3_free(zzParts);
-    return 0;
-  }
-
-  return zzParts;
-}
-
-// TODO:
-// have this take a function pointer that extracts the string so we can
-// delete crsql_asIdentifierList
-char *crsql_asIdentifierListStr(char **in, size_t inlen, char delim) {
-  int finalLen = 0;
-  char *ret = 0;
-  char **mapped = sqlite3_malloc(inlen * sizeof(char *));
-
-  for (size_t i = 0; i < inlen; ++i) {
-    mapped[i] = sqlite3_mprintf("\"%w\"", in[i]);
-    finalLen += strlen(mapped[i]);
-  }
-  // -1 for spearator not appended to last thing
-  finalLen += inlen - 1;
-
-  // + 1 for null terminator
-  ret = sqlite3_malloc(finalLen * sizeof(char) + 1);
-  ret[finalLen] = '\0';
-
-  crsql_joinWith(ret, mapped, inlen, delim);
-
-  // free everything we allocated, except ret.
-  // caller will free ret.
-  for (size_t i = 0; i < inlen; ++i) {
-    sqlite3_free(mapped[i]);
-  }
-  sqlite3_free(mapped);
-
-  return ret;
-}
-
-/**
  * @brief Given a list of clock table names, construct a union query to get the
  * max clock value for our site.
  *
@@ -311,7 +131,7 @@ char *crsql_getDbVersionUnionQuery(int numRows, char **tableNames) {
         // so skip that
         tableNames[i + 1],
         // If we have more tables to process, union them in
-        i < numRows - 1 ? UNION : "");
+        i < numRows - 1 ? UNION_ALL : "");
   }
 
   // move the array of strings into a single string
@@ -324,29 +144,12 @@ char *crsql_getDbVersionUnionQuery(int numRows, char **tableNames) {
 
   // compose the final query
   // and update the pointer to the string to point to it.
-  ret = sqlite3_mprintf("SELECT max(version) as version FROM (%z)", unionsStr);
+  ret = sqlite3_mprintf(
+      "SELECT max(version) as version FROM (%z UNION SELECT value as "
+      "version "
+      "FROM crsql_master WHERE key = 'pre_compact_dbversion')",
+      unionsStr);
   // %z frees unionsStr https://www.sqlite.org/printf.html#percentz
-  return ret;
-}
-
-/**
- * Check if tblName exists.
- * Caller is responsible for freeing tblName.
- *
- * Returns -1 on error.
- */
-int crsql_doesTableExist(sqlite3 *db, const char *tblName) {
-  char *zSql;
-  int ret = 0;
-
-  zSql = sqlite3_mprintf(
-      "SELECT count(*) as c FROM sqlite_master WHERE type='table' AND "
-      "tbl_name "
-      "= '%s'",
-      tblName);
-  ret = crsql_getCount(db, zSql);
-  sqlite3_free(zSql);
-
   return ret;
 }
 
@@ -371,104 +174,4 @@ int crsql_getCount(sqlite3 *db, char *zSql) {
   sqlite3_finalize(pStmt);
 
   return count;
-}
-
-/**
- * Given an index name, return all the columns in that index.
- * Fills pIndexedCols with an array of strings.
- * Caller is responsible for freeing pIndexedCols.
- */
-int crsql_getIndexedCols(sqlite3 *db, const char *indexName,
-                         char ***pIndexedCols, int *pIndexedColsLen,
-                         char **pErrMsg) {
-  int rc = SQLITE_OK;
-  int numCols = 0;
-  char **indexedCols;
-  sqlite3_stmt *pStmt = 0;
-  *pIndexedCols = 0;
-  *pIndexedColsLen = 0;
-
-  char *zSql = sqlite3_mprintf("SELECT count(*) FROM pragma_index_info('%s')",
-                               indexName);
-  numCols = crsql_getCount(db, zSql);
-  sqlite3_free(zSql);
-
-  if (numCols <= 0) {
-    return numCols;
-  }
-
-  zSql = sqlite3_mprintf(
-      "SELECT \"name\" FROM pragma_index_info('%s') ORDER BY \"seqno\" ASC",
-      indexName);
-  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-  sqlite3_free(zSql);
-  if (rc != SQLITE_OK) {
-    *pErrMsg = sqlite3_mprintf("Failed preparing pragma_index_info('%s') stmt",
-                               indexName);
-    sqlite3_finalize(pStmt);
-    return rc;
-  }
-
-  rc = sqlite3_step(pStmt);
-  if (rc != SQLITE_ROW) {
-    sqlite3_finalize(pStmt);
-    return SQLITE_OK;
-  }
-
-  int j = 0;
-  indexedCols = sqlite3_malloc(numCols * sizeof(char *));
-  while (rc == SQLITE_ROW) {
-    assert(j < numCols);
-
-    indexedCols[j] = crsql_strdup((const char *)sqlite3_column_text(pStmt, 0));
-
-    rc = sqlite3_step(pStmt);
-    ++j;
-  }
-  sqlite3_finalize(pStmt);
-
-  if (rc != SQLITE_DONE) {
-    for (int i = 0; i < j; ++i) {
-      sqlite3_free(indexedCols[i]);
-    }
-    sqlite3_free(indexedCols);
-    *pErrMsg = sqlite3_mprintf("Failed allocating index info");
-    return rc;
-  }
-
-  *pIndexedCols = indexedCols;
-  *pIndexedColsLen = numCols;
-
-  return SQLITE_OK;
-}
-
-int crsql_isIdentifierOpenQuote(char c) {
-  switch (c) {
-    case '[':
-      return 1;
-    case '`':
-      return 1;
-    case '"':
-      return 1;
-  }
-
-  return 0;
-}
-
-int crsql_siteIdCmp(const void *zLeft, int leftLen, const void *zRight,
-                    int rightLen) {
-  int minLen = leftLen < rightLen ? leftLen : rightLen;
-  int cmp = memcmp(zLeft, zRight, minLen);
-
-  if (cmp == 0) {
-    if (leftLen > rightLen) {
-      return 1;
-    } else if (leftLen < rightLen) {
-      return -1;
-    }
-
-    return 0;
-  }
-
-  return cmp > 0 ? 1 : -1;
 }

@@ -1,6 +1,5 @@
 #![no_std]
 #![feature(core_intrinsics)]
-#![feature(alloc_error_handler)]
 #![feature(lang_items)]
 
 extern crate alloc;
@@ -15,57 +14,21 @@ use crsql_fractindex_core::sqlite3_crsqlfractionalindex_init;
 use sqlite_nostd as sqlite;
 use sqlite_nostd::SQLite3Allocator;
 
+// This must be our allocator so we can transfer ownership of memory to SQLite and have SQLite free that memory for us.
+// This drastically reduces copies when passing strings and blobs back and forth between Rust and C.
 #[global_allocator]
 static ALLOCATOR: SQLite3Allocator = SQLite3Allocator {};
 
+// This must be our panic handler for WASM builds. For simplicity, we make it our panic handler for
+// all builds. Abort is also more portable than unwind, enabling us to go to more embedded use cases.
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
-    core::intrinsics::abort()
-}
-
-#[alloc_error_handler]
-fn oom(_: Layout) -> ! {
     core::intrinsics::abort()
 }
 
 #[cfg(not(target_family = "wasm"))]
 #[lang = "eh_personality"]
 extern "C" fn eh_personality() {}
-
-#[cfg(target_family = "wasm")]
-#[no_mangle]
-pub extern "C" fn __rust_alloc(size: usize, align: usize) -> *mut u8 {
-    unsafe { ALLOCATOR.alloc(Layout::from_size_align_unchecked(size, align)) }
-}
-
-#[cfg(target_family = "wasm")]
-#[no_mangle]
-pub extern "C" fn __rust_dealloc(ptr: *mut u8, size: usize, align: usize) {
-    unsafe { ALLOCATOR.dealloc(ptr, Layout::from_size_align_unchecked(size, align)) }
-}
-
-#[cfg(target_family = "wasm")]
-#[no_mangle]
-pub extern "C" fn __rust_realloc(
-    ptr: *mut u8,
-    old_size: usize,
-    align: usize,
-    size: usize,
-) -> *mut u8 {
-    unsafe {
-        ALLOCATOR.realloc(
-            ptr,
-            Layout::from_size_align_unchecked(old_size, align),
-            size,
-        )
-    }
-}
-
-#[cfg(target_family = "wasm")]
-#[no_mangle]
-pub extern "C" fn __rust_alloc_zeroed(size: usize, align: usize) -> *mut u8 {
-    unsafe { ALLOCATOR.alloc_zeroed(Layout::from_size_align_unchecked(size, align)) }
-}
 
 #[cfg(target_family = "wasm")]
 #[no_mangle]

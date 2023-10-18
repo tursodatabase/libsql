@@ -118,8 +118,8 @@ fn create_pend_trigger(
 ) -> Result<ResultCode, ResultCode> {
     let trigger = format!(
         "CREATE TRIGGER IF NOT EXISTS \"__crsql_{table}_fractindex_pend_trig\" AFTER INSERT ON \"{table}\"
-        WHEN NEW.\"{order_by_column}\" = -1 OR NEW.\"{order_by_column}\" = 1 BEGIN
-            UPDATE \"{table}\" SET \"{order_by_column}\" = CASE NEW.\"{order_by_column}\"
+        WHEN CAST(NEW.\"{order_by_column}\" AS INTEGER) = -1 OR CAST(NEW.\"{order_by_column}\" AS INTEGER) = 1 BEGIN
+            UPDATE \"{table}\" SET \"{order_by_column}\" = CASE CAST(NEW.\"{order_by_column}\" AS INTEGER)
             WHEN -1 THEN crsql_fract_key_between(NULL, ({min_select}))
             WHEN 1 THEN crsql_fract_key_between(({max_select}), NULL)
             END

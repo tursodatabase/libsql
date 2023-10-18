@@ -4,44 +4,54 @@
 #include "get-table.h"
 #include "util.h"
 
-crsql_ExtData *crsql_newExtData(sqlite3 *db) {
+void crsql_init_stmt_cache(crsql_ExtData *pExtData);
+void crsql_clear_stmt_cache(crsql_ExtData *pExtData);
+
+crsql_ExtData *crsql_newExtData(sqlite3 *db, unsigned char *siteIdBuffer) {
   crsql_ExtData *pExtData = sqlite3_malloc(sizeof *pExtData);
 
   pExtData->pPragmaSchemaVersionStmt = 0;
   int rc = sqlite3_prepare_v3(db, "PRAGMA schema_version", -1,
                               SQLITE_PREPARE_PERSISTENT,
                               &(pExtData->pPragmaSchemaVersionStmt), 0);
-  if (rc != SQLITE_OK) {
-    sqlite3_finalize(pExtData->pPragmaSchemaVersionStmt);
-    return 0;
-  }
   pExtData->pPragmaDataVersionStmt = 0;
-  rc = sqlite3_prepare_v3(db, "PRAGMA data_version", -1,
-                          SQLITE_PREPARE_PERSISTENT,
-                          &(pExtData->pPragmaDataVersionStmt), 0);
-  if (rc != SQLITE_OK) {
-    sqlite3_finalize(pExtData->pPragmaDataVersionStmt);
-    sqlite3_finalize(pExtData->pPragmaSchemaVersionStmt);
-    return 0;
-  }
+  rc += sqlite3_prepare_v3(db, "PRAGMA data_version", -1,
+                           SQLITE_PREPARE_PERSISTENT,
+                           &(pExtData->pPragmaDataVersionStmt), 0);
+  pExtData->pSetSyncBitStmt = 0;
+  rc += sqlite3_prepare_v3(db, SET_SYNC_BIT, -1, SQLITE_PREPARE_PERSISTENT,
+                           &(pExtData->pSetSyncBitStmt), 0);
+  pExtData->pClearSyncBitStmt = 0;
+  rc += sqlite3_prepare_v3(db, CLEAR_SYNC_BIT, -1, SQLITE_PREPARE_PERSISTENT,
+                           &(pExtData->pClearSyncBitStmt), 0);
 
-  if (rc != SQLITE_OK) {
-    sqlite3_finalize(pExtData->pPragmaDataVersionStmt);
-    sqlite3_finalize(pExtData->pPragmaSchemaVersionStmt);
-    return 0;
-  }
+  pExtData->pSetSiteIdOrdinalStmt = 0;
+  rc += sqlite3_prepare_v3(
+      db, "INSERT INTO crsql_site_id (site_id) VALUES (?) RETURNING ordinal",
+      -1, SQLITE_PREPARE_PERSISTENT, &(pExtData->pSetSiteIdOrdinalStmt), 0);
+
+  pExtData->pSelectSiteIdOrdinalStmt = 0;
+  rc += sqlite3_prepare_v3(
+      db, "SELECT ordinal FROM crsql_site_id WHERE site_id = ?", -1,
+      SQLITE_PREPARE_PERSISTENT, &(pExtData->pSelectSiteIdOrdinalStmt), 0);
 
   pExtData->dbVersion = -1;
+  pExtData->pendingDbVersion = -1;
+  pExtData->seq = 0;
   pExtData->pragmaSchemaVersion = -1;
   pExtData->pragmaDataVersion = -1;
   pExtData->pragmaSchemaVersionForTableInfos = -1;
-  pExtData->siteId = sqlite3_malloc(SITE_ID_LEN * sizeof *(pExtData->siteId));
+  pExtData->siteId = siteIdBuffer;
   pExtData->pDbVersionStmt = 0;
   pExtData->zpTableInfos = 0;
   pExtData->tableInfosLen = 0;
+  pExtData->rowsImpacted = 0;
+  pExtData->pStmtCache = 0;
+  crsql_init_stmt_cache(pExtData);
 
-  rc = crsql_fetchPragmaDataVersion(db, pExtData);
-  if (rc == -1) {
+  int pv = crsql_fetchPragmaDataVersion(db, pExtData);
+  if (pv == -1 || rc != SQLITE_OK) {
+    crsql_freeExtData(pExtData);
     return 0;
   }
 
@@ -53,7 +63,12 @@ void crsql_freeExtData(crsql_ExtData *pExtData) {
   sqlite3_finalize(pExtData->pDbVersionStmt);
   sqlite3_finalize(pExtData->pPragmaSchemaVersionStmt);
   sqlite3_finalize(pExtData->pPragmaDataVersionStmt);
+  sqlite3_finalize(pExtData->pSetSyncBitStmt);
+  sqlite3_finalize(pExtData->pClearSyncBitStmt);
+  sqlite3_finalize(pExtData->pSetSiteIdOrdinalStmt);
+  sqlite3_finalize(pExtData->pSelectSiteIdOrdinalStmt);
   crsql_freeAllTableInfos(pExtData->zpTableInfos, pExtData->tableInfosLen);
+  crsql_clear_stmt_cache(pExtData);
   sqlite3_free(pExtData);
 }
 
@@ -66,9 +81,18 @@ void crsql_finalize(crsql_ExtData *pExtData) {
   sqlite3_finalize(pExtData->pDbVersionStmt);
   sqlite3_finalize(pExtData->pPragmaSchemaVersionStmt);
   sqlite3_finalize(pExtData->pPragmaDataVersionStmt);
+  sqlite3_finalize(pExtData->pSetSyncBitStmt);
+  sqlite3_finalize(pExtData->pClearSyncBitStmt);
+  sqlite3_finalize(pExtData->pSetSiteIdOrdinalStmt);
+  sqlite3_finalize(pExtData->pSelectSiteIdOrdinalStmt);
+  crsql_clear_stmt_cache(pExtData);
   pExtData->pDbVersionStmt = 0;
   pExtData->pPragmaSchemaVersionStmt = 0;
   pExtData->pPragmaDataVersionStmt = 0;
+  pExtData->pSetSyncBitStmt = 0;
+  pExtData->pClearSyncBitStmt = 0;
+  pExtData->pSetSiteIdOrdinalStmt = 0;
+  pExtData->pSelectSiteIdOrdinalStmt = 0;
 }
 
 #define DB_VERSION_SCHEMA_VERSION 0
@@ -221,7 +245,7 @@ int crsql_fetchDbVersionFromStorage(sqlite3 *db, crsql_ExtData *pExtData,
 }
 
 /**
- * This will return the db version if it exists in `pExtData`
+ * This fills the dbVersion into `pExtData` if it is not already cached there
  *
  * If it does not exist there, it will fetch the current db version
  * from the database.
@@ -231,11 +255,12 @@ int crsql_fetchDbVersionFromStorage(sqlite3 *db, crsql_ExtData *pExtData,
 int crsql_getDbVersion(sqlite3 *db, crsql_ExtData *pExtData, char **errmsg) {
   int rc = SQLITE_OK;
 
-  // version is cached. We clear the cached version
-  // at the end of each transaction so it is safe to return this
-  // without checking the schema version.
-  // It is an error to use crsqlite in such a way that you modify
-  // a schema and fetch changes in the same transaction.
+  // Version is cached. We update the cached version at the end of every
+  // transaction to match what is written to disk. The cache is only invalid if
+  // another connection also made writes. We detect this via `pragmaDataVersion`
+  // and force a re-fetch of the db version when `pragmaDataVersion` changes. It
+  // is an error to use crsqlite in such a way that you modify a schema and
+  // fetch changes in the same transaction.
   rc = crsql_fetchPragmaDataVersion(db, pExtData);
   if (rc == -1) {
     *errmsg = sqlite3_mprintf("failed to fetch PRAGMA data_version");

@@ -2,3 +2,6 @@ node_modules/
 target/
 dist/
 dbg/
+dist-ios/
+dist-ios-sim/
+dist-macos/
