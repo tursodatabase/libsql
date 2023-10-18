@@ -7,10 +7,6 @@ const SQLITE_DIR: &str = "../../../libsql-sqlite3";
 const LIB_NAME: &str = "libsql";
 
 fn run_make() {
-    if Path::new(SQLITE_DIR).join("sqlite3.c").exists() {
-        return;
-    }
-
     Command::new("./configure")
         .current_dir(SQLITE_DIR)
         .output()
