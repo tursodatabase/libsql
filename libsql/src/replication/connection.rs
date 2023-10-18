@@ -251,7 +251,13 @@ impl Conn for RemoteConnection {
                 self.update_state(&row);
                 row.affected_row_count
             }
-            Some(RowResult::Error(e)) => return Err(Error::RemoteSqliteFailure(e.code, e.message)),
+            Some(RowResult::Error(e)) => {
+                return Err(Error::RemoteSqliteFailure(
+                    e.code,
+                    e.extended_code,
+                    e.message,
+                ))
+            }
             None => panic!("unexpected empty result row"),
         };
 
@@ -275,7 +281,11 @@ impl Conn for RemoteConnection {
             match result.row_result {
                 Some(RowResult::Row(row)) => self.update_state(&row),
                 Some(RowResult::Error(e)) => {
-                    return Err(Error::RemoteSqliteFailure(e.code, e.message))
+                    return Err(Error::RemoteSqliteFailure(
+                        e.code,
+                        e.extended_code,
+                        e.message,
+                    ))
                 }
                 None => panic!("unexpected empty result row"),
             };
@@ -451,7 +461,13 @@ impl Stmt for RemoteStatement {
                 self.conn.update_state(&row);
                 row.affected_row_count
             }
-            Some(RowResult::Error(e)) => return Err(Error::RemoteSqliteFailure(e.code, e.message)),
+            Some(RowResult::Error(e)) => {
+                return Err(Error::RemoteSqliteFailure(
+                    e.code,
+                    e.extended_code,
+                    e.message,
+                ))
+            }
             None => panic!("unexpected empty result row"),
         };
 
@@ -479,7 +495,13 @@ impl Stmt for RemoteStatement {
                 self.conn.update_state(&row);
                 row
             }
-            Some(RowResult::Error(e)) => return Err(Error::RemoteSqliteFailure(e.code, e.message)),
+            Some(RowResult::Error(e)) => {
+                return Err(Error::RemoteSqliteFailure(
+                    e.code,
+                    e.extended_code,
+                    e.message,
+                ))
+            }
             None => panic!("unexpected empty result row"),
         };
 
