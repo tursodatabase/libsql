@@ -6723,7 +6723,11 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
             pItem->pFunc = sqlite3FindFunction(pParse->db,
                                          pExpr->u.zToken, nArg, enc, 0);
             assert( pItem->bOBUnique==0 );
-            if( pExpr->pLeft ){
+            if( pExpr->pLeft
+             && (pItem->pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL)==0
+            ){
+              /* The NEEDCOLL test above causes any ORDER BY clause on
+              ** aggregate min() or max() to be ignored. */
               ExprList *pOBList;
               assert( nArg>0 );
               assert( pExpr->pLeft->op==TK_ORDER );
