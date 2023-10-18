@@ -10,7 +10,7 @@ on:
 jobs:
   maketestwasm:
 
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "Linux"]
     defaults:
       run:
         working-directory: libsql-sqlite3

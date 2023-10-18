@@ -1859,7 +1859,7 @@ mod test {
     #[test]
     fn test_from_handle_owned() -> Result<()> {
         let mut handle: *mut ffi::sqlite3 = std::ptr::null_mut();
-        let r = unsafe { ffi::sqlite3_open(":memory:\0".as_ptr() as *const i8, &mut handle) };
+        let r = unsafe { ffi::sqlite3_open(":memory:\0".as_ptr() as *const c_char, &mut handle) };
         assert_eq!(r, ffi::SQLITE_OK);
         let db = unsafe { Connection::from_handle_owned(handle) }?;
         db.execute_batch("PRAGMA VACUUM")?;

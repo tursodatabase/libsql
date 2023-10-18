@@ -10,7 +10,7 @@ on:
 jobs:
   golang-bindings:
 
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "Linux"]
 
     steps:
     - uses: actions/checkout@v3

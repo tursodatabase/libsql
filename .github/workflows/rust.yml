@@ -12,7 +12,7 @@ env:
 
 jobs:
   checks:
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "Linux"]
     name: Run Checks
     env:
       RUSTFLAGS: -D warnings
@@ -64,7 +64,7 @@ jobs:
 
   features:
     name: Check features and unused dependencies
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "Linux"]
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@nightly
@@ -74,7 +74,7 @@ jobs:
       - run: cargo +nightly hack udeps -p libsql --each-feature
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "Linux"]
     name: Run Tests
     env:
       RUSTFLAGS: -D warnings

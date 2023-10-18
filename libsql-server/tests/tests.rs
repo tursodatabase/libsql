@@ -1,4 +1,3 @@
-#![cfg(feature = "sim-tests")]
 #![allow(clippy::disallowed_names)]
 
 mod cluster;

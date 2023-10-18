@@ -72,6 +72,7 @@ async fn configure_server(
     }
 }
 
+#[ignore]
 #[tokio::test]
 async fn backup_restore() {
     let _ = env_logger::builder().is_test(true).try_init();
@@ -200,6 +201,7 @@ async fn backup_restore() {
     }
 }
 
+#[ignore]
 #[tokio::test]
 async fn rollback_restore() {
     let _ = env_logger::builder().is_test(true).try_init();

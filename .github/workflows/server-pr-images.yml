@@ -11,7 +11,7 @@ env:
 jobs:
   # docker image build and upload to ghcr
   build-and-push-image:
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "Linux"]
     permissions:
       contents: read
       packages: write
