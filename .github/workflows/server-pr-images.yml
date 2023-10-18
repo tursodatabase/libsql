@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-devel
+  IMAGE_NAME: libsql-server-devel
 
 jobs:
   # docker image build and upload to ghcr
