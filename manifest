@@ -1,5 +1,5 @@
-C Deal\swith\san\sOOM\scondition\swhile\sprocessing\saggregate\sORDER\sBYs.
-D 2023-10-18T22:27:59.265
+C Test\scase\sfor\salter\scolumn\sthat\sis\sused\sin\sthe\sORDER\sBY\sof\san\saggregate.
+D 2023-10-18T22:53:22.341
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -823,7 +823,7 @@ F test/alter3.test ffc4ab29ce78a3517a66afd69b2730667e3471622509c283b2bd4c46f680f
 F test/alter4.test 716caa071dd8a3c6d57225778d15d3c3cbf5e34b2e84ae44199aeb2bbf50a707
 F test/alterauth.test 63442ba61ceb0c1eeb63aac1f4f5cebfa509d352276059d27106ae256bafc959
 F test/alterauth2.test 48967abae0494d9a300d1c92473d99fcb66edfcc23579c89322f033f49410adc
-F test/altercol.test 8465ca659c2c55a359cf16cc261df4fcb5c45a5f104a50827c337ae66c09dc15
+F test/altercol.test 29fed774747777fbbaacdd865b4413ed2d0844a4c824f8af531b5c7d4a832087
 F test/altercorrupt.test 2e1d705342cf9d7de884518ddbb053fd52d7e60d2b8869b7b63b2fda68435c12
 F test/alterdropcol.test a653a3945f964d26845ec0cd0a8e74189f46de3119a984c5bc45457da392612e
 F test/alterdropcol2.test 527fce683b200d620f560f666c44ae33e22728e990a10a48a543280dfd4b4d41
@@ -2133,8 +2133,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 16f3805514a741405f70e0ee3b5a6b67720bc75719372e82daa4136fe411ea2b
-R 6802737776ac151bb19cf65ccd4a04fb
+P b6d44427ec0184880ad14919667e2f526777c5085ffa636f6734cb5951a31225
+R bfd41b51d8c40e8811533ae7ac911f64
 U drh
-Z 63e8f8ba6a775006c8b7c4fe41a1d182
+Z bf6fd600101e04b72e58dadb7f157c54
 # Remove this line to create a well-formed Fossil manifest.
