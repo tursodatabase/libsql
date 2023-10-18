@@ -6687,7 +6687,7 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
     ExprList *pList;
     assert( ExprUseXList(pF->pFExpr) );
     pList = pF->pFExpr->x.pList;
-    if( pF->iOBTab ){
+    if( pF->iOBTab>=0 ){
       /* For an ORDER BY aggregate, calls to OP_AggStep where deferred and
       ** all content was stored in emphermal table pF->iOBTab.  Extract that
       ** content now (in ORDER BY order) and make all calls to OP_AggStep
