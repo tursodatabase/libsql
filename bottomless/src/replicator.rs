@@ -179,7 +179,7 @@ impl Options {
         let restore_transaction_cache_fpath =
             env_var_or("LIBSQL_BOTTOMLESS_RESTORE_TXN_FILE", ".bottomless.restore");
         let use_compression =
-            CompressionKind::parse(&env_var_or("LIBSQL_BOTTOMLESS_COMPRESSION", "gz"))
+            CompressionKind::parse(&env_var_or("LIBSQL_BOTTOMLESS_COMPRESSION", "zstd"))
                 .map_err(|e| anyhow!("unknown compression kind: {}", e))?;
         let verify_crc = match env_var_or("LIBSQL_BOTTOMLESS_VERIFY_CRC", true)
             .to_lowercase()
