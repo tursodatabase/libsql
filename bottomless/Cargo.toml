@@ -1,0 +1,33 @@
+[package]
+name = "bottomless"
+version = "0.1.18"
+edition = "2021"
+license = "MIT"
+keywords = ["libsql", "sqlite", "s3", "wal", "replication"]
+repository = "https://github.com/libsql/sqld"
+readme = "bottomless/README.md"
+description = "Bottomless replication for libSQL"
+
+[dependencies]
+anyhow = "1.0.66"
+async-compression = { version = "0.4.4", features = ["tokio", "gzip", "zstd"] }
+aws-config = { version = "0.55" }
+aws-sdk-s3 = { version = "0.28" }
+bytes = "1"
+crc = "3.0.0"
+futures = { version = "0.3.25" }
+sqld-libsql-bindings = { version = "0", path = "../libsql-sys-tmp" }
+tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs"] }
+tokio-util = "0.7"
+tracing = "0.1.37"
+tracing-subscriber = "0.3.16"
+arc-swap = "1.6"
+chrono = "0.4.23"
+uuid = "1.4.1"
+rand = "0.8.5"
+
+[features]
+libsql_linked_statically = []
+
+[lib]
+crate-type = ["rlib", "staticlib"]

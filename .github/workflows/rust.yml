@@ -53,11 +53,13 @@ jobs:
         shell: bash {0}
         run: cargo tree -p sqld -i openssl; [ $? = 101 ]
 
-      - name: Clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-targets --all-features -- -D warnings
+      # Disabled because we vendor rusqlite which does not use
+      # clippy so it warns.
+      # - name: Clippy
+      #   uses: actions-rs/clippy-check@v1
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     args: --all-targets --all-features -- -D warnings
 
 
   features:
@@ -69,25 +71,25 @@ jobs:
       - uses: taiki-e/install-action@cargo-hack
       - uses: taiki-e/install-action@cargo-udeps
       - uses: Swatinem/rust-cache@v2
-      - run: cargo hack udeps --workspace --each-feature ${{ matrix.option }}
+      - run: cargo +nightly hack udeps -p libsql --each-feature
 
   test:
     runs-on: ubuntu-latest
     name: Run Tests
     env:
       RUSTFLAGS: -D warnings
-    # services:
-    #   minio:
-    #     image: lazybit/minio
-    #     ports:
-    #       - 9000:9000
-    #       - 9090:9090
-    #     env:
-    #       MINIO_ACCESS_KEY: minioadmin
-    #       MINIO_SECRET_KEY: minioadmin
-    #     volumes:
-    #       - /data
-    #     options: --name=minio --health-cmd "curl http://localhost:9000/minio/health/live"
+    services:
+      minio:
+        image: lazybit/minio
+        ports:
+          - 9000:9000
+          - 9090:9090
+        env:
+          MINIO_ACCESS_KEY: minioadmin
+          MINIO_SECRET_KEY: minioadmin
+        volumes:
+          - /data
+        options: --name=minio --health-cmd "curl http://localhost:9000/minio/health/live"
     steps:
     - uses: hecrj/setup-rust-action@v1
 
@@ -111,9 +113,9 @@ jobs:
       with:
         command: test
         args: --verbose
-      # env:
-      #   LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID: minioadmin
-      #   LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY: minioadmin
-      #   LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION: eu-central-2
-      #   LIBSQL_BOTTOMLESS_BUCKET: bottomless
-      #   LIBSQL_BOTTOMLESS_ENDPOINT: http://localhost:9000
+      env:
+        LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID: minioadmin
+        LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY: minioadmin
+        LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION: eu-central-2
+        LIBSQL_BOTTOMLESS_BUCKET: bottomless
+        LIBSQL_BOTTOMLESS_ENDPOINT: http://localhost:9000
