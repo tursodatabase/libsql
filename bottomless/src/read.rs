@@ -1,7 +1,7 @@
 use crate::replicator::CompressionKind;
 use crate::wal::WalFrameHeader;
 use anyhow::Result;
-use async_compression::tokio::bufread::GzipDecoder;
+use async_compression::tokio::bufread::{GzipDecoder, ZstdDecoder};
 use aws_sdk_s3::primitives::ByteStream;
 use std::io::ErrorKind;
 use std::pin::Pin;
@@ -31,6 +31,10 @@ impl BatchReader {
                 CompressionKind::Gzip => {
                     let gzip = GzipDecoder::new(reader);
                     Box::pin(gzip)
+                }
+                CompressionKind::Zstd => {
+                    let zstd = ZstdDecoder::new(reader);
+                    Box::pin(zstd)
                 }
             },
         }
