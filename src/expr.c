@@ -4336,7 +4336,7 @@ expr_code_doover:
 #ifdef SQLITE_VDBE_COVERAGE
         /* Verify that the OP_Null above is exercised by tests
         ** tag-20230325-2 */
-        sqlite3VdbeAddOp2(v, OP_NotNull, target, 1);
+        sqlite3VdbeAddOp3(v, OP_NotNull, target, 1, 20230325);
         VdbeCoverageNeverTaken(v);
 #endif
         break;

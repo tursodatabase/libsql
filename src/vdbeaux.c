@@ -1002,6 +1002,10 @@ void sqlite3VdbeNoJumpsOutsideSubrtn(
       int iDest = pOp->p2;   /* Jump destination */
       if( iDest==0 ) continue;
       if( pOp->opcode==OP_Gosub ) continue;
+      if( pOp->p3==20230325 && pOp->opcode==OP_NotNull ){
+        /* This is a deliberately taken illegal branch.  tag-20230325-2 */
+        continue;
+      }
       if( iDest<0 ){
         int j = ADDR(iDest);
         assert( j>=0 );
