@@ -9,6 +9,7 @@ use alloc::string::ToString;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::ffi::{c_char, c_int};
+use core::mem;
 use core::slice;
 use sqlite::ColumnType;
 use sqlite_nostd as sqlite;
@@ -34,15 +35,19 @@ pub extern "C" fn crsql_automigrate(
     argc: c_int,
     argv: *mut *mut sqlite::value,
 ) {
-    if argc != 1 {
-        ctx.result_error("Expected a single argument -- the schema string of create table statements to migrate to");
+    if argc < 1 {
+        ctx.result_error("Had no args. Expected a schema to migrate to");
         return;
     }
 
     let args = args!(argc, argv);
     if let Err(code) = automigrate_impl(ctx, args) {
-        ctx.result_error("failed to apply the updated schema");
-        ctx.result_error_code(code);
+        // We're using `Err(OK)` to signify that error message and code were already set.
+        if code != ResultCode::OK {
+            ctx.result_error(&format!("failed to apply the updated schema {:?}", code));
+            ctx.result_error_code(code);
+        }
+
         return;
     }
 
@@ -53,6 +58,14 @@ fn automigrate_impl(
     ctx: *mut sqlite::context,
     args: &[*mut sqlite::value],
 ) -> Result<ResultCode, ResultCode> {
+    let cleanup = |mem_db: ManagedConnection| {
+        if args.len() == 2 {
+            let cleanup_stmt = args[1].text();
+            mem_db.exec_safe(cleanup_stmt)
+        } else {
+            Ok(ResultCode::OK)
+        }
+    };
     let local_db = ctx.db_handle();
     let desired_schema = args[0].text();
     let stripped_schema = strip_crr_statements(desired_schema);
@@ -60,33 +73,43 @@ fn automigrate_impl(
     let result = sqlite::open(strlit!(":memory:"));
     if let Ok(mem_db) = result {
         if let Err(_) = mem_db.exec_safe(&stripped_schema) {
-            return Err(ResultCode::SCHEMA);
+            let mem_db_err_msg = mem_db.errmsg()?;
+            ctx.result_error(&mem_db_err_msg);
+            ctx.result_error_code(mem_db.errcode());
+            cleanup(mem_db)?;
+            return Err(ResultCode::OK);
         }
         local_db.exec_safe("SAVEPOINT automigrate_tables;")?;
-        if let Err(_) = migrate_to(local_db, mem_db) {
+
+        let migrate_result = migrate_to(local_db, &mem_db);
+
+        if let Err(_) = migrate_result {
             local_db.exec_safe("ROLLBACK TO automigrate_tables")?;
-            return Err(ResultCode::MISMATCH);
+            let mem_db_err_msg = mem_db.errmsg()?;
+            ctx.result_error(&mem_db_err_msg);
+            ctx.result_error_code(mem_db.errcode());
+            cleanup(mem_db)?;
+            return Err(ResultCode::OK);
+        } else {
+            cleanup(mem_db)?;
         }
-        // wait wait. This need not be done.
-        // We will run the schema against the local_db post migration.
-        // To pull in:
-        // - crr application
-        // - new index creation
-        // - new table creation
-        // - anything extra the user did like trigger creation
-        //
-        // In this way we simplify this automigrate code.
-        // The user's schema thus must then be idemptotent via `IF NOT EXISTS` statements.
+
         if !desired_schema.is_empty() {
             local_db.exec_safe(desired_schema)?;
         }
         local_db.exec_safe("RELEASE automigrate_tables")
     } else {
-        return Err(ResultCode::CANTOPEN);
+        ctx.result_error("could not open the temporary migration db");
+        ctx.result_error_code(ResultCode::CANTOPEN);
+        return Err(ResultCode::OK);
     }
 }
 
-fn migrate_to(local_db: *mut sqlite3, mem_db: ManagedConnection) -> Result<ResultCode, ResultCode> {
+fn migrate_to(
+    local_db: *mut sqlite3,
+    mem_db: &ManagedConnection,
+) -> Result<ResultCode, ResultCode> {
+    // TODO: why not HashSet?
     let mut mem_tables: BTreeSet<String> = BTreeSet::new();
 
     let sql = "SELECT name FROM sqlite_master WHERE type = 'table'
@@ -137,7 +160,10 @@ fn migrate_to(local_db: *mut sqlite3, mem_db: ManagedConnection) -> Result<Resul
 fn strip_crr_statements(schema: &str) -> String {
     schema
         .split("\n")
-        .filter(|line| !line.to_lowercase().contains("crsql_as_crr"))
+        .filter(|line| {
+            !line.to_lowercase().contains("crsql_as_crr")
+                && !line.to_lowercase().contains("crsql_fract_as_ordered")
+        })
         .collect::<Vec<_>>()
         .join("\n")
 }
@@ -146,7 +172,7 @@ fn drop_tables(local_db: *mut sqlite3, tables: Vec<String>) -> Result<ResultCode
     for table in tables {
         local_db.exec_safe(&format!(
             "DROP TABLE \"{table}\"",
-            table = crate::escape_ident(&table)
+            table = crate::util::escape_ident(&table)
         ))?;
     }
 
@@ -214,11 +240,15 @@ fn drop_columns(
     table: &str,
     columns: Vec<String>,
 ) -> Result<ResultCode, ResultCode> {
+    local_db.exec_safe(&format!(
+        "DROP VIEW IF EXISTS \"{table}_fractindex\"",
+        table = crate::util::escape_ident(table)
+    ))?;
     for col in columns {
         local_db.exec_safe(&format!(
             "ALTER TABLE \"{table}\" DROP \"{column}\"",
-            table = crate::escape_ident(table),
-            column = crate::escape_ident(&col)
+            table = crate::util::escape_ident(table),
+            column = crate::util::escape_ident(&col)
         ))?;
     }
 
@@ -289,8 +319,8 @@ fn add_column(
 
     local_db.exec_safe(&format!(
         "ALTER TABLE \"{table}\" ADD COLUMN \"{name}\" {col_type} {notnull} {dflt}",
-        table = crate::escape_ident(table),
-        name = crate::escape_ident(name),
+        table = crate::util::escape_ident(table),
+        name = crate::util::escape_ident(name),
         col_type = col_type,
         notnull = if notnull { "NOT NULL " } else { "" },
         dflt = dflt_val_str
@@ -347,7 +377,10 @@ fn drop_indices(local_db: *mut sqlite3, dropped: &Vec<String>) -> Result<ResultC
     // drop if exists given column dropping could have destroyed the index
     // already.
     for idx in dropped {
-        let sql = format!("DROP INDEX IF EXISTS \"{}\"", crate::escape_ident(&idx));
+        let sql = format!(
+            "DROP INDEX IF EXISTS \"{}\"",
+            crate::util::escape_ident(&idx)
+        );
         if let Err(e) = local_db.exec_safe(&sql) {
             return Err(e);
         }
@@ -386,7 +419,7 @@ fn maybe_recreate_index(
         // drop to finalize those statements
         drop(fetch_is_unique_mem);
         drop(fetch_is_unique_local);
-        return recreate_index(local_db, table, idx, mem_db);
+        return recreate_index(local_db, idx);
     }
 
     let fetch_idx_cols_mem = mem_db.prepare_v2(IDX_COLS_SQL)?;
@@ -400,25 +433,20 @@ fn maybe_recreate_index(
             // drop to finalize those statements
             drop(fetch_idx_cols_local);
             drop(fetch_idx_cols_mem);
-            return recreate_index(local_db, table, idx, mem_db);
+            return recreate_index(local_db, idx);
         }
         fetch_idx_cols_mem.step()?;
         fetch_idx_cols_local.step()?;
     }
 
     if mem_result != local_result {
-        return recreate_index(local_db, table, idx, mem_db);
+        return recreate_index(local_db, idx);
     }
 
     Ok(ResultCode::OK)
 }
 
-fn recreate_index(
-    local_db: *mut sqlite3,
-    table: &str,
-    idx: &str,
-    mem_db: &ManagedConnection,
-) -> Result<ResultCode, ResultCode> {
+fn recreate_index(local_db: *mut sqlite3, idx: &str) -> Result<ResultCode, ResultCode> {
     let indices = vec![idx.to_string()];
     drop_indices(local_db, &indices)?;
     // no need to call add_indices

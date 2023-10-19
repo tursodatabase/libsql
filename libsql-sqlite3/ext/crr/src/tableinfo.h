@@ -7,6 +7,9 @@ SQLITE_EXTENSION_INIT3
 #include <ctype.h>
 #include <stddef.h>
 
+// 10 trillion = 10,000,000,000,000
+#define ROWID_SLAB_SIZE 10000000000000
+
 typedef struct crsql_ColumnInfo crsql_ColumnInfo;
 struct crsql_ColumnInfo {
   int cid;
@@ -37,19 +40,18 @@ crsql_ColumnInfo *crsql_extractBaseCols(crsql_ColumnInfo *colInfos,
 void crsql_freeColumnInfoContents(crsql_ColumnInfo *columnInfo);
 void crsql_freeTableInfo(crsql_TableInfo *tableInfo);
 
+// TODO: this should be pullTableInfo
 int crsql_getTableInfo(sqlite3 *db, const char *tblName,
                        crsql_TableInfo **pTableInfo, char **pErrMsg);
-
-char *crsql_asIdentifierList(crsql_ColumnInfo *in, size_t inlen, char *prefix);
 
 void crsql_freeAllTableInfos(crsql_TableInfo **tableInfos, int len);
 crsql_TableInfo *crsql_findTableInfo(crsql_TableInfo **tblInfos, int len,
                                      const char *tblName);
-char *crsql_quoteConcat(crsql_ColumnInfo *cols, int len);
+int crsql_indexofTableInfo(crsql_TableInfo **tblInfos, int len,
+                           const char *tblName);
+sqlite3_int64 crsql_slabRowid(int idx, sqlite3_int64 rowid);
 int crsql_pullAllTableInfos(sqlite3 *db, crsql_TableInfo ***pzpTableInfos,
                             int *rTableInfosLen, char **errmsg);
 int crsql_isTableCompatible(sqlite3 *db, const char *tblName, char **errmsg);
-int crsql_columnExists(const char *colName, crsql_ColumnInfo *colInfos,
-                       int colInfosLen);
 
 #endif

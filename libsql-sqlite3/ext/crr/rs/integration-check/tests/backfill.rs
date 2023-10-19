@@ -68,14 +68,14 @@ fn new_nonempty_table_impl(apply_twice: bool) -> Result<(), ResultCode> {
         "SELECT [table], [pk], [cid], [val], [col_version], [db_version] FROM crsql_changes;",
     )?;
     let mut cnt = 0;
-    while stmt.step()? == ResultCode::ROW {
+    while stmt.step().unwrap() == ResultCode::ROW {
         cnt = cnt + 1;
         if cnt == 1 {
-            assert_eq!(stmt.column_text(1)?, "1"); // pk
-            assert_eq!(stmt.column_text(3)?, "'one'"); // col value
+            assert_eq!(stmt.column_blob(1)?, [1, 9, 1]); // pk
+            assert_eq!(stmt.column_text(3)?, "one"); // col value
         } else {
-            assert_eq!(stmt.column_text(1)?, "2"); // pk
-            assert_eq!(stmt.column_text(3)?, "'two'"); // col value
+            assert_eq!(stmt.column_blob(1)?, [1, 9, 2]); // pk
+            assert_eq!(stmt.column_text(3)?, "two"); // col value
         }
         assert_eq!(stmt.column_text(0)?, "foo"); // table name
         assert_eq!(stmt.column_text(2)?, "name"); // col name

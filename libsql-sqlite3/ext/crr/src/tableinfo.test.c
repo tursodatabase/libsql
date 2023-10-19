@@ -76,34 +76,34 @@ static void testGetTableInfo() {
   crsql_close(db);
 }
 
-static void testAsIdentifierList() {
-  printf("AsIdentifierList\n");
+// static void testAsIdentifierList() {
+//   printf("AsIdentifierList\n");
 
-  crsql_ColumnInfo tc1[3];
-  tc1[0].name = "one";
-  tc1[1].name = "two";
-  tc1[2].name = "three";
+//   crsql_ColumnInfo tc1[3];
+//   tc1[0].name = "one";
+//   tc1[1].name = "two";
+//   tc1[2].name = "three";
 
-  crsql_ColumnInfo tc2[0];
+//   crsql_ColumnInfo tc2[0];
 
-  crsql_ColumnInfo tc3[1];
-  tc3[0].name = "one";
-  char *result;
+//   crsql_ColumnInfo tc3[1];
+//   tc3[0].name = "one";
+//   char *result;
 
-  result = crsql_asIdentifierList(tc1, 3, 0);
-  assert(strcmp(result, "\"one\",\"two\",\"three\"") == 0);
-  sqlite3_free(result);
+//   result = crsql_asIdentifierList(tc1, 3, 0);
+//   assert(strcmp(result, "\"one\",\"two\",\"three\"") == 0);
+//   sqlite3_free(result);
 
-  result = crsql_asIdentifierList(tc2, 0, 0);
-  assert(result == 0);
-  sqlite3_free(result);
+//   result = crsql_asIdentifierList(tc2, 0, 0);
+//   assert(result == 0);
+//   sqlite3_free(result);
 
-  result = crsql_asIdentifierList(tc3, 1, 0);
-  assert(strcmp(result, "\"one\"") == 0);
-  sqlite3_free(result);
+//   result = crsql_asIdentifierList(tc3, 1, 0);
+//   assert(strcmp(result, "\"one\"") == 0);
+//   sqlite3_free(result);
 
-  printf("\t\e[0;32mSuccess\e[0m\n");
-}
+//   printf("\t\e[0;32mSuccess\e[0m\n");
+// }
 
 static void testFindTableInfo() {
   printf("FindTableInfo\n");
@@ -125,26 +125,6 @@ static void testFindTableInfo() {
   }
   sqlite3_free(tblInfos);
 
-  printf("\t\e[0;32mSuccess\e[0m\n");
-}
-
-static void testQuoteConcat() {
-  printf("QuoteConcat\n");
-
-  int len = 3;
-  crsql_ColumnInfo colInfos[3];
-
-  colInfos[0].name = "a";
-  colInfos[1].name = "b";
-  colInfos[2].name = "c";
-
-  char *quoted = crsql_quoteConcat(colInfos, len);
-
-  assert(strcmp(quoted,
-                "quote(\"a\") || '|' || quote(\"b\") || '|' || quote(\"c\")") ==
-         0);
-
-  sqlite3_free(quoted);
   printf("\t\e[0;32mSuccess\e[0m\n");
 }
 
@@ -215,6 +195,20 @@ static void testIsTableCompatible() {
   rc = crsql_isTableCompatible(db, "atable", &errmsg);
   assert(rc == 1);
 
+  // no autoincrement
+  rc = sqlite3_exec(
+      db, "CREATE TABLE woom (a integer primary key autoincrement)", 0, 0, 0);
+  assert(rc == SQLITE_OK);
+  rc = crsql_isTableCompatible(db, "woom", &errmsg);
+  assert(rc == 0);
+  sqlite3_free(errmsg);
+
+  // aliased rowid
+  rc = sqlite3_exec(db, "CREATE TABLE loom (a integer primary key)", 0, 0, 0);
+  assert(rc == SQLITE_OK);
+  rc = crsql_isTableCompatible(db, "loom", &errmsg);
+  assert(rc == 1);
+
   rc = sqlite3_exec(
       db, "CREATE TABLE atable2 (\"id\" TEXT PRIMARY KEY, x TEXT) STRICT;", 0,
       0, 0);
@@ -238,13 +232,64 @@ static void testIsTableCompatible() {
   crsql_close(db);
 }
 
+static void testSlabRowid() {
+  printf("SlabRowid\n");
+  sqlite3 *db = 0;
+  char *errmsg = 0;
+  int rc = SQLITE_OK;
+
+  rc = sqlite3_open(":memory:", &db);
+  rc += sqlite3_exec(db, "CREATE TABLE foo (a PRIMARY KEY)", 0, 0, 0);
+  rc += sqlite3_exec(db, "CREATE TABLE bar (a PRIMARY KEY)", 0, 0, 0);
+  rc += sqlite3_exec(db, "CREATE TABLE baz (a PRIMARY KEY)", 0, 0, 0);
+  assert(rc == SQLITE_OK);
+
+  rc += sqlite3_exec(db, "SELECT crsql_as_crr('foo');", 0, 0, 0);
+  rc += sqlite3_exec(db, "SELECT crsql_as_crr('bar');", 0, 0, 0);
+  rc += sqlite3_exec(db, "SELECT crsql_as_crr('baz');", 0, 0, 0);
+  assert(rc == SQLITE_OK);
+
+  // now pull all table infos
+  crsql_TableInfo **tblInfos = 0;
+  int tblInfosLen = 0;
+  rc = crsql_pullAllTableInfos(db, &tblInfos, &tblInfosLen, &errmsg);
+  assert(rc == SQLITE_OK);
+
+  // now get the slab rowid for each table
+  sqlite3_int64 fooSlabRowid = crsql_slabRowid(0, 1);
+  sqlite3_int64 barSlabRowid = crsql_slabRowid(1, 2);
+  sqlite3_int64 bazSlabRowid = crsql_slabRowid(2, 3);
+
+  // now assert each one
+  assert(fooSlabRowid == 1);
+  assert(barSlabRowid == 2 + ROWID_SLAB_SIZE);
+  assert(bazSlabRowid == 3 + ROWID_SLAB_SIZE * 2);
+
+  // now test the modulo
+  assert(crsql_slabRowid(0, ROWID_SLAB_SIZE) == 0);
+  assert(crsql_slabRowid(0, ROWID_SLAB_SIZE + 1) == 1);
+
+  fooSlabRowid = crsql_slabRowid(0, ROWID_SLAB_SIZE + 1);
+  barSlabRowid = crsql_slabRowid(1, ROWID_SLAB_SIZE + 2);
+  bazSlabRowid = crsql_slabRowid(2, ROWID_SLAB_SIZE * 2 + 3);
+
+  assert(fooSlabRowid == 1);
+  assert(barSlabRowid == 2 + ROWID_SLAB_SIZE);
+  assert(bazSlabRowid == 3 + ROWID_SLAB_SIZE * 2);
+
+  crsql_freeAllTableInfos(tblInfos, tblInfosLen);
+
+  crsql_close(db);
+  printf("\t\e[0;32mSuccess\e[0m\n");
+}
+
 void crsqlTableInfoTestSuite() {
   printf("\e[47m\e[1;30mSuite: crsql_tableInfo\e[0m\n");
 
-  testAsIdentifierList();
+  // testAsIdentifierList();
   testGetTableInfo();
   testFindTableInfo();
-  testQuoteConcat();
   testIsTableCompatible();
+  testSlabRowid();
   // testPullAllTableInfos();
 }

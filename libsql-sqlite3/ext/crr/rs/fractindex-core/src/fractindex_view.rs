@@ -270,17 +270,22 @@ pub fn fix_conflict_return_old_key(
         "UPDATE \"{table}\" SET \"{order_col}\" = crsql_fract_key_between(
         (
           SELECT \"{order_col}\" FROM \"{table}\"
-          JOIN (SELECT {list_columns} FROM \"{table}\" WHERE {pk_predicates}) as t
-          ON {list_join_predicates} WHERE \"{order_col}\" < ?{target_order_slot} ORDER BY \"{order_col}\" DESC LIMIT 1
+          {maybe_join} WHERE \"{order_col}\" < ?{target_order_slot} ORDER BY \"{order_col}\" DESC LIMIT 1
         ),
         ?{target_order_slot}
       ) WHERE {pk_predicates} RETURNING \"{order_col}\"",
         table = escape_ident(table),
         order_col = escape_ident(order_col.text()),
         pk_predicates = pk_predicates,
-        list_join_predicates = list_join_predicates,
-        list_columns = list_columns,
-        target_order_slot = pk_values.len() + 1
+        target_order_slot = pk_values.len() + 1,
+        maybe_join = if list_columns.len() > 0 {
+          format!(
+            "JOIN (SELECT {list_columns} FROM \"{table}\" WHERE {pk_predicates}) as t
+            ON {list_join_predicates}",
+            list_columns = list_columns, pk_predicates = pk_predicates, table = escape_ident(table), list_join_predicates = list_join_predicates)
+        } else {
+          format!("")
+        }
     );
 
     let stmt = db.prepare_v2(&sql)?;
