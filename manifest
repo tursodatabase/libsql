@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\sa\sdebugging\sroutine\sused\sinside\sof\stestcase().\s\sDoes\snot\nappear\sin\sproduction.\s\sProblem\sdiscovered\sby\sscan-build.
-D 2023-10-19T13:00:41.210
+C Simplification\sto\ssqlite3GetVarint32()\sto\savoid\sconfusing\sgcov.
+D 2023-10-19T13:35:22.869
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -786,7 +786,7 @@ F src/trigger.c 5286019b152f622a38900284109e4aae1e5f566deb7ad9ba7e931f0660771f32
 F src/update.c 6904814dd62a7a93bbb86d9f1419c7f134a9119582645854ab02b36b676d9f92
 F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
-F src/util.c e87f66258c37f87724f46e849572c3ece4c74ef5614ba41eb221e98f0dbc95de
+F src/util.c b22cc9f203a8c0b9ee5338a67f8860347d14845864c10248bebe84518a781677
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
 F src/vdbe.c 300b1ac9339a5b7db9ccd48c1a13c3d71722da13352a38ee042ca0a399b4dd7e
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
@@ -2133,8 +2133,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8b6fffb552c30f9cbf7102c2e26a7b486c4c9edd9f494d803de7004db3018277
-R 4aca618a679e8419cd172eea36c7911d
+P c6c9d7ed6dbc71b998aeaaa1bdeb36b1bb9b902f9d6088ad36db29f8ea8b7ef6
+R 2d6d822f4f032385b3965cf0ea67965f
 U drh
-Z 1bb915481df03cc399372db91bbfa483
+Z 984079d068cf9e399e4e739b1e691268
 # Remove this line to create a well-formed Fossil manifest.
