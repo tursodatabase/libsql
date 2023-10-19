@@ -3825,7 +3825,7 @@ dependencies = [
  "fallible-streaming-iterator",
  "hashlink",
  "lazy_static",
- "libsqlite3-sys",
+ "libsql-sys",
  "regex",
  "serde_json",
  "smallvec",
