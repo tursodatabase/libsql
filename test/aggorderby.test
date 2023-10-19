@@ -59,6 +59,21 @@ do_execsql_test aggorderby-4.1 {
 } {7 9}
 
 
-
+do_execsql_test aggorderby-5.0 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t3;
+  CREATE TABLE t1(a TEXT);  INSERT INTO t1 VALUES('aaa'),('bbb');
+  CREATE TABLE t3(d TEXT);  INSERT INTO t3 VALUES('/'),('-');
+  SELECT (SELECT group_concat(a,d) FROM t3) FROM t1;
+} {aaa-aaa bbb-bbb}
+do_execsql_test aggorderby-5.1 {
+  SELECT (SELECT group_concat(a,d ORDER BY d) FROM t3) FROM t1;
+} {aaa/aaa bbb/bbb}
+do_execsql_test aggorderby-5.2 {
+  SELECT (SELECT group_concat(a,d ORDER BY d DESC) FROM t3) FROM t1;
+} {aaa-aaa bbb-bbb}
+do_execsql_test aggorderby-5.3 {
+  SELECT (SELECT group_concat(a,'#' ORDER BY d) FROM t3) FROM t1;
+} {aaa#aaa bbb#bbb}
 
 finish_test

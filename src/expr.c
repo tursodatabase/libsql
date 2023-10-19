@@ -6466,6 +6466,12 @@ int sqlite3ReferencesSrcList(Parse *pParse, Expr *pExpr, SrcList *pSrcList){
   assert( pExpr->op==TK_AGG_FUNCTION );
   assert( ExprUseXList(pExpr) );
   sqlite3WalkExprList(&w, pExpr->x.pList);
+  if( pExpr->pLeft ){
+    assert( pExpr->pLeft->op==TK_ORDER );
+    assert( ExprUseXList(pExpr->pLeft) );
+    assert( pExpr->pLeft->x.pList!=0 );
+    sqlite3WalkExprList(&w, pExpr->pLeft->x.pList);
+  }
 #ifndef SQLITE_OMIT_WINDOWFUNC
   if( ExprHasProperty(pExpr, EP_WinFunc) ){
     sqlite3WalkExpr(&w, pExpr->y.pWin->pFilter);
