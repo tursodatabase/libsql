@@ -190,7 +190,6 @@ fn select_subproto(client_subprotos: &[&str], server_subprotos: &[Subproto]) -> 
 
 fn get_ws_config() -> tungstenite::protocol::WebSocketConfig {
     tungstenite::protocol::WebSocketConfig {
-        max_send_queue: Some(1 << 20),
         ..Default::default()
     }
 }

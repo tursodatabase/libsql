@@ -27,7 +27,7 @@ futures = "0.3.25"
 futures-core = "0.3"
 hmac = "0.12"
 hyper = { version = "0.14.23", features = ["http2"] }
-hyper-tungstenite = "0.10"
+hyper-tungstenite = "0.11"
 itertools = "0.10.5"
 jsonwebtoken = "8.2.0"
 memmap = "0.7.0"
@@ -53,7 +53,7 @@ tempfile = "3.3.0"
 thiserror = "1.0.38"
 tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs", "signal"] }
 tokio-stream = "0.1.11"
-tokio-tungstenite = "0.19"
+tokio-tungstenite = "0.20"
 tokio-util = { version = "0.7.8", features = ["io", "io-util"] }
 tonic = { version = "0.10.0", features = ["tls"] }
 tonic-web = "0.10"
