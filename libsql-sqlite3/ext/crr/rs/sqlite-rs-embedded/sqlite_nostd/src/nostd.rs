@@ -1,9 +1,13 @@
 extern crate alloc;
 
-use alloc::ffi::IntoStringError;
+use alloc::boxed::Box;
+use alloc::ffi::{IntoStringError, NulError};
 use alloc::vec::Vec;
 use alloc::{ffi::CString, string::String};
-use core::ffi::{c_char, c_int, c_void};
+use core::array::TryFromSliceError;
+use core::ffi::{c_char, c_int, c_void, CStr};
+use core::ptr::null_mut;
+use core::{error::Error, slice, str::Utf8Error};
 
 #[cfg(not(feature = "std"))]
 use num_derive::FromPrimitive;
@@ -12,6 +16,45 @@ use num_traits::FromPrimitive;
 
 pub use sqlite3_allocator::*;
 pub use sqlite3_capi::*;
+
+// https://www.sqlite.org/c3ref/c_alter_table.html
+#[derive(FromPrimitive, PartialEq, Debug)]
+pub enum ActionCode {
+    COPY = 0,
+    CREATE_INDEX = 1,
+    CREATE_TABLE = 2,
+    CREATE_TEMP_INDEX = 3,
+    CREATE_TEMP_TABLE = 4,
+    CREATE_TEMP_TRIGGER = 5,
+    CREATE_TEMP_VIEW = 6,
+    CREATE_TRIGGER = 7,
+    CREATE_VIEW = 8,
+    DELETE = 9,
+    DROP_INDEX = 10,
+    DROP_TABLE = 11,
+    DROP_TEMP_INDEX = 12,
+    DROP_TEMP_TABLE = 13,
+    DROP_TEMP_TRIGGER = 14,
+    DROP_TEMP_VIEW = 15,
+    DROP_TRIGGER = 16,
+    DROP_VIEW = 17,
+    INSERT = 18,
+    PRAGMA = 19,
+    READ = 20,
+    SELECT = 21,
+    TRANSACTION = 22,
+    UPDATE = 23,
+    ATTACH = 24,
+    DETACH = 25,
+    ALTER_TABLE = 26,
+    REINDEX = 27,
+    ANALYZE = 28,
+    CREATE_VTABLE = 29,
+    DROP_VTABLE = 30,
+    FUNCTION = 31,
+    SAVEPOINT = 32,
+    RECURSIVE = 33,
+}
 
 #[derive(FromPrimitive, PartialEq, Debug)]
 pub enum ResultCode {
@@ -125,6 +168,38 @@ pub enum ResultCode {
     NULL = 5000,
 }
 
+impl core::fmt::Display for ResultCode {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl Error for ResultCode {}
+
+impl From<Utf8Error> for ResultCode {
+    fn from(_error: Utf8Error) -> Self {
+        ResultCode::FORMAT
+    }
+}
+
+impl From<TryFromSliceError> for ResultCode {
+    fn from(_error: TryFromSliceError) -> Self {
+        ResultCode::RANGE
+    }
+}
+
+impl From<NulError> for ResultCode {
+    fn from(_error: NulError) -> Self {
+        ResultCode::NOMEM
+    }
+}
+
+impl From<IntoStringError> for ResultCode {
+    fn from(_error: IntoStringError) -> Self {
+        ResultCode::FORMAT
+    }
+}
+
 #[derive(FromPrimitive, PartialEq, Debug)]
 pub enum ColumnType {
     Integer = 1,
@@ -145,8 +220,12 @@ pub fn open(filename: *const c_char) -> Result<ManagedConnection, ResultCode> {
     }
 }
 
+pub fn randomness(blob: &mut [u8]) {
+    sqlite3_capi::randomness(blob.len() as c_int, blob.as_mut_ptr() as *mut c_void)
+}
+
 pub struct ManagedConnection {
-    db: *mut sqlite3,
+    pub db: *mut sqlite3,
 }
 
 pub trait Connection {
@@ -165,6 +244,14 @@ pub trait Connection {
         func: Option<xFunc>,
         step: Option<xStep>,
         final_func: Option<xFinal>,
+        destroy: Option<xDestroy>,
+    ) -> Result<ResultCode, ResultCode>;
+
+    fn create_module_v2(
+        &self,
+        name: &str,
+        module: *const module,
+        user_data: Option<*mut c_void>,
         destroy: Option<xDestroy>,
     ) -> Result<ResultCode, ResultCode>;
 
@@ -192,6 +279,16 @@ pub trait Connection {
     fn next_stmt(&self, s: Option<*mut stmt>) -> Option<*mut stmt>;
 
     fn prepare_v2(&self, sql: &str) -> Result<ManagedStmt, ResultCode>;
+
+    fn prepare_v3(&self, sql: &str, flags: u32) -> Result<ManagedStmt, ResultCode>;
+
+    fn set_authorizer(
+        &self,
+        x_auth: Option<XAuthorizer>,
+        user_data: *mut c_void,
+    ) -> Result<ResultCode, ResultCode>;
+
+    fn get_autocommit(&self) -> bool;
 }
 
 impl Connection for ManagedConnection {
@@ -221,6 +318,24 @@ impl Connection for ManagedConnection {
         )
     }
 
+    fn set_authorizer(
+        &self,
+        x_auth: Option<XAuthorizer>,
+        user_data: *mut c_void,
+    ) -> Result<ResultCode, ResultCode> {
+        self.db.set_authorizer(x_auth, user_data)
+    }
+
+    fn create_module_v2(
+        &self,
+        name: &str,
+        module: *const module,
+        user_data: Option<*mut c_void>,
+        destroy: Option<xDestroy>,
+    ) -> Result<ResultCode, ResultCode> {
+        self.db.create_module_v2(name, module, user_data, destroy)
+    }
+
     #[inline]
     fn next_stmt(&self, s: Option<*mut stmt>) -> Option<*mut stmt> {
         self.db.next_stmt(s)
@@ -229,6 +344,11 @@ impl Connection for ManagedConnection {
     #[inline]
     fn prepare_v2(&self, sql: &str) -> Result<ManagedStmt, ResultCode> {
         self.db.prepare_v2(sql)
+    }
+
+    #[inline]
+    fn prepare_v3(&self, sql: &str, flags: u32) -> Result<ManagedStmt, ResultCode> {
+        self.db.prepare_v3(sql, flags)
     }
 
     #[inline]
@@ -254,6 +374,11 @@ impl Connection for ManagedConnection {
     #[inline]
     fn errcode(&self) -> ResultCode {
         self.db.errcode()
+    }
+
+    #[inline]
+    fn get_autocommit(&self) -> bool {
+        self.db.get_autocommit()
     }
 
     #[cfg(all(feature = "static", not(feature = "omit_load_extension")))]
@@ -322,6 +447,26 @@ impl Connection for *mut sqlite3 {
         }
     }
 
+    fn create_module_v2(
+        &self,
+        name: &str,
+        module: *const module,
+        user_data: Option<*mut c_void>,
+        destroy: Option<xDestroy>,
+    ) -> Result<ResultCode, ResultCode> {
+        if let Ok(name) = CString::new(name) {
+            convert_rc(create_module_v2(
+                *self,
+                name.as_ptr(),
+                module,
+                user_data.unwrap_or(core::ptr::null_mut()),
+                destroy,
+            ))
+        } else {
+            Err(ResultCode::NOMEM)
+        }
+    }
+
     #[inline]
     fn prepare_v2(&self, sql: &str) -> Result<ManagedStmt, ResultCode> {
         let mut stmt = core::ptr::null_mut();
@@ -330,6 +475,26 @@ impl Connection for *mut sqlite3 {
             *self,
             sql.as_ptr() as *const c_char,
             sql.len() as i32,
+            &mut stmt as *mut *mut stmt,
+            &mut tail as *mut *const c_char,
+        ))
+        .unwrap();
+        if rc == ResultCode::OK {
+            Ok(ManagedStmt { stmt: stmt })
+        } else {
+            Err(rc)
+        }
+    }
+
+    #[inline]
+    fn prepare_v3(&self, sql: &str, flags: u32) -> Result<ManagedStmt, ResultCode> {
+        let mut stmt = core::ptr::null_mut();
+        let mut tail = core::ptr::null();
+        let rc = ResultCode::from_i32(prepare_v3(
+            *self,
+            sql.as_ptr() as *const c_char,
+            sql.len() as i32,
+            flags,
             &mut stmt as *mut *mut stmt,
             &mut tail as *mut *const c_char,
         ))
@@ -407,6 +572,14 @@ impl Connection for *mut sqlite3 {
         }
     }
 
+    fn set_authorizer(
+        &self,
+        x_auth: Option<XAuthorizer>,
+        user_data: *mut c_void,
+    ) -> Result<ResultCode, ResultCode> {
+        convert_rc(set_authorizer(*self, x_auth, user_data))
+    }
+
     fn errmsg(&self) -> Result<String, IntoStringError> {
         errmsg(*self).into_string()
     }
@@ -414,10 +587,14 @@ impl Connection for *mut sqlite3 {
     fn errcode(&self) -> ResultCode {
         ResultCode::from_i32(errcode(*self)).unwrap()
     }
+
+    fn get_autocommit(&self) -> bool {
+        get_autocommit(*self) != 0
+    }
 }
 
-fn convert_rc(rc: i32) -> Result<ResultCode, ResultCode> {
-    let rc = ResultCode::from_i32(rc).unwrap();
+pub fn convert_rc(rc: i32) -> Result<ResultCode, ResultCode> {
+    let rc = ResultCode::from_i32(rc).unwrap_or(ResultCode::ABORT);
     if rc == ResultCode::OK {
         Ok(rc)
     } else {
@@ -426,7 +603,7 @@ fn convert_rc(rc: i32) -> Result<ResultCode, ResultCode> {
 }
 
 pub struct ManagedStmt {
-    stmt: *mut stmt,
+    pub stmt: *mut stmt,
 }
 
 impl ManagedStmt {
@@ -472,7 +649,16 @@ impl ManagedStmt {
 
     #[inline]
     pub fn column_text(&self, i: i32) -> Result<&str, ResultCode> {
-        Ok(column_text(self.stmt, i))
+        let len = column_bytes(self.stmt, i);
+        let ptr = column_text_ptr(self.stmt, i);
+        if ptr.is_null() {
+            Err(ResultCode::NULL)
+        } else {
+            Ok(unsafe {
+                let slice = core::slice::from_raw_parts(ptr as *const u8, len as usize);
+                core::str::from_utf8_unchecked(slice)
+            })
+        }
     }
 
     #[inline]
@@ -546,6 +732,16 @@ impl ManagedStmt {
     pub fn bind_int(&self, i: i32, val: i32) -> Result<ResultCode, ResultCode> {
         convert_rc(bind_int(self.stmt, i, val))
     }
+
+    #[inline]
+    pub fn bind_null(&self, i: i32) -> Result<ResultCode, ResultCode> {
+        convert_rc(bind_null(self.stmt, i))
+    }
+
+    #[inline]
+    pub fn clear_bindings(&self) -> Result<ResultCode, ResultCode> {
+        convert_rc(clear_bindings(self.stmt))
+    }
 }
 
 impl Drop for ManagedStmt {
@@ -561,14 +757,18 @@ pub trait Context {
     /// using it.
     fn result_text_owned(&self, text: String);
     fn result_text_transient(&self, text: &str);
-    fn result_text_static(&self, text: &'static str);
+    fn result_text_static(&self, text: &str);
     fn result_blob_owned(&self, blob: Vec<u8>);
-    fn result_blob_shared(&self, blob: &[u8]);
-    fn result_blob_static(&self, blob: &'static [u8]);
+    fn result_blob_transient(&self, blob: &[u8]);
+    fn result_blob_static(&self, blob: &[u8]);
     fn result_error(&self, text: &str);
     fn result_error_code(&self, code: ResultCode);
+    fn result_value(&self, value: *mut value);
+    fn result_double(&self, value: f64);
+    fn result_int64(&self, value: i64);
     fn result_null(&self);
     fn db_handle(&self) -> *mut sqlite3;
+    fn user_data(&self) -> *mut c_void;
 }
 
 impl Context for *mut context {
@@ -577,7 +777,8 @@ impl Context for *mut context {
         result_null(*self)
     }
 
-    /// TODO: do not use this right now! The drop is not dropping according to valgrind.
+    /// Passes ownership of the blob to SQLite without copying.
+    /// The blob must have been allocated with `sqlite3_malloc`!
     #[inline]
     fn result_text_owned(&self, text: String) {
         let (ptr, len, _) = text.into_raw_parts();
@@ -603,10 +804,10 @@ impl Context for *mut context {
         );
     }
 
-    /// Takes a reference to a string that is statically allocated.
+    /// Takes a reference to a string that will outlive SQLite's use of the string.
     /// SQLite will not copy this string.
     #[inline]
-    fn result_text_static(&self, text: &'static str) {
+    fn result_text_static(&self, text: &str) {
         result_text(
             *self,
             text.as_ptr() as *mut c_char,
@@ -616,15 +817,16 @@ impl Context for *mut context {
     }
 
     /// Passes ownership of the blob to SQLite without copying.
-    /// SQLite will drop the blob when it is finished with it.
+    /// The blob must have been allocated with `sqlite3_malloc`!
     #[inline]
     fn result_blob_owned(&self, blob: Vec<u8>) {
         let (ptr, len, _) = blob.into_raw_parts();
         result_blob(*self, ptr, len as i32, Destructor::CUSTOM(droprust));
     }
 
+    /// SQLite will make a copy of the blob
     #[inline]
-    fn result_blob_shared(&self, blob: &[u8]) {
+    fn result_blob_transient(&self, blob: &[u8]) {
         result_blob(
             *self,
             blob.as_ptr(),
@@ -634,7 +836,7 @@ impl Context for *mut context {
     }
 
     #[inline]
-    fn result_blob_static(&self, blob: &'static [u8]) {
+    fn result_blob_static(&self, blob: &[u8]) {
         result_blob(*self, blob.as_ptr(), blob.len() as i32, Destructor::STATIC);
     }
 
@@ -649,18 +851,200 @@ impl Context for *mut context {
     }
 
     #[inline]
+    fn result_value(&self, value: *mut value) {
+        result_value(*self, value);
+    }
+
+    #[inline]
+    fn result_double(&self, value: f64) {
+        result_double(*self, value);
+    }
+
+    #[inline]
+    fn result_int64(&self, value: i64) {
+        result_int64(*self, value);
+    }
+
+    #[inline]
     fn db_handle(&self) -> *mut sqlite3 {
         context_db_handle(*self)
+    }
+
+    #[inline]
+    fn user_data(&self) -> *mut c_void {
+        user_data(*self)
     }
 }
 
 pub trait Stmt {
     fn sql(&self) -> &str;
+    fn bind_blob(&self, i: i32, val: &[u8], d: Destructor) -> Result<ResultCode, ResultCode>;
+    /// Gives SQLite ownership of the blob and has SQLite free it.
+    fn bind_blob_owned(&self, i: i32, val: Vec<u8>) -> Result<ResultCode, ResultCode>;
+    fn bind_value(&self, i: i32, val: *mut value) -> Result<ResultCode, ResultCode>;
+    fn bind_text(&self, i: i32, text: &str, d: Destructor) -> Result<ResultCode, ResultCode>;
+    fn bind_text_owned(&self, i: i32, text: String) -> Result<ResultCode, ResultCode>;
+    fn bind_int64(&self, i: i32, val: i64) -> Result<ResultCode, ResultCode>;
+    fn bind_int(&self, i: i32, val: i32) -> Result<ResultCode, ResultCode>;
+    fn bind_double(&self, i: i32, val: f64) -> Result<ResultCode, ResultCode>;
+    fn bind_null(&self, i: i32) -> Result<ResultCode, ResultCode>;
+
+    fn clear_bindings(&self) -> Result<ResultCode, ResultCode>;
+
+    fn column_value(&self, i: i32) -> *mut value;
+    fn column_int64(&self, i: i32) -> int64;
+    fn column_int(&self, i: i32) -> i32;
+    fn column_blob(&self, i: i32) -> &[u8];
+    fn column_double(&self, i: i32) -> f64;
+    fn column_text(&self, i: i32) -> &str;
+    fn column_bytes(&self, i: i32) -> i32;
+
+    fn finalize(&self) -> Result<ResultCode, ResultCode>;
+
+    fn reset(&self) -> Result<ResultCode, ResultCode>;
+    fn step(&self) -> Result<ResultCode, ResultCode>;
 }
 
 impl Stmt for *mut stmt {
     fn sql(&self) -> &str {
         unsafe { core::str::from_utf8_unchecked(core::ffi::CStr::from_ptr(sql(*self)).to_bytes()) }
+    }
+
+    #[inline]
+    fn bind_blob(&self, i: i32, val: &[u8], d: Destructor) -> Result<ResultCode, ResultCode> {
+        convert_rc(bind_blob(
+            *self,
+            i,
+            val.as_ptr() as *const c_void,
+            val.len() as i32,
+            d,
+        ))
+    }
+
+    #[inline]
+    fn bind_blob_owned(&self, i: i32, val: Vec<u8>) -> Result<ResultCode, ResultCode> {
+        let (ptr, len, _) = val.into_raw_parts();
+        convert_rc(bind_blob(
+            *self,
+            i,
+            ptr as *const c_void,
+            len as i32,
+            Destructor::CUSTOM(droprust),
+        ))
+    }
+
+    #[inline]
+    fn bind_double(&self, i: i32, val: f64) -> Result<ResultCode, ResultCode> {
+        convert_rc(bind_double(*self, i, val))
+    }
+
+    #[inline]
+    fn bind_value(&self, i: i32, val: *mut value) -> Result<ResultCode, ResultCode> {
+        convert_rc(bind_value(*self, i, val))
+    }
+
+    #[inline]
+    fn bind_text(&self, i: i32, text: &str, d: Destructor) -> Result<ResultCode, ResultCode> {
+        convert_rc(bind_text(
+            *self,
+            i,
+            text.as_ptr() as *const c_char,
+            text.len() as i32,
+            d,
+        ))
+    }
+
+    #[inline]
+    fn bind_text_owned(&self, i: i32, text: String) -> Result<ResultCode, ResultCode> {
+        let (ptr, len, _) = text.into_raw_parts();
+        convert_rc(bind_text(
+            *self,
+            i,
+            ptr as *const c_char,
+            len as i32,
+            Destructor::CUSTOM(droprust),
+        ))
+    }
+
+    #[inline]
+    fn bind_int64(&self, i: i32, val: i64) -> Result<ResultCode, ResultCode> {
+        convert_rc(bind_int64(*self, i, val))
+    }
+
+    #[inline]
+    fn bind_int(&self, i: i32, val: i32) -> Result<ResultCode, ResultCode> {
+        convert_rc(bind_int(*self, i, val))
+    }
+
+    #[inline]
+    fn bind_null(&self, i: i32) -> Result<ResultCode, ResultCode> {
+        convert_rc(bind_null(*self, i))
+    }
+
+    #[inline]
+    fn clear_bindings(&self) -> Result<ResultCode, ResultCode> {
+        convert_rc(clear_bindings(*self))
+    }
+
+    #[inline]
+    fn column_value(&self, i: i32) -> *mut value {
+        column_value(*self, i)
+    }
+
+    #[inline]
+    fn column_int64(&self, i: i32) -> int64 {
+        column_int64(*self, i)
+    }
+
+    #[inline]
+    fn column_int(&self, i: i32) -> i32 {
+        column_int(*self, i)
+    }
+
+    #[inline]
+    fn column_blob(&self, i: i32) -> &[u8] {
+        let len = column_bytes(*self, i);
+        let ptr = column_blob(*self, i);
+        unsafe { core::slice::from_raw_parts(ptr as *const u8, len as usize) }
+    }
+
+    #[inline]
+    fn column_double(&self, i: i32) -> f64 {
+        column_double(*self, i)
+    }
+
+    #[inline]
+    fn column_text(&self, i: i32) -> &str {
+        column_text(*self, i)
+    }
+
+    #[inline]
+    fn column_bytes(&self, i: i32) -> i32 {
+        column_bytes(*self, i)
+    }
+
+    #[inline]
+    fn reset(&self) -> Result<ResultCode, ResultCode> {
+        convert_rc(reset(*self))
+    }
+
+    #[inline]
+    fn step(&self) -> Result<ResultCode, ResultCode> {
+        match ResultCode::from_i32(step(*self)) {
+            Some(ResultCode::ROW) => Ok(ResultCode::ROW),
+            Some(ResultCode::DONE) => Ok(ResultCode::DONE),
+            Some(rc) => Err(rc),
+            None => Err(ResultCode::ERROR),
+        }
+    }
+
+    #[inline]
+    fn finalize(&self) -> Result<ResultCode, ResultCode> {
+        match ResultCode::from_i32(finalize(*self)) {
+            Some(ResultCode::OK) => Ok(ResultCode::OK),
+            Some(rc) => Err(rc),
+            None => Err(ResultCode::ABORT),
+        }
     }
 }
 
@@ -710,3 +1094,175 @@ impl Value for *mut value {
         value_bytes(*self)
     }
 }
+
+pub trait StrRef {
+    fn set(&self, val: &str);
+}
+
+impl StrRef for *mut *mut c_char {
+    /**
+     * Sets the error message, copying the contents of `val`.
+     * If the error has already been set, future calls to `set` are ignored.
+     */
+    fn set(&self, val: &str) {
+        unsafe {
+            if **self != null_mut() {
+                return;
+            }
+            if let Ok(cstring) = CString::new(val) {
+                **self = cstring.into_raw();
+            } else {
+                if let Ok(s) = CString::new("Failed setting error message.") {
+                    **self = s.into_raw();
+                }
+            }
+        }
+    }
+}
+
+// TODO: on `T` can I enforce that T has a pointer of name `base` as first item to `vtab`?
+pub trait VTabRef {
+    fn set<T>(&self, val: Box<T>);
+}
+
+impl VTabRef for *mut *mut vtab {
+    fn set<T>(&self, val: Box<T>) {
+        unsafe {
+            let raw_val = Box::into_raw(val);
+            **self = raw_val.cast::<sqlite3_capi::vtab>();
+        }
+    }
+}
+
+pub trait CursorRef {
+    fn set<T>(&self, val: Box<T>);
+}
+
+impl CursorRef for *mut *mut vtab_cursor {
+    fn set<T>(&self, val: Box<T>) {
+        unsafe {
+            let raw_val = Box::into_raw(val);
+            **self = raw_val.cast::<sqlite3_capi::vtab_cursor>();
+        }
+    }
+}
+
+pub trait VTab {
+    fn set_err(&self, val: &str);
+}
+
+impl VTab for *mut vtab {
+    /**
+     * Sets the error message, copying the contents of `val`.
+     * If the error has already been set, future calls to `set` are ignored.
+     */
+    fn set_err(&self, val: &str) {
+        unsafe {
+            if (**self).zErrMsg != null_mut() {
+                return;
+            }
+            if let Ok(e) = CString::new(val) {
+                (**self).zErrMsg = e.into_raw();
+            }
+        }
+    }
+}
+
+// from: https://github.com/asg017/sqlite-loadable-rs/blob/main/src/table.rs#L722
+pub struct VTabArgs<'a> {
+    /// Name of the module being invoked, the argument in the USING clause.
+    /// Example: `"CREATE VIRTUAL TABLE xxx USING custom_vtab"` would have
+    /// a `module_name` of `"custom_vtab"`.
+    /// Sourced from `argv[0]`
+    pub module_name: &'a str,
+    /// Name of the database where the virtual table will be created,
+    /// typically `"main"` or `"temp"` or another name from an
+    /// [`ATTACH`'ed database](https://www.sqlite.org/lang_attach.html).
+    /// Sourced from `argv[1]`
+    pub database_name: &'a str,
+
+    /// Name of the table being created.
+    /// Example: `"CREATE VIRTUAL TABLE xxx USING custom_vtab"` would
+    /// have a `table_name` of `"xxx"`.
+    /// Sourced from `argv[2]`
+    pub table_name: &'a str,
+    /// The remaining arguments given in the constructor of the virtual
+    /// table, inside `CREATE VIRTUAL TABLE xxx USING custom_vtab(...)`.
+    /// Sourced from `argv[3:]`
+    pub arguments: Vec<&'a str>,
+}
+
+/// Generally do not use this. Does a bunch of copying.
+fn c_string_to_str<'a>(c: *const c_char) -> Result<&'a str, Utf8Error> {
+    let s = unsafe { CStr::from_ptr(c).to_str()? };
+    Ok(s)
+}
+
+pub fn parse_vtab_args<'a>(
+    argc: c_int,
+    argv: *const *const c_char,
+) -> Result<VTabArgs<'a>, Utf8Error> {
+    let raw_args = unsafe { slice::from_raw_parts(argv, argc as usize) };
+    let mut args = Vec::with_capacity(argc as usize);
+    for arg in raw_args {
+        args.push(c_string_to_str(*arg)?);
+    }
+
+    // SQLite guarantees that argv[0-2] will be filled, hence the .expects() -
+    // If SQLite is wrong, then may god save our souls
+    let module_name = args
+        .get(0)
+        .expect("argv[0] should be the name of the module");
+    let database_name = args
+        .get(1)
+        .expect("argv[1] should be the name of the database the module is in");
+    let table_name = args
+        .get(2)
+        .expect("argv[2] should be the name of the virtual table");
+    let arguments = &args[3..];
+
+    Ok(VTabArgs {
+        module_name,
+        database_name,
+        table_name,
+        arguments: arguments.to_vec(),
+    })
+}
+
+pub fn declare_vtab(db: *mut sqlite3, def: &str) -> Result<ResultCode, ResultCode> {
+    let cstring = CString::new(def)?;
+    let ret = sqlite3_capi::declare_vtab(db, cstring.as_ptr());
+    convert_rc(ret)
+}
+
+pub fn vtab_config(db: *mut sqlite3, options: u32) -> Result<ResultCode, ResultCode> {
+    let rc = sqlite3_capi::vtab_config(db, options);
+    convert_rc(rc)
+}
+
+// type xCreateC = extern "C" fn(
+//     *mut sqlite3,
+//     *mut c_void,
+//     c_int,
+//     *const *const c_char,
+//     *mut *mut vtab,
+//     *mut *mut c_char,
+// ) -> c_int;
+
+// // return a lambda that invokes f appropriately?
+// pub const fn xCreate(
+//     f: fn(
+//         db: *mut sqlite3,
+//         aux: *mut c_void,
+//         args: Vec<&str>,
+//         tab: *mut *mut vtab,   // declare tab for them?
+//         err: *mut *mut c_char, // box?
+//     ) -> Result<ResultCode, ResultCode>,
+// ) -> xCreateC {
+//     move |db, aux, argc, argv, ppvtab, errmsg| match f(db, aux, str_args, ppvtab, errmsg) {
+//         Ok(rc) => rc as c_int,
+//         Err(rc) => rc as c_int,
+//     }
+// }
+
+// *mut sqlite3, *mut c_void, Vec<&str>, *mut *mut vtab, *mut *mut c_char

@@ -10,57 +10,9 @@
 #include "get-table.h"
 #include "util.h"
 
-// Bug here? see crsql_asIdentifierListStr
-char *crsql_asIdentifierList(crsql_ColumnInfo *in, size_t inlen, char *prefix) {
-  if (inlen <= 0) {
-    return 0;
-  }
-
-  char **mapped = sqlite3_malloc(inlen * sizeof(char *));
-  int finalLen = 0;
-  char *ret = 0;
-
-  for (size_t i = 0; i < inlen; ++i) {
-    mapped[i] = sqlite3_mprintf("%s\"%w\"", prefix, in[i].name);
-    finalLen += strlen(mapped[i]);
-  }
-  // -1 for spearator not appended to last thing
-  finalLen += inlen - 1;
-
-  // + 1 for null terminator
-  ret = sqlite3_malloc(finalLen * sizeof(char) + 1);
-  ret[finalLen] = '\0';
-
-  crsql_joinWith(ret, mapped, inlen, ',');
-
-  // free everything we allocated, except ret.
-  // caller will free ret.
-  for (size_t i = 0; i < inlen; ++i) {
-    sqlite3_free(mapped[i]);
-  }
-  sqlite3_free(mapped);
-
-  return ret;
-}
-
 void crsql_freeColumnInfoContents(crsql_ColumnInfo *columnInfo) {
   sqlite3_free(columnInfo->name);
   sqlite3_free(columnInfo->type);
-}
-
-static char *quote(const char *in) {
-  return sqlite3_mprintf("quote(\"%s\")", in);
-}
-
-char *crsql_quoteConcat(crsql_ColumnInfo *cols, int len) {
-  char **names = sqlite3_malloc(len * sizeof(char *));
-  for (int i = 0; i < len; ++i) {
-    names[i] = cols[i].name;
-  }
-
-  char *ret = crsql_join2(&quote, names, len, " || '|' || ");
-  sqlite3_free(names);
-  return ret;
 }
 
 static void crsql_freeColumnInfos(crsql_ColumnInfo *columnInfos, int len) {
@@ -287,6 +239,26 @@ crsql_TableInfo *crsql_findTableInfo(crsql_TableInfo **tblInfos, int len,
   return 0;
 }
 
+int crsql_indexofTableInfo(crsql_TableInfo **tblInfos, int len,
+                           const char *tblName) {
+  for (int i = 0; i < len; ++i) {
+    if (strcmp(tblInfos[i]->tblName, tblName) == 0) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+sqlite3_int64 crsql_slabRowid(int idx, sqlite3_int64 rowid) {
+  if (idx < 0) {
+    return -1;
+  }
+
+  sqlite3_int64 modulo = rowid % ROWID_SLAB_SIZE;
+  return idx * ROWID_SLAB_SIZE + modulo;
+}
+
 /**
  * Pulls all table infos for all crrs present in the database.
  * Run once at vtab initialization -- see docs on crsql_Changes_vtab
@@ -403,7 +375,33 @@ int crsql_isTableCompatible(sqlite3 *db, const char *tblName, char **errmsg) {
     return 0;
   }
 
-  // No foreign key constraints
+  // No auto-increment primary keys
+  zSql =
+      "SELECT 1 FROM sqlite_master WHERE name = ? AND type = 'table' AND sql "
+      "LIKE '%autoincrement%' limit 1";
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+
+  rc += sqlite3_bind_text(pStmt, 1, tblName, -1, SQLITE_STATIC);
+  if (rc != SQLITE_OK) {
+    *errmsg = sqlite3_mprintf("Failed to analyze autoincrement status for %s",
+                              tblName);
+    return 0;
+  }
+  rc = sqlite3_step(pStmt);
+  sqlite3_finalize(pStmt);
+  if (rc == SQLITE_ROW) {
+    *errmsg = sqlite3_mprintf(
+        "%s has auto-increment primary keys. This is likely a mistake as two "
+        "concurrent nodes will assign unrelated rows the same primary key. "
+        "Either use a primary key that represents the identity of your row or "
+        "use a database friendly UUID such as UUIDv7",
+        tblName);
+    return 0;
+  } else if (rc != SQLITE_DONE) {
+    return 0;
+  }
+
+  // No checked foreign key constraints
   zSql = sqlite3_mprintf("SELECT count(*) FROM pragma_foreign_key_list('%s')",
                          tblName);
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
@@ -421,9 +419,10 @@ int crsql_isTableCompatible(sqlite3 *db, const char *tblName, char **errmsg) {
     sqlite3_finalize(pStmt);
     if (count != 0) {
       *errmsg = sqlite3_mprintf(
-          "Table %s has foreign key constraints. CRRs must not have "
-          "checked "
-          "foreign key constraints as they can be violated by row level "
+          "Table %s has checked foreign key constraints. CRRs may have foreign "
+          "keys but must not have "
+          "checked foreign key constraints as they can be violated by row "
+          "level "
           "security or replication.",
           tblName);
       return 0;
@@ -470,15 +469,4 @@ int crsql_isTableCompatible(sqlite3 *db, const char *tblName, char **errmsg) {
   }
 
   return 1;
-}
-
-int crsql_columnExists(const char *colName, crsql_ColumnInfo *colInfos,
-                       int colInfosLen) {
-  for (int i = 0; i < colInfosLen; ++i) {
-    if (strcmp(colInfos[i].name, colName) == 0) {
-      return 1;
-    }
-  }
-
-  return 0;
 }

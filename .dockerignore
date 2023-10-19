@@ -1,5 +1,6 @@
 ./target
 ./end-to-end
+/data.sqld
 
 # ignore sqlite3 artifacts
 

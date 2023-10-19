@@ -19,11 +19,13 @@ void crsqlTestSuite();
 void crsqlTriggersTestSuite();
 void crsqlChangesVtabReadTestSuite();
 void crsqlChangesVtabTestSuite();
-void crsqlChangesVtabWriteTestSuite();
 void crsqlChangesVtabCommonTestSuite();
 void crsqlExtDataTestSuite();
 void crsqlFractSuite();
 void crsqlIsCrrTestSuite();
+void rowsImpactedTestSuite();
+void crsqlChangesVtabRowidTestSuite();
+void crsqlSandboxSuite();
 
 int main(int argc, char *argv[]) {
   char *suite = "all";
@@ -36,14 +38,15 @@ int main(int argc, char *argv[]) {
   SUITE("triggers") crsqlTriggersTestSuite();
   SUITE("vtab") crsqlChangesVtabTestSuite();
   SUITE("vtabread") crsqlChangesVtabReadTestSuite();
-  SUITE("vtabwrite") crsqlChangesVtabWriteTestSuite();
-  SUITE("vtabcommon") crsqlChangesVtabCommonTestSuite();
   SUITE("extdata") crsqlExtDataTestSuite();
   // integration tests should come at the end given fixing unit tests will
   // likely fix integration tests
   SUITE("crsql") crsqlTestSuite();
   SUITE("fract") crsqlFractSuite();
   SUITE("is_crr") crsqlIsCrrTestSuite();
+  SUITE("rows_impacted") rowsImpactedTestSuite();
+  SUITE("rowid") crsqlChangesVtabRowidTestSuite();
+  SUITE("sandbox") crsqlSandboxSuite();
 
   sqlite3_shutdown();
 }

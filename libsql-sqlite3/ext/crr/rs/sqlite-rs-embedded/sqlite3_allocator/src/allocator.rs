@@ -7,6 +7,6 @@ unsafe impl GlobalAlloc for SQLite3Allocator {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
-        sqlite3_capi::free(ptr);
+        sqlite3_capi::free(ptr as *mut core::ffi::c_void);
     }
 }

@@ -4,7 +4,7 @@
  *
  * To fetch a changeset:
  * ```sql
- * SELECT * FROM crsql_chages WHERE site_id != SITE_ID AND version > V
+ * SELECT * FROM crsql_chages WHERE site_id IS NOT SITE_ID AND version > V
  * ```
  *
  * The site id parameter is used to prevent a site from fetching its own
@@ -103,6 +103,9 @@ struct crsql_Changes_cursor {
 
   sqlite3_int64 dbVersion;
   int rowType;
+
+  sqlite3_int64 changesRowid;
+  int tblInfoIdx;
 };
 
 #endif
