@@ -3615,6 +3615,8 @@ static int rtreeInit(
   }
 
   sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
+  sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
+
 
   /* Allocate the sqlite3_vtab structure */
   nDb = (int)strlen(argv[1]);
@@ -4130,7 +4132,6 @@ static int rtreeCheckTable(
 ){
   RtreeCheck check;               /* Common context for various routines */
   sqlite3_stmt *pStmt = 0;        /* Used to find column count of rtree table */
-  int bEnd = 0;                   /* True if transaction should be closed */
   int nAux = 0;                   /* Number of extra columns. */
 
   /* Initialize the context object */
@@ -4138,14 +4139,6 @@ static int rtreeCheckTable(
   check.db = db;
   check.zDb = zDb;
   check.zTab = zTab;
-
-  /* If there is not already an open transaction, open one now. This is
-  ** to ensure that the queries run as part of this integrity-check operate
-  ** on a consistent snapshot.  */
-  if( sqlite3_get_autocommit(db) ){
-    check.rc = sqlite3_exec(db, "BEGIN", 0, 0, 0);
-    bEnd = 1;
-  }
 
   /* Find the number of auxiliary columns */
   if( check.rc==SQLITE_OK ){
@@ -4187,11 +4180,6 @@ static int rtreeCheckTable(
   sqlite3_finalize(check.aCheckMapping[0]);
   sqlite3_finalize(check.aCheckMapping[1]);
 
-  /* If one was opened, close the transaction */
-  if( bEnd ){
-    int rc = sqlite3_exec(db, "END", 0, 0, 0);
-    if( check.rc==SQLITE_OK ) check.rc = rc;
-  }
   *pzReport = check.zReport;
   return check.rc;
 }

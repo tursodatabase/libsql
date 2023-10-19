@@ -640,6 +640,7 @@ static void fts3DeclareVtab(int *pRc, Fts3Table *p){
 
     zLanguageid = (p->zLanguageid ? p->zLanguageid : "__langid");
     sqlite3_vtab_config(p->db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
+    sqlite3_vtab_config(p->db, SQLITE_VTAB_INNOCUOUS);
 
     /* Create a list of user columns for the virtual table */
     zCols = sqlite3_mprintf("%Q, ", p->azColumn[0]);

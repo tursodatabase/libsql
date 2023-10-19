@@ -408,6 +408,9 @@ static int fts5InitVtab(
   if( rc==SQLITE_OK && pConfig->eContent==FTS5_CONTENT_NORMAL ){
     rc = sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, (int)1);
   }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
+  }
 
   if( rc!=SQLITE_OK ){
     fts5FreeVtab(pTab);
@@ -1530,6 +1533,7 @@ static int fts5SpecialInsert(
   Fts5Config *pConfig = pTab->p.pConfig;
   int rc = SQLITE_OK;
   int bError = 0;
+  int bLoadConfig = 0;
 
   if( 0==sqlite3_stricmp("delete-all", zCmd) ){
     if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
@@ -1541,6 +1545,7 @@ static int fts5SpecialInsert(
     }else{
       rc = sqlite3Fts5StorageDeleteAll(pTab->pStorage);
     }
+    bLoadConfig = 1;
   }else if( 0==sqlite3_stricmp("rebuild", zCmd) ){
     if( pConfig->eContent==FTS5_CONTENT_NONE ){
       fts5SetVtabError(pTab, 
@@ -1550,6 +1555,7 @@ static int fts5SpecialInsert(
     }else{
       rc = sqlite3Fts5StorageRebuild(pTab->pStorage);
     }
+    bLoadConfig = 1;
   }else if( 0==sqlite3_stricmp("optimize", zCmd) ){
     rc = sqlite3Fts5StorageOptimize(pTab->pStorage);
   }else if( 0==sqlite3_stricmp("merge", zCmd) ){
@@ -1575,6 +1581,12 @@ static int fts5SpecialInsert(
       }
     }
   }
+
+  if( rc==SQLITE_OK && bLoadConfig ){
+    pTab->p.pConfig->iCookie--;
+    rc = sqlite3Fts5IndexLoadConfig(pTab->p.pIndex);
+  }
+
   return rc;
 }
 

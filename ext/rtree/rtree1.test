@@ -784,4 +784,15 @@ do_execsql_test 22.1 {
   SELECT id, x0 > 9223372036854775807 AS 'a0' FROM t1;
 } {123 1}
 
+# 2023-10-14 dbsqlfuzz --sql-fuzz find.  rtreecheck() should not call
+# BEGIN/COMMIT because that causes problems with statement transactions,
+# and it is unnecessary.
+#
+reset_db
+do_test 23.0 {
+  db eval {CREATE TABLE t1(a,b,c);}
+  catch {db eval {CREATE TABLE t2 AS SELECT rtreecheck('t1') AS y;}}
+  db eval {PRAGMA integrity_check;}
+} {ok}
+
 finish_test

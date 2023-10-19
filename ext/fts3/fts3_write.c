@@ -4034,9 +4034,13 @@ static int fts3IncrmergeAppend(
   nSpace += sqlite3Fts3VarintLen(nDoclist) + nDoclist;
 
   /* If the current block is not empty, and if adding this term/doclist
-  ** to the current block would make it larger than Fts3Table.nNodeSize
-  ** bytes, write this block out to the database. */
-  if( pLeaf->block.n>0 && (pLeaf->block.n + nSpace)>p->nNodeSize ){
+  ** to the current block would make it larger than Fts3Table.nNodeSize bytes,
+  ** and if there is still room for another leaf page, write this block out to
+  ** the database. */
+  if( pLeaf->block.n>0 
+   && (pLeaf->block.n + nSpace)>p->nNodeSize 
+   && pLeaf->iBlock < (pWriter->iStart + pWriter->nLeafEst)
+  ){
     rc = fts3WriteSegment(p, pLeaf->iBlock, pLeaf->block.a, pLeaf->block.n);
     pWriter->nWork++;
 
@@ -4368,7 +4372,7 @@ static int fts3IncrmergeLoad(
               rc = sqlite3Fts3ReadBlock(p, reader.iChild, &aBlock, &nBlock,0);
               blobGrowBuffer(&pNode->block, 
                   MAX(nBlock, p->nNodeSize)+FTS3_NODE_PADDING, &rc
-                  );
+              );
               if( rc==SQLITE_OK ){
                 memcpy(pNode->block.a, aBlock, nBlock);
                 pNode->block.n = nBlock;

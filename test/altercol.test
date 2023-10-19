@@ -343,6 +343,21 @@ do_catchsql_test 8.4.5 {
   ALTER TABLE b1 RENAME a TO aaa;
 } {1 {error in view zzz: no such column: george}}
 
+do_execsql_test 8.5 {
+  DROP VIEW zzz;
+  CREATE TABLE t5(a TEXT, b INT);
+  INSERT INTO t5(a,b) VALUES('aaa',7),('bbb',3),('ccc',4);
+  CREATE VIEW vt5(x) AS SELECT group_concat(a ORDER BY b) FROM t5;
+  SELECT x FROM vt5;
+} {bbb,ccc,aaa}
+do_execsql_test 8.5.1 {
+  ALTER TABLE t5 RENAME COLUMN b TO bbb;
+  SELECT sql FROM sqlite_schema WHERE name='vt5';
+} {{CREATE VIEW vt5(x) AS SELECT group_concat(a ORDER BY bbb) FROM t5}}
+do_execsql_test 8.5.2 {
+  SELECT x FROM vt5;
+} {bbb,ccc,aaa}
+
 #-------------------------------------------------------------------------
 # More triggers.
 #

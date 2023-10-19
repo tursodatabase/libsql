@@ -1124,7 +1124,11 @@ void sqlite3Pragma(
 #endif
 
       if( sqlite3GetBoolean(zRight, 0) ){
-        db->flags |= mask;
+        if( (mask & SQLITE_WriteSchema)==0
+         || (db->flags & SQLITE_Defensive)==0
+        ){
+          db->flags |= mask;
+        }
       }else{
         db->flags &= ~mask;
         if( mask==SQLITE_DeferFKs ) db->nDeferredImmCons = 0;
@@ -1762,6 +1766,7 @@ void sqlite3Pragma(
           sqlite3_vtab *pVTab;
           int a1;
           if( !IsVirtual(pTab) ) continue;
+          sqlite3ViewGetColumnNames(pParse, pTab);
           if( pTab->u.vtab.p==0 ) continue;
           pVTab = pTab->u.vtab.p->pVtab;
           if( NEVER(pVTab==0) ) continue;

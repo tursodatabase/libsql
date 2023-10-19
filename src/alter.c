@@ -446,14 +446,19 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     /* Verify that constraints are still satisfied */
     if( pNew->pCheck!=0
      || (pCol->notNull && (pCol->colFlags & COLFLAG_GENERATED)!=0)
+     || (pTab->tabFlags & TF_Strict)!=0
     ){
       sqlite3NestedParse(pParse,
         "SELECT CASE WHEN quick_check GLOB 'CHECK*'"
         " THEN raise(ABORT,'CHECK constraint failed')"
+        " WHEN quick_check GLOB 'non-* value in*'"
+        " THEN raise(ABORT,'type mismatch on DEFAULT')"
         " ELSE raise(ABORT,'NOT NULL constraint failed')"
         " END"
         "  FROM pragma_quick_check(%Q,%Q)"
-        " WHERE quick_check GLOB 'CHECK*' OR quick_check GLOB 'NULL*'",
+        " WHERE quick_check GLOB 'CHECK*'"
+        " OR quick_check GLOB 'NULL*'"
+        " OR quick_check GLOB 'non-* value in*'",
         zTab, zDb
       );
     }

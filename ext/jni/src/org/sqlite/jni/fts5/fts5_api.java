@@ -13,7 +13,7 @@
 */
 package org.sqlite.jni.fts5;
 import org.sqlite.jni.annotation.*;
-import org.sqlite.jni.*;
+import org.sqlite.jni.capi.*;
 
 /**
    A wrapper for communicating C-level (fts5_api*) instances with

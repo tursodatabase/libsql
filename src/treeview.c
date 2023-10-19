@@ -412,6 +412,7 @@ void sqlite3TreeViewWindow(TreeView *pView, const Window *pWin, u8 more){
     sqlite3TreeViewItem(pView, "FILTER", 1);
     sqlite3TreeViewExpr(pView, pWin->pFilter, 0);
     sqlite3TreeViewPop(&pView);
+    if( pWin->eFrmType==TK_FILTER ) return;
   }
   sqlite3TreeViewPush(&pView, more);
   if( pWin->zName ){
@@ -421,7 +422,7 @@ void sqlite3TreeViewWindow(TreeView *pView, const Window *pWin, u8 more){
   }
   if( pWin->zBase )    nElement++;
   if( pWin->pOrderBy ) nElement++;
-  if( pWin->eFrmType ) nElement++;
+  if( pWin->eFrmType!=0 && pWin->eFrmType!=TK_FILTER ) nElement++;
   if( pWin->eExclude ) nElement++;
   if( pWin->zBase ){
     sqlite3TreeViewPush(&pView, (--nElement)>0);
@@ -434,7 +435,7 @@ void sqlite3TreeViewWindow(TreeView *pView, const Window *pWin, u8 more){
   if( pWin->pOrderBy ){
     sqlite3TreeViewExprList(pView, pWin->pOrderBy, (--nElement)>0, "ORDER-BY");
   }
-  if( pWin->eFrmType ){
+  if( pWin->eFrmType!=0 && pWin->eFrmType!=TK_FILTER ){
     char zBuf[30];
     const char *zFrmType = "ROWS";
     if( pWin->eFrmType==TK_RANGE ) zFrmType = "RANGE";
@@ -682,7 +683,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
         assert( ExprUseXList(pExpr) );
         pFarg = pExpr->x.pList;
 #ifndef SQLITE_OMIT_WINDOWFUNC
-        pWin = ExprHasProperty(pExpr, EP_WinFunc) ? pExpr->y.pWin : 0;
+        pWin = IsWindowFunc(pExpr) ? pExpr->y.pWin : 0;
 #else
         pWin = 0;
 #endif 
@@ -708,7 +709,13 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
         sqlite3TreeViewLine(pView, "FUNCTION %Q%s", pExpr->u.zToken, zFlgs);
       }
       if( pFarg ){
-        sqlite3TreeViewExprList(pView, pFarg, pWin!=0, 0);
+        sqlite3TreeViewExprList(pView, pFarg, pWin!=0 || pExpr->pLeft, 0);
+        if( pExpr->pLeft ){
+          Expr *pOB = pExpr->pLeft;
+          assert( pOB->op==TK_ORDER );
+          assert( ExprUseXList(pOB) );
+          sqlite3TreeViewExprList(pView, pOB->x.pList, pWin!=0, "ORDERBY");
+        }
       }
 #ifndef SQLITE_OMIT_WINDOWFUNC
       if( pWin ){

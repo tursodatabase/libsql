@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** This file implements the JNI bindings declared in
-** org.sqlite.jni.CApi (from which sqlite3-jni.h is generated).
+** org.sqlite.jni.capi.CApi (from which sqlite3-jni.h is generated).
 */
 
 /*
@@ -169,7 +169,7 @@
 ** prefix seen in this macro.
 */
 #define JniFuncName(Suffix) \
-  Java_org_sqlite_jni_CApi_sqlite3_ ## Suffix
+  Java_org_sqlite_jni_capi_CApi_sqlite3_ ## Suffix
 
 /* Prologue for JNI function declarations and definitions. */
 #define JniDecl(ReturnType,Suffix) \
@@ -386,26 +386,26 @@ static const struct {
 #define RefN(INDEX, KLAZZ) MkRef(INDEX, KLAZZ, "nativePointer", "J")
 /* OutputPointer.T ref */
 #define RefO(INDEX, KLAZZ, SIG) MkRef(INDEX, KLAZZ, "value", SIG)
-  RefN(0,  "sqlite3"),
-  RefN(1,  "sqlite3_backup"),
-  RefN(2,  "sqlite3_blob"),
-  RefN(3,  "sqlite3_context"),
-  RefN(4,  "sqlite3_stmt"),
-  RefN(5,  "sqlite3_value"),
-  RefO(6,  "OutputPointer$Bool",  "Z"),
-  RefO(7,  "OutputPointer$Int32", "I"),
-  RefO(8,  "OutputPointer$Int64", "J"),
-  RefO(9,  "OutputPointer$sqlite3",
-           "Lorg/sqlite/jni/sqlite3;"),
-  RefO(10, "OutputPointer$sqlite3_blob",
-           "Lorg/sqlite/jni/sqlite3_blob;"),
-  RefO(11, "OutputPointer$sqlite3_stmt",
-           "Lorg/sqlite/jni/sqlite3_stmt;"),
-  RefO(12, "OutputPointer$sqlite3_value",
-           "Lorg/sqlite/jni/sqlite3_value;"),
-  RefO(13, "OutputPointer$String", "Ljava/lang/String;"),
+  RefN(0,  "capi/sqlite3"),
+  RefN(1,  "capi/sqlite3_backup"),
+  RefN(2,  "capi/sqlite3_blob"),
+  RefN(3,  "capi/sqlite3_context"),
+  RefN(4,  "capi/sqlite3_stmt"),
+  RefN(5,  "capi/sqlite3_value"),
+  RefO(6,  "capi/OutputPointer$Bool",  "Z"),
+  RefO(7,  "capi/OutputPointer$Int32", "I"),
+  RefO(8,  "capi/OutputPointer$Int64", "J"),
+  RefO(9,  "capi/OutputPointer$sqlite3",
+           "Lorg/sqlite/jni/capi/sqlite3;"),
+  RefO(10, "capi/OutputPointer$sqlite3_blob",
+           "Lorg/sqlite/jni/capi/sqlite3_blob;"),
+  RefO(11, "capi/OutputPointer$sqlite3_stmt",
+           "Lorg/sqlite/jni/capi/sqlite3_stmt;"),
+  RefO(12, "capi/OutputPointer$sqlite3_value",
+           "Lorg/sqlite/jni/capi/sqlite3_value;"),
+  RefO(13, "capi/OutputPointer$String", "Ljava/lang/String;"),
 #ifdef SQLITE_ENABLE_FTS5
-  RefO(14, "OutputPointer$ByteArray", "[B"),
+  RefO(14, "capi/OutputPointer$ByteArray", "[B"),
   RefN(15, "fts5/Fts5Context"),
   RefN(16, "fts5/Fts5ExtensionApi"),
   RefN(17, "fts5/fts5_api"),
@@ -660,7 +660,7 @@ struct S3JniGlobalType {
   } g;
   /*
   ** The list of Java-side auto-extensions
-  ** (org.sqlite.jni.AutoExtensionCallback objects).
+  ** (org.sqlite.jni.capi.AutoExtensionCallback objects).
   */
   struct {
     S3JniAutoExtension *aExt /* The auto-extension list. It is
@@ -909,7 +909,7 @@ static S3JniEnv * S3JniEnv__get(JNIEnv * const env){
 **
 ** For purposes of certain hand-crafted JNI function bindings, we
 ** need a way of reporting errors which is consistent with the rest of
-** the C API, as opposed to throwing JS exceptions. To that end, this
+** the C API, as opposed to throwing Java exceptions. To that end, this
 ** internal-use-only function is a thin proxy around
 ** sqlite3ErrorWithMessage(). The intent is that it only be used from
 ** JNI bindings such as sqlite3_prepare_v2/v3(), and definitely not
@@ -972,6 +972,7 @@ static jstring s3jni__utf8_to_jstring(JNIEnv * const env,
        hypothetically do this for any strings where n<4 and z is
        NUL-terminated and none of z[0..3] are NUL bytes. */
     rv = (*env)->NewStringUTF(env, "");
+    s3jni_oom_check( rv );
   }else if( z ){
     jbyteArray jba;
     if( n<0 ) n = sqlite3Strlen30(z);
@@ -985,8 +986,8 @@ static jstring s3jni__utf8_to_jstring(JNIEnv * const env,
       }
       S3JniUnrefLocal(jba);
     }
+    s3jni_oom_check( rv );
   }
-  s3jni_oom_check( rv );
   return rv;
 }
 #define s3jni_utf8_to_jstring(CStr,n) s3jni__utf8_to_jstring(env, CStr, n)
@@ -1370,6 +1371,7 @@ static S3JniNphOp * s3jni__nphop(JNIEnv * const env, S3JniNphOp const* pRef){
     S3JniNph_mutex_enter;
     if( !pNC->klazz ){
       jclass const klazz = (*env)->FindClass(env, pRef->zName);
+      //printf("FindClass %s\n", pRef->zName);
       S3JniExceptionIsFatal("FindClass() unexpectedly threw");
       pNC->klazz = S3JniRefGlobal(klazz);
     }
@@ -1468,12 +1470,14 @@ static void * NativePointerHolder__get(JNIEnv * env, jobject jNph,
 #define PtrGet_sqlite3_stmt(OBJ) PtrGet_T(sqlite3_stmt, OBJ)
 #define PtrGet_sqlite3_value(OBJ) PtrGet_T(sqlite3_value, OBJ)
 /*
-** S3JniLongPtr_T(X,Y) expects X to be an unqualified sqlite3
-** struct type name and Y to be a native pointer to such an object in
-** the form of a jlong value. The jlong is simply cast to (X*). This
+** S3JniLongPtr_T(X,Y) expects X to be an unqualified sqlite3 struct
+** type name and Y to be a native pointer to such an object in the
+** form of a jlong value. The jlong is simply cast to (X*). This
 ** approach is, as of 2023-09-27, supplanting the former approach. We
 ** now do the native pointer extraction in the Java side, rather than
-** the C side, because it's reportedly significantly faster.
+** the C side, because it's reportedly significantly faster. The
+** intptr_t part here is necessary for compatibility with (at least)
+** ARM32.
 */
 #define S3JniLongPtr_T(T,JLongAsPtr) (T*)((intptr_t)(JLongAsPtr))
 #define S3JniLongPtr_sqlite3(JLongAsPtr) S3JniLongPtr_T(sqlite3,JLongAsPtr)
@@ -1512,7 +1516,7 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, jobject jDb){
 }
 
 /*
-** Returns the S3JniDb object for the given org.sqlite.jni.sqlite3
+** Returns the S3JniDb object for the given org.sqlite.jni.capi.sqlite3
 ** object, or NULL if jDb is NULL, no pointer can be extracted
 ** from it, or no matching entry can be found.
 */
@@ -1561,7 +1565,7 @@ static int S3JniAutoExtension_init(JNIEnv *const env,
   S3JniAutoExt_mutex_assertLocker;
   *ax = S3JniHook_empty;
   ax->midCallback = (*env)->GetMethodID(env, klazz, "call",
-                                        "(Lorg/sqlite/jni/sqlite3;)I");
+                                        "(Lorg/sqlite/jni/capi/sqlite3;)I");
   S3JniUnrefLocal(klazz);
   S3JniExceptionWarnIgnore;
   if( !ax->midCallback ){
@@ -1657,7 +1661,7 @@ static int encodingTypeIsValid(int eTextRep){
 }
 
 /* For use with sqlite3_result/value_pointer() */
-static const char * const ResultJavaValuePtrStr = "org.sqlite.jni.ResultJavaVal";
+static const char * const ResultJavaValuePtrStr = "org.sqlite.jni.capi.ResultJavaVal";
 
 /*
 ** If v is not NULL, it must be a jobject global reference. Its
@@ -1755,9 +1759,9 @@ static S3JniUdf * S3JniUdf_alloc(JNIEnv * const env, jobject jObj){
   }
   if( s ){
     const char * zFSI = /* signature for xFunc, xStep, xInverse */
-      "(Lorg/sqlite/jni/sqlite3_context;[Lorg/sqlite/jni/sqlite3_value;)V";
+      "(Lorg/sqlite/jni/capi/sqlite3_context;[Lorg/sqlite/jni/capi/sqlite3_value;)V";
     const char * zFV = /* signature for xFinal, xValue */
-      "(Lorg/sqlite/jni/sqlite3_context;)V";
+      "(Lorg/sqlite/jni/capi/sqlite3_context;)V";
     jclass const klazz = (*env)->GetObjectClass(env, jObj);
 
     memset(s, 0, sizeof(*s));
@@ -1831,8 +1835,8 @@ typedef struct {
 ** UDF, writing the result (Java wrappers for cx and argv) in the
 ** final 2 arguments. Returns 0 on success, SQLITE_NOMEM on allocation
 ** error. On error *jCx and *jArgv will be set to 0. The output
-** objects are of type org.sqlite.jni.sqlite3_context and
-** array-of-org.sqlite3.jni.sqlite3_value, respectively.
+** objects are of type org.sqlite.jni.capi.sqlite3_context and
+** array-of-org.sqlite.jni.capi.sqlite3_value, respectively.
 */
 static int udf_args(JNIEnv *env,
                     sqlite3_context * const cx,
@@ -1863,6 +1867,28 @@ error_oom:
   S3JniUnrefLocal(ja);
   return SQLITE_NOMEM;
 }
+
+/*
+** Requires that jCx and jArgv are sqlite3_context
+** resp. array-of-sqlite3_value values initialized by udf_args(). This
+** function zeroes out the nativePointer member of jCx and each entry
+** in jArgv. This is a safety-net precaution to avoid undefined
+** behavior if a Java-side UDF holds a reference to one of its
+** arguments. This MUST be called from any function which successfully
+** calls udf_args(), after calling the corresponding UDF and checking
+** its exception status. It MUST NOT be called in any other case.
+*/
+static void udf_unargs(JNIEnv *env, jobject jCx, int argc, jobjectArray jArgv){
+  int i = 0;
+  assert(jCx);
+  NativePointerHolder_set(S3JniNph(sqlite3_context), jCx, 0);
+  for( ; i < argc; ++i ){
+    jobject jsv = (*env)->GetObjectArrayElement(env, jArgv, i);
+    assert(jsv);
+    NativePointerHolder_set(S3JniNph(sqlite3_value), jsv, 0);
+  }
+}
+
 
 /*
 ** Must be called immediately after a Java-side UDF callback throws.
@@ -1923,6 +1949,7 @@ static int udf_xFSI(sqlite3_context* const pCx, int argc,
       rc = udf_report_exception(env, 'F'==zFuncType[1]/*xFunc*/, pCx,
                                 s->zFuncName, zFuncType);
     }
+    udf_unargs(env, args.jcx, argc, args.jargv);
   }
   S3JniUnrefLocal(args.jcx);
   S3JniUnrefLocal(args.jargv);
@@ -2054,15 +2081,24 @@ static void udf_xInverse(sqlite3_context* cx, int argc,
   JniDecl(jlong,JniNameSuffix)(JniArgsEnvClass, jlong jpDb){ \
   return (jlong)CName(S3JniLongPtr_sqlite3(jpDb));  \
   }
+/** Create a trivial JNI wrapper for (jstring CName(sqlite3*,int)). */
+#define WRAP_STR_DB_INT(JniNameSuffix,CName)                             \
+  JniDecl(jstring,JniNameSuffix)(JniArgsEnvClass, jlong jpDb, jint ndx){ \
+    return s3jni_utf8_to_jstring(                                       \
+      CName(S3JniLongPtr_sqlite3(jpDb), (int)ndx),               \
+      -1);                                                              \
+  }
 /** Create a trivial JNI wrapper for (int CName(sqlite3_value*)). */
-#define WRAP_INT_SVALUE(JniNameSuffix,CName)                      \
+#define WRAP_INT_SVALUE(JniNameSuffix,CName,DfltOnNull)         \
   JniDecl(jint,JniNameSuffix)(JniArgsEnvClass, jlong jpSValue){ \
-    return (jint)CName(S3JniLongPtr_sqlite3_value(jpSValue));   \
+    sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSValue); \
+    return (jint)(sv ? CName(sv): DfltOnNull);                      \
   }
 /** Create a trivial JNI wrapper for (boolean CName(sqlite3_value*)). */
-#define WRAP_BOOL_SVALUE(JniNameSuffix,CName)                       \
+#define WRAP_BOOL_SVALUE(JniNameSuffix,CName,DfltOnNull)            \
   JniDecl(jboolean,JniNameSuffix)(JniArgsEnvClass, jlong jpSValue){ \
-    return (jint)CName(S3JniLongPtr_sqlite3_value(jpSValue))        \
+    sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSValue); \
+    return (jint)(sv ? CName(sv) : DfltOnNull)                       \
       ? JNI_TRUE : JNI_FALSE;                                       \
   }
 
@@ -2079,6 +2115,7 @@ WRAP_STR_STMT_INT(1column_1origin_1name,    sqlite3_column_origin_name)
 WRAP_STR_STMT_INT(1column_1table_1name,     sqlite3_column_table_name)
 WRAP_INT_STMT_INT(1column_1type,       sqlite3_column_type)
 WRAP_INT_STMT(1data_1count,            sqlite3_data_count)
+WRAP_STR_DB_INT(1db_1name,             sqlite3_db_name)
 WRAP_INT_DB(1error_1offset,            sqlite3_error_offset)
 WRAP_INT_DB(1extended_1errcode,        sqlite3_extended_errcode)
 WRAP_BOOL_DB(1get_1autocommit,         sqlite3_get_autocommit)
@@ -2101,14 +2138,12 @@ WRAP_INT_DB(1system_1errno,            sqlite3_system_errno)
 WRAP_INT_VOID(1threadsafe,             sqlite3_threadsafe)
 WRAP_INT_DB(1total_1changes,           sqlite3_total_changes)
 WRAP_INT64_DB(1total_1changes64,       sqlite3_total_changes64)
-WRAP_INT_SVALUE(1value_1bytes,         sqlite3_value_bytes)
-WRAP_INT_SVALUE(1value_1bytes16,       sqlite3_value_bytes16)
-WRAP_INT_SVALUE(1value_1encoding,      sqlite3_value_encoding)
-WRAP_BOOL_SVALUE(1value_1frombind,     sqlite3_value_frombind)
-WRAP_INT_SVALUE(1value_1nochange,      sqlite3_value_nochange)
-WRAP_INT_SVALUE(1value_1numeric_1type, sqlite3_value_numeric_type)
-WRAP_INT_SVALUE(1value_1subtype,       sqlite3_value_subtype)
-WRAP_INT_SVALUE(1value_1type,          sqlite3_value_type)
+WRAP_INT_SVALUE(1value_1encoding,      sqlite3_value_encoding,SQLITE_UTF8)
+WRAP_BOOL_SVALUE(1value_1frombind,     sqlite3_value_frombind,0)
+WRAP_INT_SVALUE(1value_1nochange,      sqlite3_value_nochange,0)
+WRAP_INT_SVALUE(1value_1numeric_1type, sqlite3_value_numeric_type,SQLITE_NULL)
+WRAP_INT_SVALUE(1value_1subtype,       sqlite3_value_subtype,0)
+WRAP_INT_SVALUE(1value_1type,          sqlite3_value_type,SQLITE_NULL)
 
 #undef WRAP_BOOL_DB
 #undef WRAP_BOOL_STMT
@@ -2122,6 +2157,7 @@ WRAP_INT_SVALUE(1value_1type,          sqlite3_value_type)
 #undef WRAP_INT_VOID
 #undef WRAP_MUTF8_VOID
 #undef WRAP_STR_STMT_INT
+#undef WRAP_STR_DB_INT
 
 S3JniApi(sqlite3_aggregate_context(),jlong,1aggregate_1context)(
   JniArgsEnvClass, jobject jCx, jboolean initialize
@@ -2366,7 +2402,7 @@ S3JniApi(sqlite3_bind_java_object(),jint,1bind_1java_1object)(
   int rc = SQLITE_MISUSE;
 
   if(pStmt){
-    jobject const rv = val ? S3JniRefGlobal(val) : 0;
+    jobject const rv = S3JniRefGlobal(val);
     if( rv ){
       rc = sqlite3_bind_pointer(pStmt, ndx, rv, ResultJavaValuePtrStr,
                                 S3Jni_jobject_finalizer);
@@ -2430,6 +2466,24 @@ S3JniApi(sqlite3_bind_text16(),jint,1bind_1text16)(
   int const rc = sqlite3_bind_text16(S3JniLongPtr_sqlite3_stmt(jpStmt), (int)ndx,
                                      pBuf, (int)nMax, SQLITE_TRANSIENT);
   s3jni_jbyteArray_release(baData, pBuf);
+  return (jint)rc;
+}
+
+S3JniApi(sqlite3_bind_value(),jint,1bind_1value)(
+  JniArgsEnvClass, jlong jpStmt, jint ndx, jlong jpValue
+){
+  int rc = 0;
+  sqlite3_stmt * pStmt = S3JniLongPtr_sqlite3_stmt(jpStmt);
+  if( pStmt ){
+    sqlite3_value *v = S3JniLongPtr_sqlite3_value(jpValue);
+    if( v ){
+      rc = sqlite3_bind_value(pStmt, (int)ndx, v);
+    }else{
+      rc = sqlite3_bind_null(pStmt, (int)ndx);
+    }
+  }else{
+    rc = SQLITE_MISUSE;
+  }
   return (jint)rc;
 }
 
@@ -2616,6 +2670,10 @@ S3JniApi(sqlite3_cancel_auto_extension(),jboolean,1cancel_1auto_1extension)(
   S3JniAutoExtension * ax;
   jboolean rc = JNI_FALSE;
   int i;
+
+  if( !jAutoExt ){
+    return rc;
+  }
   S3JniAutoExt_mutex_enter;
   /* This algo corresponds to the one in the core. */
   for( i = SJG.autoExt.nExt-1; i >= 0; --i ){
@@ -2724,7 +2782,7 @@ S3JniApi(sqlite3_collation_needed(),jint,1collation_1needed)(
   }else{
     jclass const klazz = (*env)->GetObjectClass(env, jHook);
     jmethodID const xCallback = (*env)->GetMethodID(
-      env, klazz, "call", "(Lorg/sqlite/jni/sqlite3;ILjava/lang/String;)I"
+      env, klazz, "call", "(Lorg/sqlite/jni/capi/sqlite3;ILjava/lang/String;)I"
     );
     S3JniUnrefLocal(klazz);
     S3JniIfThrew {
@@ -2778,8 +2836,8 @@ S3JniApi(sqlite3_column_text(),jbyteArray,1column_1text)(
   JniArgsEnvClass, jobject jpStmt, jint ndx
 ){
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
-  const unsigned char * const p = sqlite3_column_text(stmt, (int)ndx);
-  const int n = sqlite3_column_bytes(stmt, (int)ndx);
+  const unsigned char * const p = stmt ? sqlite3_column_text(stmt, (int)ndx) : 0;
+  const int n = p ? sqlite3_column_bytes(stmt, (int)ndx) : 0;
   return p ? s3jni_new_jbyteArray(p, n) : NULL;
 }
 
@@ -2789,8 +2847,8 @@ S3JniApi(sqlite3_column_text(),jstring,1column_1text)(
   JniArgsEnvClass, jobject jpStmt, jint ndx
 ){
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
-  const unsigned char * const p = sqlite3_column_text(stmt, (int)ndx);
-  const int n = sqlite3_column_bytes(stmt, (int)ndx);
+  const unsigned char * const p = stmt ? sqlite3_column_text(stmt, (int)ndx) : 0;
+  const int n = p ? sqlite3_column_bytes(stmt, (int)ndx) : 0;
   return p ? s3jni_utf8_to_jstring( (const char *)p, n) : 0;
 }
 #endif
@@ -2799,8 +2857,8 @@ S3JniApi(sqlite3_column_text16(),jstring,1column_1text16)(
   JniArgsEnvClass, jobject jpStmt, jint ndx
 ){
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
-  const void * const p = sqlite3_column_text16(stmt, (int)ndx);
-  const int n = sqlite3_column_bytes16(stmt, (int)ndx);
+  const void * const p = stmt ? sqlite3_column_text16(stmt, (int)ndx) : 0;
+  const int n = p ? sqlite3_column_bytes16(stmt, (int)ndx) : 0;
   return s3jni_text16_to_jstring(env, p, n);
 }
 
@@ -2808,7 +2866,8 @@ S3JniApi(sqlite3_column_value(),jobject,1column_1value)(
   JniArgsEnvClass, jobject jpStmt, jint ndx
 ){
   sqlite3_value * const sv =
-    sqlite3_column_value(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
+    sqlite3_column_value(PtrGet_sqlite3_stmt(jpStmt), (int)ndx)
+    /* reminder: returns an SQL NULL if jpStmt==NULL */;
   return new_java_sqlite3_value(env, sv);
 }
 
@@ -2858,7 +2917,7 @@ static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv * const env,
   S3JniDb_mutex_enter;
   ps = S3JniDb_from_jlong(jpDb);
   if( !ps ){
-    s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
+    s3jni_db_error(ps->pDb, SQLITE_MISUSE, 0);
     S3JniDb_mutex_leave;
     return 0;
   }
@@ -2919,6 +2978,18 @@ S3JniApi(sqlite3_compileoption_get(),jstring,1compileoption_1get)(
   return rv;
 }
 
+S3JniApi(sqlite3_compileoption_used(),jboolean,1compileoption_1used)(
+  JniArgsEnvClass, jstring name
+){
+  const char *zUtf8 = s3jni_jstring_to_mutf8(name)
+    /* We know these to be ASCII, so MUTF-8 is fine (and
+       hypothetically faster to convert). */;
+  const jboolean rc =
+    0==sqlite3_compileoption_used(zUtf8) ? JNI_FALSE : JNI_TRUE;
+  s3jni_mutf8_release(name, zUtf8);
+  return rc;
+}
+
 S3JniApi(sqlite3_complete(),int,1complete)(
   JniArgsEnvClass, jbyteArray jSql
 ){
@@ -2932,18 +3003,6 @@ S3JniApi(sqlite3_complete(),int,1complete)(
     ? sqlite3_complete( (const char *)pBuf )
     : (jSql ? SQLITE_NOMEM : SQLITE_MISUSE);
   s3jni_jbyteArray_release(jSql, pBuf);
-  return rc;
-}
-
-S3JniApi(sqlite3_compileoption_used(),jboolean,1compileoption_1used)(
-  JniArgsEnvClass, jstring name
-){
-  const char *zUtf8 = s3jni_jstring_to_mutf8(name)
-    /* We know these to be ASCII, so MUTF-8 is fine (and
-       hypothetically faster to convert). */;
-  const jboolean rc =
-    0==sqlite3_compileoption_used(zUtf8) ? JNI_FALSE : JNI_TRUE;
-  s3jni_mutf8_release(name, zUtf8);
   return rc;
 }
 
@@ -3073,7 +3132,7 @@ S3JniApi(sqlite3_config() /* for SQLITE_CONFIG_SQLLOG */,
   }else {
     jclass const klazz = (*env)->GetObjectClass(env, jLog);
     jmethodID const midCallback = (*env)->GetMethodID(env, klazz, "call",
-                                                      "(Lorg/sqlite/jni/sqlite3;"
+                                                      "(Lorg/sqlite/jni/capi/sqlite3;"
                                                       "Ljava/lang/String;"
                                                       "I)V");
     S3JniUnrefLocal(klazz);
@@ -3151,6 +3210,9 @@ S3JniApi(sqlite3_create_collation() sqlite3_create_collation_v2(),
   int rc;
   S3JniDb * ps;
 
+  if( !jDb || !name || !encodingTypeIsValid(eTextRep) ){
+    return (jint)SQLITE_MISUSE;
+  }
   S3JniDb_mutex_enter;
   ps = S3JniDb_from_java(jDb);
   jclass const klazz = (*env)->GetObjectClass(env, oCollation);
@@ -3241,39 +3303,9 @@ error_cleanup:
   return (jint)rc;
 }
 
-S3JniApi(sqlite3_db_filename(),jstring,1db_1filename)(
-  JniArgsEnvClass, jobject jDb, jstring jDbName
-){
-  S3JniDb * const ps = S3JniDb_from_java(jDb);
-  char *zDbName;
-  jstring jRv = 0;
-  int nStr = 0;
-
-  if( !ps || !jDbName ){
-    return 0;
-  }
-  zDbName = s3jni_jstring_to_utf8( jDbName, &nStr);
-  if( zDbName ){
-    char const * zRv = sqlite3_db_filename(ps->pDb, zDbName);
-    sqlite3_free(zDbName);
-    if( zRv ){
-      jRv = s3jni_utf8_to_jstring( zRv, -1);
-    }
-  }
-  return jRv;
-}
-
-S3JniApi(sqlite3_db_handle(),jobject,1db_1handle)(
-  JniArgsEnvClass, jobject jpStmt
-){
-  sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
-  sqlite3 * const pDb = pStmt ? sqlite3_db_handle(pStmt) : 0;
-  S3JniDb * const ps = pDb ? S3JniDb_from_c(pDb) : 0;
-  return ps ? ps->jDb : 0;
-}
 
 S3JniApi(sqlite3_db_config() /*for MAINDBNAME*/,
-         jint,1db_1config__Lorg_sqlite_jni_sqlite3_2ILjava_lang_String_2
+         jint,1db_1config__Lorg_sqlite_jni_capi_sqlite3_2ILjava_lang_String_2
 )(JniArgsEnvClass, jobject jDb, jint op, jstring jStr){
   S3JniDb * const ps = S3JniDb_from_java(jDb);
   int rc;
@@ -3298,6 +3330,7 @@ S3JniApi(sqlite3_db_config() /*for MAINDBNAME*/,
       }
       S3JniDb_mutex_leave;
       break;
+    case 0:
     default:
       rc = SQLITE_MISUSE;
   }
@@ -3309,7 +3342,7 @@ S3JniApi(
   /* WARNING: openjdk v19 creates a different mangled name for this
   ** function than openjdk v8 does. We account for that by exporting
   ** both versions of the name. */
-  jint,1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_Int32_2
+  jint,1db_1config__Lorg_sqlite_jni_capi_sqlite3_2IILorg_sqlite_jni_capi_OutputPointer_Int32_2
 )(
   JniArgsEnvClass, jobject jDb, jint op, jint onOff, jobject jOut
 ){
@@ -3341,6 +3374,7 @@ S3JniApi(
       }
       break;
     }
+    case 0:
     default:
       rc = SQLITE_MISUSE;
   }
@@ -3353,12 +3387,54 @@ S3JniApi(
 ** install both names for this function then Java will not be able to
 ** find the function in both environments.
 */
-JniDecl(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_00024Int32_2)(
+JniDecl(jint,1db_1config__Lorg_sqlite_jni_capi_sqlite3_2IILorg_sqlite_jni_capi_OutputPointer_00024Int32_2)(
   JniArgsEnvClass, jobject jDb, jint op, jint onOff, jobject jOut
 ){
-  return JniFuncName(1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_Int32_2)(
+  return JniFuncName(1db_1config__Lorg_sqlite_jni_capi_sqlite3_2IILorg_sqlite_jni_capi_OutputPointer_Int32_2)(
     env, jKlazz, jDb, op, onOff, jOut
   );
+}
+
+S3JniApi(sqlite3_db_filename(),jstring,1db_1filename)(
+  JniArgsEnvClass, jobject jDb, jstring jDbName
+){
+  S3JniDb * const ps = S3JniDb_from_java(jDb);
+  char *zDbName;
+  jstring jRv = 0;
+  int nStr = 0;
+
+  if( !ps || !jDbName ){
+    return 0;
+  }
+  zDbName = s3jni_jstring_to_utf8( jDbName, &nStr);
+  if( zDbName ){
+    char const * zRv = sqlite3_db_filename(ps->pDb, zDbName);
+    sqlite3_free(zDbName);
+    if( zRv ){
+      jRv = s3jni_utf8_to_jstring( zRv, -1);
+    }
+  }
+  return jRv;
+}
+
+S3JniApi(sqlite3_db_handle(),jobject,1db_1handle)(
+  JniArgsEnvClass, jobject jpStmt
+){
+  sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
+  sqlite3 * const pDb = pStmt ? sqlite3_db_handle(pStmt) : 0;
+  S3JniDb * const ps = pDb ? S3JniDb_from_c(pDb) : 0;
+  return ps ? ps->jDb : 0;
+}
+
+S3JniApi(sqlite3_db_readonly(),jint,1db_1readonly)(
+  JniArgsEnvClass, jobject jDb, jstring jDbName
+){
+  int rc = 0;
+  S3JniDb * const ps = S3JniDb_from_java(jDb);
+  char *zDbName = jDbName ? s3jni_jstring_to_utf8( jDbName, 0 ) : 0;
+  rc = sqlite3_db_readonly(ps ? ps->pDb : 0, zDbName);
+  sqlite3_free(zDbName);
+  return (jint)rc;
 }
 
 S3JniApi(sqlite3_db_release_memory(),int,1db_1release_1memory)(
@@ -3549,12 +3625,7 @@ S3JniApi(sqlite3_keyword_name(),jstring,1keyword_1name)(
 S3JniApi(sqlite3_last_insert_rowid(),jlong,1last_1insert_1rowid)(
   JniArgsEnvClass, jobject jpDb
 ){
-  jlong rc = 0;
-  sqlite3 * const pDb = PtrGet_sqlite3(jpDb);
-  if( pDb ){
-    rc = (jlong)sqlite3_last_insert_rowid(pDb);
-  }
-  return rc;
+  return (jlong)sqlite3_last_insert_rowid(PtrGet_sqlite3(jpDb));
 }
 
 S3JniApi(sqlite3_limit(),jint,1limit)(
@@ -3574,6 +3645,7 @@ static int s3jni_open_pre(JNIEnv * const env, S3JniEnv **jc,
                           S3JniDb ** ps){
   int rc = 0;
   jobject jDb = 0;
+
   *jc = S3JniEnv_get();
   if( !*jc ){
     rc = SQLITE_NOMEM;
@@ -3605,7 +3677,7 @@ end:
 /*
 ** Post-open() code common to both the sqlite3_open() and
 ** sqlite3_open_v2() bindings. ps->jDb must be the
-** org.sqlite.jni.sqlite3 object which will hold the db's native
+** org.sqlite.jni.capi.sqlite3 object which will hold the db's native
 ** pointer. theRc must be the result code of the open() op. If
 ** *ppDb is NULL then ps is set aside and its state cleared,
 ** else ps is associated with *ppDb. If *ppDb is not NULL then
@@ -3650,6 +3722,8 @@ S3JniApi(sqlite3_open(),jint,1open)(
   S3JniDb * ps = 0;
   S3JniEnv * jc = 0;
   int rc;
+
+  if( 0==jOut ) return SQLITE_MISUSE;
   rc = s3jni_open_pre(env, &jc, strName, &zName, &ps);
   if( 0==rc ){
     rc = s3jni_open_post(env, jc, ps, &pOut, jOut,
@@ -3662,14 +3736,17 @@ S3JniApi(sqlite3_open(),jint,1open)(
 
 S3JniApi(sqlite3_open_v2(),jint,1open_1v2)(
   JniArgsEnvClass, jstring strName,
-                      jobject jOut, jint flags, jstring strVfs
+  jobject jOut, jint flags, jstring strVfs
 ){
   sqlite3 * pOut = 0;
   char *zName = 0;
   S3JniDb * ps = 0;
   S3JniEnv * jc = 0;
   char *zVfs = 0;
-  int rc = s3jni_open_pre(env, &jc, strName, &zName, &ps);
+  int rc;
+
+  if( 0==jOut ) return SQLITE_MISUSE;
+  rc = s3jni_open_pre(env, &jc, strName, &zName, &ps);
   if( 0==rc ){
     if( strVfs ){
       zVfs = s3jni_jstring_to_utf8( strVfs, 0);
@@ -3696,10 +3773,15 @@ jint sqlite3_jni_prepare_v123( int prepVersion, JNIEnv * const env, jclass self,
   sqlite3_stmt * pStmt = 0;
   jobject jStmt = 0;
   const char * zTail = 0;
-  jbyte * const pBuf = s3jni_jbyteArray_bytes(baSql);
+  sqlite3 * const pDb = S3JniLongPtr_sqlite3(jpDb);
+  jbyte * const pBuf = pDb ? s3jni_jbyteArray_bytes(baSql)  : 0;
   int rc = SQLITE_ERROR;
+
   assert(prepVersion==1 || prepVersion==2 || prepVersion==3);
-  if( !pBuf ){
+  if( !pDb || !jOutStmt ){
+    rc = SQLITE_MISUSE;
+    goto end;
+  }else if( !pBuf ){
     rc = baSql ? SQLITE_NOMEM : SQLITE_MISUSE;
     goto end;
   }
@@ -3709,13 +3791,13 @@ jint sqlite3_jni_prepare_v123( int prepVersion, JNIEnv * const env, jclass self,
     goto end;
   }
   switch( prepVersion ){
-    case 1: rc = sqlite3_prepare(S3JniLongPtr_sqlite3(jpDb), (const char *)pBuf,
+    case 1: rc = sqlite3_prepare(pDb, (const char *)pBuf,
                                  (int)nMax, &pStmt, &zTail);
       break;
-    case 2: rc = sqlite3_prepare_v2(S3JniLongPtr_sqlite3(jpDb), (const char *)pBuf,
+    case 2: rc = sqlite3_prepare_v2(pDb, (const char *)pBuf,
                                     (int)nMax, &pStmt, &zTail);
       break;
-    case 3: rc = sqlite3_prepare_v3(S3JniLongPtr_sqlite3(jpDb), (const char *)pBuf,
+    case 3: rc = sqlite3_prepare_v3(pDb, (const char *)pBuf,
                                     (int)nMax, (unsigned int)prepFlags,
                                     &pStmt, &zTail);
       break;
@@ -3745,8 +3827,10 @@ end:
     S3JniUnrefLocal(jStmt);
     jStmt = 0;
   }
-  OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3_stmt),
-                        jOutStmt, jStmt);
+  if( jOutStmt ){
+    OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3_stmt),
+                          jOutStmt, jStmt);
+  }
   return (jint)rc;
 }
 S3JniApi(sqlite3_prepare(),jint,1prepare)(
@@ -3896,7 +3980,7 @@ static jobject s3jni_updatepre_hook(JNIEnv * env, int isPre, jlong jpDb, jobject
   klazz = (*env)->GetObjectClass(env, jHook);
   xCallback = isPre
     ? (*env)->GetMethodID(env, klazz, "call",
-                          "(Lorg/sqlite/jni/sqlite3;"
+                          "(Lorg/sqlite/jni/capi/sqlite3;"
                           "I"
                           "Ljava/lang/String;"
                           "Ljava/lang/String;"
@@ -4070,7 +4154,10 @@ static void result_blob_text(int as64     /* true for text64/blob64() mode */,
                              JNIEnv * const env, sqlite3_context *pCx,
                              jbyteArray jBa, jlong nMax){
   int const asBlob = 0==eTextRep;
-  if( jBa ){
+  if( !pCx ){
+    /* We should arguably emit a warning here. But where to log it? */
+    return;
+  }else if( jBa ){
     jbyte * const pBuf = s3jni_jbyteArray_bytes(jBa);
     jsize nBa = (*env)->GetArrayLength(env, jBa);
     if( nMax>=0 && nBa>(jsize)nMax ){
@@ -4086,7 +4173,7 @@ static void result_blob_text(int as64     /* true for text64/blob64() mode */,
          Note that the text64() interfaces take an unsigned value for
          the length, which Java does not support. This binding takes
          the approach of passing on negative values to the C API,
-         which will, in turn fail with SQLITE_TOOBIG at some later
+         which will in turn fail with SQLITE_TOOBIG at some later
          point (recall that the sqlite3_result_xyz() family do not
          have result values).
       */
@@ -4220,10 +4307,12 @@ S3JniApi(sqlite3_result_int64(),void,1result_1int64)(
 S3JniApi(sqlite3_result_java_object(),void,1result_1java_1object)(
   JniArgsEnvClass, jobject jpCx, jobject v
 ){
-  if( v ){
+  sqlite3_context * pCx = PtrGet_sqlite3_context(jpCx);
+  if( !pCx ) return;
+  else if( v ){
     jobject const rjv = S3JniRefGlobal(v);
     if( rjv ){
-      sqlite3_result_pointer(PtrGet_sqlite3_context(jpCx), rjv,
+      sqlite3_result_pointer(pCx, rjv,
                              ResultJavaValuePtrStr, S3Jni_jobject_finalizer);
     }else{
       sqlite3_result_error_nomem(PtrGet_sqlite3_context(jpCx));
@@ -4469,7 +4558,6 @@ static int s3jni_strlike_glob(int isLike, JNIEnv *const env,
   jbyte * const pG = s3jni_jbyteArray_bytes(baG);
   jbyte * const pT = pG ? s3jni_jbyteArray_bytes(baT) : 0;
 
-  s3jni_oom_fatal(pT);
   /* Note that we're relying on the byte arrays having been
      NUL-terminated on the Java side. */
   rc = isLike
@@ -4509,12 +4597,8 @@ S3JniApi(sqlite3_sql(),jstring,1sql)(
 S3JniApi(sqlite3_step(),jint,1step)(
   JniArgsEnvClass,jobject jStmt
 ){
-  int rc = SQLITE_MISUSE;
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jStmt);
-  if( pStmt ){
-    rc = sqlite3_step(pStmt);
-  }
-  return rc;
+  return pStmt ? (jint)sqlite3_step(pStmt) : (jint)SQLITE_MISUSE;
 }
 
 S3JniApi(sqlite3_table_column_metadata(),int,1table_1column_1metadata)(
@@ -4529,11 +4613,12 @@ S3JniApi(sqlite3_table_column_metadata(),int,1table_1column_1metadata)(
   int pNotNull = 0, pPrimaryKey = 0, pAutoinc = 0;
   int rc;
 
-  if( !db || !jDbName || !jTableName || !jColumnName ) return SQLITE_MISUSE;
+  if( !db || !jDbName || !jTableName ) return SQLITE_MISUSE;
   zDbName = s3jni_jstring_to_utf8(jDbName,0);
   zTableName = zDbName ? s3jni_jstring_to_utf8(jTableName,0) : 0;
-  zColumnName = zTableName ? s3jni_jstring_to_utf8(jColumnName,0) : 0;
-  rc = zColumnName
+  zColumnName = (zTableName && jColumnName)
+    ? s3jni_jstring_to_utf8(jColumnName,0) : 0;
+  rc = zTableName
     ? sqlite3_table_column_metadata(db, zDbName, zTableName,
                                     zColumnName, &pzDataType, &pzCollSeq,
                                     &pNotNull, &pPrimaryKey, &pAutoinc)
@@ -4693,8 +4778,8 @@ S3JniApi(sqlite3_value_blob(),jbyteArray,1value_1blob)(
   JniArgsEnvClass, jlong jpSVal
 ){
   sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
-  const jbyte * pBytes = sqlite3_value_blob(sv);
-  int const nLen = sqlite3_value_bytes(sv);
+  const jbyte * pBytes = sv ? sqlite3_value_blob(sv) : 0;
+  int const nLen = pBytes ? sqlite3_value_bytes(sv) : 0;
 
   s3jni_oom_check( nLen ? !!pBytes : 1 );
   return pBytes
@@ -4702,52 +4787,80 @@ S3JniApi(sqlite3_value_blob(),jbyteArray,1value_1blob)(
     : NULL;
 }
 
+S3JniApi(sqlite3_value_bytes(),int,1value_1bytes)(
+  JniArgsEnvClass, jlong jpSVal
+){
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  return sv ? sqlite3_value_bytes(sv) : 0;
+}
+
+S3JniApi(sqlite3_value_bytes16(),int,1value_1bytes16)(
+  JniArgsEnvClass, jlong jpSVal
+){
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  return sv ? sqlite3_value_bytes16(sv) : 0;
+}
+
 
 S3JniApi(sqlite3_value_double(),jdouble,1value_1double)(
   JniArgsEnvClass, jlong jpSVal
 ){
-  return (jdouble) sqlite3_value_double(S3JniLongPtr_sqlite3_value(jpSVal));
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  return (jdouble) (sv ? sqlite3_value_double(sv) : 0.0);
 }
 
 
 S3JniApi(sqlite3_value_dup(),jobject,1value_1dup)(
   JniArgsEnvClass, jlong jpSVal
 ){
-  sqlite3_value * const sv = sqlite3_value_dup(S3JniLongPtr_sqlite3_value(jpSVal));
-  return sv ? new_java_sqlite3_value(env, sv) : 0;
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  sqlite3_value * const sd = sv ? sqlite3_value_dup(sv) : 0;
+  jobject rv = sd ? new_java_sqlite3_value(env, sd) : 0;
+  if( sd && !rv ) {
+    /* OOM */
+    sqlite3_value_free(sd);
+  }
+  return rv;
 }
 
 S3JniApi(sqlite3_value_free(),void,1value_1free)(
   JniArgsEnvClass, jlong jpSVal
 ){
-  sqlite3_value_free(S3JniLongPtr_sqlite3_value(jpSVal));
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  if( sv ){
+    sqlite3_value_free(sv);
+  }
 }
 
 S3JniApi(sqlite3_value_int(),jint,1value_1int)(
   JniArgsEnvClass, jlong jpSVal
 ){
-  return (jint) sqlite3_value_int(S3JniLongPtr_sqlite3_value(jpSVal));
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  return (jint) (sv ? sqlite3_value_int(sv) : 0);
 }
 
 S3JniApi(sqlite3_value_int64(),jlong,1value_1int64)(
   JniArgsEnvClass, jlong jpSVal
 ){
-  return (jlong) sqlite3_value_int64(S3JniLongPtr_sqlite3_value(jpSVal));
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  return (jlong) (sv ? sqlite3_value_int64(sv) : 0LL);
 }
 
 S3JniApi(sqlite3_value_java_object(),jobject,1value_1java_1object)(
   JniArgsEnvClass, jlong jpSVal
 ){
-  return sqlite3_value_pointer(S3JniLongPtr_sqlite3_value(jpSVal),
-                               ResultJavaValuePtrStr);
+  sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
+  return sv
+    ? sqlite3_value_pointer(sv, ResultJavaValuePtrStr)
+    : 0;
 }
 
 S3JniApi(sqlite3_value_text(),jbyteArray,1value_1text)(
   JniArgsEnvClass, jlong jpSVal
 ){
   sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
-  const unsigned char * const p = sqlite3_value_text(sv);
-  int const n = sqlite3_value_bytes(sv);
+  const unsigned char * const p = sv ? sqlite3_value_text(sv) : 0;
+  int const n = p ? sqlite3_value_bytes(sv) : 0;
   return p ? s3jni_new_jbyteArray(p, n) : 0;
 }
 
@@ -4757,8 +4870,8 @@ S3JniApi(sqlite3_value_text(),jstring,1value_1text)(
   JniArgsEnvClass, jlong jpSVal
 ){
   sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
-  const unsigned char * const p = sqlite3_value_text(sv);
-  int const n = sqlite3_value_bytes(sv);
+  const unsigned char * const p = sv ? sqlite3_value_text(sv) : 0;
+  int const n = p ? sqlite3_value_bytes(sv) : 0;
   return p ? s3jni_utf8_to_jstring( (const char *)p, n) : 0;
 }
 #endif
@@ -4767,9 +4880,9 @@ S3JniApi(sqlite3_value_text16(),jstring,1value_1text16)(
   JniArgsEnvClass, jlong jpSVal
 ){
   sqlite3_value * const sv = S3JniLongPtr_sqlite3_value(jpSVal);
-  const int n = sqlite3_value_bytes16(sv);
-  const void * const p = sqlite3_value_text16(sv);
-  return s3jni_text16_to_jstring(env, p, n);
+  const int n = sv ? sqlite3_value_bytes16(sv) : 0;
+  const void * const p = sv ? sqlite3_value_text16(sv) : 0;
+  return p ? s3jni_text16_to_jstring(env, p, n) : 0;
 }
 
 JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){
@@ -4915,8 +5028,8 @@ static Fts5JniAux * Fts5JniAux_alloc(JNIEnv * const env, jobject jObj){
     s->jmid = (*env)->GetMethodID(env, klazz, "call",
                                   "(Lorg/sqlite/jni/fts5/Fts5ExtensionApi;"
                                   "Lorg/sqlite/jni/fts5/Fts5Context;"
-                                  "Lorg/sqlite/jni/sqlite3_context;"
-                                  "[Lorg/sqlite/jni/sqlite3_value;)V");
+                                  "Lorg/sqlite/jni/capi/sqlite3_context;"
+                                  "[Lorg/sqlite/jni/capi/sqlite3_value;)V");
     S3JniUnrefLocal(klazz);
     S3JniIfThrew{
       S3JniExceptionReport;
@@ -5079,6 +5192,7 @@ static void s3jni_fts5_extension_function(Fts5ExtensionApi const *pApi,
   S3JniIfThrew{
     udf_report_exception(env, 1, pCx, pAux->zFuncName, "call");
   }
+  udf_unargs(env, jpCx, argc, jArgv);
   S3JniUnrefLocal(jpFts);
   S3JniUnrefLocal(jpCx);
   S3JniUnrefLocal(jArgv);
@@ -5632,7 +5746,7 @@ static int SQLTester_strnotglob(const char *zGlob, const char *z){
 }
 
 JNIEXPORT jint JNICALL
-Java_org_sqlite_jni_SQLTester_strglob(
+Java_org_sqlite_jni_capi_SQLTester_strglob(
   JniArgsEnvClass, jbyteArray baG, jbyteArray baT
 ){
   int rc = 0;
@@ -5659,7 +5773,7 @@ static int SQLTester_auto_extension(sqlite3 *pDb, const char **pzErr,
 }
 
 JNIEXPORT void JNICALL
-Java_org_sqlite_jni_SQLTester_installCustomExtensions(JniArgsEnvClass){
+Java_org_sqlite_jni_capi_SQLTester_installCustomExtensions(JniArgsEnvClass){
   sqlite3_auto_extension( (void(*)(void))SQLTester_auto_extension );
 }
 
@@ -5673,7 +5787,7 @@ Java_org_sqlite_jni_SQLTester_installCustomExtensions(JniArgsEnvClass){
 ** state.
 */
 JNIEXPORT void JNICALL
-Java_org_sqlite_jni_CApi_init(JniArgsEnvClass){
+Java_org_sqlite_jni_capi_CApi_init(JniArgsEnvClass){
   jclass klazz;
 
   memset(&S3JniGlobal, 0, sizeof(S3JniGlobal));
@@ -5715,7 +5829,7 @@ Java_org_sqlite_jni_CApi_init(JniArgsEnvClass){
 
 #ifdef SQLITE_ENABLE_FTS5
   klazz = (*env)->FindClass(env, "org/sqlite/jni/fts5/Fts5PhraseIter");
-  S3JniExceptionIsFatal("Error getting reference to org.sqlite.jni.Fts5PhraseIter.");
+  S3JniExceptionIsFatal("Error getting reference to org.sqlite.jni.fts5.Fts5PhraseIter.");
   SJG.fts5.jPhraseIter.fidA = (*env)->GetFieldID(env, klazz, "a", "J");
   S3JniExceptionIsFatal("Cannot get Fts5PhraseIter.a field.");
   SJG.fts5.jPhraseIter.fidB = (*env)->GetFieldID(env, klazz, "b", "J");

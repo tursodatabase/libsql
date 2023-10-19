@@ -789,7 +789,7 @@ static void jsonReturnString(JsonString *p){
     }else if( jsonForceRCStr(p) ){
       sqlite3RCStrRef(p->zBuf);
       sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
-                            (void(*)(void*))sqlite3RCStrUnref,
+                            sqlite3RCStrUnref,
                             SQLITE_UTF8);
     }else{
       sqlite3_result_error_nomem(p->pCtx);
@@ -2179,7 +2179,7 @@ static JsonParse *jsonParseCached(
   /* The input JSON was not found anywhere in the cache.  We will need
   ** to parse it ourselves and generate a new JsonParse object.
   */
-  bJsonRCStr = sqlite3ValueIsOfClass(pJson,(void(*)(void*))sqlite3RCStrUnref);
+  bJsonRCStr = sqlite3ValueIsOfClass(pJson,sqlite3RCStrUnref);
   p = sqlite3_malloc64( sizeof(*p) + (bJsonRCStr ? 0 : nJson+1) );
   if( p==0 ){
     sqlite3_result_error_nomem(pCtx);
@@ -2388,6 +2388,7 @@ static JsonNode *jsonLookupStep(
         if( (pRoot[j].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ) i--;
         j += jsonNodeSize(&pRoot[j]);
       }
+      if( i==0 && j<=pRoot->n ) break;
       if( (pRoot->jnFlags & JNODE_APPEND)==0 ) break;
       if( pParse->useMod==0 ) break;
       assert( pRoot->eU==2 );
@@ -5067,7 +5068,7 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
     }else if( isFinal ){
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
                           pStr->bStatic ? SQLITE_TRANSIENT :
-                              (void(*)(void*))sqlite3RCStrUnref);
+                              sqlite3RCStrUnref);
       pStr->bStatic = 1;
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);
@@ -5187,7 +5188,7 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
     }else if( isFinal ){
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
                           pStr->bStatic ? SQLITE_TRANSIENT :
-                          (void(*)(void*))sqlite3RCStrUnref);
+                          sqlite3RCStrUnref);
       pStr->bStatic = 1;
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);
@@ -5632,7 +5633,7 @@ static int jsonEachFilter(
   if( z==0 ) return SQLITE_OK;
   memset(&p->sParse, 0, sizeof(p->sParse));
   p->sParse.nJPRef = 1;
-  if( sqlite3ValueIsOfClass(argv[0], (void(*)(void*))sqlite3RCStrUnref) ){
+  if( sqlite3ValueIsOfClass(argv[0], sqlite3RCStrUnref) ){
     p->sParse.zJson = sqlite3RCStrRef((char*)z);
   }else{
     n = sqlite3_value_bytes(argv[0]);

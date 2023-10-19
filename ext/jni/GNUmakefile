@@ -26,6 +26,7 @@ dir.src.c   := $(dir.src)/c
 dir.bld     := $(dir.jni)/bld
 dir.bld.c   := $(dir.bld)
 dir.src.jni := $(dir.src)/org/sqlite/jni
+dir.src.capi := $(dir.src.jni)/capi
 dir.src.fts5 := $(dir.src.jni)/fts5
 dir.tests   := $(dir.src)/tests
 mkdir       ?= mkdir -p
@@ -45,8 +46,8 @@ DISTCLEAN_FILES := $(dir.jni)/*~ $(dir.src.c)/*~ $(dir.src.jni)/*~
 
 sqlite3-jni.h := $(dir.src.c)/sqlite3-jni.h
 .NOTPARALLEL: $(sqlite3-jni.h)
-CApi.java := src/org/sqlite/jni/CApi.java
-SQLTester.java := src/org/sqlite/jni/SQLTester.java
+CApi.java := $(dir.src.capi)/CApi.java
+SQLTester.java := $(dir.src.capi)/SQLTester.java
 CApi.class := $(CApi.java:.java=.class)
 SQLTester.class := $(SQLTester.java:.java=.class)
 
@@ -77,9 +78,10 @@ $(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
 
 # Be explicit about which Java files to compile so that we can work on
 # in-progress files without requiring them to be in a compilable statae.
-JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
-  annotation/NotNull.java \
-  annotation/Nullable.java \
+JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/annotation/%,\
+  NotNull.java \
+  Nullable.java \
+) $(patsubst %,$(dir.src.capi)/%,\
   AbstractCollationCallback.java \
   AggregateFunction.java \
   AuthorizerCallback.java \
@@ -98,27 +100,34 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   ResultCode.java \
   RollbackHookCallback.java \
   ScalarFunction.java \
-  Sqlite.java \
-  SqliteException.java \
   SQLFunction.java \
   CallbackProxy.java \
   CApi.java \
   TableColumnMetadata.java \
   TraceV2Callback.java \
   UpdateHookCallback.java \
+  ValueHolder.java \
   WindowFunction.java \
   XDestroyCallback.java \
   sqlite3.java \
   sqlite3_context.java \
   sqlite3_stmt.java \
   sqlite3_value.java \
+) $(patsubst %,$(dir.src.jni)/wrapper1/%,\
+  AggregateFunction.java \
+  ScalarFunction.java \
+  SqlFunction.java \
+  Sqlite.java \
+  SqliteException.java \
+  ValueHolder.java \
 )
+
 JAVA_FILES.unittest := $(patsubst %,$(dir.src.jni)/%,\
-  Tester1.java \
-  Tester2.java \
+  capi/Tester1.java \
+  wrapper1/Tester2.java \
 )
 ifeq (1,$(enable.fts5))
-  JAVA_FILES.unittest += $(patsubst %,$(dir.src.jni)/%,\
+  JAVA_FILES.unittest += $(patsubst %,$(dir.src.fts5)/%,\
     TesterFts5.java \
   )
   JAVA_FILES.main += $(patsubst %,$(dir.src.fts5)/%,\
@@ -206,7 +215,7 @@ SQLITE_OPT = \
   -DSQLITE_JNI_FATAL_OOM=$(opt.fatal-oom) \
   -DSQLITE_JNI_ENABLE_METRICS=$(opt.metrics)
 
-opt.extras ?= 0
+opt.extras ?= 1
 ifeq (1,$(opt.extras))
 SQLITE_OPT += -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
@@ -245,8 +254,8 @@ $$(dir.bld.c)/org_sqlite_jni$(3)_$(2).h: $(1)/$(2).java
 endef
 # Invoke ADD_JNI_H once for each Java file which includes JNI
 # declarations:
-$(eval $(call ADD_JNI_H,$(dir.src.jni),CApi,))
-$(eval $(call ADD_JNI_H,$(dir.src.jni),SQLTester,))
+$(eval $(call ADD_JNI_H,$(dir.src.capi),CApi,_capi))
+$(eval $(call ADD_JNI_H,$(dir.src.capi),SQLTester,_capi))
 ifeq (1,$(enable.fts5))
  $(eval $(call ADD_JNI_H,$(dir.src.fts5),Fts5ExtensionApi,_fts5))
  $(eval $(call ADD_JNI_H,$(dir.src.fts5),fts5_api,_fts5))
@@ -303,16 +312,16 @@ test.flags.jvm = -ea -Djava.library.path=$(dir.bld.c) \
                   $(java.flags) -cp $(classpath)
 test.deps := $(CLASS_FILES) $(package.dll)
 test-one: $(test.deps)
-	$(bin.java) $(test.flags.jvm) org.sqlite.jni.Tester1 $(Tester1.flags)
-	$(bin.java) $(test.flags.jvm) org.sqlite.jni.Tester2 $(Tester2.flags)
+	$(bin.java) $(test.flags.jvm) org.sqlite.jni.capi.Tester1 $(Tester1.flags)
+	$(bin.java) $(test.flags.jvm) org.sqlite.jni.wrapper1.Tester2 $(Tester2.flags)
 test-sqllog: $(test.deps)
 	@echo "Testing with -sqllog..."
 	$(bin.java) $(test.flags.jvm) -sqllog
 test-mt: $(test.deps)
 	@echo "Testing in multi-threaded mode:";
-	$(bin.java) $(test.flags.jvm) org.sqlite.jni.Tester1 \
+	$(bin.java) $(test.flags.jvm) org.sqlite.jni.capi.Tester1 \
     -t 7 -r 50 -shuffle $(Tester1.flags)
-	$(bin.java) $(test.flags.jvm) org.sqlite.jni.Tester2 \
+	$(bin.java) $(test.flags.jvm) org.sqlite.jni.wrapper1.Tester2 \
     -t 7 -r 50 -shuffle $(Tester2.flags)
 
 test: test-one test-mt
@@ -325,7 +334,7 @@ ifeq (1,$(enable.tester))
 tester-local: $(CLASS_FILES.tester) $(package.dll)
 	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
 		$(java.flags) -cp $(classpath) \
-		org.sqlite.jni.SQLTester $(tester.flags) $(tester.scripts)
+		org.sqlite.jni.capi.SQLTester $(tester.flags) $(tester.scripts)
 tester: tester-local
 else
 tester:
@@ -339,7 +348,7 @@ ifneq (,$(tester.extern-scripts))
 tester-ext:
 	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
 		$(java.flags) -cp $(classpath) \
-		org.sqlite.jni.SQLTester $(tester.flags) $(tester.extern-scripts)
+		org.sqlite.jni.capi.SQLTester $(tester.flags) $(tester.extern-scripts)
 else
 tester-ext:
 	@echo "******************************************************"; \
@@ -379,13 +388,12 @@ JAVA_FILES.jar := $(JAVA_FILES.main) $(JAVA_FILES.unittest) $(JAVA_FILES.package
 CLASS_FILES.jar := $(filter-out %/package-info.class,$(JAVA_FILES.jar:.java=.class))
 $(package.jar.in): $(package.dll) $(MAKEFILE)
 	ls -1 \
-		$(dir.src.jni)/*.java $(dir.src.jni)/*.class \
-		$(dir.src.jni)/annotation/*.java $(dir.src.jni)/annotation/*.class \
+		$(dir.src.jni)/*/*.java $(dir.src.jni)/*/*.class \
 	| sed -e 's,^$(dir.src)/,,' | sort > $@
 
 $(package.jar): $(CLASS_FILES.jar) $(MAKEFILE) $(package.jar.in)
 	@rm -f $(dir.src)/c/*~ $(dir.src.jni)/*~
-	cd $(dir.src); $(bin.jar) -cfe ../$@ org.sqlite.jni.Tester1 @$(package.jar.in)
+	cd $(dir.src); $(bin.jar) -cfe ../$@ org.sqlite.jni.capi.Tester1 @$(package.jar.in)
 	@ls -la $@
 	@echo "To use this jar you will need the -Djava.library.path=DIR/CONTAINING/libsqlite3-jni.so flag."
 	@echo "e.g. java -Djava.library.path=bld -jar $@"
@@ -402,6 +410,8 @@ javadoc.exclude := -exclude org.sqlite.jni.fts5
 # ^^^^ 2023-09-13: elide the fts5 parts from the public docs for
 # the time being, as it's not clear where the Java bindings for
 # those bits are going.
+# javadoc.exclude += -exclude org.sqlite.jni.capi
+# ^^^^ exclude the capi API only for certain builds (TBD)
 $(doc.index): $(JAVA_FILES.main) $(MAKEFILE)
 	@if [ -d $(dir.doc) ]; then rm -fr $(dir.doc)/*; fi
 	$(bin.javadoc) -cp $(classpath) -d $(dir.doc) -quiet \
@@ -422,7 +432,7 @@ docserve: $(doc.index)
 # Clean up...
 CLEAN_FILES += $(dir.bld.c)/* \
   $(dir.src.jni)/*.class \
-  $(dir.src.jni.tester)/*.class \
+  $(dir.src.jni)/*/*.class \
   $(package.dll) \
   hs_err_pid*.log
 

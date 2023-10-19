@@ -934,5 +934,24 @@ do_execsql_test alter-19.3 {
   SELECT name FROM sqlite_schema WHERE sql LIKE '%t3%' ORDER BY name;
 } {r1 t3}
 
+# 2023-10-14
+# On an ALTER TABLE ADD COLUMN with a DEFAULT clause on a STRICT table
+# make sure that the DEFAULT has a compatible type.
+#
+reset_db
+do_execsql_test alter-20.1 {
+  CREATE TABLE t1(a INT) STRICT;
+  INSERT INTO t1(a) VALUES(45);
+} {}
+do_catchsql_test alter-20.2 {
+  ALTER TABLE t1 ADD COLUMN b TEXT DEFAULT x'313233';
+} {1 {type mismatch on DEFAULT}}
+do_execsql_test alter-20.2 {
+  DELETE FROM t1;
+  ALTER TABLE t1 ADD COLUMN b TEXT DEFAULT x'313233';
+} {}
+do_catchsql_test alter-20.3 {
+  INSERT INTO t1(a) VALUES(45);
+} {1 {cannot store BLOB value in TEXT column t1.b}}
 
 finish_test

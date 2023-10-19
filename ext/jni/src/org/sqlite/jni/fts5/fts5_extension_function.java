@@ -12,8 +12,8 @@
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
 package org.sqlite.jni.fts5;
-import org.sqlite.jni.sqlite3_context;
-import org.sqlite.jni.sqlite3_value;
+import org.sqlite.jni.capi.sqlite3_context;
+import org.sqlite.jni.capi.sqlite3_value;
 
 /**
    JNI-level wrapper for C's fts5_extension_function type.

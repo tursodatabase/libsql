@@ -142,7 +142,7 @@ int sqlite3_blob_open(
 #endif
   *ppBlob = 0;
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( !sqlite3SafetyCheckOk(db) || zTable==0 ){
+  if( !sqlite3SafetyCheckOk(db) || zTable==0 || zColumn==0 ){
     return SQLITE_MISUSE_BKPT;
   }
 #endif

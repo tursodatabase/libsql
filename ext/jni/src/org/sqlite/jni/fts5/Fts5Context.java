@@ -12,7 +12,7 @@
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
 package org.sqlite.jni.fts5;
-import org.sqlite.jni.*;
+import org.sqlite.jni.capi.*;
 
 /**
    A wrapper for communicating C-level (Fts5Context*) instances with
