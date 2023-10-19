@@ -1,5 +1,5 @@
-C New\sassert()\sstatements\sto\shelp\sverify\scorrectness\sof\sthe\sORDER\sBY\saggregate\ncode.
-D 2023-10-19T12:36:59.371
+C Fix\san\serror\sin\sa\sdebugging\sroutine\sused\sinside\sof\stestcase().\s\sDoes\snot\nappear\sin\sproduction.\s\sProblem\sdiscovered\sby\sscan-build.
+D 2023-10-19T13:00:41.210
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -792,7 +792,7 @@ F src/vdbe.c 300b1ac9339a5b7db9ccd48c1a13c3d71722da13352a38ee042ca0a399b4dd7e
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c fe654b1f54e1feebcaed6c2ae3ed035cc65bfeb9a1169bed866abc42bfc63ff6
-F src/vdbeaux.c 2ebd996a266851d82b93346136fc074c8f9f31a5b139bd76a484b1a6e8b52f1d
+F src/vdbeaux.c 929a4edecf9845fb063b47b23b9d187473a648470d915521cf72419f5219c4b7
 F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe5
 F src/vdbemem.c c936e9002af4993b84c4eb7133d6b1190efe46d391cc86117ecd67ba17b1a04b
 F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
@@ -2133,8 +2133,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3d26f1aaa4876f21f2c3abf13bbc37933c8f32471153e29019880cc9530cb011
-R e4538bd0a85cafb308a7c103d072a211
+P 8b6fffb552c30f9cbf7102c2e26a7b486c4c9edd9f494d803de7004db3018277
+R 4aca618a679e8419cd172eea36c7911d
 U drh
-Z 139757f6f7292db6c0b58e22a2f14879
+Z 1bb915481df03cc399372db91bbfa483
 # Remove this line to create a well-formed Fossil manifest.

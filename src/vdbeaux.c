@@ -4472,7 +4472,7 @@ SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
 */
 #if  defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_DEBUG)
 static int SQLITE_NOINLINE doubleLt(double a, double b){ return a<b; }
-static int SQLITE_NOINLINE doubleEq(double a, double b){ return a=b; }
+static int SQLITE_NOINLINE doubleEq(double a, double b){ return a==b; }
 #endif
 
 /*
