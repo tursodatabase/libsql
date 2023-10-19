@@ -1,8 +1,3 @@
-pub mod rpc {
-    #![allow(clippy::all)]
-    tonic::include_proto!("wal_log");
-}
-
 use std::collections::HashSet;
 use std::net::SocketAddr;
 use std::pin::Pin;
@@ -13,6 +8,7 @@ use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
 use tonic::Status;
+pub use libsql_replication::rpc::replication as rpc;
 
 use crate::auth::Auth;
 use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};

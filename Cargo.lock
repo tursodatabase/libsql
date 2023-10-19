@@ -2280,6 +2280,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "libsql-replication"
+version = "0.1.0"
+dependencies = [
+ "arbitrary",
+ "prost",
+ "prost-build",
+ "protobuf-src",
+ "tonic",
+ "tonic-build",
+]
+
+[[package]]
 name = "libsql-shell"
 version = "0.1.1"
 dependencies = [
@@ -3814,6 +3826,7 @@ dependencies = [
  "jsonwebtoken",
  "libsql",
  "libsql-client",
+ "libsql-replication",
  "memmap",
  "metrics",
  "metrics-exporter-prometheus",

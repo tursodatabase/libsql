@@ -7,6 +7,7 @@ default-run = "sqld"
 [dependencies]
 anyhow = "1.0.66"
 async-lock = "2.6.0"
+async-stream = "0.3.5"
 async-trait = "0.1.58"
 axum = { version = "0.6.18", features = ["headers"] }
 axum-extra = "0.7"
@@ -16,6 +17,7 @@ bottomless = { version = "0", path = "../bottomless", features = ["libsql_linked
 bytemuck = { version = "1.13.0", features = ["derive"] }
 bytes = { version = "1.2.1", features = ["serde"] }
 bytesize = { version = "1.2.0", features = ["serde"] }
+chrono = { version = "0.4.26", features = ["serde"] }
 clap = { version = "4.0.23", features = [ "derive", "env", "string" ] }
 # console-subscriber = { version = "0.1.10", optional = true }
 console-subscriber = { git = "https://github.com/tokio-rs/console.git", rev = "5a80b98", optional = true }
@@ -27,10 +29,16 @@ futures = "0.3.25"
 futures-core = "0.3"
 hmac = "0.12"
 hyper = { version = "0.14.23", features = ["http2"] }
+# hyper-rustls = "0.24.1"
+hyper-rustls = { git = "https://github.com/rustls/hyper-rustls.git", rev = "163b3f5" }
 hyper-tungstenite = "0.11"
 itertools = "0.10.5"
 jsonwebtoken = "8.2.0"
+libsql = { path = "../libsql/", optional = true }
+libsql-replication = { path = "../libsql-replication" }
 memmap = "0.7.0"
+metrics = "0.21.1"
+metrics-exporter-prometheus = "0.12.1"
 mimalloc = { version = "0.1.36", default-features = false }
 nix = { version = "0.26.2", features = ["fs"] }
 once_cell = "1.17.0"
@@ -42,6 +50,8 @@ rand = "0.8"
 regex = "1.7.0"
 reqwest = { version = "0.11.16", features = ["json", "rustls-tls"], default-features = false }
 rusqlite = { workspace = true }
+rustls = "0.21.7"
+rustls-pemfile = "1.0.3"
 semver = "1.0.18"
 serde = { version = "1.0.149", features = ["derive", "rc"] }
 serde_json = { version = "1.0.91", features = ["preserve_order"] }
