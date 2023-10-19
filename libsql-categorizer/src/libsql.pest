@@ -38,20 +38,20 @@ cmd = {
 
 transaction = { ^"transaction" ~ name? }
 transaction_type = { ^"deferred" | ^"immediate" | ^"exclusive" | ^"readonly" }
-begin = { ^"begin" ~ transaction_type? ~ transaction? }
-commit = { (^"commit" | ^"end") ~ transaction? }
+begin = { ^"begin" ~ transaction_type? ~ transaction? ~ ANY* }
+commit = { (^"commit" | ^"end") ~ transaction? ~ ANY* }
 to_savepoint = { ^"to" ~ ^"savepoint"? ~ name }
-rollback = { ^"rollback" ~ transaction? ~ to_savepoint? }
-savepoint = { ^"savepoint" ~ name }
-release = { ^"release" ~ ^"savepoint"? ~ name }
+rollback = { ^"rollback" ~ transaction? ~ to_savepoint? ~ ANY* }
+savepoint = { ^"savepoint" ~ name ~ ANY* }
+release = { ^"release" ~ ^"savepoint"? ~ name ~ ANY* }
 
 temp = { ^"temporary" | ^"temp" }
 
 create_table = { ^"create" ~ temp? ~ ^"table" ~ ANY* }
-drop_table = { ^"drop" ~ ^"table" ~ ANY* }
+drop_table = { ^"drop" ~ ^"table" ~ name ~ ANY* }
 
 create_view = { ^"create" ~ temp? ~ ^"view" ~ ANY* }
-drop_view = { ^"drop" ~ ^"view" ~ ANY* }
+drop_view = { ^"drop" ~ ^"view" ~ name ~ ANY* }
 
 select = { with? ~ ^"select" ~ ANY* }
 delete = { with? ~ ^"delete" ~ ^"from" ~ name ~ ANY* }
@@ -59,7 +59,7 @@ update = { with? ~ ^"update" ~ name ~ ANY* }
 insert = { with? ~ ^"insert" ~^"into" ~ name ~ ANY* }
 
 create_index = { ^"create" ~ ^"unique"? ~ ^"index" ~ ANY*}
-drop_index = { ^"drop" ~ ^"index" ~ ANY* }
+drop_index = { ^"drop" ~ ^"index" ~ name ~ ANY* }
 
 create_function = { ^"create" ~ ^"function" ~ ANY* }
 drop_function = { ^"drop" ~ ^"function" ~ ANY* }
@@ -77,7 +77,7 @@ attach = { ^"attach" ~ ^"database"? ~ ANY* }
 detach = { ^"detach" ~ ^"database"? ~ ANY* }
 reindex = { ^"reindex" ~ ANY* }
 analyze = { ^"analyze" ~ ANY* }
-alter_table = { ^"alter" ~ ^"table" ~ ANY* }
+alter_table = { ^"alter" ~ ^"table" ~ name ~ ANY* }
 
 create_vtab = { ^"create" ~ ^"virtual" ~ ^"table" ~ ANY*}
 

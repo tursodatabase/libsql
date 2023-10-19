@@ -36,6 +36,8 @@ impl StmtKind {
         let cmd = match inner.as_rule() {
             Rule::explain => {
                 let cmd = inner.into_inner().next()?;
+                let cmd = cmd.into_inner().next()?;
+                println!("CMD IS {cmd:?}");
                 match cmd.as_rule() {
                     Rule::pragma | Rule::vacuum => cmd,
                     _ => return Some(StmtKind::Other),
@@ -55,6 +57,7 @@ impl StmtKind {
                 None => Some(StmtKind::TxnEnd),
             },
             Rule::savepoint => Some(StmtKind::Savepoint),
+            Rule::release => Some(StmtKind::Release),
             Rule::select => Some(StmtKind::Read),
             Rule::insert | Rule::update | Rule::delete => {
                 let name = cmd.into_inner().next()?.as_str();
@@ -158,38 +161,55 @@ impl StmtKind {
 mod test {
     use super::*;
 
-    const STMTS: &[&str] = &[
-        "SELECT * FROM foo",
-        "SELECT * FROM foo WHERE bar = 1",
-        "INSERT INTO foo VALUES (5, 2)",
-        "INSERT INTO foo VALUES (5, 2), (3, 4)",
-        "VACUUM yourself",
-        "EXPLAIN VACUUM yourself",
-        "CREATE FUNCTION xyz LANGUAGE wasm AS '0xdeadbabe'",
-        "PRAGMA foreign_keys=on",
-        "PRAGMA foreign_keys",
-        "PRAGMA journal_mode",
-        "PRAGMA journal_mode=delete",
-        "PRAGMA pragma_list",
-        "CREATE TABLE t(id, v int primary key)",
-        "SAVEPOINT abc",
-        "ROLLBACK TO SAVEPOINT abc",
-        "ROLLBACK",
-        "CREATE TEMPORARY TABLE abc(def)",
-        "CREATE TEMP TABLE abc(def)",
-        "BEGIN IMMEDIATE",
-        "BEGIN READONLY",
-        "BEGIN DEFERRED",
-        "BEGIN",
-        "COMMIT",
-        "END",
+    const STMTS: &[(&str, Option<StmtKind>)] = &[
+        ("BEGIN;", Some(StmtKind::TxnBegin)),
+        ("BEGIN TRANSACTION;", Some(StmtKind::TxnBegin)),
+        ("COMMIT;", Some(StmtKind::TxnEnd)),
+        ("END;", Some(StmtKind::TxnEnd)),
+        ("ROLLBACK;", Some(StmtKind::TxnEnd)),
+        ("SELECT * FROM foo;", Some(StmtKind::Read)),
+        ("INSERT INTO foo VALUES (1, 'test');", Some(StmtKind::Write)),
+        (
+            "UPDATE foo SET bar = 'test' WHERE id = 1;",
+            Some(StmtKind::Write),
+        ),
+        ("DELETE FROM foo WHERE id = 1;", Some(StmtKind::Write)),
+        (
+            "CREATE TABLE foo (id INT, bar TEXT);",
+            Some(StmtKind::Write),
+        ),
+        ("CREATE TEMP TABLE foo2 (id INT, bar TEXT);", None),
+        ("CREATE TEMPORARY TABLE foo3 (id INT, bar TEXT);", None),
+        ("ALTER TABLE foo RENAME TO bar;", Some(StmtKind::Write)),
+        ("DROP TABLE foo;", Some(StmtKind::Write)),
+        ("CREATE INDEX idx_foo ON foo(bar);", Some(StmtKind::Write)),
+        ("DROP INDEX idx_foo;", Some(StmtKind::Write)),
+        ("SAVEPOINT sp1;", Some(StmtKind::Savepoint)),
+        ("RELEASE SAVEPOINT sp1;", Some(StmtKind::Release)),
+        ("ANALYZE;", None),
+        ("ATTACH DATABASE 'test.db' AS 'test';", None),
+        ("DETACH DATABASE 'test';", None),
+        ("EXPLAIN SELECT * FROM foo;", Some(StmtKind::Other)),
+        ("EXPLAIN PRAGMA user_version;", Some(StmtKind::Write)),
+        ("PRAGMA table_info(foo);", Some(StmtKind::Read)),
+        ("PRAGMA user_version;", Some(StmtKind::Write)),
+        ("PRAGMA journal_mode=DELETE;", None),
+        ("VACUUM;", None),
+        (
+            "CREATE VIEW view_foo AS SELECT * FROM foo;",
+            Some(StmtKind::Write),
+        ),
+        ("CREATE TEMPORARY VIEW view_foo AS SELECT * FROM foo;", None),
+        ("DROP VIEW view_foo;", Some(StmtKind::Write)),
+        ("CREATE INDEX idx_foo ON foo(bar);", Some(StmtKind::Write)),
+        ("DROP INDEX idx_foo;", Some(StmtKind::Write)),
     ];
 
     #[test]
     fn test_parse0() {
         use pest::Parser;
 
-        for stmt in STMTS {
+        for (stmt, _) in STMTS {
             let now = std::time::Instant::now();
             let parsed = LibsqlParser::parse(Rule::stmt, stmt)
                 .expect("Failed to parse statement")
@@ -213,8 +233,13 @@ mod test {
 
     #[test]
     fn test_categorize0() {
-        for stmt in STMTS {
-            println!("{:?}:\n\t{:?}", stmt, StmtKind::kind(stmt));
+        for (stmt, expected_kind) in STMTS {
+            let actual_kind = StmtKind::kind(stmt);
+            println!("{stmt:?}:\n\t{actual_kind:?}");
+            assert_eq!(
+                *expected_kind, actual_kind,
+                "Mismatch in categorization for statement: {stmt}"
+            );
         }
     }
 }
