@@ -2,8 +2,8 @@
 #[allow(non_snake_case)]
 #[allow(non_camel_case_types)]
 pub mod ffi {
-#![allow(non_snake_case, non_camel_case_types)]
-#![cfg_attr(test, allow(deref_nullptr))] // https://github.com/rust-lang/rust-bindgen/issues/2066
+    #![allow(non_snake_case, non_camel_case_types)]
+    #![cfg_attr(test, allow(deref_nullptr))] // https://github.com/rust-lang/rust-bindgen/issues/2066
     pub use super::error::libsql::*;
 
     use std::default::Default;

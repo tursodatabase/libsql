@@ -87,7 +87,7 @@ pub mod libsql {
         Unknown,
     }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub struct Error {
         pub code: ErrorCode,
         pub extended_code: c_int,
@@ -179,7 +179,7 @@ pub mod libsql {
     const SQLITE_CONSTRAINT_PINNED: c_int = crate::ffi::SQLITE_CONSTRAINT | (11 << 8);
     const SQLITE_CONSTRAINT_DATATYPE: c_int = crate::ffi::SQLITE_CONSTRAINT | (12 << 8);
 
-#[must_use]
+    #[must_use]
     pub fn code_to_str(code: c_int) -> &'static str {
         match code {
             crate::ffi::SQLITE_OK        => "Successful result",
