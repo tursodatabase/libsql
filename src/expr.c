@@ -1572,7 +1572,7 @@ static Expr *exprDup(sqlite3 *db, const Expr *p, int dupFlags, u8 **pzBuffer){
     staticFlag = EP_Static;
     assert( zAlloc!=0 );
   }else{
-    zAlloc = sqlite3DbMallocRawNN(db, dupedExprSize(p, dupFlags));
+    zAlloc = sqlite3DbMallocRawNN(db, dupedExprSize(p, dupFlags)*5);
     staticFlag = 0;
   }
   pNew = (Expr *)zAlloc;
@@ -1622,7 +1622,8 @@ static Expr *exprDup(sqlite3 *db, const Expr *p, int dupFlags, u8 **pzBuffer){
       if( ExprUseXSelect(p) ){
         pNew->x.pSelect = sqlite3SelectDup(db, p->x.pSelect, dupFlags);
       }else{
-        pNew->x.pList = sqlite3ExprListDup(db, p->x.pList, dupFlags);
+        pNew->x.pList = sqlite3ExprListDup(db, p->x.pList,
+                           p->op!=TK_ORDER ? dupFlags : 0);
       }
     }
 
