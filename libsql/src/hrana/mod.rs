@@ -188,7 +188,10 @@ impl Client {
         };
         let msg = ClientMsg {
             baton: cookie.baton,
-            requests: vec![StreamRequest::Execute(StreamExecuteReq { stmt })],
+            requests: vec![
+                StreamRequest::Execute(StreamExecuteReq { stmt }),
+                StreamRequest::Close,
+            ],
         };
         let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
         let url = cookie
@@ -220,7 +223,7 @@ impl Client {
                 response.results
             )))?;
         }
-        if response.results.len() > 1 {
+        if response.results.len() > 2 {
             // One with actual results, one closing the stream
             Err(HranaError::UnexpectedResponse(format!(
                 "Unexpected multiple responses from server: {:?}",
