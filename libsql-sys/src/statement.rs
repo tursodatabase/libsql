@@ -214,7 +214,7 @@ pub unsafe fn prepare_stmt(raw: *mut crate::ffi::sqlite3, sql: &str) -> Result<S
         }
     };
 
-    match err as u32 {
+    match err {
         crate::ffi::SQLITE_OK => Ok(Statement {
             raw_stmt,
             tail,

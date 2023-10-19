@@ -30,7 +30,7 @@ impl TryFrom<i32> for ValueType {
     type Error = ();
 
     fn try_from(value: i32) -> Result<Self, Self::Error> {
-        match value as u32 {
+        match value {
             crate::ffi::SQLITE_INTEGER => Ok(ValueType::Integer),
             crate::ffi::SQLITE_FLOAT => Ok(ValueType::Real),
             crate::ffi::SQLITE_BLOB => Ok(ValueType::Blob),

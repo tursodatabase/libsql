@@ -111,7 +111,7 @@ impl Statement {
     pub fn execute(&self, params: &Params) -> Result<u64> {
         self.bind(params);
         let err = self.inner.step();
-        match err as u32 {
+        match err {
             crate::ffi::SQLITE_DONE => Ok(self.conn.changes()),
             crate::ffi::SQLITE_ROW => Err(Error::ExecuteReturnedRows),
             _ => Err(Error::SqliteFailure(
@@ -153,7 +153,7 @@ impl Statement {
     pub fn value_ref(inner: &libsql_sys::Statement, col: usize) -> ValueRef<'_> {
         let raw = inner.raw_stmt;
 
-        match inner.column_type(col as i32) as u32 {
+        match inner.column_type(col as i32) {
             crate::ffi::SQLITE_NULL => ValueRef::Null,
             crate::ffi::SQLITE_INTEGER => {
                 ValueRef::Integer(unsafe { crate::ffi::sqlite3_column_int64(raw, col as c_int) })
@@ -210,7 +210,7 @@ impl Statement {
 
     pub(crate) fn step(&self) -> Result<()> {
         let err = self.inner.step();
-        match err as u32 {
+        match err {
             crate::ffi::SQLITE_DONE => Ok(()),
             crate::ffi::SQLITE_ROW => Err(Error::ExecuteReturnedRows),
             _ => Err(Error::SqliteFailure(

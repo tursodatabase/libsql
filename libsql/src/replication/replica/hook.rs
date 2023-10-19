@@ -13,8 +13,8 @@ use super::super::{FrameNo, WAL_PAGE_SIZE};
 use super::snapshot::TempSnapshot;
 
 // Those are custom error codes returned by the replicator hook.
-pub const LIBSQL_EXIT_REPLICATION: u32 = 200;
-pub const LIBSQL_CONTINUE_REPLICATION: u32 = 201;
+pub const LIBSQL_EXIT_REPLICATION: i32 = 200;
+pub const LIBSQL_CONTINUE_REPLICATION: i32 = 201;
 
 #[derive(Debug)]
 pub enum Frames {
