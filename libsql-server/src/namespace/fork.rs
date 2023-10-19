@@ -10,7 +10,7 @@ use tokio::time::Duration;
 use tokio_stream::StreamExt;
 
 use crate::database::PrimaryDatabase;
-use crate::replication::frame::Frame;
+use crate::replication::frame::FrameBorrowed;
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};
@@ -41,7 +41,7 @@ impl From<tokio::task::JoinError> for ForkError {
     }
 }
 
-async fn write_frame(frame: Frame, temp_file: &mut tokio::fs::File) -> Result<()> {
+async fn write_frame(frame: &FrameBorrowed, temp_file: &mut tokio::fs::File) -> Result<()> {
     let page_no = frame.header().page_no;
     let page_pos = (page_no - 1) as usize * LIBSQL_PAGE_SIZE as usize;
     temp_file.seek(SeekFrom::Start(page_pos as u64)).await?;
@@ -128,7 +128,7 @@ impl ForkTask<'_> {
                     match res {
                         Ok(frame) => {
                             next_frame_no = next_frame_no.max(frame.header().frame_no + 1);
-                            write_frame(frame, &mut data_file).await?;
+                            write_frame(&frame, &mut data_file).await?;
                         }
                         Err(LogReadError::SnapshotRequired) => {
                             let snapshot = loop {
@@ -147,7 +147,7 @@ impl ForkTask<'_> {
                             for frame in iter {
                                 let frame = frame.map_err(ForkError::LogRead)?;
                                 next_frame_no = next_frame_no.max(frame.header().frame_no + 1);
-                                write_frame(frame, &mut data_file).await?;
+                                write_frame(&frame, &mut data_file).await?;
                             }
                         }
                         Err(LogReadError::Ahead) => {
