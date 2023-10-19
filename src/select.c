@@ -417,6 +417,7 @@ void sqlite3SetJoinExpr(Expr *p, int iTable, u32 joinFlag){
     p->w.iJoin = iTable;
     if( p->op==TK_FUNCTION ){
       assert( ExprUseXList(p) );
+      assert( p->pLeft==0 );
       if( p->x.pList ){
         int i;
         for(i=0; i<p->x.pList->nExpr; i++){
@@ -454,6 +455,7 @@ static void unsetJoinExpr(Expr *p, int iTable, int nullable){
     }
     if( p->op==TK_FUNCTION ){
       assert( ExprUseXList(p) );
+      assert( p->pLeft==0 );
       if( p->x.pList ){
         int i;
         for(i=0; i<p->x.pList->nExpr; i++){
