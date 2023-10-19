@@ -8,7 +8,14 @@ edition = "2021"
 [dependencies]
 tonic = { version = "0.10.0", features = ["tls"] }
 prost = "0.12"
-
+sqld-libsql-bindings = { path = "../libsql-sys-tmp"}
+parking_lot = "0.12.1"
+bytemuck = { version = "1.13.0", features = ["derive"] }
+bytes = { version = "1.5.0", features = ["serde"] } 
+serde = { version = "1.0.189", features = ["derive"] }
+thiserror = "1.0.49"
+tracing = "0.1.40"
+ 
 [dev-dependencies]
 arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }
 

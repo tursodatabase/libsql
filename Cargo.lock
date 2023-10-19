@@ -2284,11 +2284,18 @@ name = "libsql-replication"
 version = "0.1.0"
 dependencies = [
  "arbitrary",
+ "bytemuck",
+ "bytes",
+ "parking_lot",
  "prost",
  "prost-build",
  "protobuf-src",
+ "serde",
+ "sqld-libsql-bindings",
+ "thiserror",
  "tonic",
  "tonic-build",
+ "tracing",
 ]
 
 [[package]]

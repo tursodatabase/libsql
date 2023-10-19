@@ -9,6 +9,7 @@ pub use crate::wal_hook::WalMethodsHook;
 pub use once_cell::sync::Lazy;
 use rusqlite::ffi::sqlite3;
 use wal_hook::TransparentMethods;
+pub use rusqlite;
 
 use self::{
     ffi::{libsql_wal_methods, libsql_wal_methods_find},

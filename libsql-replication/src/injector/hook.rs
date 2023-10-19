@@ -1,11 +1,11 @@
 use std::ffi::{c_int, CStr};
 
-use rusqlite::ffi::{libsql_wal as Wal, PgHdr};
+use sqld_libsql_bindings::rusqlite::ffi::{libsql_wal as Wal, PgHdr};
 use sqld_libsql_bindings::ffi::types::XWalFrameFn;
 use sqld_libsql_bindings::init_static_wal_method;
 use sqld_libsql_bindings::wal_hook::WalHook;
 
-use crate::replication::frame::FrameBorrowed;
+use crate::frame::FrameBorrowed;
 use crate::LIBSQL_PAGE_SIZE;
 
 use super::headers::Headers;
@@ -38,7 +38,7 @@ impl InjectorHookCtx {
         sync_flags: i32,
         orig: XWalFrameFn,
         wal: *mut Wal,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), ()> {
         self.is_txn = true;
         let buffer = self.buffer.lock();
         let (mut headers, size_after) = make_page_header(buffer.iter().map(|f| &**f));
@@ -63,7 +63,8 @@ impl InjectorHookCtx {
 
             Ok(())
         } else {
-            anyhow::bail!("failed to apply pages");
+            tracing::error!("fatal replication error: failed to apply pages");
+            return Err(())
         }
     }
 }
@@ -142,8 +143,7 @@ unsafe impl WalHook for InjectorHook {
         let wal_ptr = wal as *mut _;
         let ctx = Self::wal_extract_ctx(wal);
         let ret = ctx.inject_pages(sync_flags, orig, wal_ptr);
-        if let Err(e) = ret {
-            tracing::error!("fatal replication error: {e}");
+        if ret.is_err() {
             return LIBSQL_INJECT_FATAL;
         }
 

@@ -3,21 +3,20 @@ use std::path::Path;
 use std::sync::Arc;
 
 use parking_lot::Mutex;
-use rusqlite::OpenFlags;
+use sqld_libsql_bindings::rusqlite::{OpenFlags, self};
 use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
 
-use crate::error::Error;
-use crate::replication::frame::Frame;
-use crate::{replication::FrameNo, DEFAULT_AUTO_CHECKPOINT};
+use crate::frame::Frame;
+use crate::FrameNo;
 
 use hook::{
-    InjectorHookCtx, INJECTOR_METHODS, LIBSQL_INJECT_FATAL, LIBSQL_INJECT_OK, LIBSQL_INJECT_OK_TXN,
+    InjectorHookCtx, INJECTOR_METHODS, LIBSQL_INJECT_FATAL, LIBSQL_INJECT_OK, LIBSQL_INJECT_OK_TXN, InjectorHook
 };
-
-use self::hook::InjectorHook;
+pub use error::Error;
 
 mod headers;
 mod hook;
+mod error;
 
 #[derive(Debug)]
 pub enum InjectError {}
@@ -41,7 +40,7 @@ pub struct Injector {
 /// The implementer can persist the pre and post commit frame no, and compare them in the event of
 /// a crash; if the pre and post commit frame_no don't match, then the log may be corrupted.
 impl Injector {
-    pub fn new(path: &Path, buffer_capacity: usize) -> crate::Result<Self> {
+    pub fn new(path: &Path, buffer_capacity: usize, auto_checkpoint: u32) -> Result<Self, Error> {
         let buffer = FrameBuffer::default();
         let ctx = InjectorHookCtx::new(buffer.clone());
         std::fs::create_dir_all(path)?;
@@ -72,7 +71,7 @@ impl Injector {
             &INJECTOR_METHODS,
             // safety: hook is dropped after connection
             ctx,
-            DEFAULT_AUTO_CHECKPOINT,
+            auto_checkpoint,
         )?;
 
         connection.execute("CREATE TABLE IF NOT EXISTS libsql_temp_injection (x)", ())?;
@@ -86,7 +85,7 @@ impl Injector {
     }
 
     /// Inject on frame into the log. If this was a commit frame, returns Ok(Some(FrameNo)).
-    pub(crate) fn inject_frame(&mut self, frame: Frame) -> crate::Result<Option<FrameNo>> {
+    pub fn inject_frame(&mut self, frame: Frame) -> Result<Option<FrameNo>, Error> {
         let frame_close_txn = frame.header().size_after != 0;
         self.buffer.lock().push_back(frame);
         if frame_close_txn || self.buffer.lock().len() >= self.capacity {
@@ -102,7 +101,7 @@ impl Injector {
     /// Flush the buffer to libsql WAL.
     /// Trigger a dummy write, and flush the cache to trigger a call to xFrame. The buffer's frame
     /// are then injected into the wal.
-    fn flush(&mut self) -> crate::Result<Option<FrameNo>> {
+    fn flush(&mut self) -> Result<Option<FrameNo>, Error> {
         let lock = self.buffer.lock();
         // the frames in the buffer are either monotonically increasing (log) or decreasing
         // (snapshot). Either way, we want to find the biggest frameno we're about to commit, and
@@ -137,7 +136,7 @@ impl Injector {
                             if !matches!(e.sqlite_error(), Some(rusqlite::ffi::Error{ extended_code, .. }) if *extended_code == 201)
                             {
                                 tracing::error!("injector failed to commit: {e}");
-                                return Err(Error::FatalReplicationError);
+                                return Err(Error::FatalInjectError);
                             }
                         }
                         self.is_txn = false;
@@ -148,16 +147,16 @@ impl Injector {
                         assert!(self.buffer.lock().is_empty());
                         return Ok(None);
                     } else if e.extended_code == LIBSQL_INJECT_FATAL {
-                        return Err(Error::FatalReplicationError);
+                        return Err(Error::FatalInjectError);
                     }
                 }
 
-                Err(Error::FatalReplicationError)
+                Err(Error::FatalInjectError)
             }
         }
     }
 
-    fn begin_txn(&mut self) -> crate::Result<()> {
+    fn begin_txn(&mut self) -> Result<(), Error> {
         let conn = self.connection.lock();
         conn.execute("BEGIN IMMEDIATE", ())?;
         Ok(())
@@ -172,7 +171,7 @@ impl Injector {
 mod test {
     use crate::replication::primary::logger::LogFile;
 
-    use super::Injector;
+    use super::*;
 
     #[test]
     fn test_simple_inject_frames() {
@@ -180,7 +179,7 @@ mod test {
         let log = LogFile::new(log_file, 10000, None).unwrap();
         let temp = tempfile::tempdir().unwrap();
 
-        let mut injector = Injector::new(temp.path(), 10).unwrap();
+        let mut injector = Injector::new(temp.path(), 10, 10000).unwrap();
         for frame in log.frames_iter().unwrap() {
             let frame = frame.unwrap();
             injector.inject_frame(frame).unwrap();
