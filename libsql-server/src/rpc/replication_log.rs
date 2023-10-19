@@ -61,7 +61,7 @@ impl ReplicationLogService {
 }
 
 fn map_frame_stream_output(
-    r: Result<crate::replication::frame::Frame, LogReadError>,
+    r: Result<libsql_replication::frame::Frame, LogReadError>,
 ) -> Result<Frame, Status> {
     match r {
         Ok(frame) => Ok(Frame {
@@ -273,7 +273,7 @@ impl ReplicationLog for ReplicationLogService {
                                     frame.header_mut().size_after = size_after;
                                 }
                                 let _ = sender.blocking_send(Ok(Frame {
-                                    data: crate::replication::frame::Frame::from(frame).bytes(),
+                                    data: libsql_replication::frame::Frame::from(frame).bytes(),
                                 }));
                             }
                             Some(Err(e)) => {

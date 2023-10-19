@@ -1,5 +1,4 @@
 pub mod error;
-mod injector;
 mod meta;
 mod replicator;
 

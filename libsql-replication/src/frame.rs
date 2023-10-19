@@ -9,7 +9,7 @@ use bytes::Bytes;
 use crate::LIBSQL_PAGE_SIZE;
 use crate::error::Error;
 
-use super::FrameNo;
+pub type FrameNo = u64;
 
 /// The file header for the WAL log. All fields are represented in little-endian ordering.
 /// See `encode` and `decode` for actual layout.

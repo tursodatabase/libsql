@@ -4,13 +4,13 @@ use std::sync::Arc;
 
 use bottomless::replicator::Replicator;
 use chrono::NaiveDateTime;
+use libsql_replication::frame::FrameBorrowed;
 use tokio::fs::File;
 use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 use tokio::time::Duration;
 use tokio_stream::StreamExt;
 
 use crate::database::PrimaryDatabase;
-use crate::replication::frame::FrameBorrowed;
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};

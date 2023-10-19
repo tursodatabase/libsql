@@ -1,4 +1,3 @@
-pub mod frame;
 pub mod primary;
 pub mod replica;
 mod snapshot;

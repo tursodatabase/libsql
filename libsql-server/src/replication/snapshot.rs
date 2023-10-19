@@ -14,6 +14,7 @@ use anyhow::Context;
 use bytemuck::{bytes_of, pod_read_unaligned, Pod, Zeroable};
 use bytes::BytesMut;
 use crossbeam::channel::bounded;
+use libsql_replication::frame::FrameMut;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use tempfile::NamedTempFile;
@@ -21,7 +22,6 @@ use uuid::Uuid;
 
 use crate::namespace::NamespaceName;
 
-use super::frame::FrameMut;
 use super::primary::logger::LogFile;
 use super::FrameNo;
 
@@ -147,9 +147,9 @@ impl SnapshotFile {
             match self.file.read_exact_at(&mut buf, read_offset as _) {
                 Ok(_) => match FrameMut::try_from(&*buf) {
                     Ok(frame) => Some(Ok(frame)),
-                    Err(e) => Some(Err(e)),
+                    Err(e) => Some(Err(anyhow::anyhow!(e))),
                 },
-                Err(e) => Some(Err(e.into())),
+                Err(e) => Some(Err(anyhow::anyhow!(e))),
             }
         })
     }

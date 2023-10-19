@@ -2,6 +2,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use futures::StreamExt;
+use libsql_replication::frame::Frame;
+use libsql_replication::injector::{Injector, Error as InjectError};
 use parking_lot::Mutex;
 use tokio::sync::watch;
 use tokio::task::spawn_blocking;
@@ -10,8 +12,8 @@ use tonic::metadata::BinaryMetadataValue;
 use tonic::transport::Channel;
 use tonic::{Code, Request};
 
+use crate::DEFAULT_AUTO_CHECKPOINT;
 use crate::namespace::{NamespaceName, ResetCb, ResetOp};
-use crate::replication::frame::Frame;
 use crate::replication::replica::error::ReplicationError;
 use crate::replication::FrameNo;
 use crate::rpc::replication_log::rpc::{
@@ -20,7 +22,6 @@ use crate::rpc::replication_log::rpc::{
 use crate::rpc::replication_log::NEED_SNAPSHOT_ERROR_MSG;
 use crate::rpc::{NAMESPACE_DOESNT_EXIST, NAMESPACE_METADATA_KEY};
 
-use super::injector::Injector;
 use super::meta::WalIndexMeta;
 
 const HANDSHAKE_MAX_RETRIES: usize = 100;
@@ -51,7 +52,7 @@ impl Replicator {
         let (current_frame_no_notifier, _) = watch::channel(None);
         let injector = {
             let db_path = db_path.clone();
-            spawn_blocking(move || Injector::new(&db_path, INJECTOR_BUFFER_CAPACITY)).await??
+            spawn_blocking(move || Injector::new(&db_path, INJECTOR_BUFFER_CAPACITY, DEFAULT_AUTO_CHECKPOINT)).await??
         };
         let client = Client::with_origin(channel, uri);
         let meta = WalIndexMeta::open(&db_path).await?;
@@ -189,7 +190,7 @@ impl Replicator {
         let frames = self.client.snapshot(req).await?.into_inner();
 
         let mut stream = frames.map(|data| match data {
-            Ok(frame) => Frame::try_from(&*frame.data),
+            Ok(frame) => Ok(Frame::try_from(&*frame.data)?),
             Err(e) => anyhow::bail!(e),
         });
 
@@ -210,7 +211,7 @@ impl Replicator {
                     .send_replace(Some(commit_fno));
             }
             Ok(None) => (),
-            Err(e @ crate::Error::FatalReplicationError) => {
+            Err(e @ InjectError::FatalInjectError) => {
                 // we conservatively nuke the replica and start replicating from scractch
                 tracing::error!(
                     "fatal error replicating `{}` from primary, resetting namespace...",

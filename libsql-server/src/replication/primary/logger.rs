@@ -9,6 +9,7 @@ use std::sync::Arc;
 use anyhow::{bail, ensure};
 use bytemuck::{bytes_of, pod_read_unaligned, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
+use libsql_replication::frame::{FrameHeader, Frame, FrameMut};
 use parking_lot::RwLock;
 use rusqlite::ffi::SQLITE_BUSY;
 use sqld_libsql_bindings::init_static_wal_method;
@@ -23,7 +24,6 @@ use crate::libsql_bindings::ffi::{
     PageHdrIter, PgHdr, Wal, SQLITE_CHECKPOINT_TRUNCATE, SQLITE_IOERR, SQLITE_OK,
 };
 use crate::libsql_bindings::wal_hook::WalHook;
-use crate::replication::frame::{Frame, FrameHeader, FrameMut};
 use crate::replication::snapshot::{find_snapshot_file, LogCompactor, SnapshotFile};
 use crate::replication::{FrameNo, SnapshotCallback, CRC_64_GO_ISO, WAL_MAGIC};
 use crate::LIBSQL_PAGE_SIZE;
@@ -638,7 +638,7 @@ impl LogFile {
         let mut buffer = BytesMut::zeroed(LogFile::FRAME_SIZE);
         self.file.read_exact_at(&mut buffer, offset)?;
 
-        FrameMut::try_from(&*buffer)
+        Ok(FrameMut::try_from(&*buffer)?)
     }
 
     fn last_commited_frame_no(&self) -> Option<FrameNo> {
