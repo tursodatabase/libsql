@@ -2860,6 +2860,9 @@ struct AggInfo {
     FuncDef *pFunc;          /* The aggregate function implementation */
     int iDistinct;           /* Ephemeral table used to enforce DISTINCT */
     int iDistAddr;           /* Address of OP_OpenEphemeral */
+    int iOBTab;              /* Ephemeral table to implement ORDER BY */
+    u8 bOBPayload;           /* iOBTab has payload columns separate from key */
+    u8 bOBUnique;            /* Enforce uniqueness on iOBTab keys */
   } *aFunc;
   int nFunc;              /* Number of entries in aFunc[] */
   u32 selId;              /* Select to which this AggInfo belongs */
@@ -4786,6 +4789,8 @@ void sqlite3PExprAddSelect(Parse*, Expr*, Select*);
 Expr *sqlite3ExprAnd(Parse*,Expr*, Expr*);
 Expr *sqlite3ExprSimplifiedAndOr(Expr*);
 Expr *sqlite3ExprFunction(Parse*,ExprList*, const Token*, int);
+void sqlite3ExprAddFunctionOrderBy(Parse*,Expr*,ExprList*);
+void sqlite3ExprOrderByAggregateError(Parse*,Expr*);
 void sqlite3ExprFunctionUsable(Parse*,const Expr*,const FuncDef*);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*, u32);
 void sqlite3ExprDelete(sqlite3*, Expr*);

@@ -709,6 +709,12 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       }
       if( pFarg ){
         sqlite3TreeViewExprList(pView, pFarg, pWin!=0, 0);
+        if( pExpr->pLeft ){
+          Expr *pOB = pExpr->pLeft;
+          assert( pOB->op==TK_ORDER );
+          assert( ExprUseXList(pOB) );
+          sqlite3TreeViewExprList(pView, pOB->x.pList, pWin!=0, "ORDERBY");
+        }
       }
 #ifndef SQLITE_OMIT_WINDOWFUNC
       if( pWin ){
