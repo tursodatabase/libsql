@@ -591,6 +591,7 @@ Expr *sqlite3ExprForVectorField(
     */
     pRet = sqlite3PExpr(pParse, TK_SELECT_COLUMN, 0, 0);
     if( pRet ){
+      ExprSetProperty(pRet, EP_FullSize);
       pRet->iTable = nField;
       pRet->iColumn = iField;
       pRet->pLeft = pVector;
@@ -1494,11 +1495,7 @@ static int dupedExprStructSize(const Expr *p, int flags){
   assert( flags==EXPRDUP_REDUCE || flags==0 ); /* Only one flag value allowed */
   assert( EXPR_FULLSIZE<=0xfff );
   assert( (0xfff & (EP_Reduced|EP_TokenOnly))==0 );
-  if( 0==flags || p->op==TK_SELECT_COLUMN
-#ifndef SQLITE_OMIT_WINDOWFUNC
-   || ExprHasProperty(p, EP_WinFunc)
-#endif
-  ){
+  if( 0==flags || ExprHasProperty(p, EP_FullSize) ){
     nSize = EXPR_FULLSIZE;
   }else{
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
