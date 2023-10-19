@@ -37,7 +37,7 @@ fn junction_table() {
 
 // https://discord.com/channels/989870439897653248/989870440585494530/1081084118680485938
 #[test]
-fn dicord_report_1() {
+fn discord_report_1() {
     discord_report_1_impl().unwrap();
 }
 
@@ -46,7 +46,7 @@ fn sync_left_to_right(
     r: &dyn Connection,
     since: sqlite::int64,
 ) -> Result<ResultCode, ResultCode> {
-    let siteid_stmt = r.prepare_v2("SELECT crsql_siteid()")?;
+    let siteid_stmt = r.prepare_v2("SELECT crsql_site_id()")?;
     siteid_stmt.step()?;
     let siteid = siteid_stmt.column_blob(0)?;
 
@@ -56,8 +56,9 @@ fn sync_left_to_right(
     stmt_l.bind_blob(2, siteid, Destructor::STATIC)?;
 
     while stmt_l.step()? == ResultCode::ROW {
-        let stmt_r = r.prepare_v2("INSERT INTO crsql_changes VALUES (?, ?, ?, ?, ?, ?, ?)")?;
-        for x in 0..7 {
+        let stmt_r =
+            r.prepare_v2("INSERT INTO crsql_changes VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")?;
+        for x in 0..9 {
             stmt_r.bind_value(x + 1, stmt_l.column_value(x)?)?;
         }
         stmt_r.step()?;
@@ -70,7 +71,7 @@ fn sync_left_to_right(
 //     for_db: Option<&dyn Connection>,
 // ) -> Result<ResultCode, ResultCode> {
 //     let stmt = if let Some(for_db) = for_db {
-//         let siteid_stmt = for_db.prepare_v2("SELECT crsql_siteid()")?;
+//         let siteid_stmt = for_db.prepare_v2("SELECT crsql_site_id()")?;
 //         siteid_stmt.step()?;
 //         let siteid = siteid_stmt.column_blob(0)?;
 //         let stmt = db.prepare_v2(
@@ -260,10 +261,10 @@ fn discord_report_1_impl() -> Result<(), ResultCode> {
 
     let table = stmt.column_text(0)?;
     assert_eq!(table, "data");
-    let pk_val = stmt.column_text(1)?;
-    assert_eq!(pk_val, "42");
+    let pk_val = stmt.column_blob(1)?;
+    assert_eq!(pk_val, [0x01, 0x09, 0x2A]);
     let cid = stmt.column_text(2)?;
-    assert_eq!(cid, "__crsql_pko");
+    assert_eq!(cid, "-1");
     let val_type = stmt.column_type(3)?;
     assert_eq!(val_type, ColumnType::Null);
     let col_version = stmt.column_int64(4)?;

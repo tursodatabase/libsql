@@ -1,1 +1,1 @@
-#include "../../../../../sqlite3ext.h"
+#include "deps/sqlite3ext.h"

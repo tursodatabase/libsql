@@ -1,5 +1,6 @@
 #include "crsqlite.h"
 SQLITE_EXTENSION_INIT1
+LIBSQL_EXTENSION_INIT1
 
 #include <assert.h>
 #include <ctype.h>
@@ -10,138 +11,22 @@ SQLITE_EXTENSION_INIT1
 #include "changes-vtab.h"
 #include "consts.h"
 #include "ext-data.h"
+#include "rust.h"
 #include "tableinfo.h"
-#include "triggers.h"
 #include "util.h"
 
-static void uuid(unsigned char *blob) {
-  sqlite3_randomness(16, blob);
-  blob[6] = (blob[6] & 0x0f) + 0x40;
-  blob[8] = (blob[8] & 0x3f) + 0x80;
-}
-
-/**
- * The site id table is used to persist the site id and
- * populate `siteIdBlob` on initialization of a connection.
- */
-static int createSiteIdAndSiteIdTable(sqlite3 *db, unsigned char *ret) {
-  int rc = SQLITE_OK;
-  sqlite3_stmt *pStmt = 0;
-  char *zSql = 0;
-
-  zSql = sqlite3_mprintf("CREATE TABLE \"%s\" (site_id)", TBL_SITE_ID);
-  rc = sqlite3_exec(db, zSql, 0, 0, 0);
-  sqlite3_free(zSql);
-
-  if (rc != SQLITE_OK) {
-    return rc;
-  }
-
-  zSql = sqlite3_mprintf("INSERT INTO \"%s\" (site_id) VALUES(?)", TBL_SITE_ID);
-  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-  sqlite3_free(zSql);
-
-  if (rc != SQLITE_OK) {
-    sqlite3_finalize(pStmt);
-    return rc;
-  }
-
-  uuid(ret);
-  rc = sqlite3_bind_blob(pStmt, 1, ret, SITE_ID_LEN, SQLITE_STATIC);
-  if (rc != SQLITE_OK) {
-    return rc;
-  }
-  rc = sqlite3_step(pStmt);
-  if (rc != SQLITE_DONE) {
-    sqlite3_finalize(pStmt);
-    return rc;
-  }
-
-  sqlite3_finalize(pStmt);
-  return SQLITE_OK;
-}
-
-static int initPeerTrackingTable(sqlite3 *db, char **pzErrMsg) {
-  return sqlite3_exec(
-      db,
-      "CREATE TABLE IF NOT EXISTS crsql_tracked_peers (\"site_id\" "
-      "BLOB NOT NULL, \"version\" INTEGER NOT NULL, \"seq\" INTEGER DEFAULT 0, "
-      "\"tag\" INTEGER, \"event\" "
-      "INTEGER, PRIMARY "
-      "KEY (\"site_id\", \"tag\", \"event\")) STRICT;",
-      0, 0, pzErrMsg);
-}
-
-/**
- * Loads the siteId into memory. If a site id
- * cannot be found for the given database one is created
- * and saved to the site id table.
- */
-static int initSiteId(sqlite3 *db, unsigned char *ret) {
-  char *zSql = 0;
-  sqlite3_stmt *pStmt = 0;
-  int rc = SQLITE_OK;
-  int tableExists = 0;
-  const void *siteIdFromTable = 0;
-
-  // look for site id table
-  tableExists = crsql_doesTableExist(db, TBL_SITE_ID);
-
-  if (tableExists == 0) {
-    return createSiteIdAndSiteIdTable(db, ret);
-  }
-
-  // read site id from the table and return it
-  zSql = sqlite3_mprintf("SELECT site_id FROM %Q", TBL_SITE_ID);
-  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-  sqlite3_free(zSql);
-
-  if (rc != SQLITE_OK) {
-    return rc;
-  }
-
-  rc = sqlite3_step(pStmt);
-  if (rc != SQLITE_ROW) {
-    sqlite3_finalize(pStmt);
-    return rc;
-  }
-
-  siteIdFromTable = sqlite3_column_blob(pStmt, 0);
-  memcpy(ret, siteIdFromTable, SITE_ID_LEN);
-  sqlite3_finalize(pStmt);
-
-  return SQLITE_OK;
-}
-
-static int createSchemaTableIfNotExists(sqlite3 *db) {
-  int rc = SQLITE_OK;
-
-  rc = sqlite3_exec(db, "SAVEPOINT crsql_create_schema_table;", 0, 0, 0);
-  if (rc != SQLITE_OK) {
-    return rc;
-  }
-
-  char *zSql = sqlite3_mprintf(
-      "CREATE TABLE IF NOT EXISTS \"%s\" (\"key\" TEXT PRIMARY KEY, \"value\" "
-      "TEXT);",
-      TBL_SCHEMA);
-  rc = sqlite3_exec(db, zSql, 0, 0, 0);
-  sqlite3_free(zSql);
-
-  if (rc != SQLITE_OK) {
-    sqlite3_exec(db, "ROLLBACK;", 0, 0, 0);
-    return rc;
-  }
-
-  sqlite3_exec(db, "RELEASE crsql_create_schema_table;", 0, 0, 0);
-
-  return rc;
-}
+// see
+// https://github.com/chromium/chromium/commit/579b3dd0ea41a40da8a61ab87a8b0bc39e158998
+// & https://github.com/rust-lang/rust/issues/73632 &
+// https://sourcegraph.com/github.com/chromium/chromium/-/commit/579b3dd0ea41a40da8a61ab87a8b0bc39e158998?visible=1
+#ifdef CRSQLITE_WASM
+unsigned char __rust_no_alloc_shim_is_unstable;
+#endif
 
 /**
  * return the uuid which uniquely identifies this database.
  *
- * `select crsql_siteid()`
+ * `select crsql_site_id()`
  *
  * @param context
  * @param argc
@@ -156,7 +41,7 @@ static void siteIdFunc(sqlite3_context *context, int argc,
 /**
  * Return the current version of the database.
  *
- * `select crsql_dbversion()`
+ * `select crsql_db_version()`
  */
 static void dbVersionFunc(sqlite3_context *context, int argc,
                           sqlite3_value **argv) {
@@ -176,7 +61,7 @@ static void dbVersionFunc(sqlite3_context *context, int argc,
 /**
  * Return the next version of the database for use in inserts/updates/deletes
  *
- * `select crsql_nextdbversion()`
+ * `select crsql_next_db_version()`
  *
  * Nit: this should be same as `crsql_db_version`
  * If you change this behavior you need to change trigger behaviors
@@ -188,6 +73,8 @@ static void nextDbVersionFunc(sqlite3_context *context, int argc,
   char *errmsg = 0;
   crsql_ExtData *pExtData = (crsql_ExtData *)sqlite3_user_data(context);
   sqlite3 *db = sqlite3_context_db_handle(context);
+  // "getDbVersion" is really just filling the cached db version value if
+  // invalid
   int rc = crsql_getDbVersion(db, pExtData, &errmsg);
   if (rc != SQLITE_OK) {
     sqlite3_result_error(context, errmsg, -1);
@@ -195,66 +82,45 @@ static void nextDbVersionFunc(sqlite3_context *context, int argc,
     return;
   }
 
-  sqlite3_result_int64(context, pExtData->dbVersion + 1);
-}
-
-/**
- * The clock table holds the versions for each column of a given row.
- *
- * These version are set to the dbversion at the time of the write to the
- * column.
- *
- * The dbversion is updated on transaction commit.
- * This allows us to find all columns written in the same transaction
- * albeit with caveats.
- *
- * The caveats being that two partiall overlapping transactions will
- * clobber the full transaction picture given we only keep latest
- * state and not a full causal history.
- *
- * @param tableInfo
- */
-int crsql_createClockTable(sqlite3 *db, crsql_TableInfo *tableInfo,
-                           char **err) {
-  char *zSql = 0;
-  char *pkList = 0;
-  int rc = SQLITE_OK;
-
-  pkList = crsql_asIdentifierList(tableInfo->pks, tableInfo->pksLen, 0);
-  zSql = sqlite3_mprintf(
-      "CREATE TABLE IF NOT EXISTS \"%s__crsql_clock\" (\
-      %s,\
-      \"__crsql_col_name\" NOT NULL,\
-      \"__crsql_col_version\" NOT NULL,\
-      \"__crsql_db_version\" NOT NULL,\
-      \"__crsql_site_id\",\
-      PRIMARY KEY (%s, \"__crsql_col_name\")\
-    )",
-      tableInfo->tblName, pkList, pkList);
-  sqlite3_free(pkList);
-
-  rc = sqlite3_exec(db, zSql, 0, 0, err);
-  sqlite3_free(zSql);
-  if (rc != SQLITE_OK) {
-    return rc;
+  sqlite3_int64 providedVersion = 0;
+  if (argc == 1) {
+    providedVersion = sqlite3_value_int64(argv[0]);
   }
 
-  zSql = sqlite3_mprintf(
-      "CREATE INDEX IF NOT EXISTS \"%s__crsql_clock_dbv_idx\" ON "
-      "\"%s__crsql_clock\" (\"__crsql_db_version\")",
-      tableInfo->tblName, tableInfo->tblName);
-  sqlite3_exec(db, zSql, 0, 0, err);
-  sqlite3_free(zSql);
+  // now return max of:
+  // dbVersion + 1, pendingDbVersion, arg (if there is one)
+  // and set pendingDbVersion to that max
+  sqlite3_int64 ret = pExtData->dbVersion + 1;
+  if (ret < pExtData->pendingDbVersion) {
+    ret = pExtData->pendingDbVersion;
+  }
+  if (ret < providedVersion) {
+    ret = providedVersion;
+  }
+  pExtData->pendingDbVersion = ret;
 
-  return rc;
+  sqlite3_result_int64(context, ret);
+}
+
+static void incrementAndGetSeqFunc(sqlite3_context *context, int argc,
+                                   sqlite3_value **argv) {
+  crsql_ExtData *pExtData = (crsql_ExtData *)sqlite3_user_data(context);
+  sqlite3_result_int(context, pExtData->seq);
+  pExtData->seq += 1;
+}
+
+static void getSeqFunc(sqlite3_context *context, int argc,
+                       sqlite3_value **argv) {
+  crsql_ExtData *pExtData = (crsql_ExtData *)sqlite3_user_data(context);
+  sqlite3_result_int(context, pExtData->seq);
 }
 
 /**
  * Create a new crr --
  * all triggers, views, tables
  */
-static int createCrr(sqlite3_context *context, sqlite3 *db,
-                     const char *schemaName, const char *tblName, char **err) {
+int crsql_createCrr(sqlite3 *db, const char *schemaName, const char *tblName,
+                    int isCommitAlter, int noTx, char **err) {
   int rc = SQLITE_OK;
   crsql_TableInfo *tableInfo = 0;
 
@@ -277,11 +143,11 @@ static int createCrr(sqlite3_context *context, sqlite3 *db,
     return rc;
   }
 
-  rc = crsql_createClockTable(db, tableInfo, err);
+  rc = crsql_create_clock_table(db, tableInfo, err);
   if (rc == SQLITE_OK) {
     rc = crsql_remove_crr_triggers_if_exist(db, tableInfo->tblName);
     if (rc == SQLITE_OK) {
-      rc = crsql_createCrrTriggers(db, tableInfo, err);
+      rc = crsql_create_crr_triggers(db, tableInfo, err);
     }
   }
 
@@ -294,8 +160,8 @@ static int createCrr(sqlite3_context *context, sqlite3 *db,
   for (size_t i = 0; i < tableInfo->nonPksLen; i++) {
     nonPkNames[i] = tableInfo->nonPks[i].name;
   }
-  rc = crsql_backfill_table(context, tblName, pkNames, tableInfo->pksLen,
-                            nonPkNames, tableInfo->nonPksLen);
+  rc = crsql_backfill_table(db, tblName, pkNames, tableInfo->pksLen, nonPkNames,
+                            tableInfo->nonPksLen, isCommitAlter, noTx);
   sqlite3_free(pkNames);
   sqlite3_free(nonPkNames);
 
@@ -316,6 +182,7 @@ static void crsqlSyncBit(sqlite3_context *context, int argc,
   // Args? We're setting the value of the bit
   int newValue = sqlite3_value_int(argv[0]);
   *syncBit = newValue;
+  sqlite3_result_int(context, newValue);
 }
 
 /**
@@ -355,7 +222,7 @@ static void crsqlMakeCrrFunc(sqlite3_context *context, int argc,
     return;
   }
 
-  rc = createCrr(context, db, schemaName, tblName, &errmsg);
+  rc = crsql_createCrr(db, schemaName, tblName, 0, 0, &errmsg);
   if (rc != SQLITE_OK) {
     sqlite3_result_error(context, errmsg, -1);
     sqlite3_result_error_code(context, rc);
@@ -408,20 +275,8 @@ static void crsqlBeginAlterFunc(sqlite3_context *context, int argc,
   }
 }
 
-int crsql_compactPostAlter(sqlite3 *db, const char *tblName, char **errmsg) {
-  // 1. remove all entries in the clock table that have a column
-  // name that does not exist
-  // NOTE!: this is bugged, right? Doesn't this compact out pk_only and delete
-  // sentinels?
-  char *zSql = sqlite3_mprintf(
-      "DELETE FROM \"%w__crsql_clock\" WHERE \"__crsql_col_name\" NOT IN "
-      "(SELECT name FROM pragma_table_info(%Q))",
-      tblName, tblName);
-  int rc = sqlite3_exec(db, zSql, 0, 0, errmsg);
-  sqlite3_free(zSql);
-
-  return rc;
-}
+int crsql_compact_post_alter(sqlite3 *db, const char *tblName,
+                             crsql_ExtData *pExtData, char **errmsg);
 
 static void crsqlCommitAlterFunc(sqlite3_context *context, int argc,
                                  sqlite3_value **argv) {
@@ -448,9 +303,10 @@ static void crsqlCommitAlterFunc(sqlite3_context *context, int argc,
     tblName = (const char *)sqlite3_value_text(argv[0]);
   }
 
-  rc = crsql_compactPostAlter(db, tblName, &errmsg);
+  crsql_ExtData *pExtData = (crsql_ExtData *)sqlite3_user_data(context);
+  rc = crsql_compact_post_alter(db, tblName, pExtData, &errmsg);
   if (rc == SQLITE_OK) {
-    rc = createCrr(context, db, schemaName, tblName, &errmsg);
+    rc = crsql_createCrr(db, schemaName, tblName, 1, 0, &errmsg);
   }
   if (rc == SQLITE_OK) {
     rc = sqlite3_exec(db, "RELEASE alter_crr", 0, 0, &errmsg);
@@ -475,17 +331,31 @@ static void crsqlFinalize(sqlite3_context *context, int argc,
   crsql_finalize(pExtData);
 }
 
+static void crsqlRowsImpacted(sqlite3_context *context, int argc,
+                              sqlite3_value **argv) {
+  crsql_ExtData *pExtData = (crsql_ExtData *)sqlite3_user_data(context);
+  sqlite3_result_int(context, pExtData->rowsImpacted);
+}
+
 static int commitHook(void *pUserData) {
   crsql_ExtData *pExtData = (crsql_ExtData *)pUserData;
 
-  pExtData->dbVersion = -1;
+  pExtData->dbVersion = pExtData->pendingDbVersion;
+  pExtData->pendingDbVersion = -1;
+  pExtData->seq = 0;
   return SQLITE_OK;
 }
 
 static void rollbackHook(void *pUserData) {
   crsql_ExtData *pExtData = (crsql_ExtData *)pUserData;
 
-  pExtData->dbVersion = -1;
+  pExtData->pendingDbVersion = -1;
+  pExtData->seq = 0;
+}
+
+static void closeHook(void *pUserData, sqlite3 *db) {
+  crsql_ExtData *pExtData = (crsql_ExtData *)pUserData;
+  crsql_finalize(pExtData);
 }
 
 int sqlite3_crsqlrustbundle_init(sqlite3 *db, char **pzErrMsg,
@@ -495,42 +365,85 @@ int sqlite3_crsqlrustbundle_init(sqlite3 *db, char **pzErrMsg,
 __declspec(dllexport)
 #endif
     int sqlite3_crsqlite_init(sqlite3 *db, char **pzErrMsg,
-                              const sqlite3_api_routines *pApi) {
+                              const sqlite3_api_routines *pApi,
+                              const libsql_api_routines *pLibsqlApi) {
   int rc = SQLITE_OK;
 
   SQLITE_EXTENSION_INIT2(pApi);
+  LIBSQL_EXTENSION_INIT2(pLibsqlApi)
 
-  rc = initPeerTrackingTable(db, pzErrMsg);
+  // TODO: should be moved lower once we finish migrating to rust.
+  // RN it is safe here since the rust bundle init is largely just reigstering
+  // function pointers. we need to init the rust bundle otherwise sqlite api
+  // methods are not isntalled when we start calling rust
+  rc = sqlite3_crsqlrustbundle_init(db, pzErrMsg, pApi);
+
+  rc = crsql_init_peer_tracking_table(db);
   if (rc != SQLITE_OK) {
     return rc;
   }
 
-  crsql_ExtData *pExtData = crsql_newExtData(db);
+  // Register a thread & connection local bit to toggle on or off
+  // our triggers depending on the source of updates to a table.
+  int *syncBit = sqlite3_malloc(sizeof *syncBit);
+  *syncBit = 0;
+  rc = sqlite3_create_function_v2(
+      db, "crsql_internal_sync_bit",
+      -1,                              // num args: -1 -> 0 or more
+      SQLITE_UTF8 | SQLITE_INNOCUOUS,  // configuration
+      syncBit,                         // user data
+      crsqlSyncBit,
+      0,            // step
+      0,            // final
+      sqlite3_free  // destroy / free syncBit
+  );
+  if (rc != SQLITE_OK) {
+    return rc;
+  }
+
+  if (rc == SQLITE_OK) {
+    rc = crsql_maybe_update_db(db, pzErrMsg);
+  }
+
+  unsigned char *siteIdBuffer = sqlite3_malloc(SITE_ID_LEN * sizeof(char *));
+  if (rc == SQLITE_OK) {
+    rc = crsql_init_site_id(db, siteIdBuffer);
+  }
+
+  crsql_ExtData *pExtData = crsql_newExtData(db, siteIdBuffer);
   if (pExtData == 0) {
     return SQLITE_ERROR;
   }
 
-  rc = initSiteId(db, pExtData->siteId);
-  rc += createSchemaTableIfNotExists(db);
-
   if (rc == SQLITE_OK) {
     rc = sqlite3_create_function(
-        db, "crsql_siteid", 0,
+        db, "crsql_site_id", 0,
         // siteid never changes -- deterministic and innnocuous
         SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC, pExtData,
         siteIdFunc, 0, 0);
   }
   if (rc == SQLITE_OK) {
-    rc = sqlite3_create_function_v2(db, "crsql_dbversion", 0,
+    rc = sqlite3_create_function_v2(db, "crsql_db_version", 0,
                                     // dbversion can change on each invocation.
                                     SQLITE_UTF8 | SQLITE_INNOCUOUS, pExtData,
                                     dbVersionFunc, 0, 0, freeConnectionExtData);
   }
   if (rc == SQLITE_OK) {
-    rc = sqlite3_create_function(db, "crsql_nextdbversion", 0,
+    rc = sqlite3_create_function(db, "crsql_next_db_version", -1,
                                  // dbversion can change on each invocation.
                                  SQLITE_UTF8 | SQLITE_INNOCUOUS, pExtData,
                                  nextDbVersionFunc, 0, 0);
+  }
+  if (rc == SQLITE_OK) {
+    rc = sqlite3_create_function(db, "crsql_increment_and_get_seq", 0,
+                                 SQLITE_UTF8 | SQLITE_INNOCUOUS, pExtData,
+                                 incrementAndGetSeqFunc, 0, 0);
+  }
+  if (rc == SQLITE_OK) {
+    rc = sqlite3_create_function(
+        db, "crsql_get_seq", 0,
+        SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC, pExtData,
+        getSeqFunc, 0, 0);
   }
 
   if (rc == SQLITE_OK) {
@@ -553,7 +466,7 @@ __declspec(dllexport)
 
   if (rc == SQLITE_OK) {
     rc = sqlite3_create_function(db, "crsql_commit_alter", -1,
-                                 SQLITE_UTF8 | SQLITE_DIRECTONLY, 0,
+                                 SQLITE_UTF8 | SQLITE_DIRECTONLY, pExtData,
                                  crsqlCommitAlterFunc, 0, 0);
   }
 
@@ -565,20 +478,9 @@ __declspec(dllexport)
   }
 
   if (rc == SQLITE_OK) {
-    // Register a thread & connection local bit to toggle on or off
-    // our triggers depending on the source of updates to a table.
-    int *syncBit = sqlite3_malloc(sizeof *syncBit);
-    *syncBit = 0;
-    rc = sqlite3_create_function_v2(
-        db, "crsql_internal_sync_bit",
-        -1,                              // num args: -1 -> 0 or more
-        SQLITE_UTF8 | SQLITE_INNOCUOUS,  // configuration
-        syncBit,                         // user data
-        crsqlSyncBit,
-        0,            // step
-        0,            // final
-        sqlite3_free  // destroy / free syncBit
-    );
+    rc = sqlite3_create_function(db, "crsql_rows_impacted", 0,
+                                 SQLITE_UTF8 | SQLITE_INNOCUOUS, pExtData,
+                                 crsqlRowsImpacted, 0, 0);
   }
 
   if (rc == SQLITE_OK) {
@@ -589,9 +491,9 @@ __declspec(dllexport)
   if (rc == SQLITE_OK) {
     // TODO: get the prior callback so we can call it rather than replace
     // it?
+    libsql_close_hook(db, closeHook, pExtData);
     sqlite3_commit_hook(db, commitHook, pExtData);
     sqlite3_rollback_hook(db, rollbackHook, pExtData);
-    rc = sqlite3_crsqlrustbundle_init(db, pzErrMsg, pApi);
   }
 
   return rc;

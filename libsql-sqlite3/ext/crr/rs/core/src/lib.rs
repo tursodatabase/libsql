@@ -1,26 +1,39 @@
 #![cfg_attr(not(test), no_std)]
+#![feature(vec_into_raw_parts)]
 
+mod alter;
 mod automigrate;
 mod backfill;
+mod bootstrap;
+mod c;
+mod changes_vtab;
+mod changes_vtab_read;
+mod changes_vtab_write;
+mod compare_values;
+mod consts;
+mod create_cl_set_vtab;
 mod is_crr;
+mod pack_columns;
+mod stmt_cache;
 mod teardown;
+mod triggers;
+mod unpack_columns_vtab;
+mod util;
 
 use core::{ffi::c_char, slice};
 extern crate alloc;
-use alloc::string::String;
 use alloc::vec::Vec;
 pub use automigrate::*;
 pub use backfill::*;
 use core::ffi::{c_int, CStr};
 pub use is_crr::*;
+use pack_columns::crsql_pack_columns;
+pub use pack_columns::unpack_columns;
+pub use pack_columns::ColumnValue;
 use sqlite::ResultCode;
 use sqlite_nostd as sqlite;
-use sqlite_nostd::{context, Connection, Context, Value};
+use sqlite_nostd::{Connection, Context, Value};
 pub use teardown::*;
-
-fn escape_ident(ident: &str) -> String {
-    return ident.replace("\"", "\"\"");
-}
 
 pub extern "C" fn crsql_as_table(
     ctx: *mut sqlite::context,
@@ -65,7 +78,7 @@ pub extern "C" fn sqlite3_crsqlcore_init(
     let rc = db
         .create_function_v2(
             "crsql_automigrate",
-            1,
+            -1,
             sqlite::UTF8,
             None,
             Some(crsql_automigrate),
@@ -78,27 +91,56 @@ pub extern "C" fn sqlite3_crsqlcore_init(
         return rc as c_int;
     }
 
-    db.create_function_v2(
-        "crsql_as_table",
-        1,
-        sqlite::UTF8,
-        None,
-        Some(crsql_as_table),
-        None,
-        None,
-        None,
-    )
-    .unwrap_or(sqlite::ResultCode::ERROR) as c_int
+    let rc = db
+        .create_function_v2(
+            "crsql_pack_columns",
+            -1,
+            sqlite::UTF8,
+            None,
+            Some(crsql_pack_columns),
+            None,
+            None,
+            None,
+        )
+        .unwrap_or(sqlite::ResultCode::ERROR);
+    if rc != ResultCode::OK {
+        return rc as c_int;
+    }
+
+    let rc = db
+        .create_function_v2(
+            "crsql_as_table",
+            1,
+            sqlite::UTF8,
+            None,
+            Some(crsql_as_table),
+            None,
+            None,
+            None,
+        )
+        .unwrap_or(sqlite::ResultCode::ERROR);
+    if rc != ResultCode::OK {
+        return rc as c_int;
+    }
+
+    let rc = unpack_columns_vtab::create_module(db).unwrap_or(sqlite::ResultCode::ERROR);
+    if rc != ResultCode::OK {
+        return rc as c_int;
+    }
+    let rc = create_cl_set_vtab::create_module(db).unwrap_or(ResultCode::ERROR);
+    return rc as c_int;
 }
 
 #[no_mangle]
 pub extern "C" fn crsql_backfill_table(
-    context: *mut context,
+    db: *mut sqlite::sqlite3,
     table: *const c_char,
     pk_cols: *const *const c_char,
     pk_cols_len: c_int,
     non_pk_cols: *const *const c_char,
     non_pk_cols_len: c_int,
+    is_commit_alter: c_int,
+    no_tx: c_int,
 ) -> c_int {
     let table = unsafe { CStr::from_ptr(table).to_str() };
     let pk_cols = unsafe {
@@ -117,10 +159,14 @@ pub extern "C" fn crsql_backfill_table(
     };
 
     let result = match (table, pk_cols, non_pk_cols) {
-        (Ok(table), Ok(pk_cols), Ok(non_pk_cols)) => {
-            let db = context.db_handle();
-            backfill_table(db, table, pk_cols, non_pk_cols)
-        }
+        (Ok(table), Ok(pk_cols), Ok(non_pk_cols)) => backfill_table(
+            db,
+            table,
+            pk_cols,
+            non_pk_cols,
+            is_commit_alter != 0,
+            no_tx != 0,
+        ),
         _ => Err(ResultCode::ERROR),
     };
 
