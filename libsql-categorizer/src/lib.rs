@@ -30,22 +30,19 @@ impl StmtKind {
     pub fn kind(stmt: &str) -> Option<Self> {
         use pest::Parser;
 
-        let cmd = match LibsqlParser::parse(Rule::stmt, stmt) {
-            Ok(mut parsed) => parsed.next().unwrap(),
-            Err(_) => return None,
-        };
+        let cmd = LibsqlParser::parse(Rule::stmt, stmt).ok()?.next()?;
 
-        let inner = cmd.into_inner().next().unwrap();
+        let inner = cmd.into_inner().next()?;
         let cmd = match inner.as_rule() {
             Rule::explain => {
-                let cmd = inner.into_inner().next().unwrap();
+                let cmd = inner.into_inner().next()?;
                 match cmd.as_rule() {
                     Rule::pragma | Rule::vacuum => cmd,
                     _ => return Some(StmtKind::Other),
                 }
             }
             Rule::explain_query_plan => return Some(StmtKind::Other),
-            Rule::cmd => inner.into_inner().next().unwrap(),
+            Rule::cmd => inner.into_inner().next()?,
             _ => return None,
         };
 
@@ -60,7 +57,7 @@ impl StmtKind {
             Rule::savepoint => Some(StmtKind::Savepoint),
             Rule::select => Some(StmtKind::Read),
             Rule::insert | Rule::update | Rule::delete => {
-                let name = cmd.into_inner().next().unwrap().as_str();
+                let name = cmd.into_inner().next()?.as_str();
                 write_if_not_reserved(name)
             }
             Rule::create_table
@@ -77,13 +74,13 @@ impl StmtKind {
                 }
             }
             Rule::alter_table | Rule::drop_table | Rule::drop_view => {
-                let name = cmd.into_inner().next().unwrap().as_str();
+                let name = cmd.into_inner().next()?.as_str();
                 write_if_not_reserved(name)
             }
             Rule::drop_index | Rule::drop_trigger => Some(StmtKind::Write),
             Rule::pragma => {
                 let mut inner = cmd.into_inner();
-                let name = inner.next().unwrap().into_inner().next().unwrap().as_str();
+                let name = inner.next()?.into_inner().next()?.as_str();
                 let has_body = inner.next().is_some();
                 Self::pragma_kind(name, has_body)
             }
@@ -195,9 +192,9 @@ mod test {
         for stmt in STMTS {
             let now = std::time::Instant::now();
             let parsed = LibsqlParser::parse(Rule::stmt, stmt)
-                .unwrap()
+                .expect("Failed to parse statement")
                 .next()
-                .unwrap();
+                .expect("No parsed statement found");
             let elapsed = now.elapsed().as_micros();
             println!(
                 "{:?}: {:?}",
@@ -205,10 +202,10 @@ mod test {
                 parsed
                     .into_inner()
                     .next()
-                    .unwrap()
+                    .expect("No inner statement found")
                     .into_inner()
                     .next()
-                    .unwrap()
+                    .expect("No inner statement found")
             );
             println!("\tparsed in {elapsed}μs");
         }
