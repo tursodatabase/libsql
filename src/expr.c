@@ -1240,6 +1240,7 @@ void sqlite3ExprAddFunctionOrderBy(
   pOB->x.pList = pOrderBy;
   assert( ExprUseXList(pOB) );
   pExpr->pLeft = pOB;
+  ExprSetProperty(pOB, EP_FullSize);
 }
 
 /*
