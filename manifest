@@ -1,5 +1,5 @@
-C Use\ssqlite3ParserAddCleanup()\sinstead\sof\scalling\ssqlite3ExprListDelete()\ndirectly\swhen\sdisposing\sof\san\sunused\sORDER\sBY\sin\san\saggregate\sfunction,\nto\savoid\sdisrupting\sALTER\sTABLE\sdata\sstructures.
-D 2023-10-20T10:18:03.872
+C Correct\sthe\sopfs-sahpool\sVFS's\sxGetLastError()\smethod\sto\sreturn\sthe\sprevious\serror\scode,\snot\s0,\son\ssuccess.
+D 2023-10-20T12:23:49.687
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -583,7 +583,7 @@ F ext/wasm/api/sqlite3-api-worker1.js f941382f21006b4a817754184e2661b0a63ce65020
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 8cf8a897726f14071fae6be6648125162b256dfb4f96555b865dbb7a6b65e379
 F ext/wasm/api/sqlite3-v-helper.js 7daa0eab0a513a25b05e9abae7b5beaaa39209b3ed12f86aeae9ef8d2719ed25
-F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js f7c965cf9ac0b66a538cd8f6c156f3f2a235e089821ca78cabd7bce41ce16bf7
+F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 595953994aa3ae2287c889c4da39ab3d6f17b6461ecf4bec334b7a3faafddb02
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 46c4afa6c50d7369252c104f274ad977a97e91ccfafc38b400fe36e90bdda88e
 F ext/wasm/api/sqlite3-wasm.c c8c5b81b838cef2053b1eb6e7a79c44a2caedcf0c9e6b0d12a45d73ce0617be0
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bc06df0d599e625bde6a10a394e326dc68da9ff07fa5404354580f81566e591f
@@ -2133,8 +2133,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 18e7c826f08bce51719ef045daa60200b33790f2fe312c6853f9ef6c7e9d5030
-R 116bd1e6425f8040f4b7884265787040
-U drh
-Z 3ed7aa53fa4bab3e10246f808572c725
+P d083e42086733ecd79aba8c268e020b01782bfe1cfa9684ce1c277af9c8bf92a
+R 6e8befaf01cb46d1b6ec065810ecbd1e
+U stephan
+Z d67ca77d259ff533bed4295ddbc6d176
 # Remove this line to create a well-formed Fossil manifest.
