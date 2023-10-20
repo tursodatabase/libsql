@@ -33,6 +33,7 @@ use crate::connection::MakeConnection;
 use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
 use crate::replication::primary::logger::{ReplicationLoggerHookCtx, REPLICATION_METHODS};
+use crate::replication::replica::NamespaceDoesntExist;
 use crate::replication::replica::error::ReplicationError;
 use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
@@ -574,29 +575,31 @@ impl Namespace<ReplicaDatabase> {
             loop {
                 match replicator.run().await {
                     Error::Fatal(e) => {
-                        let Ok(e) = e.downcast::<ReplicationError>() else {
-                            unreachable!("unexpected fatal error")
-                        };
-                        match *e {
-                            ReplicationError::LogIncompatible => {
-                                tracing::error!("trying to replicate incompatible logs, reseting replica");
-                                (reset)(ResetOp::Reset(namespace.clone()));
-                                Err(e)?;
-                            },
-                            ReplicationError::NamespaceDoesntExist(_) => {
+                        if let Ok(err) = e.downcast::<NamespaceDoesntExist>() {
                                 tracing::error!("namespace {namespace} doesn't exist, destroying...");
                                 (reset)(ResetOp::Destroy(namespace.clone()));
-                                Err(e)?;
-                            },
-                            // We retry from last frame index?
-                            e @ (ReplicationError::FailedToCommit(_)
-                                | ReplicationError::Rpc(_)
-                                | ReplicationError::Other(_)
-                                | ReplicationError::InvalidFrame) => {
-                                tracing::warn!("non-fatal replication error, retrying from last commit index: {e}");
-                            },
+                                Err(err)?;
+                        } else {
+                            unreachable!("unexpected fatal replication error")
                         }
                     },
+                    Error::Meta(err) => {
+                        use libsql_replication::meta::Error;
+                        match err {
+                            Error::LogIncompatible => {
+                                tracing::error!("trying to replicate incompatible logs, reseting replica");
+                                (reset)(ResetOp::Reset(namespace.clone()));
+                                Err(err)?;
+                            }
+                            Error::InvalidMetaFile
+                            | Error::Io(_)
+                            | Error::InvalidLogId
+                            | Error::FailedToCommit(_) => {
+                                // We retry from last frame index?
+                                tracing::warn!("non-fatal replication error, retrying from last commit index: {err}");
+                            },
+                        }
+                    }
                     e @ (Error::Internal(_)
                     | Error::Injector(_)
                     | Error::Client(_)

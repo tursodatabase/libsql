@@ -27,6 +27,8 @@ pub enum Error {
     PrimaryHandshakeTimeout,
     #[error("Replicator needs to load from snapshot")]
     NeedSnapshot,
+    #[error("Replication meta error: {0}")]
+    Meta(#[from] super::meta::Error)
 }
 
 impl From<tokio::task::JoinError> for Error {

@@ -65,8 +65,8 @@ pub enum Error {
     NamespaceAlreadyExist(String),
     #[error("Invalid namespace")]
     InvalidNamespace,
-    #[error("Replication error: {0}")]
-    ReplicationError(#[from] ReplicationError),
+    #[error("Replica meta error: {0}")]
+    ReplicaMetaError(#[from] libsql_replication::meta::Error),
     #[error("Replicator error: {0}")]
     ReplicatorError(#[from] libsql_replication::replicator::Error),
     #[error("Failed to connect to primary")]

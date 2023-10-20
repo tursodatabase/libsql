@@ -5,6 +5,7 @@ use libsql_replication::frame::Frame;
 use libsql_replication::replicator::{Error, ReplicatorClient};
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use libsql_replication::rpc::replication::{HelloRequest, LogOffset, Frame as RpcFrame};
+use libsql_replication::meta::WalIndexMeta;
 use tokio::sync::watch;
 use tokio_stream::{Stream, StreamExt};
 use tonic::metadata::BinaryMetadataValue;
@@ -16,25 +17,11 @@ use crate::replication::FrameNo;
 use crate::rpc::replication_log::NEED_SNAPSHOT_ERROR_MSG;
 use crate::rpc::{NAMESPACE_DOESNT_EXIST, NAMESPACE_METADATA_KEY};
 
-use super::error::ReplicationError;
-use super::meta::WalIndexMeta;
-
 pub struct Client {
     client: ReplicationLogClient<Channel>,
     meta: WalIndexMeta,
     pub current_frame_no_notifier: watch::Sender<Option<FrameNo>>,
     namespace: NamespaceName,
-}
-
-impl From<ReplicationError> for Error {
-    fn from(error: ReplicationError) -> Self {
-        match error {
-            ReplicationError::LogIncompatible
-            | ReplicationError::NamespaceDoesntExist(_)
-            | ReplicationError::FailedToCommit(_) => Error::Fatal(error.into()),
-            _ => Error::Client(error.into()),
-        }
-    }
 }
 
 impl Client {
@@ -68,6 +55,10 @@ impl Client {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+#[error("namespace doesn't exist")]
+pub struct NamespaceDoesntExist;
+
 #[async_trait::async_trait]
 impl ReplicatorClient for Client {
     type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
@@ -88,11 +79,9 @@ impl ReplicatorClient for Client {
                 if e.code() == Code::FailedPrecondition
                     && e.message() == NAMESPACE_DOESNT_EXIST =>
             {
-                Err(ReplicationError::NamespaceDoesntExist(
-                    self.namespace.clone(),
-                ))?
+                Err(Error::Fatal(NamespaceDoesntExist.into()))?
             }
-            Err(e) => Err(ReplicationError::Other(e.into()))?,
+            Err(e) => Err(Error::Client(e.into()))?,
         }
     }
 
@@ -104,7 +93,7 @@ impl ReplicatorClient for Client {
         let stream = self.client
             .log_entries(req)
             .await
-            .map_err(ReplicationError::Rpc)?
+            .map_err(|e| Error::Client(e.into()))?
             .into_inner()
             .map(map_frame_err);
 
@@ -117,7 +106,7 @@ impl ReplicatorClient for Client {
         };
         let req = self.make_request(offset);
         let stream = self.client.snapshot(req).await
-            .map_err(ReplicationError::Rpc)?
+            .map_err(|e| Error::Client(e.into()))?
             .into_inner().map(map_frame_err);
         Ok(Box::pin(stream))
     }
@@ -132,11 +121,11 @@ impl ReplicatorClient for Client {
 
 fn map_frame_err(f: Result<RpcFrame, tonic::Status>) -> Result<Frame, Error> {
     match f {
-        Ok(frame) => Ok(Frame::try_from(&*frame.data).map_err(|_| ReplicationError::InvalidFrame)?),
+        Ok(frame) => Ok(Frame::try_from(&*frame.data).map_err(|e| Error::Client(e.into()))?),
         Err(err) if err.code() == tonic::Code::FailedPrecondition
                     && err.message() == NEED_SNAPSHOT_ERROR_MSG => {
                         Err(Error::NeedSnapshot)
         }
-        Err(err) => Err(ReplicationError::Rpc(err))?
+        Err(err) => Err(Error::Client(err.into()))?
     }
 }
