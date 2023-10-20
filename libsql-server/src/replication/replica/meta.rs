@@ -90,7 +90,7 @@ impl WalIndexMeta {
         }
     }
 
-    pub async fn flush(&mut self) -> crate::Result<()> {
+    pub async fn flush(&mut self) -> std::io::Result<()> {
         if let Some(data) = self.data {
             // FIXME: we can save a syscall by calling read_exact_at, but let's use tokio API for now
             self.file.seek(SeekFrom::Start(0)).await?;
@@ -107,7 +107,10 @@ impl WalIndexMeta {
     /// Apply the last commit frame no to the meta file.
     /// This function must be called after each injection, because it's idempotent to re-apply the
     /// last transaction, but not idempotent if we lose track of more than one.
-    pub async fn set_commit_frame_no(&mut self, commit_fno: FrameNo) -> crate::Result<()> {
+    pub async fn set_commit_frame_no(
+        &mut self,
+        commit_fno: FrameNo,
+    ) -> Result<(), ReplicationError> {
         {
             let data = self
                 .data
@@ -116,7 +119,9 @@ impl WalIndexMeta {
             data.committed_frame_no = commit_fno;
         }
 
-        self.flush().await?;
+        if let Err(e) = self.flush().await {
+            return Err(ReplicationError::FailedToCommit(e));
+        }
 
         Ok(())
     }

@@ -1,8 +1,8 @@
 use std::ffi::{c_int, CStr};
 
-use sqld_libsql_bindings::rusqlite::ffi::{libsql_wal as Wal, PgHdr};
 use sqld_libsql_bindings::ffi::types::XWalFrameFn;
 use sqld_libsql_bindings::init_static_wal_method;
+use sqld_libsql_bindings::rusqlite::ffi::{libsql_wal as Wal, PgHdr};
 use sqld_libsql_bindings::wal_hook::WalHook;
 
 use crate::frame::FrameBorrowed;
@@ -64,7 +64,7 @@ impl InjectorHookCtx {
             Ok(())
         } else {
             tracing::error!("fatal replication error: failed to apply pages");
-            return Err(())
+            return Err(());
         }
     }
 }

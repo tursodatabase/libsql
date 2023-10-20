@@ -6,8 +6,8 @@ use std::ops::{Deref, DerefMut};
 use bytemuck::{bytes_of, from_bytes, Pod, Zeroable};
 use bytes::Bytes;
 
-use crate::LIBSQL_PAGE_SIZE;
 use crate::error::Error;
+use crate::LIBSQL_PAGE_SIZE;
 
 pub type FrameNo = u64;
 
@@ -62,8 +62,7 @@ impl TryFrom<&[u8]> for FrameMut {
 
     fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
         if data.len() != size_of::<FrameBorrowed>() {
-            return Err(Error::InvalidFrameLen)
-
+            return Err(Error::InvalidFrameLen);
         }
         // frames are relatively large (~4ko), we want to avoid allocating them on the stack and
         // then copying them to the heap, and instead copy them to the heap directly.

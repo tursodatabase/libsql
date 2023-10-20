@@ -4,7 +4,7 @@ use std::{pin::Pin, task::Context};
 
 use futures::future::BoxFuture;
 use futures::{FutureExt, Stream};
-use libsql_replication::frame::{FrameNo, Frame};
+use libsql_replication::frame::{Frame, FrameNo};
 
 use crate::replication::{LogReadError, ReplicationLogger};
 use crate::BLOCKING_RT;

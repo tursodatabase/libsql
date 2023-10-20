@@ -9,7 +9,7 @@ use std::sync::Arc;
 use anyhow::{bail, ensure};
 use bytemuck::{bytes_of, pod_read_unaligned, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
-use libsql_replication::frame::{FrameHeader, Frame, FrameMut};
+use libsql_replication::frame::{Frame, FrameHeader, FrameMut};
 use parking_lot::RwLock;
 use rusqlite::ffi::SQLITE_BUSY;
 use sqld_libsql_bindings::init_static_wal_method;

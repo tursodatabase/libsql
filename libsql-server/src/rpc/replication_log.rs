@@ -4,11 +4,11 @@ use std::pin::Pin;
 use std::sync::{Arc, RwLock};
 
 use futures::stream::BoxStream;
+pub use libsql_replication::rpc::replication as rpc;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
 use tonic::Status;
-pub use libsql_replication::rpc::replication as rpc;
 
 use crate::auth::Auth;
 use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};

@@ -2284,6 +2284,7 @@ name = "libsql-replication"
 version = "0.1.0"
 dependencies = [
  "arbitrary",
+ "async-trait",
  "bytemuck",
  "bytes",
  "parking_lot",
@@ -2293,6 +2294,8 @@ dependencies = [
  "serde",
  "sqld-libsql-bindings",
  "thiserror",
+ "tokio",
+ "tokio-stream",
  "tonic",
  "tonic-build",
  "tracing",

@@ -7,9 +7,9 @@ use std::{ffi::CString, ops::Deref, time::Duration};
 
 pub use crate::wal_hook::WalMethodsHook;
 pub use once_cell::sync::Lazy;
+pub use rusqlite;
 use rusqlite::ffi::sqlite3;
 use wal_hook::TransparentMethods;
-pub use rusqlite;
 
 use self::{
     ffi::{libsql_wal_methods, libsql_wal_methods_find},
