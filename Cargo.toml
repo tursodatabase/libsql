@@ -17,6 +17,8 @@ members = [
 [profile.release]
 codegen-units = 1
 panic = "abort"
+strip = true
+debug = false
 
 [patch.crates-io]
 sqlite3-parser = { git = "https://github.com/LucioFranco/lemon-rs" }
