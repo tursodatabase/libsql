@@ -1930,7 +1930,7 @@ foreach {tn expr restype resval} {
     6  { ( SELECT y FROM t4 ORDER BY y DESC ) }        text    two
 
     7  { ( SELECT sum(x) FROM t4 )           }         integer 6
-    8  { ( SELECT group_concat(y,'') FROM t4 ) }       text    onetwothree
+    8  { ( SELECT string_agg(y,'') FROM t4 ) }       text    onetwothree
     9  { ( SELECT max(x) FROM t4 WHERE y LIKE '___') } integer 2 
 
 } {

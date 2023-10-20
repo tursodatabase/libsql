@@ -943,7 +943,7 @@ do_select_tests e_select-4.6 {
   4 "SELECT *, count(*) FROM a1 JOIN a2"                       {1 1 1 1 16}
   5 "SELECT *, sum(three) FROM a1 NATURAL JOIN a2"             {1 1 1 3}
   6 "SELECT *, sum(three) FROM a1 NATURAL JOIN a2"             {1 1 1 3}
-  7 "SELECT group_concat(three, ''), a1.* FROM a1 NATURAL JOIN a2" {12 1 1}
+  7 "SELECT string_agg(three, ''), a1.* FROM a1 NATURAL JOIN a2" {12 1 1}
 }
 
 # EVIDENCE-OF: R-04486-07266 Or, if the dataset contains zero rows, then

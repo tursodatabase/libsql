@@ -252,4 +252,3 @@ do_catchsql_test 9.11 {
 
 
 finish_test
-
