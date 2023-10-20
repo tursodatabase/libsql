@@ -182,6 +182,32 @@ impl FromValue for String {
     }
 }
 
+impl FromValue for bool {
+    fn from_sql(val: Value) -> Result<Self> {
+        match val {
+            Value::Null => Err(crate::Error::NullValue),
+            Value::Integer(i) => match i {
+                0 => Ok(false),
+                1 => Ok(true),
+                _ => Err(crate::Error::InvalidColumnType),
+            },
+            _ => unreachable!("invalid value type"),
+        }
+    }
+}
+
+impl<T> FromValue for Option<T>
+where
+    T: FromValue,
+{
+    fn from_sql(val: Value) -> Result<Self> {
+        match val {
+            Value::Null => Ok(None),
+            _ => T::from_sql(val).map(Some),
+        }
+    }
+}
+
 pub(crate) trait RowInner {
     fn column_value(&self, idx: i32) -> Result<Value>;
     fn column_str(&self, idx: i32) -> Result<&str>;
