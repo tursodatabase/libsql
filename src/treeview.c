@@ -724,6 +724,10 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
 #endif
       break;
     }
+    case TK_ORDER: {
+      sqlite3TreeViewExprList(pView, pExpr->x.pList, 0, "ORDERBY");
+      break;
+    }
 #ifndef SQLITE_OMIT_SUBQUERY
     case TK_EXISTS: {
       assert( ExprUseXSelect(pExpr) );

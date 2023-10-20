@@ -1529,25 +1529,21 @@ static int dupedExprNodeSize(const Expr *p, int flags){
 
 /*
 ** Return the number of bytes required to create a duplicate of the
-** expression passed as the first argument. The second argument is a
-** mask containing EXPRDUP_XXX flags.
+** expression passed as the first argument.
 **
 ** The value returned includes space to create a copy of the Expr struct
 ** itself and the buffer referred to by Expr.u.zToken, if any.
 **
-** If the EXPRDUP_REDUCE flag is set, then the return value includes
-** space to duplicate all Expr nodes in the tree formed by Expr.pLeft
-** and Expr.pRight variables (but not for any structures pointed to or
-** descended from the Expr.x.pList or Expr.x.pSelect variables).
+** The return value includes space to duplicate all Expr nodes in the
+** tree formed by Expr.pLeft and Expr.pRight, but not any other
+** substructure such as Expr.x.pList, Expr.x.pSelect, and Expr.y.pWin.
 */
-static int dupedExprSize(const Expr *p, int flags){
-  int nByte = 0;
-  if( p ){
-    nByte = dupedExprNodeSize(p, flags);
-    if( flags&EXPRDUP_REDUCE ){
-      nByte += dupedExprSize(p->pLeft, flags) + dupedExprSize(p->pRight, flags);
-    }
-  }
+static int dupedExprSize(const Expr *p){
+  int nByte;
+  assert( p!=0 );
+  nByte = dupedExprNodeSize(p, EXPRDUP_REDUCE);
+  if( p->pLeft ) nByte += dupedExprSize(p->pLeft);
+  if( p->pRight ) nByte += dupedExprSize(p->pRight);
   return nByte;
 }
 
@@ -1564,6 +1560,13 @@ static Expr *exprDup(sqlite3 *db, const Expr *p, int dupFlags, u8 **pzBuffer){
   u8 *zAlloc;           /* Memory space from which to build Expr object */
   u32 staticFlag;       /* EP_Static if space not obtained from malloc */
 
+#ifdef SQLITE_DEBUG
+  /* If zEnd is not NULL, then it is the first byte past the end of the
+  ** zAlloc buffer allocated by this routine.  Used inside assert()
+  ** to ensure that sufficient space was allocated for zAlloc */
+  u8 *zEnd = 0;
+#endif
+
   assert( db!=0 );
   assert( p );
   assert( dupFlags==0 || dupFlags==EXPRDUP_REDUCE );
@@ -1574,8 +1577,13 @@ static Expr *exprDup(sqlite3 *db, const Expr *p, int dupFlags, u8 **pzBuffer){
     zAlloc = *pzBuffer;
     staticFlag = EP_Static;
     assert( zAlloc!=0 );
+    assert( dupFlags==EXPRDUP_REDUCE );
   }else{
-    zAlloc = sqlite3DbMallocRawNN(db, dupedExprSize(p, dupFlags)*5);
+    int nAlloc = dupFlags ? dupedExprSize(p) : dupedExprNodeSize(p, 0);
+    zAlloc = sqlite3DbMallocRawNN(db, nAlloc*5);
+#ifdef SQLITE_DEBUG
+    zEnd = zAlloc ? zAlloc+nAlloc : 0;
+#endif
     staticFlag = 0;
   }
   pNew = (Expr *)zAlloc;
@@ -1597,12 +1605,14 @@ static Expr *exprDup(sqlite3 *db, const Expr *p, int dupFlags, u8 **pzBuffer){
     if( dupFlags ){
       assert( ExprHasProperty(p, EP_Reduced)==0 );
       memcpy(zAlloc, p, nNewSize);
+      zAlloc += nNewSize;
     }else{
       u32 nSize = (u32)exprStructSize(p);
       memcpy(zAlloc, p, nSize);
       if( nSize<EXPR_FULLSIZE ){
         memset(&zAlloc[nSize], 0, EXPR_FULLSIZE-nSize);
       }
+      zAlloc += EXPR_FULLSIZE;
     }
 
     /* Set the EP_Reduced, EP_TokenOnly, and EP_Static flags appropriately. */
@@ -1616,8 +1626,9 @@ static Expr *exprDup(sqlite3 *db, const Expr *p, int dupFlags, u8 **pzBuffer){
 
     /* Copy the p->u.zToken string, if any. */
     if( nToken ){
-      char *zToken = pNew->u.zToken = (char*)&zAlloc[nNewSize];
+      char *zToken = pNew->u.zToken = (char*)zAlloc;
       memcpy(zToken, p->u.zToken, nToken);
+      zAlloc += nToken;
     }
 
     if( 0==((p->flags|pNew->flags) & (EP_TokenOnly|EP_Leaf)) ){
@@ -1632,7 +1643,6 @@ static Expr *exprDup(sqlite3 *db, const Expr *p, int dupFlags, u8 **pzBuffer){
 
     /* Fill in pNew->pLeft and pNew->pRight. */
     if( ExprHasProperty(pNew, EP_Reduced|EP_TokenOnly|EP_WinFunc) ){
-      zAlloc += dupedExprNodeSize(p, dupFlags);
       if( !ExprHasProperty(pNew, EP_TokenOnly|EP_Leaf) ){
         pNew->pLeft = p->pLeft ?
                       exprDup(db, p->pLeft, EXPRDUP_REDUCE, &zAlloc) : 0;
@@ -1661,6 +1671,7 @@ static Expr *exprDup(sqlite3 *db, const Expr *p, int dupFlags, u8 **pzBuffer){
       }
     }
   }
+  assert( zEnd==0 || zAlloc<=zEnd );
   return pNew;
 }
 
