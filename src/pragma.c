@@ -1765,8 +1765,11 @@ void sqlite3Pragma(
         if( !IsOrdinaryTable(pTab) ){
           sqlite3_vtab *pVTab;
           int a1;
+          int savedErr = db->suppressErr;
           if( !IsVirtual(pTab) ) continue;
-          sqlite3ViewGetColumnNames(pParse, pTab);
+          db->suppressErr = 1;
+          rc = sqlite3ViewGetColumnNames(pParse, pTab);
+          db->suppressErr = savedErr;
           if( pTab->u.vtab.p==0 ) continue;
           pVTab = pTab->u.vtab.p->pVtab;
           if( NEVER(pVTab==0) ) continue;
