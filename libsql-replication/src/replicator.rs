@@ -37,7 +37,7 @@ impl From<tokio::task::JoinError> for Error {
 
 #[async_trait::async_trait]
 pub trait ReplicatorClient {
-    type FrameStream: Stream<Item = Result<Frame, Error>> + Unpin;
+    type FrameStream: Stream<Item = Result<Frame, Error>> + Unpin + Send;
 
     /// Perform handshake with remote
     async fn handshake(&mut self) -> Result<(), Error>;
@@ -77,13 +77,13 @@ impl<C: ReplicatorClient> Replicator<C> {
         })
     }
 
-    pub async fn run(&mut self) -> Result<(), Error> {
+    pub async fn run(&mut self) -> Error {
         loop {
             if let Err(e) = self.replicate().await {
                 // Replication encountered an error. We log the error, and then shut down the
                 // injector and propagate a potential panic from there.
                 self.has_handshake = false;
-                return Err(e);
+                return e;
             }
         }
     }

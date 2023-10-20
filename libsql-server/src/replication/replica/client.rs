@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::pin::Pin;
 
 use libsql_replication::frame::Frame;
@@ -21,7 +22,7 @@ use super::meta::WalIndexMeta;
 pub struct Client {
     client: ReplicationLogClient<Channel>,
     meta: WalIndexMeta,
-    current_frame_no_notifier: watch::Sender<Option<FrameNo>>,
+    pub current_frame_no_notifier: watch::Sender<Option<FrameNo>>,
     namespace: NamespaceName,
 }
 
@@ -37,6 +38,18 @@ impl From<ReplicationError> for Error {
 }
 
 impl Client {
+    pub async fn new(namespace: NamespaceName, client: ReplicationLogClient<Channel>, path: &Path) -> crate::Result<Self> {
+        let (current_frame_no_notifier, _) = watch::channel(None);
+        let meta = WalIndexMeta::open(&path).await?;
+
+        Ok(Self {
+            namespace,
+            client,
+            current_frame_no_notifier,
+            meta,
+        })
+    }
+
     fn make_request<T>(&self, msg: T) -> Request<T> {
         let mut req = Request::new(msg);
         req.metadata_mut().insert_bin(
@@ -57,7 +70,7 @@ impl Client {
 
 #[async_trait::async_trait]
 impl ReplicatorClient for Client {
-    type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>>>>;
+    type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
 
     async fn handshake(&mut self) -> Result<(), Error> {
         tracing::info!("Attempting to perform handshake with primary.");

@@ -2285,6 +2285,7 @@ version = "0.1.0"
 dependencies = [
  "arbitrary",
  "async-trait",
+ "bincode",
  "bytemuck",
  "bytes",
  "parking_lot",

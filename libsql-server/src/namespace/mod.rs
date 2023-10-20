@@ -12,6 +12,7 @@ use chrono::NaiveDateTime;
 use enclose::enclose;
 use futures_core::Stream;
 use hyper::Uri;
+use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use metrics::histogram;
 use parking_lot::Mutex;
 use rusqlite::ErrorCode;
@@ -32,7 +33,7 @@ use crate::connection::MakeConnection;
 use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
 use crate::replication::primary::logger::{ReplicationLoggerHookCtx, REPLICATION_METHODS};
-use crate::replication::replica::Replicator;
+use crate::replication::replica::error::ReplicationError;
 use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
@@ -561,17 +562,51 @@ impl Namespace<ReplicaDatabase> {
             DatabaseConfigStore::load(&db_path).context("Could not load database config")?,
         );
 
-        let replicator = Replicator::new(
-            db_path.clone(),
-            config.channel.clone(),
-            config.uri.clone(),
-            name.clone(),
-            reset,
-        )
-        .await?;
-        let applied_frame_no_receiver = replicator.current_frame_no_notifier.subscribe();
+        let rpc_client = ReplicationLogClient::with_origin(config.channel.clone(), config.uri.clone());
+        let client = crate::replication::replica::Client::new(name.clone(), rpc_client, &db_path).await?;
+        let applied_frame_no_receiver = client.current_frame_no_notifier.subscribe();
+        let mut replicator = libsql_replication::replicator::Replicator::new(client, db_path.clone(), DEFAULT_AUTO_CHECKPOINT).await?;
+
         let mut join_set = JoinSet::new();
-        join_set.spawn(replicator.run());
+        let namespace = name.clone();
+        join_set.spawn(async move {
+            use libsql_replication::replicator::Error;
+            loop {
+                match replicator.run().await {
+                    Error::Fatal(e) => {
+                        let Ok(e) = e.downcast::<ReplicationError>() else {
+                            unreachable!("unexpected fatal error")
+                        };
+                        match *e {
+                            ReplicationError::LogIncompatible => {
+                                tracing::error!("trying to replicate incompatible logs, reseting replica");
+                                (reset)(ResetOp::Reset(namespace.clone()));
+                                Err(e)?;
+                            },
+                            ReplicationError::NamespaceDoesntExist(_) => {
+                                tracing::error!("namespace {namespace} doesn't exist, destroying...");
+                                (reset)(ResetOp::Destroy(namespace.clone()));
+                                Err(e)?;
+                            },
+                            // We retry from last frame index?
+                            e @ (ReplicationError::FailedToCommit(_)
+                                | ReplicationError::Rpc(_)
+                                | ReplicationError::Other(_)
+                                | ReplicationError::InvalidFrame) => {
+                                tracing::warn!("non-fatal replication error, retrying from last commit index: {e}");
+                            },
+                        }
+                    },
+                    e @ (Error::Internal(_)
+                    | Error::Injector(_)
+                    | Error::Client(_)
+                    | Error::PrimaryHandshakeTimeout
+                    | Error::NeedSnapshot) => {
+                        tracing::warn!("non-fatal replication error, retrying from last commit index: {e}");
+                    },
+                }
+            }
+        });
 
         let stats = make_stats(
             &db_path,

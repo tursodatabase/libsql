@@ -67,6 +67,8 @@ pub enum Error {
     InvalidNamespace,
     #[error("Replication error: {0}")]
     ReplicationError(#[from] ReplicationError),
+    #[error("Replicator error: {0}")]
+    ReplicatorError(#[from] libsql_replication::replicator::Error),
     #[error("Failed to connect to primary")]
     PrimaryConnectionTimeout,
     #[error("Error while loading dump: {0}")]
@@ -135,6 +137,7 @@ impl IntoResponse for Error {
             ConflictingRestoreParameters => self.format_err(StatusCode::BAD_REQUEST),
             Fork(e) => e.into_response(),
             FatalReplicationError => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            ReplicatorError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }
