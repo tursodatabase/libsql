@@ -10,7 +10,7 @@ use std::sync::atomic::AtomicUsize;
 
 use crate::replication::FrameNo;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct QueryStats {
     pub rows_read: i32,
     pub rows_written: i32,

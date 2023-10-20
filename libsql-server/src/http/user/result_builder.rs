@@ -24,7 +24,6 @@ pub struct JsonHttpPayloadBuilder {
     step_row_count: usize,
     is_step_error: bool,
     is_step_empty: bool,
-    stats: QueryStats,
 }
 
 #[derive(Default)]
@@ -112,7 +111,6 @@ impl JsonHttpPayloadBuilder {
             step_row_count: 0,
             is_step_error: false,
             is_step_empty: false,
-            stats: Default::default(),
         }
     }
 }
@@ -275,7 +273,14 @@ impl QueryResultBuilder for JsonHttpPayloadBuilder {
     }
 
     fn update_stats(&mut self, stats: QueryStats) -> Result<(), QueryResultBuilderError> {
-        self.stats += stats;
+        assert!(!self.is_step_error);
+        self.formatter.serialize_key_value(
+            &mut self.buffer,
+            "stats",
+            &serde_json::to_value(&stats)
+                .map_err(|e| QueryResultBuilderError::Internal(e.into()))?,
+            false,
+        )?;
         Ok(())
     }
 
