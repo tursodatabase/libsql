@@ -650,6 +650,12 @@ impl<W: WalHook> Connection<W> {
         };
         self.stats.inc_rows_read(rows_read as u64);
         self.stats.inc_rows_written(rows_written as u64);
+        let weight = (rows_read + rows_written) as i64;
+        if self.stats.qualifies_as_top_query(weight) {
+            let query = stmt.expanded_sql().unwrap_or("<unknown>".into());
+            self.stats
+                .add_top_query(crate::stats::TopQuery::new(query, rows_read, rows_written));
+        }
     }
 
     fn describe(&self, sql: &str) -> DescribeResult {
