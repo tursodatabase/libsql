@@ -1223,7 +1223,9 @@ void sqlite3ExprAddFunctionOrderBy(
   assert( ExprUseXList(pExpr) );
   if( pExpr->x.pList==0 || NEVER(pExpr->x.pList->nExpr==0) ){
     /* Ignore ORDER BY on zero-argument aggregates */
-    sqlite3ExprListDelete(db, pOrderBy);
+    sqlite3ParserAddCleanup(pParse,
+        (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
+        pOrderBy);
     return;
   }
   if( IsWindowFunc(pExpr) ){

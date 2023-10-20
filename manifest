@@ -1,5 +1,5 @@
-C Remove\sa\sfaulty\sassert()\sthat\swas\sadded\sjust\sa\sfew\scheck-ins\sago\sby\n[8b6fffb552c30f9c].
-D 2023-10-19T20:06:20.075
+C Use\ssqlite3ParserAddCleanup()\sinstead\sof\scalling\ssqlite3ExprListDelete()\ndirectly\swhen\sdisposing\sof\san\sunused\sORDER\sBY\sin\san\saggregate\sfunction,\nto\savoid\sdisrupting\sALTER\sTABLE\sdata\sstructures.
+D 2023-10-20T10:18:03.872
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -668,7 +668,7 @@ F src/date.c eebc54a00e888d3c56147779e9f361b77d62fd69ff2008c5373946aa1ba1d574
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
 F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
-F src/expr.c 0756a4116a60666e31e77297444e628262cac913eebdac955a17c8cc8177429b
+F src/expr.c eb0d4b2078d05284e209677183b4bcc20d4545260897215a5ef3fced03b67083
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c a7fcbf7e66d14dbb73cf49f31489ebf66d0e6006c62b95246924a3bae9f37b36
 F src/func.c e8d7b3587a225f4f1116f720b72090511fe9feb936e960bd26a053cea6a17a63
@@ -2133,8 +2133,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a5c73b46f4772f214ffbfa31cb87dce82ebd690addabef539bd09def26b7744d
-R 028a712d10c14e79ed79d3b08f83b31c
+P 18e7c826f08bce51719ef045daa60200b33790f2fe312c6853f9ef6c7e9d5030
+R 116bd1e6425f8040f4b7884265787040
 U drh
-Z 37bf27ee369c257065f7353841ae889a
+Z 3ed7aa53fa4bab3e10246f808572c725
 # Remove this line to create a well-formed Fossil manifest.
