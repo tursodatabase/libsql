@@ -1578,6 +1578,7 @@ static Expr *exprDup(
   Expr *pNew;           /* Value to return */
   EdupBuf sEdupBuf;     /* Memory space from which to build Expr object */
   u32 staticFlag;       /* EP_Static if space not obtained from malloc */
+  int nToken = -1;       /* Space needed for p->u.zToken.  -1 means unknown */
 
   assert( db!=0 );
   assert( p );
@@ -1594,7 +1595,16 @@ static Expr *exprDup(
     assert( sEdupBuf.zAlloc!=0 );
     assert( dupFlags==EXPRDUP_REDUCE );
   }else{
-    int nAlloc = dupFlags ? dupedExprSize(p) : dupedExprNodeSize(p, 0);
+    int nAlloc;
+    if( dupFlags ){
+      nAlloc = dupedExprSize(p);
+    }else if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
+      nToken = sqlite3Strlen30NN(p->u.zToken)+1;
+      nAlloc = EXPR_FULLSIZE + nToken;
+    }else{
+      nToken = 0;
+      nAlloc = EXPR_FULLSIZE;
+    }
     sEdupBuf.zAlloc = sqlite3DbMallocRawNN(db, nAlloc);
 #ifdef SQLITE_DEBUG
     sEdupBuf.zEnd = sEdupBuf.zAlloc ? sEdupBuf.zAlloc+nAlloc : 0;
@@ -1612,11 +1622,12 @@ static Expr *exprDup(
     */
     const unsigned nStructSize = dupedExprStructSize(p, dupFlags);
     const int nNewSize = nStructSize & 0xfff;
-    int nToken;
-    if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
-      nToken = sqlite3Strlen30(p->u.zToken) + 1;
-    }else{
-      nToken = 0;
+    if( nToken<0 ){
+      if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
+        nToken = sqlite3Strlen30(p->u.zToken) + 1;
+      }else{
+        nToken = 0;
+      }
     }
     if( dupFlags ){
       assert( (int)(sEdupBuf.zEnd - sEdupBuf.zAlloc) >= nNewSize+nToken );
@@ -1643,7 +1654,8 @@ static Expr *exprDup(
     }
 
     /* Copy the p->u.zToken string, if any. */
-    if( nToken ){
+    assert( nToken>=0 );
+    if( nToken>0 ){
       char *zToken = pNew->u.zToken = (char*)sEdupBuf.zAlloc;
       memcpy(zToken, p->u.zToken, nToken);
       sEdupBuf.zAlloc += nToken;
