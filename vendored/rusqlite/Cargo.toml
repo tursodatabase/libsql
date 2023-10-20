@@ -29,9 +29,6 @@ maintenance = { status = "actively-developed" }
 [lib]
 name = "rusqlite"
 
-# [workspace]
-# members = ["libsqlite3-sys"]
-
 [features]
 load_extension = []
 # hot-backup interface: 3.6.11 (2009-02-18)
@@ -48,17 +45,16 @@ release_memory = []
 limits = []
 hooks = []
 i128_blob = []
-sqlcipher = ["libsqlite3-sys/sqlcipher"]
-libsql-experimental = ["libsqlite3-sys/libsql-experimental"]
-libsql-wasm-experimental = ["libsql-experimental", "libsqlite3-sys/libsql-wasm-experimental"]
-unlock_notify = ["libsqlite3-sys/unlock_notify"]
+sqlcipher = []
+libsql-experimental = []
+libsql-wasm-experimental = ["libsql-experimental"]
 # xSavepoint, xRelease and xRollbackTo: 3.7.7 (2011-06-23)
 vtab = []
 csvtab = ["csv", "vtab"]
 # pointer passing interfaces: 3.20.0
 array = ["vtab"]
 # session extension: 3.13.0
-session = ["libsqlite3-sys/session", "hooks"]
+session = ["libsql-sys/session", "hooks"]
 # window functions: 3.25.0
 window = ["functions"]
 # 3.9.0
@@ -67,13 +63,8 @@ series = ["vtab"]
 extra_check = []
 # ]3.14.0, last]
 modern_sqlite = []
-in_gecko = ["modern_sqlite", "libsqlite3-sys/in_gecko"]
 # Build bundled sqlite with -fsanitize=address
-with-asan = ["libsqlite3-sys/with-asan"]
 column_decltype = []
-wasm32-wasi-vfs = ["libsqlite3-sys/wasm32-wasi-vfs"]
-# Note: doesn't support 32-bit.
-winsqlite3 = ["libsqlite3-sys/winsqlite3"]
 
 # Helper feature for enabling most non-build-related optional features
 # or dependencies (except `session`). This is useful for running tests / clippy
@@ -98,7 +89,6 @@ modern-full = [
     "series",
     "time",
     "trace",
-    "unlock_notify",
     "url",
     "uuid",
     "vtab",
@@ -117,6 +107,7 @@ fallible-iterator = "0.2"
 fallible-streaming-iterator = "0.1"
 uuid = { version = "1.0", optional = true }
 smallvec = "1.6.1"
+libsql-sys = { path = "../../libsql-sys/" }
 
 [dev-dependencies]
 doc-comment = "0.3"
@@ -128,10 +119,6 @@ unicase = "2.6.0"
 # Use `bencher` over criterion because it builds much faster and we don't have
 # many benchmarks
 bencher = "0.1"
-
-[dependencies.libsqlite3-sys]
-path = "libsqlite3-sys"
-version = "0.26.0"
 
 [[test]]
 name = "config_log"

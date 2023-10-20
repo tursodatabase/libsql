@@ -19,3 +19,6 @@ tracing = "0.1.37"
 [build-dependencies]
 bindgen = "0.66.1"
 cc = "1.0"
+
+[features]
+session = []

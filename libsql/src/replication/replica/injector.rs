@@ -44,7 +44,7 @@ impl<'a> FrameInjector<'a> {
                 std::ptr::null_mut(),
             )
         };
-        match rc as u32 {
+        match rc {
             libsql_sys::ffi::SQLITE_OK => panic!("replication hook was not called"),
             LIBSQL_EXIT_REPLICATION => {
                 unsafe {

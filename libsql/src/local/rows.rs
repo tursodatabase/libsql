@@ -41,7 +41,7 @@ impl Rows {
             err_code = errors::extended_error_code(self.stmt.conn.raw);
             err_msg = errors::error_from_handle(self.stmt.conn.raw);
         }
-        match err as u32 {
+        match err {
             libsql_sys::ffi::SQLITE_OK => Ok(None),
             libsql_sys::ffi::SQLITE_DONE => Ok(None),
             libsql_sys::ffi::SQLITE_ROW => Ok(Some(Row {
@@ -61,7 +61,7 @@ impl Rows {
 
     pub fn column_type(&self, idx: i32) -> Result<ValueType> {
         let val = self.stmt.inner.column_type(idx);
-        match val as u32 {
+        match val {
             libsql_sys::ffi::SQLITE_INTEGER => Ok(ValueType::Integer),
             libsql_sys::ffi::SQLITE_FLOAT => Ok(ValueType::Real),
             libsql_sys::ffi::SQLITE_BLOB => Ok(ValueType::Blob),
@@ -129,7 +129,7 @@ impl Row {
 
     pub fn column_type(&self, idx: i32) -> Result<ValueType> {
         let val = self.stmt.inner.column_type(idx);
-        match val as u32 {
+        match val {
             libsql_sys::ffi::SQLITE_INTEGER => Ok(ValueType::Integer),
             libsql_sys::ffi::SQLITE_FLOAT => Ok(ValueType::Real),
             libsql_sys::ffi::SQLITE_BLOB => Ok(ValueType::Blob),

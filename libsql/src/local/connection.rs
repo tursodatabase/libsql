@@ -47,7 +47,7 @@ impl Connection {
                 std::ptr::null(),
             )
         };
-        match err as u32 {
+        match err {
             ffi::SQLITE_OK => {}
             _ => {
                 return Err(Error::ConnectionFailed(db_path));
