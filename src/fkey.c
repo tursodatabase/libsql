@@ -853,7 +853,7 @@ static int fkParentIsModified(
 */
 static int isSetNullAction(Parse *pParse, FKey *pFKey){
   Parse *pTop = sqlite3ParseToplevel(pParse);
-  if( pTop->pTriggerPrg ){
+  if( pTop->pTriggerPrg && 0==(pTop->db->flags & SQLITE_FkNoAction) ){
     Trigger *p = pTop->pTriggerPrg->pTrigger;
     if( (p==pFKey->apTrigger[0] && pFKey->aAction[0]==OE_SetNull)
      || (p==pFKey->apTrigger[1] && pFKey->aAction[1]==OE_SetNull)
@@ -1052,6 +1052,8 @@ void sqlite3FkCheck(
       }
       if( regOld!=0 ){
         int eAction = pFKey->aAction[aChange!=0];
+        if( (db->flags & SQLITE_FkNoAction) ) eAction = OE_None;
+
         fkScanChildren(pParse, pSrc, pTab, pIdx, pFKey, aiCol, regOld, 1);
         /* If this is a deferred FK constraint, or a CASCADE or SET NULL
         ** action applies, then any foreign key violations caused by
@@ -1167,7 +1169,11 @@ int sqlite3FkRequired(
       /* Check if any parent key columns are being modified. */
       for(p=sqlite3FkReferences(pTab); p; p=p->pNextTo){
         if( fkParentIsModified(pTab, p, aChange, chngRowid) ){
-          if( p->aAction[1]!=OE_None ) return 2;
+          if( (pParse->db->flags & SQLITE_FkNoAction)==0 
+           && p->aAction[1]!=OE_None 
+          ){
+            return 2;
+          }
           bHaveFK = 1;
         }
       }
@@ -1217,6 +1223,7 @@ static Trigger *fkActionTrigger(
   int iAction = (pChanges!=0);    /* 1 for UPDATE, 0 for DELETE */
 
   action = pFKey->aAction[iAction];
+  if( (db->flags & SQLITE_FkNoAction) ) action = OE_None;
   if( action==OE_Restrict && (db->flags & SQLITE_DeferFKs) ){
     return 0;
   }

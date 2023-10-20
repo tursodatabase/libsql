@@ -812,8 +812,11 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
     while( objc>1 ){
       const char *z1 = Tcl_GetString(objv[1]);
       int n = strlen(z1);
-      if( n>1 && n<=12 && 0==sqlite3_strnicmp("-nosavepoint", z1, n) ){
+      if( n>3 && n<=12 && 0==sqlite3_strnicmp("-nosavepoint", z1, n) ){
         flags |= SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
+      }
+      else if( n>3 && n<=9 && 0==sqlite3_strnicmp("-noaction", z1, n) ){
+        flags |= SQLITE_CHANGESETAPPLY_FKNOACTION;
       }
       else if( n>2 && n<=7 && 0==sqlite3_strnicmp("-invert", z1, n) ){
         flags |= SQLITE_CHANGESETAPPLY_INVERT;

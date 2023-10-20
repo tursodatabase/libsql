@@ -5322,10 +5322,21 @@ int sqlite3changeset_apply_v2(
   sqlite3_changeset_iter *pIter;  /* Iterator to skip through changeset */  
   int bInv = !!(flags & SQLITE_CHANGESETAPPLY_INVERT);
   int rc = sessionChangesetStart(&pIter, 0, 0, nChangeset, pChangeset, bInv, 1);
+  u64 savedFlag = db->flags & SQLITE_FkNoAction;
+
+  if( flags & SQLITE_CHANGESETAPPLY_FKNOACTION ){
+    db->flags |= ((u64)SQLITE_FkNoAction);
+  }
+
   if( rc==SQLITE_OK ){
     rc = sessionChangesetApply(
         db, pIter, xFilter, xConflict, pCtx, ppRebase, pnRebase, flags
     );
+  }
+
+  if( (flags & SQLITE_CHANGESETAPPLY_FKNOACTION) && savedFlag==0 ){
+    assert( db->flags & SQLITE_FkNoAction );
+    db->flags &= ((u64)SQLITE_FkNoAction);
   }
   return rc;
 }
