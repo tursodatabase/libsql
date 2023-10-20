@@ -5531,7 +5531,6 @@ static void fts5FlushOneHash(Fts5Index *p){
         assert( pBuf->n<=pBuf->nSpace );
         if( p->rc==SQLITE_OK ) sqlite3Fts5HashScanNext(pHash);
       }
-      sqlite3Fts5HashClear(pHash);
       fts5WriteFinish(p, &writer, &pgnoLast);
   
       assert( p->rc!=SQLITE_OK || bSecureDelete || pgnoLast>0 );
@@ -5564,7 +5563,6 @@ static void fts5FlushOneHash(Fts5Index *p){
   fts5IndexCrisismerge(p, &pStruct);
   fts5StructureWrite(p, pStruct);
   fts5StructureRelease(pStruct);
-  p->nContentlessDelete = 0;
 }
 
 /*
@@ -5575,8 +5573,12 @@ static void fts5IndexFlush(Fts5Index *p){
   if( p->nPendingData || p->nContentlessDelete ){
     assert( p->pHash );
     fts5FlushOneHash(p);
-    p->nPendingData = 0;
-    p->nPendingRow = 0;
+    if( p->rc==SQLITE_OK ){
+      sqlite3Fts5HashClear(p->pHash);
+      p->nPendingData = 0;
+      p->nPendingRow = 0;
+      p->nContentlessDelete = 0;
+    }
   }
 }
 
