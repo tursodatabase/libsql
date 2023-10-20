@@ -7,6 +7,12 @@ on:
   merge_group:
     branches: [ "main" ]
 
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  SCCACHE_GHA_ENABLED: "true"
+  RUSTC_WRAPPER: "sccache"
+
 jobs:
   maketestwasm:
 
@@ -21,6 +27,9 @@ jobs:
     
     - name: get TCL
       run: sudo apt-get install -y tcl8.6-dev
+
+    - name: Run sccache-cache
+      uses: mozilla-actions/sccache-action@v0.0.3
 
     - name: get WasmEdge
       run: > 
