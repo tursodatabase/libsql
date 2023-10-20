@@ -10,7 +10,7 @@ use crate::connection::Connection;
 use crate::database::{Database, PrimaryConnection};
 use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
 use crate::query_result_builder::{
-    Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
+    Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError, QueryStats,
 };
 use crate::replication::FrameNo;
 
@@ -302,6 +302,7 @@ struct ExecuteResultBuilder {
     max_size: u64,
     current_size: u64,
     current_step_size: u64,
+    stats: QueryStats,
 }
 
 impl QueryResultBuilder for ExecuteResultBuilder {
@@ -419,6 +420,11 @@ impl QueryResultBuilder for ExecuteResultBuilder {
 
         self.current_row.values.push(value);
 
+        Ok(())
+    }
+
+    fn update_stats(&mut self, stats: QueryStats) -> Result<(), QueryResultBuilderError> {
+        self.stats = stats;
         Ok(())
     }
 

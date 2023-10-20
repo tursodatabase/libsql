@@ -10,6 +10,19 @@ use std::sync::atomic::AtomicUsize;
 
 use crate::replication::FrameNo;
 
+#[derive(Debug, Default)]
+pub struct QueryStats {
+    pub rows_read: i32,
+    pub rows_written: i32,
+}
+
+impl std::ops::AddAssign<QueryStats> for QueryStats {
+    fn add_assign(&mut self, other: Self) {
+        self.rows_read += other.rows_read;
+        self.rows_written += other.rows_written;
+    }
+}
+
 pub static TOTAL_RESPONSE_SIZE: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug)]
@@ -119,6 +132,8 @@ pub trait QueryResultBuilder: Send + 'static {
     fn finish_row(&mut self) -> Result<(), QueryResultBuilderError>;
     /// end adding rows
     fn finish_rows(&mut self) -> Result<(), QueryResultBuilderError>;
+    /// update stats
+    fn update_stats(&mut self, stats: QueryStats) -> Result<(), QueryResultBuilderError>;
     /// finish serialization.
     fn finish(&mut self, last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError>;
     /// returns the inner ret
@@ -303,6 +318,10 @@ impl QueryResultBuilder for StepResultsBuilder {
         Ok(())
     }
 
+    fn update_stats(&mut self, _stats: QueryStats) -> Result<(), QueryResultBuilderError> {
+        Ok(())
+    }
+
     fn finish_row(&mut self) -> Result<(), QueryResultBuilderError> {
         Ok(())
     }
@@ -361,6 +380,10 @@ impl QueryResultBuilder for IgnoreResult {
     }
 
     fn add_row_value(&mut self, _v: ValueRef) -> Result<(), QueryResultBuilderError> {
+        Ok(())
+    }
+
+    fn update_stats(&mut self, _stats: QueryStats) -> Result<(), QueryResultBuilderError> {
         Ok(())
     }
 
@@ -460,6 +483,14 @@ impl<B: QueryResultBuilder> QueryResultBuilder for Take<B> {
     fn add_row_value(&mut self, v: ValueRef) -> Result<(), QueryResultBuilderError> {
         if self.count < self.limit {
             self.inner.add_row_value(v)
+        } else {
+            Ok(())
+        }
+    }
+
+    fn update_stats(&mut self, stats: QueryStats) -> Result<(), QueryResultBuilderError> {
+        if self.count < self.limit {
+            self.inner.update_stats(stats)
         } else {
             Ok(())
         }
@@ -593,6 +624,10 @@ pub mod test {
         }
 
         fn finish_rows(&mut self) -> Result<(), QueryResultBuilderError> {
+            Ok(())
+        }
+
+        fn update_stats(&mut self, _stats: QueryStats) -> Result<(), QueryResultBuilderError> {
             Ok(())
         }
 
@@ -877,6 +912,11 @@ pub mod test {
         fn finish_rows(&mut self) -> Result<(), QueryResultBuilderError> {
             self.maybe_inject_error()?;
             self.transition(FinishRows)
+        }
+
+        fn update_stats(&mut self, _stats: QueryStats) -> Result<(), QueryResultBuilderError> {
+            self.maybe_inject_error()?;
+            Ok(())
         }
 
         fn finish(

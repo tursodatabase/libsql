@@ -43,6 +43,23 @@ pub struct NamedArg {
 }
 
 #[derive(Serialize, prost::Message)]
+pub struct StmtResultStats {
+    #[prost(int32, required, tag = "1")]
+    pub rows_read: i32,
+    #[prost(int32, required, tag = "2")]
+    pub rows_written: i32,
+}
+
+impl From<crate::query_result_builder::QueryStats> for StmtResultStats {
+    fn from(stats: crate::query_result_builder::QueryStats) -> Self {
+        StmtResultStats {
+            rows_read: stats.rows_read,
+            rows_written: stats.rows_written,
+        }
+    }
+}
+
+#[derive(Serialize, prost::Message)]
 pub struct StmtResult {
     #[prost(message, repeated, tag = "1")]
     pub cols: Vec<Col>,
@@ -55,6 +72,8 @@ pub struct StmtResult {
     pub last_insert_rowid: Option<i64>,
     #[prost(uint64, optional, tag = "5")]
     pub replication_index: Option<u64>,
+    #[prost(message, optional, tag = "6")]
+    pub stats: Option<StmtResultStats>,
 }
 
 #[derive(Serialize, prost::Message)]

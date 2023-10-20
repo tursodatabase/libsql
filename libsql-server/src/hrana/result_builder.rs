@@ -7,7 +7,8 @@ use rusqlite::types::ValueRef;
 
 use crate::hrana::stmt::{proto_error_from_stmt_error, stmt_error_from_sqld_error};
 use crate::query_result_builder::{
-    Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError, TOTAL_RESPONSE_SIZE,
+    Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError, QueryStats,
+    TOTAL_RESPONSE_SIZE,
 };
 use crate::replication::FrameNo;
 
@@ -25,6 +26,7 @@ pub struct SingleStatementBuilder {
     max_response_size: u64,
     max_total_response_size: u64,
     last_frame_no: Option<FrameNo>,
+    stats: QueryStats,
 }
 
 struct SizeFormatter {
@@ -215,6 +217,11 @@ impl QueryResultBuilder for SingleStatementBuilder {
         Ok(())
     }
 
+    fn update_stats(&mut self, stats: QueryStats) -> Result<(), QueryResultBuilderError> {
+        self.stats += stats;
+        Ok(())
+    }
+
     fn finish_row(&mut self) -> Result<(), QueryResultBuilderError> {
         assert!(self.err.is_none());
         Ok(())
@@ -239,6 +246,7 @@ impl QueryResultBuilder for SingleStatementBuilder {
                 affected_row_count: std::mem::take(&mut self.affected_row_count),
                 last_insert_rowid: std::mem::take(&mut self.last_insert_rowid),
                 replication_index: self.last_frame_no,
+                stats: Some(std::mem::take(&mut self.stats).into()),
             }),
         }
     }
@@ -334,6 +342,10 @@ impl QueryResultBuilder for HranaBatchProtoBuilder {
 
     fn add_row_value(&mut self, v: ValueRef) -> Result<(), QueryResultBuilderError> {
         self.stmt_builder.add_row_value(v)
+    }
+
+    fn update_stats(&mut self, stats: QueryStats) -> Result<(), QueryResultBuilderError> {
+        self.stmt_builder.update_stats(stats)
     }
 
     fn finish_row(&mut self) -> Result<(), QueryResultBuilderError> {

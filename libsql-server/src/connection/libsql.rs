@@ -16,7 +16,7 @@ use crate::libsql_bindings::wal_hook::WalHook;
 use crate::metrics::{READ_QUERY_COUNT, WRITE_QUERY_COUNT};
 use crate::query::Query;
 use crate::query_analysis::{State, StmtKind};
-use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
+use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder, QueryStats};
 use crate::replication::FrameNo;
 use crate::stats::Stats;
 use crate::Result;
@@ -606,7 +606,8 @@ impl<W: WalHook> Connection<W> {
 
         drop(qresult);
 
-        self.update_stats(&stmt);
+        let result_stats = self.update_stats(&stmt);
+        builder.update_stats(result_stats)?;
 
         Ok((affected_row_count, last_insert_rowid))
     }
@@ -640,7 +641,7 @@ impl<W: WalHook> Connection<W> {
         Ok(())
     }
 
-    fn update_stats(&self, stmt: &rusqlite::Statement) {
+    fn update_stats(&self, stmt: &rusqlite::Statement) -> QueryStats {
         let rows_read = stmt.get_status(StatementStatus::RowsRead);
         let rows_written = stmt.get_status(StatementStatus::RowsWritten);
         let rows_read = if rows_read == 0 && rows_written == 0 {
@@ -650,6 +651,10 @@ impl<W: WalHook> Connection<W> {
         };
         self.stats.inc_rows_read(rows_read as u64);
         self.stats.inc_rows_written(rows_written as u64);
+        QueryStats {
+            rows_read,
+            rows_written,
+        }
     }
 
     fn describe(&self, sql: &str) -> DescribeResult {
