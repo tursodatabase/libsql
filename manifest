@@ -1,5 +1,5 @@
-C Correct\sthe\sopfs-sahpool\sVFS's\sxGetLastError()\smethod\sto\sreturn\sthe\sprevious\serror\scode,\snot\s0,\son\ssuccess.
-D 2023-10-20T12:23:49.687
+C Omit\san\sunused\sconstant\sfrom\ssessionfuzz.c\sto\sprevent\sa\scompiler\swarning.
+D 2023-10-20T14:05:26.334
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1542,7 +1542,7 @@ F test/selectG.test 089f7d3d7e6db91566f00b036cb353107a2cca6220eb1cb264085a836dae
 F test/selectH.test 0b54599f1917d99568c9b929df22ec6261ed7b6d2f02a46b5945ef81b7871aac
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/sessionfuzz-data1.db 1f8d5def831f19b1c74571037f0d53a588ea49a6c4ca2a028fc0c27ef896dbcb
-F test/sessionfuzz.c 5eef09af01eeff6f20250ae4c0112c2e576e4d2f2026cc9a49dc5be6886fa6ee
+F test/sessionfuzz.c 666b47e177c7b25f01ba645d41fb9131d2d54ae673f0d81c08f5af2b3e6ecbda
 F test/shared.test f022874d9d299fe913529dc10f52ad5a386e4e7ff709270b9b1111b3a0f3420a
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
 F test/shared3.test f8cd07c1a2b7cdb315c01671a0b2f8e3830b11ef31da6baa9a9cd8da88965403
@@ -2133,8 +2133,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d083e42086733ecd79aba8c268e020b01782bfe1cfa9684ce1c277af9c8bf92a
-R 6e8befaf01cb46d1b6ec065810ecbd1e
-U stephan
-Z d67ca77d259ff533bed4295ddbc6d176
+P 95a1dde63117d696323c775580b9c04f044a5b8d609e9174b739ac03ecc1336c
+R 6ad478f91385b35d37da9909f3b6864d
+U drh
+Z 3d1888cda1fff3d60caf044573bbf655
 # Remove this line to create a well-formed Fossil manifest.
