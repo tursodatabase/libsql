@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: libsql-server-devel
+  IMAGE_NAME: ${{ github.repository }}-server-devel
 
 jobs:
   # docker image build and upload to ghcr
@@ -38,12 +38,18 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
+      - name: Get short SHA
+        id: get-short-sha
+        run: |
+          SHA="$(echo ${{ github.event.pull_request.head.sha }} | cut -c 1-7)"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
       - name: Build and push Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}-${{ github.event.pull_request.head.sha }}
+          tags: ${{ steps.meta.outputs.tags }}-${{ steps.get-short-sha.outputs.sha }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
