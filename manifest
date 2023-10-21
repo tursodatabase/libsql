@@ -1,5 +1,5 @@
-C Create\sthe\snew\sstring_agg(X,Y)\saggregate\sfunction\swhich\sis\san\salias\sfor\nthe\stwo-argument\sgroup_concat(X,Y)\sfunction,\sfor\scompatibility\swith\nSQL-Server\sand\sPostgreSQL.
-D 2023-10-21T11:13:47.696
+C Compress\sthe\scontent\sof\sthe\sstatus\sline\sin\stestrunning.tcl\sso\sthat\sall\sthe\nsame\sstatus\sinformation\sappears\sbut\swith\sless\spunctuation\sand\swith\s"zero"\nvalues\somitted,\sso\sthat\sthe\sstatus\sline\swill\sfit\scomfortably\son\san\s80-column\nterminal\swindow.
+D 2023-10-21T11:34:59.590
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1643,7 +1643,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 68454ef88508c196d19e8694daa27bff7107a91857799eaa12f417188ae53ede
-F test/testrunner.tcl c88eae7d8ba9825d09f080ee2aa98b8e65c381bb56b4d427fb492625d2d4c36b
+F test/testrunner.tcl 14c8b8ece841b1dd17516a0dc9c7ad9b5f4d4db7987974d3fdf66ae56b2a71fa
 F test/testrunner_data.tcl 7f73f93634d32dafc857ed491b840f371113d09fde6a8bfb9e47b938d47b8c85
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2135,8 +2135,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2904fcbeebba9189cebc48e58d12fc46f78ee23d8c4d46644606691f8cabb80c 1e61864c3bffec133632f4575d59d11936e8bafc089c4d84a129dcaf7e9b6d7d
-R 49f580e4bb2041a30e18623895893528
+P a3b3df8a9e43f1880a904b76027db56ed504a84622831c96ba1962a19bbed762
+R c09cd61cb274968f322c7fa7907df922
 U drh
-Z 18932cf81e43303a0689b13f1b4c7092
+Z 764323ff2562e3191a81fc0dd1ca651e
 # Remove this line to create a well-formed Fossil manifest.

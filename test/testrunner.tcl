@@ -963,13 +963,19 @@ proc one_line_report {} {
   foreach j [lsort [array names t]] {
     foreach k {done failed running} { incr v($k,$j) 0 }
     set fin [expr $v(done,$j) + $v(failed,$j)]
-    lappend text "$j ($fin/$t($j)) f=$v(failed,$j) r=$v(running,$j)"
+    lappend text "${j}($fin/$t($j))"
+    if {$v(failed,$j)>0} {
+      lappend text "f$v(failed,$j)"
+    }
+    if {$v(running,$j)>0} {
+      lappend text "r$v(running,$j)"
+    }
   }
 
   if {[info exists TRG(reportlength)]} {
     puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
   }
-  set report "${tm}s: [join $text { }]"
+  set report "${tm} [join $text { }]"
   set TRG(reportlength) [string length $report]
   if {[string length $report]<100} {
     puts -nonewline "$report\r"
