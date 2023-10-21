@@ -1,5 +1,5 @@
-C Compress\sthe\scontent\sof\sthe\sstatus\sline\sin\stestrunning.tcl\sso\sthat\sall\sthe\nsame\sstatus\sinformation\sappears\sbut\swith\sless\spunctuation\sand\swith\s"zero"\nvalues\somitted,\sso\sthat\sthe\sstatus\sline\swill\sfit\scomfortably\son\san\s80-column\nterminal\swindow.
-D 2023-10-21T11:34:59.590
+C Adjust\san\sEXPLAIN\sQUERY\sPLAN\soutput\sin\sscanstatus2.test\sto\saccount\sfor\sa\ndifferent\sloop\sorder\staken\sdue\sto\sthe\sremoval\sof\sthe\sview-scan\soptimization.
+D 2023-10-21T11:43:54.080
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1514,7 +1514,7 @@ F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test cde525ea3075283eb950cdcdefe23ead4f700daa
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
 F test/scanstatus.test b249328caf4d317e71058006872b8012598a5fa045b30bf24a81eeff650ab49e
-F test/scanstatus2.test 1065b9db6704ef2547a5bbdcbe188c295c738c39e4704275c216002e581b5a0a
+F test/scanstatus2.test 317670daf7f3eef48a9598cb7800ba8eccab51949cf52bca3f7da3b83a0c1c8c
 F test/schema.test 5dd11c96ba64744de955315d2e4f8992e447533690153b93377dffb2a5ef5431
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 8ed4ae66e082cdd8b1b1f22d8549e1e7a0db4527a8e6ee8b6193053ee1e5c9ce
@@ -2135,8 +2135,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a3b3df8a9e43f1880a904b76027db56ed504a84622831c96ba1962a19bbed762
-R c09cd61cb274968f322c7fa7907df922
+P 966351311682a319ec796c07d407ce90cd1aa0cea9e904ba1085a4ebadbdf925
+R 4f8abf0c5506c8daf7597799f05bea2d
 U drh
-Z 764323ff2562e3191a81fc0dd1ca651e
+Z f1b1288708616bc98ffb5afd97b6b0f5
 # Remove this line to create a well-formed Fossil manifest.
