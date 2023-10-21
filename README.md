@@ -34,10 +34,10 @@ The project provides two interfaces: the libSQL API, which supports all the feat
 
 To get started with the libSQL API:
 
-* [JavaScript](https://github.com/libsql/libsql-experimental-node)
-* [Rust](core) 
+* [JavaScript](https://github.com/libsql/libsql-js)
+* [Rust](https://github.com/libsql/libsql-client-rs) 
 * [Python](https://github.com/libsql/libsql-experimental-python) (experimental)
-* [Go](bindings/go) (experimental)
+* [Go](https://github.com/libsql/libsql-client-go) (experimental)
 * [C](bindings/c) (experimantal)
 
 To build the SQLite-compatible C library and tools, run:
