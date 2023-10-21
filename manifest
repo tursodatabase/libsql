@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sSQLITE_CHANGESETAPPLY_FKNOACTION\sand\sthe\sforeign-key-trigger-cache.
-D 2023-10-21T15:04:24.399
+C Add\smissing\s"finish_test"\sto\ssessionnoact.test.
+D 2023-10-21T15:21:06.320
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F ext/session/sessionfault2.test b0d6a7c1d7398a7e800d84657404909c7d385965ea8576d
 F ext/session/sessionfault3.test 7c7547202775de268f3fe6f074c4d0d165151829710b4e64f90d4a01645ba9e7
 F ext/session/sessioninvert.test 04075517a9497a80d39c495ba6b44f3982c7371129b89e2c52219819bc105a25
 F ext/session/sessionmem.test f2a735db84a3e9e19f571033b725b0b2daf847f3f28b1da55a0c1a4e74f1de09
-F ext/session/sessionnoact.test 8c8d21db084ac1bb952d08c7236c4c38d30f5dbf3bfe4fa8b7872c2704a5f6d5
+F ext/session/sessionnoact.test 506526a5fe29421ecc50d371774ef1bb04cbd9d906a8a468f0556cdbde184c22
 F ext/session/sessionnoop.test a9366a36a95ef85f8a3687856ebef46983df399541174cb1ede2ee53b8011bc7
 F ext/session/sessionnoop2.test de4672dce88464396ec9f30ed08c6c01643a69c53ae540fadbbf6d30642d64e8
 F ext/session/sessionrebase.test 702378bdcb5062f1106e74457beca8797d09c113a81768734a58b197b5b334e2
@@ -2135,8 +2135,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 563cf5f782cdddbbd7f727c65118edfd109aeb731c8aaf0d6ee5ee7030e61ea9
-R 8851a240e077d885b4dd7be6f7eb6ebd
+P 95304ec6c9654b4366dc58ae263270cb42861cb5017174936f816922b5eb61e6
+R ba4bcd2d6342b08c7dacb17431cb3038
 U dan
-Z c750bc1fd930bc70aff345b22b4bad5e
+Z 0e2c07cdd748b69afa0ef3e62386cf6c
 # Remove this line to create a well-formed Fossil manifest.

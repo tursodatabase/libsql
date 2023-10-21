@@ -107,3 +107,4 @@ do_execsql_test 1.8 {
   PRAGMA foreign_key_check
 }
 
+finish_test
