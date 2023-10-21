@@ -1765,11 +1765,12 @@ void sqlite3Pragma(
         if( !IsOrdinaryTable(pTab) ){
           sqlite3_vtab *pVTab;
           int a1;
-          int savedErr = db->suppressErr;
           if( !IsVirtual(pTab) ) continue;
-          db->suppressErr = 1;
-          rc = sqlite3ViewGetColumnNames(pParse, pTab);
-          db->suppressErr = savedErr;
+          if( pTab->nCol<=0 ){
+            const char *zMod = pTab->u.vtab.azArg[0];
+            if( sqlite3HashFind(&db->aModule, zMod)==0 ) continue;
+          }
+          sqlite3ViewGetColumnNames(pParse, pTab);
           if( pTab->u.vtab.p==0 ) continue;
           pVTab = pTab->u.vtab.p->pVtab;
           if( NEVER(pVTab==0) ) continue;
