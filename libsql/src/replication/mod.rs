@@ -16,7 +16,10 @@ pub(crate) mod local_client;
 
 type BoxError = Box<dyn std::error::Error + Sync + Send + 'static>;
 pub enum Frames {
+    /// A set of frames, in increasing frame_no.
     Vec(Vec<Frame>),
+    /// A stream of snapshot frames. The frames must be in reverse frame_no, and the pages
+    /// deduplicated. The snapshot is expected to be a single commit unit.
     Snapshot(Pin<Box<dyn Stream<Item = Result<Frame, BoxError>> + Send + Sync + 'static>>),
 }
 #[derive(Debug, Clone)]
