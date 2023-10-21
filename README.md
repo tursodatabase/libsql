@@ -35,7 +35,7 @@ The project provides two interfaces: the libSQL API, which supports all the feat
 To get started with the libSQL API:
 
 * [JavaScript](https://github.com/libsql/libsql-experimental-node)
-* [Rust](core) 
+* [Rust](libsql) 
 * [Python](https://github.com/libsql/libsql-experimental-python) (experimental)
 * [Go](bindings/go) (experimental)
 * [C](bindings/c) (experimantal)
