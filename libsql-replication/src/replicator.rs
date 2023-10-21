@@ -31,7 +31,7 @@ pub enum Error {
     #[error("Replicator needs to load from snapshot")]
     NeedSnapshot,
     #[error("Replication meta error: {0}")]
-    Meta(#[from] super::meta::Error)
+    Meta(#[from] super::meta::Error),
 }
 
 impl From<tokio::task::JoinError> for Error {
@@ -58,7 +58,7 @@ pub trait ReplicatorClient {
 }
 
 #[async_trait::async_trait]
-impl<A, B> ReplicatorClient for Either<A, B> 
+impl<A, B> ReplicatorClient for Either<A, B>
 where
     A: ReplicatorClient + Send,
     B: ReplicatorClient + Send,
@@ -183,7 +183,7 @@ impl<C: ReplicatorClient> Replicator<C> {
                     // transaction: they are now part of the snapshot.
                     self.load_snapshot().await?;
                 }
-                Some(Err(e)) => return Err(e.into()),
+                Some(Err(e)) => return Err(e),
                 None => return Ok(()),
             }
         }
@@ -218,10 +218,12 @@ impl<C: ReplicatorClient> Replicator<C> {
 pub fn map_frame_err(f: Result<RpcFrame, tonic::Status>) -> Result<Frame, Error> {
     match f {
         Ok(frame) => Ok(Frame::try_from(&*frame.data).map_err(|e| Error::Client(e.into()))?),
-        Err(err) if err.code() == tonic::Code::FailedPrecondition
-            && err.message() == NEED_SNAPSHOT_ERROR_MSG => {
-                Err(Error::NeedSnapshot)
+        Err(err)
+            if err.code() == tonic::Code::FailedPrecondition
+                && err.message() == NEED_SNAPSHOT_ERROR_MSG =>
+        {
+            Err(Error::NeedSnapshot)
         }
-        Err(err) => Err(Error::Client(err.into()))?
+        Err(err) => Err(Error::Client(err.into()))?,
     }
 }

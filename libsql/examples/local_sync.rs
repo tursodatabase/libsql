@@ -1,5 +1,6 @@
-use libsql::{Database, Frames, TempSnapshot};
 use std::sync::{Arc, Mutex};
+
+use libsql::{Database, Frames, TempSnapshot};
 
 #[tokio::main]
 async fn main() {

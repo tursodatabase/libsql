@@ -399,7 +399,7 @@ pub static BYPASS_SQLITE_INIT: AtomicBool = AtomicBool::new(false);
 
 // threading mode checks are not necessary (and do not work) on target
 // platforms that do not have threading (such as webassembly)
-#[cfg(any(target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 fn ensure_safe_sqlite_threading_mode() -> Result<()> {
     Ok(())
 }

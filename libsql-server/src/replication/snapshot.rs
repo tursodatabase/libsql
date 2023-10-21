@@ -496,8 +496,8 @@ mod test {
 
     use bytemuck::pod_read_unaligned;
     use bytes::Bytes;
-    use tempfile::tempdir;
     use libsql_replication::frame::Frame;
+    use tempfile::tempdir;
 
     use crate::replication::primary::logger::WalPage;
     use crate::replication::snapshot::SnapshotFile;

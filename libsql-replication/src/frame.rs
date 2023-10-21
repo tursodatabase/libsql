@@ -124,7 +124,7 @@ impl From<FrameBorrowed> for Frame {
 #[derive(Pod, Zeroable, Copy, Clone)]
 pub struct FrameBorrowed {
     header: FrameHeader,
-    page: [u8; LIBSQL_PAGE_SIZE as usize],
+    page: [u8; LIBSQL_PAGE_SIZE],
 }
 
 impl FrameBorrowed {
@@ -147,7 +147,7 @@ impl FrameBorrowed {
     }
 
     pub fn from_parts(header: &FrameHeader, page: &[u8]) -> Self {
-        assert_eq!(page.len(), LIBSQL_PAGE_SIZE as usize);
+        assert_eq!(page.len(), LIBSQL_PAGE_SIZE);
 
         FrameBorrowed {
             header: *header,

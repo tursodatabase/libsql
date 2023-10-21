@@ -2,9 +2,7 @@ use axum::response::IntoResponse;
 use hyper::StatusCode;
 use tonic::metadata::errors::InvalidMetadataValueBytes;
 
-use crate::{
-    auth::AuthError, namespace::ForkError, query_result_builder::QueryResultBuilderError,
-};
+use crate::{auth::AuthError, namespace::ForkError, query_result_builder::QueryResultBuilderError};
 
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, thiserror::Error)]

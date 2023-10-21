@@ -64,7 +64,7 @@ impl InjectorHookCtx {
             Ok(())
         } else {
             tracing::error!("fatal replication error: failed to apply pages");
-            return Err(());
+            Err(())
         }
     }
 }

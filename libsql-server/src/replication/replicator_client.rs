@@ -2,10 +2,10 @@ use std::path::Path;
 use std::pin::Pin;
 
 use libsql_replication::frame::Frame;
-use libsql_replication::replicator::{Error, ReplicatorClient, map_frame_err};
+use libsql_replication::meta::WalIndexMeta;
+use libsql_replication::replicator::{map_frame_err, Error, ReplicatorClient};
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use libsql_replication::rpc::replication::{HelloRequest, LogOffset};
-use libsql_replication::meta::WalIndexMeta;
 use tokio::sync::watch;
 use tokio_stream::{Stream, StreamExt};
 use tonic::metadata::BinaryMetadataValue;
@@ -24,9 +24,13 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn new(namespace: NamespaceName, client: ReplicationLogClient<Channel>, path: &Path) -> crate::Result<Self> {
+    pub async fn new(
+        namespace: NamespaceName,
+        client: ReplicationLogClient<Channel>,
+        path: &Path,
+    ) -> crate::Result<Self> {
         let (current_frame_no_notifier, _) = watch::channel(None);
-        let meta = WalIndexMeta::open(&path).await?;
+        let meta = WalIndexMeta::open(path).await?;
 
         Ok(Self {
             namespace,
@@ -89,7 +93,8 @@ impl ReplicatorClient for Client {
             next_offset: self.next_frame_no(),
         };
         let req = self.make_request(offset);
-        let stream = self.client
+        let stream = self
+            .client
             .log_entries(req)
             .await
             .map_err(|e| Error::Client(e.into()))?
@@ -104,13 +109,20 @@ impl ReplicatorClient for Client {
             next_offset: self.next_frame_no(),
         };
         let req = self.make_request(offset);
-        let stream = self.client.snapshot(req).await
+        let stream = self
+            .client
+            .snapshot(req)
+            .await
             .map_err(|e| Error::Client(e.into()))?
-            .into_inner().map(map_frame_err);
+            .into_inner()
+            .map(map_frame_err);
         Ok(Box::pin(stream))
     }
 
-    async fn commit_frame_no(&mut self, frame_no: libsql_replication::frame::FrameNo) -> Result<(), Error> {
+    async fn commit_frame_no(
+        &mut self,
+        frame_no: libsql_replication::frame::FrameNo,
+    ) -> Result<(), Error> {
         self.current_frame_no_notifier.send_replace(Some(frame_no));
         self.meta.set_commit_frame_no(frame_no).await?;
 

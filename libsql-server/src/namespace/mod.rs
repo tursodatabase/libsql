@@ -562,10 +562,18 @@ impl Namespace<ReplicaDatabase> {
             DatabaseConfigStore::load(&db_path).context("Could not load database config")?,
         );
 
-        let rpc_client = ReplicationLogClient::with_origin(config.channel.clone(), config.uri.clone());
-        let client = crate::replication::replicator_client::Client::new(name.clone(), rpc_client, &db_path).await?;
+        let rpc_client =
+            ReplicationLogClient::with_origin(config.channel.clone(), config.uri.clone());
+        let client =
+            crate::replication::replicator_client::Client::new(name.clone(), rpc_client, &db_path)
+                .await?;
         let applied_frame_no_receiver = client.current_frame_no_notifier.subscribe();
-        let mut replicator = libsql_replication::replicator::Replicator::new(client, db_path.clone(), DEFAULT_AUTO_CHECKPOINT).await?;
+        let mut replicator = libsql_replication::replicator::Replicator::new(
+            client,
+            db_path.clone(),
+            DEFAULT_AUTO_CHECKPOINT,
+        )
+        .await?;
 
         let mut join_set = JoinSet::new();
         let namespace = name.clone();

@@ -9,9 +9,9 @@ cfg_core! {
         #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         #[repr(C)]
         pub struct OpenFlags: ::std::os::raw::c_int {
-            const SQLITE_OPEN_READ_ONLY = libsql_sys::ffi::SQLITE_OPEN_READONLY as i32;
-            const SQLITE_OPEN_READ_WRITE = libsql_sys::ffi::SQLITE_OPEN_READWRITE as i32;
-            const SQLITE_OPEN_CREATE = libsql_sys::ffi::SQLITE_OPEN_CREATE as i32;
+            const SQLITE_OPEN_READ_ONLY = libsql_sys::ffi::SQLITE_OPEN_READONLY;
+            const SQLITE_OPEN_READ_WRITE = libsql_sys::ffi::SQLITE_OPEN_READWRITE;
+            const SQLITE_OPEN_CREATE = libsql_sys::ffi::SQLITE_OPEN_CREATE;
         }
     }
 

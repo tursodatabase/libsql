@@ -100,8 +100,8 @@ impl Database {
             // if this config is not set correctly the entire api is unsafe.
             unsafe {
                 assert_eq!(
-                    ffi::sqlite3_config(ffi::SQLITE_CONFIG_SERIALIZED as i32),
-                    ffi::SQLITE_OK as i32,
+                    ffi::sqlite3_config(ffi::SQLITE_CONFIG_SERIALIZED),
+                    ffi::SQLITE_OK,
                     "libsql was configured with an incorrect threading configuration and
                 the api is not safe to use. Please check that no multi-thread options have
                 been set. If nothing was configured then please open an issue at:
@@ -110,7 +110,7 @@ impl Database {
 
                 assert_eq!(
                     ffi::sqlite3_initialize(),
-                    ffi::SQLITE_OK as i32,
+                    ffi::SQLITE_OK,
                     "libsql failed to initialize"
                 );
             }

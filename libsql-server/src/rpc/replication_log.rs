@@ -5,8 +5,11 @@ use std::sync::{Arc, RwLock};
 
 use futures::stream::BoxStream;
 pub use libsql_replication::rpc::replication as rpc;
-use libsql_replication::rpc::replication::{NEED_SNAPSHOT_ERROR_MSG, NO_HELLO_ERROR_MSG, Frame, LogOffset, Frames, HelloRequest, HelloResponse};
 use libsql_replication::rpc::replication::replication_log_server::ReplicationLog;
+use libsql_replication::rpc::replication::{
+    Frame, Frames, HelloRequest, HelloResponse, LogOffset, NEED_SNAPSHOT_ERROR_MSG,
+    NO_HELLO_ERROR_MSG,
+};
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
@@ -28,7 +31,6 @@ pub struct ReplicationLogService {
     auth: Option<Arc<Auth>>,
     disable_namespaces: bool,
 }
-
 
 pub const MAX_FRAMES_PER_BATCH: usize = 1024;
 

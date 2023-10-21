@@ -42,8 +42,8 @@ impl WalIndexMetaData {
         let mut buf = [0; size_of::<WalIndexMetaData>()];
         let meta = match file.read_exact(&mut buf).await {
             Ok(_) => {
-                let meta: Self = try_pod_read_unaligned(&buf)
-                    .map_err(|_| Error::InvalidMetaFile)?;
+                let meta: Self =
+                    try_pod_read_unaligned(&buf).map_err(|_| Error::InvalidMetaFile)?;
                 Some(meta)
             }
             Err(e) if e.kind() == ErrorKind::UnexpectedEof => None,
@@ -119,10 +119,7 @@ impl WalIndexMeta {
     /// Apply the last commit frame no to the meta file.
     /// This function must be called after each injection, because it's idempotent to re-apply the
     /// last transaction, but not idempotent if we lose track of more than one.
-    pub async fn set_commit_frame_no(
-        &mut self,
-        commit_fno: FrameNo,
-    ) -> Result<(), Error> {
+    pub async fn set_commit_frame_no(&mut self, commit_fno: FrameNo) -> Result<(), Error> {
         {
             let data = self
                 .data
