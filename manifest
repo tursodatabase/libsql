@@ -1,5 +1,5 @@
-C Add\sSQLITE_TESTCTRL_FK_NO_ACTION.
-D 2023-10-21T12:54:37.143
+C Fix\sa\sproblem\swith\sSQLITE_CHANGESETAPPLY_FKNOACTION\sand\sthe\sforeign-key-trigger-cache.
+D 2023-10-21T15:04:24.399
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F ext/session/sessionfault2.test b0d6a7c1d7398a7e800d84657404909c7d385965ea8576d
 F ext/session/sessionfault3.test 7c7547202775de268f3fe6f074c4d0d165151829710b4e64f90d4a01645ba9e7
 F ext/session/sessioninvert.test 04075517a9497a80d39c495ba6b44f3982c7371129b89e2c52219819bc105a25
 F ext/session/sessionmem.test f2a735db84a3e9e19f571033b725b0b2daf847f3f28b1da55a0c1a4e74f1de09
-F ext/session/sessionnoact.test 61d9ec369e5851fd7326c79ebb76df0b3dd7b21c0e2cb6d554eea3351b0a57de
+F ext/session/sessionnoact.test 8c8d21db084ac1bb952d08c7236c4c38d30f5dbf3bfe4fa8b7872c2704a5f6d5
 F ext/session/sessionnoop.test a9366a36a95ef85f8a3687856ebef46983df399541174cb1ede2ee53b8011bc7
 F ext/session/sessionnoop2.test de4672dce88464396ec9f30ed08c6c01643a69c53ae540fadbbf6d30642d64e8
 F ext/session/sessionrebase.test 702378bdcb5062f1106e74457beca8797d09c113a81768734a58b197b5b334e2
@@ -553,7 +553,7 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test b039e38e2ba83767b464baf39b297cc0b1cc6f3292255cb467ea7e12d0d0280c
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c 6da2db8b2d525a6fe0b6f451743dcb098f609fcc3733aa044406f2d28068aeb2
+F ext/session/sqlite3session.c a0694a23f9c72f25e98b7c3a1bc8cfa7e5903d4edafe31efec47de7cd54f5df9
 F ext/session/sqlite3session.h 4cf19a51975746d7cff2fdd74db8b769c570958e1c3639ac150d824ac1553b3e
 F ext/session/test_session.c 73e9921205633a08c1497770beecf3dcbc9b826dd4358f7f8152f706eaac5d71
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -730,7 +730,7 @@ F src/sqliteLimit.h 33b1c9baba578d34efe7dfdb43193b366111cdf41476b1e82699e14c11ee
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c ecbc3c99c0d0c3ed122a913f143026c26d38d57f33e06bb71185dd5c1efe37cd
-F src/test1.c c9f5b6f13797bd441ae810fbee27ff34b21000e1950dbeb779ea31154252dd1a
+F src/test1.c f9620e8f0d0fa4edb239201a732c4dd1562f0cdd9741955c89332d49e14a5edd
 F src/test2.c 54520d0565ef2b9bf0f8f1dcac43dc4d06baf4ffe13d10905f8d8c3ad3e4b9ab
 F src/test3.c e5178558c41ff53236ae0271e9acb3d6885a94981d2eb939536ee6474598840e
 F src/test4.c 4533b76419e7feb41b40582554663ed3cd77aaa54e135cf76b3205098cd6e664
@@ -2135,11 +2135,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9deb8b6915e794bf9c5de88f2727ef9857351eaf905f8ab56754bc4d399c88b4
-R 88beb1a112cd95408113959aeb00197a
-T *branch * fknoaction
-T *sym-fknoaction *
-T -sym-trunk *
-U drh
-Z 2a937bb8a0eae27c2684e23f20721b21
+P 563cf5f782cdddbbd7f727c65118edfd109aeb731c8aaf0d6ee5ee7030e61ea9
+R 8851a240e077d885b4dd7be6f7eb6ebd
+U dan
+Z c750bc1fd930bc70aff345b22b4bad5e
 # Remove this line to create a well-formed Fossil manifest.
