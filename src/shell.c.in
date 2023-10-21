@@ -8033,7 +8033,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       azArg[nArg++] = &zLine[h];
       while( zLine[h] && !IsSpace(zLine[h]) ){ h++; }
       if( zLine[h] ) zLine[h++] = 0;
+#ifndef _WIN32  /* Don't convert bare \ on Windows - doing so damages filenames */
       resolve_backslashes(azArg[nArg-1]);
+#endif
     }
   }
   azArg[nArg] = 0;
