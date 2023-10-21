@@ -8,6 +8,9 @@ use tokio_stream::{Stream, StreamExt};
 
 use crate::frame::{Frame, FrameNo};
 use crate::injector::Injector;
+use crate::rpc::replication::{Frame as RpcFrame, NEED_SNAPSHOT_ERROR_MSG};
+
+pub use tokio_util::either::Either;
 
 const HANDSHAKE_MAX_RETRIES: usize = 100;
 
@@ -50,6 +53,53 @@ pub trait ReplicatorClient {
     async fn snapshot(&mut self) -> Result<Self::FrameStream, Error>;
     /// set the new commit frame_no
     async fn commit_frame_no(&mut self, frame_no: FrameNo) -> Result<(), Error>;
+    /// Returns the currently committed replication index
+    fn committed_frame_no(&self) -> Option<FrameNo>;
+}
+
+#[async_trait::async_trait]
+impl<A, B> ReplicatorClient for Either<A, B> 
+where
+    A: ReplicatorClient + Send,
+    B: ReplicatorClient + Send,
+{
+    type FrameStream = Either<A::FrameStream, B::FrameStream>;
+
+    async fn handshake(&mut self) -> Result<(), Error> {
+        match self {
+            Either::Left(a) => a.handshake().await,
+            Either::Right(b) => b.handshake().await,
+        }
+    }
+    /// Return a stream of frames to apply to the database
+    async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+        match self {
+            Either::Left(a) => a.next_frames().await.map(Either::Left),
+            Either::Right(b) => b.next_frames().await.map(Either::Right),
+        }
+    }
+    /// Return a snapshot for the current replication index. Called after next_frame has returned a
+    /// NeedSnapshot error
+    async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+        match self {
+            Either::Left(a) => a.snapshot().await.map(Either::Left),
+            Either::Right(b) => b.snapshot().await.map(Either::Right),
+        }
+    }
+    /// set the new commit frame_no
+    async fn commit_frame_no(&mut self, frame_no: FrameNo) -> Result<(), Error> {
+        match self {
+            Either::Left(a) => a.commit_frame_no(frame_no).await,
+            Either::Right(b) => b.commit_frame_no(frame_no).await,
+        }
+    }
+
+    fn committed_frame_no(&self) -> Option<FrameNo> {
+        match self {
+            Either::Left(a) => a.committed_frame_no(),
+            Either::Right(b) => b.committed_frame_no(),
+        }
+    }
 }
 
 /// The `Replicator`'s duty is to download frames from the primary, and pass them to the injector at
@@ -79,6 +129,11 @@ impl<C: ReplicatorClient> Replicator<C> {
         })
     }
 
+    pub fn client_mut(&mut self) -> &mut C {
+        &mut self.client
+    }
+
+    /// Runs replicate in a loop until an error is returned
     pub async fn run(&mut self) -> Error {
         loop {
             if let Err(e) = self.replicate().await {
@@ -112,7 +167,7 @@ impl<C: ReplicatorClient> Replicator<C> {
         Err(Error::PrimaryHandshakeTimeout)
     }
 
-    async fn replicate(&mut self) -> Result<(), Error> {
+    pub async fn replicate(&mut self) -> Result<(), Error> {
         if !self.has_handshake {
             self.try_perform_handshake().await?;
         }
@@ -156,5 +211,17 @@ impl<C: ReplicatorClient> Replicator<C> {
         }
 
         Ok(())
+    }
+}
+
+/// Helper function to convert rpc frames results to replicator frames
+pub fn map_frame_err(f: Result<RpcFrame, tonic::Status>) -> Result<Frame, Error> {
+    match f {
+        Ok(frame) => Ok(Frame::try_from(&*frame.data).map_err(|e| Error::Client(e.into()))?),
+        Err(err) if err.code() == tonic::Code::FailedPrecondition
+            && err.message() == NEED_SNAPSHOT_ERROR_MSG => {
+                Err(Error::NeedSnapshot)
+        }
+        Err(err) => Err(Error::Client(err.into()))?
     }
 }

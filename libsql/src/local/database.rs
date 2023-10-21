@@ -1,17 +1,25 @@
 use std::sync::Once;
 
+use libsql_replication::replicator::Either;
 #[cfg(feature = "replication")]
-use crate::replication::Replicator;
+use libsql_replication::replicator::Replicator;
+use tokio::sync::Mutex;
+use crate::replication::client::Client;
+use crate::replication::local_client::LocalClient;
 #[cfg(feature = "replication")]
-pub use crate::replication::{Frames, TempSnapshot};
+use crate::replication::remote_client::RemoteClient;
+#[cfg(feature = "replication")]
+use libsql_replication::frame::FrameNo;
+#[cfg(feature = "replication")]
+pub use crate::replication::Frames;
 use crate::{database::OpenFlags, local::connection::Connection};
 use crate::{Error::ConnectionFailed, Result};
 use libsql_sys::ffi;
 
 #[cfg(feature = "replication")]
 pub struct ReplicationContext {
-    pub replicator: Replicator,
-    pub endpoint: String,
+    pub replicator: Mutex<Replicator<Either<RemoteClient, LocalClient>>>,
+    client: Option<Client>,
 }
 
 // A libSQL database.
@@ -40,25 +48,27 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub fn open_http_sync(
+    pub async fn open_http_sync(
         connector: crate::util::ConnectorService,
         db_path: String,
         endpoint: String,
         auth_token: String,
     ) -> Result<Database> {
+        use std::path::PathBuf;
+
         use crate::util::coerce_url_scheme;
 
         let mut db = Database::open(&db_path, OpenFlags::default())?;
 
         let endpoint = coerce_url_scheme(&endpoint);
-
-        let replicator =
-            Replicator::with_http_sync(connector, db_path, endpoint.clone(), auth_token)
-                .map_err(|e| ConnectionFailed(format!("{e}")))?;
+        let remote = crate::replication::client::Client::new(connector, endpoint.as_str().try_into().unwrap(), auth_token).unwrap();
+        let path = PathBuf::from(db_path);
+        let client = RemoteClient::new(remote.clone(), &path).await.unwrap();
+        let replicator = Mutex::new(Replicator::new(Either::Left(client), path, 1000).await.unwrap());
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,
-            endpoint,
+            client: Some(remote),
         });
 
         Ok(db)
@@ -69,10 +79,14 @@ impl Database {
         let db_path = db_path.into();
         let mut db = Database::open(&db_path, flags)?;
 
-        let replicator = Replicator::new(db_path).map_err(|e| ConnectionFailed(format!("{e}")))?;
+        // let replicator = Replicator::new(db_path).map_err(|e| ConnectionFailed(format!("{e}")))?;
+        //
+        let path = PathBuf::from(db_path);
+        let client = LocalClient::new(&path).await.unwrap();
+        let replicator = Mutex::new(Replicator::new(Either::Right(client), path, 1000).await.unwrap());
         db.replication_ctx = Some(ReplicationContext {
             replicator,
-            endpoint: "".to_string(),
+            client: None,
         });
 
         Ok(db)
@@ -116,42 +130,32 @@ impl Database {
 
     #[cfg(feature = "replication")]
     pub fn writer(&self) -> Result<Option<crate::replication::Writer>> {
-        if let Some(ctx) = &self.replication_ctx {
-            if ctx.endpoint.is_empty() {
-                return Ok(None);
-            }
-            Ok(ctx
-                .replicator
-                .writer()
-                .expect("Unable to get writer")
-                .into())
+        use crate::replication::Writer;
+
+        if let Some(ReplicationContext { client: Some(ref client), .. }) = &self.replication_ctx {
+            Ok(Some(Writer { client: client.clone() }))
         } else {
             Ok(None)
         }
     }
 
     #[cfg(feature = "replication")]
-    pub async fn sync_oneshot(&self) -> Result<usize> {
-        if let Some(ctx) = &self.replication_ctx {
-            // TODO: Unfortunate that we need to lock then unlock
-            // then lock again creating potential race conditions.
-            // This for now is fine since DB is the only user
-            // of the replicator but we should refactor it such that we
-            // can avoid having to do these weird locking patterns.
-            if ctx.replicator.meta.lock().is_none() {
-                let meta = ctx
-                    .replicator
-                    .init_metadata()
-                    .await
-                    .map_err(|e| ConnectionFailed(format!("{e}")))?;
+    /// Perform a sync step, returning the new replication index, or None, if the nothing was
+    /// replicated yet
+    pub async fn sync_oneshot(&self) -> Result<Option<FrameNo>> {
+        use libsql_replication::replicator::ReplicatorClient;
 
-                *ctx.replicator.meta.lock() = Some(meta);
+        if let Some(ref ctx) = self.replication_ctx {
+            let mut replicator = ctx.replicator.lock().await;
+            if !matches!(replicator.client_mut(), Either::Left(_)) {
+                todo!()
             }
 
-            ctx.replicator
-                .sync_from_http()
-                .await
-                .map_err(|e| ConnectionFailed(format!("{e}")))
+            if let Err(_e) = replicator.replicate().await {
+                todo!()
+            }
+
+            Ok(replicator.client_mut().committed_frame_no())
         } else {
             Err(crate::errors::Error::Misuse(
                 "No replicator available. Use Database::with_replicator() to enable replication"
@@ -161,26 +165,39 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub async fn sync(&self) -> Result<usize> {
-        let mut synced = 0;
+    /// Sync until caught up with primary
+    // FIXME: there is no guarantee this ever returns!
+    pub async fn sync(&self) -> Result<Option<FrameNo>> {
+        let mut previous_fno = None;
         loop {
-            let n = self.sync_oneshot().await?;
-            tracing::trace!("Synced {n} frames");
-            if n == 0 {
+            let new_fno = self.sync_oneshot().await?;
+            tracing::trace!("New commited fno: {new_fno:?}");
+            if new_fno == previous_fno {
                 break;
             } else {
-                synced += n;
+                previous_fno = new_fno;
             }
         }
-        Ok(synced)
+        Ok(previous_fno)
     }
 
     #[cfg(feature = "replication")]
-    pub fn sync_frames(&self, frames: Frames) -> Result<usize> {
-        if let Some(ctx) = self.replication_ctx.as_ref() {
-            ctx.replicator
-                .sync(frames)
-                .map_err(|e| ConnectionFailed(format!("{e}")))
+    pub async fn sync_frames(&self, frames: Frames) -> Result<Option<FrameNo>> {
+        use libsql_replication::replicator::ReplicatorClient;
+
+        if let Some(ref ctx) = self.replication_ctx {
+            let mut replicator = ctx.replicator.lock().await;
+            match replicator.client_mut() {
+                Either::Right(c) => {
+                    c.load_frames(frames);
+                },
+                Either::Left(_) => todo!("invalid client"),
+            }
+            if let Err(_e) = replicator.replicate().await {
+                todo!()
+            }
+
+            Ok(replicator.client_mut().committed_frame_no())
         } else {
             Err(crate::errors::Error::Misuse(
                 "No replicator available. Use Database::with_replicator() to enable replication"

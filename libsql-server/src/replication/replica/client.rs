@@ -2,9 +2,9 @@ use std::path::Path;
 use std::pin::Pin;
 
 use libsql_replication::frame::Frame;
-use libsql_replication::replicator::{Error, ReplicatorClient};
+use libsql_replication::replicator::{Error, ReplicatorClient, map_frame_err};
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
-use libsql_replication::rpc::replication::{HelloRequest, LogOffset, Frame as RpcFrame};
+use libsql_replication::rpc::replication::{HelloRequest, LogOffset};
 use libsql_replication::meta::WalIndexMeta;
 use tokio::sync::watch;
 use tokio_stream::{Stream, StreamExt};
@@ -14,7 +14,6 @@ use tonic::{Code, Request};
 
 use crate::namespace::NamespaceName;
 use crate::replication::FrameNo;
-use crate::rpc::replication_log::NEED_SNAPSHOT_ERROR_MSG;
 use crate::rpc::{NAMESPACE_DOESNT_EXIST, NAMESPACE_METADATA_KEY};
 
 pub struct Client {
@@ -65,7 +64,7 @@ impl ReplicatorClient for Client {
 
     async fn handshake(&mut self) -> Result<(), Error> {
         tracing::info!("Attempting to perform handshake with primary.");
-        let req = self.make_request(HelloRequest {});
+        let req = self.make_request(HelloRequest::default());
         match self.client.hello(req).await {
             Ok(resp) => {
                 let hello = resp.into_inner();
@@ -117,15 +116,8 @@ impl ReplicatorClient for Client {
 
         Ok(())
     }
-}
 
-fn map_frame_err(f: Result<RpcFrame, tonic::Status>) -> Result<Frame, Error> {
-    match f {
-        Ok(frame) => Ok(Frame::try_from(&*frame.data).map_err(|e| Error::Client(e.into()))?),
-        Err(err) if err.code() == tonic::Code::FailedPrecondition
-                    && err.message() == NEED_SNAPSHOT_ERROR_MSG => {
-                        Err(Error::NeedSnapshot)
-        }
-        Err(err) => Err(Error::Client(err.into()))?
+    fn committed_frame_no(&self) -> Option<FrameNo> {
+        self.meta.current_frame_no()
     }
 }

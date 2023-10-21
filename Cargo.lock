@@ -2239,6 +2239,7 @@ dependencies = [
  "http",
  "hyper",
  "hyper-rustls 0.24.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libsql-replication",
  "libsql-sys",
  "memmap",
  "once_cell",
@@ -2297,9 +2298,11 @@ dependencies = [
  "thiserror",
  "tokio",
  "tokio-stream",
+ "tokio-util",
  "tonic",
  "tonic-build",
  "tracing",
+ "uuid",
 ]
 
 [[package]]

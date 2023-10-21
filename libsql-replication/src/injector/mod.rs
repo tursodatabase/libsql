@@ -163,7 +163,7 @@ impl Injector {
     }
 
     pub fn clear_buffer(&mut self) {
-        self.buffer.lock().clear();
+        self.buffer.lock().clear()
     }
 }
 

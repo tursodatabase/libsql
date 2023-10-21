@@ -4,7 +4,6 @@ use tonic::metadata::errors::InvalidMetadataValueBytes;
 
 use crate::{
     auth::AuthError, namespace::ForkError, query_result_builder::QueryResultBuilderError,
-    replication::replica::error::ReplicationError,
 };
 
 #[allow(clippy::enum_variant_names)]
@@ -126,7 +125,6 @@ impl IntoResponse for Error {
             QueryError(_) => self.format_err(StatusCode::BAD_REQUEST),
             InvalidHost(_) => self.format_err(StatusCode::BAD_REQUEST),
             NamespaceDoesntExist(_) => self.format_err(StatusCode::BAD_REQUEST),
-            ReplicationError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             PrimaryConnectionTimeout => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             NamespaceAlreadyExist(_) => self.format_err(StatusCode::BAD_REQUEST),
             InvalidNamespace => self.format_err(StatusCode::BAD_REQUEST),
@@ -138,6 +136,7 @@ impl IntoResponse for Error {
             Fork(e) => e.into_response(),
             FatalReplicationError => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             ReplicatorError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            ReplicaMetaError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }

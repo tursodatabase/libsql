@@ -1,5 +1,7 @@
 use std::fmt;
 
+use libsql_replication::frame::FrameNo;
+
 use crate::{Connection, Result};
 
 cfg_core! {
@@ -108,11 +110,11 @@ cfg_replication! {
             http.enforce_http(false);
             http.set_nodelay(true);
 
-            Self::open_with_remote_sync_connector(db_path, url, token, http)
+            Self::open_with_remote_sync_connector(db_path, url, token, http).await
         }
 
         #[doc(hidden)]
-        pub fn open_with_remote_sync_connector<C>(
+        pub async fn open_with_remote_sync_connector<C>(
             db_path: impl Into<String>,
             url: impl Into<String>,
             token: impl Into<String>,
@@ -137,14 +139,17 @@ cfg_replication! {
                 db_path.into(),
                 url.into(),
                 token.into()
-            )?;
+            ).await?;
+
             Ok(Database {
                 db_type: DbType::Sync { db },
             })
         }
 
 
-        pub async fn sync(&self) -> Result<usize> {
+        /// Sync database from remote, and returns the commited frame_no after syncing, if
+        /// applicable.
+        pub async fn sync(&self) -> Result<Option<FrameNo>> {
             if let DbType::Sync { db } = &self.db_type {
                 db.sync().await
             } else {
@@ -152,9 +157,11 @@ cfg_replication! {
             }
         }
 
-        pub fn sync_frames(&self, frames: crate::replication::Frames) -> Result<usize> {
+        /// Apply a set of frames to the database and returns the commited frame_no after syncing, if
+        /// applicable.
+        pub async fn sync_frames(&self, frames: crate::replication::Frames) -> Result<Option<FrameNo>> {
             if let DbType::Sync { db } = &self.db_type {
-                db.sync_frames(frames)
+                db.sync_frames(frames).await
             } else {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
             }
