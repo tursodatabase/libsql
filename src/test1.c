@@ -7653,6 +7653,7 @@ static int SQLITE_TCLAPI test_test_control(
     { "SQLITE_TESTCTRL_SORTER_MMAP",        SQLITE_TESTCTRL_SORTER_MMAP     }, 
     { "SQLITE_TESTCTRL_IMPOSTER",           SQLITE_TESTCTRL_IMPOSTER        },
     { "SQLITE_TESTCTRL_INTERNAL_FUNCTIONS", SQLITE_TESTCTRL_INTERNAL_FUNCTIONS},
+    { "SQLITE_TESTCTRL_FK_NO_ACTION",       SQLITE_TESTCTRL_FK_NO_ACTION},
     { 0, 0 }
   };
   int iVerb;
@@ -7689,6 +7690,20 @@ static int SQLITE_TCLAPI test_test_control(
       }
       if( Tcl_GetIntFromObj(interp, objv[2], &val) ) return TCL_ERROR;
       sqlite3_test_control(iFlag, val, testLocaltime);
+      break;
+    }
+
+    case SQLITE_TESTCTRL_FK_NO_ACTION: {
+      int val = 0;
+      sqlite3 *db = 0;
+      if( objc!=4 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "DB BOOLEAN");
+        return TCL_ERROR;
+      }
+      if( getDbPointer(interp, Tcl_GetString(objv[2]), &db) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[3], &val) ) return TCL_ERROR;
+
+      sqlite3_test_control(SQLITE_TESTCTRL_FK_NO_ACTION, db, val);
       break;
     }
 

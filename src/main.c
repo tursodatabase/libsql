@@ -4170,6 +4170,28 @@ int sqlite3_test_control(int op, ...){
     }
 #endif
 
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_FK_NO_ACTION, sqlite3 *db, int b);
+    **
+    ** If b is true, then activate the SQLITE_FkNoAction setting.  If b is
+    ** false then clearn that setting.  If the SQLITE_FkNoAction setting is
+    ** abled, all foreign key ON DELETE and ON UPDATE actions behave as if
+    ** they were NO ACTION, regardless of how they are defined.
+    **
+    ** NB:  One must usually run "PRAGMA writable_schema=RESET" after
+    ** using this test-control, before it will take full effect.  failing
+    ** to reset the schema can result in some unexpected behavior.
+    */
+    case SQLITE_TESTCTRL_FK_NO_ACTION: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      int b = va_arg(ap, int);
+      if( b ){
+        db->flags |= SQLITE_FkNoAction;
+      }else{
+        db->flags &= ~SQLITE_FkNoAction;
+      }
+      break;
+    }
+
     /*
     **  sqlite3_test_control(BITVEC_TEST, size, program)
     **

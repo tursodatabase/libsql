@@ -5326,6 +5326,7 @@ int sqlite3changeset_apply_v2(
 
   if( flags & SQLITE_CHANGESETAPPLY_FKNOACTION ){
     db->flags |= ((u64)SQLITE_FkNoAction);
+    db->aDb[0].pSchema->schema_cookie -= 32;
   }
 
   if( rc==SQLITE_OK ){
@@ -5336,7 +5337,8 @@ int sqlite3changeset_apply_v2(
 
   if( (flags & SQLITE_CHANGESETAPPLY_FKNOACTION) && savedFlag==0 ){
     assert( db->flags & SQLITE_FkNoAction );
-    db->flags &= ((u64)SQLITE_FkNoAction);
+    db->flags &= ~((u64)SQLITE_FkNoAction);
+    db->aDb[0].pSchema->schema_cookie -= 32;
   }
   return rc;
 }
