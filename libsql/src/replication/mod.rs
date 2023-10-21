@@ -1,9 +1,11 @@
+use std::pin::Pin;
+
 use libsql_replication::rpc::proxy::{DescribeRequest, DescribeResult, ExecuteResults, Positional, Program, ProgramReq, Query, Step, query::Params};
+use libsql_replication::frame::Frame;
+use tokio_stream::Stream;
 
 use parser::Statement;
-pub use replica::hook::Frames;
 
-pub use client::pb;
 pub use connection::RemoteConnection;
 
 pub(crate) mod client;
@@ -11,8 +13,12 @@ mod connection;
 mod parser;
 pub(crate) mod remote_client;
 pub(crate) mod local_client;
-pub mod replica;
 
+type BoxError = Box<dyn std::error::Error + Sync + Send + 'static>;
+pub enum Frames {
+    Vec(Vec<Frame>),
+    Snapshot(Pin<Box<dyn Stream<Item = Result<Frame, BoxError>> + Send + Sync + 'static>>),
+}
 #[derive(Debug, Clone)]
 pub struct Writer {
     pub(crate) client: client::Client,

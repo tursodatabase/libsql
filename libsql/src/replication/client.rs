@@ -1,18 +1,5 @@
-pub mod pb {
-    #![allow(unreachable_pub)]
-    #![allow(missing_docs)]
-    include!("generated/wal_log.rs");
-
-    include!("generated/proxy.rs");
-
-    pub use proxy_client::ProxyClient;
-    pub use replication_log_client::ReplicationLogClient;
-}
-
-use std::{
-    pin::Pin,
-    task::{Context, Poll},
-};
+use std::task::{Context, Poll};
+use std::pin::Pin;
 
 use anyhow::Context as _;
 use http::Uri;

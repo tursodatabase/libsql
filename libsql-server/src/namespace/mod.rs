@@ -33,7 +33,7 @@ use crate::connection::MakeConnection;
 use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
 use crate::replication::primary::logger::{ReplicationLoggerHookCtx, REPLICATION_METHODS};
-use crate::replication::replica::NamespaceDoesntExist;
+use crate::replication::replicator_client::NamespaceDoesntExist;
 use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
@@ -563,7 +563,7 @@ impl Namespace<ReplicaDatabase> {
         );
 
         let rpc_client = ReplicationLogClient::with_origin(config.channel.clone(), config.uri.clone());
-        let client = crate::replication::replica::Client::new(name.clone(), rpc_client, &db_path).await?;
+        let client = crate::replication::replicator_client::Client::new(name.clone(), rpc_client, &db_path).await?;
         let applied_frame_no_receiver = client.current_frame_no_notifier.subscribe();
         let mut replicator = libsql_replication::replicator::Replicator::new(client, db_path.clone(), DEFAULT_AUTO_CHECKPOINT).await?;
 

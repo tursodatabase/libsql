@@ -5,15 +5,17 @@ use futures::TryStreamExt;
 use libsql_replication::{replicator::{ReplicatorClient, Error}, frame::{Frame, FrameNo}, meta::WalIndexMeta};
 use tokio_stream::Stream;
 
-use crate::replication::replica::hook::Frames;
+use crate::replication::Frames;
 
+/// A replicator client that doesn't perform networking, and is instead _loaded_ with the frames to
+/// inject
 pub struct LocalClient {
     frames: Option<Frames>,
     meta: WalIndexMeta,
 }
 
 impl LocalClient {
-    pub async fn new(path: &Path) -> anyhow::Result<Self> {
+    pub(crate) async fn new(path: &Path) -> anyhow::Result<Self> {
         let meta = WalIndexMeta::open(path).await?;
         Ok(Self {
             frames: None,
@@ -21,6 +23,8 @@ impl LocalClient {
         })
     }
 
+    /// Load `frames` into the client. The caller must ensure that client was flushed before
+    /// calling this function again.
     pub(crate) fn load_frames(&mut self, frames: Frames) {
         assert!(self.frames.is_none(), "frames not flushed before loading");
         self.frames.replace(frames);

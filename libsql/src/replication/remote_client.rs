@@ -9,6 +9,7 @@ use libsql_replication::frame::{FrameNo, Frame, FrameHeader};
 use libsql_replication::rpc::replication::{HelloRequest, LogOffset};
 use tokio_stream::{Stream};
 
+/// A remote replicator client, that pulls frames over RPC
 pub struct RemoteClient {
     remote: super::client::Client,
     meta: WalIndexMeta,
@@ -16,7 +17,7 @@ pub struct RemoteClient {
 }
 
 impl RemoteClient {
-    pub async fn new(remote: super::client::Client, path: &Path) -> anyhow::Result<Self> {
+    pub(crate) async fn new(remote: super::client::Client, path: &Path) -> anyhow::Result<Self> {
         let meta = WalIndexMeta::open(path).await?;
         Ok(Self {
             remote,
