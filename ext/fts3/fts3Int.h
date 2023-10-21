@@ -265,6 +265,7 @@ struct Fts3Table {
   int nPgsz;                      /* Page size for host database */
   char *zSegmentsTbl;             /* Name of %_segments table */
   sqlite3_blob *pSegments;        /* Blob handle open on %_segments table */
+  int iSavepoint;
 
   /* 
   ** The following array of hash tables is used to buffer pending index 

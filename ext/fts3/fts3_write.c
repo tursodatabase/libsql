@@ -3325,7 +3325,6 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
     rc = fts3SegmentMerge(p, p->iPrevLangid, i, FTS3_SEGCURSOR_PENDING);
     if( rc==SQLITE_DONE ) rc = SQLITE_OK;
   }
-  sqlite3Fts3PendingTermsClear(p);
 
   /* Determine the auto-incr-merge setting if unknown.  If enabled,
   ** estimate the number of leaf blocks of content to be written
@@ -3346,6 +3345,10 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
       }
       rc = sqlite3_reset(pStmt);
     }
+  }
+
+  if( rc==SQLITE_OK ){
+    sqlite3Fts3PendingTermsClear(p);
   }
   return rc;
 }
@@ -5437,8 +5440,11 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
     rc = fts3DoIncrmerge(p, &zVal[6]);
   }else if( nVal>10 && 0==sqlite3_strnicmp(zVal, "automerge=", 10) ){
     rc = fts3DoAutoincrmerge(p, &zVal[10]);
+  }else if( nVal==5 && 0==sqlite3_strnicmp(zVal, "flush", 5) ){
+    rc = sqlite3Fts3PendingTermsFlush(p);
+  }
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
-  }else{
+  else{
     int v;
     if( nVal>9 && 0==sqlite3_strnicmp(zVal, "nodesize=", 9) ){
       v = atoi(&zVal[9]);
@@ -5456,8 +5462,8 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
       if( v>=4 && v<=FTS3_MERGE_COUNT && (v&1)==0 ) p->nMergeCount = v;
       rc = SQLITE_OK;
     }
-#endif
   }
+#endif
   return rc;
 }
 

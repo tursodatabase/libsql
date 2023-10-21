@@ -2635,7 +2635,6 @@ static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
   int rc = SQLITE_OK;
   char *zSql = 0;
-  UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
   fts5CheckTransactionState(pTab, FTS5_SAVEPOINT, iSavepoint);
 
   if( pTab->bInSavepoint==0 ){
@@ -2666,7 +2665,6 @@ static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
 static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
   int rc = SQLITE_OK;
-  UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
   fts5CheckTransactionState(pTab, FTS5_RELEASE, iSavepoint);
   if( (iSavepoint+1)<pTab->iSavepoint ){
     rc = sqlite3Fts5FlushToDisk(&pTab->p);
@@ -2685,7 +2683,6 @@ static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
 static int fts5RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
   int rc = SQLITE_OK;
-  UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
   fts5CheckTransactionState(pTab, FTS5_ROLLBACKTO, iSavepoint);
   fts5TripCursors(pTab);
   pTab->p.pConfig->pgsz = 0;
