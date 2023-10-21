@@ -38,7 +38,7 @@ do_execsql_test aggorderby-2.2 {
   SELECT group_concat(a ORDER BY b, d) FROM t1;
 } {3,6,9,2,5,8,1,4,7,0,0,7,4,1,8,5,2,9,6,3}
 do_execsql_test aggorderby-2.3 {
-  SELECT group_concat(a ORDER BY b DESC, d) FROM t1;
+  SELECT string_agg(a, ',' ORDER BY b DESC, d) FROM t1;
 } {0,7,4,1,8,5,2,9,6,3,3,6,9,2,5,8,1,4,7,0}
 do_execsql_test aggorderby-2.4 {
   SELECT b, group_concat(a ORDER BY d) FROM t1 GROUP BY b ORDER BY b;
@@ -64,16 +64,16 @@ do_execsql_test aggorderby-5.0 {
   DROP TABLE IF EXISTS t3;
   CREATE TABLE t1(a TEXT);  INSERT INTO t1 VALUES('aaa'),('bbb');
   CREATE TABLE t3(d TEXT);  INSERT INTO t3 VALUES('/'),('-');
-  SELECT (SELECT group_concat(a,d) FROM t3) FROM t1;
+  SELECT (SELECT string_agg(a,d) FROM t3) FROM t1;
 } {aaa-aaa bbb-bbb}
 do_execsql_test aggorderby-5.1 {
   SELECT (SELECT group_concat(a,d ORDER BY d) FROM t3) FROM t1;
 } {aaa/aaa bbb/bbb}
 do_execsql_test aggorderby-5.2 {
-  SELECT (SELECT group_concat(a,d ORDER BY d DESC) FROM t3) FROM t1;
+  SELECT (SELECT string_agg(a,d ORDER BY d DESC) FROM t3) FROM t1;
 } {aaa-aaa bbb-bbb}
 do_execsql_test aggorderby-5.3 {
-  SELECT (SELECT group_concat(a,'#' ORDER BY d) FROM t3) FROM t1;
+  SELECT (SELECT string_agg(a,'#' ORDER BY d) FROM t3) FROM t1;
 } {aaa#aaa bbb#bbb}
 
 finish_test

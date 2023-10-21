@@ -332,5 +332,3 @@ QUERY (nCycle=nnn)
 #puts_debug_info { SELECT (a % 2), group_concat(b) FROM t1 GROUP BY 1 }
 
 finish_test
-
-

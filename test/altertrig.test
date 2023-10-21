@@ -160,4 +160,3 @@ foreach {tn alter update final} {
 }
 
 finish_test
-
