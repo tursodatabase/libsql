@@ -4176,6 +4176,10 @@ int sqlite3_test_control(int op, ...){
     ** false then clearn that setting.  If the SQLITE_FkNoAction setting is
     ** abled, all foreign key ON DELETE and ON UPDATE actions behave as if
     ** they were NO ACTION, regardless of how they are defined.
+    **
+    ** NB:  One must usually run "PRAGMA writable_schema=RESET" after
+    ** using this test-control, before it will take full effect.  failing
+    ** to reset the schema can result in some unexpected behavior.
     */
     case SQLITE_TESTCTRL_FK_NO_ACTION: {
       sqlite3 *db = va_arg(ap, sqlite3*);

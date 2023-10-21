@@ -1,5 +1,5 @@
-C Add\smissing\s"finish_test"\sto\ssessionnoact.test.
-D 2023-10-21T15:21:06.320
+C Extra\scomment\son\sthe\simplementation\sof\sSQLITE_TESTCTRL_FK_NO_ACTION,\nwarning\sabout\sthe\sneed\sto\sreset\sthe\sschema\sin\sorder\sfor\sthe\ssetting\schange\nto\stake\sfull\seffect.
+D 2023-10-21T16:25:44.562
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -683,7 +683,7 @@ F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
 F src/json.c d69c6e28ff7b602877bda68cd20583b8487c059759aa4d154dd21b3fd99c6238
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7d56c6f28aaf9b42e2772289e0d0a12a77b57c2baed021dbfd1fcafec69c156a
-F src/main.c 0dfcdba3a1b3dab9db971aab11ec17f90257043e49b0e48377ab92d278373ec9
+F src/main.c db12d1e572b6bbb617bcc6686f18aba30b49a6c257bacbabcb81320653029b23
 F src/malloc.c f016922435dc7d1f1f5083a03338a3e91f8c67ce2c5bdcfa4cdef62e612f5fcc
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2135,8 +2135,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 95304ec6c9654b4366dc58ae263270cb42861cb5017174936f816922b5eb61e6
-R ba4bcd2d6342b08c7dacb17431cb3038
-U dan
-Z 0e2c07cdd748b69afa0ef3e62386cf6c
+P 9a1d37f5479adedb93f40e8189ad0efa891a438805d80774ee992d4dfd71150f
+R 04a86bb9860fea6216c599ef4bafe3b4
+U drh
+Z c39b6133ba2e20b64defbf4fa26dcbfa
 # Remove this line to create a well-formed Fossil manifest.
