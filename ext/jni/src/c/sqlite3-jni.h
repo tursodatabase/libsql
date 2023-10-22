@@ -1121,6 +1121,14 @@ JNIEXPORT jlong JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1column_1int64
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_column_java_object
+ * Signature: (JI)Ljava/lang/Object;
+ */
+JNIEXPORT jobject JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1column_1java_1object
+  (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
  * Method:    sqlite3_column_name
  * Signature: (JI)Ljava/lang/String;
  */

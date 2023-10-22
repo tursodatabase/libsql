@@ -261,9 +261,13 @@ public class Tester2 implements Runnable {
       affirm( 0 == stmt.finalizeStmt() );
       affirm( null==stmt.nativeHandle() );
 
-      stmt = db.prepare("SELECT 1");
+      stmt = db.prepare("SELECT ?");
+      stmt.bindObject(1, db);
       affirm( CApi.SQLITE_ROW == stmt.step() );
-      affirm( 0 == stmt.finalizeStmt() )
+      affirm( db==stmt.columnObject(0) );
+      affirm( db==stmt.columnObject(0, Sqlite.class ) );
+      affirm( null==stmt.columnObject(0, Sqlite.Stmt.class ) );
+      affirm( 0==stmt.finalizeStmt() )
         /* getting a non-0 out of sqlite3_finalize() is tricky */;
       affirm( null==stmt.nativeHandle() );
     }

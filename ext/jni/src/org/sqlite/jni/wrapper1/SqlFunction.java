@@ -72,7 +72,7 @@ public interface SqlFunction  {
       public int getBytes(){return a.getBytes(ndx);}
       public int getBytes16(){return a.getBytes16(ndx);}
       public Object getObject(){return a.getObject(ndx);}
-      public <T> T getObjectCasted(Class<T> type){ return a.getObjectCasted(ndx, type); }
+      public <T> T getObject(Class<T> type){ return a.getObject(ndx, type); }
       public int getType(){return a.getType(ndx);}
       public Object getAuxData(){return a.getAuxData(ndx);}
       public void setAuxData(Object o){a.setAuxData(ndx, o);}
@@ -113,8 +113,8 @@ public interface SqlFunction  {
     public int getBytes(int arg){return CApi.sqlite3_value_bytes(valueAt(arg));}
     public int getBytes16(int arg){return CApi.sqlite3_value_bytes16(valueAt(arg));}
     public Object getObject(int arg){return CApi.sqlite3_value_java_object(valueAt(arg));}
-    public <T> T getObjectCasted(int arg, Class<T> type){
-      return CApi.sqlite3_value_java_casted(valueAt(arg), type);
+    public <T> T getObject(int arg, Class<T> type){
+      return CApi.sqlite3_value_java_object(valueAt(arg), type);
     }
 
     public int getType(int arg){return CApi.sqlite3_value_type(valueAt(arg));}

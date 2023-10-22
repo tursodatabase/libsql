@@ -329,6 +329,12 @@ public final class Sqlite implements AutoCloseable  {
     public int columnDataCount(){
       return CApi.sqlite3_data_count( thisStmt() );
     }
+    public Object columnObject(int ndx){
+      return CApi.sqlite3_column_java_object( checkColIndex(ndx), ndx );
+    }
+    public <T> T columnObject(int ndx, Class<T> type){
+      return CApi.sqlite3_column_java_object( checkColIndex(ndx), ndx, type );
+    }
     public String columnName(int ndx){
       return CApi.sqlite3_column_name( checkColIndex(ndx), ndx );
     }

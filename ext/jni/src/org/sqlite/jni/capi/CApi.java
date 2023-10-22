@@ -595,6 +595,36 @@ public final class CApi {
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
+  static native Object sqlite3_column_java_object(
+    @NotNull long ptrToStmt, int ndx
+  );
+
+  /**
+     If the given result column was bound with
+     sqlite3_bind_java_object() or sqlite3_result_java_object() then
+     that object is returned, else null is returned. This routine
+     requires locking the owning database's mutex briefly in order to
+     extract the object in a thread-safe way.
+  */
+  public static Object sqlite3_column_java_object(
+    @NotNull sqlite3_stmt stmt, int ndx
+  ){
+    return sqlite3_column_java_object( stmt.getNativePointer(), ndx );
+  }
+
+  /**
+     If the two-parameter overload of sqlite3_column_java_object()
+     returns non-null and the returned value is an instance of T then
+     that object is returned, else null is returned.
+  */
+  @SuppressWarnings("unchecked")
+  public static <T> T sqlite3_column_java_object(
+    @NotNull sqlite3_stmt stmt, int ndx, @NotNull Class<T> type
+  ){
+    final Object o = sqlite3_column_java_object(stmt, ndx);
+    return type.isInstance(o) ? (T)o : null;
+  }
+
   static native String sqlite3_column_name(@NotNull long ptrToStmt, int ndx);
 
   public static String sqlite3_column_name(@NotNull sqlite3_stmt stmt, int ndx){
@@ -1938,7 +1968,7 @@ public final class CApi {
      given Class, else it returns null.
   */
   @SuppressWarnings("unchecked")
-  public static <T> T sqlite3_value_java_casted(@NotNull sqlite3_value v,
+  public static <T> T sqlite3_value_java_object(@NotNull sqlite3_value v,
                                                 @NotNull Class<T> type){
     final Object o = sqlite3_value_java_object(v);
     return type.isInstance(o) ? (T)o : null;

@@ -1,5 +1,5 @@
-C JNI:\sadd\scolumn-get\sbindings\sto\sthe\swrapper1\sStmt\sclass\sand\sextend\sthe\sAggregateFunction\stests\sto\sensure\sthat\sthe\saggregate\scontext\sis\shonored.
-D 2023-10-22T13:54:26.716
+C JNI:\sflesh\sout\sand\ssimplify\sthe\sAPIs\sfor\sbinding\sand\sfetching\sarbitrary\sJava\sobjects.
+D 2023-10-22T14:25:37.634
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -239,8 +239,8 @@ F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a3
 F ext/jni/GNUmakefile 5c3ac326bf3853486ebe0d70819abc790cc65c412182ce4ebd5012b008d9b059
 F ext/jni/README.md ef9ac115e97704ea995d743b4a8334e23c659e5534c3b64065a5405256d5f2f4
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
-F ext/jni/src/c/sqlite3-jni.c 6f6df9657989e9ca2cfdcc2fe9a71c279de56d5c941adfd09a0f24256de35c8f
-F ext/jni/src/c/sqlite3-jni.h b4c413a0d0c734683da1049cfcf89e35ae2719759d0656ec0f8c57188f18cab8
+F ext/jni/src/c/sqlite3-jni.c dcd6534b65b732ad927a49185c76c76abbd5ccadfa972d02f699abc45678e329
+F ext/jni/src/c/sqlite3-jni.h e839090f5ec35aa96983a5621659e55ef897dc0522242fd00f107028ef5e7dd5
 F ext/jni/src/org/sqlite/jni/annotation/NotNull.java a99341e88154e70447596b1af6a27c586317df41a7e0f246fd41370cd7b723b2
 F ext/jni/src/org/sqlite/jni/annotation/Nullable.java 0b1879852707f752512d4db9d7edd0d8db2f0c2612316ce1c832715e012ff6ba
 F ext/jni/src/org/sqlite/jni/annotation/package-info.java 977b374aed9d5853cbf3438ba3b0940abfa2ea4574f702a2448ee143b98ac3ca
@@ -249,7 +249,7 @@ F ext/jni/src/org/sqlite/jni/capi/AggregateFunction.java bc29e986c866c2ddbbb9f93
 F ext/jni/src/org/sqlite/jni/capi/AuthorizerCallback.java 7ed409d5449684616cc924534e22ff6b07d361f12ad904b69ecb10e0568a8013
 F ext/jni/src/org/sqlite/jni/capi/AutoExtensionCallback.java 74cc4998a73d6563542ecb90804a3c4f4e828cb4bd69e61226d1a51f4646e759
 F ext/jni/src/org/sqlite/jni/capi/BusyHandlerCallback.java 7b8e19810c42b0ad21a04b5d8c804b32ee5905d137148703f16a75b612c380ca
-F ext/jni/src/org/sqlite/jni/capi/CApi.java bccb442ca81cd4decb1adae99006a60b7a9f54e5153842e738c01104e97d1de0
+F ext/jni/src/org/sqlite/jni/capi/CApi.java f23e8139cdb1d9c850f28ccf95384e37239cee47fd683bfb199f50aa7ce011fc
 F ext/jni/src/org/sqlite/jni/capi/CallbackProxy.java 0bfd6e56e8265c2f05c9207665707285534d78f8466ef0e0430c65677f00943d
 F ext/jni/src/org/sqlite/jni/capi/CollationCallback.java e29bcfc540fdd343e2f5cca4d27235113f2886acb13380686756d5cabdfd065a
 F ext/jni/src/org/sqlite/jni/capi/CollationNeededCallback.java f81cf10b79c52f9b2e9247d523d29ae48863935f60420eae35f257c38c80ce95
@@ -267,7 +267,7 @@ F ext/jni/src/org/sqlite/jni/capi/SQLFunction.java fef556adbc3624292423083a648bd
 F ext/jni/src/org/sqlite/jni/capi/SQLTester.java 09bee15aa0eedac68d767ae21d9a6a62a31ade59182a3ccbf036d6463d9e30b1
 F ext/jni/src/org/sqlite/jni/capi/ScalarFunction.java 93b9700fca4c68075ccab12fe0fbbc76c91cafc9f368e835b9bd7cd7732c8615
 F ext/jni/src/org/sqlite/jni/capi/TableColumnMetadata.java addf120e0e76e5be1ff2260daa7ce305ff9b5fafd64153a7a28e9d8f000a815f
-F ext/jni/src/org/sqlite/jni/capi/Tester1.java ca195521b6bda3e0cd00e76bb71ec8060d1fab76a2f13b1af9feea40789f44bb
+F ext/jni/src/org/sqlite/jni/capi/Tester1.java 5c4e7ba5034aeb5c5be0361b9fa0c23fe993774e634750c775d7ad8fa19b22f3
 F ext/jni/src/org/sqlite/jni/capi/TraceV2Callback.java 0a25e117a0daae3394a77f24713e36d7b44c67d6e6d30e9e1d56a63442eef723
 F ext/jni/src/org/sqlite/jni/capi/UpdateHookCallback.java 2766b8526bbffc4f1045f70e79f1bc1b1efe1c3e95ca06cdb8a7391032dda3b4
 F ext/jni/src/org/sqlite/jni/capi/ValueHolder.java 9f9e151f1da017b706c0ee5f40f4c86b54e773d6ae4339723e0cc85a456251ab
@@ -293,10 +293,10 @@ F ext/jni/src/org/sqlite/jni/fts5/fts5_tokenizer.java 92bdaa3893bd684533004d64ad
 F ext/jni/src/org/sqlite/jni/test-script-interpreter.md f9f25126127045d051e918fe59004a1485311c50a13edbf18c79a6ff9160030e
 F ext/jni/src/org/sqlite/jni/wrapper1/AggregateFunction.java 5ad99bd74c85f56bbef324d9ec29b4048f4620547c9a80093d8586c3557f9f9a
 F ext/jni/src/org/sqlite/jni/wrapper1/ScalarFunction.java 43c43adfb7866098aadaaca1620028a6ec82d5193149970019b1cce9eb59fb03
-F ext/jni/src/org/sqlite/jni/wrapper1/SqlFunction.java 004394eeb944baa56e36cd7ae69ba6d4a52b52db3c49439db16e98270b861421
-F ext/jni/src/org/sqlite/jni/wrapper1/Sqlite.java b0ee72b60b2a15d3f19571213f62e560134d6517eacece73eb1299b6d9980f14
+F ext/jni/src/org/sqlite/jni/wrapper1/SqlFunction.java 92c28b9de358407c8c5e772e0408db528e47eeeb50ffd87b86563a5f078198ad
+F ext/jni/src/org/sqlite/jni/wrapper1/Sqlite.java 882e345d925a79b575b1182efd816dcc72d6814922b4f58e7f4d29f04ece1f64
 F ext/jni/src/org/sqlite/jni/wrapper1/SqliteException.java 1386f7b753134fc12253ce2fbbc448ba8c970567fac01a3356cb672e14408d73
-F ext/jni/src/org/sqlite/jni/wrapper1/Tester2.java 5ff33f3e31f5d88178e485ab334e8fb6ccf8ad1f6666136b4a613fec58888432
+F ext/jni/src/org/sqlite/jni/wrapper1/Tester2.java e224efb77dae2f0abe18f2010c0eb5a09df991f2743597a1aff7f9283f71da7d
 F ext/jni/src/org/sqlite/jni/wrapper1/ValueHolder.java 7b89a7391f771692c5b83b0a5b86266abe8d59f1c77d7a0eccc9b79f259d79af
 F ext/jni/src/tests/000-000-sanity.test c3427a0e0ac84d7cbe4c95fdc1cd4b61f9ddcf43443408f3000139478c4dc745
 F ext/jni/src/tests/000-001-ignored.test e17e874c6ab3c437f1293d88093cf06286083b65bf162317f91bbfd92f961b70
@@ -2136,8 +2136,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f3fb4d345bbf5ae4a35d8076043df601b1bf7dfd68760a416440139eb3e5eb9a
-R 4d4dd7480ffdece828c7f766b6d86d96
+P 60a0e82db26270af9d0a5f55c6173e4fd0bdc90a885e838480ed75f8ef193287
+R 5a1e4de3384c2859d02b694c480544f0
 U stephan
-Z e88e3b32c9f23fead743fdff8331a212
+Z 0b6f35d12f929147f1a8dbbd84db96f1
 # Remove this line to create a well-formed Fossil manifest.
