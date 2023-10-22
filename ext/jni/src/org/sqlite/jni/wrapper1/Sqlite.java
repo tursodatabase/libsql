@@ -77,7 +77,7 @@ public final class Sqlite implements AutoCloseable  {
   */
   sqlite3 nativeHandle(){ return this.db; }
 
-  private sqlite3 affirmOpen(){
+  private sqlite3 thisDb(){
     if( null==db || 0==db.getNativePointer() ){
       throw new IllegalArgumentException("This database instance is closed.");
     }
@@ -88,10 +88,56 @@ public final class Sqlite implements AutoCloseable  {
   //   return s==null ? null : s.getBytes(StandardCharsets.UTF_8);
   // }
 
+  /**
+     If rc!=0, throws an SqliteException. If this db is currently
+     opened, the error state is extracted from it, else only the
+     string form of rc is used.
+  */
   private void affirmRcOk(int rc){
     if( 0!=rc ){
-      throw new SqliteException(db);
+      if( null==db ) throw new SqliteException(rc);
+      else throw new SqliteException(db);
     }
+  }
+
+  /**
+     prepare() TODOs include:
+
+     - overloads taking byte[] and ByteBuffer.
+
+     - multi-statement processing, like CApi.sqlite3_prepare_multi()
+     but using a callback specific to the higher-level Stmt class
+     rather than the sqlite3_stmt class.
+  */
+  public Stmt prepare(String sql, int prepFlags){
+    final OutputPointer.sqlite3_stmt out = new OutputPointer.sqlite3_stmt();
+    final int rc = sqlite3_prepare_v3(thisDb(), sql, prepFlags, out);
+    affirmRcOk(rc);
+    return new Stmt(this, out.take());
+  }
+
+  public Stmt prepare(String sql){
+    return prepare(sql, 0);
+  }
+
+  public void createFunction(String name, int nArg, int eTextRep, ScalarFunction f ){
+    int rc = CApi.sqlite3_create_function(thisDb(), name, nArg, eTextRep,
+                                           new SqlFunction.ScalarAdapter(f));
+    if( 0!=rc ) throw new SqliteException(db);
+  }
+
+  public void createFunction(String name, int nArg, ScalarFunction f){
+    this.createFunction(name, nArg, CApi.SQLITE_UTF8, f);
+  }
+
+  public void createFunction(String name, int nArg, int eTextRep, AggregateFunction f ){
+    int rc = CApi.sqlite3_create_function(thisDb(), name, nArg, eTextRep,
+                                           new SqlFunction.AggregateAdapter(f));
+    if( 0!=rc ) throw new SqliteException(db);
+  }
+
+  public void createFunction(String name, int nArg, AggregateFunction f){
+    this.createFunction(name, nArg, CApi.SQLITE_UTF8, f);
   }
 
   /**
@@ -111,7 +157,11 @@ public final class Sqlite implements AutoCloseable  {
       return stmt;
     }
 
-    private sqlite3_stmt affirmOpen(){
+    /**
+       If this statement is still opened, its low-level handle is
+       returned, eelse an IllegalArgumentException is thrown.
+    */
+    private sqlite3_stmt thisStmt(){
       if( null==stmt || 0==stmt.getNativePointer() ){
         throw new IllegalArgumentException("This Stmt has been finalized.");
       }
@@ -140,7 +190,9 @@ public final class Sqlite implements AutoCloseable  {
 
     /**
        Throws if rc is any value other than 0, SQLITE_ROW, or
-       SQLITE_DONE, else returns rc.
+       SQLITE_DONE, else returns rc. Error state for the exception is
+       extracted from this statement object (if it's opened) or the
+       string form of rc.
     */
     private int checkRc(int rc){
       switch(rc){
@@ -148,7 +200,8 @@ public final class Sqlite implements AutoCloseable  {
         case SQLITE_ROW:
         case SQLITE_DONE: return rc;
         default:
-          throw new SqliteException(this);
+          if( null==stmt ) throw new SqliteException(rc);
+          else throw new SqliteException(this);
       }
     }
 
@@ -157,7 +210,7 @@ public final class Sqlite implements AutoCloseable  {
        result other than 0, SQLITE_ROW, or SQLITE_DONE.
     */
     public int step(){
-      return checkRc(sqlite3_step(affirmOpen()));
+      return checkRc(sqlite3_step(thisStmt()));
     }
 
     public Sqlite db(){ return this._db; }
@@ -166,53 +219,55 @@ public final class Sqlite implements AutoCloseable  {
        Works like sqlite3_reset() but throws on error.
     */
     public void reset(){
-      checkRc(sqlite3_reset(affirmOpen()));
+      checkRc(CApi.sqlite3_reset(thisStmt()));
     }
 
     public void clearBindings(){
-      sqlite3_clear_bindings( affirmOpen() );
+      CApi.sqlite3_clear_bindings( thisStmt() );
     }
-  }
+    public void bindInt(int ndx, int val){
+      checkRc(CApi.sqlite3_bind_int(thisStmt(), ndx, val));
+    }
+    public void bindInt64(int ndx, long val){
+      checkRc(CApi.sqlite3_bind_int64(thisStmt(), ndx, val));
+    }
+    public void bindDouble(int ndx, double val){
+      checkRc(CApi.sqlite3_bind_double(thisStmt(), ndx, val));
+    }
+    public void bindObject(int ndx, Object o){
+      checkRc(CApi.sqlite3_bind_java_object(thisStmt(), ndx, o));
+    }
+    public void bindNull(int ndx){
+      checkRc(CApi.sqlite3_bind_null(thisStmt(), ndx));
+    }
+    public int bindParameterCount(){
+      return CApi.sqlite3_bind_parameter_count(thisStmt());
+    }
+    public int bindParameterIndex(String paramName){
+      return CApi.sqlite3_bind_parameter_index(thisStmt(), paramName);
+    }
+    public String bindParameterName(int ndx){
+      return CApi.sqlite3_bind_parameter_name(thisStmt(), ndx);
+    }
+    public void bindText(int ndx, byte[] utf8){
+      checkRc(CApi.sqlite3_bind_text(thisStmt(), ndx, utf8));
+    }
+    public void bindText(int ndx, String asUtf8){
+      checkRc(CApi.sqlite3_bind_text(thisStmt(), ndx, asUtf8));
+    }
+    public void bindText16(int ndx, byte[] utf16){
+      checkRc(CApi.sqlite3_bind_text16(thisStmt(), ndx, utf16));
+    }
+    public void bindText16(int ndx, String txt){
+      checkRc(CApi.sqlite3_bind_text16(thisStmt(), ndx, txt));
+    }
+    public void bindZeroBlob(int ndx, int n){
+      checkRc(CApi.sqlite3_bind_zeroblob(thisStmt(), ndx, n));
+    }
+    public void bindBlob(int ndx, byte[] bytes){
+      checkRc(CApi.sqlite3_bind_blob(thisStmt(), ndx, bytes));
+    }
 
-
-  /**
-     prepare() TODOs include:
-
-     - overloads taking byte[] and ByteBuffer.
-
-     - multi-statement processing, like CApi.sqlite3_prepare_multi()
-     but using a callback specific to the higher-level Stmt class
-     rather than the sqlite3_stmt class.
-  */
-  public Stmt prepare(String sql, int prepFlags){
-    final OutputPointer.sqlite3_stmt out = new OutputPointer.sqlite3_stmt();
-    final int rc = sqlite3_prepare_v3(affirmOpen(), sql, prepFlags, out);
-    affirmRcOk(rc);
-    return new Stmt(this, out.take());
-  }
-
-  public Stmt prepare(String sql){
-    return prepare(sql, 0);
-  }
-
-  public void createFunction(String name, int nArg, int eTextRep, ScalarFunction f ){
-    int rc = CApi.sqlite3_create_function(affirmOpen(), name, nArg, eTextRep,
-                                           new SqlFunction.ScalarAdapter(f));
-    if( 0!=rc ) throw new SqliteException(db);
-  }
-
-  public void createFunction(String name, int nArg, ScalarFunction f){
-    this.createFunction(name, nArg, CApi.SQLITE_UTF8, f);
-  }
-
-  public void createFunction(String name, int nArg, int eTextRep, AggregateFunction f ){
-    int rc = CApi.sqlite3_create_function(affirmOpen(), name, nArg, eTextRep,
-                                           new SqlFunction.AggregateAdapter(f));
-    if( 0!=rc ) throw new SqliteException(db);
-  }
-
-  public void createFunction(String name, int nArg, AggregateFunction f){
-    this.createFunction(name, nArg, CApi.SQLITE_UTF8, f);
-  }
+  } /* Stmt class */
 
 }

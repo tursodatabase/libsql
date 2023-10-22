@@ -1,5 +1,5 @@
-C JNI:\simprove\sUB\sprotections\sin\ssqlite3_bind_blob/text/text16().
-D 2023-10-22T12:33:05.772
+C Add\sJNI\swrapper1.SqliteStmt.bindXyz()\sAPIs.
+D 2023-10-22T12:43:30.072
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -294,9 +294,9 @@ F ext/jni/src/org/sqlite/jni/test-script-interpreter.md f9f25126127045d051e918fe
 F ext/jni/src/org/sqlite/jni/wrapper1/AggregateFunction.java 5ad99bd74c85f56bbef324d9ec29b4048f4620547c9a80093d8586c3557f9f9a
 F ext/jni/src/org/sqlite/jni/wrapper1/ScalarFunction.java 43c43adfb7866098aadaaca1620028a6ec82d5193149970019b1cce9eb59fb03
 F ext/jni/src/org/sqlite/jni/wrapper1/SqlFunction.java 004394eeb944baa56e36cd7ae69ba6d4a52b52db3c49439db16e98270b861421
-F ext/jni/src/org/sqlite/jni/wrapper1/Sqlite.java a9ddc6a9e8c113168cc67592ae24c0e56d30dd06226eeab012f2761a0889d7bb
+F ext/jni/src/org/sqlite/jni/wrapper1/Sqlite.java 25e4e65ba434d0e110e4adb6782e20cd374d83b7fe00ba5ca48a1dadd2fdd7dd
 F ext/jni/src/org/sqlite/jni/wrapper1/SqliteException.java 1386f7b753134fc12253ce2fbbc448ba8c970567fac01a3356cb672e14408d73
-F ext/jni/src/org/sqlite/jni/wrapper1/Tester2.java c24b510ebe801c30533cc62efdf69a4a5e2da9ec4b49f8d403f2060693f060a0
+F ext/jni/src/org/sqlite/jni/wrapper1/Tester2.java 65437e09115bfef4445957db61fcf6dac9aad37ac00edb445c3de812e9750d6e
 F ext/jni/src/org/sqlite/jni/wrapper1/ValueHolder.java 7b89a7391f771692c5b83b0a5b86266abe8d59f1c77d7a0eccc9b79f259d79af
 F ext/jni/src/tests/000-000-sanity.test c3427a0e0ac84d7cbe4c95fdc1cd4b61f9ddcf43443408f3000139478c4dc745
 F ext/jni/src/tests/000-001-ignored.test e17e874c6ab3c437f1293d88093cf06286083b65bf162317f91bbfd92f961b70
@@ -2136,8 +2136,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b8258103fb433d9f5cfa15661b5edf4e60128fb4161d8a18e5cc3253e5aed72b
-R 10dd3eddc3858c0c90f96d7af2dd213f
+P 5c8383210a87d7f9d37a27053b5b1b6f41794fa8612826c68c1ca49c495cbd97
+R 186cd14750afba6ac11c0a47787c2fc3
+T *branch * jni-post-3.44
+T *sym-jni-post-3.44 *
+T -sym-trunk * Cancelled\sby\sbranch.
 U stephan
-Z 39a3acd541e66480809465cadb3002fa
+Z dc6c06549901a63430a6e90b2648f01f
 # Remove this line to create a well-formed Fossil manifest.

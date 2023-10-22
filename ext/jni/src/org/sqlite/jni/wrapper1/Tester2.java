@@ -224,8 +224,26 @@ public class Tester2 implements Runnable {
 
   void testPrepare1(){
     try (Sqlite db = openDb()) {
-      Sqlite.Stmt stmt = db.prepare("SELECT 1");
+      Sqlite.Stmt stmt = db.prepare("SELECT ?1");
+      Exception e = null;
       affirm( null!=stmt.nativeHandle() );
+      affirm( 1==stmt.bindParameterCount() );
+      affirm( "?1".equals(stmt.bindParameterName(1)) );
+      affirm( null==stmt.bindParameterName(2) );
+      stmt.bindInt(1, 1);
+      stmt.bindInt64(1, 1);
+      stmt.bindDouble(1, 1.1);
+      stmt.bindObject(1, db);
+      stmt.bindNull(1);
+      stmt.bindText(1, new byte[] {32,32,32});
+      stmt.bindText(1, "123");
+      stmt.bindText16(1, "123".getBytes(StandardCharsets.UTF_16));
+      stmt.bindText16(1, "123");
+      stmt.bindZeroBlob(1, 8);
+      stmt.bindBlob(1, new byte[] {1,2,3,4});
+      try{ stmt.bindInt(2,1); }
+      catch(Exception ex){ e = ex; }
+      affirm( null!=e );
       affirm( CApi.SQLITE_ROW == stmt.step() );
       affirm( CApi.SQLITE_DONE == stmt.step() );
       stmt.reset();
@@ -269,6 +287,10 @@ public class Tester2 implements Runnable {
   }
 
   void testUdfAggregate(){
+    /* FIXME/TODO: once we've added the stmt bind/step/fetch
+       capabilities, go back and extend these tests to correspond to
+       the aggregate UDF tests in ext/wasm/tester1.c-pp.js. We first
+       require the ability to bind/step/fetch, however. */
     final ValueHolder<Integer> xDestroyCalled = new ValueHolder<>(0);
     final ValueHolder<Integer> vh = new ValueHolder<>(0);
     try (Sqlite db = openDb()) {
