@@ -929,7 +929,6 @@ public class Tester1 implements Runnable {
                          "ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING"+
                          ") AS sum_y "+
                          "FROM twin ORDER BY x;");
-    affirm( 0 == rc );
     int n = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       final String s = sqlite3_column_text16(stmt, 0);

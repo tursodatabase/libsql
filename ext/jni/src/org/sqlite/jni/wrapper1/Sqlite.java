@@ -29,6 +29,10 @@ import org.sqlite.jni.capi.OutputPointer;
 public final class Sqlite implements AutoCloseable  {
   private sqlite3 db;
 
+  public static final int OPEN_READWRITE = CApi.SQLITE_OPEN_READWRITE;
+  public static final int OPEN_CREATE = CApi.SQLITE_OPEN_CREATE;
+  public static final int OPEN_EXRESCODE = CApi.SQLITE_OPEN_EXRESCODE;
+
   //! Used only by the open() factory functions.
   private Sqlite(sqlite3 db){
     this.db = db;
@@ -120,7 +124,7 @@ public final class Sqlite implements AutoCloseable  {
     return prepare(sql, 0);
   }
 
-  public void createFunction(String name, int nArg, int eTextRep, ScalarFunction f ){
+  public void createFunction(String name, int nArg, int eTextRep, ScalarFunction f){
     int rc = CApi.sqlite3_create_function(thisDb(), name, nArg, eTextRep,
                                            new SqlFunction.ScalarAdapter(f));
     if( 0!=rc ) throw new SqliteException(db);
@@ -130,13 +134,23 @@ public final class Sqlite implements AutoCloseable  {
     this.createFunction(name, nArg, CApi.SQLITE_UTF8, f);
   }
 
-  public void createFunction(String name, int nArg, int eTextRep, AggregateFunction f ){
+  public void createFunction(String name, int nArg, int eTextRep, AggregateFunction f){
     int rc = CApi.sqlite3_create_function(thisDb(), name, nArg, eTextRep,
                                            new SqlFunction.AggregateAdapter(f));
     if( 0!=rc ) throw new SqliteException(db);
   }
 
   public void createFunction(String name, int nArg, AggregateFunction f){
+    this.createFunction(name, nArg, CApi.SQLITE_UTF8, f);
+  }
+
+  public void createFunction(String name, int nArg, int eTextRep, WindowFunction f){
+    int rc = CApi.sqlite3_create_function(thisDb(), name, nArg, eTextRep,
+                                          new SqlFunction.WindowAdapter(f));
+    if( 0!=rc ) throw new SqliteException(db);
+  }
+
+  public void createFunction(String name, int nArg, WindowFunction f){
     this.createFunction(name, nArg, CApi.SQLITE_UTF8, f);
   }
 
@@ -223,11 +237,19 @@ public final class Sqlite implements AutoCloseable  {
     }
 
     /**
-       Works like sqlite3_step() but throws SqliteException for any
-       result other than 0, SQLITE_ROW, or SQLITE_DONE.
+       Works like sqlite3_step() but returns true for SQLITE_ROW,
+       false for SQLITE_DONE, and throws SqliteException for any other
+       result.
     */
-    public int step(){
-      return checkRc(sqlite3_step(thisStmt()));
+    public boolean step(){
+      switch(checkRc(sqlite3_step(thisStmt()))){
+        case CApi.SQLITE_ROW: return true;
+        case CApi.SQLITE_DONE: return false;
+        default:
+          throw new IllegalStateException(
+            "This \"cannot happen\": all possible result codes were checked already."
+          );
+      }
       /*
         Potential signature change TODO:
 

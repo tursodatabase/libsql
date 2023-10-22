@@ -120,6 +120,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/annotation/%,\
   Sqlite.java \
   SqliteException.java \
   ValueHolder.java \
+  WindowFunction.java \
 )
 
 JAVA_FILES.unittest := $(patsubst %,$(dir.src.jni)/%,\
