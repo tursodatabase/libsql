@@ -13,6 +13,7 @@ mod connection;
 mod parser;
 pub(crate) mod remote_client;
 pub(crate) mod local_client;
+pub mod snapshot_file;
 
 type BoxError = Box<dyn std::error::Error + Sync + Send + 'static>;
 pub enum Frames {

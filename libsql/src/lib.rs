@@ -95,7 +95,7 @@ pub mod params;
 cfg_replication! {
     mod replication;
     pub use libsql_replication::frame::{FrameNo, Frame};
-    pub use replication::Frames;
+    pub use replication::{Frames, snapshot_file::SnapshotFile};
 }
 
 cfg_core! {

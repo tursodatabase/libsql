@@ -10,10 +10,12 @@ use anyhow::{bail, ensure};
 use bytemuck::{bytes_of, pod_read_unaligned, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
 use libsql_replication::frame::{Frame, FrameHeader, FrameMut};
-use parking_lot::RwLock;
+use libsql_replication::snapshot::SnapshotFile;
+use parking_lot::{RwLock, Mutex};
 use rusqlite::ffi::SQLITE_BUSY;
 use sqld_libsql_bindings::init_static_wal_method;
 use tokio::sync::watch;
+use tokio_stream::Stream;
 use tokio::time::{Duration, Instant};
 use uuid::Uuid;
 
@@ -24,7 +26,7 @@ use crate::libsql_bindings::ffi::{
     PageHdrIter, PgHdr, Wal, SQLITE_CHECKPOINT_TRUNCATE, SQLITE_IOERR, SQLITE_OK,
 };
 use crate::libsql_bindings::wal_hook::WalHook;
-use crate::replication::snapshot::{find_snapshot_file, LogCompactor, SnapshotFile};
+use crate::replication::snapshot::{find_snapshot_file, LogCompactor};
 use crate::replication::{FrameNo, SnapshotCallback, CRC_64_GO_ISO, WAL_MAGIC};
 use crate::LIBSQL_PAGE_SIZE;
 
@@ -501,6 +503,25 @@ impl LogFile {
         }))
     }
 
+    pub fn into_rev_stream_mut(self) -> impl  Stream<Item = anyhow::Result<FrameMut>> {
+        let mut current_frame_offset = self.header.frame_count;
+        let file = Arc::new(Mutex::new(self));
+        async_stream::try_stream! {
+            loop {
+                if current_frame_offset == 0 {
+                    break;
+                }
+                let read_byte_offset = Self::absolute_byte_offset(current_frame_offset);
+                let frame = tokio::task::spawn_blocking({ 
+                    let file = file.clone();
+                    move || file.lock().read_frame_byte_offset_mut(read_byte_offset)
+                }).await??;
+                current_frame_offset -= 1;
+                yield frame
+            }
+        }
+    }
+
     fn compute_checksum(&self, page: &WalPage) -> u64 {
         let mut digest = CRC_64_GO_ISO.digest_with_initial(self.uncommitted_checksum);
         digest.update(&page.data);
@@ -928,8 +949,8 @@ impl ReplicationLogger {
         Ok(log_file.header().last_frame_no())
     }
 
-    pub fn get_snapshot_file(&self, from: FrameNo) -> anyhow::Result<Option<SnapshotFile>> {
-        find_snapshot_file(&self.db_path, from)
+    pub async fn get_snapshot_file(&self, from: FrameNo) -> anyhow::Result<Option<SnapshotFile>> {
+        find_snapshot_file(&self.db_path, from).await
     }
 
     pub fn get_frame(&self, frame_no: FrameNo) -> Result<Frame, LogReadError> {

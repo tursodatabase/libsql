@@ -3,6 +3,7 @@ use std::net::SocketAddr;
 use std::pin::Pin;
 use std::sync::{Arc, RwLock};
 
+use tokio_stream::StreamExt;
 use futures::stream::BoxStream;
 pub use libsql_replication::rpc::replication as rpc;
 use libsql_replication::rpc::replication::replication_log_server::ReplicationLog;
@@ -10,9 +11,6 @@ use libsql_replication::rpc::replication::{
     Frame, Frames, HelloRequest, HelloResponse, LogOffset, NEED_SNAPSHOT_ERROR_MSG,
     NO_HELLO_ERROR_MSG,
 };
-use tokio::sync::mpsc;
-use tokio_stream::wrappers::ReceiverStream;
-use tokio_stream::StreamExt;
 use tonic::Status;
 
 use crate::auth::Auth;
@@ -20,7 +18,6 @@ use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::LogReadError;
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
-use crate::BLOCKING_RT;
 
 use super::NAMESPACE_DOESNT_EXIST;
 
@@ -195,7 +192,7 @@ impl ReplicationLog for ReplicationLogService {
                 .map_err(|e| Status::internal(e.to_string()))?,
             self.idle_shutdown_layer.clone(),
         )
-        .map(map_frame_stream_output)
+        .map(|e| map_frame_stream_output(e))
         .collect::<Result<Vec<_>, _>>()
         .await?;
 
@@ -246,8 +243,6 @@ impl ReplicationLog for ReplicationLogService {
     ) -> Result<tonic::Response<Self::SnapshotStream>, Status> {
         self.authenticate(&req)?;
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
-
-        let (sender, receiver) = mpsc::channel(10);
         let req = req.into_inner();
         let logger = self
             .namespaces
@@ -255,47 +250,48 @@ impl ReplicationLog for ReplicationLogService {
             .await
             .unwrap();
         let offset = req.next_offset;
-        match BLOCKING_RT
-            .spawn_blocking(move || logger.get_snapshot_file(offset))
-            .await
-        {
-            Ok(Ok(Some(snapshot))) => {
-                BLOCKING_RT.spawn_blocking(move || {
-                    let size_after = snapshot.header().size_after;
-                    let mut frames = snapshot.frames_iter_from(offset).peekable();
-                    loop {
-                        match frames.next() {
-                            Some(Ok(mut frame)) => {
-                                // this is the last frame we're sending for this snapshot, set the
-                                // frame_no
-                                if frames.peek().is_none() {
-                                    frame.header_mut().size_after = size_after;
-                                }
-                                let _ = sender.blocking_send(Ok(Frame {
-                                    data: libsql_replication::frame::Frame::from(frame).bytes(),
-                                }));
-                            }
-                            Some(Err(e)) => {
-                                let _ = sender.blocking_send(Err(Status::new(
-                                    tonic::Code::Internal,
-                                    e.to_string(),
-                                )));
-                                break;
-                            }
-                            None => {
-                                break;
-                            }
-                        }
-                    }
-                });
-
-                Ok(tonic::Response::new(Box::pin(ReceiverStream::new(
-                    receiver,
-                ))))
-            }
-            Ok(Ok(None)) => Err(Status::new(tonic::Code::Unavailable, "snapshot not found")),
+        match logger.get_snapshot_file(offset).await {
+            Ok(Some(snapshot)) => Ok(tonic::Response::new(Box::pin(snapshot_stream::make_snapshot_stream(snapshot, offset)))),
+            Ok(None) => Err(Status::new(tonic::Code::Unavailable, "snapshot not found")),
             Err(e) => Err(Status::new(tonic::Code::Internal, e.to_string())),
-            Ok(Err(e)) => Err(Status::new(tonic::Code::Internal, e.to_string())),
+        }
+    }
+}
+
+mod snapshot_stream {
+    use libsql_replication::snapshot::SnapshotFile;
+    use libsql_replication::rpc::replication::Frame;
+    use libsql_replication::frame::FrameNo;
+    use tonic::Status;
+    use futures::{Stream, StreamExt};
+
+    pub fn make_snapshot_stream(snapshot: SnapshotFile, offset: FrameNo) -> impl Stream<Item = Result<Frame, Status>> {
+        let size_after = snapshot.header().size_after;
+        let frames = snapshot.into_stream_mut_from(offset).peekable();
+        async_stream::stream! {
+            tokio::pin!(frames);
+            while let Some(frame) = frames.next().await {
+                match frame {
+                    Ok(mut frame) => {
+                        // this is the last frame we're sending for this snapshot, set the
+                        // frame_no
+                        if frames.as_mut().peek().await.is_none() {
+                            frame.header_mut().size_after = size_after;
+                        }
+
+                        yield Ok(Frame {
+                            data: libsql_replication::frame::Frame::from(frame).bytes(),
+                        });
+                    }
+                    Err(e) => {
+                        yield Err(Status::new(
+                                tonic::Code::Internal,
+                                e.to_string(),
+                        ));
+                        break;
+                    }
+                }
+            }
         }
     }
 }

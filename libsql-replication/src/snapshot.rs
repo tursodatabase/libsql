@@ -10,8 +10,8 @@ use tokio::io::AsyncSeekExt;
 use tokio_stream::Stream;
 use tokio_stream::StreamExt;
 
-use crate::frame::Frame;
 use crate::frame::FrameBorrowed;
+use crate::frame::FrameMut;
 use crate::frame::FrameNo;
 
 #[derive(Debug, thiserror::Error)]
@@ -53,7 +53,7 @@ impl SnapshotFile {
         Ok(Self { file, header })
     }
 
-    pub fn into_stream(mut self) -> impl Stream<Item = Result<Frame, Error>> {
+    pub fn into_stream_mut(mut self) -> impl Stream<Item = Result<FrameMut, Error>> {
         async_stream::try_stream! {
             let mut previous_frame_no = None;
             self.file.seek(SeekFrom::Start(size_of::<FrameBorrowed>() as _)).await?;
@@ -72,15 +72,20 @@ impl SnapshotFile {
                     previous_frame_no = Some(frame.header().frame_no);
                 }
 
-                yield Frame::from(frame)
+                yield FrameMut::from(frame)
             }
         }
     }
 
-    pub fn into_stream_from(self, from: FrameNo) -> impl Stream<Item = Result<Frame, Error>> {
-        self.into_stream().take_while(move |f| match f {
+    pub fn into_stream_mut_from(self, from: FrameNo) -> impl Stream<Item = Result<FrameMut, Error>> {
+        self.into_stream_mut().take_while(move |f| match f {
             Ok(f) => f.header().frame_no >= from,
             Err(_) => true,
         })
+    }
+
+    #[inline(always)]
+    pub fn header(&self) -> &SnapshotFileHeader {
+        &self.header
     }
 }

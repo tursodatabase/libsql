@@ -2,6 +2,7 @@ use std::io::SeekFrom;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use anyhow::anyhow;
 use bottomless::replicator::Replicator;
 use chrono::NaiveDateTime;
 use libsql_replication::frame::FrameBorrowed;
@@ -134,7 +135,8 @@ impl ForkTask<'_> {
                             let snapshot = loop {
                                 if let Some(snap) = logger
                                     .get_snapshot_file(next_frame_no)
-                                    .map_err(ForkError::Internal)?
+                                        .await
+                                        .map_err(ForkError::Internal)?
                                 {
                                     break snap;
                                 }
@@ -143,9 +145,10 @@ impl ForkTask<'_> {
                                 tokio::time::sleep(Duration::from_millis(100)).await;
                             };
 
-                            let iter = snapshot.frames_iter_from(next_frame_no);
-                            for frame in iter {
-                                let frame = frame.map_err(ForkError::LogRead)?;
+                            let frames = snapshot.into_stream_mut_from(next_frame_no);
+                            tokio::pin!(frames);
+                            while let Some(frame) = frames.next().await {
+                                let frame = frame.map_err(|e| ForkError::LogRead(anyhow!(e)))?;
                                 next_frame_no = next_frame_no.max(frame.header().frame_no + 1);
                                 write_frame(&frame, &mut data_file).await?;
                             }

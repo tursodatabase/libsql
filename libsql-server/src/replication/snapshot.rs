@@ -1,23 +1,23 @@
 use std::collections::HashSet;
-use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
 use std::mem::size_of;
 use std::os::unix::prelude::FileExt;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use std::sync::mpsc;
 use std::sync::Arc;
-use std::thread::JoinHandle;
 
+use futures::TryStreamExt;
+use tokio_stream::Stream;
 use anyhow::Context;
-use bytemuck::{bytes_of, pod_read_unaligned, Pod, Zeroable};
-use bytes::BytesMut;
-use crossbeam::channel::bounded;
+use bytemuck::bytes_of;
+use tokio::sync::mpsc;
 use libsql_replication::frame::FrameMut;
+use libsql_replication::snapshot::{SnapshotFile, SnapshotFileHeader};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use tempfile::NamedTempFile;
+use tokio_stream::StreamExt;
 use uuid::Uuid;
 
 use crate::namespace::NamespaceName;
@@ -30,27 +30,6 @@ use super::FrameNo;
 const SNAPHOT_SPACE_AMPLIFICATION_FACTOR: u64 = 2;
 /// The maximum amount of snapshot allowed before a compaction is required
 const MAX_SNAPSHOT_NUMBER: usize = 32;
-
-#[derive(Debug, Copy, Clone, Zeroable, Pod, PartialEq, Eq)]
-#[repr(C)]
-pub struct SnapshotFileHeader {
-    /// id of the database
-    pub log_id: u128,
-    /// first frame in the snapshot
-    pub start_frame_no: u64,
-    /// end frame in the snapshot
-    pub end_frame_no: u64,
-    /// number of frames in the snapshot
-    pub frame_count: u64,
-    /// safe of the database after applying the snapshot
-    pub size_after: u32,
-    pub _pad: u32,
-}
-
-pub struct SnapshotFile {
-    file: File,
-    header: SnapshotFileHeader,
-}
 
 /// returns (db_id, start_frame_no, end_frame_no) for the given snapshot name
 fn parse_snapshot_name(name: &str) -> Option<(Uuid, u64, u64)> {
@@ -80,13 +59,10 @@ fn parse_snapshot_name(name: &str) -> Option<(Uuid, u64, u64)> {
     ))
 }
 
-fn snapshot_list(db_path: &Path) -> anyhow::Result<impl Iterator<Item = String>> {
-    let mut entries = std::fs::read_dir(snapshot_dir_path(db_path))?;
-    Ok(std::iter::from_fn(move || {
-        for entry in entries.by_ref() {
-            let Ok(entry) = entry else {
-                continue;
-            };
+fn snapshot_list(db_path: &Path) -> impl Stream<Item = anyhow::Result<String>> + '_ {
+    async_stream::try_stream! {
+        let mut entries = tokio::fs::read_dir(snapshot_dir_path(db_path)).await?;
+        while let Some(entry) = entries.next_entry().await? {
             let path = entry.path();
             let Some(name) = path.file_name() else {
                 continue;
@@ -95,19 +71,20 @@ fn snapshot_list(db_path: &Path) -> anyhow::Result<impl Iterator<Item = String>>
                 continue;
             };
 
-            return Some(name_str.to_string());
+            yield name_str.to_string();
         }
-        None
-    }))
+    }
 }
 
 /// Return snapshot file containing "logically" frame_no
-pub fn find_snapshot_file(
+pub async fn find_snapshot_file(
     db_path: &Path,
     frame_no: FrameNo,
 ) -> anyhow::Result<Option<SnapshotFile>> {
     let snapshot_dir_path = snapshot_dir_path(db_path);
-    for name in snapshot_list(db_path)? {
+    let snapshots = snapshot_list(db_path);
+    tokio::pin!(snapshots);
+    while let Some(name) = snapshots.next().await.transpose()? {
         let Some((_, start_frame_no, end_frame_no)) = parse_snapshot_name(&name) else {
             continue;
         };
@@ -115,7 +92,7 @@ pub fn find_snapshot_file(
         if (start_frame_no..=end_frame_no).contains(&frame_no) {
             let snapshot_path = snapshot_dir_path.join(&name);
             tracing::debug!("found snapshot for frame {frame_no} at {snapshot_path:?}");
-            let snapshot_file = SnapshotFile::open(&snapshot_path)?;
+            let snapshot_file = SnapshotFile::open(&snapshot_path).await?;
             return Ok(Some(snapshot_file));
         }
     }
@@ -123,65 +100,9 @@ pub fn find_snapshot_file(
     Ok(None)
 }
 
-impl SnapshotFile {
-    pub fn open(path: &Path) -> anyhow::Result<Self> {
-        let file = File::open(path)?;
-        let mut header_buf = [0; size_of::<SnapshotFileHeader>()];
-        file.read_exact_at(&mut header_buf, 0)?;
-        let header: SnapshotFileHeader = pod_read_unaligned(&header_buf);
-
-        Ok(Self { file, header })
-    }
-
-    /// Iterator on the frames contained in the snapshot file, in reverse frame_no order.
-    pub fn frames_iter_mut(&self) -> impl Iterator<Item = anyhow::Result<FrameMut>> + '_ {
-        let mut current_offset = 0;
-        std::iter::from_fn(move || {
-            if current_offset >= self.header.frame_count {
-                return None;
-            }
-            let read_offset = size_of::<SnapshotFileHeader>() as u64
-                + current_offset * LogFile::FRAME_SIZE as u64;
-            current_offset += 1;
-            let mut buf = BytesMut::zeroed(LogFile::FRAME_SIZE);
-            match self.file.read_exact_at(&mut buf, read_offset as _) {
-                Ok(_) => match FrameMut::try_from(&*buf) {
-                    Ok(frame) => Some(Ok(frame)),
-                    Err(e) => Some(Err(anyhow::anyhow!(e))),
-                },
-                Err(e) => Some(Err(anyhow::anyhow!(e))),
-            }
-        })
-    }
-
-    /// Like `frames_iter`, but stops as soon as a frame with frame_no <= `frame_no` is reached.
-    /// The frames are returned in monotonically strictly decreasing frame_no. In other words, the
-    /// most recent frames come first.
-    pub fn frames_iter_from(
-        &self,
-        frame_no: u64,
-    ) -> impl Iterator<Item = anyhow::Result<FrameMut>> + '_ {
-        let mut iter = self.frames_iter_mut();
-        std::iter::from_fn(move || match iter.next() {
-            Some(Ok(frame)) => {
-                if frame.header().frame_no < frame_no {
-                    None
-                } else {
-                    Some(Ok(frame))
-                }
-            }
-            other => other,
-        })
-    }
-
-    pub fn header(&self) -> &SnapshotFileHeader {
-        &self.header
-    }
-}
-
 #[derive(Clone, Debug)]
 pub struct LogCompactor {
-    sender: crossbeam::channel::Sender<(LogFile, PathBuf, u32)>,
+    sender: mpsc::Sender<(LogFile, PathBuf, u32)>,
 }
 
 pub type SnapshotCallback = Box<dyn Fn(&Path) -> anyhow::Result<()> + Send + Sync>;
@@ -194,14 +115,14 @@ impl LogCompactor {
         // keep up with snapshop creation: if there isn't any ongoind comptaction task processing,
         // the compact does not block, and the log is compacted in the background. Otherwise, the
         // block until there is a free slot to perform compaction.
-        let (sender, receiver) = bounded::<(LogFile, PathBuf, u32)>(0);
+        let (sender, mut receiver) = mpsc::channel::<(LogFile, PathBuf, u32)>(1);
         let mut merger = SnapshotMerger::new(db_path, log_id)?;
         let db_path = db_path.to_path_buf();
         let snapshot_dir_path = snapshot_dir_path(&db_path);
         // FIXME: use tokio task for compaction
-        let _handle = std::thread::spawn(move || {
-            while let Ok((file, log_path, size_after)) = receiver.recv() {
-                match perform_compaction(&db_path, file, log_id) {
+        let _handle = tokio::task::spawn(async move {
+            while let Some((file, log_path, size_after)) = receiver.recv().await {
+                match perform_compaction(&db_path, file, log_id).await {
                     Ok((snapshot_name, snapshot_frame_count)) => {
                         tracing::info!("snapshot `{snapshot_name}` successfully created");
 
@@ -245,7 +166,7 @@ impl LogCompactor {
     /// already ongoing.
     pub fn compact(&self, file: LogFile, path: PathBuf, size_after: u32) -> anyhow::Result<()> {
         self.sender
-            .send((file, path, size_after))
+            .blocking_send((file, path, size_after))
             .context("failed to compact log: log compactor thread exited")?;
 
         Ok(())
@@ -255,16 +176,16 @@ impl LogCompactor {
 struct SnapshotMerger {
     /// Sending part of a channel of (snapshot_name, snapshot_frame_count, db_page_count) to the merger thread
     sender: mpsc::Sender<(String, u64, u32)>,
-    handle: Option<JoinHandle<anyhow::Result<()>>>,
+    handle: Option<tokio::task::JoinHandle<anyhow::Result<()>>>,
 }
 
 impl SnapshotMerger {
     fn new(db_path: &Path, log_id: Uuid) -> anyhow::Result<Self> {
-        let (sender, receiver) = mpsc::channel();
+        let (sender, receiver) = mpsc::channel(1);
 
         let db_path = db_path.to_path_buf();
         let handle =
-            std::thread::spawn(move || Self::run_snapshot_merger_loop(receiver, &db_path, log_id));
+            tokio::task::spawn(async move { Self::run_snapshot_merger_loop(receiver, &db_path, log_id).await });
 
         Ok(Self {
             sender,
@@ -278,16 +199,16 @@ impl SnapshotMerger {
             || snapshots.len() > MAX_SNAPSHOT_NUMBER
     }
 
-    fn run_snapshot_merger_loop(
-        receiver: mpsc::Receiver<(String, u64, u32)>,
+    async fn run_snapshot_merger_loop(
+        mut receiver: mpsc::Receiver<(String, u64, u32)>,
         db_path: &Path,
         log_id: Uuid,
     ) -> anyhow::Result<()> {
-        let mut snapshots = Self::init_snapshot_info_list(db_path)?;
-        while let Ok((name, size, db_page_count)) = receiver.recv() {
+        let mut snapshots = Self::init_snapshot_info_list(db_path).await?;
+        while let Some((name, size, db_page_count)) = receiver.recv().await {
             snapshots.push((name, size));
             if Self::should_compact(&snapshots, db_page_count) {
-                let compacted_snapshot_info = Self::merge_snapshots(&snapshots, db_path, log_id)?;
+                let compacted_snapshot_info = Self::merge_snapshots(&snapshots, db_path, log_id).await?;
                 snapshots.clear();
                 snapshots.push(compacted_snapshot_info);
             }
@@ -302,20 +223,23 @@ impl SnapshotMerger {
     /// TODO: if the process was kill in the midst of merging snapshot, then the compacted snapshot
     /// can exist alongside the snapshots it's supposed to have compacted. This is the place to
     /// perform the cleanup.
-    fn init_snapshot_info_list(db_path: &Path) -> anyhow::Result<Vec<(String, u64)>> {
+    async fn init_snapshot_info_list(db_path: &Path) -> anyhow::Result<Vec<(String, u64)>> {
         let snapshot_dir_path = snapshot_dir_path(db_path);
         if !snapshot_dir_path.exists() {
             return Ok(Vec::new());
         }
 
         let mut temp = Vec::new();
-        for snapshot_name in snapshot_list(db_path)? {
+
+        let snapshots = snapshot_list(db_path);
+        tokio::pin!(snapshots);
+        while let Some(snapshot_name) = snapshots.next().await.transpose()? {
             let snapshot_path = snapshot_dir_path.join(&snapshot_name);
-            let snapshot = SnapshotFile::open(&snapshot_path)?;
+            let snapshot = tokio::runtime::Handle::current().block_on(SnapshotFile::open(&snapshot_path))?;
             temp.push((
                 snapshot_name,
-                snapshot.header.frame_count,
-                snapshot.header.start_frame_no,
+                snapshot.header().frame_count,
+                snapshot.header().start_frame_no,
             ))
         }
 
@@ -327,7 +251,7 @@ impl SnapshotMerger {
             .collect())
     }
 
-    fn merge_snapshots(
+    async fn merge_snapshots(
         snapshots: &[(String, u64)],
         db_path: &Path,
         log_id: Uuid,
@@ -336,13 +260,12 @@ impl SnapshotMerger {
         let snapshot_dir_path = snapshot_dir_path(db_path);
         let mut size_after = None;
         for (name, _) in snapshots.iter().rev() {
-            let snapshot = SnapshotFile::open(&snapshot_dir_path.join(name))?;
+            let snapshot = tokio::runtime::Handle::current().block_on(SnapshotFile::open(&snapshot_dir_path.join(name)))?;
             // The size after the merged snapshot is the size after the first snapshot to be merged
             if size_after.is_none() {
-                size_after.replace(snapshot.header.size_after);
+                size_after.replace(snapshot.header().size_after);
             }
-            let iter = snapshot.frames_iter_mut();
-            builder.append_frames(iter)?;
+            builder.append_frames(snapshot.into_stream_mut().map_err(|e| anyhow::anyhow!(e))).await?;
         }
 
         let (_, start_frame_no, _) = parse_snapshot_name(&snapshots[0].0).unwrap();
@@ -369,13 +292,11 @@ impl SnapshotMerger {
     ) -> anyhow::Result<()> {
         if self
             .sender
-            .send((snapshot_name, snapshot_frame_count, db_page_count))
+            .blocking_send((snapshot_name, snapshot_frame_count, db_page_count))
             .is_err()
         {
             if let Some(handle) = self.handle.take() {
-                handle
-                    .join()
-                    .map_err(|_| anyhow::anyhow!("snapshot merger thread panicked"))??;
+                tokio::runtime::Handle::current().block_on(handle)??;
             }
 
             anyhow::bail!("failed to register snapshot with log merger: thread exited");
@@ -423,9 +344,9 @@ impl SnapshotBuilder {
     }
 
     /// append frames to the snapshot. Frames must be in decreasing frame_no order.
-    fn append_frames(
+    async fn append_frames(
         &mut self,
-        frames: impl Iterator<Item = anyhow::Result<FrameMut>>,
+        frames: impl Stream<Item = anyhow::Result<FrameMut>>,
     ) -> anyhow::Result<()> {
         // We iterate on the frames starting from the end of the log and working our way backward. We
         // make sure that only the most recent version of each file is present in the resulting
@@ -433,7 +354,8 @@ impl SnapshotBuilder {
         //
         // The snapshot file contains the most recent version of each page, in descending frame
         // number order. That last part is important for when we read it later on.
-        for frame in frames {
+        tokio::pin!(frames);
+        while let Some(frame) = frames.next().await {
             let mut frame = frame?;
             assert!(frame.header().frame_no < self.last_seen_frame_no);
             self.last_seen_frame_no = frame.header().frame_no;
@@ -479,13 +401,13 @@ impl SnapshotBuilder {
     }
 }
 
-fn perform_compaction(
+async fn perform_compaction(
     db_path: &Path,
     file_to_compact: LogFile,
     log_id: Uuid,
 ) -> anyhow::Result<(String, u64)> {
     let mut builder = SnapshotBuilder::new(db_path, log_id)?;
-    builder.append_frames(file_to_compact.rev_frames_iter_mut()?)?;
+    builder.append_frames(file_to_compact.into_rev_stream_mut()).await?;
     builder.finish()
 }
 
