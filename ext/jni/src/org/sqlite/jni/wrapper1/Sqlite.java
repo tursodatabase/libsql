@@ -147,10 +147,18 @@ public final class Sqlite implements AutoCloseable  {
   public final class Stmt implements AutoCloseable {
     private Sqlite _db = null;
     private sqlite3_stmt stmt = null;
+    /**
+       We save the result column count in order to prevent having to
+       call into C to fetch that value every time we need to check
+       that value for the columnXyz() methods.
+    */
+    private final int resultColCount;
+
     /** Only called by the prepare() factory functions. */
     Stmt(Sqlite db, sqlite3_stmt stmt){
       this._db = db;
       this.stmt = stmt;
+      this.resultColCount = CApi.sqlite3_column_count(stmt);
     }
 
     sqlite3_stmt nativeHandle(){
@@ -166,6 +174,15 @@ public final class Sqlite implements AutoCloseable  {
         throw new IllegalArgumentException("This Stmt has been finalized.");
       }
       return stmt;
+    }
+
+    /** Throws if n is out of range of this.resultColCount. Intended
+        to be used by the columnXyz() methods. */
+    private sqlite3_stmt checkColIndex(int n){
+      if(n<0 || n>=this.resultColCount){
+        throw new IllegalArgumentException("Column index "+n+" is out of range.");
+      }
+      return thisStmt();
     }
 
     /**
@@ -211,6 +228,14 @@ public final class Sqlite implements AutoCloseable  {
     */
     public int step(){
       return checkRc(sqlite3_step(thisStmt()));
+      /*
+        Potential signature change TODO:
+
+        boolean step()
+
+        Returning true for SQLITE_ROW and false for anything else.
+        Those semantics have proven useful in the WASM/JS bindings.
+      */
     }
 
     public Sqlite db(){ return this._db; }
@@ -268,6 +293,54 @@ public final class Sqlite implements AutoCloseable  {
       checkRc(CApi.sqlite3_bind_blob(thisStmt(), ndx, bytes));
     }
 
+    public byte[] columnBlob(int ndx){
+      return CApi.sqlite3_column_blob( checkColIndex(ndx), ndx );
+    }
+    public byte[] columnText(int ndx){
+      return CApi.sqlite3_column_text( checkColIndex(ndx), ndx );
+    }
+    public String columnText16(int ndx){
+      return CApi.sqlite3_column_text16( checkColIndex(ndx), ndx );
+    }
+    public int columnBytes(int ndx){
+      return CApi.sqlite3_column_bytes( checkColIndex(ndx), ndx );
+    }
+    public int columnBytes16(int ndx){
+      return CApi.sqlite3_column_bytes16( checkColIndex(ndx), ndx );
+    }
+    public int columnInt(int ndx){
+      return CApi.sqlite3_column_int( checkColIndex(ndx), ndx );
+    }
+    public long columnInt64(int ndx){
+      return CApi.sqlite3_column_int64( checkColIndex(ndx), ndx );
+    }
+    public double columnDouble(int ndx){
+      return CApi.sqlite3_column_double( checkColIndex(ndx), ndx );
+    }
+    public int columnType(int ndx){
+      return CApi.sqlite3_column_type( checkColIndex(ndx), ndx );
+    }
+    public String columnDeclType(int ndx){
+      return CApi.sqlite3_column_decltype( checkColIndex(ndx), ndx );
+    }
+    public int columnCount(){
+      return resultColCount;
+    }
+    public int columnDataCount(){
+      return CApi.sqlite3_data_count( thisStmt() );
+    }
+    public String columnName(int ndx){
+      return CApi.sqlite3_column_name( checkColIndex(ndx), ndx );
+    }
+    public String columnDatabaseName(int ndx){
+      return CApi.sqlite3_column_database_name( checkColIndex(ndx), ndx );
+    }
+    public String columnOriginName(int ndx){
+      return CApi.sqlite3_column_origin_name( checkColIndex(ndx), ndx );
+    }
+    public String columnTableName(int ndx){
+      return CApi.sqlite3_column_table_name( checkColIndex(ndx), ndx );
+    }
   } /* Stmt class */
 
 }

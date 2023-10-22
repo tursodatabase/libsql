@@ -230,7 +230,6 @@ public class Tester2 implements Runnable {
       affirm( 1==stmt.bindParameterCount() );
       affirm( "?1".equals(stmt.bindParameterName(1)) );
       affirm( null==stmt.bindParameterName(2) );
-      stmt.bindInt(1, 1);
       stmt.bindInt64(1, 1);
       stmt.bindDouble(1, 1.1);
       stmt.bindObject(1, db);
@@ -241,10 +240,20 @@ public class Tester2 implements Runnable {
       stmt.bindText16(1, "123");
       stmt.bindZeroBlob(1, 8);
       stmt.bindBlob(1, new byte[] {1,2,3,4});
+      stmt.bindInt(1, 17);
       try{ stmt.bindInt(2,1); }
       catch(Exception ex){ e = ex; }
       affirm( null!=e );
+      e = null;
       affirm( CApi.SQLITE_ROW == stmt.step() );
+      try{ stmt.columnInt(1); }
+      catch(Exception ex){ e = ex; }
+      affirm( null!=e );
+      e = null;
+      affirm( 17 == stmt.columnInt(0) );
+      affirm( 17L == stmt.columnInt64(0) );
+      affirm( 17.0 == stmt.columnDouble(0) );
+      affirm( "17".equals(stmt.columnText16(0)) );
       affirm( CApi.SQLITE_DONE == stmt.step() );
       stmt.reset();
       affirm( CApi.SQLITE_ROW == stmt.step() );
@@ -287,12 +296,8 @@ public class Tester2 implements Runnable {
   }
 
   void testUdfAggregate(){
-    /* FIXME/TODO: once we've added the stmt bind/step/fetch
-       capabilities, go back and extend these tests to correspond to
-       the aggregate UDF tests in ext/wasm/tester1.c-pp.js. We first
-       require the ability to bind/step/fetch, however. */
     final ValueHolder<Integer> xDestroyCalled = new ValueHolder<>(0);
-    final ValueHolder<Integer> vh = new ValueHolder<>(0);
+    Sqlite.Stmt q = null;
     try (Sqlite db = openDb()) {
       execSql(db, "create table t(a); insert into t(a) values(1),(2),(3)");
       final AggregateFunction f = new AggregateFunction<Integer>(){
@@ -306,18 +311,39 @@ public class Tester2 implements Runnable {
             final Integer v = this.takeAggregateState(args);
             if( null==v ) args.resultNull();
             else args.resultInt(v);
-            vh.value = v;
           }
           public void xDestroy(){
             ++xDestroyCalled.value;
           }
         };
-      db.createFunction("myagg", -1, f);
-      execSql(db, "select myagg(a) from t");
-      affirm( 6 == vh.value );
+      db.createFunction("summer", 1, f);
+      q = db.prepare(
+        "with cte(v) as ("+
+        "select 3 union all select 5 union all select 7"+
+        ") select summer(v), summer(v+1) from cte"
+        /* ------------------^^^^^^^^^^^ ensures that we're handling
+           sqlite3_aggregate_context() properly. */
+      );
+      affirm( CApi.SQLITE_ROW==q.step() );
+      affirm( 15==q.columnInt(0) );
+      q.finalizeStmt();
+      q = null;
       affirm( 0 == xDestroyCalled.value );
+      db.createFunction("summerN", -1, f);
+
+      q = db.prepare("select summerN(1,8,9), summerN(2,3,4)");
+      affirm( CApi.SQLITE_ROW==q.step() );
+      affirm( 18==q.columnInt(0) );
+      affirm( 9==q.columnInt(1) );
+      q.finalizeStmt();
+      q = null;
+
+    }/*db*/
+    finally{
+      if( null!=q ) q.finalizeStmt();
     }
-    affirm( 1 == xDestroyCalled.value );
+    affirm( 2 == xDestroyCalled.value
+            /* because we've bound the same instance twice */ );
   }
 
   private void runTests(boolean fromThread) throws Exception {
