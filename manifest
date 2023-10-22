@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\sdo\snot\stranslate\sunquoted\sbackslash\sescapes\son\sdot-commands\nas\sthat\scan\sdamage\sfilename\sarguments.
-D 2023-10-21T22:31:00.353
+C Add\smissing\sScalarFunction.java\sto\sJNI\sbuild.
+D 2023-10-22T11:11:54.330
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -292,6 +292,7 @@ F ext/jni/src/org/sqlite/jni/fts5/fts5_extension_function.java 9e2b954d210d57255
 F ext/jni/src/org/sqlite/jni/fts5/fts5_tokenizer.java 92bdaa3893bd684533004d64ade23d329843f809cd0d0f4f1a2856da6e6b4d90
 F ext/jni/src/org/sqlite/jni/test-script-interpreter.md f9f25126127045d051e918fe59004a1485311c50a13edbf18c79a6ff9160030e
 F ext/jni/src/org/sqlite/jni/wrapper1/AggregateFunction.java 5ad99bd74c85f56bbef324d9ec29b4048f4620547c9a80093d8586c3557f9f9a
+F ext/jni/src/org/sqlite/jni/wrapper1/ScalarFunction.java 43c43adfb7866098aadaaca1620028a6ec82d5193149970019b1cce9eb59fb03
 F ext/jni/src/org/sqlite/jni/wrapper1/SqlFunction.java 004394eeb944baa56e36cd7ae69ba6d4a52b52db3c49439db16e98270b861421
 F ext/jni/src/org/sqlite/jni/wrapper1/Sqlite.java a9ddc6a9e8c113168cc67592ae24c0e56d30dd06226eeab012f2761a0889d7bb
 F ext/jni/src/org/sqlite/jni/wrapper1/SqliteException.java 1386f7b753134fc12253ce2fbbc448ba8c970567fac01a3356cb672e14408d73
@@ -2135,8 +2136,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 023a9dbe83c0042e9d500e3ae6c0592a468982e4ac278d08c9201967506c7555
-R 7357061e9fc49b9bb7a383e84cdcd0ba
-U drh
-Z 674759ef24499708cece7aee8aa913b6
+P 4a0e2c6e17eefb296b7e91a13305b2260d6eb869a37bc5e5b79edaf3c19c810a
+R 3fe1108f65f1caab77f9fbf8767ff3b7
+U stephan
+Z 479ae6fc35bc2a0cdd617f9441ccbd5d
 # Remove this line to create a well-formed Fossil manifest.
