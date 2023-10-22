@@ -215,9 +215,10 @@ public final class CApi {
   );
 
   /**
-     Results are undefined if data is not null and n<0 || n>=data.length.
+     If n is negative, SQLITE_MISUSE is returned. If n>data.length
+     then n is silently truncated to data.length.
   */
-  public static int sqlite3_bind_blob(
+  static int sqlite3_bind_blob(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data, int n
   ){
     return sqlite3_bind_blob(stmt.getNativePointer(), ndx, data, n);
@@ -325,11 +326,12 @@ public final class CApi {
      SQLITE_TRANSIENT for the final C API parameter. The byte array is
      assumed to be in UTF-8 encoding.
 
-     <p>Results are undefined if data is not null and
-     maxBytes>=utf8.length. If maxBytes is negative then results are
-     undefined if data is not null and does not contain a NUL byte.
+     <p>If data is not null and maxBytes>utf8.length then maxBytes is
+     silently truncated to utf8.length. If maxBytes is negative then
+     results are undefined if data is not null and does not contain a
+     NUL byte.
   */
-  public static int sqlite3_bind_text(
+  static int sqlite3_bind_text(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] utf8, int maxBytes
   ){
     return sqlite3_bind_text(stmt.getNativePointer(), ndx, utf8, maxBytes);
@@ -354,7 +356,7 @@ public final class CApi {
   public static int sqlite3_bind_text(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] utf8
   ){
-    return (null == utf8)
+    return ( null==utf8 )
       ? sqlite3_bind_null(stmt.getNativePointer(), ndx)
       : sqlite3_bind_text(stmt.getNativePointer(), ndx, utf8, utf8.length);
   }
@@ -368,7 +370,7 @@ public final class CApi {
      signature but requires that its input be encoded in UTF-16 in
      platform byte order.
   */
-  public static int sqlite3_bind_text16(
+  static int sqlite3_bind_text16(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data, int maxBytes
   ){
     return sqlite3_bind_text16(stmt.getNativePointer(), ndx, data, maxBytes);
@@ -982,7 +984,7 @@ public final class CApi {
      necessary, however, and overloads are provided which gloss over
      that.
 
-     <p>Results are undefined if maxBytes>=sqlUtf8.length.
+     <p>Results are undefined if maxBytes>sqlUtf8.length.
 
      <p>This routine is private because its maxBytes value is not
      strictly necessary in the Java interface, as sqlUtf8.length tells

@@ -1,5 +1,5 @@
-C Add\smissing\sScalarFunction.java\sto\sJNI\sbuild.
-D 2023-10-22T11:11:54.330
+C JNI:\simprove\sUB\sprotections\sin\ssqlite3_bind_blob/text/text16().
+D 2023-10-22T12:33:05.772
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -239,7 +239,7 @@ F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a3
 F ext/jni/GNUmakefile 5c3ac326bf3853486ebe0d70819abc790cc65c412182ce4ebd5012b008d9b059
 F ext/jni/README.md ef9ac115e97704ea995d743b4a8334e23c659e5534c3b64065a5405256d5f2f4
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
-F ext/jni/src/c/sqlite3-jni.c 8d32ca0598a11370a9e92a6d111f38934c225056b42b13512175acf6e37eed4c
+F ext/jni/src/c/sqlite3-jni.c 6f6df9657989e9ca2cfdcc2fe9a71c279de56d5c941adfd09a0f24256de35c8f
 F ext/jni/src/c/sqlite3-jni.h b4c413a0d0c734683da1049cfcf89e35ae2719759d0656ec0f8c57188f18cab8
 F ext/jni/src/org/sqlite/jni/annotation/NotNull.java a99341e88154e70447596b1af6a27c586317df41a7e0f246fd41370cd7b723b2
 F ext/jni/src/org/sqlite/jni/annotation/Nullable.java 0b1879852707f752512d4db9d7edd0d8db2f0c2612316ce1c832715e012ff6ba
@@ -249,7 +249,7 @@ F ext/jni/src/org/sqlite/jni/capi/AggregateFunction.java bc29e986c866c2ddbbb9f93
 F ext/jni/src/org/sqlite/jni/capi/AuthorizerCallback.java 7ed409d5449684616cc924534e22ff6b07d361f12ad904b69ecb10e0568a8013
 F ext/jni/src/org/sqlite/jni/capi/AutoExtensionCallback.java 74cc4998a73d6563542ecb90804a3c4f4e828cb4bd69e61226d1a51f4646e759
 F ext/jni/src/org/sqlite/jni/capi/BusyHandlerCallback.java 7b8e19810c42b0ad21a04b5d8c804b32ee5905d137148703f16a75b612c380ca
-F ext/jni/src/org/sqlite/jni/capi/CApi.java 5d754b4bb57852d006ad046b2860eb23ba406f800846460b26beee5172df4fc3
+F ext/jni/src/org/sqlite/jni/capi/CApi.java bccb442ca81cd4decb1adae99006a60b7a9f54e5153842e738c01104e97d1de0
 F ext/jni/src/org/sqlite/jni/capi/CallbackProxy.java 0bfd6e56e8265c2f05c9207665707285534d78f8466ef0e0430c65677f00943d
 F ext/jni/src/org/sqlite/jni/capi/CollationCallback.java e29bcfc540fdd343e2f5cca4d27235113f2886acb13380686756d5cabdfd065a
 F ext/jni/src/org/sqlite/jni/capi/CollationNeededCallback.java f81cf10b79c52f9b2e9247d523d29ae48863935f60420eae35f257c38c80ce95
@@ -2136,8 +2136,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4a0e2c6e17eefb296b7e91a13305b2260d6eb869a37bc5e5b79edaf3c19c810a
-R 3fe1108f65f1caab77f9fbf8767ff3b7
+P b8258103fb433d9f5cfa15661b5edf4e60128fb4161d8a18e5cc3253e5aed72b
+R 10dd3eddc3858c0c90f96d7af2dd213f
 U stephan
-Z 479ae6fc35bc2a0cdd617f9441ccbd5d
+Z 39a3acd541e66480809465cadb3002fa
 # Remove this line to create a well-formed Fossil manifest.
