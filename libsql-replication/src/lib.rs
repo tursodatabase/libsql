@@ -3,6 +3,7 @@ pub mod injector;
 pub mod meta;
 pub mod replicator;
 pub mod rpc;
+pub mod snapshot;
 
 mod error;
 

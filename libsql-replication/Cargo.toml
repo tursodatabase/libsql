@@ -20,6 +20,7 @@ tokio-stream = "0.1.14"
 async-trait = "0.1.74"
 uuid = { version = "1.5.0", features = ["v4"] }
 tokio-util = "0.7.9"
+async-stream = "0.3.5"
  
 [dev-dependencies]
 arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }

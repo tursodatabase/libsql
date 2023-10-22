@@ -2227,6 +2227,7 @@ version = "0.1.11"
 dependencies = [
  "anyhow",
  "arbitrary",
+ "async-stream",
  "async-trait",
  "base64 0.21.4",
  "bincode",
@@ -2241,7 +2242,6 @@ dependencies = [
  "hyper-rustls 0.24.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "libsql-replication",
  "libsql-sys",
- "memmap",
  "once_cell",
  "parking_lot",
  "pprof",
@@ -2285,6 +2285,7 @@ name = "libsql-replication"
 version = "0.1.0"
 dependencies = [
  "arbitrary",
+ "async-stream",
  "async-trait",
  "bincode",
  "bytemuck",
