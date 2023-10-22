@@ -76,10 +76,10 @@ fn embedded_replica() {
             "http://foo.primary:8080",
             "",
             TurmoilConnector,
-        )?;
+        ).await?;
 
         let n = db.sync().await?;
-        assert_eq!(n, 0);
+        assert_eq!(n, None);
 
         let conn = db.connect()?;
 
@@ -87,7 +87,7 @@ fn embedded_replica() {
             .await?;
 
         let n = db.sync().await?;
-        assert_eq!(n, 2);
+        assert_eq!(n, Some(2));
 
         let err = conn
             .execute("INSERT INTO user(id) VALUES (1), (1)", ())

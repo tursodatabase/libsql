@@ -426,8 +426,8 @@ mod test {
 
     use super::*;
 
-    #[test]
-    fn compact_file_create_snapshot() {
+    #[tokio::test]
+    async fn compact_file_create_snapshot() {
         let temp = tempfile::NamedTempFile::new().unwrap();
         let mut log_file = LogFile::new(temp.as_file().try_clone().unwrap(), 0, None).unwrap();
         let log_id = Uuid::new_v4();
@@ -484,11 +484,12 @@ mod test {
         assert_eq!(seen_frames.len(), 25);
         assert_eq!(seen_page_no.len(), 25);
 
-        let snapshot_file = SnapshotFile::open(&snapshot_path).unwrap();
+        let snapshot_file = SnapshotFile::open(&snapshot_path).await.unwrap();
 
-        let frames = snapshot_file.frames_iter_from(0);
+        let frames = snapshot_file.into_stream_mut_from(0);
+        tokio::pin!(frames);
         let mut expected_frame_no = 49;
-        for frame in frames {
+        while let Some(frame) = frames.next().await {
             let frame = frame.unwrap();
             assert_eq!(frame.header().frame_no, expected_frame_no);
             expected_frame_no -= 1;

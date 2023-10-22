@@ -59,7 +59,7 @@ impl ReplicatorClient for LocalClient {
     /// NeedSnapshot error
     async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
         match self.frames.take() {
-            Some(Frames::Snapshot(frames)) => Ok(Box::pin(frames.map_err(Error::Client))),
+            Some(Frames::Snapshot(frames)) => Ok(Box::pin(frames.into_stream_mut().map_ok(Frame::from).map_err(|e| Error::Client(Box::new(e))))),
             Some(Frames::Vec(_)) | None => Ok(Box::pin(tokio_stream::empty()))
         }
     }

@@ -192,7 +192,7 @@ impl ReplicationLog for ReplicationLogService {
                 .map_err(|e| Status::internal(e.to_string()))?,
             self.idle_shutdown_layer.clone(),
         )
-        .map(|e| map_frame_stream_output(e))
+        .map(map_frame_stream_output)
         .collect::<Result<Vec<_>, _>>()
         .await?;
 

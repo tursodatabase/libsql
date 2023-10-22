@@ -1,8 +1,6 @@
-use std::pin::Pin;
-
 use libsql_replication::rpc::proxy::{DescribeRequest, DescribeResult, ExecuteResults, Positional, Program, ProgramReq, Query, Step, query::Params};
 use libsql_replication::frame::Frame;
-use tokio_stream::Stream;
+use libsql_replication::snapshot::SnapshotFile;
 
 use parser::Statement;
 
@@ -14,14 +12,14 @@ mod parser;
 pub(crate) mod remote_client;
 pub(crate) mod local_client;
 
-type BoxError = Box<dyn std::error::Error + Sync + Send + 'static>;
 pub enum Frames {
     /// A set of frames, in increasing frame_no.
     Vec(Vec<Frame>),
     /// A stream of snapshot frames. The frames must be in reverse frame_no, and the pages
     /// deduplicated. The snapshot is expected to be a single commit unit.
-    Snapshot(Pin<Box<dyn Stream<Item = Result<Frame, BoxError>> + Send + Sync + 'static>>),
+    Snapshot(SnapshotFile),
 }
+
 #[derive(Debug, Clone)]
 pub struct Writer {
     pub(crate) client: client::Client,
