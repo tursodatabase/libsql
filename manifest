@@ -1,5 +1,5 @@
-C Add\sJNI\swrapper1.SqliteStmt.bindXyz()\sAPIs.
-D 2023-10-22T12:43:30.072
+C Add\sAPI_ARMOR\sto\ssqlite3_clear_bindings().
+D 2023-10-22T13:09:37.276
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -794,7 +794,7 @@ F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
 F src/vdbe.c 300b1ac9339a5b7db9ccd48c1a13c3d71722da13352a38ee042ca0a399b4dd7e
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
-F src/vdbeapi.c fe654b1f54e1feebcaed6c2ae3ed035cc65bfeb9a1169bed866abc42bfc63ff6
+F src/vdbeapi.c db190d007bdf5b9165edeb12369f4c59a459f88fd652c1671c1238862e662cc3
 F src/vdbeaux.c 929a4edecf9845fb063b47b23b9d187473a648470d915521cf72419f5219c4b7
 F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe5
 F src/vdbemem.c c936e9002af4993b84c4eb7133d6b1190efe46d391cc86117ecd67ba17b1a04b
@@ -2136,11 +2136,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c8383210a87d7f9d37a27053b5b1b6f41794fa8612826c68c1ca49c495cbd97
-R 186cd14750afba6ac11c0a47787c2fc3
-T *branch * jni-post-3.44
-T *sym-jni-post-3.44 *
-T -sym-trunk * Cancelled\sby\sbranch.
+P 54fce9bf04a7517cdc8e96fe2efec66f03b0d03983c3a45d0ae7e1f16aa5a6c9
+R 17c045c95304ed4e3d6135c84273c496
 U stephan
-Z dc6c06549901a63430a6e90b2648f01f
+Z 1cc1c3ab8b0755073c3409e264c96da6
 # Remove this line to create a well-formed Fossil manifest.
