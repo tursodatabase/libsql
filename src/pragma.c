@@ -1763,6 +1763,7 @@ void sqlite3Pragma(
 
         if( pObjTab && pObjTab!=pTab ) continue;
         if( !IsOrdinaryTable(pTab) ){
+#ifndef SQLITE_OMIT_VIRTUALTABLE
           sqlite3_vtab *pVTab;
           int a1;
           if( !IsVirtual(pTab) ) continue;
@@ -1782,6 +1783,7 @@ void sqlite3Pragma(
           a1 = sqlite3VdbeAddOp1(v, OP_IsNull, 3); VdbeCoverage(v);
           integrityCheckResultRow(v);
           sqlite3VdbeJumpHere(v, a1);
+#endif
           continue;
         }
         if( isQuick || HasRowid(pTab) ){
