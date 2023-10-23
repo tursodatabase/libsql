@@ -4396,6 +4396,13 @@ S3JniApi(sqlite3_result_null(),void,1result_1null)(
   sqlite3_result_null(PtrGet_sqlite3_context(jpCx));
 }
 
+S3JniApi(sqlite3_result_subtype(),void,1result_1subtype)(
+  JniArgsEnvClass, jobject jpCx, jint v
+){
+  sqlite3_result_subtype(PtrGet_sqlite3_context(jpCx), (unsigned int)v);
+}
+
+
 S3JniApi(sqlite3_result_text(),void,1result_1text)(
   JniArgsEnvClass, jobject jpCx, jbyteArray jBa, jint nMax
 ){

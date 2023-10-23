@@ -1462,10 +1462,6 @@ public final class CApi {
     @NotNull sqlite3_context cx, int c
   );
 
-  public static native void sqlite3_result_null(
-    @NotNull sqlite3_context cx
-  );
-
   public static native void sqlite3_result_int(
     @NotNull sqlite3_context cx, int v
   );
@@ -1492,6 +1488,10 @@ public final class CApi {
   */
   public static native void sqlite3_result_java_object(
     @NotNull sqlite3_context cx, @NotNull Object o
+  );
+
+  public static native void sqlite3_result_null(
+    @NotNull sqlite3_context cx
   );
 
   public static void sqlite3_result_set(
@@ -1553,6 +1553,10 @@ public final class CApi {
     if( null==blob ) sqlite3_result_null(cx);
     else sqlite3_result_blob(cx, blob, blob.length);
   }
+
+  public static native void sqlite3_result_subtype(
+    @NotNull sqlite3_context cx, int val
+  );
 
   public static native void sqlite3_result_value(
     @NotNull sqlite3_context cx, @NotNull sqlite3_value v

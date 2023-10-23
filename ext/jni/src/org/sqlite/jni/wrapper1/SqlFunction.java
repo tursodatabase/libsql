@@ -108,6 +108,7 @@ public interface SqlFunction  {
     public void resultObject(Object o){CApi.sqlite3_result_java_object(cx, o);}
     public void resultNull(){CApi.sqlite3_result_null(cx);}
     public void resultArg(int argNdx){CApi.sqlite3_result_value(cx, valueAt(argNdx));}
+    public void resultSubtype(int subtype){CApi.sqlite3_result_subtype(cx, subtype);}
     public void resultZeroBlob(long n){
       // Throw on error? If n is too big,
       // sqlite3_result_error_toobig() is automatically called.
