@@ -1,5 +1,5 @@
-C Improved\serror\smessages\sfor\sthe\sxIntegrity\smethod\sin\sFTS3/4\sand\sFTS5.
-D 2023-10-23T13:46:22.734
+C Fix\smutex1.test\sto\stake\sinto\saccount\sthat\sthe\sprng\smutex\sis\snot\s(as\sof\s[c84e4483cb4])\staken\swhen\swriting\sa\sheader\sto\san\sin-memory\sjournal.
+D 2023-10-23T14:24:09.506
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1404,7 +1404,7 @@ F test/multiplex.test d74c034e52805f6de8cc5432cef8c9eb774bb64ec29b83a22effc8ca4d
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test fac575e0b1b852025575a6a8357701d80933e98b5d2fe6d35ddaa68f92f6a1f7
 F test/multiplex4.test e8ae4c4bd70606a5727743241f13b5701990abe4
-F test/mutex1.test 4d7ecb155ae5ba9ca6f1817c1c74d51b5bb284d7f599de1859a9f2c9a1ca0d38
+F test/mutex1.test 42cb5e244c3a77bb0ef2b967e06fa5e7ba7d32d90a9b20bed98f6f5ede185a25
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test 437d40e6d0778b050d7750726c0cbd2c9936b81962926e8f8c48ca698f00f4d1
 F test/nockpt.test 8c43b25af63b0bd620cf1b003529e37b6f1dc53bd22690e96a1bd73f78dde53a
@@ -2137,8 +2137,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 143f95efc7114455b1920f1d2f9a867392740f608d1dda4306005f01238103f8
-R e88ffdcda9c30f44a46dd8d1f3420363
-U drh
-Z 143e40da451b35005514a48e6a805b55
+P df69abc0823f4dd9c051f8d5993d2f447ee0dadab5cef73d670107b1071db255
+R 611df081e24061644e6f30e57e810029
+U dan
+Z 7831d77f323d5adc3ceef85612180a2c
 # Remove this line to create a well-formed Fossil manifest.
