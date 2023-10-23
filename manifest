@@ -1,5 +1,5 @@
-C Temporarily\sdisable\sthe\sext/expert/expert1-6.0\stest,\swhich\sdoes\snot\swork\non\smy\sconfigurations.
-D 2023-10-23T11:41:41.346
+C Fix\ssqlite3ExprDup()\salignment\sassertions\sso\sthat\sthey\swork\son\s32-bit\nplatforms.
+D 2023-10-23T12:16:27.460
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -671,7 +671,7 @@ F src/date.c eebc54a00e888d3c56147779e9f361b77d62fd69ff2008c5373946aa1ba1d574
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
 F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
-F src/expr.c 0a499c92bef5129e516c229fb305a6345be24ccb5ae6d63eaff91705ec06fa7e
+F src/expr.c 072dc4029ccfb4be3d227b559d6d531c46c5fc95cd89f2db17a2e154a3144d71
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c a47610f0a5c6cb0ad79f8fcef039c01833dec0c751bb695f28dc0ec6a4c3ba00
 F src/func.c 472f6dcfa39cf54f89a6aec76c79c225fb880a6c14469c15d361331662b9bf43
@@ -2137,8 +2137,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ab99eb2b6c50f4f0bb42918b9bdda37e2ef9316bed07de18fa4bd373c49a8b00
-R 8fb8ba2b5293d9042556f4f7040fe6f2
+P a41b903d0fe489d20c4a7118a2c91f7c8a78568ce552225f64c2945bb811ea16
+R e0765559e351b53aa91cbdf72b53d175
 U drh
-Z d2f9eb87d22e80eb87d655fc23c56455
+Z 6584dbcb9c003dd886e6e044516719d0
 # Remove this line to create a well-formed Fossil manifest.

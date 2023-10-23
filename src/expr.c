@@ -1601,10 +1601,10 @@ static Expr *exprDup(
       nAlloc = dupedExprSize(p);
     }else if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
       nToken = sqlite3Strlen30NN(p->u.zToken)+1;
-      nAlloc = EXPR_FULLSIZE + ROUND8(nToken);
+      nAlloc = ROUND8(EXPR_FULLSIZE + nToken);
     }else{
       nToken = 0;
-      nAlloc = EXPR_FULLSIZE;
+      nAlloc = ROUND8(EXPR_FULLSIZE);
     }
     assert( nAlloc==ROUND8(nAlloc) );
     sEdupBuf.zAlloc = sqlite3DbMallocRawNN(db, nAlloc);
