@@ -1256,7 +1256,8 @@ static void hexFunc(
       *(z++) = hexdigits[c&0xf];
     }
     *z = 0;
-    sqlite3_result_text(context, zHex, n*2, sqlite3_free);
+    sqlite3_result_text64(context, zHex, (u64)(z-zHex),
+                          sqlite3_free, SQLITE_UTF8);
   }
 }
 
@@ -1580,7 +1581,7 @@ static void concatFuncCore(
     k = sqlite3_value_bytes(argv[i]);
     if( k>0 ){
       const char *v = (const char*)sqlite3_value_text(argv[i]);
-      if( ALWAYS(v!=0) ){
+      if( v!=0 ){
         if( j>0 && nSep>0 ){
           memcpy(&z[j], zSep, nSep);
           j += nSep;
@@ -1592,7 +1593,7 @@ static void concatFuncCore(
   }
   z[j] = 0;
   assert( j<=n );
-  sqlite3_result_text64(context, z, n, sqlite3_free, SQLITE_UTF8);
+  sqlite3_result_text64(context, z, j, sqlite3_free, SQLITE_UTF8);
 }
 
 /*
@@ -2046,6 +2047,7 @@ static void minMaxFinalize(sqlite3_context *context){
 
 /*
 ** group_concat(EXPR, ?SEPARATOR?)
+** string_agg(EXPR, SEPARATOR)
 **
 ** The SEPARATOR goes before the EXPR string.  This is tragic.  The
 ** groupConcatInverse() implementation would have been easier if the
@@ -2669,6 +2671,8 @@ void sqlite3RegisterBuiltinFunctions(void){
     WAGGREGATE(group_concat, 1, 0, 0, groupConcatStep,
         groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
     WAGGREGATE(group_concat, 2, 0, 0, groupConcatStep,
+        groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
+    WAGGREGATE(string_agg,   2, 0, 0, groupConcatStep,
         groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
  
     LIKEFUNC(glob, 2, &globInfo, SQLITE_FUNC_LIKE|SQLITE_FUNC_CASE),

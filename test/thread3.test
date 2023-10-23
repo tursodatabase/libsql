@@ -75,4 +75,3 @@ do_execsql_test "1.Total BUSY errors: $nTotalBusy .2" {
 } $nAttempt
 
 finish_test
-

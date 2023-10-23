@@ -1124,7 +1124,11 @@ void sqlite3Pragma(
 #endif
 
       if( sqlite3GetBoolean(zRight, 0) ){
-        db->flags |= mask;
+        if( (mask & SQLITE_WriteSchema)==0
+         || (db->flags & SQLITE_Defensive)==0
+        ){
+          db->flags |= mask;
+        }
       }else{
         db->flags &= ~mask;
         if( mask==SQLITE_DeferFKs ) db->nDeferredImmCons = 0;
@@ -1762,6 +1766,11 @@ void sqlite3Pragma(
           sqlite3_vtab *pVTab;
           int a1;
           if( !IsVirtual(pTab) ) continue;
+          if( pTab->nCol<=0 ){
+            const char *zMod = pTab->u.vtab.azArg[0];
+            if( sqlite3HashFind(&db->aModule, zMod)==0 ) continue;
+          }
+          sqlite3ViewGetColumnNames(pParse, pTab);
           if( pTab->u.vtab.p==0 ) continue;
           pVTab = pTab->u.vtab.p->pVtab;
           if( NEVER(pVTab==0) ) continue;
@@ -2900,7 +2909,8 @@ static const sqlite3_module pragmaVtabModule = {
   0,                           /* xSavepoint */
   0,                           /* xRelease */
   0,                           /* xRollbackTo */
-  0                            /* xShadowName */
+  0,                           /* xShadowName */
+  0                            /* xIntegrity */
 };
 
 /*

@@ -52,8 +52,8 @@ MINIMAL_AMALGAMATION = 0
 USE_STDCALL = 0
 !ENDIF
 
-# Set this non-0 to use structured exception handling (SEH) for WAL mode
-# in the core library.
+# Use the USE_SEH=0 option on the nmake command line to omit structured
+# exception handling (SEH) support.  SEH is on by default.
 #
 !IFNDEF USE_SEH
 USE_SEH = 1
@@ -403,10 +403,11 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RBU=1
 !ENDIF
 
 # Should structured exception handling (SEH) be enabled for WAL mode in
-# the core library?
+# the core library?  It is on by default.  Only omit it if the
+# USE_SEH=0 option is provided on the nmake command-line.
 #
-!IF $(USE_SEH)!=0
-OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_USE_SEH=1
+!IF $(USE_SEH)==0
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_OMIT_SEH=1
 !ENDIF
 
 # These are the "extended" SQLite compilation options used when compiling for

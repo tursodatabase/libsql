@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing OOM error handling within the built-in 
-# group_concat() function.
+# group_concat() and string_agg() functions.
 #
 
 set testdir [file dirname $argv0]
@@ -40,7 +40,7 @@ foreach {enc} {
   }
 
   do_faultsim_test 1.$enc.2 -faults oom-t* -body {
-    execsql { SELECT group_concat(e, (SELECT s FROM s WHERE i=2)) FROM e }
+    execsql { SELECT string_agg(e, (SELECT s FROM s WHERE i=2)) FROM e }
   }
 
   do_faultsim_test 1.$enc.3 -faults oom-t* -prep {

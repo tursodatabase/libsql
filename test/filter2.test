@@ -113,7 +113,7 @@ do_execsql_test 1.12 {
 
 do_execsql_test 1.13 {
   SELECT 
-    group_concat(CAST(b AS TEXT), '_') FILTER (WHERE b%2!=0),
+    string_agg(CAST(b AS TEXT), '_') FILTER (WHERE b%2!=0),
     group_concat(CAST(b AS TEXT), '_') FILTER (WHERE b%2!=1),
     count(*) FILTER (WHERE b%2!=0),
     count(*) FILTER (WHERE b%2!=1)

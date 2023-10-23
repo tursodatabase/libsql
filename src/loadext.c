@@ -730,6 +730,9 @@ void sqlite3CloseExtensions(sqlite3 *db){
 ** default so as not to open security holes in older applications.
 */
 int sqlite3_enable_load_extension(sqlite3 *db, int onoff){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
   sqlite3_mutex_enter(db->mutex);
   if( onoff ){
     db->flags |= SQLITE_LoadExtension|SQLITE_LoadExtFunc;
@@ -751,7 +754,7 @@ int sqlite3_enable_load_extension(sqlite3 *db, int onoff){
 */
 typedef struct sqlite3AutoExtList sqlite3AutoExtList;
 static SQLITE_WSD struct sqlite3AutoExtList {
-  u32 nExt;              /* Number of entries in aExt[] */          
+  u32 nExt;              /* Number of entries in aExt[] */
   void (**aExt)(void);   /* Pointers to the extension init functions */
 } sqlite3Autoext = { 0, 0 };
 
@@ -779,6 +782,9 @@ int sqlite3_auto_extension(
   void (*xInit)(void)
 ){
   int rc = SQLITE_OK;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( xInit==0 ) return SQLITE_MISUSE_BKPT;
+#endif
 #ifndef SQLITE_OMIT_AUTOINIT
   rc = sqlite3_initialize();
   if( rc ){
@@ -831,6 +837,9 @@ int sqlite3_cancel_auto_extension(
   int i;
   int n = 0;
   wsdAutoextInit;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( xInit==0 ) return 0;
+#endif
   sqlite3_mutex_enter(mutex);
   for(i=(int)wsdAutoext.nExt-1; i>=0; i--){
     if( wsdAutoext.aExt[i]==xInit ){

@@ -662,6 +662,7 @@ static int idxRegisterVtab(sqlite3expert *p){
     0,                            /* xRelease */
     0,                            /* xRollbackTo */
     0,                            /* xShadowName */
+    0,                            /* xIntegrity */
   };
 
   return sqlite3_create_module(p->dbv, "expert", &expertModule, (void*)p);
@@ -1866,9 +1867,9 @@ int registerUDFs(sqlite3 *dbSrc, sqlite3 *dbDst){
     while( SQLITE_ROW==(rc = sqlite3_step(pStmt)) ){
       int nargs = sqlite3_column_int(pStmt,3);
       int flags = sqlite3_column_int(pStmt,4);
-      const unsigned char *name = sqlite3_column_text(pStmt,0);
-      const unsigned char *type = sqlite3_column_text(pStmt,1);
-      const unsigned char *enc = sqlite3_column_text(pStmt,2);
+      const char *name = (char*)sqlite3_column_text(pStmt,0);
+      const char *type = (char*)sqlite3_column_text(pStmt,1);
+      const char *enc = (char*)sqlite3_column_text(pStmt,2);
       if( name==0 || type==0 || enc==0 ) rc = SQLITE_NOMEM;
       else{
         int ienc = SQLITE_UTF8;

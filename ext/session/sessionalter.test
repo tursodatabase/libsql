@@ -1,0 +1,237 @@
+# 2023 October 02
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements that the sessions module interacts well with
+# the ALTER TABLE ADD COLUMN command.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+
+ifcapable !session {finish_test; return}
+set testprefix sessionalter
+
+
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+}
+
+do_execsql_test -db db2 1.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c DEFAULT 1234);
+}
+
+do_then_apply_sql {
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+}
+
+do_execsql_test -db db2 1.2 {
+  SELECT * FROM t1
+} {
+  1 one 1234
+  2 two 1234
+}
+
+do_then_apply_sql {
+  UPDATE t1 SET b='four' WHERE a=2;
+}
+
+do_execsql_test -db db2 1.3 {
+  SELECT * FROM t1
+} {
+  1 one 1234
+  2 four 1234
+}
+
+do_then_apply_sql {
+  DELETE FROM t1 WHERE a=1;
+}
+
+do_execsql_test -db db2 1.4 {
+  SELECT * FROM t1
+} {
+  2 four 1234
+}
+
+
+#--------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+}
+
+do_test 2.1 {
+  sqlite3session S db main
+  S attach t1
+  set {} {}
+} {} 
+do_execsql_test 2.2 {
+  INSERT INTO t1 VALUES(1, 2);
+  ALTER TABLE t1 ADD COLUMN c DEFAULT 'abcd';
+  INSERT INTO t1 VALUES(2, 3, 4);
+}
+do_changeset_test 2.3 S {
+  {INSERT t1 0 X.. {} {i 1 i 2 t abcd}} 
+  {INSERT t1 0 X.. {} {i 2 i 3 i 4}}
+}
+
+do_iterator_test 2.4 {} {
+  DELETE FROM t1 WHERE a=2;
+  ALTER TABLE t1 ADD COLUMN d DEFAULT 'abcd';
+  ALTER TABLE t1 ADD COLUMN e DEFAULT 5;
+  ALTER TABLE t1 ADD COLUMN f DEFAULT 7.2;
+  -- INSERT INTO t1 VALUES(9, 9, 9, 9);
+} {
+  {DELETE t1 0 X..... {i 2 i 3 i 4 t abcd i 5 f 7.2} {}}
+}
+
+#-------------------------------------------------------------------------
+# Tests of the sqlite3changegroup_xxx() APIs.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+  CREATE TABLE t2(x PRIMARY KEY, y);
+  CREATE TABLE t3(x, y);
+  CREATE TABLE t4(y PRIMARY KEY, x) WITHOUT ROWID;
+
+  INSERT INTO t1 VALUES(1, 2), (3, 4), (5, 6);
+  INSERT INTO t2 VALUES('one', 'two'), ('three', 'four'), ('five', 'six');
+  INSERT INTO t3 VALUES(1, 2), (3, 4), (5, 6);
+
+  INSERT INTO t4(x, y) VALUES(1, 2), (3, 4), (5, 6);
+}
+
+db_save_and_close
+foreach {tn sql1 at sql2} {
+  1 {
+    INSERT INTO t1(x, y) VALUES(7, 8);
+  } {
+    ALTER TABLE t1 ADD COLUMN z DEFAULT 10;
+  } {
+    UPDATE t1 SET y=11 WHERE x=7;
+  }
+
+  2 {
+    UPDATE t2 SET y='two.two' WHERE x='one';
+    DELETE FROM t2 WHERE x='five';
+    INSERT INTO t2(x, y) VALUES('seven', 'eight');
+  } {
+    ALTER TABLE t2 ADD COLUMN z;
+    ALTER TABLE t2 ADD COLUMN zz;
+  } {
+  }
+
+  3 {
+    DELETE FROM t2 WHERE x='five';
+  } {
+    ALTER TABLE t2 ADD COLUMN z DEFAULT 'xyz';
+  } {
+  }
+
+  4 {
+    UPDATE t2 SET y='two.two' WHERE x='three';
+  } {
+    ALTER TABLE t2 ADD COLUMN z;
+  } {
+    UPDATE t2 SET z='abc' WHERE x='one';
+  }
+
+  5* {
+    UPDATE t2 SET y='two.two' WHERE x='three';
+  } {
+    ALTER TABLE t2 ADD COLUMN z DEFAULT 'defu1';
+  } {
+  }
+
+  6* {
+    INSERT INTO t2(x, y) VALUES('nine', 'ten');
+  } {
+    ALTER TABLE t2 ADD COLUMN z;
+    ALTER TABLE t2 ADD COLUMN a DEFAULT 'eelve';
+    ALTER TABLE t2 ADD COLUMN b DEFAULT x'1234abcd';
+    ALTER TABLE t2 ADD COLUMN c DEFAULT 4.2;
+    ALTER TABLE t2 ADD COLUMN d DEFAULT NULL;
+  } {
+  }
+
+  7 {
+    INSERT INTO t3(x, y) VALUES(7, 8);
+    UPDATE t3 SET y='fourteen' WHERE x=1;
+    DELETE FROM t3 WHERE x=3;
+  } {
+    ALTER TABLE t3 ADD COLUMN c;
+  } {
+    INSERT INTO t3(x, y, c) VALUES(9, 10, 11);
+  }
+
+  8 {
+    INSERT INTO t4(x, y) VALUES(7, 8);
+    UPDATE t4 SET y='fourteen' WHERE x=1;
+    DELETE FROM t4 WHERE x=3;
+  } {
+    ALTER TABLE t4 ADD COLUMN c;
+  } {
+    INSERT INTO t4(x, y, c) VALUES(9, 10, 11);
+  }
+} {
+  foreach {tn2 cmd} {
+    1 changeset_from_sql
+    2 patchset_from_sql
+  } {
+    db_restore_and_reopen
+  
+    set C1 [$cmd $sql1]
+    execsql $at
+    set C2 [$cmd $sql2]
+  
+    sqlite3changegroup grp
+    grp schema db main
+    grp add $C1
+    grp add $C2
+    set T1 [grp output]
+    grp delete
+  
+    db_restore_and_reopen
+    execsql $at
+    set T2 [$cmd "$sql1 ; $sql2"]
+  
+    if {[string range $tn end end]!="*"} {
+      do_test 3.1.$tn.$tn2.1 { changeset_to_list $T1 } [changeset_to_list $T2]
+      set testname "$tn.$tn2"
+    } else {
+      set testname "[string range $tn 0 end-1].$tn2"
+    }
+  
+    db_restore_and_reopen
+    proc xConflict {args} { return "REPLACE" }
+    sqlite3changeset_apply_v2 db $T1 xConflict
+    set S1 [scksum db main]
+  
+    db_restore_and_reopen
+    sqlite3changeset_apply_v2 db $T2 xConflict
+    set S2 [scksum db main]
+  
+    # if { $tn==7 } { puts [changeset_to_list $T1] }
+  
+    do_test 3.1.$tn.2 { set S1 } $S2
+  }
+}
+
+
+finish_test
+

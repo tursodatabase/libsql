@@ -766,13 +766,22 @@ mptest:	mptester$(TEXE)
 	$(MPTEST2) --journalmode DELETE
 
 
+has_tclsh84:
+	sh $(TOP)/tool/cktclsh.sh 8.4 $(TCLSH_CMD)
+	touch has_tclsh84
+
+has_tclsh85:
+	sh $(TOP)/tool/cktclsh.sh 8.5 $(TCLSH_CMD)
+	touch has_tclsh85
+
+
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
 # build on the target system.  Some of the C source code and header
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-.target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl fts5.c
+.target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl has_tclsh84 fts5.c
 	rm -rf tsrc
 	mkdir tsrc
 	cp -f $(SRC) tsrc
@@ -782,15 +791,15 @@ mptest:	mptester$(TEXE)
 	cp fts5.c fts5.h tsrc
 	touch .target_source
 
-sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify
+sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify has_tclsh84
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
 
-sqlite3r.h: sqlite3.h
+sqlite3r.h: sqlite3.h has_tclsh84
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) --enable-recover >sqlite3r.h
 
-sqlite3r.c: sqlite3.c sqlite3r.h
+sqlite3r.c: sqlite3.c sqlite3r.h has_tclsh84
 	cp $(TOP)/ext/recover/sqlite3recover.c tsrc/
 	cp $(TOP)/ext/recover/sqlite3recover.h tsrc/
 	cp $(TOP)/ext/recover/dbdata.c tsrc/
@@ -805,7 +814,7 @@ tclsqlite3.c:	sqlite3.c
 	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
 	cat $(TOP)/src/tclsqlite.c >>tclsqlite3.c
 
-sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl
+sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl has_tclsh84
 	$(TCLSH_CMD) $(TOP)/tool/split-sqlite3c.tcl
 
 # Rule to build the amalgamation
@@ -1093,10 +1102,10 @@ tclsqlite3$(TEXE):	tclsqlite-shell.lo libsqlite3.la
 
 # Rules to build opcodes.c and opcodes.h
 #
-opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl
+opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl has_tclsh84
 	$(TCLSH_CMD) $(TOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
 
-opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/tool/mkopcodeh.tcl
+opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/tool/mkopcodeh.tcl has_tclsh84
 	cat parse.h $(TOP)/src/vdbe.c | $(TCLSH_CMD) $(TOP)/tool/mkopcodeh.tcl >opcodes.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
@@ -1107,10 +1116,10 @@ parse.c:	$(TOP)/src/parse.y lemon$(BEXE)
 	cp $(TOP)/src/parse.y .
 	./lemon$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) -S parse.y
 
-sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) $(TOP)/VERSION
+sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) $(TOP)/VERSION has_tclsh84
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
-sqlite3rc.h:	$(TOP)/src/sqlite3.rc $(TOP)/VERSION
+sqlite3rc.h:	$(TOP)/src/sqlite3.rc $(TOP)/VERSION has_tclsh84
 	echo '#ifndef SQLITE_RESOURCE_VERSION' >$@
 	echo -n '#define SQLITE_RESOURCE_VERSION ' >>$@
 	cat $(TOP)/VERSION | $(TCLSH_CMD) $(TOP)/tool/replace.tcl exact . , >>$@
@@ -1146,7 +1155,7 @@ SHELL_SRC = \
 	$(TOP)/ext/recover/sqlite3recover.h \
         $(TOP)/src/test_windirent.c
 
-shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
+shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl has_tclsh84
 	$(TCLSH_CMD) $(TOP)/tool/mkshellc.tcl >shell.c
 
 
@@ -1234,7 +1243,7 @@ fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon$(BEXE)
 
 fts5parse.h: fts5parse.c
 
-fts5.c: $(FTS5_SRC)
+fts5.c: $(FTS5_SRC) has_tclsh84
 	$(TCLSH_CMD) $(TOP)/ext/fts5/tool/mkfts5c.tcl
 	cp $(TOP)/ext/fts5/fts5.h .
 
@@ -1268,7 +1277,7 @@ TESTFIXTURE_SRC1 = sqlite3.c
 TESTFIXTURE_SRC = $(TESTSRC) $(TOP)/src/tclsqlite.c
 TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
 
-testfixture$(TEXE):	$(TESTFIXTURE_SRC)
+testfixture$(TEXE):	has_tclsh85 $(TESTFIXTURE_SRC)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
 		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
 
@@ -1319,17 +1328,23 @@ testrunner:	testfixture$(TEXE)
 
 # Runs both fuzztest and testrunner, consecutively.
 #
-devtest:	testfixture$(TEXE) fuzztest testrunner
+devtest:	srctree-check testfixture$(TEXE) fuzztest testrunner
 
-mdevtest:
+mdevtest: srctree-check has_tclsh85
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest
 
-sdevtest:
+sdevtest: has_tclsh85
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl sdevtest
+
+# Validate that various generated files in the source tree
+# are up-to-date.
+#
+srctree-check:	$(TOP)/tool/srctree-check.tcl
+	$(TCLSH_CMD) $(TOP)/tool/srctree-check.tcl
 
 # Testing for a release
 #
-releasetest: testfixture$(TEXE)
+releasetest: srctree-check testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl release
 
 # Minimal testing that runs in less than 3 minutes
@@ -1340,7 +1355,7 @@ quicktest:	./testfixture$(TEXE)
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	fuzztest sourcetest $(TESTPROGS) tcltest
+test:	srctree-check fuzztest sourcetest $(TESTPROGS) tcltest
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
@@ -1358,13 +1373,13 @@ smoketest:	$(TESTPROGS) fuzzcheck$(TEXE)
 shelltest: $(TESTPROGS)
 	./testfixture$(TEXT) $(TOP)/test/permutations.test shell
 
-sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in
+sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in has_tclsh85
 	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
 
 sqlite3_analyzer$(TEXE): sqlite3_analyzer.c
 	$(LTLINK) sqlite3_analyzer.c -o $@ $(LIBTCL) $(TLIBS)
 
-sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in
+sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in has_tclsh85
 	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
 
 sqltclsh$(TEXE): sqltclsh.c
@@ -1383,7 +1398,7 @@ CHECKER_DEPS =\
   $(TOP)/ext/misc/btreeinfo.c \
   $(TOP)/ext/repair/sqlite3_checker.c.in
 
-sqlite3_checker.c:	$(CHECKER_DEPS)
+sqlite3_checker.c:	$(CHECKER_DEPS) has_tclsh85
 	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/ext/repair/sqlite3_checker.c.in >$@
 
 sqlite3_checker$(TEXE):	sqlite3_checker.c
@@ -1549,6 +1564,7 @@ clean:
 	rm -f threadtest5
 	rm -f src-verify
 	rm -f custom.rws
+	rm -f has_tclsh84 has_tclsh85
 
 distclean:	clean
 	rm -f sqlite_cfg.h config.log config.status libtool Makefile sqlite3.pc \
@@ -1593,7 +1609,7 @@ fiddle: sqlite3.c shell.c
 	@echo 'Updating custom dictionary from tool/custom.txt'
 	aspell --lang=en create master ./custom.rws < $<
 
-misspell: ./custom.rws
+misspell: ./custom.rws has_tclsh84
 	$(TCLSH_CMD) ./tool/spellsift.tcl ./src/*.c ./src/*.h ./src/*.in
 
 #

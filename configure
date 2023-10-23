@@ -11345,7 +11345,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking build type" >&5
 $as_echo_n "checking build type... " >&6; }
 if test "${enable_debug}" = "yes" ; then
-  TARGET_DEBUG="-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0"
+  TARGET_DEBUG="-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall"
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: debug" >&5
 $as_echo "debug" >&6; }
 else

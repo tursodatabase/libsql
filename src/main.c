@@ -954,6 +954,10 @@ int sqlite3_db_cacheflush(sqlite3 *db){
 int sqlite3_db_config(sqlite3 *db, int op, ...){
   va_list ap;
   int rc;
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
   sqlite3_mutex_enter(db->mutex);
   va_start(ap, op);
   switch( op ){
@@ -2365,6 +2369,12 @@ void *sqlite3_preupdate_hook(
   void *pArg                /* First callback argument */
 ){
   void *pRet;
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( db==0 || xCallback==0 ){
+    return 0;
+  }
+#endif
   sqlite3_mutex_enter(db->mutex);
   pRet = db->pPreUpdateArg;
   db->xPreUpdateCallback = xCallback;
@@ -4160,6 +4170,28 @@ int sqlite3_test_control(int op, ...){
     }
 #endif
 
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_FK_NO_ACTION, sqlite3 *db, int b);
+    **
+    ** If b is true, then activate the SQLITE_FkNoAction setting.  If b is
+    ** false then clearn that setting.  If the SQLITE_FkNoAction setting is
+    ** abled, all foreign key ON DELETE and ON UPDATE actions behave as if
+    ** they were NO ACTION, regardless of how they are defined.
+    **
+    ** NB:  One must usually run "PRAGMA writable_schema=RESET" after
+    ** using this test-control, before it will take full effect.  failing
+    ** to reset the schema can result in some unexpected behavior.
+    */
+    case SQLITE_TESTCTRL_FK_NO_ACTION: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      int b = va_arg(ap, int);
+      if( b ){
+        db->flags |= SQLITE_FkNoAction;
+      }else{
+        db->flags &= ~SQLITE_FkNoAction;
+      }
+      break;
+    }
+
     /*
     **  sqlite3_test_control(BITVEC_TEST, size, program)
     **
@@ -5002,7 +5034,7 @@ int sqlite3_compileoption_used(const char *zOptName){
   int nOpt;
   const char **azCompileOpt;
 
-#if SQLITE_ENABLE_API_ARMOR
+#ifdef SQLITE_ENABLE_API_ARMOR
   if( zOptName==0 ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;

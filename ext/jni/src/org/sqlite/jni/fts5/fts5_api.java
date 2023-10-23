@@ -13,11 +13,9 @@
 */
 package org.sqlite.jni.fts5;
 import org.sqlite.jni.annotation.*;
-import org.sqlite.jni.*;
+import org.sqlite.jni.capi.*;
 
 /**
-   INCOMPLETE AND COMPLETELY UNTESTED.
-
    A wrapper for communicating C-level (fts5_api*) instances with
    Java. These wrappers do not own their associated pointer, they
    simply provide a type-safe way to communicate it between Java and C
@@ -35,7 +33,6 @@ public final class fts5_api extends NativePointerHolder<fts5_api> {
   */
   public static synchronized native fts5_api getInstanceForDb(@NotNull sqlite3 db);
 
-  @Canonical
   public synchronized native int xCreateFunction(@NotNull String name,
                                                  @Nullable Object userData,
                                                  @NotNull fts5_extension_function xFunction);
