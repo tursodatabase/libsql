@@ -1,5 +1,5 @@
-C Revert\san\searlier\schange\sthat\sconsidered\spassing\sa\sNULL\scallback\sto\ssqlite3_preupdate_hook()\sto\sbe\sa\smisuse.\sThis\sis\srequired\sto\sclear\sthe\spreupdate\shook\saltogether.
-D 2023-10-23T15:24:44.415
+C Avoid\sattempting\sto\sdelete\sa\sfile\swhile\sit\sis\sopen\sin\stest\sscript\ssessionalter.test.
+D 2023-10-23T15:30:38.377
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -537,7 +537,7 @@ F ext/session/sessionG.test 3efe388282d641b65485b5462e67851002cd91a282dc95b685d0
 F ext/session/sessionH.test 71bbff6b1abb2c4ac62b84dee53273c37e0b21e5fde3aed80929403e091ef859
 F ext/session/session_common.tcl e5598096425486b363718e2cda48ee85d660c96b4f8ea9d9d7a4c3ef514769da
 F ext/session/session_speed_test.c dcf0ef58d76b70c8fbd9eab3be77cf9deb8bc1638fed8be518b62d6cbdef88b3
-F ext/session/sessionalter.test 72722f6f971c7cb6302a1a3c43ff256c0db1aaf19ae625ecdf710d53f08b1237
+F ext/session/sessionalter.test 460bdac2832a550519f6bc32e5db2c0cee94f335870aaf25a3a403a81ab20e17
 F ext/session/sessionat.test 00c8badb35e43a2f12a716d2734a44d614ff62361979b6b85419035bc04b45ee
 F ext/session/sessionbig.test 47c381e7acfabeef17d98519a3080d69151723354d220afa2053852182ca7adf
 F ext/session/sessiondiff.test ad13dd65664bae26744e1f18eb3cbd5588349b7e9118851d8f9364248d67bcec
@@ -2138,8 +2138,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3950d20c3a4433543546ce4495ae07aab3d6cefb163b1f30813a9776c5b962e8
-R 35a9f1472a813719ed2779397275dbb2
+P 1bf6f0f3bb54933e4e6c730554144934f73a7fac87c97a916b275afd7379f397
+R 0a5571c089d9d726fca8373411c5f8ab
 U dan
-Z 587a9ef13d2a017742d60776adaab2de
+Z 9f6b2b6d9a63c678025f17f7bd377abf
 # Remove this line to create a well-formed Fossil manifest.
