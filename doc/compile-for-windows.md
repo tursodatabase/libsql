@@ -115,7 +115,7 @@ statically linked so that it does not depend on separate DLL:
       same directory that you put the "tcl86.lib" on your initial
       installation.  (In this document, that directory is
       "`C:\Tcl32\lib`" for 32-bit builds and
-      "`C:\Tcl\lib`" for 64-bit builds.
+      "`C:\Tcl\lib`" for 64-bit builds.)
 
   5.  CD into your SQLite source code directory and build the desired
       utility program, but add the following extra arguments to the
