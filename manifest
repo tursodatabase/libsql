@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3res\sfile\sto\sthe\sWindows\sbuild\sof\ssqldiff.exe\sso\sthat\sthe\nresulting\sbinary\sshows\sthe\sSQLite\sicon.
-D 2023-10-23T19:51:16.905
+C Add\snotes\son\show\sto\sbuild\sa\sstatically\slinked\sversion\sof\ssqlite3_analyzer.exe.
+D 2023-10-23T23:34:24.214
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -37,7 +37,7 @@ F configure 1d9cbcb416cb5387b3f750ae6db63cfedb703a2e46bf8ca61daecff31d208252 x
 F configure.ac de31fea7d975bb7ebafbe0e2190a855cc80d48558bf0c9a6578a1836daf1cd3a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
-F doc/compile-for-windows.md c52f2903f1cb11b2308798feecca2e44701b037b78f467a538ac5c46c28ee250
+F doc/compile-for-windows.md 3fbda59bea9219e7b88fac89747aaf8c74b77de53d76a5abefd2570bf2bc6ca2
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
 F doc/lemon.html 44a53a1d2b42d7751f7b2f478efb23c978e258d794bfd172442307a755b9fa44
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -2138,8 +2138,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f20b4a96f747adeb2ed486f06dd7d911f0f24b37df87dcd32d2c3e4b687da9a6
-R 249d9631460bc3a44c3fdfd22aa9b706
+P c696a4963bdd010c8161acbf7601078313e7da5ebb3f60381a489a70e5728dea
+R 63bc65d093cd6c883a355f795496cb92
 U drh
-Z 64d0e0dfaea30cc947f8f792dbf1bb4a
+Z 23c997e26716c966c8277eb8fd0c7c2b
 # Remove this line to create a well-formed Fossil manifest.
