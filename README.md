@@ -20,13 +20,13 @@ libSQL is licensed under an [Open Source License](LICENSE.md), and we adhere to 
 
 There are also various improvements and extensions to the core SQLite:
 
-* [`ALTER TABLE` extension for modifying column types and constraints](https://github.com/libsql/libsql/blob/main/doc/libsql_extensions.md#altering-columns)
+* [`ALTER TABLE` extension for modifying column types and constraints](https://github.com/libsql/libsql/blob/main/libsql-sqlite3/doc/libsql_extensions.md#altering-columns)
 * [Randomized ROWID](https://github.com/libsql/libsql/issues/12)
 * [WebAssembly User Defined Functions](https://blog.turso.tech/webassembly-functions-for-your-sqlite-compatible-database-7e1ad95a2aa7)
 * [Pass down SQL string to virtual table implementation](https://github.com/libsql/libsql/pull/87)
 * [Virtual write-ahead log interface](https://github.com/libsql/libsql/pull/53)
 
-The comprehensive description can be found [here](doc/libsql_extensions.md)
+The comprehensive description can be found [here](libsql-sqlite3/doc/libsql_extensions.md)
 
 ## Getting Started
 
