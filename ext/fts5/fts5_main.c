@@ -2918,19 +2918,24 @@ static int fts5Integrity(sqlite3_vtab *pVtab, char **pzErr){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
   Fts5Config *pConfig = pTab->p.pConfig;
   char *zSql;
+  char *zErr = 0;
   int rc;
   zSql = sqlite3_mprintf(
             "INSERT INTO \"%w\".\"%w\"(\"%w\") VALUES('integrity-check');",
             pConfig->zDb, pConfig->zName, pConfig->zName);
-  rc = sqlite3_exec(pConfig->db, zSql, 0, 0, 0);
+  if( zSql==0 ) return SQLITE_NOMEM;
+  rc = sqlite3_exec(pConfig->db, zSql, 0, 0, &zErr);
   sqlite3_free(zSql);
   if( (rc&0xff)==SQLITE_CORRUPT ){
     *pzErr = sqlite3_mprintf("malformed inverted index for FTS5 table %s.%s",
                 pConfig->zDb, pConfig->zName);
-    rc = SQLITE_OK;
+  }else if( rc!=SQLITE_OK ){
+    *pzErr = sqlite3_mprintf("unable to validate the inverted index for"
+                             " FTS5 table %s.%s: %s",
+                pConfig->zDb, pConfig->zName, zErr);
   }
-  return rc;
-
+  sqlite3_free(zErr);
+  return SQLITE_OK;
 }
 
 static int fts5Init(sqlite3 *db){

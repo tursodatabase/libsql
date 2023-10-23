@@ -4010,18 +4010,26 @@ static int fts3Integrity(sqlite3_vtab *pVtab, char **pzErr){
   Fts3Table *p = (Fts3Table*)pVtab;
   char *zSql;
   int rc;
+  char *zErr = 0;
 
   zSql = sqlite3_mprintf(
             "INSERT INTO \"%w\".\"%w\"(\"%w\") VALUES('integrity-check');",
             p->zDb, p->zName, p->zName);
-  rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
+  if( zSql==0 ){
+    return SQLITE_NOMEM;
+  }
+  rc = sqlite3_exec(p->db, zSql, 0, 0, &zErr);
   sqlite3_free(zSql);
   if( (rc&0xff)==SQLITE_CORRUPT ){
     *pzErr = sqlite3_mprintf("malformed inverted index for FTS%d table %s.%s",
                 p->bFts4 ? 4 : 3, p->zDb, p->zName);
-    rc = SQLITE_OK;
+  }else if( rc!=SQLITE_OK ){
+    *pzErr = sqlite3_mprintf("unable to validate the inverted index for"
+                             " FTS%d table %s.%s: %s",
+                p->bFts4 ? 4 : 3, p->zDb, p->zName, zErr);
   }
-  return rc;
+  sqlite3_free(zErr);
+  return SQLITE_OK;
 }
 
 
