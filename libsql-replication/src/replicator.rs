@@ -113,11 +113,12 @@ pub struct Replicator<C> {
 const INJECTOR_BUFFER_CAPACITY: usize = 10;
 
 impl<C: ReplicatorClient> Replicator<C> {
+    /// Creates a repicator for the db file pointed at by `db_path`
     pub async fn new(client: C, db_path: PathBuf, auto_checkpoint: u32) -> Result<Self, Error> {
         let injector = {
             let db_path = db_path.clone();
             spawn_blocking(move || {
-                Injector::new(&db_path, INJECTOR_BUFFER_CAPACITY, auto_checkpoint)
+                Injector::new(db_path, INJECTOR_BUFFER_CAPACITY, auto_checkpoint)
             })
             .await??
         };

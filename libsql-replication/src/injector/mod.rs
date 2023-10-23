@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use parking_lot::Mutex;
 use sqld_libsql_bindings::rusqlite::{self, OpenFlags};
-use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
 
 use crate::frame::{Frame, FrameNo};
 
@@ -40,27 +39,9 @@ pub struct Injector {
 /// The implementer can persist the pre and post commit frame no, and compare them in the event of
 /// a crash; if the pre and post commit frame_no don't match, then the log may be corrupted.
 impl Injector {
-    pub fn new(path: &Path, buffer_capacity: usize, auto_checkpoint: u32) -> Result<Self, Error> {
+    pub fn new(path: impl AsRef<Path>, buffer_capacity: usize, auto_checkpoint: u32) -> Result<Self, Error> {
         let buffer = FrameBuffer::default();
         let ctx = InjectorHookCtx::new(buffer.clone());
-        std::fs::create_dir_all(path)?;
-
-        {
-            // create the replication table if it doesn't exist. We need to do that without hooks.
-            let connection = sqld_libsql_bindings::Connection::open(
-                path,
-                OpenFlags::SQLITE_OPEN_READ_WRITE
-                    | OpenFlags::SQLITE_OPEN_CREATE
-                    | OpenFlags::SQLITE_OPEN_URI
-                    | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-                &TRANSPARENT_METHODS,
-                // safety: hook is dropped after connection
-                (),
-                u32::MAX,
-            )?;
-
-            connection.execute("CREATE TABLE IF NOT EXISTS libsql_temp_injection (x)", ())?;
-        }
 
         let connection = sqld_libsql_bindings::Connection::open(
             path,
@@ -73,8 +54,6 @@ impl Injector {
             ctx,
             auto_checkpoint,
         )?;
-
-        connection.execute("CREATE TABLE IF NOT EXISTS libsql_temp_injection (x)", ())?;
 
         Ok(Self {
             is_txn: false,
@@ -158,7 +137,13 @@ impl Injector {
 
     fn begin_txn(&mut self) -> Result<(), Error> {
         let conn = self.connection.lock();
-        conn.execute("BEGIN IMMEDIATE", ())?;
+        let mut stmt = conn.prepare_cached("BEGIN IMMEDIATE")?;
+        stmt.execute(())?;
+        // we create a dummy table. This table MUST not be persisted, otherwise the replica schema
+        // would differ with the primary's.
+        let mut stmt = conn.prepare_cached("CREATE TABLE IF NOT EXISTS libsql_temp_injection (x)")?;
+        stmt.execute(())?;
+
         Ok(())
     }
 
@@ -167,84 +152,87 @@ impl Injector {
     }
 }
 
-// #[cfg(test)]
-// mod test {
-//     use crate::replication::primary::logger::LogFile;
-//
-//     use super::*;
-//
-//     #[test]
-//     fn test_simple_inject_frames() {
-//         let log_file = std::fs::File::open("assets/test/simple_wallog").unwrap();
-//         let log = LogFile::new(log_file, 10000, None).unwrap();
-//         let temp = tempfile::tempdir().unwrap();
-//
-//         let mut injector = Injector::new(temp.path(), 10, 10000).unwrap();
-//         for frame in log.frames_iter().unwrap() {
-//             let frame = frame.unwrap();
-//             injector.inject_frame(frame).unwrap();
-//         }
-//
-//         let conn = rusqlite::Connection::open(temp.path().join("data")).unwrap();
-//
-//         conn.query_row("SELECT COUNT(*) FROM test", (), |row| {
-//             assert_eq!(row.get::<_, usize>(0).unwrap(), 5);
-//             Ok(())
-//         })
-//         .unwrap();
-//     }
-//
-//     #[test]
-//     fn test_inject_frames_split_txn() {
-//         let log_file = std::fs::File::open("assets/test/simple_wallog").unwrap();
-//         let log = LogFile::new(log_file, 10000, None).unwrap();
-//         let temp = tempfile::tempdir().unwrap();
-//
-//         // inject one frame at a time
-//         let mut injector = Injector::new(temp.path(), 1).unwrap();
-//         for frame in log.frames_iter().unwrap() {
-//             let frame = frame.unwrap();
-//             injector.inject_frame(frame).unwrap();
-//         }
-//
-//         let conn = rusqlite::Connection::open(temp.path().join("data")).unwrap();
-//
-//         conn.query_row("SELECT COUNT(*) FROM test", (), |row| {
-//             assert_eq!(row.get::<_, usize>(0).unwrap(), 5);
-//             Ok(())
-//         })
-//         .unwrap();
-//     }
-//
-//     #[test]
-//     fn test_inject_partial_txn_isolated() {
-//         let log_file = std::fs::File::open("assets/test/simple_wallog").unwrap();
-//         let log = LogFile::new(log_file, 10000, None).unwrap();
-//         let temp = tempfile::tempdir().unwrap();
-//
-//         // inject one frame at a time
-//         let mut injector = Injector::new(temp.path(), 10).unwrap();
-//         let mut iter = log.frames_iter().unwrap();
-//
-//         assert!(injector
-//             .inject_frame(iter.next().unwrap().unwrap())
-//             .unwrap()
-//             .is_none());
-//         let conn = rusqlite::Connection::open(temp.path().join("data")).unwrap();
-//         assert!(conn
-//             .query_row("SELECT COUNT(*) FROM test", (), |_| Ok(()))
-//             .is_err());
-//
-//         while injector
-//             .inject_frame(iter.next().unwrap().unwrap())
-//             .unwrap()
-//             .is_none()
-//         {}
-//
-//         // reset schema
-//         conn.pragma_update(None, "writable_schema", "reset")
-//             .unwrap();
-//         conn.query_row("SELECT COUNT(*) FROM test", (), |_| Ok(()))
-//             .unwrap();
-//     }
-// }
+#[cfg(test)]
+mod test {
+    use std::mem::size_of;
+
+    use crate::frame::FrameBorrowed;
+
+    use super::*;
+    /// this this is generated by creating a table test, inserting 5 rows into it, and then
+    /// truncating the wal file of it's header.
+    const WAL: &[u8] = include_bytes!("../../assets/test/test_wallog");
+
+    fn wal_log() -> impl Iterator<Item = Frame> {
+        WAL.chunks(size_of::<FrameBorrowed>()).map(|b| Frame::try_from(b).unwrap())
+    }
+
+    #[test]
+    fn test_simple_inject_frames() {
+        let temp = tempfile::tempdir().unwrap();
+
+        let mut injector = Injector::new(temp.path().join("data"), 10, 10000).unwrap();
+        let mut log = wal_log();
+        while let Some(frame) = log.next() {
+            injector.inject_frame(frame.into()).unwrap();
+        }
+
+        let conn = rusqlite::Connection::open(temp.path().join("data")).unwrap();
+
+        conn.query_row("SELECT COUNT(*) FROM test", (), |row| {
+            assert_eq!(row.get::<_, usize>(0).unwrap(), 5);
+            Ok(())
+        })
+        .unwrap();
+    }
+
+    #[test]
+    fn test_inject_frames_split_txn() {
+        let temp = tempfile::tempdir().unwrap();
+
+        // inject one frame at a time
+        let mut injector = Injector::new(temp.path().join("data"), 1, 10000).unwrap();
+        let mut log = wal_log();
+        while let Some(frame) = log.next() {
+            injector.inject_frame(frame.into()).unwrap();
+        }
+
+        let conn = rusqlite::Connection::open(temp.path().join("data")).unwrap();
+
+        conn.query_row("SELECT COUNT(*) FROM test", (), |row| {
+            assert_eq!(row.get::<_, usize>(0).unwrap(), 5);
+            Ok(())
+        })
+        .unwrap();
+    }
+
+    #[test]
+    fn test_inject_partial_txn_isolated() {
+        let temp = tempfile::tempdir().unwrap();
+
+        // inject one frame at a time
+        let mut injector = Injector::new(temp.path().join("data"), 10, 1000).unwrap();
+        let mut frames = wal_log();
+
+        assert!(injector
+            .inject_frame(frames.next().unwrap().into())
+            .unwrap()
+            .is_none());
+        let conn = rusqlite::Connection::open(temp.path().join("data")).unwrap();
+        assert!(conn
+            .query_row("SELECT COUNT(*) FROM test", (), |_| Ok(()))
+            .is_err());
+
+        while injector
+            .inject_frame(frames.next().unwrap().into())
+            .unwrap()
+            .is_none()
+        {}
+
+        // reset schema
+        conn.pragma_update(None, "writable_schema", "reset")
+            .unwrap();
+        conn.query_row("SELECT COUNT(*) FROM test", (), |_| Ok(()))
+            .unwrap();
+    }
+}

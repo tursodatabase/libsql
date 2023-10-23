@@ -1,23 +1,20 @@
 use std::collections::HashSet;
-use std::io::BufWriter;
-use std::io::Write;
+use std::io::SeekFrom;
 use std::mem::size_of;
-use std::os::unix::prelude::FileExt;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
 
-use futures::TryStreamExt;
-use tokio_stream::Stream;
 use anyhow::Context;
 use bytemuck::bytes_of;
-use tokio::sync::mpsc;
+use futures::TryStreamExt;
 use libsql_replication::frame::FrameMut;
 use libsql_replication::snapshot::{SnapshotFile, SnapshotFileHeader};
 use once_cell::sync::Lazy;
 use regex::Regex;
-use tempfile::NamedTempFile;
-use tokio_stream::StreamExt;
+use tokio::io::{AsyncSeekExt, AsyncWriteExt};
+use tokio::sync::mpsc;
+use tokio_stream::{Stream, StreamExt};
 use uuid::Uuid;
 
 use crate::namespace::NamespaceName;
@@ -119,7 +116,6 @@ impl LogCompactor {
         let mut merger = SnapshotMerger::new(db_path, log_id)?;
         let db_path = db_path.to_path_buf();
         let snapshot_dir_path = snapshot_dir_path(&db_path);
-        // FIXME: use tokio task for compaction
         let _handle = tokio::task::spawn(async move {
             while let Some((file, log_path, size_after)) = receiver.recv().await {
                 match perform_compaction(&db_path, file, log_id).await {
@@ -132,11 +128,10 @@ impl LogCompactor {
                             break;
                         }
 
-                        if let Err(e) = merger.register_snapshot(
-                            snapshot_name,
-                            snapshot_frame_count,
-                            size_after,
-                        ) {
+                        if let Err(e) = merger
+                            .register_snapshot(snapshot_name, snapshot_frame_count, size_after)
+                            .await
+                        {
                             tracing::error!(
                                 "failed to register snapshot with snapshot merger: {e}"
                             );
@@ -184,8 +179,9 @@ impl SnapshotMerger {
         let (sender, receiver) = mpsc::channel(1);
 
         let db_path = db_path.to_path_buf();
-        let handle =
-            tokio::task::spawn(async move { Self::run_snapshot_merger_loop(receiver, &db_path, log_id).await });
+        let handle = tokio::task::spawn(async move {
+            Self::run_snapshot_merger_loop(receiver, &db_path, log_id).await
+        });
 
         Ok(Self {
             sender,
@@ -208,7 +204,8 @@ impl SnapshotMerger {
         while let Some((name, size, db_page_count)) = receiver.recv().await {
             snapshots.push((name, size));
             if Self::should_compact(&snapshots, db_page_count) {
-                let compacted_snapshot_info = Self::merge_snapshots(&snapshots, db_path, log_id).await?;
+                let compacted_snapshot_info =
+                    Self::merge_snapshots(&snapshots, db_path, log_id).await?;
                 snapshots.clear();
                 snapshots.push(compacted_snapshot_info);
             }
@@ -235,7 +232,8 @@ impl SnapshotMerger {
         tokio::pin!(snapshots);
         while let Some(snapshot_name) = snapshots.next().await.transpose()? {
             let snapshot_path = snapshot_dir_path.join(&snapshot_name);
-            let snapshot = tokio::runtime::Handle::current().block_on(SnapshotFile::open(&snapshot_path))?;
+            let snapshot =
+                tokio::runtime::Handle::current().block_on(SnapshotFile::open(&snapshot_path))?;
             temp.push((
                 snapshot_name,
                 snapshot.header().frame_count,
@@ -256,16 +254,18 @@ impl SnapshotMerger {
         db_path: &Path,
         log_id: Uuid,
     ) -> anyhow::Result<(String, u64)> {
-        let mut builder = SnapshotBuilder::new(db_path, log_id)?;
+        let mut builder = SnapshotBuilder::new(db_path, log_id).await?;
         let snapshot_dir_path = snapshot_dir_path(db_path);
         let mut size_after = None;
         for (name, _) in snapshots.iter().rev() {
-            let snapshot = tokio::runtime::Handle::current().block_on(SnapshotFile::open(&snapshot_dir_path.join(name)))?;
+            let snapshot = SnapshotFile::open(&snapshot_dir_path.join(name)).await?;
             // The size after the merged snapshot is the size after the first snapshot to be merged
             if size_after.is_none() {
                 size_after.replace(snapshot.header().size_after);
             }
-            builder.append_frames(snapshot.into_stream_mut().map_err(|e| anyhow::anyhow!(e))).await?;
+            builder
+                .append_frames(snapshot.into_stream_mut().map_err(|e| anyhow::anyhow!(e)))
+                .await?;
         }
 
         let (_, start_frame_no, _) = parse_snapshot_name(&snapshots[0].0).unwrap();
@@ -275,16 +275,16 @@ impl SnapshotMerger {
         builder.header.end_frame_no = end_frame_no;
         builder.header.size_after = size_after.unwrap();
 
-        let compacted_snapshot_infos = builder.finish()?;
+        let compacted_snapshot_infos = builder.finish().await?;
 
         for (name, _) in snapshots.iter() {
-            std::fs::remove_file(&snapshot_dir_path.join(name))?;
+            tokio::fs::remove_file(&snapshot_dir_path.join(name)).await?;
         }
 
         Ok(compacted_snapshot_infos)
     }
 
-    fn register_snapshot(
+    async fn register_snapshot(
         &mut self,
         snapshot_name: String,
         snapshot_frame_count: u64,
@@ -292,11 +292,12 @@ impl SnapshotMerger {
     ) -> anyhow::Result<()> {
         if self
             .sender
-            .blocking_send((snapshot_name, snapshot_frame_count, db_page_count))
+            .send((snapshot_name, snapshot_frame_count, db_page_count))
+            .await
             .is_err()
         {
             if let Some(handle) = self.handle.take() {
-                tokio::runtime::Handle::current().block_on(handle)??;
+                handle.await??;
             }
 
             anyhow::bail!("failed to register snapshot with log merger: thread exited");
@@ -310,7 +311,7 @@ impl SnapshotMerger {
 struct SnapshotBuilder {
     seen_pages: HashSet<u32>,
     header: SnapshotFileHeader,
-    snapshot_file: BufWriter<NamedTempFile>,
+    snapshot_file: tokio::io::BufWriter<async_tempfile::TempFile>,
     db_path: PathBuf,
     last_seen_frame_no: u64,
 }
@@ -320,12 +321,12 @@ fn snapshot_dir_path(db_path: &Path) -> PathBuf {
 }
 
 impl SnapshotBuilder {
-    fn new(db_path: &Path, log_id: Uuid) -> anyhow::Result<Self> {
+    async fn new(db_path: &Path, log_id: Uuid) -> anyhow::Result<Self> {
         let snapshot_dir_path = snapshot_dir_path(db_path);
         std::fs::create_dir_all(&snapshot_dir_path)?;
-        let mut target = BufWriter::new(NamedTempFile::new_in(&snapshot_dir_path)?);
+        let mut f = tokio::io::BufWriter::new(async_tempfile::TempFile::new().await?);
         // reserve header space
-        target.write_all(&[0; size_of::<SnapshotFileHeader>()])?;
+        f.write_all(&[0; size_of::<SnapshotFileHeader>()]).await?;
 
         Ok(Self {
             seen_pages: HashSet::new(),
@@ -337,7 +338,7 @@ impl SnapshotBuilder {
                 size_after: 0,
                 _pad: 0,
             },
-            snapshot_file: target,
+            snapshot_file: f,
             db_path: db_path.to_path_buf(),
             last_seen_frame_no: u64::MAX,
         })
@@ -375,7 +376,8 @@ impl SnapshotBuilder {
 
             if !self.seen_pages.contains(&frame.header().page_no) {
                 self.seen_pages.insert(frame.header().page_no);
-                self.snapshot_file.write_all(frame.as_slice())?;
+                let data = frame.as_slice();
+                self.snapshot_file.write_all(data).await?;
                 self.header.frame_count += 1;
             }
         }
@@ -384,10 +386,11 @@ impl SnapshotBuilder {
     }
 
     /// Persist the snapshot, and returns the name and size is frame on the snapshot.
-    fn finish(mut self) -> anyhow::Result<(String, u64)> {
-        self.snapshot_file.flush()?;
-        let file = self.snapshot_file.into_inner()?;
-        file.as_file().write_all_at(bytes_of(&self.header), 0)?;
+    async fn finish(mut self) -> anyhow::Result<(String, u64)> {
+        self.snapshot_file.flush().await?;
+        let mut file = self.snapshot_file.into_inner();
+        file.seek(SeekFrom::Start(0)).await?;
+        file.write_all(bytes_of(&self.header)).await?;
         let snapshot_name = format!(
             "{}-{}-{}.snap",
             Uuid::from_u128(self.header.log_id),
@@ -395,7 +398,13 @@ impl SnapshotBuilder {
             self.header.end_frame_no,
         );
 
-        file.persist(snapshot_dir_path(&self.db_path).join(&snapshot_name))?;
+        file.sync_all().await?;
+
+        tokio::fs::rename(
+            file.file_path(),
+            snapshot_dir_path(&self.db_path).join(&snapshot_name),
+        )
+        .await?;
 
         Ok((snapshot_name, self.header.frame_count))
     }
@@ -406,15 +415,17 @@ async fn perform_compaction(
     file_to_compact: LogFile,
     log_id: Uuid,
 ) -> anyhow::Result<(String, u64)> {
-    let mut builder = SnapshotBuilder::new(db_path, log_id)?;
-    builder.append_frames(file_to_compact.into_rev_stream_mut()).await?;
-    builder.finish()
+    let mut builder = SnapshotBuilder::new(db_path, log_id).await?;
+    builder
+        .append_frames(file_to_compact.into_rev_stream_mut())
+        .await?;
+    builder.finish().await
 }
 
 #[cfg(test)]
 mod test {
     use std::fs::read;
-    use std::{thread, time::Duration};
+    use std::time::Duration;
 
     use bytemuck::pod_read_unaligned;
     use bytes::Bytes;
@@ -451,11 +462,18 @@ mod test {
 
         let dump_dir = tempdir().unwrap();
         let compactor = LogCompactor::new(dump_dir.path(), log_id, Box::new(|_| Ok(()))).unwrap();
-        compactor
-            .compact(log_file, temp.path().to_path_buf(), 25)
-            .unwrap();
+        tokio::task::spawn_blocking({
+            let compactor = compactor.clone();
+            move || {
+                compactor
+                    .compact(log_file, temp.path().to_path_buf(), 25)
+                    .unwrap()
+            }
+        })
+        .await
+        .unwrap();
 
-        thread::sleep(Duration::from_secs(1));
+        tokio::time::sleep(Duration::from_secs(1)).await;
 
         let snapshot_path =
             snapshot_dir_path(dump_dir.path()).join(format!("{}-{}-{}.snap", log_id, 0, 49));

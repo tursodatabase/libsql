@@ -135,8 +135,8 @@ impl ForkTask<'_> {
                             let snapshot = loop {
                                 if let Some(snap) = logger
                                     .get_snapshot_file(next_frame_no)
-                                        .await
-                                        .map_err(ForkError::Internal)?
+                                    .await
+                                    .map_err(ForkError::Internal)?
                                 {
                                     break snap;
                                 }

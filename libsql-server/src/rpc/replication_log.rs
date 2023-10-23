@@ -3,7 +3,6 @@ use std::net::SocketAddr;
 use std::pin::Pin;
 use std::sync::{Arc, RwLock};
 
-use tokio_stream::StreamExt;
 use futures::stream::BoxStream;
 pub use libsql_replication::rpc::replication as rpc;
 use libsql_replication::rpc::replication::replication_log_server::ReplicationLog;
@@ -11,6 +10,7 @@ use libsql_replication::rpc::replication::{
     Frame, Frames, HelloRequest, HelloResponse, LogOffset, NEED_SNAPSHOT_ERROR_MSG,
     NO_HELLO_ERROR_MSG,
 };
+use tokio_stream::StreamExt;
 use tonic::Status;
 
 use crate::auth::Auth;
@@ -206,6 +206,7 @@ impl ReplicationLog for ReplicationLogService {
         self.authenticate(&req)?;
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
+
         use tonic::transport::server::TcpConnectInfo;
 
         req.extensions().get::<TcpConnectInfo>().unwrap();
@@ -251,7 +252,9 @@ impl ReplicationLog for ReplicationLogService {
             .unwrap();
         let offset = req.next_offset;
         match logger.get_snapshot_file(offset).await {
-            Ok(Some(snapshot)) => Ok(tonic::Response::new(Box::pin(snapshot_stream::make_snapshot_stream(snapshot, offset)))),
+            Ok(Some(snapshot)) => Ok(tonic::Response::new(Box::pin(
+                snapshot_stream::make_snapshot_stream(snapshot, offset),
+            ))),
             Ok(None) => Err(Status::new(tonic::Code::Unavailable, "snapshot not found")),
             Err(e) => Err(Status::new(tonic::Code::Internal, e.to_string())),
         }
@@ -259,13 +262,16 @@ impl ReplicationLog for ReplicationLogService {
 }
 
 mod snapshot_stream {
-    use libsql_replication::snapshot::SnapshotFile;
-    use libsql_replication::rpc::replication::Frame;
-    use libsql_replication::frame::FrameNo;
-    use tonic::Status;
     use futures::{Stream, StreamExt};
+    use libsql_replication::frame::FrameNo;
+    use libsql_replication::rpc::replication::Frame;
+    use libsql_replication::snapshot::SnapshotFile;
+    use tonic::Status;
 
-    pub fn make_snapshot_stream(snapshot: SnapshotFile, offset: FrameNo) -> impl Stream<Item = Result<Frame, Status>> {
+    pub fn make_snapshot_stream(
+        snapshot: SnapshotFile,
+        offset: FrameNo,
+    ) -> impl Stream<Item = Result<Frame, Status>> {
         let size_after = snapshot.header().size_after;
         let frames = snapshot.into_stream_mut_from(offset).peekable();
         async_stream::stream! {

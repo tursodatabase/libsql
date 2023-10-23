@@ -63,8 +63,8 @@ impl<W: WalHook> Connection<W> {
         hook_ctx: W::Context,
         auto_checkpoint: u32,
     ) -> Result<Self, rusqlite::Error> {
-        let path = path.as_ref().join("data");
         let mut _ctx = Box::new(hook_ctx);
+        let path = path.as_ref();
         tracing::trace!(
             "Opening a connection with regular WAL at {}",
             path.display()

@@ -11,12 +11,12 @@ use bytemuck::{bytes_of, pod_read_unaligned, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
 use libsql_replication::frame::{Frame, FrameHeader, FrameMut};
 use libsql_replication::snapshot::SnapshotFile;
-use parking_lot::{RwLock, Mutex};
+use parking_lot::{Mutex, RwLock};
 use rusqlite::ffi::SQLITE_BUSY;
 use sqld_libsql_bindings::init_static_wal_method;
 use tokio::sync::watch;
-use tokio_stream::Stream;
 use tokio::time::{Duration, Instant};
+use tokio_stream::Stream;
 use uuid::Uuid;
 
 use crate::libsql_bindings::ffi::SQLITE_IOERR_WRITE;
@@ -503,7 +503,7 @@ impl LogFile {
         }))
     }
 
-    pub fn into_rev_stream_mut(self) -> impl  Stream<Item = anyhow::Result<FrameMut>> {
+    pub fn into_rev_stream_mut(self) -> impl Stream<Item = anyhow::Result<FrameMut>> {
         let mut current_frame_offset = self.header.frame_count;
         let file = Arc::new(Mutex::new(self));
         async_stream::try_stream! {
@@ -511,12 +511,12 @@ impl LogFile {
                 if current_frame_offset == 0 {
                     break;
                 }
+                current_frame_offset -= 1;
                 let read_byte_offset = Self::absolute_byte_offset(current_frame_offset);
-                let frame = tokio::task::spawn_blocking({ 
+                let frame = tokio::task::spawn_blocking({
                     let file = file.clone();
                     move || file.lock().read_frame_byte_offset_mut(read_byte_offset)
                 }).await??;
-                current_frame_offset -= 1;
                 yield frame
             }
         }
@@ -1037,8 +1037,8 @@ mod test {
     use super::*;
     use crate::DEFAULT_AUTO_CHECKPOINT;
 
-    #[test]
-    fn write_and_read_from_frame_log() {
+    #[tokio::test]
+    async fn write_and_read_from_frame_log() {
         let dir = tempfile::tempdir().unwrap();
         let logger = ReplicationLogger::open(
             dir.path(),
@@ -1073,8 +1073,8 @@ mod test {
         );
     }
 
-    #[test]
-    fn index_out_of_bounds() {
+    #[tokio::test]
+    async fn index_out_of_bounds() {
         let dir = tempfile::tempdir().unwrap();
         let logger = ReplicationLogger::open(
             dir.path(),

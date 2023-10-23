@@ -216,6 +216,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-tempfile"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b37d4bb113c47e4f263d4b0221912ff5aa840a51bc9b7b47b024e1cf1926fd9b"
+dependencies = [
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "async-trait"
 version = "0.1.74"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2296,6 +2306,7 @@ dependencies = [
  "protobuf-src",
  "serde",
  "sqld-libsql-bindings",
+ "tempfile",
  "thiserror",
  "tokio",
  "tokio-stream",
@@ -3811,6 +3822,7 @@ dependencies = [
  "arbitrary",
  "async-lock",
  "async-stream",
+ "async-tempfile",
  "async-trait",
  "aws-config",
  "aws-sdk-s3",

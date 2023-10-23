@@ -3,6 +3,7 @@ use std::sync::Once;
 use libsql_replication::replicator::Either;
 #[cfg(feature = "replication")]
 use libsql_replication::replicator::Replicator;
+use libsql_sys::ffi;
 use tokio::sync::Mutex;
 use crate::replication::client::Client;
 use crate::replication::local_client::LocalClient;
@@ -14,7 +15,6 @@ use libsql_replication::frame::FrameNo;
 pub use crate::replication::Frames;
 use crate::{database::OpenFlags, local::connection::Connection};
 use crate::{Error::ConnectionFailed, Result};
-use libsql_sys::ffi;
 
 #[cfg(feature = "replication")]
 pub struct ReplicationContext {
@@ -100,12 +100,12 @@ impl Database {
             // if this config is not set correctly the entire api is unsafe.
             unsafe {
                 assert_eq!(
-                    ffi::sqlite3_config(ffi::SQLITE_CONFIG_SERIALIZED),
+                    dbg!(ffi::sqlite3_config(ffi::SQLITE_CONFIG_SERIALIZED)),
                     ffi::SQLITE_OK,
                     "libsql was configured with an incorrect threading configuration and
-                the api is not safe to use. Please check that no multi-thread options have
-                been set. If nothing was configured then please open an issue at:
-                https://github.com/libsql/libsql"
+                    the api is not safe to use. Please check that no multi-thread options have
+                    been set. If nothing was configured then please open an issue at:
+                    https://github.com/libsql/libsql"
                 );
 
                 assert_eq!(

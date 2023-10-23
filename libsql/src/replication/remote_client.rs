@@ -18,7 +18,7 @@ pub struct RemoteClient {
 
 impl RemoteClient {
     pub(crate) async fn new(remote: super::client::Client, path: &Path) -> anyhow::Result<Self> {
-        let meta = WalIndexMeta::open(path).await?;
+        let meta = WalIndexMeta::open(path.parent().unwrap()).await?;
         Ok(Self {
             remote,
             meta,

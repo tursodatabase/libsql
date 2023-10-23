@@ -8,6 +8,7 @@ default-run = "sqld"
 anyhow = "1.0.66"
 async-lock = "2.6.0"
 async-stream = "0.3.5"
+async-tempfile = "0.4.0"
 async-trait = "0.1.58"
 axum = { version = "0.6.18", features = ["headers"] }
 axum-extra = "0.7"

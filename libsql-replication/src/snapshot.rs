@@ -1,12 +1,10 @@
-use std::io::SeekFrom;
-use std::mem::MaybeUninit;
 use std::mem::size_of;
+use std::mem::MaybeUninit;
 use std::path::Path;
 
-use tokio::fs::File;
 use bytemuck::{pod_read_unaligned, Pod, Zeroable};
+use tokio::fs::File;
 use tokio::io::AsyncReadExt;
-use tokio::io::AsyncSeekExt;
 use tokio_stream::Stream;
 use tokio_stream::StreamExt;
 
@@ -44,7 +42,7 @@ pub struct SnapshotFile {
 }
 
 impl SnapshotFile {
-    pub async fn open(path: &Path) -> Result<Self, Error> {
+    pub async fn open(path: impl AsRef<Path>) -> Result<Self, Error> {
         let mut file = File::open(path).await?;
         let mut header_buf = [0; size_of::<SnapshotFileHeader>()];
         file.read_exact(&mut header_buf).await?;
@@ -56,7 +54,6 @@ impl SnapshotFile {
     pub fn into_stream_mut(mut self) -> impl Stream<Item = Result<FrameMut, Error>> {
         async_stream::try_stream! {
             let mut previous_frame_no = None;
-            self.file.seek(SeekFrom::Start(size_of::<FrameBorrowed>() as _)).await?;
             for _ in 0..self.header.frame_count {
                 let mut frame: MaybeUninit<FrameBorrowed> = MaybeUninit::uninit();
                 let buf = unsafe { std::slice::from_raw_parts_mut(frame.as_mut_ptr() as *mut u8, size_of::<FrameBorrowed>()) };
@@ -77,7 +74,10 @@ impl SnapshotFile {
         }
     }
 
-    pub fn into_stream_mut_from(self, from: FrameNo) -> impl Stream<Item = Result<FrameMut, Error>> {
+    pub fn into_stream_mut_from(
+        self,
+        from: FrameNo,
+    ) -> impl Stream<Item = Result<FrameMut, Error>> {
         self.into_stream_mut().take_while(move |f| match f {
             Ok(f) => f.header().frame_no >= from,
             Err(_) => true,
