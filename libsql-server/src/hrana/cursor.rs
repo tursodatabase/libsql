@@ -9,7 +9,7 @@ use crate::auth::Authenticated;
 use crate::connection::program::Program;
 use crate::connection::Connection;
 use crate::query_result_builder::{
-    Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
+    Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError, QueryStats,
 };
 use crate::replication::FrameNo;
 
@@ -84,6 +84,7 @@ async fn run_cursor<C: Connection>(
         entry_tx: entry_tx.clone(),
         step_i: 0,
         step_state: StepState::default(),
+        stats: std::default::Default::default(),
     };
 
     if let Err(err) = open_req
@@ -113,6 +114,7 @@ struct CursorResultBuilder {
     entry_tx: mpsc::Sender<Result<SizedEntry>>,
     step_i: u32,
     step_state: StepState,
+    stats: QueryStats,
 }
 
 #[derive(Debug, Default)]
@@ -230,6 +232,11 @@ impl QueryResultBuilder for CursorResultBuilder {
             self.step_state.row_size += value_json_size(&v);
             self.step_state.row.push(value_to_proto(v)?);
         }
+        Ok(())
+    }
+
+    fn update_stats(&mut self, stats: QueryStats) -> Result<(), QueryResultBuilderError> {
+        self.stats += stats;
         Ok(())
     }
 

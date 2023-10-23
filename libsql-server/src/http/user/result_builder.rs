@@ -8,7 +8,7 @@ use std::sync::atomic::Ordering;
 
 use crate::query_result_builder::{
     Column, JsonFormatter, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
-    TOTAL_RESPONSE_SIZE,
+    QueryStats, TOTAL_RESPONSE_SIZE,
 };
 use crate::replication::FrameNo;
 
@@ -269,6 +269,18 @@ impl QueryResultBuilder for JsonHttpPayloadBuilder {
         )?;
         self.row_value_count += 1;
 
+        Ok(())
+    }
+
+    fn update_stats(&mut self, stats: QueryStats) -> Result<(), QueryResultBuilderError> {
+        assert!(!self.is_step_error);
+        self.formatter.serialize_key_value(
+            &mut self.buffer,
+            "stats",
+            &serde_json::to_value(&stats)
+                .map_err(|e| QueryResultBuilderError::Internal(e.into()))?,
+            false,
+        )?;
         Ok(())
     }
 
