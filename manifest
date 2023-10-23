@@ -1,5 +1,5 @@
-C Merge\sfixes\sfor\sexpert\shandling\sof\sUDFs\sand\sother\sUD-whatevers.
-D 2023-10-23T02:08:34.799
+C Add\smissing\stest\sfile\sfts3fault3.test.\sShould\shave\sbeen\spart\sof\s[7f41d700].
+D 2023-10-23T11:18:13.682
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1150,6 +1150,7 @@ F test/fts3expr5.test a5b9a053becbdb8e973fbf4d6d3abaabeb42d511d1848bd57931f3e0a1
 F test/fts3f.test 8c438d5e1cab526b0021988fb1dc70cf3597b006a33ffd6c955ee89929077fe3
 F test/fts3fault.test f4e1342acfe6d216a001490e8cd52afac1f9ffe4a11bbcdcb296129a45c5df45
 F test/fts3fault2.test 7b2741e5095367238380b0fcdb837f36c24484c7a5f353659b387df63cf039ec
+F test/fts3fault3.test 4a39a1618546776255dc1de306213b600aef87eca589ca8428a70c00fd11961b
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3fuzz001.test c78afcd8ad712ea0b8d2ed50851a8aab3bc9dc52c64a536291e07112f519357c
 F test/fts3join.test 1a4d786539b2b79a41c28ef2ac22cacd92a8ee830249b68a7dee4a020848e3bb
@@ -2136,8 +2137,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0db82b4281a0e0d5e365553df11e0347f60c00c861c0fb96227059edff3a0ef6 ee58425904b36319e016dc69bb5f141bb3565b1723a97490a4b2cfa16b89fbdf
-R 497c96bcdfec23801dbf799e41e8e8f5
-U larrybr
-Z f8a399cf107edbbf201bf5694e7c8852
+P b5d7d07df58bb8e4013b4047e4019b96e506e8ef03ca0abfc9aae06a122b353a
+R cfb6e8366d27e8293453bd6489d915e1
+U dan
+Z b2609257b784631be668163408c57885
 # Remove this line to create a well-formed Fossil manifest.
