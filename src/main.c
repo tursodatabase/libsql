@@ -2371,7 +2371,7 @@ void *sqlite3_preupdate_hook(
   void *pRet;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( db==0 || xCallback==0 ){
+  if( db==0 ){
     return 0;
   }
 #endif
