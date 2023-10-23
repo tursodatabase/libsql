@@ -32,6 +32,34 @@ public final class Sqlite implements AutoCloseable  {
   public static final int OPEN_READWRITE = CApi.SQLITE_OPEN_READWRITE;
   public static final int OPEN_CREATE = CApi.SQLITE_OPEN_CREATE;
   public static final int OPEN_EXRESCODE = CApi.SQLITE_OPEN_EXRESCODE;
+  public static final int TXN_NONE = CApi.SQLITE_TXN_NONE;
+  public static final int TXN_READ = CApi.SQLITE_TXN_READ;
+  public static final int TXN_WRITE = CApi.SQLITE_TXN_WRITE;
+
+  public static final int STATUS_MEMORY_USED = CApi.SQLITE_STATUS_MEMORY_USED;
+  public static final int STATUS_PAGECACHE_USED = CApi.SQLITE_STATUS_PAGECACHE_USED;
+  public static final int STATUS_PAGECACHE_OVERFLOW = CApi.SQLITE_STATUS_PAGECACHE_OVERFLOW;
+  public static final int STATUS_MALLOC_SIZE = CApi.SQLITE_STATUS_MALLOC_SIZE;
+  public static final int STATUS_PARSER_STACK = CApi.SQLITE_STATUS_PARSER_STACK;
+  public static final int STATUS_PAGECACHE_SIZE = CApi.SQLITE_STATUS_PAGECACHE_SIZE;
+  public static final int STATUS_MALLOC_COUNT = CApi.SQLITE_STATUS_MALLOC_COUNT;
+
+  public static final int LIMIT_LENGTH = CApi.SQLITE_LIMIT_LENGTH;
+  public static final int LIMIT_SQL_LENGTH = CApi.SQLITE_LIMIT_SQL_LENGTH;
+  public static final int LIMIT_COLUMN = CApi.SQLITE_LIMIT_COLUMN;
+  public static final int LIMIT_EXPR_DEPTH = CApi.SQLITE_LIMIT_EXPR_DEPTH;
+  public static final int LIMIT_COMPOUND_SELECT = CApi.SQLITE_LIMIT_COMPOUND_SELECT;
+  public static final int LIMIT_VDBE_OP = CApi.SQLITE_LIMIT_VDBE_OP;
+  public static final int LIMIT_FUNCTION_ARG = CApi.SQLITE_LIMIT_FUNCTION_ARG;
+  public static final int LIMIT_ATTACHED = CApi.SQLITE_LIMIT_ATTACHED;
+  public static final int LIMIT_LIKE_PATTERN_LENGTH = CApi.SQLITE_LIMIT_LIKE_PATTERN_LENGTH;
+  public static final int LIMIT_VARIABLE_NUMBER = CApi.SQLITE_LIMIT_VARIABLE_NUMBER;
+  public static final int LIMIT_TRIGGER_DEPTH = CApi.SQLITE_LIMIT_TRIGGER_DEPTH;
+  public static final int LIMIT_WORKER_THREADS = CApi.SQLITE_LIMIT_WORKER_THREADS;
+
+  public static final int PREPARE_PERSISTENT = CApi.SQLITE_PREPARE_PERSISTENT;
+  public static final int PREPARE_NORMALIZE = CApi.SQLITE_PREPARE_NORMALIZE;
+  public static final int PREPARE_NO_VTAB = CApi.SQLITE_PREPARE_NO_VTAB;
 
   //! Used only by the open() factory functions.
   private Sqlite(sqlite3 db){
@@ -67,11 +95,54 @@ public final class Sqlite implements AutoCloseable  {
     return open(filename, SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, null);
   }
 
+  public static String libVersion(){
+    return CApi.sqlite3_libversion();
+  }
+
+  public static int libVersionNumber(){
+    return CApi.sqlite3_libversion_number();
+  }
+
+  public static String libSourceId(){
+    return CApi.sqlite3_sourceid();
+  }
+
+  /**
+     As per sqlite3_status64(), but returns its current and high-water
+     results as a two-element array. Throws if the first argument is
+     not one of the STATUS_... constants.
+  */
+  public long[] libStatus(int op, boolean resetStats){
+    org.sqlite.jni.capi.OutputPointer.Int64 pCurrent =
+      new org.sqlite.jni.capi.OutputPointer.Int64();
+    org.sqlite.jni.capi.OutputPointer.Int64 pHighwater =
+      new org.sqlite.jni.capi.OutputPointer.Int64();
+    final int rc = CApi.sqlite3_status64(op, pCurrent, pHighwater, resetStats);
+    checkRc(rc);
+    return new long[] {pCurrent.value, pHighwater.value};
+  }
+
   @Override public void close(){
     if(null!=this.db){
       this.db.close();
       this.db = null;
     }
+  }
+
+  /**
+     Returns the value of the native library's build-time value of the
+     SQLITE_THREADSAFE build option.
+  */
+  public static int libThreadsafe(){
+    return CApi.sqlite3_threadsafe();
+  }
+
+  public static boolean strglob(String glob, String txt){
+    return 0==CApi.sqlite3_strglob(glob, txt);
+  }
+
+  public static boolean strlike(String glob, String txt, char escChar){
+    return 0==CApi.sqlite3_strlike(glob, txt, escChar);
   }
 
   /**
@@ -94,17 +165,21 @@ public final class Sqlite implements AutoCloseable  {
 
   /**
      If rc!=0, throws an SqliteException. If this db is currently
-     opened, the error state is extracted from it, else only the
-     string form of rc is used.
+     opened and has non-0 sqlite3_errcode(), the error state is
+     extracted from it, else only the string form of rc is used. It is
+     the caller's responsibility to filter out non-error codes such as
+     SQLITE_ROW and SQLITE_DONE before calling this.
   */
-  private void affirmRcOk(int rc){
+  private void checkRc(int rc){
     if( 0!=rc ){
-      if( null==db ) throw new SqliteException(rc);
+      if( null==db || 0==sqlite3_errcode(db)) throw new SqliteException(rc);
       else throw new SqliteException(db);
     }
   }
 
   /**
+     prepFlags must be 0 or a bitmask of the PREPARE_... constants.
+
      prepare() TODOs include:
 
      - overloads taking byte[] and ByteBuffer.
@@ -116,8 +191,20 @@ public final class Sqlite implements AutoCloseable  {
   public Stmt prepare(String sql, int prepFlags){
     final OutputPointer.sqlite3_stmt out = new OutputPointer.sqlite3_stmt();
     final int rc = sqlite3_prepare_v3(thisDb(), sql, prepFlags, out);
-    affirmRcOk(rc);
-    return new Stmt(this, out.take());
+    checkRc(rc);
+    final sqlite3_stmt q = out.take();
+    if( null==q ){
+      /* The C-level API treats input which is devoid of SQL
+         statements (e.g. all comments or an empty string) as success
+         but returns a NULL sqlite3_stmt object. In higher-level APIs,
+         wrapping a "successful NULL" object that way is tedious to
+         use because it forces clients and/or wrapper-level code to
+         check for that unusual case. In practice, higher-level
+         bindings are generally better-served by treating empty SQL
+         input as an error. */
+      throw new IllegalArgumentException("Input contains no SQL statements.");
+    }
+    return new Stmt(this, q);
   }
 
   public Stmt prepare(String sql){
@@ -152,6 +239,183 @@ public final class Sqlite implements AutoCloseable  {
 
   public void createFunction(String name, int nArg, WindowFunction f){
     this.createFunction(name, nArg, CApi.SQLITE_UTF8, f);
+  }
+
+  public long changes(){
+    return CApi.sqlite3_changes64(thisDb());
+  }
+
+  public long totalChanges(){
+    return CApi.sqlite3_total_changes64(thisDb());
+  }
+
+  public long lastInsertRowId(){
+    return CApi.sqlite3_last_insert_rowid(thisDb());
+  }
+
+  public void setLastInsertRowId(long rowId){
+    CApi.sqlite3_set_last_insert_rowid(thisDb(), rowId);
+  }
+
+  public void interrupt(){
+    CApi.sqlite3_interrupt(thisDb());
+  }
+
+  public boolean isInterrupted(){
+    return CApi.sqlite3_is_interrupted(thisDb());
+  }
+
+  public boolean isAutoCommit(){
+    return CApi.sqlite3_get_autocommit(thisDb());
+  }
+
+  public void setBusyTimeout(int ms){
+    checkRc(CApi.sqlite3_busy_timeout(thisDb(), ms));
+  }
+
+  /**
+     Analog to sqlite3_txn_state(). Returns one of TXN_NONE, TXN_READ,
+     or TXN_WRITE to denote this database's current transaction state
+     for the given schema name (or the most restrictive state of any
+     schema if zSchema is null).
+  */
+  public int transactionState(String zSchema){
+    return CApi.sqlite3_txn_state(thisDb(), zSchema);
+  }
+
+  /**
+     Analog to sqlite3_db_name(). Returns null if passed an unknown
+     index.
+  */
+  public String dbName(int dbNdx){
+    return CApi.sqlite3_db_name(thisDb(), dbNdx);
+  }
+
+  /**
+     Analog to sqlite3_db_filename(). Returns null if passed an
+     unknown db name.
+  */
+  public String dbFileName(String dbName){
+    return CApi.sqlite3_db_filename(thisDb(), dbName);
+  }
+
+  /**
+     Analog to the variant of sqlite3_db_config() for configuring the
+     SQLITE_DBCONFIG_MAINDBNAME option. Throws on error.
+  */
+  public void setMainDbName(String name){
+    checkRc(
+      CApi.sqlite3_db_config(thisDb(), CApi.SQLITE_DBCONFIG_MAINDBNAME,
+                             name)
+    );
+  }
+
+  /**
+     Analog to sqlite3_db_readonly() but throws an SqliteException
+     with result code SQLITE_NOTFOUND if given an unknown database
+     name.
+  */
+  public boolean readOnly(String dbName){
+    final int rc = CApi.sqlite3_db_readonly(thisDb(), dbName);
+    if( 0==rc ) return false;
+    else if( rc>0 ) return true;
+    throw new SqliteException(CApi.SQLITE_NOTFOUND);
+  }
+
+  /**
+     Analog to sqlite3_db_release_memory().
+  */
+  public void releaseMemory(){
+    CApi.sqlite3_db_release_memory(thisDb());
+  }
+
+  /**
+     Analog to sqlite3_release_memory().
+  */
+  public static int releaseMemory(int n){
+    return CApi.sqlite3_release_memory(n);
+  }
+
+  /**
+     Analog to sqlite3_limit(). limitId must be one of the
+     LIMIT_... constants.
+
+     Returns the old limit for the given option. If newLimit is
+     negative, it returns the old limit without modifying the limit.
+
+     If sqlite3_limit() returns a negative value, this function throws
+     an SqliteException with the SQLITE_RANGE result code but no
+     further error info (because that case does not qualify as a
+     db-level error). Such errors may indicate an invalid argument
+     value or an invalid range for newLimit (the underlying function
+     does not differentiate between those).
+  */
+  public int limit(int limitId, int newLimit){
+    final int rc = CApi.sqlite3_limit(thisDb(), limitId, newLimit);
+    if( rc<0 ){
+      throw new SqliteException(CApi.SQLITE_RANGE);
+    }
+    return rc;
+  }
+
+  /**
+     Analog to sqlite3_errstr().
+  */
+  static String errstr(int resultCode){
+    return CApi.sqlite3_errstr(resultCode);
+  }
+
+  /**
+     A wrapper object for use with tableColumnMetadata().  They are
+     created and populated only via that interface.
+  */
+  public final class TableColumnMetadata {
+    Boolean pNotNull = null;
+    Boolean pPrimaryKey = null;
+    Boolean pAutoinc = null;
+    String pzCollSeq = null;
+    String pzDataType = null;
+
+    private TableColumnMetadata(){}
+
+    public String getDataType(){ return pzDataType; }
+    public String getCollation(){ return pzCollSeq; }
+    public boolean isNotNull(){ return pNotNull; }
+    public boolean isPrimaryKey(){ return pPrimaryKey; }
+    public boolean isAutoincrement(){ return pAutoinc; }
+  }
+
+  /**
+     Returns data about a database, table, and (optionally) column
+     (which may be null), as per sqlite3_table_column_metadata().
+     Throws if passed invalid arguments, else returns the result as a
+     new TableColumnMetadata object.
+  */
+  TableColumnMetadata tableColumnMetadata(
+    String zDbName, String zTableName, String zColumnName
+  ){
+    org.sqlite.jni.capi.OutputPointer.String pzDataType
+      = new org.sqlite.jni.capi.OutputPointer.String();
+    org.sqlite.jni.capi.OutputPointer.String pzCollSeq
+      = new org.sqlite.jni.capi.OutputPointer.String();
+    org.sqlite.jni.capi.OutputPointer.Bool pNotNull
+      = new org.sqlite.jni.capi.OutputPointer.Bool();
+    org.sqlite.jni.capi.OutputPointer.Bool pPrimaryKey
+      = new org.sqlite.jni.capi.OutputPointer.Bool();
+    org.sqlite.jni.capi.OutputPointer.Bool pAutoinc
+      = new org.sqlite.jni.capi.OutputPointer.Bool();
+    final int rc = CApi.sqlite3_table_column_metadata(
+      thisDb(), zDbName, zTableName, zColumnName,
+      pzDataType, pzCollSeq, pNotNull, pPrimaryKey, pAutoinc
+    );
+    checkRc(rc);
+    TableColumnMetadata rv = new TableColumnMetadata();
+    rv.pzDataType = pzDataType.value;
+    rv.pzCollSeq = pzCollSeq.value;
+    rv.pNotNull = pNotNull.value;
+    rv.pPrimaryKey = pPrimaryKey.value;
+    rv.pAutoinc = pAutoinc.value;
+    return rv;
   }
 
   /**

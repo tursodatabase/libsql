@@ -2182,7 +2182,9 @@ S3JniApi(sqlite3_aggregate_context(),jlong,1aggregate_1context)(
   return S3JniCast_P2L(p);
 }
 
-/* Central auto-extension handler. */
+/*
+** Central auto-extension runner for auto-extensions created in Java.
+*/
 static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
                                           const struct sqlite3_api_routines *ignored){
   int rc = 0;
@@ -3537,9 +3539,16 @@ S3JniApi(sqlite3_errmsg(),jstring,1errmsg)(
 S3JniApi(sqlite3_errstr(),jstring,1errstr)(
   JniArgsEnvClass, jint rcCode
 ){
-  jstring const rv = (*env)->NewStringUTF(env, sqlite3_errstr((int)rcCode))
-    /* We know these values to be plain ASCII, so pose no MUTF-8
-    ** incompatibility */;
+  jstring rv;
+  const char * z = sqlite3_errstr((int)rcCode);
+  if( !z ){
+    /* This hypothetically cannot happen, but we'll behave like the
+       low-level library would in such a case... */
+    z = "unknown error";
+  }
+  rv = (*env)->NewStringUTF(env, z)
+      /* We know these values to be plain ASCII, so pose no MUTF-8
+      ** incompatibility */;
   s3jni_oom_check( rv );
   return rv;
 }
@@ -4615,7 +4624,7 @@ static int s3jni_strlike_glob(int isLike, JNIEnv *const env,
                               jbyteArray baG, jbyteArray baT, jint escLike){
   int rc = 0;
   jbyte * const pG = s3jni_jbyteArray_bytes(baG);
-  jbyte * const pT = pG ? s3jni_jbyteArray_bytes(baT) : 0;
+  jbyte * const pT = s3jni_jbyteArray_bytes(baT);
 
   /* Note that we're relying on the byte arrays having been
      NUL-terminated on the Java side. */
