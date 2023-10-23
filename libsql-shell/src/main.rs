@@ -22,6 +22,10 @@ use tabled::Table;
 struct Cli {
     #[clap()]
     db_path: Option<String>,
+
+    /// Print inputs before execution
+    #[arg(long, default_value = "false")]
+    echo: bool,
 }
 
 struct StrStatements {
@@ -164,8 +168,8 @@ enum StatsMode {
 }
 
 impl Shell {
-    fn new(db_path: Option<String>) -> Self {
-        let connection = match db_path.as_deref() {
+    fn new(args: Cli) -> Self {
+        let connection = match args.db_path.as_deref() {
             None | Some("") | Some(":memory:") => {
                 println!("Connected to a transient in-memory database.");
                 Connection::open_in_memory().expect("Failed to open in-memory database")
@@ -176,7 +180,7 @@ impl Shell {
         Self {
             db: connection,
             out: Out::Stdout,
-            echo: false,
+            echo: args.echo,
             eqp: false,
             explain: ExplainMode::Auto,
             headers: true,
@@ -184,7 +188,7 @@ impl Shell {
             stats: StatsMode::Off,
             width: [0; 5],
             null_value: String::new(),
-            filename: PathBuf::from(db_path.unwrap_or_else(|| ":memory:".to_string())),
+            filename: PathBuf::from(args.db_path.unwrap_or_else(|| ":memory:".to_string())),
             colseparator: String::new(),
             rowseparator: String::new(),
             main_prompt: "libsql> ".to_string(),
@@ -614,7 +618,7 @@ fn main() -> Result<()> {
     rl.load_history(history.as_path()).ok();
 
     println!("libSQL version 0.2.0");
-    let shell = Shell::new(args.db_path);
+    let shell = Shell::new(args);
     let result = shell.run(&mut rl);
     rl.save_history(history.as_path()).ok();
     result
