@@ -1,5 +1,5 @@
-C Add\san\sSQLITE_OMIT_VIRTUALTABLE\sblock\saround\sthe\snew\svtab\scode\sin\s"PRAGMA\sintegrity_check".
-D 2023-10-23T11:34:24.647
+C Temporarily\sdisable\sthe\sext/expert/expert1-6.0\stest,\swhich\sdoes\snot\swork\non\smy\sconfigurations.
+D 2023-10-23T11:41:41.346
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -52,7 +52,7 @@ F ext/async/sqlite3async.c 6f247666b495c477628dd19364d279c78ea48cd90c72d9f9b98ad
 F ext/async/sqlite3async.h 46b47c79357b97ad85d20d2795942c0020dc20c532114a49808287f04aa5309a
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
-F ext/expert/expert1.test 77eaa3efd906e245a8948cb496174724b867b43b5c0fd9bb4fe7f77f27c64517
+F ext/expert/expert1.test 0dd5cb096d66bed593e33053a3b364f6ef52ed72064bf5cf298364636dbf3cd6
 F ext/expert/sqlite3expert.c 4255c8e53da9f777ba9222897a5e4b33a750564d61a66d72fba9c2bdc392ccf5
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
@@ -2137,8 +2137,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 92e64ab63a78445fe20863f9679c55a630a2295ff10c4ce33eab6dfaeef09622
-R bd57be722eb36635558b9e45da1bb396
-U dan
-Z 17888697ec5bfb90bbb2dbaf482be5b0
+P ab99eb2b6c50f4f0bb42918b9bdda37e2ef9316bed07de18fa4bd373c49a8b00
+R 8fb8ba2b5293d9042556f4f7040fe6f2
+U drh
+Z d2f9eb87d22e80eb87d655fc23c56455
 # Remove this line to create a well-formed Fossil manifest.
