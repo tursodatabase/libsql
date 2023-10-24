@@ -10459,6 +10459,7 @@ static void checkAppendMsg(
 ** corresponds to page iPg is already set.
 */
 static int getPageReferenced(IntegrityCk *pCheck, Pgno iPg){
+  assert( pCheck->aPgRef!=0 );
   assert( iPg<=pCheck->nCkPage && sizeof(pCheck->aPgRef[0])==1 );
   return (pCheck->aPgRef[iPg/8] & (1 << (iPg & 0x07)));
 }
@@ -10467,6 +10468,7 @@ static int getPageReferenced(IntegrityCk *pCheck, Pgno iPg){
 ** Set the bit in the IntegrityCk.aPgRef[] array that corresponds to page iPg.
 */
 static void setPageReferenced(IntegrityCk *pCheck, Pgno iPg){
+  assert( pCheck->aPgRef!=0 );
   assert( iPg<=pCheck->nCkPage && sizeof(pCheck->aPgRef[0])==1 );
   pCheck->aPgRef[iPg/8] |= (1 << (iPg & 0x07));
 }
