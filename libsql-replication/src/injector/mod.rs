@@ -175,9 +175,9 @@ mod test {
         let temp = tempfile::tempdir().unwrap();
 
         let mut injector = Injector::new(temp.path().join("data"), 10, 10000).unwrap();
-        let mut log = wal_log();
-        while let Some(frame) = log.next() {
-            injector.inject_frame(frame.into()).unwrap();
+        let log = wal_log();
+        for frame in log {
+            injector.inject_frame(frame).unwrap();
         }
 
         let conn = rusqlite::Connection::open(temp.path().join("data")).unwrap();
@@ -195,9 +195,9 @@ mod test {
 
         // inject one frame at a time
         let mut injector = Injector::new(temp.path().join("data"), 1, 10000).unwrap();
-        let mut log = wal_log();
-        while let Some(frame) = log.next() {
-            injector.inject_frame(frame.into()).unwrap();
+        let log = wal_log();
+        for frame in log {
+            injector.inject_frame(frame).unwrap();
         }
 
         let conn = rusqlite::Connection::open(temp.path().join("data")).unwrap();
@@ -218,7 +218,7 @@ mod test {
         let mut frames = wal_log();
 
         assert!(injector
-            .inject_frame(frames.next().unwrap().into())
+            .inject_frame(frames.next().unwrap())
             .unwrap()
             .is_none());
         let conn = rusqlite::Connection::open(temp.path().join("data")).unwrap();
@@ -227,7 +227,7 @@ mod test {
             .is_err());
 
         while injector
-            .inject_frame(frames.next().unwrap().into())
+            .inject_frame(frames.next().unwrap())
             .unwrap()
             .is_none()
         {}
