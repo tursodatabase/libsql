@@ -1,5 +1,5 @@
 C Spelling\simprovements,\sin\scomments\sonly
-D 2023-10-24T15:07:28.933
+D 2023-10-24T15:11:55.292
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -723,7 +723,7 @@ F src/resolve.c 31229276a8eb5b5de1428cd2d80f6f1cf8ffc5248be25e47cf575df12f1b8f23
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c f9d8ece7f0742d7b835efa9590ccda4eccee5b9def7581ec94f556e3c52efe51
 F src/shell.c.in 66995332610ed7d47483152c4c78810519ca9ac8b2f93ee884127ce330ca12e8
-F src/sqlite.h.in cd71e0cc6a301796c47d7944222b82cb75ac82fa9ed8879bc647c5bb85e07052
+F src/sqlite.h.in e9047d63745272ebe5c91bf994f9bbc608edfbc3b0be9873062e9a69657bf984
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2f30b2671f4c03cd27a43f039e11251391066c97d11385f5f963bb40b03038ac
 F src/sqliteInt.h cf6646e8694a63749096e1f086767a2c1920dca9848ec2dbe9f7bfb961d322ef
@@ -2138,8 +2138,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 54be9af4469d7e31ee852f67e5aa32996557c10de654a60103fd165d2fedf311
-R 4534a93cc60bc9b01f38eb8cc54ed3a2
+P 65bcc583784476f8cc52dfe72ecc52df93d0ec5817c313ad7a83905c0047dd8c
+R c8334cab1fcc469c9751c0c187d23f95
 U larrybr
-Z bbcec0ff0072931f8df68fe4f02cd0b5
+Z 39c62f83179e0f32d38df3d4da9ac443
 # Remove this line to create a well-formed Fossil manifest.
