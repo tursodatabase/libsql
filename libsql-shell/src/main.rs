@@ -26,6 +26,9 @@ struct Cli {
     /// Print inputs before execution
     #[arg(long, default_value = "false")]
     echo: bool,
+    /// Run "COMMAND" before reading stdin
+    #[arg(long = "cmd", action = clap::ArgAction::Append)]
+    command: Option<Vec<String>>,
 }
 
 struct StrStatements {
@@ -80,6 +83,7 @@ struct Shell {
     width: [usize; 5],
     filename: PathBuf,
 
+    commands_before_repl: Option<Vec<String>>,
     colseparator: String,
     rowseparator: String,
     main_prompt: String,
@@ -189,6 +193,7 @@ impl Shell {
             width: [0; 5],
             null_value: String::new(),
             filename: PathBuf::from(args.db_path.unwrap_or_else(|| ":memory:".to_string())),
+            commands_before_repl: args.command,
             colseparator: String::new(),
             rowseparator: String::new(),
             main_prompt: "libsql> ".to_string(),
@@ -196,7 +201,26 @@ impl Shell {
         }
     }
 
+    fn parse_and_run_command(&mut self, line: &str) {
+        // split line on whitespace, but not inside quotes.
+        let mut split = vec![];
+        for (i, chunk) in line.split_terminator(&['\'', '"']).enumerate() {
+            if i % 2 != 0 {
+                split.push(chunk);
+            } else {
+                split.extend(chunk.split_whitespace())
+            }
+        }
+        self.run_command(split[0], &split[1..]);
+    }
+
     fn run(mut self, rl: &mut Editor<ShellHelper, FileHistory>) -> Result<()> {
+        if let Some(commands) = self.commands_before_repl.take() {
+            for command in commands {
+                self.parse_and_run_command(&command);
+            }
+        }
+
         let mut leftovers = String::new();
         loop {
             let prompt = if leftovers.is_empty() {
@@ -219,16 +243,7 @@ impl Shell {
                         writeln!(self.out, "{}", line).unwrap();
                     }
                     if line.starts_with('.') {
-                        // split line on whitespace, but not inside quotes.
-                        let mut split = vec![];
-                        for (i, chunk) in line.split_terminator(&['\'', '"']).enumerate() {
-                            if i % 2 != 0 {
-                                split.push(chunk);
-                            } else {
-                                split.extend(chunk.split_whitespace())
-                            }
-                        }
-                        self.run_command(split[0], &split[1..]);
+                        self.parse_and_run_command(&line);
                     } else {
                         for str_statement in get_str_statements(line) {
                             let table = self.run_statement(str_statement, (), false);
@@ -665,6 +680,7 @@ mod tests {
         let cli = Cli {
             db_path: Some(":memory:".to_string()),
             echo: false,
+            command: None,
         };
         let shell = Shell::new(cli);
         assert!(shell.headers);
