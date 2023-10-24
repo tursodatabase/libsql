@@ -1,5 +1,5 @@
-C Fix\sa\sminor\stypo\sin\sthe\sprevious.
-D 2023-10-23T23:34:53.502
+C Fix\sa\sharmless\scompiler\swarning\sin\sthe\sexpert\sextension.
+D 2023-10-24T09:57:54.656
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -53,7 +53,7 @@ F ext/async/sqlite3async.h 46b47c79357b97ad85d20d2795942c0020dc20c532114a4980828
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
 F ext/expert/expert1.test 0dd5cb096d66bed593e33053a3b364f6ef52ed72064bf5cf298364636dbf3cd6
-F ext/expert/sqlite3expert.c 4255c8e53da9f777ba9222897a5e4b33a750564d61a66d72fba9c2bdc392ccf5
+F ext/expert/sqlite3expert.c 295ca3b9bd09e857820a7c86b71b25c7c763c68402de7061741ccacff21a5bb2
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c7cc3bf59ee
@@ -2138,8 +2138,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 99ce9939c861ecc07877e640f75d395afb6502130bf4b5ccea8b98a80a1569ce
-R f32ae66a46d5a68b60c31d8f75cc7635
+P 9d388267e4e6724e2df333fe09d509e87defcfe984c5c2ebe031152d320812d0
+R c93c65b4d457eea3e32fda50bd8711c7
 U drh
-Z bbd6d4c6c0e8c3badc3185a6c900116d
+Z 3370819568316647d482b2f4e035059a
 # Remove this line to create a well-formed Fossil manifest.

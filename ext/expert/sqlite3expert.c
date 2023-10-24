@@ -1873,9 +1873,9 @@ int registerUDFs(sqlite3 *dbSrc, sqlite3 *dbDst){
       if( name==0 || type==0 || enc==0 ) rc = SQLITE_NOMEM;
       else{
         int ienc = SQLITE_UTF8;
+        int rcf = SQLITE_ERROR;
         if( strcmp(enc,"utf16le")==0 ) ienc = SQLITE_UTF16LE;
         else if( strcmp(enc,"utf16be")==0 ) ienc = SQLITE_UTF16BE;
-        int rcf = SQLITE_ERROR;
         ienc |= (flags & (SQLITE_DETERMINISTIC|SQLITE_DIRECTONLY));
         if( strcmp(type,"w")==0 ){
           rcf = sqlite3_create_window_function(dbDst,name,nargs,ienc,0,
