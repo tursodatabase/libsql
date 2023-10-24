@@ -44,11 +44,11 @@ pub struct Client {
 
 #[derive(Clone, Debug)]
 struct InnerClient {
-    #[cfg(not(feature = "cloudflare-worker"))]
+    #[cfg(not(feature = "hrana-cf"))]
     inner: hyper::Client<hyper_rustls::HttpsConnector<crate::util::ConnectorService>, hyper::Body>,
 }
 
-#[cfg(not(feature = "cloudflare-worker"))]
+#[cfg(not(feature = "hrana-cf"))]
 impl InnerClient {
     fn new(connector: crate::util::ConnectorService) -> Self {
         let https = hyper_rustls::HttpsConnectorBuilder::new()
@@ -89,7 +89,7 @@ impl InnerClient {
     }
 }
 
-#[cfg(feature = "cloudflare-worker")]
+#[cfg(feature = "hrana-cf")]
 impl InnerClient {
     fn new() -> Self {
         InnerClient {}
@@ -146,10 +146,10 @@ pub enum HranaError {
     Json(#[from] serde_json::Error),
     #[error("api error: `{0}`")]
     Api(String),
-    #[cfg(not(feature = "cloudflare-worker"))]
+    #[cfg(not(feature = "hrana-cf"))]
     #[error("http error: `{0}`")]
     Http(#[from] hyper::Error),
-    #[cfg(feature = "cloudflare-worker")]
+    #[cfg(feature = "hrana-cf")]
     #[error("http error: `{0}`")]
     Http(#[from] worker::Error),
 }
@@ -159,22 +159,22 @@ pub enum HranaError {
  * in a single-thread environment. However we need Hrana errors to be Send/Sync due to upstream
  * error propagation.
  */
-#[cfg(feature = "cloudflare-worker")]
+#[cfg(feature = "hrana-cf")]
 unsafe impl Send for HranaError {}
 
-#[cfg(feature = "cloudflare-worker")]
+#[cfg(feature = "hrana-cf")]
 unsafe impl Sync for HranaError {}
 
 impl Client {
     pub(crate) fn new(
         url: impl Into<String>,
         token: impl Into<String>,
-        #[cfg(not(feature = "cloudflare-worker"))] connector: crate::util::ConnectorService,
+        #[cfg(not(feature = "hrana-cf"))] connector: crate::util::ConnectorService,
     ) -> Self {
-        #[cfg(not(feature = "cloudflare-worker"))]
+        #[cfg(not(feature = "hrana-cf"))]
         let inner = InnerClient::new(connector);
 
-        #[cfg(feature = "cloudflare-worker")]
+        #[cfg(feature = "hrana-cf")]
         let inner = InnerClient::new();
 
         let token = token.into();
@@ -327,8 +327,8 @@ impl Client {
     }
 }
 
-#[cfg_attr(feature = "cloudflare-worker", async_trait::async_trait(?Send))]
-#[cfg_attr(not(feature = "cloudflare-worker"), async_trait::async_trait)]
+#[cfg_attr(feature = "hrana-cf", async_trait::async_trait(?Send))]
+#[cfg_attr(not(feature = "hrana-cf"), async_trait::async_trait)]
 impl Conn for Client {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
         let mut stmt = self.prepare(sql).await?;
@@ -381,8 +381,8 @@ pub struct Statement {
     inner: Stmt,
 }
 
-#[cfg_attr(feature = "cloudflare-worker", async_trait::async_trait(?Send))]
-#[cfg_attr(not(feature = "cloudflare-worker"), async_trait::async_trait)]
+#[cfg_attr(feature = "hrana-cf", async_trait::async_trait(?Send))]
+#[cfg_attr(not(feature = "hrana-cf"), async_trait::async_trait)]
 impl super::statement::Stmt for Statement {
     fn finalize(&mut self) {}
 

@@ -35,7 +35,7 @@ enum DbType {
     Remote {
         url: String,
         auth_token: String,
-        #[cfg(not(feature = "cloudflare-worker"))]
+        #[cfg(not(feature = "hrana-cf"))]
         connector: crate::util::ConnectorService,
     },
 }
@@ -165,7 +165,7 @@ cfg_replication! {
 
 cfg_hrana! {
     impl Database {
-        #[cfg(not(feature = "cloudflare-worker"))]
+        #[cfg(not(feature = "hrana-cf"))]
         pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
             let mut connector = hyper::client::HttpConnector::new();
             connector.enforce_http(false);
@@ -173,7 +173,7 @@ cfg_hrana! {
             Self::open_remote_with_connector(url, auth_token, connector)
         }
 
-        #[cfg(feature = "cloudflare-worker")]
+        #[cfg(feature = "hrana-cf")]
         pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
             Ok(Database {
                 db_type: DbType::Remote {
@@ -185,7 +185,7 @@ cfg_hrana! {
 
         // For now, only expose this for sqld testing purposes
         #[doc(hidden)]
-        #[cfg(not(feature = "cloudflare-worker"))]
+        #[cfg(not(feature = "hrana-cf"))]
         pub fn open_remote_with_connector<C>(
             url: impl Into<String>,
             auth_token: impl Into<String>,
@@ -261,7 +261,7 @@ impl Database {
                 Ok(Connection { conn })
             }
 
-            #[cfg(all(feature = "hrana", not(feature = "cloudflare-worker")))]
+            #[cfg(all(feature = "hrana", not(feature = "hrana-cf")))]
             DbType::Remote {
                 url,
                 auth_token,
@@ -274,7 +274,7 @@ impl Database {
                 )),
             }),
 
-            #[cfg(all(feature = "hrana", feature = "cloudflare-worker"))]
+            #[cfg(all(feature = "hrana", feature = "hrana-cf"))]
             DbType::Remote { url, auth_token } => Ok(Connection {
                 conn: std::sync::Arc::new(crate::hrana::Client::new(url, auth_token)),
             }),

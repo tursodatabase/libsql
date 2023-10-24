@@ -36,8 +36,8 @@ impl Deref for Transaction {
     }
 }
 
-#[cfg_attr(feature = "cloudflare-worker", async_trait::async_trait(?Send))]
-#[cfg_attr(not(feature = "cloudflare-worker"), async_trait::async_trait)]
+#[cfg_attr(feature = "hrana-cf", async_trait::async_trait(?Send))]
+#[cfg_attr(not(feature = "hrana-cf"), async_trait::async_trait)]
 pub(crate) trait Tx {
     async fn commit(&mut self) -> Result<()>;
     async fn rollback(&mut self) -> Result<()>;
