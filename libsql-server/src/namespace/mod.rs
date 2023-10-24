@@ -614,6 +614,11 @@ impl Namespace<ReplicaDatabase> {
                     | Error::NeedSnapshot) => {
                         tracing::warn!("non-fatal replication error, retrying from last commit index: {e}");
                     },
+                    Error::NoHandshake => {
+                        // not strictly necessary, but in case the handshake error goes uncaught,
+                        // we reset the client state.
+                        replicator.client_mut().reset_token();
+                    }
                 }
             }
         });

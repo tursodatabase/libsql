@@ -32,6 +32,8 @@ pub enum Error {
     NeedSnapshot,
     #[error("Replication meta error: {0}")]
     Meta(#[from] super::meta::Error),
+    #[error("Hanshake required")]
+    NoHandshake,
 }
 
 impl From<tokio::task::JoinError> for Error {
@@ -182,7 +184,19 @@ impl<C: ReplicatorClient> Replicator<C> {
                     tracing::debug!("loading snapshot");
                     // remove any outstanding frames in the buffer that are not part of a
                     // transaction: they are now part of the snapshot.
-                    self.load_snapshot().await?;
+                    match self.load_snapshot().await {
+                        Ok(()) => (),
+                        Err(Error::NoHandshake) => {
+                            self.has_handshake = false;
+                            self.try_perform_handshake().await?;
+                        }
+                        Err(e) => return Err(e),
+                    }
+                }
+                Some(Err(Error::NoHandshake)) => {
+                    tracing::debug!("session expired, new handshake required");
+                    self.has_handshake = false;
+                    self.try_perform_handshake().await?;
                 }
                 Some(Err(e)) => return Err(e),
                 None => return Ok(()),

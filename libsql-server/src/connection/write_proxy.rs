@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
 use parking_lot::Mutex as PMutex;
 use rusqlite::types::ValueRef;
 use sqld_libsql_bindings::wal_hook::{TransparentMethods, TRANSPARENT_METHODS};
@@ -23,7 +24,6 @@ use crate::replication::FrameNo;
 use crate::rpc::proxy::rpc::proxy_client::ProxyClient;
 use crate::rpc::proxy::rpc::query_result::RowResult;
 use crate::rpc::proxy::rpc::{DisconnectMessage, ExecuteResults};
-use crate::rpc::NAMESPACE_METADATA_KEY;
 use crate::stats::Stats;
 use crate::{Result, DEFAULT_AUTO_CHECKPOINT};
 

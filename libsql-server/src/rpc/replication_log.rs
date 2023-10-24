@@ -1,20 +1,20 @@
-use std::collections::HashSet;
-use std::net::SocketAddr;
 use std::pin::Pin;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
+use bytes::Bytes;
 use futures::stream::BoxStream;
 pub use libsql_replication::rpc::replication as rpc;
 use libsql_replication::rpc::replication::replication_log_server::ReplicationLog;
 use libsql_replication::rpc::replication::{
     Frame, Frames, HelloRequest, HelloResponse, LogOffset, NEED_SNAPSHOT_ERROR_MSG,
-    NO_HELLO_ERROR_MSG,
+    NO_HELLO_ERROR_MSG, SESSION_TOKEN_KEY,
 };
 use tokio_stream::StreamExt;
 use tonic::Status;
+use uuid::Uuid;
 
 use crate::auth::Auth;
-use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
+use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::LogReadError;
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
@@ -23,10 +23,10 @@ use super::NAMESPACE_DOESNT_EXIST;
 
 pub struct ReplicationLogService {
     namespaces: NamespaceStore<PrimaryNamespaceMaker>,
-    replicas_with_hello: RwLock<HashSet<(SocketAddr, NamespaceName)>>,
     idle_shutdown_layer: Option<IdleShutdownKicker>,
     auth: Option<Arc<Auth>>,
     disable_namespaces: bool,
+    session_token: Bytes,
 }
 
 pub const MAX_FRAMES_PER_BATCH: usize = 1024;
@@ -38,9 +38,10 @@ impl ReplicationLogService {
         auth: Option<Arc<Auth>>,
         disable_namespaces: bool,
     ) -> Self {
+        let session_token = Uuid::new_v4().to_string().into();
         Self {
             namespaces,
-            replicas_with_hello: Default::default(),
+            session_token,
             idle_shutdown_layer,
             auth,
             disable_namespaces,
@@ -50,6 +51,18 @@ impl ReplicationLogService {
     fn authenticate<T>(&self, req: &tonic::Request<T>) -> Result<(), Status> {
         if let Some(auth) = &self.auth {
             let _ = auth.authenticate_grpc(req, self.disable_namespaces)?;
+        }
+
+        Ok(())
+    }
+
+    fn verify_session_token<R>(&self, req: &tonic::Request<R>) -> Result<(), Status> {
+        let no_hello = || Err(Status::failed_precondition(NO_HELLO_ERROR_MSG));
+        let Some(token) = req.metadata().get(SESSION_TOKEN_KEY) else {
+            return no_hello();
+        };
+        if token.as_bytes() != self.session_token {
+            return no_hello();
         }
 
         Ok(())
@@ -122,18 +135,11 @@ impl ReplicationLog for ReplicationLogService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::LogEntriesStream>, Status> {
         self.authenticate(&req)?;
+        self.verify_session_token(&req)?;
+
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
-        let replica_addr = req
-            .remote_addr()
-            .ok_or(Status::internal("No remote RPC address"))?;
         let req = req.into_inner();
-        {
-            let guard = self.replicas_with_hello.read().unwrap();
-            if !guard.contains(&(replica_addr, namespace.clone())) {
-                return Err(Status::failed_precondition(NO_HELLO_ERROR_MSG));
-            }
-        }
 
         let logger = self
             .namespaces
@@ -162,19 +168,10 @@ impl ReplicationLog for ReplicationLogService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Frames>, Status> {
         self.authenticate(&req)?;
+        self.verify_session_token(&req)?;
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
-        let replica_addr = req
-            .remote_addr()
-            .ok_or(Status::internal("No remote RPC address"))?;
         let req = req.into_inner();
-        {
-            let guard = self.replicas_with_hello.read().unwrap();
-            if !guard.contains(&(replica_addr, namespace.clone())) {
-                return Err(Status::failed_precondition(NO_HELLO_ERROR_MSG));
-            }
-        }
-
         let logger = self
             .namespaces
             .with(namespace, |ns| ns.db.logger.clone())
@@ -206,19 +203,6 @@ impl ReplicationLog for ReplicationLogService {
         self.authenticate(&req)?;
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
-
-        use tonic::transport::server::TcpConnectInfo;
-
-        req.extensions().get::<TcpConnectInfo>().unwrap();
-        let replica_addr = req
-            .remote_addr()
-            .ok_or(Status::internal("No remote RPC address"))?;
-
-        {
-            let mut guard = self.replicas_with_hello.write().unwrap();
-            guard.insert((replica_addr, namespace.clone()));
-        }
-
         let logger = self
             .namespaces
             .with(namespace, |ns| ns.db.logger.clone())
@@ -233,6 +217,7 @@ impl ReplicationLog for ReplicationLogService {
 
         let response = HelloResponse {
             log_id: logger.log_id().to_string(),
+            session_token: self.session_token.clone(),
         };
 
         Ok(tonic::Response::new(response))

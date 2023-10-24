@@ -1,8 +1,9 @@
 use anyhow::{bail, Context as _, Result};
 use axum::http::HeaderValue;
+use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
 use tonic::Status;
 
-use crate::{namespace::NamespaceName, rpc::NAMESPACE_METADATA_KEY};
+use crate::namespace::NamespaceName;
 
 static GRPC_AUTH_HEADER: &str = "x-authorization";
 static GRPC_PROXY_AUTH_HEADER: &str = "x-proxy-authorization";

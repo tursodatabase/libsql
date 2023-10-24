@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use hyper_rustls::TlsAcceptor;
+use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
 use rustls::server::AllowAnyAuthenticatedClient;
 use rustls::RootCertStore;
 use tonic::Status;
@@ -22,7 +23,6 @@ pub mod replication_log_proxy;
 
 /// A tonic error code to signify that a namespace doesn't exist.
 pub const NAMESPACE_DOESNT_EXIST: &str = "NAMESPACE_DOESNT_EXIST";
-pub(crate) const NAMESPACE_METADATA_KEY: &str = "x-namespace-bin";
 
 pub async fn run_rpc_server<A: crate::net::Accept>(
     proxy_service: ProxyService,

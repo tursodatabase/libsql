@@ -39,7 +39,11 @@ pub struct Injector {
 /// The implementer can persist the pre and post commit frame no, and compare them in the event of
 /// a crash; if the pre and post commit frame_no don't match, then the log may be corrupted.
 impl Injector {
-    pub fn new(path: impl AsRef<Path>, buffer_capacity: usize, auto_checkpoint: u32) -> Result<Self, Error> {
+    pub fn new(
+        path: impl AsRef<Path>,
+        buffer_capacity: usize,
+        auto_checkpoint: u32,
+    ) -> Result<Self, Error> {
         let buffer = FrameBuffer::default();
         let ctx = InjectorHookCtx::new(buffer.clone());
 
@@ -141,7 +145,8 @@ impl Injector {
         stmt.execute(())?;
         // we create a dummy table. This table MUST not be persisted, otherwise the replica schema
         // would differ with the primary's.
-        let mut stmt = conn.prepare_cached("CREATE TABLE IF NOT EXISTS libsql_temp_injection (x)")?;
+        let mut stmt =
+            conn.prepare_cached("CREATE TABLE IF NOT EXISTS libsql_temp_injection (x)")?;
         stmt.execute(())?;
 
         Ok(())
@@ -164,7 +169,8 @@ mod test {
     const WAL: &[u8] = include_bytes!("../../assets/test/test_wallog");
 
     fn wal_log() -> impl Iterator<Item = Frame> {
-        WAL.chunks(size_of::<FrameBorrowed>()).map(|b| Frame::try_from(b).unwrap())
+        WAL.chunks(size_of::<FrameBorrowed>())
+            .map(|b| Frame::try_from(b).unwrap())
     }
 
     #[test]

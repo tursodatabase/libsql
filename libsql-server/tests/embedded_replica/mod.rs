@@ -74,8 +74,8 @@ fn embedded_replica() {
     //
     // This does change the serialization mode for sqld but because the mode
     // that we use in libsql is safer than the sqld one it is still safe.
-    // let db = Database::open_in_memory().unwrap();
-    // db.connect().unwrap();
+    let db = Database::open_in_memory().unwrap();
+    db.connect().unwrap();
 
     make_primary(&mut sim, tmp_host_path.clone());
 
@@ -103,7 +103,7 @@ fn embedded_replica() {
             .await?;
 
         let n = db.sync().await?;
-        assert_eq!(n, Some(2));
+        assert_eq!(n, Some(1));
 
         let err = conn
             .execute("INSERT INTO user(id) VALUES (1), (1)", ())

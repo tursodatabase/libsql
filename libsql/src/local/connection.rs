@@ -49,7 +49,7 @@ impl Connection {
         };
         match err {
             ffi::SQLITE_OK => {}
-            e => {
+            _ => {
                 return Err(Error::ConnectionFailed(db_path));
             }
         }
