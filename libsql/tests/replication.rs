@@ -17,7 +17,6 @@ async fn inject_frames() {
         .chunks(LIBSQL_PAGE_SIZE)
         .enumerate()
         .map(|(i, data)| {
-            dbg!(data.len());
             let header = FrameHeader {
                 frame_no: i as _,
                 checksum: 0,
@@ -59,7 +58,6 @@ async fn inject_frames() {
         .chunks(LIBSQL_PAGE_SIZE)
         .enumerate()
         .map(|(i, data)| {
-            dbg!(data.len());
             let header = FrameHeader {
                 frame_no: i as u64 + 3,
                 checksum: 0,
@@ -105,7 +103,6 @@ async fn inject_frames_split_txn() {
         .unwrap();
 
     let mut frames = DB.chunks(LIBSQL_PAGE_SIZE).enumerate().map(|(i, data)| {
-        dbg!(data.len());
         let header = FrameHeader {
             frame_no: i as _,
             checksum: 0,

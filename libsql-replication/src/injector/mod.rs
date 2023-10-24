@@ -70,7 +70,6 @@ impl Injector {
     /// Inject on frame into the log. If this was a commit frame, returns Ok(Some(FrameNo)).
     pub fn inject_frame(&mut self, frame: Frame) -> Result<Option<FrameNo>, Error> {
         let frame_close_txn = frame.header().size_after != 0;
-        dbg!(frame.header());
         self.buffer.lock().push_back(frame);
         if frame_close_txn || self.buffer.lock().len() >= self.capacity {
             return self.flush();
@@ -87,7 +86,6 @@ impl Injector {
             self.begin_txn()?;
         }
         let lock = self.buffer.lock();
-        dbg!();
         // the frames in the buffer are either monotonically increasing (log) or decreasing
         // (snapshot). Either way, we want to find the biggest frameno we're about to commit, and
         // that is either the front or the back of the buffer
@@ -105,7 +103,6 @@ impl Injector {
         // use prepare cached to avoid parsing the same statement over and over again.
         let mut stmt =
             connection.prepare_cached("INSERT INTO libsql_temp_injection VALUES (42)")?;
-        dbg!();
 
         // We execute the statement, and then force a call to xframe if necesacary. If the execute
         // succeeds, then xframe wasn't called, in this case, we call cache_flush, and then process
@@ -118,10 +115,8 @@ impl Injector {
                     if e.extended_code == LIBSQL_INJECT_OK {
                         // refresh schema
                         connection.pragma_update(None, "writable_schema", "reset")?;
-                        dbg!();
                         let mut rollback = connection.prepare_cached("ROLLBACK")?;
                         let _ = rollback.execute(());
-                        dbg!();
                         self.is_txn = false;
                         assert!(self.buffer.lock().is_empty());
                         return Ok(Some(last_frame_no));
