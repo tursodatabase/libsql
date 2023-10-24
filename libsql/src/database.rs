@@ -35,6 +35,7 @@ enum DbType {
     Remote {
         url: String,
         auth_token: String,
+        #[cfg(not(feature = "cloudflare-worker"))]
         connector: crate::util::ConnectorService,
     },
 }
@@ -164,6 +165,7 @@ cfg_replication! {
 
 cfg_hrana! {
     impl Database {
+        #[cfg(not(feature = "cloudflare-worker"))]
         pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
             let mut connector = hyper::client::HttpConnector::new();
             connector.enforce_http(false);
@@ -171,8 +173,19 @@ cfg_hrana! {
             Self::open_remote_with_connector(url, auth_token, connector)
         }
 
+        #[cfg(feature = "cloudflare-worker")]
+        pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
+            Ok(Database {
+                db_type: DbType::Remote {
+                    url: url.into(),
+                    auth_token: auth_token.into()
+                },
+            })
+        }
+
         // For now, only expose this for sqld testing purposes
         #[doc(hidden)]
+        #[cfg(not(feature = "cloudflare-worker"))]
         pub fn open_remote_with_connector<C>(
             url: impl Into<String>,
             auth_token: impl Into<String>,
@@ -248,20 +261,23 @@ impl Database {
                 Ok(Connection { conn })
             }
 
-            #[cfg(feature = "hrana")]
+            #[cfg(all(feature = "hrana", not(feature = "cloudflare-worker")))]
             DbType::Remote {
                 url,
                 auth_token,
                 connector,
-            } => {
-                let conn = std::sync::Arc::new(crate::hrana::Client::new_with_connector(
+            } => Ok(Connection {
+                conn: std::sync::Arc::new(crate::hrana::Client::new(
                     url,
                     auth_token,
                     connector.clone(),
-                ));
+                )),
+            }),
 
-                Ok(Connection { conn })
-            }
+            #[cfg(all(feature = "hrana", feature = "cloudflare-worker"))]
+            DbType::Remote { url, auth_token } => Ok(Connection {
+                conn: std::sync::Arc::new(crate::hrana::Client::new(url, auth_token)),
+            }),
 
             _ => unreachable!("no database type set"),
         }

@@ -36,6 +36,7 @@ tonic-web = { version = "0.10.2" , optional = true }
 tower-http = { version = "0.4.4", features = ["trace", "util"], optional = true }
 prost = { version = "0.12", optional = true }
 http = { version = "0.2", optional = true }
+worker = { version = "0.0.18", optional = true }
 
 sqlite3-parser = { path = "../vendored/sqlite3-parser", version = "0.11", optional = true }
 fallible-iterator = { version = "0.3", optional = true }
@@ -95,6 +96,7 @@ hrana = [
 ]
 serde = ["dep:serde"]
 http = ["dep:tower", "dep:hyper", "dep:http", "dep:tokio"]
+cloudflare-worker = ["dep:worker"]
 
 [[bench]]
 name = "benchmark"

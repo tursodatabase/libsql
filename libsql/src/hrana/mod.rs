@@ -4,17 +4,12 @@ mod pipeline;
 mod proto;
 
 use crate::util::coerce_url_scheme;
-use hyper::header::AUTHORIZATION;
 use pipeline::{
     ClientMsg, Response, ServerMsg, StreamBatchReq, StreamExecuteReq, StreamRequest,
     StreamResponse, StreamResponseError, StreamResponseOk,
 };
 use proto::{Batch, BatchResult, Col, Stmt, StmtResult};
 
-use hyper::StatusCode;
-use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
-
-use crate::util::ConnectorService;
 use crate::Error;
 use crate::{params::Params, Column, ValueType};
 use std::collections::{HashMap, VecDeque};
@@ -49,12 +44,14 @@ pub struct Client {
 
 #[derive(Clone, Debug)]
 struct InnerClient {
-    inner: hyper::Client<HttpsConnector<ConnectorService>, hyper::Body>,
+    #[cfg(not(feature = "cloudflare-worker"))]
+    inner: hyper::Client<hyper_rustls::HttpsConnector<crate::util::ConnectorService>, hyper::Body>,
 }
 
+#[cfg(not(feature = "cloudflare-worker"))]
 impl InnerClient {
-    fn new(connector: ConnectorService) -> Self {
-        let https = HttpsConnectorBuilder::new()
+    fn new(connector: crate::util::ConnectorService) -> Self {
+        let https = hyper_rustls::HttpsConnectorBuilder::new()
             .with_native_roots()
             .https_or_http()
             .enable_http1()
@@ -65,6 +62,8 @@ impl InnerClient {
     }
 
     async fn send(&self, url: String, auth: String, body: String) -> Result<ServerMsg> {
+        use hyper::header::AUTHORIZATION;
+
         let req = hyper::Request::post(url)
             .header(AUTHORIZATION, auth)
             .body(hyper::Body::from(body))
@@ -72,7 +71,7 @@ impl InnerClient {
 
         let res = self.inner.request(req).await.map_err(HranaError::from)?;
 
-        if res.status() != StatusCode::OK {
+        if res.status() != hyper::StatusCode::OK {
             let body = hyper::body::to_bytes(res.into_body())
                 .await
                 .map_err(HranaError::from)?;
@@ -90,6 +89,51 @@ impl InnerClient {
     }
 }
 
+#[cfg(feature = "cloudflare-worker")]
+impl InnerClient {
+    fn new() -> Self {
+        InnerClient {}
+    }
+
+    async fn send(&self, url: String, auth: String, body: String) -> Result<ServerMsg> {
+        use worker::*;
+
+        let mut response = match Fetch::Request(
+            Request::new_with_init(
+                &url,
+                &RequestInit {
+                    body: Some(wasm_bindgen::JsValue::from_str(&body)),
+                    headers: {
+                        let mut headers = Headers::new();
+                        headers.append("Authorization", &auth).ok();
+                        headers
+                    },
+                    cf: CfProperties::new(),
+                    method: Method::Post,
+                    redirect: RequestRedirect::Follow,
+                },
+            )
+            .map_err(HranaError::from)?,
+        )
+        .send()
+        .await
+        {
+            Ok(res) => res,
+            Err(e) => return Err(HranaError::Http(e)),
+        };
+        let body = match response.text().await {
+            Ok(res) => res,
+            Err(e) => return Err(HranaError::Http(e)),
+        };
+        if response.status_code() != 200 {
+            Err(HranaError::Api(body))
+        } else {
+            let msg: ServerMsg = serde_json::from_str(&body)?;
+            Ok(msg)
+        }
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum HranaError {
     #[error("unexpected response: `{0}`")]
@@ -100,19 +144,38 @@ pub enum HranaError {
     StreamError(StreamResponseError),
     #[error("json error: `{0}`")]
     Json(#[from] serde_json::Error),
-    #[error("http error: `{0}`")]
-    Http(#[from] hyper::Error),
     #[error("api error: `{0}`")]
     Api(String),
+    #[cfg(not(feature = "cloudflare-worker"))]
+    #[error("http error: `{0}`")]
+    Http(#[from] hyper::Error),
+    #[cfg(feature = "cloudflare-worker")]
+    #[error("http error: `{0}`")]
+    Http(#[from] worker::Error),
 }
 
+/**
+ * Cloudflare worker errors are not Sync/Send, but this shouldn't matter as they are executed
+ * in a single-thread environment. However we need Hrana errors to be Send/Sync due to upstream
+ * error propagation.
+ */
+#[cfg(feature = "cloudflare-worker")]
+unsafe impl Send for HranaError {}
+
+#[cfg(feature = "cloudflare-worker")]
+unsafe impl Sync for HranaError {}
+
 impl Client {
-    pub(crate) fn new_with_connector(
+    pub(crate) fn new(
         url: impl Into<String>,
         token: impl Into<String>,
-        connector: ConnectorService,
+        #[cfg(not(feature = "cloudflare-worker"))] connector: crate::util::ConnectorService,
     ) -> Self {
+        #[cfg(not(feature = "cloudflare-worker"))]
         let inner = InnerClient::new(connector);
+
+        #[cfg(feature = "cloudflare-worker")]
+        let inner = InnerClient::new();
 
         let token = token.into();
         let url = url.into();
