@@ -1,5 +1,5 @@
-C New\s#ifdefs\sto\sfix\scertain\scompile-time\soptions.
-D 2023-10-24T16:16:27.059
+C Test\scases\sfor\sCOLLATE\sand\sNULLS\sFIRST/LAST\sin\sthe\sORDER\sBY\sfor\san\naggregate\sfunction.
+D 2023-10-24T17:45:11.642
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -817,7 +817,7 @@ F test/affinity3.test f094773025eddf31135c7ad4cde722b7696f8eb07b97511f98585addf2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggfault.test 777f269d0da5b0c2524c7ff6d99ae9a93db4f1b1839a914dd2a12e3035c29829
 F test/aggnested.test 2e738bfe2980df301a782f6e7bbf9459266f64f7e72f58f3b5c843bf897c568c
-F test/aggorderby.test d110490c62d29318fa56831cd67bc49b07789592f1cdd7881725735ecd05308a
+F test/aggorderby.test 4a4b2d49532124fbb799a2c014e5134d0e6db2345b19286d027e227e0f383dfa
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 2ecb8bbd52416642e41c9081182a8df05d42c75637afd4488aace78cc4b69e13
 F test/alter.test 403a7f8842457044a994d0ffb42963d6e84fcfbf5e8f54556063b25d966cd454
@@ -2138,8 +2138,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e952db86faaafd2ef8558175ebcae6834d0b0002813cc78c7ae7da713604cbec
-R 235d95e16d499ec1c60f3973e144465a
+P 688c6279ef1d4ff8d58e83a1c73ca0221ab8570a7cd89459946a86afdad6ec1c
+R 3064fd7ebff205f56ff9b901509432de
 U drh
-Z b1a1ae289b7963d5b110e3f6be1d2e73
+Z 43199bfadf9e01e03c769a5bbfeebed2
 # Remove this line to create a well-formed Fossil manifest.
