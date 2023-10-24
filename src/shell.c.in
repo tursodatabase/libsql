@@ -454,6 +454,7 @@ static int stdin_is_interactive = 1;
 # define SHELL_WIN_UTF8_OPT 1
   static int console_utf8 = sizeof(char*)/4 - 1;
 #else
+# define console_utf8 0
 # define SHELL_WIN_UTF8_OPT 0
 #endif
 
