@@ -148,12 +148,10 @@ impl Database {
         if let Some(ref ctx) = self.replication_ctx {
             let mut replicator = ctx.replicator.lock().await;
             if !matches!(replicator.client_mut(), Either::Left(_)) {
-                todo!()
+                return Err(crate::errors::Error::Misuse("Trying to replicate from HTTP, but this is a local replicator".into()));
             }
 
-            if let Err(_e) = replicator.replicate().await {
-                todo!()
-            }
+            replicator.replicate().await?;
 
             Ok(replicator.client_mut().committed_frame_no())
         } else {
@@ -191,11 +189,9 @@ impl Database {
                 Either::Right(c) => {
                     c.load_frames(frames);
                 },
-                Either::Left(_) => todo!("invalid client"),
+                Either::Left(_) => return Err(crate::errors::Error::Misuse("Trying to call sync_frames with an HTTP replicator".into())),
             }
-            if let Err(_e) = replicator.replicate().await {
-                todo!()
-            }
+            replicator.replicate().await?;
 
             Ok(replicator.client_mut().committed_frame_no())
         } else {
