@@ -5,7 +5,8 @@ use crate::{Error, Result};
 
 use crate::{Row, Rows};
 
-#[async_trait::async_trait]
+#[cfg_attr(feature = "cloudflare-worker", async_trait::async_trait(?Send))]
+#[cfg_attr(not(feature = "cloudflare-worker"), async_trait::async_trait)]
 pub(crate) trait Stmt {
     fn finalize(&mut self);
 

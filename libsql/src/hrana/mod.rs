@@ -327,7 +327,8 @@ impl Client {
     }
 }
 
-#[async_trait::async_trait]
+#[cfg_attr(feature = "cloudflare-worker", async_trait::async_trait(?Send))]
+#[cfg_attr(not(feature = "cloudflare-worker"), async_trait::async_trait)]
 impl Conn for Client {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
         let mut stmt = self.prepare(sql).await?;
@@ -380,7 +381,8 @@ pub struct Statement {
     inner: Stmt,
 }
 
-#[async_trait::async_trait]
+#[cfg_attr(feature = "cloudflare-worker", async_trait::async_trait(?Send))]
+#[cfg_attr(not(feature = "cloudflare-worker"), async_trait::async_trait)]
 impl super::statement::Stmt for Statement {
     fn finalize(&mut self) {}
 

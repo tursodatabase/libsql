@@ -31,7 +31,7 @@ async fn main() {
 
     db.sync().await.unwrap();
 
-    let mut jh = tokio::spawn(async move {
+    let fut = async move {
         let mut rows = conn
             .query(
                 "INSERT INTO foo (x) VALUES (?1) RETURNING *",
@@ -57,7 +57,13 @@ async fn main() {
         }
 
         println!("--------");
-    });
+    };
+
+    #[cfg(not(feature = "cloudflare-worker"))]
+    let mut jh = tokio::spawn(fut);
+
+    #[cfg(feature = "cloudflare-worker")]
+    let mut jh = tokio::task::spawn_local(fut);
 
     loop {
         tokio::select! {

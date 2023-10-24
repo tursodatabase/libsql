@@ -129,4 +129,8 @@ pub use self::{
 };
 
 pub type Result<T> = std::result::Result<T, errors::Error>;
+
+#[cfg(not(feature = "cloudflare-worker"))]
 pub(crate) type BoxError = Box<dyn std::error::Error + Send + Sync>;
+#[cfg(feature = "cloudflare-worker")]
+pub(crate) type BoxError = Box<dyn std::error::Error>;

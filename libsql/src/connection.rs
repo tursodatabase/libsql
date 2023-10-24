@@ -6,7 +6,8 @@ use crate::statement::Statement;
 use crate::transaction::Transaction;
 use crate::{Result, TransactionBehavior};
 
-#[async_trait::async_trait]
+#[cfg_attr(feature = "cloudflare-worker", async_trait::async_trait(?Send))]
+#[cfg_attr(not(feature = "cloudflare-worker"), async_trait::async_trait)]
 pub(crate) trait Conn {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64>;
 
