@@ -606,7 +606,7 @@ impl<W: WalHook> Connection<W> {
 
         drop(qresult);
 
-        self.update_stats(&stmt);
+        self.update_stats(query.stmt.stmt.clone(), &stmt);
 
         Ok((affected_row_count, last_insert_rowid))
     }
@@ -640,7 +640,7 @@ impl<W: WalHook> Connection<W> {
         Ok(())
     }
 
-    fn update_stats(&self, stmt: &rusqlite::Statement) {
+    fn update_stats(&self, sql: String, stmt: &rusqlite::Statement) {
         let rows_read = stmt.get_status(StatementStatus::RowsRead);
         let rows_written = stmt.get_status(StatementStatus::RowsWritten);
         let rows_read = if rows_read == 0 && rows_written == 0 {
@@ -650,6 +650,11 @@ impl<W: WalHook> Connection<W> {
         };
         self.stats.inc_rows_read(rows_read as u64);
         self.stats.inc_rows_written(rows_written as u64);
+        let weight = (rows_read + rows_written) as i64;
+        if self.stats.qualifies_as_top_query(weight) {
+            self.stats
+                .add_top_query(crate::stats::TopQuery::new(sql, rows_read, rows_written));
+        }
     }
 
     fn describe(&self, sql: &str) -> DescribeResult {

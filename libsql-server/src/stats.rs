@@ -1,13 +1,34 @@
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Weak};
+use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
+use std::sync::{Arc, RwLock, Weak};
 
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
 use tokio::io::AsyncWriteExt;
 use tokio::task::JoinSet;
 use tokio::time::Duration;
 
 use crate::replication::FrameNo;
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+pub struct TopQuery {
+    #[serde(skip)]
+    pub weight: i64,
+    pub rows_written: i32,
+    pub rows_read: i32,
+    pub query: String,
+}
+
+impl TopQuery {
+    pub fn new(query: String, rows_read: i32, rows_written: i32) -> Self {
+        Self {
+            weight: rows_read as i64 + rows_written as i64,
+            rows_read,
+            rows_written,
+            query,
+        }
+    }
+}
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Stats {
@@ -22,6 +43,11 @@ pub struct Stats {
     write_requests_delegated: AtomicU64,
     #[serde(default)]
     current_frame_no: AtomicU64,
+    // Lowest value in currently stored top queries
+    #[serde(default)]
+    top_query_threshold: AtomicI64,
+    #[serde(default)]
+    top_queries: Arc<RwLock<BTreeSet<TopQuery>>>,
 }
 
 impl Stats {
@@ -90,6 +116,30 @@ impl Stats {
 
     pub(crate) fn get_current_frame_no(&self) -> FrameNo {
         self.current_frame_no.load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn add_top_query(&self, query: TopQuery) {
+        let mut top_queries = self.top_queries.write().unwrap();
+        tracing::debug!(
+            "top query: {},{}:{}",
+            query.rows_read,
+            query.rows_written,
+            query.query
+        );
+        top_queries.insert(query);
+        if top_queries.len() > 10 {
+            top_queries.pop_first();
+        }
+        self.top_query_threshold
+            .store(top_queries.first().unwrap().weight, Ordering::Relaxed);
+    }
+
+    pub(crate) fn qualifies_as_top_query(&self, weight: i64) -> bool {
+        weight >= self.top_query_threshold.load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn top_queries(&self) -> &Arc<RwLock<BTreeSet<TopQuery>>> {
+        &self.top_queries
     }
 }
 

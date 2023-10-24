@@ -7,7 +7,7 @@ use axum::Json;
 
 use crate::namespace::{MakeNamespace, NamespaceName};
 use crate::replication::FrameNo;
-use crate::stats::Stats;
+use crate::stats::{Stats, TopQuery};
 
 use super::AppState;
 
@@ -18,6 +18,7 @@ pub struct StatsResponse {
     pub storage_bytes_used: u64,
     pub write_requests_delegated: u64,
     pub replication_index: FrameNo,
+    pub top_queries: Vec<TopQuery>,
 }
 
 impl From<&Stats> for StatsResponse {
@@ -28,6 +29,13 @@ impl From<&Stats> for StatsResponse {
             storage_bytes_used: stats.storage_bytes_used(),
             write_requests_delegated: stats.write_requests_delegated(),
             replication_index: stats.get_current_frame_no(),
+            top_queries: stats
+                .top_queries()
+                .read()
+                .unwrap()
+                .iter()
+                .cloned()
+                .collect(),
         }
     }
 }
