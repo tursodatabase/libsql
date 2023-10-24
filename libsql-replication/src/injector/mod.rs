@@ -3,7 +3,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use parking_lot::Mutex;
-use sqld_libsql_bindings::rusqlite::{self, OpenFlags};
+use sqld_libsql_bindings::rusqlite::OpenFlags;
 
 use crate::frame::{Frame, FrameNo};
 
@@ -70,11 +70,9 @@ impl Injector {
     /// Inject on frame into the log. If this was a commit frame, returns Ok(Some(FrameNo)).
     pub fn inject_frame(&mut self, frame: Frame) -> Result<Option<FrameNo>, Error> {
         let frame_close_txn = frame.header().size_after != 0;
+        dbg!(frame.header());
         self.buffer.lock().push_back(frame);
         if frame_close_txn || self.buffer.lock().len() >= self.capacity {
-            if !self.is_txn {
-                self.begin_txn()?;
-            }
             return self.flush();
         }
 
@@ -84,8 +82,12 @@ impl Injector {
     /// Flush the buffer to libsql WAL.
     /// Trigger a dummy write, and flush the cache to trigger a call to xFrame. The buffer's frame
     /// are then injected into the wal.
-    fn flush(&mut self) -> Result<Option<FrameNo>, Error> {
+    pub fn flush(&mut self) -> Result<Option<FrameNo>, Error> {
+        if !self.is_txn {
+            self.begin_txn()?;
+        }
         let lock = self.buffer.lock();
+        dbg!();
         // the frames in the buffer are either monotonically increasing (log) or decreasing
         // (snapshot). Either way, we want to find the biggest frameno we're about to commit, and
         // that is either the front or the back of the buffer
@@ -103,6 +105,7 @@ impl Injector {
         // use prepare cached to avoid parsing the same statement over and over again.
         let mut stmt =
             connection.prepare_cached("INSERT INTO libsql_temp_injection VALUES (42)")?;
+        dbg!();
 
         // We execute the statement, and then force a call to xframe if necesacary. If the execute
         // succeeds, then xframe wasn't called, in this case, we call cache_flush, and then process
@@ -115,13 +118,10 @@ impl Injector {
                     if e.extended_code == LIBSQL_INJECT_OK {
                         // refresh schema
                         connection.pragma_update(None, "writable_schema", "reset")?;
-                        if let Err(e) = connection.execute("COMMIT", ()) {
-                            if !matches!(e.sqlite_error(), Some(rusqlite::ffi::Error{ extended_code, .. }) if *extended_code == 201)
-                            {
-                                tracing::error!("injector failed to commit: {e}");
-                                return Err(Error::FatalInjectError);
-                            }
-                        }
+                        dbg!();
+                        let mut rollback = connection.prepare_cached("ROLLBACK")?;
+                        let _ = rollback.execute(());
+                        dbg!();
                         self.is_txn = false;
                         assert!(self.buffer.lock().is_empty());
                         return Ok(Some(last_frame_no));
@@ -160,6 +160,8 @@ impl Injector {
 #[cfg(test)]
 mod test {
     use std::mem::size_of;
+
+    use sqld_libsql_bindings::rusqlite;
 
     use crate::frame::FrameBorrowed;
 

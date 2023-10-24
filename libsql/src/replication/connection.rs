@@ -26,7 +26,7 @@ use super::parser::{self, StmtKind};
 #[derive(Clone)]
 pub struct RemoteConnection {
     pub(self) local: LibsqlConnection,
-    writer: Writer,
+    writer: Option<Writer>,
     inner: Arc<Mutex<Inner>>,
 }
 
@@ -156,7 +156,7 @@ impl From<RemoteState> for State {
 }
 
 impl RemoteConnection {
-    pub(crate) fn new(local: LibsqlConnection, writer: Writer) -> Self {
+    pub(crate) fn new(local: LibsqlConnection, writer: Option<Writer>) -> Self {
         let state = Arc::new(Mutex::new(Inner::default()));
         Self {
             local,
@@ -169,13 +169,15 @@ impl RemoteConnection {
         matches!(self.inner.lock().state, State::Init)
     }
 
-    pub(self) async fn execute_program(
+    pub(self) async fn execute_remote(
         &self,
         stmts: Vec<parser::Statement>,
         params: Params,
     ) -> Result<ExecuteResults> {
-        let res = self
-            .writer
+        let Some(ref writer) = self.writer else {
+            return Err(Error::Misuse("Cannot delegate write in local replica mode.".into()));
+        };
+        let res = writer
             .execute_program(stmts, params)
             .await
             .map_err(|e| Error::WriteDelegation(e.into()))?;
@@ -191,8 +193,10 @@ impl RemoteConnection {
     }
 
     pub(self) async fn describe(&self, stmt: impl Into<String>) -> Result<DescribeResult> {
-        let res = self
-            .writer
+        let Some(ref writer) = self.writer else {
+            return Err(Error::Misuse("Cannot describe in local replica mode.".into()));
+        };
+        let res = writer
             .describe(stmt)
             .await
             .map_err(|e| Error::WriteDelegation(e.into()))?;
@@ -244,7 +248,7 @@ impl Conn for RemoteConnection {
             }
         }
 
-        let res = self.execute_program(stmts, params).await?;
+        let res = self.execute_remote(stmts, params).await?;
 
         let result = res
             .results
@@ -281,7 +285,7 @@ impl Conn for RemoteConnection {
             }
         }
 
-        let res = self.execute_program(stmts, Params::None).await?;
+        let res = self.execute_remote(stmts, Params::None).await?;
 
         for result in res.results {
             match result.row_result {
@@ -453,7 +457,7 @@ impl Stmt for RemoteStatement {
 
         let res = self
             .conn
-            .execute_program(self.stmts.clone(), params.clone())
+            .execute_remote(self.stmts.clone(), params.clone())
             .await?;
 
         let result = res
@@ -487,7 +491,7 @@ impl Stmt for RemoteStatement {
 
         let res = self
             .conn
-            .execute_program(self.stmts.clone(), params.clone())
+            .execute_remote(self.stmts.clone(), params.clone())
             .await?;
 
         let result = res

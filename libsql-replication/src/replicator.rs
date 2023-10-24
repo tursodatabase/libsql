@@ -216,8 +216,22 @@ impl<C: ReplicatorClient> Replicator<C> {
     }
 
     async fn inject_frame(&mut self, frame: Frame) -> Result<(), Error> {
+        dbg!();
         let injector = self.injector.clone();
         match spawn_blocking(move || injector.lock().inject_frame(frame)).await? {
+            Ok(Some(commit_fno)) => {
+                self.client.commit_frame_no(commit_fno).await?;
+            }
+            Ok(None) => (),
+            Err(e) => Err(e)?,
+        }
+
+        Ok(())
+    }
+
+    pub async fn flush(&mut self) -> Result<(), Error> {
+        let injector = self.injector.clone();
+        match spawn_blocking(move || injector.lock().flush()).await? {
             Ok(Some(commit_fno)) => {
                 self.client.commit_frame_no(commit_fno).await?;
             }

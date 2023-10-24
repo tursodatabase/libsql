@@ -90,7 +90,6 @@ cfg_replication! {
 
     impl Database {
         /// Open a local database file with the ability to sync from snapshots from local filesystem.
-        #[cfg(feature = "replication")]
         pub async fn open_with_local_sync(db_path: impl Into<String>) -> Result<Database> {
             let db = crate::local::Database::open_local_sync(db_path, OpenFlags::default())?;
 
@@ -100,7 +99,6 @@ cfg_replication! {
         }
 
         /// Open a local database file with the ability to sync from a remote database.
-        #[cfg(feature = "replication")]
         pub async fn open_with_remote_sync(
             db_path: impl Into<String>,
             url: impl Into<String>,
@@ -162,6 +160,16 @@ cfg_replication! {
         pub async fn sync_frames(&self, frames: crate::replication::Frames) -> Result<Option<FrameNo>> {
             if let DbType::Sync { db } = &self.db_type {
                 db.sync_frames(frames).await
+            } else {
+                Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
+            }
+        }
+
+        /// Force buffered replication frames to be applied, and return the current commit frame_no
+        /// if applicable.
+        pub async fn flush_replicator(&self) -> Result<Option<FrameNo>> {
+            if let DbType::Sync { db } = &self.db_type {
+                db.flush_replicator().await
             } else {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
             }
@@ -242,6 +250,7 @@ impl Database {
                 let conn = db.connect()?;
 
                 let local = LibsqlConnection { conn };
+                let writer = local.conn.writer().cloned();
 
                 let conn = if let Some(writer) = local.conn.writer() {
                     let writer = writer.clone();

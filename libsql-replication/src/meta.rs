@@ -144,4 +144,18 @@ impl WalIndexMeta {
             }
         })
     }
+
+    /// force default initialization, if the meta wasn't already initialized.
+    /// The log_id is set to 0, and so is the replication index is set to None
+    pub fn init_default(&mut self) {
+        if self.data.is_none() {
+            let meta = WalIndexMetaData {
+                log_id: 0,
+                committed_frame_no: FrameNo::MAX,
+                _padding: 0,
+            };
+
+            self.data.replace(meta);
+        }
+    }
 }

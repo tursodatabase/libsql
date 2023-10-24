@@ -201,4 +201,20 @@ impl Database {
             ))
         }
     }
+
+    #[cfg(feature = "replication")]
+    pub async fn flush_replicator(&self) -> Result<Option<FrameNo>> {
+        use libsql_replication::replicator::ReplicatorClient;
+
+        if let Some(ref ctx) = self.replication_ctx {
+            let mut replicator = ctx.replicator.lock().await;
+            replicator.flush().await?;
+            Ok(replicator.client_mut().committed_frame_no())
+        } else {
+            Err(crate::errors::Error::Misuse(
+                "No replicator available. Use Database::with_replicator() to enable replication"
+                    .to_string(),
+            ))
+        }
+    }
 }

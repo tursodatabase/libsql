@@ -16,7 +16,8 @@ pub struct LocalClient {
 
 impl LocalClient {
     pub(crate) async fn new(path: &Path) -> anyhow::Result<Self> {
-        let meta = WalIndexMeta::open(path).await?;
+        let mut meta = WalIndexMeta::open(path.parent().unwrap()).await?;
+        meta.init_default();
         Ok(Self {
             frames: None,
             meta,
@@ -37,7 +38,7 @@ impl ReplicatorClient for LocalClient {
 
     /// Perform handshake with remote
     async fn handshake(&mut self) -> Result<(), Error> {
-        todo!()
+        Ok(())
     }
 
     /// Return a stream of frames to apply to the database

@@ -43,6 +43,7 @@ impl InjectorHookCtx {
         let buffer = self.buffer.lock();
         let (mut headers, size_after) = make_page_header(buffer.iter().map(|f| &**f));
 
+        dbg!(size_after);
         let ret = unsafe {
             orig(
                 wal,
@@ -85,6 +86,7 @@ fn make_page_header<'a>(frames: impl Iterator<Item = &'a FrameBorrowed>) -> (Hea
         if frames.peek().is_none() {
             size_after = frame.header().size_after;
         }
+        dbg!(frame.header());
 
         let page = PgHdr {
             pPage: std::ptr::null_mut(),
