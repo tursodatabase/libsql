@@ -2127,7 +2127,7 @@ struct sqlite3_mem_methods {
 ** is stored in each sorted record and the required column values loaded
 ** from the database as records are returned in sorted order. The default
 ** value for this option is to never use this optimization. Specifying a
-** negative value for this option restores the default behaviour.
+** negative value for this option restores the default behavior.
 ** This option is only available if SQLite is compiled with the
 ** [SQLITE_ENABLE_SORTER_REFERENCES] compile-time option.
 **
@@ -5960,7 +5960,7 @@ void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
 ** <li> The database connection closes.  SQLite does not make any guarantees
 **      about the order in which destructors are called, only that all
 **      destructors will be called exactly once at some point during the
-**      database connection closingi process.
+**      database connection closing process.
 ** </ul>
 **
 ** SQLite does not do anything with client data other than invoke
@@ -6756,7 +6756,7 @@ void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 ** ^Each call to the sqlite3_autovacuum_pages() interface overrides all
 ** previous invocations for that database connection.  ^If the callback
 ** argument (C) to sqlite3_autovacuum_pages(D,C,P,X) is a NULL pointer,
-** then the autovacuum steps callback is cancelled.  The return value
+** then the autovacuum steps callback is canceled.  The return value
 ** from sqlite3_autovacuum_pages() is normally SQLITE_OK, but might
 ** be some other error code if something goes wrong.  The current
 ** implementation will only return SQLITE_OK or SQLITE_MISUSE, but other
