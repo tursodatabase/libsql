@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sthe\sfts5\shighlight()\sand\ssnippet()\sfunctions\swhen\sused\swith\stokenizers\slike\s"trigram"\sthat\soutput\soverlapping\stokens.\sForum\spost\s[forum:/forumpost/63735293ec|63735293ec].
-D 2023-10-24T16:06:56.794
+C New\s#ifdefs\sto\sfix\scertain\scompile-time\soptions.
+D 2023-10-24T16:16:27.059
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -684,7 +684,7 @@ F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
 F src/json.c d69c6e28ff7b602877bda68cd20583b8487c059759aa4d154dd21b3fd99c6238
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7d56c6f28aaf9b42e2772289e0d0a12a77b57c2baed021dbfd1fcafec69c156a
-F src/main.c e3166de468267c7d2888af536b8a9454a8e13c39700fdd9560213a6cf00b714a
+F src/main.c e1bc8864834697503d370d94613be945d05ca1c5ebdda43e7d5c8ee8c48d433c
 F src/malloc.c f016922435dc7d1f1f5083a03338a3e91f8c67ce2c5bdcfa4cdef62e612f5fcc
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -791,7 +791,7 @@ F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c b22cc9f203a8c0b9ee5338a67f8860347d14845864c10248bebe84518a781677
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
-F src/vdbe.c 300b1ac9339a5b7db9ccd48c1a13c3d71722da13352a38ee042ca0a399b4dd7e
+F src/vdbe.c af7eace744ec425f7f0c3c298b3471f6144b2648b15882f285a6852b3bd2fe83
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c fe654b1f54e1feebcaed6c2ae3ed035cc65bfeb9a1169bed866abc42bfc63ff6
@@ -2138,9 +2138,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9ee25eeaf17124dbe34b961384e74c1ae239ee1798bb01907938600ed6b4066f d570aa02f79b1d7d3889e33f9eebab1b7edcf5231b1357451eed9a538607de54
-R 4c04974dbac2d5b02e9db5f09d63c22c
-T +closed d570aa02f79b1d7d3889e33f9eebab1b7edcf5231b1357451eed9a538607de54
-U dan
-Z 7a83bdd07c56b465bbc46bd2267d0f1f
+P e952db86faaafd2ef8558175ebcae6834d0b0002813cc78c7ae7da713604cbec
+R 235d95e16d499ec1c60f3973e144465a
+U drh
+Z b1a1ae289b7963d5b110e3f6be1d2e73
 # Remove this line to create a well-formed Fossil manifest.

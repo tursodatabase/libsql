@@ -382,7 +382,9 @@ int sqlite3_initialize(void){
 
   /* Experimentally determine if high-precision floating point is
   ** available. */
+#ifndef SQLITE_OMIT_WSD
   sqlite3Config.bUseLongDouble = hasHighPrecisionDouble(rc);
+#endif
 
   return rc;
 }

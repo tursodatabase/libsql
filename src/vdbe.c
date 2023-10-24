@@ -6911,21 +6911,29 @@ case OP_CreateBtree: {          /* out2 */
 */
 case OP_SqlExec: {
   char *zErr;
+#ifndef SQLITE_OMIT_AUTHORIZATION
   sqlite3_xauth xAuth;
+#endif
   u8 mTrace;
 
   sqlite3VdbeIncrWriteCounter(p, 0);
   db->nSqlExec++;
   zErr = 0;
+#ifndef SQLITE_OMIT_AUTHORIZATION
   xAuth = db->xAuth;
+#endif
   mTrace = db->mTrace;
   if( pOp->p1 ){
+#ifndef SQLITE_OMIT_AUTHORIZATION
     db->xAuth = 0;
+#endif
     db->mTrace = 0;
   }
   rc = sqlite3_exec(db, pOp->p4.z, 0, 0, &zErr);
   db->nSqlExec--;
+#ifndef SQLITE_OMIT_AUTHORIZATION
   db->xAuth = xAuth;
+#endif
   db->mTrace = mTrace;
   if( zErr || rc ){
     sqlite3VdbeError(p, "%s", zErr);
