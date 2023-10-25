@@ -53,6 +53,16 @@ macro_rules! cfg_core {
     }
 }
 
+macro_rules! cfg_core2 {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "core")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "core")))]
+            $item
+        )*
+    }
+}
+
 macro_rules! cfg_replication {
     ($($item:item)*) => {
         $(
@@ -100,18 +110,33 @@ cfg_core! {
     pub use libsql_sys::ffi;
 }
 
-mod util;
+cfg_core2! {
+    mod util;
 
-pub mod errors;
-pub use errors::Error;
+    pub mod errors;
+    pub use errors::Error;
 
-pub use params::params_from_iter;
+    pub use params::params_from_iter;
 
-mod connection;
-mod database;
-mod rows;
-mod statement;
-mod transaction;
+    mod connection;
+    mod database;
+    mod rows;
+    mod statement;
+    mod transaction;
+
+    pub use self::{
+    connection::Connection,
+    database::Database,
+    rows::{Column, Row, Rows},
+    statement::Statement,
+    transaction::{Transaction, TransactionBehavior},
+    };
+
+    pub type Result<T> = std::result::Result<T, errors::Error>;
+}
+
+pub(crate) type BoxError = Box<dyn std::error::Error + Send + Sync>;
+
 mod value;
 
 pub use value::{Value, ValueRef, ValueType};
@@ -119,14 +144,3 @@ pub use value::{Value, ValueRef, ValueType};
 cfg_hrana! {
     mod hrana;
 }
-
-pub use self::{
-    connection::Connection,
-    database::Database,
-    rows::{Column, Row, Rows},
-    statement::Statement,
-    transaction::{Transaction, TransactionBehavior},
-};
-
-pub type Result<T> = std::result::Result<T, errors::Error>;
-pub(crate) type BoxError = Box<dyn std::error::Error + Send + Sync>;

@@ -9,9 +9,9 @@ license = "MIT"
 [dependencies]
 futures = { version = "0.3.28", optional = true }
 libsql-sys = { version = "0.2.13", path = "../libsql-sys", optional = true }
-thiserror = "1.0.40"
+thiserror = { version = "1.0.40", optional = true }
 tokio = { version = "1.29.1", features = ["fs", "sync"], optional = true }
-tracing = "0.1.37"
+tracing = { version = "0.1.37", optional = true }
 parking_lot = { version = "0.12.1", optional = true }
 hyper = { version = "0.14", features = ["client"], optional = true }
 hyper-rustls = { version = "0.24", features = ["webpki-roots"], optional = true }
@@ -56,12 +56,18 @@ prost-build = "0.12"
 
 [features]
 default = ["core", "replication", "hrana"]
+core2 = [
+  "tracing",
+  "thiserror"
+]
 core = [
+  "core2",
   "libsql-sys",
   "dep:bitflags",
   "dep:futures"
 ]
 replication = [
+  "core2",
   "core",
   "serde",
   "http",
@@ -87,6 +93,7 @@ replication = [
   "dep:futures"
 ]
 hrana = [
+  "core2",
   "serde",
   "http",
   "dep:base64",
@@ -96,6 +103,7 @@ hrana = [
 ]
 serde = ["dep:serde"]
 http = ["dep:tower", "dep:hyper", "dep:http", "dep:tokio"]
+serverless = []
 
 [[bench]]
 name = "benchmark"
