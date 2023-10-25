@@ -6771,6 +6771,7 @@ static void updateAccumulator(
     int addrNext = 0;
     int regAgg;
     int regAggSz = 0;
+    int regDistinct = 0;
     ExprList *pList;
     assert( ExprUseXList(pF->pFExpr) );
     assert( !IsWindowFunc(pF->pFExpr) );
@@ -6820,6 +6821,7 @@ static void updateAccumulator(
       }
       regAggSz++;  /* One extra register to hold result of MakeRecord */
       regAgg = sqlite3GetTempRange(pParse, regAggSz);
+      regDistinct = regAgg;
       sqlite3ExprCodeExprList(pParse, pOBList, regAgg, 0, SQLITE_ECEL_DUP);
       jj = pOBList->nExpr;
       if( !pF->bOBUnique ){
@@ -6827,11 +6829,13 @@ static void updateAccumulator(
         jj++;
       }
       if( pF->bOBPayload ){
-        sqlite3ExprCodeExprList(pParse, pList, regAgg+jj, 0, SQLITE_ECEL_DUP);
+        regDistinct = regAgg+jj;
+        sqlite3ExprCodeExprList(pParse, pList, regDistinct, 0, SQLITE_ECEL_DUP);
       }
     }else if( pList ){
       nArg = pList->nExpr;
       regAgg = sqlite3GetTempRange(pParse, nArg);
+      regDistinct = regAgg;
       sqlite3ExprCodeExprList(pParse, pList, regAgg, 0, SQLITE_ECEL_DUP);
     }else{
       nArg = 0;
@@ -6842,7 +6846,7 @@ static void updateAccumulator(
         addrNext = sqlite3VdbeMakeLabel(pParse);
       }
       pF->iDistinct = codeDistinct(pParse, eDistinctType,
-          pF->iDistinct, addrNext, pList, regAgg);
+          pF->iDistinct, addrNext, pList, regDistinct);
     }
     if( pF->iOBTab>=0 ){
       /* Insert a new record into the ORDER BY table */

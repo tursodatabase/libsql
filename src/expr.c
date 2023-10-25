@@ -6806,16 +6806,17 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
               pItem->iOBTab = pParse->nTab++;
               pOBList = pExpr->pLeft->x.pList;
               assert( pOBList->nExpr>0 );
+              assert( pItem->bOBUnique==0 );
               if( pOBList->nExpr==1
                && nArg==1
                && sqlite3ExprCompare(0,pOBList->a[0].pExpr,
                                pExpr->x.pList->a[0].pExpr,0)==0
               ){
                 pItem->bOBPayload = 0;
+                pItem->bOBUnique = ExprHasProperty(pExpr, EP_Distinct);
               }else{
                 pItem->bOBPayload = 1;
               }
-              pItem->bOBUnique = ExprHasProperty(pExpr, EP_Distinct);
             }else{
               pItem->iOBTab = -1;
             }

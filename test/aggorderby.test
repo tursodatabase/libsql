@@ -102,4 +102,21 @@ do_execsql_test aggorderby-7.1 {
          json_group_array(x ORDER BY y NULLS LAST, x) FROM c;
 } {[2,4,5,3,1] [5,3,1,2,4]}
 
+# The DISTINCT only applies to the function arguments, not to the
+# ORDER BY arguments.
+#
+do_execsql_test aggorderby-8.0 {
+  WITH c(x,y,z) AS (VALUES('a',4,5),('b',3,6),('c',2,7),('c',1,8))
+  SELECT group_concat(DISTINCT x ORDER BY y, z) FROM c;
+} {c,b,a}
+do_execsql_test aggorderby-8.1 {
+  WITH c(x,y,z) AS (VALUES('a',4,5),('b',3,6),('b',2,7),('c',1,8))
+  SELECT group_concat(DISTINCT x ORDER BY y, z) FROM c;
+} {c,b,a}
+do_execsql_test aggorderby-8.2 {
+  WITH c(x,y) AS (VALUES(1,1),(2,2),(3,3),(3,4),(3,5),(3,6))
+  SELECT sum(DISTINCT x ORDER BY y) FROM c;
+} 6
+
+
 finish_test
