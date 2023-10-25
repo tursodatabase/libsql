@@ -1,5 +1,5 @@
-C Add\san\sALWAYS\son\sbranch\sthat\swas\smade\salways-true\sby\sthe\sDISTINCT\sORDER\sBY\nfix.
-D 2023-10-25T15:30:11.779
+C Test\smodule\saltermalloc3.test\srequires\sDQS_DDL\sto\sbe\sturned\son.
+D 2023-10-25T17:26:11.573
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -834,7 +834,7 @@ F test/alterfault.test 289067108947bedca27534edd4ff251bcd298cf84402d7b24eaa37493
 F test/alterlegacy.test f38c6d06cda39e1f7b955bbce57f2e3ef5b7cb566d3d1234502093e228c15811
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
 F test/altermalloc2.test 17fb3724c4b004c469c27dc4ef181608aa644555fbd3f3236767584f73747c81
-F test/altermalloc3.test 8531b3086f0a7889f43971a579a8c81832d5123f4703d8c86b89ba1136c63b9a
+F test/altermalloc3.test 8040e486368403f2fdd6fc3998258b499bd4cc2f3ddbb5f8f874cd436f076e81
 F test/alterqf.test 8ec03d776de9c391daa0078ea8f838903bdcfb11dfae4ba3576b48436834ccba
 F test/altertab.test 8a2712f9076da5012a002d0b5cc0a421398a5bf61c25bab41b77c427586a7a27
 F test/altertab2.test 62597b6fd08feaba1b6bfe7d31dac6117c67e06dc9ce9c478a3abe75b5926de0
@@ -2138,8 +2138,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d2dbbdf7194bab4e5e3b74d3dbffb012a335829824c775c72dd7347c013d2125
-R 69224f49fd227efd4871d1e294714787
+P c29ebcb0be8e969c359c077bd4ce752a9c952d2659062868f12efdd2cc77186d
+R 1801e0da56e4876ff07eaa2fbc6ddd00
 U drh
-Z 09c12c04ae80362f6524540f0fd3a848
+Z 79a4773e545153772af92c625c1e9ce1
 # Remove this line to create a well-formed Fossil manifest.
