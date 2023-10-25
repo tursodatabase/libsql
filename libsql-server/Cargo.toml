@@ -23,7 +23,6 @@ clap = { version = "4.0.23", features = [ "derive", "env", "string" ] }
 # console-subscriber = { version = "0.1.10", optional = true }
 console-subscriber = { git = "https://github.com/tokio-rs/console.git", rev = "5a80b98", optional = true }
 crc = "3.0.0"
-crossbeam = "0.8.2"
 enclose = "1.1"
 fallible-iterator = "0.3.0"
 futures = "0.3.25"
@@ -37,7 +36,6 @@ itertools = "0.10.5"
 jsonwebtoken = "8.2.0"
 libsql = { path = "../libsql/", optional = true }
 libsql-replication = { path = "../libsql-replication" }
-memmap = "0.7.0"
 metrics = "0.21.1"
 metrics-exporter-prometheus = "0.12.1"
 mimalloc = { version = "0.1.36", default-features = false }

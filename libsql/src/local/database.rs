@@ -1,18 +1,18 @@
 use std::sync::Once;
 
-use libsql_replication::replicator::Either;
-#[cfg(feature = "replication")]
-use libsql_replication::replicator::Replicator;
+cfg_replication!(
+    use tokio::sync::Mutex;
+    use libsql_replication::replicator::Replicator;
+    use libsql_replication::frame::FrameNo;
+    use libsql_replication::replicator::Either;
+
+    use crate::replication::client::Client;
+    use crate::replication::local_client::LocalClient;
+    use crate::replication::remote_client::RemoteClient;
+    pub use crate::replication::Frames;
+);
+
 use libsql_sys::ffi;
-use tokio::sync::Mutex;
-use crate::replication::client::Client;
-use crate::replication::local_client::LocalClient;
-#[cfg(feature = "replication")]
-use crate::replication::remote_client::RemoteClient;
-#[cfg(feature = "replication")]
-use libsql_replication::frame::FrameNo;
-#[cfg(feature = "replication")]
-pub use crate::replication::Frames;
 use crate::{database::OpenFlags, local::connection::Connection};
 use crate::{Error::ConnectionFailed, Result};
 

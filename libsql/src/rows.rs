@@ -1,7 +1,6 @@
 use crate::{Result, Value, ValueType};
 
 // NOTICE: Column is blatantly copy-pasted from rusqlite
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 pub struct Column<'stmt> {
     pub name: &'stmt str,
     pub origin_name: Option<&'stmt str>,

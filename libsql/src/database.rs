@@ -1,7 +1,5 @@
 use std::fmt;
 
-use libsql_replication::frame::FrameNo;
-
 use crate::{Connection, Result};
 
 cfg_core! {
@@ -87,6 +85,8 @@ cfg_core! {
 
 cfg_replication! {
     use crate::Error;
+    use libsql_replication::frame::FrameNo;
+
 
     impl Database {
         /// Open a local database file with the ability to sync from snapshots from local filesystem.
