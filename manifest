@@ -1,5 +1,5 @@
-C Enhance\sthe\snew\sxIntegrity\smethod\sof\sthe\ssqlite3_module\sobject\swith\snew\nparameters\sthat\sprovide\sthe\sname\sof\sthe\stable\sbeing\schecked\sand\na\sflag\sto\sindicate\sa\s"quick_check".\s\sBased\son\sfeedback\sin\n[forum:/forumpost/965c0d02ea|forum\spost\s965c0d02ea].
-D 2023-10-25T10:37:11.394
+C Fix\sthe\samalgamation\sgenerator\sso\sthat\swhen\sit\sis\sreporting\sthe\sFossil\nversion\snumber\sin\sthe\sheader\scomment\sof\sthe\samalgamation,\sit\sdoes\snot\nelide\sthe\sfirst\shex\sdigit\sof\sthe\sversion\shash.
+D 2023-10-25T12:58:06.512
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2069,7 +2069,7 @@ F tool/mkshellc.tcl b7adf08b82de60811d2cb6af05ff59fc17e5cd6f3e98743c14eaaa3f8971
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
-F tool/mksqlite3c.tcl 49e39b1e616abc92fd8c24445f2b0a38881825f764541e0026f72371f0d84b65
+F tool/mksqlite3c.tcl 2c760ab786cb509b47f00c96fea82994866cb99f5e046df81c768288f57897b4
 F tool/mksqlite3h.tcl d391cff7cad0a372ee1406faee9ccc7dad9cb80a0c95cae0f73d10dd26e06762
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mktoolzip.tcl 6e17f53eb924c76ea5f290cf7b8f554cc245ad6299e46928419abcd2de691663
@@ -2138,8 +2138,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 50448fe4fdc8fd93303fe26bdcd885ecc606080c8e66e69d5be8dac28a77492b
-R 30ef2af5a58be5aa899fd43e3a6be25e
+P bc8afa3f15954bb35f65dbf940bf069de5e14d333036676c24430cf17b658d05
+R 6ec86e3a31586d43a486c38d42879355
 U drh
-Z aefb39a97493c6e3bdb1f5a57cd2f3c5
+Z 0c4d685f28f353f462c813fc0dbcad7d
 # Remove this line to create a well-formed Fossil manifest.
