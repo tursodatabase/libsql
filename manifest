@@ -1,5 +1,5 @@
-C In\sCLI\sfor\sWindows\sbuilds,\sdo\sMBCS/UTF-8\stranslation\sindependently\sfor\sinput\sand\soutput.\s(WIP)
-D 2023-10-25T20:27:18.335
+C Cure\sa\sharmless\sMSVC\swarning.\s(no\sother\schanges)
+D 2023-10-25T20:44:01.155
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -554,7 +554,7 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test b039e38e2ba83767b464baf39b297cc0b1cc6f3292255cb467ea7e12d0d0280c
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c 3e8aa4bd7136b5504952b5d3ab0b2e75f2ab50c7fc2f9915ef980d382dabbf51
+F ext/session/sqlite3session.c 7b0f9bf6479aebd49e5f34cdaeb1479cde843cf5189bca6f32db4f36c130b414
 F ext/session/sqlite3session.h 4cf19a51975746d7cff2fdd74db8b769c570958e1c3639ac150d824ac1553b3e
 F ext/session/test_session.c 73e9921205633a08c1497770beecf3dcbc9b826dd4358f7f8152f706eaac5d71
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -2138,11 +2138,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c29ebcb0be8e969c359c077bd4ce752a9c952d2659062868f12efdd2cc77186d
-R 023b0809f9198b763f6cfba361f37800
-T *branch * win-utf8-io-split
-T *sym-win-utf8-io-split *
-T -sym-trunk *
+P 47b13e66e07be3a26cf7fa0b7b65ad8576c3b4be50fc422be8fe93be93d681ac
+R b74c842dae72512c83feef833a3df3e2
 U larrybr
-Z 1eb3a8144b68660f3c58b794f51200b9
+Z 0170b741738e0aeb080b89c815bde8d0
 # Remove this line to create a well-formed Fossil manifest.
