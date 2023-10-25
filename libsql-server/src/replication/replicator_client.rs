@@ -91,7 +91,7 @@ impl ReplicatorClient for Client {
                 let hello = resp.into_inner();
                 verify_session_token(&hello.session_token).map_err(Error::Client)?;
                 self.session_token.replace(hello.session_token.clone());
-                self.meta.merge_hello(hello)?;
+                self.meta.init_from_hello(hello)?;
                 self.current_frame_no_notifier
                     .send_replace(self.meta.current_frame_no());
 

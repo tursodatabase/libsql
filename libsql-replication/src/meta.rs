@@ -77,8 +77,8 @@ impl WalIndexMeta {
         Ok(Self { file, data })
     }
 
-    /// attempts to merge two meta files.
-    pub fn merge_hello(&mut self, hello: HelloResponse) -> Result<(), Error> {
+    /// Inits metatdata from a handshake response.
+    pub fn init_from_hello(&mut self, hello: HelloResponse) -> Result<(), Error> {
         let hello_log_id = Uuid::from_str(&hello.log_id)
             .map_err(|_| Error::InvalidLogId)?
             .as_u128();
@@ -106,10 +106,7 @@ impl WalIndexMeta {
         if let Some(data) = self.data {
             // FIXME: we can save a syscall by calling read_exact_at, but let's use tokio API for now
             self.file.seek(SeekFrom::Start(0)).await?;
-            let s = self.file.write(bytes_of(&data)).await?;
-            // WalIndexMeta is smaller than a page size, and aligned at the beginning of the file, if
-            // should always be written in a single call
-            assert_eq!(s, size_of::<WalIndexMetaData>());
+            self.file.write_all(bytes_of(&data)).await?;
             self.file.flush().await?;
         }
 

@@ -61,7 +61,7 @@ impl ReplicatorClient for RemoteClient {
                 let hello = resp.into_inner();
                 verify_session_token(&hello.session_token).map_err(Error::Client)?;
                 self.session_token = Some(hello.session_token.clone());
-                self.meta.merge_hello(hello)?;
+                self.meta.init_from_hello(hello)?;
 
                 Ok(())
             }

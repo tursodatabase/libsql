@@ -67,7 +67,7 @@ impl Injector {
         })
     }
 
-    /// Inject on frame into the log. If this was a commit frame, returns Ok(Some(FrameNo)).
+    /// Inject a frame into the log. If this was a commit frame, returns Ok(Some(FrameNo)).
     pub fn inject_frame(&mut self, frame: Frame) -> Result<Option<FrameNo>, Error> {
         let frame_close_txn = frame.header().size_after != 0;
         self.buffer.lock().push_back(frame);
