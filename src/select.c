@@ -6715,7 +6715,7 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
         assert( ExprUseXList(pF->pFExpr->pLeft) );
         assert( pF->pFExpr->pLeft->x.pList!=0 );
         nKey = pF->pFExpr->pLeft->x.pList->nExpr;
-        if( !pF->bOBUnique ) nKey++;
+        if( ALWAYS(!pF->bOBUnique) ) nKey++;
       }
       iTop = sqlite3VdbeAddOp1(v, OP_Rewind, pF->iOBTab); VdbeCoverage(v);
       for(j=nArg-1; j>=0; j--){
