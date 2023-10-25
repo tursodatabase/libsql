@@ -8162,13 +8162,14 @@ case OP_VOpen: {             /* ncycle */
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-/* Opcode: VCheck * P2 * P4 *
+/* Opcode: VCheck P1 P2 P3 P4 *
 **
-** P4 is a pointer to a Table object that is a virtual table that
-** supports the xIntegrity() method.  This opcode runs the xIntegrity()
-** method for that virtual table.  If an error is reported back, the error
-** message is stored in register P2.  If no errors are seen, register P2
-** is set to NULL.
+** P4 is a pointer to a Table object that is a virtual table in schema P1
+** that supports the xIntegrity() method.  This opcode runs the xIntegrity()
+** method for that virtual table, using P3 as the integer argument.  If
+** an error is reported back, the table name is prepended to the error
+** message and that message is stored in P2.  If no errors are seen,
+** register P2 is set to NULL.
 */
 case OP_VCheck: {             /* out2 */
   Table *pTab;
@@ -8191,7 +8192,9 @@ case OP_VCheck: {             /* out2 */
   assert( pModule->xIntegrity!=0 );
   pTab->nTabRef++;
   sqlite3VtabLock(pTab->u.vtab.p);
-  rc = pModule->xIntegrity(pVtab, &zErr);
+  assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  rc = pModule->xIntegrity(pVtab, db->aDb[pOp->p1].zDbSName, pTab->zName,
+                           pOp->p3, &zErr);
   sqlite3VtabUnlock(pTab->u.vtab.p);
   sqlite3DeleteTable(db, pTab);
   if( rc ){
