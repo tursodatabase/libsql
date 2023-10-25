@@ -47,7 +47,7 @@ impl Iterator for StrStatements {
                 continue;
             }
             let str_statement = self.value[pos..index + 1].to_string();
-            if str_statement.starts_with(';') || str_statement.is_empty() {
+            if str_statement.trim().starts_with(';') {
                 pos = index + 1;
                 continue;
             }
@@ -234,7 +234,9 @@ impl Shell {
                             let table = self.run_statement(str_statement, (), false);
                             match table {
                                 Ok(table) => {
-                                    if table.count_rows() == 0 {
+                                    if self.headers && table.count_rows() == 1
+                                        || !self.headers && table.count_rows() == 0
+                                    {
                                         continue;
                                     }
                                     writeln!(self.out, "{}", table)?;
@@ -408,7 +410,13 @@ impl Shell {
                 Ok(row)
             })?;
 
-            rows.map(|r| r.unwrap()).collect()
+            let mut mapped_rows = vec![];
+            for row in rows {
+                if let Ok(r) = row {
+                    mapped_rows.push(r);
+                }
+            }
+            mapped_rows
         };
 
         let mut builder = tabled::builder::Builder::new();
@@ -629,7 +637,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_str_statements_itterator() {
+    fn test_str_statements_iterator() {
         let mut str_statements_iterator =
             get_str_statements(String::from("SELECT ';' FROM test; SELECT * FROM test;;"));
         assert_eq!(
@@ -641,5 +649,28 @@ mod tests {
             Some("SELECT * FROM test;".to_owned())
         );
         assert_eq!(str_statements_iterator.next(), None);
+
+        let mut str_statements_iterator = get_str_statements(String::from(";;;"));
+        assert_eq!(str_statements_iterator.next(), None);
+
+        let mut str_statements_iterator = get_str_statements(String::from("        "));
+        assert_eq!(str_statements_iterator.next(), None);
+
+        let mut str_statements_iterator = get_str_statements(String::from("   ;    ;    ;  "));
+        assert_eq!(str_statements_iterator.next(), None);
+    }
+
+    #[test]
+    fn test_empty_statement() {
+        let cli = Cli {
+            db_path: Some(":memory:".to_string()),
+            echo: false,
+        };
+        let shell = Shell::new(cli);
+        assert!(shell.headers);
+        let result = shell.run_statement(" ; ; ;".to_string(), [], false);
+        assert!(result.is_ok());
+        let table = result.unwrap();
+        assert_eq!(table.count_rows(), 1);
     }
 }
