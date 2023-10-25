@@ -1,5 +1,5 @@
-C Fix\sminor\sproblems\swith\sthe\s"showwal"\sutility\sprogram.\s\sAdd\sa\smissing\sheader\nto\sthe\szipfile.c\sextension.
-D 2023-10-25T18:35:48.042
+C Provide\sdummy\sparameter\snames\sin\sthe\sprototype\sfor\sthe\snew\sxIntegrity\smethod\nof\sthe\ssqlite3_module\sobject.
+D 2023-10-25T18:53:00.881
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -723,7 +723,7 @@ F src/resolve.c 31229276a8eb5b5de1428cd2d80f6f1cf8ffc5248be25e47cf575df12f1b8f23
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 64c9bc7494f3d220a27498137551762c25458282388ea9ac0a710dd6d5dc1510
 F src/shell.c.in acc452c414fddd10289d165be3c89a7a2c36c919def04c93fb7dd11ac022e6ed
-F src/sqlite.h.in 81c70644aeef9c974f72c9cadeb505ebb9441d2f6db594c018604ae935a12e6e
+F src/sqlite.h.in 428948ef39b3ef7b675ec12bd4853619bad77279b5fa38e3a51c5b9656ae16ff
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2f30b2671f4c03cd27a43f039e11251391066c97d11385f5f963bb40b03038ac
 F src/sqliteInt.h cf6646e8694a63749096e1f086767a2c1920dca9848ec2dbe9f7bfb961d322ef
@@ -2138,8 +2138,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c4d02f4b0761a2836aa34f204e725f49478a19b02160e694e01042e6e7766167
-R 0b8f4aebc898107714a7e5d3cf2077d1
+P 7b3f866e619c2b781b613493727cd111335ceec690d984408725c756feff26e6
+R 6d9977d57ab2d179650d1da7f78d796f
 U drh
-Z 420ad20bfbeee1b4c84bf5501f995f57
+Z 667356e5303058006da752293bd2707e
 # Remove this line to create a well-formed Fossil manifest.
