@@ -1,5 +1,5 @@
-C Test\smodule\saltermalloc3.test\srequires\sDQS_DDL\sto\sbe\sturned\son.
-D 2023-10-25T17:26:11.573
+C Fix\sminor\sproblems\swith\sthe\s"showwal"\sutility\sprogram.\s\sAdd\sa\smissing\sheader\nto\sthe\szipfile.c\sextension.
+D 2023-10-25T18:35:48.042
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -404,7 +404,7 @@ F ext/misc/vfsstat.c a85df08654743922a19410d7b1e3111de41bb7cd07d20dd16eda4e2b808
 F ext/misc/vtablog.c f2c9d41afe00b51b2c8307b79f508eb0c2dcd57bae074807944e73376fcf15b7
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
-F ext/misc/zipfile.c 59af123b4595801d495f55167523b68e840b8e5bfcbbb73f84cbc6a65a994ac2
+F ext/misc/zipfile.c 64cb3d98b6316586e6056d182051aa9d28fdedfbf4b908e6b7a7d70209b1db11
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2088,7 +2088,7 @@ F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
 F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c2a1
-F tool/showwal.c 65ecabae3a2dcff4116301d5a8dbb8c4964814da1b2aff6d85c806a88b71fa4e
+F tool/showwal.c 11eca547980a066b081f512636151233350ac679f29ecf4ebfce7f4530230b3d
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl 70c87c04cfd2e77b3e6f21c33ca768296aa8f67d4ab4874786ac8fbb28433477
 F tool/speed-check.sh 72dc85b2c0484af971ee3e7d10775f72b4e771e27e162c2099b3bf25517c25fb
@@ -2138,8 +2138,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c29ebcb0be8e969c359c077bd4ce752a9c952d2659062868f12efdd2cc77186d
-R 1801e0da56e4876ff07eaa2fbc6ddd00
+P c4d02f4b0761a2836aa34f204e725f49478a19b02160e694e01042e6e7766167
+R 0b8f4aebc898107714a7e5d3cf2077d1
 U drh
-Z 79a4773e545153772af92c625c1e9ce1
+Z 420ad20bfbeee1b4c84bf5501f995f57
 # Remove this line to create a well-formed Fossil manifest.
