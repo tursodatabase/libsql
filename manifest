@@ -1,5 +1,5 @@
-C Provide\sdummy\sparameter\snames\sin\sthe\sprototype\sfor\sthe\snew\sxIntegrity\smethod\nof\sthe\ssqlite3_module\sobject.
-D 2023-10-25T18:53:00.881
+C Fix\sharmless\scompiler\swarnings.
+D 2023-10-25T19:06:23.319
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -373,7 +373,7 @@ F ext/misc/ieee754.c 62a90978204d2c956d5036eb89e548e736ca5fac0e965912867ddd7bb83
 F ext/misc/memstat.c 5b284b78be431c1f5fa154b18eade2407e42c65ed32ec9e9fbf195d114778d7d
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/memvfs.c 7dffa8cc89c7f2d73da4bd4ccea1bcbd2bd283e3bb4cea398df7c372a197291b
-F ext/misc/mmapwarm.c 347caa99915fb254e8949ec131667b7fae99e2a9ce91bd468efb6dc372d9b7a9
+F ext/misc/mmapwarm.c a81af4aaec00f24f308e2f4c19bf1d88f3ac3ce848c36daa7a4cd38145c4080d
 F ext/misc/nextchar.c 7877914c2a80c2f181dd04c3dbef550dfb54c93495dc03da2403b5dd58f34edd
 F ext/misc/noop.c 81efe4cad9ec740e64388b14281cb983e6e2c223fed43eb77ab3e34946e0c1ab
 F ext/misc/normalize.c bd84355c118e297522aba74de34a4fd286fc775524e0499b14473918d09ea61f
@@ -705,7 +705,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 2e8b12107f75d1bd16412f312b4c5d5103191807a37836d3b81beb26436ad81b
+F src/os_unix.c cb116fde9e3ca3c1bbfdf89d6928f776a2a34da168e2667426523a4db353b271
 F src/os_win.c 4a50a154aeebc66a1f8fb79c1ff6dd5fe3d005556533361e0d460d41cb6a45a8
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 2188897e1102a776dcb1bbe8b2eb70ac7de8863c9cb95ef09d35e9bad406cf45
@@ -2138,8 +2138,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7b3f866e619c2b781b613493727cd111335ceec690d984408725c756feff26e6
-R 6d9977d57ab2d179650d1da7f78d796f
+P 131374d720a365cbbe3031a2bc0a34ba1c74e751e39c66e484dbce07ab49fb62
+R c0de33bff3e5c117952aa74ec280fe09
 U drh
-Z 667356e5303058006da752293bd2707e
+Z 32e645354aeb54c909684a4b4c583e71
 # Remove this line to create a well-formed Fossil manifest.
