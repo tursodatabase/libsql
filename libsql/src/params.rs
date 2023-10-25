@@ -1,4 +1,6 @@
-use crate::{Error, Result, Value};
+use core::fmt;
+
+use crate::Value;
 
 mod sealed {
     pub trait Sealed {}
@@ -88,8 +90,21 @@ pub trait IntoParams: Sealed {
     // Hide this because users should not be implementing this
     // themselves. We should consider sealing this trait.
     #[doc(hidden)]
-    fn into_params(self) -> Result<Params>;
+    fn into_params(self) -> Result<Params, ParamsError>;
 }
+
+#[derive(Debug)]
+pub struct ParamsError {
+    msg: String,
+}
+
+impl fmt::Display for ParamsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ParamsError: {}", self.msg)
+    }
+}
+
+impl std::error::Error for ParamsError {}
 
 #[derive(Clone)]
 #[doc(hidden)]
@@ -127,25 +142,25 @@ where
 
 impl Sealed for () {}
 impl IntoParams for () {
-    fn into_params(self) -> Result<Params> {
+    fn into_params(self) -> Result<Params, ParamsError> {
         Ok(Params::None)
     }
 }
 
 impl Sealed for Params {}
 impl IntoParams for Params {
-    fn into_params(self) -> Result<Params> {
+    fn into_params(self) -> Result<Params, ParamsError> {
         Ok(self)
     }
 }
 
 impl<T: IntoValue> Sealed for Vec<T> {}
 impl<T: IntoValue> IntoParams for Vec<T> {
-    fn into_params(self) -> Result<Params> {
+    fn into_params(self) -> Result<Params, ParamsError> {
         let values = self
             .into_iter()
             .map(|i| i.into_value())
-            .collect::<Result<Vec<_>>>()?;
+            .collect::<Result<Vec<_>, ParamsError>>()?;
 
         Ok(Params::Positional(values))
     }
@@ -153,11 +168,11 @@ impl<T: IntoValue> IntoParams for Vec<T> {
 
 impl<T: IntoValue> Sealed for Vec<(String, T)> {}
 impl<T: IntoValue> IntoParams for Vec<(String, T)> {
-    fn into_params(self) -> Result<Params> {
+    fn into_params(self) -> Result<Params, ParamsError> {
         let values = self
             .into_iter()
             .map(|(k, v)| Ok((k, v.into_value()?)))
-            .collect::<Result<Vec<_>>>()?;
+            .collect::<Result<Vec<_>, ParamsError>>()?;
 
         Ok(Params::Named(values))
     }
@@ -165,27 +180,27 @@ impl<T: IntoValue> IntoParams for Vec<(String, T)> {
 
 impl<T: IntoValue, const N: usize> Sealed for [T; N] {}
 impl<T: IntoValue, const N: usize> IntoParams for [T; N] {
-    fn into_params(self) -> Result<Params> {
+    fn into_params(self) -> Result<Params, ParamsError> {
         self.into_iter().collect::<Vec<_>>().into_params()
     }
 }
 
 impl<T: IntoValue, const N: usize> Sealed for [(&str, T); N] {}
 impl<T: IntoValue, const N: usize> IntoParams for [(&str, T); N] {
-    fn into_params(self) -> Result<Params> {
+    fn into_params(self) -> Result<Params, ParamsError> {
         self.into_iter()
             // TODO: Pretty unfortunate that we need to allocate here when we know
             // the str is likely 'static. Maybe we should convert our param names
             // to be `Cow<'static, str>`?
             .map(|(k, v)| Ok((k.to_string(), v.into_value()?)))
-            .collect::<Result<Vec<_>>>()?
+            .collect::<Result<Vec<_>, ParamsError>>()?
             .into_params()
     }
 }
 
 impl<T: IntoValue + Clone, const N: usize> Sealed for &[T; N] {}
 impl<T: IntoValue + Clone, const N: usize> IntoParams for &[T; N] {
-    fn into_params(self) -> Result<Params> {
+    fn into_params(self) -> Result<Params, ParamsError> {
         self.iter().cloned().collect::<Vec<_>>().into_params()
     }
 }
@@ -195,7 +210,7 @@ macro_rules! tuple_into_params {
     ($count:literal : $(($field:tt $ftype:ident)),* $(,)?) => {
         impl<$($ftype,)*> Sealed for ($($ftype,)*) where $($ftype: IntoValue,)* {}
         impl<$($ftype,)*> IntoParams for ($($ftype,)*) where $($ftype: IntoValue,)* {
-            fn into_params(self) -> Result<Params> {
+            fn into_params(self) -> Result<Params, ParamsError> {
                 let params = Params::Positional(vec![$(self.$field.into_value()?),*]);
                 Ok(params)
             }
@@ -207,7 +222,7 @@ macro_rules! named_tuple_into_params {
     ($count:literal : $(($field:tt $ftype:ident)),* $(,)?) => {
         impl<$($ftype,)*> Sealed for ($((&str, $ftype),)*) where $($ftype: IntoValue,)* {}
         impl<$($ftype,)*> IntoParams for ($((&str, $ftype),)*) where $($ftype: IntoValue,)* {
-            fn into_params(self) -> Result<Params> {
+            fn into_params(self) -> Result<Params, ParamsError> {
                 let params = Params::Named(vec![$((self.$field.0.to_string(), self.$field.1.into_value()?)),*]);
                 Ok(params)
             }
@@ -252,7 +267,7 @@ tuple_into_params!(16: (0 A), (1 B), (2 C), (3 D), (4 E), (5 F), (6 G), (7 H), (
 // error variant to match this breaking the few people that currently use
 // this error variant.
 pub trait IntoValue {
-    fn into_value(self) -> Result<Value>;
+    fn into_value(self) -> Result<Value, ParamsError>;
 }
 
 impl<T> IntoValue for T
@@ -260,14 +275,15 @@ where
     T: TryInto<Value>,
     T::Error: Into<crate::BoxError>,
 {
-    fn into_value(self) -> Result<Value> {
-        self.try_into()
-            .map_err(|e| Error::ToSqlConversionFailure(e.into()))
+    fn into_value(self) -> Result<Value, ParamsError> {
+        self.try_into().map_err(|e| ParamsError {
+            msg: format!("{}", e.into()),
+        })
     }
 }
 
-impl IntoValue for Result<Value> {
-    fn into_value(self) -> Result<Value> {
+impl IntoValue for Result<Value, ParamsError> {
+    fn into_value(self) -> Result<Value, ParamsError> {
         self
     }
 }

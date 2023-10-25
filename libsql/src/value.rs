@@ -1,6 +1,5 @@
+use core::fmt;
 use std::str::FromStr;
-
-use crate::{Error, Result};
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -129,13 +128,13 @@ impl From<u32> for Value {
 }
 
 impl TryFrom<u64> for Value {
-    type Error = crate::Error;
+    type Error = ValueError;
 
-    fn try_from(value: u64) -> Result<Value> {
+    fn try_from(value: u64) -> Result<Value, Self::Error> {
         if value > i64::MAX as u64 {
-            Err(Error::ToSqlConversionFailure(
-                "u64 is too large to fit in an i64".into(),
-            ))
+            Err(ValueError {
+                msg: "u64 is too large to fit in an i64".into(),
+            })
         } else {
             Ok(Value::Integer(value as i64))
         }
@@ -419,9 +418,22 @@ impl From<libsql_sys::ValueType> for ValueType {
 
 #[cfg(feature = "replication")]
 impl TryFrom<crate::replication::pb::Value> for Value {
-    type Error = Error;
+    type Error = crate::Error;
 
-    fn try_from(value: crate::replication::pb::Value) -> Result<Self> {
-        bincode::deserialize(&value.data[..]).map_err(Error::from)
+    fn try_from(value: crate::replication::pb::Value) -> crate::Result<Self> {
+        bincode::deserialize(&value.data[..]).map_err(crate::Error::from)
     }
 }
+
+#[derive(Debug)]
+pub struct ValueError {
+    msg: String,
+}
+
+impl fmt::Display for ValueError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ValueError: {}", self.msg)
+    }
+}
+
+impl std::error::Error for ValueError {}
