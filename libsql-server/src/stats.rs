@@ -153,9 +153,9 @@ impl Stats {
         top_queries.insert(query);
         if top_queries.len() > 10 {
             top_queries.pop_first();
+            self.top_query_threshold
+                .store(top_queries.first().unwrap().weight, Ordering::Relaxed);
         }
-        self.top_query_threshold
-            .store(top_queries.first().unwrap().weight, Ordering::Relaxed);
     }
 
     pub(crate) fn qualifies_as_top_query(&self, weight: i64) -> bool {
@@ -172,11 +172,11 @@ impl Stats {
         slowest_queries.insert(query);
         if slowest_queries.len() > 10 {
             slowest_queries.pop_first();
+            self.slowest_query_threshold.store(
+                slowest_queries.first().unwrap().elapsed_ms,
+                Ordering::Relaxed,
+            );
         }
-        self.slowest_query_threshold.store(
-            slowest_queries.first().unwrap().elapsed_ms,
-            Ordering::Relaxed,
-        );
     }
 
     pub(crate) fn qualifies_as_slowest_query(&self, elapsed_ms: u64) -> bool {
