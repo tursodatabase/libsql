@@ -1268,7 +1268,7 @@ static int sessionReinitTable(sqlite3_session *pSession, SessionTable *pTab){
     }
   }
 
-  sqlite3_free(azCol);
+  sqlite3_free((char*)azCol);
   return pSession->rc;
 }
 
