@@ -455,7 +455,9 @@ pub async fn garbage_collect(clients: &mut HashMap<Uuid, Arc<PrimaryConnection>>
     let limit = std::time::Duration::from_secs(30);
 
     clients.retain(|_, db| db.idle_time() < limit);
-    tracing::trace!("gc: remaining client handles count: {}", clients.len());
+    if !clients.is_empty() {
+        tracing::trace!("gc: remaining client handles count: {}", clients.len());
+    }
 }
 
 #[tonic::async_trait]
