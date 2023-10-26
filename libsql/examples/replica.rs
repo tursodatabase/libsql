@@ -29,7 +29,14 @@ async fn main() {
         .await
         .unwrap();
 
-    db.sync().await.unwrap();
+    let sync_interval = Duration::from_secs(60); 
+    tokio::spawn(async move {
+        loop {
+            tokio::time::sleep(sync_interval).await;
+            let r = db.sync().await.unwrap();
+            println!("{} frames have been applied", r);
+        }
+    });
 
     let mut jh = tokio::spawn(async move {
         let mut rows = conn
