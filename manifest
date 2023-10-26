@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2023-10-25T19:06:23.319
+C Deal\swith\sthe\scase\sof\sa\sreentrant\sINSERT\son\sa\svirtual\stable\swhere\sthe\nouter\sINSERT\shas\sa\sRETURNING\sclause\sbut\sthe\sinner\sdoes\snot.\ndbsqlfuzz\s3ac9a1e33f676254e02c0f297263b0a7aeb0c1a5.
+D 2023-10-26T12:59:41.136
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -785,7 +785,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 23d9f4539880b40226254ad9072f4ecf12eb1902e62aea47aac29928afafcfd5
 F src/treeview.c 62fafcd31eea60b718f8daf448116b7b19f90134ebc6c20777ddbb07f56a3d28
-F src/trigger.c 5286019b152f622a38900284109e4aae1e5f566deb7ad9ba7e931f0660771f32
+F src/trigger.c e8c460233d28e1cb291b08ffe00749d313f3686be79ac50f1af15f3087053449
 F src/update.c 6904814dd62a7a93bbb86d9f1419c7f134a9119582645854ab02b36b676d9f92
 F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -2138,8 +2138,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 131374d720a365cbbe3031a2bc0a34ba1c74e751e39c66e484dbce07ab49fb62
-R c0de33bff3e5c117952aa74ec280fe09
+P cc8efe0494b8fe0df18aa67b1675779bf704d1ac53647fe1f7f55d8048041680
+R 9ba44fb9dc03b38d8120c04401aaff8f
 U drh
-Z 32e645354aeb54c909684a4b4c583e71
+Z ab6f9f2ea52a3134056d677d31c255aa
 # Remove this line to create a well-formed Fossil manifest.

@@ -970,7 +970,7 @@ static void codeReturningTrigger(
   SrcList sFrom;
 
   assert( v!=0 );
-  assert( pParse->bReturning );
+  if( !pParse->bReturning ) return;
   assert( db->pParse==pParse );
   pReturning = pParse->u1.pReturning;
   assert( pTrigger == &(pReturning->retTrig) );
