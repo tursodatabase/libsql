@@ -1,5 +1,5 @@
-C Cure\sa\sharmless\sMSVC\swarning.\s(no\sother\schanges)
-D 2023-10-25T20:44:01.155
+C Ready\sfor\smerge,\sbut\scould\suse\stesting\son\ssome\sdusty\sold\sWindows\smachines.
+D 2023-10-26T15:12:41.667
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -722,7 +722,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 31229276a8eb5b5de1428cd2d80f6f1cf8ffc5248be25e47cf575df12f1b8f23
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 64c9bc7494f3d220a27498137551762c25458282388ea9ac0a710dd6d5dc1510
-F src/shell.c.in 6b7662064d78025f0c68567971fe834840da8683972ac1ac7a02d6fbc9c166ef
+F src/shell.c.in 14d70da4c678b2d9d8df105e113669ca956fad1d8538976e33fc8f878c17e84d
 F src/sqlite.h.in 81c70644aeef9c974f72c9cadeb505ebb9441d2f6db594c018604ae935a12e6e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2f30b2671f4c03cd27a43f039e11251391066c97d11385f5f963bb40b03038ac
@@ -2138,8 +2138,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 47b13e66e07be3a26cf7fa0b7b65ad8576c3b4be50fc422be8fe93be93d681ac
-R b74c842dae72512c83feef833a3df3e2
+P 02234ef85ed9349ddf6225f67b7e941b0b68cbd2e58c9d7d84a8324393349853
+R 89654e88f6715a69f16578b67cbc1c07
 U larrybr
-Z 0170b741738e0aeb080b89c815bde8d0
+Z 1dcda7e82518a66f972beec27c9600f6
 # Remove this line to create a well-formed Fossil manifest.

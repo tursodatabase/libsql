@@ -624,13 +624,13 @@ static void console_prepare_utf8(void){
   HANDLE hCO = GetStdHandle(STD_OUTPUT_HANDLE);
   HANDLE hCC = INVALID_HANDLE_VALUE;
   DWORD consoleMode = 0;
-  u8 conIO = 0;
+  u8 conI = 0, conO = 0;
 
   console_utf8_in = console_utf8_out = 0;
-  if( isatty(0) && GetFileType(hCI)==FILE_TYPE_CHAR ) conIO = 1;
-  if( isatty(1) && GetFileType(hCO)==FILE_TYPE_CHAR ) conIO |= 2;
-  if( conIO==0 || mbcs_opted ) return;
-  if( conIO & 1 ) hCC = hCI;
+  if( isatty(0) && GetFileType(hCI)==FILE_TYPE_CHAR ) conI = 1;
+  if( isatty(1) && GetFileType(hCO)==FILE_TYPE_CHAR ) conO = 1;
+  if( (!conI && !conO) || mbcs_opted ) return;
+  if( conI ) hCC = hCI;
   else hCC = hCO;
   if( !IsValidCodePage(CP_UTF8) || !GetConsoleMode( hCC, &consoleMode) ){
     fprintf(stderr, "Cannot use UTF-8 code page.\n");
@@ -640,14 +640,14 @@ static void console_prepare_utf8(void){
   conState.consoleMode = consoleMode;
   conState.inCodePage = GetConsoleCP();
   conState.outCodePage = GetConsoleOutputCP();
-  if( conIO & 1 ){
+  if( conI ){
     console_utf8_in = 1;
     SetConsoleCP(CP_UTF8);
     consoleMode |= ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
     SetConsoleMode(conState.hConsole, consoleMode);
     conState.infsMode = _setmode(_fileno(stdin), _O_U16TEXT);
   }
-  if( conIO & 2 ){
+  if( conO ){
     console_utf8_out = 1;
     SetConsoleOutputCP(CP_UTF8);
   }
@@ -657,7 +657,7 @@ static void console_prepare_utf8(void){
 ** Undo the effects of console_prepare_utf8(), if any.
 */
 static void SQLITE_CDECL console_restore(void){
-  if( (console_utf8_in||console_utf8_out) && conState.inCodePage!=0
+  if( (console_utf8_in||console_utf8_out)
       && conState.hConsole!=INVALID_HANDLE_VALUE ){
     _setmode(_fileno(stdin), conState.infsMode);
     SetConsoleCP(conState.inCodePage);
@@ -12653,7 +12653,12 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       const char *zCharset = "";
       int nHistory;
 #if SHELL_WIN_UTF8_OPT
-      if( console_utf8_in ) zCharset = " (utf8)";
+      switch( console_utf8_in+2*console_utf8_out ){
+      default: case 0: break;
+      case 1: zCharset = " (utf8 in)"; break;
+      case 2: zCharset = " (utf8 out)"; break;
+      case 3: zCharset = " (utf8 I/O)"; break;
+      }
 #endif
       printf(
         "SQLite version %s %.19s%s\n" /*extra-version-info*/
