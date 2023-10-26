@@ -1,11 +1,11 @@
-C Further\senhancements\sto\smake\ssure\sthe\scorrect\sreturnning\strigger\sis\srun\swhen\nthere\sare\snested\sINSERT\sRETURNING\sstatements.
-D 2023-10-26T16:59:22.532
+C Enhance\sthe\s"tool-zip"\smakefile\starget\son\sWindows\sso\sthat\sit\suses\smore\nuniversally\savailable\scommands\sto\sbuild\sthe\sZIP\sarchive.\s\sFix\sother\sminor\nissues\swith\sthat\smakefile\starget\sat\sthe\ssame\stime.
+D 2023-10-26T17:30:54.554
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 2ea4105b72561483befe0a18a37f94ca3adbc2324bad3770f99555d95fb9b0ea
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc 0e088e4fc718668e640aafe148f4d6bf9131d63ba91d85253478a20cd37a4a80
+F Makefile.msc c1aa09e0212d8609df041d13da6ca63198d1c1e29846f33104beecf19917102b
 F README.md 963d30019abf0cc06b263cd2824bce022893f3f93a531758f6f04ff2194a16a8
 F VERSION 4c09b629c03b8ae32317cb336a32f3aa3252841d6dcd51184cecc4278d08f21e
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -2073,7 +2073,7 @@ F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6
 F tool/mksqlite3c.tcl 2c760ab786cb509b47f00c96fea82994866cb99f5e046df81c768288f57897b4
 F tool/mksqlite3h.tcl d391cff7cad0a372ee1406faee9ccc7dad9cb80a0c95cae0f73d10dd26e06762
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
-F tool/mktoolzip.tcl 6e17f53eb924c76ea5f290cf7b8f554cc245ad6299e46928419abcd2de691663
+F tool/mktoolzip.tcl c7a9b685f5131d755e7d941cec50cee7f34178b9e34c9a89811eeb08617f8423
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
 F tool/offsets.c 8ed2b344d33f06e71366a9b93ccedaa38c096cc1dbd4c3c26ad08c6115285845
 F tool/omittest-msvc.tcl d6b8f501ac1d7798c4126065030f89812379012cad98a1735d6d7221492abc08
@@ -2139,8 +2139,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ec6bffa3b0fbf7cdee852cb0208de1f5869dafd88e2ee64c23cec89634219adc
-R b477c0da03665873d8762d7870dd6ef6
+P d83405e870b071540b56e76291bdce1388db80b860afd68a34e4233f6ff2a3ab 166b775bb523362ffe17722ce175278726303c319fbe7e4a1e9291736db38a5d
+R 5340f6bed15aada55435e2ba6769fc21
+T +closed 166b775bb523362ffe17722ce175278726303c319fbe7e4a1e9291736db38a5d
 U drh
-Z 2e58a9a8215340c7ff8b8940ddc39cbe
+Z a7dce5b30e42f24e886fdee0aa33be40
 # Remove this line to create a well-formed Fossil manifest.
