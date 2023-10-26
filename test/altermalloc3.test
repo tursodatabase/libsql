@@ -26,6 +26,7 @@ set ::TMPDBERROR [list 1 \
   {unable to open a temporary database file for storing temporary tables}
 ]
 
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DDL 1
 do_execsql_test 1.0 {
   CREATE TABLE x1(
       one, two, three, PRIMARY KEY(one), 
