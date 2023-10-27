@@ -90,9 +90,8 @@ cfg_replication! {
         /// Open a local database file with the ability to sync from snapshots from local filesystem.
         #[cfg(feature = "replication")]
         pub async fn open_with_local_sync(db_path: impl Into<String>) -> Result<Database> {
-            let db = crate::local::Database::open_local_sync(db_path)?;
             Ok(Database {
-                db_type: DbType::Sync { db },
+                db_type: DbType::File { path: db_path.into(), flags: OpenFlags::default() },
             })
         }
 
