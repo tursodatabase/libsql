@@ -48,7 +48,7 @@ serde_json = { version = "1.0.91", features = ["preserve_order"] }
 sha2 = "0.10"
 sha256 = "1.1.3"
 sqld-libsql-bindings = { version = "0", path = "../libsql-sys-tmp" }
-sqlite3-parser = { version = "0.11.0", default-features = false, features = [ "YYNOERRORRECOVERY" ] }
+sqlite3-parser = { path = "../vendored/sqlite3-parser", version = "0.11.0", default-features = false, features = [ "YYNOERRORRECOVERY" ] }
 tempfile = "3.3.0"
 thiserror = "1.0.38"
 tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs", "signal"] }
