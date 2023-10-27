@@ -65,9 +65,9 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub fn open_local_sync(db_path: impl Into<String>) -> Result<Database> {
+    pub fn open_local_sync(db_path: impl Into<String>, flags: OpenFlags) -> Result<Database> {
         let db_path = db_path.into();
-        let mut db = Database::open(&db_path, OpenFlags::default())?;
+        let mut db = Database::open(&db_path, flags)?;
 
         let replicator = Replicator::new(db_path).map_err(|e| ConnectionFailed(format!("{e}")))?;
         db.replication_ctx = Some(ReplicationContext {
