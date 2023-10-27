@@ -1,8 +1,4 @@
-extern crate pest;
-#[macro_use]
-extern crate pest_derive;
-
-#[derive(Parser)]
+#[derive(pest_derive::Parser)]
 #[grammar = "libsql.pest"]
 pub struct LibsqlParser;
 
