@@ -1486,7 +1486,7 @@ snapshot-tarball: sqlite3.c sqlite3rc.h
 
 # Build a ZIP archive containing various command-line tools.
 #
-tool-zip:	testfixture sqlite3 sqldiff sqlite3_analyzer tool/mktoolzip.tcl
+tool-zip:	testfixture sqlite3 sqldiff sqlite3_analyzer $(TOP)/tool/mktoolzip.tcl
 	./testfixture $(TOP)/tool/mktoolzip.tcl
 
 # The next two rules are used to support the "threadtest" target. Building
