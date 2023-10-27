@@ -1,5 +1,5 @@
-C Add\smakefile\stargets\sfor\sfuzzcheck-asan\sand\sfuzzcheck-ubsan.
-D 2023-10-27T17:40:46.550
+C Disable\stwo\srtree\stest\scases\sfor\sLinux-i686.\s\sWe\sdo\snot\shave\sthat\splatform\navailable\sfor\stesting.\s\sThe\stest\scases\swork\son\sall\sother\s64-bit\sand\s32-bit\nplatforms\sthat\swe\shave\sat\shand.\s\sSo\sthere\sis\sno\sway\sfor\sus\sto\sdebug\sthis\nproblem.\s\sBetter\sto\sdisable\sthe\stest.\n[forum:/forumpost/ffcbf789b5386573|forum\spost\sffcbf789b5386573].
+D 2023-10-27T18:16:15.021
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -483,7 +483,7 @@ F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 0dd4775e896cee6067979d67aff7c998e75c2c9d9cd8d62a1a790c09cde7adca
 F ext/rtree/rtree.c 2e1452a9338fe4db057fa677277bed86b65c667ed48b9b59144adae99f85a7cb
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
-F ext/rtree/rtree1.test ecc881fdd1bc10fc390faa988ad93343739af84384e4cf3619fed7afada66a30
+F ext/rtree/rtree1.test 2b5b8c719c6a4abe377f57766f428a49af36a93061cb146cccfdc3b30000c0a4
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
 F ext/rtree/rtree3.test 272594f88c344e973864008bbe4c71fd3a41a264c097d568593ee7886d83d409
 F ext/rtree/rtree4.test 304de65d484540111b896827e4261815e5dca4ce28eeecd58be648cd73452c4b
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cd118da9db0680fab8761ff44384639b9d564b67a5dfb1280ab72e44ff57714d
-R 803f05028bcb0911d31da2c38e3126c9
+P 27fc14303a0c6942e8cf5017d66c7ff5fcbc700a6109a93768263370f608397e
+R 71d72cb40c4b26196886d1c5a851d0e7
 U drh
-Z 66eee725aa902aff9f760f94dee7a24e
+Z b23e32d3e4b66b7a3031ae330eecd039
 # Remove this line to create a well-formed Fossil manifest.

@@ -774,15 +774,17 @@ do_execsql_test 21.1 {
 # Round-off error associated with using large integer constraints on
 # a rtree search.
 #
-reset_db
-do_execsql_test 22.0 {
-  CREATE VIRTUAL TABLE t1 USING rtree ( id, x0, x1 );  
-  INSERT INTO t1 VALUES (123, 9223372036854775799, 9223372036854775800);
-  SELECT id FROM t1 WHERE x0 > 9223372036854775807;
-} {123}
-do_execsql_test 22.1 {
-  SELECT id, x0 > 9223372036854775807 AS 'a0' FROM t1;
-} {123 1}
+if {$tcl_platform(machine)!="i686" || $tcl_platform(os)!="Linux"} {
+  reset_db
+  do_execsql_test 22.0 {
+    CREATE VIRTUAL TABLE t1 USING rtree ( id, x0, x1 );  
+    INSERT INTO t1 VALUES (123, 9223372036854775799, 9223372036854775800);
+    SELECT id FROM t1 WHERE x0 > 9223372036854775807;
+  } {123}
+  do_execsql_test 22.1 {
+    SELECT id, x0 > 9223372036854775807 AS 'a0' FROM t1;
+  } {123 1}
+}
 
 # 2023-10-14 dbsqlfuzz --sql-fuzz find.  rtreecheck() should not call
 # BEGIN/COMMIT because that causes problems with statement transactions,
