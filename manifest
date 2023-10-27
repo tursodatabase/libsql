@@ -1,5 +1,5 @@
-C Export\ssqlite3_get_autocommit()\sto\sWASM\sand\sadd\stests\sfor\sit.
-D 2023-10-27T21:05:50.750
+C Add\smissing\sdocs\sfor\sthe\sJS\sWorker1\sexport\smethod,\sas\spointed\sout\sin\s[forum:75524f7342|forum\spost\s75524f7342].
+D 2023-10-27T23:02:01.291
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -583,7 +583,7 @@ F ext/wasm/api/sqlite3-api-cleanup.js d235ad237df6954145404305040991c72ef8b18817
 F ext/wasm/api/sqlite3-api-glue.js 119b91c8a7ce6648679eb66fcdd1ed07ef7fd892eb501d658fbfefcc962012d9
 F ext/wasm/api/sqlite3-api-oo1.js 9678dc4d9a5d39632b6ffe6ea94a023119260815bf32f265bf5f6c36c9516db8
 F ext/wasm/api/sqlite3-api-prologue.js 9aeba7b45cf41b3a26d34d7fb2525633cd1adfc544888c1ea8dbb077496f4ce9
-F ext/wasm/api/sqlite3-api-worker1.js f941382f21006b4a817754184e2661b0a63ce650201f3419cd60f4758b6fd60e
+F ext/wasm/api/sqlite3-api-worker1.js 88770ac01fc756f89a3e060eec17111d6c1688e89ebfd34cb9d9e54d25affbb9
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 8cf8a897726f14071fae6be6648125162b256dfb4f96555b865dbb7a6b65e379
 F ext/wasm/api/sqlite3-v-helper.js 7daa0eab0a513a25b05e9abae7b5beaaa39209b3ed12f86aeae9ef8d2719ed25
@@ -2137,8 +2137,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac920b5386db525c794f4cae332dedcc709cac356f6fb85f3e92bc0a34602511
-R 7ff5dd75150e8cac0c211f64ca609fc2
+P 7cb6d3cd3926882240c91a4b90fdf237b931653295d8d94b05ed885dcae59608
+R 53009930e6bc65b4da12fb26b9e7e080
 U stephan
-Z 90696a3c18b398d4eb36aae7078d8581
+Z 6e447e009637f07735108793303337a5
 # Remove this line to create a well-formed Fossil manifest.
