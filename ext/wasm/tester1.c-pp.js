@@ -2644,13 +2644,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         T.assert( 0 === rc /*void pointer*/ );
 
         // Commit hook...
+        T.assert( 0!=capi.sqlite3_get_autocommit(db) );
         db.exec("BEGIN; SELECT 1; COMMIT");
         T.assert(0 === countCommit,
                  "No-op transactions (mostly) do not trigger commit hook.");
         db.exec("BEGIN EXCLUSIVE; SELECT 1; COMMIT");
         T.assert(1 === countCommit,
                  "But EXCLUSIVE transactions do.");
-        db.transaction((d)=>{d.exec("create table t(a)");});
+        db.transaction((d)=>{
+          T.assert( 0==capi.sqlite3_get_autocommit(db) );
+          d.exec("create table t(a)");
+        });
         T.assert(2 === countCommit);
 
         // Rollback hook:
