@@ -10484,7 +10484,6 @@ static void setPageReferenced(IntegrityCk *pCheck, Pgno iPg){
 */
 static int checkRef(IntegrityCk *pCheck, Pgno iPage){
   if( iPage>pCheck->nCkPage || iPage==0 ){
-    if( pCheck->nCkPage==0 ) return 0;  /* omit reference counting */
     checkAppendMsg(pCheck, "invalid page number %u", iPage);
     return 1;
   }
@@ -10990,15 +10989,10 @@ int sqlite3BtreeIntegrityCheck(
     goto integrity_ck_cleanup;
   }
 
-  if( bPartial ){
-    sCheck.nCkPage = 0;
-    sCheck.aPgRef = 0;
-  }else{
-    sCheck.aPgRef = sqlite3MallocZero((sCheck.nCkPage / 8)+ 1);
-    if( !sCheck.aPgRef ){
-      checkOom(&sCheck);
-      goto integrity_ck_cleanup;
-    }
+  sCheck.aPgRef = sqlite3MallocZero((sCheck.nCkPage / 8)+ 1);
+  if( !sCheck.aPgRef ){
+    checkOom(&sCheck);
+    goto integrity_ck_cleanup;
   }
   sCheck.heap = (u32*)sqlite3PageMalloc( pBt->pageSize );
   if( sCheck.heap==0 ){
