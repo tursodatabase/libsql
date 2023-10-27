@@ -1,0 +1,45 @@
+[package]
+name = "sqlite3-parser"
+version = "0.11.0"
+edition = "2021"
+authors = ["gwenn"]
+description = "SQL parser (as understood by SQLite)"
+documentation = "http://docs.rs/sqlite3-parser"
+repository = "https://github.com/gwenn/lemon-rs"
+readme = "README.md"
+categories = ["parser-implementations"]
+keywords = ["sql", "parser", "scanner", "tokenizer"]
+license = "Apache-2.0/MIT"
+build = "build.rs" # Lemon preprocessing
+
+[badges]
+maintenance = { status = "experimental" }
+
+[features]
+# FIXME: specific to one parser, not global
+# FIXME(lucio): Disable all features except the default ones.
+# YYTRACKMAXSTACKDEPTH = []
+YYNOERRORRECOVERY = []
+# YYSTACKDYNAMIC = []
+# YYCOVERAGE = []
+# NDEBUG = []
+default = ["YYNOERRORRECOVERY"]
+
+[dependencies]
+phf = { version = "0.11", features = ["uncased"] }
+log = "0.4"
+memchr = "2.0"
+fallible-iterator = "0.3"
+smallvec = ">=1.6.1"
+bitflags = "2.0"
+uncased = "0.9"
+indexmap = "2.0"
+
+[dev-dependencies]
+env_logger = { version = "0.10", default-features = false }
+
+[build-dependencies]
+cc = "1.0"
+phf_shared = { version = "0.11", features = ["uncased"] }
+phf_codegen = "0.11"
+uncased = "0.9"

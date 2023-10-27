@@ -3864,10 +3864,10 @@ dependencies = [
 [[package]]
 name = "sqlite3-parser"
 version = "0.11.0"
-source = "git+https://github.com/LucioFranco/lemon-rs#0ffcb2708727014f091c0c686e864d48ad788919"
 dependencies = [
  "bitflags 2.4.1",
  "cc",
+ "env_logger",
  "fallible-iterator 0.3.0",
  "indexmap 2.0.2",
  "log",
