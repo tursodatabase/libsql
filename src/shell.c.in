@@ -599,7 +599,7 @@ static char *dynamicContinuePrompt(void){
 #endif /* !defined(SQLITE_OMIT_DYNAPROMPT) */
 
 #if SHELL_WIN_UTF8_OPT
-/* Following struct is used for -utf8 operation. */
+/* Following struct is used for UTF-8 operation. */
 static struct ConsoleState {
   int stdinEof;      /* EOF has been seen on console input */
   int infsMode;      /* Input file stream mode upon shell start */
@@ -743,7 +743,7 @@ static char* utf8_fgets(char *buf, int ncmax, FILE *fin){
 ** console and if this is running on a Windows machine, and if UTF-8
 ** output unavailable (or available but opted out), translate the
 ** output from UTF-8 into MBCS for output through 8-bit stdout stream.
-** (With -utf8 active, no translation is needed and must not be done.)
+** (Without -no-utf8, no translation is needed and must not be done.)
 */
 #if defined(_WIN32) || defined(WIN32)
 void utf8_printf(FILE *out, const char *zFormat, ...){
@@ -960,7 +960,7 @@ static char *local_getline(char *zLine, FILE *in){
     }
   }
 #if defined(_WIN32) || defined(WIN32)
-  /* For interactive input on Windows systems, without -utf8,
+  /* For interactive input on Windows systems, with -no-utf8,
   ** translate the multi-byte characterset characters into UTF-8.
   ** This is the translation that predates console UTF-8 input. */
   if( stdin_is_interactive && in==stdin && !console_utf8_in ){
@@ -11957,7 +11957,7 @@ static const char zOptions[] =
   "   -newline SEP         set output row separator. Default: '\\n'\n"
 #if SHELL_WIN_UTF8_OPT
   "   -no-utf8             do not try to set up UTF-8 output (for legacy)\n"
-#endif     
+#endif
   "   -nofollow            refuse to open symbolic links to database files\n"
   "   -nonce STRING        set the safe-mode escape nonce\n"
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
@@ -11974,7 +11974,7 @@ static const char zOptions[] =
   "   -table               set output mode to 'table'\n"
   "   -tabs                set output mode to 'tabs'\n"
   "   -unsafe-testing      allow unsafe commands and modes for testing\n"
-#if SHELL_WIN_UTF8_OPT
+#if SHELL_WIN_UTF8_OPT && 0 /* Option is accepted, but is now the default. */
   "   -utf8                setup interactive console code page for UTF-8\n"
 #endif
   "   -version             show SQLite version\n"
@@ -12212,8 +12212,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 
   /* Do an initial pass through the command-line argument to locate
   ** the name of the database file, the name of the initialization file,
-  ** the size of the alternative malloc heap,
-  ** and the first command to execute.
+  ** the size of the alternative malloc heap, options affecting commands
+  ** or SQL run from the command line, and the first command to execute.
   */
 #ifndef SQLITE_SHELL_FIDDLE
   verify_uninitialized();
@@ -12260,6 +12260,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       stdin_is_interactive = 0;
     }else if( cli_strcmp(z,"-utf8")==0 ){
 #if SHELL_WIN_UTF8_OPT
+      /* Option accepted, but just specifies default UTF-8 console I/O. */
       mbcs_opted = 0;
 #endif /* SHELL_WIN_UTF8_OPT */
     }else if( cli_strcmp(z,"-no-utf8")==0 ){
