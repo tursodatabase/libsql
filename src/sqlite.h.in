@@ -6624,7 +6624,7 @@ int sqlite3_db_readonly(sqlite3 *db, const char *zDbName);
 int sqlite3_txn_state(sqlite3*,const char *zSchema);
 
 /*
-** CAPI3REF: Allowed return values from [sqlite3_txn_state()]
+** CAPI3REF: Allowed return values from sqlite3_txn_state()
 ** KEYWORDS: {transaction state}
 **
 ** These constants define the current transaction state of a database file.
