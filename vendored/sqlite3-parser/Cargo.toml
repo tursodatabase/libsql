@@ -17,11 +17,12 @@ maintenance = { status = "experimental" }
 
 [features]
 # FIXME: specific to one parser, not global
-YYTRACKMAXSTACKDEPTH = []
+# FIXME(lucio): Disable all features except the default ones.
+# YYTRACKMAXSTACKDEPTH = []
 YYNOERRORRECOVERY = []
-YYSTACKDYNAMIC = []
-YYCOVERAGE = []
-NDEBUG = []
+# YYSTACKDYNAMIC = []
+# YYCOVERAGE = []
+# NDEBUG = []
 default = ["YYNOERRORRECOVERY"]
 
 [dependencies]

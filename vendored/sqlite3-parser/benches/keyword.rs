@@ -1,3 +1,4 @@
+#![cfg(NEVER_COMPILE)]
 #![feature(test)]
 extern crate test;
 
