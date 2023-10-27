@@ -30,6 +30,25 @@ impl TopQuery {
     }
 }
 
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+pub struct SlowestQuery {
+    pub elapsed_ms: u64,
+    pub query: String,
+    pub rows_written: i32,
+    pub rows_read: i32,
+}
+
+impl SlowestQuery {
+    pub fn new(query: String, elapsed_ms: u64, rows_read: i32, rows_written: i32) -> Self {
+        Self {
+            elapsed_ms,
+            query,
+            rows_read,
+            rows_written,
+        }
+    }
+}
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Stats {
     #[serde(default)]
@@ -48,6 +67,11 @@ pub struct Stats {
     top_query_threshold: AtomicI64,
     #[serde(default)]
     top_queries: Arc<RwLock<BTreeSet<TopQuery>>>,
+    // Lowest value in currently stored slowest queries
+    #[serde(default)]
+    slowest_query_threshold: AtomicU64,
+    #[serde(default)]
+    slowest_queries: Arc<RwLock<BTreeSet<SlowestQuery>>>,
 }
 
 impl Stats {
@@ -129,9 +153,9 @@ impl Stats {
         top_queries.insert(query);
         if top_queries.len() > 10 {
             top_queries.pop_first();
+            self.top_query_threshold
+                .store(top_queries.first().unwrap().weight, Ordering::Relaxed);
         }
-        self.top_query_threshold
-            .store(top_queries.first().unwrap().weight, Ordering::Relaxed);
     }
 
     pub(crate) fn qualifies_as_top_query(&self, weight: i64) -> bool {
@@ -140,6 +164,27 @@ impl Stats {
 
     pub(crate) fn top_queries(&self) -> &Arc<RwLock<BTreeSet<TopQuery>>> {
         &self.top_queries
+    }
+
+    pub(crate) fn add_slowest_query(&self, query: SlowestQuery) {
+        let mut slowest_queries = self.slowest_queries.write().unwrap();
+        tracing::debug!("slowest query: {}: {}", query.elapsed_ms, query.query);
+        slowest_queries.insert(query);
+        if slowest_queries.len() > 10 {
+            slowest_queries.pop_first();
+            self.slowest_query_threshold.store(
+                slowest_queries.first().unwrap().elapsed_ms,
+                Ordering::Relaxed,
+            );
+        }
+    }
+
+    pub(crate) fn qualifies_as_slowest_query(&self, elapsed_ms: u64) -> bool {
+        elapsed_ms >= self.slowest_query_threshold.load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn slowest_queries(&self) -> &Arc<RwLock<BTreeSet<SlowestQuery>>> {
+        &self.slowest_queries
     }
 }
 
