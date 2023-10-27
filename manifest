@@ -1,9 +1,9 @@
-C Fix\sto\sMakefile.in\sso\sthat\sthe\s"tool-zip"\starget\scan\sbe\srun\sfrom\soutside\sthe\ssource\stree.
-D 2023-10-27T15:31:44.997
+C Add\smakefile\stargets\sfor\sfuzzcheck-asan\sand\sfuzzcheck-ubsan.
+D 2023-10-27T17:40:46.550
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in ab9045ee4781caaf92d7f9262768dcbb35e463aead30df4aa2d0c4e38ee0d2f6
+F Makefile.in 8b59912fc1538f96a08555605c5886cdcc733696ae7f22e374b2a4752196ca20
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc c1aa09e0212d8609df041d13da6ca63198d1c1e29846f33104beecf19917102b
 F README.md 963d30019abf0cc06b263cd2824bce022893f3f93a531758f6f04ff2194a16a8
@@ -641,7 +641,7 @@ F ext/wasm/wasmfs.make 8a4955882aaa0783b3f60a9484a1f0f3d8b6f775c0fcd17c082f31966
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 5536159f62058714c972b5bd325c8d5ecd5c9b00b385dd2e1cbc17da70a711b2
+F main.mk 51fd5fc8565007266e6bfd9e299199c752b171707a667b8914a204b38258e1b1
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3a87995560b5acbebeb5af407aa9eddf4c37c6a27ec9429ece0ea931918f9d9c
-R 0efb00b52520b1614c5871063698f7c2
-U dan
-Z 057c60122b3365185e9a7fdd1b36a1c0
+P cd118da9db0680fab8761ff44384639b9d564b67a5dfb1280ab72e44ff57714d
+R 803f05028bcb0911d31da2c38e3126c9
+U drh
+Z 66eee725aa902aff9f760f94dee7a24e
 # Remove this line to create a well-formed Fossil manifest.
