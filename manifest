@@ -1,5 +1,5 @@
-C Remove\sthe\sSQLITE_MAX_ALLOCATION_SIZE\sflag\s(set\sto\s536mb)\sfrom\sthe\sWASM\sand\sJNI\sbuilds\sbecause\sit\scan\sunduly\slimit\sdb\sexports\svia\ssqlite3_serialize(),\sas\sreported\sin\s[forum:75524f7342c1ba45|forum\spost\s75524f7342c1ba45].\sIt\snow\sdefaults\sto\swhatever\ssqlite3.c\suses,\swhich\sis\scurrently\sjust\sshy\sof\s2gb.
-D 2023-10-28T03:54:28.627
+C Since\sSQLite\sconsiders\sNaN\sto\sbe\slike\sNULL\sand\sNULL\ssorts\sbefore\sany\sinteger,\nmake\ssure\sthe\ssqlite3IntFloatCompare()\sroutine\sreports\sthat\sthe\sinteger\nargument\sis\slarger\sif\sthe\sfloating-point\sargument\sis\sNaN.
+D 2023-10-28T11:40:33.874
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -795,7 +795,7 @@ F src/vdbe.c 14479441337135eed8e290fb1d4abb7db657d93217a3b1ea8a2f031d3895536a
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c fe654b1f54e1feebcaed6c2ae3ed035cc65bfeb9a1169bed866abc42bfc63ff6
-F src/vdbeaux.c 929a4edecf9845fb063b47b23b9d187473a648470d915521cf72419f5219c4b7
+F src/vdbeaux.c dffcf79e7e415fcd6e4c8ac1ec7124cae5257018443adf09551c807655b04993
 F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe5
 F src/vdbemem.c c936e9002af4993b84c4eb7133d6b1190efe46d391cc86117ecd67ba17b1a04b
 F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 72d7c18f80f41529811f74855ac198681a0cfe7634225233ec4b8df219c2e73b
-R bf08c39748b4512d96281328ee8f10df
-U stephan
-Z 7196c1c2248d91eedb16eedfc74c5151
+P f6e1137919243c5ce86725df64b40b7e12e82cbceaff210ca41616d620f0dd1b
+R a6a0caaaeaf258d62d251b7e0c096200
+U drh
+Z e4297a009a5cb0d7d92fe890e604c55c
 # Remove this line to create a well-formed Fossil manifest.
