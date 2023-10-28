@@ -1,5 +1,5 @@
-C Update\sdocumentation\sfor\ssqlite3_errmsg()\sto\stry\sto\smake\sit\sclear\sthat\sif\nthe\sschema\sof\sa\sdatabase\scontains\stable\snames\sor\ssimilar\swith\sinvalid\sUTF,\nthen\sthe\serror\smessage\sgenerated\sby\sSQLite\smight\salso\scontain\sinvalid\sUTF.\nNo\schanges\sto\scode.
-D 2023-10-28T11:53:14.116
+C Limit\sthe\srange\sof\sinteger\sunix\stimestamps\sin\sdate4.test,\ssince\ssome\ssystems\n(RaspberryPI)\scannot\sdeal\swith\stimestamp\svalues\sthat\sexceed\spow(2,31).
+D 2023-10-28T16:19:21.185
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1016,7 +1016,7 @@ F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68
 F test/date.test c0d17cdfd89395bc78087b131e3538d96f864b5029c335318011accc7c0d0934
 F test/date2.test 7e12ec14aaf4d5e6294b4ba140445b0eca06ea50062a9c3a69c4ee13d0b6f8b1
 F test/date3.test a1b77abf05c6772fe5ca2337cac1398892f2a41e62bce7e6be0f4a08a0e64ae5
-F test/date4.test db9e5760cf6f480fcf36bb7ca8e215880ff44354a31be6fb3d7e58f9d2e057e9
+F test/date4.test 8aeb3de5b5e9fda968baa9357e4c0fae573724b7904943410195a19e96e31b6a
 F test/dbdata.test 042f49acff3438f940eeba5868d3af080ae64ddf26ae78f80c92bec3ca7d8603
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test 6c9a4622029d69dc38926f115864b055cb2f39badd25ec22cbfb130c8ba8e9c3
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P de1cf31a34b0f21288e7e30434a06baf25ee579929107c22e65c57236577fc4a
-R ce627b31c8a7f399b0e12cf71b754a64
+P 33ba13c7c4b6f9c5e64ea30c819718f2caea214afca945c9ed7075864f4aaa40
+R 1be0f0e552da136234a76c43155a60a1
 U drh
-Z 86353e9fa0a68bc2fae9ca0e76a0a632
+Z 9c40aed2a8cf9df874dfb316aa86c044
 # Remove this line to create a well-formed Fossil manifest.
