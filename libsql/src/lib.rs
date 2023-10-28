@@ -122,7 +122,7 @@ cfg_hrana! {
 
 pub use self::{
     connection::Connection,
-    database::Database,
+    database::{Database, OpenFlags},
     rows::{Column, Row, Rows},
     statement::Statement,
     transaction::{Transaction, TransactionBehavior},
