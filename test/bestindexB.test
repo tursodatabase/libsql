@@ -1,0 +1,87 @@
+# 2023-10-26
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix bestindexB
+
+ifcapable !vtab {
+  finish_test
+  return
+}
+
+register_tcl_module db
+
+proc vtab_command {method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE t1(a, b, c)"
+    }
+
+    xBestIndex {
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      set orderby [$hdl orderby]
+
+      if {[info exists ::xbestindex_sql]} { 
+        explain_i $::xbestindex_sql 
+        set ::xbestindex_res [ execsql $::xbestindex_sql ]
+      }
+
+      return "cost 1000000 rows 1000000 idxnum 0 idxstr hello"
+    }
+
+    xFilter {
+      return "sql {SELECT 0, 1, 2, 3}"
+    }
+  }
+
+  return {}
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE x1 USING tcl(vtab_command);
+  CREATE TABLE y1(a, b);
+  CREATE TABLE y2(a, b);
+} {}
+
+do_execsql_test 1.1 {
+  SELECT * FROM x1
+} {1 2 3}
+
+do_execsql_test 1.2 {
+  INSERT INTO y1 VALUES(1, 2) RETURNING rowid;
+} {1}
+
+do_execsql_test 1.3 {
+  CREATE TRIGGER y1tr BEFORE INSERT ON y1 BEGIN
+    SELECT * FROM x1;
+  END;
+  INSERT INTO y1 VALUES(3, 4) RETURNING rowid;
+} {2}
+
+
+# This time, rig the xBestIndex() method of the vtab to invoke an SQL
+# statement that uses RETURNING.
+set ::xbestindex_sql {
+  INSERT INTO y2 VALUES(NULL, NULL) RETURNING rowid;
+}
+do_execsql_test 1.4 {
+  INSERT INTO y1 VALUES(5, 6) RETURNING rowid;
+} {3}
+
+do_test 1.5 {
+  set ::xbestindex_res
+} {1}
+
+finish_test

@@ -1820,8 +1820,8 @@ $(SQLITE3EXE):	shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLIT
 		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 # <<mark>>
-sqldiff.exe:	$(TOP)\tool\sqldiff.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+sqldiff.exe:	$(TOP)\tool\sqldiff.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
+	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
 dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
@@ -2467,7 +2467,7 @@ extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
-tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe tool\mktoolzip.tcl
+tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe $(TOP)\tool\mktoolzip.tcl
 	.\testfixture.exe $(TOP)\tool\mktoolzip.tcl
 
 coretestprogs:	$(TESTPROGS)

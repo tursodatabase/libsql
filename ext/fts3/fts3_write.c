@@ -3981,6 +3981,8 @@ static int fts3AppendToNode(
 
   blobGrowBuffer(pPrev, nTerm, &rc);
   if( rc!=SQLITE_OK ) return rc;
+  assert( pPrev!=0 );
+  assert( pPrev->a!=0 );
 
   nPrefix = fts3PrefixCompress(pPrev->a, pPrev->n, zTerm, nTerm);
   nSuffix = nTerm - nPrefix;

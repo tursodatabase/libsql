@@ -38,7 +38,7 @@ int sqlite3_mmap_warm(sqlite3 *db, const char *zDb){
   int rc = SQLITE_OK;
   char *zSql = 0;
   int pgsz = 0;
-  int nTotal = 0;
+  unsigned int nTotal = 0;
 
   if( 0==sqlite3_get_autocommit(db) ) return SQLITE_MISUSE;
 
@@ -86,8 +86,8 @@ int sqlite3_mmap_warm(sqlite3 *db, const char *zDb){
         rc = p->xFetch(pFd, pgsz*iPg, pgsz, (void**)&pMap);
         if( rc!=SQLITE_OK || pMap==0 ) break;
 
-        nTotal += pMap[0];
-        nTotal += pMap[pgsz-1];
+        nTotal += (unsigned int)pMap[0];
+        nTotal += (unsigned int)pMap[pgsz-1];
 
         rc = p->xUnfetch(pFd, pgsz*iPg, (void*)pMap);
         if( rc!=SQLITE_OK ) break;
@@ -103,5 +103,6 @@ int sqlite3_mmap_warm(sqlite3 *db, const char *zDb){
     if( rc==SQLITE_OK ) rc = rc2;
   }
 
+  (void)nTotal;
   return rc;
 }

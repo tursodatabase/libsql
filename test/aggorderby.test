@@ -76,4 +76,47 @@ do_execsql_test aggorderby-5.3 {
   SELECT (SELECT string_agg(a,'#' ORDER BY d) FROM t3) FROM t1;
 } {aaa#aaa bbb#bbb}
 
+# COLLATE works on the ORDER BY.
+#
+do_execsql_test aggorderby-6.0 {
+  WITH c(x) AS (VALUES('abc'),('DEF'),('xyz'),('ABC'),('XYZ'))
+  SELECT string_agg(x,',' ORDER BY x COLLATE nocase),
+         string_agg(x,',' ORDER BY x) FROM c;
+} {abc,ABC,DEF,xyz,XYZ ABC,DEF,XYZ,abc,xyz}
+do_execsql_test aggorderby-6.1 {
+  WITH c(x,y) AS (VALUES(1,'a'),(2,'B'),(3,'c'),(4,'D'))
+  SELECT group_concat(x ORDER BY y COLLATE nocase),
+         group_concat(x ORDER BY y COLLATE binary) FROM c;
+} {1,2,3,4 2,4,1,3}
+
+# NULLS FIRST and NULLS LAST work on the ORDER BY
+#
+do_execsql_test aggorderby-7.0 {
+  WITH c(x) AS (VALUES(1),(NULL),(2.5),(NULL),('three'))
+  SELECT json_group_array(x ORDER BY x NULLS FIRST),
+         json_group_array(x ORDER BY x NULLS LAST) FROM c;
+} {[null,null,1,2.5,"three"] [1,2.5,"three",null,null]}
+do_execsql_test aggorderby-7.1 {
+  WITH c(x,y) AS (VALUES(1,9),(2,null),(3,5),(4,null),(5,1))
+  SELECT json_group_array(x ORDER BY y NULLS FIRST, x),
+         json_group_array(x ORDER BY y NULLS LAST, x) FROM c;
+} {[2,4,5,3,1] [5,3,1,2,4]}
+
+# The DISTINCT only applies to the function arguments, not to the
+# ORDER BY arguments.
+#
+do_execsql_test aggorderby-8.0 {
+  WITH c(x,y,z) AS (VALUES('a',4,5),('b',3,6),('c',2,7),('c',1,8))
+  SELECT group_concat(DISTINCT x ORDER BY y, z) FROM c;
+} {c,b,a}
+do_execsql_test aggorderby-8.1 {
+  WITH c(x,y,z) AS (VALUES('a',4,5),('b',3,6),('b',2,7),('c',1,8))
+  SELECT group_concat(DISTINCT x ORDER BY y, z) FROM c;
+} {c,b,a}
+do_execsql_test aggorderby-8.2 {
+  WITH c(x,y) AS (VALUES(1,1),(2,2),(3,3),(3,4),(3,5),(3,6))
+  SELECT sum(DISTINCT x ORDER BY y) FROM c;
+} 6
+
+
 finish_test

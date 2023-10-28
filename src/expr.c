@@ -1544,6 +1544,7 @@ static int dupedExprSize(const Expr *p){
   nByte = dupedExprNodeSize(p, EXPRDUP_REDUCE);
   if( p->pLeft ) nByte += dupedExprSize(p->pLeft);
   if( p->pRight ) nByte += dupedExprSize(p->pRight);
+  assert( nByte==ROUND8(nByte) );
   return nByte;
 }
 
@@ -1600,11 +1601,12 @@ static Expr *exprDup(
       nAlloc = dupedExprSize(p);
     }else if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
       nToken = sqlite3Strlen30NN(p->u.zToken)+1;
-      nAlloc = EXPR_FULLSIZE + nToken;
+      nAlloc = ROUND8(EXPR_FULLSIZE + nToken);
     }else{
       nToken = 0;
-      nAlloc = EXPR_FULLSIZE;
+      nAlloc = ROUND8(EXPR_FULLSIZE);
     }
+    assert( nAlloc==ROUND8(nAlloc) );
     sEdupBuf.zAlloc = sqlite3DbMallocRawNN(db, nAlloc);
 #ifdef SQLITE_DEBUG
     sEdupBuf.zEnd = sEdupBuf.zAlloc ? sEdupBuf.zAlloc+nAlloc : 0;
@@ -1613,6 +1615,7 @@ static Expr *exprDup(
     staticFlag = 0;
   }
   pNew = (Expr *)sEdupBuf.zAlloc;
+  assert( EIGHT_BYTE_ALIGNMENT(pNew) );
 
   if( pNew ){
     /* Set nNewSize to the size allocated for the structure pointed to
@@ -1621,7 +1624,7 @@ static Expr *exprDup(
     ** by the copy of the p->u.zToken string (if any).
     */
     const unsigned nStructSize = dupedExprStructSize(p, dupFlags);
-    const int nNewSize = nStructSize & 0xfff;
+    int nNewSize = nStructSize & 0xfff;
     if( nToken<0 ){
       if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
         nToken = sqlite3Strlen30(p->u.zToken) + 1;
@@ -1633,7 +1636,6 @@ static Expr *exprDup(
       assert( (int)(sEdupBuf.zEnd - sEdupBuf.zAlloc) >= nNewSize+nToken );
       assert( ExprHasProperty(p, EP_Reduced)==0 );
       memcpy(sEdupBuf.zAlloc, p, nNewSize);
-      sEdupBuf.zAlloc += nNewSize;
     }else{
       u32 nSize = (u32)exprStructSize(p);
       assert( (int)(sEdupBuf.zEnd - sEdupBuf.zAlloc) >= EXPR_FULLSIZE+nToken );
@@ -1641,7 +1643,7 @@ static Expr *exprDup(
       if( nSize<EXPR_FULLSIZE ){
         memset(&sEdupBuf.zAlloc[nSize], 0, EXPR_FULLSIZE-nSize);
       }
-      sEdupBuf.zAlloc += EXPR_FULLSIZE;
+      nNewSize = EXPR_FULLSIZE;
     }
 
     /* Set the EP_Reduced, EP_TokenOnly, and EP_Static flags appropriately. */
@@ -1656,10 +1658,11 @@ static Expr *exprDup(
     /* Copy the p->u.zToken string, if any. */
     assert( nToken>=0 );
     if( nToken>0 ){
-      char *zToken = pNew->u.zToken = (char*)sEdupBuf.zAlloc;
+      char *zToken = pNew->u.zToken = (char*)&sEdupBuf.zAlloc[nNewSize];
       memcpy(zToken, p->u.zToken, nToken);
-      sEdupBuf.zAlloc += nToken;
+      nNewSize += nToken;
     }
+    sEdupBuf.zAlloc += ROUND8(nNewSize);
 
     if( ((p->flags|pNew->flags)&(EP_TokenOnly|EP_Leaf))==0 ){
 
@@ -6803,16 +6806,17 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
               pItem->iOBTab = pParse->nTab++;
               pOBList = pExpr->pLeft->x.pList;
               assert( pOBList->nExpr>0 );
+              assert( pItem->bOBUnique==0 );
               if( pOBList->nExpr==1
                && nArg==1
                && sqlite3ExprCompare(0,pOBList->a[0].pExpr,
                                pExpr->x.pList->a[0].pExpr,0)==0
               ){
                 pItem->bOBPayload = 0;
+                pItem->bOBUnique = ExprHasProperty(pExpr, EP_Distinct);
               }else{
                 pItem->bOBPayload = 1;
               }
-              pItem->bOBUnique = ExprHasProperty(pExpr, EP_Distinct);
             }else{
               pItem->iOBTab = -1;
             }

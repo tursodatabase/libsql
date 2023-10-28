@@ -970,10 +970,17 @@ static void codeReturningTrigger(
   SrcList sFrom;
 
   assert( v!=0 );
-  assert( pParse->bReturning );
+  if( !pParse->bReturning ){
+    /* This RETURNING trigger must be for a different statement as
+    ** this statement lacks a RETURNING clause. */
+    return;
+  }
   assert( db->pParse==pParse );
   pReturning = pParse->u1.pReturning;
-  assert( pTrigger == &(pReturning->retTrig) );
+  if( pTrigger != &(pReturning->retTrig) ){
+    /* This RETURNING trigger is for a different statement */
+    return;
+  }
   memset(&sSelect, 0, sizeof(sSelect));
   memset(&sFrom, 0, sizeof(sFrom));
   sSelect.pEList = sqlite3ExprListDup(db, pReturning->pReturnEL, 0);

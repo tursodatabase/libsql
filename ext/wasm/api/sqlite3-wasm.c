@@ -130,12 +130,6 @@
 #endif
 
 /**********************************************************************/
-/* SQLITE_M... */
-#ifndef SQLITE_MAX_ALLOCATION_SIZE
-# define SQLITE_MAX_ALLOCATION_SIZE 0x1fffffff
-#endif
-
-/**********************************************************************/
 /* SQLITE_O... */
 #ifndef SQLITE_OMIT_DEPRECATED
 # define SQLITE_OMIT_DEPRECATED 1
