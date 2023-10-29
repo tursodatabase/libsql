@@ -66,3 +66,20 @@ pub(super) async fn handle_stats<M: MakeNamespace, C>(
 
     Ok(Json(resp))
 }
+
+pub(super) async fn handle_delete_stats<M: MakeNamespace, C>(
+    State(app_state): State<Arc<AppState<M, C>>>,
+    Path((namespace, stats_type)): Path<(String, String)>,
+) -> crate::Result<()> {
+    let stats = app_state
+        .namespaces
+        .stats(NamespaceName::from_string(namespace)?)
+        .await?;
+    match stats_type.as_str() {
+        "top" => stats.reset_top_queries(),
+        "slowest" => stats.reset_slowest_queries(),
+        _ => return Err(crate::error::Error::Internal("Invalid stats type".into())),
+    }
+
+    Ok(())
+}

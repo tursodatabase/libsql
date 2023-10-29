@@ -84,6 +84,10 @@ where
         )
         .route("/v1/namespaces/:namespace", delete(handle_delete_namespace))
         .route("/v1/namespaces/:namespace/stats", get(stats::handle_stats))
+        .route(
+            "/v1/namespaces/:namespace/stats/:stats_type",
+            delete(stats::handle_delete_stats),
+        )
         .route("/v1/diagnostics", get(handle_diagnostics))
         .route("/metrics", get(handle_metrics))
         .with_state(Arc::new(AppState {
