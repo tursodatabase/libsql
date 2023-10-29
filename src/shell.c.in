@@ -619,13 +619,13 @@ static int CheckAtLeastWin10(void){
   typedef LONG (WINAPI *REG_OPEN)(HKEY,LPCSTR,DWORD,REGSAM,PHKEY);
   typedef LSTATUS (WINAPI *REG_READ)(HKEY,LPCSTR,LPCSTR,DWORD,
                                           LPDWORD,PVOID,LPDWORD);
-  typedef LSTATUS (WINAPI *REG_UNLOAD)(HKEY,LPCSTR);
+  typedef LSTATUS (WINAPI *REG_CLOSE)(HKEY);
   int rv = 0;
   HINSTANCE hLib = LoadLibrary(TEXT("Advapi32.dll"));
   if( NULL != hLib ){
     REG_OPEN rkOpen = (REG_OPEN)GetProcAddress(hLib, "RegOpenKeyExA");
     REG_READ rkRead = (REG_READ)GetProcAddress(hLib, "RegGetValueA");
-    REG_UNLOAD rkFree = (REG_UNLOAD)GetProcAddress(hLib, "RegUnLoadKeyA");
+    REG_CLOSE rkFree = (REG_CLOSE)GetProcAddress(hLib, "RegCloseKey");
     if( rkOpen != NULL && rkRead != NULL && rkFree != NULL ){
       HKEY hk;
       const char *zsk = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
@@ -635,7 +635,7 @@ static int CheckAtLeastWin10(void){
                                      RRF_RT_REG_DWORD, 0, &kv, &kvsize) ){
           rv = (kv >= 10);
         }
-        rkFree(hk, 0);
+        rkFree(hk);
       }
     }
     FreeLibrary(hLib);
@@ -659,6 +659,7 @@ static void console_prepare_utf8(void){
   HANDLE hCC = INVALID_HANDLE_VALUE;
   DWORD consoleMode = 0;
   u8 conI = 0, conO = 0;
+  struct ConsoleState csWork = { 0, 0, 0, 0, INVALID_HANDLE_VALUE, 0 };
 
   console_utf8_in = console_utf8_out = 0;
   if( isatty(0) && GetFileType(hCI)==FILE_TYPE_CHAR ) conI = 1;
@@ -667,24 +668,28 @@ static void console_prepare_utf8(void){
   if( conI ) hCC = hCI;
   else hCC = hCO;
   if( !IsValidCodePage(CP_UTF8) || !GetConsoleMode( hCC, &consoleMode) ){
+  bail:
     fprintf(stderr, "Cannot use UTF-8 code page.\n");
     return;
   }
-  conState.hConsole = hCC;
-  conState.consoleMode = consoleMode;
-  conState.inCodePage = GetConsoleCP();
-  conState.outCodePage = GetConsoleOutputCP();
+  csWork.hConsole = hCC;
+  csWork.consoleMode = consoleMode;
+  csWork.inCodePage = GetConsoleCP();
+  csWork.outCodePage = GetConsoleOutputCP();
   if( conI ){
+    if( !SetConsoleCP(CP_UTF8) ) goto bail;
     console_utf8_in = 1;
-    SetConsoleCP(CP_UTF8);
     consoleMode |= ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
     SetConsoleMode(conState.hConsole, consoleMode);
-    conState.infsMode = _setmode(_fileno(stdin), _O_U16TEXT);
+    csWork.infsMode = _setmode(_fileno(stdin), _O_U16TEXT);
   }
   if( conO ){
+    /* Here, it is assumed that if conI is true, this call will
+    ** also succeed, so there is no need to undo above setup. */
+    if( !SetConsoleOutputCP(CP_UTF8) ) goto bail;
     console_utf8_out = 1;
-    SetConsoleOutputCP(CP_UTF8);
   }
+  conState = csWork;
 }
 
 /*
@@ -12245,7 +12250,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
 
 #if SHELL_WIN_UTF8_OPT
-  /* If Windows build and not RT, set*/
+  /* If Windows build and not RT, set default MBCS/UTF-8 translation
+  ** for console according to detected Windows version. This default
+  ** may be overridden by the -utf8 or -no-utf8 invocation options.
+  */
   mbcs_opted = (IS_WIN10_OR_LATER())? 0 : 1;
 #endif
 
