@@ -615,7 +615,24 @@ static struct ConsoleState {
 
 
 #if !SQLITE_OS_WINRT
-static int CheckAtLeastWin10(void){
+/*
+** Check Windows major version against given value, returning
+** 1 if the OS major version is no less than the argument.
+** This check uses very late binding to the registry access
+** API so that it can operate gracefully on OS versions that
+** do not have that API. The Windows NT registry, for versions
+** through Windows 11 (at least, as of October 2023), keeps
+** the actual major version number at registry key/value
+** HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\CurrentMajorVersionNumber
+** where it can be read more reliably than allowed by various
+** version info APIs which "process" the result in a manner
+** incompatible with the purpose of the CLI's version check.
+**
+** If the registry API is unavailable, or the location of
+** the above registry value changes, or the OS major version
+** is less than the argument, this function returns 0.
+*/
+static int CheckAtLeastWinX(DWORD major_version){
   typedef LONG (WINAPI *REG_OPEN)(HKEY,LPCSTR,DWORD,REGSAM,PHKEY);
   typedef LSTATUS (WINAPI *REG_READ)(HKEY,LPCSTR,LPCSTR,DWORD,
                                           LPDWORD,PVOID,LPDWORD);
@@ -633,7 +650,7 @@ static int CheckAtLeastWin10(void){
         DWORD kv = 0, kvsize = sizeof(kv);
         if( ERROR_SUCCESS ==  rkRead(hk, 0, "CurrentMajorVersionNumber",
                                      RRF_RT_REG_DWORD, 0, &kv, &kvsize) ){
-          rv = (kv >= 10);
+          rv = (kv >= major_version);
         }
         rkFree(hk);
       }
@@ -642,16 +659,22 @@ static int CheckAtLeastWin10(void){
   }
   return rv;
 }
-# define IS_WIN10_OR_LATER() CheckAtLeastWin10()
+# define IS_WIN10_OR_LATER() CheckAtLeastWinX(10)
 #else /* defined(SQLITE_OS_WINRT) */
 # define IS_WIN10_OR_LATER() 0
 #endif
 
 /*
-** Prepare console, (if known to be a WIN32 console), for UTF-8
-** input (from either typing or suitable paste operations) and/or for
-** UTF-8 rendering. This may "fail" with a message to stderr, where
+** Prepare console, (if known to be a WIN32 console), for UTF-8 input
+** (from either typing or suitable paste operations) and/or for UTF-8
+** output rendering. This may "fail" with a message to stderr, where
 ** the preparation is not done and common "code page" issues occur.
+**
+** The console state upon entry is preserved, in conState, so that
+** console_restore() can later restore the same console state.
+**
+** The globals console_utf8_in and console_utf8_out are set, for
+** later use in selecting UTF-8 or MBCS console I/O translations.
 */
 static void console_prepare_utf8(void){
   HANDLE hCI = GetStdHandle(STD_INPUT_HANDLE);
@@ -678,17 +701,17 @@ static void console_prepare_utf8(void){
   csWork.outCodePage = GetConsoleOutputCP();
   if( conI ){
     if( !SetConsoleCP(CP_UTF8) ) goto bail;
-    console_utf8_in = 1;
     consoleMode |= ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
     SetConsoleMode(conState.hConsole, consoleMode);
     csWork.infsMode = _setmode(_fileno(stdin), _O_U16TEXT);
   }
   if( conO ){
-    /* Here, it is assumed that if conI is true, this call will
-    ** also succeed, so there is no need to undo above setup. */
+    /* Here, it is assumed that if conI is true, this call will also
+    ** succeed, so there is no need to undo above setup upon failure. */
     if( !SetConsoleOutputCP(CP_UTF8) ) goto bail;
-    console_utf8_out = 1;
   }
+  console_utf8_in = conI;
+  console_utf8_out = conO;
   conState = csWork;
 }
 
@@ -12250,9 +12273,11 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
 
 #if SHELL_WIN_UTF8_OPT
-  /* If Windows build and not RT, set default MBCS/UTF-8 translation
-  ** for console according to detected Windows version. This default
-  ** may be overridden by the -utf8 or -no-utf8 invocation options.
+  /* If Windows build and not RT, set default MBCS/UTF-8 translation for
+  ** console according to detected Windows version. This default may be
+  ** overridden by a -no-utf8 or (undocumented) -utf8 invocation option.
+  ** If a runtime check for UTF-8 console I/O capability is devised,
+  ** that should be preferred over this version check.
   */
   mbcs_opted = (IS_WIN10_OR_LATER())? 0 : 1;
 #endif
