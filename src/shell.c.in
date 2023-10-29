@@ -613,11 +613,68 @@ static struct ConsoleState {
 # define _O_U16TEXT 0x20000
 #endif
 
+
+#if !SQLITE_OS_WINRT
 /*
-** Prepare console, (if known to be a WIN32 console), for UTF-8
-** input (from either typing or suitable paste operations) and/or for
-** UTF-8 rendering. This may "fail" with a message to stderr, where
+** Check Windows major version against given value, returning
+** 1 if the OS major version is no less than the argument.
+** This check uses very late binding to the registry access
+** API so that it can operate gracefully on OS versions that
+** do not have that API. The Windows NT registry, for versions
+** through Windows 11 (at least, as of October 2023), keeps
+** the actual major version number at registry key/value
+** HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\CurrentMajorVersionNumber
+** where it can be read more reliably than allowed by various
+** version info APIs which "process" the result in a manner
+** incompatible with the purpose of the CLI's version check.
+**
+** If the registry API is unavailable, or the location of
+** the above registry value changes, or the OS major version
+** is less than the argument, this function returns 0.
+*/
+static int CheckAtLeastWinX(DWORD major_version){
+  typedef LONG (WINAPI *REG_OPEN)(HKEY,LPCSTR,DWORD,REGSAM,PHKEY);
+  typedef LSTATUS (WINAPI *REG_READ)(HKEY,LPCSTR,LPCSTR,DWORD,
+                                          LPDWORD,PVOID,LPDWORD);
+  typedef LSTATUS (WINAPI *REG_CLOSE)(HKEY);
+  int rv = 0;
+  HINSTANCE hLib = LoadLibrary(TEXT("Advapi32.dll"));
+  if( NULL != hLib ){
+    REG_OPEN rkOpen = (REG_OPEN)GetProcAddress(hLib, "RegOpenKeyExA");
+    REG_READ rkRead = (REG_READ)GetProcAddress(hLib, "RegGetValueA");
+    REG_CLOSE rkFree = (REG_CLOSE)GetProcAddress(hLib, "RegCloseKey");
+    if( rkOpen != NULL && rkRead != NULL && rkFree != NULL ){
+      HKEY hk;
+      const char *zsk = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+      if( ERROR_SUCCESS == rkOpen(HKEY_LOCAL_MACHINE, zsk, 0, KEY_READ, &hk) ){
+        DWORD kv = 0, kvsize = sizeof(kv);
+        if( ERROR_SUCCESS ==  rkRead(hk, 0, "CurrentMajorVersionNumber",
+                                     RRF_RT_REG_DWORD, 0, &kv, &kvsize) ){
+          rv = (kv >= major_version);
+        }
+        rkFree(hk);
+      }
+    }
+    FreeLibrary(hLib);
+  }
+  return rv;
+}
+# define IS_WIN10_OR_LATER() CheckAtLeastWinX(10)
+#else /* defined(SQLITE_OS_WINRT) */
+# define IS_WIN10_OR_LATER() 0
+#endif
+
+/*
+** Prepare console, (if known to be a WIN32 console), for UTF-8 input
+** (from either typing or suitable paste operations) and/or for UTF-8
+** output rendering. This may "fail" with a message to stderr, where
 ** the preparation is not done and common "code page" issues occur.
+**
+** The console state upon entry is preserved, in conState, so that
+** console_restore() can later restore the same console state.
+**
+** The globals console_utf8_in and console_utf8_out are set, for
+** later use in selecting UTF-8 or MBCS console I/O translations.
 */
 static void console_prepare_utf8(void){
   HANDLE hCI = GetStdHandle(STD_INPUT_HANDLE);
@@ -625,6 +682,7 @@ static void console_prepare_utf8(void){
   HANDLE hCC = INVALID_HANDLE_VALUE;
   DWORD consoleMode = 0;
   u8 conI = 0, conO = 0;
+  struct ConsoleState csWork = { 0, 0, 0, 0, INVALID_HANDLE_VALUE, 0 };
 
   console_utf8_in = console_utf8_out = 0;
   if( isatty(0) && GetFileType(hCI)==FILE_TYPE_CHAR ) conI = 1;
@@ -633,24 +691,28 @@ static void console_prepare_utf8(void){
   if( conI ) hCC = hCI;
   else hCC = hCO;
   if( !IsValidCodePage(CP_UTF8) || !GetConsoleMode( hCC, &consoleMode) ){
+  bail:
     fprintf(stderr, "Cannot use UTF-8 code page.\n");
     return;
   }
-  conState.hConsole = hCC;
-  conState.consoleMode = consoleMode;
-  conState.inCodePage = GetConsoleCP();
-  conState.outCodePage = GetConsoleOutputCP();
+  csWork.hConsole = hCC;
+  csWork.consoleMode = consoleMode;
+  csWork.inCodePage = GetConsoleCP();
+  csWork.outCodePage = GetConsoleOutputCP();
   if( conI ){
-    console_utf8_in = 1;
-    SetConsoleCP(CP_UTF8);
+    if( !SetConsoleCP(CP_UTF8) ) goto bail;
     consoleMode |= ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
     SetConsoleMode(conState.hConsole, consoleMode);
-    conState.infsMode = _setmode(_fileno(stdin), _O_U16TEXT);
+    csWork.infsMode = _setmode(_fileno(stdin), _O_U16TEXT);
   }
   if( conO ){
-    console_utf8_out = 1;
-    SetConsoleOutputCP(CP_UTF8);
+    /* Here, it is assumed that if conI is true, this call will also
+    ** succeed, so there is no need to undo above setup upon failure. */
+    if( !SetConsoleOutputCP(CP_UTF8) ) goto bail;
   }
+  console_utf8_in = conI;
+  console_utf8_out = conO;
+  conState = csWork;
 }
 
 /*
@@ -12210,6 +12272,16 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   }
 #endif
 
+#if SHELL_WIN_UTF8_OPT
+  /* If Windows build and not RT, set default MBCS/UTF-8 translation for
+  ** console according to detected Windows version. This default may be
+  ** overridden by a -no-utf8 or (undocumented) -utf8 invocation option.
+  ** If a runtime check for UTF-8 console I/O capability is devised,
+  ** that should be preferred over this version check.
+  */
+  mbcs_opted = (IS_WIN10_OR_LATER())? 0 : 1;
+#endif
+
   /* Do an initial pass through the command-line argument to locate
   ** the name of the database file, the name of the initialization file,
   ** the size of the alternative malloc heap, options affecting commands
@@ -12405,7 +12477,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       exit(1);
     }
   }
-
 #if SHELL_WIN_UTF8_OPT
   /* Get indicated Windows console setup done before running invocation commands. */
   if( stdin_is_interactive || stdout_is_console ){

@@ -1,5 +1,5 @@
-C Limit\sthe\srange\sof\sinteger\sunix\stimestamps\sin\sdate4.test,\ssince\ssome\ssystems\n(RaspberryPI)\scannot\sdeal\swith\stimestamp\svalues\sthat\sexceed\spow(2,31).
-D 2023-10-28T16:19:21.185
+C For\sWindows\sCLI,\sinstitute\sa\sversion\scheck\sto\sdetermine\sdefault\sMBCS\sor\sUTF-8\stranslation\son\sconsole\sI/O.\s(Default\sto\sUTF-8\swhere\sknown\spossible.)
+D 2023-10-29T20:05:18.263
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -722,7 +722,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 31229276a8eb5b5de1428cd2d80f6f1cf8ffc5248be25e47cf575df12f1b8f23
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 64c9bc7494f3d220a27498137551762c25458282388ea9ac0a710dd6d5dc1510
-F src/shell.c.in 9b29276cb6447b4c608e77c08b49bd3315cdcb399801e08b2f15723aa5b733e8
+F src/shell.c.in 9e234ec61ce462b63ce37b29d875d0a716878f049ad50f13f55b859d01c919ad
 F src/sqlite.h.in ef0e41e83ad1ac0dcc9ec9939bf541a44b1c5de821bee2d6c61754c3252f3276
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2f30b2671f4c03cd27a43f039e11251391066c97d11385f5f963bb40b03038ac
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 33ba13c7c4b6f9c5e64ea30c819718f2caea214afca945c9ed7075864f4aaa40
-R 1be0f0e552da136234a76c43155a60a1
-U drh
-Z 9c40aed2a8cf9df874dfb316aa86c044
+P 765290663b28e90a0494997baf023f9610a4ed32f0ff0099bf9fc3d485733fca 046c84296627382ee416f64b02b77a937b368e30b32e6b800de5a854810766f6
+R 21d5e98541aed894e5aa957e7e737a78
+U larrybr
+Z 388b78b418fa51ea2b695e5b2ab587f8
 # Remove this line to create a well-formed Fossil manifest.
