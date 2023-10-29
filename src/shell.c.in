@@ -613,6 +613,40 @@ static struct ConsoleState {
 # define _O_U16TEXT 0x20000
 #endif
 
+
+#if !SQLITE_OS_WINRT
+static int CheckAtLeastWin10(void){
+  typedef LONG (WINAPI *REG_OPEN)(HKEY,LPCSTR,DWORD,REGSAM,PHKEY);
+  typedef LSTATUS (WINAPI *REG_READ)(HKEY,LPCSTR,LPCSTR,DWORD,
+                                          LPDWORD,PVOID,LPDWORD);
+  typedef LSTATUS (WINAPI *REG_UNLOAD)(HKEY,LPCSTR);
+  int rv = 0;
+  HINSTANCE hLib = LoadLibrary(TEXT("Advapi32.dll"));
+  if( NULL != hLib ){
+    REG_OPEN rkOpen = (REG_OPEN)GetProcAddress(hLib, "RegOpenKeyExA");
+    REG_READ rkRead = (REG_READ)GetProcAddress(hLib, "RegGetValueA");
+    REG_UNLOAD rkFree = (REG_UNLOAD)GetProcAddress(hLib, "RegUnLoadKeyA");
+    if( rkOpen != NULL && rkRead != NULL && rkFree != NULL ){
+      HKEY hk;
+      const char *zsk = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+      if( ERROR_SUCCESS == rkOpen(HKEY_LOCAL_MACHINE, zsk, 0, KEY_READ, &hk) ){
+        DWORD kv = 0, kvsize = sizeof(kv);
+        if( ERROR_SUCCESS ==  rkRead(hk, 0, "CurrentMajorVersionNumber",
+                                     RRF_RT_REG_DWORD, 0, &kv, &kvsize) ){
+          rv = (kv >= 10);
+        }
+        rkFree(hk, 0);
+      }
+    }
+    FreeLibrary(hLib);
+  }
+  return rv;
+}
+# define IS_WIN10_OR_LATER() CheckAtLeastWin10()
+#else /* defined(SQLITE_OS_WINRT) */
+# define IS_WIN10_OR_LATER() 0
+#endif
+
 /*
 ** Prepare console, (if known to be a WIN32 console), for UTF-8
 ** input (from either typing or suitable paste operations) and/or for
@@ -12210,6 +12244,11 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   }
 #endif
 
+#if SHELL_WIN_UTF8_OPT
+  /* If Windows build and not RT, set*/
+  mbcs_opted = (IS_WIN10_OR_LATER())? 0 : 1;
+#endif
+
   /* Do an initial pass through the command-line argument to locate
   ** the name of the database file, the name of the initialization file,
   ** the size of the alternative malloc heap, options affecting commands
@@ -12405,7 +12444,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       exit(1);
     }
   }
-
 #if SHELL_WIN_UTF8_OPT
   /* Get indicated Windows console setup done before running invocation commands. */
   if( stdin_is_interactive || stdout_is_console ){
