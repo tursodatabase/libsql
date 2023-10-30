@@ -66,3 +66,8 @@ pub static WAL_CHECKPOINT_COUNT: Lazy<Counter> = Lazy::new(|| {
     describe_counter!(NAME, "number of WAL checkpoints");
     register_counter!(NAME)
 });
+pub static STATEMENT_MEM_USED_BYTES: Lazy<Histogram> = Lazy::new(|| {
+    const NAME: &str = "statement_mem_used_bytes";
+    describe_histogram!(NAME, "memory used by a prepared statement");
+    register_histogram!(NAME)
+});

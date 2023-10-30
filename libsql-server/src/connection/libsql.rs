@@ -649,6 +649,8 @@ impl<W: WalHook> Connection<W> {
         let elapsed = elapsed.as_millis() as u64;
         let rows_read = stmt.get_status(StatementStatus::RowsRead);
         let rows_written = stmt.get_status(StatementStatus::RowsWritten);
+        let mem_used = stmt.get_status(StatementStatus::MemUsed);
+        histogram!("statement_mem_used_bytes", mem_used as f64);
         let rows_read = if rows_read == 0 && rows_written == 0 {
             1
         } else {
