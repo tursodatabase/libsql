@@ -13,7 +13,7 @@ use tokio::time::{Duration, Instant};
 use crate::auth::{Authenticated, Authorized, Permission};
 use crate::error::Error;
 use crate::libsql_bindings::wal_hook::WalHook;
-use crate::metrics::{READ_QUERY_COUNT, WRITE_QUERY_COUNT};
+use crate::metrics::{READ_QUERY_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT, WRITE_QUERY_COUNT};
 use crate::query::Query;
 use crate::query_analysis::{State, StmtKind};
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
@@ -618,8 +618,11 @@ impl<W: WalHook> Connection<W> {
     }
 
     fn checkpoint(&self) -> Result<()> {
+        let start = Instant::now();
         self.conn
             .query_row("PRAGMA wal_checkpoint(TRUNCATE)", (), |_| Ok(()))?;
+        WAL_CHECKPOINT_COUNT.increment(1);
+        histogram!("wal_checkpoint_time", start.elapsed());
         Ok(())
     }
 
@@ -637,10 +640,12 @@ impl<W: WalHook> Connection<W> {
         } else {
             tracing::debug!("Not vacuuming: pages={page_count} freelist={freelist_count}");
         }
+        VACUUM_COUNT.increment(1);
         Ok(())
     }
 
     fn update_stats(&self, sql: String, stmt: &rusqlite::Statement, elapsed: Duration) {
+        histogram!("statement_execution_time", elapsed);
         let elapsed = elapsed.as_millis() as u64;
         let rows_read = stmt.get_status(StatementStatus::RowsRead);
         let rows_written = stmt.get_status(StatementStatus::RowsWritten);

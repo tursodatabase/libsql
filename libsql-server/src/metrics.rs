@@ -45,3 +45,24 @@ pub static WRITE_TXN_DURATION: Lazy<Histogram> = Lazy::new(|| {
     describe_histogram!(NAME, "duration for which a write transaction was kept open");
     register_histogram!(NAME)
 });
+
+pub static STATEMENT_EXECUTION_TIME: Lazy<Histogram> = Lazy::new(|| {
+    const NAME: &str = "statement_execution_time";
+    describe_histogram!(NAME, "time to execute a statement");
+    register_histogram!(NAME)
+});
+pub static VACUUM_COUNT: Lazy<Counter> = Lazy::new(|| {
+    const NAME: &str = "vacuum_count";
+    describe_counter!(NAME, "number of vacuum operations");
+    register_counter!(NAME)
+});
+pub static WAL_CHECKPOINT_TIME: Lazy<Histogram> = Lazy::new(|| {
+    const NAME: &str = "wal_checkpoint_time";
+    describe_histogram!(NAME, "time to checkpoint the WAL");
+    register_histogram!(NAME)
+});
+pub static WAL_CHECKPOINT_COUNT: Lazy<Counter> = Lazy::new(|| {
+    const NAME: &str = "wal_checkpoint_count";
+    describe_counter!(NAME, "number of WAL checkpoints");
+    register_counter!(NAME)
+});
