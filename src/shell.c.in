@@ -3438,7 +3438,7 @@ static void display_explain_scanstats(
     if( sqlite3_stmt_scanstatus_v2(p,ii,SQLITE_SCANSTAT_EXPLAIN,f,(void*)&z) ){
       break;
     }
-    n = strlen(z) + scanStatsHeight(p, ii)*3;
+    n = (int)strlen(z) + scanStatsHeight(p, ii)*3;
     if( n>nWidth ) nWidth = n;
   }
   nWidth += 4;
@@ -3450,12 +3450,12 @@ static void display_explain_scanstats(
     i64 nCycle = 0;
     int iId = 0;
     int iPid = 0;
-    const char *z = 0;
+    const char *zo = 0;
     const char *zName = 0;
     char *zText = 0;
     double rEst = 0.0;
 
-    if( sqlite3_stmt_scanstatus_v2(p,ii,SQLITE_SCANSTAT_EXPLAIN,f,(void*)&z) ){
+    if( sqlite3_stmt_scanstatus_v2(p,ii,SQLITE_SCANSTAT_EXPLAIN,f,(void*)&zo) ){
       break;
     }
     sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_EST,f,(void*)&rEst);
@@ -3466,7 +3466,7 @@ static void display_explain_scanstats(
     sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_PARENTID,f,(void*)&iPid);
     sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_NAME,f,(void*)&zName);
 
-    zText = sqlite3_mprintf("%s", z);
+    zText = sqlite3_mprintf("%s", zo);
     if( nCycle>=0 || nLoop>=0 || nRow>=0 ){
       char *z = 0;
       if( nCycle>=0 && nTotal>0 ){
