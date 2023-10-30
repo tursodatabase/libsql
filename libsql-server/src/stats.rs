@@ -1,5 +1,5 @@
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, RwLock, Weak};
 
 use metrics::{counter, gauge, increment_counter};
@@ -15,16 +15,16 @@ use crate::replication::FrameNo;
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TopQuery {
     #[serde(skip)]
-    pub weight: i64,
-    pub rows_written: i32,
-    pub rows_read: i32,
+    pub weight: u64,
+    pub rows_written: u64,
+    pub rows_read: u64,
     pub query: String,
 }
 
 impl TopQuery {
-    pub fn new(query: String, rows_read: i32, rows_written: i32) -> Self {
+    pub fn new(query: String, rows_read: u64, rows_written: u64) -> Self {
         Self {
-            weight: rows_read as i64 + rows_written as i64,
+            weight: rows_read + rows_written,
             rows_read,
             rows_written,
             query,
@@ -36,12 +36,12 @@ impl TopQuery {
 pub struct SlowestQuery {
     pub elapsed_ms: u64,
     pub query: String,
-    pub rows_written: i32,
-    pub rows_read: i32,
+    pub rows_written: u64,
+    pub rows_read: u64,
 }
 
 impl SlowestQuery {
-    pub fn new(query: String, elapsed_ms: u64, rows_read: i32, rows_written: i32) -> Self {
+    pub fn new(query: String, elapsed_ms: u64, rows_read: u64, rows_written: u64) -> Self {
         Self {
             elapsed_ms,
             query,
@@ -69,7 +69,7 @@ pub struct Stats {
     current_frame_no: AtomicU64,
     // Lowest value in currently stored top queries
     #[serde(default)]
-    top_query_threshold: AtomicI64,
+    top_query_threshold: AtomicU64,
     #[serde(default)]
     top_queries: Arc<RwLock<BTreeSet<TopQuery>>>,
     // Lowest value in currently stored slowest queries
@@ -172,7 +172,7 @@ impl Stats {
         }
     }
 
-    pub(crate) fn qualifies_as_top_query(&self, weight: i64) -> bool {
+    pub(crate) fn qualifies_as_top_query(&self, weight: u64) -> bool {
         weight >= self.top_query_threshold.load(Ordering::Relaxed)
     }
 
