@@ -1,5 +1,5 @@
-C Dodge\sa\snuisance\swarning\sfrom\sMSVC\sin\sCLI\suse\sof\sPrepared\sStatement\sScan\sStatus.\s(Yes,\sC\srules\sare\sfine.)
-D 2023-10-30T19:50:20.447
+C Update\sthe\sautoconf/Makefile.msc\sso\sthat\sit\saligns\swith\sMakefile.msc.
+D 2023-10-30T20:35:33.577
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.msc 3dfe7dc4677569256724e4988db59521f10b1d8b8fba393ea8a255eb038b9825
+F autoconf/Makefile.msc 34f8c222846db1b354720c8a78a4fa7dec9176ea447c0fffdf442b7f74e8b1df
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 42cfd21d0b19dc7d5d85fb5c405c5f3c6a4c923021c39128f6ba685355d8fd56
 F autoconf/configure.ac ec7fa914c5e74ff212fe879f9bb6918e1234497e05facfb641f30c4d5893b277
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7564ff1ba2c2fba89106d1aa06cc5379e752f119f22370f2f155f24cc698dec6
-R 592cb591ccb42176be22bbcd43e1bb22
-U larrybr
-Z f318336f9f4c56ad4c0496d33e161662
+P 166c96d91dcc8c500a084d5703db103176ed5ec7d5f1334050cd66b3f1cd0e4f
+R a40397540ae65bc3266dad738379719e
+U drh
+Z fc1d61aea6975cccbcf8186ffc5ca0c5
 # Remove this line to create a well-formed Fossil manifest.
