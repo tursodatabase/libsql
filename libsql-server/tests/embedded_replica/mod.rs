@@ -56,7 +56,6 @@ fn make_primary(sim: &mut Sim, path: PathBuf) {
 }
 
 #[test]
-#[ignore = "fixed by #477"]
 fn embedded_replica() {
     let mut sim = Builder::new().build();
 
