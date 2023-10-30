@@ -132,6 +132,23 @@ impl Service<Uri> for TurmoilConnector {
 
 pub type TestServer = Server<TurmoilConnector, TurmoilAcceptor, TurmoilConnector>;
 
+#[async_trait::async_trait]
+pub trait SimServer {
+    async fn start_sim(self, user_api_port: usize) -> anyhow::Result<()>;
+}
+
+#[async_trait::async_trait]
+impl SimServer for TestServer {
+    async fn start_sim(mut self, user_api_port: usize) -> anyhow::Result<()> {
+        let user_api = TurmoilAcceptor::bind(([0, 0, 0, 0], user_api_port as u16)).await?;
+        self.user_api_config.http_acceptor = Some(user_api);
+
+        self.start().await?;
+
+        Ok(())
+    }
+}
+
 pub fn init_tracing() {
     static INIT_TRACING: Once = Once::new();
     INIT_TRACING.call_once(|| {

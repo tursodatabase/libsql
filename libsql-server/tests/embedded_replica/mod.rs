@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::common::http::Client;
-use crate::common::net::{init_tracing, TestServer, TurmoilAcceptor, TurmoilConnector};
+use crate::common::net::{init_tracing, SimServer, TestServer, TurmoilAcceptor, TurmoilConnector};
 use libsql::Database;
 use serde_json::json;
 use sqld::config::{AdminApiConfig, RpcServerConfig, UserApiConfig};
@@ -31,7 +31,6 @@ fn make_primary(sim: &mut Sim, path: PathBuf) {
             let server = TestServer {
                 path: path.into(),
                 user_api_config: UserApiConfig {
-                    http_acceptor: Some(TurmoilAcceptor::bind(([0, 0, 0, 0], 8080)).await?),
                     ..Default::default()
                 },
                 admin_api_config: Some(AdminApiConfig {
@@ -48,7 +47,7 @@ fn make_primary(sim: &mut Sim, path: PathBuf) {
                 ..Default::default()
             };
 
-            server.start().await?;
+            server.start_sim(8080).await?;
 
             Ok(())
         }
