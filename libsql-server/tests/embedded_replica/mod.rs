@@ -55,7 +55,6 @@ fn make_primary(sim: &mut Sim, path: PathBuf) {
 }
 
 #[test]
-#[ignore = "fixed by #477"]
 fn embedded_replica() {
     let mut sim = Builder::new().build();
 
@@ -63,18 +62,6 @@ fn embedded_replica() {
     let tmp_host = tempdir().unwrap();
     let tmp_embedded_path = tmp_embedded.path().to_owned();
     let tmp_host_path = tmp_host.path().to_owned();
-
-    // We need to ensure that libsql's init code runs before we do anything
-    // with rusqlite in sqld. This is because libsql has saftey checks and
-    // needs to configure the sqlite api. Thus if we init sqld first
-    // it will fail. To work around this we open a temp db in memory db
-    // to ensure we run libsql's init code first. This DB is not actually
-    // used in the test only for its run once init code.
-    //
-    // This does change the serialization mode for sqld but because the mode
-    // that we use in libsql is safer than the sqld one it is still safe.
-    let db = Database::open_in_memory().unwrap();
-    db.connect().unwrap();
 
     make_primary(&mut sim, tmp_host_path.clone());
 

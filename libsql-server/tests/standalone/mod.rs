@@ -12,7 +12,7 @@ use tokio::sync::Notify;
 
 use sqld::config::UserApiConfig;
 
-use common::net::{init_tracing, TestServer, TurmoilAcceptor, TurmoilConnector};
+use common::net::{init_tracing, TestServer, TurmoilConnector};
 
 async fn make_standalone_server() -> Result<(), Box<dyn std::error::Error>> {
     init_tracing();
