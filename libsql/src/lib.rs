@@ -87,6 +87,7 @@ cfg_core! {
     mod local;
 
     pub use local::{version, version_number, RowsFuture};
+    pub use database::OpenFlags;
 }
 
 pub mod params;
@@ -122,7 +123,7 @@ cfg_hrana! {
 
 pub use self::{
     connection::Connection,
-    database::{Database, OpenFlags},
+    database::Database,
     rows::{Column, Row, Rows},
     statement::Statement,
     transaction::{Transaction, TransactionBehavior},
