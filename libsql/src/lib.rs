@@ -73,16 +73,6 @@ macro_rules! cfg_hrana {
     }
 }
 
-macro_rules! cfg_cloudflare {
-    ($($item:item)*) => {
-        $(
-            #[cfg(feature = "cloudflare")]
-            #[cfg_attr(docsrs, doc(cfg(feature = "cloudflare")))]
-            $item
-        )*
-    }
-}
-
 macro_rules! cfg_http {
     ($($item:item)*) => {
         $(

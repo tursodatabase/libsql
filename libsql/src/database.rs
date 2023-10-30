@@ -37,7 +37,7 @@ enum DbType {
         auth_token: String,
         connector: crate::util::ConnectorService,
     },
-    #[cfg(feature = "cloudflare")]
+    #[cfg(all(target_family = "wasm", feature = "cloudflare"))]
     Cloudflare { url: String, auth_token: String },
 }
 
@@ -53,7 +53,7 @@ impl fmt::Debug for DbType {
             Self::Sync { .. } => write!(f, "Sync"),
             #[cfg(feature = "hrana")]
             Self::Remote { .. } => write!(f, "Remote"),
-            #[cfg(feature = "cloudflare")]
+            #[cfg(all(target_family = "wasm", feature = "cloudflare"))]
             Self::Cloudflare { .. } => write!(f, "Cloudflare"),
             _ => write!(f, "no database type set"),
         }
@@ -203,11 +203,8 @@ cfg_hrana! {
                 },
             })
         }
-    }
-}
 
-cfg_cloudflare! {
-    impl Database {
+        #[cfg(all(target_family = "wasm", feature = "cloudflare"))]
         pub fn open_cloudflare(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
             Ok(Database {
                 db_type: DbType::Cloudflare {

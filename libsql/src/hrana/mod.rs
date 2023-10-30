@@ -138,12 +138,12 @@ pub enum HranaError {
     Api(String),
     #[error("http error: `{0}`")]
     Http(#[from] hyper::Error),
-    #[cfg(feature = "cloudflare")]
+    #[cfg(all(target_family = "wasm", feature = "cloudflare"))]
     #[error("http error: `{0}`")]
     Cloudflare(String),
 }
 
-#[cfg(feature = "cloudflare")]
+#[cfg(all(target_family = "wasm", feature = "cloudflare"))]
 impl From<worker::Error> for HranaError {
     fn from(value: worker::Error) -> Self {
         HranaError::Cloudflare(value.to_string())
