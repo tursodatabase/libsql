@@ -2,12 +2,14 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::{Arc, RwLock, Weak};
 
+use metrics::{counter, gauge, increment_counter};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use tokio::io::AsyncWriteExt;
 use tokio::task::JoinSet;
 use tokio::time::Duration;
 
+use crate::namespace::NamespaceName;
 use crate::replication::FrameNo;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -51,6 +53,9 @@ impl SlowestQuery {
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Stats {
+    #[serde(skip)]
+    namespace: NamespaceName,
+
     #[serde(default)]
     rows_written: AtomicU64,
     #[serde(default)]
@@ -76,16 +81,20 @@ pub struct Stats {
 
 impl Stats {
     pub async fn new(
+        namespace: NamespaceName,
         db_path: &Path,
         join_set: &mut JoinSet<anyhow::Result<()>>,
     ) -> anyhow::Result<Arc<Self>> {
         let stats_path = db_path.join("stats.json");
-        let this = if stats_path.try_exists()? {
+        let mut this = if stats_path.try_exists()? {
             let data = tokio::fs::read_to_string(&stats_path).await?;
-            Arc::new(serde_json::from_str(&data)?)
+            serde_json::from_str(&data)?
         } else {
-            Arc::new(Stats::default())
+            Stats::default()
         };
+
+        this.namespace = namespace;
+        let this = Arc::new(this);
 
         join_set.spawn(spawn_stats_persist_thread(
             Arc::downgrade(&this),
@@ -97,15 +106,18 @@ impl Stats {
 
     /// increments the number of written rows by n
     pub fn inc_rows_written(&self, n: u64) {
+        counter!("rows_written", n, "namespace" => self.namespace.to_string());
         self.rows_written.fetch_add(n, Ordering::Relaxed);
     }
 
     /// increments the number of read rows by n
     pub fn inc_rows_read(&self, n: u64) {
+        counter!("rows_read", n, "namespace" => self.namespace.to_string());
         self.rows_read.fetch_add(n, Ordering::Relaxed);
     }
 
     pub fn set_storage_bytes_used(&self, n: u64) {
+        gauge!("storage", n as f64, "namespace" => self.namespace.to_string());
         self.storage_bytes_used.store(n, Ordering::Relaxed);
     }
 
@@ -126,6 +138,7 @@ impl Stats {
 
     /// increments the number of the write requests which were delegated from a replica to primary
     pub fn inc_write_requests_delegated(&self) {
+        increment_counter!("write_requests_delegated", "namespace" => self.namespace.to_string());
         self.write_requests_delegated
             .fetch_add(1, Ordering::Relaxed);
     }
@@ -135,6 +148,7 @@ impl Stats {
     }
 
     pub fn set_current_frame_no(&self, fno: FrameNo) {
+        gauge!("current_frame_no", fno as f64, "namespace" => self.namespace.to_string());
         self.current_frame_no.store(fno, Ordering::Relaxed);
     }
 
