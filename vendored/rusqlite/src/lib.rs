@@ -1,3 +1,4 @@
+#![allow(clippy::all)]
 //! Rusqlite is an ergonomic wrapper for using SQLite from Rust.
 //!
 //! Historically, the API was based on the one from

@@ -26,7 +26,7 @@ fn main() {
 }
 
 pub fn build_bundled(out_dir: &str, out_path: &Path) {
-    let header = HeaderLocation::FromPath(dbg!(format!("{SQLITE_DIR}/sqlite3.h")));
+    let header = HeaderLocation::FromPath(format!("{SQLITE_DIR}/sqlite3.h"));
     bindings::write_to_out_dir(header, out_path);
     println!("cargo:rerun-if-changed={SQLITE_DIR}/sqlite3.c");
     let mut cfg = cc::Build::new();

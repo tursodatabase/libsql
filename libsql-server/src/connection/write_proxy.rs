@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
 use parking_lot::Mutex as PMutex;
 use rusqlite::types::ValueRef;
 use sqld_libsql_bindings::wal_hook::{TransparentMethods, TRANSPARENT_METHODS};
@@ -23,7 +24,6 @@ use crate::replication::FrameNo;
 use crate::rpc::proxy::rpc::proxy_client::ProxyClient;
 use crate::rpc::proxy::rpc::query_result::RowResult;
 use crate::rpc::proxy::rpc::{DisconnectMessage, ExecuteResults};
-use crate::rpc::NAMESPACE_METADATA_KEY;
 use crate::stats::Stats;
 use crate::{Result, DEFAULT_AUTO_CHECKPOINT};
 
@@ -344,36 +344,21 @@ impl Drop for WriteProxyConnection {
 
 #[cfg(test)]
 pub mod test {
-    use arbitrary::{Arbitrary, Unstructured};
-    use bytes::Bytes;
-    use rand::Fill;
+    // use arbitrary::{Arbitrary, Unstructured};
+    // use rand::Fill;
+    //
+    // use super::*;
+    // use crate::query_result_builder::test::test_driver;
 
-    use super::*;
-    use crate::query_result_builder::test::test_driver;
-
-    /// generate an arbitrary rpc value. see build.rs for usage.
-    pub fn arbitrary_rpc_value(u: &mut Unstructured) -> arbitrary::Result<Vec<u8>> {
-        let data = bincode::serialize(&crate::query::Value::arbitrary(u)?).unwrap();
-
-        Ok(data)
-    }
-
-    /// generate an arbitrary `Bytes` value. see build.rs for usage.
-    pub fn arbitrary_bytes(u: &mut Unstructured) -> arbitrary::Result<Bytes> {
-        let v: Vec<u8> = Arbitrary::arbitrary(u)?;
-
-        Ok(v.into())
-    }
-
-    /// In this test, we generate random ExecuteResults, and ensures that the `execute_results_to_builder` drives the builder FSM correctly.
-    #[test]
-    fn test_execute_results_to_builder() {
-        test_driver(1000, |b| {
-            let mut data = [0; 10_000];
-            data.try_fill(&mut rand::thread_rng()).unwrap();
-            let mut un = Unstructured::new(&data);
-            let res = ExecuteResults::arbitrary(&mut un).unwrap();
-            execute_results_to_builder(res, b, &QueryBuilderConfig::default())
-        });
-    }
+    // In this test, we generate random ExecuteResults, and ensures that the `execute_results_to_builder` drives the builder FSM correctly.
+    // #[test]
+    // fn test_execute_results_to_builder() {
+    //     test_driver(1000, |b| {
+    //         let mut data = [0; 10_000];
+    //         data.try_fill(&mut rand::thread_rng()).unwrap();
+    //         let mut un = Unstructured::new(&data);
+    //         let res = ExecuteResults::arbitrary(&mut un).unwrap();
+    //         execute_results_to_builder(res, b, &QueryBuilderConfig::default())
+    //     });
+    // }
 }

@@ -8,12 +8,11 @@ message LogOffset {
 message HelloRequest {}
 
 message HelloResponse {
-    /// Uuid of the current generation
-    string generation_id = 1;
-    /// First frame_no in the current generation
-    uint64 generation_start_index = 2;
-    /// Uuid of the database being replicated
-    string database_id = 3;
+    /// id of the replicated log
+    string log_id = 3;
+    /// string-encoded Uuid v4 token for the current session, changes on each restart, and must be passed in subsequent requests header.string
+    /// If the header session token fails to match the current session token, a NO_HELLO error is returned
+    bytes session_token = 4;
 }
 
 message Frame {

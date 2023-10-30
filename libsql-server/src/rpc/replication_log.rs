@@ -1,41 +1,33 @@
-pub mod rpc {
-    #![allow(clippy::all)]
-    tonic::include_proto!("wal_log");
-}
-
-use std::collections::HashSet;
-use std::net::SocketAddr;
 use std::pin::Pin;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
+use bytes::Bytes;
 use futures::stream::BoxStream;
-use tokio::sync::mpsc;
-use tokio_stream::wrappers::ReceiverStream;
+pub use libsql_replication::rpc::replication as rpc;
+use libsql_replication::rpc::replication::replication_log_server::ReplicationLog;
+use libsql_replication::rpc::replication::{
+    Frame, Frames, HelloRequest, HelloResponse, LogOffset, NEED_SNAPSHOT_ERROR_MSG,
+    NO_HELLO_ERROR_MSG, SESSION_TOKEN_KEY,
+};
 use tokio_stream::StreamExt;
 use tonic::Status;
+use uuid::Uuid;
 
 use crate::auth::Auth;
-use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
+use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::LogReadError;
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
-use crate::BLOCKING_RT;
-
-use self::rpc::replication_log_server::ReplicationLog;
-use self::rpc::{Frame, Frames, HelloRequest, HelloResponse, LogOffset};
 
 use super::NAMESPACE_DOESNT_EXIST;
 
 pub struct ReplicationLogService {
     namespaces: NamespaceStore<PrimaryNamespaceMaker>,
-    replicas_with_hello: RwLock<HashSet<(SocketAddr, NamespaceName)>>,
     idle_shutdown_layer: Option<IdleShutdownKicker>,
     auth: Option<Arc<Auth>>,
     disable_namespaces: bool,
+    session_token: Bytes,
 }
-
-pub const NO_HELLO_ERROR_MSG: &str = "NO_HELLO";
-pub const NEED_SNAPSHOT_ERROR_MSG: &str = "NEED_SNAPSHOT";
 
 pub const MAX_FRAMES_PER_BATCH: usize = 1024;
 
@@ -46,9 +38,10 @@ impl ReplicationLogService {
         auth: Option<Arc<Auth>>,
         disable_namespaces: bool,
     ) -> Self {
+        let session_token = Uuid::new_v4().to_string().into();
         Self {
             namespaces,
-            replicas_with_hello: Default::default(),
+            session_token,
             idle_shutdown_layer,
             auth,
             disable_namespaces,
@@ -62,10 +55,22 @@ impl ReplicationLogService {
 
         Ok(())
     }
+
+    fn verify_session_token<R>(&self, req: &tonic::Request<R>) -> Result<(), Status> {
+        let no_hello = || Err(Status::failed_precondition(NO_HELLO_ERROR_MSG));
+        let Some(token) = req.metadata().get(SESSION_TOKEN_KEY) else {
+            return no_hello();
+        };
+        if token.as_bytes() != self.session_token {
+            return no_hello();
+        }
+
+        Ok(())
+    }
 }
 
 fn map_frame_stream_output(
-    r: Result<crate::replication::frame::Frame, LogReadError>,
+    r: Result<libsql_replication::frame::Frame, LogReadError>,
 ) -> Result<Frame, Status> {
     match r {
         Ok(frame) => Ok(Frame {
@@ -130,18 +135,11 @@ impl ReplicationLog for ReplicationLogService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::LogEntriesStream>, Status> {
         self.authenticate(&req)?;
+        self.verify_session_token(&req)?;
+
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
-        let replica_addr = req
-            .remote_addr()
-            .ok_or(Status::internal("No remote RPC address"))?;
         let req = req.into_inner();
-        {
-            let guard = self.replicas_with_hello.read().unwrap();
-            if !guard.contains(&(replica_addr, namespace.clone())) {
-                return Err(Status::failed_precondition(NO_HELLO_ERROR_MSG));
-            }
-        }
 
         let logger = self
             .namespaces
@@ -170,19 +168,10 @@ impl ReplicationLog for ReplicationLogService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Frames>, Status> {
         self.authenticate(&req)?;
+        self.verify_session_token(&req)?;
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
-        let replica_addr = req
-            .remote_addr()
-            .ok_or(Status::internal("No remote RPC address"))?;
         let req = req.into_inner();
-        {
-            let guard = self.replicas_with_hello.read().unwrap();
-            if !guard.contains(&(replica_addr, namespace.clone())) {
-                return Err(Status::failed_precondition(NO_HELLO_ERROR_MSG));
-            }
-        }
-
         let logger = self
             .namespaces
             .with(namespace, |ns| ns.db.logger.clone())
@@ -214,18 +203,6 @@ impl ReplicationLog for ReplicationLogService {
         self.authenticate(&req)?;
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
-        use tonic::transport::server::TcpConnectInfo;
-
-        req.extensions().get::<TcpConnectInfo>().unwrap();
-        let replica_addr = req
-            .remote_addr()
-            .ok_or(Status::internal("No remote RPC address"))?;
-
-        {
-            let mut guard = self.replicas_with_hello.write().unwrap();
-            guard.insert((replica_addr, namespace.clone()));
-        }
-
         let logger = self
             .namespaces
             .with(namespace, |ns| ns.db.logger.clone())
@@ -239,9 +216,8 @@ impl ReplicationLog for ReplicationLogService {
             })?;
 
         let response = HelloResponse {
-            database_id: logger.database_id().unwrap().to_string(),
-            generation_start_index: logger.generation.start_index,
-            generation_id: logger.generation.id.to_string(),
+            log_id: logger.log_id().to_string(),
+            session_token: self.session_token.clone(),
         };
 
         Ok(tonic::Response::new(response))
@@ -253,8 +229,6 @@ impl ReplicationLog for ReplicationLogService {
     ) -> Result<tonic::Response<Self::SnapshotStream>, Status> {
         self.authenticate(&req)?;
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
-
-        let (sender, receiver) = mpsc::channel(10);
         let req = req.into_inner();
         let logger = self
             .namespaces
@@ -262,41 +236,53 @@ impl ReplicationLog for ReplicationLogService {
             .await
             .unwrap();
         let offset = req.next_offset;
-        match BLOCKING_RT
-            .spawn_blocking(move || logger.get_snapshot_file(offset))
-            .await
-        {
-            Ok(Ok(Some(snapshot))) => {
-                BLOCKING_RT.spawn_blocking(move || {
-                    let mut frames = snapshot.frames_iter_from(offset);
-                    loop {
-                        match frames.next() {
-                            Some(Ok(frame)) => {
-                                let _ = sender.blocking_send(Ok(Frame {
-                                    data: frame.bytes(),
-                                }));
-                            }
-                            Some(Err(e)) => {
-                                let _ = sender.blocking_send(Err(Status::new(
-                                    tonic::Code::Internal,
-                                    e.to_string(),
-                                )));
-                                break;
-                            }
-                            None => {
-                                break;
-                            }
-                        }
-                    }
-                });
-
-                Ok(tonic::Response::new(Box::pin(ReceiverStream::new(
-                    receiver,
-                ))))
-            }
-            Ok(Ok(None)) => Err(Status::new(tonic::Code::Unavailable, "snapshot not found")),
+        match logger.get_snapshot_file(offset).await {
+            Ok(Some(snapshot)) => Ok(tonic::Response::new(Box::pin(
+                snapshot_stream::make_snapshot_stream(snapshot, offset),
+            ))),
+            Ok(None) => Err(Status::new(tonic::Code::Unavailable, "snapshot not found")),
             Err(e) => Err(Status::new(tonic::Code::Internal, e.to_string())),
-            Ok(Err(e)) => Err(Status::new(tonic::Code::Internal, e.to_string())),
+        }
+    }
+}
+
+mod snapshot_stream {
+    use futures::{Stream, StreamExt};
+    use libsql_replication::frame::FrameNo;
+    use libsql_replication::rpc::replication::Frame;
+    use libsql_replication::snapshot::SnapshotFile;
+    use tonic::Status;
+
+    pub fn make_snapshot_stream(
+        snapshot: SnapshotFile,
+        offset: FrameNo,
+    ) -> impl Stream<Item = Result<Frame, Status>> {
+        let size_after = snapshot.header().size_after;
+        let frames = snapshot.into_stream_mut_from(offset).peekable();
+        async_stream::stream! {
+            tokio::pin!(frames);
+            while let Some(frame) = frames.next().await {
+                match frame {
+                    Ok(mut frame) => {
+                        // this is the last frame we're sending for this snapshot, set the
+                        // frame_no
+                        if frames.as_mut().peek().await.is_none() {
+                            frame.header_mut().size_after = size_after;
+                        }
+
+                        yield Ok(Frame {
+                            data: libsql_replication::frame::Frame::from(frame).bytes(),
+                        });
+                    }
+                    Err(e) => {
+                        yield Err(Status::new(
+                                tonic::Code::Internal,
+                                e.to_string(),
+                        ));
+                        break;
+                    }
+                }
+            }
         }
     }
 }

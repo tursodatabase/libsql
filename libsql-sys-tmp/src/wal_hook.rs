@@ -16,7 +16,7 @@ use crate::get_orig_wal_methods;
 macro_rules! init_static_wal_method {
     ($name:ident, $ty:path) => {
         pub static $name: $crate::Lazy<&'static $crate::WalMethodsHook<$ty>> =
-            once_cell::sync::Lazy::new(|| {
+            $crate::Lazy::new(|| {
                 // we need a 'static address before we can register the methods.
                 static METHODS: $crate::Lazy<$crate::WalMethodsHook<$ty>> =
                     $crate::Lazy::new(|| $crate::WalMethodsHook::<$ty>::new());

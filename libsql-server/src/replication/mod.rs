@@ -1,6 +1,5 @@
-pub mod frame;
 pub mod primary;
-pub mod replica;
+pub mod replicator_client;
 mod snapshot;
 
 use crc::Crc;

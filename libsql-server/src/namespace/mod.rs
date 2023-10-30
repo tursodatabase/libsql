@@ -12,6 +12,7 @@ use chrono::NaiveDateTime;
 use enclose::enclose;
 use futures_core::Stream;
 use hyper::Uri;
+use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use metrics::histogram;
 use parking_lot::Mutex;
 use rusqlite::ErrorCode;
@@ -32,7 +33,7 @@ use crate::connection::MakeConnection;
 use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
 use crate::replication::primary::logger::{ReplicationLoggerHookCtx, REPLICATION_METHODS};
-use crate::replication::replica::Replicator;
+use crate::replication::replicator_client::NamespaceDoesntExist;
 use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
@@ -561,29 +562,75 @@ impl Namespace<ReplicaDatabase> {
             DatabaseConfigStore::load(&db_path).context("Could not load database config")?,
         );
 
-        let mut join_set = JoinSet::new();
-        let replicator = Replicator::new(
-            db_path.clone(),
-            config.channel.clone(),
-            config.uri.clone(),
-            name.clone(),
-            &mut join_set,
-            reset,
+        let rpc_client =
+            ReplicationLogClient::with_origin(config.channel.clone(), config.uri.clone());
+        let client =
+            crate::replication::replicator_client::Client::new(name.clone(), rpc_client, &db_path)
+                .await?;
+        let applied_frame_no_receiver = client.current_frame_no_notifier.subscribe();
+        let mut replicator = libsql_replication::replicator::Replicator::new(
+            client,
+            db_path.join("data"),
+            DEFAULT_AUTO_CHECKPOINT,
         )
         .await?;
 
-        let applied_frame_no_receiver = replicator.current_frame_no_notifier.clone();
+        let mut join_set = JoinSet::new();
+        let namespace = name.clone();
+        join_set.spawn(async move {
+            use libsql_replication::replicator::Error;
+            loop {
+                match replicator.run().await {
+                    Error::Fatal(e) => {
+                        if let Ok(err) = e.downcast::<NamespaceDoesntExist>() {
+                                tracing::error!("namespace {namespace} doesn't exist, destroying...");
+                                (reset)(ResetOp::Destroy(namespace.clone()));
+                                Err(err)?;
+                        } else {
+                            unreachable!("unexpected fatal replication error")
+                        }
+                    },
+                    Error::Meta(err) => {
+                        use libsql_replication::meta::Error;
+                        match err {
+                            Error::LogIncompatible => {
+                                tracing::error!("trying to replicate incompatible logs, reseting replica");
+                                (reset)(ResetOp::Reset(namespace.clone()));
+                                Err(err)?;
+                            }
+                            Error::InvalidMetaFile
+                            | Error::Io(_)
+                            | Error::InvalidLogId
+                            | Error::FailedToCommit(_) => {
+                                // We retry from last frame index?
+                                tracing::warn!("non-fatal replication error, retrying from last commit index: {err}");
+                            },
+                        }
+                    }
+                    e @ (Error::Internal(_)
+                    | Error::Injector(_)
+                    | Error::Client(_)
+                    | Error::PrimaryHandshakeTimeout
+                    | Error::NeedSnapshot) => {
+                        tracing::warn!("non-fatal replication error, retrying from last commit index: {e}");
+                    },
+                    Error::NoHandshake => {
+                        // not strictly necessary, but in case the handshake error goes uncaught,
+                        // we reset the client state.
+                        replicator.client_mut().reset_token();
+                    }
+                }
+            }
+        });
 
         let stats = make_stats(
             &db_path,
             &mut join_set,
             config.stats_sender.clone(),
             name.clone(),
-            replicator.current_frame_no_notifier.clone(),
+            applied_frame_no_receiver.clone(),
         )
         .await?;
-
-        join_set.spawn(replicator.run());
 
         let connection_maker = MakeWriteProxyConn::new(
             db_path.clone(),

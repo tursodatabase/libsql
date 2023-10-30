@@ -38,6 +38,8 @@ pub enum Error {
     Sqlite3ParserError(crate::BoxError),
     #[error("Remote SQlite failure: `{0}:{1}:{2}`")]
     RemoteSqliteFailure(i32, i32, String),
+    #[error("replication error: {0}")]
+    Replication(#[from] libsql_replication::replicator::Error),
 }
 
 impl From<std::convert::Infallible> for Error {

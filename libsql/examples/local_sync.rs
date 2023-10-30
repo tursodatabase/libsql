@@ -1,14 +1,11 @@
-use libsql::{Database, Frames, TempSnapshot};
-use std::sync::{Arc, Mutex};
+use libsql::{Database, Frames, SnapshotFile};
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let db = Arc::new(Mutex::new(
-        Database::open_with_local_sync("test.db").await.unwrap(),
-    ));
-    let conn = db.lock().unwrap().connect().unwrap();
+    let db = Database::open_with_local_sync("test.db").await.unwrap();
+    let conn = db.connect().unwrap();
 
     let args = std::env::args().collect::<Vec<String>>();
     if args.len() < 2 {
@@ -20,24 +17,22 @@ async fn main() {
     loop {
         let paths = std::fs::read_dir(snapshots_path).unwrap();
         for snapshot_path in paths {
-            let db = db.clone();
             let snapshot_path = snapshot_path.unwrap().path();
             println!(
                 "Applying snapshot to local database: {}\n",
                 snapshot_path.display()
             );
-            let snapshot = TempSnapshot::from_snapshot_file(snapshot_path.as_ref()).unwrap();
-            tokio::task::spawn_blocking(move || {
-                match db.lock().unwrap().sync_frames(Frames::Snapshot(snapshot)) {
-                    Ok(n) => println!("{n} frames from {} applied", snapshot_path.display()),
-                    Err(e) => println!(
-                        "Syncing frames from {} failed: {e}",
-                        snapshot_path.display()
-                    ),
-                }
-            })
-            .await
-            .unwrap();
+            let snapshot = SnapshotFile::open(&snapshot_path).await.unwrap();
+            match db.sync_frames(Frames::Snapshot(snapshot)).await {
+                Ok(n) => println!(
+                    "{} applied, new commit index: {n:?}",
+                    snapshot_path.display()
+                ),
+                Err(e) => println!(
+                    "Syncing frames from {} failed: {e}",
+                    snapshot_path.display()
+                ),
+            }
         }
 
         let mut rows = conn.query("SELECT * FROM sqlite_master", ()).await.unwrap();

@@ -273,31 +273,31 @@ impl IntoValue for Result<Value> {
 }
 
 #[cfg(feature = "replication")]
-impl From<Params> for crate::replication::pb::query::Params {
+impl From<Params> for libsql_replication::rpc::proxy::query::Params {
     fn from(params: Params) -> Self {
-        use crate::replication::pb;
+        use libsql_replication::rpc::proxy;
 
         match params {
-            Params::None => pb::query::Params::Positional(pb::Positional::default()),
+            Params::None => proxy::query::Params::Positional(proxy::Positional::default()),
             Params::Positional(values) => {
                 let values = values
                     .iter()
                     .map(|v| bincode::serialize(v).unwrap())
-                    .map(|data| pb::Value { data })
+                    .map(|data| proxy::Value { data })
                     .collect::<Vec<_>>();
-                pb::query::Params::Positional(pb::Positional { values })
+                proxy::query::Params::Positional(proxy::Positional { values })
             }
             Params::Named(values) => {
                 let (names, values) = values
                     .into_iter()
                     .map(|(name, value)| {
                         let data = bincode::serialize(&value).unwrap();
-                        let value = pb::Value { data };
+                        let value = proxy::Value { data };
                         (name, value)
                     })
                     .unzip();
 
-                pb::query::Params::Named(pb::Named { names, values })
+                proxy::query::Params::Named(proxy::Named { names, values })
             }
         }
     }

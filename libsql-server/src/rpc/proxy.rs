@@ -23,17 +23,15 @@ use self::rpc::{
 use super::NAMESPACE_DOESNT_EXIST;
 
 pub mod rpc {
-    #![allow(clippy::all)]
-
     use std::sync::Arc;
 
     use anyhow::Context;
+    pub use libsql_replication::rpc::proxy::*;
 
     use crate::query_analysis::Statement;
     use crate::{connection, error::Error as SqldError};
 
     use self::{error::ErrorCode, execute_results::State};
-    tonic::include_proto!("proxy");
 
     impl From<SqldError> for Error {
         fn from(other: SqldError) -> Self {

@@ -2,15 +2,16 @@ use std::io::SeekFrom;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use anyhow::anyhow;
 use bottomless::replicator::Replicator;
 use chrono::NaiveDateTime;
+use libsql_replication::frame::FrameBorrowed;
 use tokio::fs::File;
 use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 use tokio::time::Duration;
 use tokio_stream::StreamExt;
 
 use crate::database::PrimaryDatabase;
-use crate::replication::frame::Frame;
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};
@@ -41,7 +42,7 @@ impl From<tokio::task::JoinError> for ForkError {
     }
 }
 
-async fn write_frame(frame: Frame, temp_file: &mut tokio::fs::File) -> Result<()> {
+async fn write_frame(frame: &FrameBorrowed, temp_file: &mut tokio::fs::File) -> Result<()> {
     let page_no = frame.header().page_no;
     let page_pos = (page_no - 1) as usize * LIBSQL_PAGE_SIZE as usize;
     temp_file.seek(SeekFrom::Start(page_pos as u64)).await?;
@@ -128,12 +129,13 @@ impl ForkTask<'_> {
                     match res {
                         Ok(frame) => {
                             next_frame_no = next_frame_no.max(frame.header().frame_no + 1);
-                            write_frame(frame, &mut data_file).await?;
+                            write_frame(&frame, &mut data_file).await?;
                         }
                         Err(LogReadError::SnapshotRequired) => {
                             let snapshot = loop {
                                 if let Some(snap) = logger
                                     .get_snapshot_file(next_frame_no)
+                                    .await
                                     .map_err(ForkError::Internal)?
                                 {
                                     break snap;
@@ -143,11 +145,12 @@ impl ForkTask<'_> {
                                 tokio::time::sleep(Duration::from_millis(100)).await;
                             };
 
-                            let iter = snapshot.frames_iter_from(next_frame_no);
-                            for frame in iter {
-                                let frame = frame.map_err(ForkError::LogRead)?;
+                            let frames = snapshot.into_stream_mut_from(next_frame_no);
+                            tokio::pin!(frames);
+                            while let Some(frame) = frames.next().await {
+                                let frame = frame.map_err(|e| ForkError::LogRead(anyhow!(e)))?;
                                 next_frame_no = next_frame_no.max(frame.header().frame_no + 1);
-                                write_frame(frame, &mut data_file).await?;
+                                write_frame(&frame, &mut data_file).await?;
                             }
                         }
                         Err(LogReadError::Ahead) => {

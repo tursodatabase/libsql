@@ -5,11 +5,26 @@ use crate::common::net::{init_tracing, TestServer, TurmoilAcceptor, TurmoilConne
 use libsql::Database;
 use serde_json::json;
 use sqld::config::{AdminApiConfig, RpcServerConfig, UserApiConfig};
+use tempfile::tempdir;
 use turmoil::{Builder, Sim};
-use uuid::Uuid;
+
+fn enable_libsql_logging() {
+    use std::ffi::c_int;
+    use std::sync::Once;
+    static ONCE: Once = Once::new();
+
+    fn libsql_log(code: c_int, msg: &str) {
+        tracing::error!("sqlite error {code}: {msg}");
+    }
+
+    ONCE.call_once(|| unsafe {
+        rusqlite::trace::config_log(Some(libsql_log)).unwrap();
+    });
+}
 
 fn make_primary(sim: &mut Sim, path: PathBuf) {
     init_tracing();
+    enable_libsql_logging();
     sim.host("primary", move || {
         let path = path.clone();
         async move {
@@ -45,11 +60,10 @@ fn make_primary(sim: &mut Sim, path: PathBuf) {
 fn embedded_replica() {
     let mut sim = Builder::new().build();
 
-    let tmp_dir_name = Uuid::new_v4().simple().to_string();
-
-    let tmp = std::env::temp_dir().join(tmp_dir_name);
-
-    tracing::debug!("tmp dir: {:?}", tmp);
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_host = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+    let tmp_host_path = tmp_host.path().to_owned();
 
     // We need to ensure that libsql's init code runs before we do anything
     // with rusqlite in sqld. This is because libsql has saftey checks and
@@ -63,7 +77,7 @@ fn embedded_replica() {
     let db = Database::open_in_memory().unwrap();
     db.connect().unwrap();
 
-    make_primary(&mut sim, tmp.to_path_buf());
+    make_primary(&mut sim, tmp_host_path.clone());
 
     sim.client("client", async move {
         let client = Client::new();
@@ -71,15 +85,17 @@ fn embedded_replica() {
             .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
             .await?;
 
+        let path = tmp_embedded_path.join("embedded");
         let db = Database::open_with_remote_sync_connector(
-            tmp.join("embedded").to_str().unwrap(),
+            path.to_str().unwrap(),
             "http://foo.primary:8080",
             "",
             TurmoilConnector,
-        )?;
+        )
+        .await?;
 
         let n = db.sync().await?;
-        assert_eq!(n, 0);
+        assert_eq!(n, None);
 
         let conn = db.connect()?;
 
@@ -87,7 +103,7 @@ fn embedded_replica() {
             .await?;
 
         let n = db.sync().await?;
-        assert_eq!(n, 2);
+        assert_eq!(n, Some(1));
 
         let err = conn
             .execute("INSERT INTO user(id) VALUES (1), (1)", ())

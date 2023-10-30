@@ -752,7 +752,6 @@ pub mod test {
         }
 
         // this can be useful to help debug the generated test case
-        dbg!(trace);
 
         b
     }

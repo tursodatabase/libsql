@@ -418,10 +418,10 @@ impl From<libsql_sys::ValueType> for ValueType {
 }
 
 #[cfg(feature = "replication")]
-impl TryFrom<crate::replication::pb::Value> for Value {
+impl TryFrom<libsql_replication::rpc::proxy::Value> for Value {
     type Error = Error;
 
-    fn try_from(value: crate::replication::pb::Value) -> Result<Self> {
+    fn try_from(value: libsql_replication::rpc::proxy::Value) -> Result<Self> {
         bincode::deserialize(&value.data[..]).map_err(Error::from)
     }
 }

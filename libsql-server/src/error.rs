@@ -2,10 +2,7 @@ use axum::response::IntoResponse;
 use hyper::StatusCode;
 use tonic::metadata::errors::InvalidMetadataValueBytes;
 
-use crate::{
-    auth::AuthError, namespace::ForkError, query_result_builder::QueryResultBuilderError,
-    replication::replica::error::ReplicationError,
-};
+use crate::{auth::AuthError, namespace::ForkError, query_result_builder::QueryResultBuilderError};
 
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, thiserror::Error)]
@@ -65,8 +62,10 @@ pub enum Error {
     NamespaceAlreadyExist(String),
     #[error("Invalid namespace")]
     InvalidNamespace,
-    #[error("Replication error: {0}")]
-    ReplicationError(#[from] ReplicationError),
+    #[error("Replica meta error: {0}")]
+    ReplicaMetaError(#[from] libsql_replication::meta::Error),
+    #[error("Replicator error: {0}")]
+    ReplicatorError(#[from] libsql_replication::replicator::Error),
     #[error("Failed to connect to primary")]
     PrimaryConnectionTimeout,
     #[error("Error while loading dump: {0}")]
@@ -81,6 +80,8 @@ pub enum Error {
     ConflictingRestoreParameters,
     #[error("Failed to fork database: {0}")]
     Fork(#[from] ForkError),
+    #[error("Fatal replication error")]
+    FatalReplicationError,
 }
 
 trait ResponseError: std::error::Error {
@@ -122,7 +123,6 @@ impl IntoResponse for Error {
             QueryError(_) => self.format_err(StatusCode::BAD_REQUEST),
             InvalidHost(_) => self.format_err(StatusCode::BAD_REQUEST),
             NamespaceDoesntExist(_) => self.format_err(StatusCode::BAD_REQUEST),
-            ReplicationError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             PrimaryConnectionTimeout => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             NamespaceAlreadyExist(_) => self.format_err(StatusCode::BAD_REQUEST),
             InvalidNamespace => self.format_err(StatusCode::BAD_REQUEST),
@@ -132,6 +132,9 @@ impl IntoResponse for Error {
             LoadDumpExistingDb => self.format_err(StatusCode::BAD_REQUEST),
             ConflictingRestoreParameters => self.format_err(StatusCode::BAD_REQUEST),
             Fork(e) => e.into_response(),
+            FatalReplicationError => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            ReplicatorError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            ReplicaMetaError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }

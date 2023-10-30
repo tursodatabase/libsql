@@ -1,5 +1,5 @@
 ---
-source: sqld/tests/namespaces/dumps.rs
+source: libsql-server/tests/namespaces/dumps.rs
 expression: resp.json_value().await.unwrap()
 ---
 {

@@ -33,7 +33,7 @@
 //! let mut db = Database::open_with_local_sync("/tmp/test.db").await.unwrap();
 //!
 //! let frames = Frames::Vec(vec![]);
-//! db.sync_frames(frames).unwrap();
+//! db.sync_frames(frames).await.unwrap();
 //! let conn = db.connect().unwrap();
 //! conn.execute("SELECT * FROM users", ()).await.unwrap();
 //! # }
@@ -94,7 +94,9 @@ pub mod params;
 
 cfg_replication! {
     mod replication;
-    pub use replication::{Frame, FrameNo, Frames, TempSnapshot};
+    pub use libsql_replication::frame::{FrameNo, Frame};
+    pub use libsql_replication::snapshot::SnapshotFile;
+    pub use replication::Frames;
 }
 
 cfg_core! {

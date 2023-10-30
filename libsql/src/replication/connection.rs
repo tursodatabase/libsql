@@ -4,10 +4,11 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use parking_lot::Mutex;
-
-use crate::replication::pb::{
+use libsql_replication::rpc::proxy::{
     describe_result, execute_results::State as RemoteState, query_result::RowResult, DescribeResult,
+    ExecuteResults, ResultRows
 };
+
 use crate::rows::{RowInner, RowsInner};
 use crate::statement::Stmt;
 use crate::transaction::Tx;
@@ -21,12 +22,11 @@ use crate::connection::Conn;
 use crate::local::impls::LibsqlConnection;
 
 use super::parser::{self, StmtKind};
-use super::pb::{ExecuteResults, ResultRows};
 
 #[derive(Clone)]
 pub struct RemoteConnection {
     pub(self) local: LibsqlConnection,
-    writer: Writer,
+    writer: Option<Writer>,
     inner: Arc<Mutex<Inner>>,
 }
 
@@ -156,7 +156,7 @@ impl From<RemoteState> for State {
 }
 
 impl RemoteConnection {
-    pub(crate) fn new(local: LibsqlConnection, writer: Writer) -> Self {
+    pub(crate) fn new(local: LibsqlConnection, writer: Option<Writer>) -> Self {
         let state = Arc::new(Mutex::new(Inner::default()));
         Self {
             local,
@@ -169,16 +169,15 @@ impl RemoteConnection {
         matches!(self.inner.lock().state, State::Init)
     }
 
-    pub(self) async fn execute_program(
+    pub(self) async fn execute_remote(
         &self,
         stmts: Vec<parser::Statement>,
         params: Params,
     ) -> Result<ExecuteResults> {
-        use crate::replication::pb;
-        let params: pb::query::Params = params.into();
-
-        let res = self
-            .writer
+        let Some(ref writer) = self.writer else {
+            return Err(Error::Misuse("Cannot delegate write in local replica mode.".into()));
+        };
+        let res = writer
             .execute_program(stmts, params)
             .await
             .map_err(|e| Error::WriteDelegation(e.into()))?;
@@ -194,8 +193,10 @@ impl RemoteConnection {
     }
 
     pub(self) async fn describe(&self, stmt: impl Into<String>) -> Result<DescribeResult> {
-        let res = self
-            .writer
+        let Some(ref writer) = self.writer else {
+            return Err(Error::Misuse("Cannot describe in local replica mode.".into()));
+        };
+        let res = writer
             .describe(stmt)
             .await
             .map_err(|e| Error::WriteDelegation(e.into()))?;
@@ -247,7 +248,7 @@ impl Conn for RemoteConnection {
             }
         }
 
-        let res = self.execute_program(stmts, params).await?;
+        let res = self.execute_remote(stmts, params).await?;
 
         let result = res
             .results
@@ -284,7 +285,7 @@ impl Conn for RemoteConnection {
             }
         }
 
-        let res = self.execute_program(stmts, Params::None).await?;
+        let res = self.execute_remote(stmts, Params::None).await?;
 
         for result in res.results {
             match result.row_result {
@@ -347,8 +348,8 @@ pub struct ColumnMeta {
     decl_type: Option<String>,
 }
 
-impl From<crate::replication::pb::Column> for ColumnMeta {
-    fn from(col: crate::replication::pb::Column) -> Self {
+impl From<libsql_replication::rpc::proxy::Column> for ColumnMeta {
+    fn from(col: libsql_replication::rpc::proxy::Column) -> Self {
         Self {
             name: col.name.clone(),
             origin_name: None,
@@ -456,7 +457,7 @@ impl Stmt for RemoteStatement {
 
         let res = self
             .conn
-            .execute_program(self.stmts.clone(), params.clone())
+            .execute_remote(self.stmts.clone(), params.clone())
             .await?;
 
         let result = res
@@ -490,7 +491,7 @@ impl Stmt for RemoteStatement {
 
         let res = self
             .conn
-            .execute_program(self.stmts.clone(), params.clone())
+            .execute_remote(self.stmts.clone(), params.clone())
             .await?;
 
         let result = res
@@ -566,7 +567,7 @@ impl Stmt for RemoteStatement {
 }
 
 pub(crate) struct RemoteRows(
-    pub(crate) crate::replication::pb::ResultRows,
+    pub(crate) ResultRows,
     pub(crate) usize,
 );
 
@@ -614,7 +615,7 @@ impl RowsInner for RemoteRows {
     }
 }
 
-struct RemoteRow(Vec<Value>, Vec<crate::replication::pb::Column>);
+struct RemoteRow(Vec<Value>, Vec<libsql_replication::rpc::proxy::Column>);
 
 impl RowInner for RemoteRow {
     fn column_value(&self, idx: i32) -> Result<Value> {

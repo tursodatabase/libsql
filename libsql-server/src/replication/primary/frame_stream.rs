@@ -4,9 +4,9 @@ use std::{pin::Pin, task::Context};
 
 use futures::future::BoxFuture;
 use futures::{FutureExt, Stream};
+use libsql_replication::frame::{Frame, FrameNo};
 
-use crate::replication::frame::Frame;
-use crate::replication::{FrameNo, LogReadError, ReplicationLogger};
+use crate::replication::{LogReadError, ReplicationLogger};
 use crate::BLOCKING_RT;
 
 /// Streams frames from the replication log starting at `current_frame_no`.
