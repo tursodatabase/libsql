@@ -6588,6 +6588,13 @@ int sqlite3PagerCommitPhaseOne(
         rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_BEGIN_ATOMIC_WRITE, 0);
         if( rc==SQLITE_OK ){
           rc = pager_write_pagelist(pPager, pList);
+          if( rc==SQLITE_OK && pPager->dbSize>pPager->dbFileSize ){
+            char *pTmp = pPager->pTmpSpace;
+            int szPage = (int)pPager->pageSize;
+            memset(pTmp, 0, szPage);
+            rc = sqlite3OsWrite(pPager->fd, pTmp, szPage,
+                      ((i64)pPager->dbSize*pPager->pageSize)-szPage);
+          }
           if( rc==SQLITE_OK ){
             rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_COMMIT_ATOMIC_WRITE, 0);
           }

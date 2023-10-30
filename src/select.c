@@ -6743,10 +6743,10 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
 ** registers if register regAcc contains 0. The caller will take care
 ** of setting and clearing regAcc.
 **
-** For an ORDER BY aggregate, the actually accumulator memory cell update
+** For an ORDER BY aggregate, the actual accumulator memory cell update
 ** is deferred until after all input rows have been received, so that they
 ** can be run in the requested order.  In that case, instead of invoking
-** OP_AggStep to update accumulator, just add the arguments that would
+** OP_AggStep to update the accumulator, just add the arguments that would
 ** have been passed into OP_AggStep into the sorting ephemeral table
 ** (along with the appropriate sort key).
 */
