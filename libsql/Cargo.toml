@@ -55,7 +55,7 @@ prost-build = "0.12"
 
 
 [features]
-default = ["core", "replication", "hrana"]
+default = ["core", "replication", "remote"]
 core = [
   "libsql-sys",
   "dep:bitflags",
@@ -88,16 +88,19 @@ replication = [
 ]
 hrana = [
   "serde",
-  "http",
   "dep:base64",
   "dep:serde_json",
+]
+remote = [
+  "hrana",
+  "http",
   "dep:tower",
-  "dep:hyper-rustls"
+  "dep:hyper-rustls",
 ]
 serde = ["dep:serde"]
 http = ["dep:tower", "dep:hyper", "dep:http", "dep:tokio"]
 cloudflare = [
-  "core",
+  "libsql-sys",
   "hrana",
   "dep:worker",
 ]

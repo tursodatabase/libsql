@@ -98,6 +98,7 @@ cfg_replication! {
 
 cfg_core! {
     pub use libsql_sys::ffi;
+    pub use self::database::OpenFlags;
 }
 
 mod util;
@@ -122,7 +123,7 @@ cfg_hrana! {
 
 pub use self::{
     connection::Connection,
-    database::{Database, OpenFlags},
+    database::Database,
     rows::{Column, Row, Rows},
     statement::Statement,
     transaction::{Transaction, TransactionBehavior},

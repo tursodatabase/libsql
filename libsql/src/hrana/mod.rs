@@ -3,7 +3,6 @@
 mod pipeline;
 mod proto;
 
-use crate::util::coerce_url_scheme;
 use pipeline::{
     ClientMsg, Response, ServerMsg, StreamBatchReq, StreamExecuteReq, StreamRequest,
     StreamResponse, StreamResponseError, StreamResponseOk,
@@ -167,7 +166,7 @@ impl Client {
 
     fn with_inner(url: String, token: String, inner: InnerClient) -> Self {
         // The `libsql://` protocol is an alias for `https://`.
-        let base_url = coerce_url_scheme(&url);
+        let base_url = crate::util::coerce_url_scheme(&url);
         let url_for_queries = format!("{base_url}/v2/pipeline");
         Self {
             inner,

@@ -31,7 +31,7 @@ enum DbType {
     File { path: String, flags: OpenFlags },
     #[cfg(feature = "replication")]
     Sync { db: crate::local::Database },
-    #[cfg(feature = "hrana")]
+    #[cfg(feature = "remote")]
     Remote {
         url: String,
         auth_token: String,
@@ -51,7 +51,7 @@ impl fmt::Debug for DbType {
             Self::File { .. } => write!(f, "File"),
             #[cfg(feature = "replication")]
             Self::Sync { .. } => write!(f, "Sync"),
-            #[cfg(feature = "hrana")]
+            #[cfg(feature = "remote")]
             Self::Remote { .. } => write!(f, "Remote"),
             #[cfg(all(target_family = "wasm", feature = "cloudflare"))]
             Self::Cloudflare { .. } => write!(f, "Cloudflare"),
@@ -168,7 +168,7 @@ cfg_replication! {
 
 cfg_hrana! {
     impl Database {
-        #[cfg(feature = "hrana")]
+        #[cfg(feature = "remote")]
         pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
             let mut connector = hyper::client::HttpConnector::new();
             connector.enforce_http(false);
@@ -178,7 +178,7 @@ cfg_hrana! {
 
         // For now, only expose this for sqld testing purposes
         #[doc(hidden)]
-        #[cfg(feature = "hrana")]
+        #[cfg(feature = "remote")]
         pub fn open_remote_with_connector<C>(
             url: impl Into<String>,
             auth_token: impl Into<String>,
@@ -264,7 +264,7 @@ impl Database {
                 Ok(Connection { conn })
             }
 
-            #[cfg(feature = "hrana")]
+            #[cfg(feature = "remote")]
             DbType::Remote {
                 url,
                 auth_token,
