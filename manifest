@@ -1,11 +1,11 @@
-C Predicate\sWindows\sCLI\sUTF-8\sconsole\sI/O\son\sa\sruntime\scapability\scheck\srather\sthan\san\sOS\sversion\scheck.
-D 2023-10-30T16:38:05.798
+C Add\sFTS5\sto\sdefault\sMakefile.msc\sbuilds.\sAnd\sUNKNOWN_SQL_FUNCTION\sand\sSTMT_SCANSTATUS\sto\sdefault\sMakefile.msc\sshell\sbuilds.
+D 2023-10-30T17:13:12.161
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 8b59912fc1538f96a08555605c5886cdcc733696ae7f22e374b2a4752196ca20
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc c1aa09e0212d8609df041d13da6ca63198d1c1e29846f33104beecf19917102b
+F Makefile.msc 23bd95afb445537aba610eaec45cd3848bdeb591d4350c21831f1a714754f339
 F README.md 963d30019abf0cc06b263cd2824bce022893f3f93a531758f6f04ff2194a16a8
 F VERSION 4c09b629c03b8ae32317cb336a32f3aa3252841d6dcd51184cecc4278d08f21e
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c9fdd6805df04f05ef347e5a43506fd37a729c5924abb6e1103e871c4ac2d6dc f89d062f8890fffc957a354e966784031d561d0f8f5c174c1ccdcf77e66c32bd
-R 43d0ce4e57a74fef184c4e525ab03183
-U larrybr
-Z 1a3e09d8f095a721c300f93b0f338e98
+P 0058ea6a69103c1442bf5090553ce9bf77e06011a4960df754eb96144ced497d
+R 841dad75dbd2b5725c477d5302bf71ff
+U dan
+Z bcdddb47387f655ace8d6b5a5dfbcdc4
 # Remove this line to create a well-formed Fossil manifest.
