@@ -363,6 +363,9 @@ struct sqlite3_api_routines {
   int (*is_interrupted)(sqlite3*);
   /* Version 3.43.0 and later */
   int (*stmt_explain)(sqlite3_stmt*,int);
+  /* Version 3.44.0 and later */
+  void *(*get_clientdata)(sqlite3*,const char*);
+  int (*set_clientdata)(sqlite3*, const char*, void*, void(*)(void*));
 };
 
 /*
@@ -693,6 +696,9 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_is_interrupted         sqlite3_api->is_interrupted
 /* Version 3.43.0 and later */
 #define sqlite3_stmt_explain           sqlite3_api->stmt_explain
+/* Version 3.44.0 and later */
+#define sqlite3_get_clientdata         sqlite3_api->get_clientdata
+#define sqlite3_set_clientdata         sqlite3_api->set_clientdata
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
