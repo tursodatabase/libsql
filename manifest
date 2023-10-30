@@ -1,5 +1,5 @@
-C For\sWindows\sCLI,\sinstitute\sa\sversion\scheck\sto\sdetermine\sdefault\sMBCS\sor\sUTF-8\stranslation\son\sconsole\sI/O.\s(Default\sto\sUTF-8\swhere\sknown\spossible.)
-D 2023-10-29T20:05:18.263
+C With\sSQLITE_ENABLE_BLOCK_ATOMIC_WRITE\senabled,\sif\sa\stransaction\sis\scommitting\nand\sthere\sis\sa\snew\sfreelist\spage\sat\sthe\send\sof\sthe\sdatabase\sfile\swhich\swould\ncause\sthe\sdatabase\sfile\ssize\sto\sgrow,\sensure\sthat\spage\sis\swritten\sand\sthe\nfile\ssize\sgrows\sbefore\sthe\sblock-atomic-write\scommits.\s\sFix\sfor\sthe\nproblem\sidentified\sby\s[forum:/forumpost/3bd8d497b2|forum\spost\s3bd8d497b2]
+D 2023-10-30T12:09:48.933
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -708,7 +708,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c cb116fde9e3ca3c1bbfdf89d6928f776a2a34da168e2667426523a4db353b271
 F src/os_win.c 4a50a154aeebc66a1f8fb79c1ff6dd5fe3d005556533361e0d460d41cb6a45a8
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 2188897e1102a776dcb1bbe8b2eb70ac7de8863c9cb95ef09d35e9bad406cf45
+F src/pager.c 9c9343d9ff407fb9e01f8c22e9babbe42807ab53aa1c7d747da77bb2b2f74629
 F src/pager.h f4d33fec8052603758792045493423b8871a996da2d0973927b7d36cd6070473
 F src/parse.y 020d80386eb216ec9520549106353c517d2bbc89be28752ffdca649a9eaf56ec
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 765290663b28e90a0494997baf023f9610a4ed32f0ff0099bf9fc3d485733fca 046c84296627382ee416f64b02b77a937b368e30b32e6b800de5a854810766f6
-R 21d5e98541aed894e5aa957e7e737a78
-U larrybr
-Z 388b78b418fa51ea2b695e5b2ab587f8
+P ddc6ead6453e0f98943bd07aedd90d47bc2e9e9e27b008d493491168bea2b3f1
+R d568eda5a52aecc6980b1f18605b773c
+U drh
+Z 6faa5f859e86aecdc04ddabbaa63c135
 # Remove this line to create a well-formed Fossil manifest.
