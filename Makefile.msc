@@ -1594,8 +1594,7 @@ TESTEXT = \
   $(TOP)\ext\rtree\test_rtreedoc.c \
   $(TOP)\ext\recover\sqlite3recover.c \
   $(TOP)\ext\recover\test_recover.c \
-  $(TOP)\ext\recover\dbdata.c \
-  fts5.c
+  $(TOP)\ext\recover\dbdata.c 
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
 #
