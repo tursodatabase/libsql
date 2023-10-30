@@ -91,7 +91,7 @@ cfg_replication! {
     impl Database {
         /// Open a local database file with the ability to sync from snapshots from local filesystem.
         pub async fn open_with_local_sync(db_path: impl Into<String>) -> Result<Database> {
-            let db = crate::local::Database::open_local_sync(db_path, OpenFlags::default())?;
+            let db = crate::local::Database::open_local_sync(db_path, OpenFlags::default()).await?;
 
             Ok(Database {
                 db_type: DbType::Sync { db },
@@ -251,15 +251,8 @@ impl Database {
 
                 let local = LibsqlConnection { conn };
                 let writer = local.conn.writer().cloned();
-
-                let conn = if let Some(writer) = local.conn.writer() {
-                    let writer = writer.clone();
-                    let remote = crate::replication::RemoteConnection::new(local, writer);
-                    std::sync::Arc::new(remote)
-                } else {
-                    std::sync::Arc::new(local)
-                        as std::sync::Arc<dyn crate::connection::Conn + Send + Sync>
-                };
+                let remote = crate::replication::RemoteConnection::new(local, writer);
+                let conn = std::sync::Arc::new(remote);
 
                 Ok(Connection { conn })
             }

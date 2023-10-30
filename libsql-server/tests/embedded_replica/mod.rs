@@ -94,8 +94,8 @@ fn embedded_replica() {
         )
         .await?;
 
-        // let n = db.sync().await?;
-        // assert_eq!(n, None);
+        let n = db.sync().await?;
+        assert_eq!(n, None);
 
         let conn = db.connect()?;
 

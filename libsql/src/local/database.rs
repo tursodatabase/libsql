@@ -75,15 +75,15 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub fn open_local_sync(db_path: impl Into<String>, flags: OpenFlags) -> Result<Database> {
+    pub async fn open_local_sync(db_path: impl Into<String>, flags: OpenFlags) -> Result<Database> {
+        use std::path::PathBuf;
+
         let db_path = db_path.into();
         let mut db = Database::open(&db_path, flags)?;
 
-        // let replicator = Replicator::new(db_path).map_err(|e| ConnectionFailed(format!("{e}")))?;
-        //
         let path = PathBuf::from(db_path);
         let client = LocalClient::new(&path).await.unwrap();
-        let replicator = Mutex::new(Replicator::new(Either::Right(client), path, 1000).await.unwrap());
+        let replicator = Mutex::new(Replicator::new(Either::Right(client), path, 1000).await.map_err(|e| ConnectionFailed(format!("{e}")))?);
         db.replication_ctx = Some(ReplicationContext {
             replicator,
             client: None,
