@@ -96,7 +96,11 @@ hrana = [
 ]
 serde = ["dep:serde"]
 http = ["dep:tower", "dep:hyper", "dep:http", "dep:tokio"]
-hrana-cf = ["dep:worker"]
+cloudflare = [
+  "core",
+  "hrana",
+  "dep:worker",
+]
 
 [[bench]]
 name = "benchmark"

@@ -73,6 +73,16 @@ macro_rules! cfg_hrana {
     }
 }
 
+macro_rules! cfg_cloudflare {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "cloudflare")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "cloudflare")))]
+            $item
+        )*
+    }
+}
+
 macro_rules! cfg_http {
     ($($item:item)*) => {
         $(
@@ -130,7 +140,7 @@ pub use self::{
 
 pub type Result<T> = std::result::Result<T, errors::Error>;
 
-#[cfg(not(feature = "hrana-cf"))]
+#[cfg(not(target_family = "wasm"))]
 pub(crate) type BoxError = Box<dyn std::error::Error + Send + Sync>;
-#[cfg(feature = "hrana-cf")]
+#[cfg(target_family = "wasm")]
 pub(crate) type BoxError = Box<dyn std::error::Error>;

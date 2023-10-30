@@ -231,8 +231,8 @@ impl RemoteConnection {
         }
     }
 }
-#[cfg_attr(feature = "hrana-cf", async_trait::async_trait(?Send))]
-#[cfg_attr(not(feature = "hrana-cf"), async_trait::async_trait)]
+#[cfg_attr(target_family = "wasm", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_family = "wasm"), async_trait::async_trait)]
 impl Conn for RemoteConnection {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64> {
         let stmts = parser::Statement::parse(sql).collect::<Result<Vec<_>>>()?;
@@ -445,8 +445,8 @@ async fn fetch_metas(
     Ok(metas)
 }
 
-#[cfg_attr(feature = "hrana-cf", async_trait::async_trait(?Send))]
-#[cfg_attr(not(feature = "hrana-cf"), async_trait::async_trait)]
+#[cfg_attr(target_family = "wasm", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_family = "wasm"), async_trait::async_trait)]
 impl Stmt for RemoteStatement {
     fn finalize(&mut self) {}
 
@@ -667,8 +667,8 @@ impl RemoteTx {
     }
 }
 
-#[cfg_attr(feature = "hrana-cf", async_trait::async_trait(?Send))]
-#[cfg_attr(not(feature = "hrana-cf"), async_trait::async_trait)]
+#[cfg_attr(target_family = "wasm", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_family = "wasm"), async_trait::async_trait)]
 impl Tx for RemoteTx {
     async fn commit(&mut self) -> Result<()> {
         let conn = self.0.take().expect("Tx already dropped");

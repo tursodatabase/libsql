@@ -44,11 +44,11 @@ pub struct Client {
 
 #[derive(Clone, Debug)]
 struct InnerClient {
-    #[cfg(not(feature = "hrana-cf"))]
+    #[cfg(not(all(target_family = "wasm", feature = "cloudflare")))]
     inner: hyper::Client<hyper_rustls::HttpsConnector<crate::util::ConnectorService>, hyper::Body>,
 }
 
-#[cfg(not(feature = "hrana-cf"))]
+#[cfg(not(all(target_family = "wasm", feature = "cloudflare")))]
 impl InnerClient {
     fn new(connector: crate::util::ConnectorService) -> Self {
         let https = hyper_rustls::HttpsConnectorBuilder::new()
@@ -89,7 +89,7 @@ impl InnerClient {
     }
 }
 
-#[cfg(feature = "hrana-cf")]
+#[cfg(all(target_family = "wasm", feature = "cloudflare"))]
 impl InnerClient {
     fn new() -> Self {
         InnerClient {}
@@ -98,33 +98,23 @@ impl InnerClient {
     async fn send(&self, url: String, auth: String, body: String) -> Result<ServerMsg> {
         use worker::*;
 
-        let mut response = match Fetch::Request(
-            Request::new_with_init(
-                &url,
-                &RequestInit {
-                    body: Some(wasm_bindgen::JsValue::from_str(&body)),
-                    headers: {
-                        let mut headers = Headers::new();
-                        headers.append("Authorization", &auth).ok();
-                        headers
-                    },
-                    cf: CfProperties::new(),
-                    method: Method::Post,
-                    redirect: RequestRedirect::Follow,
+        let mut response = Fetch::Request(Request::new_with_init(
+            &url,
+            &RequestInit {
+                body: Some(wasm_bindgen::JsValue::from_str(&body)),
+                headers: {
+                    let mut headers = Headers::new();
+                    headers.append("Authorization", &auth).ok();
+                    headers
                 },
-            )
-            .map_err(HranaError::from)?,
-        )
+                cf: CfProperties::new(),
+                method: Method::Post,
+                redirect: RequestRedirect::Follow,
+            },
+        )?)
         .send()
-        .await
-        {
-            Ok(res) => res,
-            Err(e) => return Err(HranaError::Http(e)),
-        };
-        let body = match response.text().await {
-            Ok(res) => res,
-            Err(e) => return Err(HranaError::Http(e)),
-        };
+        .await?;
+        let body = response.text().await?;
         if response.status_code() != 200 {
             Err(HranaError::Api(body))
         } else {
@@ -146,39 +136,36 @@ pub enum HranaError {
     Json(#[from] serde_json::Error),
     #[error("api error: `{0}`")]
     Api(String),
-    #[cfg(not(feature = "hrana-cf"))]
     #[error("http error: `{0}`")]
     Http(#[from] hyper::Error),
-    #[cfg(feature = "hrana-cf")]
+    #[cfg(feature = "cloudflare")]
     #[error("http error: `{0}`")]
-    Http(#[from] worker::Error),
+    Cloudflare(String),
 }
 
-/**
- * Cloudflare worker errors are not Sync/Send, but this shouldn't matter as they are executed
- * in a single-thread environment. However we need Hrana errors to be Send/Sync due to upstream
- * error propagation.
- */
-#[cfg(feature = "hrana-cf")]
-unsafe impl Send for HranaError {}
-
-#[cfg(feature = "hrana-cf")]
-unsafe impl Sync for HranaError {}
+#[cfg(feature = "cloudflare")]
+impl From<worker::Error> for HranaError {
+    fn from(value: worker::Error) -> Self {
+        HranaError::Cloudflare(value.to_string())
+    }
+}
 
 impl Client {
     pub(crate) fn new(
         url: impl Into<String>,
         token: impl Into<String>,
-        #[cfg(not(feature = "hrana-cf"))] connector: crate::util::ConnectorService,
+        connector: crate::util::ConnectorService,
     ) -> Self {
-        #[cfg(not(feature = "hrana-cf"))]
         let inner = InnerClient::new(connector);
+        Self::with_inner(url.into(), token.into(), inner)
+    }
 
-        #[cfg(feature = "hrana-cf")]
-        let inner = InnerClient::new();
+    #[cfg(all(target_family = "wasm", feature = "cloudflare"))]
+    fn with_cloudflare(url: impl Into<String>, token: impl Into<String>) -> Self {
+        Self::with_inner(url.into(), token.into(), InnerClient::new())
+    }
 
-        let token = token.into();
-        let url = url.into();
+    fn with_inner(url: String, token: String, inner: InnerClient) -> Self {
         // The `libsql://` protocol is an alias for `https://`.
         let base_url = coerce_url_scheme(&url);
         let url_for_queries = format!("{base_url}/v2/pipeline");
@@ -327,8 +314,8 @@ impl Client {
     }
 }
 
-#[cfg_attr(feature = "hrana-cf", async_trait::async_trait(?Send))]
-#[cfg_attr(not(feature = "hrana-cf"), async_trait::async_trait)]
+#[cfg_attr(target_family = "wasm", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_family = "wasm"), async_trait::async_trait)]
 impl Conn for Client {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
         let mut stmt = self.prepare(sql).await?;
@@ -381,8 +368,8 @@ pub struct Statement {
     inner: Stmt,
 }
 
-#[cfg_attr(feature = "hrana-cf", async_trait::async_trait(?Send))]
-#[cfg_attr(not(feature = "hrana-cf"), async_trait::async_trait)]
+#[cfg_attr(target_family = "wasm", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_family = "wasm"), async_trait::async_trait)]
 impl super::statement::Stmt for Statement {
     fn finalize(&mut self) {}
 

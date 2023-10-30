@@ -59,10 +59,10 @@ async fn main() {
         println!("--------");
     };
 
-    #[cfg(not(feature = "hrana-cf"))]
+    #[cfg(not(feature = "cloudflare"))]
     let mut jh = tokio::spawn(fut);
 
-    #[cfg(feature = "hrana-cf")]
+    #[cfg(feature = "cloudflare")]
     let mut jh = tokio::task::spawn_local(fut);
 
     loop {

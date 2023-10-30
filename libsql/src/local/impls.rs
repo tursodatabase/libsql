@@ -15,8 +15,8 @@ pub(crate) struct LibsqlConnection {
     pub(crate) conn: super::Connection,
 }
 
-#[cfg_attr(feature = "hrana-cf", async_trait::async_trait(?Send))]
-#[cfg_attr(not(feature = "hrana-cf"), async_trait::async_trait)]
+#[cfg_attr(target_family = "wasm", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_family = "wasm"), async_trait::async_trait)]
 impl Conn for LibsqlConnection {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64> {
         self.conn.execute(sql, params)
@@ -66,8 +66,8 @@ impl Conn for LibsqlConnection {
 
 pub(crate) struct LibsqlStmt(pub(super) crate::local::Statement);
 
-#[cfg_attr(feature = "hrana-cf", async_trait::async_trait(?Send))]
-#[cfg_attr(not(feature = "hrana-cf"), async_trait::async_trait)]
+#[cfg_attr(target_family = "wasm", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_family = "wasm"), async_trait::async_trait)]
 impl Stmt for LibsqlStmt {
     fn finalize(&mut self) {
         self.0.finalize();
@@ -108,8 +108,8 @@ impl Stmt for LibsqlStmt {
 
 pub(super) struct LibsqlTx(pub(super) Option<crate::local::Transaction>);
 
-#[cfg_attr(feature = "hrana-cf", async_trait::async_trait(?Send))]
-#[cfg_attr(not(feature = "hrana-cf"), async_trait::async_trait)]
+#[cfg_attr(target_family = "wasm", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_family = "wasm"), async_trait::async_trait)]
 impl Tx for LibsqlTx {
     async fn commit(&mut self) -> Result<()> {
         let tx = self.0.take().expect("Tx already dropped");

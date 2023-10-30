@@ -5,8 +5,8 @@ use crate::{Error, Result};
 
 use crate::{Row, Rows};
 
-#[cfg_attr(feature = "hrana-cf", async_trait::async_trait(?Send))]
-#[cfg_attr(not(feature = "hrana-cf"), async_trait::async_trait)]
+#[cfg_attr(target_family = "wasm", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_family = "wasm"), async_trait::async_trait)]
 pub(crate) trait Stmt {
     fn finalize(&mut self);
 

@@ -35,9 +35,10 @@ enum DbType {
     Remote {
         url: String,
         auth_token: String,
-        #[cfg(not(feature = "hrana-cf"))]
         connector: crate::util::ConnectorService,
     },
+    #[cfg(feature = "cloudflare")]
+    Cloudflare { url: String, auth_token: String },
 }
 
 impl fmt::Debug for DbType {
@@ -52,6 +53,8 @@ impl fmt::Debug for DbType {
             Self::Sync { .. } => write!(f, "Sync"),
             #[cfg(feature = "hrana")]
             Self::Remote { .. } => write!(f, "Remote"),
+            #[cfg(feature = "cloudflare")]
+            Self::Cloudflare { .. } => write!(f, "Cloudflare"),
             _ => write!(f, "no database type set"),
         }
     }
@@ -165,7 +168,7 @@ cfg_replication! {
 
 cfg_hrana! {
     impl Database {
-        #[cfg(not(feature = "hrana-cf"))]
+        #[cfg(feature = "hrana")]
         pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
             let mut connector = hyper::client::HttpConnector::new();
             connector.enforce_http(false);
@@ -173,19 +176,9 @@ cfg_hrana! {
             Self::open_remote_with_connector(url, auth_token, connector)
         }
 
-        #[cfg(feature = "hrana-cf")]
-        pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
-            Ok(Database {
-                db_type: DbType::Remote {
-                    url: url.into(),
-                    auth_token: auth_token.into()
-                },
-            })
-        }
-
         // For now, only expose this for sqld testing purposes
         #[doc(hidden)]
-        #[cfg(not(feature = "hrana-cf"))]
+        #[cfg(feature = "hrana")]
         pub fn open_remote_with_connector<C>(
             url: impl Into<String>,
             auth_token: impl Into<String>,
@@ -207,6 +200,19 @@ cfg_hrana! {
                     url: url.into(),
                     auth_token: auth_token.into(),
                     connector: crate::util::ConnectorService::new(svc),
+                },
+            })
+        }
+    }
+}
+
+cfg_cloudflare! {
+    impl Database {
+        pub fn open_cloudflare(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
+            Ok(Database {
+                db_type: DbType::Cloudflare {
+                    url: url.into(),
+                    auth_token: auth_token.into()
                 },
             })
         }
@@ -261,7 +267,7 @@ impl Database {
                 Ok(Connection { conn })
             }
 
-            #[cfg(all(feature = "hrana", not(feature = "hrana-cf")))]
+            #[cfg(feature = "hrana")]
             DbType::Remote {
                 url,
                 auth_token,
@@ -274,9 +280,9 @@ impl Database {
                 )),
             }),
 
-            #[cfg(all(feature = "hrana", feature = "hrana-cf"))]
-            DbType::Remote { url, auth_token } => Ok(Connection {
-                conn: std::sync::Arc::new(crate::hrana::Client::new(url, auth_token)),
+            #[cfg(all(target_family = "wasm", feature = "cloudflare"))]
+            DbType::Cloudflare { url, auth_token } => Ok(Connection {
+                conn: std::sync::Arc::new(crate::hrana::Client::with_cloudflare(url, auth_token)),
             }),
 
             _ => unreachable!("no database type set"),
