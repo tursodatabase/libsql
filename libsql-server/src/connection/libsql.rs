@@ -362,6 +362,17 @@ unsafe extern "C" fn busy_handler<W: WalHook>(state: *mut c_void, _retries: c_in
     })
 }
 
+fn value_size(val: &rusqlite::types::ValueRef) -> usize {
+    use rusqlite::types::ValueRef;
+    match val {
+        ValueRef::Null => 0,
+        ValueRef::Integer(_) => 8,
+        ValueRef::Real(_) => 8,
+        ValueRef::Text(s) => s.len(),
+        ValueRef::Blob(b) => b.len(),
+    }
+}
+
 impl<W: WalHook> Connection<W> {
     fn new(
         path: &Path,
@@ -578,15 +589,18 @@ impl<W: WalHook> Connection<W> {
 
         let mut qresult = stmt.raw_query();
 
+        let mut values_total_bytes = 0;
         builder.begin_rows()?;
         while let Some(row) = qresult.next()? {
             builder.begin_row()?;
             for i in 0..cols_count {
                 let val = row.get_ref(i)?;
+                values_total_bytes += value_size(&val);
                 builder.add_row_value(val)?;
             }
             builder.finish_row()?;
         }
+        histogram!("returned_bytes", values_total_bytes as f64);
 
         builder.finish_rows()?;
 
