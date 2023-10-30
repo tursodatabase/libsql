@@ -644,23 +644,26 @@ static short console_attrs(unsigned stnum, HANDLE *pH, DWORD *pConsMode){
 */
 static short ConsoleDoesUTF8(void){
   UINT ocp = GetConsoleOutputCP();
+  const char TrialUtf8[] = { '\xC8', '\xAB' }; /* "ȫ" or 2 MBCS characters */
+  WCHAR aReadBack[1] = { 0 }; /* Read back as 0x022B when decoded as UTF-8. */
   CONSOLE_SCREEN_BUFFER_INFO csbInfo = {0};
   /* Create an inactive screen buffer with which to do the experiment. */
   HANDLE hCSB = CreateConsoleScreenBuffer(GENERIC_READ|GENERIC_WRITE, 0, 0,
                                           CONSOLE_TEXTMODE_BUFFER, NULL);
   if( hCSB!=INVALID_HANDLE_VALUE ){
-    const char TrialUtf8[] = { '\xC8', '\xAB' }; /* "ȫ" or 2 MBCS characters */
     COORD cpos = {0,0};
+    DWORD rbc;
     SetConsoleCursorPosition(hCSB, cpos);
     SetConsoleOutputCP(CP_UTF8);
     /* Write 2 chars which are a single character in UTF-8 but more in MBCS. */
     WriteConsoleA(hCSB, TrialUtf8, sizeof(TrialUtf8), NULL, NULL);
+    ReadConsoleOutputCharacterW(hCSB, &aReadBack[0], 1, cpos, &rbc);
     GetConsoleScreenBufferInfo(hCSB, &csbInfo);
     SetConsoleOutputCP(ocp);
     CloseHandle(hCSB);
   }
   /* Return 1 if cursor advanced by 1 position, else 0. */
-  return (short)(csbInfo.dwCursorPosition.X == 1);
+  return (short)(csbInfo.dwCursorPosition.X == 1 && aReadBack[0] == 0x022B);
 }
 
 static short in_console = 0;
