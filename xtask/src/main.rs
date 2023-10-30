@@ -31,7 +31,7 @@ sim-tests <test name>  runs the libsql-server simulation test suite
 }
 
 fn sim_tests(arg: &str) -> Result<()> {
-    run_cargo(&["test", "--test", "tests", "--features", "sim-tests", arg])?;
+    run_cargo(&["test", "--test", "tests", arg])?;
 
     Ok(())
 }

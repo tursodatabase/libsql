@@ -108,3 +108,52 @@ fn embedded_replica() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn execute_batch() {
+    let mut sim = Builder::new().build();
+
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_host = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let client = Client::new();
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let path = tmp_embedded_path.join("embedded");
+        let db = Database::open_with_remote_sync_connector(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080",
+            "",
+            TurmoilConnector,
+        )
+        .await?;
+
+        let n = db.sync().await?;
+        assert_eq!(n, None);
+
+        let conn = db.connect()?;
+
+        conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
+            .await?;
+
+        let n = db.sync().await?;
+        assert_eq!(n, Some(1));
+
+        conn.execute_batch(
+            "BEGIN;
+            INSERT INTO user (id) VALUES (2);", // COMMIT;",
+        )
+        .await?;
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
