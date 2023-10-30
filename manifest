@@ -1,5 +1,5 @@
-C Fix\sanother\scomment\stypo.\s\sNo\scode\schanges.
-D 2023-10-30T18:48:03.095
+C Add\sa\scast\sto\si64\sfor\san\sinteger\sin\san\ssqlite3OsWrite()\soffset\ncalculation.\s\sThe\scast\sis\snot\sstrictly\snecessary,\sbut\sit\shelps\shuman\sreaders\nsee\sthat\sthe\scode\sis\scorrect.
+D 2023-10-30T19:03:17.274
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -708,7 +708,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c cb116fde9e3ca3c1bbfdf89d6928f776a2a34da168e2667426523a4db353b271
 F src/os_win.c 4a50a154aeebc66a1f8fb79c1ff6dd5fe3d005556533361e0d460d41cb6a45a8
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 9c9343d9ff407fb9e01f8c22e9babbe42807ab53aa1c7d747da77bb2b2f74629
+F src/pager.c 699aab8dfc88056d796b03b40c0ab979040d58dfc3ae9db207f1be91e4880bbf
 F src/pager.h f4d33fec8052603758792045493423b8871a996da2d0973927b7d36cd6070473
 F src/parse.y 020d80386eb216ec9520549106353c517d2bbc89be28752ffdca649a9eaf56ec
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e41fde2fdb999b430561ac6d6ba150666ad1858e99c973f8dcd04a6934991032
-R 0419b51896081f56de024f9efaca85b4
+P 3203256c0285ef2fea810d59978603bfd7e38151cbc42e1baddf84b57c56f638
+R bc4d33b10898224fed6a435408a265f0
 U drh
-Z 85228b44c3864b12cba540f8b7c26125
+Z dd8b500ddcc44fefafb6cf0d50166aea
 # Remove this line to create a well-formed Fossil manifest.
