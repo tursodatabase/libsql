@@ -683,12 +683,15 @@ impl<W: WalHook> Connection<W> {
         if self.stats.qualifies_as_slowest_query(elapsed) {
             self.stats
                 .add_slowest_query(crate::stats::SlowestQuery::new(
-                    sql,
+                    sql.clone(),
                     elapsed,
                     rows_read,
                     rows_written,
                 ));
         }
+
+        self.stats
+            .update_query_metrics(sql, rows_read, rows_written, mem_used, elapsed)
     }
 
     fn describe(&self, sql: &str) -> DescribeResult {

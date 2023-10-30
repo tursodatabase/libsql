@@ -210,6 +210,21 @@ impl Stats {
         self.slowest_queries.write().unwrap().clear();
         self.slowest_query_threshold.store(0, Ordering::Relaxed);
     }
+
+    pub(crate) fn update_query_metrics(
+        &self,
+        sql: String,
+        rows_read: u64,
+        rows_written: u64,
+        mem_used: u64,
+        elapsed: u64,
+    ) {
+        increment_counter!("query_count", "namespace" => self.namespace.to_string(), "query" => sql.clone());
+        counter!("query_latency", elapsed, "namespace" => self.namespace.to_string(), "query" => sql.clone());
+        counter!("query_rows_read", rows_read, "namespace" => self.namespace.to_string(), "query" => sql.clone());
+        counter!("query_rows_written", rows_written, "namespace" => self.namespace.to_string(), "query" => sql.clone());
+        counter!("query_mem_used", mem_used, "namespace" => self.namespace.to_string(), "query" => sql.clone());
+    }
 }
 
 async fn spawn_stats_persist_thread(stats: Weak<Stats>, path: PathBuf) -> anyhow::Result<()> {
