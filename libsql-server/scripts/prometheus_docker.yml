@@ -1,0 +1,14 @@
+# my global config
+global:
+  scrape_interval: 5s 
+  evaluation_interval: 5s
+  scrape_timeout: 4s
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["127.0.0.1:9090"]
+  - job_name: "sqld"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["host.docker.internal:8081"]
