@@ -271,7 +271,10 @@ impl<T: WalHook> TxnSlot<T> {
         // we have a lock on the connection, we don't need mode than a
         // Relaxed store.
         conn.rollback();
-        histogram!("write_txn_duration", self.created_at.elapsed())
+        histogram!(
+            "libsql_server_write_txn_duration",
+            self.created_at.elapsed()
+        )
         // WRITE_TXN_DURATION.record(self.created_at.elapsed());
     }
 }
@@ -606,7 +609,7 @@ impl<W: WalHook> Connection<W> {
             }
             builder.finish_row()?;
         }
-        histogram!("returned_bytes", values_total_bytes as f64);
+        histogram!("libsql_server_returned_bytes", values_total_bytes as f64);
 
         builder.finish_rows()?;
 
@@ -642,7 +645,7 @@ impl<W: WalHook> Connection<W> {
         self.conn
             .query_row("PRAGMA wal_checkpoint(TRUNCATE)", (), |_| Ok(()))?;
         WAL_CHECKPOINT_COUNT.increment(1);
-        histogram!("wal_checkpoint_time", start.elapsed());
+        histogram!("libsql_server_wal_checkpoint_time", start.elapsed());
         Ok(())
     }
 
@@ -665,12 +668,12 @@ impl<W: WalHook> Connection<W> {
     }
 
     fn update_stats(&self, sql: String, stmt: &rusqlite::Statement, elapsed: Duration) {
-        histogram!("statement_execution_time", elapsed);
+        histogram!("libsql_server_statement_execution_time", elapsed);
         let elapsed = elapsed.as_millis() as u64;
         let rows_read = stmt.get_status(StatementStatus::RowsRead) as u64;
         let rows_written = stmt.get_status(StatementStatus::RowsWritten) as u64;
         let mem_used = stmt.get_status(StatementStatus::MemUsed) as u64;
-        histogram!("statement_mem_used_bytes", mem_used as f64);
+        histogram!("libsql_server_statement_mem_used_bytes", mem_used as f64);
         let rows_read = if rows_read == 0 && rows_written == 0 {
             1
         } else {

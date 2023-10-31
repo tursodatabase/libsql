@@ -456,7 +456,10 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             lock.insert(namespace, ns);
 
             // NAMESPACE_LOAD_LATENCY.record(before_load.elapsed());
-            histogram!("namespace_load_latency", before_load.elapsed());
+            histogram!(
+                "libsql_server_namespace_load_latency",
+                before_load.elapsed()
+            );
 
             Ok(ret)
         }
