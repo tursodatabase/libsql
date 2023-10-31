@@ -1,0 +1,22 @@
+[package]
+name = "libsql-remote"
+version = "0.1.0"
+edition = "2021"
+description = "libSQL remote protocol implementation"
+repository = "https://github.com/libsql/libsql"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+thiserror = "1.0.40"
+base64 = "0.21"
+futures = { version = "0.3.28" }
+serde = { version = "1", features = ["derive"]}
+serde_json = { version = "1" }
+worker = { version = "0.0.18", optional = true }
+
+[features]
+cloudflare = [
+    "dep:worker",
+]

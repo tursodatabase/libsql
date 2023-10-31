@@ -2255,7 +2255,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid",
- "worker",
 ]
 
 [[package]]
@@ -2271,6 +2270,18 @@ dependencies = [
  "reqwest",
  "serde_json",
  "url",
+]
+
+[[package]]
+name = "libsql-remote"
+version = "0.1.0"
+dependencies = [
+ "base64 0.21.4",
+ "futures",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "worker",
 ]
 
 [[package]]

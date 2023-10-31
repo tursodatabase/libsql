@@ -21,7 +21,6 @@ serde_json = { version = "1", optional = true }
 async-trait = "0.1"
 bitflags = { version = "2.4.0", optional = true }
 tower = { version = "0.4", features = ["util"], optional = true }
-worker = { version = "0.0.18", optional = true }
 
 bincode = { version = "1", optional = true }
 anyhow = { version = "1.0.71", optional = true }
@@ -92,12 +91,6 @@ remote = [
 ]
 serde = ["dep:serde"]
 http = ["dep:tower", "dep:hyper", "dep:http", "dep:tokio"]
-cloudflare = [
-  "libsql-sys",
-  "hrana",
-  "dep:futures",
-  "dep:worker",
-]
 
 [[bench]]
 name = "benchmark"
