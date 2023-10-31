@@ -213,7 +213,9 @@ pub enum TxnStatus {
 impl TxnStatus {
     pub fn step(&mut self, kind: StmtKind) {
         *self = match (*self, kind) {
-            (TxnStatus::Txn, StmtKind::TxnBegin) | (TxnStatus::Init, StmtKind::TxnEnd) => TxnStatus::Invalid,
+            (TxnStatus::Txn, StmtKind::TxnBegin) | (TxnStatus::Init, StmtKind::TxnEnd) => {
+                TxnStatus::Invalid
+            }
             (TxnStatus::Txn, StmtKind::TxnEnd) => TxnStatus::Init,
             (state, StmtKind::Other | StmtKind::Write | StmtKind::Read) => state,
             (TxnStatus::Invalid, _) => TxnStatus::Invalid,

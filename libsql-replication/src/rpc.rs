@@ -1,13 +1,13 @@
 pub mod proxy {
     #![allow(clippy::all)]
     include!("generated/proxy.rs");
-    
+
     use sqld_libsql_bindings::rusqlite::types::ValueRef;
-    
+
     impl From<ValueRef<'_>> for RowValue {
         fn from(value: ValueRef<'_>) -> Self {
             use row_value::Value;
-    
+
             let value = Some(match value {
                 ValueRef::Null => Value::Null(true),
                 ValueRef::Integer(i) => Value::Integer(i),
@@ -15,7 +15,7 @@ pub mod proxy {
                 ValueRef::Text(s) => Value::Text(String::from_utf8(s.to_vec()).unwrap()),
                 ValueRef::Blob(b) => Value::Blob(b.to_vec()),
             });
-    
+
             RowValue { value }
         }
     }

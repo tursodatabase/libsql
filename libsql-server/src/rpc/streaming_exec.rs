@@ -58,7 +58,7 @@ where
         let conn = Arc::new(conn);
 
         pin!(request_stream);
-        
+
         let mut last_request_id = None;
 
         loop {
@@ -355,7 +355,7 @@ impl QueryResultBuilder for StreamResponseBuilder {
 
 #[cfg(test)]
 pub mod test {
-    use insta::{assert_debug_snapshot, assert_snapshot, assert_json_snapshot};
+    use insta::{assert_debug_snapshot, assert_json_snapshot, assert_snapshot};
     use tempfile::tempdir;
     use tokio_stream::wrappers::ReceiverStream;
 

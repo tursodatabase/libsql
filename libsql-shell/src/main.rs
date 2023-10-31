@@ -426,10 +426,8 @@ impl Shell {
             })?;
 
             let mut mapped_rows = vec![];
-            for row in rows {
-                if let Ok(r) = row {
-                    mapped_rows.push(r);
-                }
+            for row in rows.flatten() {
+                mapped_rows.push(row);
             }
             mapped_rows
         };

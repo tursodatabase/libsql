@@ -37,7 +37,7 @@ use crate::http::user::types::HttpQuery;
 use crate::namespace::{MakeNamespace, NamespaceStore};
 use crate::net::Accept;
 use crate::query::{self, Query};
-use crate::query_analysis::{predict_final_state, TxnStatus, Statement};
+use crate::query_analysis::{predict_final_state, Statement, TxnStatus};
 use crate::query_result_builder::QueryResultBuilder;
 use crate::rpc::proxy::rpc::proxy_server::{Proxy, ProxyServer};
 use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLog;
