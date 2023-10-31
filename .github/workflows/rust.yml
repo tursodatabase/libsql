@@ -9,6 +9,10 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  PROTOC_VERSION: 3.23.4
+  # FIXME: There are some warnings depending on certain feature flags that
+  # we need to fix before we can enable this.
+  # RUSTFLAGS: "-D warnings"
 
 jobs:
   checks:
@@ -103,6 +107,11 @@ jobs:
 
     - name: Install deps
       run: sudo apt update && sudo apt install -y libclang-dev
+
+    - name: Install protoc
+      uses: taiki-e/install-action@v2
+      with:
+        tool: protoc@${{ env.PROTOC_VERSION }}
 
     - uses: actions/checkout@v3
 
