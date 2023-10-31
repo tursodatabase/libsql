@@ -1,0 +1,28 @@
+---
+source: libsql-server/src/rpc/streaming_exec.rs
+expression: stream.next().await.unwrap().unwrap()
+---
+ExecResp {
+    request_id: 0,
+    response: Some(
+        DescribeResp(
+            DescribeResp {
+                params: [
+                    DescribeParam {
+                        name: Some(
+                            "$hello",
+                        ),
+                    },
+                ],
+                cols: [
+                    DescribeCol {
+                        name: "$hello",
+                        decltype: None,
+                    },
+                ],
+                is_explain: false,
+                is_readonly: true,
+            },
+        ),
+    ),
+}

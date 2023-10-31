@@ -1,0 +1,5 @@
+---
+source: libsql-server/src/rpc/streaming_exec.rs
+expression: stream.next().await.unwrap().unwrap_err().to_string()
+---
+status: InvalidArgument, message: "invalid request", details: [], metadata: MetadataMap { headers: {} }
