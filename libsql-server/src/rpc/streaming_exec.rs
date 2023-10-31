@@ -58,6 +58,8 @@ where
         let conn = Arc::new(conn);
 
         pin!(request_stream);
+        
+        let mut last_request_id = None;
 
         loop {
             tokio::select! {
@@ -71,6 +73,16 @@ where
                         }
                         Ok(req) => {
                             let request_id = req.request_id;
+                            if let Some(last_req_id) = last_request_id {
+                                if request_id <= last_req_id {
+                                    tracing::error!("received request with id less than last received request, closing stream");
+                                    yield Err(Status::new(Code::InvalidArgument, "received request with id less than last received request, closing stream"));
+                                    return;
+                                }
+                            }
+
+                            last_request_id = Some(request_id);
+
                             match req.request {
                                 Some(Request::Execute(pgm)) => {
                                     let Ok(pgm) =
@@ -343,7 +355,7 @@ impl QueryResultBuilder for StreamResponseBuilder {
 
 #[cfg(test)]
 pub mod test {
-    use insta::{assert_debug_snapshot, assert_snapshot};
+    use insta::{assert_debug_snapshot, assert_snapshot, assert_json_snapshot};
     use tempfile::tempdir;
     use tokio_stream::wrappers::ReceiverStream;
 
@@ -499,6 +511,54 @@ pub mod test {
 
         let resp = stream.next().await.unwrap().unwrap();
         assert_eq!(resp.request_id, 1);
+    }
+
+    #[tokio::test]
+    async fn perform_multiple_queries() {
+        let tmp = tempdir().unwrap();
+        let conn = LibSqlConnection::new_test(tmp.path());
+        let (snd, rcv) = mpsc::channel(1);
+        let auth = Authenticated::Authorized(Authorized {
+            namespace: None,
+            permission: Permission::FullAccess,
+        });
+        let stream = make_proxy_stream(conn, auth, ReceiverStream::new(rcv));
+
+        pin!(stream);
+
+        // request 0 should be dropped, and request 1 should be processed instead
+        let req1 = exec_req_stmt("create table test (foo)", 0);
+        snd.send(Ok(req1)).await.unwrap();
+        assert_json_snapshot!(stream.next().await.unwrap().unwrap());
+
+        let req2 = exec_req_stmt("insert into test values (12)", 1);
+        snd.send(Ok(req2)).await.unwrap();
+        assert_json_snapshot!(stream.next().await.unwrap().unwrap());
+    }
+
+    #[tokio::test]
+    async fn query_number_less_than_previous_query() {
+        let tmp = tempdir().unwrap();
+        let conn = LibSqlConnection::new_test(tmp.path());
+        let (snd, rcv) = mpsc::channel(1);
+        let auth = Authenticated::Authorized(Authorized {
+            namespace: None,
+            permission: Permission::FullAccess,
+        });
+        let stream = make_proxy_stream(conn, auth, ReceiverStream::new(rcv));
+
+        pin!(stream);
+
+        // request 0 should be dropped, and request 1 should be processed instead
+        let req1 = exec_req_stmt("create table test (foo)", 0);
+        snd.send(Ok(req1)).await.unwrap();
+        assert_json_snapshot!(stream.next().await.unwrap().unwrap());
+
+        let req2 = exec_req_stmt("insert into test values (12)", 0);
+        snd.send(Ok(req2)).await.unwrap();
+        let resp = stream.next().await.unwrap();
+        assert!(resp.is_err());
+        assert_debug_snapshot!(resp);
     }
 
     #[tokio::test]

@@ -7,6 +7,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     config.bytes([".wal_log"]);
     tonic_build::configure()
         .protoc_arg("--experimental_allow_proto3_optional")
+        .type_attribute(".proxy", "#[derive(serde::Serialize, serde::Deserialize)]")
         .type_attribute(".proxy", "#[cfg_attr(test, derive(arbitrary::Arbitrary))]")
         .compile_with_config(
             config,
