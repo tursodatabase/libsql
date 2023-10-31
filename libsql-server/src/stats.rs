@@ -106,18 +106,18 @@ impl Stats {
 
     /// increments the number of written rows by n
     pub fn inc_rows_written(&self, n: u64) {
-        counter!("rows_written", n, "namespace" => self.namespace.to_string());
+        counter!("libsql_server_rows_written", n, "namespace" => self.namespace.to_string());
         self.rows_written.fetch_add(n, Ordering::Relaxed);
     }
 
     /// increments the number of read rows by n
     pub fn inc_rows_read(&self, n: u64) {
-        counter!("rows_read", n, "namespace" => self.namespace.to_string());
+        counter!("libsql_server_rows_read", n, "namespace" => self.namespace.to_string());
         self.rows_read.fetch_add(n, Ordering::Relaxed);
     }
 
     pub fn set_storage_bytes_used(&self, n: u64) {
-        gauge!("storage", n as f64, "namespace" => self.namespace.to_string());
+        gauge!("libsql_server_storage", n as f64, "namespace" => self.namespace.to_string());
         self.storage_bytes_used.store(n, Ordering::Relaxed);
     }
 
@@ -138,7 +138,7 @@ impl Stats {
 
     /// increments the number of the write requests which were delegated from a replica to primary
     pub fn inc_write_requests_delegated(&self) {
-        increment_counter!("write_requests_delegated", "namespace" => self.namespace.to_string());
+        increment_counter!("libsql_server_write_requests_delegated", "namespace" => self.namespace.to_string());
         self.write_requests_delegated
             .fetch_add(1, Ordering::Relaxed);
     }
@@ -148,7 +148,7 @@ impl Stats {
     }
 
     pub fn set_current_frame_no(&self, fno: FrameNo) {
-        gauge!("current_frame_no", fno as f64, "namespace" => self.namespace.to_string());
+        gauge!("libsql_server_current_frame_no", fno as f64, "namespace" => self.namespace.to_string());
         self.current_frame_no.store(fno, Ordering::Relaxed);
     }
 
@@ -219,11 +219,11 @@ impl Stats {
         mem_used: u64,
         elapsed: u64,
     ) {
-        increment_counter!("query_count", "namespace" => self.namespace.to_string(), "query" => sql.clone());
-        counter!("query_latency", elapsed, "namespace" => self.namespace.to_string(), "query" => sql.clone());
-        counter!("query_rows_read", rows_read, "namespace" => self.namespace.to_string(), "query" => sql.clone());
-        counter!("query_rows_written", rows_written, "namespace" => self.namespace.to_string(), "query" => sql.clone());
-        counter!("query_mem_used", mem_used, "namespace" => self.namespace.to_string(), "query" => sql.clone());
+        increment_counter!("libsql_server_query_count", "namespace" => self.namespace.to_string(), "query" => sql.clone());
+        counter!("libsql_server_query_latency", elapsed, "namespace" => self.namespace.to_string(), "query" => sql.clone());
+        counter!("libsql_server_query_rows_read", rows_read, "namespace" => self.namespace.to_string(), "query" => sql.clone());
+        counter!("libsql_server_query_rows_written", rows_written, "namespace" => self.namespace.to_string(), "query" => sql.clone());
+        counter!("libsql_server_query_mem_used", mem_used, "namespace" => self.namespace.to_string(), "query" => sql.clone());
     }
 }
 

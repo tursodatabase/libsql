@@ -285,7 +285,10 @@ impl<F: MakeConnection> MakeConnection for MakeThrottledConnection<F> {
 
         CONCCURENT_CONNECTIONS_COUNT.increment(1.0);
         // CONNECTION_CREATE_TIME.record(before_create.elapsed());
-        histogram!("connection_create_time", before_create.elapsed());
+        histogram!(
+            "libsql_server_connection_create_time",
+            before_create.elapsed()
+        );
 
         Ok(TrackedConnection {
             permit,
@@ -308,7 +311,10 @@ pub struct TrackedConnection<DB> {
 impl<T> Drop for TrackedConnection<T> {
     fn drop(&mut self) {
         CONCCURENT_CONNECTIONS_COUNT.decrement(1.0);
-        histogram!("connection_create_time", self.created_at.elapsed());
+        histogram!(
+            "libsql_server_connection_create_time",
+            self.created_at.elapsed()
+        );
         // CONNECTION_ALIVE_DURATION.record();
     }
 }
