@@ -1638,7 +1638,8 @@ static Expr *exprDup(
       memcpy(sEdupBuf.zAlloc, p, nNewSize);
     }else{
       u32 nSize = (u32)exprStructSize(p);
-      assert( (int)(sEdupBuf.zEnd - sEdupBuf.zAlloc) >= EXPR_FULLSIZE+nToken );
+      assert( (int)(sEdupBuf.zEnd - sEdupBuf.zAlloc) >=
+                                                   (int)EXPR_FULLSIZE+nToken );
       memcpy(sEdupBuf.zAlloc, p, nSize);
       if( nSize<EXPR_FULLSIZE ){
         memset(&sEdupBuf.zAlloc[nSize], 0, EXPR_FULLSIZE-nSize);

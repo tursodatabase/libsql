@@ -392,7 +392,6 @@ static int SQLITE_TCLAPI test_session_cmd(
       };
       size_t sz = sizeof(aOpt[0]);
 
-      int rc;
       int iArg;
       int iOpt;
       if( Tcl_GetIndexFromObjStruct(interp,objv[2],aOpt,sz,"option",0,&iOpt) ){
