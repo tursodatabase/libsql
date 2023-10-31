@@ -40,6 +40,8 @@ fn main() {
         )
         .unwrap();
         println!("cargo:lib_dir={out_dir}");
+        println!("cargo:rustc-link-search={out_dir}");
+        println!("cargo:rustc-link-lib=static={LIB_NAME}");
         return;
     }
 
