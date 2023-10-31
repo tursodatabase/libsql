@@ -1,28 +1,30 @@
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, RwLock, Weak};
 
+use metrics::{counter, gauge, increment_counter};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use tokio::io::AsyncWriteExt;
 use tokio::task::JoinSet;
 use tokio::time::Duration;
 
+use crate::namespace::NamespaceName;
 use crate::replication::FrameNo;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TopQuery {
     #[serde(skip)]
-    pub weight: i64,
-    pub rows_written: i32,
-    pub rows_read: i32,
+    pub weight: u64,
+    pub rows_written: u64,
+    pub rows_read: u64,
     pub query: String,
 }
 
 impl TopQuery {
-    pub fn new(query: String, rows_read: i32, rows_written: i32) -> Self {
+    pub fn new(query: String, rows_read: u64, rows_written: u64) -> Self {
         Self {
-            weight: rows_read as i64 + rows_written as i64,
+            weight: rows_read + rows_written,
             rows_read,
             rows_written,
             query,
@@ -34,12 +36,12 @@ impl TopQuery {
 pub struct SlowestQuery {
     pub elapsed_ms: u64,
     pub query: String,
-    pub rows_written: i32,
-    pub rows_read: i32,
+    pub rows_written: u64,
+    pub rows_read: u64,
 }
 
 impl SlowestQuery {
-    pub fn new(query: String, elapsed_ms: u64, rows_read: i32, rows_written: i32) -> Self {
+    pub fn new(query: String, elapsed_ms: u64, rows_read: u64, rows_written: u64) -> Self {
         Self {
             elapsed_ms,
             query,
@@ -51,6 +53,9 @@ impl SlowestQuery {
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Stats {
+    #[serde(skip)]
+    namespace: NamespaceName,
+
     #[serde(default)]
     rows_written: AtomicU64,
     #[serde(default)]
@@ -64,7 +69,7 @@ pub struct Stats {
     current_frame_no: AtomicU64,
     // Lowest value in currently stored top queries
     #[serde(default)]
-    top_query_threshold: AtomicI64,
+    top_query_threshold: AtomicU64,
     #[serde(default)]
     top_queries: Arc<RwLock<BTreeSet<TopQuery>>>,
     // Lowest value in currently stored slowest queries
@@ -76,16 +81,20 @@ pub struct Stats {
 
 impl Stats {
     pub async fn new(
+        namespace: NamespaceName,
         db_path: &Path,
         join_set: &mut JoinSet<anyhow::Result<()>>,
     ) -> anyhow::Result<Arc<Self>> {
         let stats_path = db_path.join("stats.json");
-        let this = if stats_path.try_exists()? {
+        let mut this = if stats_path.try_exists()? {
             let data = tokio::fs::read_to_string(&stats_path).await?;
-            Arc::new(serde_json::from_str(&data)?)
+            serde_json::from_str(&data)?
         } else {
-            Arc::new(Stats::default())
+            Stats::default()
         };
+
+        this.namespace = namespace;
+        let this = Arc::new(this);
 
         join_set.spawn(spawn_stats_persist_thread(
             Arc::downgrade(&this),
@@ -97,15 +106,18 @@ impl Stats {
 
     /// increments the number of written rows by n
     pub fn inc_rows_written(&self, n: u64) {
+        counter!("rows_written", n, "namespace" => self.namespace.to_string());
         self.rows_written.fetch_add(n, Ordering::Relaxed);
     }
 
     /// increments the number of read rows by n
     pub fn inc_rows_read(&self, n: u64) {
+        counter!("rows_read", n, "namespace" => self.namespace.to_string());
         self.rows_read.fetch_add(n, Ordering::Relaxed);
     }
 
     pub fn set_storage_bytes_used(&self, n: u64) {
+        gauge!("storage", n as f64, "namespace" => self.namespace.to_string());
         self.storage_bytes_used.store(n, Ordering::Relaxed);
     }
 
@@ -126,6 +138,7 @@ impl Stats {
 
     /// increments the number of the write requests which were delegated from a replica to primary
     pub fn inc_write_requests_delegated(&self) {
+        increment_counter!("write_requests_delegated", "namespace" => self.namespace.to_string());
         self.write_requests_delegated
             .fetch_add(1, Ordering::Relaxed);
     }
@@ -135,6 +148,7 @@ impl Stats {
     }
 
     pub fn set_current_frame_no(&self, fno: FrameNo) {
+        gauge!("current_frame_no", fno as f64, "namespace" => self.namespace.to_string());
         self.current_frame_no.store(fno, Ordering::Relaxed);
     }
 
@@ -158,7 +172,7 @@ impl Stats {
         }
     }
 
-    pub(crate) fn qualifies_as_top_query(&self, weight: i64) -> bool {
+    pub(crate) fn qualifies_as_top_query(&self, weight: u64) -> bool {
         weight >= self.top_query_threshold.load(Ordering::Relaxed)
     }
 
@@ -195,6 +209,21 @@ impl Stats {
     pub(crate) fn reset_slowest_queries(&self) {
         self.slowest_queries.write().unwrap().clear();
         self.slowest_query_threshold.store(0, Ordering::Relaxed);
+    }
+
+    pub(crate) fn update_query_metrics(
+        &self,
+        sql: String,
+        rows_read: u64,
+        rows_written: u64,
+        mem_used: u64,
+        elapsed: u64,
+    ) {
+        increment_counter!("query_count", "namespace" => self.namespace.to_string(), "query" => sql.clone());
+        counter!("query_latency", elapsed, "namespace" => self.namespace.to_string(), "query" => sql.clone());
+        counter!("query_rows_read", rows_read, "namespace" => self.namespace.to_string(), "query" => sql.clone());
+        counter!("query_rows_written", rows_written, "namespace" => self.namespace.to_string(), "query" => sql.clone());
+        counter!("query_mem_used", mem_used, "namespace" => self.namespace.to_string(), "query" => sql.clone());
     }
 }
 

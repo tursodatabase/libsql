@@ -863,7 +863,7 @@ async fn make_stats(
     name: NamespaceName,
     mut current_frame_no: watch::Receiver<Option<FrameNo>>,
 ) -> anyhow::Result<Arc<Stats>> {
-    let stats = Stats::new(db_path, join_set).await?;
+    let stats = Stats::new(name.clone(), db_path, join_set).await?;
 
     // the storage monitor is optional, so we ignore the error here.
     let _ = stats_sender

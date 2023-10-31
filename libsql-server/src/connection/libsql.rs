@@ -667,9 +667,9 @@ impl<W: WalHook> Connection<W> {
     fn update_stats(&self, sql: String, stmt: &rusqlite::Statement, elapsed: Duration) {
         histogram!("statement_execution_time", elapsed);
         let elapsed = elapsed.as_millis() as u64;
-        let rows_read = stmt.get_status(StatementStatus::RowsRead);
-        let rows_written = stmt.get_status(StatementStatus::RowsWritten);
-        let mem_used = stmt.get_status(StatementStatus::MemUsed);
+        let rows_read = stmt.get_status(StatementStatus::RowsRead) as u64;
+        let rows_written = stmt.get_status(StatementStatus::RowsWritten) as u64;
+        let mem_used = stmt.get_status(StatementStatus::MemUsed) as u64;
         histogram!("statement_mem_used_bytes", mem_used as f64);
         let rows_read = if rows_read == 0 && rows_written == 0 {
             1
@@ -678,7 +678,7 @@ impl<W: WalHook> Connection<W> {
         };
         self.stats.inc_rows_read(rows_read as u64);
         self.stats.inc_rows_written(rows_written as u64);
-        let weight = (rows_read + rows_written) as i64;
+        let weight = (rows_read + rows_written) as u64;
         if self.stats.qualifies_as_top_query(weight) {
             self.stats.add_top_query(crate::stats::TopQuery::new(
                 sql.clone(),
@@ -689,12 +689,15 @@ impl<W: WalHook> Connection<W> {
         if self.stats.qualifies_as_slowest_query(elapsed) {
             self.stats
                 .add_slowest_query(crate::stats::SlowestQuery::new(
-                    sql,
+                    sql.clone(),
                     elapsed,
                     rows_read,
                     rows_written,
                 ));
         }
+
+        self.stats
+            .update_query_metrics(sql, rows_read, rows_written, mem_used, elapsed)
     }
 
     fn describe(&self, sql: &str) -> DescribeResult {
