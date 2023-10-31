@@ -26,6 +26,7 @@ enclose = "1.1"
 fallible-iterator = "0.3.0"
 futures = "0.3.25"
 futures-core = "0.3"
+futures-option = "0.2.0"
 hmac = "0.12"
 hyper = { version = "0.14.23", features = ["http2"] }
 hyper-rustls = { git = "https://github.com/rustls/hyper-rustls.git", rev = "163b3f5" }
