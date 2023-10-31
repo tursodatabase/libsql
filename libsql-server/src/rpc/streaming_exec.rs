@@ -1,8 +1,9 @@
+use std::future::poll_fn;
 use std::sync::Arc;
+use std::task::Poll;
 
 use futures_core::future::BoxFuture;
 use futures_core::Stream;
-use futures_option::OptionExt;
 use libsql_replication::rpc::proxy::exec_req::Request;
 use libsql_replication::rpc::proxy::exec_resp::{self, Response};
 use libsql_replication::rpc::proxy::resp_step::Step;
@@ -53,7 +54,7 @@ where
     C: Connection,
 {
     async_stream::stream! {
-        let mut current_request_fut: Option<BoxFuture<'static, (crate::Result<()>, u32)>> = None;
+        let mut current_request_fut: BoxFuture<'static, (crate::Result<()>, u32)> = Box::pin(poll_fn(|_| Poll::Pending));
         let (snd, mut recv) = mpsc::channel(1);
         let conn = Arc::new(conn);
 
@@ -107,7 +108,7 @@ where
                                         (ret, request_id)
                                     };
 
-                                    current_request_fut.replace(Box::pin(fut));
+                                    current_request_fut = Box::pin(fut);
                                 }
                                 Some(Request::Describe(StreamDescribeReq { stmt })) => {
                                     let auth = auth.clone();
@@ -135,7 +136,7 @@ where
                                         (ret, request_id)
                                     };
 
-                                    current_request_fut.replace(Box::pin(fut));
+                                    current_request_fut = Box::pin(fut);
 
                                 },
                                 None => {
@@ -149,7 +150,7 @@ where
                 Some(res) = recv.recv() => {
                     yield Ok(res);
                 },
-                (ret, request_id) = current_request_fut.current(), if current_request_fut.is_some() => {
+                (ret, request_id) = &mut current_request_fut => {
                     if let Err(e) = ret {
                         yield Ok(ExecResp { request_id, response: Some(Response::Error(e.into())) })
                     }
