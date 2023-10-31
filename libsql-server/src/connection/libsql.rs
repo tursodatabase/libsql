@@ -679,9 +679,9 @@ impl<W: WalHook> Connection<W> {
         } else {
             rows_read
         };
-        self.stats.inc_rows_read(rows_read as u64);
-        self.stats.inc_rows_written(rows_written as u64);
-        let weight = (rows_read + rows_written) as u64;
+        self.stats.inc_rows_read(rows_read);
+        self.stats.inc_rows_written(rows_written);
+        let weight = rows_read + rows_written;
         if self.stats.qualifies_as_top_query(weight) {
             self.stats.add_top_query(crate::stats::TopQuery::new(
                 sql.clone(),
