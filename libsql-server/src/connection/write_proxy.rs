@@ -1,35 +1,34 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use futures_core::future::BoxFuture;
+use futures_core::Stream;
+use libsql_replication::rpc::proxy::proxy_client::ProxyClient;
+use libsql_replication::rpc::proxy::{
+    exec_req, exec_resp, ExecReq, ExecResp, StreamDescribeReq, StreamProgramReq,
+};
 use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
 use parking_lot::Mutex as PMutex;
-use rusqlite::types::ValueRef;
 use sqld_libsql_bindings::wal_hook::{TransparentMethods, TRANSPARENT_METHODS};
-use tokio::sync::{watch, Mutex};
+use tokio::sync::{mpsc, watch, Mutex};
+use tokio_stream::StreamExt;
 use tonic::metadata::BinaryMetadataValue;
 use tonic::transport::Channel;
-use tonic::Request;
-use uuid::Uuid;
+use tonic::{Request, Streaming};
 
 use crate::auth::Authenticated;
+use crate::connection::program::{DescribeCol, DescribeParam};
 use crate::error::Error;
-use crate::metrics::REQUESTS_PROXIED;
 use crate::namespace::NamespaceName;
-use crate::query::Value;
-use crate::query_analysis::State;
-use crate::query_result_builder::{
-    Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
-};
+use crate::query_analysis::TxnStatus;
+use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
 use crate::replication::FrameNo;
-use crate::rpc::proxy::rpc::proxy_client::ProxyClient;
-use crate::rpc::proxy::rpc::query_result::RowResult;
-use crate::rpc::proxy::rpc::{DisconnectMessage, ExecuteResults};
 use crate::stats::Stats;
 use crate::{Result, DEFAULT_AUTO_CHECKPOINT};
 
 use super::config::DatabaseConfigStore;
 use super::libsql::{LibSqlConnection, MakeLibSqlConn};
-use super::program::DescribeResult;
+use super::program::DescribeResponse;
 use super::Connection;
 use super::{MakeConnection, Program};
 
@@ -105,13 +104,11 @@ impl MakeConnection for MakeWriteProxyConn {
     }
 }
 
-#[derive(Debug)]
-pub struct WriteProxyConnection {
+pub struct WriteProxyConnection<R = Streaming<ExecResp>> {
     /// Lazily initialized read connection
     read_conn: LibSqlConnection<TransparentMethods>,
     write_proxy: ProxyClient<Channel>,
-    state: Mutex<State>,
-    client_id: Uuid,
+    state: Mutex<TxnStatus>,
     /// FrameNo of the last write performed by this connection on the primary.
     /// any subsequent read on this connection must wait for the replicator to catch up with this
     /// frame_no
@@ -121,51 +118,8 @@ pub struct WriteProxyConnection {
     builder_config: QueryBuilderConfig,
     stats: Arc<Stats>,
     namespace: NamespaceName,
-}
 
-fn execute_results_to_builder<B: QueryResultBuilder>(
-    execute_result: ExecuteResults,
-    mut builder: B,
-    config: &QueryBuilderConfig,
-) -> Result<B> {
-    builder.init(config)?;
-    for result in execute_result.results {
-        match result.row_result {
-            Some(RowResult::Row(rows)) => {
-                builder.begin_step()?;
-                builder.cols_description(rows.column_descriptions.iter().map(|c| Column {
-                    name: &c.name,
-                    decl_ty: c.decltype.as_deref(),
-                }))?;
-
-                builder.begin_rows()?;
-                for row in rows.rows {
-                    builder.begin_row()?;
-                    for value in row.values {
-                        let value: Value = bincode::deserialize(&value.data)
-                            // something is wrong, better stop right here
-                            .map_err(QueryResultBuilderError::from_any)?;
-                        builder.add_row_value(ValueRef::from(&value))?;
-                    }
-                    builder.finish_row()?;
-                }
-
-                builder.finish_rows()?;
-
-                builder.finish_step(rows.affected_row_count, rows.last_insert_rowid)?;
-            }
-            Some(RowResult::Error(err)) => {
-                builder.begin_step()?;
-                builder.step_error(Error::RpcQueryError(err))?;
-                builder.finish_step(0, None)?;
-            }
-            None => (),
-        }
-    }
-
-    builder.finish(execute_result.current_frame_no)?;
-
-    Ok(builder)
+    remote_conn: Mutex<Option<RemoteConnection<R>>>,
 }
 
 impl WriteProxyConnection {
@@ -181,58 +135,73 @@ impl WriteProxyConnection {
         Ok(Self {
             read_conn,
             write_proxy,
-            state: Mutex::new(State::Init),
-            client_id: Uuid::new_v4(),
-            last_write_frame_no: PMutex::new(None),
+            state: Mutex::new(TxnStatus::Init),
+            last_write_frame_no: Default::default(),
             applied_frame_no_receiver,
             builder_config,
             stats,
             namespace,
+            remote_conn: Default::default(),
         })
+    }
+
+    async fn with_remote_conn<F, Ret>(
+        &self,
+        auth: Authenticated,
+        builder_config: QueryBuilderConfig,
+        cb: F,
+    ) -> crate::Result<Ret>
+    where
+        F: FnOnce(&mut RemoteConnection) -> BoxFuture<'_, crate::Result<Ret>>,
+    {
+        let mut remote_conn = self.remote_conn.lock().await;
+        if remote_conn.is_some() {
+            cb(remote_conn.as_mut().unwrap()).await
+        } else {
+            let conn = RemoteConnection::connect(
+                self.write_proxy.clone(),
+                self.namespace.clone(),
+                auth,
+                builder_config,
+            )
+            .await?;
+            let conn = remote_conn.insert(conn);
+            cb(conn).await
+        }
     }
 
     async fn execute_remote<B: QueryResultBuilder>(
         &self,
         pgm: Program,
-        state: &mut State,
+        status: &mut TxnStatus,
         auth: Authenticated,
         builder: B,
-    ) -> Result<(B, State)> {
-        REQUESTS_PROXIED.increment(1);
-
+    ) -> Result<B> {
         self.stats.inc_write_requests_delegated();
-        let mut client = self.write_proxy.clone();
+        *status = TxnStatus::Invalid;
+        let res = self
+            .with_remote_conn(auth, self.builder_config, |conn| {
+                Box::pin(conn.execute(pgm, builder))
+            })
+            .await;
 
-        let mut req = Request::new(crate::rpc::proxy::rpc::ProgramReq {
-            client_id: self.client_id.to_string(),
-            pgm: Some(pgm.into()),
-        });
-
-        let namespace = BinaryMetadataValue::from_bytes(self.namespace.as_slice());
-        req.metadata_mut()
-            .insert_bin(NAMESPACE_METADATA_KEY, namespace);
-        auth.upgrade_grpc_request(&mut req);
-
-        match client.execute(req).await {
-            Ok(r) => {
-                let execute_result = r.into_inner();
-                *state = execute_result.state().into();
-                let current_frame_no = execute_result.current_frame_no;
-                let builder =
-                    execute_results_to_builder(execute_result, builder, &self.builder_config)?;
-                if let Some(current_frame_no) = current_frame_no {
-                    self.update_last_write_frame_no(current_frame_no);
-                }
-
-                Ok((builder, *state))
+        let (builder, new_status, new_frame_no) = match res {
+            Ok(res) => res,
+            Err(e @ (Error::PrimaryStreamDisconnect | Error::PrimaryStreamMisuse)) => {
+                // drop the connection, and reset the state.
+                self.remote_conn.lock().await.take();
+                *status = TxnStatus::Init;
+                return Err(e);
             }
-            Err(e) => {
-                // Set state to invalid, so next call is sent to remote, and we have a chance
-                // to recover state.
-                *state = State::Invalid;
-                Err(Error::RpcQueryExecutionError(e))
-            }
+            Err(e) => return Err(e),
+        };
+
+        *status = new_status;
+        if let Some(current_frame_no) = new_frame_no {
+            self.update_last_write_frame_no(current_frame_no);
         }
+
+        Ok(builder)
     }
 
     fn update_last_write_frame_no(&self, new_frame_no: FrameNo) {
@@ -264,6 +233,161 @@ impl WriteProxyConnection {
     }
 }
 
+struct RemoteConnection<R = Streaming<ExecResp>> {
+    response_stream: R,
+    request_sender: mpsc::Sender<ExecReq>,
+    current_request_id: u32,
+    builder_config: QueryBuilderConfig,
+}
+
+impl RemoteConnection {
+    async fn connect(
+        mut client: ProxyClient<Channel>,
+        namespace: NamespaceName,
+        auth: Authenticated,
+        builder_config: QueryBuilderConfig,
+    ) -> crate::Result<Self> {
+        let (request_sender, receiver) = mpsc::channel(1);
+
+        let stream = tokio_stream::wrappers::ReceiverStream::new(receiver);
+        let mut req = Request::new(stream);
+        let namespace = BinaryMetadataValue::from_bytes(namespace.as_slice());
+        req.metadata_mut()
+            .insert_bin(NAMESPACE_METADATA_KEY, namespace);
+        auth.upgrade_grpc_request(&mut req);
+        let response_stream = client.stream_exec(req).await.unwrap().into_inner();
+
+        Ok(Self {
+            response_stream,
+            request_sender,
+            current_request_id: 0,
+            builder_config,
+        })
+    }
+}
+
+impl<R> RemoteConnection<R>
+where
+    R: Stream<Item = Result<ExecResp, tonic::Status>> + Unpin,
+{
+    /// Perform a request on to the remote peer, and call message_cb for every message received for
+    /// that request. message cb should return whether to expect more message for that request.
+    async fn make_request(
+        &mut self,
+        req: exec_req::Request,
+        mut response_cb: impl FnMut(exec_resp::Response) -> crate::Result<bool>,
+    ) -> crate::Result<()> {
+        let request_id = self.current_request_id;
+        self.current_request_id += 1;
+
+        let req = ExecReq {
+            request_id,
+            request: Some(req),
+        };
+
+        self.request_sender
+            .send(req)
+            .await
+            .map_err(|_| Error::PrimaryStreamDisconnect)?;
+
+        while let Some(resp) = self.response_stream.next().await {
+            match resp {
+                Ok(resp) => {
+                    // there was an interuption, and we moved to the next query
+                    if resp.request_id > request_id {
+                        return Err(Error::PrimaryStreamInterupted);
+                    }
+
+                    // we can ignore response for previously interupted requests
+                    if resp.request_id < request_id {
+                        continue;
+                    }
+
+                    if !response_cb(resp.response.ok_or(Error::PrimaryStreamMisuse)?)? {
+                        break;
+                    }
+                }
+                Err(e) => {
+                    tracing::error!("received an error from connection stream: {e}");
+                    return Err(Error::PrimaryStreamDisconnect);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn execute<B: QueryResultBuilder>(
+        &mut self,
+        program: Program,
+        mut builder: B,
+    ) -> crate::Result<(B, TxnStatus, Option<FrameNo>)> {
+        let mut txn_status = TxnStatus::Invalid;
+        let mut new_frame_no = None;
+        let builder_config = self.builder_config;
+        let cb = |response: exec_resp::Response| match response {
+            exec_resp::Response::ProgramResp(resp) => {
+                crate::rpc::streaming_exec::apply_program_resp_to_builder(
+                    &builder_config,
+                    &mut builder,
+                    resp,
+                    |last_frame_no, status| {
+                        txn_status = status;
+                        new_frame_no = last_frame_no;
+                    },
+                )
+            }
+            exec_resp::Response::DescribeResp(_) => Err(Error::PrimaryStreamMisuse),
+            exec_resp::Response::Error(e) => Err(Error::RpcQueryError(e)),
+        };
+
+        self.make_request(
+            exec_req::Request::Execute(StreamProgramReq {
+                pgm: Some(program.into()),
+            }),
+            cb,
+        )
+        .await?;
+
+        Ok((builder, txn_status, new_frame_no))
+    }
+
+    #[allow(dead_code)] // reference implementation
+    async fn describe(&mut self, stmt: String) -> crate::Result<DescribeResponse> {
+        let mut out = None;
+        let cb = |response: exec_resp::Response| match response {
+            exec_resp::Response::DescribeResp(resp) => {
+                out = Some(DescribeResponse {
+                    params: resp
+                        .params
+                        .into_iter()
+                        .map(|p| DescribeParam { name: p.name })
+                        .collect(),
+                    cols: resp
+                        .cols
+                        .into_iter()
+                        .map(|c| DescribeCol {
+                            name: c.name,
+                            decltype: c.decltype,
+                        })
+                        .collect(),
+                    is_explain: resp.is_explain,
+                    is_readonly: resp.is_readonly,
+                });
+
+                Ok(false)
+            }
+            exec_resp::Response::Error(e) => Err(Error::RpcQueryError(e)),
+            exec_resp::Response::ProgramResp(_) => Err(Error::PrimaryStreamMisuse),
+        };
+
+        self.make_request(exec_req::Request::Describe(StreamDescribeReq { stmt }), cb)
+            .await?;
+
+        out.ok_or(Error::PrimaryStreamMisuse)
+    }
+}
+
 #[async_trait::async_trait]
 impl Connection for WriteProxyConnection {
     async fn execute_program<B: QueryResultBuilder>(
@@ -272,26 +396,30 @@ impl Connection for WriteProxyConnection {
         auth: Authenticated,
         builder: B,
         replication_index: Option<FrameNo>,
-    ) -> Result<(B, State)> {
+    ) -> Result<B> {
         let mut state = self.state.lock().await;
 
         // This is a fresh namespace, and it is not replicated yet, proxy the first request.
         if self.applied_frame_no_receiver.borrow().is_none() {
             self.execute_remote(pgm, &mut state, auth, builder).await
-        } else if *state == State::Init && pgm.is_read_only() {
+        } else if *state == TxnStatus::Init && pgm.is_read_only() {
+            // set the state to invalid before doing anything, and set it to a valid state after.
+            *state = TxnStatus::Invalid;
             self.wait_replication_sync(replication_index).await?;
             // We know that this program won't perform any writes. We attempt to run it on the
             // replica. If it leaves an open transaction, then this program is an interactive
             // transaction, so we rollback the replica, and execute again on the primary.
-            let (builder, new_state) = self
+            let builder = self
                 .read_conn
                 .execute_program(pgm.clone(), auth.clone(), builder, replication_index)
                 .await?;
-            if new_state != State::Init {
+            let new_state = self.read_conn.txn_status()?;
+            if new_state != TxnStatus::Init {
                 self.read_conn.rollback(auth.clone()).await?;
                 self.execute_remote(pgm, &mut state, auth, builder).await
             } else {
-                Ok((builder, new_state))
+                *state = new_state;
+                Ok(builder)
             }
         } else {
             self.execute_remote(pgm, &mut state, auth, builder).await
@@ -303,7 +431,7 @@ impl Connection for WriteProxyConnection {
         sql: String,
         auth: Authenticated,
         replication_index: Option<FrameNo>,
-    ) -> Result<DescribeResult> {
+    ) -> Result<Result<DescribeResponse>> {
         self.wait_replication_sync(replication_index).await?;
         self.read_conn.describe(sql, auth, replication_index).await
     }
@@ -311,8 +439,8 @@ impl Connection for WriteProxyConnection {
     async fn is_autocommit(&self) -> Result<bool> {
         let state = self.state.lock().await;
         Ok(match *state {
-            State::Txn => false,
-            State::Init | State::Invalid => true,
+            TxnStatus::Txn => false,
+            TxnStatus::Init | TxnStatus::Invalid => true,
         })
     }
 
@@ -331,34 +459,32 @@ impl Connection for WriteProxyConnection {
     }
 }
 
-impl Drop for WriteProxyConnection {
-    fn drop(&mut self) {
-        // best effort attempt to disconnect
-        let mut remote = self.write_proxy.clone();
-        let client_id = self.client_id.to_string();
-        tokio::spawn(async move {
-            let _ = remote.disconnect(DisconnectMessage { client_id }).await;
-        });
-    }
-}
-
 #[cfg(test)]
 pub mod test {
-    // use arbitrary::{Arbitrary, Unstructured};
-    // use rand::Fill;
-    //
-    // use super::*;
-    // use crate::query_result_builder::test::test_driver;
+    use super::*;
+    use crate::rpc::streaming_exec::test::random_valid_program_resp;
 
-    // In this test, we generate random ExecuteResults, and ensures that the `execute_results_to_builder` drives the builder FSM correctly.
-    // #[test]
-    // fn test_execute_results_to_builder() {
-    //     test_driver(1000, |b| {
-    //         let mut data = [0; 10_000];
-    //         data.try_fill(&mut rand::thread_rng()).unwrap();
-    //         let mut un = Unstructured::new(&data);
-    //         let res = ExecuteResults::arbitrary(&mut un).unwrap();
-    //         execute_results_to_builder(res, b, &QueryBuilderConfig::default())
-    //     });
-    // }
+    #[tokio::test]
+    // in this test we do a roundtrip: generate a random valid program, stream it to
+    // RemoteConnection, and make sure that the remote connection drives the builder with the same
+    // state transitions.
+    async fn validate_random_stream_response() {
+        for _ in 0..10 {
+            let (response_stream, validator) = random_valid_program_resp(500, 150);
+            let (request_sender, _request_recver) = mpsc::channel(1);
+            let mut remote = RemoteConnection {
+                response_stream: response_stream.map(Ok),
+                request_sender,
+                current_request_id: 0,
+                builder_config: QueryBuilderConfig::default(),
+            };
+
+            remote
+                .execute(Program::seq(&[]), validator)
+                .await
+                .unwrap()
+                .0
+                .into_ret();
+        }
+    }
 }
