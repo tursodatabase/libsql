@@ -6,6 +6,7 @@ use serde::{Serialize, Serializer};
 use serde_json::ser::{CompactFormatter, Formatter};
 use std::sync::atomic::Ordering;
 
+use crate::query_analysis::TxnStatus;
 use crate::query_result_builder::{
     Column, JsonFormatter, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
     TOTAL_RESPONSE_SIZE,
@@ -293,7 +294,11 @@ impl QueryResultBuilder for JsonHttpPayloadBuilder {
     }
 
     // TODO: how do we return last_frame_no?
-    fn finish(&mut self, _last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError> {
+    fn finish(
+        &mut self,
+        _last_frame_no: Option<FrameNo>,
+        _state: TxnStatus,
+    ) -> Result<(), QueryResultBuilderError> {
         self.formatter.end_array(&mut self.buffer)?;
 
         Ok(())
@@ -306,7 +311,8 @@ impl QueryResultBuilder for JsonHttpPayloadBuilder {
 
 #[cfg(test)]
 mod test {
-    use crate::query_result_builder::test::random_builder_driver;
+
+    use crate::query_result_builder::test::{fsm_builder_driver, random_transition};
 
     use super::*;
 
@@ -314,7 +320,8 @@ mod test {
     fn test_json_builder() {
         for _ in 0..1000 {
             let builder = JsonHttpPayloadBuilder::new();
-            let ret = random_builder_driver(100, builder).into_ret();
+            let trace = random_transition(100);
+            let ret = fsm_builder_driver(&trace, builder).into_ret();
             println!("{}", std::str::from_utf8(&ret).unwrap());
             // we produce valid json
             serde_json::from_slice::<Vec<serde_json::Value>>(&ret).unwrap();
