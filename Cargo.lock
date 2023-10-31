@@ -1639,6 +1639,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "futures-option"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "01141bf1c1a803403a2e7ae6a7eb20506c6bd2ebd209fc2424d05572a78af5f5"
+dependencies = [
+ "futures-core",
+]
+
+[[package]]
 name = "futures-sink"
 version = "0.3.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3754,6 +3763,7 @@ dependencies = [
  "fallible-iterator 0.3.0",
  "futures",
  "futures-core",
+ "futures-option",
  "hmac",
  "hyper",
  "hyper-rustls 0.24.1",
