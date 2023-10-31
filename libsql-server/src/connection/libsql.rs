@@ -227,6 +227,27 @@ where
             inner: Arc::new(Mutex::new(conn)),
         })
     }
+#[cfg(test)]
+impl LibSqlConnection<TransparentMethods> {
+    pub fn new_test(path: &Path) -> Self {
+        let (_snd, rcv) = watch::channel(None);
+        let conn = Connection::new(
+            path,
+            Arc::new([]),
+            &crate::libsql_bindings::wal_hook::TRANSPARENT_METHODS,
+            (),
+            Default::default(),
+            DatabaseConfigStore::new_test().into(),
+            QueryBuilderConfig::default(),
+            rcv,
+            Default::default(),
+        )
+        .unwrap();
+
+        Self {
+            inner: Arc::new(Mutex::new(conn)),
+        }
+    }
 }
 
 struct Connection<W: WalHook = TransparentMethods> {
