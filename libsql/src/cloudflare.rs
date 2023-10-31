@@ -1,8 +1,9 @@
 use crate::hrana::{HranaClient, HranaError, HttpSend, ServerMsg};
-use crate::params::Params;
+use crate::params::IntoParams;
 use crate::{Result, Rows};
-use std::pin::Pin;
+use futures::future::LocalBoxFuture;
 
+#[derive(Debug, Clone)]
 pub struct Connection {
     client: HranaClient<CloudflareSender>,
 }
@@ -13,14 +14,14 @@ impl Connection {
         Connection { client }
     }
 
-    pub async fn query(&self, sql: &str, params: Params) -> Result<Rows> {
+    pub async fn query(&self, sql: &str, params: impl IntoParams) -> Result<Rows> {
         let mut stmt = self.client.prepare(sql);
-        stmt.query(&params).await
+        stmt.query(&params.into_params()?).await
     }
 
-    pub async fn execute(&self, sql: &str, params: Params) -> Result<usize> {
+    pub async fn execute(&self, sql: &str, params: impl IntoParams) -> Result<usize> {
         let mut stmt = self.client.prepare(sql);
-        stmt.execute(&params).await
+        stmt.execute(&params.into_params()?).await
     }
 }
 
@@ -61,16 +62,14 @@ impl CloudflareSender {
     }
 }
 
-impl HttpSend for CloudflareSender {
-    type Result = DynFuture<std::result::Result<ServerMsg, HranaError>>;
+impl<'a> HttpSend<'a> for CloudflareSender {
+    type Result = LocalBoxFuture<'a, std::result::Result<ServerMsg, HranaError>>;
 
     fn http_send(&self, url: String, auth: String, body: String) -> Self::Result {
         let fut = Self::send(url, auth, body);
         Box::pin(fut)
     }
 }
-
-type DynFuture<T> = Pin<Box<dyn std::future::Future<Output = T> + 'static>>;
 
 impl From<worker::Error> for HranaError {
     fn from(value: worker::Error) -> Self {

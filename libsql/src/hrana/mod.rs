@@ -1,19 +1,19 @@
 #![allow(dead_code)]
 
+#[cfg(feature = "remote")]
 mod hyper;
 mod pipeline;
 mod proto;
 
 use crate::util::coerce_url_scheme;
-use pipeline::{
+pub(crate) use pipeline::{
     ClientMsg, Response, ServerMsg, StreamBatchReq, StreamExecuteReq, StreamRequest,
     StreamResponse, StreamResponseError, StreamResponseOk,
 };
 use proto::{Batch, BatchResult, Col, Stmt, StmtResult};
 
-use crate::util::ConnectorService;
 use crate::Error;
-use crate::{params::Params, Column, ValueType};
+use crate::{params::Params, ValueType};
 use std::collections::{HashMap, VecDeque};
 use std::future::Future;
 use std::ops::Deref;
@@ -21,8 +21,6 @@ use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};
 
 use super::rows::{RowInner, RowsInner};
-use crate::connection::Conn;
-use crate::transaction::Transaction;
 
 type Result<T> = std::result::Result<T, HranaError>;
 
@@ -84,11 +82,12 @@ pub enum HranaError {
     Api(String),
 }
 
+#[cfg(feature = "remote")]
 impl HranaClient<hyper::HttpSender> {
     pub(crate) fn new_with_connector(
         url: impl Into<String>,
         token: impl Into<String>,
-        connector: ConnectorService,
+        connector: crate::util::ConnectorService,
     ) -> Self {
         let inner = hyper::HttpSender::new(connector);
         Self::new(url.into(), token.into(), inner)
@@ -256,8 +255,9 @@ where
     }
 }
 
+#[cfg(feature = "remote")]
 #[async_trait::async_trait]
-impl Conn for HranaClient<hyper::HttpSender> {
+impl crate::connection::Conn for HranaClient<hyper::HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
         let mut stmt = self.prepare(sql);
         let rows = stmt.execute(&params).await?;
@@ -282,7 +282,7 @@ impl Conn for HranaClient<hyper::HttpSender> {
     async fn transaction(
         &self,
         _tx_behavior: crate::TransactionBehavior,
-    ) -> crate::Result<Transaction> {
+    ) -> crate::Result<crate::transaction::Transaction> {
         todo!()
     }
 
@@ -353,6 +353,7 @@ where
     }
 }
 
+#[cfg(feature = "remote")]
 #[async_trait::async_trait]
 impl super::statement::Stmt for Statement<hyper::HttpSender> {
     fn finalize(&mut self) {}
@@ -375,7 +376,7 @@ impl super::statement::Stmt for Statement<hyper::HttpSender> {
         todo!()
     }
 
-    fn columns(&self) -> Vec<Column> {
+    fn columns(&self) -> Vec<crate::Column> {
         todo!()
     }
 }

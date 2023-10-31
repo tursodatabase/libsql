@@ -31,7 +31,7 @@ enum DbType {
     File { path: String, flags: OpenFlags },
     #[cfg(feature = "replication")]
     Sync { db: crate::local::Database },
-    #[cfg(feature = "hrana")]
+    #[cfg(feature = "remote")]
     Remote {
         url: String,
         auth_token: String,
@@ -49,7 +49,7 @@ impl fmt::Debug for DbType {
             Self::File { .. } => write!(f, "File"),
             #[cfg(feature = "replication")]
             Self::Sync { .. } => write!(f, "Sync"),
-            #[cfg(feature = "hrana")]
+            #[cfg(feature = "remote")]
             Self::Remote { .. } => write!(f, "Remote"),
             _ => write!(f, "no database type set"),
         }
@@ -177,7 +177,7 @@ cfg_replication! {
     }
 }
 
-cfg_hrana! {
+cfg_remote! {
     impl Database {
         pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
             let mut connector = hyper::client::HttpConnector::new();
@@ -257,7 +257,7 @@ impl Database {
                 Ok(Connection { conn })
             }
 
-            #[cfg(feature = "hrana")]
+            #[cfg(feature = "remote")]
             DbType::Remote {
                 url,
                 auth_token,
