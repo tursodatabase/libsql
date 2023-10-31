@@ -1,2 +1,5 @@
 [build]
 rustflags = ["--cfg", "tokio_unstable"]
+
+[alias]
+xtask = "run --manifest-path ./xtask/Cargo.toml --"

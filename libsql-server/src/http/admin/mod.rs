@@ -6,7 +6,9 @@ use chrono::NaiveDateTime;
 use futures::TryStreamExt;
 use hyper::Body;
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
+use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
+use std::cell::OnceCell;
 use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -49,6 +51,8 @@ impl<M: MakeNamespace, C> FromRef<Arc<AppState<M, C>>> for Metrics {
     }
 }
 
+static PROM_HANDLE: Mutex<OnceCell<PrometheusHandle>> = Mutex::new(OnceCell::new());
+
 pub async fn run<M, A, C>(
     acceptor: A,
     user_http_server: UserHttpServer<M>,
@@ -61,12 +65,17 @@ where
     M: MakeNamespace,
     C: Connector,
 {
+    let prom_handle = if !disable_metrics {
+        let lock = PROM_HANDLE.lock();
+        let prom_handle = lock.get_or_init(|| PrometheusBuilder::new().install_recorder().unwrap());
+        Some(prom_handle.clone())
+    } else {
+        None
+    };
+
     use axum::routing::{get, post};
     let metrics = Metrics {
-        handle: (!disable_metrics)
-            .then(|| PrometheusBuilder::new().install_recorder())
-            .transpose()
-            .unwrap(),
+        handle: prom_handle,
     };
     let router = axum::Router::new()
         .route("/", get(handle_get_index))

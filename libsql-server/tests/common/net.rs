@@ -132,6 +132,35 @@ impl Service<Uri> for TurmoilConnector {
 
 pub type TestServer = Server<TurmoilConnector, TurmoilAcceptor, TurmoilConnector>;
 
+#[async_trait::async_trait]
+pub trait SimServer {
+    async fn start_sim(self, user_api_port: usize) -> anyhow::Result<()>;
+}
+
+#[async_trait::async_trait]
+impl SimServer for TestServer {
+    async fn start_sim(mut self, user_api_port: usize) -> anyhow::Result<()> {
+        // We need to ensure that libsql's init code runs before we do anything
+        // with rusqlite in sqld. This is because libsql has saftey checks and
+        // needs to configure the sqlite api. Thus if we init sqld first
+        // it will fail. To work around this we open a temp db in memory db
+        // to ensure we run libsql's init code first. This DB is not actually
+        // used in the test only for its run once init code.
+        //
+        // This does change the serialization mode for sqld but because the mode
+        // that we use in libsql is safer than the sqld one it is still safe.
+        let db = libsql::Database::open_in_memory().unwrap();
+        db.connect().unwrap();
+
+        let user_api = TurmoilAcceptor::bind(([0, 0, 0, 0], user_api_port as u16)).await?;
+        self.user_api_config.http_acceptor = Some(user_api);
+
+        self.start().await?;
+
+        Ok(())
+    }
+}
+
 pub fn init_tracing() {
     static INIT_TRACING: Once = Once::new();
     INIT_TRACING.call_once(|| {

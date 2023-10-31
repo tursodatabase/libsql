@@ -1,5 +1,7 @@
 //! Tests for standalone primary configuration
 
+use crate::common::net::SimServer;
+
 use super::common;
 
 use std::sync::Arc;
@@ -10,7 +12,7 @@ use tokio::sync::Notify;
 
 use sqld::config::UserApiConfig;
 
-use common::net::{init_tracing, TestServer, TurmoilAcceptor, TurmoilConnector};
+use common::net::{init_tracing, TestServer, TurmoilConnector};
 
 async fn make_standalone_server() -> Result<(), Box<dyn std::error::Error>> {
     init_tracing();
@@ -19,13 +21,12 @@ async fn make_standalone_server() -> Result<(), Box<dyn std::error::Error>> {
         path: tmp.path().to_owned().into(),
         user_api_config: UserApiConfig {
             hrana_ws_acceptor: None,
-            http_acceptor: Some(TurmoilAcceptor::bind(([0, 0, 0, 0], 8080)).await?),
             ..Default::default()
         },
         ..Default::default()
     };
 
-    server.start().await?;
+    server.start_sim(8080).await?;
 
     Ok(())
 }
