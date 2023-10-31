@@ -110,7 +110,7 @@ pub async fn execute_batch(
     replication_index: Option<u64>,
 ) -> Result<proto::BatchResult> {
     let batch_builder = HranaBatchProtoBuilder::default();
-    let (builder, _state) = db
+    let builder = db
         .execute_program(pgm, auth, batch_builder, replication_index)
         .await
         .map_err(catch_batch_error)?;
@@ -151,7 +151,7 @@ pub async fn execute_sequence(
     replication_index: Option<FrameNo>,
 ) -> Result<()> {
     let builder = StepResultsBuilder::default();
-    let (builder, _state) = db
+    let builder = db
         .execute_program(pgm, auth, builder, replication_index)
         .await
         .map_err(catch_batch_error)?;

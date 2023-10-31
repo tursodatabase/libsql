@@ -15,14 +15,14 @@ use crate::error::Error;
 use crate::libsql_bindings::wal_hook::WalHook;
 use crate::metrics::{READ_QUERY_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT, WRITE_QUERY_COUNT};
 use crate::query::Query;
-use crate::query_analysis::{State, StmtKind};
+use crate::query_analysis::{StmtKind, TxnStatus};
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
 use crate::replication::FrameNo;
 use crate::stats::Stats;
 use crate::Result;
 
 use super::config::DatabaseConfigStore;
-use super::program::{Cond, DescribeCol, DescribeParam, DescribeResponse, DescribeResult};
+use super::program::{Cond, DescribeCol, DescribeParam, DescribeResponse};
 use super::{MakeConnection, Program, Step, TXN_TIMEOUT};
 
 pub struct MakeLibSqlConn<W: WalHook + 'static> {
@@ -146,7 +146,6 @@ where
     }
 }
 
-#[derive(Clone)]
 pub struct LibSqlConnection<W: WalHook> {
     inner: Arc<Mutex<Connection<W>>>,
 }
@@ -158,6 +157,14 @@ impl<W: WalHook> std::fmt::Debug for LibSqlConnection<W> {
                 write!(f, "{conn:?}")
             }
             None => write!(f, "<locked>"),
+        }
+    }
+}
+
+impl<W: WalHook> Clone for LibSqlConnection<W> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
         }
     }
 }
@@ -287,7 +294,7 @@ struct TxnSlot<T: WalHook> {
     /// is stolen.
     conn: Arc<Mutex<Connection<T>>>,
     /// Time at which the transaction can be stolen
-    created_at: tokio::time::Instant,
+    timeout_at: tokio::time::Instant,
     /// The transaction lock was stolen
     is_stolen: AtomicBool,
 }
@@ -414,6 +421,17 @@ fn value_size(val: &rusqlite::types::ValueRef) -> usize {
     }
 }
 
+impl From<TransactionState> for TxnStatus {
+    fn from(value: TransactionState) -> Self {
+        use TransactionState as Tx;
+        match value {
+            Tx::None => TxnStatus::Init,
+            Tx::Read | Tx::Write => TxnStatus::Txn,
+            _ => unreachable!(),
+        }
+    }
+}
+
 impl<W: WalHook> Connection<W> {
     fn new(
         path: &Path,
@@ -468,7 +486,7 @@ impl<W: WalHook> Connection<W> {
         this: Arc<Mutex<Self>>,
         pgm: Program,
         mut builder: B,
-    ) -> Result<(B, State)> {
+    ) -> Result<B> {
         use rusqlite::TransactionState as Tx;
 
         let state = this.lock().state.clone();
@@ -532,20 +550,18 @@ impl<W: WalHook> Connection<W> {
             results.push(res);
         }
 
-        builder.finish(*this.lock().current_frame_no_receiver.borrow_and_update())?;
+        let status = this
+            .lock()
+            .conn
+            .transaction_state(Some(DatabaseName::Main))?
+            .into();
 
-        let state = if matches!(
-            this.lock()
-                .conn
-                .transaction_state(Some(DatabaseName::Main))?,
-            Tx::Read | Tx::Write
-        ) {
-            State::Txn
-        } else {
-            State::Init
-        };
+        builder.finish(
+            *this.lock().current_frame_no_receiver.borrow_and_update(),
+            status,
+        )?;
 
-        Ok((builder, state))
+        Ok(builder)
     }
 
     fn execute_step(
@@ -605,7 +621,7 @@ impl<W: WalHook> Connection<W> {
         let blocked = match query.stmt.kind {
             StmtKind::Read | StmtKind::TxnBegin | StmtKind::Other => config.block_reads,
             StmtKind::Write => config.block_reads || config.block_writes,
-            StmtKind::TxnEnd | StmtKind::Release | StmtKind::Savepoint => false,
+            StmtKind::TxnEnd => false,
         };
         if blocked {
             return Err(Error::Blocked(config.block_reason.clone()));
@@ -735,7 +751,7 @@ impl<W: WalHook> Connection<W> {
             .update_query_metrics(sql, rows_read, rows_written, mem_used, elapsed)
     }
 
-    fn describe(&self, sql: &str) -> DescribeResult {
+    fn describe(&self, sql: &str) -> crate::Result<DescribeResponse> {
         let stmt = self.conn.prepare(sql)?;
 
         let params = (1..=stmt.parameter_count())
@@ -840,7 +856,7 @@ where
         auth: Authenticated,
         builder: B,
         _replication_index: Option<FrameNo>,
-    ) -> Result<(B, State)> {
+    ) -> Result<B> {
         check_program_auth(auth, &pgm)?;
         let conn = self.inner.clone();
         tokio::task::spawn_blocking(move || Connection::run(conn, pgm, builder))
@@ -853,7 +869,7 @@ where
         sql: String,
         auth: Authenticated,
         _replication_index: Option<FrameNo>,
-    ) -> Result<DescribeResult> {
+    ) -> Result<crate::Result<DescribeResponse>> {
         check_describe_auth(auth)?;
         let conn = self.inner.clone();
         let res = tokio::task::spawn_blocking(move || conn.lock().describe(&sql))
@@ -932,7 +948,7 @@ mod test {
     fn test_libsql_conn_builder_driver() {
         test_driver(1000, |b| {
             let conn = setup_test_conn();
-            Connection::run(conn, Program::seq(&["select * from test"]), b).map(|x| x.0)
+            Connection::run(conn, Program::seq(&["select * from test"]), b)
         })
     }
 
@@ -956,23 +972,23 @@ mod test {
 
         tokio::time::pause();
         let conn = make_conn.make_connection().await.unwrap();
-        let (_builder, state) = Connection::run(
+        let _builder = Connection::run(
             conn.inner.clone(),
             Program::seq(&["BEGIN IMMEDIATE"]),
             TestBuilder::default(),
         )
         .unwrap();
-        assert_eq!(state, State::Txn);
+        assert_eq!(conn.txn_status().unwrap(), TxnStatus::Txn);
 
         tokio::time::advance(TXN_TIMEOUT * 2).await;
 
-        let (builder, state) = Connection::run(
+        let builder = Connection::run(
             conn.inner.clone(),
             Program::seq(&["BEGIN IMMEDIATE"]),
             TestBuilder::default(),
         )
         .unwrap();
-        assert_eq!(state, State::Init);
+        assert_eq!(conn.txn_status().unwrap(), TxnStatus::Init);
         assert!(matches!(builder.into_ret()[0], Err(Error::LibSqlTxTimeout)));
     }
 
@@ -1000,13 +1016,13 @@ mod test {
         for _ in 0..10 {
             let conn = make_conn.make_connection().await.unwrap();
             set.spawn_blocking(move || {
-                let (builder, state) = Connection::run(
-                    conn.inner,
+                let builder = Connection::run(
+                    conn.inner.clone(),
                     Program::seq(&["BEGIN IMMEDIATE"]),
                     TestBuilder::default(),
                 )
                 .unwrap();
-                assert_eq!(state, State::Txn);
+                assert_eq!(conn.txn_status().unwrap(), TxnStatus::Txn);
                 assert!(builder.into_ret()[0].is_ok());
             });
         }
@@ -1041,15 +1057,15 @@ mod test {
 
         let conn1 = make_conn.make_connection().await.unwrap();
         tokio::task::spawn_blocking({
-            let conn = conn1.inner.clone();
+            let conn = conn1.clone();
             move || {
-                let (builder, state) = Connection::run(
-                    conn,
+                let builder = Connection::run(
+                    conn.inner.clone(),
                     Program::seq(&["BEGIN IMMEDIATE"]),
                     TestBuilder::default(),
                 )
                 .unwrap();
-                assert_eq!(state, State::Txn);
+                assert_eq!(conn.txn_status().unwrap(), TxnStatus::Txn);
                 assert!(builder.into_ret()[0].is_ok());
             }
         })
@@ -1058,16 +1074,16 @@ mod test {
 
         let conn2 = make_conn.make_connection().await.unwrap();
         let handle = tokio::task::spawn_blocking({
-            let conn = conn2.inner.clone();
+            let conn = conn2.clone();
             move || {
                 let before = Instant::now();
-                let (builder, state) = Connection::run(
-                    conn,
+                let builder = Connection::run(
+                    conn.inner.clone(),
                     Program::seq(&["BEGIN IMMEDIATE"]),
                     TestBuilder::default(),
                 )
                 .unwrap();
-                assert_eq!(state, State::Txn);
+                assert_eq!(conn.txn_status().unwrap(), TxnStatus::Txn);
                 assert!(builder.into_ret()[0].is_ok());
                 before.elapsed()
             }
@@ -1077,12 +1093,15 @@ mod test {
         tokio::time::sleep(wait_time).await;
 
         tokio::task::spawn_blocking({
-            let conn = conn1.inner.clone();
+            let conn = conn1.clone();
             move || {
-                let (builder, state) =
-                    Connection::run(conn, Program::seq(&["COMMIT"]), TestBuilder::default())
-                        .unwrap();
-                assert_eq!(state, State::Init);
+                let builder = Connection::run(
+                    conn.inner.clone(),
+                    Program::seq(&["COMMIT"]),
+                    TestBuilder::default(),
+                )
+                .unwrap();
+                assert_eq!(conn.txn_status().unwrap(), TxnStatus::Init);
                 assert!(builder.into_ret()[0].is_ok());
             }
         })

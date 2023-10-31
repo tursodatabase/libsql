@@ -8,6 +8,7 @@ use tokio::sync::{mpsc, oneshot};
 use crate::auth::Authenticated;
 use crate::connection::program::Program;
 use crate::connection::Connection;
+use crate::query_analysis::TxnStatus;
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
 };

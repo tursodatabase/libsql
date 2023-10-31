@@ -58,7 +58,7 @@ pub async fn execute_stmt(
     replication_index: Option<FrameNo>,
 ) -> Result<proto::StmtResult> {
     let builder = SingleStatementBuilder::default();
-    let (stmt_res, _) = db
+    let stmt_res = db
         .execute_batch(vec![query], auth, builder, replication_index)
         .await
         .map_err(catch_stmt_error)?;
