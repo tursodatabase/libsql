@@ -1,13 +1,13 @@
 pub mod proxy {
     #![allow(clippy::all)]
-    tonic::include_proto!("proxy");
+    include!("generated/proxy.rs");
 }
 
 pub mod replication {
     #![allow(clippy::all)]
 
     use uuid::Uuid;
-    tonic::include_proto!("wal_log");
+    include!("generated/wal_log.rs");
 
     pub const NO_HELLO_ERROR_MSG: &str = "NO_HELLO";
     pub const NEED_SNAPSHOT_ERROR_MSG: &str = "NEED_SNAPSHOT";

@@ -26,8 +26,5 @@ async-stream = "0.3.5"
 arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }
 bincode = "1.3.3"
 tempfile = "3.8.0"
-
-[build-dependencies]
 prost-build = "0.12.0"
-protobuf-src = "1.1.0"
 tonic-build = "0.10"

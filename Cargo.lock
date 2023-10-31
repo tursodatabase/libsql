@@ -2263,7 +2263,6 @@ dependencies = [
  "parking_lot",
  "prost",
  "prost-build",
- "protobuf-src",
  "serde",
  "sqld-libsql-bindings",
  "tempfile",
