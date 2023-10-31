@@ -113,6 +113,8 @@ pub struct Options {
     /// When recovering a transaction, when its page cache needs to be swapped onto local file,
     /// this field contains a path for a file to be used.
     pub restore_transaction_cache_fpath: String,
+    /// Max number of retries for S3 operations
+    pub s3_max_retries: u32,
 }
 
 impl Options {
@@ -142,7 +144,10 @@ impl Options {
                 None,
                 "Static",
             ))
-            .retry_config(aws_sdk_s3::config::retry::RetryConfig::standard().with_max_attempts(6))
+            .retry_config(
+                aws_sdk_s3::config::retry::RetryConfig::standard()
+                    .with_max_attempts(self.s3_max_retries),
+            )
             .build();
         Ok(conf)
     }
@@ -192,6 +197,7 @@ impl Options {
                 other
             ),
         };
+        let s3_max_retries = env_var_or("LIBSQL_BOTTOMLESS_S3_MAX_RETRIES", 10).parse::<u32>()?;
         Ok(Options {
             db_id,
             create_bucket_if_not_exists: true,
@@ -207,6 +213,7 @@ impl Options {
             region,
             restore_transaction_cache_fpath,
             bucket_name,
+            s3_max_retries,
         })
     }
 }
