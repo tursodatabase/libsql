@@ -1,23 +1,22 @@
 #![allow(dead_code)]
 
+mod hyper;
 mod pipeline;
 mod proto;
 
 use crate::util::coerce_url_scheme;
-use hyper::header::AUTHORIZATION;
 use pipeline::{
     ClientMsg, Response, ServerMsg, StreamBatchReq, StreamExecuteReq, StreamRequest,
     StreamResponse, StreamResponseError, StreamResponseOk,
 };
 use proto::{Batch, BatchResult, Col, Stmt, StmtResult};
 
-use hyper::StatusCode;
-use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
-
 use crate::util::ConnectorService;
 use crate::Error;
 use crate::{params::Params, Column, ValueType};
 use std::collections::{HashMap, VecDeque};
+use std::future::Future;
+use std::ops::Deref;
 use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};
 
@@ -37,57 +36,36 @@ struct Cookie {
 
 /// Generic HTTP client. Needs a helper function that actually sends
 /// the request.
-#[derive(Clone, Debug)]
-pub struct Client {
-    inner: InnerClient,
-    cookies: Arc<RwLock<HashMap<u64, Cookie>>>,
+#[derive(Debug)]
+pub struct HranaClient<T>(Arc<InnerClient<T>>);
+
+impl<T> Clone for HranaClient<T> {
+    fn clone(&self) -> Self {
+        HranaClient(self.0.clone())
+    }
+}
+
+impl<T> Deref for HranaClient<T> {
+    type Target = InnerClient<T>;
+
+    fn deref(&self) -> &Self::Target {
+        self.0.deref()
+    }
+}
+
+#[derive(Debug)]
+pub struct InnerClient<T> {
+    inner: T,
+    cookies: RwLock<HashMap<u64, Cookie>>,
     url_for_queries: String,
     auth: String,
-    affected_row_count: Arc<AtomicU64>,
-    last_insert_rowid: Arc<AtomicI64>,
+    affected_row_count: AtomicU64,
+    last_insert_rowid: AtomicI64,
 }
 
-#[derive(Clone, Debug)]
-struct InnerClient {
-    inner: hyper::Client<HttpsConnector<ConnectorService>, hyper::Body>,
-}
-
-impl InnerClient {
-    fn new(connector: ConnectorService) -> Self {
-        let https = HttpsConnectorBuilder::new()
-            .with_native_roots()
-            .https_or_http()
-            .enable_http1()
-            .wrap_connector(connector);
-        let inner = hyper::Client::builder().build(https);
-
-        Self { inner }
-    }
-
-    async fn send(&self, url: String, auth: String, body: String) -> Result<ServerMsg> {
-        let req = hyper::Request::post(url)
-            .header(AUTHORIZATION, auth)
-            .body(hyper::Body::from(body))
-            .unwrap();
-
-        let res = self.inner.request(req).await.map_err(HranaError::from)?;
-
-        if res.status() != StatusCode::OK {
-            let body = hyper::body::to_bytes(res.into_body())
-                .await
-                .map_err(HranaError::from)?;
-            let body = String::from_utf8(body.into()).unwrap();
-            return Err(HranaError::Api(body));
-        }
-
-        let body = hyper::body::to_bytes(res.into_body())
-            .await
-            .map_err(HranaError::from)?;
-
-        let msg = serde_json::from_slice::<ServerMsg>(&body[..]).map_err(HranaError::from)?;
-
-        Ok(msg)
-    }
+pub trait HttpSend<'a> {
+    type Result: Future<Output = Result<ServerMsg>> + 'a;
+    fn http_send(&'a self, url: String, auth: String, body: String) -> Self::Result;
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -101,36 +79,40 @@ pub enum HranaError {
     #[error("json error: `{0}`")]
     Json(#[from] serde_json::Error),
     #[error("http error: `{0}`")]
-    Http(#[from] hyper::Error),
+    Http(String),
     #[error("api error: `{0}`")]
     Api(String),
 }
 
-impl Client {
+impl HranaClient<hyper::HttpSender> {
     pub(crate) fn new_with_connector(
         url: impl Into<String>,
         token: impl Into<String>,
         connector: ConnectorService,
     ) -> Self {
-        let inner = InnerClient::new(connector);
-
-        let token = token.into();
-        let url = url.into();
-        // The `libsql://` protocol is an alias for `https://`.
-        let base_url = coerce_url_scheme(&url);
-        let url_for_queries = format!("{base_url}/v2/pipeline");
-        Self {
-            inner,
-            cookies: Arc::new(RwLock::new(HashMap::new())),
-            url_for_queries,
-            auth: format!("Bearer {token}"),
-            affected_row_count: Arc::new(AtomicU64::new(0)),
-            last_insert_rowid: Arc::new(AtomicI64::new(0)),
-        }
+        let inner = hyper::HttpSender::new(connector);
+        Self::new(url.into(), token.into(), inner)
     }
 }
 
-impl Client {
+impl<T> HranaClient<T>
+where
+    T: for<'a> HttpSend<'a>,
+{
+    pub fn new(url: String, token: String, inner: T) -> Self {
+        // The `libsql://` protocol is an alias for `https://`.
+        let base_url = coerce_url_scheme(&url);
+        let url_for_queries = format!("{base_url}/v2/pipeline");
+        HranaClient(Arc::new(InnerClient {
+            inner,
+            cookies: RwLock::new(HashMap::new()),
+            url_for_queries,
+            auth: format!("Bearer {token}"),
+            affected_row_count: AtomicU64::new(0),
+            last_insert_rowid: AtomicI64::new(0),
+        }))
+    }
+
     pub async fn raw_batch(&self, stmts: impl IntoIterator<Item = Stmt>) -> Result<BatchResult> {
         let mut batch = Batch::new();
         for stmt in stmts.into_iter() {
@@ -147,7 +129,7 @@ impl Client {
         let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
         let mut response: ServerMsg = self
             .inner
-            .send(self.url_for_queries.clone(), self.auth.clone(), body)
+            .http_send(self.url_for_queries.clone(), self.auth.clone(), body)
             .await?;
 
         if response.results.is_empty() {
@@ -197,7 +179,7 @@ impl Client {
         let url = cookie
             .base_url
             .unwrap_or_else(|| self.url_for_queries.clone());
-        let mut response: ServerMsg = self.inner.send(url, self.auth.clone(), body).await?;
+        let mut response: ServerMsg = self.inner.http_send(url, self.auth.clone(), body).await?;
 
         if tx_id > 0 {
             let base_url = response.base_url;
@@ -258,17 +240,27 @@ impl Client {
             .base_url
             .unwrap_or_else(|| self.url_for_queries.clone());
         let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
-        self.inner.send(url, self.auth.clone(), body).await.ok();
+        self.inner
+            .http_send(url, self.auth.clone(), body)
+            .await
+            .ok();
         self.cookies.write().unwrap().remove(&tx_id);
         Ok(())
+    }
+
+    pub fn prepare(&self, sql: &str) -> Statement<T> {
+        Statement {
+            client: self.clone(),
+            inner: Stmt::new(sql, true),
+        }
     }
 }
 
 #[async_trait::async_trait]
-impl Conn for Client {
+impl Conn for HranaClient<hyper::HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
-        let mut stmt = self.prepare(sql).await?;
-        let rows = stmt.execute(params).await?;
+        let mut stmt = self.prepare(sql);
+        let rows = stmt.execute(&params).await?;
 
         Ok(rows as u64)
     }
@@ -312,16 +304,16 @@ impl Conn for Client {
     }
 }
 
-pub struct Statement {
-    client: Client,
+pub struct Statement<T> {
+    client: HranaClient<T>,
     inner: Stmt,
 }
 
-#[async_trait::async_trait]
-impl super::statement::Stmt for Statement {
-    fn finalize(&mut self) {}
-
-    async fn execute(&mut self, params: &Params) -> crate::Result<usize> {
+impl<T> Statement<T>
+where
+    T: for<'a> HttpSend<'a>,
+{
+    pub async fn execute(&mut self, params: &Params) -> crate::Result<usize> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
@@ -342,7 +334,7 @@ impl super::statement::Stmt for Statement {
         Ok(affected_row_count)
     }
 
-    async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
+    pub async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
@@ -358,6 +350,19 @@ impl super::statement::Stmt for Statement {
                 cols: Arc::new(cols),
             }),
         })
+    }
+}
+
+#[async_trait::async_trait]
+impl super::statement::Stmt for Statement<hyper::HttpSender> {
+    fn finalize(&mut self) {}
+
+    async fn execute(&mut self, params: &Params) -> crate::Result<usize> {
+        self.execute(params).await
+    }
+
+    async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
+        self.query(params).await
     }
 
     fn reset(&mut self) {}

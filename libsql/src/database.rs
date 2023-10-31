@@ -263,7 +263,7 @@ impl Database {
                 auth_token,
                 connector,
             } => {
-                let conn = std::sync::Arc::new(crate::hrana::Client::new_with_connector(
+                let conn = std::sync::Arc::new(crate::hrana::HranaClient::new_with_connector(
                     url,
                     auth_token,
                     connector.clone(),

@@ -73,6 +73,16 @@ macro_rules! cfg_hrana {
     }
 }
 
+macro_rules! cfg_cloudflare {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "cloudflare")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "cloudflare")))]
+            $item
+        )*
+    }
+}
+
 macro_rules! cfg_http {
     ($($item:item)*) => {
         $(
@@ -121,6 +131,10 @@ pub use value::{Value, ValueRef, ValueType};
 
 cfg_hrana! {
     mod hrana;
+}
+
+cfg_cloudflare! {
+    mod cloudflare;
 }
 
 pub use self::{
