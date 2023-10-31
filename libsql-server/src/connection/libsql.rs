@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use metrics::histogram;
 use parking_lot::{Mutex, RwLock};
-use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus};
+use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus, TransactionState};
 use sqld_libsql_bindings::wal_hook::{TransparentMethods, WalMethodsHook};
 use tokio::sync::{watch, Notify};
 use tokio::time::{Duration, Instant};
@@ -294,7 +294,7 @@ struct TxnSlot<T: WalHook> {
     /// is stolen.
     conn: Arc<Mutex<Connection<T>>>,
     /// Time at which the transaction can be stolen
-    timeout_at: tokio::time::Instant,
+    created_at: tokio::time::Instant,
     /// The transaction lock was stolen
     is_stolen: AtomicBool,
 }
@@ -621,7 +621,7 @@ impl<W: WalHook> Connection<W> {
         let blocked = match query.stmt.kind {
             StmtKind::Read | StmtKind::TxnBegin | StmtKind::Other => config.block_reads,
             StmtKind::Write => config.block_reads || config.block_writes,
-            StmtKind::TxnEnd => false,
+            StmtKind::TxnEnd | StmtKind::Release | StmtKind::Savepoint => false,
         };
         if blocked {
             return Err(Error::Blocked(config.block_reason.clone()));
