@@ -1610,7 +1610,8 @@ TESTSRC2 = \
   $(SRC01) \
   $(SRC07) \
   $(SRC10) \
-  $(TOP)\ext\async\sqlite3async.c
+  $(TOP)\ext\async\sqlite3async.c \
+  fts5.c
 
 # Header files used by all library source files.
 #
