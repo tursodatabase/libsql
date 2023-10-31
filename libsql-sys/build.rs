@@ -17,18 +17,29 @@ fn run_make() {
         .unwrap();
 }
 
+fn precompiled() -> bool {
+    std::fs::metadata(Path::new(SQLITE_DIR).join(".libs").join("liblibsql.a")).is_ok()
+}
+
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
 
+    // Fast path: liblibsql.a exists and bindings are ready
     println!("cargo:rerun-if-env-changed=LIBSQL_REGENERATE_BINDINGS");
-    if env::var("LIBSQL_REGENERATE_BINDINGS").is_err() {
+    if precompiled() && env::var("LIBSQL_REGENERATE_BINDINGS").is_err() {
         let bindgen_rs_path = if cfg!(feature = "session") {
             "bundled/bindings/session_bindgen.rs"
         } else {
             "bundled/bindings/bindgen.rs"
         };
-        std::fs::copy(Path::new(bindgen_rs_path), out_path).unwrap();
+        std::fs::copy(Path::new(bindgen_rs_path), &out_path).unwrap();
+        std::fs::copy(
+            Path::new(SQLITE_DIR).join(".libs").join("liblibsql.a"),
+            Path::new(&out_dir).join("liblibsql.a"),
+        )
+        .unwrap();
+        println!("cargo:lib_dir={out_dir}");
         return;
     }
 
