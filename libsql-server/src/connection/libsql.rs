@@ -227,6 +227,17 @@ where
             inner: Arc::new(Mutex::new(conn)),
         })
     }
+
+    pub fn txn_status(&self) -> crate::Result<TxnStatus> {
+        Ok(self
+            .inner
+            .lock()
+            .conn
+            .transaction_state(Some(DatabaseName::Main))?
+            .into())
+    }
+}
+
 #[cfg(test)]
 impl LibSqlConnection<TransparentMethods> {
     pub fn new_test(path: &Path) -> Self {
