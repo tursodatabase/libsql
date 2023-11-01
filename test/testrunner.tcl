@@ -425,7 +425,7 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
       if {$isLast} { usage }
     } elseif {($n>2 && [string match "$a*" --zipvfs]) || $a=="-z"} {
       incr ii
-      set TRG(zipvfs) [lindex $argv $ii]
+      set TRG(zipvfs) [file normalize [lindex $argv $ii]]
       if {$isLast} { usage }
     } else {
       usage

@@ -1,5 +1,5 @@
-C Version\s3.44.0
-D 2023-11-01T11:23:50.173
+C Fix\stestrunner.tcl\sso\sthat\sit\saccepts\sa\srelative\spath\sas\san\sargument\sto\sthe\s--zipvfs\sswitch.
+D 2023-11-01T14:33:44.381
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1647,7 +1647,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 68454ef88508c196d19e8694daa27bff7107a91857799eaa12f417188ae53ede
-F test/testrunner.tcl 14c8b8ece841b1dd17516a0dc9c7ad9b5f4d4db7987974d3fdf66ae56b2a71fa
+F test/testrunner.tcl 8a6721213bce1cfd3b33e1588cc6431143d96b98819206bf91f5a205fbb150d4
 F test/testrunner_data.tcl 7f73f93634d32dafc857ed491b840f371113d09fde6a8bfb9e47b938d47b8c85
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2139,11 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d1895dd8f5757a339f619f22b29c8a739398ded673bb9c93f1b8eb8a4b38f510
-R 06db090922d30265c1e1381238ea6702
-T +sym-major-release *
-T +sym-release *
-T +sym-version-3.44.0 *
-U drh
-Z 14f36413d8197ea0c35026cb3842c9f7
+P 17129ba1ff7f0daf37100ee82d507aef7827cf38de1866e2633096ae6ad81301
+R 95342b1e9b6483a07de6e1272f8f583b
+U dan
+Z ad9ef3268962ff3bfef4d4d0ad2ec6f3
 # Remove this line to create a well-formed Fossil manifest.
