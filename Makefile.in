@@ -707,6 +707,9 @@ fuzzcheck$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
 fuzzcheck-asan$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
 	$(LTLINK) -o $@ -fsanitize=address $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
 
+fuzzcheck-ubsan$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
+	$(LTLINK) -o $@ -fsanitize=undefined $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
+
 ossshell$(TEXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c \
              $(TOP)/test/ossfuzz.c sqlite3.c $(TLIBS)
@@ -1486,7 +1489,7 @@ snapshot-tarball: sqlite3.c sqlite3rc.h
 
 # Build a ZIP archive containing various command-line tools.
 #
-tool-zip:	testfixture sqlite3 sqldiff sqlite3_analyzer tool/mktoolzip.tcl
+tool-zip:	testfixture sqlite3 sqldiff sqlite3_analyzer $(TOP)/tool/mktoolzip.tcl
 	./testfixture $(TOP)/tool/mktoolzip.tcl
 
 # The next two rules are used to support the "threadtest" target. Building

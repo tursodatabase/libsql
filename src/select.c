@@ -6715,7 +6715,7 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
         assert( ExprUseXList(pF->pFExpr->pLeft) );
         assert( pF->pFExpr->pLeft->x.pList!=0 );
         nKey = pF->pFExpr->pLeft->x.pList->nExpr;
-        if( !pF->bOBUnique ) nKey++;
+        if( ALWAYS(!pF->bOBUnique) ) nKey++;
       }
       iTop = sqlite3VdbeAddOp1(v, OP_Rewind, pF->iOBTab); VdbeCoverage(v);
       for(j=nArg-1; j>=0; j--){
@@ -6743,10 +6743,10 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
 ** registers if register regAcc contains 0. The caller will take care
 ** of setting and clearing regAcc.
 **
-** For an ORDER BY aggregate, the actually accumulator memory cell update
+** For an ORDER BY aggregate, the actual accumulator memory cell update
 ** is deferred until after all input rows have been received, so that they
 ** can be run in the requested order.  In that case, instead of invoking
-** OP_AggStep to update accumulator, just add the arguments that would
+** OP_AggStep to update the accumulator, just add the arguments that would
 ** have been passed into OP_AggStep into the sorting ephemeral table
 ** (along with the appropriate sort key).
 */
@@ -6771,6 +6771,7 @@ static void updateAccumulator(
     int addrNext = 0;
     int regAgg;
     int regAggSz = 0;
+    int regDistinct = 0;
     ExprList *pList;
     assert( ExprUseXList(pF->pFExpr) );
     assert( !IsWindowFunc(pF->pFExpr) );
@@ -6820,6 +6821,7 @@ static void updateAccumulator(
       }
       regAggSz++;  /* One extra register to hold result of MakeRecord */
       regAgg = sqlite3GetTempRange(pParse, regAggSz);
+      regDistinct = regAgg;
       sqlite3ExprCodeExprList(pParse, pOBList, regAgg, 0, SQLITE_ECEL_DUP);
       jj = pOBList->nExpr;
       if( !pF->bOBUnique ){
@@ -6827,11 +6829,13 @@ static void updateAccumulator(
         jj++;
       }
       if( pF->bOBPayload ){
-        sqlite3ExprCodeExprList(pParse, pList, regAgg+jj, 0, SQLITE_ECEL_DUP);
+        regDistinct = regAgg+jj;
+        sqlite3ExprCodeExprList(pParse, pList, regDistinct, 0, SQLITE_ECEL_DUP);
       }
     }else if( pList ){
       nArg = pList->nExpr;
       regAgg = sqlite3GetTempRange(pParse, nArg);
+      regDistinct = regAgg;
       sqlite3ExprCodeExprList(pParse, pList, regAgg, 0, SQLITE_ECEL_DUP);
     }else{
       nArg = 0;
@@ -6842,7 +6846,7 @@ static void updateAccumulator(
         addrNext = sqlite3VdbeMakeLabel(pParse);
       }
       pF->iDistinct = codeDistinct(pParse, eDistinctType,
-          pF->iDistinct, addrNext, pList, regAgg);
+          pF->iDistinct, addrNext, pList, regDistinct);
     }
     if( pF->iOBTab>=0 ){
       /* Insert a new record into the ORDER BY table */

@@ -348,4 +348,3 @@ do_execsql_test 8.1 {
 }
 
 finish_test
-

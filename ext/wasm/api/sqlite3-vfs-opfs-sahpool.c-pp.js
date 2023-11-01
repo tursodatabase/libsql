@@ -155,8 +155,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             pool.deletePath(file.path);
           }
         }catch(e){
-          pool.storeErr(e);
-          return capi.SQLITE_IOERR;
+          return pool.storeErr(e, capi.SQLITE_IOERR);
         }
       }
       return 0;
@@ -200,8 +199,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }
         return 0;
       }catch(e){
-        pool.storeErr(e);
-        return capi.SQLITE_IOERR;
+        return pool.storeErr(e, capi.SQLITE_IOERR);
       }
     },
     xSectorSize: function(pFile){
@@ -217,8 +215,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         file.sah.flush();
         return 0;
       }catch(e){
-        pool.storeErr(e);
-        return capi.SQLITE_IOERR;
+        return pool.storeErr(e, capi.SQLITE_IOERR);
       }
     },
     xTruncate: function(pFile,sz64){
@@ -231,8 +228,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         file.sah.truncate(HEADER_OFFSET_DATA + Number(sz64));
         return 0;
       }catch(e){
-        pool.storeErr(e);
-        return capi.SQLITE_IOERR;
+        return pool.storeErr(e, capi.SQLITE_IOERR);
       }
     },
     xUnlock: function(pFile,lockType){
@@ -252,10 +248,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           wasm.heap8u().subarray(pSrc, pSrc+n),
           { at: HEADER_OFFSET_DATA + Number(offset64) }
         );
-        return nBytes === n ? 0 : capi.SQLITE_IOERR;
+        return n===nBytes ? 0 : toss("Unknown write() failure.");
       }catch(e){
-        pool.storeErr(e);
-        return capi.SQLITE_IOERR;
+        return pool.storeErr(e, capi.SQLITE_IOERR);
       }
     }
   }/*ioMethods*/;
@@ -314,8 +309,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     },
     xGetLastError: function(pVfs,nOut,pOut){
       const pool = getPoolForVfs(pVfs);
-      pool.log(`xGetLastError ${nOut}`);
       const e = pool.popErr();
+      pool.log(`xGetLastError ${nOut} e =`,e);
       if(e){
         const scope = wasm.scopedAllocPush();
         try{
@@ -328,7 +323,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           wasm.scopedAllocPop(scope);
         }
       }
-      return 0;
+      return e ? (e.sqlite3Rc || capi.SQLITE_IOERR) : 0;
     },
     //xSleep is optionally defined below
     xOpen: function f(pVfs, zName, pFile, flags, pOutFlags){
@@ -762,12 +757,20 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
 
     /**
-       Sets e as this object's current error. Pass a falsy
-       (or no) value to clear it.
+       Sets e (an Error object) as this object's current error. Pass a
+       falsy (or no) value to clear it. If code is truthy it is
+       assumed to be an SQLITE_xxx result code, defaulting to
+       SQLITE_IOERR if code is falsy.
+
+       Returns the 2nd argument.
     */
-    storeErr(e){
-      if(e) this.error(e);
-      return this.$error = e;
+    storeErr(e,code){
+      if(e){
+        e.sqlite3Rc = code || capi.SQLITE_IOERR;
+        this.error(e);
+      }
+      this.$error = e;
+      return code;
     }
     /**
        Pops this object's Error object and returns

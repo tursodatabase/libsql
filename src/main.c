@@ -382,7 +382,9 @@ int sqlite3_initialize(void){
 
   /* Experimentally determine if high-precision floating point is
   ** available. */
+#ifndef SQLITE_OMIT_WSD
   sqlite3Config.bUseLongDouble = hasHighPrecisionDouble(rc);
+#endif
 
   return rc;
 }
@@ -2371,7 +2373,7 @@ void *sqlite3_preupdate_hook(
   void *pRet;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( db==0 || xCallback==0 ){
+  if( db==0 ){
     return 0;
   }
 #endif
@@ -4169,6 +4171,28 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 #endif
+
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_FK_NO_ACTION, sqlite3 *db, int b);
+    **
+    ** If b is true, then activate the SQLITE_FkNoAction setting.  If b is
+    ** false then clearn that setting.  If the SQLITE_FkNoAction setting is
+    ** abled, all foreign key ON DELETE and ON UPDATE actions behave as if
+    ** they were NO ACTION, regardless of how they are defined.
+    **
+    ** NB:  One must usually run "PRAGMA writable_schema=RESET" after
+    ** using this test-control, before it will take full effect.  failing
+    ** to reset the schema can result in some unexpected behavior.
+    */
+    case SQLITE_TESTCTRL_FK_NO_ACTION: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      int b = va_arg(ap, int);
+      if( b ){
+        db->flags |= SQLITE_FkNoAction;
+      }else{
+        db->flags &= ~SQLITE_FkNoAction;
+      }
+      break;
+    }
 
     /*
     **  sqlite3_test_control(BITVEC_TEST, size, program)

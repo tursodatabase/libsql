@@ -1845,6 +1845,7 @@ struct sqlite3 {
                                           /*   the count using a callback. */
 #define SQLITE_CorruptRdOnly  HI(0x00002) /* Prohibit writes due to error */
 #define SQLITE_ReadUncommit   HI(0x00004) /* READ UNCOMMITTED in shared-cache */
+#define SQLITE_FkNoAction     HI(0x00008) /* Treat all FK as NO ACTION */
 
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG
@@ -4076,6 +4077,7 @@ struct Returning {
   int iRetCur;          /* Transient table holding RETURNING results */
   int nRetCol;          /* Number of in pReturnEL after expansion */
   int iRetReg;          /* Register array for holding a row of RETURNING */
+  char zName[40];       /* Name of trigger: "sqlite_returning_%p" */
 };
 
 /*

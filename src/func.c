@@ -2047,6 +2047,7 @@ static void minMaxFinalize(sqlite3_context *context){
 
 /*
 ** group_concat(EXPR, ?SEPARATOR?)
+** string_agg(EXPR, SEPARATOR)
 **
 ** The SEPARATOR goes before the EXPR string.  This is tragic.  The
 ** groupConcatInverse() implementation would have been easier if the
@@ -2670,6 +2671,8 @@ void sqlite3RegisterBuiltinFunctions(void){
     WAGGREGATE(group_concat, 1, 0, 0, groupConcatStep,
         groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
     WAGGREGATE(group_concat, 2, 0, 0, groupConcatStep,
+        groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
+    WAGGREGATE(string_agg,   2, 0, 0, groupConcatStep,
         groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
  
     LIKEFUNC(glob, 2, &globInfo, SQLITE_FUNC_LIKE|SQLITE_FUNC_CASE),

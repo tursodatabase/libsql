@@ -841,13 +841,23 @@ static const char * s3jni__jstring_to_mutf8(JNIEnv * const env, jstring v ){
 #define s3jni_jstring_to_mutf8(ARG) s3jni__jstring_to_mutf8(env, (ARG))
 #define s3jni_mutf8_release(ARG,VAR) if( VAR ) (*env)->ReleaseStringUTFChars(env, ARG, VAR)
 
-static jbyte * s3jni__jbyteArray_bytes(JNIEnv * const env, jbyteArray jBA ){
+/*
+** If jBA is not NULL then its GetByteArrayElements() value is
+** returned. If jBA is not NULL and nBA is not NULL then *nBA is set
+** to the GetArrayLength() of jBA. If GetByteArrayElements() requires
+** an allocation and that allocation fails then this function either
+** fails fatally or returns 0, depending on build-time options.
+ */
+static jbyte * s3jni__jbyteArray_bytes2(JNIEnv * const env, jbyteArray jBA, jsize * nBA ){
   jbyte * const rv = jBA ? (*env)->GetByteArrayElements(env, jBA, NULL) : 0;
   s3jni_oom_check( jBA ? !!rv : 1 );
+  if( jBA && nBA ) *nBA = (*env)->GetArrayLength(env, jBA);
   return rv;
 }
 
-#define s3jni_jbyteArray_bytes(jByteArray) s3jni__jbyteArray_bytes(env, (jByteArray))
+#define s3jni_jbyteArray_bytes2(jByteArray,ptrToSz) \
+  s3jni__jbyteArray_bytes2(env, (jByteArray), (ptrToSz))
+#define s3jni_jbyteArray_bytes(jByteArray) s3jni__jbyteArray_bytes2(env, (jByteArray), 0)
 #define s3jni_jbyteArray_release(jByteArray,jBytes) \
   if( jBytes ) (*env)->ReleaseByteArrayElements(env, jByteArray, jBytes, JNI_ABORT)
 #define s3jni_jbyteArray_commit(jByteArray,jBytes) \
@@ -1010,7 +1020,7 @@ static jstring s3jni__utf8_to_jstring(JNIEnv * const env,
 static char * s3jni__jstring_to_utf8(JNIEnv * const env,
                                     jstring jstr, int *nLen){
   jbyteArray jba;
-  jsize nBa;
+  jsize nBA;
   char *rv;
 
   if( !jstr ) return 0;
@@ -1024,12 +1034,12 @@ static char * s3jni__jstring_to_utf8(JNIEnv * const env,
     if( nLen ) *nLen = 0;
     return 0;
   }
-  nBa = (*env)->GetArrayLength(env, jba);
-  if( nLen ) *nLen = (int)nBa;
-  rv = s3jni_malloc( nBa + 1 );
+  nBA = (*env)->GetArrayLength(env, jba);
+  if( nLen ) *nLen = (int)nBA;
+  rv = s3jni_malloc( nBA + 1 );
   if( rv ){
-    (*env)->GetByteArrayRegion(env, jba, 0, nBa, (jbyte*)rv);
-    rv[nBa] = 0;
+    (*env)->GetByteArrayRegion(env, jba, 0, nBA, (jbyte*)rv);
+    rv[nBA] = 0;
   }
   S3JniUnrefLocal(jba);
   return rv;
@@ -2359,9 +2369,13 @@ S3JniApi(sqlite3_backup_step(),jint,1backup_1step)(
 S3JniApi(sqlite3_bind_blob(),jint,1bind_1blob)(
   JniArgsEnvClass, jlong jpStmt, jint ndx, jbyteArray baData, jint nMax
 ){
-  jbyte * const pBuf = baData ? s3jni_jbyteArray_bytes(baData) : 0;
+  jsize nBA = 0;
+  jbyte * const pBuf = baData ? s3jni_jbyteArray_bytes2(baData, &nBA) : 0;
   int rc;
   if( pBuf ){
+    if( nMax>nBA ){
+      nMax = nBA;
+    }
     rc = sqlite3_bind_blob(S3JniLongPtr_sqlite3_stmt(jpStmt), (int)ndx,
                            pBuf, (int)nMax, SQLITE_TRANSIENT);
     s3jni_jbyteArray_release(baData, pBuf);
@@ -2448,25 +2462,49 @@ S3JniApi(sqlite3_bind_parameter_name(),jstring,1bind_1parameter_1name)(
   return z ? s3jni_utf8_to_jstring(z, -1) : 0;
 }
 
+/*
+** Impl of sqlite3_bind_text/text16().
+*/
+static int s3jni__bind_text(int is16, JNIEnv *env, jlong jpStmt, jint ndx,
+                            jbyteArray baData, jint nMax){
+  jsize nBA = 0;
+  jbyte * const pBuf =
+    baData ? s3jni_jbyteArray_bytes2(baData, &nBA) : 0;
+  int rc;
+  if( pBuf ){
+    if( nMax>nBA ){
+      nMax = nBA;
+    }
+    /* Note that we rely on the Java layer having assured that baData
+       is NUL-terminated if nMax is negative. In order to avoid UB for
+       such cases, we do not expose the byte-limit arguments in the
+       public API. */
+    rc = is16
+      ? sqlite3_bind_text16(S3JniLongPtr_sqlite3_stmt(jpStmt), (int)ndx,
+                            pBuf, (int)nMax, SQLITE_TRANSIENT)
+      : sqlite3_bind_text(S3JniLongPtr_sqlite3_stmt(jpStmt), (int)ndx,
+                          (const char *)pBuf,
+                          (int)nMax, SQLITE_TRANSIENT);
+  }else{
+    rc = baData
+      ? sqlite3_bind_null(S3JniLongPtr_sqlite3_stmt(jpStmt), (int)ndx)
+      : SQLITE_NOMEM;
+  }
+  s3jni_jbyteArray_release(baData, pBuf);
+  return (jint)rc;
+
+}
+
 S3JniApi(sqlite3_bind_text(),jint,1bind_1text)(
   JniArgsEnvClass, jlong jpStmt, jint ndx, jbyteArray baData, jint nMax
 ){
-  jbyte * const pBuf = baData ? s3jni_jbyteArray_bytes(baData) : 0;
-  int const rc = sqlite3_bind_text(S3JniLongPtr_sqlite3_stmt(jpStmt), (int)ndx,
-                                   (const char *)pBuf,
-                                   (int)nMax, SQLITE_TRANSIENT);
-  s3jni_jbyteArray_release(baData, pBuf);
-  return (jint)rc;
+  return s3jni__bind_text(0, env, jpStmt, ndx, baData, nMax);
 }
 
 S3JniApi(sqlite3_bind_text16(),jint,1bind_1text16)(
   JniArgsEnvClass, jlong jpStmt, jint ndx, jbyteArray baData, jint nMax
 ){
-  jbyte * const pBuf = baData ? s3jni_jbyteArray_bytes(baData) : 0;
-  int const rc = sqlite3_bind_text16(S3JniLongPtr_sqlite3_stmt(jpStmt), (int)ndx,
-                                     pBuf, (int)nMax, SQLITE_TRANSIENT);
-  s3jni_jbyteArray_release(baData, pBuf);
-  return (jint)rc;
+  return s3jni__bind_text(1, env, jpStmt, ndx, baData, nMax);
 }
 
 S3JniApi(sqlite3_bind_value(),jint,1bind_1value)(
@@ -2575,10 +2613,10 @@ S3JniApi(sqlite3_blob_write(),jint,1blob_1write)(
 ){
   sqlite3_blob * const b = S3JniLongPtr_sqlite3_blob(jpBlob);
   jbyte * const pBuf = b ? s3jni_jbyteArray_bytes(jBa) : 0;
-  const jsize nBa = pBuf ? (*env)->GetArrayLength(env, jBa) : 0;
+  const jsize nBA = pBuf ? (*env)->GetArrayLength(env, jBa) : 0;
   int rc = SQLITE_MISUSE;
   if(b && pBuf){
-    rc = sqlite3_blob_write( b, pBuf, (int)nBa, (int)iOffset );
+    rc = sqlite3_blob_write( b, pBuf, (int)nBA, (int)iOffset );
   }
   s3jni_jbyteArray_release(jBa, pBuf);
   return (jint)rc;
@@ -2994,12 +3032,12 @@ S3JniApi(sqlite3_complete(),int,1complete)(
   JniArgsEnvClass, jbyteArray jSql
 ){
   jbyte * const pBuf = s3jni_jbyteArray_bytes(jSql);
-  const jsize nBa = pBuf ? (*env)->GetArrayLength(env, jSql) : 0;
+  const jsize nBA = pBuf ? (*env)->GetArrayLength(env, jSql) : 0;
   int rc;
 
-  assert( (nBa>0 ? 0==pBuf[nBa-1] : (pBuf ? 0==*pBuf : 1))
+  assert( (nBA>0 ? 0==pBuf[nBA-1] : (pBuf ? 0==*pBuf : 1))
           && "Byte array is not NUL-terminated." );
-  rc = (pBuf && 0==pBuf[(nBa ? nBa-1 : 0)])
+  rc = (pBuf && 0==pBuf[(nBA ? nBA-1 : 0)])
     ? sqlite3_complete( (const char *)pBuf )
     : (jSql ? SQLITE_NOMEM : SQLITE_MISUSE);
   s3jni_jbyteArray_release(jSql, pBuf);
@@ -4159,9 +4197,9 @@ static void result_blob_text(int as64     /* true for text64/blob64() mode */,
     return;
   }else if( jBa ){
     jbyte * const pBuf = s3jni_jbyteArray_bytes(jBa);
-    jsize nBa = (*env)->GetArrayLength(env, jBa);
-    if( nMax>=0 && nBa>(jsize)nMax ){
-      nBa = (jsize)nMax;
+    jsize nBA = (*env)->GetArrayLength(env, jBa);
+    if( nMax>=0 && nBA>(jsize)nMax ){
+      nBA = (jsize)nMax;
       /**
          From the sqlite docs:
 
@@ -4181,15 +4219,15 @@ static void result_blob_text(int as64     /* true for text64/blob64() mode */,
     if( as64 ){ /* 64-bit... */
       static const jsize nLimit64 =
         SQLITE_MAX_ALLOCATION_SIZE/*only _kinda_ arbitrary*/;
-      if( nBa > nLimit64 ){
+      if( nBA > nLimit64 ){
         sqlite3_result_error_toobig(pCx);
       }else if( asBlob ){
-        sqlite3_result_blob64(pCx, pBuf, (sqlite3_uint64)nBa,
+        sqlite3_result_blob64(pCx, pBuf, (sqlite3_uint64)nBA,
                               SQLITE_TRANSIENT);
       }else{ /* text64... */
         if( encodingTypeIsValid(eTextRep) ){
           sqlite3_result_text64(pCx, (const char *)pBuf,
-                                (sqlite3_uint64)nBa,
+                                (sqlite3_uint64)nBA,
                                 SQLITE_TRANSIENT, eTextRep);
         }else{
           sqlite3_result_error_code(pCx, SQLITE_FORMAT);
@@ -4197,27 +4235,27 @@ static void result_blob_text(int as64     /* true for text64/blob64() mode */,
       }
     }else{ /* 32-bit... */
       static const jsize nLimit = SQLITE_MAX_ALLOCATION_SIZE;
-      if( nBa > nLimit ){
+      if( nBA > nLimit ){
         sqlite3_result_error_toobig(pCx);
       }else if( asBlob ){
-        sqlite3_result_blob(pCx, pBuf, (int)nBa,
+        sqlite3_result_blob(pCx, pBuf, (int)nBA,
                             SQLITE_TRANSIENT);
       }else{
         switch( eTextRep ){
           case SQLITE_UTF8:
-            sqlite3_result_text(pCx, (const char *)pBuf, (int)nBa,
+            sqlite3_result_text(pCx, (const char *)pBuf, (int)nBA,
                                 SQLITE_TRANSIENT);
             break;
           case SQLITE_UTF16:
-            sqlite3_result_text16(pCx, (const char *)pBuf, (int)nBa,
+            sqlite3_result_text16(pCx, (const char *)pBuf, (int)nBA,
                                   SQLITE_TRANSIENT);
             break;
           case SQLITE_UTF16LE:
-            sqlite3_result_text16le(pCx, (const char *)pBuf, (int)nBa,
+            sqlite3_result_text16le(pCx, (const char *)pBuf, (int)nBA,
                                     SQLITE_TRANSIENT);
             break;
           case SQLITE_UTF16BE:
-            sqlite3_result_text16be(pCx, (const char *)pBuf, (int)nBa,
+            sqlite3_result_text16be(pCx, (const char *)pBuf, (int)nBA,
                                     SQLITE_TRANSIENT);
             break;
         }

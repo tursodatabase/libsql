@@ -3332,7 +3332,7 @@ static int rtreeShadowName(const char *zName){
 }
 
 /* Forward declaration */
-static int rtreeIntegrity(sqlite3_vtab*, char**);
+static int rtreeIntegrity(sqlite3_vtab*, const char*, const char*, int, char**);
 
 static sqlite3_module rtreeModule = {
   4,                          /* iVersion */
@@ -4187,9 +4187,19 @@ static int rtreeCheckTable(
 /*
 ** Implementation of the xIntegrity method for Rtree.
 */
-static int rtreeIntegrity(sqlite3_vtab *pVtab, char **pzErr){
+static int rtreeIntegrity(
+  sqlite3_vtab *pVtab,   /* The virtual table to check */
+  const char *zSchema,   /* Schema in which the virtual table lives */
+  const char *zName,     /* Name of the virtual table */
+  int isQuick,           /* True for a quick_check */
+  char **pzErr           /* Write results here */
+){
   Rtree *pRtree = (Rtree*)pVtab;
   int rc;
+  assert( pzErr!=0 && *pzErr==0 );
+  UNUSED_PARAMETER(zSchema);
+  UNUSED_PARAMETER(zName);
+  UNUSED_PARAMETER(isQuick);
   rc = rtreeCheckTable(pRtree->db, pRtree->zDb, pRtree->zName, pzErr);
   if( rc==SQLITE_OK && *pzErr ){
     *pzErr = sqlite3_mprintf("In RTree %s.%s:\n%z",

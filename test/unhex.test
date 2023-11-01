@@ -100,5 +100,3 @@ do_execsql_test 6.4.3 { SELECT typeof(unhex('1234', NULL)) } {null}
 
 
 finish_test
-
-

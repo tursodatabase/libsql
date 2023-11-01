@@ -56,7 +56,7 @@ do_test distinctagg-2.1 {
 } {1 {DISTINCT aggregates must have exactly one argument}}
 do_test distinctagg-2.2 {
   catchsql {
-    SELECT group_concat(distinct a,b) FROM t1;
+    SELECT string_agg(distinct a,b) FROM t1;
   }
 } {1 {DISTINCT aggregates must have exactly one argument}}
 
@@ -215,4 +215,3 @@ do_execsql_test 7.0 {
 
 
 finish_test
-

@@ -1223,7 +1223,9 @@ void sqlite3ExprAddFunctionOrderBy(
   assert( ExprUseXList(pExpr) );
   if( pExpr->x.pList==0 || NEVER(pExpr->x.pList->nExpr==0) ){
     /* Ignore ORDER BY on zero-argument aggregates */
-    sqlite3ExprListDelete(db, pOrderBy);
+    sqlite3ParserAddCleanup(pParse,
+        (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
+        pOrderBy);
     return;
   }
   if( IsWindowFunc(pExpr) ){
@@ -1527,56 +1529,93 @@ static int dupedExprNodeSize(const Expr *p, int flags){
 
 /*
 ** Return the number of bytes required to create a duplicate of the
-** expression passed as the first argument. The second argument is a
-** mask containing EXPRDUP_XXX flags.
+** expression passed as the first argument.
 **
 ** The value returned includes space to create a copy of the Expr struct
 ** itself and the buffer referred to by Expr.u.zToken, if any.
 **
-** If the EXPRDUP_REDUCE flag is set, then the return value includes
-** space to duplicate all Expr nodes in the tree formed by Expr.pLeft
-** and Expr.pRight variables (but not for any structures pointed to or
-** descended from the Expr.x.pList or Expr.x.pSelect variables).
+** The return value includes space to duplicate all Expr nodes in the
+** tree formed by Expr.pLeft and Expr.pRight, but not any other
+** substructure such as Expr.x.pList, Expr.x.pSelect, and Expr.y.pWin.
 */
-static int dupedExprSize(const Expr *p, int flags){
-  int nByte = 0;
-  if( p ){
-    nByte = dupedExprNodeSize(p, flags);
-    if( flags&EXPRDUP_REDUCE ){
-      nByte += dupedExprSize(p->pLeft, flags) + dupedExprSize(p->pRight, flags);
-    }
-  }
+static int dupedExprSize(const Expr *p){
+  int nByte;
+  assert( p!=0 );
+  nByte = dupedExprNodeSize(p, EXPRDUP_REDUCE);
+  if( p->pLeft ) nByte += dupedExprSize(p->pLeft);
+  if( p->pRight ) nByte += dupedExprSize(p->pRight);
+  assert( nByte==ROUND8(nByte) );
   return nByte;
 }
 
 /*
-** This function is similar to sqlite3ExprDup(), except that if pzBuffer
-** is not NULL then *pzBuffer is assumed to point to a buffer large enough
-** to store the copy of expression p, the copies of p->u.zToken
-** (if applicable), and the copies of the p->pLeft and p->pRight expressions,
-** if any. Before returning, *pzBuffer is set to the first byte past the
-** portion of the buffer copied into by this function.
+** An EdupBuf is a memory allocation used to stored multiple Expr objects
+** together with their Expr.zToken content.  This is used to help implement
+** compression while doing sqlite3ExprDup().  The top-level Expr does the
+** allocation for itself and many of its decendents, then passes an instance
+** of the structure down into exprDup() so that they decendents can have
+** access to that memory.
 */
-static Expr *exprDup(sqlite3 *db, const Expr *p, int dupFlags, u8 **pzBuffer){
+typedef struct EdupBuf EdupBuf;
+struct EdupBuf {
+  u8 *zAlloc;          /* Memory space available for storage */
+#ifdef SQLITE_DEBUG
+  u8 *zEnd;            /* First byte past the end of memory */
+#endif
+};
+
+/*
+** This function is similar to sqlite3ExprDup(), except that if pEdupBuf
+** is not NULL then it points to memory that can be used to store a copy
+** of the input Expr p together with its p->u.zToken (if any).  pEdupBuf
+** is updated with the new buffer tail prior to returning.
+*/
+static Expr *exprDup(
+  sqlite3 *db,          /* Database connection (for memory allocation) */
+  const Expr *p,        /* Expr tree to be duplicated */
+  int dupFlags,         /* EXPRDUP_REDUCE for compression.  0 if not */
+  EdupBuf *pEdupBuf     /* Preallocated storage space, or NULL */
+){
   Expr *pNew;           /* Value to return */
-  u8 *zAlloc;           /* Memory space from which to build Expr object */
+  EdupBuf sEdupBuf;     /* Memory space from which to build Expr object */
   u32 staticFlag;       /* EP_Static if space not obtained from malloc */
+  int nToken = -1;       /* Space needed for p->u.zToken.  -1 means unknown */
 
   assert( db!=0 );
   assert( p );
   assert( dupFlags==0 || dupFlags==EXPRDUP_REDUCE );
-  assert( pzBuffer==0 || dupFlags==EXPRDUP_REDUCE );
+  assert( pEdupBuf==0 || dupFlags==EXPRDUP_REDUCE );
 
   /* Figure out where to write the new Expr structure. */
-  if( pzBuffer ){
-    zAlloc = *pzBuffer;
+  if( pEdupBuf ){
+    sEdupBuf.zAlloc = pEdupBuf->zAlloc;
+#ifdef SQLITE_DEBUG
+    sEdupBuf.zEnd = pEdupBuf->zEnd;
+#endif
     staticFlag = EP_Static;
-    assert( zAlloc!=0 );
+    assert( sEdupBuf.zAlloc!=0 );
+    assert( dupFlags==EXPRDUP_REDUCE );
   }else{
-    zAlloc = sqlite3DbMallocRawNN(db, dupedExprSize(p, dupFlags)*5);
+    int nAlloc;
+    if( dupFlags ){
+      nAlloc = dupedExprSize(p);
+    }else if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
+      nToken = sqlite3Strlen30NN(p->u.zToken)+1;
+      nAlloc = ROUND8(EXPR_FULLSIZE + nToken);
+    }else{
+      nToken = 0;
+      nAlloc = ROUND8(EXPR_FULLSIZE);
+    }
+    assert( nAlloc==ROUND8(nAlloc) );
+    sEdupBuf.zAlloc = sqlite3DbMallocRawNN(db, nAlloc);
+#ifdef SQLITE_DEBUG
+    sEdupBuf.zEnd = sEdupBuf.zAlloc ? sEdupBuf.zAlloc+nAlloc : 0;
+#endif
+    
     staticFlag = 0;
   }
-  pNew = (Expr *)zAlloc;
+  pNew = (Expr *)sEdupBuf.zAlloc;
+  assert( EIGHT_BYTE_ALIGNMENT(pNew) );
 
   if( pNew ){
     /* Set nNewSize to the size allocated for the structure pointed to
@@ -1585,22 +1624,27 @@ static Expr *exprDup(sqlite3 *db, const Expr *p, int dupFlags, u8 **pzBuffer){
     ** by the copy of the p->u.zToken string (if any).
     */
     const unsigned nStructSize = dupedExprStructSize(p, dupFlags);
-    const int nNewSize = nStructSize & 0xfff;
-    int nToken;
-    if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
-      nToken = sqlite3Strlen30(p->u.zToken) + 1;
-    }else{
-      nToken = 0;
+    int nNewSize = nStructSize & 0xfff;
+    if( nToken<0 ){
+      if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
+        nToken = sqlite3Strlen30(p->u.zToken) + 1;
+      }else{
+        nToken = 0;
+      }
     }
     if( dupFlags ){
+      assert( (int)(sEdupBuf.zEnd - sEdupBuf.zAlloc) >= nNewSize+nToken );
       assert( ExprHasProperty(p, EP_Reduced)==0 );
-      memcpy(zAlloc, p, nNewSize);
+      memcpy(sEdupBuf.zAlloc, p, nNewSize);
     }else{
       u32 nSize = (u32)exprStructSize(p);
-      memcpy(zAlloc, p, nSize);
+      assert( (int)(sEdupBuf.zEnd - sEdupBuf.zAlloc) >=
+                                                   (int)EXPR_FULLSIZE+nToken );
+      memcpy(sEdupBuf.zAlloc, p, nSize);
       if( nSize<EXPR_FULLSIZE ){
-        memset(&zAlloc[nSize], 0, EXPR_FULLSIZE-nSize);
+        memset(&sEdupBuf.zAlloc[nSize], 0, EXPR_FULLSIZE-nSize);
       }
+      nNewSize = EXPR_FULLSIZE;
     }
 
     /* Set the EP_Reduced, EP_TokenOnly, and EP_Static flags appropriately. */
@@ -1613,12 +1657,16 @@ static Expr *exprDup(sqlite3 *db, const Expr *p, int dupFlags, u8 **pzBuffer){
     }
 
     /* Copy the p->u.zToken string, if any. */
-    if( nToken ){
-      char *zToken = pNew->u.zToken = (char*)&zAlloc[nNewSize];
+    assert( nToken>=0 );
+    if( nToken>0 ){
+      char *zToken = pNew->u.zToken = (char*)&sEdupBuf.zAlloc[nNewSize];
       memcpy(zToken, p->u.zToken, nToken);
+      nNewSize += nToken;
     }
+    sEdupBuf.zAlloc += ROUND8(nNewSize);
 
-    if( 0==((p->flags|pNew->flags) & (EP_TokenOnly|EP_Leaf)) ){
+    if( ((p->flags|pNew->flags)&(EP_TokenOnly|EP_Leaf))==0 ){
+
       /* Fill in the pNew->x.pSelect or pNew->x.pList member. */
       if( ExprUseXSelect(p) ){
         pNew->x.pSelect = sqlite3SelectDup(db, p->x.pSelect, dupFlags);
@@ -1626,32 +1674,33 @@ static Expr *exprDup(sqlite3 *db, const Expr *p, int dupFlags, u8 **pzBuffer){
         pNew->x.pList = sqlite3ExprListDup(db, p->x.pList,
                            p->op!=TK_ORDER ? dupFlags : 0);
       }
-    }
 
-    /* Fill in pNew->pLeft and pNew->pRight. */
-    if( ExprHasProperty(pNew, EP_Reduced|EP_TokenOnly|EP_WinFunc) ){
-      zAlloc += dupedExprNodeSize(p, dupFlags);
-      if( !ExprHasProperty(pNew, EP_TokenOnly|EP_Leaf) ){
-        pNew->pLeft = p->pLeft ?
-                      exprDup(db, p->pLeft, EXPRDUP_REDUCE, &zAlloc) : 0;
-        pNew->pRight = p->pRight ?
-                       exprDup(db, p->pRight, EXPRDUP_REDUCE, &zAlloc) : 0;
-      }
 #ifndef SQLITE_OMIT_WINDOWFUNC
       if( ExprHasProperty(p, EP_WinFunc) ){
         pNew->y.pWin = sqlite3WindowDup(db, pNew, p->y.pWin);
         assert( ExprHasProperty(pNew, EP_WinFunc) );
       }
 #endif /* SQLITE_OMIT_WINDOWFUNC */
-      if( pzBuffer ){
-        *pzBuffer = zAlloc;
-      }
-    }else{
-      if( !ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
-        if( pNew->op==TK_SELECT_COLUMN ){
+
+      /* Fill in pNew->pLeft and pNew->pRight. */
+      if( dupFlags ){
+        if( p->op==TK_SELECT_COLUMN ){
           pNew->pLeft = p->pLeft;
-          assert( p->pRight==0  || p->pRight==p->pLeft
-                                || ExprHasProperty(p->pLeft, EP_Subquery) );
+          assert( p->pRight==0 
+               || p->pRight==p->pLeft
+               || ExprHasProperty(p->pLeft, EP_Subquery) );
+        }else{
+          pNew->pLeft = p->pLeft ?
+                      exprDup(db, p->pLeft, EXPRDUP_REDUCE, &sEdupBuf) : 0;
+        }
+        pNew->pRight = p->pRight ?
+                       exprDup(db, p->pRight, EXPRDUP_REDUCE, &sEdupBuf) : 0;
+      }else{
+        if( p->op==TK_SELECT_COLUMN ){
+          pNew->pLeft = p->pLeft;
+          assert( p->pRight==0 
+               || p->pRight==p->pLeft
+               || ExprHasProperty(p->pLeft, EP_Subquery) );
         }else{
           pNew->pLeft = sqlite3ExprDup(db, p->pLeft, 0);
         }
@@ -1659,6 +1708,8 @@ static Expr *exprDup(sqlite3 *db, const Expr *p, int dupFlags, u8 **pzBuffer){
       }
     }
   }
+  if( pEdupBuf ) memcpy(pEdupBuf, &sEdupBuf, sizeof(sEdupBuf));
+  assert( sEdupBuf.zAlloc <= sEdupBuf.zEnd );
   return pNew;
 }
 
@@ -6756,16 +6807,17 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
               pItem->iOBTab = pParse->nTab++;
               pOBList = pExpr->pLeft->x.pList;
               assert( pOBList->nExpr>0 );
+              assert( pItem->bOBUnique==0 );
               if( pOBList->nExpr==1
                && nArg==1
                && sqlite3ExprCompare(0,pOBList->a[0].pExpr,
                                pExpr->x.pList->a[0].pExpr,0)==0
               ){
                 pItem->bOBPayload = 0;
+                pItem->bOBUnique = ExprHasProperty(pExpr, EP_Distinct);
               }else{
                 pItem->bOBPayload = 1;
               }
-              pItem->bOBUnique = ExprHasProperty(pExpr, EP_Distinct);
             }else{
               pItem->iOBTab = -1;
             }

@@ -597,7 +597,17 @@ dbfuzz2$(EXE):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
 	  $(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c  $(TLIBS) $(THREADLIB)
 
 fuzzcheck$(EXE):	$(FUZZSRC) sqlite3.c sqlite3.h $(FUZZDEP)
-	$(TCCX) -o fuzzcheck$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+	$(TCCX) -o $@ -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+		-DSQLITE_ENABLE_MEMSYS5 $(FUZZCHECK_OPT) -DSQLITE_OSS_FUZZ \
+		$(FUZZSRC) sqlite3.c $(TLIBS) $(THREADLIB)
+
+fuzzcheck-asan$(EXE):	$(FUZZSRC) sqlite3.c sqlite3.h $(FUZZDEP)
+	$(TCCX) -fsanitize=address -o $W -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+		-DSQLITE_ENABLE_MEMSYS5 $(FUZZCHECK_OPT) -DSQLITE_OSS_FUZZ \
+		$(FUZZSRC) sqlite3.c $(TLIBS) $(THREADLIB)
+
+fuzzcheck-ubsan$(EXE):	$(FUZZSRC) sqlite3.c sqlite3.h $(FUZZDEP)
+	$(TCCX) -fsanitize=undefined -o $@ -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		-DSQLITE_ENABLE_MEMSYS5 $(FUZZCHECK_OPT) -DSQLITE_OSS_FUZZ \
 		$(FUZZSRC) sqlite3.c $(TLIBS) $(THREADLIB)
 

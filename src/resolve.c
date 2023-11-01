@@ -1784,9 +1784,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
   while( p ){
     assert( (p->selFlags & SF_Expanded)!=0 );
     assert( (p->selFlags & SF_Resolved)==0 );
-    assert( db->suppressErr==0 ); /* SF_Resolved not set if errors suppressed */
     p->selFlags |= SF_Resolved;
-
 
     /* Resolve the expressions in the LIMIT and OFFSET clauses. These
     ** are not allowed to refer to any names, so pass an empty NameContext.
