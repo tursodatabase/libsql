@@ -1,5 +1,5 @@
-C Merge\strunk\sinto\sjni-post-3.44\sbranch.
-D 2023-10-28T03:56:14.902
+C Remove\ssome\soutdated\sJNI\sdocs.
+D 2023-11-01T20:09:02.325
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -249,7 +249,7 @@ F ext/jni/src/org/sqlite/jni/capi/AggregateFunction.java 0b72cdff61533b564d65b63
 F ext/jni/src/org/sqlite/jni/capi/AuthorizerCallback.java 7ed409d5449684616cc924534e22ff6b07d361f12ad904b69ecb10e0568a8013
 F ext/jni/src/org/sqlite/jni/capi/AutoExtensionCallback.java 74cc4998a73d6563542ecb90804a3c4f4e828cb4bd69e61226d1a51f4646e759
 F ext/jni/src/org/sqlite/jni/capi/BusyHandlerCallback.java 7b8e19810c42b0ad21a04b5d8c804b32ee5905d137148703f16a75b612c380ca
-F ext/jni/src/org/sqlite/jni/capi/CApi.java 23d4073b34b5c07dd412d18395c9db79779bab059164316e14a60b33ec473cff
+F ext/jni/src/org/sqlite/jni/capi/CApi.java 24aba7b14b11da52cd47083608d37c186122c2e2072e75b2ff923d1f15bfb9e5
 F ext/jni/src/org/sqlite/jni/capi/CallbackProxy.java 0bfd6e56e8265c2f05c9207665707285534d78f8466ef0e0430c65677f00943d
 F ext/jni/src/org/sqlite/jni/capi/CollationCallback.java e29bcfc540fdd343e2f5cca4d27235113f2886acb13380686756d5cabdfd065a
 F ext/jni/src/org/sqlite/jni/capi/CollationNeededCallback.java f81cf10b79c52f9b2e9247d523d29ae48863935f60420eae35f257c38c80ce95
@@ -2140,8 +2140,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a7b267bd11216ee990cdd855044fbc18c300dff07cf25b317f27c1bbbc340dcc f6e1137919243c5ce86725df64b40b7e12e82cbceaff210ca41616d620f0dd1b
-R 624bf302e62c1cc32ad38a47599efaea
+P 9670eb2496b4005cf718d9fd12dbd11733f7cf6704a967ebb316504ea6a51e82
+R 97a2b4ce6a38c0f0d2c6b5ea82f2a285
 U stephan
-Z e297eea85124209717df39b3b4767cd9
+Z 679d5351cf0eeba3692c3f5d2e6b7df2
 # Remove this line to create a well-formed Fossil manifest.

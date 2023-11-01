@@ -32,15 +32,6 @@ import java.util.Arrays;
 
   <p>The C-side part can be found in sqlite3-jni.c.
 
-  <p>This class is package-private in order to keep Java clients from
-  having direct access to the low-level C-style APIs, a design
-  decision made by Java developers based on the C-style API being
-  riddled with opportunities for Java developers to proverbially shoot
-  themselves in the foot with. Third-party copies of this code may
-  eliminate that guard by simply changing this class from
-  package-private to public. Its methods which are intended to be
-  exposed that way are all public.
-
   <p>Only functions which materially differ from their C counterparts
   are documented here, and only those material differences are
   documented. The C documentation is otherwise applicable for these
