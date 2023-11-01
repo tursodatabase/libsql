@@ -29,7 +29,7 @@ jobs:
 
     - name: configure
       working-directory: libsql-sqlite3
-      run: ./configure
+      run: CFLAGS="-DSQLITE_ENABLE_COLUMN_METADATA=1" ./configure --enable-all --enable-releasemode
 
     - name: Build
       working-directory: libsql-sqlite3
