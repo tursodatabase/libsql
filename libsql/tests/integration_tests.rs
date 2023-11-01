@@ -338,3 +338,25 @@ async fn custom_params() {
     .await
     .unwrap();
 }
+
+#[tokio::test]
+async fn debug_print_row() {
+    let db = Database::open(":memory:").unwrap();
+    let conn = db.connect().unwrap();
+    let _ = conn
+        .execute(
+            "CREATE TABLE users (id INTEGER, name TEXT, score REAL, data BLOB, age INTEGER)",
+            (),
+        )
+        .await;
+    conn.execute("INSERT INTO users (id, name, score, data, age) VALUES (123, \"potato\", 3.14, X'deadbeef', NULL)", ())
+    .await
+    .unwrap();
+
+    let mut stmt = conn.prepare("SELECT * FROM users").await.unwrap();
+    let mut rows = stmt.query(()).await.unwrap();
+    assert_eq!(
+        format!("{:?}", rows.next().unwrap().unwrap()),
+        "{Some(\"id\"): (Integer, 123), Some(\"name\"): (Text, \"potato\"), Some(\"score\"): (Real, 3.14), Some(\"data\"): (Blob, 4), Some(\"age\"): (Null, ())}"
+    );
+}

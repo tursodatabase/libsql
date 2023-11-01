@@ -230,6 +230,7 @@ impl From<libsql_sys::Value> for Value {
 }
 
 // Heavily inspired by rusqlite's ValueRef
+#[derive(Debug)]
 pub enum ValueRef<'a> {
     Null,
     Integer(i64),
