@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::connection::libsql::LibSqlConnection;
-use crate::connection::write_proxy::WriteProxyConnection;
+use crate::connection::write_proxy::{RpcStream, WriteProxyConnection};
 use crate::connection::{Connection, MakeConnection, TrackedConnection};
 use crate::replication::{ReplicationLogger, ReplicationLoggerHook};
 
@@ -15,11 +15,11 @@ pub trait Database: Sync + Send + 'static {
 
 pub struct ReplicaDatabase {
     pub connection_maker:
-        Arc<dyn MakeConnection<Connection = TrackedConnection<WriteProxyConnection>>>,
+        Arc<dyn MakeConnection<Connection = TrackedConnection<WriteProxyConnection<RpcStream>>>>,
 }
 
 impl Database for ReplicaDatabase {
-    type Connection = TrackedConnection<WriteProxyConnection>;
+    type Connection = TrackedConnection<WriteProxyConnection<RpcStream>>;
 
     fn connection_maker(&self) -> Arc<dyn MakeConnection<Connection = Self::Connection>> {
         self.connection_maker.clone()

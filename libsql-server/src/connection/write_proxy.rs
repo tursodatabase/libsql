@@ -32,6 +32,8 @@ use super::program::DescribeResponse;
 use super::Connection;
 use super::{MakeConnection, Program};
 
+pub type RpcStream = Streaming<ExecResp>;
+
 pub struct MakeWriteProxyConn {
     client: ProxyClient<Channel>,
     stats: Arc<Stats>,
@@ -85,7 +87,7 @@ impl MakeWriteProxyConn {
 
 #[async_trait::async_trait]
 impl MakeConnection for MakeWriteProxyConn {
-    type Connection = WriteProxyConnection;
+    type Connection = WriteProxyConnection<RpcStream>;
     async fn create(&self) -> Result<Self::Connection> {
         let db = WriteProxyConnection::new(
             self.client.clone(),
@@ -104,7 +106,7 @@ impl MakeConnection for MakeWriteProxyConn {
     }
 }
 
-pub struct WriteProxyConnection<R = Streaming<ExecResp>> {
+pub struct WriteProxyConnection<R> {
     /// Lazily initialized read connection
     read_conn: LibSqlConnection<TransparentMethods>,
     write_proxy: ProxyClient<Channel>,
@@ -122,7 +124,7 @@ pub struct WriteProxyConnection<R = Streaming<ExecResp>> {
     remote_conn: Mutex<Option<RemoteConnection<R>>>,
 }
 
-impl WriteProxyConnection {
+impl WriteProxyConnection<RpcStream> {
     #[allow(clippy::too_many_arguments)]
     async fn new(
         write_proxy: ProxyClient<Channel>,
@@ -389,7 +391,7 @@ where
 }
 
 #[async_trait::async_trait]
-impl Connection for WriteProxyConnection {
+impl Connection for WriteProxyConnection<RpcStream> {
     async fn execute_program<B: QueryResultBuilder>(
         &self,
         pgm: Program,
