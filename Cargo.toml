@@ -27,6 +27,7 @@ exclude = [
 [profile.release]
 codegen-units = 1
 panic = "unwind"
+lto = true
 
 [workspace.dependencies]
 rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = "0.29", default-features = false, features = [
@@ -66,3 +67,6 @@ tag-namespace = "libsql-server"
 inherits = "release"
 lto = "thin"
 
+[profile.release.package.sql-experimental]
+debug = false
+strip = true
