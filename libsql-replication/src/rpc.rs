@@ -24,4 +24,12 @@ pub mod replication {
 
         Ok(())
     }
+
+    impl HelloRequest {
+        pub fn new() -> Self {
+            Self {
+                handshake_version: Some(1),
+            }
+        }
+    }
 }
