@@ -9,6 +9,7 @@ const LIB_NAME: &str = "libsql";
 fn run_make() {
     Command::new("./configure")
         .current_dir(SQLITE_DIR)
+        .env("CFLAGS", "-DSQLITE_ENABLE_COLUMN_METADATA=1")
         .output()
         .unwrap();
     Command::new("make")
