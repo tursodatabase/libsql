@@ -27,7 +27,6 @@ proc readfile {filename} {
 # Find the root of the tree.
 #
 set ROOT [file dir [file dir [file normalize $argv0]]]
-cd $ROOT
 
 # Name of the TCL interpreter
 #
