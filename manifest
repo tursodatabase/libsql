@@ -1,5 +1,5 @@
-C Add\sthe\s"remove_diacritics"\soption\sto\sthe\sfts5\strigram\stokenizer.
-D 2023-11-02T17:31:06.153
+C Fix\sa\sproblem\swith\samalgamation\sbuilds\son\sthis\sbranch.
+D 2023-11-02T18:10:22.533
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -100,7 +100,7 @@ F ext/fts5/fts5_storage.c 5d10b9bdcce5b90656cad13c7d12ad4148677d4b9e3fca0481fca5
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
 F ext/fts5/fts5_test_mi.c 08c11ec968148d4cb4119d96d819f8c1f329812c568bac3684f5464be177d3ee
 F ext/fts5/fts5_test_tok.c 3cb0a9b508b30d17ef025ccddd26ae3dc8ddffbe76c057616e59a9aa85d36f3b
-F ext/fts5/fts5_tokenize.c 5a895f3bf366a87cb8c0812445736248c236e7ea664a10125021662acd6b0ba4
+F ext/fts5/fts5_tokenize.c 83cfcede3898001cab84432a36ce1503e3080cf9b1c682b022ec82e267ea4c13
 F ext/fts5/fts5_unicode2.c eca63dbc797f8ff0572e97caf4631389c0ab900d6364861b915bdd4735973f00
 F ext/fts5/fts5_varint.c e64d2113f6e1bfee0032972cffc1207b77af63319746951bf1d09885d1dadf80
 F ext/fts5/fts5_vocab.c aed56169ae5c1aa9b8189c779ffeef04ed516d3c712c06914e6d91a6759f4e4a
@@ -2140,8 +2140,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cba9f0601ca995ac6952aa3a83f7264f6d25aaaa2ea36b19e90cbf591077de72
-R 91c6db43050bc1c48384df29a062813f
+P 83da80135b6105f47d1de560232449562ae8ac176c8011a6f75589f62bc9b1db
+R 3ce25e9cac6413ed342178c779ca3982
 U dan
-Z e9e46724e46ba97d1a7a1bb71106fcd0
+Z b71b576bf0dbf7927d3f2659bd9c8691
 # Remove this line to create a well-formed Fossil manifest.

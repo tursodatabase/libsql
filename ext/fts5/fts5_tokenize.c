@@ -227,13 +227,13 @@ static const unsigned char sqlite3Utf8Trans1[] = {
   }                                                    \
 }
 
-#define SKIP_UTF8(zIn) {                               \
+#endif /* ifndef SQLITE_AMALGAMATION */
+
+#define FTS5_SKIP_UTF8(zIn) {                               \
   if( ((unsigned char)(*(zIn++)))>=0xc0 ){                              \
     while( (((unsigned char)*zIn) & 0xc0)==0x80 ){ zIn++; }             \
   }                                                    \
 }
-
-#endif /* ifndef SQLITE_AMALGAMATION */
 
 typedef struct Unicode61Tokenizer Unicode61Tokenizer;
 struct Unicode61Tokenizer {
@@ -1297,6 +1297,7 @@ static int fts5TriCreate(
   }else{
     int i;
     pNew->bFold = 1;
+    pNew->iFoldParam = 0;
     for(i=0; rc==SQLITE_OK && i<nArg; i+=2){
       const char *zArg = azArg[i+1];
       if( 0==sqlite3_stricmp(azArg[i], "case_sensitive") ){
@@ -1389,7 +1390,7 @@ static int fts5TriTokenize(
     /* Remove the first character from buffer aBuf[]. Append the character
     ** with codepoint iCode.  */
     z1 = aBuf;
-    SKIP_UTF8(z1);
+    FTS5_SKIP_UTF8(z1);
     memmove(aBuf, z1, zOut - z1);
     zOut -= (z1 - aBuf);
     WRITE_UTF8(zOut, iCode);
