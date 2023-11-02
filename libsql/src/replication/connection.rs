@@ -59,12 +59,14 @@ impl State {
             | (State::TxnDeferred, StmtKind::TxnEnd) => State::Init,
 
             // Savepoint only makes sense within a transaction and doesn't change the transaction kind
+            (State::TxnDeferred, StmtKind::Savepoint) => State::TxnDeferred,
             (State::TxnReadOnly, StmtKind::Savepoint) => State::TxnReadOnly,
             (State::Txn, StmtKind::Savepoint) => State::Txn,
             (_, StmtKind::Savepoint) => State::Invalid,
 
             // Releasing a savepoint only makes sense inside a transaction and it doesn't change its state
             (State::TxnReadOnly, StmtKind::Release) => State::TxnReadOnly,
+            (State::TxnDeferred, StmtKind::Release) => State::TxnDeferred,
             (State::Txn, StmtKind::Release) => State::Txn,
             (_, StmtKind::Release) => State::Invalid,
 
