@@ -55,7 +55,7 @@ impl ReplicatorClient for RemoteClient {
     /// Perform handshake with remote
     async fn handshake(&mut self) -> Result<(), Error> {
         tracing::info!("Attempting to perform handshake with primary.");
-        let req = self.make_request(HelloRequest::default());
+        let req = self.make_request(HelloRequest::new());
         match self.remote.replication.hello(req).await {
             Ok(resp) => {
                 let hello = resp.into_inner();
