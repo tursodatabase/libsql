@@ -1,5 +1,5 @@
-C Merge\slatest\sJNI\spieces\sinto\strunk.
-D 2023-11-02T18:08:49.759
+C Add\sthe\s"remove_diacritics"\soption\sto\sthe\sfts5\strigram\stokenizer.
+D 2023-11-02T18:22:35.452
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -100,7 +100,7 @@ F ext/fts5/fts5_storage.c 5d10b9bdcce5b90656cad13c7d12ad4148677d4b9e3fca0481fca5
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
 F ext/fts5/fts5_test_mi.c 08c11ec968148d4cb4119d96d819f8c1f329812c568bac3684f5464be177d3ee
 F ext/fts5/fts5_test_tok.c 3cb0a9b508b30d17ef025ccddd26ae3dc8ddffbe76c057616e59a9aa85d36f3b
-F ext/fts5/fts5_tokenize.c 5e251efb0f1af99a25ed50010ba6b1ad1250aca5921af1988fdcabe5ebc3cb43
+F ext/fts5/fts5_tokenize.c 83cfcede3898001cab84432a36ce1503e3080cf9b1c682b022ec82e267ea4c13
 F ext/fts5/fts5_unicode2.c eca63dbc797f8ff0572e97caf4631389c0ab900d6364861b915bdd4735973f00
 F ext/fts5/fts5_varint.c e64d2113f6e1bfee0032972cffc1207b77af63319746951bf1d09885d1dadf80
 F ext/fts5/fts5_vocab.c aed56169ae5c1aa9b8189c779ffeef04ed516d3c712c06914e6d91a6759f4e4a
@@ -217,6 +217,7 @@ F ext/fts5/test/fts5tok1.test 1f7817499f5971450d8c4a652114b3d833393c8134e32422d0
 F ext/fts5/test/fts5tok2.test dcacb32d4a2a3f0dd3215d4a3987f78ae4be21a2
 F ext/fts5/test/fts5tokenizer.test ac3c9112b263a639fb0508ae73a3ee886bf4866d2153771a8e8a20c721305a43
 F ext/fts5/test/fts5trigram.test 6c4e37864f3e7d90673db5563d9736d7e40080ab94d10ebdffa94c1b77941da0
+F ext/fts5/test/fts5trigram2.test 9fe4207f8a4241747aff1005258b564958588d21bfd240d6cd4c2e955d31c156
 F ext/fts5/test/fts5ubsan.test 783d5a8d13ebfa169e634940228db54540780e3ba7a87ad1e4510e61440bf64b
 F ext/fts5/test/fts5umlaut.test a42fe2fe6387c40c49ab27ccbd070e1ae38e07f38d05926482cc0bccac9ad602
 F ext/fts5/test/fts5unicode.test 17056f4efe6b0a5d4f41fdf7a7dc9af2873004562eaa899d40633b93dc95f5a9
@@ -2140,9 +2141,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cba9f0601ca995ac6952aa3a83f7264f6d25aaaa2ea36b19e90cbf591077de72 52aef3d015bad12c4bd9334ec795276a68a0dabdc6fd0ff2a1068f640171eb77
-R 68a7c8f334cdcfec330ab8b9d0fb1419
-T +closed 52aef3d015bad12c4bd9334ec795276a68a0dabdc6fd0ff2a1068f640171eb77 Closed\sby\sintegrate-merge.
-U stephan
-Z 2b85b199bb49bc244763d72014a1c5d4
+P e8c97faec339430fa2d1a7e915050d9b363bdba606a4419397cb099141da254d 8f046c82c9cf51fc349674577c68d3d2499ee37009deacbf937d711d9930fd49
+R e431cbffcb397fe64b4dba15715dbe90
+T +closed 8f046c82c9cf51fc349674577c68d3d2499ee37009deacbf937d711d9930fd49
+U dan
+Z a985144f5adb4bfbc320c60d16272d9c
 # Remove this line to create a well-formed Fossil manifest.
