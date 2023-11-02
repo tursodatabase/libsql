@@ -46,7 +46,7 @@ Where `T` is the type of the payload in case of success.
 #### Queries
 
 ```
-POST /queries
+POST /
 ```
 
 This endpoint supports sending batches of queries to the database. All of the statements in the batch are executed as part of a transaction. If any statement in the batch fails, an error is returned and the transaction is aborted, resulting in no change to the database.
@@ -70,7 +70,7 @@ Queries are either simple strings or `ParamQuery` that accept parameter bindings
 
 ##### Response Format
 
-On success, a request to `POST /query` returns a response with an HTTP 200 code and a JSON body with the following structure:
+On success, a request to `POST /` returns a response with an HTTP 200 code and a JSON body with the following structure:
 ```
 type BatchResponse = {
     results: Array<QueryResult>,
