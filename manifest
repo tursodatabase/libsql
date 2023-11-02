@@ -1,5 +1,5 @@
-C CLI\sto\scompile\swith\solder\sMSVC\scompiler.
-D 2023-11-02T11:04:37.702
+C Update\sthe\ssrctree-check.tcl\sscript\sand\schild\sscript\sso\sthat\sthey\scan\sbe\srun\non\sa\sread-only\ssource\stree\sand\sso\sthat\sif\sany\sinconsistencies\sare\sfound,\sthe\nscript\sreturns\sa\snon-zero\sexit\scode\sand\sthus\shalts\sthe\sbuild.
+D 2023-11-02T12:05:55.199
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2059,13 +2059,13 @@ F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a1914b176
 F tool/mkautoconfamal.sh cbdcf993fa83dccbef7fb77b39cdeb31ef9f77d9d88c9e343b58d35ca3898a6a
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
-F tool/mkctimec.tcl 372452e24267dfe1b496eec3992d10c6e5e7d7870a152560cdcfe5404bc8cc04 x
+F tool/mkctimec.tcl a16682eae5f01f85e5861b2aa215ca0d46b4230658ee25977e02b4508566fb75 x
 F tool/mkkeywordhash.c b9faa0ae7e14e4dbbcd951cddd786bf46b8a65bb07b129ba8c0cfade723aaffd
 F tool/mkmsvcmin.tcl 8897d515ef7f94772322db95a3b6fce6c614d84fe0bdd06ba5a1c786351d5a1d
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
 F tool/mkopcodeh.tcl 769d9e6a8b462323150dc13a8539d6064664b72974f7894befe2491cc73e05cd
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
-F tool/mkpragmatab.tcl bd07bd59d45d0f3448e123d6937e9811195f9908a51e09d774609883055bfd3d
+F tool/mkpragmatab.tcl 32e359ccb21011958a821955254bd7a5fa7915d01a8c16fed91ffc8b40cb4adf
 F tool/mkshellc.tcl b7adf08b82de60811d2cb6af05ff59fc17e5cd6f3e98743c14eaaa3f8971fed0
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -2106,7 +2106,7 @@ F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaa
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c 41c586dee84d0b190ad13e0282ed83d4a65ec9fefde9adf4943efdf6558eea7f
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
-F tool/srctree-check.tcl cef630bc4ff21a460d72479c43a42bf1c1ed61897659305c35c8d72e91bcb176
+F tool/srctree-check.tcl 32712f58821aa224ff3f6401ff985f5f24fa8b9a75250443ed70c5a51a13d84c
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/stripccomments.c 20b8aabc4694d0d4af5566e42da1f1a03aff057689370326e9269a9ddcffdc37
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3524a8914c62f7987d948e5ef50cfdcb07254489e80e2257f38d0050c4baf450
-R 1426ab6e5bb9ef707c7806f924ffe51a
-U larrybr
-Z 3840fc65c1d88cda0ad731f26c553ff7
+P c89f75f8eef449f6869bda423593f7e14080e805f8ed192aff9463460f11b1a9
+R 6b4fbbc7f44186f715baaef1e0827b96
+U drh
+Z 1f35d6921bfbf38634fcb89e7db9b288
 # Remove this line to create a well-formed Fossil manifest.
