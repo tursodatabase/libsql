@@ -1838,7 +1838,9 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         }
       }
     }
-    if( pOuterNC ) pOuterNC->nNestedSelect--;
+    if( pOuterNC && ALWAYS(pOuterNC->nNestedSelect>0) ){
+      pOuterNC->nNestedSelect--;
+    }
  
     /* Set up the local name-context to pass to sqlite3ResolveExprNames() to
     ** resolve the result-set expression list.
