@@ -129,6 +129,11 @@ public class Tester2 implements Runnable {
     execSql(db, String.join("", sql));
   }
 
+  /**
+     Executes all SQL statements in the given string. If throwOnError
+     is true then it will throw for any prepare/step errors, else it
+     will return the corresponding non-0 result code.
+  */
   public static int execSql(Sqlite dbw, boolean throwOnError, String sql){
     final sqlite3 db = dbw.nativeHandle();
     OutputPointer.Int32 oTail = new OutputPointer.Int32();
@@ -145,7 +150,7 @@ public class Tester2 implements Runnable {
       }
       if( 0==sqlChunk.length ) break;
       rc = CApi.sqlite3_prepare_v2(db, sqlChunk, outStmt, oTail);
-      if(throwOnError) affirm(0 == rc);
+      if( throwOnError ) affirm(0 == rc);
       else if( 0!=rc ) break;
       pos = oTail.value;
       stmt = outStmt.take();
@@ -158,7 +163,7 @@ public class Tester2 implements Runnable {
       }
       CApi.sqlite3_finalize(stmt);
       affirm(0 == stmt.getNativePointer());
-      if(0!=rc && CApi.SQLITE_ROW!=rc && CApi.SQLITE_DONE!=rc){
+      if(CApi.SQLITE_DONE!=rc){
         break;
       }
     }
@@ -194,9 +199,9 @@ public class Tester2 implements Runnable {
   }
 
   Sqlite openDb(String name){
-    final Sqlite db = Sqlite.open(name, CApi.SQLITE_OPEN_READWRITE|
-                                  CApi.SQLITE_OPEN_CREATE|
-                                  CApi.SQLITE_OPEN_EXRESCODE);
+    final Sqlite db = Sqlite.open(name, Sqlite.OPEN_READWRITE|
+                                  Sqlite.OPEN_CREATE|
+                                  Sqlite.OPEN_EXRESCODE);
     ++metrics.dbOpen;
     return db;
   }
@@ -224,19 +229,50 @@ public class Tester2 implements Runnable {
 
   void testPrepare1(){
     try (Sqlite db = openDb()) {
-      Sqlite.Stmt stmt = db.prepare("SELECT 1");
+      Sqlite.Stmt stmt = db.prepare("SELECT ?1");
+      Exception e = null;
       affirm( null!=stmt.nativeHandle() );
-      affirm( CApi.SQLITE_ROW == stmt.step() );
-      affirm( CApi.SQLITE_DONE == stmt.step() );
+      affirm( 1==stmt.bindParameterCount() );
+      affirm( "?1".equals(stmt.bindParameterName(1)) );
+      affirm( null==stmt.bindParameterName(2) );
+      stmt.bindInt64(1, 1);
+      stmt.bindDouble(1, 1.1);
+      stmt.bindObject(1, db);
+      stmt.bindNull(1);
+      stmt.bindText(1, new byte[] {32,32,32});
+      stmt.bindText(1, "123");
+      stmt.bindText16(1, "123".getBytes(StandardCharsets.UTF_16));
+      stmt.bindText16(1, "123");
+      stmt.bindZeroBlob(1, 8);
+      stmt.bindBlob(1, new byte[] {1,2,3,4});
+      stmt.bindInt(1, 17);
+      try{ stmt.bindInt(2,1); }
+      catch(Exception ex){ e = ex; }
+      affirm( null!=e );
+      e = null;
+      affirm( stmt.step() );
+      try{ stmt.columnInt(1); }
+      catch(Exception ex){ e = ex; }
+      affirm( null!=e );
+      e = null;
+      affirm( 17 == stmt.columnInt(0) );
+      affirm( 17L == stmt.columnInt64(0) );
+      affirm( 17.0 == stmt.columnDouble(0) );
+      affirm( "17".equals(stmt.columnText16(0)) );
+      affirm( !stmt.step() );
       stmt.reset();
-      affirm( CApi.SQLITE_ROW == stmt.step() );
-      affirm( CApi.SQLITE_DONE == stmt.step() );
+      affirm( stmt.step() );
+      affirm( !stmt.step() );
       affirm( 0 == stmt.finalizeStmt() );
       affirm( null==stmt.nativeHandle() );
 
-      stmt = db.prepare("SELECT 1");
-      affirm( CApi.SQLITE_ROW == stmt.step() );
-      affirm( 0 == stmt.finalizeStmt() )
+      stmt = db.prepare("SELECT ?");
+      stmt.bindObject(1, db);
+      affirm( stmt.step() );
+      affirm( db==stmt.columnObject(0) );
+      affirm( db==stmt.columnObject(0, Sqlite.class ) );
+      affirm( null==stmt.columnObject(0, Sqlite.Stmt.class ) );
+      affirm( 0==stmt.finalizeStmt() )
         /* getting a non-0 out of sqlite3_finalize() is tricky */;
       affirm( null==stmt.nativeHandle() );
     }
@@ -270,7 +306,7 @@ public class Tester2 implements Runnable {
 
   void testUdfAggregate(){
     final ValueHolder<Integer> xDestroyCalled = new ValueHolder<>(0);
-    final ValueHolder<Integer> vh = new ValueHolder<>(0);
+    Sqlite.Stmt q = null;
     try (Sqlite db = openDb()) {
       execSql(db, "create table t(a); insert into t(a) values(1),(2),(3)");
       final AggregateFunction f = new AggregateFunction<Integer>(){
@@ -284,18 +320,96 @@ public class Tester2 implements Runnable {
             final Integer v = this.takeAggregateState(args);
             if( null==v ) args.resultNull();
             else args.resultInt(v);
-            vh.value = v;
           }
           public void xDestroy(){
             ++xDestroyCalled.value;
           }
         };
-      db.createFunction("myagg", -1, f);
-      execSql(db, "select myagg(a) from t");
-      affirm( 6 == vh.value );
+      db.createFunction("summer", 1, f);
+      q = db.prepare(
+        "with cte(v) as ("+
+        "select 3 union all select 5 union all select 7"+
+        ") select summer(v), summer(v+1) from cte"
+        /* ------------------^^^^^^^^^^^ ensures that we're handling
+           sqlite3_aggregate_context() properly. */
+      );
+      affirm( q.step() );
+      affirm( 15==q.columnInt(0) );
+      q.finalizeStmt();
+      q = null;
       affirm( 0 == xDestroyCalled.value );
+      db.createFunction("summerN", -1, f);
+
+      q = db.prepare("select summerN(1,8,9), summerN(2,3,4)");
+      affirm( q.step() );
+      affirm( 18==q.columnInt(0) );
+      affirm( 9==q.columnInt(1) );
+      q.finalizeStmt();
+      q = null;
+
+    }/*db*/
+    finally{
+      if( null!=q ) q.finalizeStmt();
     }
-    affirm( 1 == xDestroyCalled.value );
+    affirm( 2 == xDestroyCalled.value
+            /* because we've bound the same instance twice */ );
+  }
+
+  private void testUdfWindow(){
+    final Sqlite db = openDb();
+    /* Example window function, table, and results taken from:
+       https://sqlite.org/windowfunctions.html#udfwinfunc */
+    final WindowFunction func = new WindowFunction<Integer>(){
+        //! Impl of xStep() and xInverse()
+        private void xStepInverse(SqlFunction.Arguments args, int v){
+          this.getAggregateState(args,0).value += v;
+        }
+        @Override public void xStep(SqlFunction.Arguments args){
+          this.xStepInverse(args, args.getInt(0));
+        }
+        @Override public void xInverse(SqlFunction.Arguments args){
+          this.xStepInverse(args, -args.getInt(0));
+        }
+        //! Impl of xFinal() and xValue()
+        private void xFinalValue(SqlFunction.Arguments args, Integer v){
+          if(null == v) args.resultNull();
+          else args.resultInt(v);
+        }
+        @Override public void xFinal(SqlFunction.Arguments args){
+          xFinalValue(args, this.takeAggregateState(args));
+          affirm( null == this.getAggregateState(args,null).value );
+        }
+        @Override public void xValue(SqlFunction.Arguments args){
+          xFinalValue(args, this.getAggregateState(args,null).value);
+        }
+      };
+    db.createFunction("winsumint", 1, func);
+    execSql(db, new String[] {
+        "CREATE TEMP TABLE twin(x, y); INSERT INTO twin VALUES",
+        "('a', 4),('b', 5),('c', 3),('d', 8),('e', 1)"
+      });
+    final Sqlite.Stmt stmt = db.prepare(
+      "SELECT x, winsumint(y) OVER ("+
+      "ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING"+
+      ") AS sum_y "+
+      "FROM twin ORDER BY x;"
+    );
+    int n = 0;
+    while( stmt.step() ){
+      final String s = stmt.columnText16(0);
+      final int i = stmt.columnInt(1);
+      switch(++n){
+        case 1: affirm( "a".equals(s) && 9==i ); break;
+        case 2: affirm( "b".equals(s) && 12==i ); break;
+        case 3: affirm( "c".equals(s) && 16==i ); break;
+        case 4: affirm( "d".equals(s) && 12==i ); break;
+        case 5: affirm( "e".equals(s) && 9==i ); break;
+        default: affirm( false /* cannot happen */ );
+      }
+    }
+    stmt.close();
+    affirm( 5 == n );
+    db.close();
   }
 
   private void runTests(boolean fromThread) throws Exception {

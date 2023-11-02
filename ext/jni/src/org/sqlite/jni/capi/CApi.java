@@ -32,15 +32,6 @@ import java.util.Arrays;
 
   <p>The C-side part can be found in sqlite3-jni.c.
 
-  <p>This class is package-private in order to keep Java clients from
-  having direct access to the low-level C-style APIs, a design
-  decision made by Java developers based on the C-style API being
-  riddled with opportunities for Java developers to proverbially shoot
-  themselves in the foot with. Third-party copies of this code may
-  eliminate that guard by simply changing this class from
-  package-private to public. Its methods which are intended to be
-  exposed that way are all public.
-
   <p>Only functions which materially differ from their C counterparts
   are documented here, and only those material differences are
   documented. The C documentation is otherwise applicable for these
@@ -594,6 +585,36 @@ public final class CApi {
   public static native long sqlite3_column_int64(
     @NotNull sqlite3_stmt stmt, int ndx
   );
+
+  static native Object sqlite3_column_java_object(
+    @NotNull long ptrToStmt, int ndx
+  );
+
+  /**
+     If the given result column was bound with
+     sqlite3_bind_java_object() or sqlite3_result_java_object() then
+     that object is returned, else null is returned. This routine
+     requires locking the owning database's mutex briefly in order to
+     extract the object in a thread-safe way.
+  */
+  public static Object sqlite3_column_java_object(
+    @NotNull sqlite3_stmt stmt, int ndx
+  ){
+    return sqlite3_column_java_object( stmt.getNativePointer(), ndx );
+  }
+
+  /**
+     If the two-parameter overload of sqlite3_column_java_object()
+     returns non-null and the returned value is an instance of T then
+     that object is returned, else null is returned.
+  */
+  @SuppressWarnings("unchecked")
+  public static <T> T sqlite3_column_java_object(
+    @NotNull sqlite3_stmt stmt, int ndx, @NotNull Class<T> type
+  ){
+    final Object o = sqlite3_column_java_object(stmt, ndx);
+    return type.isInstance(o) ? (T)o : null;
+  }
 
   static native String sqlite3_column_name(@NotNull long ptrToStmt, int ndx);
 
@@ -1432,10 +1453,6 @@ public final class CApi {
     @NotNull sqlite3_context cx, int c
   );
 
-  public static native void sqlite3_result_null(
-    @NotNull sqlite3_context cx
-  );
-
   public static native void sqlite3_result_int(
     @NotNull sqlite3_context cx, int v
   );
@@ -1462,6 +1479,10 @@ public final class CApi {
   */
   public static native void sqlite3_result_java_object(
     @NotNull sqlite3_context cx, @NotNull Object o
+  );
+
+  public static native void sqlite3_result_null(
+    @NotNull sqlite3_context cx
   );
 
   public static void sqlite3_result_set(
@@ -1523,6 +1544,10 @@ public final class CApi {
     if( null==blob ) sqlite3_result_null(cx);
     else sqlite3_result_blob(cx, blob, blob.length);
   }
+
+  public static native void sqlite3_result_subtype(
+    @NotNull sqlite3_context cx, int val
+  );
 
   public static native void sqlite3_result_value(
     @NotNull sqlite3_context cx, @NotNull sqlite3_value v
@@ -1938,7 +1963,7 @@ public final class CApi {
      given Class, else it returns null.
   */
   @SuppressWarnings("unchecked")
-  public static <T> T sqlite3_value_java_casted(@NotNull sqlite3_value v,
+  public static <T> T sqlite3_value_java_object(@NotNull sqlite3_value v,
                                                 @NotNull Class<T> type){
     final Object o = sqlite3_value_java_object(v);
     return type.isInstance(o) ? (T)o : null;

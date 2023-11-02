@@ -803,13 +803,17 @@ public class Tester1 implements Runnable {
     affirm( 0==rc );
     int n = 0;
     if( SQLITE_ROW == sqlite3_step(stmt) ){
+      affirm( testResult.value == sqlite3_column_java_object(stmt, 0) );
+      affirm( testResult.value == sqlite3_column_java_object(stmt, 0, sqlite3.class) );
+      affirm( null == sqlite3_column_java_object(stmt, 0, sqlite3_stmt.class) );
+      affirm( null == sqlite3_column_java_object(stmt,1) );
       final sqlite3_value v = sqlite3_column_value(stmt, 0);
       affirm( testResult.value == sqlite3_value_java_object(v) );
-      affirm( testResult.value == sqlite3_value_java_casted(v, sqlite3.class) );
+      affirm( testResult.value == sqlite3_value_java_object(v, sqlite3.class) );
       affirm( testResult.value ==
-              sqlite3_value_java_casted(v, testResult.value.getClass()) );
-      affirm( testResult.value == sqlite3_value_java_casted(v, Object.class) );
-      affirm( null == sqlite3_value_java_casted(v, String.class) );
+              sqlite3_value_java_object(v, testResult.value.getClass()) );
+      affirm( testResult.value == sqlite3_value_java_object(v, Object.class) );
+      affirm( null == sqlite3_value_java_object(v, String.class) );
       ++n;
     }
     sqlite3_finalize(stmt);
@@ -925,7 +929,6 @@ public class Tester1 implements Runnable {
                          "ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING"+
                          ") AS sum_y "+
                          "FROM twin ORDER BY x;");
-    affirm( 0 == rc );
     int n = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       final String s = sqlite3_column_text16(stmt, 0);
