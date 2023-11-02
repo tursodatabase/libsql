@@ -6,10 +6,19 @@ pub struct LogOffset {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct HelloRequest {}
+pub struct HelloRequest {
+    #[prost(uint64, optional, tag = "1")]
+    pub handshake_version: ::core::option::Option<u64>,
+}
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct HelloResponse {
+    /// / Uuid of the current generation
+    #[prost(string, tag = "1")]
+    pub generation_id: ::prost::alloc::string::String,
+    /// / First frame_no in the current generation
+    #[prost(uint64, tag = "2")]
+    pub generation_start_index: u64,
     /// / id of the replicated log
     #[prost(string, tag = "3")]
     pub log_id: ::prost::alloc::string::String,

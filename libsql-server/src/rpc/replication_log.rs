@@ -1,5 +1,7 @@
+use std::collections::HashSet;
+use std::net::SocketAddr;
 use std::pin::Pin;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use bytes::Bytes;
 use futures::stream::BoxStream;
@@ -11,15 +13,16 @@ use libsql_replication::rpc::replication::{
 };
 use tokio_stream::StreamExt;
 use tonic::Status;
+use tonic::transport::server::TcpConnectInfo;
 use uuid::Uuid;
 
 use crate::auth::Auth;
-use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
+use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker, NamespaceName};
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::LogReadError;
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 
-use super::NAMESPACE_DOESNT_EXIST;
+use super::{NAMESPACE_DOESNT_EXIST, extract_namespace};
 
 pub struct ReplicationLogService {
     namespaces: NamespaceStore<PrimaryNamespaceMaker>,
@@ -27,6 +30,10 @@ pub struct ReplicationLogService {
     auth: Option<Arc<Auth>>,
     disable_namespaces: bool,
     session_token: Bytes,
+
+    //deprecated:
+    generation_id: Uuid,
+    replicas_with_hello: RwLock<HashSet<(SocketAddr, NamespaceName)>>,
 }
 
 pub const MAX_FRAMES_PER_BATCH: usize = 1024;
@@ -45,6 +52,8 @@ impl ReplicationLogService {
             idle_shutdown_layer,
             auth,
             disable_namespaces,
+            generation_id: Uuid::new_v4(),
+            replicas_with_hello: Default::default(),
         }
     }
 
@@ -58,11 +67,25 @@ impl ReplicationLogService {
 
     fn verify_session_token<R>(&self, req: &tonic::Request<R>) -> Result<(), Status> {
         let no_hello = || Err(Status::failed_precondition(NO_HELLO_ERROR_MSG));
-        let Some(token) = req.metadata().get(SESSION_TOKEN_KEY) else {
-            return no_hello();
-        };
-        if token.as_bytes() != self.session_token {
-            return no_hello();
+        match req.metadata().get(SESSION_TOKEN_KEY) {
+            Some(token) => {
+                if token.as_bytes() != self.session_token {
+                    return no_hello();
+                }
+            }
+            None => {
+                // legacy: old replicas used stateful session management
+                let replica_addr = req
+                    .remote_addr()
+                    .ok_or(Status::internal("No remote RPC address"))?;
+                {
+                    let namespace = extract_namespace(self.disable_namespaces, req)?;
+                    let guard = self.replicas_with_hello.read().unwrap();
+                    if !guard.contains(&(replica_addr, namespace)) {
+                        return no_hello();
+                    }
+                }
+            }
         }
 
         Ok(())
@@ -203,6 +226,19 @@ impl ReplicationLog for ReplicationLogService {
         self.authenticate(&req)?;
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
+        // legacy support
+        if req.get_ref().handshake_version.is_none() {
+            req.extensions().get::<TcpConnectInfo>().unwrap();
+            let replica_addr = req
+                .remote_addr()
+                .ok_or(Status::internal("No remote RPC address"))?;
+
+            {
+                let mut guard = self.replicas_with_hello.write().unwrap();
+                guard.insert((replica_addr, namespace.clone()));
+            }
+        }
+
         let logger = self
             .namespaces
             .with(namespace, |ns| ns.db.logger.clone())
@@ -218,6 +254,8 @@ impl ReplicationLog for ReplicationLogService {
         let response = HelloResponse {
             log_id: logger.log_id().to_string(),
             session_token: self.session_token.clone(),
+            generation_id: self.generation_id.to_string(),
+            generation_start_index: 0,
         };
 
         Ok(tonic::Response::new(response))
@@ -228,6 +266,7 @@ impl ReplicationLog for ReplicationLogService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::SnapshotStream>, Status> {
         self.authenticate(&req)?;
+        self.verify_session_token(&req)?;
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
         let req = req.into_inner();
         let logger = self
