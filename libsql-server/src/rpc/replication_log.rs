@@ -12,17 +12,17 @@ use libsql_replication::rpc::replication::{
     NO_HELLO_ERROR_MSG, SESSION_TOKEN_KEY,
 };
 use tokio_stream::StreamExt;
-use tonic::Status;
 use tonic::transport::server::TcpConnectInfo;
+use tonic::Status;
 use uuid::Uuid;
 
 use crate::auth::Auth;
-use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker, NamespaceName};
+use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::LogReadError;
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 
-use super::{NAMESPACE_DOESNT_EXIST, extract_namespace};
+use super::{extract_namespace, NAMESPACE_DOESNT_EXIST};
 
 pub struct ReplicationLogService {
     namespaces: NamespaceStore<PrimaryNamespaceMaker>,
