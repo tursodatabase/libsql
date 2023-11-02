@@ -510,12 +510,16 @@ impl Proxy for ProxyService {
 
         tracing::debug!("executing request for {client_id}");
 
+        tracing::trace!(?pgm, "executing program");
+
         let builder = ExecuteResultBuilder::default();
         let (results, state) = db
             .execute_program(pgm, auth, builder, None)
             .await
             // TODO: this is no necessarily a permission denied error!
             .map_err(|e| tonic::Status::new(tonic::Code::PermissionDenied, e.to_string()))?;
+
+        tracing::trace!(end_state=?state, "done executing program");
 
         let current_frame_no = *new_frame_notifier.borrow();
         Ok(tonic::Response::new(ExecuteResults {

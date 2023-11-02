@@ -157,3 +157,60 @@ fn execute_batch() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn txn_autocommit() {
+    let mut sim = Builder::new().build();
+
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_host = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let client = Client::new();
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let path = tmp_embedded_path.join("embedded");
+        let db = Database::open_with_remote_sync_connector(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080",
+            "",
+            TurmoilConnector,
+        )
+        .await?;
+
+        let n = db.sync().await?;
+        assert_eq!(n, None);
+
+        let conn = db.connect()?;
+
+        let txn = conn
+            .transaction_with_behavior(libsql::TransactionBehavior::Deferred)
+            .await?;
+
+        assert!(!txn.is_autocommit());
+
+        txn.execute("select 1", ()).await?;
+        txn.commit().await?;
+
+        assert!(conn.is_autocommit());
+
+        let txn = conn
+            .transaction_with_behavior(libsql::TransactionBehavior::Deferred)
+            .await?;
+
+        assert!(!txn.is_autocommit());
+
+        txn.execute("select 1", ()).await?;
+        txn.commit().await?;
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}

@@ -22,6 +22,7 @@ pub enum StmtKind {
     /// The begining of a transaction
     TxnBegin,
     TxnBeginReadOnly,
+    TxnBeginDeferred,
     /// The end of a transaction
     TxnEnd,
     Read,
@@ -52,6 +53,9 @@ impl StmtKind {
             Cmd::ExplainQueryPlan(_) => Some(Self::Other),
             Cmd::Stmt(Stmt::Begin(Some(TransactionType::ReadOnly), _)) => {
                 Some(Self::TxnBeginReadOnly)
+            }
+            Cmd::Stmt(Stmt::Begin(Some(TransactionType::Deferred), _)) => {
+                Some(Self::TxnBeginDeferred)
             }
             Cmd::Stmt(Stmt::Begin { .. }) => Some(Self::TxnBegin),
             Cmd::Stmt(

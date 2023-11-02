@@ -10,7 +10,6 @@ use hyper::server::accept::Accept as HyperAccept;
 use hyper::Uri;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tower::Service;
-use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 use sqld::net::Accept;
 use sqld::net::AddrStream;
@@ -140,6 +139,8 @@ pub trait SimServer {
 #[async_trait::async_trait]
 impl SimServer for TestServer {
     async fn start_sim(mut self, user_api_port: usize) -> anyhow::Result<()> {
+        init_tracing();
+
         // We need to ensure that libsql's init code runs before we do anything
         // with rusqlite in sqld. This is because libsql has saftey checks and
         // needs to configure the sqlite api. Thus if we init sqld first
@@ -163,10 +164,5 @@ impl SimServer for TestServer {
 
 pub fn init_tracing() {
     static INIT_TRACING: Once = Once::new();
-    INIT_TRACING.call_once(|| {
-        tracing_subscriber::registry()
-            .with(fmt::layer())
-            .with(EnvFilter::from_default_env())
-            .init();
-    });
+    INIT_TRACING.call_once(|| tracing_subscriber::fmt::init());
 }

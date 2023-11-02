@@ -3,11 +3,11 @@
 use std::str::FromStr;
 use std::sync::Arc;
 
-use parking_lot::Mutex;
 use libsql_replication::rpc::proxy::{
-    describe_result, execute_results::State as RemoteState, query_result::RowResult, DescribeResult,
-    ExecuteResults, ResultRows
+    describe_result, execute_results::State as RemoteState, query_result::RowResult,
+    DescribeResult, ExecuteResults, ResultRows,
 };
+use parking_lot::Mutex;
 
 use crate::rows::{RowInner, RowsInner};
 use crate::statement::Stmt;
@@ -43,6 +43,7 @@ enum State {
     Init,
     Invalid,
     Txn,
+    TxnDeferred,
     TxnReadOnly,
 }
 
@@ -50,30 +51,30 @@ impl State {
     pub fn step(&self, kind: StmtKind) -> State {
         use State;
 
-        match (*self, kind) {
-            (State::TxnReadOnly, StmtKind::TxnBegin)
-            | (State::Txn, StmtKind::TxnBegin)
-            | (State::Init, StmtKind::TxnEnd) => State::Invalid,
+        tracing::trace!(state=?self, stmt_kind=?kind, "state step");
 
-            (State::TxnReadOnly, StmtKind::TxnEnd) | (State::Txn, StmtKind::TxnEnd) => State::Init,
+        match (*self, kind) {
+            (State::TxnReadOnly, StmtKind::TxnEnd)
+            | (State::Txn, StmtKind::TxnEnd)
+            | (State::TxnDeferred, StmtKind::TxnEnd) => State::Init,
 
             // Savepoint only makes sense within a transaction and doesn't change the transaction kind
             (State::TxnReadOnly, StmtKind::Savepoint) => State::TxnReadOnly,
             (State::Txn, StmtKind::Savepoint) => State::Txn,
             (_, StmtKind::Savepoint) => State::Invalid,
+
             // Releasing a savepoint only makes sense inside a transaction and it doesn't change its state
             (State::TxnReadOnly, StmtKind::Release) => State::TxnReadOnly,
             (State::Txn, StmtKind::Release) => State::Txn,
             (_, StmtKind::Release) => State::Invalid,
 
             (state, StmtKind::Other | StmtKind::Write | StmtKind::Read) => state,
-            (State::Invalid, _) => State::Invalid,
 
             (State::Init, StmtKind::TxnBegin) => State::Txn,
             (State::Init, StmtKind::TxnBeginReadOnly) => State::TxnReadOnly,
+            (State::Init, StmtKind::TxnBeginDeferred) => State::TxnDeferred,
 
-            (State::Txn, StmtKind::TxnBeginReadOnly)
-            | (State::TxnReadOnly, StmtKind::TxnBeginReadOnly) => State::Invalid,
+            _ => State::Invalid,
         }
     }
 }
@@ -97,6 +98,8 @@ fn predict_final_state<'a>(
 /// and start a new transaction with the write in it.
 fn should_execute_local(state: &mut State, stmts: &[parser::Statement]) -> Result<bool> {
     let predicted_end_state = predict_final_state(*state, stmts.iter());
+
+    tracing::trace!(initial_state=?*state, predicated_end_state=?predicted_end_state, "should_execute_local");
 
     let should_execute_local = match (*state, predicted_end_state) {
         (State::Init, State::Init) => {
@@ -139,7 +142,10 @@ fn should_execute_local(state: &mut State, stmts: &[parser::Statement]) -> Resul
             );
         }
 
-        _ => false,
+        (_, predicted_final_state) => {
+            *state = predicted_final_state;
+            false
+        }
     };
 
     Ok(should_execute_local)
@@ -166,7 +172,9 @@ impl RemoteConnection {
     }
 
     fn is_state_init(&self) -> bool {
-        matches!(self.inner.lock().state, State::Init)
+        let state = self.inner.lock().state;
+        tracing::trace!(?state, "is_state_init");
+        matches!(state, State::Init)
     }
 
     pub(self) async fn execute_remote(
@@ -175,7 +183,9 @@ impl RemoteConnection {
         params: Params,
     ) -> Result<ExecuteResults> {
         let Some(ref writer) = self.writer else {
-            return Err(Error::Misuse("Cannot delegate write in local replica mode.".into()));
+            return Err(Error::Misuse(
+                "Cannot delegate write in local replica mode.".into(),
+            ));
         };
         let res = writer
             .execute_program(stmts, params)
@@ -184,9 +194,16 @@ impl RemoteConnection {
 
         {
             let mut inner = self.inner.lock();
-            inner.state = RemoteState::try_from(res.state)
+
+            let remote_state = RemoteState::try_from(res.state)
                 .expect("Invalid state enum")
                 .into();
+
+            tracing::trace!(old_state=?inner.state, new_remote_state=?res.state, "update state from remote");
+
+            if inner.state != State::TxnDeferred {
+                inner.state = remote_state;
+            }
         }
 
         Ok(res)
@@ -194,7 +211,9 @@ impl RemoteConnection {
 
     pub(self) async fn describe(&self, stmt: impl Into<String>) -> Result<DescribeResult> {
         let Some(ref writer) = self.writer else {
-            return Err(Error::Misuse("Cannot describe in local replica mode.".into()));
+            return Err(Error::Misuse(
+                "Cannot describe in local replica mode.".into(),
+            ));
         };
         let res = writer
             .describe(stmt)
@@ -566,10 +585,7 @@ impl Stmt for RemoteStatement {
     }
 }
 
-pub(crate) struct RemoteRows(
-    pub(crate) ResultRows,
-    pub(crate) usize,
-);
+pub(crate) struct RemoteRows(pub(crate) ResultRows, pub(crate) usize);
 
 impl RowsInner for RemoteRows {
     fn next(&mut self) -> Result<Option<Row>> {
