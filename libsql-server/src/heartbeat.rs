@@ -45,19 +45,43 @@ async fn send_stats(
     for (ns, stats) in watched.iter() {
         if let Some(stats) = stats.upgrade() {
             let body = StatsResponse::from(stats.as_ref());
+            let mut heartbeat_url;
             if let Some(url) = url {
-                let mut url = url.clone();
-                url.path_segments_mut().unwrap().push(ns.as_str());
-                let request = client.post(url);
-                let request = if let Some(ref auth) = auth {
-                    request.header("Authorization", auth.to_string())
-                } else {
-                    request
-                };
-                let request = request.json(&body);
-                if let Err(err) = request.send().await {
-                    tracing::warn!("Error sending heartbeat: {}", err);
+                heartbeat_url = url.clone();
+            } else {
+                match namespaces.config_store(ns.clone()).await {
+                    Ok(config_store) => {
+                        let config = config_store.get();
+                        if let Some(url) = config.heartbeat_url.as_ref() {
+                            heartbeat_url = url.clone();
+                        } else {
+                            tracing::warn!(
+                                "No heartbeat url for namespace {}. Can't send stats!",
+                                ns.as_str()
+                            );
+                            continue;
+                        }
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            "Error fetching config for namespace {}. Can't send stats: {}",
+                            ns.as_str(),
+                            e
+                        );
+                        continue;
+                    }
                 }
+            }
+            heartbeat_url.path_segments_mut().unwrap().push(ns.as_str());
+            let request = client.post(heartbeat_url);
+            let request = if let Some(ref auth) = auth {
+                request.header("Authorization", auth.to_string())
+            } else {
+                request
+            };
+            let request = request.json(&body);
+            if let Err(err) = request.send().await {
+                tracing::warn!("Error sending heartbeat: {}", err);
             }
         }
     }
