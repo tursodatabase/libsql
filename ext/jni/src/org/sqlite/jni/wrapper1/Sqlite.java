@@ -137,6 +137,47 @@ public final class Sqlite implements AutoCloseable  {
     return CApi.sqlite3_threadsafe();
   }
 
+  /**
+     Analog to sqlite3_compileoption_get().
+  */
+  public static String compileOptionGet(int n){
+    return CApi.sqlite3_compileoption_get(n);
+  }
+
+  /**
+     Analog to sqlite3_compileoption_used().
+  */
+  public static boolean compileOptionUsed(String optName){
+    return CApi.sqlite3_compileoption_used(optName);
+  }
+
+  /**
+     Analog to sqlite3_complete().
+  */
+  public static boolean isCompleteStatement(String sql){
+    switch(CApi.sqlite3_complete(sql)){
+      case 0: return false;
+      case CApi.SQLITE_MISUSE:
+        throw new IllegalArgumentException("Input may not be null.");
+      case CApi.SQLITE_NOMEM:
+        throw new OutOfMemoryError();
+      default:
+        return true;
+    }
+  }
+
+  public static int keywordCount(){
+    return CApi.sqlite3_keyword_count();
+  }
+
+  public static boolean keywordCheck(String word){
+    return CApi.sqlite3_keyword_check(word);
+  }
+
+  public static String keywordName(int index){
+    return CApi.sqlite3_keyword_name(index);
+  }
+
   public static boolean strglob(String glob, String txt){
     return 0==CApi.sqlite3_strglob(glob, txt);
   }
