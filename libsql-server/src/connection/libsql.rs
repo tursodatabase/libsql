@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use metrics::histogram;
+use metrics::{histogram, increment_counter};
 use parking_lot::{Mutex, RwLock};
 use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus, TransactionState};
 use sqld_libsql_bindings::wal_hook::{TransparentMethods, WalMethodsHook};
@@ -616,6 +616,9 @@ impl<W: WalHook> Connection<W> {
         builder: &mut impl QueryResultBuilder,
     ) -> Result<(u64, Option<i64>)> {
         tracing::trace!("executing query: {}", query.stmt.stmt);
+
+        increment_counter!("libsql_server_libsql_query_execute");
+
         let start = Instant::now();
         let config = self.config_store.get();
         let blocked = match query.stmt.kind {
@@ -857,6 +860,8 @@ where
         builder: B,
         _replication_index: Option<FrameNo>,
     ) -> Result<B> {
+        increment_counter!("libsql_server_libsql_execute_program");
+
         check_program_auth(auth, &pgm)?;
         let conn = self.inner.clone();
         tokio::task::spawn_blocking(move || Connection::run(conn, pgm, builder))
