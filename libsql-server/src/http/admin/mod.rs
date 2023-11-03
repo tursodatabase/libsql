@@ -270,7 +270,17 @@ async fn handle_fork_namespace<M: MakeNamespace, C>(
     let timestamp = req.map(|v| v.timestamp);
     let from = NamespaceName::from_string(from)?;
     let to = NamespaceName::from_string(to)?;
-    app_state.namespaces.fork(from, to, timestamp).await?;
+    app_state
+        .namespaces
+        .fork(from.clone(), to.clone(), timestamp)
+        .await?;
+    let from_store = app_state.namespaces.config_store(from).await?;
+    let from_config = from_store.get();
+    let to_store = app_state.namespaces.config_store(to).await?;
+    let mut to_config = (*to_store.get()).clone();
+    to_config.max_db_pages = from_config.max_db_pages;
+    to_config.heartbeat_url = from_config.heartbeat_url.clone();
+    to_store.store(to_config)?;
     Ok(())
 }
 
