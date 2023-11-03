@@ -6,6 +6,7 @@ use bytes::Bytes;
 use rusqlite::types::ValueRef;
 
 use crate::hrana::stmt::{proto_error_from_stmt_error, stmt_error_from_sqld_error};
+use crate::query_analysis::TxnStatus;
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError, TOTAL_RESPONSE_SIZE,
 };
@@ -225,7 +226,11 @@ impl QueryResultBuilder for SingleStatementBuilder {
         Ok(())
     }
 
-    fn finish(&mut self, last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError> {
+    fn finish(
+        &mut self,
+        last_frame_no: Option<FrameNo>,
+        _state: TxnStatus,
+    ) -> Result<(), QueryResultBuilderError> {
         self.last_frame_no = last_frame_no;
         Ok(())
     }
@@ -344,7 +349,11 @@ impl QueryResultBuilder for HranaBatchProtoBuilder {
         Ok(())
     }
 
-    fn finish(&mut self, _last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError> {
+    fn finish(
+        &mut self,
+        _last_frame_no: Option<FrameNo>,
+        _state: TxnStatus,
+    ) -> Result<(), QueryResultBuilderError> {
         Ok(())
     }
 

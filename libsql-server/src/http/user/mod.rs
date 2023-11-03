@@ -37,7 +37,7 @@ use crate::http::user::types::HttpQuery;
 use crate::namespace::{MakeNamespace, NamespaceStore};
 use crate::net::Accept;
 use crate::query::{self, Query};
-use crate::query_analysis::{predict_final_state, State, Statement};
+use crate::query_analysis::{predict_final_state, Statement, TxnStatus};
 use crate::query_result_builder::QueryResultBuilder;
 use crate::rpc::proxy::rpc::proxy_server::{Proxy, ProxyServer};
 use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLog;
@@ -108,15 +108,15 @@ fn parse_queries(queries: Vec<QueryObject>) -> crate::Result<Vec<Query>> {
         ));
     }
 
-    match predict_final_state(State::Init, out.iter().map(|q| &q.stmt)) {
-        State::Txn => {
+    match predict_final_state(TxnStatus::Init, out.iter().map(|q| &q.stmt)) {
+        TxnStatus::Txn => {
             return Err(Error::QueryError(
                 "interactive transaction not allowed in HTTP queries".to_string(),
             ))
         }
-        State::Init => (),
+        TxnStatus::Init => (),
         // maybe we should err here, but let's sqlite deal with that.
-        State::Invalid => (),
+        TxnStatus::Invalid => (),
     }
 
     Ok(out)
@@ -132,7 +132,7 @@ async fn handle_query<C: Connection>(
     let db = connection_maker.create().await?;
 
     let builder = JsonHttpPayloadBuilder::new();
-    let (builder, _) = db
+    let builder = db
         .execute_batch_or_rollback(batch, auth, builder, query.replication_index)
         .await?;
 

@@ -82,6 +82,13 @@ pub enum Error {
     Fork(#[from] ForkError),
     #[error("Fatal replication error")]
     FatalReplicationError,
+
+    #[error("Connection with primary broken")]
+    PrimaryStreamDisconnect,
+    #[error("Proxy protocal misuse")]
+    PrimaryStreamMisuse,
+    #[error("Proxy request interupted")]
+    PrimaryStreamInterupted,
 }
 
 trait ResponseError: std::error::Error {
@@ -135,6 +142,9 @@ impl IntoResponse for Error {
             FatalReplicationError => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             ReplicatorError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             ReplicaMetaError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            PrimaryStreamDisconnect => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            PrimaryStreamMisuse => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            PrimaryStreamInterupted => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }

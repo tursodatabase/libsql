@@ -44,10 +44,7 @@ fn build() -> Result<()> {
 }
 
 fn run_cargo(cmd: &[&str]) -> Result<()> {
-    let mut out = Command::new("cargo")
-        .args(&cmd[..])
-        .spawn()
-        .context("spawn")?;
+    let mut out = Command::new("cargo").args(cmd).spawn().context("spawn")?;
 
     let exit = out.wait().context("wait")?;
 

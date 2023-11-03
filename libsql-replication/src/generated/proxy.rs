@@ -1,4 +1,4 @@
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Queries {
@@ -8,7 +8,7 @@ pub struct Queries {
     #[prost(string, tag = "2")]
     pub client_id: ::prost::alloc::string::String,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Query {
@@ -21,7 +21,7 @@ pub struct Query {
 }
 /// Nested message and enum types in `Query`.
 pub mod query {
-    #[cfg_attr(test, derive(arbitrary::Arbitrary))]
+    #[derive(serde::Serialize, serde::Deserialize)]
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Params {
@@ -31,14 +31,14 @@ pub mod query {
         Named(super::Named),
     }
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Positional {
     #[prost(message, repeated, tag = "1")]
     pub values: ::prost::alloc::vec::Vec<Value>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Named {
@@ -47,7 +47,7 @@ pub struct Named {
     #[prost(message, repeated, tag = "2")]
     pub values: ::prost::alloc::vec::Vec<Value>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryResult {
@@ -56,7 +56,7 @@ pub struct QueryResult {
 }
 /// Nested message and enum types in `QueryResult`.
 pub mod query_result {
-    #[cfg_attr(test, derive(arbitrary::Arbitrary))]
+    #[derive(serde::Serialize, serde::Deserialize)]
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum RowResult {
@@ -66,7 +66,7 @@ pub mod query_result {
         Row(super::ResultRows),
     }
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Error {
@@ -79,7 +79,7 @@ pub struct Error {
 }
 /// Nested message and enum types in `Error`.
 pub mod error {
-    #[cfg_attr(test, derive(arbitrary::Arbitrary))]
+    #[derive(serde::Serialize, serde::Deserialize)]
     #[derive(
         Clone,
         Copy,
@@ -105,25 +105,25 @@ pub mod error {
         /// (if the ProtoBuf definition does not change) and safe for programmatic use.
         pub fn as_str_name(&self) -> &'static str {
             match self {
-                ErrorCode::SqlError => "SQLError",
-                ErrorCode::TxBusy => "TxBusy",
-                ErrorCode::TxTimeout => "TxTimeout",
-                ErrorCode::Internal => "Internal",
+                ErrorCode::SqlError => "SQL_ERROR",
+                ErrorCode::TxBusy => "TX_BUSY",
+                ErrorCode::TxTimeout => "TX_TIMEOUT",
+                ErrorCode::Internal => "INTERNAL",
             }
         }
         /// Creates an enum from field names used in the ProtoBuf definition.
         pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
             match value {
-                "SQLError" => Some(Self::SqlError),
-                "TxBusy" => Some(Self::TxBusy),
-                "TxTimeout" => Some(Self::TxTimeout),
-                "Internal" => Some(Self::Internal),
+                "SQL_ERROR" => Some(Self::SqlError),
+                "TX_BUSY" => Some(Self::TxBusy),
+                "TX_TIMEOUT" => Some(Self::TxTimeout),
+                "INTERNAL" => Some(Self::Internal),
                 _ => None,
             }
         }
     }
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ResultRows {
@@ -136,7 +136,7 @@ pub struct ResultRows {
     #[prost(int64, optional, tag = "4")]
     pub last_insert_rowid: ::core::option::Option<i64>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DescribeRequest {
@@ -145,7 +145,7 @@ pub struct DescribeRequest {
     #[prost(string, tag = "2")]
     pub stmt: ::prost::alloc::string::String,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DescribeResult {
@@ -154,7 +154,7 @@ pub struct DescribeResult {
 }
 /// Nested message and enum types in `DescribeResult`.
 pub mod describe_result {
-    #[cfg_attr(test, derive(arbitrary::Arbitrary))]
+    #[derive(serde::Serialize, serde::Deserialize)]
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum DescribeResult {
@@ -164,7 +164,7 @@ pub mod describe_result {
         Description(super::Description),
     }
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Description {
@@ -175,23 +175,22 @@ pub struct Description {
     #[prost(uint64, tag = "3")]
     pub param_count: u64,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Value {
     /// / bincode encoded Value
     #[prost(bytes = "vec", tag = "1")]
-    #[cfg_attr(test, arbitrary(with = crate::test::arbitrary_rpc_value))]
     pub data: ::prost::alloc::vec::Vec<u8>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Row {
     #[prost(message, repeated, tag = "1")]
     pub values: ::prost::alloc::vec::Vec<Value>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Column {
@@ -200,81 +199,38 @@ pub struct Column {
     #[prost(string, optional, tag = "3")]
     pub decltype: ::core::option::Option<::prost::alloc::string::String>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DisconnectMessage {
     #[prost(string, tag = "1")]
     pub client_id: ::prost::alloc::string::String,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Ack {}
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ExecuteResults {
     #[prost(message, repeated, tag = "1")]
     pub results: ::prost::alloc::vec::Vec<QueryResult>,
     /// / State after executing the queries
-    #[prost(enumeration = "execute_results::State", tag = "2")]
+    #[prost(enumeration = "State", tag = "2")]
     pub state: i32,
     /// / Primary frame_no after executing the request.
     #[prost(uint64, optional, tag = "3")]
     pub current_frame_no: ::core::option::Option<u64>,
 }
-/// Nested message and enum types in `ExecuteResults`.
-pub mod execute_results {
-    #[cfg_attr(test, derive(arbitrary::Arbitrary))]
-    #[derive(
-        Clone,
-        Copy,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash,
-        PartialOrd,
-        Ord,
-        ::prost::Enumeration
-    )]
-    #[repr(i32)]
-    pub enum State {
-        Init = 0,
-        Invalid = 1,
-        Txn = 2,
-    }
-    impl State {
-        /// String value of the enum field names used in the ProtoBuf definition.
-        ///
-        /// The values are not transformed in any way and thus are considered stable
-        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
-        pub fn as_str_name(&self) -> &'static str {
-            match self {
-                State::Init => "Init",
-                State::Invalid => "Invalid",
-                State::Txn => "Txn",
-            }
-        }
-        /// Creates an enum from field names used in the ProtoBuf definition.
-        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
-            match value {
-                "Init" => Some(Self::Init),
-                "Invalid" => Some(Self::Invalid),
-                "Txn" => Some(Self::Txn),
-                _ => None,
-            }
-        }
-    }
-}
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Program {
     #[prost(message, repeated, tag = "1")]
     pub steps: ::prost::alloc::vec::Vec<Step>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Step {
@@ -283,7 +239,7 @@ pub struct Step {
     #[prost(message, optional, tag = "2")]
     pub query: ::core::option::Option<Query>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Cond {
@@ -292,7 +248,7 @@ pub struct Cond {
 }
 /// Nested message and enum types in `Cond`.
 pub mod cond {
-    #[cfg_attr(test, derive(arbitrary::Arbitrary))]
+    #[derive(serde::Serialize, serde::Deserialize)]
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Cond {
@@ -310,46 +266,46 @@ pub mod cond {
         IsAutocommit(super::IsAutocommitCond),
     }
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OkCond {
     #[prost(int64, tag = "1")]
     pub step: i64,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ErrCond {
     #[prost(int64, tag = "1")]
     pub step: i64,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct NotCond {
     #[prost(message, optional, boxed, tag = "1")]
     pub cond: ::core::option::Option<::prost::alloc::boxed::Box<Cond>>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AndCond {
     #[prost(message, repeated, tag = "1")]
     pub conds: ::prost::alloc::vec::Vec<Cond>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OrCond {
     #[prost(message, repeated, tag = "1")]
     pub conds: ::prost::alloc::vec::Vec<Cond>,
 }
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct IsAutocommitCond {}
-#[cfg_attr(test, derive(arbitrary::Arbitrary))]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ProgramReq {
@@ -357,6 +313,262 @@ pub struct ProgramReq {
     pub client_id: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "2")]
     pub pgm: ::core::option::Option<Program>,
+}
+/// / Streaming exec request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExecReq {
+    /// / id of the request. The response will contain this id.
+    #[prost(uint32, tag = "1")]
+    pub request_id: u32,
+    #[prost(oneof = "exec_req::Request", tags = "2, 3")]
+    pub request: ::core::option::Option<exec_req::Request>,
+}
+/// Nested message and enum types in `ExecReq`.
+pub mod exec_req {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Request {
+        #[prost(message, tag = "2")]
+        Execute(super::StreamProgramReq),
+        #[prost(message, tag = "3")]
+        Describe(super::StreamDescribeReq),
+    }
+}
+/// / Describe request for the streaming protocol
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct StreamProgramReq {
+    #[prost(message, optional, tag = "1")]
+    pub pgm: ::core::option::Option<Program>,
+}
+/// / descibre request for the streaming protocol
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct StreamDescribeReq {
+    #[prost(string, tag = "1")]
+    pub stmt: ::prost::alloc::string::String,
+}
+/// / Request response types
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Init {}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BeginStep {}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FinishStep {
+    #[prost(uint64, tag = "1")]
+    pub affected_row_count: u64,
+    #[prost(int64, optional, tag = "2")]
+    pub last_insert_rowid: ::core::option::Option<i64>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct StepError {
+    #[prost(message, optional, tag = "1")]
+    pub error: ::core::option::Option<Error>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ColsDescription {
+    #[prost(message, repeated, tag = "1")]
+    pub columns: ::prost::alloc::vec::Vec<Column>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RowValue {
+    #[prost(oneof = "row_value::Value", tags = "1, 2, 3, 4, 5")]
+    pub value: ::core::option::Option<row_value::Value>,
+}
+/// Nested message and enum types in `RowValue`.
+pub mod row_value {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Value {
+        #[prost(string, tag = "1")]
+        Text(::prost::alloc::string::String),
+        #[prost(int64, tag = "2")]
+        Integer(i64),
+        #[prost(double, tag = "3")]
+        Real(f64),
+        #[prost(bytes, tag = "4")]
+        Blob(::prost::alloc::vec::Vec<u8>),
+        /// null if present
+        #[prost(bool, tag = "5")]
+        Null(bool),
+    }
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BeginRows {}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BeginRow {}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AddRowValue {
+    #[prost(message, optional, tag = "1")]
+    pub val: ::core::option::Option<RowValue>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FinishRow {}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FinishRows {}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Finish {
+    #[prost(uint64, optional, tag = "1")]
+    pub last_frame_no: ::core::option::Option<u64>,
+    #[prost(enumeration = "State", tag = "2")]
+    pub state: i32,
+}
+/// / Stream execx dexcribe response messages
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DescribeParam {
+    #[prost(string, optional, tag = "1")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DescribeCol {
+    #[prost(string, tag = "1")]
+    pub name: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "2")]
+    pub decltype: ::core::option::Option<::prost::alloc::string::String>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DescribeResp {
+    #[prost(message, repeated, tag = "1")]
+    pub params: ::prost::alloc::vec::Vec<DescribeParam>,
+    #[prost(message, repeated, tag = "2")]
+    pub cols: ::prost::alloc::vec::Vec<DescribeCol>,
+    #[prost(bool, tag = "3")]
+    pub is_explain: bool,
+    #[prost(bool, tag = "4")]
+    pub is_readonly: bool,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RespStep {
+    #[prost(oneof = "resp_step::Step", tags = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11")]
+    pub step: ::core::option::Option<resp_step::Step>,
+}
+/// Nested message and enum types in `RespStep`.
+pub mod resp_step {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Step {
+        #[prost(message, tag = "1")]
+        Init(super::Init),
+        #[prost(message, tag = "2")]
+        BeginStep(super::BeginStep),
+        #[prost(message, tag = "3")]
+        FinishStep(super::FinishStep),
+        #[prost(message, tag = "4")]
+        StepError(super::StepError),
+        #[prost(message, tag = "5")]
+        ColsDescription(super::ColsDescription),
+        #[prost(message, tag = "6")]
+        BeginRows(super::BeginRows),
+        #[prost(message, tag = "7")]
+        BeginRow(super::BeginRow),
+        #[prost(message, tag = "8")]
+        AddRowValue(super::AddRowValue),
+        #[prost(message, tag = "9")]
+        FinishRow(super::FinishRow),
+        #[prost(message, tag = "10")]
+        FinishRows(super::FinishRows),
+        #[prost(message, tag = "11")]
+        Finish(super::Finish),
+    }
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ProgramResp {
+    #[prost(message, repeated, tag = "1")]
+    pub steps: ::prost::alloc::vec::Vec<RespStep>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExecResp {
+    #[prost(uint32, tag = "1")]
+    pub request_id: u32,
+    #[prost(oneof = "exec_resp::Response", tags = "2, 3, 4")]
+    pub response: ::core::option::Option<exec_resp::Response>,
+}
+/// Nested message and enum types in `ExecResp`.
+pub mod exec_resp {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Response {
+        #[prost(message, tag = "2")]
+        ProgramResp(super::ProgramResp),
+        #[prost(message, tag = "3")]
+        DescribeResp(super::DescribeResp),
+        #[prost(message, tag = "4")]
+        Error(super::Error),
+    }
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum State {
+    Init = 0,
+    Invalid = 1,
+    Txn = 2,
+}
+impl State {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            State::Init => "INIT",
+            State::Invalid => "INVALID",
+            State::Txn => "TXN",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "INIT" => Some(Self::Init),
+            "INVALID" => Some(Self::Invalid),
+            "TXN" => Some(Self::Txn),
+            _ => None,
+        }
+    }
 }
 /// Generated client implementations.
 pub mod proxy_client {
@@ -443,6 +655,29 @@ pub mod proxy_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
+        pub async fn stream_exec(
+            &mut self,
+            request: impl tonic::IntoStreamingRequest<Message = super::ExecReq>,
+        ) -> std::result::Result<
+            tonic::Response<tonic::codec::Streaming<super::ExecResp>>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/proxy.Proxy/StreamExec");
+            let mut req = request.into_streaming_request();
+            req.extensions_mut().insert(GrpcMethod::new("proxy.Proxy", "StreamExec"));
+            self.inner.streaming(req, path, codec).await
+        }
+        /// Deprecated:
         pub async fn execute(
             &mut self,
             request: impl tonic::IntoRequest<super::ProgramReq>,
@@ -509,6 +744,17 @@ pub mod proxy_server {
     /// Generated trait containing gRPC methods that should be implemented for use with ProxyServer.
     #[async_trait]
     pub trait Proxy: Send + Sync + 'static {
+        /// Server streaming response type for the StreamExec method.
+        type StreamExecStream: tonic::codegen::tokio_stream::Stream<
+                Item = std::result::Result<super::ExecResp, tonic::Status>,
+            >
+            + Send
+            + 'static;
+        async fn stream_exec(
+            &self,
+            request: tonic::Request<tonic::Streaming<super::ExecReq>>,
+        ) -> std::result::Result<tonic::Response<Self::StreamExecStream>, tonic::Status>;
+        /// Deprecated:
         async fn execute(
             &self,
             request: tonic::Request<super::ProgramReq>,
@@ -601,6 +847,51 @@ pub mod proxy_server {
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
+                "/proxy.Proxy/StreamExec" => {
+                    #[allow(non_camel_case_types)]
+                    struct StreamExecSvc<T: Proxy>(pub Arc<T>);
+                    impl<T: Proxy> tonic::server::StreamingService<super::ExecReq>
+                    for StreamExecSvc<T> {
+                        type Response = super::ExecResp;
+                        type ResponseStream = T::StreamExecStream;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::ResponseStream>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<tonic::Streaming<super::ExecReq>>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as Proxy>::stream_exec(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = StreamExecSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.streaming(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/proxy.Proxy/Execute" => {
                     #[allow(non_camel_case_types)]
                     struct ExecuteSvc<T: Proxy>(pub Arc<T>);

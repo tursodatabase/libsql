@@ -201,7 +201,7 @@ impl StmtKind {
 
 /// The state of a transaction for a series of statement
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum State {
+pub enum TxnStatus {
     /// The txn in an opened state
     Txn,
     /// The txn in a closed state
@@ -210,20 +210,22 @@ pub enum State {
     Invalid,
 }
 
-impl State {
+impl TxnStatus {
     pub fn step(&mut self, kind: StmtKind) {
         *self = match (*self, kind) {
-            (State::Txn, StmtKind::TxnBegin) | (State::Init, StmtKind::TxnEnd) => State::Invalid,
-            (State::Txn, StmtKind::TxnEnd) => State::Init,
+            (TxnStatus::Txn, StmtKind::TxnBegin) | (TxnStatus::Init, StmtKind::TxnEnd) => {
+                TxnStatus::Invalid
+            }
+            (TxnStatus::Txn, StmtKind::TxnEnd) => TxnStatus::Init,
             (state, StmtKind::Other | StmtKind::Write | StmtKind::Read) => state,
-            (State::Invalid, _) => State::Invalid,
-            (State::Init, StmtKind::TxnBegin) => State::Txn,
-            _ => State::Invalid,
+            (TxnStatus::Invalid, _) => TxnStatus::Invalid,
+            (TxnStatus::Init, StmtKind::TxnBegin) => TxnStatus::Txn,
+            _ => TxnStatus::Invalid,
         };
     }
 
     pub fn reset(&mut self) {
-        *self = State::Init
+        *self = TxnStatus::Init
     }
 }
 
@@ -307,11 +309,7 @@ impl Statement {
     pub fn is_read_only(&self) -> bool {
         matches!(
             self.kind,
-            StmtKind::Read
-                | StmtKind::TxnEnd
-                | StmtKind::TxnBegin
-                | StmtKind::Release
-                | StmtKind::Savepoint
+            StmtKind::Read | StmtKind::TxnEnd | StmtKind::TxnBegin
         )
     }
 }
@@ -319,9 +317,9 @@ impl Statement {
 /// Given a an initial state and an array of queries, attempts to predict what the final state will
 /// be
 pub fn predict_final_state<'a>(
-    mut state: State,
+    mut state: TxnStatus,
     stmts: impl Iterator<Item = &'a Statement>,
-) -> State {
+) -> TxnStatus {
     for stmt in stmts {
         state.step(stmt.kind);
     }

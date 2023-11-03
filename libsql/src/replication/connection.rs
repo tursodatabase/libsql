@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use parking_lot::Mutex;
 use libsql_replication::rpc::proxy::{
-    describe_result, execute_results::State as RemoteState, query_result::RowResult, DescribeResult,
+    describe_result, State as RemoteState, query_result::RowResult, DescribeResult,
     ExecuteResults, ResultRows
 };
 

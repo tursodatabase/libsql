@@ -1,25 +1,30 @@
 use std::collections::HashMap;
+use std::pin::Pin;
 use std::str::FromStr;
 use std::sync::Arc;
 
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
+use futures_core::Stream;
+use libsql_replication::rpc::proxy::proxy_server::Proxy;
+use libsql_replication::rpc::proxy::query_result::RowResult;
+use libsql_replication::rpc::proxy::{
+    describe_result, Ack, DescribeRequest, DescribeResult, Description, DisconnectMessage, ExecReq,
+    ExecResp, ExecuteResults, QueryResult, ResultRows, Row,
+};
+use rusqlite::types::ValueRef;
 use uuid::Uuid;
 
 use crate::auth::{Auth, Authenticated};
 use crate::connection::Connection;
 use crate::database::{Database, PrimaryConnection};
 use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
+use crate::query_analysis::TxnStatus;
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
 };
 use crate::replication::FrameNo;
+use crate::rpc::streaming_exec::make_proxy_stream;
 
-use self::rpc::proxy_server::Proxy;
-use self::rpc::query_result::RowResult;
-use self::rpc::{
-    describe_result, Ack, DescribeRequest, DescribeResult, Description, DisconnectMessage,
-    ExecuteResults, QueryResult, ResultRows, Row,
-};
 use super::NAMESPACE_DOESNT_EXIST;
 
 pub mod rpc {
@@ -31,7 +36,7 @@ pub mod rpc {
     use crate::query_analysis::Statement;
     use crate::{connection, error::Error as SqldError};
 
-    use self::{error::ErrorCode, execute_results::State};
+    use error::ErrorCode;
 
     impl From<SqldError> for Error {
         fn from(other: SqldError) -> Self {
@@ -56,22 +61,33 @@ pub mod rpc {
         }
     }
 
-    impl From<crate::query_analysis::State> for State {
-        fn from(other: crate::query_analysis::State) -> Self {
+    impl From<SqldError> for ErrorCode {
+        fn from(other: SqldError) -> Self {
             match other {
-                crate::query_analysis::State::Txn => Self::Txn,
-                crate::query_analysis::State::Init => Self::Init,
-                crate::query_analysis::State::Invalid => Self::Invalid,
+                SqldError::LibSqlInvalidQueryParams(_) => ErrorCode::SqlError,
+                SqldError::LibSqlTxTimeout => ErrorCode::TxTimeout,
+                SqldError::LibSqlTxBusy => ErrorCode::TxBusy,
+                _ => ErrorCode::Internal,
             }
         }
     }
 
-    impl From<State> for crate::query_analysis::State {
+    impl From<crate::query_analysis::TxnStatus> for State {
+        fn from(other: crate::query_analysis::TxnStatus) -> Self {
+            match other {
+                crate::query_analysis::TxnStatus::Txn => Self::Txn,
+                crate::query_analysis::TxnStatus::Init => Self::Init,
+                crate::query_analysis::TxnStatus::Invalid => Self::Invalid,
+            }
+        }
+    }
+
+    impl From<State> for crate::query_analysis::TxnStatus {
         fn from(other: State) -> Self {
             match other {
-                State::Txn => crate::query_analysis::State::Txn,
-                State::Init => crate::query_analysis::State::Init,
-                State::Invalid => crate::query_analysis::State::Invalid,
+                State::Txn => crate::query_analysis::TxnStatus::Txn,
+                State::Init => crate::query_analysis::TxnStatus::Init,
+                State::Invalid => crate::query_analysis::TxnStatus::Invalid,
             }
         }
     }
@@ -291,7 +307,8 @@ impl ProxyService {
 }
 
 #[derive(Debug, Default)]
-struct ExecuteResultBuilder {
+struct ExecuteResultsBuilder {
+    output: Option<ExecuteResults>,
     results: Vec<QueryResult>,
     current_rows: Vec<Row>,
     current_row: rpc::Row,
@@ -302,8 +319,8 @@ struct ExecuteResultBuilder {
     current_step_size: u64,
 }
 
-impl QueryResultBuilder for ExecuteResultBuilder {
-    type Ret = Vec<QueryResult>;
+impl QueryResultBuilder for ExecuteResultsBuilder {
+    type Ret = ExecuteResults;
 
     fn init(&mut self, config: &QueryBuilderConfig) -> Result<(), QueryResultBuilderError> {
         *self = Self {
@@ -398,10 +415,7 @@ impl QueryResultBuilder for ExecuteResultBuilder {
         Ok(())
     }
 
-    fn add_row_value(
-        &mut self,
-        v: rusqlite::types::ValueRef,
-    ) -> Result<(), QueryResultBuilderError> {
+    fn add_row_value(&mut self, v: ValueRef) -> Result<(), QueryResultBuilderError> {
         let data = bincode::serialize(
             &crate::query::Value::try_from(v).map_err(QueryResultBuilderError::from_any)?,
         )
@@ -436,12 +450,21 @@ impl QueryResultBuilder for ExecuteResultBuilder {
         Ok(())
     }
 
-    fn finish(&mut self, _last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError> {
+    fn finish(
+        &mut self,
+        last_frame_no: Option<FrameNo>,
+        txn_status: TxnStatus,
+    ) -> Result<(), QueryResultBuilderError> {
+        self.output = Some(ExecuteResults {
+            results: std::mem::take(&mut self.results),
+            state: rpc::State::from(txn_status).into(),
+            current_frame_no: last_frame_no,
+        });
         Ok(())
     }
 
     fn into_ret(self) -> Self::Ret {
-        self.results
+        self.output.unwrap()
     }
 }
 
@@ -460,6 +483,42 @@ pub async fn garbage_collect(clients: &mut HashMap<Uuid, Arc<PrimaryConnection>>
 
 #[tonic::async_trait]
 impl Proxy for ProxyService {
+    type StreamExecStream = Pin<Box<dyn Stream<Item = Result<ExecResp, tonic::Status>> + Send>>;
+
+    async fn stream_exec(
+        &self,
+        req: tonic::Request<tonic::Streaming<ExecReq>>,
+    ) -> Result<tonic::Response<Self::StreamExecStream>, tonic::Status> {
+        let auth = if let Some(auth) = &self.auth {
+            auth.authenticate_grpc(&req, self.disable_namespaces)?
+        } else {
+            Authenticated::from_proxy_grpc_request(&req, self.disable_namespaces)?
+        };
+
+        let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
+        let (connection_maker, _new_frame_notifier) = self
+            .namespaces
+            .with(namespace, |ns| {
+                let connection_maker = ns.db.connection_maker();
+                let notifier = ns.db.logger.new_frame_notifier.subscribe();
+                (connection_maker, notifier)
+            })
+            .await
+            .map_err(|e| {
+                if let crate::error::Error::NamespaceDoesntExist(_) = e {
+                    tonic::Status::failed_precondition(NAMESPACE_DOESNT_EXIST)
+                } else {
+                    tonic::Status::internal(e.to_string())
+                }
+            })?;
+
+        let conn = connection_maker.create().await.unwrap();
+
+        let stream = make_proxy_stream(conn, auth, req.into_inner());
+
+        Ok(tonic::Response::new(Box::pin(stream)))
+    }
+
     async fn execute(
         &self,
         req: tonic::Request<rpc::ProgramReq>,
@@ -475,13 +534,9 @@ impl Proxy for ProxyService {
             .map_err(|e| tonic::Status::new(tonic::Code::InvalidArgument, e.to_string()))?;
         let client_id = Uuid::from_str(&req.client_id).unwrap();
 
-        let (connection_maker, new_frame_notifier) = self
+        let connection_maker = self
             .namespaces
-            .with(namespace, |ns| {
-                let connection_maker = ns.db.connection_maker();
-                let notifier = ns.db.logger.new_frame_notifier.subscribe();
-                (connection_maker, notifier)
-            })
+            .with(namespace, |ns| ns.db.connection_maker())
             .await
             .map_err(|e| {
                 if let crate::error::Error::NamespaceDoesntExist(_) = e {
@@ -510,19 +565,14 @@ impl Proxy for ProxyService {
 
         tracing::debug!("executing request for {client_id}");
 
-        let builder = ExecuteResultBuilder::default();
-        let (results, state) = db
+        let builder = ExecuteResultsBuilder::default();
+        let builder = db
             .execute_program(pgm, auth, builder, None)
             .await
             // TODO: this is no necessarily a permission denied error!
             .map_err(|e| tonic::Status::new(tonic::Code::PermissionDenied, e.to_string()))?;
 
-        let current_frame_no = *new_frame_notifier.borrow();
-        Ok(tonic::Response::new(ExecuteResults {
-            current_frame_no,
-            results: results.into_ret(),
-            state: rpc::execute_results::State::from(state).into(),
-        }))
+        Ok(tonic::Response::new(builder.into_ret()))
     }
 
     //TODO: also handle cleanup on peer disconnect

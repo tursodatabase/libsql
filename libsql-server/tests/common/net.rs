@@ -8,6 +8,7 @@ use futures_core::Future;
 use hyper::client::connect::Connected;
 use hyper::server::accept::Accept as HyperAccept;
 use hyper::Uri;
+use metrics_util::debugging::DebuggingRecorder;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tower::Service;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
@@ -152,8 +153,16 @@ impl SimServer for TestServer {
         let db = libsql::Database::open_in_memory().unwrap();
         db.connect().unwrap();
 
+        // Ignore the result because we may set it many times in a single process.
+        let _ = DebuggingRecorder::per_thread().install();
+
         let user_api = TurmoilAcceptor::bind(([0, 0, 0, 0], user_api_port as u16)).await?;
         self.user_api_config.http_acceptor = Some(user_api);
+
+        // Disable prom metrics since we already created our recorder.
+        if let Some(admin_api) = &mut self.admin_api_config {
+            admin_api.disable_metrics = true;
+        }
 
         self.start().await?;
 

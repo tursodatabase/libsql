@@ -86,6 +86,7 @@ rand = "0.8.5"
 tempfile = "3.7.0"
 turmoil = "0.5.6"
 url = "2.3"
+metrics-util = "0.15"
 
 [build-dependencies]
 prost-build = "0.12.0"
