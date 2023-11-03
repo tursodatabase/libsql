@@ -12,7 +12,7 @@ use turmoil::{Builder, Sim};
 
 use common::net::{init_tracing, TestServer, TurmoilAcceptor, TurmoilConnector};
 
-use crate::common::{http::Client, net::SimServer};
+use crate::common::{http::Client, net::SimServer, snapshot_metrics};
 
 fn make_cluster(sim: &mut Sim, num_replica: usize, disable_namespaces: bool) {
     init_tracing();
@@ -100,6 +100,8 @@ fn proxy_write() {
             rows.next().unwrap().unwrap().get_value(0).unwrap(),
             Value::Integer(1)
         ));
+
+        snapshot_metrics().assert_gauge("libsql_server_current_frame_no", 2.0);
 
         Ok(())
     });

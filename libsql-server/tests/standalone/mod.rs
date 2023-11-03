@@ -1,6 +1,6 @@
 //! Tests for standalone primary configuration
 
-use crate::common::net::SimServer;
+use crate::common::{net::SimServer, snapshot_metrics};
 
 use super::common;
 
@@ -50,6 +50,36 @@ fn basic_query() {
             rows.next().unwrap().unwrap().get_value(0).unwrap(),
             libsql::Value::Integer(1)
         ));
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn basic_metrics() {
+    let mut sim = turmoil::Builder::new().build();
+
+    sim.host("primary", make_standalone_server);
+
+    sim.client("test", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        conn.execute("create table test (x)", ()).await?;
+        conn.execute("insert into test values (12)", ()).await?;
+
+        let mut rows = conn.query("select count(*) from test", ()).await?;
+
+        assert!(matches!(
+            rows.next().unwrap().unwrap().get_value(0).unwrap(),
+            libsql::Value::Integer(1)
+        ));
+
+        snapshot_metrics()
+            .assert_gauge("libsql_server_current_frame_no", 2.0)
+            .assert_counter("libsql_server_libsql_execute_program", 3);
 
         Ok(())
     });

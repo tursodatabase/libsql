@@ -1,7 +1,9 @@
 #![allow(clippy::disallowed_names)]
 
-mod cluster;
+#[macro_use]
 mod common;
+
+mod cluster;
 mod embedded_replica;
 mod namespaces;
 mod standalone;
