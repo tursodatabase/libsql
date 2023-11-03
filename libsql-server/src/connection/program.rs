@@ -60,8 +60,6 @@ pub enum Cond {
     IsAutocommit,
 }
 
-pub type DescribeResult = crate::Result<DescribeResponse>;
-
 #[derive(Debug, Clone)]
 pub struct DescribeResponse {
     pub params: Vec<DescribeParam>,

@@ -1,0 +1,72 @@
+---
+source: libsql-server/src/rpc/streaming_exec.rs
+expression: stream.next().await.unwrap().unwrap()
+---
+ExecResp {
+    request_id: 0,
+    response: Some(
+        ProgramResp(
+            ProgramResp {
+                steps: [
+                    RespStep {
+                        step: Some(
+                            Init(
+                                Init,
+                            ),
+                        ),
+                    },
+                    RespStep {
+                        step: Some(
+                            BeginStep(
+                                BeginStep,
+                            ),
+                        ),
+                    },
+                    RespStep {
+                        step: Some(
+                            ColsDescription(
+                                ColsDescription {
+                                    columns: [],
+                                },
+                            ),
+                        ),
+                    },
+                    RespStep {
+                        step: Some(
+                            BeginRows(
+                                BeginRows,
+                            ),
+                        ),
+                    },
+                    RespStep {
+                        step: Some(
+                            FinishRows(
+                                FinishRows,
+                            ),
+                        ),
+                    },
+                    RespStep {
+                        step: Some(
+                            FinishStep(
+                                FinishStep {
+                                    affected_row_count: 0,
+                                    last_insert_rowid: None,
+                                },
+                            ),
+                        ),
+                    },
+                    RespStep {
+                        step: Some(
+                            Finish(
+                                Finish {
+                                    last_frame_no: None,
+                                    state: Init,
+                                },
+                            ),
+                        ),
+                    },
+                ],
+            },
+        ),
+    ),
+}

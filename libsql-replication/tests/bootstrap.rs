@@ -17,15 +17,7 @@ fn bootstrap() {
         .build_server(true)
         .build_transport(true)
         .out_dir(&out_dir)
-        .type_attribute(".proxy", "#[cfg_attr(test, derive(arbitrary::Arbitrary))]")
-        .field_attribute(
-            ".proxy.Value.data",
-            "#[cfg_attr(test, arbitrary(with = crate::test::arbitrary_rpc_value))]",
-        )
-        .field_attribute(
-            ".proxy.ProgramReq.namespace",
-            "#[cfg_attr(test, arbitrary(with = crate::test::arbitrary_bytes))]",
-        )
+        .type_attribute(".proxy", "#[derive(serde::Serialize, serde::Deserialize)]")
         .compile_with_config(config, iface_files, dirs)
         .unwrap();
 

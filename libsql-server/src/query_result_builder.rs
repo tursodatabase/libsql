@@ -8,12 +8,14 @@ use serde::Serialize;
 use serde_json::ser::Formatter;
 use std::sync::atomic::AtomicUsize;
 
+use crate::query_analysis::TxnStatus;
 use crate::replication::FrameNo;
 
 pub static TOTAL_RESPONSE_SIZE: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug)]
 pub enum QueryResultBuilderError {
+    /// The response payload is too large
     ResponseTooLarge(u64),
     Internal(anyhow::Error),
 }
@@ -120,7 +122,11 @@ pub trait QueryResultBuilder: Send + 'static {
     /// end adding rows
     fn finish_rows(&mut self) -> Result<(), QueryResultBuilderError>;
     /// finish serialization.
-    fn finish(&mut self, last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError>;
+    fn finish(
+        &mut self,
+        last_frame_no: Option<FrameNo>,
+        state: TxnStatus,
+    ) -> Result<(), QueryResultBuilderError>;
     /// returns the inner ret
     fn into_ret(self) -> Self::Ret;
     /// Returns a `QueryResultBuilder` that wraps Self and takes at most `n` steps
@@ -311,7 +317,11 @@ impl QueryResultBuilder for StepResultsBuilder {
         Ok(())
     }
 
-    fn finish(&mut self, _last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError> {
+    fn finish(
+        &mut self,
+        _last_frame_no: Option<FrameNo>,
+        _state: TxnStatus,
+    ) -> Result<(), QueryResultBuilderError> {
         Ok(())
     }
 
@@ -372,7 +382,11 @@ impl QueryResultBuilder for IgnoreResult {
         Ok(())
     }
 
-    fn finish(&mut self, _last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError> {
+    fn finish(
+        &mut self,
+        _last_frame_no: Option<FrameNo>,
+        _state: TxnStatus,
+    ) -> Result<(), QueryResultBuilderError> {
         Ok(())
     }
 
@@ -481,8 +495,12 @@ impl<B: QueryResultBuilder> QueryResultBuilder for Take<B> {
         }
     }
 
-    fn finish(&mut self, last_frame_no: Option<FrameNo>) -> Result<(), QueryResultBuilderError> {
-        self.inner.finish(last_frame_no)
+    fn finish(
+        &mut self,
+        last_frame_no: Option<FrameNo>,
+        state: TxnStatus,
+    ) -> Result<(), QueryResultBuilderError> {
+        self.inner.finish(last_frame_no, state)
     }
 
     fn into_ret(self) -> Self::Ret {
@@ -599,6 +617,7 @@ pub mod test {
         fn finish(
             &mut self,
             _last_frame_no: Option<FrameNo>,
+            _txn_status: TxnStatus,
         ) -> Result<(), QueryResultBuilderError> {
             Ok(())
         }
@@ -614,7 +633,7 @@ pub mod test {
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
     #[repr(usize)]
     // do not reorder!
-    enum FsmState {
+    pub enum FsmState {
         Init = 0,
         Finish,
         BeginStep,
@@ -658,12 +677,12 @@ pub mod test {
                 .filter_map(|(i, ss)| ss[self as usize].then_some(i))
                 .collect_vec();
             // distribution is somewhat tweaked to be biased towards more real-world test cases
-            let weights = valid_next_states
+            let weigths = valid_next_states
                 .iter()
                 .enumerate()
                 .map(|(p, i)| i.pow(p as _))
                 .collect_vec();
-            let dist = WeightedIndex::new(weights).unwrap();
+            let dist = WeightedIndex::new(weigths).unwrap();
             unsafe { std::mem::transmute(valid_next_states[dist.sample(&mut thread_rng())]) }
         }
 
@@ -683,11 +702,31 @@ pub mod test {
         }
     }
 
-    pub fn random_builder_driver<B: QueryResultBuilder>(mut max_steps: usize, mut b: B) -> B {
+    pub fn random_transition(mut max_steps: usize) -> Vec<FsmState> {
+        let mut trace = Vec::with_capacity(max_steps);
+        let mut state = Init;
+        trace.push(state);
+        loop {
+            if max_steps > 0 {
+                state = state.rand_transition(false);
+            } else {
+                state = state.toward_finish()
+            }
+
+            trace.push(state);
+            if state == FsmState::Finish {
+                break;
+            }
+
+            max_steps = max_steps.saturating_sub(1);
+        }
+        trace
+    }
+
+    pub fn fsm_builder_driver<B: QueryResultBuilder>(trace: &[FsmState], mut b: B) -> B {
         let mut rand_data = [0; 10_000];
         rand_data.try_fill(&mut rand::thread_rng()).unwrap();
         let mut u = Unstructured::new(&rand_data);
-        let mut trace = Vec::new();
 
         #[derive(Arbitrary)]
         pub enum ValueRef<'a> {
@@ -710,9 +749,7 @@ pub mod test {
             }
         }
 
-        let mut state = Init;
-        trace.push(state);
-        loop {
+        for state in trace {
             match state {
                 Init => b.init(&QueryBuilderConfig::default()).unwrap(),
                 BeginStep => b.begin_step().unwrap(),
@@ -734,26 +771,114 @@ pub mod test {
                 FinishRow => b.finish_row().unwrap(),
                 FinishRows => b.finish_rows().unwrap(),
                 Finish => {
-                    b.finish(Some(0)).unwrap();
+                    b.finish(Some(0), TxnStatus::Init).unwrap();
                     break;
                 }
                 BuilderError => return b,
             }
-
-            if max_steps > 0 {
-                state = state.rand_transition(false);
-            } else {
-                state = state.toward_finish()
-            }
-
-            trace.push(state);
-
-            max_steps = max_steps.saturating_sub(1);
         }
 
-        // this can be useful to help debug the generated test case
-
         b
+    }
+
+    /// A Builder that validates a given execution trace
+    pub struct ValidateTraceBuilder {
+        trace: Vec<FsmState>,
+        current: usize,
+    }
+
+    impl ValidateTraceBuilder {
+        pub fn new(trace: Vec<FsmState>) -> Self {
+            Self { trace, current: 0 }
+        }
+    }
+
+    impl QueryResultBuilder for ValidateTraceBuilder {
+        type Ret = ();
+
+        fn init(&mut self, _config: &QueryBuilderConfig) -> Result<(), QueryResultBuilderError> {
+            assert_eq!(self.trace[self.current], FsmState::Init);
+            self.current += 1;
+            Ok(())
+        }
+
+        fn begin_step(&mut self) -> Result<(), QueryResultBuilderError> {
+            assert_eq!(self.trace[self.current], FsmState::BeginStep);
+            self.current += 1;
+            Ok(())
+        }
+
+        fn finish_step(
+            &mut self,
+            _affected_row_count: u64,
+            _last_insert_rowid: Option<i64>,
+        ) -> Result<(), QueryResultBuilderError> {
+            assert_eq!(self.trace[self.current], FsmState::FinishStep);
+            self.current += 1;
+            Ok(())
+        }
+
+        fn step_error(
+            &mut self,
+            _error: crate::error::Error,
+        ) -> Result<(), QueryResultBuilderError> {
+            assert_eq!(self.trace[self.current], FsmState::StepError);
+            self.current += 1;
+            Ok(())
+        }
+
+        fn cols_description<'a>(
+            &mut self,
+            _cols: impl IntoIterator<Item = impl Into<Column<'a>>>,
+        ) -> Result<(), QueryResultBuilderError> {
+            assert_eq!(self.trace[self.current], FsmState::ColsDescription);
+            self.current += 1;
+            Ok(())
+        }
+
+        fn begin_rows(&mut self) -> Result<(), QueryResultBuilderError> {
+            assert_eq!(self.trace[self.current], FsmState::BeginRows);
+            self.current += 1;
+            Ok(())
+        }
+
+        fn begin_row(&mut self) -> Result<(), QueryResultBuilderError> {
+            assert_eq!(self.trace[self.current], FsmState::BeginRow);
+            self.current += 1;
+            Ok(())
+        }
+
+        fn add_row_value(&mut self, _v: ValueRef) -> Result<(), QueryResultBuilderError> {
+            assert_eq!(self.trace[self.current], FsmState::AddRowValue);
+            self.current += 1;
+            Ok(())
+        }
+
+        fn finish_row(&mut self) -> Result<(), QueryResultBuilderError> {
+            assert_eq!(self.trace[self.current], FsmState::FinishRow);
+            self.current += 1;
+            Ok(())
+        }
+
+        fn finish_rows(&mut self) -> Result<(), QueryResultBuilderError> {
+            assert_eq!(self.trace[self.current], FsmState::FinishRows);
+            self.current += 1;
+            Ok(())
+        }
+
+        fn finish(
+            &mut self,
+            _last_frame_no: Option<FrameNo>,
+            _state: TxnStatus,
+        ) -> Result<(), QueryResultBuilderError> {
+            assert_eq!(self.trace[self.current], FsmState::Finish);
+            self.current += 1;
+            Ok(())
+        }
+
+        fn into_ret(self) -> Self::Ret {
+            assert_eq!(self.current, self.trace.len());
+        }
     }
 
     pub struct FsmQueryBuilder {
@@ -881,6 +1006,7 @@ pub mod test {
         fn finish(
             &mut self,
             _last_frame_no: Option<FrameNo>,
+            _txn_status: TxnStatus,
         ) -> Result<(), QueryResultBuilderError> {
             self.maybe_inject_error()?;
             self.transition(Finish)
@@ -929,7 +1055,7 @@ pub mod test {
         builder.finish_rows().unwrap();
         builder.finish_step(0, None).unwrap();
 
-        builder.finish(Some(0)).unwrap();
+        builder.finish(Some(0), TxnStatus::Init).unwrap();
     }
 
     #[test]
