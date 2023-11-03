@@ -1,5 +1,5 @@
-C Merge\sall\sthe\slatest\strunk\sfixes\sand\senhancements\sinto\sthe\sjsonb\sbranch.
-D 2023-11-03T11:35:33.434
+C Enhance\sthe\sJSONB\slookup\sroutine\swith\slogic\sto\sapply\sedits.\s\sThe\snew\slogic\sis\ncurrently\sunused\sand\shence\suntested\sbut\sdoes\snot\screate\sany\sregressions.
+D 2023-11-03T12:09:22.342
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -683,7 +683,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 2c0599c54aef24739015a0b7f7b569adecd760e4d06afd3d9c01c8c53713d3f0
+F src/json.c e109da4d5f29e239db837dad09a886a78b6a217592ea8c71e3b584483ce9b179
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c e1bc8864834697503d370d94613be945d05ca1c5ebdda43e7d5c8ee8c48d433c
@@ -2142,8 +2142,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a420a4f7ff76b0e9cf5f6d515ccfa31e526d58f4001a4015a367e2aa3c82091f 15b618e92a2708cc83256947736de8c494a9985a77e38bd5efc7e51e72cba344
-R 7bce1ab3b73fc9ca8b3b94f2470fc2d6
+P b089bf46374b374d02d7654c65eb3e75d1777638b398061e47644af0dab48c9b
+R 02d78f9919449761c67674ad6f60265a
 U drh
-Z 13124fe09b7592eb801d594e79ae949a
+Z f8a451c94f8b9175a3b99dd9c9c86acd
 # Remove this line to create a well-formed Fossil manifest.

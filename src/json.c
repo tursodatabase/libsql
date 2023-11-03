@@ -341,7 +341,18 @@ struct JsonParse {
   u32 nBlob;         /* Bytes of aBlob[] actually used */
   u32 nBlobAlloc;    /* Bytes allocated to aBlob[] */
   u8 *aBlob;         /* BLOB representation of zJson */
+  /* Search and edit information.  See jsonLookupBlobStep() */
+  u8 eEdit;          /* Edit operation to apply */
+  int delta;         /* Size change due to the edit */
+  u32 nIns;          /* Number of bytes to insert */
+  u8 *aIns;          /* Content to be inserted */
 };
+
+/* Allowed values for JsonParse.eEdit */
+#define JEDIT_DEL   0x01   /* Delete if exists */
+#define JEDIT_INS   0x02   /* Insert if not exists */
+#define JEDIT_REPL  0x04   /* Overwrite if exists */
+#define JEDIT_SET   0x08   /* Insert or overwrite */
 
 /*
 ** Maximum nesting depth of JSON for this implementation.
@@ -719,8 +730,6 @@ static void jsonAppendNormalizedReal(JsonString *p, const char *zIn, u32 N){
     jsonAppendRawNZ(p, zIn, N);
   }
 }
-
-
 
 /*
 ** Append an sqlite3_value (such as a function parameter) to the JSON
@@ -2558,6 +2567,31 @@ static int jsonBlobExpand(JsonParse *pParse, u32 N){
   return 0;
 }
 
+/*
+** If pParse->aBlob is not previously editable (because it is taken
+** from sqlite3_value_blob(), as indicated by the fact that
+** pParse->nBlobAlloc==0 and pParse->nBlob>0) then make it editable
+** by making a copy into space obtained from malloc.
+**
+** Return true on success.  Return false on OOM.
+*/
+static int jsonBlobMakeEditable(JsonParse *pParse){
+  u8 *aOld;
+  u32 nSize;
+  if( pParse->nBlobAlloc>0 ) return 1;
+  aOld = pParse->aBlob;
+  nSize = pParse->nBlob + pParse->nIns;
+  if( nSize>100 ) nSize -= 100;
+  pParse->aBlob = 0;
+  if( jsonBlobExpand(pParse, nSize) ){
+    return 0;
+  }
+  assert( pParse->nBlobAlloc >= pParse->nBlob + pParse->nIns );
+  memcpy(pParse->aBlob, aOld, pParse->nBlob);
+  return 1;
+}
+
+
 /* Expand pParse->aBlob and append N bytes.
 **
 ** Return the number of errors.
@@ -3768,11 +3802,23 @@ static u32 jsonbArrayCount(JsonParse *pParse, u32 iRoot){
 }
 
 /*
+** Edit the size of the element at iRoot by the amount in pParse->delta.
+*/
+static void jsonAfterEditSizeAdjust(JsonParse *pParse, u32 iRoot){
+  u32 sz;
+  assert( pParse->delta==0 );
+  (void)jsonbPayloadSize(pParse, iRoot, &sz);
+  sz += pParse->delta;
+  jsonBlobChangePayloadSize(pParse, iRoot, sz);
+}
+
+/*
 ** Error returns from jsonLookupBlobStep()
 */
 #define JSON_BLOB_ERROR      0xffffffff
 #define JSON_BLOB_NOTFOUND   0xfffffffe
 #define JSON_BLOB_PATHERROR  0xfffffffd
+#define JSON_BLOB_ISERROR(x) ((x)>=JSON_BLOB_PATHERROR)
 
 /*
 ** Search along zPath to find the Json element specified.  Return an
@@ -3785,12 +3831,39 @@ static u32 jsonLookupBlobStep(
   u32 iRoot,              /* Begin the search at this element of aBlob[] */
   const char *zPath       /* The path to search */
 ){
-  u32 i, j, k, nKey, sz, n, iEnd;
+  u32 i, j, k, nKey, sz, n, iEnd, rc;
   const char *zKey;
   u8 x;
 
-  if( pParse->oom ) return 0;
-  if( zPath[0]==0 ) return iRoot;
+  if( zPath[0]==0 ){
+    if( pParse->eEdit && jsonBlobMakeEditable(pParse) ){
+      n = jsonbPayloadSize(pParse, iRoot, &sz);
+      sz += n;
+      if( pParse->eEdit==JEDIT_DEL ){
+        memmove(&pParse->aBlob[iRoot], &pParse->aBlob[iRoot+sz],
+                pParse->nBlob - iRoot);
+        pParse->nBlob -= n;
+        pParse->delta = -(int)n;
+      }else if( pParse->eEdit==JEDIT_INS ){
+        /* Already exists, so json_insert() is a no-op */
+      }else{
+        /* json_set() or json_replace() */
+        int d = (int)pParse->nIns - (int)sz;
+        pParse->delta = d;
+        if( d!=0 ){
+          if( pParse->nBlob + d > pParse->nBlobAlloc ){
+            jsonBlobExpand(pParse, pParse->nBlob+d);
+            if( pParse->oom ) return iRoot;
+          }
+          memmove(&pParse->aBlob[iRoot+pParse->nIns],
+                  &pParse->aBlob[iRoot+sz],
+                  pParse->nBlob - iRoot - sz);
+        }
+        memcpy(&pParse->aBlob[iRoot], pParse->aIns, pParse->nIns);
+      }
+    }
+    return iRoot;
+  }
   if( zPath[0]=='.' ){
     x = pParse->aBlob[iRoot];
     zPath++;
@@ -3828,7 +3901,9 @@ static u32 jsonLookupBlobStep(
         if( ((pParse->aBlob[j])&0x0f)>JSONB_OBJECT ) return JSON_BLOB_ERROR;
         n = jsonbPayloadSize(pParse, j, &sz);
         if( n==0 || j+n+sz>iEnd ) return JSON_BLOB_ERROR;
-        return jsonLookupBlobStep(pParse, j, &zPath[i]);
+        rc = jsonLookupBlobStep(pParse, j, &zPath[i]);
+        if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
+        return rc;
       }
       j = k+sz;
       if( ((pParse->aBlob[j])&0x0f)>JSONB_OBJECT ) return JSON_BLOB_ERROR;
@@ -3872,7 +3947,9 @@ static u32 jsonLookupBlobStep(
     iEnd = j+sz;
     while( j<iEnd ){
       if( k==0 ){
-        return jsonLookupBlobStep(pParse, j, &zPath[i+1]);
+        rc = jsonLookupBlobStep(pParse, j, &zPath[i+1]);
+        if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
+        return rc;
       }
       k--;
       n = jsonbPayloadSize(pParse, j, &sz);
@@ -3880,8 +3957,19 @@ static u32 jsonLookupBlobStep(
       j += n+sz;
     }
     if( j>iEnd ) return JSON_BLOB_ERROR;
+    if( k>1 ) return JSON_BLOB_NOTFOUND;
   }else{
     return JSON_BLOB_PATHERROR; 
+  }
+  if( pParse->eEdit==JEDIT_INS && jsonBlobMakeEditable(pParse) ){
+    assert( pParse->nBlob + pParse->nIns <= pParse->nBlobAlloc );
+    memmove(&pParse->aBlob[j], &pParse->aBlob[j+pParse->nIns],
+            pParse->nBlob - j);
+    memcpy(&pParse->aBlob[j], pParse->aIns, pParse->nIns);
+    pParse->delta = pParse->nIns;
+    pParse->nBlob += pParse->nIns;
+    jsonAfterEditSizeAdjust(pParse, iRoot);
+    return j;
   }
   return JSON_BLOB_NOTFOUND;
 }
