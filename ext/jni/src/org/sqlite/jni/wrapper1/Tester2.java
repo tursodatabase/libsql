@@ -422,6 +422,28 @@ public class Tester2 implements Runnable {
     affirm( null==Sqlite.keywordName(n) );
   }
 
+
+  private void testExplain(){
+    final Sqlite db = openDb();
+    Sqlite.Stmt q = db.prepare("SELECT 1");
+    affirm( 0 == q.isExplain() );
+    q.explain(0);
+    affirm( 0 == q.isExplain() );
+    q.explain(1);
+    affirm( 1 == q.isExplain() );
+    q.explain(2);
+    affirm( 2 == q.isExplain() );
+    Exception ex = null;
+    try{
+      q.explain(-1);
+    }catch(Exception e){
+      ex = e;
+    }
+    affirm( ex instanceof SqliteException );
+    q.finalizeStmt();
+    db.close();
+  }
+
   private void runTests(boolean fromThread) throws Exception {
     List<java.lang.reflect.Method> mlist = testMethods;
     affirm( null!=mlist );

@@ -121,6 +121,17 @@ public interface SqlFunction  {
     public void resultText16(byte[] utf16){CApi.sqlite3_result_text16(cx, utf16);}
     public void resultText16(String txt){CApi.sqlite3_result_text16(cx, txt);}
 
+    /**
+       Callbacks should invoke this on OOM errors, instead of throwing
+       OutOfMemoryError, because the latter cannot be propagated
+       through the C API.
+    */
+    public void resultNoMem(){CApi.sqlite3_result_error_nomem(cx);}
+
+    /**
+       Analog to sqlite3_set_auxdata() but throws if argNdx is out of
+       range.
+    */
     public void setAuxData(int argNdx, Object o){
       /* From the API docs: https://www.sqlite.org/c3ref/get_auxdata.html
 
@@ -132,6 +143,10 @@ public interface SqlFunction  {
       CApi.sqlite3_set_auxdata(cx, argNdx, o);
     }
 
+    /**
+       Analog to sqlite3_get_auxdata() but throws if argNdx is out of
+       range.
+    */
     public Object getAuxData(int argNdx){
       valueAt(argNdx);
       return CApi.sqlite3_get_auxdata(cx, argNdx);

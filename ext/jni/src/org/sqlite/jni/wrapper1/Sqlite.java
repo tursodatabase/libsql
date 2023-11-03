@@ -210,11 +210,19 @@ public final class Sqlite implements AutoCloseable  {
      extracted from it, else only the string form of rc is used. It is
      the caller's responsibility to filter out non-error codes such as
      SQLITE_ROW and SQLITE_DONE before calling this.
+
+     As a special case, if rc is SQLITE_NOMEM, an OutOfMemoryError is
+     thrown.
   */
   private void checkRc(int rc){
     if( 0!=rc ){
-      if( null==db || 0==sqlite3_errcode(db)) throw new SqliteException(rc);
-      else throw new SqliteException(db);
+      if( CApi.SQLITE_NOMEM==rc ){
+        throw new OutOfMemoryError();
+      }else if( null==db || 0==sqlite3_errcode(db)){
+        throw new SqliteException(rc);
+      }else{
+        throw new SqliteException(db);
+      }
     }
   }
 
@@ -470,8 +478,11 @@ public final class Sqlite implements AutoCloseable  {
        We save the result column count in order to prevent having to
        call into C to fetch that value every time we need to check
        that value for the columnXyz() methods.
+
+       Design note: if this is final then we cannot zero it in
+       finalizeStmt().
     */
-    private final int resultColCount;
+    private int resultColCount;
 
     /** Only called by the prepare() factory functions. */
     Stmt(Sqlite db, sqlite3_stmt stmt){
@@ -509,13 +520,17 @@ public final class Sqlite implements AutoCloseable  {
        name finalize() here because this one requires a different
        signature. It does not throw on error here because "destructors
        do not throw." If it returns non-0, the object is still
-       finalized.
+       finalized, but the result code is an indication that something
+       went wrong in a prior call into the statement's API, as
+       documented for sqlite3_finalize().
     */
     public int finalizeStmt(){
       int rc = 0;
       if( null!=stmt ){
         sqlite3_finalize(stmt);
         stmt = null;
+        _db = null;
+        resultColCount = 0;
       }
       return rc;
     }
@@ -565,6 +580,10 @@ public final class Sqlite implements AutoCloseable  {
       */
     }
 
+    /**
+       Returns the Sqlite which prepared this statement, or null if
+       this statement has been finalized.
+    */
     public Sqlite db(){ return this._db; }
 
     /**
@@ -572,6 +591,44 @@ public final class Sqlite implements AutoCloseable  {
     */
     public void reset(){
       checkRc(CApi.sqlite3_reset(thisStmt()));
+    }
+
+    public boolean isBusy(){
+      return CApi.sqlite3_stmt_busy(thisStmt());
+    }
+
+    public boolean isReadOnly(){
+      return CApi.sqlite3_stmt_readonly(thisStmt());
+    }
+
+    public String sql(){
+      return CApi.sqlite3_sql(thisStmt());
+    }
+
+    public String expandedSql(){
+      return CApi.sqlite3_expanded_sql(thisStmt());
+    }
+
+    /**
+       Analog to sqlite3_stmt_explain() but throws if op is invalid.
+    */
+    public void explain(int op){
+      checkRc(CApi.sqlite3_stmt_explain(thisStmt(), op));
+    }
+
+    /**
+       Analog to sqlite3_stmt_isexplain().
+    */
+    public int isExplain(){
+      return CApi.sqlite3_stmt_isexplain(thisStmt());
+    }
+
+    /**
+       Analog to sqlite3_normalized_sql(), returning null if the
+       library is built without the SQLITE_ENABLE_NORMALIZE flag.
+    */
+    public String normalizedSql(){
+      return CApi.sqlite3_normalized_sql(thisStmt());
     }
 
     public void clearBindings(){
@@ -610,8 +667,8 @@ public final class Sqlite implements AutoCloseable  {
     public void bindText16(int ndx, byte[] utf16){
       checkRc(CApi.sqlite3_bind_text16(thisStmt(), ndx, utf16));
     }
-    public void bindText16(int ndx, String txt){
-      checkRc(CApi.sqlite3_bind_text16(thisStmt(), ndx, txt));
+    public void bindText16(int ndx, String asUtf16){
+      checkRc(CApi.sqlite3_bind_text16(thisStmt(), ndx, asUtf16));
     }
     public void bindZeroBlob(int ndx, int n){
       checkRc(CApi.sqlite3_bind_zeroblob(thisStmt(), ndx, n));
