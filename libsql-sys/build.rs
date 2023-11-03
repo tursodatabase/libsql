@@ -1,44 +1,36 @@
 use std::env;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
-const SQLITE_DIR: &str = "../libsql-sqlite3";
 const LIB_NAME: &str = "libsql";
-
-fn run_make() {
-    Command::new("./configure")
-        .current_dir(SQLITE_DIR)
-        .env("CFLAGS", "-DSQLITE_ENABLE_COLUMN_METADATA=1")
-        .output()
-        .unwrap();
-    Command::new("make")
-        .current_dir(SQLITE_DIR)
-        .output()
-        .unwrap();
-}
 
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
 
-    println!("cargo:rerun-if-changed={SQLITE_DIR}/src/");
-    run_make();
+    println!("cargo:rerun-if-changed=bundled/src/");
     build_bundled(&out_dir, &out_path);
 }
 
 pub fn build_bundled(out_dir: &str, out_path: &Path) {
     let bindings_dir = if std::env::var("LIBSQL_REGENERATE_BINDINGS").is_ok() {
-        let header = HeaderLocation::FromPath(format!("{SQLITE_DIR}/sqlite3.h"));
+        let header = HeaderLocation::FromPath(format!("bundled/src/sqlite3.h"));
         bindings::write_to_out_dir(header, out_path);
         out_path.display().to_string()
     } else {
-        SQLITE_DIR.to_string()
+        let bindgen_rs_path = if cfg!(feature = "session") {
+            "bundled/bindings/session_bindgen.rs"
+        } else {
+            "bundled/bindings/bindgen.rs"
+        };
+        let dir = env!("CARGO_MANIFEST_DIR");
+        std::fs::copy(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
+        "bundled/src".to_string()
     };
 
     println!("cargo:rerun-if-changed={bindings_dir}/sqlite3.c");
     let mut cfg = cc::Build::new();
-    cfg.file(format!("{bindings_dir}/src/sqlite3.c"))
+    cfg.file(format!("{bindings_dir}/sqlite3.c"))
         .flag("-DSQLITE_CORE")
         .flag("-DSQLITE_DEFAULT_FOREIGN_KEYS=1")
         .flag("-DSQLITE_ENABLE_API_ARMOR")
