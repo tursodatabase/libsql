@@ -18,33 +18,9 @@ fn run_make() {
         .unwrap();
 }
 
-fn precompiled() -> bool {
-    std::fs::metadata(Path::new(SQLITE_DIR).join(".libs").join("liblibsql.a")).is_ok()
-}
-
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
-
-    // Fast path: liblibsql.a exists and bindings are ready
-    println!("cargo:rerun-if-env-changed=LIBSQL_REGENERATE_BINDINGS");
-    if precompiled() && env::var("LIBSQL_REGENERATE_BINDINGS").is_err() {
-        let bindgen_rs_path = if cfg!(feature = "session") {
-            "bundled/bindings/session_bindgen.rs"
-        } else {
-            "bundled/bindings/bindgen.rs"
-        };
-        std::fs::copy(Path::new(bindgen_rs_path), &out_path).unwrap();
-        std::fs::copy(
-            Path::new(SQLITE_DIR).join(".libs").join("liblibsql.a"),
-            Path::new(&out_dir).join("liblibsql.a"),
-        )
-        .unwrap();
-        println!("cargo:lib_dir={out_dir}");
-        println!("cargo:rustc-link-search={out_dir}");
-        println!("cargo:rustc-link-lib=static={LIB_NAME}");
-        return;
-    }
 
     println!("cargo:rerun-if-changed={SQLITE_DIR}/src/");
     run_make();
@@ -52,11 +28,17 @@ fn main() {
 }
 
 pub fn build_bundled(out_dir: &str, out_path: &Path) {
-    let header = HeaderLocation::FromPath(format!("{SQLITE_DIR}/sqlite3.h"));
-    bindings::write_to_out_dir(header, out_path);
-    println!("cargo:rerun-if-changed={SQLITE_DIR}/sqlite3.c");
+    let bindings_dir = if std::env::var("LIBSQL_REGENERATE_BINDINGS").is_ok() {
+        let header = HeaderLocation::FromPath(format!("{SQLITE_DIR}/sqlite3.h"));
+        bindings::write_to_out_dir(header, out_path);
+        out_path.display().to_string()
+    } else {
+        SQLITE_DIR.to_string()
+    };
+
+    println!("cargo:rerun-if-changed={bindings_dir}/sqlite3.c");
     let mut cfg = cc::Build::new();
-    cfg.file(format!("{SQLITE_DIR}/sqlite3.c"))
+    cfg.file(format!("{bindings_dir}/src/sqlite3.c"))
         .flag("-DSQLITE_CORE")
         .flag("-DSQLITE_DEFAULT_FOREIGN_KEYS=1")
         .flag("-DSQLITE_ENABLE_API_ARMOR")
