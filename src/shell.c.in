@@ -704,9 +704,8 @@ static void console_prepare_utf8(void){
   conState.outCodePage = GetConsoleOutputCP();
   if( in_console ){
     SetConsoleCP(CP_UTF8);
-    DWORD newConsoleMode = conState.consoleMode
-      | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
-    SetConsoleMode(conState.hConsole, newConsoleMode);
+    SetConsoleMode(conState.hConsole, conState.consoleMode
+                   | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT);
     conState.infsMode = _setmode(_fileno(stdin), _O_U16TEXT);
     console_utf8_in = 1;
   }

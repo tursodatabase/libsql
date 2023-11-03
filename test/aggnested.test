@@ -358,6 +358,60 @@ do_execsql_test 6.2.2 {
   FROM t2 GROUP BY 'constant_string';
 } {{}}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 7.0 {
+  CREATE TABLE invoice (
+      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+      amount DOUBLE PRECISION DEFAULT NULL,
+      name VARCHAR(100) DEFAULT NULL
+  );
+
+  INSERT INTO invoice (amount, name) VALUES 
+      (4.0, 'Michael'), (15.0, 'Bara'), (4.0, 'Michael'), (6.0, 'John');
+}
+
+do_execsql_test 7.1 {
+  SELECT sum(amount), name
+    from invoice
+  group by name
+  having (select v > 6 from (select sum(amount) v) t)
+} {
+  15.0 Bara
+  8.0 Michael
+}
+
+do_execsql_test 7.2 {
+  SELECT (select 1 from (select sum(amount))) FROM invoice
+} {1}
+
+do_execsql_test 8.0 {
+  CREATE TABLE t1(x INT);
+  INSERT INTO t1 VALUES(100);
+  INSERT INTO t1 VALUES(20);
+  INSERT INTO t1 VALUES(3);
+  SELECT (SELECT y FROM (SELECT sum(x) AS y) AS t2 ) FROM t1;
+} {123}
+
+do_execsql_test 8.1 {
+  SELECT (
+    SELECT y FROM (
+      SELECT z AS y FROM (SELECT sum(x) AS z) AS t2 
+    ) 
+  ) FROM t1;
+} {123}
+
+do_execsql_test 8.2 {
+  SELECT (
+    SELECT a FROM (
+      SELECT y AS a FROM (
+        SELECT z AS y FROM (SELECT sum(x) AS z) AS t2 
+      ) 
+    )
+  ) FROM t1;
+} {123}
+
 
 
  

@@ -3397,6 +3397,7 @@ struct NameContext {
   int nRef;            /* Number of names resolved by this context */
   int nNcErr;          /* Number of errors encountered while resolving names */
   int ncFlags;         /* Zero or more NC_* flags defined below */
+  u32 nNestedSelect;   /* Number of nested selects using this NC */
   Select *pWinSelect;  /* SELECT statement for any window functions */
 };
 

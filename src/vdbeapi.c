@@ -152,7 +152,15 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
   int rc = SQLITE_OK;
   Vdbe *p = (Vdbe*)pStmt;
 #if SQLITE_THREADSAFE
-  sqlite3_mutex *mutex = ((Vdbe*)pStmt)->db->mutex;
+  sqlite3_mutex *mutex;
+#endif
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pStmt==0 ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
+#if SQLITE_THREADSAFE
+  mutex = p->db->mutex;
 #endif
   sqlite3_mutex_enter(mutex);
   for(i=0; i<p->nVar; i++){
