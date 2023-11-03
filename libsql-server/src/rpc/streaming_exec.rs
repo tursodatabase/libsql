@@ -54,7 +54,8 @@ where
     C: Connection,
 {
     async_stream::stream! {
-        let mut current_request_fut: BoxFuture<'static, (crate::Result<()>, u32)> = Box::pin(poll_fn(|_| Poll::Pending));
+        let never = || Box::pin(poll_fn(|_| Poll::Pending));
+        let mut current_request_fut: BoxFuture<'static, (crate::Result<()>, u32)> = never();
         let (snd, mut recv) = mpsc::channel(1);
         let conn = Arc::new(conn);
 
@@ -151,6 +152,7 @@ where
                     yield Ok(res);
                 },
                 (ret, request_id) = &mut current_request_fut => {
+                    current_request_fut = never();
                     if let Err(e) = ret {
                         yield Ok(ExecResp { request_id, response: Some(Response::Error(e.into())) })
                     }
