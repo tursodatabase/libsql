@@ -12,7 +12,7 @@ use crate::namespace::NamespaceName;
 use crate::stats::Stats;
 
 pub async fn server_heartbeat(
-    url: Url,
+    url: Option<Url>,
     auth: Option<String>,
     update_period: Duration,
     mut stats_subs: mpsc::Receiver<(NamespaceName, Weak<Stats>)>,
@@ -27,7 +27,7 @@ pub async fn server_heartbeat(
                 watched.insert(ns, stats);
             }
             _ = interval.tick() => {
-                send_stats(&mut watched, &client, &url, auth.as_deref()).await;
+                send_stats(&mut watched, &client, url.as_ref(), auth.as_deref()).await;
             }
         };
     }
@@ -36,24 +36,26 @@ pub async fn server_heartbeat(
 async fn send_stats(
     watched: &mut HashMap<NamespaceName, Weak<Stats>>,
     client: &reqwest::Client,
-    url: &Url,
+    url: Option<&Url>,
     auth: Option<&str>,
 ) {
     // first send all the stats...
     for (ns, stats) in watched.iter() {
         if let Some(stats) = stats.upgrade() {
             let body = StatsResponse::from(stats.as_ref());
-            let mut url = url.clone();
-            url.path_segments_mut().unwrap().push(ns.as_str());
-            let request = client.post(url);
-            let request = if let Some(ref auth) = auth {
-                request.header("Authorization", auth.to_string())
-            } else {
-                request
-            };
-            let request = request.json(&body);
-            if let Err(err) = request.send().await {
-                tracing::warn!("Error sending heartbeat: {}", err);
+            if let Some(url) = url {
+                let mut url = url.clone();
+                url.path_segments_mut().unwrap().push(ns.as_str());
+                let request = client.post(url);
+                let request = if let Some(ref auth) = auth {
+                    request.header("Authorization", auth.to_string())
+                } else {
+                    request
+                };
+                let request = request.json(&body);
+                if let Err(err) = request.send().await {
+                    tracing::warn!("Error sending heartbeat: {}", err);
+                }
             }
         }
     }

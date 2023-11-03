@@ -323,14 +323,17 @@ where
             Some(ref config) => {
                 tracing::info!(
                     "Server sending heartbeat to URL {} every {:?}",
-                    config.heartbeat_url,
+                    config.heartbeat_url.as_deref().unwrap_or("<not supplied>"),
                     config.heartbeat_period,
                 );
                 join_set.spawn({
                     let heartbeat_auth = config.heartbeat_auth.clone();
                     let heartbeat_period = config.heartbeat_period;
-                    let heartbeat_url =
-                        Url::from_str(&config.heartbeat_url).context("invalid heartbeat URL")?;
+                    let heartbeat_url = if let Some(url) = &config.heartbeat_url {
+                        Some(Url::from_str(&url).context("invalid heartbeat URL")?)
+                    } else {
+                        None
+                    };
                     async move {
                         heartbeat::server_heartbeat(
                             heartbeat_url,

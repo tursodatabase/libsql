@@ -439,7 +439,7 @@ async fn make_rpc_client_config(config: &Cli) -> anyhow::Result<Option<RpcClient
 
 fn make_hearbeat_config(config: &Cli) -> Option<HeartbeatConfig> {
     Some(HeartbeatConfig {
-        heartbeat_url: config.heartbeat_url.clone()?,
+        heartbeat_url: config.heartbeat_url.clone(),
         heartbeat_period: Duration::from_secs(config.heartbeat_period_s),
         heartbeat_auth: config.heartbeat_auth.clone(),
     })
