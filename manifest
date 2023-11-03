@@ -1,5 +1,5 @@
-C Update\sthe\sversion\snumber\sto\s3.45.0\sto\sbegin\sthe\snext\sdevelopment\scycle.
-D 2023-11-03T10:15:16.434
+C Update\sthe\stool/srctree-check.tcl\sscript\sso\sthat\sit\sverifies\sthat\sautoconf\nhas\sbeen\srun\sfollowing\sedits\sto\sVERSION.
+D 2023-11-03T11:41:24.817
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2108,7 +2108,7 @@ F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaa
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c 41c586dee84d0b190ad13e0282ed83d4a65ec9fefde9adf4943efdf6558eea7f
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
-F tool/srctree-check.tcl 9f1098d439159692ece45cc9e701b35df4956269399fe0c770e41f235d1ce5e6
+F tool/srctree-check.tcl c15f860a3c97d5f7b4c14b60392d9466af29dd006c4ef18127f502641e2977a8
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/stripccomments.c 20b8aabc4694d0d4af5566e42da1f1a03aff057689370326e9269a9ddcffdc37
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
@@ -2141,8 +2141,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 268b5984a4263bee245a9bb47ac927bde56cdf4af8795b851dada5622224076f
-R dd1ef45ff2a5ccfd075e4867f283d51c
+P 15b618e92a2708cc83256947736de8c494a9985a77e38bd5efc7e51e72cba344
+R 341d9b485cad2a5cb5b07c2f4f98a2ae
 U drh
-Z b80b47952b8aa2091fd6d596beedfe43
+Z 90bfecd59f7685a9235e07a588127673
 # Remove this line to create a well-formed Fossil manifest.
