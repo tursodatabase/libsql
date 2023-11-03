@@ -6,16 +6,21 @@ use crate::util::ConnectorService;
 use crate::{Rows, Statement};
 use futures::future::BoxFuture;
 use http::header::AUTHORIZATION;
-use http::StatusCode;
+use http::{HeaderValue, StatusCode};
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 
 #[derive(Clone, Debug)]
 pub struct HttpSender {
     inner: hyper::Client<HttpsConnector<ConnectorService>, hyper::Body>,
+    version: HeaderValue,
 }
 
 impl HttpSender {
-    pub fn new(connector: ConnectorService) -> Self {
+    pub fn new(connector: ConnectorService, version: Option<&str>) -> Self {
+        let ver = version.unwrap_or_else(|| env!("CARGO_PKG_VERSION"));
+
+        let version = HeaderValue::try_from(format!("libsql-hrana-{ver}")).unwrap();
+
         let https = HttpsConnectorBuilder::new()
             .with_native_roots()
             .https_or_http()
@@ -23,12 +28,13 @@ impl HttpSender {
             .wrap_connector(connector);
         let inner = hyper::Client::builder().build(https);
 
-        Self { inner }
+        Self { inner, version }
     }
 
     async fn send(&self, url: String, auth: String, body: String) -> Result<ServerMsg> {
         let req = hyper::Request::post(url)
             .header(AUTHORIZATION, auth)
+            .header("x-libsql-client-version", self.version.clone())
             .body(hyper::Body::from(body))
             .unwrap();
 
@@ -72,8 +78,9 @@ impl HttpConnection<HttpSender> {
         url: impl Into<String>,
         token: impl Into<String>,
         connector: ConnectorService,
+        version: Option<&str>,
     ) -> Self {
-        let inner = HttpSender::new(connector);
+        let inner = HttpSender::new(connector, version);
         Self::new(url.into(), token.into(), inner)
     }
 }

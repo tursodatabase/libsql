@@ -36,6 +36,7 @@ enum DbType {
         url: String,
         auth_token: String,
         connector: crate::util::ConnectorService,
+        version: Option<String>,
     },
 }
 
@@ -112,11 +113,42 @@ cfg_replication! {
         }
 
         #[doc(hidden)]
+        pub async fn open_with_remote_sync_internal(
+            db_path: impl Into<String>,
+            url: impl Into<String>,
+            token: impl Into<String>,
+            version: Option<String>
+        ) -> Result<Database> {
+            let mut http = hyper::client::HttpConnector::new();
+            http.enforce_http(false);
+            http.set_nodelay(true);
+
+            Self::open_with_remote_sync_connector_internal(db_path, url, token, http, version).await
+        }
+
+        #[doc(hidden)]
         pub async fn open_with_remote_sync_connector<C>(
             db_path: impl Into<String>,
             url: impl Into<String>,
             token: impl Into<String>,
             connector: C,
+        ) -> Result<Database>
+        where
+            C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
+            C::Response: crate::util::Socket,
+            C::Future: Send + 'static,
+            C::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
+        {
+            Self::open_with_remote_sync_connector_internal(db_path, url, token, connector, None).await
+        }
+
+        #[doc(hidden)]
+        async fn open_with_remote_sync_connector_internal<C>(
+            db_path: impl Into<String>,
+            url: impl Into<String>,
+            token: impl Into<String>,
+            connector: C,
+            version: Option<String>
         ) -> Result<Database>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
@@ -132,11 +164,12 @@ cfg_replication! {
 
             let svc = crate::util::ConnectorService::new(svc);
 
-            let db = crate::local::Database::open_http_sync(
+            let db = crate::local::Database::open_http_sync_internal(
                 svc,
                 db_path.into(),
                 url.into(),
-                token.into()
+                token.into(),
+                version
             ).await?;
 
             Ok(Database {
@@ -177,13 +210,27 @@ cfg_replication! {
     }
 }
 
+impl Database {}
+
 cfg_remote! {
     impl Database {
         pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
             let mut connector = hyper::client::HttpConnector::new();
             connector.enforce_http(false);
 
-            Self::open_remote_with_connector(url, auth_token, connector)
+            Self::open_remote_with_connector_internal(url, auth_token, connector, None)
+        }
+
+        #[doc(hidden)]
+        pub fn open_remote_internal(
+            url: impl Into<String>,
+            auth_token: impl Into<String>,
+            version: impl Into<String>,
+        ) -> Result<Self> {
+            let mut connector = hyper::client::HttpConnector::new();
+            connector.enforce_http(false);
+
+            Self::open_remote_with_connector_internal(url, auth_token, connector, Some(version.into()))
         }
 
         // For now, only expose this for sqld testing purposes
@@ -192,6 +239,21 @@ cfg_remote! {
             url: impl Into<String>,
             auth_token: impl Into<String>,
             connector: C,
+        ) -> Result<Self>
+        where
+            C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
+            C::Response: crate::util::Socket,
+            C::Future: Send + 'static,
+            C::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
+        {
+            Self::open_remote_with_connector_internal(url, auth_token, connector, None)
+        }
+
+        fn open_remote_with_connector_internal<C>(
+            url: impl Into<String>,
+            auth_token: impl Into<String>,
+            connector: C,
+            version: Option<String>
         ) -> Result<Self>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
@@ -209,6 +271,7 @@ cfg_remote! {
                     url: url.into(),
                     auth_token: auth_token.into(),
                     connector: crate::util::ConnectorService::new(svc),
+                    version,
                 },
             })
         }
@@ -262,12 +325,14 @@ impl Database {
                 url,
                 auth_token,
                 connector,
+                version,
             } => {
                 let conn = std::sync::Arc::new(
                     crate::hrana::connection::HttpConnection::new_with_connector(
                         url,
                         auth_token,
                         connector.clone(),
+                        version.as_ref().map(|s| s.as_str()),
                     ),
                 );
 

@@ -64,6 +64,12 @@ impl MetricsSnapshot {
         None
     }
 
+    pub fn snapshot(
+        &self,
+    ) -> &HashMap<CompositeKey, (Option<Unit>, Option<SharedString>, DebugValue)> {
+        &self.snapshot
+    }
+
     #[track_caller]
     pub fn assert_gauge(&self, metric_name: &str, value: f64) -> &Self {
         let val = self.get_gauge(metric_name).expect("metric does not exist");

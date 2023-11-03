@@ -20,10 +20,14 @@ struct Cookie {
 #[derive(Debug)]
 pub struct HttpConnection<T>(Arc<InnerClient<T>>);
 
-impl<T> Clone for HttpConnection<T> {
-    fn clone(&self) -> Self {
-        HttpConnection(self.0.clone())
-    }
+#[derive(Debug)]
+struct InnerClient<T> {
+    inner: T,
+    cookies: RwLock<HashMap<u64, Cookie>>,
+    url_for_queries: String,
+    auth: String,
+    affected_row_count: AtomicU64,
+    last_insert_rowid: AtomicI64,
 }
 
 impl<T> HttpConnection<T>
@@ -222,12 +226,8 @@ where
     }
 }
 
-#[derive(Debug)]
-struct InnerClient<T> {
-    inner: T,
-    cookies: RwLock<HashMap<u64, Cookie>>,
-    url_for_queries: String,
-    auth: String,
-    affected_row_count: AtomicU64,
-    last_insert_rowid: AtomicI64,
+impl<T> Clone for HttpConnection<T> {
+    fn clone(&self) -> Self {
+        HttpConnection(self.0.clone())
+    }
 }

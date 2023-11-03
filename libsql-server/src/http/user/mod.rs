@@ -34,7 +34,7 @@ use crate::database::Database;
 use crate::error::Error;
 use crate::hrana;
 use crate::http::user::types::HttpQuery;
-use crate::metrics::LEGACY_HTTP_CALL;
+use crate::metrics::{CLIENT_VERSION, LEGACY_HTTP_CALL};
 use crate::namespace::{MakeNamespace, NamespaceStore};
 use crate::net::Accept;
 use crate::query::{self, Query};
@@ -307,8 +307,20 @@ where
                 path: self.path,
             };
 
-            fn trace_request<B>(req: &Request<B>, _span: &Span) {
-                tracing::debug!("got request: {} {}", req.method(), req.uri());
+            fn trace_request<B>(req: &Request<B>, span: &Span) {
+                let _s = span.enter();
+
+                tracing::debug!(
+                    "got request: {} {} {:?}",
+                    req.method(),
+                    req.uri(),
+                    req.headers()
+                );
+                if let Some(v) = req.headers().get("x-libsql-client-version") {
+                    if let Ok(s) = v.to_str() {
+                        metrics::increment_counter!(CLIENT_VERSION, "version" => s.to_string());
+                    }
+                }
             }
 
             macro_rules! handle_hrana {
@@ -392,7 +404,19 @@ where
                 )
                 .with_state(state);
 
-            let layered_app = app
+            // Merge the grpc based axum router into our regular http router
+            let replication = ReplicationLogServer::new(self.replication_service);
+            let write_proxy = ProxyServer::new(self.proxy_service);
+
+            let grpc_router = Server::builder()
+                .accept_http1(true)
+                .add_service(tonic_web::enable(replication))
+                .add_service(tonic_web::enable(write_proxy))
+                .into_router();
+
+            let router = app.merge(grpc_router);
+
+            let router = router
                 .layer(option_layer(self.idle_shutdown_kicker.clone()))
                 .layer(
                     tower_http::trace::TraceLayer::new_for_http()
@@ -410,18 +434,6 @@ where
                         .allow_headers(cors::Any)
                         .allow_origin(cors::Any),
                 );
-
-            // Merge the grpc based axum router into our regular http router
-            let replication = ReplicationLogServer::new(self.replication_service);
-            let write_proxy = ProxyServer::new(self.proxy_service);
-
-            let grpc_router = Server::builder()
-                .accept_http1(true)
-                .add_service(tonic_web::enable(replication))
-                .add_service(tonic_web::enable(write_proxy))
-                .into_router();
-
-            let router = layered_app.merge(grpc_router);
 
             let router = router.fallback(handle_fallback);
             let h2c = crate::h2c::H2cMaker::new(router);

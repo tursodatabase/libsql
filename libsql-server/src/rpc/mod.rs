@@ -7,8 +7,12 @@ use rustls::server::AllowAnyAuthenticatedClient;
 use rustls::RootCertStore;
 use tonic::Status;
 use tower::util::option_layer;
+use tower::ServiceBuilder;
+use tower_http::trace::DefaultOnResponse;
+use tracing::Span;
 
 use crate::config::TlsConfig;
+use crate::metrics::CLIENT_VERSION;
 use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
 use crate::rpc::proxy::rpc::proxy_server::ProxyServer;
 use crate::rpc::proxy::ProxyService;
@@ -80,7 +84,19 @@ pub async fn run_rpc_server<A: crate::net::Accept>(
             .add_service(ReplicationLogServer::new(logger_service))
             .into_router();
 
-        let h2c = crate::h2c::H2cMaker::new(router);
+        let svc = ServiceBuilder::new()
+            .layer(
+                tower_http::trace::TraceLayer::new_for_grpc()
+                    .on_request(trace_request)
+                    .on_response(
+                        DefaultOnResponse::new()
+                            .level(tracing::Level::DEBUG)
+                            .latency_unit(tower_http::LatencyUnit::Micros),
+                    ),
+            )
+            .service(router);
+
+        let h2c = crate::h2c::H2cMaker::new(svc);
         hyper::server::Server::builder(acceptor)
             .serve(h2c)
             .await
@@ -95,7 +111,20 @@ pub async fn run_rpc_server<A: crate::net::Accept>(
             .add_service(replication)
             .into_router();
 
-        let h2c = crate::h2c::H2cMaker::new(router);
+        let svc = ServiceBuilder::new()
+            .layer(
+                tower_http::trace::TraceLayer::new_for_grpc()
+                    .on_request(trace_request)
+                    .on_response(
+                        DefaultOnResponse::new()
+                            .level(tracing::Level::DEBUG)
+                            .latency_unit(tower_http::LatencyUnit::Micros),
+                    ),
+            )
+            .service(router);
+
+        let h2c = crate::h2c::H2cMaker::new(svc);
+
         hyper::server::Server::builder(acceptor)
             .serve(h2c)
             .await
@@ -120,5 +149,22 @@ fn extract_namespace<T>(
             .map_err(|_| Status::invalid_argument("Invalid namespace name"))
     } else {
         Err(Status::invalid_argument("Missing x-namespace-bin metadata"))
+    }
+}
+
+fn trace_request<B>(req: &hyper::Request<B>, span: &Span) {
+    let _s = span.enter();
+
+    tracing::debug!(
+        "rpc request: {} {} {:?}",
+        req.method(),
+        req.uri(),
+        req.headers()
+    );
+
+    if let Some(v) = req.headers().get("x-libsql-client-version") {
+        if let Ok(s) = v.to_str() {
+            metrics::increment_counter!(CLIENT_VERSION, "version" => s.to_string());
+        }
     }
 }

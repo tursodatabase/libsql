@@ -1,10 +1,12 @@
-use std::task::{Context, Poll};
 use std::pin::Pin;
+use std::task::{Context, Poll};
 
 use anyhow::Context as _;
 use http::Uri;
 use hyper_rustls::HttpsConnectorBuilder;
-use libsql_replication::rpc::proxy::{proxy_client::ProxyClient, DescribeRequest, DescribeResult, ExecuteResults, ProgramReq};
+use libsql_replication::rpc::proxy::{
+    proxy_client::ProxyClient, DescribeRequest, DescribeResult, ExecuteResults, ProgramReq,
+};
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use tonic::{
     body::BoxBody,
@@ -23,7 +25,6 @@ use uuid::Uuid;
 use crate::util::ConnectorService;
 
 use crate::util::box_clone_service::BoxCloneService;
-
 
 type ResponseBody = trace::ResponseBody<
     GrpcWebCall<hyper::Body>,
@@ -45,7 +46,14 @@ impl Client {
         connector: ConnectorService,
         origin: Uri,
         auth_token: impl AsRef<str>,
+        version: Option<&str>,
     ) -> anyhow::Result<Self> {
+        let ver = version.unwrap_or_else(|| env!("CARGO_PKG_VERSION"));
+
+        let version: AsciiMetadataValue = format!("libsql-embedded-replica-{ver}")
+            .try_into()
+            .context("Invalid client version")?;
+
         let auth_token: AsciiMetadataValue = format!("Bearer {}", auth_token.as_ref())
             .try_into()
             .context("Invalid auth token must be ascii")?;
@@ -55,15 +63,18 @@ impl Client {
 
         let channel = GrpcChannel::new(connector);
 
-        let interceptor = GrpcInterceptor(auth_token, namespace);
+        let interceptor = GrpcInterceptor {
+            auth_token,
+            namespace,
+            version,
+        };
 
         let replication = ReplicationLogClient::with_origin(
             InterceptedService::new(channel.clone(), interceptor.clone()),
             origin.clone(),
         );
 
-        let proxy =
-            ProxyClient::with_origin(InterceptedService::new(channel, interceptor), origin);
+        let proxy = ProxyClient::with_origin(InterceptedService::new(channel, interceptor), origin);
 
         // Remove default tonic `8mb` message limits since fly may buffer
         // messages causing the msg len to be longer.
@@ -149,13 +160,20 @@ impl Service<http::Request<BoxBody>> for GrpcChannel {
 
 #[derive(Clone)]
 /// Contains token and namespace headers to append to every request.
-pub struct GrpcInterceptor(AsciiMetadataValue, BinaryMetadataValue);
+pub struct GrpcInterceptor {
+    auth_token: AsciiMetadataValue,
+    namespace: BinaryMetadataValue,
+    version: AsciiMetadataValue,
+}
 
 impl Interceptor for GrpcInterceptor {
     fn call(&mut self, mut req: tonic::Request<()>) -> Result<tonic::Request<()>, tonic::Status> {
-        req.metadata_mut().insert("x-authorization", self.0.clone());
         req.metadata_mut()
-            .insert_bin("x-namespace-bin", self.1.clone());
+            .insert("x-authorization", self.auth_token.clone());
+        req.metadata_mut()
+            .insert_bin("x-namespace-bin", self.namespace.clone());
+        req.metadata_mut()
+            .insert("x-libsql-client-version", self.version.clone());
         Ok(req)
     }
 }

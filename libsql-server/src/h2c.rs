@@ -38,9 +38,11 @@
 //!       └────────────►│call axum router │◄───────────┘
 //!                     └─────────────────┘
 
+use std::marker::PhantomData;
 use std::pin::Pin;
 
 use axum::{body::BoxBody, http::HeaderValue};
+use bytes::Bytes;
 use hyper::header;
 use hyper::Body;
 use hyper::{Request, Response};
@@ -52,25 +54,31 @@ type BoxError = Box<dyn std::error::Error + Send + Sync>;
 /// A `MakeService` adapter for [`H2c`] that injects connection
 /// info into the request extensions.
 #[derive(Debug, Clone)]
-pub struct H2cMaker<S> {
+pub struct H2cMaker<S, B> {
     s: S,
+    _pd: PhantomData<fn(B)>,
 }
 
-impl<S> H2cMaker<S> {
+impl<S, B> H2cMaker<S, B> {
     pub fn new(s: S) -> Self {
-        Self { s }
+        Self {
+            s,
+            _pd: PhantomData,
+        }
     }
 }
 
-impl<S, C> Service<&C> for H2cMaker<S>
+impl<S, C, B> Service<&C> for H2cMaker<S, B>
 where
-    S: Service<Request<Body>, Response = Response<BoxBody>> + Clone + Send + 'static,
+    S: Service<Request<Body>, Response = Response<B>> + Clone + Send + 'static,
     S::Future: Send + 'static,
     S::Error: Into<BoxError> + Sync + Send + 'static,
     S::Response: Send + 'static,
     C: crate::net::Conn,
+    B: http_body::Body<Data = Bytes> + Send + 'static,
+    B::Error: Into<BoxError> + Sync + Send + 'static,
 {
-    type Response = H2c<S>;
+    type Response = H2c<S, B>;
 
     type Error = hyper::Error;
 
@@ -87,7 +95,13 @@ where
     fn call(&mut self, conn: &C) -> Self::Future {
         let connect_info = conn.connect_info();
         let s = self.s.clone();
-        Box::pin(async move { Ok(H2c { s, connect_info }) })
+        Box::pin(async move {
+            Ok(H2c {
+                s,
+                connect_info,
+                _pd: PhantomData,
+            })
+        })
     }
 }
 
@@ -95,17 +109,20 @@ where
 /// delegate calls to the inner service once a protocol
 /// has been selected.
 #[derive(Debug, Clone)]
-pub struct H2c<S> {
+pub struct H2c<S, B> {
     s: S,
     connect_info: TcpConnectInfo,
+    _pd: PhantomData<fn(B)>,
 }
 
-impl<S> Service<Request<Body>> for H2c<S>
+impl<S, B> Service<Request<Body>> for H2c<S, B>
 where
-    S: Service<Request<Body>, Response = Response<BoxBody>> + Clone + Send + 'static,
+    S: Service<Request<Body>, Response = Response<B>> + Clone + Send + 'static,
     S::Future: Send + 'static,
     S::Error: Into<BoxError> + Sync + Send + 'static,
     S::Response: Send + 'static,
+    B: http_body::Body<Data = Bytes> + Send + 'static,
+    B::Error: Into<BoxError> + Sync + Send + 'static,
 {
     type Response = hyper::Response<BoxBody>;
     type Error = BoxError;
@@ -130,7 +147,11 @@ where
             // the request to the inner service, which in our case is the
             // axum router.
             if req.headers().get(header::UPGRADE) != Some(&HeaderValue::from_static("h2c")) {
-                return svc.call(req).await.map_err(Into::into);
+                return svc
+                    .call(req)
+                    .await
+                    .map(|r| r.map(axum::body::boxed))
+                    .map_err(Into::into);
             }
 
             tracing::debug!("Got a h2c upgrade request");
