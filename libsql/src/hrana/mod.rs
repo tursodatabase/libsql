@@ -411,6 +411,7 @@ impl RowsInner for Rows {
     }
 }
 
+#[derive(Debug)]
 pub struct Row {
     cols: Arc<Vec<Col>>,
     inner: Vec<proto::Value>,

@@ -615,6 +615,7 @@ impl RowsInner for RemoteRows {
     }
 }
 
+#[derive(Debug)]
 struct RemoteRow(Vec<Value>, Vec<libsql_replication::rpc::proxy::Column>);
 
 impl RowInner for RemoteRow {

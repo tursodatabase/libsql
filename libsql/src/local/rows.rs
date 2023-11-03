@@ -4,6 +4,7 @@ use crate::{errors, Error, Result};
 use crate::{Value, ValueRef};
 use libsql_sys::ValueType;
 
+use std::fmt;
 use std::cell::RefCell;
 use std::ffi::c_char;
 /// Query result rows.
@@ -148,6 +149,32 @@ impl Row {
             &self.stmt.inner,
             idx as usize,
         ))
+    }
+}
+
+impl fmt::Debug for Row {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::result::Result<(), fmt::Error> {
+        let mut dbg_map = f.debug_map();
+        for column in 0..self.stmt.column_count() {
+            dbg_map.key(&self.stmt.column_name(column));
+            let value = self.get_ref(column as i32);
+            match value {
+                Ok(value_ref) => {
+                    let value_type = value_ref.data_type();
+                    match value_ref {
+                        ValueRef::Null => dbg_map.value(&(value_type, ())),
+                        ValueRef::Integer(i) => dbg_map.value(&(value_type, i)),
+                        ValueRef::Real(f) => dbg_map.value(&(value_type, f)),
+                        ValueRef::Text(s) => dbg_map.value(&(value_type, String::from_utf8_lossy(s))),
+                        ValueRef::Blob(b) => dbg_map.value(&(value_type, b.len())),
+                    };
+                }
+                Err(_) => {
+                    dbg_map.value(&value);
+                }
+            }
+        }
+        dbg_map.finish()
     }
 }
 

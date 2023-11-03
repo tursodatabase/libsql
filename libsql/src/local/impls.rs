@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::fmt;
 
 use crate::{
     connection::Conn,
@@ -160,5 +161,11 @@ impl RowInner for LibsqlRow {
 
     fn column_type(&self, idx: i32) -> Result<ValueType> {
         self.0.column_type(idx).map(ValueType::from)
+    }
+}
+
+impl fmt::Debug for LibsqlRow {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::result::Result<(), fmt::Error> {
+        self.0.fmt(f)
     }
 }
