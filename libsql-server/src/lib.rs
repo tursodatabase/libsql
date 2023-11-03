@@ -318,6 +318,7 @@ where
         &self,
         join_set: &mut JoinSet<anyhow::Result<()>>,
         stats_receiver: mpsc::Receiver<(NamespaceName, Weak<Stats>)>,
+        namespaces: NamespaceStore<impl MakeNamespace>,
     ) -> anyhow::Result<()> {
         match self.heartbeat_config {
             Some(ref config) => {
@@ -340,6 +341,7 @@ where
                             heartbeat_auth,
                             heartbeat_period,
                             stats_receiver,
+                            namespaces,
                         )
                         .await;
                         Ok(())
@@ -356,13 +358,11 @@ where
         Ok(())
     }
 
-    pub async fn start(self) -> anyhow::Result<()> {
+    pub async fn start(mut self) -> anyhow::Result<()> {
         let mut join_set = JoinSet::new();
 
         init_version_file(&self.path)?;
         maybe_migrate(&self.path)?;
-        let (stats_sender, stats_receiver) = mpsc::channel(8);
-        self.spawn_monitoring_tasks(&mut join_set, stats_receiver)?;
         self.init_sqlite_globals();
         let db_is_dirty = init_sentinel_file(&self.path)?;
         let idle_shutdown_kicker = self.setup_shutdown();
@@ -373,6 +373,7 @@ where
 
         match self.rpc_client_config {
             Some(rpc_config) => {
+                let (stats_sender, stats_receiver) = mpsc::channel(8);
                 let replica = Replica {
                     rpc_config,
                     stats_sender,
@@ -382,6 +383,9 @@ where
                     auth: auth.clone(),
                 };
                 let (namespaces, proxy_service, replication_service) = replica.configure().await?;
+                self.rpc_client_config = None;
+                self.spawn_monitoring_tasks(&mut join_set, stats_receiver, namespaces.clone())?;
+
                 let services = Services {
                     namespaces,
                     idle_shutdown_kicker,
@@ -399,6 +403,7 @@ where
                 services.configure(&mut join_set);
             }
             None => {
+                let (stats_sender, stats_receiver) = mpsc::channel(8);
                 let primary = Primary {
                     rpc_config: self.rpc_server_config,
                     db_config: self.db_config.clone(),
@@ -413,6 +418,8 @@ where
                     auth: auth.clone(),
                 };
                 let (namespaces, proxy_service, replication_service) = primary.configure().await?;
+                self.rpc_server_config = None;
+                self.spawn_monitoring_tasks(&mut join_set, stats_receiver, namespaces.clone())?;
 
                 let services = Services {
                     namespaces,
