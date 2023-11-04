@@ -2817,7 +2817,7 @@ S3JniApi(sqlite3_collation_needed(),jint,1collation_1needed)(
   }else{
     jclass const klazz = (*env)->GetObjectClass(env, jHook);
     jmethodID const xCallback = (*env)->GetMethodID(
-      env, klazz, "call", "(Lorg/sqlite/jni/capi/sqlite3;ILjava/lang/String;)I"
+      env, klazz, "call", "(Lorg/sqlite/jni/capi/sqlite3;ILjava/lang/String;)V"
     );
     S3JniUnrefLocal(klazz);
     S3JniIfThrew {

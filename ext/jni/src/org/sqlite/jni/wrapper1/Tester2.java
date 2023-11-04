@@ -638,6 +638,67 @@ public class Tester2 implements Runnable {
     dbDest.close();
   }
 
+  private void testCollation(){
+    final Sqlite db = openDb();
+    execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
+    final Sqlite.Collation myCollation = new Sqlite.Collation() {
+        private String myState =
+          "this is local state. There is much like it, but this is mine.";
+        @Override
+        // Reverse-sorts its inputs...
+        public int call(byte[] lhs, byte[] rhs){
+          int len = lhs.length > rhs.length ? rhs.length : lhs.length;
+          int c = 0, i = 0;
+          for(i = 0; i < len; ++i){
+            c = lhs[i] - rhs[i];
+            if(0 != c) break;
+          }
+          if(0==c){
+            if(i < lhs.length) c = 1;
+            else if(i < rhs.length) c = -1;
+          }
+          return -c;
+        }
+      };
+    final Sqlite.CollationNeeded collLoader = new Sqlite.CollationNeeded(){
+        @Override
+        public void call(Sqlite dbArg, int eTextRep, String collationName){
+          affirm(dbArg == db);
+          db.createCollation("reversi", eTextRep, myCollation);
+        }
+      };
+    db.onCollationNeeded(collLoader);
+    Sqlite.Stmt stmt = db.prepare("SELECT a FROM t ORDER BY a COLLATE reversi");
+    int counter = 0;
+    while( stmt.step() ){
+      final String val = stmt.columnText16(0);
+      ++counter;
+      switch(counter){
+        case 1: affirm("c".equals(val)); break;
+        case 2: affirm("b".equals(val)); break;
+        case 3: affirm("a".equals(val)); break;
+      }
+    }
+    affirm(3 == counter);
+    stmt.finalizeStmt();
+    stmt = db.prepare("SELECT a FROM t ORDER BY a");
+    counter = 0;
+    while( stmt.step() ){
+      final String val = stmt.columnText16(0);
+      ++counter;
+      //outln("Non-REVERSI'd row#"+counter+": "+val);
+      switch(counter){
+        case 3: affirm("c".equals(val)); break;
+        case 2: affirm("b".equals(val)); break;
+        case 1: affirm("a".equals(val)); break;
+      }
+    }
+    affirm(3 == counter);
+    stmt.finalizeStmt();
+    db.onCollationNeeded(null);
+    db.close();
+  }
+
   private void runTests(boolean fromThread) throws Exception {
     List<java.lang.reflect.Method> mlist = testMethods;
     affirm( null!=mlist );

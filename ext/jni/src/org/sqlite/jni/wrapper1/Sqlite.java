@@ -100,6 +100,13 @@ public final class Sqlite implements AutoCloseable  {
   public static final int DBCONFIG_STMT_SCANSTATUS = CApi.SQLITE_DBCONFIG_STMT_SCANSTATUS;
   public static final int DBCONFIG_REVERSE_SCANORDER = CApi.SQLITE_DBCONFIG_REVERSE_SCANORDER;
 
+  public static final int UTF8 = CApi.SQLITE_UTF8;
+  public static final int UTF16 = CApi.SQLITE_UTF16;
+  public static final int UTF16LE = CApi.SQLITE_UTF16LE;
+  public static final int UTF16BE = CApi.SQLITE_UTF16BE;
+  /* We elide the UTF16_ALIGNED from this interface because it
+     is irrelevant for the Java interface. */
+
   //! Used only by the open() factory functions.
   private Sqlite(sqlite3 db){
     this.db = db;
@@ -1122,4 +1129,94 @@ public final class Sqlite implements AutoCloseable  {
     return new Backup(this, schemaDest, dbSrc, schemaSrc);
   }
 
+
+  /**
+     Callback type for use with createCollation().
+   */
+  public interface Collation {
+    /**
+       Called by the SQLite core to compare inputs. Implementations
+       must compare its two arguments using memcmp(3) semantics.
+
+       Warning: the SQLite core has no mechanism for reporting errors
+       from custom collations and its workflow does not accommodate
+       propagation of exceptions from callbacks. Any exceptions thrown
+       from collations will be silently supressed and sorting results
+       will be unpredictable.
+    */
+    int call(byte[] lhs, byte[] rhs);
+  }
+
+  /**
+     Analog to sqlite3_create_collation().
+
+     Throws if name is null or empty, c is null, or the encoding flag
+     is invalid. The encoding must be one of the UTF8, UTF16, UTF16LE,
+     or UTF16BE constants.
+  */
+  public void createCollation(String name, int encoding, Collation c){
+    thisDb();
+    if( null==name || 0==name.length()){
+      throw new IllegalArgumentException("Collation name may not be null or empty.");
+    }
+    if( null==c ){
+      throw new IllegalArgumentException("Collation may not be null.");
+    }
+    switch(encoding){
+      case UTF8:
+      case UTF16:
+      case UTF16LE:
+      case UTF16BE:
+        break;
+      default:
+        throw new IllegalArgumentException("Invalid Collation encoding.");
+    }
+    checkRc(
+      CApi.sqlite3_create_collation(
+        thisDb(), name, encoding, new org.sqlite.jni.capi.CollationCallback(){
+            @Override public int call(byte[] lhs, byte[] rhs){
+              try{return c.call(lhs, rhs);}
+              catch(Exception e){return 0;}
+            }
+            @Override public void xDestroy(){}
+          }
+      )
+    );
+  }
+
+  /**
+     Callback for use with onCollationNeeded().
+  */
+  public interface CollationNeeded {
+    /**
+       Must behave as documented for the callback for
+       sqlite3_collation_needed().
+
+       Warning: the C API has no mechanism for reporting or
+       propagating errors from this callback, so any exceptions it
+       throws are suppressed.
+    */
+    void call(Sqlite db, int encoding, String collationName);
+  }
+
+  /**
+     Sets up the given object to be called by the SQLite core when it
+     encounters a collation name which it does not know. Pass a null
+     object to disconnect the object from the core. This replaces any
+     existing collation-needed loader, or is a no-op if the given
+     object is already registered. Throws if registering the loader
+     fails.
+  */
+  public void onCollationNeeded( CollationNeeded cn ){
+    org.sqlite.jni.capi.CollationNeededCallback cnc = null;
+    if( null!=cn ){
+      cnc = new org.sqlite.jni.capi.CollationNeededCallback(){
+          @Override public void call(sqlite3 db, int encoding, String collationName){
+            final Sqlite xdb = Sqlite.fromNative(db);
+            if(null!=xdb) cn.call(xdb, encoding, collationName);
+          }
+        };
+    }
+    checkRc( CApi.sqlite3_collation_needed(thisDb(), cnc) );
+  }
 }

@@ -593,9 +593,9 @@ public class Tester1 implements Runnable {
       };
     final CollationNeededCallback collLoader = new CollationNeededCallback(){
         @Override
-        public int call(sqlite3 dbArg, int eTextRep, String collationName){
+        public void call(sqlite3 dbArg, int eTextRep, String collationName){
           affirm(dbArg == db/* as opposed to a temporary object*/);
-          return sqlite3_create_collation(dbArg, "reversi", eTextRep, myCollation);
+          sqlite3_create_collation(dbArg, "reversi", eTextRep, myCollation);
         }
       };
     int rc = sqlite3_collation_needed(db, collLoader);
