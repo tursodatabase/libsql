@@ -37,6 +37,42 @@ impl Column<'_> {
     }
 }
 
+pub trait ColumnIndex: fmt::Debug {
+    fn index(self, row: &Row) -> Result<i32>;
+}
+
+impl ColumnIndex for &str {
+    fn index(self, row: &Row) -> Result<i32> {
+        row.column_index(self)
+            .ok_or_else(|| crate::Error::InvalidColumnName(self.to_string()))
+    }
+}
+
+impl ColumnIndex for String {
+    fn index(self, row: &Row) -> Result<i32> {
+        row.column_index(&self)
+            .ok_or_else(|| crate::Error::InvalidColumnName(self))
+    }
+}
+
+impl ColumnIndex for i32 {
+    fn index(self, _: &Row) -> Result<i32> {
+        Ok(self)
+    }
+}
+
+impl ColumnIndex for i64 {
+    fn index(self, _: &Row) -> Result<i32> {
+        Ok(self as i32)
+    }
+}
+
+impl ColumnIndex for usize {
+    fn index(self, _: &Row) -> Result<i32> {
+        Ok(self as i32)
+    }
+}
+
 pub(crate) trait RowsInner {
     fn next(&mut self) -> Result<Option<Row>>;
 
@@ -72,23 +108,6 @@ impl Rows {
 
 pub struct Row {
     pub(crate) inner: Box<dyn RowInner + Send + Sync>,
-}
-
-pub trait ColumnIndex: fmt::Debug {
-    fn index(&self, row: &Row) -> Result<i32>;
-}
-
-impl ColumnIndex for &str {
-    fn index(&self, row: &Row) -> Result<i32> {
-        row.column_index(*self)
-            .ok_or_else(|| crate::Error::InvalidColumnName(self.to_string()))
-    }
-}
-
-impl ColumnIndex for i32 {
-    fn index(&self, _: &Row) -> Result<i32> {
-        Ok(*self)
-    }
 }
 
 impl Row {
