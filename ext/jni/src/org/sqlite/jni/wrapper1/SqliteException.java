@@ -74,7 +74,7 @@ public final class SqliteException extends java.lang.RuntimeException {
   }
 
   public SqliteException(Sqlite.Stmt stmt){
-    this(stmt.db());
+    this(stmt.getDb());
   }
 
   public int errcode(){ return errCode; }

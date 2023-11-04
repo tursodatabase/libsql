@@ -241,6 +241,7 @@ public class Tester2 implements Runnable {
       Sqlite.Stmt stmt = db.prepare("SELECT ?1");
       Exception e = null;
       affirm( null!=stmt.nativeHandle() );
+      affirm( db == stmt.getDb() );
       affirm( 1==stmt.bindParameterCount() );
       affirm( "?1".equals(stmt.bindParameterName(1)) );
       affirm( null==stmt.bindParameterName(2) );
@@ -294,21 +295,30 @@ public class Tester2 implements Runnable {
       final ValueHolder<Integer> vh = new ValueHolder<>(0);
       final ScalarFunction f = new ScalarFunction(){
           public void xFunc(SqlFunction.Arguments args){
+            affirm( db == args.getDb() );
             for( SqlFunction.Arguments.Arg arg : args ){
               vh.value += arg.getInt();
             }
+            args.resultInt(vh.value);
           }
           public void xDestroy(){
             ++xDestroyCalled.value;
           }
         };
       db.createFunction("myfunc", -1, f);
-      execSql(db, "select myfunc(1,2,3)");
+      Sqlite.Stmt q = db.prepare("select myfunc(1,2,3)");
+      affirm( q.step() );
       affirm( 6 == vh.value );
-      vh.value = 0;
-      execSql(db, "select myfunc(-1,-2,-3)");
-      affirm( -6 == vh.value );
+      affirm( 6 == q.columnInt(0) );
+      q.finalizeStmt();
       affirm( 0 == xDestroyCalled.value );
+      vh.value = 0;
+      q = db.prepare("select myfunc(-1,-2,-3)");
+      affirm( q.step() );
+      affirm( -6 == vh.value );
+      affirm( -6 == q.columnInt(0) );
+      affirm( 0 == xDestroyCalled.value );
+      q.finalizeStmt();
     }
     affirm( 1 == xDestroyCalled.value );
   }

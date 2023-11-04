@@ -56,7 +56,7 @@ public interface SqlFunction  {
     */
     Arguments(sqlite3_context cx, sqlite3_value args[]){
       this.cx = cx;
-      this.args = args==null ? new sqlite3_value[0] : args;;
+      this.args = args==null ? new sqlite3_value[0] : args;
       this.length = this.args.length;
     }
 
@@ -75,6 +75,16 @@ public interface SqlFunction  {
 
     //! Returns the underlying sqlite3_context for these arguments.
     sqlite3_context getContext(){return cx;}
+
+    /**
+       Returns the Sqlite (db) object associated with this UDF call,
+       or null if the UDF is somehow called without such an object or
+       the db has been closed in an untimely manner (e.g. closed by a
+       UDF call).
+    */
+    public Sqlite getDb(){
+      return Sqlite.fromNative( CApi.sqlite3_context_db_handle(cx) );
+    }
 
     public int getArgCount(){ return args.length; }
 

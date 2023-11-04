@@ -781,7 +781,7 @@ public final class Sqlite implements AutoCloseable  {
        Returns the Sqlite which prepared this statement, or null if
        this statement has been finalized.
     */
-    public Sqlite db(){ return this._db; }
+    public Sqlite getDb(){ return this._db; }
 
     /**
        Works like sqlite3_reset() but throws on error.
