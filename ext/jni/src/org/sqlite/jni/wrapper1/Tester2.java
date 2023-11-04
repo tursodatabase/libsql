@@ -603,6 +603,41 @@ public class Tester2 implements Runnable {
     affirm( 8 == val.value );
   }
 
+  private void testBackup(){
+    final Sqlite dbDest = openDb();
+
+    try (Sqlite dbSrc = openDb()) {
+      execSql(dbSrc, new String[]{
+          "pragma page_size=512; VACUUM;",
+          "create table t(a);",
+          "insert into t(a) values(1),(2),(3);"
+        });
+      Exception e = null;
+      try {
+        dbSrc.initBackup("main",dbSrc,"main");
+      }catch(Exception x){
+        e = x;
+      }
+      affirm( e instanceof SqliteException );
+      e = null;
+      try (Sqlite.Backup b = dbDest.initBackup("main",dbSrc,"main")) {
+        affirm( null!=b );
+        int rc;
+        while( Sqlite.Backup.DONE!=(rc = b.step(1)) ){
+          affirm( 0==rc );
+        }
+        affirm( b.pageCount() > 0 );
+        b.finish();
+      }
+    }
+
+    try (Sqlite.Stmt q = dbDest.prepare("SELECT sum(a) from t")) {
+      q.step();
+      affirm( q.columnInt(0) == 6 );
+    }
+    dbDest.close();
+  }
+
   private void runTests(boolean fromThread) throws Exception {
     List<java.lang.reflect.Method> mlist = testMethods;
     affirm( null!=mlist );

@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import org.sqlite.jni.capi.CApi;
 import org.sqlite.jni.capi.sqlite3;
 import org.sqlite.jni.capi.sqlite3_stmt;
+import org.sqlite.jni.capi.sqlite3_backup;
 import org.sqlite.jni.capi.OutputPointer;
 
 /**
@@ -767,14 +768,6 @@ public final class Sqlite implements AutoCloseable  {
             "This \"cannot happen\": all possible result codes were checked already."
           );
       }
-      /*
-        Potential signature change TODO:
-
-        boolean step()
-
-        Returning true for SQLITE_ROW and false for anything else.
-        Those semantics have proven useful in the WASM/JS bindings.
-      */
     }
 
     /**
@@ -1017,6 +1010,116 @@ public final class Sqlite implements AutoCloseable  {
     synchronized(autoExtensions){
       autoExtensions.clear();
     }
+  }
+
+  /**
+     Encapsulates state related to the sqlite3 backup API. Use
+     Sqlite.initBackup() to create new instances.
+  */
+  public static final class Backup implements AutoCloseable {
+    private sqlite3_backup b = null;
+    private Sqlite dbTo = null;
+    private Sqlite dbFrom = null;
+
+
+    public static final int DONE = CApi.SQLITE_DONE;
+    public static final int BUSY = CApi.SQLITE_BUSY;
+    public static final int LOCKED = CApi.SQLITE_LOCKED;
+
+    Backup(Sqlite dbDest, String schemaDest,Sqlite dbSrc, String schemaSrc){
+      this.dbTo = dbDest;
+      this.dbFrom = dbSrc;
+      b = CApi.sqlite3_backup_init(dbDest.nativeHandle(), schemaDest,
+                                   dbSrc.nativeHandle(), schemaSrc);
+      if(null==b) toss();
+    }
+
+    private void toss(){
+      int rc = CApi.sqlite3_errcode(dbTo.nativeHandle());
+      if(0!=rc) throw new SqliteException(dbTo);
+      rc = CApi.sqlite3_errcode(dbFrom.nativeHandle());
+      if(0!=rc) throw new SqliteException(dbFrom);
+      throw new SqliteException(CApi.SQLITE_ERROR);
+    }
+
+    private sqlite3_backup getNative(){
+      if( null==b ) throw new IllegalStateException("This Backup is already closed.");
+      return b;
+    }
+    /**
+       If this backup is still active, this completes the backup and
+       frees its native resources, otherwise it this is a no-op.
+    */
+    public void finish(){
+      if( null!=b ){
+        CApi.sqlite3_backup_finish(b);
+        b = null;
+        dbTo = null;
+        dbFrom = null;
+      }
+    }
+
+    /** Equivalent to finish(). */
+    @Override public void close(){
+      this.finish();
+    }
+
+    /**
+       Analog to sqlite3_backup_step(). Returns 0 if stepping succeeds
+       or, DONE if the end is reached, BUSY if one of the databases is
+       busy, LOCKED if one of the databases is locked, and throws for
+       any other result code or if this object has been closed. Note
+       that BUSY and LOCKED are not necessarily permanent errors, so
+       do not trigger an exception.
+    */
+    public int step(int pageCount){
+      final int rc = CApi.sqlite3_backup_step(getNative(), pageCount);
+      switch(rc){
+        case 0:
+        case DONE:
+        case BUSY:
+        case LOCKED:
+          return rc;
+        default:
+          toss();
+          return CApi.SQLITE_ERROR/*not reached*/;
+      }
+    }
+
+    /**
+       Analog to sqlite3_backup_pagecount().
+    */
+    public int pageCount(){
+      return CApi.sqlite3_backup_pagecount(getNative());
+    }
+
+    /**
+       Analog to sqlite3_backup_remaining().
+    */
+    public int remaining(){
+      return CApi.sqlite3_backup_remaining(getNative());
+    }
+  }
+
+  /**
+     Analog to sqlite3_backup_init(). If schemaSrc is null, "main" is
+     assumed. Throws if either this db or dbSrc (the source db) are
+     not opened, if either of schemaDest or schemaSrc are null, or if
+     the underlying call to sqlite3_backup_init() fails.
+
+     The returned object must eventually be cleaned up by either
+     arranging for it to be auto-closed (e.g. using
+     try-with-resources) or by calling its finish() method.
+  */
+  public Backup initBackup(String schemaDest, Sqlite dbSrc, String schemaSrc){
+    thisDb();
+    dbSrc.thisDb();
+    if( null==schemaSrc || null==schemaDest ){
+      throw new IllegalArgumentException(
+        "Neither the source nor destination schema name may be null."
+      );
+    }
+    return new Backup(this, schemaDest, dbSrc, schemaSrc);
   }
 
 }
