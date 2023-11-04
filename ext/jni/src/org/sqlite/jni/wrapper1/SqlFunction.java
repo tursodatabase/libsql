@@ -117,6 +117,10 @@ public interface SqlFunction  {
     public void resultErrorCode(int rc){CApi.sqlite3_result_error_code(cx, rc);}
     public void resultObject(Object o){CApi.sqlite3_result_java_object(cx, o);}
     public void resultNull(){CApi.sqlite3_result_null(cx);}
+    /**
+       Analog to sqlite3_result_value(), using the Value object at the
+       given argument index.
+    */
     public void resultArg(int argNdx){CApi.sqlite3_result_value(cx, valueAt(argNdx));}
     public void resultSubtype(int subtype){CApi.sqlite3_result_subtype(cx, subtype);}
     public void resultZeroBlob(long n){

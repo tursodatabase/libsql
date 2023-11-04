@@ -891,7 +891,7 @@ public final class CApi {
   }
 
   public static native boolean sqlite3_extended_result_codes(
-    @NotNull sqlite3 db, boolean onoff
+    @NotNull sqlite3 db, boolean on
   );
 
   static native boolean sqlite3_get_autocommit(@NotNull long ptrToDb);

@@ -13,7 +13,6 @@
 */
 package org.sqlite.jni.wrapper1;
 import java.nio.charset.StandardCharsets;
-import static org.sqlite.jni.capi.CApi.*;
 import org.sqlite.jni.capi.CApi;
 import org.sqlite.jni.capi.sqlite3;
 import org.sqlite.jni.capi.sqlite3_stmt;
@@ -129,7 +128,7 @@ public final class Sqlite implements AutoCloseable  {
   */
   public static Sqlite open(String filename, int flags, String vfsName){
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
-    final int rc = sqlite3_open_v2(filename, out, flags, vfsName);
+    final int rc = CApi.sqlite3_open_v2(filename, out, flags, vfsName);
     final sqlite3 n = out.take();
     if( 0!=rc ){
       if( null==n ) throw new SqliteException(rc);
@@ -137,10 +136,11 @@ public final class Sqlite implements AutoCloseable  {
       n.close();
       throw ex;
     }
-    Sqlite rv = new Sqlite(n);
+    final Sqlite rv = new Sqlite(n);
     synchronized(nativeToWrapper){
       nativeToWrapper.put(n, rv);
     }
+    runAutoExtensions(rv);
     return rv;
   }
 
@@ -149,7 +149,7 @@ public final class Sqlite implements AutoCloseable  {
   }
 
   public static Sqlite open(String filename){
-    return open(filename, SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, null);
+    return open(filename, OPEN_READWRITE|OPEN_CREATE, null);
   }
 
   public static String libVersion(){
@@ -308,7 +308,7 @@ public final class Sqlite implements AutoCloseable  {
     if( 0!=rc ){
       if( CApi.SQLITE_NOMEM==rc ){
         throw new OutOfMemoryError();
-      }else if( null==db || 0==sqlite3_errcode(db)){
+      }else if( null==db || 0==CApi.sqlite3_errcode(db)){
         throw new SqliteException(rc);
       }else{
         throw new SqliteException(db);
@@ -343,7 +343,7 @@ public final class Sqlite implements AutoCloseable  {
   */
   public Stmt prepare(String sql, int prepFlags){
     final OutputPointer.sqlite3_stmt out = new OutputPointer.sqlite3_stmt();
-    final int rc = sqlite3_prepare_v3(thisDb(), sql, prepFlags, out);
+    final int rc = CApi.sqlite3_prepare_v3(thisDb(), sql, prepFlags, out);
     checkRc(rc);
     final sqlite3_stmt q = out.take();
     if( null==q ){
@@ -724,7 +724,7 @@ public final class Sqlite implements AutoCloseable  {
         synchronized(nativeToWrapper){
           nativeToWrapper.remove(this.stmt);
         }
-        sqlite3_finalize(stmt);
+        CApi.sqlite3_finalize(stmt);
         stmt = null;
         _db = null;
         resultColCount = 0;
@@ -745,8 +745,8 @@ public final class Sqlite implements AutoCloseable  {
     private int checkRc(int rc){
       switch(rc){
         case 0:
-        case SQLITE_ROW:
-        case SQLITE_DONE: return rc;
+        case CApi.SQLITE_ROW:
+        case CApi.SQLITE_DONE: return rc;
         default:
           if( null==stmt ) throw new SqliteException(rc);
           else throw new SqliteException(this);
@@ -759,7 +759,7 @@ public final class Sqlite implements AutoCloseable  {
        result.
     */
     public boolean step(){
-      switch(checkRc(sqlite3_step(thisStmt()))){
+      switch(checkRc(CApi.sqlite3_step(thisStmt()))){
         case CApi.SQLITE_ROW: return true;
         case CApi.SQLITE_DONE: return false;
         default:
@@ -929,5 +929,94 @@ public final class Sqlite implements AutoCloseable  {
       return CApi.sqlite3_column_table_name( checkColIndex(ndx), ndx );
     }
   } /* Stmt class */
+
+  /**
+     Interface for auto-extensions, as per the
+     sqlite3_auto_extension() API.
+
+     Design note: the chicken/egg timing of auto-extension execution
+     requires that this feature be entirely re-implemented in Java
+     because the C-level API has no access to the Sqlite type so
+     cannot pass on an object of that type while the database is being
+     opened.  One side effect of this reimplementation is that this
+     class's list of auto-extensions is 100% independent of the
+     C-level list so, e.g., clearAutoExtensions() will have no effect
+     on auto-extensions added via the C-level API and databases opened
+     from that level of API will not be passed to this level's
+     AutoExtension instances.
+  */
+  public interface AutoExtension {
+    public void call(Sqlite db);
+  }
+
+  private static final java.util.Set<AutoExtension> autoExtensions =
+    new java.util.LinkedHashSet<>();
+
+  /**
+     Passes db to all auto-extensions. If any one of them throws,
+     db.close() is called before the exception is propagated.
+  */
+  private static void runAutoExtensions(Sqlite db){
+    AutoExtension list[];
+    synchronized(autoExtensions){
+      /* Avoid that modifications to the AutoExtension list from within
+         auto-extensions affect this execution of this list. */
+      list = autoExtensions.toArray(new AutoExtension[0]);
+    }
+    try {
+      for( AutoExtension ax : list ) ax.call(db);
+    }catch(Exception e){
+      db.close();
+      throw e;
+    }
+  }
+
+  /**
+     Analog to sqlite3_auto_extension(), adds the given object to the
+     list of auto-extensions if it is not already in that list. The
+     given object will be run as part of Sqlite.open(), and passed the
+     being-opened database. If the extension throws then open() will
+     fail.
+
+     This API does not guaranty whether or not manipulations made to
+     the auto-extension list from within auto-extension callbacks will
+     affect the current traversal of the auto-extension list.  Whether
+     or not they do is unspecified and subject to change between
+     versions. e.g. if an AutoExtension calls addAutoExtension(),
+     whether or not the new extension will be run on the being-opened
+     database is undefined.
+
+     Note that calling Sqlite.open() from an auto-extension will
+     necessarily result in recursion loop and (eventually) a stack
+     overflow.
+  */
+  public static void addAutoExtension( AutoExtension e ){
+    if( null==e ){
+      throw new IllegalArgumentException("AutoExtension may not be null.");
+    }
+    synchronized(autoExtensions){
+      autoExtensions.add(e);
+    }
+  }
+
+  /**
+     Removes the given object from the auto-extension list if it is in
+     that list, otherwise this has no side-effects beyond briefly
+     locking that list.
+  */
+  public static void removeAutoExtension( AutoExtension e ){
+    synchronized(autoExtensions){
+      autoExtensions.remove(e);
+    }
+  }
+
+  /**
+     Removes all auto-extensions which were added via addAutoExtension().
+  */
+  public static void clearAutoExtensions(){
+    synchronized(autoExtensions){
+      autoExtensions.clear();
+    }
+  }
 
 }

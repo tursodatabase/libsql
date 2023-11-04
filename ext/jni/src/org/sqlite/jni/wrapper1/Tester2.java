@@ -526,6 +526,83 @@ public class Tester2 implements Runnable {
     db.close();
   }
 
+  @SingleThreadOnly /* because multiple threads legitimately make these
+                       results unpredictable */
+  private synchronized void testAutoExtension(){
+    final ValueHolder<Integer> val = new ValueHolder<>(0);
+    final ValueHolder<String> toss = new ValueHolder<>(null);
+    final Sqlite.AutoExtension ax = new Sqlite.AutoExtension(){
+        @Override public void call(Sqlite db){
+          ++val.value;
+          if( null!=toss.value ){
+            throw new RuntimeException(toss.value);
+          }
+        }
+      };
+    Sqlite.addAutoExtension(ax);
+    openDb().close();
+    affirm( 1==val.value );
+    openDb().close();
+    affirm( 2==val.value );
+    Sqlite.clearAutoExtensions();
+    openDb().close();
+    affirm( 2==val.value );
+
+    Sqlite.addAutoExtension( ax );
+    Sqlite.addAutoExtension( ax ); // Must not add a second entry
+    Sqlite.addAutoExtension( ax ); // or a third one
+    openDb().close();
+    affirm( 3==val.value );
+
+    Sqlite db = openDb();
+    affirm( 4==val.value );
+    execSql(db, "ATTACH ':memory:' as foo");
+    affirm( 4==val.value, "ATTACH uses the same connection, not sub-connections." );
+    db.close();
+    db = null;
+
+    Sqlite.removeAutoExtension(ax);
+    openDb().close();
+    affirm( 4==val.value );
+    Sqlite.addAutoExtension(ax);
+    Exception err = null;
+    toss.value = "Throwing from auto_extension.";
+    try{
+      openDb();
+    }catch(Exception e){
+      err = e;
+    }
+    affirm( err!=null );
+    affirm( err.getMessage().indexOf(toss.value)>=0 );
+    toss.value = null;
+
+    val.value = 0;
+    final Sqlite.AutoExtension ax2 = new Sqlite.AutoExtension(){
+        @Override public void call(Sqlite db){
+          ++val.value;
+        }
+      };
+    Sqlite.addAutoExtension(ax2);
+    openDb().close();
+    affirm( 2 == val.value );
+    Sqlite.removeAutoExtension(ax);
+    openDb().close();
+    affirm( 3 == val.value );
+    Sqlite.addAutoExtension(ax);
+    openDb().close();
+    affirm( 5 == val.value );
+    Sqlite.removeAutoExtension(ax2);
+    openDb().close();
+    affirm( 6 == val.value );
+    Sqlite.addAutoExtension(ax2);
+    openDb().close();
+    affirm( 8 == val.value );
+
+    Sqlite.clearAutoExtensions();
+    openDb().close();
+    affirm( 8 == val.value );
+  }
+
   private void runTests(boolean fromThread) throws Exception {
     List<java.lang.reflect.Method> mlist = testMethods;
     affirm( null!=mlist );

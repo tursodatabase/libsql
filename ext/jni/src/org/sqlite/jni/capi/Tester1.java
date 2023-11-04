@@ -1419,7 +1419,7 @@ public class Tester1 implements Runnable {
 
     val.value = 0;
     final AutoExtensionCallback ax2 = new AutoExtensionCallback(){
-        @Override public synchronized int call(sqlite3 db){
+        @Override public int call(sqlite3 db){
           ++val.value;
           return 0;
         }
