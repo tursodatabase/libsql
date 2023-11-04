@@ -1,5 +1,5 @@
-C Expose\scontext_db_handle()\sto\sthe\sJNI\swrapper1\sAPI\sand\sclean\sup\ssome\srelated\stests.
-D 2023-11-04T16:01:13.004
+C Ensure\sthat\sthe\sYYYY-MM-DD\sinput\sto\sdate\sand\stime\sfunctions\shas\sbeen\snormalized\nprior\sto\sreturning\sa\sresult.\n[forum:/forumpost/6bb476897e|Forum\spost\s6bb476897e].
+D 2023-11-04T21:44:00.659
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -670,7 +670,7 @@ F src/build.c 189e4517d67f09f0a3e0d8e1faa6e2ef0c2e95f6ac82e33c912cb7efa2a359cc
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 23331529e654be40ca97d171cbbffe9b3d4c71cc53b78fe5501230675952da8b
-F src/date.c eebc54a00e888d3c56147779e9f361b77d62fd69ff2008c5373946aa1ba1d574
+F src/date.c 3b8d02977d160e128469de38493b4085f7c5cf4073193459909a6af3cf6d7c91
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
 F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
@@ -1016,7 +1016,7 @@ F test/ctime.test 340f362f41f92972bbd71f44e10569a5cc694062b692231bd08aa6fe6c1c47
 F test/cursorhint.test 05cf0febe5c5f8a31f199401fd1c9322249e753950d55f26f9d5aca61408a270
 F test/cursorhint2.test 6f3aa9cb19e7418967a10ec6905209bcbb5968054da855fc36c8beee9ae9c42f
 F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68ccf2a7bb8
-F test/date.test c0d17cdfd89395bc78087b131e3538d96f864b5029c335318011accc7c0d0934
+F test/date.test ff2341a1ef71b9a27979494d299222f9a293aa22cb9ff6e9c38d88a895317ebf
 F test/date2.test 7e12ec14aaf4d5e6294b4ba140445b0eca06ea50062a9c3a69c4ee13d0b6f8b1
 F test/date3.test a1b77abf05c6772fe5ca2337cac1398892f2a41e62bce7e6be0f4a08a0e64ae5
 F test/date4.test 8aeb3de5b5e9fda968baa9357e4c0fae573724b7904943410195a19e96e31b6a
@@ -2142,8 +2142,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 40ad3920673561a06edf0b70a50a40be6cd20817fe22b87b63a9ac80cb2c9df8
-R f79739ffe6d4cd3ba58087c1ffb0d1f9
-U stephan
-Z 05734d404abe66e6e03def34a1d0d490
+P c23123af7d40dea24a0848dff987fd58a6703ce04165060533544db85983d566
+R 0a52dbd298d991529b412673e9dc7eb5
+U drh
+Z 33b6056e932d878d8676b163d8b94db2
 # Remove this line to create a well-formed Fossil manifest.
