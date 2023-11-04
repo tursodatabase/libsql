@@ -46,7 +46,7 @@ public class Tester1 implements Runnable {
   //! True to shuffle the order of the tests.
   private static boolean shuffle = false;
   //! True to dump the list of to-run tests to stdout.
-  private static boolean listRunTests = false;
+  private static int listRunTests = 0;
   //! True to squelch all out() and outln() output.
   private static boolean quietMode = false;
   //! Total number of runTests() calls.
@@ -1701,7 +1701,7 @@ public class Tester1 implements Runnable {
       mlist = new ArrayList<>( testMethods.subList(0, testMethods.size()) );
       java.util.Collections.shuffle(mlist);
     }
-    if( listRunTests ){
+    if( (!fromThread && listRunTests>0) || listRunTests>1 ){
       synchronized(this.getClass()){
         if( !fromThread ){
           out("Initial test"," list: ");
@@ -1763,8 +1763,11 @@ public class Tester1 implements Runnable {
      -naps: sleep small random intervals between tests in order to add
      some chaos for cross-thread contention.
 
+
      -list-tests: outputs the list of tests being run, minus some
-      which are hard-coded. This is noisy in multi-threaded mode.
+      which are hard-coded. In multi-threaded mode, use this twice to
+      to emit the list run by each thread (which may differ from the initial
+      list, in particular if -shuffle is used).
 
      -fail: forces an exception to be thrown during the test run.  Use
      with -shuffle to make its appearance unpredictable.
@@ -1793,7 +1796,7 @@ public class Tester1 implements Runnable {
         }else if(arg.equals("shuffle")){
           shuffle = true;
         }else if(arg.equals("list-tests")){
-          listRunTests = true;
+          ++listRunTests;
         }else if(arg.equals("fail")){
           forceFail = true;
         }else if(arg.equals("sqllog")){

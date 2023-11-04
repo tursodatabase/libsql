@@ -46,7 +46,7 @@ public class Tester2 implements Runnable {
   //! True to shuffle the order of the tests.
   private static boolean shuffle = false;
   //! True to dump the list of to-run tests to stdout.
-  private static boolean listRunTests = false;
+  private static int listRunTests = 0;
   //! True to squelch all out() and outln() output.
   private static boolean quietMode = false;
   //! Total number of runTests() calls.
@@ -444,6 +444,54 @@ public class Tester2 implements Runnable {
     db.close();
   }
 
+
+  private void testTrace(){
+    final Sqlite db = openDb();
+    final ValueHolder<Integer> counter = new ValueHolder<>(0);
+    /* Ensure that characters outside of the UTF BMP survive the trip
+       from Java to sqlite3 and back to Java. (At no small efficiency
+       penalty.) */
+    final String nonBmpChar = "😃";
+    db.trace(
+      Sqlite.TRACE_ALL,
+      new Sqlite.TraceCallback(){
+        @Override public void call(int traceFlag, Object pNative, Object x){
+          ++counter.value;
+          //outln("TRACE "+traceFlag+" pNative = "+pNative.getClass().getName());
+          switch(traceFlag){
+            case Sqlite.TRACE_STMT:
+              affirm(pNative instanceof Sqlite.Stmt);
+              //outln("TRACE_STMT sql = "+x);
+              affirm(x instanceof String);
+              affirm( ((String)x).indexOf(nonBmpChar) > 0 );
+              break;
+            case Sqlite.TRACE_PROFILE:
+              affirm(pNative instanceof Sqlite.Stmt);
+              affirm(x instanceof Long);
+              //outln("TRACE_PROFILE time = "+x);
+              break;
+            case Sqlite.TRACE_ROW:
+              affirm(pNative instanceof Sqlite.Stmt);
+              affirm(null == x);
+              //outln("TRACE_ROW = "+sqlite3_column_text16((sqlite3_stmt)pNative, 0));
+              break;
+            case Sqlite.TRACE_CLOSE:
+              affirm(pNative instanceof Sqlite);
+              affirm(null == x);
+              break;
+            default:
+              affirm(false /*cannot happen*/);
+              break;
+          }
+        }
+      });
+    execSql(db, "SELECT coalesce(null,null,'"+nonBmpChar+"'); "+
+            "SELECT 'w"+nonBmpChar+"orld'");
+    affirm( 6 == counter.value );
+    db.close();
+    affirm( 7 == counter.value );
+  }
+
   private void runTests(boolean fromThread) throws Exception {
     List<java.lang.reflect.Method> mlist = testMethods;
     affirm( null!=mlist );
@@ -451,7 +499,7 @@ public class Tester2 implements Runnable {
       mlist = new ArrayList<>( testMethods.subList(0, testMethods.size()) );
       java.util.Collections.shuffle(mlist);
     }
-    if( listRunTests ){
+    if( (!fromThread && listRunTests>0) || listRunTests>1 ){
       synchronized(this.getClass()){
         if( !fromThread ){
           out("Initial test"," list: ");
@@ -514,7 +562,9 @@ public class Tester2 implements Runnable {
      some chaos for cross-thread contention.
 
      -list-tests: outputs the list of tests being run, minus some
-      which are hard-coded. This is noisy in multi-threaded mode.
+      which are hard-coded. In multi-threaded mode, use this twice to
+      to emit the list run by each thread (which may differ from the initial
+      list, in particular if -shuffle is used).
 
      -fail: forces an exception to be thrown during the test run.  Use
      with -shuffle to make its appearance unpredictable.
@@ -543,7 +593,7 @@ public class Tester2 implements Runnable {
         }else if(arg.equals("shuffle")){
           shuffle = true;
         }else if(arg.equals("list-tests")){
-          listRunTests = true;
+          ++listRunTests;
         }else if(arg.equals("fail")){
           forceFail = true;
         }else if(arg.equals("sqllog")){

@@ -61,9 +61,29 @@ public final class Sqlite implements AutoCloseable  {
   public static final int PREPARE_NORMALIZE = CApi.SQLITE_PREPARE_NORMALIZE;
   public static final int PREPARE_NO_VTAB = CApi.SQLITE_PREPARE_NO_VTAB;
 
+  public static final int TRACE_STMT = CApi.SQLITE_TRACE_STMT;
+  public static final int TRACE_PROFILE = CApi.SQLITE_TRACE_PROFILE;
+  public static final int TRACE_ROW = CApi.SQLITE_TRACE_ROW;
+  public static final int TRACE_CLOSE = CApi.SQLITE_TRACE_CLOSE;
+  public static final int TRACE_ALL = TRACE_STMT | TRACE_PROFILE | TRACE_ROW | TRACE_CLOSE;
+
   //! Used only by the open() factory functions.
   private Sqlite(sqlite3 db){
     this.db = db;
+  }
+
+  /** Maps org.sqlite.jni.capi.sqlite3 to Sqlite instances. */
+  private static final java.util.Map<org.sqlite.jni.capi.sqlite3, Sqlite> nativeToWrapper
+    = new java.util.HashMap<>();
+
+  /**
+     Returns the Sqlite object associated with the given sqlite3
+     object, or null if there is no such mapping.
+  */
+  static Sqlite fromNative(sqlite3 low){
+    synchronized(nativeToWrapper){
+      return nativeToWrapper.get(low);
+    }
   }
 
   /**
@@ -84,7 +104,11 @@ public final class Sqlite implements AutoCloseable  {
       n.close();
       throw ex;
     }
-    return new Sqlite(n);
+    Sqlite rv = new Sqlite(n);
+    synchronized(nativeToWrapper){
+      nativeToWrapper.put(n, rv);
+    }
+    return rv;
   }
 
   public static Sqlite open(String filename, int flags){
@@ -124,6 +148,9 @@ public final class Sqlite implements AutoCloseable  {
 
   @Override public void close(){
     if(null!=this.db){
+      synchronized(nativeToWrapper){
+        nativeToWrapper.remove(this.db);
+      }
       this.db.close();
       this.db = null;
     }
@@ -467,11 +494,71 @@ public final class Sqlite implements AutoCloseable  {
     return rv;
   }
 
+  public interface TraceCallback {
+    /**
+       Called by sqlite3 for various tracing operations, as per
+       sqlite3_trace_v2(). Note that this interface elides the 2nd
+       argument to the native trace callback, as that role is better
+       filled by instance-local state.
+
+       <p>These callbacks may throw, in which case their exceptions are
+       converted to C-level error information.
+
+       <p>The 2nd argument to this function, if non-null, will be a an
+       Sqlite or Sqlite.Stmt object, depending on the first argument
+       (see below).
+
+       <p>The final argument to this function is the "X" argument
+       documented for sqlite3_trace() and sqlite3_trace_v2(). Its type
+       depends on value of the first argument:
+
+       <p>- SQLITE_TRACE_STMT: pNative is a Sqlite.Stmt. pX is a String
+       containing the prepared SQL.
+
+       <p>- SQLITE_TRACE_PROFILE: pNative is a sqlite3_stmt. pX is a Long
+       holding an approximate number of nanoseconds the statement took
+       to run.
+
+       <p>- SQLITE_TRACE_ROW: pNative is a sqlite3_stmt. pX is null.
+
+       <p>- SQLITE_TRACE_CLOSE: pNative is a sqlite3. pX is null.
+    */
+    void call(int traceFlag, Object pNative, Object pX);
+  }
+
+  /**
+     Analog to sqlite3_trace_v2(). traceMask must be a mask of the
+     TRACE_...  constants. Pass a null callback to remove tracing.
+
+     Throws on error.
+  */
+  public void trace(int traceMask, TraceCallback callback){
+    final Sqlite self = this;
+    final org.sqlite.jni.capi.TraceV2Callback tc =
+      (null==callback) ? null : new org.sqlite.jni.capi.TraceV2Callback(){
+          @SuppressWarnings("unchecked")
+          @Override public int call(int flag, Object pNative, Object pX){
+            switch(flag){
+              case TRACE_ROW:
+              case TRACE_PROFILE:
+              case TRACE_STMT:
+                callback.call(flag, Sqlite.Stmt.fromNative((sqlite3_stmt)pNative), pX);
+                break;
+              case TRACE_CLOSE:
+                callback.call(flag, self, pX);
+                break;
+            }
+            return 0;
+          }
+        };
+    checkRc( CApi.sqlite3_trace_v2(thisDb(), traceMask, tc) );
+  };
+
   /**
      Corresponds to the sqlite3_stmt class. Use Sqlite.prepare() to
      create new instances.
   */
-  public final class Stmt implements AutoCloseable {
+  public static final class Stmt implements AutoCloseable {
     private Sqlite _db = null;
     private sqlite3_stmt stmt = null;
     /**
@@ -489,10 +576,27 @@ public final class Sqlite implements AutoCloseable  {
       this._db = db;
       this.stmt = stmt;
       this.resultColCount = CApi.sqlite3_column_count(stmt);
+      synchronized(nativeToWrapper){
+        nativeToWrapper.put(this.stmt, this);
+      }
     }
 
     sqlite3_stmt nativeHandle(){
       return stmt;
+    }
+
+    /** Maps org.sqlite.jni.capi.sqlite3_stmt to Stmt instances. */
+    private static final java.util.Map<org.sqlite.jni.capi.sqlite3_stmt, Stmt> nativeToWrapper
+      = new java.util.HashMap<>();
+
+    /**
+       Returns the Stmt object associated with the given sqlite3_stmt
+       object, or null if there is no such mapping.
+    */
+    static Stmt fromNative(sqlite3_stmt low){
+      synchronized(nativeToWrapper){
+        return nativeToWrapper.get(low);
+      }
     }
 
     /**
@@ -527,6 +631,9 @@ public final class Sqlite implements AutoCloseable  {
     public int finalizeStmt(){
       int rc = 0;
       if( null!=stmt ){
+        synchronized(nativeToWrapper){
+          nativeToWrapper.remove(this.stmt);
+        }
         sqlite3_finalize(stmt);
         stmt = null;
         _db = null;
