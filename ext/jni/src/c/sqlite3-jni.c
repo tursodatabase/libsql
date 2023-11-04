@@ -3429,7 +3429,6 @@ S3JniApi(
       }
       break;
     }
-    case 0:
     default:
       rc = SQLITE_MISUSE;
   }

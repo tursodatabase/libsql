@@ -67,6 +67,25 @@ public final class Sqlite implements AutoCloseable  {
   public static final int TRACE_CLOSE = CApi.SQLITE_TRACE_CLOSE;
   public static final int TRACE_ALL = TRACE_STMT | TRACE_PROFILE | TRACE_ROW | TRACE_CLOSE;
 
+  public static final int DBCONFIG_ENABLE_FKEY = CApi.SQLITE_DBCONFIG_ENABLE_FKEY;
+  public static final int DBCONFIG_ENABLE_TRIGGER = CApi.SQLITE_DBCONFIG_ENABLE_TRIGGER;
+  public static final int DBCONFIG_ENABLE_FTS3_TOKENIZER = CApi.SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER;
+  public static final int DBCONFIG_ENABLE_LOAD_EXTENSION = CApi.SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION;
+  public static final int DBCONFIG_NO_CKPT_ON_CLOSE = CApi.SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE;
+  public static final int DBCONFIG_ENABLE_QPSG = CApi.SQLITE_DBCONFIG_ENABLE_QPSG;
+  public static final int DBCONFIG_TRIGGER_EQP = CApi.SQLITE_DBCONFIG_TRIGGER_EQP;
+  public static final int DBCONFIG_RESET_DATABASE = CApi.SQLITE_DBCONFIG_RESET_DATABASE;
+  public static final int DBCONFIG_DEFENSIVE = CApi.SQLITE_DBCONFIG_DEFENSIVE;
+  public static final int DBCONFIG_WRITABLE_SCHEMA = CApi.SQLITE_DBCONFIG_WRITABLE_SCHEMA;
+  public static final int DBCONFIG_LEGACY_ALTER_TABLE = CApi.SQLITE_DBCONFIG_LEGACY_ALTER_TABLE;
+  public static final int DBCONFIG_DQS_DML = CApi.SQLITE_DBCONFIG_DQS_DML;
+  public static final int DBCONFIG_DQS_DDL = CApi.SQLITE_DBCONFIG_DQS_DDL;
+  public static final int DBCONFIG_ENABLE_VIEW = CApi.SQLITE_DBCONFIG_ENABLE_VIEW;
+  public static final int DBCONFIG_LEGACY_FILE_FORMAT = CApi.SQLITE_DBCONFIG_LEGACY_FILE_FORMAT;
+  public static final int DBCONFIG_TRUSTED_SCHEMA = CApi.SQLITE_DBCONFIG_TRUSTED_SCHEMA;
+  public static final int DBCONFIG_STMT_SCANSTATUS = CApi.SQLITE_DBCONFIG_STMT_SCANSTATUS;
+  public static final int DBCONFIG_REVERSE_SCANORDER = CApi.SQLITE_DBCONFIG_REVERSE_SCANORDER;
+
   //! Used only by the open() factory functions.
   private Sqlite(sqlite3 db){
     this.db = db;
@@ -373,6 +392,19 @@ public final class Sqlite implements AutoCloseable  {
   */
   public String dbFileName(String dbName){
     return CApi.sqlite3_db_filename(thisDb(), dbName);
+  }
+
+  /**
+     Analog to sqlite3_db_config() for the call forms which take one
+     of the boolean-type db configuration flags (namely the
+     DBCONFIG_... constants defined in this class). On success it
+     returns the result of that underlying call. Throws on error.
+  */
+  public boolean dbConfig(int op, boolean on){
+    org.sqlite.jni.capi.OutputPointer.Int32 pOut =
+      new org.sqlite.jni.capi.OutputPointer.Int32();
+    checkRc( CApi.sqlite3_db_config(thisDb(), op, on ? 1 : 0, pOut) );
+    return pOut.get()!=0;
   }
 
   /**

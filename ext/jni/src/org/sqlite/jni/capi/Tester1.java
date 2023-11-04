@@ -1049,6 +1049,7 @@ public class Tester1 implements Runnable {
     rc = sqlite3_db_config(db1, SQLITE_DBCONFIG_MAINDBNAME, "foo");
     affirm( sqlite3_db_filename(db1, "foo").endsWith(dbName) );
     affirm( "foo".equals( sqlite3_db_name(db1, 0) ) );
+    affirm( SQLITE_MISUSE == sqlite3_db_config(db1, 0, 0, null) );
 
     final ValueHolder<Integer> xBusyCalled = new ValueHolder<>(0);
     BusyHandlerCallback handler = new BusyHandlerCallback(){

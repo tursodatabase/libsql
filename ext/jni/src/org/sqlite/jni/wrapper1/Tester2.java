@@ -211,15 +211,24 @@ public class Tester2 implements Runnable {
   void testOpenDb1(){
     Sqlite db = openDb();
     affirm( 0!=db.nativeHandle().getNativePointer() );
+    affirm( "main".equals( db.dbName(0) ) );
+    db.setMainDbName("foo");
+    affirm( "foo".equals( db.dbName(0) ) );
+    affirm( db.dbConfig(Sqlite.DBCONFIG_DEFENSIVE, true)
+      /* The underlying function has different mangled names in jdk8
+         vs jdk19, and this call is here to ensure that the build
+         fails if it cannot find both names. */ );
+    affirm( !db.dbConfig(Sqlite.DBCONFIG_DEFENSIVE, false) );
+    SqliteException ex = null;
+    try{ db.dbConfig(0, false); }
+    catch(SqliteException e){ ex = e; }
+    affirm( null!=ex );
+    ex = null;
     db.close();
     affirm( null==db.nativeHandle() );
 
-    SqliteException ex = null;
-    try {
-      db = openDb("/no/such/dir/.../probably");
-    }catch(SqliteException e){
-      ex = e;
-    }
+    try{ db = openDb("/no/such/dir/.../probably"); }
+    catch(SqliteException e){ ex = e; }
     affirm( ex!=null );
     affirm( ex.errcode() != 0 );
     affirm( ex.extendedErrcode() != 0 );

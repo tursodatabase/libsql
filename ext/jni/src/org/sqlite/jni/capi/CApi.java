@@ -828,7 +828,7 @@ public final class CApi {
      SQLITE_DBCONFIG_... options which uses this call form.
 
      <p>Unlike the C API, this returns SQLITE_MISUSE if its db argument
-     are null (as opposed to invoking UB).
+     is null (as opposed to invoking UB).
   */
   public static native int sqlite3_db_config(
     @NotNull sqlite3 db, int op, int onOff, @Nullable OutputPointer.Int32 out
@@ -850,7 +850,6 @@ public final class CApi {
   public static String sqlite3_db_name(@NotNull sqlite3 db, int ndx){
     return null==db ? null : sqlite3_db_name(db.getNativePointer(), ndx);
   }
-
 
   public static native String sqlite3_db_filename(
     @NotNull sqlite3 db, @NotNull String dbName
