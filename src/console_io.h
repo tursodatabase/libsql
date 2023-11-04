@@ -1,0 +1,143 @@
+/*
+** 2023 November 1
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** This file exposes various interfaces used for console I/O by the
+** SQLite project command-line tools. These interfaces are used at
+** either source conglomeration time, compilation time, or run time.
+** This source provides for either inclusion into conglomerated,
+** "single-source" forms or separate compilation then linking. (TBD)
+**
+** Platform dependencies are "hidden" here by various stratagems so
+** that, provided certain conditions are met, the programs using
+** this source or object code compiled from it need no explicit
+** conditional compilation in their source for their console I/O.
+**
+** The symbols and functionality exposed here are not a public API.
+** This code may change in tandem with other project code as needed.
+*/
+
+/* Define enum for use with following function. */
+enum ConsoleStdStreams {
+  CSC_NoConsole = 0,
+  CSC_InConsole = 1, CSC_OutConsole = 2, CSC_ErrConsole = 4,
+  CSC_AnyConsole = 0x7
+};
+
+/*
+** Classify the three standard I/O streams according to whether
+** they are connected to a console attached to the process.
+**
+** Returns the bit-wise OR of CSC_{In,Out,Err}Console values,
+** or CSC_NoConsole if none of the streams reaches a console.
+**
+** This function should be called before any I/O is done with
+** the given streams. As a side-effect, the given inputs are
+** recorded so that later I/O operations on them may be done
+** differently than the C library FILE* I/O would be done,
+** iff the stream is used for the I/O functions that follow.
+**
+** On some platforms, stream or console mode alteration (aka
+** "Setup") may be made which is undone by consoleRestore().
+*/
+INT_LINKAGE ConsoleStdStreams
+consoleClassifySetup( FILE *pfIn, FILE *pfOut,FILE *pfErr );
+
+/*
+** Undo any side-effects left by consoleClassifySetup(...).
+**
+** This should be called after consoleClassifySetup() and
+** before the process terminates normally. It is suitable
+** for use with the atexit() C library procedure. After
+** this call, no I/O should be done with the console.
+*/
+INT_LINKAGE void SQLITE_CDECL consoleRestore( void );
+
+/*
+** Render output like fprintf(). If the output is going to the
+** console and translation from UTF-8 is necessary, perform
+** the needed translation. Otherwise, write formatted output
+** to the provided stream almost as-is, with possibly with
+** newline translation as set by set{Binary,Text}Mode().
+*/
+INT_LINKAGE int fprintfUtf8(FILE *, const char *zFmt, ...);
+
+/*
+** Collect input like fgets(...) with special provisions for input
+** from the console on platforms that require same. Defers to the
+** C library fgets() when input is not from the console. Newline
+** translation may be done as set by set{Binary,Text}Mode().
+*/
+INT_LINKAGE int fgetsUtf8(char *buf, int ncMax, FILE *pfIn);
+
+/*
+** Set given stream for binary mode, where newline translation is
+** not done, or to text mode where, for some platforms, newlines
+** are translated to the platform's conventional char sequence.
+**
+** An additional side-effect is that if the stream is one passed
+** to consoleClassifySetup() as an output, it is flushed.
+*/
+INT_LINKAGE void setBinaryMode(File *);
+INT_LINKAGE void setTextMode(File *);
+
+/*
+** Macros for use of a line editor.
+**
+** The following macros define operations involving use of a
+** line-editing library or simple console interaction.
+** A "T" argument is a text (char *) buffer or filename.
+** A "N" argument is an integer.
+**
+** SHELL_ADD_HISTORY(T) // Record text as line(s) of history.
+** SHELL_READ_HISTORY(T) // Read history from file named by T.
+** SHELL_WRITE_HISTORY(T) // Write history to file named by T.
+** SHELL_STIFLE_HISTORY(N) // Limit history to N entries.
+**
+** A console program which does interactive console input is
+** expected to call:
+** SHELL_READ_HISTORY(T) before collecting such input;
+** SHELL_ADD_HISTORY(T) as record-worthy input is taken;
+** SHELL_STIFLE_HISTORY(N) after console input ceases; then
+** SHELL_WRITE_HISTORY(T) before the program exits.
+*/
+
+/*
+** Retrieve a single line of input text from an input stream.
+**
+** If pfIn is the input stream passed to consoleClassifySetup(),
+** and azPrompt is not NULL, then a prompt is issued before the
+** line is collected, as selected by the isContinuation flag.
+** Array azPrompt[{0,1}] holds the {main,continuation} prompt.
+**
+** If zBufPrior is not NULL then it is a buffer from a prior
+** call to this routine that can be reused, or will be freed.
+**
+** The result is stored in space obtained from malloc() and
+** must either be freed by the caller or else passed back to
+** this function as zBufPrior for reuse.
+**
+** This function may call upon services of a line-editing
+** library to interactively collect line edited input.
+*/
+INT_LINKAGE char *
+shellGetLine(File *pfIn, char *zBufPrior, int nLen,
+             short isContinuation, const char *azPrompt[2]);
+
+/*
+** TBD: Define an interface for application(s) to generate
+** completion candidates for use by the line-editor.
+**
+** This may be premature; the CLI is the only application
+** that does this. Yet, getting line-editing melded into
+** console I/O is desirable because a line-editing library
+** may have to establish console operating mode, possibly
+** in a way that interferes with the above functionality.
+*/
