@@ -44,6 +44,20 @@ public final class Sqlite implements AutoCloseable  {
   public static final int STATUS_PAGECACHE_SIZE = CApi.SQLITE_STATUS_PAGECACHE_SIZE;
   public static final int STATUS_MALLOC_COUNT = CApi.SQLITE_STATUS_MALLOC_COUNT;
 
+  public static final int DBSTATUS_LOOKASIDE_USED = CApi.SQLITE_DBSTATUS_LOOKASIDE_USED;
+  public static final int DBSTATUS_CACHE_USED = CApi.SQLITE_DBSTATUS_CACHE_USED;
+  public static final int DBSTATUS_SCHEMA_USED = CApi.SQLITE_DBSTATUS_SCHEMA_USED;
+  public static final int DBSTATUS_STMT_USED = CApi.SQLITE_DBSTATUS_STMT_USED;
+  public static final int DBSTATUS_LOOKASIDE_HIT = CApi.SQLITE_DBSTATUS_LOOKASIDE_HIT;
+  public static final int DBSTATUS_LOOKASIDE_MISS_SIZE = CApi.SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE;
+  public static final int DBSTATUS_LOOKASIDE_MISS_FULL = CApi.SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL;
+  public static final int DBSTATUS_CACHE_HIT = CApi.SQLITE_DBSTATUS_CACHE_HIT;
+  public static final int DBSTATUS_CACHE_MISS = CApi.SQLITE_DBSTATUS_CACHE_MISS;
+  public static final int DBSTATUS_CACHE_WRITE = CApi.SQLITE_DBSTATUS_CACHE_WRITE;
+  public static final int DBSTATUS_DEFERRED_FKS = CApi.SQLITE_DBSTATUS_DEFERRED_FKS;
+  public static final int DBSTATUS_CACHE_USED_SHARED = CApi.SQLITE_DBSTATUS_CACHE_USED_SHARED;
+  public static final int DBSTATUS_CACHE_SPILL = CApi.SQLITE_DBSTATUS_CACHE_SPILL;
+
   public static final int LIMIT_LENGTH = CApi.SQLITE_LIMIT_LENGTH;
   public static final int LIMIT_SQL_LENGTH = CApi.SQLITE_LIMIT_SQL_LENGTH;
   public static final int LIMIT_COLUMN = CApi.SQLITE_LIMIT_COLUMN;
@@ -150,19 +164,49 @@ public final class Sqlite implements AutoCloseable  {
     return CApi.sqlite3_sourceid();
   }
 
+
+  /**
+     Output object for use with status() and libStatus().
+  */
+  public static final class Status {
+    /** The current value for the requested status() or libStatus() metric. */
+    long current;
+    /** The peak value for the requested status() or libStatus() metric. */
+    long peak;
+  };
+
   /**
      As per sqlite3_status64(), but returns its current and high-water
-     results as a two-element array. Throws if the first argument is
+     results as a Status object. Throws if the first argument is
      not one of the STATUS_... constants.
   */
-  public long[] libStatus(int op, boolean resetStats){
+  public static Status libStatus(int op, boolean resetStats){
     org.sqlite.jni.capi.OutputPointer.Int64 pCurrent =
       new org.sqlite.jni.capi.OutputPointer.Int64();
     org.sqlite.jni.capi.OutputPointer.Int64 pHighwater =
       new org.sqlite.jni.capi.OutputPointer.Int64();
-    final int rc = CApi.sqlite3_status64(op, pCurrent, pHighwater, resetStats);
-    checkRc(rc);
-    return new long[] {pCurrent.value, pHighwater.value};
+    checkRc2( CApi.sqlite3_status64(op, pCurrent, pHighwater, resetStats) );
+    final Status s = new Status();
+    s.current = pCurrent.value;
+    s.peak = pHighwater.value;
+    return s;
+  }
+
+  /**
+     As per sqlite3_status64(), but returns its current and high-water
+     results as a Status object. Throws if the first argument is
+     not one of the DBSTATUS_... constants or on any other misuse.
+  */
+  public Status status(int op, boolean resetStats){
+    org.sqlite.jni.capi.OutputPointer.Int32 pCurrent =
+      new org.sqlite.jni.capi.OutputPointer.Int32();
+    org.sqlite.jni.capi.OutputPointer.Int32 pHighwater =
+      new org.sqlite.jni.capi.OutputPointer.Int32();
+    checkRc( CApi.sqlite3_db_status(thisDb(), op, pCurrent, pHighwater, resetStats) );
+    final Status s = new Status();
+    s.current = pCurrent.value;
+    s.peak = pHighwater.value;
+    return s;
   }
 
   @Override public void close(){
@@ -268,6 +312,20 @@ public final class Sqlite implements AutoCloseable  {
         throw new SqliteException(rc);
       }else{
         throw new SqliteException(db);
+      }
+    }
+  }
+
+  /**
+     Like checkRc() but behaves as if that function were
+     called with a null db object.
+  */
+  private static void checkRc2(int rc){
+    if( 0!=rc ){
+      if( CApi.SQLITE_NOMEM==rc ){
+        throw new OutOfMemoryError();
+      }else{
+        throw new SqliteException(rc);
       }
     }
   }
@@ -440,7 +498,7 @@ public final class Sqlite implements AutoCloseable  {
   /**
      Analog to sqlite3_release_memory().
   */
-  public static int releaseMemory(int n){
+  public static int libReleaseMemory(int n){
     return CApi.sqlite3_release_memory(n);
   }
 

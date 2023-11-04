@@ -501,6 +501,21 @@ public class Tester2 implements Runnable {
     affirm( 7 == counter.value );
   }
 
+  private void testStatus(){
+    final Sqlite db = openDb();
+    execSql(db, "create table t(a); insert into t values(1),(2),(3)");
+
+    Sqlite.Status s = Sqlite.libStatus(Sqlite.STATUS_MEMORY_USED, false);
+    affirm( s.current > 0 );
+    affirm( s.peak >= s.current );
+
+    s = db.status(Sqlite.DBSTATUS_SCHEMA_USED, false);
+    affirm( s.current > 0 );
+    affirm( s.peak == 0 /* always 0 for SCHEMA_USED */ );
+
+    db.close();
+  }
+
   private void runTests(boolean fromThread) throws Exception {
     List<java.lang.reflect.Method> mlist = testMethods;
     affirm( null!=mlist );
