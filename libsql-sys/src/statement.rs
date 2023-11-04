@@ -115,7 +115,7 @@ impl Statement {
         let count = self.column_count();
         for i in 0..count {
             let name = self.column_name(i);
-            if name.is_some() && name.unwrap() == column_name {
+            if name.is_some_and(|name| name == column_name) {
                 return Some(i);
             }
         }
