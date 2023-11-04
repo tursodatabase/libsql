@@ -55,7 +55,7 @@ fn bench(c: &mut Criterion) {
         b.to_async(&rt).iter(|| async {
             let mut rows = conn.query("SELECT 1", ()).await.unwrap();
             let row = rows.next().unwrap().unwrap();
-            assert_eq!(row.get::<i32>(0).unwrap(), 1);
+            assert_eq!(row.get::<i32, _>(0).unwrap(), 1);
         });
     });
 
@@ -94,7 +94,7 @@ fn bench(c: &mut Criterion) {
             |mut stmt| async move {
                 let mut rows = stmt.query(()).await.unwrap();
                 let row = rows.next().unwrap().unwrap();
-                assert_eq!(row.get::<i32>(0).unwrap(), 1);
+                assert_eq!(row.get::<i32, _>(0).unwrap(), 1);
                 stmt.reset();
             },
             BatchSize::SmallInput,
@@ -114,7 +114,7 @@ fn bench(c: &mut Criterion) {
             |mut stmt| async move {
                 let mut rows = stmt.query(()).await.unwrap();
                 let row = rows.next().unwrap().unwrap();
-                assert_eq!(row.get::<i32>(0).unwrap(), 1);
+                assert_eq!(row.get::<i32, _>(0).unwrap(), 1);
                 stmt.reset();
             },
             BatchSize::SmallInput,
@@ -129,7 +129,7 @@ fn bench(c: &mut Criterion) {
                 |mut stmt| async move {
                     let mut rows = stmt.query(()).await.unwrap();
                     let row = rows.next().unwrap().unwrap();
-                    assert_eq!(row.get::<i32>(0).unwrap(), 1);
+                    assert_eq!(row.get::<i32, _>(0).unwrap(), 1);
                     stmt.reset();
                 },
                 BatchSize::SmallInput,
@@ -147,7 +147,7 @@ fn bench(c: &mut Criterion) {
         b.to_async(&rt).iter(|| async {
             let mut rows = conn.query("SELECT 1", ()).await.unwrap();
             let row = rows.next().unwrap().unwrap();
-            assert_eq!(row.get::<i32>(0).unwrap(), 1);
+            assert_eq!(row.get::<i32, _>(0).unwrap(), 1);
         });
     });
 
@@ -157,7 +157,7 @@ fn bench(c: &mut Criterion) {
             |mut stmt| async move {
                 let mut rows = stmt.query(()).await.unwrap();
                 let row = rows.next().unwrap().unwrap();
-                assert_eq!(row.get::<i32>(0).unwrap(), 1);
+                assert_eq!(row.get::<i32, _>(0).unwrap(), 1);
                 stmt.reset();
             },
             BatchSize::SmallInput,
@@ -189,7 +189,7 @@ fn bench(c: &mut Criterion) {
                 |mut stmt| async move {
                     let mut rows = stmt.query(()).await.unwrap();
                     let row = rows.next().unwrap().unwrap();
-                    assert_eq!(row.get::<i32>(0).unwrap(), 1);
+                    assert_eq!(row.get::<i32, _>(0).unwrap(), 1);
                     stmt.reset();
                 },
                 BatchSize::SmallInput,
@@ -205,7 +205,7 @@ fn bench(c: &mut Criterion) {
                 |mut stmt| async move {
                     let mut rows = stmt.query(()).await.unwrap();
                     let row = rows.next().unwrap().unwrap();
-                    assert_eq!(row.get::<i32>(0).unwrap(), 1);
+                    assert_eq!(row.get::<i32, _>(0).unwrap(), 1);
                     stmt.reset();
                 },
                 BatchSize::SmallInput,

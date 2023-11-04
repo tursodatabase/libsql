@@ -111,6 +111,17 @@ impl Statement {
         Some(raw_name)
     }
 
+    pub fn column_index(&self, column_name: &str) -> Option<i32> {
+        let count = self.column_count();
+        for i in 0..count {
+            let name = self.column_name(i);
+            if name.is_some() && name.unwrap() == column_name {
+                return Some(i);
+            }
+        }
+        None
+    }
+
     pub fn column_origin_name(&self, idx: i32) -> Option<&str> {
         let raw_name = unsafe { crate::ffi::sqlite3_column_origin_name(self.raw_stmt, idx) };
 

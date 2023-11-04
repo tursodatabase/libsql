@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::fmt;
+use std::sync::Arc;
 
 use crate::{
     connection::Conn,
@@ -153,6 +153,10 @@ impl RowInner for LibsqlRow {
 
     fn column_name(&self, idx: i32) -> Option<&str> {
         self.0.column_name(idx)
+    }
+
+    fn column_index(&self, name: &str) -> Option<i32> {
+        self.0.column_index(name)
     }
 
     fn column_str(&self, idx: i32) -> Result<&str> {

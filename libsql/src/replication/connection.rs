@@ -3,11 +3,11 @@
 use std::str::FromStr;
 use std::sync::Arc;
 
-use parking_lot::Mutex;
 use libsql_replication::rpc::proxy::{
-    describe_result, State as RemoteState, query_result::RowResult, DescribeResult,
-    ExecuteResults, ResultRows
+    describe_result, query_result::RowResult, DescribeResult, ExecuteResults, ResultRows,
+    State as RemoteState,
 };
+use parking_lot::Mutex;
 
 use crate::rows::{RowInner, RowsInner};
 use crate::statement::Stmt;
@@ -175,7 +175,9 @@ impl RemoteConnection {
         params: Params,
     ) -> Result<ExecuteResults> {
         let Some(ref writer) = self.writer else {
-            return Err(Error::Misuse("Cannot delegate write in local replica mode.".into()));
+            return Err(Error::Misuse(
+                "Cannot delegate write in local replica mode.".into(),
+            ));
         };
         let res = writer
             .execute_program(stmts, params)
@@ -194,7 +196,9 @@ impl RemoteConnection {
 
     pub(self) async fn describe(&self, stmt: impl Into<String>) -> Result<DescribeResult> {
         let Some(ref writer) = self.writer else {
-            return Err(Error::Misuse("Cannot describe in local replica mode.".into()));
+            return Err(Error::Misuse(
+                "Cannot describe in local replica mode.".into(),
+            ));
         };
         let res = writer
             .describe(stmt)
@@ -566,10 +570,7 @@ impl Stmt for RemoteStatement {
     }
 }
 
-pub(crate) struct RemoteRows(
-    pub(crate) ResultRows,
-    pub(crate) usize,
-);
+pub(crate) struct RemoteRows(pub(crate) ResultRows, pub(crate) usize);
 
 impl RowsInner for RemoteRows {
     fn next(&mut self) -> Result<Option<Row>> {
@@ -628,6 +629,13 @@ impl RowInner for RemoteRow {
 
     fn column_name(&self, idx: i32) -> Option<&str> {
         self.1.get(idx as usize).map(|s| s.name.as_str())
+    }
+
+    fn column_index(&self, column_name: &str) -> Option<i32> {
+        self.1
+            .iter()
+            .position(|c| c.name.as_str() == column_name)
+            .map(|idx| idx as i32)
     }
 
     fn column_str(&self, idx: i32) -> Result<&str> {

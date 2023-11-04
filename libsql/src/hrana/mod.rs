@@ -430,6 +430,13 @@ impl RowInner for Row {
             .map(|s| s.as_str())
     }
 
+    fn column_index(&self, name: &str) -> Option<i32> {
+        self.cols
+            .iter()
+            .position(|c| c.name.as_ref().map_or(false, |s| s == name))
+            .map(|idx| idx as i32)
+    }
+
     fn column_str(&self, _idx: i32) -> crate::Result<&str> {
         todo!()
     }
