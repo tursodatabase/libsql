@@ -24,19 +24,33 @@
 ** This code may change in tandem with other project code as needed.
 */
 
+#ifndef INT_LINKAGE
+# define INT_LINKAGE /* Linkage will be external to translation unit. */
+# include <stdio.h>
+# include <stdlib.h>
+# include <limits.h>
+# if defined(_WIN32) || defined(WIN32)
+#  undef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+#  include <io.h>
+#  include <fcntl.h>
+# endif
+#endif
+
 /* Define enum for use with following function. */
-enum ConsoleStdStreams {
-  CSC_NoConsole = 0,
-  CSC_InConsole = 1, CSC_OutConsole = 2, CSC_ErrConsole = 4,
-  CSC_AnyConsole = 0x7
-};
+typedef enum ConsoleStdConsStreams {
+  CSCS_NoConsole = 0,
+  CSCS_InConsole = 1, CSCS_OutConsole = 2, CSCS_ErrConsole = 4,
+  CSCS_AnyConsole = 0x7
+} ConsoleStdConsStreams;
 
 /*
 ** Classify the three standard I/O streams according to whether
 ** they are connected to a console attached to the process.
 **
-** Returns the bit-wise OR of CSC_{In,Out,Err}Console values,
-** or CSC_NoConsole if none of the streams reaches a console.
+** Returns the bit-wise OR of CSCS_{In,Out,Err}Console values,
+** or CSCS_NoConsole if none of the streams reaches a console.
 **
 ** This function should be called before any I/O is done with
 ** the given streams. As a side-effect, the given inputs are
@@ -47,8 +61,8 @@ enum ConsoleStdStreams {
 ** On some platforms, stream or console mode alteration (aka
 ** "Setup") may be made which is undone by consoleRestore().
 */
-INT_LINKAGE ConsoleStdStreams
-consoleClassifySetup( FILE *pfIn, FILE *pfOut,FILE *pfErr );
+INT_LINKAGE ConsoleStdConsStreams
+consoleClassifySetup( FILE *pfIn, FILE *pfOut, FILE *pfErr );
 
 /*
 ** Undo any side-effects left by consoleClassifySetup(...).
@@ -64,10 +78,10 @@ INT_LINKAGE void SQLITE_CDECL consoleRestore( void );
 ** Render output like fprintf(). If the output is going to the
 ** console and translation from UTF-8 is necessary, perform
 ** the needed translation. Otherwise, write formatted output
-** to the provided stream almost as-is, with possibly with
-** newline translation as set by set{Binary,Text}Mode().
+** to the provided stream almost as-is, possibly with newline
+** translation as specified by set{Binary,Text}Mode().
 */
-INT_LINKAGE int fprintfUtf8(FILE *, const char *zFmt, ...);
+INT_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...);
 
 /*
 ** Collect input like fgets(...) with special provisions for input
@@ -79,14 +93,23 @@ INT_LINKAGE int fgetsUtf8(char *buf, int ncMax, FILE *pfIn);
 
 /*
 ** Set given stream for binary mode, where newline translation is
-** not done, or to text mode where, for some platforms, newlines
+** not done, or for text mode where, for some platforms, newlines
 ** are translated to the platform's conventional char sequence.
+** If bFlush true, flush the stream.
 **
 ** An additional side-effect is that if the stream is one passed
-** to consoleClassifySetup() as an output, it is flushed.
+** to consoleClassifySetup() as an output, it is flushed first.
+**
+** Note that binary/text mode has no effect on console output
+** translation. Newline chars start a new line on all platforms.
 */
-INT_LINKAGE void setBinaryMode(File *);
-INT_LINKAGE void setTextMode(File *);
+INT_LINKAGE void setBinaryMode(FILE *, short bFlush);
+INT_LINKAGE void setTextMode(FILE *, short bFlush);
+
+typedef struct Prompts {
+  int numPrompts;
+  const char **azPrompts;
+} Prompts;
 
 /*
 ** Macros for use of a line editor.
@@ -128,8 +151,8 @@ INT_LINKAGE void setTextMode(File *);
 ** library to interactively collect line edited input.
 */
 INT_LINKAGE char *
-shellGetLine(File *pfIn, char *zBufPrior, int nLen,
-             short isContinuation, const char *azPrompt[2]);
+shellGetLine(FILE *pfIn, char *zBufPrior, int nLen,
+             short isContinuation, Prompts azPrompt);
 
 /*
 ** TBD: Define an interface for application(s) to generate

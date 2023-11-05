@@ -1,5 +1,5 @@
-C Define\sinterface\sbetween\sproject\scommand-line\sapps\sand\sa\sconsole\sI/O\s"library".
-D 2023-11-04T02:22:04.015
+C Setup,\stakedown,\smode\sset\sand\soutput\sworking.\sNo\sinput\syet.\s(WIP)
+D 2023-11-05T01:21:14.743
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -669,7 +669,8 @@ F src/btreeInt.h ef12a72b708677e48d6bc8dcd66fed25434740568b89e2cfa368093cfc5b9d1
 F src/build.c 189e4517d67f09f0a3e0d8e1faa6e2ef0c2e95f6ac82e33c912cb7efa2a359cc
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/console_io.h 14057195f16cace1f669f723510190f90300ee6c1ef0a6f417a54344bc57bdd0
+F src/console_io.c 484a4ad56c18ddc62b845494f8ac6e06df9f9b0bc2fa60ac2dcba74635bdf8da x
+F src/console_io.h 6b7c86a5778445e507a089b9808803e4523e2989f33c04692e008eae3f0f4d8a
 F src/ctime.c 23331529e654be40ca97d171cbbffe9b3d4c71cc53b78fe5501230675952da8b
 F src/date.c eebc54a00e888d3c56147779e9f361b77d62fd69ff2008c5373946aa1ba1d574
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
@@ -2143,11 +2144,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 570635575cc5fbffe910ed992b58393e214117ef3b5370a66f115cd0ee202913
-R 44e2680e2cc755f86742bfd0211316ba
-T *branch * console-io-lib
-T *sym-console-io-lib *
-T -sym-trunk *
+P 64abef8314b8544fdc7b71317d61a4641dc607a1ae42b8ff21543226fd338ba2
+R 9aec452b903f28bc0cbf638b7c11370e
 U larrybr
-Z e3b2358cc83000c61d02936c7cb34f1b
+Z 37ecbe5d111f6f842b9b1e97c1e0e0d1
 # Remove this line to create a well-formed Fossil manifest.
