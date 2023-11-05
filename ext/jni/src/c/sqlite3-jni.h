@@ -427,8 +427,6 @@ extern "C" {
 #define org_sqlite_jni_capi_CApi_SQLITE_OPEN_EXRESCODE 33554432L
 #undef org_sqlite_jni_capi_CApi_SQLITE_PREPARE_PERSISTENT
 #define org_sqlite_jni_capi_CApi_SQLITE_PREPARE_PERSISTENT 1L
-#undef org_sqlite_jni_capi_CApi_SQLITE_PREPARE_NORMALIZE
-#define org_sqlite_jni_capi_CApi_SQLITE_PREPARE_NORMALIZE 2L
 #undef org_sqlite_jni_capi_CApi_SQLITE_PREPARE_NO_VTAB
 #define org_sqlite_jni_capi_CApi_SQLITE_PREPARE_NO_VTAB 4L
 #undef org_sqlite_jni_capi_CApi_SQLITE_OK

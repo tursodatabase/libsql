@@ -2279,7 +2279,6 @@ public final class CApi {
 
   // prepare flags
   public static final int SQLITE_PREPARE_PERSISTENT = 1;
-  public static final int SQLITE_PREPARE_NORMALIZE = 2;
   public static final int SQLITE_PREPARE_NO_VTAB = 4;
 
   // result codes

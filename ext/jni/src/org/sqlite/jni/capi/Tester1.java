@@ -327,7 +327,7 @@ public class Tester1 implements Runnable {
 
 
     rc = sqlite3_prepare_v3(db, "INSERT INTO t2(a) VALUES(1),(2),(3)",
-                            SQLITE_PREPARE_NORMALIZE, outStmt);
+                            0, outStmt);
     affirm(0 == rc);
     stmt = outStmt.get();
     affirm(0 != stmt.getNativePointer());

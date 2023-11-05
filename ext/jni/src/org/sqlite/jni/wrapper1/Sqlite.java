@@ -178,7 +178,6 @@ public final class Sqlite implements AutoCloseable  {
   public static final int LIMIT_WORKER_THREADS = CApi.SQLITE_LIMIT_WORKER_THREADS;
 
   public static final int PREPARE_PERSISTENT = CApi.SQLITE_PREPARE_PERSISTENT;
-  public static final int PREPARE_NORMALIZE = CApi.SQLITE_PREPARE_NORMALIZE;
   public static final int PREPARE_NO_VTAB = CApi.SQLITE_PREPARE_NO_VTAB;
 
   public static final int TRACE_STMT = CApi.SQLITE_TRACE_STMT;
@@ -334,6 +333,22 @@ public final class Sqlite implements AutoCloseable  {
   */
   public static boolean compileOptionUsed(String optName){
     return CApi.sqlite3_compileoption_used(optName);
+  }
+
+  private static boolean hasNormalizeSql =
+    compileOptionUsed("ENABLE_NORMALIZE");
+
+  /**
+     Throws UnsupportedOperationException if check is false.
+     flag is expected to be the name of an SQLITE_ENABLE_...
+     build flag.
+  */
+  private static void checkSupported(boolean check, String flag){
+    if( !check ){
+      throw new UnsupportedOperationException(
+        "Library was built without "+flag
+      );
+    }
   }
 
   /**
@@ -972,10 +987,12 @@ public final class Sqlite implements AutoCloseable  {
     }
 
     /**
-       Analog to sqlite3_normalized_sql(), returning null if the
-       library is built without the SQLITE_ENABLE_NORMALIZE flag.
+       Analog to sqlite3_normalized_sql(), but throws
+       UnsupportedOperationException if the library was built without
+       the SQLITE_ENABLE_NORMALIZE flag.
     */
     public String normalizedSql(){
+      Sqlite.checkSupported(hasNormalizeSql, "SQLITE_ENABLE_NORMALIZE");
       return CApi.sqlite3_normalized_sql(thisStmt());
     }
 
