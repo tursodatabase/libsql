@@ -870,6 +870,24 @@ public class Tester2 implements Runnable {
     db.close();
   }
 
+  private void testProgress(){
+    final Sqlite db = openDb();
+    final ValueHolder<Integer> counter = new ValueHolder<>(0);
+    db.setProgressHandler(1, new Sqlite.ProgressHandler(){
+        @Override public int call(){
+          ++counter.value;
+          return 0;
+        }
+      });
+    execSql(db, "SELECT 1; SELECT 2;");
+    affirm( counter.value > 0 );
+    int nOld = counter.value;
+    db.setProgressHandler(0, null);
+    execSql(db, "SELECT 1; SELECT 2;");
+    affirm( nOld == counter.value );
+    db.close();
+  }
+
   private void runTests(boolean fromThread) throws Exception {
     List<java.lang.reflect.Method> mlist = testMethods;
     affirm( null!=mlist );

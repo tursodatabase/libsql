@@ -890,7 +890,7 @@ public final class CApi {
     return sqlite3_extended_errcode(db.getNativePointer());
   }
 
-  public static native boolean sqlite3_extended_result_codes(
+  public static native int sqlite3_extended_result_codes(
     @NotNull sqlite3 db, boolean on
   );
 

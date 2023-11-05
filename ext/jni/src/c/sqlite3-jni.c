@@ -3596,12 +3596,14 @@ S3JniApi(sqlite3_normalized_sql(),jstring,1normalized_1sql)(
 #endif
 }
 
-S3JniApi(sqlite3_extended_result_codes(),jboolean,1extended_1result_1codes)(
+S3JniApi(sqlite3_extended_result_codes(),jint,1extended_1result_1codes)(
   JniArgsEnvClass, jobject jpDb, jboolean onoff
 ){
   sqlite3 * const pDb = PtrGet_sqlite3(jpDb);
-  int const rc = pDb ? sqlite3_extended_result_codes(pDb, onoff ? 1 : 0) : 0;
-  return rc ? JNI_TRUE : JNI_FALSE;
+  int const rc = pDb
+    ? sqlite3_extended_result_codes(pDb, onoff ? 1 : 0)
+    : SQLITE_MISUSE;
+  return rc;
 }
 
 S3JniApi(sqlite3_finalize(),jint,1finalize)(

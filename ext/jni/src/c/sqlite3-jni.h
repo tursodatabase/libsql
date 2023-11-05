@@ -1402,9 +1402,9 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1extended_1errcode
 /*
  * Class:     org_sqlite_jni_capi_CApi
  * Method:    sqlite3_extended_result_codes
- * Signature: (Lorg/sqlite/jni/capi/sqlite3;Z)Z
+ * Signature: (Lorg/sqlite/jni/capi/sqlite3;Z)I
  */
-JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1extended_1result_1codes
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1extended_1result_1codes
   (JNIEnv *, jclass, jobject, jboolean);
 
 /*

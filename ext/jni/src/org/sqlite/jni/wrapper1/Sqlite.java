@@ -213,61 +213,6 @@ public final class Sqlite implements AutoCloseable  {
     return CApi.sqlite3_sourceid();
   }
 
-
-  /**
-     Output object for use with status() and libStatus().
-  */
-  public static final class Status {
-    /** The current value for the requested status() or libStatus() metric. */
-    long current;
-    /** The peak value for the requested status() or libStatus() metric. */
-    long peak;
-  };
-
-  /**
-     As per sqlite3_status64(), but returns its current and high-water
-     results as a Status object. Throws if the first argument is
-     not one of the STATUS_... constants.
-  */
-  public static Status libStatus(int op, boolean resetStats){
-    org.sqlite.jni.capi.OutputPointer.Int64 pCurrent =
-      new org.sqlite.jni.capi.OutputPointer.Int64();
-    org.sqlite.jni.capi.OutputPointer.Int64 pHighwater =
-      new org.sqlite.jni.capi.OutputPointer.Int64();
-    checkRc2( CApi.sqlite3_status64(op, pCurrent, pHighwater, resetStats) );
-    final Status s = new Status();
-    s.current = pCurrent.value;
-    s.peak = pHighwater.value;
-    return s;
-  }
-
-  /**
-     As per sqlite3_status64(), but returns its current and high-water
-     results as a Status object. Throws if the first argument is
-     not one of the DBSTATUS_... constants or on any other misuse.
-  */
-  public Status status(int op, boolean resetStats){
-    org.sqlite.jni.capi.OutputPointer.Int32 pCurrent =
-      new org.sqlite.jni.capi.OutputPointer.Int32();
-    org.sqlite.jni.capi.OutputPointer.Int32 pHighwater =
-      new org.sqlite.jni.capi.OutputPointer.Int32();
-    checkRc( CApi.sqlite3_db_status(thisDb(), op, pCurrent, pHighwater, resetStats) );
-    final Status s = new Status();
-    s.current = pCurrent.value;
-    s.peak = pHighwater.value;
-    return s;
-  }
-
-  @Override public void close(){
-    if(null!=this.db){
-      synchronized(nativeToWrapper){
-        nativeToWrapper.remove(this.db);
-      }
-      this.db.close();
-      this.db = null;
-    }
-  }
-
   /**
      Returns the value of the native library's build-time value of the
      SQLITE_THREADSAFE build option.
@@ -326,6 +271,61 @@ public final class Sqlite implements AutoCloseable  {
   }
 
   /**
+     Output object for use with status() and libStatus().
+  */
+  public static final class Status {
+    /** The current value for the requested status() or libStatus() metric. */
+    long current;
+    /** The peak value for the requested status() or libStatus() metric. */
+    long peak;
+  };
+
+  /**
+     As per sqlite3_status64(), but returns its current and high-water
+     results as a Status object. Throws if the first argument is
+     not one of the STATUS_... constants.
+  */
+  public static Status libStatus(int op, boolean resetStats){
+    org.sqlite.jni.capi.OutputPointer.Int64 pCurrent =
+      new org.sqlite.jni.capi.OutputPointer.Int64();
+    org.sqlite.jni.capi.OutputPointer.Int64 pHighwater =
+      new org.sqlite.jni.capi.OutputPointer.Int64();
+    checkRc2( CApi.sqlite3_status64(op, pCurrent, pHighwater, resetStats) );
+    final Status s = new Status();
+    s.current = pCurrent.value;
+    s.peak = pHighwater.value;
+    return s;
+  }
+
+  /**
+     As per sqlite3_db_status(), but returns its current and
+     high-water results as a Status object. Throws if the first
+     argument is not one of the DBSTATUS_... constants or on any other
+     misuse.
+  */
+  public Status status(int op, boolean resetStats){
+    org.sqlite.jni.capi.OutputPointer.Int32 pCurrent =
+      new org.sqlite.jni.capi.OutputPointer.Int32();
+    org.sqlite.jni.capi.OutputPointer.Int32 pHighwater =
+      new org.sqlite.jni.capi.OutputPointer.Int32();
+    checkRc( CApi.sqlite3_db_status(thisDb(), op, pCurrent, pHighwater, resetStats) );
+    final Status s = new Status();
+    s.current = pCurrent.value;
+    s.peak = pHighwater.value;
+    return s;
+  }
+
+  @Override public void close(){
+    if(null!=this.db){
+      synchronized(nativeToWrapper){
+        nativeToWrapper.remove(this.db);
+      }
+      this.db.close();
+      this.db = null;
+    }
+  }
+
+  /**
      Returns this object's underlying native db handle, or null if
      this instance has been closed. This is very specifically not
      public.
@@ -377,6 +377,19 @@ public final class Sqlite implements AutoCloseable  {
         throw new SqliteException(rc);
       }
     }
+  }
+
+  /**
+     Toggles the use of extended result codes on or off. By default
+     they are turned off, but they can be enabled by default by
+     including the OPEN_EXRESCODE flag when opening a database.
+
+     Because this API reports db-side errors using exceptions,
+     enabling this may change the values returned by
+     SqliteException.errcode().
+  */
+  public void useExtendedResultCodes(boolean on){
+    checkRc( CApi.sqlite3_extended_result_codes(thisDb(), on) );
   }
 
   /**
@@ -1278,7 +1291,7 @@ public final class Sqlite implements AutoCloseable  {
      Analog to sqlite3_busy_handler(). If b is null then any
      current handler is cleared.
   */
-  void setBusyHandler( BusyHandler b ){
+  public void setBusyHandler( BusyHandler b ){
     org.sqlite.jni.capi.BusyHandlerCallback bhc = null;
     if( null!=b ){
       bhc = new org.sqlite.jni.capi.BusyHandlerCallback(){
@@ -1328,7 +1341,7 @@ public final class Sqlite implements AutoCloseable  {
      handle is only manipulated via the high-level API, this caveat
      does not apply.
   */
-  CommitHook setCommitHook( CommitHook c ){
+  public CommitHook setCommitHook( CommitHook c ){
     CommitHookProxy chp = null;
     if( null!=c ){
       chp = new CommitHookProxy(c);
@@ -1377,7 +1390,7 @@ public final class Sqlite implements AutoCloseable  {
      handle is only manipulated via the high-level API, this caveat
      does not apply.
   */
-  RollbackHook setRollbackHook( RollbackHook c ){
+  public RollbackHook setRollbackHook( RollbackHook c ){
     RollbackHookProxy chp = null;
     if( null!=c ){
       chp = new RollbackHookProxy(c);
@@ -1426,7 +1439,7 @@ public final class Sqlite implements AutoCloseable  {
      handle is only manipulated via the high-level API, this caveat
      does not apply.
   */
-  UpdateHook setUpdateHook( UpdateHook c ){
+  public UpdateHook setUpdateHook( UpdateHook c ){
     UpdateHookProxy chp = null;
     if( null!=c ){
       chp = new UpdateHookProxy(c);
@@ -1438,4 +1451,35 @@ public final class Sqlite implements AutoCloseable  {
       : null;
   }
 
+
+  /**
+     Callback interface for use with setProgressHandler().
+  */
+  public interface ProgressHandler {
+    /**
+       Must behave as documented for the C-level sqlite3_progress_handler()
+       callback. If it throws, the exception is translated into
+       a db-level error.
+    */
+    int call();
+  }
+
+  /**
+     Analog to sqlite3_progress_handler(), sets the current progress
+     handler or clears it if p is null.
+
+     Note that this API, in contrast to setUpdateHook(),
+     setRollbackHook(), and setCommitHook(), cannot return the
+     previous handler. That inconsistency is part of the lower-level C
+     API.
+  */
+  public void setProgressHandler( int n, ProgressHandler p ){
+    org.sqlite.jni.capi.ProgressHandlerCallback phc = null;
+    if( null!=p ){
+      phc = new org.sqlite.jni.capi.ProgressHandlerCallback(){
+          @Override public int call(){ return p.call(); }
+        };
+    }
+    CApi.sqlite3_progress_handler( thisDb(), n, phc );
+  }
 }
