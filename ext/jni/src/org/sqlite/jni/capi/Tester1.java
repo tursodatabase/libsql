@@ -1031,49 +1031,48 @@ public class Tester1 implements Runnable {
   @SingleThreadOnly /* because threads inherently break this test */
   private static void testBusy(){
     final String dbName = "_busy-handler.db";
-    final OutputPointer.sqlite3 outDb = new OutputPointer.sqlite3();
-    final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
-
-    int rc = sqlite3_open(dbName, outDb);
-    ++metrics.dbOpen;
-    affirm( 0 == rc );
-    final sqlite3 db1 = outDb.get();
-    execSql(db1, "CREATE TABLE IF NOT EXISTS t(a)");
-    rc = sqlite3_open(dbName, outDb);
-    ++metrics.dbOpen;
-    affirm( 0 == rc );
-    affirm( outDb.get() != db1 );
-    final sqlite3 db2 = outDb.get();
-
-    affirm( "main".equals( sqlite3_db_name(db1, 0) ) );
-    rc = sqlite3_db_config(db1, SQLITE_DBCONFIG_MAINDBNAME, "foo");
-    affirm( sqlite3_db_filename(db1, "foo").endsWith(dbName) );
-    affirm( "foo".equals( sqlite3_db_name(db1, 0) ) );
-    affirm( SQLITE_MISUSE == sqlite3_db_config(db1, 0, 0, null) );
-
-    final ValueHolder<Integer> xBusyCalled = new ValueHolder<>(0);
-    BusyHandlerCallback handler = new BusyHandlerCallback(){
-        @Override public int call(int n){
-          //outln("busy handler #"+n);
-          return n > 2 ? 0 : ++xBusyCalled.value;
-        }
-      };
-    rc = sqlite3_busy_handler(db2, handler);
-    affirm(0 == rc);
-
-    // Force a locked condition...
-    execSql(db1, "BEGIN EXCLUSIVE");
-    rc = sqlite3_prepare_v2(db2, "SELECT * from t", outStmt);
-    affirm( SQLITE_BUSY == rc);
-    affirm( null == outStmt.get() );
-    affirm( 3 == xBusyCalled.value );
-    sqlite3_close_v2(db1);
-    sqlite3_close_v2(db2);
     try{
-      final java.io.File f = new java.io.File(dbName);
-      f.delete();
-    }catch(Exception e){
-      /* ignore */
+      final OutputPointer.sqlite3 outDb = new OutputPointer.sqlite3();
+      final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
+
+      int rc = sqlite3_open(dbName, outDb);
+      ++metrics.dbOpen;
+      affirm( 0 == rc );
+      final sqlite3 db1 = outDb.get();
+      execSql(db1, "CREATE TABLE IF NOT EXISTS t(a)");
+      rc = sqlite3_open(dbName, outDb);
+      ++metrics.dbOpen;
+      affirm( 0 == rc );
+      affirm( outDb.get() != db1 );
+      final sqlite3 db2 = outDb.get();
+
+      affirm( "main".equals( sqlite3_db_name(db1, 0) ) );
+      rc = sqlite3_db_config(db1, SQLITE_DBCONFIG_MAINDBNAME, "foo");
+      affirm( sqlite3_db_filename(db1, "foo").endsWith(dbName) );
+      affirm( "foo".equals( sqlite3_db_name(db1, 0) ) );
+      affirm( SQLITE_MISUSE == sqlite3_db_config(db1, 0, 0, null) );
+
+      final ValueHolder<Integer> xBusyCalled = new ValueHolder<>(0);
+      BusyHandlerCallback handler = new BusyHandlerCallback(){
+          @Override public int call(int n){
+            //outln("busy handler #"+n);
+            return n > 2 ? 0 : ++xBusyCalled.value;
+          }
+        };
+      rc = sqlite3_busy_handler(db2, handler);
+      affirm(0 == rc);
+
+      // Force a locked condition...
+      execSql(db1, "BEGIN EXCLUSIVE");
+      rc = sqlite3_prepare_v2(db2, "SELECT * from t", outStmt);
+      affirm( SQLITE_BUSY == rc);
+      affirm( null == outStmt.get() );
+      affirm( 3 == xBusyCalled.value );
+      sqlite3_close_v2(db1);
+      sqlite3_close_v2(db2);
+    }finally{
+      try{(new java.io.File(dbName)).delete();}
+      catch(Exception e){/* ignore */}
     }
   }
 

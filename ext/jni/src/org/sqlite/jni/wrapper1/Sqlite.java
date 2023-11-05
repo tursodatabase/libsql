@@ -32,6 +32,7 @@ public final class Sqlite implements AutoCloseable  {
   public static final int OPEN_READWRITE = CApi.SQLITE_OPEN_READWRITE;
   public static final int OPEN_CREATE = CApi.SQLITE_OPEN_CREATE;
   public static final int OPEN_EXRESCODE = CApi.SQLITE_OPEN_EXRESCODE;
+
   public static final int TXN_NONE = CApi.SQLITE_TXN_NONE;
   public static final int TXN_READ = CApi.SQLITE_TXN_READ;
   public static final int TXN_WRITE = CApi.SQLITE_TXN_WRITE;
@@ -106,6 +107,10 @@ public final class Sqlite implements AutoCloseable  {
   public static final int UTF16BE = CApi.SQLITE_UTF16BE;
   /* We elide the UTF16_ALIGNED from this interface because it
      is irrelevant for the Java interface. */
+
+  public static final int DONE = CApi.SQLITE_DONE;
+  public static final int BUSY = CApi.SQLITE_BUSY;
+  public static final int LOCKED = CApi.SQLITE_LOCKED;
 
   //! Used only by the open() factory functions.
   private Sqlite(sqlite3 db){
@@ -428,10 +433,6 @@ public final class Sqlite implements AutoCloseable  {
 
   public boolean isAutoCommit(){
     return CApi.sqlite3_get_autocommit(thisDb());
-  }
-
-  public void setBusyTimeout(int ms){
-    checkRc(CApi.sqlite3_busy_timeout(thisDb(), ms));
   }
 
   /**
@@ -1028,11 +1029,6 @@ public final class Sqlite implements AutoCloseable  {
     private Sqlite dbTo = null;
     private Sqlite dbFrom = null;
 
-
-    public static final int DONE = CApi.SQLITE_DONE;
-    public static final int BUSY = CApi.SQLITE_BUSY;
-    public static final int LOCKED = CApi.SQLITE_LOCKED;
-
     Backup(Sqlite dbDest, String schemaDest,Sqlite dbSrc, String schemaSrc){
       this.dbTo = dbDest;
       this.dbFrom = dbSrc;
@@ -1073,19 +1069,19 @@ public final class Sqlite implements AutoCloseable  {
 
     /**
        Analog to sqlite3_backup_step(). Returns 0 if stepping succeeds
-       or, DONE if the end is reached, BUSY if one of the databases is
-       busy, LOCKED if one of the databases is locked, and throws for
-       any other result code or if this object has been closed. Note
-       that BUSY and LOCKED are not necessarily permanent errors, so
-       do not trigger an exception.
+       or, Sqlite.DONE if the end is reached, Sqlite.BUSY if one of
+       the databases is busy, Sqlite.LOCKED if one of the databases is
+       locked, and throws for any other result code or if this object
+       has been closed. Note that BUSY and LOCKED are not necessarily
+       permanent errors, so do not trigger an exception.
     */
     public int step(int pageCount){
       final int rc = CApi.sqlite3_backup_step(getNative(), pageCount);
       switch(rc){
         case 0:
-        case DONE:
-        case BUSY:
-        case LOCKED:
+        case Sqlite.DONE:
+        case Sqlite.BUSY:
+        case Sqlite.LOCKED:
           return rc;
         default:
           toss();
@@ -1218,5 +1214,43 @@ public final class Sqlite implements AutoCloseable  {
         };
     }
     checkRc( CApi.sqlite3_collation_needed(thisDb(), cnc) );
+  }
+
+  /**
+     Callback for use with busyHandler().
+  */
+  public interface BusyHandler {
+    /**
+       Must function as documented for the C-level
+       sqlite3_busy_handler() callback argument, minus the (void*)
+       argument the C-level function requires.
+
+       If this function throws, it is translated to a database-level
+       error.
+    */
+    int call(int n);
+  }
+
+  /**
+     Analog to sqlite3_busy_timeout().
+  */
+  public void setBusyTimeout(int ms){
+    checkRc(CApi.sqlite3_busy_timeout(thisDb(), ms));
+  }
+
+  /**
+     Analog to sqlite3_busy_handler(). If b is null then any
+     current handler is cleared.
+  */
+  void setBusyHandler( BusyHandler b ){
+    org.sqlite.jni.capi.BusyHandlerCallback bhc = null;
+    if( null!=b ){
+      bhc = new org.sqlite.jni.capi.BusyHandlerCallback(){
+          @Override public int call(int n){
+            return b.call(n);
+          }
+        };
+    }
+    checkRc( CApi.sqlite3_busy_handler(thisDb(), bhc) );
   }
 }

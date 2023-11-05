@@ -623,7 +623,7 @@ public class Tester2 implements Runnable {
       try (Sqlite.Backup b = dbDest.initBackup("main",dbSrc,"main")) {
         affirm( null!=b );
         int rc;
-        while( Sqlite.Backup.DONE!=(rc = b.step(1)) ){
+        while( Sqlite.DONE!=(rc = b.step(1)) ){
           affirm( 0==rc );
         }
         affirm( b.pageCount() > 0 );
@@ -697,6 +697,44 @@ public class Tester2 implements Runnable {
     stmt.finalizeStmt();
     db.onCollationNeeded(null);
     db.close();
+  }
+
+  @SingleThreadOnly /* because threads inherently break this test */
+  private void testBusy(){
+    final String dbName = "_busy-handler.db";
+    try{
+      Sqlite db1 = openDb(dbName);
+      ++metrics.dbOpen;
+      execSql(db1, "CREATE TABLE IF NOT EXISTS t(a)");
+      Sqlite db2 = openDb(dbName);
+      ++metrics.dbOpen;
+
+      final ValueHolder<Integer> xBusyCalled = new ValueHolder<>(0);
+      Sqlite.BusyHandler handler = new Sqlite.BusyHandler(){
+          @Override public int call(int n){
+            return n > 2 ? 0 : ++xBusyCalled.value;
+          }
+        };
+      db2.setBusyHandler(handler);
+
+      // Force a locked condition...
+      execSql(db1, "BEGIN EXCLUSIVE");
+      int rc = 0;
+      SqliteException ex = null;
+      try{
+        db2.prepare("SELECT * from t");
+      }catch(SqliteException x){
+        ex = x;
+      }
+      affirm( null!=ex );
+      affirm( Sqlite.BUSY == ex.errcode() );
+      affirm( 3 == xBusyCalled.value );
+      db1.close();
+      db2.close();
+    }finally{
+      try{(new java.io.File(dbName)).delete();}
+      catch(Exception e){/* ignore */}
+    }
   }
 
   private void runTests(boolean fromThread) throws Exception {
