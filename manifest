@@ -1,5 +1,5 @@
-C Add\scommit/rollback\shook\ssupport\sto\sJNI\swrapper1.
-D 2023-11-05T00:48:43.424
+C Add\supdate-hook\ssupport\sto\sJNI\swrapper1.
+D 2023-11-05T01:14:07.152
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -264,14 +264,14 @@ F ext/jni/src/org/sqlite/jni/capi/PrepareMultiCallback.java aca8f9fa72e3b6602bc9
 F ext/jni/src/org/sqlite/jni/capi/PreupdateHookCallback.java 819d938e26208adde17ca4b7ddde1d8cd6915b6ab7b708249a9787beca6bd6b6
 F ext/jni/src/org/sqlite/jni/capi/ProgressHandlerCallback.java 01bc0c238eed2d5f93c73522cb7849a445cc9098c2ed1e78248fa20ed1cfde5b
 F ext/jni/src/org/sqlite/jni/capi/ResultCode.java 8141171f1bcf9f46eef303b9d3c5dc2537a25ad1628f3638398d8a60cacefa7f
-F ext/jni/src/org/sqlite/jni/capi/RollbackHookCallback.java 105e324d09c207100485e7667ad172e64322c62426bb49b547e9b0dc9c33f5f0
+F ext/jni/src/org/sqlite/jni/capi/RollbackHookCallback.java e172210a2080e851ebb694c70e9f0bf89284237795e38710a7f5f1b61e3f6787
 F ext/jni/src/org/sqlite/jni/capi/SQLFunction.java 0d1e9afc9ff8a2adb94a155b72385155fa3b8011a5cca0bb3c28468c7131c1a5
 F ext/jni/src/org/sqlite/jni/capi/SQLTester.java 09bee15aa0eedac68d767ae21d9a6a62a31ade59182a3ccbf036d6463d9e30b1
 F ext/jni/src/org/sqlite/jni/capi/ScalarFunction.java 93b9700fca4c68075ccab12fe0fbbc76c91cafc9f368e835b9bd7cd7732c8615
 F ext/jni/src/org/sqlite/jni/capi/TableColumnMetadata.java addf120e0e76e5be1ff2260daa7ce305ff9b5fafd64153a7a28e9d8f000a815f
 F ext/jni/src/org/sqlite/jni/capi/Tester1.java 909ebd23111762c878116ebacf73a848c8323fb46e8128eb3d99a85d48905444
 F ext/jni/src/org/sqlite/jni/capi/TraceV2Callback.java 0a25e117a0daae3394a77f24713e36d7b44c67d6e6d30e9e1d56a63442eef723
-F ext/jni/src/org/sqlite/jni/capi/UpdateHookCallback.java 2766b8526bbffc4f1045f70e79f1bc1b1efe1c3e95ca06cdb8a7391032dda3b4
+F ext/jni/src/org/sqlite/jni/capi/UpdateHookCallback.java c8bdf7848e6599115d601bcc9427ff902cb33129b9be32870ac6808e04b6ae56
 F ext/jni/src/org/sqlite/jni/capi/ValueHolder.java 22d365746a78c5cd7ae10c39444eb7bbf1a819aad4bb7eb77b1edc47773a3950
 F ext/jni/src/org/sqlite/jni/capi/WindowFunction.java caf4396f91b2567904cf94bc538a069fd62260d975bd037d15a02a890ed1ef9e
 F ext/jni/src/org/sqlite/jni/capi/XDestroyCallback.java f3abb8dd7381f53ebba909437090caf68200f06717b8a7d6aa96fa3e8133117d
@@ -296,9 +296,9 @@ F ext/jni/src/org/sqlite/jni/test-script-interpreter.md f9f25126127045d051e918fe
 F ext/jni/src/org/sqlite/jni/wrapper1/AggregateFunction.java d5c108b02afd3c63c9e5e53f71f85273c1bfdc461ae526e0a0bb2b25e4df6483
 F ext/jni/src/org/sqlite/jni/wrapper1/ScalarFunction.java 43c43adfb7866098aadaaca1620028a6ec82d5193149970019b1cce9eb59fb03
 F ext/jni/src/org/sqlite/jni/wrapper1/SqlFunction.java 2833afdb9af5c1949bb35f4c926a5351fba9d1cdf0996864caa7b47827a346c7
-F ext/jni/src/org/sqlite/jni/wrapper1/Sqlite.java 782bb185ffc629cdabbd624565a52ed9b4b1b2d773b8b1d84476d91cbf94827d
+F ext/jni/src/org/sqlite/jni/wrapper1/Sqlite.java 12f55248d500c0cf4148757adb442303831632edaa738a41d82708643ba42418
 F ext/jni/src/org/sqlite/jni/wrapper1/SqliteException.java 929a1e2ab4e135fbbae7f0d2d609f77cfbbc60bbec7ba789ce23d9c73bc6156e
-F ext/jni/src/org/sqlite/jni/wrapper1/Tester2.java ab1236dd65b4f90db729c88c71382b14aa179095f8b8e4b50835125bd0072f9e
+F ext/jni/src/org/sqlite/jni/wrapper1/Tester2.java 4cb3bebcd44f4289fa8075477583b6c508832288f7b18d6101d2ec23309ee4cf
 F ext/jni/src/org/sqlite/jni/wrapper1/ValueHolder.java 7b89a7391f771692c5b83b0a5b86266abe8d59f1c77d7a0eccc9b79f259d79af
 F ext/jni/src/org/sqlite/jni/wrapper1/WindowFunction.java c7d1452f9ff26175b3c19bbf273116cc2846610af68e01756d755f037fe7319f
 F ext/jni/src/tests/000-000-sanity.test c3427a0e0ac84d7cbe4c95fdc1cd4b61f9ddcf43443408f3000139478c4dc745
@@ -2142,8 +2142,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dcf579ab2de4a3d3a437cde59b2fd60f1729c0bde31df1865117e6a5ea4bab20
-R f0002b14be80bf0bcecc7fa19a1e63af
+P ff3d44fe42528d96533d22c7807472df89bca18f1def23b018e2f407318143f8
+R 100ace4e28cdce95fe3bed6faf77a591
 U stephan
-Z 507dddf857173269602bfa9033ce1fa7
+Z dbd53c8956790cde47b0f616fa6677f5
 # Remove this line to create a well-formed Fossil manifest.

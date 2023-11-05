@@ -112,6 +112,42 @@ public final class Sqlite implements AutoCloseable  {
   public static final int BUSY = CApi.SQLITE_BUSY;
   public static final int LOCKED = CApi.SQLITE_LOCKED;
 
+  public static final int DENY = CApi.SQLITE_DENY;
+  public static final int IGNORE = CApi.SQLITE_IGNORE;
+  public static final int CREATE_INDEX = CApi.SQLITE_CREATE_INDEX;
+  public static final int CREATE_TABLE = CApi.SQLITE_CREATE_TABLE;
+  public static final int CREATE_TEMP_INDEX = CApi.SQLITE_CREATE_TEMP_INDEX;
+  public static final int CREATE_TEMP_TABLE = CApi.SQLITE_CREATE_TEMP_TABLE;
+  public static final int CREATE_TEMP_TRIGGER = CApi.SQLITE_CREATE_TEMP_TRIGGER;
+  public static final int CREATE_TEMP_VIEW = CApi.SQLITE_CREATE_TEMP_VIEW;
+  public static final int CREATE_TRIGGER = CApi.SQLITE_CREATE_TRIGGER;
+  public static final int CREATE_VIEW = CApi.SQLITE_CREATE_VIEW;
+  public static final int DELETE = CApi.SQLITE_DELETE;
+  public static final int DROP_INDEX = CApi.SQLITE_DROP_INDEX;
+  public static final int DROP_TABLE = CApi.SQLITE_DROP_TABLE;
+  public static final int DROP_TEMP_INDEX = CApi.SQLITE_DROP_TEMP_INDEX;
+  public static final int DROP_TEMP_TABLE = CApi.SQLITE_DROP_TEMP_TABLE;
+  public static final int DROP_TEMP_TRIGGER = CApi.SQLITE_DROP_TEMP_TRIGGER;
+  public static final int DROP_TEMP_VIEW = CApi.SQLITE_DROP_TEMP_VIEW;
+  public static final int DROP_TRIGGER = CApi.SQLITE_DROP_TRIGGER;
+  public static final int DROP_VIEW = CApi.SQLITE_DROP_VIEW;
+  public static final int INSERT = CApi.SQLITE_INSERT;
+  public static final int PRAGMA = CApi.SQLITE_PRAGMA;
+  public static final int READ = CApi.SQLITE_READ;
+  public static final int SELECT = CApi.SQLITE_SELECT;
+  public static final int TRANSACTION = CApi.SQLITE_TRANSACTION;
+  public static final int UPDATE = CApi.SQLITE_UPDATE;
+  public static final int ATTACH = CApi.SQLITE_ATTACH;
+  public static final int DETACH = CApi.SQLITE_DETACH;
+  public static final int ALTER_TABLE = CApi.SQLITE_ALTER_TABLE;
+  public static final int REINDEX = CApi.SQLITE_REINDEX;
+  public static final int ANALYZE = CApi.SQLITE_ANALYZE;
+  public static final int CREATE_VTABLE = CApi.SQLITE_CREATE_VTABLE;
+  public static final int DROP_VTABLE = CApi.SQLITE_DROP_VTABLE;
+  public static final int FUNCTION = CApi.SQLITE_FUNCTION;
+  public static final int SAVEPOINT = CApi.SQLITE_SAVEPOINT;
+  public static final int RECURSIVE = CApi.SQLITE_RECURSIVE;
+
   //! Used only by the open() factory functions.
   private Sqlite(sqlite3 db){
     this.db = db;
@@ -1353,5 +1389,53 @@ public final class Sqlite implements AutoCloseable  {
       : null;
   }
 
+  public interface UpdateHook {
+    /**
+       Must function as described for the C-level sqlite3_update_hook()
+       callback.
+    */
+    void call(int opId, String dbName, String tableName, long rowId);
+  }
+
+  /**
+     A level of indirection to permit setUpdateHook() to have similar
+     semantics as the C API, returning the previous hook. The caveat
+     is that if the low-level API is used to install a hook, it will
+     have a different hook type than Sqlite.UpdateHook so
+     setUpdateHook() will return null instead of that object.
+  */
+  private static class UpdateHookProxy
+    implements org.sqlite.jni.capi.UpdateHookCallback {
+    final UpdateHook updateHook;
+    UpdateHookProxy(UpdateHook ch){
+      this.updateHook = ch;
+    }
+    @Override public void call(int opId, String dbName, String tableName, long rowId){
+      updateHook.call(opId, dbName, tableName, rowId);
+    }
+  }
+
+  /**
+     Analog to sqlite3_update_hook(). Returns the previous hook, if
+     any (else null). Throws if this db is closed.
+
+     Minor caveat: if a update hook is set on this object's underlying
+     db handle using the lower-level SQLite API, this function may
+     return null when replacing it, despite there being a hook,
+     because it will have a different callback type. So long as the
+     handle is only manipulated via the high-level API, this caveat
+     does not apply.
+  */
+  UpdateHook setUpdateHook( UpdateHook c ){
+    UpdateHookProxy chp = null;
+    if( null!=c ){
+      chp = new UpdateHookProxy(c);
+    }
+    final org.sqlite.jni.capi.UpdateHookCallback rv =
+      CApi.sqlite3_update_hook(thisDb(), chp);
+    return (rv instanceof UpdateHookProxy)
+      ? ((UpdateHookProxy)rv).updateHook
+      : null;
+  }
 
 }

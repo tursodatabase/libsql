@@ -18,8 +18,9 @@ package org.sqlite.jni.capi;
 */
 public interface RollbackHookCallback extends CallbackProxy {
   /**
-     Works as documented for the C-level sqlite3_rollback_hook()
-     callback.
+     Must function as documented for the C-level sqlite3_rollback_hook()
+     callback. If it throws, the exception is translated into
+     a db-level error.
   */
   void call();
 }

@@ -133,6 +133,9 @@ public class Tester2 implements Runnable {
      Executes all SQL statements in the given string. If throwOnError
      is true then it will throw for any prepare/step errors, else it
      will return the corresponding non-0 result code.
+
+     TODO: reimplement this in the high-level API once it has the
+     multi-prepare capability.
   */
   public static int execSql(Sqlite dbw, boolean throwOnError, String sql){
     final sqlite3 db = dbw.nativeHandle();
@@ -163,7 +166,7 @@ public class Tester2 implements Runnable {
       }
       CApi.sqlite3_finalize(stmt);
       affirm(0 == stmt.getNativePointer());
-      if(CApi.SQLITE_DONE!=rc){
+      if(Sqlite.DONE!=rc){
         break;
       }
     }
@@ -181,7 +184,7 @@ public class Tester2 implements Runnable {
 
   @SingleThreadOnly /* because it's thread-agnostic */
   private void test1(){
-    affirm(CApi.sqlite3_libversion_number() == CApi.SQLITE_VERSION_NUMBER);
+    affirm(Sqlite.libVersionNumber() == CApi.SQLITE_VERSION_NUMBER);
   }
 
   /* Copy/paste/rename this to add new tests. */
@@ -815,6 +818,55 @@ public class Tester2 implements Runnable {
     int rc = execSql(db, false, "BEGIN; SELECT 1; ROLLBACK;");
     affirm( 0 == rc );
     affirm( 3 == counter.value );
+    db.close();
+  }
+
+  private void testUpdateHook(){
+    final Sqlite db = openDb();
+    final ValueHolder<Integer> counter = new ValueHolder<>(0);
+    final ValueHolder<Integer> expectedOp = new ValueHolder<>(0);
+    final Sqlite.UpdateHook theHook = new Sqlite.UpdateHook(){
+        @Override
+        public void call(int opId, String dbName, String tableName, long rowId){
+          ++counter.value;
+          if( 0!=expectedOp.value ){
+            affirm( expectedOp.value == opId );
+          }
+        }
+      };
+    Sqlite.UpdateHook oldHook = db.setUpdateHook(theHook);
+    affirm( null == oldHook );
+    expectedOp.value = Sqlite.INSERT;
+    execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
+    affirm( 3 == counter.value );
+    expectedOp.value = Sqlite.UPDATE;
+    execSql(db, "update t set a='d' where a='c';");
+    affirm( 4 == counter.value );
+    oldHook = db.setUpdateHook(theHook);
+    affirm( theHook == oldHook );
+    expectedOp.value = Sqlite.DELETE;
+    execSql(db, "DELETE FROM t where a='d'");
+    affirm( 5 == counter.value );
+    oldHook = db.setUpdateHook(null);
+    affirm( theHook == oldHook );
+    execSql(db, "update t set a='e' where a='b';");
+    affirm( 5 == counter.value );
+    oldHook = db.setUpdateHook(null);
+    affirm( null == oldHook );
+
+    final Sqlite.UpdateHook newHook = new Sqlite.UpdateHook(){
+        @Override public void call(int opId, String dbName, String tableName, long rowId){
+        }
+      };
+    oldHook = db.setUpdateHook(newHook);
+    affirm( null == oldHook );
+    execSql(db, "update t set a='h' where a='a'");
+    affirm( 5 == counter.value );
+    oldHook = db.setUpdateHook(theHook);
+    affirm( newHook == oldHook );
+    expectedOp.value = Sqlite.UPDATE;
+    execSql(db, "update t set a='i' where a='h'");
+    affirm( 6 == counter.value );
     db.close();
   }
 
