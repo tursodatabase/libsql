@@ -912,6 +912,32 @@ public class Tester2 implements Runnable {
     db.close();
   }
 
+  private void testBlobOpen(){
+    final Sqlite db = openDb();
+
+    execSql(db, "CREATE TABLE T(a BLOB);"
+            +"INSERT INTO t(rowid,a) VALUES(1, 'def'),(2, 'XYZ');"
+    );
+    Sqlite.Blob b = db.blobOpen("main", "t", "a",
+                                db.lastInsertRowId(), true);
+    affirm( 3==b.bytes() );
+    b.write(new byte[] {100, 101, 102 /*"DEF"*/}, 0);
+    b.close();
+    Sqlite.Stmt stmt = db.prepare("SELECT length(a), a FROM t ORDER BY a");
+    affirm( stmt.step() );
+    affirm( 3 == stmt.columnInt(0) );
+    affirm( "def".equals(stmt.columnText16(1)) );
+    stmt.finalizeStmt();
+
+    b = db.blobOpen("main", "t", "a", db.lastInsertRowId(), false);
+    b.reopen(2);
+    final byte[] tgt = new byte[3];
+    b.read( tgt, 0 );
+    affirm( 100==tgt[0] && 101==tgt[1] && 102==tgt[2], "DEF" );
+    b.close();
+    db.close();
+  }
+
   private void runTests(boolean fromThread) throws Exception {
     List<java.lang.reflect.Method> mlist = testMethods;
     affirm( null!=mlist );

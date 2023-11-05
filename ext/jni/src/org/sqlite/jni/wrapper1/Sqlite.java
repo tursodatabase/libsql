@@ -17,6 +17,7 @@ import org.sqlite.jni.capi.CApi;
 import org.sqlite.jni.capi.sqlite3;
 import org.sqlite.jni.capi.sqlite3_stmt;
 import org.sqlite.jni.capi.sqlite3_backup;
+import org.sqlite.jni.capi.sqlite3_blob;
 import org.sqlite.jni.capi.OutputPointer;
 
 /**
@@ -473,7 +474,7 @@ public final class Sqlite implements AutoCloseable  {
     if( 0!=rc ){
       if( CApi.SQLITE_NOMEM==rc ){
         throw new OutOfMemoryError();
-      }else if( null==db || 0==CApi.sqlite3_errcode(db)){
+      }else if( null==db || 0==CApi.sqlite3_errcode(db) ){
         throw new SqliteException(rc);
       }else{
         throw new SqliteException(db);
@@ -1628,6 +1629,78 @@ public final class Sqlite implements AutoCloseable  {
         };
     }
     checkRc( CApi.sqlite3_set_authorizer( thisDb(), ac ) );
+  }
+
+  /**
+     Object type for use with blobOpen()
+  */
+  public final class Blob implements AutoCloseable {
+    private Sqlite db;
+    private sqlite3_blob b;
+    Blob(Sqlite db, sqlite3_blob b){
+      this.db = db;
+      this.b = b;
+    }
+
+    /**
+       Analog to sqlite3_blob_close().
+    */
+    @Override public void close(){
+      if( null!=b ){
+        CApi.sqlite3_blob_close(b);
+        b = null;
+        db = null;
+      }
+    }
+
+    /**
+       Analog to sqlite3_blob_reopen() but throws on error.
+    */
+    public void reopen(long newRowId){
+      db.checkRc( CApi.sqlite3_blob_reopen(b, newRowId) );
+    }
+
+    /**
+       Analog to sqlite3_blob_write() but throws on error.
+    */
+    public void write( byte[] bytes, int atOffset ){
+      db.checkRc( CApi.sqlite3_blob_write(b, bytes, atOffset) );
+    }
+
+    /**
+       Analog to sqlite3_blob_read() but throws on error.
+    */
+    public void read( byte[] dest, int atOffset ){
+      db.checkRc( CApi.sqlite3_blob_read(b, dest, atOffset) );
+    }
+
+    /**
+       Analog to sqlite3_blob_bytes().
+    */
+    public int bytes(){
+      return CApi.sqlite3_blob_bytes(b);
+    }
+  }
+
+  /**
+     Analog to sqlite3_blob_open(). Returns a Blob object for the
+     given database, table, column, and rowid. The blob is opened for
+     read-write mode if writeable is true, else it is read-only.
+
+     The returned object must eventually be freed, before this
+     database is closed, by either arranging for it to be auto-closed
+     or calling its close() method.
+
+     Throws on error.
+  */
+  public Blob blobOpen(String dbName, String tableName, String columnName,
+                       long iRow, boolean writeable){
+    final OutputPointer.sqlite3_blob out = new OutputPointer.sqlite3_blob();
+    checkRc(
+      CApi.sqlite3_blob_open(thisDb(), dbName, tableName, columnName,
+                             iRow, writeable ? 1 : 0, out)
+    );
+    return new Blob(this, out.take());
   }
 
 }

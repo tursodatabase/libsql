@@ -1633,7 +1633,7 @@ public class Tester1 implements Runnable {
     sqlite3_finalize(stmt);
 
     b = sqlite3_blob_open(db, "main", "t", "a",
-                          sqlite3_last_insert_rowid(db), 1);
+                          sqlite3_last_insert_rowid(db), 0);
     affirm( null!=b );
     rc = sqlite3_blob_reopen(b, 2);
     affirm( 0==rc );
