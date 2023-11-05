@@ -1358,6 +1358,9 @@ public class Tester1 implements Runnable {
     authRc.value = SQLITE_DENY;
     int rc = execSql(db, false, "UPDATE t SET a=2");
     affirm( SQLITE_AUTH==rc );
+    sqlite3_set_authorizer(db, null);
+    rc = execSql(db, false, "UPDATE t SET a=2");
+    affirm( 0==rc );
     // TODO: expand these tests considerably
     sqlite3_close(db);
   }

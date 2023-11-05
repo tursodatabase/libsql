@@ -888,6 +888,30 @@ public class Tester2 implements Runnable {
     db.close();
   }
 
+  private void testAuthorizer(){
+    final Sqlite db = openDb();
+    final ValueHolder<Integer> counter = new ValueHolder<>(0);
+    final ValueHolder<Integer> authRc = new ValueHolder<>(0);
+    final Sqlite.Authorizer auth = new Sqlite.Authorizer(){
+        public int call(int op, String s0, String s1, String s2, String s3){
+          ++counter.value;
+          //outln("xAuth(): "+s0+" "+s1+" "+s2+" "+s3);
+          return authRc.value;
+        }
+      };
+    execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
+    db.setAuthorizer(auth);
+    execSql(db, "UPDATE t SET a=1");
+    affirm( 1 == counter.value );
+    authRc.value = Sqlite.DENY;
+    int rc = execSql(db, false, "UPDATE t SET a=2");
+    affirm( Sqlite.AUTH==rc );
+    db.setAuthorizer(null);
+    rc = execSql(db, false, "UPDATE t SET a=2");
+    affirm( 0==rc );
+    db.close();
+  }
+
   private void runTests(boolean fromThread) throws Exception {
     List<java.lang.reflect.Method> mlist = testMethods;
     affirm( null!=mlist );

@@ -29,6 +29,111 @@ import org.sqlite.jni.capi.OutputPointer;
 public final class Sqlite implements AutoCloseable  {
   private sqlite3 db;
 
+  public static final int OK = CApi.SQLITE_OK;
+  public static final int ERROR = CApi.SQLITE_ERROR;
+  public static final int INTERNAL = CApi.SQLITE_INTERNAL;
+  public static final int PERM = CApi.SQLITE_PERM;
+  public static final int ABORT = CApi.SQLITE_ABORT;
+  public static final int BUSY = CApi.SQLITE_BUSY;
+  public static final int LOCKED = CApi.SQLITE_LOCKED;
+  public static final int NOMEM = CApi.SQLITE_NOMEM;
+  public static final int READONLY = CApi.SQLITE_READONLY;
+  public static final int INTERRUPT = CApi.SQLITE_INTERRUPT;
+  public static final int IOERR = CApi.SQLITE_IOERR;
+  public static final int CORRUPT = CApi.SQLITE_CORRUPT;
+  public static final int NOTFOUND = CApi.SQLITE_NOTFOUND;
+  public static final int FULL = CApi.SQLITE_FULL;
+  public static final int CANTOPEN = CApi.SQLITE_CANTOPEN;
+  public static final int PROTOCOL = CApi.SQLITE_PROTOCOL;
+  public static final int EMPTY = CApi.SQLITE_EMPTY;
+  public static final int SCHEMA = CApi.SQLITE_SCHEMA;
+  public static final int TOOBIG = CApi.SQLITE_TOOBIG;
+  public static final int CONSTRAINT = CApi. SQLITE_CONSTRAINT;
+  public static final int MISMATCH = CApi.SQLITE_MISMATCH;
+  public static final int MISUSE = CApi.SQLITE_MISUSE;
+  public static final int NOLFS = CApi.SQLITE_NOLFS;
+  public static final int AUTH = CApi.SQLITE_AUTH;
+  public static final int FORMAT = CApi.SQLITE_FORMAT;
+  public static final int RANGE = CApi.SQLITE_RANGE;
+  public static final int NOTADB = CApi.SQLITE_NOTADB;
+  public static final int NOTICE = CApi.SQLITE_NOTICE;
+  public static final int WARNING = CApi.SQLITE_WARNING;
+  public static final int ROW = CApi.SQLITE_ROW;
+  public static final int DONE = CApi.SQLITE_DONE;
+  public static final int ERROR_MISSING_COLLSEQ = CApi.SQLITE_ERROR_MISSING_COLLSEQ;
+  public static final int ERROR_RETRY = CApi.SQLITE_ERROR_RETRY;
+  public static final int ERROR_SNAPSHOT = CApi.SQLITE_ERROR_SNAPSHOT;
+  public static final int IOERR_READ = CApi.SQLITE_IOERR_READ;
+  public static final int IOERR_SHORT_READ = CApi.SQLITE_IOERR_SHORT_READ;
+  public static final int IOERR_WRITE = CApi.SQLITE_IOERR_WRITE;
+  public static final int IOERR_FSYNC = CApi.SQLITE_IOERR_FSYNC;
+  public static final int IOERR_DIR_FSYNC = CApi.SQLITE_IOERR_DIR_FSYNC;
+  public static final int IOERR_TRUNCATE = CApi.SQLITE_IOERR_TRUNCATE;
+  public static final int IOERR_FSTAT = CApi.SQLITE_IOERR_FSTAT;
+  public static final int IOERR_UNLOCK = CApi.SQLITE_IOERR_UNLOCK;
+  public static final int IOERR_RDLOCK = CApi.SQLITE_IOERR_RDLOCK;
+  public static final int IOERR_DELETE = CApi.SQLITE_IOERR_DELETE;
+  public static final int IOERR_BLOCKED = CApi.SQLITE_IOERR_BLOCKED;
+  public static final int IOERR_NOMEM = CApi.SQLITE_IOERR_NOMEM;
+  public static final int IOERR_ACCESS = CApi.SQLITE_IOERR_ACCESS;
+  public static final int IOERR_CHECKRESERVEDLOCK = CApi.SQLITE_IOERR_CHECKRESERVEDLOCK;
+  public static final int IOERR_LOCK = CApi.SQLITE_IOERR_LOCK;
+  public static final int IOERR_CLOSE = CApi.SQLITE_IOERR_CLOSE;
+  public static final int IOERR_DIR_CLOSE = CApi.SQLITE_IOERR_DIR_CLOSE;
+  public static final int IOERR_SHMOPEN = CApi.SQLITE_IOERR_SHMOPEN;
+  public static final int IOERR_SHMSIZE = CApi.SQLITE_IOERR_SHMSIZE;
+  public static final int IOERR_SHMLOCK = CApi.SQLITE_IOERR_SHMLOCK;
+  public static final int IOERR_SHMMAP = CApi.SQLITE_IOERR_SHMMAP;
+  public static final int IOERR_SEEK = CApi.SQLITE_IOERR_SEEK;
+  public static final int IOERR_DELETE_NOENT = CApi.SQLITE_IOERR_DELETE_NOENT;
+  public static final int IOERR_MMAP = CApi.SQLITE_IOERR_MMAP;
+  public static final int IOERR_GETTEMPPATH = CApi.SQLITE_IOERR_GETTEMPPATH;
+  public static final int IOERR_CONVPATH = CApi.SQLITE_IOERR_CONVPATH;
+  public static final int IOERR_VNODE = CApi.SQLITE_IOERR_VNODE;
+  public static final int IOERR_AUTH = CApi.SQLITE_IOERR_AUTH;
+  public static final int IOERR_BEGIN_ATOMIC = CApi.SQLITE_IOERR_BEGIN_ATOMIC;
+  public static final int IOERR_COMMIT_ATOMIC = CApi.SQLITE_IOERR_COMMIT_ATOMIC;
+  public static final int IOERR_ROLLBACK_ATOMIC = CApi.SQLITE_IOERR_ROLLBACK_ATOMIC;
+  public static final int IOERR_DATA = CApi.SQLITE_IOERR_DATA;
+  public static final int IOERR_CORRUPTFS = CApi.SQLITE_IOERR_CORRUPTFS;
+  public static final int LOCKED_SHAREDCACHE = CApi.SQLITE_LOCKED_SHAREDCACHE;
+  public static final int LOCKED_VTAB = CApi.SQLITE_LOCKED_VTAB;
+  public static final int BUSY_RECOVERY = CApi.SQLITE_BUSY_RECOVERY;
+  public static final int BUSY_SNAPSHOT = CApi.SQLITE_BUSY_SNAPSHOT;
+  public static final int BUSY_TIMEOUT = CApi.SQLITE_BUSY_TIMEOUT;
+  public static final int CANTOPEN_NOTEMPDIR = CApi.SQLITE_CANTOPEN_NOTEMPDIR;
+  public static final int CANTOPEN_ISDIR = CApi.SQLITE_CANTOPEN_ISDIR;
+  public static final int CANTOPEN_FULLPATH = CApi.SQLITE_CANTOPEN_FULLPATH;
+  public static final int CANTOPEN_CONVPATH = CApi.SQLITE_CANTOPEN_CONVPATH;
+  public static final int CANTOPEN_SYMLINK = CApi.SQLITE_CANTOPEN_SYMLINK;
+  public static final int CORRUPT_VTAB = CApi.SQLITE_CORRUPT_VTAB;
+  public static final int CORRUPT_SEQUENCE = CApi.SQLITE_CORRUPT_SEQUENCE;
+  public static final int CORRUPT_INDEX = CApi.SQLITE_CORRUPT_INDEX;
+  public static final int READONLY_RECOVERY = CApi.SQLITE_READONLY_RECOVERY;
+  public static final int READONLY_CANTLOCK = CApi.SQLITE_READONLY_CANTLOCK;
+  public static final int READONLY_ROLLBACK = CApi.SQLITE_READONLY_ROLLBACK;
+  public static final int READONLY_DBMOVED = CApi.SQLITE_READONLY_DBMOVED;
+  public static final int READONLY_CANTINIT = CApi.SQLITE_READONLY_CANTINIT;
+  public static final int READONLY_DIRECTORY = CApi.SQLITE_READONLY_DIRECTORY;
+  public static final int ABORT_ROLLBACK = CApi.SQLITE_ABORT_ROLLBACK;
+  public static final int CONSTRAINT_CHECK = CApi.SQLITE_CONSTRAINT_CHECK;
+  public static final int CONSTRAINT_COMMITHOOK = CApi.SQLITE_CONSTRAINT_COMMITHOOK;
+  public static final int CONSTRAINT_FOREIGNKEY = CApi.SQLITE_CONSTRAINT_FOREIGNKEY;
+  public static final int CONSTRAINT_FUNCTION = CApi.SQLITE_CONSTRAINT_FUNCTION;
+  public static final int CONSTRAINT_NOTNULL = CApi.SQLITE_CONSTRAINT_NOTNULL;
+  public static final int CONSTRAINT_PRIMARYKEY = CApi.SQLITE_CONSTRAINT_PRIMARYKEY;
+  public static final int CONSTRAINT_TRIGGER = CApi.SQLITE_CONSTRAINT_TRIGGER;
+  public static final int CONSTRAINT_UNIQUE = CApi.SQLITE_CONSTRAINT_UNIQUE;
+  public static final int CONSTRAINT_VTAB = CApi.SQLITE_CONSTRAINT_VTAB;
+  public static final int CONSTRAINT_ROWID = CApi.SQLITE_CONSTRAINT_ROWID;
+  public static final int CONSTRAINT_PINNED = CApi.SQLITE_CONSTRAINT_PINNED;
+  public static final int CONSTRAINT_DATATYPE = CApi.SQLITE_CONSTRAINT_DATATYPE;
+  public static final int NOTICE_RECOVER_WAL = CApi.SQLITE_NOTICE_RECOVER_WAL;
+  public static final int NOTICE_RECOVER_ROLLBACK = CApi.SQLITE_NOTICE_RECOVER_ROLLBACK;
+  public static final int WARNING_AUTOINDEX = CApi.SQLITE_WARNING_AUTOINDEX;
+  public static final int AUTH_USER = CApi.SQLITE_AUTH_USER;
+  public static final int OK_LOAD_PERMANENTLY = CApi.SQLITE_OK_LOAD_PERMANENTLY;
+
   public static final int OPEN_READWRITE = CApi.SQLITE_OPEN_READWRITE;
   public static final int OPEN_CREATE = CApi.SQLITE_OPEN_CREATE;
   public static final int OPEN_EXRESCODE = CApi.SQLITE_OPEN_EXRESCODE;
@@ -107,10 +212,6 @@ public final class Sqlite implements AutoCloseable  {
   public static final int UTF16BE = CApi.SQLITE_UTF16BE;
   /* We elide the UTF16_ALIGNED from this interface because it
      is irrelevant for the Java interface. */
-
-  public static final int DONE = CApi.SQLITE_DONE;
-  public static final int BUSY = CApi.SQLITE_BUSY;
-  public static final int LOCKED = CApi.SQLITE_LOCKED;
 
   public static final int DENY = CApi.SQLITE_DENY;
   public static final int IGNORE = CApi.SQLITE_IGNORE;
@@ -1482,4 +1583,34 @@ public final class Sqlite implements AutoCloseable  {
     }
     CApi.sqlite3_progress_handler( thisDb(), n, phc );
   }
+
+
+  /**
+     Callback for use with setAuthorizer().
+  */
+  public interface Authorizer {
+    /**
+       Must function as described for the C-level
+       sqlite3_set_authorizer() callback. If it throws, the error is
+       converted to a db-level error and the exception is suppressed.
+    */
+    int call(int opId, String s1, String s2, String s3, String s4);
+  }
+
+  /**
+     Analog to sqlite3_set_authorizer(), this sets the current
+     authorizer callback, or clears if it passed null.
+  */
+  public void setAuthorizer( Authorizer a ) {
+    org.sqlite.jni.capi.AuthorizerCallback ac = null;
+    if( null!=a ){
+      ac = new org.sqlite.jni.capi.AuthorizerCallback(){
+          @Override public int call(int opId, String s1, String s2, String s3, String s4){
+            return a.call(opId, s1, s2, s3, s4);
+          }
+        };
+    }
+    checkRc( CApi.sqlite3_set_authorizer( thisDb(), ac ) );
+  }
+
 }
