@@ -60,6 +60,10 @@ typedef enum ConsoleStdConsStreams {
 **
 ** On some platforms, stream or console mode alteration (aka
 ** "Setup") may be made which is undone by consoleRestore().
+**
+** Applications which run an inferior (child) process which
+** inherits the same I/O streams may call this function after
+** such a process exits to guard against console mode changes.
 */
 INT_LINKAGE ConsoleStdConsStreams
 consoleClassifySetup( FILE *pfIn, FILE *pfOut, FILE *pfErr );
@@ -70,7 +74,13 @@ consoleClassifySetup( FILE *pfIn, FILE *pfOut, FILE *pfErr );
 ** This should be called after consoleClassifySetup() and
 ** before the process terminates normally. It is suitable
 ** for use with the atexit() C library procedure. After
-** this call, no I/O should be done with the console.
+** this call, no I/O should be done with the console
+** until consoleClassifySetup(...) is called again.
+**
+** Applications which run an inferior (child) process that
+** inherits the same I/O streams might call this procedure
+** before so that said process will have a console setup
+** however users have configured it or come to expect.
 */
 INT_LINKAGE void SQLITE_CDECL consoleRestore( void );
 
@@ -87,9 +97,10 @@ INT_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...);
 ** Collect input like fgets(...) with special provisions for input
 ** from the console on platforms that require same. Defers to the
 ** C library fgets() when input is not from the console. Newline
-** translation may be done as set by set{Binary,Text}Mode().
+** translation may be done as set by set{Binary,Text}Mode(). As a
+** convenience, pfIn==NULL is treated as stdin.
 */
-INT_LINKAGE int fgetsUtf8(char *buf, int ncMax, FILE *pfIn);
+INT_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn);
 
 /*
 ** Set given stream for binary mode, where newline translation is
@@ -100,8 +111,9 @@ INT_LINKAGE int fgetsUtf8(char *buf, int ncMax, FILE *pfIn);
 ** An additional side-effect is that if the stream is one passed
 ** to consoleClassifySetup() as an output, it is flushed first.
 **
-** Note that binary/text mode has no effect on console output
-** translation. Newline chars start a new line on all platforms.
+** Note that binary/text mode has no effect on console I/O
+** translation. On all platforms, newline to the console starts
+** a new line and CR,LF chars from the console become a newline.
 */
 INT_LINKAGE void setBinaryMode(FILE *, short bFlush);
 INT_LINKAGE void setTextMode(FILE *, short bFlush);
