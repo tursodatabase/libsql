@@ -1253,4 +1253,105 @@ public final class Sqlite implements AutoCloseable  {
     }
     checkRc( CApi.sqlite3_busy_handler(thisDb(), bhc) );
   }
+
+  public interface CommitHook {
+    /**
+       Must behave as documented for the C-level sqlite3_commit_hook()
+       callback. If it throws, the exception is translated into
+       a db-level error.
+    */
+    int call();
+  }
+
+  /**
+     A level of indirection to permit setCommitHook() to have similar
+     semantics as the C API, returning the previous hook. The caveat
+     is that if the low-level API is used to install a hook, it will
+     have a different hook type than Sqlite.CommitHook so
+     setCommitHook() will return null instead of that object.
+  */
+  private static class CommitHookProxy
+    implements org.sqlite.jni.capi.CommitHookCallback {
+    final CommitHook commitHook;
+    CommitHookProxy(CommitHook ch){
+      this.commitHook = ch;
+    }
+    @Override public int call(){
+      return commitHook.call();
+    }
+  }
+
+  /**
+     Analog to sqlite3_commit_hook(). Returns the previous hook, if
+     any (else null). Throws if this db is closed.
+
+     Minor caveat: if a commit hook is set on this object's underlying
+     db handle using the lower-level SQLite API, this function may
+     return null when replacing it, despite there being a hook,
+     because it will have a different callback type. So long as the
+     handle is only manipulated via the high-level API, this caveat
+     does not apply.
+  */
+  CommitHook setCommitHook( CommitHook c ){
+    CommitHookProxy chp = null;
+    if( null!=c ){
+      chp = new CommitHookProxy(c);
+    }
+    final org.sqlite.jni.capi.CommitHookCallback rv =
+      CApi.sqlite3_commit_hook(thisDb(), chp);
+    return (rv instanceof CommitHookProxy)
+      ? ((CommitHookProxy)rv).commitHook
+      : null;
+  }
+
+
+  public interface RollbackHook {
+    /**
+       Must behave as documented for the C-level sqlite3_rollback_hook()
+       callback. If it throws, the exception is translated into
+       a db-level error.
+    */
+    void call();
+  }
+
+  /**
+     A level of indirection to permit setRollbackHook() to have similar
+     semantics as the C API, returning the previous hook. The caveat
+     is that if the low-level API is used to install a hook, it will
+     have a different hook type than Sqlite.RollbackHook so
+     setRollbackHook() will return null instead of that object.
+  */
+  private static class RollbackHookProxy
+    implements org.sqlite.jni.capi.RollbackHookCallback {
+    final RollbackHook rollbackHook;
+    RollbackHookProxy(RollbackHook ch){
+      this.rollbackHook = ch;
+    }
+    @Override public void call(){rollbackHook.call();}
+  }
+
+  /**
+     Analog to sqlite3_rollback_hook(). Returns the previous hook, if
+     any (else null). Throws if this db is closed.
+
+     Minor caveat: if a rollback hook is set on this object's underlying
+     db handle using the lower-level SQLite API, this function may
+     return null when replacing it, despite there being a hook,
+     because it will have a different callback type. So long as the
+     handle is only manipulated via the high-level API, this caveat
+     does not apply.
+  */
+  RollbackHook setRollbackHook( RollbackHook c ){
+    RollbackHookProxy chp = null;
+    if( null!=c ){
+      chp = new RollbackHookProxy(c);
+    }
+    final org.sqlite.jni.capi.RollbackHookCallback rv =
+      CApi.sqlite3_rollback_hook(thisDb(), chp);
+    return (rv instanceof RollbackHookProxy)
+      ? ((RollbackHookProxy)rv).rollbackHook
+      : null;
+  }
+
+
 }

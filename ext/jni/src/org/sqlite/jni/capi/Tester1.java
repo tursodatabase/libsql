@@ -1096,6 +1096,7 @@ public class Tester1 implements Runnable {
 
   private void testCommitHook(){
     final sqlite3 db = createNewDb();
+    sqlite3_extended_result_codes(db, true);
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
     final ValueHolder<Integer> hookResult = new ValueHolder<>(0);
     final CommitHookCallback theHook = new CommitHookCallback(){
@@ -1138,7 +1139,7 @@ public class Tester1 implements Runnable {
     affirm( 5 == counter.value );
     hookResult.value = SQLITE_ERROR;
     int rc = execSql(db, false, "BEGIN; update t set a='j' where a='i'; COMMIT;");
-    affirm( SQLITE_CONSTRAINT == rc );
+    affirm( SQLITE_CONSTRAINT_COMMITHOOK == rc );
     affirm( 6 == counter.value );
     sqlite3_close_v2(db);
   }

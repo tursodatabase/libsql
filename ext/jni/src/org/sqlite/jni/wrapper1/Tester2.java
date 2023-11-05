@@ -737,6 +737,87 @@ public class Tester2 implements Runnable {
     }
   }
 
+  private void testCommitHook(){
+    final Sqlite db = openDb();
+    final ValueHolder<Integer> counter = new ValueHolder<>(0);
+    final ValueHolder<Integer> hookResult = new ValueHolder<>(0);
+    final Sqlite.CommitHook theHook = new Sqlite.CommitHook(){
+        @Override public int call(){
+          ++counter.value;
+          return hookResult.value;
+        }
+      };
+    Sqlite.CommitHook oldHook = db.setCommitHook(theHook);
+    affirm( null == oldHook );
+    execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
+    affirm( 2 == counter.value );
+    execSql(db, "BEGIN; SELECT 1; SELECT 2; COMMIT;");
+    affirm( 2 == counter.value /* NOT invoked if no changes are made */ );
+    execSql(db, "BEGIN; update t set a='d' where a='c'; COMMIT;");
+    affirm( 3 == counter.value );
+    oldHook = db.setCommitHook(theHook);
+    affirm( theHook == oldHook );
+    execSql(db, "BEGIN; update t set a='e' where a='d'; COMMIT;");
+    affirm( 4 == counter.value );
+    oldHook = db.setCommitHook(null);
+    affirm( theHook == oldHook );
+    execSql(db, "BEGIN; update t set a='f' where a='e'; COMMIT;");
+    affirm( 4 == counter.value );
+    oldHook = db.setCommitHook(null);
+    affirm( null == oldHook );
+    execSql(db, "BEGIN; update t set a='g' where a='f'; COMMIT;");
+    affirm( 4 == counter.value );
+
+    final Sqlite.CommitHook newHook = new Sqlite.CommitHook(){
+        @Override public int call(){return 0;}
+      };
+    oldHook = db.setCommitHook(newHook);
+    affirm( null == oldHook );
+    execSql(db, "BEGIN; update t set a='h' where a='g'; COMMIT;");
+    affirm( 4 == counter.value );
+    oldHook = db.setCommitHook(theHook);
+    affirm( newHook == oldHook );
+    execSql(db, "BEGIN; update t set a='i' where a='h'; COMMIT;");
+    affirm( 5 == counter.value );
+    hookResult.value = CApi.SQLITE_ERROR;
+    int rc = execSql(db, false, "BEGIN; update t set a='j' where a='i'; COMMIT;");
+    affirm( CApi.SQLITE_CONSTRAINT_COMMITHOOK == rc );
+    affirm( 6 == counter.value );
+    db.close();
+  }
+
+  private void testRollbackHook(){
+    final Sqlite db = openDb();
+    final ValueHolder<Integer> counter = new ValueHolder<>(0);
+    final Sqlite.RollbackHook theHook = new Sqlite.RollbackHook(){
+        @Override public void call(){
+          ++counter.value;
+        }
+      };
+    Sqlite.RollbackHook oldHook = db.setRollbackHook(theHook);
+    affirm( null == oldHook );
+    execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
+    affirm( 0 == counter.value );
+    execSql(db, false, "BEGIN; SELECT 1; SELECT 2; ROLLBACK;");
+    affirm( 1 == counter.value /* contra to commit hook, is invoked if no changes are made */ );
+
+    final Sqlite.RollbackHook newHook = new Sqlite.RollbackHook(){
+        @Override public void call(){}
+      };
+    oldHook = db.setRollbackHook(newHook);
+    affirm( theHook == oldHook );
+    execSql(db, false, "BEGIN; SELECT 1; ROLLBACK;");
+    affirm( 1 == counter.value );
+    oldHook = db.setRollbackHook(theHook);
+    affirm( newHook == oldHook );
+    execSql(db, false, "BEGIN; SELECT 1; ROLLBACK;");
+    affirm( 2 == counter.value );
+    int rc = execSql(db, false, "BEGIN; SELECT 1; ROLLBACK;");
+    affirm( 0 == rc );
+    affirm( 3 == counter.value );
+    db.close();
+  }
+
   private void runTests(boolean fromThread) throws Exception {
     List<java.lang.reflect.Method> mlist = testMethods;
     affirm( null!=mlist );

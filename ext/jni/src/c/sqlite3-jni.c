@@ -2942,7 +2942,10 @@ static int s3jni_commit_rollback_hook_impl(int isCommit, S3JniDb * const ps){
       ? (int)(*env)->CallIntMethod(env, hook.jObj, hook.midCallback)
       : (int)((*env)->CallVoidMethod(env, hook.jObj, hook.midCallback), 0);
     S3JniIfThrew{
-      rc = s3jni_db_exception(ps->pDb, SQLITE_ERROR, "hook callback threw");
+      rc = s3jni_db_exception(ps->pDb, SQLITE_ERROR,
+                              isCommit
+                              ? "Commit hook callback threw"
+                              : "Rollback hook callback threw");
     }
     S3JniHook_localundup(hook);
   }
