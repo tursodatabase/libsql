@@ -133,7 +133,6 @@ consoleClassifySetup( FILE *pfIn, FILE *pfOut, FILE *pfErr ){
         consoleInfo.outputIx |= ix;
       }
       SetConsoleMode(ppst->hx, cm);
-      fprintf(stderr, "consMode[%d]: %02x -> %02x\n", ix, ppst->consMode, cm);
 #endif
       rv |= (CSCS_InConsole<<ix);
     }
@@ -270,7 +269,6 @@ INT_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
         bRC &= ReadConsoleW(consoleInfo.pst[0].hx, wcBuf+nbr, 1, &nbrx, 0);
         if( bRC ) nbr += nbrx;
       }
-      hd(wcBuf,nbr);
       if( !bRC || (noc==0 && nbr==0) ) return 0;
       if( nbr > 0 ){
         int nmb = WideCharToMultiByte(CP_UTF8, 0, wcBuf,nbr,0,0,0,0);
@@ -314,39 +312,3 @@ INT_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
   }
 #endif
 }
-
-#ifdef TEST_CIO
-// cl -Zi -I. -DWIN32 -DTEST_CIO sqlite3.c src/console_io.c -Fecio.exe
-// gcc -I. -DWIN32 -DTEST_CIO sqlite3.c src/console_io.c -o cio.exe
-const char *prompts[] = { "main", "cont" };
-Prompts goofy = { 2, prompts };
-
-int main(int na, char *av[]){
-  ConsoleStdConsStreams cc = consoleClassifySetup(stdin, stdout, stderr);
-  const char *zt = "Math: ±×÷∂∆∙√∞∩∫≈≠≡≤≥\n"
-    "Hiragana: 亜唖娃阿哀愛挨姶逢葵茜穐悪握渥旭葦芦鯵梓圧斡扱"
-    "宛姐虻飴絢綾鮎或粟袷安庵按暗案闇鞍杏\n"
-    "Simplified Chinese: 餐参蚕残惭惨灿掺孱骖璨粲黪\n"
-    "Geometric Shapes: ■□▪▫▲△▼▽◆◇◊○◌◎●◢◣◤◥◦\n"
-    "Boxes single: ─━│┃┄┅┆┇┈┉┊┋ ┌┍┎┏┐┑┒┓└┕┖┗┘┙┚┛├┝┞┟┠┡┢┣┤┥┦┧┨┩┪┫┬┭┮┯┰┱┲┳"
-    "┴┵┶┷┸┹┺┻┼┽┾┿╀╁╂╃╄╅╆╇╈╉╊╋\n"
-    "Boxes double: ═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬\n"
-    "Rounded corners and diagonals: ╭╮╯╰╱╲╳\n"
-    ;
-  char inBuf[150];
-  setTextMode(stdout, 1);
-  setTextMode(stderr, 1);
-  fprintfUtf8(stderr, "Console streams: %d, CP_UTF8 valid: %d\n", cc,
-              IsValidCodePage(CP_UTF8));
-  fprintfUtf8(stdout, "%s=%d\n", "∑(1st 7 primes)", 42);
-  fprintfUtf8(stderr, "%s\n", "∫ (1/x) dx ≡ ln(x)");
-  fprintfUtf8(stdout, "%s", zt);
-  fprintfUtf8(stderr, "Entering input/echo loop."
-              " Type or copy/paste, or EOF to exit.\n");
-  while( fprintfUtf8(stdout,"? ") && fgetsUtf8(inBuf, sizeof(inBuf), stdin) ){
-    fprintfUtf8(stdout, "! %s", inBuf);
-  }
-  consoleRestore();
-  return 0;
-}
-#endif /* defined(TEST_CIO) */

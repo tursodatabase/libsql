@@ -25,7 +25,7 @@
 */
 
 #ifndef INT_LINKAGE
-# define INT_LINKAGE /* Linkage will be external to translation unit. */
+# define INT_LINKAGE extern /* Linkage external to translation unit. */
 # include <stdio.h>
 # include <stdlib.h>
 # include <limits.h>
@@ -36,6 +36,10 @@
 #  include <io.h>
 #  include <fcntl.h>
 # endif
+#endif
+
+#ifndef SQLITE3_H
+# include "sqlite3.h"
 #endif
 
 /* Define enum for use with following function. */

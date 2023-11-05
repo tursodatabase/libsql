@@ -1,5 +1,5 @@
-C Input\sworking.\sNo\sline-editor\sprovisions\syet.\s(WIP,\sbut\ssuitable\sfor\stesting.)
-D 2023-11-05T19:42:00.134
+C Make\sit\sbuildable.\sPull\stest\sprogram\sfrom\stestee.\sZap\sstray\sfprintf().
+D 2023-11-05T23:55:41.214
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -669,8 +669,8 @@ F src/btreeInt.h ef12a72b708677e48d6bc8dcd66fed25434740568b89e2cfa368093cfc5b9d1
 F src/build.c 189e4517d67f09f0a3e0d8e1faa6e2ef0c2e95f6ac82e33c912cb7efa2a359cc
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/console_io.c a04f62d1930d32f0bda26b546e9b3d6455e7caaee4ea7624be4b1ef7ea2329b7 x
-F src/console_io.h 49680984d2a121697ccb2620f9e8465393d61c3edc3d5720c77dfa0a1f4a7389
+F src/console_io.c 5ff9be9911d73bdf89d33b57db282e1777d2fc906c3e1c573d2e90adfb85393b x
+F src/console_io.h 88b5376f02550b03a0d0f44e71fe6b8dccc025b33f7822780fed9cfe58961fe3
 F src/ctime.c 23331529e654be40ca97d171cbbffe9b3d4c71cc53b78fe5501230675952da8b
 F src/date.c eebc54a00e888d3c56147779e9f361b77d62fd69ff2008c5373946aa1ba1d574
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
@@ -2144,8 +2144,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dfea85be1fb927ea446c9d98bae42ba1197bdab098aa6d95aa512a37d07a1e52
-R 4898fd3a7f002f1e4e422622974a0785
+P e8568b1d925c2118eb08394dd8aa50cfb521240f87668f535ec4a03e67dc9a09
+R 35673b0955f1c798661d8793bf63d1c3
 U larrybr
-Z c9314460b6b28a6cd16041af96151d83
+Z beec5bac02182bb7b20a99bcb3d7ba4e
 # Remove this line to create a well-formed Fossil manifest.
