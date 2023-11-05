@@ -2038,6 +2038,9 @@ impl ToTokens for CreateTableBody {
                 if options.contains(TableOptions::WITHOUT_ROWID) {
                     s.append(TK_WITHOUT, None)?;
                     s.append(TK_ID, Some("ROWID"))?;
+                } else if options.contains(TableOptions::RANDOM_ROWID) {
+                    s.append(TK_ID, Some("RANDOM"))?;
+                    s.append(TK_ID, Some("ROWID"))?;
                 }
                 if options.contains(TableOptions::STRICT) {
                     s.append(TK_ID, Some("STRICT"))?;
@@ -2327,6 +2330,7 @@ bitflags::bitflags! {
         const NONE = 0;
         const WITHOUT_ROWID = 1;
         const STRICT = 2;
+        const RANDOM_ROWID = 3;
     }
 }
 
