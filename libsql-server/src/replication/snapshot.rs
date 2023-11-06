@@ -232,8 +232,7 @@ impl SnapshotMerger {
         tokio::pin!(snapshots);
         while let Some(snapshot_name) = snapshots.next().await.transpose()? {
             let snapshot_path = snapshot_dir_path.join(&snapshot_name);
-            let snapshot =
-                tokio::runtime::Handle::current().block_on(SnapshotFile::open(&snapshot_path))?;
+            let snapshot = SnapshotFile::open(&snapshot_path).await?;
             temp.push((
                 snapshot_name,
                 snapshot.header().frame_count,
