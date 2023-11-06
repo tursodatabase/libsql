@@ -1,4 +1,6 @@
-use crate::{Error, HttpSend, Result, ServerMsg};
+use crate::connection::Connection;
+use crate::proto::Stmt;
+use crate::{Error, HttpSend, IntoParams, Result, Rows, ServerMsg, Statement};
 use futures::future::LocalBoxFuture;
 
 #[derive(Debug, Copy, Clone)]
@@ -26,7 +28,7 @@ impl CloudflareSender {
         .await?;
         let body = response.text().await?;
         if response.status_code() != 200 {
-            Err(Error::Api(body))
+            Err(crate::Error::Api(body))
         } else {
             let msg: ServerMsg = serde_json::from_str(&body)?;
             Ok(msg)
@@ -46,5 +48,29 @@ impl<'a> HttpSend<'a> for CloudflareSender {
 impl From<worker::Error> for Error {
     fn from(value: worker::Error) -> Self {
         Error::Http(value.to_string())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DbConnection(Connection<CloudflareSender>);
+
+impl DbConnection {
+    pub fn open(url: impl Into<String>, token: impl Into<String>) -> Self {
+        DbConnection(Connection::new(url.into(), token.into(), CloudflareSender))
+    }
+
+    pub fn prepare(&self, sql: &str) -> Statement<CloudflareSender> {
+        Statement {
+            client: self.0.clone(),
+            inner: Stmt::new(sql, true),
+        }
+    }
+
+    pub async fn execute<P: IntoParams>(&self, sql: &str, params: P) -> Result<usize> {
+        self.prepare(sql).execute(&params.into_params()?).await
+    }
+
+    pub async fn query<P: IntoParams>(&self, sql: &str, params: P) -> Result<Rows> {
+        self.prepare(sql).query(&params.into_params()?).await
     }
 }

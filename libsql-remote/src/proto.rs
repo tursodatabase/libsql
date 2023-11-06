@@ -3,10 +3,12 @@
 //! Please consult the Hrana specification in the `docs/` directory for more information.
 #![allow(dead_code)]
 
+use base64::engine::general_purpose::STANDARD_NO_PAD;
+use base64::Engine;
 use std::collections::VecDeque;
 use std::fmt;
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 
 #[derive(Serialize, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -119,6 +121,15 @@ pub struct Col {
     pub name: Option<String>,
 }
 
+impl Serialize for Col {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.name.serialize(serializer)
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Value {
@@ -137,6 +148,23 @@ pub enum Value {
         #[serde(with = "bytes_as_base64", rename = "base64")]
         value: Vec<u8>,
     },
+}
+
+impl From<Value> for serde_json::Value {
+    fn from(value: Value) -> Self {
+        match value {
+            Value::Null => serde_json::Value::Null,
+            Value::Integer { value } => serde_json::Value::from(value),
+            Value::Float { value } => serde_json::Value::from(value),
+            Value::Text { value } => serde_json::Value::String(value),
+            Value::Blob { value } => serde_json::Value::Object({
+                let mut obj = serde_json::Map::new();
+                let base64 = STANDARD_NO_PAD.encode(value);
+                obj.insert("base64".to_string(), base64.into());
+                obj
+            }),
+        }
+    }
 }
 
 #[derive(Serialize, Debug)]
@@ -271,13 +299,11 @@ impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Value::Null => write!(f, "null"),
-            Value::Integer { value: n } => write!(f, "{n}"),
-            Value::Float { value: d } => write!(f, "{d}"),
-            Value::Text { value: s } => write!(f, "{}", serde_json::json!(s)),
-            Value::Blob { value: b } => {
-                use base64::{prelude::BASE64_STANDARD_NO_PAD, Engine};
-                let b = BASE64_STANDARD_NO_PAD.encode(b);
-                write!(f, "{{\"base64\": {b}}}")
+            Value::Integer { value } => write!(f, "{}", value),
+            Value::Float { value } => write!(f, "{}", value),
+            Value::Text { value } => write!(f, "{}", value),
+            Value::Blob { value } => {
+                write!(f, "{}", STANDARD_NO_PAD.encode(value))
             }
         }
     }

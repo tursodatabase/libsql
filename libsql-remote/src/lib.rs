@@ -13,12 +13,12 @@ macro_rules! cfg_cloudflare {
 cfg_cloudflare! {
     mod cloudflare;
 
-    pub type DbConnection = crate::cloudflare::Connection<crate::cloudflare::CloudflareSender>;
+    pub type DbConnection = crate::cloudflare::DbConnection;
 }
 
 pub mod connection;
-mod params;
-mod pipeline;
+pub mod params;
+pub mod pipeline;
 mod proto;
 
 pub use params::{IntoParams, Params};
@@ -30,9 +30,14 @@ pub use proto::Value;
 use proto::{Col, Stmt, StmtResult};
 
 use crate::connection::Connection;
+use base64::engine::general_purpose::STANDARD_NO_PAD;
+use base64::Engine;
+use serde::ser::{SerializeSeq, SerializeStruct};
+use serde::{Serialize, Serializer};
+use serde_json::json;
 use std::collections::VecDeque;
 use std::future::Future;
-use std::ops::Index;
+use std::ops::{Deref, Index};
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
@@ -43,11 +48,7 @@ pub trait HttpSend<'a> {
     fn http_send(&'a self, url: String, auth: String, body: String) -> Self::Result;
 }
 
-#[cfg(not(target_family = "wasm"))]
 pub type BoxError = Box<dyn std::error::Error + Send + Sync>;
-
-#[cfg(target_family = "wasm")]
-pub type BoxError = Box<dyn std::error::Error>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -108,9 +109,74 @@ where
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Rows {
     cols: Arc<Vec<Col>>,
     rows: VecDeque<Vec<Value>>,
+}
+
+impl Serialize for Rows {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        struct ColsRef<'a>(&'a [Col]);
+        impl<'a> Serialize for ColsRef<'a> {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                let mut s = serializer.serialize_seq(Some(self.0.len()))?;
+                for col in self.0.iter() {
+                    s.serialize_element(&col.name)?;
+                }
+                s.end()
+            }
+        }
+
+        struct RowsRef<'a>(&'a VecDeque<Vec<Value>>);
+        impl<'a> Serialize for RowsRef<'a> {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                let mut s = serializer.serialize_seq(Some(self.0.len()))?;
+                for row in self.0.iter() {
+                    s.serialize_element(&RowRef(row))?;
+                }
+                s.end()
+            }
+        }
+        struct RowRef<'a>(&'a [Value]);
+        impl<'a> Serialize for RowRef<'a> {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                let mut s = serializer.serialize_seq(Some(self.0.len()))?;
+                for cell in self.0.iter() {
+                    match cell {
+                        Value::Null => s.serialize_element(&Value::Null),
+                        Value::Integer { value } => s.serialize_element(value),
+                        Value::Float { value } => s.serialize_element(value),
+                        Value::Text { value } => s.serialize_element(value),
+                        Value::Blob { value } => {
+                            let base64 = STANDARD_NO_PAD.encode(value);
+                            s.serialize_element(&json!({
+                                "base64": base64
+                            }))
+                        }
+                    }?;
+                }
+                s.end()
+            }
+        }
+
+        let mut s = serializer.serialize_struct("Rows", 2)?;
+        s.serialize_field("columns", &ColsRef(self.cols.deref()))?;
+
+        s.end()
+    }
 }
 
 impl Iterator for Rows {
@@ -126,17 +192,21 @@ impl Iterator for Rows {
 }
 
 impl Rows {
-    pub fn column_count(&self) -> i32 {
-        self.cols.len() as i32
-    }
-
-    pub fn column_name(&self, idx: i32) -> Option<&str> {
+    pub fn column_name(&self, idx: usize) -> Option<&str> {
         self.cols
-            .get(idx as usize)
+            .get(idx)
             .and_then(|c| c.name.as_ref())
             .map(|s| s.as_str())
     }
+
+    pub fn columns(&self) -> Columns {
+        self.cols.iter()
+    }
 }
+
+pub type Columns<'a> = std::slice::Iter<'a, Col>;
+
+pub type Cells<'a> = std::slice::Iter<'a, Value>;
 
 pub struct Row {
     cols: Arc<Vec<Col>>,
@@ -144,23 +214,38 @@ pub struct Row {
 }
 
 impl Row {
-    pub fn column_value(&self, idx: i32) -> Option<Value> {
-        self.inner.get(idx as usize).cloned()
+    pub fn get_value(&self, idx: usize) -> Option<Value> {
+        self.inner.get(idx).cloned()
     }
 
-    pub fn column_name(&self, idx: i32) -> Option<&str> {
+    pub fn get<T>(&self, idx: usize) -> std::result::Result<T, String>
+    where
+        T: TryFrom<Value, Error = String>,
+    {
+        if let Some(value) = self.inner.get(idx as usize) {
+            T::try_from(value.clone())
+        } else {
+            Err(format!("Row has no value at index {idx}"))
+        }
+    }
+
+    pub fn column_name(&self, idx: usize) -> Option<&str> {
         self.cols
             .get(idx as usize)
             .and_then(|c| c.name.as_ref())
             .map(|s| s.as_str())
     }
+
+    pub fn cells(&self) -> Cells {
+        self.inner.iter()
+    }
 }
 
-impl Index<i32> for Row {
+impl Index<usize> for Row {
     type Output = Value;
 
-    fn index(&self, index: i32) -> &Self::Output {
-        &self.inner[index as usize]
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.inner[index]
     }
 }
 
