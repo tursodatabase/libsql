@@ -13,10 +13,9 @@ fn main() {
 }
 
 pub fn build_bundled(out_dir: &str, out_path: &Path) {
-    let bindings_dir = if std::env::var("LIBSQL_REGENERATE_BINDINGS").is_ok() {
+    if std::env::var("LIBSQL_REGENERATE_BINDINGS").is_ok() {
         let header = HeaderLocation::FromPath(format!("bundled/src/sqlite3.h"));
         bindings::write_to_out_dir(header, out_path);
-        out_path.display().to_string()
     } else {
         let bindgen_rs_path = if cfg!(feature = "session") {
             "bundled/bindings/session_bindgen.rs"
@@ -25,9 +24,9 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
         };
         let dir = env!("CARGO_MANIFEST_DIR");
         std::fs::copy(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
-        "bundled/src".to_string()
-    };
+    }
 
+    let bindings_dir = "bundled/src".to_string();
     println!("cargo:rerun-if-changed={bindings_dir}/sqlite3.c");
     let mut cfg = cc::Build::new();
     cfg.file(format!("{bindings_dir}/sqlite3.c"))
