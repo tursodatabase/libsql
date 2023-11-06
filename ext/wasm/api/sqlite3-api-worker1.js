@@ -62,7 +62,7 @@
 
   ```
   {
-    type: string, // one of: 'open', 'close', 'exec', 'config-get'
+    type: string, // one of: 'open', 'close', 'exec', 'export', 'config-get'
 
     messageId: OPTIONAL arbitrary value. The worker will copy it as-is
     into response messages to assist in client-side dispatching.
@@ -325,6 +325,37 @@
   passed only a string), noting that options.resultRows and
   options.columnNames may be populated by the call to db.exec().
 
+
+  ====================================================================
+  "export" the current db
+
+  To export the underlying database as a byte array...
+
+  Message format:
+
+  ```
+  {
+    type: "export",
+    messageId: ...as above...,
+    dbId: ...as above...
+  }
+  ```
+
+  Response:
+
+  ```
+  {
+    type: "export",
+    messageId: ...as above...,
+    dbId: ...as above...
+    result: {
+      byteArray: Uint8Array (as per sqlite3_js_db_export()),
+      filename: the db filename,
+      mimetype: "application/x-sqlite3"
+    }
+  }
+  ```
+
 */
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 sqlite3.initWorker1API = function(){
@@ -333,7 +364,6 @@ sqlite3.initWorker1API = function(){
   if(!(globalThis.WorkerGlobalScope instanceof Function)){
     toss("initWorker1API() must be run from a Worker thread.");
   }
-  const self = this.self;
   const sqlite3 = this.sqlite3 || toss("Missing this.sqlite3 object.");
   const DB = sqlite3.oo1.DB;
 
@@ -657,5 +687,5 @@ sqlite3.initWorker1API = function(){
     }, wState.xfer);
   };
   globalThis.postMessage({type:'sqlite3-api',result:'worker1-ready'});
-}.bind({self, sqlite3});
+}.bind({sqlite3});
 });

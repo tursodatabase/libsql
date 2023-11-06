@@ -117,6 +117,8 @@ struct Fts5FullTable {
   Fts5Storage *pStorage;          /* Document store */
   Fts5Global *pGlobal;            /* Global (connection wide) data */
   Fts5Cursor *pSortCsr;           /* Sort data from this cursor */
+  int iSavepoint;                 /* Successful xSavepoint()+1 */
+  int bInSavepoint;
 #ifdef SQLITE_DEBUG
   struct Fts5TransactionState ts;
 #endif
@@ -407,6 +409,9 @@ static int fts5InitVtab(
 
   if( rc==SQLITE_OK && pConfig->eContent==FTS5_CONTENT_NORMAL ){
     rc = sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, (int)1);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
   }
 
   if( rc!=SQLITE_OK ){
@@ -1530,6 +1535,7 @@ static int fts5SpecialInsert(
   Fts5Config *pConfig = pTab->p.pConfig;
   int rc = SQLITE_OK;
   int bError = 0;
+  int bLoadConfig = 0;
 
   if( 0==sqlite3_stricmp("delete-all", zCmd) ){
     if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
@@ -1541,6 +1547,7 @@ static int fts5SpecialInsert(
     }else{
       rc = sqlite3Fts5StorageDeleteAll(pTab->pStorage);
     }
+    bLoadConfig = 1;
   }else if( 0==sqlite3_stricmp("rebuild", zCmd) ){
     if( pConfig->eContent==FTS5_CONTENT_NONE ){
       fts5SetVtabError(pTab, 
@@ -1550,6 +1557,7 @@ static int fts5SpecialInsert(
     }else{
       rc = sqlite3Fts5StorageRebuild(pTab->pStorage);
     }
+    bLoadConfig = 1;
   }else if( 0==sqlite3_stricmp("optimize", zCmd) ){
     rc = sqlite3Fts5StorageOptimize(pTab->pStorage);
   }else if( 0==sqlite3_stricmp("merge", zCmd) ){
@@ -1562,6 +1570,8 @@ static int fts5SpecialInsert(
   }else if( 0==sqlite3_stricmp("prefix-index", zCmd) ){
     pConfig->bPrefixIndex = sqlite3_value_int(pVal);
 #endif
+  }else if( 0==sqlite3_stricmp("flush", zCmd) ){
+    rc = sqlite3Fts5FlushToDisk(&pTab->p);
   }else{
     rc = sqlite3Fts5IndexLoadConfig(pTab->p.pIndex);
     if( rc==SQLITE_OK ){
@@ -1575,6 +1585,12 @@ static int fts5SpecialInsert(
       }
     }
   }
+
+  if( rc==SQLITE_OK && bLoadConfig ){
+    pTab->p.pConfig->iCookie--;
+    rc = sqlite3Fts5IndexLoadConfig(pTab->p.pIndex);
+  }
+
   return rc;
 }
 
@@ -2597,8 +2613,12 @@ static int fts5RenameMethod(
   sqlite3_vtab *pVtab,            /* Virtual table handle */
   const char *zName               /* New name of table */
 ){
+  int rc;
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
-  return sqlite3Fts5StorageRename(pTab->pStorage, zName);
+  pTab->bInSavepoint = 1;
+  rc = sqlite3Fts5StorageRename(pTab->pStorage, zName);
+  pTab->bInSavepoint = 0;
+  return rc;
 }
 
 int sqlite3Fts5FlushToDisk(Fts5Table *pTab){
@@ -2612,9 +2632,29 @@ int sqlite3Fts5FlushToDisk(Fts5Table *pTab){
 ** Flush the contents of the pending-terms table to disk.
 */
 static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
-  UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
-  fts5CheckTransactionState((Fts5FullTable*)pVtab, FTS5_SAVEPOINT, iSavepoint);
-  return sqlite3Fts5FlushToDisk((Fts5Table*)pVtab);
+  Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
+  int rc = SQLITE_OK;
+  char *zSql = 0;
+  fts5CheckTransactionState(pTab, FTS5_SAVEPOINT, iSavepoint);
+
+  if( pTab->bInSavepoint==0 ){
+    zSql = sqlite3_mprintf("INSERT INTO %Q.%Q(%Q) VALUES('flush')",
+        pTab->p.pConfig->zDb, pTab->p.pConfig->zName, pTab->p.pConfig->zName
+    );
+    if( zSql ){
+      pTab->bInSavepoint = 1;
+      rc = sqlite3_exec(pTab->p.pConfig->db, zSql, 0, 0, 0);
+      pTab->bInSavepoint = 0;
+      sqlite3_free(zSql);
+    }else{
+      rc = SQLITE_NOMEM;
+    }
+    if( rc==SQLITE_OK ){
+      pTab->iSavepoint = iSavepoint+1;
+    }
+  }
+
+  return rc;
 }
 
 /*
@@ -2623,9 +2663,16 @@ static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
 ** This is a no-op.
 */
 static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
-  UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
-  fts5CheckTransactionState((Fts5FullTable*)pVtab, FTS5_RELEASE, iSavepoint);
-  return sqlite3Fts5FlushToDisk((Fts5Table*)pVtab);
+  Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
+  int rc = SQLITE_OK;
+  fts5CheckTransactionState(pTab, FTS5_RELEASE, iSavepoint);
+  if( (iSavepoint+1)<pTab->iSavepoint ){
+    rc = sqlite3Fts5FlushToDisk(&pTab->p);
+    if( rc==SQLITE_OK ){
+      pTab->iSavepoint = iSavepoint;
+    }
+  }
+  return rc;
 }
 
 /*
@@ -2635,11 +2682,14 @@ static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
 */
 static int fts5RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
-  UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
+  int rc = SQLITE_OK;
   fts5CheckTransactionState(pTab, FTS5_ROLLBACKTO, iSavepoint);
   fts5TripCursors(pTab);
   pTab->p.pConfig->pgsz = 0;
-  return sqlite3Fts5StorageRollback(pTab->pStorage);
+  if( (iSavepoint+1)<=pTab->iSavepoint ){
+    rc = sqlite3Fts5StorageRollback(pTab->pStorage);
+  }
+  return rc;
 }
 
 /*
@@ -2864,23 +2914,36 @@ static int fts5ShadowName(const char *zName){
 ** if anything is found amiss.  Return a NULL pointer if everything is
 ** OK.
 */
-static int fts5Integrity(sqlite3_vtab *pVtab, char **pzErr){
+static int fts5Integrity(
+  sqlite3_vtab *pVtab,    /* the FTS5 virtual table to check */
+  const char *zSchema,    /* Name of schema in which this table lives */
+  const char *zTabname,   /* Name of the table itself */
+  int isQuick,            /* True if this is a quick-check */
+  char **pzErr            /* Write error message here */
+){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
   Fts5Config *pConfig = pTab->p.pConfig;
   char *zSql;
+  char *zErr = 0;
   int rc;
+  assert( pzErr!=0 && *pzErr==0 );
+  UNUSED_PARAM(isQuick);
   zSql = sqlite3_mprintf(
             "INSERT INTO \"%w\".\"%w\"(\"%w\") VALUES('integrity-check');",
-            pConfig->zDb, pConfig->zName, pConfig->zName);
-  rc = sqlite3_exec(pConfig->db, zSql, 0, 0, 0);
+            zSchema, zTabname, pConfig->zName);
+  if( zSql==0 ) return SQLITE_NOMEM;
+  rc = sqlite3_exec(pConfig->db, zSql, 0, 0, &zErr);
   sqlite3_free(zSql);
   if( (rc&0xff)==SQLITE_CORRUPT ){
     *pzErr = sqlite3_mprintf("malformed inverted index for FTS5 table %s.%s",
-                pConfig->zDb, pConfig->zName);
-    rc = SQLITE_OK;
+                zSchema, zTabname);
+  }else if( rc!=SQLITE_OK ){
+    *pzErr = sqlite3_mprintf("unable to validate the inverted index for"
+                             " FTS5 table %s.%s: %s",
+                zSchema, zTabname, zErr);
   }
-  return rc;
-
+  sqlite3_free(zErr);
+  return SQLITE_OK;
 }
 
 static int fts5Init(sqlite3 *db){

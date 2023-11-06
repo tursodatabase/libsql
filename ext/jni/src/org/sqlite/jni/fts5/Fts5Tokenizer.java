@@ -12,7 +12,7 @@
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
 package org.sqlite.jni.fts5;
-import org.sqlite.jni.NativePointerHolder;
+import org.sqlite.jni.capi.NativePointerHolder;
 
 /**
    INCOMPLETE AND COMPLETELY UNTESTED.

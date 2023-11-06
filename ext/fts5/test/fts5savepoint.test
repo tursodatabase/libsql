@@ -71,7 +71,7 @@ ifcapable fts3 {
 
   do_catchsql_test 3.2 {
     DROP TABLE vt1;
-  } {1 {SQL logic error}}
+  } {0 {}}
 
   do_execsql_test 3.3 {
     SAVEPOINT x;

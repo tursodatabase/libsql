@@ -1389,7 +1389,7 @@ char *sqlite3RCStrRef(char *z){
 ** Decrease the reference count by one.  Free the string when the
 ** reference count reaches zero.
 */
-void sqlite3RCStrUnref(char *z){
+void sqlite3RCStrUnref(void *z){
   RCStr *p = (RCStr*)z;
   assert( p!=0 );
   p--;

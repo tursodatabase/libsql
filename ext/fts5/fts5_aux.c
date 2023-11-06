@@ -110,15 +110,19 @@ static int fts5CInstIterInit(
 */
 typedef struct HighlightContext HighlightContext;
 struct HighlightContext {
-  CInstIter iter;                 /* Coalesced Instance Iterator */
-  int iPos;                       /* Current token offset in zIn[] */
+  /* Constant parameters to fts5HighlightCb() */
   int iRangeStart;                /* First token to include */
   int iRangeEnd;                  /* If non-zero, last token to include */
   const char *zOpen;              /* Opening highlight */
   const char *zClose;             /* Closing highlight */
   const char *zIn;                /* Input text */
   int nIn;                        /* Size of input text in bytes */
-  int iOff;                       /* Current offset within zIn[] */
+
+  /* Variables modified by fts5HighlightCb() */
+  CInstIter iter;                 /* Coalesced Instance Iterator */
+  int iPos;                       /* Current token offset in zIn[] */
+  int iOff;                       /* Have copied up to this offset in zIn[] */
+  int bOpen;                      /* True if highlight is open */
   char *zOut;                     /* Output value */
 };
 
@@ -151,8 +155,8 @@ static int fts5HighlightCb(
   int tflags,                     /* Mask of FTS5_TOKEN_* flags */
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
-  int iStartOff,                  /* Start offset of token */
-  int iEndOff                     /* End offset of token */
+  int iStartOff,                  /* Start byte offset of token */
+  int iEndOff                     /* End byte offset of token */
 ){
   HighlightContext *p = (HighlightContext*)pContext;
   int rc = SQLITE_OK;
@@ -168,30 +172,55 @@ static int fts5HighlightCb(
     if( p->iRangeStart && iPos==p->iRangeStart ) p->iOff = iStartOff;
   }
 
-  if( iPos==p->iter.iStart ){
+  /* If the parenthesis is open, and this token is not part of the current
+  ** phrase, and the starting byte offset of this token is past the point
+  ** that has currently been copied into the output buffer, close the
+  ** parenthesis. */
+  if( p->bOpen 
+   && (iPos<=p->iter.iStart || p->iter.iStart<0)
+   && iStartOff>p->iOff 
+  ){
+    fts5HighlightAppend(&rc, p, p->zClose, -1);
+    p->bOpen = 0;
+  }
+
+  /* If this is the start of a new phrase, and the highlight is not open:
+  **
+  **   * copy text from the input up to the start of the phrase, and
+  **   * open the highlight.
+  */
+  if( iPos==p->iter.iStart && p->bOpen==0 ){
     fts5HighlightAppend(&rc, p, &p->zIn[p->iOff], iStartOff - p->iOff);
     fts5HighlightAppend(&rc, p, p->zOpen, -1);
     p->iOff = iStartOff;
+    p->bOpen = 1;
   }
 
   if( iPos==p->iter.iEnd ){
-    if( p->iRangeEnd>=0 && p->iter.iStart<p->iRangeStart ){
+    if( p->bOpen==0 ){
+      assert( p->iRangeEnd>=0 );
       fts5HighlightAppend(&rc, p, p->zOpen, -1);
+      p->bOpen = 1;
     }
     fts5HighlightAppend(&rc, p, &p->zIn[p->iOff], iEndOff - p->iOff);
-    fts5HighlightAppend(&rc, p, p->zClose, -1);
     p->iOff = iEndOff;
+
     if( rc==SQLITE_OK ){
       rc = fts5CInstIterNext(&p->iter);
     }
   }
 
-  if( p->iRangeEnd>=0 && iPos==p->iRangeEnd ){
+  if( iPos==p->iRangeEnd ){
+    if( p->bOpen ){
+      if( p->iter.iStart>=0 && iPos>=p->iter.iStart ){
+        fts5HighlightAppend(&rc, p, &p->zIn[p->iOff], iEndOff - p->iOff);
+        p->iOff = iEndOff;
+      }
+      fts5HighlightAppend(&rc, p, p->zClose, -1);
+      p->bOpen = 0;
+    }
     fts5HighlightAppend(&rc, p, &p->zIn[p->iOff], iEndOff - p->iOff);
     p->iOff = iEndOff;
-    if( iPos>=p->iter.iStart && iPos<p->iter.iEnd ){
-      fts5HighlightAppend(&rc, p, p->zClose, -1);
-    }
   }
 
   return rc;
@@ -231,6 +260,9 @@ static void fts5HighlightFunction(
 
     if( rc==SQLITE_OK ){
       rc = pApi->xTokenize(pFts, ctx.zIn, ctx.nIn, (void*)&ctx,fts5HighlightCb);
+    }
+    if( ctx.bOpen ){
+      fts5HighlightAppend(&rc, &ctx, ctx.zClose, -1);
     }
     fts5HighlightAppend(&rc, &ctx, &ctx.zIn[ctx.iOff], ctx.nIn - ctx.iOff);
 
@@ -509,6 +541,9 @@ static void fts5SnippetFunction(
 
     if( rc==SQLITE_OK ){
       rc = pApi->xTokenize(pFts, ctx.zIn, ctx.nIn, (void*)&ctx,fts5HighlightCb);
+    }
+    if( ctx.bOpen ){
+      fts5HighlightAppend(&rc, &ctx, ctx.zClose, -1);
     }
     if( ctx.iRangeEnd>=(nColSize-1) ){
       fts5HighlightAppend(&rc, &ctx, &ctx.zIn[ctx.iOff], ctx.nIn - ctx.iOff);

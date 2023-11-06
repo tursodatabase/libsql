@@ -28,7 +28,7 @@ if {$tcl_platform(os)=="Linux"} {
 } else {
   set FMT {%d,%e,%F,%H,%I,%j,%p,%R,%u,%w,%W,%%}
 }
-for {set i 0} {$i<=86400} {incr i} {
+for {set i 0} {$i<=24854} {incr i} {
   set TS [expr {$i*86401}]
   do_execsql_test date4-$i {
     SELECT strftime($::FMT,$::TS,'unixepoch');

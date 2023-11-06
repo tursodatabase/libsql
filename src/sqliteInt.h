@@ -319,6 +319,16 @@
 #endif
 
 /*
+** Enable SQLITE_USE_SEH by default on MSVC builds.  Only omit
+** SEH support if the -DSQLITE_OMIT_SEH option is given.
+*/
+#if defined(_MSC_VER) && !defined(SQLITE_OMIT_SEH)
+# define SQLITE_USE_SEH 1
+#else
+# undef SQLITE_USE_SEH
+#endif
+
+/*
 ** The SQLITE_THREADSAFE macro must be defined as 0, 1, or 2.
 ** 0 means mutexes are permanently disable and the library is never
 ** threadsafe.  1 means the library is serialized which is the highest
@@ -1835,6 +1845,7 @@ struct sqlite3 {
                                           /*   the count using a callback. */
 #define SQLITE_CorruptRdOnly  HI(0x00002) /* Prohibit writes due to error */
 #define SQLITE_ReadUncommit   HI(0x00004) /* READ UNCOMMITTED in shared-cache */
+#define SQLITE_FkNoAction     HI(0x00008) /* Treat all FK as NO ACTION */
 
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG
@@ -2850,6 +2861,9 @@ struct AggInfo {
     FuncDef *pFunc;          /* The aggregate function implementation */
     int iDistinct;           /* Ephemeral table used to enforce DISTINCT */
     int iDistAddr;           /* Address of OP_OpenEphemeral */
+    int iOBTab;              /* Ephemeral table to implement ORDER BY */
+    u8 bOBPayload;           /* iOBTab has payload columns separate from key */
+    u8 bOBUnique;            /* Enforce uniqueness on iOBTab keys */
   } *aFunc;
   int nFunc;              /* Number of entries in aFunc[] */
   u32 selId;              /* Select to which this AggInfo belongs */
@@ -3034,7 +3048,7 @@ struct Expr {
 #define EP_Reduced    0x004000 /* Expr struct EXPR_REDUCEDSIZE bytes only */
 #define EP_Win        0x008000 /* Contains window functions */
 #define EP_TokenOnly  0x010000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
-                   /* 0x020000 // Available for reuse */
+#define EP_FullSize   0x020000 /* Expr structure must remain full sized */
 #define EP_IfNullRow  0x040000 /* The TK_IF_NULL_ROW opcode */
 #define EP_Unlikely   0x080000 /* unlikely() or likelihood() function */
 #define EP_ConstFunc  0x100000 /* A SQLITE_FUNC_CONSTANT or _SLOCHNG function */
@@ -3064,6 +3078,7 @@ struct Expr {
 #define ExprClearProperty(E,P)   (E)->flags&=~(P)
 #define ExprAlwaysTrue(E)   (((E)->flags&(EP_OuterON|EP_IsTrue))==EP_IsTrue)
 #define ExprAlwaysFalse(E)  (((E)->flags&(EP_OuterON|EP_IsFalse))==EP_IsFalse)
+#define ExprIsFullSize(E)   (((E)->flags&(EP_Reduced|EP_TokenOnly))==0)
 
 /* Macros used to ensure that the correct members of unions are accessed
 ** in Expr.
@@ -3382,6 +3397,7 @@ struct NameContext {
   int nRef;            /* Number of names resolved by this context */
   int nNcErr;          /* Number of errors encountered while resolving names */
   int ncFlags;         /* Zero or more NC_* flags defined below */
+  u32 nNestedSelect;   /* Number of nested selects using this NC */
   Select *pWinSelect;  /* SELECT statement for any window functions */
 };
 
@@ -4062,6 +4078,7 @@ struct Returning {
   int iRetCur;          /* Transient table holding RETURNING results */
   int nRetCol;          /* Number of in pReturnEL after expansion */
   int iRetReg;          /* Register array for holding a row of RETURNING */
+  char zName[40];       /* Name of trigger: "sqlite_returning_%p" */
 };
 
 /*
@@ -4776,6 +4793,8 @@ void sqlite3PExprAddSelect(Parse*, Expr*, Select*);
 Expr *sqlite3ExprAnd(Parse*,Expr*, Expr*);
 Expr *sqlite3ExprSimplifiedAndOr(Expr*);
 Expr *sqlite3ExprFunction(Parse*,ExprList*, const Token*, int);
+void sqlite3ExprAddFunctionOrderBy(Parse*,Expr*,ExprList*);
+void sqlite3ExprOrderByAggregateError(Parse*,Expr*);
 void sqlite3ExprFunctionUsable(Parse*,const Expr*,const FuncDef*);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*, u32);
 void sqlite3ExprDelete(sqlite3*, Expr*);
@@ -5342,7 +5361,7 @@ int sqlite3ApiExit(sqlite3 *db, int);
 int sqlite3OpenTempDatabase(Parse *);
 
 char *sqlite3RCStrRef(char*);
-void sqlite3RCStrUnref(char*);
+void sqlite3RCStrUnref(void*);
 char *sqlite3RCStrNew(u64);
 char *sqlite3RCStrResize(char*,u64);
 

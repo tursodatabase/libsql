@@ -790,4 +790,3 @@ do_catchsql_test 11.2 {
 
 
 finish_test
-

@@ -1,7 +1,7 @@
 # Notes On Compiling SQLite On Windows 11
 
 Here are step-by-step instructions on how to build SQLite from
-canonical source on a new Windows 11 PC, as of 2023-08-16:
+canonical source on a new Windows 11 PC, as of 2023-11-01:
 
   1.  Install Microsoft Visual Studio. The free "community edition" 
       will work fine.  Do a standard install for C++ development.
@@ -16,7 +16,7 @@ canonical source on a new Windows 11 PC, as of 2023-08-16:
       a 32-bit build.)  The subsequent steps will not work in a vanilla
       DOS prompt.  Nor will they work in PowerShell.
 
-  3.  Install TCL development libraries.  This note assumes that you wil
+  3.  Install TCL development libraries.  This note assumes that you will
       install the TCL development libraries in the "`c:\Tcl`" directory.
       Make adjustments
       if you want TCL installed somewhere else.  SQLite needs both the
@@ -83,3 +83,66 @@ following minor changes:
       <ul>
       <li>  `set PATH=c:\tcl32\bin;%PATH%`
       </ul>
+
+## Building a DLL
+
+The command the developers use for building the deliverable DLL on the 
+[download page](https://sqlite.org/download.html) is as follows:
+
+> ~~~~
+nmake /f Makefile.msc sqlite3.dll USE_NATIVE_LIBPATHS=1 "OPTS=-DSQLITE_ENABLE_FTS3=1 -DSQLITE_ENABLE_FTS4=1 -DSQLITE_ENABLE_FTS5=1 -DSQLITE_ENABLE_RTREE=1 -DSQLITE_ENABLE_JSON1=1 -DSQLITE_ENABLE_GEOPOLY=1 -DSQLITE_ENABLE_SESSION=1 -DSQLITE_ENABLE_PREUPDATE_HOOK=1 -DSQLITE_ENABLE_SERIALIZE=1 -DSQLITE_ENABLE_MATH_FUNCTIONS=1"
+~~~~
+
+That command generates both the sqlite3.dll and sqlite3.def files.  The same
+command works for both 32-bit and 64-bit builds.
+
+## Statically Linking The TCL Library
+
+Some utility programs associated with SQLite need to be linked
+with TCL in order to function.  The [sqlite3_analyzer.exe program](https://sqlite.org/sqlanalyze.html)
+is an example.  You can build as described above, and then
+enter:
+
+> ~~~~
+nmake /f Makefile.msc sqlite3_analyzer.exe
+~~~~
+
+And you will end up with a working executable.  However, that executable
+will depend on having the "tcl86.dll" library somewhere on your %PATH%.
+Use the following steps to build an executable that has the TCL library
+statically linked so that it does not depend on separate DLL:
+
+  1.  Use the appropriate "Command Prompt" window - either x86 or
+      x64, depending on whether you want a 32-bit or 64-bit executable.
+
+  2.  Untar the TCL source tarball into a fresh directory.  CD into
+      the "win/" subfolder.
+
+  3.  Run: `nmake /f makefile.vc OPTS=nothreads,static shell`
+
+
+  4.  CD into the "Release*" subfolder that is created (note the
+      wildcard - the full name of the directory might vary).  There
+      you will find the "tcl86s.lib" file.  Copy this file into the
+      same directory that you put the "tcl86.lib" on your initial
+      installation.  (In this document, that directory is
+      "`C:\Tcl32\lib`" for 32-bit builds and
+      "`C:\Tcl\lib`" for 64-bit builds.)
+
+  5.  CD into your SQLite source code directory and build the desired
+      utility program, but add the following extra arguments to the
+      nmake command line:
+      <blockquote><pre>
+      CCOPTS="-DSTATIC_BUILD" LIBTCL="tcl86s.lib netapi32.lib user32.lib"
+      </pre></blockquote>
+      <p>So, for example, to build a statically linked version of
+      sqlite3_analyzer.exe, you might type:
+      <blockquote><pre>
+      nmake /f Makefile.msc CCOPTS="-DSTATIC_BUILD" LIBTCL="tcl86s.lib netapi32.lib user32.lib" sqlite3_analyzer.exe
+      </pre></blockquote>
+
+  6.  After your executable is built, you can verify that it does not
+      depend on the TCL DLL by running:
+      <blockquote><pre>
+      dumpbin /dependents sqlite3_analyzer.exe
+      </pre></blockquote>

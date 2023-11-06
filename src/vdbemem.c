@@ -336,7 +336,7 @@ void sqlite3VdbeMemZeroTerminateIfAble(Mem *pMem){
       pMem->flags |= MEM_Term;
       return;
     }
-    if( pMem->xDel==(void(*)(void*))sqlite3RCStrUnref ){
+    if( pMem->xDel==sqlite3RCStrUnref ){
       /* Blindly assume that all RCStr objects are zero-terminated */
       pMem->flags |= MEM_Term;
       return;
@@ -1716,6 +1716,7 @@ static int valueFromExpr(
     if( pVal ){
       pVal->flags = MEM_Int;
       pVal->u.i = pExpr->u.zToken[4]==0;
+      sqlite3ValueApplyAffinity(pVal, affinity, enc);
     }
   }
 

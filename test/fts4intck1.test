@@ -1,0 +1,58 @@
+# 2023-10-23
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# Test PRAGMA integrity_check against and FTS3/FTS4 table.
+#
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !fts3 { finish_test ; return }
+
+set ::testprefix fts4intck1
+
+proc slang {in} {
+  return [string map {th d e eh} $in]
+}
+
+db function slang -deterministic -innocuous slang
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT, c TEXT AS (slang(b)));
+  INSERT INTO t1(b) VALUES('the quick fox jumps over the lazy brown dog');
+  SELECT c FROM t1;
+} {{deh quick fox jumps ovehr deh lazy brown dog}}
+
+do_execsql_test 1.1 {
+  CREATE VIRTUAL TABLE t2 USING fts4(content="t1", c);
+  INSERT INTO t2(t2) VALUES('rebuild');
+  SELECT docid FROM t2 WHERE t2 MATCH 'deh';
+} {1}
+
+do_execsql_test 1.2 {
+  PRAGMA integrity_check(t2);
+} {ok}
+
+db close
+sqlite3 db test.db
+do_execsql_test 2.1 {
+  PRAGMA integrity_check(t2);
+} {{unable to validate the inverted index for FTS4 table main.t2: SQL logic error}}
+
+db function slang -deterministic -innocuous slang
+do_execsql_test 2.2 {
+  PRAGMA integrity_check(t2);
+} {ok}
+
+proc slang {in} {return $in}
+do_execsql_test 2.3 {
+  PRAGMA integrity_check(t2);
+} {{malformed inverted index for FTS4 table main.t2}}
+
+
+finish_test

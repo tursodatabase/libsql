@@ -762,11 +762,11 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
     sqlite3RCStrRef(pBuf);
     if( t&1 ){
       rc = sqlite3VdbeMemSetStr(pDest, pBuf, len, encoding,
-                                (void(*)(void*))sqlite3RCStrUnref);
+                                sqlite3RCStrUnref);
       pDest->flags |= MEM_Term;
     }else{
       rc = sqlite3VdbeMemSetStr(pDest, pBuf, len, 0,
-                                (void(*)(void*))sqlite3RCStrUnref);
+                                sqlite3RCStrUnref);
     }
   }else{
     rc = sqlite3VdbeMemFromBtree(pC->uc.pCursor, iOffset, len, pDest);
@@ -6906,13 +6906,41 @@ case OP_CreateBtree: {          /* out2 */
 /* Opcode: SqlExec * * * P4 *
 **
 ** Run the SQL statement or statements specified in the P4 string.
+** Disable Auth and Trace callbacks while those statements are running if
+** P1 is true.
 */
 case OP_SqlExec: {
+  char *zErr;
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  sqlite3_xauth xAuth;
+#endif
+  u8 mTrace;
+
   sqlite3VdbeIncrWriteCounter(p, 0);
   db->nSqlExec++;
-  rc = sqlite3_exec(db, pOp->p4.z, 0, 0, 0);
+  zErr = 0;
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  xAuth = db->xAuth;
+#endif
+  mTrace = db->mTrace;
+  if( pOp->p1 ){
+#ifndef SQLITE_OMIT_AUTHORIZATION
+    db->xAuth = 0;
+#endif
+    db->mTrace = 0;
+  }
+  rc = sqlite3_exec(db, pOp->p4.z, 0, 0, &zErr);
   db->nSqlExec--;
-  if( rc ) goto abort_due_to_error;
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  db->xAuth = xAuth;
+#endif
+  db->mTrace = mTrace;
+  if( zErr || rc ){
+    sqlite3VdbeError(p, "%s", zErr);
+    sqlite3_free(zErr);
+    if( rc==SQLITE_NOMEM ) goto no_mem;
+    goto abort_due_to_error;
+  }
   break;
 }
 
@@ -8134,13 +8162,14 @@ case OP_VOpen: {             /* ncycle */
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-/* Opcode: VCheck * P2 * P4 *
+/* Opcode: VCheck P1 P2 P3 P4 *
 **
-** P4 is a pointer to a Table object that is a virtual table that
-** supports the xIntegrity() method.  This opcode runs the xIntegrity()
-** method for that virtual table.  If an error is reported back, the error
-** message is stored in register P2.  If no errors are seen, register P2
-** is set to NULL.
+** P4 is a pointer to a Table object that is a virtual table in schema P1
+** that supports the xIntegrity() method.  This opcode runs the xIntegrity()
+** method for that virtual table, using P3 as the integer argument.  If
+** an error is reported back, the table name is prepended to the error
+** message and that message is stored in P2.  If no errors are seen,
+** register P2 is set to NULL.
 */
 case OP_VCheck: {             /* out2 */
   Table *pTab;
@@ -8163,7 +8192,9 @@ case OP_VCheck: {             /* out2 */
   assert( pModule->xIntegrity!=0 );
   pTab->nTabRef++;
   sqlite3VtabLock(pTab->u.vtab.p);
-  rc = pModule->xIntegrity(pVtab, &zErr);
+  assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  rc = pModule->xIntegrity(pVtab, db->aDb[pOp->p1].zDbSName, pTab->zName,
+                           pOp->p3, &zErr);
   sqlite3VtabUnlock(pTab->u.vtab.p);
   sqlite3DeleteTable(db, pTab);
   if( rc ){

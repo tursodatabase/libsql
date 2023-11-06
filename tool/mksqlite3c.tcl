@@ -116,7 +116,7 @@ if {$tcl_platform(platform)=="windows"} {
 if {[file executable $vsrcprog] && [file readable $srcroot/manifest]} {
   set res [string trim [split [exec $vsrcprog -x $srcroot]] \n]
   puts $out "** The content in this amalgamation comes from Fossil check-in"
-  puts -nonewline $out "** [string range [lindex $res 0] 1 35]"
+  puts -nonewline $out "** [string range [lindex $res 0] 0 35]"
   if {[llength $res]==1} {
     puts $out "."
   } else {

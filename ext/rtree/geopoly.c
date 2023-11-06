@@ -1252,6 +1252,7 @@ static int geopolyInit(
   (void)pAux;
 
   sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
+  sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
 
   /* Allocate the sqlite3_vtab structure */
   nDb = strlen(argv[1]);
@@ -1782,7 +1783,8 @@ static sqlite3_module geopolyModule = {
   rtreeSavepoint,             /* xSavepoint */
   0,                          /* xRelease */
   0,                          /* xRollbackTo */
-  rtreeShadowName             /* xShadowName */
+  rtreeShadowName,            /* xShadowName */
+  rtreeIntegrity              /* xIntegrity */
 };
 
 static int sqlite3_geopoly_init(sqlite3 *db){

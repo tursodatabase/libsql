@@ -439,7 +439,8 @@ static sqlite3_module qpvtabModule = {
   /* xSavepoint  */ 0,
   /* xRelease    */ 0,
   /* xRollbackTo */ 0,
-  /* xShadowName */ 0
+  /* xShadowName */ 0,
+  /* xIntegrity  */ 0
 };
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 

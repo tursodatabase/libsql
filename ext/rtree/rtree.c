@@ -3332,7 +3332,7 @@ static int rtreeShadowName(const char *zName){
 }
 
 /* Forward declaration */
-static int rtreeIntegrity(sqlite3_vtab*, char**);
+static int rtreeIntegrity(sqlite3_vtab*, const char*, const char*, int, char**);
 
 static sqlite3_module rtreeModule = {
   4,                          /* iVersion */
@@ -3615,6 +3615,8 @@ static int rtreeInit(
   }
 
   sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
+  sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
+
 
   /* Allocate the sqlite3_vtab structure */
   nDb = (int)strlen(argv[1]);
@@ -4130,7 +4132,6 @@ static int rtreeCheckTable(
 ){
   RtreeCheck check;               /* Common context for various routines */
   sqlite3_stmt *pStmt = 0;        /* Used to find column count of rtree table */
-  int bEnd = 0;                   /* True if transaction should be closed */
   int nAux = 0;                   /* Number of extra columns. */
 
   /* Initialize the context object */
@@ -4138,14 +4139,6 @@ static int rtreeCheckTable(
   check.db = db;
   check.zDb = zDb;
   check.zTab = zTab;
-
-  /* If there is not already an open transaction, open one now. This is
-  ** to ensure that the queries run as part of this integrity-check operate
-  ** on a consistent snapshot.  */
-  if( sqlite3_get_autocommit(db) ){
-    check.rc = sqlite3_exec(db, "BEGIN", 0, 0, 0);
-    bEnd = 1;
-  }
 
   /* Find the number of auxiliary columns */
   if( check.rc==SQLITE_OK ){
@@ -4187,11 +4180,6 @@ static int rtreeCheckTable(
   sqlite3_finalize(check.aCheckMapping[0]);
   sqlite3_finalize(check.aCheckMapping[1]);
 
-  /* If one was opened, close the transaction */
-  if( bEnd ){
-    int rc = sqlite3_exec(db, "END", 0, 0, 0);
-    if( check.rc==SQLITE_OK ) check.rc = rc;
-  }
   *pzReport = check.zReport;
   return check.rc;
 }
@@ -4199,9 +4187,19 @@ static int rtreeCheckTable(
 /*
 ** Implementation of the xIntegrity method for Rtree.
 */
-static int rtreeIntegrity(sqlite3_vtab *pVtab, char **pzErr){
+static int rtreeIntegrity(
+  sqlite3_vtab *pVtab,   /* The virtual table to check */
+  const char *zSchema,   /* Schema in which the virtual table lives */
+  const char *zName,     /* Name of the virtual table */
+  int isQuick,           /* True for a quick_check */
+  char **pzErr           /* Write results here */
+){
   Rtree *pRtree = (Rtree*)pVtab;
   int rc;
+  assert( pzErr!=0 && *pzErr==0 );
+  UNUSED_PARAMETER(zSchema);
+  UNUSED_PARAMETER(zName);
+  UNUSED_PARAMETER(isQuick);
   rc = rtreeCheckTable(pRtree->db, pRtree->zDb, pRtree->zName, pzErr);
   if( rc==SQLITE_OK && *pzErr ){
     *pzErr = sqlite3_mprintf("In RTree %s.%s:\n%z",

@@ -55,6 +55,8 @@ do_catchsql_test 3.1 {
 #--------------------------------------------------------------------------
 # Test the 2-argument version.
 #
+# Zap global x array set in some previous test.
+if {[array exists x]} {array unset x}
 foreach {tn hex} {
   1 "FFFF  ABCD"
   2 "FFFF ABCD"
@@ -98,5 +100,3 @@ do_execsql_test 6.4.3 { SELECT typeof(unhex('1234', NULL)) } {null}
 
 
 finish_test
-
-

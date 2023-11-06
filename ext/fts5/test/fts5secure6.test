@@ -18,7 +18,7 @@ db progress 1 progress_handler
 set ::PHC 0
 proc progress_handler {args} {
   incr ::PHC
-  if {($::PHC % 100000)==0}  breakpoint
+  # if {($::PHC % 100000)==0}  breakpoint
   return 0
 }
 
@@ -73,12 +73,12 @@ do_execsql_test 2.2 {
 #-------------------------------------------------------------------------
 reset_db
 
-do_execsql_test 2.0 {
+do_execsql_test 3.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x);
   INSERT INTO t1(t1, rank) VALUES('secure-delete', $sd) 
 }
 
-do_execsql_test 2.1 {
+do_execsql_test 3.1 {
   BEGIN;
     INSERT INTO t1(rowid, x) 
       VALUES(51869, 'when whenever where weress what turn'), 
@@ -90,6 +90,52 @@ do_execsql_test 3.2 {
   DELETE FROM t1 WHERE rowid=51871;
   INSERT INTO t1(t1) VALUES('integrity-check');
 }
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(rowid, x) VALUES(10, 'one two');
+}
+do_execsql_test 4.1 {
+  UPDATE t1 SET x = 'one three' WHERE rowid=10;
+  INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+}
+do_execsql_test 4.2 {
+  DELETE FROM t1 WHERE rowid=10;
+}
+do_execsql_test 4.3 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(content);
+
+  INSERT INTO t1(t1,rank) VALUES('secure-delete',1);
+  INSERT INTO t1 VALUES('active'),('boomer'),('atom'),('atomic'),
+         ('alpha channel backup abandon test aback boomer atom alpha active');
+  DELETE FROM t1 WHERE t1 MATCH 'abandon';
+} 
+
+do_execsql_test 5.1 {
+  INSERT INTO t1(t1) VALUES('rebuild');
+}
+
+do_execsql_test 5.2 {
+  DELETE FROM t1 WHERE rowid NOTNULL<5;
+}
+
+db close
+sqlite3 db test.db
+
+do_execsql_test 5.3 {
+  PRAGMA integrity_check;
+} {ok}
+
 
 finish_test
 

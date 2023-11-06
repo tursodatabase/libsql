@@ -1052,6 +1052,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       Window *pWin = (IsWindowFunc(pExpr) ? pExpr->y.pWin : 0);
 #endif
       assert( !ExprHasProperty(pExpr, EP_xIsSelect|EP_IntValue) );
+      assert( pExpr->pLeft==0 || pExpr->pLeft->op==TK_ORDER );
       zId = pExpr->u.zToken;
       pDef = sqlite3FindFunction(pParse->db, zId, n, enc, 0);
       if( pDef==0 ){
@@ -1193,6 +1194,10 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           pNC->nNcErr++;
         }
 #endif
+        else if( is_agg==0 && pExpr->pLeft ){
+          sqlite3ExprOrderByAggregateError(pParse, pExpr);
+          pNC->nNcErr++;
+        }
         if( is_agg ){
           /* Window functions may not be arguments of aggregate functions.
           ** Or arguments of other window functions. But aggregate functions
@@ -1211,6 +1216,11 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #endif
       sqlite3WalkExprList(pWalker, pList);
       if( is_agg ){
+        if( pExpr->pLeft ){
+          assert( pExpr->pLeft->op==TK_ORDER );
+          assert( ExprUseXList(pExpr->pLeft) );
+          sqlite3WalkExprList(pWalker, pExpr->pLeft->x.pList);
+        }
 #ifndef SQLITE_OMIT_WINDOWFUNC
         if( pWin ){
           Select *pSel = pNC->pWinSelect;
@@ -1239,11 +1249,12 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           while( pNC2
               && sqlite3ReferencesSrcList(pParse, pExpr, pNC2->pSrcList)==0
           ){
-            pExpr->op2++;
+            pExpr->op2 += (1 + pNC2->nNestedSelect);
             pNC2 = pNC2->pNext;
           }
           assert( pDef!=0 || IN_RENAME_OBJECT );
           if( pNC2 && pDef ){
+            pExpr->op2 += pNC2->nNestedSelect;
             assert( SQLITE_FUNC_MINMAX==NC_MinMaxAgg );
             assert( SQLITE_FUNC_ANYORDER==NC_OrderAgg );
             testcase( (pDef->funcFlags & SQLITE_FUNC_MINMAX)!=0 );
@@ -1774,9 +1785,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
   while( p ){
     assert( (p->selFlags & SF_Expanded)!=0 );
     assert( (p->selFlags & SF_Resolved)==0 );
-    assert( db->suppressErr==0 ); /* SF_Resolved not set if errors suppressed */
     p->selFlags |= SF_Resolved;
-
 
     /* Resolve the expressions in the LIMIT and OFFSET clauses. These
     ** are not allowed to refer to any names, so pass an empty NameContext.
@@ -1804,6 +1813,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
  
     /* Recursively resolve names in all subqueries in the FROM clause
     */
+    if( pOuterNC ) pOuterNC->nNestedSelect++;
     for(i=0; i<p->pSrc->nSrc; i++){
       SrcItem *pItem = &p->pSrc->a[i];
       if( pItem->pSelect && (pItem->pSelect->selFlags & SF_Resolved)==0 ){
@@ -1827,6 +1837,9 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
           pItem->fg.isCorrelated = (pOuterNC->nRef>nRef);
         }
       }
+    }
+    if( pOuterNC && ALWAYS(pOuterNC->nNestedSelect>0) ){
+      pOuterNC->nNestedSelect--;
     }
  
     /* Set up the local name-context to pass to sqlite3ResolveExprNames() to

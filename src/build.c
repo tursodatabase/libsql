@@ -1408,19 +1408,12 @@ void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
 #endif
 
 /*
-** Name of the special TEMP trigger used to implement RETURNING.  The
-** name begins with "sqlite_" so that it is guaranteed not to collide
-** with any application-generated triggers.
-*/
-#define RETURNING_TRIGGER_NAME  "sqlite_returning"
-
-/*
 ** Clean up the data structures associated with the RETURNING clause.
 */
 static void sqlite3DeleteReturning(sqlite3 *db, Returning *pRet){
   Hash *pHash;
   pHash = &(db->aDb[1].pSchema->trigHash);
-  sqlite3HashInsert(pHash, RETURNING_TRIGGER_NAME, 0);
+  sqlite3HashInsert(pHash, pRet->zName, 0);
   sqlite3ExprListDelete(db, pRet->pReturnEL);
   sqlite3DbFree(db, pRet);
 }
@@ -1463,7 +1456,9 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
      (void(*)(sqlite3*,void*))sqlite3DeleteReturning, pRet);
   testcase( pParse->earlyCleanup );
   if( db->mallocFailed ) return;
-  pRet->retTrig.zName = RETURNING_TRIGGER_NAME;
+  sqlite3_snprintf(sizeof(pRet->zName), pRet->zName,
+                   "sqlite_returning_%p", pParse);
+  pRet->retTrig.zName = pRet->zName;
   pRet->retTrig.op = TK_RETURNING;
   pRet->retTrig.tr_tm = TRIGGER_AFTER;
   pRet->retTrig.bReturning = 1;
@@ -1474,9 +1469,9 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   pRet->retTStep.pTrig = &pRet->retTrig;
   pRet->retTStep.pExprList = pList;
   pHash = &(db->aDb[1].pSchema->trigHash);
-  assert( sqlite3HashFind(pHash, RETURNING_TRIGGER_NAME)==0
+  assert( sqlite3HashFind(pHash, pRet->zName)==0
           || pParse->nErr  || pParse->ifNotExists );
-  if( sqlite3HashInsert(pHash, RETURNING_TRIGGER_NAME, &pRet->retTrig)
+  if( sqlite3HashInsert(pHash, pRet->zName, &pRet->retTrig)
           ==&pRet->retTrig ){
     sqlite3OomFault(db);
   }
@@ -2302,7 +2297,7 @@ static int isDupColumn(Index *pIdx, int nKey, Index *pPk, int iCol){
 ** The colNotIdxed mask is AND-ed with the SrcList.a[].colUsed mask
 ** to determine if the index is covering index.
 */
-static void recomputeColumnsNotIndexed(Parse *pParse, Index *pIdx){
+static void recomputeColumnsNotIndexed(Index *pIdx){
   Bitmask m = 0;
   int j;
   Table *pTab = pIdx->pTable;
@@ -2493,7 +2488,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   }
   assert( pPk->nColumn==j );
   assert( pTab->nNVCol<=j );
-  recomputeColumnsNotIndexed(pParse, pPk);
+  recomputeColumnsNotIndexed(pPk);
 }
 
 
@@ -2920,6 +2915,17 @@ void sqlite3EndTable(
     /* Reparse everything to update our internal data structures */
     sqlite3VdbeAddParseSchemaOp(v, iDb,
            sqlite3MPrintf(db, "tbl_name='%q' AND type!='trigger'", p->zName),0);
+
+    /* Test for cycles in generated columns and illegal expressions
+    ** in CHECK constraints and in DEFAULT clauses. */
+    if( p->tabFlags & TF_HasGenerated ){
+      sqlite3VdbeAddOp4(v, OP_SqlExec, 1, 0, 0,
+             sqlite3MPrintf(db, "SELECT*FROM\"%w\".\"%w\"",
+                   db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
+    }
+    sqlite3VdbeAddOp4(v, OP_SqlExec, 1, 0, 0,
+           sqlite3MPrintf(db, "PRAGMA \"%w\".integrity_check(%Q)",
+                 db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
   }
 
   /* Add the table to the in-memory representation of the database.
@@ -4273,7 +4279,7 @@ void sqlite3CreateIndex(
   ** it as a covering index */
   assert( HasRowid(pTab)
       || pTab->iPKey<0 || sqlite3TableColumnToIndex(pIndex, pTab->iPKey)>=0 );
-  recomputeColumnsNotIndexed(pParse, pIndex);
+  recomputeColumnsNotIndexed(pIndex);
   if( pTblName!=0 && pIndex->nColumn>=pTab->nCol ){
     pIndex->isCovering = 1;
     for(j=0; j<pTab->nCol; j++){
