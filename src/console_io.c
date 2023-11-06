@@ -249,18 +249,20 @@ INT_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...){
   return rv;
 }
 
+
 INT_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
   if( pfIn==0 ) pfIn = stdin;
 #if SHELL_CON_TRANSLATE
   if( pfIn == consoleInfo.pst[0].pf ){
-    static const int nwcLen = 150;
-    WCHAR wcBuf[nwcLen+1];
+#define SHELL_GULP 150 /* Count of WCHARS to be gulped at a time */
+    WCHAR wcBuf[SHELL_GULP+1];
     int lend = 0, noc = 0;
     if( consoleInfo.stdinEof ) return 0;
     if( ncMax > 0 ) cBuf[0] = 0;
     while( noc < ncMax-8-1 && !lend ){
       /* There is room for at least 2 more characters and a 0-terminator. */
-      int na = (ncMax > nwcLen*4+1 + noc)? nwcLen : (ncMax-1 - noc)/4;
+      int na = (ncMax > SHELL_GULP*4+1 + noc)? SHELL_GULP : (ncMax-1 - noc)/4;
+#undef SHELL_GULP
       DWORD nbr = 0;
       BOOL bRC = ReadConsoleW(consoleInfo.pst[0].hx, wcBuf, na, &nbr, 0);
       if( bRC && nbr>0 && (wcBuf[nbr-1]&0xF800)==0xD800 ){
