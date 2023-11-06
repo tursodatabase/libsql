@@ -36,6 +36,8 @@
 #  include <io.h>
 #  include <fcntl.h>
 # endif
+#else
+# define SHELL_NO_SYSINC /* Better yet, modify mkshellc.tcl for this. */
 #endif
 
 #ifndef SQLITE3_H

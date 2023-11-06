@@ -17,21 +17,27 @@
 # define SQLITE_CDECL
 #endif
 
+#ifndef SHELL_NO_SYSINC
 #include <stdarg.h>
 #include <string.h>
 #include "console_io.h"
 #include "sqlite3.h"
+#endif
 
 #if defined(_WIN32) || defined(WIN32)
-# include <io.h>
-# include <fcntl.h>
+# ifndef SHELL_NO_SYSINC
+#  include <io.h>
+#  include <fcntl.h>
+# endif
 # ifdef SHELL_LEGACY_CONSOLE_IO
 #  define SHELL_CON_TRANSLATE 2 /* Use UTF-8/MBCS translation for console I/O */
 # else
 #  define SHELL_CON_TRANSLATE 1 /* Use WCHAR Windows APIs for console I/O */
 # endif
 #else
-# include <unistd.h>
+# ifndef SHELL_NO_SYSINC
+#  include <unistd.h>
+# endif
 # define SHELL_CON_TRANSLATE 0 /* Use plain C library stream I/O at console */
 #endif
 
@@ -215,7 +221,7 @@ INT_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...){
     /* Legacy translation to active code page, then MBCS chars out. */
     char *z2 = sqlite3_win32_utf8_to_mbcs_v2(z1, 0);
     if( z2!=NULL ){
-      rv = strlen(z2);
+      rv = (int)strlen(z2);
       vfprintf(pfO, "%s", z2);
       sqlite3_free(z2);
     }
@@ -224,7 +230,7 @@ INT_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...){
     if( z1!=NULL ){
       int nwc;
       WCHAR *zw2 = 0;
-      rv = strlen(z1);
+      rv = (int)strlen(z1);
       nwc = MultiByteToWideChar(CP_UTF8,0,z1,rv,0,0);
       if( nwc>0 ){
         zw2 = sqlite3_malloc64((nwc+1)*sizeof(WCHAR));
