@@ -239,8 +239,8 @@ extern LPWSTR sqlite3_win32_utf8_to_unicode(const char *zText);
 
 #define SQLITE_INTERNAL_LINKAGE static
 
-INCLUDE console_io.h
-INCLUDE console_io.c
+INCLUDE ../ext/consio/console_io.h
+INCLUDE ../ext/consio/console_io.c
 
 /* True if the timer is enabled */
 static int enableTimer = 0;
