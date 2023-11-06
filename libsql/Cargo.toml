@@ -80,6 +80,7 @@ replication = [
   "dep:futures"
 ]
 hrana = [
+  "core",
   "serde",
   "http",
   "dep:base64",
