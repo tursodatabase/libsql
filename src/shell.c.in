@@ -237,7 +237,7 @@ extern char *sqlite3_win32_unicode_to_utf8(LPCWSTR);
 extern LPWSTR sqlite3_win32_utf8_to_unicode(const char *zText);
 #endif
 
-#define INT_LINKAGE static
+#define SQLITE_INTERNAL_LINKAGE static
 
 INCLUDE console_io.h
 INCLUDE console_io.c
@@ -557,7 +557,8 @@ static char *dynamicContinuePrompt(void){
         shell_strncpy(dynPrompt.dynamicPrompt, "(x.", 4);
         dynPrompt.dynamicPrompt[2] = (char)('0'+dynPrompt.inParenLevel);
       }
-      shell_strncpy(dynPrompt.dynamicPrompt+3, continuePrompt+3, PROMPT_LEN_MAX-4);
+      shell_strncpy(dynPrompt.dynamicPrompt+3, continuePrompt+3,
+                    PROMPT_LEN_MAX-4);
     }
   }
   return dynPrompt.dynamicPrompt;
@@ -568,7 +569,7 @@ static char *dynamicContinuePrompt(void){
 #define fgets(b,n,f) fgetsUtf8(b,n,f)
 /* And, (varargs) utf8_printf(f,z,...) is redirected to the same. */
 #define utf8_printf fprintfUtf8
-/* And, rfprintf(f,z) is redirected to fputsUtf8(z,f) in the library. */
+/* And, utf8_print(f,z) is redirected to fputsUtf8(z,f) in the library. */
 #define utf8_print(f,z) fputsUtf8(z,f)
 
 /* Indicate out-of-memory and exit. */
@@ -3340,7 +3341,7 @@ static void display_scanstats(
   UNUSED_PARAMETER(pArg);
 #else
   if( pArg->scanstatsOn==3 ){
-    const char *zSql = 
+    const char *zSql =
       "  SELECT addr, opcode, p1, p2, p3, p4, p5, comment, nexec,"
       "   round(ncycle*100.0 / (sum(ncycle) OVER ()), 2)||'%' AS cycles"
       "   FROM bytecode(?)";
@@ -4026,7 +4027,7 @@ static int expertFinish(
         const char *zEQP = sqlite3_expert_report(p, i, EXPERT_REPORT_PLAN);
         if( zIdx==0 ) zIdx = "(no new indexes)\n";
         if( bVerbose ){
-          utf8_printf(out, "-- Query %d --------------------------------\n",i+1);
+          utf8_printf(out,"-- Query %d --------------------------------\n",i+1);
           utf8_printf(out, "%s\n\n", zSql);
         }
         utf8_printf(out, "%s\n", zIdx);
@@ -9990,7 +9991,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else{
         rc = sqlite3session_attach(pSession->p, azCmd[1]);
         if( rc ){
-          utf8_printf(stderr, "ERROR: sqlite3session_attach() returns %d\n", rc);
+          utf8_printf(stderr, "ERROR: sqlite3session_attach() returns %d\n",rc);
           rc = 0;
         }
       }
@@ -10729,7 +10730,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     {"seek_count",         SQLITE_TESTCTRL_SEEK_COUNT,  0, ""               },
     {"sorter_mmap",        SQLITE_TESTCTRL_SORTER_MMAP, 0, "NMAX"           },
     {"tune",               SQLITE_TESTCTRL_TUNE,        1, "ID VALUE"       },
-    {"uselongdouble",    SQLITE_TESTCTRL_USELONGDOUBLE,0,"?BOOLEAN|\"default\"?"},
+    {"uselongdouble",  SQLITE_TESTCTRL_USELONGDOUBLE,0,"?BOOLEAN|\"default\"?"},
     };
     int testctrl = -1;
     int iCtrl = -1;
@@ -11737,9 +11738,6 @@ static const char zOptions[] =
   "   -multiplex           enable the multiplexor VFS\n"
 #endif
   "   -newline SEP         set output row separator. Default: '\\n'\n"
-#if SHELL_WIN_UTF8_OPT
-  "   -no-utf8             do not try to set up UTF-8 output (for legacy)\n"
-#endif
   "   -nofollow            refuse to open symbolic links to database files\n"
   "   -nonce STRING        set the safe-mode escape nonce\n"
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
@@ -12177,15 +12175,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       exit(1);
     }
   }
-#if SHELL_WIN_UTF8_OPT
-  /* Get indicated Windows console setup done before running invocation commands. */
-  if( in_console || out_console ){
-    console_prepare_utf8();
-  }
-  if( !in_console ){
-    setBinaryMode(stdin, 0);
-  }
-#endif
 
   if( data.pAuxDb->zDbFilename==0 ){
 #ifndef SQLITE_OMIT_MEMORYDB

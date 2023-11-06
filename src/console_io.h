@@ -24,8 +24,8 @@
 ** This code may change in tandem with other project code as needed.
 */
 
-#ifndef INT_LINKAGE
-# define INT_LINKAGE extern /* Linkage external to translation unit. */
+#ifndef SQLITE_INTERNAL_LINKAGE
+# define SQLITE_INTERNAL_LINKAGE extern /* external to translation unit */
 # include <stdio.h>
 # include <stdlib.h>
 # include <limits.h>
@@ -71,7 +71,7 @@ typedef enum ConsoleStdConsStreams {
 ** inherits the same I/O streams may call this function after
 ** such a process exits to guard against console mode changes.
 */
-INT_LINKAGE ConsoleStdConsStreams
+SQLITE_INTERNAL_LINKAGE ConsoleStdConsStreams
 consoleClassifySetup( FILE *pfIn, FILE *pfOut, FILE *pfErr );
 
 /*
@@ -88,7 +88,7 @@ consoleClassifySetup( FILE *pfIn, FILE *pfOut, FILE *pfErr );
 ** before so that said process will have a console setup
 ** however users have configured it or come to expect.
 */
-INT_LINKAGE void SQLITE_CDECL consoleRestore( void );
+SQLITE_INTERNAL_LINKAGE void SQLITE_CDECL consoleRestore( void );
 
 /*
 ** Render output like fprintf(). If the output is going to the
@@ -97,7 +97,7 @@ INT_LINKAGE void SQLITE_CDECL consoleRestore( void );
 ** to the provided stream almost as-is, possibly with newline
 ** translation as specified by set{Binary,Text}Mode().
 */
-INT_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...);
+SQLITE_INTERNAL_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...);
 
 /*
 ** Render output like fputs(). If the output is going to the
@@ -106,7 +106,7 @@ INT_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...);
 ** provided stream almost as-is, possibly with newline
 ** translation as specified by set{Binary,Text}Mode().
 */
-INT_LINKAGE int fputsUtf8(const char *z, FILE *pfO);
+SQLITE_INTERNAL_LINKAGE int fputsUtf8(const char *z, FILE *pfO);
 
 /*
 ** Collect input like fgets(...) with special provisions for input
@@ -115,7 +115,7 @@ INT_LINKAGE int fputsUtf8(const char *z, FILE *pfO);
 ** translation may be done as set by set{Binary,Text}Mode(). As a
 ** convenience, pfIn==NULL is treated as stdin.
 */
-INT_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn);
+SQLITE_INTERNAL_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn);
 
 /*
 ** Set given stream for binary mode, where newline translation is
@@ -130,8 +130,8 @@ INT_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn);
 ** translation. On all platforms, newline to the console starts
 ** a new line and CR,LF chars from the console become a newline.
 */
-INT_LINKAGE void setBinaryMode(FILE *, short bFlush);
-INT_LINKAGE void setTextMode(FILE *, short bFlush);
+SQLITE_INTERNAL_LINKAGE void setBinaryMode(FILE *, short bFlush);
+SQLITE_INTERNAL_LINKAGE void setTextMode(FILE *, short bFlush);
 
 typedef struct Prompts {
   int numPrompts;
@@ -177,10 +177,11 @@ typedef struct Prompts {
 ** This function may call upon services of a line-editing
 ** library to interactively collect line edited input.
 */
-INT_LINKAGE char *
+#if 0 /* not yet implemented */
+SQLITE_INTERNAL_LINKAGE char *
 shellGetLine(FILE *pfIn, char *zBufPrior, int nLen,
              short isContinuation, Prompts azPrompt);
-
+#endif
 /*
 ** TBD: Define an interface for application(s) to generate
 ** completion candidates for use by the line-editor.

@@ -122,7 +122,7 @@ static ConsoleInfo consoleInfo = {
 };
 #undef CI_INITIALIZER
 
-INT_LINKAGE ConsoleStdConsStreams
+SQLITE_INTERNAL_LINKAGE ConsoleStdConsStreams
 consoleClassifySetup( FILE *pfIn, FILE *pfOut, FILE *pfErr ){
   ConsoleStdConsStreams rv = CSCS_NoConsole;
   FILE *apf[3] = { pfIn, pfOut, pfErr };
@@ -152,7 +152,7 @@ consoleClassifySetup( FILE *pfIn, FILE *pfOut, FILE *pfErr ){
   return rv;
 }
 
-INT_LINKAGE void SQLITE_CDECL consoleRestore( void ){
+SQLITE_INTERNAL_LINKAGE void SQLITE_CDECL consoleRestore( void ){
   if( consoleInfo.cscs ){
     int ix;
     for( ix=0; ix<3; ++ix ){
@@ -199,15 +199,15 @@ static void setModeFlushQ(FILE *pf, short bFlush, int mode){
 # define setModeFlushQ(f, b, m) if(isConOut(f)>0||b) fflush(f)
 #endif
 
-INT_LINKAGE void setBinaryMode(FILE *pf, short bFlush){
+SQLITE_INTERNAL_LINKAGE void setBinaryMode(FILE *pf, short bFlush){
   setModeFlushQ(pf, bFlush, _O_BINARY);
 }
-INT_LINKAGE void setTextMode(FILE *pf, short bFlush){
+SQLITE_INTERNAL_LINKAGE void setTextMode(FILE *pf, short bFlush){
   setModeFlushQ(pf, bFlush, _O_TEXT);
 }
 #undef setModeFlushQ
 
-INT_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...){
+SQLITE_INTERNAL_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...){
   va_list ap;
   int rv = 0;
 #if SHELL_CON_TRANSLATE
@@ -255,7 +255,7 @@ INT_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...){
   return rv;
 }
 
-INT_LINKAGE int fputsUtf8(const char *z, FILE *pfO){
+SQLITE_INTERNAL_LINKAGE int fputsUtf8(const char *z, FILE *pfO){
 #if SHELL_CON_TRANSLATE
   return fprintfUtf8(pfO, "%s", z);
 #else
@@ -263,7 +263,7 @@ INT_LINKAGE int fputsUtf8(const char *z, FILE *pfO){
 #endif
 }
 
-INT_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
+SQLITE_INTERNAL_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
   if( pfIn==0 ) pfIn = stdin;
 #if SHELL_CON_TRANSLATE
   if( pfIn == consoleInfo.pst[0].pf ){
