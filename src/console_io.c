@@ -255,6 +255,13 @@ INT_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...){
   return rv;
 }
 
+INT_LINKAGE int fputsUtf8(const char *z, FILE *pfO){
+#if SHELL_CON_TRANSLATE
+  return fprintfUtf8(pfO, "%s", z);
+#else
+  return fputs(z, pfO);
+#endif
+}
 
 INT_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
   if( pfIn==0 ) pfIn = stdin;

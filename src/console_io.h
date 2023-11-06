@@ -100,6 +100,15 @@ INT_LINKAGE void SQLITE_CDECL consoleRestore( void );
 INT_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...);
 
 /*
+** Render output like fputs(). If the output is going to the
+** console and translation from UTF-8 is necessary, perform
+** the needed translation. Otherwise, write given text to the
+** provided stream almost as-is, possibly with newline
+** translation as specified by set{Binary,Text}Mode().
+*/
+INT_LINKAGE int fputsUtf8(const char *z, FILE *pfO);
+
+/*
 ** Collect input like fgets(...) with special provisions for input
 ** from the console on platforms that require same. Defers to the
 ** C library fgets() when input is not from the console. Newline
