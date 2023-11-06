@@ -72,16 +72,6 @@ macro_rules! cfg_hrana {
         )*
     }
 }
-
-macro_rules! cfg_remote {
-    ($($item:item)*) => {
-        $(
-            #[cfg(feature = "remote")]
-            #[cfg_attr(docsrs, doc(cfg(feature = "remote")))]
-            $item
-        )*
-    }
-}
 macro_rules! cfg_cloudflare {
     ($($item:item)*) => {
         $(

@@ -1,4 +1,3 @@
-use crate::hrana::pipeline::ServerMsg;
 use crate::hrana::Result;
 use crate::hrana::{HranaError, HttpSend};
 use crate::util::ConnectorService;
@@ -7,6 +6,7 @@ use http::header::AUTHORIZATION;
 use http::StatusCode;
 use hyper::Error;
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
+use libsql_remote::ServerMsg;
 
 #[derive(Clone, Debug)]
 pub struct HttpSender {

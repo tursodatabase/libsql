@@ -1,16 +1,14 @@
 #![allow(dead_code)]
 
-#[cfg(feature = "remote")]
+#[cfg(feature = "http")]
 mod hyper;
-mod pipeline;
-mod proto;
 
 use crate::util::coerce_url_scheme;
-pub(crate) use pipeline::{
+pub(crate) use libsql_remote::pipeline::{
     ClientMsg, Response, ServerMsg, StreamBatchReq, StreamExecuteReq, StreamRequest,
     StreamResponse, StreamResponseError, StreamResponseOk,
 };
-use proto::{Batch, BatchResult, Col, Stmt, StmtResult};
+use libsql_remote::proto::{Batch, BatchResult, Col, Stmt, StmtResult};
 
 use crate::Error;
 use crate::{params::Params, ValueType};
@@ -23,6 +21,8 @@ use std::sync::{Arc, RwLock};
 use super::rows::{RowInner, RowsInner};
 
 type Result<T> = std::result::Result<T, HranaError>;
+
+type RValue = libsql_remote::proto::Value;
 
 /// Information about the current session: the server-generated cookie
 /// and the URL that should be used for further communication.
@@ -82,7 +82,7 @@ pub enum HranaError {
     Api(String),
 }
 
-#[cfg(feature = "remote")]
+#[cfg(feature = "hrana")]
 impl HranaClient<hyper::HttpSender> {
     pub(crate) fn new_with_connector(
         url: impl Into<String>,
@@ -255,7 +255,6 @@ where
     }
 }
 
-#[cfg(feature = "remote")]
 #[async_trait::async_trait]
 impl crate::connection::Conn for HranaClient<hyper::HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
@@ -353,7 +352,6 @@ where
     }
 }
 
-#[cfg(feature = "remote")]
 #[async_trait::async_trait]
 impl super::statement::Stmt for Statement<hyper::HttpSender> {
     fn finalize(&mut self) {}
@@ -383,7 +381,7 @@ impl super::statement::Stmt for Statement<hyper::HttpSender> {
 
 pub struct Rows {
     cols: Arc<Vec<Col>>,
-    rows: VecDeque<Vec<proto::Value>>,
+    rows: VecDeque<Vec<RValue>>,
 }
 
 impl RowsInner for Rows {
@@ -420,7 +418,7 @@ impl RowsInner for Rows {
 #[derive(Debug)]
 pub struct Row {
     cols: Arc<Vec<Col>>,
-    inner: Vec<proto::Value>,
+    inner: Vec<RValue>,
 }
 
 impl RowInner for Row {
@@ -443,11 +441,11 @@ impl RowInner for Row {
     fn column_type(&self, idx: i32) -> crate::Result<ValueType> {
         if let Some(value) = self.inner.get(idx as usize) {
             Ok(match value {
-                proto::Value::Null => ValueType::Null,
-                proto::Value::Integer { value: _ } => ValueType::Integer,
-                proto::Value::Float { value: _ } => ValueType::Real,
-                proto::Value::Text { value: _ } => ValueType::Text,
-                proto::Value::Blob { value: _ } => ValueType::Blob,
+                RValue::Null => ValueType::Null,
+                RValue::Integer { value: _ } => ValueType::Integer,
+                RValue::Float { value: _ } => ValueType::Real,
+                RValue::Text { value: _ } => ValueType::Text,
+                RValue::Blob { value: _ } => ValueType::Blob,
             })
         } else {
             Err(crate::Error::ColumnNotFound(idx))
@@ -471,22 +469,22 @@ fn bind_params(params: Params, stmt: &mut Stmt) {
     }
 }
 
-fn into_value(value: crate::Value) -> proto::Value {
+fn into_value(value: crate::Value) -> RValue {
     match value {
-        crate::Value::Null => proto::Value::Null,
-        crate::Value::Integer(value) => proto::Value::Integer { value },
-        crate::Value::Real(value) => proto::Value::Float { value },
-        crate::Value::Text(value) => proto::Value::Text { value },
-        crate::Value::Blob(value) => proto::Value::Blob { value },
+        crate::Value::Null => RValue::Null,
+        crate::Value::Integer(value) => RValue::Integer { value },
+        crate::Value::Real(value) => RValue::Float { value },
+        crate::Value::Text(value) => RValue::Text { value },
+        crate::Value::Blob(value) => RValue::Blob { value },
     }
 }
 
-fn into_value2(value: proto::Value) -> crate::Value {
+fn into_value2(value: RValue) -> crate::Value {
     match value {
-        proto::Value::Null => crate::Value::Null,
-        proto::Value::Integer { value } => crate::Value::Integer(value),
-        proto::Value::Float { value } => crate::Value::Real(value),
-        proto::Value::Text { value } => crate::Value::Text(value),
-        proto::Value::Blob { value } => crate::Value::Blob(value),
+        RValue::Null => crate::Value::Null,
+        RValue::Integer { value } => crate::Value::Integer(value),
+        RValue::Float { value } => crate::Value::Real(value),
+        RValue::Text { value } => crate::Value::Text(value),
+        RValue::Blob { value } => crate::Value::Blob(value),
     }
 }

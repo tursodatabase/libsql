@@ -9,6 +9,7 @@ license = "MIT"
 [dependencies]
 futures = { version = "0.3.28", optional = true }
 libsql-sys = { version = "0.2.13", path = "../libsql-sys", optional = true }
+libsql-remote = { version = "0.1", path = "../libsql-remote", optional = true }
 thiserror = "1.0.40"
 tokio = { version = "1.29.1", features = ["fs", "sync"], optional = true }
 tracing = "0.1.37"
@@ -51,7 +52,7 @@ prost-build = "0.12"
 
 
 [features]
-default = ["core", "replication", "remote"]
+default = ["core", "replication", "hrana"]
 core = [
   "libsql-sys",
   "dep:bitflags",
@@ -80,14 +81,12 @@ replication = [
 ]
 hrana = [
   "serde",
+  "http",
   "dep:base64",
   "dep:serde_json",
-]
-remote = [
-  "hrana",
-  "http",
   "dep:tower",
-  "dep:hyper-rustls"
+  "dep:hyper-rustls",
+  "dep:libsql-remote",
 ]
 serde = ["dep:serde"]
 http = ["dep:tower", "dep:hyper", "dep:http", "dep:tokio"]

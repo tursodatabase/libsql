@@ -2234,6 +2234,7 @@ dependencies = [
  "http",
  "hyper",
  "hyper-rustls 0.24.2",
+ "libsql-remote",
  "libsql-replication",
  "libsql-sys",
  "parking_lot",
@@ -2276,7 +2277,7 @@ dependencies = [
 name = "libsql-remote"
 version = "0.1.0"
 dependencies = [
- "base64 0.21.4",
+ "base64 0.21.5",
  "futures",
  "serde",
  "serde_json",

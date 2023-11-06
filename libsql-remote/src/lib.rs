@@ -19,7 +19,7 @@ cfg_cloudflare! {
 pub mod connection;
 pub mod params;
 pub mod pipeline;
-mod proto;
+pub mod proto;
 
 pub use params::{IntoParams, Params};
 pub use pipeline::{
