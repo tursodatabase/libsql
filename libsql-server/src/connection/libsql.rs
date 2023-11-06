@@ -389,24 +389,32 @@ unsafe extern "C" fn busy_handler<W: WalHook>(state: *mut c_void, _retries: c_in
             // the current holder of the transaction has timedout, we will attempt to steal their
             // lock.
             _ = timeout => {
+                tracing::info!("transaction has timed-out, stealing lock");
                 // only a single connection gets to steal the lock, others retry
                 if let Some(mut lock) = state.slot.try_write() {
-                    // We check that slot wasn't already stolen, and that their is still a slot.
-                    // The ordering is relaxed because the atomic is only set under the slot lock.
-                    if slot.is_stolen.compare_exchange(false, true, Ordering::Relaxed, Ordering::Relaxed).is_ok() {
-                        // The connection holding the current txn will set itself as stolen when it
-                        // detects a timeout, so if we arrive to this point, then there is
-                        // necessarily a slot, and this slot has to be the one we attempted to
-                        // steal.
-                        assert!(lock.take().is_some());
+                    if let Some(ref s) = *lock {
+                        // The state contains the same lock as the one we're attempting to steal
+                        if Arc::ptr_eq(s, &slot) {
+                            // We check that slot wasn't already stolen, and that their is still a slot.
+                            // The ordering is relaxed because the atomic is only set under the slot lock.
+                            if slot.is_stolen.compare_exchange(false, true, Ordering::Relaxed, Ordering::Relaxed).is_ok() {
+                                // The connection holding the current txn will set itself as stolen when it
+                                // detects a timeout, so if we arrive to this point, then there is
+                                // necessarily a slot, and this slot has to be the one we attempted to
+                                // steal.
+                                assert!(lock.take().is_some());
 
-                        slot.abort();
-                        tracing::info!("stole transaction lock");
+                                slot.abort();
+                                tracing::info!("stole transaction lock");
+                            }
+                        }
                     }
                 }
+
                 1
             }
         }
+
     })
 }
 
@@ -537,8 +545,20 @@ impl<W: WalHook> Connection<W> {
                 }
                 // lock was downgraded, notify a waiter
                 (Tx::Write, Tx::None | Tx::Read) => {
-                    state.slot.write().take();
-                    lock.slot.take();
+                    let old_slot = lock
+                        .slot
+                        .take()
+                        .expect("there should be a slot right after downgrading a txn");
+                    let mut maybe_state_slot = state.slot.write();
+                    // We need to make sure that the state slot is our slot before removing it.
+                    if let Some(ref state_slot) = *maybe_state_slot {
+                        if Arc::ptr_eq(state_slot, &old_slot) {
+                            maybe_state_slot.take();
+                        }
+                    }
+
+                    drop(maybe_state_slot);
+
                     state.notify.notify_one();
                 }
                 // nothing to do
