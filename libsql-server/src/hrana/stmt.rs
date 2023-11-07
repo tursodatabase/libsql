@@ -216,7 +216,8 @@ pub fn stmt_error_from_sqld_error(sqld_error: SqldError) -> Result<StmtError, Sq
         }
         SqldError::Blocked(reason) => StmtError::Blocked { reason },
         SqldError::RpcQueryError(e) => StmtError::Proxy(e.message),
-        SqldError::RusqliteError(rusqlite_error) => match rusqlite_error {
+        SqldError::RusqliteError(rusqlite_error)
+        | SqldError::RusqliteErrorExtended(rusqlite_error, _) => match rusqlite_error {
             rusqlite::Error::SqliteFailure(sqlite_error, Some(message)) => StmtError::SqliteError {
                 source: sqlite_error,
                 message,

@@ -6,6 +6,7 @@ use super::common;
 
 use std::sync::Arc;
 
+use insta::assert_debug_snapshot;
 use libsql::{Database, Value};
 use tempfile::tempdir;
 use tokio::sync::Notify;
@@ -197,6 +198,31 @@ fn execute_transaction() {
 
             Ok(())
         }
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn basic_query_fail() {
+    let mut sim = turmoil::Builder::new().build();
+
+    sim.host("primary", make_standalone_server);
+
+    sim.client("test", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        conn.execute("create table test (x)", ()).await?;
+        conn.execute("create unique index test_index on test(x)", ())
+            .await?;
+        conn.execute("insert into test values (12)", ()).await?;
+        assert_debug_snapshot!(conn
+            .execute("insert into test values (12)", ())
+            .await
+            .unwrap_err());
+
+        Ok(())
     });
 
     sim.run().unwrap();
