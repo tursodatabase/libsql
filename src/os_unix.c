@@ -4980,12 +4980,15 @@ static int unixShmLock(
   ** It is not permitted to block on the RECOVER lock.
   */
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-  assert( (flags & SQLITE_SHM_UNLOCK) || pDbFd->iBusyTimeout==0 || (
-         (ofst!=2)                                   /* not RECOVER */
-      && (ofst!=1 || (p->exclMask|p->sharedMask)==0)
-      && (ofst!=0 || (p->exclMask|p->sharedMask)<3)
-      && (ofst<3  || (p->exclMask|p->sharedMask)<(1<<ofst))
-  ));
+  {
+    u16 lockMask = (p->exclMask|p->sharedMask);
+    assert( (flags & SQLITE_SHM_UNLOCK) || pDbFd->iBusyTimeout==0 || (
+          (ofst!=2)                                   /* not RECOVER */
+       && (ofst!=1 || lockMask==0 || lockMask==2)
+       && (ofst!=0 || lockMask<3)
+       && (ofst<3  || lockMask<(1<<ofst))
+    ));
+  }
 #endif
 
   mask = (1<<(ofst+n)) - (1<<ofst);
