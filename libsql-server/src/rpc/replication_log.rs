@@ -256,6 +256,7 @@ impl ReplicationLog for ReplicationLogService {
             session_token: self.session_token.clone(),
             generation_id: self.generation_id.to_string(),
             generation_start_index: 0,
+            current_replication_index: *logger.new_frame_notifier.borrow(),
         };
 
         Ok(tonic::Response::new(response))

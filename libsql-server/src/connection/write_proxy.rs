@@ -42,6 +42,7 @@ pub struct MakeWriteProxyConn {
     max_total_response_size: u64,
     namespace: NamespaceName,
     make_read_only_conn: MakeLibSqlConn<TransparentMethods>,
+    primary_replication_index: Option<FrameNo>,
 }
 
 impl MakeWriteProxyConn {
@@ -57,6 +58,7 @@ impl MakeWriteProxyConn {
         max_response_size: u64,
         max_total_response_size: u64,
         namespace: NamespaceName,
+        primary_replication_index: Option<FrameNo>,
     ) -> crate::Result<Self> {
         let client = ProxyClient::with_origin(channel, uri);
         let make_read_only_conn = MakeLibSqlConn::new(
@@ -81,6 +83,7 @@ impl MakeWriteProxyConn {
             max_total_response_size,
             namespace,
             make_read_only_conn,
+            primary_replication_index,
         })
     }
 }
@@ -100,6 +103,7 @@ impl MakeConnection for MakeWriteProxyConn {
             },
             self.namespace.clone(),
             self.make_read_only_conn.create().await?,
+            self.primary_replication_index,
         )
         .await?;
         Ok(db)
@@ -122,6 +126,8 @@ pub struct WriteProxyConnection<R> {
     namespace: NamespaceName,
 
     remote_conn: Mutex<Option<RemoteConnection<R>>>,
+    /// the primary replication index when the namespace was loaded
+    primary_replication_index: Option<FrameNo>,
 }
 
 impl WriteProxyConnection<RpcStream> {
@@ -133,6 +139,7 @@ impl WriteProxyConnection<RpcStream> {
         builder_config: QueryBuilderConfig,
         namespace: NamespaceName,
         read_conn: LibSqlConnection<TransparentMethods>,
+        primary_replication_index: Option<u64>,
     ) -> Result<Self> {
         Ok(Self {
             read_conn,
@@ -144,6 +151,7 @@ impl WriteProxyConnection<RpcStream> {
             stats,
             namespace,
             remote_conn: Default::default(),
+            primary_replication_index,
         })
     }
 
@@ -232,6 +240,27 @@ impl WriteProxyConnection<RpcStream> {
             }
             None => Ok(()),
         }
+    }
+
+    /// returns whether a request should be unconditionally proxied based on the current state of
+    /// the replica.
+    fn should_proxy(&self) -> bool {
+        // There primary has data
+        if let Some(primary_index) = self.primary_replication_index {
+            let last_applied = *self.applied_frame_no_receiver.borrow();
+            // if we either don't have data while the primary has, or the data we have is
+            // anterior to that of the primary when we loaded the namespace, then proxy the
+            // request to the primary
+            if last_applied.is_none() {
+                return true;
+            }
+
+            if let Some(last_applied) = last_applied {
+                return last_applied < primary_index;
+            }
+        }
+
+        false
     }
 }
 
@@ -405,8 +434,7 @@ impl Connection for WriteProxyConnection<RpcStream> {
     ) -> Result<B> {
         let mut state = self.state.lock().await;
 
-        // This is a fresh namespace, and it is not replicated yet, proxy the first request.
-        if self.applied_frame_no_receiver.borrow().is_none() {
+        if self.should_proxy() {
             self.execute_remote(pgm, &mut state, auth, builder).await
         } else if *state == TxnStatus::Init && pgm.is_read_only() {
             // set the state to invalid before doing anything, and set it to a valid state after.

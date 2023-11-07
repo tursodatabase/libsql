@@ -19,6 +19,7 @@ message HelloResponse {
     /// string-encoded Uuid v4 token for the current session, changes on each restart, and must be passed in subsequent requests header.string
     /// If the header session token fails to match the current session token, a NO_HELLO error is returned
     bytes session_token = 4;
+    optional uint64 current_replication_index = 5;
 }
 
 message Frame {
