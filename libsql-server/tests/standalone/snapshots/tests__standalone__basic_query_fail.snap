@@ -1,6 +1,5 @@
 ---
 source: libsql-server/tests/standalone/mod.rs
-assertion_line: 220
 expression: "conn.execute(\"insert into test values (12)\", ()).await.unwrap_err()"
 ---
 Hrana(
