@@ -36,6 +36,7 @@ use crate::{
 
 cfg_cloudflare! {
     mod cloudflare;
+    pub use cloudflare::CloudflareSender;
 }
 
 #[derive(Debug, Clone)]
@@ -44,12 +45,10 @@ pub struct Connection<T> {
 }
 
 cfg_cloudflare! {
-    use cloudflare::CloudflareSender;
-
     impl Connection<CloudflareSender> {
         pub fn open_cloudflare_worker(url: impl Into<String>, auth_token: impl Into<String>) -> Self    {
             Connection {
-                conn: HttpConnection::new(url.into(), auth_token.into(), CloudflareSender::default()),
+                conn: HttpConnection::new(url.into(), auth_token.into(), CloudflareSender::new()),
             }
         }
     }
