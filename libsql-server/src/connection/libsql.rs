@@ -13,7 +13,10 @@ use tokio::time::{Duration, Instant};
 use crate::auth::{Authenticated, Authorized, Permission};
 use crate::error::Error;
 use crate::libsql_bindings::wal_hook::WalHook;
-use crate::metrics::{READ_QUERY_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT, WRITE_QUERY_COUNT};
+use crate::metrics::{
+    DESCRIBE_COUNT, PROGRAM_EXEC_COUNT, READ_QUERY_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT,
+    WRITE_QUERY_COUNT, WRITE_TXN_DURATION,
+};
 use crate::query::Query;
 use crate::query_analysis::{StmtKind, TxnStatus};
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
@@ -310,11 +313,7 @@ impl<T: WalHook> TxnSlot<T> {
         // we have a lock on the connection, we don't need mode than a
         // Relaxed store.
         conn.rollback();
-        histogram!(
-            "libsql_server_write_txn_duration",
-            self.created_at.elapsed()
-        )
-        // WRITE_TXN_DURATION.record(self.created_at.elapsed());
+        WRITE_TXN_DURATION.record(self.created_at.elapsed());
     }
 }
 
@@ -769,7 +768,7 @@ impl<W: WalHook> Connection<W> {
         }
 
         self.stats
-            .update_query_metrics(sql, rows_read, rows_written, mem_used, elapsed)
+            .update_query_metrics(rows_read, rows_written, mem_used, elapsed)
     }
 
     fn describe(&self, sql: &str) -> crate::Result<DescribeResponse> {
@@ -878,7 +877,7 @@ where
         builder: B,
         _replication_index: Option<FrameNo>,
     ) -> Result<B> {
-        increment_counter!("libsql_server_libsql_execute_program");
+        PROGRAM_EXEC_COUNT.increment(1);
 
         check_program_auth(auth, &pgm)?;
         let conn = self.inner.clone();
@@ -893,6 +892,7 @@ where
         auth: Authenticated,
         _replication_index: Option<FrameNo>,
     ) -> Result<crate::Result<DescribeResponse>> {
+        DESCRIBE_COUNT.increment(1);
         check_describe_auth(auth)?;
         let conn = self.inner.clone();
         let res = tokio::task::spawn_blocking(move || conn.lock().describe(&sql))

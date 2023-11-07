@@ -12,6 +12,7 @@ use std::cell::OnceCell;
 use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio_util::io::ReaderStream;
 use url::Url;
 
@@ -65,9 +66,24 @@ where
     M: MakeNamespace,
     C: Connector,
 {
+    let app_label = std::env::var("SQLD_APP_LABEL").ok();
+
     let prom_handle = if !disable_metrics {
         let lock = PROM_HANDLE.lock();
-        let prom_handle = lock.get_or_init(|| PrometheusBuilder::new().install_recorder().unwrap());
+        let prom_handle = lock.get_or_init(|| {
+            let b = PrometheusBuilder::new().idle_timeout(
+                metrics_util::MetricKindMask::ALL,
+                Some(Duration::from_secs(120)),
+            );
+
+            if let Some(app_label) = app_label {
+                b.add_global_label("app", app_label)
+                    .install_recorder()
+                    .unwrap()
+            } else {
+                b.install_recorder().unwrap()
+            }
+        });
         Some(prom_handle.clone())
     } else {
         None
