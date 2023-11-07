@@ -228,7 +228,6 @@ fn basic_query_fail() {
     sim.run().unwrap();
 }
 
-
 #[test]
 fn random_rowid() {
     let mut sim = turmoil::Builder::new().build();
