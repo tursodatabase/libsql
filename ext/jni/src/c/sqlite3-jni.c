@@ -2115,9 +2115,11 @@ WRAP_INT_STMT_INT(1column_1bytes16,    sqlite3_column_bytes16)
 WRAP_INT_STMT(1column_1count,          sqlite3_column_count)
 WRAP_STR_STMT_INT(1column_1decltype,   sqlite3_column_decltype)
 WRAP_STR_STMT_INT(1column_1name,       sqlite3_column_name)
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
 WRAP_STR_STMT_INT(1column_1database_1name,  sqlite3_column_database_name)
 WRAP_STR_STMT_INT(1column_1origin_1name,    sqlite3_column_origin_name)
 WRAP_STR_STMT_INT(1column_1table_1name,     sqlite3_column_table_name)
+#endif
 WRAP_INT_STMT_INT(1column_1type,       sqlite3_column_type)
 WRAP_INT_STMT(1data_1count,            sqlite3_data_count)
 WRAP_STR_DB_INT(1db_1name,             sqlite3_db_name)

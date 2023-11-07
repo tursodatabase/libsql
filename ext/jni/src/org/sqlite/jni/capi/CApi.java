@@ -622,20 +622,29 @@ public final class CApi {
     return sqlite3_column_name(stmt.getNativePointer(), ndx);
   }
 
-  static native String sqlite3_column_database_name(@NotNull long ptrToStmt, int ndx);
+  private static native String sqlite3_column_database_name(@NotNull long ptrToStmt, int ndx);
 
+  /**
+     Only available if built with SQLITE_ENABLE_COLUMN_METADATA.
+  */
   public static String sqlite3_column_database_name(@NotNull sqlite3_stmt stmt, int ndx){
     return sqlite3_column_database_name(stmt.getNativePointer(), ndx);
   }
 
-  static native String sqlite3_column_origin_name(@NotNull long ptrToStmt, int ndx);
+  private static native String sqlite3_column_origin_name(@NotNull long ptrToStmt, int ndx);
 
+  /**
+     Only available if built with SQLITE_ENABLE_COLUMN_METADATA.
+  */
   public static String sqlite3_column_origin_name(@NotNull sqlite3_stmt stmt, int ndx){
     return sqlite3_column_origin_name(stmt.getNativePointer(), ndx);
   }
 
-  static native String sqlite3_column_table_name(@NotNull long ptrToStmt, int ndx);
+  private static native String sqlite3_column_table_name(@NotNull long ptrToStmt, int ndx);
 
+  /**
+     Only available if built with SQLITE_ENABLE_COLUMN_METADATA.
+  */
   public static String sqlite3_column_table_name(@NotNull sqlite3_stmt stmt, int ndx){
     return sqlite3_column_table_name(stmt.getNativePointer(), ndx);
   }
