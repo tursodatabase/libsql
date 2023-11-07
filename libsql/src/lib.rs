@@ -123,9 +123,7 @@ cfg_core! {
     pub use libsql_sys::ffi;
 }
 
-cfg_cloudflare! {
-    pub use hrana::cloudflare::Connection as DbConnection;
-}
+pub mod wasm;
 
 mod util;
 

@@ -1,7 +1,5 @@
 #![allow(dead_code)]
 
-#[cfg(feature = "cloudflare")]
-pub mod cloudflare;
 pub mod connection;
 #[cfg(feature = "http")]
 mod hyper;
@@ -19,7 +17,7 @@ use std::sync::Arc;
 
 use super::rows::{RowInner, RowsInner};
 
-type Result<T> = std::result::Result<T, HranaError>;
+pub(crate) type Result<T> = std::result::Result<T, HranaError>;
 
 /// Information about the current session: the server-generated cookie
 /// and the URL that should be used for further communication.

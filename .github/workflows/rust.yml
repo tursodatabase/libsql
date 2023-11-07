@@ -139,41 +139,39 @@ jobs:
         LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION: eu-central-2
         LIBSQL_BOTTOMLESS_BUCKET: bottomless
         LIBSQL_BOTTOMLESS_ENDPOINT: http://localhost:9000
-  test-wasm:
+
+  test-rust-wasm:
     runs-on: ubuntu-latest
     name: Run Rust Wasm Tests
     env:
       RUSTFLAGS: -D warnings
     steps:
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        targets: ["wasm32-unknown-unknown"]
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          targets: [wasm32-unknown-unknown]
 
-    # needed because we run out of disk space during tests
-    - name: Free Disk Space (Ubuntu)
-      uses: jlumbroso/free-disk-space@main
-      with:
-        # this might remove tools that are actually needed,
-        # when set to "true" but frees about 6 GB
-        tool-cache: true
+      # needed because we run out of disk space during tests
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # when set to "true" but frees about 6 GB
+          tool-cache: true
 
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up cargo cache
-      uses: actions/cache@v3
-      continue-on-error: false
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: ${{ runner.os }}-cargo-
+      - name: Set up cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
 
-    - name: Run check
-      uses: actions-rs/cargo@v1
-      with:
-        command: check
-        args: --verbose -p libsql --target wasm32-unknown-unknown --no-default-features --features cloudflare
+      - name: Run check
+        command: cargo check --verbose -p libsql --target wasm32-unknown-unknown --no-default-features --features cloudflare

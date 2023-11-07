@@ -1,39 +1,10 @@
-use crate::hrana::connection::HttpConnection;
 use crate::hrana::pipeline::ServerMsg;
 use crate::hrana::{HranaError, HttpSend, Result};
-use crate::params::IntoParams;
-use crate::Rows;
 use futures::future::LocalBoxFuture;
 use worker::wasm_bindgen::JsValue;
 
-#[derive(Debug, Clone)]
-pub struct Connection {
-    conn: HttpConnection<CloudflareSender>,
-}
-
-impl Connection {
-    pub fn open(url: impl Into<String>, auth_token: impl Into<String>) -> Self {
-        Connection {
-            conn: HttpConnection::new(url.into(), auth_token.into(), CloudflareSender),
-        }
-    }
-
-    pub async fn execute(&self, sql: &str, params: impl IntoParams) -> crate::Result<u64> {
-        tracing::trace!("executing `{}`", sql);
-        let mut stmt = crate::hrana::Statement::new(self.conn.clone(), sql.to_string(), true);
-        let rows = stmt.execute(&params.into_params()?).await?;
-        Ok(rows as u64)
-    }
-
-    pub async fn query(&self, sql: &str, params: impl IntoParams) -> crate::Result<Rows> {
-        tracing::trace!("querying `{}`", sql);
-        let mut stmt = crate::hrana::Statement::new(self.conn.clone(), sql.to_string(), true);
-        stmt.query(&params.into_params()?).await
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-struct CloudflareSender;
+#[derive(Default, Debug, Copy, Clone)]
+pub(super) struct CloudflareSender(());
 
 impl CloudflareSender {
     async fn send(url: String, auth: String, body: String) -> Result<ServerMsg> {
