@@ -231,6 +231,7 @@ struct CreateNamespaceReq {
     dump_url: Option<Url>,
     max_db_size: Option<bytesize::ByteSize>,
     heartbeat_url: Option<String>,
+    bottomless_db_id: Option<String>,
 }
 
 async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
@@ -248,7 +249,7 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
     let namespace = NamespaceName::from_string(namespace)?;
     app_state
         .namespaces
-        .create(namespace.clone(), dump, None)
+        .create(namespace.clone(), dump, req.bottomless_db_id)
         .await?;
 
     let store = app_state.namespaces.config_store(namespace).await?;
