@@ -119,7 +119,6 @@ typedef struct ConsoleInfo {
 #endif
 
 static ConsoleInfo consoleInfo = {
-  /* {0,0,0}, // iInitialFmode */
   { /* pst */ CI_INITIALIZER, CI_INITIALIZER, CI_INITIALIZER },
 #if SHELL_CON_TRANSLATE
   0, 0, 1, /* haveInput, outputIx, stdinEof */
@@ -150,7 +149,6 @@ consoleClassifySetup( FILE *pfIn, FILE *pfOut, FILE *pfErr ){
     }
     if( ix > 0 ) fflush(apf[ix]);
 #if SHELL_CON_TRANSLATE == 2
-    //    _setmode(_fileno(apf[ix]), _O_U8TEXT);
     _setmode(_fileno(apf[ix]), _O_TEXT);
 #endif
   }
@@ -165,14 +163,13 @@ SQLITE_INTERNAL_LINKAGE void SQLITE_CDECL consoleRestore( void ){
       if( consoleInfo.cscs & (CSCS_InConsole<<ix) ){
         PerStreamTags *ppst = &consoleInfo.pst[ix];
 #if SHELL_CON_TRANSLATE == 2
-        static int tmode = _O_TEXT;//, xmode = _O_U8TEXT;
+        static int tmode = _O_TEXT;
         /* Consider: Read these modes in consoleClassifySetup somehow.
         ** A _get_fmode() call almost works. But not with gcc, yet.
         ** This has to be done to make the CLI a callable function
         ** when legacy console I/O is done. (This may never happen.)
         */
         _setmode(_fileno(consoleInfo.pst[ix].pf), tmode);
-        //_setmode(_fileno(consoleInfo.pst[ix].pf), xmode);
 #endif
 #if SHELL_CON_TRANSLATE
         SetConsoleMode(ppst->hx, ppst->consMode);
@@ -213,43 +210,59 @@ SQLITE_INTERNAL_LINKAGE void setTextMode(FILE *pf, short bFlush){
 #undef setModeFlushQ
 
 #if SHELL_CON_TRANSLATE
+/* Write plain 0-terminated output to stream known as console. */
+static int conioZstrOut(int rch, const char *z){
+  int rv = 0;
+  if( z!=NULL && *z!=0 ){
+    int nc;
+    int nwc;
+# if SHELL_CON_TRANSLATE == 2
+    UINT cocp = GetConsoleOutputCP();
+    FILE *pfO = consoleInfo.pst[rch].pf;
+    if( cocp == CP_UTF8 ){
+      /* This is not legacy action. But it can work better,
+      ** when the console putatively can handle UTF-8. */
+      return fputs(z, pfO)<0 ? 0 : (int)strlen(z);
+    }
+# endif
+    nc = (int)strlen(z);
+    nwc = MultiByteToWideChar(CP_UTF8,0, z,nc, 0,0);
+    if( nwc > 0 ){
+      WCHAR *zw = sqlite3_malloc64(nwc*sizeof(WCHAR));
+      if( zw!=NULL ){
+        nwc = MultiByteToWideChar(CP_UTF8,0, z,nc, zw,nwc);
+        if( nwc > 0 ){
+# if SHELL_CON_TRANSLATE == 2
+          /* Legacy translation to active code page, then MBCS out. */
+          rv = WideCharToMultiByte(cocp,0, zw,nwc, 0,0, 0,0);
+          if( rv != 0 ){
+            char *zmb = sqlite3_malloc64(rv+1);
+            if( zmb != NULL ){
+              rv = WideCharToMultiByte(cocp,0, zw,nwc, zmb,rv, 0,0);
+              zmb[rv] = 0;
+              if( fputs(zmb, pfO)<0 ) rv = 0;
+              sqlite3_free(zmb);
+            }
+          }
+# elif SHELL_CON_TRANSLATE == 1
+          /* Translation from UTF-8 to UTF-16, then WCHARs out. */
+          if( WriteConsoleW(consoleInfo.pst[rch].hx, zw,nwc, 0, NULL) ){
+            rv = nc;
+          }
+# endif
+        }
+        sqlite3_free(zw);
+      }
+    }
+  }
+  return rv;
+}
+
 /* For fprintfUtf8() and printfUtf8() when stream is known as console. */
 static int conioVmPrintf(int rch, const char *zFormat, va_list ap){
-  int rv = 0;
-  char *z1 = sqlite3_vmprintf(zFormat, ap);
-# if SHELL_CON_TRANSLATE == 2
-  if( z1!=NULL ){
-    UINT ccp = GetConsoleOutputCP();
-    FILE *pfO = consoleInfo.pst[rch].pf;
-    /* Legacy translation to active code page, then MBCS chars out. */
-    char *z2 = sqlite3_win32_utf8_to_mbcs_v2(z1, 0);
-    if( z2!=NULL ){
-      rv = (int)strlen(z2);
-      fputs(z2, pfO);
-      sqlite3_free(z2);
-    }
-    sqlite3_free(z1);
-  }
-# elif SHELL_CON_TRANSLATE == 1
-  /* Translation from UTF-8 to UTF-16, then WCHAR characters out. */
-  if( z1!=NULL ){
-    int nwc;
-    WCHAR *zw2 = 0;
-    rv = (int)strlen(z1);
-    nwc = MultiByteToWideChar(CP_UTF8,0,z1,rv,0,0);
-    if( nwc>0 ){
-      zw2 = sqlite3_malloc64((nwc+1)*sizeof(WCHAR));
-      if( zw2!=NULL ){
-        HANDLE ho = consoleInfo.pst[rch].hx;
-        nwc = MultiByteToWideChar(CP_UTF8,0,z1,rv,zw2,nwc);
-        zw2[nwc] = 0;
-        WriteConsoleW(ho, zw2, nwc, 0, NULL);
-        sqlite3_free(zw2);
-      }else rv = 0;
-    }
-    sqlite3_free(z1);
-  }
-# endif
+  char *z = sqlite3_vmprintf(zFormat, ap);
+  int rv = conioZstrOut(rch, z);
+  sqlite3_free(z);
   return rv;
 }
 #endif
@@ -292,9 +305,14 @@ SQLITE_INTERNAL_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...){
 
 SQLITE_INTERNAL_LINKAGE int fputsUtf8(const char *z, FILE *pfO){
 #if SHELL_CON_TRANSLATE
-  return fprintfUtf8(pfO, "%s", z);
-#else
-  return fputs(z, pfO);
+  short rch = isConOut(pfO);
+  if( rch > 0 ){
+    return conioZstrOut(rch, z);
+  }else {
+#endif
+    return (fputs(z, pfO)<0)? 0 : (int)strlen(z);
+#if SHELL_CON_TRANSLATE
+  }
 #endif
 }
 
@@ -374,8 +392,11 @@ SQLITE_INTERNAL_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
     ** Also, it is interactive input so it need not be fast.  */
     int nco = 0;
     /* For converstion to WCHAR, or pre-test of same. */
-    UINT ccp = GetConsoleCP(); /* For translation from mbcs. */
-    if( ccp == CP_UTF8 ) return fgets(cBuf, ncMax, pfIn);
+    UINT cicp = GetConsoleCP(); /* For translation from mbcs. */
+    /* If input code page is CP_UTF8, must bypass MBCS input
+    ** collection because getc() returns 0 for non-ASCII byte
+    ** Instead, use fgets() which repects character boundaries. */
+    if( cicp == CP_UTF8 ) return fgets(cBuf, ncMax, pfIn);
     while( ncMax-nco >= 5 ){
       /* Have space for max UTF-8 group and 0-term. */
       int nug = 0;
@@ -391,25 +412,29 @@ SQLITE_INTERNAL_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
         continue;
       }
       /* Deal with possible mbcs lead byte. */
-      nug = mbcsToUtf8InPlaceIfValid(cBuf+nco, 1, ncMax-nco-1, ccp);
+      nug = mbcsToUtf8InPlaceIfValid(cBuf+nco, 1, ncMax-nco-1, cicp);
       if( nug > 0 ){
         nco += nug;
       }else{
-        /* Must have just mbcs lead byte; get the trail byte. */
-        int ct = getc(pfIn);
-        if( ct < 0 || ct == '\n' ){
-          /* Just drop whatever garbage preceded the newline or.
-          ** EOF. It's not valid, should not happen, and there
-          ** is no good way to deal with it, short of bailing. */
-          if( ct > 0 ){
-            cBuf[nco++] = (int)ct;
+        /* Must have just mbcs lead byte; get the trail byte(s). */
+        int ntb = 1, ct;
+        while( ntb <= 3 ){ /* No more under any multi-byte code. */
+          ct = getc(pfIn);
+          if( ct < 0 || ct == '\n' ){
+            /* Just drop whatever garbage preceded the newline or.
+            ** EOF. It's not valid, should not happen, and there
+            ** is no good way to deal with it, short of bailing. */
+            if( ct > 0 ){
+              cBuf[nco++] = (int)ct;
+            }
+            break;
           }
-          break;
+          /* Treat ct as bona fide MBCS trailing byte, if valid. */
+          cBuf[nco+ntb] = ct;
+          nug = mbcsToUtf8InPlaceIfValid(cBuf+nco, 1+ntb, ncMax-nco-1, cicp);
+          nco += nug;
         }
-        /* Treat ct as bona fide MBCS trailing byte, if valid. */
-        cBuf[nco+1] = ct;
-        nug = mbcsToUtf8InPlaceIfValid(cBuf+nco, 2, ncMax-nco-1, ccp);
-        nco += nug;
+        if( ct < 0 ) break;
       }
     }
     cBuf[nco] = 0;

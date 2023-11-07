@@ -10500,7 +10500,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       zCmd = sqlite3_mprintf(strchr(azArg[i],' ')==0?"%z %s":"%z \"%s\"",
                              zCmd, azArg[i]);
     }
+    consoleRestore();
     x = zCmd!=0 ? system(zCmd) : 1;
+    consoleClassifySetup(stdin, stdout, stderr);
     sqlite3_free(zCmd);
     if( x ) utf8_printf(stderr, "System command returns %d\n", x);
   }else
