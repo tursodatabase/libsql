@@ -4,7 +4,7 @@ use anyhow::Result;
 use base64::{engine::general_purpose, Engine as _};
 use clap::Parser;
 use rusqlite::Params;
-use rusqlite::{types::ValueRef, Connection, Statement};
+use rusqlite::{types::ValueRef, Connection, OpenFlags, Statement};
 use rustyline::completion::{Completer, Pair};
 use rustyline::error::ReadlineError;
 use rustyline::history::FileHistory;
@@ -26,6 +26,9 @@ struct Cli {
     /// Print inputs before execution
     #[arg(long, default_value = "false")]
     echo: bool,
+    /// Refuse to open symbolic links to database files
+    #[arg(long = "nofollow", default_value = "false")]
+    no_follow: bool,
     /// Run "COMMAND" before reading stdin
     #[arg(long = "cmd", action = clap::ArgAction::Append)]
     command: Option<Vec<String>>,
@@ -172,16 +175,22 @@ enum StatsMode {
 }
 
 impl Shell {
-    fn new(args: Cli) -> Self {
+    fn new(args: Cli) -> Result<Self> {
         let connection = match args.db_path.as_deref() {
             None | Some("") | Some(":memory:") => {
                 println!("Connected to a transient in-memory database.");
-                Connection::open_in_memory().expect("Failed to open in-memory database")
+                Connection::open_in_memory()?
             }
-            Some(path) => Connection::open(path).expect("Failed to open database"),
+            Some(path) => {
+                let mut flags = OpenFlags::default();
+                if args.no_follow {
+                    flags |= OpenFlags::SQLITE_OPEN_NOFOLLOW;
+                }
+                Connection::open_with_flags(path, flags)?
+            }
         };
 
-        Self {
+        Ok(Self {
             db: connection,
             out: Out::Stdout,
             echo: args.echo,
@@ -198,7 +207,7 @@ impl Shell {
             rowseparator: String::new(),
             main_prompt: "libsql> ".to_string(),
             continuation_prompt: "   ...> ".to_string(),
-        }
+        })
     }
 
     fn parse_and_run_command(&mut self, line: &str) {
@@ -639,7 +648,7 @@ fn main() -> Result<()> {
     rl.load_history(history.as_path()).ok();
 
     println!("libSQL version 0.2.0");
-    let shell = Shell::new(args);
+    let shell = Shell::new(args)?;
     let result = shell.run(&mut rl);
     rl.save_history(history.as_path()).ok();
     result
@@ -678,9 +687,10 @@ mod tests {
         let cli = Cli {
             db_path: Some(":memory:".to_string()),
             echo: false,
+            no_follow: false,
             command: None,
         };
-        let shell = Shell::new(cli);
+        let shell = Shell::new(cli).unwrap();
         assert!(shell.headers);
         let result = shell.run_statement(" ; ; ;".to_string(), [], false);
         assert!(result.is_ok());
