@@ -1,27 +1,34 @@
-use crate::hrana::{HranaClient, HranaError, HttpSend, ServerMsg};
+use crate::hrana::connection::HttpConnection;
+use crate::hrana::pipeline::ServerMsg;
+use crate::hrana::{HranaError, HttpSend, Result};
 use crate::params::IntoParams;
-use crate::{Result, Rows};
+use crate::Rows;
 use futures::future::LocalBoxFuture;
+use worker::wasm_bindgen::JsValue;
 
 #[derive(Debug, Clone)]
 pub struct Connection {
-    client: HranaClient<CloudflareSender>,
+    conn: HttpConnection<CloudflareSender>,
 }
 
 impl Connection {
     pub fn open(url: impl Into<String>, auth_token: impl Into<String>) -> Self {
-        let client = HranaClient::new(url.into(), auth_token.into(), CloudflareSender);
-        Connection { client }
+        Connection {
+            conn: HttpConnection::new(url.into(), auth_token.into(), CloudflareSender),
+        }
     }
 
-    pub async fn query(&self, sql: &str, params: impl IntoParams) -> Result<Rows> {
-        let mut stmt = self.client.prepare(sql);
+    pub async fn execute(&self, sql: &str, params: impl IntoParams) -> crate::Result<u64> {
+        tracing::trace!("executing `{}`", sql);
+        let mut stmt = crate::hrana::Statement::new(self.conn.clone(), sql.to_string(), true);
+        let rows = stmt.execute(&params.into_params()?).await?;
+        Ok(rows as u64)
+    }
+
+    pub async fn query(&self, sql: &str, params: impl IntoParams) -> crate::Result<Rows> {
+        tracing::trace!("querying `{}`", sql);
+        let mut stmt = crate::hrana::Statement::new(self.conn.clone(), sql.to_string(), true);
         stmt.query(&params.into_params()?).await
-    }
-
-    pub async fn execute(&self, sql: &str, params: impl IntoParams) -> Result<usize> {
-        let mut stmt = self.client.prepare(sql);
-        stmt.execute(&params.into_params()?).await
     }
 }
 
@@ -29,20 +36,16 @@ impl Connection {
 struct CloudflareSender;
 
 impl CloudflareSender {
-    async fn send(
-        url: String,
-        auth: String,
-        body: String,
-    ) -> std::result::Result<ServerMsg, HranaError> {
+    async fn send(url: String, auth: String, body: String) -> Result<ServerMsg> {
         use worker::*;
 
         let mut response = Fetch::Request(Request::new_with_init(
             &url,
             &RequestInit {
-                body: Some(wasm_bindgen::JsValue::from_str(&body)),
+                body: Some(JsValue::from(body)),
                 headers: {
                     let mut headers = Headers::new();
-                    headers.append("Authorization", &auth).ok();
+                    headers.append("Authorization", &auth)?;
                     headers
                 },
                 cf: CfProperties::new(),
@@ -63,7 +66,7 @@ impl CloudflareSender {
 }
 
 impl<'a> HttpSend<'a> for CloudflareSender {
-    type Result = LocalBoxFuture<'a, std::result::Result<ServerMsg, HranaError>>;
+    type Result = LocalBoxFuture<'a, Result<ServerMsg>>;
 
     fn http_send(&self, url: String, auth: String, body: String) -> Self::Result {
         let fut = Self::send(url, auth, body);

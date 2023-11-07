@@ -72,6 +72,17 @@ macro_rules! cfg_hrana {
         )*
     }
 }
+
+macro_rules! cfg_remote {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "remote")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "remote")))]
+            $item
+        )*
+    }
+}
+
 macro_rules! cfg_cloudflare {
     ($($item:item)*) => {
         $(
@@ -112,6 +123,10 @@ cfg_core! {
     pub use libsql_sys::ffi;
 }
 
+cfg_cloudflare! {
+    pub use hrana::cloudflare::Connection as DbConnection;
+}
+
 mod util;
 
 pub mod errors;
@@ -130,12 +145,6 @@ pub use value::{Value, ValueRef, ValueType};
 
 cfg_hrana! {
     mod hrana;
-}
-
-cfg_cloudflare! {
-    mod cloudflare;
-
-    pub type DbConnection = crate::cloudflare::Connection;
 }
 
 pub use self::{

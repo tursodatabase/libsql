@@ -9,7 +9,6 @@ license = "MIT"
 [dependencies]
 futures = { version = "0.3.28", optional = true }
 libsql-sys = { version = "0.2.13", path = "../libsql-sys", optional = true }
-libsql-remote = { version = "0.1", path = "../libsql-remote", optional = true }
 thiserror = "1.0.40"
 tokio = { version = "1.29.1", features = ["fs", "sync"], optional = true }
 tracing = "0.1.37"
@@ -22,6 +21,7 @@ serde_json = { version = "1", optional = true }
 async-trait = "0.1"
 bitflags = { version = "2.4.0", optional = true }
 tower = { version = "0.4", features = ["util"], optional = true }
+worker = { version = "0.0.18", optional = true }
 
 bincode = { version = "1", optional = true }
 anyhow = { version = "1.0.71", optional = true }
@@ -52,7 +52,7 @@ prost-build = "0.12"
 
 
 [features]
-default = ["core", "replication", "hrana"]
+default = ["core", "replication", "remote"]
 core = [
   "libsql-sys",
   "dep:bitflags",
@@ -80,17 +80,26 @@ replication = [
   "dep:futures"
 ]
 hrana = [
-  "core",
   "serde",
-  "http",
   "dep:base64",
   "dep:serde_json",
-  "dep:tower",
-  "dep:hyper-rustls",
-  "dep:libsql-remote",
 ]
 serde = ["dep:serde"]
 http = ["dep:tower", "dep:hyper", "dep:http", "dep:tokio"]
+remote = [
+  "core",
+  "hrana",
+  "http",
+  "dep:futures",
+  "dep:bitflags",
+  "dep:tower",
+  "dep:hyper-rustls",
+]
+cloudflare = [
+  "hrana",
+  "dep:futures",
+  "dep:worker"
+]
 
 [[bench]]
 name = "benchmark"

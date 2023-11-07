@@ -5,7 +5,6 @@ members = [
   "bindings/c",
   "bindings/wasm",
   "libsql-sys",
-  "libsql-remote",
   "libsql-shell",
   "libsql-server",
   "bottomless",

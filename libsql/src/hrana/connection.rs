@@ -1,12 +1,13 @@
-use crate::pipeline::{
+use crate::hrana::pipeline::{
     ClientMsg, Response, ServerMsg, StreamBatchReq, StreamExecuteReq, StreamRequest,
     StreamResponse, StreamResponseOk,
 };
-use crate::proto::{Batch, BatchResult, Stmt, StmtResult};
-use crate::{coerce_url_scheme, Error, HttpSend, Result, Statement};
+use crate::hrana::proto::{Batch, BatchResult, Stmt, StmtResult};
+use crate::hrana::{HranaError, HttpSend, Result, Statement};
+use crate::util::coerce_url_scheme;
 use std::collections::HashMap;
 use std::ops::Deref;
-use std::sync::atomic::{AtomicI64, AtomicU64};
+use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};
 
 /// Information about the current session: the server-generated cookie
@@ -18,33 +19,15 @@ struct Cookie {
 }
 
 #[derive(Debug)]
-pub struct Connection<T>(Arc<InnerClient<T>>);
+pub struct HttpConnection<T>(Arc<InnerClient<T>>);
 
-impl<T> Clone for Connection<T> {
+impl<T> Clone for HttpConnection<T> {
     fn clone(&self) -> Self {
-        Connection(self.0.clone())
+        HttpConnection(self.0.clone())
     }
 }
 
-impl<T> Deref for Connection<T> {
-    type Target = InnerClient<T>;
-
-    fn deref(&self) -> &Self::Target {
-        self.0.deref()
-    }
-}
-
-#[derive(Debug)]
-pub struct InnerClient<T> {
-    inner: T,
-    cookies: RwLock<HashMap<u64, Cookie>>,
-    url_for_queries: String,
-    auth: String,
-    pub(crate) affected_row_count: AtomicU64,
-    pub(crate) last_insert_rowid: AtomicI64,
-}
-
-impl<T> Connection<T>
+impl<T> HttpConnection<T>
 where
     T: for<'a> HttpSend<'a>,
 {
@@ -52,7 +35,7 @@ where
         // The `libsql://` protocol is an alias for `https://`.
         let base_url = coerce_url_scheme(&url);
         let url_for_queries = format!("{base_url}/v2/pipeline");
-        Connection(Arc::new(InnerClient {
+        HttpConnection(Arc::new(InnerClient {
             inner,
             cookies: RwLock::new(HashMap::new()),
             url_for_queries,
@@ -62,7 +45,35 @@ where
         }))
     }
 
-    pub async fn raw_batch(&self, stmts: impl IntoIterator<Item = Stmt>) -> Result<BatchResult> {
+    pub fn affected_row_count(&self) -> u64 {
+        self.client().affected_row_count.load(Ordering::SeqCst)
+    }
+
+    pub fn set_affected_row_count(&self, value: u64) {
+        self.client()
+            .affected_row_count
+            .store(value, Ordering::SeqCst)
+    }
+
+    pub fn last_insert_rowid(&self) -> i64 {
+        self.client().last_insert_rowid.load(Ordering::SeqCst)
+    }
+
+    pub fn set_last_insert_rowid(&self, value: i64) {
+        self.client()
+            .last_insert_rowid
+            .store(value, Ordering::SeqCst)
+    }
+
+    fn client(&self) -> &InnerClient<T> {
+        self.0.deref()
+    }
+
+    pub(crate) async fn raw_batch(
+        &self,
+        stmts: impl IntoIterator<Item = Stmt>,
+    ) -> Result<BatchResult> {
+        let client = self.client();
         let mut batch = Batch::new();
         for stmt in stmts.into_iter() {
             batch.step(None, stmt);
@@ -75,21 +86,21 @@ where
                 StreamRequest::Close,
             ],
         };
-        let body = serde_json::to_string(&msg).map_err(Error::Json)?;
-        let mut response: ServerMsg = self
+        let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
+        let mut response: ServerMsg = client
             .inner
-            .http_send(self.url_for_queries.clone(), self.auth.clone(), body)
+            .http_send(client.url_for_queries.clone(), client.auth.clone(), body)
             .await?;
 
         if response.results.is_empty() {
-            Err(Error::UnexpectedResponse(format!(
+            Err(HranaError::UnexpectedResponse(format!(
                 "Unexpected empty response from server: {:?}",
                 response.results
             )))?;
         }
         if response.results.len() > 2 {
             // One with actual results, one closing the stream
-            Err(Error::UnexpectedResponse(format!(
+            Err(HranaError::UnexpectedResponse(format!(
                 "Unexpected multiple responses from server: {:?}",
                 response.results
             )))?;
@@ -98,17 +109,19 @@ where
             Response::Ok(StreamResponseOk {
                 response: StreamResponse::Batch(batch_result),
             }) => Ok(batch_result.result),
-            Response::Ok(_) => Err(Error::UnexpectedResponse(format!(
+            Response::Ok(_) => Err(HranaError::UnexpectedResponse(format!(
                 "Unexpected response from server: {:?}",
                 response.results
             ))),
-            Response::Error(e) => Err(Error::StreamError(e)),
+            Response::Error(e) => Err(HranaError::StreamError(e)),
         }
     }
 
     pub(crate) async fn execute_inner(&self, stmt: Stmt, tx_id: u64) -> Result<StmtResult> {
+        let client = self.client();
         let cookie = if tx_id > 0 {
-            self.cookies
+            client
+                .cookies
                 .read()
                 .unwrap()
                 .get(&tx_id)
@@ -124,17 +137,20 @@ where
                 StreamRequest::Close,
             ],
         };
-        let body = serde_json::to_string(&msg).map_err(Error::Json)?;
+        let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
         let url = cookie
             .base_url
-            .unwrap_or_else(|| self.url_for_queries.clone());
-        let mut response: ServerMsg = self.inner.http_send(url, self.auth.clone(), body).await?;
+            .unwrap_or_else(|| client.url_for_queries.clone());
+        let mut response: ServerMsg = client
+            .inner
+            .http_send(url, client.auth.clone(), body)
+            .await?;
 
         if tx_id > 0 {
             let base_url = response.base_url;
             match response.baton {
                 Some(baton) => {
-                    self.cookies.write().unwrap().insert(
+                    client.cookies.write().unwrap().insert(
                         tx_id,
                         Cookie {
                             baton: Some(baton),
@@ -142,21 +158,21 @@ where
                         },
                     );
                 }
-                None => Err(Error::StreamClosed(
+                None => Err(HranaError::StreamClosed(
                     "Stream closed: server returned empty baton".into(),
                 ))?,
             }
         }
 
         if response.results.is_empty() {
-            Err(Error::UnexpectedResponse(format!(
+            Err(HranaError::UnexpectedResponse(format!(
                 "Unexpected empty response from server: {:?}",
                 response.results
             )))?;
         }
         if response.results.len() > 2 {
             // One with actual results, one closing the stream
-            Err(Error::UnexpectedResponse(format!(
+            Err(HranaError::UnexpectedResponse(format!(
                 "Unexpected multiple responses from server: {:?}",
                 response.results
             )))?;
@@ -165,16 +181,17 @@ where
             Response::Ok(StreamResponseOk {
                 response: StreamResponse::Execute(execute_result),
             }) => Ok(execute_result.result),
-            Response::Ok(_) => Err(Error::UnexpectedResponse(format!(
+            Response::Ok(_) => Err(HranaError::UnexpectedResponse(format!(
                 "Unexpected response from server: {:?}",
                 response.results
             ))),
-            Response::Error(e) => Err(Error::StreamError(e)),
+            Response::Error(e) => Err(HranaError::StreamError(e)),
         }
     }
 
     async fn _close_stream_for(&self, tx_id: u64) -> Result<()> {
-        let cookie = self
+        let client = self.client();
+        let cookie = client
             .cookies
             .read()
             .unwrap()
@@ -187,13 +204,14 @@ where
         };
         let url = cookie
             .base_url
-            .unwrap_or_else(|| self.url_for_queries.clone());
-        let body = serde_json::to_string(&msg).map_err(Error::Json)?;
-        self.inner
-            .http_send(url, self.auth.clone(), body)
+            .unwrap_or_else(|| client.url_for_queries.clone());
+        let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
+        client
+            .inner
+            .http_send(url, client.auth.clone(), body)
             .await
             .ok();
-        self.cookies.write().unwrap().remove(&tx_id);
+        client.cookies.write().unwrap().remove(&tx_id);
         Ok(())
     }
 
@@ -203,4 +221,14 @@ where
             inner: Stmt::new(sql, true),
         }
     }
+}
+
+#[derive(Debug)]
+struct InnerClient<T> {
+    inner: T,
+    cookies: RwLock<HashMap<u64, Cookie>>,
+    url_for_queries: String,
+    auth: String,
+    affected_row_count: AtomicU64,
+    last_insert_rowid: AtomicI64,
 }
