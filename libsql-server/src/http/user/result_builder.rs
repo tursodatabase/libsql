@@ -6,7 +6,6 @@ use serde::{Serialize, Serializer};
 use serde_json::ser::{CompactFormatter, Formatter};
 use std::sync::atomic::Ordering;
 
-use crate::query_analysis::TxnStatus;
 use crate::query_result_builder::{
     Column, JsonFormatter, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
     TOTAL_RESPONSE_SIZE,
@@ -297,7 +296,7 @@ impl QueryResultBuilder for JsonHttpPayloadBuilder {
     fn finish(
         &mut self,
         _last_frame_no: Option<FrameNo>,
-        _state: TxnStatus,
+        _is_autocommit: bool,
     ) -> Result<(), QueryResultBuilderError> {
         self.formatter.end_array(&mut self.buffer)?;
 

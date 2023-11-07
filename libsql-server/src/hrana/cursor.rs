@@ -8,7 +8,6 @@ use tokio::sync::{mpsc, oneshot};
 use crate::auth::Authenticated;
 use crate::connection::program::Program;
 use crate::connection::Connection;
-use crate::query_analysis::TxnStatus;
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
 };
@@ -259,7 +258,7 @@ impl QueryResultBuilder for CursorResultBuilder {
     fn finish(
         &mut self,
         last_frame_no: Option<FrameNo>,
-        _status: TxnStatus,
+        _is_autocommit: bool,
     ) -> Result<(), QueryResultBuilderError> {
         self.emit_entry(Ok(SizedEntry {
             entry: proto::CursorEntry::ReplicationIndex {

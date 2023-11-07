@@ -60,7 +60,7 @@ ExecResp {
                             Finish(
                                 Finish {
                                     last_frame_no: None,
-                                    state: Init,
+                                    is_autocommit: true,
                                 },
                             ),
                         ),

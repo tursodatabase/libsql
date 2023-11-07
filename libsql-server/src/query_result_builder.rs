@@ -8,7 +8,6 @@ use serde::Serialize;
 use serde_json::ser::Formatter;
 use std::sync::atomic::AtomicUsize;
 
-use crate::query_analysis::TxnStatus;
 use crate::replication::FrameNo;
 
 pub static TOTAL_RESPONSE_SIZE: AtomicUsize = AtomicUsize::new(0);
@@ -125,7 +124,7 @@ pub trait QueryResultBuilder: Send + 'static {
     fn finish(
         &mut self,
         last_frame_no: Option<FrameNo>,
-        state: TxnStatus,
+        _is_auto_commit: bool,
     ) -> Result<(), QueryResultBuilderError>;
     /// returns the inner ret
     fn into_ret(self) -> Self::Ret;
@@ -320,7 +319,7 @@ impl QueryResultBuilder for StepResultsBuilder {
     fn finish(
         &mut self,
         _last_frame_no: Option<FrameNo>,
-        _state: TxnStatus,
+        _is_autocommit: bool,
     ) -> Result<(), QueryResultBuilderError> {
         Ok(())
     }
@@ -385,7 +384,7 @@ impl QueryResultBuilder for IgnoreResult {
     fn finish(
         &mut self,
         _last_frame_no: Option<FrameNo>,
-        _state: TxnStatus,
+        _is_autocommit: bool,
     ) -> Result<(), QueryResultBuilderError> {
         Ok(())
     }
@@ -498,9 +497,9 @@ impl<B: QueryResultBuilder> QueryResultBuilder for Take<B> {
     fn finish(
         &mut self,
         last_frame_no: Option<FrameNo>,
-        state: TxnStatus,
+        is_autocommit: bool,
     ) -> Result<(), QueryResultBuilderError> {
-        self.inner.finish(last_frame_no, state)
+        self.inner.finish(last_frame_no, is_autocommit)
     }
 
     fn into_ret(self) -> Self::Ret {
@@ -617,7 +616,7 @@ pub mod test {
         fn finish(
             &mut self,
             _last_frame_no: Option<FrameNo>,
-            _txn_status: TxnStatus,
+            _is_autocommitk: bool,
         ) -> Result<(), QueryResultBuilderError> {
             Ok(())
         }
@@ -771,7 +770,7 @@ pub mod test {
                 FinishRow => b.finish_row().unwrap(),
                 FinishRows => b.finish_rows().unwrap(),
                 Finish => {
-                    b.finish(Some(0), TxnStatus::Init).unwrap();
+                    b.finish(Some(0), true).unwrap();
                     break;
                 }
                 BuilderError => return b,
@@ -869,7 +868,7 @@ pub mod test {
         fn finish(
             &mut self,
             _last_frame_no: Option<FrameNo>,
-            _state: TxnStatus,
+            _is_autocommitk: bool,
         ) -> Result<(), QueryResultBuilderError> {
             assert_eq!(self.trace[self.current], FsmState::Finish);
             self.current += 1;
@@ -1006,7 +1005,7 @@ pub mod test {
         fn finish(
             &mut self,
             _last_frame_no: Option<FrameNo>,
-            _txn_status: TxnStatus,
+            _is_autocommitk: bool,
         ) -> Result<(), QueryResultBuilderError> {
             self.maybe_inject_error()?;
             self.transition(Finish)
@@ -1055,7 +1054,7 @@ pub mod test {
         builder.finish_rows().unwrap();
         builder.finish_step(0, None).unwrap();
 
-        builder.finish(Some(0), TxnStatus::Init).unwrap();
+        builder.finish(Some(0), true).unwrap();
     }
 
     #[test]

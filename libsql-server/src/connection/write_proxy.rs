@@ -333,8 +333,12 @@ where
                     &builder_config,
                     &mut builder,
                     resp,
-                    |last_frame_no, status| {
-                        txn_status = status;
+                    |last_frame_no, is_autocommit| {
+                        txn_status = if is_autocommit {
+                            TxnStatus::Init
+                        } else {
+                            TxnStatus::Txn
+                        };
                         new_frame_no = last_frame_no;
                     },
                 )

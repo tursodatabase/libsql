@@ -46,7 +46,7 @@ expression: stream.next().await.unwrap().unwrap()
           "step": {
             "Finish": {
               "last_frame_no": null,
-              "state": 0
+              "is_autocommit": true
             }
           }
         }
