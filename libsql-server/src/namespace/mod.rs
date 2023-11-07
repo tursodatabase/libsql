@@ -743,6 +743,9 @@ impl Namespace<PrimaryDatabase> {
         let mut is_dirty = config.db_is_dirty;
 
         tokio::fs::create_dir_all(&db_path).await?;
+        let db_config_store = Arc::new(
+            DatabaseConfigStore::load(&db_path).context("Could not load database config")?,
+        );
 
         // FIXME: due to a bug in logger::checkpoint_db we call regular checkpointing code
         // instead of our virtual WAL one. It's a bit tangled to fix right now, because
@@ -812,10 +815,6 @@ impl Namespace<PrimaryDatabase> {
             logger.new_frame_notifier.subscribe(),
         )
         .await?;
-
-        let db_config_store = Arc::new(
-            DatabaseConfigStore::load(&db_path).context("Could not load database config")?,
-        );
 
         let connection_maker: Arc<_> = MakeLibSqlConn::new(
             db_path.clone(),
