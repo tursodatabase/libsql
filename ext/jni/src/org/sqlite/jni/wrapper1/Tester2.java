@@ -948,7 +948,6 @@ public class Tester2 implements Runnable {
             ++fCount.value;
             args.resultNull();
           }
-          public void xDestroy(){}
         }
       );
       final Sqlite.PrepareMulti pm = new Sqlite.PrepareMultiFinalize(

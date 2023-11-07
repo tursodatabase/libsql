@@ -1920,6 +1920,7 @@ public class Tester1 implements Runnable {
           sqlite3_libversion_number(),"\n",
           sqlite3_libversion(),"\n",SQLITE_SOURCE_ID,"\n",
           "SQLITE_THREADSAFE=",sqlite3_threadsafe());
+    outln("JVM NIO support? ",sqlite3_jni_supports_nio() ? "YES" : "NO");
     final boolean showLoopCount = (nRepeat>1 && nThread>1);
     if( showLoopCount ){
       outln("Running ",nRepeat," loop(s) with ",nThread," thread(s) each.");

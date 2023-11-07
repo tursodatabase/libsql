@@ -775,6 +775,14 @@ JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1java_1uncache_
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_jni_supports_nio
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1jni_1supports_1nio
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
  * Method:    sqlite3_aggregate_context
  * Signature: (Lorg/sqlite/jni/capi/sqlite3_context;Z)J
  */

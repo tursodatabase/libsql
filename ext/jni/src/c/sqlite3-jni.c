@@ -651,6 +651,17 @@ struct S3JniGlobalType {
     jmethodID ctorLong1      /* the Long(long) constructor */;
     jmethodID ctorStringBA   /* the String(byte[],Charset) constructor */;
     jmethodID stringGetBytes /* the String.getBytes(Charset) method */;
+
+    /*
+      ByteBuffer may or may not be supported via JNI on any given
+      platform:
+
+      https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/functions.html#nio_support
+
+      We only store a ref to the following if JNI support for
+      ByteBuffer is available (which we determine during static init).
+    */
+    jclass cByteBuffer       /* global ref to java.nio.ByteBuffer */;
   } g;
   /*
   ** The list of Java-side auto-extensions
@@ -3661,6 +3672,11 @@ JniDecl(jboolean,1java_1uncache_1thread)(JniArgsEnvClass){
   return rc ? JNI_TRUE : JNI_FALSE;
 }
 
+JniDecl(jboolean,1jni_1supports_1nio)(JniArgsEnvClass){
+  return SJG.g.cByteBuffer ? JNI_TRUE : JNI_FALSE;
+}
+
+
 S3JniApi(sqlite3_keyword_check(),jboolean,1keyword_1check)(
   JniArgsEnvClass, jstring jWord
 ){
@@ -4576,20 +4592,8 @@ S3JniApi(sqlite3_shutdown(),jint,1shutdown)(
       S3JniEnv_uncache( SJG.envCache.aHead->env );
     }
   } S3JniEnv_mutex_leave;
-#if 0
-  /*
-  ** Is automatically closing any still-open dbs a good idea? We will
-  ** get rid of the perDb list once sqlite3 gets a per-db client
-  ** state, at which point we won't have a central list of databases
-  ** to close.
-  */
-  S3JniDb_mutex_enter;
-  while( SJG.perDb.pHead ){
-    s3jni_close_db(env, SJG.perDb.pHead->jDb, 2);
-  }
-  S3JniDb_mutex_leave;
-#endif
-  /* Do not clear S3JniGlobal.jvm: it's legal to restart the lib. */
+  /* Do not clear S3JniGlobal.jvm or S3JniGlobal.g: it's legal to
+  ** restart the lib. */
   return sqlite3_shutdown();
 }
 
@@ -5929,6 +5933,19 @@ Java_org_sqlite_jni_capi_CApi_init(JniArgsEnvClass){
   SJG.metrics.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
   s3jni_oom_fatal( SJG.metrics.mutex );
 #endif
+
+  {
+    /* Test whether this JVM supports direct memory access via
+       ByteBuffer. */
+    unsigned char buf[16] = {0};
+    jobject bb = (*env)->NewDirectByteBuffer(env, buf, 16);
+    if( bb ){
+      SJG.g.cByteBuffer = (*env)->GetObjectClass(env, bb);
+      S3JniUnrefLocal(bb);
+    }else{
+      SJG.g.cByteBuffer = 0;
+    }
+  }
 
   sqlite3_shutdown()
     /* So that it becomes legal for Java-level code to call

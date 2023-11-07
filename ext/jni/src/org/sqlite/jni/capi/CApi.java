@@ -123,6 +123,12 @@ public final class CApi {
   */
   public static native boolean sqlite3_java_uncache_thread();
 
+  /**
+     Returns true if this JVM has JNI-level support for direct memory
+     access using java.nio.ByteBuffer, else returns false.
+  */
+  public static native boolean sqlite3_jni_supports_nio();
+
   //////////////////////////////////////////////////////////////////////
   // Maintenance reminder: please keep the sqlite3_.... functions
   // alphabetized.  The SQLITE_... values. on the other hand, are
