@@ -201,3 +201,25 @@ fn execute_transaction() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn random_rowid() {
+    let mut sim = turmoil::Builder::new().build();
+
+    sim.host("primary", make_standalone_server);
+
+    sim.client("test", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        conn.execute(
+            "CREATE TABLE shopping_list(item text, quantity int) RANDOM ROWID",
+            (),
+        )
+        .await?;
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
