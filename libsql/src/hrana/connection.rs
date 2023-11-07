@@ -66,7 +66,7 @@ where
     }
 
     fn client(&self) -> &InnerClient<T> {
-        self.0.deref()
+        &self.0
     }
 
     pub(crate) async fn raw_batch(

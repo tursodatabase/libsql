@@ -76,6 +76,8 @@ impl<'a> HttpSend<'a> for CloudflareSender {
 
 impl From<worker::Error> for HranaError {
     fn from(value: worker::Error) -> Self {
+        // This converts it to a string due to the error type being !Send/!Sync which will break
+        // a lot of stuff.
         HranaError::Http(value.to_string())
     }
 }
