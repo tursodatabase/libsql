@@ -62,7 +62,10 @@ core = [
 replication = [
   "core",
   "serde",
-  "http",
+  "dep:tower",
+  "dep:hyper",
+  "dep:http",
+  "dep:tokio",
   "dep:anyhow",
   "dep:bincode",
   "dep:bytemuck",
@@ -87,19 +90,21 @@ hrana = [
   "dep:serde_json",
 ]
 serde = ["dep:serde"]
-http = ["dep:tower", "dep:hyper", "dep:http", "dep:tokio"]
 remote = [
   "core",
   "hrana",
-  "http",
+  "dep:tower",
+  "dep:hyper",
+  "dep:http",
+  "dep:tokio",
   "dep:futures",
   "dep:bitflags",
   "dep:tower",
   "dep:hyper-rustls",
 ]
+wasm = ["hrana"]
 cloudflare = [
-  "hrana",
-  "dep:futures",
+  "wasm",
   "dep:worker"
 ]
 

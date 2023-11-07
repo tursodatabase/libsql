@@ -1,6 +1,7 @@
 use crate::hrana::pipeline::ServerMsg;
 use crate::hrana::{HranaError, HttpSend, Result};
-use futures::future::LocalBoxFuture;
+use std::future::Future;
+use std::pin::Pin;
 use worker::wasm_bindgen::JsValue;
 
 #[derive(Default, Debug, Copy, Clone)]
@@ -37,7 +38,7 @@ impl CloudflareSender {
 }
 
 impl<'a> HttpSend<'a> for CloudflareSender {
-    type Result = LocalBoxFuture<'a, Result<ServerMsg>>;
+    type Result = Pin<Box<dyn Future<Output = Result<ServerMsg>> + 'a>>;
 
     fn http_send(&self, url: String, auth: String, body: String) -> Self::Result {
         let fut = Self::send(url, auth, body);

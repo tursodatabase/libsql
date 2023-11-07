@@ -1,8 +1,11 @@
 #![allow(dead_code)]
 
 pub mod connection;
-#[cfg(feature = "http")]
-mod hyper;
+
+cfg_remote! {
+    mod hyper;
+}
+
 pub mod pipeline;
 pub mod proto;
 
