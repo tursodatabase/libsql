@@ -6,7 +6,6 @@ use crate::hrana::proto::{Batch, BatchResult, Stmt, StmtResult};
 use crate::hrana::{HranaError, HttpSend, Result, Statement};
 use crate::util::coerce_url_scheme;
 use std::collections::HashMap;
-use std::ops::Deref;
 use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};
 

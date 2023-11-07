@@ -4,6 +4,7 @@ cfg_http! {
     pub(crate) use self::http::{ConnectorService, Socket};
 }
 
+#[cfg(any(feature = "hrana", feature = "core"))]
 pub(crate) fn coerce_url_scheme(url: &str) -> String {
     let mut url = url.replace("libsql://", "https://");
 
