@@ -205,7 +205,7 @@ message FinishRow       { }
 message FinishRows      { }
 message Finish          {
     optional uint64 last_frame_no = 1;
-    State state = 2;
+    bool is_autocommit = 2;
 }
 
 /// Stream execx dexcribe response messages
