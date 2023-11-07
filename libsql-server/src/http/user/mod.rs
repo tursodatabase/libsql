@@ -34,6 +34,7 @@ use crate::database::Database;
 use crate::error::Error;
 use crate::hrana;
 use crate::http::user::types::HttpQuery;
+use crate::metrics::LEGACY_HTTP_CALL;
 use crate::namespace::{MakeNamespace, NamespaceStore};
 use crate::net::Accept;
 use crate::query::{self, Query};
@@ -127,6 +128,7 @@ async fn handle_query<C: Connection>(
     MakeConnectionExtractor(connection_maker): MakeConnectionExtractor<C>,
     Json(query): Json<HttpQuery>,
 ) -> Result<axum::response::Response, Error> {
+    LEGACY_HTTP_CALL.increment(1);
     let batch = parse_queries(query.statements)?;
 
     let db = connection_maker.create().await?;

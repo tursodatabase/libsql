@@ -19,6 +19,7 @@ use tonic::{Request, Streaming};
 use crate::auth::Authenticated;
 use crate::connection::program::{DescribeCol, DescribeParam};
 use crate::error::Error;
+use crate::metrics::{REPLICA_LOCAL_EXEC_MISPREDICT, REPLICA_LOCAL_PROGRAM_EXEC};
 use crate::namespace::NamespaceName;
 use crate::query_analysis::TxnStatus;
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
@@ -417,9 +418,11 @@ impl Connection for WriteProxyConnection<RpcStream> {
                 .await?;
             let new_state = self.read_conn.txn_status()?;
             if new_state != TxnStatus::Init {
+                REPLICA_LOCAL_EXEC_MISPREDICT.increment(1);
                 self.read_conn.rollback(auth.clone()).await?;
                 self.execute_remote(pgm, &mut state, auth, builder).await
             } else {
+                REPLICA_LOCAL_PROGRAM_EXEC.increment(1);
                 *state = new_state;
                 Ok(builder)
             }
