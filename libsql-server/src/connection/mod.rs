@@ -23,7 +23,10 @@ pub mod libsql;
 pub mod program;
 pub mod write_proxy;
 
+#[cfg(not(test))]
 const TXN_TIMEOUT: Duration = Duration::from_secs(5);
+#[cfg(test)]
+const TXN_TIMEOUT: Duration = Duration::from_millis(100);
 
 #[async_trait::async_trait]
 pub trait Connection: Send + Sync + 'static {

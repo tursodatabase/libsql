@@ -938,10 +938,12 @@ where
 #[cfg(test)]
 mod test {
     use itertools::Itertools;
+    use rand::Rng;
     use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
     use tempfile::tempdir;
     use tokio::task::JoinSet;
 
+    use crate::connection::Connection as _;
     use crate::query_result_builder::test::{test_driver, TestBuilder};
     use crate::query_result_builder::QueryResultBuilder;
     use crate::DEFAULT_AUTO_CHECKPOINT;
@@ -1137,5 +1139,79 @@ mod test {
 
         let epsilon = Duration::from_millis(100);
         assert!((wait_time..wait_time + epsilon).contains(&elapsed));
+    }
+
+    /// The goal of this test is to run many conccurent transaction and hopefully catch a bug in
+    /// the lock stealing code. If this test becomes flaky check out the lock stealing code.
+    #[tokio::test]
+    async fn test_many_conccurent() {
+        let tmp = tempdir().unwrap();
+        let make_conn = MakeLibSqlConn::new(
+            tmp.path().into(),
+            &TRANSPARENT_METHODS,
+            || (),
+            Default::default(),
+            Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
+            Arc::new([]),
+            100000000,
+            100000000,
+            DEFAULT_AUTO_CHECKPOINT,
+            watch::channel(None).1,
+        )
+        .await
+        .unwrap();
+        let auth = Authenticated::Authorized(Authorized {
+            namespace: None,
+            permission: Permission::FullAccess,
+        });
+
+        let conn = make_conn.make_connection().await.unwrap();
+        conn.execute_program(
+            Program::seq(&["CREATE TABLE test (x)"]),
+            auth.clone(),
+            TestBuilder::default(),
+            None,
+        )
+        .await
+        .unwrap();
+        let run_conn = |maker: Arc<MakeLibSqlConn<TransparentMethods>>| {
+            let auth = auth.clone();
+            async move {
+                for _ in 0..1000 {
+                    let conn = maker.make_connection().await.unwrap();
+                    let pgm = Program::seq(&["BEGIN IMMEDIATE", "INSERT INTO test VALUES (42)"]);
+                    let res = conn
+                        .execute_program(pgm, auth.clone(), TestBuilder::default(), None)
+                        .await
+                        .unwrap()
+                        .into_ret();
+                    for result in res {
+                        result.unwrap();
+                    }
+                    // with 99% change, commit the txn
+                    if rand::thread_rng().gen_range(0..100) > 1 {
+                        let pgm = Program::seq(&["INSERT INTO test VALUES (43)", "COMMIT"]);
+                        let res = conn
+                            .execute_program(pgm, auth.clone(), TestBuilder::default(), None)
+                            .await
+                            .unwrap()
+                            .into_ret();
+                        for result in res {
+                            result.unwrap();
+                        }
+                    }
+                }
+            }
+        };
+
+        let maker = Arc::new(make_conn);
+        let mut join_set = JoinSet::new();
+        for _ in 0..3 {
+            join_set.spawn(run_conn(maker.clone()));
+        }
+
+        while let Some(next) = join_set.join_next().await {
+            next.unwrap();
+        }
     }
 }
