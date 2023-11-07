@@ -78,7 +78,7 @@ fn basic_metrics() {
         ));
 
         snapshot_metrics()
-            .assert_gauge("libsql_server_current_frame_no", 2.0)
+            .assert_gauge("libsql_server_concurrent_connections", 0.0)
             .assert_counter("libsql_server_libsql_execute_program", 3);
 
         Ok(())

@@ -38,6 +38,7 @@ impl MetricsSnapshot {
     }
 
     pub fn get_counter(&self, metric_name: &str) -> Option<u64> {
+        println!("{:?}", self.snapshot);
         for (key, (_, _, val)) in &self.snapshot {
             if key.kind() == MetricKind::Counter && key.key().name() == metric_name {
                 match val {
