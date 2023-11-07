@@ -19,13 +19,3 @@ impl hyper::client::connect::Connection for Box<dyn Socket> {
 
 pub type ConnectorService =
     BoxCloneService<http::Uri, Box<dyn Socket>, Box<dyn std::error::Error + Sync + Send + 'static>>;
-
-pub(crate) fn coerce_url_scheme(url: &str) -> String {
-    let mut url = url.replace("libsql://", "https://");
-
-    if !url.contains("://") {
-        url = format!("https://{}", url)
-    }
-
-    url
-}

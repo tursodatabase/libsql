@@ -12,9 +12,9 @@ cfg_replication!(
     pub use crate::replication::Frames;
 );
 
-use libsql_sys::ffi;
 use crate::{database::OpenFlags, local::connection::Connection};
 use crate::{Error::ConnectionFailed, Result};
+use libsql_sys::ffi;
 
 #[cfg(feature = "replication")]
 pub struct ReplicationContext {
@@ -61,10 +61,19 @@ impl Database {
         let mut db = Database::open(&db_path, OpenFlags::default())?;
 
         let endpoint = coerce_url_scheme(&endpoint);
-        let remote = crate::replication::client::Client::new(connector, endpoint.as_str().try_into().unwrap(), auth_token).unwrap();
+        let remote = crate::replication::client::Client::new(
+            connector,
+            endpoint.as_str().try_into().unwrap(),
+            auth_token,
+        )
+        .unwrap();
         let path = PathBuf::from(db_path);
         let client = RemoteClient::new(remote.clone(), &path).await.unwrap();
-        let replicator = Mutex::new(Replicator::new(Either::Left(client), path, 1000).await.unwrap());
+        let replicator = Mutex::new(
+            Replicator::new(Either::Left(client), path, 1000)
+                .await
+                .unwrap(),
+        );
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,
@@ -83,7 +92,11 @@ impl Database {
 
         let path = PathBuf::from(db_path);
         let client = LocalClient::new(&path).await.unwrap();
-        let replicator = Mutex::new(Replicator::new(Either::Right(client), path, 1000).await.map_err(|e| ConnectionFailed(format!("{e}")))?);
+        let replicator = Mutex::new(
+            Replicator::new(Either::Right(client), path, 1000)
+                .await
+                .map_err(|e| ConnectionFailed(format!("{e}")))?,
+        );
         db.replication_ctx = Some(ReplicationContext {
             replicator,
             client: None,
@@ -132,8 +145,14 @@ impl Database {
     pub fn writer(&self) -> Result<Option<crate::replication::Writer>> {
         use crate::replication::Writer;
 
-        if let Some(ReplicationContext { client: Some(ref client), .. }) = &self.replication_ctx {
-            Ok(Some(Writer { client: client.clone() }))
+        if let Some(ReplicationContext {
+            client: Some(ref client),
+            ..
+        }) = &self.replication_ctx
+        {
+            Ok(Some(Writer {
+                client: client.clone(),
+            }))
         } else {
             Ok(None)
         }
@@ -148,10 +167,15 @@ impl Database {
         if let Some(ref ctx) = self.replication_ctx {
             let mut replicator = ctx.replicator.lock().await;
             if !matches!(replicator.client_mut(), Either::Left(_)) {
-                return Err(crate::errors::Error::Misuse("Trying to replicate from HTTP, but this is a local replicator".into()));
+                return Err(crate::errors::Error::Misuse(
+                    "Trying to replicate from HTTP, but this is a local replicator".into(),
+                ));
             }
 
-            replicator.replicate().await?;
+            replicator
+                .replicate()
+                .await
+                .map_err(|e| crate::Error::Replication(e.into()))?;
 
             Ok(replicator.client_mut().committed_frame_no())
         } else {
@@ -188,10 +212,17 @@ impl Database {
             match replicator.client_mut() {
                 Either::Right(c) => {
                     c.load_frames(frames);
-                },
-                Either::Left(_) => return Err(crate::errors::Error::Misuse("Trying to call sync_frames with an HTTP replicator".into())),
+                }
+                Either::Left(_) => {
+                    return Err(crate::errors::Error::Misuse(
+                        "Trying to call sync_frames with an HTTP replicator".into(),
+                    ))
+                }
             }
-            replicator.replicate().await?;
+            replicator
+                .replicate()
+                .await
+                .map_err(|e| crate::Error::Replication(e.into()))?;
 
             Ok(replicator.client_mut().committed_frame_no())
         } else {
@@ -208,7 +239,10 @@ impl Database {
 
         if let Some(ref ctx) = self.replication_ctx {
             let mut replicator = ctx.replicator.lock().await;
-            replicator.flush().await?;
+            replicator
+                .flush()
+                .await
+                .map_err(|e| crate::Error::Replication(e.into()))?;
             Ok(replicator.client_mut().committed_frame_no())
         } else {
             Err(crate::errors::Error::Misuse(

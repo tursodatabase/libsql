@@ -1,5 +1,19 @@
-cfg_http! {
+cfg_replication_or_remote! {
     pub mod box_clone_service;
     mod http;
-    pub(crate) use self::http::{coerce_url_scheme, ConnectorService, Socket};
+    pub(crate) use self::http::{ConnectorService, Socket};
+
+
+}
+
+cfg_replication_or_remote_or_hrana! {
+    pub(crate) fn coerce_url_scheme(url: &str) -> String {
+        let mut url = url.replace("libsql://", "https://");
+
+        if !url.contains("://") {
+            url = format!("https://{}", url)
+        }
+
+        url
+    }
 }

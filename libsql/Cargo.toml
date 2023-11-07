@@ -7,11 +7,12 @@ repository = "https://github.com/libsql/libsql"
 license = "MIT"
 
 [dependencies]
+tracing = { version = "0.1.37", default-features = false }
+thiserror = "1.0.40"
+
 futures = { version = "0.3.28", optional = true }
 libsql-sys = { version = "0.2.13", path = "../libsql-sys", optional = true }
-thiserror = "1.0.40"
 tokio = { version = "1.29.1", features = ["fs", "sync"], optional = true }
-tracing = "0.1.37"
 parking_lot = { version = "0.12.1", optional = true }
 hyper = { version = "0.14", features = ["client"], optional = true }
 hyper-rustls = { version = "0.24", features = ["webpki-roots"], optional = true }
@@ -21,6 +22,7 @@ serde_json = { version = "1", optional = true }
 async-trait = "0.1"
 bitflags = { version = "2.4.0", optional = true }
 tower = { version = "0.4", features = ["util"], optional = true }
+worker = { version = "0.0.18", optional = true }
 
 bincode = { version = "1", optional = true }
 anyhow = { version = "1.0.71", optional = true }
@@ -36,7 +38,7 @@ http = { version = "0.2", optional = true }
 sqlite3-parser = { path = "../vendored/sqlite3-parser", version = "0.11", optional = true }
 fallible-iterator = { version = "0.3", optional = true }
 
-libsql-replication = { path = "../libsql-replication" }
+libsql-replication = { path = "../libsql-replication", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports", "async", "async_futures", "async_tokio"] }
@@ -51,7 +53,7 @@ prost-build = "0.12"
 
 
 [features]
-default = ["core", "replication", "hrana"]
+default = ["core", "replication", "remote"]
 core = [
   "libsql-sys",
   "dep:bitflags",
@@ -60,7 +62,10 @@ core = [
 replication = [
   "core",
   "serde",
-  "http",
+  "dep:tower",
+  "dep:hyper",
+  "dep:http",
+  "dep:tokio",
   "dep:anyhow",
   "dep:bincode",
   "dep:bytemuck",
@@ -76,19 +81,38 @@ replication = [
   "dep:tower-http",
   "dep:tower",
   "dep:hyper-rustls",
-  "dep:futures"
+  "dep:futures",
+  "dep:libsql-replication"
 ]
 hrana = [
   "serde",
-  "http",
   "dep:base64",
   "dep:serde_json",
-  "dep:tower",
-  "dep:hyper-rustls"
 ]
 serde = ["dep:serde"]
-http = ["dep:tower", "dep:hyper", "dep:http", "dep:tokio"]
+remote = [
+  "core",
+  "hrana",
+  "dep:tower",
+  "dep:hyper",
+  "dep:http",
+  "dep:tokio",
+  "dep:futures",
+  "dep:bitflags",
+  "dep:tower",
+  "dep:hyper-rustls",
+]
+wasm = ["hrana"]
+cloudflare = [
+  "wasm",
+  "dep:worker"
+]
 
 [[bench]]
 name = "benchmark"
 harness = false
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

@@ -1,31 +1,26 @@
 #![allow(dead_code)]
 
-mod pipeline;
-mod proto;
+pub mod connection;
 
-use crate::util::coerce_url_scheme;
-use hyper::header::AUTHORIZATION;
-use pipeline::{
-    ClientMsg, Response, ServerMsg, StreamBatchReq, StreamExecuteReq, StreamRequest,
-    StreamResponse, StreamResponseError, StreamResponseOk,
-};
-use proto::{Batch, BatchResult, Col, Stmt, StmtResult};
+cfg_remote! {
+    mod hyper;
+}
 
-use hyper::StatusCode;
-use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
+pub mod pipeline;
+pub mod proto;
 
-use crate::util::ConnectorService;
+use crate::hrana::connection::HttpConnection;
+pub(crate) use crate::hrana::pipeline::{ServerMsg, StreamResponseError};
+use crate::hrana::proto::{Col, Stmt, StmtResult};
 use crate::Error;
-use crate::{params::Params, Column, ValueType};
-use std::collections::{HashMap, VecDeque};
-use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
-use std::sync::{Arc, RwLock};
+use crate::{params::Params, ValueType};
+use std::collections::VecDeque;
+use std::future::Future;
+use std::sync::Arc;
 
 use super::rows::{RowInner, RowsInner};
-use crate::connection::Conn;
-use crate::transaction::Transaction;
 
-type Result<T> = std::result::Result<T, HranaError>;
+pub(crate) type Result<T> = std::result::Result<T, HranaError>;
 
 /// Information about the current session: the server-generated cookie
 /// and the URL that should be used for further communication.
@@ -35,59 +30,9 @@ struct Cookie {
     base_url: Option<String>,
 }
 
-/// Generic HTTP client. Needs a helper function that actually sends
-/// the request.
-#[derive(Clone, Debug)]
-pub struct Client {
-    inner: InnerClient,
-    cookies: Arc<RwLock<HashMap<u64, Cookie>>>,
-    url_for_queries: String,
-    auth: String,
-    affected_row_count: Arc<AtomicU64>,
-    last_insert_rowid: Arc<AtomicI64>,
-}
-
-#[derive(Clone, Debug)]
-struct InnerClient {
-    inner: hyper::Client<HttpsConnector<ConnectorService>, hyper::Body>,
-}
-
-impl InnerClient {
-    fn new(connector: ConnectorService) -> Self {
-        let https = HttpsConnectorBuilder::new()
-            .with_native_roots()
-            .https_or_http()
-            .enable_http1()
-            .wrap_connector(connector);
-        let inner = hyper::Client::builder().build(https);
-
-        Self { inner }
-    }
-
-    async fn send(&self, url: String, auth: String, body: String) -> Result<ServerMsg> {
-        let req = hyper::Request::post(url)
-            .header(AUTHORIZATION, auth)
-            .body(hyper::Body::from(body))
-            .unwrap();
-
-        let res = self.inner.request(req).await.map_err(HranaError::from)?;
-
-        if res.status() != StatusCode::OK {
-            let body = hyper::body::to_bytes(res.into_body())
-                .await
-                .map_err(HranaError::from)?;
-            let body = String::from_utf8(body.into()).unwrap();
-            return Err(HranaError::Api(body));
-        }
-
-        let body = hyper::body::to_bytes(res.into_body())
-            .await
-            .map_err(HranaError::from)?;
-
-        let msg = serde_json::from_slice::<ServerMsg>(&body[..]).map_err(HranaError::from)?;
-
-        Ok(msg)
-    }
+pub trait HttpSend<'a> {
+    type Result: Future<Output = Result<ServerMsg>> + 'a;
+    fn http_send(&'a self, url: String, auth: String, body: String) -> Self::Result;
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -101,227 +46,28 @@ pub enum HranaError {
     #[error("json error: `{0}`")]
     Json(#[from] serde_json::Error),
     #[error("http error: `{0}`")]
-    Http(#[from] hyper::Error),
+    Http(String),
     #[error("api error: `{0}`")]
     Api(String),
 }
 
-impl Client {
-    pub(crate) fn new_with_connector(
-        url: impl Into<String>,
-        token: impl Into<String>,
-        connector: ConnectorService,
-    ) -> Self {
-        let inner = InnerClient::new(connector);
-
-        let token = token.into();
-        let url = url.into();
-        // The `libsql://` protocol is an alias for `https://`.
-        let base_url = coerce_url_scheme(&url);
-        let url_for_queries = format!("{base_url}/v2/pipeline");
-        Self {
-            inner,
-            cookies: Arc::new(RwLock::new(HashMap::new())),
-            url_for_queries,
-            auth: format!("Bearer {token}"),
-            affected_row_count: Arc::new(AtomicU64::new(0)),
-            last_insert_rowid: Arc::new(AtomicI64::new(0)),
-        }
-    }
-}
-
-impl Client {
-    pub async fn raw_batch(&self, stmts: impl IntoIterator<Item = Stmt>) -> Result<BatchResult> {
-        let mut batch = Batch::new();
-        for stmt in stmts.into_iter() {
-            batch.step(None, stmt);
-        }
-
-        let msg = ClientMsg {
-            baton: None,
-            requests: vec![
-                StreamRequest::Batch(StreamBatchReq { batch }),
-                StreamRequest::Close,
-            ],
-        };
-        let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
-        let mut response: ServerMsg = self
-            .inner
-            .send(self.url_for_queries.clone(), self.auth.clone(), body)
-            .await?;
-
-        if response.results.is_empty() {
-            Err(HranaError::UnexpectedResponse(format!(
-                "Unexpected empty response from server: {:?}",
-                response.results
-            )))?;
-        }
-        if response.results.len() > 2 {
-            // One with actual results, one closing the stream
-            Err(HranaError::UnexpectedResponse(format!(
-                "Unexpected multiple responses from server: {:?}",
-                response.results
-            )))?;
-        }
-        match response.results.swap_remove(0) {
-            Response::Ok(StreamResponseOk {
-                response: StreamResponse::Batch(batch_result),
-            }) => Ok(batch_result.result),
-            Response::Ok(_) => Err(HranaError::UnexpectedResponse(format!(
-                "Unexpected response from server: {:?}",
-                response.results
-            ))),
-            Response::Error(e) => Err(HranaError::StreamError(e)),
-        }
-    }
-
-    async fn execute_inner(&self, stmt: Stmt, tx_id: u64) -> Result<StmtResult> {
-        let cookie = if tx_id > 0 {
-            self.cookies
-                .read()
-                .unwrap()
-                .get(&tx_id)
-                .cloned()
-                .unwrap_or_default()
-        } else {
-            Cookie::default()
-        };
-        let msg = ClientMsg {
-            baton: cookie.baton,
-            requests: vec![
-                StreamRequest::Execute(StreamExecuteReq { stmt }),
-                StreamRequest::Close,
-            ],
-        };
-        let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
-        let url = cookie
-            .base_url
-            .unwrap_or_else(|| self.url_for_queries.clone());
-        let mut response: ServerMsg = self.inner.send(url, self.auth.clone(), body).await?;
-
-        if tx_id > 0 {
-            let base_url = response.base_url;
-            match response.baton {
-                Some(baton) => {
-                    self.cookies.write().unwrap().insert(
-                        tx_id,
-                        Cookie {
-                            baton: Some(baton),
-                            base_url,
-                        },
-                    );
-                }
-                None => Err(HranaError::StreamClosed(
-                    "Stream closed: server returned empty baton".into(),
-                ))?,
-            }
-        }
-
-        if response.results.is_empty() {
-            Err(HranaError::UnexpectedResponse(format!(
-                "Unexpected empty response from server: {:?}",
-                response.results
-            )))?;
-        }
-        if response.results.len() > 2 {
-            // One with actual results, one closing the stream
-            Err(HranaError::UnexpectedResponse(format!(
-                "Unexpected multiple responses from server: {:?}",
-                response.results
-            )))?;
-        }
-        match response.results.swap_remove(0) {
-            Response::Ok(StreamResponseOk {
-                response: StreamResponse::Execute(execute_result),
-            }) => Ok(execute_result.result),
-            Response::Ok(_) => Err(HranaError::UnexpectedResponse(format!(
-                "Unexpected response from server: {:?}",
-                response.results
-            ))),
-            Response::Error(e) => Err(HranaError::StreamError(e)),
-        }
-    }
-
-    async fn _close_stream_for(&self, tx_id: u64) -> Result<()> {
-        let cookie = self
-            .cookies
-            .read()
-            .unwrap()
-            .get(&tx_id)
-            .cloned()
-            .unwrap_or_default();
-        let msg = ClientMsg {
-            baton: cookie.baton,
-            requests: vec![StreamRequest::Close],
-        };
-        let url = cookie
-            .base_url
-            .unwrap_or_else(|| self.url_for_queries.clone());
-        let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
-        self.inner.send(url, self.auth.clone(), body).await.ok();
-        self.cookies.write().unwrap().remove(&tx_id);
-        Ok(())
-    }
-}
-
-#[async_trait::async_trait]
-impl Conn for Client {
-    async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
-        let mut stmt = self.prepare(sql).await?;
-        let rows = stmt.execute(params).await?;
-
-        Ok(rows as u64)
-    }
-
-    async fn execute_batch(&self, _sql: &str) -> crate::Result<()> {
-        todo!()
-    }
-
-    async fn prepare(&self, sql: &str) -> crate::Result<super::Statement> {
-        let stmt = Statement {
-            client: self.clone(),
-            inner: Stmt::new(sql, true),
-        };
-        Ok(super::Statement {
-            inner: Box::new(stmt),
-        })
-    }
-
-    async fn transaction(
-        &self,
-        _tx_behavior: crate::TransactionBehavior,
-    ) -> crate::Result<Transaction> {
-        todo!()
-    }
-
-    fn is_autocommit(&self) -> bool {
-        // TODO: Is this correct?
-        false
-    }
-
-    fn changes(&self) -> u64 {
-        self.affected_row_count.load(Ordering::SeqCst)
-    }
-
-    fn last_insert_rowid(&self) -> i64 {
-        self.last_insert_rowid.load(Ordering::SeqCst)
-    }
-
-    fn close(&mut self) {
-        todo!()
-    }
-}
-
-pub struct Statement {
-    client: Client,
+pub struct Statement<T> {
+    client: HttpConnection<T>,
     inner: Stmt,
 }
 
-#[async_trait::async_trait]
-impl super::statement::Stmt for Statement {
-    fn finalize(&mut self) {}
+impl<T> Statement<T>
+where
+    T: for<'a> HttpSend<'a>,
+{
+    pub(crate) fn new(conn: HttpConnection<T>, sql: String, want_rows: bool) -> Self {
+        Statement {
+            client: conn,
+            inner: Stmt::new(sql, want_rows),
+        }
+    }
 
-    async fn execute(&mut self, params: &Params) -> crate::Result<usize> {
+    pub async fn execute(&mut self, params: &Params) -> crate::Result<usize> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
@@ -332,17 +78,14 @@ impl super::statement::Stmt for Statement {
             .map_err(|e| Error::Hrana(e.into()))?;
         let affected_row_count = v.affected_row_count as usize;
         self.client
-            .affected_row_count
-            .store(affected_row_count as u64, Ordering::SeqCst);
+            .set_affected_row_count(affected_row_count as u64);
         if let Some(last_insert_rowid) = v.last_insert_rowid {
-            self.client
-                .last_insert_rowid
-                .store(last_insert_rowid, Ordering::SeqCst);
+            self.client.set_last_insert_rowid(last_insert_rowid);
         }
         Ok(affected_row_count)
     }
 
-    async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
+    pub async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
@@ -358,20 +101,6 @@ impl super::statement::Stmt for Statement {
                 cols: Arc::new(cols),
             }),
         })
-    }
-
-    fn reset(&mut self) {}
-
-    fn parameter_count(&self) -> usize {
-        todo!()
-    }
-
-    fn parameter_name(&self, _idx: i32) -> Option<&str> {
-        todo!()
-    }
-
-    fn columns(&self) -> Vec<Column> {
-        todo!()
     }
 }
 

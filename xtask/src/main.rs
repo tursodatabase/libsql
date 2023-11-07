@@ -14,6 +14,7 @@ fn try_main() -> Result<()> {
     let arg = env::args().nth(2).unwrap_or("".to_string());
     match task.as_deref() {
         Some("build") => build()?,
+        Some("build-wasm") => build_wasm(&arg)?,
         Some("sim-tests") => sim_tests(&arg)?,
         _ => print_help(),
     }
@@ -28,6 +29,21 @@ build                  builds all languages
 sim-tests <test name>  runs the libsql-server simulation test suite
 "
     )
+}
+
+fn build_wasm(_arg: &str) -> Result<()> {
+    run_cargo(&[
+        "check",
+        "-p",
+        "libsql",
+        "--target",
+        "wasm32-unknown-unknown",
+        "--no-default-features",
+        "--features",
+        "cloudflare",
+    ])?;
+
+    Ok(())
 }
 
 fn sim_tests(arg: &str) -> Result<()> {
