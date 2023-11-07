@@ -43,45 +43,8 @@
 //!
 //! You can find more examples in the [`examples`](https://github.com/tursodatabase/libsql/tree/main/crates/core/examples) directory.
 
-macro_rules! cfg_core {
-    ($($item:item)*) => {
-        $(
-            #[cfg(feature = "core")]
-            #[cfg_attr(docsrs, doc(cfg(feature = "core")))]
-            $item
-        )*
-    }
-}
-
-macro_rules! cfg_replication {
-    ($($item:item)*) => {
-        $(
-            #[cfg(feature = "replication")]
-            #[cfg_attr(docsrs, doc(cfg(feature = "replication")))]
-            $item
-        )*
-    }
-}
-
-macro_rules! cfg_hrana {
-    ($($item:item)*) => {
-        $(
-            #[cfg(feature = "hrana")]
-            #[cfg_attr(docsrs, doc(cfg(feature = "hrana")))]
-            $item
-        )*
-    }
-}
-
-macro_rules! cfg_http {
-    ($($item:item)*) => {
-        $(
-            #[cfg(feature = "http")]
-            #[cfg_attr(docsrs, doc(cfg(feature = "http")))]
-            $item
-        )*
-    }
-}
+#[macro_use]
+mod macros;
 
 cfg_core! {
     mod local;
@@ -101,6 +64,10 @@ cfg_replication! {
 
 cfg_core! {
     pub use libsql_sys::ffi;
+}
+
+cfg_wasm! {
+    pub mod wasm;
 }
 
 mod util;

@@ -12,7 +12,7 @@ pub struct Error {
     pub code: String,
 }
 
-#[derive(Deserialize, prost::Message)]
+#[derive(Deserialize, Serialize, prost::Message)]
 pub struct Stmt {
     #[serde(default)]
     #[prost(string, optional, tag = "1")]
@@ -34,7 +34,7 @@ pub struct Stmt {
     pub replication_index: Option<u64>,
 }
 
-#[derive(Deserialize, prost::Message)]
+#[derive(Deserialize, Serialize, prost::Message)]
 pub struct NamedArg {
     #[prost(string, tag = "1")]
     pub name: String,
@@ -53,8 +53,6 @@ pub struct StmtResult {
     #[serde(with = "option_i64_as_str")]
     #[prost(sint64, optional, tag = "4")]
     pub last_insert_rowid: Option<i64>,
-    #[prost(uint64, optional, tag = "5")]
-    pub replication_index: Option<u64>,
 }
 
 #[derive(Serialize, prost::Message)]
@@ -72,7 +70,7 @@ pub struct Row {
     pub values: Vec<Value>,
 }
 
-#[derive(Deserialize, prost::Message)]
+#[derive(Deserialize, Serialize, prost::Message)]
 pub struct Batch {
     #[prost(message, repeated, tag = "1")]
     pub steps: Vec<BatchStep>,
@@ -81,7 +79,7 @@ pub struct Batch {
     pub replication_index: Option<u64>,
 }
 
-#[derive(Deserialize, prost::Message)]
+#[derive(Deserialize, Serialize, prost::Message)]
 pub struct BatchStep {
     #[serde(default)]
     #[prost(message, optional, tag = "1")]
@@ -94,9 +92,10 @@ pub struct BatchStep {
 pub struct BatchResult {
     pub step_results: Vec<Option<StmtResult>>,
     pub step_errors: Vec<Option<Error>>,
+    pub replication_index: Option<u64>,
 }
 
-#[derive(Deserialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Debug, Default)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum BatchCond {
     #[serde(skip_deserializing)]
@@ -116,7 +115,7 @@ pub enum BatchCond {
     IsAutocommit {},
 }
 
-#[derive(Deserialize, prost::Message)]
+#[derive(Deserialize, Serialize, prost::Message)]
 pub struct BatchCondList {
     #[prost(message, repeated, tag = "1")]
     pub conds: Vec<BatchCond>,

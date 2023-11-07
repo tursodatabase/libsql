@@ -26,6 +26,8 @@ pub struct HelloResponse {
     /// / If the header session token fails to match the current session token, a NO_HELLO error is returned
     #[prost(bytes = "bytes", tag = "4")]
     pub session_token: ::prost::bytes::Bytes,
+    #[prost(uint64, optional, tag = "5")]
+    pub current_replication_index: ::core::option::Option<u64>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
