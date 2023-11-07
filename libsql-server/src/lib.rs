@@ -48,6 +48,8 @@ pub mod net;
 pub mod rpc;
 pub mod version;
 
+pub use hrana::proto as hrana_proto;
+
 mod auth;
 mod database;
 mod error;
