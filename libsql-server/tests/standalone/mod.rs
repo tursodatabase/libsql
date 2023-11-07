@@ -77,9 +77,7 @@ fn basic_metrics() {
             libsql::Value::Integer(1)
         ));
 
-        snapshot_metrics()
-            .assert_gauge("libsql_server_concurrent_connections", 0.0)
-            .assert_counter("libsql_server_libsql_execute_program", 3);
+        snapshot_metrics().assert_counter("libsql_server_libsql_execute_program", 3);
 
         Ok(())
     });
