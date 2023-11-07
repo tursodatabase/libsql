@@ -2014,7 +2014,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_SLOCHNG  0x2000 /* "Slow Change". Value constant during a
                                     ** single query - might change over time */
 #define SQLITE_FUNC_TEST     0x4000 /* Built-in testing functions */
-/*                           0x8000 -- available for reuse */
+#define SQLITE_FUNC_RUNONLY  0x8000 /* Cannot be used by valueFromFunction */
 #define SQLITE_FUNC_WINDOW   0x00010000 /* Built-in window-only function */
 #define SQLITE_FUNC_INTERNAL 0x00040000 /* For use by NestedParse() only */
 #define SQLITE_FUNC_DIRECT   0x00080000 /* Not for use in TRIGGERs or VIEWs */
@@ -2115,7 +2115,7 @@ struct FuncDestructor {
    xPtr, 0, xFunc, 0, 0, 0, #zName, {0} }
 #define JFUNCTION(zName, nArg, iArg, xFunc) \
   {nArg, SQLITE_FUNC_BUILTIN|SQLITE_DETERMINISTIC|\
-   SQLITE_FUNC_CONSTANT|SQLITE_UTF8, \
+   SQLITE_FUNC_CONSTANT|SQLITE_UTF8|SQLITE_FUNC_RUNONLY, \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define INLINE_FUNC(zName, nArg, iArg, mFlags) \
   {nArg, SQLITE_FUNC_BUILTIN|\
