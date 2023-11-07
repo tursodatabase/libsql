@@ -211,19 +211,20 @@ impl Stats {
         self.slowest_query_threshold.store(0, Ordering::Relaxed);
     }
 
+    // TOOD: Update these metrics with namespace labels in the future so we can localize
+    // issues to a specific namespace.
     pub(crate) fn update_query_metrics(
         &self,
-        sql: String,
         rows_read: u64,
         rows_written: u64,
         mem_used: u64,
         elapsed: u64,
     ) {
-        increment_counter!("libsql_server_query_count", "namespace" => self.namespace.to_string(), "query" => sql.clone());
-        counter!("libsql_server_query_latency", elapsed, "namespace" => self.namespace.to_string(), "query" => sql.clone());
-        counter!("libsql_server_query_rows_read", rows_read, "namespace" => self.namespace.to_string(), "query" => sql.clone());
-        counter!("libsql_server_query_rows_written", rows_written, "namespace" => self.namespace.to_string(), "query" => sql.clone());
-        counter!("libsql_server_query_mem_used", mem_used, "namespace" => self.namespace.to_string(), "query" => sql.clone());
+        increment_counter!("libsql_server_query_count");
+        counter!("libsql_server_query_latency", elapsed);
+        counter!("libsql_server_query_rows_read", rows_read);
+        counter!("libsql_server_query_rows_written", rows_written);
+        counter!("libsql_server_query_mem_used", mem_used);
     }
 }
 

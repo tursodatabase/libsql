@@ -35,6 +35,7 @@ jsonwebtoken = "8.2.0"
 libsql = { path = "../libsql/", optional = true }
 libsql-replication = { path = "../libsql-replication" }
 metrics = "0.21.1"
+metrics-util = "0.15"
 metrics-exporter-prometheus = "0.12.1"
 mimalloc = { version = "0.1.36", default-features = false }
 nix = { version = "0.26.2", features = ["fs"] }

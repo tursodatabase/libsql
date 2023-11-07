@@ -749,9 +749,8 @@ impl<W: WalHook> Connection<W> {
                 ));
         }
 
-        // TODO: change how these metrics are gathered to limit cardinality
-        // self.stats
-        //     .update_query_metrics(sql, rows_read, rows_written, mem_used, elapsed)
+        self.stats
+            .update_query_metrics(rows_read, rows_written, mem_used, elapsed)
     }
 
     fn describe(&self, sql: &str) -> crate::Result<DescribeResponse> {
