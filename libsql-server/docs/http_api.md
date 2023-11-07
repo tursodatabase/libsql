@@ -22,20 +22,15 @@ Responses to queries can either succeed or fail. When they succeed a payload spe
 
 In the case of a failure, a specific `Error` response is returned with the approriate HTTP status code. The `Error` response has the following structure:
 
-```
+```ts
 type Error = {
-    error: {
-        message: string,
-        error_code: string,
-   }
+    error: string
 }
 ```
 
-The error code can later be used to link to the relevant documentation.
-
 The general structure of a response is:
 
-```
+```ts
 type Response<T> = T | Error;
 ```
 
@@ -57,7 +52,7 @@ The HTTP API is stateless, which means that interactive transactions are not pos
 
 The body for the query request has the following format:
 
-```
+```ts
 type QueryBody = {
     statements: Array<Query>
 }
@@ -71,20 +66,20 @@ Queries are either simple strings or `ParamQuery` that accept parameter bindings
 ##### Response Format
 
 On success, a request to `POST /` returns a response with an HTTP 200 code and a JSON body with the following structure:
-```
-type BatchResponse = {
-    results: Array<QueryResult>,
-}
+```ts
+type BatchResponse = Array<QueryResult>|Error
 
 type QueryResult = {
-    columns: Array<string>,
-    rows: Array<Array<Value>>,
+    results: {
+        columns: Array<string>,
+        rows: Array<Array<Value>>
+    }
 }
 
 ```
 
-Each entry in the `results` array of the `BatchResponse` corresponds to a query in the request.
-The `QueryResult` is either an error or a set of results.
+Each `QueryResult` entry in the `BatchResponse` array corresponds to a query in the request.
+The `BatchResponse` is either an `Error` or a set of `QueryResult`s.
 
 The `Query` can either be a plain query string, such as `SELECT * FROM users` or `INSERT INTO users VALUES ("adhoc")`, or objects for queries with bound parameters.
 
