@@ -510,19 +510,27 @@ public final class Sqlite implements AutoCloseable  {
   }
 
   /**
+     Analog to sqlite3_prepare_v3(), this prepares the first SQL
+     statement from the given input string and returns it as a
+     Stmt. It throws an SqliteException if preparation fails or an
+     IllegalArgumentException if the input is empty (e.g. contains
+     only comments or whitespace).
+
+     The first argument must be SQL input in UTF-8 encoding.
+
      prepFlags must be 0 or a bitmask of the PREPARE_... constants.
 
-     prepare() TODOs include:
+     For processing multiple statements from a single input, use
+     prepareMulti().
 
-     - overloads taking byte[] and ByteBuffer.
-
-     - multi-statement processing, like CApi.sqlite3_prepare_multi()
-     but using a callback specific to the higher-level Stmt class
-     rather than the sqlite3_stmt class.
+     Design note: though the C-level API succeeds with a null
+     statement object for empty inputs, that approach is cumbersome to
+     use in higher-level APIs because every prepared statement has to
+     be checked for null before using it.
   */
-  public Stmt prepare(String sql, int prepFlags){
+  public Stmt prepare(byte utf8Sql[], int prepFlags){
     final OutputPointer.sqlite3_stmt out = new OutputPointer.sqlite3_stmt();
-    final int rc = CApi.sqlite3_prepare_v3(thisDb(), sql, prepFlags, out);
+    final int rc = CApi.sqlite3_prepare_v3(thisDb(), utf8Sql, prepFlags, out);
     checkRc(rc);
     final sqlite3_stmt q = out.take();
     if( null==q ){
@@ -539,8 +547,111 @@ public final class Sqlite implements AutoCloseable  {
     return new Stmt(this, q);
   }
 
+  /**
+     Equivalent to prepare(X, prepFlags), where X is
+     sql.getBytes(StandardCharsets.UTF_8).
+  */
+  public Stmt prepare(String sql, int prepFlags){
+    return prepare( sql.getBytes(StandardCharsets.UTF_8), prepFlags );
+  }
+
+  /**
+     Equivalent to prepare(sql, 0).
+  */
   public Stmt prepare(String sql){
     return prepare(sql, 0);
+  }
+
+
+  /**
+     Callback type for use with prepareMulti().
+  */
+  public interface PrepareMulti {
+    /**
+       Gets passed a Stmt which it may handle in arbitrary ways.
+       Ownership of st is passed to this function. It must throw on
+       error.
+    */
+    void call(Sqlite.Stmt st);
+  }
+
+  /**
+     A PrepareMulti implementation which calls another PrepareMulti
+     object and then finalizes its statement.
+  */
+  public static class PrepareMultiFinalize implements PrepareMulti {
+    private final PrepareMulti pm;
+    /**
+       Proxies the given PrepareMulti via this object's call() method.
+    */
+    public PrepareMultiFinalize(PrepareMulti proxy){
+      this.pm = proxy;
+    }
+    /**
+       Passes st to the call() method of the object this one proxies,
+       then finalizes st, propagating any exceptions from call() after
+       finalizing st.
+    */
+    @Override public void call(Stmt st){
+      try{ pm.call(st); }
+      finally{ st.finalizeStmt(); }
+    }
+  }
+
+  /**
+     Equivalent to prepareMulti(sql,0,visitor).
+  */
+  public void prepareMulti(String sql, PrepareMulti visitor){
+    prepareMulti( sql, 0, visitor );
+  }
+
+  /**
+     A variant of prepare() which can handle multiple SQL statements
+     in a single input string. For each statement in the given string,
+     the statement is passed to visitor.call() a single time, passing
+     ownership of the statement to that function. This function does
+     not step() or close() statements - those operations are left to
+     caller or the visitor function.
+
+     Unlike prepare(), this function does not fail if the input
+     contains only whitespace or SQL comments. In that case it is up
+     to the caller to arrange for that to be an error (if desired).
+
+     PrepareMultiFinalize offers a proxy which finalizes each
+     statement after it is passed to another client-defined visitor.
+  */
+  public void prepareMulti(byte sqlUtf8[], int prepFlags, PrepareMulti visitor){
+    int pos = 0, n = 1;
+    byte[] sqlChunk = sqlUtf8;
+    final org.sqlite.jni.capi.OutputPointer.sqlite3_stmt outStmt =
+      new org.sqlite.jni.capi.OutputPointer.sqlite3_stmt();
+    final org.sqlite.jni.capi.OutputPointer.Int32 oTail =
+      new org.sqlite.jni.capi.OutputPointer.Int32();
+    while( pos < sqlChunk.length ){
+      sqlite3_stmt stmt = null;
+      if( pos>0 ){
+        sqlChunk = java.util.Arrays.copyOfRange(sqlChunk, pos, sqlChunk.length);
+      }
+      if( 0==sqlChunk.length ) break;
+      checkRc(
+        CApi.sqlite3_prepare_v3(db, sqlChunk, prepFlags, outStmt, oTail)
+      );
+      pos = oTail.value;
+      stmt = outStmt.take();
+      if( null==stmt ){
+        /* empty statement, e.g. only comments or whitespace, was parsed. */
+        continue;
+      }
+      visitor.call(new Stmt(this, stmt));
+    }
+  }
+
+  /**
+     Equivallent to prepareMulti(X,prepFlags,visitor), where X is
+     sql.getBytes(StandardCharsets.UTF_8).
+  */
+  public void prepareMulti(String sql, int prepFlags, PrepareMulti visitor){
+    prepareMulti(sql.getBytes(StandardCharsets.UTF_8), prepFlags, visitor);
   }
 
   public void createFunction(String name, int nArg, int eTextRep, ScalarFunction f){

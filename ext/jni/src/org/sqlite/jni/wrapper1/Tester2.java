@@ -125,7 +125,7 @@ public class Tester2 implements Runnable {
   }
 
 
-  public static void execSql(Sqlite db, String[] sql){
+  public static void execSql(Sqlite db, String sql[]){
     execSql(db, String.join("", sql));
   }
 
@@ -936,6 +936,37 @@ public class Tester2 implements Runnable {
     affirm( 100==tgt[0] && 101==tgt[1] && 102==tgt[2], "DEF" );
     b.close();
     db.close();
+  }
+
+  void testPrepareMulti(){
+    final ValueHolder<Integer> fCount = new ValueHolder<>(0);
+    final ValueHolder<Integer> mCount = new ValueHolder<>(0);
+    try (Sqlite db = openDb()) {
+      execSql(db, "create table t(a); insert into t(a) values(1),(2),(3)");
+      db.createFunction("counter", -1, new ScalarFunction(){
+          @Override public void xFunc(SqlFunction.Arguments args){
+            ++fCount.value;
+            args.resultNull();
+          }
+          public void xDestroy(){}
+        }
+      );
+      final Sqlite.PrepareMulti pm = new Sqlite.PrepareMultiFinalize(
+        new Sqlite.PrepareMulti() {
+          @Override public void call(Sqlite.Stmt q){
+            ++mCount.value;
+            while(q.step()){}
+          }
+        }
+      );
+      final String sql = "select counter(*) from t;"+
+        "select counter(*) from t; /* comment */"+
+        "select counter(*) from t; -- comment\n"
+        ;
+      db.prepareMulti(sql, pm);
+    }
+    affirm( 3 == mCount.value );
+    affirm( 9 == fCount.value );
   }
 
   private void runTests(boolean fromThread) throws Exception {

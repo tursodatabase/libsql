@@ -1202,26 +1202,26 @@ public final class CApi {
   */
   public static int sqlite3_prepare_multi(
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8,
-    int preFlags,
+    int prepFlags,
     @NotNull PrepareMultiCallback p){
     final OutputPointer.Int32 oTail = new OutputPointer.Int32();
     int pos = 0, n = 1;
     byte[] sqlChunk = sqlUtf8;
     int rc = 0;
     final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
-    while(0==rc && pos<sqlChunk.length){
+    while( 0==rc && pos<sqlChunk.length ){
       sqlite3_stmt stmt = null;
-      if(pos > 0){
+      if( pos>0 ){
         sqlChunk = Arrays.copyOfRange(sqlChunk, pos,
                                       sqlChunk.length);
       }
       if( 0==sqlChunk.length ) break;
-      rc = sqlite3_prepare_v3(db, sqlChunk, preFlags, outStmt, oTail);
+      rc = sqlite3_prepare_v3(db, sqlChunk, prepFlags, outStmt, oTail);
       if( 0!=rc ) break;
       pos = oTail.value;
       stmt = outStmt.take();
-      if( null == stmt ){
-        // empty statement was parsed.
+      if( null==stmt ){
+        // empty statement (whitespace/comments)
         continue;
       }
       rc = p.call(stmt);
