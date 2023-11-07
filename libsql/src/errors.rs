@@ -39,7 +39,7 @@ pub enum Error {
     #[error("Remote SQlite failure: `{0}:{1}:{2}`")]
     RemoteSqliteFailure(i32, i32, String),
     #[error("replication error: {0}")]
-    Replication(#[from] libsql_replication::replicator::Error),
+    Replication(crate::BoxError),
 }
 
 impl From<std::convert::Infallible> for Error {
