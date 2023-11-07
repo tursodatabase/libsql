@@ -18,7 +18,6 @@ use crate::auth::{Auth, Authenticated};
 use crate::connection::Connection;
 use crate::database::{Database, PrimaryConnection};
 use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
-use crate::query_analysis::TxnStatus;
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
 };
@@ -453,11 +452,17 @@ impl QueryResultBuilder for ExecuteResultsBuilder {
     fn finish(
         &mut self,
         last_frame_no: Option<FrameNo>,
-        txn_status: TxnStatus,
+        is_autocommit: bool,
     ) -> Result<(), QueryResultBuilderError> {
+        use libsql_replication::rpc::proxy::State;
+
         self.output = Some(ExecuteResults {
             results: std::mem::take(&mut self.results),
-            state: rpc::State::from(txn_status).into(),
+            state: if is_autocommit {
+                State::Init.into()
+            } else {
+                State::Txn.into()
+            },
             current_frame_no: last_frame_no,
         });
         Ok(())

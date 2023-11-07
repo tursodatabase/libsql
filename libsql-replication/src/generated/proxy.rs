@@ -440,8 +440,8 @@ pub struct FinishRows {}
 pub struct Finish {
     #[prost(uint64, optional, tag = "1")]
     pub last_frame_no: ::core::option::Option<u64>,
-    #[prost(enumeration = "State", tag = "2")]
-    pub state: i32,
+    #[prost(bool, tag = "2")]
+    pub is_autocommit: bool,
 }
 /// / Stream execx dexcribe response messages
 #[derive(serde::Serialize, serde::Deserialize)]

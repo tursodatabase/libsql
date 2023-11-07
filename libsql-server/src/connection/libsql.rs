@@ -570,16 +570,14 @@ impl<W: WalHook> Connection<W> {
             results.push(res);
         }
 
-        let status = this
-            .lock()
-            .conn
-            .transaction_state(Some(DatabaseName::Main))?
-            .into();
-
-        builder.finish(
-            *this.lock().current_frame_no_receiver.borrow_and_update(),
-            status,
-        )?;
+        {
+            let mut lock = this.lock();
+            let is_autocommit = lock.conn.is_autocommit();
+            builder.finish(
+                *(lock.current_frame_no_receiver.borrow_and_update()),
+                is_autocommit,
+            )?;
+        }
 
         Ok(builder)
     }

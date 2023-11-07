@@ -11,7 +11,7 @@ use libsql_replication::rpc::proxy::row_value::Value;
 use libsql_replication::rpc::proxy::{
     AddRowValue, BeginRow, BeginRows, BeginStep, ColsDescription, DescribeCol, DescribeParam,
     DescribeResp, ExecReq, ExecResp, Finish, FinishRow, FinishRows, FinishStep, Init, ProgramResp,
-    RespStep, RowValue, State as RpcState, StepError, StreamDescribeReq,
+    RespStep, RowValue, StepError, StreamDescribeReq,
 };
 use prost::Message;
 use rusqlite::types::ValueRef;
@@ -23,7 +23,6 @@ use tonic::{Code, Status};
 use crate::auth::Authenticated;
 use crate::connection::Connection;
 use crate::error::Error;
-use crate::query_analysis::TxnStatus;
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
 };
@@ -212,7 +211,7 @@ pub fn apply_program_resp_to_builder<B: QueryResultBuilder>(
     config: &QueryBuilderConfig,
     builder: &mut B,
     resp: ProgramResp,
-    mut on_finish: impl FnMut(Option<FrameNo>, TxnStatus),
+    mut on_finish: impl FnMut(Option<FrameNo>, bool),
 ) -> crate::Result<bool> {
     for step in resp.steps {
         let Some(step) = step.step else {
@@ -251,10 +250,12 @@ pub fn apply_program_resp_to_builder<B: QueryResultBuilder>(
             }
             Step::FinishRow(_) => builder.finish_row()?,
             Step::FinishRows(_) => builder.finish_rows()?,
-            Step::Finish(f @ Finish { last_frame_no, .. }) => {
-                let txn_status = TxnStatus::from(f.state());
-                on_finish(last_frame_no, txn_status);
-                builder.finish(last_frame_no, txn_status)?;
+            Step::Finish(Finish {
+                last_frame_no,
+                is_autocommit,
+            }) => {
+                on_finish(last_frame_no, is_autocommit);
+                builder.finish(last_frame_no, is_autocommit)?;
                 return Ok(false);
             }
             _ => return Err(Error::PrimaryStreamMisuse),
@@ -343,11 +344,11 @@ impl QueryResultBuilder for StreamResponseBuilder {
     fn finish(
         &mut self,
         last_frame_no: Option<FrameNo>,
-        state: TxnStatus,
+        is_autocommit: bool,
     ) -> Result<(), QueryResultBuilderError> {
         self.push(Step::Finish(Finish {
             last_frame_no,
-            state: RpcState::from(state).into(),
+            is_autocommit,
         }))?;
         self.flush()?;
         Ok(())
