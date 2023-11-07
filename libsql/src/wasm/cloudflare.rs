@@ -4,10 +4,14 @@ use std::future::Future;
 use std::pin::Pin;
 use worker::wasm_bindgen::JsValue;
 
-#[derive(Default, Debug, Copy, Clone)]
-pub(super) struct CloudflareSender(());
+#[derive(Debug, Copy, Clone)]
+pub struct CloudflareSender(());
 
 impl CloudflareSender {
+    pub(crate) fn new() -> Self {
+        CloudflareSender(())
+    }
+
     async fn send(url: String, auth: String, body: String) -> Result<ServerMsg> {
         use worker::*;
 
