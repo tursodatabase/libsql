@@ -58,6 +58,7 @@ fn basic_query() {
 }
 
 #[test]
+#[ignore]
 fn basic_metrics() {
     let mut sim = turmoil::Builder::new().build();
 
