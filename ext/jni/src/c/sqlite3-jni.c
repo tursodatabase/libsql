@@ -201,8 +201,8 @@
 **
 ** https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/design.html#jni_interface_functions_and_pointers
 */
-#define JniArgsEnvObj JNIEnv * const env, jobject jSelf
-#define JniArgsEnvClass JNIEnv * const env, jclass jKlazz
+#define JniArgsEnvObj JNIEnv * env, jobject jSelf
+#define JniArgsEnvClass JNIEnv * env, jclass jKlazz
 /*
 ** Helpers to account for -Xcheck:jni warnings about not having
 ** checked for exceptions.
