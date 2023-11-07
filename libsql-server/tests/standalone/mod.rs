@@ -4,7 +4,7 @@ use crate::common::{net::SimServer, snapshot_metrics};
 
 use super::common;
 
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use libsql::{Database, Value};
 use tempfile::tempdir;
@@ -76,6 +76,8 @@ fn basic_metrics() {
             rows.next().unwrap().unwrap().get_value(0).unwrap(),
             libsql::Value::Integer(1)
         ));
+
+        tokio::time::sleep(Duration::from_secs(1)).await;
 
         snapshot_metrics().assert_counter("libsql_server_libsql_execute_program", 3);
 
