@@ -26,6 +26,8 @@ pub struct Client {
     pub current_frame_no_notifier: watch::Sender<Option<FrameNo>>,
     namespace: NamespaceName,
     session_token: Option<Bytes>,
+    // the primary current replication index, as reported by the last handshake
+    pub primary_replication_index: Option<FrameNo>,
 }
 
 impl Client {
@@ -43,6 +45,7 @@ impl Client {
             current_frame_no_notifier,
             meta,
             session_token: None,
+            primary_replication_index: None,
         })
     }
 
@@ -90,6 +93,7 @@ impl ReplicatorClient for Client {
             Ok(resp) => {
                 let hello = resp.into_inner();
                 verify_session_token(&hello.session_token).map_err(Error::Client)?;
+                self.primary_replication_index = hello.current_replication_index;
                 self.session_token.replace(hello.session_token.clone());
                 self.meta.init_from_hello(hello)?;
                 self.current_frame_no_notifier

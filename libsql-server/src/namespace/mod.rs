@@ -578,6 +578,10 @@ impl Namespace<ReplicaDatabase> {
         )
         .await?;
 
+        // force a handshake now, to retrieve the primary's current replication index
+        replicator.try_perform_handshake().await?;
+        let primary_current_replicatio_index = replicator.client_mut().primary_replication_index;
+
         let mut join_set = JoinSet::new();
         let namespace = name.clone();
         join_set.spawn(async move {
@@ -646,6 +650,7 @@ impl Namespace<ReplicaDatabase> {
             config.max_response_size,
             config.max_total_response_size,
             name.clone(),
+            primary_current_replicatio_index,
         )
         .await?
         .throttled(

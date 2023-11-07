@@ -148,7 +148,7 @@ impl<C: ReplicatorClient> Replicator<C> {
         }
     }
 
-    async fn try_perform_handshake(&mut self) -> Result<(), Error> {
+    pub async fn try_perform_handshake(&mut self) -> Result<(), Error> {
         let mut error_printed = false;
         for _ in 0..HANDSHAKE_MAX_RETRIES {
             tracing::info!("Attempting to perform handshake with primary.");
