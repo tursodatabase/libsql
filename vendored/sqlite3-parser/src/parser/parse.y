@@ -149,6 +149,15 @@ table_option(A) ::= WITHOUT nm(X). {
     self.ctx.sqlite3_error_msg(&msg);
   }
 }
+table_option(A) ::= nm(X) nm(Y). {
+  if "random".eq_ignore_ascii_case(&X.0) && "rowid".eq_ignore_ascii_case(&Y.0) {
+    A = TableOptions::RANDOM_ROWID;
+  }else{
+    A = TableOptions::NONE;
+    let msg = format!("unknown table option: {} {}", &X, &Y);
+    self.ctx.sqlite3_error_msg(&msg);
+  }
+}
 table_option(A) ::= nm(X). {
   if "strict".eq_ignore_ascii_case(&X.0) {
     A = TableOptions::STRICT;
