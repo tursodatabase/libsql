@@ -8,7 +8,7 @@
 **    May you find forgiveness for yourself and forgive others.
 **    May you share freely, never taking more than you give.
 **
-*************************************************************************
+********************************************************************************
 ** This file exposes various interfaces used for console I/O by the
 ** SQLite project command-line tools. These interfaces are used at
 ** either source conglomeration time, compilation time, or run time.
@@ -27,15 +27,6 @@
 #ifndef SQLITE_INTERNAL_LINKAGE
 # define SQLITE_INTERNAL_LINKAGE extern /* external to translation unit */
 # include <stdio.h>
-# include <stdlib.h>
-# include <limits.h>
-# if defined(_WIN32) || defined(WIN32)
-#  undef WIN32_LEAN_AND_MEAN
-#  define WIN32_LEAN_AND_MEAN
-#  include <windows.h>
-#  include <io.h>
-#  include <fcntl.h>
-# endif
 #else
 # define SHELL_NO_SYSINC /* Better yet, modify mkshellc.tcl for this. */
 #endif
@@ -98,6 +89,8 @@ SQLITE_INTERNAL_LINKAGE void SQLITE_CDECL consoleRestore( void );
 ** translation as specified by set{Binary,Text}Mode().
 */
 SQLITE_INTERNAL_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...);
+/* Like fprintfUtf8 except stream is always the recorded output. */
+SQLITE_INTERNAL_LINKAGE int printfUtf8(const char *zFormat, ...);
 
 /*
 ** Render output like fputs(). If the output is going to the

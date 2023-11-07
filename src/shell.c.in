@@ -567,8 +567,9 @@ static char *dynamicContinuePrompt(void){
 
 /* From here onward, fgets() is redirected to the console_io library. */
 #define fgets(b,n,f) fgetsUtf8(b,n,f)
-/* And, (varargs) utf8_printf(f,z,...) is redirected to the same. */
+/* Also, (varargs) utf8_printf(f,z,...),printf(z,...) so redirected. */
 #define utf8_printf fprintfUtf8
+#define printf printfUtf8
 /* And, utf8_print(f,z) is redirected to fputsUtf8(z,f) in the library. */
 #define utf8_print(f,z) fputsUtf8(z,f)
 
@@ -12427,8 +12428,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       char *zHistory;
       const char *zCharset = "";
       int nHistory;
-#if SHELL_CON_TRANSLATE
+#if SHELL_CON_TRANSLATE==1
       zCharset = " (UTF-16 console I/O)";
+#elif SHELL_CON_TRANSLATE==2
+      zCharset = " (MBCS console I/O)";
 #endif
       printf(
         "SQLite version %s %.19s%s\n" /*extra-version-info*/
