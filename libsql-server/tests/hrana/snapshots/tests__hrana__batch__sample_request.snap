@@ -1,0 +1,20 @@
+---
+source: libsql-server/tests/hrana/batch.rs
+expression: resp.json_value().await.unwrap()
+---
+{
+  "result": {
+    "step_results": [
+      {
+        "cols": [],
+        "rows": [],
+        "affected_row_count": 0,
+        "last_insert_rowid": null
+      }
+    ],
+    "step_errors": [
+      null
+    ],
+    "replication_index": 1
+  }
+}

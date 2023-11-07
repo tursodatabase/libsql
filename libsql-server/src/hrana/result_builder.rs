@@ -360,7 +360,6 @@ impl QueryResultBuilder for HranaBatchProtoBuilder {
             step_results: self.step_results,
             step_errors: self.step_errors,
             replication_index: self.last_frame_no,
-
         }
     }
 }

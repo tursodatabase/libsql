@@ -12,7 +12,7 @@ pub struct Error {
     pub code: String,
 }
 
-#[derive(Deserialize, prost::Message)]
+#[derive(Deserialize, Serialize, prost::Message)]
 pub struct Stmt {
     #[serde(default)]
     #[prost(string, optional, tag = "1")]
@@ -34,7 +34,7 @@ pub struct Stmt {
     pub replication_index: Option<u64>,
 }
 
-#[derive(Deserialize, prost::Message)]
+#[derive(Deserialize, Serialize, prost::Message)]
 pub struct NamedArg {
     #[prost(string, tag = "1")]
     pub name: String,
@@ -70,7 +70,7 @@ pub struct Row {
     pub values: Vec<Value>,
 }
 
-#[derive(Deserialize, prost::Message)]
+#[derive(Deserialize, Serialize, prost::Message)]
 pub struct Batch {
     #[prost(message, repeated, tag = "1")]
     pub steps: Vec<BatchStep>,
@@ -79,7 +79,7 @@ pub struct Batch {
     pub replication_index: Option<u64>,
 }
 
-#[derive(Deserialize, prost::Message)]
+#[derive(Deserialize, Serialize, prost::Message)]
 pub struct BatchStep {
     #[serde(default)]
     #[prost(message, optional, tag = "1")]
@@ -95,7 +95,7 @@ pub struct BatchResult {
     pub replication_index: Option<u64>,
 }
 
-#[derive(Deserialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Debug, Default)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum BatchCond {
     #[serde(skip_deserializing)]
@@ -115,7 +115,7 @@ pub enum BatchCond {
     IsAutocommit {},
 }
 
-#[derive(Deserialize, prost::Message)]
+#[derive(Deserialize, Serialize, prost::Message)]
 pub struct BatchCondList {
     #[prost(message, repeated, tag = "1")]
     pub conds: Vec<BatchCond>,
