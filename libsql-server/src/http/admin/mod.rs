@@ -284,6 +284,7 @@ async fn handle_fork_namespace<M: MakeNamespace, C>(
     let mut to_config = (*to_store.get()).clone();
     to_config.max_db_pages = from_config.max_db_pages;
     to_config.heartbeat_url = from_config.heartbeat_url.clone();
+    to_config.bottomless_db_id = from_config.bottomless_db_id.clone();
     to_store.store(to_config)?;
     Ok(())
 }
