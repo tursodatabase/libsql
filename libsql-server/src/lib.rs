@@ -513,7 +513,11 @@ where
         // eagerly load the default namespace when namespaces are disabled
         if self.disable_namespaces {
             namespaces
-                .create(NamespaceName::default(), namespace::RestoreOption::Latest)
+                .create(
+                    NamespaceName::default(),
+                    namespace::RestoreOption::Latest,
+                    None,
+                )
                 .await?;
         }
 

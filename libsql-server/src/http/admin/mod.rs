@@ -246,7 +246,10 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
     };
 
     let namespace = NamespaceName::from_string(namespace)?;
-    app_state.namespaces.create(namespace.clone(), dump).await?;
+    app_state
+        .namespaces
+        .create(namespace.clone(), dump, None)
+        .await?;
 
     let store = app_state.namespaces.config_store(namespace).await?;
     let mut config = (*store.get()).clone();
