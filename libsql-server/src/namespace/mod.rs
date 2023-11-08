@@ -478,6 +478,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         &self,
         namespace: NamespaceName,
         restore_option: RestoreOption,
+        bottomless_db_id: Option<String>,
     ) -> crate::Result<()> {
         let lock = self.inner.store.upgradable_read().await;
         if lock.contains_key(&namespace) {
@@ -492,7 +493,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             .create(
                 namespace.clone(),
                 restore_option,
-                None,
+                bottomless_db_id,
                 true,
                 self.make_reset_cb(),
             )
