@@ -3804,37 +3804,43 @@ static sqlite3_module jsonTreeModule = {
 void sqlite3RegisterJsonFunctions(void){
 #ifndef SQLITE_OMIT_JSON
   static FuncDef aJsonFunc[] = {
-    /*              Uses cache ------,  ,---- Might return JSON (subtype J) */
-    /*          Num args ________    |  |    ___ Flags                      */
-    /*                           \   |  |   /                               */
-    JFUNCTION(json,               1, 1, 1, 0,          jsonRemoveFunc),
-    JFUNCTION(json_array,        -1, 0, 1, 0,          jsonArrayFunc),
-    JFUNCTION(json_array_length,  1, 1, 0, 0,          jsonArrayLengthFunc),
-    JFUNCTION(json_array_length,  2, 1, 0, 0,          jsonArrayLengthFunc),
-    JFUNCTION(json_error_position,1, 1, 0, 0,          jsonErrorFunc),
-    JFUNCTION(json_extract,      -1, 1, 1, 0,          jsonExtractFunc),
-    JFUNCTION(->,                 2, 1, 1, JSON_JSON,  jsonExtractFunc),
-    JFUNCTION(->>,                2, 1, 0, JSON_SQL,   jsonExtractFunc),
-    JFUNCTION(json_insert,       -1, 1, 1, 0,          jsonSetFunc),
-    JFUNCTION(json_object,       -1, 0, 1, 0,          jsonObjectFunc),
-    JFUNCTION(json_patch,         2, 1, 1, 0,          jsonPatchFunc),
-    JFUNCTION(json_quote,         1, 0, 1, 0,          jsonQuoteFunc),
-    JFUNCTION(json_remove,       -1, 1, 1, 0,          jsonRemoveFunc),
-    JFUNCTION(json_replace,      -1, 1, 1, 0,          jsonReplaceFunc),
-    JFUNCTION(json_set,          -1, 1, 1, JSON_ISSET, jsonSetFunc),
-    JFUNCTION(json_type,          1, 1, 0, 0,          jsonTypeFunc),
-    JFUNCTION(json_type,          2, 1, 0, 0,          jsonTypeFunc),
-    JFUNCTION(json_valid,         1, 1, 0, 0,          jsonValidFunc),
+    /*                     calls sqlite3_result_subtype()                    */
+    /*                                  |                                    */
+    /*              Uses cache ______   |   __ calls sqlite3_value_subtype() */
+    /*                               |  |  |                                 */
+    /*          Num args _________   |  |  |   ___ Flags                     */
+    /*                            |  |  |  |  |                              */
+    /*                            |  |  |  |  |                              */
+    JFUNCTION(json,               1, 1, 1, 0, 0,          jsonRemoveFunc),
+    JFUNCTION(json_array,        -1, 0, 1, 1, 0,          jsonArrayFunc),
+    JFUNCTION(json_array_length,  1, 1, 0, 0, 0,          jsonArrayLengthFunc),
+    JFUNCTION(json_array_length,  2, 1, 0, 0, 0,          jsonArrayLengthFunc),
+    JFUNCTION(json_error_position,1, 1, 0, 0, 0,          jsonErrorFunc),
+    JFUNCTION(json_extract,      -1, 1, 1, 0, 0,          jsonExtractFunc),
+    JFUNCTION(->,                 2, 1, 1, 0, JSON_JSON,  jsonExtractFunc),
+    JFUNCTION(->>,                2, 1, 0, 0, JSON_SQL,   jsonExtractFunc),
+    JFUNCTION(json_insert,       -1, 1, 1, 1, 0,          jsonSetFunc),
+    JFUNCTION(json_object,       -1, 0, 1, 1, 0,          jsonObjectFunc),
+    JFUNCTION(json_patch,         2, 1, 1, 0, 0,          jsonPatchFunc),
+    JFUNCTION(json_quote,         1, 0, 1, 1, 0,          jsonQuoteFunc),
+    JFUNCTION(json_remove,       -1, 1, 1, 0, 0,          jsonRemoveFunc),
+    JFUNCTION(json_replace,      -1, 1, 1, 1, 0,          jsonReplaceFunc),
+    JFUNCTION(json_set,          -1, 1, 1, 1, JSON_ISSET, jsonSetFunc),
+    JFUNCTION(json_type,          1, 1, 0, 0, 0,          jsonTypeFunc),
+    JFUNCTION(json_type,          2, 1, 0, 0, 0,          jsonTypeFunc),
+    JFUNCTION(json_valid,         1, 1, 0, 0, 0,          jsonValidFunc),
 #if SQLITE_DEBUG
-    JFUNCTION(json_parse,         1, 1, 0, 0,          jsonParseFunc),
-    JFUNCTION(json_test1,         1, 1, 0, 0,          jsonTest1Func),
+    JFUNCTION(json_parse,         1, 1, 1, 0, 0,          jsonParseFunc),
+    JFUNCTION(json_test1,         1, 1, 0, 1, 0,          jsonTest1Func),
 #endif
     WAGGREGATE(json_group_array,  1, 0, 0,
        jsonArrayStep, jsonArrayFinal, jsonArrayValue, jsonGroupInverse,
-       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC),
+       SQLITE_VALUE_SUBTYPE|SQLITE_RESULT_SUBTYPE|SQLITE_UTF8|
+       SQLITE_DETERMINISTIC),
     WAGGREGATE(json_group_object, 2, 0, 0,
        jsonObjectStep, jsonObjectFinal, jsonObjectValue, jsonGroupInverse,
-       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC)
+       SQLITE_VALUE_SUBTYPE|SQLITE_RESULT_SUBTYPE|SQLITE_UTF8|
+       SQLITE_DETERMINISTIC)
   };
   sqlite3InsertBuiltinFuncs(aJsonFunc, ArraySize(aJsonFunc));
 #endif

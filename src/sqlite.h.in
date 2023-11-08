@@ -5572,21 +5572,38 @@ int sqlite3_create_window_function(
 ** security-adverse side-effects and information-leaks.
 ** </dd>
 **
-** [[SQLITE_SUBTYPE]] <dt>SQLITE_SUBTYPE</dt><dd>
-** The SQLITE_SUBTYPE flag indicates to SQLite that a function may call
+** [[SQLITE_VALUE_SUBTYPE]] <dt>SQLITE_VALUE_SUBTYPE</dt><dd>
+** The SQLITE_VALUE_SUBTYPE flag indicates to SQLite that a function may call
 ** [sqlite3_value_subtype()] to inspect the sub-types of its arguments.
-** Specifying this flag makes no difference for scalar or aggregate user
-** functions. However, if it is not specified for a user-defined window
-** function, then any sub-types belonging to arguments passed to the window
-** function may be discarded before the window function is called (i.e.
-** sqlite3_value_subtype() will always return 0).
+** Every function that invokes [sqlite3_value_subtype()] should have this
+** property.  If it does not, then the query planner might generate
+** incorrect code for queries that use that function.  This property
+** used to be called [SQLITE_SUBTYPE].  Its name was changed to disinguish
+** it from [SQLITE_RESULT_SUBTYPE].  The old name is also retained for
+** backwards compatibility.
+**
+** [[SQLITE_SUBTYPE]] <dt>SQLITE_SUBTYPE</dt><dd>
+** The SQLITE_SUBTYPE flag is an alias for [SQLITE_VALUE_SUBTYPE] used for
+** backwards compatibility.  The newer [SQLITE_VALUE_SUBTYPE]
+** symbol is preferred.
+**
+** [[SQLITE_RESULT_SUBTYPE]] <dt>SQLITE_RESULT_SUBTYPE</dt><dd>
+** The SQLITE_RESULT_SUBTYPE flag indicates to SQLite that a function might call
+** [sqlite3_result_subtype()] to cause a sub-type to be associated with its
+** result.
+** Every function that invokes [sqlite3_result_subtype()] should have this
+** property.  If it does not, then the call to [sqlite3_result_subtype()]
+** might become a no-op if the function is used as term in an
+** [expression index].
 ** </dd>
 ** </dl>
 */
 #define SQLITE_DETERMINISTIC    0x000000800
 #define SQLITE_DIRECTONLY       0x000080000
-#define SQLITE_SUBTYPE          0x000100000
+#define SQLITE_SUBTYPE          0x000100000  /* Deprecated name */
+#define SQLITE_VALUE_SUBTYPE    0x000100000  /* Use instead of SQLITE_SUBTYPE */
 #define SQLITE_INNOCUOUS        0x000200000
+#define SQLITE_RESULT_SUBTYPE   0x001000000
 
 /*
 ** CAPI3REF: Deprecated Functions
