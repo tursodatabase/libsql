@@ -1,5 +1,5 @@
-C Add\s-DSQLITE_ENABLE_SETLK_TIMEOUT=1\sto\sa\srelease-test\sconfiguration.
-D 2023-11-07T20:56:29.493
+C Changes\sa\sno-op\scall\sto\sfreeP4()\sinto\san\sassert().
+D 2023-11-08T00:12:38.510
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -798,7 +798,7 @@ F src/vdbe.c 14479441337135eed8e290fb1d4abb7db657d93217a3b1ea8a2f031d3895536a
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c db190d007bdf5b9165edeb12369f4c59a459f88fd652c1671c1238862e662cc3
-F src/vdbeaux.c dffcf79e7e415fcd6e4c8ac1ec7124cae5257018443adf09551c807655b04993
+F src/vdbeaux.c f3997b5956c8d97bd2fc3392db42caecddfa6549e9df82e0a7e5804653ca475a
 F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe5
 F src/vdbemem.c 0012d5f01cc866833847c2f3ae4c318ac53a1cb3d28acad9c35e688039464cf0
 F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
@@ -2142,8 +2142,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 84634bc268e5c80146f3f3b2e13118f239c9a7e4e4e9dfcaccef2b17252ce53b
-R abb9ab70d79eb8c8383bcdc7ce649ea3
-U dan
-Z 13575d6d42a1cdb37a2cb5cc87a1058f
+P cd3e38fb0f2f7e134bb6cfbe86b6621017344e4361dc6a09ec1367860ba8773b
+R b6c8804aadc6653e2e6af22ab7efdb56
+U drh
+Z 1be7d8d52cecb1d54f8658da7683cb85
 # Remove this line to create a well-formed Fossil manifest.
