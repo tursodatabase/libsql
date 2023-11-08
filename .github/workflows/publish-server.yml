@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-server
+  IMAGE_NAME: sqld
 
 jobs:
   # docker image build and upload to ghcr
