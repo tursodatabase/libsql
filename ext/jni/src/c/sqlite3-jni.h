@@ -427,8 +427,6 @@ extern "C" {
 #define org_sqlite_jni_capi_CApi_SQLITE_OPEN_EXRESCODE 33554432L
 #undef org_sqlite_jni_capi_CApi_SQLITE_PREPARE_PERSISTENT
 #define org_sqlite_jni_capi_CApi_SQLITE_PREPARE_PERSISTENT 1L
-#undef org_sqlite_jni_capi_CApi_SQLITE_PREPARE_NORMALIZE
-#define org_sqlite_jni_capi_CApi_SQLITE_PREPARE_NORMALIZE 2L
 #undef org_sqlite_jni_capi_CApi_SQLITE_PREPARE_NO_VTAB
 #define org_sqlite_jni_capi_CApi_SQLITE_PREPARE_NO_VTAB 4L
 #undef org_sqlite_jni_capi_CApi_SQLITE_OK
@@ -773,6 +771,14 @@ JNIEXPORT void JNICALL Java_org_sqlite_jni_capi_CApi_init
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1java_1uncache_1thread
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_jni_supports_nio
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1jni_1supports_1nio
   (JNIEnv *, jclass);
 
 /*
@@ -1402,9 +1408,9 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1extended_1errcode
 /*
  * Class:     org_sqlite_jni_capi_CApi
  * Method:    sqlite3_extended_result_codes
- * Signature: (Lorg/sqlite/jni/capi/sqlite3;Z)Z
+ * Signature: (Lorg/sqlite/jni/capi/sqlite3;Z)I
  */
-JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1extended_1result_1codes
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1extended_1result_1codes
   (JNIEnv *, jclass, jobject, jboolean);
 
 /*

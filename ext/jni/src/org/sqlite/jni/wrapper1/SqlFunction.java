@@ -56,7 +56,7 @@ public interface SqlFunction  {
     */
     Arguments(sqlite3_context cx, sqlite3_value args[]){
       this.cx = cx;
-      this.args = args==null ? new sqlite3_value[0] : args;;
+      this.args = args==null ? new sqlite3_value[0] : args;
       this.length = this.args.length;
     }
 
@@ -75,6 +75,16 @@ public interface SqlFunction  {
 
     //! Returns the underlying sqlite3_context for these arguments.
     sqlite3_context getContext(){return cx;}
+
+    /**
+       Returns the Sqlite (db) object associated with this UDF call,
+       or null if the UDF is somehow called without such an object or
+       the db has been closed in an untimely manner (e.g. closed by a
+       UDF call).
+    */
+    public Sqlite getDb(){
+      return Sqlite.fromNative( CApi.sqlite3_context_db_handle(cx) );
+    }
 
     public int getArgCount(){ return args.length; }
 
@@ -107,6 +117,10 @@ public interface SqlFunction  {
     public void resultErrorCode(int rc){CApi.sqlite3_result_error_code(cx, rc);}
     public void resultObject(Object o){CApi.sqlite3_result_java_object(cx, o);}
     public void resultNull(){CApi.sqlite3_result_null(cx);}
+    /**
+       Analog to sqlite3_result_value(), using the Value object at the
+       given argument index.
+    */
     public void resultArg(int argNdx){CApi.sqlite3_result_value(cx, valueAt(argNdx));}
     public void resultSubtype(int subtype){CApi.sqlite3_result_subtype(cx, subtype);}
     public void resultZeroBlob(long n){
@@ -121,6 +135,17 @@ public interface SqlFunction  {
     public void resultText16(byte[] utf16){CApi.sqlite3_result_text16(cx, utf16);}
     public void resultText16(String txt){CApi.sqlite3_result_text16(cx, txt);}
 
+    /**
+       Callbacks should invoke this on OOM errors, instead of throwing
+       OutOfMemoryError, because the latter cannot be propagated
+       through the C API.
+    */
+    public void resultNoMem(){CApi.sqlite3_result_error_nomem(cx);}
+
+    /**
+       Analog to sqlite3_set_auxdata() but throws if argNdx is out of
+       range.
+    */
     public void setAuxData(int argNdx, Object o){
       /* From the API docs: https://www.sqlite.org/c3ref/get_auxdata.html
 
@@ -132,6 +157,10 @@ public interface SqlFunction  {
       CApi.sqlite3_set_auxdata(cx, argNdx, o);
     }
 
+    /**
+       Analog to sqlite3_get_auxdata() but throws if argNdx is out of
+       range.
+    */
     public Object getAuxData(int argNdx){
       valueAt(argNdx);
       return CApi.sqlite3_get_auxdata(cx, argNdx);

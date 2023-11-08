@@ -2033,7 +2033,7 @@ case OP_AddImm: {            /* in1 */
   pIn1 = &aMem[pOp->p1];
   memAboutToChange(p, pIn1);
   sqlite3VdbeMemIntegerify(pIn1);
-  pIn1->u.i += pOp->p2;
+  *(u64*)&pIn1->u.i += (u64)pOp->p2;
   break;
 }
 

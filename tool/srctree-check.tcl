@@ -36,6 +36,17 @@ set TCLSH [info nameofexe]
 #
 set NERR 0
 
+######################### configure ###########################################
+
+set conf [readfile $ROOT/configure]
+set vers [readfile $ROOT/VERSION]
+if {[string first $vers $conf]<=0} {
+  puts "ERROR: ./configure does not agree with ./VERSION"
+  puts "...... Fix: run autoconf"
+  incr NERR
+}
+unset conf
+
 ######################### autoconf/tea/configure.ac ###########################
 
 set confac [readfile $ROOT/autoconf/tea/configure.ac]
@@ -45,9 +56,11 @@ append pattern [string trim $vers]
 append pattern {])}
 if {[string first $pattern $confac]<=0} {
   puts "ERROR: ./autoconf/tea/configure.ac does not agree with ./VERSION"
-  puts "...... Fix: manually edit ./autoconf/tea/configure.ac to"
+  puts "...... Fix: manually edit ./autoconf/tea/configure.ac and put the"
+  puts "......      correct version number in AC_INIT()"
   incr NERR
 }
+unset confac
 
 ######################### autoconf/Makefile.msc ###############################
 

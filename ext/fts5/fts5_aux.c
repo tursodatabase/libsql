@@ -211,6 +211,14 @@ static int fts5HighlightCb(
   }
 
   if( iPos==p->iRangeEnd ){
+    if( p->bOpen ){
+      if( p->iter.iStart>=0 && iPos>=p->iter.iStart ){
+        fts5HighlightAppend(&rc, p, &p->zIn[p->iOff], iEndOff - p->iOff);
+        p->iOff = iEndOff;
+      }
+      fts5HighlightAppend(&rc, p, p->zClose, -1);
+      p->bOpen = 0;
+    }
     fts5HighlightAppend(&rc, p, &p->zIn[p->iOff], iEndOff - p->iOff);
     p->iOff = iEndOff;
   }
