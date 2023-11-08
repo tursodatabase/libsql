@@ -3061,7 +3061,7 @@ S3JniApi(sqlite3_compileoption_used(),jboolean,1compileoption_1used)(
   return rc;
 }
 
-S3JniApi(sqlite3_complete(),int,1complete)(
+S3JniApi(sqlite3_complete(),jint,1complete)(
   JniArgsEnvClass, jbyteArray jSql
 ){
   jbyte * const pBuf = s3jni_jbyteArray_bytes(jSql);
@@ -3507,7 +3507,7 @@ S3JniApi(sqlite3_db_readonly(),jint,1db_1readonly)(
   return (jint)rc;
 }
 
-S3JniApi(sqlite3_db_release_memory(),int,1db_1release_1memory)(
+S3JniApi(sqlite3_db_release_memory(),jint,1db_1release_1memory)(
   JniArgsEnvClass, jobject jDb
 ){
   sqlite3 * const pDb = PtrGet_sqlite3(jDb);
@@ -4012,11 +4012,11 @@ static void s3jni_update_hook_impl(void * pState, int opId, const char *zDb,
 
 #if !defined(SQLITE_ENABLE_PREUPDATE_HOOK)
 /* We need no-op impls for preupdate_{count,depth,blobwrite}() */
-S3JniApi(sqlite3_preupdate_blobwrite(),int,1preupdate_1blobwrite)(
+S3JniApi(sqlite3_preupdate_blobwrite(),jint,1preupdate_1blobwrite)(
   JniArgsEnvClass, jlong jDb){ return SQLITE_MISUSE; }
-S3JniApi(sqlite3_preupdate_count(),int,1preupdate_1count)(
+S3JniApi(sqlite3_preupdate_count(),jint,1preupdate_1count)(
   JniArgsEnvClass, jlong jDb){ return SQLITE_MISUSE; }
-S3JniApi(sqlite3_preupdate_depth(),int,1preupdate_1depth)(
+S3JniApi(sqlite3_preupdate_depth(),jint,1preupdate_1depth)(
   JniArgsEnvClass, jlong jDb){ return SQLITE_MISUSE; }
 #endif /* !SQLITE_ENABLE_PREUPDATE_HOOK */
 
@@ -4332,7 +4332,7 @@ S3JniApi(sqlite3_result_double(),void,1result_1double)(
 }
 
 S3JniApi(sqlite3_result_error(),void,1result_1error)(
-  JniArgsEnvClass, jobject jpCx, jbyteArray baMsg, int eTextRep
+  JniArgsEnvClass, jobject jpCx, jbyteArray baMsg, jint eTextRep
 ){
   const char * zUnspecified = "Unspecified error.";
   jsize const baLen = (*env)->GetArrayLength(env, baMsg);
@@ -4680,7 +4680,7 @@ S3JniApi(sqlite3_step(),jint,1step)(
   return pStmt ? (jint)sqlite3_step(pStmt) : (jint)SQLITE_MISUSE;
 }
 
-S3JniApi(sqlite3_table_column_metadata(),int,1table_1column_1metadata)(
+S3JniApi(sqlite3_table_column_metadata(),jint,1table_1column_1metadata)(
   JniArgsEnvClass, jobject jDb, jstring jDbName, jstring jTableName,
   jstring jColumnName, jobject jDataType, jobject jCollSeq, jobject jNotNull,
   jobject jPrimaryKey, jobject jAutoinc
@@ -4866,14 +4866,14 @@ S3JniApi(sqlite3_value_blob(),jbyteArray,1value_1blob)(
     : NULL;
 }
 
-S3JniApi(sqlite3_value_bytes(),int,1value_1bytes)(
+S3JniApi(sqlite3_value_bytes(),jint,1value_1bytes)(
   JniArgsEnvClass, jlong jpSVal
 ){
   sqlite3_value * const sv = LongPtrGet_sqlite3_value(jpSVal);
   return sv ? sqlite3_value_bytes(sv) : 0;
 }
 
-S3JniApi(sqlite3_value_bytes16(),int,1value_1bytes16)(
+S3JniApi(sqlite3_value_bytes16(),jint,1value_1bytes16)(
   JniArgsEnvClass, jlong jpSVal
 ){
   sqlite3_value * const sv = LongPtrGet_sqlite3_value(jpSVal);
@@ -5540,7 +5540,7 @@ JniDeclFtsXA(jlong,xRowid)(JniArgsEnvObj,jobject jCtx){
   return (jlong)ext->xRowid(PtrGet_Fts5Context(jCtx));
 }
 
-JniDeclFtsXA(int,xSetAuxdata)(JniArgsEnvObj,jobject jCtx, jobject jAux){
+JniDeclFtsXA(jint,xSetAuxdata)(JniArgsEnvObj,jobject jCtx, jobject jAux){
   Fts5ExtDecl;
   int rc;
   S3JniFts5AuxData * pAux;
