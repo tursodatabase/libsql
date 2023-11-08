@@ -106,6 +106,7 @@ impl ForkTask<'_> {
             .create(
                 self.dest_namespace.clone(),
                 RestoreOption::Latest,
+                None,
                 true,
                 self.reset_cb,
             )
