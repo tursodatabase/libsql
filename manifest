@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\sinto\sthis\sbranch.
-D 2023-11-06T19:16:38.711
+C Add\sdeclarations\sfor\snew\sAPI\sfunctions.
+D 2023-11-08T14:55:20.854
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -87,7 +87,7 @@ F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl d5aebf022fa4577ee8cdf27468f0d847879993959101f6dbd6348ef0cfc324a7
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
-F ext/fts5/fts5.h 05501612cc655504c5dce8ba765ab621d50fc478490089beaa0d75e00b23e520
+F ext/fts5/fts5.h 68256dd94eaba3e874762a63578922fd62a5ca87c76a28f7636effee4d9bd781
 F ext/fts5/fts5Int.h a21eb1cf036ac9eb943e45ed307762901ea86f0159bf0848baa2079a112ddc2f
 F ext/fts5/fts5_aux.c ee770eec0af8646db9e18fc01a0dad7345b5f5e8cbba236704cfae2d777022ad
 F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b729225eeaf6a5
@@ -2143,8 +2143,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac5570614ebb77feff4943c7a78d877508e31087b550f337c11b45f1016e3c55 c2058a045b57571b2b5d342adb212fe606717c633a0422755691ae6bf5725d25
-R 5cb5a1a54d74cfe313891abc677e111f
+P 3a869cf1f84b0e9bdcc4de53685430ab41eafacbba1ca7b87e727aa98811c6c5
+R 9e06a9e0b44056d476c02db915884372
 U dan
-Z d0201f081f93fb8379f972a79c65f95a
+Z 6c0dbde9f9a0f05c4a27f8bd01924beb
 # Remove this line to create a well-formed Fossil manifest.

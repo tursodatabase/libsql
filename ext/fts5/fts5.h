@@ -298,6 +298,11 @@ struct Fts5ExtensionApi {
 
   int (*xPhraseFirstColumn)(Fts5Context*, int iPhrase, Fts5PhraseIter*, int*);
   void (*xPhraseNextColumn)(Fts5Context*, Fts5PhraseIter*, int *piCol);
+
+  /* Below this point are iVersion>=3 only */
+  int (*xQueryToken)(Fts5Context*, int iPhrase, int iToken, const char**, int*);
+  int (*xInstToken)(Fts5Context*, int iIdx, int iToken, const char**, int*);
+  int (*xPhraseToken)(Fts5Context*, Fts5PhraseIter*, int, const char**, int*);
 };
 
 /* 
