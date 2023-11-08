@@ -1208,8 +1208,14 @@ mod test {
             join_set.spawn(run_conn(maker.clone()));
         }
 
-        while let Some(next) = join_set.join_next().await {
-            next.unwrap();
-        }
+        let join_all = async move {
+            while let Some(next) = join_set.join_next().await {
+                next.unwrap();
+            }
+        };
+
+        tokio::time::timeout(Duration::from_secs(30), join_all)
+            .await
+            .expect("timed out running connections");
     }
 }
