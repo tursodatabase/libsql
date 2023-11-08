@@ -57,6 +57,7 @@ pub struct ForkTask<'a> {
     pub dest_namespace: NamespaceName,
     pub make_namespace: &'a dyn MakeNamespace<Database = PrimaryDatabase>,
     pub restore_to: Option<PointInTimeRestore>,
+    pub bottomless_db_id: Option<String>,
 }
 
 pub struct PointInTimeRestore {
@@ -105,7 +106,7 @@ impl ForkTask<'_> {
             .create(
                 self.dest_namespace.clone(),
                 RestoreOption::Latest,
-                None,
+                self.bottomless_db_id,
                 true,
                 // Forking works only on primary and
                 // PrimaryNamespaceMaker::create ignores

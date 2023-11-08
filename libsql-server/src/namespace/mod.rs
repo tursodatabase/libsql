@@ -197,11 +197,16 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         to: NamespaceName,
         timestamp: Option<NaiveDateTime>,
     ) -> crate::Result<Namespace<Self::Database>> {
+        let bottomless_db_id = from.db_config_store.get().bottomless_db_id.clone();
         let restore_to = if let Some(timestamp) = timestamp {
             if let Some(ref options) = self.config.bottomless_replication {
                 Some(PointInTimeRestore {
                     timestamp,
-                    replicator_options: make_bottomless_options(options, None, from.name().clone()),
+                    replicator_options: make_bottomless_options(
+                        options,
+                        bottomless_db_id.clone(),
+                        from.name().clone(),
+                    ),
                 })
             } else {
                 return Err(Error::Fork(ForkError::BackupServiceNotConfigured));
@@ -215,6 +220,7 @@ impl MakeNamespace for PrimaryNamespaceMaker {
             logger: from.db.logger.clone(),
             make_namespace: self,
             restore_to,
+            bottomless_db_id,
         };
         let ns = fork_task.fork().await?;
         Ok(ns)
