@@ -1,16 +1,18 @@
-use libsql_replication::rpc::proxy::{DescribeRequest, DescribeResult, ExecuteResults, Positional, Program, ProgramReq, Query, Step, query::Params};
 use libsql_replication::frame::Frame;
+use libsql_replication::rpc::proxy::{
+    query::Params, DescribeRequest, DescribeResult, ExecuteResults, Positional, Program,
+    ProgramReq, Query, Step,
+};
 use libsql_replication::snapshot::SnapshotFile;
 
-use parser::Statement;
+use crate::parser::Statement;
 
 pub use connection::RemoteConnection;
 
 pub(crate) mod client;
 mod connection;
-mod parser;
-pub(crate) mod remote_client;
 pub(crate) mod local_client;
+pub(crate) mod remote_client;
 
 pub enum Frames {
     /// A set of frames, in increasing frame_no.

@@ -95,8 +95,13 @@ impl crate::connection::Conn for HttpConnection<HttpSender> {
         Ok(rows as u64)
     }
 
-    async fn execute_batch(&self, _sql: &str) -> crate::Result<()> {
-        let statements: Vec<Stmt> = todo!();
+    async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
+        let mut statements = Vec::new();
+        let stmts = crate::parser::Statement::parse(sql);
+        for s in stmts {
+            let s = s?;
+            statements.push(Stmt::new(s.stmt, false));
+        }
         self.raw_batch(statements)
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
