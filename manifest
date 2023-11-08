@@ -1,5 +1,5 @@
-C Changes\sa\sno-op\scall\sto\sfreeP4()\sinto\san\sassert().
-D 2023-11-08T00:12:38.510
+C Suppress\sharmless\sUBSAN\swarnings\sabout\smemory\soverflow\sin\sOP_AddImm.\s\sThe\nexact\ssame\smachine\scode\sis\sgenerated\sby\sGCC.
+D 2023-11-08T00:45:14.192
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -794,7 +794,7 @@ F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c b22cc9f203a8c0b9ee5338a67f8860347d14845864c10248bebe84518a781677
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
-F src/vdbe.c 14479441337135eed8e290fb1d4abb7db657d93217a3b1ea8a2f031d3895536a
+F src/vdbe.c 7034cf3eec0c905df753368efbcdd96377fca0245584e66766ec47a29fe468c8
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c db190d007bdf5b9165edeb12369f4c59a459f88fd652c1671c1238862e662cc3
@@ -2142,8 +2142,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cd3e38fb0f2f7e134bb6cfbe86b6621017344e4361dc6a09ec1367860ba8773b
-R b6c8804aadc6653e2e6af22ab7efdb56
+P 32a7b1bd4d88a6839c2c5061a38b4a28f31b22aa8fa08c743633ff96fc4bf88d
+R 018fee29b67a9c300c9a1c8f38582550
 U drh
-Z 1be7d8d52cecb1d54f8658da7683cb85
+Z d4e9689751359f866f309e9e035b0a5f
 # Remove this line to create a well-formed Fossil manifest.
