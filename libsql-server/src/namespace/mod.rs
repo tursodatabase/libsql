@@ -163,7 +163,7 @@ impl MakeNamespace for PrimaryNamespaceMaker {
 
         if prune_all {
             if let Some(ref options) = self.config.bottomless_replication {
-                let options = make_bottomless_options(options, namespace);
+                let options = make_bottomless_options(options, None, namespace);
                 let replicator = bottomless::replicator::Replicator::with_options(
                     ns_path.join("data").to_str().unwrap(),
                     options,
@@ -194,7 +194,7 @@ impl MakeNamespace for PrimaryNamespaceMaker {
             if let Some(ref options) = self.config.bottomless_replication {
                 Some(PointInTimeRestore {
                     timestamp,
-                    replicator_options: make_bottomless_options(options, from.name().clone()),
+                    replicator_options: make_bottomless_options(options, None, from.name().clone()),
                 })
             } else {
                 return Err(Error::Fork(ForkError::BackupServiceNotConfigured));
@@ -694,10 +694,18 @@ pub struct PrimaryNamespaceConfig {
 pub type DumpStream =
     Box<dyn Stream<Item = std::io::Result<Bytes>> + Send + Sync + 'static + Unpin>;
 
-fn make_bottomless_options(options: &Options, name: NamespaceName) -> Options {
+fn make_bottomless_options(
+    options: &Options,
+    namespace_db_id: Option<String>,
+    name: NamespaceName,
+) -> Options {
     let mut options = options.clone();
-    let db_id = options.db_id.unwrap_or_default();
-    let db_id = format!("ns-{db_id}:{name}");
+    let mut db_id = match namespace_db_id {
+        Some(id) => id,
+        None => options.db_id.unwrap_or_default(),
+    };
+
+    db_id = format!("ns-{db_id}:{name}");
     options.db_id = Some(db_id);
     options
 }
@@ -760,7 +768,7 @@ impl Namespace<PrimaryDatabase> {
         }
 
         let bottomless_replicator = if let Some(options) = &config.bottomless_replication {
-            let options = make_bottomless_options(options, name.clone());
+            let options = make_bottomless_options(options, None, name.clone());
             let (replicator, did_recover) =
                 init_bottomless_replicator(db_path.join("data"), options, &restore_option).await?;
 
