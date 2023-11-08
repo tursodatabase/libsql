@@ -4248,9 +4248,14 @@ int sqlite3WalCheckpoint(
   /* Read the wal-index header. */
   SEH_TRY {
     if( rc==SQLITE_OK ){
+      /* For a passive checkpoint, do not re-enable blocking locks after
+      ** reading the wal-index header. A passive checkpoint should not block 
+      ** or invoke the busy handler. The only lock such a checkpoint may 
+      ** attempt to obtain is a lock on a read-slot, and it should give up
+      ** immediately and do a partial checkpoint if it cannot obtain it. */
       walDisableBlocking(pWal);
       rc = walIndexReadHdr(pWal, &isChanged);
-      (void)walEnableBlocking(pWal);
+      if( eMode2!=SQLITE_CHECKPOINT_PASSIVE ) (void)walEnableBlocking(pWal);
       if( isChanged && pWal->pDbFd->pMethods->iVersion>=3 ){
         sqlite3OsUnfetch(pWal->pDbFd, 0, 0);
       }
