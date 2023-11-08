@@ -1,5 +1,5 @@
-C More\sprecise\scharacterization\sof\sJSON\sfunctions.\s\sIndicate\swhen\sfunctions\smight\nreturn\sJSON\s(subtype\s'J')\sand\swhen\sthey\smake\suse\sof\sthe\sfunction\sargument\scache.
-D 2023-11-08T16:37:12.211
+C Do\snot\scover\sexpressions\susing\san\sindexed\sexpression\sif\sthe\sindexed\sexpression\nis\sa\sfunction\sthat\smight\sset\sa\ssubtype.
+D 2023-11-08T18:08:07.513
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -809,7 +809,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bba7db5dae3ffe2c6b9c173fc10be4b570b125e985cb5b95a6c22716213adde4
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 313ce81270d2a414672370e1ee74e65949ad620519193d4cac2986d073cbc8a0
+F src/where.c 431309d7920383671b05d43454351230eb9c01d963a6f7d4a516334cbbcce1d4
 F src/whereInt.h 4b38c5889514e3aead3f27d0ee9a26e47c3f150efc59e2a8b4e3bc8835e4d7a1
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
@@ -1269,7 +1269,7 @@ F test/index8.test caa097735c91dbc23d8a402f5e63a2a03c83840ba3928733ed7f9a03f8a91
 F test/index9.test 2ac891806a4136ef3e91280477e23114e67575207dc331e6797fa0ed9379f997
 F test/indexA.test 11d84f6995e6e5b9d8315953fb1b6d29772ee7c7803ee9112715e7e4dd3e4974
 F test/indexedby.test f21eca4f7a6ffe14c8500a7ad6cd53166666c99e5ccd311842a28bc94a195fe0
-F test/indexexpr1.test 62558b1cfd7ccbe7bc015849cc6d1a13ef124e80cbd5b3a98dc66c3c9cce0cf4
+F test/indexexpr1.test 833f511213a5e26549186813f0566bd72f978177a7e6e98a2d2dd695de3c670d
 F test/indexexpr2.test 1c382e81ef996d8ae8b834a74f2a9013dddf59214c32201d7c8a656d739f999a
 F test/indexfault.test 98d78a8ff1f5335628b62f886a1cb7c7dac1ef6d48fa39c51ec871c87dce9811
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -2139,8 +2139,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3978c084a509c3c739fbe87e20feec9ddf1325e35170329987af197ca9fd731a
-R 2a4b96e0d45f1ec3b63228c066f1d6da
+P b2b62546c4a5e9dccb8aa0cb8eda228d662c69159e320b01a377317bc909e89f
+R 3699dfa06af6d8dfe43187d2c78cc578
+T *branch * idx-expr-fix
+T *sym-idx-expr-fix *
+T -sym-trunk *
 U drh
-Z 7680e031e38ed1a9d942d233bb859fec
+Z 99b5085d0aa63df2f84ecba864ce3e16
 # Remove this line to create a well-formed Fossil manifest.
