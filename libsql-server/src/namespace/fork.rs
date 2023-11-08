@@ -16,7 +16,7 @@ use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};
 
-use super::{MakeNamespace, NamespaceName, ResetCb, RestoreOption};
+use super::{MakeNamespace, NamespaceName, RestoreOption};
 
 type Result<T> = crate::Result<T, ForkError>;
 
@@ -56,7 +56,6 @@ pub struct ForkTask<'a> {
     pub logger: Arc<ReplicationLogger>,
     pub dest_namespace: NamespaceName,
     pub make_namespace: &'a dyn MakeNamespace<Database = PrimaryDatabase>,
-    pub reset_cb: ResetCb,
     pub restore_to: Option<PointInTimeRestore>,
 }
 
@@ -108,7 +107,10 @@ impl ForkTask<'_> {
                 RestoreOption::Latest,
                 None,
                 true,
-                self.reset_cb,
+                // Forking works only on primary and
+                // PrimaryNamespaceMaker::create ignores
+                // reset_cb param
+                Box::new(|_op| {}),
             )
             .await
             .map_err(|e| ForkError::CreateNamespace(Box::new(e)))

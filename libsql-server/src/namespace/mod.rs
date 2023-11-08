@@ -128,7 +128,6 @@ pub trait MakeNamespace: Sync + Send + 'static {
         &self,
         from: &Namespace<Self::Database>,
         to: NamespaceName,
-        reset: ResetCb,
         timestamp: Option<NaiveDateTime>,
     ) -> crate::Result<Namespace<Self::Database>>;
 }
@@ -196,7 +195,6 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         &self,
         from: &Namespace<Self::Database>,
         to: NamespaceName,
-        reset_cb: ResetCb,
         timestamp: Option<NaiveDateTime>,
     ) -> crate::Result<Namespace<Self::Database>> {
         let restore_to = if let Some(timestamp) = timestamp {
@@ -216,7 +214,6 @@ impl MakeNamespace for PrimaryNamespaceMaker {
             dest_namespace: to,
             logger: from.db.logger.clone(),
             make_namespace: self,
-            reset_cb,
             restore_to,
         };
         let ns = fork_task.fork().await?;
@@ -266,7 +263,6 @@ impl MakeNamespace for ReplicaNamespaceMaker {
         &self,
         _from: &Namespace<Self::Database>,
         _to: NamespaceName,
-        _reset: ResetCb,
         _timestamp: Option<NaiveDateTime>,
     ) -> crate::Result<Namespace<Self::Database>> {
         return Err(ForkError::ForkReplica.into());
@@ -420,7 +416,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         let forked = self
             .inner
             .make_namespace
-            .fork(from_ns, to.clone(), self.make_reset_cb(), timestamp)
+            .fork(from_ns, to.clone(), timestamp)
             .await?;
         lock.insert(to.clone(), forked);
 
