@@ -155,7 +155,7 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         allow_creation: bool,
         _reset: ResetCb,
     ) -> crate::Result<Namespace<Self::Database>> {
-        Namespace::new_primary(&self.config, name, restore_option, allow_creation).await
+        Namespace::new_primary(&self.config, name, restore_option, None, allow_creation).await
     }
 
     async fn destroy(&self, namespace: NamespaceName, prune_all: bool) -> crate::Result<()> {
@@ -715,11 +715,18 @@ impl Namespace<PrimaryDatabase> {
         config: &PrimaryNamespaceConfig,
         name: NamespaceName,
         restore_option: RestoreOption,
+        bottomless_db_id: Option<String>,
         allow_creation: bool,
     ) -> crate::Result<Self> {
         // FIXME: make that truly atomic. explore the idea of using temp directories, and it's implications
-        match Self::try_new_primary(config, name.clone(), restore_option, None, allow_creation)
-            .await
+        match Self::try_new_primary(
+            config,
+            name.clone(),
+            restore_option,
+            bottomless_db_id,
+            allow_creation,
+        )
+        .await
         {
             Ok(ns) => Ok(ns),
             Err(e) => {
