@@ -718,7 +718,9 @@ impl Namespace<PrimaryDatabase> {
         allow_creation: bool,
     ) -> crate::Result<Self> {
         // FIXME: make that truly atomic. explore the idea of using temp directories, and it's implications
-        match Self::try_new_primary(config, name.clone(), restore_option, allow_creation).await {
+        match Self::try_new_primary(config, name.clone(), restore_option, None, allow_creation)
+            .await
+        {
             Ok(ns) => Ok(ns),
             Err(e) => {
                 let path = config.base_path.join("dbs").join(name.as_str());
@@ -734,6 +736,7 @@ impl Namespace<PrimaryDatabase> {
         config: &PrimaryNamespaceConfig,
         name: NamespaceName,
         restore_option: RestoreOption,
+        bottomless_db_id: Option<String>,
         allow_creation: bool,
     ) -> crate::Result<Self> {
         // if namespaces are disabled, then we allow creation for the default namespace.
@@ -754,6 +757,15 @@ impl Namespace<PrimaryDatabase> {
         let db_config_store = Arc::new(
             DatabaseConfigStore::load(&db_path).context("Could not load database config")?,
         );
+        let bottomless_db_id = if bottomless_db_id.is_some() {
+            let mut config = (*db_config_store.get()).clone();
+            config.bottomless_db_id = bottomless_db_id.clone();
+            db_config_store.store(config)?;
+            bottomless_db_id
+        } else {
+            let config = db_config_store.get();
+            config.bottomless_db_id.clone()
+        };
 
         // FIXME: due to a bug in logger::checkpoint_db we call regular checkpointing code
         // instead of our virtual WAL one. It's a bit tangled to fix right now, because
@@ -768,7 +780,7 @@ impl Namespace<PrimaryDatabase> {
         }
 
         let bottomless_replicator = if let Some(options) = &config.bottomless_replication {
-            let options = make_bottomless_options(options, None, name.clone());
+            let options = make_bottomless_options(options, bottomless_db_id, name.clone());
             let (replicator, did_recover) =
                 init_bottomless_replicator(db_path.join("data"), options, &restore_option).await?;
 
