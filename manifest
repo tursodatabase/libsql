@@ -1,5 +1,5 @@
-C Remove\sold\sfiles\srelated\sto\swapptest.tcl\sfrom\stest/\sdirectory.
-D 2023-11-08T15:51:42.810
+C Have\sthe\sshell\stool\semit\sa\swarning\sif\sthe\suser\sattempts\sto\suse\s".scanstats\svm"\sin\sa\snon-SQLITE_ENABLE_BYTECODE_VTAB\sbuild.
+D 2023-11-08T15:56:41.847
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -725,7 +725,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d017bad7ba8e778617701a0e986fdeb393d67d6afa84fb28ef4e8b8ad2acf916
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c a19daa26e95f7245106a31f288b2f50c72d1f2cc156703f04c8c91450e111515
-F src/shell.c.in aebfbedaa7706d2c73ab7366a19fc8bc40ea68b70d2529f7feef54e6eb077ea2
+F src/shell.c.in 7312c571ebf518fc8927bbb5aeb4fa67e5b0dfb2adae4258dcd1ccae42c11e1f
 F src/sqlite.h.in a0fce680a40fe81b13eae3749d001134d9fe0a43aecc09a8986520d5119acfcd
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e5ecc404cae1ce8b639d0263fa07571c066f11bfc62f5ba331ad7ae138e78572
-R ce83d55831eeaab82518466b14d3660d
+P dd3e7b5bcad122ac1e7e19ec547f4486ce90a6a2aa89a64e36bea13a216492fe
+R 6732486a2aaa0526e06e22748aa04499
 U dan
-Z aaf04791c4ef545a121de15f3eab560c
+Z 4a970381aa1757bde9016fd89b987339
 # Remove this line to create a well-formed Fossil manifest.

@@ -10074,8 +10074,14 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_db_config(
           p->db, SQLITE_DBCONFIG_STMT_SCANSTATUS, p->scanstatsOn, (int*)0
       );
-#ifndef SQLITE_ENABLE_STMT_SCANSTATUS
+#if !defined(SQLITE_ENABLE_STMT_SCANSTATUS)
       raw_printf(stderr, "Warning: .scanstats not available in this build.\n");
+#elif !defined(SQLITE_ENABLE_BYTECODE_VTAB)
+      if( p->scanstatsOn==3 ){
+        raw_printf(stderr, 
+            "Warning: \".scanstats vm\" not available in this build.\n"
+        );
+      }
 #endif
     }else{
       raw_printf(stderr, "Usage: .scanstats on|off|est\n");
