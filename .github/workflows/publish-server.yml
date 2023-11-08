@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: libsql-server
+  IMAGE_NAME: tursodatabase/libsql-server
 
 jobs:
   # docker image build and upload to ghcr
