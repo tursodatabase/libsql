@@ -115,6 +115,7 @@ pub trait MakeNamespace: Sync + Send + 'static {
         &self,
         name: NamespaceName,
         restore_option: RestoreOption,
+        bottomless_db_id: Option<String>,
         allow_creation: bool,
         reset: ResetCb,
     ) -> crate::Result<Namespace<Self::Database>>;
@@ -152,10 +153,18 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         &self,
         name: NamespaceName,
         restore_option: RestoreOption,
+        bottomless_db_id: Option<String>,
         allow_creation: bool,
         _reset: ResetCb,
     ) -> crate::Result<Namespace<Self::Database>> {
-        Namespace::new_primary(&self.config, name, restore_option, None, allow_creation).await
+        Namespace::new_primary(
+            &self.config,
+            name,
+            restore_option,
+            bottomless_db_id,
+            allow_creation,
+        )
+        .await
     }
 
     async fn destroy(&self, namespace: NamespaceName, prune_all: bool) -> crate::Result<()> {
@@ -235,6 +244,7 @@ impl MakeNamespace for ReplicaNamespaceMaker {
         &self,
         name: NamespaceName,
         restore_option: RestoreOption,
+        _bottomless_db_id: Option<String>,
         allow_creation: bool,
         reset: ResetCb,
     ) -> crate::Result<Namespace<Self::Database>> {
@@ -342,6 +352,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             .create(
                 namespace.clone(),
                 restore_option,
+                None,
                 true,
                 self.make_reset_cb(),
             )
@@ -397,6 +408,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                     .create(
                         from.clone(),
                         RestoreOption::Latest,
+                        None,
                         false,
                         self.make_reset_cb(),
                     )
@@ -447,6 +459,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                 .create(
                     namespace.clone(),
                     RestoreOption::Latest,
+                    None,
                     self.inner.allow_lazy_creation,
                     self.make_reset_cb(),
                 )
@@ -479,6 +492,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             .create(
                 namespace.clone(),
                 restore_option,
+                None,
                 true,
                 self.make_reset_cb(),
             )
