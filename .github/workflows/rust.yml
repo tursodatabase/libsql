@@ -113,6 +113,10 @@ jobs:
       with:
         tool: protoc@${{ env.PROTOC_VERSION }}
 
+    - uses: taiki-e/install-action@v2
+      with:
+        tool: nextest
+
     - uses: actions/checkout@v3
 
     - name: Set up cargo cache
@@ -129,10 +133,7 @@ jobs:
         restore-keys: ${{ runner.os }}-cargo-
 
     - name: Run tests
-      uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --verbose
+      run: cargo nextest run
       env:
         LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID: minioadmin
         LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY: minioadmin
@@ -140,8 +141,6 @@ jobs:
         LIBSQL_BOTTOMLESS_BUCKET: bottomless
         LIBSQL_BOTTOMLESS_ENDPOINT: http://localhost:9000
 
-  # TODO(lucio): Enable this, for some reason github doesn't like this
-  # but won't tell me why...
   # test-rust-wasm:
   #   runs-on: ubuntu-latest
   #   name: Run Rust Wasm Tests
@@ -176,4 +175,4 @@ jobs:
   #         restore-keys: ${{ runner.os }}-cargo-
 
   #     - name: Run check
-  #       command: cargo check --verbose -p libsql --target wasm32-unknown-unknown --no-default-features --features cloudflare
+  #       run: cargo check --verbose -p libsql --target wasm32-unknown-unknown --no-default-features --features cloudflare

@@ -3817,6 +3817,7 @@ dependencies = [
  "futures",
  "futures-core",
  "hmac",
+ "http-body",
  "hyper",
  "hyper-rustls 0.24.1",
  "hyper-tungstenite",

@@ -65,6 +65,46 @@ impl Database {
             connector,
             endpoint.as_str().try_into().unwrap(),
             auth_token,
+            None,
+        )
+        .unwrap();
+        let path = PathBuf::from(db_path);
+        let client = RemoteClient::new(remote.clone(), &path).await.unwrap();
+        let replicator = Mutex::new(
+            Replicator::new(Either::Left(client), path, 1000)
+                .await
+                .unwrap(),
+        );
+
+        db.replication_ctx = Some(ReplicationContext {
+            replicator,
+            client: Some(remote),
+        });
+
+        Ok(db)
+    }
+
+    #[cfg(feature = "replication")]
+    #[doc(hidden)]
+    pub async fn open_http_sync_internal(
+        connector: crate::util::ConnectorService,
+        db_path: String,
+        endpoint: String,
+        auth_token: String,
+        version: Option<String>,
+    ) -> Result<Database> {
+        use std::path::PathBuf;
+
+        use crate::util::coerce_url_scheme;
+
+        let mut db = Database::open(&db_path, OpenFlags::default())?;
+
+        let endpoint = coerce_url_scheme(&endpoint);
+        let remote = crate::replication::client::Client::new(
+            connector,
+            endpoint.as_str().try_into().unwrap(),
+            auth_token,
+            version.as_ref().map(String::as_str),
         )
         .unwrap();
         let path = PathBuf::from(db_path);

@@ -5,6 +5,8 @@ use metrics::{
 };
 use once_cell::sync::Lazy;
 
+pub static CLIENT_VERSION: &str = "libsql_client_version";
+
 pub static WRITE_QUERY_COUNT: Lazy<Counter> = Lazy::new(|| {
     const NAME: &str = "libsql_server_writes_count";
     describe_counter!(NAME, "number of write statements");

@@ -59,7 +59,6 @@ fn basic_query() {
 }
 
 #[test]
-#[ignore]
 fn basic_metrics() {
     let mut sim = turmoil::Builder::new().build();
 
@@ -81,7 +80,18 @@ fn basic_metrics() {
 
         tokio::time::sleep(Duration::from_secs(1)).await;
 
-        snapshot_metrics().assert_counter("libsql_server_libsql_execute_program", 3);
+        let snapshot = snapshot_metrics();
+        snapshot.assert_counter("libsql_server_libsql_execute_program", 3);
+
+        for (key, (_, _, val)) in snapshot.snapshot() {
+            if key.kind() == metrics_util::MetricKind::Counter
+                && key.key().name() == "libsql_client_version"
+            {
+                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(3));
+                let label = key.key().labels().next().unwrap();
+                assert!(label.value().starts_with("libsql-hrana-"));
+            }
+        }
 
         Ok(())
     });
