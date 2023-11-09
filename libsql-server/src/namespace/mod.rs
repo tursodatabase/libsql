@@ -328,7 +328,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         Ok(())
     }
 
-    pub async fn reset(
+    async fn reset(
         &self,
         namespace: NamespaceName,
         restore_option: RestoreOption,
