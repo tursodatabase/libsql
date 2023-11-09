@@ -2018,10 +2018,11 @@ struct FuncDestructor {
 #define SQLITE_FUNC_WINDOW   0x00010000 /* Built-in window-only function */
 #define SQLITE_FUNC_INTERNAL 0x00040000 /* For use by NestedParse() only */
 #define SQLITE_FUNC_DIRECT   0x00080000 /* Not for use in TRIGGERs or VIEWs */
-#define SQLITE_FUNC_SUBTYPE  0x00100000 /* Result likely to have sub-type */
+/* SQLITE_SUBTYPE            0x00100000 // Consumer of subtypes */
 #define SQLITE_FUNC_UNSAFE   0x00200000 /* Function has side effects */
 #define SQLITE_FUNC_INLINE   0x00400000 /* Functions implemented in-line */
 #define SQLITE_FUNC_BUILTIN  0x00800000 /* This is a built-in function */
+/*  SQLITE_RESULT_SUBTYPE    0x01000000 // Generator of subtypes */
 #define SQLITE_FUNC_ANYORDER 0x08000000 /* count/min/max aggregate */
 
 /* Identifier numbers for each in-line function */
@@ -2113,9 +2114,10 @@ struct FuncDestructor {
 #define MFUNCTION(zName, nArg, xPtr, xFunc) \
   {nArg, SQLITE_FUNC_BUILTIN|SQLITE_FUNC_CONSTANT|SQLITE_UTF8, \
    xPtr, 0, xFunc, 0, 0, 0, #zName, {0} }
-#define JFUNCTION(zName, nArg, bUseCache, bSubtype, iArg, xFunc) \
+#define JFUNCTION(zName, nArg, bUseCache, bWS, bRS, iArg, xFunc) \
   {nArg, SQLITE_FUNC_BUILTIN|SQLITE_DETERMINISTIC|SQLITE_FUNC_CONSTANT|\
-   SQLITE_UTF8|((bUseCache)*SQLITE_FUNC_RUNONLY)|((bSubtype)*SQLITE_SUBTYPE), \
+   SQLITE_UTF8|((bUseCache)*SQLITE_FUNC_RUNONLY)|\
+   ((bRS)*SQLITE_SUBTYPE)|((bWS)*SQLITE_RESULT_SUBTYPE), \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define INLINE_FUNC(zName, nArg, iArg, mFlags) \
   {nArg, SQLITE_FUNC_BUILTIN|\
