@@ -8,14 +8,15 @@ use url::Url;
 use tokio::sync::mpsc;
 
 use crate::http::admin::stats::StatsResponse;
-use crate::namespace::NamespaceName;
+use crate::namespace::{MakeNamespace, NamespaceName, NamespaceStore};
 use crate::stats::Stats;
 
 pub async fn server_heartbeat(
-    url: Url,
+    url: Option<Url>,
     auth: Option<String>,
     update_period: Duration,
     mut stats_subs: mpsc::Receiver<(NamespaceName, Weak<Stats>)>,
+    namespaces: NamespaceStore<impl MakeNamespace>,
 ) {
     let mut watched = HashMap::new();
     let client = reqwest::Client::new();
@@ -27,7 +28,7 @@ pub async fn server_heartbeat(
                 watched.insert(ns, stats);
             }
             _ = interval.tick() => {
-                send_stats(&mut watched, &client, &url, auth.as_deref()).await;
+                send_stats(&mut watched, &client, &namespaces, url.as_ref(), auth.as_deref()).await;
             }
         };
     }
@@ -36,16 +37,43 @@ pub async fn server_heartbeat(
 async fn send_stats(
     watched: &mut HashMap<NamespaceName, Weak<Stats>>,
     client: &reqwest::Client,
-    url: &Url,
+    namespaces: &NamespaceStore<impl MakeNamespace>,
+    url: Option<&Url>,
     auth: Option<&str>,
 ) {
     // first send all the stats...
     for (ns, stats) in watched.iter() {
         if let Some(stats) = stats.upgrade() {
             let body = StatsResponse::from(stats.as_ref());
-            let mut url = url.clone();
-            url.path_segments_mut().unwrap().push(ns.as_str());
-            let request = client.post(url);
+            let mut heartbeat_url;
+            if let Some(url) = url {
+                heartbeat_url = url.clone();
+            } else {
+                match namespaces.config_store(ns.clone()).await {
+                    Ok(config_store) => {
+                        let config = config_store.get();
+                        if let Some(url) = config.heartbeat_url.as_ref() {
+                            heartbeat_url = url.clone();
+                        } else {
+                            tracing::warn!(
+                                "No heartbeat url for namespace {}. Can't send stats!",
+                                ns.as_str()
+                            );
+                            continue;
+                        }
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            "Error fetching config for namespace {}. Can't send stats: {}",
+                            ns.as_str(),
+                            e
+                        );
+                        continue;
+                    }
+                }
+            }
+            heartbeat_url.path_segments_mut().unwrap().push(ns.as_str());
+            let request = client.post(heartbeat_url);
             let request = if let Some(ref auth) = auth {
                 request.header("Authorization", auth.to_string())
             } else {

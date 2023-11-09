@@ -192,7 +192,7 @@ impl DbConfig {
 }
 
 pub struct HeartbeatConfig {
-    pub heartbeat_url: String,
+    pub heartbeat_url: Option<String>,
     pub heartbeat_period: Duration,
     pub heartbeat_auth: Option<String>,
 }

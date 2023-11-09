@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::{fs, io};
+use url::Url;
 
 use crate::error::Error;
 use crate::{Result, LIBSQL_PAGE_SIZE};
@@ -26,6 +27,8 @@ pub struct DatabaseConfig {
     /// maximum db size (in pages)
     #[serde(default = "default_max_size")]
     pub max_db_pages: u64,
+    #[serde(default)]
+    pub heartbeat_url: Option<Url>,
 }
 
 const fn default_max_size() -> u64 {
@@ -39,6 +42,7 @@ impl Default for DatabaseConfig {
             block_writes: Default::default(),
             block_reason: Default::default(),
             max_db_pages: default_max_size(),
+            heartbeat_url: None,
         }
     }
 }

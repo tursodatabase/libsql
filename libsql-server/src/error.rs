@@ -89,6 +89,8 @@ pub enum Error {
     PrimaryStreamMisuse,
     #[error("Proxy request interupted")]
     PrimaryStreamInterupted,
+    #[error("Wrong URL: {0}")]
+    UrlParseError(#[from] url::ParseError),
 }
 
 trait ResponseError: std::error::Error {
@@ -145,6 +147,7 @@ impl IntoResponse for Error {
             PrimaryStreamDisconnect => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             PrimaryStreamMisuse => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             PrimaryStreamInterupted => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            UrlParseError(_) => self.format_err(StatusCode::BAD_REQUEST),
         }
     }
 }

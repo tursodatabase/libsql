@@ -152,6 +152,7 @@ async fn handle_get_config<M: MakeNamespace, C: Connector>(
         block_writes: config.block_writes,
         block_reason: config.block_reason.clone(),
         max_db_size: Some(max_db_size),
+        heartbeat_url: config.heartbeat_url.clone().map(|u| u.into()),
     };
 
     Ok(Json(resp))
@@ -192,6 +193,8 @@ struct HttpDatabaseConfig {
     block_reason: Option<String>,
     #[serde(default)]
     max_db_size: Option<bytesize::ByteSize>,
+    #[serde(default)]
+    heartbeat_url: Option<String>,
 }
 
 async fn handle_post_config<M: MakeNamespace, C>(
@@ -210,6 +213,9 @@ async fn handle_post_config<M: MakeNamespace, C>(
     if let Some(size) = req.max_db_size {
         config.max_db_pages = size.as_u64() / LIBSQL_PAGE_SIZE;
     }
+    if let Some(url) = req.heartbeat_url {
+        config.heartbeat_url = Some(Url::parse(&url)?);
+    }
 
     store.store(config)?;
 
@@ -220,6 +226,7 @@ async fn handle_post_config<M: MakeNamespace, C>(
 struct CreateNamespaceReq {
     dump_url: Option<Url>,
     max_db_size: Option<bytesize::ByteSize>,
+    heartbeat_url: Option<String>,
 }
 
 async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
@@ -237,12 +244,15 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
     let namespace = NamespaceName::from_string(namespace)?;
     app_state.namespaces.create(namespace.clone(), dump).await?;
 
+    let store = app_state.namespaces.config_store(namespace).await?;
+    let mut config = (*store.get()).clone();
     if let Some(max_db_size) = req.max_db_size {
-        let store = app_state.namespaces.config_store(namespace).await?;
-        let mut config = (*store.get()).clone();
         config.max_db_pages = max_db_size.as_u64() / LIBSQL_PAGE_SIZE;
-        store.store(config)?;
     }
+    if let Some(url) = req.heartbeat_url {
+        config.heartbeat_url = Some(Url::parse(&url)?)
+    }
+    store.store(config)?;
 
     Ok(())
 }
@@ -260,7 +270,17 @@ async fn handle_fork_namespace<M: MakeNamespace, C>(
     let timestamp = req.map(|v| v.timestamp);
     let from = NamespaceName::from_string(from)?;
     let to = NamespaceName::from_string(to)?;
-    app_state.namespaces.fork(from, to, timestamp).await?;
+    app_state
+        .namespaces
+        .fork(from.clone(), to.clone(), timestamp)
+        .await?;
+    let from_store = app_state.namespaces.config_store(from).await?;
+    let from_config = from_store.get();
+    let to_store = app_state.namespaces.config_store(to).await?;
+    let mut to_config = (*to_store.get()).clone();
+    to_config.max_db_pages = from_config.max_db_pages;
+    to_config.heartbeat_url = from_config.heartbeat_url.clone();
+    to_store.store(to_config)?;
     Ok(())
 }
 
