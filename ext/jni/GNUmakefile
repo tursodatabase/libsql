@@ -35,6 +35,8 @@ $(dir.bld.c):
 
 javac.flags ?= -Xlint:unchecked -Xlint:deprecation
 java.flags ?=
+javac.flags += -encoding utf8
+# -------------^^^^^^^^^^^^^^ required for Windows builds
 jnicheck ?= 1
 ifeq (1,$(jnicheck))
   java.flags += -Xcheck:jni
