@@ -6228,6 +6228,12 @@ int sqlite3_result_zeroblob64(sqlite3_context*, sqlite3_uint64 n);
 ** interface is invoked within an SQL function that does not have the
 ** SQLITE_RESULT_SUBTYPE property, then sqlite3_result_subtype()
 ** might fail to set the result subtype.
+**
+** If SQLite is compiled with -DSQLITE_STRICT_SUBTYPE=1, then any
+** SQL function that invokes the sqlite3_result_subtype() interface
+** and that does not have the SQLITE_RESULT_SUBTYPE property will raise
+** an error.  Future versions of SQLite might enable -DSQLITE_STRICT_SUBTYPE=1
+** by default.
 */
 void sqlite3_result_subtype(sqlite3_context*,unsigned int);
 
