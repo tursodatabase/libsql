@@ -432,12 +432,18 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
   zIn++;
   N -= 2;
   while( N>0 ){
-    for(i=0; i<N && zIn[i]!='\\'; i++){}
+    for(i=0; i<N && zIn[i]!='\\' && zIn[i]!='"'; i++){}
     if( i>0 ){
       jsonAppendRawNZ(p, zIn, i);
       zIn += i;
       N -= i;
       if( N==0 ) break;
+    }
+    if( zIn[0]=='"' ){
+      jsonAppendRawNZ(p, "\\\"", 2);
+      zIn++;
+      N--;
+      continue;
     }
     assert( zIn[0]=='\\' );
     switch( (u8)zIn[1] ){
