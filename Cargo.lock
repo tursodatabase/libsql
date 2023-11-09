@@ -817,6 +817,7 @@ dependencies = [
  "aws-sdk-s3",
  "bytes",
  "chrono",
+ "futures-core",
  "rand",
  "sqld-libsql-bindings",
  "tokio",
@@ -831,10 +832,12 @@ name = "bottomless-cli"
 version = "0.1.14"
 dependencies = [
  "anyhow",
+ "async-compression 0.4.4",
  "aws-config",
  "aws-sdk-s3",
  "aws-smithy-types",
  "bottomless",
+ "bytes",
  "chrono",
  "clap 4.4.7",
  "rusqlite",

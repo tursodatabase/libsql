@@ -16,6 +16,7 @@ fn try_main() -> Result<()> {
         Some("build") => build()?,
         Some("build-wasm") => build_wasm(&arg)?,
         Some("sim-tests") => sim_tests(&arg)?,
+        Some("test") => run_tests(&arg)?,
         _ => print_help(),
     }
     Ok(())
@@ -26,6 +27,8 @@ fn print_help() {
         "Tasks:
 
 build                  builds all languages 
+build-wasm             builds the wasm components in wasm32-unknown-unknown
+tests                  runs the entire libsql test suite using nextest
 sim-tests <test name>  runs the libsql-server simulation test suite
 "
     )
@@ -42,6 +45,15 @@ fn build_wasm(_arg: &str) -> Result<()> {
         "--features",
         "cloudflare",
     ])?;
+
+    Ok(())
+}
+
+fn run_tests(arg: &str) -> Result<()> {
+    println!("installing nextest");
+    run_cargo(&["install", "cargo-nextest"])?;
+    println!("running nextest run");
+    run_cargo(&["nextest", "run", arg])?;
 
     Ok(())
 }
