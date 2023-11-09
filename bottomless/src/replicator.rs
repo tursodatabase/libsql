@@ -730,8 +730,6 @@ impl Replicator {
             }
         };
 
-        self.store_metadata(wal.page_size(), wal.checksum()).await?;
-
         let frame_count = wal.frame_count().await;
         tracing::trace!("Local WAL pages: {}", frame_count);
         self.submit_frames(frame_count);
@@ -745,6 +743,7 @@ impl Replicator {
                 pending_frames
             );
         }
+        self.store_metadata(wal.page_size(), wal.checksum()).await?;
         tracing::info!("Local WAL replicated");
         Ok(())
     }
