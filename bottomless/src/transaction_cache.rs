@@ -7,7 +7,7 @@ use tokio::fs::{File, OpenOptions};
 use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 
 #[derive(Debug)]
-pub(crate) struct TransactionPageCache {
+pub struct TransactionPageCache {
     /// Threshold (in pages) after which, the cache will start flushing pages on disk.
     swap_after_pages: u32,
     page_size: u32,
