@@ -540,7 +540,9 @@ void sqlite3_result_subtype(sqlite3_context *pCtx, unsigned int eSubtype){
   if( pCtx==0 ) return;
 #endif
 #if defined(SQLITE_STRICT_SUBTYPE) && SQLITE_STRICT_SUBTYPE+0!=0
-  if( (pCtx->pFunc->funcFlags & SQLITE_RESULT_SUBTYPE)==0 ){
+  if( pCtx->pFunc!=0
+   && (pCtx->pFunc->funcFlags & SQLITE_RESULT_SUBTYPE)==0
+  ){
     char zErr[200];
     sqlite3_snprintf(sizeof(zErr), zErr,
                      "misuse of sqlite3_result_subtype() by %s()", 

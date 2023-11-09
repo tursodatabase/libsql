@@ -833,7 +833,8 @@ static void jsonReturnJson(
   JsonParse *pParse,          /* The complete JSON */
   JsonNode *pNode,            /* Node to return */
   sqlite3_context *pCtx,      /* Return value for this function */
-  int bGenerateAlt            /* Also store the rendered text in zAlt */
+  int bGenerateAlt,           /* Also store the rendered text in zAlt */
+  int omitSubtype             /* Do not call sqlite3_result_subtype() */
 ){
   JsonString s;
   if( pParse->oom ){
@@ -848,7 +849,7 @@ static void jsonReturnJson(
       pParse->nAlt = s.nUsed;
     }
     jsonResult(&s);
-    sqlite3_result_subtype(pCtx, JSON_SUBTYPE);
+    if( !omitSubtype ) sqlite3_result_subtype(pCtx, JSON_SUBTYPE);
   }
 }
 
@@ -889,7 +890,8 @@ static u32 jsonHexToInt4(const char *z){
 static void jsonReturn(
   JsonParse *pParse,          /* Complete JSON parse tree */
   JsonNode *pNode,            /* Node to return */
-  sqlite3_context *pCtx       /* Return value for this function */
+  sqlite3_context *pCtx,      /* Return value for this function */
+  int omitSubtype             /* Do not call sqlite3_result_subtype() */
 ){
   switch( pNode->eType ){
     default: {
@@ -1035,7 +1037,7 @@ static void jsonReturn(
     }
     case JSON_ARRAY:
     case JSON_OBJECT: {
-      jsonReturnJson(pParse, pNode, pCtx, 0);
+      jsonReturnJson(pParse, pNode, pCtx, 0, omitSubtype);
       break;
     }
   }
@@ -2387,7 +2389,7 @@ static void jsonParseFunc(
   printf("iSubst    = %u\n", p->iSubst);
   printf("iHold     = %u\n", p->iHold);
   jsonDebugPrintNodeEntries(p->aNode, p->nNode);
-  jsonReturnJson(p, p->aNode, ctx, 1);
+  jsonReturnJson(p, p->aNode, ctx, 1, 0);
 }
 
 /*
@@ -2573,15 +2575,14 @@ static void jsonExtractFunc(
       }
       if( pNode ){
         if( flags & JSON_JSON ){
-          jsonReturnJson(p, pNode, ctx, 0);
+          jsonReturnJson(p, pNode, ctx, 0, 0);
         }else{
-          jsonReturn(p, pNode, ctx);
-          sqlite3_result_subtype(ctx, 0);
+          jsonReturn(p, pNode, ctx, 1);
         }
       }
     }else{
       pNode = jsonLookup(p, zPath, 0, ctx);
-      if( p->nErr==0 && pNode ) jsonReturn(p, pNode, ctx);
+      if( p->nErr==0 && pNode ) jsonReturn(p, pNode, ctx, 0);
     }
   }else{
     /* Two or more PATH arguments results in a JSON array with each
@@ -2707,7 +2708,7 @@ static void jsonPatchFunc(
   if( pResult && pX->oom==0 ){
     jsonDebugPrintParse(pX);
     jsonDebugPrintNode(pResult);
-    jsonReturnJson(pX, pResult, ctx, 0);
+    jsonReturnJson(pX, pResult, ctx, 0, 0);
   }else{
     sqlite3_result_error_nomem(ctx);
   }
@@ -2786,7 +2787,7 @@ static void jsonRemoveFunc(
     }
   }
   if( (pParse->aNode[0].jnFlags & JNODE_REMOVE)==0 ){
-    jsonReturnJson(pParse, pParse->aNode, ctx, 1);
+    jsonReturnJson(pParse, pParse->aNode, ctx, 1, 0);
   }
 remove_done:
   jsonDebugPrintParse(p);
@@ -2915,7 +2916,7 @@ static void jsonReplaceFunc(
       jsonReplaceNode(ctx, pParse, (u32)(pNode - pParse->aNode), argv[i+1]);
     }
   }
-  jsonReturnJson(pParse, pParse->aNode, ctx, 1);
+  jsonReturnJson(pParse, pParse->aNode, ctx, 1, 0);
 replace_err:
   jsonDebugPrintParse(pParse);
   jsonParseFree(pParse);
@@ -2969,7 +2970,7 @@ static void jsonSetFunc(
     }
   }
   jsonDebugPrintParse(pParse);
-  jsonReturnJson(pParse, pParse->aNode, ctx, 1);
+  jsonReturnJson(pParse, pParse->aNode, ctx, 1, 0);
 jsonSetDone:
   jsonParseFree(pParse);
 }
@@ -3484,7 +3485,7 @@ static int jsonEachColumn(
     case JEACH_KEY: {
       if( p->i==0 ) break;
       if( p->eType==JSON_OBJECT ){
-        jsonReturn(&p->sParse, pThis, ctx);
+        jsonReturn(&p->sParse, pThis, ctx, 0);
       }else if( p->eType==JSON_ARRAY ){
         u32 iKey;
         if( p->bRecursive ){
@@ -3500,7 +3501,7 @@ static int jsonEachColumn(
     }
     case JEACH_VALUE: {
       if( pThis->jnFlags & JNODE_LABEL ) pThis++;
-      jsonReturn(&p->sParse, pThis, ctx);
+      jsonReturn(&p->sParse, pThis, ctx, 0);
       break;
     }
     case JEACH_TYPE: {
@@ -3511,7 +3512,7 @@ static int jsonEachColumn(
     case JEACH_ATOM: {
       if( pThis->jnFlags & JNODE_LABEL ) pThis++;
       if( pThis->eType>=JSON_ARRAY ) break;
-      jsonReturn(&p->sParse, pThis, ctx);
+      jsonReturn(&p->sParse, pThis, ctx, 0);
       break;
     }
     case JEACH_ID: {
