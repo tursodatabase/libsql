@@ -1872,10 +1872,10 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1status64
 /*
  * Class:     org_sqlite_jni_capi_CApi
  * Method:    sqlite3_step
- * Signature: (Lorg/sqlite/jni/capi/sqlite3_stmt;)I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1step
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_sqlite_jni_capi_CApi

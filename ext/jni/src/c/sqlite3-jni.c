@@ -185,6 +185,8 @@
 **
 ** This use of intptr_t is the _only_ reason we require <stdint.h>
 ** which, in turn, requires building with -std=c99 (or later).
+**
+** See also: the notes for LongPtrGet_T.
 */
 #define S3JniCast_L2P(JLongAsPtr) (void*)((intptr_t)(JLongAsPtr))
 #define S3JniCast_P2L(PTR) (jlong)((intptr_t)(PTR))
@@ -1493,6 +1495,15 @@ static void * NativePointerHolder__get(JNIEnv * env, jobject jNph,
 ** the C side, because it's reportedly significantly faster. The
 ** intptr_t part here is necessary for compatibility with (at least)
 ** ARM32.
+**
+** 2023-11-09: testing has not revealed any measurable performance
+** difference between the approach of passing type T to C compared to
+** passing pointer-to-T to C, and adding support for the latter
+** everywhere requires sigificantly more code. As of this writing, the
+** older/simpler approach is being applied except for (A) where the
+** newer approach has already been applied and (B) hot-spot APIs where
+** a difference of microseconds (i.e. below our testing measurement
+** threshold) might add up.
 */
 #define LongPtrGet_T(T,JLongAsPtr) (T*)((intptr_t)(JLongAsPtr))
 #define LongPtrGet_sqlite3(JLongAsPtr) LongPtrGet_T(sqlite3,JLongAsPtr)
@@ -4674,9 +4685,9 @@ S3JniApi(sqlite3_sql(),jstring,1sql)(
 }
 
 S3JniApi(sqlite3_step(),jint,1step)(
-  JniArgsEnvClass,jobject jStmt
+  JniArgsEnvClass, jlong jpStmt
 ){
-  sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jStmt);
+  sqlite3_stmt * const pStmt = LongPtrGet_sqlite3_stmt(jpStmt);
   return pStmt ? (jint)sqlite3_step(pStmt) : (jint)SQLITE_MISUSE;
 }
 

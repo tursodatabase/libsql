@@ -1734,20 +1734,24 @@ public final class CApi {
     @NotNull OutputPointer.Int64 pHighwater, boolean reset
   );
 
-  public static native int sqlite3_step(@NotNull sqlite3_stmt stmt);
+  private static native int sqlite3_step(@NotNull long ptrToStmt);
+
+  public static int sqlite3_step(@NotNull sqlite3_stmt stmt){
+    return null==stmt ? SQLITE_MISUSE : sqlite3_step(stmt.getNativePointer());
+  }
 
   public static native boolean sqlite3_stmt_busy(@NotNull sqlite3_stmt stmt);
 
   private static native int sqlite3_stmt_explain(@NotNull long ptrToStmt, int op);
 
   public static int sqlite3_stmt_explain(@NotNull sqlite3_stmt stmt, int op){
-    return sqlite3_stmt_explain(stmt.getNativePointer(), op);
+    return null==stmt ? SQLITE_MISUSE : sqlite3_stmt_explain(stmt.getNativePointer(), op);
   }
 
   private static native int sqlite3_stmt_isexplain(@NotNull long ptrToStmt);
 
   public static int sqlite3_stmt_isexplain(@NotNull sqlite3_stmt stmt){
-    return sqlite3_stmt_isexplain(stmt.getNativePointer());
+    return null==stmt ? 0 : sqlite3_stmt_isexplain(stmt.getNativePointer());
   }
 
   public static native boolean sqlite3_stmt_readonly(@NotNull sqlite3_stmt stmt);
