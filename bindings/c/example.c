@@ -1,5 +1,3 @@
-/* gcc -I include example.c ../../target/debug/libsql_experimental.a ../../../.libs/libsqlite3.a && ./a.out */
-
 #include "libsql.h"
 #include <assert.h>
 #include <stdio.h>
@@ -8,30 +6,59 @@ int main(int argc, char *argv[])
 {
 	libsql_connection_t conn;
 	libsql_rows_t rows;
+	libsql_row_t row;
 	libsql_database_t db;
+	const char *err = NULL;
+	int retval = 0;
 
-	db = libsql_open_ext(":memory:");
-	if (!db) {
-		assert(0);
+	retval = libsql_open_ext(":memory:", &db, &err);
+	if (retval != 0) {
+		fprintf(stderr, "%s\n", err);
+		goto quit;
 	}
-	conn = libsql_connect(db);
-	if (!conn) {
-		assert(0);
+
+	retval = libsql_connect(db, &conn, &err);
+	if (retval != 0) {
+		fprintf(stderr, "%s\n", err);
+		goto quit;
 	}
-	rows = libsql_execute(conn, "SELECT 1");
-	if (!rows) {
-		assert(0);
+
+	retval = libsql_execute(conn, "SELECT 1", &rows, &err);
+	if (retval != 0) {
+		fprintf(stderr, "%s\n", err);
+		goto quit;
 	}
-	for (int row = 0; row < libsql_row_count(rows); row++) {
-		for (int col = 0; col < libsql_column_count(rows); col++) {
+
+	int num_cols = libsql_column_count(rows);
+
+	while ((retval = libsql_next_row(rows, &row, &err)) == 0) {
+		if (!err && !row) {
+			break;
+		}
+		for (int col = 0; col < num_cols; col++) {
 			if (col > 0) {
 				printf(", ");
 			}
-			const char *value = libsql_value_text(rows, row, col);
-			printf("%s", value);
+			long long value;
+			retval = libsql_get_int(row, col, &value, &err);
+			if (retval != 0) {
+				fprintf(stderr, "%s\n", err);
+			} else {
+				printf("%lld\n", value);
+			}
 		}
+		err = NULL;
 	}
+
+	if (retval != 0) {
+		fprintf(stderr, "%s\n", err);
+		goto quit;
+	}
+
+quit:
 	libsql_free_rows(rows);
 	libsql_disconnect(conn);
 	libsql_close(db);
+
+	return retval;
 }
