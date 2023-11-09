@@ -186,7 +186,7 @@ impl Options {
         let use_compression =
             CompressionKind::parse(&env_var_or("LIBSQL_BOTTOMLESS_COMPRESSION", "zstd"))
                 .map_err(|e| anyhow!("unknown compression kind: {}", e))?;
-        let verify_crc = match env_var_or("LIBSQL_BOTTOMLESS_VERIFY_CRC", true)
+        let verify_crc = match env_var_or("LIBSQL_BOTTOMLESS_VERIFY_CRC", false)
             .to_lowercase()
             .as_ref()
         {
