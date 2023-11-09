@@ -89,7 +89,7 @@ fn basic_metrics() {
             {
                 assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(3));
                 let label = key.key().labels().next().unwrap();
-                assert!(label.value().starts_with("libsql-hrana-"));
+                assert!(label.value().starts_with("libsql-remote-"));
             }
         }
 

@@ -50,7 +50,7 @@ impl Client {
     ) -> anyhow::Result<Self> {
         let ver = version.unwrap_or_else(|| env!("CARGO_PKG_VERSION"));
 
-        let version: AsciiMetadataValue = format!("libsql-embedded-replica-{ver}")
+        let version: AsciiMetadataValue = format!("libsql-rpc-{ver}")
             .try_into()
             .context("Invalid client version")?;
 

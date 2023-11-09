@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use crate::common::http::Client;
 use crate::common::net::{init_tracing, SimServer, TestServer, TurmoilAcceptor, TurmoilConnector};
+use crate::common::snapshot_metrics;
 use libsql::Database;
 use serde_json::json;
 use sqld::config::{AdminApiConfig, RpcServerConfig, UserApiConfig};
@@ -102,6 +103,18 @@ fn embedded_replica() {
 
         assert_eq!(code, 3);
         assert_eq!(extended_code, 1555);
+
+        let snapshot = snapshot_metrics();
+
+        for (key, (_, _, val)) in snapshot.snapshot() {
+            if key.kind() == metrics_util::MetricKind::Counter
+                && key.key().name() == "libsql_client_version"
+            {
+                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(6));
+                let label = key.key().labels().next().unwrap();
+                assert!(label.value().starts_with("libsql-rpc-"));
+            }
+        }
 
         Ok(())
     });
