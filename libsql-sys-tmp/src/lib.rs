@@ -3,7 +3,11 @@
 pub mod ffi;
 pub mod wal_hook;
 
-use std::{ffi::CString, ops::Deref, time::Duration};
+use std::{
+    ffi::CString,
+    ops::{Deref, DerefMut},
+    time::Duration,
+};
 
 pub use crate::wal_hook::WalMethodsHook;
 pub use once_cell::sync::Lazy;
@@ -38,6 +42,12 @@ impl<W: WalHook> Deref for Connection<W> {
 
     fn deref(&self) -> &Self::Target {
         &self.conn
+    }
+}
+
+impl<W: WalHook> DerefMut for Connection<W> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.conn
     }
 }
 
