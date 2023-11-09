@@ -1772,7 +1772,7 @@ public final class CApi {
      signature is the public-facing one.
   */
   private static native int sqlite3_strglob(
-    @NotNull byte[] glob, @NotNull byte[] nullTerminatedUtf8
+    @NotNull byte[] glob, @NotNull byte[] nulTerminatedUtf8
   );
 
   public static int sqlite3_strglob(
@@ -1786,7 +1786,7 @@ public final class CApi {
      The LIKE counterpart of the private sqlite3_strglob() method.
   */
   private static native int sqlite3_strlike(
-    @NotNull byte[] glob, @NotNull byte[] nullTerminatedUtf8,
+    @NotNull byte[] glob, @NotNull byte[] nulTerminatedUtf8,
     int escChar
   );
 
