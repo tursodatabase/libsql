@@ -19,7 +19,7 @@ impl HttpSender {
     pub fn new(connector: ConnectorService, version: Option<&str>) -> Self {
         let ver = version.unwrap_or_else(|| env!("CARGO_PKG_VERSION"));
 
-        let version = HeaderValue::try_from(format!("libsql-hrana-{ver}")).unwrap();
+        let version = HeaderValue::try_from(format!("libsql-remote-{ver}")).unwrap();
 
         let https = HttpsConnectorBuilder::new()
             .with_native_roots()
