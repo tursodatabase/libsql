@@ -22,18 +22,18 @@ jobs:
     - name: Install Protoc
       uses: arduino/setup-protoc@v2
 
-    - name: Install Wasmpack
-      uses: jetli/wasm-pack-action@v0.4.0
+    - name: Set up cargo cache
+      uses: actions/cache@v3
+      continue-on-error: false
       with:
-        version: 'latest'
-
-    - name: configure
-      working-directory: libsql-sqlite3
-      run: CFLAGS="-DSQLITE_ENABLE_COLUMN_METADATA=1" ./configure --enable-all --enable-releasemode
-
-    - name: Build
-      working-directory: libsql-sqlite3
-      run: make
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo-
 
     - name: Build crates
       run: cargo build
