@@ -264,4 +264,170 @@ impl Replicator {
         self.print_snapshot_summary(&generation).await?;
         Ok(())
     }
+
+    pub async fn restore_from_local_snapshot(
+        from_dir: impl AsRef<std::path::Path>,
+        db: &mut tokio::fs::File,
+    ) -> Result<bool> {
+        let from_dir = from_dir.as_ref();
+        use bottomless::replicator::CompressionKind;
+        use tokio::io::AsyncWriteExt;
+
+        let algos_to_try = &[
+            CompressionKind::Gzip,
+            CompressionKind::Zstd,
+            CompressionKind::None,
+        ];
+
+        for algo in algos_to_try {
+            let main_db_path = match algo {
+                CompressionKind::None => from_dir.join("db.db"),
+                CompressionKind::Gzip => from_dir.join("db.gz"),
+                CompressionKind::Zstd => from_dir.join("db.zstd"),
+            };
+            if let Ok(mut db_file) = tokio::fs::File::open(&main_db_path).await {
+                let db_size = match algo {
+                    CompressionKind::None => tokio::io::copy(&mut db_file, db).await?,
+                    CompressionKind::Gzip => {
+                        let mut decompress_reader =
+                            async_compression::tokio::bufread::GzipDecoder::new(
+                                tokio::io::BufReader::new(db_file),
+                            );
+                        tokio::io::copy(&mut decompress_reader, db).await?
+                    }
+                    CompressionKind::Zstd => {
+                        let mut decompress_reader =
+                            async_compression::tokio::bufread::ZstdDecoder::new(
+                                tokio::io::BufReader::new(db_file),
+                            );
+                        tokio::io::copy(&mut decompress_reader, db).await?
+                    }
+                };
+                db.flush().await?;
+
+                tracing::info!("Restored the main database file ({} bytes)", db_size);
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
+    pub async fn apply_wal_from_local_generation(
+        from_dir: impl AsRef<std::path::Path>,
+        db: &mut tokio::fs::File,
+        page_size: u32,
+        checksum: u64,
+    ) -> Result<u32> {
+        use bottomless::transaction_cache::TransactionPageCache;
+        use tokio::io::AsyncWriteExt;
+
+        const SWAP_AFTER: u32 = 65536;
+        const TMP_RESTORE_DIR: &str = ".bottomless.restore.tmp";
+
+        let from_dir = from_dir.as_ref();
+        let mut page_buf = {
+            let mut v = Vec::with_capacity(page_size as usize);
+            v.spare_capacity_mut();
+            unsafe { v.set_len(page_size as usize) };
+            v
+        };
+
+        let objs = {
+            let mut objs = Vec::new();
+            let mut dir = tokio::fs::read_dir(from_dir).await.unwrap();
+            while let Some(entry) = dir.next_entry().await.unwrap() {
+                let path = entry.path();
+                if let Some(file_name) = path.file_name() {
+                    if let Some(file_name) = file_name.to_str() {
+                        if file_name.ends_with(".gz")
+                            || file_name.ends_with(".zstd")
+                            || file_name.ends_with(".raw")
+                        {
+                            objs.push(path);
+                        }
+                    }
+                }
+            }
+            objs.sort();
+            objs.into_iter()
+        };
+
+        let mut last_received_frame_no = 0;
+        let mut pending_pages =
+            TransactionPageCache::new(SWAP_AFTER, page_size, TMP_RESTORE_DIR.into());
+
+        let mut checksum: Option<u64> = Some(checksum);
+        for obj in objs {
+            let key = obj.file_name().unwrap().to_str().unwrap();
+            tracing::debug!("Loading {}", key);
+
+            let (first_frame_no, _last_frame_no, _timestamp, compression_kind) =
+                match bottomless::replicator::Replicator::parse_frame_range(&format!("/{key}")) {
+                    Some(result) => result,
+                    None => {
+                        if key != "db.gz" && key != "db.zstd" && key != "db.db" {
+                            tracing::warn!("Failed to parse frame/page from key {}", key);
+                        }
+                        continue;
+                    }
+                };
+            if first_frame_no != last_received_frame_no + 1 {
+                tracing::warn!("Missing series of consecutive frames. Last applied frame: {}, next found: {}. Stopping the restoration process",
+                        last_received_frame_no, first_frame_no);
+                break;
+            }
+            // read frame from the file - from_dir and `obj` dir entry compose the path to it
+            let frame = tokio::fs::File::open(&obj).await?;
+
+            let mut frameno = first_frame_no;
+            let mut reader = bottomless::read::BatchReader::new(
+                frameno,
+                frame,
+                page_size as usize,
+                compression_kind,
+            );
+
+            while let Some(frame) = reader.next_frame_header().await? {
+                let pgno = frame.pgno();
+                reader.next_page(&mut page_buf).await?;
+                if let Some(ck) = checksum {
+                    checksum = match frame.verify(ck, &page_buf) {
+                        Ok(checksum) => Some(checksum),
+                        Err(e) => {
+                            println!("ERROR: failed to verify checksum of page {pgno}: {e}, continuing anyway. Checksum will no longer be validated");
+                            tracing::error!("Failed to verify checksum of page {pgno}: {e}, continuing anyway. Checksum will no longer be validated");
+                            None
+                        }
+                    };
+                }
+                pending_pages.insert(pgno, &page_buf).await?;
+                if frame.is_committed() {
+                    let pending_pages = std::mem::replace(
+                        &mut pending_pages,
+                        TransactionPageCache::new(SWAP_AFTER, page_size, TMP_RESTORE_DIR.into()),
+                    );
+                    pending_pages.flush(db).await?;
+                }
+                frameno += 1;
+                last_received_frame_no += 1;
+            }
+            db.flush().await?;
+        }
+        Ok(last_received_frame_no)
+    }
+
+    pub async fn get_local_metadata(
+        from_dir: impl AsRef<std::path::Path>,
+    ) -> Result<Option<(u32, u64)>> {
+        use bytes::Buf;
+
+        if let Ok(data) = tokio::fs::read(from_dir.as_ref().join(".meta")).await {
+            let mut data = bytes::Bytes::from(data);
+            let page_size = data.get_u32();
+            let crc = data.get_u64();
+            Ok(Some((page_size, crc)))
+        } else {
+            Ok(None)
+        }
+    }
 }

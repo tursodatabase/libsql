@@ -6,7 +6,7 @@ use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWrite};
 
 #[repr(transparent)]
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub(crate) struct WalFrameHeader([u8; WalFrameHeader::SIZE]);
+pub struct WalFrameHeader([u8; WalFrameHeader::SIZE]);
 
 impl WalFrameHeader {
     pub const SIZE: usize = 24;

@@ -381,6 +381,10 @@ impl Replicator {
         self.last_sent_frame_no.load(Ordering::Acquire)
     }
 
+    pub fn compression_kind(&self) -> CompressionKind {
+        self.use_compression
+    }
+
     pub async fn wait_until_snapshotted(&mut self) -> Result<bool> {
         if let Ok(generation) = self.generation() {
             if !self.main_db_exists_and_not_empty().await {
@@ -963,7 +967,7 @@ impl Replicator {
 
     // Parses the frame and page number from given key.
     // Format: <db-name>-<generation>/<first-frame-no>-<last-frame-no>-<timestamp>.<compression-kind>
-    fn parse_frame_range(key: &str) -> Option<(u32, u32, u64, CompressionKind)> {
+    pub fn parse_frame_range(key: &str) -> Option<(u32, u32, u64, CompressionKind)> {
         let frame_delim = key.rfind('/')?;
         let frame_suffix = &key[(frame_delim + 1)..];
         let timestamp_delim = frame_suffix.rfind('-')?;
@@ -1329,8 +1333,12 @@ impl Replicator {
                 }
                 let frame = self.get_object(key.into()).send().await?;
                 let mut frameno = first_frame_no;
-                let mut reader =
-                    BatchReader::new(frameno, frame.body, self.page_size, compression_kind);
+                let mut reader = BatchReader::new(
+                    frameno,
+                    tokio_util::io::StreamReader::new(frame.body),
+                    self.page_size,
+                    compression_kind,
+                );
 
                 while let Some(frame) = reader.next_frame_header().await? {
                     let pgno = frame.pgno();

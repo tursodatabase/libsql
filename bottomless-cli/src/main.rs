@@ -71,6 +71,8 @@ enum Commands {
             long_help = "UTC timestamp which is an upper bound for the transactions to be restored."
         )]
         utc_time: Option<NaiveDateTime>,
+        #[clap(long, short, conflicts_with_all = ["generation", "utc_time"], long_help = "Restore from a local directory")]
+        from_dir: Option<PathBuf>,
     },
     #[clap(about = "Verify integrity of the database")]
     Verify {
@@ -106,6 +108,51 @@ enum Commands {
 async fn run() -> Result<()> {
     tracing_subscriber::fmt::init();
     let mut options = Cli::parse();
+
+    if let Commands::Restore {
+        generation: _,
+        utc_time: _,
+        from_dir: Some(from_dir),
+    } = options.command
+    {
+        let database = match &options.database {
+            Some(database) => database,
+            None => {
+                println!("Please pass the database name with -d option");
+                return Ok(());
+            }
+        };
+        println!("trying to restore from {}", from_dir.display());
+        let mut db_file = tokio::fs::File::create(database).await?;
+        let (page_size, checksum) = match Replicator::get_local_metadata(&from_dir).await {
+            Ok(Some((page_size, checksum))) => (page_size, checksum),
+            Ok(None) => {
+                println!("No local metadata found, continuing anyway");
+                (4096, 0)
+            }
+            Err(e) => {
+                println!("Failed to get local metadata: {e}, continuing anyway");
+                (4096, 0)
+            }
+        };
+        println!("Local metadata: page_size={page_size}, checksum={checksum:x}");
+        Replicator::restore_from_local_snapshot(&from_dir, &mut db_file).await?;
+        println!("Restored local snapshot to {}", database);
+        let applied_frames = Replicator::apply_wal_from_local_generation(
+            &from_dir,
+            &mut db_file,
+            page_size,
+            checksum,
+        )
+        .await?;
+        println!("Applied {applied_frames} frames from local generation");
+        if let Err(e) = verify_db(&PathBuf::from(database)) {
+            println!("Verification failed: {e}");
+            std::process::exit(1)
+        }
+        println!("Verification: ok");
+        return Ok(());
+    }
 
     if let Some(ep) = options.endpoint.as_deref() {
         std::env::set_var("LIBSQL_BOTTOMLESS_ENDPOINT", ep)
@@ -166,6 +213,7 @@ async fn run() -> Result<()> {
         Commands::Restore {
             generation,
             utc_time,
+            ..
         } => {
             tokio::fs::create_dir_all(&database_dir).await?;
             client.restore(generation, utc_time).await?;

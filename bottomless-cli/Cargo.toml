@@ -11,10 +11,12 @@ description = "Command-line interface for bottomless replication for libSQL"
 
 [dependencies]
 anyhow = "1.0.66"
+async-compression = { version = "0.4.4", features = ["tokio", "gzip", "zstd"] }
 aws-config = "0.55"
 aws-sdk-s3 = "0.28"
 aws-smithy-types = "0.55"
 bottomless = { version = "0", path = "../bottomless" }
+bytes = "1"
 chrono = "0.4.23"
 clap = { version = "4.0.29", features = ["derive"] }
 tokio = { version = "1.23.0", features = ["macros", "rt", "rt-multi-thread"] }

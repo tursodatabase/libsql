@@ -5,11 +5,11 @@
 mod ffi;
 
 mod backup;
-mod read;
+pub mod read;
 pub mod replicator;
-mod transaction_cache;
+pub mod transaction_cache;
 pub mod uuid_utils;
-mod wal;
+pub mod wal;
 
 use crate::ffi::{
     bottomless_methods, libsql_wal_methods, sqlite3, sqlite3_file, sqlite3_vfs, PgHdr, Wal,
