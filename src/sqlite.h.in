@@ -5572,20 +5572,12 @@ int sqlite3_create_window_function(
 ** security-adverse side-effects and information-leaks.
 ** </dd>
 **
-** [[SQLITE_VALUE_SUBTYPE]] <dt>SQLITE_VALUE_SUBTYPE</dt><dd>
-** The SQLITE_VALUE_SUBTYPE flag indicates to SQLite that a function may call
+** [[SQLITE_SUBTYPE]] <dt>SQLITE_SUBTYPE</dt><dd>
+** The SQLITE_SUBTYPE flag indicates to SQLite that a function may call
 ** [sqlite3_value_subtype()] to inspect the sub-types of its arguments.
 ** Every function that invokes [sqlite3_value_subtype()] should have this
 ** property.  If it does not, then the query planner might generate
-** incorrect code for queries that use that function.  This property
-** used to be called [SQLITE_SUBTYPE].  Its name was changed to disinguish
-** it from [SQLITE_RESULT_SUBTYPE].  The old name is also retained for
-** backwards compatibility.
-**
-** [[SQLITE_SUBTYPE]] <dt>SQLITE_SUBTYPE</dt><dd>
-** The SQLITE_SUBTYPE flag is an alias for [SQLITE_VALUE_SUBTYPE] used for
-** backwards compatibility.  The newer [SQLITE_VALUE_SUBTYPE]
-** symbol is preferred.
+** incorrect code for queries that use that function.
 **
 ** [[SQLITE_RESULT_SUBTYPE]] <dt>SQLITE_RESULT_SUBTYPE</dt><dd>
 ** The SQLITE_RESULT_SUBTYPE flag indicates to SQLite that a function might call
@@ -5594,14 +5586,16 @@ int sqlite3_create_window_function(
 ** Every function that invokes [sqlite3_result_subtype()] should have this
 ** property.  If it does not, then the call to [sqlite3_result_subtype()]
 ** might become a no-op if the function is used as term in an
-** [expression index].
+** [expression index].  On the other hand, SQL functions that never invoke
+** [sqlite3_result_subtype()] should avoid setting this property, as the
+** purpose of this property is to disable certain optimizations that are
+** incompatible with subtypes.
 ** </dd>
 ** </dl>
 */
 #define SQLITE_DETERMINISTIC    0x000000800
 #define SQLITE_DIRECTONLY       0x000080000
-#define SQLITE_SUBTYPE          0x000100000  /* Deprecated name */
-#define SQLITE_VALUE_SUBTYPE    0x000100000  /* Use instead of SQLITE_SUBTYPE */
+#define SQLITE_SUBTYPE          0x000100000
 #define SQLITE_INNOCUOUS        0x000200000
 #define SQLITE_RESULT_SUBTYPE   0x001000000
 
@@ -5800,6 +5794,13 @@ int sqlite3_value_encoding(sqlite3_value*);
 ** information can be used to pass a limited amount of context from
 ** one SQL function to another.  Use the [sqlite3_result_subtype()]
 ** routine to set the subtype for the return value of an SQL function.
+**
+** Every [application-defined SQL function] that invoke this interface
+** <i>must</i> include the [SQLITE_SUBTYPE] property in the text
+** encoding argument when the function is [sqlite3_create_function|registered].
+** The sqlite3_value_subtype() can return an incorrect answer if it
+** is invoked from within an application-defined SQL function that does
+** not have the [SQLITE_SUBTYPE] property.
 */
 unsigned int sqlite3_value_subtype(sqlite3_value*);
 
@@ -6219,6 +6220,14 @@ int sqlite3_result_zeroblob64(sqlite3_context*, sqlite3_uint64 n);
 ** higher order bits are discarded.
 ** The number of subtype bytes preserved by SQLite might increase
 ** in future releases of SQLite.
+**
+** Every [application-defined SQL function] that invokes this interface
+** <i>must</i> include the [SQLITE_RESULT_SUBTYPE] property in its
+** text encoding argument when the SQL function is
+** [sqlite3_create_function|registered].  If the sqlite3_result_subtype()
+** interface is invoked within an SQL function that does not have the
+** SQLITE_RESULT_SUBTYPE property, then sqlite3_result_subtype()
+** might fail to set the result subtype.
 */
 void sqlite3_result_subtype(sqlite3_context*,unsigned int);
 
