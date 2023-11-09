@@ -123,7 +123,12 @@ pub trait MakeNamespace: Sync + Send + 'static {
     /// Destroy all resources associated with `namespace`.
     /// When `prune_all` is false, remove only files from local disk.
     /// When `prune_all` is true remove local database files as well as remote backup.
-    async fn destroy(&self, namespace: NamespaceName, prune_all: bool) -> crate::Result<()>;
+    async fn destroy(
+        &self,
+        namespace: NamespaceName,
+        bottomless_db_id: Option<Option<String>>,
+        prune_all: bool,
+    ) -> crate::Result<()>;
     async fn fork(
         &self,
         from: &Namespace<Self::Database>,
@@ -166,12 +171,30 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         .await
     }
 
-    async fn destroy(&self, namespace: NamespaceName, prune_all: bool) -> crate::Result<()> {
+    async fn destroy(
+        &self,
+        namespace: NamespaceName,
+        bottomless_db_id: Option<Option<String>>,
+        prune_all: bool,
+    ) -> crate::Result<()> {
         let ns_path = self.config.base_path.join("dbs").join(namespace.as_str());
 
         if prune_all {
             if let Some(ref options) = self.config.bottomless_replication {
-                let options = make_bottomless_options(options, None, namespace);
+                let bottomless_db_id = match bottomless_db_id {
+                    Some(db_id) => db_id,
+                    None => {
+                        if !ns_path.try_exists()? {
+                            None
+                        } else {
+                            let db_config_store = DatabaseConfigStore::load(&ns_path)
+                                .context("Could not load database config")?;
+                            let config = db_config_store.get();
+                            config.bottomless_db_id.clone()
+                        }
+                    }
+                };
+                let options = make_bottomless_options(options, bottomless_db_id, namespace);
                 let replicator = bottomless::replicator::Replicator::with_options(
                     ns_path.join("data").to_str().unwrap(),
                     options,
@@ -259,7 +282,12 @@ impl MakeNamespace for ReplicaNamespaceMaker {
         Namespace::new_replica(&self.config, name, allow_creation, reset).await
     }
 
-    async fn destroy(&self, namespace: NamespaceName, _prune_all: bool) -> crate::Result<()> {
+    async fn destroy(
+        &self,
+        namespace: NamespaceName,
+        _bottomless_db_id: Option<Option<String>>,
+        _prune_all: bool,
+    ) -> crate::Result<()> {
         let ns_path = self.config.base_path.join("dbs").join(namespace.as_str());
         tokio::fs::remove_dir_all(ns_path).await?;
         Ok(())
@@ -308,7 +336,9 @@ impl<M: MakeNamespace> NamespaceStore<M> {
 
     pub async fn destroy(&self, namespace: NamespaceName) -> crate::Result<()> {
         let mut lock = self.inner.store.write().await;
+        let mut bottomless_db_id = None;
         if let Some(ns) = lock.remove(&namespace) {
+            bottomless_db_id = Some(ns.db_config_store.get().bottomless_db_id.clone());
             // FIXME: when destroying, we are waiting for all the tasks associated with the
             // allocation to finnish, which create a lot of contention on the lock. Need to use a
             // conccurent hashmap to deal with this issue.
@@ -320,7 +350,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         // destroy on-disk database and backups
         self.inner
             .make_namespace
-            .destroy(namespace.clone(), true)
+            .destroy(namespace.clone(), bottomless_db_id, true)
             .await?;
 
         tracing::info!("destroyed namespace: {namespace}");
@@ -346,7 +376,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         // destroy on-disk database
         self.inner
             .make_namespace
-            .destroy(namespace.clone(), false)
+            .destroy(namespace.clone(), None, false)
             .await?;
         let ns = self
             .inner
@@ -364,6 +394,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         Ok(())
     }
 
+    // This is only called on replica
     fn make_reset_cb(&self) -> ResetCb {
         let this = self.clone();
         Box::new(move |op| {
