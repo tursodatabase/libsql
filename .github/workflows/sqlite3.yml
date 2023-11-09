@@ -3,13 +3,18 @@ name: Makefile CI with Wasm enabled
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - "libsql-sqlite3/**"
   pull_request:
+    paths:
+      - "libsql-sqlite3/**"
   merge_group:
     branches: [ "main" ]
+    paths:
+      - "libsql-sqlite3/**"
 
 jobs:
-  maketestwasm:
-
+  make-sqlite3:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -38,13 +43,4 @@ jobs:
       run: make test
 
     - name: Run Rust tests with Wasm
-      run: make rusttestwasm
-
-    - name: reconfigure with Wasm in WasmEdge mode
-      run: make clean && ./configure --enable-wasm-runtime-wasmedge
-
-    - name: Run tests
-      run: make test
-
-    - name: Run tests with Wasm
       run: make rusttestwasm
