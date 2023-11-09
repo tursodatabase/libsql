@@ -1,5 +1,5 @@
-C Fixes:\s\s(1)\sIn\sthe\s->>\sfunction,\sinstead\sof\ssetting\sa\ssubtype\sand\sclearing\sit,\ndo\snot\sset\sit\sin\sthe\sfirst\splace,\sas\sdoing\sthe\sset\swould\strigger\san\serror\nunder\sSQLITE_STRICT_SUBTYPE.\s\s(2)\sAllow\sthe\sSQLITE_STRICT_SUBTYPE\sthrough\nthe\sproperty\sfilter\son\ssqlite3_create_function().
-D 2023-11-09T15:01:56.971
+C Futher\sdocumentation\srefinements.
+D 2023-11-09T16:52:44.766
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -726,7 +726,7 @@ F src/resolve.c d017bad7ba8e778617701a0e986fdeb393d67d6afa84fb28ef4e8b8ad2acf916
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c a19daa26e95f7245106a31f288b2f50c72d1f2cc156703f04c8c91450e111515
 F src/shell.c.in 7312c571ebf518fc8927bbb5aeb4fa67e5b0dfb2adae4258dcd1ccae42c11e1f
-F src/sqlite.h.in b6eac8ba5956af95269875a27273ab4c318d16ce4143f1d944962defce9accc6
+F src/sqlite.h.in 4f841d3d117b830ee5ee45e8d89ceff1195f3ebb72d041ace8d116ba4c103b35
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h cd171cba32c7a553e7623fbd82b68b36a1b6c81079ab963260777ea9b3abe4d9
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e98a9a65dd309f72c240e280c7bebabc58af664fae9ee0d30c3fa1c78db5bae9
-R e019c72939d4c624411f804ee942841e
+P 6195468b14f6f17ea072cf191c9ef1bd0713acd314bc6dc128be7322bfd612cc
+R d70a69270dd45a660decb50b1e7c2d52
 U drh
-Z 80a4b0d4e614ee4844ff727ed0551cab
+Z 8b58d9d66b776c4e0e8bd09f1958be56
 # Remove this line to create a well-formed Fossil manifest.
