@@ -1,5 +1,5 @@
-C Futher\sdocumentation\srefinements.
-D 2023-11-09T16:52:44.766
+C Put\san\sALWAYS\son\san\strue\sbranch.
+D 2023-11-09T17:26:39.395
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -809,7 +809,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bba7db5dae3ffe2c6b9c173fc10be4b570b125e985cb5b95a6c22716213adde4
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 8718d58065745a4b7203a6b5d7c77b00d67eaf31a66d37c54a00f47c0cd23ac5
+F src/where.c d6ac0f598e725412af5b4484fe98187a129f3c8778c7dbc18ac7477294e190ca
 F src/whereInt.h 4b38c5889514e3aead3f27d0ee9a26e47c3f150efc59e2a8b4e3bc8835e4d7a1
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6195468b14f6f17ea072cf191c9ef1bd0713acd314bc6dc128be7322bfd612cc
-R d70a69270dd45a660decb50b1e7c2d52
+P 311c2eba93097bbecfa286bbeaff9bd6fc75a238e20cd2b6f834e594032d8c59
+R 017a5657e59f3d0e3637d7716ee24315
 U drh
-Z 8b58d9d66b776c4e0e8bd09f1958be56
+Z a5d8bd3105f63db4fe25f071664830bd
 # Remove this line to create a well-formed Fossil manifest.
