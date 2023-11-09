@@ -1,15 +1,21 @@
 use anyhow::{anyhow, bail, Result};
+use bytesize::ByteSize;
 
 use super::super::{batch, stmt, ProtocolError, Version};
 use super::{proto, stream};
 use crate::auth::Authenticated;
 use crate::connection::Connection;
 
+const MAX_SQL_COUNT: usize = 50;
+const MAX_STORED_SQL_SIZE: ByteSize = ByteSize::kb(5);
+
 /// An error from executing a [`proto::StreamRequest`]
 #[derive(thiserror::Error, Debug)]
 enum StreamResponseError {
     #[error("The server already stores {count} SQL texts, it cannot store more")]
     SqlTooMany { count: usize },
+    #[error("The statement is too large to be stored: {size}/{MAX_STORED_SQL_SIZE}")]
+    SqlTooLarge { size: ByteSize },
     #[error(transparent)]
     Stmt(stmt::StmtError),
     #[error(transparent)]
@@ -107,6 +113,10 @@ async fn try_handle<D: Connection>(
                 bail!(ProtocolError::SqlExists { sql_id })
             } else if sqls.len() >= MAX_SQL_COUNT {
                 bail!(StreamResponseError::SqlTooMany { count: sqls.len() })
+            } else if req.sql.len() > MAX_STORED_SQL_SIZE.as_u64() as usize {
+                bail!(StreamResponseError::SqlTooLarge {
+                    size: ByteSize::b(req.sql.len() as _)
+                })
             }
             sqls.insert(sql_id, req.sql);
             proto::StreamResponse::StoreSql(proto::StoreSqlStreamResp {})
@@ -124,8 +134,6 @@ async fn try_handle<D: Connection>(
         }
     })
 }
-
-const MAX_SQL_COUNT: usize = 50;
 
 fn catch_stmt_error(err: anyhow::Error) -> anyhow::Error {
     match err.downcast::<stmt::StmtError>() {
@@ -147,6 +155,7 @@ impl StreamResponseError {
             Self::SqlTooMany { .. } => "SQL_STORE_TOO_MANY",
             Self::Stmt(err) => err.code(),
             Self::Batch(err) => err.code(),
+            StreamResponseError::SqlTooLarge { .. } => "SQL_STORE_TOO_LARGE",
         }
     }
 }
