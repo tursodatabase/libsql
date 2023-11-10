@@ -290,5 +290,23 @@ do_execsql_test 11.3 {
   SELECT * FROM t1 LEFT JOIN t2 RIGHT JOIN t3 ON (t2.c=10) WHERE t1.a=1
 } {}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 12.1 {
+  CREATE TABLE t1(a1 INT, b1 TEXT);
+  INSERT INTO t1 VALUES(88,'');
+  CREATE TABLE t2(c2 INT, d2 TEXT);
+  INSERT INTO t2 VALUES(88,'');
+  CREATE TABLE t3(e3 TEXT PRIMARY KEY);
+  INSERT INTO t3 VALUES('');
+}
+
+do_execsql_test 12.2 {
+  SELECT * FROM t1 LEFT JOIN t2 ON true RIGHT JOIN t3 ON d2=e3 WHERE c2 BETWEEN NULL AND a1;
+}
+do_execsql_test 12.3 {
+  SELECT * FROM t1 LEFT JOIN t2 ON true RIGHT JOIN t3 ON d2=e3 WHERE c2 BETWEEN NULL AND a1;
+}
 
 finish_test

@@ -7416,7 +7416,7 @@ int sqlite3Select(
             }
           }
         }
-        for(j=pTabList->nSrc-1; j>=i; j--){
+        for(j=pTabList->nSrc-1; j>=0; j--){
           pTabList->a[j].fg.jointype &= ~JT_LTORJ;
           if( pTabList->a[j].fg.jointype & JT_RIGHT ) break;
         }
