@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\sALWAYS()\sthat\swas\sinserted\syesterday\s[1e039b6eb59c0001].
-D 2023-11-10T20:35:59.820
+C Additional\sdebugging\sinformation\son\sthe\stree-dump\sof\sthe\sBETWEEN\soperator.
+D 2023-11-10T20:46:58.376
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -787,7 +787,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 23d9f4539880b40226254ad9072f4ecf12eb1902e62aea47aac29928afafcfd5
-F src/treeview.c 62fafcd31eea60b718f8daf448116b7b19f90134ebc6c20777ddbb07f56a3d28
+F src/treeview.c c6fc972683fd00f975d8b32a81c1f25d2fb7d4035366bf45c9f5622d3ccd70ee
 F src/trigger.c 0905b96b04bb6658509f711a8207287f1315cdbc3df1a1b13ba6483c8e341c81
 F src/update.c 6904814dd62a7a93bbb86d9f1419c7f134a9119582645854ab02b36b676d9f92
 F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac39800bb2685fa287c7d834faed75f0bc61320ef986de314392d6eadb574d30
-R ab374843bab00dc7e7d0efa052218f4c
+P 12885e298b9d3f977f1de11a194692dfb5fbb7daeabd958674f884a5575ddd24
+R c3f7aa166734d4220835a7bad8ba4679
 U drh
-Z 6634464e9b33a08cf926f1b7b363008f
+Z 09fad8e886637b8c34b5cfcae694bf8a
 # Remove this line to create a well-formed Fossil manifest.
