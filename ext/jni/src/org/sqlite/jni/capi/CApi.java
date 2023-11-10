@@ -2447,8 +2447,9 @@ public final class CApi {
   // udf flags
   public static final int SQLITE_DETERMINISTIC =  0x000000800;
   public static final int SQLITE_DIRECTONLY    =  0x000080000;
-  public static final int SQLITE_RESULT_SUBTYPE = 0x001000000;
+  public static final int SQLITE_SUBTYPE =        0x000100000;
   public static final int SQLITE_INNOCUOUS     =  0x000200000;
+  public static final int SQLITE_RESULT_SUBTYPE = 0x001000000;
 
   // virtual tables
   public static final int SQLITE_INDEX_SCAN_UNIQUE = 1;

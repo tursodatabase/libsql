@@ -25,6 +25,7 @@ public interface SqlFunction  {
   public static final int DETERMINISTIC = CApi.SQLITE_DETERMINISTIC;
   public static final int INNOCUOUS = CApi.SQLITE_INNOCUOUS;
   public static final int DIRECTONLY = CApi.SQLITE_DIRECTONLY;
+  public static final int SUBTYPE = CApi.SQLITE_SUBTYPE;
   public static final int RESULT_SUBTYPE = CApi.SQLITE_RESULT_SUBTYPE;
   public static final int UTF8 = CApi.SQLITE_UTF8;
   public static final int UTF16 = CApi.SQLITE_UTF16;
