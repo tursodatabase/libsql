@@ -705,6 +705,8 @@ extern "C" {
 #define org_sqlite_jni_capi_CApi_SQLITE_DETERMINISTIC 2048L
 #undef org_sqlite_jni_capi_CApi_SQLITE_DIRECTONLY
 #define org_sqlite_jni_capi_CApi_SQLITE_DIRECTONLY 524288L
+#undef org_sqlite_jni_capi_CApi_SQLITE_RESULT_SUBTYPE
+#define org_sqlite_jni_capi_CApi_SQLITE_RESULT_SUBTYPE 16777216L
 #undef org_sqlite_jni_capi_CApi_SQLITE_INNOCUOUS
 #define org_sqlite_jni_capi_CApi_SQLITE_INNOCUOUS 2097152L
 #undef org_sqlite_jni_capi_CApi_SQLITE_INDEX_SCAN_UNIQUE
