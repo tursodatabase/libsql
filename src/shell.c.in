@@ -1311,7 +1311,11 @@ static void shellDtostr(
   char z[400];
   if( n<1 ) n = 1;
   if( n>350 ) n = 350;
+#if defined(_MSC_VER)
+  _snprintf(z, sizeof(z)-2, "%#+.*e", n, r);
+#else
   snprintf(z, sizeof(z)-1, "%#+.*e", n, r);
+#endif
   sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
 }
 

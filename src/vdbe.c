@@ -8340,6 +8340,7 @@ case OP_VColumn: {           /* ncycle */
   sContext.pOut = pDest;
   sContext.enc = encoding;
   nullFunc.pUserData = 0;
+  nullFunc.funcFlags = SQLITE_RESULT_SUBTYPE;
   sContext.pFunc = &nullFunc;
   assert( pOp->p5==OPFLAG_NOCHNG || pOp->p5==0 );
   if( pOp->p5 & OPFLAG_NOCHNG ){

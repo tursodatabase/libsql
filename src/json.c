@@ -593,7 +593,7 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
   u32 i;
   jsonAppendChar(p, '"');
   while( N>0 ){
-    for(i=0; i<N && zIn[i]!='\\'; i++){}
+    for(i=0; i<N && zIn[i]!='\\' && zIn[i]!='"'; i++){}
     if( i>0 ){
       jsonAppendRawNZ(p, zIn, i);
       if( i>=N ) break;
@@ -603,6 +603,12 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
     if( N<2 ){
       p->eErr |= JSTRING_MALFORMED;
       break;
+    }
+    if( zIn[0]=='"' ){
+      jsonAppendRawNZ(p, "\\\"", 2);
+      zIn++;
+      N--;
+      continue;
     }
     assert( zIn[0]=='\\' );
     switch( (u8)zIn[1] ){
@@ -1031,7 +1037,8 @@ static void jsonReturnNodeAsJson(
   JsonParse *pParse,          /* The complete JSON */
   JsonNode *pNode,            /* Node to return */
   sqlite3_context *pCtx,      /* Return value for this function */
-  int bGenerateAlt            /* Also store the rendered text in zAlt */
+  int bGenerateAlt,           /* Also store the rendered text in zAlt */
+  int omitSubtype             /* Do not call sqlite3_result_subtype() */
 ){
   int flags;
   JsonString s;
@@ -1061,7 +1068,7 @@ static void jsonReturnNodeAsJson(
       pParse->nAlt = s.nUsed;
     }
     jsonReturnString(&s);
-    sqlite3_result_subtype(pCtx, JSON_SUBTYPE);
+    if( !omitSubtype ) sqlite3_result_subtype(pCtx, JSON_SUBTYPE);
   }
 }
 
@@ -1105,7 +1112,8 @@ static u32 jsonHexToInt4(const char *z){
 static void jsonReturnFromNode(
   JsonParse *pParse,          /* Complete JSON parse tree */
   JsonNode *pNode,            /* Node to return */
-  sqlite3_context *pCtx       /* Return value for this function */
+  sqlite3_context *pCtx,      /* Return value for this function */
+  int omitSubtype             /* Do not call sqlite3_result_subtype() */
 ){
   switch( pNode->eType ){
     default: {
@@ -1259,7 +1267,7 @@ static void jsonReturnFromNode(
     }
     case JSON_ARRAY:
     case JSON_OBJECT: {
-      jsonReturnNodeAsJson(pParse, pNode, pCtx, 0);
+      jsonReturnNodeAsJson(pParse, pNode, pCtx, 0, omitSubtype);
       break;
     }
   }
@@ -4318,7 +4326,7 @@ static void jsonParseFunc(
   printf("iSubst    = %u\n", p->iSubst);
   printf("iHold     = %u\n", p->iHold);
   jsonDebugPrintNodeEntries(p->aNode, p->nNode);
-  jsonReturnNodeAsJson(p, p->aNode, ctx, 1);
+  jsonReturnNodeAsJson(p, p->aNode, ctx, 1, 0);
 }
 
 /*
@@ -4570,15 +4578,14 @@ static void jsonExtractFunc(
       }
       if( pNode ){
         if( flags & JSON_JSON ){
-          jsonReturnNodeAsJson(p, pNode, ctx, 0);
+          jsonReturnNodeAsJson(p, pNode, ctx, 0, 0);
         }else{
-          jsonReturnFromNode(p, pNode, ctx);
-          sqlite3_result_subtype(ctx, 0);
+          jsonReturnFromNode(p, pNode, ctx, 1);
         }
       }
     }else{
       pNode = jsonLookup(p, zPath, 0, ctx);
-      if( p->nErr==0 && pNode ) jsonReturnFromNode(p, pNode, ctx);
+      if( p->nErr==0 && pNode ) jsonReturnFromNode(p, pNode, ctx, 0);
     }
   }else{
     /* Two or more PATH arguments results in a JSON array with each
@@ -4710,7 +4717,7 @@ static void jsonPatchFunc(
   }else if( pResult ){
     jsonDebugPrintParse(pX);
     jsonDebugPrintNode(pResult);
-    jsonReturnNodeAsJson(pX, pResult, ctx, 0);
+    jsonReturnNodeAsJson(pX, pResult, ctx, 0, 0);
   }
 }
 
@@ -4787,7 +4794,7 @@ static void jsonRemoveFunc(
     }
   }
   if( (pParse->aNode[0].jnFlags & JNODE_REMOVE)==0 ){
-    jsonReturnNodeAsJson(pParse, pParse->aNode, ctx, 1);
+    jsonReturnNodeAsJson(pParse, pParse->aNode, ctx, 1, 0);
   }
 remove_done:
   jsonDebugPrintParse(p);
@@ -4923,7 +4930,7 @@ static void jsonReplaceFunc(
       jsonReplaceNode(ctx, pParse, (u32)(pNode - pParse->aNode), argv[i+1]);
     }
   }
-  jsonReturnNodeAsJson(pParse, pParse->aNode, ctx, 1);
+  jsonReturnNodeAsJson(pParse, pParse->aNode, ctx, 1, 0);
 replace_err:
   jsonDebugPrintParse(pParse);
   jsonParseFree(pParse);
@@ -4978,7 +4985,7 @@ static void jsonSetFunc(
     }
   }
   jsonDebugPrintParse(pParse);
-  jsonReturnNodeAsJson(pParse, pParse->aNode, ctx, 1);
+  jsonReturnNodeAsJson(pParse, pParse->aNode, ctx, 1, 0);
 jsonSetDone:
   jsonParseFree(pParse);
 }
@@ -5526,7 +5533,7 @@ static int jsonEachColumn(
     case JEACH_KEY: {
       if( p->i==0 ) break;
       if( p->eType==JSON_OBJECT ){
-        jsonReturnFromNode(&p->sParse, pThis, ctx);
+        jsonReturnFromNode(&p->sParse, pThis, ctx, 0);
       }else if( p->eType==JSON_ARRAY ){
         u32 iKey;
         if( p->bRecursive ){
@@ -5542,7 +5549,7 @@ static int jsonEachColumn(
     }
     case JEACH_VALUE: {
       if( pThis->jnFlags & JNODE_LABEL ) pThis++;
-      jsonReturnFromNode(&p->sParse, pThis, ctx);
+      jsonReturnFromNode(&p->sParse, pThis, ctx, 0);
       break;
     }
     case JEACH_TYPE: {
@@ -5553,7 +5560,7 @@ static int jsonEachColumn(
     case JEACH_ATOM: {
       if( pThis->jnFlags & JNODE_LABEL ) pThis++;
       if( pThis->eType>=JSON_ARRAY ) break;
-      jsonReturnFromNode(&p->sParse, pThis, ctx);
+      jsonReturnFromNode(&p->sParse, pThis, ctx, 0);
       break;
     }
     case JEACH_ID: {
@@ -5859,56 +5866,58 @@ static sqlite3_module jsonTreeModule = {
 void sqlite3RegisterJsonFunctions(void){
 #ifndef SQLITE_OMIT_JSON
   static FuncDef aJsonFunc[] = {
-    /*                    Might return JSON text (subtype J)                 */
-    /*                                  |                                    */
-    /*              Uses cache ------,  |  ,---- Returns JSONB               */
-    /*                               |  |  |                                 */
-    /*     Number of arguments ---,  |  |  |  ,--- Flags                     */
-    /*                            |  |  |  |  |                              */
-    JFUNCTION(json,               1, 1, 1, 0, 0,          jsonRemoveFunc),
-    JFUNCTION(jsonb,              1, 1, 0, 1, 0,          jsonbFunc),
-    JFUNCTION(json_array,        -1, 0, 1, 0, 0,          jsonArrayFunc),
-    JFUNCTION(jsonb_array,       -1, 0, 0, 1, 0,          jsonArrayFunc),
-    JFUNCTION(json_array_length,  1, 1, 0, 0, 0,          jsonArrayLengthFunc),
-    JFUNCTION(json_array_length,  2, 1, 0, 0, 0,          jsonArrayLengthFunc),
-    JFUNCTION(json_error_position,1, 1, 0, 0, 0,          jsonErrorFunc),
-    JFUNCTION(json_extract,      -1, 1, 1, 0, 0,          jsonExtractFunc),
-    JFUNCTION(jsonb_extract,     -1, 1, 0, 1, 0,          jsonExtractFunc),
-    JFUNCTION(->,                 2, 1, 1, 0, JSON_JSON,  jsonExtractFunc),
-    JFUNCTION(->>,                2, 1, 0, 0, JSON_SQL,   jsonExtractFunc),
-    JFUNCTION(json_insert,       -1, 1, 1, 0, 0,          jsonSetFunc),
-    JFUNCTION(jsonb_insert,      -1, 1, 0, 1, 0,          jsonSetFunc),
-    JFUNCTION(json_object,       -1, 0, 1, 0, 0,          jsonObjectFunc),
-    JFUNCTION(jsonb_object,      -1, 0, 0, 1, 0,          jsonObjectFunc),
-    JFUNCTION(json_patch,         2, 1, 1, 0, 0,          jsonPatchFunc),
-    JFUNCTION(jsonb_patch,        2, 1, 0, 1, 0,          jsonPatchFunc),
-    JFUNCTION(json_quote,         1, 0, 1, 0, 0,          jsonQuoteFunc),
-    JFUNCTION(json_remove,       -1, 1, 1, 0, 0,          jsonRemoveFunc),
-    JFUNCTION(jsonb_remove,      -1, 1, 0, 1, 0,          jsonRemoveFunc),
-    JFUNCTION(json_replace,      -1, 1, 1, 0, 0,          jsonReplaceFunc),
-    JFUNCTION(jsonb_replace,     -1, 1, 0, 1, 0,          jsonReplaceFunc),
-    JFUNCTION(json_set,          -1, 1, 1, 0, JSON_ISSET, jsonSetFunc),
-    JFUNCTION(jsonb_set,         -1, 1, 0, 1, JSON_ISSET, jsonSetFunc),
-    JFUNCTION(json_type,          1, 1, 0, 0, 0,          jsonTypeFunc),
-    JFUNCTION(json_type,          2, 1, 0, 0, 0,          jsonTypeFunc),
-    JFUNCTION(json_valid,         1, 1, 0, 0, 0,          jsonValidFunc),
+    /*   sqlite3_result_subtype() ----,  ,--- sqlite3_value_subtype()       */
+    /*                                |  |                                  */
+    /*             Uses cache ------, |  | ,---- Returns JSONB              */
+    /*                              | |  | |                                */
+    /*     Number of arguments ---, | |  | | ,--- Flags                     */
+    /*                            | | |  | | |                              */
+    JFUNCTION(json,               1,1,1, 0,0,0,          jsonRemoveFunc),
+    JFUNCTION(jsonb,              1,1,0, 0,1,0,          jsonbFunc),
+    JFUNCTION(json_array,        -1,0,1, 1,0,0,          jsonArrayFunc),
+    JFUNCTION(jsonb_array,       -1,0,1, 1,1,0,          jsonArrayFunc),
+    JFUNCTION(json_array_length,  1,1,0, 0,0,0,          jsonArrayLengthFunc),
+    JFUNCTION(json_array_length,  2,1,0, 0,0,0,          jsonArrayLengthFunc),
+    JFUNCTION(json_error_position,1,1,0, 0,0,0,          jsonErrorFunc),
+    JFUNCTION(json_extract,      -1,1,1, 0,0,0,          jsonExtractFunc),
+    JFUNCTION(jsonb_extract,     -1,1,0, 0,1,0,          jsonExtractFunc),
+    JFUNCTION(->,                 2,1,1, 0,0,JSON_JSON,  jsonExtractFunc),
+    JFUNCTION(->>,                2,1,0, 0,0,JSON_SQL,   jsonExtractFunc),
+    JFUNCTION(json_insert,       -1,1,1, 1,0,0,          jsonSetFunc),
+    JFUNCTION(jsonb_insert,      -1,1,0, 1,1,0,          jsonSetFunc),
+    JFUNCTION(json_object,       -1,0,1, 1,0,0,          jsonObjectFunc),
+    JFUNCTION(jsonb_object,      -1,0,1, 1,1,0,          jsonObjectFunc),
+    JFUNCTION(json_patch,         2,1,1, 0,0,0,          jsonPatchFunc),
+    JFUNCTION(jsonb_patch,        2,1,0, 0,1,0,          jsonPatchFunc),
+    JFUNCTION(json_quote,         1,0,1, 1,0,0,          jsonQuoteFunc),
+    JFUNCTION(json_remove,       -1,1,1, 0,0,0,          jsonRemoveFunc),
+    JFUNCTION(jsonb_remove,      -1,1,0, 0,1,0,          jsonRemoveFunc),
+    JFUNCTION(json_replace,      -1,1,1, 1,0,0,          jsonReplaceFunc),
+    JFUNCTION(jsonb_replace,     -1,1,0, 1,1,0,          jsonReplaceFunc),
+    JFUNCTION(json_set,          -1,1,1, 1,0,JSON_ISSET, jsonSetFunc),
+    JFUNCTION(jsonb_set,         -1,1,0, 1,1,JSON_ISSET, jsonSetFunc),
+    JFUNCTION(json_type,          1,1,0, 0,0,0,          jsonTypeFunc),
+    JFUNCTION(json_type,          2,1,0, 0,0,0,          jsonTypeFunc),
+    JFUNCTION(json_valid,         1,1,0, 0,0,0,          jsonValidFunc),
 #if SQLITE_DEBUG
-    JFUNCTION(json_parse,         1, 1, 0, 0, 0,          jsonParseFunc),
-    JFUNCTION(json_test1,         1, 1, 0, 0, 0,          jsonTest1Func),
-    JFUNCTION(jsonb_test2,        1, 1, 0, 1, 0,          jsonbTest2),
+    JFUNCTION(json_parse,         1,1,0, 0,0,0,          jsonParseFunc),
+    JFUNCTION(json_test1,         1,1,0, 1,0,0,          jsonTest1Func),
+    JFUNCTION(jsonb_test2,        1,1,0, 0,1,0,          jsonbTest2),
 #endif
     WAGGREGATE(json_group_array,  1, 0, 0,
        jsonArrayStep, jsonArrayFinal, jsonArrayValue, jsonGroupInverse,
-       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC),
+       SQLITE_SUBTYPE|SQLITE_RESULT_SUBTYPE|SQLITE_UTF8|
+       SQLITE_DETERMINISTIC),
     WAGGREGATE(jsonb_group_array, 1, JSON_BLOB, 0,
        jsonArrayStep, jsonArrayFinal, jsonArrayValue, jsonGroupInverse,
-       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC),
+       SQLITE_SUBTYPE|SQLITE_RESULT_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC),
     WAGGREGATE(json_group_object, 2, 0, 0,
        jsonObjectStep, jsonObjectFinal, jsonObjectValue, jsonGroupInverse,
-       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC),
+       SQLITE_SUBTYPE|SQLITE_RESULT_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC),
     WAGGREGATE(jsonb_group_object,2, JSON_BLOB, 0,
        jsonObjectStep, jsonObjectFinal, jsonObjectValue, jsonGroupInverse,
-       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC)
+       SQLITE_SUBTYPE|SQLITE_RESULT_SUBTYPE|SQLITE_UTF8|
+       SQLITE_DETERMINISTIC)
   };
   sqlite3InsertBuiltinFuncs(aJsonFunc, ArraySize(aJsonFunc));
 #endif
