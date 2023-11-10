@@ -5062,10 +5062,13 @@ act_like_temp_file:
 */
 sqlite3_file *sqlite3_database_file_object(const char *zName){
   Pager *pPager;
+  const char *p;
   while( zName[-1]!=0 || zName[-2]!=0 || zName[-3]!=0 || zName[-4]!=0 ){
     zName--;
   }
-  pPager = *(Pager**)(zName - 4 - sizeof(Pager*));
+  p = zName - 4 - sizeof(Pager*);
+  assert( EIGHT_BYTE_ALIGNMENT(p) );
+  pPager = *(Pager**)p;
   return pPager->fd;
 }
 
