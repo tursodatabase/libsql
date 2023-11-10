@@ -7397,6 +7397,7 @@ int sqlite3Select(
           TREETRACE(0x1000,pParse,p,
                     ("LEFT-JOIN simplifies to JOIN on term %d\n",i));
           pItem->fg.jointype &= ~(JT_LEFT|JT_OUTER);
+          unsetJoinExpr(p->pWhere, pItem->iCursor, 0);
         }
       }
       if( pItem->fg.jointype & JT_LTORJ ){
@@ -7411,6 +7412,7 @@ int sqlite3Select(
               TREETRACE(0x1000,pParse,p,
                         ("RIGHT-JOIN simplifies to JOIN on term %d\n",j));
               pI2->fg.jointype &= ~(JT_RIGHT|JT_OUTER);
+              unsetJoinExpr(p->pWhere, pI2->iCursor, 1);
             }
           }
         }
@@ -7419,9 +7421,6 @@ int sqlite3Select(
           if( pTabList->a[j].fg.jointype & JT_RIGHT ) break;
         }
       }
-      assert( pItem->iCursor>=0 );
-      unsetJoinExpr(p->pWhere, pItem->iCursor,
-                    pTabList->a[0].fg.jointype & JT_LTORJ);
     }
 
     /* No further action if this term of the FROM clause is not a subquery */
