@@ -5820,7 +5820,7 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
       assert( ExprUseXList(pExpr) );
       n = ALWAYS(pExpr->x.pList) ? pExpr->x.pList->nExpr : 0;
       pDef = sqlite3FindFunction(db, pExpr->u.zToken, n, ENC(db), 0);
-      if( NEVER(pDef==0) || (pDef->funcFlags & SQLITE_RESULT_SUBTYPE)!=0 ){
+      if( pDef==0 || (pDef->funcFlags & SQLITE_RESULT_SUBTYPE)!=0 ){
         continue;
       }
     }
