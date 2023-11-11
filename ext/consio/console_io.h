@@ -9,16 +9,16 @@
 **    May you share freely, never taking more than you give.
 **
 ********************************************************************************
-** This file exposes various interfaces used for console I/O by the
-** SQLite project command-line tools. These interfaces are used at
-** either source conglomeration time, compilation time, or run time.
+** This file exposes various interfaces used for console and other I/O
+** by the SQLite project command-line tools. These interfaces are used
+** at either source conglomeration time, compilation time, or run time.
 ** This source provides for either inclusion into conglomerated,
-** "single-source" forms or separate compilation then linking. (TBD)
+** "single-source" forms or separate compilation then linking.
 **
 ** Platform dependencies are "hidden" here by various stratagems so
-** that, provided certain conditions are met, the programs using
-** this source or object code compiled from it need no explicit
-** conditional compilation in their source for their console I/O.
+** that, provided certain conditions are met, the programs using this
+** source or object code compiled from it need no explicit conditional
+** compilation in their source for their console and stream I/O.
 **
 ** The symbols and functionality exposed here are not a public API.
 ** This code may change in tandem with other project code as needed.
@@ -36,34 +36,44 @@
 #endif
 
 /* Define enum for use with following function. */
-typedef enum ConsoleStdConsStreams {
-  CSCS_NoConsole = 0,
-  CSCS_InConsole = 1, CSCS_OutConsole = 2, CSCS_ErrConsole = 4,
-  CSCS_AnyConsole = 0x7
-} ConsoleStdConsStreams;
+typedef enum StreamsAreConsole {
+  SAC_NoConsole = 0,
+  SAC_InConsole = 1, SAC_OutConsole = 2, SAC_ErrConsole = 4,
+  SAC_AnyConsole = 0x7
+} StreamsAreConsole;
 
 /*
 ** Classify the three standard I/O streams according to whether
 ** they are connected to a console attached to the process.
 **
-** Returns the bit-wise OR of CSCS_{In,Out,Err}Console values,
-** or CSCS_NoConsole if none of the streams reaches a console.
+** Returns the bit-wise OR of SAC_{In,Out,Err}Console values,
+** or SAC_NoConsole if none of the streams reaches a console.
 **
 ** This function should be called before any I/O is done with
 ** the given streams. As a side-effect, the given inputs are
 ** recorded so that later I/O operations on them may be done
 ** differently than the C library FILE* I/O would be done,
-** iff the stream is used for the I/O functions that follow.
+** iff the stream is used for the I/O functions that follow,
+** and to support the ones that use an implicit stream.
 **
 ** On some platforms, stream or console mode alteration (aka
 ** "Setup") may be made which is undone by consoleRestore().
+*/
+SQLITE_INTERNAL_LINKAGE StreamsAreConsole
+consoleClassifySetup( FILE *pfIn, FILE *pfOut, FILE *pfErr );
+/* A usual call for convenience: */
+#define SQLITE_STD_CONSOLE_INIT() consoleClassifySetup(stdin,stdout,stderr)
+
+/*
+** After an initial call to consoleClassifySetup(...), renew
+** the same setup it effected. (A call not after is an error.)
+** This will restore state altered by consoleRestore();
 **
 ** Applications which run an inferior (child) process which
 ** inherits the same I/O streams may call this function after
 ** such a process exits to guard against console mode changes.
 */
-SQLITE_INTERNAL_LINKAGE ConsoleStdConsStreams
-consoleClassifySetup( FILE *pfIn, FILE *pfOut, FILE *pfErr );
+SQLITE_INTERNAL_LINKAGE void consoleRenewSetup(void);
 
 /*
 ** Undo any side-effects left by consoleClassifySetup(...).
@@ -71,8 +81,8 @@ consoleClassifySetup( FILE *pfIn, FILE *pfOut, FILE *pfErr );
 ** This should be called after consoleClassifySetup() and
 ** before the process terminates normally. It is suitable
 ** for use with the atexit() C library procedure. After
-** this call, no I/O should be done with the console
-** until consoleClassifySetup(...) is called again.
+** this call, no console I/O should be done until one of
+** console{Classify or Renew}Setup(...) is called again.
 **
 ** Applications which run an inferior (child) process that
 ** inherits the same I/O streams might call this procedure
@@ -82,24 +92,49 @@ consoleClassifySetup( FILE *pfIn, FILE *pfOut, FILE *pfErr );
 SQLITE_INTERNAL_LINKAGE void SQLITE_CDECL consoleRestore( void );
 
 /*
-** Render output like fprintf(). If the output is going to the
+** Set stream to be used for the functions below which write
+** to "the designated X stream", where X is Output or Error.
+** Returns the previous value.
+**
+** Alternatively, pass the special value, invalidFileStream,
+** to get the designated stream value without setting it.
+**
+** Before the designated streams are set, they default to
+** those passed to consoleClassifySetup(...), and before
+** that is called they default to stdout and stderr.
+**
+** It is error to close a stream so designated, then, without
+** designating another, use the corresponding {o,e}Emit(...).
+*/
+SQLITE_INTERNAL_LINKAGE FILE *invalidFileStream;
+SQLITE_INTERNAL_LINKAGE FILE *setOutputStream(FILE *pf);
+SQLITE_INTERNAL_LINKAGE FILE *setErrorStream(FILE *pf);
+
+/*
+** Emit output like fprintf(). If the output is going to the
 ** console and translation from UTF-8 is necessary, perform
 ** the needed translation. Otherwise, write formatted output
 ** to the provided stream almost as-is, possibly with newline
 ** translation as specified by set{Binary,Text}Mode().
 */
-SQLITE_INTERNAL_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...);
-/* Like fprintfUtf8 except stream is always the recorded output. */
-SQLITE_INTERNAL_LINKAGE int printfUtf8(const char *zFormat, ...);
+SQLITE_INTERNAL_LINKAGE int fPrintfUtf8(FILE *pfO, const char *zFormat, ...);
+/* Like fPrintfUtf8 except stream is always the designated output. */
+SQLITE_INTERNAL_LINKAGE int oPrintfUtf8(const char *zFormat, ...);
+/* Like fPrintfUtf8 except stream is always the designated error. */
+SQLITE_INTERNAL_LINKAGE int ePrintfUtf8(const char *zFormat, ...);
 
 /*
-** Render output like fputs(). If the output is going to the
+** Emit output like fputs(). If the output is going to the
 ** console and translation from UTF-8 is necessary, perform
 ** the needed translation. Otherwise, write given text to the
 ** provided stream almost as-is, possibly with newline
 ** translation as specified by set{Binary,Text}Mode().
 */
-SQLITE_INTERNAL_LINKAGE int fputsUtf8(const char *z, FILE *pfO);
+SQLITE_INTERNAL_LINKAGE int fPutsUtf8(const char *z, FILE *pfO);
+/* Like fPutsUtf8 except stream is always the designated output. */
+SQLITE_INTERNAL_LINKAGE int oPutsUtf8(const char *z);
+/* Like fPutsUtf8 except stream is always the designated error. */
+SQLITE_INTERNAL_LINKAGE int ePutsUtf8(const char *z);
 
 /*
 ** Collect input like fgets(...) with special provisions for input
@@ -108,7 +143,9 @@ SQLITE_INTERNAL_LINKAGE int fputsUtf8(const char *z, FILE *pfO);
 ** translation may be done as set by set{Binary,Text}Mode(). As a
 ** convenience, pfIn==NULL is treated as stdin.
 */
-SQLITE_INTERNAL_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn);
+SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn);
+/* Like fGetsUtf8 except stream is always the designated input. */
+SQLITE_INTERNAL_LINKAGE char* iGetsUtf8(char *cBuf, int ncMax);
 
 /*
 ** Set given stream for binary mode, where newline translation is
@@ -126,10 +163,12 @@ SQLITE_INTERNAL_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn);
 SQLITE_INTERNAL_LINKAGE void setBinaryMode(FILE *, short bFlush);
 SQLITE_INTERNAL_LINKAGE void setTextMode(FILE *, short bFlush);
 
+#if 0 /* For use with line editor. (not yet used) */
 typedef struct Prompts {
   int numPrompts;
   const char **azPrompts;
 } Prompts;
+#endif
 
 /*
 ** Macros for use of a line editor.

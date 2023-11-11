@@ -9,8 +9,9 @@
 **    May you share freely, never taking more than you give.
 **
 ********************************************************************************
-** This file implements various interfaces used for console I/O by the
-** SQLite project command-line tools, as explained in console_io.h .
+** This file implements various interfaces used for console and stream I/O
+** by the SQLite project command-line tools, as explained in console_io.h .
+** Functions prefixed by "SQLITE_INTERNAL_LINKAGE" behave as described there.
 */
 
 #ifndef SQLITE_CDECL
@@ -22,11 +23,12 @@
 # include <string.h>
 # include <stdlib.h>
 # include <limits.h>
+# include <assert.h>
 # include "console_io.h"
 # include "sqlite3.h"
 #endif
 
-#if defined(_WIN32) || defined(WIN32)
+#if (defined(_WIN32) || defined(WIN32)) && !SQLITE_OS_WINRT
 # ifndef SHELL_NO_SYSINC
 #  include <io.h>
 #  include <fcntl.h>
@@ -36,7 +38,6 @@
 # endif
 # ifdef SHELL_LEGACY_CONSOLE_IO
 #  define SHELL_CON_TRANSLATE 2 /* Use UTF-8/MBCS translation for console I/O */
-extern char *sqlite3_win32_utf8_to_mbcs_v2(const char *, int);
 # else
 #  define SHELL_CON_TRANSLATE 1 /* Use WCHAR Windows APIs for console I/O */
 # endif
@@ -51,7 +52,7 @@ extern char *sqlite3_win32_utf8_to_mbcs_v2(const char *, int);
 static HANDLE handleOfFile(FILE *pf){
   int fileDesc = _fileno(pf);
   union { intptr_t osfh; HANDLE fh; } fid = {
-    (fileDesc!=-2)? _get_osfhandle(fileDesc) : (intptr_t)INVALID_HANDLE_VALUE
+    (fileDesc>=0)? _get_osfhandle(fileDesc) : (intptr_t)INVALID_HANDLE_VALUE
   };
   return fid.fh;
 }
@@ -59,35 +60,66 @@ static HANDLE handleOfFile(FILE *pf){
 
 typedef struct PerStreamTags {
 #if SHELL_CON_TRANSLATE
-  DWORD consMode;
   HANDLE hx;
+  DWORD consMode;
+#else
+  short reachesConsole;
 #endif
   FILE *pf;
 } PerStreamTags;
 
-static short fileOfConsole(FILE *pf, PerStreamTags *ppst){
+/* Define NULL-like value for things which can validly be 0. */
+#define SHELL_INVALID_FILE_PTR ((FILE *)~0)
 #if SHELL_CON_TRANSLATE
-  short rv = 0;
-  DWORD dwj;
-  HANDLE fh = handleOfFile(pf);
-  if( INVALID_HANDLE_VALUE != fh ){
-    rv = (GetFileType(fh) == FILE_TYPE_CHAR && GetConsoleMode(fh,&dwj));
-    if( rv ){
-      ppst->hx = fh;
-      ppst->pf = pf;
-      GetConsoleMode(fh, &ppst->consMode);
-    }
-  }
-  return rv;
+# define SHELL_INVALID_CONS_MODE 0xFFFF0000
+#endif
+
+#if SHELL_CON_TRANSLATE
+# define CI_INITIALIZER \
+  { INVALID_HANDLE_VALUE, SHELL_INVALID_CONS_MODE, SHELL_INVALID_FILE_PTR }
 #else
-  return (short)isatty(fileno(pf));
+# define CI_INITIALIZER { 0, SHELL_INVALID_FILE_PTR }
+#endif
+
+/* Quickly say whether a known output is going to the console. */
+static short pstReachesConsole(PerStreamTags *ppst){
+#if SHELL_CON_TRANSLATE
+  return (ppst->hx != INVALID_HANDLE_VALUE);
+#else
+  return (ppst->reachesConsole != 0);
 #endif
 }
 
-#define SHELL_INVALID_FILE_PTR ((FILE *)sizeof(FILE*))
-#define SHELL_INVALID_CONS_MODE 0xFFFF0000
+#if SHELL_CON_TRANSLATE
+static void restoreConsoleArb(PerStreamTags *ppst){
+  if( pstReachesConsole(ppst) ) SetConsoleMode(ppst->hx, ppst->consMode);
+}
+#else
+# define restoreConsoleArb(ppst)
+#endif
+
+/* Say whether FILE* appears to be a console, collect associated info. */
+static short streamOfConsole(FILE *pf, /* out */ PerStreamTags *ppst){
+#if SHELL_CON_TRANSLATE
+  short rv = 0;
+  DWORD dwCM = SHELL_INVALID_CONS_MODE;
+  HANDLE fh = handleOfFile(pf);
+  ppst->pf = pf;
+  if( INVALID_HANDLE_VALUE != fh ){
+    rv = (GetFileType(fh) == FILE_TYPE_CHAR && GetConsoleMode(fh,&dwCM));
+  }
+  ppst->hx = (rv)? fh : INVALID_HANDLE_VALUE;
+  ppst->consMode = dwCM;
+  return rv;
+#else
+  ppst->pf = pf;
+  ppst->reachesConsole = ( (short)isatty(fileno(pf)) );
+  return ppst->reachesConsole;
+#endif
+}
 
 #if SHELL_CON_TRANSLATE
+/* Define console modes for use with the Windows Console API. */
 # define SHELL_CONI_MODE \
   (ENABLE_ECHO_INPUT | ENABLE_INSERT_MODE | ENABLE_LINE_INPUT | 0x80 \
   | ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT)
@@ -96,109 +128,159 @@ static short fileOfConsole(FILE *pf, PerStreamTags *ppst){
 #endif
 
 typedef struct ConsoleInfo {
-  /* int iInitialFmode[3];
-  ** Above only needed for legacy console I/O for callable CLI.
-  ** Because that state cannot be obtained from each FILE *,
-  ** there will be no exact restoration of console state for
-  ** the CLI when built with SHELL_LEGACY_CONSOLE_IO defined.
-  */
-  PerStreamTags pst[3];
-#if SHELL_CON_TRANSLATE
-  unsigned char haveInput;
-  unsigned char outputIx;
-  unsigned char stdinEof;
-#endif
-  ConsoleStdConsStreams cscs;
+  PerStreamTags pstSetup[3];
+  PerStreamTags pstDesignated[3];
+  StreamsAreConsole sacSetup;
+  StreamsAreConsole sacDesignated;
 } ConsoleInfo;
 
-#if SHELL_CON_TRANSLATE
-# define CI_INITIALIZER \
-  {SHELL_INVALID_CONS_MODE, INVALID_HANDLE_VALUE, SHELL_INVALID_FILE_PTR }
-#else
-# define CI_INITIALIZER { SHELL_INVALID_FILE_PTR }
-#endif
+static short isValidStreamInfo(PerStreamTags *ppst){
+  return (ppst->pf != SHELL_INVALID_FILE_PTR);
+}
 
 static ConsoleInfo consoleInfo = {
-  { /* pst */ CI_INITIALIZER, CI_INITIALIZER, CI_INITIALIZER },
-#if SHELL_CON_TRANSLATE
-  0, 0, 1, /* haveInput, outputIx, stdinEof */
-#endif
-  CSCS_NoConsole
+  { /* pstSetup */ CI_INITIALIZER, CI_INITIALIZER, CI_INITIALIZER },
+  { /* pstDesignated[] */ CI_INITIALIZER, CI_INITIALIZER, CI_INITIALIZER },
+  SAC_NoConsole, SAC_NoConsole /* sacSetup, sacDesignated */
 };
+#undef SHELL_INVALID_FILE_PTR
 #undef CI_INITIALIZER
 
-SQLITE_INTERNAL_LINKAGE ConsoleStdConsStreams
+SQLITE_INTERNAL_LINKAGE FILE* invalidFileStream = (FILE *)~0;
+
+static void maybeSetupAsConsole(PerStreamTags *ppst, short odir){
+#if SHELL_CON_TRANSLATE
+  if( pstReachesConsole(ppst) ){
+    DWORD cm = odir? SHELL_CONO_MODE : SHELL_CONI_MODE;
+    SetConsoleMode(ppst->hx, cm);
+# if SHELL_CON_TRANSLATE == 2
+    _setmode(_fileno(ppst->pf), _O_TEXT);
+# endif
+  }
+#else
+  (void)ppst;
+  (void)odir;
+#endif
+}
+
+SQLITE_INTERNAL_LINKAGE void consoleRenewSetup(void){
+#if SHELL_CON_TRANSLATE
+  int ix = 0;
+  while( ix < 6 ){
+    PerStreamTags *ppst = (ix<3)?
+      &consoleInfo.pstSetup[ix] : &consoleInfo.pstDesignated[ix-3];
+    maybeSetupAsConsole(ppst, (ix % 3)>0);
+    ++ix;
+  }
+#endif
+}
+
+SQLITE_INTERNAL_LINKAGE StreamsAreConsole
 consoleClassifySetup( FILE *pfIn, FILE *pfOut, FILE *pfErr ){
-  ConsoleStdConsStreams rv = CSCS_NoConsole;
-  FILE *apf[3] = { pfIn, pfOut, pfErr };
+  StreamsAreConsole rv = SAC_NoConsole;
+  FILE* apf[3] = { pfIn, pfOut, pfErr };
   int ix;
   for( ix = 2; ix >= 0; --ix ){
-    PerStreamTags *ppst = &consoleInfo.pst[ix];
-    if( fileOfConsole(apf[ix], ppst) ){
-#if SHELL_CON_TRANSLATE
-      DWORD cm = (ix==0)? SHELL_CONI_MODE : SHELL_CONO_MODE;
-      if( ix==0 ){
-        consoleInfo.haveInput = 1;
-        consoleInfo.stdinEof = 0;
-      }else{
-        consoleInfo.outputIx |= ix;
-      }
-      SetConsoleMode(ppst->hx, cm);
-#endif
-      rv |= (CSCS_InConsole<<ix);
+    PerStreamTags *ppst = &consoleInfo.pstSetup[ix];
+    if( streamOfConsole(apf[ix], ppst) ){
+      rv |= (SAC_InConsole<<ix);
     }
+    consoleInfo.pstDesignated[ix] = *ppst;
     if( ix > 0 ) fflush(apf[ix]);
 #if SHELL_CON_TRANSLATE == 2
     _setmode(_fileno(apf[ix]), _O_TEXT);
 #endif
   }
-  consoleInfo.cscs = rv;
+  consoleInfo.sacSetup = rv;
+  consoleRenewSetup();
   return rv;
 }
 
 SQLITE_INTERNAL_LINKAGE void SQLITE_CDECL consoleRestore( void ){
-  if( consoleInfo.cscs ){
+#if SHELL_CON_TRANSLATE
+  static ConsoleInfo *pci = &consoleInfo;
+  if( pci->sacSetup ){
     int ix;
     for( ix=0; ix<3; ++ix ){
-      if( consoleInfo.cscs & (CSCS_InConsole<<ix) ){
-        PerStreamTags *ppst = &consoleInfo.pst[ix];
-#if SHELL_CON_TRANSLATE == 2
+      if( pci->sacSetup & (SAC_InConsole<<ix) ){
+        PerStreamTags *ppst = &pci->pstSetup[ix];
+# if SHELL_CON_TRANSLATE == 2
         static int tmode = _O_TEXT;
-        /* Consider: Read these modes in consoleClassifySetup somehow.
+        /* Consider: Read this mode in consoleClassifySetup somehow.
         ** A _get_fmode() call almost works. But not with gcc, yet.
         ** This has to be done to make the CLI a callable function
         ** when legacy console I/O is done. (This may never happen.)
         */
-        _setmode(_fileno(consoleInfo.pst[ix].pf), tmode);
-#endif
-#if SHELL_CON_TRANSLATE
+        _setmode(_fileno(pci->pstSetup[ix].pf), tmode);
+# endif
         SetConsoleMode(ppst->hx, ppst->consMode);
-        ppst->hx = INVALID_HANDLE_VALUE;
-#endif
-        ppst->pf = SHELL_INVALID_FILE_PTR;
       }
-      consoleInfo.cscs = CSCS_NoConsole;
-#if SHELL_CON_TRANSLATE
-      consoleInfo.stdinEof = consoleInfo.haveInput = consoleInfo.outputIx= 0;
-#endif
     }
   }
+#endif
 }
 
-static short isConOut(FILE *pf){
-  if( pf==consoleInfo.pst[1].pf ) return 1;
-  else if( pf==consoleInfo.pst[2].pf ) return 2;
-  else return 0;
+/* Say whether given FILE* is among those known, via either
+** consoleClassifySetup() or set{Output,Error}Stream, as
+** readable, and return an associated PerStreamTags pointer
+** if so. Otherwise, return 0.
+*/
+static PerStreamTags * isKnownReadable(FILE *pf){
+  static PerStreamTags *apst[] = {
+    &consoleInfo.pstDesignated[0], &consoleInfo.pstSetup[0], 0
+  };
+  int ix = 0;
+  do {
+    if( apst[ix]->pf == pf ) break;
+  } while( apst[++ix] != 0 );
+  return apst[ix];
+}
+
+/* Say whether given FILE* is among those known, via either
+** consoleClassifySetup() or set{Output,Error}Stream, as
+** writable, and return an associated PerStreamTags pointer
+** if so. Otherwise, return 0.
+*/
+static PerStreamTags * isKnownWritable(FILE *pf){
+  static PerStreamTags *apst[] = {
+    &consoleInfo.pstDesignated[1], &consoleInfo.pstDesignated[2],
+    &consoleInfo.pstSetup[1], &consoleInfo.pstSetup[2], 0
+  };
+  int ix = 0;
+  do {
+    if( apst[ix]->pf == pf ) break;
+  } while( apst[++ix] != 0 );
+  return apst[ix];
+}
+
+static FILE *designateEmitStream(FILE *pf, unsigned chix){
+  FILE *rv = consoleInfo.pstDesignated[chix].pf;
+  if( pf == invalidFileStream ) return rv;
+  else{
+    /* Setting a possibly new output stream. */
+    PerStreamTags *ppst = isKnownWritable(pf);
+    if( ppst != 0 ){
+      PerStreamTags pst = *ppst;
+      consoleInfo.pstDesignated[chix] = pst;
+    }else streamOfConsole(pf, &consoleInfo.pstDesignated[chix]);
+  }
+  return rv;
+}
+
+SQLITE_INTERNAL_LINKAGE FILE *setOutputStream(FILE *pf){
+  return designateEmitStream(pf, 1);
+}
+SQLITE_INTERNAL_LINKAGE FILE *setErrorStream(FILE *pf){
+  return designateEmitStream(pf, 2);
 }
 
 #if SHELL_CON_TRANSLATE
 static void setModeFlushQ(FILE *pf, short bFlush, int mode){
-  short ico = isConOut(pf);
-  if( ico>1 || bFlush ) fflush(pf);
+  if( bFlush ) fflush(pf);
   _setmode(_fileno(pf), mode);
 }
 #else
-# define setModeFlushQ(f, b, m) if(isConOut(f)>0||b) fflush(f)
+# define setModeFlushQ(f, b, m) if(b) fflush(f)
 #endif
 
 SQLITE_INTERNAL_LINKAGE void setBinaryMode(FILE *pf, short bFlush){
@@ -210,15 +292,15 @@ SQLITE_INTERNAL_LINKAGE void setTextMode(FILE *pf, short bFlush){
 #undef setModeFlushQ
 
 #if SHELL_CON_TRANSLATE
-/* Write plain 0-terminated output to stream known as console. */
-static int conioZstrOut(int rch, const char *z){
+/* Write plain 0-terminated output to stream known as reaching console. */
+static int conioZstrOut(PerStreamTags *ppst, const char *z){
   int rv = 0;
   if( z!=NULL && *z!=0 ){
     int nc;
     int nwc;
 # if SHELL_CON_TRANSLATE == 2
     UINT cocp = GetConsoleOutputCP();
-    FILE *pfO = consoleInfo.pst[rch].pf;
+    FILE *pfO = ppst->pf;
     if( cocp == CP_UTF8 ){
       /* This is not legacy action. But it can work better,
       ** when the console putatively can handle UTF-8. */
@@ -246,7 +328,7 @@ static int conioZstrOut(int rch, const char *z){
           }
 # elif SHELL_CON_TRANSLATE == 1
           /* Translation from UTF-8 to UTF-16, then WCHARs out. */
-          if( WriteConsoleW(consoleInfo.pst[rch].hx, zw,nwc, 0, NULL) ){
+          if( WriteConsoleW(ppst->hx, zw,nwc, 0, NULL) ){
             rv = nc;
           }
 # endif
@@ -258,42 +340,115 @@ static int conioZstrOut(int rch, const char *z){
   return rv;
 }
 
-/* For fprintfUtf8() and printfUtf8() when stream is known as console. */
-static int conioVmPrintf(int rch, const char *zFormat, va_list ap){
+/* For {f,o,e}PrintfUtf8() when stream is known to reach console. */
+static int conioVmPrintf(PerStreamTags *ppst, const char *zFormat, va_list ap){
   char *z = sqlite3_vmprintf(zFormat, ap);
-  int rv = conioZstrOut(rch, z);
+  int rv = conioZstrOut(ppst, z);
   sqlite3_free(z);
   return rv;
 }
-#endif
+#endif /* SHELL_CON_TRANSLATE */
 
-SQLITE_INTERNAL_LINKAGE int printfUtf8(const char *zFormat, ...){
+
+static PerStreamTags * getDesignatedEmitStream(FILE *pf, unsigned chix,
+                                               PerStreamTags *ppst){
+  PerStreamTags *rv = isKnownWritable(pf);
+  short isValid = (rv!=0)? isValidStreamInfo(rv) : 0;
+  if( rv != 0 && isValid ) return rv;
+  streamOfConsole(pf, ppst);
+  return ppst;
+}
+
+/* Get stream info, either for designated output or error stream when
+** chix equals 1 or 2, or for an arbitrary stream when chix == 0.
+** In either case, ppst references a caller-owned PerStreamTags
+** struct which may be filled in if none of the known writable
+** streams is being held by consoleInfo. The ppf parameter is an
+** output when chix!=0 and an input when chix==0.
+ */
+static PerStreamTags *
+getEmitStreamInfo(unsigned chix, PerStreamTags *ppst,
+                  /* in/out */ FILE **ppf){
+  PerStreamTags *ppstTry;
+  FILE *pfEmit;
+  if( chix > 0 ){
+    ppstTry = &consoleInfo.pstDesignated[chix];
+    if( !isValidStreamInfo(ppstTry) ){
+      ppstTry = &consoleInfo.pstSetup[chix];
+      pfEmit = ppst->pf;
+    }else pfEmit = ppstTry->pf;
+    if( !isValidStreamInfo(ppst) ){
+      pfEmit = (chix > 1)? stderr : stdout;
+      ppstTry = ppst;
+      streamOfConsole(pfEmit, ppstTry);
+    }
+    *ppf = pfEmit;
+  }else{
+    ppstTry = isKnownWritable(*ppf);
+    if( ppstTry != 0 ) return ppstTry;
+    streamOfConsole(*ppf, ppst);
+    return ppst;
+  }
+  return ppstTry;
+}
+
+SQLITE_INTERNAL_LINKAGE int oPrintfUtf8(const char *zFormat, ...){
   va_list ap;
   int rv;
+  FILE *pfOut;
+  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags *ppst = getEmitStreamInfo(1, &pst, &pfOut);
+
   va_start(ap, zFormat);
 #if SHELL_CON_TRANSLATE
-  if( SHELL_INVALID_FILE_PTR != consoleInfo.pst[1].pf ){
-    rv = conioVmPrintf(1, zFormat, ap);
+  if( pstReachesConsole(ppst) ){
+    rv = conioVmPrintf(ppst, zFormat, ap);
   }else{
 #endif
-    rv = vfprintf(stdout, zFormat, ap);
+    rv = vfprintf(pfOut, zFormat, ap);
 #if SHELL_CON_TRANSLATE
   }
 #endif
   va_end(ap);
   return rv;
 }
-#undef SHELL_INVALID_FILE_PTR
 
-SQLITE_INTERNAL_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...){
+SQLITE_INTERNAL_LINKAGE int ePrintfUtf8(const char *zFormat, ...){
   va_list ap;
   int rv;
+  FILE *pfErr;
+  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags *ppst = getEmitStreamInfo(2, &pst, &pfErr);
+
   va_start(ap, zFormat);
 #if SHELL_CON_TRANSLATE
-  short rch = isConOut(pfO);
-  if( rch > 0 ){
-    rv = conioVmPrintf(rch, zFormat, ap);
-  }else {
+  if( pstReachesConsole(ppst) ){
+    rv = conioVmPrintf(ppst, zFormat, ap);
+  }else{
+#endif
+    rv = vfprintf(pfErr, zFormat, ap);
+#if SHELL_CON_TRANSLATE
+  }
+#endif
+  va_end(ap);
+  return rv;
+}
+
+SQLITE_INTERNAL_LINKAGE int fPrintfUtf8(FILE *pfO, const char *zFormat, ...){
+  va_list ap;
+  int rv;
+#if SHELL_CON_TRANSLATE
+  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags *ppst = getEmitStreamInfo(0, &pst, &pfO);
+#endif
+
+  va_start(ap, zFormat);
+#if SHELL_CON_TRANSLATE
+  if( pstReachesConsole(ppst) ){
+    maybeSetupAsConsole(ppst, 1);
+    rv = conioVmPrintf(ppst, zFormat, ap);
+    if( 0 == isKnownWritable(ppst->pf) ) restoreConsoleArb(ppst);
+  }else{
 #endif
     rv = vfprintf(pfO, zFormat, ap);
 #if SHELL_CON_TRANSLATE
@@ -303,14 +458,47 @@ SQLITE_INTERNAL_LINKAGE int fprintfUtf8(FILE *pfO, const char *zFormat, ...){
   return rv;
 }
 
-SQLITE_INTERNAL_LINKAGE int fputsUtf8(const char *z, FILE *pfO){
+SQLITE_INTERNAL_LINKAGE int fPutsUtf8(const char *z, FILE *pfO){
 #if SHELL_CON_TRANSLATE
-  short rch = isConOut(pfO);
-  if( rch > 0 ){
-    return conioZstrOut(rch, z);
+  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags *ppst = getEmitStreamInfo(0, &pst, &pfO);
+  if( pstReachesConsole(ppst) ){
+    int rv;
+    maybeSetupAsConsole(ppst, 1);
+    rv = conioZstrOut(ppst, z);
+    if( 0 == isKnownWritable(ppst->pf) ) restoreConsoleArb(ppst);
+    return rv;
   }else {
 #endif
     return (fputs(z, pfO)<0)? 0 : (int)strlen(z);
+#if SHELL_CON_TRANSLATE
+  }
+#endif
+}
+
+SQLITE_INTERNAL_LINKAGE int ePutsUtf8(const char *z){
+  FILE *pfErr;
+  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags *ppst = getEmitStreamInfo(2, &pst, &pfErr);
+#if SHELL_CON_TRANSLATE
+  if( pstReachesConsole(ppst) ) return conioZstrOut(ppst, z);
+  else {
+#endif
+    return (fputs(z, pfErr)<0)? 0 : (int)strlen(z);
+#if SHELL_CON_TRANSLATE
+  }
+#endif
+}
+
+SQLITE_INTERNAL_LINKAGE int oPutsUtf8(const char *z){
+  FILE *pfOut;
+  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags *ppst = getEmitStreamInfo(1, &pst, &pfOut);
+#if SHELL_CON_TRANSLATE
+  if( pstReachesConsole(ppst) ) return conioZstrOut(ppst, z);
+  else {
+#endif
+    return (fputs(z, pfOut)<0)? 0 : (int)strlen(z);
 #if SHELL_CON_TRANSLATE
   }
 #endif
@@ -329,26 +517,25 @@ static int mbcsToUtf8InPlaceIfValid(char *pc, int nci, int nco, UINT codePage){
 }
 #endif
 
-SQLITE_INTERNAL_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
+SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
   if( pfIn==0 ) pfIn = stdin;
 #if SHELL_CON_TRANSLATE
-  if( pfIn == consoleInfo.pst[0].pf ){
+  if( pfIn == consoleInfo.pstSetup[0].pf ){
 # if SHELL_CON_TRANSLATE==1
 #  define SHELL_GULP 150 /* Count of WCHARS to be gulped at a time */
     WCHAR wcBuf[SHELL_GULP+1];
     int lend = 0, noc = 0;
-    if( consoleInfo.stdinEof ) return 0;
     if( ncMax > 0 ) cBuf[0] = 0;
     while( noc < ncMax-8-1 && !lend ){
       /* There is room for at least 2 more characters and a 0-terminator. */
       int na = (ncMax > SHELL_GULP*4+1 + noc)? SHELL_GULP : (ncMax-1 - noc)/4;
 #  undef SHELL_GULP
       DWORD nbr = 0;
-      BOOL bRC = ReadConsoleW(consoleInfo.pst[0].hx, wcBuf, na, &nbr, 0);
+      BOOL bRC = ReadConsoleW(consoleInfo.pstSetup[0].hx, wcBuf, na, &nbr, 0);
       if( bRC && nbr>0 && (wcBuf[nbr-1]&0xF800)==0xD800 ){
         /* Last WHAR read is first of a UTF-16 surrogate pair. Grab its mate. */
         DWORD nbrx;
-        bRC &= ReadConsoleW(consoleInfo.pst[0].hx, wcBuf+nbr, 1, &nbrx, 0);
+        bRC &= ReadConsoleW(consoleInfo.pstSetup[0].hx, wcBuf+nbr, 1, &nbrx, 0);
         if( bRC ) nbr += nbrx;
       }
       if( !bRC || (noc==0 && nbr==0) ) return 0;
@@ -359,23 +546,20 @@ SQLITE_INTERNAL_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
           nmb = WideCharToMultiByte(CP_UTF8, 0, wcBuf,nbr,cBuf+noc,nmb,0,0);
           noc += nmb;
           /* Fixup line-ends as coded by Windows for CR (or "Enter".)
-          ** Note that this is done without regard for any setModeText()
+          ** This is done without regard for any setMode{Text,Binary}()
           ** call that might have been done on the interactive input.
           */
           if( noc > 0 ){
             if( cBuf[noc-1]=='\n' ){
               lend = 1;
-              if( noc > 1 && cBuf[noc-2]=='\r' ){
-                cBuf[noc-2] = '\n';
-                --noc;
-              }
+              if( noc > 1 && cBuf[noc-2]=='\r' ) cBuf[--noc-1] = '\n';
             }
           }
           /* Check for ^Z (anywhere in line) too, to act as EOF. */
           while( iseg < noc ){
-            if( cBuf[iseg]==0x1a ){
-              consoleInfo.stdinEof = 1;
+            if( cBuf[iseg]=='\x1a' ){
               noc = iseg; /* Chop ^Z and anything following. */
+              lend = 1; /* Counts as end of line too. */
               break;
             }
             ++iseg;
@@ -384,9 +568,10 @@ SQLITE_INTERNAL_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
       }else break;
     }
     /* If got nothing, (after ^Z chop), must be at end-of-file. */
-    if( noc == 0 ) return 0;
-    cBuf[noc] = 0;
-    return cBuf;
+    if( noc > 0 ){
+      cBuf[noc] = 0;
+      return cBuf;
+    }else return 0;
 # elif SHELL_CON_TRANSLATE==2
     /* This is not done efficiently because it may never be used.
     ** Also, it is interactive input so it need not be fast.  */
@@ -432,7 +617,10 @@ SQLITE_INTERNAL_LINKAGE char* fgetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
           /* Treat ct as bona fide MBCS trailing byte, if valid. */
           cBuf[nco+ntb] = ct;
           nug = mbcsToUtf8InPlaceIfValid(cBuf+nco, 1+ntb, ncMax-nco-1, cicp);
-          nco += nug;
+          if( nug > 0 ){
+            nco += nug;
+            break;
+          }
         }
         if( ct < 0 ) break;
       }

@@ -25,13 +25,10 @@ public interface SqlFunction  {
   public static final int DETERMINISTIC = CApi.SQLITE_DETERMINISTIC;
   public static final int INNOCUOUS = CApi.SQLITE_INNOCUOUS;
   public static final int DIRECTONLY = CApi.SQLITE_DIRECTONLY;
+  public static final int SUBTYPE = CApi.SQLITE_SUBTYPE;
+  public static final int RESULT_SUBTYPE = CApi.SQLITE_RESULT_SUBTYPE;
   public static final int UTF8 = CApi.SQLITE_UTF8;
   public static final int UTF16 = CApi.SQLITE_UTF16;
-  // /**
-  //    For Window functions only and is not currently bound because
-  //    doing so may require exposing sqlite3_value for effective use.
-  // */
-  // public static final int SUBTYPE = CApi.SQLITE_SUBTYPE;
 
   /**
      The Arguments type is an abstraction on top of the lower-level
@@ -56,7 +53,7 @@ public interface SqlFunction  {
     */
     Arguments(sqlite3_context cx, sqlite3_value args[]){
       this.cx = cx;
-      this.args = args==null ? new sqlite3_value[0] : args;;
+      this.args = args==null ? new sqlite3_value[0] : args;
       this.length = this.args.length;
     }
 
@@ -75,6 +72,16 @@ public interface SqlFunction  {
 
     //! Returns the underlying sqlite3_context for these arguments.
     sqlite3_context getContext(){return cx;}
+
+    /**
+       Returns the Sqlite (db) object associated with this UDF call,
+       or null if the UDF is somehow called without such an object or
+       the db has been closed in an untimely manner (e.g. closed by a
+       UDF call).
+    */
+    public Sqlite getDb(){
+      return Sqlite.fromNative( CApi.sqlite3_context_db_handle(cx) );
+    }
 
     public int getArgCount(){ return args.length; }
 
@@ -107,6 +114,10 @@ public interface SqlFunction  {
     public void resultErrorCode(int rc){CApi.sqlite3_result_error_code(cx, rc);}
     public void resultObject(Object o){CApi.sqlite3_result_java_object(cx, o);}
     public void resultNull(){CApi.sqlite3_result_null(cx);}
+    /**
+       Analog to sqlite3_result_value(), using the Value object at the
+       given argument index.
+    */
     public void resultArg(int argNdx){CApi.sqlite3_result_value(cx, valueAt(argNdx));}
     public void resultSubtype(int subtype){CApi.sqlite3_result_subtype(cx, subtype);}
     public void resultZeroBlob(long n){
@@ -153,7 +164,7 @@ public interface SqlFunction  {
     }
 
     /**
-       Wrapper for a single SqlFunction argument. Primarily intended
+       Represents a single SqlFunction argument. Primarily intended
        for use with the Arguments class's Iterable interface.
     */
     public final static class Arg {

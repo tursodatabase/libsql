@@ -300,5 +300,10 @@ do_execsql_test 12.4 {
           || ' "xyz"}')->>'a';
 } xyz
 
+# 2023-11-08 forum/forumpost/ddcad3e884
+#
+do_execsql_test 13.1 {
+  SELECT json('{x:''a "b" c''}');
+} {{{"x":"a \"b\" c"}}}
 
 finish_test

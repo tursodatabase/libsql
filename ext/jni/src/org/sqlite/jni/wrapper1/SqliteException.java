@@ -50,7 +50,7 @@ public final class SqliteException extends java.lang.RuntimeException {
 
   /**
      Records the current error state of db (which must not be null and
-     must refer to an opened db object). Note that this does NOT close
+     must refer to an opened db object). Note that this does not close
      the db.
 
      Design note: closing the db on error is really only useful during
@@ -74,7 +74,7 @@ public final class SqliteException extends java.lang.RuntimeException {
   }
 
   public SqliteException(Sqlite.Stmt stmt){
-    this(stmt.db());
+    this(stmt.getDb());
   }
 
   public int errcode(){ return errCode; }

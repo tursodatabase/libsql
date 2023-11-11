@@ -19,7 +19,8 @@ package org.sqlite.jni.capi;
 public interface UpdateHookCallback extends CallbackProxy {
   /**
      Must function as described for the C-level sqlite3_update_hook()
-     callback.
+     callback. If it throws, the exception is translated into
+     a db-level error.
   */
   void call(int opId, String dbName, String tableName, long rowId);
 }

@@ -432,10 +432,8 @@ static Fts5HashEntry *fts5HashEntryMerge(
 }
 
 /*
-** Extract all tokens from hash table iHash and link them into a list
-** in sorted order. The hash table is cleared before returning. It is
-** the responsibility of the caller to free the elements of the returned
-** list.
+** Link all tokens from hash table iHash into a list in sorted order. The
+** tokens are not removed from the hash table.
 */
 static int fts5HashEntrySort(
   Fts5Hash *pHash, 

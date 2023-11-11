@@ -35,6 +35,8 @@ $(dir.bld.c):
 
 javac.flags ?= -Xlint:unchecked -Xlint:deprecation
 java.flags ?=
+javac.flags += -encoding utf8
+# -------------^^^^^^^^^^^^^^ required for Windows builds
 jnicheck ?= 1
 ifeq (1,$(jnicheck))
   java.flags += -Xcheck:jni
@@ -110,6 +112,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/annotation/%,\
   WindowFunction.java \
   XDestroyCallback.java \
   sqlite3.java \
+  sqlite3_blob.java \
   sqlite3_context.java \
   sqlite3_stmt.java \
   sqlite3_value.java \
@@ -160,12 +163,13 @@ endif
 CLASS_FILES :=
 define CLASSFILE_DEPS
 all: $(1).class
+$(1).class: $(1).java
 CLASS_FILES += $(1).class
 endef
 $(foreach B,$(basename \
   $(JAVA_FILES.main) $(JAVA_FILES.unittest) $(JAVA_FILES.tester)),\
   $(eval $(call CLASSFILE_DEPS,$(B))))
-$(CLASS_FILES): $(JAVA_FILES) $(MAKEFILE)
+$(CLASS_FILES): $(MAKEFILE)
 	$(bin.javac) $(javac.flags) -h $(dir.bld.c) -cp $(classpath) $(JAVA_FILES)
 
 #.PHONY: classfiles
@@ -227,7 +231,8 @@ SQLITE_OPT += -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_OFFSET_SQL_FUNC \
   -DSQLITE_ENABLE_PREUPDATE_HOOK \
   -DSQLITE_ENABLE_NORMALIZE \
-  -DSQLITE_ENABLE_SQLLOG
+  -DSQLITE_ENABLE_SQLLOG \
+  -DSQLITE_ENABLE_COLUMN_METADATA
 endif
 
 ifeq (1,$(opt.debug))
