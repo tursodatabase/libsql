@@ -11,7 +11,7 @@ use rustyline::history::FileHistory;
 use rustyline::{CompletionType, Config, Context, Editor};
 use rustyline_derive::{Helper, Highlighter, Hinter, Validator};
 use std::fmt::Display;
-use std::io::Write;
+use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use tabled::settings::Style;
 use tabled::Table;
@@ -351,6 +351,32 @@ impl Shell {
                 }
             }
             ".quit" => std::process::exit(0),
+            ".read" => {
+                if args.len() != 1 {
+                    writeln!(self.out, "Usage: .read FILE").unwrap();
+                    return;
+                }
+
+                let filename = args[0];
+                let reader = match std::fs::File::open(filename) {
+                    Ok(file) => BufReader::new(file),
+                    Err(_e) => {
+                        println!("Error: cannot open \"{}\"", args[0]);
+                        return;
+                    }
+                };
+                for (i, line) in reader.lines().enumerate() {
+                    let statement = line.unwrap();
+                    match self.run_statement(statement, (), false) {
+                        Ok(table) => {
+                            if !table.is_empty() {
+                                println!("{}", table);
+                            }
+                        }
+                        Err(e) => println!("Parse error near line {}: {}", i + 1, e),
+                    }
+                }
+            }
             ".show" => {
                 if !args.is_empty() {
                     writeln!(self.out, "Usage: .show").unwrap();
