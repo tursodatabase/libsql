@@ -979,7 +979,7 @@ public final class Sqlite implements AutoCloseable  {
     /** Throws if n is out of range of this statement's result column
         count. Intended to be used by the columnXyz() methods. */
     private sqlite3_stmt checkColIndex(int n){
-      if(null==stmt || n<0 || n>=columnCount()){
+      if(n<0 || n>=columnCount()){
         throw new IllegalArgumentException("Column index "+n+" is out of range.");
       }
       return thisStmt();
