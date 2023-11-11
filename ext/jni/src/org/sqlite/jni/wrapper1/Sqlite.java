@@ -937,21 +937,11 @@ public final class Sqlite implements AutoCloseable  {
   public static final class Stmt implements AutoCloseable {
     private Sqlite _db = null;
     private sqlite3_stmt stmt = null;
-    /**
-       We save the result column count in order to prevent having to
-       call into C to fetch that value every time we need to check
-       that value for the columnXyz() methods.
-
-       Design note: if this is final then we cannot zero it in
-       finalizeStmt().
-    */
-    private int resultColCount;
 
     /** Only called by the prepare() factory functions. */
     Stmt(Sqlite db, sqlite3_stmt stmt){
       this._db = db;
       this.stmt = stmt;
-      this.resultColCount = CApi.sqlite3_column_count(stmt);
       synchronized(nativeToWrapper){
         nativeToWrapper.put(this.stmt, this);
       }
@@ -986,10 +976,10 @@ public final class Sqlite implements AutoCloseable  {
       return stmt;
     }
 
-    /** Throws if n is out of range of this.resultColCount. Intended
-        to be used by the columnXyz() methods. */
+    /** Throws if n is out of range of this statement's result column
+        count. Intended to be used by the columnXyz() methods. */
     private sqlite3_stmt checkColIndex(int n){
-      if(n<0 || n>=this.resultColCount){
+      if(n<0 || n>=columnCount()){
         throw new IllegalArgumentException("Column index "+n+" is out of range.");
       }
       return thisStmt();
@@ -1013,7 +1003,6 @@ public final class Sqlite implements AutoCloseable  {
         CApi.sqlite3_finalize(stmt);
         stmt = null;
         _db = null;
-        resultColCount = 0;
       }
       return rc;
     }
@@ -1184,8 +1173,18 @@ public final class Sqlite implements AutoCloseable  {
     public String columnDeclType(int ndx){
       return CApi.sqlite3_column_decltype( checkColIndex(ndx), ndx );
     }
+    /**
+       Analog to sqlite3_column_count() but throws if this statement
+       has been finalized.
+    */
     public int columnCount(){
-      return resultColCount;
+      /* We cannot reliably cache the column count in a class
+         member because an ALTER TABLE from a separate statement
+         can invalidate that count and we have no way, short of
+         installing a COMMIT handler or the like, of knowing when
+         to re-read it. We cannot install such a handler without
+         interfering with a client's ability to do so. */
+      return CApi.sqlite3_column_count(thisStmt());
     }
     public int columnDataCount(){
       return CApi.sqlite3_data_count( thisStmt() );

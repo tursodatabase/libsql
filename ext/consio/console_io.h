@@ -136,6 +136,21 @@ SQLITE_INTERNAL_LINKAGE int oPutsUtf8(const char *z);
 /* Like fPutsUtf8 except stream is always the designated error. */
 SQLITE_INTERNAL_LINKAGE int ePutsUtf8(const char *z);
 
+#if 0
+/*
+** Emit output like fputc(), with appropriate translation(s).
+** This is not strictly needed on fully UTF-8-aware platforms.
+** It exists for sake of orthogonality and output designation.
+**
+** The routine returns an error for non-ASCII character input.
+*/
+SQLITE_INTERNAL_LINKAGE int fPutcUtf8(int ch, FILE *pfO);
+/* Like fPutcUtf8 except stream is always the designated output. */
+SQLITE_INTERNAL_LINKAGE int oPutcUtf8(int ch);
+/* Like fPutcUtf8 except stream is always the designated error. */
+SQLITE_INTERNAL_LINKAGE int ePutcUtf8(int ch);
+#endif
+
 /*
 ** Collect input like fgets(...) with special provisions for input
 ** from the console on platforms that require same. Defers to the

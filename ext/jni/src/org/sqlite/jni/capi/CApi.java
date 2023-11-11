@@ -69,7 +69,7 @@ import java.util.Arrays;
   NUL-terminated, and conversion to a Java byte array must sometimes
   be careful to add one. Functions which take a length do not require
   this so long as the length is provided. Search the CApi class
-  for "\0" for many examples.
+  for "\0" for examples.
 
   </ul>
 

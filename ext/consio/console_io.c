@@ -503,6 +503,34 @@ SQLITE_INTERNAL_LINKAGE int oPutsUtf8(const char *z){
 #endif
 }
 
+#if 0
+/* Next 3 functions could be optimized to avoid console mode futzing. */
+SQLITE_INTERNAL_LINKAGE int fPutcUtf8(int ch, FILE *pfO){
+  if( (ch & ~0x7f) != 0 ) return 0;
+  else{
+    char ac[2] = "?";
+    ac[0] = (char)ch;
+    return (fPutsUtf8(ac, pfO) > 0);
+  }
+}
+SQLITE_INTERNAL_LINKAGE int oPutcUtf8(int ch){
+  if( (ch & ~0x7f) != 0 ) return 0;
+  else{
+    char ac[2] = "?";
+    ac[0] = (char)ch;
+    return (oPutsUtf8(ac) > 0);
+  }
+}
+SQLITE_INTERNAL_LINKAGE int ePutcUtf8(int ch){
+  if( (ch & ~0x7f) != 0 ) return 0;
+  else{
+    char ac[2] = "?";
+    ac[0] = (char)ch;
+    return (ePutsUtf8(ac) > 0);
+  }
+}
+#endif
+
 #if SHELL_CON_TRANSLATE==2
 static int mbcsToUtf8InPlaceIfValid(char *pc, int nci, int nco, UINT codePage){
   WCHAR wcOneCode[2];
