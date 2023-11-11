@@ -1,5 +1,5 @@
-C Fix\sanother\sproblem\swith\smixed\sjoin\stypes\sand\sthe\sRIGHT\sJOIN\sstrength-reduction\soptimization.\s[forum:/forumpost/befdab472d\s|\sForum\spost\sbefdab472d].
-D 2023-11-10T20:55:20.957
+C Do\snot\scache\sa\sstatement's\scolumn\scount\sin\sthe\sJNI\swrapper1\sAPI\sbecause\san\sALTER\sTABLE\svia\sanother\sstatement\smay\sinvalidate\sit,\sas\sreported\sin\s[forum:6d80efd58d4591c7|forum\spost\s6d80efd58d4591c7].
+D 2023-11-11T14:43:50.704
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -251,7 +251,7 @@ F ext/jni/src/org/sqlite/jni/capi/AggregateFunction.java 0b72cdff61533b564d65b63
 F ext/jni/src/org/sqlite/jni/capi/AuthorizerCallback.java c045a5b47e02bb5f1af91973814a905f12048c428a3504fbc5266d1c1be3de5a
 F ext/jni/src/org/sqlite/jni/capi/AutoExtensionCallback.java 74cc4998a73d6563542ecb90804a3c4f4e828cb4bd69e61226d1a51f4646e759
 F ext/jni/src/org/sqlite/jni/capi/BusyHandlerCallback.java 7b8e19810c42b0ad21a04b5d8c804b32ee5905d137148703f16a75b612c380ca
-F ext/jni/src/org/sqlite/jni/capi/CApi.java 92d443b08175c798e132a312f71b1a42140c60d473d35c149e3d95a45b6550f3
+F ext/jni/src/org/sqlite/jni/capi/CApi.java bd4a6490548f913bf9719443dee3d8a233f920ed1614b622738527d746e00f5d
 F ext/jni/src/org/sqlite/jni/capi/CallbackProxy.java 57e2d275dcebe690b1fc1f3d34eb96879b2d7039bce30b563aee547bf45d8a8b
 F ext/jni/src/org/sqlite/jni/capi/CollationCallback.java e29bcfc540fdd343e2f5cca4d27235113f2886acb13380686756d5cabdfd065a
 F ext/jni/src/org/sqlite/jni/capi/CollationNeededCallback.java 5bfa226a8e7a92e804fd52d6e42b4c7b875fa7a94f8e2c330af8cc244a8920ab
@@ -296,7 +296,7 @@ F ext/jni/src/org/sqlite/jni/test-script-interpreter.md f9f25126127045d051e918fe
 F ext/jni/src/org/sqlite/jni/wrapper1/AggregateFunction.java d5c108b02afd3c63c9e5e53f71f85273c1bfdc461ae526e0a0bb2b25e4df6483
 F ext/jni/src/org/sqlite/jni/wrapper1/ScalarFunction.java 43c43adfb7866098aadaaca1620028a6ec82d5193149970019b1cce9eb59fb03
 F ext/jni/src/org/sqlite/jni/wrapper1/SqlFunction.java 27b141f5914c7cb0e40e90a301d5e05b77f3bd42236834a68031b7086381fafd
-F ext/jni/src/org/sqlite/jni/wrapper1/Sqlite.java 0ef62b43b1d6a9f044e106b56c9ea42bc7150b82ebeb79cff58f5be08cb9a435
+F ext/jni/src/org/sqlite/jni/wrapper1/Sqlite.java 08a5037aaa5bc83d87f5389adce39c747835c210c445ff02669280e5cc7ffed1
 F ext/jni/src/org/sqlite/jni/wrapper1/SqliteException.java 982538ddb4c0719ef87dfa664cd137b09890b546029a7477810bd64d4c47ee35
 F ext/jni/src/org/sqlite/jni/wrapper1/Tester2.java 40806dbbf8e120f115e33255d1813db13b40f0a598869e299a947a580429939b
 F ext/jni/src/org/sqlite/jni/wrapper1/ValueHolder.java 7b89a7391f771692c5b83b0a5b86266abe8d59f1c77d7a0eccc9b79f259d79af
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aca31e49d1d25043769544ccf2a07980c5f162a8eb2486e393bf9d9d1a394a60
-R 97cf5703d60c0dd519713f02ba70db03
-U dan
-Z e3c451988b970e006792a61910aa1f15
+P f1eae192315335d7e385b0a801a17700a9718d245bda6628518c5df9a1e9d3d6
+R 6d2e0ef8621cb43b22b4fb0195114a8a
+U stephan
+Z 23f634cb68b0506eca8a1295175f53ed
 # Remove this line to create a well-formed Fossil manifest.
