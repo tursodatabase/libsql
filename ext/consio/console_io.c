@@ -131,7 +131,6 @@ typedef struct ConsoleInfo {
   PerStreamTags pstSetup[3];
   PerStreamTags pstDesignated[3];
   StreamsAreConsole sacSetup;
-  StreamsAreConsole sacDesignated;
 } ConsoleInfo;
 
 static short isValidStreamInfo(PerStreamTags *ppst){
@@ -141,7 +140,7 @@ static short isValidStreamInfo(PerStreamTags *ppst){
 static ConsoleInfo consoleInfo = {
   { /* pstSetup */ CI_INITIALIZER, CI_INITIALIZER, CI_INITIALIZER },
   { /* pstDesignated[] */ CI_INITIALIZER, CI_INITIALIZER, CI_INITIALIZER },
-  SAC_NoConsole, SAC_NoConsole /* sacSetup, sacDesignated */
+  SAC_NoConsole /* sacSetup */
 };
 #undef SHELL_INVALID_FILE_PTR
 #undef CI_INITIALIZER
@@ -520,7 +519,8 @@ static int mbcsToUtf8InPlaceIfValid(char *pc, int nci, int nco, UINT codePage){
 SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
   if( pfIn==0 ) pfIn = stdin;
 #if SHELL_CON_TRANSLATE
-  if( pfIn == consoleInfo.pstSetup[0].pf ){
+  if( pfIn == consoleInfo.pstSetup[0].pf
+      && (consoleInfo.sacSetup & SAC_InConsole)!=0 ){
 # if SHELL_CON_TRANSLATE==1
 #  define SHELL_GULP 150 /* Count of WCHARS to be gulped at a time */
     WCHAR wcBuf[SHELL_GULP+1];
