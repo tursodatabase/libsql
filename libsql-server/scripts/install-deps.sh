@@ -15,7 +15,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
       libpq-dev \
       libsqlite3-dev \
       nodejs \
-      protobuf-compiler 
+      protobuf-compiler
   elif [ "$ID" = "fedora" ]; then
     dnf install -y \
       libpq-devel \
@@ -26,8 +26,18 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
       rubygem-bundler \
       rubygem-sqlite3 \
       ruby-devel
+  elif [ "$ID" = "rocky" ] || [ "$VERION_ID" = "9.2" ]; then
+    dnf install -y \
+      libpq-devel \
+      libsqlite3x-devel \
+      nodejs \
+      npm \
+      protobuf-compiler \
+      rubygem-bundler \
+      rubygem-sqlite3 \
+      ruby-devel
   else
-    echo "Linux distribution $ID is not supported by this installer."
+    echo "Linux distribution $ID-$VERSION_ID is not supported by this installer."
   fi
 elif [[ "$OSTYPE" == "darwin"* ]]; then
   brew install protobuf
