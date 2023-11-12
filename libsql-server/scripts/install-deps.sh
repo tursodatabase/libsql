@@ -26,7 +26,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
       rubygem-bundler \
       rubygem-sqlite3 \
       ruby-devel
-  elif [ "$ID" = "rocky" ] || [ "$VERION_ID" = "9.2" ]; then
+  elif [ "$ID" = "rocky" ] && [ "$VERION_ID" = "9.2" ]; then
     dnf install -y \
       libpq-devel \
       libsqlite3x-devel \
