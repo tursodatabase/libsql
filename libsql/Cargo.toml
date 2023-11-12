@@ -88,6 +88,8 @@ hrana = [
   "serde",
   "dep:base64",
   "dep:serde_json",
+  "dep:sqlite3-parser",
+  "dep:fallible-iterator"
 ]
 serde = ["dep:serde"]
 remote = [

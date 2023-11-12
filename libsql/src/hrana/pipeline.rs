@@ -1,6 +1,6 @@
 // https://github.com/libsql/sqld/blob/main/docs/HTTP_V2_SPEC.md
 
-use super::proto::{Batch, BatchResult, DescribeResult, Error, Stmt, StmtResult};
+use super::proto::{Batch, BatchResult, Error, Stmt, StmtResult};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Debug)]
@@ -22,11 +22,11 @@ pub enum StreamRequest {
     Close,
     Execute(StreamExecuteReq),
     Batch(StreamBatchReq),
-    Sequence(StreamSequenceReq),
-    Describe(StreamDescribeReq),
-    StoreSql(StreamStoreSqlReq),
-    CloseSql(StreamCloseSqlReq),
-    GetAutocommit,
+    // TODO: implement
+    //    Sequence(Sequence),
+    //    Describe(Describe),
+    //    StoreSql(StoreSql),
+    //    CloseSql(CloseSql),
 }
 
 #[derive(Serialize, Debug)]
@@ -37,29 +37,6 @@ pub struct StreamExecuteReq {
 #[derive(Serialize, Debug)]
 pub struct StreamBatchReq {
     pub batch: Batch,
-}
-
-#[derive(Serialize, Debug)]
-pub struct StreamSequenceReq {
-    pub sql: Option<String>,
-    pub sql_id: Option<i32>,
-}
-
-#[derive(Serialize, Debug)]
-pub struct StreamDescribeReq {
-    pub sql: Option<String>,
-    pub sql_id: Option<i32>,
-}
-
-#[derive(Serialize, Debug)]
-pub struct StreamStoreSqlReq {
-    pub sql: String,
-    pub sql_id: i32,
-}
-
-#[derive(Serialize, Debug)]
-pub struct StreamCloseSqlReq {
-    pub sql_id: i32,
 }
 
 #[derive(Deserialize, Debug)]
@@ -85,10 +62,11 @@ pub enum StreamResponse {
     Close,
     Execute(StreamExecuteResult),
     Batch(StreamBatchResult),
-    Sequence,
-    Describe(StreamDescribeResult),
-    StoreSql,
-    CloseSql,
+    // TODO: implement
+    //    Sequence(SequenceResult),
+    //    Describe(DescribeResult),
+    //    StoreSql(StoreSqlResult),
+    //    CloseSql(CloseSqlResult),
 }
 
 #[derive(Deserialize, Debug)]
@@ -99,9 +77,4 @@ pub struct StreamExecuteResult {
 #[derive(Deserialize, Debug)]
 pub struct StreamBatchResult {
     pub result: BatchResult,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct StreamDescribeResult {
-    pub result: DescribeResult,
 }

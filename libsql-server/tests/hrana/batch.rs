@@ -75,17 +75,17 @@ fn execute_batch() {
             r#"
         begin;
         create table t(x text);
-        insert into t(x) values('hello');
+        insert into t(x) values('hello; world');
         end;"#,
         )
         .await?;
         let mut rows = conn
-            .query("select * from t where x = ?", params!["hello"])
+            .query("select * from t where x = ?", params!["hello; world"])
             .await?;
 
         assert_eq!(rows.column_count(), 1);
         assert_eq!(rows.column_name(0), Some("x"));
-        assert_eq!(rows.next()?.unwrap().get::<String>(0)?, "hello");
+        assert_eq!(rows.next()?.unwrap().get::<String>(0)?, "hello; world");
         assert!(rows.next()?.is_none());
 
         Ok(())
