@@ -45,6 +45,11 @@
 #endif
 
 #if SHELL_CON_TRANSLATE
+/* Character used to represent a known-incomplete UTF-8 char group (�) */
+static WCHAR cBadGroup = 0xfffd;
+#endif
+
+#if SHELL_CON_TRANSLATE
 static HANDLE handleOfFile(FILE *pf){
   int fileDesc = _fileno(pf);
   union { intptr_t osfh; HANDLE fh; } fid = {
@@ -58,6 +63,7 @@ typedef struct PerStreamTags {
 #if SHELL_CON_TRANSLATE
   HANDLE hx;
   DWORD consMode;
+  char acIncomplete[4];
 #else
   short reachesConsole;
 #endif
@@ -71,8 +77,8 @@ typedef struct PerStreamTags {
 #endif
 
 #if SHELL_CON_TRANSLATE
-# define CI_INITIALIZER \
-  { INVALID_HANDLE_VALUE, SHELL_INVALID_CONS_MODE, SHELL_INVALID_FILE_PTR }
+# define CI_INITIALIZER { INVALID_HANDLE_VALUE, SHELL_INVALID_CONS_MODE, \
+      {0,0,0,0}, SHELL_INVALID_FILE_PTR }
 #else
 # define CI_INITIALIZER { 0, SHELL_INVALID_FILE_PTR }
 #endif
