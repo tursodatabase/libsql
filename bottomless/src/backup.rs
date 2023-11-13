@@ -74,10 +74,11 @@ impl WalCopier {
             let mut meta_file = tokio::fs::File::create(&meta_path).await?;
             let buf = {
                 let page_size = wal.page_size();
-                let crc = wal.checksum();
+                let (checksum_1, checksum_2) = wal.checksum();
                 let mut buf = [0u8; 12];
                 buf[0..4].copy_from_slice(page_size.to_be_bytes().as_slice());
-                buf[4..].copy_from_slice(crc.to_be_bytes().as_slice());
+                buf[4..8].copy_from_slice(checksum_1.to_be_bytes().as_slice());
+                buf[8..12].copy_from_slice(checksum_2.to_be_bytes().as_slice());
                 buf
             };
             meta_file.write_all(buf.as_ref()).await?;
