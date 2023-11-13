@@ -40,6 +40,16 @@ macro_rules! cfg_replication {
     }
 }
 
+macro_rules! cfg_parser {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "parser")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "parser")))]
+            $item
+        )*
+    }
+}
+
 macro_rules! cfg_hrana {
     ($($item:item)*) => {
         $(
