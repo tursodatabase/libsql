@@ -129,6 +129,7 @@ where
         .with_graceful_shutdown(shutdown.notified())
         .await
         .context("Could not bind admin HTTP API server")?;
+
     Ok(())
 }
 

@@ -576,7 +576,9 @@ impl Namespace<ReplicaDatabase> {
 
         // force a handshake now, to retrieve the primary's current replication index
         match replicator.try_perform_handshake().await {
-            Err(libsql_replication::replicator::Error::Meta(libsql_replication::meta::Error::LogIncompatible)) => {
+            Err(libsql_replication::replicator::Error::Meta(
+                libsql_replication::meta::Error::LogIncompatible,
+            )) => {
                 tracing::error!("trying to replicate incompatible logs, reseting replica");
                 (reset)(ResetOp::Reset(name.clone()));
             }
