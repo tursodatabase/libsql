@@ -235,7 +235,8 @@ fn replica_primary_reset() {
     });
 
     sim.client("client", async move {
-        let primary = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let primary =
+            Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = primary.connect()?;
 
         // insert a few valued into the primary
@@ -247,7 +248,14 @@ fn replica_primary_reset() {
         }
 
         let tmp = tempdir().unwrap();
-        let replica = Database::open_with_remote_sync_connector(tmp.path().join("data").display().to_string(), "http://primary:8080", "", TurmoilConnector).await.unwrap();
+        let replica = Database::open_with_remote_sync_connector(
+            tmp.path().join("data").display().to_string(),
+            "http://primary:8080",
+            "",
+            TurmoilConnector,
+        )
+        .await
+        .unwrap();
         let replica_index = replica.sync().await.unwrap().unwrap();
         let primary_index = Client::new()
             .get("http://primary:9090/v1/namespaces/default/stats")
@@ -262,16 +270,47 @@ fn replica_primary_reset() {
 
         assert_eq!(replica_index, primary_index);
 
-        let replica_count = *replica.connect().unwrap().query("select count(*) from test", ()).await.unwrap().next().unwrap().unwrap().get_value(0).unwrap().as_integer().unwrap();
-        let primary_count = *primary.connect().unwrap().query("select count(*) from test", ()).await.unwrap().next().unwrap().unwrap().get_value(0).unwrap().as_integer().unwrap();
+        let replica_count = *replica
+            .connect()
+            .unwrap()
+            .query("select count(*) from test", ())
+            .await
+            .unwrap()
+            .next()
+            .unwrap()
+            .unwrap()
+            .get_value(0)
+            .unwrap()
+            .as_integer()
+            .unwrap();
+        let primary_count = *primary
+            .connect()
+            .unwrap()
+            .query("select count(*) from test", ())
+            .await
+            .unwrap()
+            .next()
+            .unwrap()
+            .unwrap()
+            .get_value(0)
+            .unwrap()
+            .as_integer()
+            .unwrap();
         assert_eq!(primary_count, replica_count);
 
         notify.notify_waiters();
         notify.notified().await;
-        
+
         // drop the replica here, to make sure not to reuse an open connection.
         drop(replica);
-        let replica = Database::open_with_remote_sync_connector(tmp.path().join("data").display().to_string(), "http://primary:8080", "", TurmoilConnector).await.unwrap();
+        let replica = Database::open_with_remote_sync_connector(
+            tmp.path().join("data").display().to_string(),
+            "http://primary:8080",
+            "",
+            TurmoilConnector,
+        )
+        .await
+        .unwrap();
         let replica_index = replica.sync().await.unwrap().unwrap();
         let primary_index = Client::new()
             .get("http://primary:9090/v1/namespaces/default/stats")
@@ -286,8 +325,32 @@ fn replica_primary_reset() {
 
         assert_eq!(replica_index, primary_index);
 
-        let replica_count = *replica.connect().unwrap().query("select count(*) from test", ()).await.unwrap().next().unwrap().unwrap().get_value(0).unwrap().as_integer().unwrap();
-        let primary_count = *primary.connect().unwrap().query("select count(*) from test", ()).await.unwrap().next().unwrap().unwrap().get_value(0).unwrap().as_integer().unwrap();
+        let replica_count = *replica
+            .connect()
+            .unwrap()
+            .query("select count(*) from test", ())
+            .await
+            .unwrap()
+            .next()
+            .unwrap()
+            .unwrap()
+            .get_value(0)
+            .unwrap()
+            .as_integer()
+            .unwrap();
+        let primary_count = *primary
+            .connect()
+            .unwrap()
+            .query("select count(*) from test", ())
+            .await
+            .unwrap()
+            .next()
+            .unwrap()
+            .unwrap()
+            .get_value(0)
+            .unwrap()
+            .as_integer()
+            .unwrap();
         assert_eq!(primary_count, replica_count);
 
         Ok(())

@@ -108,7 +108,7 @@ impl WalIndexMeta {
         Ok(())
     }
 
-    async fn flush_inner(&mut self ) -> std::io::Result<()> {
+    async fn flush_inner(&mut self) -> std::io::Result<()> {
         if let Some(data) = self.data {
             // FIXME: we can save a syscall by calling read_exact_at, but let's use tokio API for now
             self.file.seek(SeekFrom::Start(0)).await?;
