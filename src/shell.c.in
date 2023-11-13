@@ -1819,18 +1819,22 @@ static void output_quoted_escaped_string(const char *z){
   setTextMode(pfO, 1);
 }
 
-/* Like strpbrk, but with an optional limit on search length. */
-static const char *anyOfInStr(const char *s, const char *zAny, i64 n){
-  if( n<0 ) return strpbrk(s, zAny);
-  else{
-    void *pcFirst = (void*)(s+(size_t)n);
-    while(*zAny){
-      void *pc = memchr(s, *zAny&0xff, n);
-      if( pc && pc < pcFirst ) pcFirst = pc;
-      ++zAny;
+/*
+** Find earliest of chars within s specified in zAny.
+** With ns == ~0, is like strpbrk(s,zAny) and s must be 0-terminated.
+*/
+static const char *anyOfInStr(const char *s, const char *zAny, size_t ns){
+  if( ns == ~0 ) ns = strlen(s);
+  const char *pcFirst = 0;
+  while(*zAny){
+    const char *pc = (const char*)memchr(s, *zAny&0xff, ns);
+    if( pc ){
+      pcFirst = pc;
+      ns = pcFirst - s;
     }
-    return (const char*)(((const char*)pcFirst < s+(size_t)n)? pcFirst : 0);
+    ++zAny;
   }
+  return pcFirst;
 }
 /*
 ** Output the given string as a quoted according to C or TCL quoting rules.
@@ -1844,7 +1848,7 @@ static void output_c_string(const char *z){
   char cbsSay;
   oputz(zq);
   while( *z!=0 ){
-    char *pcDQBSRO = strpbrk(z, zDQBSRO);
+    const char *pcDQBSRO = anyOfInStr(z, zDQBSRO, ~0);
     const char *pcPast = z + fPutbUtf8(0, z, INT_MAX, ctrlMask);
     const char *pcEnd = (pcDQBSRO && pcDQBSRO < pcPast)? pcDQBSRO : pcPast;
     if( pcEnd > z ) oPutbUtf8(z, (int)(pcEnd-z), 0);
