@@ -136,20 +136,39 @@ SQLITE_INTERNAL_LINKAGE int oPutsUtf8(const char *z);
 /* Like fPutsUtf8 except stream is always the designated error. */
 SQLITE_INTERNAL_LINKAGE int ePutsUtf8(const char *z);
 
-#if 0
 /*
-** Emit output like fputc(), with appropriate translation(s).
-** This is not strictly needed on fully UTF-8-aware platforms.
-** It exists for sake of orthogonality and output designation.
+** Emit output like fPutsUtf8(), except that the length of the
+** accepted char or character sequence may be limited by nAccept.
 **
-** The routine returns an error for non-ASCII character input.
+** The magnitude and sign of nAccept control what nAccept limits.
+** If positive, nAccept limits the number of char's accepted.
+** If negative, it limits the number of valid input characters.
+** Obtain the behavior of {f,o,e}PutsUtf8 with nAccept==INT_MAX.
+**
+** Returns the number of accepted char values.
+**
+** When ctrlMask!=0, it specifies a set of control characters not
+** accepted as input, so that cBuf[abs(N)] on return will be one
+** of the non-accepted characters unless nAccept limited the scan.
+** Each bit in ctrlMask, 1<<cn, directs cn to not be accepted.
+**
+** The cBuf content will only be accessad up to the lesser of the
+** limits specified by nAccept or a terminator char. It need not
+** have a sentinel unless the nAccept limit exceeds the content.
+** A common sentinel is '\x00', selected with ctrlMask == 1L .
+**
+** Special-case treatment occurs when fPutbUtf8() is given a NULL
+** pfOut argument; No output is attempted, but the return value
+** will still reflect the above conditions.
 */
-SQLITE_INTERNAL_LINKAGE int fPutcUtf8(int ch, FILE *pfO);
-/* Like fPutcUtf8 except stream is always the designated output. */
-SQLITE_INTERNAL_LINKAGE int oPutcUtf8(int ch);
-/* Like fPutcUtf8 except stream is always the designated error. */
-SQLITE_INTERNAL_LINKAGE int ePutcUtf8(int ch);
-#endif
+SQLITE_INTERNAL_LINKAGE int
+fPutbUtf8(FILE *pfOut, const char *cBuf, int nAccept, long ctrlMask);
+/* Like fPutbUtf8 except stream is always the designated output. */
+SQLITE_INTERNAL_LINKAGE int
+oPutbUtf8(const char *cBuf, int nAccept, long ctrlMask);
+/* Like fPutbUtf8 except stream is always the designated error. */
+SQLITE_INTERNAL_LINKAGE int
+ePutbUtf8(const char *cBuf, int nAccept, long ctrlMask);
 
 /*
 ** Collect input like fgets(...) with special provisions for input

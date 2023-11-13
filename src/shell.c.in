@@ -1819,16 +1819,37 @@ static void output_quoted_escaped_string(const char *z){
   setTextMode(pfO, 1);
 }
 
+/* Like strpbrk, but with an optional limit on search length. */
+static const char *anyOfInStr(const char *s, const char *zAny, i64 n){
+  if( n<0 ) return strpbrk(s, zAny);
+  else{
+    void *pcFirst = (void*)(s+(size_t)n);
+    while(*zAny){
+      void *pc = memchr(s, *zAny&0xff, n);
+      if( pc && pc < pcFirst ) pcFirst = pc;
+      ++zAny;
+    }
+    return (const char*)(((const char*)pcFirst < s+(size_t)n)? pcFirst : 0);
+  }
+}
 /*
 ** Output the given string as a quoted according to C or TCL quoting rules.
 */
 static void output_c_string(const char *z){
-  unsigned int c;
+  char c;
   static const char *zq = "\"";
+  static long ctrlMask = ~0L;
+  static const char *zDQBSRO = "\"\\\x7f"; /* double-quote, backslash, rubout */
   char ace[3] = "\\?";
   char cbsSay;
   oputz(zq);
-  while( (c = *(z++))!= 0 ){
+  while( *z!=0 ){
+    char *pcDQBSRO = strpbrk(z, zDQBSRO);
+    const char *pcPast = z + fPutbUtf8(0, z, INT_MAX, ctrlMask);
+    const char *pcEnd = (pcDQBSRO && pcDQBSRO < pcPast)? pcDQBSRO : pcPast;
+    if( pcEnd > z ) oPutbUtf8(z, (int)(pcEnd-z), 0);
+    if( (c = *pcEnd)==0 ) break;
+    ++pcEnd;
     switch( c ){
     case '\\': case '"':
       cbsSay = (char)c;
@@ -1848,6 +1869,7 @@ static void output_c_string(const char *z){
       ace[1] = (char)c;
       oputz(ace+1);
     }
+    z = pcEnd;
   }
   oputz(zq);
 }
@@ -1856,14 +1878,26 @@ static void output_c_string(const char *z){
 ** Output the given string as a quoted according to JSON quoting rules.
 */
 static void output_json_string(const char *z, i64 n){
-  unsigned int c;
+  char c;
   static const char *zq = "\"";
+  static long ctrlMask = ~0L;
+  static const char *zDQBS = "\"\\";
+  const char *pcLimit;
   char ace[3] = "\\?";
   char cbsSay;
+
   if( z==0 ) z = "";
-  if( n<0 ) n = strlen(z);
+  pcLimit = z + ((n<0)? strlen(z) : (size_t)n);
   oputz(zq);
-  while( n-- ){
+  while( z < pcLimit ){
+    const char *pcDQBS = anyOfInStr(z, zDQBS, pcLimit-z);
+    const char *pcPast = z + fPutbUtf8(0, z, (int)(pcLimit-z), ctrlMask);
+    const char *pcEnd = (pcDQBS && pcDQBS < pcPast)? pcDQBS : pcPast;
+    if( pcEnd > z ){
+      oPutbUtf8(z, (int)(pcEnd-z), 0);
+      z = pcEnd;
+    }
+    if( z >= pcLimit ) break;
     c = *(z++);
     switch( c ){
     case '"': case '\\':

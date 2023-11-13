@@ -278,22 +278,20 @@ SQLITE_INTERNAL_LINKAGE void setTextMode(FILE *pf, short bFlush){
 #undef setModeFlushQ
 
 #if SHELL_CON_TRANSLATE
-/* Write plain 0-terminated output to stream known as reaching console. */
-static int conioZstrOut(PerStreamTags *ppst, const char *z){
+/* Write buffer cBuf as output to stream known to reach console,
+** limited to ncTake char's. Return ncTake on success, else 0. */
+static int conZstrEmit(PerStreamTags *ppst, const char *z, int ncTake){
   int rv = 0;
-  if( z!=NULL && *z!=0 ){
-    int nc;
-    int nwc;
-    nc = (int)strlen(z);
-    nwc = MultiByteToWideChar(CP_UTF8,0, z,nc, 0,0);
+  if( z!=NULL ){
+    int nwc = MultiByteToWideChar(CP_UTF8,0, z,ncTake, 0,0);
     if( nwc > 0 ){
       WCHAR *zw = sqlite3_malloc64(nwc*sizeof(WCHAR));
       if( zw!=NULL ){
-        nwc = MultiByteToWideChar(CP_UTF8,0, z,nc, zw,nwc);
+        nwc = MultiByteToWideChar(CP_UTF8,0, z,ncTake, zw,nwc);
         if( nwc > 0 ){
           /* Translation from UTF-8 to UTF-16, then WCHARs out. */
           if( WriteConsoleW(ppst->hx, zw,nwc, 0, NULL) ){
-            rv = nc;
+            rv = ncTake;
           }
         }
         sqlite3_free(zw);
@@ -306,9 +304,11 @@ static int conioZstrOut(PerStreamTags *ppst, const char *z){
 /* For {f,o,e}PrintfUtf8() when stream is known to reach console. */
 static int conioVmPrintf(PerStreamTags *ppst, const char *zFormat, va_list ap){
   char *z = sqlite3_vmprintf(zFormat, ap);
-  int rv = conioZstrOut(ppst, z);
-  sqlite3_free(z);
-  return rv;
+  if( z ){
+    int rv = conZstrEmit(ppst, z, (int)strlen(z));
+    sqlite3_free(z);
+    return rv;
+  }else return 0;
 }
 #endif /* SHELL_CON_TRANSLATE */
 
@@ -428,7 +428,7 @@ SQLITE_INTERNAL_LINKAGE int fPutsUtf8(const char *z, FILE *pfO){
   if( pstReachesConsole(ppst) ){
     int rv;
     maybeSetupAsConsole(ppst, 1);
-    rv = conioZstrOut(ppst, z);
+    rv = conZstrEmit(ppst, z, (int)strlen(z));
     if( 0 == isKnownWritable(ppst->pf) ) restoreConsoleArb(ppst);
     return rv;
   }else {
@@ -444,7 +444,7 @@ SQLITE_INTERNAL_LINKAGE int ePutsUtf8(const char *z){
   PerStreamTags pst; /* Needed only for heretofore unknown streams. */
   PerStreamTags *ppst = getEmitStreamInfo(2, &pst, &pfErr);
 #if SHELL_CON_TRANSLATE
-  if( pstReachesConsole(ppst) ) return conioZstrOut(ppst, z);
+  if( pstReachesConsole(ppst) ) return conZstrEmit(ppst, z, (int)strlen(z));
   else {
 #endif
     return (fputs(z, pfErr)<0)? 0 : (int)strlen(z);
@@ -458,7 +458,7 @@ SQLITE_INTERNAL_LINKAGE int oPutsUtf8(const char *z){
   PerStreamTags pst; /* Needed only for heretofore unknown streams. */
   PerStreamTags *ppst = getEmitStreamInfo(1, &pst, &pfOut);
 #if SHELL_CON_TRANSLATE
-  if( pstReachesConsole(ppst) ) return conioZstrOut(ppst, z);
+  if( pstReachesConsole(ppst) ) return conZstrEmit(ppst, z, (int)strlen(z));
   else {
 #endif
     return (fputs(z, pfOut)<0)? 0 : (int)strlen(z);
@@ -467,33 +467,96 @@ SQLITE_INTERNAL_LINKAGE int oPutsUtf8(const char *z){
 #endif
 }
 
-#if 0
-/* Next 3 functions could be optimized to avoid console mode futzing. */
-SQLITE_INTERNAL_LINKAGE int fPutcUtf8(int ch, FILE *pfO){
-  if( (ch & ~0x7f) != 0 ) return 0;
-  else{
-    char ac[2] = "?";
-    ac[0] = (char)ch;
-    return (fPutsUtf8(ac, pfO) > 0);
+/* Skip over as much z[] input char sequence as is valid UTF-8,
+** limited per nAccept char's or whole characters and containing
+** no char cn such that ((1<<cn) & ccm)!=0. On return, the
+** sequence z:return (inclusive:exclusive) is validated UTF-8.
+** Limit: nAccept>=0 => char count, nAccept<0 => character
+ */
+static const char* zSkipValidUtf8(const char *z, int nAccept, long ccm){
+  int ng = (nAccept<0)? -nAccept : 0;
+  const char *pcLimit = (nAccept>=0)? z+nAccept : 0;
+  while( (pcLimit)? (z<pcLimit) : (ng-- > 0) ){
+    char c = *z;
+    if( (c & 0x80) == 0 ){
+      if( ccm != 0L && c < 0x20 && ((1L<<c) & ccm) != 0 ) return z;
+      ++z; /* ASCII */
+    }else if( (c & 0xC0) != 0xC0 ) return z; /* not a lead byte */
+    else{
+      const char *zt = z+1; /* Got lead byte, look at trail bytes.*/
+      do{
+        if( pcLimit && zt >= pcLimit ) return z;
+        else{
+          char ct = *zt++;
+          if( ct==0 || (zt-z)>4 || (ct & 0xC0)!=0x80 ){
+            /* Trailing bytes are too few, too many, or invalid. */
+            return z;
+          }
+        }
+      } while( ((c <<= 1) & 0x40) == 0x40 ); /* Eat lead byte's count. */
+      z = zt;
+    }
   }
+  return z;
 }
-SQLITE_INTERNAL_LINKAGE int oPutcUtf8(int ch){
-  if( (ch & ~0x7f) != 0 ) return 0;
-  else{
-    char ac[2] = "?";
-    ac[0] = (char)ch;
-    return (oPutsUtf8(ac) > 0);
-  }
-}
-SQLITE_INTERNAL_LINKAGE int ePutcUtf8(int ch){
-  if( (ch & ~0x7f) != 0 ) return 0;
-  else{
-    char ac[2] = "?";
-    ac[0] = (char)ch;
-    return (ePutsUtf8(ac) > 0);
-  }
-}
+
+SQLITE_INTERNAL_LINKAGE int
+fPutbUtf8(FILE *pfO, const char *cBuf, int nAccept, long ctrlMask){
+  const char *zPast = zSkipValidUtf8(cBuf, nAccept, ctrlMask);
+  int ncConsume = (int)(zPast - cBuf);
+  if( pfO == 0 ) return ncConsume;
+#if SHELL_CON_TRANSLATE
+  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags *ppst = getEmitStreamInfo(0, &pst, &pfO);
+  if( pstReachesConsole(ppst) ){
+    int rv;
+    maybeSetupAsConsole(ppst, 1);
+    rv = conZstrEmit(ppst, cBuf, ncConsume);
+    if( 0 == isKnownWritable(ppst->pf) ) restoreConsoleArb(ppst);
+    return rv;
+  }else {
 #endif
+    return (int)fwrite(cBuf, 1, ncConsume, pfO);
+#if SHELL_CON_TRANSLATE
+  }
+#endif
+}
+
+SQLITE_INTERNAL_LINKAGE int
+oPutbUtf8(const char *cBuf, int nAccept, long ctrlMask){
+  FILE *pfOut;
+  const char *zPast = zSkipValidUtf8(cBuf, nAccept, ctrlMask);
+  int ncConsume = (int)(zPast - cBuf);
+  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags *ppst = getEmitStreamInfo(1, &pst, &pfOut);
+#if SHELL_CON_TRANSLATE
+  if( pstReachesConsole(ppst) ){
+    return conZstrEmit(ppst, cBuf, ncConsume);
+  }else {
+#endif
+    return (int)fwrite(cBuf, 1, ncConsume, pfOut);
+#if SHELL_CON_TRANSLATE
+  }
+#endif
+}
+
+SQLITE_INTERNAL_LINKAGE int
+ePutbUtf8(const char *cBuf, int nAccept, long ctrlMask){
+  FILE *pfErr;
+  const char *zPast = zSkipValidUtf8(cBuf, nAccept, ctrlMask);
+  int ncConsume = (int)(zPast - cBuf);
+  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags *ppst = getEmitStreamInfo(2, &pst, &pfErr);
+#if SHELL_CON_TRANSLATE
+  if( pstReachesConsole(ppst) ){
+    return conZstrEmit(ppst, cBuf, ncConsume);
+  }else {
+#endif
+    return (int)fwrite(cBuf, 1, ncConsume, pfErr);
+#if SHELL_CON_TRANSLATE
+  }
+#endif
+}
 
 SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
   if( pfIn==0 ) pfIn = stdin;
