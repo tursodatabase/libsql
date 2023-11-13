@@ -1483,7 +1483,7 @@ static void shellPutsFunc(
   int nVal,
   sqlite3_value **apVal
 ){
-  ShellState *p = (ShellState*)sqlite3_user_data(pCtx);
+  /* Unused: (ShellState*)sqlite3_user_data(pCtx); */
   (void)nVal;
   oputf("%s\n", sqlite3_value_text(apVal[0]));
   sqlite3_result_value(pCtx, apVal[0]);
@@ -1825,7 +1825,7 @@ static void output_quoted_escaped_string(const char *z){
 */
 static const char *anyOfInStr(const char *s, const char *zAny, size_t ns){
   const char *pcFirst = 0;
-  if( ns == ~0 ) ns = strlen(s);
+  if( ns == ~(size_t)0 ) ns = strlen(s);
   while(*zAny){
     const char *pc = (const char*)memchr(s, *zAny&0xff, ns);
     if( pc ){
@@ -1848,7 +1848,7 @@ static void output_c_string(const char *z){
   char cbsSay;
   oputz(zq);
   while( *z!=0 ){
-    const char *pcDQBSRO = anyOfInStr(z, zDQBSRO, ~0);
+    const char *pcDQBSRO = anyOfInStr(z, zDQBSRO, ~(size_t)0);
     const char *pcPast = z + fPutbUtf8(0, z, INT_MAX, ctrlMask);
     const char *pcEnd = (pcDQBSRO && pcDQBSRO < pcPast)? pcDQBSRO : pcPast;
     if( pcEnd > z ) oPutbUtf8(z, (int)(pcEnd-z), 0);
@@ -3001,7 +3001,6 @@ static void displayLinuxIoStats(void){
 ** Display a single line of status using 64-bit values.
 */
 static void displayStatLine(
-  ShellState *p,            /* The shell context */
   char *zLabel,             /* Label for this one line */
   char *zFormat,            /* Format for the result */
   int iStatusCtrl,          /* Which status to display */
@@ -3067,22 +3066,22 @@ static int display_stats(
     return 0;
   }
 
-  displayStatLine(pArg, "Memory Used:",
+  displayStatLine("Memory Used:",
      "%lld (max %lld) bytes", SQLITE_STATUS_MEMORY_USED, bReset);
-  displayStatLine(pArg, "Number of Outstanding Allocations:",
+  displayStatLine("Number of Outstanding Allocations:",
      "%lld (max %lld)", SQLITE_STATUS_MALLOC_COUNT, bReset);
   if( pArg->shellFlgs & SHFLG_Pagecache ){
-    displayStatLine(pArg, "Number of Pcache Pages Used:",
+    displayStatLine("Number of Pcache Pages Used:",
        "%lld (max %lld) pages", SQLITE_STATUS_PAGECACHE_USED, bReset);
   }
-  displayStatLine(pArg, "Number of Pcache Overflow Bytes:",
+  displayStatLine("Number of Pcache Overflow Bytes:",
      "%lld (max %lld) bytes", SQLITE_STATUS_PAGECACHE_OVERFLOW, bReset);
-  displayStatLine(pArg, "Largest Allocation:",
+  displayStatLine("Largest Allocation:",
      "%lld bytes", SQLITE_STATUS_MALLOC_SIZE, bReset);
-  displayStatLine(pArg, "Largest Pcache Allocation:",
+  displayStatLine("Largest Pcache Allocation:",
      "%lld bytes", SQLITE_STATUS_PAGECACHE_SIZE, bReset);
 #ifdef YYTRACKMAXSTACKDEPTH
-  displayStatLine(pArg, "Deepest Parser Stack:",
+  displayStatLine("Deepest Parser Stack:",
      "%lld (max %lld)", SQLITE_STATUS_PARSER_STACK, bReset);
 #endif
 

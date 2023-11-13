@@ -108,7 +108,9 @@ SQLITE_INTERNAL_LINKAGE void SQLITE_CDECL consoleRestore( void );
 */
 SQLITE_INTERNAL_LINKAGE FILE *invalidFileStream;
 SQLITE_INTERNAL_LINKAGE FILE *setOutputStream(FILE *pf);
+#ifdef CONSIO_SET_ERROR_STREAM
 SQLITE_INTERNAL_LINKAGE FILE *setErrorStream(FILE *pf);
+#endif
 
 /*
 ** Emit output like fprintf(). If the output is going to the
@@ -167,8 +169,10 @@ fPutbUtf8(FILE *pfOut, const char *cBuf, int nAccept, long ctrlMask);
 SQLITE_INTERNAL_LINKAGE int
 oPutbUtf8(const char *cBuf, int nAccept, long ctrlMask);
 /* Like fPutbUtf8 except stream is always the designated error. */
+#ifdef CONSIO_EPUTB
 SQLITE_INTERNAL_LINKAGE int
 ePutbUtf8(const char *cBuf, int nAccept, long ctrlMask);
+#endif
 
 /*
 ** Collect input like fgets(...) with special provisions for input
@@ -179,7 +183,7 @@ ePutbUtf8(const char *cBuf, int nAccept, long ctrlMask);
 */
 SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn);
 /* Like fGetsUtf8 except stream is always the designated input. */
-SQLITE_INTERNAL_LINKAGE char* iGetsUtf8(char *cBuf, int ncMax);
+/* SQLITE_INTERNAL_LINKAGE char* iGetsUtf8(char *cBuf, int ncMax); */
 
 /*
 ** Set given stream for binary mode, where newline translation is

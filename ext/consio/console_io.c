@@ -77,20 +77,24 @@ typedef struct PerStreamTags {
 #endif
 
 #if SHELL_CON_TRANSLATE
-# define CI_INITIALIZER { INVALID_HANDLE_VALUE, SHELL_INVALID_CONS_MODE, \
+# define PST_INITIALIZER { INVALID_HANDLE_VALUE, SHELL_INVALID_CONS_MODE, \
       {0,0,0,0}, SHELL_INVALID_FILE_PTR }
 #else
-# define CI_INITIALIZER { 0, SHELL_INVALID_FILE_PTR }
+# define PST_INITIALIZER { 0, SHELL_INVALID_FILE_PTR }
 #endif
 
 /* Quickly say whether a known output is going to the console. */
-static short pstReachesConsole(PerStreamTags *ppst){
 #if SHELL_CON_TRANSLATE
+static short pstReachesConsole(PerStreamTags *ppst){
+# if SHELL_CON_TRANSLATE
   return (ppst->hx != INVALID_HANDLE_VALUE);
-#else
+# else
   return (ppst->reachesConsole != 0);
-#endif
+# endif
 }
+#else
+# define pstReachesConsole(ppst) 0
+#endif
 
 #if SHELL_CON_TRANSLATE
 static void restoreConsoleArb(PerStreamTags *ppst){
@@ -140,26 +144,23 @@ static short isValidStreamInfo(PerStreamTags *ppst){
 }
 
 static ConsoleInfo consoleInfo = {
-  { /* pstSetup */ CI_INITIALIZER, CI_INITIALIZER, CI_INITIALIZER },
-  { /* pstDesignated[] */ CI_INITIALIZER, CI_INITIALIZER, CI_INITIALIZER },
+  { /* pstSetup */ PST_INITIALIZER, PST_INITIALIZER, PST_INITIALIZER },
+  { /* pstDesignated[] */ PST_INITIALIZER, PST_INITIALIZER, PST_INITIALIZER },
   SAC_NoConsole /* sacSetup */
 };
-#undef SHELL_INVALID_FILE_PTR
-#undef CI_INITIALIZER
 
 SQLITE_INTERNAL_LINKAGE FILE* invalidFileStream = (FILE *)~0;
 
-static void maybeSetupAsConsole(PerStreamTags *ppst, short odir){
 #if SHELL_CON_TRANSLATE
+static void maybeSetupAsConsole(PerStreamTags *ppst, short odir){
   if( pstReachesConsole(ppst) ){
     DWORD cm = odir? SHELL_CONO_MODE : SHELL_CONI_MODE;
     SetConsoleMode(ppst->hx, cm);
   }
-#else
-  (void)ppst;
-  (void)odir;
-#endif
 }
+#else
+# define maybeSetupAsConsole(ppst,odir)
+#endif
 
 SQLITE_INTERNAL_LINKAGE void consoleRenewSetup(void){
 #if SHELL_CON_TRANSLATE
@@ -206,6 +207,7 @@ SQLITE_INTERNAL_LINKAGE void SQLITE_CDECL consoleRestore( void ){
 #endif
 }
 
+#ifdef CONSIO_INPUT_REDIR
 /* Say whether given FILE* is among those known, via either
 ** consoleClassifySetup() or set{Output,Error}Stream, as
 ** readable, and return an associated PerStreamTags pointer
@@ -221,6 +223,7 @@ static PerStreamTags * isKnownReadable(FILE *pf){
   } while( apst[++ix] != 0 );
   return apst[ix];
 }
+#endif
 
 /* Say whether given FILE* is among those known, via either
 ** consoleClassifySetup() or set{Output,Error}Stream, as
@@ -256,9 +259,11 @@ static FILE *designateEmitStream(FILE *pf, unsigned chix){
 SQLITE_INTERNAL_LINKAGE FILE *setOutputStream(FILE *pf){
   return designateEmitStream(pf, 1);
 }
+#ifdef CONSIO_SET_ERROR_STREAM
 SQLITE_INTERNAL_LINKAGE FILE *setErrorStream(FILE *pf){
   return designateEmitStream(pf, 2);
 }
+#endif
 
 #if SHELL_CON_TRANSLATE
 static void setModeFlushQ(FILE *pf, short bFlush, int mode){
@@ -312,7 +317,7 @@ static int conioVmPrintf(PerStreamTags *ppst, const char *zFormat, va_list ap){
 }
 #endif /* SHELL_CON_TRANSLATE */
 
-
+#ifdef CONSIO_GET_EMIT_STREAM
 static PerStreamTags * getDesignatedEmitStream(FILE *pf, unsigned chix,
                                                PerStreamTags *ppst){
   PerStreamTags *rv = isKnownWritable(pf);
@@ -321,6 +326,7 @@ static PerStreamTags * getDesignatedEmitStream(FILE *pf, unsigned chix,
   streamOfConsole(pf, ppst);
   return ppst;
 }
+#endif
 
 /* Get stream info, either for designated output or error stream when
 ** chix equals 1 or 2, or for an arbitrary stream when chix == 0.
@@ -359,9 +365,12 @@ SQLITE_INTERNAL_LINKAGE int oPrintfUtf8(const char *zFormat, ...){
   va_list ap;
   int rv;
   FILE *pfOut;
-  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags pst = PST_INITIALIZER; /* for unknown streams */
+#if SHELL_CON_TRANSLATE
   PerStreamTags *ppst = getEmitStreamInfo(1, &pst, &pfOut);
-
+#else
+  getEmitStreamInfo(1, &pst, &pfOut);
+#endif
   va_start(ap, zFormat);
 #if SHELL_CON_TRANSLATE
   if( pstReachesConsole(ppst) ){
@@ -380,9 +389,12 @@ SQLITE_INTERNAL_LINKAGE int ePrintfUtf8(const char *zFormat, ...){
   va_list ap;
   int rv;
   FILE *pfErr;
-  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags pst = PST_INITIALIZER; /* for unknown streams */
+#if SHELL_CON_TRANSLATE
   PerStreamTags *ppst = getEmitStreamInfo(2, &pst, &pfErr);
-
+#else
+  getEmitStreamInfo(2, &pst, &pfErr);
+#endif
   va_start(ap, zFormat);
 #if SHELL_CON_TRANSLATE
   if( pstReachesConsole(ppst) ){
@@ -400,9 +412,11 @@ SQLITE_INTERNAL_LINKAGE int ePrintfUtf8(const char *zFormat, ...){
 SQLITE_INTERNAL_LINKAGE int fPrintfUtf8(FILE *pfO, const char *zFormat, ...){
   va_list ap;
   int rv;
+  PerStreamTags pst = PST_INITIALIZER; /* for unknown streams */
 #if SHELL_CON_TRANSLATE
-  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
   PerStreamTags *ppst = getEmitStreamInfo(0, &pst, &pfO);
+#else
+  getEmitStreamInfo(0, &pst, &pfO);
 #endif
 
   va_start(ap, zFormat);
@@ -422,9 +436,13 @@ SQLITE_INTERNAL_LINKAGE int fPrintfUtf8(FILE *pfO, const char *zFormat, ...){
 }
 
 SQLITE_INTERNAL_LINKAGE int fPutsUtf8(const char *z, FILE *pfO){
+  PerStreamTags pst = PST_INITIALIZER; /* for unknown streams */
 #if SHELL_CON_TRANSLATE
-  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
   PerStreamTags *ppst = getEmitStreamInfo(0, &pst, &pfO);
+#else
+  getEmitStreamInfo(0, &pst, &pfO);
+#endif
+#if SHELL_CON_TRANSLATE
   if( pstReachesConsole(ppst) ){
     int rv;
     maybeSetupAsConsole(ppst, 1);
@@ -441,8 +459,12 @@ SQLITE_INTERNAL_LINKAGE int fPutsUtf8(const char *z, FILE *pfO){
 
 SQLITE_INTERNAL_LINKAGE int ePutsUtf8(const char *z){
   FILE *pfErr;
-  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags pst = PST_INITIALIZER; /* for unknown streams */
+#if SHELL_CON_TRANSLATE
   PerStreamTags *ppst = getEmitStreamInfo(2, &pst, &pfErr);
+#else
+  getEmitStreamInfo(2, &pst, &pfErr);
+#endif
 #if SHELL_CON_TRANSLATE
   if( pstReachesConsole(ppst) ) return conZstrEmit(ppst, z, (int)strlen(z));
   else {
@@ -455,8 +477,12 @@ SQLITE_INTERNAL_LINKAGE int ePutsUtf8(const char *z){
 
 SQLITE_INTERNAL_LINKAGE int oPutsUtf8(const char *z){
   FILE *pfOut;
-  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags pst = PST_INITIALIZER; /* for unknown streams */
+#if SHELL_CON_TRANSLATE
   PerStreamTags *ppst = getEmitStreamInfo(1, &pst, &pfOut);
+#else
+  getEmitStreamInfo(1, &pst, &pfOut);
+#endif
 #if SHELL_CON_TRANSLATE
   if( pstReachesConsole(ppst) ) return conZstrEmit(ppst, z, (int)strlen(z));
   else {
@@ -506,7 +532,7 @@ fPutbUtf8(FILE *pfO, const char *cBuf, int nAccept, long ctrlMask){
   int ncConsume = (int)(zPast - cBuf);
   if( pfO == 0 ) return ncConsume;
 #if SHELL_CON_TRANSLATE
-  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags pst = PST_INITIALIZER; /* for unknown streams */
   PerStreamTags *ppst = getEmitStreamInfo(0, &pst, &pfO);
   if( pstReachesConsole(ppst) ){
     int rv;
@@ -527,8 +553,12 @@ oPutbUtf8(const char *cBuf, int nAccept, long ctrlMask){
   FILE *pfOut;
   const char *zPast = zSkipValidUtf8(cBuf, nAccept, ctrlMask);
   int ncConsume = (int)(zPast - cBuf);
-  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags pst = PST_INITIALIZER; /* for unknown streams */
+#if SHELL_CON_TRANSLATE
   PerStreamTags *ppst = getEmitStreamInfo(1, &pst, &pfOut);
+#else
+  getEmitStreamInfo(1, &pst, &pfOut);
+#endif
 #if SHELL_CON_TRANSLATE
   if( pstReachesConsole(ppst) ){
     return conZstrEmit(ppst, cBuf, ncConsume);
@@ -540,23 +570,25 @@ oPutbUtf8(const char *cBuf, int nAccept, long ctrlMask){
 #endif
 }
 
+#ifdef CONSIO_EPUTB
 SQLITE_INTERNAL_LINKAGE int
 ePutbUtf8(const char *cBuf, int nAccept, long ctrlMask){
   FILE *pfErr;
   const char *zPast = zSkipValidUtf8(cBuf, nAccept, ctrlMask);
   int ncConsume = (int)(zPast - cBuf);
-  PerStreamTags pst; /* Needed only for heretofore unknown streams. */
+  PerStreamTags pst = PST_INITIALIZER; /* for unknown streams */
   PerStreamTags *ppst = getEmitStreamInfo(2, &pst, &pfErr);
-#if SHELL_CON_TRANSLATE
+# if SHELL_CON_TRANSLATE
   if( pstReachesConsole(ppst) ){
     return conZstrEmit(ppst, cBuf, ncConsume);
   }else {
-#endif
+# endif
     return (int)fwrite(cBuf, 1, ncConsume, pfErr);
-#if SHELL_CON_TRANSLATE
+# if SHELL_CON_TRANSLATE
   }
-#endif
+# endif
 }
+#endif /* defined(CONSIO_EPUTB) */
 
 SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
   if( pfIn==0 ) pfIn = stdin;
@@ -622,3 +654,5 @@ SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
   }
 #endif
 }
+
+#undef SHELL_INVALID_FILE_PTR
