@@ -1824,8 +1824,8 @@ static void output_quoted_escaped_string(const char *z){
 ** With ns == ~0, is like strpbrk(s,zAny) and s must be 0-terminated.
 */
 static const char *anyOfInStr(const char *s, const char *zAny, size_t ns){
-  if( ns == ~0 ) ns = strlen(s);
   const char *pcFirst = 0;
+  if( ns == ~0 ) ns = strlen(s);
   while(*zAny){
     const char *pc = (const char*)memchr(s, *zAny&0xff, ns);
     if( pc ){
