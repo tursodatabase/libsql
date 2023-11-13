@@ -15,13 +15,14 @@
 
 /*
 ** If you found this comment by searching the code for
-** CallStaticObjectMethod then you're the victim of an OpenJDK bug:
+** CallStaticObjectMethod because it appears in console output then
+** you're probably the victim of an OpenJDK bug:
 **
 ** https://bugs.openjdk.org/browse/JDK-8130659
 **
-** It's known to happen with OpenJDK v8 but not with v19.
-**
-** This code does not use JNI's CallStaticObjectMethod().
+** It's known to happen with OpenJDK v8 but not with v19. It was
+** triggered by this code long before it made any use of
+** CallStaticObjectMethod().
 */
 
 /*
@@ -664,6 +665,7 @@ struct S3JniGlobalType {
       ByteBuffer is available (which we determine during static init).
     */
     jclass cByteBuffer       /* global ref to java.nio.ByteBuffer */;
+    jmethodID byteBufferAlloc/* ByteBuffer.allocateDirect() */;
   } g;
   /*
   ** The list of Java-side auto-extensions
@@ -1092,6 +1094,47 @@ static jstring s3jni_text16_to_jstring(JNIEnv * const env, const void * const p,
   s3jni_oom_check( p ? !!rv : 1 );
   return rv;
 }
+
+/*
+** Creates a new ByteBuffer instance with a capacity of n. assert()s
+** that SJG.g.cByteBuffer is not 0 and n>0.
+*/
+static jobject s3jni__new_ByteBuffer(JNIEnv * const env, int n){
+  jobject rv = 0;
+  assert( SJG.g.cByteBuffer );
+  assert( SJG.g.byteBufferAlloc );
+  assert( n > 0 );
+  rv = (*env)->CallStaticObjectMethod(env, SJG.g.cByteBuffer,
+                                      SJG.g.byteBufferAlloc, (jint)n);
+  S3JniIfThrew {
+    S3JniExceptionReport;
+    S3JniExceptionClear;
+  }
+  s3jni_oom_check( rv );
+  return rv;
+}
+
+/*
+** If n>0 and sqlite3_jni_supports_nio() is true then this creates a
+** new ByteBuffer object and copies n bytes from p to it. Returns NULL
+** if n is 0, sqlite3_jni_supports_nio() is false, or on allocation
+** error (unless fatal alloc failures are enabled).
+*/
+static jobject s3jni__blob_to_ByteBuffer(JNIEnv * const env,
+                                         const void * p, int n){
+  jobject rv = NULL;
+  assert( n >= 0 );
+  if( 0==n || !SJG.g.cByteBuffer ){
+    return NULL;
+  }
+  rv = s3jni__new_ByteBuffer(env, n);
+  if( rv ){
+    void * tgt = (*env)->GetDirectBufferAddress(env, rv);
+    memcpy(tgt, p, (size_t)n);
+  }
+  return rv;
+}
+
 
 /*
 ** Requires jx to be a Throwable. Calls its toString() method and
@@ -1936,7 +1979,7 @@ static void udf_unargs(JNIEnv *env, jobject jCx, int argc, jobjectArray jArgv){
   NativePointerHolder_set(S3JniNph(sqlite3_context), jCx, 0);
   for( ; i < argc; ++i ){
     jobject jsv = (*env)->GetObjectArrayElement(env, jArgv, i);
-    assert(jsv);
+    assert(jsv && "Someone illegally modified a UDF argument array.");
     NativePointerHolder_set(S3JniNph(sqlite3_value), jsv, 0);
   }
 }
@@ -3018,6 +3061,21 @@ S3JniApi(sqlite3_column_java_object(),jobject,1column_1java_1object)(
       );
     }
     sqlite3_mutex_leave(sqlite3_db_mutex(db));
+  }
+  return rv;
+}
+
+S3JniApi(sqlite3_value_nio_buffer(),jobject,1column_1nio_1buffer)(
+  JniArgsEnvClass, jobject jStmt, jint ndx
+){
+  sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jStmt);
+  jobject rv = 0;
+  if( stmt ){
+    const void * const p = sqlite3_column_blob(stmt, (int)ndx);
+    if( p ){
+      const int n = sqlite3_column_bytes(stmt, (int)ndx);
+      rv = s3jni__blob_to_ByteBuffer(env, p, n);
+    }
   }
   return rv;
 }
@@ -5090,6 +5148,21 @@ S3JniApi(sqlite3_value_java_object(),jobject,1value_1java_1object)(
     : 0;
 }
 
+S3JniApi(sqlite3_value_nio_buffer(),jobject,1value_1nio_1buffer)(
+  JniArgsEnvClass, jobject jVal
+){
+  sqlite3_value * const sv = PtrGet_sqlite3_value(jVal);
+  jobject rv = 0;
+  if( sv ){
+    const void * const p = sqlite3_value_blob(sv);
+    if( p ){
+      const int n = sqlite3_value_bytes(sv);
+      rv = s3jni__blob_to_ByteBuffer(env, p, n);
+    }
+  }
+  return rv;
+}
+
 S3JniApi(sqlite3_value_text(),jbyteArray,1value_1text)(
   JniArgsEnvClass, jlong jpSVal
 ){
@@ -6096,10 +6169,15 @@ Java_org_sqlite_jni_capi_CApi_init(JniArgsEnvClass){
     unsigned char buf[16] = {0};
     jobject bb = (*env)->NewDirectByteBuffer(env, buf, 16);
     if( bb ){
-      SJG.g.cByteBuffer = (*env)->GetObjectClass(env, bb);
+      SJG.g.cByteBuffer = S3JniRefGlobal((*env)->GetObjectClass(env, bb));
+      SJG.g.byteBufferAlloc = (*env)->GetStaticMethodID(
+        env, SJG.g.cByteBuffer, "allocateDirect", "(I)Ljava/nio/ByteBuffer;"
+      );
+      S3JniExceptionIsFatal("Error getting ByteBuffer.allocateDirect() method.");
       S3JniUnrefLocal(bb);
     }else{
       SJG.g.cByteBuffer = 0;
+      SJG.g.byteBufferAlloc = 0;
     }
   }
 

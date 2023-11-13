@@ -494,6 +494,7 @@ public class Tester1 implements Runnable {
     stmt = prepare(db, "SELECT a FROM t ORDER BY a DESC;");
     StringBuilder sbuf = new StringBuilder();
     n = 0;
+    final boolean tryNio = sqlite3_jni_supports_nio();
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       final sqlite3_value sv = sqlite3_value_dup(sqlite3_column_value(stmt,0));
       final String txt = sqlite3_column_text16(stmt, 0);
@@ -508,6 +509,15 @@ public class Tester1 implements Runnable {
                            StandardCharsets.UTF_8)) );
       affirm( txt.length() == sqlite3_value_bytes16(sv)/2 );
       affirm( txt.equals(sqlite3_value_text16(sv)) );
+      if( tryNio ){
+        java.nio.ByteBuffer bu = sqlite3_value_nio_buffer(sv);
+        byte ba[] = sqlite3_value_blob(sv);
+        affirm( ba.length == bu.capacity() );
+        int i = 0;
+        for( byte b : ba ){
+          affirm( b == bu.get(i++) );
+        }
+      }
       sqlite3_value_free(sv);
       ++n;
     }
@@ -570,6 +580,10 @@ public class Tester1 implements Runnable {
     /* TODO: these tests need to be much more extensive to check the
        begin/end range handling. */
 
+    java.nio.ByteBuffer zeroCheck =
+      java.nio.ByteBuffer.allocateDirect(0);
+    affirm( null != zeroCheck );
+    zeroCheck = null;
     sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a)");
 
@@ -590,11 +604,17 @@ public class Tester1 implements Runnable {
     int total = 0;
     affirm( SQLITE_ROW == sqlite3_step(stmt) );
     byte blob[] = sqlite3_column_blob(stmt, 0);
+    java.nio.ByteBuffer nioBlob =
+      sqlite3_column_nio_buffer(stmt, 0);
     affirm(3 == blob.length);
+    affirm(blob.length == nioBlob.capacity());
+    affirm(blob.length == nioBlob.limit());
     int i = 0;
     for(byte b : blob){
       affirm( i<=3 );
-      affirm(b == buf.get(1 + i++));
+      affirm(b == buf.get(1 + i));
+      affirm(b == nioBlob.get(i));
+      ++i;
       total += b;
     }
     affirm( SQLITE_DONE == sqlite3_step(stmt) );

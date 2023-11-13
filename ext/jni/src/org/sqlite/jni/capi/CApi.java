@@ -318,10 +318,6 @@ public final class CApi {
      buffers and the only such class offered by Java is (apparently)
      ByteBuffer.
 
-     Design note: there are no sqlite3_column_nio_buffer() and
-     sqlite3_value_nio_buffer() counterparts because the ByteBuffer
-     interface does not enable sensible implementations of those.
-
      @see https://docs.oracle.com/javase/8/docs/api/java/nio/Buffer.html
   */
   public static native int sqlite3_bind_nio_buffer(
@@ -646,6 +642,15 @@ public final class CApi {
     return sqlite3_column_count(stmt.getNativePointer());
   }
 
+  private static native String sqlite3_column_database_name(@NotNull long ptrToStmt, int ndx);
+
+  /**
+     Only available if built with SQLITE_ENABLE_COLUMN_METADATA.
+  */
+  public static String sqlite3_column_database_name(@NotNull sqlite3_stmt stmt, int ndx){
+    return sqlite3_column_database_name(stmt.getNativePointer(), ndx);
+  }
+
   private static native String sqlite3_column_decltype(@NotNull long ptrToStmt, int ndx);
 
   public static String sqlite3_column_decltype(@NotNull sqlite3_stmt stmt, int ndx){
@@ -700,14 +705,15 @@ public final class CApi {
     return sqlite3_column_name(stmt.getNativePointer(), ndx);
   }
 
-  private static native String sqlite3_column_database_name(@NotNull long ptrToStmt, int ndx);
-
   /**
-     Only available if built with SQLITE_ENABLE_COLUMN_METADATA.
+     A variant of sqlite3_column_blob() which returns the blob as a
+     ByteBuffer object. Returns null if its argument is null, if
+     sqlite3_jni_supports_nio() is false, or if sqlite3_column_blob()
+     would return null for the same inputs.
   */
-  public static String sqlite3_column_database_name(@NotNull sqlite3_stmt stmt, int ndx){
-    return sqlite3_column_database_name(stmt.getNativePointer(), ndx);
-  }
+  public static native java.nio.ByteBuffer sqlite3_column_nio_buffer(
+    @NotNull sqlite3_stmt stmt, int ndx
+  );
 
   private static native String sqlite3_column_origin_name(@NotNull long ptrToStmt, int ndx);
 
@@ -1418,6 +1424,15 @@ public final class CApi {
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined,
      this acts as a proxy for C's sqlite3_preupdate_new(), else it
      returns SQLITE_MISUSE with no side effects.
+
+     WARNING: client code _must not_ hold a reference to the returned
+     sqlite3_value object beyond the scope of the preupdate hook in
+     which this function is called. Doing so will leave the client
+     holding a stale pointer, the address of which could point to
+     anything at all after the pre-update hook is complete. This API
+     has no way to record such objects and clear/invalidate them at
+     the end of a pre-update hook. We "could" add infrastructure to do
+     so, but would require significant levels of bookkeeping.
   */
   public static int sqlite3_preupdate_new(@NotNull sqlite3 db, int col,
                                           @NotNull OutputPointer.sqlite3_value out){
@@ -1441,6 +1456,9 @@ public final class CApi {
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined,
      this acts as a proxy for C's sqlite3_preupdate_old(), else it
      returns SQLITE_MISUSE with no side effects.
+
+     WARNING: see warning in sqlite3_preupdate_new() regarding the
+     potential for stale sqlite3_value handles.
   */
   public static int sqlite3_preupdate_old(@NotNull sqlite3 db, int col,
                                           @NotNull OutputPointer.sqlite3_value out){
@@ -2109,6 +2127,16 @@ public final class CApi {
     final Object o = sqlite3_value_java_object(v);
     return type.isInstance(o) ? (T)o : null;
   }
+
+  /**
+     A variant of sqlite3_column_blob() which returns the blob as a
+     ByteBuffer object. Returns null if its argument is null, if
+     sqlite3_jni_supports_nio() is false, or if sqlite3_value_blob()
+     would return null for the same input.
+  */
+  public static native java.nio.ByteBuffer sqlite3_value_nio_buffer(
+    @NotNull sqlite3_value v
+  );
 
   private static native int sqlite3_value_nochange(@NotNull long ptrToValue);
 
