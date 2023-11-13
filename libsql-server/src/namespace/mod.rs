@@ -575,7 +575,14 @@ impl Namespace<ReplicaDatabase> {
         .await?;
 
         // force a handshake now, to retrieve the primary's current replication index
-        replicator.try_perform_handshake().await?;
+        match replicator.try_perform_handshake().await {
+            Err(libsql_replication::replicator::Error::Meta(libsql_replication::meta::Error::LogIncompatible)) => {
+                tracing::error!("trying to replicate incompatible logs, reseting replica");
+                (reset)(ResetOp::Reset(name.clone()));
+            }
+            Err(e) => Err(e)?,
+            Ok(_) => (),
+        }
         let primary_current_replicatio_index = replicator.client_mut().primary_replication_index;
 
         let mut join_set = JoinSet::new();
