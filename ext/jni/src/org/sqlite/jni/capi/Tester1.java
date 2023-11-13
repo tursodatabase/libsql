@@ -38,6 +38,14 @@ import java.util.concurrent.Future;
 @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD})
 @interface SingleThreadOnly{}
 
+/**
+   Annotation for Tester1 tests which must only be run if JNI-level support for
+   java.nio.Buffer is available.
+*/
+@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
+@java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD})
+@interface RequiresNioBuffer{}
+
 public class Tester1 implements Runnable {
   //! True when running in multi-threaded mode.
   private static boolean mtMode = false;
@@ -554,6 +562,45 @@ public class Tester1 implements Runnable {
     sqlite3_finalize(stmt);
     affirm(1 == n);
     affirm(total == 0x32 + 0x33 + 0x34);
+    sqlite3_close_v2(db);
+  }
+
+  @RequiresNioBuffer
+  private void testBindByteBuffer(){
+    sqlite3 db = createNewDb();
+    execSql(db, "CREATE TABLE t(a)");
+    sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
+    java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocateDirect(10);
+    buf.put((byte)0x31)/*note that we'll skip this one*/
+      .put((byte)0x32)
+      .put((byte)0x33)
+      .put((byte)0x34);
+    int rc = sqlite3_bind_blob(stmt, 1, buf, -1, 0);
+    affirm( SQLITE_MISUSE==rc );
+    rc = sqlite3_bind_blob(stmt, 1, buf, 1, 3);
+    affirm( 0==rc );
+    rc = sqlite3_step(stmt);
+    affirm(SQLITE_DONE == rc);
+    sqlite3_finalize(stmt);
+    stmt = prepare(db, "SELECT a FROM t ORDER BY a DESC;");
+    int n = 0;
+    int total = 0;
+    while( SQLITE_ROW == sqlite3_step(stmt) ){
+      byte[] blob = sqlite3_column_blob(stmt, 0);
+      affirm(3 == blob.length);
+      int i = 0;
+      for(byte b : blob){
+        affirm( i<=3 );
+        affirm(b == buf.get(1 + i++));
+        total += b;
+      }
+      ++n;
+    }
+    sqlite3_finalize(stmt);
+    affirm(1 == n);
+    affirm(total == 0x32 + 0x33 + 0x34);
+    /* TODO: these tests need to be much more extensive to check the
+       begin range handling. */
     sqlite3_close_v2(db);
   }
 
@@ -1877,18 +1924,19 @@ public class Tester1 implements Runnable {
           if( forceFail ){
             testMethods.add(m);
           }
+        }else if( m.isAnnotationPresent( RequiresNioBuffer.class )
+                  && !sqlite3_jni_supports_nio() ){
+          outln("Skipping test for lack JNI nio.Buffer support: ",name,"()\n");
+          ++nSkipped;
         }else if( !m.isAnnotationPresent( ManualTest.class ) ){
           if( nThread>1 && m.isAnnotationPresent( SingleThreadOnly.class ) ){
-            if( 0==nSkipped++ ){
-              out("Skipping tests in multi-thread mode:");
-            }
-            out(" "+name+"()");
+            out("Skipping test in multi-thread mode: ",name,"()\n");
+            ++nSkipped;
           }else if( name.startsWith("test") ){
             testMethods.add(m);
           }
         }
       }
-      if( nSkipped>0 ) out("\n");
     }
 
     final long timeStart = System.currentTimeMillis();

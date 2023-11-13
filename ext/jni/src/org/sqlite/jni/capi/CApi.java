@@ -215,7 +215,7 @@ public final class CApi {
      If n is negative, SQLITE_MISUSE is returned. If n>data.length
      then n is silently truncated to data.length.
   */
-  static int sqlite3_bind_blob(
+  public static int sqlite3_bind_blob(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data, int n
   ){
     return sqlite3_bind_blob(stmt.getNativePointer(), ndx, data, n);
@@ -227,6 +227,28 @@ public final class CApi {
     return (null==data)
       ? sqlite3_bind_null(stmt.getNativePointer(), ndx)
       : sqlite3_bind_blob(stmt.getNativePointer(), ndx, data, data.length);
+  }
+
+  /**
+     Convenience overload which is a simple proxy for
+     sqlite3_bind_nio_buffer().
+  */
+  public static int sqlite3_bind_blob(
+    @NotNull sqlite3_stmt stmt, int ndx, @Nullable java.nio.ByteBuffer data,
+    int begin, int n
+  ){
+    return sqlite3_bind_nio_buffer(stmt, ndx, data, begin, n);
+  }
+
+  /**
+     Convenience overload which is equivalant to passing its arguments
+     to sqlite3_bind_nio_buffer() with the values 0 and -1 for the
+     final two arguments.
+  */
+  public static int sqlite3_bind_blob(
+    @NotNull sqlite3_stmt stmt, int ndx, @Nullable java.nio.ByteBuffer data
+  ){
+    return sqlite3_bind_nio_buffer(stmt, ndx, data, 0, -1);
   }
 
   private static native int sqlite3_bind_double(
@@ -260,6 +282,57 @@ public final class CApi {
   private static native int sqlite3_bind_java_object(
     @NotNull long ptrToStmt, int ndx, @Nullable Object o
   );
+
+  /**
+     Binds the contents of the given buffer object as a blob.
+
+     The byte range of the buffer may be restricted by providing a
+     start index and a number of bytes. beginPos may not be negative
+     but a negative howMany is interpretated as the remainder of the
+     buffer past the given start position.
+
+     If beginPos+howMany would extend past the end of the buffer, the
+     range is silently truncated to fit the buffer.
+
+     If any of the following are true, this function behaves like
+     sqlite3_bind_null(): the buffer is null, beginPos is past the end
+     of the buffer, howMany is 0, or the calculated slice of the blob
+     has a length of 0.
+
+     If ndx is out of range, it returns SQLITE_RANGE, as documented
+     for sqlite3_bind_blob().  If any other arguments are invalid or
+     if sqlite3_jni_supports_nio() is false then SQLITE_MISUSE is
+     returned.  Note that this function is bound (as it were) by the
+     SQLITE_LIMIT_LENGTH constraint and SQLITE_MISUSE is returned if
+     that's violated.
+
+     This function does not modify the buffer's streaming-related
+     cursors.
+
+     If the buffer is modified in a separate thread while this
+     operation is running, results are undefined and will likely
+     result in corruption of the bound data or a segmentation fault.
+
+     Design note: this function should arguably take a java.nio.Buffer
+     instead of ByteBuffer, but it can only operate on "direct"
+     buffers and the only such class offered by Java is (apparently)
+     ByteBuffer.
+
+     @see https://docs.oracle.com/javase/8/docs/api/java/nio/Buffer.html
+  */
+  public static native int sqlite3_bind_nio_buffer(
+    @NotNull sqlite3_stmt stmt, int ndx, @Nullable java.nio.ByteBuffer data,
+    int beginPos, int howMany
+  );
+
+  /**
+     Convenience overload which binds the given buffer's entire contents.
+  */
+  public static int sqlite3_bind_nio_buffer(
+    @NotNull sqlite3_stmt stmt, int ndx, @Nullable java.nio.ByteBuffer data
+  ){
+    return sqlite3_bind_nio_buffer(stmt, ndx, data, 0, -1);
+  }
 
   /**
      Binds the given object at the given index. If o is null then this behaves like

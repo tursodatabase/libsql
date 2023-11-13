@@ -883,6 +883,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1bind_1java_1object
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_bind_nio_buffer
+ * Signature: (Lorg/sqlite/jni/capi/sqlite3_stmt;ILjava/nio/ByteBuffer;II)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1bind_1nio_1buffer
+  (JNIEnv *, jclass, jobject, jint, jobject, jint, jint);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
  * Method:    sqlite3_bind_null
  * Signature: (JI)I
  */
