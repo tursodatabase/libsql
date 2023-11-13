@@ -184,8 +184,7 @@ impl Database {
     #[cfg(feature = "replication")]
     pub fn writer(&self) -> Result<Option<crate::replication::Writer>> {
         use crate::replication::Writer;
-
-        if let Some(ReplicationContext {
+if let Some(ReplicationContext {
             client: Some(ref client),
             ..
         }) = &self.replication_ctx
@@ -212,10 +211,17 @@ impl Database {
                 ));
             }
 
-            replicator
+            match replicator
                 .replicate()
-                .await
-                .map_err(|e| crate::Error::Replication(e.into()))?;
+                .await {
+                    Err(libsql_replication::replicator::Error::Meta(libsql_replication::meta::Error::LogIncompatible)) => {
+                        // The meta must have been marked as dirty, replicate again from scratch
+                        // this time.
+                        replicator.replicate().await.map_err(|e| crate::Error::Replication(e.into()))?;
+                    }
+                    Err(e) => return Err(crate::Error::Replication(e.into())),
+                    Ok(_) => (),
+            }
 
             Ok(replicator.client_mut().committed_frame_no())
         } else {

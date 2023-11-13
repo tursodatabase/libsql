@@ -17,6 +17,8 @@ pub struct RemoteClient {
     meta: WalIndexMeta,
     last_received: Option<FrameNo>,
     session_token: Option<Bytes>,
+    // the replication log is dirty, reset the meta on next handshake
+    dirty: bool,
 }
 
 impl RemoteClient {
@@ -27,6 +29,7 @@ impl RemoteClient {
             meta,
             last_received: None,
             session_token: None,
+            dirty: false,
         })
     }
 
@@ -61,7 +64,21 @@ impl ReplicatorClient for RemoteClient {
                 let hello = resp.into_inner();
                 verify_session_token(&hello.session_token).map_err(Error::Client)?;
                 self.session_token = Some(hello.session_token.clone());
-                self.meta.init_from_hello(hello)?;
+                if self.dirty {
+                    self.meta.reset();
+                    self.dirty = false;
+                }
+                if let Err(e) = self.meta.init_from_hello(hello) {
+                    // set the meta as dirty. The caller should catch the error and clean the db
+                    // file. On the next call to replicate, the db will be replicated from the new
+                    // log.
+                    if let libsql_replication::meta::Error::LogIncompatible = e {
+                        self.dirty = true;
+                    }
+
+                    Err(e)?;
+                }
+                self.meta.flush().await?;
 
                 Ok(())
             }
