@@ -13,6 +13,7 @@ use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::Notify;
 use tokio_util::io::ReaderStream;
 use url::Url;
 
@@ -60,6 +61,7 @@ pub async fn run<M, A, C>(
     namespaces: NamespaceStore<M>,
     connector: C,
     disable_metrics: bool,
+    shutdown: Arc<Notify>,
 ) -> anyhow::Result<()>
 where
     A: crate::net::Accept,
@@ -124,6 +126,7 @@ where
 
     hyper::server::Server::builder(acceptor)
         .serve(router.into_make_service())
+        .with_graceful_shutdown(shutdown.notified())
         .await
         .context("Could not bind admin HTTP API server")?;
     Ok(())
