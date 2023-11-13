@@ -773,6 +773,8 @@ int sqlite3Fts5ExprClonePhrase(Fts5Expr*, int, Fts5Expr**);
 
 int sqlite3Fts5ExprPhraseCollist(Fts5Expr *, int, const u8 **, int *);
 
+int sqlite3Fts5ExprQueryToken(Fts5Expr*, int, int, const char**, int*);
+
 /*******************************************
 ** The fts5_expr.c API above this point is used by the other hand-written
 ** C code in this module. The interfaces below this point are called by

@@ -2323,13 +2323,24 @@ static int fts5ApiPhraseFirstColumn(
   return rc;
 }
 
+static int fts5ApiQueryToken(
+  Fts5Context* pCtx, 
+  int iPhrase, 
+  int iToken, 
+  const char **ppOut, 
+  int *pnOut
+){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  return sqlite3Fts5ExprQueryToken(pCsr->pExpr, iPhrase, iToken, ppOut, pnOut);
+}
+
 
 static int fts5ApiQueryPhrase(Fts5Context*, int, void*, 
     int(*)(const Fts5ExtensionApi*, Fts5Context*, void*)
 );
 
 static const Fts5ExtensionApi sFts5Api = {
-  2,                            /* iVersion */
+  3,                            /* iVersion */
   fts5ApiUserData,
   fts5ApiColumnCount,
   fts5ApiRowCount,
@@ -2349,6 +2360,9 @@ static const Fts5ExtensionApi sFts5Api = {
   fts5ApiPhraseNext,
   fts5ApiPhraseFirstColumn,
   fts5ApiPhraseNextColumn,
+  fts5ApiQueryToken,
+  0,
+  0
 };
 
 /*

@@ -3145,3 +3145,29 @@ int sqlite3Fts5ExprPhraseCollist(
 
   return rc;
 }
+
+/*
+** Does the work of the fts5_api.xQueryToken() API method.
+*/
+int sqlite3Fts5ExprQueryToken(
+  Fts5Expr *pExpr, 
+  int iPhrase, 
+  int iToken, 
+  const char **ppOut, 
+  int *pnOut
+){
+  Fts5ExprPhrase *pPhrase = 0;
+
+  if( iPhrase<0 || iPhrase>=pExpr->nPhrase ){
+    return SQLITE_RANGE;
+  }
+  pPhrase = pExpr->apExprPhrase[iPhrase];
+  if( iToken<0 || iToken>=pPhrase->nTerm ){
+    return SQLITE_RANGE;
+  }
+
+  *ppOut = pPhrase->aTerm[iToken].pTerm;
+  *pnOut = pPhrase->aTerm[iToken].nFullTerm;
+  return SQLITE_OK;
+}
+
