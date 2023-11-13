@@ -79,6 +79,9 @@ pub use params::params_from_iter;
 
 mod connection;
 mod database;
+cfg_parser! {
+    mod parser;
+}
 mod rows;
 mod statement;
 mod transaction;

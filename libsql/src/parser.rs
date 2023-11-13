@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::{Error, Result};
 use fallible_iterator::FallibleIterator;
 use sqlite3_parser::ast::{Cmd, PragmaBody, QualifiedName, Stmt, TransactionType};

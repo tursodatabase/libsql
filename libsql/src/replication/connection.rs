@@ -3,12 +3,14 @@
 use std::str::FromStr;
 use std::sync::Arc;
 
-use parking_lot::Mutex;
 use libsql_replication::rpc::proxy::{
-    describe_result, State as RemoteState, query_result::RowResult, DescribeResult,
-    ExecuteResults, ResultRows
+    describe_result, query_result::RowResult, DescribeResult, ExecuteResults, ResultRows,
+    State as RemoteState,
 };
+use parking_lot::Mutex;
 
+use crate::parser;
+use crate::parser::StmtKind;
 use crate::rows::{RowInner, RowsInner};
 use crate::statement::Stmt;
 use crate::transaction::Tx;
@@ -20,8 +22,6 @@ use crate::{Column, Row, Rows, Value};
 
 use crate::connection::Conn;
 use crate::local::impls::LibsqlConnection;
-
-use super::parser::{self, StmtKind};
 
 #[derive(Clone)]
 pub struct RemoteConnection {
@@ -175,7 +175,9 @@ impl RemoteConnection {
         params: Params,
     ) -> Result<ExecuteResults> {
         let Some(ref writer) = self.writer else {
-            return Err(Error::Misuse("Cannot delegate write in local replica mode.".into()));
+            return Err(Error::Misuse(
+                "Cannot delegate write in local replica mode.".into(),
+            ));
         };
         let res = writer
             .execute_program(stmts, params)
@@ -194,7 +196,9 @@ impl RemoteConnection {
 
     pub(self) async fn describe(&self, stmt: impl Into<String>) -> Result<DescribeResult> {
         let Some(ref writer) = self.writer else {
-            return Err(Error::Misuse("Cannot describe in local replica mode.".into()));
+            return Err(Error::Misuse(
+                "Cannot describe in local replica mode.".into(),
+            ));
         };
         let res = writer
             .describe(stmt)
@@ -566,10 +570,7 @@ impl Stmt for RemoteStatement {
     }
 }
 
-pub(crate) struct RemoteRows(
-    pub(crate) ResultRows,
-    pub(crate) usize,
-);
+pub(crate) struct RemoteRows(pub(crate) ResultRows, pub(crate) usize);
 
 impl RowsInner for RemoteRows {
     fn next(&mut self) -> Result<Option<Row>> {
@@ -685,7 +686,7 @@ impl Tx for RemoteTx {
 
 #[cfg(test)]
 mod tests {
-    use crate::replication::parser::Statement;
+    use crate::parser::Statement;
 
     use super::{should_execute_local, State};
 

@@ -1,5 +1,6 @@
 use crate::hrana::connection::HttpConnection;
 use crate::hrana::pipeline::ServerMsg;
+use crate::hrana::proto::Stmt;
 use crate::hrana::{HranaError, HttpSend, Result};
 use crate::params::Params;
 use crate::util::ConnectorService;
@@ -94,8 +95,17 @@ impl crate::connection::Conn for HttpConnection<HttpSender> {
         Ok(rows as u64)
     }
 
-    async fn execute_batch(&self, _sql: &str) -> crate::Result<()> {
-        todo!()
+    async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
+        let mut statements = Vec::new();
+        let stmts = crate::parser::Statement::parse(sql);
+        for s in stmts {
+            let s = s?;
+            statements.push(Stmt::new(s.stmt, false));
+        }
+        self.raw_batch(statements)
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        Ok(())
     }
 
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
