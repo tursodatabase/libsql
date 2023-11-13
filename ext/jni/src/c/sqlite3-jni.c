@@ -882,7 +882,7 @@ static jbyte * s3jni__jbyteArray_bytes2(JNIEnv * const env, jbyteArray jBA, jsiz
 ** required so cannot check for that violation. The caller is required
 ** to ensure that any to-be-bind()ed range fits within SQLITE_LIMIT.
  */
-/*static*/ void s3jni__get_nio_buffer(JNIEnv * const env, jobject jbb, void **pBuf, jint * pN ){
+static void s3jni__get_nio_buffer(JNIEnv * const env, jobject jbb, void **pBuf, jint * pN ){
   *pBuf = 0;
   *pN = 0;
   if( jbb ){
@@ -2433,32 +2433,90 @@ S3JniApi(sqlite3_bind_blob(),jint,1bind_1blob)(
   return (jint)rc;
 }
 
+/**
+   Helper for use with s3jni_setup_nio_args().
+*/
+struct S3JniNioArgs {
+  jobject jBuf;        /* input - ByteBuffer */
+  jint iBegin;         /* input - byte offset */
+  jint iN;             /* input - byte count to bind */
+  jint nBuf;           /* output - jBuf's buffer size */
+  void * p;            /* output - jBuf's buffer memory */
+  const void * pStart; /* output - offset of p to bind */
+  int iOutLen;         /* output - number of bytes from pStart to bind */
+};
+typedef struct S3JniNioArgs S3JniNioArgs;
+static const S3JniNioArgs S3JniNioArgs_empty = {
+  0,0,0,0,0,0,0
+};
+
+/**
+   Internal helper for sqlite3_bind_nio_buffer() and
+   sqlite3_result_nio_buffer(). Populates pArgs and returns 0 on
+   success, non-0 if the operation should fail. The caller is
+   required to check for SJG.g.cByteBuffer!=0 before calling
+   this and reporting it in a way appropriate for that routine.
+   This function may assert() that SJG.g.cByteBuffer is not 0.
+
+   The (jBuffer, iBegin, iN) arguments are the (ByteBuffer, offset,
+   length) arguments to the bind/result method.
+*/
+static int s3jni_setup_nio_args(
+  JNIEnv *env, S3JniNioArgs * pArgs,
+  jobject jBuffer, jint iBegin, jint iN
+){
+  jlong iEnd = 0;
+  *pArgs = S3JniNioArgs_empty;
+  pArgs->jBuf = jBuffer;
+  pArgs->iBegin = iBegin;
+  pArgs->iN = iN;
+  assert( SJG.g.cByteBuffer );
+  if( pArgs->iBegin<0 ){
+    return SQLITE_MISUSE;
+  }
+  s3jni_get_nio_buffer(pArgs->jBuf, &pArgs->p, &pArgs->nBuf);
+  if( !pArgs->p ){
+    return SQLITE_MISUSE;
+  }else if( pArgs->iBegin>=pArgs->nBuf ){
+    pArgs->pStart = 0;
+    pArgs->iOutLen = 0;
+    return 0;
+  }
+  assert( pArgs->nBuf > 0 );
+  assert( pArgs->iBegin < pArgs->nBuf );
+  iEnd = pArgs->iN<0 ? pArgs->nBuf - pArgs->iBegin : pArgs->iBegin + pArgs->iN;
+  if( iEnd>(jlong)pArgs->nBuf ) iEnd = pArgs->nBuf - pArgs->iBegin;
+  if( iEnd - pArgs->iBegin > (jlong)SQLITE_MAX_LENGTH ){
+    return SQLITE_TOOBIG;
+  }
+  assert( pArgs->iBegin >= 0 );
+  assert( iEnd > pArgs->iBegin );
+  pArgs->pStart = pArgs->p + pArgs->iBegin;
+  pArgs->iOutLen = (int)(iEnd - pArgs->iBegin);
+  assert( pArgs->iOutLen > 0 );
+  return 0;
+}
+
 S3JniApi(sqlite3_bind_nio_buffer(),jint,1bind_1nio_1buffer)(
   JniArgsEnvClass, jobject jpStmt, jint ndx, jobject jBuffer,
   jint iBegin, jint iN
 ){
   sqlite3_stmt * pStmt = PtrGet_sqlite3_stmt(jpStmt);
-  void * pBuf = 0;
-  jint nBuf = 0;
-  jlong iEnd = 0;
-  if( !SJG.g.cByteBuffer || !pStmt || iBegin<0 ){
-    return (jint)SQLITE_MISUSE;
+  S3JniNioArgs args;
+  int rc;
+  if( !pStmt || !SJG.g.cByteBuffer ) return SQLITE_MISUSE;
+  rc = s3jni_setup_nio_args(env, &args, jBuffer, iBegin, iN);
+  if(rc){
+    return rc;
+  }else if( !args.pStart || !args.iOutLen ){
+    return sqlite3_bind_null(pStmt, ndx);
   }
-  s3jni_get_nio_buffer(jBuffer, &pBuf, &nBuf);
-  if( !pBuf || iBegin>=nBuf ){
-    return (jint)sqlite3_bind_null(pStmt, ndx);
-  }
-  assert( nBuf > 0 );
-  assert( iBegin < nBuf );
-  iEnd = iN<0 ? nBuf - iBegin : iBegin + iN;
-  if( iEnd>(jlong)nBuf ) iEnd = nBuf-iBegin;
-  if( iEnd-iBegin >(jlong)SQLITE_MAX_LENGTH ){
-    return SQLITE_MISUSE;
-  }
-  assert( iBegin>=0 );
-  assert( iEnd > iBegin );
-  return (jint)sqlite3_bind_blob(pStmt, (int)ndx, pBuf + iBegin,
-                                 (int)(iEnd - iBegin), SQLITE_TRANSIENT);
+  assert( args.iOutLen>0 );
+  assert( args.nBuf > 0 );
+  assert( args.pStart != 0 );
+  assert( (args.pStart + args.iOutLen) <= (args.p + args.nBuf) );
+  return sqlite3_bind_blob( pStmt, (int)ndx, args.pStart,
+                            args.iOutLen, SQLITE_TRANSIENT );
 }
 
 S3JniApi(sqlite3_bind_double(),jint,1bind_1double)(
@@ -4469,6 +4527,40 @@ S3JniApi(sqlite3_result_java_object(),void,1result_1java_1object)(
     sqlite3_result_null(PtrGet_sqlite3_context(jpCx));
   }
 }
+
+S3JniApi(sqlite3_result_nio_buffer(),void,1result_1nio_1buffer)(
+  JniArgsEnvClass, jobject jpCtx, jobject jBuffer,
+  jint iBegin, jint iN
+){
+  sqlite3_context * pCx = PtrGet_sqlite3_context(jpCtx);
+  int rc;
+  S3JniNioArgs args;
+  if( !pCx ){
+    return;
+  }else if( !SJG.g.cByteBuffer ){
+    sqlite3_result_error(
+      pCx, "This JVM does not support JNI access to ByteBuffers.", -1
+    );
+    return;
+  }
+  rc = s3jni_setup_nio_args(env, &args, jBuffer, iBegin, iN);
+  if(rc){
+    if( iBegin<0 ){
+      sqlite3_result_error(pCx, "Start index may not be negative.", -1);
+    }else if( SQLITE_TOOBIG==rc ){
+      sqlite3_result_error_toobig(pCx);
+    }else{
+      sqlite3_result_error(
+        pCx, "Invalid arguments to sqlite3_result_nio_buffer().", -1
+      );
+    }
+  }else if( !args.pStart || !args.iOutLen ){
+    sqlite3_result_null(pCx);
+  }else{
+    sqlite3_result_blob(pCx, args.pStart, args.iOutLen, SQLITE_TRANSIENT);
+  }
+}
+
 
 S3JniApi(sqlite3_result_null(),void,1result_1null)(
   JniArgsEnvClass, jobject jpCx

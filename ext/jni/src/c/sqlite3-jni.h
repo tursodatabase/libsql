@@ -1731,6 +1731,14 @@ JNIEXPORT void JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1result_1java_1obje
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_result_nio_buffer
+ * Signature: (Lorg/sqlite/jni/capi/sqlite3_context;Ljava/nio/ByteBuffer;II)V
+ */
+JNIEXPORT void JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1result_1nio_1buffer
+  (JNIEnv *, jclass, jobject, jobject, jint, jint);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
  * Method:    sqlite3_result_null
  * Signature: (Lorg/sqlite/jni/capi/sqlite3_context;)V
  */

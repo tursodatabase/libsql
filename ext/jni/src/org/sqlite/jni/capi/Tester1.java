@@ -39,12 +39,12 @@ import java.util.concurrent.Future;
 @interface SingleThreadOnly{}
 
 /**
-   Annotation for Tester1 tests which must only be run if JNI-level support for
-   java.nio.Buffer is available.
+   Annotation for Tester1 tests which must only be run if
+   sqlite3_jni_supports_nio() is true.
 */
 @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD})
-@interface RequiresNioBuffer{}
+@interface RequiresJniNio{}
 
 public class Tester1 implements Runnable {
   //! True when running in multi-threaded mode.
@@ -565,42 +565,65 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
-  @RequiresNioBuffer
+  @RequiresJniNio
   private void testBindByteBuffer(){
+    /* TODO: these tests need to be much more extensive to check the
+       begin/end range handling. */
+
     sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a)");
-    sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
-    java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocateDirect(10);
+
+    final java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocateDirect(10);
     buf.put((byte)0x31)/*note that we'll skip this one*/
       .put((byte)0x32)
       .put((byte)0x33)
-      .put((byte)0x34);
-    int rc = sqlite3_bind_blob(stmt, 1, buf, -1, 0);
-    affirm( SQLITE_MISUSE==rc );
-    rc = sqlite3_bind_blob(stmt, 1, buf, 1, 3);
-    affirm( 0==rc );
-    rc = sqlite3_step(stmt);
-    affirm(SQLITE_DONE == rc);
+      .put((byte)0x34)
+      .put((byte)0x35)/*we'll skip this one too*/;
+
+    final int expectTotal = buf.get(1) + buf.get(2) + buf.get(3);
+    sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
+    affirm( SQLITE_MISUSE == sqlite3_bind_blob(stmt, 1, buf, -1, 0) );
+    affirm( 0 == sqlite3_bind_blob(stmt, 1, buf, 1, 3) );
+    affirm( SQLITE_DONE == sqlite3_step(stmt) );
     sqlite3_finalize(stmt);
-    stmt = prepare(db, "SELECT a FROM t ORDER BY a DESC;");
-    int n = 0;
+    stmt = prepare(db, "SELECT a FROM t;");
     int total = 0;
-    while( SQLITE_ROW == sqlite3_step(stmt) ){
-      byte[] blob = sqlite3_column_blob(stmt, 0);
-      affirm(3 == blob.length);
-      int i = 0;
-      for(byte b : blob){
-        affirm( i<=3 );
-        affirm(b == buf.get(1 + i++));
-        total += b;
-      }
-      ++n;
+    affirm( SQLITE_ROW == sqlite3_step(stmt) );
+    byte blob[] = sqlite3_column_blob(stmt, 0);
+    affirm(3 == blob.length);
+    int i = 0;
+    for(byte b : blob){
+      affirm( i<=3 );
+      affirm(b == buf.get(1 + i++));
+      total += b;
     }
+    affirm( SQLITE_DONE == sqlite3_step(stmt) );
     sqlite3_finalize(stmt);
-    affirm(1 == n);
-    affirm(total == 0x32 + 0x33 + 0x34);
-    /* TODO: these tests need to be much more extensive to check the
-       begin range handling. */
+    affirm(total == expectTotal);
+
+    SQLFunction func =
+      new ScalarFunction(){
+        public void xFunc(sqlite3_context cx, sqlite3_value[] args){
+          sqlite3_result_blob(cx, buf, 1, 3);
+        }
+      };
+
+    affirm( 0 == sqlite3_create_function(db, "myfunc", -1, SQLITE_UTF8, func) );
+    stmt = prepare(db, "SELECT myfunc()");
+    affirm( SQLITE_ROW == sqlite3_step(stmt) );
+    blob = sqlite3_column_blob(stmt, 0);
+    affirm(3 == blob.length);
+    i = 0;
+    total = 0;
+    for(byte b : blob){
+      affirm( i<=3 );
+      affirm(b == buf.get(1 + i++));
+      total += b;
+    }
+    affirm( SQLITE_DONE == sqlite3_step(stmt) );
+    sqlite3_finalize(stmt);
+    affirm(total == expectTotal);
+
     sqlite3_close_v2(db);
   }
 
@@ -1924,9 +1947,10 @@ public class Tester1 implements Runnable {
           if( forceFail ){
             testMethods.add(m);
           }
-        }else if( m.isAnnotationPresent( RequiresNioBuffer.class )
+        }else if( m.isAnnotationPresent( RequiresJniNio.class )
                   && !sqlite3_jni_supports_nio() ){
-          outln("Skipping test for lack JNI nio.Buffer support: ",name,"()\n");
+          outln("Skipping test for lack of JNI java.nio.ByteBuffer support: ",
+                name,"()\n");
           ++nSkipped;
         }else if( !m.isAnnotationPresent( ManualTest.class ) ){
           if( nThread>1 && m.isAnnotationPresent( SingleThreadOnly.class ) ){

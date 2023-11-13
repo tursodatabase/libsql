@@ -295,16 +295,16 @@ public final class CApi {
      range is silently truncated to fit the buffer.
 
      If any of the following are true, this function behaves like
-     sqlite3_bind_null(): the buffer is null, beginPos is past the end
-     of the buffer, howMany is 0, or the calculated slice of the blob
-     has a length of 0.
+     sqlite3_bind_null(): the buffer is null, beginPos is at or past
+     the end of the buffer, howMany is 0, or the calculated slice of
+     the blob has a length of 0.
 
      If ndx is out of range, it returns SQLITE_RANGE, as documented
-     for sqlite3_bind_blob().  If any other arguments are invalid or
-     if sqlite3_jni_supports_nio() is false then SQLITE_MISUSE is
+     for sqlite3_bind_blob().  If beginPos is negative or if
+     sqlite3_jni_supports_nio() returns false then SQLITE_MISUSE is
      returned.  Note that this function is bound (as it were) by the
-     SQLITE_LIMIT_LENGTH constraint and SQLITE_MISUSE is returned if
-     that's violated.
+     SQLITE_LIMIT_LENGTH constraint and SQLITE_TOOBIG is returned if
+     the resulting slice of the buffer exceeds that limit.
 
      This function does not modify the buffer's streaming-related
      cursors.
@@ -317,6 +317,10 @@ public final class CApi {
      instead of ByteBuffer, but it can only operate on "direct"
      buffers and the only such class offered by Java is (apparently)
      ByteBuffer.
+
+     Design note: there are no sqlite3_column_nio_buffer() and
+     sqlite3_value_nio_buffer() counterparts because the ByteBuffer
+     interface does not enable sensible implementations of those.
 
      @see https://docs.oracle.com/javase/8/docs/api/java/nio/Buffer.html
   */
@@ -1560,6 +1564,39 @@ public final class CApi {
     @NotNull sqlite3_context cx, @NotNull Object o
   );
 
+  /**
+     Similar to sqlite3_bind_nio_buffer(), this works like
+     sqlite3_result_blob() but accepts a java.nio.ByteBuffer as its
+     input source. See sqlite3_bind_nio_buffer() for the semantics of
+     the second and subsequent arguments.
+
+     If cx is null then this function will silently fail. If
+     sqlite3_jni_supports_nio() returns false or iBegin is negative,
+     an error result is set. If (begin+n) extends beyond the end of
+     the buffer, it is silently truncated to fit.
+
+     If any of the following apply, this function behaves like
+     sqlite3_result_null(): the blob is null, the resulting slice of
+     the blob is empty.
+
+     If the resulting slice of the buffer exceeds SQLITE_LIMIT_LENGTH
+     then this function behaves like sqlite3_result_error_toobig().
+  */
+  public static native void sqlite3_result_nio_buffer(
+    @NotNull sqlite3_context cx, @Nullable java.nio.ByteBuffer blob,
+    int begin, int n
+  );
+
+  /**
+     Convenience overload which uses the whole input object
+     as the result blob content.
+  */
+  public static void sqlite3_result_nio_buffer(
+    @NotNull sqlite3_context cx, @Nullable java.nio.ByteBuffer blob
+  ){
+    sqlite3_result_nio_buffer(cx, blob, 0, -1);
+  }
+
   public static native void sqlite3_result_null(
     @NotNull sqlite3_context cx
   );
@@ -1652,6 +1689,27 @@ public final class CApi {
     @NotNull sqlite3_context cx, @Nullable byte[] blob
   ){
     sqlite3_result_blob(cx, blob, (int)(null==blob ? 0 : blob.length));
+  }
+
+  /**
+     Convenience overload which behaves like
+     sqlite3_result_nio_buffer().
+  */
+  public static void sqlite3_result_blob(
+    @NotNull sqlite3_context cx, @Nullable java.nio.ByteBuffer blob,
+    int begin, int n
+  ){
+    sqlite3_result_nio_buffer(cx, blob, begin, n);
+  }
+
+  /**
+     Convenience overload which behaves like the two-argument overload of
+     sqlite3_result_nio_buffer().
+  */
+  public static void sqlite3_result_blob(
+    @NotNull sqlite3_context cx, @Nullable java.nio.ByteBuffer blob
+  ){
+    sqlite3_result_nio_buffer(cx, blob);
   }
 
   /**
