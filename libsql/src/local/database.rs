@@ -217,6 +217,7 @@ if let Some(ReplicationContext {
                     Err(libsql_replication::replicator::Error::Meta(libsql_replication::meta::Error::LogIncompatible)) => {
                         // The meta must have been marked as dirty, replicate again from scratch
                         // this time.
+                        tracing::debug!("re-replicating database after LogIncompatible error");
                         replicator.replicate().await.map_err(|e| crate::Error::Replication(e.into()))?;
                     }
                     Err(e) => return Err(crate::Error::Replication(e.into())),
