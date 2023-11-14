@@ -3,6 +3,7 @@
 use anyhow::Result;
 use base64::{engine::general_purpose, Engine as _};
 use clap::Parser;
+use rusqlite::ffi::{sqlite3_changes64, sqlite3_total_changes64};
 use rusqlite::Params;
 use rusqlite::{types::ValueRef, Connection, OpenFlags, Statement};
 use rustyline::completion::{Completer, Pair};
@@ -77,6 +78,7 @@ struct Shell {
     out: Out,
 
     bail: bool,
+    changes: bool,
     echo: bool,
     eqp: bool,
     explain: ExplainMode,
@@ -225,6 +227,7 @@ impl Shell {
 
         Ok(Self {
             bail: false,
+            changes: false,
             db: connection,
             out: Out::Stdout,
             echo: args.echo,
@@ -298,6 +301,18 @@ impl Shell {
                                         continue;
                                     }
                                     writeln!(self.out, "{}", table)?;
+                                    if self.changes {
+                                        unsafe {
+                                            let db = self.db.handle();
+                                            let changes = sqlite3_changes64(db);
+                                            let total_changes = sqlite3_total_changes64(db);
+                                            writeln!(
+                                                self.out,
+                                                "changes: {}   total_changes: {}",
+                                                changes, total_changes
+                                            )?;
+                                        }
+                                    }
                                 }
                                 Err(e) => {
                                     println!("Error: {}", e);
@@ -328,6 +343,7 @@ impl Shell {
         match command {
             ".bail" => toggle_option(command, &mut self.bail, args),
             ".echo" => toggle_option(command, &mut self.echo, args),
+            ".changes" => toggle_option(command, &mut self.changes, args),
             ".headers" => {
                 if args.len() != 1 {
                     writeln!(self.out, "Usage: .headers on|off")?;
@@ -444,6 +460,18 @@ impl Shell {
                         Ok(table) => {
                             if !table.is_empty() {
                                 writeln!(self.out, "{}", table)?;
+                            }
+                            if self.changes {
+                                unsafe {
+                                    let db = self.db.handle();
+                                    let changes = sqlite3_changes64(db);
+                                    let total_changes = sqlite3_total_changes64(db);
+                                    writeln!(
+                                        self.out,
+                                        "changes: {}   total_changes: {}",
+                                        changes, total_changes
+                                    )?;
+                                }
                             }
                         }
                         Err(e) => {
