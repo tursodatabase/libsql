@@ -10,7 +10,7 @@ use rustyline::error::ReadlineError;
 use rustyline::history::FileHistory;
 use rustyline::{CompletionType, Config, Context, Editor};
 use rustyline_derive::{Helper, Highlighter, Hinter, Validator};
-use std::fmt::Display;
+use std::fmt;
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use tabled::settings::Style;
@@ -114,8 +114,8 @@ impl Write for Out {
     }
 }
 
-impl Display for Out {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Out {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Out::Stdout => write!(f, "stdout"),
             Out::File(_, path) => write!(f, "{}", path.display()),
@@ -123,11 +123,24 @@ impl Display for Out {
     }
 }
 
-#[derive(Debug)]
 enum ExplainMode {
     Off,
     On,
     Auto,
+}
+
+impl fmt::Display for ExplainMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match *self {
+                ExplainMode::Off => "off",
+                ExplainMode::On => "on",
+                ExplainMode::Auto => "auto",
+            }
+        )
+    }
 }
 
 #[derive(Debug)]
@@ -162,7 +175,12 @@ enum OutputMode {
     Tcl,
 }
 
-#[derive(Debug)]
+impl fmt::Display for OutputMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", format!("{:?}", self).to_lowercase())
+    }
+}
+
 enum StatsMode {
     /// Turn off automatic stat display
     Off,
@@ -174,6 +192,20 @@ enum StatsMode {
     Vmstep,
 }
 
+impl fmt::Display for StatsMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match *self {
+                StatsMode::Off => "off",
+                StatsMode::On => "on",
+                StatsMode::Stmt => "stmt",
+                StatsMode::Vmstep => "vmstep",
+            }
+        )
+    }
+}
 impl Shell {
     fn new(args: Cli) -> Result<Self> {
         let connection = match args.db_path.as_deref() {
@@ -203,8 +235,8 @@ impl Shell {
             null_value: String::new(),
             filename: PathBuf::from(args.db_path.unwrap_or_else(|| ":memory:".to_string())),
             commands_before_repl: args.command,
-            colseparator: String::new(),
-            rowseparator: String::new(),
+            colseparator: String::from("|"),
+            rowseparator: String::from("\n"),
             main_prompt: "libsql> ".to_string(),
             continuation_prompt: "   ...> ".to_string(),
         })
@@ -383,28 +415,29 @@ impl Shell {
                     return;
                 }
                 let out_name = format!("{}", self.out);
-                _ = writeln!(
+                _ = write!(
                     self.out,
-                    "{:>12}: {}
+                    r#"{:>12}: {}
 {:>12}: {}
+{:>12}: {}
+{:>12}: {}
+{:>12}: {}
+{:>12}: "{}"
+{:>12}: {}
+{:>12}: {:?}
 {:>12}: {:?}
 {:>12}: {}
 {:>12}: {:?}
-{:>12}: \"{}\"
 {:>12}: {}
-{:>12}: {}
-{:>12}: {}
-{:>12}: {:?}
-{:>12}: {:?}
-{:>12}: {}",
+"#,
                     "echo",
-                    self.echo,
+                    if self.echo { "on" } else { "off" },
                     "eqp",
-                    self.eqp,
+                    if self.eqp { "on" } else { "off" },
                     "explain",
                     self.explain,
                     "headers",
-                    self.headers,
+                    if self.headers { "on" } else { "off" },
                     "mode",
                     self.mode,
                     "nullvalue",
@@ -524,9 +557,7 @@ impl Shell {
     // TODO: implement `-all` option: print detailed flags for each command
     // TODO: implement `?PATTERN?` : allow narrowing using prefix search.
     fn show_help(&mut self, _args: &[&str]) {
-        _ = writeln!(
-            self.out,
-            r#"
+        let help = r#"
 .auth ON|OFF             Show authorizer callbacks
 .backup ?DB? FILE        Backup DB (default "main") to FILE
 .bail on|off             Stop after hitting an error.  Default OFF
@@ -591,8 +622,8 @@ impl Shell {
 .vfslist                 List all available VFSes
 .vfsname ?AUX?           Print the name of the VFS stack
 .width NUM1 NUM2 ...     Set minimum column widths for columnar output
-"#
-        );
+"#;
+        _ = writeln!(self.out, "{}", help.trim());
     }
 }
 
