@@ -1011,6 +1011,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1blob_1write
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_blob_write_nio_buffer
+ * Signature: (JILjava/nio/ByteBuffer;II)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1blob_1write_1nio_1buffer
+  (JNIEnv *, jclass, jlong, jint, jobject, jint, jint);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
  * Method:    sqlite3_busy_handler
  * Signature: (JLorg/sqlite/jni/capi/BusyHandlerCallback;)I
  */

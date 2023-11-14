@@ -119,13 +119,15 @@ public final class CApi {
      <p>This routine returns false without side effects if the current
      JNIEnv is not cached, else returns true, but this information is
      primarily for testing of the JNI bindings and is not information
-     which client-level code can use to make any informed decisions.
+     which client-level code can use to make any informed
+     decisions. Its return type and semantics are not considered
+     stable and may change at any time.
   */
   public static native boolean sqlite3_java_uncache_thread();
 
   /**
-     Returns true if this JVM has JNI-level support for direct memory
-     access using java.nio.ByteBuffer, else returns false.
+     Returns true if this JVM has JNI-level support for C-level direct
+     memory access using java.nio.ByteBuffer, else returns false.
   */
   public static native boolean sqlite3_jni_supports_nio();
 
@@ -563,6 +565,49 @@ public final class CApi {
     @NotNull sqlite3_blob b, @NotNull byte[] bytes, int iOffset
   ){
     return sqlite3_blob_write(b.getNativePointer(), bytes, iOffset);
+  }
+
+
+  /**
+     An internal level of indirection in order to avoid having
+     overloaded names of sqlite3_blob_write() in the C API, as the
+     resulting mangled names are unwieldy. The public face of this
+     method is the sqlite3_blob_write() overload which takes a
+     java.nio.ByteBuffer.
+  */
+  private static native int sqlite3_blob_write_nio_buffer(
+    @NotNull long ptrToBlob, int tgtOffset,
+    @NotNull java.nio.ByteBuffer src,
+    int srcOffset, int howMany
+  );
+
+  /**
+     Writes howMany bytes of memory from offset srcOffset of the src
+     buffer at position tgtOffset of b.
+
+     If howMany is negative then it's equivalent to the number of
+     bytes remaining starting at srcOffset. If the computed input
+     slice exceeds src's bounds, the slice is silently truncated.
+  */
+  public static int sqlite3_blob_write(
+    @NotNull sqlite3_blob b, int tgtOffset,
+    @NotNull java.nio.ByteBuffer src,
+    int srcOffset, int howMany
+  ){
+    return sqlite3_blob_write_nio_buffer(b.getNativePointer(), tgtOffset,
+                                         src, srcOffset, howMany);
+  }
+
+  /**
+     Convenience overload which writes all of src to the given offset
+     of b.
+   */
+  public static int sqlite3_blob_write(
+    @NotNull sqlite3_blob b, int tgtOffset,
+    @NotNull java.nio.ByteBuffer src
+  ){
+    return sqlite3_blob_write_nio_buffer(b.getNativePointer(), tgtOffset,
+                                         src, 0, -1);
   }
 
   private static native int sqlite3_busy_handler(
@@ -1787,7 +1832,8 @@ public final class CApi {
 
      <ul>
 
-     <li>text is null: translates to a call to sqlite3_result_null()</li>
+     <li>text is null: translates to a call to {@link
+     #sqlite3_result_null}</li>
 
      <li>text is too large: translates to a call to
      {@link #sqlite3_result_error_toobig}</li>
