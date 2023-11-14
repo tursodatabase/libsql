@@ -208,8 +208,14 @@ impl MakeNamespace for PrimaryNamespaceMaker {
                         if !ns_path.try_exists()? {
                             NamespaceBottomlessDbId::NotProvided
                         } else {
-                            let db_config_store = DatabaseConfigStore::load(&ns_path)
-                                .context("Could not load database config")?;
+                            let db_config_store_result = DatabaseConfigStore::load(&ns_path);
+                            let db_config_store = match db_config_store_result {
+                                Ok(store) => store,
+                                Err(err) => {
+                                    tracing::error!("could not load database: {}", err);
+                                    return Err(err);
+                                }
+                            };
                             let config = db_config_store.get();
                             NamespaceBottomlessDbId::from_config(&config)
                         }
