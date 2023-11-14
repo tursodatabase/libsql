@@ -1045,6 +1045,22 @@ public final class Sqlite implements AutoCloseable  {
     }
 
     /**
+       Works like sqlite3_step(), returning the same result codes as
+       that function unless throwOnError is true, in which case it
+       will throw an SqliteException for any result codes other than
+       Sqlite.ROW or Sqlite.DONE.
+
+       The utility of this overload over the no-argument one is the
+       ability to handle BUSY and LOCKED errors more easily.
+    */
+    public int step(boolean throwOnError){
+      final int rc = (null==stmt)
+              ? Sqlite.MISUSE
+              : CApi.sqlite3_step(stmt);
+      return throwOnError ? checkRc(rc) : rc;
+    }
+
+    /**
        Returns the Sqlite which prepared this statement, or null if
        this statement has been finalized.
     */

@@ -274,14 +274,14 @@ public class Tester2 implements Runnable {
       affirm( "17".equals(stmt.columnText16(0)) );
       affirm( !stmt.step() );
       stmt.reset();
-      affirm( stmt.step() );
+      affirm( Sqlite.ROW==stmt.step(false) );
       affirm( !stmt.step() );
       affirm( 0 == stmt.finalizeStmt() );
       affirm( null==stmt.nativeHandle() );
 
       stmt = db.prepare("SELECT ?");
       stmt.bindObject(1, db);
-      affirm( stmt.step() );
+      affirm( Sqlite.ROW == stmt.step(false) );
       affirm( db==stmt.columnObject(0) );
       affirm( db==stmt.columnObject(0, Sqlite.class ) );
       affirm( null==stmt.columnObject(0, Sqlite.Stmt.class ) );
