@@ -1,6 +1,7 @@
 use crate::hrana::connection::HttpConnection;
 use crate::hrana::pipeline::ServerMsg;
 use crate::hrana::proto::Stmt;
+use crate::hrana::transaction::HttpTransaction;
 use crate::hrana::{HranaError, HttpSend, Result};
 use crate::params::Params;
 use crate::util::ConnectorService;
@@ -9,6 +10,7 @@ use futures::future::BoxFuture;
 use http::header::AUTHORIZATION;
 use http::{HeaderValue, StatusCode};
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct HttpSender {
@@ -114,9 +116,18 @@ impl crate::connection::Conn for HttpConnection<HttpSender> {
 
     async fn transaction(
         &self,
-        _tx_behavior: crate::TransactionBehavior,
+        tx_behavior: crate::TransactionBehavior,
     ) -> crate::Result<crate::transaction::Transaction> {
-        todo!()
+        let stream = self.open_stream();
+        let tx = HttpTransaction::open(stream, tx_behavior)
+            .await
+            .map_err(|e| crate::Error::Hrana(Box::new(e)))?;
+        Ok(crate::Transaction {
+            inner: Box::new(tx),
+            conn: crate::Connection {
+                conn: Arc::new(self.clone()),
+            },
+        })
     }
 
     fn is_autocommit(&self) -> bool {

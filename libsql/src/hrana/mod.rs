@@ -8,6 +8,8 @@ cfg_remote! {
 
 pub mod pipeline;
 pub mod proto;
+mod stream;
+mod transaction;
 
 use crate::hrana::connection::HttpConnection;
 pub(crate) use crate::hrana::pipeline::{ServerMsg, StreamResponseError};
@@ -58,7 +60,7 @@ pub struct Statement<T> {
 
 impl<T> Statement<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: for<'a> HttpSend<'a> + Clone,
 {
     pub(crate) fn new(conn: HttpConnection<T>, sql: String, want_rows: bool) -> Self {
         Statement {
@@ -73,7 +75,7 @@ where
 
         let v = self
             .client
-            .execute_inner(stmt, 0)
+            .execute_inner(stmt)
             .await
             .map_err(|e| Error::Hrana(e.into()))?;
         let affected_row_count = v.affected_row_count as usize;
@@ -91,7 +93,7 @@ where
 
         let StmtResult { rows, cols, .. } = self
             .client
-            .execute_inner(stmt, 0)
+            .execute_inner(stmt)
             .await
             .map_err(|e| Error::Hrana(e.into()))?;
 

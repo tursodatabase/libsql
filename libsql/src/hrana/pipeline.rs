@@ -1,6 +1,6 @@
 // https://github.com/libsql/sqld/blob/main/docs/HTTP_V2_SPEC.md
 
-use super::proto::{Batch, BatchResult, Error, Stmt, StmtResult};
+use super::proto::{Batch, BatchResult, DescribeResult, Error, Stmt, StmtResult};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Debug)]
@@ -20,25 +20,47 @@ pub struct ServerMsg {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum StreamRequest {
     Close,
-    Execute(StreamExecuteReq),
-    Batch(StreamBatchReq),
-    // TODO: implement
-    //    Sequence(Sequence),
-    //    Describe(Describe),
-    //    StoreSql(StoreSql),
-    //    CloseSql(CloseSql),
+    Execute(ExecuteStreamReq),
+    Batch(BatchStreamReq),
+    Sequence(SequenceStreamReq),
+    Describe(DescribeStreamReq),
+    StoreSql(StoreSqlStreamReq),
+    CloseSql(CloseSqlStreamReq),
+    GetAutocommit,
 }
 
 #[derive(Serialize, Debug)]
-pub struct StreamExecuteReq {
+pub struct ExecuteStreamReq {
     pub stmt: Stmt,
 }
 
 #[derive(Serialize, Debug)]
-pub struct StreamBatchReq {
+pub struct BatchStreamReq {
     pub batch: Batch,
 }
 
+#[derive(Serialize, Debug)]
+pub struct SequenceStreamReq {
+    pub sql: Option<String>,
+    pub sql_id: Option<i32>,
+}
+
+#[derive(Serialize, Debug)]
+pub struct DescribeStreamReq {
+    pub sql: Option<String>,
+    pub sql_id: Option<i32>,
+}
+
+#[derive(Serialize, Debug)]
+pub struct StoreSqlStreamReq {
+    pub sql: String,
+    pub sql_id: i32,
+}
+
+#[derive(Serialize, Debug)]
+pub struct CloseSqlStreamReq {
+    pub sql_id: i32,
+}
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Response {
@@ -56,25 +78,36 @@ pub struct StreamResponseError {
     pub error: Error,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum StreamResponse {
+    #[default]
     Close,
-    Execute(StreamExecuteResult),
-    Batch(StreamBatchResult),
-    // TODO: implement
-    //    Sequence(SequenceResult),
-    //    Describe(DescribeResult),
-    //    StoreSql(StoreSqlResult),
-    //    CloseSql(CloseSqlResult),
+    Execute(ExecuteStreamResp),
+    Batch(BatchStreamResp),
+    Sequence,
+    Describe(DescribeStreamResp),
+    StoreSql,
+    CloseSql,
+    GetAutocommit(GetAutocommitStreamResp),
 }
 
 #[derive(Deserialize, Debug)]
-pub struct StreamExecuteResult {
+pub struct ExecuteStreamResp {
     pub result: StmtResult,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct StreamBatchResult {
+pub struct DescribeStreamResp {
+    pub result: DescribeResult,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct GetAutocommitStreamResp {
+    pub is_autocommit: bool,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct BatchStreamResp {
     pub result: BatchResult,
 }

@@ -5,6 +5,7 @@ use tempfile::tempdir;
 
 use crate::common::net::{init_tracing, SimServer, TestServer};
 mod batch;
+mod transaction;
 
 async fn make_standalone_server() -> Result<(), Box<dyn std::error::Error>> {
     init_tracing();
