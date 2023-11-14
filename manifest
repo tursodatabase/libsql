@@ -1,5 +1,5 @@
-C Cure\smany\swarnings\sfrom\sgcc,\sclang\sand\sCL.exe.
-D 2023-11-13T15:59:27.593
+C Add\sa\sfew\sasserts\sinto\s*Put*()\sfunctions\sto\scatch\scalls\sthat\smight\scause\san\saddress\sfault.
+D 2023-11-14T03:24:43.961
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -50,7 +50,7 @@ F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 6f247666b495c477628dd19364d279c78ea48cd90c72d9f9b98ad1aff3294f94
 F ext/async/sqlite3async.h 46b47c79357b97ad85d20d2795942c0020dc20c532114a49808287f04aa5309a
-F ext/consio/console_io.c b59dac1eb138339fcef6da8feae2f3a9a4397b7362ef52b4dca630ef5f848f23 x
+F ext/consio/console_io.c baffbeb5e73dcd3191c677bbcd5266c35891c17f87930cd89cf2463b7ec2da09 x
 F ext/consio/console_io.h 515d27ca9e5a5d36e12ff2b85977b5931fdeba0ce142f40178d94dc8638b4c81
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
@@ -2142,8 +2142,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 08996f4fd52f5742e77225ce3da2ac43ea5cc44bb0d8d21126b6d624273842a5
-R ab417e4721f6826c6db3c6522006d6a5
+P 29ea2a3aadd34facc45a2e9f9a567bac16fca76beb019b879e2611433c85bbb3
+R 8876fea59629c4e62a560a6743807241
 U larrybr
-Z 401b90e437fbd22102bf23dbdae3a8b4
+Z 00b6c0e6cfeef68150271d56dd5abcd0
 # Remove this line to create a well-formed Fossil manifest.

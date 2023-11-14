@@ -371,6 +371,7 @@ SQLITE_INTERNAL_LINKAGE int oPrintfUtf8(const char *zFormat, ...){
 #else
   getEmitStreamInfo(1, &pst, &pfOut);
 #endif
+  assert(zFormat!=0);
   va_start(ap, zFormat);
 #if SHELL_CON_TRANSLATE
   if( pstReachesConsole(ppst) ){
@@ -395,6 +396,7 @@ SQLITE_INTERNAL_LINKAGE int ePrintfUtf8(const char *zFormat, ...){
 #else
   getEmitStreamInfo(2, &pst, &pfErr);
 #endif
+  assert(zFormat!=0);
   va_start(ap, zFormat);
 #if SHELL_CON_TRANSLATE
   if( pstReachesConsole(ppst) ){
@@ -418,7 +420,7 @@ SQLITE_INTERNAL_LINKAGE int fPrintfUtf8(FILE *pfO, const char *zFormat, ...){
 #else
   getEmitStreamInfo(0, &pst, &pfO);
 #endif
-
+  assert(zFormat!=0);
   va_start(ap, zFormat);
 #if SHELL_CON_TRANSLATE
   if( pstReachesConsole(ppst) ){
@@ -442,6 +444,7 @@ SQLITE_INTERNAL_LINKAGE int fPutsUtf8(const char *z, FILE *pfO){
 #else
   getEmitStreamInfo(0, &pst, &pfO);
 #endif
+  assert(z!=0);
 #if SHELL_CON_TRANSLATE
   if( pstReachesConsole(ppst) ){
     int rv;
@@ -465,6 +468,7 @@ SQLITE_INTERNAL_LINKAGE int ePutsUtf8(const char *z){
 #else
   getEmitStreamInfo(2, &pst, &pfErr);
 #endif
+  assert(z!=0);
 #if SHELL_CON_TRANSLATE
   if( pstReachesConsole(ppst) ) return conZstrEmit(ppst, z, (int)strlen(z));
   else {
@@ -483,6 +487,7 @@ SQLITE_INTERNAL_LINKAGE int oPutsUtf8(const char *z){
 #else
   getEmitStreamInfo(1, &pst, &pfOut);
 #endif
+  assert(z!=0);
 #if SHELL_CON_TRANSLATE
   if( pstReachesConsole(ppst) ) return conZstrEmit(ppst, z, (int)strlen(z));
   else {
@@ -502,6 +507,7 @@ SQLITE_INTERNAL_LINKAGE int oPutsUtf8(const char *z){
 static const char* zSkipValidUtf8(const char *z, int nAccept, long ccm){
   int ng = (nAccept<0)? -nAccept : 0;
   const char *pcLimit = (nAccept>=0)? z+nAccept : 0;
+  assert(z!=0);
   while( (pcLimit)? (z<pcLimit) : (ng-- > 0) ){
     char c = *z;
     if( (c & 0x80) == 0 ){
