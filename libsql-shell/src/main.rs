@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use anyhow::Result;
 use base64::{engine::general_purpose, Engine as _};
 use clap::Parser;
@@ -108,6 +106,7 @@ struct Shell {
     continuation_prompt: String,
 }
 
+#[allow(dead_code)]
 enum Out {
     Stdout,
     File(std::fs::File, PathBuf),
@@ -138,6 +137,7 @@ impl fmt::Display for Out {
     }
 }
 
+#[allow(dead_code)]
 enum ExplainMode {
     Off,
     On,
@@ -158,6 +158,7 @@ impl fmt::Display for ExplainMode {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 enum OutputMode {
     /// Columns/rows delimited by 0x1F and 0x1E
@@ -196,6 +197,7 @@ impl fmt::Display for OutputMode {
     }
 }
 
+#[allow(dead_code)]
 enum StatsMode {
     /// Turn off automatic stat display
     Off,
