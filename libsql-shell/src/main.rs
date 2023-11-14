@@ -76,6 +76,7 @@ struct Shell {
     /// Write results here
     out: Out,
 
+    bail: bool,
     echo: bool,
     eqp: bool,
     explain: ExplainMode,
@@ -223,6 +224,7 @@ impl Shell {
         };
 
         Ok(Self {
+            bail: false,
             db: connection,
             out: Out::Stdout,
             echo: args.echo,
@@ -324,24 +326,8 @@ impl Shell {
     fn run_command(&mut self, command: &str, args: &[&str]) -> Result<()> {
         let mut result = None;
         match command {
-            ".echo" => {
-                if args.len() != 1 {
-                    writeln!(self.out, "Usage: .echo on|off")?;
-                    return Ok(());
-                }
-                match args[0].to_lowercase().as_str() {
-                    "on" | "true" => self.echo = true,
-                    "off" | "false" => self.echo = false,
-                    txt => {
-                        self.echo = false;
-                        writeln!(
-                            self.out,
-                            "ERROR: Not a boolean value: \"{}\". Assuming \"no\"",
-                            txt
-                        )?;
-                    }
-                }
-            }
+            ".bail" => toggle_option(command, &mut self.bail, args),
+            ".echo" => toggle_option(command, &mut self.echo, args),
             ".headers" => {
                 if args.len() != 1 {
                     writeln!(self.out, "Usage: .headers on|off")?;
@@ -460,7 +446,12 @@ impl Shell {
                                 writeln!(self.out, "{}", table)?;
                             }
                         }
-                        Err(e) => println!("Parse error near line {}: {}", i + 1, e),
+                        Err(e) => {
+                            println!("Parse error near line {}: {}", i + 1, e);
+                            if self.bail {
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -765,6 +756,29 @@ fn main() -> Result<()> {
     let result = shell.run(&mut rl);
     rl.save_history(history.as_path()).ok();
     result
+}
+
+fn toggle_option(name: &str, value: &mut bool, args: &[&str]) {
+    if args.len() != 1 {
+        println!("Usage: {} on|off", name);
+        return;
+    }
+
+    match args[0].to_lowercase().as_str() {
+        "on" | "true" | "yes" => *value = true,
+        "off" | "false" | "no" => *value = false,
+        arg => {
+            // FIXME Run with `.bail '123"`, it should not be legal, but `split_terminator`
+            // return args as ["123"] which however work here.
+            // It's not a big problem, but it doesn't behave same as `sqlite`.
+            if arg.chars().all(|a| a.is_ascii_digit()) {
+                *value = arg != "0";
+            } else {
+                *value = false;
+                println!("ERROR: Not a boolean value: \"{}\". Assuming \"no\"", arg)
+            }
+        }
+    }
 }
 
 #[cfg(test)]
