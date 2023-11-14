@@ -26,8 +26,8 @@ use http::user::UserApi;
 use hyper::client::HttpConnector;
 use hyper_rustls::HttpsConnector;
 use namespace::{
-    MakeNamespace, NamespaceName, NamespaceStore, PrimaryNamespaceConfig, PrimaryNamespaceMaker,
-    ReplicaNamespaceConfig, ReplicaNamespaceMaker,
+    MakeNamespace, NamespaceBottomlessDbId, NamespaceName, NamespaceStore, PrimaryNamespaceConfig,
+    PrimaryNamespaceMaker, ReplicaNamespaceConfig, ReplicaNamespaceMaker,
 };
 use net::Connector;
 use once_cell::sync::Lazy;
@@ -516,7 +516,7 @@ where
                 .create(
                     NamespaceName::default(),
                     namespace::RestoreOption::Latest,
-                    None,
+                    NamespaceBottomlessDbId::NotProvided,
                 )
                 .await?;
         }
