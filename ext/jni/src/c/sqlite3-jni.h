@@ -1003,6 +1003,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1blob_1read
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_blob_read_nio_buffer
+ * Signature: (JILjava/nio/ByteBuffer;II)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1blob_1read_1nio_1buffer
+  (JNIEnv *, jclass, jlong, jint, jobject, jint, jint);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
  * Method:    sqlite3_blob_reopen
  * Signature: (JJ)I
  */

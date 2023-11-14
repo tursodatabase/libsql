@@ -1759,8 +1759,8 @@ public class Tester1 implements Runnable {
     for( byte i = 0; i < 10; ++i ){
       bb.put((int)i, (byte)(48+i & 0xff));
     }
-    rc = sqlite3_blob_write(b, 1, bb);
-    affirm( rc==SQLITE_ERROR, "Because b length < (offset 1 + bb length)" );
+    rc = sqlite3_blob_write(b, 1, bb, 1, 10);
+    affirm( rc==SQLITE_ERROR, "b length < (srcOffset + bb length)" );
     rc = sqlite3_blob_write(b, -1, bb);
     affirm( rc==SQLITE_ERROR, "Target offset may not be negative" );
     rc = sqlite3_blob_write(b, 0, bb, -1, -1);
@@ -1770,13 +1770,58 @@ public class Tester1 implements Runnable {
     // b's contents: 0 49  50  51  52  53  54  55  56  0
     //        ascii: 0 '1' '2' '3' '4' '5' '6' '7' '8' 0
     byte br[] = new byte[10];
+    java.nio.ByteBuffer bbr =
+      java.nio.ByteBuffer.allocateDirect(bb.limit());
     rc = sqlite3_blob_read( b, br, 0 );
-    sqlite3_blob_close(b);
     affirm( rc==0 );
+    rc = sqlite3_blob_read( b, bbr );
+    affirm( rc==0 );
+    java.nio.ByteBuffer bbr2 = sqlite3_blob_read_nio_buffer(b, 0, 12);
+    affirm( null==bbr2, "Read size is too big");
+    bbr2 = sqlite3_blob_read_nio_buffer(b, -1, 3);
+    affirm( null==bbr2, "Source offset is negative");
+    bbr2 = sqlite3_blob_read_nio_buffer(b, 5, 6);
+    affirm( null==bbr2, "Read pos+size is too big");
+    bbr2 = sqlite3_blob_read_nio_buffer(b, 4, 7);
+    affirm( null==bbr2, "Read pos+size is too big");
+    bbr2 = sqlite3_blob_read_nio_buffer(b, 4, 6);
+    affirm( null!=bbr2 );
+    java.nio.ByteBuffer bbr3 =
+      java.nio.ByteBuffer.allocateDirect(2 * bb.limit());
+    java.nio.ByteBuffer bbr4 =
+      java.nio.ByteBuffer.allocateDirect(5);
+    rc = sqlite3_blob_read( b, bbr3 );
+    affirm( rc==0 );
+    rc = sqlite3_blob_read( b, bbr4 );
+    affirm( rc==0 );
+    affirm( sqlite3_blob_bytes(b)==bbr3.limit() );
+    affirm( 5==bbr4.limit() );
+    sqlite3_blob_close(b);
     affirm( 0==br[0] );
     affirm( 0==br[9] );
+    affirm( 0==bbr.get(0) );
+    affirm( 0==bbr.get(9) );
+    affirm( bbr2.limit() == 6 );
+    affirm( 0==bbr3.get(0) );
+    {
+      Exception ex = null;
+      try{ bbr3.get(11); }
+      catch(Exception e){ex = e;}
+      affirm( ex instanceof IndexOutOfBoundsException,
+              "bbr3.limit() was reset by read()" );
+      ex = null;
+    }
+    affirm( 0==bbr4.get(0) );
     for( int i = 1; i < 9; ++i ){
       affirm( br[i] == 48 + i );
+      affirm( br[i] == bbr.get(i) );
+      affirm( br[i] == bbr3.get(i) );
+      if( i>3 ){
+        affirm( br[i] == bbr2.get(i-4) );
+      }
+      if( i < bbr4.limit() ){
+        affirm( br[i] == bbr4.get(i) );
+      }
     }
     sqlite3_close_v2(db);
   }

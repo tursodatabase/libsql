@@ -2485,7 +2485,7 @@ struct S3JniNioArgs {
   jint iHowMany;       /* input - byte count to bind/read/write */
   jint nBuf;           /* output - jBuf's buffer size */
   void * p;            /* output - jBuf's buffer memory */
-  const void * pStart; /* output - offset of p to bind/read/write */
+  void * pStart;       /* output - offset of p to bind/read/write */
   int nOut;            /* output - number of bytes from pStart to bind/read/write */
 };
 typedef struct S3JniNioArgs S3JniNioArgs;
@@ -2494,32 +2494,39 @@ static const S3JniNioArgs S3JniNioArgs_empty = {
 };
 
 /*
-** Internal helper for sqlite3_bind_nio_buffer() and
-** sqlite3_result_nio_buffer(). Populates pArgs and returns 0 on
-** success, non-0 if the operation should fail. The caller is required
-** to check for SJG.g.cByteBuffer!=0 before calling this and reporting
-** it in a way appropriate for that routine.  This function may
-** assert() that SJG.g.cByteBuffer is not 0.
+** Internal helper for sqlite3_bind_nio_buffer(),
+** sqlite3_result_nio_buffer(), and similar methods which take a
+** ByteBuffer object as either input or output. Populates pArgs and
+** returns 0 on success, non-0 if the operation should fail. The
+** caller is required to check for SJG.g.cByteBuffer!=0 before calling
+** this and reporting it in a way appropriate for that routine.  This
+** function may assert() that SJG.g.cByteBuffer is not 0.
 **
-** The (jBuffer, iOffset, iN) arguments are the (ByteBuffer, offset,
+** The (jBuffer, iOffset, iHowMany) arguments are the (ByteBuffer, offset,
 ** length) arguments to the bind/result method.
+**
+** If iHowMany is negative then it's treated as "until the end" and
+** the calculated slice is trimmed to fit if needed. If iHowMany is
+** positive and extends past the end of jBuffer then SQLITE_ERROR is
+** returned.
 **
 ** Returns 0 if everything looks to be in order, else some SQLITE_...
 ** result code
 */
 static int s3jni_setup_nio_args(
   JNIEnv *env, S3JniNioArgs * pArgs,
-  jobject jBuffer, jint iOffset, jint iN
+  jobject jBuffer, jint iOffset, jint iHowMany
 ){
   jlong iEnd = 0;
+  const int bAllowTruncate = iHowMany<0;
   *pArgs = S3JniNioArgs_empty;
   pArgs->jBuf = jBuffer;
   pArgs->iOffset = iOffset;
-  pArgs->iHowMany = iN;
+  pArgs->iHowMany = iHowMany;
   assert( SJG.g.cByteBuffer );
   if( pArgs->iOffset<0 ){
     return SQLITE_ERROR
-      /* SQLITE_MISUSE would arguably fit better but we use
+      /* SQLITE_MISUSE or SQLITE_RANGE would fit better but we use
          SQLITE_ERROR for consistency with the code documented for a
          negative target blob offset in sqlite3_blob_read/write(). */;
   }
@@ -2536,7 +2543,15 @@ static int s3jni_setup_nio_args(
   iEnd = pArgs->iHowMany<0
     ? pArgs->nBuf - pArgs->iOffset
     : pArgs->iOffset + pArgs->iHowMany;
-  if( iEnd>(jlong)pArgs->nBuf ) iEnd = pArgs->nBuf - pArgs->iOffset;
+  if( iEnd>(jlong)pArgs->nBuf ){
+    if( bAllowTruncate ){
+      iEnd = pArgs->nBuf - pArgs->iOffset;
+    }else{
+      return SQLITE_ERROR
+        /* again: for consistency with blob_read/write(), though
+           SQLITE_MISUSE or SQLITE_RANGE would be a better fit. */;
+    }
+  }
   if( iEnd - pArgs->iOffset > (jlong)SQLITE_MAX_LENGTH ){
     return SQLITE_TOOBIG;
   }
@@ -2545,6 +2560,7 @@ static int s3jni_setup_nio_args(
   pArgs->pStart = pArgs->p + pArgs->iOffset;
   pArgs->nOut = (int)(iEnd - pArgs->iOffset);
   assert( pArgs->nOut > 0 );
+  assert( (pArgs->pStart + pArgs->nOut) <= (pArgs->p + pArgs->nBuf) );
   return 0;
 }
 
@@ -2562,10 +2578,6 @@ S3JniApi(sqlite3_bind_nio_buffer(),jint,1bind_1nio_1buffer)(
   }else if( !args.pStart || !args.nOut ){
     return sqlite3_bind_null(pStmt, ndx);
   }
-  assert( args.nOut>0 );
-  assert( args.nBuf > 0 );
-  assert( args.pStart != 0 );
-  assert( (args.pStart + args.nOut) <= (args.p + args.nBuf) );
   return sqlite3_bind_blob( pStmt, (int)ndx, args.pStart,
                             args.nOut, SQLITE_TRANSIENT );
 }
@@ -2784,6 +2796,30 @@ S3JniApi(sqlite3_blob_read(),jint,1blob_1read)(
   return rc;
 }
 
+S3JniApi(sqlite3_blob_read_nio_buffer(),jint,1blob_1read_1nio_1buffer)(
+  JniArgsEnvClass, jlong jpBlob, jint iSrcOff, jobject jBB, jint iTgtOff, jint iHowMany
+){
+  sqlite3_blob * const b = LongPtrGet_sqlite3_blob(jpBlob);
+  S3JniNioArgs args;
+  int rc;
+  if( !b || !SJG.g.cByteBuffer || iHowMany<0 ){
+    return SQLITE_MISUSE;
+  }else if( iTgtOff<0 || iSrcOff<0 ){
+    return SQLITE_ERROR
+      /* for consistency with underlying sqlite3_blob_read() */;
+  }else if( 0==iHowMany ){
+    return 0;
+  }
+  rc = s3jni_setup_nio_args(env, &args, jBB, iTgtOff, iHowMany);
+  if(rc){
+    return rc;
+  }else if( !args.pStart || !args.nOut ){
+    return 0;
+  }
+  assert( args.iHowMany>0 );
+  return sqlite3_blob_read( b, args.pStart, (int)args.nOut, (int)iSrcOff );
+}
+
 S3JniApi(sqlite3_blob_reopen(),jint,1blob_1reopen)(
   JniArgsEnvClass, jlong jpBlob, jlong iNewRowId
 ){
@@ -2806,7 +2842,7 @@ S3JniApi(sqlite3_blob_write(),jint,1blob_1write)(
 }
 
 S3JniApi(sqlite3_blob_write_nio_buffer(),jint,1blob_1write_1nio_1buffer)(
-  JniArgsEnvClass, jlong jpBlob, jint iSrcOff, jobject jBB, jint iTgtOff, jint iHowMany
+  JniArgsEnvClass, jlong jpBlob, jint iTgtOff, jobject jBB, jint iSrcOff, jint iHowMany
 ){
   sqlite3_blob * const b = LongPtrGet_sqlite3_blob(jpBlob);
   S3JniNioArgs args;
@@ -2819,17 +2855,13 @@ S3JniApi(sqlite3_blob_write_nio_buffer(),jint,1blob_1write_1nio_1buffer)(
   }else if( 0==iHowMany ){
     return 0;
   }
-  rc = s3jni_setup_nio_args(env, &args, jBB, iTgtOff, iHowMany);
+  rc = s3jni_setup_nio_args(env, &args, jBB, iSrcOff, iHowMany);
   if(rc){
     return rc;
   }else if( !args.pStart || !args.nOut ){
     return 0;
   }
-  assert( args.nOut>0 );
-  assert( args.nBuf > 0 );
-  assert( args.pStart != 0 );
-  assert( (args.pStart + args.nOut) <= (args.p + args.nBuf) );
-  return sqlite3_blob_write( b, args.pStart, (int)args.nOut, iSrcOff );
+  return sqlite3_blob_write( b, args.pStart, (int)args.nOut, (int)iTgtOff );
 }
 
 /* Central C-to-Java busy handler proxy. */
