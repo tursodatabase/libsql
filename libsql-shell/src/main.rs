@@ -3,7 +3,17 @@
 use anyhow::Result;
 use base64::{engine::general_purpose, Engine as _};
 use clap::Parser;
-use rusqlite::ffi::{sqlite3_changes64, sqlite3_total_changes64};
+use once_cell::sync::Lazy;
+use rusqlite::ffi::{
+    sqlite3_changes64, sqlite3_db_config, sqlite3_total_changes64, SQLITE_DBCONFIG_DEFENSIVE,
+    SQLITE_DBCONFIG_DQS_DDL, SQLITE_DBCONFIG_DQS_DML, SQLITE_DBCONFIG_ENABLE_FKEY,
+    SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION,
+    SQLITE_DBCONFIG_ENABLE_QPSG, SQLITE_DBCONFIG_ENABLE_TRIGGER, SQLITE_DBCONFIG_ENABLE_VIEW,
+    SQLITE_DBCONFIG_LEGACY_ALTER_TABLE, SQLITE_DBCONFIG_LEGACY_FILE_FORMAT,
+    SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE, SQLITE_DBCONFIG_RESET_DATABASE,
+    SQLITE_DBCONFIG_REVERSE_SCANORDER, SQLITE_DBCONFIG_STMT_SCANSTATUS,
+    SQLITE_DBCONFIG_TRIGGER_EQP, SQLITE_DBCONFIG_TRUSTED_SCHEMA, SQLITE_DBCONFIG_WRITABLE_SCHEMA,
+};
 use rusqlite::Params;
 use rusqlite::{types::ValueRef, Connection, OpenFlags, Statement};
 use rustyline::completion::{Completer, Pair};
@@ -11,6 +21,7 @@ use rustyline::error::ReadlineError;
 use rustyline::history::FileHistory;
 use rustyline::{CompletionType, Config, Context, Editor};
 use rustyline_derive::{Helper, Highlighter, Hinter, Validator};
+use std::collections::BTreeMap;
 use std::fmt;
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
@@ -357,6 +368,91 @@ impl Shell {
                     // but we cannot convert a `&str` to `DatabaseName`
                     let readonly = if self.readonly { "r/o" } else { "r/w" };
                     writeln!(self.out, "{}: {:?} {}", name, file, readonly)?;
+                }
+            }
+            ".dbconfig" => {
+                static DBCONFIG: Lazy<BTreeMap<&str, i32>> = Lazy::new(|| {
+                    [
+                        ("defensive", SQLITE_DBCONFIG_DEFENSIVE),
+                        ("dqs_ddl", SQLITE_DBCONFIG_DQS_DDL),
+                        ("dqs_dml", SQLITE_DBCONFIG_DQS_DML),
+                        ("enable_fkey", SQLITE_DBCONFIG_ENABLE_FKEY),
+                        ("enable_qpsg", SQLITE_DBCONFIG_ENABLE_QPSG),
+                        ("enable_trigger", SQLITE_DBCONFIG_ENABLE_TRIGGER),
+                        ("enable_view", SQLITE_DBCONFIG_ENABLE_VIEW),
+                        ("fts3_tokenizer", SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER),
+                        ("legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE),
+                        ("legacy_file_format", SQLITE_DBCONFIG_LEGACY_FILE_FORMAT),
+                        ("load_extension", SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION),
+                        ("no_ckpt_on_close", SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE),
+                        ("reset_database", SQLITE_DBCONFIG_RESET_DATABASE),
+                        ("reverse_scanorder", SQLITE_DBCONFIG_REVERSE_SCANORDER),
+                        ("stmt_scanstatus", SQLITE_DBCONFIG_STMT_SCANSTATUS),
+                        ("trigger_eqp", SQLITE_DBCONFIG_TRIGGER_EQP),
+                        ("trusted_schema", SQLITE_DBCONFIG_TRUSTED_SCHEMA),
+                        ("writable_schema", SQLITE_DBCONFIG_WRITABLE_SCHEMA),
+                    ]
+                    .into_iter()
+                    .collect()
+                });
+                let db = unsafe { self.db.handle() };
+                if args.is_empty() {
+                    for (name, opt) in DBCONFIG.iter() {
+                        let enabled = 0;
+                        unsafe {
+                            sqlite3_db_config(db, *opt, -1, &enabled);
+                        }
+                        writeln!(
+                            self.out,
+                            "{:>19} {}",
+                            name,
+                            if enabled == 0 { "off" } else { "on" }
+                        )?;
+                    }
+                } else {
+                    match DBCONFIG.get(args[0]) {
+                        Some(opt) => match args.len() {
+                            1 => {
+                                let enabled = 0;
+                                unsafe {
+                                    sqlite3_db_config(db, *opt, -1, &enabled);
+                                }
+                                writeln!(
+                                    self.out,
+                                    "{:>19} {}",
+                                    args[0],
+                                    if enabled == 0 { "off" } else { "on" }
+                                )?;
+                            }
+                            2 => {
+                                let enabled = match args[1].to_lowercase().as_str() {
+                                    "on" | "true" | "yes" => true,
+                                    "off" | "false" | "no" => false,
+                                    arg => {
+                                        if arg.chars().all(|a| a.is_ascii_digit()) {
+                                            arg != "0"
+                                        } else {
+                                            println!("ERROR: Not a boolean value: \"{}\". Assuming \"no\"", arg);
+                                            false
+                                        }
+                                    }
+                                };
+                                unsafe {
+                                    sqlite3_db_config(db, *opt, enabled as i32, 0);
+                                }
+                                writeln!(
+                                    self.out,
+                                    "{:>19} {}",
+                                    args[0],
+                                    if enabled { "on" } else { "off" }
+                                )?;
+                            }
+                            _ => println!("Usage: .dbconfig ?op? ?val?     List or change sqlite3_db_config() options"),
+                        },
+                        None => {
+                            println!("Error: unknown dbconfig {:?}\nEnter \".dbconfig\" with no arguments for a list", args[0]);
+                        }
+                    }
                 }
             }
             ".headers" => {
