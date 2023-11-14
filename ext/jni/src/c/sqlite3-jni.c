@@ -661,11 +661,14 @@ struct S3JniGlobalType {
 
       https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/functions.html#nio_support
 
-      We only store a ref to the following if JNI support for
+      We only store a ref to byteBuffer.klazz if JNI support for
       ByteBuffer is available (which we determine during static init).
     */
-    jclass cByteBuffer       /* global ref to java.nio.ByteBuffer */;
-    jmethodID byteBufferAlloc/* ByteBuffer.allocateDirect() */;
+    struct {
+      jclass klazz       /* global ref to java.nio.ByteBuffer */;
+      jmethodID midAlloc /* ByteBuffer.allocateDirect() */;
+      jmethodID midLimit /* ByteBuffer.limit() */;
+    } byteBuffer;
   } g;
   /*
   ** The list of Java-side auto-extensions
@@ -873,25 +876,52 @@ static jbyte * s3jni__jbyteArray_bytes2(JNIEnv * const env, jbyteArray jBA, jsiz
   if( jBytes ) (*env)->ReleaseByteArrayElements(env, jByteArray, jBytes, JNI_COMMIT)
 
 /*
-** If jbb is-a java.nio.Buffer object and the JNI environment
-** supports it, *pBuf is set to the buffer's memory and *pN is set to
-** its length. If jbb is NULL, not a Buffer, or the JNI environment
-** does not support that operation, *pBuf is set to 0 and *pN is set
-** to 0.
+** If jbb is-a java.nio.Buffer object and the JNI environment supports
+** it, *pBuf is set to the buffer's memory and *pN is set to its
+** limit() (as opposed to its capacity()). If jbb is NULL, not a
+** Buffer, or the JNI environment does not support that operation,
+** *pBuf is set to 0 and *pN is set to 0.
 **
 ** Note that the length of the buffer can be larger than SQLITE_LIMIT
 ** but this function does not know what byte range of the buffer is
 ** required so cannot check for that violation. The caller is required
 ** to ensure that any to-be-bind()ed range fits within SQLITE_LIMIT.
- */
+**
+** Sidebar: it is unfortunate that we cannot get ByteBuffer.limit()
+** via a JNI method like we can for ByteBuffer.capacity(). We instead
+** have to call back into Java to get the limit(). Depending on how
+** the ByteBuffer is used, the limit and capacity might be the same,
+** but when reusing a buffer, the limit may well change whereas the
+** capacity is fixed. The problem with, e.g., read()ing blob data to a
+** ByteBuffer's memory based on its capacity is that Java-level code
+** is restricted to accessing the range specified in
+** ByteBuffer.limit().  If we were to honor only the capacity, we
+** could end up writing to, or reading from, parts of a ByteBuffer
+** which client code itself cannot access without explicitly modifying
+** the limit. The penalty we pay for this correctness is that we must
+** call into Java to get the limit() of every ByteBuffer we work with.
+**
+** An alternative to having to call into ByteBuffer.limit() from here
+** would be to add private native impls of all ByteBuffer-using
+** methods, each of which adds a jint parameter which _must_ be set to
+** theBuffer.limit() by public Java APIs which use those private impls
+** to do the real work.
+*/
 static void s3jni__get_nio_buffer(JNIEnv * const env, jobject jbb, void **pBuf, jint * pN ){
   *pBuf = 0;
   *pN = 0;
   if( jbb ){
     *pBuf = (*env)->GetDirectBufferAddress(env, jbb);
-    *pN = *pBuf ? (jint)(*env)->GetDirectBufferCapacity(env, jbb) : 0
-      /* why the Java limits the buffer length to int but the JNI API
-         uses a jlong for the length is a mystery. */;
+    if( *pBuf ){
+      /*
+      ** Maintenance reminder: do not use
+      ** (*env)->GetDirectBufferCapacity(env,jbb), even though it
+      ** would be much faster, for reasons explained in this
+      ** function's comments.
+      */
+      *pN = (*env)->CallIntMethod(env, jbb, SJG.g.byteBuffer.midLimit);
+      S3JniExceptionIsFatal("Error calling ByteBuffer.limit() method.");
+    }
   }
 }
 #define s3jni_get_nio_buffer(JOBJ,vpOut,jpOut) \
@@ -1097,15 +1127,15 @@ static jstring s3jni_text16_to_jstring(JNIEnv * const env, const void * const p,
 
 /*
 ** Creates a new ByteBuffer instance with a capacity of n. assert()s
-** that SJG.g.cByteBuffer is not 0 and n>0.
+** that SJG.g.byteBuffer.klazz is not 0 and n>0.
 */
 static jobject s3jni__new_ByteBuffer(JNIEnv * const env, int n){
   jobject rv = 0;
-  assert( SJG.g.cByteBuffer );
-  assert( SJG.g.byteBufferAlloc );
+  assert( SJG.g.byteBuffer.klazz );
+  assert( SJG.g.byteBuffer.midAlloc );
   assert( n > 0 );
-  rv = (*env)->CallStaticObjectMethod(env, SJG.g.cByteBuffer,
-                                      SJG.g.byteBufferAlloc, (jint)n);
+  rv = (*env)->CallStaticObjectMethod(env, SJG.g.byteBuffer.klazz,
+                                      SJG.g.byteBuffer.midAlloc, (jint)n);
   S3JniIfThrew {
     S3JniExceptionReport;
     S3JniExceptionClear;
@@ -1124,7 +1154,7 @@ static jobject s3jni__blob_to_ByteBuffer(JNIEnv * const env,
                                          const void * p, int n){
   jobject rv = NULL;
   assert( n >= 0 );
-  if( 0==n || !SJG.g.cByteBuffer ){
+  if( 0==n || !SJG.g.byteBuffer.klazz ){
     return NULL;
   }
   rv = s3jni__new_ByteBuffer(env, n);
@@ -2498,9 +2528,9 @@ static const S3JniNioArgs S3JniNioArgs_empty = {
 ** sqlite3_result_nio_buffer(), and similar methods which take a
 ** ByteBuffer object as either input or output. Populates pArgs and
 ** returns 0 on success, non-0 if the operation should fail. The
-** caller is required to check for SJG.g.cByteBuffer!=0 before calling
+** caller is required to check for SJG.g.byteBuffer.klazz!=0 before calling
 ** this and reporting it in a way appropriate for that routine.  This
-** function may assert() that SJG.g.cByteBuffer is not 0.
+** function may assert() that SJG.g.byteBuffer.klazz is not 0.
 **
 ** The (jBuffer, iOffset, iHowMany) arguments are the (ByteBuffer, offset,
 ** length) arguments to the bind/result method.
@@ -2523,7 +2553,7 @@ static int s3jni_setup_nio_args(
   pArgs->jBuf = jBuffer;
   pArgs->iOffset = iOffset;
   pArgs->iHowMany = iHowMany;
-  assert( SJG.g.cByteBuffer );
+  assert( SJG.g.byteBuffer.klazz );
   if( pArgs->iOffset<0 ){
     return SQLITE_ERROR
       /* SQLITE_MISUSE or SQLITE_RANGE would fit better but we use
@@ -2571,7 +2601,7 @@ S3JniApi(sqlite3_bind_nio_buffer(),jint,1bind_1nio_1buffer)(
   sqlite3_stmt * pStmt = PtrGet_sqlite3_stmt(jpStmt);
   S3JniNioArgs args;
   int rc;
-  if( !pStmt || !SJG.g.cByteBuffer ) return SQLITE_MISUSE;
+  if( !pStmt || !SJG.g.byteBuffer.klazz ) return SQLITE_MISUSE;
   rc = s3jni_setup_nio_args(env, &args, jBuffer, iOffset, iN);
   if(rc){
     return rc;
@@ -2802,7 +2832,7 @@ S3JniApi(sqlite3_blob_read_nio_buffer(),jint,1blob_1read_1nio_1buffer)(
   sqlite3_blob * const b = LongPtrGet_sqlite3_blob(jpBlob);
   S3JniNioArgs args;
   int rc;
-  if( !b || !SJG.g.cByteBuffer || iHowMany<0 ){
+  if( !b || !SJG.g.byteBuffer.klazz || iHowMany<0 ){
     return SQLITE_MISUSE;
   }else if( iTgtOff<0 || iSrcOff<0 ){
     return SQLITE_ERROR
@@ -2847,7 +2877,7 @@ S3JniApi(sqlite3_blob_write_nio_buffer(),jint,1blob_1write_1nio_1buffer)(
   sqlite3_blob * const b = LongPtrGet_sqlite3_blob(jpBlob);
   S3JniNioArgs args;
   int rc;
-  if( !b || !SJG.g.cByteBuffer ){
+  if( !b || !SJG.g.byteBuffer.klazz ){
     return SQLITE_MISUSE;
   }else if( iTgtOff<0 || iSrcOff<0 ){
     return SQLITE_ERROR
@@ -3940,7 +3970,7 @@ S3JniApi(sqlite3_jni_db_error(), jint, 1jni_1db_1error)(
 S3JniApi(sqlite3_jni_supports_nio(), jboolean,1jni_1supports_1nio)(
   JniArgsEnvClass
 ){
-  return SJG.g.cByteBuffer ? JNI_TRUE : JNI_FALSE;
+  return SJG.g.byteBuffer.klazz ? JNI_TRUE : JNI_FALSE;
 }
 
 
@@ -4683,7 +4713,7 @@ S3JniApi(sqlite3_result_nio_buffer(),void,1result_1nio_1buffer)(
   S3JniNioArgs args;
   if( !pCx ){
     return;
-  }else if( !SJG.g.cByteBuffer ){
+  }else if( !SJG.g.byteBuffer.klazz ){
     sqlite3_result_error(
       pCx, "This JVM does not support JNI access to ByteBuffers.", -1
     );
@@ -6257,15 +6287,19 @@ Java_org_sqlite_jni_capi_CApi_init(JniArgsEnvClass){
     unsigned char buf[16] = {0};
     jobject bb = (*env)->NewDirectByteBuffer(env, buf, 16);
     if( bb ){
-      SJG.g.cByteBuffer = S3JniRefGlobal((*env)->GetObjectClass(env, bb));
-      SJG.g.byteBufferAlloc = (*env)->GetStaticMethodID(
-        env, SJG.g.cByteBuffer, "allocateDirect", "(I)Ljava/nio/ByteBuffer;"
+      SJG.g.byteBuffer.klazz = S3JniRefGlobal((*env)->GetObjectClass(env, bb));
+      SJG.g.byteBuffer.midAlloc = (*env)->GetStaticMethodID(
+        env, SJG.g.byteBuffer.klazz, "allocateDirect", "(I)Ljava/nio/ByteBuffer;"
       );
       S3JniExceptionIsFatal("Error getting ByteBuffer.allocateDirect() method.");
+      SJG.g.byteBuffer.midLimit = (*env)->GetMethodID(
+        env, SJG.g.byteBuffer.klazz, "limit", "()I"
+      );
+      S3JniExceptionIsFatal("Error getting ByteBuffer.limit() method.");
       S3JniUnrefLocal(bb);
     }else{
-      SJG.g.cByteBuffer = 0;
-      SJG.g.byteBufferAlloc = 0;
+      SJG.g.byteBuffer.klazz = 0;
+      SJG.g.byteBuffer.midAlloc = 0;
     }
   }
 

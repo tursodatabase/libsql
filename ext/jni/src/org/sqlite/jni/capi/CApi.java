@@ -308,12 +308,13 @@ public final class CApi {
      Binds the contents of the given buffer object as a blob.
 
      The byte range of the buffer may be restricted by providing a
-     start index and a number of bytes. beginPos may not be negative
-     but a negative howMany is interpretated as the remainder of the
-     buffer past the given start position.
+     start index and a number of bytes. beginPos may not be negative.
+     Negative howMany is interpretated as the remainder of the buffer
+     past the given start position, up to the buffer's limit() (as
+     opposed its capacity()).
 
-     If beginPos+howMany would extend past the end of the buffer then
-     SQLITE_ERROR is returned.
+     If beginPos+howMany would extend past the limit() of the buffer
+     then SQLITE_ERROR is returned.
 
      If any of the following are true, this function behaves like
      sqlite3_bind_null(): the buffer is null, beginPos is at or past
@@ -347,7 +348,8 @@ public final class CApi {
   );
 
   /**
-     Convenience overload which binds the given buffer's entire contents.
+     Convenience overload which binds the given buffer's entire
+     contents, up to its limit() (as opposed to its capacity()).
   */
   public static int sqlite3_bind_nio_buffer(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable java.nio.ByteBuffer data
