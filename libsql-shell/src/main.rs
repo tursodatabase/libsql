@@ -383,6 +383,54 @@ impl Shell {
                 }
             }
             ".quit" => std::process::exit(0),
+            ".open" => {
+                // .open ?OPTIONS? ?FILE?
+                let mut filename = None;
+                let mut flags = OpenFlags::default();
+                for arg in args {
+                    match *arg {
+                        "--append" | "--deserialize" | "--hexdb" | "--maxsize" => {
+                            println!("`{}` is not supported yet", arg);
+                            return;
+                        }
+                        "--new" => flags |= OpenFlags::SQLITE_OPEN_CREATE,
+                        "--nofollow" => flags |= OpenFlags::SQLITE_OPEN_NOFOLLOW,
+                        "--readonly" => {
+                            flags ^= OpenFlags::SQLITE_OPEN_READ_WRITE;
+                            flags ^= OpenFlags::SQLITE_OPEN_CREATE;
+                            flags |= OpenFlags::SQLITE_OPEN_READ_ONLY
+                        }
+                        "--zip" => todo!(),
+                        arg => {
+                            if arg.starts_with('-') {
+                                println!("unknown option: {}", arg);
+                                return;
+                            }
+
+                            if filename.is_some() {
+                                println!("extra argument: \"{}\"", arg);
+                                return;
+                            }
+
+                            filename = Some(arg);
+                        }
+                    }
+                }
+
+                (self.filename, self.db) = match filename {
+                    Some(path) => {
+                        let db = match Connection::open_with_flags(path, flags) {
+                            Ok(con) => con,
+                            Err(e) => {
+                                println!("Error: unable to open database \"{}\": {}\nNotice: using substitute in-memory database instead of \"{}\"", path, e, path);
+                                return;
+                            }
+                        };
+                        (path.into(), db)
+                    }
+                    None => ("".into(), Connection::open_in_memory().unwrap()),
+                };
+            }
             ".read" => {
                 if args.len() != 1 {
                     writeln!(self.out, "Usage: .read FILE").unwrap();
