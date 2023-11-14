@@ -16,7 +16,7 @@ use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};
 
-use super::{MakeNamespace, NamespaceName, RestoreOption};
+use super::{MakeNamespace, NamespaceBottomlessDbId, NamespaceName, RestoreOption};
 
 type Result<T> = crate::Result<T, ForkError>;
 
@@ -57,7 +57,7 @@ pub struct ForkTask<'a> {
     pub dest_namespace: NamespaceName,
     pub make_namespace: &'a dyn MakeNamespace<Database = PrimaryDatabase>,
     pub restore_to: Option<PointInTimeRestore>,
-    pub bottomless_db_id: Option<String>,
+    pub bottomless_db_id: NamespaceBottomlessDbId,
 }
 
 pub struct PointInTimeRestore {
