@@ -111,10 +111,13 @@ async fn handle_pipeline<C: Connection>(
 ) -> Result<hyper::Response<hyper::Body>> {
     let req_body: proto::PipelineReqBody = read_decode_request(req, encoding).await?;
     let mut stream_guard =
-        stream::acquire(server, connection_maker, req_body.baton.as_deref()).await?;
+        stream::acquire(server, connection_maker.clone(), req_body.baton.as_deref()).await?;
 
     let mut results = Vec::with_capacity(req_body.requests.len());
     for request in req_body.requests.into_iter() {
+        if stream_guard.closed() {
+            stream_guard = stream::acquire(server, connection_maker.clone(), None).await?
+        }
         tracing::debug!("pipeline:{{ {:?}, {:?} }}", version, request);
         let result = request::handle(&mut stream_guard, auth.clone(), request, version).await?;
         results.push(result);

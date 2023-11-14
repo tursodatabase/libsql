@@ -224,6 +224,10 @@ impl<'srv, D: Connection> Guard<'srv, D> {
             None
         }
     }
+
+    pub fn closed(&self) -> bool {
+        self.stream.is_none() || self.stream.as_ref().unwrap().db.is_none()
+    }
 }
 
 impl<'srv, D> Drop for Guard<'srv, D> {
