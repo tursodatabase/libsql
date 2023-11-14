@@ -627,6 +627,11 @@ public final class Sqlite implements AutoCloseable  {
 
      PrepareMultiFinalize offers a proxy which finalizes each
      statement after it is passed to another client-defined visitor.
+
+     Be aware that certain legal SQL constructs may fail in the
+     preparation phase, before the corresponding statement can be
+     stepped. Most notably, authorizer checks which disallow access to
+     something in a statement behave that way.
   */
   public void prepareMulti(byte sqlUtf8[], int prepFlags, PrepareMulti visitor){
     int pos = 0, n = 1;

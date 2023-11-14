@@ -133,49 +133,29 @@ public class Tester2 implements Runnable {
      Executes all SQL statements in the given string. If throwOnError
      is true then it will throw for any prepare/step errors, else it
      will return the corresponding non-0 result code.
-
-     TODO: reimplement this in the high-level API once it has the
-     multi-prepare capability.
   */
   public static int execSql(Sqlite dbw, boolean throwOnError, String sql){
-    final sqlite3 db = dbw.nativeHandle();
-    OutputPointer.Int32 oTail = new OutputPointer.Int32();
-    final byte[] sqlUtf8 = sql.getBytes(StandardCharsets.UTF_8);
-    int pos = 0, n = 1;
-    byte[] sqlChunk = sqlUtf8;
-    int rc = 0;
-    sqlite3_stmt stmt = null;
-    final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
-    while(pos < sqlChunk.length){
-      if(pos > 0){
-        sqlChunk = Arrays.copyOfRange(sqlChunk, pos,
-                                      sqlChunk.length);
-      }
-      if( 0==sqlChunk.length ) break;
-      rc = CApi.sqlite3_prepare_v2(db, sqlChunk, outStmt, oTail);
-      if( throwOnError ) affirm(0 == rc);
-      else if( 0!=rc ) break;
-      pos = oTail.value;
-      stmt = outStmt.take();
-      if( null == stmt ){
-        // empty statement was parsed.
-        continue;
-      }
-      affirm(0 != stmt.getNativePointer());
-      while( CApi.SQLITE_ROW == (rc = CApi.sqlite3_step(stmt)) ){
-      }
-      CApi.sqlite3_finalize(stmt);
-      affirm(0 == stmt.getNativePointer());
-      if(Sqlite.DONE!=rc){
-        break;
+    final ValueHolder<Integer> rv = new ValueHolder<>(0);
+    final Sqlite.PrepareMulti pm = new Sqlite.PrepareMulti(){
+        @Override public void call(Sqlite.Stmt stmt){
+          try{
+            while( Sqlite.ROW == (rv.value = stmt.step(throwOnError)) ){}
+          }
+          finally{ stmt.finalizeStmt(); }
+        }
+      };
+    try {
+      dbw.prepareMulti(sql, pm);
+    }catch(SqliteException se){
+      if( throwOnError ){
+        throw se;
+      }else{
+        /* This error (likely) happened in the prepare() phase and we
+           need to preempt it. */
+        rv.value = se.errcode();
       }
     }
-    CApi.sqlite3_finalize(stmt);
-    if(CApi.SQLITE_ROW==rc || CApi.SQLITE_DONE==rc) rc = 0;
-    if( 0!=rc && throwOnError){
-      throw new SqliteException(db);
-    }
-    return rc;
+    return (rv.value==Sqlite.DONE) ? 0 : rv.value;
   }
 
   static void execSql(Sqlite db, String sql){
