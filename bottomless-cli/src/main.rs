@@ -128,14 +128,17 @@ async fn run() -> Result<()> {
             Ok(Some((page_size, checksum))) => (page_size, checksum),
             Ok(None) => {
                 println!("No local metadata found, continuing anyway");
-                (4096, 0)
+                (4096, (0, 0))
             }
             Err(e) => {
                 println!("Failed to get local metadata: {e}, continuing anyway");
-                (4096, 0)
+                (4096, (0, 0))
             }
         };
-        println!("Local metadata: page_size={page_size}, checksum={checksum:x}");
+        println!(
+            "Local metadata: page_size={page_size}, checksum={:X}-{:X}",
+            checksum.0, checksum.1
+        );
         Replicator::restore_from_local_snapshot(&from_dir, &mut db_file).await?;
         println!("Restored local snapshot to {}", database);
         let applied_frames = Replicator::apply_wal_from_local_generation(
