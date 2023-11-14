@@ -606,6 +606,14 @@ public final class Sqlite implements AutoCloseable  {
   }
 
   /**
+     Equivallent to prepareMulti(X,prepFlags,visitor), where X is
+     sql.getBytes(StandardCharsets.UTF_8).
+  */
+  public void prepareMulti(String sql, int prepFlags, PrepareMulti visitor){
+    prepareMulti(sql.getBytes(StandardCharsets.UTF_8), prepFlags, visitor);
+  }
+
+  /**
      A variant of prepare() which can handle multiple SQL statements
      in a single input string. For each statement in the given string,
      the statement is passed to visitor.call() a single time, passing
@@ -644,14 +652,6 @@ public final class Sqlite implements AutoCloseable  {
       }
       visitor.call(new Stmt(this, stmt));
     }
-  }
-
-  /**
-     Equivallent to prepareMulti(X,prepFlags,visitor), where X is
-     sql.getBytes(StandardCharsets.UTF_8).
-  */
-  public void prepareMulti(String sql, int prepFlags, PrepareMulti visitor){
-    prepareMulti(sql.getBytes(StandardCharsets.UTF_8), prepFlags, visitor);
   }
 
   public void createFunction(String name, int nArg, int eTextRep, ScalarFunction f){

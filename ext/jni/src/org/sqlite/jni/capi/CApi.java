@@ -131,6 +131,25 @@ public final class CApi {
   */
   public static native boolean sqlite3_jni_supports_nio();
 
+  /**
+     For internal use only. Sets the given db's error code and
+     (optionally) string. If rc is 0, it defaults to SQLITE_ERROR.
+
+     On success it returns rc. On error it may return a more serious
+     code, such as SQLITE_NOMEM. Returns SQLITE_MISUSE if db is null.
+  */
+  static native int sqlite3_jni_db_error(@NotNull sqlite3 db,
+                                         int rc, @Nullable String msg);
+
+  /**
+     Convenience overload which uses e.toString() as the error
+     message.
+  */
+  static int sqlite3_jni_db_error(@NotNull sqlite3 db,
+                                  int rc, @NotNull Exception e){
+    return sqlite3_jni_db_error(db, rc, e.toString());
+  }
+
   //////////////////////////////////////////////////////////////////////
   // Maintenance reminder: please keep the sqlite3_.... functions
   // alphabetized.  The SQLITE_... values. on the other hand, are
@@ -1324,9 +1343,13 @@ public final class CApi {
      array.  It loops over the input bytes looking for
      statements. Each one it finds is passed to p.call(), passing
      ownership of it to that function. If p.call() returns 0, looping
-     continues, else the loop stops.
+     continues, else the loop stops and p.call()'s result code is
+     returned. If preparation of any given segment fails, looping
+     stops and that result code is returned.
 
-     <p>If p.call() throws, the exception is propagated.
+     <p>If p.call() throws, the exception is converted to a db-level
+     error and a non-0 code is returned, in order to retain the
+     C-style error semantics of the API.
 
      <p>How each statement is handled, including whether it is finalized
      or not, is up to the callback object. e.g. the callback might
@@ -1358,7 +1381,11 @@ public final class CApi {
         // empty statement (whitespace/comments)
         continue;
       }
-      rc = p.call(stmt);
+      try{
+        rc = p.call(stmt);
+      }catch(Exception e){
+        rc = sqlite3_jni_db_error( db, SQLITE_ERROR, e );
+      }
     }
     return rc;
   }

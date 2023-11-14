@@ -1790,9 +1790,13 @@ public class Tester1 implements Runnable {
     };
     final List<sqlite3_stmt> liStmt = new ArrayList<sqlite3_stmt>();
     final PrepareMultiCallback proxy = new PrepareMultiCallback.StepAll();
+    final ValueHolder<String> toss = new ValueHolder<>(null);
     PrepareMultiCallback m = new PrepareMultiCallback() {
         @Override public int call(sqlite3_stmt st){
           liStmt.add(st);
+          if( null!=toss.value ){
+            throw new RuntimeException(toss.value);
+          }
           return proxy.call(st);
         }
       };
@@ -1802,6 +1806,10 @@ public class Tester1 implements Runnable {
     for( sqlite3_stmt st : liStmt ){
       sqlite3_finalize(st);
     }
+    toss.value = "This is an exception.";
+    rc = sqlite3_prepare_multi(db, "SELECT 1", m);
+    affirm( SQLITE_ERROR==rc );
+    affirm( sqlite3_errmsg(db).indexOf(toss.value)>0 );
     sqlite3_close_v2(db);
   }
 

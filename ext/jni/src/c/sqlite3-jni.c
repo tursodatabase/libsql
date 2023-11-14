@@ -3879,7 +3879,9 @@ S3JniApi(sqlite3_is_interrupted(),jboolean,1is_1interrupted)(
 ** any resources owned by that cache entry and making that slot
 ** available for re-use.
 */
-JniDecl(jboolean,1java_1uncache_1thread)(JniArgsEnvClass){
+S3JniApi(sqlite3_java_uncache_thread(), jboolean, 1java_1uncache_1thread)(
+  JniArgsEnvClass
+){
   int rc;
   S3JniEnv_mutex_enter;
   rc = S3JniEnv_uncache(env);
@@ -3887,7 +3889,25 @@ JniDecl(jboolean,1java_1uncache_1thread)(JniArgsEnvClass){
   return rc ? JNI_TRUE : JNI_FALSE;
 }
 
-JniDecl(jboolean,1jni_1supports_1nio)(JniArgsEnvClass){
+S3JniApi(sqlite3_jni_db_error(), jint, 1jni_1db_1error)(
+  JniArgsEnvClass, jobject jDb, jint jRc, jstring jStr
+){
+  S3JniDb * const ps = S3JniDb_from_java(jDb);
+  int rc = SQLITE_MISUSE;
+  if( ps ){
+  char *zStr;
+    zStr = jStr
+      ? s3jni_jstring_to_utf8( jStr, 0)
+      : NULL;
+    rc = s3jni_db_error( ps->pDb, (int)jRc, zStr );
+    sqlite3_free(zStr);
+  }
+  return rc;
+}
+
+S3JniApi(sqlite3_jni_supports_nio(), jboolean,1jni_1supports_1nio)(
+  JniArgsEnvClass
+){
   return SJG.g.cByteBuffer ? JNI_TRUE : JNI_FALSE;
 }
 
@@ -4065,10 +4085,11 @@ S3JniApi(sqlite3_open_v2(),jint,1open_1v2)(
 }
 
 /* Proxy for the sqlite3_prepare[_v2/3]() family. */
-jint sqlite3_jni_prepare_v123( int prepVersion, JNIEnv * const env, jclass self,
-                               jlong jpDb, jbyteArray baSql,
-                               jint nMax, jint prepFlags,
-                               jobject jOutStmt, jobject outTail){
+static jint sqlite3_jni_prepare_v123( int prepVersion, JNIEnv * const env,
+                                      jclass self,
+                                      jlong jpDb, jbyteArray baSql,
+                                      jint nMax, jint prepFlags,
+                                      jobject jOutStmt, jobject outTail){
   sqlite3_stmt * pStmt = 0;
   jobject jStmt = 0;
   const char * zTail = 0;
