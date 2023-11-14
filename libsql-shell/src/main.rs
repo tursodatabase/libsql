@@ -216,7 +216,7 @@ impl Shell {
             Some(path) => {
                 let mut flags = OpenFlags::default();
                 if args.no_follow {
-                    flags |= OpenFlags::SQLITE_OPEN_NOFOLLOW;
+                    flags.insert(OpenFlags::SQLITE_OPEN_NOFOLLOW);
                 }
                 Connection::open_with_flags(path, flags)?
             }
@@ -242,7 +242,7 @@ impl Shell {
         })
     }
 
-    fn parse_and_run_command(&mut self, line: &str) {
+    fn parse_and_run_command(&mut self, line: &str) -> Result<()> {
         // split line on whitespace, but not inside quotes.
         let mut split = vec![];
         for (i, chunk) in line.split_terminator(&['\'', '"']).enumerate() {
@@ -252,13 +252,13 @@ impl Shell {
                 split.extend(chunk.split_whitespace())
             }
         }
-        self.run_command(split[0], &split[1..]);
+        self.run_command(split[0], &split[1..])
     }
 
     fn run(mut self, rl: &mut Editor<ShellHelper, FileHistory>) -> Result<()> {
         if let Some(commands) = self.commands_before_repl.take() {
             for command in commands {
-                self.parse_and_run_command(&command);
+                self.parse_and_run_command(&command)?;
             }
         }
 
@@ -281,10 +281,10 @@ impl Shell {
                     };
                     rl.add_history_entry(&line).ok();
                     if self.echo {
-                        writeln!(self.out, "{}", line).unwrap();
+                        writeln!(self.out, "{}", line)?;
                     }
                     if line.starts_with('.') {
-                        self.parse_and_run_command(&line);
+                        self.parse_and_run_command(&line)?;
                     } else {
                         for str_statement in get_str_statements(line) {
                             let table = self.run_statement(str_statement, (), false);
@@ -321,13 +321,13 @@ impl Shell {
         Ok(())
     }
 
-    fn run_command(&mut self, command: &str, args: &[&str]) {
+    fn run_command(&mut self, command: &str, args: &[&str]) -> Result<()> {
         let mut result = None;
         match command {
             ".echo" => {
                 if args.len() != 1 {
-                    writeln!(self.out, "Usage: .echo on|off").unwrap();
-                    return;
+                    writeln!(self.out, "Usage: .echo on|off")?;
+                    return Ok(());
                 }
                 match args[0].to_lowercase().as_str() {
                     "on" | "true" => self.echo = true,
@@ -338,15 +338,14 @@ impl Shell {
                             self.out,
                             "ERROR: Not a boolean value: \"{}\". Assuming \"no\"",
                             txt
-                        )
-                        .unwrap()
+                        )?;
                     }
                 }
             }
             ".headers" => {
                 if args.len() != 1 {
-                    writeln!(self.out, "Usage: .headers on|off").unwrap();
-                    return;
+                    writeln!(self.out, "Usage: .headers on|off")?;
+                    return Ok(());
                 }
                 match args[0].to_lowercase().as_str() {
                     "on" | "true" => self.headers = true,
@@ -357,8 +356,7 @@ impl Shell {
                             self.out,
                             "ERROR: Not a boolean value: \"{}\". Assuming \"no\"",
                             txt
-                        )
-                        .unwrap()
+                        )?
                     }
                 }
             }
@@ -366,13 +364,13 @@ impl Shell {
             ".indexes" => result = Some(self.list_tables(args.first().copied(), true)),
             ".nullvalue" => {
                 if args.len() != 1 {
-                    writeln!(self.out, "Usage: .nullvalue STRING").unwrap();
-                    return;
+                    writeln!(self.out, "Usage: .nullvalue STRING")?;
+                    return Ok(());
                 }
                 self.null_value = args[0].to_string();
             }
             ".print" => {
-                writeln!(self.out, "{}", args.join(" ")).unwrap();
+                writeln!(self.out, "{}", args.join(" "))?;
             }
             ".prompt" => {
                 if !args.is_empty() {
@@ -391,25 +389,25 @@ impl Shell {
                     match *arg {
                         "--append" | "--deserialize" | "--hexdb" | "--maxsize" => {
                             println!("`{}` is not supported yet", arg);
-                            return;
+                            return Ok(());
                         }
-                        "--new" => flags |= OpenFlags::SQLITE_OPEN_CREATE,
-                        "--nofollow" => flags |= OpenFlags::SQLITE_OPEN_NOFOLLOW,
+                        "--new" => flags.insert(OpenFlags::SQLITE_OPEN_CREATE),
+                        "--nofollow" => flags.insert(OpenFlags::SQLITE_OPEN_NOFOLLOW),
                         "--readonly" => {
-                            flags ^= OpenFlags::SQLITE_OPEN_READ_WRITE;
-                            flags ^= OpenFlags::SQLITE_OPEN_CREATE;
-                            flags |= OpenFlags::SQLITE_OPEN_READ_ONLY
+                            flags.remove(OpenFlags::SQLITE_OPEN_CREATE);
+                            flags.remove(OpenFlags::SQLITE_OPEN_READ_WRITE);
+                            flags.insert(OpenFlags::SQLITE_OPEN_READ_ONLY);
                         }
                         "--zip" => todo!(),
                         arg => {
                             if arg.starts_with('-') {
                                 println!("unknown option: {}", arg);
-                                return;
+                                return Ok(());
                             }
 
                             if filename.is_some() {
                                 println!("extra argument: \"{}\"", arg);
-                                return;
+                                return Ok(());
                             }
 
                             filename = Some(arg);
@@ -423,18 +421,27 @@ impl Shell {
                             Ok(con) => con,
                             Err(e) => {
                                 println!("Error: unable to open database \"{}\": {}\nNotice: using substitute in-memory database instead of \"{}\"", path, e, path);
-                                return;
+                                return Ok(());
                             }
                         };
                         (path.into(), db)
                     }
-                    None => ("".into(), Connection::open_in_memory().unwrap()),
+                    None => {
+                        let db = match Connection::open_in_memory() {
+                            Ok(con) => con,
+                            Err(_e) => {
+                                println!("Error: unable to open database in memory");
+                                return Ok(());
+                            }
+                        };
+                        ("".into(), db)
+                    }
                 };
             }
             ".read" => {
                 if args.len() != 1 {
-                    writeln!(self.out, "Usage: .read FILE").unwrap();
-                    return;
+                    writeln!(self.out, "Usage: .read FILE")?;
+                    return Ok(());
                 }
 
                 let filename = args[0];
@@ -442,15 +449,15 @@ impl Shell {
                     Ok(file) => BufReader::new(file),
                     Err(_e) => {
                         println!("Error: cannot open \"{}\"", args[0]);
-                        return;
+                        return Ok(());
                     }
                 };
                 for (i, line) in reader.lines().enumerate() {
-                    let statement = line.unwrap();
+                    let statement = line?;
                     match self.run_statement(statement, (), false) {
                         Ok(table) => {
                             if !table.is_empty() {
-                                println!("{}", table);
+                                writeln!(self.out, "{}", table)?;
                             }
                         }
                         Err(e) => println!("Parse error near line {}: {}", i + 1, e),
@@ -459,11 +466,12 @@ impl Shell {
             }
             ".show" => {
                 if !args.is_empty() {
-                    writeln!(self.out, "Usage: .show").unwrap();
-                    return;
+                    writeln!(self.out, "Usage: .show")?;
+                    return Ok(());
                 }
+
                 let out_name = format!("{}", self.out);
-                _ = write!(
+                write!(
                     self.out,
                     r#"{:>12}: {}
 {:>12}: {}
@@ -502,7 +510,7 @@ impl Shell {
                     self.width,
                     "filename",
                     self.filename.display()
-                );
+                )?;
             }
             ".tables" => result = Some(self.list_tables(args.first().copied(), false)),
             _ => println!(
@@ -512,17 +520,17 @@ impl Shell {
         }
         match result {
             Some(Ok(mut table)) => {
-                if table.count_rows() == 0 {
-                    return;
+                if table.count_rows() != 0 {
+                    table.with(Style::blank());
+                    writeln!(self.out, "{}", table)?;
                 }
-                table.with(Style::blank());
-                _ = writeln!(self.out, "{}", table);
             }
             Some(Err(e)) => {
                 println!("Error: {e}");
             }
             None => {}
         }
+        Ok(())
     }
 
     fn run_statement<P>(&self, statement: String, params: P, is_command: bool) -> Result<Table>
