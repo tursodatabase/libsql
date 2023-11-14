@@ -14,7 +14,7 @@ pub enum Error {
     #[error("Server can't handle additional transactions")]
     LibSqlTxBusy,
     #[error(transparent)]
-    IOError(#[from] std::io::Error),
+    IOError(std::io::Error),
     #[error(transparent)]
     RusqliteError(#[from] rusqlite::Error),
     #[error("{0}")]
@@ -149,6 +149,16 @@ impl IntoResponse for Error {
             PrimaryStreamInterupted => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             UrlParseError(_) => self.format_err(StatusCode::BAD_REQUEST),
         }
+    }
+}
+
+impl From<std::io::Error> for Error {
+    fn from(value: std::io::Error) -> Self {
+        let backtrace = std::backtrace::Backtrace::force_capture();
+
+        tracing::error!("IO error reported: {}, {:?}", value, backtrace);
+
+        Error::IOError(value)
     }
 }
 
