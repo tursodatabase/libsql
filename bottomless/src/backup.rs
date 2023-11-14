@@ -11,7 +11,6 @@ use uuid::Uuid;
 
 #[derive(Debug)]
 pub(crate) struct WalCopier {
-    wal: Option<WalFileReader>,
     outbox: Sender<String>,
     use_compression: CompressionKind,
     max_frames_per_batch: usize,
@@ -32,7 +31,6 @@ impl WalCopier {
         outbox: Sender<String>,
     ) -> Self {
         WalCopier {
-            wal: None,
             bucket,
             db_name,
             generation,
@@ -49,15 +47,9 @@ impl WalCopier {
             tracing::trace!("Trying to flush empty frame range");
             return Ok(frames.start - 1);
         }
-        let wal = {
-            if self.wal.is_none() {
-                self.wal = WalFileReader::open(&self.wal_path).await?;
-            }
-            if let Some(wal) = self.wal.as_mut() {
-                wal
-            } else {
-                return Err(anyhow!("WAL file not found: `{}`", self.wal_path));
-            }
+        let mut wal = match WalFileReader::open(&self.wal_path).await? {
+            Some(wal) => wal,
+            None => return Err(anyhow!("WAL file not found: `{}`", self.wal_path)),
         };
         let generation = if let Some(generation) = self.generation.load_full() {
             generation
