@@ -85,6 +85,7 @@ struct Shell {
     headers: bool,
     mode: OutputMode,
     null_value: String,
+    readonly: bool,
     stats: StatsMode,
     width: [usize; 5],
     filename: PathBuf,
@@ -235,6 +236,7 @@ impl Shell {
             explain: ExplainMode::Auto,
             headers: true,
             mode: OutputMode::Column,
+            readonly: false,
             stats: StatsMode::Off,
             width: [0; 5],
             null_value: String::new(),
@@ -344,6 +346,19 @@ impl Shell {
             ".bail" => toggle_option(command, &mut self.bail, args),
             ".echo" => toggle_option(command, &mut self.echo, args),
             ".changes" => toggle_option(command, &mut self.changes, args),
+            ".databases" => {
+                let statement = "pragma database_list;";
+                let mut stmt = self.db.prepare(statement)?;
+                let mut rows = stmt.query([])?;
+                while let Some(row) = rows.next()? {
+                    let name = row.get::<_, String>(1)?;
+                    let file = row.get::<_, String>(2)?;
+                    // If call `self.db.is_readonly(db_name)`, db_name is Database::Name,
+                    // but we cannot convert a `&str` to `DatabaseName`
+                    let readonly = if self.readonly { "r/o" } else { "r/w" };
+                    writeln!(self.out, "{}: {:?} {}", name, file, readonly)?;
+                }
+            }
             ".headers" => {
                 if args.len() != 1 {
                     writeln!(self.out, "Usage: .headers on|off")?;
@@ -389,7 +404,7 @@ impl Shell {
                 let mut flags = OpenFlags::default();
                 for arg in args {
                     match *arg {
-                        "--append" | "--deserialize" | "--hexdb" | "--maxsize" => {
+                        "--append" | "--deserialize" | "--hexdb" | "--maxsize" | "--zip" => {
                             println!("`{}` is not supported yet", arg);
                             return Ok(());
                         }
@@ -399,8 +414,8 @@ impl Shell {
                             flags.remove(OpenFlags::SQLITE_OPEN_CREATE);
                             flags.remove(OpenFlags::SQLITE_OPEN_READ_WRITE);
                             flags.insert(OpenFlags::SQLITE_OPEN_READ_ONLY);
+                            self.readonly = true;
                         }
-                        "--zip" => todo!(),
                         arg => {
                             if arg.starts_with('-') {
                                 println!("unknown option: {}", arg);
