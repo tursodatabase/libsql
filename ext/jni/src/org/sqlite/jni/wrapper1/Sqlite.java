@@ -19,6 +19,7 @@ import org.sqlite.jni.capi.sqlite3_stmt;
 import org.sqlite.jni.capi.sqlite3_backup;
 import org.sqlite.jni.capi.sqlite3_blob;
 import org.sqlite.jni.capi.OutputPointer;
+import java.nio.ByteBuffer;
 
 /**
    This class represents a database connection, analog to the C-side
@@ -29,6 +30,8 @@ import org.sqlite.jni.capi.OutputPointer;
 */
 public final class Sqlite implements AutoCloseable  {
   private sqlite3 db;
+  private static final boolean JNI_SUPPORTS_NIO =
+    CApi.sqlite3_jni_supports_nio();
 
   public static final int OK = CApi.SQLITE_OK;
   public static final int ERROR = CApi.SQLITE_ERROR;
@@ -972,7 +975,7 @@ public final class Sqlite implements AutoCloseable  {
 
     /**
        If this statement is still opened, its low-level handle is
-       returned, eelse an IllegalArgumentException is thrown.
+       returned, else an IllegalArgumentException is thrown.
     */
     private sqlite3_stmt thisStmt(){
       if( null==stmt || 0==stmt.getNativePointer() ){
@@ -1774,6 +1777,17 @@ public final class Sqlite implements AutoCloseable  {
     }
 
     /**
+       If this blob is still opened, its low-level handle is
+       returned, else an IllegalArgumentException is thrown.
+    */
+    private sqlite3_blob thisBlob(){
+      if( null==b || 0==b.getNativePointer() ){
+        throw new IllegalArgumentException("This Blob has been finalized.");
+      }
+      return b;
+    }
+
+    /**
        Analog to sqlite3_blob_close().
     */
     @Override public void close(){
@@ -1785,31 +1799,42 @@ public final class Sqlite implements AutoCloseable  {
     }
 
     /**
+       Throws if the JVM does not have JNI-level support for
+       ByteBuffer.
+    */
+    private void checkNio(){
+      if( !Sqlite.JNI_SUPPORTS_NIO ){
+        throw new UnsupportedOperationException(
+          "This JVM does not support JNI access to ByteBuffer."
+        );
+      }
+    }
+    /**
        Analog to sqlite3_blob_reopen() but throws on error.
     */
     public void reopen(long newRowId){
-      db.checkRc( CApi.sqlite3_blob_reopen(b, newRowId) );
+      db.checkRc( CApi.sqlite3_blob_reopen(thisBlob(), newRowId) );
     }
 
     /**
        Analog to sqlite3_blob_write() but throws on error.
     */
     public void write( byte[] bytes, int atOffset ){
-      db.checkRc( CApi.sqlite3_blob_write(b, bytes, atOffset) );
+      db.checkRc( CApi.sqlite3_blob_write(thisBlob(), bytes, atOffset) );
     }
 
     /**
        Analog to sqlite3_blob_read() but throws on error.
     */
     public void read( byte[] dest, int atOffset ){
-      db.checkRc( CApi.sqlite3_blob_read(b, dest, atOffset) );
+      db.checkRc( CApi.sqlite3_blob_read(thisBlob(), dest, atOffset) );
     }
 
     /**
        Analog to sqlite3_blob_bytes().
     */
     public int bytes(){
-      return CApi.sqlite3_blob_bytes(b);
+      return CApi.sqlite3_blob_bytes(thisBlob());
     }
   }
 

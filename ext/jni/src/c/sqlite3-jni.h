@@ -1283,26 +1283,26 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1complete
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
- * Method:    sqlite3_config
+ * Method:    sqlite3_config__enable
  * Signature: (I)I
  */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1config__I
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1config_1_1enable
   (JNIEnv *, jclass, jint);
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
- * Method:    sqlite3_config
- * Signature: (Lorg/sqlite/jni/capi/ConfigSqllogCallback;)I
+ * Method:    sqlite3_config__CONFIG_LOG
+ * Signature: (Lorg/sqlite/jni/capi/ConfigLogCallback;)I
  */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1config__Lorg_sqlite_jni_capi_ConfigSqllogCallback_2
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1config_1_1CONFIG_1LOG
   (JNIEnv *, jclass, jobject);
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
- * Method:    sqlite3_config
- * Signature: (Lorg/sqlite/jni/capi/ConfigLogCallback;)I
+ * Method:    sqlite3_config__SQLLOG
+ * Signature: (Lorg/sqlite/jni/capi/ConfigSqllogCallback;)I
  */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1config__Lorg_sqlite_jni_capi_ConfigLogCallback_2
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1config_1_1SQLLOG
   (JNIEnv *, jclass, jobject);
 
 /*

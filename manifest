@@ -1,5 +1,5 @@
-C Add\sNEVER()\sto\sa\sbranch\smade\sunreachable\sby\s[6f9eed826f5b3d1c].
-D 2023-11-14T16:53:52.014
+C JNI:\sapply\san\sinternal\slevel\sof\sAPI\sindirection\sto\savoid\shaving\sto\swork\swith\smassively-mangled\snames\sfor\sthe\svarious\ssqlite3_config()\soverloads.
+D 2023-11-15T03:02:11.306
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -239,10 +239,10 @@ F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f4
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/jni/GNUmakefile f2f3a31923293659b95225e932a286af1f2287d75bf88ad6c0fd1b9d9cd020d4
-F ext/jni/README.md ef9ac115e97704ea995d743b4a8334e23c659e5534c3b64065a5405256d5f2f4
+F ext/jni/README.md 78a0386f6813e5201142ff07f077f4dcf1bb66266c69c6bbd09edac69cadff60
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
-F ext/jni/src/c/sqlite3-jni.c 524ca86d59c07db31ad6feb93f2dece977563e1264b903ccfbbdbeff5f288089
-F ext/jni/src/c/sqlite3-jni.h 0ed09051f16f612680603a297fefa2c131c4a7e98e0b41cdd9ece08428b47d48
+F ext/jni/src/c/sqlite3-jni.c 4fd9906698d296d4e4e4a54c3946461f8506f5b2a13a26cd7b27e0e5c7272bd0
+F ext/jni/src/c/sqlite3-jni.h e10321a23fe8433791f463adc15cf885406a7237788087f92a75a99f9a0fdf8f
 F ext/jni/src/org/sqlite/jni/annotation/NotNull.java 02091a8112e33389f1c160f506cd413168c8dfacbeda608a4946c6e3557b7d5a
 F ext/jni/src/org/sqlite/jni/annotation/Nullable.java 0b1879852707f752512d4db9d7edd0d8db2f0c2612316ce1c832715e012ff6ba
 F ext/jni/src/org/sqlite/jni/annotation/package-info.java 977b374aed9d5853cbf3438ba3b0940abfa2ea4574f702a2448ee143b98ac3ca
@@ -251,7 +251,7 @@ F ext/jni/src/org/sqlite/jni/capi/AggregateFunction.java 0b72cdff61533b564d65b63
 F ext/jni/src/org/sqlite/jni/capi/AuthorizerCallback.java c045a5b47e02bb5f1af91973814a905f12048c428a3504fbc5266d1c1be3de5a
 F ext/jni/src/org/sqlite/jni/capi/AutoExtensionCallback.java 74cc4998a73d6563542ecb90804a3c4f4e828cb4bd69e61226d1a51f4646e759
 F ext/jni/src/org/sqlite/jni/capi/BusyHandlerCallback.java 7b8e19810c42b0ad21a04b5d8c804b32ee5905d137148703f16a75b612c380ca
-F ext/jni/src/org/sqlite/jni/capi/CApi.java 7b2eae29f21db915bd358f3fab1eb9f1a4cbc8b2cc4c78aab7309cd69b71958a
+F ext/jni/src/org/sqlite/jni/capi/CApi.java 4cbcd18aec9da051a9d934a2ba663f9272c71ab6b17e01462f285df87c0c54fd
 F ext/jni/src/org/sqlite/jni/capi/CallbackProxy.java 57e2d275dcebe690b1fc1f3d34eb96879b2d7039bce30b563aee547bf45d8a8b
 F ext/jni/src/org/sqlite/jni/capi/CollationCallback.java e29bcfc540fdd343e2f5cca4d27235113f2886acb13380686756d5cabdfd065a
 F ext/jni/src/org/sqlite/jni/capi/CollationNeededCallback.java 5bfa226a8e7a92e804fd52d6e42b4c7b875fa7a94f8e2c330af8cc244a8920ab
@@ -296,7 +296,7 @@ F ext/jni/src/org/sqlite/jni/test-script-interpreter.md f9f25126127045d051e918fe
 F ext/jni/src/org/sqlite/jni/wrapper1/AggregateFunction.java d5c108b02afd3c63c9e5e53f71f85273c1bfdc461ae526e0a0bb2b25e4df6483
 F ext/jni/src/org/sqlite/jni/wrapper1/ScalarFunction.java 43c43adfb7866098aadaaca1620028a6ec82d5193149970019b1cce9eb59fb03
 F ext/jni/src/org/sqlite/jni/wrapper1/SqlFunction.java 27b141f5914c7cb0e40e90a301d5e05b77f3bd42236834a68031b7086381fafd
-F ext/jni/src/org/sqlite/jni/wrapper1/Sqlite.java 1d8ee109710fd41ba05c17b584f89fe6fcbb53ec1c305dc9686fc7a81fadd6f2
+F ext/jni/src/org/sqlite/jni/wrapper1/Sqlite.java 3914c4786adae73fd4533e9b3a3a882e9fc23f53e3810d2f2490cbf342d0508c
 F ext/jni/src/org/sqlite/jni/wrapper1/SqliteException.java 982538ddb4c0719ef87dfa664cd137b09890b546029a7477810bd64d4c47ee35
 F ext/jni/src/org/sqlite/jni/wrapper1/Tester2.java a9235aa3695e5ad2fca47d43d35a77220b1244d77e43dab1fa3f56555bfc3733
 F ext/jni/src/org/sqlite/jni/wrapper1/ValueHolder.java a84e90c43724a69c2ecebd601bc8e5139f869b7d08cb705c77ef757dacdd0593
@@ -2139,8 +2139,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3a69679e41d23a760df349b2471a1ed306c087f9a7a7a2e2cba3723071dee6b2
-R 86e45bec612b162e274e644f32063331
-U drh
-Z b640c146c438183b53719e4f6331aea5
+P 26dcaa34e3521783bde687749d590eca54cecb4bb95ef332a4a6473c4141d052
+R 1457080e864b1bcae8f96b78786cdb55
+U stephan
+Z a407c77d672c175e671589a08a8a1a46
 # Remove this line to create a well-formed Fossil manifest.

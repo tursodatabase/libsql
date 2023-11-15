@@ -3354,8 +3354,9 @@ S3JniApi(sqlite3_complete(),jint,1complete)(
   return rc;
 }
 
-S3JniApi(sqlite3_config() /*for a small subset of options.*/,
-         jint,1config__I)(JniArgsEnvClass, jint n){
+S3JniApi(sqlite3_config() /*for a small subset of options.*/
+         sqlite3_config__enable()/* internal name to avoid name-mangling issues*/,
+         jint,1config_1_1enable)(JniArgsEnvClass, jint n){
   switch( n ){
     case SQLITE_CONFIG_SINGLETHREAD:
     case SQLITE_CONFIG_MULTITHREAD:
@@ -3385,8 +3386,9 @@ static void s3jni_config_log(void *ignored, int errCode, const char *z){
   }
 }
 
-S3JniApi(sqlite3_config() /* for SQLITE_CONFIG_LOG */,
-         jint, 1config__Lorg_sqlite_jni_ConfigLogCallback_2
+S3JniApi(sqlite3_config() /* for SQLITE_CONFIG_LOG */
+         sqlite3_config__config_log() /* internal name */,
+         jint, 1config_1_1CONFIG_1LOG
 )(JniArgsEnvClass, jobject jLog){
   S3JniHook * const pHook = &SJG.hook.configlog;
   int rc = 0;
@@ -3460,9 +3462,10 @@ void sqlite3_init_sqllog(void){
 }
 #endif
 
-S3JniApi(sqlite3_config() /* for SQLITE_CONFIG_SQLLOG */,
-         jint, 1config__Lorg_sqlite_jni_ConfigSqllogCallback_2)(
-           JniArgsEnvClass, jobject jLog){
+S3JniApi(sqlite3_config() /* for SQLITE_CONFIG_SQLLOG */
+         sqlite3_config__SQLLOG() /*internal name*/,
+         jint, 1config_1_1SQLLOG
+)(JniArgsEnvClass, jobject jLog){
 #ifndef SQLITE_ENABLE_SQLLOG
   return SQLITE_MISUSE;
 #else

@@ -1039,6 +1039,24 @@ public final class CApi {
     return sqlite3_complete( nulTerminateUtf8(sql) );
   }
 
+  /**
+     Internal level of indirection for sqlite3_config(int).
+  */
+  private static native int sqlite3_config__enable(int op);
+
+  /**
+     Internal level of indirection for sqlite3_config(ConfigLogCallback).
+  */
+  private static native int sqlite3_config__CONFIG_LOG(
+    @Nullable ConfigLogCallback logger
+  );
+
+  /**
+     Internal level of indirection for sqlite3_config(ConfigSqllogCallback).
+  */
+  private static native int sqlite3_config__SQLLOG(
+    @Nullable ConfigSqllogCallback logger
+  );
 
   /**
      <p>Works like in the C API with the exception that it only supports
@@ -1055,12 +1073,14 @@ public final class CApi {
      the rest of the library. This must not be called when any other
      library APIs are being called.
   */
-  public static native int sqlite3_config(int op);
+  public static int sqlite3_config(int op){
+    return sqlite3_config__enable(op);
+  }
 
   /**
      If the native library was built with SQLITE_ENABLE_SQLLOG defined
      then this acts as a proxy for C's
-     sqlite3_config(SQLITE_ENABLE_SQLLOG,...). This sets or clears the
+     sqlite3_config(SQLITE_CONFIG_SQLLOG,...). This sets or clears the
      logger. If installation of a logger fails, any previous logger is
      retained.
 
@@ -1071,13 +1091,17 @@ public final class CApi {
      the rest of the library. This must not be called when any other
      library APIs are being called.
   */
-  public static native int sqlite3_config( @Nullable ConfigSqllogCallback logger );
+  public static int sqlite3_config( @Nullable ConfigSqllogCallback logger ){
+    return sqlite3_config__SQLLOG(logger);
+  }
 
   /**
      The sqlite3_config() overload for handling the SQLITE_CONFIG_LOG
      option.
   */
-  public static native int sqlite3_config( @Nullable ConfigLogCallback logger );
+  public static int sqlite3_config( @Nullable ConfigLogCallback logger ){
+    return sqlite3_config__CONFIG_LOG(logger);
+  }
 
   /**
      Unlike the C API, this returns null if its argument is
