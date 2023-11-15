@@ -6,6 +6,7 @@ use crate::ffi::*;
 pub use sqlite3_wal::{CreateSqlite3Wal, Sqlite3Wal};
 
 pub(crate) mod ffi;
+mod sqlite3_wal;
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
