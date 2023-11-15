@@ -49,6 +49,8 @@ pub use fork::ForkError;
 use self::fork::ForkTask;
 
 mod fork;
+pub mod replication_wal;
+
 pub type ResetCb = Box<dyn Fn(ResetOp) + Send + Sync + 'static>;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
