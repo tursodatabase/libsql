@@ -1,5 +1,5 @@
-C JNI:\sadd\smore\swrapper1\sSqlite.Blob\stests.
-D 2023-11-15T08:59:53.744
+C Fix\san\sexception\smisuse\sin\stest-opfs-vfs.js.
+D 2023-11-15T11:31:49.343
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -634,7 +634,7 @@ F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f129
 F ext/wasm/sql/000-mandelbrot.sql 775337a4b80938ac8146aedf88808282f04d02d983d82675bd63d9c2d97a15f0
 F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f2f78d0917299b5
 F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555e685bce3da8c3f
-F ext/wasm/test-opfs-vfs.js f09266873e1a34d9bdb6d3981ec8c9e382f31f215c9fd2f9016d2394b8ae9b7b
+F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
 F ext/wasm/tester1-worker.html ebc4b820a128963afce328ecf63ab200bd923309eb939f4110510ab449e9814c
 F ext/wasm/tester1.c-pp.html 1c1bc78b858af2019e663b1a31e76657b73dc24bede28ca92fbe917c3a972af2
 F ext/wasm/tester1.c-pp.js a92dc256738dbd1b50f142d1fd0c835294ba09b7bb6526650360e942f88cb63f
@@ -2140,8 +2140,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 138f40543b26b2e02e27d830d92e30b12cfef5a8dc3f0b58b39c68e1b3c91cc6
-R 76fc00597b943b362935e3abab72b3f2
+P d63f6e1ffda9a88a37acc7862cb7ee8b9cd669b0fdba64c1ec9dd221cf807714
+R ef67521a91142009d8ed3d90bf5a230c
 U stephan
-Z 69325a49ba0faa37d14cde8766694d0b
+Z ab3ce547af8ac754282e359887ba0477
 # Remove this line to create a well-formed Fossil manifest.

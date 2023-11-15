@@ -22,7 +22,7 @@ const tryOpfsVfs = async function(sqlite3){
   const opfs = sqlite3.opfs;
   log("tryOpfsVfs()");
   if(!sqlite3.opfs){
-    const e = toss("OPFS is not available.");
+    const e = new Error("OPFS is not available.");
     error(e);
     throw e;
   }
