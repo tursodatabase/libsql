@@ -64,7 +64,7 @@ impl InnerConnection {
         c_path: &CStr,
         flags: OpenFlags,
         vfs: Option<&CStr>,
-        #[cfg(feature = "libsql-experimental")] wal: Option<&CStr>,
+        #[cfg(feature = "libsql-experimental")] create_wal: Option<ffi::libsql_create_wal>,
     ) -> Result<InnerConnection> {
         ensure_safe_sqlite_threading_mode()?;
 
@@ -88,17 +88,18 @@ impl InnerConnection {
             None => ptr::null(),
         };
 
-        #[cfg(feature = "libsql-experimental")]
-        let z_wal = wal
-            .map(|c_wal| c_wal.as_ptr())
-            .unwrap_or_else(std::ptr::null);
-
         unsafe {
             let mut db: *mut ffi::sqlite3 = ptr::null_mut();
             #[cfg(not(feature = "libsql-experimental"))]
             let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), z_vfs);
             #[cfg(feature = "libsql-experimental")]
-            let r = ffi::libsql_open(c_path.as_ptr(), &mut db, flags.bits(), z_vfs, z_wal);
+            let r = match create_wal {
+                Some(create_wal) => {
+                    ffi::libsql_open(c_path.as_ptr(), &mut db, flags.bits(), z_vfs, create_wal)
+                }
+                None => ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), z_vfs),
+            };
+
             if r != ffi::SQLITE_OK {
                 let e = if db.is_null() {
                     error_from_sqlite_code(r, Some(c_path.to_string_lossy().to_string()))
