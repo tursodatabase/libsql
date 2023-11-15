@@ -3,7 +3,7 @@ pub mod replicator_client;
 mod snapshot;
 
 use crc::Crc;
-pub use primary::logger::{LogReadError, ReplicationLogger, ReplicationLoggerHook};
+pub use primary::logger::{LogReadError, ReplicationLogger};
 pub use snapshot::{NamespacedSnapshotCallback, SnapshotCallback};
 
 pub const WAL_MAGIC: u64 = u64::from_le_bytes(*b"SQLDWAL\0");

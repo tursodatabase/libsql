@@ -1,4 +1,4 @@
-use std::ffi::{c_int, c_void, CStr};
+use std::ffi::c_int;
 use std::fs::{remove_dir_all, File, OpenOptions};
 use std::io::Write;
 use std::mem::size_of;
@@ -13,25 +13,15 @@ use bytes::{Bytes, BytesMut};
 use libsql_replication::frame::{Frame, FrameHeader, FrameMut};
 use libsql_replication::snapshot::SnapshotFile;
 use parking_lot::{Mutex, RwLock};
-use rusqlite::ffi::SQLITE_BUSY;
-use sqld_libsql_bindings::init_static_wal_method;
+use rusqlite::ffi::SQLITE_CHECKPOINT_TRUNCATE;
 use tokio::sync::watch;
 use tokio::time::{Duration, Instant};
 use tokio_stream::Stream;
 use uuid::Uuid;
 
-use crate::libsql_bindings::ffi::SQLITE_IOERR_WRITE;
-use crate::libsql_bindings::ffi::{
-    sqlite3,
-    types::{XWalCheckpointFn, XWalFrameFn, XWalSavePointUndoFn, XWalUndoFn},
-    PageHdrIter, PgHdr, Wal, SQLITE_CHECKPOINT_TRUNCATE, SQLITE_IOERR, SQLITE_OK,
-};
-use crate::libsql_bindings::wal_hook::WalHook;
 use crate::replication::snapshot::{find_snapshot_file, LogCompactor};
 use crate::replication::{FrameNo, SnapshotCallback, CRC_64_GO_ISO, WAL_MAGIC};
 use crate::LIBSQL_PAGE_SIZE;
-
-init_static_wal_method!(REPLICATION_METHODS, ReplicationLoggerHook);
 
 #[derive(PartialEq, Eq)]
 struct Version([u16; 4]);
@@ -45,332 +35,12 @@ impl Version {
     }
 }
 
-#[derive(Debug)]
-pub enum ReplicationLoggerHook {}
-
-#[derive(Clone, Debug)]
-pub struct ReplicationLoggerHookCtx {
-    buffer: Vec<WalPage>,
-    logger: Arc<ReplicationLogger>,
-    bottomless_replicator: Option<Arc<std::sync::Mutex<Option<Replicator>>>>,
-}
-
-/// This implementation of WalHook intercepts calls to `on_frame`, and writes them to a
-/// shadow wal. Writing to the shadow wal is done in three steps:
-/// i. append the new pages at the offset pointed by header.start_frame_no + header.frame_count
-/// ii. call the underlying implementation of on_frames
-/// iii. if the call of the underlying method was successful, update the log header to the new
-/// frame count.
-///
-/// If either writing to the database of to the shadow wal fails, it must be noop.
-unsafe impl WalHook for ReplicationLoggerHook {
-    type Context = ReplicationLoggerHookCtx;
-
-    fn name() -> &'static CStr {
-        CStr::from_bytes_with_nul(b"replication_logger_hook\0").unwrap()
-    }
-
-    fn on_frames(
-        wal: &mut Wal,
-        page_size: c_int,
-        page_headers: *mut PgHdr,
-        ntruncate: u32,
-        is_commit: c_int,
-        sync_flags: c_int,
-        orig: XWalFrameFn,
-    ) -> c_int {
-        assert_eq!(page_size, 4096);
-        let wal_ptr = wal as *mut _;
-        let last_valid_frame = wal.hdr.mxFrame;
-        tracing::trace!("Last valid frame before applying: {last_valid_frame}");
-        let ctx = Self::wal_extract_ctx(wal);
-
-        let mut binding = ctx.bottomless_replicator.clone();
-        let replicator_mutex: Option<&mut Replicator>;
-        let mut replicator_lock: MutexGuard<Option<Replicator>>;
-        if let Some(replicator) = binding.as_mut() {
-            replicator_lock = replicator.lock().unwrap();
-            if replicator_lock.is_none() {
-                tracing::error!("fatal error: expected a replicator, exiting");
-                return SQLITE_IOERR;
-            } else {
-                replicator_mutex = Option::from(replicator_lock.as_mut().unwrap());
-            }
-        } else {
-            replicator_mutex = None;
-        }
-
-        let mut frame_count = 0;
-        for (page_no, data) in PageHdrIter::new(page_headers, page_size as _) {
-            ctx.write_frame(page_no, data);
-            frame_count += 1;
-        }
-        if let Err(e) = ctx.flush(ntruncate) {
-            tracing::error!("error writing to replication log: {e}");
-            // returning IO_ERR ensure that xUndo will be called by sqlite.
-            return SQLITE_IOERR;
-        }
-
-        let rc = unsafe {
-            orig(
-                wal_ptr,
-                page_size,
-                page_headers,
-                ntruncate,
-                is_commit,
-                sync_flags,
-            )
-        };
-
-        if is_commit != 0 && rc == 0 {
-            if let Err(e) = ctx.commit() {
-                // If we reach this point, it means that we have committed a transaction to sqlite wal,
-                // but failed to commit it to the shadow WAL, which leaves us in an inconsistent state.
-                tracing::error!(
-                    "fatal error: log failed to commit: inconsistent replication log: {e}"
-                );
-                std::process::abort();
-            }
-
-            // do backup after log replication as we don't want to replicate potentially
-            // inconsistent frames
-            if let Some(replicator) = replicator_mutex {
-                replicator.register_last_valid_frame(last_valid_frame);
-                if let Err(e) = replicator.set_page_size(page_size as usize) {
-                    tracing::error!("fatal error during backup: {e}, exiting");
-                    std::process::abort()
-                }
-                replicator.submit_frames(frame_count as u32);
-            }
-
-            if let Err(e) = ctx
-                .logger
-                .log_file
-                .write()
-                .maybe_compact(ctx.logger.compactor.clone(), &ctx.logger.db_path)
-            {
-                tracing::error!("fatal error: {e}, exiting");
-                std::process::abort()
-            }
-        }
-
-        rc
-    }
-
-    fn on_undo(
-        wal: &mut Wal,
-        func: Option<unsafe extern "C" fn(*mut c_void, u32) -> i32>,
-        undo_ctx: *mut c_void,
-        orig: XWalUndoFn,
-    ) -> i32 {
-        let ctx = Self::wal_extract_ctx(wal);
-        ctx.rollback();
-        unsafe { orig(wal, func, undo_ctx) }
-    }
-
-    fn on_savepoint_undo(wal: &mut Wal, wal_data: *mut u32, orig: XWalSavePointUndoFn) -> i32 {
-        let rc = unsafe { orig(wal, wal_data) };
-        if rc != SQLITE_OK {
-            return rc;
-        };
-
-        {
-            let ctx = Self::wal_extract_ctx(wal);
-            if let Some(replicator) = ctx.bottomless_replicator.as_mut() {
-                let last_valid_frame = unsafe { *wal_data };
-                if let Some(replicator) = replicator.lock().unwrap().as_mut() {
-                    let prev_valid_frame = replicator.peek_last_valid_frame();
-                    tracing::trace!(
-                    "Savepoint: rolling back from frame {prev_valid_frame} to {last_valid_frame}",
-                );
-                    replicator.rollback_to_frame(last_valid_frame);
-                } else {
-                    tracing::error!("fatal error: expected a replicator, exiting");
-                    return SQLITE_IOERR;
-                }
-            }
-        }
-
-        rc
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    fn on_checkpoint(
-        wal: &mut Wal,
-        db: *mut sqlite3,
-        emode: i32,
-        busy_handler: Option<unsafe extern "C" fn(*mut c_void) -> i32>,
-        busy_arg: *mut c_void,
-        sync_flags: i32,
-        n_buf: i32,
-        z_buf: *mut u8,
-        frames_in_wal: *mut i32,
-        backfilled_frames: *mut i32,
-        orig: XWalCheckpointFn,
-    ) -> i32 {
-        {
-            tracing::trace!("bottomless checkpoint");
-
-            /* In order to avoid partial checkpoints, passive checkpoint
-             ** mode is not allowed. Only TRUNCATE checkpoints are accepted,
-             ** because these are guaranteed to block writes, copy all WAL pages
-             ** back into the main database file and reset the frame number.
-             ** In order to avoid autocheckpoint on close (that's too often),
-             ** checkpoint attempts weaker than TRUNCATE are ignored.
-             */
-            if emode < SQLITE_CHECKPOINT_TRUNCATE {
-                tracing::trace!(
-                    "Ignoring a checkpoint request weaker than TRUNCATE: {}",
-                    emode
-                );
-                // Return an error to signal to sqlite that the WAL was not checkpointed, and it is
-                // therefore not safe to delete it.
-                return SQLITE_BUSY;
-            }
-        }
-
-        #[allow(clippy::await_holding_lock)]
-        // uncontended -> only gets called under a libSQL write lock
-        {
-            let ctx = Self::wal_extract_ctx(wal);
-            let runtime = tokio::runtime::Handle::current();
-            if let Some(replicator) = ctx.bottomless_replicator.as_mut() {
-                if let Some(replicator) = replicator.lock().unwrap().as_mut() {
-                    let last_known_frame = replicator.last_known_frame();
-                    replicator.request_flush();
-                    if last_known_frame == 0 {
-                        tracing::debug!(
-                            "No committed changes in this generation, not snapshotting"
-                        );
-                        replicator.skip_snapshot_for_current_generation();
-                        return SQLITE_OK;
-                    }
-                    if let Err(e) =
-                        runtime.block_on(replicator.wait_until_committed(last_known_frame))
-                    {
-                        tracing::error!(
-                            "Failed to wait for S3 replicator to confirm {} frames backup: {}",
-                            last_known_frame,
-                            e
-                        );
-                        return SQLITE_IOERR_WRITE;
-                    }
-                    if let Err(e) = runtime.block_on(replicator.wait_until_snapshotted()) {
-                        tracing::error!(
-                        "Failed to wait for S3 replicator to confirm database snapshot backup: {}",
-                        e
-                    );
-                        return SQLITE_IOERR_WRITE;
-                    }
-                } else {
-                    tracing::error!("fatal error: expected a replicator, exiting");
-                    return SQLITE_IOERR;
-                }
-            }
-        }
-        let rc = unsafe {
-            orig(
-                wal,
-                db,
-                emode,
-                busy_handler,
-                busy_arg,
-                sync_flags,
-                n_buf,
-                z_buf,
-                frames_in_wal,
-                backfilled_frames,
-            )
-        };
-
-        if rc != SQLITE_OK {
-            return rc;
-        }
-
-        #[allow(clippy::await_holding_lock)]
-        // uncontended -> only gets called under a libSQL write lock
-        {
-            let ctx = Self::wal_extract_ctx(wal);
-            let runtime = tokio::runtime::Handle::current();
-            if let Some(replicator) = ctx.bottomless_replicator.as_mut() {
-                if let Some(replicator) = replicator.lock().unwrap().as_mut() {
-                    let _prev = replicator.new_generation();
-                    if let Err(e) =
-                        runtime.block_on(async move { replicator.snapshot_main_db_file().await })
-                    {
-                        tracing::error!(
-                            "Failed to snapshot the main db file during checkpoint: {e}"
-                        );
-                        return SQLITE_IOERR_WRITE;
-                    }
-                } else {
-                    tracing::error!("fatal error: expected a replicator, exiting");
-                    return SQLITE_IOERR;
-                }
-            }
-        }
-        SQLITE_OK
-    }
-}
-
 #[derive(Clone, Debug)]
 pub struct WalPage {
     pub page_no: u32,
     /// 0 for non-commit frames
     pub size_after: u32,
     pub data: Bytes,
-}
-
-impl ReplicationLoggerHookCtx {
-    pub fn new(
-        logger: Arc<ReplicationLogger>,
-        bottomless_replicator: Option<Arc<std::sync::Mutex<Option<Replicator>>>>,
-    ) -> Self {
-        if bottomless_replicator.is_some() {
-            tracing::trace!("bottomless replication enabled");
-        }
-        Self {
-            buffer: Default::default(),
-            logger,
-            bottomless_replicator,
-        }
-    }
-
-    fn write_frame(&mut self, page_no: u32, data: &[u8]) {
-        let entry = WalPage {
-            page_no,
-            size_after: 0,
-            data: Bytes::copy_from_slice(data),
-        };
-        self.buffer.push(entry);
-    }
-
-    /// write buffered pages to the logger, without committing.
-    fn flush(&mut self, size_after: u32) -> anyhow::Result<()> {
-        if !self.buffer.is_empty() {
-            self.buffer.last_mut().unwrap().size_after = size_after;
-            self.logger.write_pages(&self.buffer)?;
-            self.buffer.clear();
-        }
-
-        Ok(())
-    }
-
-    fn commit(&self) -> anyhow::Result<()> {
-        let new_frame_no = self.logger.commit()?;
-        tracing::trace!("new frame committed {new_frame_no:?}");
-        self.logger.new_frame_notifier.send_replace(new_frame_no);
-        Ok(())
-    }
-
-    fn rollback(&mut self) {
-        self.logger.log_file.write().rollback();
-        self.buffer.clear();
-    }
-
-    pub fn logger(&self) -> &ReplicationLogger {
-        self.logger.as_ref()
-    }
 }
 
 /// Represent a LogFile, and operations that can be performed on it.
@@ -489,7 +159,7 @@ impl LogFile {
         Ok(())
     }
 
-    fn rollback(&mut self) {
+    pub(crate) fn rollback(&mut self) {
         self.uncommitted_frame_count = 0;
         self.uncommitted_checksum = self.commited_checksum;
     }
@@ -974,7 +644,7 @@ impl ReplicationLogger {
 
     /// Write pages to the log, without updating the file header.
     /// Returns the new frame count and checksum to commit
-    fn write_pages(&self, pages: &[WalPage]) -> anyhow::Result<()> {
+    pub(crate) fn write_pages(&self, pages: &[WalPage]) -> anyhow::Result<()> {
         let mut log_file = self.log_file.write();
         for page in pages.iter() {
             log_file.push_page(page)?;
@@ -1001,7 +671,7 @@ impl ReplicationLogger {
     }
 
     /// commit the current transaction and returns the new top frame number
-    fn commit(&self) -> anyhow::Result<Option<FrameNo>> {
+    pub(crate) fn commit(&self) -> anyhow::Result<Option<FrameNo>> {
         let mut log_file = self.log_file.write();
         log_file.commit()?;
         Ok(log_file.header().last_frame_no())
@@ -1036,6 +706,14 @@ impl ReplicationLogger {
 
         log_file.do_compaction(self.compactor.clone(), &self.db_path)?;
         Ok(true)
+    }
+
+    pub(crate) fn compactor(&self) -> &LogCompactor {
+        &self.compactor
+    }
+
+    pub(crate) fn db_path(&self) -> &Path {
+        &self.db_path
     }
 }
 
@@ -1094,10 +772,11 @@ pub fn checkpoint_db(data_path: &Path) -> anyhow::Result<()> {
 mod test {
     use std::collections::HashSet;
 
-    use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
+    use libsql_sys::wal::CreateSqlite3Wal;
 
     use super::*;
     use crate::connection::libsql::open_conn;
+    use crate::replication::primary::replication_logger_wal::CreateReplicationLoggerWal;
     use crate::DEFAULT_AUTO_CHECKPOINT;
 
     #[tokio::test]
@@ -1239,8 +918,7 @@ mod test {
         );
         let mut conn = open_conn(
             tmp.path(),
-            &REPLICATION_METHODS,
-            ReplicationLoggerHookCtx::new(logger.clone(), None),
+            CreateReplicationLoggerWal::new(logger),
             None,
             10000,
         )
@@ -1284,7 +962,7 @@ mod test {
 
         new_db_file.flush().unwrap();
 
-        let conn2 = open_conn(tmp2.path(), &TRANSPARENT_METHODS, (), None, 10000).unwrap();
+        let conn2 = open_conn(tmp2.path(), CreateSqlite3Wal::new(), None, 10000).unwrap();
 
         conn2
             .query_row("SELECT count(*) FROM test", (), |row| {
