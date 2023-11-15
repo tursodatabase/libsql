@@ -298,7 +298,7 @@ impl yyParser<'_> {
         self.yystack.reserve(additional);
         #[cfg(not(feature = "NDEBUG"))]
         {
-            debug!(
+            trace!(
                 target: TARGET,
                 "Stack grows from {} to {} entries.",
                 capacity,
@@ -345,7 +345,7 @@ impl yyParser<'_> {
         //assert_eq!(self.yyidx+1, self.yystack.len());
         #[cfg(not(feature = "NDEBUG"))]
         {
-            debug!(
+            trace!(
                 target: TARGET,
                 "Popping {}", yyTokenName[yytos.major as usize]
             );
@@ -453,7 +453,7 @@ fn yy_find_shift_action(
                 if iFallback != 0 {
                     #[cfg(not(feature = "NDEBUG"))]
                     {
-                        debug!(
+                        trace!(
                             target: TARGET,
                             "FALLBACK {} => {}",
                             yyTokenName[iLookAhead as usize],
@@ -470,7 +470,7 @@ fn yy_find_shift_action(
                 if yy_lookahead[j] == YYWILDCARD && iLookAhead > 0 {
                     #[cfg(not(feature = "NDEBUG"))]
                     {
-                        debug!(
+                        trace!(
                             target: TARGET,
                             "WILDCARD {} => {}",
                             yyTokenName[iLookAhead as usize],
@@ -548,12 +548,12 @@ impl yyParser<'_> {
         {
             let yytos = &self[0];
             if yyNewState < YYNSTATE {
-                debug!(
+                trace!(
                     target: TARGET,
                     "{} '{}', go to state {}", zTag, yyTokenName[yytos.major as usize], yyNewState
                 );
             } else {
-                debug!(
+                trace!(
                     target: TARGET,
                     "{} '{}', pending reduce {:?}",
                     zTag,
@@ -709,7 +709,7 @@ impl yyParser<'_> {
     fn yy_accept(&mut self) {
         #[cfg(not(feature = "NDEBUG"))]
         {
-            debug!(target: TARGET, "Accept!");
+            trace!(target: TARGET, "Accept!");
         }
         if cfg!(not(feature = "YYNOERRORRECOVERY")) {
             self.yyerrcnt = -1;
@@ -764,12 +764,12 @@ impl yyParser<'_> {
         #[cfg(not(feature = "NDEBUG"))]
         {
             if yyact < YY_MIN_REDUCE {
-                debug!(
+                trace!(
                     target: TARGET,
                     "Input '{}' in state {}", yyTokenName[yymajor as usize], yyact
                 );
             } else {
-                debug!(
+                trace!(
                     target: TARGET,
                     "Input '{}' with pending reduce {}",
                     yyTokenName[yymajor as usize],
@@ -793,7 +793,7 @@ impl yyParser<'_> {
                             " without external action"
                         };
                         if yysize != 0 {
-                            debug!(
+                            trace!(
                                 target: TARGET,
                                 "Reduce {} [{}]{}, pop back to state {}.",
                                 yyruleno,
@@ -802,7 +802,7 @@ impl yyParser<'_> {
                                 self[yysize].stateno
                             );
                         } else {
-                            debug!(
+                            trace!(
                                 target: TARGET,
                                 "Reduce {} [{}]{}.", yyruleno, yyRuleName[yyruleno as usize], action
                             );
@@ -832,7 +832,7 @@ impl yyParser<'_> {
                 assert_eq!(yyact, YY_ERROR_ACTION);
                 #[cfg(not(feature = "NDEBUG"))]
                 {
-                    debug!(target: TARGET, "Syntax Error!");
+                    trace!(target: TARGET, "Syntax Error!");
                 }
                 if YYERRORSYMBOL > 0 {
                     /* A syntax error has occurred.
@@ -861,7 +861,7 @@ impl yyParser<'_> {
                     if yymx == YYERRORSYMBOL || yyerrorhit {
                         #[cfg(not(feature = "NDEBUG"))]
                         {
-                            debug!(
+                            trace!(
                                 target: TARGET,
                                 "Discard input token {}", yyTokenName[yymajor as usize]
                             );
@@ -937,7 +937,7 @@ impl yyParser<'_> {
                     .map(|entry| yyTokenName[entry.major as usize])
                     .collect::<Vec<&str>>()
                     .join(" ");
-                debug!(target: TARGET, "Return. Stack=[{}]", msg);
+                trace!(target: TARGET, "Return. Stack=[{}]", msg);
             }
         }
         return Ok(());
