@@ -11,6 +11,7 @@ members = [
   "bottomless-cli",
   "libsql-sys-tmp",
   "libsql-replication",
+  "libsql-ffi",
 
   "vendored/rusqlite",
   "vendored/sqlite3-parser",

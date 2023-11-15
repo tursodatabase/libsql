@@ -59,8 +59,13 @@ core = [
   "dep:bitflags",
   "dep:futures"
 ]
+parser = [
+  "dep:sqlite3-parser",
+  "dep:fallible-iterator"
+]
 replication = [
   "core",
+  "parser",
   "serde",
   "dep:tower",
   "dep:hyper",
@@ -70,10 +75,8 @@ replication = [
   "dep:bincode",
   "dep:bytemuck",
   "dep:bytes",
-  "dep:fallible-iterator",
   "dep:uuid",
   "dep:tokio-stream",
-  "dep:sqlite3-parser",
   "dep:parking_lot",
   "dep:tokio",
   "dep:tonic",
@@ -85,6 +88,7 @@ replication = [
   "dep:libsql-replication"
 ]
 hrana = [
+  "parser",
   "serde",
   "dep:base64",
   "dep:serde_json",

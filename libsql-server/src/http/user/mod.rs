@@ -21,7 +21,7 @@ use hyper::{header, Body, Request, Response, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Number;
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::{mpsc, oneshot, Notify};
 use tokio::task::JoinSet;
 use tonic::transport::Server;
 use tower_http::trace::DefaultOnResponse;
@@ -237,6 +237,7 @@ pub struct UserApi<M: MakeNamespace, A, P, S> {
     pub enable_console: bool,
     pub self_url: Option<String>,
     pub path: Arc<Path>,
+    pub shutdown: Arc<Notify>,
 }
 
 impl<M, A, P, S> UserApi<M, A, P, S>
@@ -441,6 +442,7 @@ where
             join_set.spawn(async move {
                 hyper::server::Server::builder(acceptor)
                     .serve(h2c)
+                    .with_graceful_shutdown(self.shutdown.notified())
                     .await
                     .context("http server")?;
                 Ok(())

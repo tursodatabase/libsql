@@ -157,7 +157,7 @@ impl<C: ReplicatorClient> Replicator<C> {
                     self.has_handshake = true;
                     return Ok(());
                 }
-                Err(e @ Error::Fatal(_)) => return Err(e),
+                Err(e @ (Error::Fatal(_) | Error::Meta(_))) => return Err(e),
                 Err(e) if !error_printed => {
                     tracing::error!("error connecting to primary. retrying. error: {e}");
                     error_printed = true;
