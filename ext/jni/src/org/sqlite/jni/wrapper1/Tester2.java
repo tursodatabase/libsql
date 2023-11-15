@@ -12,14 +12,13 @@
 ** This file contains a set of tests for the sqlite3 JNI bindings.
 */
 package org.sqlite.jni.wrapper1;
-//import static org.sqlite.jni.capi.CApi.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.sqlite.jni.capi.*;
+import org.sqlite.jni.capi.CApi;
 
 /**
    An annotation for Tester2 tests which we do not want to run in
@@ -165,14 +164,6 @@ public class Tester2 implements Runnable {
   @SingleThreadOnly /* because it's thread-agnostic */
   private void test1(){
     affirm(Sqlite.libVersionNumber() == CApi.SQLITE_VERSION_NUMBER);
-  }
-
-  /* Copy/paste/rename this to add new tests. */
-  private void _testTemplate(){
-    //final sqlite3 db = createNewDb();
-    //sqlite3_stmt stmt = prepare(db,"SELECT 1");
-    //sqlite3_finalize(stmt);
-    //sqlite3_close_v2(db);
   }
 
   private void nap() throws InterruptedException {
@@ -946,6 +937,15 @@ public class Tester2 implements Runnable {
     }
     affirm( 3 == mCount.value );
     affirm( 9 == fCount.value );
+  }
+
+
+  /* Copy/paste/rename this to add new tests. */
+  private void _testTemplate(){
+    try (Sqlite db = openDb()) {
+      Sqlite.Stmt stmt = db.prepare("SELECT 1");
+      stmt.finalizeStmt();
+    }
   }
 
   private void runTests(boolean fromThread) throws Exception {
