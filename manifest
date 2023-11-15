@@ -1,5 +1,5 @@
-C Fix\san\sexception\smisuse\sin\stest-opfs-vfs.js.
-D 2023-11-15T11:31:49.343
+C Improvements\sto\sthe\sdescription\sof\ssqlite3_errmsg()\sand\ssqlite3_errstr().
+D 2023-11-15T14:09:37.372
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -727,7 +727,7 @@ F src/resolve.c d017bad7ba8e778617701a0e986fdeb393d67d6afa84fb28ef4e8b8ad2acf916
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 503331aca8785254a7bf3d74ab338a99118fa297e1184a4dde33b3cdf7a9d341
 F src/shell.c.in 297625a1ba6ea1c08bc2ea1b838b646cad309b62bf08df0e379355629404f140
-F src/sqlite.h.in 4f841d3d117b830ee5ee45e8d89ceff1195f3ebb72d041ace8d116ba4c103b35
+F src/sqlite.h.in d93a4821d2f792467a60f7dc81268d1bb8634f40c31694ef254cab4f9921f96a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h cd171cba32c7a553e7623fbd82b68b36a1b6c81079ab963260777ea9b3abe4d9
@@ -2140,8 +2140,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d63f6e1ffda9a88a37acc7862cb7ee8b9cd669b0fdba64c1ec9dd221cf807714
-R ef67521a91142009d8ed3d90bf5a230c
-U stephan
-Z ab3ce547af8ac754282e359887ba0477
+P 9264955e6e47aa8fc3a6f8bed192a6c12f43de49f7fba2e0cc080e47abedde14
+R 139e17684ccca74689d8240b0ba576f4
+U drh
+Z 8986785ee5fdd637d4bddc3835832faf
 # Remove this line to create a well-formed Fossil manifest.
