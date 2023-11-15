@@ -1,6 +1,6 @@
 [package]
 name = "sqld"
-version = "0.22.1"
+version = "0.22.3"
 edition = "2021"
 default-run = "sqld"
 
