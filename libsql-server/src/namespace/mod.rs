@@ -7,6 +7,7 @@ use std::sync::{Arc, Weak};
 
 use anyhow::Context as _;
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
+use bottomless::bottomless_wal::CreateBottomlessWal;
 use bottomless::replicator::Options;
 use bytes::Bytes;
 use chrono::NaiveDateTime;
@@ -14,9 +15,9 @@ use enclose::enclose;
 use futures_core::Stream;
 use hyper::Uri;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
+use libsql_sys::wal::{CreateSqlite3Wal, CreateWal};
 use parking_lot::Mutex;
 use rusqlite::ErrorCode;
-use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
 use tokio::io::AsyncBufReadExt;
 use tokio::sync::watch;
 use tokio::task::JoinSet;
@@ -35,7 +36,8 @@ use crate::connection::MakeConnection;
 use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
-use crate::replication::primary::logger::{ReplicationLoggerHookCtx, REPLICATION_METHODS};
+use crate::replication::primary::replication_logger_wal::CreateReplicationLoggerWal;
+use crate::replication::replicator_client::NamespaceDoesntExist;
 use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
@@ -47,6 +49,7 @@ use crate::namespace::fork::PointInTimeRestore;
 pub use fork::ForkError;
 
 use self::fork::ForkTask;
+use self::replication_wal::CreateReplicationWal;
 
 mod fork;
 pub mod replication_wal;
@@ -907,6 +910,7 @@ impl Namespace<PrimaryDatabase> {
         // So instead we checkpoint early, *before* bottomless gets initialized. That way
         // we're sure bottomless won't try to back up any existing WAL frames and will instead
         // treat the existing db file as the source of truth.
+
         if config.bottomless_replication.is_some() {
             tracing::debug!("Checkpointing before initializing bottomless");
             crate::replication::primary::logger::checkpoint_db(&db_path.join("data"))?;
@@ -956,12 +960,6 @@ impl Namespace<PrimaryDatabase> {
             bottomless_replicator.clone(),
         )?);
 
-        let ctx_builder = {
-            let logger = logger.clone();
-            let bottomless_replicator = bottomless_replicator.clone();
-            move || ReplicationLoggerHookCtx::new(logger.clone(), bottomless_replicator.clone())
-        };
-
         let stats = make_stats(
             &db_path,
             &mut join_set,
@@ -971,10 +969,18 @@ impl Namespace<PrimaryDatabase> {
         )
         .await?;
 
+        let base_create_wal = CreateReplicationLoggerWal::new(logger.clone());
+        let create_wal = match bottomless_replicator {
+            Some(replicator) => CreateReplicationWal::Bottomless(CreateBottomlessWal::new(
+                base_create_wal,
+                replicator,
+            )),
+            None => CreateReplicationWal::Logger(base_create_wal),
+        };
+
         let connection_maker: Arc<_> = MakeLibSqlConn::new(
             db_path.clone(),
-            &REPLICATION_METHODS,
-            ctx_builder.clone(),
+            create_wal.clone(),
             stats.clone(),
             db_config_store.clone(),
             config.extensions.clone(),
@@ -991,12 +997,15 @@ impl Namespace<PrimaryDatabase> {
         )
         .into();
 
+        // this must happen after we create the connection maker. The connection maker old on a
+        // connection to ensure that no other connection is closing while we try to open the dump.
+        // that would cause a SQLITE_LOCKED error.
         match restore_option {
             RestoreOption::Dump(_) if !is_fresh_db => {
                 Err(LoadDumpError::LoadDumpExistingDb)?;
             }
             RestoreOption::Dump(dump) => {
-                load_dump(&db_path, dump, ctx_builder, logger.auto_checkpoint).await?;
+                load_dump(&db_path, dump, create_wal, logger.auto_checkpoint).await?;
             }
             _ => { /* other cases were already handled when creating bottomless */ }
         }
@@ -1075,22 +1084,24 @@ pub enum RestoreOption {
 const WASM_TABLE_CREATE: &str =
     "CREATE TABLE libsql_wasm_func_table (name text PRIMARY KEY, body text) WITHOUT ROWID;";
 
-async fn load_dump<S>(
+async fn load_dump<S, C>(
     db_path: &Path,
     dump: S,
-    mk_ctx: impl Fn() -> ReplicationLoggerHookCtx,
+    create_wal: C,
     auto_checkpoint: u32,
 ) -> crate::Result<(), LoadDumpError>
 where
     S: Stream<Item = std::io::Result<Bytes>> + Unpin,
+    C: CreateWal + Clone + Send + 'static,
+    C::Wal: Send + 'static,
 {
     let mut retries = 0;
     // there is a small chance we fail to acquire the lock right away, so we perform a few retries
     let conn = loop {
-        let ctx = mk_ctx();
         let db_path = db_path.to_path_buf();
+        let create_wal = create_wal.clone();
         match tokio::task::spawn_blocking(move || {
-            open_conn(&db_path, &REPLICATION_METHODS, ctx, None, auto_checkpoint)
+            open_conn(&db_path, create_wal, None, auto_checkpoint)
         })
         .await?
         {
@@ -1255,7 +1266,7 @@ async fn run_storage_monitor(db_path: PathBuf, stats: Weak<Stats>) -> anyhow::Re
             // fail to open it, we wait for `duration` and try again later.
             // We can safely open db with DEFAULT_AUTO_CHECKPOINT, since monitor is read-only: it 
             // won't produce new updates, frames or generate checkpoints.
-            match open_conn(&db_path, &TRANSPARENT_METHODS, (), Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), DEFAULT_AUTO_CHECKPOINT) {
+            match open_conn(&db_path, CreateSqlite3Wal::new(), Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), DEFAULT_AUTO_CHECKPOINT) {
                 Ok(conn) => {
                     if let Ok(storage_bytes_used) =
                         conn.query_row("select sum(pgsize) from dbstat;", [], |row| {
