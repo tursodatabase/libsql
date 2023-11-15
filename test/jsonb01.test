@@ -38,8 +38,11 @@ foreach {id path res} {
  17 {$.c[#-5]}  {{{"a":5,"b":{"x":10,"y":11},"c":[1,2,3,4]}}}
  18 {$.c[#-6]}  {{{"a":5,"b":{"x":10,"y":11},"c":[1,2,3,4]}}}
 } {
-  do_execsql_test jsonb01-1.2.$id {
+  do_execsql_test jsonb01-1.2.$id.1 {
     SELECT json(jsonb_remove(x,$path)) FROM t1;
+  } $res
+  do_execsql_test jsonb01-1.2.$id.2 {
+    SELECT json_remove(x,$path) FROM t1;
   } $res
 }
 

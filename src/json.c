@@ -4265,7 +4265,9 @@ static void jsonRemoveFromBlob(
   int i;
   u32 rc;
   const char *zPath = 0;
+  int flgs;
   JsonParse px;
+
   memset(&px, 0, sizeof(px));
   px.nBlob = sqlite3_value_bytes(argv[0]);
   px.aBlob = (u8*)sqlite3_value_blob(argv[0]);
@@ -4283,8 +4285,17 @@ static void jsonRemoveFromBlob(
     if( rc==JSON_BLOB_NOTFOUND ) continue;
     if( JSON_BLOB_ISERROR(rc) ) goto jsonRemoveFromBlob_patherror;
   }
-  sqlite3_result_blob(ctx, px.aBlob, px.nBlob,
-                      px.nBlobAlloc>0 ? SQLITE_DYNAMIC : SQLITE_TRANSIENT);
+  flgs = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
+  if( flgs & JSON_BLOB ){
+    sqlite3_result_blob(ctx, px.aBlob, px.nBlob,
+                        px.nBlobAlloc>0 ? SQLITE_DYNAMIC : SQLITE_TRANSIENT);
+  }else{
+    JsonString s;
+    jsonStringInit(&s, ctx);
+    jsonXlateBlobToText(&px, 0, &s);
+    jsonReturnString(&s);
+    if( px.nBlobAlloc ) sqlite3_free(px.aBlob);
+  }
   return;
 
 jsonRemoveFromBlob_patherror:
@@ -4834,9 +4845,7 @@ static void jsonRemoveFunc(
   u32 i;
 
   if( argc<1 ) return;
-  if( jsonFuncArgMightBeBinary(argv[0])
-   && (SQLITE_PTR_TO_INT(sqlite3_user_data(ctx))&JSON_BLOB)!=0
-  ){
+  if( jsonFuncArgMightBeBinary(argv[0]) ){
     jsonRemoveFromBlob(ctx, argc, argv);
     return;
   }
