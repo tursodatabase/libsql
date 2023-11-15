@@ -16,7 +16,7 @@ impl<'a> Headers<'a> {
         }
     }
 
-    pub(crate) fn as_ptr(&mut self) -> *mut PgHdr {
+    pub(crate) fn as_mut_ptr(&mut self) -> *mut PgHdr {
         self.ptr
     }
 
