@@ -198,7 +198,8 @@ do_execsql_test 4.1.2 {
 do_execsql_test 4.1.3 {
   SELECT * FROM t0 WHERE t0 MATCH 'abc';
   INSERT INTO t0(t0) VALUES('integrity-check');
-} {}
+  PRAGMA integrity_check;
+} {ok}
 
 do_execsql_test 4.2.1 {
   CREATE VIRTUAL TABLE t01 USING fts4;
@@ -211,7 +212,8 @@ do_execsql_test 4.2.1 {
 do_execsql_test 4.2.2 {
   SELECT * FROM t01 WHERE t01 MATCH 'b';
   INSERT INTO t01(t01) VALUES('integrity-check');
-} {}
+  PRAGMA integrity_check;
+} {ok}
 
 do_execsql_test 4.3.1 {
   CREATE VIRTUAL TABLE t02 USING fts4;

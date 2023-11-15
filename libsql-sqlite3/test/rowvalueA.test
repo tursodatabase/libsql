@@ -74,4 +74,3 @@ do_catchsql_test 2.3 {
 } {1 {row value misused}}
 
 finish_test
-

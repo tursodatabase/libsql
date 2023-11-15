@@ -1252,24 +1252,28 @@ static int geopolyInit(
   (void)pAux;
 
   sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
+  sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
 
   /* Allocate the sqlite3_vtab structure */
   nDb = strlen(argv[1]);
   nName = strlen(argv[2]);
-  pRtree = (Rtree *)sqlite3_malloc64(sizeof(Rtree)+nDb+nName+2);
+  pRtree = (Rtree *)sqlite3_malloc64(sizeof(Rtree)+nDb+nName*2+8);
   if( !pRtree ){
     return SQLITE_NOMEM;
   }
-  memset(pRtree, 0, sizeof(Rtree)+nDb+nName+2);
+  memset(pRtree, 0, sizeof(Rtree)+nDb+nName*2+8);
   pRtree->nBusy = 1;
   pRtree->base.pModule = &rtreeModule;
   pRtree->zDb = (char *)&pRtree[1];
   pRtree->zName = &pRtree->zDb[nDb+1];
+  pRtree->zNodeName = &pRtree->zName[nName+1];
   pRtree->eCoordType = RTREE_COORD_REAL32;
   pRtree->nDim = 2;
   pRtree->nDim2 = 4;
   memcpy(pRtree->zDb, argv[1], nDb);
   memcpy(pRtree->zName, argv[2], nName);
+  memcpy(pRtree->zNodeName, argv[2], nName);
+  memcpy(&pRtree->zNodeName[nName], "_node", 6);
 
 
   /* Create/Connect to the underlying relational database schema. If
@@ -1683,7 +1687,6 @@ static int geopolyUpdate(
     }
     if( rc==SQLITE_OK ){
       int rc2;
-      pRtree->iReinsertHeight = -1;
       rc = rtreeInsertCell(pRtree, pLeaf, &cell, 0);
       rc2 = nodeRelease(pRtree, pLeaf);
       if( rc==SQLITE_OK ){
@@ -1780,7 +1783,8 @@ static sqlite3_module geopolyModule = {
   rtreeSavepoint,             /* xSavepoint */
   0,                          /* xRelease */
   0,                          /* xRollbackTo */
-  rtreeShadowName             /* xShadowName */
+  rtreeShadowName,            /* xShadowName */
+  rtreeIntegrity              /* xIntegrity */
 };
 
 static int sqlite3_geopoly_init(sqlite3 *db){

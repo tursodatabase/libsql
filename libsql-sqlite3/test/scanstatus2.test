@@ -145,8 +145,8 @@ do_graph_test 1.4 {
 QUERY (nCycle=nnn)
 --MATERIALIZE v2 (nCycle=nnn)
 ----SCAN t2 (nCycle=nnn)
---SCAN v2 (nCycle=nnn)
 --SCAN t1 (nCycle=nnn)
+--SCAN v2 (nCycle=nnn)
 --USE TEMP B-TREE FOR ORDER BY (nCycle=nnn)
 }
 
@@ -332,5 +332,3 @@ QUERY (nCycle=nnn)
 #puts_debug_info { SELECT (a % 2), group_concat(b) FROM t1 GROUP BY 1 }
 
 finish_test
-
-

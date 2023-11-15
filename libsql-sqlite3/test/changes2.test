@@ -92,4 +92,3 @@ do_execsql_test 2.4 {
 } {{2 changes} {2 changes}}
 
 finish_test
-

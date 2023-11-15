@@ -543,15 +543,26 @@ int main(int argc, char **argv){
   }
   zPgSz[0] = 0;
   zPgSz[1] = 0;
-  lseek(fd, 8, SEEK_SET);
-  read(fd, zPgSz, 4);
+  fstat(fd, &sbuf);
+  if( sbuf.st_size<32 ){
+    printf("%s: file too small to be a WAL - only %d bytes\n",
+           argv[1], (int)sbuf.st_size);
+    return 0;
+  }
+  if( lseek(fd, 8, SEEK_SET)!=8 ){
+    printf("\"%s\" seems to not be a valid WAL file\n", argv[1]);
+    return 1;
+  }
+  if( read(fd, zPgSz, 4)!=4 ){
+    printf("\"%s\": cannot read the page size\n", argv[1]);
+    return 1;
+  }
   pagesize = zPgSz[1]*65536 + zPgSz[2]*256 + zPgSz[3];
   if( pagesize==0 ) pagesize = 1024;
   printf("Pagesize: %d\n", pagesize);
-  fstat(fd, &sbuf);
-  if( sbuf.st_size<32 ){
-    printf("file too small to be a WAL\n");
-    return 0;
+  if( (pagesize & (pagesize-1))!=0 || pagesize<512 || pagesize>65536 ){
+    printf("\"%s\": invalid page size.\n", argv[1]);
+    return 1;
   }
   mxFrame = (sbuf.st_size - 32)/(pagesize + 24);
   printf("Available pages: 1..%d\n", mxFrame);

@@ -84,6 +84,14 @@
 
 /**********************************************************************/
 /* SQLITE_ENABLE_... */
+/*
+** Unconditionally enable API_ARMOR in the WASM build. It ensures that
+** public APIs behave predictable in the face of passing illegal NULLs
+** or ranges which might otherwise invoke undefined behavior.
+*/
+#undef SQLITE_ENABLE_API_ARMOR
+#define SQLITE_ENABLE_API_ARMOR 1
+
 #ifndef SQLITE_ENABLE_BYTECODE_VTAB
 #  define SQLITE_ENABLE_BYTECODE_VTAB 1
 #endif
@@ -119,12 +127,6 @@
 #endif
 #ifndef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 #  define SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
-#endif
-
-/**********************************************************************/
-/* SQLITE_M... */
-#ifndef SQLITE_MAX_ALLOCATION_SIZE
-# define SQLITE_MAX_ALLOCATION_SIZE 0x1fffffff
 #endif
 
 /**********************************************************************/
@@ -352,7 +354,9 @@ int sqlite3_wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
   if( db!=0 ){
     if( 0!=zMsg ){
       const int nMsg = sqlite3Strlen30(zMsg);
+      sqlite3_mutex_enter(sqlite3_db_mutex(db));
       sqlite3ErrorWithMsg(db, err_code, "%.*s", nMsg, zMsg);
+      sqlite3_mutex_leave(sqlite3_db_mutex(db));
     }else{
       sqlite3ErrorWithMsg(db, err_code, NULL);
     }
@@ -1799,6 +1803,118 @@ char * sqlite3_wasm_test_str_hello(int fail){
   }
   return s;
 }
+
+/*
+** For testing using SQLTester scripts.
+**
+** Return non-zero if string z matches glob pattern zGlob and zero if the
+** pattern does not match.
+**
+** To repeat:
+**
+**         zero == no match
+**     non-zero == match
+**
+** Globbing rules:
+**
+**      '*'       Matches any sequence of zero or more characters.
+**
+**      '?'       Matches exactly one character.
+**
+**     [...]      Matches one character from the enclosed list of
+**                characters.
+**
+**     [^...]     Matches one character not in the enclosed list.
+**
+**      '#'       Matches any sequence of one or more digits with an
+**                optional + or - sign in front, or a hexadecimal
+**                literal of the form 0x...
+*/
+static int sqlite3_wasm_SQLTester_strnotglob(const char *zGlob, const char *z){
+  int c, c2;
+  int invert;
+  int seen;
+  typedef int (*recurse_f)(const char *,const char *);
+  static const recurse_f recurse = sqlite3_wasm_SQLTester_strnotglob;
+
+  while( (c = (*(zGlob++)))!=0 ){
+    if( c=='*' ){
+      while( (c=(*(zGlob++))) == '*' || c=='?' ){
+        if( c=='?' && (*(z++))==0 ) return 0;
+      }
+      if( c==0 ){
+        return 1;
+      }else if( c=='[' ){
+        while( *z && recurse(zGlob-1,z)==0 ){
+          z++;
+        }
+        return (*z)!=0;
+      }
+      while( (c2 = (*(z++)))!=0 ){
+        while( c2!=c ){
+          c2 = *(z++);
+          if( c2==0 ) return 0;
+        }
+        if( recurse(zGlob,z) ) return 1;
+      }
+      return 0;
+    }else if( c=='?' ){
+      if( (*(z++))==0 ) return 0;
+    }else if( c=='[' ){
+      int prior_c = 0;
+      seen = 0;
+      invert = 0;
+      c = *(z++);
+      if( c==0 ) return 0;
+      c2 = *(zGlob++);
+      if( c2=='^' ){
+        invert = 1;
+        c2 = *(zGlob++);
+      }
+      if( c2==']' ){
+        if( c==']' ) seen = 1;
+        c2 = *(zGlob++);
+      }
+      while( c2 && c2!=']' ){
+        if( c2=='-' && zGlob[0]!=']' && zGlob[0]!=0 && prior_c>0 ){
+          c2 = *(zGlob++);
+          if( c>=prior_c && c<=c2 ) seen = 1;
+          prior_c = 0;
+        }else{
+          if( c==c2 ){
+            seen = 1;
+          }
+          prior_c = c2;
+        }
+        c2 = *(zGlob++);
+      }
+      if( c2==0 || (seen ^ invert)==0 ) return 0;
+    }else if( c=='#' ){
+      if( z[0]=='0'
+       && (z[1]=='x' || z[1]=='X')
+       && sqlite3Isxdigit(z[2])
+      ){
+        z += 3;
+        while( sqlite3Isxdigit(z[0]) ){ z++; }
+      }else{
+        if( (z[0]=='-' || z[0]=='+') && sqlite3Isdigit(z[1]) ) z++;
+        if( !sqlite3Isdigit(z[0]) ) return 0;
+        z++;
+        while( sqlite3Isdigit(z[0]) ){ z++; }
+      }
+    }else{
+      if( c!=(*(z++)) ) return 0;
+    }
+  }
+  return *z==0;
+}
+
+SQLITE_WASM_EXPORT
+int sqlite3_wasm_SQLTester_strglob(const char *zGlob, const char *z){
+ return !sqlite3_wasm_SQLTester_strnotglob(zGlob, z);
+}
+
+
 #endif /* SQLITE_WASM_TESTS */
 
 #undef SQLITE_WASM_EXPORT

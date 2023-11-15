@@ -662,11 +662,8 @@ do_execsql_test gencol1-23.4 {
 
 # 2023-03-07 https://sqlite.org/forum/forumpost/b312e075b5
 #
-do_execsql_test gencol1-23.5 {
+do_catchsql_test gencol1-23.5 {
   CREATE TABLE v0(c1 INT, c2 AS (RAISE(IGNORE)));
-}
-do_catchsql_test gencol1-23.6 {
-  SELECT * FROM v0;
 } {1 {RAISE() may only be used within a trigger-program}}
 
 finish_test

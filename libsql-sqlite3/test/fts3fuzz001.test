@@ -13,6 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix fts3fuzz001
 
 ifcapable !deserialize||!fts3 {
   finish_test
@@ -109,6 +110,32 @@ do_test fts3fuzz001-121 {
     INSERT INTO t1(t1) VALUES('integrity-check');
   }
 } {1 {database disk image is malformed}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 200 {
+  CREATE VIRTUAL TABLE x1 USING fts3(x);
+
+  INSERT INTO x1 VALUES('braes brag bragged bragger bragging');
+  INSERT INTO x1 VALUES('brags braid braided braiding braids');
+  INSERT INTO x1 VALUES('brain brainchild brained braining brains');
+  INSERT INTO x1 VALUES('brainstem brainstems brainstorm brainstorms');
+  INSERT INTO x1(x1) VALUES('nodesize=24');
+}
+
+do_execsql_test 210 {
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 220 {
+  INSERT INTO x1(x1) VALUES('merge=10,2')
+}
+
+do_execsql_test 220 {
+  PRAGMA integrity_check;
+} {ok}
+
+
 
 
 finish_test

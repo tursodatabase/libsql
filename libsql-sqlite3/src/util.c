@@ -202,12 +202,16 @@ void sqlite3ProgressCheck(Parse *p){
     p->rc = SQLITE_INTERRUPT;
   }
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  if( db->xProgress && (++p->nProgressSteps)>=db->nProgressOps ){
-    if( db->xProgress(db->pProgressArg) ){
-      p->nErr++;
-      p->rc = SQLITE_INTERRUPT;
+  if( db->xProgress ){
+    if( p->rc==SQLITE_INTERRUPT ){
+      p->nProgressSteps = 0;
+    }else if( (++p->nProgressSteps)>=db->nProgressOps ){
+      if( db->xProgress(db->pProgressArg) ){
+        p->nErr++;
+        p->rc = SQLITE_INTERRUPT;
+      }
+      p->nProgressSteps = 0;
     }
-    p->nProgressSteps = 0;
   }
 #endif
 }
@@ -1025,29 +1029,29 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     double rr[2];
     rr[0] = r;
     rr[1] = 0.0;
-    if( rr[0]>1.84e+19 ){
-      while( rr[0]>1.84e+119 ){
+    if( rr[0]>9.223372036854774784e+18 ){
+      while( rr[0]>9.223372036854774784e+118 ){
         exp += 100;
         dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
       }
-      while( rr[0]>1.84e+29 ){
+      while( rr[0]>9.223372036854774784e+28 ){
         exp += 10;
         dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
       }
-      while( rr[0]>1.84e+19 ){
+      while( rr[0]>9.223372036854774784e+18 ){
         exp += 1;
         dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
       }
     }else{
-      while( rr[0]<1.84e-82  ){
+      while( rr[0]<9.223372036854774784e-83  ){
         exp -= 100;
         dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
       }
-      while( rr[0]<1.84e+08  ){
+      while( rr[0]<9.223372036854774784e+07  ){
         exp -= 10;
         dekkerMul2(rr, 1.0e+10, 0.0);
       }
-      while( rr[0]<1.84e+18  ){
+      while( rr[0]<9.22337203685477478e+17  ){
         exp -= 1;
         dekkerMul2(rr, 1.0e+01, 0.0);
       }
@@ -1363,121 +1367,32 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
 ** this function assumes the single-byte case has already been handled.
 */
 u8 sqlite3GetVarint32(const unsigned char *p, u32 *v){
-  u32 a,b;
+  u64 v64;
+  u8 n;
 
-  /* The 1-byte case.  Overwhelmingly the most common.  Handled inline
-  ** by the getVarin32() macro */
-  a = *p;
-  /* a: p0 (unmasked) */
-#ifndef getVarint32
-  if (!(a&0x80))
-  {
-    /* Values between 0 and 127 */
-    *v = a;
-    return 1;
-  }
-#endif
+  /* Assume that the single-byte case has already been handled by
+  ** the getVarint32() macro */
+  assert( (p[0] & 0x80)!=0 );
 
-  /* The 2-byte case */
-  p++;
-  b = *p;
-  /* b: p1 (unmasked) */
-  if (!(b&0x80))
-  {
-    /* Values between 128 and 16383 */
-    a &= 0x7f;
-    a = a<<7;
-    *v = a | b;
+  if( (p[1] & 0x80)==0 ){
+    /* This is the two-byte case */
+    *v = ((p[0]&0x7f)<<7) | p[1];
     return 2;
   }
-
-  /* The 3-byte case */
-  p++;
-  a = a<<14;
-  a |= *p;
-  /* a: p0<<14 | p2 (unmasked) */
-  if (!(a&0x80))
-  {
-    /* Values between 16384 and 2097151 */
-    a &= (0x7f<<14)|(0x7f);
-    b &= 0x7f;
-    b = b<<7;
-    *v = a | b;
+  if( (p[2] & 0x80)==0 ){
+    /* This is the three-byte case */
+    *v = ((p[0]&0x7f)<<14) | ((p[1]&0x7f)<<7) | p[2];
     return 3;
   }
-
-  /* A 32-bit varint is used to store size information in btrees.
-  ** Objects are rarely larger than 2MiB limit of a 3-byte varint.
-  ** A 3-byte varint is sufficient, for example, to record the size
-  ** of a 1048569-byte BLOB or string.
-  **
-  ** We only unroll the first 1-, 2-, and 3- byte cases.  The very
-  ** rare larger cases can be handled by the slower 64-bit varint
-  ** routine.
-  */
-#if 1
-  {
-    u64 v64;
-    u8 n;
-
-    n = sqlite3GetVarint(p-2, &v64);
-    assert( n>3 && n<=9 );
-    if( (v64 & SQLITE_MAX_U32)!=v64 ){
-      *v = 0xffffffff;
-    }else{
-      *v = (u32)v64;
-    }
-    return n;
-  }
-
-#else
-  /* For following code (kept for historical record only) shows an
-  ** unrolling for the 3- and 4-byte varint cases.  This code is
-  ** slightly faster, but it is also larger and much harder to test.
-  */
-  p++;
-  b = b<<14;
-  b |= *p;
-  /* b: p1<<14 | p3 (unmasked) */
-  if (!(b&0x80))
-  {
-    /* Values between 2097152 and 268435455 */
-    b &= (0x7f<<14)|(0x7f);
-    a &= (0x7f<<14)|(0x7f);
-    a = a<<7;
-    *v = a | b;
-    return 4;
-  }
-
-  p++;
-  a = a<<14;
-  a |= *p;
-  /* a: p0<<28 | p2<<14 | p4 (unmasked) */
-  if (!(a&0x80))
-  {
-    /* Values  between 268435456 and 34359738367 */
-    a &= SLOT_4_2_0;
-    b &= SLOT_4_2_0;
-    b = b<<7;
-    *v = a | b;
-    return 5;
-  }
-
-  /* We can only reach this point when reading a corrupt database
-  ** file.  In that case we are not in any hurry.  Use the (relatively
-  ** slow) general-purpose sqlite3GetVarint() routine to extract the
-  ** value. */
-  {
-    u64 v64;
-    u8 n;
-
-    p -= 4;
-    n = sqlite3GetVarint(p, &v64);
-    assert( n>5 && n<=9 );
+  /* four or more bytes */
+  n = sqlite3GetVarint(p, &v64);
+  assert( n>3 && n<=9 );
+  if( (v64 & SQLITE_MAX_U32)!=v64 ){
+    *v = 0xffffffff;
+  }else{
     *v = (u32)v64;
-    return n;
   }
-#endif
+  return n;
 }
 
 /*

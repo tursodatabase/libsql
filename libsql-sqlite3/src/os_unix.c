@@ -3150,9 +3150,6 @@ static int afpUnlock(sqlite3_file *id, int eFileLock) {
   unixInodeInfo *pInode;
   afpLockingContext *context = (afpLockingContext *) pFile->lockingContext;
   int skipShared = 0;
-#ifdef SQLITE_TEST
-  int h = pFile->h;
-#endif
 
   assert( pFile );
   OSTRACE(("UNLOCK  %d %d was %d(%d,%d) pid=%d (afp)\n", pFile->h, eFileLock,
@@ -3168,9 +3165,6 @@ static int afpUnlock(sqlite3_file *id, int eFileLock) {
   assert( pInode->nShared!=0 );
   if( pFile->eFileLock>SHARED_LOCK ){
     assert( pInode->eFileLock==pFile->eFileLock );
-    SimulateIOErrorBenign(1);
-    SimulateIOError( h=(-1) )
-    SimulateIOErrorBenign(0);
   
 #ifdef SQLITE_DEBUG
     /* When reducing a lock such that other processes can start
@@ -3219,9 +3213,6 @@ static int afpUnlock(sqlite3_file *id, int eFileLock) {
     unsigned long long sharedLockByte = SHARED_FIRST+pInode->sharedByte;
     pInode->nShared--;
     if( pInode->nShared==0 ){
-      SimulateIOErrorBenign(1);
-      SimulateIOError( h=(-1) )
-      SimulateIOErrorBenign(0);
       if( !skipShared ){
         rc = afpSetLock(context->dbPath, pFile, sharedLockByte, 1, 0);
       }

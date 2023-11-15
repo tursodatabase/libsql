@@ -75,7 +75,7 @@ do_test rtree8-1.2.2 { nested_select 1 } {51}
 #
 populate_t1 1500
 do_rtree_integrity_test rtree8-1.3.0 t1
-do_execsql_test rtree8-1.3.1 { SELECT max(nodeno) FROM t1_node } {164}
+do_execsql_test rtree8-1.3.1 { SELECT max(nodeno) FROM t1_node } {183}
 do_test rtree8-1.3.2 {
   set rowids [execsql {SELECT min(rowid) FROM t1_rowid GROUP BY nodeno}]
   set stmt_list [list]

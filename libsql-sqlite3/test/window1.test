@@ -158,7 +158,7 @@ do_execsql_test 4.9 {
 do_execsql_test 4.10.1 {
   SELECT a, 
     count() OVER (ORDER BY a DESC),
-    group_concat(a, '.') OVER (ORDER BY a DESC) 
+    string_agg(a, '.') OVER (ORDER BY a DESC) 
   FROM t2 ORDER BY a DESC
 } {
   6 1 6
@@ -825,7 +825,7 @@ foreach {tn sql error} {
 }
 
 do_execsql_test 18.3.1 {
-  SELECT group_concat(c, '.') OVER (PARTITION BY b ORDER BY c)
+  SELECT string_agg(c, '.') OVER (PARTITION BY b ORDER BY c)
   FROM t1
 } {four four.six four.six.two five five.one five.one.three}
 
@@ -836,7 +836,7 @@ do_execsql_test 18.3.2 {
 } {four four.six four.six.two five five.one five.one.three}
 
 do_execsql_test 18.3.3 {
-  SELECT group_concat(c, '.') OVER win2
+  SELECT string_agg(c, '.') OVER win2
   FROM t1
   WINDOW win1 AS (PARTITION BY b),
          win2 AS (win1 ORDER BY c)
@@ -850,7 +850,7 @@ do_execsql_test 18.3.4 {
 } {four four.six four.six.two five five.one five.one.three}
 
 do_execsql_test 18.3.5 {
-  SELECT group_concat(c, '.') OVER win5
+  SELECT string_agg(c, '.') OVER win5
   FROM t1
   WINDOW win1 AS (PARTITION BY b),
          win2 AS (win1),
@@ -1127,7 +1127,7 @@ do_execsql_test 28.1.1 {
 }
 
 do_execsql_test 28.1.2 {
-  SELECT group_concat(b,'') OVER w1 FROM t1
+  SELECT string_agg(b,'') OVER w1 FROM t1
     WINDOW w1 AS (ORDER BY a RANGE BETWEEN 3 PRECEDING AND 1 PRECEDING)
 } {
   {} {}

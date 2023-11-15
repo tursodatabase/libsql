@@ -52,4 +52,3 @@ do_faultsim_test 2 -faults * -prep {
 }
 
 finish_test
-

@@ -65,4 +65,44 @@ do_execsql_test 2.1 {
   INSERT INTO fts_idx(fts_idx) VALUES('integrity-check');
 }
 
+#-------------------------------------------------------------------------
+# Tests for OR IGNORE conflict handling.
+#
+reset_db
+foreach_detail_mode $::testprefix {
+
+  do_execsql_test 3.0 {
+    CREATE VIRTUAL TABLE t1 USING fts5(xyz, detail=%DETAIL%);
+
+    BEGIN;
+    INSERT INTO t1(rowid, xyz) VALUES(13, 'thirteen documents');
+    INSERT INTO t1(rowid, xyz) VALUES(14, 'fourteen documents');
+    INSERT INTO t1(rowid, xyz) VALUES(15, 'fifteen documents');
+    COMMIT;
+  }
+
+  set db_cksum [cksum]
+    foreach {tn sql} {
+    1 {
+      INSERT OR IGNORE INTO t1(rowid, xyz) VALUES(14, 'new text');
+    }
+    2 {
+      UPDATE OR IGNORE t1 SET rowid=13 WHERE rowid=15;
+    }
+    3 {
+      INSERT OR IGNORE INTO t1(rowid, xyz) 
+      SELECT 13, 'some text'
+      UNION ALL
+      SELECT 14, 'some text'
+      UNION ALL
+      SELECT 15, 'some text'
+    }
+  } {
+    do_execsql_test 3.1.$tn.1 $sql
+    do_test 3.1.$tn.2 { cksum } $db_cksum
+  }
+
+}
+
+
 finish_test

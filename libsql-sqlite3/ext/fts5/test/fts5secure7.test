@@ -1,0 +1,116 @@
+# 2023 Feb 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+# TESTRUNNER: slow
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+ifcapable !fts5 { finish_test ; return }
+set ::testprefix fts5secure7
+
+
+set NVOCAB 500
+set NDOC [expr 1000]
+
+set NREP 100
+set nDeletePerRep [expr 5]
+
+set VOCAB [list]
+
+proc select_one {list} {
+  set n [llength $list]
+  lindex $list [expr {abs(int(rand()*$n))}]
+}
+
+proc init_vocab {} {
+  set L [split "abcdefghijklmnopqrstuvwxyz" {}]
+  set nL [llength $L]
+  for {set i 0} {$i < $::NVOCAB} {incr i} {
+    set n [expr {6 + int(rand()*8)}]
+    set word ""
+    for {set j 0} {$j < $n} {incr j} {
+      append word [select_one $L]
+    }
+    lappend ::VOCAB $word
+  }
+}
+
+proc get_word {} {
+  select_one $::VOCAB
+}
+
+proc get_document {nWord} {
+  set ret [list]
+  for {set i 0} {$i < $nWord} {incr i} {
+    lappend ret [get_word]
+  }
+  return $ret
+}
+
+init_vocab
+
+db func document [list get_document 12]
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(body);
+  INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+}
+do_execsql_test 1.1 {
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<$NDOC
+  )
+  INSERT INTO t1 SELECT document() FROM s;
+}
+
+for {set iRep 0} {$iRep < $NREP} {incr iRep} {
+  set lRowid [db eval {SELECT rowid FROM t1}]
+  for {set iDel 0} {$iDel < $nDeletePerRep} {incr iDel} {
+    set idx [select_one $lRowid]
+    db eval {
+      DELETE FROM t1 WHERE rowid=$idx
+    }
+  }
+  db eval {
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<$nDeletePerRep
+    )
+    INSERT INTO t1 SELECT document() FROM s;
+  }
+  do_execsql_test 1.2.$iRep {
+    INSERT INTO t1(t1) VALUES('integrity-check');
+  }
+}
+
+reset_db
+db func document [list get_document 12]
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(body);
+  INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 128);
+}
+do_execsql_test 2.1 {
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<$NDOC
+  )
+  INSERT INTO t1 SELECT document() FROM s;
+}
+for {set ii 0} {$ii < $NDOC} {incr ii} {
+  set lRowid [db eval {SELECT rowid FROM t1}]
+  set idx [select_one $lRowid]
+  db eval { DELETE FROM t1 WHERE rowid=$idx }
+  do_execsql_test 2.2.$ii {
+    INSERT INTO t1(t1) VALUES('integrity-check');
+  }
+}
+
+finish_test
+
+

@@ -294,4 +294,3 @@ do_catchsql_test 7.2.5 {
 } {1 {recursively defined fts5 content table}}
 
 finish_test
-

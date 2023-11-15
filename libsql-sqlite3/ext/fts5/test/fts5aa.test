@@ -65,7 +65,9 @@ foreach w {a b c d e f} {
 
 do_execsql_test 2.4 {
   INSERT INTO t1(t1) VALUES('integrity-check');
-}
+  PRAGMA integrity_check;
+  PRAGMA integrity_check(t1);
+} {ok ok}
 
 
 #-------------------------------------------------------------------------
@@ -88,6 +90,7 @@ foreach {i x y} {
 } {
   do_execsql_test 3.$i.1 { INSERT INTO t1 VALUES($x, $y) }
   do_execsql_test 3.$i.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
+  do_execsql_test 3.$i.3 { PRAGMA integrity_check(t1) } ok
   if {[set_test_counter errors]} break
 }
 
@@ -135,7 +138,7 @@ foreach {i x y} {
    10 {ddd abcde dddd dd c} {dddd c c d abcde}
 } {
   do_execsql_test 5.$i.1 { INSERT INTO t1 VALUES($x, $y) }
-  do_execsql_test 5.$i.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
+  do_execsql_test 5.$i.2 { PRAGMA integrity_check(t1) } ok
   if {[set_test_counter errors]} break
 }
 

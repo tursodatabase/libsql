@@ -464,4 +464,23 @@ do_execsql_test 5.3 {
   t2 t2_idx_0001295b {100 20 5}
 }
 
+if 0 {
+do_test expert1-6.0 {
+  catchcmd :memory: {
+.expert
+select base64('');
+.expert
+select name from pragma_collation_list order by name collate uint;
+}
+} {0 {(no new indexes)
+
+SCAN CONSTANT ROW
+
+(no new indexes)
+
+SCAN pragma_collation_list VIRTUAL TABLE INDEX 0:
+USE TEMP B-TREE FOR ORDER BY
+}}
+}
+
 finish_test

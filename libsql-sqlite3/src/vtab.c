@@ -821,7 +821,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   sqlite3_mutex_enter(db->mutex);
   pCtx = db->pVtabCtx;
   if( !pCtx || pCtx->bDeclared ){
-    sqlite3Error(db, SQLITE_MISUSE);
+    sqlite3Error(db, SQLITE_MISUSE_BKPT);
     sqlite3_mutex_leave(db->mutex);
     return SQLITE_MISUSE_BKPT;
   }

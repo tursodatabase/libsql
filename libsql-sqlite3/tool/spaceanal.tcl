@@ -581,6 +581,7 @@ set inuse_pgcnt   [expr wide([mem eval $sql])]
 set inuse_percent [percent $inuse_pgcnt $file_pgcnt]
 
 set free_pgcnt    [expr {$file_pgcnt-$inuse_pgcnt-$av_pgcnt}]
+if {$file_bytes>1073741824 && $free_pgcnt>0} {incr free_pgcnt -1}
 set free_percent  [percent $free_pgcnt $file_pgcnt]
 set free_pgcnt2   [db one {PRAGMA freelist_count}]
 set free_percent2 [percent $free_pgcnt2 $file_pgcnt]
