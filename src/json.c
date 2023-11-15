@@ -3813,11 +3813,12 @@ static u32 jsonbArrayCount(JsonParse *pParse, u32 iRoot){
 ** Edit the size of the element at iRoot by the amount in pParse->delta.
 */
 static void jsonAfterEditSizeAdjust(JsonParse *pParse, u32 iRoot){
-  u32 sz;
-  assert( pParse->delta==0 );
+  u32 sz = 0;
+  assert( pParse->delta!=0 );
   (void)jsonbPayloadSize(pParse, iRoot, &sz);
   sz += pParse->delta;
   jsonBlobChangePayloadSize(pParse, iRoot, sz);
+  pParse->nBlob += pParse->delta;
 }
 
 /*
@@ -3837,7 +3838,8 @@ static void jsonAfterEditSizeAdjust(JsonParse *pParse, u32 iRoot){
 static u32 jsonLookupBlobStep(
   JsonParse *pParse,      /* The JSON to search */
   u32 iRoot,              /* Begin the search at this element of aBlob[] */
-  const char *zPath       /* The path to search */
+  const char *zPath,      /* The path to search */
+  u32 iLabel              /* Label if iRoot is a value of in an object */
 ){
   u32 i, j, k, nKey, sz, n, iEnd, rc;
   const char *zKey;
@@ -3848,10 +3850,13 @@ static u32 jsonLookupBlobStep(
       n = jsonbPayloadSize(pParse, iRoot, &sz);
       sz += n;
       if( pParse->eEdit==JEDIT_DEL ){
+        if( iLabel>0 ){
+          sz += iRoot - iLabel;
+          iRoot = iLabel;
+        }
         memmove(&pParse->aBlob[iRoot], &pParse->aBlob[iRoot+sz],
-                pParse->nBlob - iRoot);
-        pParse->nBlob -= n;
-        pParse->delta = -(int)n;
+                pParse->nBlob - (iRoot+sz));
+        pParse->delta = -(int)sz;
       }else if( pParse->eEdit==JEDIT_INS ){
         /* Already exists, so json_insert() is a no-op */
       }else{
@@ -3895,21 +3900,22 @@ static u32 jsonLookupBlobStep(
     }
     if( (x & 0x0f)!=JSONB_OBJECT ) return JSON_BLOB_NOTFOUND;
     n = jsonbPayloadSize(pParse, iRoot, &sz);
-    j = iRoot + n;
+    j = iRoot + n;  /* j is the index of a label */
     iEnd = j+sz;
     while( j<iEnd ){
       x = pParse->aBlob[j] & 0x0f;
       if( x<JSONB_TEXT || x>JSONB_TEXTRAW ) return JSON_BLOB_ERROR;
       n = jsonbPayloadSize(pParse, j, &sz);
       if( n==0 ) return JSON_BLOB_ERROR;
-      k = j+n;
+      k = j+n;  /* k is the index of the label text */
       if( k+sz>=iEnd ) return JSON_BLOB_ERROR;
       if( sz==nKey && memcmp(&pParse->aBlob[k], zKey, nKey)==0 ){
-        j = k+sz;
-        if( ((pParse->aBlob[j])&0x0f)>JSONB_OBJECT ) return JSON_BLOB_ERROR;
-        n = jsonbPayloadSize(pParse, j, &sz);
-        if( n==0 || j+n+sz>iEnd ) return JSON_BLOB_ERROR;
-        rc = jsonLookupBlobStep(pParse, j, &zPath[i]);
+        u32 v = k+sz;  /* v is the index of the value */
+        if( ((pParse->aBlob[v])&0x0f)>JSONB_OBJECT ) return JSON_BLOB_ERROR;
+        n = jsonbPayloadSize(pParse, v, &sz);
+        if( n==0 || v+n+sz>iEnd ) return JSON_BLOB_ERROR;
+        assert( j>0 );
+        rc = jsonLookupBlobStep(pParse, v, &zPath[i], j);
         if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
         return rc;
       }
@@ -3955,7 +3961,7 @@ static u32 jsonLookupBlobStep(
     iEnd = j+sz;
     while( j<iEnd ){
       if( k==0 ){
-        rc = jsonLookupBlobStep(pParse, j, &zPath[i+1]);
+        rc = jsonLookupBlobStep(pParse, j, &zPath[i+1], 0);
         if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
         return rc;
       }
@@ -3975,7 +3981,6 @@ static u32 jsonLookupBlobStep(
             pParse->nBlob - j);
     memcpy(&pParse->aBlob[j], pParse->aIns, pParse->nIns);
     pParse->delta = pParse->nIns;
-    pParse->nBlob += pParse->nIns;
     jsonAfterEditSizeAdjust(pParse, iRoot);
     return j;
   }
@@ -4195,7 +4200,7 @@ static void jsonExtractFromBlob(
   if( px.aBlob==0 ) return;
   if( zPath[0]=='$' ){
     zPath++;
-    i = jsonLookupBlobStep(&px, 0, zPath);
+    i = jsonLookupBlobStep(&px, 0, zPath, 0);
   }else if( (flags & JSON_ABPATH) ){
     /* The -> and ->> operators accept abbreviated PATH arguments.  This
     ** is mostly for compatibility with PostgreSQL, but also for
@@ -4218,7 +4223,7 @@ static void jsonExtractFromBlob(
       jsonAppendChar(&jx, 0);
       zPath = jx.zBuf;
     }
-    i = jsonLookupBlobStep(&px, 0, zPath);
+    i = jsonLookupBlobStep(&px, 0, zPath, 0);
     jsonStringReset(&jx);
   }else{
     sqlite3_result_error(ctx, "bad path", -1);
@@ -4237,7 +4242,41 @@ static void jsonExtractFromBlob(
     sqlite3_free(zMsg);
   }
 }
-  
+ 
+/* argv[0] is a BLOB that seems likely to be a JSONB.  Subsequent
+** arguments are JSON paths of elements to be removed.  Do that removal
+** and return the result.
+*/
+static void jsonRemoveFromBlob(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  int i;
+  u32 rc;
+  JsonParse px;
+  memset(&px, 0, sizeof(px));
+  px.nBlob = sqlite3_value_bytes(argv[0]);
+  px.aBlob = (u8*)sqlite3_value_blob(argv[0]);
+  if( px.aBlob==0 ) return;
+  for(i=1; i<argc; i++){
+    const char *zPath = (const char*)sqlite3_value_text(argv[i]);
+    if( zPath==0 ) goto jsonRemoveFromBlob_error;
+    if( zPath[0]!='$' ) goto jsonRemoveFromBlob_error;
+    px.eEdit = JEDIT_DEL;
+    rc = jsonLookupBlobStep(&px, 0, zPath+1, 0);
+    if( rc==JSON_BLOB_NOTFOUND ) continue;
+    if( JSON_BLOB_ISERROR(rc) ) goto jsonRemoveFromBlob_error;
+  }
+  sqlite3_result_blob(ctx, px.aBlob, px.nBlob,
+                      px.nBlobAlloc>0 ? sqlite3_free : SQLITE_DYNAMIC);
+  return;
+
+jsonRemoveFromBlob_error:
+  if( px.nBlobAlloc ) sqlite3_free(px.aBlob);
+  return;
+
+}
 
 /****************************************************************************
 ** SQL functions used for testing and debugging
@@ -4780,6 +4819,12 @@ static void jsonRemoveFunc(
   u32 i;
 
   if( argc<1 ) return;
+  if( jsonFuncArgMightBeBinary(argv[0])
+   && (SQLITE_PTR_TO_INT(sqlite3_user_data(ctx))&JSON_BLOB)!=0
+  ){
+    jsonRemoveFromBlob(ctx, argc, argv);
+    return;
+  }
   pParse = jsonParseCached(ctx, argv[0], ctx, argc>1);
   if( pParse==0 ) return;
   for(i=1; i<(u32)argc; i++){
