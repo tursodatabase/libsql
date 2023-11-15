@@ -369,10 +369,6 @@ struct sqlite3_api_routines {
 };
 
 struct libsql_api_routines {
-    /* libSQL 0.1.1 */
-  struct libsql_wal_methods *(*wal_methods_find)(const char *);
-  int (*wal_methods_register)(struct libsql_wal_methods*);
-  int (*wal_methods_unregister)(struct libsql_wal_methods*);
   /* libSQL 0.2.3 */
   void *(*close_hook)(sqlite3*, void(*)(void*,sqlite3*), void *pArg);
 };
@@ -706,10 +702,6 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_is_interrupted         sqlite3_api->is_interrupted
 /* Version 3.43.0 and later */
 #define sqlite3_stmt_explain           sqlite3_api->stmt_explain
-/* libSQL 0.1.1 */
-#define libsql_wal_methods_find        libsql_api->wal_methods_find
-#define libsql_wal_methods_register    libsql_api->wal_methods_register
-#define libsql_wal_methods_unregister  libsql_api->wal_methods_unregister
 /* libSQL 0.2.3 */
 #define libsql_close_hook              libsql_api->close_hook
 /* Version 3.44.0 and later */

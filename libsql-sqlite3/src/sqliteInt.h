@@ -1794,8 +1794,9 @@ struct sqlite3 {
 #ifdef LIBSQL_ENABLE_WASM_RUNTIME
   libsql_wasm_ctx wasm;        /* WebAssembly runtime context */
 #endif
-  libsql_wal_methods* pWalMethods; /* Custom WAL methods */
-  void* pWalMethodsData;           /* optional data for WAL methods */
+#ifndef SQLITE_OMIT_WAL
+  RefCountCreateWal *create_wal;
+#endif
   void *pCloseArg;                 /* First argument to xCloseCallback */
   void (*xCloseCallback)(          /* Registered using sqlite3_close_hook() */
     void*, sqlite3*
@@ -4875,8 +4876,8 @@ void sqlite3AddCollateType(Parse*, Token*);
 void sqlite3AddGenerated(Parse*,Expr*,Token*);
 void sqlite3EndTable(Parse*,Token*,Token*,u32,Select*);
 void sqlite3AddReturning(Parse*,ExprList*);
-int sqlite3ParseUri(const char*,const char*,const char*,unsigned int*,
-                    sqlite3_vfs**,libsql_wal_methods**,char**,char **);
+int sqlite3ParseUri(const char*,const char*,unsigned int*,
+                    sqlite3_vfs**,char**,char **);
 #define sqlite3CodecQueryParameters(A,B,C) 0
 Btree *sqlite3DbNameToBtree(sqlite3*,const char*);
 

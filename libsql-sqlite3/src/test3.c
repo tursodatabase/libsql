@@ -15,6 +15,7 @@
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
+#include "wal.h"
 #if defined(INCLUDE_SQLITE_TCL_H)
 #  include "sqlite_tcl.h"
 #else
@@ -58,9 +59,6 @@ static int SQLITE_TCLAPI btree_open(
   nRefSqlite3++;
   if( nRefSqlite3==1 ){
     sDb.pVfs = sqlite3_vfs_find(0);
-  #ifndef SQLITE_OMIT_WAL
-    sDb.pWalMethods = libsql_wal_methods_find(NULL);
-  #endif
     sDb.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
     sqlite3_mutex_enter(sDb.mutex);
   }
@@ -69,8 +67,14 @@ static int SQLITE_TCLAPI btree_open(
   if( zFilename==0 ) return TCL_ERROR;
   memcpy(zFilename, argv[1], n+1);
   zFilename[n+1] = 0;
-  rc = sqlite3BtreeOpen(sDb.pVfs, sDb.pWalMethods, zFilename, &sDb, &pBt, 0, 
+
+  RefCountCreateWal  *create_wal;
+  rc = make_ref_counted_create_wal(sqlite3_create_wal, &create_wal);
+  if (rc) return rc;
+  sDb.create_wal = create_wal;
+  rc = sqlite3BtreeOpen(sDb.pVfs, zFilename, &sDb, &pBt, 0, 
      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB);
+  destroy_create_wal(sDb.create_wal);
   sqlite3_free(zFilename);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);

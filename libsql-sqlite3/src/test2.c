@@ -14,6 +14,8 @@
 ** testing of the SQLite library.
 */
 #include "sqliteInt.h"
+#include "wal.h"
+#include <sys/signal.h>
 #if defined(INCLUDE_SQLITE_TCL_H)
 #  include "sqlite_tcl.h"
 #else
@@ -37,8 +39,6 @@ static void pager_test_reiniter(DbPage *pNotUsed){
   return;
 }
 
-extern libsql_wal_methods *libsql_wal_methods_find(const char*);
-
 /*
 ** Usage:   pager_open FILENAME N-PAGE
 **
@@ -52,22 +52,23 @@ static int SQLITE_TCLAPI pager_open(
 ){
   u32 pageSize;
   Pager *pPager;
-  libsql_wal_methods *pWalMethods = NULL;
   int nPage;
   int rc;
   char zBuf[100];
+
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
        " FILENAME N-PAGE\"", 0);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[2], &nPage) ) return TCL_ERROR;
-#ifndef SQLITE_OMIT_WAL
-  pWalMethods = libsql_wal_methods_find(NULL);
-#endif
-  rc = sqlite3PagerOpen(sqlite3_vfs_find(0), pWalMethods, NULL, &pPager, argv[1], 0, 0,
+  RefCountCreateWal* create_wal;
+  rc = make_ref_counted_create_wal(sqlite3_create_wal, &create_wal);
+  if (rc) return rc;
+  rc = sqlite3PagerOpen(sqlite3_vfs_find(0), create_wal, &pPager, argv[1], 0, 0,
       SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB,
       pager_test_reiniter);
+  destroy_create_wal(create_wal);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
