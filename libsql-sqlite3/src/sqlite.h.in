@@ -7321,13 +7321,13 @@ struct sqlite3_module {
   /* The methods above are in versions 1 and 2 of the sqlite_module object.
   ** Those below are for version 3 and greater. */
   int (*xShadowName)(const char*);
+  /* The methods above are in versions 1 through 3 of the sqlite_module object.
+  ** Those below are for version 4 and greater. */
+  int (*xIntegrity)(sqlite3_vtab *pVTab, const char *zSchema,
+                    const char *zTabName, int mFlags, char **pzErr);
   /* The methods below relate to features contributed by the community and
   ** are available for version 700 and greater. */
   int (*xPreparedSql)(sqlite3_vtab_cursor*, const char*);
-  /* The methods above are in versions 1 through 3 of the sqlite_module object.
-  ** Those below are for version 701 and greater. */
-  int (*xIntegrity)(sqlite3_vtab *pVTab, const char *zSchema,
-                    const char *zTabName, int mFlags, char **pzErr);
 };
 
 /*
