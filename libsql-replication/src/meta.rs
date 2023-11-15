@@ -102,7 +102,13 @@ impl WalIndexMeta {
         }
     }
 
-    pub async fn flush(&mut self) -> std::io::Result<()> {
+    pub async fn flush(&mut self) -> Result<(), Error> {
+        self.flush_inner().await?;
+
+        Ok(())
+    }
+
+    async fn flush_inner(&mut self) -> std::io::Result<()> {
         if let Some(data) = self.data {
             // FIXME: we can save a syscall by calling read_exact_at, but let's use tokio API for now
             self.file.seek(SeekFrom::Start(0)).await?;
@@ -125,7 +131,7 @@ impl WalIndexMeta {
             data.committed_frame_no = commit_fno;
         }
 
-        if let Err(e) = self.flush().await {
+        if let Err(e) = self.flush_inner().await {
             return Err(Error::FailedToCommit(e));
         }
 
@@ -154,5 +160,9 @@ impl WalIndexMeta {
 
             self.data.replace(meta);
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.data.take();
     }
 }

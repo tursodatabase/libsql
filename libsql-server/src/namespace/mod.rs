@@ -25,7 +25,7 @@ use tonic::transport::Channel;
 use uuid::Uuid;
 
 use crate::auth::Authenticated;
-use crate::connection::config::DatabaseConfigStore;
+use crate::connection::config::{DatabaseConfig, DatabaseConfigStore};
 use crate::connection::libsql::{open_conn, MakeLibSqlConn};
 use crate::connection::write_proxy::MakeWriteProxyConn;
 use crate::connection::MakeConnection;
@@ -105,6 +105,27 @@ pub enum ResetOp {
     Destroy(NamespaceName),
 }
 
+#[derive(Clone, Debug)]
+pub enum NamespaceBottomlessDbId {
+    Namespace(String),
+    NotProvided,
+}
+
+impl NamespaceBottomlessDbId {
+    fn from_config(config: &DatabaseConfig) -> NamespaceBottomlessDbId {
+        match config.bottomless_db_id.clone() {
+            Some(db_id) => NamespaceBottomlessDbId::Namespace(db_id),
+            None => NamespaceBottomlessDbId::NotProvided,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum NamespaceBottomlessDbIdInit {
+    Provided(NamespaceBottomlessDbId),
+    FetchFromConfig,
+}
+
 /// Creates a new `Namespace` for database of the `Self::Database` type.
 #[async_trait::async_trait]
 pub trait MakeNamespace: Sync + Send + 'static {
@@ -115,6 +136,7 @@ pub trait MakeNamespace: Sync + Send + 'static {
         &self,
         name: NamespaceName,
         restore_option: RestoreOption,
+        bottomless_db_id: NamespaceBottomlessDbId,
         allow_creation: bool,
         reset: ResetCb,
     ) -> crate::Result<Namespace<Self::Database>>;
@@ -122,12 +144,16 @@ pub trait MakeNamespace: Sync + Send + 'static {
     /// Destroy all resources associated with `namespace`.
     /// When `prune_all` is false, remove only files from local disk.
     /// When `prune_all` is true remove local database files as well as remote backup.
-    async fn destroy(&self, namespace: NamespaceName, prune_all: bool) -> crate::Result<()>;
+    async fn destroy(
+        &self,
+        namespace: NamespaceName,
+        bottomless_db_id_init: NamespaceBottomlessDbIdInit,
+        prune_all: bool,
+    ) -> crate::Result<()>;
     async fn fork(
         &self,
         from: &Namespace<Self::Database>,
         to: NamespaceName,
-        reset: ResetCb,
         timestamp: Option<NaiveDateTime>,
     ) -> crate::Result<Namespace<Self::Database>>;
 }
@@ -152,18 +178,50 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         &self,
         name: NamespaceName,
         restore_option: RestoreOption,
+        bottomless_db_id: NamespaceBottomlessDbId,
         allow_creation: bool,
         _reset: ResetCb,
     ) -> crate::Result<Namespace<Self::Database>> {
-        Namespace::new_primary(&self.config, name, restore_option, allow_creation).await
+        Namespace::new_primary(
+            &self.config,
+            name,
+            restore_option,
+            bottomless_db_id,
+            allow_creation,
+        )
+        .await
     }
 
-    async fn destroy(&self, namespace: NamespaceName, prune_all: bool) -> crate::Result<()> {
+    async fn destroy(
+        &self,
+        namespace: NamespaceName,
+        bottomless_db_id_init: NamespaceBottomlessDbIdInit,
+        prune_all: bool,
+    ) -> crate::Result<()> {
         let ns_path = self.config.base_path.join("dbs").join(namespace.as_str());
 
         if prune_all {
             if let Some(ref options) = self.config.bottomless_replication {
-                let options = make_bottomless_options(options, namespace);
+                let bottomless_db_id = match bottomless_db_id_init {
+                    NamespaceBottomlessDbIdInit::Provided(db_id) => db_id,
+                    NamespaceBottomlessDbIdInit::FetchFromConfig => {
+                        if !ns_path.try_exists()? {
+                            NamespaceBottomlessDbId::NotProvided
+                        } else {
+                            let db_config_store_result = DatabaseConfigStore::load(&ns_path);
+                            let db_config_store = match db_config_store_result {
+                                Ok(store) => store,
+                                Err(err) => {
+                                    tracing::error!("could not load database: {}", err);
+                                    return Err(err);
+                                }
+                            };
+                            let config = db_config_store.get();
+                            NamespaceBottomlessDbId::from_config(&config)
+                        }
+                    }
+                };
+                let options = make_bottomless_options(options, bottomless_db_id, namespace);
                 let replicator = bottomless::replicator::Replicator::with_options(
                     ns_path.join("data").to_str().unwrap(),
                     options,
@@ -187,14 +245,18 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         &self,
         from: &Namespace<Self::Database>,
         to: NamespaceName,
-        reset_cb: ResetCb,
         timestamp: Option<NaiveDateTime>,
     ) -> crate::Result<Namespace<Self::Database>> {
+        let bottomless_db_id = NamespaceBottomlessDbId::from_config(&from.db_config_store.get());
         let restore_to = if let Some(timestamp) = timestamp {
             if let Some(ref options) = self.config.bottomless_replication {
                 Some(PointInTimeRestore {
                     timestamp,
-                    replicator_options: make_bottomless_options(options, from.name().clone()),
+                    replicator_options: make_bottomless_options(
+                        options,
+                        bottomless_db_id.clone(),
+                        from.name().clone(),
+                    ),
                 })
             } else {
                 return Err(Error::Fork(ForkError::BackupServiceNotConfigured));
@@ -207,8 +269,8 @@ impl MakeNamespace for PrimaryNamespaceMaker {
             dest_namespace: to,
             logger: from.db.logger.clone(),
             make_namespace: self,
-            reset_cb,
             restore_to,
+            bottomless_db_id,
         };
         let ns = fork_task.fork().await?;
         Ok(ns)
@@ -235,6 +297,7 @@ impl MakeNamespace for ReplicaNamespaceMaker {
         &self,
         name: NamespaceName,
         restore_option: RestoreOption,
+        _bottomless_db_id: NamespaceBottomlessDbId,
         allow_creation: bool,
         reset: ResetCb,
     ) -> crate::Result<Namespace<Self::Database>> {
@@ -246,7 +309,12 @@ impl MakeNamespace for ReplicaNamespaceMaker {
         Namespace::new_replica(&self.config, name, allow_creation, reset).await
     }
 
-    async fn destroy(&self, namespace: NamespaceName, _prune_all: bool) -> crate::Result<()> {
+    async fn destroy(
+        &self,
+        namespace: NamespaceName,
+        _bottomless_db_id_init: NamespaceBottomlessDbIdInit,
+        _prune_all: bool,
+    ) -> crate::Result<()> {
         let ns_path = self.config.base_path.join("dbs").join(namespace.as_str());
         tokio::fs::remove_dir_all(ns_path).await?;
         Ok(())
@@ -256,7 +324,6 @@ impl MakeNamespace for ReplicaNamespaceMaker {
         &self,
         _from: &Namespace<Self::Database>,
         _to: NamespaceName,
-        _reset: ResetCb,
         _timestamp: Option<NaiveDateTime>,
     ) -> crate::Result<Namespace<Self::Database>> {
         return Err(ForkError::ForkReplica.into());
@@ -296,7 +363,11 @@ impl<M: MakeNamespace> NamespaceStore<M> {
 
     pub async fn destroy(&self, namespace: NamespaceName) -> crate::Result<()> {
         let mut lock = self.inner.store.write().await;
+        let mut bottomless_db_id_init = NamespaceBottomlessDbIdInit::FetchFromConfig;
         if let Some(ns) = lock.remove(&namespace) {
+            bottomless_db_id_init = NamespaceBottomlessDbIdInit::Provided(
+                NamespaceBottomlessDbId::from_config(&ns.db_config_store.get()),
+            );
             // FIXME: when destroying, we are waiting for all the tasks associated with the
             // allocation to finnish, which create a lot of contention on the lock. Need to use a
             // conccurent hashmap to deal with this issue.
@@ -308,7 +379,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         // destroy on-disk database and backups
         self.inner
             .make_namespace
-            .destroy(namespace.clone(), true)
+            .destroy(namespace.clone(), bottomless_db_id_init, true)
             .await?;
 
         tracing::info!("destroyed namespace: {namespace}");
@@ -316,7 +387,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         Ok(())
     }
 
-    pub async fn reset(
+    async fn reset(
         &self,
         namespace: NamespaceName,
         restore_option: RestoreOption,
@@ -334,7 +405,11 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         // destroy on-disk database
         self.inner
             .make_namespace
-            .destroy(namespace.clone(), false)
+            .destroy(
+                namespace.clone(),
+                NamespaceBottomlessDbIdInit::FetchFromConfig,
+                false,
+            )
             .await?;
         let ns = self
             .inner
@@ -342,6 +417,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             .create(
                 namespace.clone(),
                 restore_option,
+                NamespaceBottomlessDbId::NotProvided,
                 true,
                 self.make_reset_cb(),
             )
@@ -351,6 +427,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         Ok(())
     }
 
+    // This is only called on replica
     fn make_reset_cb(&self) -> ResetCb {
         let this = self.clone();
         Box::new(move |op| {
@@ -397,6 +474,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                     .create(
                         from.clone(),
                         RestoreOption::Latest,
+                        NamespaceBottomlessDbId::NotProvided,
                         false,
                         self.make_reset_cb(),
                     )
@@ -408,7 +486,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         let forked = self
             .inner
             .make_namespace
-            .fork(from_ns, to.clone(), self.make_reset_cb(), timestamp)
+            .fork(from_ns, to.clone(), timestamp)
             .await?;
         lock.insert(to.clone(), forked);
 
@@ -447,6 +525,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                 .create(
                     namespace.clone(),
                     RestoreOption::Latest,
+                    NamespaceBottomlessDbId::NotProvided,
                     self.inner.allow_lazy_creation,
                     self.make_reset_cb(),
                 )
@@ -465,6 +544,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         &self,
         namespace: NamespaceName,
         restore_option: RestoreOption,
+        bottomless_db_id: NamespaceBottomlessDbId,
     ) -> crate::Result<()> {
         let lock = self.inner.store.upgradable_read().await;
         if lock.contains_key(&namespace) {
@@ -479,6 +559,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             .create(
                 namespace.clone(),
                 restore_option,
+                bottomless_db_id,
                 true,
                 self.make_reset_cb(),
             )
@@ -694,10 +775,18 @@ pub struct PrimaryNamespaceConfig {
 pub type DumpStream =
     Box<dyn Stream<Item = std::io::Result<Bytes>> + Send + Sync + 'static + Unpin>;
 
-fn make_bottomless_options(options: &Options, name: NamespaceName) -> Options {
+fn make_bottomless_options(
+    options: &Options,
+    namespace_db_id: NamespaceBottomlessDbId,
+    name: NamespaceName,
+) -> Options {
     let mut options = options.clone();
-    let db_id = options.db_id.unwrap_or_default();
-    let db_id = format!("ns-{db_id}:{name}");
+    let mut db_id = match namespace_db_id {
+        NamespaceBottomlessDbId::Namespace(id) => id,
+        NamespaceBottomlessDbId::NotProvided => options.db_id.unwrap_or_default(),
+    };
+
+    db_id = format!("ns-{db_id}:{name}");
     options.db_id = Some(db_id);
     options
 }
@@ -707,10 +796,19 @@ impl Namespace<PrimaryDatabase> {
         config: &PrimaryNamespaceConfig,
         name: NamespaceName,
         restore_option: RestoreOption,
+        bottomless_db_id: NamespaceBottomlessDbId,
         allow_creation: bool,
     ) -> crate::Result<Self> {
         // FIXME: make that truly atomic. explore the idea of using temp directories, and it's implications
-        match Self::try_new_primary(config, name.clone(), restore_option, allow_creation).await {
+        match Self::try_new_primary(
+            config,
+            name.clone(),
+            restore_option,
+            bottomless_db_id,
+            allow_creation,
+        )
+        .await
+        {
             Ok(ns) => Ok(ns),
             Err(e) => {
                 let path = config.base_path.join("dbs").join(name.as_str());
@@ -726,6 +824,7 @@ impl Namespace<PrimaryDatabase> {
         config: &PrimaryNamespaceConfig,
         name: NamespaceName,
         restore_option: RestoreOption,
+        bottomless_db_id: NamespaceBottomlessDbId,
         allow_creation: bool,
     ) -> crate::Result<Self> {
         // if namespaces are disabled, then we allow creation for the default namespace.
@@ -743,6 +842,20 @@ impl Namespace<PrimaryDatabase> {
         let mut is_dirty = config.db_is_dirty;
 
         tokio::fs::create_dir_all(&db_path).await?;
+        let db_config_store = Arc::new(
+            DatabaseConfigStore::load(&db_path).context("Could not load database config")?,
+        );
+        let bottomless_db_id = match bottomless_db_id {
+            NamespaceBottomlessDbId::Namespace(ref db_id) => {
+                let mut config = (*db_config_store.get()).clone();
+                config.bottomless_db_id = Some(db_id.clone());
+                db_config_store.store(config)?;
+                bottomless_db_id
+            }
+            NamespaceBottomlessDbId::NotProvided => {
+                NamespaceBottomlessDbId::from_config(&db_config_store.get())
+            }
+        };
 
         // FIXME: due to a bug in logger::checkpoint_db we call regular checkpointing code
         // instead of our virtual WAL one. It's a bit tangled to fix right now, because
@@ -757,7 +870,7 @@ impl Namespace<PrimaryDatabase> {
         }
 
         let bottomless_replicator = if let Some(options) = &config.bottomless_replication {
-            let options = make_bottomless_options(options, name.clone());
+            let options = make_bottomless_options(options, bottomless_db_id, name.clone());
             let (replicator, did_recover) =
                 init_bottomless_replicator(db_path.join("data"), options, &restore_option).await?;
 
@@ -812,10 +925,6 @@ impl Namespace<PrimaryDatabase> {
             logger.new_frame_notifier.subscribe(),
         )
         .await?;
-
-        let db_config_store = Arc::new(
-            DatabaseConfigStore::load(&db_path).context("Could not load database config")?,
-        );
 
         let connection_maker: Arc<_> = MakeLibSqlConn::new(
             db_path.clone(),
