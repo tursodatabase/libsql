@@ -2277,6 +2277,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "libsql-ffi"
+version = "0.1.0"
+dependencies = [
+ "bindgen",
+ "cc",
+]
+
+[[package]]
 name = "libsql-replication"
 version = "0.1.0"
 dependencies = [
@@ -2321,8 +2329,7 @@ dependencies = [
 name = "libsql-sys"
 version = "0.2.14"
 dependencies = [
- "bindgen",
- "cc",
+ "libsql-ffi",
  "once_cell",
  "tracing",
 ]

@@ -1,0 +1,16 @@
+[package]
+name = "libsql-ffi"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[build-dependencies]
+bindgen = "0.66.1"
+cc = "1.0"
+
+[features]
+session = []
