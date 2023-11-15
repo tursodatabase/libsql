@@ -1,6 +1,7 @@
 //! Tests for standalone primary configuration
 
-use crate::common::{net::SimServer, snapshot_metrics};
+use crate::common::net::{SimServer, TurmoilAcceptor};
+use crate::common::{http::Client, snapshot_metrics};
 
 use super::common;
 
@@ -11,7 +12,7 @@ use libsql::{Database, Value};
 use tempfile::tempdir;
 use tokio::sync::Notify;
 
-use sqld::config::UserApiConfig;
+use sqld::config::{AdminApiConfig, UserApiConfig};
 
 use common::net::{init_tracing, TestServer, TurmoilConnector};
 
@@ -255,6 +256,53 @@ fn random_rowid() {
         )
         .await?;
 
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn dirty_startup_dont_prevent_namespace_creation() {
+    let mut sim = turmoil::Builder::new().build();
+
+    sim.host("primary", || async {
+        init_tracing();
+        let tmp = tempdir()?;
+        let server = TestServer {
+            path: tmp.path().to_owned().into(),
+            user_api_config: UserApiConfig {
+                hrana_ws_acceptor: None,
+                ..Default::default()
+            },
+            admin_api_config: Some(AdminApiConfig {
+                acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
+                connector: TurmoilConnector,
+                disable_metrics: true,
+            }),
+            disable_default_namespace: true,
+            disable_namespaces: false,
+            ..Default::default()
+        };
+
+        tokio::fs::File::create(tmp.path().join(".sentinel"))
+            .await
+            .unwrap();
+        server.start_sim(8080).await?;
+
+        Ok(())
+    });
+
+    sim.client("test", async {
+        let client = Client::new();
+        let resp = client
+            .post(
+                "http://primary:9090/v1/namespaces/test/create",
+                serde_json::json!({}),
+            )
+            .await
+            .unwrap();
+        assert!(resp.status().is_success());
         Ok(())
     });
 
