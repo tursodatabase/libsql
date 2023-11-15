@@ -23,6 +23,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
+use std::process::exit;
 use tabled::settings::Style;
 use tabled::Table;
 
@@ -355,7 +356,6 @@ impl Shell {
         let mut result = None;
         match command {
             ".bail" => toggle_option(command, &mut self.bail, args),
-            ".echo" => toggle_option(command, &mut self.echo, args),
             ".changes" => toggle_option(command, &mut self.changes, args),
             ".databases" => {
                 let statement = "pragma database_list;";
@@ -462,6 +462,37 @@ impl Shell {
                     }
                 }
             }
+            ".echo" => toggle_option(command, &mut self.echo, args),
+            ".exit" => {
+                if args.len() != 1 {
+                    exit(0);
+                }
+
+                let mut chars = args[0].bytes();
+                let mut code = 0;
+                let neg = match chars.next() {
+                    Some(b'-') => true,
+                    Some(c) if c.is_ascii_digit() => {
+                        code = code * 10 + (c - b'0') as i32;
+                        false
+                    }
+                    _ => exit(0),
+                };
+
+                for c in chars {
+                    if c.is_ascii_digit() {
+                        code = code * 10 + (c - b'0') as i32;
+                    } else {
+                        exit(0);
+                    }
+                }
+                if neg {
+                    code = -code;
+                }
+
+                // exit code is in range [0, 255]
+                exit(code);
+            }
             ".headers" => {
                 if args.len() != 1 {
                     writeln!(self.out, "Usage: .headers on|off")?;
@@ -500,7 +531,7 @@ impl Shell {
                     self.continuation_prompt = args[1].to_string();
                 }
             }
-            ".quit" => std::process::exit(0),
+            ".quit" => exit(0),
             ".open" => {
                 // .open ?OPTIONS? ?FILE?
                 let mut filename = None;
