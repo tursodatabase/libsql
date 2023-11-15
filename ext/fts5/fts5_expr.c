@@ -3171,3 +3171,27 @@ int sqlite3Fts5ExprQueryToken(
   return SQLITE_OK;
 }
 
+int sqlite3Fts5ExprInstToken(
+  Fts5Expr *pExpr, 
+  int iPhrase, 
+  int iCol, 
+  int iOff, 
+  int iToken, 
+  const char **ppOut, 
+  int *pnOut
+){
+  Fts5ExprPhrase *pPhrase = 0;
+  Fts5IndexIter *pIter = 0;
+
+  if( iPhrase<0 || iPhrase>=pExpr->nPhrase ){
+    return SQLITE_RANGE;
+  }
+  pPhrase = pExpr->apExprPhrase[iPhrase];
+  if( iToken<0 || iToken>=pPhrase->nTerm ){
+    return SQLITE_RANGE;
+  }
+  pIter = pPhrase->aTerm[iToken].pIter;
+
+  return sqlite3Fts5IterToken(pIter, iCol, iOff+iToken, ppOut, pnOut);
+}
+

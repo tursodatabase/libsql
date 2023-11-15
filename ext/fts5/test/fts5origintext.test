@@ -167,38 +167,77 @@ proc querytoken {cmd iPhrase iToken} {
 }
 sqlite3_fts5_create_function db querytoken querytoken
 
-do_execsql_test 3.0 {
+do_execsql_test 4.0 {
   CREATE VIRTUAL TABLE ft USING fts5(
       x, tokenize='origintext unicode61', tokendata=1
   );
   INSERT INTO ft VALUES('one two three four');
 }
 
-do_execsql_test 3.1 {
+do_execsql_test 4.1 {
   SELECT rowid, querytoken(ft, 0, 0) FROM ft('TwO')
 } {1 two.TwO}
-do_execsql_test 3.2 {
+do_execsql_test 4.2 {
   SELECT rowid, querytoken(ft, 0, 0) FROM ft('one TWO ThreE')
 } {1 one}
-do_execsql_test 3.3 {
+do_execsql_test 4.3 {
   SELECT rowid, querytoken(ft, 1, 0) FROM ft('one TWO ThreE')
 } {1 two.TWO}
-do_execsql_test 3.4 {
+do_execsql_test 4.4 {
   SELECT rowid, querytoken(ft, 0, 2) FROM ft('"one TWO ThreE"')
 } {1 three.ThreE}
 
-do_catchsql_test 3.5 {
+do_catchsql_test 4.5 {
   SELECT rowid, querytoken(ft, 0, 3) FROM ft('"one TWO ThreE"')
 } {1 SQLITE_RANGE}
-do_catchsql_test 3.6 {
+do_catchsql_test 4.6 {
   SELECT rowid, querytoken(ft, 1, 0) FROM ft('"one TWO ThreE"')
 } {1 SQLITE_RANGE}
-do_catchsql_test 3.7 {
+do_catchsql_test 4.7 {
   SELECT rowid, querytoken(ft, -1, 0) FROM ft('"one TWO ThreE"')
 } {1 SQLITE_RANGE}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+sqlite3_fts5_register_origintext db
+proc insttoken {cmd iIdx iToken} { 
+  set txt [$cmd xInstToken $iIdx $iToken]
+  string map [list "\0" "."] $txt
+}
+sqlite3_fts5_create_function db insttoken insttoken
+fts5_aux_test_functions db
 
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(
+      x, tokenize='origintext unicode61', tokendata=1
+  );
+  INSERT INTO ft VALUES('one ONE One oNe oNE one');
+}
 
+do_execsql_test 5.1 {
+  SELECT insttoken(ft, 0, 0), 
+         insttoken(ft, 1, 0),
+         insttoken(ft, 2, 0),
+         insttoken(ft, 3, 0),
+         insttoken(ft, 4, 0),
+         insttoken(ft, 5, 0)
+  FROM ft('one');
+} {
+  one one.ONE one.One one.oNe one.oNE one
+}
+
+do_execsql_test 5.2 {
+  SELECT insttoken(ft, 1, 0) FROM ft('one');
+} {
+  one.ONE
+}
+
+do_execsql_test 5.3 {
+  SELECT fts5_test_poslist(ft) FROM ft('one');
+} {
+  {0.0.0 0.0.1 0.0.2 0.0.3 0.0.4 0.0.5}
+}
 
 finish_test
 

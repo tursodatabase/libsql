@@ -464,6 +464,10 @@ void *sqlite3Fts5StructureRef(Fts5Index*);
 void sqlite3Fts5StructureRelease(void*);
 int sqlite3Fts5StructureTest(Fts5Index*, void*);
 
+/*
+** Used by xInstToken() and xPhraseToken().
+*/
+int sqlite3Fts5IterToken(Fts5IndexIter*, int, int, const char**, int*);
 
 /*
 ** Insert or remove data to or from the index. Each time a document is 
@@ -774,6 +778,7 @@ int sqlite3Fts5ExprClonePhrase(Fts5Expr*, int, Fts5Expr**);
 int sqlite3Fts5ExprPhraseCollist(Fts5Expr *, int, const u8 **, int *);
 
 int sqlite3Fts5ExprQueryToken(Fts5Expr*, int, int, const char**, int*);
+int sqlite3Fts5ExprInstToken(Fts5Expr*, int, int, int, int, const char**, int*);
 
 /*******************************************
 ** The fts5_expr.c API above this point is used by the other hand-written

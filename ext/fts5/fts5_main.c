@@ -2063,12 +2063,6 @@ static int fts5ApiInst(
   ){
     if( iIdx<0 || iIdx>=pCsr->nInstCount ){
       rc = SQLITE_RANGE;
-#if 0
-    }else if( fts5IsOffsetless((Fts5Table*)pCsr->base.pVtab) ){
-      *piPhrase = pCsr->aInst[iIdx*3];
-      *piCol = pCsr->aInst[iIdx*3 + 2];
-      *piOff = -1;
-#endif
     }else{
       *piPhrase = pCsr->aInst[iIdx*3];
       *piCol = pCsr->aInst[iIdx*3 + 1];
@@ -2323,6 +2317,9 @@ static int fts5ApiPhraseFirstColumn(
   return rc;
 }
 
+/*
+** xQueryToken() API implemenetation.
+*/
 static int fts5ApiQueryToken(
   Fts5Context* pCtx, 
   int iPhrase, 
@@ -2332,6 +2329,48 @@ static int fts5ApiQueryToken(
 ){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   return sqlite3Fts5ExprQueryToken(pCsr->pExpr, iPhrase, iToken, ppOut, pnOut);
+}
+
+/*
+** xInstToken() API implemenetation.
+*/
+static int fts5ApiInstToken(
+  Fts5Context *pCtx,
+  int iIdx, 
+  int iToken,
+  const char **ppOut, int *pnOut
+){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  int rc = SQLITE_OK;
+  if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_INST)==0 
+   || SQLITE_OK==(rc = fts5CacheInstArray(pCsr)) 
+  ){
+    if( iIdx<0 || iIdx>=pCsr->nInstCount ){
+      rc = SQLITE_RANGE;
+    }else{
+      int iPhrase = pCsr->aInst[iIdx*3];
+      int iCol = pCsr->aInst[iIdx*3 + 1];
+      int iOff = pCsr->aInst[iIdx*3 + 2];
+
+      rc = sqlite3Fts5ExprInstToken(
+          pCsr->pExpr, iPhrase, iCol, iOff, iToken, ppOut, pnOut
+      );
+    }
+  }
+  return rc;
+}
+
+/*
+** xPhraseToken() API implemenetation.
+*/
+static int fts5ApiPhraseToken(
+  Fts5Context *pCtx, 
+  Fts5PhraseIter *pIter, 
+  int iToken,
+  const char **ppOut, 
+  int *pnOut
+){
+  return SQLITE_OK;
 }
 
 
@@ -2361,8 +2400,8 @@ static const Fts5ExtensionApi sFts5Api = {
   fts5ApiPhraseFirstColumn,
   fts5ApiPhraseNextColumn,
   fts5ApiQueryToken,
-  0,
-  0
+  fts5ApiInstToken,
+  fts5ApiPhraseToken
 };
 
 /*

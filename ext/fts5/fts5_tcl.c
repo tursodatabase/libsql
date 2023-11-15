@@ -245,7 +245,8 @@ static int SQLITE_TCLAPI xF5tApi(
     { "xPhraseForeach",    4, "IPHRASE COLVAR OFFVAR SCRIPT" }, /* 16 */
     { "xPhraseColumnForeach", 3, "IPHRASE COLVAR SCRIPT" }, /* 17 */
 
-    { "xQueryToken",       2, "IPHRASE ITERM" },      /* 19 */
+    { "xQueryToken",       2, "IPHRASE ITERM" },      /* 18 */
+    { "xInstToken",        2, "IDX ITERM" },          /* 19 */
     { 0, 0, 0}
   };
 
@@ -511,6 +512,22 @@ static int SQLITE_TCLAPI xF5tApi(
       if( Tcl_GetIntFromObj(interp, objv[2], &iPhrase) ) return TCL_ERROR;
       if( Tcl_GetIntFromObj(interp, objv[3], &iTerm) ) return TCL_ERROR;
       rc = p->pApi->xQueryToken(p->pFts, iPhrase, iTerm, &pTerm, &nTerm);
+      if( rc==SQLITE_OK ){
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(pTerm, nTerm));
+      }
+
+      break;
+    }
+
+    CASE(19, "xInstToken") {
+      const char *pTerm = 0;
+      int nTerm = 0;
+      int iIdx = 0;
+      int iTerm = 0;
+
+      if( Tcl_GetIntFromObj(interp, objv[2], &iIdx) ) return TCL_ERROR;
+      if( Tcl_GetIntFromObj(interp, objv[3], &iTerm) ) return TCL_ERROR;
+      rc = p->pApi->xInstToken(p->pFts, iIdx, iTerm, &pTerm, &nTerm);
       if( rc==SQLITE_OK ){
         Tcl_SetObjResult(interp, Tcl_NewStringObj(pTerm, nTerm));
       }
