@@ -818,8 +818,8 @@ dependencies = [
  "bytes",
  "chrono",
  "futures-core",
+ "libsql-sys",
  "rand",
- "sqld-libsql-bindings",
  "tokio",
  "tokio-util",
  "tracing",
@@ -2303,11 +2303,12 @@ dependencies = [
  "bincode",
  "bytemuck",
  "bytes",
+ "libsql-sys",
  "parking_lot",
  "prost",
  "prost-build",
+ "rusqlite",
  "serde",
- "sqld-libsql-bindings",
  "tempfile",
  "thiserror",
  "tokio",
@@ -2359,6 +2360,7 @@ dependencies = [
  "libsql",
  "libsql-client",
  "libsql-replication",
+ "libsql-sys",
  "metrics",
  "metrics-exporter-prometheus",
  "metrics-util",
@@ -2383,7 +2385,6 @@ dependencies = [
  "serde_json",
  "sha2",
  "sha256",
- "sqld-libsql-bindings",
  "sqlite3-parser",
  "tempfile",
  "thiserror",
@@ -2426,6 +2427,7 @@ version = "0.2.14"
 dependencies = [
  "libsql-ffi",
  "once_cell",
+ "rusqlite",
  "tracing",
 ]
 
@@ -3439,7 +3441,7 @@ dependencies = [
  "fallible-streaming-iterator",
  "hashlink",
  "lazy_static",
- "libsql-sys",
+ "libsql-ffi",
  "regex",
  "serde_json",
  "smallvec",
@@ -3875,16 +3877,6 @@ dependencies = [
  "lazy_static",
  "libsql",
  "tokio",
-]
-
-[[package]]
-name = "sqld-libsql-bindings"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "once_cell",
- "rusqlite",
- "tracing",
 ]
 
 [[package]]
