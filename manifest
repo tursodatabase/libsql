@@ -1,5 +1,5 @@
-C jsonb_remove()\snow\sworks\swithout\shaving\sto\suse\sa\sJsonNode\sparse,\sassuming\nthat\sthe\sinput\sis\sJSONB.
-D 2023-11-15T18:55:03.625
+C Some\ssimple\stest\scases\sfor\sJSONB\sdirect\sremove.
+D 2023-11-15T19:21:09.380
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1329,6 +1329,7 @@ F test/json104.test 1b844a70cddcfa2e4cd81a5db0657b2e61e7f00868310f24f56a9ba01143
 F test/json105.test 11670a4387f4308ae0318cadcbd6a918ea7edcd19fbafde020720a073952675d
 F test/json501.test c419deb835b70c1a2c8532936927bcc1146730328edd2052276715bfd209724d
 F test/json502.test 98c38e3c4573841028a1381dfb81d4c3f9b105d39668167da10d055e503f6d0b
+F test/jsonb01.test 830e87e012518aa0bf4358ed794fe40cbf0743247d5ade273223064547cb1ceb
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/kvtest.c 6e0228409ea7ca0497dad503fbd109badb5e59545d131014b6aaac68b56f484a
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
@@ -2141,9 +2142,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ba91408f4c044feda003ef93784ccefb619f99ab64379ced481ee8e9e890fd41 e76d48137ea823b7810dc8c3b70eb21adabdd6cfbac36050c85d1375e94be1de
-R 6ab8908817380ee469413c76bca0c832
-T +closed e76d48137ea823b7810dc8c3b70eb21adabdd6cfbac36050c85d1375e94be1de
+P 5207679e929786e577a0553d0d84dda5125456dcde80c0f3156f14f4d8c804cb
+R 76eca9722da06337c910d0b8ea9ca3cc
 U drh
-Z a599420b20eb0d182795d486baa84f09
+Z 9b402027f08ff9f924d703e81b5baa92
 # Remove this line to create a well-formed Fossil manifest.
