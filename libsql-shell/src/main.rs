@@ -12,8 +12,8 @@ use rusqlite::ffi::{
     SQLITE_DBCONFIG_REVERSE_SCANORDER, SQLITE_DBCONFIG_STMT_SCANSTATUS,
     SQLITE_DBCONFIG_TRIGGER_EQP, SQLITE_DBCONFIG_TRUSTED_SCHEMA, SQLITE_DBCONFIG_WRITABLE_SCHEMA,
 };
-use rusqlite::Params;
 use rusqlite::{types::ValueRef, Connection, OpenFlags, Statement};
+use rusqlite::{DatabaseName, Params};
 use rustyline::completion::{Completer, Pair};
 use rustyline::error::ReadlineError;
 use rustyline::history::FileHistory;
@@ -94,7 +94,6 @@ struct Shell {
     headers: bool,
     mode: OutputMode,
     null_value: String,
-    readonly: bool,
     stats: StatsMode,
     width: [usize; 5],
     filename: PathBuf,
@@ -249,7 +248,6 @@ impl Shell {
             explain: ExplainMode::Auto,
             headers: true,
             mode: OutputMode::Column,
-            readonly: false,
             stats: StatsMode::Off,
             width: [0; 5],
             null_value: String::new(),
@@ -366,9 +364,16 @@ impl Shell {
                 while let Some(row) = rows.next()? {
                     let name = row.get::<_, String>(1)?;
                     let file = row.get::<_, String>(2)?;
-                    // If call `self.db.is_readonly(db_name)`, db_name is Database::Name,
-                    // but we cannot convert a `&str` to `DatabaseName`
-                    let readonly = if self.readonly { "r/o" } else { "r/w" };
+                    let db_name = match name.as_str() {
+                        "main" => DatabaseName::Main,
+                        "temp" => DatabaseName::Temp,
+                        s => DatabaseName::Attached(s),
+                    };
+                    let readonly = if self.db.is_readonly(db_name)? {
+                        "r/o"
+                    } else {
+                        "r/w"
+                    };
                     writeln!(self.out, "{}: {:?} {}", name, file, readonly)?;
                 }
             }
@@ -512,7 +517,6 @@ impl Shell {
                             flags.remove(OpenFlags::SQLITE_OPEN_CREATE);
                             flags.remove(OpenFlags::SQLITE_OPEN_READ_WRITE);
                             flags.insert(OpenFlags::SQLITE_OPEN_READ_ONLY);
-                            self.readonly = true;
                         }
                         arg => {
                             if arg.starts_with('-') {
