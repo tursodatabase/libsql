@@ -1,18 +1,29 @@
-#![allow(dead_code)]
-
 use anyhow::Result;
 use base64::{engine::general_purpose, Engine as _};
 use clap::Parser;
-use rusqlite::Params;
+use once_cell::sync::Lazy;
+use rusqlite::ffi::{
+    sqlite3_changes64, sqlite3_db_config, sqlite3_total_changes64, SQLITE_DBCONFIG_DEFENSIVE,
+    SQLITE_DBCONFIG_DQS_DDL, SQLITE_DBCONFIG_DQS_DML, SQLITE_DBCONFIG_ENABLE_FKEY,
+    SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION,
+    SQLITE_DBCONFIG_ENABLE_QPSG, SQLITE_DBCONFIG_ENABLE_TRIGGER, SQLITE_DBCONFIG_ENABLE_VIEW,
+    SQLITE_DBCONFIG_LEGACY_ALTER_TABLE, SQLITE_DBCONFIG_LEGACY_FILE_FORMAT,
+    SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE, SQLITE_DBCONFIG_RESET_DATABASE,
+    SQLITE_DBCONFIG_REVERSE_SCANORDER, SQLITE_DBCONFIG_STMT_SCANSTATUS,
+    SQLITE_DBCONFIG_TRIGGER_EQP, SQLITE_DBCONFIG_TRUSTED_SCHEMA, SQLITE_DBCONFIG_WRITABLE_SCHEMA,
+};
 use rusqlite::{types::ValueRef, Connection, OpenFlags, Statement};
+use rusqlite::{DatabaseName, Params};
 use rustyline::completion::{Completer, Pair};
 use rustyline::error::ReadlineError;
 use rustyline::history::FileHistory;
 use rustyline::{CompletionType, Config, Context, Editor};
 use rustyline_derive::{Helper, Highlighter, Hinter, Validator};
-use std::fmt::Display;
-use std::io::Write;
+use std::collections::BTreeMap;
+use std::fmt;
+use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
+use std::process::exit;
 use tabled::settings::Style;
 use tabled::Table;
 
@@ -76,6 +87,8 @@ struct Shell {
     /// Write results here
     out: Out,
 
+    bail: bool,
+    changes: bool,
     echo: bool,
     eqp: bool,
     explain: ExplainMode,
@@ -93,6 +106,7 @@ struct Shell {
     continuation_prompt: String,
 }
 
+#[allow(dead_code)]
 enum Out {
     Stdout,
     File(std::fs::File, PathBuf),
@@ -114,8 +128,8 @@ impl Write for Out {
     }
 }
 
-impl Display for Out {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Out {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Out::Stdout => write!(f, "stdout"),
             Out::File(_, path) => write!(f, "{}", path.display()),
@@ -123,13 +137,28 @@ impl Display for Out {
     }
 }
 
-#[derive(Debug)]
+#[allow(dead_code)]
 enum ExplainMode {
     Off,
     On,
     Auto,
 }
 
+impl fmt::Display for ExplainMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match *self {
+                ExplainMode::Off => "off",
+                ExplainMode::On => "on",
+                ExplainMode::Auto => "auto",
+            }
+        )
+    }
+}
+
+#[allow(dead_code)]
 #[derive(Debug)]
 enum OutputMode {
     /// Columns/rows delimited by 0x1F and 0x1E
@@ -162,7 +191,13 @@ enum OutputMode {
     Tcl,
 }
 
-#[derive(Debug)]
+impl fmt::Display for OutputMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", format!("{:?}", self).to_lowercase())
+    }
+}
+
+#[allow(dead_code)]
 enum StatsMode {
     /// Turn off automatic stat display
     Off,
@@ -174,6 +209,20 @@ enum StatsMode {
     Vmstep,
 }
 
+impl fmt::Display for StatsMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match *self {
+                StatsMode::Off => "off",
+                StatsMode::On => "on",
+                StatsMode::Stmt => "stmt",
+                StatsMode::Vmstep => "vmstep",
+            }
+        )
+    }
+}
 impl Shell {
     fn new(args: Cli) -> Result<Self> {
         let connection = match args.db_path.as_deref() {
@@ -184,13 +233,15 @@ impl Shell {
             Some(path) => {
                 let mut flags = OpenFlags::default();
                 if args.no_follow {
-                    flags |= OpenFlags::SQLITE_OPEN_NOFOLLOW;
+                    flags.insert(OpenFlags::SQLITE_OPEN_NOFOLLOW);
                 }
                 Connection::open_with_flags(path, flags)?
             }
         };
 
         Ok(Self {
+            bail: false,
+            changes: false,
             db: connection,
             out: Out::Stdout,
             echo: args.echo,
@@ -203,14 +254,14 @@ impl Shell {
             null_value: String::new(),
             filename: PathBuf::from(args.db_path.unwrap_or_else(|| ":memory:".to_string())),
             commands_before_repl: args.command,
-            colseparator: String::new(),
-            rowseparator: String::new(),
+            colseparator: String::from("|"),
+            rowseparator: String::from("\n"),
             main_prompt: "libsql> ".to_string(),
             continuation_prompt: "   ...> ".to_string(),
         })
     }
 
-    fn parse_and_run_command(&mut self, line: &str) {
+    fn parse_and_run_command(&mut self, line: &str) -> Result<()> {
         // split line on whitespace, but not inside quotes.
         let mut split = vec![];
         for (i, chunk) in line.split_terminator(&['\'', '"']).enumerate() {
@@ -220,13 +271,13 @@ impl Shell {
                 split.extend(chunk.split_whitespace())
             }
         }
-        self.run_command(split[0], &split[1..]);
+        self.run_command(split[0], &split[1..])
     }
 
     fn run(mut self, rl: &mut Editor<ShellHelper, FileHistory>) -> Result<()> {
         if let Some(commands) = self.commands_before_repl.take() {
             for command in commands {
-                self.parse_and_run_command(&command);
+                self.parse_and_run_command(&command)?;
             }
         }
 
@@ -249,10 +300,10 @@ impl Shell {
                     };
                     rl.add_history_entry(&line).ok();
                     if self.echo {
-                        writeln!(self.out, "{}", line).unwrap();
+                        writeln!(self.out, "{}", line)?;
                     }
                     if line.starts_with('.') {
-                        self.parse_and_run_command(&line);
+                        self.parse_and_run_command(&line)?;
                     } else {
                         for str_statement in get_str_statements(line) {
                             let table = self.run_statement(str_statement, (), false);
@@ -264,6 +315,18 @@ impl Shell {
                                         continue;
                                     }
                                     writeln!(self.out, "{}", table)?;
+                                    if self.changes {
+                                        unsafe {
+                                            let db = self.db.handle();
+                                            let changes = sqlite3_changes64(db);
+                                            let total_changes = sqlite3_total_changes64(db);
+                                            writeln!(
+                                                self.out,
+                                                "changes: {}   total_changes: {}",
+                                                changes, total_changes
+                                            )?;
+                                        }
+                                    }
                                 }
                                 Err(e) => {
                                     println!("Error: {}", e);
@@ -289,32 +352,151 @@ impl Shell {
         Ok(())
     }
 
-    fn run_command(&mut self, command: &str, args: &[&str]) {
+    fn run_command(&mut self, command: &str, args: &[&str]) -> Result<()> {
         let mut result = None;
         match command {
-            ".echo" => {
-                if args.len() != 1 {
-                    writeln!(self.out, "Usage: .echo on|off").unwrap();
-                    return;
+            ".bail" => toggle_option(command, &mut self.bail, args),
+            ".changes" => toggle_option(command, &mut self.changes, args),
+            ".databases" => {
+                let statement = "pragma database_list;";
+                let mut stmt = self.db.prepare(statement)?;
+                let mut rows = stmt.query([])?;
+                while let Some(row) = rows.next()? {
+                    let name = row.get::<_, String>(1)?;
+                    let file = row.get::<_, String>(2)?;
+                    let db_name = match name.as_str() {
+                        "main" => DatabaseName::Main,
+                        "temp" => DatabaseName::Temp,
+                        s => DatabaseName::Attached(s),
+                    };
+                    let readonly = if self.db.is_readonly(db_name)? {
+                        "r/o"
+                    } else {
+                        "r/w"
+                    };
+                    writeln!(self.out, "{}: {:?} {}", name, file, readonly)?;
                 }
-                match args[0].to_lowercase().as_str() {
-                    "on" | "true" => self.echo = true,
-                    "off" | "false" => self.echo = false,
-                    txt => {
-                        self.echo = false;
+            }
+            ".dbconfig" => {
+                static DBCONFIG: Lazy<BTreeMap<&str, i32>> = Lazy::new(|| {
+                    [
+                        ("defensive", SQLITE_DBCONFIG_DEFENSIVE),
+                        ("dqs_ddl", SQLITE_DBCONFIG_DQS_DDL),
+                        ("dqs_dml", SQLITE_DBCONFIG_DQS_DML),
+                        ("enable_fkey", SQLITE_DBCONFIG_ENABLE_FKEY),
+                        ("enable_qpsg", SQLITE_DBCONFIG_ENABLE_QPSG),
+                        ("enable_trigger", SQLITE_DBCONFIG_ENABLE_TRIGGER),
+                        ("enable_view", SQLITE_DBCONFIG_ENABLE_VIEW),
+                        ("fts3_tokenizer", SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER),
+                        ("legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE),
+                        ("legacy_file_format", SQLITE_DBCONFIG_LEGACY_FILE_FORMAT),
+                        ("load_extension", SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION),
+                        ("no_ckpt_on_close", SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE),
+                        ("reset_database", SQLITE_DBCONFIG_RESET_DATABASE),
+                        ("reverse_scanorder", SQLITE_DBCONFIG_REVERSE_SCANORDER),
+                        ("stmt_scanstatus", SQLITE_DBCONFIG_STMT_SCANSTATUS),
+                        ("trigger_eqp", SQLITE_DBCONFIG_TRIGGER_EQP),
+                        ("trusted_schema", SQLITE_DBCONFIG_TRUSTED_SCHEMA),
+                        ("writable_schema", SQLITE_DBCONFIG_WRITABLE_SCHEMA),
+                    ]
+                    .into_iter()
+                    .collect()
+                });
+                let db = unsafe { self.db.handle() };
+                if args.is_empty() {
+                    for (name, opt) in DBCONFIG.iter() {
+                        let enabled = 0;
+                        unsafe {
+                            sqlite3_db_config(db, *opt, -1, &enabled);
+                        }
                         writeln!(
                             self.out,
-                            "ERROR: Not a boolean value: \"{}\". Assuming \"no\"",
-                            txt
-                        )
-                        .unwrap()
+                            "{:>19} {}",
+                            name,
+                            if enabled == 0 { "off" } else { "on" }
+                        )?;
+                    }
+                } else {
+                    match DBCONFIG.get(args[0]) {
+                        Some(opt) => match args.len() {
+                            1 => {
+                                let enabled = 0;
+                                unsafe {
+                                    sqlite3_db_config(db, *opt, -1, &enabled);
+                                }
+                                writeln!(
+                                    self.out,
+                                    "{:>19} {}",
+                                    args[0],
+                                    if enabled == 0 { "off" } else { "on" }
+                                )?;
+                            }
+                            2 => {
+                                let enabled = match args[1].to_lowercase().as_str() {
+                                    "on" | "true" | "yes" => true,
+                                    "off" | "false" | "no" => false,
+                                    arg => {
+                                        if arg.chars().all(|a| a.is_ascii_digit()) {
+                                            arg != "0"
+                                        } else {
+                                            println!("ERROR: Not a boolean value: \"{}\". Assuming \"no\"", arg);
+                                            false
+                                        }
+                                    }
+                                };
+                                unsafe {
+                                    sqlite3_db_config(db, *opt, enabled as i32, 0);
+                                }
+                                writeln!(
+                                    self.out,
+                                    "{:>19} {}",
+                                    args[0],
+                                    if enabled { "on" } else { "off" }
+                                )?;
+                            }
+                            _ => println!("Usage: .dbconfig ?op? ?val?     List or change sqlite3_db_config() options"),
+                        },
+                        None => {
+                            println!("Error: unknown dbconfig {:?}\nEnter \".dbconfig\" with no arguments for a list", args[0]);
+                        }
                     }
                 }
             }
+            ".echo" => toggle_option(command, &mut self.echo, args),
+            ".exit" => {
+                if args.len() != 1 {
+                    exit(0);
+                }
+
+                let mut chars = args[0].bytes();
+                let mut code = 0;
+                let neg = match chars.next() {
+                    Some(b'-') => true,
+                    Some(c) if c.is_ascii_digit() => {
+                        code = code * 10 + (c - b'0') as i32;
+                        false
+                    }
+                    _ => exit(0),
+                };
+
+                for c in chars {
+                    if c.is_ascii_digit() {
+                        code = code * 10 + (c - b'0') as i32;
+                    } else {
+                        exit(0);
+                    }
+                }
+                if neg {
+                    code = -code;
+                }
+
+                // exit code is in range [0, 255]
+                exit(code);
+            }
             ".headers" => {
                 if args.len() != 1 {
-                    writeln!(self.out, "Usage: .headers on|off").unwrap();
-                    return;
+                    writeln!(self.out, "Usage: .headers on|off")?;
+                    return Ok(());
                 }
                 match args[0].to_lowercase().as_str() {
                     "on" | "true" => self.headers = true,
@@ -325,8 +507,7 @@ impl Shell {
                             self.out,
                             "ERROR: Not a boolean value: \"{}\". Assuming \"no\"",
                             txt
-                        )
-                        .unwrap()
+                        )?
                     }
                 }
             }
@@ -334,13 +515,13 @@ impl Shell {
             ".indexes" => result = Some(self.list_tables(args.first().copied(), true)),
             ".nullvalue" => {
                 if args.len() != 1 {
-                    writeln!(self.out, "Usage: .nullvalue STRING").unwrap();
-                    return;
+                    writeln!(self.out, "Usage: .nullvalue STRING")?;
+                    return Ok(());
                 }
                 self.null_value = args[0].to_string();
             }
             ".print" => {
-                writeln!(self.out, "{}", args.join(" ")).unwrap();
+                writeln!(self.out, "{}", args.join(" "))?;
             }
             ".prompt" => {
                 if !args.is_empty() {
@@ -350,35 +531,136 @@ impl Shell {
                     self.continuation_prompt = args[1].to_string();
                 }
             }
-            ".quit" => std::process::exit(0),
+            ".quit" => exit(0),
+            ".open" => {
+                // .open ?OPTIONS? ?FILE?
+                let mut filename = None;
+                let mut flags = OpenFlags::default();
+                for arg in args {
+                    match *arg {
+                        "--append" | "--deserialize" | "--hexdb" | "--maxsize" | "--zip" => {
+                            println!("`{}` is not supported yet", arg);
+                            return Ok(());
+                        }
+                        "--new" => flags.insert(OpenFlags::SQLITE_OPEN_CREATE),
+                        "--nofollow" => flags.insert(OpenFlags::SQLITE_OPEN_NOFOLLOW),
+                        "--readonly" => {
+                            flags.remove(OpenFlags::SQLITE_OPEN_CREATE);
+                            flags.remove(OpenFlags::SQLITE_OPEN_READ_WRITE);
+                            flags.insert(OpenFlags::SQLITE_OPEN_READ_ONLY);
+                        }
+                        arg => {
+                            if arg.starts_with('-') {
+                                println!("unknown option: {}", arg);
+                                return Ok(());
+                            }
+
+                            if filename.is_some() {
+                                println!("extra argument: \"{}\"", arg);
+                                return Ok(());
+                            }
+
+                            filename = Some(arg);
+                        }
+                    }
+                }
+
+                (self.filename, self.db) = match filename {
+                    Some(path) => {
+                        let db = match Connection::open_with_flags(path, flags) {
+                            Ok(con) => con,
+                            Err(e) => {
+                                println!("Error: unable to open database \"{}\": {}\nNotice: using substitute in-memory database instead of \"{}\"", path, e, path);
+                                return Ok(());
+                            }
+                        };
+                        (path.into(), db)
+                    }
+                    None => {
+                        let db = match Connection::open_in_memory() {
+                            Ok(con) => con,
+                            Err(_e) => {
+                                println!("Error: unable to open database in memory");
+                                return Ok(());
+                            }
+                        };
+                        ("".into(), db)
+                    }
+                };
+            }
+            ".read" => {
+                if args.len() != 1 {
+                    writeln!(self.out, "Usage: .read FILE")?;
+                    return Ok(());
+                }
+
+                let filename = args[0];
+                let reader = match std::fs::File::open(filename) {
+                    Ok(file) => BufReader::new(file),
+                    Err(_e) => {
+                        println!("Error: cannot open \"{}\"", args[0]);
+                        return Ok(());
+                    }
+                };
+                for (i, line) in reader.lines().enumerate() {
+                    let statement = line?;
+                    match self.run_statement(statement, (), false) {
+                        Ok(table) => {
+                            if !table.is_empty() {
+                                writeln!(self.out, "{}", table)?;
+                            }
+                            if self.changes {
+                                unsafe {
+                                    let db = self.db.handle();
+                                    let changes = sqlite3_changes64(db);
+                                    let total_changes = sqlite3_total_changes64(db);
+                                    writeln!(
+                                        self.out,
+                                        "changes: {}   total_changes: {}",
+                                        changes, total_changes
+                                    )?;
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            println!("Parse error near line {}: {}", i + 1, e);
+                            if self.bail {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
             ".show" => {
                 if !args.is_empty() {
-                    writeln!(self.out, "Usage: .show").unwrap();
-                    return;
+                    writeln!(self.out, "Usage: .show")?;
+                    return Ok(());
                 }
+
                 let out_name = format!("{}", self.out);
-                _ = writeln!(
+                write!(
                     self.out,
-                    "{:>12}: {}
+                    r#"{:>12}: {}
 {:>12}: {}
+{:>12}: {}
+{:>12}: {}
+{:>12}: {}
+{:>12}: "{}"
+{:>12}: {}
+{:>12}: {:?}
 {:>12}: {:?}
 {:>12}: {}
 {:>12}: {:?}
-{:>12}: \"{}\"
 {:>12}: {}
-{:>12}: {}
-{:>12}: {}
-{:>12}: {:?}
-{:>12}: {:?}
-{:>12}: {}",
+"#,
                     "echo",
-                    self.echo,
+                    if self.echo { "on" } else { "off" },
                     "eqp",
-                    self.eqp,
+                    if self.eqp { "on" } else { "off" },
                     "explain",
                     self.explain,
                     "headers",
-                    self.headers,
+                    if self.headers { "on" } else { "off" },
                     "mode",
                     self.mode,
                     "nullvalue",
@@ -395,7 +677,7 @@ impl Shell {
                     self.width,
                     "filename",
                     self.filename.display()
-                );
+                )?;
             }
             ".tables" => result = Some(self.list_tables(args.first().copied(), false)),
             _ => println!(
@@ -405,17 +687,17 @@ impl Shell {
         }
         match result {
             Some(Ok(mut table)) => {
-                if table.count_rows() == 0 {
-                    return;
+                if table.count_rows() != 0 {
+                    table.with(Style::blank());
+                    writeln!(self.out, "{}", table)?;
                 }
-                table.with(Style::blank());
-                _ = writeln!(self.out, "{}", table);
             }
             Some(Err(e)) => {
                 println!("Error: {e}");
             }
             None => {}
         }
+        Ok(())
     }
 
     fn run_statement<P>(&self, statement: String, params: P, is_command: bool) -> Result<Table>
@@ -498,9 +780,7 @@ impl Shell {
     // TODO: implement `-all` option: print detailed flags for each command
     // TODO: implement `?PATTERN?` : allow narrowing using prefix search.
     fn show_help(&mut self, _args: &[&str]) {
-        _ = writeln!(
-            self.out,
-            r#"
+        let help = r#"
 .auth ON|OFF             Show authorizer callbacks
 .backup ?DB? FILE        Backup DB (default "main") to FILE
 .bail on|off             Stop after hitting an error.  Default OFF
@@ -565,8 +845,8 @@ impl Shell {
 .vfslist                 List all available VFSes
 .vfsname ?AUX?           Print the name of the VFS stack
 .width NUM1 NUM2 ...     Set minimum column widths for columnar output
-"#
-        );
+"#;
+        _ = writeln!(self.out, "{}", help.trim());
     }
 }
 
@@ -652,6 +932,29 @@ fn main() -> Result<()> {
     let result = shell.run(&mut rl);
     rl.save_history(history.as_path()).ok();
     result
+}
+
+fn toggle_option(name: &str, value: &mut bool, args: &[&str]) {
+    if args.len() != 1 {
+        println!("Usage: {} on|off", name);
+        return;
+    }
+
+    match args[0].to_lowercase().as_str() {
+        "on" | "true" | "yes" => *value = true,
+        "off" | "false" | "no" => *value = false,
+        arg => {
+            // FIXME Run with `.bail '123"`, it should not be legal, but `split_terminator`
+            // return args as ["123"] which however work here.
+            // It's not a big problem, but it doesn't behave same as `sqlite`.
+            if arg.chars().all(|a| a.is_ascii_digit()) {
+                *value = arg != "0";
+            } else {
+                *value = false;
+                println!("ERROR: Not a boolean value: \"{}\". Assuming \"no\"", arg)
+            }
+        }
+    }
 }
 
 #[cfg(test)]

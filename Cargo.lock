@@ -2318,6 +2318,7 @@ dependencies = [
  "base64 0.21.5",
  "clap 4.4.7",
  "home",
+ "once_cell",
  "rusqlite",
  "rustyline",
  "rustyline-derive",
