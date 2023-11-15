@@ -3,7 +3,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use parking_lot::Mutex;
-use sqld_libsql_bindings::rusqlite::OpenFlags;
+use rusqlite::OpenFlags;
 
 use crate::frame::{Frame, FrameNo};
 

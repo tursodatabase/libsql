@@ -8,8 +8,8 @@ use libsql_replication::rpc::proxy::{
     exec_req, exec_resp, ExecReq, ExecResp, StreamDescribeReq, StreamProgramReq,
 };
 use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
+use libsql_sys::wal::{CreateSqlite3Wal, Sqlite3Wal};
 use parking_lot::Mutex as PMutex;
-use sqld_libsql_bindings::wal_hook::{TransparentMethods, TRANSPARENT_METHODS};
 use tokio::sync::{mpsc, watch, Mutex};
 use tokio_stream::StreamExt;
 use tonic::metadata::BinaryMetadataValue;

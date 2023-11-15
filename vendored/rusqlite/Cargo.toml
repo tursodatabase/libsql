@@ -55,7 +55,7 @@ csvtab = ["csv", "vtab"]
 # pointer passing interfaces: 3.20.0
 array = ["vtab"]
 # session extension: 3.13.0
-session = ["libsql-sys/session", "hooks"]
+session = ["libsql-ffi/session", "hooks"]
 # window functions: 3.25.0
 window = ["functions"]
 # 3.9.0
@@ -108,7 +108,7 @@ fallible-iterator = "0.2"
 fallible-streaming-iterator = "0.1"
 uuid = { version = "1.0", optional = true }
 smallvec = "1.6.1"
-libsql-sys = { path = "../../libsql-sys/" }
+libsql-ffi = { path = "../../libsql-ffi" }
 
 [dev-dependencies]
 doc-comment = "0.3"

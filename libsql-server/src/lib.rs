@@ -35,7 +35,6 @@ use namespace::{
 use net::Connector;
 use once_cell::sync::Lazy;
 use replication::NamespacedSnapshotCallback;
-pub use sqld_libsql_bindings as libsql_bindings;
 use tokio::runtime::Runtime;
 use tokio::sync::{mpsc, Notify};
 use tokio::task::JoinSet;

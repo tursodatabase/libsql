@@ -2,7 +2,7 @@ pub mod proxy {
     #![allow(clippy::all)]
     include!("generated/proxy.rs");
 
-    use sqld_libsql_bindings::rusqlite::types::ValueRef;
+    use rusqlite::types::ValueRef;
 
     impl From<ValueRef<'_>> for RowValue {
         fn from(value: ValueRef<'_>) -> Self {

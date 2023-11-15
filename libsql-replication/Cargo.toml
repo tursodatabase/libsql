@@ -8,7 +8,8 @@ edition = "2021"
 [dependencies]
 tonic = { version = "0.10.0", features = ["tls"] }
 prost = "0.12"
-sqld-libsql-bindings = { path = "../libsql-sys-tmp"}
+libsql-sys = { path = "../libsql-sys", default-features = false, features = ["wal", "rusqlite"] }
+rusqlite = { workspace = true }
 parking_lot = "0.12.1"
 bytemuck = { version = "1.13.0", features = ["derive"] }
 bytes = { version = "1.5.0", features = ["serde"] } 

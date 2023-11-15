@@ -55,7 +55,7 @@
 #![warn(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-pub use libsql_sys::ffi;
+pub use libsql_ffi as ffi;
 
 use std::cell::RefCell;
 use std::default::Default;

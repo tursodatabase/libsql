@@ -3,16 +3,15 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
+use libsql_sys::wal::{CreateWal, Wal};
 use metrics::{histogram, increment_counter};
 use parking_lot::{Mutex, RwLock};
 use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus, TransactionState};
-use sqld_libsql_bindings::wal_hook::{TransparentMethods, WalMethodsHook};
 use tokio::sync::{watch, Notify};
 use tokio::time::{Duration, Instant};
 
 use crate::auth::{Authenticated, Authorized, Permission};
 use crate::error::Error;
-use crate::libsql_bindings::wal_hook::WalHook;
 use crate::metrics::{
     DESCRIBE_COUNT, PROGRAM_EXEC_COUNT, READ_QUERY_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT,
     WRITE_QUERY_COUNT, WRITE_TXN_DURATION,
