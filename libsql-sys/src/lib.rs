@@ -6,6 +6,7 @@ pub mod value;
 pub mod wal_hook;
 
 pub use libsql_ffi as ffi;
+pub mod wal;
 
 pub use connection::Connection;
 pub use error::{Error, Result};
