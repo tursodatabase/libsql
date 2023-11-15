@@ -2007,7 +2007,7 @@ public class Tester1 implements Runnable {
 
     if( sqlLog ){
       if( sqlite3_compileoption_used("ENABLE_SQLLOG") ){
-        final ConfigSqllogCallback log = new ConfigSqllogCallback() {
+        final ConfigSqlLogCallback log = new ConfigSqlLogCallback() {
             @Override public void call(sqlite3 db, String msg, int op){
               switch(op){
                 case 0: outln("Opening db: ",db); break;
@@ -2018,7 +2018,7 @@ public class Tester1 implements Runnable {
           };
         int rc = sqlite3_config( log );
         affirm( 0==rc );
-        rc = sqlite3_config( (ConfigSqllogCallback)null );
+        rc = sqlite3_config( (ConfigSqlLogCallback)null );
         affirm( 0==rc );
         rc = sqlite3_config( log );
         affirm( 0==rc );

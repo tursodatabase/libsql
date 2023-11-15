@@ -762,9 +762,9 @@ public class Tester2 implements Runnable {
     affirm( newHook == oldHook );
     execSql(db, "BEGIN; update t set a='i' where a='h'; COMMIT;");
     affirm( 5 == counter.value );
-    hookResult.value = CApi.SQLITE_ERROR;
+    hookResult.value = Sqlite.ERROR;
     int rc = execSql(db, false, "BEGIN; update t set a='j' where a='i'; COMMIT;");
-    affirm( CApi.SQLITE_CONSTRAINT_COMMITHOOK == rc );
+    affirm( Sqlite.CONSTRAINT_COMMITHOOK == rc );
     affirm( 6 == counter.value );
     db.close();
   }
@@ -994,8 +994,7 @@ public class Tester2 implements Runnable {
         listErrors.add(e);
       }
     }finally{
-      affirm( CApi.sqlite3_java_uncache_thread() );
-      affirm( !CApi.sqlite3_java_uncache_thread() );
+      Sqlite.uncacheThread();
     }
   }
 
@@ -1068,38 +1067,28 @@ public class Tester2 implements Runnable {
 
     if( sqlLog ){
       if( Sqlite.compileOptionUsed("ENABLE_SQLLOG") ){
-        final ConfigSqllogCallback log = new ConfigSqllogCallback() {
-            @Override public void call(sqlite3 db, String msg, int op){
+        Sqlite.libConfigSqlLog( new Sqlite.ConfigSqlLog() {
+            @Override public void call(Sqlite db, String msg, int op){
               switch(op){
                 case 0: outln("Opening db: ",db); break;
                 case 1: outln("SQL ",db,": ",msg); break;
                 case 2: outln("Closing db: ",db); break;
               }
             }
-          };
-        int rc = CApi.sqlite3_config( log );
-        affirm( 0==rc );
-        rc = CApi.sqlite3_config( (ConfigSqllogCallback)null );
-        affirm( 0==rc );
-        rc = CApi.sqlite3_config( log );
-        affirm( 0==rc );
+          }
+        );
       }else{
         outln("WARNING: -sqllog is not active because library was built ",
               "without SQLITE_ENABLE_SQLLOG.");
       }
     }
     if( configLog ){
-      final ConfigLogCallback log = new ConfigLogCallback() {
+      Sqlite.libConfigLog( new Sqlite.ConfigLog() {
           @Override public void call(int code, String msg){
-            outln("ConfigLogCallback: ",ResultCode.getEntryForInt(code),": ", msg);
+            outln("ConfigLog: ",Sqlite.errstr(code),": ", msg);
           };
-        };
-      int rc = CApi.sqlite3_config( log );
-      affirm( 0==rc );
-      rc = CApi.sqlite3_config( (ConfigLogCallback)null );
-      affirm( 0==rc );
-      rc = CApi.sqlite3_config( log );
-      affirm( 0==rc );
+        }
+      );
     }
 
     quietMode = squelchTestOutput;
@@ -1132,39 +1121,16 @@ public class Tester2 implements Runnable {
     }
 
     final long timeStart = System.currentTimeMillis();
-    int nLoop = 0;
-    switch( CApi.sqlite3_threadsafe() ){ /* Sanity checking */
-      case 0:
-        affirm( CApi.SQLITE_ERROR==CApi.sqlite3_config( CApi.SQLITE_CONFIG_SINGLETHREAD ),
-                "Could not switch to single-thread mode." );
-        affirm( CApi.SQLITE_ERROR==CApi.sqlite3_config( CApi.SQLITE_CONFIG_MULTITHREAD ),
-                "Could switch to multithread mode."  );
-        affirm( CApi.SQLITE_ERROR==CApi.sqlite3_config( CApi.SQLITE_CONFIG_SERIALIZED ),
-                "Could not switch to serialized threading mode."  );
-        outln("This is a single-threaded build. Not using threads.");
-        nThread = 1;
-        break;
-      case 1:
-      case 2:
-        affirm( 0==CApi.sqlite3_config( CApi.SQLITE_CONFIG_SINGLETHREAD ),
-                "Could not switch to single-thread mode." );
-        affirm( 0==CApi.sqlite3_config( CApi.SQLITE_CONFIG_MULTITHREAD ),
-                "Could not switch to multithread mode."  );
-        affirm( 0==CApi.sqlite3_config( CApi.SQLITE_CONFIG_SERIALIZED ),
-                "Could not switch to serialized threading mode."  );
-        break;
-      default:
-        affirm( false, "Unhandled SQLITE_THREADSAFE value." );
-    }
     outln("libversion_number: ",
-          CApi.sqlite3_libversion_number(),"\n",
-          CApi.sqlite3_libversion(),"\n",CApi.SQLITE_SOURCE_ID,"\n",
+          Sqlite.libVersionNumber(),"\n",
+          Sqlite.libVersion(),"\n",Sqlite.libSourceId(),"\n",
           "SQLITE_THREADSAFE=",CApi.sqlite3_threadsafe());
     final boolean showLoopCount = (nRepeat>1 && nThread>1);
     if( showLoopCount ){
       outln("Running ",nRepeat," loop(s) with ",nThread," thread(s) each.");
     }
     if( takeNaps ) outln("Napping between tests is enabled.");
+    int nLoop = 0;
     for( int n = 0; n < nRepeat; ++n ){
       ++nLoop;
       if( showLoopCount ) out((1==nLoop ? "" : " ")+nLoop);
@@ -1206,7 +1172,7 @@ public class Tester2 implements Runnable {
     if( doSomethingForDev ){
       CApi.sqlite3_jni_internal_details();
     }
-    affirm( 0==CApi.sqlite3_release_memory(1) );
+    affirm( 0==Sqlite.libReleaseMemory(1) );
     CApi.sqlite3_shutdown();
     int nMethods = 0;
     int nNatives = 0;

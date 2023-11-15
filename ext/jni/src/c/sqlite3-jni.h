@@ -1300,7 +1300,7 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1config_1_1CONFIG_1
 /*
  * Class:     org_sqlite_jni_capi_CApi
  * Method:    sqlite3_config__SQLLOG
- * Signature: (Lorg/sqlite/jni/capi/ConfigSqllogCallback;)I
+ * Signature: (Lorg/sqlite/jni/capi/ConfigSqlLogCallback;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1config_1_1SQLLOG
   (JNIEnv *, jclass, jobject);

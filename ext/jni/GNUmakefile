@@ -93,7 +93,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/annotation/%,\
   CollationNeededCallback.java \
   CommitHookCallback.java \
   ConfigLogCallback.java \
-  ConfigSqllogCallback.java \
+  ConfigSqlLogCallback.java \
   NativePointerHolder.java \
   OutputPointer.java \
   PrepareMultiCallback.java \
@@ -322,7 +322,7 @@ test-one: $(test.deps)
 	$(bin.java) $(test.flags.jvm) org.sqlite.jni.wrapper1.Tester2 $(Tester2.flags)
 test-sqllog: $(test.deps)
 	@echo "Testing with -sqllog..."
-	$(bin.java) $(test.flags.jvm) -sqllog
+	$(bin.java) $(test.flags.jvm) org.sqlite.jni.capi.Tester1 $(Tester1.flags) -sqllog
 test-mt: $(test.deps)
 	@echo "Testing in multi-threaded mode:";
 	$(bin.java) $(test.flags.jvm) org.sqlite.jni.capi.Tester1 \

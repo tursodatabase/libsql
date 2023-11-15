@@ -1052,10 +1052,10 @@ public final class CApi {
   );
 
   /**
-     Internal level of indirection for sqlite3_config(ConfigSqllogCallback).
+     Internal level of indirection for sqlite3_config(ConfigSqlLogCallback).
   */
   private static native int sqlite3_config__SQLLOG(
-    @Nullable ConfigSqllogCallback logger
+    @Nullable ConfigSqlLogCallback logger
   );
 
   /**
@@ -1091,7 +1091,7 @@ public final class CApi {
      the rest of the library. This must not be called when any other
      library APIs are being called.
   */
-  public static int sqlite3_config( @Nullable ConfigSqllogCallback logger ){
+  public static int sqlite3_config( @Nullable ConfigSqlLogCallback logger ){
     return sqlite3_config__SQLLOG(logger);
   }
 

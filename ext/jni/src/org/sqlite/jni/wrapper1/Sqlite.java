@@ -209,6 +209,10 @@ public final class Sqlite implements AutoCloseable  {
   public static final int DBCONFIG_STMT_SCANSTATUS = CApi.SQLITE_DBCONFIG_STMT_SCANSTATUS;
   public static final int DBCONFIG_REVERSE_SCANORDER = CApi.SQLITE_DBCONFIG_REVERSE_SCANORDER;
 
+  public static final int CONFIG_SINGLETHREAD = CApi.SQLITE_CONFIG_SINGLETHREAD;
+  public static final int CONFIG_MULTITHREAD = CApi.SQLITE_CONFIG_MULTITHREAD;
+  public static final int CONFIG_SERIALIZED = CApi.SQLITE_CONFIG_SERIALIZED;
+
   public static final int UTF8 = CApi.SQLITE_UTF8;
   public static final int UTF16 = CApi.SQLITE_UTF16;
   public static final int UTF16LE = CApi.SQLITE_UTF16LE;
@@ -260,6 +264,32 @@ public final class Sqlite implements AutoCloseable  {
   /** Maps org.sqlite.jni.capi.sqlite3 to Sqlite instances. */
   private static final java.util.Map<org.sqlite.jni.capi.sqlite3, Sqlite> nativeToWrapper
     = new java.util.HashMap<>();
+
+
+  /**
+     When any given thread is done using the SQLite library, calling
+     this will free up any native-side resources which may be
+     associated specifically with that thread. This is not strictly
+     necessary, in particular in applications which only use SQLite
+     from a single thread, but may help free some otherwise errant
+     resources.
+
+     Calling into SQLite from a given thread after this has been
+     called in that thread is harmless. The library will simply start
+     to re-cache certain state for that thread.
+
+     Contrariwise, failing to call this will effectively leak a small
+     amount of cached state for the thread, which may add up to
+     significant amounts if the application uses SQLite from many
+     threads.
+
+     This must never be called while actively using SQLite from this
+     thread, e.g. from within a query loop or a callback which is
+     operating on behalf of the library.
+  */
+  static void uncacheThread(){
+    CApi.sqlite3_java_uncache_thread();
+  }
 
   /**
      Returns the Sqlite object associated with the given sqlite3
@@ -342,6 +372,9 @@ public final class Sqlite implements AutoCloseable  {
   private static boolean hasNormalizeSql =
     compileOptionUsed("ENABLE_NORMALIZE");
 
+  private static boolean hasSqlLog =
+    compileOptionUsed("ENABLE_SQLLOG");
+
   /**
      Throws UnsupportedOperationException if check is false.
      flag is expected to be the name of an SQLITE_ENABLE_...
@@ -410,7 +443,7 @@ public final class Sqlite implements AutoCloseable  {
       new org.sqlite.jni.capi.OutputPointer.Int64();
     org.sqlite.jni.capi.OutputPointer.Int64 pHighwater =
       new org.sqlite.jni.capi.OutputPointer.Int64();
-    checkRc2( CApi.sqlite3_status64(op, pCurrent, pHighwater, resetStats) );
+    checkRcStatic( CApi.sqlite3_status64(op, pCurrent, pHighwater, resetStats) );
     final Status s = new Status();
     s.current = pCurrent.value;
     s.peak = pHighwater.value;
@@ -489,7 +522,7 @@ public final class Sqlite implements AutoCloseable  {
      Like checkRc() but behaves as if that function were
      called with a null db object.
   */
-  private static void checkRc2(int rc){
+  private static void checkRcStatic(int rc){
     if( 0!=rc ){
       if( CApi.SQLITE_NOMEM==rc ){
         throw new OutOfMemoryError();
@@ -1857,6 +1890,83 @@ public final class Sqlite implements AutoCloseable  {
                              iRow, writeable ? 1 : 0, out)
     );
     return new Blob(this, out.take());
+  }
+
+  /**
+     Callback for use with libConfigLog().
+  */
+  public interface ConfigLog {
+    /**
+     Must function as described for a C-level callback for
+     sqlite3_config()'s SQLITE_CONFIG_LOG callback, with the slight
+     signature change. Any exceptions thrown from this callback are
+     necessarily suppressed.
+    */
+    void call(int errCode, String msg);
+  }
+
+  /**
+     Analog to sqlite3_config() with the SQLITE_CONFIG_LOG option,
+     this sets or (if log is null) clears the current logger.
+  */
+  public static void libConfigLog(ConfigLog log){
+    final org.sqlite.jni.capi.ConfigLogCallback l =
+      null==log
+      ? null
+      : new org.sqlite.jni.capi.ConfigLogCallback() {
+          @Override public void call(int errCode, String msg){
+            log.call(errCode, msg);
+          }
+        };
+      checkRcStatic(CApi.sqlite3_config(l));
+  }
+
+  /**
+     Callback for use with libConfigSqlLog().
+  */
+  public interface ConfigSqlLog {
+    /**
+       Must function as described for a C-level callback for
+       sqlite3_config()'s SQLITE_CONFIG_SQLLOG callback, with the
+       slight signature change. Any exceptions thrown from this
+       callback are necessarily suppressed.
+     */
+    void call(Sqlite db, String msg, int msgType);
+  }
+
+  /**
+     Analog to sqlite3_config() with the SQLITE_CONFIG_SQLLOG option,
+     this sets or (if log is null) clears the current logger.
+
+     If SQLite is built without SQLITE_ENABLE_SQLLOG defined then this
+     will throw an UnsupportedOperationException.
+  */
+  public static void libConfigSqlLog(ConfigSqlLog log){
+    Sqlite.checkSupported(hasNormalizeSql, "SQLITE_ENABLE_SQLLOG");
+    final org.sqlite.jni.capi.ConfigSqlLogCallback l =
+      null==log
+      ? null
+      : new org.sqlite.jni.capi.ConfigSqlLogCallback() {
+          @Override public void call(sqlite3 db, String msg, int msgType){
+            try{
+              log.call(fromNative(db), msg, msgType);
+            }catch(Exception e){
+              /* Suppressed */
+            }
+          }
+        };
+      checkRcStatic(CApi.sqlite3_config(l));
+  }
+
+  /**
+     Analog to the C-level sqlite3_config() with one of the
+     SQLITE_CONFIG_... constants defined as CONFIG_... in this
+     class. Throws on error, including passing of an unknown option or
+     if a specified option is not supported by the underlying build of
+     the SQLite library.
+   */
+  public static void libConfigOp( int op ){
+    checkRcStatic(CApi.sqlite3_config(op));
   }
 
 }
