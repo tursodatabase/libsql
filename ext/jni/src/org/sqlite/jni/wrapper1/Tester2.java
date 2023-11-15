@@ -901,10 +901,21 @@ public class Tester2 implements Runnable {
     stmt.finalizeStmt();
 
     b = db.blobOpen("main", "t", "a", db.lastInsertRowId(), false);
-    b.reopen(2);
     final byte[] tgt = new byte[3];
     b.read( tgt, 0 );
     affirm( 100==tgt[0] && 101==tgt[1] && 102==tgt[2], "DEF" );
+    execSql(db,"UPDATE t SET a=zeroblob(10) WHERE rowid=2");
+    b.close();
+    b = db.blobOpen("main", "t", "a", db.lastInsertRowId(), true);
+    byte[] bw = new byte[]{
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+    };
+    b.write(bw, 0);
+    byte[] br = new byte[10];
+    b.read(br, 0);
+    for( int i = 0; i < br.length; ++i ){
+      affirm(bw[i] == br[i]);
+    }
     b.close();
     db.close();
   }
