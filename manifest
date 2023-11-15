@@ -1,5 +1,5 @@
-C JNI:\sadd\sthe\s@Experimental\sannotation\sand\smark\sall\sjava.nio.ByteBuffer-related\smethods\swith\sit.
-D 2023-11-15T06:10:37.765
+C JNI\sdoc\supdates.
+D 2023-11-15T06:28:51.535
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -239,7 +239,7 @@ F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f4
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/jni/GNUmakefile 59eb05f2a363bdfac8d15d66bed624bfe1ff289229184f3861b95f98a19cf4b2
-F ext/jni/README.md 78a0386f6813e5201142ff07f077f4dcf1bb66266c69c6bbd09edac69cadff60
+F ext/jni/README.md 5a556b9fb0a1113f4a5fbf95c0d9c59910bd14ffe048c086528bfb241755a3ff
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
 F ext/jni/src/c/sqlite3-jni.c 4fd9906698d296d4e4e4a54c3946461f8506f5b2a13a26cd7b27e0e5c7272bd0
 F ext/jni/src/c/sqlite3-jni.h 913ab8e8fee432ae40f0e387c8231118d17053714703f5ded18202912a8a3fbf
@@ -2140,8 +2140,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 09142ac14347e6f41bbe50bc835920e271713452733a478ede547816cc291ace
-R cfcc320e0959e3a4de2a4fc818c2a559
+P 0f4b223102e5dc9142c9d2cb8892b8d3cc476e579420028b93d4e12f4cf94d3e
+R e3ab397266802d21fbd0818f6ef7c03b
 U stephan
-Z c96b2596adaae992941a9453741b8e02
+Z 68da6256258e35616148bab25b4e0c27
 # Remove this line to create a well-formed Fossil manifest.
