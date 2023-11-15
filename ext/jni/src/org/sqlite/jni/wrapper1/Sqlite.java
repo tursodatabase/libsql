@@ -33,6 +33,7 @@ public final class Sqlite implements AutoCloseable  {
   private static final boolean JNI_SUPPORTS_NIO =
     CApi.sqlite3_jni_supports_nio();
 
+  // Result codes
   public static final int OK = CApi.SQLITE_OK;
   public static final int ERROR = CApi.SQLITE_ERROR;
   public static final int INTERNAL = CApi.SQLITE_INTERNAL;
@@ -138,14 +139,17 @@ public final class Sqlite implements AutoCloseable  {
   public static final int AUTH_USER = CApi.SQLITE_AUTH_USER;
   public static final int OK_LOAD_PERMANENTLY = CApi.SQLITE_OK_LOAD_PERMANENTLY;
 
+  // sqlite3_open() flags
   public static final int OPEN_READWRITE = CApi.SQLITE_OPEN_READWRITE;
   public static final int OPEN_CREATE = CApi.SQLITE_OPEN_CREATE;
   public static final int OPEN_EXRESCODE = CApi.SQLITE_OPEN_EXRESCODE;
 
+  // transaction state
   public static final int TXN_NONE = CApi.SQLITE_TXN_NONE;
   public static final int TXN_READ = CApi.SQLITE_TXN_READ;
   public static final int TXN_WRITE = CApi.SQLITE_TXN_WRITE;
 
+  // sqlite3_status() ops
   public static final int STATUS_MEMORY_USED = CApi.SQLITE_STATUS_MEMORY_USED;
   public static final int STATUS_PAGECACHE_USED = CApi.SQLITE_STATUS_PAGECACHE_USED;
   public static final int STATUS_PAGECACHE_OVERFLOW = CApi.SQLITE_STATUS_PAGECACHE_OVERFLOW;
@@ -154,6 +158,7 @@ public final class Sqlite implements AutoCloseable  {
   public static final int STATUS_PAGECACHE_SIZE = CApi.SQLITE_STATUS_PAGECACHE_SIZE;
   public static final int STATUS_MALLOC_COUNT = CApi.SQLITE_STATUS_MALLOC_COUNT;
 
+  // sqlite3_db_status() ops
   public static final int DBSTATUS_LOOKASIDE_USED = CApi.SQLITE_DBSTATUS_LOOKASIDE_USED;
   public static final int DBSTATUS_CACHE_USED = CApi.SQLITE_DBSTATUS_CACHE_USED;
   public static final int DBSTATUS_SCHEMA_USED = CApi.SQLITE_DBSTATUS_SCHEMA_USED;
@@ -168,6 +173,7 @@ public final class Sqlite implements AutoCloseable  {
   public static final int DBSTATUS_CACHE_USED_SHARED = CApi.SQLITE_DBSTATUS_CACHE_USED_SHARED;
   public static final int DBSTATUS_CACHE_SPILL = CApi.SQLITE_DBSTATUS_CACHE_SPILL;
 
+  // Limits
   public static final int LIMIT_LENGTH = CApi.SQLITE_LIMIT_LENGTH;
   public static final int LIMIT_SQL_LENGTH = CApi.SQLITE_LIMIT_SQL_LENGTH;
   public static final int LIMIT_COLUMN = CApi.SQLITE_LIMIT_COLUMN;
@@ -181,15 +187,18 @@ public final class Sqlite implements AutoCloseable  {
   public static final int LIMIT_TRIGGER_DEPTH = CApi.SQLITE_LIMIT_TRIGGER_DEPTH;
   public static final int LIMIT_WORKER_THREADS = CApi.SQLITE_LIMIT_WORKER_THREADS;
 
+  // sqlite3_prepare_v3() flags
   public static final int PREPARE_PERSISTENT = CApi.SQLITE_PREPARE_PERSISTENT;
   public static final int PREPARE_NO_VTAB = CApi.SQLITE_PREPARE_NO_VTAB;
 
+  // sqlite3_trace_v2() flags
   public static final int TRACE_STMT = CApi.SQLITE_TRACE_STMT;
   public static final int TRACE_PROFILE = CApi.SQLITE_TRACE_PROFILE;
   public static final int TRACE_ROW = CApi.SQLITE_TRACE_ROW;
   public static final int TRACE_CLOSE = CApi.SQLITE_TRACE_CLOSE;
   public static final int TRACE_ALL = TRACE_STMT | TRACE_PROFILE | TRACE_ROW | TRACE_CLOSE;
 
+  // sqlite3_db_config() ops
   public static final int DBCONFIG_ENABLE_FKEY = CApi.SQLITE_DBCONFIG_ENABLE_FKEY;
   public static final int DBCONFIG_ENABLE_TRIGGER = CApi.SQLITE_DBCONFIG_ENABLE_TRIGGER;
   public static final int DBCONFIG_ENABLE_FTS3_TOKENIZER = CApi.SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER;
@@ -209,10 +218,12 @@ public final class Sqlite implements AutoCloseable  {
   public static final int DBCONFIG_STMT_SCANSTATUS = CApi.SQLITE_DBCONFIG_STMT_SCANSTATUS;
   public static final int DBCONFIG_REVERSE_SCANORDER = CApi.SQLITE_DBCONFIG_REVERSE_SCANORDER;
 
+  // sqlite3_config() ops
   public static final int CONFIG_SINGLETHREAD = CApi.SQLITE_CONFIG_SINGLETHREAD;
   public static final int CONFIG_MULTITHREAD = CApi.SQLITE_CONFIG_MULTITHREAD;
   public static final int CONFIG_SERIALIZED = CApi.SQLITE_CONFIG_SERIALIZED;
 
+  // Encodings
   public static final int UTF8 = CApi.SQLITE_UTF8;
   public static final int UTF16 = CApi.SQLITE_UTF16;
   public static final int UTF16LE = CApi.SQLITE_UTF16LE;
@@ -220,6 +231,14 @@ public final class Sqlite implements AutoCloseable  {
   /* We elide the UTF16_ALIGNED from this interface because it
      is irrelevant for the Java interface. */
 
+  // SQL data type IDs
+  public static final int INTEGER = CApi.SQLITE_INTEGER;
+  public static final int FLOAT = CApi.SQLITE_FLOAT;
+  public static final int TEXT = CApi.SQLITE_TEXT;
+  public static final int BLOB = CApi.SQLITE_BLOB;
+  public static final int NULL = CApi.SQLITE_NULL;
+
+  // Authorizer codes.
   public static final int DENY = CApi.SQLITE_DENY;
   public static final int IGNORE = CApi.SQLITE_IGNORE;
   public static final int CREATE_INDEX = CApi.SQLITE_CREATE_INDEX;

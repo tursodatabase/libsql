@@ -928,15 +928,28 @@ public class Tester1 implements Runnable {
       // To confirm that xFinal() is called with no aggregate state
       // when the corresponding result set is empty.
       new ValueHolder<>(false);
+    final ValueHolder<sqlite3_value[]> neverEverDoThisInClientCode = new ValueHolder<>(null);
+    final ValueHolder<sqlite3_context> neverEverDoThisInClientCode2 = new ValueHolder<>(null);
     SQLFunction func = new AggregateFunction<Integer>(){
         @Override
         public void xStep(sqlite3_context cx, sqlite3_value[] args){
+          if( null==neverEverDoThisInClientCode.value ){
+            /* !!!NEVER!!! hold a reference to an sqlite3_value or
+               sqlite3_context object like this in client code! They
+               are ONLY legal for the duration of their single
+               call. We do it here ONLY to test that the defenses
+               against clients doing this are working. */
+            neverEverDoThisInClientCode.value = args;
+          }
           final ValueHolder<Integer> agg = this.getAggregateState(cx, 0);
           agg.value += sqlite3_value_int(args[0]);
           affirm( agg == this.getAggregateState(cx, 0) );
         }
         @Override
         public void xFinal(sqlite3_context cx){
+          if( null==neverEverDoThisInClientCode2.value ){
+            neverEverDoThisInClientCode2.value = cx;
+          }
           final Integer v = this.takeAggregateState(cx);
           if(null == v){
             xFinalNull.value = true;
@@ -961,6 +974,10 @@ public class Tester1 implements Runnable {
     }
     affirm( 1==n );
     affirm(!xFinalNull.value);
+    affirm( null!=neverEverDoThisInClientCode.value );
+    affirm( null!=neverEverDoThisInClientCode2.value );
+    affirm( 0<neverEverDoThisInClientCode.value.length );
+    affirm( 0==neverEverDoThisInClientCode2.value.getNativePointer() );
     sqlite3_reset(stmt);
     affirm( 1==sqlite3_stmt_status(stmt, SQLITE_STMTSTATUS_RUN, false) );
     // Ensure that the accumulator is reset on subsequent calls...

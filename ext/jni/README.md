@@ -16,9 +16,8 @@ Technical support is available in the forum:
 > **FOREWARNING:** this subproject is very much in development and
   subject to any number of changes. Please do not rely on any
   information about its API until this disclaimer is removed.  The JNI
-  bindings released with version 3.43 are a "tech preview" and 3.44
-  will be "final," at which point strong backward compatibility
-  guarantees will apply.
+  bindings released with version 3.43 are a "tech preview." Once
+  finalized, strong backward compatibility guarantees will apply.
 
 Project goals/requirements:
 
@@ -43,11 +42,13 @@ Non-goals:
 - Creation of high-level OO wrapper APIs. Clients are free to create
   them off of the C-style API.
 
+- Virtual tables are unlikely to be supported due to the amount of
+  glue code needed to fit them into Java.
+
 - Support for mixed-mode operation, where client code accesses SQLite
   both via the Java-side API and the C API via their own native
-  code. In such cases, proxy functionalities (primarily callback
-  handler wrappers of all sorts) may fail because the C-side use of
-  the SQLite APIs will bypass those proxies.
+  code. Such cases would be a minefield of potential mis-interactions
+  between this project's JNI bindings and mixed-mode client code.
 
 
 Hello World
