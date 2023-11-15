@@ -288,17 +288,13 @@ where
         if let Some(soft_limit_mb) = self.db_config.soft_heap_limit_mb {
             tracing::warn!("Setting soft heap limit to {soft_limit_mb}MiB");
             unsafe {
-                sqld_libsql_bindings::ffi::sqlite3_soft_heap_limit64(
-                    soft_limit_mb as i64 * 1024 * 1024,
-                )
+                libsql_sys::ffi::sqlite3_soft_heap_limit64(soft_limit_mb as i64 * 1024 * 1024)
             };
         }
         if let Some(hard_limit_mb) = self.db_config.hard_heap_limit_mb {
             tracing::warn!("Setting hard heap limit to {hard_limit_mb}MiB");
             unsafe {
-                sqld_libsql_bindings::ffi::sqlite3_hard_heap_limit64(
-                    hard_limit_mb as i64 * 1024 * 1024,
-                )
+                libsql_sys::ffi::sqlite3_hard_heap_limit64(hard_limit_mb as i64 * 1024 * 1024)
             };
         }
     }
@@ -337,7 +333,7 @@ where
                     let heartbeat_auth = config.heartbeat_auth.clone();
                     let heartbeat_period = config.heartbeat_period;
                     let heartbeat_url = if let Some(url) = &config.heartbeat_url {
-                        Some(Url::from_str(&url).context("invalid heartbeat URL")?)
+                        Some(Url::from_str(url).context("invalid heartbeat URL")?)
                     } else {
                         None
                     };
