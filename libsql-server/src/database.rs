@@ -1,10 +1,14 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
+
 use crate::connection::libsql::LibSqlConnection;
 use crate::connection::write_proxy::{RpcStream, WriteProxyConnection};
 use crate::connection::{Connection, MakeConnection, TrackedConnection};
-use crate::replication::{ReplicationLogger, ReplicationLoggerHook};
-use async_trait::async_trait;
+use crate::namespace::replication_wal::ReplicationWal;
+use crate::replication::ReplicationLogger;
+
+pub type PrimaryConnection = TrackedConnection<LibSqlConnection<ReplicationWal>>;
 
 pub type Result<T> = anyhow::Result<T>;
 
@@ -39,8 +43,6 @@ impl Database for ReplicaDatabase {
         Ok(())
     }
 }
-
-pub type PrimaryConnection = TrackedConnection<LibSqlConnection<ReplicationLoggerHook>>;
 
 pub struct PrimaryDatabase {
     pub logger: Arc<ReplicationLogger>,
