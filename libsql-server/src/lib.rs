@@ -285,10 +285,6 @@ where
 {
     /// Setup sqlite global environment
     fn init_sqlite_globals(&self) {
-        if self.db_config.bottomless_replication.is_some() {
-            bottomless::static_init::register_bottomless_methods();
-        }
-
         if let Some(soft_limit_mb) = self.db_config.soft_heap_limit_mb {
             tracing::warn!("Setting soft heap limit to {soft_limit_mb}MiB");
             unsafe {
