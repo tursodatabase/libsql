@@ -19,6 +19,7 @@ import org.sqlite.jni.capi.sqlite3_stmt;
 import org.sqlite.jni.capi.sqlite3_backup;
 import org.sqlite.jni.capi.sqlite3_blob;
 import org.sqlite.jni.capi.OutputPointer;
+import java.nio.ByteBuffer;
 
 /**
    This class represents a database connection, analog to the C-side
@@ -29,7 +30,10 @@ import org.sqlite.jni.capi.OutputPointer;
 */
 public final class Sqlite implements AutoCloseable  {
   private sqlite3 db;
+  private static final boolean JNI_SUPPORTS_NIO =
+    CApi.sqlite3_jni_supports_nio();
 
+  // Result codes
   public static final int OK = CApi.SQLITE_OK;
   public static final int ERROR = CApi.SQLITE_ERROR;
   public static final int INTERNAL = CApi.SQLITE_INTERNAL;
@@ -135,14 +139,17 @@ public final class Sqlite implements AutoCloseable  {
   public static final int AUTH_USER = CApi.SQLITE_AUTH_USER;
   public static final int OK_LOAD_PERMANENTLY = CApi.SQLITE_OK_LOAD_PERMANENTLY;
 
+  // sqlite3_open() flags
   public static final int OPEN_READWRITE = CApi.SQLITE_OPEN_READWRITE;
   public static final int OPEN_CREATE = CApi.SQLITE_OPEN_CREATE;
   public static final int OPEN_EXRESCODE = CApi.SQLITE_OPEN_EXRESCODE;
 
+  // transaction state
   public static final int TXN_NONE = CApi.SQLITE_TXN_NONE;
   public static final int TXN_READ = CApi.SQLITE_TXN_READ;
   public static final int TXN_WRITE = CApi.SQLITE_TXN_WRITE;
 
+  // sqlite3_status() ops
   public static final int STATUS_MEMORY_USED = CApi.SQLITE_STATUS_MEMORY_USED;
   public static final int STATUS_PAGECACHE_USED = CApi.SQLITE_STATUS_PAGECACHE_USED;
   public static final int STATUS_PAGECACHE_OVERFLOW = CApi.SQLITE_STATUS_PAGECACHE_OVERFLOW;
@@ -151,6 +158,7 @@ public final class Sqlite implements AutoCloseable  {
   public static final int STATUS_PAGECACHE_SIZE = CApi.SQLITE_STATUS_PAGECACHE_SIZE;
   public static final int STATUS_MALLOC_COUNT = CApi.SQLITE_STATUS_MALLOC_COUNT;
 
+  // sqlite3_db_status() ops
   public static final int DBSTATUS_LOOKASIDE_USED = CApi.SQLITE_DBSTATUS_LOOKASIDE_USED;
   public static final int DBSTATUS_CACHE_USED = CApi.SQLITE_DBSTATUS_CACHE_USED;
   public static final int DBSTATUS_SCHEMA_USED = CApi.SQLITE_DBSTATUS_SCHEMA_USED;
@@ -165,6 +173,7 @@ public final class Sqlite implements AutoCloseable  {
   public static final int DBSTATUS_CACHE_USED_SHARED = CApi.SQLITE_DBSTATUS_CACHE_USED_SHARED;
   public static final int DBSTATUS_CACHE_SPILL = CApi.SQLITE_DBSTATUS_CACHE_SPILL;
 
+  // Limits
   public static final int LIMIT_LENGTH = CApi.SQLITE_LIMIT_LENGTH;
   public static final int LIMIT_SQL_LENGTH = CApi.SQLITE_LIMIT_SQL_LENGTH;
   public static final int LIMIT_COLUMN = CApi.SQLITE_LIMIT_COLUMN;
@@ -178,15 +187,18 @@ public final class Sqlite implements AutoCloseable  {
   public static final int LIMIT_TRIGGER_DEPTH = CApi.SQLITE_LIMIT_TRIGGER_DEPTH;
   public static final int LIMIT_WORKER_THREADS = CApi.SQLITE_LIMIT_WORKER_THREADS;
 
+  // sqlite3_prepare_v3() flags
   public static final int PREPARE_PERSISTENT = CApi.SQLITE_PREPARE_PERSISTENT;
   public static final int PREPARE_NO_VTAB = CApi.SQLITE_PREPARE_NO_VTAB;
 
+  // sqlite3_trace_v2() flags
   public static final int TRACE_STMT = CApi.SQLITE_TRACE_STMT;
   public static final int TRACE_PROFILE = CApi.SQLITE_TRACE_PROFILE;
   public static final int TRACE_ROW = CApi.SQLITE_TRACE_ROW;
   public static final int TRACE_CLOSE = CApi.SQLITE_TRACE_CLOSE;
   public static final int TRACE_ALL = TRACE_STMT | TRACE_PROFILE | TRACE_ROW | TRACE_CLOSE;
 
+  // sqlite3_db_config() ops
   public static final int DBCONFIG_ENABLE_FKEY = CApi.SQLITE_DBCONFIG_ENABLE_FKEY;
   public static final int DBCONFIG_ENABLE_TRIGGER = CApi.SQLITE_DBCONFIG_ENABLE_TRIGGER;
   public static final int DBCONFIG_ENABLE_FTS3_TOKENIZER = CApi.SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER;
@@ -206,6 +218,12 @@ public final class Sqlite implements AutoCloseable  {
   public static final int DBCONFIG_STMT_SCANSTATUS = CApi.SQLITE_DBCONFIG_STMT_SCANSTATUS;
   public static final int DBCONFIG_REVERSE_SCANORDER = CApi.SQLITE_DBCONFIG_REVERSE_SCANORDER;
 
+  // sqlite3_config() ops
+  public static final int CONFIG_SINGLETHREAD = CApi.SQLITE_CONFIG_SINGLETHREAD;
+  public static final int CONFIG_MULTITHREAD = CApi.SQLITE_CONFIG_MULTITHREAD;
+  public static final int CONFIG_SERIALIZED = CApi.SQLITE_CONFIG_SERIALIZED;
+
+  // Encodings
   public static final int UTF8 = CApi.SQLITE_UTF8;
   public static final int UTF16 = CApi.SQLITE_UTF16;
   public static final int UTF16LE = CApi.SQLITE_UTF16LE;
@@ -213,6 +231,14 @@ public final class Sqlite implements AutoCloseable  {
   /* We elide the UTF16_ALIGNED from this interface because it
      is irrelevant for the Java interface. */
 
+  // SQL data type IDs
+  public static final int INTEGER = CApi.SQLITE_INTEGER;
+  public static final int FLOAT = CApi.SQLITE_FLOAT;
+  public static final int TEXT = CApi.SQLITE_TEXT;
+  public static final int BLOB = CApi.SQLITE_BLOB;
+  public static final int NULL = CApi.SQLITE_NULL;
+
+  // Authorizer codes.
   public static final int DENY = CApi.SQLITE_DENY;
   public static final int IGNORE = CApi.SQLITE_IGNORE;
   public static final int CREATE_INDEX = CApi.SQLITE_CREATE_INDEX;
@@ -257,6 +283,32 @@ public final class Sqlite implements AutoCloseable  {
   /** Maps org.sqlite.jni.capi.sqlite3 to Sqlite instances. */
   private static final java.util.Map<org.sqlite.jni.capi.sqlite3, Sqlite> nativeToWrapper
     = new java.util.HashMap<>();
+
+
+  /**
+     When any given thread is done using the SQLite library, calling
+     this will free up any native-side resources which may be
+     associated specifically with that thread. This is not strictly
+     necessary, in particular in applications which only use SQLite
+     from a single thread, but may help free some otherwise errant
+     resources.
+
+     Calling into SQLite from a given thread after this has been
+     called in that thread is harmless. The library will simply start
+     to re-cache certain state for that thread.
+
+     Contrariwise, failing to call this will effectively leak a small
+     amount of cached state for the thread, which may add up to
+     significant amounts if the application uses SQLite from many
+     threads.
+
+     This must never be called while actively using SQLite from this
+     thread, e.g. from within a query loop or a callback which is
+     operating on behalf of the library.
+  */
+  static void uncacheThread(){
+    CApi.sqlite3_java_uncache_thread();
+  }
 
   /**
      Returns the Sqlite object associated with the given sqlite3
@@ -339,6 +391,9 @@ public final class Sqlite implements AutoCloseable  {
   private static boolean hasNormalizeSql =
     compileOptionUsed("ENABLE_NORMALIZE");
 
+  private static boolean hasSqlLog =
+    compileOptionUsed("ENABLE_SQLLOG");
+
   /**
      Throws UnsupportedOperationException if check is false.
      flag is expected to be the name of an SQLITE_ENABLE_...
@@ -407,7 +462,7 @@ public final class Sqlite implements AutoCloseable  {
       new org.sqlite.jni.capi.OutputPointer.Int64();
     org.sqlite.jni.capi.OutputPointer.Int64 pHighwater =
       new org.sqlite.jni.capi.OutputPointer.Int64();
-    checkRc2( CApi.sqlite3_status64(op, pCurrent, pHighwater, resetStats) );
+    checkRcStatic( CApi.sqlite3_status64(op, pCurrent, pHighwater, resetStats) );
     final Status s = new Status();
     s.current = pCurrent.value;
     s.peak = pHighwater.value;
@@ -486,7 +541,7 @@ public final class Sqlite implements AutoCloseable  {
      Like checkRc() but behaves as if that function were
      called with a null db object.
   */
-  private static void checkRc2(int rc){
+  private static void checkRcStatic(int rc){
     if( 0!=rc ){
       if( CApi.SQLITE_NOMEM==rc ){
         throw new OutOfMemoryError();
@@ -606,6 +661,14 @@ public final class Sqlite implements AutoCloseable  {
   }
 
   /**
+     Equivallent to prepareMulti(X,prepFlags,visitor), where X is
+     sql.getBytes(StandardCharsets.UTF_8).
+  */
+  public void prepareMulti(String sql, int prepFlags, PrepareMulti visitor){
+    prepareMulti(sql.getBytes(StandardCharsets.UTF_8), prepFlags, visitor);
+  }
+
+  /**
      A variant of prepare() which can handle multiple SQL statements
      in a single input string. For each statement in the given string,
      the statement is passed to visitor.call() a single time, passing
@@ -619,6 +682,11 @@ public final class Sqlite implements AutoCloseable  {
 
      PrepareMultiFinalize offers a proxy which finalizes each
      statement after it is passed to another client-defined visitor.
+
+     Be aware that certain legal SQL constructs may fail in the
+     preparation phase, before the corresponding statement can be
+     stepped. Most notably, authorizer checks which disallow access to
+     something in a statement behave that way.
   */
   public void prepareMulti(byte sqlUtf8[], int prepFlags, PrepareMulti visitor){
     int pos = 0, n = 1;
@@ -644,14 +712,6 @@ public final class Sqlite implements AutoCloseable  {
       }
       visitor.call(new Stmt(this, stmt));
     }
-  }
-
-  /**
-     Equivallent to prepareMulti(X,prepFlags,visitor), where X is
-     sql.getBytes(StandardCharsets.UTF_8).
-  */
-  public void prepareMulti(String sql, int prepFlags, PrepareMulti visitor){
-    prepareMulti(sql.getBytes(StandardCharsets.UTF_8), prepFlags, visitor);
   }
 
   public void createFunction(String name, int nArg, int eTextRep, ScalarFunction f){
@@ -937,21 +997,11 @@ public final class Sqlite implements AutoCloseable  {
   public static final class Stmt implements AutoCloseable {
     private Sqlite _db = null;
     private sqlite3_stmt stmt = null;
-    /**
-       We save the result column count in order to prevent having to
-       call into C to fetch that value every time we need to check
-       that value for the columnXyz() methods.
-
-       Design note: if this is final then we cannot zero it in
-       finalizeStmt().
-    */
-    private int resultColCount;
 
     /** Only called by the prepare() factory functions. */
     Stmt(Sqlite db, sqlite3_stmt stmt){
       this._db = db;
       this.stmt = stmt;
-      this.resultColCount = CApi.sqlite3_column_count(stmt);
       synchronized(nativeToWrapper){
         nativeToWrapper.put(this.stmt, this);
       }
@@ -977,7 +1027,7 @@ public final class Sqlite implements AutoCloseable  {
 
     /**
        If this statement is still opened, its low-level handle is
-       returned, eelse an IllegalArgumentException is thrown.
+       returned, else an IllegalArgumentException is thrown.
     */
     private sqlite3_stmt thisStmt(){
       if( null==stmt || 0==stmt.getNativePointer() ){
@@ -986,10 +1036,10 @@ public final class Sqlite implements AutoCloseable  {
       return stmt;
     }
 
-    /** Throws if n is out of range of this.resultColCount. Intended
-        to be used by the columnXyz() methods. */
+    /** Throws if n is out of range of this statement's result column
+        count. Intended to be used by the columnXyz() methods. */
     private sqlite3_stmt checkColIndex(int n){
-      if(n<0 || n>=this.resultColCount){
+      if(n<0 || n>=columnCount()){
         throw new IllegalArgumentException("Column index "+n+" is out of range.");
       }
       return thisStmt();
@@ -1013,7 +1063,6 @@ public final class Sqlite implements AutoCloseable  {
         CApi.sqlite3_finalize(stmt);
         stmt = null;
         _db = null;
-        resultColCount = 0;
       }
       return rc;
     }
@@ -1053,6 +1102,22 @@ public final class Sqlite implements AutoCloseable  {
             "This \"cannot happen\": all possible result codes were checked already."
           );
       }
+    }
+
+    /**
+       Works like sqlite3_step(), returning the same result codes as
+       that function unless throwOnError is true, in which case it
+       will throw an SqliteException for any result codes other than
+       Sqlite.ROW or Sqlite.DONE.
+
+       The utility of this overload over the no-argument one is the
+       ability to handle BUSY and LOCKED errors more easily.
+    */
+    public int step(boolean throwOnError){
+      final int rc = (null==stmt)
+              ? Sqlite.MISUSE
+              : CApi.sqlite3_step(stmt);
+      return throwOnError ? checkRc(rc) : rc;
     }
 
     /**
@@ -1184,8 +1249,18 @@ public final class Sqlite implements AutoCloseable  {
     public String columnDeclType(int ndx){
       return CApi.sqlite3_column_decltype( checkColIndex(ndx), ndx );
     }
+    /**
+       Analog to sqlite3_column_count() but throws if this statement
+       has been finalized.
+    */
     public int columnCount(){
-      return resultColCount;
+      /* We cannot reliably cache the column count in a class
+         member because an ALTER TABLE from a separate statement
+         can invalidate that count and we have no way, short of
+         installing a COMMIT handler or the like, of knowing when
+         to re-read it. We cannot install such a handler without
+         interfering with a client's ability to do so. */
+      return CApi.sqlite3_column_count(thisStmt());
     }
     public int columnDataCount(){
       return CApi.sqlite3_data_count( thisStmt() );
@@ -1754,6 +1829,17 @@ public final class Sqlite implements AutoCloseable  {
     }
 
     /**
+       If this blob is still opened, its low-level handle is
+       returned, else an IllegalArgumentException is thrown.
+    */
+    private sqlite3_blob thisBlob(){
+      if( null==b || 0==b.getNativePointer() ){
+        throw new IllegalArgumentException("This Blob has been finalized.");
+      }
+      return b;
+    }
+
+    /**
        Analog to sqlite3_blob_close().
     */
     @Override public void close(){
@@ -1765,31 +1851,42 @@ public final class Sqlite implements AutoCloseable  {
     }
 
     /**
+       Throws if the JVM does not have JNI-level support for
+       ByteBuffer.
+    */
+    private void checkNio(){
+      if( !Sqlite.JNI_SUPPORTS_NIO ){
+        throw new UnsupportedOperationException(
+          "This JVM does not support JNI access to ByteBuffer."
+        );
+      }
+    }
+    /**
        Analog to sqlite3_blob_reopen() but throws on error.
     */
     public void reopen(long newRowId){
-      db.checkRc( CApi.sqlite3_blob_reopen(b, newRowId) );
+      db.checkRc( CApi.sqlite3_blob_reopen(thisBlob(), newRowId) );
     }
 
     /**
        Analog to sqlite3_blob_write() but throws on error.
     */
     public void write( byte[] bytes, int atOffset ){
-      db.checkRc( CApi.sqlite3_blob_write(b, bytes, atOffset) );
+      db.checkRc( CApi.sqlite3_blob_write(thisBlob(), bytes, atOffset) );
     }
 
     /**
        Analog to sqlite3_blob_read() but throws on error.
     */
     public void read( byte[] dest, int atOffset ){
-      db.checkRc( CApi.sqlite3_blob_read(b, dest, atOffset) );
+      db.checkRc( CApi.sqlite3_blob_read(thisBlob(), dest, atOffset) );
     }
 
     /**
        Analog to sqlite3_blob_bytes().
     */
     public int bytes(){
-      return CApi.sqlite3_blob_bytes(b);
+      return CApi.sqlite3_blob_bytes(thisBlob());
     }
   }
 
@@ -1812,6 +1909,83 @@ public final class Sqlite implements AutoCloseable  {
                              iRow, writeable ? 1 : 0, out)
     );
     return new Blob(this, out.take());
+  }
+
+  /**
+     Callback for use with libConfigLog().
+  */
+  public interface ConfigLog {
+    /**
+     Must function as described for a C-level callback for
+     sqlite3_config()'s SQLITE_CONFIG_LOG callback, with the slight
+     signature change. Any exceptions thrown from this callback are
+     necessarily suppressed.
+    */
+    void call(int errCode, String msg);
+  }
+
+  /**
+     Analog to sqlite3_config() with the SQLITE_CONFIG_LOG option,
+     this sets or (if log is null) clears the current logger.
+  */
+  public static void libConfigLog(ConfigLog log){
+    final org.sqlite.jni.capi.ConfigLogCallback l =
+      null==log
+      ? null
+      : new org.sqlite.jni.capi.ConfigLogCallback() {
+          @Override public void call(int errCode, String msg){
+            log.call(errCode, msg);
+          }
+        };
+      checkRcStatic(CApi.sqlite3_config(l));
+  }
+
+  /**
+     Callback for use with libConfigSqlLog().
+  */
+  public interface ConfigSqlLog {
+    /**
+       Must function as described for a C-level callback for
+       sqlite3_config()'s SQLITE_CONFIG_SQLLOG callback, with the
+       slight signature change. Any exceptions thrown from this
+       callback are necessarily suppressed.
+     */
+    void call(Sqlite db, String msg, int msgType);
+  }
+
+  /**
+     Analog to sqlite3_config() with the SQLITE_CONFIG_SQLLOG option,
+     this sets or (if log is null) clears the current logger.
+
+     If SQLite is built without SQLITE_ENABLE_SQLLOG defined then this
+     will throw an UnsupportedOperationException.
+  */
+  public static void libConfigSqlLog(ConfigSqlLog log){
+    Sqlite.checkSupported(hasNormalizeSql, "SQLITE_ENABLE_SQLLOG");
+    final org.sqlite.jni.capi.ConfigSqlLogCallback l =
+      null==log
+      ? null
+      : new org.sqlite.jni.capi.ConfigSqlLogCallback() {
+          @Override public void call(sqlite3 db, String msg, int msgType){
+            try{
+              log.call(fromNative(db), msg, msgType);
+            }catch(Exception e){
+              /* Suppressed */
+            }
+          }
+        };
+      checkRcStatic(CApi.sqlite3_config(l));
+  }
+
+  /**
+     Analog to the C-level sqlite3_config() with one of the
+     SQLITE_CONFIG_... constants defined as CONFIG_... in this
+     class. Throws on error, including passing of an unknown option or
+     if a specified option is not supported by the underlying build of
+     the SQLite library.
+   */
+  public static void libConfigOp( int op ){
+    checkRcStatic(CApi.sqlite3_config(op));
   }
 
 }

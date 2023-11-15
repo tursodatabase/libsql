@@ -787,6 +787,14 @@ JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1jni_1supports_
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_jni_db_error
+ * Signature: (Lorg/sqlite/jni/capi/sqlite3;ILjava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1jni_1db_1error
+  (JNIEnv *, jclass, jobject, jint, jstring);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
  * Method:    sqlite3_aggregate_context
  * Signature: (Lorg/sqlite/jni/capi/sqlite3_context;Z)J
  */
@@ -880,6 +888,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1bind_1int64
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1bind_1java_1object
   (JNIEnv *, jclass, jlong, jint, jobject);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_bind_nio_buffer
+ * Signature: (Lorg/sqlite/jni/capi/sqlite3_stmt;ILjava/nio/ByteBuffer;II)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1bind_1nio_1buffer
+  (JNIEnv *, jclass, jobject, jint, jobject, jint, jint);
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
@@ -987,6 +1003,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1blob_1read
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_blob_read_nio_buffer
+ * Signature: (JILjava/nio/ByteBuffer;II)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1blob_1read_1nio_1buffer
+  (JNIEnv *, jclass, jlong, jint, jobject, jint, jint);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
  * Method:    sqlite3_blob_reopen
  * Signature: (JJ)I
  */
@@ -1000,6 +1024,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1blob_1reopen
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1blob_1write
   (JNIEnv *, jclass, jlong, jbyteArray, jint);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_blob_write_nio_buffer
+ * Signature: (JILjava/nio/ByteBuffer;II)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1blob_1write_1nio_1buffer
+  (JNIEnv *, jclass, jlong, jint, jobject, jint, jint);
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
@@ -1099,6 +1131,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1column_1count
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_column_database_name
+ * Signature: (JI)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1column_1database_1name
+  (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
  * Method:    sqlite3_column_decltype
  * Signature: (JI)Ljava/lang/String;
  */
@@ -1147,11 +1187,11 @@ JNIEXPORT jstring JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1column_1name
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
- * Method:    sqlite3_column_database_name
- * Signature: (JI)Ljava/lang/String;
+ * Method:    sqlite3_column_nio_buffer
+ * Signature: (Lorg/sqlite/jni/capi/sqlite3_stmt;I)Ljava/nio/ByteBuffer;
  */
-JNIEXPORT jstring JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1column_1database_1name
-  (JNIEnv *, jclass, jlong, jint);
+JNIEXPORT jobject JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1column_1nio_1buffer
+  (JNIEnv *, jclass, jobject, jint);
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
@@ -1243,26 +1283,26 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1complete
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
- * Method:    sqlite3_config
+ * Method:    sqlite3_config__enable
  * Signature: (I)I
  */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1config__I
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1config_1_1enable
   (JNIEnv *, jclass, jint);
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
- * Method:    sqlite3_config
- * Signature: (Lorg/sqlite/jni/capi/ConfigSqllogCallback;)I
+ * Method:    sqlite3_config__CONFIG_LOG
+ * Signature: (Lorg/sqlite/jni/capi/ConfigLogCallback;)I
  */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1config__Lorg_sqlite_jni_capi_ConfigSqllogCallback_2
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1config_1_1CONFIG_1LOG
   (JNIEnv *, jclass, jobject);
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
- * Method:    sqlite3_config
- * Signature: (Lorg/sqlite/jni/capi/ConfigLogCallback;)I
+ * Method:    sqlite3_config__SQLLOG
+ * Signature: (Lorg/sqlite/jni/capi/ConfigSqlLogCallback;)I
  */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1config__Lorg_sqlite_jni_capi_ConfigLogCallback_2
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1config_1_1SQLLOG
   (JNIEnv *, jclass, jobject);
 
 /*
@@ -1723,6 +1763,14 @@ JNIEXPORT void JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1result_1java_1obje
 
 /*
  * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_result_nio_buffer
+ * Signature: (Lorg/sqlite/jni/capi/sqlite3_context;Ljava/nio/ByteBuffer;II)V
+ */
+JNIEXPORT void JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1result_1nio_1buffer
+  (JNIEnv *, jclass, jobject, jobject, jint, jint);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
  * Method:    sqlite3_result_null
  * Signature: (Lorg/sqlite/jni/capi/sqlite3_context;)V
  */
@@ -2088,6 +2136,14 @@ JNIEXPORT jlong JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1value_1int64
  */
 JNIEXPORT jobject JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1value_1java_1object
   (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_value_nio_buffer
+ * Signature: (Lorg/sqlite/jni/capi/sqlite3_value;)Ljava/nio/ByteBuffer;
+ */
+JNIEXPORT jobject JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1value_1nio_1buffer
+  (JNIEnv *, jclass, jobject);
 
 /*
  * Class:     org_sqlite_jni_capi_CApi

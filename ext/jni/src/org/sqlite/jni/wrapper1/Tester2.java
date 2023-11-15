@@ -12,14 +12,13 @@
 ** This file contains a set of tests for the sqlite3 JNI bindings.
 */
 package org.sqlite.jni.wrapper1;
-//import static org.sqlite.jni.capi.CApi.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.sqlite.jni.capi.*;
+import org.sqlite.jni.capi.CApi;
 
 /**
    An annotation for Tester2 tests which we do not want to run in
@@ -133,49 +132,29 @@ public class Tester2 implements Runnable {
      Executes all SQL statements in the given string. If throwOnError
      is true then it will throw for any prepare/step errors, else it
      will return the corresponding non-0 result code.
-
-     TODO: reimplement this in the high-level API once it has the
-     multi-prepare capability.
   */
   public static int execSql(Sqlite dbw, boolean throwOnError, String sql){
-    final sqlite3 db = dbw.nativeHandle();
-    OutputPointer.Int32 oTail = new OutputPointer.Int32();
-    final byte[] sqlUtf8 = sql.getBytes(StandardCharsets.UTF_8);
-    int pos = 0, n = 1;
-    byte[] sqlChunk = sqlUtf8;
-    int rc = 0;
-    sqlite3_stmt stmt = null;
-    final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
-    while(pos < sqlChunk.length){
-      if(pos > 0){
-        sqlChunk = Arrays.copyOfRange(sqlChunk, pos,
-                                      sqlChunk.length);
-      }
-      if( 0==sqlChunk.length ) break;
-      rc = CApi.sqlite3_prepare_v2(db, sqlChunk, outStmt, oTail);
-      if( throwOnError ) affirm(0 == rc);
-      else if( 0!=rc ) break;
-      pos = oTail.value;
-      stmt = outStmt.take();
-      if( null == stmt ){
-        // empty statement was parsed.
-        continue;
-      }
-      affirm(0 != stmt.getNativePointer());
-      while( CApi.SQLITE_ROW == (rc = CApi.sqlite3_step(stmt)) ){
-      }
-      CApi.sqlite3_finalize(stmt);
-      affirm(0 == stmt.getNativePointer());
-      if(Sqlite.DONE!=rc){
-        break;
+    final ValueHolder<Integer> rv = new ValueHolder<>(0);
+    final Sqlite.PrepareMulti pm = new Sqlite.PrepareMulti(){
+        @Override public void call(Sqlite.Stmt stmt){
+          try{
+            while( Sqlite.ROW == (rv.value = stmt.step(throwOnError)) ){}
+          }
+          finally{ stmt.finalizeStmt(); }
+        }
+      };
+    try {
+      dbw.prepareMulti(sql, pm);
+    }catch(SqliteException se){
+      if( throwOnError ){
+        throw se;
+      }else{
+        /* This error (likely) happened in the prepare() phase and we
+           need to preempt it. */
+        rv.value = se.errcode();
       }
     }
-    CApi.sqlite3_finalize(stmt);
-    if(CApi.SQLITE_ROW==rc || CApi.SQLITE_DONE==rc) rc = 0;
-    if( 0!=rc && throwOnError){
-      throw new SqliteException(db);
-    }
-    return rc;
+    return (rv.value==Sqlite.DONE) ? 0 : rv.value;
   }
 
   static void execSql(Sqlite db, String sql){
@@ -185,14 +164,6 @@ public class Tester2 implements Runnable {
   @SingleThreadOnly /* because it's thread-agnostic */
   private void test1(){
     affirm(Sqlite.libVersionNumber() == CApi.SQLITE_VERSION_NUMBER);
-  }
-
-  /* Copy/paste/rename this to add new tests. */
-  private void _testTemplate(){
-    //final sqlite3 db = createNewDb();
-    //sqlite3_stmt stmt = prepare(db,"SELECT 1");
-    //sqlite3_finalize(stmt);
-    //sqlite3_close_v2(db);
   }
 
   private void nap() throws InterruptedException {
@@ -274,14 +245,14 @@ public class Tester2 implements Runnable {
       affirm( "17".equals(stmt.columnText16(0)) );
       affirm( !stmt.step() );
       stmt.reset();
-      affirm( stmt.step() );
+      affirm( Sqlite.ROW==stmt.step(false) );
       affirm( !stmt.step() );
       affirm( 0 == stmt.finalizeStmt() );
       affirm( null==stmt.nativeHandle() );
 
       stmt = db.prepare("SELECT ?");
       stmt.bindObject(1, db);
-      affirm( stmt.step() );
+      affirm( Sqlite.ROW == stmt.step(false) );
       affirm( db==stmt.columnObject(0) );
       affirm( db==stmt.columnObject(0, Sqlite.class ) );
       affirm( null==stmt.columnObject(0, Sqlite.Stmt.class ) );
@@ -782,9 +753,9 @@ public class Tester2 implements Runnable {
     affirm( newHook == oldHook );
     execSql(db, "BEGIN; update t set a='i' where a='h'; COMMIT;");
     affirm( 5 == counter.value );
-    hookResult.value = CApi.SQLITE_ERROR;
+    hookResult.value = Sqlite.ERROR;
     int rc = execSql(db, false, "BEGIN; update t set a='j' where a='i'; COMMIT;");
-    affirm( CApi.SQLITE_CONSTRAINT_COMMITHOOK == rc );
+    affirm( Sqlite.CONSTRAINT_COMMITHOOK == rc );
     affirm( 6 == counter.value );
     db.close();
   }
@@ -930,10 +901,21 @@ public class Tester2 implements Runnable {
     stmt.finalizeStmt();
 
     b = db.blobOpen("main", "t", "a", db.lastInsertRowId(), false);
-    b.reopen(2);
     final byte[] tgt = new byte[3];
     b.read( tgt, 0 );
     affirm( 100==tgt[0] && 101==tgt[1] && 102==tgt[2], "DEF" );
+    execSql(db,"UPDATE t SET a=zeroblob(10) WHERE rowid=2");
+    b.close();
+    b = db.blobOpen("main", "t", "a", db.lastInsertRowId(), true);
+    byte[] bw = new byte[]{
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+    };
+    b.write(bw, 0);
+    byte[] br = new byte[10];
+    b.read(br, 0);
+    for( int i = 0; i < br.length; ++i ){
+      affirm(bw[i] == br[i]);
+    }
     b.close();
     db.close();
   }
@@ -966,6 +948,15 @@ public class Tester2 implements Runnable {
     }
     affirm( 3 == mCount.value );
     affirm( 9 == fCount.value );
+  }
+
+
+  /* Copy/paste/rename this to add new tests. */
+  private void _testTemplate(){
+    try (Sqlite db = openDb()) {
+      Sqlite.Stmt stmt = db.prepare("SELECT 1");
+      stmt.finalizeStmt();
+    }
   }
 
   private void runTests(boolean fromThread) throws Exception {
@@ -1014,8 +1005,7 @@ public class Tester2 implements Runnable {
         listErrors.add(e);
       }
     }finally{
-      affirm( CApi.sqlite3_java_uncache_thread() );
-      affirm( !CApi.sqlite3_java_uncache_thread() );
+      Sqlite.uncacheThread();
     }
   }
 
@@ -1088,38 +1078,28 @@ public class Tester2 implements Runnable {
 
     if( sqlLog ){
       if( Sqlite.compileOptionUsed("ENABLE_SQLLOG") ){
-        final ConfigSqllogCallback log = new ConfigSqllogCallback() {
-            @Override public void call(sqlite3 db, String msg, int op){
+        Sqlite.libConfigSqlLog( new Sqlite.ConfigSqlLog() {
+            @Override public void call(Sqlite db, String msg, int op){
               switch(op){
                 case 0: outln("Opening db: ",db); break;
                 case 1: outln("SQL ",db,": ",msg); break;
                 case 2: outln("Closing db: ",db); break;
               }
             }
-          };
-        int rc = CApi.sqlite3_config( log );
-        affirm( 0==rc );
-        rc = CApi.sqlite3_config( (ConfigSqllogCallback)null );
-        affirm( 0==rc );
-        rc = CApi.sqlite3_config( log );
-        affirm( 0==rc );
+          }
+        );
       }else{
         outln("WARNING: -sqllog is not active because library was built ",
               "without SQLITE_ENABLE_SQLLOG.");
       }
     }
     if( configLog ){
-      final ConfigLogCallback log = new ConfigLogCallback() {
+      Sqlite.libConfigLog( new Sqlite.ConfigLog() {
           @Override public void call(int code, String msg){
-            outln("ConfigLogCallback: ",ResultCode.getEntryForInt(code),": ", msg);
+            outln("ConfigLog: ",Sqlite.errstr(code),": ", msg);
           };
-        };
-      int rc = CApi.sqlite3_config( log );
-      affirm( 0==rc );
-      rc = CApi.sqlite3_config( (ConfigLogCallback)null );
-      affirm( 0==rc );
-      rc = CApi.sqlite3_config( log );
-      affirm( 0==rc );
+        }
+      );
     }
 
     quietMode = squelchTestOutput;
@@ -1152,39 +1132,16 @@ public class Tester2 implements Runnable {
     }
 
     final long timeStart = System.currentTimeMillis();
-    int nLoop = 0;
-    switch( CApi.sqlite3_threadsafe() ){ /* Sanity checking */
-      case 0:
-        affirm( CApi.SQLITE_ERROR==CApi.sqlite3_config( CApi.SQLITE_CONFIG_SINGLETHREAD ),
-                "Could not switch to single-thread mode." );
-        affirm( CApi.SQLITE_ERROR==CApi.sqlite3_config( CApi.SQLITE_CONFIG_MULTITHREAD ),
-                "Could switch to multithread mode."  );
-        affirm( CApi.SQLITE_ERROR==CApi.sqlite3_config( CApi.SQLITE_CONFIG_SERIALIZED ),
-                "Could not switch to serialized threading mode."  );
-        outln("This is a single-threaded build. Not using threads.");
-        nThread = 1;
-        break;
-      case 1:
-      case 2:
-        affirm( 0==CApi.sqlite3_config( CApi.SQLITE_CONFIG_SINGLETHREAD ),
-                "Could not switch to single-thread mode." );
-        affirm( 0==CApi.sqlite3_config( CApi.SQLITE_CONFIG_MULTITHREAD ),
-                "Could not switch to multithread mode."  );
-        affirm( 0==CApi.sqlite3_config( CApi.SQLITE_CONFIG_SERIALIZED ),
-                "Could not switch to serialized threading mode."  );
-        break;
-      default:
-        affirm( false, "Unhandled SQLITE_THREADSAFE value." );
-    }
     outln("libversion_number: ",
-          CApi.sqlite3_libversion_number(),"\n",
-          CApi.sqlite3_libversion(),"\n",CApi.SQLITE_SOURCE_ID,"\n",
+          Sqlite.libVersionNumber(),"\n",
+          Sqlite.libVersion(),"\n",Sqlite.libSourceId(),"\n",
           "SQLITE_THREADSAFE=",CApi.sqlite3_threadsafe());
     final boolean showLoopCount = (nRepeat>1 && nThread>1);
     if( showLoopCount ){
       outln("Running ",nRepeat," loop(s) with ",nThread," thread(s) each.");
     }
     if( takeNaps ) outln("Napping between tests is enabled.");
+    int nLoop = 0;
     for( int n = 0; n < nRepeat; ++n ){
       ++nLoop;
       if( showLoopCount ) out((1==nLoop ? "" : " ")+nLoop);
@@ -1226,7 +1183,7 @@ public class Tester2 implements Runnable {
     if( doSomethingForDev ){
       CApi.sqlite3_jni_internal_details();
     }
-    affirm( 0==CApi.sqlite3_release_memory(1) );
+    affirm( 0==Sqlite.libReleaseMemory(1) );
     CApi.sqlite3_shutdown();
     int nMethods = 0;
     int nNatives = 0;

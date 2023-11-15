@@ -412,7 +412,65 @@ do_execsql_test 8.2 {
   ) FROM t1;
 } {123}
 
+#-------------------------------------------------------------------------
+# dbsqlfuzz 04408efc51ae46897c4c122b407412045ed221b4
+#
+reset_db
 
+do_execsql_test 9.1 {
+  WITH out(i, j, k) AS ( 
+      VALUES(1234, 5678, 9012) 
+  )
+  SELECT (
+    SELECT (
+      SELECT min(abc) = ( SELECT ( SELECT 1234 fROM (SELECT abc) ) ) 
+      FROM (
+        SELECT sum( out.i ) + ( SELECT sum( out.i ) ) AS abc FROM (SELECT out.j)
+      )
+    ) 
+  ) FROM out;
+} {0}
+
+do_execsql_test 9.2 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b);
+  INSERT INTO t1 VALUES(1), (2), (3);
+  INSERT INTO t2 VALUES(4), (5), (6);
+
+  SELECT ( 
+    SELECT min(y) + (SELECT x) FROM (
+      SELECT sum(a) AS x, b AS y FROM t2
+    )
+  )
+  FROM t1;
+} {10}
+
+do_execsql_test 9.3 {
+  SELECT ( 
+    SELECT min(y) + (SELECT (SELECT x)) FROM (
+      SELECT sum(a) AS x, b AS y FROM t2
+    )
+  )
+  FROM t1;
+} {10}
+
+do_execsql_test 9.4 {
+  SELECT (
+    SELECT (SELECT x) FROM (
+      SELECT sum(a) AS x, b AS y FROM t2
+      ) GROUP BY y
+    )
+  FROM t1;
+} {6}
+
+do_execsql_test 9.5 {
+  SELECT (
+    SELECT (SELECT (SELECT x)) FROM (
+      SELECT sum(a) AS x, b AS y FROM t2
+      ) GROUP BY y
+    )
+  FROM t1;
+} {6}
 
  
 
