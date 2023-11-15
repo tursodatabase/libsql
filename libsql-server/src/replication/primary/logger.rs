@@ -810,8 +810,13 @@ impl ReplicationLogger {
         let header = log_file.header();
 
         let should_recover = if dirty {
-            tracing::info!("Replication log is dirty, recovering from database file.");
-            true
+            if data_path.try_exists()? {
+                tracing::info!("Replication log is dirty, recovering from database file.");
+                true
+            } else {
+                // there is no database; nothing to recover
+                false
+            }
         } else if header.version < 2 || header.sqld_version() != Version::current() {
             tracing::info!("replication log version not compatible with current sqld version, recovering from database file.");
             true
