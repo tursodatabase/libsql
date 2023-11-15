@@ -8,6 +8,7 @@ use std::sync::{Arc, Weak};
 use crate::auth::Auth;
 use crate::connection::{Connection, MakeConnection};
 use crate::error::Error;
+use crate::metrics::DIRTY_STARTUP;
 use crate::migration::maybe_migrate;
 use crate::net::Accept;
 use crate::rpc::proxy::rpc::proxy_server::Proxy;
@@ -247,6 +248,10 @@ fn sentinel_file_path(path: &Path) -> PathBuf {
 fn init_sentinel_file(path: &Path) -> anyhow::Result<bool> {
     let path = sentinel_file_path(path);
     if path.try_exists()? {
+        DIRTY_STARTUP.increment(1);
+        tracing::warn!(
+            "sentinel file found: sqld was not shutdown gracefully, namespaces will be recovered."
+        );
         return Ok(true);
     }
 
@@ -450,6 +455,7 @@ where
                 join_set.shutdown().await;
                 // clean shutdown, remove sentinel file
                 std::fs::remove_file(sentinel_file_path(&self.path))?;
+                tracing::info!("sqld was shutdown gracefully. Bye!");
             }
             Some(res) = join_set.join_next() => {
                 res??;

@@ -109,3 +109,11 @@ pub static LEGACY_HTTP_CALL: Lazy<Counter> = Lazy::new(|| {
     describe_counter!(NAME, "number of calls to the legacy HTTP API");
     register_counter!(NAME)
 });
+pub static DIRTY_STARTUP: Lazy<Counter> = Lazy::new(|| {
+    const NAME: &str = "libsql_server_dirty_startup";
+    describe_counter!(
+        NAME,
+        "how many times an instance started with a dirty state"
+    );
+    register_counter!(NAME)
+});
