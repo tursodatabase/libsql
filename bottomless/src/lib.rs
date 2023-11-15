@@ -5,6 +5,7 @@
 mod ffi;
 
 mod backup;
+pub mod bottomless_wal;
 pub mod read;
 pub mod replicator;
 pub mod transaction_cache;
