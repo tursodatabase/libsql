@@ -2265,6 +2265,8 @@ SHELL_SRC = \
 	$(TOP)\ext\consio\console_io.h \
 	$(TOP)\ext\misc\appendvfs.c \
 	$(TOP)\ext\misc\completion.c \
+	$(TOP)\ext\consio\console_io.c \
+	$(TOP)\ext\consio\console_io.h \
 	$(TOP)\ext\misc\base64.c \
 	$(TOP)\ext\misc\base85.c \
 	$(TOP)\ext\misc\decimal.c \

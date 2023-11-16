@@ -35,6 +35,8 @@
 # include "sqlite3.h"
 #endif
 
+#ifndef SQLITE_CIO_NO_CLASSIFY
+
 /* Define enum for use with following function. */
 typedef enum StreamsAreConsole {
   SAC_NoConsole = 0,
@@ -91,6 +93,13 @@ SQLITE_INTERNAL_LINKAGE void consoleRenewSetup(void);
 */
 SQLITE_INTERNAL_LINKAGE void SQLITE_CDECL consoleRestore( void );
 
+#else /* defined(SQLITE_CIO_NO_CLASSIFY) */
+# define consoleClassifySetup(i,o,e)
+# define consoleRenewSetup()
+# define consoleRestore()
+#endif /* defined(SQLITE_CIO_NO_CLASSIFY) */
+
+#ifndef SQLITE_CIO_NO_REDIRECT
 /*
 ** Set stream to be used for the functions below which write
 ** to "the designated X stream", where X is Output or Error.
@@ -108,10 +117,15 @@ SQLITE_INTERNAL_LINKAGE void SQLITE_CDECL consoleRestore( void );
 */
 SQLITE_INTERNAL_LINKAGE FILE *invalidFileStream;
 SQLITE_INTERNAL_LINKAGE FILE *setOutputStream(FILE *pf);
-#ifdef CONSIO_SET_ERROR_STREAM
+# ifdef CONSIO_SET_ERROR_STREAM
 SQLITE_INTERNAL_LINKAGE FILE *setErrorStream(FILE *pf);
-#endif
+# endif
+#else
+# define setOutputStream(pf)
+# define setErrorStream(pf)
+#endif /* !defined(SQLITE_CIO_NO_REDIRECT) */
 
+#ifndef SQLITE_CIO_NO_TRANSLATE
 /*
 ** Emit output like fprintf(). If the output is going to the
 ** console and translation from UTF-8 is necessary, perform
@@ -140,38 +154,19 @@ SQLITE_INTERNAL_LINKAGE int ePutsUtf8(const char *z);
 
 /*
 ** Emit output like fPutsUtf8(), except that the length of the
-** accepted char or character sequence may be limited by nAccept.
-**
-** The magnitude and sign of nAccept control what nAccept limits.
-** If positive, nAccept limits the number of char's accepted.
-** If negative, it limits the number of valid input characters.
-** Obtain the behavior of {f,o,e}PutsUtf8 with nAccept==INT_MAX.
+** accepted char or character sequence is limited by nAccept.
 **
 ** Returns the number of accepted char values.
-**
-** When ctrlMask!=0, it specifies a set of control characters not
-** accepted as input, so that cBuf[abs(N)] on return will be one
-** of the non-accepted characters unless nAccept limited the scan.
-** Each bit in ctrlMask, 1<<cn, directs cn to not be accepted.
-**
-** The cBuf content will only be accessad up to the lesser of the
-** limits specified by nAccept or a terminator char. It need not
-** have a sentinel unless the nAccept limit exceeds the content.
-** A common sentinel is '\x00', selected with ctrlMask == 1L .
-**
-** Special-case treatment occurs when fPutbUtf8() is given a NULL
-** pfOut argument; No output is attempted, but the return value
-** will still reflect the above conditions.
 */
 SQLITE_INTERNAL_LINKAGE int
-fPutbUtf8(FILE *pfOut, const char *cBuf, int nAccept, long ctrlMask);
+fPutbUtf8(FILE *pfOut, const char *cBuf, int nAccept);
 /* Like fPutbUtf8 except stream is always the designated output. */
 SQLITE_INTERNAL_LINKAGE int
-oPutbUtf8(const char *cBuf, int nAccept, long ctrlMask);
+oPutbUtf8(const char *cBuf, int nAccept);
 /* Like fPutbUtf8 except stream is always the designated error. */
 #ifdef CONSIO_EPUTB
 SQLITE_INTERNAL_LINKAGE int
-ePutbUtf8(const char *cBuf, int nAccept, long ctrlMask);
+ePutbUtf8(const char *cBuf, int nAccept);
 #endif
 
 /*
@@ -185,6 +180,9 @@ SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn);
 /* Like fGetsUtf8 except stream is always the designated input. */
 /* SQLITE_INTERNAL_LINKAGE char* iGetsUtf8(char *cBuf, int ncMax); */
 
+#endif /* !defined(SQLITE_CIO_NO_TRANSLATE) */
+
+#ifndef SQLITE_CIO_NO_SETMODE
 /*
 ** Set given stream for binary mode, where newline translation is
 ** not done, or for text mode where, for some platforms, newlines
@@ -200,13 +198,13 @@ SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn);
 */
 SQLITE_INTERNAL_LINKAGE void setBinaryMode(FILE *, short bFlush);
 SQLITE_INTERNAL_LINKAGE void setTextMode(FILE *, short bFlush);
+#endif
 
-#if 0 /* For use with line editor. (not yet used) */
+#ifdef SQLITE_CIO_PROMPTED_IN
 typedef struct Prompts {
   int numPrompts;
   const char **azPrompts;
 } Prompts;
-#endif
 
 /*
 ** Macros for use of a line editor.
@@ -247,11 +245,10 @@ typedef struct Prompts {
 ** This function may call upon services of a line-editing
 ** library to interactively collect line edited input.
 */
-#if 0 /* not yet implemented */
 SQLITE_INTERNAL_LINKAGE char *
 shellGetLine(FILE *pfIn, char *zBufPrior, int nLen,
              short isContinuation, Prompts azPrompt);
-#endif
+#endif /* defined(SQLITE_CIO_PROMPTED_IN) */
 /*
 ** TBD: Define an interface for application(s) to generate
 ** completion candidates for use by the line-editor.
@@ -262,3 +259,15 @@ shellGetLine(FILE *pfIn, char *zBufPrior, int nLen,
 ** may have to establish console operating mode, possibly
 ** in a way that interferes with the above functionality.
 */
+
+#if !(defined(SQLITE_CIO_NO_UTF8SCAN)&&defined(SQLITE_CIO_NO_TRANSLATE))
+/* Skip over as much z[] input char sequence as is valid UTF-8,
+** limited per nAccept char's or whole characters and containing
+** no char cn such that ((1<<cn) & ccm)!=0. On return, the
+** sequence z:return (inclusive:exclusive) is validated UTF-8.
+** Limit: nAccept>=0 => char count, nAccept<0 => character
+ */
+SQLITE_INTERNAL_LINKAGE const char*
+zSkipValidUtf8(const char *z, int nAccept, long ccm);
+
+#endif

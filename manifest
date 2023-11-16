@@ -1,11 +1,11 @@
-C Add\sa\sfew\sasserts\sinto\s*Put*()\sfunctions\sto\scatch\scalls\sthat\smight\scause\san\saddress\sfault.
-D 2023-11-14T03:24:43.961
+C Simplify\sand\smake\smore\srational\show\sconsole\sI/O\spackage\sfeatures\sare\sselected.\s(Motivated\sby\sFiddle\sand\sother\scommand-line\sutilities\sto\ssoon\suse\sthe\spackage.)\sNo\ssubstantive\scode-execution\schanges.
+D 2023-11-16T18:31:05.379
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in f1ec22cfe53927eb9411ed82e452a0984df0ef88acb7a45024d98c5b6909da12
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc 59bb36dba001f0b38212be0794fb838f25371008b180929bcf08aa799694c168
+F Makefile.msc f90f75b3b62809e1d13e5362b84a5cce90bc9d6772e4092be52c2b9a6638a7ed
 F README.md 963d30019abf0cc06b263cd2824bce022893f3f93a531758f6f04ff2194a16a8
 F VERSION 73573d4545343f001bf5dc5461173a7c78c203dd046cabcf99153878cf25d3a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -50,8 +50,8 @@ F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 6f247666b495c477628dd19364d279c78ea48cd90c72d9f9b98ad1aff3294f94
 F ext/async/sqlite3async.h 46b47c79357b97ad85d20d2795942c0020dc20c532114a49808287f04aa5309a
-F ext/consio/console_io.c baffbeb5e73dcd3191c677bbcd5266c35891c17f87930cd89cf2463b7ec2da09 x
-F ext/consio/console_io.h 515d27ca9e5a5d36e12ff2b85977b5931fdeba0ce142f40178d94dc8638b4c81
+F ext/consio/console_io.c 48536ed2f2add0abd8be80f72cae46e19738fa671b69daa88197df53a55da7c4
+F ext/consio/console_io.h b8dce7fa926b51f19b5d1c516219ac91b5c1ccddd467b2510e2557c900830f7d
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
 F ext/expert/expert1.test 0dd5cb096d66bed593e33053a3b364f6ef52ed72064bf5cf298364636dbf3cd6
@@ -728,7 +728,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d017bad7ba8e778617701a0e986fdeb393d67d6afa84fb28ef4e8b8ad2acf916
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 503331aca8785254a7bf3d74ab338a99118fa297e1184a4dde33b3cdf7a9d341
-F src/shell.c.in 187da23da7601bfb225d0efadf77cbf766d9cee7574323a25a3d42dc29cd27fe
+F src/shell.c.in 9bfdb6faaea31e2ff0f940f1234e39f505f263b068ba6736838c7b6ad9d7d8ad
 F src/sqlite.h.in 4f841d3d117b830ee5ee45e8d89ceff1195f3ebb72d041ace8d116ba4c103b35
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
@@ -2142,8 +2142,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 29ea2a3aadd34facc45a2e9f9a567bac16fca76beb019b879e2611433c85bbb3
-R 8876fea59629c4e62a560a6743807241
+P 2341f9b6a48634a94e90e849f579afd07d398c3e0304efccf07d18b41a0e40aa
+Q +45b8061e7568ccca164fe000f1f0a0d984b1c28fad530bc9fdea35793a0f40bc
+Q +957ebaa2be3056371d679f7a00aeba242db34218fb839ffd1d1197cad0c4a510
+R dab16a36061bd95f615790a1ad678bef
 U larrybr
-Z 00b6c0e6cfeef68150271d56dd5abcd0
+Z f345bc7daef2ffd72adafc6ced1c0785
 # Remove this line to create a well-formed Fossil manifest.
