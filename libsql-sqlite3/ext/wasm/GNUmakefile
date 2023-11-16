@@ -463,13 +463,6 @@ emcc.exportedRuntimeMethods := \
 emcc.jsflags += $(emcc.exportedRuntimeMethods)
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
-#emcc.jsflags += -sASYNCIFY=2
-# ^^^ ASYNCIFY=2 is for experimental JSPI support
-# (https://v8.dev/blog/jspi), but enabling it causes the lib-level
-# init code to throw inexplicable complaints about C-level function
-# signatures not matching what we expect them to be. JSPI requires, as of
-# this writing, requires an experimental Chrome flag:
-# chrome://flags/#enable-experimental-webassembly-stack-switching
 emcc.jsflags += -sSTRICT_JS=0
 # STRICT_JS disabled due to:
 #   https://github.com/emscripten-core/emscripten/issues/18610
@@ -855,11 +848,11 @@ sqlite3-worker1-bundler-friendly.js := $(dir.dout)/sqlite3-worker1-bundler-frien
 sqlite3-worker1-promiser-bundler-friendly.js := $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js
 $(eval $(call C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1.js)))
 $(eval $(call C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1-bundler-friendly.js),\
-    $(c-pp.D.bundler-friendly)))
+    $(c-pp.D.sqlite3-bundler-friendly)))
 $(eval $(call C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),$(sqlite3-worker1-promiser.js)))
 $(eval $(call C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),\
     $(sqlite3-worker1-promiser-bundler-friendly.js),\
-    $(c-pp.D.bundler-friendly)))
+    $(c-pp.D.sqlite3-bundler-friendly)))
 $(sqlite3-bundler-friendly.mjs): $(sqlite3-worker1-bundler-friendly.js) \
     $(sqlite3-worker1-promiser-bundler-friendly.js)
 $(sqlite3.js) $(sqlite3.mjs): $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js)

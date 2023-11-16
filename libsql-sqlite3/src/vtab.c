@@ -37,11 +37,12 @@ struct VtabCtx {
 ** If pModule==0, then delete the module zName if it exists.
 */
 Module *sqlite3VtabCreateModule(
-  sqlite3 *db,                    /* Database in which module is registered */
-  const char *zName,              /* Name assigned to this module */
-  const sqlite3_module *pModule,  /* The definition of the module */
-  void *pAux,                     /* Context pointer for xCreate/xConnect */
-  void (*xDestroy)(void *)        /* Module destructor function */
+  sqlite3 *db,                        /* Database in which module is registered */
+  const char *zName,                  /* Name assigned to this module */
+  const sqlite3_module *pModule,      /* The definition of the module */
+  const libsql_module *pLibsqlModule, /* The definition of the libSQL module */
+  void *pAux,                         /* Context pointer for xCreate/xConnect */
+  void (*xDestroy)(void *)            /* Module destructor function */
 ){
   Module *pMod;
   Module *pDel;
@@ -60,6 +61,7 @@ Module *sqlite3VtabCreateModule(
     memcpy(zCopy, zName, nName+1);
     pMod->zName = zCopy;
     pMod->pModule = pModule;
+    pMod->pLibsqlModule = pLibsqlModule;
     pMod->pAux = pAux;
     pMod->xDestroy = xDestroy;
     pMod->pEpoTab = 0;
@@ -85,16 +87,17 @@ Module *sqlite3VtabCreateModule(
 ** sqlite3_create_module_v2() interfaces.
 */
 static int createModule(
-  sqlite3 *db,                    /* Database in which module is registered */
-  const char *zName,              /* Name assigned to this module */
-  const sqlite3_module *pModule,  /* The definition of the module */
-  void *pAux,                     /* Context pointer for xCreate/xConnect */
-  void (*xDestroy)(void *)        /* Module destructor function */
+  sqlite3 *db,                        /* Database in which module is registered */
+  const char *zName,                  /* Name assigned to this module */
+  const sqlite3_module *pModule,      /* The definition of the module */
+  const libsql_module *pLibsqlModule, /* The definition of the libSQL module */
+  void *pAux,                         /* Context pointer for xCreate/xConnect */
+  void (*xDestroy)(void *)            /* Module destructor function */
 ){
   int rc = SQLITE_OK;
 
   sqlite3_mutex_enter(db->mutex);
-  (void)sqlite3VtabCreateModule(db, zName, pModule, pAux, xDestroy);
+  (void)sqlite3VtabCreateModule(db, zName, pModule, pLibsqlModule, pAux, xDestroy);
   rc = sqlite3ApiExit(db, rc);
   if( rc!=SQLITE_OK && xDestroy ) xDestroy(pAux);
   sqlite3_mutex_leave(db->mutex);
@@ -114,7 +117,7 @@ int sqlite3_create_module(
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) || zName==0 ) return SQLITE_MISUSE_BKPT;
 #endif
-  return createModule(db, zName, pModule, pAux, 0);
+  return createModule(db, zName, pModule, NULL, pAux, 0);
 }
 
 /*
@@ -123,14 +126,31 @@ int sqlite3_create_module(
 int sqlite3_create_module_v2(
   sqlite3 *db,                    /* Database in which module is registered */
   const char *zName,              /* Name assigned to this module */
-  const sqlite3_module *pModule,  /* The definition of the module */
+  const sqlite3_module *pModule,  /* The definition of the libSQL module */
   void *pAux,                     /* Context pointer for xCreate/xConnect */
   void (*xDestroy)(void *)        /* Module destructor function */
 ){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) || zName==0 ) return SQLITE_MISUSE_BKPT;
 #endif
-  return createModule(db, zName, pModule, pAux, xDestroy);
+  return createModule(db, zName, pModule, NULL, pAux, xDestroy);
+}
+
+/*
+** External API function used to create a new virtual-table module.
+*/
+int libsql_create_module_v2(
+  sqlite3 *db,                         /* Database in which module is registered */
+  const char *zName,                   /* Name assigned to this module */
+  const sqlite3_module *pModule,       /* The definition of the module */
+  const libsql_module *pLibsqlModule,  /* The definition of the module */
+  void *pAux,                          /* Context pointer for xCreate/xConnect */
+  void (*xDestroy)(void *)             /* Module destructor function */
+){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) || zName==0 ) return SQLITE_MISUSE_BKPT;
+#endif
+  return createModule(db, zName, pModule, pLibsqlModule, pAux, xDestroy);
 }
 
 /*
@@ -150,7 +170,7 @@ int sqlite3_drop_modules(sqlite3 *db, const char** azNames){
       for(ii=0; azNames[ii]!=0 && strcmp(azNames[ii],pMod->zName)!=0; ii++){}
       if( azNames[ii]!=0 ) continue;
     }
-    createModule(db, pMod->zName, 0, 0, 0);
+    createModule(db, pMod->zName, 0, 0, 0, 0);
   }
   return SQLITE_OK;
 }
@@ -630,6 +650,7 @@ static int vtabCallConstructor(
     ** the sqlite3_vtab object if successful.  */
     memset(pVTable->pVtab, 0, sizeof(pVTable->pVtab[0]));
     pVTable->pVtab->pModule = pMod->pModule;
+    pVTable->pVtab->pLibsqlModule = pMod->pLibsqlModule;
     pMod->nRefModule++;
     pVTable->nRef = 1;
     if( sCtx.bDeclared==0 ){
@@ -821,7 +842,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   sqlite3_mutex_enter(db->mutex);
   pCtx = db->pVtabCtx;
   if( !pCtx || pCtx->bDeclared ){
-    sqlite3Error(db, SQLITE_MISUSE);
+    sqlite3Error(db, SQLITE_MISUSE_BKPT);
     sqlite3_mutex_leave(db->mutex);
     return SQLITE_MISUSE_BKPT;
   }

@@ -783,7 +783,8 @@ int sqlite3Fts5VocabInit(Fts5Global *pGlobal, sqlite3 *db){
     /* xSavepoint    */ 0,
     /* xRelease      */ 0,
     /* xRollbackTo   */ 0,
-    /* xShadowName   */ 0
+    /* xShadowName   */ 0,
+    /* xIntegrity    */ 0
   };
   void *p = (void*)pGlobal;
 

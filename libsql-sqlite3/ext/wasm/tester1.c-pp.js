@@ -2939,8 +2939,27 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         let db;
         try {
           const exp = this.opfsDbExport;
+          const filename = this.opfsDbFile;
           delete this.opfsDbExport;
-          this.opfsImportSize = await sqlite3.oo1.OpfsDb.importDb(this.opfsDbFile, exp);
+          this.opfsImportSize = await sqlite3.oo1.OpfsDb.importDb(filename, exp);
+          db = new sqlite3.oo1.OpfsDb(this.opfsDbFile);
+          T.assert(6 === db.selectValue('select count(*) from p')).
+            assert( this.opfsImportSize == exp.byteLength );
+          db.close();
+          this.opfsUnlink(filename);
+          T.assert(!(await sqlite3.opfs.entryExists(filename)));
+          // Try again with a function as an input source:
+          let cursor = 0;
+          const blockSize = 512, end = exp.byteLength;
+          const reader = async function(){
+            if(cursor >= exp.byteLength){
+              return undefined;
+            }
+            const rv = exp.subarray(cursor, cursor+blockSize>end ? end : cursor+blockSize);
+            cursor += blockSize;
+            return rv;
+          };
+          this.opfsImportSize = await sqlite3.oo1.OpfsDb.importDb(filename, reader);
           db = new sqlite3.oo1.OpfsDb(this.opfsDbFile);
           T.assert(6 === db.selectValue('select count(*) from p')).
             assert( this.opfsImportSize == exp.byteLength );
@@ -3059,8 +3078,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           const dbytes = u1.exportFile(dbName);
           T.assert(dbytes.length >= 4096);
           const dbName2 = '/exported.db';
-          u1.importDb(dbName2, dbytes);
-          T.assert( 2 == u1.getFileCount() );
+          let nWrote = u1.importDb(dbName2, dbytes);
+          T.assert( 2 == u1.getFileCount() )
+            .assert( dbytes.byteLength == nWrote );
           let db2 = new u1.OpfsSAHPoolDb(dbName2);
           T.assert(db2 instanceof sqlite3.oo1.DB)
             .assert(3 === db2.selectValue('select count(*) from t'));
@@ -3069,6 +3089,25 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert(false === u1.unlink(dbName2))
             .assert(1 === u1.getFileCount())
             .assert(1 === u1.getFileNames().length);
+          // Try again with a function as an input source:
+          let cursor = 0;
+          const blockSize = 1024, end = dbytes.byteLength;
+          const reader = async function(){
+            if(cursor >= dbytes.byteLength){
+              return undefined;
+            }
+            const rv = dbytes.subarray(cursor, cursor+blockSize>end ? end : cursor+blockSize);
+            cursor += blockSize;
+            return rv;
+          };
+          nWrote = await u1.importDb(dbName2, reader);
+          T.assert( 2 == u1.getFileCount() );
+          db2 = new u1.OpfsSAHPoolDb(dbName2);
+          T.assert(db2 instanceof sqlite3.oo1.DB)
+            .assert(3 === db2.selectValue('select count(*) from t'));
+          db2.close();
+          T.assert(true === u1.unlink(dbName2))
+            .assert(dbytes.byteLength == nWrote);
         }
 
         T.assert(true === u1.unlink(dbName))
@@ -3214,4 +3253,3 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     TestUtil.runTests(sqlite3);
   });
 })(self);
-

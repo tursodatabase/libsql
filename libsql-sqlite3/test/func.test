@@ -1136,18 +1136,18 @@ ifcapable deprecated {
   } {3}
 }
 
-# The group_concat() function.
+# The group_concat() and string_agg() functions.
 #
 do_test func-24.1 {
   execsql {
-    SELECT group_concat(t1) FROM tbl1
+    SELECT group_concat(t1), string_agg(t1,',') FROM tbl1
   }
-} {this,program,is,free,software}
+} {this,program,is,free,software this,program,is,free,software}
 do_test func-24.2 {
   execsql {
-    SELECT group_concat(t1,' ') FROM tbl1
+    SELECT group_concat(t1,' '), string_agg(t1,' ') FROM tbl1
   }
-} {{this program is free software}}
+} {{this program is free software} {this program is free software}}
 do_test func-24.3 {
   execsql {
     SELECT group_concat(t1,' ' || rowid || ' ') FROM tbl1
@@ -1160,9 +1160,9 @@ do_test func-24.4 {
 } {{}}
 do_test func-24.5 {
   execsql {
-    SELECT group_concat(t1,NULL) FROM tbl1
+    SELECT group_concat(t1,NULL), string_agg(t1,NULL) FROM tbl1
   }
-} {thisprogramisfreesoftware}
+} {thisprogramisfreesoftware thisprogramisfreesoftware}
 do_test func-24.6 {
   execsql {
     SELECT 'BEGIN-'||group_concat(t1) FROM tbl1
@@ -1544,5 +1544,13 @@ do_catchsql_test func-37.120 {
   WITH c(x) AS (VALUES(9223372036854775807),(10000),(-10010))
   SELECT sum(x) FROM c;
 } {1 {integer overflow}}
+
+# 2023-08-28 forum post https://sqlite.org/forum/forumpost/1c06ddcacc86032a
+# Incorrect handling of infinity by SUM().
+#
+do_execsql_test func-38.100 {
+  WITH t1(x) AS (VALUES(9e+999)) SELECT sum(x), avg(x), total(x) FROM t1;
+  WITH t1(x) AS (VALUES(-9e+999)) SELECT sum(x), avg(x), total(x) FROM t1;
+} {Inf Inf Inf -Inf -Inf -Inf}
 
 finish_test

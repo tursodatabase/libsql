@@ -1328,7 +1328,12 @@ static sqlite3_module echoModule = {
   echoCommit,                /* xCommit - commit transaction */
   echoRollback,              /* xRollback - rollback transaction */
   echoFindFunction,          /* xFindFunction - function overloading */
-  echoRename                 /* xRename - rename the table */
+  echoRename,                /* xRename - rename the table */
+  0,                         /* xSavepoint */
+  0,                         /* xRelease */
+  0,                         /* xRollbackTo */
+  0,                         /* xShadowName */
+  0                          /* xIntegrity */
 };
 
 static sqlite3_module echoModuleV2 = {
@@ -1355,8 +1360,9 @@ static sqlite3_module echoModuleV2 = {
   echoSavepoint,
   echoRelease,
   echoRollbackTo,
-  echoShadowName,
+  0,                         /* xShadowName */
   echoPreparedSql,
+  0                          /* xIntegrity  */
 };
 
 /*

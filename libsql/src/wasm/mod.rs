@@ -65,6 +65,20 @@ where
         Ok(rows as u64)
     }
 
+    pub async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
+        let mut statements = Vec::new();
+        let stmts = crate::parser::Statement::parse(sql);
+        for s in stmts {
+            let s = s?;
+            statements.push(crate::hrana::proto::Stmt::new(s.stmt, false));
+        }
+        self.conn
+            .raw_batch(statements)
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        Ok(())
+    }
+
     pub async fn query(&self, sql: &str, params: impl IntoParams) -> crate::Result<Rows> {
         tracing::trace!("querying `{}`", sql);
         let mut stmt = crate::hrana::Statement::new(self.conn.clone(), sql.to_string(), true);

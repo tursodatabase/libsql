@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# TESTRUNNER: slow
+# TESTRUNNER: superslow
 #
 
 source [file join [file dirname [info script]] fts5_common.tcl]
@@ -40,25 +40,6 @@ do_test 1.1 {
 
 do_execsql_test 1.2 {
   SELECT count(*) FROM t1('mno')
-} $nLoop
-
-do_execsql_test 2.0 {
-  CREATE VIRTUAL TABLE t2 USING fts5(x);
-  INSERT INTO t2(t2, rank) VALUES('pgsz', 32);
-}
-
-do_test 2.1 {
-  for {set ii 0} {$ii < $nLoop} {incr ii} {
-    execsql {
-      INSERT INTO t2 VALUES('abc def ghi');
-      INSERT INTO t2 VALUES('jkl mno pqr');
-      INSERT INTO t2(t2, rank) VALUES('merge', -1);
-    }
-  }
-} {}
-
-do_execsql_test 2.2 {
-  SELECT count(*) FROM t2('mno')
 } $nLoop
 
 finish_test

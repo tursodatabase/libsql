@@ -640,6 +640,7 @@ static void fts3DeclareVtab(int *pRc, Fts3Table *p){
 
     zLanguageid = (p->zLanguageid ? p->zLanguageid : "__langid");
     sqlite3_vtab_config(p->db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
+    sqlite3_vtab_config(p->db, SQLITE_VTAB_INNOCUOUS);
 
     /* Create a list of user columns for the virtual table */
     zCols = sqlite3_mprintf("%Q, ", p->azColumn[0]);
@@ -3889,6 +3890,8 @@ static int fts3RenameMethod(
     rc = sqlite3Fts3PendingTermsFlush(p);
   }
 
+  p->bIgnoreSavepoint = 1;
+
   if( p->zContentTbl==0 ){
     fts3DbExec(&rc, db,
       "ALTER TABLE %Q.'%q_content'  RENAME TO '%q_content';",
@@ -3916,6 +3919,8 @@ static int fts3RenameMethod(
     "ALTER TABLE %Q.'%q_segdir'   RENAME TO '%q_segdir';",
     p->zDb, p->zName, zName
   );
+
+  p->bIgnoreSavepoint = 0;
   return rc;
 }
 
@@ -3926,12 +3931,28 @@ static int fts3RenameMethod(
 */
 static int fts3SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
   int rc = SQLITE_OK;
-  UNUSED_PARAMETER(iSavepoint);
-  assert( ((Fts3Table *)pVtab)->inTransaction );
-  assert( ((Fts3Table *)pVtab)->mxSavepoint <= iSavepoint );
-  TESTONLY( ((Fts3Table *)pVtab)->mxSavepoint = iSavepoint );
-  if( ((Fts3Table *)pVtab)->bIgnoreSavepoint==0 ){
-    rc = fts3SyncMethod(pVtab);
+  Fts3Table *pTab = (Fts3Table*)pVtab;
+  assert( pTab->inTransaction );
+  assert( pTab->mxSavepoint<=iSavepoint );
+  TESTONLY( pTab->mxSavepoint = iSavepoint );
+
+  if( pTab->bIgnoreSavepoint==0 ){
+    if( fts3HashCount(&pTab->aIndex[0].hPending)>0 ){
+      char *zSql = sqlite3_mprintf("INSERT INTO %Q.%Q(%Q) VALUES('flush')",
+          pTab->zDb, pTab->zName, pTab->zName
+          );
+      if( zSql ){
+        pTab->bIgnoreSavepoint = 1;
+        rc = sqlite3_exec(pTab->db, zSql, 0, 0, 0);
+        pTab->bIgnoreSavepoint = 0;
+        sqlite3_free(zSql);
+      }else{
+        rc = SQLITE_NOMEM;
+      }
+    }
+    if( rc==SQLITE_OK ){
+      pTab->iSavepoint = iSavepoint+1;
+    }
   }
   return rc;
 }
@@ -3942,12 +3963,11 @@ static int fts3SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
 ** This is a no-op.
 */
 static int fts3ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
-  TESTONLY( Fts3Table *p = (Fts3Table*)pVtab );
-  UNUSED_PARAMETER(iSavepoint);
-  UNUSED_PARAMETER(pVtab);
-  assert( p->inTransaction );
-  assert( p->mxSavepoint >= iSavepoint );
-  TESTONLY( p->mxSavepoint = iSavepoint-1 );
+  Fts3Table *pTab = (Fts3Table*)pVtab;
+  assert( pTab->inTransaction );
+  assert( pTab->mxSavepoint >= iSavepoint );
+  TESTONLY( pTab->mxSavepoint = iSavepoint-1 );
+  pTab->iSavepoint = iSavepoint;
   return SQLITE_OK;
 }
 
@@ -3957,11 +3977,13 @@ static int fts3ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
 ** Discard the contents of the pending terms table.
 */
 static int fts3RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
-  Fts3Table *p = (Fts3Table*)pVtab;
+  Fts3Table *pTab = (Fts3Table*)pVtab;
   UNUSED_PARAMETER(iSavepoint);
-  assert( p->inTransaction );
-  TESTONLY( p->mxSavepoint = iSavepoint );
-  sqlite3Fts3PendingTermsClear(p);
+  assert( pTab->inTransaction );
+  TESTONLY( pTab->mxSavepoint = iSavepoint );
+  if( (iSavepoint+1)<=pTab->iSavepoint ){
+    sqlite3Fts3PendingTermsClear(pTab);
+  }
   return SQLITE_OK;
 }
 
@@ -3980,8 +4002,49 @@ static int fts3ShadowName(const char *zName){
   return 0;
 }
 
+/*
+** Implementation of the xIntegrity() method on the FTS3/FTS4 virtual
+** table.
+*/
+static int fts3Integrity(
+  sqlite3_vtab *pVtab,      /* The virtual table to be checked */
+  const char *zSchema,      /* Name of schema in which pVtab lives */
+  const char *zTabname,     /* Name of the pVTab table */
+  int isQuick,              /* True if this is a quick_check */
+  char **pzErr              /* Write error message here */
+){
+  Fts3Table *p = (Fts3Table*)pVtab;
+  char *zSql;
+  int rc;
+  char *zErr = 0;
+
+  assert( pzErr!=0 );
+  assert( *pzErr==0 );
+  UNUSED_PARAMETER(isQuick);
+  zSql = sqlite3_mprintf(
+            "INSERT INTO \"%w\".\"%w\"(\"%w\") VALUES('integrity-check');",
+            zSchema, zTabname, zTabname);
+  if( zSql==0 ){
+    return SQLITE_NOMEM;
+  }
+  rc = sqlite3_exec(p->db, zSql, 0, 0, &zErr);
+  sqlite3_free(zSql);
+  if( (rc&0xff)==SQLITE_CORRUPT ){
+    *pzErr = sqlite3_mprintf("malformed inverted index for FTS%d table %s.%s",
+                p->bFts4 ? 4 : 3, zSchema, zTabname);
+  }else if( rc!=SQLITE_OK ){
+    *pzErr = sqlite3_mprintf("unable to validate the inverted index for"
+                             " FTS%d table %s.%s: %s",
+                p->bFts4 ? 4 : 3, zSchema, zTabname, zErr);
+  }
+  sqlite3_free(zErr);
+  return SQLITE_OK;
+}
+
+
+
 static const sqlite3_module fts3Module = {
-  /* iVersion      */ 3,
+  /* iVersion      */ 4,
   /* xCreate       */ fts3CreateMethod,
   /* xConnect      */ fts3ConnectMethod,
   /* xBestIndex    */ fts3BestIndexMethod,
@@ -4005,6 +4068,7 @@ static const sqlite3_module fts3Module = {
   /* xRelease      */ fts3ReleaseMethod,
   /* xRollbackTo   */ fts3RollbackToMethod,
   /* xShadowName   */ fts3ShadowName,
+  /* xIntegrity    */ fts3Integrity,
 };
 
 /*

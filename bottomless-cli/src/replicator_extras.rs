@@ -145,7 +145,7 @@ impl Replicator {
                         println!("\tconsistent WAL frame: {consistent_frame}");
                         if let Some((page_size, crc)) = m {
                             println!("\tpage size:            {}", page_size);
-                            println!("\tWAL frame checksum:   {:x}", crc);
+                            println!("\tWAL frame checksum:   {:X}-{:X}", crc.0, crc.1);
                         }
                         if let Some(prev_gen) = parent {
                             println!("\tprevious generation:  {}", prev_gen);
@@ -256,7 +256,7 @@ impl Replicator {
         println!("\tconsistent WAL frame: {consistent_frame}");
         if let Some((page_size, crc)) = meta {
             println!("\tpage size:            {}", page_size);
-            println!("\tWAL frame checksum:   {:x}", crc);
+            println!("\tWAL frame checksum:   {:X}-{:X}", crc.0, crc.1);
         }
         if let Some(prev_gen) = dep {
             println!("\tprevious generation:  {}", prev_gen);
@@ -316,7 +316,7 @@ impl Replicator {
         from_dir: impl AsRef<std::path::Path>,
         db: &mut tokio::fs::File,
         page_size: u32,
-        checksum: u64,
+        checksum: (u32, u32),
     ) -> Result<u32> {
         use bottomless::transaction_cache::TransactionPageCache;
         use tokio::io::AsyncWriteExt;
@@ -356,7 +356,7 @@ impl Replicator {
         let mut pending_pages =
             TransactionPageCache::new(SWAP_AFTER, page_size, TMP_RESTORE_DIR.into());
 
-        let mut checksum: Option<u64> = Some(checksum);
+        let mut checksum: Option<(u32, u32)> = Some(checksum);
         for obj in objs {
             let key = obj.file_name().unwrap().to_str().unwrap();
             tracing::debug!("Loading {}", key);
@@ -418,13 +418,13 @@ impl Replicator {
 
     pub async fn get_local_metadata(
         from_dir: impl AsRef<std::path::Path>,
-    ) -> Result<Option<(u32, u64)>> {
+    ) -> Result<Option<(u32, (u32, u32))>> {
         use bytes::Buf;
 
         if let Ok(data) = tokio::fs::read(from_dir.as_ref().join(".meta")).await {
             let mut data = bytes::Bytes::from(data);
             let page_size = data.get_u32();
-            let crc = data.get_u64();
+            let crc = (data.get_u32(), data.get_u32());
             Ok(Some((page_size, crc)))
         } else {
             Ok(None)

@@ -84,5 +84,3 @@ do_catchsql_test 3.2 {
 
 
 finish_test
-
-

@@ -13,13 +13,17 @@ use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::Notify;
 use tokio_util::io::ReaderStream;
 use url::Url;
 
 use crate::database::Database;
 use crate::error::LoadDumpError;
 use crate::hrana;
-use crate::namespace::{DumpStream, MakeNamespace, NamespaceName, NamespaceStore, RestoreOption};
+use crate::namespace::{
+    DumpStream, MakeNamespace, NamespaceBottomlessDbId, NamespaceName, NamespaceStore,
+    RestoreOption,
+};
 use crate::net::Connector;
 use crate::LIBSQL_PAGE_SIZE;
 
@@ -60,6 +64,7 @@ pub async fn run<M, A, C>(
     namespaces: NamespaceStore<M>,
     connector: C,
     disable_metrics: bool,
+    shutdown: Arc<Notify>,
 ) -> anyhow::Result<()>
 where
     A: crate::net::Accept,
@@ -71,6 +76,7 @@ where
     let prom_handle = if !disable_metrics {
         let lock = PROM_HANDLE.lock();
         let prom_handle = lock.get_or_init(|| {
+            tracing::info!("initializing prometheus metrics");
             let b = PrometheusBuilder::new().idle_timeout(
                 metrics_util::MetricKindMask::ALL,
                 Some(Duration::from_secs(120)),
@@ -124,8 +130,10 @@ where
 
     hyper::server::Server::builder(acceptor)
         .serve(router.into_make_service())
+        .with_graceful_shutdown(shutdown.notified())
         .await
         .context("Could not bind admin HTTP API server")?;
+
     Ok(())
 }
 
@@ -227,6 +235,7 @@ struct CreateNamespaceReq {
     dump_url: Option<Url>,
     max_db_size: Option<bytesize::ByteSize>,
     heartbeat_url: Option<String>,
+    bottomless_db_id: Option<String>,
 }
 
 async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
@@ -241,8 +250,15 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
         None => RestoreOption::Latest,
     };
 
+    let bottomless_db_id = match req.bottomless_db_id {
+        Some(db_id) => NamespaceBottomlessDbId::Namespace(db_id),
+        None => NamespaceBottomlessDbId::NotProvided,
+    };
     let namespace = NamespaceName::from_string(namespace)?;
-    app_state.namespaces.create(namespace.clone(), dump).await?;
+    app_state
+        .namespaces
+        .create(namespace.clone(), dump, bottomless_db_id)
+        .await?;
 
     let store = app_state.namespaces.config_store(namespace).await?;
     let mut config = (*store.get()).clone();
@@ -280,6 +296,7 @@ async fn handle_fork_namespace<M: MakeNamespace, C>(
     let mut to_config = (*to_store.get()).clone();
     to_config.max_db_pages = from_config.max_db_pages;
     to_config.heartbeat_url = from_config.heartbeat_url.clone();
+    to_config.bottomless_db_id = from_config.bottomless_db_id.clone();
     to_store.store(to_config)?;
     Ok(())
 }

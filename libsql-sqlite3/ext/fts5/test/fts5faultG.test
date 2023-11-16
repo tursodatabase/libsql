@@ -1,0 +1,50 @@
+# 2010 June 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+source $testdir/malloc_common.tcl
+set testprefix fts5faultG
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+set ::testprefix fts5faultG
+
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  INSERT INTO t1 VALUES('test renaming the table');
+  INSERT INTO t1 VALUES(' after it has been written');
+  INSERT INTO t1 VALUES(' actually other stuff instead');
+}
+faultsim_save_and_close
+do_faultsim_test 1 -faults oom* -prep { 
+  faultsim_restore_and_reopen
+  execsql {
+    BEGIN;
+      DELETE FROM t1 WHERE rowid=2;
+  }
+} -body {
+  execsql {
+    DELETE FROM t1;
+  }
+} -test {
+  catchsql { COMMIT }
+  faultsim_integrity_check
+  faultsim_test_result {0 {}}
+}
+
+
+finish_test

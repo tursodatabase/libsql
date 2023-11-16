@@ -8,6 +8,7 @@ use std::sync::{Arc, Weak};
 use crate::auth::Auth;
 use crate::connection::{Connection, MakeConnection};
 use crate::error::Error;
+use crate::metrics::DIRTY_STARTUP;
 use crate::migration::maybe_migrate;
 use crate::net::Accept;
 use crate::rpc::proxy::rpc::proxy_server::Proxy;
@@ -26,8 +27,8 @@ use http::user::UserApi;
 use hyper::client::HttpConnector;
 use hyper_rustls::HttpsConnector;
 use namespace::{
-    MakeNamespace, NamespaceName, NamespaceStore, PrimaryNamespaceConfig, PrimaryNamespaceMaker,
-    ReplicaNamespaceConfig, ReplicaNamespaceMaker,
+    MakeNamespace, NamespaceBottomlessDbId, NamespaceName, NamespaceStore, PrimaryNamespaceConfig,
+    PrimaryNamespaceMaker, ReplicaNamespaceConfig, ReplicaNamespaceMaker,
 };
 use net::Connector;
 use once_cell::sync::Lazy;
@@ -131,6 +132,7 @@ struct Services<M: MakeNamespace, A, P, S, C> {
     db_config: DbConfig,
     auth: Arc<Auth>,
     path: Arc<Path>,
+    shutdown: Arc<Notify>,
 }
 
 impl<M, A, P, S, C> Services<M, A, P, S, C>
@@ -156,6 +158,7 @@ where
             enable_console: self.user_api_config.enable_http_console,
             self_url: self.user_api_config.self_url,
             path: self.path.clone(),
+            shutdown: self.shutdown.clone(),
         };
 
         let user_http_service = user_http.configure(join_set);
@@ -166,12 +169,14 @@ where
             disable_metrics,
         }) = self.admin_api_config
         {
+            let shutdown = self.shutdown.clone();
             join_set.spawn(http::admin::run(
                 acceptor,
                 user_http_service,
                 self.namespaces,
                 connector,
                 disable_metrics,
+                shutdown,
             ));
         }
     }
@@ -243,6 +248,10 @@ fn sentinel_file_path(path: &Path) -> PathBuf {
 fn init_sentinel_file(path: &Path) -> anyhow::Result<bool> {
     let path = sentinel_file_path(path);
     if path.try_exists()? {
+        DIRTY_STARTUP.increment(1);
+        tracing::warn!(
+            "sentinel file found: sqld was not shutdown gracefully, namespaces will be recovered."
+        );
         return Ok(true);
     }
 
@@ -398,6 +407,7 @@ where
                     db_config: self.db_config,
                     auth,
                     path: self.path.clone(),
+                    shutdown: self.shutdown.clone(),
                 };
 
                 services.configure(&mut join_set);
@@ -433,6 +443,7 @@ where
                     db_config: self.db_config,
                     auth,
                     path: self.path.clone(),
+                    shutdown: self.shutdown.clone(),
                 };
 
                 services.configure(&mut join_set);
@@ -444,6 +455,7 @@ where
                 join_set.shutdown().await;
                 // clean shutdown, remove sentinel file
                 std::fs::remove_file(sentinel_file_path(&self.path))?;
+                tracing::info!("sqld was shutdown gracefully. Bye!");
             }
             Some(res) = join_set.join_next() => {
                 res??;
@@ -507,7 +519,11 @@ where
         // eagerly load the default namespace when namespaces are disabled
         if self.disable_namespaces {
             namespaces
-                .create(NamespaceName::default(), namespace::RestoreOption::Latest)
+                .create(
+                    NamespaceName::default(),
+                    namespace::RestoreOption::Latest,
+                    NamespaceBottomlessDbId::NotProvided,
+                )
                 .await?;
         }
 

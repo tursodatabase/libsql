@@ -78,6 +78,11 @@ do_execsql_test 2.3 {
   SELECT rtreecheck('r1') 
 } {{Dimension 0 of cell 0 on node 1 is corrupt
 Dimension 1 of cell 3 on node 1 is corrupt}}
+do_execsql_test 2.3b { 
+  PRAGMA integrity_check;
+} {{In RTree main.r1:
+Dimension 0 of cell 0 on node 1 is corrupt
+Dimension 1 of cell 3 on node 1 is corrupt}}
 
 setup_simple_db
 do_execsql_test 2.4 {
@@ -85,12 +90,21 @@ do_execsql_test 2.4 {
   SELECT rtreecheck('r1') 
 } {{Mapping (3 -> 1) missing from %_rowid table
 Wrong number of entries in %_rowid table - expected 5, actual 4}}
+do_execsql_test 2.4b {
+  PRAGMA integrity_check
+} {{In RTree main.r1:
+Mapping (3 -> 1) missing from %_rowid table
+Wrong number of entries in %_rowid table - expected 5, actual 4}}
 
 setup_simple_db
 do_execsql_test 2.5 {
   UPDATE r1_rowid SET nodeno=2 WHERE rowid=3;
   SELECT rtreecheck('r1') 
 } {{Found (3 -> 2) in %_rowid table, expected (3 -> 1)}}
+do_execsql_test 2.5b {
+  PRAGMA integrity_check
+} {{In RTree main.r1:
+Found (3 -> 2) in %_rowid table, expected (3 -> 1)}}
 
 reset_db
 do_execsql_test 3.0 { 
@@ -104,14 +118,16 @@ do_execsql_test 3.0 {
   INSERT INTO r1 VALUES(7, 5, 0x00000080);
   INSERT INTO r1 VALUES(8, 5, 0x40490fdb);
   INSERT INTO r1 VALUES(9, 0x7f800000, 0x7f900000);
-  SELECT rtreecheck('r1') 
-} {ok}
+  SELECT rtreecheck('r1');
+  PRAGMA integrity_check;
+} {ok ok}
 
 do_execsql_test 3.1 { 
   CREATE VIRTUAL TABLE r2 USING rtree_i32(id, x1, x2);
   INSERT INTO r2 VALUES(2, -1*(1<<31), -1*(1<<31)+5);
-  SELECT rtreecheck('r2') 
-} {ok}
+  SELECT rtreecheck('r2');
+  PRAGMA integrity_check;
+} {ok ok}
 
 sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 3.2 {
@@ -125,6 +141,11 @@ do_execsql_test 3.3 {
   UPDATE r2_node SET data = X'00001234';
   SELECT rtreecheck('r2')!='ok';
 } {1}
+do_execsql_test 3.4 {
+  PRAGMA integrity_check;
+} {{In RTree main.r2:
+Node 1 is too small for cell count of 4660 (4 bytes)
+Wrong number of entries in %_rowid table - expected 0, actual 1}}
 
 do_execsql_test 4.0 {
   CREATE TABLE notanrtree(i);
@@ -181,4 +202,3 @@ if {[permutation]=="inmemory_journal"} {
 }
 
 finish_test
-

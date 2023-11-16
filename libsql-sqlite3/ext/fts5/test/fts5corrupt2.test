@@ -167,6 +167,9 @@ foreach {tn hdr} {
       do_test 3.$tn.$tn2.2 {
         catchsql { INSERT INTO x3(x3) VALUES('integrity-check') }
       } {1 {database disk image is malformed}}
+      do_execsql_test 3.$tn.$tn2.3 {
+        PRAGMA integrity_check(x3);
+      } {{malformed inverted index for FTS5 table main.x3}}
     }
 
     execsql ROLLBACK

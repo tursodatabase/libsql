@@ -98,11 +98,15 @@ namespace eval trd {
   set build(All-O0) {
     -O0 --enable-all
   }
-  set build(All-Sanitize) { --enable-all -fsanitize=address,undefined }
+  set build(All-Sanitize) { 
+    -DSQLITE_OMIT_LOOKASIDE=1
+    --enable-all -fsanitize=address,undefined 
+  }
 
   set build(Sanitize) {
     CC=clang -fsanitize=address,undefined
     -DSQLITE_ENABLE_STAT4
+    -DSQLITE_OMIT_LOOKASIDE=1
     -DCONFIG_SLOWDOWN_FACTOR=5.0
     --enable-debug
     --enable-all
@@ -370,14 +374,44 @@ proc trd_configs {platform bld} {
 
 proc trd_extras {platform bld} {
   trd_import
+  if {[info exists extra($platform.$bld)]==0} { return [list] }
+  return $extra($platform.$bld)
+}
 
-  set elist [list]
-  if {[info exists extra($platform.$bld)]} {
-    set elist $extra($platform.$bld)
+# Usage: 
+#
+#     trd_fuzztest_data
+#
+# This returns data used by testrunner.tcl to run commands equivalent 
+# to [make fuzztest]. The returned value is a list, which should be
+# interpreted as a sequence of pairs. The first element of each pair
+# is an interpreter name. The second element is a list of files.
+# testrunner.tcl automatically creates one job to build each interpreter,
+# and one to run each of the files with it once it has been built.
+#
+# In practice, the returned value looks like this:
+#
+# {
+#   {fuzzcheck {$testdir/fuzzdata1.db $testdir/fuzzdata2.db ...}}
+#   {{sessionfuzz run} $testdir/sessionfuzz-data1.db}
+# }
+#
+# where $testdir is replaced by the full-path to the test-directory (the
+# directory containing this file). "fuzzcheck" and "sessionfuzz" have .exe
+# extensions on windows.
+#
+proc trd_fuzztest_data {} {
+  set EXE ""
+  set lFuzzDb    [glob [file join $::testdir fuzzdata*.db]] 
+  set lSessionDb [glob [file join $::testdir sessionfuzz-data*.db]]
+
+  if {$::tcl_platform(platform)=="windows"} {
+    return [list fuzzcheck.exe $lFuzzDb]
   }
 
-  set elist
+  return [list fuzzcheck $lFuzzDb {sessionfuzz run} $lSessionDb]
 }
+
 
 proc trd_all_configs {} {
   trd_import
@@ -394,7 +428,7 @@ proc make_sh_script {srcdir opts cflags makeOpts configOpts} {
   set myopts ""
   if {[info exists ::env(OPTS)]} {
     append myopts "# From environment variable:\n"
-    append myopts "OPTS=$::env(OPTS)\n"
+    append myopts "OPTS=$::env(OPTS)\n\n"
   }
   foreach o [lsort $opts] { 
     append myopts "OPTS=\"\$OPTS $o\"\n"
@@ -509,7 +543,6 @@ proc make_script {cfg srcdir bMsvc} {
           default {
             error "Cannot translate $param for MSVC"
           }
-
         }
       }
 
@@ -517,11 +550,19 @@ proc make_script {cfg srcdir bMsvc} {
     }
 
     if {[string range $param 0 0]=="-"} {
-      if {$bMsvc && [regexp -- {^-O(\d+)$} $param -> level]} {
-        lappend makeOpts OPTIMIZATIONS=$level
-      } else {
-        lappend cflags $param
+
+      if {$bMsvc} {
+        if {[regexp -- {^-O(\d+)$} $param -> level]} {
+          lappend makeOpts OPTIMIZATIONS=$level
+          continue
+        }
+        if {$param eq "-fsanitize=address,undefined"} {
+          lappend makeOpts ASAN=1
+          continue
+        }
       }
+
+      lappend cflags $param
       continue
     }
 
@@ -560,4 +601,36 @@ proc trd_buildscript {config srcdir bMsvc} {
   return [make_script $build($config) $srcdir $bMsvc]
 }
 
+# Usage:
+#
+#    trd_test_script_properties PATH
+#
+# The argument must be a path to a Tcl test script. This function scans the
+# first 100 lines of the script for lines that look like:
+#
+#    TESTRUNNER: <properties>
+#
+# where <properties> is a list of identifiers, each of which defines a 
+# property of the test script. Example properties are "slow" or "superslow".
+#
+proc trd_test_script_properties {path} {
+  # Use this global array as a cache:
+  global trd_test_script_properties_cache
+
+  if {![info exists trd_test_script_properties_cache($path)]} {
+    set fd [open $path]
+    set ret [list]
+    for {set line 0} {$line < 100 && ![eof $fd]} {incr line} {
+      set text [gets $fd]
+      if {[string match -nocase *testrunner:* $text]} {
+        regexp -nocase {.*testrunner:(.*)} $text -> properties
+        lappend ret {*}$properties
+      }
+    }
+    set trd_test_script_properties_cache($path) $ret
+    close $fd
+  }
+
+  set trd_test_script_properties_cache($path)
+}
 

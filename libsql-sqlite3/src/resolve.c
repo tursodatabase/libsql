@@ -104,21 +104,36 @@ static void resolveAlias(
 }
 
 /*
-** Subqueries stores the original database, table and column names for their
-** result sets in ExprList.a[].zSpan, in the form "DATABASE.TABLE.COLUMN".
-** Check to see if the zSpan given to this routine matches the zDb, zTab,
-** and zCol.  If any of zDb, zTab, and zCol are NULL then those fields will
-** match anything.
+** Subqueries store the original database, table and column names for their
+** result sets in ExprList.a[].zSpan, in the form "DATABASE.TABLE.COLUMN",
+** and mark the expression-list item by setting ExprList.a[].fg.eEName
+** to ENAME_TAB.
+**
+** Check to see if the zSpan/eEName of the expression-list item passed to this
+** routine matches the zDb, zTab, and zCol.  If any of zDb, zTab, and zCol are
+** NULL then those fields will match anything. Return true if there is a match,
+** or false otherwise.
+**
+** SF_NestedFrom subqueries also store an entry for the implicit rowid (or
+** _rowid_, or oid) column by setting ExprList.a[].fg.eEName to ENAME_ROWID,
+** and setting zSpan to "DATABASE.TABLE.<rowid-alias>". This type of pItem
+** argument matches if zCol is a rowid alias. If it is not NULL, (*pbRowid)
+** is set to 1 if there is this kind of match.
 */
 int sqlite3MatchEName(
   const struct ExprList_item *pItem,
   const char *zCol,
   const char *zTab,
-  const char *zDb
+  const char *zDb,
+  int *pbRowid
 ){
   int n;
   const char *zSpan;
-  if( pItem->fg.eEName!=ENAME_TAB ) return 0;
+  int eEName = pItem->fg.eEName;
+  if( eEName!=ENAME_TAB && (eEName!=ENAME_ROWID || NEVER(pbRowid==0)) ){
+    return 0;
+  }
+  assert( pbRowid==0 || *pbRowid==0 );
   zSpan = pItem->zEName;
   for(n=0; ALWAYS(zSpan[n]) && zSpan[n]!='.'; n++){}
   if( zDb && (sqlite3StrNICmp(zSpan, zDb, n)!=0 || zDb[n]!=0) ){
@@ -130,9 +145,11 @@ int sqlite3MatchEName(
     return 0;
   }
   zSpan += n+1;
-  if( zCol && sqlite3StrICmp(zSpan, zCol)!=0 ){
-    return 0;
+  if( zCol ){
+    if( eEName==ENAME_TAB && sqlite3StrICmp(zSpan, zCol)!=0 ) return 0;
+    if( eEName==ENAME_ROWID && sqlite3IsRowid(zCol)==0 ) return 0;
   }
+  if( eEName==ENAME_ROWID ) *pbRowid = 1;
   return 1;
 }
 
@@ -265,7 +282,7 @@ static int lookupName(
 ){
   int i, j;                         /* Loop counters */
   int cnt = 0;                      /* Number of matching column names */
-  int cntTab = 0;                   /* Number of matching table names */
+  int cntTab = 0;                   /* Number of potential "rowid" matches */
   int nSubquery = 0;                /* How many levels of subquery */
   sqlite3 *db = pParse->db;         /* The database connection */
   SrcItem *pItem;                   /* Use for looping over pSrcList items */
@@ -342,39 +359,49 @@ static int lookupName(
           assert( pEList!=0 );
           assert( pEList->nExpr==pTab->nCol );
           for(j=0; j<pEList->nExpr; j++){
-            if( !sqlite3MatchEName(&pEList->a[j], zCol, zTab, zDb) ){
+            int bRowid = 0;       /* True if possible rowid match */
+            if( !sqlite3MatchEName(&pEList->a[j], zCol, zTab, zDb, &bRowid) ){
               continue;
             }
-            if( cnt>0 ){
-              if( pItem->fg.isUsing==0
-               || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
-              ){
-                /* Two or more tables have the same column name which is
-                ** not joined by USING.  This is an error.  Signal as much
-                ** by clearing pFJMatch and letting cnt go above 1. */
-                sqlite3ExprListDelete(db, pFJMatch);
-                pFJMatch = 0;
-              }else
-              if( (pItem->fg.jointype & JT_RIGHT)==0 ){
-                /* An INNER or LEFT JOIN.  Use the left-most table */
-                continue;
-              }else
-              if( (pItem->fg.jointype & JT_LEFT)==0 ){
-                /* A RIGHT JOIN.  Use the right-most table */
-                cnt = 0;
-                sqlite3ExprListDelete(db, pFJMatch);
-                pFJMatch = 0;
-              }else{
-                /* For a FULL JOIN, we must construct a coalesce() func */
-                extendFJMatch(pParse, &pFJMatch, pMatch, pExpr->iColumn);
+            if( bRowid==0 ){
+              if( cnt>0 ){
+                if( pItem->fg.isUsing==0
+                 || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
+                ){
+                  /* Two or more tables have the same column name which is
+                  ** not joined by USING.  This is an error.  Signal as much
+                  ** by clearing pFJMatch and letting cnt go above 1. */
+                  sqlite3ExprListDelete(db, pFJMatch);
+                  pFJMatch = 0;
+                }else
+                if( (pItem->fg.jointype & JT_RIGHT)==0 ){
+                  /* An INNER or LEFT JOIN.  Use the left-most table */
+                  continue;
+                }else
+                if( (pItem->fg.jointype & JT_LEFT)==0 ){
+                  /* A RIGHT JOIN.  Use the right-most table */
+                  cnt = 0;
+                  sqlite3ExprListDelete(db, pFJMatch);
+                  pFJMatch = 0;
+                }else{
+                  /* For a FULL JOIN, we must construct a coalesce() func */
+                  extendFJMatch(pParse, &pFJMatch, pMatch, pExpr->iColumn);
+                }
               }
+              cnt++;
+              hit = 1;
+            }else if( cnt>0 ){
+              /* This is a potential rowid match, but there has already been
+              ** a real match found. So this can be ignored.  */
+              continue;
             }
-            cnt++;
-            cntTab = 2;
+            cntTab++;
             pMatch = pItem;
             pExpr->iColumn = j;
             pEList->a[j].fg.bUsed = 1;
-            hit = 1;
+
+            /* rowid cannot be part of a USING clause - assert() this. */
+            assert( bRowid==0 || pEList->a[j].fg.bUsingTerm==0 );
             if( pEList->a[j].fg.bUsingTerm ) break;
           }
           if( hit || zTab==0 ) continue;
@@ -569,10 +596,10 @@ static int lookupName(
      && pMatch
      && (pNC->ncFlags & (NC_IdxExpr|NC_GenCol))==0
      && sqlite3IsRowid(zCol)
-     && ALWAYS(VisibleRowid(pMatch->pTab))
+     && ALWAYS(VisibleRowid(pMatch->pTab) || pMatch->fg.isNestedFrom)
     ){
       cnt = 1;
-      pExpr->iColumn = -1;
+      if( pMatch->fg.isNestedFrom==0 ) pExpr->iColumn = -1;
       pExpr->affExpr = SQLITE_AFF_INTEGER;
     }
 
@@ -1025,6 +1052,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       Window *pWin = (IsWindowFunc(pExpr) ? pExpr->y.pWin : 0);
 #endif
       assert( !ExprHasProperty(pExpr, EP_xIsSelect|EP_IntValue) );
+      assert( pExpr->pLeft==0 || pExpr->pLeft->op==TK_ORDER );
       zId = pExpr->u.zToken;
       pDef = sqlite3FindFunction(pParse->db, zId, n, enc, 0);
       if( pDef==0 ){
@@ -1166,6 +1194,10 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           pNC->nNcErr++;
         }
 #endif
+        else if( is_agg==0 && pExpr->pLeft ){
+          sqlite3ExprOrderByAggregateError(pParse, pExpr);
+          pNC->nNcErr++;
+        }
         if( is_agg ){
           /* Window functions may not be arguments of aggregate functions.
           ** Or arguments of other window functions. But aggregate functions
@@ -1184,6 +1216,11 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #endif
       sqlite3WalkExprList(pWalker, pList);
       if( is_agg ){
+        if( pExpr->pLeft ){
+          assert( pExpr->pLeft->op==TK_ORDER );
+          assert( ExprUseXList(pExpr->pLeft) );
+          sqlite3WalkExprList(pWalker, pExpr->pLeft->x.pList);
+        }
 #ifndef SQLITE_OMIT_WINDOWFUNC
         if( pWin ){
           Select *pSel = pNC->pWinSelect;
@@ -1747,9 +1784,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
   while( p ){
     assert( (p->selFlags & SF_Expanded)!=0 );
     assert( (p->selFlags & SF_Resolved)==0 );
-    assert( db->suppressErr==0 ); /* SF_Resolved not set if errors suppressed */
     p->selFlags |= SF_Resolved;
-
 
     /* Resolve the expressions in the LIMIT and OFFSET clauses. These
     ** are not allowed to refer to any names, so pass an empty NameContext.

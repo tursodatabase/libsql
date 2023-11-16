@@ -25,6 +25,14 @@ VERSION=`cat $TOP/VERSION`
 HASH=`sed 's/^\(..........\).*/\1/' $TOP/manifest.uuid`
 DATETIME=`grep '^D' $TOP/manifest | sed -e 's/[^0-9]//g' -e 's/\(............\).*/\1/'`
 
+# Verify that the version number in the TEA autoconf file is correct.
+# Fail with an error if not.
+#
+if grep $VERSION $TOP/autoconf/tea/configure.ac
+then echo "TEA version number ok"
+else echo "TEA version number mismatch.  Should be $VERSION"; exit 1
+fi
+
 # If this script is given an argument of --snapshot, then generate a
 # snapshot tarball named for the current checkout SHA1 hash, rather than
 # the version number.

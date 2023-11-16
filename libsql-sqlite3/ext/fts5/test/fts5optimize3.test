@@ -1,0 +1,45 @@
+# 2023 Aug 27
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# TESTRUNNER: superslow
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5optimize2
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+set nLoop 2500
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t2 USING fts5(x);
+  INSERT INTO t2(t2, rank) VALUES('pgsz', 32);
+}
+
+do_test 1.1 {
+  for {set ii 0} {$ii < $nLoop} {incr ii} {
+    execsql {
+      INSERT INTO t2 VALUES('abc def ghi');
+      INSERT INTO t2 VALUES('jkl mno pqr');
+      INSERT INTO t2(t2, rank) VALUES('merge', -1);
+    }
+  }
+} {}
+
+do_execsql_test 1.2 {
+  SELECT count(*) FROM t2('mno')
+} $nLoop
+
+finish_test

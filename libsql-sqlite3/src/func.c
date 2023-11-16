@@ -1260,7 +1260,8 @@ static void hexFunc(
       *(z++) = hexdigits[c&0xf];
     }
     *z = 0;
-    sqlite3_result_text(context, zHex, n*2, sqlite3_free);
+    sqlite3_result_text64(context, zHex, (u64)(z-zHex),
+                          sqlite3_free, SQLITE_UTF8);
   }
 }
 
@@ -1554,6 +1555,81 @@ static void trimFunc(
   sqlite3_result_text(context, (char*)zIn, nIn, SQLITE_TRANSIENT);
 }
 
+/* The core implementation of the CONCAT(...) and CONCAT_WS(SEP,...)
+** functions.
+**
+** Return a string value that is the concatenation of all non-null
+** entries in argv[].  Use zSep as the separator.
+*/
+static void concatFuncCore(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv,
+  int nSep,
+  const char *zSep
+){
+  i64 j, k, n = 0;
+  int i;
+  char *z;
+  for(i=0; i<argc; i++){
+    n += sqlite3_value_bytes(argv[i]);
+  }
+  n += (argc-1)*nSep;
+  z = sqlite3_malloc64(n+1);
+  if( z==0 ){
+    sqlite3_result_error_nomem(context);
+    return;
+  }
+  j = 0;
+  for(i=0; i<argc; i++){
+    k = sqlite3_value_bytes(argv[i]);
+    if( k>0 ){
+      const char *v = (const char*)sqlite3_value_text(argv[i]);
+      if( v!=0 ){
+        if( j>0 && nSep>0 ){
+          memcpy(&z[j], zSep, nSep);
+          j += nSep;
+        }
+        memcpy(&z[j], v, k);
+        j += k;
+      }
+    }
+  }
+  z[j] = 0;
+  assert( j<=n );
+  sqlite3_result_text64(context, z, j, sqlite3_free, SQLITE_UTF8);
+}
+
+/*
+** The CONCAT(...) function.  Generate a string result that is the
+** concatentation of all non-null arguments.
+*/
+static void concatFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  concatFuncCore(context, argc, argv, 0, "");
+}
+
+/*
+** The CONCAT_WS(separator, ...) function.
+**
+** Generate a string that is the concatenation of 2nd through the Nth
+** argument.  Use the first argument (which must be non-NULL) as the
+** separator.
+*/
+static void concatwsFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int nSep = sqlite3_value_bytes(argv[0]);
+  const char *zSep = (const char*)sqlite3_value_text(argv[0]);
+  if( zSep==0 ) return;
+  concatFuncCore(context, argc-1, argv+1, nSep, zSep);
+}
+
 
 #ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 /*
@@ -1820,8 +1896,10 @@ static void sumFinalize(sqlite3_context *context){
     if( p->approx ){
       if( p->ovrfl ){
         sqlite3_result_error(context,"integer overflow",-1);
-      }else{
+      }else if( !sqlite3IsNaN(p->rErr) ){
         sqlite3_result_double(context, p->rSum+p->rErr);
+      }else{
+        sqlite3_result_double(context, p->rSum);
       }
     }else{
       sqlite3_result_int64(context, p->iSum);
@@ -1834,7 +1912,8 @@ static void avgFinalize(sqlite3_context *context){
   if( p && p->cnt>0 ){
     double r;
     if( p->approx ){
-      r = p->rSum+p->rErr;
+      r = p->rSum;
+      if( !sqlite3IsNaN(p->rErr) ) r += p->rErr;
     }else{
       r = (double)(p->iSum);
     }
@@ -1847,7 +1926,8 @@ static void totalFinalize(sqlite3_context *context){
   p = sqlite3_aggregate_context(context, 0);
   if( p ){
     if( p->approx ){
-      r = p->rSum+p->rErr;
+      r = p->rSum;
+      if( !sqlite3IsNaN(p->rErr) ) r += p->rErr;
     }else{
       r = (double)(p->iSum);
     }
@@ -1971,6 +2051,7 @@ static void minMaxFinalize(sqlite3_context *context){
 
 /*
 ** group_concat(EXPR, ?SEPARATOR?)
+** string_agg(EXPR, SEPARATOR)
 **
 ** The SEPARATOR goes before the EXPR string.  This is tragic.  The
 ** groupConcatInverse() implementation would have been easier if the
@@ -2692,6 +2773,11 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(hex,                1, 0, 0, hexFunc          ),
     FUNCTION(unhex,              1, 0, 0, unhexFunc        ),
     FUNCTION(unhex,              2, 0, 0, unhexFunc        ),
+    FUNCTION(concat,            -1, 0, 0, concatFunc       ),
+    FUNCTION(concat,             0, 0, 0, 0                ),
+    FUNCTION(concat_ws,         -1, 0, 0, concatwsFunc     ),
+    FUNCTION(concat_ws,          0, 0, 0, 0                ),
+    FUNCTION(concat_ws,          1, 0, 0, 0                ),
     INLINE_FUNC(ifnull,          2, INLINEFUNC_coalesce, 0 ),
     VFUNCTION(random,            0, 0, 0, randomFunc       ),
     VFUNCTION(randomblob,        1, 0, 0, randomBlob       ),
@@ -2720,6 +2806,8 @@ void sqlite3RegisterBuiltinFunctions(void){
     WAGGREGATE(group_concat, 1, 0, 0, groupConcatStep,
         groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
     WAGGREGATE(group_concat, 2, 0, 0, groupConcatStep,
+        groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
+    WAGGREGATE(string_agg,   2, 0, 0, groupConcatStep,
         groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
  
     LIKEFUNC(glob, 2, &globInfo, SQLITE_FUNC_LIKE|SQLITE_FUNC_CASE),

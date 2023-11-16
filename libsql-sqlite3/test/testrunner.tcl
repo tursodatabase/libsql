@@ -59,7 +59,6 @@ Usage:
 
   where SWITCHES are:
     --jobs NUMBER-OF-JOBS
-    --fuzztest
     --zipvfs ZIPVFS-SOURCE-DIR
 
 Interesting values for PERMUTATION are:
@@ -82,11 +81,6 @@ omitted if any PATTERN arguments are specified on the command line.
 If a PERMUTATION is specified and is followed by the path to a Tcl script
 instead of a list of patterns, then that single Tcl test script is run
 with the specified permutation.
-
-The --fuzztest option is ignored if the PERMUTATION is "release". Otherwise,
-if it is present, then "make -C <dir> fuzztest" is run as part of the tests,
-where <dir> is the directory containing the testfixture binary used to
-run the script.
 
 The "status" and "njob" commands are designed to be run from the same
 directory as a running testrunner.tcl script that is running tests. The
@@ -157,19 +151,28 @@ set TRG(zipvfs) ""                  ;# -zipvfs option, if any
 
 switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
-    set TRG(platform) osx
-    set TRG(make)     make.sh
-    set TRG(makecmd)  "bash make.sh"
+    set TRG(platform)    osx
+    set TRG(make)        make.sh
+    set TRG(makecmd)     "bash make.sh"
+    set TRG(testfixture) testfixture
+    set TRG(run)         run.sh
+    set TRG(runcmd)      "bash run.sh"
   }
   *linux* {
-    set TRG(platform) linux
-    set TRG(make)     make.sh
-    set TRG(makecmd)  "bash make.sh"
+    set TRG(platform)    linux
+    set TRG(make)        make.sh
+    set TRG(makecmd)     "bash make.sh"
+    set TRG(testfixture) testfixture
+    set TRG(run)         run.sh
+    set TRG(runcmd)      "bash run.sh"
   }
   *win* {
-    set TRG(platform) win
-    set TRG(make)     make.bat
-    set TRG(makecmd)  make.bat
+    set TRG(platform)    win
+    set TRG(make)        make.bat
+    set TRG(makecmd)     make.bat
+    set TRG(testfixture) testfixture.exe
+    set TRG(run)         run.bat
+    set TRG(runcmd)      "run.bat"
   }
   default {
     error "cannot determine platform!"
@@ -181,20 +184,59 @@ switch -nocase -glob -- $tcl_platform(os) {
 # The database schema used by the testrunner.db database.
 #
 set TRG(schema) {
-  DROP TABLE IF EXISTS script;
+  DROP TABLE IF EXISTS jobs;
   DROP TABLE IF EXISTS config;
 
-  CREATE TABLE script(
-    build TEXT DEFAULT '',
-    config TEXT,
-    filename TEXT,                -- full path to test script
-    slow BOOLEAN,                 -- true if script is "slow"
+  /*
+  ** This table contains one row for each job that testrunner.tcl must run
+  ** before the entire test run is finished.
+  **
+  ** jobid:
+  **   Unique identifier for each job. Must be a +ve non-zero number.
+  **
+  ** displaytype:
+  **   3 or 4 letter mnemonic for the class of tests this belongs to e.g.
+  **   "fuzz", "tcl", "make" etc.
+  **
+  ** displayname:
+  **   Name/description of job. For display purposes.
+  **
+  ** build:
+  **   If the job requires a make.bat/make.sh make wrapper (i.e. to build
+  **   something), the name of the build configuration it uses. See 
+  **   testrunner_data.tcl for a list of build configs. e.g. "Win32-MemDebug".
+  **
+  ** dirname:
+  **   If the job should use a well-known directory name for its 
+  **   sub-directory instead of an anonymous "testdir[1234...]" sub-dir
+  **   that is deleted after the job is finished.
+  **
+  ** cmd:
+  **   Bash or batch script to run the job.
+  **
+  ** depid:
+  **   The jobid value of a job that this job depends on. This job may not
+  **   be run before its depid job has finished successfully.
+  **
+  ** priority:
+  **   Higher values run first. Sometimes.
+  */
+  CREATE TABLE jobs(
+    /* Fields populated when db is initialized */
+    jobid INTEGER PRIMARY KEY,          -- id to identify job
+    displaytype TEXT NOT NULL,          -- Type of test (for one line report)
+    displayname TEXT NOT NULL,          -- Human readable job name
+    build TEXT NOT NULL DEFAULT '',     -- make.sh/make.bat file request, if any
+    dirname TEXT NOT NULL DEFAULT '',   -- directory name, if required
+    cmd TEXT NOT NULL,                  -- shell command to run
+    depid INTEGER,                      -- identifier of dependency (or '')
+    priority INTEGER NOT NULL,          -- higher priority jobs may run earlier
+  
+    /* Fields updated as jobs run */
+    starttime INTEGER, 
+    endtime INTEGER,
     state TEXT CHECK( state IN ('', 'ready', 'running', 'done', 'failed') ),
-    time INTEGER,                 -- Time in ms
-    output TEXT,                  -- full output of test script
-    priority INTEGER,
-    jobtype TEXT CHECK( jobtype IN ('script', 'build', 'make') ),
-    PRIMARY KEY(build, config, filename)
+    output TEXT
   );
 
   CREATE TABLE config(
@@ -202,8 +244,8 @@ set TRG(schema) {
     value 
   ) WITHOUT ROWID;
 
-  CREATE INDEX i1 ON script(state, jobtype);
-  CREATE INDEX i2 ON script(state, priority);
+  CREATE INDEX i1 ON jobs(state, priority);
+  CREATE INDEX i2 ON jobs(depid);
 }
 #-------------------------------------------------------------------------
 
@@ -303,39 +345,14 @@ if {[llength $argv]==1
  && [string compare -nocase status [lindex $argv 0]]==0 
 } {
 
-  proc display_job {build config filename {tm ""}} {
-    if {$config=="build"} {
-      set fname "build: $filename"
-      set config ""
-    } elseif {$config=="make"} {
-      set fname "make: $filename"
-      set config ""
-    } else {
-      set fname [file normalize $filename]
-      if {[string first $::srcdir $fname]==0} {
-        set fname [string range $fname [string length $::srcdir]+1 end]
-      }
-    }
-    set dfname [format %-33s $fname]
+  proc display_job {jobdict {tm ""}} {
+    array set job $jobdict
 
-    set dbuild ""
-    set dconfig ""
-    set dparams ""
+    set dfname [format %-60s $job(displayname)]
+
     set dtm ""
-    if {$build!=""} { set dbuild $build }
-    if {$config!="" && $config!="full"} { set dconfig $config }
-    if {$dbuild!="" || $dconfig!=""} {
-      append dparams "("
-      if {$dbuild!=""}                 {append dparams "build=$dbuild"}
-      if {$dbuild!="" && $dconfig!=""} {append dparams " "}
-      if {$dconfig!=""}                {append dparams "config=$dconfig"}
-      append dparams ")"
-      set dparams [format %-33s $dparams]
-    }
-    if {$tm!=""} {
-      set dtm "\[${tm}ms\]"
-    }
-    puts "  $dfname $dparams $dtm"
+    if {$tm!=""} { set dtm "\[[expr {$tm-$job(starttime)}]ms\]" }
+    puts "  $dfname $dtm"
   }
 
   sqlite3 mydb $TRG(dbname)
@@ -355,7 +372,7 @@ if {[llength $argv]==1
   set total 0
   foreach s {"" ready running done failed} { set S($s) 0 }
   mydb eval {
-    SELECT state, count(*) AS cnt FROM script GROUP BY 1
+    SELECT state, count(*) AS cnt FROM jobs GROUP BY 1
   } {
     incr S($state) $cnt
     incr total $cnt
@@ -375,19 +392,17 @@ if {[llength $argv]==1
   if {$S(running)>0} {
     puts "Running: "
     mydb eval {
-      SELECT build, config, filename, time FROM script WHERE state='running'
-      ORDER BY time 
-    } {
-      display_job $build $config $filename [expr $now-$time]
+      SELECT * FROM jobs WHERE state='running' ORDER BY starttime 
+    } job {
+      display_job [array get job] $now
     }
   }
   if {$S(failed)>0} {
     puts "Failures: "
     mydb eval {
-      SELECT build, config, filename FROM script WHERE state='failed'
-      ORDER BY 3
-    } {
-      display_job $build $config $filename
+      SELECT * FROM jobs WHERE state='failed' ORDER BY starttime
+    } job {
+      display_job [array get job]
     }
   }
  
@@ -408,8 +423,6 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
       incr ii
       set TRG(nJob) [lindex $argv $ii]
       if {$isLast} { usage }
-    } elseif {($n>2 && [string match "$a*" --fuzztest]) || $a=="-f"} {
-      set TRG(fuzztest) 1
     } elseif {($n>2 && [string match "$a*" --zipvfs]) || $a=="-z"} {
       incr ii
       set TRG(zipvfs) [lindex $argv $ii]
@@ -480,120 +493,12 @@ proc create_or_clear_dir {dir} {
   }
 }
 
-proc copy_dir {from to} {
-  foreach f [glob -nocomplain [file join $from *]] {
-    catch { file copy -force $f $to }
-  }
-}
-
 proc build_to_dirname {bname} {
   set fold [string tolower [string map {- _} $bname]]
   return "testrunner_build_$fold"
 }
 
 #-------------------------------------------------------------------------
-# Return a list of tests to run. Each element of the list is itself a
-# list of two elements - the name of a permuations.test configuration
-# followed by the full path to a test script. i.e.:
-#
-#    {BUILD CONFIG FILENAME} {BUILD CONFIG FILENAME} ...
-#
-proc testset_patternlist {patternlist} {
-  global TRG
-
-  set testset [list]              ;# return value
-
-  set first [lindex $patternlist 0]
-
-  if {$first=="sdevtest" || $first=="mdevtest"} {
-    set CONFIGS(sdevtest) {All-Debug All-Sanitize}
-    set CONFIGS(mdevtest) {All-Debug All-O0}
-
-    set patternlist [lrange $patternlist 1 end]
-
-    foreach b $CONFIGS($first) {
-      lappend testset [list $b build testfixture]
-      lappend testset [list $b make fuzztest]
-      testset_append testset $b veryquick $patternlist
-    }
-  } elseif {$first=="release"} {
-    set platform $::TRG(platform)
-
-    set patternlist [lrange $patternlist 1 end]
-    foreach b [trd_builds $platform] {
-      foreach c [trd_configs $platform $b] {
-        testset_append testset $b $c $patternlist
-      }
-
-      if {[llength $patternlist]==0 || $b=="User-Auth"} {
-        set target testfixture
-      } else {
-        set target coretestprogs
-      }
-      lappend testset [list $b build $target]
-    }
-
-    if {[llength $patternlist]==0} {
-      foreach b [trd_builds $platform] {
-        foreach e [trd_extras $platform $b] {
-          lappend testset [list $b make $e]
-        }
-      }
-    }
-
-    set TRG(fuzztest) 0           ;# ignore --fuzztest option in this case
-
-  } elseif {$first=="all"} {
-
-    set clist [trd_all_configs]
-    set patternlist [lrange $patternlist 1 end]
-    foreach c $clist {
-      testset_append testset "" $c $patternlist
-    }
-
-  } elseif {[info exists ::testspec($first)]} {
-    set clist $first
-    testset_append testset "" $first [lrange $patternlist 1 end]
-  } elseif { [llength $patternlist]==0 } {
-    testset_append testset "" veryquick $patternlist
-  } else {
-    testset_append testset "" full $patternlist
-  }
-  if {$TRG(fuzztest)} {
-    if {$TRG(platform)=="win"} { error "todo" }
-    lappend testset [list "" make fuzztest]
-  }
-
-  set testset
-}
-
-proc testset_append {listvar build config patternlist} {
-  upvar $listvar lvar
-
-  catch { array unset O }
-  array set O $::testspec($config)
-
-  foreach f $O(-files) {
-    if {[llength $patternlist]>0} {
-      set bMatch 0
-      foreach p $patternlist {
-        if {[string match $p [file tail $f]]} {
-          set bMatch 1
-          break
-        }
-      }
-      if {$bMatch==0} continue
-    }
-
-    if {[file pathtype $f]!="absolute"} {
-      set f [file join $::testdir $f]
-    }
-    lappend lvar [list $build $config $f]
-  }
-}
-
-#--------------------------------------------------------------------------
-
 
 proc r_write_db {tcl} {
   trdb eval { BEGIN EXCLUSIVE }
@@ -615,51 +520,307 @@ proc r_get_next_job {iJob} {
     set orderby "ORDER BY priority DESC"
   }
 
+  set ret [list]
+
   r_write_db {
-    set f ""
-    set c ""
-    trdb eval "
-      SELECT build, config, filename 
-        FROM script 
-        WHERE state='ready' 
-        $orderby LIMIT 1
-    " {
-      set b $build
-      set c $config
-      set f $filename
-    }
-    if {$f!=""} {
+    set query "
+      SELECT * FROM jobs AS j WHERE state='ready' $orderby LIMIT 1
+    " 
+    trdb eval $query job {
       set tm [clock_milliseconds]
       set T($iJob) $tm
-      trdb eval { 
-        UPDATE script SET state='running', time=$tm
-        WHERE (build, config, filename) = ($b, $c, $f)
+      set jobid $job(jobid)
+
+      trdb eval {
+        UPDATE jobs SET starttime=$tm, state='running' WHERE jobid=$jobid
       }
+
+      set ret [array get job]
     }
   }
 
-  if {$f==""} { return "" }
-  list $b $c $f
+  return $ret
 }
 
 #rename r_get_next_job r_get_next_job_r
 #proc r_get_next_job {iJob} {
-#  puts [time { set res [r_get_next_job_r $iJob] }]
-#  set res
+  #puts [time { set res [r_get_next_job_r $iJob] }]
+  #set res
 #}
+
+# Usage:
+#
+#   add_job OPTION ARG OPTION ARG...
+#
+# where available OPTIONS are:
+#
+#   -displaytype
+#   -displayname
+#   -build
+#   -dirname     
+#   -cmd 
+#   -depid 
+#   -priority 
+#
+# Returns the jobid value for the new job.
+# 
+proc add_job {args} {
+
+  set options {
+      -displaytype -displayname -build -dirname 
+      -cmd -depid -priority
+  }
+
+  # Set default values of options.
+  set A(-dirname) ""
+  set A(-depid)   ""
+  set A(-priority) 0
+  set A(-build)   ""
+
+  array set A $args
+
+  # Check all required options are present. And that no extras are present.
+  foreach o $options {
+    if {[info exists A($o)]==0} { error "missing required option $o" }
+  }
+  foreach o [array names A] {
+    if {[lsearch -exact $options $o]<0} { error "unrecognized option: $o" }
+  }
+
+  set state ""
+  if {$A(-depid)==""} { set state ready }
+
+  trdb eval {
+    INSERT INTO jobs(
+      displaytype, displayname, build, dirname, cmd, depid, priority,
+      state
+    ) VALUES (
+      $A(-displaytype),
+      $A(-displayname),
+      $A(-build),
+      $A(-dirname),
+      $A(-cmd),
+      $A(-depid),
+      $A(-priority),
+      $state
+    )
+  }
+
+  trdb last_insert_rowid
+}
+
+proc add_tcl_jobs {build config patternlist} {
+  global TRG
+
+  set topdir [file dirname $::testdir]
+  set testrunner_tcl [file normalize [info script]]
+
+  if {$build==""} {
+    set testfixture [info nameofexec]
+  } else {
+    set testfixture [file join [lindex $build 1] $TRG(testfixture)]
+  }
+  if {[lindex $build 2]=="Valgrind"} {
+    set setvar "export OMIT_MISUSE=1\n"
+    set testfixture "${setvar}valgrind -v --error-exitcode=1 $testfixture"
+  }
+
+  # The ::testspec array is populated by permutations.test
+  foreach f [dict get $::testspec($config) -files] {
+
+    if {[llength $patternlist]>0} {
+      set bMatch 0
+      foreach p $patternlist {
+        if {[string match $p [file tail $f]]} {
+          set bMatch 1
+          break
+        }
+      }
+      if {$bMatch==0} continue
+    }
+
+    if {[file pathtype $f]!="absolute"} { set f [file join $::testdir $f] }
+    set f [file normalize $f]
+
+    set displayname [string map [list $topdir/ {}] $f]
+    if {$config=="full" || $config=="veryquick"} {
+      set cmd "$testfixture $f"
+    } else {
+      set cmd "$testfixture $testrunner_tcl $config $f"
+      set displayname "config=$config $displayname"
+    }
+    if {$build!=""} {
+      set displayname "[lindex $build 2] $displayname"
+    }
+
+    set lProp [trd_test_script_properties $f]
+    set priority 0
+    if {[lsearch $lProp slow]>=0} { set priority 2 }
+    if {[lsearch $lProp superslow]>=0} { set priority 4 }
+
+    add_job                            \
+        -displaytype tcl               \
+        -displayname $displayname      \
+        -cmd $cmd                      \
+        -depid [lindex $build 0]       \
+        -priority $priority
+
+  }
+}
+
+proc add_build_job {buildname target} {
+  global TRG
+
+  set dirname "[string tolower [string map {- _} $buildname]]_$target"
+  set dirname "testrunner_bld_$dirname"
+
+  set id [add_job                                \
+    -displaytype bld                             \
+    -displayname "Build $buildname ($target)"    \
+    -dirname $dirname                            \
+    -build $buildname                            \
+    -cmd  "$TRG(makecmd) $target"                \
+    -priority 3
+  ]
+
+  list $id [file normalize $dirname] $buildname
+}
+
+proc add_make_job {bld target} {
+  global TRG
+
+  if {$TRG(platform)=="win"} {
+    set path [string map {/ \\} [lindex $bld 1]]
+    set cmd "xcopy /S $path\\* ."
+  } else {
+    set cmd "cp -r [lindex $bld 1]/* ."
+  }
+  append cmd "\n$TRG(makecmd) $target"
+
+  add_job                                       \
+    -displaytype make                           \
+    -displayname "[lindex $bld 2] make $target" \
+    -cmd $cmd                                   \
+    -depid [lindex $bld 0]                      \
+    -priority 1
+}
+
+proc add_fuzztest_jobs {buildname} {
+
+  foreach {interpreter scripts} [trd_fuzztest_data] {
+    set subcmd [lrange $interpreter 1 end]
+    set interpreter [lindex $interpreter 0]
+
+    set bld [add_build_job $buildname $interpreter]
+    foreach {depid dirname displayname} $bld {}
+
+    foreach s $scripts {
+
+      # Fuzz data files fuzzdata1.db and fuzzdata2.db are larger than
+      # the others. So ensure that these are run as a higher priority.
+      set tail [file tail $s]
+      if {$tail=="fuzzdata1.db" || $tail=="fuzzdata2.db"} {
+        set priority 5
+      } else {
+        set priority 1
+      }
+
+      add_job                                                   \
+        -displaytype fuzz                                       \
+        -displayname "$buildname $interpreter $tail"            \
+        -depid $depid                                           \
+        -cmd "[file join $dirname $interpreter] $subcmd $s"     \
+        -priority $priority
+    }
+  }
+}
+
+proc add_zipvfs_jobs {} {
+  global TRG
+  source [file join $TRG(zipvfs) test zipvfs_testrunner.tcl]
+
+  set bld [add_build_job Zipvfs $TRG(testfixture)]
+  foreach s [zipvfs_testrunner_files] {
+    set cmd "[file join [lindex $bld 1] $TRG(testfixture)] $s"
+    add_job                                  \
+        -displaytype tcl                     \
+        -displayname "Zipvfs [file tail $s]" \
+        -cmd $cmd                            \
+        -depid [lindex $bld 0]
+  }
+
+  set ::env(SQLITE_TEST_DIR) $::testdir
+}
+
+proc add_jobs_from_cmdline {patternlist} {
+  global TRG
+
+  if {$TRG(zipvfs)!=""} {
+    add_zipvfs_jobs
+    if {[llength $patternlist]==0} return
+  }
+
+  if {[llength $patternlist]==0} {
+    set patternlist [list veryquick]
+  }
+
+  set first [lindex $patternlist 0]
+  switch -- $first {
+    all {
+      set patternlist [lrange $patternlist 1 end]
+      set clist [trd_all_configs]
+      foreach c $clist {
+        add_tcl_jobs "" $c $patternlist
+      }
+    }
+
+    mdevtest {
+      foreach b [list All-O0 All-Debug] {
+        set bld [add_build_job $b $TRG(testfixture)]
+        add_tcl_jobs $bld veryquick ""
+        add_fuzztest_jobs $b
+      }
+    }
+
+    sdevtest {
+      foreach b [list All-Sanitize All-Debug] {
+        set bld [add_build_job $b $TRG(testfixture)]
+        add_tcl_jobs $bld veryquick ""
+        add_fuzztest_jobs $b
+      }
+    }
+
+    release {
+      foreach b [trd_builds $TRG(platform)] {
+        set bld [add_build_job $b $TRG(testfixture)]
+        foreach c [trd_configs $TRG(platform) $b] {
+          add_tcl_jobs $bld $c ""
+        }
+
+        foreach e [trd_extras $TRG(platform) $b] {
+          if {$e=="fuzztest"} {
+            add_fuzztest_jobs $b
+          } else {
+            add_make_job $bld $e
+          }
+        }
+      }
+    }
+
+    default {
+      if {[info exists ::testspec($first)]} {
+        add_tcl_jobs "" $first [lrange $patternlist 1 end]
+      } else {
+        add_tcl_jobs "" full $patternlist
+      }
+    }
+  }
+}
 
 proc make_new_testset {} {
   global TRG
 
-  set tests [testset_patternlist $TRG(patternlist)]
-
-  if {$TRG(zipvfs)!=""} {
-    source [file join $TRG(zipvfs) test zipvfs_testrunner.tcl]
-    set tests [concat $tests [zipvfs_testrunner_testset]]
-  }
-
   r_write_db {
-
     trdb eval $TRG(schema)
     set nJob $TRG(nJob)
     set cmdline $TRG(cmdline)
@@ -668,88 +829,52 @@ proc make_new_testset {} {
     trdb eval { REPLACE INTO config VALUES('cmdline', $cmdline ); }
     trdb eval { REPLACE INTO config VALUES('start', $tm ); }
 
-    foreach t $tests {
-      foreach {b c s} $t {}
-      set slow 0
-
-      if {$c!="make" && $c!="build"} {
-        set fd [open $s]
-        for {set ii 0} {$ii<100 && ![eof $fd]} {incr ii} {
-          set line [gets $fd]
-          if {[string match -nocase *testrunner:* $line]} {
-            regexp -nocase {.*testrunner:(.*)} $line -> properties
-            foreach p $properties {
-              if {$p=="slow"} { set slow 1 }
-              if {$p=="superslow"} { set slow 2 }
-            }
-          }
-        }
-        close $fd
-      }
-
-      if {$c=="make" && $b==""} {
-        # --fuzztest option
-        set slow 1
-      }
-
-      if {$c=="veryquick"} {
-        set c ""
-      }
-
-      set state ready
-      if {$b!="" && $c!="build"} {
-        set state ""
-      }
-
-      set priority [expr {$slow*2}]
-      if {$c=="make"} { incr priority 3 }
-      if {$c=="build"} { incr priority 1 }
-
-      if {$c=="make" || $c=="build"} {
-        set jobtype $c
-      } else {
-        set jobtype "script"
-      }
-
-      trdb eval { 
-        INSERT INTO script
-                   (build, config, filename, slow, state, priority, jobtype) 
-            VALUES ($b, $c, $s, $slow, $state, $priority, $jobtype) 
-      }
-    }
+    add_jobs_from_cmdline $TRG(patternlist)
   }
+
 }
 
-proc script_input_ready {fd iJob b c f} {
+proc script_input_ready {fd iJob jobid} {
   global TRG
   global O
   global T
 
   if {[eof $fd]} {
+    trdb eval { SELECT * FROM jobs WHERE jobid=$jobid } job {}
+
+    # If this job specified a directory name, then delete the run.sh/run.bat
+    # file from it before continuing. This is because the contents of this
+    # directory might be copied by some other job, and we don't want to copy
+    # the run.sh file in this case.
+    if {$job(dirname)!=""} {
+      file delete -force [file join $job(dirname) $TRG(run)]
+    }
+
     set ::done 1
     fconfigure $fd -blocking 1
     set state "done"
     set rc [catch { close $fd } msg]
     if {$rc} { 
-      puts "FAILED: $b $c $f"
+      if {[info exists TRG(reportlength)]} {
+        puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
+      }
+      puts "FAILED: $job(displayname) ($iJob)"
       set state "failed" 
     }
 
-    set tm [expr [clock_milliseconds] - $T($iJob)]
+    set tm [clock_milliseconds]
+    set jobtm [expr {$tm - $job(starttime)}]
 
-    puts $TRG(log) "### $b ### $c ### $f ${tm}ms ($state)"
+    puts $TRG(log) "### $job(displayname) ${jobtm}ms ($state)"
     puts $TRG(log) [string trim $O($iJob)]
 
     r_write_db {
       set output $O($iJob)
       trdb eval {
-        UPDATE script SET output = $output, state=$state, time=$tm
-        WHERE (build, config, filename) = ($b, $c, $f)
-      }
-      if {$state=="done" && $c=="build"} {
-        trdb eval {
-          UPDATE script SET state = 'ready' WHERE (build, state)==($b, '')
-        }
+        UPDATE jobs 
+          SET output=$output, state=$state, endtime=$tm
+          WHERE jobid=$jobid;
+        UPDATE jobs SET state='ready' WHERE depid=$jobid;
       }
     }
 
@@ -780,79 +905,39 @@ proc launch_another_job {iJob} {
   set testfixture [info nameofexec]
   set script $TRG(info_script)
 
-  set dir [dirname $iJob]
-  create_or_clear_dir $dir
-
   set O($iJob) ""
   
-  set job [r_get_next_job $iJob]
-  if {$job==""} { return 0 }
+  set jobdict [r_get_next_job $iJob]
+  if {$jobdict==""} { return 0 }
+  array set job $jobdict
 
-  foreach {b c f} $job {}
+  set dir $job(dirname)
+  if {$dir==""} { set dir [dirname $iJob] }
+  create_or_clear_dir $dir
 
-  if {$c=="build"} {
-    set testdir [file dirname $TRG(info_script)]
-    set srcdir [file dirname $testdir]
-    set builddir [build_to_dirname $b]
-    create_or_clear_dir $builddir
-
-    if {$b=="Zipvfs"} {
+  if {$job(build)!=""} {
+    set srcdir [file dirname $::testdir]
+    if {$job(build)=="Zipvfs"} {
       set script [zipvfs_testrunner_script]
     } else {
-      set script [trd_buildscript $b $srcdir [expr {$TRG(platform)=="win"}]]
+      set bWin [expr {$TRG(platform)=="win"}]
+      set script [trd_buildscript $job(build) $srcdir $bWin]
     }
-
-    set fd [open [file join $builddir $TRG(make)] w]
+    set fd [open [file join $dir $TRG(make)] w]
     puts $fd $script
     close $fd
-
-    puts "Launching build \"$b\" in directory $builddir..."
-    set target coretestprogs
-    if {$b=="User-Auth"}  { set target testfixture }
-
-    set cmd "$TRG(makecmd) $target"
-    set dir $builddir
-
-  } elseif {$c=="make"} {
-    if {$b==""} {
-      if {$f!="fuzztest"} { error "corruption in testrunner.db!" }
-      # Special case - run [make fuzztest] 
-      set makedir [file dirname $testfixture]
-      if {$TRG(platform)=="win"} {
-        error "how?"
-      } else {
-        set cmd [list make -C $makedir fuzztest]
-      }
-    } else {
-      set builddir [build_to_dirname $b]
-      copy_dir $builddir $dir
-      set cmd "$TRG(makecmd) $f"
-    }
-  } else {
-    if {$b==""} {
-      set testfixture [info nameofexec]
-    } else {
-      set tail testfixture
-      if {$TRG(platform)=="win"} { set tail testfixture.exe }
-      set testfixture [file normalize [file join [build_to_dirname $b] $tail]]
-    }
-
-    if {$c=="valgrind"} {
-      set testfixture "valgrind -v --error-exitcode=1 $testfixture"
-      set ::env(OMIT_MISUSE) 1
-    }
-    set cmd [concat $testfixture [list $script $c $f]]
   }
 
   set pwd [pwd]
   cd $dir
-  set fd [open "|$cmd 2>@1" r]
+  set fd [open $TRG(run) w]
+  puts $fd $job(cmd) 
+  close $fd
+  set fd [open "|$TRG(runcmd) 2>@1" r]
   cd $pwd
-  set pid [pid $fd]
 
   fconfigure $fd -blocking false
-  fileevent $fd readable [list script_input_ready $fd $iJob $b $c $f]
-  unset -nocomplain ::env(OMIT_MISUSE)
+  fileevent $fd readable [list script_input_ready $fd $iJob $job(jobid)]
 
   return 1
 }
@@ -863,39 +948,36 @@ proc one_line_report {} {
   set tm [expr [clock_milliseconds] - $TRG(starttime)]
   set tm [format "%d" [expr int($tm/1000.0 + 0.5)]]
 
-  foreach s {ready running done failed} {
-    set v($s,build) 0
-    set v($s,make) 0
-    set v($s,script) 0
-  }
-
   r_write_db {
-    trdb eval {
-      SELECT state, jobtype, count(*) AS cnt 
-      FROM script 
-      GROUP BY state, jobtype
+    trdb eval { 
+      SELECT displaytype, state, count(*) AS cnt 
+      FROM jobs 
+      GROUP BY 1, 2 
     } {
-      set v($state,$jobtype) $cnt
-      if {[info exists t($jobtype)]} {
-        incr t($jobtype) $cnt
-      } else {
-        set t($jobtype) $cnt
-      }
+      set v($state,$displaytype) $cnt
+      incr t($displaytype) $cnt
     }
   }
 
   set text ""
-  foreach j [array names t] {
+  foreach j [lsort [array names t]] {
+    foreach k {done failed running} { incr v($k,$j) 0 }
     set fin [expr $v(done,$j) + $v(failed,$j)]
-    lappend text "$j ($fin/$t($j)) f=$v(failed,$j) r=$v(running,$j)"
+    lappend text "${j}($fin/$t($j))"
+    if {$v(failed,$j)>0} {
+      lappend text "f$v(failed,$j)"
+    }
+    if {$v(running,$j)>0} {
+      lappend text "r$v(running,$j)"
+    }
   }
 
   if {[info exists TRG(reportlength)]} {
     puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
   }
-  set report "${tm}s: [join $text { }]"
+  set report "${tm} [join $text { }]"
   set TRG(reportlength) [string length $report]
-  if {[string length $report]<80} {
+  if {[string length $report]<100} {
     puts -nonewline "$report\r"
     flush stdout
   } else {
@@ -907,9 +989,8 @@ proc one_line_report {} {
 
 proc launch_some_jobs {} {
   global TRG
-  r_write_db {
-    set nJob [trdb one { SELECT value FROM config WHERE name='njob' }]
-  }
+  set nJob [trdb one { SELECT value FROM config WHERE name='njob' }]
+
   while {[dirs_nHelper]<$nJob} {
     set iDir [dirs_allocDir]
     if {0==[launch_another_job $iDir]} {
@@ -927,7 +1008,6 @@ proc run_testset {} {
   set TRG(log) [open $TRG(logname) w]
 
   launch_some_jobs
-    # launch_another_job $ii
 
   one_line_report
   while {[dirs_nHelper]>0} {
@@ -940,13 +1020,13 @@ proc run_testset {} {
   r_write_db {
     set tm [clock_milliseconds]
     trdb eval { REPLACE INTO config VALUES('end', $tm ); }
-    set nErr [trdb one {SELECT count(*) FROM script WHERE state='failed'}]
+    set nErr [trdb one {SELECT count(*) FROM jobs WHERE state='failed'}]
     if {$nErr>0} {
       puts "$nErr failures:"
       trdb eval {
-        SELECT build, config, filename FROM script WHERE state='failed'
+        SELECT displayname FROM jobs WHERE state='failed'
       } {
-        puts "FAILED: $build $config $filename"
+        puts "FAILED: $displayname"
       }
     }
   }
@@ -960,7 +1040,7 @@ sqlite3 trdb $TRG(dbname)
 trdb timeout $TRG(timeout)
 set tm [lindex [time { make_new_testset }] 0]
 if {$TRG(nJob)>1} {
-  puts "splitting work across $TRG(nJob) cores"
+  puts "splitting work across $TRG(nJob) jobs"
 }
 puts "built testset in [expr $tm/1000]ms.."
 run_testset

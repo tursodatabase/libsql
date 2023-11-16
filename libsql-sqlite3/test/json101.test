@@ -119,6 +119,9 @@ do_execsql_test json101-4.7 {
 do_execsql_test json101-4.8 {
   SELECT x FROM j1 WHERE json_insert(x)<>x;
 } {}
+do_execsql_test json101-4.9 {
+  SELECT json_insert('{"a":1}','$.b',CAST(x'0000' AS text));
+} {{{"a":1,"b":"\u0000\u0000"}}}
 
 # json_extract(JSON,'$') will return objects and arrays without change.
 #
@@ -1013,7 +1016,43 @@ do_execsql_test json101-21.27 {
   SELECT json_group_object(x,y) FROM c;
 } {{{"a":1,"b":2.0,"c":null,:"three","e":"four"}}}
 
+# 2023-10-09 https://sqlite.org/forum/forumpost/b25edc1d46
+# UAF due to JSON cache overflow
+#
+do_execsql_test json101-22.1 {
+  SELECT json_set(
+    '{}',
+    '$.a', json('1'),
+    '$.a', json('2'),
+    '$.b', json('3'),
+    '$.b', json('4'),
+    '$.c', json('5'),
+    '$.c', json('6')
+  );
+} {{{"a":2,"b":4,"c":6}}}
+do_execsql_test json101-22.2 {
+  SELECT json_replace(
+    '{"a":7,"b":8,"c":9}',
+    '$.a', json('1'),
+    '$.a', json('2'),
+    '$.b', json('3'),
+    '$.b', json('4'),
+    '$.c', json('5'),
+    '$.c', json('6')
+  );
+} {{{"a":2,"b":4,"c":6}}}
 
+# 2023-10-17 https://sqlite.org/forum/forumpost/fc0e3f1e2a
+# Incorrect accesss to '$[0]' in parsed + edited JSON.
+#
+do_execsql_test json101-23.1 {
+  SELECT j, j->>0, j->>1
+    FROM (SELECT json_set(json_set('[]','$[#]',0), '$[#]',1) AS j);
+} {{[0,1]} 0 1}
+do_execsql_test json101-23.2 {
+  SELECT j, j->>0, j->>1
+    FROM (SELECT json_set('[]','$[#]',0,'$[#]',1) AS j);
+} {{[0,1]} 0 1}
 
 
 

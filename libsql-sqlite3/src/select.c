@@ -454,6 +454,7 @@ static void unsetJoinExpr(Expr *p, int iTable, int nullable){
     }
     if( p->op==TK_FUNCTION ){
       assert( ExprUseXList(p) );
+      assert( p->pLeft==0 );
       if( p->x.pList ){
         int i;
         for(i=0; i<p->x.pList->nExpr; i++){
@@ -5301,12 +5302,12 @@ static int disableUnusedSubqueryResultColumns(SrcItem *pItem){
   assert( pItem->pSelect!=0 );
   pSub = pItem->pSelect;
   assert( pSub->pEList->nExpr==pTab->nCol );
-  if( (pSub->selFlags & (SF_Distinct|SF_Aggregate))!=0 ){
-    testcase( pSub->selFlags & SF_Distinct );
-    testcase( pSub->selFlags & SF_Aggregate );
-    return 0;
-  }
   for(pX=pSub; pX; pX=pX->pPrior){
+    if( (pX->selFlags & (SF_Distinct|SF_Aggregate))!=0 ){
+      testcase( pX->selFlags & SF_Distinct );
+      testcase( pX->selFlags & SF_Aggregate );
+      return 0;
+    }
     if( pX->pPrior && pX->op!=TK_ALL ){
       /* This optimization does not work for compound subqueries that
       ** use UNION, INTERSECT, or EXCEPT.  Only UNION ALL is allowed. */
@@ -6114,6 +6115,7 @@ static int selectExpander(Walker *pWalker, Select *p){
         char *zTName = 0;       /* text of name of TABLE */
         int iErrOfst;
         if( pE->op==TK_DOT ){
+          assert( (selFlags & SF_NestedFrom)==0 );
           assert( pE->pLeft!=0 );
           assert( !ExprHasProperty(pE->pLeft, EP_IntValue) );
           zTName = pE->pLeft->u.zToken;
@@ -6124,6 +6126,7 @@ static int selectExpander(Walker *pWalker, Select *p){
           iErrOfst = pE->w.iOfst;
         }
         for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
+          int nAdd;                    /* Number of cols including rowid */
           Table *pTab = pFrom->pTab;   /* Table for this data source */
           ExprList *pNestedFrom;       /* Result-set of a nested FROM clause */
           char *zTabName;              /* AS name for this data source */
@@ -6141,6 +6144,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             pNestedFrom = pFrom->pSelect->pEList;
             assert( pNestedFrom!=0 );
             assert( pNestedFrom->nExpr==pTab->nCol );
+            assert( VisibleRowid(pTab)==0 );
           }else{
             if( zTName && sqlite3StrICmp(zTName, zTabName)!=0 ){
               continue;
@@ -6171,33 +6175,48 @@ static int selectExpander(Walker *pWalker, Select *p){
           }else{
             pUsing = 0;
           }
-          for(j=0; j<pTab->nCol; j++){
-            char *zName = pTab->aCol[j].zCnName;
+
+          nAdd = pTab->nCol + (VisibleRowid(pTab) && (selFlags&SF_NestedFrom));
+          for(j=0; j<nAdd; j++){
+            const char *zName; 
             struct ExprList_item *pX; /* Newly added ExprList term */
 
-            assert( zName );
-            if( zTName
-             && pNestedFrom
-             && sqlite3MatchEName(&pNestedFrom->a[j], 0, zTName, 0)==0
-            ){
-              continue;
-            }
+            if( j==pTab->nCol ){
+              zName = sqlite3RowidAlias(pTab);
+              if( zName==0 ) continue;
+            }else{
+              zName = pTab->aCol[j].zCnName;
 
-            /* If a column is marked as 'hidden', omit it from the expanded
-            ** result-set list unless the SELECT has the SF_IncludeHidden
-            ** bit set.
-            */
-            if( (p->selFlags & SF_IncludeHidden)==0
-             && IsHiddenColumn(&pTab->aCol[j])
-            ){
-              continue;
+              /* If pTab is actually an SF_NestedFrom sub-select, do not
+              ** expand any ENAME_ROWID columns.  */
+              if( pNestedFrom && pNestedFrom->a[j].fg.eEName==ENAME_ROWID ){
+                continue;
+              }
+
+              if( zTName
+               && pNestedFrom
+               && sqlite3MatchEName(&pNestedFrom->a[j], 0, zTName, 0, 0)==0
+              ){
+                continue;
+              }
+
+              /* If a column is marked as 'hidden', omit it from the expanded
+              ** result-set list unless the SELECT has the SF_IncludeHidden
+              ** bit set.
+              */
+              if( (p->selFlags & SF_IncludeHidden)==0
+                && IsHiddenColumn(&pTab->aCol[j])
+              ){
+                continue;
+              }
+              if( (pTab->aCol[j].colFlags & COLFLAG_NOEXPAND)!=0
+               && zTName==0
+               && (selFlags & (SF_NestedFrom))==0
+              ){
+                continue;
+              }
             }
-            if( (pTab->aCol[j].colFlags & COLFLAG_NOEXPAND)!=0
-             && zTName==0
-             && (selFlags & (SF_NestedFrom))==0
-            ){
-              continue;
-            }
+            assert( zName );
             tableSeen = 1;
 
             if( i>0 && zTName==0 && (selFlags & SF_NestedFrom)==0 ){
@@ -6247,11 +6266,11 @@ static int selectExpander(Walker *pWalker, Select *p){
                                            zSchemaName, zTabName, zName);
                 testcase( pX->zEName==0 );
               }
-              pX->fg.eEName = ENAME_TAB;
+              pX->fg.eEName = (j==pTab->nCol ? ENAME_ROWID : ENAME_TAB);
               if( (pFrom->fg.isUsing
                    && sqlite3IdListIndex(pFrom->u3.pUsing, zName)>=0)
                || (pUsing && sqlite3IdListIndex(pUsing, zName)>=0)
-               || (pTab->aCol[j].colFlags & COLFLAG_NOEXPAND)!=0
+               || (j<pTab->nCol && (pTab->aCol[j].colFlags & COLFLAG_NOEXPAND))
               ){
                 pX->fg.bNoExpand = 1;
               }
@@ -6472,8 +6491,14 @@ static void analyzeAggFuncArgs(
   pNC->ncFlags |= NC_InAggFunc;
   for(i=0; i<pAggInfo->nFunc; i++){
     Expr *pExpr = pAggInfo->aFunc[i].pFExpr;
+    assert( pExpr->op==TK_FUNCTION || pExpr->op==TK_AGG_FUNCTION );
     assert( ExprUseXList(pExpr) );
     sqlite3ExprAnalyzeAggList(pNC, pExpr->x.pList);
+    if( pExpr->pLeft ){
+      assert( pExpr->pLeft->op==TK_ORDER );
+      assert( ExprUseXList(pExpr->pLeft) );
+      sqlite3ExprAnalyzeAggList(pNC, pExpr->pLeft->x.pList);
+    }
 #ifndef SQLITE_OMIT_WINDOWFUNC
     assert( !IsWindowFunc(pExpr) );
     if( ExprHasProperty(pExpr, EP_WinFunc) ){
@@ -6628,6 +6653,32 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
                           pFunc->pFunc->zName));
       }
     }
+    if( pFunc->iOBTab>=0 ){
+      ExprList *pOBList;
+      KeyInfo *pKeyInfo;
+      int nExtra = 0;
+      assert( pFunc->pFExpr->pLeft!=0 );
+      assert( pFunc->pFExpr->pLeft->op==TK_ORDER );
+      assert( ExprUseXList(pFunc->pFExpr->pLeft) );
+      pOBList = pFunc->pFExpr->pLeft->x.pList;
+      if( !pFunc->bOBUnique ){
+        nExtra++;  /* One extra column for the OP_Sequence */
+      }
+      if( pFunc->bOBPayload ){
+        /* extra columns for the function arguments */
+        assert( ExprUseXList(pFunc->pFExpr) );
+        nExtra += pFunc->pFExpr->x.pList->nExpr;
+      }
+      pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pOBList, 0, nExtra);
+      if( !pFunc->bOBUnique && pParse->nErr==0 ){
+        pKeyInfo->nKeyField++;
+      }
+      sqlite3VdbeAddOp4(v, OP_OpenEphemeral,
+            pFunc->iOBTab, pOBList->nExpr+nExtra, 0,
+            (char*)pKeyInfo, P4_KEYINFO);
+      ExplainQueryPlan((pParse, 0, "USE TEMP B-TREE FOR %s(ORDER BY)",
+                          pFunc->pFunc->zName));
+    }
   }
 }
 
@@ -6643,12 +6694,45 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
     ExprList *pList;
     assert( ExprUseXList(pF->pFExpr) );
     pList = pF->pFExpr->x.pList;
+    if( pF->iOBTab>=0 ){
+      /* For an ORDER BY aggregate, calls to OP_AggStep where deferred and
+      ** all content was stored in emphermal table pF->iOBTab.  Extract that
+      ** content now (in ORDER BY order) and make all calls to OP_AggStep
+      ** before doing the OP_AggFinal call. */
+      int iTop;        /* Start of loop for extracting columns */
+      int nArg;        /* Number of columns to extract */
+      int nKey;        /* Key columns to be skipped */
+      int regAgg;      /* Extract into this array */
+      int j;           /* Loop counter */
+      
+      nArg = pList->nExpr;
+      regAgg = sqlite3GetTempRange(pParse, nArg);
+
+      if( pF->bOBPayload==0 ){
+        nKey = 0;
+      }else{
+        assert( pF->pFExpr->pLeft!=0 );
+        assert( ExprUseXList(pF->pFExpr->pLeft) );
+        assert( pF->pFExpr->pLeft->x.pList!=0 );
+        nKey = pF->pFExpr->pLeft->x.pList->nExpr;
+        if( ALWAYS(!pF->bOBUnique) ) nKey++;
+      }
+      iTop = sqlite3VdbeAddOp1(v, OP_Rewind, pF->iOBTab); VdbeCoverage(v);
+      for(j=nArg-1; j>=0; j--){
+        sqlite3VdbeAddOp3(v, OP_Column, pF->iOBTab, nKey+j, regAgg+j);
+      }
+      sqlite3VdbeAddOp3(v, OP_AggStep, 0, regAgg, AggInfoFuncReg(pAggInfo,i));
+      sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
+      sqlite3VdbeChangeP5(v, (u8)nArg);
+      sqlite3VdbeAddOp2(v, OP_Next, pF->iOBTab, iTop+1); VdbeCoverage(v);
+      sqlite3VdbeJumpHere(v, iTop);
+      sqlite3ReleaseTempRange(pParse, regAgg, nArg);
+    }
     sqlite3VdbeAddOp2(v, OP_AggFinal, AggInfoFuncReg(pAggInfo,i),
                       pList ? pList->nExpr : 0);
     sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
   }
 }
-
 
 /*
 ** Generate code that will update the accumulator memory cells for an
@@ -6658,6 +6742,13 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
 ** in pAggInfo, then only populate the pAggInfo->nAccumulator accumulator
 ** registers if register regAcc contains 0. The caller will take care
 ** of setting and clearing regAcc.
+**
+** For an ORDER BY aggregate, the actual accumulator memory cell update
+** is deferred until after all input rows have been received, so that they
+** can be run in the requested order.  In that case, instead of invoking
+** OP_AggStep to update the accumulator, just add the arguments that would
+** have been passed into OP_AggStep into the sorting ephemeral table
+** (along with the appropriate sort key).
 */
 static void updateAccumulator(
   Parse *pParse,
@@ -6679,6 +6770,8 @@ static void updateAccumulator(
     int nArg;
     int addrNext = 0;
     int regAgg;
+    int regAggSz = 0;
+    int regDistinct = 0;
     ExprList *pList;
     assert( ExprUseXList(pF->pFExpr) );
     assert( !IsWindowFunc(pF->pFExpr) );
@@ -6705,9 +6798,44 @@ static void updateAccumulator(
       addrNext = sqlite3VdbeMakeLabel(pParse);
       sqlite3ExprIfFalse(pParse, pFilter, addrNext, SQLITE_JUMPIFNULL);
     }
-    if( pList ){
+    if( pF->iOBTab>=0 ){
+      /* Instead of invoking AggStep, we must push the arguments that would
+      ** have been passed to AggStep onto the sorting table. */
+      int jj;                /* Registered used so far in building the record */
+      ExprList *pOBList;     /* The ORDER BY clause */
+      assert( pList!=0 );
+      nArg = pList->nExpr;
+      assert( nArg>0 );
+      assert( pF->pFExpr->pLeft!=0 );
+      assert( pF->pFExpr->pLeft->op==TK_ORDER );
+      assert( ExprUseXList(pF->pFExpr->pLeft) );
+      pOBList = pF->pFExpr->pLeft->x.pList;
+      assert( pOBList!=0 );
+      assert( pOBList->nExpr>0 );
+      regAggSz = pOBList->nExpr;
+      if( !pF->bOBUnique ){
+        regAggSz++;   /* One register for OP_Sequence */
+      }
+      if( pF->bOBPayload ){
+        regAggSz += nArg;
+      }
+      regAggSz++;  /* One extra register to hold result of MakeRecord */
+      regAgg = sqlite3GetTempRange(pParse, regAggSz);
+      regDistinct = regAgg;
+      sqlite3ExprCodeExprList(pParse, pOBList, regAgg, 0, SQLITE_ECEL_DUP);
+      jj = pOBList->nExpr;
+      if( !pF->bOBUnique ){
+        sqlite3VdbeAddOp2(v, OP_Sequence, pF->iOBTab, regAgg+jj);
+        jj++;
+      }
+      if( pF->bOBPayload ){
+        regDistinct = regAgg+jj;
+        sqlite3ExprCodeExprList(pParse, pList, regDistinct, 0, SQLITE_ECEL_DUP);
+      }
+    }else if( pList ){
       nArg = pList->nExpr;
       regAgg = sqlite3GetTempRange(pParse, nArg);
+      regDistinct = regAgg;
       sqlite3ExprCodeExprList(pParse, pList, regAgg, 0, SQLITE_ECEL_DUP);
     }else{
       nArg = 0;
@@ -6718,26 +6846,37 @@ static void updateAccumulator(
         addrNext = sqlite3VdbeMakeLabel(pParse);
       }
       pF->iDistinct = codeDistinct(pParse, eDistinctType,
-          pF->iDistinct, addrNext, pList, regAgg);
+          pF->iDistinct, addrNext, pList, regDistinct);
     }
-    if( pF->pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
-      CollSeq *pColl = 0;
-      struct ExprList_item *pItem;
-      int j;
-      assert( pList!=0 );  /* pList!=0 if pF->pFunc has NEEDCOLL */
-      for(j=0, pItem=pList->a; !pColl && j<nArg; j++, pItem++){
-        pColl = sqlite3ExprCollSeq(pParse, pItem->pExpr);
+    if( pF->iOBTab>=0 ){
+      /* Insert a new record into the ORDER BY table */
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, regAgg, regAggSz-1,
+                        regAgg+regAggSz-1);
+      sqlite3VdbeAddOp4Int(v, OP_IdxInsert, pF->iOBTab, regAgg+regAggSz-1,
+                           regAgg, regAggSz-1);
+      sqlite3ReleaseTempRange(pParse, regAgg, regAggSz);
+    }else{
+      /* Invoke the AggStep function */
+      if( pF->pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
+        CollSeq *pColl = 0;
+        struct ExprList_item *pItem;
+        int j;
+        assert( pList!=0 );  /* pList!=0 if pF->pFunc has NEEDCOLL */
+        for(j=0, pItem=pList->a; !pColl && j<nArg; j++, pItem++){
+          pColl = sqlite3ExprCollSeq(pParse, pItem->pExpr);
+        }
+        if( !pColl ){
+          pColl = pParse->db->pDfltColl;
+        }
+        if( regHit==0 && pAggInfo->nAccumulator ) regHit = ++pParse->nMem;
+        sqlite3VdbeAddOp4(v, OP_CollSeq, regHit, 0, 0,
+                         (char *)pColl, P4_COLLSEQ);
       }
-      if( !pColl ){
-        pColl = pParse->db->pDfltColl;
-      }
-      if( regHit==0 && pAggInfo->nAccumulator ) regHit = ++pParse->nMem;
-      sqlite3VdbeAddOp4(v, OP_CollSeq, regHit, 0, 0, (char *)pColl, P4_COLLSEQ);
+      sqlite3VdbeAddOp3(v, OP_AggStep, 0, regAgg, AggInfoFuncReg(pAggInfo,i));
+      sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
+      sqlite3VdbeChangeP5(v, (u8)nArg);
+      sqlite3ReleaseTempRange(pParse, regAgg, nArg);
     }
-    sqlite3VdbeAddOp3(v, OP_AggStep, 0, regAgg, AggInfoFuncReg(pAggInfo,i));
-    sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
-    sqlite3VdbeChangeP5(v, (u8)nArg);
-    sqlite3ReleaseTempRange(pParse, regAgg, nArg);
     if( addrNext ){
       sqlite3VdbeResolveLabel(v, addrNext);
     }

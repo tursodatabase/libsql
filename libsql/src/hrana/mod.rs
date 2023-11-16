@@ -135,8 +135,22 @@ impl RowsInner for Rows {
             .map(|s| s.as_str())
     }
 
-    fn column_type(&self, _idx: i32) -> crate::Result<ValueType> {
-        todo!("implement")
+    fn column_type(&self, idx: i32) -> crate::Result<ValueType> {
+        let row = match self.rows.get(0) {
+            None => return Err(crate::Error::QueryReturnedNoRows),
+            Some(row) => row,
+        };
+        let cell = match row.get(idx as usize) {
+            None => return Err(crate::Error::ColumnNotFound(idx)),
+            Some(cell) => cell,
+        };
+        Ok(match cell {
+            proto::Value::Null => ValueType::Null,
+            proto::Value::Integer { .. } => ValueType::Integer,
+            proto::Value::Float { .. } => ValueType::Real,
+            proto::Value::Text { .. } => ValueType::Text,
+            proto::Value::Blob { .. } => ValueType::Blob,
+        })
     }
 }
 

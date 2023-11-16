@@ -60,3 +60,4 @@ testfixture
 libsql
 /src-verify
 /crates/target/
+/has_tclsh*

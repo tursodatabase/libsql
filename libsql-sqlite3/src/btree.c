@@ -1,4 +1,3 @@
-
 /*
 ** 2004 April 6
 **
@@ -7496,9 +7495,10 @@ static int rebuildPage(
   int k;                          /* Current slot in pCArray->apEnd[] */
   u8 *pSrcEnd;                    /* Current pCArray->apEnd[k] value */
 
+  assert( nCell>0 );
   assert( i<iEnd );
   j = get2byte(&aData[hdr+5]);
-  if( NEVER(j>(u32)usableSize) ){ j = 0; }
+  if( j>(u32)usableSize ){ j = 0; }
   memcpy(&pTmp[j], &aData[j], usableSize - j);
 
   for(k=0; ALWAYS(k<NB*2) && pCArray->ixNx[k]<=i; k++){}
@@ -7802,6 +7802,7 @@ static int editPage(
   return SQLITE_OK;
  editpage_fail:
   /* Unable to edit this page. Rebuild it from scratch instead. */
+  if( nNew<1 ) return SQLITE_CORRUPT_BKPT;
   populateCellCache(pCArray, iNew, nNew);
   return rebuildPage(pCArray, iNew, nNew, pPg);
 }
@@ -10464,7 +10465,8 @@ static void checkAppendMsg(
 ** corresponds to page iPg is already set.
 */
 static int getPageReferenced(IntegrityCk *pCheck, Pgno iPg){
-  assert( iPg<=pCheck->nPage && sizeof(pCheck->aPgRef[0])==1 );
+  assert( pCheck->aPgRef!=0 );
+  assert( iPg<=pCheck->nCkPage && sizeof(pCheck->aPgRef[0])==1 );
   return (pCheck->aPgRef[iPg/8] & (1 << (iPg & 0x07)));
 }
 
@@ -10472,7 +10474,8 @@ static int getPageReferenced(IntegrityCk *pCheck, Pgno iPg){
 ** Set the bit in the IntegrityCk.aPgRef[] array that corresponds to page iPg.
 */
 static void setPageReferenced(IntegrityCk *pCheck, Pgno iPg){
-  assert( iPg<=pCheck->nPage && sizeof(pCheck->aPgRef[0])==1 );
+  assert( pCheck->aPgRef!=0 );
+  assert( iPg<=pCheck->nCkPage && sizeof(pCheck->aPgRef[0])==1 );
   pCheck->aPgRef[iPg/8] |= (1 << (iPg & 0x07));
 }
 
@@ -10486,7 +10489,7 @@ static void setPageReferenced(IntegrityCk *pCheck, Pgno iPg){
 ** Also check that the page number is in bounds.
 */
 static int checkRef(IntegrityCk *pCheck, Pgno iPage){
-  if( iPage>pCheck->nPage || iPage==0 ){
+  if( iPage>pCheck->nCkPage || iPage==0 ){
     checkAppendMsg(pCheck, "invalid page number %u", iPage);
     return 1;
   }
@@ -10713,6 +10716,7 @@ static int checkTreePage(
   if( (rc = btreeGetPage(pBt, iPage, &pPage, 0))!=0 ){
     checkAppendMsg(pCheck,
        "unable to get the page. error code=%d", rc);
+    if( rc==SQLITE_IOERR_NOMEM ) pCheck->rc = SQLITE_NOMEM;
     goto end_of_check;
   }
 
@@ -10983,15 +10987,15 @@ int sqlite3BtreeIntegrityCheck(
   sCheck.db = db;
   sCheck.pBt = pBt;
   sCheck.pPager = pBt->pPager;
-  sCheck.nPage = btreePagecount(sCheck.pBt);
+  sCheck.nCkPage = btreePagecount(sCheck.pBt);
   sCheck.mxErr = mxErr;
   sqlite3StrAccumInit(&sCheck.errMsg, 0, zErr, sizeof(zErr), SQLITE_MAX_LENGTH);
   sCheck.errMsg.printfFlags = SQLITE_PRINTF_INTERNAL;
-  if( sCheck.nPage==0 ){
+  if( sCheck.nCkPage==0 ){
     goto integrity_ck_cleanup;
   }
 
-  sCheck.aPgRef = sqlite3MallocZero((sCheck.nPage / 8)+ 1);
+  sCheck.aPgRef = sqlite3MallocZero((sCheck.nCkPage / 8)+ 1);
   if( !sCheck.aPgRef ){
     checkOom(&sCheck);
     goto integrity_ck_cleanup;
@@ -11003,7 +11007,7 @@ int sqlite3BtreeIntegrityCheck(
   }
 
   i = PENDING_BYTE_PAGE(pBt);
-  if( i<=sCheck.nPage ) setPageReferenced(&sCheck, i);
+  if( i<=sCheck.nCkPage ) setPageReferenced(&sCheck, i);
 
   /* Check the integrity of the freelist
   */
@@ -11054,7 +11058,7 @@ int sqlite3BtreeIntegrityCheck(
   /* Make sure every page in the file is referenced
   */
   if( !bPartial ){
-    for(i=1; i<=sCheck.nPage && sCheck.mxErr; i++){
+    for(i=1; i<=sCheck.nCkPage && sCheck.mxErr; i++){
 #ifdef SQLITE_OMIT_AUTOVACUUM
       if( getPageReferenced(&sCheck, i)==0 ){
         checkAppendMsg(&sCheck, "Page %u: never used", i);

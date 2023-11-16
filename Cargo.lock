@@ -2277,6 +2277,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "libsql-ffi"
+version = "0.1.0"
+dependencies = [
+ "bindgen",
+ "cc",
+]
+
+[[package]]
 name = "libsql-replication"
 version = "0.1.0"
 dependencies = [
@@ -2310,6 +2318,7 @@ dependencies = [
  "base64 0.21.5",
  "clap 4.4.7",
  "home",
+ "once_cell",
  "rusqlite",
  "rustyline",
  "rustyline-derive",
@@ -2321,8 +2330,7 @@ dependencies = [
 name = "libsql-sys"
 version = "0.2.14"
 dependencies = [
- "bindgen",
- "cc",
+ "libsql-ffi",
  "once_cell",
  "tracing",
 ]
@@ -3792,7 +3800,7 @@ dependencies = [
 
 [[package]]
 name = "sqld"
-version = "0.22.0"
+version = "0.22.4"
 dependencies = [
  "anyhow",
  "arbitrary",

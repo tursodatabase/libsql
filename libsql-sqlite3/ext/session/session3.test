@@ -135,8 +135,8 @@ do_test 2.2.2 {
     DROP TABLE t2;
     CREATE TABLE t2(a, b PRIMARY KEY, c, d);
   }
-  list [catch { S changeset } msg] $msg
-} {1 SQLITE_SCHEMA}
+  catch { S changeset } 
+} {0}
 do_test 2.2.3 {
   S delete
   sqlite3session S db main
@@ -167,8 +167,8 @@ do_test 2.2.4 {
     CREATE TABLE t2(a, b PRIMARY KEY, c, d);
     INSERT INTO t2 VALUES(4, 5, 6, 7);
   }
-  list [catch { S changeset } msg] $msg
-} {1 SQLITE_SCHEMA}
+  catch { S changeset }
+} {0}
 
 do_test 2.3 {
   S delete

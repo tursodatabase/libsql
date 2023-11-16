@@ -52,8 +52,8 @@ MINIMAL_AMALGAMATION = 0
 USE_STDCALL = 0
 !ENDIF
 
-# Set this non-0 to use structured exception handling (SEH) for WAL mode
-# in the core library.
+# Use the USE_SEH=0 option on the nmake command line to omit structured
+# exception handling (SEH) support.  SEH is on by default.
 #
 !IFNDEF USE_SEH
 USE_SEH = 1
@@ -374,6 +374,7 @@ SQLITE_TCL_DEP =
 !IFNDEF OPT_FEATURE_FLAGS
 !IF $(MINIMAL_AMALGAMATION)==0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS5=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_GEOPOLY=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_STMTVTAB=1
@@ -403,10 +404,11 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RBU=1
 !ENDIF
 
 # Should structured exception handling (SEH) be enabled for WAL mode in
-# the core library?
+# the core library?  It is on by default.  Only omit it if the
+# USE_SEH=0 option is provided on the nmake command-line.
 #
-!IF $(USE_SEH)!=0
-OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_USE_SEH=1
+!IF $(USE_SEH)==0
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_OMIT_SEH=1
 !ENDIF
 
 # These are the "extended" SQLite compilation options used when compiling for
@@ -1592,8 +1594,7 @@ TESTEXT = \
   $(TOP)\ext\rtree\test_rtreedoc.c \
   $(TOP)\ext\recover\sqlite3recover.c \
   $(TOP)\ext\recover\test_recover.c \
-  $(TOP)\ext\recover\dbdata.c \
-  fts5.c
+  $(TOP)\ext\recover\dbdata.c 
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
 #
@@ -1609,7 +1610,8 @@ TESTSRC2 = \
   $(SRC01) \
   $(SRC07) \
   $(SRC10) \
-  $(TOP)\ext\async\sqlite3async.c
+  $(TOP)\ext\async\sqlite3async.c \
+  fts5.c
 
 # Header files used by all library source files.
 #
@@ -1688,6 +1690,8 @@ SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_DQS=0
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_FTS4=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_EXPLAIN_COMMENTS=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_OFFSET_SQL_FUNC=1
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION=1
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_STMT_SCANSTATUS=1
 !ENDIF
 
 # <<mark>>
@@ -1819,8 +1823,8 @@ $(SQLITE3EXE):	shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLIT
 		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 # <<mark>>
-sqldiff.exe:	$(TOP)\tool\sqldiff.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+sqldiff.exe:	$(TOP)\tool\sqldiff.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
+	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
 dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
@@ -2465,6 +2469,9 @@ testfixture.exe:	$(TESTFIXTURE_SRC) $(TESTFIXTURE_DEP) $(SQLITE3H) $(LIBRESOBJS)
 extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
+
+tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe $(TOP)\tool\mktoolzip.tcl
+	.\testfixture.exe $(TOP)\tool\mktoolzip.tcl
 
 coretestprogs:	$(TESTPROGS)
 

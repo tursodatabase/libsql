@@ -48,6 +48,9 @@ do_execsql_test json102-180 {
 do_execsql_test json102-190 {
   SELECT json_array_length('[1,2,3,4]');
 } {{4}}
+do_execsql_test json102-191 {
+  SELECT json_array_length( json_remove('[1,2,3,4]','$[2]') );
+} {{3}}
 do_execsql_test json102-200 {
   SELECT json_array_length('[1,2,3,4]', '$');
 } {{4}}

@@ -215,4 +215,42 @@ do_execsql_test 7.2 {
   SELECT rowid FROM f WHERE filename GLOB '*ир*';
 } {20}
 
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 8.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(y, tokenize=trigram);
+  INSERT INTO t1 VALUES('abcdefghijklm');
+}
+
+foreach {tn match res} {
+  1 "abc ghi"         "(abc)def(ghi)jklm"
+  2 "def ghi"         "abc(defghi)jklm"
+  3 "efg ghi"         "abcd(efghi)jklm"
+  4 "efghi"           "abcd(efghi)jklm"
+  5 "abcd jklm"       "(abcd)efghi(jklm)"
+  6 "ijkl jklm"       "abcdefgh(ijklm)"
+  7 "ijk ijkl hijk"   "abcdefg(hijkl)m"
+
+} {
+  do_execsql_test 8.1.$tn {
+    SELECT highlight(t1, 0, '(', ')') FROM t1($match)
+  } $res
+}
+
+do_execsql_test 8.2 {
+  CREATE VIRTUAL TABLE ft2 USING fts5(a, tokenize="trigram");
+  INSERT INTO ft2 VALUES('abc x cde');
+  INSERT INTO ft2 VALUES('abc cde');
+  INSERT INTO ft2 VALUES('abcde');
+}
+
+do_execsql_test 8.3 {
+  SELECT highlight(ft2, 0, '[', ']') FROM ft2 WHERE ft2 MATCH 'abc AND cde';
+} {
+  {[abc] x [cde]}
+  {[abc] [cde]}
+  {[abcde]}
+}
+
 finish_test

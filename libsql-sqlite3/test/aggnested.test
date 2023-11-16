@@ -25,19 +25,19 @@ do_test aggnested-1.1 {
     INSERT INTO t1 VALUES(1), (2), (3);
     CREATE TABLE t2(b1 INTEGER);
     INSERT INTO t2 VALUES(4), (5);
-    SELECT (SELECT group_concat(a1,'x') FROM t2) FROM t1;
+    SELECT (SELECT string_agg(a1,'x') FROM t2) FROM t1;
   }
 } {1x2x3}
 do_test aggnested-1.2 {
   db eval {
     SELECT
-     (SELECT group_concat(a1,'x') || '-' || group_concat(b1,'y') FROM t2)
+     (SELECT string_agg(a1,'x') || '-' || string_agg(b1,'y') FROM t2)
     FROM t1;
   }
 } {1x2x3-4y5}
 do_test aggnested-1.3 {
   db eval {
-    SELECT (SELECT group_concat(b1,a1) FROM t2) FROM t1;
+    SELECT (SELECT string_agg(b1,a1) FROM t2) FROM t1;
   }
 } {415 425 435}
 do_test aggnested-1.4 {
@@ -309,7 +309,7 @@ do_execsql_test 5.4 {
 do_execsql_test 5.5 {
   CREATE TABLE a(b);
   WITH c AS(SELECT a)
-    SELECT(SELECT(SELECT group_concat(b, b)
+    SELECT(SELECT(SELECT string_agg(b, b)
           LIMIT(SELECT 0.100000 *
             AVG(DISTINCT(SELECT 0 FROM a ORDER BY b, b, b))))
         FROM a GROUP BY b,

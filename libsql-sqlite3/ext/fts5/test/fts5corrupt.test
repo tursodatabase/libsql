@@ -48,6 +48,10 @@ do_test 1.3 {
   }
   catchsql { INSERT INTO t1(t1) VALUES('integrity-check') }
 } {1 {database disk image is malformed}}
+do_execsql_test 1.3b {
+  PRAGMA integrity_check(t1);
+} {{malformed inverted index for FTS5 table main.t1}}
+
 
 do_test 1.4 {
   db_restore_and_reopen
