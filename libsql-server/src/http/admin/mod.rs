@@ -76,6 +76,7 @@ where
     let prom_handle = if !disable_metrics {
         let lock = PROM_HANDLE.lock();
         let prom_handle = lock.get_or_init(|| {
+            tracing::info!("initializing prometheus metrics");
             let b = PrometheusBuilder::new().idle_timeout(
                 metrics_util::MetricKindMask::ALL,
                 Some(Duration::from_secs(120)),
