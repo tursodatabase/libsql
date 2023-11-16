@@ -1081,10 +1081,10 @@ do_test shell1-5.0 {
       #
       set escapes [list \
           \t \\t \n \\n \v \\v \f \\f \
-          " " "\" \"" \" \\\" ' \"'\" \\ \\\\]
+          " " "\" \"" \" \\\" \\ \\\\]
     }
     set char [string map $escapes $char]
-    set x [catchcmdex test.db ".print $char\n"]
+    set x [catchcmdex test.db ".print \"$char\"\n"]
     set code [lindex $x 0]
     set res [lindex $x 1]
     if {$code ne "0"} {
@@ -1165,21 +1165,21 @@ do_test shell1-7.1.2 {
 } {0 {CREATE TABLE Z (x TEXT PRIMARY KEY);
 CREATE TABLE _ (x TEXT PRIMARY KEY);}}
 do_test shell1-7.1.3 {
-  catchcmd "test.db" ".schema \\\\_"
+  catchcmd "test.db" ".schema \"\\\\_\""
 } {0 {CREATE TABLE _ (x TEXT PRIMARY KEY);}}
 do_test shell1-7.1.4 {
   catchcmd "test.db" ".schema __"
 } {0 {CREATE TABLE YY (x TEXT PRIMARY KEY);
 CREATE TABLE __ (x TEXT PRIMARY KEY);}}
 do_test shell1-7.1.5 {
-  catchcmd "test.db" ".schema \\\\_\\\\_"
+  catchcmd "test.db" ".schema \"\\\\_\\\\_\""
 } {0 {CREATE TABLE __ (x TEXT PRIMARY KEY);}}
 do_test shell1-7.1.6 {
   catchcmd "test.db" ".schema ___"
 } {0 {CREATE TABLE WWW (x TEXT PRIMARY KEY);
 CREATE TABLE ___ (x TEXT PRIMARY KEY);}}
 do_test shell1-7.1.7 {
-  catchcmd "test.db" ".schema \\\\_\\\\_\\\\_"
+  catchcmd "test.db" ".schema \"\\\\_\\\\_\\\\_\""
 } {0 {CREATE TABLE ___ (x TEXT PRIMARY KEY);}}
 
 }

@@ -65,7 +65,7 @@ do_test tkt-cbd05-1.2 {
 } {}
 do_test tkt-cbd05-1.3 {
   execsql { 
-    SELECT tbl,idx,group_concat(s(sample),' ') 
+    SELECT tbl,idx,string_agg(s(sample),' ') 
     FROM vvv 
     WHERE idx = 't1_x' 
     GROUP BY tbl,idx

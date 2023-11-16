@@ -115,6 +115,14 @@ ifcapable threadsafe1&&shared_cache {
     }
   } {
 
+    # For journal_mode=memory, the static_prng mutex is not required. This
+    # is because the header of an in-memory journal does not contain
+    # any random bytes, and so no call to sqlite3_randomness() is made.
+    if {[permutation]=="inmemory_journal"} {
+      set idx [lsearch $mutexes static_prng]
+      if {$idx>=0} { set mutexes [lreplace $mutexes $idx $idx] }
+    }
+
     do_test mutex1.2.$mode.1 {
       catch {db close}
       sqlite3_shutdown

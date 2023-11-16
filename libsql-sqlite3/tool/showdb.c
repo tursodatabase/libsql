@@ -959,6 +959,10 @@ static void page_usage_freelist(u32 pgno){
     a = fileRead((pgno-1)*g.pagesize, g.pagesize);
     iNext = decodeInt32(a);
     n = decodeInt32(a+4);
+    if( n>(g.pagesize - 8)/4 ){
+      printf("ERROR: page %d too many freelist entries (%d)\n", pgno, n);
+      n = (g.pagesize - 8)/4;
+    }
     for(i=0; i<n; i++){
       int child = decodeInt32(a + (i*4+8));
       page_usage_msg(child, "freelist leaf, child %d of trunk page %d",

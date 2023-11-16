@@ -602,7 +602,7 @@ static void jsonResult(JsonString *p){
     }else if( jsonForceRCStr(p) ){
       sqlite3RCStrRef(p->zBuf);
       sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
-                            (void(*)(void*))sqlite3RCStrUnref,
+                            sqlite3RCStrUnref,
                             SQLITE_UTF8);
     }
   }
@@ -1942,7 +1942,7 @@ static JsonParse *jsonParseCached(
   /* The input JSON was not found anywhere in the cache.  We will need
   ** to parse it ourselves and generate a new JsonParse object.
   */
-  bJsonRCStr = sqlite3ValueIsOfClass(pJson,(void(*)(void*))sqlite3RCStrUnref);
+  bJsonRCStr = sqlite3ValueIsOfClass(pJson,sqlite3RCStrUnref);
   p = sqlite3_malloc64( sizeof(*p) + (bJsonRCStr ? 0 : nJson+1) );
   if( p==0 ){
     sqlite3_result_error_nomem(pCtx);
@@ -2156,6 +2156,7 @@ static JsonNode *jsonLookupStep(
         if( (pRoot[j].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ) i--;
         j += jsonNodeSize(&pRoot[j]);
       }
+      if( i==0 && j<=pRoot->n ) break;
       if( (pRoot->jnFlags & JNODE_APPEND)==0 ) break;
       if( pParse->useMod==0 ) break;
       assert( pRoot->eU==2 );
@@ -2484,7 +2485,9 @@ static void jsonArrayLengthFunc(
   }
   if( pNode->eType==JSON_ARRAY ){
     while( 1 /*exit-by-break*/ ){
-      for(i=1; i<=pNode->n; n++){
+      i = 1;
+      while( i<=pNode->n ){
+        if( (pNode[i].jnFlags & JNODE_REMOVE)==0 ) n++;
         i += jsonNodeSize(&pNode[i]);
       }
       if( (pNode->jnFlags & JNODE_APPEND)==0 ) break;
@@ -2841,11 +2844,13 @@ static void jsonReplaceNode(
          break;
       }
       if( sqlite3_value_subtype(pValue)!=JSON_SUBTYPE ){
-        char *zCopy = sqlite3DbStrDup(0, z);
+        char *zCopy = sqlite3_malloc64( n+1 );
         int k;
         if( zCopy ){
+          memcpy(zCopy, z, n);
+          zCopy[n] = 0;
           jsonParseAddCleanup(p, sqlite3_free, zCopy);
-       }else{
+        }else{
           p->oom = 1;
           sqlite3_result_error_nomem(pCtx);
         }
@@ -2900,6 +2905,7 @@ static void jsonReplaceFunc(
   }
   pParse = jsonParseCached(ctx, argv[0], ctx, argc>1);
   if( pParse==0 ) return;
+  pParse->nJPRef++;
   for(i=1; i<(u32)argc; i+=2){
     zPath = (const char*)sqlite3_value_text(argv[i]);
     pParse->useMod = 1;
@@ -2912,6 +2918,7 @@ static void jsonReplaceFunc(
   jsonReturnJson(pParse, pParse->aNode, ctx, 1);
 replace_err:
   jsonDebugPrintParse(pParse);
+  jsonParseFree(pParse);
 }
 
 
@@ -2946,6 +2953,7 @@ static void jsonSetFunc(
   }
   pParse = jsonParseCached(ctx, argv[0], ctx, argc>1);
   if( pParse==0 ) return;
+  pParse->nJPRef++;
   for(i=1; i<(u32)argc; i+=2){
     zPath = (const char*)sqlite3_value_text(argv[i]);
     bApnd = 0;
@@ -2962,9 +2970,8 @@ static void jsonSetFunc(
   }
   jsonDebugPrintParse(pParse);
   jsonReturnJson(pParse, pParse->aNode, ctx, 1);
-
 jsonSetDone:
-  /* no cleanup required */;
+  jsonParseFree(pParse);
 }
 
 /*
@@ -3120,7 +3127,7 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
     }else if( isFinal ){
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
                           pStr->bStatic ? SQLITE_TRANSIENT :
-                              (void(*)(void*))sqlite3RCStrUnref);
+                              sqlite3RCStrUnref);
       pStr->bStatic = 1;
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);
@@ -3229,7 +3236,7 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
     }else if( isFinal ){
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
                           pStr->bStatic ? SQLITE_TRANSIENT :
-                          (void(*)(void*))sqlite3RCStrUnref);
+                          sqlite3RCStrUnref);
       pStr->bStatic = 1;
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);
@@ -3661,7 +3668,7 @@ static int jsonEachFilter(
   if( z==0 ) return SQLITE_OK;
   memset(&p->sParse, 0, sizeof(p->sParse));
   p->sParse.nJPRef = 1;
-  if( sqlite3ValueIsOfClass(argv[0], (void(*)(void*))sqlite3RCStrUnref) ){
+  if( sqlite3ValueIsOfClass(argv[0], sqlite3RCStrUnref) ){
     p->sParse.zJson = sqlite3RCStrRef((char*)z);
   }else{
     n = sqlite3_value_bytes(argv[0]);
@@ -3756,7 +3763,8 @@ static sqlite3_module jsonEachModule = {
   0,                         /* xSavepoint */
   0,                         /* xRelease */
   0,                         /* xRollbackTo */
-  0                          /* xShadowName */
+  0,                         /* xShadowName */
+  0                          /* xIntegrity */
 };
 
 /* The methods of the json_tree virtual table. */
@@ -3784,7 +3792,8 @@ static sqlite3_module jsonTreeModule = {
   0,                         /* xSavepoint */
   0,                         /* xRelease */
   0,                         /* xRollbackTo */
-  0                          /* xShadowName */
+  0,                         /* xShadowName */
+  0                          /* xIntegrity */
 };
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 #endif /* !defined(SQLITE_OMIT_JSON) */

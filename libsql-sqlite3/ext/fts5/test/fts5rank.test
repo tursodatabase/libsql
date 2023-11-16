@@ -180,4 +180,28 @@ do_execsql_test 6.1 {
   {table table table} {the table names.} {rank on an fts5 table}
 }
 
+
+#-------------------------------------------------------------------------
+# forum post: https://sqlite.org/forum/forumpost/a2dd636330
+#
+reset_db
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t USING fts5 (a, b);  
+  INSERT INTO t (a, b) VALUES ('data1', 'sentence1'), ('data2', 'sentence2'); 
+  INSERT INTO t(t, rank) VALUES ('rank', 'bm25(10.0,1.0)');
+}
+
+sqlite3 db2 test.db 
+do_execsql_test -db db2 1.1 {
+  SELECT *, rank<0.0 FROM t('data*') ORDER BY RANK;
+} {data1 sentence1 1 data2 sentence2 1}
+
+do_execsql_test 1.2 {
+  INSERT INTO t(t, rank) VALUES ('rank', 'bm25(10.0,1.0)');
+}
+do_execsql_test -db db2 1.3 {
+  SELECT *, rank<0.0 FROM t('data*') ORDER BY RANK;
+} {data1 sentence1 1 data2 sentence2 1}
+db2 close
+
 finish_test

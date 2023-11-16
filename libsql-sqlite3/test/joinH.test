@@ -132,4 +132,123 @@ do_execsql_test 6.0 {
 do_execsql_test 6.1 {
   SELECT * FROM t1 LEFT JOIN t2 ON true WHERE CASE WHEN t2.b THEN 0 ELSE 1 END;
 } {3 NULL}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c);
+  CREATE TABLE t3(d);
+
+  INSERT INTO t1 VALUES ('a', 'a');
+  INSERT INTO t2 VALUES ('ddd');
+  INSERT INTO t3 VALUES(1234);
+}
+
+do_execsql_test 7.1 {
+  SELECT t2.rowid FROM t1 JOIN (t2 JOIN t3);
+} {1}
+
+do_execsql_test 7.1 {
+  UPDATE t1 SET b = t2.rowid FROM t2, t3;
+}
+
+do_execsql_test 7.2 { 
+  SELECT * FROM t1
+} {a 1}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE x1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE x2(c, d);
+  CREATE TABLE x3(rowid, _rowid_);
+
+  CREATE TABLE x4(rowid, _rowid_, oid);
+
+  INSERT INTO x1 VALUES(1000, 'thousand');
+  INSERT INTO x2 VALUES('c', 'd');
+  INSERT INTO x3(oid, rowid, _rowid_) VALUES(43, 'hello', 'world');
+  INSERT INTO x4(oid, rowid, _rowid_) VALUES('forty three', 'hello', 'world');
+}
+
+do_execsql_test 8.1 {
+  SELECT x3.oid FROM x1 JOIN (x2 JOIN x3 ON c='c')
+} 43
+
+breakpoint
+do_execsql_test 8.2 {
+  SELECT x3.rowid FROM x1 JOIN (x2 JOIN x3 ON c='c')
+} {hello}
+
+do_execsql_test 8.3 {
+  SELECT x4.oid FROM x1 JOIN (x2 JOIN x4 ON c='c')
+} {{forty three}}
+
+
+#---------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 9.0 {
+  CREATE TABLE x1(a);
+  CREATE TABLE x2(b);
+  CREATE TABLE x3(c);
+
+  CREATE TABLE wo1(a PRIMARY KEY, b) WITHOUT ROWID;
+  CREATE TABLE wo2(a PRIMARY KEY, rowid) WITHOUT ROWID;
+  CREATE TABLE wo3(a PRIMARY KEY, b) WITHOUT ROWID;
+}
+
+do_catchsql_test 9.1 {
+  SELECT rowid FROM wo1, x1, x2;
+} {1 {no such column: rowid}}
+do_catchsql_test 9.2 {
+  SELECT rowid FROM wo1, (x1, x2);
+} {1 {no such column: rowid}}
+do_catchsql_test 9.3 {
+  SELECT rowid FROM wo1 JOIN (x1 JOIN x2);
+} {1 {no such column: rowid}}
+do_catchsql_test 9.4 {
+  SELECT a FROM wo1, x1, x2;
+} {1 {ambiguous column name: a}}
+
+
+# It is not possible to use "rowid" in a USING clause.
+#
+do_catchsql_test 9.5 {
+  SELECT * FROM x1 JOIN x2 USING (rowid);
+} {1 {cannot join using column rowid - column not present in both tables}}
+do_catchsql_test 9.6 {
+  SELECT * FROM wo2 JOIN x2 USING (rowid);
+} {1 {cannot join using column rowid - column not present in both tables}}
+
+# "rowid" columns are not matched by NATURAL JOIN. If they were, then
+# the SELECT below would return zero rows.
+do_execsql_test 9.7 {
+  INSERT INTO x1(rowid, a) VALUES(101, 'A');
+  INSERT INTO x2(rowid, b) VALUES(55, 'B');
+  SELECT * FROM x1 NATURAL JOIN x2;
+} {A B}
+
+do_execsql_test 9.8 {
+  INSERT INTO wo1(a, b) VALUES('mya', 'myb');
+  INSERT INTO wo2(a, rowid) VALUES('mypk', 'myrowid');
+  INSERT INTO wo3(a, b) VALUES('MYA', 'MYB');
+  INSERT INTO x3(rowid, c) VALUES(99, 'x3B');
+}
+
+do_catchsql_test 9.8 {
+  SELECT rowid FROM x1 JOIN (x2 JOIN wo2);
+} {0 myrowid}
+do_catchsql_test 9.9 {
+  SELECT _rowid_ FROM wo1 JOIN (wo3 JOIN x3)
+} {0 99}
+do_catchsql_test 9.10 {
+  SELECT oid FROM wo1 JOIN (wo3 JOIN x3)
+} {0 99}
+do_catchsql_test 9.11 {
+  SELECT oid FROM wo2 JOIN (wo3 JOIN x3)
+} {0 99}
+
+
 finish_test

@@ -772,8 +772,43 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     isSharedTypedArray,
     toss: function(...args){throw new Error(args.join(' '))},
     toss3,
-    typedArrayPart
-  };
+    typedArrayPart,
+    /**
+       Given a byte array or ArrayBuffer, this function throws if the
+       lead bytes of that buffer do not hold a SQLite3 database header,
+       else it returns without side effects.
+
+       Added in 3.44.
+    */
+    affirmDbHeader: function(bytes){
+      if(bytes instanceof ArrayBuffer) bytes = new Uint8Array(bytes);
+      const header = "SQLite format 3";
+      if( header.length > bytes.byteLength ){
+        toss3("Input does not contain an SQLite3 database header.");
+      }
+      for(let i = 0; i < header.length; ++i){
+        if( header.charCodeAt(i) !== bytes[i] ){
+          toss3("Input does not contain an SQLite3 database header.");
+        }
+      }
+    },
+    /**
+       Given a byte array or ArrayBuffer, this function throws if the
+       database does not, at a cursory glance, appear to be an SQLite3
+       database. It only examines the size and header, but further
+       checks may be added in the future.
+
+       Added in 3.44.
+    */
+    affirmIsDb: function(bytes){
+      if(bytes instanceof ArrayBuffer) bytes = new Uint8Array(bytes);
+      const n = bytes.byteLength;
+      if(n<512 || n%512!==0) {
+        toss3("Byte array size",n,"is invalid for an SQLite3 db.");
+      }
+      util.affirmDbHeader(bytes);
+    }
+  }/*util*/;
 
   Object.assign(wasm, {
     /**
@@ -1100,7 +1135,23 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       return 1===n
         ? wasm.pstack.alloc(safePtrSize ? 8 : wasm.ptrSizeof)
         : wasm.pstack.allocChunks(n, safePtrSize ? 8 : wasm.ptrSizeof);
+    },
+
+    /**
+       Records the current pstack position, calls the given function,
+       passing it the sqlite3 object, then restores the pstack
+       regardless of whether the function throws. Returns the result
+       of the call or propagates an exception on error.
+
+       Added in 3.44.
+    */
+    call: function(f){
+      const stackPos = wasm.pstack.pointer;
+      try{ return f(sqlite3) } finally{
+        wasm.pstack.restore(stackPos);
+      }
     }
+
   })/*wasm.pstack*/;
   Object.defineProperties(wasm.pstack, {
     /**
@@ -1507,6 +1558,26 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        wasm.dealloc(pData);
     }
   };
+
+  /**
+     Converts SQL input from a variety of convenient formats
+     to plain strings.
+
+     If v is a string, it is returned as-is. If it is-a Array, its
+     join("") result is returned.  If is is a Uint8Array, Int8Array,
+     or ArrayBuffer, it is assumed to hold UTF-8-encoded text and is
+     decoded to a string. If it looks like a WASM pointer,
+     wasm.cstrToJs(sql) is returned. Else undefined is returned.
+
+     Added in 3.44
+  */
+  capi.sqlite3_js_sql_to_string = (sql)=>{
+    if('string' === typeof sql){
+      return sql;
+    }
+    const x = flexibleString(v);
+    return x===v ? undefined : x;
+  }
 
   if( util.isUIThread() ){
     /* Features specific to the main window thread... */

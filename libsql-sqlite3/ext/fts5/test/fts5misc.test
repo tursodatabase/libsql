@@ -44,12 +44,12 @@ do_catchsql_test 1.2.2 {
 
 do_catchsql_test 1.3.1 { 
   SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*reads'); 
-} {1 {no such cursor: 1}}
+} {1 {no such cursor: 2}}
 
 do_catchsql_test 1.3.2 {
   SELECT a FROM t1
     WHERE rank = (SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*reads'));
-} {1 {no such cursor: 1}}
+} {1 {no such cursor: 2}}
 
 db close
 sqlite3 db test.db
@@ -424,9 +424,11 @@ do_execsql_test -db db2 15.3 {
   SAVEPOINT one;
 } {}
 do_execsql_test 15.4 END
-do_test 15.4 {
+do_test 15.5 {
   list [catch { db2 eval COMMIT } msg] $msg
 } {0 {}}
+
+db2 close
 
 #-------------------------------------------------------------------------
 reset_db
@@ -468,6 +470,8 @@ do_execsql_test 16.5 {
 do_execsql_test -db db2 16.6 {
   SELECT * FROM x1
 } {abc def}
+
+db2 close
 
 #-------------------------------------------------------------------------
 reset_db

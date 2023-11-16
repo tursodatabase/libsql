@@ -66,14 +66,6 @@
 #define SQLITE_ENABLE_DESERIALIZE 1
 #include "sqlite3.c"
 
-/* Create a test database.  This will be an in-memory database */
-static const char zInitSql[] = 
-  "CREATE TABLE t1(a INTEGER PRIMARY KEY,b,c,d);\n"
-  "CREATE TABLE t2(e TEXT PRIMARY KEY NOT NULL,f,g);\n"
-  "CREATE TABLE t3(w REAL PRIMARY KEY NOT NULL,x,y);\n"
-  "CREATE TABLE t4(z PRIMARY KEY) WITHOUT ROWID;\n"
-;
-
 /* Code to populate the database */
 static const char zFillSql[] = 
   "INSERT INTO t1(a,b,c,d) VALUES\n"

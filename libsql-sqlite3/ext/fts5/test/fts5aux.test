@@ -307,5 +307,31 @@ do_catchsql_test 10.1.4 {
   SELECT group_concat(firstcol(t1), '.') FROM t1 GROUP BY rowid
 } {1 {unable to use function firstcol in the requested context}}
 
-finish_test
+#-------------------------------------------------------------------------
+# Test that xInstCount() works from within an xPhraseQuery() callback.
+#
+reset_db
 
+proc xCallback {cmd} {
+  incr ::hitcount [$cmd xInstCount]
+  return SQLITE_OK
+}
+proc fts5_hitcount {cmd} {
+  set ::hitcount 0
+  $cmd xQueryPhrase 0 xCallback
+  return $::hitcount
+}
+sqlite3_fts5_create_function db fts5_hitcount fts5_hitcount
+
+do_execsql_test 11.1 {
+  CREATE VIRTUAL TABLE x1 USING fts5(z);
+  INSERT INTO x1 VALUES('one two three');
+  INSERT INTO x1 VALUES('one two one three one');
+  INSERT INTO x1 VALUES('one two three');
+}
+
+do_execsql_test 11.2 {
+  SELECT fts5_hitcount(x1) FROM x1('one') LIMIT 1;
+} {5}
+
+finish_test

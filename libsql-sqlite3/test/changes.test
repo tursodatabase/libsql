@@ -86,5 +86,3 @@ foreach {tn nRow wor} {
 }
 
 finish_test
-
-

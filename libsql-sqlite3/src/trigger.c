@@ -183,6 +183,10 @@ void sqlite3BeginTrigger(
     sqlite3ErrorMsg(pParse, "cannot create triggers on virtual tables");
     goto trigger_orphan_error;
   }
+  if( (pTab->tabFlags & TF_Shadow)!=0 && sqlite3ReadOnlyShadowTables(db) ){
+    sqlite3ErrorMsg(pParse, "cannot create triggers on shadow tables");
+    goto trigger_orphan_error;
+  }
 
   /* Check that the trigger name is not reserved and that no trigger of the
   ** specified name exists */
@@ -966,10 +970,17 @@ static void codeReturningTrigger(
   SrcList sFrom;
 
   assert( v!=0 );
-  assert( pParse->bReturning );
+  if( !pParse->bReturning ){
+    /* This RETURNING trigger must be for a different statement as
+    ** this statement lacks a RETURNING clause. */
+    return;
+  }
   assert( db->pParse==pParse );
   pReturning = pParse->u1.pReturning;
-  assert( pTrigger == &(pReturning->retTrig) );
+  if( pTrigger != &(pReturning->retTrig) ){
+    /* This RETURNING trigger is for a different statement */
+    return;
+  }
   memset(&sSelect, 0, sizeof(sSelect));
   memset(&sFrom, 0, sizeof(sFrom));
   sSelect.pEList = sqlite3ExprListDup(db, pReturning->pReturnEL, 0);

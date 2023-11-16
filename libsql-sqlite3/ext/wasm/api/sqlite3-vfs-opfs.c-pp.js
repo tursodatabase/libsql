@@ -136,6 +136,7 @@ const installOpfsVfs = function callee(options){
     const error =  (...args)=>logImpl(0, ...args);
     const toss = sqlite3.util.toss;
     const capi = sqlite3.capi;
+    const util = sqlite3.util;
     const wasm = sqlite3.wasm;
     const sqlite3_vfs = capi.sqlite3_vfs;
     const sqlite3_file = capi.sqlite3_file;
@@ -1169,8 +1170,59 @@ const installOpfsVfs = function callee(options){
     };
 
     /**
+       impl of importDb() when it's given a function as its second
+       argument.
+    */
+    const importDbChunked = async function(filename, callback){
+      const [hDir, fnamePart] = await opfsUtil.getDirForFilename(filename, true);
+      const hFile = await hDir.getFileHandle(fnamePart, {create:true});
+      let sah = await hFile.createSyncAccessHandle();
+      let nWrote = 0, chunk, checkedHeader = false, err = false;
+      try{
+        sah.truncate(0);
+        while( undefined !== (chunk = await callback()) ){
+          if(chunk instanceof ArrayBuffer) chunk = new Uint8Array(chunk);
+          if( 0===nWrote && chunk.byteLength>=15 ){
+            util.affirmDbHeader(chunk);
+            checkedHeader = true;
+          }
+          sah.write(chunk, {at: nWrote});
+          nWrote += chunk.byteLength;
+        }
+        if( nWrote < 512 || 0!==nWrote % 512 ){
+          toss("Input size",nWrote,"is not correct for an SQLite database.");
+        }
+        if( !checkedHeader ){
+          const header = new Uint8Array(20);
+          sah.read( header, {at: 0} );
+          util.affirmDbHeader( header );
+        }
+        sah.write(new Uint8Array([1,1]), {at: 18}/*force db out of WAL mode*/);
+        return nWrote;
+      }catch(e){
+        await sah.close();
+        sah = undefined;
+        await hDir.removeEntry( fnamePart ).catch(()=>{});
+        throw e;
+      }finally {
+        if( sah ) await sah.close();
+      }
+    };
+
+    /**
        Asynchronously imports the given bytes (a byte array or
        ArrayBuffer) into the given database file.
+
+       If passed a function for its second argument, its behaviour
+       changes to async and it imports its data in chunks fed to it by
+       the given callback function. It calls the callback (which may
+       be async) repeatedly, expecting either a Uint8Array or
+       ArrayBuffer (to denote new input) or undefined (to denote
+       EOF). For so long as the callback continues to return
+       non-undefined, it will append incoming data to the given
+       VFS-hosted database file. When called this way, the resolved
+       value of the returned Promise is the number of bytes written to
+       the target file.
 
        It very specifically requires the input to be an SQLite3
        database and throws if that's not the case.  It does so in
@@ -1178,30 +1230,40 @@ const installOpfsVfs = function callee(options){
        than it is specifically intended to. i.e. we do not want it to
        become a convenience for importing arbitrary files into OPFS.
 
-       Throws on error. Resolves to the number of bytes written.
+       This routine rewrites the database header bytes in the output
+       file (not the input array) to force disabling of WAL mode.
+
+       On error this throws and the state of the input file is
+       undefined (it depends on where the exception was triggered).
+
+       On success, resolves to the number of bytes written.
     */
     opfsUtil.importDb = async function(filename, bytes){
+      if( bytes instanceof Function ){
+        return importDbChunked(filename, bytes);
+      }
       if(bytes instanceof ArrayBuffer) bytes = new Uint8Array(bytes);
+      util.affirmIsDb(bytes);
       const n = bytes.byteLength;
-      if(n<512 || n%512!=0){
-        toss("Byte array size is invalid for an SQLite db.");
-      }
-      const header = "SQLite format 3";
-      for(let i = 0; i < header.length; ++i){
-        if( header.charCodeAt(i) !== bytes[i] ){
-          toss("Input does not contain an SQLite database header.");
-        }
-      }
       const [hDir, fnamePart] = await opfsUtil.getDirForFilename(filename, true);
-      const hFile = await hDir.getFileHandle(fnamePart, {create:true});
-      const sah = await hFile.createSyncAccessHandle();
-      sah.truncate(0);
-      const nWrote = sah.write(bytes, {at: 0});
-      sah.close();
-      if(nWrote != n){
-        toss("Expected to write "+n+" bytes but wrote "+nWrote+".");
+      let sah, err, nWrote = 0;
+      try {
+        const hFile = await hDir.getFileHandle(fnamePart, {create:true});
+        sah = await hFile.createSyncAccessHandle();
+        sah.truncate(0);
+        nWrote = sah.write(bytes, {at: 0});
+        if(nWrote != n){
+          toss("Expected to write "+n+" bytes but wrote "+nWrote+".");
+        }
+        sah.write(new Uint8Array([1,1]), {at: 18}) /* force db out of WAL mode */;
+        return nWrote;
+      }catch(e){
+        if( sah ){ await sah.close(); sah = undefined; }
+        await hDir.removeEntry( fnamePart ).catch(()=>{});
+        throw e;
+      }finally{
+        if( sah ) await sah.close();
       }
-      return nWrote;
     };
 
     if(sqlite3.oo1){

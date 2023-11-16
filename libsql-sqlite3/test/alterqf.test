@@ -65,7 +65,7 @@ foreach {tn before after} {
 
  11 {CREATE TRIGGER ott AFTER UPDATE ON t1 BEGIN 
       SELECT max("str", new."a") FROM t1 
-          WHERE group_concat("b", ",") OVER (ORDER BY c||"str");
+          WHERE string_agg("b", ",") OVER (ORDER BY c||"str");
       UPDATE t1 SET c= b + "str";
       DELETE FROM t1 WHERE EXISTS (
         SELECT 1 FROM t1 AS o WHERE o."a" = "o.a" AND t1.b IN("t1.b")
@@ -73,7 +73,7 @@ foreach {tn before after} {
     END;
  } {CREATE TRIGGER ott AFTER UPDATE ON t1 BEGIN 
       SELECT max('str', new."a") FROM t1 
-          WHERE group_concat("b", ',') OVER (ORDER BY c||'str');
+          WHERE string_agg("b", ',') OVER (ORDER BY c||'str');
       UPDATE t1 SET c= b + 'str';
       DELETE FROM t1 WHERE EXISTS (
         SELECT 1 FROM t1 AS o WHERE o."a" = 'o.a' AND t1.b IN('t1.b')

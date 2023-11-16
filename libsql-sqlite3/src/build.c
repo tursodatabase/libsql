@@ -246,19 +246,14 @@ void sqlite3FinishCoding(Parse *pParse){
     */
     if( pParse->pAinc ) sqlite3AutoincrementBegin(pParse);
 
-    /* Code constant expressions that where factored out of inner loops.
-    **
-    ** The pConstExpr list might also contain expressions that we simply
-    ** want to keep around until the Parse object is deleted.  Such
-    ** expressions have iConstExprReg==0.  Do not generate code for
-    ** those expressions, of course.
+    /* Code constant expressions that were factored out of inner loops. 
     */
     if( pParse->pConstExpr ){
       ExprList *pEL = pParse->pConstExpr;
       pParse->okConstFactor = 0;
       for(i=0; i<pEL->nExpr; i++){
-        int iReg = pEL->a[i].u.iConstExprReg;
-        sqlite3ExprCode(pParse, pEL->a[i].pExpr, iReg);
+        assert( pEL->a[i].u.iConstExprReg>0 );
+        sqlite3ExprCode(pParse, pEL->a[i].pExpr, pEL->a[i].u.iConstExprReg);
       }
     }
 
@@ -1413,19 +1408,12 @@ void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
 #endif
 
 /*
-** Name of the special TEMP trigger used to implement RETURNING.  The
-** name begins with "sqlite_" so that it is guaranteed not to collide
-** with any application-generated triggers.
-*/
-#define RETURNING_TRIGGER_NAME  "sqlite_returning"
-
-/*
 ** Clean up the data structures associated with the RETURNING clause.
 */
 static void sqlite3DeleteReturning(sqlite3 *db, Returning *pRet){
   Hash *pHash;
   pHash = &(db->aDb[1].pSchema->trigHash);
-  sqlite3HashInsert(pHash, RETURNING_TRIGGER_NAME, 0);
+  sqlite3HashInsert(pHash, pRet->zName, 0);
   sqlite3ExprListDelete(db, pRet->pReturnEL);
   sqlite3DbFree(db, pRet);
 }
@@ -1468,7 +1456,9 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
      (void(*)(sqlite3*,void*))sqlite3DeleteReturning, pRet);
   testcase( pParse->earlyCleanup );
   if( db->mallocFailed ) return;
-  pRet->retTrig.zName = RETURNING_TRIGGER_NAME;
+  sqlite3_snprintf(sizeof(pRet->zName), pRet->zName,
+                   "sqlite_returning_%p", pParse);
+  pRet->retTrig.zName = pRet->zName;
   pRet->retTrig.op = TK_RETURNING;
   pRet->retTrig.tr_tm = TRIGGER_AFTER;
   pRet->retTrig.bReturning = 1;
@@ -1479,9 +1469,9 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   pRet->retTStep.pTrig = &pRet->retTrig;
   pRet->retTStep.pExprList = pList;
   pHash = &(db->aDb[1].pSchema->trigHash);
-  assert( sqlite3HashFind(pHash, RETURNING_TRIGGER_NAME)==0
+  assert( sqlite3HashFind(pHash, pRet->zName)==0
           || pParse->nErr  || pParse->ifNotExists );
-  if( sqlite3HashInsert(pHash, RETURNING_TRIGGER_NAME, &pRet->retTrig)
+  if( sqlite3HashInsert(pHash, pRet->zName, &pRet->retTrig)
           ==&pRet->retTrig ){
     sqlite3OomFault(db);
   }
@@ -2934,6 +2924,17 @@ void sqlite3EndTable(
     /* Reparse everything to update our internal data structures */
     sqlite3VdbeAddParseSchemaOp(v, iDb,
            sqlite3MPrintf(db, "tbl_name='%q' AND type!='trigger'", p->zName),0);
+
+    /* Test for cycles in generated columns and illegal expressions
+    ** in CHECK constraints and in DEFAULT clauses. */
+    if( p->tabFlags & TF_HasGenerated ){
+      sqlite3VdbeAddOp4(v, OP_SqlExec, 1, 0, 0,
+             sqlite3MPrintf(db, "SELECT*FROM\"%w\".\"%w\"",
+                   db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
+    }
+    sqlite3VdbeAddOp4(v, OP_SqlExec, 1, 0, 0,
+           sqlite3MPrintf(db, "PRAGMA \"%w\".integrity_check(%Q)",
+                 db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
   }
 
   /* Add the table to the in-memory representation of the database.

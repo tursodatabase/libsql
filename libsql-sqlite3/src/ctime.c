@@ -355,6 +355,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #ifdef SQLITE_EXPLAIN_ESTIMATED_ROWS
   "EXPLAIN_ESTIMATED_ROWS",
 #endif
+#ifdef SQLITE_EXTRA_AUTOEXT
+  "EXTRA_AUTOEXT=" CTIMEOPT_VAL(SQLITE_EXTRA_AUTOEXT),
+#endif
 #ifdef SQLITE_EXTRA_IFNULLROW
   "EXTRA_IFNULLROW",
 #endif
@@ -635,6 +638,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #endif
 #ifdef SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS
   "OMIT_SCHEMA_VERSION_PRAGMAS",
+#endif
+#ifdef SQLITE_OMIT_SEH
+  "OMIT_SEH",
 #endif
 #ifdef SQLITE_OMIT_SHARED_CACHE
   "OMIT_SHARED_CACHE",

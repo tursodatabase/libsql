@@ -2595,17 +2595,13 @@ do_execsql_test 17.1 {
     UPDATE t1 SET b=quote(zeroblob(200)) WHERE a MATCH 'thread*';
 }
 
-do_catchsql_test 17.2 {
-  DROP TABLE IF EXISTS t1;
-} {1 {SQL logic error}}
-
-do_execsql_test 17.3 {
+do_execsql_test 17.2 {
   INSERT INTO t1(t1) VALUES('optimize');
 }
 
-do_catchsql_test 17.4 {
+do_catchsql_test 17.3 {
   DROP TABLE IF EXISTS t1;
-} {1 {SQL logic error}}
+} {0 {}}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -5812,6 +5808,9 @@ do_execsql_test 35.0 {
 do_catchsql_test 35.1 {
   INSERT INTO f(f) VALUES ('integrity-check');
 } {1 {database disk image is malformed}}
+do_execsql_test 35.2 {
+  PRAGMA integrity_check;
+} {{malformed inverted index for FTS3 table main.f}}
 
 reset_db
 do_catchsql_test 36.0 {

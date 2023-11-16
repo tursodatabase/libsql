@@ -598,8 +598,6 @@ void sqlite3ParseObjectReset(Parse *pParse){
   db->lookaside.sz = db->lookaside.bDisable ? 0 : db->lookaside.szTrue;
   assert( pParse->db->pParse==pParse );
   db->pParse = pParse->pOuterParse;
-  pParse->db = 0;
-  pParse->disableLookaside = 0;
 }
 
 /*
