@@ -23,3 +23,6 @@ tracing-subscriber = "0.3.16"
 [[bin]]
 name = "libsql"
 path = "src/main.rs"
+
+[package.metadata.dist]
+dist = false

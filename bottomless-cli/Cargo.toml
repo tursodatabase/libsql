@@ -24,3 +24,6 @@ tracing = "0.1.37"
 tracing-subscriber = "0.3.16"
 uuid = "1.4.1"
 rusqlite = { workspace = true }
+
+[package.metadata.dist]
+dist = false

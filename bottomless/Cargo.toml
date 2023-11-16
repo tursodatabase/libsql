@@ -30,3 +30,6 @@ libsql_linked_statically = []
 
 [lib]
 crate-type = ["rlib", "staticlib"]
+
+[package.metadata.dist]
+dist = false
