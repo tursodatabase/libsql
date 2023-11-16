@@ -308,6 +308,8 @@ impl<T: WalHook> TxnSlot<T> {
         self.created_at + TXN_TIMEOUT
     }
 
+    /// abort the connection for that slot.
+    /// This methods must not be called if a lock on the state's slot is still held.
     fn abort(&self) {
         let conn = self.conn.lock();
         // we have a lock on the connection, we don't need mode than a
@@ -402,6 +404,10 @@ unsafe extern "C" fn busy_handler<W: WalHook>(state: *mut c_void, _retries: c_in
                                 // necessarily a slot, and this slot has to be the one we attempted to
                                 // steal.
                                 assert!(lock.take().is_some());
+                                // we drop the lock here, before aborting, because the connection
+                                // may currently be waiting for the lock to commit/abort itself,
+                                // and we don't need the slot lock past that point.
+                                drop(lock);
 
                                 slot.abort();
                                 tracing::info!("stole transaction lock");
