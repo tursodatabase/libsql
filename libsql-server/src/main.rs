@@ -445,6 +445,20 @@ fn make_hearbeat_config(config: &Cli) -> Option<HeartbeatConfig> {
     })
 }
 
+async fn shutdown_signal() -> Result<&'static str> {
+    use tokio::signal::unix::{signal, SignalKind};
+
+    let mut int = signal(SignalKind::interrupt())?;
+    let mut term = signal(SignalKind::terminate())?;
+
+    let signal = tokio::select! {
+        _ = int.recv() => "SIGINT",
+        _ = term.recv() => "SIGTERM",
+    };
+
+    Ok(signal)
+}
+
 async fn build_server(config: &Cli) -> anyhow::Result<Server> {
     let db_config = make_db_config(config)?;
     let user_api_config = make_user_api_config(config).await?;
@@ -458,12 +472,15 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
         let shutdown = shutdown.clone();
         async move {
             loop {
-                tokio::signal::ctrl_c()
+                let signal = shutdown_signal()
                     .await
-                    .expect("failed to listen to CTRL-C");
+                    .expect("Failed to registry shutdown signals");
+
                 tracing::info!(
-                    "received CTRL-C, shutting down gracefully... This may take some time"
+                    "Got {} shutdown signal, gracefully shutting down...this may take some time",
+                    signal
                 );
+
                 shutdown.notify_waiters();
             }
         }
