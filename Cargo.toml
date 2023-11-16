@@ -49,6 +49,7 @@ publish-jobs = ["homebrew"]
 create-release = false
 # Publish jobs to run in CI
 pr-run-mode = "plan"
+allow-dirty = ["ci"] # we've edited the release yml to narrow the tag scope
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
