@@ -12,7 +12,7 @@ use libsql::{Database, Value};
 use tempfile::tempdir;
 use tokio::sync::Notify;
 
-use sqld::config::{AdminApiConfig, UserApiConfig};
+use libsql-server::config::{AdminApiConfig, UserApiConfig};
 
 use common::net::{init_tracing, TestServer, TurmoilConnector};
 

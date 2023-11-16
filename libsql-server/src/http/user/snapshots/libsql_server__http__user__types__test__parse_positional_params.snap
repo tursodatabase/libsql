@@ -1,0 +1,28 @@
+---
+source: libsql-server/src/http/user/types.rs
+expression: found
+---
+{
+  "Positional": [
+    {
+      "Integer": 1
+    },
+    {
+      "Text": "hello"
+    },
+    {
+      "Real": 12.1
+    },
+    {
+      "Blob": [
+        104,
+        101,
+        108,
+        108,
+        111,
+        10
+      ]
+    },
+    "Null"
+  ]
+}

@@ -1,0 +1,11 @@
+---
+source: libsql-server/src/rpc/streaming_exec.rs
+expression: resp
+---
+Err(
+    Status {
+        code: InvalidArgument,
+        message: "received request with id less than last received request, closing stream",
+        source: None,
+    },
+)

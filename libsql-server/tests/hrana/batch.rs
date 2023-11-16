@@ -1,6 +1,6 @@
 use insta::assert_json_snapshot;
 use libsql::{params, Database};
-use sqld::hrana_proto::{Batch, BatchStep, Stmt};
+use libsql_server::hrana_proto::{Batch, BatchStep, Stmt};
 
 use crate::common::http::Client;
 use crate::common::net::TurmoilConnector;

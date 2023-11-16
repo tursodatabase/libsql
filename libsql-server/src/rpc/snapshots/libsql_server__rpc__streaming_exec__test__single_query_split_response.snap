@@ -1,0 +1,255 @@
+---
+source: libsql-server/src/rpc/streaming_exec.rs
+expression: builder.into_ret()
+---
+[
+    Ok(
+        [
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+            [
+                Text(
+                    "something moderately long",
+                ),
+            ],
+        ],
+    ),
+]
