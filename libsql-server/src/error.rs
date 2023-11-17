@@ -22,7 +22,7 @@ pub enum Error {
     #[error("Failed to execute query via RPC. Error code: {}, message: {}", .0.code, .0.message)]
     RpcQueryError(crate::rpc::proxy::rpc::Error),
     #[error("Failed to execute queries via RPC protocol: `{0}`")]
-    RpcQueryExecutionError(tonic::Status),
+    RpcQueryExecutionError(#[from] tonic::Status),
     #[error("Database value error: `{0}`")]
     DbValueError(String),
     // Dedicated for most generic internal errors. Please use it sparingly.

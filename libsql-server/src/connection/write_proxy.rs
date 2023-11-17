@@ -287,7 +287,7 @@ impl RemoteConnection {
         req.metadata_mut()
             .insert_bin(NAMESPACE_METADATA_KEY, namespace);
         auth.upgrade_grpc_request(&mut req);
-        let response_stream = client.stream_exec(req).await.unwrap().into_inner();
+        let response_stream = client.stream_exec(req).await?.into_inner();
 
         Ok(Self {
             response_stream,
