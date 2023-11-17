@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sdebugging\scode.
-D 2023-11-17T12:22:42.597
+C Add\san\sassert()\sto\sprove\sthe\ssqlite3_prepare()\salways\seither\sreturns\nSQLITE_OK\sor\selse\sleaves\s*ppStmt\sset\sto\sNULL.\s\sSee\n[forum:/forumpost/70bb8576c6c084c2|forum\spost\s70bb8576c6c084c2].
+D 2023-11-17T17:25:30.458
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -720,7 +720,7 @@ F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
 F src/pragma.c b3b4ad9c0298d63098a067acca613c21a5f56b4d176d5842922bcd0b07b7164e
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
-F src/prepare.c bde74add20fc0e8ce0c4e937a1f70a36d17413afe4f71d3e103f5cb74b17c8d9
+F src/prepare.c 371f6115cb69286ebc12c6f2d7511279c2e47d9f54f475d46a554d687a3b312c
 F src/printf.c 9da63b9ae1c14789bcae12840f5d800fd9302500cd2d62733fac77f0041b4750
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d017bad7ba8e778617701a0e986fdeb393d67d6afa84fb28ef4e8b8ad2acf916
@@ -2140,8 +2140,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a9443dbfbe25e588b4adddde664ddf482f19f71c704fbf356d49cf3a6135e7fb
-R dc0c90fa6e9a7208b4b533ec9a5980a8
+P ce6a75622ea5bca517bc6613e738aa670c9e1dd863596220eded5c2379c616c7
+R 0df7c74767a0014b650e41ddac5ac20d
 U drh
-Z 5cf7a41ba5c0eb3c7c4392bc0e2744d2
+Z 3d905d6e432172a6f350f89a5634e3bc
 # Remove this line to create a well-formed Fossil manifest.
