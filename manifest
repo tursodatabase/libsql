@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sdebugging\scode.
-D 2023-11-17T12:22:42.597
+C When\sSQLITE_ENABLE_SETLK_TIMEOUT\sis\sdefined,\suse\sa\sseparate\smutex\sin\sos_unix.c\sfor\seach\sshm\slocking\sslot.
+D 2023-11-17T17:10:37.075
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -709,7 +709,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c f8a557ff5b387ec599e8b84b7341e5a45ebdd579da03788364a34b9a9567faeb
+F src/os_unix.c 1f6a930e8469b3709728690d089b55deb2fe605ba860941ddc21a2345e51bce4
 F src/os_win.c 4a50a154aeebc66a1f8fb79c1ff6dd5fe3d005556533361e0d460d41cb6a45a8
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 987ab3a2cd9065d62e9955474470ff733445e2357432a67e3d0f5a8f9313e334
@@ -2140,8 +2140,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a9443dbfbe25e588b4adddde664ddf482f19f71c704fbf356d49cf3a6135e7fb
-R dc0c90fa6e9a7208b4b533ec9a5980a8
-U drh
-Z 5cf7a41ba5c0eb3c7c4392bc0e2744d2
+P ce6a75622ea5bca517bc6613e738aa670c9e1dd863596220eded5c2379c616c7
+R 277be03c0e13cb54ac8c8a3d23aba815
+T *branch * unix-setlk-timeout-mutexes
+T *sym-unix-setlk-timeout-mutexes *
+T -sym-trunk *
+U dan
+Z 8cc8841ac15d12b07622be01120eb3c1
 # Remove this line to create a well-formed Fossil manifest.
