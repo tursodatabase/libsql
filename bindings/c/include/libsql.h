@@ -64,6 +64,8 @@ int libsql_column_type(libsql_rows_t res, int col, int *out_type, const char **o
 
 uint64_t libsql_changes(libsql_connection_t conn);
 
+int64_t libsql_last_insert_rowid(libsql_connection_t conn);
+
 int libsql_next_row(libsql_rows_t res, libsql_row_t *out_row, const char **out_err_msg);
 
 void libsql_free_row(libsql_row_t res);
