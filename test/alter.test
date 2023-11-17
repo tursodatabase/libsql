@@ -954,4 +954,21 @@ do_catchsql_test alter-20.3 {
   INSERT INTO t1(a) VALUES(45);
 } {1 {cannot store BLOB value in TEXT column t1.b}}
 
+# 2023-11-17 dbsqlfuzz e0900262dadd5c78c2226ad6a435c7f0255be2cd
+# Assertion fault associated with ALTER TABLE and an
+# aggregate ORDER BY within an unknown aggregate function.
+#
+reset_db
+do_execsql_test alter-21.1 {
+  CREATE TABLE t1(a,b,c,d);
+  CREATE TABLE t2(a,b,c,d,x);
+  CREATE TRIGGER r1 AFTER INSERT ON t2 BEGIN
+    SELECT unknown_function(a ORDER BY (SELECT group_concat(DISTINCT a ORDER BY a) FROM t1)) FROM t1;
+  END;
+  ALTER TABLE t2 RENAME TO e;
+} {}
+do_execsql_test alter-21.2 {
+  SELECT name, type FROM sqlite_schema ORDER BY name;
+} {e table r1 trigger t1 table}
+
 finish_test
