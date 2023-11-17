@@ -82,9 +82,24 @@ impl Injector {
     /// Trigger a dummy write, and flush the cache to trigger a call to xFrame. The buffer's frame
     /// are then injected into the wal.
     pub fn flush(&mut self) -> Result<Option<FrameNo>, Error> {
+        match self.try_flush() {
+            Err(e) => {
+                // something went wrong, rollback the connection to make sure we can retry in a
+                // clean state
+                let connection = self.connection.lock();
+                let mut rollback = connection.prepare_cached("ROLLBACK")?;
+                let _ = rollback.execute(());
+                Err(e)
+            }
+            Ok(ret) => Ok(ret),
+        }
+    }
+
+    fn try_flush(&mut self) -> Result<Option<FrameNo>, Error> {
         if !self.is_txn {
             self.begin_txn()?;
         }
+
         let lock = self.buffer.lock();
         // the frames in the buffer are either monotonically increasing (log) or decreasing
         // (snapshot). Either way, we want to find the biggest frameno we're about to commit, and
