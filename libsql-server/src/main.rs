@@ -526,7 +526,15 @@ async fn main() -> Result<()> {
         )
         .init();
 
-    std::panic::set_hook(Box::new(tracing_panic::panic_hook));
+    std::panic::set_hook(Box::new(|p| {
+        tracing_panic::panic_hook(p);
+        if let Ok(v) = std::env::var("RUST_BACKTRACE") {
+            if !v.is_empty() {
+                let bt = std::backtrace::Backtrace::force_capture();
+                eprintln!("{bt}");
+            }
+        }
+    }));
 
     let args = Cli::parse();
 
