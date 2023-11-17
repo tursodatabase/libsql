@@ -143,6 +143,7 @@ fn connect_create_shared(
         base: sqlite::vtab {
             nRef: 0,
             pModule: core::ptr::null(),
+            pLibsqlModule: core::ptr::null(),
             zErrMsg: core::ptr::null_mut(),
         },
         base_table_name: base_name_from_virtual_name(args.table_name).to_owned(),
@@ -259,7 +260,7 @@ static MODULE: sqlite_nostd::module = sqlite_nostd::module {
     xRelease: None,
     xRollbackTo: None,
     xShadowName: None,
-    xPreparedSql: None,
+    xIntegrity: None,
 };
 
 pub fn create_module(db: *mut sqlite::sqlite3) -> Result<ResultCode, ResultCode> {
