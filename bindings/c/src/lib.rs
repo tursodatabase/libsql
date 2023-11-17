@@ -283,6 +283,12 @@ pub unsafe extern "C" fn libsql_column_type(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn libsql_changes(conn: libsql_connection_t) -> u64 {
+    let conn = conn.get_ref();
+    conn.changes()
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn libsql_next_row(
     res: libsql_rows_t,
     out_row: *mut libsql_row_t,
