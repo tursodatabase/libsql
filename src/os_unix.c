@@ -4054,7 +4054,13 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
     case SQLITE_FCNTL_LOCK_TIMEOUT: {
       int iOld = pFile->iBusyTimeout;
+#if SQLITE_ENABLE_SETLK_TIMEOUT==1
       pFile->iBusyTimeout = *(int*)pArg;
+#elif SQLITE_ENABLE_SETLK_TIMEOUT==2
+      pFile->iBusyTimeout = !!(*(int*)pArg);
+#else
+# error "SQLITE_ENABLE_SETLK_TIMEOUT must be set to 1 or 2"
+#endif
       *(int*)pArg = iOld;
       return SQLITE_OK;
     }
@@ -4426,7 +4432,7 @@ static int unixShmSystemLock(
     f.l_len = n;
     res = osSetPosixAdvisoryLock(pShmNode->hShm, &f, pFile);
     if( res==-1 ){
-#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+#if defined(SQLITE_ENABLE_SETLK_TIMEOUT) && SQLITE_ENABLE_SETLK_TIMEOUT==1
       rc = (pFile->iBusyTimeout ? SQLITE_BUSY_TIMEOUT : SQLITE_BUSY);
 #else
       rc = SQLITE_BUSY;
