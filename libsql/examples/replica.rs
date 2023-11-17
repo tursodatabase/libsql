@@ -20,56 +20,56 @@ async fn main() {
     )
     .await
     .unwrap();
-    let conn = db.connect().unwrap();
+    // let conn = db.connect().unwrap();
 
     let f = db.sync().await.unwrap();
     println!("inital sync complete, frame no: {f:?}");
 
-    conn.execute("CREATE TABLE IF NOT EXISTS foo (x TEXT)", ())
-        .await
-        .unwrap();
+    // conn.execute("CREATE TABLE IF NOT EXISTS foo (x TEXT)", ())
+    //     .await
+    //     .unwrap();
 
-    db.sync().await.unwrap();
+    // db.sync().await.unwrap();
 
-    let mut jh = tokio::spawn(async move {
-        let mut rows = conn
-            .query(
-                "INSERT INTO foo (x) VALUES (?1) RETURNING *",
-                vec![Value::from(
-                    "this value was written by an embedded replica!",
-                )],
-            )
-            .await
-            .unwrap();
+    // let mut jh = tokio::spawn(async move {
+    //     let mut rows = conn
+    //         .query(
+    //             "INSERT INTO foo (x) VALUES (?1) RETURNING *",
+    //             vec![Value::from(
+    //                 "this value was written by an embedded replica!",
+    //             )],
+    //         )
+    //         .await
+    //         .unwrap();
 
-        println!("Rows insert call");
-        while let Some(row) = rows.next().unwrap() {
-            println!("Row: {}", row.get_str(0).unwrap());
-        }
+    //     println!("Rows insert call");
+    //     while let Some(row) = rows.next().unwrap() {
+    //         println!("Row: {}", row.get_str(0).unwrap());
+    //     }
 
-        println!("--------");
+    //     println!("--------");
 
-        let mut rows = conn.query("SELECT * FROM foo", ()).await.unwrap();
+    //     let mut rows = conn.query("SELECT * FROM foo", ()).await.unwrap();
 
-        println!("Rows coming from a read after write call");
-        while let Some(row) = rows.next().unwrap() {
-            println!("Row: {}", row.get_str(0).unwrap());
-        }
+    //     println!("Rows coming from a read after write call");
+    //     while let Some(row) = rows.next().unwrap() {
+    //         println!("Row: {}", row.get_str(0).unwrap());
+    //     }
 
-        println!("--------");
-    });
+    //     println!("--------");
+    // });
 
-    loop {
-        tokio::select! {
-            _ = tokio::time::sleep(Duration::from_secs(1)) => {
-                let r = db.sync().await.unwrap();
-                println!("replicated until index {r:?}");
-            }
+    // loop {
+    //     tokio::select! {
+    //         _ = tokio::time::sleep(Duration::from_secs(1)) => {
+    //             let r = db.sync().await.unwrap();
+    //             println!("replicated until index {r:?}");
+    //         }
 
-            r = &mut jh => {
-                r.unwrap();
-                return;
-            }
-        }
-    }
+    //         r = &mut jh => {
+    //             r.unwrap();
+    //             return;
+    //         }
+    //     }
+    // }
 }

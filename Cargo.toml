@@ -21,7 +21,7 @@ members = [
 
 [profile.release]
 codegen-units = 1
-panic = "abort"
+panic = "unwind"
 
 [workspace.dependencies]
 rusqlite = { path = "vendored/rusqlite", version = "0.29", default-features = false, features = [
