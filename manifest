@@ -1,5 +1,5 @@
-C Adjust\san\sassert()\sin\sfts5WritePoslistData()\sso\sthat\sit\sonly\sapplies\sif\sthere\nhave\sbeen\sno\sprior\serrors.\ndbsqlfuzz\s25dca9b2568f67dc78a0e32ff280133fe71994bd.
-D 2023-11-18T12:06:21.202
+C When\sENABLE_SETLK\sis\sdefined,\savoid\sever\sblocking\son\sthe\slock\smutex\sin\sos_unix.c\swhen\srequesting\san\sexclusive\slock.
+D 2023-11-18T17:20:04.644
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -709,7 +709,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 1f6a930e8469b3709728690d089b55deb2fe605ba860941ddc21a2345e51bce4
+F src/os_unix.c dc5404b56da7fb13cf272ddb94c3753cf9e82d32a65cba35dbb6aadcb849419c
 F src/os_win.c 4a50a154aeebc66a1f8fb79c1ff6dd5fe3d005556533361e0d460d41cb6a45a8
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 987ab3a2cd9065d62e9955474470ff733445e2357432a67e3d0f5a8f9313e334
@@ -2140,8 +2140,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3afaeac56dff58db596360bf6f8dca97cb31405f73be8e189e8c0e6a1e5b239d
-R 9cf44b62577ea28a6c89efc96ebe6c29
-U drh
-Z 76fce07162fdeb3d4e5e596aa33e5ef1
+P 257cdbab90c6db8ccc9a8fd5df556b69c3a35a329d39cd4642c792d7359a54a5
+R c4cd41341f8782719a82292d54af9847
+U dan
+Z d62588e5cdbd2512931321f6949cd27c
 # Remove this line to create a well-formed Fossil manifest.

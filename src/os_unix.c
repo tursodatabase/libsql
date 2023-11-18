@@ -5056,95 +5056,115 @@ static int unixShmLock(
    || (flags==(SQLITE_SHM_EXCLUSIVE|SQLITE_SHM_LOCK))
   ){
 
-    /* Take the required mutexes */
+    /* Take the required mutexes. In SETLK_TIMEOUT mode (blocking locks), if
+    ** this is an attempt on an exclusive lock use sqlite3_mutex_try(). If any
+    ** other thread is holding this mutex, then it is either holding or about
+    ** to hold a lock exclusive to the one being requested, and we may
+    ** therefore return SQLITE_BUSY to the caller.
+    **
+    ** Doing this prevents some deadlock scenarios. For example, thread 1 may
+    ** be a checkpointer blocked waiting on the WRITER lock. And thread 2
+    ** may be a normal SQL client upgrading to a write transaction. In this
+    ** case thread 2 does a non-blocking request for the WRITER lock. But -
+    ** if it were to use sqlite3_mutex_enter() then it would effectively
+    ** become a (doomed) blocking request, as thread 2 would block until thread
+    ** 1 obtained WRITER and released the mutex. Since thread 2 already holds
+    ** a lock on a read-locking slot at this point, this breaks the
+    ** anti-deadlock rules (see above).  */
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
     int iMutex;
     for(iMutex=ofst; iMutex<ofst+n; iMutex++){
-      sqlite3_mutex_enter(pShmNode->aMutex[iMutex]);
+      if( flags==(SQLITE_SHM_LOCK|SQLITE_SHM_EXCLUSIVE) ){
+        rc = sqlite3_mutex_try(pShmNode->aMutex[iMutex]);
+        if( rc!=SQLITE_OK ) break;
+      }else{
+        sqlite3_mutex_enter(pShmNode->aMutex[iMutex]);
+      }
     }
 #else
     sqlite3_mutex_enter(pShmNode->pShmMutex);
 #endif
 
-    if( flags & SQLITE_SHM_UNLOCK ){
-      /* Case (a) - unlock.  */
-      int bUnlock = 1;
-      assert( (p->exclMask & p->sharedMask)==0 );
-      assert( (flags & SQLITE_SHM_EXCLUSIVE)==0 || (p->exclMask & mask)==mask );
-      assert( (flags & SQLITE_SHM_SHARED)==0 || (p->sharedMask & mask)==mask );
-
-      /* If this is a SHARED lock being unlocked, it is possible that other
-      ** clients within this process are holding the same SHARED lock. In
-      ** this case, set bUnlock to 0 so that the posix lock is not removed
-      ** from the file-descriptor below.  */
-      if( flags & SQLITE_SHM_SHARED ){
-        assert( n==1 );
-        assert( aLock[ofst]>=1 );
-        if( aLock[ofst]>1 ){
-          bUnlock = 0;
-          aLock[ofst]--;
-          p->sharedMask &= ~mask;
+    if( rc==SQLITE_OK ){
+      if( flags & SQLITE_SHM_UNLOCK ){
+        /* Case (a) - unlock.  */
+        int bUnlock = 1;
+        assert( (p->exclMask & p->sharedMask)==0 );
+        assert( !(flags & SQLITE_SHM_EXCLUSIVE) || (p->exclMask & mask)==mask );
+        assert( !(flags & SQLITE_SHM_SHARED) || (p->sharedMask & mask)==mask );
+  
+        /* If this is a SHARED lock being unlocked, it is possible that other
+        ** clients within this process are holding the same SHARED lock. In
+        ** this case, set bUnlock to 0 so that the posix lock is not removed
+        ** from the file-descriptor below.  */
+        if( flags & SQLITE_SHM_SHARED ){
+          assert( n==1 );
+          assert( aLock[ofst]>=1 );
+          if( aLock[ofst]>1 ){
+            bUnlock = 0;
+            aLock[ofst]--;
+            p->sharedMask &= ~mask;
+          }
         }
-      }
-
-      if( bUnlock ){
-        rc = unixShmSystemLock(pDbFd, F_UNLCK, ofst+UNIX_SHM_BASE, n);
-        if( rc==SQLITE_OK ){
-          memset(&aLock[ofst], 0, sizeof(int)*n);
-          p->sharedMask &= ~mask;
-          p->exclMask &= ~mask;
+  
+        if( bUnlock ){
+          rc = unixShmSystemLock(pDbFd, F_UNLCK, ofst+UNIX_SHM_BASE, n);
+          if( rc==SQLITE_OK ){
+            memset(&aLock[ofst], 0, sizeof(int)*n);
+            p->sharedMask &= ~mask;
+            p->exclMask &= ~mask;
+          }
         }
-      }
-    }else if( flags & SQLITE_SHM_SHARED ){
-      /* Case (b) - a shared lock.  */
-
-      if( aLock[ofst]<0 ){
-        /* An exclusive lock is held by some other connection. BUSY. */ 
-        rc = SQLITE_BUSY;
-      }else if( aLock[ofst]==0 ){
-        rc = unixShmSystemLock(pDbFd, F_RDLCK, ofst+UNIX_SHM_BASE, n);
-      }
-
-      /* Get the local shared locks */
-      if( rc==SQLITE_OK ){
-        p->sharedMask |= mask;
-        aLock[ofst]++;
-      }
-    }else{
-      /* Case (c) - an exclusive lock.  */
-      int ii;
-
-      assert( flags==(SQLITE_SHM_LOCK|SQLITE_SHM_EXCLUSIVE) );
-      assert( (p->sharedMask & mask)==0 );
-      assert( (p->exclMask & mask)==0 );
-
-      /* Make sure no sibling connections hold locks that will block this
-      ** lock.  If any do, return SQLITE_BUSY right away.  */
-      for(ii=ofst; ii<ofst+n; ii++){
-        if( aLock[ii] ){
+      }else if( flags & SQLITE_SHM_SHARED ){
+        /* Case (b) - a shared lock.  */
+  
+        if( aLock[ofst]<0 ){
+          /* An exclusive lock is held by some other connection. BUSY. */ 
           rc = SQLITE_BUSY;
-          break;
+        }else if( aLock[ofst]==0 ){
+          rc = unixShmSystemLock(pDbFd, F_RDLCK, ofst+UNIX_SHM_BASE, n);
         }
-      }
-
-      /* Get the exclusive locks at the system level. Then if successful
-      ** also update the in-memory values. */
-      if( rc==SQLITE_OK ){
-        rc = unixShmSystemLock(pDbFd, F_WRLCK, ofst+UNIX_SHM_BASE, n);
+  
+        /* Get the local shared locks */
         if( rc==SQLITE_OK ){
-          p->exclMask |= mask;
-          for(ii=ofst; ii<ofst+n; ii++){
-            aLock[ii] = -1;
+          p->sharedMask |= mask;
+          aLock[ofst]++;
+        }
+      }else{
+        /* Case (c) - an exclusive lock.  */
+        int ii;
+  
+        assert( flags==(SQLITE_SHM_LOCK|SQLITE_SHM_EXCLUSIVE) );
+        assert( (p->sharedMask & mask)==0 );
+        assert( (p->exclMask & mask)==0 );
+  
+        /* Make sure no sibling connections hold locks that will block this
+        ** lock.  If any do, return SQLITE_BUSY right away.  */
+        for(ii=ofst; ii<ofst+n; ii++){
+          if( aLock[ii] ){
+            rc = SQLITE_BUSY;
+            break;
+          }
+        }
+  
+        /* Get the exclusive locks at the system level. Then if successful
+        ** also update the in-memory values. */
+        if( rc==SQLITE_OK ){
+          rc = unixShmSystemLock(pDbFd, F_WRLCK, ofst+UNIX_SHM_BASE, n);
+          if( rc==SQLITE_OK ){
+            p->exclMask |= mask;
+            for(ii=ofst; ii<ofst+n; ii++){
+              aLock[ii] = -1;
+            }
           }
         }
       }
+      assert( assertLockingArrayOk(pShmNode) );
     }
-  
-    assert( assertLockingArrayOk(pShmNode) );
 
     /* Drop the mutexes acquired above. */
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-    for(iMutex=ofst; iMutex<ofst+n; iMutex++){
+    for(iMutex--; iMutex>=ofst; iMutex--){
       sqlite3_mutex_leave(pShmNode->aMutex[iMutex]);
     }
 #else
