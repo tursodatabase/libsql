@@ -128,11 +128,12 @@ unsafe impl WalHook for ReplicationLoggerHook {
                 replicator.submit_frames(frame_count as u32);
             }
 
-            if let Err(e) = ctx.logger.log_file.write().maybe_compact(
-                ctx.logger.compactor.clone(),
-                ntruncate,
-                &ctx.logger.db_path,
-            ) {
+            if let Err(e) = ctx
+                .logger
+                .log_file
+                .write()
+                .maybe_compact(ctx.logger.compactor.clone(), &ctx.logger.db_path)
+            {
                 tracing::error!("fatal error: {e}, exiting");
                 std::process::abort()
             }
@@ -604,26 +605,16 @@ impl LogFile {
         compact
     }
 
-    fn maybe_compact(
-        &mut self,
-        compactor: LogCompactor,
-        size_after: u32,
-        path: &Path,
-    ) -> anyhow::Result<()> {
+    fn maybe_compact(&mut self, compactor: LogCompactor, path: &Path) -> anyhow::Result<()> {
         if self.should_compact() {
-            self.do_compaction(compactor, size_after, path)
+            self.do_compaction(compactor, path)
         } else {
             Ok(())
         }
     }
 
     /// perform the log compaction.
-    fn do_compaction(
-        &mut self,
-        compactor: LogCompactor,
-        size_after: u32,
-        path: &Path,
-    ) -> anyhow::Result<()> {
+    fn do_compaction(&mut self, compactor: LogCompactor, path: &Path) -> anyhow::Result<()> {
         assert_eq!(self.uncommitted_frame_count, 0);
 
         // nothing to compact
@@ -657,7 +648,7 @@ impl LogFile {
         // FIXME(marin): the dest path never changes, store it somewhere.
         atomic_rename(&to_compact_log_path, path.join("wallog")).unwrap();
         let old_log_file = std::mem::replace(self, new_log_file);
-        compactor.compact(old_log_file, to_compact_log_path, size_after)?;
+        compactor.compact(old_log_file, to_compact_log_path)?;
 
         Ok(())
     }
@@ -988,7 +979,7 @@ impl ReplicationLogger {
         let size_after = last_frame.header().size_after;
         assert!(size_after != 0);
 
-        log_file.do_compaction(self.compactor.clone(), size_after, &self.db_path)?;
+        log_file.do_compaction(self.compactor.clone(), &self.db_path)?;
         Ok(true)
     }
 }

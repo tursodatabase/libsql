@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use bytemuck::bytes_of;
 use futures::TryStreamExt;
 use libsql_replication::frame::FrameMut;
@@ -18,6 +18,7 @@ use tokio_stream::{Stream, StreamExt};
 use uuid::Uuid;
 
 use crate::namespace::NamespaceName;
+use crate::replication::primary::logger::LogFileHeader;
 
 use super::primary::logger::LogFile;
 use super::FrameNo;
@@ -99,57 +100,129 @@ pub async fn find_snapshot_file(
 
 #[derive(Clone, Debug)]
 pub struct LogCompactor {
-    sender: mpsc::Sender<(LogFile, PathBuf, u32)>,
+    sender: mpsc::Sender<(LogFile, PathBuf)>,
 }
 
 pub type SnapshotCallback = Box<dyn Fn(&Path) -> anyhow::Result<()> + Send + Sync>;
 pub type NamespacedSnapshotCallback =
     Arc<dyn Fn(&Path, &NamespaceName) -> anyhow::Result<()> + Send + Sync>;
 
+async fn compact(
+    db_path: &Path,
+    to_compact_file: LogFile,
+    log_id: Uuid,
+    merger: &mut SnapshotMerger,
+    callback: &SnapshotCallback,
+    snapshot_dir_path: &Path,
+    to_compact_path: &Path,
+) -> anyhow::Result<()> {
+    match perform_compaction(&db_path, to_compact_file, log_id).await {
+        Ok((snapshot_name, snapshot_frame_count, size_after)) => {
+            tracing::info!("snapshot `{snapshot_name}` successfully created");
+
+            let snapshot_file = snapshot_dir_path.join(&snapshot_name);
+            if let Err(e) = (*callback)(&snapshot_file) {
+                bail!("failed to call snapshot callback: {e}");
+            }
+
+            if let Err(e) = merger
+                .register_snapshot(snapshot_name, snapshot_frame_count, size_after)
+                .await
+            {
+                bail!("failed to register snapshot with snapshot merger: {e}");
+            }
+
+            if let Err(e) = std::fs::remove_file(&to_compact_path) {
+                bail!("failed to remove old log file `{to_compact_path:?}`: {e}",);
+            }
+        }
+        Err(e) => {
+            bail!("fatal error creating snapshot: {e}");
+        }
+    }
+
+    Ok(())
+}
+
+/// Returns a list of pending snapshots to compact by reading the `to_compact` directory. Those
+/// snapshots should be processed before any other.
+fn pending_snapshots_list(compact_queue_dir: &Path) -> anyhow::Result<Vec<(LogFile, PathBuf)>> {
+    let dir = std::fs::read_dir(compact_queue_dir)?;
+    let mut to_compact = Vec::new();
+    for entry in dir {
+        let entry = entry?;
+        if entry.file_type()?.is_file() {
+            let to_compact_path = entry.path();
+            let file = std::fs::File::open(&to_compact_path)?;
+            let size = file.metadata()?.len();
+            // ignore empty log files
+            if size == size_of::<LogFileHeader>() as u64 {
+                if let Err(e) = std::fs::remove_file(&to_compact_path) {
+                    tracing::warn!("failed to remove empty pending log: {e}");
+                }
+                continue;
+            }
+            // max log duration and frame number don't  matter, we compact the file and discard it
+            // immediately.
+            let to_compact_file = LogFile::new(file, u64::MAX, None)?;
+            to_compact.push((to_compact_file, to_compact_path));
+        }
+    }
+
+    // sort the logs by start frame_no, so that they are registered with the merger in the right
+    // order.
+    to_compact.sort_unstable_by_key(|(log, _)| log.header().start_frame_no);
+
+    Ok(to_compact)
+}
+
 impl LogCompactor {
     pub fn new(db_path: &Path, log_id: Uuid, callback: SnapshotCallback) -> anyhow::Result<Self> {
         // a directory containing logs that need compaction
-        std::fs::create_dir_all(db_path.join("to_compact"))?;
-        let (sender, mut receiver) = mpsc::channel::<(LogFile, PathBuf, u32)>(8);
+        let compact_queue_dir = db_path.join("to_compact");
+        std::fs::create_dir_all(&compact_queue_dir)?;
+        let (sender, mut receiver) = mpsc::channel::<(LogFile, PathBuf)>(8);
         let mut merger = SnapshotMerger::new(db_path, log_id)?;
-        let db_path = db_path.to_path_buf();
         let snapshot_dir_path = snapshot_dir_path(&db_path);
-        // TODO: load snapshot in to_compact here.
+
+        let db_path = db_path.to_path_buf();
+        // We gather pending snapshots here, so new snapshots don't interfere.
+        let pending = pending_snapshots_list(&compact_queue_dir)?;
         // FIXME(marin): we somehow need to make this code more robust. How to deal with a
         // compaction error?
-        let _handle = tokio::task::spawn(async move {
-            while let Some((to_compact_file, to_compact_path, size_after)) = receiver.recv().await {
-                match perform_compaction(&db_path, to_compact_file, log_id).await {
-                    Ok((snapshot_name, snapshot_frame_count)) => {
-                        tracing::info!("snapshot `{snapshot_name}` successfully created");
+        tokio::task::spawn(async move {
+            // process pending snapshots if any.
+            for (to_compact_file, to_compact_path) in pending {
+                if let Err(e) = compact(
+                    &db_path,
+                    to_compact_file,
+                    log_id,
+                    &mut merger,
+                    &callback,
+                    &snapshot_dir_path,
+                    &to_compact_path,
+                )
+                .await
+                {
+                    tracing::error!("fatal error while compacting pending logs: {e}");
+                    return;
+                }
+            }
 
-                        let snapshot_file = snapshot_dir_path.join(&snapshot_name);
-                        if let Err(e) = (*callback)(&snapshot_file) {
-                            tracing::error!("failed to call snapshot callback: {e}");
-                            break;
-                        }
-
-                        if let Err(e) = merger
-                            .register_snapshot(snapshot_name, snapshot_frame_count, size_after)
-                            .await
-                        {
-                            tracing::error!(
-                                "failed to register snapshot with snapshot merger: {e}"
-                            );
-                            break;
-                        }
-
-                        if let Err(e) = std::fs::remove_file(&to_compact_path) {
-                            tracing::error!(
-                                "failed to remove old log file `{to_compact_path:?}`: {e}",
-                            );
-                            break;
-                        }
-                    }
-                    Err(e) => {
-                        tracing::error!("fatal error creating snapshot: {e}");
-                        break;
-                    }
+            while let Some((to_compact_file, to_compact_path)) = receiver.recv().await {
+                if let Err(e) = compact(
+                    &db_path,
+                    to_compact_file,
+                    log_id,
+                    &mut merger,
+                    &callback,
+                    &snapshot_dir_path,
+                    &to_compact_path,
+                )
+                .await
+                {
+                    tracing::error!("fatal compactor error: {e}");
+                    break;
                 }
             }
         });
@@ -159,9 +232,9 @@ impl LogCompactor {
 
     /// Sends a compaction task to the background compaction thread. Blocks if a compaction task is
     /// already ongoing.
-    pub fn compact(&self, file: LogFile, path: PathBuf, size_after: u32) -> anyhow::Result<()> {
+    pub fn compact(&self, file: LogFile, path: PathBuf) -> anyhow::Result<()> {
         self.sender
-            .blocking_send((file, path, size_after))
+            .blocking_send((file, path))
             .context("failed to compact log: log compactor thread exited")?;
 
         Ok(())
@@ -385,7 +458,7 @@ impl SnapshotBuilder {
     }
 
     /// Persist the snapshot, and returns the name and size is frame on the snapshot.
-    async fn finish(mut self) -> anyhow::Result<(String, u64)> {
+    async fn finish(mut self) -> anyhow::Result<(String, u64, u32)> {
         self.snapshot_file.flush().await?;
         let mut file = self.snapshot_file.into_inner();
         file.seek(SeekFrom::Start(0)).await?;
@@ -405,7 +478,11 @@ impl SnapshotBuilder {
         )
         .await?;
 
-        Ok((snapshot_name, self.header.frame_count))
+        Ok((
+            snapshot_name,
+            self.header.frame_count,
+            self.header.size_after,
+        ))
     }
 }
 
@@ -413,7 +490,7 @@ async fn perform_compaction(
     db_path: &Path,
     file_to_compact: LogFile,
     log_id: Uuid,
-) -> anyhow::Result<(String, u64)> {
+) -> anyhow::Result<(String, u64, u32)> {
     let mut builder = SnapshotBuilder::new(db_path, log_id).await?;
     builder
         .append_frames(file_to_compact.into_rev_stream_mut())
