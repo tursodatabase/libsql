@@ -4404,7 +4404,7 @@ static void fts5WriteAppendPoslistData(
   const u8 *a = aData;
   int n = nData;
   
-  assert( p->pConfig->pgsz>0 );
+  assert( p->pConfig->pgsz>0 || p->rc!=SQLITE_OK );
   while( p->rc==SQLITE_OK 
      && (pPage->buf.n + pPage->pgidx.n + n)>=p->pConfig->pgsz 
   ){
