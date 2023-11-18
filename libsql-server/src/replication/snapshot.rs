@@ -108,17 +108,18 @@ pub type NamespacedSnapshotCallback =
 
 impl LogCompactor {
     pub fn new(db_path: &Path, log_id: Uuid, callback: SnapshotCallback) -> anyhow::Result<Self> {
-        // we create a 0 sized channel, in order to create backpressure when we can't
-        // keep up with snapshop creation: if there isn't any ongoind comptaction task processing,
-        // the compact does not block, and the log is compacted in the background. Otherwise, the
-        // block until there is a free slot to perform compaction.
-        let (sender, mut receiver) = mpsc::channel::<(LogFile, PathBuf, u32)>(1);
+        // a directory containing logs that need compaction
+        std::fs::create_dir_all(db_path.join("to_compact"))?;
+        let (sender, mut receiver) = mpsc::channel::<(LogFile, PathBuf, u32)>(8);
         let mut merger = SnapshotMerger::new(db_path, log_id)?;
         let db_path = db_path.to_path_buf();
         let snapshot_dir_path = snapshot_dir_path(&db_path);
+        // TODO: load snapshot in to_compact here.
+        // FIXME(marin): we somehow need to make this code more robust. How to deal with a
+        // compaction error?
         let _handle = tokio::task::spawn(async move {
-            while let Some((file, log_path, size_after)) = receiver.recv().await {
-                match perform_compaction(&db_path, file, log_id).await {
+            while let Some((to_compact_file, to_compact_path, size_after)) = receiver.recv().await {
+                match perform_compaction(&db_path, to_compact_file, log_id).await {
                     Ok((snapshot_name, snapshot_frame_count)) => {
                         tracing::info!("snapshot `{snapshot_name}` successfully created");
 
@@ -138,10 +139,9 @@ impl LogCompactor {
                             break;
                         }
 
-                        if let Err(e) = std::fs::remove_file(&log_path) {
+                        if let Err(e) = std::fs::remove_file(&to_compact_path) {
                             tracing::error!(
-                                "failed to remove old log file `{}`: {e}",
-                                log_path.display()
+                                "failed to remove old log file `{to_compact_path:?}`: {e}",
                             );
                             break;
                         }

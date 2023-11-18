@@ -632,12 +632,18 @@ impl LogFile {
         }
 
         tracing::info!("performing log compaction");
-        let temp_log_path = path.join("temp_log");
+        // To perform the compaction, we create a new, empty file in the `to_compact` directory.
+        // We will then atomically swap that file with the current log file.
+        // I case of crash, when filling the compactor job queue, if we find that we find a log
+        // file that doesn't contains only a header, we can safely assume that it was from a
+        // previous crash that happenned in the middle of this operation.
+        let to_compact_id = Uuid::new_v4();
+        let to_compact_log_path = path.join("to_compact").join(to_compact_id.to_string());
         let file = OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
-            .open(&temp_log_path)?;
+            .open(&to_compact_log_path)?;
         let mut new_log_file = LogFile::new(file, self.max_log_frame_count, self.max_log_duration)?;
         let new_header = LogFileHeader {
             start_frame_no: self.header.last_frame_no().unwrap() + 1,
@@ -648,9 +654,10 @@ impl LogFile {
         new_log_file.header = new_header;
         new_log_file.write_header().unwrap();
         // swap old and new snapshot
-        atomic_rename(&temp_log_path, path.join("wallog")).unwrap();
+        // FIXME(marin): the dest path never changes, store it somewhere.
+        atomic_rename(&to_compact_log_path, path.join("wallog")).unwrap();
         let old_log_file = std::mem::replace(self, new_log_file);
-        compactor.compact(old_log_file, temp_log_path, size_after)?;
+        compactor.compact(old_log_file, to_compact_log_path, size_after)?;
 
         Ok(())
     }
