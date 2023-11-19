@@ -360,3 +360,44 @@ async fn debug_print_row() {
         "{Some(\"id\"): (Integer, 123), Some(\"name\"): (Text, \"potato\"), Some(\"score\"): (Real, 3.14), Some(\"data\"): (Blob, 4), Some(\"age\"): (Null, ())}"
     );
 }
+
+#[cfg(feature = "serde")]
+#[tokio::test]
+async fn deserialize_row() {
+    let db = Database::open(":memory:").unwrap();
+    let conn = db.connect().unwrap();
+    let _ = conn
+        .execute(
+            "CREATE TABLE users (id INTEGER, name TEXT, score REAL, data BLOB, age INTEGER)",
+            (),
+        )
+        .await;
+    conn.execute("INSERT INTO users (id, name, score, data, age) VALUES (123, \"potato\", 3.14, X'deadbeef', NULL)", ())
+    .await
+    .unwrap();
+
+    use serde::Deserialize;
+
+    #[derive(Deserialize, Debug)]
+    struct Data {
+        id: i64,
+        name: String,
+        score: f64,
+        data: Vec<u8>,
+        age: (),
+    }
+
+    let row = conn
+        .query("SELECT * FROM users", ())
+        .await
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap();
+    let data: Data = libsql::deserialize_row::from_row(&row).unwrap();
+    assert_eq!(data.id, 123);
+    assert_eq!(data.name, "potato".to_string());
+    assert_eq!(data.score, 3.14);
+    assert_eq!(data.data, vec![0xde, 0xad, 0xbe, 0xef]);
+    assert_eq!(data.age, ());
+}

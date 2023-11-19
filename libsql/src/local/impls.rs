@@ -162,6 +162,10 @@ impl RowInner for LibsqlRow {
     fn column_type(&self, idx: i32) -> Result<ValueType> {
         self.0.column_type(idx).map(ValueType::from)
     }
+
+    fn column_count(&self) -> usize {
+        self.0.stmt.column_count()
+    }
 }
 
 impl fmt::Debug for LibsqlRow {

@@ -219,4 +219,5 @@ pub(crate) trait RowInner: fmt::Debug {
     fn column_str(&self, idx: i32) -> Result<&str>;
     fn column_name(&self, idx: i32) -> Option<&str>;
     fn column_type(&self, idx: i32) -> Result<ValueType>;
+    fn column_count(&self) -> usize;
 }

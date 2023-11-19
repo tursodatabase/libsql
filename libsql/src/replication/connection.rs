@@ -648,6 +648,10 @@ impl RowInner for RemoteRow {
             .map(ValueType::from)
             .ok_or(Error::InvalidColumnType)
     }
+
+    fn column_count(&self) -> usize {
+        self.1.len()
+    }
 }
 
 pub(super) struct RemoteTx(pub(super) Option<RemoteConnection>);
