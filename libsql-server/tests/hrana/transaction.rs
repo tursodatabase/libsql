@@ -11,13 +11,7 @@ fn transaction_commit_and_rollback() {
 
         // initialize tables
         let tx = conn.transaction().await?;
-        tx.execute_batch(
-            r#"
-        begin;
-        create table t(x text);
-        end;"#,
-        )
-        .await?;
+        tx.execute_batch(r#"create table t(x text);"#).await?;
         tx.commit().await?;
 
         // transaction with temporary data
@@ -56,13 +50,7 @@ fn multiple_concurrent_transactions() {
     sim.client("client", async {
         let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
-        conn.execute_batch(
-            r#"
-        begin;
-        create table t(x text);
-        end;"#,
-        )
-        .await?;
+        conn.execute_batch(r#"create table t(x text);"#).await?;
 
         // open first transaction and alter data
         let tx1 = conn
