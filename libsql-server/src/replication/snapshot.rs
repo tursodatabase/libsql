@@ -283,7 +283,7 @@ impl SnapshotMerger {
             tokio::select! {
                 Some((name, size, db_page_count)) = receiver.recv() => {
                     snapshots.push((name, size));
-                    if !working && dbg!(Self::should_compact(&snapshots, db_page_count)) {
+                    if !working && Self::should_compact(&snapshots, db_page_count) {
                         let snapshots = std::mem::take(&mut snapshots);
                         let fut = async move {
                             let compacted_snapshot_info =
@@ -297,7 +297,7 @@ impl SnapshotMerger {
                 ret = &mut job, if working => {
                     working = false;
                     job = Box::pin(std::future::pending());
-                    let ret = dbg!(ret)?;
+                    let ret = ret?;
                     // the new merged snapshot is prepended to the snapshot list
                     snapshots.insert(0, ret);
                 }
@@ -345,14 +345,12 @@ impl SnapshotMerger {
         db_path: &Path,
         log_id: Uuid,
     ) -> anyhow::Result<(String, u64)> {
-        let mut builder = SnapshotBuilder::new(dbg!(db_path), log_id).await?;
-        dbg!();
+        let mut builder = SnapshotBuilder::new(db_path, log_id).await?;
         let snapshot_dir_path = snapshot_dir_path(db_path);
         let mut size_after = None;
         tracing::debug!("merging {} snashots for {log_id}", snapshots.len());
         for (name, _) in snapshots.iter().rev() {
-            let snapshot = SnapshotFile::open(dbg!(&snapshot_dir_path.join(name))).await?;
-            dbg!();
+            let snapshot = SnapshotFile::open(&snapshot_dir_path.join(name)).await?;
             // The size after the merged snapshot is the size after the first snapshot to be merged
             if size_after.is_none() {
                 size_after.replace(snapshot.header().size_after);
@@ -462,7 +460,7 @@ impl SnapshotBuilder {
                 self.header.start_frame_no = frame.header().frame_no;
             }
 
-            if dbg!(frame.header().frame_no) >= dbg!(self.header.end_frame_no) {
+            if frame.header().frame_no >= self.header.end_frame_no {
                 self.header.end_frame_no = frame.header().frame_no;
                 self.header.size_after = frame.header().size_after;
             }
@@ -613,9 +611,7 @@ mod test {
         let compactor_clone = compactor.clone();
         tokio::task::spawn_blocking(move || {
             let (logfile, logfile_path) = make_logfile();
-            compactor_clone
-                .compact(logfile, dbg!(logfile_path))
-                .unwrap();
+            compactor_clone.compact(logfile, logfile_path).unwrap();
         })
         .await
         .unwrap();
@@ -730,9 +726,7 @@ mod test {
         tokio::task::spawn_blocking(move || {
             for _ in 0..10 {
                 let (logfile, logfile_path) = make_logfile();
-                compactor_clone
-                    .compact(logfile, dbg!(logfile_path))
-                    .unwrap();
+                compactor_clone.compact(logfile, logfile_path).unwrap();
             }
         })
         .await
