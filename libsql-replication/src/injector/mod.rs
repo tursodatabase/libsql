@@ -108,12 +108,12 @@ impl Injector {
         // (snapshot). Either way, we want to find the biggest frameno we're about to commit, and
         // that is either the front or the back of the buffer
         let last_frame_no = match lock.back().zip(lock.front()) {
-                    Some((b, f)) => f.header().frame_no.max(b.header().frame_no),
-                    None => {
-                        tracing::trace!("nothing to inject");
-                        return Ok(None);
-                    }
-                };
+            Some((b, f)) => f.header().frame_no.max(b.header().frame_no),
+            None => {
+                tracing::trace!("nothing to inject");
+                return Ok(None);
+            }
+        };
 
         self.biggest_uncommitted_seen = self.biggest_uncommitted_seen.max(last_frame_no);
 

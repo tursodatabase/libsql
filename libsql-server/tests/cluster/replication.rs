@@ -1,10 +1,13 @@
-use std::time::Duration;
 use std::sync::Arc;
+use std::time::Duration;
 
-use sqld::config::{AdminApiConfig, DbConfig, RpcServerConfig, RpcClientConfig};
+use sqld::config::{AdminApiConfig, DbConfig, RpcClientConfig, RpcServerConfig};
 use tokio::sync::Notify;
 
-use crate::common::{net::{TestServer, TurmoilAcceptor, TurmoilConnector, SimServer}, http::Client};
+use crate::common::{
+    http::Client,
+    net::{SimServer, TestServer, TurmoilAcceptor, TurmoilConnector},
+};
 
 /// In this test, we first create a primary with a very small max_log_size, and then add a good
 /// amount of data to it. This will cause the primary to create a bunch of snaphots a large enough
@@ -31,15 +34,16 @@ fn apply_partial_snapshot() {
                         max_log_size: 1,
                         ..Default::default()
                     },
-                    admin_api_config: Some(AdminApiConfig{
+                    admin_api_config: Some(AdminApiConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
                         connector: TurmoilConnector,
                         disable_metrics: true,
                     }),
                     rpc_server_config: Some(RpcServerConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 5050)).await.unwrap(),
-                        tls_config: None }),
-                        ..Default::default()
+                        tls_config: None,
+                    }),
+                    ..Default::default()
                 };
 
                 primary.start_sim(8080).await.unwrap();
@@ -49,7 +53,7 @@ fn apply_partial_snapshot() {
         }
     });
 
-    sim.host("replica", { 
+    sim.host("replica", {
         let notify = notify.clone();
         move || {
             let notify = notify.clone();
@@ -61,15 +65,15 @@ fn apply_partial_snapshot() {
                         max_log_size: 1,
                         ..Default::default()
                     },
-                    admin_api_config: Some(AdminApiConfig{
+                    admin_api_config: Some(AdminApiConfig {
                         acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
                         connector: TurmoilConnector,
                         disable_metrics: true,
                     }),
-                    rpc_client_config: Some(RpcClientConfig { 
+                    rpc_client_config: Some(RpcClientConfig {
                         remote_url: "http://primary:5050".into(),
                         tls_config: None,
-                        connector: TurmoilConnector
+                        connector: TurmoilConnector,
                     }),
                     ..Default::default()
                 };
@@ -83,17 +87,27 @@ fn apply_partial_snapshot() {
     });
 
     sim.client("client", async move {
-        let primary = libsql::Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector).unwrap();
+        let primary = libsql::Database::open_remote_with_connector(
+            "http://primary:8080",
+            "",
+            TurmoilConnector,
+        )
+        .unwrap();
         let conn = primary.connect().unwrap();
         conn.execute("CREATE TABLE TEST (x)", ()).await.unwrap();
         // we need a sufficiently large snapshot for the test. Before the fix, 5000 insert would
         // trigger an infinite loop.
         for _ in 0..5000 {
-            conn.execute("INSERT INTO TEST VALUES (randomblob(6000))", ()).await.unwrap();
+            conn.execute("INSERT INTO TEST VALUES (randomblob(6000))", ())
+                .await
+                .unwrap();
         }
 
         let client = Client::new();
-        let resp = client.get("http://primary:9090/v1/namespaces/default/stats").await.unwrap();
+        let resp = client
+            .get("http://primary:9090/v1/namespaces/default/stats")
+            .await
+            .unwrap();
         let stats = resp.json_value().await.unwrap();
         let primary_replication_index = stats["replication_index"].as_i64().unwrap();
 
@@ -102,12 +116,15 @@ fn apply_partial_snapshot() {
 
         let client = Client::new();
         loop {
-            let resp = client.get("http://replica:9090/v1/namespaces/default/stats").await.unwrap();
+            let resp = client
+                .get("http://replica:9090/v1/namespaces/default/stats")
+                .await
+                .unwrap();
             let stats = resp.json_value().await.unwrap();
             let replication_index = &stats["replication_index"];
             if !replication_index.is_null() {
                 if replication_index.as_i64().unwrap() == primary_replication_index {
-                    break
+                    break;
                 }
             }
             tokio::time::sleep(Duration::from_millis(1000)).await;
