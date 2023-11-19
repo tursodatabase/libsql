@@ -536,8 +536,233 @@ mod test {
 
     use crate::replication::primary::logger::WalPage;
     use crate::replication::snapshot::SnapshotFile;
+    use crate::LIBSQL_PAGE_SIZE;
 
     use super::*;
+
+    async fn assert_dir_is_empty(p: &Path) {
+        // there is nothing left in the to_compact directory
+        if p.try_exists().unwrap() {
+            let mut dir = tokio::fs::read_dir(p).await.unwrap();
+            let mut count = 0;
+            while let Some(entry) = dir.next_entry().await.unwrap() {
+                if entry.file_type().await.unwrap().is_file() {
+                    count += 1;
+                }
+            }
+
+            assert_eq!(count, 0);
+        }
+    }
+
+    /// On startup, there may be uncompacted log leftover in the `to_compact` directory.
+    /// These should be processed before any other logs.
+    #[tokio::test]
+    async fn process_pending_logs_on_startup() {
+        let tmp = tempdir().unwrap();
+        let log_id = Uuid::new_v4();
+        let to_compact_path = tmp.path().join("to_compact");
+        tokio::fs::create_dir_all(&to_compact_path).await.unwrap();
+        let mut current_fno = 0;
+        let mut make_logfile = {
+            let to_compact_path = to_compact_path.clone();
+            move || {
+                let logfile_path = to_compact_path.join(Uuid::new_v4().to_string());
+                let file = std::fs::OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .read(true)
+                    .open(&logfile_path)
+                    .unwrap();
+                let mut logfile = LogFile::new(file, u64::MAX, None).unwrap();
+                let header = LogFileHeader {
+                    log_id: log_id.as_u128(),
+                    start_frame_no: current_fno,
+                    ..*logfile.header()
+                };
+
+                logfile.header = header;
+                logfile.write_header().unwrap();
+
+                logfile
+                    .push_page(&WalPage {
+                        page_no: 0,
+                        size_after: 1,
+                        data: Bytes::from_static(&[0; LIBSQL_PAGE_SIZE as _]),
+                    })
+                    .unwrap();
+                logfile.commit().unwrap();
+                current_fno = logfile.header().start_frame_no + logfile.header().frame_count;
+                (logfile, logfile_path)
+            }
+        };
+        // write a couple of pages to the pending compact list.
+        for _ in 0..3 {
+            make_logfile();
+        }
+
+        // nothing has been compacted yet
+        assert!(!tmp.path().join("snapshots").exists());
+
+        // we make a last logfile that we'll send through to the compactor. This one should be
+        // processed after the pending one. We can't guarantee that it will be received _before_ we
+        // start processing pending logs, but a correct implementation should always processs the
+        // log _after_ the pending logs have been processed. A failure to do so will trigger
+        // assertions in the merger code.
+        let compactor = LogCompactor::new(tmp.path(), log_id, Box::new(|_| Ok(()))).unwrap();
+        let compactor_clone = compactor.clone();
+        tokio::task::spawn_blocking(move || {
+            let (logfile, logfile_path) = make_logfile();
+            compactor_clone
+                .compact(logfile, dbg!(logfile_path))
+                .unwrap();
+        })
+        .await
+        .unwrap();
+
+        // wait a bit for snapshot to be compated
+        tokio::time::sleep(Duration::from_millis(300)).await;
+
+        // no error occured: the loop is still running.
+        assert!(!compactor.sender.is_closed());
+        assert!(tmp.path().join("snapshots").exists());
+        let mut dir = tokio::fs::read_dir(tmp.path().join("snapshots"))
+            .await
+            .unwrap();
+        let mut start_idx = u64::MAX;
+        let mut end_idx = u64::MIN;
+        while let Some(entry) = dir.next_entry().await.unwrap() {
+            if entry.file_type().await.unwrap().is_file() {
+                let (_, start, end) =
+                    parse_snapshot_name(entry.file_name().to_str().unwrap()).unwrap();
+                start_idx = start_idx.min(start);
+                end_idx = end_idx.max(end);
+            }
+        }
+
+        // assert that all indexes are covered
+        assert_eq!((start_idx, end_idx), (0, 3));
+
+        assert_dir_is_empty(&to_compact_path).await;
+    }
+
+    /// Simulate an empty pending snapshot left by the logger if the logswapping operation was
+    /// interupted after the new log was created, but before it was swapped with the old log.
+    #[tokio::test]
+    async fn empty_pending_log_is_ignored() {
+        let tmp = tempdir().unwrap();
+        let to_compact_path = tmp.path().join("to_compact");
+        tokio::fs::create_dir_all(&to_compact_path).await.unwrap();
+        let logfile_path = to_compact_path.join(Uuid::new_v4().to_string());
+        let file = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .read(true)
+            .open(&logfile_path)
+            .unwrap();
+        let mut logfile = LogFile::new(file, u64::MAX, None).unwrap();
+        logfile.write_header().unwrap();
+
+        let _compactor =
+            LogCompactor::new(tmp.path(), Uuid::new_v4(), Box::new(|_| Ok(()))).unwrap();
+        tokio::time::sleep(Duration::from_millis(100)).await;
+
+        // emtpy snapshot was discarded
+        assert_dir_is_empty(&tmp.path().join("to_compact")).await;
+        assert_dir_is_empty(&tmp.path().join("snapshots")).await;
+    }
+
+    /// In this test, we send a bunch of snapshot to the compactor, and see if it handles it
+    /// correctly.
+    ///
+    /// This test is similar to process_pending_logs_on_startup, except that all the logs are sent
+    /// over the compactor channel.
+    #[tokio::test]
+    async fn compact_many() {
+        let tmp = tempdir().unwrap();
+        let log_id = Uuid::new_v4();
+        let to_compact_path = tmp.path().join("to_compact");
+        tokio::fs::create_dir_all(&to_compact_path).await.unwrap();
+        let mut current_fno = 0;
+        let mut make_logfile = {
+            let to_compact_path = to_compact_path.clone();
+            move || {
+                let logfile_path = to_compact_path.join(Uuid::new_v4().to_string());
+                let file = std::fs::OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .read(true)
+                    .open(&logfile_path)
+                    .unwrap();
+                let mut logfile = LogFile::new(file, u64::MAX, None).unwrap();
+                let header = LogFileHeader {
+                    log_id: log_id.as_u128(),
+                    start_frame_no: current_fno,
+                    ..*logfile.header()
+                };
+
+                logfile.header = header;
+                logfile.write_header().unwrap();
+
+                logfile
+                    .push_page(&WalPage {
+                        page_no: 0,
+                        size_after: 1,
+                        data: Bytes::from_static(&[0; LIBSQL_PAGE_SIZE as _]),
+                    })
+                    .unwrap();
+                logfile.commit().unwrap();
+                current_fno = logfile.header().start_frame_no + logfile.header().frame_count;
+                (logfile, logfile_path)
+            }
+        };
+
+        // nothing has been compacted yet
+        assert!(!tmp.path().join("snapshots").exists());
+
+        // we make a last logfile that we'll send through to the compactor. This one should be
+        // processed after the pending one. We can't guarantee that it will be received _before_ we
+        // start processing pending logs, but a correct implementation should always processs the
+        // log _after_ the pending logs have been processed. A failure to do so will trigger
+        // assertions in the merger code.
+        let compactor = LogCompactor::new(tmp.path(), log_id, Box::new(|_| Ok(()))).unwrap();
+        let compactor_clone = compactor.clone();
+        tokio::task::spawn_blocking(move || {
+            for _ in 0..10 {
+                let (logfile, logfile_path) = make_logfile();
+                compactor_clone
+                    .compact(logfile, dbg!(logfile_path))
+                    .unwrap();
+            }
+        })
+        .await
+        .unwrap();
+
+        // wait a bit for snapshot to be compated
+        tokio::time::sleep(Duration::from_millis(300)).await;
+
+        // no error occured: the loop is still running.
+        assert!(!compactor.sender.is_closed());
+        assert!(tmp.path().join("snapshots").exists());
+        let mut dir = tokio::fs::read_dir(tmp.path().join("snapshots"))
+            .await
+            .unwrap();
+        let mut start_idx = u64::MAX;
+        let mut end_idx = u64::MIN;
+        while let Some(entry) = dir.next_entry().await.unwrap() {
+            if entry.file_type().await.unwrap().is_file() {
+                let (_, start, end) =
+                    parse_snapshot_name(entry.file_name().to_str().unwrap()).unwrap();
+                start_idx = start_idx.min(start);
+                end_idx = end_idx.max(end);
+            }
+        }
+
+        // assert that all indexes are covered
+        assert_eq!((start_idx, end_idx), (0, 9));
+
+        assert_dir_is_empty(&to_compact_path).await;
+    }
 
     #[tokio::test]
     async fn compact_file_create_snapshot() {
@@ -568,7 +793,7 @@ mod test {
             let compactor = compactor.clone();
             move || {
                 compactor
-                    .compact(log_file, temp.path().to_path_buf(), 25)
+                    .compact(log_file, temp.path().to_path_buf())
                     .unwrap()
             }
         })
