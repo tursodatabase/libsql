@@ -4,16 +4,16 @@ pub mod connection;
 
 cfg_remote! {
     mod hyper;
+    mod transaction;
 }
 
 pub mod pipeline;
 pub mod proto;
 mod stream;
-mod transaction;
 
-use crate::hrana::connection::HttpConnection;
 pub(crate) use crate::hrana::pipeline::{ServerMsg, StreamResponseError};
 use crate::hrana::proto::{Col, Stmt, StmtResult};
+use crate::hrana::stream::HttpStream;
 use crate::Error;
 use crate::{params::Params, ValueType};
 use std::collections::VecDeque;
@@ -53,18 +53,21 @@ pub enum HranaError {
     Api(String),
 }
 
-pub struct Statement<T> {
-    client: HttpConnection<T>,
+pub struct Statement<T>
+where
+    T: for<'a> HttpSend<'a>,
+{
+    conn: HttpStream<T>,
     inner: Stmt,
 }
 
 impl<T> Statement<T>
 where
-    T: for<'a> HttpSend<'a> + Clone,
+    T: for<'a> HttpSend<'a>,
 {
-    pub(crate) fn new(conn: HttpConnection<T>, sql: String, want_rows: bool) -> Self {
+    pub(crate) fn new(stream: HttpStream<T>, sql: String, want_rows: bool) -> Self {
         Statement {
-            client: conn,
+            conn: stream,
             inner: Stmt::new(sql, want_rows),
         }
     }
@@ -74,17 +77,11 @@ where
         bind_params(params.clone(), &mut stmt);
 
         let v = self
-            .client
-            .execute_inner(stmt)
+            .conn
+            .execute(stmt)
             .await
             .map_err(|e| Error::Hrana(e.into()))?;
-        let affected_row_count = v.affected_row_count as usize;
-        self.client
-            .set_affected_row_count(affected_row_count as u64);
-        if let Some(last_insert_rowid) = v.last_insert_rowid {
-            self.client.set_last_insert_rowid(last_insert_rowid);
-        }
-        Ok(affected_row_count)
+        Ok(v.affected_row_count as usize)
     }
 
     pub async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
@@ -92,8 +89,8 @@ where
         bind_params(params.clone(), &mut stmt);
 
         let StmtResult { rows, cols, .. } = self
-            .client
-            .execute_inner(stmt)
+            .conn
+            .execute(stmt)
             .await
             .map_err(|e| Error::Hrana(e.into()))?;
 

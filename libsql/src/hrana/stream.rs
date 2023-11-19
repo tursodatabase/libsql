@@ -6,6 +6,7 @@ use crate::hrana::pipeline::{
 use crate::hrana::proto::{Batch, BatchResult, DescribeResult, Stmt, StmtResult};
 use crate::hrana::{HranaError, HttpSend, Result};
 use futures::lock::Mutex;
+use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::Arc;
 
 macro_rules! unexpected {
@@ -22,11 +23,17 @@ pub type SqlId = i32;
 /// A representation of Hrana HTTP stream. Since streams rely on sequential execution of requests,
 /// it's realized internally as a mutex lock.
 #[derive(Debug)]
-pub(super) struct HttpStream<T> {
-    inner: Arc<Mutex<Inner<T>>>,
+pub struct HttpStream<T>
+where
+    T: for<'a> HttpSend<'a>,
+{
+    inner: Arc<Inner<T>>,
 }
 
-impl<T> Clone for HttpStream<T> {
+impl<T> Clone for HttpStream<T>
+where
+    T: for<'a> HttpSend<'a>,
+{
     fn clone(&self) -> Self {
         HttpStream {
             inner: self.inner.clone(),
@@ -38,40 +45,52 @@ impl<T> HttpStream<T>
 where
     T: for<'a> HttpSend<'a>,
 {
-    pub fn open(client: T, base_url: String, auth_token: String) -> Self {
-        let inner = Inner {
-            client,
-            base_url,
-            auth_token,
-            sql_id_generator: 0,
-            status: StreamStatus::Open,
-            baton: None,
-        };
+    pub(super) fn open(client: T, base_url: String, auth_token: String) -> Self {
         HttpStream {
-            inner: Arc::new(Mutex::new(inner)),
+            inner: Arc::new(Inner {
+                affected_row_count: AtomicU64::new(0),
+                last_insert_rowid: AtomicI64::new(0),
+                stream: Mutex::new(RawStream {
+                    client,
+                    base_url,
+                    auth_token,
+                    sql_id_generator: 0,
+                    status: StreamStatus::Open,
+                    baton: None,
+                }),
+            }),
         }
     }
 
-    /// Executes a final request and immediately closes current stream.
+    /// Executes a final request and immediately closes current stream - all in one request.
     pub async fn finalize(&mut self, req: StreamRequest) -> Result<StreamResponse> {
-        let mut client = self.inner.lock().await;
+        let mut client = self.inner.stream.lock().await;
         let resp = client.finalize(req).await?;
         Ok(resp)
     }
 
     pub async fn execute(&self, stmt: Stmt) -> Result<StmtResult> {
-        let mut client = self.inner.lock().await;
+        let mut client = self.inner.stream.lock().await;
         let resp = client
             .send(StreamRequest::Execute(ExecuteStreamReq { stmt }))
             .await?;
         match resp {
-            StreamResponse::Execute(resp) => Ok(resp.result),
+            StreamResponse::Execute(resp) => {
+                let r = resp.result;
+                self.inner
+                    .affected_row_count
+                    .store(r.affected_row_count, Ordering::SeqCst);
+                self.inner
+                    .last_insert_rowid
+                    .store(r.last_insert_rowid.unwrap_or_default(), Ordering::SeqCst);
+                Ok(r)
+            }
             other => unexpected!(other),
         }
     }
 
     pub async fn batch(&self, batch: Batch) -> Result<BatchResult> {
-        let mut client = self.inner.lock().await;
+        let mut client = self.inner.stream.lock().await;
         let resp = client
             .send(StreamRequest::Batch(BatchStreamReq { batch }))
             .await?;
@@ -82,7 +101,7 @@ where
     }
 
     pub async fn store_sql(&self, sql: String) -> Result<StoredSql<T>> {
-        let mut client = self.inner.lock().await;
+        let mut client = self.inner.stream.lock().await;
         let sql_id = client.next_sql_id();
         let resp = client
             .send(StreamRequest::StoreSql(StoreSqlStreamReq { sql, sql_id }))
@@ -100,7 +119,7 @@ where
     }
 
     async fn close_sql(&self, sql_id: SqlId) -> Result<()> {
-        let mut client = self.inner.lock().await;
+        let mut client = self.inner.stream.lock().await;
         let resp = client
             .send(StreamRequest::CloseSql(CloseSqlStreamReq { sql_id }))
             .await?;
@@ -111,7 +130,7 @@ where
     }
 
     pub async fn describe<D: SqlDescriptor>(&self, descriptor: &D) -> Result<DescribeResult> {
-        let mut client = self.inner.lock().await;
+        let mut client = self.inner.stream.lock().await;
         let req = match descriptor.sql_description() {
             SqlDescription::Sql(sql) => DescribeStreamReq {
                 sql: Some(sql),
@@ -130,7 +149,7 @@ where
     }
 
     pub async fn sequence<D: SqlDescriptor>(&self, descriptor: &D) -> Result<()> {
-        let mut client = self.inner.lock().await;
+        let mut client = self.inner.stream.lock().await;
         let req = match descriptor.sql_description() {
             SqlDescription::Sql(sql) => SequenceStreamReq {
                 sql: Some(sql),
@@ -149,16 +168,38 @@ where
     }
 
     pub async fn get_autocommit(&self) -> Result<bool> {
-        let mut client = self.inner.lock().await;
+        let mut client = self.inner.stream.lock().await;
         let resp = client.send(StreamRequest::GetAutocommit).await?;
         match resp {
             StreamResponse::GetAutocommit(resp) => Ok(resp.is_autocommit),
             other => unexpected!(other),
         }
     }
+
+    pub fn affected_row_count(&self) -> u64 {
+        self.inner.affected_row_count.load(Ordering::SeqCst)
+    }
+
+    pub fn last_insert_rowid(&self) -> i64 {
+        self.inner.last_insert_rowid.load(Ordering::SeqCst)
+    }
 }
 
-struct Inner<T> {
+#[derive(Debug)]
+struct Inner<T>
+where
+    T: for<'a> HttpSend<'a>,
+{
+    affected_row_count: AtomicU64,
+    last_insert_rowid: AtomicI64,
+    stream: Mutex<RawStream<T>>,
+}
+
+#[derive(Debug)]
+struct RawStream<T>
+where
+    T: for<'a> HttpSend<'a>,
+{
     client: T,
     baton: Option<String>,
     base_url: String,
@@ -167,7 +208,7 @@ struct Inner<T> {
     sql_id_generator: SqlId,
 }
 
-impl<T> Inner<T>
+impl<T> RawStream<T>
 where
     T: for<'a> HttpSend<'a>,
 {
@@ -182,9 +223,14 @@ where
     ) -> Result<[StreamResponse; N]> {
         if self.status == StreamStatus::Closed {
             return Err(HranaError::StreamClosed(
-                "stream has been closed by the servers".to_string(),
+                "client stream has been closed by the servers".to_string(),
             ));
         }
+        tracing::trace!(
+            "client stream sending {} requests with baton `{}`",
+            N,
+            self.baton.as_deref().unwrap_or_default()
+        );
         let msg = ClientMsg {
             baton: self.baton.clone(),
             requests: Vec::from(requests),
@@ -194,12 +240,18 @@ where
             .client
             .http_send(self.base_url.clone(), self.auth_token.clone(), body)
             .await?;
-        match response.baton.take() {
-            None => self.status = StreamStatus::Closed, // stream has been closed by the server
-            baton => self.baton = baton,
-        }
         if let Some(base_url) = response.base_url.take() {
             self.base_url = base_url;
+        }
+        match response.baton.take() {
+            None => {
+                tracing::trace!("client stream has been closed by the server");
+                self.status = StreamStatus::Closed
+            } // stream has been closed by the server
+            Some(baton) => {
+                tracing::trace!("client stream has been assigned with baton: `{}`", baton);
+                self.baton = Some(baton)
+            }
         }
 
         if response.results.is_empty() {
@@ -227,7 +279,17 @@ where
 
     async fn finalize(&mut self, req: StreamRequest) -> Result<StreamResponse> {
         let [resp, _] = self.send_requests([req, StreamRequest::Close]).await?;
+        self.done();
         Ok(resp)
+    }
+
+    fn done(&mut self) {
+        if let Some(baton) = &self.baton {
+            tracing::trace!("closing client stream (baton: `{}`)", baton);
+        }
+        self.baton = None;
+        self.sql_id_generator = 0;
+        self.status = StreamStatus::Closed;
     }
 
     async fn close(&mut self) -> Result<()> {
@@ -235,7 +297,7 @@ where
             return Ok(());
         }
         self.send(StreamRequest::Close).await?;
-        self.status = StreamStatus::Closed;
+        self.done();
         Ok(())
     }
 
@@ -253,7 +315,10 @@ pub enum StreamStatus {
 }
 
 #[derive(Debug, Clone)]
-pub struct StoredSql<T> {
+pub struct StoredSql<T>
+where
+    T: for<'a> HttpSend<'a>,
+{
     stream: HttpStream<T>,
     sql_id: SqlId,
 }
@@ -289,7 +354,10 @@ impl SqlDescriptor for String {
     }
 }
 
-impl<T> SqlDescriptor for StoredSql<T> {
+impl<T> SqlDescriptor for StoredSql<T>
+where
+    T: for<'a> HttpSend<'a>,
+{
     fn sql_description(&self) -> SqlDescription {
         SqlDescription::SqlId(self.sql_id)
     }

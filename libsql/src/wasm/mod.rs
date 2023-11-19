@@ -73,7 +73,7 @@ where
             statements.push(crate::hrana::proto::Stmt::new(s.stmt, false));
         }
         self.conn
-            .raw_batch(statements)
+            .batch_inner(statements)
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
         Ok(())

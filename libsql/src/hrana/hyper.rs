@@ -2,7 +2,7 @@ use crate::hrana::connection::HttpConnection;
 use crate::hrana::pipeline::ServerMsg;
 use crate::hrana::proto::Stmt;
 use crate::hrana::transaction::HttpTransaction;
-use crate::hrana::{HranaError, HttpSend, Result};
+use crate::hrana::{bind_params, HranaError, HttpSend, Result};
 use crate::params::Params;
 use crate::util::ConnectorService;
 use crate::{Rows, Statement};
@@ -88,10 +88,13 @@ impl HttpConnection<HttpSender> {
 #[async_trait::async_trait]
 impl crate::connection::Conn for HttpConnection<HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
-        let mut stmt = self.prepare(sql);
-        let rows = stmt.execute(&params).await?;
-
-        Ok(rows as u64)
+        let mut stmt = Stmt::new(sql, false);
+        bind_params(params, &mut stmt);
+        let res = self
+            .execute_inner(stmt)
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        Ok(res.affected_row_count)
     }
 
     async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
@@ -101,14 +104,15 @@ impl crate::connection::Conn for HttpConnection<HttpSender> {
             let s = s?;
             statements.push(Stmt::new(s.stmt, false));
         }
-        self.raw_batch(statements)
+        self.batch_inner(statements)
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
         Ok(())
     }
 
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
-        let stmt = crate::hrana::Statement::new(self.clone(), sql.to_string(), true);
+        let stream = self.open_stream();
+        let stmt = crate::hrana::Statement::new(stream, sql.to_string(), true);
         Ok(Statement {
             inner: Box::new(stmt),
         })
@@ -123,10 +127,8 @@ impl crate::connection::Conn for HttpConnection<HttpSender> {
             .await
             .map_err(|e| crate::Error::Hrana(Box::new(e)))?;
         Ok(crate::Transaction {
-            inner: Box::new(tx),
-            conn: crate::Connection {
-                conn: Arc::new(self.clone()),
-            },
+            inner: Box::new(tx.clone()),
+            conn: crate::Connection { conn: Arc::new(tx) },
         })
     }
 

@@ -8,10 +8,15 @@ use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};
 
 #[derive(Debug)]
-pub struct HttpConnection<T>(Arc<InnerClient<T>>);
+pub struct HttpConnection<T>(Arc<InnerClient<T>>)
+where
+    T: for<'a> HttpSend<'a> + Clone;
 
 #[derive(Debug)]
-struct InnerClient<T> {
+struct InnerClient<T>
+where
+    T: for<'a> HttpSend<'a> + Clone,
+{
     inner: T,
     streams: RwLock<HashMap<u64, HttpStream<T>>>,
     url_for_queries: String,
@@ -71,7 +76,7 @@ where
         )
     }
 
-    pub(crate) async fn raw_batch(
+    pub(crate) async fn batch_inner(
         &self,
         stmts: impl IntoIterator<Item = Stmt>,
     ) -> Result<BatchResult> {
@@ -108,13 +113,16 @@ where
 
     pub fn prepare(&self, sql: &str) -> Statement<T> {
         Statement {
-            client: self.clone(),
+            conn: self.open_stream(),
             inner: Stmt::new(sql, true),
         }
     }
 }
 
-impl<T> Clone for HttpConnection<T> {
+impl<T> Clone for HttpConnection<T>
+where
+    T: for<'a> HttpSend<'a> + Clone,
+{
     fn clone(&self) -> Self {
         HttpConnection(self.0.clone())
     }
