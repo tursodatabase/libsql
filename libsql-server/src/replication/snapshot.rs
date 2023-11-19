@@ -2,12 +2,14 @@ use std::collections::HashSet;
 use std::io::SeekFrom;
 use std::mem::size_of;
 use std::path::{Path, PathBuf};
+use std::pin::Pin;
 use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use bytemuck::bytes_of;
 use futures::TryStreamExt;
+use futures_core::Future;
 use libsql_replication::frame::FrameMut;
 use libsql_replication::snapshot::{SnapshotFile, SnapshotFileHeader};
 use once_cell::sync::Lazy;
@@ -274,17 +276,34 @@ impl SnapshotMerger {
         log_id: Uuid,
     ) -> anyhow::Result<()> {
         let mut snapshots = Self::init_snapshot_info_list(db_path).await?;
-        while let Some((name, size, db_page_count)) = receiver.recv().await {
-            snapshots.push((name, size));
-            if Self::should_compact(&snapshots, db_page_count) {
-                let compacted_snapshot_info =
-                    Self::merge_snapshots(&snapshots, db_path, log_id).await?;
-                snapshots.clear();
-                snapshots.push(compacted_snapshot_info);
+        let mut working = false;
+        let mut job: Pin<Box<dyn Future<Output = anyhow::Result<_>> + Sync + Send>> =
+            Box::pin(std::future::pending());
+        loop {
+            tokio::select! {
+                Some((name, size, db_page_count)) = receiver.recv() => {
+                    snapshots.push((name, size));
+                    if !working && dbg!(Self::should_compact(&snapshots, db_page_count)) {
+                        let snapshots = std::mem::take(&mut snapshots);
+                        let fut = async move {
+                            let compacted_snapshot_info =
+                                Self::merge_snapshots(snapshots, db_path, log_id).await?;
+                            Ok(compacted_snapshot_info)
+                        };
+                        job = Box::pin(fut);
+                        working = true;
+                    }
+                }
+                ret = &mut job, if working => {
+                    working = false;
+                    job = Box::pin(std::future::pending());
+                    let ret = dbg!(ret)?;
+                    // the new merged snapshot is prepended to the snapshot list
+                    snapshots.insert(0, ret);
+                }
+                else => return Ok(())
             }
         }
-
-        Ok(())
     }
 
     /// Reads the snapshot dir and returns the list of snapshots along with their size, sorted in
@@ -322,15 +341,18 @@ impl SnapshotMerger {
     }
 
     async fn merge_snapshots(
-        snapshots: &[(String, u64)],
+        snapshots: Vec<(String, u64)>,
         db_path: &Path,
         log_id: Uuid,
     ) -> anyhow::Result<(String, u64)> {
-        let mut builder = SnapshotBuilder::new(db_path, log_id).await?;
+        let mut builder = SnapshotBuilder::new(dbg!(db_path), log_id).await?;
+        dbg!();
         let snapshot_dir_path = snapshot_dir_path(db_path);
         let mut size_after = None;
+        tracing::debug!("merging {} snashots for {log_id}", snapshots.len());
         for (name, _) in snapshots.iter().rev() {
-            let snapshot = SnapshotFile::open(&snapshot_dir_path.join(name)).await?;
+            let snapshot = SnapshotFile::open(dbg!(&snapshot_dir_path.join(name))).await?;
+            dbg!();
             // The size after the merged snapshot is the size after the first snapshot to be merged
             if size_after.is_none() {
                 size_after.replace(snapshot.header().size_after);
@@ -343,17 +365,21 @@ impl SnapshotMerger {
         let (_, start_frame_no, _) = parse_snapshot_name(&snapshots[0].0).unwrap();
         let (_, _, end_frame_no) = parse_snapshot_name(&snapshots.last().unwrap().0).unwrap();
 
+        tracing::debug!(
+            "created merged snapshot for {log_id} from frame {start_frame_no} to {end_frame_no}"
+        );
+
         builder.header.start_frame_no = start_frame_no;
         builder.header.end_frame_no = end_frame_no;
         builder.header.size_after = size_after.unwrap();
 
-        let compacted_snapshot_infos = builder.finish().await?;
+        let meta = builder.finish().await?;
 
         for (name, _) in snapshots.iter() {
             tokio::fs::remove_file(&snapshot_dir_path.join(name)).await?;
         }
 
-        Ok(compacted_snapshot_infos)
+        Ok((meta.0, meta.1))
     }
 
     async fn register_snapshot(
@@ -436,7 +462,7 @@ impl SnapshotBuilder {
                 self.header.start_frame_no = frame.header().frame_no;
             }
 
-            if frame.header().frame_no > self.header.end_frame_no {
+            if dbg!(frame.header().frame_no) >= dbg!(self.header.end_frame_no) {
                 self.header.end_frame_no = frame.header().frame_no;
                 self.header.size_after = frame.header().size_after;
             }
