@@ -5664,8 +5664,9 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p){
 
   assert( p->rc==SQLITE_OK );
   fts5IndexFlush(p);
-  assert( p->nContentlessDelete==0 );
+  assert( p->rc!=SQLITE_OK || p->nContentlessDelete==0 );
   pStruct = fts5StructureRead(p);
+  assert( p->rc!=SQLITE_OK || pStruct!=0 );
   fts5StructureInvalidate(p);
 
   if( pStruct ){
