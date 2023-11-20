@@ -7,6 +7,11 @@ use std::fmt;
 use std::mem;
 use std::os::raw::c_int;
 
+#[cfg(feature = "wasmtime-bindings")]
+pub use libsql_wasm::{
+    libsql_compile_wasm_module, libsql_free_wasm_module, libsql_run_wasm, libsql_wasm_engine_new,
+};
+
 include!(concat!(env!("OUT_DIR"), "/bindgen.rs"));
 
 #[must_use]

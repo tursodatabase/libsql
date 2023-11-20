@@ -11,7 +11,7 @@ fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
     println!("cargo:rerun-if-changed={BUNDLED_DIR}/src/");
-    if std::env::var("LIBSQL_DEV").is_ok() {
+    if std::env::var("LIBSQL_DEV").is_ok() || cfg!(feature = "wasmtime-bindings") {
         println!("cargo:rerun-if-changed={SQLITE_DIR}/src/");
         make_amalgation();
     }
@@ -20,9 +20,17 @@ fn main() {
 }
 
 fn make_amalgation() {
+    let flags = ["-DSQLITE_ENABLE_COLUMN_METADATA=1"];
+
+    Command::new("make")
+        .current_dir(SQLITE_DIR)
+        .arg("clean")
+        .output()
+        .unwrap();
+
     Command::new("./configure")
         .current_dir(SQLITE_DIR)
-        .env("CFLAGS", "-DSQLITE_ENABLE_COLUMN_METADATA=1")
+        .env("CFLAGS", flags.join(" "))
         .output()
         .unwrap();
     Command::new("make")
@@ -81,7 +89,7 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
         .flag("-D_POSIX_THREAD_SAFE_FUNCTIONS") // cross compile with MinGW
         .warnings(false);
 
-    if cfg!(feature = "libsql-wasm-experimental") {
+    if cfg!(feature = "wasmtime-bindings") {
         cfg.flag("-DLIBSQL_ENABLE_WASM_RUNTIME=1");
     }
 
