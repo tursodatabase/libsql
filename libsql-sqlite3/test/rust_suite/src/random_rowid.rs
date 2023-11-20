@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use rusqlite::Connection;
+    use libsql_sys::rusqlite::Connection;
 
     // Test that RANDOM ROWID tables indeed generate rowid values in a pseudorandom way
     #[test]

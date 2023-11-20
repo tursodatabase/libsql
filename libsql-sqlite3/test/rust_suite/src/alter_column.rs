@@ -1,4 +1,4 @@
-use rusqlite::Connection;
+use libsql_sys::rusqlite::Connection;
 
 #[test]
 fn test_update_column_check() {
@@ -60,6 +60,9 @@ fn test_update_not_null_constraint() {
 fn test_update_references_foreign_key() {
     let conn = Connection::open_in_memory().unwrap();
 
+    // default foreign key is set to 1 in compile options.
+    conn.execute("PRAGMA foreign_keys = OFF", ()).unwrap();
+
     conn.execute("CREATE TABLE t1(id int primary key)", ())
         .unwrap();
     conn.execute("CREATE TABLE t2(id int primary key, v text, t1_id)", ())
@@ -73,6 +76,7 @@ fn test_update_references_foreign_key() {
     // Inserting a row with a non-existent foreign key is ok, because those are not validated by default
     assert!(conn
         .execute("INSERT INTO t2 VALUES (1, 'a', 42)", ())
+        .map_err(|e| dbg!(e))
         .is_ok());
     // Now they should be validated
     conn.execute("PRAGMA foreign_keys = ON", ()).unwrap();
