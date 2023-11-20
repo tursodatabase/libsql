@@ -104,7 +104,7 @@ impl Conn for HttpTransaction {
     }
 
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
-        let stmt = crate::hrana::Statement::new(self.stream.clone(), sql.to_string(), true);
+        let stmt = crate::hrana::Statement::from_stream(self.stream.clone(), sql.to_string(), true);
         Ok(Statement {
             inner: Box::new(stmt),
         })

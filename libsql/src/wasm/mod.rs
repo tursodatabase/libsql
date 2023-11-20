@@ -40,7 +40,10 @@ cfg_cloudflare! {
 }
 
 #[derive(Debug, Clone)]
-pub struct Connection<T> {
+pub struct Connection<T>
+where
+    T: for<'a> HttpSend<'a> + Clone,
+{
     conn: HttpConnection<T>,
 }
 
@@ -56,11 +59,12 @@ cfg_cloudflare! {
 
 impl<T> Connection<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: for<'a> HttpSend<'a> + Clone,
 {
     pub async fn execute(&self, sql: &str, params: impl IntoParams) -> crate::Result<u64> {
         tracing::trace!("executing `{}`", sql);
-        let mut stmt = crate::hrana::Statement::new(self.conn.clone(), sql.to_string(), true);
+        let mut stmt =
+            crate::hrana::Statement::from_connection(self.conn.clone(), sql.to_string(), true);
         let rows = stmt.execute(&params.into_params()?).await?;
         Ok(rows as u64)
     }
@@ -81,7 +85,8 @@ where
 
     pub async fn query(&self, sql: &str, params: impl IntoParams) -> crate::Result<Rows> {
         tracing::trace!("querying `{}`", sql);
-        let mut stmt = crate::hrana::Statement::new(self.conn.clone(), sql.to_string(), true);
+        let mut stmt =
+            crate::hrana::Statement::from_connection(self.conn.clone(), sql.to_string(), true);
         stmt.query(&params.into_params()?).await
     }
 }

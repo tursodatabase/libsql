@@ -109,13 +109,7 @@ where
     }
 
     pub fn prepare(&self, sql: &str) -> Statement<T> {
-        //TODO: since this opens a new stream, will anyone keep in mind that it should to be closed
-        // somehow? Also: the same statement when prepared by the transaction should not be closed
-        // as this would cause transaction termination. Maybe some CoW-like owned/borrowed variant?
-        Statement {
-            conn: self.open_stream(),
-            inner: Stmt::new(sql, true),
-        }
+        Statement::from_connection(self.clone(), sql.to_string(), true)
     }
 }
 

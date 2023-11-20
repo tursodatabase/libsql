@@ -112,7 +112,7 @@ impl crate::connection::Conn for HttpConnection<HttpSender> {
 
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
         let stream = self.open_stream();
-        let stmt = crate::hrana::Statement::new(stream, sql.to_string(), true);
+        let stmt = crate::hrana::Statement::from_stream(stream, sql.to_string(), true);
         Ok(Statement {
             inner: Box::new(stmt),
         })
