@@ -1067,7 +1067,7 @@ do_test shell1-5.0 {
       #
       set escapes [list \
           \a \\a \b \\b \t \\t \n \\n \v \\v \f \\f \r \\r \
-          " " "\" \"" \" \\\" ' \"'\" \\ \\\\]
+          " " "\" \"" \" \\\" \\ \\\\]
     } else {
       #
       # NOTE: On Unix, we need to escape most of the whitespace characters
