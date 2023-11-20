@@ -14,7 +14,7 @@ COPY . .
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/sqld/target \
-    cargo build -p sqld --release && \
+    cargo build -p libsql-server --release && \
     cp target/release/sqld /sqld/bin
 
 

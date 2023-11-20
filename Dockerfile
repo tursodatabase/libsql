@@ -25,7 +25,7 @@ FROM chef AS builder
 COPY --from=planner /recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
-RUN cargo build -p sqld --release
+RUN cargo build -p libsql-server --release
 
 # runtime
 FROM debian:bullseye-slim
