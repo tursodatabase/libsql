@@ -1,5 +1,4 @@
 use std::ffi::{c_int, CStr};
-use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 
 use libsql_sys::ffi::{SQLITE_BUSY, SQLITE_IOERR_WRITE};
@@ -19,14 +18,6 @@ pub struct CreateBottomlessWal<T> {
 impl<T> CreateBottomlessWal<T> {
     pub fn new(inner: T, replicator: Arc<Mutex<Replicator>>) -> Self {
         Self { inner, replicator }
-    }
-}
-
-impl<T> Deref for CreateBottomlessWal<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
     }
 }
 
