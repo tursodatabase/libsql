@@ -428,7 +428,8 @@ impl SnapshotBuilder {
     async fn new(db_path: &Path, log_id: Uuid) -> anyhow::Result<Self> {
         let snapshot_dir_path = snapshot_dir_path(db_path);
         std::fs::create_dir_all(&snapshot_dir_path)?;
-        let mut f = tokio::io::BufWriter::new(async_tempfile::TempFile::new_in(db_path.join("tmp")).await?);
+        let mut f =
+            tokio::io::BufWriter::new(async_tempfile::TempFile::new_in(db_path.join("tmp")).await?);
         // reserve header space
         f.write_all(&[0; size_of::<SnapshotFileHeader>()]).await?;
 
