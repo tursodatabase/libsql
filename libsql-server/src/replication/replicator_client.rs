@@ -7,8 +7,8 @@ use libsql_replication::meta::WalIndexMeta;
 use libsql_replication::replicator::{map_frame_err, Error, ReplicatorClient};
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use libsql_replication::rpc::replication::{
-    verify_session_token, HelloRequest, LogOffset, NAMESPACE_METADATA_KEY, NO_HELLO_ERROR_MSG,
-    SESSION_TOKEN_KEY,
+    verify_session_token, HelloRequest, LogOffset, NAMESPACE_METADATA_KEY, NEED_SNAPSHOT_ERROR_MSG,
+    NO_HELLO_ERROR_MSG, SESSION_TOKEN_KEY,
 };
 use tokio::sync::watch;
 use tokio_stream::{Stream, StreamExt};
@@ -120,7 +120,13 @@ impl ReplicatorClient for Client {
             .client
             .log_entries(req)
             .await
-            .map_err(|e| Error::Client(e.into()))?
+            .map_err(|e| {
+                if e.code() == Code::FailedPrecondition && e.message() == NEED_SNAPSHOT_ERROR_MSG {
+                    Error::NeedSnapshot
+                } else {
+                    Error::Client(e.into())
+                }
+            })?
             .into_inner()
             .map(map_frame_err);
 

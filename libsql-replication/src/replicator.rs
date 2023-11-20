@@ -174,7 +174,9 @@ impl<C: ReplicatorClient> Replicator<C> {
         if !self.has_handshake {
             self.try_perform_handshake().await?;
         }
-        let mut stream = self.client.next_frames().await?;
+
+        let mut stream = self.start_next_frames().await?;
+
         loop {
             match stream.next().await {
                 Some(Ok(frame)) => {
@@ -200,6 +202,28 @@ impl<C: ReplicatorClient> Replicator<C> {
                 }
                 Some(Err(e)) => return Err(e),
                 None => return Ok(()),
+            }
+        }
+    }
+
+    async fn start_next_frames(&mut self) -> Result<C::FrameStream, Error> {
+        loop {
+            match self.client.next_frames().await {
+                Ok(s) => return Ok(s),
+                Err(Error::NeedSnapshot) => {
+                    tracing::debug!("loading snapshot");
+                    // remove any outstanding frames in the buffer that are not part of a
+                    // transaction: they are now part of the snapshot.
+                    match self.load_snapshot().await {
+                        Ok(()) => continue,
+                        Err(Error::NoHandshake) => {
+                            self.has_handshake = false;
+                            self.try_perform_handshake().await?;
+                        }
+                        Err(e) => return Err(e),
+                    }
+                }
+                Err(e) => return Err(e),
             }
         }
     }

@@ -4,12 +4,15 @@ use std::pin::Pin;
 
 use bytes::Bytes;
 use futures::StreamExt as _;
-use libsql_replication::replicator::{ReplicatorClient, Error, map_frame_err};
+use libsql_replication::frame::{Frame, FrameHeader, FrameNo};
 use libsql_replication::meta::WalIndexMeta;
-use libsql_replication::frame::{FrameNo, Frame, FrameHeader};
-use libsql_replication::rpc::replication::{HelloRequest, LogOffset, verify_session_token, SESSION_TOKEN_KEY};
+use libsql_replication::replicator::{map_frame_err, Error, ReplicatorClient};
+use libsql_replication::rpc::replication::{
+    verify_session_token, HelloRequest, LogOffset, NEED_SNAPSHOT_ERROR_MSG, SESSION_TOKEN_KEY,
+};
 use tokio_stream::Stream;
 use tonic::metadata::AsciiMetadataValue;
+use tonic::Code;
 
 /// A remote replicator client, that pulls frames over RPC
 pub struct RemoteClient {
@@ -39,12 +42,14 @@ impl RemoteClient {
             None => 0,
         }
     }
-    
+
     fn make_request<T>(&self, req: T) -> tonic::Request<T> {
         let mut req = tonic::Request::new(req);
         if let Some(token) = self.session_token.clone() {
             // SAFETY: we always validate the token
-            req.metadata_mut().insert(SESSION_TOKEN_KEY, unsafe { AsciiMetadataValue::from_shared_unchecked(token) });
+            req.metadata_mut().insert(SESSION_TOKEN_KEY, unsafe {
+                AsciiMetadataValue::from_shared_unchecked(token)
+            });
         }
 
         req
@@ -88,18 +93,27 @@ impl ReplicatorClient for RemoteClient {
 
     /// Return a stream of frames to apply to the database
     async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
-        let req = self.make_request(LogOffset { next_offset: self.next_offset() });
+        let req = self.make_request(LogOffset {
+            next_offset: self.next_offset(),
+        });
         let frames = self
             .remote
             .replication
             .batch_log_entries(req)
             .await
-            .map_err(|e| Error::Client(e.into()))?
+            .map_err(|e| {
+                if e.code() == Code::FailedPrecondition && e.message() == NEED_SNAPSHOT_ERROR_MSG {
+                    Error::NeedSnapshot
+                } else {
+                    Error::Client(e.into())
+                }
+            })?
             .into_inner()
             .frames;
 
         if let Some(f) = frames.last() {
-            let header: FrameHeader = bytemuck::pod_read_unaligned(&f.data[0..size_of::<FrameHeader>()]);
+            let header: FrameHeader =
+                bytemuck::pod_read_unaligned(&f.data[0..size_of::<FrameHeader>()]);
             self.last_received = Some(header.frame_no);
         }
 
@@ -115,7 +129,9 @@ impl ReplicatorClient for RemoteClient {
     /// Return a snapshot for the current replication index. Called after next_frame has returned a
     /// NeedSnapshot error
     async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
-        let req = self.make_request(LogOffset { next_offset: self.next_offset() });
+        let req = self.make_request(LogOffset {
+            next_offset: self.next_offset(),
+        });
         let mut frames = self
             .remote
             .replication
