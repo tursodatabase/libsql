@@ -21,7 +21,7 @@ case.
 
 ## Build and run
 
-Follow the [instructions](./docs/BUILD-RUN.md) to build and run `sqld`
+Follow the [instructions](../docs/BUILD-RUN.md) to build and run `sqld`
 using Homebrew, Docker, or your own Rust toolchain.
 
 ## Client libraries
