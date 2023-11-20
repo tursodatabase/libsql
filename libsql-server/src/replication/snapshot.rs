@@ -182,6 +182,14 @@ impl LogCompactor {
         // a directory containing logs that need compaction
         let compact_queue_dir = db_path.join("to_compact");
         std::fs::create_dir_all(&compact_queue_dir)?;
+
+        // setup the tmp dir
+        let tmp_path = db_path.join("tmp");
+        if tmp_path.try_exists()? {
+            std::fs::remove_dir_all(&tmp_path)?;
+        }
+        std::fs::create_dir_all(&tmp_path)?;
+
         let (sender, mut receiver) = mpsc::channel::<(LogFile, PathBuf)>(8);
         let mut merger = SnapshotMerger::new(db_path, log_id)?;
         let snapshot_dir_path = snapshot_dir_path(&db_path);
@@ -420,7 +428,8 @@ impl SnapshotBuilder {
     async fn new(db_path: &Path, log_id: Uuid) -> anyhow::Result<Self> {
         let snapshot_dir_path = snapshot_dir_path(db_path);
         std::fs::create_dir_all(&snapshot_dir_path)?;
-        let mut f = tokio::io::BufWriter::new(async_tempfile::TempFile::new().await?);
+        let mut f =
+            tokio::io::BufWriter::new(async_tempfile::TempFile::new_in(db_path.join("tmp")).await?);
         // reserve header space
         f.write_all(&[0; size_of::<SnapshotFileHeader>()]).await?;
 
