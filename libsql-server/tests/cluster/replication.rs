@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use sqld::config::{AdminApiConfig, DbConfig, RpcClientConfig, RpcServerConfig};
+use libsql_server::config::{AdminApiConfig, DbConfig, RpcClientConfig, RpcServerConfig};
 use tokio::sync::Notify;
 
 use crate::common::{
