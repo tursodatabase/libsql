@@ -55,7 +55,7 @@ jobs:
 
       - name: Test openssl
         shell: bash {0}
-        run: cargo tree -p sqld -i openssl; [ $? = 101 ]
+        run: cargo tree -p libsql-server -i openssl; [ $? = 101 ]
 
       # Disabled because we vendor rusqlite which does not use
       # clippy so it warns.
