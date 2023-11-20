@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use bytemuck::bytes_of;
 use futures::TryStreamExt;
 use libsql_replication::frame::FrameMut;
@@ -15,9 +15,11 @@ use regex::Regex;
 use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 use tokio::sync::mpsc;
 use tokio_stream::{Stream, StreamExt};
+use tokio_util::sync::ReusableBoxFuture;
 use uuid::Uuid;
 
 use crate::namespace::NamespaceName;
+use crate::replication::primary::logger::LogFileHeader;
 
 use super::primary::logger::LogFile;
 use super::FrameNo;
@@ -99,57 +101,129 @@ pub async fn find_snapshot_file(
 
 #[derive(Clone, Debug)]
 pub struct LogCompactor {
-    sender: mpsc::Sender<(LogFile, PathBuf, u32)>,
+    sender: mpsc::Sender<(LogFile, PathBuf)>,
 }
 
 pub type SnapshotCallback = Box<dyn Fn(&Path) -> anyhow::Result<()> + Send + Sync>;
 pub type NamespacedSnapshotCallback =
     Arc<dyn Fn(&Path, &NamespaceName) -> anyhow::Result<()> + Send + Sync>;
 
+async fn compact(
+    db_path: &Path,
+    to_compact_file: LogFile,
+    log_id: Uuid,
+    merger: &mut SnapshotMerger,
+    callback: &SnapshotCallback,
+    snapshot_dir_path: &Path,
+    to_compact_path: &Path,
+) -> anyhow::Result<()> {
+    match perform_compaction(&db_path, to_compact_file, log_id).await {
+        Ok((snapshot_name, snapshot_frame_count, size_after)) => {
+            tracing::info!("snapshot `{snapshot_name}` successfully created");
+
+            let snapshot_file = snapshot_dir_path.join(&snapshot_name);
+            if let Err(e) = (*callback)(&snapshot_file) {
+                bail!("failed to call snapshot callback: {e}");
+            }
+
+            if let Err(e) = merger
+                .register_snapshot(snapshot_name, snapshot_frame_count, size_after)
+                .await
+            {
+                bail!("failed to register snapshot with snapshot merger: {e}");
+            }
+
+            if let Err(e) = std::fs::remove_file(&to_compact_path) {
+                bail!("failed to remove old log file `{to_compact_path:?}`: {e}",);
+            }
+        }
+        Err(e) => {
+            bail!("fatal error creating snapshot: {e}");
+        }
+    }
+
+    Ok(())
+}
+
+/// Returns a list of pending snapshots to compact by reading the `to_compact` directory. Those
+/// snapshots should be processed before any other.
+fn pending_snapshots_list(compact_queue_dir: &Path) -> anyhow::Result<Vec<(LogFile, PathBuf)>> {
+    let dir = std::fs::read_dir(compact_queue_dir)?;
+    let mut to_compact = Vec::new();
+    for entry in dir {
+        let entry = entry?;
+        if entry.file_type()?.is_file() {
+            let to_compact_path = entry.path();
+            let file = std::fs::File::open(&to_compact_path)?;
+            let size = file.metadata()?.len();
+            // ignore empty log files
+            if size == size_of::<LogFileHeader>() as u64 {
+                if let Err(e) = std::fs::remove_file(&to_compact_path) {
+                    tracing::warn!("failed to remove empty pending log: {e}");
+                }
+                continue;
+            }
+            // max log duration and frame number don't  matter, we compact the file and discard it
+            // immediately.
+            let to_compact_file = LogFile::new(file, u64::MAX, None)?;
+            to_compact.push((to_compact_file, to_compact_path));
+        }
+    }
+
+    // sort the logs by start frame_no, so that they are registered with the merger in the right
+    // order.
+    to_compact.sort_unstable_by_key(|(log, _)| log.header().start_frame_no);
+
+    Ok(to_compact)
+}
+
 impl LogCompactor {
     pub fn new(db_path: &Path, log_id: Uuid, callback: SnapshotCallback) -> anyhow::Result<Self> {
-        // we create a 0 sized channel, in order to create backpressure when we can't
-        // keep up with snapshop creation: if there isn't any ongoind comptaction task processing,
-        // the compact does not block, and the log is compacted in the background. Otherwise, the
-        // block until there is a free slot to perform compaction.
-        let (sender, mut receiver) = mpsc::channel::<(LogFile, PathBuf, u32)>(1);
+        // a directory containing logs that need compaction
+        let compact_queue_dir = db_path.join("to_compact");
+        std::fs::create_dir_all(&compact_queue_dir)?;
+        let (sender, mut receiver) = mpsc::channel::<(LogFile, PathBuf)>(8);
         let mut merger = SnapshotMerger::new(db_path, log_id)?;
-        let db_path = db_path.to_path_buf();
         let snapshot_dir_path = snapshot_dir_path(&db_path);
-        let _handle = tokio::task::spawn(async move {
-            while let Some((file, log_path, size_after)) = receiver.recv().await {
-                match perform_compaction(&db_path, file, log_id).await {
-                    Ok((snapshot_name, snapshot_frame_count)) => {
-                        tracing::info!("snapshot `{snapshot_name}` successfully created");
 
-                        let snapshot_file = snapshot_dir_path.join(&snapshot_name);
-                        if let Err(e) = (*callback)(&snapshot_file) {
-                            tracing::error!("failed to call snapshot callback: {e}");
-                            break;
-                        }
+        let db_path = db_path.to_path_buf();
+        // We gather pending snapshots here, so new snapshots don't interfere.
+        let pending = pending_snapshots_list(&compact_queue_dir)?;
+        // FIXME(marin): we somehow need to make this code more robust. How to deal with a
+        // compaction error?
+        tokio::task::spawn(async move {
+            // process pending snapshots if any.
+            for (to_compact_file, to_compact_path) in pending {
+                if let Err(e) = compact(
+                    &db_path,
+                    to_compact_file,
+                    log_id,
+                    &mut merger,
+                    &callback,
+                    &snapshot_dir_path,
+                    &to_compact_path,
+                )
+                .await
+                {
+                    tracing::error!("fatal error while compacting pending logs: {e}");
+                    return;
+                }
+            }
 
-                        if let Err(e) = merger
-                            .register_snapshot(snapshot_name, snapshot_frame_count, size_after)
-                            .await
-                        {
-                            tracing::error!(
-                                "failed to register snapshot with snapshot merger: {e}"
-                            );
-                            break;
-                        }
-
-                        if let Err(e) = std::fs::remove_file(&log_path) {
-                            tracing::error!(
-                                "failed to remove old log file `{}`: {e}",
-                                log_path.display()
-                            );
-                            break;
-                        }
-                    }
-                    Err(e) => {
-                        tracing::error!("fatal error creating snapshot: {e}");
-                        break;
-                    }
+            while let Some((to_compact_file, to_compact_path)) = receiver.recv().await {
+                if let Err(e) = compact(
+                    &db_path,
+                    to_compact_file,
+                    log_id,
+                    &mut merger,
+                    &callback,
+                    &snapshot_dir_path,
+                    &to_compact_path,
+                )
+                .await
+                {
+                    tracing::error!("fatal compactor error: {e}");
+                    break;
                 }
             }
         });
@@ -159,9 +233,9 @@ impl LogCompactor {
 
     /// Sends a compaction task to the background compaction thread. Blocks if a compaction task is
     /// already ongoing.
-    pub fn compact(&self, file: LogFile, path: PathBuf, size_after: u32) -> anyhow::Result<()> {
+    pub fn compact(&self, file: LogFile, path: PathBuf) -> anyhow::Result<()> {
         self.sender
-            .blocking_send((file, path, size_after))
+            .blocking_send((file, path))
             .context("failed to compact log: log compactor thread exited")?;
 
         Ok(())
@@ -201,17 +275,35 @@ impl SnapshotMerger {
         log_id: Uuid,
     ) -> anyhow::Result<()> {
         let mut snapshots = Self::init_snapshot_info_list(db_path).await?;
-        while let Some((name, size, db_page_count)) = receiver.recv().await {
-            snapshots.push((name, size));
-            if Self::should_compact(&snapshots, db_page_count) {
-                let compacted_snapshot_info =
-                    Self::merge_snapshots(&snapshots, db_path, log_id).await?;
-                snapshots.clear();
-                snapshots.push(compacted_snapshot_info);
+        let mut working = false;
+        let mut job = ReusableBoxFuture::<anyhow::Result<_>>::new(std::future::pending());
+        let db_path: Arc<Path> = db_path.to_path_buf().into();
+        loop {
+            tokio::select! {
+                Some((name, size, db_page_count)) = receiver.recv() => {
+                    snapshots.push((name, size));
+                    if !working && Self::should_compact(&snapshots, db_page_count) {
+                        let snapshots = std::mem::take(&mut snapshots);
+                        let db_path = db_path.clone();
+                        let handle = tokio::spawn(async move {
+                            let compacted_snapshot_info =
+                                Self::merge_snapshots(snapshots, db_path.as_ref(), log_id).await?;
+                            anyhow::Result::<_, anyhow::Error>::Ok(compacted_snapshot_info)
+                        });
+                        job.set(async move { Ok(handle.await?) });
+                        working = true;
+                    }
+                }
+                ret = &mut job, if working => {
+                    working = false;
+                    job.set(std::future::pending());
+                    let ret = ret??;
+                    // the new merged snapshot is prepended to the snapshot list
+                    snapshots.insert(0, ret);
+                }
+                else => return Ok(())
             }
         }
-
-        Ok(())
     }
 
     /// Reads the snapshot dir and returns the list of snapshots along with their size, sorted in
@@ -249,13 +341,14 @@ impl SnapshotMerger {
     }
 
     async fn merge_snapshots(
-        snapshots: &[(String, u64)],
+        snapshots: Vec<(String, u64)>,
         db_path: &Path,
         log_id: Uuid,
     ) -> anyhow::Result<(String, u64)> {
         let mut builder = SnapshotBuilder::new(db_path, log_id).await?;
         let snapshot_dir_path = snapshot_dir_path(db_path);
         let mut size_after = None;
+        tracing::debug!("merging {} snashots for {log_id}", snapshots.len());
         for (name, _) in snapshots.iter().rev() {
             let snapshot = SnapshotFile::open(&snapshot_dir_path.join(name)).await?;
             // The size after the merged snapshot is the size after the first snapshot to be merged
@@ -270,17 +363,21 @@ impl SnapshotMerger {
         let (_, start_frame_no, _) = parse_snapshot_name(&snapshots[0].0).unwrap();
         let (_, _, end_frame_no) = parse_snapshot_name(&snapshots.last().unwrap().0).unwrap();
 
+        tracing::debug!(
+            "created merged snapshot for {log_id} from frame {start_frame_no} to {end_frame_no}"
+        );
+
         builder.header.start_frame_no = start_frame_no;
         builder.header.end_frame_no = end_frame_no;
         builder.header.size_after = size_after.unwrap();
 
-        let compacted_snapshot_infos = builder.finish().await?;
+        let meta = builder.finish().await?;
 
         for (name, _) in snapshots.iter() {
             tokio::fs::remove_file(&snapshot_dir_path.join(name)).await?;
         }
 
-        Ok(compacted_snapshot_infos)
+        Ok((meta.0, meta.1))
     }
 
     async fn register_snapshot(
@@ -363,7 +460,7 @@ impl SnapshotBuilder {
                 self.header.start_frame_no = frame.header().frame_no;
             }
 
-            if frame.header().frame_no > self.header.end_frame_no {
+            if frame.header().frame_no >= self.header.end_frame_no {
                 self.header.end_frame_no = frame.header().frame_no;
                 self.header.size_after = frame.header().size_after;
             }
@@ -385,7 +482,7 @@ impl SnapshotBuilder {
     }
 
     /// Persist the snapshot, and returns the name and size is frame on the snapshot.
-    async fn finish(mut self) -> anyhow::Result<(String, u64)> {
+    async fn finish(mut self) -> anyhow::Result<(String, u64, u32)> {
         self.snapshot_file.flush().await?;
         let mut file = self.snapshot_file.into_inner();
         file.seek(SeekFrom::Start(0)).await?;
@@ -405,7 +502,11 @@ impl SnapshotBuilder {
         )
         .await?;
 
-        Ok((snapshot_name, self.header.frame_count))
+        Ok((
+            snapshot_name,
+            self.header.frame_count,
+            self.header.size_after,
+        ))
     }
 }
 
@@ -413,7 +514,14 @@ async fn perform_compaction(
     db_path: &Path,
     file_to_compact: LogFile,
     log_id: Uuid,
-) -> anyhow::Result<(String, u64)> {
+) -> anyhow::Result<(String, u64, u32)> {
+    let header = file_to_compact.header();
+    tracing::info!(
+        "attempting to compact {} frame from logfile {}, starting at frame no {}",
+        header.frame_count,
+        Uuid::from_u128(header.log_id),
+        header.start_frame_no,
+    );
     let mut builder = SnapshotBuilder::new(db_path, log_id).await?;
     builder
         .append_frames(file_to_compact.into_rev_stream_mut())
@@ -433,8 +541,229 @@ mod test {
 
     use crate::replication::primary::logger::WalPage;
     use crate::replication::snapshot::SnapshotFile;
+    use crate::LIBSQL_PAGE_SIZE;
 
     use super::*;
+
+    async fn assert_dir_is_empty(p: &Path) {
+        // there is nothing left in the to_compact directory
+        if p.try_exists().unwrap() {
+            let mut dir = tokio::fs::read_dir(p).await.unwrap();
+            let mut count = 0;
+            while let Some(entry) = dir.next_entry().await.unwrap() {
+                if entry.file_type().await.unwrap().is_file() {
+                    count += 1;
+                }
+            }
+
+            assert_eq!(count, 0);
+        }
+    }
+
+    /// On startup, there may be uncompacted log leftover in the `to_compact` directory.
+    /// These should be processed before any other logs.
+    #[tokio::test]
+    async fn process_pending_logs_on_startup() {
+        let tmp = tempdir().unwrap();
+        let log_id = Uuid::new_v4();
+        let to_compact_path = tmp.path().join("to_compact");
+        tokio::fs::create_dir_all(&to_compact_path).await.unwrap();
+        let mut current_fno = 0;
+        let mut make_logfile = {
+            let to_compact_path = to_compact_path.clone();
+            move || {
+                let logfile_path = to_compact_path.join(Uuid::new_v4().to_string());
+                let file = std::fs::OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .read(true)
+                    .open(&logfile_path)
+                    .unwrap();
+                let mut logfile = LogFile::new(file, u64::MAX, None).unwrap();
+                let header = LogFileHeader {
+                    log_id: log_id.as_u128(),
+                    start_frame_no: current_fno,
+                    ..*logfile.header()
+                };
+
+                logfile.header = header;
+                logfile.write_header().unwrap();
+
+                logfile
+                    .push_page(&WalPage {
+                        page_no: 0,
+                        size_after: 1,
+                        data: Bytes::from_static(&[0; LIBSQL_PAGE_SIZE as _]),
+                    })
+                    .unwrap();
+                logfile.commit().unwrap();
+                current_fno = logfile.header().start_frame_no + logfile.header().frame_count;
+                (logfile, logfile_path)
+            }
+        };
+        // write a couple of pages to the pending compact list.
+        for _ in 0..3 {
+            make_logfile();
+        }
+
+        // nothing has been compacted yet
+        assert!(!tmp.path().join("snapshots").exists());
+
+        // we make a last logfile that we'll send through to the compactor. This one should be
+        // processed after the pending one. We can't guarantee that it will be received _before_ we
+        // start processing pending logs, but a correct implementation should always processs the
+        // log _after_ the pending logs have been processed. A failure to do so will trigger
+        // assertions in the merger code.
+        let compactor = LogCompactor::new(tmp.path(), log_id, Box::new(|_| Ok(()))).unwrap();
+        let compactor_clone = compactor.clone();
+        tokio::task::spawn_blocking(move || {
+            let (logfile, logfile_path) = make_logfile();
+            compactor_clone.compact(logfile, logfile_path).unwrap();
+        })
+        .await
+        .unwrap();
+
+        // wait a bit for snapshot to be compated
+        tokio::time::sleep(Duration::from_millis(300)).await;
+
+        // no error occured: the loop is still running.
+        assert!(!compactor.sender.is_closed());
+        assert!(tmp.path().join("snapshots").exists());
+        let mut dir = tokio::fs::read_dir(tmp.path().join("snapshots"))
+            .await
+            .unwrap();
+        let mut start_idx = u64::MAX;
+        let mut end_idx = u64::MIN;
+        while let Some(entry) = dir.next_entry().await.unwrap() {
+            if entry.file_type().await.unwrap().is_file() {
+                let (_, start, end) =
+                    parse_snapshot_name(entry.file_name().to_str().unwrap()).unwrap();
+                start_idx = start_idx.min(start);
+                end_idx = end_idx.max(end);
+            }
+        }
+
+        // assert that all indexes are covered
+        assert_eq!((start_idx, end_idx), (0, 3));
+
+        assert_dir_is_empty(&to_compact_path).await;
+    }
+
+    /// Simulate an empty pending snapshot left by the logger if the logswapping operation was
+    /// interupted after the new log was created, but before it was swapped with the old log.
+    #[tokio::test]
+    async fn empty_pending_log_is_ignored() {
+        let tmp = tempdir().unwrap();
+        let to_compact_path = tmp.path().join("to_compact");
+        tokio::fs::create_dir_all(&to_compact_path).await.unwrap();
+        let logfile_path = to_compact_path.join(Uuid::new_v4().to_string());
+        let file = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .read(true)
+            .open(&logfile_path)
+            .unwrap();
+        let mut logfile = LogFile::new(file, u64::MAX, None).unwrap();
+        logfile.write_header().unwrap();
+
+        let _compactor =
+            LogCompactor::new(tmp.path(), Uuid::new_v4(), Box::new(|_| Ok(()))).unwrap();
+        tokio::time::sleep(Duration::from_millis(100)).await;
+
+        // emtpy snapshot was discarded
+        assert_dir_is_empty(&tmp.path().join("to_compact")).await;
+        assert_dir_is_empty(&tmp.path().join("snapshots")).await;
+    }
+
+    /// In this test, we send a bunch of snapshot to the compactor, and see if it handles it
+    /// correctly.
+    ///
+    /// This test is similar to process_pending_logs_on_startup, except that all the logs are sent
+    /// over the compactor channel.
+    #[tokio::test]
+    async fn compact_many() {
+        let tmp = tempdir().unwrap();
+        let log_id = Uuid::new_v4();
+        let to_compact_path = tmp.path().join("to_compact");
+        tokio::fs::create_dir_all(&to_compact_path).await.unwrap();
+        let mut current_fno = 0;
+        let mut make_logfile = {
+            let to_compact_path = to_compact_path.clone();
+            move || {
+                let logfile_path = to_compact_path.join(Uuid::new_v4().to_string());
+                let file = std::fs::OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .read(true)
+                    .open(&logfile_path)
+                    .unwrap();
+                let mut logfile = LogFile::new(file, u64::MAX, None).unwrap();
+                let header = LogFileHeader {
+                    log_id: log_id.as_u128(),
+                    start_frame_no: current_fno,
+                    ..*logfile.header()
+                };
+
+                logfile.header = header;
+                logfile.write_header().unwrap();
+
+                logfile
+                    .push_page(&WalPage {
+                        page_no: 0,
+                        size_after: 1,
+                        data: Bytes::from_static(&[0; LIBSQL_PAGE_SIZE as _]),
+                    })
+                    .unwrap();
+                logfile.commit().unwrap();
+                current_fno = logfile.header().start_frame_no + logfile.header().frame_count;
+                (logfile, logfile_path)
+            }
+        };
+
+        // nothing has been compacted yet
+        assert!(!tmp.path().join("snapshots").exists());
+
+        // we make a last logfile that we'll send through to the compactor. This one should be
+        // processed after the pending one. We can't guarantee that it will be received _before_ we
+        // start processing pending logs, but a correct implementation should always processs the
+        // log _after_ the pending logs have been processed. A failure to do so will trigger
+        // assertions in the merger code.
+        let compactor = LogCompactor::new(tmp.path(), log_id, Box::new(|_| Ok(()))).unwrap();
+        let compactor_clone = compactor.clone();
+        tokio::task::spawn_blocking(move || {
+            for _ in 0..10 {
+                let (logfile, logfile_path) = make_logfile();
+                compactor_clone.compact(logfile, logfile_path).unwrap();
+            }
+        })
+        .await
+        .unwrap();
+
+        // wait a bit for snapshot to be compated
+        tokio::time::sleep(Duration::from_millis(300)).await;
+
+        // no error occured: the loop is still running.
+        assert!(!compactor.sender.is_closed());
+        assert!(tmp.path().join("snapshots").exists());
+        let mut dir = tokio::fs::read_dir(tmp.path().join("snapshots"))
+            .await
+            .unwrap();
+        let mut start_idx = u64::MAX;
+        let mut end_idx = u64::MIN;
+        while let Some(entry) = dir.next_entry().await.unwrap() {
+            if entry.file_type().await.unwrap().is_file() {
+                let (_, start, end) =
+                    parse_snapshot_name(entry.file_name().to_str().unwrap()).unwrap();
+                start_idx = start_idx.min(start);
+                end_idx = end_idx.max(end);
+            }
+        }
+
+        // assert that all indexes are covered
+        assert_eq!((start_idx, end_idx), (0, 9));
+
+        assert_dir_is_empty(&to_compact_path).await;
+    }
 
     #[tokio::test]
     async fn compact_file_create_snapshot() {
@@ -465,7 +794,7 @@ mod test {
             let compactor = compactor.clone();
             move || {
                 compactor
-                    .compact(log_file, temp.path().to_path_buf(), 25)
+                    .compact(log_file, temp.path().to_path_buf())
                     .unwrap()
             }
         })
