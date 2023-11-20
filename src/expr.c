@@ -6043,8 +6043,8 @@ int sqlite3ExprListCompare(const ExprList *pA, const ExprList *pB, int iTab){
 */
 int sqlite3ExprCompareSkip(Expr *pA,Expr *pB, int iTab){
   return sqlite3ExprCompare(0,
-             sqlite3ExprSkipCollateAndLikely(pA),
-             sqlite3ExprSkipCollateAndLikely(pB),
+             sqlite3ExprSkipCollate(pA),
+             sqlite3ExprSkipCollate(pB),
              iTab);
 }
 
