@@ -1,7 +1,8 @@
 use crate::connection::Conn;
 use crate::hrana::connection::HttpConnection;
 use crate::hrana::pipeline::ServerMsg;
-use crate::hrana::proto::Stmt;
+use crate::hrana::proto::{Batch, Stmt};
+use crate::hrana::stream::HttpStream;
 use crate::hrana::transaction::HttpTransaction;
 use crate::hrana::{bind_params, HranaError, HttpSend, Result};
 use crate::params::Params;
@@ -88,7 +89,7 @@ impl HttpConnection<HttpSender> {
 }
 
 #[async_trait::async_trait]
-impl crate::connection::Conn for HttpConnection<HttpSender> {
+impl Conn for HttpConnection<HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
         let mut stmt = Stmt::new(sql, false);
         bind_params(params, &mut stmt);
@@ -130,7 +131,9 @@ impl crate::connection::Conn for HttpConnection<HttpSender> {
             .map_err(|e| crate::Error::Hrana(Box::new(e)))?;
         Ok(crate::Transaction {
             inner: Box::new(tx.clone()),
-            conn: crate::Connection { conn: Arc::new(tx) },
+            conn: crate::Connection {
+                conn: Arc::new(tx.stream().clone()),
+            },
         })
     }
 
@@ -197,12 +200,11 @@ impl Tx for HttpTransaction<HttpSender> {
 }
 
 #[async_trait::async_trait]
-impl Conn for HttpTransaction<HttpSender> {
+impl Conn for HttpStream<HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
         let mut stmt = Stmt::new(sql, false);
         bind_params(params, &mut stmt);
         let result = self
-            .stream()
             .execute(stmt)
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
@@ -210,21 +212,20 @@ impl Conn for HttpTransaction<HttpSender> {
     }
 
     async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
-        let mut statements = Vec::new();
+        let mut batch = Batch::new();
         let stmts = crate::parser::Statement::parse(sql);
         for s in stmts {
             let s = s?;
-            statements.push(Stmt::new(s.stmt, false));
+            batch.step(None, Stmt::new(s.stmt, false));
         }
-        self.execute_batch(statements)
+        self.batch(batch)
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
         Ok(())
     }
 
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
-        let stmt =
-            crate::hrana::Statement::from_stream(self.stream().clone(), sql.to_string(), true);
+        let stmt = crate::hrana::Statement::from_stream(self.clone(), sql.to_string(), true);
         Ok(Statement {
             inner: Box::new(stmt),
         })
@@ -243,11 +244,11 @@ impl Conn for HttpTransaction<HttpSender> {
     }
 
     fn changes(&self) -> u64 {
-        self.stream().affected_row_count()
+        self.affected_row_count()
     }
 
     fn last_insert_rowid(&self) -> i64 {
-        self.stream().last_insert_rowid()
+        self.last_insert_rowid()
     }
 
     fn close(&mut self) {
