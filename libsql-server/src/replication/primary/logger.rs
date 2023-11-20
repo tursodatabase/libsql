@@ -625,7 +625,7 @@ impl LogFile {
         tracing::info!("performing log compaction");
         // To perform the compaction, we create a new, empty file in the `to_compact` directory.
         // We will then atomically swap that file with the current log file.
-        // I case of crash, when filling the compactor job queue, if we find that we find a log
+        // In case of a crash, when filling the compactor job queue, if we find that we find a log
         // file that doesn't contains only a header, we can safely assume that it was from a
         // previous crash that happenned in the middle of this operation.
         let to_compact_id = Uuid::new_v4();

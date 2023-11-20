@@ -2,14 +2,12 @@ use std::collections::HashSet;
 use std::io::SeekFrom;
 use std::mem::size_of;
 use std::path::{Path, PathBuf};
-use std::pin::Pin;
 use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use bytemuck::bytes_of;
 use futures::TryStreamExt;
-use futures_core::Future;
 use libsql_replication::frame::FrameMut;
 use libsql_replication::snapshot::{SnapshotFile, SnapshotFileHeader};
 use once_cell::sync::Lazy;
@@ -17,6 +15,7 @@ use regex::Regex;
 use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 use tokio::sync::mpsc;
 use tokio_stream::{Stream, StreamExt};
+use tokio_util::sync::ReusableBoxFuture;
 use uuid::Uuid;
 
 use crate::namespace::NamespaceName;
@@ -277,27 +276,28 @@ impl SnapshotMerger {
     ) -> anyhow::Result<()> {
         let mut snapshots = Self::init_snapshot_info_list(db_path).await?;
         let mut working = false;
-        let mut job: Pin<Box<dyn Future<Output = anyhow::Result<_>> + Sync + Send>> =
-            Box::pin(std::future::pending());
+        let mut job = ReusableBoxFuture::<anyhow::Result<_>>::new(std::future::pending());
+        let db_path: Arc<Path> = db_path.to_path_buf().into();
         loop {
             tokio::select! {
                 Some((name, size, db_page_count)) = receiver.recv() => {
                     snapshots.push((name, size));
                     if !working && Self::should_compact(&snapshots, db_page_count) {
                         let snapshots = std::mem::take(&mut snapshots);
-                        let fut = async move {
+                        let db_path = db_path.clone();
+                        let handle = tokio::spawn(async move {
                             let compacted_snapshot_info =
-                                Self::merge_snapshots(snapshots, db_path, log_id).await?;
-                            Ok(compacted_snapshot_info)
-                        };
-                        job = Box::pin(fut);
+                                Self::merge_snapshots(snapshots, db_path.as_ref(), log_id).await?;
+                            anyhow::Result::<_, anyhow::Error>::Ok(compacted_snapshot_info)
+                        });
+                        job.set(async move { Ok(handle.await?) });
                         working = true;
                     }
                 }
                 ret = &mut job, if working => {
                     working = false;
-                    job = Box::pin(std::future::pending());
-                    let ret = ret?;
+                    job.set(std::future::pending());
+                    let ret = ret??;
                     // the new merged snapshot is prepended to the snapshot list
                     snapshots.insert(0, ret);
                 }
@@ -515,6 +515,13 @@ async fn perform_compaction(
     file_to_compact: LogFile,
     log_id: Uuid,
 ) -> anyhow::Result<(String, u64, u32)> {
+    let header = file_to_compact.header();
+    tracing::info!(
+        "attempting to compact {} frame from logfile {}, starting at frame no {}",
+        header.frame_count,
+        Uuid::from_u128(header.log_id),
+        header.start_frame_no,
+    );
     let mut builder = SnapshotBuilder::new(db_path, log_id).await?;
     builder
         .append_frames(file_to_compact.into_rev_stream_mut())
