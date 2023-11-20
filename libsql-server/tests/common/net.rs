@@ -13,9 +13,9 @@ use tokio::io::{AsyncRead, AsyncWrite};
 use tower::Service;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
-use sqld::net::Accept;
-use sqld::net::AddrStream;
-use sqld::Server;
+use libsql_server::net::Accept;
+use libsql_server::net::AddrStream;
+use libsql_server::Server;
 
 type TurmoilAddrStream = AddrStream<turmoil::net::TcpStream>;
 

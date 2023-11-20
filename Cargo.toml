@@ -34,19 +34,22 @@ rusqlite = { path = "vendored/rusqlite", version = "0.29", default-features = fa
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.2.0-prerelease.6"
-# CI backends to support (see 'cargo dist generate-ci')
+cargo-dist-version = "0.4.2"
+# CI backends to support
 ci = ["github"]
 # The installers to generate for each app
 installers = ["shell", "homebrew"]
 # A GitHub repo to push Homebrew formulas to
-tap = "libsql/homebrew-sqld"
+tap = "tursodatabase/homebrew-sqld"
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["x86_64-unknown-linux-gnu", "x86_64-apple-darwin", "aarch64-apple-darwin"]
+targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-musl"]
 # Publish jobs to run in CI
 publish-jobs = ["homebrew"]
 # Whether cargo-dist should create a Github Release or use an existing draft
 create-release = false
+# Publish jobs to run in CI
+pr-run-mode = "plan"
+allow-dirty = ["ci"] # we've edited the release yml to narrow the tag scope
 
 # The profile that 'cargo dist' will build with
 [profile.dist]

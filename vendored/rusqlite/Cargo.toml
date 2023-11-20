@@ -5,12 +5,13 @@ version = "0.29.0"
 authors = ["The rusqlite developers"]
 edition = "2018"
 description = "Ergonomic wrapper for SQLite"
-repository = "https://github.com/rusqlite/rusqlite"
+# repository = "https://github.com/rusqlite/rusqlite"
 documentation = "http://docs.rs/rusqlite/"
 readme = "README.md"
 keywords = ["sqlite", "database", "ffi"]
 license = "MIT"
 categories = ["database"]
+publish = false
 
 exclude = [
   "/.github/*",
@@ -148,3 +149,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 [package.metadata.playground]
 features = ["bundled-full"]
 all-features = false
+
+[package.metadata.dist]
+dist = false

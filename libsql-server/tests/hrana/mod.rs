@@ -1,6 +1,6 @@
 //! Test hrana related functionalities
 
-use sqld::config::UserApiConfig;
+use libsql_server::config::UserApiConfig;
 use tempfile::tempdir;
 
 use crate::common::net::{init_tracing, SimServer, TestServer};

@@ -4,7 +4,7 @@ version = "0.1.14"
 edition = "2021"
 license = "MIT"
 keywords = ["libsql", "sqlite", "s3", "cli", "replication"]
-repository = "https://github.com/libsql/sqld"
+repository = "https://github.com/tursodatabase/libsql"
 description = "Command-line interface for bottomless replication for libSQL"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -24,3 +24,6 @@ tracing = "0.1.37"
 tracing-subscriber = "0.3.16"
 uuid = "1.4.1"
 rusqlite = { workspace = true }
+
+[package.metadata.dist]
+dist = false

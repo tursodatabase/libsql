@@ -1,0 +1,56 @@
+---
+source: libsql-server/src/rpc/streaming_exec.rs
+expression: stream.next().await.unwrap().unwrap()
+---
+{
+  "request_id": 0,
+  "response": {
+    "ProgramResp": {
+      "steps": [
+        {
+          "step": {
+            "Init": {}
+          }
+        },
+        {
+          "step": {
+            "BeginStep": {}
+          }
+        },
+        {
+          "step": {
+            "ColsDescription": {
+              "columns": []
+            }
+          }
+        },
+        {
+          "step": {
+            "BeginRows": {}
+          }
+        },
+        {
+          "step": {
+            "FinishRows": {}
+          }
+        },
+        {
+          "step": {
+            "FinishStep": {
+              "affected_row_count": 0,
+              "last_insert_rowid": null
+            }
+          }
+        },
+        {
+          "step": {
+            "Finish": {
+              "last_frame_no": null,
+              "is_autocommit": true
+            }
+          }
+        }
+      ]
+    }
+  }
+}

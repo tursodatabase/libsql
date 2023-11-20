@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use futures::FutureExt;
 use libsql::Database;
-use sqld::config::{AdminApiConfig, RpcClientConfig, RpcServerConfig, UserApiConfig};
+use libsql_server::config::{AdminApiConfig, RpcClientConfig, RpcServerConfig, UserApiConfig};
 use tempfile::tempdir;
 use tokio::sync::Notify;
 use turmoil::Builder;

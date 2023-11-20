@@ -5,8 +5,8 @@ use std::path::PathBuf;
 use crate::common::http::Client;
 use crate::common::net::{init_tracing, SimServer, TestServer, TurmoilAcceptor, TurmoilConnector};
 use libsql::{Database, Value};
+use libsql_server::config::{AdminApiConfig, RpcServerConfig, UserApiConfig};
 use serde_json::json;
-use sqld::config::{AdminApiConfig, RpcServerConfig, UserApiConfig};
 use tempfile::tempdir;
 use turmoil::{Builder, Sim};
 

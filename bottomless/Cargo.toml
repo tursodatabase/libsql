@@ -4,7 +4,7 @@ version = "0.1.18"
 edition = "2021"
 license = "MIT"
 keywords = ["libsql", "sqlite", "s3", "wal", "replication"]
-repository = "https://github.com/libsql/sqld"
+repository = "https://github.com/tursodatabase/libsql"
 readme = "bottomless/README.md"
 description = "Bottomless replication for libSQL"
 
@@ -30,3 +30,6 @@ libsql_linked_statically = []
 
 [lib]
 crate-type = ["rlib", "staticlib"]
+
+[package.metadata.dist]
+dist = false

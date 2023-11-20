@@ -1,8 +1,12 @@
 [package]
-name = "sqld"
+name = "libsql-server"
 version = "0.22.4"
 edition = "2021"
 default-run = "sqld"
+
+[[bin]]
+name = "sqld"
+path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.66"

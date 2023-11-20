@@ -16,13 +16,13 @@ use tracing_subscriber::prelude::*;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::Layer;
 
-use sqld::config::{
+use libsql_server::config::{
     AdminApiConfig, DbConfig, HeartbeatConfig, RpcClientConfig, RpcServerConfig, TlsConfig,
     UserApiConfig,
 };
-use sqld::net::AddrIncoming;
-use sqld::Server;
-use sqld::{connection::dump::exporter::export_dump, version::Version};
+use libsql_server::net::AddrIncoming;
+use libsql_server::Server;
+use libsql_server::{connection::dump::exporter::export_dump, version::Version};
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
