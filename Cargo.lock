@@ -2323,7 +2323,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-server"
-version = "0.22.4"
+version = "0.22.5"
 dependencies = [
  "anyhow",
  "arbitrary",
