@@ -22,3 +22,6 @@ pub use statement::{prepare_stmt, Statement};
 pub use types::*;
 #[cfg(feature = "api")]
 pub use value::{Value, ValueType};
+
+#[cfg(feature = "rusqlite")]
+pub use rusqlite;
