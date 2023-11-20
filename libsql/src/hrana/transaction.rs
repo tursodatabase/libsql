@@ -3,7 +3,7 @@ use crate::hrana::hyper::HttpSender;
 use crate::hrana::pipeline::{ExecuteStreamReq, StreamRequest};
 use crate::hrana::proto::{Batch, BatchResult, Stmt, StmtResult};
 use crate::hrana::stream::HttpStream;
-use crate::hrana::Result;
+use crate::hrana::{bind_params, Result};
 use crate::params::Params;
 use crate::transaction::Tx;
 use crate::{Statement, TransactionBehavior};
@@ -80,9 +80,14 @@ impl Tx for HttpTransaction {
 #[async_trait::async_trait]
 impl Conn for HttpTransaction {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
-        let mut stmt = self.prepare(sql).await?;
-        let rows = stmt.execute(params).await?;
-        Ok(rows as u64)
+        let mut stmt = Stmt::new(sql, false);
+        bind_params(params, &mut stmt);
+        let result = self
+            .stream
+            .execute(stmt)
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        Ok(result.affected_row_count)
     }
 
     async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
@@ -126,6 +131,8 @@ impl Conn for HttpTransaction {
     }
 
     fn close(&mut self) {
+        //TODO: nobody is using this trait method and since it's not async
+        // there's no reason to do it anyway
         todo!()
     }
 }

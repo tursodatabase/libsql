@@ -3,9 +3,8 @@ use crate::hrana::proto::{Batch, BatchResult, Stmt, StmtResult};
 use crate::hrana::stream::HttpStream;
 use crate::hrana::{HranaError, HttpSend, Result, Statement};
 use crate::util::coerce_url_scheme;
-use std::collections::HashMap;
 use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct HttpConnection<T>(Arc<InnerClient<T>>)
@@ -18,7 +17,6 @@ where
     T: for<'a> HttpSend<'a> + Clone,
 {
     inner: T,
-    streams: RwLock<HashMap<u64, HttpStream<T>>>,
     url_for_queries: String,
     auth: String,
     affected_row_count: AtomicU64,
@@ -35,7 +33,6 @@ where
         let url_for_queries = format!("{base_url}/v2/pipeline");
         HttpConnection(Arc::new(InnerClient {
             inner,
-            streams: RwLock::new(HashMap::new()),
             url_for_queries,
             auth: format!("Bearer {token}"),
             affected_row_count: AtomicU64::new(0),
@@ -112,6 +109,9 @@ where
     }
 
     pub fn prepare(&self, sql: &str) -> Statement<T> {
+        //TODO: since this opens a new stream, will anyone keep in mind that it should to be closed
+        // somehow? Also: the same statement when prepared by the transaction should not be closed
+        // as this would cause transaction termination. Maybe some CoW-like owned/borrowed variant?
         Statement {
             conn: self.open_stream(),
             inner: Stmt::new(sql, true),
