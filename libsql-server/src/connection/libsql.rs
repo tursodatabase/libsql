@@ -564,7 +564,7 @@ impl<W: WalHook> Connection<W> {
 
                     drop(maybe_state_slot);
 
-                    state.notify.notify_one();
+                    state.notify.notify_waiters();
                 }
                 // nothing to do
                 (_, _) => (),
