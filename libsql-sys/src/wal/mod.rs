@@ -9,6 +9,7 @@ pub(crate) mod ffi;
 mod sqlite3_wal;
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
+pub use ffi::make_create_wal;
 
 pub trait CreateWal {
     type Wal: Wal;

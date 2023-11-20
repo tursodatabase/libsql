@@ -46,7 +46,9 @@ pub(crate) fn construct_libsql_wal<W: Wal>(wal: *mut W) -> libsql_wal {
     }
 }
 
-pub(crate) fn make_create_wal<T: CreateWal>(create_wal: T) -> libsql_create_wal {
+/// Turn a `CreateWal` into a `libsql_create_wal`.
+/// The caller is responsible for deallocating `libsql_create_wal.pData`
+pub fn make_create_wal<T: CreateWal>(create_wal: T) -> libsql_create_wal {
     libsql_create_wal {
         bUsesShm: create_wal.use_shared_memory() as _,
         xOpen: Some(open::<T>),
