@@ -9,12 +9,12 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct HttpConnection<T>(Arc<InnerClient<T>>)
 where
-    T: for<'a> HttpSend<'a> + Clone;
+    T: for<'a> HttpSend<'a>;
 
 #[derive(Debug)]
 struct InnerClient<T>
 where
-    T: for<'a> HttpSend<'a> + Clone,
+    T: for<'a> HttpSend<'a>,
 {
     inner: T,
     url_for_queries: String,
@@ -25,7 +25,7 @@ where
 
 impl<T> HttpConnection<T>
 where
-    T: for<'a> HttpSend<'a> + Clone,
+    T: for<'a> HttpSend<'a>,
 {
     pub fn new(url: String, token: String, inner: T) -> Self {
         // The `libsql://` protocol is an alias for `https://`.
@@ -64,7 +64,7 @@ where
         &self.0
     }
 
-    pub(super) fn open_stream(&self) -> HttpStream<T> {
+    pub(crate) fn open_stream(&self) -> HttpStream<T> {
         let client = self.client();
         HttpStream::open(
             client.inner.clone(),
@@ -115,7 +115,7 @@ where
 
 impl<T> Clone for HttpConnection<T>
 where
-    T: for<'a> HttpSend<'a> + Clone,
+    T: for<'a> HttpSend<'a>,
 {
     fn clone(&self) -> Self {
         HttpConnection(self.0.clone())

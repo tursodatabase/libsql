@@ -1,9 +1,11 @@
+use crate::connection::Conn;
 use crate::hrana::connection::HttpConnection;
 use crate::hrana::pipeline::ServerMsg;
 use crate::hrana::proto::Stmt;
 use crate::hrana::transaction::HttpTransaction;
 use crate::hrana::{bind_params, HranaError, HttpSend, Result};
 use crate::params::Params;
+use crate::transaction::Tx;
 use crate::util::ConnectorService;
 use crate::{Rows, Statement};
 use futures::future::BoxFuture;
@@ -173,6 +175,84 @@ impl crate::statement::Stmt for crate::hrana::Statement<HttpSender> {
     }
 
     fn columns(&self) -> Vec<crate::Column> {
+        todo!()
+    }
+}
+
+#[async_trait::async_trait]
+impl Tx for HttpTransaction<HttpSender> {
+    async fn commit(&mut self) -> crate::Result<()> {
+        self.commit()
+            .await
+            .map_err(|e| crate::Error::Hrana(Box::new(e)))?;
+        Ok(())
+    }
+
+    async fn rollback(&mut self) -> crate::Result<()> {
+        self.rollback()
+            .await
+            .map_err(|e| crate::Error::Hrana(Box::new(e)))?;
+        Ok(())
+    }
+}
+
+#[async_trait::async_trait]
+impl Conn for HttpTransaction<HttpSender> {
+    async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
+        let mut stmt = Stmt::new(sql, false);
+        bind_params(params, &mut stmt);
+        let result = self
+            .stream()
+            .execute(stmt)
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        Ok(result.affected_row_count)
+    }
+
+    async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
+        let mut statements = Vec::new();
+        let stmts = crate::parser::Statement::parse(sql);
+        for s in stmts {
+            let s = s?;
+            statements.push(Stmt::new(s.stmt, false));
+        }
+        self.execute_batch(statements)
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        Ok(())
+    }
+
+    async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
+        let stmt =
+            crate::hrana::Statement::from_stream(self.stream().clone(), sql.to_string(), true);
+        Ok(Statement {
+            inner: Box::new(stmt),
+        })
+    }
+
+    async fn transaction(
+        &self,
+        _tx_behavior: crate::TransactionBehavior,
+    ) -> crate::Result<crate::transaction::Transaction> {
+        todo!("sounds like nested transactions innit?")
+    }
+
+    fn is_autocommit(&self) -> bool {
+        // TODO: Is this correct?
+        false
+    }
+
+    fn changes(&self) -> u64 {
+        self.stream().affected_row_count()
+    }
+
+    fn last_insert_rowid(&self) -> i64 {
+        self.stream().last_insert_rowid()
+    }
+
+    fn close(&mut self) {
+        //TODO: nobody is using this trait method and since it's not async
+        // there's no reason to do it anyway
         todo!()
     }
 }

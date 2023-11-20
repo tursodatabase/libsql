@@ -4,12 +4,12 @@ pub mod connection;
 
 cfg_remote! {
     mod hyper;
-    mod transaction;
 }
 
 pub mod pipeline;
 pub mod proto;
 mod stream;
+pub mod transaction;
 
 use crate::hrana::connection::HttpConnection;
 pub(crate) use crate::hrana::pipeline::{ServerMsg, StreamResponseError};
@@ -32,7 +32,7 @@ struct Cookie {
     base_url: Option<String>,
 }
 
-pub trait HttpSend<'a> {
+pub trait HttpSend<'a>: Clone {
     type Result: Future<Output = Result<ServerMsg>> + 'a;
     fn http_send(&'a self, url: String, auth: String, body: String) -> Self::Result;
 }
@@ -53,7 +53,7 @@ pub enum HranaError {
     Api(String),
 }
 
-enum StatementExecutor<T: for<'a> HttpSend<'a> + Clone> {
+enum StatementExecutor<T: for<'a> HttpSend<'a>> {
     /// An opened HTTP Hrana stream - usually in scope of executing transaction. Operations over it
     /// will be scheduled for sequential execution.
     Stream(HttpStream<T>),
@@ -64,7 +64,7 @@ enum StatementExecutor<T: for<'a> HttpSend<'a> + Clone> {
 
 impl<T> StatementExecutor<T>
 where
-    T: for<'a> HttpSend<'a> + Clone,
+    T: for<'a> HttpSend<'a>,
 {
     async fn execute(&self, stmt: Stmt) -> crate::Result<StmtResult> {
         let res = match self {
@@ -77,7 +77,7 @@ where
 
 pub struct Statement<T>
 where
-    T: for<'a> HttpSend<'a> + Clone,
+    T: for<'a> HttpSend<'a>,
 {
     executor: StatementExecutor<T>,
     inner: Stmt,
@@ -85,7 +85,7 @@ where
 
 impl<T> Statement<T>
 where
-    T: for<'a> HttpSend<'a> + Clone,
+    T: for<'a> HttpSend<'a>,
 {
     pub(crate) fn from_stream(stream: HttpStream<T>, sql: String, want_rows: bool) -> Self {
         Statement {
