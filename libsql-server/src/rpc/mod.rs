@@ -26,9 +26,6 @@ pub mod replication_log;
 pub mod replication_log_proxy;
 pub mod streaming_exec;
 
-/// A tonic error code to signify that a namespace doesn't exist.
-pub const NAMESPACE_DOESNT_EXIST: &str = "NAMESPACE_DOESNT_EXIST";
-
 pub async fn run_rpc_server<A: crate::net::Accept>(
     proxy_service: ProxyService,
     acceptor: A,

@@ -8,11 +8,10 @@ use libsql_replication::frame::{Frame, FrameHeader, FrameNo};
 use libsql_replication::meta::WalIndexMeta;
 use libsql_replication::replicator::{map_frame_err, Error, ReplicatorClient};
 use libsql_replication::rpc::replication::{
-    verify_session_token, HelloRequest, LogOffset, NEED_SNAPSHOT_ERROR_MSG, SESSION_TOKEN_KEY,
+    verify_session_token, HelloRequest, LogOffset, SESSION_TOKEN_KEY,
 };
 use tokio_stream::Stream;
 use tonic::metadata::AsciiMetadataValue;
-use tonic::Code;
 
 /// A remote replicator client, that pulls frames over RPC
 pub struct RemoteClient {
@@ -64,31 +63,27 @@ impl ReplicatorClient for RemoteClient {
     async fn handshake(&mut self) -> Result<(), Error> {
         tracing::info!("Attempting to perform handshake with primary.");
         let req = self.make_request(HelloRequest::new());
-        match self.remote.replication.hello(req).await {
-            Ok(resp) => {
-                let hello = resp.into_inner();
-                verify_session_token(&hello.session_token).map_err(Error::Client)?;
-                self.session_token = Some(hello.session_token.clone());
-                if self.dirty {
-                    self.meta.reset();
-                    self.dirty = false;
-                }
-                if let Err(e) = self.meta.init_from_hello(hello) {
-                    // set the meta as dirty. The caller should catch the error and clean the db
-                    // file. On the next call to replicate, the db will be replicated from the new
-                    // log.
-                    if let libsql_replication::meta::Error::LogIncompatible = e {
-                        self.dirty = true;
-                    }
-
-                    Err(e)?;
-                }
-                self.meta.flush().await?;
-
-                Ok(())
-            }
-            Err(e) => Err(Error::Client(e.into()))?,
+        let resp = self.remote.replication.hello(req).await?;
+        let hello = resp.into_inner();
+        verify_session_token(&hello.session_token).map_err(Error::Client)?;
+        self.session_token = Some(hello.session_token.clone());
+        if self.dirty {
+            self.meta.reset();
+            self.dirty = false;
         }
+        if let Err(e) = self.meta.init_from_hello(hello) {
+            // set the meta as dirty. The caller should catch the error and clean the db
+            // file. On the next call to replicate, the db will be replicated from the new
+            // log.
+            if let libsql_replication::meta::Error::LogIncompatible = e {
+                self.dirty = true;
+            }
+
+            Err(e)?;
+        }
+        self.meta.flush().await?;
+
+        Ok(())
     }
 
     /// Return a stream of frames to apply to the database
@@ -100,14 +95,7 @@ impl ReplicatorClient for RemoteClient {
             .remote
             .replication
             .batch_log_entries(req)
-            .await
-            .map_err(|e| {
-                if e.code() == Code::FailedPrecondition && e.message() == NEED_SNAPSHOT_ERROR_MSG {
-                    Error::NeedSnapshot
-                } else {
-                    Error::Client(e.into())
-                }
-            })?
+            .await?
             .into_inner()
             .frames;
 
@@ -136,8 +124,7 @@ impl ReplicatorClient for RemoteClient {
             .remote
             .replication
             .snapshot(req)
-            .await
-            .map_err(|e| Error::Client(e.into()))?
+            .await?
             .into_inner()
             .map(map_frame_err)
             .peekable();

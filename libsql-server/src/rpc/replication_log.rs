@@ -9,7 +9,7 @@ pub use libsql_replication::rpc::replication as rpc;
 use libsql_replication::rpc::replication::replication_log_server::ReplicationLog;
 use libsql_replication::rpc::replication::{
     Frame, Frames, HelloRequest, HelloResponse, LogOffset, NEED_SNAPSHOT_ERROR_MSG,
-    NO_HELLO_ERROR_MSG, SESSION_TOKEN_KEY,
+    NO_HELLO_ERROR_MSG, SESSION_TOKEN_KEY, NAMESPACE_DOESNT_EXIST,
 };
 use tokio_stream::StreamExt;
 use tonic::transport::server::TcpConnectInfo;
@@ -22,7 +22,7 @@ use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::LogReadError;
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 
-use super::{extract_namespace, NAMESPACE_DOESNT_EXIST};
+use super::extract_namespace;
 
 pub struct ReplicationLogService {
     namespaces: NamespaceStore<PrimaryNamespaceMaker>,

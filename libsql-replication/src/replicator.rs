@@ -5,10 +5,11 @@ use parking_lot::Mutex;
 use tokio::task::spawn_blocking;
 use tokio::time::Duration;
 use tokio_stream::{Stream, StreamExt};
+use tonic::{Status, Code};
 
 use crate::frame::{Frame, FrameNo};
 use crate::injector::Injector;
-use crate::rpc::replication::{Frame as RpcFrame, NEED_SNAPSHOT_ERROR_MSG};
+use crate::rpc::replication::{Frame as RpcFrame, NEED_SNAPSHOT_ERROR_MSG, NO_HELLO_ERROR_MSG, NAMESPACE_DOESNT_EXIST};
 
 pub use tokio_util::either::Either;
 
@@ -34,6 +35,23 @@ pub enum Error {
     Meta(#[from] super::meta::Error),
     #[error("Hanshake required")]
     NoHandshake,
+    #[error("Requested namespace doesn't exist")]
+    NamespaceDoesntExist,
+}
+
+impl From<Status> for Error {
+    fn from(status: Status) -> Self {
+        if status.code() == Code::FailedPrecondition {
+            match status.message() {
+                NEED_SNAPSHOT_ERROR_MSG => Error::NeedSnapshot,
+                NO_HELLO_ERROR_MSG => Error::NoHandshake,
+                NAMESPACE_DOESNT_EXIST => Error::NamespaceDoesntExist,
+                _ => Error::Client(status.into()),
+            }
+        } else {
+            Error::Client(status.into())
+        }
+    }
 }
 
 impl From<tokio::task::JoinError> for Error {
@@ -109,10 +127,18 @@ where
 pub struct Replicator<C> {
     client: C,
     injector: Arc<Mutex<Injector>>,
-    has_handshake: bool,
+    state: ReplicatorState,
 }
 
 const INJECTOR_BUFFER_CAPACITY: usize = 10;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ReplicatorState {
+    NeedFrames,
+    NeedHandshake,
+    NeedSnapshot,
+    Exit,
+}
 
 impl<C: ReplicatorClient> Replicator<C> {
     /// Creates a repicator for the db file pointed at by `db_path`
@@ -128,7 +154,7 @@ impl<C: ReplicatorClient> Replicator<C> {
         Ok(Self {
             client,
             injector: Arc::new(Mutex::new(injector)),
-            has_handshake: false,
+            state: ReplicatorState::NeedHandshake,
         })
     }
 
@@ -140,9 +166,6 @@ impl<C: ReplicatorClient> Replicator<C> {
     pub async fn run(&mut self) -> Error {
         loop {
             if let Err(e) = self.replicate().await {
-                // Replication encountered an error. We log the error, and then shut down the
-                // injector and propagate a potential panic from there.
-                self.has_handshake = false;
                 return e;
             }
         }
@@ -154,15 +177,15 @@ impl<C: ReplicatorClient> Replicator<C> {
             tracing::info!("Attempting to perform handshake with primary.");
             match self.client.handshake().await {
                 Ok(_) => {
-                    self.has_handshake = true;
+                    self.state = ReplicatorState::NeedFrames;
                     return Ok(());
                 }
-                Err(e @ (Error::Fatal(_) | Error::Meta(_))) => return Err(e),
-                Err(e) if !error_printed => {
+                Err(Error::Client(e)) if !error_printed => {
                     tracing::error!("error connecting to primary. retrying. error: {e}");
                     error_printed = true;
                 }
-                _ => (),
+                Err(Error::Client(_)) if error_printed => (),
+                Err(e) => return Err(e),
             }
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
@@ -171,61 +194,56 @@ impl<C: ReplicatorClient> Replicator<C> {
     }
 
     pub async fn replicate(&mut self) -> Result<(), Error> {
-        if !self.has_handshake {
-            self.try_perform_handshake().await?;
-        }
-
-        let mut stream = self.start_next_frames().await?;
-
         loop {
-            match stream.next().await {
-                Some(Ok(frame)) => {
-                    self.inject_frame(frame).await?;
-                }
-                Some(Err(Error::NeedSnapshot)) => {
-                    tracing::debug!("loading snapshot");
-                    // remove any outstanding frames in the buffer that are not part of a
-                    // transaction: they are now part of the snapshot.
-                    match self.load_snapshot().await {
-                        Ok(()) => (),
-                        Err(Error::NoHandshake) => {
-                            self.has_handshake = false;
-                            self.try_perform_handshake().await?;
-                        }
-                        Err(e) => return Err(e),
-                    }
-                }
-                Some(Err(Error::NoHandshake)) => {
-                    tracing::debug!("session expired, new handshake required");
-                    self.has_handshake = false;
-                    self.try_perform_handshake().await?;
-                }
-                Some(Err(e)) => return Err(e),
-                None => return Ok(()),
+            self.try_replicate_step().await?;
+            if self.state == ReplicatorState::Exit {
+                self.state = ReplicatorState::NeedFrames;
+                return Ok(());
             }
         }
     }
 
-    async fn start_next_frames(&mut self) -> Result<C::FrameStream, Error> {
-        loop {
-            match self.client.next_frames().await {
-                Ok(s) => return Ok(s),
-                Err(Error::NeedSnapshot) => {
-                    tracing::debug!("loading snapshot");
-                    // remove any outstanding frames in the buffer that are not part of a
-                    // transaction: they are now part of the snapshot.
-                    match self.load_snapshot().await {
-                        Ok(()) => continue,
-                        Err(Error::NoHandshake) => {
-                            self.has_handshake = false;
-                            self.try_perform_handshake().await?;
-                        }
-                        Err(e) => return Err(e),
-                    }
+    async fn try_replicate_step(&mut self) -> Result<(), Error> {
+        let state = self.state;
+        let ret = match state {
+            ReplicatorState::NeedHandshake => self.try_perform_handshake().await,
+            ReplicatorState::NeedFrames => self.try_replicate().await,
+            ReplicatorState::NeedSnapshot => self.load_snapshot().await,
+            ReplicatorState::Exit => unreachable!("trying to step replicator on exit"),
+        };
+
+        self.state = match ret {
+            // perform normal operation state transition
+            Ok(()) => match state {
+                ReplicatorState::Exit => unreachable!(),
+                ReplicatorState::NeedFrames => ReplicatorState::Exit,
+                ReplicatorState::NeedSnapshot | ReplicatorState::NeedHandshake => {
+                    ReplicatorState::NeedFrames
                 }
-                Err(e) => return Err(e),
+            },
+            Err(Error::NoHandshake) => {
+                if state == ReplicatorState::NeedHandshake {
+                    return Err(Error::Fatal(
+                        "Received handshake error while performing handshake".into(),
+                    ));
+                }
+                ReplicatorState::NeedHandshake
             }
+            Err(Error::NeedSnapshot) => ReplicatorState::NeedSnapshot,
+            Err(e) => return Err(e),
+        };
+
+        Ok(())
+    }
+
+    async fn try_replicate(&mut self) -> Result<(), Error> {
+        let mut stream = self.client.next_frames().await?;
+
+        while let Some(frame) = stream.next().await.transpose()? {
+            self.inject_frame(frame).await?;
         }
+
+        Ok(())
     }
 
     async fn load_snapshot(&mut self) -> Result<(), Error> {
@@ -267,15 +285,7 @@ impl<C: ReplicatorClient> Replicator<C> {
 }
 
 /// Helper function to convert rpc frames results to replicator frames
-pub fn map_frame_err(f: Result<RpcFrame, tonic::Status>) -> Result<Frame, Error> {
-    match f {
-        Ok(frame) => Ok(Frame::try_from(&*frame.data).map_err(|e| Error::Client(e.into()))?),
-        Err(err)
-            if err.code() == tonic::Code::FailedPrecondition
-                && err.message() == NEED_SNAPSHOT_ERROR_MSG =>
-        {
-            Err(Error::NeedSnapshot)
-        }
-        Err(err) => Err(Error::Client(err.into()))?,
-    }
+pub fn map_frame_err(f: Result<RpcFrame, Status>) -> Result<Frame, Error> {
+    let frame = f?;
+    Ok(Frame::try_from(&*frame.data).map_err(|e| Error::Client(e.into()))?)
 }

@@ -11,6 +11,7 @@ use libsql_replication::rpc::proxy::{
     describe_result, Ack, DescribeRequest, DescribeResult, Description, DisconnectMessage, ExecReq,
     ExecResp, ExecuteResults, QueryResult, ResultRows, Row,
 };
+use libsql_replication::rpc::replication::NAMESPACE_DOESNT_EXIST;
 use rusqlite::types::ValueRef;
 use uuid::Uuid;
 
@@ -23,8 +24,6 @@ use crate::query_result_builder::{
 };
 use crate::replication::FrameNo;
 use crate::rpc::streaming_exec::make_proxy_stream;
-
-use super::NAMESPACE_DOESNT_EXIST;
 
 pub mod rpc {
     use std::sync::Arc;
