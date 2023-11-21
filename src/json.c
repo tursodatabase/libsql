@@ -4304,6 +4304,143 @@ jsonRemoveFromBlob_patherror:
   return;
 }
 
+/*
+** pArg is a function argument that might be an SQL value or a JSON
+** value.  Figure out what it is and encode it as a JSONB blob.
+** Return the results in pParse.
+**
+** pParse is uninitialized upon entry.  This routine will handle the
+** initialization of pParse.  The result will be contained in
+** pParse->aBlob and pParse->nBlob.  pParse->aBlob might be dynamically
+** allocated (if pParse->nBlobAlloc is greater than zero) in which case
+** the caller is responsible for freeing the space allocated to pParse->aBlob
+** when it has finished with it.  Or pParse->aBlob might be a static string
+** or a value obtained from sqlite3_value_blob(pArg).
+**
+** If the argument is a BLOB that is clearly not a JSONB, then this
+** function might set an error message in ctx and return non-zero.
+** It might also set an error message and return non-zero on an OOM error.
+*/
+static int jsonFunctionArgToBlob(
+  sqlite3_context *ctx,
+  sqlite3_value *pArg,
+  JsonParse *pParse
+){
+  int eType = sqlite3_value_type(pArg);
+  static u8 aNull[] = { 0x00 };
+  memset(pParse, 0, sizeof(pParse[0]));
+  switch( eType ){
+    case SQLITE_NULL: {
+      pParse->aBlob = aNull;
+      pParse->nBlob = 1;
+      return 0;
+    }
+    case SQLITE_BLOB: {
+      if( jsonFuncArgMightBeBinary(pArg) ){
+        pParse->aBlob = (u8*)sqlite3_value_blob(pArg);
+        pParse->nBlob = sqlite3_value_bytes(pArg);
+      }else{
+        sqlite3_result_error(ctx, "JSON cannot hold BLOB values", -1);
+        return 1;
+      }
+      break;
+    }
+    case SQLITE_TEXT: {
+      const char *zJson = (const char*)sqlite3_value_text(pArg);
+      int nJson = sqlite3_value_bytes(pArg);
+      if( zJson==0 ) return 1;
+      if( sqlite3_value_subtype(pArg)==JSON_SUBTYPE ){
+        pParse->zJson = (char*)zJson;
+        pParse->nJson = nJson;
+        if( jsonConvertTextToBlob(pParse, ctx) ){
+          sqlite3_result_error(ctx, "malformed JSON", -1);
+          sqlite3_free(pParse->aBlob);
+          memset(pParse, 0, sizeof(pParse[0]));
+          return 1;
+        }
+      }else{
+        jsonBlobAppendNodeType(pParse, JSONB_TEXTRAW, nJson);
+        jsonBlobAppendNBytes(pParse, (const u8*)zJson, nJson);
+      }
+      break;
+    }
+    case SQLITE_FLOAT:
+    case SQLITE_INTEGER: {
+      int n = sqlite3_value_bytes(pArg);
+      const char *z = (const char*)sqlite3_value_text(pArg);
+      int e = eType==SQLITE_INTEGER ? JSONB_INT : JSONB_FLOAT;
+      if( z==0 ) return 1;
+      jsonBlobAppendNodeType(pParse, e, n);
+      jsonBlobAppendNBytes(pParse, (const u8*)z, n);
+      break;
+    }
+  }
+  return 0;
+}
+ 
+/* argv[0] is a BLOB that seems likely to be a JSONB.  Subsequent
+** arguments come in parse where each pair contains a JSON path and
+** content to insert or set at that patch.  Do the updates
+** and return the result.
+**
+** The specific operation is determined by eEdit, which can be one
+** of JEDIT_INS, JEDIT_REPL, or JEDIT_SET.
+*/
+static void jsonInsertIntoBlob(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv,
+  int eEdit                /* JEDIT_INS, JEDIT_REPL, or JEDIT_SET */
+){
+  int i;
+  u32 rc;
+  const char *zPath = 0;
+  int flgs;
+  JsonParse px, ax;
+
+  assert( (argc&1)==1 );
+  memset(&px, 0, sizeof(px));
+  px.nBlob = sqlite3_value_bytes(argv[0]);
+  px.aBlob = (u8*)sqlite3_value_blob(argv[0]);
+  if( px.aBlob==0 ) return;
+  for(i=1; i<argc-1; i+=2){
+    const char *zPath = (const char*)sqlite3_value_text(argv[i]);
+    if( zPath==0 ) goto jsonInsertIntoBlob_patherror;
+    if( zPath[0]!='$' ) goto jsonInsertIntoBlob_patherror;
+    if( jsonFunctionArgToBlob(ctx, argv[i+1], &ax) ){
+      break;
+    }
+    if( zPath[1]==0 ){
+      if( px.nBlobAlloc ) sqlite3_free(px.aBlob);
+      return;  /* return NULL if $ is removed */
+    }
+    px.eEdit = eEdit;
+    px.nIns = ax.nBlob;
+    px.aIns = ax.aBlob;
+    rc = jsonLookupBlobStep(&px, 0, zPath+1, 0);
+    if( ax.nBlobAlloc ) sqlite3_free(ax.aBlob);
+    if( rc==JSON_BLOB_NOTFOUND ) continue;
+    if( JSON_BLOB_ISERROR(rc) ) goto jsonInsertIntoBlob_patherror;
+  }
+  flgs = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
+  if( flgs & JSON_BLOB ){
+    sqlite3_result_blob(ctx, px.aBlob, px.nBlob,
+                        px.nBlobAlloc>0 ? SQLITE_DYNAMIC : SQLITE_TRANSIENT);
+  }else{
+    JsonString s;
+    jsonStringInit(&s, ctx);
+    jsonXlateBlobToText(&px, 0, &s);
+    jsonReturnString(&s);
+    if( px.nBlobAlloc ) sqlite3_free(px.aBlob);
+  }
+  return;
+
+jsonInsertIntoBlob_patherror:
+  if( px.nBlobAlloc ) sqlite3_free(px.aBlob);
+  jsonPathSyntaxError(zPath, ctx);
+  return;
+}
+
 /****************************************************************************
 ** SQL functions used for testing and debugging
 ****************************************************************************/
@@ -4985,6 +5122,10 @@ static void jsonReplaceFunc(
   if( argc<1 ) return;
   if( (argc&1)==0 ) {
     jsonWrongNumArgs(ctx, "replace");
+    return;
+  }
+  if( jsonFuncArgMightBeBinary(argv[0]) && argc>=3 ){
+    jsonInsertIntoBlob(ctx, argc, argv, JEDIT_REPL);
     return;
   }
   pParse = jsonParseCached(ctx, argv[0], ctx, argc>1);
