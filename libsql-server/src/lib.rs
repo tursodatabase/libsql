@@ -263,11 +263,13 @@ fn init_sentinel_file(path: &Path) -> anyhow::Result<bool> {
 fn init_version_file(db_path: &Path) -> anyhow::Result<()> {
     // try to detect the presence of the data file at the root of db_path. If it's there, it's a
     // pre-0.18.0 database and needs to be migrated
+    println!("init_version_file: db_path: {:?}", db_path);
     if db_path.join("data").exists() {
         return Ok(());
     }
 
     let version_path = db_path.join(".version");
+    println!("init_version_file: version_path: {:?}", version_path);
     if !version_path.exists() {
         std::fs::create_dir_all(db_path)?;
         std::fs::write(version_path, env!("CARGO_PKG_VERSION"))?;
