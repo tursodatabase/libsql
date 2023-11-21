@@ -8,18 +8,21 @@ async fn main() {
     let db_file = tempfile::NamedTempFile::new().unwrap();
     println!("Database {}", db_file.path().display());
 
-    let auth_token = std::env::var("TURSO_AUTH_TOKEN").unwrap_or_else(|_| {
-        println!("Using empty token since TURSO_AUTH_TOKEN was not set");
+    let auth_token = std::env::var("LIBSQL_AUTH_TOKEN").unwrap_or_else(|_| {
+        println!("Using empty token since LIBSQL_TOKEN was not set");
         "".to_string()
     });
 
-    let db = Database::open_with_remote_sync(
-        db_file.path().to_str().unwrap(),
-        "http://localhost:8080",
-        auth_token,
-    )
-    .await
-    .unwrap();
+    let url = std::env::var("LIBSQL_URL")
+        .unwrap_or_else(|_| {
+            println!("Using empty token since LIBSQL_URL was not set");
+            "http://localhost:8080".to_string()
+        })
+        .replace("libsql", "https");
+
+    let db = Database::open_with_remote_sync(db_file.path().to_str().unwrap(), url, auth_token)
+        .await
+        .unwrap();
     let conn = db.connect().unwrap();
 
     let f = db.sync().await.unwrap();
