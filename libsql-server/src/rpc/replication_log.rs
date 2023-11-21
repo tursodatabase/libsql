@@ -8,8 +8,8 @@ use futures::stream::BoxStream;
 pub use libsql_replication::rpc::replication as rpc;
 use libsql_replication::rpc::replication::replication_log_server::ReplicationLog;
 use libsql_replication::rpc::replication::{
-    Frame, Frames, HelloRequest, HelloResponse, LogOffset, NEED_SNAPSHOT_ERROR_MSG,
-    NO_HELLO_ERROR_MSG, SESSION_TOKEN_KEY, NAMESPACE_DOESNT_EXIST,
+    Frame, Frames, HelloRequest, HelloResponse, LogOffset, NAMESPACE_DOESNT_EXIST,
+    NEED_SNAPSHOT_ERROR_MSG, NO_HELLO_ERROR_MSG, SESSION_TOKEN_KEY,
 };
 use tokio_stream::StreamExt;
 use tonic::transport::server::TcpConnectInfo;

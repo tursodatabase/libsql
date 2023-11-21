@@ -32,7 +32,6 @@ pub mod replication {
     /// A tonic error code to signify that a namespace doesn't exist.
     pub const NAMESPACE_DOESNT_EXIST: &str = "NAMESPACE_DOESNT_EXIST";
 
-
     pub const SESSION_TOKEN_KEY: &str = "x-session-token";
     pub const NAMESPACE_METADATA_KEY: &str = "x-namespace-bin";
 

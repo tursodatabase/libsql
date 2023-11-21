@@ -7,8 +7,7 @@ use libsql_replication::meta::WalIndexMeta;
 use libsql_replication::replicator::{map_frame_err, Error, ReplicatorClient};
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use libsql_replication::rpc::replication::{
-    verify_session_token, HelloRequest, LogOffset, NAMESPACE_METADATA_KEY,
-    SESSION_TOKEN_KEY, 
+    verify_session_token, HelloRequest, LogOffset, NAMESPACE_METADATA_KEY, SESSION_TOKEN_KEY,
 };
 use tokio::sync::watch;
 use tokio_stream::{Stream, StreamExt};

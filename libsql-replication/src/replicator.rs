@@ -5,11 +5,13 @@ use parking_lot::Mutex;
 use tokio::task::spawn_blocking;
 use tokio::time::Duration;
 use tokio_stream::{Stream, StreamExt};
-use tonic::{Status, Code};
+use tonic::{Code, Status};
 
 use crate::frame::{Frame, FrameNo};
 use crate::injector::Injector;
-use crate::rpc::replication::{Frame as RpcFrame, NEED_SNAPSHOT_ERROR_MSG, NO_HELLO_ERROR_MSG, NAMESPACE_DOESNT_EXIST};
+use crate::rpc::replication::{
+    Frame as RpcFrame, NAMESPACE_DOESNT_EXIST, NEED_SNAPSHOT_ERROR_MSG, NO_HELLO_ERROR_MSG,
+};
 
 pub use tokio_util::either::Either;
 
@@ -330,13 +332,12 @@ mod test {
             }
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000).await.unwrap();
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
+            .await
+            .unwrap();
 
         assert!(matches!(
-            replicator
-                .try_replicate_step()
-                .await
-                .unwrap_err(),
+            replicator.try_replicate_step().await.unwrap_err(),
             Error::NamespaceDoesntExist
         ));
     }
@@ -373,7 +374,9 @@ mod test {
             }
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000).await.unwrap();
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
+            .await
+            .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
         replicator.state = ReplicatorState::NeedFrames;
         replicator.try_replicate_step().await.unwrap();
@@ -414,13 +417,12 @@ mod test {
             }
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000).await.unwrap();
-        // we assume that we already received the handshake and the handshake is not valid anymore
-        replicator.state = ReplicatorState::NeedFrames;
-        replicator
-            .try_replicate_step()
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
             .await
             .unwrap();
+        // we assume that we already received the handshake and the handshake is not valid anymore
+        replicator.state = ReplicatorState::NeedFrames;
+        replicator.try_replicate_step().await.unwrap();
         assert_eq!(replicator.state, ReplicatorState::NeedHandshake);
     }
 
@@ -458,13 +460,12 @@ mod test {
             }
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000).await.unwrap();
-        // we assume that we already received the handshake and the handshake is not valid anymore
-        replicator.state = ReplicatorState::NeedFrames;
-        replicator
-            .try_replicate_step()
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
             .await
             .unwrap();
+        // we assume that we already received the handshake and the handshake is not valid anymore
+        replicator.state = ReplicatorState::NeedFrames;
+        replicator.try_replicate_step().await.unwrap();
         assert_eq!(replicator.state, ReplicatorState::NeedSnapshot);
     }
 
@@ -500,13 +501,12 @@ mod test {
             }
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000).await.unwrap();
-        // we assume that we already received the handshake and the handshake is not valid anymore
-        replicator.state = ReplicatorState::NeedFrames;
-        replicator
-            .try_replicate_step()
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
             .await
             .unwrap();
+        // we assume that we already received the handshake and the handshake is not valid anymore
+        replicator.state = ReplicatorState::NeedFrames;
+        replicator.try_replicate_step().await.unwrap();
         assert_eq!(replicator.state, ReplicatorState::NeedSnapshot);
     }
 
@@ -546,10 +546,7 @@ mod test {
             .await
             .unwrap();
         replicator.state = ReplicatorState::NeedSnapshot;
-        replicator
-            .try_replicate_step()
-            .await
-            .unwrap();
+        replicator.try_replicate_step().await.unwrap();
         assert_eq!(replicator.state, ReplicatorState::NeedHandshake);
     }
 
@@ -587,13 +584,12 @@ mod test {
             }
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000).await.unwrap();
-        // we assume that we already received the handshake and the handshake is not valid anymore
-        replicator.state = ReplicatorState::NeedSnapshot;
-        replicator
-            .try_replicate_step()
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
             .await
             .unwrap();
+        // we assume that we already received the handshake and the handshake is not valid anymore
+        replicator.state = ReplicatorState::NeedSnapshot;
+        replicator.try_replicate_step().await.unwrap();
 
         assert_eq!(replicator.state, ReplicatorState::NeedHandshake);
     }
@@ -635,10 +631,7 @@ mod test {
             .unwrap();
         replicator.state = ReplicatorState::NeedHandshake;
         assert!(matches!(
-            replicator
-                .try_replicate_step()
-                .await
-                .unwrap_err(),
+            replicator.try_replicate_step().await.unwrap_err(),
             Error::Fatal(_)
         ));
     }
