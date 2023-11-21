@@ -2,10 +2,8 @@
 
 use crate::hrana::proto::{Batch, Col, Value};
 use crate::hrana::{HttpSend, Result};
-use futures::lock::Mutex;
 use serde::{Deserialize, Serialize};
 use std::pin::Pin;
-use std::sync::Arc;
 use std::task::{Context, Poll};
 
 #[derive(Serialize, Debug)]

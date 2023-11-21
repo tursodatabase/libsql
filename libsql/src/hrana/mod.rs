@@ -13,14 +13,16 @@ mod stream;
 pub mod transaction;
 
 use crate::hrana::connection::HttpConnection;
-pub(crate) use crate::hrana::pipeline::{ServerMsg, StreamResponseError};
+pub(crate) use crate::hrana::pipeline::StreamResponseError;
 use crate::hrana::proto::{Col, Stmt, StmtResult};
 use crate::hrana::stream::HranaStream;
 use crate::{params::Params, ValueType};
-use bytes::Bytes;
+use bytes::{Bytes, BytesMut};
+use futures::Stream;
 use std::collections::VecDeque;
 use std::future::Future;
 use std::sync::Arc;
+use tokio_stream::StreamExt;
 
 use super::rows::{RowInner, RowsInner};
 
@@ -35,8 +37,32 @@ struct Cookie {
 }
 
 pub trait HttpSend<'a>: Clone {
-    type Result: Future<Output = Result<Bytes>> + 'a;
+    type Result: Future<Output = Result<HttpBody>> + 'a;
     fn http_send(&'a self, url: String, auth: String, body: String) -> Self::Result;
+}
+
+pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Unpin>;
+
+pub enum HttpBody {
+    Body(Bytes),
+    Stream(ByteStream),
+}
+
+impl HttpBody {
+    pub async fn bytes(self) -> Result<Bytes> {
+        match self {
+            HttpBody::Body(bytes) => Ok(bytes),
+            HttpBody::Stream(stream) => stream_to_bytes(stream).await,
+        }
+    }
+}
+
+async fn stream_to_bytes(mut stream: ByteStream) -> Result<Bytes> {
+    let mut buf = BytesMut::new();
+    while let Some(chunk) = stream.next().await {
+        buf.extend_from_slice(&chunk?);
+    }
+    Ok(buf.freeze())
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -47,6 +73,8 @@ pub enum HranaError {
     StreamClosed(String),
     #[error("stream error: `{0:?}`")]
     StreamError(StreamResponseError),
+    #[error("cursor error: `{0:?}`")]
+    CursorError(String),
     #[error("json error: `{0}`")]
     Json(#[from] serde_json::Error),
     #[error("http error: `{0}`")]

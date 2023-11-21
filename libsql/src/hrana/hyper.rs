@@ -1,6 +1,5 @@
 use crate::connection::Conn;
 use crate::hrana::connection::HttpConnection;
-use crate::hrana::pipeline::ServerMsg;
 use crate::hrana::proto::{Batch, Stmt};
 use crate::hrana::stream::HranaStream;
 use crate::hrana::transaction::HttpTransaction;
@@ -9,10 +8,11 @@ use crate::params::Params;
 use crate::transaction::Tx;
 use crate::util::ConnectorService;
 use crate::{Rows, Statement};
-use bytes::Bytes;
 use futures::future::BoxFuture;
+use futures::TryStreamExt;
 use http::header::AUTHORIZATION;
 use http::{HeaderValue, StatusCode};
+use hyper::body::HttpBody;
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 use std::sync::Arc;
 
@@ -38,29 +38,42 @@ impl HttpSender {
         Self { inner, version }
     }
 
-    async fn send(&self, url: String, auth: String, body: String) -> Result<Bytes> {
+    async fn send(&self, url: String, auth: String, body: String) -> Result<super::HttpBody> {
         let req = hyper::Request::post(url)
             .header(AUTHORIZATION, auth)
             .header("x-libsql-client-version", self.version.clone())
             .body(hyper::Body::from(body))
             .map_err(|err| HranaError::Http(format!("{:?}", err)))?;
 
-        let res = self.inner.request(req).await?;
+        let resp = self.inner.request(req).await.map_err(HranaError::from)?;
 
-        if res.status() != StatusCode::OK {
-            let body = hyper::body::to_bytes(res.into_body()).await?;
-            let msg = String::from_utf8(body.into())
-                .unwrap_or_else(|err| format!("Invalid payload: {}", err));
-            return Err(HranaError::Api(msg));
+        if resp.status() != StatusCode::OK {
+            let body = hyper::body::to_bytes(resp.into_body())
+                .await
+                .map_err(HranaError::from)?;
+            let body = String::from_utf8(body.into()).unwrap();
+            return Err(HranaError::Api(body));
         }
 
-        let body = hyper::body::to_bytes(res.into_body()).await?;
+        let body = if resp.is_end_stream() {
+            let body = hyper::body::to_bytes(resp.into_body())
+                .await
+                .map_err(HranaError::from)?;
+            super::HttpBody::Body(body)
+        } else {
+            let stream = resp
+                .into_body()
+                .into_stream()
+                .map_err(|e| HranaError::Http(e.to_string()));
+            super::HttpBody::Stream(Box::new(stream))
+        };
+
         Ok(body)
     }
 }
 
 impl<'a> HttpSend<'a> for HttpSender {
-    type Result = BoxFuture<'a, Result<Bytes>>;
+    type Result = BoxFuture<'a, Result<super::HttpBody>>;
 
     fn http_send(&'a self, url: String, auth: String, body: String) -> Self::Result {
         let fut = self.send(url, auth, body);
