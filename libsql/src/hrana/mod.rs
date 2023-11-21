@@ -6,6 +6,7 @@ cfg_remote! {
     mod hyper;
 }
 
+mod cursor;
 pub mod pipeline;
 pub mod proto;
 mod stream;
@@ -14,8 +15,9 @@ pub mod transaction;
 use crate::hrana::connection::HttpConnection;
 pub(crate) use crate::hrana::pipeline::{ServerMsg, StreamResponseError};
 use crate::hrana::proto::{Col, Stmt, StmtResult};
-use crate::hrana::stream::HttpStream;
+use crate::hrana::stream::HranaStream;
 use crate::{params::Params, ValueType};
+use bytes::Bytes;
 use std::collections::VecDeque;
 use std::future::Future;
 use std::sync::Arc;
@@ -33,7 +35,7 @@ struct Cookie {
 }
 
 pub trait HttpSend<'a>: Clone {
-    type Result: Future<Output = Result<ServerMsg>> + 'a;
+    type Result: Future<Output = Result<Bytes>> + 'a;
     fn http_send(&'a self, url: String, auth: String, body: String) -> Self::Result;
 }
 
@@ -56,7 +58,7 @@ pub enum HranaError {
 enum StatementExecutor<T: for<'a> HttpSend<'a>> {
     /// An opened HTTP Hrana stream - usually in scope of executing transaction. Operations over it
     /// will be scheduled for sequential execution.
-    Stream(HttpStream<T>),
+    Stream(HranaStream<T>),
     /// Hrana HTTP connection. Operations executing over it are not attached to any sequential
     /// order of execution.
     Connection(HttpConnection<T>),
@@ -87,7 +89,7 @@ impl<T> Statement<T>
 where
     T: for<'a> HttpSend<'a>,
 {
-    pub(crate) fn from_stream(stream: HttpStream<T>, sql: String, want_rows: bool) -> Self {
+    pub(crate) fn from_stream(stream: HranaStream<T>, sql: String, want_rows: bool) -> Self {
         Statement {
             executor: StatementExecutor::Stream(stream),
             inner: Stmt::new(sql, want_rows),

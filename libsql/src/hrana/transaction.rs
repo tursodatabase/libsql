@@ -1,7 +1,7 @@
 use crate::hrana::connection::stmts_to_batch;
 use crate::hrana::pipeline::{ExecuteStreamReq, StreamRequest};
-use crate::hrana::proto::{BatchResult, Stmt, StmtResult};
-use crate::hrana::stream::HttpStream;
+use crate::hrana::proto::{Batch, BatchResult, Stmt, StmtResult};
+use crate::hrana::stream::HranaStream;
 use crate::hrana::{HttpSend, Result};
 use crate::TransactionBehavior;
 
@@ -10,18 +10,18 @@ pub(crate) struct HttpTransaction<T>
 where
     T: for<'a> HttpSend<'a>,
 {
-    stream: HttpStream<T>,
+    stream: HranaStream<T>,
 }
 
 impl<T> HttpTransaction<T>
 where
     T: for<'a> HttpSend<'a>,
 {
-    pub fn stream(&self) -> &HttpStream<T> {
+    pub fn stream(&self) -> &HranaStream<T> {
         &self.stream
     }
 
-    pub async fn open(stream: HttpStream<T>, tx_behavior: TransactionBehavior) -> Result<Self> {
+    pub async fn open(stream: HranaStream<T>, tx_behavior: TransactionBehavior) -> Result<Self> {
         let begin_stmt = match tx_behavior {
             TransactionBehavior::Deferred => "BEGIN DEFERRED",
             TransactionBehavior::Immediate => "BEGIN IMMEDIATE",

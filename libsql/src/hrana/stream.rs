@@ -23,30 +23,30 @@ pub type SqlId = i32;
 /// A representation of Hrana HTTP stream. Since streams rely on sequential execution of requests,
 /// it's realized internally as a mutex lock.
 #[derive(Debug)]
-pub struct HttpStream<T>
+pub struct HranaStream<T>
 where
     T: for<'a> HttpSend<'a>,
 {
     inner: Arc<Inner<T>>,
 }
 
-impl<T> Clone for HttpStream<T>
+impl<T> Clone for HranaStream<T>
 where
     T: for<'a> HttpSend<'a>,
 {
     fn clone(&self) -> Self {
-        HttpStream {
+        HranaStream {
             inner: self.inner.clone(),
         }
     }
 }
 
-impl<T> HttpStream<T>
+impl<T> HranaStream<T>
 where
     T: for<'a> HttpSend<'a>,
 {
     pub(super) fn open(client: T, base_url: String, auth_token: String) -> Self {
-        HttpStream {
+        HranaStream {
             inner: Arc::new(Inner {
                 affected_row_count: AtomicU64::new(0),
                 last_insert_rowid: AtomicI64::new(0),
@@ -233,10 +233,11 @@ where
             requests: Vec::from(requests),
         };
         let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
-        let mut response: ServerMsg = self
+        let body = self
             .client
             .http_send(self.base_url.clone(), self.auth_token.clone(), body)
             .await?;
+        let mut response: ServerMsg = serde_json::from_slice(&body)?;
         if let Some(base_url) = response.base_url.take() {
             self.base_url = base_url;
         }
@@ -327,7 +328,7 @@ pub struct StoredSql<T>
 where
     T: for<'a> HttpSend<'a>,
 {
-    stream: HttpStream<T>,
+    stream: HranaStream<T>,
     sql_id: SqlId,
 }
 
@@ -335,7 +336,7 @@ impl<T> StoredSql<T>
 where
     T: for<'a> HttpSend<'a>,
 {
-    fn new(stream: HttpStream<T>, sql_id: SqlId) -> Self {
+    fn new(stream: HranaStream<T>, sql_id: SqlId) -> Self {
         StoredSql { stream, sql_id }
     }
 

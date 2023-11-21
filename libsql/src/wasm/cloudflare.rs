@@ -1,5 +1,6 @@
 use crate::hrana::pipeline::ServerMsg;
 use crate::hrana::{HranaError, HttpSend, Result};
+use bytes::Bytes;
 use std::future::Future;
 use std::pin::Pin;
 use worker::wasm_bindgen::JsValue;
@@ -12,7 +13,7 @@ impl CloudflareSender {
         CloudflareSender(())
     }
 
-    async fn send(url: String, auth: String, body: String) -> Result<ServerMsg> {
+    async fn send(url: String, auth: String, body: String) -> Result<Bytes> {
         use worker::*;
 
         let mut response = Fetch::Request(Request::new_with_init(
@@ -31,18 +32,18 @@ impl CloudflareSender {
         )?)
         .send()
         .await?;
-        let body = response.text().await?;
         if response.status_code() != 200 {
+            let body = response.text().await?;
             Err(HranaError::Api(body))
         } else {
-            let msg: ServerMsg = serde_json::from_str(&body)?;
-            Ok(msg)
+            let body = response.bytes().await?;
+            Ok(Bytes::from(body))
         }
     }
 }
 
 impl<'a> HttpSend<'a> for CloudflareSender {
-    type Result = Pin<Box<dyn Future<Output = Result<ServerMsg>> + 'a>>;
+    type Result = Pin<Box<dyn Future<Output = Result<Bytes>> + 'a>>;
 
     fn http_send(&self, url: String, auth: String, body: String) -> Self::Result {
         let fut = Self::send(url, auth, body);
