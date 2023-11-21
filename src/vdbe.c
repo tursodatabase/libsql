@@ -8184,7 +8184,7 @@ case OP_VCheck: {             /* out2 */
   pTab = pOp->p4.pTab;
   assert( pTab!=0 );
   assert( IsVirtual(pTab) );
-  assert( pTab->u.vtab.p!=0 );
+  if( pTab->u.vtab.p==0 ) break;
   pVtab = pTab->u.vtab.p->pVtab;
   assert( pVtab!=0 );
   pModule = pVtab->pModule;

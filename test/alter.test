@@ -970,5 +970,17 @@ do_execsql_test alter-21.1 {
 do_execsql_test alter-21.2 {
   SELECT name, type FROM sqlite_schema ORDER BY name;
 } {e table r1 trigger t1 table}
+do_execsql_test alter-21.3 {
+  DROP TRIGGER r1;
+  CREATE TRIGGER r2 AFTER INSERT ON e BEGIN
+    SELECT unknown_function(a ORDER BY (SELECT group_concat(a ORDER BY a) FROM (SELECT b FROM t1))) FROM t1;
+  END;
+  ALTER TABLE e RENAME TO t99;
+}
+do_execsql_test alter-21.4 {
+  SELECT name, type FROM sqlite_schema ORDER BY name;
+} {r2 trigger t1 table t99 table}
+
+
 
 finish_test

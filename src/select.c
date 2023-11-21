@@ -2319,7 +2319,8 @@ void sqlite3SubqueryColumnTypes(
   NameContext sNC;
 
   assert( pSelect!=0 );
-  assert( (pSelect->selFlags & SF_Resolved)!=0 );
+  testcase( (pSelect->selFlags & SF_Resolved)==0 );
+  assert( (pSelect->selFlags & SF_Resolved)!=0 || IN_RENAME_OBJECT );
   assert( pTab->nCol==pSelect->pEList->nExpr || pParse->nErr>0 );
   assert( aff==SQLITE_AFF_NONE || aff==SQLITE_AFF_BLOB );
   if( db->mallocFailed || IN_RENAME_OBJECT ) return;
