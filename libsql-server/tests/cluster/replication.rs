@@ -115,6 +115,12 @@ fn apply_partial_snapshot() {
         notify.notify_waiters();
 
         let client = Client::new();
+
+        // wait for replica to start up
+        while client.get("http://replica:8080/").await.is_err() {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+
         loop {
             let resp = client
                 .get("http://replica:9090/v1/namespaces/default/stats")
