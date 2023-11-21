@@ -349,10 +349,10 @@ struct JsonParse {
 };
 
 /* Allowed values for JsonParse.eEdit */
-#define JEDIT_DEL   0x01   /* Delete if exists */
-#define JEDIT_INS   0x02   /* Insert if not exists */
-#define JEDIT_REPL  0x04   /* Overwrite if exists */
-#define JEDIT_SET   0x08   /* Insert or overwrite */
+#define JEDIT_DEL   1   /* Delete if exists */
+#define JEDIT_REPL  2   /* Overwrite if exists */
+#define JEDIT_INS   3   /* Insert if not exists */
+#define JEDIT_SET   4   /* Insert or overwrite */
 
 /*
 ** Maximum nesting depth of JSON for this implementation.
@@ -2586,12 +2586,12 @@ static int jsonBlobExpand(JsonParse *pParse, u32 N){
 **
 ** Return true on success.  Return false on OOM.
 */
-static int jsonBlobMakeEditable(JsonParse *pParse){
+static int jsonBlobMakeEditable(JsonParse *pParse, u32 nExtra){
   u8 *aOld;
   u32 nSize;
   if( pParse->nBlobAlloc>0 ) return 1;
   aOld = pParse->aBlob;
-  nSize = pParse->nBlob + pParse->nIns;
+  nSize = pParse->nBlob + pParse->nIns + nExtra;
   if( nSize>100 ) nSize -= 100;
   pParse->aBlob = 0;
   if( jsonBlobExpand(pParse, nSize) ){
@@ -3859,7 +3859,7 @@ static u32 jsonLookupBlobStep(
   u8 x;
 
   if( zPath[0]==0 ){
-    if( pParse->eEdit && jsonBlobMakeEditable(pParse) ){
+    if( pParse->eEdit && jsonBlobMakeEditable(pParse, 0) ){
       n = jsonbPayloadSize(pParse, iRoot, &sz);
       sz += n;
       if( pParse->eEdit==JEDIT_DEL ){
@@ -3941,6 +3941,32 @@ static u32 jsonLookupBlobStep(
       j += n+sz;
     }
     if( j>iEnd ) return JSON_BLOB_ERROR;
+    if( pParse->eEdit>=JEDIT_INS ){
+      u32 nIns;
+      u8 aLabel[16];
+      JsonParse ix;
+      testcase( pParse->eEdit==JEDIT_INS );
+      testcase( pParse->eEdit==JEDIT_SET );
+      memset(&ix, 0, sizeof(ix));
+      ix.aBlob = aLabel;
+      ix.nBlobAlloc = sizeof(aLabel);
+      jsonBlobAppendNodeType(&ix,JSONB_TEXTRAW, nKey);
+      if( jsonBlobMakeEditable(pParse, ix.nBlob+nKey) ){
+        nIns = ix.nBlob + nKey + pParse->nIns;
+        assert( pParse->nBlob + pParse->nIns <= pParse->nBlobAlloc );
+        memmove(&pParse->aBlob[j+nIns], &pParse->aBlob[j],
+                pParse->nBlob - j);
+        memcpy(&pParse->aBlob[j], ix.aBlob, ix.nBlob);
+        k = j + ix.nBlob;
+        memcpy(&pParse->aBlob[k], zKey, nKey);
+        k += nKey;
+        memcpy(&pParse->aBlob[k], pParse->aIns, pParse->nIns);
+        pParse->delta = nIns;
+        pParse->nBlob += nIns;
+        jsonAfterEditSizeAdjust(pParse, iRoot);
+      }
+      return j;
+    }
   }else if( zPath[0]=='[' ){
     x = pParse->aBlob[iRoot] & 0x0f;
     if( x!=JSONB_ARRAY )  return JSON_BLOB_NOTFOUND;
@@ -3987,18 +4013,20 @@ static u32 jsonLookupBlobStep(
     }
     if( j>iEnd ) return JSON_BLOB_ERROR;
     if( k>1 ) return JSON_BLOB_NOTFOUND;
+    if( pParse->eEdit>=JEDIT_INS && jsonBlobMakeEditable(pParse, 0) ){
+      testcase( pParse->eEdit==JEDIT_INS );
+      testcase( pParse->eEdit==JEDIT_SET );
+      assert( pParse->nBlob + pParse->nIns <= pParse->nBlobAlloc );
+      memmove(&pParse->aBlob[j+pParse->nIns], &pParse->aBlob[j],
+              pParse->nBlob - j);
+      memcpy(&pParse->aBlob[j], pParse->aIns, pParse->nIns);
+      pParse->delta = pParse->nIns;
+      pParse->nBlob += pParse->nIns;
+      jsonAfterEditSizeAdjust(pParse, iRoot);
+      return j;
+    }
   }else{
     return JSON_BLOB_PATHERROR; 
-  }
-  if( pParse->eEdit==JEDIT_INS && jsonBlobMakeEditable(pParse) ){
-    assert( pParse->nBlob + pParse->nIns <= pParse->nBlobAlloc );
-    memmove(&pParse->aBlob[j], &pParse->aBlob[j+pParse->nIns],
-            pParse->nBlob - j);
-    memcpy(&pParse->aBlob[j], pParse->aIns, pParse->nIns);
-    pParse->delta = pParse->nIns;
-    pParse->nBlob += pParse->nIns;
-    jsonAfterEditSizeAdjust(pParse, iRoot);
-    return j;
   }
   return JSON_BLOB_NOTFOUND;
 }
@@ -5181,6 +5209,10 @@ static void jsonSetFunc(
   if( argc<1 ) return;
   if( (argc&1)==0 ) {
     jsonWrongNumArgs(ctx, bIsSet ? "set" : "insert");
+    return;
+  }
+  if( jsonFuncArgMightBeBinary(argv[0]) && argc>=3 ){
+    jsonInsertIntoBlob(ctx, argc, argv, bIsSet ? JEDIT_SET : JEDIT_INS);
     return;
   }
   pParse = jsonParseCached(ctx, argv[0], ctx, argc>1);
