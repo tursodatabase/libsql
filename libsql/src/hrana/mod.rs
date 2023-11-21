@@ -24,6 +24,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
+use tokio_stream::StreamExt;
 
 use super::rows::{RowInner, RowsInner};
 
@@ -99,6 +100,30 @@ where
             }
         }
     }
+}
+
+pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Unpin>;
+
+pub enum HttpBody {
+    Body(Bytes),
+    Stream(ByteStream),
+}
+
+impl HttpBody {
+    pub async fn bytes(self) -> Result<Bytes> {
+        match self {
+            HttpBody::Body(bytes) => Ok(bytes),
+            HttpBody::Stream(stream) => stream_to_bytes(stream).await,
+        }
+    }
+}
+
+async fn stream_to_bytes(mut stream: ByteStream) -> Result<Bytes> {
+    let mut buf = BytesMut::new();
+    while let Some(chunk) = stream.next().await {
+        buf.extend_from_slice(&chunk?);
+    }
+    Ok(buf.freeze())
 }
 
 #[derive(Debug, thiserror::Error)]

@@ -1,6 +1,6 @@
 // https://github.com/tursodatabase/libsql/blob/main/docs/HRANA_3_SPEC.md#cursor-entries
 
-use crate::hrana::proto::{Batch, BatchResult, Col, StmtResult, Value};
+use crate::hrana::proto::{Batch, BatchResult, Col, StmtResult, HttpSend, Value};
 use crate::hrana::{CursorResponseError, HranaError, Result, Row};
 use bytes::Bytes;
 use futures::{ready, Future, Stream, StreamExt};
@@ -8,7 +8,6 @@ use serde::de::Error;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::pin::Pin;
-use std::sync::Arc;
 use std::task::{Context, Poll};
 
 #[derive(Serialize, Debug)]

@@ -8,7 +8,6 @@ use crate::params::Params;
 use crate::transaction::Tx;
 use crate::util::ConnectorService;
 use crate::{Rows, Statement};
-use bytes::Bytes;
 use futures::future::BoxFuture;
 use futures::{Stream, TryStreamExt};
 use http::header::AUTHORIZATION;
