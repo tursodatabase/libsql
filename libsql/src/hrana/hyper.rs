@@ -2,13 +2,14 @@ use crate::connection::Conn;
 use crate::hrana::connection::HttpConnection;
 use crate::hrana::pipeline::ServerMsg;
 use crate::hrana::proto::{Batch, Stmt};
-use crate::hrana::stream::HttpStream;
+use crate::hrana::stream::HranaStream;
 use crate::hrana::transaction::HttpTransaction;
 use crate::hrana::{bind_params, HranaError, HttpSend, Result};
 use crate::params::Params;
 use crate::transaction::Tx;
 use crate::util::ConnectorService;
 use crate::{Rows, Statement};
+use bytes::Bytes;
 use futures::future::BoxFuture;
 use http::header::AUTHORIZATION;
 use http::{HeaderValue, StatusCode};
@@ -37,7 +38,7 @@ impl HttpSender {
         Self { inner, version }
     }
 
-    async fn send(&self, url: String, auth: String, body: String) -> Result<ServerMsg> {
+    async fn send(&self, url: String, auth: String, body: String) -> Result<Bytes> {
         let req = hyper::Request::post(url)
             .header(AUTHORIZATION, auth)
             .header("x-libsql-client-version", self.version.clone())
@@ -54,15 +55,12 @@ impl HttpSender {
         }
 
         let body = hyper::body::to_bytes(res.into_body()).await?;
-
-        let msg = serde_json::from_slice::<ServerMsg>(&body[..])?;
-
-        Ok(msg)
+        Ok(body)
     }
 }
 
 impl<'a> HttpSend<'a> for HttpSender {
-    type Result = BoxFuture<'a, Result<ServerMsg>>;
+    type Result = BoxFuture<'a, Result<Bytes>>;
 
     fn http_send(&'a self, url: String, auth: String, body: String) -> Self::Result {
         let fut = self.send(url, auth, body);
@@ -200,7 +198,7 @@ impl Tx for HttpTransaction<HttpSender> {
 }
 
 #[async_trait::async_trait]
-impl Conn for HttpStream<HttpSender> {
+impl Conn for HranaStream<HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
         let mut stmt = Stmt::new(sql, false);
         bind_params(params, &mut stmt);

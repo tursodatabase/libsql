@@ -64,9 +64,9 @@ where
         &self.0
     }
 
-    pub(crate) fn open_stream(&self) -> HttpStream<T> {
+    pub(crate) fn open_stream(&self) -> HranaStream<T> {
         let client = self.client();
-        HttpStream::open(
+        HranaStream::open(
             client.inner.clone(),
             client.url_for_queries.clone(),
             client.auth.clone(),
