@@ -4427,7 +4427,7 @@ static void jsonInsertIntoBlob(
   int eEdit                /* JEDIT_INS, JEDIT_REPL, or JEDIT_SET */
 ){
   int i;
-  u32 rc;
+  u32 rc = 0;
   const char *zPath = 0;
   int flgs;
   JsonParse px, ax;
@@ -4471,7 +4471,11 @@ static void jsonInsertIntoBlob(
 
 jsonInsertIntoBlob_patherror:
   if( px.nBlobAlloc ) sqlite3_free(px.aBlob);
-  jsonPathSyntaxError(zPath, ctx);
+  if( rc==JSON_BLOB_ERROR ){
+    sqlite3_result_error(ctx, "malformed JSON", -1);
+  }else{
+    jsonPathSyntaxError(zPath, ctx);
+  }
   return;
 }
 
