@@ -236,6 +236,8 @@ where
         let body = self
             .client
             .http_send(self.base_url.clone(), self.auth_token.clone(), body)
+            .await?
+            .bytes()
             .await?;
         let mut response: ServerMsg = serde_json::from_slice(&body)?;
         if let Some(base_url) = response.base_url.take() {
