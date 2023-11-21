@@ -3372,6 +3372,7 @@ static u32 jsonXlateBlobToText(
       u32 k = 2;
       sqlite3_uint64 u = 0;
       const char *zIn = (const char*)&pParse->aBlob[i+n];
+      int bOverflow = 0;
       if( zIn[0]=='-' ){
         jsonAppendChar(pOut, '-');
         k++;
@@ -3382,11 +3383,13 @@ static u32 jsonXlateBlobToText(
         if( !sqlite3Isxdigit(zIn[k]) ){
           pOut->eErr |= JSTRING_MALFORMED;
           break;
+        }else if( (u>>60)!=0 ){
+          bOverflow = 1;
         }else{
           u = u*16 + sqlite3HexToInt(zIn[k]);
         }
       }
-      jsonPrintf(100,pOut,"%llu",u);
+      jsonPrintf(100,pOut,bOverflow?"9.0e999":"%llu", u);
       break;
     }
     case JSONB_FLOAT5: { /* Float literal missing digits beside "." */
@@ -3519,6 +3522,7 @@ static u32 jsonXlateBlobToText(
         j = jsonXlateBlobToText(pParse, j, pOut);
         jsonAppendChar(pOut, (x++ & 1) ? ',' : ':');
       }
+      if( x & 1 ) pOut->eErr |= JSTRING_MALFORMED;
       if( sz>0 ) pOut->nUsed--;
       jsonAppendChar(pOut, '}');
       break;
