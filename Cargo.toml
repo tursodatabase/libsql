@@ -19,6 +19,8 @@ members = [
   "xtask",
 ]
 
+exclude = [ "./libsql-sqlite3/ext/crr" ]
+
 [profile.release]
 codegen-units = 1
 panic = "unwind"
