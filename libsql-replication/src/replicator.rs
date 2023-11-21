@@ -289,3 +289,357 @@ pub fn map_frame_err(f: Result<RpcFrame, Status>) -> Result<Frame, Error> {
     let frame = f?;
     Ok(Frame::try_from(&*frame.data).map_err(|e| Error::Client(e.into()))?)
 }
+
+#[cfg(test)]
+mod test {
+    use std::pin::Pin;
+
+    use async_stream::stream;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn handshake_error_namespace_doesnt_exist() {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        struct Client;
+
+        #[async_trait::async_trait]
+        impl ReplicatorClient for Client {
+            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+
+            /// Perform handshake with remote
+            async fn handshake(&mut self) -> Result<(), Error> {
+                Err(Error::NamespaceDoesntExist)
+            }
+            /// Return a stream of frames to apply to the database
+            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+                unreachable!()
+            }
+            /// Return a snapshot for the current replication index. Called after next_frame has returned a
+            /// NeedSnapshot error
+            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+                unreachable!()
+            }
+            /// set the new commit frame_no
+            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
+                unreachable!()
+            }
+            /// Returns the currently committed replication index
+            fn committed_frame_no(&self) -> Option<FrameNo> {
+                unreachable!()
+            }
+        }
+
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000).await.unwrap();
+
+        assert!(matches!(
+            replicator
+                .try_replicate_step()
+                .await
+                .unwrap_err(),
+            Error::NamespaceDoesntExist
+        ));
+    }
+
+    #[tokio::test]
+    async fn no_handshake_error_in_next_frame() {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        struct Client;
+
+        #[async_trait::async_trait]
+        impl ReplicatorClient for Client {
+            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+
+            /// Perform handshake with remote
+            async fn handshake(&mut self) -> Result<(), Error> {
+                unimplemented!()
+            }
+            /// Return a stream of frames to apply to the database
+            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+                Err(Error::NoHandshake)
+            }
+            /// Return a snapshot for the current replication index. Called after next_frame has returned a
+            /// NeedSnapshot error
+            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+                unreachable!()
+            }
+            /// set the new commit frame_no
+            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
+                unreachable!()
+            }
+            /// Returns the currently committed replication index
+            fn committed_frame_no(&self) -> Option<FrameNo> {
+                unreachable!()
+            }
+        }
+
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000).await.unwrap();
+        // we assume that we already received the handshake and the handshake is not valid anymore
+        replicator.state = ReplicatorState::NeedFrames;
+        replicator.try_replicate_step().await.unwrap();
+        assert_eq!(replicator.state, ReplicatorState::NeedHandshake);
+    }
+
+    #[tokio::test]
+    async fn stream_frame_returns_handshake_error() {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        struct Client;
+
+        #[async_trait::async_trait]
+        impl ReplicatorClient for Client {
+            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+
+            /// Perform handshake with remote
+            async fn handshake(&mut self) -> Result<(), Error> {
+                unimplemented!()
+            }
+            /// Return a stream of frames to apply to the database
+            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+                Ok(Box::pin(stream! {
+                    yield Err(Error::NoHandshake);
+                }))
+            }
+            /// Return a snapshot for the current replication index. Called after next_frame has returned a
+            /// NeedSnapshot error
+            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+                unreachable!()
+            }
+            /// set the new commit frame_no
+            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
+                unreachable!()
+            }
+            /// Returns the currently committed replication index
+            fn committed_frame_no(&self) -> Option<FrameNo> {
+                unreachable!()
+            }
+        }
+
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000).await.unwrap();
+        // we assume that we already received the handshake and the handshake is not valid anymore
+        replicator.state = ReplicatorState::NeedFrames;
+        replicator
+            .try_replicate_step()
+            .await
+            .unwrap();
+        assert_eq!(replicator.state, ReplicatorState::NeedHandshake);
+    }
+
+    #[tokio::test]
+    async fn stream_frame_returns_need_snapshot() {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        struct Client;
+
+        #[async_trait::async_trait]
+        impl ReplicatorClient for Client {
+            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+
+            /// Perform handshake with remote
+            async fn handshake(&mut self) -> Result<(), Error> {
+                unimplemented!()
+            }
+            /// Return a stream of frames to apply to the database
+            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+                Ok(Box::pin(stream! {
+                    yield Err(Error::NeedSnapshot);
+                }))
+            }
+            /// Return a snapshot for the current replication index. Called after next_frame has returned a
+            /// NeedSnapshot error
+            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+                unreachable!()
+            }
+            /// set the new commit frame_no
+            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
+                unreachable!()
+            }
+            /// Returns the currently committed replication index
+            fn committed_frame_no(&self) -> Option<FrameNo> {
+                unreachable!()
+            }
+        }
+
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000).await.unwrap();
+        // we assume that we already received the handshake and the handshake is not valid anymore
+        replicator.state = ReplicatorState::NeedFrames;
+        replicator
+            .try_replicate_step()
+            .await
+            .unwrap();
+        assert_eq!(replicator.state, ReplicatorState::NeedSnapshot);
+    }
+
+    #[tokio::test]
+    async fn next_frames_returns_need_snapshot() {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        struct Client;
+
+        #[async_trait::async_trait]
+        impl ReplicatorClient for Client {
+            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+
+            /// Perform handshake with remote
+            async fn handshake(&mut self) -> Result<(), Error> {
+                unimplemented!()
+            }
+            /// Return a stream of frames to apply to the database
+            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+                Err(Error::NeedSnapshot)
+            }
+            /// Return a snapshot for the current replication index. Called after next_frame has returned a
+            /// NeedSnapshot error
+            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+                unreachable!()
+            }
+            /// set the new commit frame_no
+            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
+                unreachable!()
+            }
+            /// Returns the currently committed replication index
+            fn committed_frame_no(&self) -> Option<FrameNo> {
+                unreachable!()
+            }
+        }
+
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000).await.unwrap();
+        // we assume that we already received the handshake and the handshake is not valid anymore
+        replicator.state = ReplicatorState::NeedFrames;
+        replicator
+            .try_replicate_step()
+            .await
+            .unwrap();
+        assert_eq!(replicator.state, ReplicatorState::NeedSnapshot);
+    }
+
+    #[tokio::test]
+    async fn load_snapshot_returns_need_handshake() {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        struct Client;
+
+        #[async_trait::async_trait]
+        impl ReplicatorClient for Client {
+            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+
+            /// Perform handshake with remote
+            async fn handshake(&mut self) -> Result<(), Error> {
+                unimplemented!()
+            }
+            /// Return a stream of frames to apply to the database
+            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+                unimplemented!()
+            }
+            /// Return a snapshot for the current replication index. Called after next_frame has returned a
+            /// NeedSnapshot error
+            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+                Err(Error::NoHandshake)
+            }
+            /// set the new commit frame_no
+            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
+                unreachable!()
+            }
+            /// Returns the currently committed replication index
+            fn committed_frame_no(&self) -> Option<FrameNo> {
+                unreachable!()
+            }
+        }
+
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
+            .await
+            .unwrap();
+        replicator.state = ReplicatorState::NeedSnapshot;
+        replicator
+            .try_replicate_step()
+            .await
+            .unwrap();
+        assert_eq!(replicator.state, ReplicatorState::NeedHandshake);
+    }
+
+    #[tokio::test]
+    async fn load_snapshot_stream_returns_need_handshake() {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        struct Client;
+
+        #[async_trait::async_trait]
+        impl ReplicatorClient for Client {
+            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+
+            /// Perform handshake with remote
+            async fn handshake(&mut self) -> Result<(), Error> {
+                unimplemented!()
+            }
+            /// Return a stream of frames to apply to the database
+            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+                unimplemented!()
+            }
+            /// Return a snapshot for the current replication index. Called after next_frame has returned a
+            /// NeedSnapshot error
+            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+                Ok(Box::pin(stream! {
+                    yield Err(Error::NoHandshake)
+                }))
+            }
+            /// set the new commit frame_no
+            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
+                unreachable!()
+            }
+            /// Returns the currently committed replication index
+            fn committed_frame_no(&self) -> Option<FrameNo> {
+                unreachable!()
+            }
+        }
+
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000).await.unwrap();
+        // we assume that we already received the handshake and the handshake is not valid anymore
+        replicator.state = ReplicatorState::NeedSnapshot;
+        replicator
+            .try_replicate_step()
+            .await
+            .unwrap();
+
+        assert_eq!(replicator.state, ReplicatorState::NeedHandshake);
+    }
+
+    #[tokio::test]
+    async fn receive_handshake_error_while_handshaking() {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        struct Client;
+
+        #[async_trait::async_trait]
+        impl ReplicatorClient for Client {
+            type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+
+            /// Perform handshake with remote
+            async fn handshake(&mut self) -> Result<(), Error> {
+                Err(Error::NoHandshake)
+            }
+            /// Return a stream of frames to apply to the database
+            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+                unimplemented!()
+            }
+            /// Return a snapshot for the current replication index. Called after next_frame has returned a
+            /// NeedSnapshot error
+            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+                unimplemented!()
+            }
+            /// set the new commit frame_no
+            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
+                unreachable!()
+            }
+            /// Returns the currently committed replication index
+            fn committed_frame_no(&self) -> Option<FrameNo> {
+                unreachable!()
+            }
+        }
+
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
+            .await
+            .unwrap();
+        replicator.state = ReplicatorState::NeedHandshake;
+        assert!(matches!(
+            replicator
+                .try_replicate_step()
+                .await
+                .unwrap_err(),
+            Error::Fatal(_)
+        ));
+    }
+}
