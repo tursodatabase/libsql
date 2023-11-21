@@ -710,6 +710,21 @@ fuzzcheck-asan$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
 fuzzcheck-ubsan$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
 	$(LTLINK) -o $@ -fsanitize=undefined $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
 
+# Usage:    FUZZDB=filename make run-fuzzcheck
+#
+# Where filename is a fuzzcheck database, this target builds and runs
+# fuzzcheck, fuzzcheck-asan, and fuzzcheck-ubsan on that database.
+#
+# FUZZDB can be a glob pattern of two or more databases. Example:
+#
+#     FUZZDB=test/fuzzdata*.db make run-fuzzcheck
+#
+run-fuzzcheck:	fuzzcheck$(TEXE) fuzzcheck-asan$(TEXE) fuzzcheck-ubsan$(TEXE)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck$(TEXE) --spinner $(FUZZDB)
+	./fuzzcheck-asan$(TEXE) --spinner $(FUZZDB)
+	./fuzzcheck-ubsan$(TEXE) --spinner $(FUZZDB)
+
 ossshell$(TEXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c \
              $(TOP)/test/ossfuzz.c sqlite3.c $(TLIBS)

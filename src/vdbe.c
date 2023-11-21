@@ -132,11 +132,12 @@ int sqlite3_found_count = 0;
 **   sqlite3CantopenError(lineno)
 */
 static void test_trace_breakpoint(int pc, Op *pOp, Vdbe *v){
-  static int n = 0;
+  static u64 n = 0;
   (void)pc;
   (void)pOp;
   (void)v;
   n++;
+  if( n==LARGEST_UINT64 ) abort(); /* So that n is used, preventing a warning */
 }
 #endif
 
@@ -8183,7 +8184,7 @@ case OP_VCheck: {             /* out2 */
   pTab = pOp->p4.pTab;
   assert( pTab!=0 );
   assert( IsVirtual(pTab) );
-  assert( pTab->u.vtab.p!=0 );
+  if( pTab->u.vtab.p==0 ) break;
   pVtab = pTab->u.vtab.p->pVtab;
   assert( pVtab!=0 );
   pModule = pVtab->pModule;
