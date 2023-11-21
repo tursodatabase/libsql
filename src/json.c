@@ -3375,6 +3375,8 @@ static u32 jsonXlateBlobToText(
       if( zIn[0]=='-' ){
         jsonAppendChar(pOut, '-');
         k++;
+      }else if( zIn[0]=='+' ){
+        k++;
       }
       for(; k<sz; k++){
         if( !sqlite3Isxdigit(zIn[k]) ){
