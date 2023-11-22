@@ -85,7 +85,7 @@ jobs:
       - name: Cargo build
         run: |
           cargo build
-          mv ./target/debug/sqld /usr/local/bin
+          mv ./target/debug/sqld /home/ubuntu/.cargo/bin
           sqld --version
 
       - name: Run nemesis tests
