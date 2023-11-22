@@ -39,7 +39,7 @@ permissions:
 on:
   push:
     tags:
-      - 'libqsl-server-**[0-9]+.[0-9]+.[0-9]+*'
+      - 'libsql-server-**[0-9]+.[0-9]+.[0-9]+*'
   pull_request:
 
 jobs:
