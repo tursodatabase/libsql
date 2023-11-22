@@ -545,6 +545,13 @@ int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
 int sqlite3Fts5IndexGetOrigin(Fts5Index *p, i64 *piOrigin);
 int sqlite3Fts5IndexContentlessDelete(Fts5Index *p, i64 iOrigin, i64 iRowid);
 
+/* Used to populate hash tables for xInstToken in detail=none/column mode. */
+void sqlite3Fts5IndexIterClearTokendata(Fts5IndexIter*);
+int sqlite3Fts5IndexIterWriteTokendata(
+    Fts5IndexIter*, const char*, int, int iCol, int iOff
+);
+int sqlite3Fts5IndexIterHashifyTokendata(Fts5IndexIter*);
+
 /*
 ** End of interface to code in fts5_index.c.
 **************************************************************************/

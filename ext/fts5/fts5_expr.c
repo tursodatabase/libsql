@@ -2985,6 +2985,12 @@ static int fts5ExprColsetTest(Fts5Colset *pColset, int iCol){
   return 0;
 }
 
+static int fts5QueryTerm(const char *pToken, int nToken){
+  int ii;
+  for(ii=0; ii<nToken && pToken[ii]; ii++){}
+  return ii;
+}
+
 static int fts5ExprPopulatePoslistsCb(
   void *pCtx,                /* Copy of 2nd argument to xTokenize() */
   int tflags,                /* Mask of FTS5_TOKEN_* flags */
@@ -2996,21 +3002,32 @@ static int fts5ExprPopulatePoslistsCb(
   Fts5ExprCtx *p = (Fts5ExprCtx*)pCtx;
   Fts5Expr *pExpr = p->pExpr;
   int i;
+  int nQuery = nToken;
 
   UNUSED_PARAM2(iUnused1, iUnused2);
 
-  if( nToken>FTS5_MAX_TOKEN_SIZE ) nToken = FTS5_MAX_TOKEN_SIZE;
+  if( nQuery>FTS5_MAX_TOKEN_SIZE ) nQuery = FTS5_MAX_TOKEN_SIZE;
+  if( pExpr->pConfig->bTokendata ){
+    nQuery = fts5QueryTerm(pToken, nQuery);
+  }
   if( (tflags & FTS5_TOKEN_COLOCATED)==0 ) p->iOff++;
   for(i=0; i<pExpr->nPhrase; i++){
     Fts5ExprTerm *pT;
     if( p->aPopulator[i].bOk==0 ) continue;
     for(pT=&pExpr->apExprPhrase[i]->aTerm[0]; pT; pT=pT->pSynonym){
-      if( (pT->nFullTerm==nToken || (pT->nFullTerm<nToken && pT->bPrefix))
-       && memcmp(pT->pTerm, pToken, pT->nFullTerm)==0
+      if( (pT->nQueryTerm==nQuery || (pT->nQueryTerm<nQuery && pT->bPrefix))
+       && memcmp(pT->pTerm, pToken, pT->nQueryTerm)==0
       ){
         int rc = sqlite3Fts5PoslistWriterAppend(
             &pExpr->apExprPhrase[i]->poslist, &p->aPopulator[i].writer, p->iOff
         );
+        if( rc==SQLITE_OK && pExpr->pConfig->bTokendata ){
+          int iCol = p->iOff>>32;
+          int iTokOff = p->iOff & 0x7FFFFFFF;
+          rc = sqlite3Fts5IndexIterWriteTokendata(
+              pT->pIter, pToken, nToken, iCol, iTokOff
+          );
+        }
         if( rc ) return rc;
         break;
       }
@@ -3027,10 +3044,22 @@ int sqlite3Fts5ExprPopulatePoslists(
   const char *z, int n
 ){
   int i;
+  int rc = SQLITE_OK;
   Fts5ExprCtx sCtx;
   sCtx.pExpr = pExpr;
   sCtx.aPopulator = aPopulator;
   sCtx.iOff = (((i64)iCol) << 32) - 1;
+
+  /* If this is a tokendata=1 table, clear out the hash tables of
+  ** full-terms.  */
+  if( pConfig->bTokendata ){
+    for(i=0; i<pExpr->nPhrase; i++){
+      Fts5ExprTerm *pT;
+      for(pT=&pExpr->apExprPhrase[i]->aTerm[0]; pT; pT=pT->pSynonym){
+        sqlite3Fts5IndexIterClearTokendata(pT->pIter);
+      }
+    }
+  }
 
   for(i=0; i<pExpr->nPhrase; i++){
     Fts5ExprNode *pNode = pExpr->apExprPhrase[i]->pNode;
@@ -3044,9 +3073,20 @@ int sqlite3Fts5ExprPopulatePoslists(
     }
   }
 
-  return sqlite3Fts5Tokenize(pConfig, 
+  rc = sqlite3Fts5Tokenize(pConfig, 
       FTS5_TOKENIZE_DOCUMENT, z, n, (void*)&sCtx, fts5ExprPopulatePoslistsCb
   );
+
+  if( pConfig->bTokendata ){
+    for(i=0; i<pExpr->nPhrase; i++){
+      Fts5ExprTerm *pT;
+      for(pT=&pExpr->apExprPhrase[i]->aTerm[0]; pT; pT=pT->pSynonym){
+        sqlite3Fts5IndexIterHashifyTokendata(pT->pIter);
+      }
+    }
+  }
+
+  return rc;
 }
 
 static void fts5ExprClearPoslists(Fts5ExprNode *pNode){

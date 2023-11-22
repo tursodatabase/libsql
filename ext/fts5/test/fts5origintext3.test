@@ -1,0 +1,60 @@
+# 2023 November 22
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests focused on phrase queries.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5origintext3
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+foreach_detail_mode $testprefix {
+  reset_db
+
+  sqlite3_fts5_register_origintext db
+  fts5_aux_test_functions db
+  proc insttoken {cmd iIdx iToken} { 
+    set txt [$cmd xInstToken $iIdx $iToken]
+    string map [list "\0" "."] $txt
+  }
+  sqlite3_fts5_create_function db insttoken insttoken
+  
+  do_execsql_test 1.0 {
+    CREATE VIRTUAL TABLE ft USING fts5(
+        x, tokenize="origintext unicode61", tokendata=1, detail=%DETAIL%
+    );
+  }
+  
+  do_execsql_test 1.1 {
+    INSERT INTO ft VALUES('Hello world HELLO WORLD hello');
+  }
+  
+  do_execsql_test 1.2 {
+    SELECT fts5_test_poslist(ft) FROM ft('hello');
+  } {{0.0.0 0.0.2 0.0.4}}
+
+  do_execsql_test 1.3 {
+    SELECT 
+      insttoken(ft, 0, 0),
+      insttoken(ft, 1, 0),
+      insttoken(ft, 2, 0)
+    FROM ft('hello');
+  } {hello.Hello hello.HELLO hello}
+
+}
+
+finish_test
+

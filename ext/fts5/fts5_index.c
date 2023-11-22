@@ -6878,6 +6878,73 @@ int sqlite3Fts5IterToken(
 }
 
 /*
+** Clear any existing entries from the token-map associated with the
+** iterator passed as the only argument. 
+*/
+void sqlite3Fts5IndexIterClearTokendata(Fts5IndexIter *pIndexIter){
+  Fts5Iter *pIter = (Fts5Iter*)pIndexIter;
+  assert( pIter->pIndex->pConfig->eDetail!=FTS5_DETAIL_FULL );
+  if( pIter->pTokenMap ){
+    pIter->pTokenMap->nEntry = 0;
+  }
+}
+
+int sqlite3Fts5IndexIterWriteTokendata(
+  Fts5IndexIter *pIndexIter, 
+  const char *pToken, int nToken, 
+  int iCol, int iOff
+){
+  Fts5Iter *pIter = (Fts5Iter*)pIndexIter;
+  Fts5Index *p = pIter->pIndex;
+  assert( p->pConfig->eDetail!=FTS5_DETAIL_FULL );
+  if( pIter->pTokenMap==0 ){
+    pIter->pTokenMap = (Fts5TokenMap*)fts5IdxMalloc(p, sizeof(Fts5TokenMap));
+  }
+  if( p->rc==SQLITE_OK ){
+    Fts5TokenMap *pMap = pIter->pTokenMap;
+    int ii;
+    for(ii=0; ii<pMap->nToken; ii++){
+      if( nToken==pMap->aToken[ii].nTerm 
+       && 0==memcmp(pMap->aToken[ii].pTerm, pToken, nToken) 
+      ){
+        break;
+      }
+    }
+    if( ii==pMap->nToken ){
+      fts5TokenMapTerm(p, pMap, (const u8*)pToken, nToken);
+    }
+    if( pMap->nEntry>=pMap->nEntryAlloc ){
+      int nNew = pMap->nEntryAlloc ? pMap->nEntryAlloc*2 : 32;
+      Fts5TokenMapEntry *aNew = (Fts5TokenMapEntry*)sqlite3_realloc(
+          pMap->aEntry, nNew * sizeof(Fts5TokenMapEntry)
+      );
+      if( aNew==0 ){
+        p->rc = SQLITE_NOMEM;
+      }else{
+        pMap->aEntry = aNew;
+        pMap->nEntryAlloc = nNew;
+      }
+    }
+    if( p->rc==SQLITE_OK ){
+      Fts5TokenMapEntry *pEntry = &pMap->aEntry[pMap->nEntry++];
+      pEntry->iRowid = pIndexIter->iRowid;
+      pEntry->iCol = iCol;
+      pEntry->iOff = iOff;
+      pEntry->iTok = ii+1;
+    }
+  }
+  return fts5IndexReturn(p);
+}
+
+int sqlite3Fts5IndexIterHashifyTokendata(Fts5IndexIter *pIndexIter){
+  Fts5Iter *pIter = (Fts5Iter*)pIndexIter;
+  if( pIter->pTokenMap ){
+    fts5TokenMapHashify(pIter->pIndex, pIter->pTokenMap);
+  }
+  return fts5IndexReturn(pIter->pIndex);
+}
+
+/*
 ** Close an iterator opened by an earlier call to sqlite3Fts5IndexQuery().
 */
 void sqlite3Fts5IterClose(Fts5IndexIter *pIndexIter){
