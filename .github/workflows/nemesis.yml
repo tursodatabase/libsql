@@ -3,7 +3,7 @@ name: Rust
 on:
   push:
     branches: [ "main" ]
-  pull_request:
+  pull_request_target:
   merge_group:
     branches: [ "main" ]
 
