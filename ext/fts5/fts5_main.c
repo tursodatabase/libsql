@@ -2360,19 +2360,6 @@ static int fts5ApiInstToken(
   return rc;
 }
 
-/*
-** xPhraseToken() API implemenetation.
-*/
-static int fts5ApiPhraseToken(
-  Fts5Context *pCtx, 
-  Fts5PhraseIter *pIter, 
-  int iToken,
-  const char **ppOut, 
-  int *pnOut
-){
-  return SQLITE_OK;
-}
-
 
 static int fts5ApiQueryPhrase(Fts5Context*, int, void*, 
     int(*)(const Fts5ExtensionApi*, Fts5Context*, void*)
@@ -2400,8 +2387,7 @@ static const Fts5ExtensionApi sFts5Api = {
   fts5ApiPhraseFirstColumn,
   fts5ApiPhraseNextColumn,
   fts5ApiQueryToken,
-  fts5ApiInstToken,
-  fts5ApiPhraseToken
+  fts5ApiInstToken
 };
 
 /*
