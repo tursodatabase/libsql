@@ -3,7 +3,7 @@ name = "libsql"
 version = "0.2.0-alpha.1"
 edition = "2021"
 description = "libSQL library: the main gateway for interacting with the database"
-repository = "https://github.com/libsql/libsql"
+repository = "https://github.com/tursodatabase/libsql"
 license = "MIT"
 
 [dependencies]

@@ -4,7 +4,7 @@ version = "0.2.14"
 edition = "2021"
 license = "MIT"
 description = "Native bindings to libSQL"
-repository = "https://github.com/libsql/libsql"
+repository = "https://github.com/tursodatabase/libsql"
 keywords = ["libsql", "sqlite", "ffi", "bindings", "database"]
 categories = ["external-ffi-bindings"]
 
