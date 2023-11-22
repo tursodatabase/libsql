@@ -628,6 +628,8 @@ struct Fts5TokenMapToken {
 };
 
 struct Fts5TokenMap {
+  int bHashed;                    /* True once hashed */
+
   int nEntryAlloc;
   int nEntry;
   Fts5TokenMapEntry *aEntry;
@@ -6372,7 +6374,6 @@ static void fts5SetupPrefixIter(
     ** index contains all the doclists required, except for the one
     ** corresponding to the prefix itself. That one is extracted from the
     ** main term index here.  */
-    assert( iIdx==0 || pMap==0 );
     if( iIdx!=0 ){
       int dummy = 0;
       const int f2 = FTS5INDEX_QUERY_SKIPEMPTY|FTS5INDEX_QUERY_NOOUTPUT;
@@ -6402,7 +6403,7 @@ static void fts5SetupPrefixIter(
       *ppIter = p1;
     }else{
 
-      if( iIdx==0 && p->pConfig->eDetail==FTS5_DETAIL_FULL ){
+      if( iIdx==0 && p->pConfig->eDetail==FTS5_DETAIL_FULL && bTokenscan ){
         pMap = (Fts5TokenMap*)fts5IdxMalloc(p, sizeof(Fts5TokenMap));
       }
       assert( p->rc!=SQLITE_OK || (aBuf && pStruct) );
@@ -6473,7 +6474,6 @@ static void fts5SetupPrefixIter(
         pData->p = (u8*)&pData[1];
         pData->nn = pData->szLeaf = doclist.n;
         if( doclist.n ) memcpy(pData->p, doclist.p, doclist.n);
-        if( pMap ) fts5TokenMapHashify(p, pMap);
         fts5MultiIterNew2(p, pData, pMap, bDesc, ppIter);
         pMap = 0;
       }
@@ -6867,7 +6867,15 @@ int sqlite3Fts5IterToken(
   const char **ppOut, int *pnOut
 ){
   Fts5Iter *pIter = (Fts5Iter*)pIndexIter;
-  if( pIter->pTokenMap ){
+  Fts5TokenMap *pMap = pIter->pTokenMap;
+  if( pMap ){
+    if( pMap->bHashed==0 ){
+      Fts5Index *p = pIter->pIndex;
+      fts5TokenMapHashify(p, pMap);
+      if( p->rc ){
+        return fts5IndexReturn(p);
+      }
+    }
     *ppOut = (const char*)fts5TokenMapLookup(
         pIter->pTokenMap, pIndexIter->iRowid, iCol, iOff, pnOut
     );
@@ -6934,14 +6942,6 @@ int sqlite3Fts5IndexIterWriteTokendata(
     }
   }
   return fts5IndexReturn(p);
-}
-
-int sqlite3Fts5IndexIterHashifyTokendata(Fts5IndexIter *pIndexIter){
-  Fts5Iter *pIter = (Fts5Iter*)pIndexIter;
-  if( pIter->pTokenMap ){
-    fts5TokenMapHashify(pIter->pIndex, pIter->pTokenMap);
-  }
-  return fts5IndexReturn(pIter->pIndex);
 }
 
 /*

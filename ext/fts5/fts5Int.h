@@ -550,7 +550,6 @@ void sqlite3Fts5IndexIterClearTokendata(Fts5IndexIter*);
 int sqlite3Fts5IndexIterWriteTokendata(
     Fts5IndexIter*, const char*, int, int iCol, int iOff
 );
-int sqlite3Fts5IndexIterHashifyTokendata(Fts5IndexIter*);
 
 /*
 ** End of interface to code in fts5_index.c.

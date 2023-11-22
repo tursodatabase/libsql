@@ -3044,7 +3044,6 @@ int sqlite3Fts5ExprPopulatePoslists(
   const char *z, int n
 ){
   int i;
-  int rc = SQLITE_OK;
   Fts5ExprCtx sCtx;
   sCtx.pExpr = pExpr;
   sCtx.aPopulator = aPopulator;
@@ -3073,20 +3072,9 @@ int sqlite3Fts5ExprPopulatePoslists(
     }
   }
 
-  rc = sqlite3Fts5Tokenize(pConfig, 
+  return sqlite3Fts5Tokenize(pConfig, 
       FTS5_TOKENIZE_DOCUMENT, z, n, (void*)&sCtx, fts5ExprPopulatePoslistsCb
   );
-
-  if( pConfig->bTokendata ){
-    for(i=0; i<pExpr->nPhrase; i++){
-      Fts5ExprTerm *pT;
-      for(pT=&pExpr->apExprPhrase[i]->aTerm[0]; pT; pT=pT->pSynonym){
-        sqlite3Fts5IndexIterHashifyTokendata(pT->pIter);
-      }
-    }
-  }
-
-  return rc;
 }
 
 static void fts5ExprClearPoslists(Fts5ExprNode *pNode){
