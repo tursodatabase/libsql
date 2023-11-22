@@ -50,7 +50,7 @@ jobs:
         run: |
           wget -q https://dl.min.io/server/minio/release/linux-amd64/minio -O minio
           chmod +x minio
-          mv minio /usr/local/bin
+          mv minio /home/ubuntu/.cargo/bin
           minio --version
 
       - name: Nemesis tests checkout
