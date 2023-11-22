@@ -1,5 +1,5 @@
-C For\sCLI\sbuild\swith\sunused\sfunction\swarnings\son,\s#ifdef\sout\sa\sconsole\sI/O\sfunction,\sfPutbUtf8().
-D 2023-11-22T21:24:50.362
+C Minor\sdoc\sfix\sin\ssrc/betreeInt.h,\sprompted\sby\san\semail\sreport.\sNo\scode\schanges.
+D 2023-11-22T22:59:28.482
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -669,7 +669,7 @@ F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c f3b09c5414de3a11db73e11e1d66f4c5e53c9e89876ff3b531a887ab656ca303 x
 F src/btree.h 03e3356f5208bcab8eed4e094240fdac4a7f9f5ddf5e91045ce589f67d47c240
-F src/btreeInt.h ef12a72b708677e48d6bc8dcd66fed25434740568b89e2cfa368093cfc5b9d15
+F src/btreeInt.h 3e2589726c4f105e653461814f65857465da68be1fac688de340c43b873f4062
 F src/build.c 189e4517d67f09f0a3e0d8e1faa6e2ef0c2e95f6ac82e33c912cb7efa2a359cc
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -2143,8 +2143,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 753a75218913c3b9c7ec5438387107369c34d1775d68b04d19ae18197e558605
-R b587086460a6ac7590f679aa25138fac
-U larrybr
-Z cc13daeb8a62f26641951c271bc4d098
+P da36f90d94b3b55de71aa7965421ea850ac677e9e63d60744633c4dc59448de4
+R 3ef6d89fc15fe0585e3af316ac8b0b81
+U stephan
+Z 2cbcfc9303e321d5bde61219a7b5db62
 # Remove this line to create a well-formed Fossil manifest.

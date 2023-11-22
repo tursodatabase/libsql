@@ -64,7 +64,7 @@
 **     22       1     Min embedded payload fraction (must be 32)
 **     23       1     Min leaf payload fraction (must be 32)
 **     24       4     File change counter
-**     28       4     Reserved for future use
+**     28       4     The size of the database in pages
 **     32       4     First freelist page
 **     36       4     Number of freelist pages in the file
 **     40      60     15 4-byte meta values passed to higher layers
