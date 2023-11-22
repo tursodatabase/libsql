@@ -13,16 +13,16 @@ impl CloudflareSender {
         CloudflareSender(())
     }
 
-    async fn send(url: String, auth: String, body: String) -> Result<Bytes> {
+    async fn send(url: &str, auth: &str, body: String) -> Result<Bytes> {
         use worker::*;
 
         let mut response = Fetch::Request(Request::new_with_init(
-            &url,
+            url,
             &RequestInit {
                 body: Some(JsValue::from(body)),
                 headers: {
                     let mut headers = Headers::new();
-                    headers.append("Authorization", &auth)?;
+                    headers.append("Authorization", auth)?;
                     headers
                 },
                 cf: CfProperties::new(),
@@ -45,7 +45,7 @@ impl CloudflareSender {
 impl<'a> HttpSend<'a> for CloudflareSender {
     type Result = Pin<Box<dyn Future<Output = Result<Bytes>> + 'a>>;
 
-    fn http_send(&self, url: String, auth: String, body: String) -> Self::Result {
+    fn http_send(&'a self, url: &'a str, auth: &'a str, body: String) -> Self::Result {
         let fut = Self::send(url, auth, body);
         Box::pin(fut)
     }

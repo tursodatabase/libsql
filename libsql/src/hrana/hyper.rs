@@ -33,7 +33,7 @@ impl HttpSender {
         Self { inner, version }
     }
 
-    async fn send(&self, url: String, auth: String, body: String) -> Result<super::HttpBody> {
+    async fn send(&self, url: &str, auth: &str, body: String) -> Result<super::HttpBody> {
         let req = hyper::Request::post(url)
             .header(AUTHORIZATION, auth)
             .header("x-libsql-client-version", self.version.clone())
@@ -70,7 +70,7 @@ impl HttpSender {
 impl<'a> HttpSend<'a> for HttpSender {
     type Result = BoxFuture<'a, Result<super::HttpBody>>;
 
-    fn http_send(&'a self, url: String, auth: String, body: String) -> Self::Result {
+    fn http_send(&'a self, url: &'a str, auth: &'a str, body: String) -> Self::Result {
         let fut = self.send(url, auth, body);
         Box::pin(fut)
     }

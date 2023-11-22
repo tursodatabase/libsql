@@ -1,7 +1,7 @@
 // https://github.com/tursodatabase/libsql/blob/main/docs/HRANA_3_SPEC.md#cursor-entries
 
 use crate::hrana::proto::{Batch, Col, Value};
-use crate::hrana::{HttpSend, Result};
+use crate::hrana::{ByteStream, HttpBody, HttpSend, Result};
 use serde::{Deserialize, Serialize};
 use std::pin::Pin;
 use std::task::{Context, Poll};
@@ -56,27 +56,13 @@ pub struct ErrorEntry {
     pub error: String,
 }
 
-#[derive(Debug)]
-pub struct Cursor<T>
-where
-    T: for<'a> HttpSend<'a>,
-{
-    stream: T,
+pub struct Cursor {
+    response_stream: ByteStream,
 }
 
-impl<T> Cursor<T>
-where
-    T: for<'a> HttpSend<'a>,
-{
-    pub async fn open(stream: T, url: String, auth_token: String, body: Batch) -> Result<T> {
-        todo!()
-    }
-}
+impl Cursor {}
 
-impl<T> futures::Stream for Cursor<T>
-where
-    T: for<'a> HttpSend<'a>,
-{
+impl futures::Stream for Cursor {
     type Item = Result<CursorEntry>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {

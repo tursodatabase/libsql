@@ -1,10 +1,11 @@
+use crate::hrana::cursor::{Cursor, CursorReq};
 use crate::hrana::pipeline::{
     BatchStreamReq, ClientMsg, CloseSqlStreamReq, DescribeStreamReq, ExecuteStreamReq, Response,
     SequenceStreamReq, ServerMsg, StoreSqlStreamReq, StreamRequest, StreamResponse,
     StreamResponseOk,
 };
 use crate::hrana::proto::{Batch, BatchResult, DescribeResult, Stmt, StmtResult};
-use crate::hrana::{HranaError, HttpSend, Result};
+use crate::hrana::{ByteStream, HranaError, HttpSend, Result};
 use futures::lock::Mutex;
 use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::Arc;
@@ -45,7 +46,7 @@ impl<T> HranaStream<T>
 where
     T: for<'a> HttpSend<'a>,
 {
-    pub(super) fn open(client: T, base_url: String, auth_token: String) -> Self {
+    pub(super) fn open(client: T, base_url: Arc<str>, auth_token: Arc<str>) -> Self {
         HranaStream {
             inner: Arc::new(Inner {
                 affected_row_count: AtomicU64::new(0),
@@ -199,8 +200,8 @@ where
 {
     client: T,
     baton: Option<String>,
-    base_url: String,
-    auth_token: String,
+    base_url: Arc<str>,
+    auth_token: Arc<str>,
     status: StreamStatus,
     sql_id_generator: SqlId,
 }
@@ -212,6 +213,29 @@ where
     async fn send(&mut self, req: StreamRequest) -> Result<StreamResponse> {
         let [resp] = self.send_requests([req]).await?;
         Ok(resp)
+    }
+
+    pub async fn send_cursor_req(&mut self, batch: Batch) -> Result<Cursor> {
+        if self.status == StreamStatus::Closed {
+            return Err(HranaError::StreamClosed(
+                "client stream has been closed by the servers".to_string(),
+            ));
+        }
+        tracing::trace!(
+            "client stream sending {} requests with baton `{}`",
+            N,
+            self.baton.as_deref().unwrap_or_default()
+        );
+        let msg = CursorReq {
+            baton: self.baton.clone(),
+            batch,
+        };
+        let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
+        let body: ByteStream = self
+            .client
+            .http_send(&self.base_url, &self.auth_token, body)
+            .await?
+            .stream();
     }
 
     async fn send_requests<const N: usize>(
@@ -235,13 +259,13 @@ where
         let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
         let body = self
             .client
-            .http_send(self.base_url.clone(), self.auth_token.clone(), body)
+            .http_send(&self.base_url, &self.auth_token, body)
             .await?
             .bytes()
             .await?;
         let mut response: ServerMsg = serde_json::from_slice(&body)?;
         if let Some(base_url) = response.base_url.take() {
-            self.base_url = base_url;
+            self.base_url = Arc::from(base_url);
         }
         match response.baton.take() {
             None => {

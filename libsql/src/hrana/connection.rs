@@ -1,6 +1,6 @@
 use crate::hrana::pipeline::{BatchStreamReq, ExecuteStreamReq, StreamRequest, StreamResponse};
 use crate::hrana::proto::{Batch, BatchCond, BatchResult, Stmt, StmtResult};
-use crate::hrana::stream::HttpStream;
+use crate::hrana::stream::HranaStream;
 use crate::hrana::{HranaError, HttpSend, Result, Statement};
 use crate::util::coerce_url_scheme;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
@@ -17,8 +17,9 @@ where
     T: for<'a> HttpSend<'a>,
 {
     inner: T,
-    url_for_queries: String,
-    auth: String,
+    pipeline_url: Arc<str>,
+    cursor_url: Arc<str>,
+    auth: Arc<str>,
     affected_row_count: AtomicU64,
     last_insert_rowid: AtomicI64,
     is_autocommit: AtomicBool,
@@ -31,11 +32,13 @@ where
     pub fn new(url: String, token: String, inner: T) -> Self {
         // The `libsql://` protocol is an alias for `https://`.
         let base_url = coerce_url_scheme(&url);
-        let url_for_queries = format!("{base_url}/v3/pipeline");
+        let pipeline_url = Arc::from(format!("{base_url}/v2/pipeline"));
+        let cursor_url = Arc::from(format!("{base_url}/v3/cursor"));
         HttpConnection(Arc::new(InnerClient {
             inner,
-            url_for_queries,
-            auth: format!("Bearer {token}"),
+            pipeline_url,
+            cursor_url,
+            auth: Arc::from(format!("Bearer {token}")),
             affected_row_count: AtomicU64::new(0),
             last_insert_rowid: AtomicI64::new(0),
             is_autocommit: AtomicBool::new(true),
@@ -78,7 +81,7 @@ where
         let client = self.client();
         HranaStream::open(
             client.inner.clone(),
-            client.url_for_queries.clone(),
+            client.pipeline_url.clone(),
             client.auth.clone(),
         )
     }

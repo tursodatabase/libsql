@@ -21,7 +21,9 @@ use bytes::{Bytes, BytesMut};
 use futures::Stream;
 use std::collections::VecDeque;
 use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
+use std::task::{Context, Poll};
 use tokio_stream::StreamExt;
 
 use super::rows::{RowInner, RowsInner};
@@ -38,10 +40,14 @@ struct Cookie {
 
 pub trait HttpSend<'a>: Clone {
     type Result: Future<Output = Result<HttpBody>> + 'a;
-    fn http_send(&'a self, url: String, auth: String, body: String) -> Self::Result;
+    fn http_send(&'a self, url: &'a str, auth: &'a str, body: String) -> Self::Result;
 }
 
+#[cfg(feature = "wasm")]
 pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Unpin>;
+
+#[cfg(not(feature = "wasm"))]
+pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Send + Unpin>;
 
 pub enum HttpBody {
     Body(Bytes),
@@ -53,6 +59,30 @@ impl HttpBody {
         match self {
             HttpBody::Body(bytes) => Ok(bytes),
             HttpBody::Stream(stream) => stream_to_bytes(stream).await,
+        }
+    }
+
+    pub fn stream(self) -> ByteStream {
+        match self {
+            HttpBody::Stream(stream) => stream,
+            HttpBody::Body(bytes) => Box::new(SimpleStream::new(bytes)),
+        }
+    }
+}
+
+struct SimpleStream(Option<Bytes>);
+impl SimpleStream {
+    fn new(bytes: Bytes) -> Self {
+        SimpleStream(Some(bytes))
+    }
+}
+impl Stream for SimpleStream {
+    type Item = Result<Bytes>;
+
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        match self.0.take() {
+            None => Poll::Ready(None),
+            Some(bytes) => Poll::Ready(Some(Ok(bytes))),
         }
     }
 }

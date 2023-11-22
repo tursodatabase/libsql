@@ -1,6 +1,6 @@
 use crate::hrana::connection::stmts_to_batch;
 use crate::hrana::pipeline::{ExecuteStreamReq, StreamRequest};
-use crate::hrana::proto::{Batch, BatchResult, Stmt, StmtResult};
+use crate::hrana::proto::{BatchResult, Stmt, StmtResult};
 use crate::hrana::stream::HranaStream;
 use crate::hrana::{HttpSend, Result};
 use crate::TransactionBehavior;
