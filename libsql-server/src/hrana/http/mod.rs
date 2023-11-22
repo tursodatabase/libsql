@@ -10,6 +10,8 @@ use std::task;
 use super::{batch, cursor, Encoding, ProtocolError, Version};
 use crate::auth::Authenticated;
 use crate::connection::{Connection, MakeConnection};
+use crate::hrana::http::stream::StreamError;
+
 mod proto;
 mod protobuf;
 mod request;
@@ -64,7 +66,7 @@ impl<C: Connection> Server<C> {
             e
         })
         .or_else(|err| {
-            err.downcast::<stream::StreamError>()
+            err.downcast::<StreamError>()
                 .map(|err| stream_error_response(err, encoding))
         })
         .or_else(|err| err.downcast::<ProtocolError>().map(protocol_error_response))
@@ -243,12 +245,12 @@ fn protocol_error_response(err: ProtocolError) -> hyper::Response<hyper::Body> {
     text_response(hyper::StatusCode::BAD_REQUEST, err.to_string())
 }
 
-fn stream_error_response(
-    err: stream::StreamError,
-    encoding: Encoding,
-) -> hyper::Response<hyper::Body> {
+fn stream_error_response(err: StreamError, encoding: Encoding) -> hyper::Response<hyper::Body> {
+    let status = match err {
+        StreamError::StreamExpired => hyper::StatusCode::BAD_REQUEST,
+    };
     encode_response(
-        hyper::StatusCode::INTERNAL_SERVER_ERROR,
+        status,
         &proto::Error {
             message: err.to_string(),
             code: err.code().into(),
