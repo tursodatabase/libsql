@@ -1,5 +1,5 @@
-C Correct\sthe\sURL\sfor\sloading\ssqlite3-worker1-bundler-friendly.mjs\sfrom\ssqlite3-worker1-promiser-bundler-friendly.js,\sso\sthat\sthe\spromiser\scan\sbe\sused\sin\sbundler-using\senvironments.\sProblem\sreported\svia\semail.
-D 2023-11-22T17:11:39.095
+C For\sCLI\sbuild\swith\sunused\sfunction\swarnings\son,\s#ifdef\sout\sa\sconsole\sI/O\sfunction,\sfPutbUtf8().
+D 2023-11-22T21:24:50.362
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -50,8 +50,8 @@ F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 6f247666b495c477628dd19364d279c78ea48cd90c72d9f9b98ad1aff3294f94
 F ext/async/sqlite3async.h 46b47c79357b97ad85d20d2795942c0020dc20c532114a49808287f04aa5309a
-F ext/consio/console_io.c 0d9e79742930dadc13f4819fa0fe602676ac32c825304d498171c5922a3863ce
-F ext/consio/console_io.h d9ba2de923f11348919cccc2ba161ccbf2e417b866d2b7d072329e6c702eb242
+F ext/consio/console_io.c 5ac3b110d83bba8e12ed6cce79ee61d927db1d8ae1c3ec7439ca3192ca9fec35
+F ext/consio/console_io.h 3228dff1717481202a24f6dcf45ce0b75e7a778bf6877089518a44e1473b76a3
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
 F ext/expert/expert1.test 0dd5cb096d66bed593e33053a3b364f6ef52ed72064bf5cf298364636dbf3cd6
@@ -2143,8 +2143,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 935a8a8ee76d0014df42c1480e044fd1c2dfc26e78abb587d99d861d2ae5eb27
-R 88b228f6756043549fa673c8abfcfa61
-U stephan
-Z 2f087f3dd80678f00ca104b71330863c
+P 753a75218913c3b9c7ec5438387107369c34d1775d68b04d19ae18197e558605
+R b587086460a6ac7590f679aa25138fac
+U larrybr
+Z cc13daeb8a62f26641951c271bc4d098
 # Remove this line to create a well-formed Fossil manifest.

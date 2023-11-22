@@ -163,9 +163,11 @@ SQLITE_INTERNAL_LINKAGE int ePutsUtf8(const char *z);
 **
 ** Returns the number of accepted char values.
 */
+#ifdef CONSIO_SPUTB
 SQLITE_INTERNAL_LINKAGE int
 fPutbUtf8(FILE *pfOut, const char *cBuf, int nAccept);
 /* Like fPutbUtf8 except stream is always the designated output. */
+#endif
 SQLITE_INTERNAL_LINKAGE int
 oPutbUtf8(const char *cBuf, int nAccept);
 /* Like fPutbUtf8 except stream is always the designated error. */

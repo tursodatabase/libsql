@@ -549,10 +549,11 @@ zSkipValidUtf8(const char *z, int nAccept, long ccm){
 #endif /*!(defined(SQLITE_CIO_NO_UTF8SCAN)&&defined(SQLITE_CIO_NO_TRANSLATE))*/
 
 #ifndef SQLITE_CIO_NO_TRANSLATE
+# ifdef CONSIO_SPUTB
 SQLITE_INTERNAL_LINKAGE int
 fPutbUtf8(FILE *pfO, const char *cBuf, int nAccept){
   assert(pfO!=0);
-# if CIO_WIN_WC_XLATE
+#  if CIO_WIN_WC_XLATE
   PerStreamTags pst = PST_INITIALIZER; /* for unknown streams */
   PerStreamTags *ppst = getEmitStreamInfo(0, &pst, &pfO);
   if( pstReachesConsole(ppst) ){
@@ -562,12 +563,13 @@ fPutbUtf8(FILE *pfO, const char *cBuf, int nAccept){
     if( 0 == isKnownWritable(ppst->pf) ) restoreConsoleArb(ppst);
     return rv;
   }else {
-# endif
+#  endif
     return (int)fwrite(cBuf, 1, nAccept, pfO);
-# if CIO_WIN_WC_XLATE
+#  if CIO_WIN_WC_XLATE
   }
-# endif
+#  endif
 }
+# endif
 
 SQLITE_INTERNAL_LINKAGE int
 oPutbUtf8(const char *cBuf, int nAccept){
