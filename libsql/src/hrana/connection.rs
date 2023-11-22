@@ -1,5 +1,5 @@
 use crate::hrana::pipeline::{BatchStreamReq, ExecuteStreamReq, StreamRequest, StreamResponse};
-use crate::hrana::proto::{Batch, BatchResult, Stmt, StmtResult};
+use crate::hrana::proto::{Batch, BatchCond, BatchResult, Stmt, StmtResult};
 use crate::hrana::stream::HttpStream;
 use crate::hrana::{HranaError, HttpSend, Result, Statement};
 use crate::util::coerce_url_scheme;
@@ -77,10 +77,7 @@ where
         &self,
         stmts: impl IntoIterator<Item = Stmt>,
     ) -> Result<BatchResult> {
-        let mut batch = Batch::new();
-        for stmt in stmts.into_iter() {
-            batch.step(None, stmt);
-        }
+        let batch = stmts_to_batch(false, stmts);
         let resp = self
             .open_stream()
             .finalize(StreamRequest::Batch(BatchStreamReq { batch }))
@@ -125,4 +122,25 @@ where
 pub(crate) enum CommitBehavior {
     Commit,
     Rollback,
+}
+
+pub(super) fn stmts_to_batch(protocol_v3: bool, stmts: impl IntoIterator<Item = Stmt>) -> Batch {
+    let mut batch = Batch::new();
+    let mut step = -1;
+    for stmt in stmts.into_iter() {
+        let cond = if step >= 0 {
+            let mut cond = BatchCond::Ok { step };
+            if protocol_v3 {
+                cond = BatchCond::And {
+                    conds: vec![cond, BatchCond::IsAutocommit],
+                };
+            }
+            Some(cond)
+        } else {
+            None
+        };
+        batch.step(cond, stmt);
+        step += 1;
+    }
+    batch
 }

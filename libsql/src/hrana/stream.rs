@@ -116,10 +116,7 @@ where
                 drop(client);
                 Ok(StoredSql::new(self.clone(), sql_id))
             }
-            other => {
-                client.sql_id_generator = client.sql_id_generator.wrapping_sub(1);
-                unexpected!(other)
-            }
+            other => unexpected!(other),
         }
     }
 
@@ -251,7 +248,7 @@ where
         match response.baton.take() {
             None => {
                 tracing::trace!("client stream has been closed by the server");
-                self.status = StreamStatus::Closed
+                self.done();
             } // stream has been closed by the server
             Some(baton) => {
                 tracing::trace!("client stream has been assigned with baton: `{}`", baton);
@@ -265,7 +262,7 @@ where
                 response.results
             )))?;
         }
-        if response.results.len() > N {
+        if response.results.len() != N {
             // One with actual results, one closing the stream
             Err(HranaError::UnexpectedResponse(format!(
                 "Unexpected multiple responses from server: {:?}",
