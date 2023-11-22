@@ -1,7 +1,7 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/libsql/libsql/blob/master/LICENSE.md)
 [![Discord](https://img.shields.io/discord/1026540227218640906?color=5865F2&label=discord&logo=discord&logoColor=8a9095)](https://discord.gg/VzbXemj6Rg)
-
+w
 <p align="center">
 <img src="https://user-images.githubusercontent.com/331197/205099307-3f20b4e5-96cf-466c-be62-73907e9f2325.png">
 </p>
