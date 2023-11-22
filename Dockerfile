@@ -29,7 +29,6 @@ RUN cargo build -p libsql-server --release
 
 # runtime
 FROM debian:bullseye-slim
-RUN apt update
 
 EXPOSE 5001 8080
 VOLUME [ "/var/lib/sqld" ]
