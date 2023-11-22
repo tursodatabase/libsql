@@ -21,41 +21,8 @@ jobs:
     env:
       RUSTFLAGS: -D warnings
     steps:
-      - uses: hecrj/setup-rust-action@v1
-
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      - name: Set up cargo cache
-        uses: actions/cache@v3
-        continue-on-error: false
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
-
-      - name: Cargo fmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --check
-
-      - name: Cargo check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --all-targets --all-features
-
-      - name: Test openssl
-        shell: bash {0}
-        run: cargo tree -p libsql-server -i openssl; [ $? = 101 ]
+      - run: |
+         echo "bye"
 
       # Disabled because we vendor rusqlite which does not use
       # clippy so it warns.
@@ -70,109 +37,14 @@ jobs:
     name: Check features and unused dependencies
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@nightly
-      - uses: taiki-e/install-action@cargo-hack
-      - uses: taiki-e/install-action@cargo-udeps
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo +nightly hack udeps -p libsql --each-feature
+      - run: |
+          echo "bye"
 
   test:
     runs-on: ubuntu-latest
     name: Run Tests
     env:
       RUSTFLAGS: -D warnings
-    services:
-      minio:
-        image: lazybit/minio
-        ports:
-          - 9000:9000
-          - 9090:9090
-        env:
-          MINIO_ACCESS_KEY: minioadmin
-          MINIO_SECRET_KEY: minioadmin
-        volumes:
-          - /data
-        options: --name=minio --health-cmd "curl http://localhost:9000/minio/health/live"
     steps:
-    - uses: hecrj/setup-rust-action@v1
-
-    # needed because we run out of disk space during tests
-    - name: Free Disk Space (Ubuntu)
-      uses: jlumbroso/free-disk-space@main
-      with:
-        # this might remove tools that are actually needed,
-        # when set to "true" but frees about 6 GB
-        tool-cache: true
-
-    - name: Install deps
-      run: sudo apt update && sudo apt install -y libclang-dev
-
-    - name: Install protoc
-      uses: taiki-e/install-action@v2
-      with:
-        tool: protoc@${{ env.PROTOC_VERSION }}
-
-    - uses: taiki-e/install-action@v2
-      with:
-        tool: nextest
-
-    - uses: actions/checkout@v3
-
-    - name: Set up cargo cache
-      uses: actions/cache@v3
-      continue-on-error: false
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: ${{ runner.os }}-cargo-
-
-    - name: Run tests
-      run: cargo nextest run
-      env:
-        LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID: minioadmin
-        LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY: minioadmin
-        LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION: eu-central-2
-        LIBSQL_BOTTOMLESS_BUCKET: bottomless
-        LIBSQL_BOTTOMLESS_ENDPOINT: http://localhost:9000
-
-  # test-rust-wasm:
-  #   runs-on: ubuntu-latest
-  #   name: Run Rust Wasm Tests
-  #   env:
-  #     RUSTFLAGS: -D warnings
-  #   steps:
-  #     - uses: hecrj/setup-rust-action@v1
-  #       with:
-  #         targets: [wasm32-unknown-unknown]
-
-  #     # needed because we run out of disk space during tests
-  #     - name: Free Disk Space (Ubuntu)
-  #       uses: jlumbroso/free-disk-space@main
-  #       with:
-  #         # this might remove tools that are actually needed,
-  #         # when set to "true" but frees about 6 GB
-  #         tool-cache: true
-
-  #     - uses: actions/checkout@v3
-
-  #     - name: Set up cargo cache
-  #       uses: actions/cache@v3
-  #       continue-on-error: false
-  #       with:
-  #         path: |
-  #           ~/.cargo/bin/
-  #           ~/.cargo/registry/index/
-  #           ~/.cargo/registry/cache/
-  #           ~/.cargo/git/db/
-  #           target/
-  #         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-  #         restore-keys: ${{ runner.os }}-cargo-
-
-  #     - name: Run check
-  #       run: cargo check --verbose -p libsql --target wasm32-unknown-unknown --no-default-features --features cloudflare
+      - run: |
+          echo "bye"

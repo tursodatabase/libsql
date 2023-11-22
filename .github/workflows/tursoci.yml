@@ -1,0 +1,80 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  pull_request:
+  pull_request_target:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+
+env:
+  TURSO_API_TOKEN: ${{ secrets.TURSOCI_TOKEN }}
+
+jobs:
+  authorize:
+    environment: ${{ github.event_name == 'pull_request_target' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      'external' || 'internal' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: true
+
+  build:
+    needs: authorize
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          #ref: "refs/pull/${{ github.event.number }}/merge" # THIS IS INSECURE
+
+      - name: Integration tests checkout
+        uses: actions/checkout@v3
+        with:
+          repository: tursodatabase/tursotest
+          ref: "main"
+          path: "tests"
+          token: ${{ secrets.ACCESS_TOKEN_TO_TESTS }}
+
+      - name: Setup Golang with cache
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: TidyTree
+        run: if [ "$(go mod tidy && git diff | wc -l)" -gt 0 ]; then exit 1; fi
+
+      - name: Format
+        run: if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then exit 1; fi
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Vet
+        run: go vet -v ./...
+
+      - name: Install sqlclosecheck
+        run: go install github.com/ryanrolds/sqlclosecheck@latest
+
+      - name: sqlclosecheck
+        run: go vet -vettool=${HOME}/go/bin/sqlclosecheck ./...
+
+      - name: Staticcheck
+        uses: dominikh/staticcheck-action@v1.3.0
+        with:
+          version: "2023.1.2"
+          build-tags: "preview"
+          install-go: false
+
+      - name: Test
+        run: go test -v ./...
+
+      - name: Build Turso binary
+        run: go build -o turso cmd/turso/main.go
+
+      - name: Integration Test
+        run: cd tests && export TURSO_BINARY=../turso && go run cmd/tursotest/main.go -test.v -test.count=1 run integrationtests
