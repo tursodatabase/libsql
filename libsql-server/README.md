@@ -19,6 +19,8 @@ case.
 * Integration with [mvSQLite](https://github.com/losfair/mvsqlite) for high
   availability and fault tolerance.
 
+hiiiiii
+
 ## Build and run
 
 Follow the [instructions](../docs/BUILD-RUN.md) to build and run `sqld`
