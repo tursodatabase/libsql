@@ -58,12 +58,14 @@ jobs:
 
       - name: Cargo build
         run: |
+          echo "cargo build"
           cargo build
           mv ./target/debug/sqld /home/ubuntu/.cargo/bin
           sqld --version
 
       - name: Download MinIO binary
         run: |
+          echo "minio build"
           wget -q https://dl.min.io/server/minio/release/linux-amd64/minio -O minio
           chmod +x minio
           mv minio /home/ubuntu/.cargo/bin
