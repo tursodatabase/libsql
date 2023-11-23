@@ -150,4 +150,8 @@ impl ReplicatorClient for RemoteClient {
     fn committed_frame_no(&self) -> Option<FrameNo> {
         self.meta.current_frame_no()
     }
+
+    fn rollback(&mut self) {
+        self.last_received = self.committed_frame_no()
+    }
 }
