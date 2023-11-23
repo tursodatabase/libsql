@@ -36,7 +36,6 @@ use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
 use crate::replication::primary::logger::{ReplicationLoggerHookCtx, REPLICATION_METHODS};
-use crate::replication::replicator_client::NamespaceDoesntExist;
 use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
@@ -720,15 +719,12 @@ impl Namespace<ReplicaDatabase> {
             use libsql_replication::replicator::Error;
             loop {
                 match replicator.run().await {
-                    Error::Fatal(e) => {
-                        if let Ok(err) = e.downcast::<NamespaceDoesntExist>() {
-                                tracing::error!("namespace {namespace} doesn't exist, destroying...");
-                                (reset)(ResetOp::Destroy(namespace.clone()));
-                                Err(err)?;
-                        } else {
-                            unreachable!("unexpected fatal replication error")
-                        }
-                    },
+                    err @ Error::Fatal(_) => Err(err)?,
+                    err @ Error::NamespaceDoesntExist => {
+                        tracing::error!("namespace {namespace} doesn't exist, destroying...");
+                        (reset)(ResetOp::Destroy(namespace.clone()));
+                        Err(err)?;
+                    }
                     Error::Meta(err) => {
                         use libsql_replication::meta::Error;
                         match err {
