@@ -76,3 +76,4 @@ Compatibility with SQLite is of great importance for us. But it can mean many th
 * **The file format**: libSQL will always be able to ingest and write the SQLite file format. We would love to add extensions like encryption, and CRC that require the file to be changed. But we commit to always doing so in a way that generates standard sqlite files if those features are not used.
 * **The API**: libSQL will keep 100% compatibility with the SQLite API, but we may add additional APIs.
 * **Embedded**: SQLite is an embedded database that can be consumed as a single .c file with its accompanying header. libSQL will always be embeddable, meaning it runs inside your process without needing a network connection. But we may change the distribution, so that object files are generated, instead of a single .c file.
+v is pru
