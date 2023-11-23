@@ -31,6 +31,8 @@ jobs:
     env:
       RUSTFLAGS: -D warnings
     steps:
+      - run: |
+          echo ${{ secrets.AWS_REGION }}
       - uses: hecrj/setup-rust-action@v1
 
       - name: Install deps
