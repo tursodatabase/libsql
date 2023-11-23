@@ -214,6 +214,11 @@ impl<C: ReplicatorClient> Replicator<C> {
             ReplicatorState::Exit => unreachable!("trying to step replicator on exit"),
         };
 
+        // in case of error we rollback the current injector transaction, and start over.
+        if ret.is_err() {
+            self.injector.lock().rollback();
+        }
+
         self.state = match ret {
             // perform normal operation state transition
             Ok(()) => match state {

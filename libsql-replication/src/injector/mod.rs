@@ -80,6 +80,13 @@ impl Injector {
         Ok(None)
     }
 
+    pub fn rollback(&mut self) {
+        let conn = self.connection.lock();
+        let mut rollback = conn.prepare_cached("ROLLBACK").unwrap();
+        let _ = rollback.execute(());
+        self.is_txn = false;
+    }
+
     /// Flush the buffer to libsql WAL.
     /// Trigger a dummy write, and flush the cache to trigger a call to xFrame. The buffer's frame
     /// are then injected into the wal.
@@ -89,9 +96,7 @@ impl Injector {
                 // something went wrong, rollback the connection to make sure we can retry in a
                 // clean state
                 self.biggest_uncommitted_seen = 0;
-                let connection = self.connection.lock();
-                let mut rollback = connection.prepare_cached("ROLLBACK")?;
-                let _ = rollback.execute(());
+                self.rollback();
                 Err(e)
             }
             Ok(ret) => Ok(ret),
