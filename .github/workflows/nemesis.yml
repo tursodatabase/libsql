@@ -3,7 +3,8 @@ name: Rust
 on:
   push:
     branches: [ "main" ]
-  pull_request:
+  pull_request_target:
+    branches: [ "main" ]
   merge_group:
     branches: [ "main" ]
 
@@ -15,7 +16,16 @@ env:
   # RUSTFLAGS: "-D warnings"
 
 jobs:
+  authorize:
+    environment: ${{ github.event_name == 'pull_request_target' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      'external' || 'internal' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: true
+
   test-nemesis:
+    needs: authorize
     runs-on: ubuntu-latest
     name: Run Nemesis Tests
     env:
@@ -43,21 +53,23 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
-
-      - name: Cargo build
-        run: |
-          cargo build
-          mv ./target/debug/sqld /usr/local/bin
-          sqld --version
+          key: ${{ runner.os }}-cargox-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargox-
 
       - name: Download MinIO binary
         run: |
+          echo "minio build"
           wget -q https://dl.min.io/server/minio/release/linux-amd64/minio -O minio
           chmod +x minio
-          mv minio /usr/local/bin
+          mv minio /home/ubuntu/.cargo/bin
           minio --version
+
+      - name: Cargo build
+        run: |
+          echo "cargo build"
+          cargo build
+          mv ./target/debug/sqld /home/ubuntu/.cargo/bin
+          sqld --version
 
       - name: Nemesis tests checkout
         uses: actions/checkout@v3
