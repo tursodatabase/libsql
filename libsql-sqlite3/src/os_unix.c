@@ -95,7 +95,7 @@
 #include <time.h>
 #include <sys/time.h>    /* amalgamator: keep */
 #include <errno.h>
-#if (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0) \
+#if (!defined(SQLITE_OMIT_SHARED_MEM) || SQLITE_MAX_MMAP_SIZE>0) \
   && !defined(SQLITE_WASI)
 # include <sys/mman.h>
 #endif
@@ -535,7 +535,7 @@ static struct unix_syscall {
 #endif
 #define osGeteuid   ((uid_t(*)(void))aSyscall[21].pCurrent)
 
-#if (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0) \
+#if (!defined(SQLITE_OMIT_SHARED_MEM) || SQLITE_MAX_MMAP_SIZE>0) \
   && !defined(SQLITE_WASI)
   { "mmap",         (sqlite3_syscall_ptr)mmap,            0 },
 #else
@@ -543,7 +543,7 @@ static struct unix_syscall {
 #endif
 #define osMmap ((void*(*)(void*,size_t,int,int,int,off_t))aSyscall[22].pCurrent)
 
-#if (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0) \
+#if (!defined(SQLITE_OMIT_SHARED_MEM) || SQLITE_MAX_MMAP_SIZE>0) \
   && !defined(SQLITE_WASI)
   { "munmap",       (sqlite3_syscall_ptr)munmap,          0 },
 #else
@@ -551,14 +551,14 @@ static struct unix_syscall {
 #endif
 #define osMunmap ((int(*)(void*,size_t))aSyscall[23].pCurrent)
 
-#if HAVE_MREMAP && (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0)
+#if HAVE_MREMAP && (!defined(SQLITE_OMIT_SHARED_MEM) || SQLITE_MAX_MMAP_SIZE>0)
   { "mremap",       (sqlite3_syscall_ptr)mremap,          0 },
 #else
   { "mremap",       (sqlite3_syscall_ptr)0,               0 },
 #endif
 #define osMremap ((void*(*)(void*,size_t,size_t,int,...))aSyscall[24].pCurrent)
 
-#if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
+#if !defined(SQLITE_OMIT_SHARED_MEM) || SQLITE_MAX_MMAP_SIZE>0
   { "getpagesize",  (sqlite3_syscall_ptr)unixGetpagesize, 0 },
 #else
   { "getpagesize",  (sqlite3_syscall_ptr)0,               0 },
@@ -3983,7 +3983,7 @@ static void unixModeBit(unixFile *pFile, unsigned char mask, int *pArg){
 
 /* Forward declaration */
 static int unixGetTempname(int nBuf, char *zBuf);
-#ifndef SQLITE_OMIT_WAL
+#ifndef SQLITE_OMIT_SHARED_MEM
  static int unixFcntlExternalReader(unixFile*, int*);
 #endif
 
@@ -4104,7 +4104,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 #endif /* SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__) */
 
     case SQLITE_FCNTL_EXTERNAL_READER: {
-#ifndef SQLITE_OMIT_WAL
+#ifndef SQLITE_OMIT_SHARED_MEM
       return unixFcntlExternalReader((unixFile*)id, (int*)pArg);
 #else
       *(int*)pArg = 0;
@@ -4257,7 +4257,7 @@ static int unixDeviceCharacteristics(sqlite3_file *id){
   return pFd->deviceCharacteristics;
 }
 
-#if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
+#if !defined(SQLITE_OMIT_SHARED_MEM) || SQLITE_MAX_MMAP_SIZE>0
 
 /*
 ** Return the system page size.
@@ -4275,9 +4275,9 @@ static int unixGetpagesize(void){
 #endif
 }
 
-#endif /* !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0 */
+#endif /* !defined(SQLITE_OMIT_SHARED_MEM) || SQLITE_MAX_MMAP_SIZE>0 */
 
-#ifndef SQLITE_OMIT_WAL
+#ifndef SQLITE_OMIT_SHARED_MEM
 
 /*
 ** Object used to represent an shared memory buffer.
@@ -5143,7 +5143,7 @@ static int unixShmUnmap(
 # define unixShmLock    0
 # define unixShmBarrier 0
 # define unixShmUnmap   0
-#endif /* #ifndef SQLITE_OMIT_WAL */
+#endif /* #ifndef SQLITE_OMIT_SHARED_MEM */
 
 #if SQLITE_MAX_MMAP_SIZE>0
 /*
@@ -8105,7 +8105,7 @@ int sqlite3_os_init(void){
 #endif
   unixBigLock = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
 
-#ifndef SQLITE_OMIT_WAL
+#ifndef SQLITE_OMIT_SHARED_MEM
   /* Validate lock assumptions */
   assert( SQLITE_SHM_NLOCK==8 );  /* Number of available locks */
   assert( UNIX_SHM_BASE==120  );  /* Start of locking area */
