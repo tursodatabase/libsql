@@ -1651,6 +1651,7 @@ clean:
 	rm -f src-verify
 	rm -f custom.rws
 	rm -f has_tclsh84 has_tclsh85
+	rm -f libsql.wasm
 
 distclean:	clean
 	rm -f sqlite_cfg.h config.log config.status libtool Makefile sqlite3.pc libsql.pc sqlite3session.h \
@@ -1679,6 +1680,27 @@ sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
 #
 fiddle: sqlite3.c shell.c
 	make -C ext/wasm fiddle emcc_opt=-Os
+
+#
+# Wasm/WASI module
+# TODO: hardcode less parameters
+# TODO: detect if wasi sysroot exists: /usr/share/wasi-sysroot
+#
+wasi: sqlite3.c sqlite3.h
+	clang --target=wasm32-unknown-wasi \
+		-DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_UTF16 \
+		-DSQLITE_OMIT_SHARED_CACHE -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_SHARED_MEM=1 \
+		-DSQLITE_TEMP_STORE=2 \
+		-DSQLITE_USE_URI=1 \
+		-DSQLITE_DEFAULT_UNIX_VFS=\"unix-none\" \
+		--sysroot /usr/share/wasi-sysroot \
+		-nostartfiles \
+		-Wl,--no-entry \
+		-Wl,--export-all \
+		-o libsql.wasm \
+		-v \
+		sqlite3.c
+
 
 #
 # Spell-checking for source comments

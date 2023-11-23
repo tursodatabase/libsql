@@ -50,6 +50,12 @@
 #  define SQLITE_TCLAPI
 #endif
 
+// NOTICE: libSQL extension: disabled WAL also implies we don't want shared memory via mmap
+#ifdef SQLITE_OMIT_WAL
+# undef SQLITE_OMIT_SHARED_MEM
+# define SQLITE_OMIT_SHARED_MEM 1
+#endif
+
 /*
 ** Include the header file used to customize the compiler options for MSVC.
 ** This should be done first so that it can successfully prevent spurious

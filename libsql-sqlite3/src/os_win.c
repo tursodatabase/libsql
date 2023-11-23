@@ -29,9 +29,9 @@
 ** Compiling and using WAL mode requires several APIs that are only
 ** available in Windows platforms based on the NT kernel.
 */
-#if !SQLITE_OS_WINNT && !defined(SQLITE_OMIT_WAL)
+#if !SQLITE_OS_WINNT && !defined(SQLITE_OMIT_SHARED_MEM)
 #  error "WAL mode requires support from the Windows NT kernel, compile\
- with SQLITE_OMIT_WAL."
+ with SQLITE_OMIT_SHARED_MEM."
 #endif
 
 #if !SQLITE_OS_WINNT && SQLITE_MAX_MMAP_SIZE>0
@@ -189,7 +189,7 @@
 ** CE SDK; however, they are not present in the header file)?
 */
 #if SQLITE_WIN32_FILEMAPPING_API && \
-        (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0)
+        (!defined(SQLITE_OMIT_SHARED_MEM) || SQLITE_MAX_MMAP_SIZE>0)
 /*
 ** Two of the file mapping APIs are different under WinRT.  Figure out which
 ** set we need.
@@ -236,7 +236,7 @@ WINBASEAPI BOOL WINAPI UnmapViewOfFile(LPCVOID);
 # define FILE_ATTRIBUTE_MASK     (0x0003FFF7)
 #endif
 
-#ifndef SQLITE_OMIT_WAL
+#ifndef SQLITE_OMIT_SHARED_MEM
 /* Forward references to structures used for WAL */
 typedef struct winShm winShm;           /* A connection to shared-memory */
 typedef struct winShmNode winShmNode;   /* A region of shared-memory */
@@ -268,7 +268,7 @@ struct winFile {
   short sharedLockByte;   /* Randomly chosen byte used as a shared lock */
   u8 ctrlFlags;           /* Flags.  See WINFILE_* below */
   DWORD lastErrno;        /* The Windows errno from the last I/O error */
-#ifndef SQLITE_OMIT_WAL
+#ifndef SQLITE_OMIT_SHARED_MEM
   winShm *pShm;           /* Instance of shared memory on this file */
 #endif
   const char *zPath;      /* Full pathname of this file */
@@ -556,7 +556,7 @@ static struct win_syscall {
         LPSECURITY_ATTRIBUTES,DWORD,DWORD,HANDLE))aSyscall[5].pCurrent)
 
 #if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_ANSI) && \
-        (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0) && \
+        (!defined(SQLITE_OMIT_SHARED_MEM) || SQLITE_MAX_MMAP_SIZE>0) && \
         SQLITE_WIN32_CREATEFILEMAPPINGA
   { "CreateFileMappingA",      (SYSCALL)CreateFileMappingA,      0 },
 #else
@@ -567,7 +567,7 @@ static struct win_syscall {
         DWORD,DWORD,DWORD,LPCSTR))aSyscall[6].pCurrent)
 
 #if SQLITE_OS_WINCE || (!SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE) && \
-        (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0))
+        (!defined(SQLITE_OMIT_SHARED_MEM) || SQLITE_MAX_MMAP_SIZE>0))
   { "CreateFileMappingW",      (SYSCALL)CreateFileMappingW,      0 },
 #else
   { "CreateFileMappingW",      (SYSCALL)0,                       0 },
@@ -907,7 +907,7 @@ static struct win_syscall {
 #endif
 
 #if SQLITE_OS_WINCE || (!SQLITE_OS_WINRT && \
-        (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0))
+        (!defined(SQLITE_OMIT_SHARED_MEM) || SQLITE_MAX_MMAP_SIZE>0))
   { "MapViewOfFile",           (SYSCALL)MapViewOfFile,           0 },
 #else
   { "MapViewOfFile",           (SYSCALL)0,                       0 },
@@ -977,7 +977,7 @@ static struct win_syscall {
 #define osUnlockFileEx ((BOOL(WINAPI*)(HANDLE,DWORD,DWORD,DWORD, \
         LPOVERLAPPED))aSyscall[58].pCurrent)
 
-#if SQLITE_OS_WINCE || !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
+#if SQLITE_OS_WINCE || !defined(SQLITE_OMIT_SHARED_MEM) || SQLITE_MAX_MMAP_SIZE>0
   { "UnmapViewOfFile",         (SYSCALL)UnmapViewOfFile,         0 },
 #else
   { "UnmapViewOfFile",         (SYSCALL)0,                       0 },
@@ -1040,7 +1040,7 @@ static struct win_syscall {
 #define osGetFileInformationByHandleEx ((BOOL(WINAPI*)(HANDLE, \
         FILE_INFO_BY_HANDLE_CLASS,LPVOID,DWORD))aSyscall[66].pCurrent)
 
-#if SQLITE_OS_WINRT && (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0)
+#if SQLITE_OS_WINRT && (!defined(SQLITE_OMIT_SHARED_MEM) || SQLITE_MAX_MMAP_SIZE>0)
   { "MapViewOfFileFromApp",    (SYSCALL)MapViewOfFileFromApp,    0 },
 #else
   { "MapViewOfFileFromApp",    (SYSCALL)0,                       0 },
@@ -1104,7 +1104,7 @@ static struct win_syscall {
 
 #define osGetProcessHeap ((HANDLE(WINAPI*)(VOID))aSyscall[74].pCurrent)
 
-#if SQLITE_OS_WINRT && (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0)
+#if SQLITE_OS_WINRT && (!defined(SQLITE_OMIT_SHARED_MEM) || SQLITE_MAX_MMAP_SIZE>0)
   { "CreateFileMappingFromApp", (SYSCALL)CreateFileMappingFromApp, 0 },
 #else
   { "CreateFileMappingFromApp", (SYSCALL)0,                      0 },
@@ -2666,7 +2666,7 @@ static int winClose(sqlite3_file *id){
   winFile *pFile = (winFile*)id;
 
   assert( id!=0 );
-#ifndef SQLITE_OMIT_WAL
+#ifndef SQLITE_OMIT_SHARED_MEM
   assert( pFile->pShm==0 );
 #endif
   assert( pFile->h!=NULL && pFile->h!=INVALID_HANDLE_VALUE );
@@ -3672,7 +3672,7 @@ static int winDeviceCharacteristics(sqlite3_file *id){
 */
 static SYSTEM_INFO winSysInfo;
 
-#ifndef SQLITE_OMIT_WAL
+#ifndef SQLITE_OMIT_SHARED_MEM
 
 /*
 ** Helper functions to obtain and relinquish the global mutex. The
@@ -4357,7 +4357,7 @@ shmpage_out:
 # define winShmLock    0
 # define winShmBarrier 0
 # define winShmUnmap   0
-#endif /* #ifndef SQLITE_OMIT_WAL */
+#endif /* #ifndef SQLITE_OMIT_SHARED_MEM */
 
 /*
 ** Cleans up the mapped region of the specified file, if any.
@@ -6181,7 +6181,7 @@ int sqlite3_os_init(void){
   sqlite3_vfs_register(&winLongPathNolockVfs, 0);
 #endif
 
-#ifndef SQLITE_OMIT_WAL
+#ifndef SQLITE_OMIT_SHARED_MEM
   winBigLock = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
 #endif
 
@@ -6196,7 +6196,7 @@ int sqlite3_os_end(void){
   }
 #endif
 
-#ifndef SQLITE_OMIT_WAL
+#ifndef SQLITE_OMIT_SHARED_MEM
   winBigLock = 0;
 #endif
 
