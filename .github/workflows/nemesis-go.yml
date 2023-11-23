@@ -1,4 +1,4 @@
-name: Rust
+name: Nemesis Tests
 
 on:
   push:
