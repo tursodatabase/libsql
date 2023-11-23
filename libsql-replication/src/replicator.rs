@@ -237,7 +237,12 @@ impl<C: ReplicatorClient> Replicator<C> {
                 ReplicatorState::NeedHandshake
             }
             Err(Error::NeedSnapshot) => ReplicatorState::NeedSnapshot,
-            Err(e) => return Err(e),
+            Err(e) => {
+                // an error here could be due to a disconnection, it's safe to rollback to a
+                // NeedHandshake state again, to avoid entering a busy loop.
+                self.state = ReplicatorState::NeedHandshake;
+                return Err(e);
+            }
         };
 
         Ok(())
