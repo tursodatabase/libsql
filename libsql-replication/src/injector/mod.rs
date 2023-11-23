@@ -24,7 +24,7 @@ pub type FrameBuffer = Arc<Mutex<VecDeque<Frame>>>;
 
 pub struct Injector {
     /// The injector is in a transaction state
-    is_txn: bool,
+    pub(crate) is_txn: bool,
     /// Buffer for holding current transaction frames
     buffer: FrameBuffer,
     /// Maximum capacity of the frame buffer
