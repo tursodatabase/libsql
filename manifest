@@ -1,5 +1,5 @@
-C Minor\sdoc\sfix\sin\ssrc/betreeInt.h,\sprompted\sby\san\semail\sreport.\sNo\scode\schanges.
-D 2023-11-22T22:59:28.482
+C Fix\soutput\sredirect\sbug\sreported\sin\s[forum:/forumposts/cbf4933cfeee74bb|the\sforum].
+D 2023-11-23T07:08:49.865
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -50,7 +50,7 @@ F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 6f247666b495c477628dd19364d279c78ea48cd90c72d9f9b98ad1aff3294f94
 F ext/async/sqlite3async.h 46b47c79357b97ad85d20d2795942c0020dc20c532114a49808287f04aa5309a
-F ext/consio/console_io.c 5ac3b110d83bba8e12ed6cce79ee61d927db1d8ae1c3ec7439ca3192ca9fec35
+F ext/consio/console_io.c 097323f60037d70523421f0248958d2280851f8ff2f9a443d4ee1474c4769118 x
 F ext/consio/console_io.h 3228dff1717481202a24f6dcf45ce0b75e7a778bf6877089518a44e1473b76a3
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
@@ -1567,7 +1567,7 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 0bb36232873d7df2ba627ed25cff1332f6d98c0f7f244b425702c1ab1850bd15
+F test/shell1.test c7127a5e780ffc9e14c476773127fdf292c6db226529c44c1676f37b3793123f
 F test/shell2.test 35226c070a8c7f64fd016dfac2a0db2a40f709b3131f61daacd9dad61536c9cb
 F test/shell3.test 91febeac0412812bf6370abb8ed72700e32bf8f9878849414518f662dfd55e8a
 F test/shell4.test 9abd0c12a7e20a4c49e84d5be208d2124fa6c09e728f56f1f4bee0f02853935f
@@ -2143,8 +2143,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P da36f90d94b3b55de71aa7965421ea850ac677e9e63d60744633c4dc59448de4
-R 3ef6d89fc15fe0585e3af316ac8b0b81
-U stephan
-Z 2cbcfc9303e321d5bde61219a7b5db62
+P 30d49aaed20454fe006e2f89db58f0c0b2433c99b2676a0b9583f56b7adb7fdb
+Q +2ab256bc0bb351c16feaf0d4917ad9c3f55e39821cc7d319d86c6f0752188af7
+R d91cba5021090c578862032ea108381c
+U larrybr
+Z c5c429bf4e3762c78a8478accbfbf9e1
 # Remove this line to create a well-formed Fossil manifest.

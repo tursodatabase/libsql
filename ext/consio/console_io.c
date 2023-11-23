@@ -343,8 +343,8 @@ static PerStreamTags * getDesignatedEmitStream(FILE *pf, unsigned chix,
 ** chix equals 1 or 2, or for an arbitrary stream when chix == 0.
 ** In either case, ppst references a caller-owned PerStreamTags
 ** struct which may be filled in if none of the known writable
-** streams is being held by consoleInfo. The ppf parameter is an
-** output when chix!=0 and an input when chix==0.
+** streams is being held by consoleInfo. The ppf parameter is a
+** byref output when chix!=0 and a byref input when chix==0.
  */
 static PerStreamTags *
 getEmitStreamInfo(unsigned chix, PerStreamTags *ppst,
@@ -357,7 +357,7 @@ getEmitStreamInfo(unsigned chix, PerStreamTags *ppst,
       ppstTry = &consoleInfo.pstSetup[chix];
       pfEmit = ppst->pf;
     }else pfEmit = ppstTry->pf;
-    if( !isValidStreamInfo(ppst) ){
+    if( !isValidStreamInfo(ppstTry) ){
       pfEmit = (chix > 1)? stderr : stdout;
       ppstTry = ppst;
       streamOfConsole(pfEmit, ppstTry);
