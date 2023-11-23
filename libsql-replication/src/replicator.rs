@@ -732,11 +732,13 @@ mod test {
         replicator.try_replicate_step().await.unwrap();
         assert_eq!(replicator.state, ReplicatorState::NeedFrames);
 
-        assert!(matches!(replicator.try_replicate_step().await.unwrap_err(), Error::Client(_)));
+        assert!(matches!(
+            replicator.try_replicate_step().await.unwrap_err(),
+            Error::Client(_)
+        ));
         assert!(!replicator.injector.lock().is_txn);
         assert!(replicator.client_mut().committed_frame_no.is_none());
         assert_eq!(replicator.state, ReplicatorState::NeedHandshake);
-
 
         replicator.try_replicate_step().await.unwrap();
         assert_eq!(replicator.state, ReplicatorState::NeedFrames);
