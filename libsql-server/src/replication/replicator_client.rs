@@ -138,5 +138,5 @@ impl ReplicatorClient for Client {
         self.meta.current_frame_no()
     }
 
-    fn rollback(&mut self) { }
+    fn rollback(&mut self) {}
 }

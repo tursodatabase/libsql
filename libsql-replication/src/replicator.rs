@@ -169,6 +169,11 @@ impl<C: ReplicatorClient> Replicator<C> {
         })
     }
 
+    /// for a handshake on next call to replicate.
+    pub fn force_handshake(&mut self) {
+        self.state = ReplicatorState::NeedHandshake;
+    }
+
     pub fn client_mut(&mut self) -> &mut C {
         &mut self.client
     }
@@ -225,6 +230,7 @@ impl<C: ReplicatorClient> Replicator<C> {
 
         // in case of error we rollback the current injector transaction, and start over.
         if ret.is_err() {
+            self.client.rollback();
             self.injector.lock().rollback();
         }
 
