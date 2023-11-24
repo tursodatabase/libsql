@@ -865,6 +865,12 @@ static void jsonParseReset(JsonParse *pParse){
     sqlite3RCStrUnref(pParse->zAlt);
     pParse->zAlt = 0;
   }
+  if( pParse->nBlobAlloc ){
+    sqlite3_free(pParse->aBlob);
+    pParse->aBlob = 0;
+    pParse->nBlob = 0;
+    pParse->nBlobAlloc = 0;
+  }
 }
 
 /*
@@ -4311,7 +4317,7 @@ static void jsonRemoveFromBlob(
     if( zPath==0 ) goto jsonRemoveFromBlob_patherror;
     if( zPath[0]!='$' ) goto jsonRemoveFromBlob_patherror;
     if( zPath[1]==0 ){
-      if( px.nBlobAlloc ) sqlite3_free(px.aBlob);
+      jsonParseReset(&px);
       return;  /* return NULL if $ is removed */
     }
     px.eEdit = JEDIT_DEL;
@@ -4328,12 +4334,12 @@ static void jsonRemoveFromBlob(
     jsonStringInit(&s, ctx);
     jsonXlateBlobToText(&px, 0, &s);
     jsonReturnString(&s);
-    if( px.nBlobAlloc ) sqlite3_free(px.aBlob);
+    jsonParseReset(&px);
   }
   return;
 
 jsonRemoveFromBlob_patherror:
-  if( px.nBlobAlloc ) sqlite3_free(px.aBlob);
+  jsonParseReset(&px);
   jsonPathSyntaxError(zPath, ctx);
   return;
 }
@@ -4445,14 +4451,14 @@ static void jsonInsertIntoBlob(
       break;
     }
     if( zPath[1]==0 ){
-      if( px.nBlobAlloc ) sqlite3_free(px.aBlob);
+      jsonParseReset(&px);
       return;  /* return NULL if $ is removed */
     }
     px.eEdit = eEdit;
     px.nIns = ax.nBlob;
     px.aIns = ax.aBlob;
     rc = jsonLookupBlobStep(&px, 0, zPath+1, 0);
-    if( ax.nBlobAlloc ) sqlite3_free(ax.aBlob);
+    jsonParseReset(&ax);
     if( rc==JSON_BLOB_NOTFOUND ) continue;
     if( JSON_BLOB_ISERROR(rc) ) goto jsonInsertIntoBlob_patherror;
   }
@@ -4465,12 +4471,12 @@ static void jsonInsertIntoBlob(
     jsonStringInit(&s, ctx);
     jsonXlateBlobToText(&px, 0, &s);
     jsonReturnString(&s);
-    if( px.nBlobAlloc ) sqlite3_free(px.aBlob);
+    jsonParseReset(&px);
   }
   return;
 
 jsonInsertIntoBlob_patherror:
-  if( px.nBlobAlloc ) sqlite3_free(px.aBlob);
+  jsonParseReset(&px);
   if( rc==JSON_BLOB_ERROR ){
     sqlite3_result_error(ctx, "malformed JSON", -1);
   }else{
@@ -4648,13 +4654,12 @@ static void jsonbFunc(
     x.nJson = nJson;
     if( jsonConvertTextToBlob(pParse, ctx) ){
       sqlite3_result_error(ctx, "malformed JSON", -1);
-      sqlite3_free(pParse->aBlob);
     }else{
       sqlite3_result_blob(ctx, pParse->aBlob, pParse->nBlob, sqlite3_free);
+      pParse->aBlob = 0;
+      pParse->nBlob = 0;
+      pParse->nBlobAlloc = 0;
     }
-    pParse->aBlob = 0;
-    pParse->nBlob = 0;
-    pParse->nBlobAlloc = 0;
     jsonParseReset(pParse);
   }
 }
