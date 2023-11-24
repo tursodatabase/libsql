@@ -19,7 +19,10 @@ members = [
   "xtask",
 ]
 
-exclude = [ "./libsql-sqlite3/ext/crr" ]
+exclude = [
+    "./libsql-sqlite3/ext/crr",
+    "./libsql-sqlite3/ext/libsql-wasi-demo",
+]
 
 [profile.release]
 codegen-units = 1
