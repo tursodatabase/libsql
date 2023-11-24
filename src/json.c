@@ -5576,6 +5576,7 @@ static void jsonObjectFinal(sqlite3_context *ctx){
 typedef struct JsonParent JsonParent;
 struct JsonParent {
   u32 iHead;                 /* Start of object or array */
+  u32 iValue;                /* Start of the value */
   u32 iEnd;                  /* First byte past the end */
   i64 iKey;                  /* Key for JSONB_ARRAY */
 };
@@ -5773,7 +5774,7 @@ static int jsonEachNext(sqlite3_vtab_cursor *cur){
     u32 n, sz = 0;
     u32 i = jsonSkipLabel(p);
     x = p->sParse.aBlob[i] & 0x0f;
-    n = jsonbPayloadSize(&p->sParse, p->i, &sz);
+    n = jsonbPayloadSize(&p->sParse, i, &sz);
     if( x==JSONB_OBJECT || x==JSONB_ARRAY ){
       JsonParent *pParent;
       if( p->nParent>=p->nParentAlloc ){
@@ -5784,25 +5785,33 @@ static int jsonEachNext(sqlite3_vtab_cursor *cur){
         if( pNew==0 ) return SQLITE_NOMEM;
         p->nParentAlloc = (u32)nNew;
         p->aParent = pNew;
-        levelChange = 1;
       }
+      levelChange = 1;
       pParent = &p->aParent[p->nParent++];
       pParent->iHead = p->i;
-      pParent->iEnd = p->i + n + sz;
-      pParent->iKey = 0;
+      pParent->iValue = i;
+      pParent->iEnd = i + n + sz;
+      pParent->iKey = -1;
+      p->i = i + n;
     }else{
       p->i = i + n + sz;
     }
-    if( p->nParent>0 && p->i >= p->aParent[p->nParent-1].iEnd ){
+    while( p->nParent>0 && p->i >= p->aParent[p->nParent-1].iEnd ){
       p->nParent--;
       levelChange = 1;
     }
     if( levelChange ){
       if( p->nParent>0 ){
-        p->eType = p->sParse.aBlob[p->aParent[p->nParent-1].iHead] & 0x0f;
+        JsonParent *pParent = &p->aParent[p->nParent-1];
+        u32 i = pParent->iValue;
+        p->eType = p->sParse.aBlob[i] & 0x0f;
       }else{
         p->eType = 0;
       }
+    }
+    if( p->eType==JSONB_ARRAY ){
+      assert( p->nParent>0 );
+      p->aParent[p->nParent-1].iKey++;
     }
   }else{
     u32 n, sz = 0;
@@ -5810,6 +5819,7 @@ static int jsonEachNext(sqlite3_vtab_cursor *cur){
     n = jsonbPayloadSize(&p->sParse, i, &sz);
     p->i = i + n + sz;
   }
+  p->iRowid++;
   return SQLITE_OK;
 }
 
@@ -6022,6 +6032,19 @@ static int jsonEachColumn(
         break;
       }
       case JEACH_FULLKEY: {
+#if 0
+        u32 i;
+        JsonString x;
+        jsonStringInit(&x, ctx);
+        for(i=0; i<p->nParent; i++){
+          jsonPrintf(200,&x,"(%u,%u,%u,%lld)",
+             p->aParent[i].iHead,
+             p->aParent[i].iValue,
+             p->aParent[i].iEnd,
+             p->aParent[i].iKey);
+        }
+        jsonReturnString(&x);
+#endif
 #if 0
         JsonString x;
         jsonStringInit(&x, ctx);
