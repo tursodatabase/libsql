@@ -23,11 +23,11 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 
-pub const SQLITE_VERSION: &[u8; 7] = b"3.43.0\0";
-pub const SQLITE_VERSION_NUMBER: i32 = 3043000;
+pub const SQLITE_VERSION: &[u8; 7] = b"3.44.0\0";
+pub const SQLITE_VERSION_NUMBER: i32 = 3044000;
 pub const SQLITE_SOURCE_ID: &[u8; 85] =
-    b"2023-08-24 12:36:59 0f80b798b3f4b81a7bb4233c58294edd0f1156f36b6ecf5ab8e83631d468alt1\0";
-pub const LIBSQL_VERSION: &[u8; 6] = b"0.2.2\0";
+    b"2023-11-01 11:23:50 17129ba1ff7f0daf37100ee82d507aef7827cf38de1866e2633096ae6ad8alt1\0";
+pub const LIBSQL_VERSION: &[u8; 6] = b"0.2.3\0";
 pub const SQLITE_OK: i32 = 0;
 pub const SQLITE_ERROR: i32 = 1;
 pub const SQLITE_INTERNAL: i32 = 2;
@@ -399,6 +399,7 @@ pub const SQLITE_TESTCTRL_FIRST: i32 = 5;
 pub const SQLITE_TESTCTRL_PRNG_SAVE: i32 = 5;
 pub const SQLITE_TESTCTRL_PRNG_RESTORE: i32 = 6;
 pub const SQLITE_TESTCTRL_PRNG_RESET: i32 = 7;
+pub const SQLITE_TESTCTRL_FK_NO_ACTION: i32 = 7;
 pub const SQLITE_TESTCTRL_BITVEC_TEST: i32 = 8;
 pub const SQLITE_TESTCTRL_FAULT_INSTALL: i32 = 9;
 pub const SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS: i32 = 10;
@@ -1732,6 +1733,20 @@ extern "C" {
         arg3: ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void)>,
     );
 }
+extern "C" {
+    pub fn sqlite3_get_clientdata(
+        arg1: *mut sqlite3,
+        arg2: *const ::std::os::raw::c_char,
+    ) -> *mut ::std::os::raw::c_void;
+}
+extern "C" {
+    pub fn sqlite3_set_clientdata(
+        arg1: *mut sqlite3,
+        arg2: *const ::std::os::raw::c_char,
+        arg3: *mut ::std::os::raw::c_void,
+        arg4: ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void)>,
+    ) -> ::std::os::raw::c_int;
+}
 pub type sqlite3_destructor_type =
     ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void)>;
 extern "C" {
@@ -2219,6 +2234,20 @@ pub struct sqlite3_module {
     pub xShadowName: ::std::option::Option<
         unsafe extern "C" fn(arg1: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int,
     >,
+    pub xIntegrity: ::std::option::Option<
+        unsafe extern "C" fn(
+            pVTab: *mut sqlite3_vtab,
+            zSchema: *const ::std::os::raw::c_char,
+            zTabName: *const ::std::os::raw::c_char,
+            mFlags: ::std::os::raw::c_int,
+            pzErr: *mut *mut ::std::os::raw::c_char,
+        ) -> ::std::os::raw::c_int,
+    >,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct libsql_module {
+    pub iVersion: ::std::os::raw::c_int,
     pub xPreparedSql: ::std::option::Option<
         unsafe extern "C" fn(
             arg1: *mut sqlite3_vtab_cursor,
@@ -2281,6 +2310,16 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn libsql_create_module(
+        db: *mut sqlite3,
+        zName: *const ::std::os::raw::c_char,
+        p: *const sqlite3_module,
+        pLibsql: *const libsql_module,
+        pClientData: *mut ::std::os::raw::c_void,
+        xDestroy: ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void)>,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn sqlite3_drop_modules(
         db: *mut sqlite3,
         azKeep: *mut *const ::std::os::raw::c_char,
@@ -2290,6 +2329,7 @@ extern "C" {
 #[derive(Debug, Copy, Clone)]
 pub struct sqlite3_vtab {
     pub pModule: *const sqlite3_module,
+    pub pLibsqlModule: *const libsql_module,
     pub nRef: ::std::os::raw::c_int,
     pub zErrMsg: *mut ::std::os::raw::c_char,
 }
