@@ -148,6 +148,8 @@ set TRG(cmdline) $argv
 set TRG(reporttime) 2000
 set TRG(fuzztest) 0                 ;# is the fuzztest option present.
 set TRG(zipvfs) ""                  ;# -zipvfs option, if any
+set TRG(buildonly) 0                ;# True if --buildonly option 
+set TRG(dryrun) 0                   ;# True if --dryrun option 
 
 switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
@@ -427,6 +429,10 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
       incr ii
       set TRG(zipvfs) [file normalize [lindex $argv $ii]]
       if {$isLast} { usage }
+    } elseif {($n>2 && [string match "$a*" --buildonly]) || $a=="-b"} {
+      set TRG(buildonly) 1
+    } elseif {($n>2 && [string match "$a*" --dryrun]) || $a=="-d"} {
+      set TRG(dryrun) 1
     } else {
       usage
     }
@@ -843,6 +849,17 @@ proc make_new_testset {} {
 
 }
 
+proc mark_job_as_finished {jobid output state endtm} {
+  r_write_db {
+    trdb eval {
+      UPDATE jobs 
+        SET output=$output, state=$state, endtime=$endtm
+        WHERE jobid=$jobid;
+      UPDATE jobs SET state='ready' WHERE depid=$jobid;
+    }
+  }
+}
+
 proc script_input_ready {fd iJob jobid} {
   global TRG
   global O
@@ -877,15 +894,7 @@ proc script_input_ready {fd iJob jobid} {
     puts $TRG(log) "### $job(displayname) ${jobtm}ms ($state)"
     puts $TRG(log) [string trim $O($iJob)]
 
-    r_write_db {
-      set output $O($iJob)
-      trdb eval {
-        UPDATE jobs 
-          SET output=$output, state=$state, endtime=$tm
-          WHERE jobid=$jobid;
-        UPDATE jobs SET state='ready' WHERE depid=$jobid;
-      }
-    }
+    mark_job_as_finished $jobid $O($iJob) $state $tm
 
     dirs_freeDir $iJob
     launch_some_jobs
@@ -937,16 +946,28 @@ proc launch_another_job {iJob} {
     close $fd
   }
 
-  set pwd [pwd]
-  cd $dir
-  set fd [open $TRG(run) w]
-  puts $fd $job(cmd) 
-  close $fd
-  set fd [open "|$TRG(runcmd) 2>@1" r]
-  cd $pwd
+  if { $TRG(dryrun) } {
 
-  fconfigure $fd -blocking false
-  fileevent $fd readable [list script_input_ready $fd $iJob $job(jobid)]
+    mark_job_as_finished $job(jobid) "" done 0
+    dirs_freeDir $iJob
+    if {$job(build)!=""} {
+      puts $TRG(log) "(cd $dir ; $job(cmd) )"
+    } else {
+      puts $TRG(log) "$job(cmd)"
+    }
+
+  } else {
+    set pwd [pwd]
+    cd $dir
+    set fd [open $TRG(run) w]
+    puts $fd $job(cmd) 
+    close $fd
+    set fd [open "|$TRG(runcmd) 2>@1" r]
+    cd $pwd
+
+    fconfigure $fd -blocking false
+    fileevent $fd readable [list script_input_ready $fd $iJob $job(jobid)]
+  }
 
   return 1
 }
@@ -1044,6 +1065,16 @@ proc run_testset {} {
   puts "Test log is $TRG(logname)"
 }
 
+# Handle the --buildonly option, if it was specified.
+#
+proc handle_buildonly {} {
+  global TRG
+  if {$TRG(buildonly)} {
+    r_write_db {
+      trdb eval { DELETE FROM jobs WHERE displaytype!='bld' }
+    }
+  }
+}
 
 sqlite3 trdb $TRG(dbname)
 trdb timeout $TRG(timeout)
@@ -1052,6 +1083,8 @@ if {$TRG(nJob)>1} {
   puts "splitting work across $TRG(nJob) jobs"
 }
 puts "built testset in [expr $tm/1000]ms.."
+
+handle_buildonly
 run_testset
 trdb close
 #puts [pwd]
