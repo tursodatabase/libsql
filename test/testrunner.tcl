@@ -752,6 +752,20 @@ proc add_zipvfs_jobs {} {
   set ::env(SQLITE_TEST_DIR) $::testdir
 }
 
+# Used to add jobs for "mdevtest" and "sdevtest".
+#
+proc add_devtest_jobs {lBld patternlist} {
+  global TRG
+
+  foreach b $lBld {
+    set bld [add_build_job $b $TRG(testfixture)]
+    add_tcl_jobs $bld veryquick $patternlist
+    if {$patternlist==""} {
+      add_fuzztest_jobs $b
+    }
+  }
+}
+
 proc add_jobs_from_cmdline {patternlist} {
   global TRG
 
@@ -775,33 +789,28 @@ proc add_jobs_from_cmdline {patternlist} {
     }
 
     mdevtest {
-      foreach b [list All-O0 All-Debug] {
-        set bld [add_build_job $b $TRG(testfixture)]
-        add_tcl_jobs $bld veryquick ""
-        add_fuzztest_jobs $b
-      }
+      add_devtest_jobs {All-O0 All-Debug} [lrange $patternlist 1 end]
     }
 
     sdevtest {
-      foreach b [list All-Sanitize All-Debug] {
-        set bld [add_build_job $b $TRG(testfixture)]
-        add_tcl_jobs $bld veryquick ""
-        add_fuzztest_jobs $b
-      }
+      add_devtest_jobs {All-Sanitize All-Debug} [lrange $patternlist 1 end]
     }
 
     release {
+      set patternlist [lrange $patternlist 1 end]
       foreach b [trd_builds $TRG(platform)] {
         set bld [add_build_job $b $TRG(testfixture)]
         foreach c [trd_configs $TRG(platform) $b] {
-          add_tcl_jobs $bld $c ""
+          add_tcl_jobs $bld $c $patternlist
         }
 
-        foreach e [trd_extras $TRG(platform) $b] {
-          if {$e=="fuzztest"} {
-            add_fuzztest_jobs $b
-          } else {
-            add_make_job $bld $e
+        if {$patternlist==""} {
+          foreach e [trd_extras $TRG(platform) $b] {
+            if {$e=="fuzztest"} {
+              add_fuzztest_jobs $b
+            } else {
+              add_make_job $bld $e
+            }
           }
         }
       }

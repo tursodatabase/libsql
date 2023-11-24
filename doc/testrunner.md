@@ -114,6 +114,12 @@ a specified pattern (e.g. all tests that start with "fts5"), either of:
   ./testfixture $TESTDIR/testrunner.tcl 'fts5*'
 ```
 
+Strictly speaking, for a test to be run the pattern must match the script
+filename, not including the directory, using the rules of Tcl's 
+\[string match\] command. Except that before the matching is done, any "%"
+characters specified as part of the pattern are transformed to "\*".
+
+
 To run "all" tests (full + permutations):
 
 ```
@@ -141,6 +147,7 @@ Or, if the failure occured as part of a permutation:
 
 TODO: An example instead of "$PERMUTATION" and $PATH\_TO\_SCRIPT?
 
+<a name=source_code_tests></a>
 # 3. Source Code Tests
 
 The commands described in this section invoke the C compiler to build 
@@ -199,6 +206,16 @@ of the specific tests run.
 
 ```
   tclsh $TESTDIR/testrunner.tcl release
+```
+
+As with <a href=#source code tests>source code tests</a>, one or more patterns
+may be appended to any of the above commands (mdevtest, sdevtest or release).
+In that case only Tcl tests (no fuzz or other tests) that match the specified
+pattern are run. For example, to run the just the Tcl rtree tests in all 
+builds and configurations supported by "release":
+
+```
+  tclsh $TESTDIR/testrunner.tcl release rtree%
 ```
 
 ## Running ZipVFS Tests
@@ -274,11 +291,6 @@ testrunner.log and testrunner.db files:
 ```
   $ ./testfixture $TESTDIR/testrunner.tcl njob $NEW_NUMBER_OF_JOBS
 ```
-
-
-
-
-
 
 
 
