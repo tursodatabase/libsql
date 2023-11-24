@@ -77,6 +77,8 @@ pub trait ReplicatorClient {
     async fn commit_frame_no(&mut self, frame_no: FrameNo) -> Result<(), Error>;
     /// Returns the currently committed replication index
     fn committed_frame_no(&self) -> Option<FrameNo>;
+    /// rollback the client to previously commited index.
+    fn rollback(&mut self);
 }
 
 #[async_trait::async_trait]
@@ -122,6 +124,13 @@ where
             Either::Right(b) => b.committed_frame_no(),
         }
     }
+
+    fn rollback(&mut self) {
+        match self {
+            Either::Left(a) => a.rollback(),
+            Either::Right(b) => b.rollback(),
+        }
+    }
 }
 
 /// The `Replicator`'s duty is to download frames from the primary, and pass them to the injector at
@@ -158,6 +167,11 @@ impl<C: ReplicatorClient> Replicator<C> {
             injector: Arc::new(Mutex::new(injector)),
             state: ReplicatorState::NeedHandshake,
         })
+    }
+
+    /// for a handshake on next call to replicate.
+    pub fn force_handshake(&mut self) {
+        self.state = ReplicatorState::NeedHandshake;
     }
 
     pub fn client_mut(&mut self) -> &mut C {
@@ -216,6 +230,7 @@ impl<C: ReplicatorClient> Replicator<C> {
 
         // in case of error we rollback the current injector transaction, and start over.
         if ret.is_err() {
+            self.client.rollback();
             self.injector.lock().rollback();
         }
 
@@ -342,6 +357,8 @@ mod test {
             fn committed_frame_no(&self) -> Option<FrameNo> {
                 unreachable!()
             }
+
+            fn rollback(&mut self) {}
         }
 
         let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
@@ -384,6 +401,7 @@ mod test {
             fn committed_frame_no(&self) -> Option<FrameNo> {
                 unreachable!()
             }
+            fn rollback(&mut self) {}
         }
 
         let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
@@ -427,6 +445,7 @@ mod test {
             fn committed_frame_no(&self) -> Option<FrameNo> {
                 unreachable!()
             }
+            fn rollback(&mut self) {}
         }
 
         let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
@@ -470,6 +489,7 @@ mod test {
             fn committed_frame_no(&self) -> Option<FrameNo> {
                 unreachable!()
             }
+            fn rollback(&mut self) {}
         }
 
         let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
@@ -511,6 +531,7 @@ mod test {
             fn committed_frame_no(&self) -> Option<FrameNo> {
                 unreachable!()
             }
+            fn rollback(&mut self) {}
         }
 
         let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
@@ -552,6 +573,7 @@ mod test {
             fn committed_frame_no(&self) -> Option<FrameNo> {
                 unreachable!()
             }
+            fn rollback(&mut self) {}
         }
 
         let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
@@ -594,6 +616,7 @@ mod test {
             fn committed_frame_no(&self) -> Option<FrameNo> {
                 unreachable!()
             }
+            fn rollback(&mut self) {}
         }
 
         let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
@@ -636,6 +659,7 @@ mod test {
             fn committed_frame_no(&self) -> Option<FrameNo> {
                 unreachable!()
             }
+            fn rollback(&mut self) {}
         }
 
         let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
@@ -717,6 +741,7 @@ mod test {
             fn committed_frame_no(&self) -> Option<FrameNo> {
                 unimplemented!()
             }
+            fn rollback(&mut self) {}
         }
 
         let client = Client {

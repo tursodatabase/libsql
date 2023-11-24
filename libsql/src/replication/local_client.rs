@@ -74,4 +74,6 @@ impl ReplicatorClient for LocalClient {
     fn committed_frame_no(&self) -> Option<FrameNo> {
         self.meta.current_frame_no()
     }
+
+    fn rollback(&mut self) {}
 }

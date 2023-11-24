@@ -112,7 +112,7 @@ fn embedded_replica() {
             if key.kind() == metrics_util::MetricKind::Counter
                 && key.key().name() == "libsql_client_version"
             {
-                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(6));
+                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(8));
                 let label = key.key().labels().next().unwrap();
                 assert!(label.value().starts_with("libsql-rpc-"));
             }

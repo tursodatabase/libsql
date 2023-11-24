@@ -19,6 +19,7 @@ pub struct RemoteClient {
     meta: WalIndexMeta,
     last_received: Option<FrameNo>,
     session_token: Option<Bytes>,
+    last_handshake_replication_index: Option<FrameNo>,
     // the replication log is dirty, reset the meta on next handshake
     dirty: bool,
 }
@@ -32,6 +33,7 @@ impl RemoteClient {
             last_received: None,
             session_token: None,
             dirty: false,
+            last_handshake_replication_index: None,
         })
     }
 
@@ -53,6 +55,10 @@ impl RemoteClient {
 
         req
     }
+
+    pub fn last_handshake_replication_index(&self) -> Option<u64> {
+        self.last_handshake_replication_index
+    }
 }
 
 #[async_trait::async_trait]
@@ -69,8 +75,10 @@ impl ReplicatorClient for RemoteClient {
         self.session_token = Some(hello.session_token.clone());
         if self.dirty {
             self.meta.reset();
+            self.last_received = None;
             self.dirty = false;
         }
+        let current_replication_index = hello.current_replication_index;
         if let Err(e) = self.meta.init_from_hello(hello) {
             // set the meta as dirty. The caller should catch the error and clean the db
             // file. On the next call to replicate, the db will be replicated from the new
@@ -81,6 +89,7 @@ impl ReplicatorClient for RemoteClient {
 
             Err(e)?;
         }
+        self.last_handshake_replication_index = current_replication_index;
         self.meta.flush().await?;
 
         Ok(())
@@ -149,5 +158,9 @@ impl ReplicatorClient for RemoteClient {
 
     fn committed_frame_no(&self) -> Option<FrameNo> {
         self.meta.current_frame_no()
+    }
+
+    fn rollback(&mut self) {
+        self.last_received = self.committed_frame_no()
     }
 }
