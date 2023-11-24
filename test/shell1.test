@@ -496,11 +496,16 @@ do_test shell1-3.14.3 {
 
 # .output FILENAME       Send output to FILENAME
 do_test shell1-3.15.1 {
-  catchcmd "test.db" ".output"
-} {0 {}}
+  catchcmd "test.db" ".output
+.print x"
+} {0 x}
 do_test shell1-3.15.2 {
-  catchcmd "test.db" ".output FOO"
-} {0 {}}
+  catchcmd "test.db" ".output FOO
+.print x
+.output
+SELECT readfile('FOO');"
+} {0 {x
+}}
 do_test shell1-3.15.3 {
   # too many arguments
   catchcmd "test.db" ".output FOO BAD"
