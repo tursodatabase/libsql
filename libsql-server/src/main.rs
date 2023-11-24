@@ -227,7 +227,7 @@ impl Cli {
         eprintln!("build date: {}", env!("VERGEN_BUILD_DATE"));
         eprintln!();
         eprintln!("This software is in BETA version.");
-        eprintln!("If you encounter any bug, please open an issue at https://github.com/libsql/sqld/issues");
+        eprintln!("If you encounter any bug, please open an issue at https://github.com/tursodatabase/libsql/issues");
         eprintln!();
 
         eprintln!("config:");
