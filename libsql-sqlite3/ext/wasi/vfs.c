@@ -79,13 +79,25 @@ sqlite3_vfs libsql_wasi_vfs = {
 
 void libsql_wasi_init() {
     sqlite3_vfs_register(&libsql_wasi_vfs, 1);
+    // TODO: register WAL methods too
 }
 
 sqlite3 *libsql_wasi_open_db(const char *filename) {
     sqlite3 *db;
+    // TODO: libsql_open, with virtual WAL methods
     int rc = sqlite3_open_v2(filename, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, "libsql_wasi");
     if (rc != SQLITE_OK) {
         fprintf(stderr, "Failed to open database: %s\n", sqlite3_errmsg(db));
+        return NULL;
+    }
+    rc = sqlite3_exec(db, "PRAGMA locking_mode=exclusive;", NULL, NULL, NULL);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Failed to set locking mode: %s\n", sqlite3_errmsg(db));
+        return NULL;
+    }
+    rc = sqlite3_exec(db, "PRAGMA journal_mode=WAL;", NULL, NULL, NULL);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Failed to set journal mode: %s\n", sqlite3_errmsg(db));
         return NULL;
     }
     return db;

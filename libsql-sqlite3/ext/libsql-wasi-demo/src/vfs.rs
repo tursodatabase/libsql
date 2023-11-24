@@ -7,7 +7,7 @@ fn get_memory(caller: &mut Caller<'_, State>) -> Memory {
 
 fn open_fd(mut caller: Caller<'_, State>, name: i32, flags: i32) -> anyhow::Result<i64> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (memory, _state) = memory.data_and_store_mut(&mut caller);
 
     let name = memory::read_cstr(memory, name)?;
 
@@ -30,7 +30,7 @@ fn delete(
     sync_dir: i32,
 ) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
     println!("HOST DELETE CALLED");
     Ok(0)
@@ -44,7 +44,7 @@ fn access(
     res_out: i32,
 ) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
     println!("HOST ACCESS CALLED");
     Ok(0)
@@ -58,7 +58,7 @@ fn full_pathname(
     out: i32,
 ) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (memory, _state) = memory.data_and_store_mut(&mut caller);
 
     let name = memory::read_cstr(memory, name)?;
     let out = memory::slice_mut(memory, out, n_out as usize)?;
@@ -74,7 +74,7 @@ fn randomness(
     out: i32,
 ) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
     println!("HOST RANDOMNESS CALLED");
     Ok(0)
@@ -82,7 +82,7 @@ fn randomness(
 
 fn sleep(mut caller: Caller<'_, State>, vfs: i32, microseconds: i32) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
     println!("HOST SLEEP CALLED");
     Ok(0)
@@ -90,7 +90,7 @@ fn sleep(mut caller: Caller<'_, State>, vfs: i32, microseconds: i32) -> anyhow::
 
 fn current_time(mut caller: Caller<'_, State>, vfs: i32, out: i32) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
     println!("HOST CURRENT TIME CALLED");
     Ok(0)
@@ -103,7 +103,7 @@ fn get_last_error(
     out: i32,
 ) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
     println!("HOST GET LAST ERROR CALLED");
     Ok(0)
@@ -111,7 +111,7 @@ fn get_last_error(
 
 fn current_time_64(mut caller: Caller<'_, State>, vfs: i32, out: i32) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
     println!("HOST CURRENT TIME 64 CALLED");
     Ok(0)
@@ -119,7 +119,7 @@ fn current_time_64(mut caller: Caller<'_, State>, vfs: i32, out: i32) -> anyhow:
 
 fn close(mut caller: Caller<'_, State>, file: i32) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
     // TODO: read the file pointer from guest memory and feed it to Box::from_raw
     println!("HOST CLOSE CALLED");
 
@@ -134,7 +134,7 @@ fn read(
     offset: i64,
 ) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
     println!("HOST READ CALLED");
     Ok(0)
@@ -148,7 +148,7 @@ fn write(
     offset: i64,
 ) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
     println!("HOST WRITE CALLED");
     Ok(0)
@@ -156,35 +156,35 @@ fn write(
 
 fn truncate(mut caller: Caller<'_, State>, file: i32, size: i64) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
     println!("HOST TRUNCATE CALLED");
     Ok(0)
 }
 
 fn sync(mut caller: Caller<'_, State>, file: i32, flags: i32) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
     println!("HOST SYNC CALLED");
     Ok(0)
 }
 
 fn file_size(mut caller: Caller<'_, State>, file: i32, size: i32) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
     println!("HOST FILE SIZE CALLED");
     Ok(0)
 }
 
 fn lock(mut caller: Caller<'_, State>, file: i32, lock: i32) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
     println!("HOST LOCK CALLED");
     Ok(0)
 }
 
 fn unlock(mut caller: Caller<'_, State>, file: i32, lock: i32) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
     println!("HOST UNLOCK CALLED");
     Ok(0)
 }
@@ -195,7 +195,7 @@ fn check_reserved_lock(
     reserved_lock: i32,
 ) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
     println!("HOST CHECK RESERVED LOCK CALLED");
     Ok(0)
 }
@@ -207,7 +207,7 @@ fn file_control(
     arg: i32,
 ) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
     println!("HOST FILE CONTROL CALLED");
     Ok(0)
@@ -215,7 +215,7 @@ fn file_control(
 
 fn sector_size(mut caller: Caller<'_, State>, file: i32) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
     println!("HOST SECTOR SIZE CALLED");
     Ok(0)
@@ -223,7 +223,7 @@ fn sector_size(mut caller: Caller<'_, State>, file: i32) -> anyhow::Result<i32> 
 
 fn device_characteristics(mut caller: Caller<'_, State>, file: i32) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (memory, state) = memory.data_and_store_mut(&mut caller);
+    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
     println!("HOST DEVICE CHARACTERISTICS CALLED");
     Ok(0)

@@ -1,4 +1,4 @@
-mod memory;
+pub mod memory;
 mod vfs;
 
 // FIXME: add any state we need to pass - WasiCtx is here to get free println! and stuff
@@ -17,7 +17,6 @@ fn main() -> anyhow::Result<()> {
     vfs::link(&mut linker)?;
     wasmtime_wasi::add_to_linker(&mut linker, |s| s)?;
 
-    std::fs::create_dir("/tmp/wasm-demo").ok();
     // FIXME: we might as well not need it with VFS and virtual WAL, it's here to make stuff easier for debugging
     let wasi = WasiCtxBuilder::new()
         .inherit_stdio()
