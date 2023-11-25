@@ -218,7 +218,13 @@ async fn main() {
 
 ## Multitenancy
 
-The `sqld` server supports more than one databases. Currently, databases are created lazily when a HTTP request arrives.
+The `sqld` server supports more than one database. To create a database, send a create namespace request to the [admin API](ADMIN_API.md).
+For example, to create a database named `db1`, send the following HTTP request:
+
+```shell
+curl -X POST http://localhost:8080/v1/namespaces/db1/create
+```
+
 The name of the database is determined from the `Host` header in the HTTP request.
 
 For example, if you have the following entries in your `/etc/hosts` file:
