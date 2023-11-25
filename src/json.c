@@ -5540,16 +5540,14 @@ typedef struct JsonEachCursor JsonEachCursor;
 struct JsonEachCursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
   u32 iRowid;                /* The rowid */
-  u32 iBegin;                /* The first node of the scan */
   u32 i;                     /* Index in sParse.aBlob[] of current row */
   u32 iEnd;                  /* EOF when i equals or exceeds this value */
+  u32 nRoot;                 /* Size of the root argument in bytes */
   u8 eType;                  /* Type of the container for element i */
   u8 bRecursive;             /* True for json_tree().  False for json_each() */
   u32 nParent;               /* Current nesting depth */
   u32 nParentAlloc;          /* Space allocated for aParent[] */
   JsonParent *aParent;       /* Parent elements of i */
-  char *zJson;               /* Input JSON */
-  char *zRoot;               /* Path by which to filter zJson */
   sqlite3 *db;               /* Database connection */
   JsonString path;           /* Current path */
   JsonParse sParse;          /* Parse of the input JSON */
@@ -5638,7 +5636,6 @@ static int jsonEachOpenTree(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
 /* Reset a JsonEachCursor back to its original state.  Free any memory
 ** held. */
 static void jsonEachCursorReset(JsonEachCursor *p){
-  sqlite3_free(p->zRoot);
   jsonParseReset(&p->sParse);
   jsonStringReset(&p->path);
   sqlite3DbFree(p->db, p->aParent);
@@ -5649,8 +5646,6 @@ static void jsonEachCursorReset(JsonEachCursor *p){
   p->nParentAlloc = 0;
   p->iEnd = 0;
   p->eType = 0;
-  p->zJson = 0;
-  p->zRoot = 0;
 }
 
 /* Destructor for a jsonEachCursor object */
@@ -5839,9 +5834,7 @@ static int jsonEachColumn(
       break;
     }
     default: {
-      const char *zRoot = p->zRoot;
-      if( zRoot==0 ) zRoot = "$";
-      sqlite3_result_text(ctx, zRoot, -1, SQLITE_STATIC);
+      sqlite3_result_text(ctx, p->path.zBuf, p->nRoot, SQLITE_STATIC);
       break;
     }
     case JEACH_JSON: {
@@ -5956,6 +5949,7 @@ static int jsonEachFilter(
     if( p->sParse.aBlob==0 ){
       return SQLITE_NOMEM;
     }
+    p->sParse.isBinary = 1;
   }else{
     p->sParse.zJson = (char*)sqlite3_value_text(argv[0]);
     p->sParse.nJson = sqlite3_value_bytes(argv[0]);
@@ -6001,8 +5995,8 @@ static int jsonEachFilter(
     p->eType = 0;
     jsonAppendRaw(&p->path, "$", 1);
   }
+  p->nRoot = p->path.nUsed;
   p->nParent = 0;
-  p->sParse.isBinary = 1;
   n = jsonbPayloadSize(&p->sParse, i, &sz);
   p->iEnd = i+n+sz;
   if( (p->sParse.aBlob[i] & 0x0f)>=JSONB_ARRAY && !p->bRecursive ){
