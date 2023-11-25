@@ -43,7 +43,8 @@ impl HttpSender {
 
         if res.status() != StatusCode::OK {
             let body = hyper::body::to_bytes(res.into_body()).await?;
-            let msg = String::from_utf8(body.into()).unwrap_or_else(|err| err.to_string());
+            let msg = String::from_utf8(body.into())
+                .unwrap_or_else(|err| format!("Invalid payload: {}", err));
             return Err(HranaError::Api(msg));
         }
 
