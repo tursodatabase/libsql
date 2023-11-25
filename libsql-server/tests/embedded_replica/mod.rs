@@ -444,9 +444,7 @@ fn replica_no_resync_on_restart() {
 
 #[test]
 fn replicate_with_snapshots() {
-    let mut sim = Builder::new()
-        .tcp_capacity(200)
-        .build();
+    let mut sim = Builder::new().tcp_capacity(200).build();
 
     let tmp = tempdir().unwrap();
 
@@ -487,18 +485,36 @@ fn replicate_with_snapshots() {
         conn.execute("create table test (x)", ()).await.unwrap();
         // insert enough to trigger snapshot creation.
         for _ in 0..200 {
-            conn.execute("INSERT INTO test values (randomblob(6000))", ()).await.unwrap();
+            conn.execute("INSERT INTO test values (randomblob(6000))", ())
+                .await
+                .unwrap();
         }
 
         let tmp = tempdir().unwrap();
-        let db = Database::open_with_remote_sync_connector(format!("{:?}", tmp.path()), "http://primary:8080", "", TurmoilConnector).await.unwrap();
+        let db = Database::open_with_remote_sync_connector(
+            format!("{:?}", tmp.path()),
+            "http://primary:8080",
+            "",
+            TurmoilConnector,
+        )
+        .await
+        .unwrap();
 
         db.sync().await.unwrap();
 
         let conn = db.connect().unwrap();
 
         let mut res = conn.query("select count(*) from test", ()).await.unwrap();
-        assert_eq!(*res.next().unwrap().unwrap().get_value(0).unwrap().as_integer().unwrap(), 200);
+        assert_eq!(
+            *res.next()
+                .unwrap()
+                .unwrap()
+                .get_value(0)
+                .unwrap()
+                .as_integer()
+                .unwrap(),
+            200
+        );
 
         Ok(())
     });
