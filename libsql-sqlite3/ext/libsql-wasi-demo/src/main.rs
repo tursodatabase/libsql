@@ -5,7 +5,7 @@ mod vfs;
 type State = WasiCtx;
 
 use anyhow::Context;
-use wasmtime::{Caller, Engine, Linker, Module, Store};
+use wasmtime::{Engine, Linker, Module, Store};
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder};
 
 fn main() -> anyhow::Result<()> {

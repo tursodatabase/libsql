@@ -1,8 +1,33 @@
 use super::{memory, State};
 use wasmtime::{Caller, Linker, Memory};
 
+/*
+typedef struct libsql_wasi_file {
+    const struct sqlite3_io_methods* pMethods;
+    int64_t fd;
+} libsql_wasi_file;
+
+#[repr(C)]
+struct LibsqlWasiFile {
+    ptr: *mut std::ffi::c_void,
+    fd: i64,
+}
+*/
+
 fn get_memory(caller: &mut Caller<'_, State>) -> Memory {
     caller.get_export("memory").unwrap().into_memory().unwrap()
+}
+
+fn get_file(memory: &[u8], file_ptr: i32) -> &'static mut std::fs::File {
+    let file_fd = i64::from_le_bytes(
+        memory[file_ptr as usize + 8..file_ptr as usize + 8 + 8]
+            .try_into()
+            .unwrap(),
+    );
+    let mut file: &'static mut std::fs::File = unsafe { &mut *(file_fd as *mut std::fs::File) };
+
+    println!("Metadata: {:?}", file.metadata());
+    file
 }
 
 fn open_fd(mut caller: Caller<'_, State>, name: i32, flags: i32) -> anyhow::Result<i64> {
@@ -133,11 +158,26 @@ fn read(
     amt: i32,
     offset: i64,
 ) -> anyhow::Result<i32> {
-    let memory = get_memory(&mut caller);
-    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
+    use std::io::Read;
 
-    println!("HOST READ CALLED");
-    Ok(0)
+    let memory = get_memory(&mut caller);
+    let (memory, _state) = memory.data_and_store_mut(&mut caller);
+
+    println!("HOST READ CALLED: {amt} bytes starting at {offset}");
+
+    let file = get_file(memory, file);
+
+    let buf = memory::slice_mut(memory, buf, amt as usize)?;
+    match file.read_exact(buf) {
+        Ok(_) => Ok(0),
+        Err(e) => {
+            let errno = e.raw_os_error().unwrap_or(0);
+            println!("Assuming short read, got: {e}");
+            // 522 == SQLITE_IOERR_SHORT_READ
+            buf.fill(0);
+            Ok(522)
+        }
+    }
 }
 
 fn write(
@@ -209,24 +249,37 @@ fn file_control(
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
-    println!("HOST FILE CONTROL CALLED");
-    Ok(0)
+    println!("HOST FILE CONTROL CALLED: op={op}, arg={arg}");
+    // 12 == SQLITE_NOTFOUND
+    Ok(12)
 }
 
-fn sector_size(mut caller: Caller<'_, State>, file: i32) -> anyhow::Result<i32> {
-    let memory = get_memory(&mut caller);
-    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
-
+fn sector_size(mut caller: Caller<'_, State>, _file: i32) -> anyhow::Result<i32> {
     println!("HOST SECTOR SIZE CALLED");
-    Ok(0)
+    Ok(512)
 }
 
-fn device_characteristics(mut caller: Caller<'_, State>, file: i32) -> anyhow::Result<i32> {
-    let memory = get_memory(&mut caller);
-    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
-
-    println!("HOST DEVICE CHARACTERISTICS CALLED");
-    Ok(0)
+fn device_characteristics(mut caller: Caller<'_, State>, _file: i32) -> anyhow::Result<i32> {
+    /*
+       #define SQLITE_IOCAP_ATOMIC                 0x00000001
+       #define SQLITE_IOCAP_ATOMIC512              0x00000002
+       #define SQLITE_IOCAP_ATOMIC1K               0x00000004
+       #define SQLITE_IOCAP_ATOMIC2K               0x00000008
+       #define SQLITE_IOCAP_ATOMIC4K               0x00000010
+       #define SQLITE_IOCAP_ATOMIC8K               0x00000020
+       #define SQLITE_IOCAP_ATOMIC16K              0x00000040
+       #define SQLITE_IOCAP_ATOMIC32K              0x00000080
+       #define SQLITE_IOCAP_ATOMIC64K              0x00000100
+       #define SQLITE_IOCAP_SAFE_APPEND            0x00000200
+       #define SQLITE_IOCAP_SEQUENTIAL             0x00000400
+       #define SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN  0x00000800
+       #define SQLITE_IOCAP_POWERSAFE_OVERWRITE    0x00001000
+       #define SQLITE_IOCAP_IMMUTABLE              0x00002000
+       #define SQLITE_IOCAP_BATCH_ATOMIC           0x00004000
+    */
+    // ATOMIC | SAFE_APPEND | SEQUENTIAL
+    println!("dEVICE CHARACTERISTICS CALLED");
+    Ok(0x00000001 | 0x00000200 | 0x00000400)
 }
 
 pub fn link(linker: &mut Linker<State>) -> anyhow::Result<()> {
