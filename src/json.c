@@ -6249,8 +6249,16 @@ static int jsonEachFilter(
     n = jsonbPayloadSize(&p->sParse, i, &sz);
     p->iEnd = i+n+sz;
     if( (p->sParse.aBlob[i] & 0x0f)>=JSONB_ARRAY && !p->bRecursive ){
-      p->i += n;
+      p->i = i + n;
       p->eType = p->sParse.aBlob[i] & 0x0f;
+      p->aParent = sqlite3DbMallocZero(p->db, sizeof(JsonParent));
+      if( p->aParent==0 ) return SQLITE_NOMEM;
+      p->nParent = 1;
+      p->nParentAlloc = 1;
+      p->aParent[0].iKey = 0;
+      p->aParent[0].iEnd = p->iEnd;
+      p->aParent[0].iHead = p->i;
+      p->aParent[0].iValue = i;
     }
     return SQLITE_OK;
   }else{
