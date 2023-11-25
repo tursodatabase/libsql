@@ -796,7 +796,6 @@ static void jsonAppendSqlValue(
   }
 }
 
-
 /* Make the text in p (which is probably a generated JSON text string)
 ** the result of the SQL function.
 **
@@ -5580,6 +5579,7 @@ struct JsonParent {
   u32 iHead;                 /* Start of object or array */
   u32 iValue;                /* Start of the value */
   u32 iEnd;                  /* First byte past the end */
+  u32 nPath;                 /* Length of path */
   i64 iKey;                  /* Key for JSONB_ARRAY */
 };
 
@@ -5598,6 +5598,7 @@ struct JsonEachCursor {
   char *zJson;               /* Input JSON */
   char *zRoot;               /* Path by which to filter zJson */
   sqlite3 *db;               /* Database connection */
+  JsonString path;           /* Current path */
   JsonParse sParse;          /* Parse of the input JSON */
 };
 typedef struct JsonEachConnection JsonEachConnection;
@@ -5666,6 +5667,7 @@ static int jsonEachOpenEach(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->db = pVtab->db;
+  jsonStringZero(&pCur->path);
   *ppCursor = &pCur->base;
   return SQLITE_OK;
 }
@@ -5685,6 +5687,7 @@ static int jsonEachOpenTree(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
 static void jsonEachCursorReset(JsonEachCursor *p){
   sqlite3_free(p->zRoot);
   jsonParseReset(&p->sParse);
+  jsonStringReset(&p->path);
   sqlite3DbFree(p->db, p->aParent);
   p->iRowid = 0;
   p->i = 0;
@@ -5701,6 +5704,7 @@ static void jsonEachCursorReset(JsonEachCursor *p){
 static int jsonEachClose(sqlite3_vtab_cursor *cur){
   JsonEachCursor *p = (JsonEachCursor*)cur;
   jsonEachCursorReset(p);
+  
   sqlite3_free(cur);
   return SQLITE_OK;
 }
@@ -5724,6 +5728,39 @@ static int jsonSkipLabel(JsonEachCursor *p){
     return p->i + n + sz;
   }else{
     return p->i;
+  }
+}
+
+/*
+** Append the path name for the current element.
+*/
+static void jsonAppendPathName(JsonEachCursor *p){
+  assert( p->nParent>0 );
+  assert( p->eType==JSONB_ARRAY || p->eType==JSONB_OBJECT );
+  if( p->eType==JSONB_ARRAY ){
+    jsonPrintf(30, &p->path, "[%lld]", p->aParent[p->nParent-1].iKey);
+  }else{
+    u32 n, sz = 0, k, i;
+    const char *z;
+    int needQuote = 0;
+    n = jsonbPayloadSize(&p->sParse, p->i, &sz);
+    k = p->i + n;
+    z = (const char*)&p->sParse.aBlob[k];
+    if( sz==0 || !sqlite3Isalpha(z[0]) ){
+      needQuote = 1;
+    }else{
+      for(i=0; i<sz; i++){
+        if( !sqlite3Isalnum(z[i]) ){
+          needQuote = 1;
+          break;
+        }
+      }
+    }
+    if( needQuote ){
+      jsonPrintf(sz+4,&p->path,".\"%.*s\"", sz, z);
+    }else{
+      jsonPrintf(sz+2,&p->path,".%.*s", sz, z);
+    }
   }
 }
 
@@ -5789,17 +5826,21 @@ static int jsonEachNext(sqlite3_vtab_cursor *cur){
         p->aParent = pNew;
       }
       levelChange = 1;
-      pParent = &p->aParent[p->nParent++];
+      pParent = &p->aParent[p->nParent];
       pParent->iHead = p->i;
       pParent->iValue = i;
       pParent->iEnd = i + n + sz;
       pParent->iKey = -1;
+      pParent->nPath = (u32)p->path.nUsed;
+      if( p->eType && p->nParent ) jsonAppendPathName(p);
+      p->nParent++;
       p->i = i + n;
     }else{
       p->i = i + n + sz;
     }
     while( p->nParent>0 && p->i >= p->aParent[p->nParent-1].iEnd ){
       p->nParent--;
+      p->path.nUsed = p->aParent[p->nParent].nPath;
       levelChange = 1;
     }
     if( levelChange ){
@@ -6034,53 +6075,16 @@ static int jsonEachColumn(
         break;
       }
       case JEACH_FULLKEY: {
-#if 0
-        u32 i;
-        JsonString x;
-        jsonStringInit(&x, ctx);
-        for(i=0; i<p->nParent; i++){
-          jsonPrintf(200,&x,"(%u,%u,%u,%lld)",
-             p->aParent[i].iHead,
-             p->aParent[i].iValue,
-             p->aParent[i].iEnd,
-             p->aParent[i].iKey);
-        }
-        jsonReturnString(&x);
-#endif
-#if 0
-        JsonString x;
-        jsonStringInit(&x, ctx);
-        if( p->bRecursive ){
-          jsonEachComputePath(p, &x, p->i);
-        }else{
-          if( p->zRoot ){
-            jsonAppendRaw(&x, p->zRoot, (int)strlen(p->zRoot));
-          }else{
-            jsonAppendChar(&x, '$');
-          }
-          if( p->eType==JSON_ARRAY ){
-            jsonPrintf(30, &x, "[%d]", p->iRowid);
-          }else if( p->eType==JSON_OBJECT ){
-            jsonAppendObjectPathElementOfNode(&x, pThis);
-          }
-        }
-        jsonReturnString(&x);
-#endif
+        u64 nBase = p->path.nUsed;
+        if( p->nParent ) jsonAppendPathName(p);
+        sqlite3_result_text64(ctx, p->path.zBuf, p->path.nUsed,
+                              SQLITE_TRANSIENT, SQLITE_UTF8);
+        p->path.nUsed = nBase;
         break;
       }
       case JEACH_PATH: {
-#if 0
-        if( p->bRecursive ){
-          JsonString x;
-          jsonStringInit(&x, ctx);
-          jsonEachComputePath(p, &x, p->sParse.aUp[p->i]);
-          jsonReturnString(&x);
-          break;
-        }
-        /* For json_each() path and root are the same so fall through
-        ** into the root case */
-        /* no break */ deliberate_fall_through
-#endif
+        sqlite3_result_text64(ctx, p->path.zBuf, p->path.nUsed,
+                              SQLITE_TRANSIENT, SQLITE_UTF8);
         break;
       }
       default: {
@@ -6209,10 +6213,6 @@ static int jsonEachFilter(
     if( idxNum==3 ){
       zRoot = (const char*)sqlite3_value_text(argv[1]);
       if( zRoot==0 ) return SQLITE_OK;
-      n = sqlite3_value_bytes(argv[1]);
-      p->zRoot = sqlite3_malloc64( n+1 );
-      if( p->zRoot==0 ) return SQLITE_NOMEM;
-      memcpy(p->zRoot, zRoot, (size_t)n+1);
       if( zRoot[0]!='$' ){
         sqlite3_free(cur->pVtab->zErrMsg);
         cur->pVtab->zErrMsg = jsonPathSyntaxError(zRoot, 0);
@@ -6223,7 +6223,7 @@ static int jsonEachFilter(
         i = p->i = 0;
         p->eType = 0;
       }else{
-        i = jsonLookupBlobStep(&p->sParse, 0, p->zRoot+1, 0);
+        i = jsonLookupBlobStep(&p->sParse, 0, zRoot+1, 0);
         if( JSON_BLOB_ISERROR(i) ){
           p->i = 0;
           p->eType = 0;
@@ -6238,9 +6238,11 @@ static int jsonEachFilter(
           p->eType = JSONB_ARRAY;
         }
       }
+      jsonAppendRaw(&p->path, zRoot, sqlite3Strlen30(zRoot));
     }else{
       i = p->i = 0;
       p->eType = 0;
+      jsonAppendRaw(&p->path, "$", 1);
     }
     p->nParent = 0;
     p->sParse.isBinary = 1;
