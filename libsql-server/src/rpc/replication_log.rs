@@ -163,7 +163,6 @@ impl ReplicationLog for ReplicationLogService {
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
         let req = req.into_inner();
-
         let logger = self
             .namespaces
             .with(namespace, |ns| ns.db.logger.clone())
@@ -270,6 +269,7 @@ impl ReplicationLog for ReplicationLogService {
         self.verify_session_token(&req)?;
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
         let req = req.into_inner();
+
         let logger = self
             .namespaces
             .with(namespace, |ns| ns.db.logger.clone())
