@@ -190,6 +190,10 @@ impl RowInner for Row {
             Err(crate::Error::ColumnNotFound(idx))
         }
     }
+
+    fn column_count(&self) -> usize {
+        self.cols.len()
+    }
 }
 
 fn bind_params(params: Params, stmt: &mut Stmt) {
