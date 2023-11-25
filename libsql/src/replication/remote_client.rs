@@ -24,13 +24,19 @@ pub struct RemoteClient {
     dirty: bool,
 }
 
+impl Drop for RemoteClient {
+    fn drop(&mut self) {
+        dbg!();
+    }
+}
+
 impl RemoteClient {
     pub(crate) async fn new(remote: super::client::Client, path: &Path) -> anyhow::Result<Self> {
         let meta = WalIndexMeta::open(path.parent().unwrap()).await?;
         Ok(Self {
             remote,
+            last_received: meta.current_frame_no(),
             meta,
-            last_received: None,
             session_token: None,
             dirty: false,
             last_handshake_replication_index: None,
@@ -75,7 +81,7 @@ impl ReplicatorClient for RemoteClient {
         self.session_token = Some(hello.session_token.clone());
         if self.dirty {
             self.meta.reset();
-            self.last_received = None;
+            self.last_received = self.meta.current_frame_no();
             self.dirty = false;
         }
         let current_replication_index = hello.current_replication_index;

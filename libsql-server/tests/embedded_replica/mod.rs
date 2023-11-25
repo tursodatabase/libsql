@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use crate::common::http::Client;
 use crate::common::net::{init_tracing, SimServer, TestServer, TurmoilAcceptor, TurmoilConnector};
@@ -357,4 +358,87 @@ fn replica_primary_reset() {
     });
 
     sim.run().unwrap();
+}
+
+#[test]
+fn replica_no_resync_on_restart() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(600))
+        .build();
+    let tmp = tempdir().unwrap();
+
+    init_tracing();
+    sim.host("primary", move || {
+        let path = tmp.path().to_path_buf();
+        async move {
+            let make_server = || async {
+                TestServer {
+                    path: path.clone().into(),
+                    user_api_config: UserApiConfig {
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                }
+            };
+            let server = make_server().await;
+            server.start_sim(8080).await.unwrap();
+
+            Ok(())
+        }
+    });
+
+    sim.client("client", async {
+        // seed database
+        {
+            let db =
+                Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)
+                    .unwrap();
+            let conn = db.connect().unwrap();
+            conn.execute("create table test (x)", ()).await.unwrap();
+            for _ in 0..500 {
+                conn.execute("insert into test values (42)", ())
+                    .await
+                    .unwrap();
+            }
+        }
+
+        let tmp = tempdir().unwrap();
+        let db_path = tmp.path().join("data");
+        let before = Instant::now();
+        let first_sync_index = {
+            let db = Database::open_with_remote_sync_connector(
+                db_path.display().to_string(),
+                "http://primary:8080",
+                "",
+                TurmoilConnector,
+            )
+            .await
+            .unwrap();
+            db.sync().await.unwrap().unwrap()
+        };
+        let first_sync = before.elapsed();
+
+        let before = Instant::now();
+        let second_sync_index = {
+            let db = Database::open_with_remote_sync_connector(
+                db_path.display().to_string(),
+                "http://primary:8080",
+                "",
+                TurmoilConnector,
+            )
+            .await
+            .unwrap();
+            db.sync().await.unwrap().unwrap()
+        };
+        let second_sync = before.elapsed();
+
+        assert_eq!(first_sync_index, second_sync_index);
+        // very sketchy way of checking the the second sync was very fast, because it performed
+        // only a handshake.
+        assert!(second_sync.as_secs_f64() / first_sync.as_secs_f64() < 0.10);
+
+        Ok(())
+    });
+
+    sim.run().unwrap()
 }
