@@ -105,14 +105,13 @@ impl Database {
             endpoint.as_str().try_into().unwrap(),
             auth_token,
             version.as_ref().map(String::as_str),
-        )
-        .unwrap();
+        ).map_err(|e| crate::errors::Error::ConnectionFailed(e.to_string()))?;
         let path = PathBuf::from(db_path);
-        let client = RemoteClient::new(remote.clone(), &path).await.unwrap();
+        let client = RemoteClient::new(remote.clone(), &path).await.map_err(|e| crate::errors::Error::ConnectionFailed(e.to_string()))?;
         let replicator = Mutex::new(
             Replicator::new(Either::Left(client), path, 1000)
-                .await
-                .unwrap(),
+            .await
+            .map_err(|e| crate::errors::Error::ConnectionFailed(e.to_string()))?
         );
 
         db.replication_ctx = Some(ReplicationContext {
