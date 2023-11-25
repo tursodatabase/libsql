@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 
 use crate::common::http::Client;
 use crate::common::net::{init_tracing, SimServer, TestServer, TurmoilAcceptor, TurmoilConnector};
@@ -387,14 +387,18 @@ fn replica_no_resync_on_restart() {
         }
     });
 
-    sim.client("client", async  {
+    sim.client("client", async {
         // seed database
         {
-            let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector).unwrap();
+            let db =
+                Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)
+                    .unwrap();
             let conn = db.connect().unwrap();
             conn.execute("create table test (x)", ()).await.unwrap();
             for _ in 0..500 {
-                conn.execute("insert into test values (42)", ()).await.unwrap();
+                conn.execute("insert into test values (42)", ())
+                    .await
+                    .unwrap();
             }
         }
 
@@ -402,14 +406,28 @@ fn replica_no_resync_on_restart() {
         let db_path = tmp.path().join("data");
         let before = Instant::now();
         let first_sync_index = {
-            let db =  Database::open_with_remote_sync_connector(db_path.display().to_string(), "http://primary:8080", "", TurmoilConnector).await.unwrap();
+            let db = Database::open_with_remote_sync_connector(
+                db_path.display().to_string(),
+                "http://primary:8080",
+                "",
+                TurmoilConnector,
+            )
+            .await
+            .unwrap();
             db.sync().await.unwrap().unwrap()
         };
         let first_sync = before.elapsed();
 
         let before = Instant::now();
         let second_sync_index = {
-            let db =  Database::open_with_remote_sync_connector(db_path.display().to_string(), "http://primary:8080", "", TurmoilConnector).await.unwrap();
+            let db = Database::open_with_remote_sync_connector(
+                db_path.display().to_string(),
+                "http://primary:8080",
+                "",
+                TurmoilConnector,
+            )
+            .await
+            .unwrap();
             db.sync().await.unwrap().unwrap()
         };
         let second_sync = before.elapsed();
