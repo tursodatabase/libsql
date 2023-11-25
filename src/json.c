@@ -329,7 +329,6 @@ struct JsonParse {
   JsonNode *aNode;   /* Array of nodes containing the parse */
   char *zJson;       /* Original JSON string (before edits) */
   char *zAlt;        /* Revised and/or mimified JSON */
-  u32 *aUp;          /* Index of parent of each node */
   JsonCleanup *pClup;/* Cleanup operations prior to freeing this object */
   u16 iDepth;        /* Nesting depth */
   u8 nErr;           /* Number of errors seen */
@@ -860,10 +859,6 @@ static void jsonParseReset(JsonParse *pParse){
   }
   pParse->nNode = 0;
   pParse->nAlloc = 0;
-  if( pParse->aUp ){
-    sqlite3_free(pParse->aUp);
-    pParse->aUp = 0;
-  }
   if( pParse->bJsonIsRCStr ){
     sqlite3RCStrUnref(pParse->zJson);
     pParse->zJson = 0;
@@ -2013,33 +2008,6 @@ json_parse_restart:
   } /* End switch(z[i]) */
 }
 
-/* Mark node i of pParse as being a child of iParent.  Call recursively
-** to fill in all the descendants of node i.
-*/
-static void jsonParseFillInParentage(JsonParse *pParse, u32 i, u32 iParent){
-  JsonNode *pNode = &pParse->aNode[i];
-  u32 j;
-  pParse->aUp[i] = iParent;
-  switch( pNode->eType ){
-    case JSON_ARRAY: {
-      for(j=1; j<=pNode->n; j += jsonNodeSize(pNode+j)){
-        jsonParseFillInParentage(pParse, i+j, i);
-      }
-      break;
-    }
-    case JSON_OBJECT: {
-      for(j=1; j<=pNode->n; j += jsonNodeSize(pNode+j+1)+1){
-        pParse->aUp[i+j] = i;
-        jsonParseFillInParentage(pParse, i+j+1, i);
-      }
-      break;
-    }
-    default: {
-      break;
-    }
-  }
-}
-
 /*
 ** Parse JSON (either pure RFC-8259 JSON text, or JSON-5 text, or a JSONB
 ** blob) into the JsonNode representation.
@@ -2088,21 +2056,6 @@ static int jsonParse(
     return 1;
   }
   return 0;
-}
-
-/*
-** Compute the parentage of all nodes in a completed parse.
-*/
-static int jsonParseFindParents(JsonParse *pParse){
-  u32 *aUp;
-  assert( pParse->aUp==0 );
-  aUp = pParse->aUp = sqlite3_malloc64( sizeof(u32)*pParse->nNode );
-  if( aUp==0 ){
-    pParse->oom = 1;
-    return SQLITE_NOMEM;
-  }
-  jsonParseFillInParentage(pParse, 0, 0);
-  return SQLITE_OK;
 }
 
 /*
@@ -3257,7 +3210,7 @@ static int jsonConvertTextToBlob(
     }
   }
   if( i<=0 ){
-    if( ALWAYS(pCtx!=0) ){
+    if( pCtx!=0 ){
       if( pParse->oom ){
         sqlite3_result_error_nomem(pCtx);
       }else{
@@ -5767,47 +5720,7 @@ static void jsonAppendPathName(JsonEachCursor *p){
 /* Advance the cursor to the next element for json_tree() */
 static int jsonEachNext(sqlite3_vtab_cursor *cur){
   JsonEachCursor *p = (JsonEachCursor*)cur;
-  if( p->sParse.aNode ){
-    /* LEGACY */
-    if( p->bRecursive ){
-      if( p->sParse.aNode[p->i].jnFlags & JNODE_LABEL ) p->i++;
-      p->i++;
-      p->iRowid++;
-      if( p->i<p->iEnd ){
-        u32 iUp = p->sParse.aUp[p->i];
-        JsonNode *pUp = &p->sParse.aNode[iUp];
-        p->eType = pUp->eType;
-        if( pUp->eType==JSON_ARRAY ){
-          assert( pUp->eU==0 || pUp->eU==3 );
-          testcase( pUp->eU==3 );
-          JSON_VVA( pUp->eU = 3 );
-          if( iUp==p->i-1 ){
-            pUp->u.iKey = 0;
-          }else{
-            pUp->u.iKey++;
-          }
-        }
-      }
-    }else{
-      switch( p->eType ){
-        case JSON_ARRAY: {
-          p->i += jsonNodeSize(&p->sParse.aNode[p->i]);
-          p->iRowid++;
-          break;
-        }
-        case JSON_OBJECT: {
-          p->i += 1 + jsonNodeSize(&p->sParse.aNode[p->i+1]);
-          p->iRowid++;
-          break;
-        }
-        default: {
-          p->i = p->iEnd;
-          break;
-        }
-      }
-    }
-    return SQLITE_OK;
-  }else if( p->bRecursive ){
+  if( p->bRecursive ){
     u8 x;
     u8 levelChange = 0;
     u32 n, sz = 0;
@@ -5866,70 +5779,6 @@ static int jsonEachNext(sqlite3_vtab_cursor *cur){
   return SQLITE_OK;
 }
 
-/* Append an object label to the JSON Path being constructed
-** in pStr.
-*/
-static void jsonAppendObjectPathElementOfNode(
-  JsonString *pStr,
-  JsonNode *pNode
-){
-  int nn;
-  const char *z;
-  int bNeedQuote = 0;
-  assert( pNode->eType==JSON_STRING );
-  assert( pNode->jnFlags & JNODE_LABEL );
-  assert( pNode->eU==1 );
-  z = pNode->u.zJContent;
-  nn = pNode->n;
-  if( pNode->jnFlags & JNODE_RAW ){
-    /* no-op */
-  }else if( nn==0 || !sqlite3Isalpha(z[0]) ){
-    bNeedQuote = 1;
-  }else{
-    int jj;
-    for(jj=1; jj<nn && sqlite3Isalnum(z[jj]); jj++){}
-    bNeedQuote = jj<nn;
-  }
-  if( bNeedQuote ){
-    jsonPrintf(nn+4, pStr, ".\"%.*s\"", nn, z);
-  }else{
-    jsonPrintf(nn+2, pStr, ".%.*s", nn, z);
-  }
-}
-
-/* Append the name of the path for element i to pStr
-*/
-static void jsonEachComputePath(
-  JsonEachCursor *p,       /* The cursor */
-  JsonString *pStr,        /* Write the path here */
-  u32 i                    /* Path to this element */
-){
-  JsonNode *pNode, *pUp;
-  u32 iUp;
-  if( i==0 ){
-    jsonAppendChar(pStr, '$');
-    return;
-  }
-  if( p->sParse.aNode ){
-    /* LEGACY */
-    assert( p->sParse.aUp );
-    iUp = p->sParse.aUp[i];
-    jsonEachComputePath(p, pStr, iUp);
-    pNode = &p->sParse.aNode[i];
-    pUp = &p->sParse.aNode[iUp];
-    if( pUp->eType==JSON_ARRAY ){
-      assert( pUp->eU==3 || (pUp->eU==0 && pUp->u.iKey==0) );
-      testcase( pUp->eU==0 );
-      jsonPrintf(30, pStr, "[%d]", pUp->u.iKey);
-    }else{
-      assert( pUp->eType==JSON_OBJECT );
-      if( (pNode->jnFlags & JNODE_LABEL)==0 ) pNode--;
-      jsonAppendObjectPathElementOfNode(pStr, pNode);
-    }
-    return;
-  }
-}
-
 /* Return the value of a column */
 static int jsonEachColumn(
   sqlite3_vtab_cursor *cur,   /* The cursor */
@@ -5937,173 +5786,73 @@ static int jsonEachColumn(
   int iColumn                 /* Which column to return */
 ){
   JsonEachCursor *p = (JsonEachCursor*)cur;
-  if( p->sParse.aNode!=0 ){
-    /* LEGACY */
-    JsonNode *pThis = &p->sParse.aNode[p->i];
-    switch( iColumn ){
-      case JEACH_KEY: {
-        if( p->i==0 ) break;
-        if( p->eType==JSON_OBJECT ){
-          jsonReturnFromNode(&p->sParse, pThis, ctx, 0);
-        }else if( p->eType==JSON_ARRAY ){
-          u32 iKey;
-          if( p->bRecursive ){
-            if( p->iRowid==0 ) break;
-            assert( p->sParse.aNode[p->sParse.aUp[p->i]].eU==3 );
-            iKey = p->sParse.aNode[p->sParse.aUp[p->i]].u.iKey;
-          }else{
-            iKey = p->iRowid;
-          }
-          sqlite3_result_int64(ctx, (sqlite3_int64)iKey);
-        }
-        break;
+  switch( iColumn ){
+    case JEACH_KEY: {
+      if( p->nParent==0 ) break;
+      if( p->eType==JSONB_OBJECT ){
+        jsonReturnFromBlob(&p->sParse, p->i, ctx, 1);
+      }else{
+        assert( p->eType==JSONB_ARRAY );
+        sqlite3_result_int64(ctx, p->aParent[p->nParent-1].iKey);
       }
-      case JEACH_VALUE: {
-        if( pThis->jnFlags & JNODE_LABEL ) pThis++;
-        jsonReturnFromNode(&p->sParse, pThis, ctx, 0);
-        break;
-      }
-      case JEACH_TYPE: {
-        if( pThis->jnFlags & JNODE_LABEL ) pThis++;
-        sqlite3_result_text(ctx, jsonType[pThis->eType], -1, SQLITE_STATIC);
-        break;
-      }
-      case JEACH_ATOM: {
-        if( pThis->jnFlags & JNODE_LABEL ) pThis++;
-        if( pThis->eType>=JSON_ARRAY ) break;
-        jsonReturnFromNode(&p->sParse, pThis, ctx, 0);
-        break;
-      }
-      case JEACH_ID: {
-        sqlite3_result_int64(ctx,
-           (sqlite3_int64)p->i + ((pThis->jnFlags & JNODE_LABEL)!=0));
-        break;
-      }
-      case JEACH_PARENT: {
-        if( p->i>p->iBegin && p->bRecursive ){
-          sqlite3_result_int64(ctx, (sqlite3_int64)p->sParse.aUp[p->i]);
-        }
-        break;
-      }
-      case JEACH_FULLKEY: {
-        JsonString x;
-        jsonStringInit(&x, ctx);
-        if( p->bRecursive ){
-          jsonEachComputePath(p, &x, p->i);
-        }else{
-          if( p->zRoot ){
-            jsonAppendRaw(&x, p->zRoot, (int)strlen(p->zRoot));
-          }else{
-            jsonAppendChar(&x, '$');
-          }
-          if( p->eType==JSON_ARRAY ){
-            jsonPrintf(30, &x, "[%d]", p->iRowid);
-          }else if( p->eType==JSON_OBJECT ){
-            jsonAppendObjectPathElementOfNode(&x, pThis);
-          }
-        }
-        jsonReturnString(&x);
-        break;
-      }
-      case JEACH_PATH: {
-        if( p->bRecursive ){
-          JsonString x;
-          jsonStringInit(&x, ctx);
-          jsonEachComputePath(p, &x, p->sParse.aUp[p->i]);
-          jsonReturnString(&x);
-          break;
-        }
-        /* For json_each() path and root are the same so fall through
-        ** into the root case */
-        /* no break */ deliberate_fall_through
-      }
-      default: {
-        const char *zRoot = p->zRoot;
-        if( zRoot==0 ) zRoot = "$";
-        sqlite3_result_text(ctx, zRoot, -1, SQLITE_STATIC);
-        break;
-      }
-      case JEACH_JSON: {
-        if( p->sParse.isBinary ){
-          sqlite3_result_blob(ctx, p->sParse.aBlob, p->sParse.nBlob,
-                              SQLITE_STATIC);
-        }else{
-          sqlite3_result_text(ctx, p->sParse.zJson, -1, SQLITE_STATIC);
-        }
-        break;
-      }
+      break;
     }
-  }else{
-    /* Blob scan */
-    switch( iColumn ){
-      case JEACH_KEY: {
-        if( p->nParent==0 ) break;
-        if( p->eType==JSONB_OBJECT ){
-          jsonReturnFromBlob(&p->sParse, p->i, ctx, 1);
-        }else{
-          assert( p->eType==JSONB_ARRAY );
-          sqlite3_result_int64(ctx, p->aParent[p->nParent-1].iKey);
-        }
-        break;
-      }
-      case JEACH_VALUE: {
-        u32 i = jsonSkipLabel(p);
+    case JEACH_VALUE: {
+      u32 i = jsonSkipLabel(p);
+      jsonReturnFromBlob(&p->sParse, i, ctx, 1);
+      break;
+    }
+    case JEACH_TYPE: {
+      u32 i = jsonSkipLabel(p);
+      u8 eType = eType = p->sParse.aBlob[i] & 0x0f;
+      sqlite3_result_text(ctx, jsonbType[eType], -1, SQLITE_STATIC);
+      break;
+    }
+    case JEACH_ATOM: {
+      u32 i = jsonSkipLabel(p);
+      if( (p->sParse.aBlob[i] & 0x0f)<JSONB_ARRAY ){
         jsonReturnFromBlob(&p->sParse, i, ctx, 1);
-        break;
       }
-      case JEACH_TYPE: {
-        u32 i = jsonSkipLabel(p);
-        u8 eType = eType = p->sParse.aBlob[i] & 0x0f;
-        sqlite3_result_text(ctx, jsonbType[eType], -1, SQLITE_STATIC);
-        break;
-      }
-      case JEACH_ATOM: {
-        u32 i = jsonSkipLabel(p);
-        if( (p->sParse.aBlob[i] & 0x0f)<JSONB_ARRAY ){
-          jsonReturnFromBlob(&p->sParse, i, ctx, 1);
-        }
-        break;
-      }
-      case JEACH_ID: {
-        sqlite3_result_int64(ctx, (sqlite3_int64)p->i);
-        break;
-      }
-      case JEACH_PARENT: {
-        if( p->nParent>0 ){
-          sqlite3_result_int64(ctx, p->aParent[p->nParent-1].iHead);
-        }
-        break;
-      }
-      case JEACH_FULLKEY: {
-        u64 nBase = p->path.nUsed;
-        if( p->nParent ) jsonAppendPathName(p);
-        sqlite3_result_text64(ctx, p->path.zBuf, p->path.nUsed,
-                              SQLITE_TRANSIENT, SQLITE_UTF8);
-        p->path.nUsed = nBase;
-        break;
-      }
-      case JEACH_PATH: {
-        sqlite3_result_text64(ctx, p->path.zBuf, p->path.nUsed,
-                              SQLITE_TRANSIENT, SQLITE_UTF8);
-        break;
-      }
-      default: {
-        const char *zRoot = p->zRoot;
-        if( zRoot==0 ) zRoot = "$";
-        sqlite3_result_text(ctx, zRoot, -1, SQLITE_STATIC);
-        break;
-      }
-      case JEACH_JSON: {
-        if( p->sParse.isBinary ){
-          sqlite3_result_blob(ctx, p->sParse.aBlob, p->sParse.nBlob,
-                              SQLITE_STATIC);
-        }else{
-          sqlite3_result_text(ctx, p->sParse.zJson, -1, SQLITE_STATIC);
-        }
-        break;
-      }
+      break;
     }
-
+    case JEACH_ID: {
+      sqlite3_result_int64(ctx, (sqlite3_int64)p->i);
+      break;
+    }
+    case JEACH_PARENT: {
+      if( p->nParent>0 ){
+        sqlite3_result_int64(ctx, p->aParent[p->nParent-1].iHead);
+      }
+      break;
+    }
+    case JEACH_FULLKEY: {
+      u64 nBase = p->path.nUsed;
+      if( p->nParent ) jsonAppendPathName(p);
+      sqlite3_result_text64(ctx, p->path.zBuf, p->path.nUsed,
+                            SQLITE_TRANSIENT, SQLITE_UTF8);
+      p->path.nUsed = nBase;
+      break;
+    }
+    case JEACH_PATH: {
+      sqlite3_result_text64(ctx, p->path.zBuf, p->path.nUsed,
+                            SQLITE_TRANSIENT, SQLITE_UTF8);
+      break;
+    }
+    default: {
+      const char *zRoot = p->zRoot;
+      if( zRoot==0 ) zRoot = "$";
+      sqlite3_result_text(ctx, zRoot, -1, SQLITE_STATIC);
+      break;
+    }
+    case JEACH_JSON: {
+      if( p->sParse.isBinary ){
+        sqlite3_result_blob(ctx, p->sParse.aBlob, p->sParse.nBlob,
+                            SQLITE_STATIC);
+      }else{
+        sqlite3_result_text(ctx, p->sParse.zJson, -1, SQLITE_STATIC);
+      }
+      break;
+    }
   }
   return SQLITE_OK;
 }
@@ -6192,10 +5941,8 @@ static int jsonEachFilter(
   int argc, sqlite3_value **argv
 ){
   JsonEachCursor *p = (JsonEachCursor*)cur;
-  const char *z;
   const char *zRoot = 0;
-  sqlite3_int64 n;
-  int isBinary;
+  u32 i, n, sz;
 
   UNUSED_PARAMETER(idxStr);
   UNUSED_PARAMETER(argc);
@@ -6204,136 +5951,71 @@ static int jsonEachFilter(
   memset(&p->sParse, 0, sizeof(p->sParse));
   p->sParse.nJPRef = 1;
   if( jsonFuncArgMightBeBinary(argv[0]) ){
-    u32 i, n, sz;
     p->sParse.nBlob = sqlite3_value_bytes(argv[0]);
     p->sParse.aBlob = (u8*)sqlite3_value_blob(argv[0]);
     if( p->sParse.aBlob==0 ){
       return SQLITE_NOMEM;
     }
-    if( idxNum==3 ){
-      zRoot = (const char*)sqlite3_value_text(argv[1]);
-      if( zRoot==0 ) return SQLITE_OK;
-      if( zRoot[0]!='$' ){
-        sqlite3_free(cur->pVtab->zErrMsg);
-        cur->pVtab->zErrMsg = jsonPathSyntaxError(zRoot, 0);
-        jsonEachCursorReset(p);
-        return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
+  }else{
+    p->sParse.zJson = (char*)sqlite3_value_text(argv[0]);
+    p->sParse.nJson = sqlite3_value_bytes(argv[0]);
+    if( p->sParse.zJson==0 || jsonConvertTextToBlob(&p->sParse, 0) ){
+      if( p->sParse.oom ){
+        return SQLITE_NOMEM;
       }
-      if( zRoot[1]==0 ){
-        i = p->i = 0;
-        p->eType = 0;
-      }else{
-        i = jsonLookupBlobStep(&p->sParse, 0, zRoot+1, 0);
-        if( JSON_BLOB_ISERROR(i) ){
-          p->i = 0;
-          p->eType = 0;
-          p->iEnd = 0;
-          return SQLITE_OK;
-        }
-        if( p->sParse.iLabel ){
-          p->i = p->sParse.iLabel;
-          p->eType = JSONB_OBJECT;
-        }else{
-          p->i = i;
-          p->eType = JSONB_ARRAY;
-        }
-      }
-      jsonAppendRaw(&p->path, zRoot, sqlite3Strlen30(zRoot));
-    }else{
+      p->i = p->iEnd = 0;
+      return SQLITE_OK;
+    }
+  }
+  if( idxNum==3 ){
+    zRoot = (const char*)sqlite3_value_text(argv[1]);
+    if( zRoot==0 ) return SQLITE_OK;
+    if( zRoot[0]!='$' ){
+      sqlite3_free(cur->pVtab->zErrMsg);
+      cur->pVtab->zErrMsg = jsonPathSyntaxError(zRoot, 0);
+      jsonEachCursorReset(p);
+      return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
+    }
+    if( zRoot[1]==0 ){
       i = p->i = 0;
       p->eType = 0;
-      jsonAppendRaw(&p->path, "$", 1);
-    }
-    p->nParent = 0;
-    p->sParse.isBinary = 1;
-    n = jsonbPayloadSize(&p->sParse, i, &sz);
-    p->iEnd = i+n+sz;
-    if( (p->sParse.aBlob[i] & 0x0f)>=JSONB_ARRAY && !p->bRecursive ){
-      p->i = i + n;
-      p->eType = p->sParse.aBlob[i] & 0x0f;
-      p->aParent = sqlite3DbMallocZero(p->db, sizeof(JsonParent));
-      if( p->aParent==0 ) return SQLITE_NOMEM;
-      p->nParent = 1;
-      p->nParentAlloc = 1;
-      p->aParent[0].iKey = 0;
-      p->aParent[0].iEnd = p->iEnd;
-      p->aParent[0].iHead = p->i;
-      p->aParent[0].iValue = i;
-    }
-    return SQLITE_OK;
-  }else{
-    z = (const char*)sqlite3_value_text(argv[0]);
-    isBinary = 0;
-  }
-  if( z==0 ) return SQLITE_OK;
-  if( sqlite3ValueIsOfClass(argv[0], sqlite3RCStrUnref) ){
-    p->sParse.zJson = sqlite3RCStrRef((char*)z);
-  }else{
-    n = sqlite3_value_bytes(argv[0]);
-    p->sParse.zJson = sqlite3RCStrNew( n+1 );
-    if( p->sParse.zJson==0 ) return SQLITE_NOMEM;
-    memcpy(p->sParse.zJson, z, (size_t)n+(isBinary==0));
-    p->sParse.nJson = n;
-  }
-  p->sParse.bJsonIsRCStr = 1;
-  p->sParse.isBinary = isBinary;
-  p->zJson = p->sParse.zJson;
-  if( jsonParse(&p->sParse, 0) ){
-    int rc = SQLITE_NOMEM;
-    if( p->sParse.oom==0 ){
-      sqlite3_free(cur->pVtab->zErrMsg);
-      cur->pVtab->zErrMsg = sqlite3_mprintf("malformed JSON");
-      if( cur->pVtab->zErrMsg ) rc = SQLITE_ERROR;
-    }
-    jsonEachCursorReset(p);
-    return rc;
-  }else if( p->bRecursive && jsonParseFindParents(&p->sParse) ){
-    jsonEachCursorReset(p);
-    return SQLITE_NOMEM;
-  }else{
-    JsonNode *pNode = 0;
-    if( idxNum==3 ){
-      const char *zErr = 0;
-      zRoot = (const char*)sqlite3_value_text(argv[1]);
-      if( zRoot==0 ) return SQLITE_OK;
-      n = sqlite3_value_bytes(argv[1]);
-      p->zRoot = sqlite3_malloc64( n+1 );
-      if( p->zRoot==0 ) return SQLITE_NOMEM;
-      memcpy(p->zRoot, zRoot, (size_t)n+1);
-      if( zRoot[0]!='$' ){
-        zErr = zRoot;
-      }else{
-        pNode = jsonLookupStep(&p->sParse, 0, p->zRoot+1, 0, &zErr);
-      }
-      if( zErr ){
-        sqlite3_free(cur->pVtab->zErrMsg);
-        cur->pVtab->zErrMsg = jsonPathSyntaxError(zErr, 0);
-        jsonEachCursorReset(p);
-        return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
-      }else if( pNode==0 ){
+    }else{
+      i = jsonLookupBlobStep(&p->sParse, 0, zRoot+1, 0);
+      if( JSON_BLOB_ISERROR(i) ){
+        p->i = 0;
+        p->eType = 0;
+        p->iEnd = 0;
         return SQLITE_OK;
       }
-    }else{
-      pNode = p->sParse.aNode;
-    }
-    p->iBegin = p->i = (int)(pNode - p->sParse.aNode);
-    p->eType = pNode->eType;
-    if( p->eType>=JSON_ARRAY ){
-      assert( pNode->eU==0 );
-      JSON_VVA( pNode->eU = 3 );
-      pNode->u.iKey = 0;
-      p->iEnd = p->i + pNode->n + 1;
-      if( p->bRecursive ){
-        p->eType = p->sParse.aNode[p->sParse.aUp[p->i]].eType;
-        if( p->i>0 && (p->sParse.aNode[p->i-1].jnFlags & JNODE_LABEL)!=0 ){
-          p->i--;
-        }
+      if( p->sParse.iLabel ){
+        p->i = p->sParse.iLabel;
+        p->eType = JSONB_OBJECT;
       }else{
-        p->i++;
+        p->i = i;
+        p->eType = JSONB_ARRAY;
       }
-    }else{
-      p->iEnd = p->i+1;
     }
+    jsonAppendRaw(&p->path, zRoot, sqlite3Strlen30(zRoot));
+  }else{
+    i = p->i = 0;
+    p->eType = 0;
+    jsonAppendRaw(&p->path, "$", 1);
+  }
+  p->nParent = 0;
+  p->sParse.isBinary = 1;
+  n = jsonbPayloadSize(&p->sParse, i, &sz);
+  p->iEnd = i+n+sz;
+  if( (p->sParse.aBlob[i] & 0x0f)>=JSONB_ARRAY && !p->bRecursive ){
+    p->i = i + n;
+    p->eType = p->sParse.aBlob[i] & 0x0f;
+    p->aParent = sqlite3DbMallocZero(p->db, sizeof(JsonParent));
+    if( p->aParent==0 ) return SQLITE_NOMEM;
+    p->nParent = 1;
+    p->nParentAlloc = 1;
+    p->aParent[0].iKey = 0;
+    p->aParent[0].iEnd = p->iEnd;
+    p->aParent[0].iHead = p->i;
+    p->aParent[0].iValue = i;
   }
   return SQLITE_OK;
 }
