@@ -1,7 +1,7 @@
 use super::{memory, State};
 use wasmtime::{Caller, Linker, Memory};
 
-/*
+/* Reference from C:
 typedef struct libsql_wasi_file {
     const struct sqlite3_io_methods* pMethods;
     int64_t fd;
@@ -26,7 +26,7 @@ fn get_file(memory: &[u8], file_ptr: i32) -> &'static mut std::fs::File {
     );
     let mut file: &'static mut std::fs::File = unsafe { &mut *(file_fd as *mut std::fs::File) };
 
-    println!("Metadata: {:?}", file.metadata());
+    tracing::debug!("Metadata: {:?}", file.metadata());
     file
 }
 
@@ -36,7 +36,7 @@ fn open_fd(mut caller: Caller<'_, State>, name: i32, flags: i32) -> anyhow::Resu
 
     let name = memory::read_cstr(memory, name)?;
 
-    println!("HOST OPEN_FD CALLED: {name:?} {flags:0o}");
+    tracing::debug!("Opening a file on host: {name:?} {flags:0o}");
 
     let file = std::fs::OpenOptions::new()
         .read(true)
@@ -57,7 +57,7 @@ fn delete(
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
-    println!("HOST DELETE CALLED");
+    tracing::debug!("HOST DELETE CALLED");
     Ok(0)
 }
 
@@ -71,7 +71,7 @@ fn access(
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
-    println!("HOST ACCESS CALLED");
+    tracing::debug!("HOST ACCESS CALLED");
     Ok(0)
 }
 
@@ -101,7 +101,7 @@ fn randomness(
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
-    println!("HOST RANDOMNESS CALLED");
+    tracing::debug!("HOST RANDOMNESS CALLED");
     Ok(0)
 }
 
@@ -109,7 +109,7 @@ fn sleep(mut caller: Caller<'_, State>, vfs: i32, microseconds: i32) -> anyhow::
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
-    println!("HOST SLEEP CALLED");
+    tracing::debug!("HOST SLEEP CALLED");
     Ok(0)
 }
 
@@ -117,7 +117,7 @@ fn current_time(mut caller: Caller<'_, State>, vfs: i32, out: i32) -> anyhow::Re
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
-    println!("HOST CURRENT TIME CALLED");
+    tracing::debug!("HOST CURRENT TIME CALLED");
     Ok(0)
 }
 
@@ -130,7 +130,7 @@ fn get_last_error(
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
-    println!("HOST GET LAST ERROR CALLED");
+    tracing::debug!("HOST GET LAST ERROR CALLED");
     Ok(0)
 }
 
@@ -138,15 +138,20 @@ fn current_time_64(mut caller: Caller<'_, State>, vfs: i32, out: i32) -> anyhow:
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
-    println!("HOST CURRENT TIME 64 CALLED");
+    tracing::debug!("HOST CURRENT TIME 64 CALLED");
     Ok(0)
 }
 
 fn close(mut caller: Caller<'_, State>, file: i32) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
-    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
-    // TODO: read the file pointer from guest memory and feed it to Box::from_raw
-    println!("HOST CLOSE CALLED");
+    let (memory, _state) = memory.data_and_store_mut(&mut caller);
+
+    let file_fd = i64::from_le_bytes(
+        memory[file as usize + 8..file as usize + 8 + 8]
+            .try_into()
+            .unwrap(),
+    );
+    let file = unsafe { Box::from_raw(file_fd as *mut std::fs::File) };
 
     Ok(0)
 }
@@ -163,7 +168,7 @@ fn read(
     let memory = get_memory(&mut caller);
     let (memory, _state) = memory.data_and_store_mut(&mut caller);
 
-    println!("HOST READ CALLED: {amt} bytes starting at {offset}");
+    tracing::debug!("HOST READ CALLED: {amt} bytes starting at {offset}");
 
     let file = get_file(memory, file);
     file.seek(std::io::SeekFrom::Start(offset as u64))?;
@@ -173,7 +178,7 @@ fn read(
         Ok(_) => Ok(0),
         Err(e) => {
             let errno = e.raw_os_error().unwrap_or(0);
-            println!("Assuming short read, got: {e}");
+            tracing::debug!("Assuming short read, got: {e}");
             // 522 == SQLITE_IOERR_SHORT_READ
             buf.fill(0);
             Ok(522)
@@ -193,7 +198,7 @@ fn write(
     let memory = get_memory(&mut caller);
     let (memory, _state) = memory.data_and_store_mut(&mut caller);
 
-    println!("HOST WRITE CALLED");
+    tracing::debug!("HOST WRITE CALLED");
 
     let file = get_file(memory, file);
     file.seek(std::io::SeekFrom::Start(offset as u64))?;
@@ -203,7 +208,7 @@ fn write(
         Ok(_) => Ok(0),
         Err(e) => {
             let errno = e.raw_os_error().unwrap_or(0);
-            println!("Assuming short write, got: {e}");
+            tracing::debug!("Assuming short write, got: {e}");
             // 778 == SQLITE_IOERR_WRITE
             Ok(778)
         }
@@ -213,35 +218,35 @@ fn write(
 fn truncate(mut caller: Caller<'_, State>, file: i32, size: i64) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
-    println!("HOST TRUNCATE CALLED");
+    tracing::debug!("HOST TRUNCATE CALLED");
     Ok(0)
 }
 
 fn sync(mut caller: Caller<'_, State>, file: i32, flags: i32) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
-    println!("HOST SYNC CALLED");
+    tracing::debug!("HOST SYNC CALLED");
     Ok(0)
 }
 
 fn file_size(mut caller: Caller<'_, State>, file: i32, size: i32) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
-    println!("HOST FILE SIZE CALLED");
+    tracing::debug!("HOST FILE SIZE CALLED");
     Ok(0)
 }
 
 fn lock(mut caller: Caller<'_, State>, file: i32, lock: i32) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
-    println!("HOST LOCK CALLED");
+    tracing::debug!("HOST LOCK CALLED");
     Ok(0)
 }
 
 fn unlock(mut caller: Caller<'_, State>, file: i32, lock: i32) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
-    println!("HOST UNLOCK CALLED");
+    tracing::debug!("HOST UNLOCK CALLED");
     Ok(0)
 }
 
@@ -252,7 +257,7 @@ fn check_reserved_lock(
 ) -> anyhow::Result<i32> {
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
-    println!("HOST CHECK RESERVED LOCK CALLED");
+    tracing::debug!("HOST CHECK RESERVED LOCK CALLED");
     Ok(0)
 }
 
@@ -265,13 +270,13 @@ fn file_control(
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
-    println!("HOST FILE CONTROL CALLED: op={op}, arg={arg}");
+    tracing::debug!("HOST FILE CONTROL CALLED: op={op}, arg={arg}");
     // 12 == SQLITE_NOTFOUND
     Ok(12)
 }
 
 fn sector_size(mut caller: Caller<'_, State>, _file: i32) -> anyhow::Result<i32> {
-    println!("HOST SECTOR SIZE CALLED");
+    tracing::debug!("HOST SECTOR SIZE CALLED");
     Ok(512)
 }
 
@@ -294,7 +299,7 @@ fn device_characteristics(mut caller: Caller<'_, State>, _file: i32) -> anyhow::
        #define SQLITE_IOCAP_BATCH_ATOMIC           0x00004000
     */
     // ATOMIC | SAFE_APPEND | SEQUENTIAL
-    println!("dEVICE CHARACTERISTICS CALLED");
+    tracing::debug!("dEVICE CHARACTERISTICS CALLED");
     Ok(0x00000001 | 0x00000200 | 0x00000400)
 }
 
