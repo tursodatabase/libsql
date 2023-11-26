@@ -45,9 +45,9 @@ fn main() -> anyhow::Result<()> {
     let sql = malloc.call(&mut store, 64)?;
     memory.write(&mut store, sql as usize, b"PRAGMA journal_mode=WAL;\0")?;
     let rc = exec_func.call(&mut store, (db, sql))?;
-    let _ = free.call(&mut store, sql)?;
+    free.call(&mut store, sql)?;
     let _ = close_func.call(&mut store, db)?;
-    let _ = free.call(&mut store, db_path)?;
+    free.call(&mut store, db_path)?;
 
     println!("rc: {rc}");
 
