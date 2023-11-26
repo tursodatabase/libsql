@@ -416,7 +416,7 @@ static void jsonStringReset(JsonString *p){
 */
 static void jsonStringOom(JsonString *p){
   p->eErr |= JSTRING_OOM;
-  sqlite3_result_error_nomem(p->pCtx);
+  if( p->pCtx ) sqlite3_result_error_nomem(p->pCtx);
   jsonStringReset(p);
 }
 
@@ -5766,8 +5766,7 @@ static int jsonEachNext(sqlite3_vtab_cursor *cur){
     n = jsonbPayloadSize(&p->sParse, i, &sz);
     p->i = i + n + sz;
   }
-  if( p->eType==JSONB_ARRAY ){
-    assert( p->nParent>0 );
+  if( p->eType==JSONB_ARRAY && p->nParent ){
     p->aParent[p->nParent-1].iKey++;
   }
   p->iRowid++;
@@ -5809,7 +5808,6 @@ static int jsonEachColumn(
     case JEACH_KEY: {
       if( p->nParent==0 ){
         u32 n, j;
-        assert( p->iRowid==0 && p->bRecursive );
         if( p->nRoot==1 ) break;
         j = jsonEachPathLength(p);
         n = p->nRoot - j;
