@@ -12,17 +12,43 @@ LIBSQL_IMPORT("write") int libsql_wasi_write(sqlite3_file*, const void*, int iAm
 LIBSQL_IMPORT("truncate") int libsql_wasi_truncate(sqlite3_file*, sqlite3_int64 size);
 LIBSQL_IMPORT("sync") int libsql_wasi_sync(sqlite3_file*, int flags);
 LIBSQL_IMPORT("file_size") int libsql_wasi_file_size(sqlite3_file*, sqlite3_int64 *pSize);
-LIBSQL_IMPORT("lock") int libsql_wasi_lock(sqlite3_file*, int);
-LIBSQL_IMPORT("unlock") int libsql_wasi_unlock(sqlite3_file*, int);
-LIBSQL_IMPORT("check_reserved_lock") int libsql_wasi_check_reserved_lock(sqlite3_file*, int *pResOut);
-LIBSQL_IMPORT("file_control") int libslq_wasi_file_control(sqlite3_file*, int op, void *pArg);
-LIBSQL_IMPORT("sector_size") int libsql_wasi_sector_size(sqlite3_file*);
-LIBSQL_IMPORT("device_characteristics") int libsql_wasi_device_characteristics(sqlite3_file*);
 
 typedef struct libsql_wasi_file {
     const struct sqlite3_io_methods* pMethods;
     int64_t fd;
 } libsql_wasi_file;
+
+// We're running in exclusive mode, so locks are noops.
+// We need to handle locking in the host.
+static int libsql_wasi_lock(sqlite3_file* f, int eLock) {
+    (void)f, (void)eLock;
+    return SQLITE_OK;
+}
+
+static int libsql_wasi_unlock(sqlite3_file* f, int eLock) {
+    (void)f, (void)eLock;
+    return SQLITE_OK;
+}
+
+static int libsql_wasi_check_reserved_lock(sqlite3_file* f, int *pResOut) {
+    (void)f, (void)pResOut;
+    return SQLITE_OK;
+}
+
+static int libsql_wasi_device_characteristics(sqlite3_file* f) {
+    (void)f;
+    return SQLITE_IOCAP_ATOMIC | SQLITE_IOCAP_SAFE_APPEND | SQLITE_IOCAP_SEQUENTIAL;
+}
+
+static int libsql_wasi_file_control(sqlite3_file* f, int opcode, void* arg) {
+    (void)opcode, (void)f, (void)arg;
+    return SQLITE_NOTFOUND;
+}
+
+static int libsql_wasi_sector_size(sqlite3_file* f) {
+    (void)f;
+    return 512;
+}
 
 static const sqlite3_io_methods wasi_io_methods = {
     .iVersion = 1,
@@ -35,7 +61,7 @@ static const sqlite3_io_methods wasi_io_methods = {
     .xLock = &libsql_wasi_lock,
     .xUnlock = &libsql_wasi_unlock,
     .xCheckReservedLock = &libsql_wasi_check_reserved_lock,
-    .xFileControl = &libslq_wasi_file_control,
+    .xFileControl = &libsql_wasi_file_control,
     .xSectorSize = &libsql_wasi_sector_size,
     .xDeviceCharacteristics = &libsql_wasi_device_characteristics,
 };

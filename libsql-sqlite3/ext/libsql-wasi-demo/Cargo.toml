@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.75"
+rand = "0.8.5"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 wasmtime = "15.0.0"
