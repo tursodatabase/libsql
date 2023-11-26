@@ -1688,6 +1688,7 @@ fiddle: sqlite3.c shell.c
 #
 wasi: sqlite3.c sqlite3.h
 	clang --target=wasm32-unknown-wasi \
+		-I . \
 		-DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_UTF16 \
 		-DSQLITE_OMIT_SHARED_CACHE -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_SHARED_MEM=1 \
 		-DSQLITE_TEMP_STORE=2 \
@@ -1699,7 +1700,7 @@ wasi: sqlite3.c sqlite3.h
 		-Wl,--export-all \
 		-o libsql.wasm \
 		-v \
-		sqlite3.c
+		sqlite3.c ext/wasi/vfs.c
 
 
 #
