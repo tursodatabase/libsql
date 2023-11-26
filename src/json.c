@@ -5542,7 +5542,7 @@ struct JsonEachCursor {
   u32 iRowid;                /* The rowid */
   u32 i;                     /* Index in sParse.aBlob[] of current row */
   u32 iEnd;                  /* EOF when i equals or exceeds this value */
-  u32 nRoot;                 /* Size of the root argument in bytes */
+  u32 nRoot;                 /* Size of the root path in bytes */
   u8 eType;                  /* Type of the container for element i */
   u8 bRecursive;             /* True for json_tree().  False for json_each() */
   u32 nParent;               /* Current nesting depth */
@@ -5760,18 +5760,42 @@ static int jsonEachNext(sqlite3_vtab_cursor *cur){
         p->eType = 0;
       }
     }
-    if( p->eType==JSONB_ARRAY ){
-      assert( p->nParent>0 );
-      p->aParent[p->nParent-1].iKey++;
-    }
   }else{
     u32 n, sz = 0;
     u32 i = jsonSkipLabel(p);
     n = jsonbPayloadSize(&p->sParse, i, &sz);
     p->i = i + n + sz;
   }
+  if( p->eType==JSONB_ARRAY ){
+    assert( p->nParent>0 );
+    p->aParent[p->nParent-1].iKey++;
+  }
   p->iRowid++;
   return SQLITE_OK;
+}
+
+/* Length of the path for rowid==0 in bRecursive mode.
+*/
+static int jsonEachPathLength(JsonEachCursor *p){
+  u32 n = p->path.nUsed;
+  if( p->iRowid==0 && p->bRecursive && n>1 ){
+    if( p->path.zBuf[n-1]==']' ){
+      do{
+        n--;
+        assert( n>0 );
+      }while( p->path.zBuf[n]!='[' );
+    }else{
+      u32 sz = 0;
+      jsonbPayloadSize(&p->sParse, p->i, &sz);
+      if( p->path.zBuf[n-1]=='"' ) sz += 2;
+      n -= sz;
+      while( p->path.zBuf[n]!='.' ){
+        n--;
+        assert( n>0 );
+      }
+    }
+  }
+  return n;
 }
 
 /* Return the value of a column */
@@ -5783,7 +5807,23 @@ static int jsonEachColumn(
   JsonEachCursor *p = (JsonEachCursor*)cur;
   switch( iColumn ){
     case JEACH_KEY: {
-      if( p->nParent==0 ) break;
+      if( p->nParent==0 ){
+        u32 n, j;
+        assert( p->iRowid==0 && p->bRecursive );
+        if( p->nRoot==1 ) break;
+        j = jsonEachPathLength(p);
+        n = p->nRoot - j;
+        if( p->path.zBuf[j]=='[' ){
+          i64 x;
+          sqlite3Atoi64(&p->path.zBuf[j+1], &x, n-1, SQLITE_UTF8);
+          sqlite3_result_int64(ctx, x);
+        }else if( p->path.zBuf[j+1]=='"' ){
+          sqlite3_result_text(ctx, &p->path.zBuf[j+2], n-3, SQLITE_TRANSIENT);
+        }else{
+          sqlite3_result_text(ctx, &p->path.zBuf[j+1], n-1, SQLITE_TRANSIENT);
+        }
+        break;
+      }
       if( p->eType==JSONB_OBJECT ){
         jsonReturnFromBlob(&p->sParse, p->i, ctx, 1);
       }else{
@@ -5815,7 +5855,7 @@ static int jsonEachColumn(
       break;
     }
     case JEACH_PARENT: {
-      if( p->nParent>0 ){
+      if( p->nParent>0 && p->bRecursive ){
         sqlite3_result_int64(ctx, p->aParent[p->nParent-1].iHead);
       }
       break;
@@ -5829,7 +5869,8 @@ static int jsonEachColumn(
       break;
     }
     case JEACH_PATH: {
-      sqlite3_result_text64(ctx, p->path.zBuf, p->path.nUsed,
+      u32 n = jsonEachPathLength(p);
+      sqlite3_result_text64(ctx, p->path.zBuf, n,
                             SQLITE_TRANSIENT, SQLITE_UTF8);
       break;
     }
@@ -5970,6 +6011,7 @@ static int jsonEachFilter(
       jsonEachCursorReset(p);
       return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
     }
+    p->nRoot = sqlite3_value_bytes(argv[1]);
     if( zRoot[1]==0 ){
       i = p->i = 0;
       p->eType = 0;
@@ -5989,13 +6031,13 @@ static int jsonEachFilter(
         p->eType = JSONB_ARRAY;
       }
     }
-    jsonAppendRaw(&p->path, zRoot, sqlite3Strlen30(zRoot));
+    jsonAppendRaw(&p->path, zRoot, p->nRoot);
   }else{
     i = p->i = 0;
     p->eType = 0;
+    p->nRoot = 1;
     jsonAppendRaw(&p->path, "$", 1);
   }
-  p->nRoot = p->path.nUsed;
   p->nParent = 0;
   n = jsonbPayloadSize(&p->sParse, i, &sz);
   p->iEnd = i+n+sz;
