@@ -42,10 +42,24 @@ fn main() -> anyhow::Result<()> {
 
     libsql_wasi_init.call(&mut store, ())?;
     let db = open_func.call(&mut store, db_path)?;
+
     let sql = malloc.call(&mut store, 64)?;
     memory.write(&mut store, sql as usize, b"PRAGMA journal_mode=WAL;\0")?;
     let rc = exec_func.call(&mut store, (db, sql))?;
     free.call(&mut store, sql)?;
+    if rc != 0 {
+        anyhow::bail!("Failed to execute SQL");
+    }
+
+    let sql = malloc.call(&mut store, 64)?;
+    memory.write(
+        &mut store,
+        sql as usize,
+        b"CREATE TABLE testme(id, v1, v2);\0",
+    )?;
+    let rc = exec_func.call(&mut store, (db, sql))?;
+    free.call(&mut store, sql)?;
+
     let _ = close_func.call(&mut store, db)?;
     free.call(&mut store, db_path)?;
 
