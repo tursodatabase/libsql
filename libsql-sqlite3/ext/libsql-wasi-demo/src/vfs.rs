@@ -158,7 +158,7 @@ fn read(
     amt: i32,
     offset: i64,
 ) -> anyhow::Result<i32> {
-    use std::io::Read;
+    use std::io::{Read, Seek};
 
     let memory = get_memory(&mut caller);
     let (memory, _state) = memory.data_and_store_mut(&mut caller);
@@ -166,6 +166,7 @@ fn read(
     println!("HOST READ CALLED: {amt} bytes starting at {offset}");
 
     let file = get_file(memory, file);
+    file.seek(std::io::SeekFrom::Start(offset as u64))?;
 
     let buf = memory::slice_mut(memory, buf, amt as usize)?;
     match file.read_exact(buf) {
@@ -187,11 +188,26 @@ fn write(
     amt: i32,
     offset: i64,
 ) -> anyhow::Result<i32> {
+    use std::io::{Seek, Write};
+
     let memory = get_memory(&mut caller);
-    let (_memory, _state) = memory.data_and_store_mut(&mut caller);
+    let (memory, _state) = memory.data_and_store_mut(&mut caller);
 
     println!("HOST WRITE CALLED");
-    Ok(0)
+
+    let file = get_file(memory, file);
+    file.seek(std::io::SeekFrom::Start(offset as u64))?;
+
+    let buf = memory::slice(memory, buf, amt as usize)?;
+    match file.write_all(buf) {
+        Ok(_) => Ok(0),
+        Err(e) => {
+            let errno = e.raw_os_error().unwrap_or(0);
+            println!("Assuming short write, got: {e}");
+            // 778 == SQLITE_IOERR_WRITE
+            Ok(778)
+        }
+    }
 }
 
 fn truncate(mut caller: Caller<'_, State>, file: i32, size: i64) -> anyhow::Result<i32> {
