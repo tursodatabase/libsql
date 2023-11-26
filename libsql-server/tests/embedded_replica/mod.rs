@@ -6,7 +6,7 @@ use crate::common::http::Client;
 use crate::common::net::{init_tracing, SimServer, TestServer, TurmoilAcceptor, TurmoilConnector};
 use crate::common::snapshot_metrics;
 use libsql::Database;
-use libsql_server::config::{AdminApiConfig, RpcServerConfig, UserApiConfig};
+use libsql_server::config::{AdminApiConfig, DbConfig, RpcServerConfig, UserApiConfig};
 use serde_json::json;
 use tempfile::tempdir;
 use tokio::sync::Notify;
@@ -359,7 +359,6 @@ fn replica_primary_reset() {
 
     sim.run().unwrap();
 }
-
 #[test]
 fn replica_no_resync_on_restart() {
     let mut sim = Builder::new()
@@ -441,4 +440,84 @@ fn replica_no_resync_on_restart() {
     });
 
     sim.run().unwrap()
+}
+
+#[test]
+fn replicate_with_snapshots() {
+    let mut sim = Builder::new().tcp_capacity(200).build();
+
+    let tmp = tempdir().unwrap();
+
+    init_tracing();
+    sim.host("primary", move || {
+        let path = tmp.path().to_path_buf();
+        async move {
+            let server = TestServer {
+                path: path.clone().into(),
+                user_api_config: UserApiConfig {
+                    ..Default::default()
+                },
+                db_config: DbConfig {
+                    max_log_size: 1, // very small log size to force snapshot creation
+                    ..Default::default()
+                },
+                admin_api_config: Some(AdminApiConfig {
+                    acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
+                    connector: TurmoilConnector,
+                    disable_metrics: true,
+                }),
+                rpc_server_config: Some(RpcServerConfig {
+                    acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 4567)).await.unwrap(),
+                    tls_config: None,
+                }),
+                ..Default::default()
+            };
+            server.start_sim(8080).await.unwrap();
+
+            Ok(())
+        }
+    });
+
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)
+            .unwrap();
+        let conn = db.connect().unwrap();
+        conn.execute("create table test (x)", ()).await.unwrap();
+        // insert enough to trigger snapshot creation.
+        for _ in 0..200 {
+            conn.execute("INSERT INTO test values (randomblob(6000))", ())
+                .await
+                .unwrap();
+        }
+
+        let tmp = tempdir().unwrap();
+        let db = Database::open_with_remote_sync_connector(
+            format!("{:?}", tmp.path()),
+            "http://primary:8080",
+            "",
+            TurmoilConnector,
+        )
+        .await
+        .unwrap();
+
+        db.sync().await.unwrap();
+
+        let conn = db.connect().unwrap();
+
+        let mut res = conn.query("select count(*) from test", ()).await.unwrap();
+        assert_eq!(
+            *res.next()
+                .unwrap()
+                .unwrap()
+                .get_value(0)
+                .unwrap()
+                .as_integer()
+                .unwrap(),
+            200
+        );
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
 }
