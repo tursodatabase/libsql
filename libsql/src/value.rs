@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use crate::{Error, Result};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum Value {
     Null,
