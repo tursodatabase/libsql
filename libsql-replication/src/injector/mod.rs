@@ -24,7 +24,7 @@ pub type FrameBuffer = Arc<Mutex<VecDeque<Frame>>>;
 
 pub struct Injector {
     /// The injector is in a transaction state
-    pub(crate) is_txn: bool,
+    is_txn: bool,
     /// Buffer for holding current transaction frames
     buffer: FrameBuffer,
     /// Maximum capacity of the frame buffer
@@ -176,6 +176,11 @@ impl Injector {
 
     pub fn clear_buffer(&mut self) {
         self.buffer.lock().clear()
+    }
+
+    #[cfg(test)]
+    pub fn is_txn(&self) -> bool {
+        self.is_txn
     }
 }
 
