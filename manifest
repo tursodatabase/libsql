@@ -1,5 +1,5 @@
-C Enhance\sthe\s(SQLITE_DEBUG-only)\sjson_parse()\sroutine\sso\sthat\sit\sshows\sa\s\ndecoding\sof\sJSONB\swhen\sgiven\sa\sBLOB\sargument.
-D 2023-11-27T17:13:18.242
+C Add\suntested\s(#ifdefed-out)\scode\sfor\sthe\sMergePatch\salgorithm\sagainst\sJSONB.\nAdd\s(and\stest)\sthe\sjsonBlobEdit()\sroutine\sthat\sis\sneeded\sby\sthe\snew\sMergePatch.
+D 2023-11-27T23:46:12.954
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -688,7 +688,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c aefd3bf7c225ad03e25680febb2659779a99b227cd98222270e16719b1251bdb
+F src/json.c 7d6387920736cd9b78a4211771265c4c574284613d8e63f43b3ce7bc160da498
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 1b89f3de98d1b59fec5bac1d66d6ece21f703821b8eaa0d53d9604c35309f6f9
@@ -2145,8 +2145,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a4e19ad43dac81e7655ec03ff69bb99d1d02b0c227034c90fb41415fd4793fe3
-R 2b39f71294c83f1ae33c269e29617f78
+P af267868562e0799ad691dccad05f17afbc34d609eede8c55f57d209290246ef
+R 47ffcc493583e45ee7703e45cf1805e3
 U drh
-Z ba17737c2ff9c3cb6da75654e948a46b
+Z 2cedbcb9affb9f675b8d832bfea283a4
 # Remove this line to create a well-formed Fossil manifest.

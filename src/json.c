@@ -3802,6 +3802,41 @@ static void jsonAfterEditSizeAdjust(JsonParse *pParse, u32 iRoot){
 }
 
 /*
+** Modify the JSONB blob at pParse->aBlob by removing nDel bytes of
+** content beginning at iDel, and replacing them with nIns bytes of
+** content given by aIns.
+**
+** nDel may be zero, in which case no bytes are removed.  But iDel is
+** still important as new bytes will be insert beginning at iDel.
+**
+** nIns may be zero, in which case no new bytes are inserted.  aIns might
+** be a NULL pointer in this case.
+**
+** Set pParse->oom if an OOM occurs.
+*/
+static void jsonBlobEdit(
+  JsonParse *pParse,     /* The JSONB to be modified is in pParse->aBlob */
+  u32 iDel,              /* First byte to be removed */
+  u32 nDel,              /* Number of bytes to remove */
+  const u8 *aIns,        /* Content to insert */
+  u32 nIns               /* Bytes of content to insert */
+){
+  i64 d = (i64)nIns - (i64)nDel;
+  if( d!=0 ){
+    if( pParse->nBlob + d > pParse->nBlobAlloc ){
+      jsonBlobExpand(pParse, pParse->nBlob+d);
+      if( pParse->oom ) return;
+    }
+    memmove(&pParse->aBlob[iDel+nIns],
+            &pParse->aBlob[iDel+nDel],
+            pParse->nBlob - (iDel+nDel));
+    pParse->nBlob += d;
+    pParse->delta += d;
+  }
+  if( nIns ) memcpy(&pParse->aBlob[iDel], aIns, nIns);
+}
+
+/*
 ** Error returns from jsonLookupBlobStep()
 */
 #define JSON_BLOB_ERROR      0xffffffff
@@ -3834,27 +3869,12 @@ static u32 jsonLookupBlobStep(
           sz += iRoot - iLabel;
           iRoot = iLabel;
         }
-        memmove(&pParse->aBlob[iRoot], &pParse->aBlob[iRoot+sz],
-                pParse->nBlob - (iRoot+sz));
-        pParse->delta = -(int)sz;
-        pParse->nBlob -= sz;
+        jsonBlobEdit(pParse, iRoot, sz, 0, 0);
       }else if( pParse->eEdit==JEDIT_INS ){
         /* Already exists, so json_insert() is a no-op */
       }else{
         /* json_set() or json_replace() */
-        int d = (int)pParse->nIns - (int)sz;
-        pParse->delta = d;
-        if( d!=0 ){
-          if( pParse->nBlob + d > pParse->nBlobAlloc ){
-            jsonBlobExpand(pParse, pParse->nBlob+d);
-            if( pParse->oom ) return iRoot;
-          }
-          memmove(&pParse->aBlob[iRoot+pParse->nIns],
-                  &pParse->aBlob[iRoot+sz],
-                  pParse->nBlob - iRoot - sz);
-          pParse->nBlob += d;
-        }
-        memcpy(&pParse->aBlob[iRoot], pParse->aIns, pParse->nIns);
+        jsonBlobEdit(pParse, iRoot, sz, pParse->aIns, pParse->nIns);
       }
     }
     pParse->iLabel = iLabel;
@@ -3920,6 +3940,8 @@ static u32 jsonLookupBlobStep(
       ix.nBlobAlloc = sizeof(aLabel);
       jsonBlobAppendNodeType(&ix,JSONB_TEXTRAW, nKey);
       if( jsonBlobMakeEditable(pParse, ix.nBlob+nKey) ){
+        /* This is similar to jsonBlobEdit() except that the inserted
+        ** bytes come from two different places, ix.aBlob and pParse->aBlob. */
         nIns = ix.nBlob + nKey + pParse->nIns;
         assert( pParse->nBlob + pParse->nIns <= pParse->nBlobAlloc );
         memmove(&pParse->aBlob[j+nIns], &pParse->aBlob[j],
@@ -3984,12 +4006,7 @@ static u32 jsonLookupBlobStep(
     if( pParse->eEdit>=JEDIT_INS && jsonBlobMakeEditable(pParse, 0) ){
       testcase( pParse->eEdit==JEDIT_INS );
       testcase( pParse->eEdit==JEDIT_SET );
-      assert( pParse->nBlob + pParse->nIns <= pParse->nBlobAlloc );
-      memmove(&pParse->aBlob[j+pParse->nIns], &pParse->aBlob[j],
-              pParse->nBlob - j);
-      memcpy(&pParse->aBlob[j], pParse->aIns, pParse->nIns);
-      pParse->delta = pParse->nIns;
-      pParse->nBlob += pParse->nIns;
+      jsonBlobEdit(pParse, j, 0, pParse->aIns, pParse->nIns);
       jsonAfterEditSizeAdjust(pParse, iRoot);
       return j;
     }
@@ -4284,6 +4301,7 @@ static void jsonRemoveFromBlob(
       return;  /* return NULL if $ is removed */
     }
     px.eEdit = JEDIT_DEL;
+    px.delta = 0;
     rc = jsonLookupBlobStep(&px, 0, zPath+1, 0);
     if( rc==JSON_BLOB_NOTFOUND ) continue;
     if( JSON_BLOB_ISERROR(rc) ) goto jsonRemoveFromBlob_patherror;
@@ -4420,6 +4438,7 @@ static void jsonInsertIntoBlob(
     px.eEdit = eEdit;
     px.nIns = ax.nBlob;
     px.aIns = ax.aBlob;
+    px.delta = 0;
     rc = jsonLookupBlobStep(&px, 0, zPath+1, 0);
     jsonParseReset(&ax);
     if( rc==JSON_BLOB_NOTFOUND ) continue;
@@ -4978,6 +4997,181 @@ static JsonNode *jsonMergePatch(
   }
   return pTarget;
 }
+
+
+#if 0
+/*
+** Return codes for jsonMergePatchBlob()
+*/
+#define JSON_MERGE_OK          0     /* Success */
+#define JSON_MERGE_BADTARGET   1     /* Malformed TARGET blob */
+#define JSON_MERGE_BADPATCH    2     /* Malformed PATCH blob */
+#define JSON_MERGE_OOM         3     /* Out-of-memory condition */
+
+/*
+** RFC-7396 MergePatch for two JSONB blobs.
+**
+** pTarget is the target. pPatch is the patch.  The target is updated
+** in place.  The patch is read-only.
+**
+** The original RFC-7396 algorithm is this:
+**
+**   define MergePatch(Target, Patch):
+**     if Patch is an Object:
+**       if Target is not an Object:
+**         Target = {} # Ignore the contents and set it to an empty Object
+**     for each Name/Value pair in Patch:
+**         if Value is null:
+**           if Name exists in Target:
+**             remove the Name/Value pair from Target
+**         else:
+**           Target[Name] = MergePatch(Target[Name], Value)
+**       return Target
+**     else:
+**       return Patch
+**
+** Here is the same algorithm restrictured to show the actual
+** implementation:
+**
+** 01   define MergePatch(Target, Patch):
+** 02      if Patch is not an Object:
+** 03         return Patch
+** 04      else:  // if Patch is an Object:
+** 05         if Target is not an Object:
+** 06            Target = {}
+** 07      for each Name/Value pair in Patch:
+** 08         if Name exists in Target:
+** 09            if Value is null:
+** 10               remove the Name/Value pair from Target
+** 11            else
+** 12               Target[name] = MergePatch(Target[Name], Value)
+** 13         else if Value is not NULL:
+** 14            Target[name] = RemoveNullVAlues(Value)
+** 15      return Target
+**  |
+**  ^---- Line numbers referenced in comments in the implementation
+*/
+static int jsonMergePatchBlob(
+  JsonParse *pTarget,      /* The JSON parser that contains the TARGET */
+  u32 iTarget,             /* Index of TARGET in pTarget->aBlob[] */
+  const JsonParse *pPatch  /* The PATCH */
+  u32 iPatch               /* Index of PATCH in pPatch->aBlob[] */
+){
+  u8 x;             /* Type of a single node */
+  u32 n, sz=0;      /* Return values from jsonbPayloadSize() */
+  u32 iTCursor;     /* Cursor position while scanning the target object */
+  u32 iTStart;      /* First label in the target object */
+  u32 iTEndBE;      /* Original first byte past end of target, before edit */
+  u32 iTEnd;        /* Current first byte past end of target */
+  u32 iTLabel;      /* Index of the label */
+  u32 nTLabel;      /* Header size in bytes for the target label */
+  u32 szTLabel;     /* Size of the target label payload */
+  u32 iTValue;      /* Index of the target value */
+  u32 nTValue;      /* Header size of the target value */
+  u32 szTValue;     /* Payload size for the target value */
+
+  u32 iPCursor;     /* Cursor position while scanning the patch */
+  u32 iPEnd;        /* First byte past the end of the patch */
+  u32 iPLabel;      /* Start of patch label */
+  u32 nPLabel;      /* Size of header on the patch label */
+  u32 szPLabel;     /* Payload size of the patch label */
+  u32 iPValue;      /* Start of patch value */
+  u32 nPValue;      /* Header size for the patch value */
+  u32 szPValue;     /* Payload size of the patch value */
+
+  assert( iTarget>=0 && iTarget<pTarget->nBlob );
+  assert( iPatch>=0 && iPatch<pPatch->nBlob );
+  x = pPatch->aBlob[iPatch] & 0x0f;
+  if( x!=JSONB_OBJECT ){  /* Algorithm line 02 */
+    u32 szPatch;        /* Total size of the patch, header+payload */
+    u32 szTarget;       /* Total size of the target, header+payload */
+    n = jsonbPayloadSize(pPatch, iPatch, &sz);
+    szPatch = n+sz;
+    sz = 0;
+    n = jsonbPayloadSize(pTarget, iTarget, &sz);
+    szTarget = n+sz;
+    jsonBlobEdit(pTarget, iTarget, szTarget, pPatch->aBlob+iPatch, szPatch);
+    return pTarget->oom ? JSON_MERGE_OOM : JSON_MERGE_OK;  /* Line 03 */
+  }
+  x = pTarget->aBlob[iTarget] & 0x0f;
+  if( x!=JSONB_OBJECT ){  /* Algorithm line 05 */
+    static const u8 emptyObject = { JSONB_OBJECT };
+    n = jsonbPayloadSize(pTarget, iTarget, &sz);
+    jsonBlobEdit(pTarget, iTarget, szTarget, emptyObject, 1); /* Line 06 */
+  }
+  n = jsonbPayloadSize(pPatch, iPatch, &sz);
+  if( n==0 ) return JSON_MERGE_BADPATCH;
+  iPCursor = iPatch+n;
+  iPEnd = iPCursor+sz;
+  n = jsonbPayloadSize(pTarget, iTarget, &sz);
+  if( n==0 ) return JSON_MERGE_BADTARGET;
+  iTStart = iTarget+n;
+  iTEndBE = iTStart+sz;
+
+  while( iPCursor<iPEnd ){  /* Algorithm line 07 */
+    iPLabel = iPCursor;
+    x = pPatch->aBlob[iPCursor] & 0x0f;
+    if( x<JSONB_TEXT || x>JSONB_TEXTRAW ) return JSON_MERGE_BADPATCH;
+    nPLabel = jsonbPayloadSize(pPatch, iPCursor, &szPLabel);
+    if( nPLabel==0 ) return JSON_MERGE_BADPATCH;
+    iPValue = iPCursor + nPLabel + szPLabel;
+    if( iPCursor>=iPEnd ) return JSON_MERGE_BADPATCH;
+    nPValue = jsonbPayloadSize(pPatch, iPValue, &szPValue);
+    if( nPValue==0 ) return JSON_MERGE_BADPATCH;
+    iPCursor = iPValue + nPValue + szPValue;
+    if( iPCursor>iPEnd ) return JSON_MERGE_BADPATCH;
+
+    iTCursor = iTStart;
+    iTEnd = iTEndBE + pTarget->delta;
+    while( iTCursor<iTEnd ){
+      iTLabel = iTCursor;
+      x = pTarget->aBlob[iTCursor] & 0x0f;
+      if( x<JSONB_TEXT || x>JSONB_TEXTRAW ) return JSON_MERGE_BADTARGET;
+      nTLabel = jsonbPayloadSize(pTarget, iTCursor, &szTLabel);
+      if( nTLabel==0 ) return JSON_MERGE_BADTARGET;
+      iTValue = iTLabel + nTLabel + szTLabel;
+      if( iTValue>=iTEnd ) return JSON_MERGE_BADTARGET;
+      nTValue = jsonbPayloadSize(pTarget, iTValue, &szTValue);
+      if( nTValue==0 ) return JSON_MERGE_BADTARGET;
+      if( iTValue + nTValue + szTValue > iTEnd ) return JSON_MERGE_BADTARGET;
+      if( eTLabel==ePLabel ){
+        if( szTLabel==szPLabel
+         && memcmp(&pTarget->aBlob[iTLabel+nTLabel],
+                   &pPatch->aBlob[iPLabel+nPLabel], szTLabel)==0
+        ){
+          break;  /* Labels match. */
+        }
+      }else{
+        if( jsonLabelEqual(pTarget, iTLabel, pPatch, iPLabel) ) break;
+      }
+      iTCursor = iTValue + nTValue + szTValue;
+    }
+    x = pPatch->aBlob[iPValue] & 0x0f;
+    if( iTCursor<iTEnd ){
+      /* A match was found.  Algorithm line 08 */
+      if( x==0 ){
+        /* Patch value is NULL.  Algorithm line 09 */
+        jsonBlobEdit(pTarget, iTLabel, nTLabel+szTLabel+nTValue+szTValue,
+                     0, 0);
+        if( pTarget->oom ) return JSON_MERGE_OOM;
+      }else{
+        /* Algorithm line 12 */
+        int rc = jsonMergePatchBlob(pTarget, iTValue, pPatch, pPValue);
+        if( rc ) return rc;
+      }        
+    }else if( x>0 ){  /* Algorithm line 13 */
+      /* No match and patch value is not NULL */
+      jsonBlobEdit(pTarget, iTEnd, 0,
+                   pPatch->aBlob+iPValue, szPValue+nPValue);
+      if( pTarget->oom ) return JSON_MERGE_OOM;
+      jsonBlobRemoveNullsFromObject(pTarget, iTEnd);
+    }
+  }
+  jsonAfterEditSizeAdjust(pTarget, iTarget);
+  return pTarget->oom ? JSON_MERGE_OOM : JSON_MERGE_OK;
+}
+#endif
+
 
 /*
 ** Implementation of the json_mergepatch(JSON1,JSON2) function.  Return a JSON
