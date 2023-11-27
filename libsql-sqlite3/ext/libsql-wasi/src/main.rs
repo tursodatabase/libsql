@@ -1,36 +1,18 @@
-pub mod memory;
-mod vfs;
+use libsql_wasi::{instantiate, new_linker, Error, Result};
 
-type State = WasiCtx;
-
-use anyhow::Context;
-use wasmtime::{Engine, Linker, Module, Store};
-use wasmtime_wasi::{WasiCtx, WasiCtxBuilder};
-
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<()> {
     tracing_subscriber::fmt::try_init().ok();
-    let engine = Engine::default();
 
-    let libsql_module = Module::from_file(&engine, "../../libsql.wasm")?;
-
-    let mut linker = Linker::new(&engine);
-    vfs::link(&mut linker)?;
-    wasmtime_wasi::add_to_linker(&mut linker, |s| s)?;
-
-    let wasi = WasiCtxBuilder::new()
-        .inherit_stdio()
-        .inherit_args()?
-        .build();
-
-    let mut store = Store::new(&engine, wasi);
-    let instance = linker.instantiate(&mut store, &libsql_module)?;
+    let engine = wasmtime::Engine::default();
+    let linker = new_linker(&engine)?;
+    let (mut store, instance) = instantiate(&linker, "../../libsql.wasm")?;
 
     let malloc = instance.get_typed_func::<i32, i32>(&mut store, "malloc")?;
     let free = instance.get_typed_func::<i32, ()>(&mut store, "free")?;
 
     let memory = instance
         .get_memory(&mut store, "memory")
-        .context("memory export not found")?;
+        .ok_or_else(|| Error::RuntimeError("no memory found"))?;
 
     let db_path = malloc.call(&mut store, 16)?;
     memory.write(&mut store, db_path as usize, b"/tmp/wasm-demo.db\0")?;
@@ -48,7 +30,7 @@ fn main() -> anyhow::Result<()> {
     let rc = exec_func.call(&mut store, (db, sql))?;
     free.call(&mut store, sql)?;
     if rc != 0 {
-        anyhow::bail!("Failed to execute SQL");
+        return Err(Error::RuntimeError("Failed to execute SQL"));
     }
 
     let sql = malloc.call(&mut store, 64)?;

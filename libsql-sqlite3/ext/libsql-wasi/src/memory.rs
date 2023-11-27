@@ -1,20 +1,20 @@
 // Shamelessly stolen from Honza - thx man!!!
 
-use anyhow::{bail, ensure, Context as _, Result};
+use crate::{Error, Result};
 
 pub type Ptr = i32;
 
 pub fn slice(memory: &[u8], ptr: Ptr, len: usize) -> Result<&[u8]> {
     let ptr = ptr as usize;
-    ensure!(ptr != 0 && ptr <= memory.len(), "Invalid pointer");
-    ensure!(ptr + len <= memory.len(), "Invalid pointer and length");
+    assert!(ptr != 0 && ptr <= memory.len(), "Invalid pointer");
+    assert!(ptr + len <= memory.len(), "Invalid pointer and length");
     Ok(&memory[ptr..][..len])
 }
 
 pub fn slice_mut(memory: &mut [u8], ptr: Ptr, len: usize) -> Result<&mut [u8]> {
     let ptr = ptr as usize;
-    ensure!(ptr != 0 && ptr <= memory.len(), "Invalid pointer");
-    ensure!(ptr + len <= memory.len(), "Invalid pointer and length");
+    assert!(ptr != 0 && ptr <= memory.len(), "Invalid pointer");
+    assert!(ptr + len <= memory.len(), "Invalid pointer and length");
     Ok(&mut memory[ptr..][..len])
 }
 
@@ -24,9 +24,9 @@ pub fn read_vec(memory: &[u8], ptr: Ptr, len: usize) -> Result<Vec<u8>> {
 
 pub fn read_cstr(memory: &[u8], cstr_ptr: Ptr) -> Result<String> {
     let Some(data) = read_cstr_bytes(memory, cstr_ptr) else {
-        bail!("Invalid pointer to C string")
+        return Err(Error::MemoryError("Invalid pointer to C string"));
     };
-    String::from_utf8(data).context("Invalid data in C string")
+    String::from_utf8(data).map_err(|_| Error::MemoryError("Invalid UTF-8 in C string"))
 }
 
 pub fn read_cstr_or_null(memory: &[u8], cstr_ptr: Ptr) -> Result<Option<String>> {
