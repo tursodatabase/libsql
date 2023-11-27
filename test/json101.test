@@ -324,7 +324,7 @@ do_execsql_test json101-5.2 {
   SELECT id, json_valid(json), json_type(json), '|' FROM j2 ORDER BY id;
 } {1 1 object | 2 1 object | 3 1 array |}
 do_execsql_test json101-5.2b {
-  SELECT id, json_valid(json), json_type(json), '|' FROM j2b ORDER BY id;
+  SELECT id, json_valid(json,5), json_type(json), '|' FROM j2b ORDER BY id;
 } {1 1 object | 2 1 object | 3 1 array |}
 
 ifcapable !vtab {

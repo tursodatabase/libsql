@@ -5241,15 +5241,60 @@ static void jsonTypeFunc(
 
 /*
 ** json_valid(JSON)
+** json_valid(JSON, FLAGS)
 **
-** Return 1 if the argument is one of:
+** Check the JSON argument to see if it is well-formed.  The FLAGS argument
+** encodes the various constraints on what is meant by "well-formed":
 **
-**    *   A well-formed canonical JSON string according to RFC-8259
-**        (without JSON5 enhancements), or
+**     0x01      Canonical RFC-8259 JSON text
+**     0x02      JSON text with optional JSON-5 extensions
+**     0x04      Superficially appears to be JSONB
+**     0x08      Strictly well-formed JSONB
 **
-**    *   A BLOB that plausibly could be a JSONB value.
+** If the FLAGS argument is omitted, it defaults to 1.  Useful values for
+** FLAGS include:
 **
-** Return 0 otherwise.
+**    1          Strict canonical JSON text
+**    2          JSON text perhaps with JSON-5 extensions
+**    4          Superficially appears to be JSONB
+**    5          Canonical JSON text or superficial JSONB
+**    6          JSON-5 text or superficial JSONB
+**    8          Strict JSONB
+**    9          Canonical JSON text or strict JSONB
+**    10         JSON-5 text or strict JSONB
+**
+** Other flag combinations are redundant.  For example, every canonical
+** JSON text is also well-formed JSON-5 text, so FLAG values 2 and 3
+** are the same.  Similarly, any input that passes a strict JSONB validation
+** will also pass the superficial validation so 12 through 15 are the same
+** as 8 through 11 respectively.
+**
+** This routine runs in linear time to validate text and when doing strict
+** JSONB validation.  Superficial JSONB validation is constant time,
+** assuming the BLOB is already in memory.  The performance advantage
+** of superficial JSONB validation is why that option is provided.
+** Application developers can choose to do fast superficial validation or
+** slower strict validation, according to their specific needs.
+**
+** Only the lower four bits of the FLAGS argument are currently used.
+** Higher bits are reserved for future expansion.   To facilitate
+** compatibility, the current implementation raises an error if any bit
+** in FLAGS is set other than the lower four bits.
+**
+** The original circa 2015 implementation of the JSON routines in
+** SQLite only supported canonical RFC-8259 JSON text and the json_valid()
+** function only accepted one argument.  That is why the default value
+** for the FLAGS argument is 1, since FLAGS=1 causes this routine to only
+** recognize canonical RFC-8259 JSON text as valid.  The extra FLAGS
+** argument was added when the JSON routines were extended to support
+** JSON5-like extensions and binary JSONB stored in BLOBs.
+**
+** Return Values:
+**
+**   *   Raise an error if FLAGS is outside the range of 1 to 15.
+**   *   Return NULL if the input is NULL
+**   *   Return 1 if the input is well-formed.
+**   *   Return 0 if the input is not well-formed.
 */
 static void jsonValidFunc(
   sqlite3_context *ctx,
@@ -5257,26 +5302,47 @@ static void jsonValidFunc(
   sqlite3_value **argv
 ){
   JsonParse *p;          /* The parse */
-  UNUSED_PARAMETER(argc);
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
+  u8 flags = 1;
+  u8 res = 0;
+  if( argc==2 ){
+    i64 f = sqlite3_value_int64(argv[1]);
+    if( f<1 || f>15 ){
+      sqlite3_result_error(ctx, "FLAGS parameter to json_valid() must be"
+                                " between 1 and 15", -1);
+      return;
+    }
+    flags = f & 0x0f;
+  }
+  switch( sqlite3_value_type(argv[0]) ){
+    case SQLITE_NULL: {
 #ifdef SQLITE_LEGACY_JSON_VALID
-    /* Incorrect legacy behavior was to return FALSE for a NULL input */
-    sqlite3_result_int(ctx, 0);
+      /* Incorrect legacy behavior was to return FALSE for a NULL input */
+      sqlite3_result_int(ctx, 0);
 #endif
-    return;
+      return;
+    }
+    case SQLITE_BLOB: {
+      if( (flags & 0x0c)!=0 && jsonFuncArgMightBeBinary(argv[0]) ){
+        /* TO-DO:  strict checking if flags & 0x08 */
+        res = 1;
+      }
+      break;
+    }
+    default: {
+      if( (flags & 0x3)==0 ) break;
+      p = jsonParseCached(ctx, argv[0], 0, 0);
+      if( p==0 || p->oom ){
+        sqlite3_result_error_nomem(ctx);
+        sqlite3_free(p);
+      }else if( p->nErr ){
+        jsonParseFree(p);
+      }else if( (flags & 0x02)!=0 || p->hasNonstd==0 || p->useMod ){
+        res = 1;
+      }
+      break;
+    }
   }
-  if( jsonFuncArgMightBeBinary(argv[0]) ){
-    sqlite3_result_int(ctx, 1);
-    return;
-  }
-  p = jsonParseCached(ctx, argv[0], 0, 0);
-  if( p==0 || p->oom ){
-    sqlite3_result_error_nomem(ctx);
-    sqlite3_free(p);
-  }else{
-    sqlite3_result_int(ctx, p->nErr==0 && (p->hasNonstd==0 || p->useMod));
-    if( p->nErr ) jsonParseFree(p);
-  }
+  sqlite3_result_int(ctx, res);
 }
 
 /*
@@ -6171,6 +6237,7 @@ void sqlite3RegisterJsonFunctions(void){
     JFUNCTION(json_type,          1,1,0, 0,0,0,          jsonTypeFunc),
     JFUNCTION(json_type,          2,1,0, 0,0,0,          jsonTypeFunc),
     JFUNCTION(json_valid,         1,1,0, 0,0,0,          jsonValidFunc),
+    JFUNCTION(json_valid,         2,1,0, 0,0,0,          jsonValidFunc),
 #if SQLITE_DEBUG
     JFUNCTION(json_parse,         1,1,0, 0,0,0,          jsonParseFunc),
     JFUNCTION(json_test1,         1,1,0, 1,0,0,          jsonTest1Func),
