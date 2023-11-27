@@ -70,7 +70,7 @@ impl SimpleStream {
 impl Stream for SimpleStream {
     type Item = Result<Bytes>;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    fn poll_next(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         match self.0.take() {
             None => Poll::Ready(None),
             Some(bytes) => Poll::Ready(Some(Ok(bytes))),
