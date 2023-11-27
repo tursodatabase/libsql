@@ -79,7 +79,7 @@ impl SimpleStream {
 impl Stream for SimpleStream {
     type Item = Result<Bytes>;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    fn poll_next(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         match self.0.take() {
             None => Poll::Ready(None),
             Some(bytes) => Poll::Ready(Some(Ok(bytes))),
@@ -103,14 +103,26 @@ pub enum HranaError {
     StreamClosed(String),
     #[error("stream error: `{0:?}`")]
     StreamError(StreamResponseError),
-    #[error("cursor error: `{0:?}`")]
-    CursorError(String),
+    #[error("cursor error: `{0}`")]
+    CursorError(CursorResponseError),
     #[error("json error: `{0}`")]
     Json(#[from] serde_json::Error),
     #[error("http error: `{0}`")]
     Http(String),
     #[error("api error: `{0}`")]
     Api(String),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum CursorResponseError {
+    #[error("cursor step {actual} arrived before step {expected} end message")]
+    NotClosed { expected: u32, actual: u32 },
+    #[error("error at step {step}: `{error}`")]
+    StepError { step: u32, error: String },
+    #[error("cursor stream ended prematurely")]
+    CursorClosed,
+    #[error("{0}")]
+    Other(String),
 }
 
 enum StatementExecutor<T: for<'a> HttpSend<'a>> {
@@ -238,6 +250,12 @@ impl RowsInner for Rows {
 pub struct Row {
     cols: Arc<Vec<Col>>,
     inner: Vec<proto::Value>,
+}
+
+impl Row {
+    pub(super) fn new(cols: Arc<Vec<Col>>, inner: Vec<proto::Value>) -> Self {
+        Row { cols, inner }
+    }
 }
 
 impl RowInner for Row {

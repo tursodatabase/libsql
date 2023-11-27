@@ -2,8 +2,7 @@ use std::str::FromStr;
 
 use crate::{Error, Result};
 
-/// An enum representing the types in libsql.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum Value {
     Null,

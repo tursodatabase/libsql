@@ -215,27 +215,37 @@ where
         Ok(resp)
     }
 
-    pub async fn send_cursor_req(&mut self, batch: Batch) -> Result<Cursor> {
+    pub async fn open_cursor(&mut self, batch: Batch) -> Result<Cursor> {
         if self.status == StreamStatus::Closed {
             return Err(HranaError::StreamClosed(
                 "client stream has been closed by the servers".to_string(),
             ));
         }
-        tracing::trace!(
-            "client stream sending {} requests with baton `{}`",
-            N,
-            self.baton.as_deref().unwrap_or_default()
-        );
         let msg = CursorReq {
             baton: self.baton.clone(),
             batch,
         };
         let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
-        let body: ByteStream = self
+        let stream: ByteStream = self
             .client
             .http_send(&self.base_url, &self.auth_token, body)
             .await?
             .stream();
+        let (cursor, mut response) = Cursor::open(stream).await?;
+        if let Some(base_url) = response.base_url.take() {
+            self.base_url = Arc::from(base_url);
+        }
+        match response.baton.take() {
+            None => {
+                tracing::trace!("client stream has been closed by the server");
+                self.done();
+            } // stream has been closed by the server
+            Some(baton) => {
+                tracing::trace!("client stream has been assigned with baton: `{}`", baton);
+                self.baton = Some(baton)
+            }
+        }
+        Ok(cursor)
     }
 
     async fn send_requests<const N: usize>(
