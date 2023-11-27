@@ -37,23 +37,20 @@ impl HttpSender {
             .header(AUTHORIZATION, auth)
             .header("x-libsql-client-version", self.version.clone())
             .body(hyper::Body::from(body))
-            .unwrap();
+            .map_err(|err| HranaError::Http(format!("{:?}", err)))?;
 
-        let res = self.inner.request(req).await.map_err(HranaError::from)?;
+        let res = self.inner.request(req).await?;
 
         if res.status() != StatusCode::OK {
-            let body = hyper::body::to_bytes(res.into_body())
-                .await
-                .map_err(HranaError::from)?;
-            let body = String::from_utf8(body.into()).unwrap();
-            return Err(HranaError::Api(body));
+            let body = hyper::body::to_bytes(res.into_body()).await?;
+            let msg = String::from_utf8(body.into())
+                .unwrap_or_else(|err| format!("Invalid payload: {}", err));
+            return Err(HranaError::Api(msg));
         }
 
-        let body = hyper::body::to_bytes(res.into_body())
-            .await
-            .map_err(HranaError::from)?;
+        let body = hyper::body::to_bytes(res.into_body()).await?;
 
-        let msg = serde_json::from_slice::<ServerMsg>(&body[..]).map_err(HranaError::from)?;
+        let msg = serde_json::from_slice::<ServerMsg>(&body[..])?;
 
         Ok(msg)
     }
