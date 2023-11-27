@@ -761,7 +761,7 @@ mod test {
             replicator.try_replicate_step().await.unwrap_err(),
             Error::Client(_)
         ));
-        assert!(!replicator.injector.lock().is_txn);
+        assert!(!replicator.injector.lock().is_txn());
         assert!(replicator.client_mut().committed_frame_no.is_none());
         assert_eq!(replicator.state, ReplicatorState::NeedHandshake);
 
@@ -771,7 +771,7 @@ mod test {
         replicator.client_mut().should_error = false;
 
         replicator.try_replicate_step().await.unwrap();
-        assert!(!replicator.injector.lock().is_txn);
+        assert!(!replicator.injector.lock().is_txn());
         assert_eq!(replicator.state, ReplicatorState::Exit);
         assert_eq!(replicator.client_mut().committed_frame_no, Some(6));
     }

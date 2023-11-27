@@ -24,12 +24,6 @@ pub struct RemoteClient {
     dirty: bool,
 }
 
-impl Drop for RemoteClient {
-    fn drop(&mut self) {
-        dbg!();
-    }
-}
-
 impl RemoteClient {
     pub(crate) async fn new(remote: super::client::Client, path: &Path) -> anyhow::Result<Self> {
         let meta = WalIndexMeta::open(path.parent().unwrap()).await?;
