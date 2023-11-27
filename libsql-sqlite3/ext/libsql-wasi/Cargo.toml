@@ -1,13 +1,17 @@
 [package]
-name = "libsql-wasi-demo"
+name = "libsql-wasi"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "WASI support for libSQL"
+keywords = ["webassembly", "wasm", "wasi", "libsql", "sqlite"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "1.0.75"
 rand = "0.8.5"
+thiserror = "1.0.50"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 wasmtime = "15.0.0"

@@ -1,4 +1,6 @@
-use super::{memory, State};
+use crate::{memory, State};
+// anyhow is used in wasmtime_wasi for error wrapping
+use anyhow::Result;
 use wasmtime::{Caller, Linker, Memory};
 
 const SQLITE_DATAONLY: i32 = 0x00010;
@@ -38,7 +40,7 @@ fn get_file(memory: &[u8], file_ptr: i32) -> &'static mut std::fs::File {
     file
 }
 
-fn open_fd(mut caller: Caller<'_, State>, name: i32, flags: i32) -> anyhow::Result<i64> {
+fn open_fd(mut caller: Caller<'_, State>, name: i32, flags: i32) -> Result<i64> {
     let memory = get_memory(&mut caller);
     let memory = memory.data_mut(&mut caller);
 
@@ -56,12 +58,7 @@ fn open_fd(mut caller: Caller<'_, State>, name: i32, flags: i32) -> anyhow::Resu
     Ok(Box::into_raw(file) as i64)
 }
 
-fn delete(
-    mut caller: Caller<'_, State>,
-    _vfs: i32,
-    name: i32,
-    sync_dir: i32,
-) -> anyhow::Result<i32> {
+fn delete(mut caller: Caller<'_, State>, _vfs: i32, name: i32, sync_dir: i32) -> Result<i32> {
     let memory = get_memory(&mut caller);
     let memory = memory.data_mut(&mut caller);
 
@@ -78,7 +75,7 @@ fn access(
     name: i32,
     flags: i32,
     res_out: i32,
-) -> anyhow::Result<i32> {
+) -> Result<i32> {
     let memory = get_memory(&mut caller);
     let memory = memory.data_mut(&mut caller);
 
@@ -116,7 +113,7 @@ fn full_pathname(
     name: i32,
     n_out: i32,
     out: i32,
-) -> anyhow::Result<i32> {
+) -> Result<i32> {
     let memory = get_memory(&mut caller);
     let memory = memory.data_mut(&mut caller);
 
@@ -127,12 +124,7 @@ fn full_pathname(
     Ok(0)
 }
 
-fn randomness(
-    mut caller: Caller<'_, State>,
-    _vfs: i32,
-    n_byte: i32,
-    out: i32,
-) -> anyhow::Result<i32> {
+fn randomness(mut caller: Caller<'_, State>, _vfs: i32, n_byte: i32, out: i32) -> Result<i32> {
     use rand::Rng;
 
     let memory = get_memory(&mut caller);
@@ -146,7 +138,7 @@ fn randomness(
     Ok(0)
 }
 
-fn sleep(mut caller: Caller<'_, State>, _vfs: i32, microseconds: i32) -> anyhow::Result<i32> {
+fn sleep(mut caller: Caller<'_, State>, _vfs: i32, microseconds: i32) -> Result<i32> {
     let memory = get_memory(&mut caller);
     let (_memory, _state) = memory.data_and_store_mut(&mut caller);
 
@@ -155,7 +147,7 @@ fn sleep(mut caller: Caller<'_, State>, _vfs: i32, microseconds: i32) -> anyhow:
     Ok(0)
 }
 
-fn current_time(mut caller: Caller<'_, State>, _vfs: i32, out: i32) -> anyhow::Result<i32> {
+fn current_time(mut caller: Caller<'_, State>, _vfs: i32, out: i32) -> Result<i32> {
     let memory = get_memory(&mut caller);
     let memory = memory.data_mut(&mut caller);
 
@@ -171,12 +163,7 @@ fn current_time(mut caller: Caller<'_, State>, _vfs: i32, out: i32) -> anyhow::R
     Ok(0)
 }
 
-fn get_last_error(
-    mut caller: Caller<'_, State>,
-    _vfs: i32,
-    i: i32,
-    out: i32,
-) -> anyhow::Result<i32> {
+fn get_last_error(mut caller: Caller<'_, State>, _vfs: i32, i: i32, out: i32) -> Result<i32> {
     let memory = get_memory(&mut caller);
     let memory = memory.data_mut(&mut caller);
 
@@ -187,7 +174,7 @@ fn get_last_error(
     Ok(0)
 }
 
-fn current_time_64(mut caller: Caller<'_, State>, _vfs: i32, out: i32) -> anyhow::Result<i32> {
+fn current_time_64(mut caller: Caller<'_, State>, _vfs: i32, out: i32) -> Result<i32> {
     let memory = get_memory(&mut caller);
     let memory = memory.data_mut(&mut caller);
 
@@ -204,7 +191,7 @@ fn current_time_64(mut caller: Caller<'_, State>, _vfs: i32, out: i32) -> anyhow
     Ok(0)
 }
 
-fn close(mut caller: Caller<'_, State>, file: i32) -> anyhow::Result<i32> {
+fn close(mut caller: Caller<'_, State>, file: i32) -> Result<i32> {
     let memory = get_memory(&mut caller);
     let memory = memory.data_mut(&mut caller);
 
@@ -218,13 +205,7 @@ fn close(mut caller: Caller<'_, State>, file: i32) -> anyhow::Result<i32> {
     Ok(0)
 }
 
-fn read(
-    mut caller: Caller<'_, State>,
-    file: i32,
-    buf: i32,
-    amt: i32,
-    offset: i64,
-) -> anyhow::Result<i32> {
+fn read(mut caller: Caller<'_, State>, file: i32, buf: i32, amt: i32, offset: i64) -> Result<i32> {
     use std::io::{Read, Seek};
 
     let memory = get_memory(&mut caller);
@@ -251,13 +232,7 @@ fn read(
     }
 }
 
-fn write(
-    mut caller: Caller<'_, State>,
-    file: i32,
-    buf: i32,
-    amt: i32,
-    offset: i64,
-) -> anyhow::Result<i32> {
+fn write(mut caller: Caller<'_, State>, file: i32, buf: i32, amt: i32, offset: i64) -> Result<i32> {
     use std::io::{Seek, Write};
 
     let memory = get_memory(&mut caller);
@@ -278,7 +253,7 @@ fn write(
     }
 }
 
-fn truncate(mut caller: Caller<'_, State>, file: i32, size: i64) -> anyhow::Result<i32> {
+fn truncate(mut caller: Caller<'_, State>, file: i32, size: i64) -> Result<i32> {
     let memory = get_memory(&mut caller);
     let memory = memory.data_mut(&mut caller);
 
@@ -289,7 +264,7 @@ fn truncate(mut caller: Caller<'_, State>, file: i32, size: i64) -> anyhow::Resu
     Ok(0)
 }
 
-fn sync(mut caller: Caller<'_, State>, file: i32, flags: i32) -> anyhow::Result<i32> {
+fn sync(mut caller: Caller<'_, State>, file: i32, flags: i32) -> Result<i32> {
     let memory = get_memory(&mut caller);
     let memory = memory.data_mut(&mut caller);
 
@@ -305,7 +280,7 @@ fn sync(mut caller: Caller<'_, State>, file: i32, flags: i32) -> anyhow::Result<
     Ok(0)
 }
 
-fn file_size(mut caller: Caller<'_, State>, file: i32, size_ptr: i32) -> anyhow::Result<i32> {
+fn file_size(mut caller: Caller<'_, State>, file: i32, size_ptr: i32) -> Result<i32> {
     let memory = get_memory(&mut caller);
     let memory = memory.data_mut(&mut caller);
     tracing::debug!("HOST FILE SIZE");
@@ -317,7 +292,7 @@ fn file_size(mut caller: Caller<'_, State>, file: i32, size_ptr: i32) -> anyhow:
     Ok(0)
 }
 
-pub fn link(linker: &mut Linker<State>) -> anyhow::Result<()> {
+pub fn link(linker: &mut Linker<State>) -> Result<()> {
     // VFS methods required by sqlite3_vfs
     linker.func_wrap("libsql_host", "open_fd", open_fd)?;
     linker.func_wrap("libsql_host", "delete", delete)?;

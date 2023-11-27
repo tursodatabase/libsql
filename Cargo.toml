@@ -21,7 +21,7 @@ members = [
 
 exclude = [
     "./libsql-sqlite3/ext/crr",
-    "./libsql-sqlite3/ext/libsql-wasi-demo",
+    "./libsql-sqlite3/ext/libsql-wasi",
 ]
 
 [profile.release]
