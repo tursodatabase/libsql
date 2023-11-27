@@ -2959,6 +2959,9 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   int i;                          /* Loop counter */
   int rc = SQLITE_OK;             /* Return code  */
   u32 mxFrame;                    /* Wal frame to lock to */
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  int nBlockTmout = 0;
+#endif
 
   assert( pWal->readLock<0 );     /* Not currently locked */
 
@@ -2996,7 +2999,8 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     ** attempted read fails and (b) the shared lock taken on the DMS slot
     ** in os_unix.c.  Both of these locks are attempted from within the 
     ** call to walIndexReadHdr() below.  */
-    if( cnt>=10 && !useWal && walEnableBlockingMs(pWal, (nDelay+999)/1000) ){
+    nBlockTmout = (nDelay+998) / 1000;
+    if( !useWal && walEnableBlockingMs(pWal, nBlockTmout) ){
       nDelay = 1;
     }
 #endif
@@ -3126,7 +3130,9 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     return rc==SQLITE_BUSY ? WAL_RETRY : SQLITE_READONLY_CANTINIT;
   }
 
+  (void)walEnableBlockingMs(pWal, nBlockTmout);
   rc = walLockShared(pWal, WAL_READ_LOCK(mxI));
+  walDisableBlocking(pWal);
   if( rc ){
     return rc==SQLITE_BUSY ? WAL_RETRY : rc;
   }
