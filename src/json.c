@@ -4490,6 +4490,84 @@ static void jsonDebugPrintNodeEntries(
 }
 #endif /* SQLITE_DEBUG */
 
+#if SQLITE_DEBUG
+/*
+** Decode JSONB bytes in aBlob[] starting at iStart through but not 
+** including iEnd.  Indent the
+** content by nIndent spaces.
+*/
+static void jsonDebugPrintBlob(
+  JsonParse *pParse, /* JSON content */
+  u32 iStart,        /* Start rendering here */
+  u32 iEnd,          /* Do not render this byte or any byte after this one */
+  int nIndent        /* Indent by this many spaces */
+){
+  while( iStart<iEnd ){
+    u32 i, n, nn, sz = 0;
+    int showContent = 1;
+    u8 x = pParse->aBlob[iStart] & 0x0f;
+    printf("%5d:%*s", iStart, nIndent, "");
+    nn = n = jsonbPayloadSize(pParse, iStart, &sz);
+    if( nn==0 ) nn = 1;
+    if( sz>0 && x<JSONB_ARRAY ){
+      nn += sz;
+    }
+    for(i=0; i<nn; i++) printf(" %02x", pParse->aBlob[iStart+i]);
+    if( n==0 || iStart+n+sz>iEnd ){
+      printf("   ERROR invalid node size\n");
+      iStart = n==0 ? iStart+1 : iEnd;
+      continue;
+    }
+    printf("  <-- ");
+    switch( x ){
+      case JSONB_NULL:     printf("null"); break;
+      case JSONB_TRUE:     printf("true"); break;
+      case JSONB_FALSE:    printf("false"); break;
+      case JSONB_INT:      printf("int"); break;
+      case JSONB_INT5:     printf("int5"); break;
+      case JSONB_FLOAT:    printf("float"); break;
+      case JSONB_FLOAT5:   printf("float5"); break;
+      case JSONB_TEXT:     printf("text"); break;
+      case JSONB_TEXTJ:    printf("textj"); break;
+      case JSONB_TEXT5:    printf("text5"); break;
+      case JSONB_TEXTRAW:  printf("textraw"); break;
+      case JSONB_ARRAY: {
+        printf("array, %u bytes\n", sz);
+        jsonDebugPrintBlob(pParse, iStart+n, iStart+n+sz, nIndent+2);
+        showContent = 0;
+        break;
+      }
+      case JSONB_OBJECT: {
+        printf("object, %u bytes\n", sz);
+        jsonDebugPrintBlob(pParse, iStart+n, iStart+n+sz, nIndent+2);
+        showContent = 0;
+        break;
+      }
+      default: {
+        printf("ERROR: unknown node type\n");
+        showContent = 0;
+        break;
+      }
+    }
+    if( showContent ){
+      if( sz==0 && x<=JSON_FALSE ){
+        printf("\n");
+      }else{
+        u32 i;
+        printf(": \"");
+        for(i=iStart+n; i<iStart+n+sz; i++){
+          u8 c = pParse->aBlob[i];
+          if( c<0x20 || c>=0x7f ) c = '.';
+          putchar(c);
+        }
+        printf("\"\n");
+      }
+    }
+    iStart += n + sz;
+  }
+}
+#endif /* SQLITE_DEBUG */
+
 
 #if 0  /* 1 for debugging.  0 normally.  Requires -DSQLITE_DEBUG too */
 static void jsonDebugPrintParse(JsonParse *p){
@@ -4520,6 +4598,14 @@ static void jsonParseFunc(
   JsonParse *p;        /* The parse */
 
   assert( argc==1 );
+  if( jsonFuncArgMightBeBinary(argv[0]) ){
+    JsonParse x;
+    memset(&x, 0, sizeof(x));
+    x.nBlob = sqlite3_value_bytes(argv[0]);
+    x.aBlob = (u8*)sqlite3_value_blob(argv[0]);
+    jsonDebugPrintBlob(&x, 0, x.nBlob, 0);
+    return;
+  }
   p = jsonParseCached(ctx, argv[0], ctx, 0);
   if( p==0 ) return;
   printf("nNode     = %u\n", p->nNode);
