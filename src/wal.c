@@ -2004,6 +2004,19 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
 }
 
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+
+
+/*
+** Attempt to enable blocking locks that block for nMs ms. Return 1 if 
+** blocking locks are successfully enabled, or 0 otherwise.
+*/
+static int walEnableBlockingMs(Wal *pWal, int nMs){
+  int rc = sqlite3OsFileControl(
+      pWal->pDbFd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&nMs
+  );
+  return (rc==SQLITE_OK);
+}
+
 /*
 ** Attempt to enable blocking locks. Blocking locks are enabled only if (a)
 ** they are supported by the VFS, and (b) the database handle is configured
@@ -2015,11 +2028,7 @@ static int walEnableBlocking(Wal *pWal){
   if( pWal->db ){
     int tmout = pWal->db->busyTimeout;
     if( tmout ){
-      int rc;
-      rc = sqlite3OsFileControl(
-          pWal->pDbFd, SQLITE_FCNTL_LOCK_TIMEOUT, (void*)&tmout
-      );
-      res = (rc==SQLITE_OK);
+      res = walEnableBlockingMs(pWal, tmout);
     }
   }
   return res;
@@ -2068,20 +2077,10 @@ void sqlite3WalDb(Wal *pWal, sqlite3 *db){
   pWal->db = db;
 }
 
-/*
-** Take an exclusive WRITE lock. Blocking if so configured.
-*/
-static int walLockWriter(Wal *pWal){
-  int rc;
-  walEnableBlocking(pWal);
-  rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
-  walDisableBlocking(pWal);
-  return rc;
-}
 #else
 # define walEnableBlocking(x) 0
 # define walDisableBlocking(x)
-# define walLockWriter(pWal) walLockExclusive((pWal), WAL_WRITE_LOCK, 1)
+# define walEnableBlockingMs(pWal, ms) 0
 # define sqlite3WalDb(pWal, db)
 #endif   /* ifdef SQLITE_ENABLE_SETLK_TIMEOUT */
 
@@ -2682,7 +2681,9 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
       }
     }else{
       int bWriteLock = pWal->writeLock;
-      if( bWriteLock || SQLITE_OK==(rc = walLockWriter(pWal)) ){
+      if( bWriteLock 
+       || SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1)) 
+      ){
         pWal->writeLock = 1;
         if( SQLITE_OK==(rc = walIndexPage(pWal, 0, &page0)) ){
           badHdr = walIndexTryHdr(pWal, pChanged);
@@ -2690,7 +2691,8 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
             /* If the wal-index header is still malformed even while holding
             ** a WRITE lock, it can only mean that the header is corrupted and
             ** needs to be reconstructed.  So run recovery to do exactly that.
-            */
+            ** Disable blocking locks first.  */
+            walDisableBlocking(pWal);
             rc = walIndexRecover(pWal);
             *pChanged = 1;
           }
@@ -2987,6 +2989,17 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
       return SQLITE_PROTOCOL;
     }
     if( cnt>=10 ) nDelay = (cnt-9)*(cnt-9)*39;
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    /* In SQLITE_ENABLE_SETLK_TIMEOUT builds, configure the file-descriptor
+    ** to block for locks for approximately nDelay us. This affects two
+    ** locks (a) the WRITER lock taken in walIndexReadHdr() if the first
+    ** attempted read fails and (b) the shared lock taken on the DMS slot
+    ** in os_unix.c.  Both of these locks are attempted from within the 
+    ** call to walIndexReadHdr() below.  */
+    if( cnt>=10 && !useWal && walEnableBlockingMs(pWal, (nDelay+999)/1000) ){
+      nDelay = 1;
+    }
+#endif
     sqlite3OsSleep(pWal->pVfs, nDelay);
   }
 
@@ -2995,6 +3008,10 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     if( pWal->bShmUnreliable==0 ){
       rc = walIndexReadHdr(pWal, pChanged);
     }
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    walDisableBlocking(pWal);
+    if( rc==SQLITE_BUSY_TIMEOUT ) rc = SQLITE_BUSY;
+#endif
     if( rc==SQLITE_BUSY ){
       /* If there is not a recovery running in another thread or process
       ** then convert BUSY errors to WAL_RETRY.  If recovery is known to
