@@ -1,4 +1,4 @@
-use libsql::Database;
+use libsql::{de, Database};
 
 #[tokio::main]
 async fn main() {
@@ -38,4 +38,21 @@ async fn main() {
             row.get_value(3)
         );
     }
+
+    let mut rows = conn.query("SELECT * FROM test1", ()).await.unwrap();
+
+    let row = rows.next().unwrap().unwrap();
+
+    #[derive(Debug, serde::Deserialize)]
+    #[allow(dead_code)]
+    struct Row {
+        t: String,
+        i: i64,
+        f: f64,
+        b: Vec<u8>,
+    }
+
+    let row = de::from_row::<Row>(&row).unwrap();
+
+    println!("Row: {:?}", row);
 }
