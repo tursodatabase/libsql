@@ -5715,6 +5715,7 @@ static void jsonAppendPathName(JsonEachCursor *p){
 /* Advance the cursor to the next element for json_tree() */
 static int jsonEachNext(sqlite3_vtab_cursor *cur){
   JsonEachCursor *p = (JsonEachCursor*)cur;
+  int rc = SQLITE_OK;
   if( p->bRecursive ){
     u8 x;
     u8 levelChange = 0;
@@ -5740,7 +5741,10 @@ static int jsonEachNext(sqlite3_vtab_cursor *cur){
       pParent->iEnd = i + n + sz;
       pParent->iKey = -1;
       pParent->nPath = (u32)p->path.nUsed;
-      if( p->eType && p->nParent ) jsonAppendPathName(p);
+      if( p->eType && p->nParent ){
+        jsonAppendPathName(p);
+        if( p->path.eErr ) rc = SQLITE_NOMEM;
+      }
       p->nParent++;
       p->i = i + n;
     }else{
@@ -5770,7 +5774,7 @@ static int jsonEachNext(sqlite3_vtab_cursor *cur){
     p->aParent[p->nParent-1].iKey++;
   }
   p->iRowid++;
-  return SQLITE_OK;
+  return rc;
 }
 
 /* Length of the path for rowid==0 in bRecursive mode.
@@ -5811,7 +5815,9 @@ static int jsonEachColumn(
         if( p->nRoot==1 ) break;
         j = jsonEachPathLength(p);
         n = p->nRoot - j;
-        if( p->path.zBuf[j]=='[' ){
+        if( n==0 ){
+          break;
+        }else if( p->path.zBuf[j]=='[' ){
           i64 x;
           sqlite3Atoi64(&p->path.zBuf[j+1], &x, n-1, SQLITE_UTF8);
           sqlite3_result_int64(ctx, x);
@@ -5992,12 +5998,18 @@ static int jsonEachFilter(
   }else{
     p->sParse.zJson = (char*)sqlite3_value_text(argv[0]);
     p->sParse.nJson = sqlite3_value_bytes(argv[0]);
-    if( p->sParse.zJson==0 || jsonConvertTextToBlob(&p->sParse, 0) ){
+    if( p->sParse.zJson==0 ){
+      p->i = p->iEnd = 0;
+      return SQLITE_OK;
+    }      
+    if( jsonConvertTextToBlob(&p->sParse, 0) ){
       if( p->sParse.oom ){
         return SQLITE_NOMEM;
       }
-      p->i = p->iEnd = 0;
-      return SQLITE_OK;
+      sqlite3_free(cur->pVtab->zErrMsg);
+      cur->pVtab->zErrMsg = sqlite3_mprintf("malformed JSON");
+      jsonEachCursorReset(p);
+      return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
     }
   }
   if( idxNum==3 ){
@@ -6016,10 +6028,16 @@ static int jsonEachFilter(
     }else{
       i = jsonLookupBlobStep(&p->sParse, 0, zRoot+1, 0);
       if( JSON_BLOB_ISERROR(i) ){
-        p->i = 0;
-        p->eType = 0;
-        p->iEnd = 0;
-        return SQLITE_OK;
+        if( i==JSON_BLOB_NOTFOUND ){
+          p->i = 0;
+          p->eType = 0;
+          p->iEnd = 0;
+          return SQLITE_OK;
+        }
+        sqlite3_free(cur->pVtab->zErrMsg);
+        cur->pVtab->zErrMsg = jsonPathSyntaxError(zRoot, 0);
+        jsonEachCursorReset(p);
+        return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
       }
       if( p->sParse.iLabel ){
         p->i = p->sParse.iLabel;
