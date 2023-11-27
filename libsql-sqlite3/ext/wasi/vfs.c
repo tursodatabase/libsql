@@ -1,4 +1,5 @@
 #include "sqlite3.h"
+#include "src/wal.h"
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -103,24 +104,182 @@ sqlite3_vfs libsql_wasi_vfs = {
     .xCurrentTimeInt64 = &libsql_wasi_current_time_64,
 };
 
+libsql_wal_methods *the_wal_methods = NULL;
+
+int libsql_wasi_wal_open(sqlite3_vfs* vfs, sqlite3_file* f, const char* path, int no_shm_mode, long long max_size, struct libsql_wal_methods* wal_methods, libsql_wal** wal) {
+    fprintf(stderr, "Opening virtual WAL at %s: %s\n", path, wal_methods->zName);
+    return the_wal_methods->xOpen(vfs, f, path, no_shm_mode, max_size, wal_methods, wal);
+}
+
+int libsql_wasi_wal_close(libsql_wal* wal, sqlite3* db, int sync_flags, int nBuf, unsigned char* zBuf) {
+    return the_wal_methods->xClose(wal, db, sync_flags, nBuf, zBuf);
+}
+
+void libsql_wasi_wal_limit(libsql_wal* wal, long long limit) {
+    return the_wal_methods->xLimit(wal, limit);
+}
+
+int libsql_wasi_wal_begin_read_transaction(libsql_wal* wal, int* out) {
+    return the_wal_methods->xBeginReadTransaction(wal, out);
+}
+
+void libsql_wasi_wal_end_read_transaction(libsql_wal* wal) {
+    return the_wal_methods->xEndReadTransaction(wal);
+}
+
+int libsql_wasi_wal_find_frame(libsql_wal* wal, unsigned int frame, unsigned int* out) {
+    return the_wal_methods->xFindFrame(wal, frame, out);
+}
+
+int libsql_wasi_wal_read_frame(libsql_wal* wal, unsigned int frame, int n, unsigned char* out) {
+    return the_wal_methods->xReadFrame(wal, frame, n, out);
+}
+
+unsigned int libsql_wasi_wal_dbsize(libsql_wal* wal) {
+    return the_wal_methods->xDbsize(wal);
+}
+
+int libsql_wasi_wal_begin_write_transaction(libsql_wal* wal) {
+    return the_wal_methods->xBeginWriteTransaction(wal);
+}
+
+int libsql_wasi_wal_end_write_transaction(libsql_wal* wal) {
+    return the_wal_methods->xEndWriteTransaction(wal);
+}
+
+int libsql_wasi_wal_undo(libsql_wal* wal, int (*xUndo)(void*, unsigned int), void* pUndoCtx) {
+    return the_wal_methods->xUndo(wal, xUndo, pUndoCtx);
+}
+
+void libsql_wasi_wal_savepoint(libsql_wal* wal, unsigned int* aWalData) {
+    return the_wal_methods->xSavepoint(wal, aWalData);
+}
+
+int libsql_wasi_wal_savepoint_undo(libsql_wal* wal, unsigned int* aWalData) {
+    return the_wal_methods->xSavepointUndo(wal, aWalData);
+}
+
+int libsql_wasi_wal_frames(libsql_wal* wal, int n, libsql_pghdr* aPgHdr, unsigned int cksum, int mode, int readonly) {
+    return the_wal_methods->xFrames(wal, n, aPgHdr, cksum, mode, readonly);
+}
+
+int libsql_wasi_wal_checkpoint(libsql_wal* wal, sqlite3* db, int eMode, int (*xBusy)(void*), void* pBusyArg, int sync_flags, int nBuf, unsigned char* zBuf, int* pnLog, int* pnCkpt) {
+    return the_wal_methods->xCheckpoint(wal, db, eMode, xBusy, pBusyArg, sync_flags, nBuf, zBuf, pnLog, pnCkpt);
+}
+
+int libsql_wasi_wal_callback(libsql_wal* wal) {
+    return the_wal_methods->xCallback(wal);
+}
+
+int libsql_wasi_wal_exclusive_mode(libsql_wal* wal, int op) {
+    return the_wal_methods->xExclusiveMode(wal, op);
+}
+
+int libsql_wasi_wal_heap_memory(libsql_wal* wal) {
+    return the_wal_methods->xHeapMemory(wal);
+}
+
+int libsql_wasi_wal_snapshot_get(libsql_wal* wal, sqlite3_snapshot** snapshot) {
+    return the_wal_methods->xSnapshotGet(wal, snapshot);
+}
+
+void libsql_wasi_wal_snapshot_open(libsql_wal* wal, sqlite3_snapshot* snapshot) {
+    return the_wal_methods->xSnapshotOpen(wal, snapshot);
+}
+
+int libsql_wasi_wal_snapshot_recover(libsql_wal* wal) {
+    return the_wal_methods->xSnapshotRecover(wal);
+}
+
+int libsql_wasi_wal_snapshot_check(libsql_wal* wal, sqlite3_snapshot* snapshot) {
+    return the_wal_methods->xSnapshotCheck(wal, snapshot);
+}
+
+void libsql_wasi_wal_snapshot_unlock(libsql_wal* wal) {
+    return the_wal_methods->xSnapshotUnlock(wal);
+}
+
+int libsql_wasi_wal_framesize(libsql_wal* wal) {
+    return the_wal_methods->xFramesize(wal);
+}
+
+sqlite3_file *libsql_wasi_wal_file(libsql_wal* wal) {
+    return the_wal_methods->xFile(wal);
+}
+
+int libsql_wasi_wal_writelock(libsql_wal* wal, int bLock) {
+    return the_wal_methods->xWriteLock(wal, bLock);
+}
+
+void libsql_wasi_wal_db(libsql_wal* wal, sqlite3* db) {
+    return the_wal_methods->xDb(wal, db);
+}
+
+int libsql_wasi_wal_pathname_len(int orig_len) {
+    return the_wal_methods->xPathnameLen(orig_len);
+}
+
+void libsql_wasi_get_wal_pathname(char *buf, const char *orig, int len) {
+    return the_wal_methods->xGetWalPathname(buf, orig, len);
+}
+
+int libsql_wasi_wal_pre_main_db_open(libsql_wal_methods *methods, const char *path) {
+    return 0;
+}
+
+libsql_wal_methods libsql_wasi_wal_methods = {
+    .iVersion = 1,
+    .xOpen = &libsql_wasi_wal_open,
+    .xClose = &libsql_wasi_wal_close,
+    .xLimit = &libsql_wasi_wal_limit,
+    .xBeginReadTransaction = &libsql_wasi_wal_begin_read_transaction,
+    .xEndReadTransaction = &libsql_wasi_wal_end_read_transaction,
+    .xFindFrame = &libsql_wasi_wal_find_frame,
+    .xReadFrame = &libsql_wasi_wal_read_frame,
+    .xDbsize = &libsql_wasi_wal_dbsize,
+    .xBeginWriteTransaction = &libsql_wasi_wal_begin_write_transaction,
+    .xEndWriteTransaction = &libsql_wasi_wal_end_write_transaction,
+    .xUndo = &libsql_wasi_wal_undo,
+    .xSavepoint = &libsql_wasi_wal_savepoint,
+    .xSavepointUndo = &libsql_wasi_wal_savepoint_undo,
+    .xFrames = &libsql_wasi_wal_frames,
+    .xCheckpoint = &libsql_wasi_wal_checkpoint,
+    .xCallback = &libsql_wasi_wal_callback,
+    .xExclusiveMode = &libsql_wasi_wal_exclusive_mode,
+    .xHeapMemory = &libsql_wasi_wal_heap_memory,
+    .xSnapshotGet = &libsql_wasi_wal_snapshot_get,
+    .xSnapshotOpen = &libsql_wasi_wal_snapshot_open,
+    .xSnapshotRecover = &libsql_wasi_wal_snapshot_recover,
+    .xSnapshotCheck = &libsql_wasi_wal_snapshot_check,
+    .xSnapshotUnlock = &libsql_wasi_wal_snapshot_unlock,
+    .xFramesize = &libsql_wasi_wal_framesize,
+    .xFile = &libsql_wasi_wal_file,
+    .xWriteLock = &libsql_wasi_wal_writelock,
+    .xDb = &libsql_wasi_wal_db,
+    .xPathnameLen = &libsql_wasi_wal_pathname_len,
+    .xGetWalPathname = &libsql_wasi_get_wal_pathname,
+    .xPreMainDbOpen = &libsql_wasi_wal_pre_main_db_open,
+    .bUsesShm = 0,
+    .zName = "libsql_wasi",
+    .pNext = NULL,
+};
+
 void libsql_wasi_init() {
+    the_wal_methods = libsql_wal_methods_find(NULL);
     sqlite3_vfs_register(&libsql_wasi_vfs, 1);
-    // TODO: register WAL methods too
+    libsql_wal_methods_register(&libsql_wasi_wal_methods);
+    fprintf(stderr, "WASI initialized\n");
 }
 
 sqlite3 *libsql_wasi_open_db(const char *filename) {
     sqlite3 *db;
-    // TODO: libsql_open, with virtual WAL methods
-    int rc = sqlite3_open_v2(filename, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, "libsql_wasi");
+    fprintf(stderr, "opening database %s\n", filename);
+    int rc = libsql_open(filename, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, "libsql_wasi", "libsql_wasi");
     if (rc != SQLITE_OK) {
         fprintf(stderr, "Failed to open database: %s\n", sqlite3_errmsg(db));
         return NULL;
     }
-    rc = sqlite3_exec(db, "PRAGMA locking_mode=exclusive;", NULL, NULL, NULL);
-    if (rc != SQLITE_OK) {
-        fprintf(stderr, "Failed to set locking mode: %s\n", sqlite3_errmsg(db));
-        return NULL;
-    }
+    fprintf(stderr, "opened database %s\n", filename);
     rc = sqlite3_exec(db, "PRAGMA journal_mode=WAL;", NULL, NULL, NULL);
     if (rc != SQLITE_OK) {
         fprintf(stderr, "Failed to set journal mode: %s\n", sqlite3_errmsg(db));
