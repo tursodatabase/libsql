@@ -476,10 +476,10 @@ impl Connection {
     pub fn open_with_flags_and_wal<P: AsRef<Path>>(
         path: P,
         flags: OpenFlags,
-        create_wal: libsql_ffi::libsql_create_wal,
+        wal_manager: libsql_ffi::libsql_wal_manager,
     ) -> Result<Connection> {
         let c_path = path_to_cstring(path.as_ref())?;
-        InnerConnection::open_with_flags(&c_path, flags, None, Some(create_wal)).map(|db| {
+        InnerConnection::open_with_flags(&c_path, flags, None, Some(wal_manager)).map(|db| {
             Connection {
                 db: RefCell::new(db),
                 cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
@@ -501,11 +501,11 @@ impl Connection {
         path: P,
         flags: OpenFlags,
         vfs: &str,
-        create_wal: ffi::libsql_create_wal,
+        wal_manager: ffi::libsql_wal_manager,
     ) -> Result<Connection> {
         let c_path = path_to_cstring(path.as_ref())?;
         let c_vfs = str_to_cstring(vfs)?;
-        InnerConnection::open_with_flags(&c_path, flags, Some(&c_vfs), Some(create_wal)).map(|db| {
+        InnerConnection::open_with_flags(&c_path, flags, Some(&c_vfs), Some(wal_manager)).map(|db| {
             Connection {
                 db: RefCell::new(db),
                 cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),

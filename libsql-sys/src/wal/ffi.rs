@@ -1,14 +1,14 @@
 use std::ffi::{c_char, c_int, c_longlong, c_void, CStr};
 
 use libsql_ffi::{
-    create_wal_impl, libsql_create_wal, libsql_wal, libsql_wal_methods, sqlite3, sqlite3_file,
+    wal_manager_impl, libsql_wal_manager, libsql_wal, libsql_wal_methods, sqlite3, sqlite3_file,
     sqlite3_vfs, wal_impl, PgHdr, SQLITE_CHECKPOINT_FULL, SQLITE_CHECKPOINT_PASSIVE,
     SQLITE_CHECKPOINT_RESTART, SQLITE_CHECKPOINT_TRUNCATE, SQLITE_OK, WAL_SAVEPOINT_NDATA,
 };
 
 use crate::wal::{BusyHandler, CheckpointMode, UndoHandler};
 
-use super::{CreateWal, PageHeaders, Sqlite3Db, Sqlite3File, Vfs, Wal};
+use super::{WalManager, PageHeaders, Sqlite3Db, Sqlite3File, Vfs, Wal};
 
 // Construct a libsql_wal instance from a pointer to a Wal. This pointer must be valid until a call
 // to CreateWal::close
@@ -46,24 +46,24 @@ pub(crate) fn construct_libsql_wal<W: Wal>(wal: *mut W) -> libsql_wal {
     }
 }
 
-/// Turn a `CreateWal` into a `libsql_create_wal`.
-/// The caller is responsible for deallocating `libsql_create_wal.pData`
-pub fn make_create_wal<T: CreateWal>(create_wal: T) -> libsql_create_wal {
-    libsql_create_wal {
-        bUsesShm: create_wal.use_shared_memory() as _,
+/// Turn a `CreateWal` into a `libsql_wal_manager`.
+/// The caller is responsible for deallocating `libsql_wal_manager.pData`
+pub fn make_wal_manager<T: WalManager>(wal_manager: T) -> libsql_wal_manager {
+    libsql_wal_manager {
+        bUsesShm: wal_manager.use_shared_memory() as _,
         xOpen: Some(open::<T>),
         xClose: Some(close::<T>),
         xLogDestroy: Some(log_destroy::<T>),
         xLogExists: Some(log_exists::<T>),
-        xDestroy: Some(destroy_create_wal::<T>),
-        pData: Box::into_raw(Box::new(create_wal)) as *mut _,
+        xDestroy: Some(destroy_wal_manager::<T>),
+        pData: Box::into_raw(Box::new(wal_manager)) as *mut _,
     }
 }
 
 // FFI functions mapping C traits to function pointers.
 
-pub unsafe extern "C" fn open<T: CreateWal>(
-    create_wal: *mut create_wal_impl,
+pub unsafe extern "C" fn open<T: WalManager>(
+    wal_manager: *mut wal_manager_impl,
     vfs: *mut sqlite3_vfs,
     db_file: *mut sqlite3_file,
     no_shm_mode: c_int,
@@ -71,7 +71,7 @@ pub unsafe extern "C" fn open<T: CreateWal>(
     db_path: *const c_char,
     out_wal: *mut libsql_wal,
 ) -> c_int {
-    let this = &*(create_wal as *mut T);
+    let this = &*(wal_manager as *mut T);
     let mut vfs = Vfs { vfs };
     let db_path = CStr::from_ptr(db_path);
     let mut file = Sqlite3File { inner: db_file };
@@ -92,15 +92,15 @@ pub unsafe extern "C" fn open<T: CreateWal>(
     }
 }
 
-pub unsafe extern "C" fn close<T: CreateWal>(
-    create_wal: *mut create_wal_impl,
+pub unsafe extern "C" fn close<T: WalManager>(
+    wal_manager: *mut wal_manager_impl,
     wal: *mut wal_impl,
     db: *mut sqlite3,
     sync_flags: c_int,
     n_buf: c_int,
     z_buf: *mut u8,
 ) -> c_int {
-    let this = &*(create_wal as *mut T);
+    let this = &*(wal_manager as *mut T);
     let mut wal = Box::from_raw(wal as *mut T::Wal);
     let scratch = std::slice::from_raw_parts_mut(z_buf, n_buf as usize);
     let mut db = Sqlite3Db { inner: db };
@@ -111,12 +111,12 @@ pub unsafe extern "C" fn close<T: CreateWal>(
     }
 }
 
-pub unsafe extern "C" fn log_destroy<T: CreateWal>(
-    create_wal: *mut create_wal_impl,
+pub unsafe extern "C" fn log_destroy<T: WalManager>(
+    wal_manager: *mut wal_manager_impl,
     vfs: *mut sqlite3_vfs,
     db_path: *const c_char,
 ) -> c_int {
-    let this = &*(create_wal as *mut T);
+    let this = &*(wal_manager as *mut T);
     let db_path = CStr::from_ptr(db_path);
     let mut vfs = Vfs { vfs };
     match this.destroy_log(&mut vfs, db_path) {
@@ -125,13 +125,13 @@ pub unsafe extern "C" fn log_destroy<T: CreateWal>(
     }
 }
 
-pub unsafe extern "C" fn log_exists<T: CreateWal>(
-    create_wal: *mut create_wal_impl,
+pub unsafe extern "C" fn log_exists<T: WalManager>(
+    wal_manager: *mut wal_manager_impl,
     vfs: *mut sqlite3_vfs,
     db_path: *const c_char,
     exists: *mut c_int,
 ) -> c_int {
-    let this = &*(create_wal as *mut T);
+    let this = &*(wal_manager as *mut T);
     let db_path = CStr::from_ptr(db_path);
     let mut vfs = Vfs { vfs };
     match this.log_exists(&mut vfs, db_path) {
@@ -143,8 +143,8 @@ pub unsafe extern "C" fn log_exists<T: CreateWal>(
     }
 }
 
-pub unsafe extern "C" fn destroy_create_wal<T: CreateWal>(create_wal: *mut create_wal_impl) {
-    let this = Box::from_raw(create_wal as *mut T);
+pub unsafe extern "C" fn destroy_wal_manager<T: WalManager>(wal_manager: *mut wal_manager_impl) {
+    let this = Box::from_raw(wal_manager as *mut T);
     this.destroy();
 }
 

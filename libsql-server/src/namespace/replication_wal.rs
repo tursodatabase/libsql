@@ -2,7 +2,7 @@ use std::ffi::{c_int, CStr};
 
 use bottomless::bottomless_wal::{BottomlessWal, CreateBottomlessWal};
 use libsql_sys::wal::{
-    BusyHandler, CheckpointMode, CreateWal, PageHeaders, Result, Sqlite3Db, Sqlite3File,
+    BusyHandler, CheckpointMode, WalManager, PageHeaders, Result, Sqlite3Db, Sqlite3File,
     UndoHandler, Vfs, Wal,
 };
 
@@ -18,7 +18,7 @@ pub enum CreateReplicationWal {
     Logger(CreateReplicationLoggerWal),
 }
 
-impl CreateWal for CreateReplicationWal {
+impl WalManager for CreateReplicationWal {
     type Wal = ReplicationWal;
 
     fn use_shared_memory(&self) -> bool {

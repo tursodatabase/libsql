@@ -4344,20 +4344,20 @@ static int sqlite3WalOpen(
 
 void sqlite3DestroyCreateWal(void *self) { }
 
-int make_ref_counted_create_wal(libsql_create_wal create_wal, RefCountCreateWal **out) {
-    RefCountCreateWal *p = (RefCountCreateWal*)sqlite3MallocZero(sizeof(RefCountCreateWal));
+int make_ref_counted_wal_manager(libsql_wal_manager wal_manager, RefCountedWalManager **out) {
+    RefCountedWalManager *p = (RefCountedWalManager*)sqlite3MallocZero(sizeof(RefCountedWalManager));
     if (!p) return SQLITE_NOMEM;
     p->n = 1;
-    p->ref = create_wal;
+    p->ref = wal_manager;
     *out = p;
     return SQLITE_OK;
 }
 
 /*
- * Decrease the ref count and call the create_wal destructor when the count reaches 0.
+ * Decrease the ref count and call the wal_manager destructor when the count reaches 0.
  * Must be called from withing a critical section.
  */
-void destroy_create_wal(RefCountCreateWal *p) {
+void destroy_wal_manager(RefCountedWalManager *p) {
     assert(p->n != 0);
     p->n -= 1;
     if (p->n == 0) {
@@ -4371,20 +4371,20 @@ void destroy_create_wal(RefCountCreateWal *p) {
  * Must be called from withing a critical section.
  * Return NULL if the passed pointer ref count is already 0.
  */
-RefCountCreateWal* clone_create_wal(RefCountCreateWal *p) {
+RefCountedWalManager* clone_wal_manager(RefCountedWalManager *p) {
     assert(p->n != 0);
     p->n += 1;
     return p;
 }
 
-libsql_create_wal sqlite3_create_wal = {
+libsql_wal_manager sqlite3_wal_manager = {
     .pData = NULL,
-    .xOpen = (int (*)(create_wal_impl *, sqlite3_vfs *, sqlite3_file *, int, long long, const char*, libsql_wal *))sqlite3WalOpen,
-    .xClose = (int (*)(create_wal_impl *, wal_impl *, sqlite3 *, int, int, unsigned char *))sqlite3WalClose,
+    .xOpen = (int (*)(wal_manager_impl *, sqlite3_vfs *, sqlite3_file *, int, long long, const char*, libsql_wal *))sqlite3WalOpen,
+    .xClose = (int (*)(wal_manager_impl *, wal_impl *, sqlite3 *, int, int, unsigned char *))sqlite3WalClose,
     .bUsesShm = 1,
-    .xLogDestroy = (int (*)(create_wal_impl *, sqlite3_vfs*, const char*))sqlite3LogDestroy,
-    .xLogExists = (int (*)(create_wal_impl *, sqlite3_vfs*, const char*, int *))sqlite3LogExists,
-    .xDestroy =(void (*)(create_wal_impl*))sqlite3DestroyCreateWal,
+    .xLogDestroy = (int (*)(wal_manager_impl *, sqlite3_vfs*, const char*))sqlite3LogDestroy,
+    .xLogExists = (int (*)(wal_manager_impl *, sqlite3_vfs*, const char*, int *))sqlite3LogExists,
+    .xDestroy =(void (*)(wal_manager_impl*))sqlite3DestroyCreateWal,
 };
 
 typedef struct wal_impl wal_impl;

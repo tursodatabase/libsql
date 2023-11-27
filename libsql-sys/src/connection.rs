@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use std::path::Path;
 
-use crate::wal::{ffi::make_create_wal, CreateWal, Wal};
+use crate::wal::{ffi::make_wal_manager, WalManager, Wal};
 
 #[cfg(not(feature = "rusqlite"))]
 type RawConnection = *mut crate::ffi::sqlite3;
@@ -57,11 +57,11 @@ impl<W: Wal> Connection<W> {
     pub fn open<T>(
         path: impl AsRef<Path>,
         flags: OpenFlags,
-        create_wal: T,
+        wal_manager: T,
         auto_checkpoint: u32,
     ) -> Result<Self, Error>
     where
-        T: CreateWal<Wal = W>,
+        T: WalManager<Wal = W>,
     {
         tracing::trace!(
             "Opening a connection with regular WAL at {}",
@@ -73,7 +73,7 @@ impl<W: Wal> Connection<W> {
             let conn = rusqlite::Connection::open_with_flags_and_wal(
                 path,
                 flags,
-                make_create_wal(create_wal),
+                make_wal_manager(wal_manager),
             )?;
             conn.pragma_update(None, "journal_mode", "WAL")?;
             unsafe {
@@ -106,7 +106,7 @@ impl<W: Wal> Connection<W> {
                 &mut conn as *mut _,
                 flags,
                 std::ptr::null_mut(),
-                make_create_wal(create_wal),
+                make_wal_manager(wal_manager),
             );
 
             if rc == 0 {

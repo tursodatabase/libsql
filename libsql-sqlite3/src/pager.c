@@ -699,7 +699,7 @@ struct Pager {
   char *pTmpSpace;            /* Pager.pageSize bytes of space for tmp use */
   PCache *pPCache;            /* Pointer to page cache object */
 #ifndef SQLITE_OMIT_WAL
-  RefCountCreateWal* create_wal;
+  RefCountedWalManager* wal_manager;
   libsql_wal wal;
 #endif
 };
@@ -3347,7 +3347,7 @@ static int pagerOpenWalIfPresent(Pager *pPager){
 
   if( !pPager->tempFile ){
     int isWal;                    /* True if WAL file exists */
-    rc =pPager->create_wal->ref.xLogExists(pPager->create_wal->ref.pData, pPager->pVfs, pPager->zFilename, &isWal);
+    rc =pPager->wal_manager->ref.xLogExists(pPager->wal_manager->ref.pData, pPager->pVfs, pPager->zFilename, &isWal);
     if( rc==SQLITE_OK ){
       if( isWal ){
         Pgno nPage;                   /* Size of the database file */
@@ -3355,7 +3355,7 @@ static int pagerOpenWalIfPresent(Pager *pPager){
         rc = pagerPagecount(pPager, &nPage);
         if( rc ) return rc;
         if( nPage==0 ){
-          rc = pPager->create_wal->ref.xLogDestroy(pPager->create_wal->ref.pData, pPager->pVfs, pPager->zFilename);
+          rc = pPager->wal_manager->ref.xLogDestroy(pPager->wal_manager->ref.pData, pPager->pVfs, pPager->zFilename);
         }else{
           testcase( sqlite3PcachePagecount(pPager->pPCache)==0 );
           rc = sqlite3PagerOpenWal(pPager, 0);
@@ -4182,10 +4182,10 @@ int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
       a = pTmp;
     }
     if (pagerUseWal(pPager)) {
-      pPager->create_wal->ref.xClose(pPager->create_wal->ref.pData, pPager->wal.pData, db, pPager->walSyncFlags, pPager->pageSize,a);
+      pPager->wal_manager->ref.xClose(pPager->wal_manager->ref.pData, pPager->wal.pData, db, pPager->walSyncFlags, pPager->pageSize,a);
       memset((void*)&(pPager->wal), 0, sizeof(libsql_wal));
     }
-    destroy_create_wal(pPager->create_wal);
+    destroy_wal_manager(pPager->wal_manager);
   }
 #endif
   pager_reset(pPager);
@@ -4725,7 +4725,7 @@ int sqlite3PagerFlush(Pager *pPager){
 */
 int sqlite3PagerOpen(
   sqlite3_vfs *pVfs,       /* The virtual file system to use */
-  RefCountCreateWal *create_wal, /* WAL methods to use */
+  RefCountedWalManager *wal_manager, /* WAL methods to use */
   Pager **ppPager,         /* OUT: Return the Pager structure here */
   const char *zFilename,   /* Name of the database file to open */
   int nExtra,              /* Extra bytes append to each in-memory page */
@@ -4880,7 +4880,7 @@ int sqlite3PagerOpen(
   pPager->fd = (sqlite3_file*)pPtr;       pPtr += ROUND8(pVfs->szOsFile);
   pPager->sjfd = (sqlite3_file*)pPtr;     pPtr += journalFileSize;
   pPager->jfd =  (sqlite3_file*)pPtr;     pPtr += journalFileSize;
-  pPager->create_wal = clone_create_wal(create_wal);
+  pPager->wal_manager = clone_wal_manager(wal_manager);
   assert( EIGHT_BYTE_ALIGNMENT(pPager->jfd) );
   memcpy(pPtr, &pPager, SQLITE_PTRSIZE);  pPtr += SQLITE_PTRSIZE;
 
@@ -5010,7 +5010,7 @@ act_like_temp_file:
   if( rc!=SQLITE_OK ){
     sqlite3OsClose(pPager->fd);
     sqlite3PageFree(pPager->pTmpSpace);
-    destroy_create_wal(pPager->create_wal);
+    destroy_wal_manager(pPager->wal_manager);
     sqlite3_free(pPager);
     return rc;
   }
@@ -7556,7 +7556,7 @@ int sqlite3PagerWalCallback(Pager *pPager){
 int sqlite3PagerWalSupported(Pager *pPager){
   const sqlite3_io_methods *pMethods = pPager->fd->pMethods;
   if( pPager->noLock ) return 0;
-  return pPager->exclusiveMode || (pPager->create_wal->ref.bUsesShm == 0) || (pMethods->iVersion>=2 && pMethods->xShmMap);
+  return pPager->exclusiveMode || (pPager->wal_manager->ref.bUsesShm == 0) || (pMethods->iVersion>=2 && pMethods->xShmMap);
 }
 
 /*
@@ -7604,7 +7604,7 @@ static int pagerOpenWal(Pager *pPager){
   ** (e.g. due to malloc() failure), return an error code.
   */
   if( rc==SQLITE_OK ){
-    rc = pPager->create_wal->ref.xOpen(pPager->create_wal->ref.pData, pPager->pVfs,
+    rc = pPager->wal_manager->ref.xOpen(pPager->wal_manager->ref.pData, pPager->pVfs,
         pPager->fd, pPager->exclusiveMode,
         pPager->journalSizeLimit, pPager->zFilename, &(pPager->wal)
     );
@@ -7682,7 +7682,7 @@ int sqlite3PagerCloseWal(Pager *pPager, sqlite3 *db){
     int logexists = 0;
     rc = pagerLockDb(pPager, SHARED_LOCK);
     if( rc==SQLITE_OK ){
-      rc = pPager->create_wal->ref.xLogExists(pPager->create_wal->ref.pData, pPager->pVfs, pPager->zFilename, &logexists);
+      rc = pPager->wal_manager->ref.xLogExists(pPager->wal_manager->ref.pData, pPager->pVfs, pPager->zFilename, &logexists);
     }
     if( rc==SQLITE_OK && logexists ){
       rc = pagerOpenWal(pPager);
@@ -7695,7 +7695,7 @@ int sqlite3PagerCloseWal(Pager *pPager, sqlite3 *db){
   if( rc==SQLITE_OK && pagerUseWal(pPager) ){
     rc = pagerExclusiveLock(pPager);
     if( rc==SQLITE_OK ){
-      rc = pPager->create_wal->ref.xClose(pPager->create_wal->ref.pData, pPager->wal.pData, db, pPager->walSyncFlags,
+      rc = pPager->wal_manager->ref.xClose(pPager->wal_manager->ref.pData, pPager->wal.pData, db, pPager->walSyncFlags,
                            pPager->pageSize, (u8*)pPager->pTmpSpace);
       memset(&(pPager->wal), 0, sizeof(libsql_wal));
       pagerFixMaplimit(pPager);

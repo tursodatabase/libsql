@@ -46,7 +46,7 @@ impl Injector {
         auto_checkpoint: u32,
     ) -> Result<Self, Error> {
         let buffer = FrameBuffer::default();
-        let create_wal = CreateInjectorWal::new(buffer.clone());
+        let wal_manager = CreateInjectorWal::new(buffer.clone());
 
         let connection = libsql_sys::Connection::open(
             path,
@@ -54,7 +54,7 @@ impl Injector {
                 | OpenFlags::SQLITE_OPEN_CREATE
                 | OpenFlags::SQLITE_OPEN_URI
                 | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-            create_wal,
+            wal_manager,
             auto_checkpoint,
         )?;
 

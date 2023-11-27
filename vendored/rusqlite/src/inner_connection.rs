@@ -64,7 +64,7 @@ impl InnerConnection {
         c_path: &CStr,
         flags: OpenFlags,
         vfs: Option<&CStr>,
-        #[cfg(feature = "libsql-experimental")] create_wal: Option<ffi::libsql_create_wal>,
+        #[cfg(feature = "libsql-experimental")] wal_manager: Option<ffi::libsql_wal_manager>,
     ) -> Result<InnerConnection> {
         ensure_safe_sqlite_threading_mode()?;
 
@@ -93,9 +93,9 @@ impl InnerConnection {
             #[cfg(not(feature = "libsql-experimental"))]
             let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), z_vfs);
             #[cfg(feature = "libsql-experimental")]
-            let r = match create_wal {
-                Some(create_wal) => {
-                    ffi::libsql_open(c_path.as_ptr(), &mut db, flags.bits(), z_vfs, create_wal)
+            let r = match wal_manager {
+                Some(wal_manager) => {
+                    ffi::libsql_open(c_path.as_ptr(), &mut db, flags.bits(), z_vfs, wal_manager)
                 }
                 None => ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), z_vfs),
             };

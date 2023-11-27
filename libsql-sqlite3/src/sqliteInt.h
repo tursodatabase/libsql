@@ -1795,7 +1795,7 @@ struct sqlite3 {
   libsql_wasm_ctx wasm;        /* WebAssembly runtime context */
 #endif
 #ifndef SQLITE_OMIT_WAL
-  RefCountCreateWal *create_wal;
+  RefCountedWalManager *wal_manager;
 #endif
   void *pCloseArg;                 /* First argument to xCloseCallback */
   void (*xCloseCallback)(          /* Registered using sqlite3_close_hook() */

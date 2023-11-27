@@ -1,10 +1,10 @@
 #![allow(improper_ctypes)]
 #[cfg(test)]
 mod tests {
-    use libsql_sys::wal::{CreateWal, CreateSqlite3Wal, Sqlite3Wal, Wal, make_create_wal};
+    use libsql_sys::wal::{CreateWal, CreateSqlite3Wal, Sqlite3Wal, Wal, make_wal_manager};
     use libsql_sys::rusqlite::{Connection, OpenFlags};
 
-    /// A create_wal the simple wraps sqlite3 WAL
+    /// A wal_manager the simple wraps sqlite3 WAL
     struct WrapCreateWal {
         inner: CreateSqlite3Wal,
     }
@@ -146,11 +146,11 @@ mod tests {
     #[test]
     fn test_vwal_register() {
         let tmpfile = tempfile::NamedTempFile::new().unwrap();
-        let create_wal = make_create_wal(WrapCreateWal { inner: CreateSqlite3Wal::new() });
+        let wal_manager = make_wal_manager(WrapCreateWal { inner: CreateSqlite3Wal::new() });
         let conn = Connection::open_with_flags_and_wal(
             tmpfile.path(),
             OpenFlags::default(),
-            create_wal
+            wal_manager
         ).unwrap();
 
         conn.pragma(None, "journal_mode", "wal", |_| Ok(())).unwrap();

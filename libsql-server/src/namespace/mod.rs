@@ -15,7 +15,7 @@ use enclose::enclose;
 use futures_core::Stream;
 use hyper::Uri;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
-use libsql_sys::wal::{CreateSqlite3Wal, CreateWal};
+use libsql_sys::wal::{CreateSqlite3Wal, WalManager};
 use parking_lot::Mutex;
 use rusqlite::ErrorCode;
 use tokio::io::AsyncBufReadExt;
@@ -969,18 +969,18 @@ impl Namespace<PrimaryDatabase> {
         )
         .await?;
 
-        let base_create_wal = CreateReplicationLoggerWal::new(logger.clone());
-        let create_wal = match bottomless_replicator {
+        let base_wal_manager = CreateReplicationLoggerWal::new(logger.clone());
+        let wal_manager = match bottomless_replicator {
             Some(replicator) => CreateReplicationWal::Bottomless(CreateBottomlessWal::new(
-                base_create_wal,
+                base_wal_manager,
                 replicator,
             )),
-            None => CreateReplicationWal::Logger(base_create_wal),
+            None => CreateReplicationWal::Logger(base_wal_manager),
         };
 
         let connection_maker: Arc<_> = MakeLibSqlConn::new(
             db_path.clone(),
-            create_wal.clone(),
+            wal_manager.clone(),
             stats.clone(),
             db_config_store.clone(),
             config.extensions.clone(),
@@ -1005,7 +1005,7 @@ impl Namespace<PrimaryDatabase> {
                 Err(LoadDumpError::LoadDumpExistingDb)?;
             }
             RestoreOption::Dump(dump) => {
-                load_dump(&db_path, dump, create_wal, logger.auto_checkpoint).await?;
+                load_dump(&db_path, dump, wal_manager, logger.auto_checkpoint).await?;
             }
             _ => { /* other cases were already handled when creating bottomless */ }
         }
@@ -1087,21 +1087,21 @@ const WASM_TABLE_CREATE: &str =
 async fn load_dump<S, C>(
     db_path: &Path,
     dump: S,
-    create_wal: C,
+    wal_manager: C,
     auto_checkpoint: u32,
 ) -> crate::Result<(), LoadDumpError>
 where
     S: Stream<Item = std::io::Result<Bytes>> + Unpin,
-    C: CreateWal + Clone + Send + 'static,
+    C: WalManager + Clone + Send + 'static,
     C::Wal: Send + 'static,
 {
     let mut retries = 0;
     // there is a small chance we fail to acquire the lock right away, so we perform a few retries
     let conn = loop {
         let db_path = db_path.to_path_buf();
-        let create_wal = create_wal.clone();
+        let wal_manager = wal_manager.clone();
         match tokio::task::spawn_blocking(move || {
-            open_conn(&db_path, create_wal, None, auto_checkpoint)
+            open_conn(&db_path, wal_manager, None, auto_checkpoint)
         })
         .await?
         {

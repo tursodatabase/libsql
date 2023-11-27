@@ -68,13 +68,13 @@ static int SQLITE_TCLAPI btree_open(
   memcpy(zFilename, argv[1], n+1);
   zFilename[n+1] = 0;
 
-  RefCountCreateWal  *create_wal;
-  rc = make_ref_counted_create_wal(sqlite3_create_wal, &create_wal);
+  RefCountedWalManager  *wal_manager;
+  rc = make_ref_counted_wal_manager(sqlite3_wal_manager, &wal_manager);
   if (rc) return rc;
-  sDb.create_wal = create_wal;
+  sDb.wal_manager = wal_manager;
   rc = sqlite3BtreeOpen(sDb.pVfs, zFilename, &sDb, &pBt, 0, 
      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB);
-  destroy_create_wal(sDb.create_wal);
+  destroy_wal_manager(sDb.wal_manager);
   sqlite3_free(zFilename);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);

@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use libsql_sys::ffi::{SQLITE_BUSY, SQLITE_IOERR_WRITE};
 use libsql_sys::wal::{
-    CheckpointMode, CreateWal, Error, PageHeaders, Result, Sqlite3Db, Sqlite3File, UndoHandler,
+    CheckpointMode, WalManager, Error, PageHeaders, Result, Sqlite3Db, Sqlite3File, UndoHandler,
     Vfs, Wal,
 };
 
@@ -21,7 +21,7 @@ impl<T> CreateBottomlessWal<T> {
     }
 }
 
-impl<T: CreateWal> CreateWal for CreateBottomlessWal<T> {
+impl<T: WalManager> WalManager for CreateBottomlessWal<T> {
     type Wal = BottomlessWal<T::Wal>;
 
     fn use_shared_memory(&self) -> bool {

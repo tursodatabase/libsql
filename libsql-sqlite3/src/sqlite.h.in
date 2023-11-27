@@ -3778,14 +3778,14 @@ int sqlite3_open_v2(
   const char *zVfs        /* Name of VFS module to use */
 );
 
-typedef struct libsql_create_wal libsql_create_wal;
+typedef struct libsql_wal_manager libsql_wal_manager;
 
 int libsql_open(
   const char *filename,   /* Database filename (UTF-8) */
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   int flags,              /* Flags */
   const char *zVfs,       /* Name of VFS module to use, NULL for default */
-  libsql_create_wal create_wal   /* create_wal instance, in charge of instanciating a wal */
+  libsql_wal_manager wal_manager   /* wal_manager instance, in charge of instanciating a wal */
 );
 
 LIBSQL_API int libsql_try_initialize_wasm_func_table(sqlite3 *db);

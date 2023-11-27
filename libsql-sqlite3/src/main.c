@@ -1482,7 +1482,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
   }
 
   /* Destroy the create wal */
-  destroy_create_wal(db->create_wal);
+  destroy_wal_manager(db->wal_manager);
 
   sqlite3_free(db);
 }
@@ -3275,11 +3275,11 @@ static const char *uriParameter(const char *zFilename, const char *zParam){
 ** is UTF-8 encoded.
 */
 static int openDatabase(
-  const char *zFilename,        /* Database filename UTF-8 encoded */
-  sqlite3 **ppDb,               /* OUT: Returned database handle */
-  unsigned int flags,           /* Operational flags */
-  const char *zVfs,             /* Name of the VFS to use */
-  libsql_create_wal create_wal  /* Pointer to the user data*/
+  const char *zFilename,          /* Database filename UTF-8 encoded */
+  sqlite3 **ppDb,                 /* OUT: Returned database handle */
+  unsigned int flags,             /* Operational flags */
+  const char *zVfs,               /* Name of the VFS to use */
+  libsql_wal_manager wal_manager  /* wal manager implementation */
 ){
   sqlite3 *db;                    /* Store allocated handle here */
   int rc;                         /* Return code */
@@ -3339,10 +3339,10 @@ static int openDatabase(
   /* Allocate the sqlite data structure */
   db = sqlite3MallocZero( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
-  rc = make_ref_counted_create_wal(create_wal, &(db->create_wal));
+  rc = make_ref_counted_wal_manager(wal_manager, &(db->wal_manager));
   if (rc) {
       sqlite3_free(db);
-      create_wal.xDestroy(create_wal.pData);
+      wal_manager.xDestroy(wal_manager.pData);
       db = 0;
       rc = SQLITE_NOMEM;
       goto opendb_out;
@@ -3354,8 +3354,8 @@ static int openDatabase(
   ){
     db->mutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
     if( db->mutex==0 ){
-      create_wal.xDestroy(create_wal.pData);
-      sqlite3_free(db->create_wal);
+      wal_manager.xDestroy(wal_manager.pData);
+      sqlite3_free(db->wal_manager);
       sqlite3_free(db);
       db = 0;
       goto opendb_out;
@@ -3647,7 +3647,7 @@ int sqlite3_open(
   sqlite3 **ppDb
 ){
   return openDatabase(zFilename, ppDb,
-                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, sqlite3_create_wal);
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, sqlite3_wal_manager);
 }
 int sqlite3_open_v2(
   const char *filename,   /* Database filename (UTF-8) */
@@ -3655,7 +3655,7 @@ int sqlite3_open_v2(
   int flags,              /* Flags */
   const char *zVfs        /* Name of VFS module to use */
 ){
-  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, sqlite3_create_wal);
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, sqlite3_wal_manager);
 }
 
 int libsql_open(
@@ -3663,9 +3663,9 @@ int libsql_open(
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   int flags,              /* Flags */
   const char *zVfs,       /* Name of VFS module to use, NULL for default */
-  libsql_create_wal create_wal   /* create_wal instance, in charge of instanciating a wal */
+  libsql_wal_manager wal_manager   /* wal_manager implemetation */
 ) {
-  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, create_wal);
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, wal_manager);
 }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -3694,7 +3694,7 @@ int sqlite3_open16(
   zFilename8 = sqlite3ValueText(pVal, SQLITE_UTF8);
   if( zFilename8 ){
     rc = openDatabase(zFilename8, ppDb,
-                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, sqlite3_create_wal);
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, sqlite3_wal_manager);
     assert( *ppDb || rc==SQLITE_NOMEM );
     if( rc==SQLITE_OK && !DbHasProperty(*ppDb, 0, DB_SchemaLoaded) ){
       SCHEMA_ENC(*ppDb) = ENC(*ppDb) = SQLITE_UTF16NATIVE;

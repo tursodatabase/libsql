@@ -118,7 +118,7 @@ typedef struct libsql_wal_methods libsql_wal_methods;
 /* Open and close a Pager connection. */ 
 int sqlite3PagerOpen(
   sqlite3_vfs*,
-  RefCountCreateWal*,
+  RefCountedWalManager*,
   Pager **ppPager,
   const char*,
   int,

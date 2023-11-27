@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use libsql_sys::wal::{CreateWal, Wal};
+use libsql_sys::wal::{WalManager, Wal};
 use metrics::{histogram, increment_counter};
 use parking_lot::{Mutex, RwLock};
 use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus, TransactionState};
@@ -27,9 +27,9 @@ use super::config::DatabaseConfigStore;
 use super::program::{Cond, DescribeCol, DescribeParam, DescribeResponse};
 use super::{MakeConnection, Program, Step, TXN_TIMEOUT};
 
-pub struct MakeLibSqlConn<T: CreateWal> {
+pub struct MakeLibSqlConn<T: WalManager> {
     db_path: PathBuf,
-    create_wal: T,
+    wal_manager: T,
     stats: Arc<Stats>,
     config_store: Arc<DatabaseConfigStore>,
     extensions: Arc<[PathBuf]>,
@@ -45,13 +45,13 @@ pub struct MakeLibSqlConn<T: CreateWal> {
 
 impl<T> MakeLibSqlConn<T>
 where
-    T: CreateWal + Clone + Send + 'static,
+    T: WalManager + Clone + Send + 'static,
     T::Wal: Send + 'static,
 {
     #[allow(clippy::too_many_arguments)]
     pub async fn new(
         db_path: PathBuf,
-        create_wal: T,
+        wal_manager: T,
         stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
         extensions: Arc<[PathBuf]>,
@@ -71,7 +71,7 @@ where
             current_frame_no_receiver,
             _db: None,
             state: Default::default(),
-            create_wal,
+            wal_manager,
         };
 
         let db = this.try_create_db().await?;
@@ -113,7 +113,7 @@ where
         LibSqlConnection::new(
             self.db_path.clone(),
             self.extensions.clone(),
-            self.create_wal.clone(),
+            self.wal_manager.clone(),
             self.stats.clone(),
             self.config_store.clone(),
             QueryBuilderConfig {
@@ -131,7 +131,7 @@ where
 #[async_trait::async_trait]
 impl<T> MakeConnection for MakeLibSqlConn<T>
 where
-    T: CreateWal + Clone + Send + Sync + 'static,
+    T: WalManager + Clone + Send + Sync + 'static,
     T::Wal: Send,
 {
     type Connection = LibSqlConnection<T::Wal>;
@@ -166,12 +166,12 @@ impl<T> std::fmt::Debug for LibSqlConnection<T> {
 
 pub fn open_conn<T>(
     path: &Path,
-    create_wal: T,
+    wal_manager: T,
     flags: Option<OpenFlags>,
     auto_checkpoint: u32,
 ) -> Result<libsql_sys::Connection<T::Wal>, rusqlite::Error>
 where
-    T: CreateWal,
+    T: WalManager,
 {
     let flags = flags.unwrap_or(
         OpenFlags::SQLITE_OPEN_READ_WRITE
@@ -179,7 +179,7 @@ where
             | OpenFlags::SQLITE_OPEN_URI
             | OpenFlags::SQLITE_OPEN_NO_MUTEX,
     );
-    libsql_sys::Connection::open(path.join("data"), flags, create_wal, auto_checkpoint)
+    libsql_sys::Connection::open(path.join("data"), flags, wal_manager, auto_checkpoint)
 }
 
 impl<W> LibSqlConnection<W>
@@ -189,7 +189,7 @@ where
     pub async fn new<T>(
         path: impl AsRef<Path> + Send + 'static,
         extensions: Arc<[PathBuf]>,
-        create_wal: T,
+        wal_manager: T,
         stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
         builder_config: QueryBuilderConfig,
@@ -197,14 +197,14 @@ where
         state: Arc<TxnState<W>>,
     ) -> crate::Result<Self>
     where
-        T: CreateWal<Wal = W> + Send + 'static,
+        T: WalManager<Wal = W> + Send + 'static,
     {
         let max_db_size = config_store.get().max_db_pages;
         let conn = tokio::task::spawn_blocking(move || -> crate::Result<_> {
             let conn = Connection::new(
                 path.as_ref(),
                 extensions,
-                create_wal,
+                wal_manager,
                 stats,
                 config_store,
                 builder_config,
@@ -432,17 +432,17 @@ impl From<TransactionState> for TxnStatus {
 }
 
 impl<W: Wal> Connection<W> {
-    fn new<T: CreateWal<Wal = W>>(
+    fn new<T: WalManager<Wal = W>>(
         path: &Path,
         extensions: Arc<[PathBuf]>,
-        create_wal: T,
+        wal_manager: T,
         stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
     ) -> Result<Self> {
-        let conn = open_conn(path, create_wal, None, builder_config.auto_checkpoint)?;
+        let conn = open_conn(path, wal_manager, None, builder_config.auto_checkpoint)?;
 
         // register the lock-stealing busy handler
         unsafe {

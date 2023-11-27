@@ -2,19 +2,19 @@ use std::ffi::{c_int, c_void, CStr};
 use std::mem::MaybeUninit;
 
 use libsql_ffi::{
-    libsql_create_wal, libsql_wal, sqlite3_create_wal, sqlite3_wal, Error, SQLITE_OK,
+    libsql_wal_manager, libsql_wal, sqlite3_wal_manager, sqlite3_wal, Error, SQLITE_OK,
     WAL_SAVEPOINT_NDATA,
 };
 
 use super::{
-    BusyHandler, CheckpointMode, CreateWal, PageHeaders, Result, Sqlite3Db, Sqlite3File,
+    BusyHandler, CheckpointMode, WalManager, PageHeaders, Result, Sqlite3Db, Sqlite3File,
     UndoHandler, Vfs, Wal,
 };
 
-/// SQLite3 default create_wal implementation.
+/// SQLite3 default wal_manager implementation.
 #[derive(Clone, Copy)]
 pub struct CreateSqlite3Wal {
-    inner: libsql_create_wal,
+    inner: libsql_wal_manager,
 }
 
 /// Safety: the create pointer is an immutable global pointer
@@ -24,7 +24,7 @@ unsafe impl Sync for CreateSqlite3Wal {}
 impl CreateSqlite3Wal {
     pub fn new() -> Self {
         Self {
-            inner: unsafe { sqlite3_create_wal },
+            inner: unsafe { sqlite3_wal_manager },
         }
     }
 }
@@ -35,7 +35,7 @@ impl Default for CreateSqlite3Wal {
     }
 }
 
-impl CreateWal for CreateSqlite3Wal {
+impl WalManager for CreateSqlite3Wal {
     type Wal = Sqlite3Wal;
 
     fn use_shared_memory(&self) -> bool {

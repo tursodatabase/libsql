@@ -9,9 +9,9 @@ pub(crate) mod ffi;
 mod sqlite3_wal;
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
-pub use ffi::make_create_wal;
+pub use ffi::make_wal_manager;
 
-pub trait CreateWal {
+pub trait WalManager {
     type Wal: Wal;
 
     fn use_shared_memory(&self) -> bool;

@@ -32,10 +32,10 @@
 ** There is one object of this type for each pager. 
 */
 typedef struct libsql_wal libsql_wal;
-typedef struct libsql_create_wal libsql_create_wal;
+typedef struct libsql_wal_manager libsql_wal_manager;
 /* Opaque types for wal method data */
 typedef struct wal_impl wal_impl;
-typedef struct create_wal_impl create_wal_impl;
+typedef struct wal_manager_impl wal_manager_impl;
 
 typedef struct libsql_wal_methods {
   int iVersion; /* Current version is 1, versioning is here for backward compatibility */
@@ -167,22 +167,22 @@ struct WalIndexHdr {
   unsigned int aCksum[2];                  /* Checksum over all prior fields */
 };
 
-struct libsql_create_wal {
+struct libsql_wal_manager {
   /* True if the implementation relies on shared memory routines (e.g. locks) */
   int bUsesShm;
 
   /* Open and close a connection to a write-ahead log. */
-  int (*xOpen)(create_wal_impl* pData, sqlite3_vfs*, sqlite3_file*, int no_shm_mode, long long max_size, const char* zMainDbFileName, libsql_wal* out_wal);
-  int (*xClose)(create_wal_impl* pData, wal_impl* pWal, sqlite3* db, int sync_flags, int nBuf, unsigned char *zBuf);
+  int (*xOpen)(wal_manager_impl* pData, sqlite3_vfs*, sqlite3_file*, int no_shm_mode, long long max_size, const char* zMainDbFileName, libsql_wal* out_wal);
+  int (*xClose)(wal_manager_impl* pData, wal_impl* pWal, sqlite3* db, int sync_flags, int nBuf, unsigned char *zBuf);
 
   /* destroy resources for this wal */
-  int (*xLogDestroy)(create_wal_impl* pData, sqlite3_vfs *vfs, const char* zMainDbFileName);
+  int (*xLogDestroy)(wal_manager_impl* pData, sqlite3_vfs *vfs, const char* zMainDbFileName);
   /* returns whether this wal exists */
-  int (*xLogExists)(create_wal_impl* pData, sqlite3_vfs *vfs, const char* zMainDbFileName, int* exist);
+  int (*xLogExists)(wal_manager_impl* pData, sqlite3_vfs *vfs, const char* zMainDbFileName, int* exist);
   /* destructor */
-  void (*xDestroy)(create_wal_impl* pData);
+  void (*xDestroy)(wal_manager_impl* pData);
 
-  create_wal_impl* pData;
+  wal_manager_impl* pData;
 };
 
 /*
@@ -224,15 +224,15 @@ struct libsql_wal {
     wal_impl* pData; /* methods receiver */
 };
 
-typedef struct RefCountCreateWal {
+typedef struct RefCountedWalManager {
     int n;
-    libsql_create_wal ref;
-} RefCountCreateWal;
+    libsql_wal_manager ref;
+} RefCountedWalManager;
 
-int make_ref_counted_create_wal(libsql_create_wal create_wal, RefCountCreateWal **out);
-void destroy_create_wal(RefCountCreateWal *p);
-RefCountCreateWal* clone_create_wal(RefCountCreateWal *p);
+int make_ref_counted_wal_manager(libsql_wal_manager wal_manager, RefCountedWalManager **out);
+void destroy_wal_manager(RefCountedWalManager *p);
+RefCountedWalManager* clone_wal_manager(RefCountedWalManager *p);
 
-extern libsql_create_wal sqlite3_create_wal;
+extern libsql_wal_manager sqlite3_wal_manager;
 
 #endif /* SQLITE_WAL_H */

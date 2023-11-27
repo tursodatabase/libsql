@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use libsql_sys::wal::Vfs;
-use libsql_sys::wal::{BusyHandler, CreateSqlite3Wal, CreateWal, Result, Sqlite3Wal};
+use libsql_sys::wal::{BusyHandler, CreateSqlite3Wal, WalManager, Result, Sqlite3Wal};
 use libsql_sys::wal::{PageHeaders, Sqlite3Db, Sqlite3File, UndoHandler};
 use rusqlite::ffi::SQLITE_IOERR;
 
@@ -13,24 +13,24 @@ use super::logger::WalPage;
 
 #[derive(Clone)]
 pub struct CreateReplicationLoggerWal {
-    sqlite_create_wal: CreateSqlite3Wal,
+    sqlite_wal_manager: CreateSqlite3Wal,
     logger: Arc<ReplicationLogger>,
 }
 
 impl CreateReplicationLoggerWal {
     pub fn new(logger: Arc<ReplicationLogger>) -> Self {
         Self {
-            sqlite_create_wal: CreateSqlite3Wal::new(),
+            sqlite_wal_manager: CreateSqlite3Wal::new(),
             logger,
         }
     }
 }
 
-impl CreateWal for CreateReplicationLoggerWal {
+impl WalManager for CreateReplicationLoggerWal {
     type Wal = ReplicationLoggerWal;
 
     fn use_shared_memory(&self) -> bool {
-        self.sqlite_create_wal.use_shared_memory()
+        self.sqlite_wal_manager.use_shared_memory()
     }
 
     fn open(
@@ -42,7 +42,7 @@ impl CreateWal for CreateReplicationLoggerWal {
         db_path: &CStr,
     ) -> Result<Self::Wal> {
         let inner = self
-            .sqlite_create_wal
+            .sqlite_wal_manager
             .open(vfs, file, no_shm_mode, max_log_size, db_path)?;
         Ok(Self::Wal {
             inner,
@@ -58,23 +58,23 @@ impl CreateWal for CreateReplicationLoggerWal {
         sync_flags: c_int,
         scratch: &mut [u8],
     ) -> Result<()> {
-        self.sqlite_create_wal
+        self.sqlite_wal_manager
             .close(&mut wal.inner, db, sync_flags, scratch)
     }
 
     fn destroy_log(&self, vfs: &mut Vfs, db_path: &CStr) -> Result<()> {
-        self.sqlite_create_wal.destroy_log(vfs, db_path)
+        self.sqlite_wal_manager.destroy_log(vfs, db_path)
     }
 
     fn log_exists(&self, vfs: &mut Vfs, db_path: &CStr) -> Result<bool> {
-        self.sqlite_create_wal.log_exists(vfs, db_path)
+        self.sqlite_wal_manager.log_exists(vfs, db_path)
     }
 
     fn destroy(self)
     where
         Self: Sized,
     {
-        self.sqlite_create_wal.destroy()
+        self.sqlite_wal_manager.destroy()
     }
 }
 

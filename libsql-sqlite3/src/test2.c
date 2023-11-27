@@ -62,13 +62,13 @@ static int SQLITE_TCLAPI pager_open(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[2], &nPage) ) return TCL_ERROR;
-  RefCountCreateWal* create_wal;
-  rc = make_ref_counted_create_wal(sqlite3_create_wal, &create_wal);
+  RefCountedWalManager* wal_manager;
+  rc = make_ref_counted_wal_manager(sqlite3_wal_manager, &wal_manager);
   if (rc) return rc;
-  rc = sqlite3PagerOpen(sqlite3_vfs_find(0), create_wal, &pPager, argv[1], 0, 0,
+  rc = sqlite3PagerOpen(sqlite3_vfs_find(0), wal_manager, &pPager, argv[1], 0, 0,
       SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB,
       pager_test_reiniter);
-  destroy_create_wal(create_wal);
+  destroy_wal_manager(wal_manager);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
