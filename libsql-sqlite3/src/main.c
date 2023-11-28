@@ -3652,7 +3652,32 @@ int sqlite3_open_v2(
   return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, (RefCountedWalManager*) &sqlite3_wal_manager_rc);
 }
 
+/* deprecated, only works with zWal == NULL */
 int libsql_open(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  int flags,              /* Flags */
+  const char *zVfs,       /* Name of VFS module to use, NULL for default */
+  const char *zWal        /* Name of WAL module to use */
+) {
+  assert( zWal == NULL );;
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, &sqlite3_wal_manager_rc);
+}
+
+/* deprecated, only works with zWal == NULL */
+int libsql_open_v2(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  int flags,              /* Flags */
+  const char *zVfs,       /* Name of VFS module to use, NULL for default */
+  const char *zWal,       /* Name of WAL module to use */
+  void* pWalMethodsData   /* User data, passed to the libsql_wal struct*/
+) {
+  assert( zWal == NULL );;
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, &sqlite3_wal_manager_rc);
+}
+
+int libsql_open_v3(
   const char *filename,   /* Database filename (UTF-8) */
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   int flags,              /* Flags */

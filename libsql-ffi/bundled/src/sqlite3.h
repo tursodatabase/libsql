@@ -3785,6 +3785,24 @@ SQLITE_API int libsql_open(
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   int flags,              /* Flags */
   const char *zVfs,       /* Name of VFS module to use, NULL for default */
+  const char *zWal        /* Name of WAL module to use */
+);
+
+/* deprecated, only works with zWal == NULL */
+SQLITE_API int libsql_open_v2(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  int flags,              /* Flags */
+  const char *zVfs,       /* Name of VFS module to use, NULL for default */
+  const char *zWal,       /* Name of WAL module to use */
+  void* pWalMethodsData   /* User data, passed to the libsql_wal struct*/
+);
+
+SQLITE_API int libsql_open_v3(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  int flags,              /* Flags */
+  const char *zVfs,       /* Name of VFS module to use, NULL for default */
   libsql_wal_manager wal_manager   /* wal_manager instance, in charge of instanciating a wal */
 );
 
@@ -13632,14 +13650,15 @@ struct libsql_wal {
 typedef struct RefCountedWalManager {
     int n;
     libsql_wal_manager ref;
+    int is_static;
 } RefCountedWalManager;
 
 int make_ref_counted_wal_manager(libsql_wal_manager wal_manager, RefCountedWalManager **out);
-int make_ref_counted_wal_manager_static(libsql_wal_manager wal_manager, RefCountedWalManager **out);
 void destroy_wal_manager(RefCountedWalManager *p);
 RefCountedWalManager* clone_wal_manager(RefCountedWalManager *p);
 
-SQLITE_API extern libsql_wal_manager sqlite3_wal_manager;
+SQLITE_API extern const libsql_wal_manager sqlite3_wal_manager;
+SQLITE_API extern RefCountedWalManager sqlite3_wal_manager_rc;
 
 #endif /* SQLITE_WAL_H */
 

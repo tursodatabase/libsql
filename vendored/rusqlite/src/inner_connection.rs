@@ -95,7 +95,7 @@ impl InnerConnection {
             #[cfg(feature = "libsql-experimental")]
             let r = match wal_manager {
                 Some(wal_manager) => {
-                    ffi::libsql_open(c_path.as_ptr(), &mut db, flags.bits(), z_vfs, wal_manager)
+                    ffi::libsql_open_v3(c_path.as_ptr(), &mut db, flags.bits(), z_vfs, wal_manager)
                 }
                 None => ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), z_vfs),
             };

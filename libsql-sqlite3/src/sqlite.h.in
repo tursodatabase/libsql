@@ -3785,6 +3785,24 @@ int libsql_open(
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   int flags,              /* Flags */
   const char *zVfs,       /* Name of VFS module to use, NULL for default */
+  const char *zWal        /* Name of WAL module to use */
+);
+
+/* deprecated, only works with zWal == NULL */
+int libsql_open_v2(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  int flags,              /* Flags */
+  const char *zVfs,       /* Name of VFS module to use, NULL for default */
+  const char *zWal,       /* Name of WAL module to use */
+  void* pWalMethodsData   /* User data, passed to the libsql_wal struct*/
+); 
+
+int libsql_open_v3(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  int flags,              /* Flags */
+  const char *zVfs,       /* Name of VFS module to use, NULL for default */
   libsql_wal_manager wal_manager   /* wal_manager instance, in charge of instanciating a wal */
 );
 
