@@ -25,27 +25,36 @@ fn main() -> Result<()> {
     libsql_wasi_init.call(&mut store, ())?;
     let db = open_func.call(&mut store, db_path)?;
 
-    let sql = malloc.call(&mut store, 64)?;
-    memory.write(&mut store, sql as usize, b"PRAGMA journal_mode=WAL;\0")?;
-    let rc = exec_func.call(&mut store, (db, sql))?;
-    free.call(&mut store, sql)?;
-    if rc != 0 {
-        return Err(Error::RuntimeError("Failed to execute SQL"));
-    }
+    let mut exec = |sql: &str, times: usize| -> Result<()> {
+        let sql_ptr = malloc.call(&mut store, sql.len() as i32 + 1)?;
+        memory.write(&mut store, sql_ptr as usize, sql.as_bytes())?;
+        for _ in 0..times {
+            exec_func.call(&mut store, (db, sql_ptr))?;
+        }
+        free.call(&mut store, sql_ptr)?;
+        Ok(())
+    };
 
-    let sql = malloc.call(&mut store, 64)?;
-    memory.write(
-        &mut store,
-        sql as usize,
-        b"CREATE TABLE testme(id, v1, v2);\0",
-    )?;
-    let rc = exec_func.call(&mut store, (db, sql))?;
-    free.call(&mut store, sql)?;
+    exec("CREATE TABLE IF NOT EXISTS testme (id, name);", 1)?;
+
+    let start = std::time::Instant::now();
+    exec("INSERT INTO testme VALUES (42, zeroblob(512));", 100000)?;
+    let elapsed = start.elapsed();
+    println!("single SQL string allocation: ");
+    println!("\t100k inserts took {:?}", elapsed);
+    println!("\tper insert: {:?}", elapsed / 100000);
+
+    let start = std::time::Instant::now();
+    for _ in 0..100000 {
+        exec("INSERT INTO testme VALUES (42, zeroblob(512));", 1)?;
+    }
+    let elapsed = start.elapsed();
+    println!("SQL string allocation per insert: ");
+    println!("\t100k inserts took {:?}", elapsed);
+    println!("\tper insert: {:?}", elapsed / 100000);
 
     let _ = close_func.call(&mut store, db)?;
     free.call(&mut store, db_path)?;
-
-    println!("rc: {rc}");
 
     Ok(())
 }
