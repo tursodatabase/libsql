@@ -13635,6 +13635,7 @@ typedef struct RefCountedWalManager {
 } RefCountedWalManager;
 
 int make_ref_counted_wal_manager(libsql_wal_manager wal_manager, RefCountedWalManager **out);
+int make_ref_counted_wal_manager_static(libsql_wal_manager wal_manager, RefCountedWalManager **out);
 void destroy_wal_manager(RefCountedWalManager *p);
 RefCountedWalManager* clone_wal_manager(RefCountedWalManager *p);
 

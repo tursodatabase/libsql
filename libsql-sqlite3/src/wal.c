@@ -2120,7 +2120,7 @@ static void walLimitSize(Wal *pWal, i64 nMax){
 ** Close a connection to a log file.
 */
 static int sqlite3WalClose(
-  void *self,
+  wal_manager_impl *self,
   Wal *pWal,              /* Wal to close */
   sqlite3 *db,                    /* For interrupt flag */
   int sync_flags,                 /* Flags to pass to OsSync() (or 0) */
@@ -4164,7 +4164,7 @@ static int libsqlMakeWalPathname(const char *main_db_path_name, char **out) {
   return SQLITE_OK;
 }
 
-int sqlite3LogExists(void* self, sqlite3_vfs *vfs, const char *main_db_path_name, int *exists) {
+int sqlite3LogExists(wal_manager_impl* self, sqlite3_vfs *vfs, const char *main_db_path_name, int *exists) {
     char *zWal;
     int rc = libsqlMakeWalPathname(main_db_path_name, &zWal);
     if (rc != 0) return rc;
@@ -4174,7 +4174,7 @@ int sqlite3LogExists(void* self, sqlite3_vfs *vfs, const char *main_db_path_name
     return SQLITE_OK;
 }
 
-int sqlite3LogDestroy(void* self, sqlite3_vfs *vfs, const char *main_db_path_name) {
+int sqlite3LogDestroy(wal_manager_impl* self, sqlite3_vfs *vfs, const char *main_db_path_name) {
     char *zWal;
     int rc = libsqlMakeWalPathname(main_db_path_name, &zWal);
     if (rc != 0) return rc;
@@ -4202,7 +4202,7 @@ int sqlite3LogDestroy(void* self, sqlite3_vfs *vfs, const char *main_db_path_nam
 ** an SQLite error code is returned and *ppWal is left unmodified.
 */
 static int sqlite3WalOpen(
-  void *self,
+  wal_manager_impl *self,
   sqlite3_vfs *pVfs,              /* vfs module to open wal and wal-index */
   sqlite3_file *pDbFd,            /* The open database file */
   int bNoShm,                     /* True to run in heap-memory mode */
@@ -4342,13 +4342,14 @@ static int sqlite3WalOpen(
   return rc;
 }
 
-void sqlite3DestroyCreateWal(void *self) { }
+void sqlite3DestroyWalManager(wal_manager_impl *self) { }
 
 int make_ref_counted_wal_manager(libsql_wal_manager wal_manager, RefCountedWalManager **out) {
     RefCountedWalManager *p = (RefCountedWalManager*)sqlite3MallocZero(sizeof(RefCountedWalManager));
     if (!p) return SQLITE_NOMEM;
     p->n = 1;
     p->ref = wal_manager;
+    p->is_static = 0;
     *out = p;
     return SQLITE_OK;
 }
@@ -4358,6 +4359,7 @@ int make_ref_counted_wal_manager(libsql_wal_manager wal_manager, RefCountedWalMa
  * Must be called from withing a critical section.
  */
 void destroy_wal_manager(RefCountedWalManager *p) {
+    if (p->is_static) return;
     assert(p->n != 0);
     p->n -= 1;
     if (p->n == 0) {
@@ -4377,14 +4379,22 @@ RefCountedWalManager* clone_wal_manager(RefCountedWalManager *p) {
     return p;
 }
 
-libsql_wal_manager sqlite3_wal_manager = {
-    .pData = NULL,
-    .xOpen = (int (*)(wal_manager_impl *, sqlite3_vfs *, sqlite3_file *, int, long long, const char*, libsql_wal *))sqlite3WalOpen,
-    .xClose = (int (*)(wal_manager_impl *, wal_impl *, sqlite3 *, int, int, unsigned char *))sqlite3WalClose,
-    .bUsesShm = 1,
-    .xLogDestroy = (int (*)(wal_manager_impl *, sqlite3_vfs*, const char*))sqlite3LogDestroy,
-    .xLogExists = (int (*)(wal_manager_impl *, sqlite3_vfs*, const char*, int *))sqlite3LogExists,
-    .xDestroy =(void (*)(wal_manager_impl*))sqlite3DestroyCreateWal,
+#define SQLITE3_WAL_MANAGER { \
+    .pData = NULL, \
+    .xOpen = (int (*)(wal_manager_impl *, sqlite3_vfs *, sqlite3_file *, int, long long, const char*, libsql_wal *))sqlite3WalOpen, \
+    .xClose = (int (*)(wal_manager_impl *, wal_impl *, sqlite3 *, int, int, unsigned char *))sqlite3WalClose, \
+    .bUsesShm = 1, \
+    .xLogDestroy = (int (*)(wal_manager_impl *, sqlite3_vfs*, const char*))sqlite3LogDestroy, \
+    .xLogExists = (int (*)(wal_manager_impl *, sqlite3_vfs*, const char*, int *))sqlite3LogExists, \
+    .xDestroy =(void (*)(wal_manager_impl*))sqlite3DestroyWalManager, \
+}
+
+const libsql_wal_manager sqlite3_wal_manager = SQLITE3_WAL_MANAGER;
+
+RefCountedWalManager sqlite3_wal_manager_rc = {
+    .is_static = 1,
+    .n = 1,
+    .ref = SQLITE3_WAL_MANAGER,
 };
 
 typedef struct wal_impl wal_impl;

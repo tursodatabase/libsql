@@ -3978,6 +3978,12 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn make_ref_counted_wal_manager_static(
+        wal_manager: libsql_wal_manager,
+        out: *mut *mut RefCountedWalManager,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn destroy_wal_manager(p: *mut RefCountedWalManager);
 }
 extern "C" {

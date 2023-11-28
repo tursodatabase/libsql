@@ -15,6 +15,7 @@
 ** accessed by users of the library.
 */
 #include "sqliteInt.h"
+#include "wal.h"
 
 #ifdef SQLITE_ENABLE_FTS3
 # include "fts3.h"
@@ -3279,7 +3280,7 @@ static int openDatabase(
   sqlite3 **ppDb,                 /* OUT: Returned database handle */
   unsigned int flags,             /* Operational flags */
   const char *zVfs,               /* Name of the VFS to use */
-  libsql_wal_manager wal_manager  /* wal manager implementation */
+  RefCountedWalManager *wal_manager  /* wal manager implementation */
 ){
   sqlite3 *db;                    /* Store allocated handle here */
   int rc;                         /* Return code */
@@ -3339,14 +3340,7 @@ static int openDatabase(
   /* Allocate the sqlite data structure */
   db = sqlite3MallocZero( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
-  rc = make_ref_counted_wal_manager(wal_manager, &(db->wal_manager));
-  if (rc) {
-      sqlite3_free(db);
-      wal_manager.xDestroy(wal_manager.pData);
-      db = 0;
-      rc = SQLITE_NOMEM;
-      goto opendb_out;
-  }
+  db->wal_manager = wal_manager;
   if( isThreadsafe
 #ifdef SQLITE_ENABLE_MULTITHREADED_CHECKS
    || sqlite3GlobalConfig.bCoreMutex
@@ -3354,7 +3348,7 @@ static int openDatabase(
   ){
     db->mutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
     if( db->mutex==0 ){
-      wal_manager.xDestroy(wal_manager.pData);
+      wal_manager->ref.xDestroy(wal_manager->ref.pData);
       sqlite3_free(db->wal_manager);
       sqlite3_free(db);
       db = 0;
@@ -3647,7 +3641,7 @@ int sqlite3_open(
   sqlite3 **ppDb
 ){
   return openDatabase(zFilename, ppDb,
-                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, sqlite3_wal_manager);
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, (RefCountedWalManager*) &sqlite3_wal_manager_rc);
 }
 int sqlite3_open_v2(
   const char *filename,   /* Database filename (UTF-8) */
@@ -3655,7 +3649,7 @@ int sqlite3_open_v2(
   int flags,              /* Flags */
   const char *zVfs        /* Name of VFS module to use */
 ){
-  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, sqlite3_wal_manager);
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, (RefCountedWalManager*) &sqlite3_wal_manager_rc);
 }
 
 int libsql_open(
@@ -3664,8 +3658,14 @@ int libsql_open(
   int flags,              /* Flags */
   const char *zVfs,       /* Name of VFS module to use, NULL for default */
   libsql_wal_manager wal_manager   /* wal_manager implemetation */
-) {
-  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, wal_manager);
+  ) {
+    RefCountedWalManager *wal_manager_rc        ;
+    int rc = make_ref_counted_wal_manager(wal_manager, &wal_manager_rc);
+    if (rc) {
+        wal_manager.xDestroy(wal_manager.pData);
+        return rc;
+    }
+    return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, wal_manager_rc);
 }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -3694,7 +3694,7 @@ int sqlite3_open16(
   zFilename8 = sqlite3ValueText(pVal, SQLITE_UTF8);
   if( zFilename8 ){
     rc = openDatabase(zFilename8, ppDb,
-                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, sqlite3_wal_manager);
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, (RefCountedWalManager*)&sqlite3_wal_manager_rc);
     assert( *ppDb || rc==SQLITE_NOMEM );
     if( rc==SQLITE_OK && !DbHasProperty(*ppDb, 0, DB_SchemaLoaded) ){
       SCHEMA_ENC(*ppDb) = ENC(*ppDb) = SQLITE_UTF16NATIVE;
