@@ -3134,7 +3134,8 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   rc = walLockShared(pWal, WAL_READ_LOCK(mxI));
   walDisableBlocking(pWal);
   if( rc ){
-    return rc==SQLITE_BUSY ? WAL_RETRY : rc;
+    assert( (rc&0xFF)!=SQLITE_BUSY||rc==SQLITE_BUSY||rc==SQLITE_BUSY_TIMEOUT );
+    return (rc&0xFF)==SQLITE_BUSY ? WAL_RETRY : rc;
   }
   /* Now that the read-lock has been obtained, check that neither the
   ** value in the aReadMark[] array or the contents of the wal-index
