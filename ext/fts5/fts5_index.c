@@ -4463,7 +4463,7 @@ static void fts5WriteAppendPoslistData(
   const u8 *a = aData;
   int n = nData;
   
-  assert( p->pConfig->pgsz>0 );
+  assert( p->pConfig->pgsz>0 || p->rc!=SQLITE_OK );
   while( p->rc==SQLITE_OK 
      && (pPage->buf.n + pPage->pgidx.n + n)>=p->pConfig->pgsz 
   ){
@@ -5196,18 +5196,24 @@ static void fts5DoSecureDelete(
 
   iOff = iStart;
 
-  /* Set variable bLastInDoclist to true if this entry happens to be
-  ** the last rowid in the doclist for its term.  */
+  /* If the position-list for the entry being removed flows over past
+  ** the end of this page, delete the portion of the position-list on the
+  ** next page and beyond.
+  **
+  ** Set variable bLastInDoclist to true if this entry happens 
+  ** to be the last rowid in the doclist for its term.  */
+  if( iNextOff>=iPgIdx ){
+    int pgno = pSeg->iLeafPgno+1;
+    fts5SecureDeleteOverflow(p, pSeg->pSeg, pgno, &bLastInDoclist);
+    iNextOff = iPgIdx;
+  }
+
   if( pSeg->bDel==0 ){
-    if( iNextOff>=iPgIdx ){
-      int pgno = pSeg->iLeafPgno+1;
-      fts5SecureDeleteOverflow(p, pSeg->pSeg, pgno, &bLastInDoclist);
-      iNextOff = iPgIdx;
-    }else{
+    if( iNextOff!=iPgIdx ){
       /* Loop through the page-footer. If iNextOff (offset of the
       ** entry following the one we are removing) is equal to the 
       ** offset of a key on this page, then the entry is the last 
-      ** in its doclist.  */
+      ** in its doclist. */
       int iKeyOff = 0;
       for(iIdx=0; iIdx<nIdx; /* no-op */){
         u32 iVal = 0;
@@ -5722,8 +5728,9 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p){
 
   assert( p->rc==SQLITE_OK );
   fts5IndexFlush(p);
-  assert( p->nContentlessDelete==0 );
+  assert( p->rc!=SQLITE_OK || p->nContentlessDelete==0 );
   pStruct = fts5StructureRead(p);
+  assert( p->rc!=SQLITE_OK || pStruct!=0 );
   fts5StructureInvalidate(p);
 
   if( pStruct ){

@@ -9,9 +9,10 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file houses the Nullable annotaion for the sqlite3 C API.
+** This file houses the Nullable annotation for the sqlite3 C API.
 */
 package org.sqlite.jni.annotation;
+import java.lang.annotation.*;
 
 /**
    This annotation is for flagging parameters which may legally be
@@ -26,7 +27,7 @@ package org.sqlite.jni.annotation;
    annotated functions. It is not part of the public API and
    client-level code must not rely on it.
 */
-@java.lang.annotation.Documented
-@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE)
-@java.lang.annotation.Target(java.lang.annotation.ElementType.PARAMETER)
+@Documented
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.PARAMETER)
 public @interface Nullable{}

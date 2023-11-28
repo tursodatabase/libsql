@@ -710,6 +710,21 @@ fuzzcheck-asan$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
 fuzzcheck-ubsan$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
 	$(LTLINK) -o $@ -fsanitize=undefined $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
 
+# Usage:    FUZZDB=filename make run-fuzzcheck
+#
+# Where filename is a fuzzcheck database, this target builds and runs
+# fuzzcheck, fuzzcheck-asan, and fuzzcheck-ubsan on that database.
+#
+# FUZZDB can be a glob pattern of two or more databases. Example:
+#
+#     FUZZDB=test/fuzzdata*.db make run-fuzzcheck
+#
+run-fuzzcheck:	fuzzcheck$(TEXE) fuzzcheck-asan$(TEXE) fuzzcheck-ubsan$(TEXE)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck$(TEXE) --spinner $(FUZZDB)
+	./fuzzcheck-asan$(TEXE) --spinner $(FUZZDB)
+	./fuzzcheck-ubsan$(TEXE) --spinner $(FUZZDB)
+
 ossshell$(TEXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c \
              $(TOP)/test/ossfuzz.c sqlite3.c $(TLIBS)
@@ -1135,19 +1150,21 @@ keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 # Source files that go into making shell.c
 SHELL_SRC = \
 	$(TOP)/src/shell.c.in \
-        $(TOP)/ext/misc/appendvfs.c \
+	$(TOP)/ext/consio/console_io.c \
+	$(TOP)/ext/consio/console_io.h \
+	$(TOP)/ext/misc/appendvfs.c \
 	$(TOP)/ext/misc/completion.c \
-        $(TOP)/ext/misc/decimal.c \
-        $(TOP)/ext/misc/basexx.c \
-        $(TOP)/ext/misc/base64.c \
-        $(TOP)/ext/misc/base85.c \
+	$(TOP)/ext/misc/decimal.c \
+	$(TOP)/ext/misc/basexx.c \
+	$(TOP)/ext/misc/base64.c \
+	$(TOP)/ext/misc/base85.c \
 	$(TOP)/ext/misc/fileio.c \
-        $(TOP)/ext/misc/ieee754.c \
-        $(TOP)/ext/misc/regexp.c \
-        $(TOP)/ext/misc/series.c \
+	$(TOP)/ext/misc/ieee754.c \
+	$(TOP)/ext/misc/regexp.c \
+	$(TOP)/ext/misc/series.c \
 	$(TOP)/ext/misc/shathree.c \
 	$(TOP)/ext/misc/sqlar.c \
-        $(TOP)/ext/misc/uint.c \
+	$(TOP)/ext/misc/uint.c \
 	$(TOP)/ext/expert/sqlite3expert.c \
 	$(TOP)/ext/expert/sqlite3expert.h \
 	$(TOP)/ext/misc/zipfile.c \
@@ -1156,7 +1173,7 @@ SHELL_SRC = \
 	$(TOP)/ext/recover/dbdata.c \
 	$(TOP)/ext/recover/sqlite3recover.c \
 	$(TOP)/ext/recover/sqlite3recover.h \
-        $(TOP)/src/test_windirent.c
+	$(TOP)/src/test_windirent.c
 
 shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl has_tclsh84
 	$(TCLSH_CMD) $(TOP)/tool/mkshellc.tcl >shell.c

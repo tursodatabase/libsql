@@ -9,7 +9,8 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file holds utility code for the sqlite3 JNI bindings.
+** This file contains the ValueHolder utility class for the sqlite3
+** JNI bindings.
 */
 package org.sqlite.jni.capi;
 

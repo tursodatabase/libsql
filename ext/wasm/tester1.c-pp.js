@@ -1688,7 +1688,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           wasm.sqlite3_wasm_vfs_unlink(0, filename);
         }
       }
-    }/*sqlite3_js_vfs_create_file()*/)
+    }/*sqlite3_js_posix_create_file()*/)
 
   ////////////////////////////////////////////////////////////////////
     .t({
@@ -2605,28 +2605,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }
       }
     }/*kvvfs sanity checks*/)
-    .t({
-      name: 'kvvfs sqlite3_js_vfs_create_file()',
-      predicate: ()=>"kvvfs does not currently support this",
-      test: function(sqlite3){
-        let db;
-        try {
-          db = new this.JDb(this.kvvfsDbFile);
-          const exp = capi.sqlite3_js_db_export(db);
-          db.close();
-          this.kvvfsUnlink();
-          capi.sqlite3_js_vfs_create_file("kvvfs", this.kvvfsDbFile, exp);
-          db = new this.JDb(filename);
-          T.assert(6 === db.selectValue('select count(*) from kvvfs'));
-        }finally{
-          db.close();
-          this.kvvfsUnlink();
-        }
-        delete this.kvvfsDbFile;
-        delete this.kvvfsUnlink;
-        delete this.JDb;
-      }
-   }/*kvvfs sqlite3_js_vfs_create_file()*/)
   ;/* end kvvfs tests */
 
   ////////////////////////////////////////////////////////////////////////

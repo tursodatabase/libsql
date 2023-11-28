@@ -877,7 +877,7 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_STMTSTATUS_FILTER_HIT);
     DefInt(SQLITE_STMTSTATUS_MEMUSED);
   } _DefGroup;
-  
+
   DefGroup(syncFlags) {
     DefInt(SQLITE_SYNC_NORMAL);
     DefInt(SQLITE_SYNC_FULL);
@@ -901,6 +901,8 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_DETERMINISTIC);
     DefInt(SQLITE_DIRECTONLY);
     DefInt(SQLITE_INNOCUOUS);
+    DefInt(SQLITE_SUBTYPE);
+    DefInt(SQLITE_RESULT_SUBTYPE);
   } _DefGroup;
 
   DefGroup(version) {

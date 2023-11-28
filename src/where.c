@@ -678,12 +678,22 @@ static void translateColumnToCopy(
   for(; iStart<iEnd; iStart++, pOp++){
     if( pOp->p1!=iTabCur ) continue;
     if( pOp->opcode==OP_Column ){
+#ifdef SQLITE_DEBUG
+      if( pParse->db->flags & SQLITE_VdbeAddopTrace ){
+        printf("TRANSLATE OP_Column to OP_Copy at %d\n", iStart);
+      }
+#endif
       pOp->opcode = OP_Copy;
       pOp->p1 = pOp->p2 + iRegister;
       pOp->p2 = pOp->p3;
       pOp->p3 = 0;
       pOp->p5 = 2;  /* Cause the MEM_Subtype flag to be cleared */
     }else if( pOp->opcode==OP_Rowid ){
+#ifdef SQLITE_DEBUG
+      if( pParse->db->flags & SQLITE_VdbeAddopTrace ){
+        printf("TRANSLATE OP_Rowid to OP_Sequence at %d\n", iStart);
+      }
+#endif
       pOp->opcode = OP_Sequence;
       pOp->p1 = iAutoidxCur;
 #ifdef SQLITE_ALLOW_ROWID_IN_VIEW
@@ -5810,6 +5820,20 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
       continue;
     }
     if( sqlite3ExprIsConstant(pExpr) ) continue;
+    if( pExpr->op==TK_FUNCTION ){
+      /* Functions that might set a subtype should not be replaced by the
+      ** value taken from an expression index since the index omits the
+      ** subtype.  https://sqlite.org/forum/forumpost/68d284c86b082c3e */
+      int n;
+      FuncDef *pDef;
+      sqlite3 *db = pParse->db;
+      assert( ExprUseXList(pExpr) );
+      n = pExpr->x.pList ? pExpr->x.pList->nExpr : 0;
+      pDef = sqlite3FindFunction(db, pExpr->u.zToken, n, ENC(db), 0);
+      if( pDef==0 || (pDef->funcFlags & SQLITE_RESULT_SUBTYPE)!=0 ){
+        continue;
+      }
+    }
     p = sqlite3DbMallocRaw(pParse->db,  sizeof(IndexedExpr));
     if( p==0 ) break;
     p->pIENext = pParse->pIdxEpr;
