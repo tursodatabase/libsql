@@ -319,11 +319,12 @@ impl Conn for RemoteConnection {
     async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction> {
         let tx = RemoteTx::begin(self.clone(), tx_behavior).await?;
 
-        Ok(crate::Transaction {
+        Ok(Transaction {
             inner: Box::new(tx),
             conn: crate::Connection {
                 conn: Arc::new(self.clone()),
             },
+            close: None,
         })
     }
 

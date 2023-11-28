@@ -126,7 +126,7 @@ impl Conn for HttpConnection<HttpSender> {
         tx_behavior: crate::TransactionBehavior,
     ) -> crate::Result<crate::transaction::Transaction> {
         let stream = self.open_stream();
-        let tx = HttpTransaction::open(stream, tx_behavior)
+        let mut tx = HttpTransaction::open(stream, tx_behavior)
             .await
             .map_err(|e| crate::Error::Hrana(Box::new(e)))?;
         Ok(crate::Transaction {
@@ -134,6 +134,11 @@ impl Conn for HttpConnection<HttpSender> {
             conn: crate::Connection {
                 conn: Arc::new(tx.stream().clone()),
             },
+            close: Some(Box::new(|| {
+                // make sure that Hrana connection is closed and all uncommitted changes
+                // are rolled back when we're about to drop the transaction
+                let _ = tokio::task::spawn(async move { tx.rollback().await });
+            })),
         })
     }
 

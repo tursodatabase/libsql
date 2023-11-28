@@ -44,6 +44,7 @@ impl Conn for LibsqlConnection {
             conn: Connection {
                 conn: Arc::new(self.clone()),
             },
+            close: None,
         })
     }
 

@@ -69,11 +69,6 @@ where
         Ok(resp)
     }
 
-    pub async fn close(&mut self) -> Result<()> {
-        let mut client = self.inner.stream.lock().await;
-        client.close().await
-    }
-
     pub async fn execute(&self, stmt: Stmt) -> Result<StmtResult> {
         let mut client = self.inner.stream.lock().await;
         let resp = client
