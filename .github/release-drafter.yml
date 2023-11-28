@@ -1,5 +1,7 @@
-name-template: 'v$RESOLVED_VERSION'
-tag-template: 'v$RESOLVED_VERSION'
+name-template: 'SQLD v$RESOLVED_VERSION'
+tag-template: 'libsql-server-v$RESOLVED_VERSION'
+tag-prefix: "libsql-server-v"
+include-paths: ["libsql-server"]
 categories:
   - title: '🚀 Features'
     labels:
