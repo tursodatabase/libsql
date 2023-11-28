@@ -380,7 +380,7 @@ static int jsonParseAddNode(JsonParse*,u32,u32,const char*);
 static int jsonXlateBlobToNode(JsonParse *pParse, u32 i);
 static int jsonFuncArgMightBeBinary(sqlite3_value *pJson);
 static JsonNode *jsonLookupAppend(JsonParse*,const char*,int*,const char**);
-static u32 jsonXlateBlobToText(JsonParse*,u32,JsonString*);
+static u32 jsonXlateBlobToText(const JsonParse*,u32,JsonString*);
 
 /**************************************************************************
 ** Utility routines for dealing with JsonString objects
@@ -2558,13 +2558,12 @@ static int jsonBlobMakeEditable(JsonParse *pParse, u32 nExtra){
   u32 nSize;
   if( pParse->nBlobAlloc>0 ) return 1;
   aOld = pParse->aBlob;
-  nSize = pParse->nBlob + pParse->nIns + nExtra;
-  if( nSize>100 ) nSize -= 100;
+  nSize = pParse->nBlob + nExtra;
   pParse->aBlob = 0;
   if( jsonBlobExpand(pParse, nSize) ){
     return 0;
   }
-  assert( pParse->nBlobAlloc >= pParse->nBlob + pParse->nIns );
+  assert( pParse->nBlobAlloc >= pParse->nBlob + nExtra );
   memcpy(pParse->aBlob, aOld, pParse->nBlob);
   return 1;
 }
@@ -3248,7 +3247,7 @@ static void jsonReturnStringAsBlob(JsonString *pStr){
 ** payload size in to *pSz.  It returns the offset from i to the
 ** beginning of the payload.  Return 0 on error.
 */
-static u32 jsonbPayloadSize(JsonParse *pParse, u32 i, u32 *pSz){
+static u32 jsonbPayloadSize(const JsonParse *pParse, u32 i, u32 *pSz){
   u8 x;
   u32 sz;
   u32 n;
@@ -3306,7 +3305,7 @@ static u32 jsonbPayloadSize(JsonParse *pParse, u32 i, u32 *pSz){
 ** The pOut->eErr JSTRING_OOM flag is set on a OOM.
 */
 static u32 jsonXlateBlobToText(
-  JsonParse *pParse,             /* the complete parse of the JSON */
+  const JsonParse *pParse,       /* the complete parse of the JSON */
   u32 i,                         /* Start rendering at this index */
   JsonString *pOut               /* Write JSON here */
 ){
@@ -3861,7 +3860,7 @@ static u32 jsonLookupBlobStep(
   u8 x;
 
   if( zPath[0]==0 ){
-    if( pParse->eEdit && jsonBlobMakeEditable(pParse, 0) ){
+    if( pParse->eEdit && jsonBlobMakeEditable(pParse, pParse->nIns) ){
       n = jsonbPayloadSize(pParse, iRoot, &sz);
       sz += n;
       if( pParse->eEdit==JEDIT_DEL ){
@@ -3939,7 +3938,7 @@ static u32 jsonLookupBlobStep(
       ix.aBlob = aLabel;
       ix.nBlobAlloc = sizeof(aLabel);
       jsonBlobAppendNodeType(&ix,JSONB_TEXTRAW, nKey);
-      if( jsonBlobMakeEditable(pParse, ix.nBlob+nKey) ){
+      if( jsonBlobMakeEditable(pParse, ix.nBlob+nKey+pParse->nIns) ){
         nIns = ix.nBlob + nKey + pParse->nIns;
         jsonBlobEdit(pParse, j, 0, 0, nIns);
         assert( pParse->nBlob + pParse->nIns <= pParse->nBlobAlloc );
@@ -3998,7 +3997,9 @@ static u32 jsonLookupBlobStep(
     }
     if( j>iEnd ) return JSON_BLOB_ERROR;
     if( k>1 ) return JSON_BLOB_NOTFOUND;
-    if( pParse->eEdit>=JEDIT_INS && jsonBlobMakeEditable(pParse, 0) ){
+    if( pParse->eEdit>=JEDIT_INS
+     && jsonBlobMakeEditable(pParse, pParse->nIns)
+    ){
       testcase( pParse->eEdit==JEDIT_INS );
       testcase( pParse->eEdit==JEDIT_SET );
       jsonBlobEdit(pParse, j, 0, pParse->aIns, pParse->nIns);
@@ -4994,7 +4995,6 @@ static JsonNode *jsonMergePatch(
 }
 
 
-#if 0
 /*
 ** Return codes for jsonMergePatchBlob()
 */
@@ -5052,7 +5052,7 @@ static JsonNode *jsonMergePatch(
 static int jsonMergePatchBlob(
   JsonParse *pTarget,      /* The JSON parser that contains the TARGET */
   u32 iTarget,             /* Index of TARGET in pTarget->aBlob[] */
-  const JsonParse *pPatch  /* The PATCH */
+  const JsonParse *pPatch, /* The PATCH */
   u32 iPatch               /* Index of PATCH in pPatch->aBlob[] */
 ){
   u8 x;             /* Type of a single node */
@@ -5061,6 +5061,7 @@ static int jsonMergePatchBlob(
   u32 iTStart;      /* First label in the target object */
   u32 iTEndBE;      /* Original first byte past end of target, before edit */
   u32 iTEnd;        /* Current first byte past end of target */
+  u8 eTLabel;       /* Node type of the target label */
   u32 iTLabel;      /* Index of the label */
   u32 nTLabel;      /* Header size in bytes for the target label */
   u32 szTLabel;     /* Size of the target label payload */
@@ -5070,6 +5071,7 @@ static int jsonMergePatchBlob(
 
   u32 iPCursor;     /* Cursor position while scanning the patch */
   u32 iPEnd;        /* First byte past the end of the patch */
+  u8 ePLabel;       /* Node type of the patch label */
   u32 iPLabel;      /* Start of patch label */
   u32 nPLabel;      /* Size of header on the patch label */
   u32 szPLabel;     /* Payload size of the patch label */
@@ -5093,9 +5095,9 @@ static int jsonMergePatchBlob(
   }
   x = pTarget->aBlob[iTarget] & 0x0f;
   if( x!=JSONB_OBJECT ){  /* Algorithm line 05 */
-    static const u8 emptyObject = { JSONB_OBJECT };
+    static const u8 emptyObject[] = { JSONB_OBJECT };
     n = jsonbPayloadSize(pTarget, iTarget, &sz);
-    jsonBlobEdit(pTarget, iTarget, szTarget, emptyObject, 1); /* Line 06 */
+    jsonBlobEdit(pTarget, iTarget, sz, emptyObject, 1); /* Line 06 */
   }
   n = jsonbPayloadSize(pPatch, iPatch, &sz);
   if( n==0 ) return JSON_MERGE_BADPATCH;
@@ -5108,8 +5110,10 @@ static int jsonMergePatchBlob(
 
   while( iPCursor<iPEnd ){  /* Algorithm line 07 */
     iPLabel = iPCursor;
-    x = pPatch->aBlob[iPCursor] & 0x0f;
-    if( x<JSONB_TEXT || x>JSONB_TEXTRAW ) return JSON_MERGE_BADPATCH;
+    ePLabel = pPatch->aBlob[iPCursor] & 0x0f;
+    if( ePLabel<JSONB_TEXT || ePLabel>JSONB_TEXTRAW ){
+      return JSON_MERGE_BADPATCH;
+    }
     nPLabel = jsonbPayloadSize(pPatch, iPCursor, &szPLabel);
     if( nPLabel==0 ) return JSON_MERGE_BADPATCH;
     iPValue = iPCursor + nPLabel + szPLabel;
@@ -5123,8 +5127,10 @@ static int jsonMergePatchBlob(
     iTEnd = iTEndBE + pTarget->delta;
     while( iTCursor<iTEnd ){
       iTLabel = iTCursor;
-      x = pTarget->aBlob[iTCursor] & 0x0f;
-      if( x<JSONB_TEXT || x>JSONB_TEXTRAW ) return JSON_MERGE_BADTARGET;
+      eTLabel = pTarget->aBlob[iTCursor] & 0x0f;
+      if( eTLabel<JSONB_TEXT || eTLabel>JSONB_TEXTRAW ){
+        return JSON_MERGE_BADTARGET;
+      }
       nTLabel = jsonbPayloadSize(pTarget, iTCursor, &szTLabel);
       if( nTLabel==0 ) return JSON_MERGE_BADTARGET;
       iTValue = iTLabel + nTLabel + szTLabel;
@@ -5133,6 +5139,7 @@ static int jsonMergePatchBlob(
       if( nTValue==0 ) return JSON_MERGE_BADTARGET;
       if( iTValue + nTValue + szTValue > iTEnd ) return JSON_MERGE_BADTARGET;
       if( eTLabel==ePLabel ){
+        /* Common case */
         if( szTLabel==szPLabel
          && memcmp(&pTarget->aBlob[iTLabel+nTLabel],
                    &pPatch->aBlob[iPLabel+nPLabel], szTLabel)==0
@@ -5140,7 +5147,23 @@ static int jsonMergePatchBlob(
           break;  /* Labels match. */
         }
       }else{
-        if( jsonLabelEqual(pTarget, iTLabel, pPatch, iPLabel) ) break;
+        /* Should rarely happen */
+        JsonString s1, s2;
+        int isEqual;
+        jsonStringInit(&s1, 0);
+        jsonXlateBlobToText(pTarget, iTLabel, &s1);
+        if( s1.eErr ) return JSON_MERGE_OOM;
+        jsonStringInit(&s2, 0);
+        jsonXlateBlobToText(pPatch, iPLabel, &s2);
+        if( s2.eErr ) return JSON_MERGE_OOM;
+        if( s1.nUsed==s2.nUsed && memcmp(s1.zBuf, s2.zBuf, s1.nUsed)==0 ){
+          isEqual = 1;
+        }else{
+          isEqual = 0;
+        }
+        jsonStringReset(&s1);
+        jsonStringReset(&s2);
+        if( isEqual ) break;
       }
       iTCursor = iTValue + nTValue + szTValue;
     }
@@ -5154,22 +5177,23 @@ static int jsonMergePatchBlob(
         if( pTarget->oom ) return JSON_MERGE_OOM;
       }else{
         /* Algorithm line 12 */
-        int rc = jsonMergePatchBlob(pTarget, iTValue, pPatch, pPValue);
+        int rc = jsonMergePatchBlob(pTarget, iTValue, pPatch, iPValue);
         if( rc ) return rc;
       }        
     }else if( x>0 ){  /* Algorithm line 13 */
       /* No match and patch value is not NULL */
-      if( pPatch->aBlob[iPValue] & 0x0f)!=JSONB_OBJECT ){
+      if( (pPatch->aBlob[iPValue] & 0x0f)!=JSONB_OBJECT ){  /* Line 14 */
         jsonBlobEdit(pTarget, iTEnd, 0,
-                     pPatch->aBlob+iPValue, szPValue+nPValue, 0, 0);
+                     pPatch->aBlob+iPValue, szPValue+nPValue);
         if( pTarget->oom ) return JSON_MERGE_OOM;
       }else{
+        int rc;
         u32 szNew = szPLabel+nPLabel;
         jsonBlobEdit(pTarget, iTEnd, 0, 0, szNew+1);
         if( pTarget->oom ) return JSON_MERGE_OOM;
         memcpy(&pTarget->aBlob[iTEnd], &pPatch->aBlob[iPLabel], szNew);
         pTarget->aBlob[iTEnd+szNew] = 0x00;
-        rc = jsonMergePatch(pTarget, iTEnd+szNew, pPatch, iPValue);
+        rc = jsonMergePatchBlob(pTarget, iTEnd+szNew,pPatch,iPValue);
         if( rc ) return rc;
       }
     }
@@ -5177,7 +5201,6 @@ static int jsonMergePatchBlob(
   jsonAfterEditSizeAdjust(pTarget, iTarget);
   return pTarget->oom ? JSON_MERGE_OOM : JSON_MERGE_OK;
 }
-#endif
 
 
 /*
@@ -5195,6 +5218,43 @@ static void jsonPatchFunc(
   JsonNode *pResult;   /* The result of the merge */
 
   UNUSED_PARAMETER(argc);
+  if( jsonFuncArgMightBeBinary(argv[0])
+   && jsonFuncArgMightBeBinary(argv[1])
+  ){
+    JsonParse target, patch;
+    sqlite3 *db;
+    int rc;
+    memset(&target, 0, sizeof(target));
+    memset(&patch, 0, sizeof(patch));
+    target.aBlob = (u8*)sqlite3_value_blob(argv[0]);
+    target.nBlob = sqlite3_value_bytes(argv[0]);
+    patch.aBlob = (u8*)sqlite3_value_blob(argv[1]);
+    patch.nBlob = sqlite3_value_bytes(argv[1]);
+    db = sqlite3_context_db_handle(ctx);
+    if( db->mallocFailed ) return;
+    if( !jsonBlobMakeEditable(&target, patch.nBlob) ) return;
+    rc = jsonMergePatchBlob(&target, 0, &patch, 0);
+    if( rc ){
+      if( rc==JSON_MERGE_OOM ){
+        sqlite3_result_error_nomem(ctx);
+      }else{
+        sqlite3_result_error(ctx, "malformed JSON", -1);
+      }
+      jsonParseReset(&target);
+    }else{
+      int flgs = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
+      if( flgs & JSON_BLOB ){
+        sqlite3_result_blob(ctx, target.aBlob, target.nBlob, SQLITE_DYNAMIC);
+      }else{
+        JsonString s;
+        jsonStringInit(&s, ctx);
+        jsonXlateBlobToText(&target, 0, &s);
+        jsonReturnString(&s);
+        jsonParseReset(&target);
+      }
+    }
+    return;
+  }
   pX = jsonParseCached(ctx, argv[0], ctx, 1);
   if( pX==0 ) return;
   assert( pX->hasMod==0 );
