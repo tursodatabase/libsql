@@ -3809,8 +3809,8 @@ static void jsonAfterEditSizeAdjust(JsonParse *pParse, u32 iRoot){
 ** nDel may be zero, in which case no bytes are removed.  But iDel is
 ** still important as new bytes will be insert beginning at iDel.
 **
-** nIns may be zero, in which case no new bytes are inserted.  aIns might
-** be a NULL pointer in this case.
+** aIns may be zero, in which case space is created to hold nIns bytes
+** beginning at iDel, but that space is uninitialized.
 **
 ** Set pParse->oom if an OOM occurs.
 */
@@ -3833,7 +3833,7 @@ static void jsonBlobEdit(
     pParse->nBlob += d;
     pParse->delta += d;
   }
-  if( nIns ) memcpy(&pParse->aBlob[iDel], aIns, nIns);
+  if( nIns && aIns ) memcpy(&pParse->aBlob[iDel], aIns, nIns);
 }
 
 /*
@@ -3940,19 +3940,14 @@ static u32 jsonLookupBlobStep(
       ix.nBlobAlloc = sizeof(aLabel);
       jsonBlobAppendNodeType(&ix,JSONB_TEXTRAW, nKey);
       if( jsonBlobMakeEditable(pParse, ix.nBlob+nKey) ){
-        /* This is similar to jsonBlobEdit() except that the inserted
-        ** bytes come from two different places, ix.aBlob and pParse->aBlob. */
         nIns = ix.nBlob + nKey + pParse->nIns;
+        jsonBlobEdit(pParse, j, 0, 0, nIns);
         assert( pParse->nBlob + pParse->nIns <= pParse->nBlobAlloc );
-        memmove(&pParse->aBlob[j+nIns], &pParse->aBlob[j],
-                pParse->nBlob - j);
         memcpy(&pParse->aBlob[j], ix.aBlob, ix.nBlob);
         k = j + ix.nBlob;
         memcpy(&pParse->aBlob[k], zKey, nKey);
         k += nKey;
         memcpy(&pParse->aBlob[k], pParse->aIns, pParse->nIns);
-        pParse->delta = nIns;
-        pParse->nBlob += nIns;
         jsonAfterEditSizeAdjust(pParse, iRoot);
       }
       return j;
@@ -5030,13 +5025,13 @@ static JsonNode *jsonMergePatch(
 **     else:
 **       return Patch
 **
-** Here is the same algorithm restrictured to show the actual
+** Here is an equivalent algorithm restructured to show the actual
 ** implementation:
 **
 ** 01   define MergePatch(Target, Patch):
 ** 02      if Patch is not an Object:
 ** 03         return Patch
-** 04      else:  // if Patch is an Object:
+** 04      else: // if Patch is an Object
 ** 05         if Target is not an Object:
 ** 06            Target = {}
 ** 07      for each Name/Value pair in Patch:
@@ -5046,8 +5041,11 @@ static JsonNode *jsonMergePatch(
 ** 11            else
 ** 12               Target[name] = MergePatch(Target[Name], Value)
 ** 13         else if Value is not NULL:
-** 14            Target[name] = RemoveNullVAlues(Value)
-** 15      return Target
+** 14            if Value is not an Object:
+** 15               Target[name] = Value
+** 16            else:
+** 17               Target[name] = MergePatch('{}',value)
+** 18      return Target
 **  |
 **  ^---- Line numbers referenced in comments in the implementation
 */
@@ -5161,10 +5159,19 @@ static int jsonMergePatchBlob(
       }        
     }else if( x>0 ){  /* Algorithm line 13 */
       /* No match and patch value is not NULL */
-      jsonBlobEdit(pTarget, iTEnd, 0,
-                   pPatch->aBlob+iPValue, szPValue+nPValue);
-      if( pTarget->oom ) return JSON_MERGE_OOM;
-      jsonBlobRemoveNullsFromObject(pTarget, iTEnd);
+      if( pPatch->aBlob[iPValue] & 0x0f)!=JSONB_OBJECT ){
+        jsonBlobEdit(pTarget, iTEnd, 0,
+                     pPatch->aBlob+iPValue, szPValue+nPValue, 0, 0);
+        if( pTarget->oom ) return JSON_MERGE_OOM;
+      }else{
+        u32 szNew = szPLabel+nPLabel;
+        jsonBlobEdit(pTarget, iTEnd, 0, 0, szNew+1);
+        if( pTarget->oom ) return JSON_MERGE_OOM;
+        memcpy(&pTarget->aBlob[iTEnd], &pPatch->aBlob[iPLabel], szNew);
+        pTarget->aBlob[iTEnd+szNew] = 0x00;
+        rc = jsonMergePatch(pTarget, iTEnd+szNew, pPatch, iPValue);
+        if( rc ) return rc;
+      }
     }
   }
   jsonAfterEditSizeAdjust(pTarget, iTarget);
