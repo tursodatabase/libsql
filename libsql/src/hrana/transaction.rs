@@ -1,6 +1,5 @@
-use crate::hrana::connection::stmts_to_batch;
 use crate::hrana::pipeline::{ExecuteStreamReq, StreamRequest};
-use crate::hrana::proto::{BatchResult, Stmt, StmtResult};
+use crate::hrana::proto::{Batch, BatchResult, Stmt, StmtResult};
 use crate::hrana::stream::HranaStream;
 use crate::hrana::{HttpSend, Result};
 use crate::TransactionBehavior;
@@ -40,7 +39,7 @@ where
         &self,
         stmts: impl IntoIterator<Item = Stmt>,
     ) -> Result<BatchResult> {
-        let batch = stmts_to_batch(false, stmts);
+        let batch = Batch::from_iter(stmts, false);
         self.stream.batch(batch).await
     }
 
