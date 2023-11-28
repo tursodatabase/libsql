@@ -42,6 +42,10 @@ int libsql_open_sync(const char *db_path,
 
 int libsql_open_ext(const char *url, libsql_database_t *out_db, const char **out_err_msg);
 
+int libsql_open_file(const char *url, libsql_database_t *out_db, const char **out_err_msg);
+
+int libsql_open_remote(const char *url, const char *auth_token, libsql_database_t *out_db, const char **out_err_msg);
+
 void libsql_close(libsql_database_t db);
 
 int libsql_connect(libsql_database_t db, libsql_connection_t *out_conn, const char **out_err_msg);
