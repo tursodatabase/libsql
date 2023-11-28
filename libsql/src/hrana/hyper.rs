@@ -218,13 +218,13 @@ impl Conn for HranaStream<HttpSender> {
     }
 
     async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
-        let mut batch = Batch::new();
-        let stmts = crate::parser::Statement::parse(sql);
-        for s in stmts {
+        let mut stmts = Vec::new();
+        let parse = crate::parser::Statement::parse(sql);
+        for s in parse {
             let s = s?;
-            batch.step(None, Stmt::new(s.stmt, false));
+            stmts.push(Stmt::new(s.stmt, false));
         }
-        self.batch(batch)
+        self.batch(Batch::from_iter(stmts, false))
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
         Ok(())
