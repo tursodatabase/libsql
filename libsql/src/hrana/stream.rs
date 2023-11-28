@@ -346,6 +346,10 @@ where
     }
 }
 
+/// Trait that allows to refer to stored SQL statements. Stored SQL is first send by
+/// the prepared statements as raw string and can be cached on the server side in scope of
+/// a current transaction using a number identifier. This identifier can be send in subsequent
+/// calls in place of SQL string to reduce the size of a message.
 pub trait SqlDescriptor {
     fn sql_description(&self) -> SqlDescription;
 }
@@ -365,8 +369,16 @@ where
     }
 }
 
+/// Enum used by stored SQL statements. It can refer to either fresh SQL statement text, or a
+/// unique identifier assigned to that statement.
+///
+/// For the same statement executed many times over it's better to cache it first under [SqlId] key
+/// and then re-execute it in subsequent calls using only identifier.
 #[derive(Debug)]
 pub enum SqlDescription {
+    /// Non-cached SQL statement string.
     Sql(String),
+    /// Key identifier of a SQL statement cached by the server. Key is valid only in
+    /// the scope of current transaction/prepared statement, which sent a store SQL request.
     SqlId(SqlId),
 }

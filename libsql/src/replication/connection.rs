@@ -228,7 +228,7 @@ impl RemoteConnection {
     // and will return false if no rollback happened and the
     // execute was valid.
     pub(self) async fn maybe_execute_rollback(&self) -> Result<bool> {
-        if !self.local.is_autocommit() && self.inner.lock().state != State::TxnReadOnly {
+        if self.inner.lock().state != State::TxnReadOnly && !self.local.is_autocommit().await? {
             self.local.execute("ROLLBACK", Params::None).await?;
             Ok(true)
         } else {
@@ -327,8 +327,8 @@ impl Conn for RemoteConnection {
         })
     }
 
-    fn is_autocommit(&self) -> bool {
-        self.is_state_init()
+    async fn is_autocommit(&self) -> Result<bool> {
+        Ok(self.is_state_init())
     }
 
     fn changes(&self) -> u64 {
@@ -337,10 +337,6 @@ impl Conn for RemoteConnection {
 
     fn last_insert_rowid(&self) -> i64 {
         self.inner.lock().last_insert_rowid
-    }
-
-    fn close(&mut self) {
-        self.local.close()
     }
 }
 

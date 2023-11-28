@@ -137,9 +137,8 @@ impl Conn for HttpConnection<HttpSender> {
         })
     }
 
-    fn is_autocommit(&self) -> bool {
-        // TODO: Is this correct?
-        false
+    async fn is_autocommit(&self) -> crate::Result<bool> {
+        Ok(true) // connection without transaction always commits at the end of execution step
     }
 
     fn changes(&self) -> u64 {
@@ -148,10 +147,6 @@ impl Conn for HttpConnection<HttpSender> {
 
     fn last_insert_rowid(&self) -> i64 {
         self.last_insert_rowid()
-    }
-
-    fn close(&mut self) {
-        todo!()
     }
 }
 
@@ -238,9 +233,12 @@ impl Conn for HttpStream<HttpSender> {
         todo!("sounds like nested transactions innit?")
     }
 
-    fn is_autocommit(&self) -> bool {
-        // TODO: Is this correct?
-        false
+    async fn is_autocommit(&self) -> crate::Result<bool> {
+        let is_autocommit = self
+            .get_autocommit()
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        Ok(is_autocommit)
     }
 
     fn changes(&self) -> u64 {
@@ -249,11 +247,5 @@ impl Conn for HttpStream<HttpSender> {
 
     fn last_insert_rowid(&self) -> i64 {
         self.last_insert_rowid()
-    }
-
-    fn close(&mut self) {
-        //TODO: nobody is using this trait method and since it's not async
-        // there's no reason to do it anyway
-        todo!()
     }
 }

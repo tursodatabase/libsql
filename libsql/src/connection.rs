@@ -16,13 +16,11 @@ pub(crate) trait Conn {
 
     async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction>;
 
-    fn is_autocommit(&self) -> bool;
+    async fn is_autocommit(&self) -> Result<bool>;
 
     fn changes(&self) -> u64;
 
     fn last_insert_rowid(&self) -> i64;
-
-    fn close(&mut self);
 }
 
 #[derive(Clone)]
@@ -69,8 +67,8 @@ impl Connection {
         self.conn.transaction(tx_behavior).await
     }
 
-    pub fn is_autocommit(&self) -> bool {
-        self.conn.is_autocommit()
+    pub async fn is_autocommit(&self) -> Result<bool> {
+        self.conn.is_autocommit().await
     }
 
     pub fn changes(&self) -> u64 {
@@ -79,11 +77,5 @@ impl Connection {
 
     pub fn last_insert_rowid(&self) -> i64 {
         self.conn.last_insert_rowid()
-    }
-
-    pub fn close(&mut self) {
-        if let Some(conn) = Arc::get_mut(&mut self.conn) {
-            conn.close()
-        }
     }
 }
