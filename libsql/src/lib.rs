@@ -88,7 +88,7 @@ mod transaction;
 mod value;
 
 #[cfg(feature = "serde")]
-pub mod deserialize_row;
+pub mod de;
 
 pub use value::{Value, ValueRef, ValueType};
 
