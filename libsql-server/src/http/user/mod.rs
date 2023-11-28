@@ -2,6 +2,7 @@ pub mod db_factory;
 mod dump;
 mod hrana_over_http_1;
 mod result_builder;
+mod trace;
 mod types;
 
 use std::path::Path;
@@ -24,9 +25,8 @@ use serde_json::Number;
 use tokio::sync::{mpsc, oneshot, Notify};
 use tokio::task::JoinSet;
 use tonic::transport::Server;
-use tower_http::trace::DefaultOnResponse;
+
 use tower_http::{compression::CompressionLayer, cors};
-use tracing::{Level, Span};
 
 use crate::auth::{Auth, Authenticated};
 use crate::connection::Connection;
@@ -34,7 +34,7 @@ use crate::database::Database;
 use crate::error::Error;
 use crate::hrana;
 use crate::http::user::types::HttpQuery;
-use crate::metrics::{CLIENT_VERSION, LEGACY_HTTP_CALL};
+use crate::metrics::LEGACY_HTTP_CALL;
 use crate::namespace::{MakeNamespace, NamespaceStore};
 use crate::net::Accept;
 use crate::query::{self, Query};
@@ -308,22 +308,6 @@ where
                 path: self.path,
             };
 
-            fn trace_request<B>(req: &Request<B>, span: &Span) {
-                let _s = span.enter();
-
-                tracing::debug!(
-                    "got request: {} {} {:?}",
-                    req.method(),
-                    req.uri(),
-                    req.headers()
-                );
-                if let Some(v) = req.headers().get("x-libsql-client-version") {
-                    if let Ok(s) = v.to_str() {
-                        metrics::increment_counter!(CLIENT_VERSION, "version" => s.to_string());
-                    }
-                }
-            }
-
             macro_rules! handle_hrana {
                 ($endpoint:expr, $version:expr, $encoding:expr,) => {{
                     async fn handle_hrana<F: MakeNamespace>(
@@ -420,13 +404,11 @@ where
             let router = router
                 .layer(option_layer(self.idle_shutdown_kicker.clone()))
                 .layer(
-                    tower_http::trace::TraceLayer::new_for_http()
-                        .on_request(trace_request)
-                        .on_response(
-                            DefaultOnResponse::new()
-                                .level(Level::DEBUG)
-                                .latency_unit(tower_http::LatencyUnit::Micros),
-                        ),
+                    tower_http::trace::TraceLayer::new_for_grpc()
+                        .on_eos(trace::eos)
+                        .on_request(trace::request)
+                        .on_response(trace::response)
+                        .on_failure(trace::failure),
                 )
                 .layer(CompressionLayer::new())
                 .layer(
