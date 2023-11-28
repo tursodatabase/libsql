@@ -51,7 +51,7 @@ targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-apple-dar
 # Publish jobs to run in CI
 publish-jobs = ["homebrew"]
 # Whether cargo-dist should create a Github Release or use an existing draft
-create-release = false
+create-release = true
 # Publish jobs to run in CI
 pr-run-mode = "plan"
 allow-dirty = ["ci"] # we've edited the release yml to narrow the tag scope
