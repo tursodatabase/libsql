@@ -1111,180 +1111,6 @@ static u32 jsonHexToInt4(const char *z){
 }
 
 /*
-** Make the return value from an SQL function be the SQL value of
-** JsonNode pNode.
-**
-** If pNode is an atom (not an array or object) then the value returned
-** is a pure SQL value - an SQLITE_INTEGER, SQLITE_REAL, SQLITE_TEXT, or
-** SQLITE_NULL.  However, if pNode is a JSON array or object, then the
-** value returned is either RFC-8259 JSON text or a BLOB in the JSONB
-** format, depending on the JSON_BLOB flag of the function user-data.
-*/
-static void jsonReturnFromNode(
-  JsonParse *pParse,          /* Complete JSON parse tree */
-  JsonNode *pNode,            /* Node to return */
-  sqlite3_context *pCtx,      /* Return value for this function */
-  int omitSubtype             /* Do not call sqlite3_result_subtype() */
-){
-  switch( pNode->eType ){
-    default: {
-      assert( pNode->eType==JSON_NULL );
-      sqlite3_result_null(pCtx);
-      break;
-    }
-    case JSON_TRUE: {
-      sqlite3_result_int(pCtx, 1);
-      break;
-    }
-    case JSON_FALSE: {
-      sqlite3_result_int(pCtx, 0);
-      break;
-    }
-    case JSON_INT: {
-      sqlite3_int64 i = 0;
-      int rc;
-      int bNeg = 0;
-      const char *z;
-      char *zz;
-      sqlite3 *db = sqlite3_context_db_handle(pCtx);
-
-      assert( pNode->eU==1 );
-      zz = sqlite3DbStrNDup(db, pNode->u.zJContent, pNode->n);
-      if( zz==0 ){
-        sqlite3_result_error_nomem(pCtx);
-        return;
-      }
-      z = zz;
-      if( z[0]=='-' ){ z++; bNeg = 1; }
-      else if( z[0]=='+' ){ z++; }
-      rc = sqlite3DecOrHexToI64(z, &i);
-      sqlite3DbFree(db, zz);
-      if( rc<=1 ){
-        sqlite3_result_int64(pCtx, bNeg ? -i : i);
-      }else if( rc==3 && bNeg ){
-        sqlite3_result_int64(pCtx, SMALLEST_INT64);
-      }else{
-        goto to_double;
-      }
-      break;
-    }
-    case JSON_REAL: {
-      double r;
-      const char *z;
-      assert( pNode->eU==1 );
-    to_double:
-      z = pNode->u.zJContent;
-      sqlite3AtoF(z, &r, pNode->n, SQLITE_UTF8);
-      sqlite3_result_double(pCtx, r);
-      break;
-    }
-    case JSON_STRING: {
-      if( pNode->jnFlags & JNODE_RAW ){
-        assert( pNode->eU==1 );
-        sqlite3_result_text(pCtx, pNode->u.zJContent, pNode->n,
-                            SQLITE_TRANSIENT);
-      }else if( (pNode->jnFlags & JNODE_ESCAPE)==0 ){
-        /* JSON formatted without any backslash-escapes */
-        assert( pNode->eU==1 );
-        sqlite3_result_text(pCtx, pNode->u.zJContent, pNode->n,
-                            SQLITE_TRANSIENT);
-      }else{
-        /* Translate JSON formatted string into raw text */
-        u32 i;
-        u32 n = pNode->n;
-        const char *z;
-        char *zOut;
-        u32 j;
-        u32 nOut = n;
-        assert( pNode->eU==1 );
-        z = pNode->u.zJContent;
-        zOut = sqlite3_malloc( nOut+1 );
-        if( zOut==0 ){
-          sqlite3_result_error_nomem(pCtx);
-          break;
-        }
-        for(i=0, j=0; i<n; i++){
-          char c = z[i];
-          if( c=='\\' ){
-            c = z[++i];
-            if( c=='u' ){
-              u32 v = jsonHexToInt4(z+i+1);
-              i += 4;
-              if( v==0 ) break;
-              if( v<=0x7f ){
-                zOut[j++] = (char)v;
-              }else if( v<=0x7ff ){
-                zOut[j++] = (char)(0xc0 | (v>>6));
-                zOut[j++] = 0x80 | (v&0x3f);
-              }else{
-                u32 vlo;
-                if( (v&0xfc00)==0xd800
-                  && i<n-6
-                  && z[i+1]=='\\'
-                  && z[i+2]=='u'
-                  && ((vlo = jsonHexToInt4(z+i+3))&0xfc00)==0xdc00
-                ){
-                  /* We have a surrogate pair */
-                  v = ((v&0x3ff)<<10) + (vlo&0x3ff) + 0x10000;
-                  i += 6;
-                  zOut[j++] = 0xf0 | (v>>18);
-                  zOut[j++] = 0x80 | ((v>>12)&0x3f);
-                  zOut[j++] = 0x80 | ((v>>6)&0x3f);
-                  zOut[j++] = 0x80 | (v&0x3f);
-                }else{
-                  zOut[j++] = 0xe0 | (v>>12);
-                  zOut[j++] = 0x80 | ((v>>6)&0x3f);
-                  zOut[j++] = 0x80 | (v&0x3f);
-                }
-              }
-              continue;
-            }else if( c=='b' ){
-              c = '\b';
-            }else if( c=='f' ){
-              c = '\f';
-            }else if( c=='n' ){
-              c = '\n';
-            }else if( c=='r' ){
-              c = '\r';
-            }else if( c=='t' ){
-              c = '\t';
-            }else if( c=='v' ){
-              c = '\v';
-            }else if( c=='\'' || c=='"' || c=='/' || c=='\\' ){
-              /* pass through unchanged */
-            }else if( c=='0' ){
-              c = 0;
-            }else if( c=='x' ){
-              c = (jsonHexToInt(z[i+1])<<4) | jsonHexToInt(z[i+2]);
-              i += 2;
-            }else if( c=='\r' && z[i+1]=='\n' ){
-              i++;
-              continue;
-            }else if( 0xe2==(u8)c ){
-              assert( 0x80==(u8)z[i+1] );
-              assert( 0xa8==(u8)z[i+2] || 0xa9==(u8)z[i+2] );
-              i += 2;
-              continue;
-            }else{
-              continue;
-            }
-          } /* end if( c=='\\' ) */
-          zOut[j++] = c;
-        } /* end for() */
-        zOut[j] = 0;
-        sqlite3_result_text(pCtx, zOut, j, sqlite3_free);
-      }
-      break;
-    }
-    case JSON_ARRAY:
-    case JSON_OBJECT: {
-      jsonReturnNodeAsJson(pParse, pNode, pCtx, 0, omitSubtype);
-      break;
-    }
-  }
-}
-
-/*
 ** A macro to hint to the compiler that a function should not be
 ** inlined.
 */
@@ -4217,6 +4043,7 @@ static void jsonReturnFromBlob(
   }
 }
 
+#if 0
 /* Do a JSON_EXTRACT(JSON, PATH) on a when JSON is a BLOB.
 */
 static void jsonExtractFromBlob(
@@ -4277,6 +4104,7 @@ static void jsonExtractFromBlob(
     sqlite3_free(zMsg);
   }
 }
+#endif
 
 /*
 ** pArg is a function argument that might be an SQL value or a JSON
@@ -4820,6 +4648,19 @@ static void jsonArrayLengthFunc(
 }
 
 /*
+** Generate a bad path error for json_extract()
+*/
+static void jsonExtractBadPathError(
+  sqlite3_context *ctx,     /* The function call containing the error */
+  const char *zPath         /* The path with the problem */
+){
+  sqlite3 *db = sqlite3_context_db_handle(ctx);
+  char *zMsg = sqlite3MPrintf(db, "bad JSON path: %Q", zPath);
+  sqlite3_result_error(ctx, zMsg, -1);
+  sqlite3DbFree(db, zMsg);
+}
+
+/*
 ** json_extract(JSON, PATH, ...)
 ** "->"(JSON,PATH)
 ** "->>"(JSON,PATH)
@@ -4844,83 +4685,94 @@ static void jsonExtractFunc(
   int argc,
   sqlite3_value **argv
 ){
-  JsonParse *p;          /* The parse */
-  JsonNode *pNode;
-  const char *zPath;
-  int flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
-  JsonString jx;
+  JsonParse *p = 0;      /* The parse */
+  int flags;             /* Flags associated with the function */
+  int i;                 /* Loop counter */
+  JsonString jx;         /* String for array result */
 
   if( argc<2 ) return;
-  if( jsonFuncArgMightBeBinary(argv[0]) && argc==2 ){
-    jsonExtractFromBlob(ctx, argv[0], argv[1], flags);
-    return;
-  }
-  p = jsonParseCached(ctx, argv[0], ctx, 0);
+  p = jsonParseFuncArg(ctx, argv[0], 0);
   if( p==0 ) return;
-  if( argc==2 ){
-    /* With a single PATH argument */
-    zPath = (const char*)sqlite3_value_text(argv[1]);
-    if( zPath==0 ) return;
-    if( flags & JSON_ABPATH ){
-      if( zPath[0]!='$' || (zPath[1]!='.' && zPath[1]!='[' && zPath[1]!=0) ){
-        /* The -> and ->> operators accept abbreviated PATH arguments.  This
-        ** is mostly for compatibility with PostgreSQL, but also for
-        ** convenience.
-        **
-        **     NUMBER   ==>  $[NUMBER]     // PG compatible
-        **     LABEL    ==>  $.LABEL       // PG compatible
-        **     [NUMBER] ==>  $[NUMBER]     // Not PG.  Purely for convenience
-        */
-        jsonStringInit(&jx, ctx);
-        if( sqlite3Isdigit(zPath[0]) ){
-          jsonAppendRawNZ(&jx, "$[", 2);
-          jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
-          jsonAppendRawNZ(&jx, "]", 2);
-        }else{
-          jsonAppendRawNZ(&jx, "$.", 1 + (zPath[0]!='['));
-          jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
-          jsonAppendChar(&jx, 0);
-        }
-        pNode = jx.eErr ? 0 : jsonLookup(p, jx.zBuf, 0, ctx);
-        jsonStringReset(&jx);
-      }else{
-        pNode = jsonLookup(p, zPath, 0, ctx);
-      }
-      if( pNode ){
-        if( flags & JSON_JSON ){
-          jsonReturnNodeAsJson(p, pNode, ctx, 0, 0);
-        }else{
-          jsonReturnFromNode(p, pNode, ctx, 1);
-        }
-      }
-    }else{
-      pNode = jsonLookup(p, zPath, 0, ctx);
-      if( p->nErr==0 && pNode ) jsonReturnFromNode(p, pNode, ctx, 0);
-    }
-  }else{
-    /* Two or more PATH arguments results in a JSON array with each
-    ** element of the array being the value selected by one of the PATHs */
-    int i;
-    jsonStringInit(&jx, ctx);
+  flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
+  jsonStringInit(&jx, ctx);
+  if( argc>2 ){
     jsonAppendChar(&jx, '[');
-    for(i=1; i<argc; i++){
-      zPath = (const char*)sqlite3_value_text(argv[i]);
-      pNode = jsonLookup(p, zPath, 0, ctx);
-      if( p->nErr ) break;
-      jsonAppendSeparator(&jx);
-      if( pNode ){
-        jsonXlateNodeToText(p, pNode, &jx);
+  }
+  for(i=1; i<argc; i++){
+    /* With a single PATH argument */
+    const char *zPath = (const char*)sqlite3_value_text(argv[i]);
+    u32 j;
+    if( zPath==0 ) goto json_extract_error;
+    if( zPath[0]=='$' ){
+      j = jsonLookupBlobStep(p, 0, zPath+1, 0);
+    }else if( (flags & JSON_ABPATH) ){
+      /* The -> and ->> operators accept abbreviated PATH arguments.  This
+      ** is mostly for compatibility with PostgreSQL, but also for
+      ** convenience.
+      **
+      **     NUMBER   ==>  $[NUMBER]     // PG compatible
+      **     LABEL    ==>  $.LABEL       // PG compatible
+      **     [NUMBER] ==>  $[NUMBER]     // Not PG.  Purely for convenience
+      */
+      jsonStringInit(&jx, ctx);
+      if( sqlite3Isdigit(zPath[0]) ){
+        jsonAppendRawNZ(&jx, "[", 1);
+        jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
+        jsonAppendRawNZ(&jx, "]", 2);
+      }else if( zPath[0]!='[' ){
+        jsonAppendRawNZ(&jx, ".", 1);
+        jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
+        jsonAppendChar(&jx, 0);
+      }
+      jsonStringTerminate(&jx);
+      j = jsonLookupBlobStep(p, 0, jx.zBuf, 0);
+      jsonStringReset(&jx);
+    }else{
+      jsonExtractBadPathError(ctx, zPath);
+      goto json_extract_error;
+    }
+    if( j<p->nBlob ){
+      if( argc==2 ){
+        if( flags & JSON_JSON ){
+          jsonStringInit(&jx, ctx);
+          jsonXlateBlobToText(p, j, &jx);
+          jsonReturnString(&jx);
+          jsonStringReset(&jx);
+          sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+        }else{
+          jsonReturnFromBlob(p, j, ctx, 0);
+          if( (flags & JSON_SQL)==0 && (p->aBlob[j]&0x0f)>=JSONB_ARRAY ){
+            sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+          }
+        }
       }else{
+        jsonAppendSeparator(&jx);
+        jsonXlateBlobToText(p, j, &jx);
+      }
+    }else if( j==JSON_BLOB_NOTFOUND ){
+      if( argc==2 ){
+        goto json_extract_error;  /* Return NULL if not found */
+      }else{
+        jsonAppendSeparator(&jx);
         jsonAppendRawNZ(&jx, "null", 4);
       }
+    }else if( j==JSON_BLOB_ERROR ){
+      sqlite3_result_error(ctx, "malformed JSON", -1);
+      goto json_extract_error;
+    }else{
+      jsonExtractBadPathError(ctx, zPath);
+      goto json_extract_error;
     }
-    if( i==argc ){
-      jsonAppendChar(&jx, ']');
-      jsonReturnString(&jx);
-      sqlite3_result_subtype(ctx, JSON_SUBTYPE);
-    }
-    jsonStringReset(&jx);
   }
+  if( argc>2 ){
+    jsonAppendChar(&jx, ']');
+    jsonReturnString(&jx);
+    sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+  }
+json_extract_error:
+  jsonStringReset(&jx);
+  jsonParseFree(p);
+  return;
 }
 
 /* This is the RFC 7396 MergePatch algorithm.
