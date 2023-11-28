@@ -1098,6 +1098,25 @@ extern "C" {
         ppDb: *mut *mut sqlite3,
         flags: ::std::os::raw::c_int,
         zVfs: *const ::std::os::raw::c_char,
+        zWal: *const ::std::os::raw::c_char,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn libsql_open_v2(
+        filename: *const ::std::os::raw::c_char,
+        ppDb: *mut *mut sqlite3,
+        flags: ::std::os::raw::c_int,
+        zVfs: *const ::std::os::raw::c_char,
+        zWal: *const ::std::os::raw::c_char,
+        pWalMethodsData: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn libsql_open_v3(
+        filename: *const ::std::os::raw::c_char,
+        ppDb: *mut *mut sqlite3,
+        flags: ::std::os::raw::c_int,
+        zVfs: *const ::std::os::raw::c_char,
         wal_manager: libsql_wal_manager,
     ) -> ::std::os::raw::c_int;
 }
@@ -3970,15 +3989,10 @@ pub struct libsql_wal {
 pub struct RefCountedWalManager {
     pub n: ::std::os::raw::c_int,
     pub ref_: libsql_wal_manager,
+    pub is_static: ::std::os::raw::c_int,
 }
 extern "C" {
     pub fn make_ref_counted_wal_manager(
-        wal_manager: libsql_wal_manager,
-        out: *mut *mut RefCountedWalManager,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    pub fn make_ref_counted_wal_manager_static(
         wal_manager: libsql_wal_manager,
         out: *mut *mut RefCountedWalManager,
     ) -> ::std::os::raw::c_int;
@@ -3990,6 +4004,9 @@ extern "C" {
     pub fn clone_wal_manager(p: *mut RefCountedWalManager) -> *mut RefCountedWalManager;
 }
 extern "C" {
-    pub static mut sqlite3_wal_manager: libsql_wal_manager;
+    pub static sqlite3_wal_manager: libsql_wal_manager;
+}
+extern "C" {
+    pub static mut sqlite3_wal_manager_rc: RefCountedWalManager;
 }
 pub type __builtin_va_list = *mut ::std::os::raw::c_char;

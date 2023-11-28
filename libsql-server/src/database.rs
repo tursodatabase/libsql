@@ -5,8 +5,7 @@ use async_trait::async_trait;
 use crate::connection::libsql::LibSqlConnection;
 use crate::connection::write_proxy::{RpcStream, WriteProxyConnection};
 use crate::connection::{Connection, MakeConnection, TrackedConnection};
-use crate::namespace::replication_wal::ReplicationWal;
-use crate::replication::ReplicationLogger;
+use crate::namespace::replication_wal::{ReplicationWal, CreateReplicationWal};
 
 pub type PrimaryConnection = TrackedConnection<LibSqlConnection<ReplicationWal>>;
 
@@ -45,7 +44,7 @@ impl Database for ReplicaDatabase {
 }
 
 pub struct PrimaryDatabase {
-    pub logger: Arc<ReplicationLogger>,
+    pub wal_manager: CreateReplicationWal,
     pub connection_maker: Arc<dyn MakeConnection<Connection = PrimaryConnection>>,
 }
 
@@ -58,7 +57,7 @@ impl Database for PrimaryDatabase {
     }
 
     fn destroy(self) {
-        self.logger.closed_signal.send_replace(true);
+        self.wal_manager.logger().closed_signal.send_replace(true);
     }
 
     async fn shutdown(self) -> Result<()> {
@@ -69,6 +68,7 @@ impl Database for PrimaryDatabase {
                 replicator.shutdown_gracefully().await?;
             }
         }
+
         Ok(())
     }
 }

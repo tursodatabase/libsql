@@ -504,7 +504,7 @@ impl Proxy for ProxyService {
             .namespaces
             .with(namespace, |ns| {
                 let connection_maker = ns.db.connection_maker();
-                let notifier = ns.db.logger.new_frame_notifier.subscribe();
+                let notifier = ns.db.wal_manager.logger().new_frame_notifier.subscribe();
                 (connection_maker, notifier)
             })
             .await
@@ -611,7 +611,7 @@ impl Proxy for ProxyService {
             .namespaces
             .with(namespace, |ns| {
                 let connection_maker = ns.db.connection_maker();
-                let notifier = ns.db.logger.new_frame_notifier.subscribe();
+                let notifier = ns.db.wal_manager.logger().new_frame_notifier.subscribe();
                 (connection_maker, notifier)
             })
             .await

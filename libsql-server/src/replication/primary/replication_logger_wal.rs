@@ -24,6 +24,10 @@ impl CreateReplicationLoggerWal {
             logger,
         }
     }
+
+    pub fn logger(&self) -> Arc<ReplicationLogger> {
+        self.logger.clone()
+    }
 }
 
 impl WalManager for CreateReplicationLoggerWal {
@@ -202,7 +206,6 @@ impl libsql_sys::wal::Wal for ReplicationLoggerWal {
 
             if let Err(e) = self.logger.log_file.write().maybe_compact(
                 self.logger.compactor().clone(),
-                size_after,
                 self.logger.db_path(),
             ) {
                 tracing::error!("fatal error: {e}, exiting");

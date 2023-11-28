@@ -37,7 +37,6 @@ use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
 use crate::replication::primary::replication_logger_wal::CreateReplicationLoggerWal;
-use crate::replication::replicator_client::NamespaceDoesntExist;
 use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
@@ -274,7 +273,7 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         let fork_task = ForkTask {
             base_path: self.config.base_path.clone(),
             dest_namespace: to,
-            logger: from.db.logger.clone(),
+            logger: from.db.wal_manager.logger(),
             make_namespace: self,
             restore_to,
             bottomless_db_id,
@@ -933,7 +932,7 @@ impl Namespace<PrimaryDatabase> {
             }
 
             is_dirty |= did_recover;
-            Some(Arc::new(std::sync::Mutex::new(Some(replicator))))
+            Some(replicator)
         } else {
             None
         };
@@ -957,7 +956,6 @@ impl Namespace<PrimaryDatabase> {
                 let cb = config.snapshot_callback.clone();
                 move |path: &Path| cb(path, &name)
             }),
-            bottomless_replicator.clone(),
         )?);
 
         let stats = make_stats(
@@ -1005,7 +1003,7 @@ impl Namespace<PrimaryDatabase> {
                 Err(LoadDumpError::LoadDumpExistingDb)?;
             }
             RestoreOption::Dump(dump) => {
-                load_dump(&db_path, dump, wal_manager, logger.auto_checkpoint).await?;
+                load_dump(&db_path, dump, wal_manager.clone(), logger.auto_checkpoint).await?;
             }
             _ => { /* other cases were already handled when creating bottomless */ }
         }
@@ -1022,7 +1020,7 @@ impl Namespace<PrimaryDatabase> {
         Ok(Self {
             tasks: join_set,
             db: PrimaryDatabase {
-                logger,
+                wal_manager,
                 connection_maker,
             },
             name,

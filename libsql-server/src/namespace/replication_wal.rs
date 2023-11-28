@@ -1,14 +1,14 @@
-use std::ffi::{c_int, CStr};
+use std::{ffi::{c_int, CStr}, sync::Arc};
 
-use bottomless::bottomless_wal::{BottomlessWal, CreateBottomlessWal};
+use bottomless::{bottomless_wal::{BottomlessWal, CreateBottomlessWal}, replicator::Replicator};
 use libsql_sys::wal::{
     BusyHandler, CheckpointMode, WalManager, PageHeaders, Result, Sqlite3Db, Sqlite3File,
     UndoHandler, Vfs, Wal,
 };
 
-use crate::replication::primary::replication_logger_wal::{
+use crate::replication::{primary::replication_logger_wal::{
     CreateReplicationLoggerWal, ReplicationLoggerWal,
-};
+}, ReplicationLogger};
 
 /// Depending on the configuration, we use different backends for replication. This CreateWal
 /// implementation allows runtime selection of the backend.
@@ -16,6 +16,28 @@ use crate::replication::primary::replication_logger_wal::{
 pub enum CreateReplicationWal {
     Bottomless(CreateBottomlessWal<CreateReplicationLoggerWal>),
     Logger(CreateReplicationLoggerWal),
+}
+
+impl CreateReplicationWal {
+    pub fn shutdown(&self) -> Option<Replicator> {
+        match self {
+            CreateReplicationWal::Bottomless(bottomless) => {
+                bottomless.shutdown()
+            },
+            CreateReplicationWal::Logger(_) => None,
+        }
+    }
+
+    pub fn logger(&self) -> Arc<ReplicationLogger> {
+        match self {
+            CreateReplicationWal::Bottomless(bottomless) => {
+                bottomless.inner().logger()
+            },
+            CreateReplicationWal::Logger(wal) => {
+                wal.logger()
+            },
+        }
+    }
 }
 
 impl WalManager for CreateReplicationWal {
