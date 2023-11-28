@@ -4701,6 +4701,7 @@ static void jsonExtractFunc(
   for(i=1; i<argc; i++){
     /* With a single PATH argument */
     const char *zPath = (const char*)sqlite3_value_text(argv[i]);
+    int nPath = sqlite3_value_bytes(argv[i]);
     u32 j;
     if( zPath==0 ) goto json_extract_error;
     if( zPath[0]=='$' ){
@@ -4717,12 +4718,14 @@ static void jsonExtractFunc(
       jsonStringInit(&jx, ctx);
       if( sqlite3Isdigit(zPath[0]) ){
         jsonAppendRawNZ(&jx, "[", 1);
-        jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
+        jsonAppendRaw(&jx, zPath, nPath);
         jsonAppendRawNZ(&jx, "]", 2);
       }else if( zPath[0]!='[' ){
         jsonAppendRawNZ(&jx, ".", 1);
-        jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
+        jsonAppendRaw(&jx, zPath, nPath);
         jsonAppendChar(&jx, 0);
+      }else{
+        jsonAppendRaw(&jx, zPath, nPath);
       }
       jsonStringTerminate(&jx);
       j = jsonLookupBlobStep(p, 0, jx.zBuf, 0);
