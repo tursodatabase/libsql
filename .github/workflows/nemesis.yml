@@ -46,14 +46,14 @@ jobs:
       - name: Cargo build
         run: |
           cargo build
-          mv ./target/debug/sqld /home/ubuntu/.cargo/bin
+          mv ./target/debug/sqld ~/.cargo/bin
           sqld --version
 
       - name: Download MinIO binary
         run: |
           wget -q https://dl.min.io/server/minio/release/linux-amd64/minio -O minio
           chmod +x minio
-          mv minio /home/ubuntu/.cargo/bin
+          mv minio ~/.cargo/bin
           minio --version
 
       - name: Nemesis tests checkout
