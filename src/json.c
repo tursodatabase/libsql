@@ -4043,69 +4043,6 @@ static void jsonReturnFromBlob(
   }
 }
 
-#if 0
-/* Do a JSON_EXTRACT(JSON, PATH) on a when JSON is a BLOB.
-*/
-static void jsonExtractFromBlob(
-  sqlite3_context *ctx,
-  sqlite3_value *pJson,
-  sqlite3_value *pPath,
-  int flags
-){
-  const char *zPath = (const char*)sqlite3_value_text(pPath);
-  u32 i = 0;
-  JsonParse px;
-  if( zPath==0 ) return;
-  memset(&px, 0, sizeof(px));
-  px.nBlob = sqlite3_value_bytes(pJson);
-  px.aBlob = (u8*)sqlite3_value_blob(pJson);
-  if( px.aBlob==0 ) return;
-  if( zPath[0]=='$' ){
-    zPath++;
-    i = jsonLookupBlobStep(&px, 0, zPath, 0);
-  }else if( (flags & JSON_ABPATH) ){
-    /* The -> and ->> operators accept abbreviated PATH arguments.  This
-    ** is mostly for compatibility with PostgreSQL, but also for
-    ** convenience.
-    **
-    **     NUMBER   ==>  $[NUMBER]     // PG compatible
-    **     LABEL    ==>  $.LABEL       // PG compatible
-    **     [NUMBER] ==>  $[NUMBER]     // Not PG.  Purely for convenience
-    */
-    JsonString jx;
-    jsonStringInit(&jx, ctx);
-    if( sqlite3Isdigit(zPath[0]) ){
-      jsonAppendRawNZ(&jx, "[", 1);
-      jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
-      jsonAppendRawNZ(&jx, "]", 2);
-      zPath = jx.zBuf;
-    }else if( zPath[0]!='[' ){
-      jsonAppendRawNZ(&jx, ".", 1);
-      jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
-      jsonAppendChar(&jx, 0);
-      zPath = jx.zBuf;
-    }
-    i = jsonLookupBlobStep(&px, 0, zPath, 0);
-    jsonStringReset(&jx);
-  }else{
-    sqlite3_result_error(ctx, "bad path", -1);
-    return;
-  }
-  if( i<px.nBlob ){
-    jsonReturnFromBlob(&px, i, ctx, 0);
-  }else if( i==JSON_BLOB_NOTFOUND ){
-    return;  /* Return NULL if not found */
-  }else if( i==JSON_BLOB_ERROR ){
-    sqlite3_result_error(ctx, "malformed JSON", -1);
-  }else{
-    char *zMsg = sqlite3_mprintf("bad path syntax: %s",
-                    sqlite3_value_text(pPath));
-    sqlite3_result_error(ctx, zMsg, -1);
-    sqlite3_free(zMsg);
-  }
-}
-#endif
-
 /*
 ** pArg is a function argument that might be an SQL value or a JSON
 ** value.  Figure out what it is and encode it as a JSONB blob.
@@ -4741,10 +4678,13 @@ static void jsonExtractFunc(
           jsonXlateBlobToText(p, j, &jx);
           jsonReturnString(&jx);
           jsonStringReset(&jx);
+          assert( (flags & JSON_BLOB)==0 );
           sqlite3_result_subtype(ctx, JSON_SUBTYPE);
         }else{
           jsonReturnFromBlob(p, j, ctx, 0);
-          if( (flags & JSON_SQL)==0 && (p->aBlob[j]&0x0f)>=JSONB_ARRAY ){
+          if( (flags & (JSON_SQL|JSON_BLOB))==0
+           && (p->aBlob[j]&0x0f)>=JSONB_ARRAY
+          ){
             sqlite3_result_subtype(ctx, JSON_SUBTYPE);
           }
         }
@@ -4770,7 +4710,9 @@ static void jsonExtractFunc(
   if( argc>2 ){
     jsonAppendChar(&jx, ']');
     jsonReturnString(&jx);
-    sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+    if( (flags & JSON_BLOB)==0 ){
+      sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+    }
   }
 json_extract_error:
   jsonStringReset(&jx);
