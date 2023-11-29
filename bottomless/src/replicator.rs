@@ -49,7 +49,7 @@ pub struct Replicator {
     /// Last frame which has been confirmed as stored locally outside of WAL file.
     /// Always: [last_committed_frame_no] <= [last_sent_frame_no].
     last_committed_frame_no: Receiver<Result<u32>>,
-    flush_trigger: Sender<()>,
+    flush_trigger: Option<Sender<()>>,
     snapshot_waiter: Receiver<Result<Option<Uuid>>>,
     snapshot_notifier: Arc<Sender<Result<Option<Uuid>>>>,
 
@@ -353,7 +353,7 @@ impl Replicator {
             generation,
             next_frame_no,
             last_sent_frame_no,
-            flush_trigger,
+            flush_trigger: Some(flush_trigger),
             last_committed_frame_no,
             verify_crc: options.verify_crc,
             db_path,
@@ -371,6 +371,8 @@ impl Replicator {
 
     pub async fn shutdown_gracefully(&mut self) -> Result<()> {
         let last_frame_no = self.last_known_frame();
+        // drop flush trigger, which will cause background task for local WAL copier to complete
+        self.flush_trigger.take();
         self.wait_until_committed(last_frame_no).await?;
         self.wait_until_snapshotted().await?;
         while let Some(t) = self.join_set.join_next().await {
@@ -634,8 +636,12 @@ impl Replicator {
     }
 
     pub fn request_flush(&self) {
-        tracing::trace!("Requesting flush");
-        let _ = self.flush_trigger.send(());
+        if let Some(tx) = self.flush_trigger.as_ref() {
+            tracing::trace!("Requesting flush");
+            let _ = tx.send(());
+        } else {
+            tracing::warn!("Cannot request flush - replicator is closing");
+        }
     }
 
     // Drops uncommitted frames newer than given last valid frame
