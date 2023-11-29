@@ -59,7 +59,7 @@ impl WalManager for CreateSqlite3Wal {
                 no_shm_mode,
                 max_log_size,
                 db_path.as_ptr(),
-                wal.as_mut_ptr()
+                wal.as_mut_ptr(),
             )
         };
 

@@ -4004,9 +4004,9 @@ extern "C" {
     pub fn clone_wal_manager(p: *mut RefCountedWalManager) -> *mut RefCountedWalManager;
 }
 extern "C" {
-    pub static sqlite3_wal_manager: libsql_wal_manager;
+    pub fn make_sqlite3_wal_manager_rc(out: *mut *mut RefCountedWalManager);
 }
 extern "C" {
-    pub static mut sqlite3_wal_manager_rc: RefCountedWalManager;
+    pub static sqlite3_wal_manager: libsql_wal_manager;
 }
 pub type __builtin_va_list = *mut ::std::os::raw::c_char;

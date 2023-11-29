@@ -3404,13 +3404,13 @@ pub struct libsql_wal_manager {
             no_shm_mode: ::std::os::raw::c_int,
             max_size: ::std::os::raw::c_longlong,
             zMainDbFileName: *const ::std::os::raw::c_char,
-            out_wal: *mut *mut libsql_wal,
+            out_wal: *mut libsql_wal,
         ) -> ::std::os::raw::c_int,
     >,
     pub xClose: ::std::option::Option<
         unsafe extern "C" fn(
             pData: *mut wal_manager_impl,
-            pWal: *mut libsql_wal,
+            pWal: *mut wal_impl,
             db: *mut sqlite3,
             sync_flags: ::std::os::raw::c_int,
             nBuf: ::std::os::raw::c_int,
@@ -3492,9 +3492,9 @@ extern "C" {
     pub fn clone_wal_manager(p: *mut RefCountedWalManager) -> *mut RefCountedWalManager;
 }
 extern "C" {
-    pub static sqlite3_wal_manager: libsql_wal_manager;
+    pub fn make_sqlite3_wal_manager_rc(out: *mut *mut RefCountedWalManager);
 }
 extern "C" {
-    pub static mut sqlite3_wal_manager_rc: RefCountedWalManager;
+    pub static sqlite3_wal_manager: libsql_wal_manager;
 }
 pub type __builtin_va_list = *mut ::std::os::raw::c_char;

@@ -4180,7 +4180,8 @@ int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
       a = pTmp;
     }
     if (pagerUseWal(pPager)) {
-      pPager->wal_manager->ref.xClose(pPager->wal_manager->ref.pData, pPager->wal, db, pPager->walSyncFlags, pPager->pageSize,a);
+      pPager->wal_manager->ref.xClose(pPager->wal_manager->ref.pData, pPager->wal->pData, db, pPager->walSyncFlags, pPager->pageSize,a);
+      sqlite3_free(pPager->wal);
       pPager->wal = NULL;
     }
     destroy_wal_manager(pPager->wal_manager);
@@ -7601,11 +7602,23 @@ static int pagerOpenWal(Pager *pPager){
   /* Open the connection to the log file. If this operation fails,
   ** (e.g. due to malloc() failure), return an error code.
   */
+
   if( rc==SQLITE_OK ){
-    rc = pPager->wal_manager->ref.xOpen(pPager->wal_manager->ref.pData, pPager->pVfs,
-        pPager->fd, pPager->exclusiveMode,
-        pPager->journalSizeLimit, pPager->zFilename, &pPager->wal
-    );
+    libsql_wal *wal = (libsql_wal*)sqlite3MallocZero(sizeof(libsql_wal));
+    if (!wal) {
+        rc = SQLITE_NOMEM;
+    }
+    if (rc == SQLITE_OK) {
+      rc = pPager->wal_manager->ref.xOpen(pPager->wal_manager->ref.pData, pPager->pVfs,
+              pPager->fd, pPager->exclusiveMode,
+              pPager->journalSizeLimit, pPager->zFilename, wal
+              );
+      if (rc == SQLITE_OK) {
+          pPager->wal = wal;
+      } else {
+          sqlite3_free(wal);
+      }
+    }
   }
   pagerFixMaplimit(pPager);
 
@@ -7693,8 +7706,9 @@ int sqlite3PagerCloseWal(Pager *pPager, sqlite3 *db){
   if( rc==SQLITE_OK && pagerUseWal(pPager) ){
     rc = pagerExclusiveLock(pPager);
     if( rc==SQLITE_OK ){
-      rc = pPager->wal_manager->ref.xClose(pPager->wal_manager->ref.pData, pPager->wal, db, pPager->walSyncFlags,
+      rc = pPager->wal_manager->ref.xClose(pPager->wal_manager->ref.pData, pPager->wal->pData, db, pPager->walSyncFlags,
                            pPager->pageSize, (u8*)pPager->pTmpSpace);
+      sqlite3_free(pPager->wal);
       pPager->wal = NULL;
       pagerFixMaplimit(pPager);
       if( rc && !pPager->exclusiveMode ) pagerUnlockDb(pPager, SHARED_LOCK);

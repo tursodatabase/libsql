@@ -3639,8 +3639,10 @@ int sqlite3_open(
   const char *zFilename,
   sqlite3 **ppDb
 ){
+  RefCountedWalManager *wal;
+  make_sqlite3_wal_manager_rc(&wal);
   return openDatabase(zFilename, ppDb,
-                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, (RefCountedWalManager*) &sqlite3_wal_manager_rc);
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, wal);
 }
 int sqlite3_open_v2(
   const char *filename,   /* Database filename (UTF-8) */
@@ -3648,7 +3650,9 @@ int sqlite3_open_v2(
   int flags,              /* Flags */
   const char *zVfs        /* Name of VFS module to use */
 ){
-  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, (RefCountedWalManager*) &sqlite3_wal_manager_rc);
+  RefCountedWalManager *wal;
+  make_sqlite3_wal_manager_rc(&wal);
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, wal);
 }
 
 /* deprecated, only works with zWal == NULL */
@@ -3660,7 +3664,9 @@ int libsql_open(
   const char *zWal        /* Name of WAL module to use */
 ) {
   assert( zWal == NULL );;
-  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, &sqlite3_wal_manager_rc);
+  RefCountedWalManager *wal;
+  make_sqlite3_wal_manager_rc(&wal);
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, wal);
 }
 
 /* deprecated, only works with zWal == NULL */
@@ -3673,7 +3679,9 @@ int libsql_open_v2(
   void* pWalMethodsData   /* User data, passed to the libsql_wal struct*/
 ) {
   assert( zWal == NULL );;
-  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, &sqlite3_wal_manager_rc);
+  RefCountedWalManager *wal;
+  make_sqlite3_wal_manager_rc(&wal);
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, wal);
 }
 
 int libsql_open_v3(
@@ -3717,8 +3725,10 @@ int sqlite3_open16(
   sqlite3ValueSetStr(pVal, -1, zFilename, SQLITE_UTF16NATIVE, SQLITE_STATIC);
   zFilename8 = sqlite3ValueText(pVal, SQLITE_UTF8);
   if( zFilename8 ){
+    RefCountedWalManager *wal;
+    make_sqlite3_wal_manager_rc(&wal);
     rc = openDatabase(zFilename8, ppDb,
-                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, (RefCountedWalManager*)&sqlite3_wal_manager_rc);
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, wal);
     assert( *ppDb || rc==SQLITE_NOMEM );
     if( rc==SQLITE_OK && !DbHasProperty(*ppDb, 0, DB_SchemaLoaded) ){
       SCHEMA_ENC(*ppDb) = ENC(*ppDb) = SQLITE_UTF16NATIVE;
