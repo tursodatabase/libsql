@@ -1400,6 +1400,10 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
       if( db->pnBytesFreed==0 ) sqlite3VtabUnlock((VTable *)p4);
       break;
     }
+    case P4_TABLEREF: {
+      if( db->pnBytesFreed==0 ) sqlite3DeleteTable(db, (Table*)p4);
+      break;
+    }
   }
 }
 

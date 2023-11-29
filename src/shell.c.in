@@ -439,7 +439,7 @@ static void endTimer(void){
     FILETIME ftCreation, ftExit, ftKernelEnd, ftUserEnd;
     sqlite3_int64 ftWallEnd = timeOfDay();
     getProcessTimesAddr(hProcess,&ftCreation,&ftExit,&ftKernelEnd,&ftUserEnd);
-    oputf("Run Time: real %.3f user %f sys %f\n",
+    sputf(stdout, "Run Time: real %.3f user %f sys %f\n",
           (ftWallEnd - ftWallBegin)*0.001,
           timeDiff(&ftUserBegin, &ftUserEnd),
           timeDiff(&ftKernelBegin, &ftKernelEnd));
@@ -11860,14 +11860,14 @@ static void printBold(const char *zText){
          FOREGROUND_RED|FOREGROUND_INTENSITY
   );
 #endif
-  oputz(zText);
+  sputz(stdout, zText);
 #if !SQLITE_OS_WINRT
   SetConsoleTextAttribute(out, defaultScreenInfo.wAttributes);
 #endif
 }
 #else
 static void printBold(const char *zText){
-  oputf("\033[1m%s\033[0m", zText);
+  sputf(stdout, "\033[1m%s\033[0m", zText);
 }
 #endif
 
@@ -12334,8 +12334,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( cli_strcmp(z,"-bail")==0 ){
       /* No-op.  The bail_on_error flag should already be set. */
     }else if( cli_strcmp(z,"-version")==0 ){
-      oputf("%s %s (%d-bit)\n", sqlite3_libversion(), sqlite3_sourceid(),
-            8*(int)sizeof(char*));
+      sputf(stdout, "%s %s (%d-bit)\n",
+            sqlite3_libversion(), sqlite3_sourceid(), 8*(int)sizeof(char*));
       return 0;
     }else if( cli_strcmp(z,"-interactive")==0 ){
       /* already handled */
@@ -12467,13 +12467,13 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #else
 # define SHELL_CIO_CHAR_SET ""
 #endif
-      oputf("SQLite version %s %.19s%s\n" /*extra-version-info*/
+      sputf(stdout, "SQLite version %s %.19s%s\n" /*extra-version-info*/
             "Enter \".help\" for usage hints.\n",
             sqlite3_libversion(), sqlite3_sourceid(), SHELL_CIO_CHAR_SET);
       if( warnInmemoryDb ){
-        oputz("Connected to a ");
+        sputz(stdout, "Connected to a ");
         printBold("transient in-memory database");
-        oputz(".\nUse \".open FILENAME\" to reopen on a"
+        sputz(stdout, ".\nUse \".open FILENAME\" to reopen on a"
               " persistent database.\n");
       }
       zHistory = getenv("SQLITE_HISTORY");

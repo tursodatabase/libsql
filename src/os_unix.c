@@ -4595,7 +4595,20 @@ static int unixLockSharedMemory(unixFile *pDbFd, unixShmNode *pShmNode){
       pShmNode->isUnlocked = 1;
       rc = SQLITE_READONLY_CANTINIT;
     }else{
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+      /* Do not use a blocking lock here. If the lock cannot be obtained
+      ** immediately, it means some other connection is truncating the
+      ** *-shm file. And after it has done so, it will not release its
+      ** lock, but only downgrade it to a shared lock. So no point in
+      ** blocking here. The call below to obtain the shared DMS lock may 
+      ** use a blocking lock. */
+      int iSaveTimeout = pDbFd->iBusyTimeout;
+      pDbFd->iBusyTimeout = 0;
+#endif
       rc = unixShmSystemLock(pDbFd, F_WRLCK, UNIX_SHM_DMS, 1);
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+      pDbFd->iBusyTimeout = iSaveTimeout;
+#endif
       /* The first connection to attach must truncate the -shm file.  We
       ** truncate to 3 bytes (an arbitrary small number, less than the
       ** -shm header size) rather than 0 as a system debugging aid, to
