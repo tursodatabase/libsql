@@ -4538,6 +4538,18 @@ static void jsonArrayFunc(
   sqlite3_result_subtype(ctx, JSON_SUBTYPE);
 }
 
+/*
+** Generate a bad path error for json_extract()
+*/
+static void jsonBadPathError(
+  sqlite3_context *ctx,     /* The function call containing the error */
+  const char *zPath         /* The path with the problem */
+){
+  sqlite3 *db = sqlite3_context_db_handle(ctx);
+  char *zMsg = sqlite3MPrintf(db, "bad JSON path: %Q", zPath);
+  sqlite3_result_error(ctx, zMsg, -1);
+  sqlite3DbFree(db, zMsg);
+}
 
 /*
 ** json_array_length(JSON)
@@ -4552,49 +4564,52 @@ static void jsonArrayLengthFunc(
   sqlite3_value **argv
 ){
   JsonParse *p;          /* The parse */
-  sqlite3_int64 n = 0;
+  sqlite3_int64 cnt = 0;
   u32 i;
-  JsonNode *pNode;
+  u8 eErr = 0;
 
-  p = jsonParseCached(ctx, argv[0], ctx, 0);
+  p = jsonParseFuncArg(ctx, argv[0], 0);
   if( p==0 ) return;
-  assert( p->nNode );
   if( argc==2 ){
     const char *zPath = (const char*)sqlite3_value_text(argv[1]);
-    pNode = jsonLookup(p, zPath, 0, ctx);
-  }else{
-    pNode = p->aNode;
-  }
-  if( pNode==0 ){
-    return;
-  }
-  if( pNode->eType==JSON_ARRAY ){
-    while( 1 /*exit-by-break*/ ){
-      i = 1;
-      while( i<=pNode->n ){
-        if( (pNode[i].jnFlags & JNODE_REMOVE)==0 ) n++;
-        i += jsonNodeSize(&pNode[i]);
+    if( zPath==0 ){
+      jsonParseFree(p);
+      return;
+    }
+    i = jsonLookupBlobStep(p, 0, zPath[0]=='$' ? zPath+1 : "@", 0);
+    if( JSON_BLOB_ISERROR(i) ){
+      if( i==JSON_BLOB_NOTFOUND ){
+        /* no-op */
+      }else if( i==JSON_BLOB_PATHERROR ){
+        jsonBadPathError(ctx, zPath);
+      }else{
+        sqlite3_result_error(ctx, "malformed JSON", -1);
       }
-      if( (pNode->jnFlags & JNODE_APPEND)==0 ) break;
-      if( p->useMod==0 ) break;
-      assert( pNode->eU==2 );
-      pNode = &p->aNode[pNode->u.iAppend];
+      eErr = 1;
+      i = 0;
+    }
+  }else{
+    i = 0;
+  }
+  if( (p->aBlob[i] & 0x0f)==JSONB_ARRAY ){
+    u32 n, sz = 0, iEnd;
+    n = jsonbPayloadSize(p, i, &sz);
+    if( n==0 ) eErr = 2;
+    iEnd = i+n+sz;
+    i += n;
+    while( eErr==0 && i<iEnd ){
+      cnt++;
+      n = jsonbPayloadSize(p, i, &sz);
+      if( n==0 ) eErr = 2;
+      i += n+sz;
     }
   }
-  sqlite3_result_int64(ctx, n);
-}
-
-/*
-** Generate a bad path error for json_extract()
-*/
-static void jsonExtractBadPathError(
-  sqlite3_context *ctx,     /* The function call containing the error */
-  const char *zPath         /* The path with the problem */
-){
-  sqlite3 *db = sqlite3_context_db_handle(ctx);
-  char *zMsg = sqlite3MPrintf(db, "bad JSON path: %Q", zPath);
-  sqlite3_result_error(ctx, zMsg, -1);
-  sqlite3DbFree(db, zMsg);
+  if( eErr ){
+    if( eErr==2 ) sqlite3_result_error(ctx, "malformed JSON", -1);
+  }else{
+    sqlite3_result_int64(ctx, cnt);
+  }
+  jsonParseFree(p);
 }
 
 /*
@@ -4668,7 +4683,7 @@ static void jsonExtractFunc(
       j = jsonLookupBlobStep(p, 0, jx.zBuf, 0);
       jsonStringReset(&jx);
     }else{
-      jsonExtractBadPathError(ctx, zPath);
+      jsonBadPathError(ctx, zPath);
       goto json_extract_error;
     }
     if( j<p->nBlob ){
@@ -4703,7 +4718,7 @@ static void jsonExtractFunc(
       sqlite3_result_error(ctx, "malformed JSON", -1);
       goto json_extract_error;
     }else{
-      jsonExtractBadPathError(ctx, zPath);
+      jsonBadPathError(ctx, zPath);
       goto json_extract_error;
     }
   }
