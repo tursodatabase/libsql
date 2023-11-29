@@ -4,7 +4,7 @@ on:
   push:
     #branches: ['main']
     tags:
-      - libsql-v*.*.*
+      - libsql-sqlite3-v*.*.*
 
 jobs:
         
