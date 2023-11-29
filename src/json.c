@@ -2033,15 +2033,6 @@ static int jsonLabelCompare(const JsonNode *pNode, const char *zKey, u32 nKey){
   if( pNode->n!=nKey ) return 0;
   return strncmp(pNode->u.zJContent, zKey, nKey)==0;
 }
-static int jsonSameLabel(const JsonNode *p1, const JsonNode *p2){
-  if( p1->jnFlags & JNODE_RAW ){
-    return jsonLabelCompare(p2, p1->u.zJContent, p1->n);
-  }else if( p2->jnFlags & JNODE_RAW ){
-    return jsonLabelCompare(p1, p2->u.zJContent, p2->n);
-  }else{
-    return p1->n==p2->n && strncmp(p1->u.zJContent,p2->u.zJContent,p1->n)==0;
-  }
-}
 
 /*
 ** Search along zPath to find the node specified.  Return a pointer
@@ -2325,25 +2316,6 @@ static void jsonWrongNumArgs(
                                zFuncName);
   sqlite3_result_error(pCtx, zMsg, -1);
   sqlite3_free(zMsg);
-}
-
-/*
-** Mark all NULL entries in the Object passed in as JNODE_REMOVE.
-*/
-static void jsonRemoveAllNulls(JsonNode *pNode){
-  int i, n;
-  assert( pNode->eType==JSON_OBJECT );
-  n = pNode->n;
-  for(i=2; i<=n; i += jsonNodeSize(&pNode[i])+1){
-    switch( pNode[i].eType ){
-      case JSON_NULL:
-        pNode[i].jnFlags |= JNODE_REMOVE;
-        break;
-      case JSON_OBJECT:
-        jsonRemoveAllNulls(&pNode[i]);
-        break;
-    }
-  }
 }
 
 /****************************************************************************
@@ -3111,7 +3083,9 @@ static u32 jsonbPayloadSize(const JsonParse *pParse, u32 i, u32 *pSz){
          (pParse->aBlob[i+3]<<8) + pParse->aBlob[i+4];
     n = 5;
   }
-  if( i+sz+n>pParse->nBlob ){
+  if( i+sz+n > pParse->nBlob
+   && i+sz+n > pParse->nBlob-pParse->delta
+  ){
     sz = 0;
     n = 0;
   }
@@ -4314,17 +4288,32 @@ static void jsonDebugPrintBlob(
     u32 i, n, nn, sz = 0;
     int showContent = 1;
     u8 x = pParse->aBlob[iStart] & 0x0f;
+    u32 savedNBlob = pParse->nBlob;
     printf("%5d:%*s", iStart, nIndent, "");
+    if( pParse->nBlobAlloc>pParse->nBlob ){
+      pParse->nBlob = pParse->nBlobAlloc;
+    }
     nn = n = jsonbPayloadSize(pParse, iStart, &sz);
     if( nn==0 ) nn = 1;
     if( sz>0 && x<JSONB_ARRAY ){
       nn += sz;
     }
     for(i=0; i<nn; i++) printf(" %02x", pParse->aBlob[iStart+i]);
-    if( n==0 || iStart+n+sz>iEnd ){
+    if( n==0 ){
       printf("   ERROR invalid node size\n");
       iStart = n==0 ? iStart+1 : iEnd;
       continue;
+    }
+    pParse->nBlob = savedNBlob;
+    if( iStart+n+sz>iEnd ){
+      iEnd = iStart+n+sz;
+      if( iEnd>pParse->nBlob ){
+        if( pParse->nBlobAlloc>0 && iEnd>pParse->nBlobAlloc ){
+          iEnd = pParse->nBlobAlloc;
+        }else{
+          iEnd = pParse->nBlob;
+        }
+      }
     }
     printf("  <-- ");
     switch( x ){
@@ -4379,7 +4368,11 @@ static void jsonShowParse(JsonParse *pParse){
     printf("NULL pointer\n");
     return;
   }else{
-    printf("%u byte JSONB:\n", pParse->nBlob);
+    printf("nBlobAlloc = %u\n", pParse->nBlobAlloc);
+    printf("nBlob = %u\n", pParse->nBlob);
+    printf("delta = %d\n", pParse->delta);
+    if( pParse->nBlob==0 ) return;
+    printf("content (bytes 0..%u):\n", pParse->nBlob-1);
   }
   jsonDebugPrintBlob(pParse, 0, pParse->nBlob, 0);
 }
@@ -4735,79 +4728,6 @@ json_extract_error:
   return;
 }
 
-/* This is the RFC 7396 MergePatch algorithm.
-*/
-static JsonNode *jsonMergePatch(
-  JsonParse *pParse,   /* The JSON parser that contains the TARGET */
-  u32 iTarget,         /* Node of the TARGET in pParse */
-  JsonNode *pPatch     /* The PATCH */
-){
-  u32 i, j;
-  u32 iRoot;
-  JsonNode *pTarget;
-  if( pPatch->eType!=JSON_OBJECT ){
-    return pPatch;
-  }
-  assert( iTarget<pParse->nNode );
-  pTarget = &pParse->aNode[iTarget];
-  assert( (pPatch->jnFlags & JNODE_APPEND)==0 );
-  if( pTarget->eType!=JSON_OBJECT ){
-    jsonRemoveAllNulls(pPatch);
-    return pPatch;
-  }
-  iRoot = iTarget;
-  for(i=1; i<pPatch->n; i += jsonNodeSize(&pPatch[i+1])+1){
-    u32 nKey;
-    const char *zKey;
-    if( pPatch[i].eType!=JSON_STRING ){
-      pParse->nErr = 1;
-      return 0;
-    }
-    assert( pPatch[i].eU==1 );
-    nKey = pPatch[i].n;
-    zKey = pPatch[i].u.zJContent;
-    for(j=1; j<pTarget->n; j += jsonNodeSize(&pTarget[j+1])+1 ){
-      assert( pTarget[j].eType==JSON_STRING );
-      assert( pTarget[j].jnFlags & JNODE_LABEL );
-      if( jsonSameLabel(&pPatch[i], &pTarget[j]) ){
-        if( pTarget[j+1].jnFlags & (JNODE_REMOVE|JNODE_REPLACE) ) break;
-        if( pPatch[i+1].eType==JSON_NULL ){
-          pTarget[j+1].jnFlags |= JNODE_REMOVE;
-        }else{
-          JsonNode *pNew = jsonMergePatch(pParse, iTarget+j+1, &pPatch[i+1]);
-          if( pNew==0 ) return 0;
-          if( pNew!=&pParse->aNode[iTarget+j+1] ){
-            jsonParseAddSubstNode(pParse, iTarget+j+1);
-            jsonParseAddNodeArray(pParse, pNew, jsonNodeSize(pNew));
-          }
-          pTarget = &pParse->aNode[iTarget];
-        }
-        break;
-      }
-    }
-    if( j>=pTarget->n && pPatch[i+1].eType!=JSON_NULL ){
-      int iStart;
-      JsonNode *pApnd;
-      u32 nApnd;
-      iStart = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
-      jsonParseAddNode(pParse, JSON_STRING, nKey, zKey);
-      pApnd = &pPatch[i+1];
-      if( pApnd->eType==JSON_OBJECT ) jsonRemoveAllNulls(pApnd);
-      nApnd = jsonNodeSize(pApnd);
-      jsonParseAddNodeArray(pParse, pApnd, jsonNodeSize(pApnd));
-      if( pParse->oom ) return 0;
-      pParse->aNode[iStart].n = 1+nApnd;
-      pParse->aNode[iRoot].jnFlags |= JNODE_APPEND;
-      pParse->aNode[iRoot].u.iAppend = iStart;
-      JSON_VVA( pParse->aNode[iRoot].eU = 2 );
-      iRoot = iStart;
-      pTarget = &pParse->aNode[iTarget];
-    }
-  }
-  return pTarget;
-}
-
-
 /*
 ** Return codes for jsonMergePatchBlob()
 */
@@ -4908,9 +4828,10 @@ static int jsonMergePatchBlob(
   }
   x = pTarget->aBlob[iTarget] & 0x0f;
   if( x!=JSONB_OBJECT ){  /* Algorithm line 05 */
-    static const u8 emptyObject[] = { JSONB_OBJECT };
     n = jsonbPayloadSize(pTarget, iTarget, &sz);
-    jsonBlobEdit(pTarget, iTarget, sz, emptyObject, 1); /* Line 06 */
+    jsonBlobEdit(pTarget, iTarget+n, sz, 0, 0);
+    x = pTarget->aBlob[iTarget];
+    pTarget->aBlob[iTarget] = (x & 0xf0) | JSONB_OBJECT;
   }
   n = jsonbPayloadSize(pPatch, iPatch, &sz);
   if( n==0 ) return JSON_MERGE_BADPATCH;
@@ -5019,7 +4940,7 @@ static int jsonMergePatchBlob(
       }
     }
   }
-  jsonAfterEditSizeAdjust(pTarget, iTarget);
+  if( pTarget->delta ) jsonAfterEditSizeAdjust(pTarget, iTarget);
   return pTarget->oom ? JSON_MERGE_OOM : JSON_MERGE_OK;
 }
 
@@ -5034,65 +4955,27 @@ static void jsonPatchFunc(
   int argc,
   sqlite3_value **argv
 ){
-  JsonParse *pX;     /* The JSON that is being patched */
-  JsonParse *pY;     /* The patch */
-  JsonNode *pResult;   /* The result of the merge */
+  JsonParse *pTarget;    /* The TARGET */
+  JsonParse *pPatch;     /* The PATCH */
+  int rc;                /* Result code */
 
   UNUSED_PARAMETER(argc);
-  if( jsonFuncArgMightBeBinary(argv[0])
-   && jsonFuncArgMightBeBinary(argv[1])
-  ){
-    JsonParse target, patch;
-    sqlite3 *db;
-    int rc;
-    memset(&target, 0, sizeof(target));
-    memset(&patch, 0, sizeof(patch));
-    target.aBlob = (u8*)sqlite3_value_blob(argv[0]);
-    target.nBlob = sqlite3_value_bytes(argv[0]);
-    patch.aBlob = (u8*)sqlite3_value_blob(argv[1]);
-    patch.nBlob = sqlite3_value_bytes(argv[1]);
-    db = sqlite3_context_db_handle(ctx);
-    if( db->mallocFailed ) return;
-    if( !jsonBlobMakeEditable(&target, patch.nBlob) ) return;
-    rc = jsonMergePatchBlob(&target, 0, &patch, 0);
-    if( rc ){
-      if( rc==JSON_MERGE_OOM ){
-        sqlite3_result_error_nomem(ctx);
-      }else{
-        sqlite3_result_error(ctx, "malformed JSON", -1);
-      }
-      jsonParseReset(&target);
+  assert( argc==2 );
+  pTarget = jsonParseFuncArg(ctx, argv[0], JSON_EDITABLE);
+  if( pTarget==0 ) return;
+  pPatch = jsonParseFuncArg(ctx, argv[1], 0);
+  if( pPatch ){
+    rc = jsonMergePatchBlob(pTarget, 0, pPatch, 0);
+    if( rc==JSON_MERGE_OK ){
+      jsonReturnParse(ctx, pTarget);
+    }else if( rc==JSON_MERGE_OOM ){
+      sqlite3_result_error_nomem(ctx);
     }else{
-      int flgs = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
-      if( flgs & JSON_BLOB ){
-        sqlite3_result_blob(ctx, target.aBlob, target.nBlob, SQLITE_DYNAMIC);
-      }else{
-        JsonString s;
-        jsonStringInit(&s, ctx);
-        jsonXlateBlobToText(&target, 0, &s);
-        jsonReturnString(&s);
-        jsonParseReset(&target);
-      }
+      sqlite3_result_error(ctx, "malformed JSON", -1);
     }
-    return;
+    jsonParseFree(pPatch);
   }
-  pX = jsonParseCached(ctx, argv[0], ctx, 1);
-  if( pX==0 ) return;
-  assert( pX->hasMod==0 );
-  pX->hasMod = 1;
-  pY = jsonParseCached(ctx, argv[1], ctx, 1);
-  if( pY==0 ) return;
-  pX->useMod = 1;
-  pY->useMod = 1;
-  pResult = jsonMergePatch(pX, 0, pY->aNode);
-  assert( pResult!=0 || pX->oom || pX->nErr );
-  if( pX->oom ){
-    sqlite3_result_error_nomem(ctx);
-  }else if( pX->nErr ){
-    sqlite3_result_error(ctx, "malformed JSON", -1);
-  }else if( pResult ){
-    jsonReturnNodeAsJson(pX, pResult, ctx, 0, 0);
-  }
+  jsonParseFree(pTarget);
 }
 
 
