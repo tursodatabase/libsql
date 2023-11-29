@@ -5438,25 +5438,48 @@ static void jsonErrorFunc(
   int argc,
   sqlite3_value **argv
 ){
-  JsonParse *p;          /* The parse */
+  i64 iErrPos = 0;       /* Error position to be returned */
+  JsonParse s;
+
+  assert( argc==1 );
   UNUSED_PARAMETER(argc);
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
-  p = jsonParseCached(ctx, argv[0], 0, 0);
-  if( p==0 || p->oom ){
-    sqlite3_result_error_nomem(ctx);
-    sqlite3_free(p);
-  }else if( p->nErr==0 ){
-    sqlite3_result_int(ctx, 0);
-  }else{
-    int n = 1;
-    u32 i;
-    const char *z = (const char*)sqlite3_value_text(argv[0]);
-    for(i=0; i<p->iErr && ALWAYS(z[i]); i++){
-      if( (z[i]&0xc0)!=0x80 ) n++;
+  switch( sqlite3_value_type(argv[0]) ){
+    case SQLITE_NULL: {
+      return;
     }
-    sqlite3_result_int(ctx, n);
-    jsonParseFree(p);
+    case SQLITE_BLOB: {
+      if( !jsonFuncArgMightBeBinary(argv[0]) ) iErrPos = 1;
+      break;
+    }
+    default: {
+      memset(&s, 0, sizeof(s));
+      s.zJson = (char*)sqlite3_value_text(argv[0]);
+      s.nJson = sqlite3_value_bytes(argv[0]);
+      if( s.nJson==0 ){
+        iErrPos = 1;
+        break;
+      }
+      if( s.zJson==0 ){
+        sqlite3_result_error_nomem(ctx);
+        return;
+      }
+      if( jsonConvertTextToBlob(&s,0) ){
+        u32 k;
+        if( s.oom ){
+          sqlite3_result_error_nomem(ctx);
+          jsonParseReset(&s);
+          return;
+        }
+        /* Convert byte-offset s.iErr into a character offset */
+        for(k=0; k<s.iErr && s.zJson[k]; k++){
+          if( (s.zJson[k] & 0xc0)!=0x80 ) iErrPos++;
+        }
+        iErrPos++;
+      }
+      jsonParseReset(&s);
+    }
   }
+  sqlite3_result_int64(ctx, iErrPos);
 }
 
 
