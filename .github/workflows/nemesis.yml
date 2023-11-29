@@ -1,12 +1,8 @@
 name: Nemesis Tests
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request_target:
-    branches: [ "main" ]
-  merge_group:
-    branches: [ "main" ]
+  schedule:
+    - cron: '* */4 * * *'
 
 env:
   CARGO_TERM_COLOR: always
@@ -16,17 +12,8 @@ env:
   # RUSTFLAGS: "-D warnings"
 
 jobs:
-  authorize:
-    environment: ${{ github.event_name == 'pull_request_target' &&
-      github.event.pull_request.head.repo.full_name != github.repository &&
-      'external' || 'internal' }}
-    runs-on: ubuntu-latest
-    steps:
-      - run: true
-
   test-nemesis:
-    needs: authorize
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     name: Run Nemesis Tests
     env:
       RUSTFLAGS: -D warnings
@@ -59,14 +46,14 @@ jobs:
       - name: Cargo build
         run: |
           cargo build
-          mv ./target/debug/sqld /home/ubuntu/.cargo/bin
+          mv ./target/debug/sqld ~/.cargo/bin
           sqld --version
 
       - name: Download MinIO binary
         run: |
           wget -q https://dl.min.io/server/minio/release/linux-amd64/minio -O minio
           chmod +x minio
-          mv minio /home/ubuntu/.cargo/bin
+          mv minio ~/.cargo/bin
           minio --version
 
       - name: Nemesis tests checkout

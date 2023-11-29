@@ -394,7 +394,7 @@ async fn deserialize_row() {
         .next()
         .unwrap()
         .unwrap();
-    let data: Data = libsql::deserialize_row::from_row(&row).unwrap();
+    let data: Data = libsql::de::from_row(&row).unwrap();
     assert_eq!(data.id, 123);
     assert_eq!(data.name, "potato".to_string());
     assert_eq!(data.score, 3.14);

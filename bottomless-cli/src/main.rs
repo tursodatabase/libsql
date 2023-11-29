@@ -168,6 +168,13 @@ async fn run() -> Result<()> {
     } else {
         options.bucket = std::env::var("LIBSQL_BOTTOMLESS_BUCKET").ok();
     }
+
+    if let Some(ns) = options.namespace.as_deref() {
+        if !ns.starts_with("ns-") {
+            println!("Namespace should start with 'ns-'");
+            std::process::exit(1)
+        }
+    }
     let namespace = options.namespace.as_deref().unwrap_or("ns-default");
     std::env::set_var("LIBSQL_BOTTOMLESS_DATABASE_ID", namespace);
     let database = match options.database.clone() {

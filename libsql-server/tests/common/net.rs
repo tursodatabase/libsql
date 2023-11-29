@@ -141,6 +141,8 @@ pub trait SimServer {
 #[async_trait::async_trait]
 impl SimServer for TestServer {
     async fn start_sim(mut self, user_api_port: usize) -> anyhow::Result<()> {
+        let _ = tracing_subscriber::fmt::try_init();
+
         // We need to ensure that libsql's init code runs before we do anything
         // with rusqlite in sqld. This is because libsql has saftey checks and
         // needs to configure the sqlite api. Thus if we init sqld first

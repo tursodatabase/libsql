@@ -14,6 +14,7 @@ fn try_main() -> Result<()> {
     let arg = env::args().nth(2).unwrap_or("".to_string());
     match task.as_deref() {
         Some("build") => build()?,
+        Some("build-bundled") => build_bundled()?,
         Some("build-wasm") => build_wasm(&arg)?,
         Some("sim-tests") => sim_tests(&arg)?,
         Some("test") => run_tests(&arg)?,
@@ -28,7 +29,8 @@ fn print_help() {
 
 build                  builds all languages 
 build-wasm             builds the wasm components in wasm32-unknown-unknown
-tests                  runs the entire libsql test suite using nextest
+build-bundled          builds sqlite3 and updates the bundeled code for ffi
+test                   runs the entire libsql test suite using nextest
 sim-tests <test name>  runs the libsql-server simulation test suite
 "
     )
@@ -71,6 +73,22 @@ fn build() -> Result<()> {
     Ok(())
 }
 
+fn build_bundled() -> Result<()> {
+    build()?;
+
+    run_cp(&[
+        "libsql-sqlite3/sqlite3.c",
+        "libsql-ffi/bundled/src/sqlite3.c",
+    ])?;
+
+    run_cp(&[
+        "libsql-sqlite3/sqlite3.h",
+        "libsql-ffi/bundled/src/sqlite3.h",
+    ])?;
+
+    Ok(())
+}
+
 fn run_cargo(cmd: &[&str]) -> Result<()> {
     let mut out = Command::new("cargo").args(cmd).spawn().context("spawn")?;
 
@@ -87,6 +105,18 @@ fn run_libsql_sqlite3(cmd: &str) -> Result<()> {
     let mut out = Command::new(cmd).current_dir("libsql-sqlite3").spawn()?;
 
     let exit = out.wait()?;
+
+    if !exit.success() {
+        anyhow::bail!("non 0 exit code: {}", exit);
+    }
+
+    Ok(())
+}
+
+fn run_cp(cmd: &[&str]) -> Result<()> {
+    let mut out = Command::new("cp").args(cmd).spawn().context("spawn")?;
+
+    let exit = out.wait().context("wait")?;
 
     if !exit.success() {
         anyhow::bail!("non 0 exit code: {}", exit);

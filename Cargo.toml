@@ -47,11 +47,11 @@ installers = ["shell", "homebrew"]
 # A GitHub repo to push Homebrew formulas to
 tap = "tursodatabase/homebrew-sqld"
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-musl"]
+targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-apple-darwin"]
 # Publish jobs to run in CI
 publish-jobs = ["homebrew"]
 # Whether cargo-dist should create a Github Release or use an existing draft
-create-release = false
+create-release = true
 # Publish jobs to run in CI
 pr-run-mode = "plan"
 allow-dirty = ["ci"] # we've edited the release yml to narrow the tag scope
