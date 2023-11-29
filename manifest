@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\supdates\sinto\sthis\sbranch.
-D 2023-11-28T19:43:08.965
+C Fix\ssigned\sinteger\soverflow\sin\sfts5.
+D 2023-11-29T16:22:39.960
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -96,7 +96,7 @@ F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b7292
 F ext/fts5/fts5_config.c 8072a207034b51ae9b7694121d1b5715c794e94b275e088f70ae532378ca5cdf
 F ext/fts5/fts5_expr.c 5d557c7ebefaeac5a5111cc47d4fee8a2fc6bc15245d5c99eebf53dd04bf794e
 F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a0ec91b1
-F ext/fts5/fts5_index.c de7bc351d9b7e0c8891db93b211fd9e137edef2cec832dcedfb32d4a2929c0d2
+F ext/fts5/fts5_index.c bafdef8be40a20bb86a131af4f09b56919f416fa13d1a86af1bf92bad9a2870d
 F ext/fts5/fts5_main.c 55b53085dbd1693b5735463198a8d124dfbc27f08311c839637b44b8254ef7cb
 F ext/fts5/fts5_storage.c 5d10b9bdcce5b90656cad13c7d12ad4148677d4b9e3fca0481fca56d6601426d
 F ext/fts5/fts5_tcl.c cf0fd0dbe64ec272491b749e0d594f563cda03336aeb60900129e6d18b0aefb8
@@ -264,7 +264,7 @@ F ext/jni/src/org/sqlite/jni/capi/CollationCallback.java e29bcfc540fdd343e2f5cca
 F ext/jni/src/org/sqlite/jni/capi/CollationNeededCallback.java 5bfa226a8e7a92e804fd52d6e42b4c7b875fa7a94f8e2c330af8cc244a8920ab
 F ext/jni/src/org/sqlite/jni/capi/CommitHookCallback.java 482f53dfec9e3ac2a9070d3fceebd56250932aaaf7c4f5bc8de29fc011416e0c
 F ext/jni/src/org/sqlite/jni/capi/ConfigLogCallback.java b995ca412f59b631803b93aa5b3684fce62e335d1e123207084c054abfd488d4
-F ext/jni/src/org/sqlite/jni/capi/ConfigSqlLogCallback.java e5723900b6458bc6288f52187090a78ebe0a20f403ac7c887ec9061dfe51aba7 w ext/jni/src/org/sqlite/jni/capi/ConfigSqllogCallback.java
+F ext/jni/src/org/sqlite/jni/capi/ConfigSqlLogCallback.java e5723900b6458bc6288f52187090a78ebe0a20f403ac7c887ec9061dfe51aba7
 F ext/jni/src/org/sqlite/jni/capi/NativePointerHolder.java b7036dcb1ef1b39f1f36ac605dde0ff1a24a9a01ade6aa1a605039443e089a61
 F ext/jni/src/org/sqlite/jni/capi/OutputPointer.java 246b0e66c4603f41c567105a21189d138aaf8c58203ecd4928802333da553e7c
 F ext/jni/src/org/sqlite/jni/capi/PrepareMultiCallback.java 97352091abd7556167f4799076396279a51749fdae2b72a6ba61cd39b3df0359
@@ -2146,8 +2146,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9be8969edd49e3da96fb8ac2279aff6fe2e215d6ac55162b4734aca1b6316580 4c055b7a6e4533e1e571773456226ca7038ce372df3eedbbbcd9a81e8652a6cf
-R ec1a7fd48afc240687b4ab2330f993e9
+P 554fc13f2ca5f2ebd9ad0206034c25b556ff40db3106051c5e539f2e142e88ea
+R 5c7c1632cd09d2b131adef895eab90a8
 U dan
-Z 65a112da054f34cd19f6d265591002ed
+Z 009b023eba91b6acc35beb7d051a677a
 # Remove this line to create a well-formed Fossil manifest.
