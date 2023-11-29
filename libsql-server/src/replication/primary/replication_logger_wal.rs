@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use libsql_sys::wal::Vfs;
-use libsql_sys::wal::{BusyHandler, CreateSqlite3Wal, Result, Sqlite3Wal, WalManager};
+use libsql_sys::wal::{BusyHandler, Sqlite3WalManager, Result, Sqlite3Wal, WalManager};
 use libsql_sys::wal::{PageHeaders, Sqlite3Db, Sqlite3File, UndoHandler};
 use rusqlite::ffi::SQLITE_IOERR;
 
@@ -12,15 +12,15 @@ use crate::replication::ReplicationLogger;
 use super::logger::WalPage;
 
 #[derive(Clone)]
-pub struct CreateReplicationLoggerWal {
-    sqlite_wal_manager: CreateSqlite3Wal,
+pub struct ReplicationLoggerWalManager {
+    sqlite_wal_manager: Sqlite3WalManager,
     logger: Arc<ReplicationLogger>,
 }
 
-impl CreateReplicationLoggerWal {
+impl ReplicationLoggerWalManager {
     pub fn new(logger: Arc<ReplicationLogger>) -> Self {
         Self {
-            sqlite_wal_manager: CreateSqlite3Wal::new(),
+            sqlite_wal_manager: Sqlite3WalManager::new(),
             logger,
         }
     }
@@ -30,7 +30,7 @@ impl CreateReplicationLoggerWal {
     }
 }
 
-impl WalManager for CreateReplicationLoggerWal {
+impl WalManager for ReplicationLoggerWalManager {
     type Wal = ReplicationLoggerWal;
 
     fn use_shared_memory(&self) -> bool {

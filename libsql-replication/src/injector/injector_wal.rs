@@ -2,7 +2,7 @@ use std::ffi::{c_int, CStr};
 
 use libsql_sys::ffi::PgHdr;
 use libsql_sys::wal::{
-    BusyHandler, CheckpointMode, CreateSqlite3Wal, PageHeaders, Result, Sqlite3Db, Sqlite3File,
+    BusyHandler, CheckpointMode, Sqlite3WalManager, PageHeaders, Result, Sqlite3Db, Sqlite3File,
     Sqlite3Wal, UndoHandler, Vfs, Wal, WalManager,
 };
 
@@ -17,21 +17,21 @@ pub const LIBSQL_INJECT_OK_TXN: c_int = 201;
 /// Injection succeeded
 pub const LIBSQL_INJECT_OK: c_int = 202;
 
-pub struct CreateInjectorWal {
-    inner: CreateSqlite3Wal,
+pub struct InjectorWalManager {
+    inner: Sqlite3WalManager,
     buffer: FrameBuffer,
 }
 
-impl CreateInjectorWal {
-    pub(crate) fn new(buffer: FrameBuffer) -> CreateInjectorWal {
+impl InjectorWalManager {
+    pub(crate) fn new(buffer: FrameBuffer) -> InjectorWalManager {
         Self {
-            inner: CreateSqlite3Wal::new(),
+            inner: Sqlite3WalManager::new(),
             buffer,
         }
     }
 }
 
-impl WalManager for CreateInjectorWal {
+impl WalManager for InjectorWalManager {
     type Wal = InjectorWal;
 
     fn use_shared_memory(&self) -> bool {

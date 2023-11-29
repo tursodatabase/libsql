@@ -13,15 +13,15 @@ use super::{
 
 /// SQLite3 default wal_manager implementation.
 #[derive(Clone, Copy)]
-pub struct CreateSqlite3Wal {
+pub struct Sqlite3WalManager {
     inner: libsql_wal_manager,
 }
 
 /// Safety: the create pointer is an immutable global pointer
-unsafe impl Send for CreateSqlite3Wal {}
-unsafe impl Sync for CreateSqlite3Wal {}
+unsafe impl Send for Sqlite3WalManager {}
+unsafe impl Sync for Sqlite3WalManager {}
 
-impl CreateSqlite3Wal {
+impl Sqlite3WalManager {
     pub fn new() -> Self {
         Self {
             inner: unsafe { sqlite3_wal_manager },
@@ -29,13 +29,13 @@ impl CreateSqlite3Wal {
     }
 }
 
-impl Default for CreateSqlite3Wal {
+impl Default for Sqlite3WalManager {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl WalManager for CreateSqlite3Wal {
+impl WalManager for Sqlite3WalManager {
     type Wal = Sqlite3Wal;
 
     fn use_shared_memory(&self) -> bool {

@@ -1,15 +1,15 @@
 #![allow(improper_ctypes)]
 #[cfg(test)]
 mod tests {
-    use libsql_sys::wal::{CreateWal, CreateSqlite3Wal, Sqlite3Wal, Wal, make_wal_manager};
+    use libsql_sys::wal::{WalManager, Sqlite3WalManager, Sqlite3Wal, Wal, make_wal_manager};
     use libsql_sys::rusqlite::{Connection, OpenFlags};
 
     /// A wal_manager the simple wraps sqlite3 WAL
-    struct WrapCreateWal {
-        inner: CreateSqlite3Wal,
+    struct WrapWalManager {
+        inner: Sqlite3WalManager,
     }
 
-    impl CreateWal for WrapCreateWal {
+    impl WalManager for WrapWalManager {
         type Wal = WrapWal;
 
         fn use_shared_memory(&self) -> bool {
@@ -146,7 +146,7 @@ mod tests {
     #[test]
     fn test_vwal_register() {
         let tmpfile = tempfile::NamedTempFile::new().unwrap();
-        let wal_manager = make_wal_manager(WrapCreateWal { inner: CreateSqlite3Wal::new() });
+        let wal_manager = make_wal_manager(WrapWalManager { inner: Sqlite3WalManager::new() });
         let conn = Connection::open_with_flags_and_wal(
             tmpfile.path(),
             OpenFlags::default(),

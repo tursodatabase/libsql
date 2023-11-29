@@ -15,7 +15,7 @@ use enclose::enclose;
 use futures_core::Stream;
 use hyper::Uri;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
-use libsql_sys::wal::{CreateSqlite3Wal, WalManager};
+use libsql_sys::wal::{Sqlite3WalManager, WalManager};
 use parking_lot::Mutex;
 use rusqlite::ErrorCode;
 use tokio::io::AsyncBufReadExt;
@@ -36,7 +36,7 @@ use crate::connection::MakeConnection;
 use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
-use crate::replication::primary::replication_logger_wal::CreateReplicationLoggerWal;
+use crate::replication::primary::replication_logger_wal::ReplicationLoggerWalManager;
 use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
@@ -48,7 +48,7 @@ use crate::namespace::fork::PointInTimeRestore;
 pub use fork::ForkError;
 
 use self::fork::ForkTask;
-use self::replication_wal::CreateReplicationWal;
+use self::replication_wal::ReplicationWalManager;
 
 mod fork;
 pub mod replication_wal;
@@ -967,13 +967,13 @@ impl Namespace<PrimaryDatabase> {
         )
         .await?;
 
-        let base_wal_manager = CreateReplicationLoggerWal::new(logger.clone());
+        let base_wal_manager = ReplicationLoggerWalManager::new(logger.clone());
         let wal_manager = match bottomless_replicator {
-            Some(replicator) => CreateReplicationWal::Bottomless(CreateBottomlessWal::new(
+            Some(replicator) => ReplicationWalManager::Bottomless(CreateBottomlessWal::new(
                 base_wal_manager,
                 replicator,
             )),
-            None => CreateReplicationWal::Logger(base_wal_manager),
+            None => ReplicationWalManager::Logger(base_wal_manager),
         };
 
         let connection_maker: Arc<_> = MakeLibSqlConn::new(
@@ -1264,7 +1264,7 @@ async fn run_storage_monitor(db_path: PathBuf, stats: Weak<Stats>) -> anyhow::Re
             // fail to open it, we wait for `duration` and try again later.
             // We can safely open db with DEFAULT_AUTO_CHECKPOINT, since monitor is read-only: it 
             // won't produce new updates, frames or generate checkpoints.
-            match open_conn(&db_path, CreateSqlite3Wal::new(), Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), DEFAULT_AUTO_CHECKPOINT) {
+            match open_conn(&db_path, Sqlite3WalManager::new(), Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), DEFAULT_AUTO_CHECKPOINT) {
                 Ok(conn) => {
                     if let Ok(storage_bytes_used) =
                         conn.query_row("select sum(pgsize) from dbstat;", [], |row| {

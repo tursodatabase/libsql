@@ -13,41 +13,41 @@ use libsql_sys::wal::{
 };
 
 use crate::replication::{
-    primary::replication_logger_wal::{CreateReplicationLoggerWal, ReplicationLoggerWal},
+    primary::replication_logger_wal::{ReplicationLoggerWalManager, ReplicationLoggerWal},
     ReplicationLogger,
 };
 
-/// Depending on the configuration, we use different backends for replication. This CreateWal
+/// Depending on the configuration, we use different backends for replication. This WalManager
 /// implementation allows runtime selection of the backend.
 #[derive(Clone)]
-pub enum CreateReplicationWal {
-    Bottomless(CreateBottomlessWal<CreateReplicationLoggerWal>),
-    Logger(CreateReplicationLoggerWal),
+pub enum ReplicationWalManager {
+    Bottomless(CreateBottomlessWal<ReplicationLoggerWalManager>),
+    Logger(ReplicationLoggerWalManager),
 }
 
-impl CreateReplicationWal {
+impl ReplicationWalManager {
     pub fn shutdown(&self) -> Option<Replicator> {
         match self {
-            CreateReplicationWal::Bottomless(bottomless) => bottomless.shutdown(),
-            CreateReplicationWal::Logger(_) => None,
+            ReplicationWalManager::Bottomless(bottomless) => bottomless.shutdown(),
+            ReplicationWalManager::Logger(_) => None,
         }
     }
 
     pub fn logger(&self) -> Arc<ReplicationLogger> {
         match self {
-            CreateReplicationWal::Bottomless(bottomless) => bottomless.inner().logger(),
-            CreateReplicationWal::Logger(wal) => wal.logger(),
+            ReplicationWalManager::Bottomless(bottomless) => bottomless.inner().logger(),
+            ReplicationWalManager::Logger(wal) => wal.logger(),
         }
     }
 }
 
-impl WalManager for CreateReplicationWal {
+impl WalManager for ReplicationWalManager {
     type Wal = ReplicationWal;
 
     fn use_shared_memory(&self) -> bool {
         match self {
-            CreateReplicationWal::Bottomless(inner) => inner.use_shared_memory(),
-            CreateReplicationWal::Logger(inner) => inner.use_shared_memory(),
+            ReplicationWalManager::Bottomless(inner) => inner.use_shared_memory(),
+            ReplicationWalManager::Logger(inner) => inner.use_shared_memory(),
         }
     }
 
@@ -60,10 +60,10 @@ impl WalManager for CreateReplicationWal {
         db_path: &CStr,
     ) -> Result<Self::Wal> {
         match self {
-            CreateReplicationWal::Bottomless(inner) => inner
+            ReplicationWalManager::Bottomless(inner) => inner
                 .open(vfs, file, no_shm_mode, max_log_size, db_path)
                 .map(ReplicationWal::Bottomless),
-            CreateReplicationWal::Logger(inner) => inner
+            ReplicationWalManager::Logger(inner) => inner
                 .open(vfs, file, no_shm_mode, max_log_size, db_path)
                 .map(ReplicationWal::Logger),
         }
@@ -77,10 +77,10 @@ impl WalManager for CreateReplicationWal {
         scratch: &mut [u8],
     ) -> Result<()> {
         match (self, wal) {
-            (CreateReplicationWal::Bottomless(inner), ReplicationWal::Bottomless(wal)) => {
+            (ReplicationWalManager::Bottomless(inner), ReplicationWal::Bottomless(wal)) => {
                 inner.close(wal, db, sync_flags, scratch)
             }
-            (CreateReplicationWal::Logger(inner), ReplicationWal::Logger(wal)) => {
+            (ReplicationWalManager::Logger(inner), ReplicationWal::Logger(wal)) => {
                 inner.close(wal, db, sync_flags, scratch)
             }
             _ => unreachable!(),
@@ -89,15 +89,15 @@ impl WalManager for CreateReplicationWal {
 
     fn destroy_log(&self, vfs: &mut Vfs, db_path: &CStr) -> Result<()> {
         match self {
-            CreateReplicationWal::Bottomless(inner) => inner.destroy_log(vfs, db_path),
-            CreateReplicationWal::Logger(inner) => inner.destroy_log(vfs, db_path),
+            ReplicationWalManager::Bottomless(inner) => inner.destroy_log(vfs, db_path),
+            ReplicationWalManager::Logger(inner) => inner.destroy_log(vfs, db_path),
         }
     }
 
     fn log_exists(&self, vfs: &mut Vfs, db_path: &CStr) -> Result<bool> {
         match self {
-            CreateReplicationWal::Bottomless(inner) => inner.log_exists(vfs, db_path),
-            CreateReplicationWal::Logger(inner) => inner.log_exists(vfs, db_path),
+            ReplicationWalManager::Bottomless(inner) => inner.log_exists(vfs, db_path),
+            ReplicationWalManager::Logger(inner) => inner.log_exists(vfs, db_path),
         }
     }
 
@@ -106,8 +106,8 @@ impl WalManager for CreateReplicationWal {
         Self: Sized,
     {
         match self {
-            CreateReplicationWal::Bottomless(inner) => inner.destroy(),
-            CreateReplicationWal::Logger(inner) => inner.destroy(),
+            ReplicationWalManager::Bottomless(inner) => inner.destroy(),
+            ReplicationWalManager::Logger(inner) => inner.destroy(),
         }
     }
 }

@@ -8,7 +8,7 @@ use libsql_replication::rpc::proxy::{
     exec_req, exec_resp, ExecReq, ExecResp, StreamDescribeReq, StreamProgramReq,
 };
 use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
-use libsql_sys::wal::{CreateSqlite3Wal, Sqlite3Wal};
+use libsql_sys::wal::{Sqlite3WalManager, Sqlite3Wal};
 use parking_lot::Mutex as PMutex;
 use tokio::sync::{mpsc, watch, Mutex};
 use tokio_stream::StreamExt;
@@ -43,7 +43,7 @@ pub struct MakeWriteProxyConn {
     max_total_response_size: u64,
     namespace: NamespaceName,
     primary_replication_index: Option<FrameNo>,
-    make_read_only_conn: MakeLibSqlConn<CreateSqlite3Wal>,
+    make_read_only_conn: MakeLibSqlConn<Sqlite3WalManager>,
 }
 
 impl MakeWriteProxyConn {
@@ -64,7 +64,7 @@ impl MakeWriteProxyConn {
         let client = ProxyClient::with_origin(channel, uri);
         let make_read_only_conn = MakeLibSqlConn::new(
             db_path.clone(),
-            CreateSqlite3Wal::new(),
+            Sqlite3WalManager::new(),
             stats.clone(),
             config_store.clone(),
             extensions.clone(),

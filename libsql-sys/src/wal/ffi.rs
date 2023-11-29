@@ -11,7 +11,7 @@ use crate::wal::{BusyHandler, CheckpointMode, UndoHandler};
 use super::{PageHeaders, Sqlite3Db, Sqlite3File, Vfs, Wal, WalManager};
 
 // Construct a libsql_wal instance from a pointer to a Wal. This pointer must be valid until a call
-// to CreateWal::close
+// to WalManager::close
 pub(crate) fn construct_libsql_wal<W: Wal>(wal: *mut W) -> libsql_wal {
     libsql_wal {
         methods: libsql_wal_methods {
@@ -46,7 +46,7 @@ pub(crate) fn construct_libsql_wal<W: Wal>(wal: *mut W) -> libsql_wal {
     }
 }
 
-/// Turn a `CreateWal` into a `libsql_wal_manager`.
+/// Turn a `WalManager` into a `libsql_wal_manager`.
 /// The caller is responsible for deallocating `libsql_wal_manager.pData`
 pub fn make_wal_manager<T: WalManager>(wal_manager: T) -> libsql_wal_manager {
     libsql_wal_manager {

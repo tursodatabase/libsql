@@ -10,7 +10,7 @@ use crate::frame::{Frame, FrameNo};
 pub use error::Error;
 
 use self::injector_wal::{
-    CreateInjectorWal, InjectorWal, LIBSQL_INJECT_FATAL, LIBSQL_INJECT_OK, LIBSQL_INJECT_OK_TXN,
+    InjectorWalManager, InjectorWal, LIBSQL_INJECT_FATAL, LIBSQL_INJECT_OK, LIBSQL_INJECT_OK_TXN,
 };
 
 mod error;
@@ -46,7 +46,7 @@ impl Injector {
         auto_checkpoint: u32,
     ) -> Result<Self, Error> {
         let buffer = FrameBuffer::default();
-        let wal_manager = CreateInjectorWal::new(buffer.clone());
+        let wal_manager = InjectorWalManager::new(buffer.clone());
 
         let connection = libsql_sys::Connection::open(
             path,

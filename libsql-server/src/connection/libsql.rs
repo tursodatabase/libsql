@@ -240,7 +240,7 @@ impl LibSqlConnection<libsql_sys::wal::Sqlite3Wal> {
         let conn = Connection::new(
             path,
             Arc::new([]),
-            libsql_sys::wal::CreateSqlite3Wal::new(),
+            libsql_sys::wal::Sqlite3WalManager::new(),
             Default::default(),
             DatabaseConfigStore::new_test().into(),
             QueryBuilderConfig::default(),
@@ -920,7 +920,7 @@ where
 #[cfg(test)]
 mod test {
     use itertools::Itertools;
-    use libsql_sys::wal::{CreateSqlite3Wal, Sqlite3Wal};
+    use libsql_sys::wal::{Sqlite3WalManager, Sqlite3Wal};
     use rand::Rng;
     use tempfile::tempdir;
     use tokio::task::JoinSet;
@@ -966,7 +966,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
-            CreateSqlite3Wal::new(),
+            Sqlite3WalManager::new(),
             Default::default(),
             Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
             Arc::new([]),
@@ -1007,7 +1007,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
-            CreateSqlite3Wal::new(),
+            Sqlite3WalManager::new(),
             Default::default(),
             Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
             Arc::new([]),
@@ -1049,7 +1049,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
-            CreateSqlite3Wal::new(),
+            Sqlite3WalManager::new(),
             Default::default(),
             Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
             Arc::new([]),
@@ -1127,7 +1127,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
-            CreateSqlite3Wal::new(),
+            Sqlite3WalManager::new(),
             Default::default(),
             Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
             Arc::new([]),
@@ -1152,7 +1152,7 @@ mod test {
         )
         .await
         .unwrap();
-        let run_conn = |maker: Arc<MakeLibSqlConn<CreateSqlite3Wal>>| {
+        let run_conn = |maker: Arc<MakeLibSqlConn<Sqlite3WalManager>>| {
             let auth = auth.clone();
             async move {
                 for _ in 0..1000 {

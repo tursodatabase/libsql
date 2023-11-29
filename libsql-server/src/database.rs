@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use crate::connection::libsql::LibSqlConnection;
 use crate::connection::write_proxy::{RpcStream, WriteProxyConnection};
 use crate::connection::{Connection, MakeConnection, TrackedConnection};
-use crate::namespace::replication_wal::{CreateReplicationWal, ReplicationWal};
+use crate::namespace::replication_wal::{ReplicationWalManager, ReplicationWal};
 
 pub type PrimaryConnection = TrackedConnection<LibSqlConnection<ReplicationWal>>;
 
@@ -44,7 +44,7 @@ impl Database for ReplicaDatabase {
 }
 
 pub struct PrimaryDatabase {
-    pub wal_manager: CreateReplicationWal,
+    pub wal_manager: ReplicationWalManager,
     pub connection_maker: Arc<dyn MakeConnection<Connection = PrimaryConnection>>,
 }
 

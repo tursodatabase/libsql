@@ -3,7 +3,7 @@ use std::ffi::{c_int, CStr};
 pub use crate::ffi::Error;
 use crate::ffi::*;
 
-pub use sqlite3_wal::{CreateSqlite3Wal, Sqlite3Wal};
+pub use sqlite3_wal::{Sqlite3WalManager, Sqlite3Wal};
 
 pub(crate) mod ffi;
 mod sqlite3_wal;
