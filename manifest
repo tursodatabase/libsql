@@ -1,5 +1,5 @@
-C In\sSQLITE_ENABLE_SETLK_TIMEOUT\sbuilds,\suse\sblocking\slocks\sin\splace\sof\ssleep()\scalls\swhen\sopening\sa\sread-transaction.
-D 2023-11-28T17:12:42.879
+C The\sassertion\schange\sat\scheck-in\s[7946c79567b0ccd3]\sis\sinsufficient\sto\sfix\nthe\sproblem\sof\sa\sTable\sobject\sbeing\sdeleted\sout\sfrom\sunder\sthe\sOP_VCheck\nopcode.\s\sWe\sneed\sto\sreference\scount\sthe\sTable,\swhich\sis\saccomplished\shere.
+D 2023-11-29T02:45:09.518
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -721,7 +721,7 @@ F src/parse.y 020d80386eb216ec9520549106353c517d2bbc89be28752ffdca649a9eaf56ec
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
-F src/pragma.c b3b4ad9c0298d63098a067acca613c21a5f56b4d176d5842922bcd0b07b7164e
+F src/pragma.c b5b4cff830575e6188cd56a295a57448d2b9dbc53f0dae58e22b97354cda3781
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 371f6115cb69286ebc12c6f2d7511279c2e47d9f54f475d46a554d687a3b312c
 F src/printf.c 9da63b9ae1c14789bcae12840f5d800fd9302500cd2d62733fac77f0041b4750
@@ -798,11 +798,11 @@ F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c b22cc9f203a8c0b9ee5338a67f8860347d14845864c10248bebe84518a781677
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
-F src/vdbe.c 319af2cf092d20e233e8ad4267ae49bfe33c50ac4db4ee7e47af898f824c2368
-F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
+F src/vdbe.c c7a5a1b27c6567faeeb5f41c72a4f7f81ee34f8ec0449c3dd9ae25b8a28bdccd
+F src/vdbe.h 88e19a982df9027ec1c177c793d1a5d34dc23d8f06e3b2d997f43688b05ee0eb
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c b07df805110dc6e81f2a3f9cd4e83f56ea523277a59bcec489a12b740c1079e7
-F src/vdbeaux.c b34dfbc09403ccb676608da16ff0780d23d466470563d24fdf6350b8d2271d5e
+F src/vdbeaux.c c5a471b34e9c4cfc0295a3e10734fd197670ffaebcb742f284c8e17e8026ceea
 F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe5
 F src/vdbemem.c 0012d5f01cc866833847c2f3ae4c318ac53a1cb3d28acad9c35e688039464cf0
 F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
@@ -2143,9 +2143,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a0c87ae9d3db914d18e2c8811db0d0ae3ad7b15c63de84fa975efce28bace27e 5fbf3906d272df3eb981f67455eb35f649ad2774cba9fc3f077b28d9bef3f0cb
-R a3e95520ff5d52f362b8ffc8bb5b50fd
-T +closed 5fbf3906d272df3eb981f67455eb35f649ad2774cba9fc3f077b28d9bef3f0cb
-U dan
-Z fe1d300d9f65afce84bb98eff88fc681
+P 4c055b7a6e4533e1e571773456226ca7038ce372df3eedbbbcd9a81e8652a6cf
+R b802cc74f401db4801f35603d41bed2d
+U drh
+Z fcd4003bc0cfee07fff53afb131d1b17
 # Remove this line to create a well-formed Fossil manifest.

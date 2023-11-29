@@ -8180,9 +8180,10 @@ case OP_VCheck: {             /* out2 */
 
   pOut = &aMem[pOp->p2];
   sqlite3VdbeMemSetNull(pOut);  /* Innocent until proven guilty */
-  assert( pOp->p4type==P4_TABLE );
+  assert( pOp->p4type==P4_TABLEREF );
   pTab = pOp->p4.pTab;
   assert( pTab!=0 );
+  assert( pTab->nTabRef>0 );
   assert( IsVirtual(pTab) );
   if( pTab->u.vtab.p==0 ) break;
   pVtab = pTab->u.vtab.p->pVtab;
@@ -8191,13 +8192,11 @@ case OP_VCheck: {             /* out2 */
   assert( pModule!=0 );
   assert( pModule->iVersion>=4 );
   assert( pModule->xIntegrity!=0 );
-  pTab->nTabRef++;
   sqlite3VtabLock(pTab->u.vtab.p);
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   rc = pModule->xIntegrity(pVtab, db->aDb[pOp->p1].zDbSName, pTab->zName,
                            pOp->p3, &zErr);
   sqlite3VtabUnlock(pTab->u.vtab.p);
-  sqlite3DeleteTable(db, pTab);
   if( rc ){
     sqlite3_free(zErr);
     goto abort_due_to_error;
