@@ -101,7 +101,7 @@ impl<W: Wal> Connection<W> {
             // We pass a pointer to the WAL methods data to the database connection. This means
             // that the reference must outlive the connection. This is guaranteed by the marker in
             // the returned connection.
-            let mut rc = libsql_ffi::libsql_open(
+            let mut rc = libsql_ffi::libsql_open_v3(
                 path.as_ptr(),
                 &mut conn as *mut _,
                 flags,
