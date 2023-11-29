@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::fmt;
+use std::sync::Arc;
 
 use crate::{
     connection::Conn,
@@ -44,11 +44,12 @@ impl Conn for LibsqlConnection {
             conn: Connection {
                 conn: Arc::new(self.clone()),
             },
+            close: None,
         })
     }
 
-    fn is_autocommit(&self) -> bool {
-        self.conn.is_autocommit()
+    async fn is_autocommit(&self) -> Result<bool> {
+        Ok(self.conn.is_autocommit())
     }
 
     fn changes(&self) -> u64 {
@@ -58,8 +59,10 @@ impl Conn for LibsqlConnection {
     fn last_insert_rowid(&self) -> i64 {
         self.conn.last_insert_rowid()
     }
+}
 
-    fn close(&mut self) {
+impl Drop for LibsqlConnection {
+    fn drop(&mut self) {
         self.conn.disconnect()
     }
 }

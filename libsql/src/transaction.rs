@@ -15,6 +15,8 @@ pub enum TransactionBehavior {
 pub struct Transaction {
     pub(crate) inner: Box<dyn Tx + Send + Sync>,
     pub(crate) conn: Connection,
+    /// An optional action executed whenever a transaction needs to be dropped.
+    pub(crate) close: Option<Box<dyn FnOnce() -> ()>>,
 }
 
 impl Transaction {
@@ -33,6 +35,14 @@ impl Deref for Transaction {
     #[inline]
     fn deref(&self) -> &Connection {
         &self.conn
+    }
+}
+
+impl Drop for Transaction {
+    fn drop(&mut self) {
+        if let Some(close) = self.close.take() {
+            close();
+        }
     }
 }
 

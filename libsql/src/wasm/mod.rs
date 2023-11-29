@@ -27,11 +27,11 @@
 //! conn.execute("select 1", ()).await?;
 //! conn.query("select 1", ()).await?;
 //! ```
-
+use crate::hrana::transaction::HttpTransaction;
 use crate::{
     hrana::{connection::HttpConnection, HttpSend},
     params::IntoParams,
-    Rows,
+    Rows, TransactionBehavior,
 };
 
 cfg_cloudflare! {
@@ -40,7 +40,10 @@ cfg_cloudflare! {
 }
 
 #[derive(Debug, Clone)]
-pub struct Connection<T> {
+pub struct Connection<T>
+where
+    T: for<'a> HttpSend<'a>,
+{
     conn: HttpConnection<T>,
 }
 
@@ -60,7 +63,8 @@ where
 {
     pub async fn execute(&self, sql: &str, params: impl IntoParams) -> crate::Result<u64> {
         tracing::trace!("executing `{}`", sql);
-        let mut stmt = crate::hrana::Statement::new(self.conn.clone(), sql.to_string(), true);
+        let mut stmt =
+            crate::hrana::Statement::from_connection(self.conn.clone(), sql.to_string(), true);
         let rows = stmt.execute(&params.into_params()?).await?;
         Ok(rows as u64)
     }
@@ -73,7 +77,7 @@ where
             statements.push(crate::hrana::proto::Stmt::new(s.stmt, false));
         }
         self.conn
-            .raw_batch(statements)
+            .batch_inner(statements)
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
         Ok(())
@@ -81,7 +85,76 @@ where
 
     pub async fn query(&self, sql: &str, params: impl IntoParams) -> crate::Result<Rows> {
         tracing::trace!("querying `{}`", sql);
-        let mut stmt = crate::hrana::Statement::new(self.conn.clone(), sql.to_string(), true);
+        let mut stmt =
+            crate::hrana::Statement::from_connection(self.conn.clone(), sql.to_string(), true);
         stmt.query(&params.into_params()?).await
+    }
+
+    pub async fn transaction(
+        &self,
+        tx_behavior: TransactionBehavior,
+    ) -> crate::Result<Transaction<T>> {
+        let stream = self.conn.open_stream();
+        let tx = HttpTransaction::open(stream, tx_behavior)
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        Ok(Transaction { inner: tx })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Transaction<T>
+where
+    T: for<'a> HttpSend<'a>,
+{
+    inner: HttpTransaction<T>,
+}
+
+impl<T> Transaction<T>
+where
+    T: for<'a> HttpSend<'a>,
+{
+    pub async fn query(&self, sql: &str, params: impl IntoParams) -> crate::Result<Rows> {
+        tracing::trace!("querying `{}`", sql);
+        let stream = self.inner.stream().clone();
+        let mut stmt = crate::hrana::Statement::from_stream(stream, sql.to_string(), true);
+        stmt.query(&params.into_params()?).await
+    }
+
+    pub async fn execute(&self, sql: &str, params: impl IntoParams) -> crate::Result<u64> {
+        tracing::trace!("executing `{}`", sql);
+        let stream = self.inner.stream().clone();
+        let mut stmt = crate::hrana::Statement::from_stream(stream, sql.to_string(), true);
+        let rows = stmt.execute(&params.into_params()?).await?;
+        Ok(rows as u64)
+    }
+
+    pub async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
+        let mut statements = Vec::new();
+        let stmts = crate::parser::Statement::parse(sql);
+        for s in stmts {
+            let s = s?;
+            statements.push(crate::hrana::proto::Stmt::new(s.stmt, false));
+        }
+
+        self.inner
+            .execute_batch(statements)
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        Ok(())
+    }
+
+    pub async fn commit(&mut self) -> crate::Result<()> {
+        self.inner
+            .commit()
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))
+    }
+
+    pub async fn rollback(&mut self) -> crate::Result<()> {
+        self.inner
+            .rollback()
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))
     }
 }

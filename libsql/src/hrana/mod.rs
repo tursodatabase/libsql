@@ -8,11 +8,13 @@ cfg_remote! {
 
 pub mod pipeline;
 pub mod proto;
+mod stream;
+pub mod transaction;
 
 use crate::hrana::connection::HttpConnection;
 pub(crate) use crate::hrana::pipeline::{ServerMsg, StreamResponseError};
 use crate::hrana::proto::{Col, Stmt, StmtResult};
-use crate::Error;
+use crate::hrana::stream::HttpStream;
 use crate::{params::Params, ValueType};
 use std::collections::VecDeque;
 use std::future::Future;
@@ -30,7 +32,7 @@ struct Cookie {
     base_url: Option<String>,
 }
 
-pub trait HttpSend<'a> {
+pub trait HttpSend<'a>: Clone {
     type Result: Future<Output = Result<ServerMsg>> + 'a;
     fn http_send(&'a self, url: String, auth: String, body: String) -> Self::Result;
 }
@@ -51,8 +53,33 @@ pub enum HranaError {
     Api(String),
 }
 
-pub struct Statement<T> {
-    client: HttpConnection<T>,
+enum StatementExecutor<T: for<'a> HttpSend<'a>> {
+    /// An opened HTTP Hrana stream - usually in scope of executing transaction. Operations over it
+    /// will be scheduled for sequential execution.
+    Stream(HttpStream<T>),
+    /// Hrana HTTP connection. Operations executing over it are not attached to any sequential
+    /// order of execution.
+    Connection(HttpConnection<T>),
+}
+
+impl<T> StatementExecutor<T>
+where
+    T: for<'a> HttpSend<'a>,
+{
+    async fn execute(&self, stmt: Stmt) -> crate::Result<StmtResult> {
+        let res = match self {
+            StatementExecutor::Stream(stream) => stream.execute(stmt).await,
+            StatementExecutor::Connection(conn) => conn.execute_inner(stmt).await,
+        };
+        res.map_err(|e| crate::Error::Hrana(e.into()))
+    }
+}
+
+pub struct Statement<T>
+where
+    T: for<'a> HttpSend<'a>,
+{
+    executor: StatementExecutor<T>,
     inner: Stmt,
 }
 
@@ -60,9 +87,16 @@ impl<T> Statement<T>
 where
     T: for<'a> HttpSend<'a>,
 {
-    pub(crate) fn new(conn: HttpConnection<T>, sql: String, want_rows: bool) -> Self {
+    pub(crate) fn from_stream(stream: HttpStream<T>, sql: String, want_rows: bool) -> Self {
         Statement {
-            client: conn,
+            executor: StatementExecutor::Stream(stream),
+            inner: Stmt::new(sql, want_rows),
+        }
+    }
+
+    pub(crate) fn from_connection(conn: HttpConnection<T>, sql: String, want_rows: bool) -> Self {
+        Statement {
+            executor: StatementExecutor::Connection(conn),
             inner: Stmt::new(sql, want_rows),
         }
     }
@@ -71,29 +105,15 @@ where
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
-        let v = self
-            .client
-            .execute_inner(stmt, 0)
-            .await
-            .map_err(|e| Error::Hrana(e.into()))?;
-        let affected_row_count = v.affected_row_count as usize;
-        self.client
-            .set_affected_row_count(affected_row_count as u64);
-        if let Some(last_insert_rowid) = v.last_insert_rowid {
-            self.client.set_last_insert_rowid(last_insert_rowid);
-        }
-        Ok(affected_row_count)
+        let v = self.executor.execute(stmt).await?;
+        Ok(v.affected_row_count as usize)
     }
 
     pub async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
-        let StmtResult { rows, cols, .. } = self
-            .client
-            .execute_inner(stmt, 0)
-            .await
-            .map_err(|e| Error::Hrana(e.into()))?;
+        let StmtResult { rows, cols, .. } = self.executor.execute(stmt).await?;
 
         Ok(super::Rows {
             inner: Box::new(Rows {
@@ -196,7 +216,7 @@ impl RowInner for Row {
     }
 }
 
-fn bind_params(params: Params, stmt: &mut Stmt) {
+pub(super) fn bind_params(params: Params, stmt: &mut Stmt) {
     match params {
         Params::None => {}
         Params::Positional(values) => {

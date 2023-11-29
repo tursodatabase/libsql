@@ -1,14 +1,19 @@
+use crate::connection::Conn;
 use crate::hrana::connection::HttpConnection;
 use crate::hrana::pipeline::ServerMsg;
-use crate::hrana::proto::Stmt;
-use crate::hrana::{HranaError, HttpSend, Result};
+use crate::hrana::proto::{Batch, Stmt};
+use crate::hrana::stream::HttpStream;
+use crate::hrana::transaction::HttpTransaction;
+use crate::hrana::{bind_params, HranaError, HttpSend, Result};
 use crate::params::Params;
+use crate::transaction::Tx;
 use crate::util::ConnectorService;
 use crate::{Rows, Statement};
 use futures::future::BoxFuture;
 use http::header::AUTHORIZATION;
 use http::{HeaderValue, StatusCode};
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct HttpSender {
@@ -84,12 +89,15 @@ impl HttpConnection<HttpSender> {
 }
 
 #[async_trait::async_trait]
-impl crate::connection::Conn for HttpConnection<HttpSender> {
+impl Conn for HttpConnection<HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
-        let mut stmt = self.prepare(sql);
-        let rows = stmt.execute(&params).await?;
-
-        Ok(rows as u64)
+        let mut stmt = Stmt::new(sql, false);
+        bind_params(params, &mut stmt);
+        let res = self
+            .execute_inner(stmt)
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        Ok(res.affected_row_count)
     }
 
     async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
@@ -99,14 +107,15 @@ impl crate::connection::Conn for HttpConnection<HttpSender> {
             let s = s?;
             statements.push(Stmt::new(s.stmt, false));
         }
-        self.raw_batch(statements)
+        self.batch_inner(statements)
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
         Ok(())
     }
 
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
-        let stmt = crate::hrana::Statement::new(self.clone(), sql.to_string(), true);
+        let stream = self.open_stream();
+        let stmt = crate::hrana::Statement::from_stream(stream, sql.to_string(), true);
         Ok(Statement {
             inner: Box::new(stmt),
         })
@@ -114,14 +123,27 @@ impl crate::connection::Conn for HttpConnection<HttpSender> {
 
     async fn transaction(
         &self,
-        _tx_behavior: crate::TransactionBehavior,
+        tx_behavior: crate::TransactionBehavior,
     ) -> crate::Result<crate::transaction::Transaction> {
-        todo!()
+        let stream = self.open_stream();
+        let mut tx = HttpTransaction::open(stream, tx_behavior)
+            .await
+            .map_err(|e| crate::Error::Hrana(Box::new(e)))?;
+        Ok(crate::Transaction {
+            inner: Box::new(tx.clone()),
+            conn: crate::Connection {
+                conn: Arc::new(tx.stream().clone()),
+            },
+            close: Some(Box::new(|| {
+                // make sure that Hrana connection is closed and all uncommitted changes
+                // are rolled back when we're about to drop the transaction
+                let _ = tokio::task::spawn(async move { tx.rollback().await });
+            })),
+        })
     }
 
-    fn is_autocommit(&self) -> bool {
-        // TODO: Is this correct?
-        false
+    async fn is_autocommit(&self) -> crate::Result<bool> {
+        Ok(true) // connection without transaction always commits at the end of execution step
     }
 
     fn changes(&self) -> u64 {
@@ -130,10 +152,6 @@ impl crate::connection::Conn for HttpConnection<HttpSender> {
 
     fn last_insert_rowid(&self) -> i64 {
         self.last_insert_rowid()
-    }
-
-    fn close(&mut self) {
-        todo!()
     }
 }
 
@@ -161,5 +179,78 @@ impl crate::statement::Stmt for crate::hrana::Statement<HttpSender> {
 
     fn columns(&self) -> Vec<crate::Column> {
         todo!()
+    }
+}
+
+#[async_trait::async_trait]
+impl Tx for HttpTransaction<HttpSender> {
+    async fn commit(&mut self) -> crate::Result<()> {
+        self.commit()
+            .await
+            .map_err(|e| crate::Error::Hrana(Box::new(e)))?;
+        Ok(())
+    }
+
+    async fn rollback(&mut self) -> crate::Result<()> {
+        self.rollback()
+            .await
+            .map_err(|e| crate::Error::Hrana(Box::new(e)))?;
+        Ok(())
+    }
+}
+
+#[async_trait::async_trait]
+impl Conn for HttpStream<HttpSender> {
+    async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
+        let mut stmt = Stmt::new(sql, false);
+        bind_params(params, &mut stmt);
+        let result = self
+            .execute(stmt)
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        Ok(result.affected_row_count)
+    }
+
+    async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
+        let mut batch = Batch::new();
+        let stmts = crate::parser::Statement::parse(sql);
+        for s in stmts {
+            let s = s?;
+            batch.step(None, Stmt::new(s.stmt, false));
+        }
+        self.batch(batch)
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        Ok(())
+    }
+
+    async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
+        let stmt = crate::hrana::Statement::from_stream(self.clone(), sql.to_string(), true);
+        Ok(Statement {
+            inner: Box::new(stmt),
+        })
+    }
+
+    async fn transaction(
+        &self,
+        _tx_behavior: crate::TransactionBehavior,
+    ) -> crate::Result<crate::transaction::Transaction> {
+        todo!("sounds like nested transactions innit?")
+    }
+
+    async fn is_autocommit(&self) -> crate::Result<bool> {
+        let is_autocommit = self
+            .get_autocommit()
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        Ok(is_autocommit)
+    }
+
+    fn changes(&self) -> u64 {
+        self.affected_row_count()
+    }
+
+    fn last_insert_rowid(&self) -> i64 {
+        self.last_insert_rowid()
     }
 }

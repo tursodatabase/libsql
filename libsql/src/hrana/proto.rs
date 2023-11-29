@@ -195,12 +195,14 @@ pub struct BatchStep {
 }
 
 #[derive(Serialize, Debug)]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum BatchCond {
     Ok { step: i32 },
     Error { step: i32 },
     Not { cond: Box<BatchCond> },
     And { conds: Vec<BatchCond> },
     Or { conds: Vec<BatchCond> },
+    IsAutocommit,
 }
 
 #[derive(Deserialize, Debug)]
@@ -212,6 +214,25 @@ pub struct BatchResp {
 pub struct BatchResult {
     pub step_results: Vec<Option<StmtResult>>,
     pub step_errors: Vec<Option<Error>>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct DescribeResult {
+    pub params: Vec<DescribeParam>,
+    pub cols: Vec<DescribeCol>,
+    pub is_explain: bool,
+    pub is_readonly: bool,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct DescribeParam {
+    pub name: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct DescribeCol {
+    pub name: String,
+    pub decltype: Option<String>,
 }
 
 impl<T> From<Option<T>> for Value
