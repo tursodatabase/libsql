@@ -28,7 +28,7 @@ fn print_help() {
 
 build                  builds all languages 
 build-wasm             builds the wasm components in wasm32-unknown-unknown
-tests                  runs the entire libsql test suite using nextest
+test                  runs the entire libsql test suite using nextest
 sim-tests <test name>  runs the libsql-server simulation test suite
 "
     )

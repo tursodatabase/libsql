@@ -119,6 +119,8 @@ fn embedded_replica() {
             }
         }
 
+        snapshot.assert_counter("libsql_server_user_http_response", 8);
+
         Ok(())
     });
 
