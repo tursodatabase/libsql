@@ -15,7 +15,6 @@
 ** accessed by users of the library.
 */
 #include "sqliteInt.h"
-#include "wal.h"
 
 #ifdef SQLITE_ENABLE_FTS3
 # include "fts3.h"

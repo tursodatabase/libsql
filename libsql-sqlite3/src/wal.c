@@ -4208,7 +4208,7 @@ static int sqlite3WalOpen(
   int bNoShm,                     /* True to run in heap-memory mode */
   i64 mxWalSize,                  /* Truncate WAL to this size on reset */
   const char* main_db_file_name,
-  libsql_wal *out                     /* OUT: Allocated Wal handle */
+  libsql_wal **out                     /* OUT: Allocated Wal handle */
 ){
   int rc;                         /* Return Code */
   Wal *pRet;                      /* Object to allocate and return */
@@ -4260,6 +4260,11 @@ static int sqlite3WalOpen(
   assert( UNIX_SHM_BASE==WALINDEX_LOCK_OFFSET );
 #endif
 
+  libsql_wal *outWal = sqlite3MallocZero(sizeof(libsql_wal));
+  if (!outWal) {
+    return SQLITE_NOMEM_BKPT;
+  }
+
   char *zWalName;
   rc = libsqlMakeWalPathname(main_db_file_name, &zWalName);
   if (rc) { return rc; }
@@ -4267,6 +4272,7 @@ static int sqlite3WalOpen(
   /* Allocate an instance of struct Wal to return. */
   pRet = (Wal*)sqlite3MallocZero(sizeof(Wal) + pVfs->szOsFile);
   if( !pRet ){
+    sqlite3_free(outWal);
     return SQLITE_NOMEM_BKPT;
   }
 
@@ -4288,10 +4294,12 @@ static int sqlite3WalOpen(
   }
 
   if( rc!=SQLITE_OK ){
+    *out = NULL;
     walIndexClose(pRet, 0);
     sqlite3OsClose(pRet->pWalFd);
     sqlite3_free(zWalName);
     sqlite3_free(pRet);
+    sqlite3_free(outWal);
   }else{
     int iDC = sqlite3OsDeviceCharacteristics(pDbFd);
     if( iDC & SQLITE_IOCAP_SEQUENTIAL ){ pRet->syncHeader = 0; }
@@ -4299,43 +4307,44 @@ static int sqlite3WalOpen(
       pRet->padToSectorBoundary = 0;
     }
 
-    out->pData = (wal_impl*) pRet;
-    out->methods.iVersion = 1;
-    out->methods.xLimit = (void (*)(wal_impl *, long long))sqlite3WalLimit;
-    out->methods.xBeginReadTransaction = (int (*)(wal_impl *, int *))sqlite3WalBeginReadTransaction;
-    out->methods.xEndReadTransaction = (void (*)(wal_impl *))sqlite3WalEndReadTransaction;
-    out->methods.xFindFrame = (int (*)(wal_impl *, unsigned int, unsigned int *))sqlite3WalFindFrame;
-    out->methods.xReadFrame = (int (*)(wal_impl *, unsigned int, int, unsigned char *))sqlite3WalReadFrame;
-    out->methods.xDbsize = (unsigned int (*)(wal_impl *))sqlite3WalDbsize;
-    out->methods.xBeginWriteTransaction = (int (*)(wal_impl *))sqlite3WalBeginWriteTransaction;
-    out->methods.xEndWriteTransaction = (int (*)(wal_impl *))sqlite3WalEndWriteTransaction;
-    out->methods.xUndo = (int (*)(wal_impl *, int (*)(void *, unsigned int), void *))sqlite3WalUndo;
-    out->methods.xSavepoint = (void (*)(wal_impl *, unsigned int *))sqlite3WalSavepoint;
-    out->methods.xSavepointUndo = (int (*)(wal_impl *, unsigned int *))sqlite3WalSavepointUndo;
-    out->methods.xFrames = (int (*)(wal_impl *, int, libsql_pghdr *, unsigned int, int, int))sqlite3WalFrames;
-    out->methods.xCheckpoint = (int (*)(wal_impl *, sqlite3 *, int, int (*)(void *), void *, int, int, unsigned char *, int *, int *))sqlite3WalCheckpoint;
-    out->methods.xCallback = (int (*)(wal_impl *))sqlite3WalCallback;
-    out->methods.xExclusiveMode = (int (*)(wal_impl *, int))sqlite3WalExclusiveMode;
-    out->methods.xHeapMemory = (int (*)(wal_impl *))sqlite3WalHeapMemory;
+    outWal->pData = (wal_impl*) pRet;
+    outWal->methods.iVersion = 1;
+    outWal->methods.xLimit = (void (*)(wal_impl *, long long))sqlite3WalLimit;
+    outWal->methods.xBeginReadTransaction = (int (*)(wal_impl *, int *))sqlite3WalBeginReadTransaction;
+    outWal->methods.xEndReadTransaction = (void (*)(wal_impl *))sqlite3WalEndReadTransaction;
+    outWal->methods.xFindFrame = (int (*)(wal_impl *, unsigned int, unsigned int *))sqlite3WalFindFrame;
+    outWal->methods.xReadFrame = (int (*)(wal_impl *, unsigned int, int, unsigned char *))sqlite3WalReadFrame;
+    outWal->methods.xDbsize = (unsigned int (*)(wal_impl *))sqlite3WalDbsize;
+    outWal->methods.xBeginWriteTransaction = (int (*)(wal_impl *))sqlite3WalBeginWriteTransaction;
+    outWal->methods.xEndWriteTransaction = (int (*)(wal_impl *))sqlite3WalEndWriteTransaction;
+    outWal->methods.xUndo = (int (*)(wal_impl *, int (*)(void *, unsigned int), void *))sqlite3WalUndo;
+    outWal->methods.xSavepoint = (void (*)(wal_impl *, unsigned int *))sqlite3WalSavepoint;
+    outWal->methods.xSavepointUndo = (int (*)(wal_impl *, unsigned int *))sqlite3WalSavepointUndo;
+    outWal->methods.xFrames = (int (*)(wal_impl *, int, libsql_pghdr *, unsigned int, int, int))sqlite3WalFrames;
+    outWal->methods.xCheckpoint = (int (*)(wal_impl *, sqlite3 *, int, int (*)(void *), void *, int, int, unsigned char *, int *, int *))sqlite3WalCheckpoint;
+    outWal->methods.xCallback = (int (*)(wal_impl *))sqlite3WalCallback;
+    outWal->methods.xExclusiveMode = (int (*)(wal_impl *, int))sqlite3WalExclusiveMode;
+    outWal->methods.xHeapMemory = (int (*)(wal_impl *))sqlite3WalHeapMemory;
 #ifdef SQLITE_ENABLE_SNAPSHOT
-    out->methods.xSnapshotGet = sqlite3WalSnapshotGet;
-    out->methods.xSnapshotOpen = sqlite3WalSnapshotOpen;
-    out->methods.xSnapshotRecover = sqlite3WalSnapshotRecover;
-    out->methods.xSnapshotCheck = sqlite3WalSnapshotCheck;
-    out->methods.xSnapshotUnlock = sqlite3WalSnapshotUnlock;
+    outWal->methods.xSnapshotGet = sqlite3WalSnapshotGet;
+    outWal->methods.xSnapshotOpen = sqlite3WalSnapshotOpen;
+    outWal->methods.xSnapshotRecover = sqlite3WalSnapshotRecover;
+    outWal->methods.xSnapshotCheck = sqlite3WalSnapshotCheck;
+    outWal->methods.xSnapshotUnlock = sqlite3WalSnapshotUnlock;
 #endif
 
 #ifdef SQLITE_ENABLE_ZIPVFS
-    out->methods.xFramesize = sqlite3WalFramesize;
+    outWal->methods.xFramesize = sqlite3WalFramesize;
 #endif
 
-    out->methods.xFile = (sqlite3_file *(*)(wal_impl *))sqlite3WalFile;
+    outWal->methods.xFile = (sqlite3_file *(*)(wal_impl *))sqlite3WalFile;
 
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-    methods.xWriteLock = sqlite3WalWriteLock;
+    outWal->methods.xWriteLock = sqlite3WalWriteLock;
 #endif
-    out->methods.xDb = (void (*)(wal_impl *, sqlite3 *))sqlite3WalDb;
+    outWal->methods.xDb = (void (*)(wal_impl *, sqlite3 *))sqlite3WalDb;
 
+   *out = outWal;
     WALTRACE(("WAL%d: opened\n", pRet));
   }
 
@@ -4381,8 +4390,8 @@ RefCountedWalManager* clone_wal_manager(RefCountedWalManager *p) {
 
 #define SQLITE3_WAL_MANAGER { \
     .pData = NULL, \
-    .xOpen = (int (*)(wal_manager_impl *, sqlite3_vfs *, sqlite3_file *, int, long long, const char*, libsql_wal *))sqlite3WalOpen, \
-    .xClose = (int (*)(wal_manager_impl *, wal_impl *, sqlite3 *, int, int, unsigned char *))sqlite3WalClose, \
+    .xOpen = (int (*)(wal_manager_impl *, sqlite3_vfs *, sqlite3_file *, int, long long, const char*, libsql_wal **))sqlite3WalOpen, \
+    .xClose = (int (*)(wal_manager_impl *, libsql_wal *, sqlite3 *, int, int, unsigned char *))sqlite3WalClose, \
     .bUsesShm = 1, \
     .xLogDestroy = (int (*)(wal_manager_impl *, sqlite3_vfs*, const char*))sqlite3LogDestroy, \
     .xLogExists = (int (*)(wal_manager_impl *, sqlite3_vfs*, const char*, int *))sqlite3LogExists, \
@@ -4399,4 +4408,4 @@ RefCountedWalManager sqlite3_wal_manager_rc = {
 
 typedef struct wal_impl wal_impl;
 
-#endif /* #ifndef SQLITE_OMIT_WAL */
+#endif /* #ifndef SQLITE_OMIT_WAL */  

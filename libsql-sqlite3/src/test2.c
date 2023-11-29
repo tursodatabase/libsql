@@ -14,8 +14,6 @@
 ** testing of the SQLite library.
 */
 #include "sqliteInt.h"
-#include "wal.h"
-#include <sys/signal.h>
 #if defined(INCLUDE_SQLITE_TCL_H)
 #  include "sqlite_tcl.h"
 #else

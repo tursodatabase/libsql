@@ -3,8 +3,8 @@ use std::sync::{Arc, Mutex};
 
 use libsql_sys::ffi::{SQLITE_BUSY, SQLITE_IOERR_WRITE};
 use libsql_sys::wal::{
-    CheckpointMode, WalManager, Error, PageHeaders, Result, Sqlite3Db, Sqlite3File, UndoHandler,
-    Vfs, Wal,
+    CheckpointMode, Error, PageHeaders, Result, Sqlite3Db, Sqlite3File, UndoHandler, Vfs, Wal,
+    WalManager,
 };
 
 use crate::replicator::Replicator;
@@ -17,7 +17,10 @@ pub struct CreateBottomlessWal<T> {
 
 impl<T> CreateBottomlessWal<T> {
     pub fn new(inner: T, replicator: Replicator) -> Self {
-        Self { inner, replicator: Arc::new(Mutex::new(Some(replicator))) }
+        Self {
+            inner,
+            replicator: Arc::new(Mutex::new(Some(replicator))),
+        }
     }
 
     pub fn shutdown(&self) -> Option<Replicator> {
@@ -88,9 +91,7 @@ impl<T> BottomlessWal<T> {
     fn try_with_replicator<Ret>(&self, f: impl FnOnce(&mut Replicator) -> Ret) -> Result<Ret> {
         let mut lock = self.replicator.lock().unwrap();
         match &mut *lock {
-            Some(replicator) => {
-                Ok(f(replicator))
-            },
+            Some(replicator) => Ok(f(replicator)),
             None => Err(Error::new(SQLITE_IOERR_WRITE)),
         }
     }
@@ -218,7 +219,8 @@ impl<T: Wal> Wal for BottomlessWal<T> {
                     replicator.skip_snapshot_for_current_generation();
                     return Err(Error::new(SQLITE_BUSY));
                 }
-                if let Err(e) = runtime.block_on(replicator.wait_until_committed(last_known_frame)) {
+                if let Err(e) = runtime.block_on(replicator.wait_until_committed(last_known_frame))
+                {
                     tracing::error!(
                         "Failed to wait for S3 replicator to confirm {} frames backup: {}",
                         last_known_frame,

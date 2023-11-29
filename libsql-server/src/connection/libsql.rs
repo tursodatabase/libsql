@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use libsql_sys::wal::{WalManager, Wal};
+use libsql_sys::wal::{Wal, WalManager};
 use metrics::{histogram, increment_counter};
 use parking_lot::{Mutex, RwLock};
 use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus, TransactionState};

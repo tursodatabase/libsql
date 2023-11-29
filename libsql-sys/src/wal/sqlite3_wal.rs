@@ -2,13 +2,13 @@ use std::ffi::{c_int, c_void, CStr};
 use std::mem::MaybeUninit;
 
 use libsql_ffi::{
-    libsql_wal_manager, libsql_wal, sqlite3_wal_manager, sqlite3_wal, Error, SQLITE_OK,
+    libsql_wal, libsql_wal_manager, sqlite3_wal, sqlite3_wal_manager, Error, SQLITE_OK,
     WAL_SAVEPOINT_NDATA,
 };
 
 use super::{
-    BusyHandler, CheckpointMode, WalManager, PageHeaders, Result, Sqlite3Db, Sqlite3File,
-    UndoHandler, Vfs, Wal,
+    BusyHandler, CheckpointMode, PageHeaders, Result, Sqlite3Db, Sqlite3File, UndoHandler, Vfs,
+    Wal, WalManager,
 };
 
 /// SQLite3 default wal_manager implementation.
@@ -59,7 +59,7 @@ impl WalManager for CreateSqlite3Wal {
                 no_shm_mode,
                 max_log_size,
                 db_path.as_ptr(),
-                wal.as_mut_ptr(),
+                wal.as_mut_ptr()
             )
         };
 

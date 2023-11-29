@@ -2,8 +2,8 @@ use std::ffi::{c_int, CStr};
 
 use libsql_sys::ffi::PgHdr;
 use libsql_sys::wal::{
-    BusyHandler, CheckpointMode, CreateSqlite3Wal, WalManager, PageHeaders, Result, Sqlite3Db,
-    Sqlite3File, Sqlite3Wal, UndoHandler, Vfs, Wal,
+    BusyHandler, CheckpointMode, CreateSqlite3Wal, PageHeaders, Result, Sqlite3Db, Sqlite3File,
+    Sqlite3Wal, UndoHandler, Vfs, Wal, WalManager,
 };
 
 use crate::frame::FrameBorrowed;

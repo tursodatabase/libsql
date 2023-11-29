@@ -505,12 +505,12 @@ impl Connection {
     ) -> Result<Connection> {
         let c_path = path_to_cstring(path.as_ref())?;
         let c_vfs = str_to_cstring(vfs)?;
-        InnerConnection::open_with_flags(&c_path, flags, Some(&c_vfs), Some(wal_manager)).map(|db| {
-            Connection {
+        InnerConnection::open_with_flags(&c_path, flags, Some(&c_vfs), Some(wal_manager)).map(
+            |db| Connection {
                 db: RefCell::new(db),
                 cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
-            }
-        })
+            },
+        )
     }
 
     /// Open a new connection to an in-memory SQLite database.

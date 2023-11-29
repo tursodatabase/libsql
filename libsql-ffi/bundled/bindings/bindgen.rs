@@ -3404,13 +3404,13 @@ pub struct libsql_wal_manager {
             no_shm_mode: ::std::os::raw::c_int,
             max_size: ::std::os::raw::c_longlong,
             zMainDbFileName: *const ::std::os::raw::c_char,
-            out_wal: *mut libsql_wal,
+            out_wal: *mut *mut libsql_wal,
         ) -> ::std::os::raw::c_int,
     >,
     pub xClose: ::std::option::Option<
         unsafe extern "C" fn(
             pData: *mut wal_manager_impl,
-            pWal: *mut wal_impl,
+            pWal: *mut libsql_wal,
             db: *mut sqlite3,
             sync_flags: ::std::os::raw::c_int,
             nBuf: ::std::os::raw::c_int,

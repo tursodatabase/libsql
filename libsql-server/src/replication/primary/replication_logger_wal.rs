@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use libsql_sys::wal::Vfs;
-use libsql_sys::wal::{BusyHandler, CreateSqlite3Wal, WalManager, Result, Sqlite3Wal};
+use libsql_sys::wal::{BusyHandler, CreateSqlite3Wal, Result, Sqlite3Wal, WalManager};
 use libsql_sys::wal::{PageHeaders, Sqlite3Db, Sqlite3File, UndoHandler};
 use rusqlite::ffi::SQLITE_IOERR;
 
@@ -204,10 +204,12 @@ impl libsql_sys::wal::Wal for ReplicationLoggerWal {
                 std::process::abort();
             }
 
-            if let Err(e) = self.logger.log_file.write().maybe_compact(
-                self.logger.compactor().clone(),
-                self.logger.db_path(),
-            ) {
+            if let Err(e) = self
+                .logger
+                .log_file
+                .write()
+                .maybe_compact(self.logger.compactor().clone(), self.logger.db_path())
+            {
                 tracing::error!("fatal error: {e}, exiting");
                 std::process::abort()
             }

@@ -527,19 +527,9 @@ impl ReplicationLogger {
         };
 
         if should_recover {
-            Self::recover(
-                log_file,
-                data_path,
-                callback,
-                auto_checkpoint,
-            )
+            Self::recover(log_file, data_path, callback, auto_checkpoint)
         } else {
-            Self::from_log_file(
-                db_path.to_path_buf(),
-                log_file,
-                callback,
-                auto_checkpoint,
-            )
+            Self::from_log_file(db_path.to_path_buf(), log_file, callback, auto_checkpoint)
         }
     }
 
@@ -621,12 +611,7 @@ impl ReplicationLogger {
 
         assert!(data_path.pop());
 
-        Self::from_log_file(
-            data_path,
-            log_file,
-            callback,
-            auto_checkpoint,
-        )
+        Self::from_log_file(data_path, log_file, callback, auto_checkpoint)
     }
 
     pub fn log_id(&self) -> Uuid {

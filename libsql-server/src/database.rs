@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use crate::connection::libsql::LibSqlConnection;
 use crate::connection::write_proxy::{RpcStream, WriteProxyConnection};
 use crate::connection::{Connection, MakeConnection, TrackedConnection};
-use crate::namespace::replication_wal::{ReplicationWal, CreateReplicationWal};
+use crate::namespace::replication_wal::{CreateReplicationWal, ReplicationWal};
 
 pub type PrimaryConnection = TrackedConnection<LibSqlConnection<ReplicationWal>>;
 
@@ -61,12 +61,12 @@ impl Database for PrimaryDatabase {
     }
 
     async fn shutdown(self) -> Result<()> {
-        self.logger.closed_signal.send_replace(true);
-        if let Some(replicator) = &self.logger.bottomless_replicator {
-            let replicator = replicator.lock().unwrap().take();
-            if let Some(mut replicator) = replicator {
-                replicator.shutdown_gracefully().await?;
-            }
+        self.wal_manager.logger().closed_signal.send_replace(true);
+        let wal_manager = self.wal_manager;
+        if let Some(mut replicator) =
+            tokio::task::spawn_blocking(move || wal_manager.shutdown()).await?
+        {
+            replicator.shutdown_gracefully().await?;
         }
 
         Ok(())

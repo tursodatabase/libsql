@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use std::path::Path;
 
-use crate::wal::{ffi::make_wal_manager, WalManager, Wal};
+use crate::wal::{ffi::make_wal_manager, Wal, WalManager};
 
 #[cfg(not(feature = "rusqlite"))]
 type RawConnection = *mut crate::ffi::sqlite3;

@@ -1,14 +1,14 @@
 use std::ffi::{c_char, c_int, c_longlong, c_void, CStr};
 
 use libsql_ffi::{
-    wal_manager_impl, libsql_wal_manager, libsql_wal, libsql_wal_methods, sqlite3, sqlite3_file,
-    sqlite3_vfs, wal_impl, PgHdr, SQLITE_CHECKPOINT_FULL, SQLITE_CHECKPOINT_PASSIVE,
+    libsql_wal, libsql_wal_manager, libsql_wal_methods, sqlite3, sqlite3_file, sqlite3_vfs,
+    wal_impl, wal_manager_impl, PgHdr, SQLITE_CHECKPOINT_FULL, SQLITE_CHECKPOINT_PASSIVE,
     SQLITE_CHECKPOINT_RESTART, SQLITE_CHECKPOINT_TRUNCATE, SQLITE_OK, WAL_SAVEPOINT_NDATA,
 };
 
 use crate::wal::{BusyHandler, CheckpointMode, UndoHandler};
 
-use super::{WalManager, PageHeaders, Sqlite3Db, Sqlite3File, Vfs, Wal};
+use super::{PageHeaders, Sqlite3Db, Sqlite3File, Vfs, Wal, WalManager};
 
 // Construct a libsql_wal instance from a pointer to a Wal. This pointer must be valid until a call
 // to CreateWal::close
