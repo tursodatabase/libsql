@@ -65,7 +65,7 @@ pub struct Replicator {
     use_compression: CompressionKind,
     max_frames_per_batch: usize,
     s3_upload_max_parallelism: usize,
-    _join_set: JoinSet<()>,
+    join_set: JoinSet<()>,
 }
 
 #[derive(Debug)]
@@ -262,7 +262,7 @@ impl Replicator {
         let next_frame_no = Arc::new(AtomicU32::new(1));
         let last_sent_frame_no = Arc::new(AtomicU32::new(0));
 
-        let mut _join_set = JoinSet::new();
+        let mut join_set = JoinSet::new();
 
         let (frames_outbox, mut frames_inbox) = tokio::sync::mpsc::channel(64);
         let _local_backup = {
@@ -278,7 +278,7 @@ impl Replicator {
             let next_frame_no = next_frame_no.clone();
             let last_sent_frame_no = last_sent_frame_no.clone();
             let batch_interval = options.max_batch_interval;
-            _join_set.spawn(async move {
+            join_set.spawn(async move {
                 loop {
                     let timeout = Instant::now() + batch_interval;
                     let trigger = match timeout_at(timeout, flush_trigger_rx.changed()).await {
@@ -313,7 +313,7 @@ impl Replicator {
             let client = client.clone();
             let bucket = options.bucket_name.clone();
             let max_parallelism = options.s3_upload_max_parallelism;
-            _join_set.spawn(async move {
+            join_set.spawn(async move {
                 let sem = Arc::new(tokio::sync::Semaphore::new(max_parallelism));
                 let mut join_set = JoinSet::new();
                 while let Some(fdesc) = frames_inbox.recv().await {
@@ -365,8 +365,18 @@ impl Replicator {
             use_compression: options.use_compression,
             max_frames_per_batch: options.max_frames_per_batch,
             s3_upload_max_parallelism: options.s3_upload_max_parallelism,
-            _join_set,
+            join_set,
         })
+    }
+
+    pub async fn shutdown_gracefully(&mut self) -> Result<()> {
+        let last_frame_no = self.last_known_frame();
+        self.wait_until_committed(last_frame_no).await?;
+        self.wait_until_snapshotted().await?;
+        while let Some(t) = self.join_set.join_next().await {
+            t?;
+        }
+        Ok(())
     }
 
     pub fn next_frame_no(&self) -> u32 {
