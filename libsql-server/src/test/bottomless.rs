@@ -50,6 +50,7 @@ async fn configure_server(
             max_total_response_size: 10000000 * 4096,
             snapshot_exec: None,
             checkpoint_interval: Some(Duration::from_secs(3)),
+            snapshot_at_shutdown: false,
         },
         admin_api_config: None,
         disable_namespaces: true,
