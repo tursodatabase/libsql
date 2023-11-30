@@ -886,10 +886,12 @@ impl Replicator {
     // FIXME: assumes that this bucket stores *only* generations for databases,
     // it should be more robust and continue looking if the first item does not
     // match the <db-name>-<generation-uuid>/ pattern.
+    #[tracing::instrument(skip(self))]
     pub async fn latest_generation_before(
         &self,
         timestamp: Option<&NaiveDateTime>,
     ) -> Option<Uuid> {
+        tracing::debug!("last generation before");
         let mut next_marker: Option<String> = None;
         let prefix = format!("{}-", self.db_name);
         let threshold = timestamp.map(|ts| ts.timestamp() as u64);
@@ -904,6 +906,7 @@ impl Replicator {
             let response = request.send().await.ok()?;
             let objs = response.contents()?;
             if objs.is_empty() {
+                tracing::debug!("no objects found in bucket");
                 break;
             }
             let mut last_key = None;
@@ -916,9 +919,10 @@ impl Replicator {
                         Some(index) => &key[self.db_name.len() + 1..index],
                         None => key,
                     };
+
                     if Some(key) != last_gen {
                         last_gen = Some(key);
-                        if let Ok(generation) = Uuid::parse_str(key) {
+                        if let Ok(generation) = Uuid::parse_str(dbg!(key)) {
                             match threshold.as_ref() {
                                 None => return Some(generation),
                                 Some(threshold) => match Self::generation_to_timestamp(&generation)
@@ -1011,12 +1015,14 @@ impl Replicator {
 
     /// Restores the database state from given remote generation
     /// On success, returns the RestoreAction, and whether the database was recovered from backup.
+    #[tracing::instrument(skip(self))]
     async fn restore_from(
         &mut self,
         generation: Uuid,
         timestamp: Option<NaiveDateTime>,
     ) -> Result<(RestoreAction, bool)> {
-        if let Some(tombstone) = self.get_tombstone().await? {
+        tracing::debug!("restoring from");
+        if let Some(tombstone) = dbg!(self.get_tombstone().await)? {
             if let Some(timestamp) = Self::generation_to_timestamp(&generation) {
                 if tombstone.timestamp() as u64 >= timestamp.to_unix().0 {
                     bail!(
@@ -1033,6 +1039,8 @@ impl Replicator {
         // first check if there are any remaining files that we didn't manage to upload
         // on time in the last run
         self.upload_remaining_files(&generation).await?;
+
+        tracing::debug!("done uploading remaining files");
 
         let last_frame = self.get_last_consistent_frame(&generation).await?;
         tracing::debug!("Last consistent remote frame in generation {generation}: {last_frame}.");
@@ -1415,6 +1423,7 @@ impl Replicator {
         generation: Option<Uuid>,
         timestamp: Option<NaiveDateTime>,
     ) -> Result<(RestoreAction, bool)> {
+        tracing::debug!("restoring with {:?} at {:?}", generation, timestamp);
         let generation = match generation {
             Some(gen) => gen,
             None => match self.latest_generation_before(timestamp.as_ref()).await {
@@ -1433,7 +1442,9 @@ impl Replicator {
         Ok((action, recovered))
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn get_last_consistent_frame(&self, generation: &Uuid) -> Result<u32> {
+        tracing::debug!("get last consistent frame");
         let prefix = format!("{}-{}/", self.db_name, generation);
         let mut marker: Option<String> = None;
         let mut last_frame = 0;
@@ -1446,7 +1457,7 @@ impl Replicator {
             marker = Self::try_get_last_frame_no(response, &mut last_frame);
             marker.is_some()
         } {}
-        Ok(last_frame)
+        Ok(dbg!(last_frame))
     }
 
     fn try_get_last_frame_no(response: ListObjectsOutput, frame_no: &mut u32) -> Option<String> {

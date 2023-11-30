@@ -92,6 +92,8 @@ tempfile = "3.7.0"
 turmoil = "0.5.6"
 url = "2.3"
 metrics-util = "0.15"
+s3s = "0.8.1-dev"
+s3s-fs = "0.8.1-dev"
 
 [build-dependencies]
 prost-build = "0.12.0"
