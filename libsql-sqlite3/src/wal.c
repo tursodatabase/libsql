@@ -4167,21 +4167,19 @@ static int libsqlMakeWalPathname(const char *main_db_path_name, char **out) {
 int sqlite3LogExists(wal_manager_impl* self, sqlite3_vfs *vfs, const char *main_db_path_name, int *exists) {
     char *zWal;
     int rc = libsqlMakeWalPathname(main_db_path_name, &zWal);
-    if (rc != 0) return rc;
+    if (rc != SQLITE_OK) return rc;
     rc = sqlite3OsAccess(vfs, zWal, SQLITE_ACCESS_EXISTS, exists);
     sqlite3_free(zWal);
-    if (rc != 0) return rc;
-    return SQLITE_OK;
+    return rc;
 }
 
 int sqlite3LogDestroy(wal_manager_impl* self, sqlite3_vfs *vfs, const char *main_db_path_name) {
     char *zWal;
     int rc = libsqlMakeWalPathname(main_db_path_name, &zWal);
-    if (rc != 0) return rc;
+    if (rc != SQLITE_OK) return rc;
     rc = sqlite3OsDelete(vfs, zWal, 0);
     sqlite3_free(zWal);
-    if (rc != 0) return rc;
-    return SQLITE_OK;
+    return rc;
 }
 
 /*
@@ -4389,7 +4387,7 @@ const libsql_wal_manager sqlite3_wal_manager = {
     .xDestroy =(void (*)(wal_manager_impl*))sqlite3DestroyWalManager,
 };
 
-void make_sqlite3_wal_manager_rc(RefCountedWalManager **out) {
+RefCountedWalManager *make_sqlite3_wal_manager_rc() {
     static int initialized = 0;
     static RefCountedWalManager manager = { 0 };
     /*
@@ -4402,7 +4400,7 @@ void make_sqlite3_wal_manager_rc(RefCountedWalManager **out) {
         initialized = 1;
     }
 
-    *out = &manager;
+    return &manager;
 }
 
 typedef struct wal_impl wal_impl;
