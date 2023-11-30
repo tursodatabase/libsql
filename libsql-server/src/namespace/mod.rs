@@ -30,7 +30,6 @@ use crate::auth::Authenticated;
 use crate::connection::config::{DatabaseConfig, DatabaseConfigStore};
 use crate::connection::libsql::{open_conn, MakeLibSqlConn};
 use crate::connection::write_proxy::MakeWriteProxyConn;
-use crate::connection::Connection;
 use crate::connection::MakeConnection;
 use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
@@ -638,16 +637,8 @@ impl<T: Database> Namespace<T> {
         Ok(())
     }
 
-    async fn checkpoint(&self) -> anyhow::Result<()> {
-        let conn = self.db.connection_maker().create().await?;
-        conn.vacuum_if_needed().await?;
-        conn.checkpoint().await?;
-        Ok(())
-    }
-
     async fn shutdown(mut self) -> anyhow::Result<()> {
         self.tasks.shutdown().await;
-        self.checkpoint().await?;
         self.db.shutdown().await?;
         Ok(())
     }
