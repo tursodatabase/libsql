@@ -517,7 +517,7 @@ where
             disable_namespace: self.disable_namespaces,
         };
         let factory = PrimaryNamespaceMaker::new(conf);
-        let namespaces = NamespaceStore::new(factory, false);
+        let namespaces = NamespaceStore::new(factory, false, self.db_config.snapshot_at_shutdown);
 
         // eagerly load the default namespace when namespaces are disabled
         if self.disable_namespaces {
@@ -605,7 +605,7 @@ impl<C: Connector> Replica<C> {
             max_total_response_size: self.db_config.max_total_response_size,
         };
         let factory = ReplicaNamespaceMaker::new(conf);
-        let namespaces = NamespaceStore::new(factory, true);
+        let namespaces = NamespaceStore::new(factory, true, false);
         let replication_service = ReplicationLogProxyService::new(channel.clone(), uri.clone());
         let proxy_service = ReplicaProxyService::new(channel, uri, self.auth.clone());
 
