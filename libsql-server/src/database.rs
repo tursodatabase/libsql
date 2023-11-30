@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use crate::connection::libsql::LibSqlConnection;
 use crate::connection::write_proxy::{RpcStream, WriteProxyConnection};
 use crate::connection::{Connection, MakeConnection, TrackedConnection};
-use crate::namespace::replication_wal::{ReplicationWalManager, ReplicationWal};
+use crate::namespace::replication_wal::{ReplicationWal, ReplicationWalManager};
 
 pub type PrimaryConnection = TrackedConnection<LibSqlConnection<ReplicationWal>>;
 

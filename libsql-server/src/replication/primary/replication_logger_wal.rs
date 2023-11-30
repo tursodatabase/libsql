@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use libsql_sys::wal::Vfs;
-use libsql_sys::wal::{BusyHandler, Sqlite3WalManager, Result, Sqlite3Wal, WalManager};
+use libsql_sys::wal::{BusyHandler, Result, Sqlite3Wal, Sqlite3WalManager, WalManager};
 use libsql_sys::wal::{PageHeaders, Sqlite3Db, Sqlite3File, UndoHandler};
 use rusqlite::ffi::SQLITE_IOERR;
 

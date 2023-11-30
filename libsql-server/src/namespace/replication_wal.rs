@@ -13,7 +13,7 @@ use libsql_sys::wal::{
 };
 
 use crate::replication::{
-    primary::replication_logger_wal::{ReplicationLoggerWalManager, ReplicationLoggerWal},
+    primary::replication_logger_wal::{ReplicationLoggerWal, ReplicationLoggerWalManager},
     ReplicationLogger,
 };
 

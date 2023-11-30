@@ -8,7 +8,7 @@ use libsql_replication::rpc::proxy::{
     exec_req, exec_resp, ExecReq, ExecResp, StreamDescribeReq, StreamProgramReq,
 };
 use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
-use libsql_sys::wal::{Sqlite3WalManager, Sqlite3Wal};
+use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager};
 use parking_lot::Mutex as PMutex;
 use tokio::sync::{mpsc, watch, Mutex};
 use tokio_stream::StreamExt;
