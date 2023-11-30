@@ -1,5 +1,5 @@
-C New\stest\scases\sfor\sinsert/set/replace\swith\spaths\sthat\sindicate\ssubstructure\nthat\sdoes\snot\syet\sexist.
-D 2023-11-30T12:04:14.610
+C Simplification\sof\sthe\snew\sJSON\sinsert/set\stest\scases.
+D 2023-11-30T16:17:09.157
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1325,7 +1325,7 @@ F test/json/json-generator.tcl dc0dd0f393800c98658fc4c47eaa6af29d4e17527380cd286
 F test/json/json-q1-b.txt 606818a5fba6d9e418c9f4ea7d8418af026775042dad81439b72447a147a462c
 F test/json/json-q1.txt 65f9d1cdcc4cffa9823fb73ed936aae5658700cd001fde448f68bfb91c807307
 F test/json/json-speed-check.sh b060a9a6c696c0a807d8929400fa11bd7113edc58b0d66b9795f424f8d0db326 x
-F test/json101.test 861a5d75c296709471e88aa48d82095ed600dedd23ba29b904b91e64d319b7c3
+F test/json101.test 70587d7d35ef9e2126364ba70f0c951f70827cfbd28649d779ff3df7e8f87547
 F test/json102.test 557a46e16df1aa9bdbc4076a71a45814ea0e7503d6621d87d42a8c04cbc2b0ef
 F test/json103.test 53df87f83a4e5fa0c0a56eb29ff6c94055c6eb919f33316d62161a8880112dbe
 F test/json104.test 1b844a70cddcfa2e4cd81a5db0657b2e61e7f00868310f24f56a9ba0114348c1
@@ -2145,8 +2145,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 99c8f6bd5c9a31b6d00f92e383bec8a8235ed553916ad59adbb1b7663f6ebff1
-R 757617988b02e4847aadc75efb2ede4b
+P 146c717c51940b2139befc45ac74e7a1c36ef3c32fd3cfe35b334488eebe6298
+R 8e1036414b3f5ed40f0248ecb25d6019
 U drh
-Z 50c123f2db65971d190ff942903bde3b
+Z df0518617355b4fc840dfe4615c492b7
 # Remove this line to create a well-formed Fossil manifest.
