@@ -370,14 +370,22 @@ impl Replicator {
     }
 
     pub async fn shutdown_gracefully(&mut self) -> Result<()> {
+        tracing::info!("bottomless replicator: shutting down...");
+        // 1. wait for all committed WAL frames to be committed locally
         let last_frame_no = self.last_known_frame();
-        // drop flush trigger, which will cause background task for local WAL copier to complete
-        self.flush_trigger.take();
         self.wait_until_committed(last_frame_no).await?;
+        // 2. wait for snapshot upload to S3 to finish
         self.wait_until_snapshotted().await?;
+        // 3. drop flush trigger, which will cause WAL upload loop to close. Since this action will
+        // close the channel used by wait_until_committed, it must happen after wait_until_committed
+        // has finished. If trigger won't be dropped, tasks from join_set will never finish.
+        self.flush_trigger.take();
         while let Some(t) = self.join_set.join_next().await {
+            // one of the tasks we're waiting for is upload of local WAL segment from pt.1 to S3
+            // this should ensure that all WAL frames are one S3
             t?;
         }
+        tracing::info!("bottomless replicator: shutdown complete");
         Ok(())
     }
 
