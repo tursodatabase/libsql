@@ -124,6 +124,7 @@ pub struct DbConfig {
     pub max_total_response_size: u64,
     pub snapshot_exec: Option<String>,
     pub checkpoint_interval: Option<Duration>,
+    pub snapshot_at_shutdown: bool,
 }
 
 impl Default for DbConfig {
@@ -139,6 +140,7 @@ impl Default for DbConfig {
             max_total_response_size: bytesize::mb(10u64),
             snapshot_exec: None,
             checkpoint_interval: None,
+            snapshot_at_shutdown: false,
         }
     }
 }

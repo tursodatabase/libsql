@@ -351,16 +351,18 @@ struct NamespaceStoreInner<M: MakeNamespace> {
     make_namespace: M,
     allow_lazy_creation: bool,
     has_shutdown: AtomicBool,
+    snapshot_at_shutdown: bool,
 }
 
 impl<M: MakeNamespace> NamespaceStore<M> {
-    pub fn new(make_namespace: M, allow_lazy_creation: bool) -> Self {
+    pub fn new(make_namespace: M, allow_lazy_creation: bool, snapshot_at_shutdown: bool) -> Self {
         Self {
             inner: Arc::new(NamespaceStoreInner {
                 store: Default::default(),
                 make_namespace,
                 allow_lazy_creation,
                 has_shutdown: AtomicBool::new(false),
+                snapshot_at_shutdown,
             }),
         }
     }
@@ -598,7 +600,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         self.inner.has_shutdown.store(true, Ordering::Relaxed);
         let mut lock = self.inner.store.write().await;
         for (name, ns) in lock.drain() {
-            ns.shutdown().await?;
+            ns.shutdown(self.inner.snapshot_at_shutdown).await?;
             trace!("shutdown namespace: `{}`", name);
         }
         Ok(())
@@ -645,9 +647,11 @@ impl<T: Database> Namespace<T> {
         Ok(())
     }
 
-    async fn shutdown(mut self) -> anyhow::Result<()> {
+    async fn shutdown(mut self, should_checkpoint: bool) -> anyhow::Result<()> {
         self.tasks.shutdown().await;
-        self.checkpoint().await?;
+        if should_checkpoint {
+            self.checkpoint().await?;
+        }
         self.db.shutdown().await?;
         Ok(())
     }
