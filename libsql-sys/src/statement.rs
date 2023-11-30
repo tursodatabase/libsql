@@ -245,8 +245,8 @@ fn str_for_sqlite(s: &[u8]) -> Result<(*const c_char, c_int)> {
 // failed.
 fn len_as_c_int(len: usize) -> Result<c_int> {
     if len >= (c_int::MAX as usize) {
-        Err(crate::Error::LibError(
-            crate::ffi::SQLITE_TOOBIG as std::ffi::c_int,
+        Err(crate::Error::from(
+            libsql_ffi::SQLITE_TOOBIG as std::ffi::c_int,
         ))
     } else {
         Ok(len as c_int)

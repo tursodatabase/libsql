@@ -1,10 +1,13 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
+
 use crate::connection::libsql::LibSqlConnection;
 use crate::connection::write_proxy::{RpcStream, WriteProxyConnection};
 use crate::connection::{Connection, MakeConnection, TrackedConnection};
-use crate::replication::{ReplicationLogger, ReplicationLoggerHook};
-use async_trait::async_trait;
+use crate::namespace::replication_wal::{ReplicationWal, ReplicationWalManager};
+
+pub type PrimaryConnection = TrackedConnection<LibSqlConnection<ReplicationWal>>;
 
 pub type Result<T> = anyhow::Result<T>;
 
@@ -40,10 +43,8 @@ impl Database for ReplicaDatabase {
     }
 }
 
-pub type PrimaryConnection = TrackedConnection<LibSqlConnection<ReplicationLoggerHook>>;
-
 pub struct PrimaryDatabase {
-    pub logger: Arc<ReplicationLogger>,
+    pub wal_manager: ReplicationWalManager,
     pub connection_maker: Arc<dyn MakeConnection<Connection = PrimaryConnection>>,
 }
 
@@ -56,17 +57,18 @@ impl Database for PrimaryDatabase {
     }
 
     fn destroy(self) {
-        self.logger.closed_signal.send_replace(true);
+        self.wal_manager.logger().closed_signal.send_replace(true);
     }
 
     async fn shutdown(self) -> Result<()> {
-        self.logger.closed_signal.send_replace(true);
-        if let Some(replicator) = &self.logger.bottomless_replicator {
-            let replicator = replicator.lock().unwrap().take();
-            if let Some(mut replicator) = replicator {
-                replicator.shutdown_gracefully().await?;
-            }
+        self.wal_manager.logger().closed_signal.send_replace(true);
+        let wal_manager = self.wal_manager;
+        if let Some(mut replicator) =
+            tokio::task::spawn_blocking(move || wal_manager.shutdown()).await?
+        {
+            replicator.shutdown_gracefully().await?;
         }
+
         Ok(())
     }
 }

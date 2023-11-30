@@ -3,16 +3,15 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
+use libsql_sys::wal::{Wal, WalManager};
 use metrics::{histogram, increment_counter};
 use parking_lot::{Mutex, RwLock};
 use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus, TransactionState};
-use sqld_libsql_bindings::wal_hook::{TransparentMethods, WalMethodsHook};
 use tokio::sync::{watch, Notify};
 use tokio::time::{Duration, Instant};
 
 use crate::auth::{Authenticated, Authorized, Permission};
 use crate::error::Error;
-use crate::libsql_bindings::wal_hook::WalHook;
 use crate::metrics::{
     DESCRIBE_COUNT, PROGRAM_EXEC_COUNT, READ_QUERY_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT,
     WRITE_QUERY_COUNT, WRITE_TXN_DURATION,
@@ -28,10 +27,9 @@ use super::config::DatabaseConfigStore;
 use super::program::{Cond, DescribeCol, DescribeParam, DescribeResponse};
 use super::{MakeConnection, Program, Step, TXN_TIMEOUT};
 
-pub struct MakeLibSqlConn<W: WalHook + 'static> {
+pub struct MakeLibSqlConn<T: WalManager> {
     db_path: PathBuf,
-    hook: &'static WalMethodsHook<W>,
-    ctx_builder: Box<dyn Fn() -> W::Context + Sync + Send + 'static>,
+    wal_manager: T,
     stats: Arc<Stats>,
     config_store: Arc<DatabaseConfigStore>,
     extensions: Arc<[PathBuf]>,
@@ -39,22 +37,21 @@ pub struct MakeLibSqlConn<W: WalHook + 'static> {
     max_total_response_size: u64,
     auto_checkpoint: u32,
     current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
-    state: Arc<TxnState<W>>,
+    state: Arc<TxnState<T::Wal>>,
     /// In wal mode, closing the last database takes time, and causes other databases creation to
     /// return sqlite busy. To mitigate that, we hold on to one connection
-    _db: Option<LibSqlConnection<W>>,
+    _db: Option<LibSqlConnection<T::Wal>>,
 }
 
-impl<W: WalHook + 'static> MakeLibSqlConn<W>
+impl<T> MakeLibSqlConn<T>
 where
-    W: WalHook + 'static + Sync + Send,
-    W::Context: Send + 'static,
+    T: WalManager + Clone + Send + 'static,
+    T::Wal: Send + 'static,
 {
     #[allow(clippy::too_many_arguments)]
-    pub async fn new<F>(
+    pub async fn new(
         db_path: PathBuf,
-        hook: &'static WalMethodsHook<W>,
-        ctx_builder: F,
+        wal_manager: T,
         stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
         extensions: Arc<[PathBuf]>,
@@ -62,14 +59,9 @@ where
         max_total_response_size: u64,
         auto_checkpoint: u32,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
-    ) -> Result<Self>
-    where
-        F: Fn() -> W::Context + Sync + Send + 'static,
-    {
+    ) -> Result<Self> {
         let mut this = Self {
             db_path,
-            hook,
-            ctx_builder: Box::new(ctx_builder),
             stats,
             config_store,
             extensions,
@@ -79,6 +71,7 @@ where
             current_frame_no_receiver,
             _db: None,
             state: Default::default(),
+            wal_manager,
         };
 
         let db = this.try_create_db().await?;
@@ -88,7 +81,7 @@ where
     }
 
     /// Tries to create a database, retrying if the database is busy.
-    async fn try_create_db(&self) -> Result<LibSqlConnection<W>> {
+    async fn try_create_db(&self) -> Result<LibSqlConnection<T::Wal>> {
         // try 100 times to acquire initial db connection.
         let mut retries = 0;
         loop {
@@ -116,12 +109,11 @@ where
         }
     }
 
-    async fn make_connection(&self) -> Result<LibSqlConnection<W>> {
+    async fn make_connection(&self) -> Result<LibSqlConnection<T::Wal>> {
         LibSqlConnection::new(
             self.db_path.clone(),
             self.extensions.clone(),
-            self.hook,
-            (self.ctx_builder)(),
+            self.wal_manager.clone(),
             self.stats.clone(),
             self.config_store.clone(),
             QueryBuilderConfig {
@@ -137,23 +129,31 @@ where
 }
 
 #[async_trait::async_trait]
-impl<W> MakeConnection for MakeLibSqlConn<W>
+impl<T> MakeConnection for MakeLibSqlConn<T>
 where
-    W: WalHook + 'static + Sync + Send,
-    W::Context: Send + 'static,
+    T: WalManager + Clone + Send + Sync + 'static,
+    T::Wal: Send,
 {
-    type Connection = LibSqlConnection<W>;
+    type Connection = LibSqlConnection<T::Wal>;
 
     async fn create(&self) -> Result<Self::Connection, Error> {
         self.make_connection().await
     }
 }
 
-pub struct LibSqlConnection<W: WalHook> {
-    inner: Arc<Mutex<Connection<W>>>,
+pub struct LibSqlConnection<T> {
+    inner: Arc<Mutex<Connection<T>>>,
 }
 
-impl<W: WalHook> std::fmt::Debug for LibSqlConnection<W> {
+impl<T> Clone for LibSqlConnection<T> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+impl<T> std::fmt::Debug for LibSqlConnection<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.inner.try_lock() {
             Some(conn) => {
@@ -164,23 +164,14 @@ impl<W: WalHook> std::fmt::Debug for LibSqlConnection<W> {
     }
 }
 
-impl<W: WalHook> Clone for LibSqlConnection<W> {
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-        }
-    }
-}
-
-pub fn open_conn<W>(
+pub fn open_conn<T>(
     path: &Path,
-    wal_methods: &'static WalMethodsHook<W>,
-    hook_ctx: W::Context,
+    wal_manager: T,
     flags: Option<OpenFlags>,
     auto_checkpoint: u32,
-) -> Result<sqld_libsql_bindings::Connection<W>, rusqlite::Error>
+) -> Result<libsql_sys::Connection<T::Wal>, rusqlite::Error>
 where
-    W: WalHook,
+    T: WalManager,
 {
     let flags = flags.unwrap_or(
         OpenFlags::SQLITE_OPEN_READ_WRITE
@@ -188,38 +179,32 @@ where
             | OpenFlags::SQLITE_OPEN_URI
             | OpenFlags::SQLITE_OPEN_NO_MUTEX,
     );
-    sqld_libsql_bindings::Connection::open(
-        path.join("data"),
-        flags,
-        wal_methods,
-        hook_ctx,
-        auto_checkpoint,
-    )
+    libsql_sys::Connection::open(path.join("data"), flags, wal_manager, auto_checkpoint)
 }
 
 impl<W> LibSqlConnection<W>
 where
-    W: WalHook,
-    W::Context: Send,
+    W: Wal + Send + 'static,
 {
-    pub async fn new(
+    pub async fn new<T>(
         path: impl AsRef<Path> + Send + 'static,
         extensions: Arc<[PathBuf]>,
-        wal_hook: &'static WalMethodsHook<W>,
-        hook_ctx: W::Context,
+        wal_manager: T,
         stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
-    ) -> crate::Result<Self> {
+    ) -> crate::Result<Self>
+    where
+        T: WalManager<Wal = W> + Send + 'static,
+    {
         let max_db_size = config_store.get().max_db_pages;
         let conn = tokio::task::spawn_blocking(move || -> crate::Result<_> {
             let conn = Connection::new(
                 path.as_ref(),
                 extensions,
-                wal_hook,
-                hook_ctx,
+                wal_manager,
                 stats,
                 config_store,
                 builder_config,
@@ -249,14 +234,13 @@ where
 }
 
 #[cfg(test)]
-impl LibSqlConnection<TransparentMethods> {
+impl LibSqlConnection<libsql_sys::wal::Sqlite3Wal> {
     pub fn new_test(path: &Path) -> Self {
         let (_snd, rcv) = watch::channel(None);
         let conn = Connection::new(
             path,
             Arc::new([]),
-            &crate::libsql_bindings::wal_hook::TRANSPARENT_METHODS,
-            (),
+            libsql_sys::wal::Sqlite3WalManager::new(),
             Default::default(),
             DatabaseConfigStore::new_test().into(),
             QueryBuilderConfig::default(),
@@ -271,19 +255,19 @@ impl LibSqlConnection<TransparentMethods> {
     }
 }
 
-struct Connection<W: WalHook = TransparentMethods> {
-    conn: sqld_libsql_bindings::Connection<W>,
+struct Connection<T> {
+    conn: libsql_sys::Connection<T>,
     stats: Arc<Stats>,
     config_store: Arc<DatabaseConfigStore>,
     builder_config: QueryBuilderConfig,
     current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
     // must be dropped after the connection because the connection refers to it
-    state: Arc<TxnState<W>>,
+    state: Arc<TxnState<T>>,
     // current txn slot if any
-    slot: Option<Arc<TxnSlot<W>>>,
+    slot: Option<Arc<TxnSlot<T>>>,
 }
 
-impl<W: WalHook> std::fmt::Debug for Connection<W> {
+impl<T> std::fmt::Debug for Connection<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Connection")
             .field("slot", &self.slot)
@@ -292,7 +276,7 @@ impl<W: WalHook> std::fmt::Debug for Connection<W> {
 }
 
 /// A slot for holding the state of a transaction lock permit
-struct TxnSlot<T: WalHook> {
+struct TxnSlot<T> {
     /// Pointer to the connection holding the lock. Used to rollback the transaction when the lock
     /// is stolen.
     conn: Arc<Mutex<Connection<T>>>,
@@ -302,7 +286,7 @@ struct TxnSlot<T: WalHook> {
     is_stolen: AtomicBool,
 }
 
-impl<T: WalHook> TxnSlot<T> {
+impl<T> TxnSlot<T> {
     #[inline]
     fn expires_at(&self) -> Instant {
         self.created_at + TXN_TIMEOUT
@@ -310,7 +294,10 @@ impl<T: WalHook> TxnSlot<T> {
 
     /// abort the connection for that slot.
     /// This methods must not be called if a lock on the state's slot is still held.
-    fn abort(&self) {
+    fn abort(&self)
+    where
+        T: Wal,
+    {
         let conn = self.conn.lock();
         // we have a lock on the connection, we don't need mode than a
         // Relaxed store.
@@ -319,7 +306,7 @@ impl<T: WalHook> TxnSlot<T> {
     }
 }
 
-impl<T: WalHook> std::fmt::Debug for TxnSlot<T> {
+impl<T> std::fmt::Debug for TxnSlot<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let stolen = self.is_stolen.load(Ordering::Relaxed);
         let time_left = self.expires_at().duration_since(Instant::now());
@@ -333,14 +320,14 @@ impl<T: WalHook> std::fmt::Debug for TxnSlot<T> {
 
 /// The transaction state shared among all connections to the same database
 #[derive(Debug)]
-pub struct TxnState<T: WalHook> {
+pub struct TxnState<T> {
     /// Slot for the connection currently holding the transaction lock
     slot: RwLock<Option<Arc<TxnSlot<T>>>>,
     /// Notifier for when the lock gets dropped
     notify: Notify,
 }
 
-impl<W: WalHook> Default for TxnState<W> {
+impl<T> Default for TxnState<T> {
     fn default() -> Self {
         Self {
             slot: Default::default(),
@@ -365,8 +352,8 @@ impl<W: WalHook> Default for TxnState<W> {
 /// - If the handler waits until the txn timeout and isn't notified of the termination of the txn, it will attempt to steal the lock.
 ///   This is done by calling rollback on the slot's txn, and marking the slot as stolen.
 /// - When a connection notices that it's slot has been stolen, it returns a timedout error to the next request.
-unsafe extern "C" fn busy_handler<W: WalHook>(state: *mut c_void, _retries: c_int) -> c_int {
-    let state = &*(state as *mut TxnState<W>);
+unsafe extern "C" fn busy_handler<T: Wal>(state: *mut c_void, _retries: c_int) -> c_int {
+    let state = &*(state as *mut TxnState<T>);
     let lock = state.slot.read();
     // we take a reference to the slot we will attempt to steal. this is to make sure that we
     // actually steal the correct lock.
@@ -436,34 +423,26 @@ fn value_size(val: &rusqlite::types::ValueRef) -> usize {
 
 impl From<TransactionState> for TxnStatus {
     fn from(value: TransactionState) -> Self {
-        use TransactionState as Tx;
         match value {
-            Tx::None => TxnStatus::Init,
-            Tx::Read | Tx::Write => TxnStatus::Txn,
+            TransactionState::None => TxnStatus::Init,
+            TransactionState::Read | TransactionState::Write => TxnStatus::Txn,
             _ => unreachable!(),
         }
     }
 }
 
-impl<W: WalHook> Connection<W> {
-    fn new(
+impl<W: Wal> Connection<W> {
+    fn new<T: WalManager<Wal = W>>(
         path: &Path,
         extensions: Arc<[PathBuf]>,
-        wal_methods: &'static WalMethodsHook<W>,
-        hook_ctx: W::Context,
+        wal_manager: T,
         stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
     ) -> Result<Self> {
-        let conn = open_conn(
-            path,
-            wal_methods,
-            hook_ctx,
-            None,
-            builder_config.auto_checkpoint,
-        )?;
+        let conn = open_conn(path, wal_manager, None, builder_config.auto_checkpoint)?;
 
         // register the lock-stealing busy handler
         unsafe {
@@ -871,10 +850,9 @@ fn check_describe_auth(auth: Authenticated) -> Result<()> {
 }
 
 #[async_trait::async_trait]
-impl<W> super::Connection for LibSqlConnection<W>
+impl<T> super::Connection for LibSqlConnection<T>
 where
-    W: WalHook + 'static,
-    W::Context: Send,
+    T: Wal + Send + 'static,
 {
     async fn execute_program<B: QueryResultBuilder>(
         &self,
@@ -942,8 +920,8 @@ where
 #[cfg(test)]
 mod test {
     use itertools::Itertools;
+    use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager};
     use rand::Rng;
-    use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
     use tempfile::tempdir;
     use tokio::task::JoinSet;
 
@@ -954,9 +932,9 @@ mod test {
 
     use super::*;
 
-    fn setup_test_conn() -> Arc<Mutex<Connection>> {
+    fn setup_test_conn() -> Arc<Mutex<Connection<Sqlite3Wal>>> {
         let conn = Connection {
-            conn: sqld_libsql_bindings::Connection::test(),
+            conn: libsql_sys::Connection::test(),
             stats: Arc::new(Stats::default()),
             config_store: Arc::new(DatabaseConfigStore::new_test()),
             builder_config: QueryBuilderConfig::default(),
@@ -988,8 +966,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
-            &TRANSPARENT_METHODS,
-            || (),
+            Sqlite3WalManager::new(),
             Default::default(),
             Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
             Arc::new([]),
@@ -1030,8 +1007,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
-            &TRANSPARENT_METHODS,
-            || (),
+            Sqlite3WalManager::new(),
             Default::default(),
             Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
             Arc::new([]),
@@ -1073,8 +1049,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
-            &TRANSPARENT_METHODS,
-            || (),
+            Sqlite3WalManager::new(),
             Default::default(),
             Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
             Arc::new([]),
@@ -1152,8 +1127,7 @@ mod test {
         let tmp = tempdir().unwrap();
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
-            &TRANSPARENT_METHODS,
-            || (),
+            Sqlite3WalManager::new(),
             Default::default(),
             Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
             Arc::new([]),
@@ -1178,7 +1152,7 @@ mod test {
         )
         .await
         .unwrap();
-        let run_conn = |maker: Arc<MakeLibSqlConn<TransparentMethods>>| {
+        let run_conn = |maker: Arc<MakeLibSqlConn<Sqlite3WalManager>>| {
             let auth = auth.clone();
             async move {
                 for _ in 0..1000 {

@@ -11470,24 +11470,6 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
-#ifndef SQLITE_OMIT_WAL
-  if( c=='w' && cli_strncmp(azArg[0], "walmethodslist", n)==0 ){
-    libsql_wal_methods *pWal;
-    libsql_wal_methods *pCurrent = 0;
-    if( p->db ){
-      sqlite3_file_control(p->db, "main", SQLITE_FCNTL_WAL_METHODS_POINTER, &pCurrent);
-    }
-    for(pWal=libsql_wal_methods_find(0); pWal; pWal=libsql_wal_methods_next(pWal)){
-      
-      utf8_printf(p->out, "wal.zName      = \"%s\"%s\n", libsql_wal_methods_name(pWal),
-           pWal==pCurrent ? "  <--- CURRENT" : "");
-      if( libsql_wal_methods_next(pWal) ){
-        raw_printf(p->out, "-----------------------------------\n");
-      }
-    }
-  }else
-#endif
-
   if( c=='w' && cli_strncmp(azArg[0], "wheretrace", n)==0 ){
     unsigned int x = nArg>=2? (unsigned int)integerValue(azArg[1]) : 0xffffffff;
     sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &x);

@@ -1,7 +1,7 @@
 use crate::user_defined_functions_src::{
     concat3_src, contains_src, fib_src, get_null_src, reverse_blob_src,
 };
-use rusqlite::Connection;
+use libsql_sys::rusqlite::Connection;
 
 fn fib(n: i32) -> i32 {
     match n {
@@ -164,7 +164,7 @@ fn test_reverse_blob() {
     for (mut blob, rev) in stmt
         .query_map([], |row| Ok((row.get(0).unwrap(), row.get(1).unwrap())))
         .unwrap()
-        .map(|e: rusqlite::Result<(Vec<u8>, Vec<u8>)>| e.unwrap())
+        .map(|e: libsql_sys::rusqlite::Result<(Vec<u8>, Vec<u8>)>| e.unwrap())
     {
         blob.reverse();
         assert_eq!(blob, rev)

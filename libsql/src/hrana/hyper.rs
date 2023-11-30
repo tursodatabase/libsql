@@ -23,7 +23,7 @@ pub struct HttpSender {
 
 impl HttpSender {
     pub fn new(connector: ConnectorService, version: Option<&str>) -> Self {
-        let ver = version.unwrap_or_else(|| env!("CARGO_PKG_VERSION"));
+        let ver = version.unwrap_or(env!("CARGO_PKG_VERSION"));
 
         let version = HeaderValue::try_from(format!("libsql-remote-{ver}")).unwrap();
 

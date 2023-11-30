@@ -45,7 +45,6 @@ typedef struct libsql_wal_methods libsql_wal_methods;
 
 int sqlite3BtreeOpen(
   sqlite3_vfs *pVfs,       /* VFS to use with this b-tree */
-  libsql_wal_methods *pWal,/* WAL methods to use with this b-tree */
   const char *zFilename,   /* Name of database file to open */
   sqlite3 *db,             /* Associated database connection */
   Btree **ppBtree,         /* Return open Btree* here */

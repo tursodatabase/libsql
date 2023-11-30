@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use sqld_libsql_bindings::rusqlite::ffi::PgHdr;
+use libsql_sys::ffi::PgHdr;
 
 pub struct Headers<'a> {
     ptr: *mut PgHdr,
@@ -16,7 +16,7 @@ impl<'a> Headers<'a> {
         }
     }
 
-    pub(crate) fn as_ptr(&mut self) -> *mut PgHdr {
+    pub(crate) fn as_mut_ptr(&mut self) -> *mut PgHdr {
         self.ptr
     }
 

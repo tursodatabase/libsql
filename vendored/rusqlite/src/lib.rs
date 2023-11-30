@@ -55,7 +55,7 @@
 #![warn(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-pub use libsql_sys::ffi;
+pub use libsql_ffi as ffi;
 
 use std::cell::RefCell;
 use std::default::Default;
@@ -476,13 +476,14 @@ impl Connection {
     pub fn open_with_flags_and_wal<P: AsRef<Path>>(
         path: P,
         flags: OpenFlags,
-        wal: &str,
+        wal_manager: libsql_ffi::libsql_wal_manager,
     ) -> Result<Connection> {
         let c_path = path_to_cstring(path.as_ref())?;
-        let c_wal = str_to_cstring(wal)?;
-        InnerConnection::open_with_flags(&c_path, flags, None, Some(&c_wal)).map(|db| Connection {
-            db: RefCell::new(db),
-            cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
+        InnerConnection::open_with_flags(&c_path, flags, None, Some(wal_manager)).map(|db| {
+            Connection {
+                db: RefCell::new(db),
+                cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
+            }
         })
     }
 
@@ -500,17 +501,16 @@ impl Connection {
         path: P,
         flags: OpenFlags,
         vfs: &str,
-        wal: &str,
+        wal_manager: ffi::libsql_wal_manager,
     ) -> Result<Connection> {
         let c_path = path_to_cstring(path.as_ref())?;
         let c_vfs = str_to_cstring(vfs)?;
-        let c_wal = str_to_cstring(wal)?;
-        InnerConnection::open_with_flags(&c_path, flags, Some(&c_vfs), Some(&c_wal)).map(|db| {
-            Connection {
+        InnerConnection::open_with_flags(&c_path, flags, Some(&c_vfs), Some(wal_manager)).map(
+            |db| Connection {
                 db: RefCell::new(db),
                 cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
-            }
-        })
+            },
+        )
     }
 
     /// Open a new connection to an in-memory SQLite database.

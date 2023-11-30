@@ -8,8 +8,8 @@ use libsql_replication::rpc::proxy::{
     exec_req, exec_resp, ExecReq, ExecResp, StreamDescribeReq, StreamProgramReq,
 };
 use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
+use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager};
 use parking_lot::Mutex as PMutex;
-use sqld_libsql_bindings::wal_hook::{TransparentMethods, TRANSPARENT_METHODS};
 use tokio::sync::{mpsc, watch, Mutex};
 use tokio_stream::StreamExt;
 use tonic::metadata::BinaryMetadataValue;
@@ -42,8 +42,8 @@ pub struct MakeWriteProxyConn {
     max_response_size: u64,
     max_total_response_size: u64,
     namespace: NamespaceName,
-    make_read_only_conn: MakeLibSqlConn<TransparentMethods>,
     primary_replication_index: Option<FrameNo>,
+    make_read_only_conn: MakeLibSqlConn<Sqlite3WalManager>,
 }
 
 impl MakeWriteProxyConn {
@@ -64,8 +64,7 @@ impl MakeWriteProxyConn {
         let client = ProxyClient::with_origin(channel, uri);
         let make_read_only_conn = MakeLibSqlConn::new(
             db_path.clone(),
-            &TRANSPARENT_METHODS,
-            || (),
+            Sqlite3WalManager::new(),
             stats.clone(),
             config_store.clone(),
             extensions.clone(),
@@ -93,7 +92,7 @@ impl MakeWriteProxyConn {
 impl MakeConnection for MakeWriteProxyConn {
     type Connection = WriteProxyConnection<RpcStream>;
     async fn create(&self) -> Result<Self::Connection> {
-        let db = WriteProxyConnection::new(
+        Ok(WriteProxyConnection::new(
             self.client.clone(),
             self.stats.clone(),
             self.applied_frame_no_receiver.clone(),
@@ -103,17 +102,15 @@ impl MakeConnection for MakeWriteProxyConn {
                 auto_checkpoint: DEFAULT_AUTO_CHECKPOINT,
             },
             self.namespace.clone(),
-            self.make_read_only_conn.create().await?,
             self.primary_replication_index,
-        )
-        .await?;
-        Ok(db)
+            self.make_read_only_conn.create().await?,
+        )?)
     }
 }
 
 pub struct WriteProxyConnection<R> {
     /// Lazily initialized read connection
-    read_conn: LibSqlConnection<TransparentMethods>,
+    read_conn: LibSqlConnection<Sqlite3Wal>,
     write_proxy: ProxyClient<Channel>,
     state: Mutex<TxnStatus>,
     /// FrameNo of the last write performed by this connection on the primary.
@@ -133,14 +130,14 @@ pub struct WriteProxyConnection<R> {
 
 impl WriteProxyConnection<RpcStream> {
     #[allow(clippy::too_many_arguments)]
-    async fn new(
+    fn new(
         write_proxy: ProxyClient<Channel>,
         stats: Arc<Stats>,
         applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         builder_config: QueryBuilderConfig,
         namespace: NamespaceName,
-        read_conn: LibSqlConnection<TransparentMethods>,
         primary_replication_index: Option<u64>,
+        read_conn: LibSqlConnection<Sqlite3Wal>,
     ) -> Result<Self> {
         Ok(Self {
             read_conn,

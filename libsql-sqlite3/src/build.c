@@ -5223,7 +5223,7 @@ int sqlite3OpenTempDatabase(Parse *pParse){
           SQLITE_OPEN_DELETEONCLOSE |
           SQLITE_OPEN_TEMP_DB;
 
-    rc = sqlite3BtreeOpen(db->pVfs, db->pWalMethods, 0, db, &pBt, 0, flags);
+    rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pBt, 0, flags);
     if( rc!=SQLITE_OK ){
       sqlite3ErrorMsg(pParse, "unable to open a temporary database "
         "file for storing temporary tables");

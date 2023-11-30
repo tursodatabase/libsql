@@ -12,15 +12,17 @@ mod user_defined_functions_src;
 mod tests {
     extern "C" {
         fn libsql_close_hook(
-            db: *mut rusqlite::ffi::sqlite3,
+            db: *mut libsql_sys::ffi::sqlite3,
             callback: Option<
-                unsafe fn(arg: *mut std::ffi::c_void, db: *mut rusqlite::ffi::sqlite3),
+                extern "C" fn(arg: *mut std::ffi::c_void, db: *mut libsql_sys::ffi::sqlite3),
             >,
             arg: *mut std::ffi::c_void,
         );
     }
 
-    use rusqlite::Connection;
+    use std::ffi::c_void;
+
+    use libsql_sys::rusqlite::Connection;
 
     #[derive(Debug, PartialEq)]
     struct Person {
@@ -73,8 +75,8 @@ mod tests {
         let mut rows = stmt.query(()).unwrap();
         while let Ok(Some(_)) = rows.next() {}
         drop(rows);
-        let mut rows_read = rusqlite::StatementStatus::FullscanStep;
-        let mut rows_written = rusqlite::StatementStatus::FullscanStep;
+        let mut rows_read = libsql_sys::rusqlite::StatementStatus::FullscanStep;
+        let mut rows_written = libsql_sys::rusqlite::StatementStatus::FullscanStep;
         // FIXME: there's no API for ROWS_READ/WRITTEN yet, so let's rewrite to checking ROWS_* instead
         unsafe {
             std::ptr::copy(
@@ -152,14 +154,18 @@ mod tests {
     fn test_close_hook() {
         let conn = Connection::open_in_memory().unwrap();
         let mut closed = false;
+        
+        extern "C" fn cb(closed: *mut c_void, _db: *mut libsql_sys::ffi::sqlite3) {
+            unsafe {
+                println!("Close hook called!");
+                let closed = &mut *(closed as *mut bool);
+                *closed = true;
+            }
+        }
         unsafe {
             libsql_close_hook(
                 conn.handle(),
-                Some(|closed, _db| {
-                    println!("Close hook called!");
-                    let closed = &mut *(closed as *mut bool);
-                    *closed = true;
-                }),
+                Some(cb),
                 &mut closed as *mut _ as *mut _,
             );
         }

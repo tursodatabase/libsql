@@ -4488,7 +4488,7 @@ case OP_OpenEphemeral: {     /* ncycle */
     pCx = allocateCursor(p, pOp->p1, pOp->p2, CURTYPE_BTREE);
     if( pCx==0 ) goto no_mem;
     pCx->isEphemeral = 1;
-    rc = sqlite3BtreeOpen(db->pVfs, db->pWalMethods, 0, db, &pCx->ub.pBtx, 
+    rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->ub.pBtx, 
                           BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5,
                           vfsFlags);
     if( rc==SQLITE_OK ){

@@ -9,7 +9,6 @@ members = [
   "libsql-server",
   "bottomless",
   "bottomless-cli",
-  "libsql-sys-tmp",
   "libsql-replication",
   "libsql-ffi",
 
