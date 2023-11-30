@@ -1888,42 +1888,6 @@ static char *jsonPathSyntaxError(const char *zErr, sqlite3_context *ctx){
 }
 
 /*
-** Do a node lookup using zPath.  Return a pointer to the node on success.
-** Return NULL if not found or if there is an error.
-**
-** On an error, write an error message into pCtx and increment the
-** pParse->nErr counter.
-**
-** If pApnd!=NULL then try to append missing nodes and set *pApnd = 1 if
-** nodes are appended.
-*/
-static JsonNode *jsonLookup(
-  JsonParse *pParse,      /* The JSON to search */
-  const char *zPath,      /* The path to search */
-  int *pApnd,             /* Append nodes to complete path if not NULL */
-  sqlite3_context *pCtx   /* Report errors here, if not NULL */
-){
-  const char *zErr = 0;
-  JsonNode *pNode = 0;
-
-  if( zPath==0 ) return 0;
-  if( zPath[0]!='$' ){
-    zErr = zPath;
-    goto lookup_err;
-  }
-  zPath++;
-  pNode = jsonLookupStep(pParse, 0, zPath, pApnd, &zErr);
-  if( zErr==0 ) return pNode;
-
-lookup_err:
-  pParse->nErr++;
-  assert( zErr!=0 && pCtx!=0 );
-  jsonPathSyntaxError(zErr, pCtx);
-  return 0;
-}
-
-
-/*
 ** Report the wrong number of arguments for json_insert(), json_replace()
 ** or json_set().
 */
@@ -4666,20 +4630,45 @@ static void jsonTypeFunc(
   sqlite3_value **argv
 ){
   JsonParse *p;          /* The parse */
-  const char *zPath;
-  JsonNode *pNode;
+  const char *zPath = 0;
+  u32 i;
 
-  p = jsonParseCached(ctx, argv[0], ctx, 0);
+  p = jsonParseFuncArg(ctx, argv[0], 0);
   if( p==0 ) return;
   if( argc==2 ){
+    if( sqlite3_value_type(argv[1])==SQLITE_NULL ){
+      goto json_type_done;
+    }
+    if( sqlite3_value_bytes(argv[1])==0 ){
+      jsonBadPathError(ctx, "");
+      goto json_type_done;
+    }
     zPath = (const char*)sqlite3_value_text(argv[1]);
-    pNode = jsonLookup(p, zPath, 0, ctx);
+    if( zPath==0 ){
+      sqlite3_result_error_nomem(ctx);
+      goto json_type_done;
+    }
+    if( zPath[0]!='$' ){
+      jsonBadPathError(ctx, zPath);
+      goto json_type_done;
+    }
+    i = jsonLookupBlobStep(p, 0, zPath+1, 0);
+    if( JSON_BLOB_ISERROR(i) ){
+      if( i==JSON_BLOB_NOTFOUND ){
+        /* no-op */
+      }else if( i==JSON_BLOB_PATHERROR ){
+        jsonBadPathError(ctx, zPath);
+      }else{
+        sqlite3_result_error(ctx, "malformed JSON", -1);
+      }
+      goto json_type_done;
+    }
   }else{
-    pNode = p->aNode;
+    i = 0;
   }
-  if( pNode ){
-    sqlite3_result_text(ctx, jsonType[pNode->eType], -1, SQLITE_STATIC);
-  }
+  sqlite3_result_text(ctx, jsonbType[p->aBlob[i]&0x0f], -1, SQLITE_STATIC);
+json_type_done:
+  jsonParseFree(p);
 }
 
 /*
