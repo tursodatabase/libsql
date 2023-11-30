@@ -370,14 +370,18 @@ impl Replicator {
     }
 
     pub async fn shutdown_gracefully(&mut self) -> Result<()> {
+        tracing::info!("bottomless replicator: shutting down...");
         let last_frame_no = self.last_known_frame();
-        // drop flush trigger, which will cause background task for local WAL copier to complete
-        self.flush_trigger.take();
         self.wait_until_committed(last_frame_no).await?;
+        // drop flush trigger, which will cause WAL upload loop to close. Since this action will
+        // close the channel used by wait_until_committed, it must happen after wait_until_committed
+        // has finished
+        self.flush_trigger.take();
         self.wait_until_snapshotted().await?;
         while let Some(t) = self.join_set.join_next().await {
             t?;
         }
+        tracing::info!("bottomless replicator: shutdown complete");
         Ok(())
     }
 
