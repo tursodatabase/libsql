@@ -3154,6 +3154,7 @@ static u32 jsonLookupBlobStep(
   u32 i, j, k, nKey, sz, n, iEnd, rc;
   const char *zKey;
   u8 x;
+  static const u8 emptyObject[] = { JSONB_ARRAY, JSONB_OBJECT };
 
   if( zPath[0]==0 ){
     if( pParse->eEdit && jsonBlobMakeEditable(pParse, pParse->nIns) ){
@@ -3225,25 +3226,44 @@ static u32 jsonLookupBlobStep(
     }
     if( j>iEnd ) return JSON_BLOB_ERROR;
     if( pParse->eEdit>=JEDIT_INS ){
-      u32 nIns;
-      u8 aLabel[16];
-      JsonParse ix;
+      u32 nIns;          /* Total bytes to insert (label+value) */
+      JsonParse v;       /* BLOB encoding of the value to be inserted */
+      JsonParse ix;      /* Header of the label to be inserted */
+      u8 aLabel[16];     /* Buffer space for ix */
       testcase( pParse->eEdit==JEDIT_INS );
       testcase( pParse->eEdit==JEDIT_SET );
       memset(&ix, 0, sizeof(ix));
       ix.aBlob = aLabel;
       ix.nBlobAlloc = sizeof(aLabel);
       jsonBlobAppendNodeType(&ix,JSONB_TEXTRAW, nKey);
-      if( jsonBlobMakeEditable(pParse, ix.nBlob+nKey+pParse->nIns) ){
-        nIns = ix.nBlob + nKey + pParse->nIns;
+      memset(&v, 0, sizeof(v));
+      if( zPath[i]==0 ){
+        v.nBlob = pParse->nIns;
+        v.aBlob = pParse->aIns;
+      }else{
+        v.nBlob = 1;
+        v.aBlob = (u8*)&emptyObject[zPath[i]=='.'];
+        v.eEdit = pParse->eEdit;
+        v.nIns = pParse->nIns;
+        v.aIns = pParse->aIns;
+        rc = jsonLookupBlobStep(&v, 0, &zPath[i], 0);
+        if( JSON_BLOB_ISERROR(rc) || v.oom ){
+          pParse->oom |= v.oom;
+          jsonParseReset(&v);
+          return rc;
+        }
+      }
+      if( jsonBlobMakeEditable(pParse, ix.nBlob+nKey+v.nBlob) ){
+        nIns = ix.nBlob + nKey + v.nBlob;
         jsonBlobEdit(pParse, j, 0, 0, nIns);
         memcpy(&pParse->aBlob[j], ix.aBlob, ix.nBlob);
         k = j + ix.nBlob;
         memcpy(&pParse->aBlob[k], zKey, nKey);
         k += nKey;
-        memcpy(&pParse->aBlob[k], pParse->aIns, pParse->nIns);
+        memcpy(&pParse->aBlob[k], v.aBlob, v.nBlob);
         if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
       }
+      jsonParseReset(&v);
       return j;
     }
   }else if( zPath[0]=='[' ){
@@ -3292,12 +3312,31 @@ static u32 jsonLookupBlobStep(
     }
     if( j>iEnd ) return JSON_BLOB_ERROR;
     if( k>0 ) return JSON_BLOB_NOTFOUND;
-    if( pParse->eEdit>=JEDIT_INS
-     && jsonBlobMakeEditable(pParse, pParse->nIns)
-    ){
+    if( pParse->eEdit>=JEDIT_INS ){
+      JsonParse v;
       testcase( pParse->eEdit==JEDIT_INS );
       testcase( pParse->eEdit==JEDIT_SET );
-      jsonBlobEdit(pParse, j, 0, pParse->aIns, pParse->nIns);
+      memset(&v, 0, sizeof(v));
+      if( zPath[i+1]==0 ){
+        v.aBlob = pParse->aIns;
+        v.nBlob = pParse->nIns;
+      }else{
+        v.nBlob = 1;
+        v.aBlob = (u8*)&emptyObject[zPath[i+1]=='.'];
+        v.eEdit = pParse->eEdit;
+        v.nIns = pParse->nIns;
+        v.aIns = pParse->aIns;
+        rc = jsonLookupBlobStep(&v, 0, &zPath[i+1], 0);
+        if( JSON_BLOB_ISERROR(rc) || v.oom ){
+          pParse->oom |= v.oom;
+          jsonParseReset(&v);
+          return rc;
+        }
+      }
+      if( jsonBlobMakeEditable(pParse, v.nBlob) ){
+        jsonBlobEdit(pParse, j, 0, v.aBlob, v.nBlob);
+      }
+      jsonParseReset(&v);
       if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
       return j;
     }
@@ -3754,6 +3793,10 @@ static void jsonReturnParse(
   JsonParse *p
 ){
   int flgs;
+  if( p->oom ){
+    sqlite3_result_error_nomem(ctx);
+    return;
+  }
   flgs = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
   if( flgs & JSON_BLOB ){
     sqlite3_result_blob(ctx, p->aBlob, p->nBlob,

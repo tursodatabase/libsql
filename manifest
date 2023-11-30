@@ -1,5 +1,5 @@
-C Simplification\sof\sthe\snew\sJSON\sinsert/set\stest\scases.
-D 2023-11-30T16:17:09.157
+C Enhance\sjson_set()\sand\sjson_insert()\sso\sthat\sthey\screate\smissing\nsubstructure.
+D 2023-11-30T19:06:27.003
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -688,7 +688,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 8b509dead923cd44f31e4866d1024f1b602bdf01c9d41a08cc36aa5f1203fdf8
+F src/json.c 92cc05dcf87cdace6fbf2a76e0cb2b030f04ddb1819e024af4ce8885261b4cef
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 1b89f3de98d1b59fec5bac1d66d6ece21f703821b8eaa0d53d9604c35309f6f9
@@ -2145,8 +2145,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 146c717c51940b2139befc45ac74e7a1c36ef3c32fd3cfe35b334488eebe6298
-R 8e1036414b3f5ed40f0248ecb25d6019
+P 04c0d5644372446c924a2e31a26edf51ddc563a1990d170b0ed4739e3e8b239b
+R 4a2861d7ab7860f80e426ce44e32c50f
 U drh
-Z df0518617355b4fc840dfe4615c492b7
+Z 1fffc27f10fd5ca429d5618946ebb513
 # Remove this line to create a well-formed Fossil manifest.
