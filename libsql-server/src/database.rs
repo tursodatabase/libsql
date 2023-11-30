@@ -64,7 +64,7 @@ impl Database for PrimaryDatabase {
         if let Some(replicator) = &self.logger.bottomless_replicator {
             let replicator = replicator.lock().unwrap().take();
             if let Some(mut replicator) = replicator {
-                replicator.shutdown_gracefully().await?;
+                replicator.wait_until_snapshotted().await?;
             }
         }
         Ok(())
