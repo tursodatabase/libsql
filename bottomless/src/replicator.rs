@@ -373,11 +373,11 @@ impl Replicator {
         tracing::info!("bottomless replicator: shutting down...");
         let last_frame_no = self.last_known_frame();
         self.wait_until_committed(last_frame_no).await?;
+        self.wait_until_snapshotted().await?;
         // drop flush trigger, which will cause WAL upload loop to close. Since this action will
         // close the channel used by wait_until_committed, it must happen after wait_until_committed
-        // has finished
+        // has finished. If trigger won't be dropped, tasks from join_set will never finish.
         self.flush_trigger.take();
-        self.wait_until_snapshotted().await?;
         while let Some(t) = self.join_set.join_next().await {
             t?;
         }
