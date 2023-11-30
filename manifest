@@ -1,5 +1,5 @@
-C In\sthe\srecovery\sextension,\sif\sa\spayload\ssize\sis\sunreasonably\slarge,\sit\sis\nprobably\scorrupt,\sso\struncate\sit.
-D 2023-11-29T13:47:46.693
+C Update\ssome\sOPFS-related\shelp\stext\sin\sWASM\stests.\sMinor\scleanups\sin\sspeedtest1-worker.js.
+D 2023-11-30T10:00:25.069
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -621,8 +621,8 @@ F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d695
 F ext/wasm/fiddle/fiddle-worker.js e0153f9af6500805c6f09c0b3cfdb7d857e9d6863dbee9d50d1628fccf5f4b4d
 F ext/wasm/fiddle/fiddle.js 974b995119ac443685d7d94d3b3c58c6a36540e9eb3fed7069d5653284071715
 F ext/wasm/fiddle/index.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
-F ext/wasm/index-dist.html 22379774f0ad4edcaaa8cf9c674c82e794cc557719a8addabed74eb8069d412e
-F ext/wasm/index.html 4e7847b909f4ae0da8c829b150b79454050e53b3658431f138636257729cd42b
+F ext/wasm/index-dist.html e91d76e4581185238fd3d42ed86ec600f7023ed3e3a944c5c356f25304bf1263
+F ext/wasm/index.html b31ce41c0da476d5ffcef23069b9d3415b419d65af5779096ebcfbcbade453a9
 F ext/wasm/jaccwabyt/jaccwabyt.js 1264710db3cfbcb6887d95665b7aeba60c1126eaef789ca4cf1a4a17d5bc7f54
 F ext/wasm/jaccwabyt/jaccwabyt.md 37911f00db12cbcca73aa1ed72594430365f30aafae2fa9c886961de74e5e0eb
 F ext/wasm/module-symbols.html dc476b403369b26a1a23773e13b80f41b9a49f0825e81435fe3600a7cfbbe337
@@ -631,7 +631,7 @@ F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd84223150
 F ext/wasm/speedtest1-wasmfs.html 0e9d335a9b5b5fafe6e1bc8dc0f0ca7e22e6eb916682a2d7c36218bb7d67379d
 F ext/wasm/speedtest1-wasmfs.mjs ac5cadbf4ffe69e9eaac8b45e8523f030521e02bb67d654c6eb5236d9c456cbe
 F ext/wasm/speedtest1-worker.html e33e2064bda572c0c3ebaec7306c35aa758d9d27e245d67e807f8cc4a9351cc5
-F ext/wasm/speedtest1-worker.js 315d26198c46be7c85e26fda15d80ef882424276abde25ffd8b026fb02a35d8c
+F ext/wasm/speedtest1-worker.js 4d2ea70a3c24e05bdca78025202841f33d298c4fa9541a0070c3228661f89ecd
 F ext/wasm/speedtest1.html ff048b4a623aa192e83e143e48f1ce2a899846dd42c023fdedc8772b6e3f07da
 F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f1293583ad5af0cd3a3779e205 x
 F ext/wasm/sql/000-mandelbrot.sql 775337a4b80938ac8146aedf88808282f04d02d983d82675bd63d9c2d97a15f0
@@ -2143,8 +2143,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cad269d5e274443c39203a56603b991accc0399135d436996fc039d1d28ec9db
-R 4a3a6ee7f774b8b1af828ef09f5272a7
-U drh
-Z 25e836823c87bebe85ade3cc7e139b02
+P 988c3179e978a3a6d42541e9c7a2ab98150383671810926503376ed808f150ff
+R 73ee9ef0435c8cda72f87d3ec03cb69f
+U stephan
+Z 88450718d2dd1d2993dee724cc33772c
 # Remove this line to create a well-formed Fossil manifest.
