@@ -1022,7 +1022,7 @@ impl Replicator {
         timestamp: Option<NaiveDateTime>,
     ) -> Result<(RestoreAction, bool)> {
         tracing::debug!("restoring from");
-        if let Some(tombstone) = dbg!(self.get_tombstone().await)? {
+        if let Some(tombstone) = self.get_tombstone().await? {
             if let Some(timestamp) = Self::generation_to_timestamp(&generation) {
                 if tombstone.timestamp() as u64 >= timestamp.to_unix().0 {
                     bail!(
@@ -1423,7 +1423,7 @@ impl Replicator {
         generation: Option<Uuid>,
         timestamp: Option<NaiveDateTime>,
     ) -> Result<(RestoreAction, bool)> {
-        tracing::debug!("restoring with {:?} at {:?}", generation, timestamp);
+        tracing::debug!("restoring with {generation:?} at {timestamp:?}");
         let generation = match generation {
             Some(gen) => gen,
             None => match self.latest_generation_before(timestamp.as_ref()).await {
@@ -1457,7 +1457,7 @@ impl Replicator {
             marker = Self::try_get_last_frame_no(response, &mut last_frame);
             marker.is_some()
         } {}
-        Ok(dbg!(last_frame))
+        Ok(last_frame)
     }
 
     fn try_get_last_frame_no(response: ListObjectsOutput, frame_no: &mut u32) -> Option<String> {
