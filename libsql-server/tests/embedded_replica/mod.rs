@@ -494,7 +494,7 @@ fn replicate_with_snapshots() {
 
         let tmp = tempdir().unwrap();
         let db = Database::open_with_remote_sync_connector(
-            format!("{:?}", tmp.path()),
+            tmp.path().join("data").display().to_string(),
             "http://primary:8080",
             "",
             TurmoilConnector,
