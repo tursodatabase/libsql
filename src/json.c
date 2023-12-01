@@ -201,7 +201,6 @@ static const char jsonIsOk[256] = {
 
 /* Objects */
 typedef struct JsonCache JsonCache;
-typedef struct JsonCacheLine JsonCacheLine;
 typedef struct JsonString JsonString;
 typedef struct JsonParse JsonParse;
 
@@ -217,16 +216,10 @@ typedef struct JsonParse JsonParse;
 ** All content, both JSON text and the JSONB blobs, is stored as RCStr
 ** objects.
 */
-struct JsonCacheLine {
-  u32 nJson;        /* Size of the JSON text, in bytes */
-  u32 nBlob;        /* Size of the corresponding JSONB, in bytes */
-  char *zJson;      /* RCStr holding the JSON text */
-  char *aBlob;      /* RCStr holding the corresponding JSONB */
-};
 struct JsonCache {
-  sqlite3 *db;                       /* Database connection */
-  int nUsed;                         /* Number of active entries in the cache */
-  JsonCacheLine a[JSON_CACHE_SIZE];  /* One line for each cache entry */
+  sqlite3 *db;                    /* Database connection */
+  int nUsed;                      /* Number of active entries in the cache */
+  JsonParse *a[JSON_CACHE_SIZE];  /* One line for each cache entry */
 };
 
 /* An instance of this object represents a JSON string
@@ -285,13 +278,14 @@ struct JsonParse {
   u32 nBlob;         /* Bytes of aBlob[] actually used */
   u32 nBlobAlloc;    /* Bytes allocated to aBlob[].  0 if aBlob is external */
   char *zJson;       /* Json text used for parsing */
+  int nJson;         /* Length of the zJson string in bytes */
   u16 iDepth;        /* Nesting depth */
   u8 nErr;           /* Number of errors seen */
   u8 oom;            /* Set to true if out of memory */
-  u8 bBlobIsRCStr;   /* True if aBlob is an RCStr */
+  u8 bJsonIsRCStr;   /* True if zJson is an RCStr */
   u8 hasNonstd;      /* True if input uses non-standard features like JSON5 */
+  u8 bReadOnly;      /* Do not modify. */
   u32 nJPRef;        /* Number of references to this object */
-  int nJson;         /* Length of the zJson string in bytes */
   u32 iErr;          /* Error location in zJson[] */
   /* Search and edit information.  See jsonLookupBlobStep() */
   u8 eEdit;          /* Edit operation to apply */
@@ -330,6 +324,9 @@ static int jsonFuncArgMightBeBinary(sqlite3_value *pJson);
 static u32 jsonXlateBlobToText(const JsonParse*,u32,JsonString*);
 static void jsonReturnParse(sqlite3_context*,JsonParse*);
 static JsonParse *jsonParseFuncArg(sqlite3_context*,sqlite3_value*,u32);
+static void jsonParseFree(JsonParse*);
+
+
 /**************************************************************************
 ** Utility routines for dealing with JsonCache objects
 **************************************************************************/
@@ -340,8 +337,7 @@ static JsonParse *jsonParseFuncArg(sqlite3_context*,sqlite3_value*,u32);
 static void jsonCacheDelete(JsonCache *p){
   int i;
   for(i=0; i<p->nUsed; i++){
-    sqlite3RCStrUnref(p->a[i].zJson);
-    sqlite3RCStrUnref(p->a[i].aBlob);
+    jsonParseFree(p->a[i]);
   }
   sqlite3DbFree(p->db, p);
 }
@@ -358,16 +354,12 @@ static void jsonCacheDeleteGeneric(void *p){
 */
 static int jsonCacheInsert(
   sqlite3_context *ctx,   /* The SQL statement context holding the cache */
-  char *zJson,            /* The key. */
-  u32 nJson,              /* Number of bytes in zJson */
-  int bJsonIsRCStr,       /* True if zJson is already an RCStr */
-  u8 *aBlob,              /* The value. */
-  u32 nBlob               /* Number of bytes in aBlob */
+  JsonParse *pParse       /* The parse object to be added to the cache */
 ){
   JsonCache *p;
-  char *aRCBlob;
-  char *zRCJson;
 
+  assert( pParse->zJson!=0 );
+  assert( pParse->bJsonIsRCStr );
   p = sqlite3_get_auxdata(ctx, JSON_CACHE_ID);
   if( p==0 ){
     sqlite3 *db = sqlite3_context_db_handle(ctx);
@@ -378,76 +370,61 @@ static int jsonCacheInsert(
     p = sqlite3_get_auxdata(ctx, JSON_CACHE_ID);
     if( p==0 ) return SQLITE_NOMEM;
   }
-  aRCBlob = sqlite3RCStrNew( nBlob );
-  if( aRCBlob==0 ) return SQLITE_NOMEM;
-  memcpy(aRCBlob, aBlob, nBlob);
-  if( bJsonIsRCStr ){
-    zRCJson = sqlite3RCStrRef(zJson);
-  }else{
-    zRCJson = sqlite3RCStrNew( nJson );
-    if( zRCJson==0 ){
-      sqlite3RCStrUnref(aRCBlob);
-      return SQLITE_NOMEM;
-    }
-    memcpy(zRCJson, zJson, nJson);
-    zRCJson[nJson] = 0;
-  }
   if( p->nUsed >= JSON_CACHE_SIZE ){
-    sqlite3RCStrUnref(p->a[0].zJson);
-    sqlite3RCStrUnref(p->a[0].aBlob);
+    jsonParseFree(p->a[0]);
     memmove(p->a, &p->a[1], (JSON_CACHE_SIZE-1)*sizeof(p->a[0]));
     p->nUsed = JSON_CACHE_SIZE-1;
   }
-  p->a[p->nUsed].nJson = nJson;
-  p->a[p->nUsed].nBlob = nBlob;
-  p->a[p->nUsed].zJson = zRCJson;
-  p->a[p->nUsed].aBlob = aRCBlob;
+  pParse->eEdit = 0;
+  pParse->nJPRef++;
+  pParse->bReadOnly = 1;
+  p->a[p->nUsed] = pParse;
   p->nUsed++;
   return SQLITE_OK;
 }
 
 /*
-** Search for a cached translation of zJson (size: nJson bytes) into 
-** JSONB.  Return it if found.
-**
-** The returned value is an RCStr object if it is not NULL.
-** The caller is responsible for incrementing the reference count.
+** Search for a cached translation the json text supplied by pArg.  Return
+** the JsonParse object if found.
 */
-static u8 *jsonCacheSearch(
+static JsonParse *jsonCacheSearch(
   sqlite3_context *ctx,    /* The SQL statement context holding the cache */
-  char *zJson,             /* The key.  Might or might not be an RCStr */
-  u32 nJson,               /* Size of the key in bytes */
-  u32 *pnBlob              /* OUT: Size of the result in bytes */
+  sqlite3_value *pArg      /* Function argument containing SQL text */
 ){
   JsonCache *p;
   int i;
+  const char *zJson;
+  int nJson;
 
-  assert( pnBlob!=0 );
+  if( sqlite3_value_type(pArg)!=SQLITE_TEXT ){
+    return 0;
+  }
+  zJson = (const char*)sqlite3_value_text(pArg);
+  if( zJson==0 ) return 0;
+  nJson = sqlite3_value_bytes(pArg);
+
   p = sqlite3_get_auxdata(ctx, JSON_CACHE_ID);
   if( p==0 ){
-    *pnBlob = 0;
     return 0;
   }
   for(i=0; i<p->nUsed; i++){
-    if( p->a[i].zJson==zJson ) break;
+    if( p->a[i]->zJson==zJson ) break;
   }
   if( i>=p->nUsed ){
     for(i=0; i<p->nUsed; i++){
-      if( p->a[i].nJson!=nJson ) continue;
-      if( memcmp(p->a[i].zJson, zJson, nJson)==0 ) break;
+      if( p->a[i]->nJson!=nJson ) continue;
+      if( memcmp(p->a[i]->zJson, zJson, nJson)==0 ) break;
     }
   }
   if( i<p->nUsed ){
     if( i<p->nUsed-1 ){
-      JsonCacheLine tmp = p->a[i];
+      JsonParse *tmp = p->a[i];
       memmove(&p->a[i], &p->a[i+1], (p->nUsed-i-1)*sizeof(tmp));
       p->a[p->nUsed-1] = tmp;
       i = p->nUsed - 1;
     }
-    *pnBlob = p->a[i].nBlob;
-    return (u8*)p->a[i].aBlob;
+    return p->a[i];
   }else{
-    *pnBlob = 0;
     return 0;
   }
 }
@@ -717,9 +694,9 @@ static void jsonAppendSqlValue(
 **
 ** The JsonString is reset.
 **
-** If pParse and ctx are both non-NULL and if pParse->aBlob is valid
-** then an attempt is made to cache the translation from JSON text into
-** the blob.
+** If pParse and ctx are both non-NULL, then the SQL string in p is
+** loaded into the zJson field of the pParse object as a RCStr and the
+** pParse is added to the cache.
 */
 static void jsonReturnString(
   JsonString *p,            /* String to return */
@@ -736,18 +713,19 @@ static void jsonReturnString(
       sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
                             SQLITE_TRANSIENT, SQLITE_UTF8);
     }else if( jsonForceRCStr(p) ){
-      sqlite3RCStrRef(p->zBuf);
-      if( pParse ){
-        int rc = jsonCacheInsert(ctx, p->zBuf, p->nUsed, 1,
-                                 pParse->aBlob, pParse->nBlob);
+      if( pParse && pParse->bJsonIsRCStr==0 ){
+        int rc;
+        pParse->zJson = sqlite3RCStrRef(p->zBuf);
+        pParse->nJson = p->nUsed;
+        pParse->bJsonIsRCStr = 1;
+        rc = jsonCacheInsert(ctx, pParse);
         if( rc==SQLITE_NOMEM ){
-          sqlite3RCStrUnref(p->zBuf);
           sqlite3_result_error_nomem(ctx);
           jsonStringReset(p);
           return;
         }
       }
-      sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
+      sqlite3_result_text64(p->pCtx, sqlite3RCStrRef(p->zBuf), p->nUsed,
                             sqlite3RCStrUnref,
                             SQLITE_UTF8);
     }else{
@@ -771,12 +749,11 @@ static void jsonReturnString(
 */
 static void jsonParseReset(JsonParse *pParse){
   assert( pParse->nJPRef<=1 );
-  if( pParse->bBlobIsRCStr ){
-    assert( pParse->nBlobAlloc==0 );
-    sqlite3RCStrUnref((char*)pParse->aBlob);
-    pParse->aBlob = 0;
-    pParse->nBlob = 0;
-    pParse->bBlobIsRCStr = 0;
+  if( pParse->bJsonIsRCStr ){
+    sqlite3RCStrUnref(pParse->zJson);
+    pParse->zJson = 0;
+    pParse->nJson = 0;
+    pParse->bJsonIsRCStr = 0;
   }
   if( pParse->nBlobAlloc ){
     sqlite3_free(pParse->aBlob);
@@ -1048,6 +1025,7 @@ static int jsonBlobExpand(JsonParse *pParse, u32 N){
 static int jsonBlobMakeEditable(JsonParse *pParse, u32 nExtra){
   u8 *aOld;
   u32 nSize;
+  assert( !pParse->bReadOnly );
   if( pParse->nBlobAlloc>0 ) return 1;
   aOld = pParse->aBlob;
   nSize = pParse->nBlob + nExtra;
@@ -2672,6 +2650,11 @@ jsonInsertIntoBlob_patherror:
 }
 
 /*
+** Make a copy of a JsonParse object.  The copy will be editable.
+*/
+
+
+/*
 ** Generate a JsonParse object, containing valid JSONB in aBlob and nBlob,
 ** from the SQL function argument pArg.  Return a pointer to the new
 ** JsonParse object.
@@ -2692,17 +2675,40 @@ static JsonParse *jsonParseFuncArg(
   sqlite3_value *pArg,
   u32 flgs
 ){
-  int eType;          /* Datatype of pArg */
-  JsonParse *p = 0;   /* Value to be returned */
+  int eType;                   /* Datatype of pArg */
+  JsonParse *p = 0;            /* Value to be returned */
+  JsonParse *pFromCache = 0;   /* Value taken from cache */
   
   assert( ctx!=0 );
   eType = sqlite3_value_type(pArg);
   if( eType==SQLITE_NULL ){
     return 0;
   }
+  pFromCache = jsonCacheSearch(ctx, pArg);
+  if( pFromCache ){
+    pFromCache->nJPRef++;
+    if( (flgs & JSON_EDITABLE)==0 ){
+      return pFromCache;
+    }
+  }
+rebuild_from_cache:
   p = sqlite3_malloc64( sizeof(*p) );
   if( p==0 ) goto json_pfa_oom;
   memset(p, 0, sizeof(*p));
+  p->nJPRef = 1;
+  if( pFromCache!=0 ){
+    u32 nBlob = pFromCache->nBlob;
+    p->aBlob = sqlite3_malloc64( nBlob );
+    if( p->aBlob==0 ) goto json_pfa_oom;
+    memcpy(p->aBlob, pFromCache->aBlob, nBlob);
+    p->nBlobAlloc = p->nBlob = nBlob;
+    p->hasNonstd = pFromCache->hasNonstd;
+    jsonParseFree(pFromCache);
+    return p;
+  }else{
+    jsonParseFree(pFromCache);
+    pFromCache = 0;
+  }
   if( eType==SQLITE_BLOB ){
     u32 n, sz = 0;
     p->aBlob = (u8*)sqlite3_value_blob(pArg);
@@ -2729,29 +2735,11 @@ static JsonParse *jsonParseFuncArg(
     }
     return p;
   }
-  /* TODO: Check in the cache */
   p->zJson = (char*)sqlite3_value_text(pArg);
   p->nJson = sqlite3_value_bytes(pArg);
   if( p->nJson==0 ) goto json_pfa_malformed;
   if( p->zJson==0 ) goto json_pfa_oom;
-
-  p->aBlob = jsonCacheSearch(ctx, p->zJson, p->nJson, &p->nBlob);
-  if( p->aBlob ){
-    if( flgs & JSON_EDITABLE ){
-      u8 *pNew = sqlite3_malloc64( p->nBlob );
-      if( pNew==0 ) goto json_pfa_oom;
-      memcpy(pNew, p->aBlob, p->nBlob);
-      p->aBlob = pNew;
-      p->nBlobAlloc = p->nBlob;
-    }else{
-      sqlite3RCStrRef((char*)p->aBlob);
-      p->bBlobIsRCStr = 1;
-    }
-    return p;
-  }
-
-  if( flgs & JSON_KEEPERROR ) ctx = 0;
-  if( jsonConvertTextToBlob(p, ctx) ){
+  if( jsonConvertTextToBlob(p, (flgs & JSON_KEEPERROR) ? 0 : ctx) ){
     if( flgs & JSON_KEEPERROR ){
       p->nErr = 1;
       return p;
@@ -2759,12 +2747,26 @@ static JsonParse *jsonParseFuncArg(
       jsonParseFree(p);
       return 0;
     }
-  }
-  if( ctx ){
+  }else{
     int isRCStr = sqlite3ValueIsOfClass(pArg, sqlite3RCStrUnref);
-    int rc = jsonCacheInsert(ctx, p->zJson, p->nJson, isRCStr,
-                             p->aBlob, p->nBlob);
+    int rc;
+    if( !isRCStr ){
+      char *zNew = sqlite3RCStrNew( p->nJson );
+      if( zNew==0 ) goto json_pfa_oom;
+      memcpy(zNew, p->zJson, p->nJson);
+      p->zJson = zNew;
+      p->zJson[p->nJson] = 0;
+    }else{
+      sqlite3RCStrRef(p->zJson);
+    }
+    p->bJsonIsRCStr = 1;
+    rc = jsonCacheInsert(ctx, p);
     if( rc==SQLITE_NOMEM ) goto json_pfa_oom;
+    if( flgs & JSON_EDITABLE ){
+      pFromCache = p;
+      p = 0;
+      goto rebuild_from_cache;
+    }
   }
   return p;
 
@@ -2779,6 +2781,7 @@ json_pfa_malformed:
   }
 
 json_pfa_oom:
+  jsonParseFree(pFromCache);
   jsonParseFree(p);
   sqlite3_result_error_nomem(ctx);
   return 0;
