@@ -24,6 +24,14 @@ case.
 Follow the [instructions](../docs/BUILD-RUN.md) to build and run `sqld`
 using Homebrew, Docker, or your own Rust toolchain.
 
+## Tests
+
+Run the command below to run all tests for `libsql` and `libsql-server`.
+
+```
+cargo xtask test
+```
+
 ## Client libraries
 
 The following client libraries enable your app to query `sqld` programmatically:
