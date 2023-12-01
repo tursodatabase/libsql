@@ -4004,7 +4004,7 @@ extern "C" {
     pub fn clone_wal_manager(p: *mut RefCountedWalManager) -> *mut RefCountedWalManager;
 }
 extern "C" {
-    pub fn make_sqlite3_wal_manager_rc(out: *mut *mut RefCountedWalManager);
+    pub fn make_sqlite3_wal_manager_rc() -> *mut RefCountedWalManager;
 }
 extern "C" {
     pub static sqlite3_wal_manager: libsql_wal_manager;
