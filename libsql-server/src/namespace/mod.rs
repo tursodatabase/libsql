@@ -406,31 +406,30 @@ struct NamespaceStoreInner<M: MakeNamespace> {
 }
 
 impl<M: MakeNamespace> NamespaceStore<M> {
-    pub async fn new(
+    pub fn new(
         make_namespace: M,
         allow_lazy_creation: bool,
         snapshot_at_shutdown: bool,
         meta_store_path: impl AsRef<Path>,
-    ) -> crate::Result<Self> {
-        let metadata = MetaStore::new(meta_store_path).await?;
-
+        max_active_namespaces: usize,
+    ) -> Self {
         let store = Cache::<NamespaceName, NamespaceEntry<M::Database>>::builder()
-        .async_eviction_listener(|name, ns, _| {
-            Box::pin(async move {
-                tracing::info!("namespace `{name}` deallocated");
-                // shutdown namespace
-                if let Some(ns) = ns.write().await.take() {
-                    if let Err(e) = ns.destroy().await {
-                        tracing::error!("error deallocating `{name}`: {e}")
+            .async_eviction_listener(|name, ns, _| {
+                Box::pin(async move {
+                    tracing::info!("namespace `{name}` deallocated");
+                    // shutdown namespace
+                    if let Some(ns) = ns.write().await.take() {
+                        if let Err(e) = ns.destroy().await {
+                            tracing::error!("error deallocating `{name}`: {e}")
+                        }
                     }
-                }
+                })
             })
-        })
-        // TODO(marin): configurable capacity
-        .max_capacity(25)
-        .build();
-
-        Ok(Self {
+            // TODO(marin): configurable capacity
+            .max_capacity(max_active_namespaces as u64)
+            .time_to_idle(Duration::from_secs(300))
+            .build();
+        Self {
             inner: Arc::new(NamespaceStoreInner {
                 store,
                 metadata,
@@ -439,7 +438,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                 has_shutdown: AtomicBool::new(false),
                 snapshot_at_shutdown,
             }),
-        })
+        }
     }
 
     pub async fn destroy(&self, namespace: NamespaceName) -> crate::Result<()> {
@@ -744,7 +743,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                             bottomless_db_id,
                             true,
                             self.make_reset_cb(),
-                            &self.inner.metadata
+                            &self.inner.metadata,
                         )
                         .await?;
 
