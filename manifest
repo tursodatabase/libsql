@@ -1,5 +1,5 @@
-C First\sattempt\sto\sget\sthe\sJSON\stext-to-binary\scache\sworking.\s\sAll\stest\scases\npass,\sbut\sthe\scache\sseems\snot\sto\shelp\smuch.
-D 2023-12-01T12:57:12.578
+C JSON\scache\sis\snow\smore\seffective.
+D 2023-12-01T18:49:02.694
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -688,7 +688,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 9a96faf916f572deb94b6cc7673ba6e299c48d153c18218e104a2c6ae37c2c8e
+F src/json.c 3556e879386b0af1c542ed13ebb2f58c48d3b8b3ab13a96ab77ad2a9493cc715
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 1b89f3de98d1b59fec5bac1d66d6ece21f703821b8eaa0d53d9604c35309f6f9
@@ -2145,8 +2145,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 11ebb5f712cc7a515e2e0f2be8c1d71de20c97fe5b74c4f4d72c84fd21182d35
-R 18f6bb3dc7a73112aa5c773b9941447e
+P 25ed295f300fea6185104a73721076bccd2b2a6e411c78564266fa6dca4ff70c 1fdbc39521f63aedc6f08ecaafa54ea467b8c6316a692a18ad01eecbf22a0977
+R bed96169a434a08ba8168cff3e09a739
+T +closed 1fdbc39521f63aedc6f08ecaafa54ea467b8c6316a692a18ad01eecbf22a0977
 U drh
-Z 9a005b4c0b238db6966807971445cc41
+Z 38a6916a5a09665f20ec73466c161c5c
 # Remove this line to create a well-formed Fossil manifest.
