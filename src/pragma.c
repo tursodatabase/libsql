@@ -1779,7 +1779,8 @@ void sqlite3Pragma(
           if( pVTab->pModule->iVersion<4 ) continue;
           if( pVTab->pModule->xIntegrity==0 ) continue;
           sqlite3VdbeAddOp3(v, OP_VCheck, i, 3, isQuick);
-          sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
+          pTab->nTabRef++;
+          sqlite3VdbeAppendP4(v, pTab, P4_TABLEREF);
           a1 = sqlite3VdbeAddOp1(v, OP_IsNull, 3); VdbeCoverage(v);
           integrityCheckResultRow(v);
           sqlite3VdbeJumpHere(v, a1);

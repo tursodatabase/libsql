@@ -854,7 +854,7 @@ dir.sql := sql
 speedtest1 := ../../speedtest1
 speedtest1.c := ../../test/speedtest1.c
 speedtest1.sql := $(dir.sql)/speedtest1.sql
-speedtest1.cliflags := --size 25 --big-transactions
+speedtest1.cliflags := --size 10 --big-transactions
 $(speedtest1):
 	$(MAKE) -C ../.. speedtest1
 $(speedtest1.sql): $(speedtest1) $(MAKEFILE)

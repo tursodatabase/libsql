@@ -72,7 +72,6 @@
     App.logHtml("reset db rc =",rc,db.id, db.filename);
   };
 
-  
   const E = (s)=>document.querySelector(s);
   const App = {
     e: {
@@ -91,6 +90,15 @@
     db: Object.create(null),
     dbs: Object.create(null),
     cache:{},
+    metrics: {
+      fileCount: 0,
+      runTimeMs: 0,
+      prepareTimeMs: 0,
+      stepTimeMs: 0,
+      stmtCount: 0,
+      strcpyMs: 0,
+      sqlBytes: 0
+    },
     log: console.log.bind(console),
     warn: console.warn.bind(console),
     cls: function(){this.e.output.innerHTML = ''},
@@ -117,7 +125,6 @@
                    "Running",name,'('+sql.length,'bytes) using',db.id);
       const capi = this.sqlite3.capi, wasm = this.sqlite3.wasm;
       let pStmt = 0, pSqlBegin;
-      const stack = wasm.scopedAllocPush();
       const metrics = db.metrics = Object.create(null);
       metrics.prepTotal = metrics.stepTotal = 0;
       metrics.stmtCount = 0;
@@ -142,6 +149,11 @@
         this.logHtml("Overhead (time - prep - step):",
                      (metrics.evalTimeTotal - metrics.prepTotal - metrics.stepTotal)+"ms");
         this.logHtml(banner,"End of",name);
+        this.metrics.prepareTimeMs += metrics.prepTotal;
+        this.metrics.stepTimeMs += metrics.stepTotal;
+        this.metrics.stmtCount += metrics.stmtCount;
+        this.metrics.strcpyMs += metrics.strcpy;
+        this.metrics.sqlBytes += sql.length;
       };
 
       let runner;
@@ -214,7 +226,9 @@
         }.bind(this);
       }else{/*sqlite3 db...*/
         runner = function(resolve, reject){
+          ++this.metrics.fileCount;
           metrics.evalSqlStart = performance.now();
+          const stack = wasm.scopedAllocPush();
           try {
             let t;
             let sqlByteLen = sql.byteLength;
@@ -269,7 +283,7 @@
       let p;
       if(1){
         p = new Promise(function(res,rej){
-          setTimeout(()=>runner(res, rej), 50)/*give UI a chance to output the "running" banner*/;
+          setTimeout(()=>runner(res, rej), 0)/*give UI a chance to output the "running" banner*/;
         });
       }else{
         p = new Promise(runner);
@@ -401,7 +415,7 @@
       });
       return new Blob(ar);
     },
-    
+
     downloadMetrics: function(){
       const b = this.metricsToBlob();
       if(!b) return;
@@ -576,6 +590,8 @@
         const timeTotal = performance.now() - timeStart;
         who.logHtml("Run-remaining time:",timeTotal,"ms ("+(timeTotal/1000/60)+" minute(s))");
         who.clearStorage();
+        App.metrics.runTimeMs = timeTotal;
+        who.logHtml("Total metrics:",JSON.stringify(App.metrics,undefined,'  '));
       }, false);
     }/*run()*/
   }/*App*/;

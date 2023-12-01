@@ -1054,6 +1054,30 @@ do_execsql_test json101-23.2 {
     FROM (SELECT json_set('[]','$[#]',0,'$[#]',1) AS j);
 } {{[0,1]} 0 1}
 
+# Insert/Set/Replace where the path specifies substructure that
+# does not yet exist
+#
+proc tx x {return [string map [list ( \173 ) \175 ' \042 < \133 > \135] $x]}
+foreach {id start path ins set repl} {
+  1 {{}}       {$.a.b.c}     ('a':('b':('c':9)))      ('a':('b':('c':9)))      ()
+  2 {{a:4}}    {$.a.b.c}     ('a':4)                  ('a':4)                  ('a':4)
+  3 {{a:{}}}   {$.a.b.c}     ('a':('b':('c':9)))      ('a':('b':('c':9)))      ('a':())
+  4 {[0,1,2]}  {$[3].a[0].b} <0,1,2,('a':<('b':9)>)>  <0,1,2,('a':<('b':9)>)>  <0,1,2>
+  5 {[0,1,2]}  {$[1].a[0].b} <0,1,2>                  <0,1,2>                  <0,1,2>
+  6 {[0,{},2]} {$[1].a[0].b} <0,('a':<('b':9)>),2>    <0,('a':<('b':9)>),2>    <0,(),2>
+  7 {[0,1,2]}  {$[3][0].b}   <0,1,2,<('b':9)>>        <0,1,2,<('b':9)>>        <0,1,2>
+  8 {[0,1,2]}  {$[1][0].b}   <0,1,2>                  <0,1,2>                  <0,1,2>
+} {
+  do_execsql_test json101-24.$id.insert {
+    SELECT json_insert($start,$path,9);
+  } [list [tx $ins]]
+  do_execsql_test json101-24.$id.set {
+    SELECT json_set($start,$path,9);
+  } [list [tx $set]]
+  do_execsql_test json101-24.$id.replace {
+    SELECT json_replace($start,$path,9);
+  } [list [tx $repl]]
+}
 
 
 finish_test

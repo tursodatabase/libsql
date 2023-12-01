@@ -126,6 +126,7 @@ typedef struct VdbeOpList VdbeOpList;
 #define P4_INT64      (-13) /* P4 is a 64-bit signed integer */
 #define P4_INTARRAY   (-14) /* P4 is a vector of 32-bit integers */
 #define P4_FUNCCTX    (-15) /* P4 is a pointer to an sqlite3_context object */
+#define P4_TABLEREF   (-16) /* Like P4_TABLE, but reference counted */
 
 /* Error message codes for OP_Halt */
 #define P5_ConstraintNotNull 1
