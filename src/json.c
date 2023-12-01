@@ -1366,7 +1366,6 @@ json_parse_restart:
   case '\'': {
     u8 opcode;
     char cDelim;
-    int nn;
     pParse->hasNonstd = 1;
     opcode = JSONB_TEXT;
     goto parse_string;
@@ -1375,12 +1374,7 @@ json_parse_restart:
     opcode = JSONB_TEXT;
   parse_string:
     cDelim = z[i];
-    nn = pParse->nJson;
     for(j=i+1; 1; j++){
-      if( j>=nn ){
-        pParse->iErr = j;
-        return -1;
-      }
       if( jsonIsOk[(unsigned char)z[j]] ) continue;
       c = z[j];
       if( c==cDelim ){
