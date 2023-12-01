@@ -58,7 +58,7 @@ pub(crate) fn response<B>(res: &Response<B>, latency: Duration, span: &Span) {
     } else {
         let grpc = GrpcErrorsAsFailures::new().with_success(GrpcCode::FailedPrecondition);
 
-        let code = match dbg!(grpc.classify_response(res)) {
+        let code = match grpc.classify_response(res) {
             ClassifiedResponse::Ready(Ok(())) => "0".to_string(),
             ClassifiedResponse::Ready(Err(GrpcFailureClass::Code(code))) => {
                 metrics::increment_counter!("libsql_server_user_http_fault", "protcol" => "grpc");
