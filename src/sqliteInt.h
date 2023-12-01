@@ -4116,6 +4116,9 @@ struct sqlite3_str {
 **
 **   3.  Make a (read-only) copy of a read-only RCStr string using
 **       sqlite3RCStrRef().
+**
+** "String" is in the name, but an RCStr object can also be used to hold
+** binary data.
 */
 struct RCStr {
   u64 nRCRef;            /* Number of references */
