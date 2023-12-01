@@ -385,17 +385,18 @@ struct Fts5IndexIter {
 /*
 ** Values used as part of the flags argument passed to IndexQuery().
 */
-#define FTS5INDEX_QUERY_PREFIX     0x0001   /* Prefix query */
-#define FTS5INDEX_QUERY_DESC       0x0002   /* Docs in descending rowid order */
-#define FTS5INDEX_QUERY_TEST_NOIDX 0x0004   /* Do not use prefix index */
-#define FTS5INDEX_QUERY_SCAN       0x0008   /* Scan query (fts5vocab) */
+#define FTS5INDEX_QUERY_PREFIX      0x0001  /* Prefix query */
+#define FTS5INDEX_QUERY_DESC        0x0002  /* Docs in descending rowid order */
+#define FTS5INDEX_QUERY_TEST_NOIDX  0x0004  /* Do not use prefix index */
+#define FTS5INDEX_QUERY_SCAN        0x0008  /* Scan query (fts5vocab) */
 
 /* The following are used internally by the fts5_index.c module. They are
 ** defined here only to make it easier to avoid clashes with the flags
 ** above. */
-#define FTS5INDEX_QUERY_SKIPEMPTY  0x0010
-#define FTS5INDEX_QUERY_NOOUTPUT   0x0020
-#define FTS5INDEX_QUERY_SKIPHASH   0x0040
+#define FTS5INDEX_QUERY_SKIPEMPTY   0x0010
+#define FTS5INDEX_QUERY_NOOUTPUT    0x0020
+#define FTS5INDEX_QUERY_SKIPHASH    0x0040
+#define FTS5INDEX_QUERY_NOTOKENDATA 0x0080
 
 /*
 ** Create/destroy an Fts5Index object.
@@ -467,7 +468,7 @@ int sqlite3Fts5StructureTest(Fts5Index*, void*);
 /*
 ** Used by xInstToken() and xPhraseToken().
 */
-int sqlite3Fts5IterToken(Fts5IndexIter*, int, int, const char**, int*);
+int sqlite3Fts5IterToken(Fts5IndexIter*, i64, int, int, const char**, int*);
 
 /*
 ** Insert or remove data to or from the index. Each time a document is 
@@ -548,7 +549,7 @@ int sqlite3Fts5IndexContentlessDelete(Fts5Index *p, i64 iOrigin, i64 iRowid);
 /* Used to populate hash tables for xInstToken in detail=none/column mode. */
 void sqlite3Fts5IndexIterClearTokendata(Fts5IndexIter*);
 int sqlite3Fts5IndexIterWriteTokendata(
-    Fts5IndexIter*, const char*, int, int iCol, int iOff
+    Fts5IndexIter*, const char*, int, i64 iRowid, int iCol, int iOff
 );
 
 /*

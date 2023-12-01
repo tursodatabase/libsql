@@ -656,12 +656,15 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   }
   idxStr[iIdxStr] = '\0';
 
-  /* Set idxFlags flags for the ORDER BY clause */
+  /* Set idxFlags flags for the ORDER BY clause
+  **
+  ** Note that tokendata=1 tables cannot currently handle "ORDER BY rowid DESC".
+  */
   if( pInfo->nOrderBy==1 ){
     int iSort = pInfo->aOrderBy[0].iColumn;
     if( iSort==(pConfig->nCol+1) && bSeenMatch ){
       idxFlags |= FTS5_BI_ORDER_RANK;
-    }else if( iSort==-1 ){
+    }else if( iSort==-1 && (!pInfo->aOrderBy[0].desc || !pConfig->bTokendata) ){
       idxFlags |= FTS5_BI_ORDER_ROWID;
     }
     if( BitFlagTest(idxFlags, FTS5_BI_ORDER_RANK|FTS5_BI_ORDER_ROWID) ){

@@ -46,12 +46,21 @@ foreach_detail_mode $testprefix {
     SELECT fts5_test_poslist(ft) FROM ft('hello');
   } {{0.0.0 0.0.2 0.0.4}}
 
+breakpoint
   do_execsql_test 1.3 {
     SELECT 
       insttoken(ft, 0, 0),
       insttoken(ft, 1, 0),
       insttoken(ft, 2, 0)
     FROM ft('hello');
+  } {hello.Hello hello.HELLO hello}
+
+  do_execsql_test 1.4 {
+    SELECT 
+      insttoken(ft, 0, 0),
+      insttoken(ft, 1, 0),
+      insttoken(ft, 2, 0)
+    FROM ft('hello') ORDER BY rank;
   } {hello.Hello hello.HELLO hello}
 
 }

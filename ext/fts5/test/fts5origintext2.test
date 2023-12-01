@@ -102,6 +102,7 @@ breakpoint
 do_execsql_test 1.11 { SELECT rowid FROM ft('hello'); } {1 2 3}
 do_execsql_test 1.12 { SELECT rowid FROM ft('today'); } {4 5 6}
 do_execsql_test 1.13 { SELECT rowid FROM ft('world'); } {7 8 9}
+do_execsql_test 1.14 { SELECT rowid FROM ft('hello') ORDER BY rank; } {1 2 3}
 
 finish_test
 

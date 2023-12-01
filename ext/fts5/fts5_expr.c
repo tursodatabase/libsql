@@ -3003,6 +3003,7 @@ static int fts5ExprPopulatePoslistsCb(
   Fts5Expr *pExpr = p->pExpr;
   int i;
   int nQuery = nToken;
+  i64 iRowid = pExpr->pRoot->iRowid;
 
   UNUSED_PARAM2(iUnused1, iUnused2);
 
@@ -3025,7 +3026,7 @@ static int fts5ExprPopulatePoslistsCb(
           int iCol = p->iOff>>32;
           int iTokOff = p->iOff & 0x7FFFFFFF;
           rc = sqlite3Fts5IndexIterWriteTokendata(
-              pT->pIter, pToken, nToken, iCol, iTokOff
+              pT->pIter, pToken, nToken, iRowid, iCol, iTokOff
           );
         }
         if( rc ) return rc;
@@ -3210,6 +3211,7 @@ int sqlite3Fts5ExprInstToken(
 ){
   Fts5ExprPhrase *pPhrase = 0;
   Fts5IndexIter *pIter = 0;
+  i64 iRowid = pExpr->pRoot->iRowid;
 
   if( iPhrase<0 || iPhrase>=pExpr->nPhrase ){
     return SQLITE_RANGE;
@@ -3220,6 +3222,6 @@ int sqlite3Fts5ExprInstToken(
   }
   pIter = pPhrase->aTerm[iToken].pIter;
 
-  return sqlite3Fts5IterToken(pIter, iCol, iOff+iToken, ppOut, pnOut);
+  return sqlite3Fts5IterToken(pIter, iRowid, iCol, iOff+iToken, ppOut, pnOut);
 }
 
