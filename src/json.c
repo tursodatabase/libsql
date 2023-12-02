@@ -3416,10 +3416,10 @@ static int jsonMergePatchBlob(
   u8 eTLabel;       /* Node type of the target label */
   u32 iTLabel = 0;  /* Index of the label */
   u32 nTLabel = 0;  /* Header size in bytes for the target label */
-  u32 szTLabel;     /* Size of the target label payload */
+  u32 szTLabel = 0; /* Size of the target label payload */
   u32 iTValue = 0;  /* Index of the target value */
   u32 nTValue = 0;  /* Header size of the target value */
-  u32 szTValue;     /* Payload size for the target value */
+  u32 szTValue = 0; /* Payload size for the target value */
 
   u32 iPCursor;     /* Cursor position while scanning the patch */
   u32 iPEnd;        /* First byte past the end of the patch */
