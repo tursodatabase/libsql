@@ -133,12 +133,13 @@
 #define JSONB_ARRAY   11   /* An array */
 #define JSONB_OBJECT  12   /* An object */
 
-/* Human-readable names for the JSONB values:
+/* Human-readable names for the JSONB values.  The index for each
+** string must correspond to the JSONB_* integer above.
 */
 static const char * const jsonbType[] = {
   "null", "true", "false", "integer", "integer", 
   "real", "real", "text",  "text",    "text",
-  "text", "array", "object"
+  "text", "array", "object", "", "", "", ""
 };
 
 /*
@@ -168,7 +169,7 @@ static const char jsonIsSpace[] = {
 #define jsonIsspace(x) (jsonIsSpace[(unsigned char)x])
 
 /*
-** Characters that are special to JSON.  Control charaters,
+** Characters that are special to JSON.  Control characters,
 ** '"' and '\\'.
 */
 static const char jsonIsOk[256] = {
@@ -204,7 +205,6 @@ typedef struct JsonCache JsonCache;
 typedef struct JsonString JsonString;
 typedef struct JsonParse JsonParse;
 
-
 /*
 ** Magic number used for the JSON parse cache in sqlite3_get_auxdata()
 */
@@ -213,8 +213,14 @@ typedef struct JsonParse JsonParse;
 
 /* A cache mapping JSON text into JSONB blobs.
 **
-** All content, both JSON text and the JSONB blobs, is stored as RCStr
-** objects.
+** Each cache entry is a JsonParse object with the following restrictions:
+**
+**    *   The bReadOnly flag must be set
+**
+**    *   The aBlob[] array must be owned by the JsonParse object.  In other
+**        words, nBlobAlloc must be non-zero.
+**
+**    *   zJson must be an RCStr.  In other words bJsonIsRCStr must be true.
 */
 struct JsonCache {
   sqlite3 *db;                    /* Database connection */
@@ -225,6 +231,10 @@ struct JsonCache {
 /* An instance of this object represents a JSON string
 ** under construction.  Really, this is a generic string accumulator
 ** that can be and is used to create strings other than JSON.
+**
+** If the generated string is longer than will fit into the zSpace[] buffer,
+** then it will be an RCStr string.  This aids with caching of large
+** JSON strings.
 */
 struct JsonString {
   sqlite3_context *pCtx;   /* Function context - put error messages here */
@@ -260,18 +270,17 @@ struct JsonString {
 /* A parsed JSON value.  Lifecycle:
 **
 **   1.  JSON comes in and is parsed into a JSONB value in aBlob.  The
-**       original text is stored in zJson.
+**       original text is stored in zJson.  This step is skipped if the
+**       input is JSONB instead of text JSON.
 **
-**   2.  The aBlob is searched using the JSON path notation, if needed.
+**   2.  The aBlob[] array is searched using the JSON path notation, if needed.
 **       
-**   3.  Zero or more changes are made to aBlob (via json_remove() or
-**       json_replace() or similar).
+**   3.  Zero or more changes are made to aBlob[] (via json_remove() or
+**       json_replace() or json_patch() or similar).
 **
-**   4.  New JSON text is generated from the aBlob for output.
-**
-** Step 1 is omitted if the input is a BLOB in the JSONB format.  Step 4
-** is omitted if the output is JSONB or some other value that is not
-** JSON text.
+**   4.  New JSON text is generated from the aBlob[] for output.  This step
+**       is skipped the function is one of the jsonb_* functions that returns
+**       JSONB instead of text JSON.
 */
 struct JsonParse {
   u8 *aBlob;         /* JSONB representation of JSON value */
@@ -326,7 +335,6 @@ static void jsonReturnParse(sqlite3_context*,JsonParse*);
 static JsonParse *jsonParseFuncArg(sqlite3_context*,sqlite3_value*,u32);
 static void jsonParseFree(JsonParse*);
 
-
 /**************************************************************************
 ** Utility routines for dealing with JsonCache objects
 **************************************************************************/
@@ -346,11 +354,11 @@ static void jsonCacheDeleteGeneric(void *p){
 }
 
 /*
-** Insert a new entry into the cache.  If the cache is full, expell
+** Insert a new entry into the cache.  If the cache is full, expel
 ** the least recently used entry.  Return SQLITE_OK on success or a
 ** result code otherwise.
 **
-** Both the input JSON and JSONB must be RCStr objects.
+** Cache entries are stored in age order, oldest first.
 */
 static int jsonCacheInsert(
   sqlite3_context *ctx,   /* The SQL statement context holding the cache */
@@ -386,7 +394,14 @@ static int jsonCacheInsert(
 
 /*
 ** Search for a cached translation the json text supplied by pArg.  Return
-** the JsonParse object if found.
+** the JsonParse object if found.  Return NULL if not found.
+**
+** When a match if found, the matching entry is moved to become the
+** most-recently used entry if it isn't so already.
+**
+** The JsonParse object returned still belongs to the Cache and might
+** be deleted at any moment.  If the caller whants the JsonParse to
+** linger, it needs to increment the nPJRef reference counter.
 */
 static JsonParse *jsonCacheSearch(
   sqlite3_context *ctx,    /* The SQL statement context holding the cache */
@@ -419,6 +434,7 @@ static JsonParse *jsonCacheSearch(
   }
   if( i<p->nUsed ){
     if( i<p->nUsed-1 ){
+      /* Make the matching entry the most recently used entry */
       JsonParse *tmp = p->a[i];
       memmove(&p->a[i], &p->a[i+1], (p->nUsed-i-1)*sizeof(tmp));
       p->a[p->nUsed-1] = tmp;
@@ -561,7 +577,9 @@ static void jsonStringTerminate(JsonString *p){
   }   
 }
 
-/* Try to force the string to be a zero-terminated RCStr string.
+/* Try to force the string to be a zero-terminated RCStr string.  In other
+** words, make sure it is not still using the internal zSpace[] static
+** buffer.
 **
 ** Return true on success.  Return false if an OOM prevents this
 ** from happening.
@@ -591,9 +609,12 @@ static void jsonAppendSeparator(JsonString *p){
 }
 
 /* Append the N-byte string in zIn to the end of the JsonString string
-** under construction.  Enclose the string in "..." and escape
-** any double-quotes or backslash characters contained within the
+** under construction.  Enclose the string in double-quotes ("...") and
+** escape any double-quotes or backslash characters contained within the
 ** string.
+**
+** This routine is a high-runner.  There is a measurable performance
+** increase associated with unwinding the jsonIsOk[] loop.
 */
 static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
   u32 k;
@@ -604,8 +625,8 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
   p->zBuf[p->nUsed++] = '"';
   while( 1 /*exit-by-break*/ ){
     k = 0;
-    while( k+1<N && jsonIsOk[z[k]] && jsonIsOk[z[k+1]] ){ k += 2; }
-    while( k<N && jsonIsOk[z[k]] ){ k++; }
+    while( k+1<N && jsonIsOk[z[k]] && jsonIsOk[z[k+1]] ){ k += 2; } /* <--, */
+    while( k<N && jsonIsOk[z[k]] ){ k++; }    /* <-- loop unwound for speed  */
     if( k>=N ){
       if( k>0 ){
         memcpy(&p->zBuf[p->nUsed], z, k);
@@ -783,12 +804,8 @@ static void jsonParseReset(JsonParse *pParse){
 }
 
 /*
-** Free a JsonParse object that was obtained from sqlite3_malloc().
-**
-** Note that destroying JsonParse might call sqlite3RCStrUnref() to
-** destroy the zJson value.  The RCStr object might recursively invoke
-** JsonParse to destroy this pParse object again.  Take care to ensure
-** that this recursive destructor sequence terminates harmlessly.
+** Decrement the reference count on the JsonParse object.  When the
+** count reaches zero, free the object.
 */
 static void jsonParseFree(JsonParse *pParse){
   if( pParse ){
@@ -1009,7 +1026,6 @@ static void jsonWrongNumArgs(
 /****************************************************************************
 ** Utility routines for dealing with the binary BLOB representation of JSON
 ****************************************************************************/
-
 
 /*
 ** Expand pParse->aBlob so that it holds at least N bytes.
@@ -2068,7 +2084,8 @@ static u32 jsonbArrayCount(JsonParse *pParse, u32 iRoot){
 }
 
 /*
-** Edit the size of the element at iRoot by the amount in pParse->delta.
+** Edit the payload size of the element at iRoot by the amount in
+** pParse->delta.
 */
 static void jsonAfterEditSizeAdjust(JsonParse *pParse, u32 iRoot){
   u32 sz = 0;
@@ -2126,6 +2143,55 @@ static void jsonBlobEdit(
 #define JSON_LOOKUP_PATHERROR  0xfffffffd
 #define JSON_LOOKUP_ISERROR(x) ((x)>=JSON_LOOKUP_PATHERROR)
 
+/* Forward declaration */
+static u32 jsonLookupStep(JsonParse*,u32,const char*,u32);
+
+
+/* This helper routine for jsonLookupStep() populates pIns with
+** binary data that is to be inserted into pParse.
+**
+** In the common case, pIns just points to pParse->aIns and pParse->nIns.
+** But if the zPath of the original edit operation includes path elements
+** that go deeper, additional substructure must be created.
+**
+** For example:
+**
+**     json_insert('{}', '$.a.b.c', 123);
+**
+** The search stops at '$.a'  But additional substructure must be
+** created for the ".b.c" part of the patch so that the final result
+** is:  {"a":{"b":{"c"::123}}}.  This routine populates pIns with
+** the binary equivalent of {"b":{"c":123}} so that it can be inserted.
+**
+** The caller is responsible for resetting pIns when it has finished
+** using the substructure.
+*/
+static u32 jsonCreateEditSubstructure(
+  JsonParse *pParse,  /* The original JSONB that is being edited */
+  JsonParse *pIns,    /* Populate this with the blob data to insert */
+  const char *zTail   /* Tail of the path that determins substructure */
+){
+  static const u8 emptyObject[] = { JSONB_ARRAY, JSONB_OBJECT };
+  int rc;
+  memset(pIns, 0, sizeof(*pIns));
+  if( zTail[0]==0 ){
+    /* No substructure.  Just insert what is given in pParse. */
+    pIns->aBlob = pParse->aIns;
+    pIns->nBlob = pParse->nIns;
+    rc = 0;
+  }else{
+    /* Construct the binary substructure */
+    pIns->nBlob = 1;
+    pIns->aBlob = (u8*)&emptyObject[zTail[0]=='.'];
+    pIns->eEdit = pParse->eEdit;
+    pIns->nIns = pParse->nIns;
+    pIns->aIns = pParse->aIns;
+    rc = jsonLookupStep(pIns, 0, zTail, 0);
+    pParse->oom |= pIns->oom;
+  }
+  return rc;  /* Error code only */
+}
+
 /*
 ** Search along zPath to find the Json element specified.  Return an
 ** index into pParse->aBlob[] for the start of that element's value.
@@ -2135,6 +2201,13 @@ static void jsonBlobEdit(
 ** label, before returning.
 **
 ** Return one of the JSON_LOOKUP error codes if problems are seen.
+**
+** This routine will also modify the blob.  If pParse->eEdit is one of
+** JEDIT_DEL, JEDIT_REPL, JEDIT_INS, or JEDIT_SET, then changes might be
+** made to the selected value.  If an edit is performed, then the return
+** value does not necessarily point to the select element.  If an edit
+** is performed, the return value is only useful for detecting error
+** conditions.
 */
 static u32 jsonLookupStep(
   JsonParse *pParse,      /* The JSON to search */
@@ -2145,7 +2218,6 @@ static u32 jsonLookupStep(
   u32 i, j, k, nKey, sz, n, iEnd, rc;
   const char *zKey;
   u8 x;
-  static const u8 emptyObject[] = { JSONB_ARRAY, JSONB_OBJECT };
 
   if( zPath[0]==0 ){
     if( pParse->eEdit && jsonBlobMakeEditable(pParse, pParse->nIns) ){
@@ -2224,26 +2296,12 @@ static u32 jsonLookupStep(
       testcase( pParse->eEdit==JEDIT_SET );
       memset(&ix, 0, sizeof(ix));
       jsonBlobAppendNode(&ix,JSONB_TEXTRAW, nKey, 0);
-      memset(&v, 0, sizeof(v));
-      if( zPath[i]==0 ){
-        v.nBlob = pParse->nIns;
-        v.aBlob = pParse->aIns;
-      }else{
-        v.nBlob = 1;
-        v.aBlob = (u8*)&emptyObject[zPath[i]=='.'];
-        v.eEdit = pParse->eEdit;
-        v.nIns = pParse->nIns;
-        v.aIns = pParse->aIns;
-        rc = jsonLookupStep(&v, 0, &zPath[i], 0);
-        if( JSON_LOOKUP_ISERROR(rc) || v.oom ){
-          pParse->oom |= v.oom;
-          jsonParseReset(&v);
-          jsonParseReset(&ix);
-          return rc;
-        }
-      }
       pParse->oom |= ix.oom;
-      if( jsonBlobMakeEditable(pParse, ix.nBlob+nKey+v.nBlob) ){
+      rc = jsonCreateEditSubstructure(pParse, &v, &zPath[i]);
+      if( !JSON_LOOKUP_ISERROR(rc)
+       && jsonBlobMakeEditable(pParse, ix.nBlob+nKey+v.nBlob)
+      ){
+        assert( !pParse->oom );
         nIns = ix.nBlob + nKey + v.nBlob;
         jsonBlobEdit(pParse, j, 0, 0, nIns);
         if( !pParse->oom ){
@@ -2257,7 +2315,7 @@ static u32 jsonLookupStep(
       }
       jsonParseReset(&v);
       jsonParseReset(&ix);
-      return j;
+      return rc;
     }
   }else if( zPath[0]=='[' ){
     x = pParse->aBlob[iRoot] & 0x0f;
@@ -2309,29 +2367,16 @@ static u32 jsonLookupStep(
       JsonParse v;
       testcase( pParse->eEdit==JEDIT_INS );
       testcase( pParse->eEdit==JEDIT_SET );
-      memset(&v, 0, sizeof(v));
-      if( zPath[i+1]==0 ){
-        v.aBlob = pParse->aIns;
-        v.nBlob = pParse->nIns;
-      }else{
-        v.nBlob = 1;
-        v.aBlob = (u8*)&emptyObject[zPath[i+1]=='.'];
-        v.eEdit = pParse->eEdit;
-        v.nIns = pParse->nIns;
-        v.aIns = pParse->aIns;
-        rc = jsonLookupStep(&v, 0, &zPath[i+1], 0);
-        if( JSON_LOOKUP_ISERROR(rc) || v.oom ){
-          pParse->oom |= v.oom;
-          jsonParseReset(&v);
-          return rc;
-        }
-      }
-      if( jsonBlobMakeEditable(pParse, v.nBlob) ){
+      rc = jsonCreateEditSubstructure(pParse, &v, &zPath[i+1]);
+      if( !JSON_LOOKUP_ISERROR(rc)
+       && jsonBlobMakeEditable(pParse, v.nBlob)
+      ){
+        assert( !pParse->oom );
         jsonBlobEdit(pParse, j, 0, v.aBlob, v.nBlob);
       }
       jsonParseReset(&v);
       if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
-      return j;
+      return rc;
     }
   }else{
     return JSON_LOOKUP_PATHERROR; 
@@ -3169,17 +3214,7 @@ static void jsonArrayLengthFunc(
     i = 0;
   }
   if( (p->aBlob[i] & 0x0f)==JSONB_ARRAY ){
-    u32 n, sz = 0, iEnd;
-    n = jsonbPayloadSize(p, i, &sz);
-    if( n==0 ) eErr = 2;
-    iEnd = i+n+sz;
-    i += n;
-    while( eErr==0 && i<iEnd ){
-      cnt++;
-      n = jsonbPayloadSize(p, i, &sz);
-      if( n==0 ) eErr = 2;
-      i += n+sz;
-    }
+    cnt = jsonbArrayCount(p, i);
   }
   if( eErr ){
     if( eErr==2 ) sqlite3_result_error(ctx, "malformed JSON", -1);
