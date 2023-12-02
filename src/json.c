@@ -1064,38 +1064,39 @@ static int jsonBlobAppendOneByte(JsonParse *pParse, u8 c){
   return 0;
 }
 
-/* Append bytes.  Return 1 if an error occurs.
+/* Slow version of jsonBlobAppendNode() that first resizes the
+** pParse->aBlob structure.
 */
-static int jsonBlobAppendNBytes(JsonParse *pParse, const u8 *aData, u32 N){
-  if( pParse->nBlob+N > pParse->nBlobAlloc ){
-    return jsonBlobExpandAndAppend(pParse, aData, N);
-  }
-  memcpy(&pParse->aBlob[pParse->nBlob], aData, N);
-  pParse->nBlob += N;
-  return 0;
-}
-
-static void jsonBlobAppendNodeType(JsonParse*,u8,u32);
-static SQLITE_NOINLINE void jsonBlobExpandAndAppendNodeType(
+static void jsonBlobAppendNode(JsonParse*,u8,u32,const void*);
+static SQLITE_NOINLINE void jsonBlobExpandAndAppendNode(
   JsonParse *pParse,
   u8 eType,
-  u32 szPayload
+  u32 szPayload,
+  const void *aPayload
 ){
   if( jsonBlobExpand(pParse, pParse->nBlob+szPayload+9) ) return;
-  jsonBlobAppendNodeType(pParse, eType, szPayload);
+  jsonBlobAppendNode(pParse, eType, szPayload, aPayload);
 }
 
 
-/* Append an node type byte together with the payload size.
+/* Append an node type byte together with the payload size and
+** possibly also the payload.
+**
+** If aPayload is not NULL, then it is a pointer to the payload which
+** is also appended.  If aPayload is NULL, the pParse->aBlob[] array
+** is resized (if necessary) so that it is big enough to hold the
+** payload, but the payload is not appended and pParse->nBlob is left
+** pointing to where the first byte of payload will eventually be.
 */
-static void jsonBlobAppendNodeType(
-  JsonParse *pParse,
-  u8 eType,
-  u32 szPayload
+static void jsonBlobAppendNode(
+  JsonParse *pParse,          /* The JsonParse object under construction */
+  u8 eType,                   /* Node type.  One of JSONB_* */
+  u32 szPayload,              /* Number of bytes of payload */
+  const void *aPayload        /* The payload.  Might be NULL */
 ){
   u8 *a;
   if( pParse->nBlob+szPayload+9 > pParse->nBlobAlloc ){
-    jsonBlobExpandAndAppendNodeType(pParse,eType,szPayload);
+    jsonBlobExpandAndAppendNode(pParse,eType,szPayload,aPayload);
     return;
   }
   a = &pParse->aBlob[pParse->nBlob];
@@ -1118,6 +1119,10 @@ static void jsonBlobAppendNodeType(
     a[3] = (szPayload >> 8) & 0xff;
     a[4] = szPayload & 0xff;
     pParse->nBlob += 5;
+  }
+  if( aPayload ){
+    pParse->nBlob += szPayload;
+    memcpy(&pParse->aBlob[pParse->nBlob-szPayload], aPayload, szPayload);
   }
 }
 
@@ -1230,7 +1235,7 @@ json_parse_restart:
   case '{': {
     /* Parse object */
     iThis = pParse->nBlob;
-    jsonBlobAppendNodeType(pParse, JSONB_OBJECT, (pParse->nJson-i)*2);
+    jsonBlobAppendNode(pParse, JSONB_OBJECT, (pParse->nJson-i)*2, 0);
     if( ++pParse->iDepth > JSON_MAX_DEPTH ){
       pParse->iErr = i;
       return -1;
@@ -1258,8 +1263,7 @@ json_parse_restart:
             k++;
           }
           assert( iBlob==pParse->nBlob );
-          jsonBlobAppendNodeType(pParse, op, k-j);
-          jsonBlobAppendNBytes(pParse, (const u8*)&z[j], k-j);
+          jsonBlobAppendNode(pParse, op, k-j, &z[j]);
           pParse->hasNonstd = 1;
           x = k;
         }else{
@@ -1331,7 +1335,7 @@ json_parse_restart:
   case '[': {
     /* Parse array */
     iThis = pParse->nBlob;
-    jsonBlobAppendNodeType(pParse, JSONB_ARRAY, pParse->nJson - i);
+    jsonBlobAppendNode(pParse, JSONB_ARRAY, pParse->nJson - i, 0);
     iStart = pParse->nBlob;
     if( pParse->oom ) return -1;
     if( ++pParse->iDepth > JSON_MAX_DEPTH ){
@@ -1431,8 +1435,7 @@ json_parse_restart:
       }
       j++;
     }
-    jsonBlobAppendNodeType(pParse, opcode, j-1-i);
-    jsonBlobAppendNBytes(pParse, (const u8*)&z[i+1], j-1-i);
+    jsonBlobAppendNode(pParse, opcode, j-1-i, &z[i+1]);
     return j+1;
   }
   case 't': {
@@ -1507,11 +1510,9 @@ json_parse_restart:
           ){
             pParse->hasNonstd = 1;
             if( z[i]=='-' ){
-              jsonBlobAppendNodeType(pParse, JSONB_FLOAT, 6);
-              jsonBlobAppendNBytes(pParse, (const u8*)"-9e999", 6);
+              jsonBlobAppendNode(pParse, JSONB_FLOAT, 6, "-9e999");
             }else{
-              jsonBlobAppendNodeType(pParse, JSONB_FLOAT, 5);
-              jsonBlobAppendNBytes(pParse, (const u8*)"9e999", 5);
+              jsonBlobAppendNode(pParse, JSONB_FLOAT, 5, "9e999");
             }
             return i + (sqlite3StrNICmp(&z[i+4],"inity",5)==0 ? 9 : 4);
           }
@@ -1592,8 +1593,7 @@ json_parse_restart:
     assert( JSONB_FLOAT+0x01==JSONB_FLOAT5 );
     assert( JSONB_INT+0x02==JSONB_FLOAT );
     if( z[i]=='+' ) i++;
-    jsonBlobAppendNodeType(pParse, JSONB_INT+t, j-i);
-    jsonBlobAppendNBytes(pParse, (const u8*)&z[i], j-i);
+    jsonBlobAppendNode(pParse, JSONB_INT+t, j-i, &z[i]);
     return j;
   }
   case '}': {
@@ -1660,8 +1660,7 @@ json_parse_restart:
       }
       if( sqlite3Isalnum(z[i+nn]) ) continue;
       if( aNanInfName[k].eType==JSONB_FLOAT ){
-        jsonBlobAppendOneByte(pParse, JSONB_FLOAT | 0x50);
-        jsonBlobAppendNBytes(pParse, (const u8*)"9e999", 5);
+        jsonBlobAppendNode(pParse, JSONB_FLOAT, 5, "9e999");
       }else{
         jsonBlobAppendOneByte(pParse, JSONB_NULL);
       }
@@ -2198,7 +2197,7 @@ static u32 jsonLookupBlobStep(
       testcase( pParse->eEdit==JEDIT_INS );
       testcase( pParse->eEdit==JEDIT_SET );
       memset(&ix, 0, sizeof(ix));
-      jsonBlobAppendNodeType(&ix,JSONB_TEXTRAW, nKey);
+      jsonBlobAppendNode(&ix,JSONB_TEXTRAW, nKey, 0);
       memset(&v, 0, sizeof(v));
       if( zPath[i]==0 ){
         v.nBlob = pParse->nIns;
@@ -2563,8 +2562,7 @@ static int jsonFunctionArgToBlob(
           return 1;
         }
       }else{
-        jsonBlobAppendNodeType(pParse, JSONB_TEXTRAW, nJson);
-        jsonBlobAppendNBytes(pParse, (const u8*)zJson, nJson);
+        jsonBlobAppendNode(pParse, JSONB_TEXTRAW, nJson, zJson);
       }
       break;
     }
@@ -2574,8 +2572,7 @@ static int jsonFunctionArgToBlob(
       const char *z = (const char*)sqlite3_value_text(pArg);
       int e = eType==SQLITE_INTEGER ? JSONB_INT : JSONB_FLOAT;
       if( z==0 ) return 1;
-      jsonBlobAppendNodeType(pParse, e, n);
-      jsonBlobAppendNBytes(pParse, (const u8*)z, n);
+      jsonBlobAppendNode(pParse, e, n, z);
       break;
     }
   }
