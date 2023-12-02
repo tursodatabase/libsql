@@ -1391,8 +1391,16 @@ json_parse_restart:
     opcode = JSONB_TEXT;
   parse_string:
     cDelim = z[i];
-    for(j=i+1; 1; j++){
-      if( jsonIsOk[(unsigned char)z[j]] ) continue;
+    j = i+1;
+    while( 1 /*exit-by-break*/ ){
+      if( jsonIsOk[(u8)z[j]] ){
+        if( jsonIsOk[(u8)z[j+1]] ){
+          j += 2;
+          continue;
+        }else{
+          j += 1;
+        }
+      }
       c = z[j];
       if( c==cDelim ){
         break;
@@ -1421,6 +1429,7 @@ json_parse_restart:
         pParse->iErr = j;
         return -1;
       }
+      j++;
     }
     jsonBlobAppendNodeType(pParse, opcode, j-1-i);
     jsonBlobAppendNBytes(pParse, (const u8*)&z[i+1], j-1-i);
