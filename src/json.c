@@ -2239,12 +2239,14 @@ static u32 jsonLookupBlobStep(
       if( jsonBlobMakeEditable(pParse, ix.nBlob+nKey+v.nBlob) ){
         nIns = ix.nBlob + nKey + v.nBlob;
         jsonBlobEdit(pParse, j, 0, 0, nIns);
-        memcpy(&pParse->aBlob[j], ix.aBlob, ix.nBlob);
-        k = j + ix.nBlob;
-        memcpy(&pParse->aBlob[k], zKey, nKey);
-        k += nKey;
-        memcpy(&pParse->aBlob[k], v.aBlob, v.nBlob);
-        if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
+        if( !pParse->oom ){
+          memcpy(&pParse->aBlob[j], ix.aBlob, ix.nBlob);
+          k = j + ix.nBlob;
+          memcpy(&pParse->aBlob[k], zKey, nKey);
+          k += nKey;
+          memcpy(&pParse->aBlob[k], v.aBlob, v.nBlob);
+          if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
+        }
       }
       jsonParseReset(&v);
       jsonParseReset(&ix);
