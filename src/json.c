@@ -3880,8 +3880,39 @@ static void jsonValidFunc(
     }
     case SQLITE_BLOB: {
       if( (flags & 0x0c)!=0 && jsonFuncArgMightBeBinary(argv[0]) ){
-        /* TO-DO:  strict checking if flags & 0x08 */
-        res = 1;
+        if( flags & 0x04 ){
+          /* Superficial checking only - accomplisehd by the
+          ** jsonFuncArgMightBeBinary() call above. */
+          res = 1;
+        }else{
+          /* Strict checking.  Check by translating BLOB->TEXT->BLOB.  If
+          ** no errors occur, call that a "strict check". */
+          JsonParse px;
+          JsonString sx;
+          u8 oom = 0;
+          memset(&px, 0, sizeof(px));
+          px.aBlob = (u8*)sqlite3_value_blob(argv[0]);
+          px.nBlob = sqlite3_value_bytes(argv[0]);
+          jsonStringInit(&sx, 0);
+          jsonXlateBlobToText(&px, 0, &sx);
+          jsonParseReset(&px);
+          if( sx.eErr & JSTRING_OOM ) oom = 1;
+          if( sx.eErr==0 ){
+            memset(&px, 0, sizeof(px));
+            px.zJson = sx.zBuf;
+            px.nJson = sx.nUsed;
+            if( jsonXlateTextToBlob(&px, 0)==px.nJson ){
+              res = 1;
+            }
+            oom |= px.oom;
+            jsonParseReset(&px);
+          }
+          jsonStringReset(&sx);
+          if( oom ){
+            sqlite3_result_error_nomem(ctx);
+            return;
+          }
+        }
       }
       break;
     }
