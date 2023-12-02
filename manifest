@@ -1,5 +1,5 @@
-C Add\sa\sbasic\sbatch-mode\sSQL\srunner\sfor\sthe\sSAH\sPool\sVFS,\sfor\suse\sin\scomparing\sit\sagainst\sWebSQL.\sBring\sthe\sWebSQL\sbatch\srunner\sup\sto\sdate,\snoting\sthat\sit\scannot\srun\swithout\saddition\sof\san\s"origin\strial"\sactivation\skey\sfrom\sGoogle\sbecause\sthat's\snow\sthe\sonly\sway\sto\senable\sWebSQL\sin\sChrome\s(that\spart\sis\snot\schecked\sin\sbecause\sthat\skey\sis\sprivate).\sMinor\scode-adjacent\scleanups.
-D 2023-11-30T20:34:24.440
+C Remove\sa\sNEVER\sthat\scan\sbe\strue\sif\sa\svirtual\stable\scolumn\sis\sdeclared\sto\shave\na\sDEFAULT.\s\sSee\n[forum:/forumpost/3d4de8917627d058|forum\spost\s3d4de8917627d058].
+D 2023-12-02T12:23:34.118
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -672,7 +672,7 @@ F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c f3b09c5414de3a11db73e11e1d66f4c5e53c9e89876ff3b531a887ab656ca303 x
 F src/btree.h 03e3356f5208bcab8eed4e094240fdac4a7f9f5ddf5e91045ce589f67d47c240
 F src/btreeInt.h 3e2589726c4f105e653461814f65857465da68be1fac688de340c43b873f4062
-F src/build.c 189e4517d67f09f0a3e0d8e1faa6e2ef0c2e95f6ac82e33c912cb7efa2a359cc
+F src/build.c d0bb02989e9e652ee8a012c7780e32087c0dd99643d0cf609971029f78cb738a
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 23331529e654be40ca97d171cbbffe9b3d4c71cc53b78fe5501230675952da8b
@@ -2145,8 +2145,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6802b6459d0d16c961ff41d240a6c88287f197d8f609090f79308707490a49c2
-R 0685d189d0b0c5921f2e4eda3787211e
-U stephan
-Z 5692f67161061876d9b3bcabcb3928cc
+P 883990e7938c1f63906300a6113f0fadce143913b7c384e8aeb5f886f0be7c62
+R 9588fe6fe9170e1bad62d9178cc8ac2d
+U drh
+Z fe60aea9a6abab8faa2bce1247eb25bf
 # Remove this line to create a well-formed Fossil manifest.
