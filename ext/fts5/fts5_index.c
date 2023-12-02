@@ -324,6 +324,7 @@ typedef struct Fts5Structure Fts5Structure;
 typedef struct Fts5StructureLevel Fts5StructureLevel;
 typedef struct Fts5StructureSegment Fts5StructureSegment;
 typedef struct Fts5TokenDataIter Fts5TokenDataIter;
+typedef struct Fts5TombstoneArray Fts5TombstoneArray;
 
 struct Fts5Data {
   u8 *p;                          /* Pointer to buffer containing record */
@@ -520,8 +521,7 @@ struct Fts5SegIter {
   Fts5Data *pLeaf;                /* Current leaf data */
   Fts5Data *pNextLeaf;            /* Leaf page (iLeafPgno+1) */
   i64 iLeafOffset;                /* Byte offset within current leaf */
-  Fts5Data **apTombstone;         /* Array of tombstone pages */
-  int nTombstone;
+  Fts5TombstoneArray *pTombArray; /* Array of tombstone pages */
 
   /* Next method */
   void (*xNext)(Fts5Index*, Fts5SegIter*, int*);
@@ -546,6 +546,12 @@ struct Fts5SegIter {
   i64 iRowid;                     /* Current rowid */
   int nPos;                       /* Number of bytes in current position list */
   u8 bDel;                        /* True if the delete flag is set */
+};
+
+struct Fts5TombstoneArray {
+  int nRef;                       /* Number of pointers to this object */
+  int nTombstone;
+  Fts5Data *apTombstone[1];       /* Array of tombstone pages */
 };
 
 /*
@@ -1924,11 +1930,13 @@ static void fts5SegIterSetNext(Fts5Index *p, Fts5SegIter *pIter){
 static void fts5SegIterAllocTombstone(Fts5Index *p, Fts5SegIter *pIter){
   const int nTomb = pIter->pSeg->nPgTombstone;
   if( nTomb>0 ){
-    Fts5Data **apTomb = 0;
-    apTomb = (Fts5Data**)sqlite3Fts5MallocZero(&p->rc, sizeof(Fts5Data)*nTomb);
-    if( apTomb ){
-      pIter->apTombstone = apTomb;
-      pIter->nTombstone = nTomb;
+    int nByte = nTomb * sizeof(Fts5Data*) + sizeof(Fts5TombstoneArray);
+    Fts5TombstoneArray *pNew;
+    pNew = (Fts5TombstoneArray*)sqlite3Fts5MallocZero(&p->rc, nByte);
+    if( pNew ){
+      pNew->nTombstone = nTomb;
+      pNew->nRef = 1;
+      pIter->pTombArray = pNew;
     }
   }
 }
@@ -2677,7 +2685,9 @@ static void fts5SegIterSeekInit(
   }
 
   fts5SegIterSetNext(p, pIter);
-  fts5SegIterAllocTombstone(p, pIter);
+  if( 0==(flags & FTS5INDEX_QUERY_SCANONETERM) ){
+    fts5SegIterAllocTombstone(p, pIter);
+  }
 
   /* Either:
   **
@@ -2852,6 +2862,19 @@ static void fts5IndexFreeArray(Fts5Data **ap, int n){
   }
 }
 
+static void fts5TombstoneArrayDelete(Fts5TombstoneArray *p){
+  if( p ){
+    p->nRef--;
+    if( p->nRef<=0 ){
+      int ii;
+      for(ii=0; ii<p->nTombstone; ii++){
+        fts5DataRelease(p->apTombstone[ii]);
+      }
+      sqlite3_free(p);
+    }
+  }
+}
+
 /*
 ** Zero the iterator passed as the only argument.
 */
@@ -2859,7 +2882,7 @@ static void fts5SegIterClear(Fts5SegIter *pIter){
   fts5BufferFree(&pIter->term);
   fts5DataRelease(pIter->pLeaf);
   fts5DataRelease(pIter->pNextLeaf);
-  fts5IndexFreeArray(pIter->apTombstone, pIter->nTombstone);
+  fts5TombstoneArrayDelete(pIter->pTombArray);
   fts5DlidxIterFree(pIter->pDlidx);
   sqlite3_free(pIter->aRowidOffset);
   memset(pIter, 0, sizeof(Fts5SegIter));
@@ -3248,24 +3271,25 @@ static int fts5IndexTombstoneQuery(
 static int fts5MultiIterIsDeleted(Fts5Iter *pIter){
   int iFirst = pIter->aFirst[1].iFirst;
   Fts5SegIter *pSeg = &pIter->aSeg[iFirst];
+  Fts5TombstoneArray *pArray = pSeg->pTombArray;
 
-  if( pSeg->pLeaf && pSeg->nTombstone ){
+  if( pSeg->pLeaf && pArray ){
     /* Figure out which page the rowid might be present on. */
-    int iPg = ((u64)pSeg->iRowid) % pSeg->nTombstone;
+    int iPg = ((u64)pSeg->iRowid) % pArray->nTombstone;
     assert( iPg>=0 );
 
     /* If tombstone hash page iPg has not yet been loaded from the 
     ** database, load it now. */
-    if( pSeg->apTombstone[iPg]==0 ){
-      pSeg->apTombstone[iPg] = fts5DataRead(pIter->pIndex,
+    if( pArray->apTombstone[iPg]==0 ){
+      pArray->apTombstone[iPg] = fts5DataRead(pIter->pIndex,
           FTS5_TOMBSTONE_ROWID(pSeg->pSeg->iSegid, iPg)
       );
-      if( pSeg->apTombstone[iPg]==0 ) return 0;
+      if( pArray->apTombstone[iPg]==0 ) return 0;
     }
 
     return fts5IndexTombstoneQuery(
-        pSeg->apTombstone[iPg],
-        pSeg->nTombstone,
+        pArray->apTombstone[iPg],
+        pArray->nTombstone,
         pSeg->iRowid
     );
   }
@@ -6884,6 +6908,15 @@ static Fts5Iter *fts5SetupTokendataIter(
 
         if( bDone==0 ){
           fts5SegIterSeekInit(p, bSeek.p, bSeek.n, flags, pSeg, pNewIter);
+        }
+
+        if( pPrevIter ){
+          if( pPrevIter->pTombArray ){
+            pNewIter->pTombArray = pPrevIter->pTombArray;
+            pNewIter->pTombArray->nRef++;
+          }
+        }else{
+          fts5SegIterAllocTombstone(p, pNewIter);
         }
 
         pNewIter++;
