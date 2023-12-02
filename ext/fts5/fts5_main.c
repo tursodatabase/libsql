@@ -916,6 +916,16 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
   );
   assert( !CsrFlagTest(pCsr, FTS5CSR_EOF) );
 
+  /* If this cursor uses FTS5_PLAN_MATCH and this is a tokendata=1 table,
+  ** clear any token mappings accumulated at the fts5_index.c level. In
+  ** other cases, specifically FTS5_PLAN_SOURCE and FTS5_PLAN_SORTED_MATCH,
+  ** we need to retain the mappings for the entire query.  */
+  if( pCsr->ePlan==FTS5_PLAN_MATCH 
+   && ((Fts5Table*)pCursor->pVtab)->pConfig->bTokendata 
+  ){
+    sqlite3Fts5ExprClearTokens(pCsr->pExpr);
+  }
+
   if( pCsr->ePlan<3 ){
     int bSkip = 0;
     if( (rc = fts5CursorReseek(pCsr, &bSkip)) || bSkip ) return rc;

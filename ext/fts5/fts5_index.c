@@ -366,6 +366,7 @@ struct Fts5Index {
   sqlite3_stmt *pIdxWriter;       /* "INSERT ... %_idx VALUES(?,?,?,?)" */
   sqlite3_stmt *pIdxDeleter;      /* "DELETE FROM %_idx WHERE segid=?" */
   sqlite3_stmt *pIdxSelect;
+  sqlite3_stmt *pIdxNextSelect;
   int nRead;                      /* Total number of blocks read */
 
   sqlite3_stmt *pDeleteFromIdx;
@@ -2660,7 +2661,7 @@ static void fts5SegIterSeekInit(
     fts5LeafSeek(p, bGe, pIter, pTerm, nTerm);
   }
 
-  if( p->rc==SQLITE_OK && bGe==0 ){
+  if( p->rc==SQLITE_OK && (bGe==0 || (flags & FTS5INDEX_QUERY_SCANONETERM)) ){
     pIter->flags |= FTS5_SEGITER_ONETERM;
     if( pIter->pLeaf ){
       if( flags & FTS5INDEX_QUERY_DESC ){
@@ -2691,6 +2692,79 @@ static void fts5SegIterSeekInit(
    || fts5BufferCompareBlob(&pIter->term, pTerm, nTerm)==0          /* 3 */
    || (bGe && fts5BufferCompareBlob(&pIter->term, pTerm, nTerm)>0)  /* 4 */
   );
+}
+
+
+/*
+** SQL used by fts5SegIterNextInit() to find the page to open.
+*/
+static sqlite3_stmt *fts5IdxNextStmt(Fts5Index *p){
+  if( p->pIdxNextSelect==0 ){
+    Fts5Config *pConfig = p->pConfig;
+    fts5IndexPrepareStmt(p, &p->pIdxNextSelect, sqlite3_mprintf(
+          "SELECT pgno FROM '%q'.'%q_idx' WHERE "
+          "segid=? AND term>? ORDER BY term ASC LIMIT 1",
+          pConfig->zDb, pConfig->zName
+    ));
+    
+  }
+  return p->pIdxNextSelect;
+}
+
+/*
+** This is similar to fts5SegIterSeekInit(), except that it initializes
+** the segment iterator to point to the first term following the page
+** with pToken/nToken on it.
+*/
+static void fts5SegIterNextInit(
+  Fts5Index *p, 
+  const char *pTerm, int nTerm,
+  Fts5StructureSegment *pSeg,     /* Description of segment */
+  Fts5SegIter *pIter              /* Object to populate */
+){
+  int iPg = -1;                   /* Page of segment to open */
+  int bDlidx = 0;
+  sqlite3_stmt *pSel = 0;         /* SELECT to find iPg */
+
+  pSel = fts5IdxNextStmt(p);
+  if( pSel ){
+    assert( p->rc==SQLITE_OK );
+    sqlite3_bind_int(pSel, 1, pSeg->iSegid);
+    sqlite3_bind_blob(pSel, 2, pTerm, nTerm, SQLITE_STATIC);
+
+    if( sqlite3_step(pSel)==SQLITE_ROW ){
+      i64 val = sqlite3_column_int64(pSel, 0);
+      iPg = (int)(val>>1);
+      bDlidx = (val & 0x0001);
+    }
+    p->rc = sqlite3_reset(pSel);
+    if( p->rc ) return;
+  }
+
+  memset(pIter, 0, sizeof(*pIter));
+  pIter->pSeg = pSeg;
+  pIter->flags |= FTS5_SEGITER_ONETERM;
+  if( iPg>=0 ){
+    pIter->iLeafPgno = iPg - 1;
+    fts5SegIterNextPage(p, pIter);
+    fts5SegIterSetNext(p, pIter);
+    fts5SegIterAllocTombstone(p, pIter);
+  }
+  if( pIter->pLeaf ){
+    const u8 *a = pIter->pLeaf->p;
+    int iTermOff = 0;
+
+    pIter->iPgidxOff = pIter->pLeaf->szLeaf;
+    pIter->iPgidxOff += fts5GetVarint32(&a[pIter->iPgidxOff], iTermOff);
+    pIter->iLeafOffset = iTermOff;
+    fts5SegIterLoadTerm(p, pIter, 0);
+    fts5SegIterLoadNPos(p, pIter);
+    if( bDlidx ) fts5SegIterLoadDlidx(p, pIter);
+
+    assert( p->rc!=SQLITE_OK || 
+        fts5BufferCompareBlob(&pIter->term, pTerm, nTerm)>0
+    );
+  }
 }
 
 /*
@@ -6346,6 +6420,7 @@ int sqlite3Fts5IndexClose(Fts5Index *p){
     sqlite3_finalize(p->pIdxWriter);
     sqlite3_finalize(p->pIdxDeleter);
     sqlite3_finalize(p->pIdxSelect);
+    sqlite3_finalize(p->pIdxNextSelect);
     sqlite3_finalize(p->pDataVersion);
     sqlite3_finalize(p->pDeleteFromIdx);
     sqlite3Fts5HashFree(p->pHash);
@@ -6496,7 +6571,7 @@ static Fts5TokenDataIter *fts5AppendTokendataIter(
   if( p->rc==SQLITE_OK ){
     if( pIn==0 || pIn->nIter==pIn->nIterAlloc ){
       int nAlloc = pIn ? pIn->nIterAlloc*2 : 16;
-      int nByte = nAlloc * sizeof(Fts5Iter*);
+      int nByte = nAlloc * sizeof(Fts5Iter*) + sizeof(Fts5TokenDataIter);
       Fts5TokenDataIter *pNew = (Fts5TokenDataIter*)sqlite3_realloc(pIn, nByte);
 
       if( pNew==0 ){
@@ -6513,6 +6588,7 @@ static Fts5TokenDataIter *fts5AppendTokendataIter(
   }else{
     pRet->apIter[pRet->nIter++] = pAppend;
   }
+  assert( pRet==0 || pRet->nIter<=pRet->nIterAlloc );
 
   return pRet;
 }
@@ -6747,6 +6823,10 @@ static void fts5TokendataSetTermIfEof(Fts5Iter *pIter, Fts5Buffer *pTerm){
   }
 }
 
+/*
+** This function sets up an iterator to use for a non-prefix query on a 
+** tokendata=1 table. 
+*/
 static Fts5Iter *fts5SetupTokendataIter(
   Fts5Index *p,                   /* FTS index to query */
   const u8 *pToken,               /* Buffer containing query term */
@@ -6756,7 +6836,7 @@ static Fts5Iter *fts5SetupTokendataIter(
   Fts5Iter *pRet = 0;
   Fts5TokenDataIter *pSet = 0;
   Fts5Structure *pStruct = 0;
-  const int flags = FTS5INDEX_QUERY_SKIPEMPTY | FTS5INDEX_QUERY_SCAN;
+  const int flags = FTS5INDEX_QUERY_SCANONETERM | FTS5INDEX_QUERY_SCAN;
 
   Fts5Buffer bSeek = {0, 0, 0};
   Fts5Buffer *pSmall = 0;             
@@ -6787,20 +6867,32 @@ static Fts5Iter *fts5SetupTokendataIter(
     for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
       for(iSeg=pStruct->aLevel[iLvl].nSeg-1; iSeg>=0; iSeg--){
         Fts5StructureSegment *pSeg = &pStruct->aLevel[iLvl].aSeg[iSeg];
-        fts5SegIterSeekInit(p, bSeek.p, bSeek.n, flags, pSeg, pNewIter);
+        int bDone = 0;
 
-        pNewIter++;
         if( pPrevIter ){
           if( fts5BufferCompare(pSmall, &pPrevIter->term) ){
-            fts5SegIterSetEOF(pPrevIter);
+            memcpy(pNewIter, pPrevIter, sizeof(Fts5SegIter));
+            memset(pPrevIter, 0, sizeof(Fts5SegIter));
+            bDone = 1;
+          }else if( pPrevIter->pLeaf 
+                 && pPrevIter->iEndofDoclist>pPrevIter->pLeaf->szLeaf
+          ){
+            fts5SegIterNextInit(p,(const char*)bSeek.p,bSeek.n-1,pSeg,pNewIter);
+            bDone = 1;
           }
-          pPrevIter++;
         }
+
+        if( bDone==0 ){
+          fts5SegIterSeekInit(p, bSeek.p, bSeek.n, flags, pSeg, pNewIter);
+        }
+
+        pNewIter++;
+        if( pPrevIter ) pPrevIter++;
       }
     }
     fts5TokendataSetTermIfEof(pPrev, pSmall);
 
-    pNew->bSkipEmpty = (0!=(flags & FTS5INDEX_QUERY_SKIPEMPTY));
+    pNew->bSkipEmpty = 1;
     pNew->pColset = pColset;
     fts5IterSetOutputCb(&p->rc, pNew);
 
@@ -7043,7 +7135,6 @@ int sqlite3Fts5IterToken(
 */
 void sqlite3Fts5IndexIterClearTokendata(Fts5IndexIter *pIndexIter){
   Fts5Iter *pIter = (Fts5Iter*)pIndexIter;
-  assert( pIter->pIndex->pConfig->eDetail!=FTS5_DETAIL_FULL );
   if( pIter->pTokenDataIter ){
     pIter->pTokenDataIter->nMap = 0;
   }

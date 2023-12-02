@@ -3050,17 +3050,6 @@ int sqlite3Fts5ExprPopulatePoslists(
   sCtx.aPopulator = aPopulator;
   sCtx.iOff = (((i64)iCol) << 32) - 1;
 
-  /* If this is a tokendata=1 table, clear out the hash tables of
-  ** full-terms.  */
-  if( pConfig->bTokendata ){
-    for(i=0; i<pExpr->nPhrase; i++){
-      Fts5ExprTerm *pT;
-      for(pT=&pExpr->apExprPhrase[i]->aTerm[0]; pT; pT=pT->pSynonym){
-        sqlite3Fts5IndexIterClearTokendata(pT->pIter);
-      }
-    }
-  }
-
   for(i=0; i<pExpr->nPhrase; i++){
     Fts5ExprNode *pNode = pExpr->apExprPhrase[i]->pNode;
     Fts5Colset *pColset = pNode->pNear->pColset;
@@ -3223,5 +3212,19 @@ int sqlite3Fts5ExprInstToken(
   pIter = pPhrase->aTerm[iToken].pIter;
 
   return sqlite3Fts5IterToken(pIter, iRowid, iCol, iOff+iToken, ppOut, pnOut);
+}
+
+/*
+** Clear the token mappings for all Fts5IndexIter objects mannaged by 
+** the expression passed as the only argument.
+*/
+void sqlite3Fts5ExprClearTokens(Fts5Expr *pExpr){
+  int ii;
+  for(ii=0; ii<pExpr->nPhrase; ii++){
+    Fts5ExprTerm *pT;
+    for(pT=&pExpr->apExprPhrase[ii]->aTerm[0]; pT; pT=pT->pSynonym){
+      sqlite3Fts5IndexIterClearTokendata(pT->pIter);
+    }
+  }
 }
 

@@ -397,6 +397,7 @@ struct Fts5IndexIter {
 #define FTS5INDEX_QUERY_NOOUTPUT    0x0020
 #define FTS5INDEX_QUERY_SKIPHASH    0x0040
 #define FTS5INDEX_QUERY_NOTOKENDATA 0x0080
+#define FTS5INDEX_QUERY_SCANONETERM 0x0100
 
 /*
 ** Create/destroy an Fts5Index object.
@@ -786,6 +787,7 @@ int sqlite3Fts5ExprPhraseCollist(Fts5Expr *, int, const u8 **, int *);
 
 int sqlite3Fts5ExprQueryToken(Fts5Expr*, int, int, const char**, int*);
 int sqlite3Fts5ExprInstToken(Fts5Expr*, int, int, int, int, const char**, int*);
+void sqlite3Fts5ExprClearTokens(Fts5Expr*);
 
 /*******************************************
 ** The fts5_expr.c API above this point is used by the other hand-written
