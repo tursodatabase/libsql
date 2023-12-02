@@ -467,7 +467,7 @@ void sqlite3Fts5StructureRelease(void*);
 int sqlite3Fts5StructureTest(Fts5Index*, void*);
 
 /*
-** Used by xInstToken() and xPhraseToken().
+** Used by xInstToken():
 */
 int sqlite3Fts5IterToken(Fts5IndexIter*, i64, int, int, const char**, int*);
 
@@ -547,8 +547,9 @@ int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
 int sqlite3Fts5IndexGetOrigin(Fts5Index *p, i64 *piOrigin);
 int sqlite3Fts5IndexContentlessDelete(Fts5Index *p, i64 iOrigin, i64 iRowid);
 
-/* Used to populate hash tables for xInstToken in detail=none/column mode. */
 void sqlite3Fts5IndexIterClearTokendata(Fts5IndexIter*);
+
+/* Used to populate hash tables for xInstToken in detail=none/column mode. */
 int sqlite3Fts5IndexIterWriteTokendata(
     Fts5IndexIter*, const char*, int, i64 iRowid, int iCol, int iOff
 );

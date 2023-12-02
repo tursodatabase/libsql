@@ -2985,6 +2985,11 @@ static int fts5ExprColsetTest(Fts5Colset *pColset, int iCol){
   return 0;
 }
 
+/*
+** pToken is a buffer nToken bytes in size that may or may not contain
+** an embedded 0x00 byte. If it does, return the number of bytes in
+** the buffer before the 0x00. If it does not, return nToken.
+*/
 static int fts5QueryTerm(const char *pToken, int nToken){
   int ii;
   for(ii=0; ii<nToken && pToken[ii]; ii++){}
@@ -3189,6 +3194,9 @@ int sqlite3Fts5ExprQueryToken(
   return SQLITE_OK;
 }
 
+/*
+** Does the work of the fts5_api.xInstToken() API method.
+*/
 int sqlite3Fts5ExprInstToken(
   Fts5Expr *pExpr, 
   int iPhrase, 

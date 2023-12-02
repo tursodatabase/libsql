@@ -324,6 +324,7 @@ typedef struct Fts5Structure Fts5Structure;
 typedef struct Fts5StructureLevel Fts5StructureLevel;
 typedef struct Fts5StructureSegment Fts5StructureSegment;
 typedef struct Fts5TokenDataIter Fts5TokenDataIter;
+typedef struct Fts5TokenDataMap Fts5TokenDataMap;
 typedef struct Fts5TombstoneArray Fts5TombstoneArray;
 
 struct Fts5Data {
@@ -548,6 +549,9 @@ struct Fts5SegIter {
   u8 bDel;                        /* True if the delete flag is set */
 };
 
+/*
+** Array of tombstone pages. Reference counted.
+*/
 struct Fts5TombstoneArray {
   int nRef;                       /* Number of pointers to this object */
   int nTombstone;
@@ -1923,9 +1927,9 @@ static void fts5SegIterSetNext(Fts5Index *p, Fts5SegIter *pIter){
 }
 
 /*
-** Allocate a tombstone hash page array (pIter->apTombstone) for the 
-** iterator passed as the second argument. If an OOM error occurs, leave
-** an error in the Fts5Index object.
+** Allocate a tombstone hash page array object (pIter->pTombArray) for 
+** the iterator passed as the second argument. If an OOM error occurs, 
+** leave an error in the Fts5Index object.
 */
 static void fts5SegIterAllocTombstone(Fts5Index *p, Fts5SegIter *pIter){
   const int nTomb = pIter->pSeg->nPgTombstone;
@@ -2748,6 +2752,7 @@ static void fts5SegIterNextInit(
       bDlidx = (val & 0x0001);
     }
     p->rc = sqlite3_reset(pSel);
+    sqlite3_bind_null(pSel, 2);
     if( p->rc ) return;
   }
 
@@ -2772,7 +2777,7 @@ static void fts5SegIterNextInit(
     if( bDlidx ) fts5SegIterLoadDlidx(p, pIter);
 
     assert( p->rc!=SQLITE_OK || 
-        fts5BufferCompareBlob(&pIter->term, pTerm, nTerm)>0
+        fts5BufferCompareBlob(&pIter->term, (const u8*)pTerm, nTerm)>0
     );
   }
 }
@@ -2862,6 +2867,10 @@ static void fts5IndexFreeArray(Fts5Data **ap, int n){
   }
 }
 
+/*
+** Decrement the ref-count of the object passed as the only argument. If it
+** reaches 0, free it and its contents. 
+*/
 static void fts5TombstoneArrayDelete(Fts5TombstoneArray *p){
   if( p ){
     p->nRef--;
@@ -3828,6 +3837,10 @@ static void fts5IterSetOutputCb(int *pRc, Fts5Iter *pIter){
   }
 }
 
+/*
+** All the component segment-iterators of pIter have been set up. This
+** functions finishes setup for iterator pIter itself.
+*/
 static void fts5MultiIterFinishSetup(Fts5Index *p, Fts5Iter *pIter){
   int iIter;
   for(iIter=pIter->nSeg-1; iIter>0; iIter--){
@@ -6566,13 +6579,25 @@ static void fts5SegIterSetEOF(Fts5SegIter *pSeg){
   pSeg->pLeaf = 0;
 }
 
-typedef struct Fts5TokenDataMap Fts5TokenDataMap;
+/*
+** Usually, a tokendata=1 iterator (struct Fts5TokenDataIter) accumulates an
+** array of these for each row it visits. Or, for an iterator used by an
+** "ORDER BY rank" query, it accumulates an array of these for the entire
+** query.
+**
+** Each instance in the array indicates the iterator (and therefore term)
+** associated with position iPos of rowid iRowid. This is used by the
+** xInstToken() API.
+*/
 struct Fts5TokenDataMap {
-  i64 iRowid;
-  i64 iPos;
-  int iIter;
+  i64 iRowid;                     /* Row this token is located in */
+  i64 iPos;                       /* Position of token */
+  int iIter;                      /* Iterator token was read from */
 };
 
+/*
+** An object used to supplement Fts5Iter for tokendata=1 iterators.
+*/
 struct Fts5TokenDataIter {
   int nIter;
   int nIterAlloc;
@@ -6585,10 +6610,14 @@ struct Fts5TokenDataIter {
   Fts5Iter *apIter[1];
 };
 
+/*
+** This function appends iterator pAppend to Fts5TokenDataIter pIn and 
+** returns the result.
+*/
 static Fts5TokenDataIter *fts5AppendTokendataIter(
-  Fts5Index *p, 
-  Fts5TokenDataIter *pIn, 
-  Fts5Iter *pAppend
+  Fts5Index *p,                   /* Index object (for error code) */
+  Fts5TokenDataIter *pIn,         /* Current Fts5TokenDataIter struct */
+  Fts5Iter *pAppend               /* Append this iterator */
 ){
   Fts5TokenDataIter *pRet = pIn;
 
@@ -6617,6 +6646,9 @@ static Fts5TokenDataIter *fts5AppendTokendataIter(
   return pRet;
 }
 
+/*
+** Delete an Fts5TokenDataIter structure and its contents.
+*/
 static void fts5TokendataIterDelete(Fts5TokenDataIter *pSet){
   if( pSet ){
     int ii;
@@ -6629,6 +6661,13 @@ static void fts5TokendataIterDelete(Fts5TokenDataIter *pSet){
   }
 }
 
+/*
+** The iterator passed as the first argument must be a tokendata=1 iterator
+** (pIter->pTokenDataIter!=0). This function is used to access the token
+** instance located at offset iOff of column iCol of row iRowid. It is
+** returned via output pointers *ppOut and *pnOut. This is used by the
+** xInstToken() API.
+*/
 static int fts5TokendataIterToken(
   Fts5Iter *pIter, 
   i64 iRowid,
@@ -6673,6 +6712,9 @@ static int fts5TokendataIterToken(
   return SQLITE_OK;
 }
 
+/*
+** Append a mapping to the token-map belonging to object pT.
+*/
 static void fts5TokendataIterAppendMap(
   Fts5Index *p, 
   Fts5TokenDataIter *pT, 
@@ -6703,6 +6745,12 @@ static void fts5TokendataIterAppendMap(
   }
 }
 
+/*
+** The iterator passed as the only argument must be a tokendata=1 iterator
+** (pIter->pTokenDataIter!=0). This function sets the iterator output
+** variables (pIter->base.*) according to the contents of the current
+** row.
+*/
 static void fts5IterSetOutputsTokendata(Fts5Iter *pIter){
   int ii;
   int nHit = 0;
@@ -6819,6 +6867,13 @@ static void fts5IterSetOutputsTokendata(Fts5Iter *pIter){
   }
 }
 
+/*
+** The iterator passed as the only argument must be a tokendata=1 iterator
+** (pIter->pTokenDataIter!=0). This function advances the iterator. If
+** argument bFrom is false, then the iterator is advanced to the next
+** entry. Or, if bFrom is true, it is advanced to the first entry with
+** a rowid of iFrom or greater.
+*/
 static void fts5TokendataIterNext(Fts5Iter *pIter, int bFrom, i64 iFrom){
   int ii;
   Fts5TokenDataIter *pT = pIter->pTokenDataIter;
@@ -6841,6 +6896,10 @@ static void fts5TokendataIterNext(Fts5Iter *pIter, int bFrom, i64 iFrom){
   fts5IterSetOutputsTokendata(pIter);
 }
 
+/*
+** If the segment-iterator passed as the first argument is at EOF, then
+** set pIter->term to a copy of buffer pTerm.
+*/
 static void fts5TokendataSetTermIfEof(Fts5Iter *pIter, Fts5Buffer *pTerm){
   if( pIter && pIter->aSeg[0].pLeaf==0 ){
     fts5BufferSet(&pIter->pIndex->rc, &pIter->aSeg[0].term, pTerm->n, pTerm->p);
@@ -7144,7 +7203,9 @@ const char *sqlite3Fts5IterTerm(Fts5IndexIter *pIndexIter, int *pn){
 }
 
 /*
-**
+** This is used by xInstToken() to access the token at offset iOff, column
+** iCol of row iRowid. The token is returned via output variables *ppOut
+** and *pnOut.
 */
 int sqlite3Fts5IterToken(
   Fts5IndexIter *pIndexIter, 
@@ -7173,6 +7234,13 @@ void sqlite3Fts5IndexIterClearTokendata(Fts5IndexIter *pIndexIter){
   }
 }
 
+/*
+** Set a token-mapping for the iterator passed as the first argument. This
+** is used in detail=column or detail=none mode when a token is requested
+** using the xInstToken() API. In this case the caller tokenizers the
+** current row and configures the token-mapping via multiple calls to this
+** function.
+*/
 int sqlite3Fts5IndexIterWriteTokendata(
   Fts5IndexIter *pIndexIter, 
   const char *pToken, int nToken, 

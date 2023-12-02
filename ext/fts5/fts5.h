@@ -281,7 +281,7 @@ struct Fts5PhraseIter {
 **   includes any embedded 0x00 and trailing data.
 **
 **   This API can be quite slow if used with an FTS5 table created with the
-**   "detail=none" or "detail=column" option. 
+**   "detail=none" or "detail=column" option.
 */
 struct Fts5ExtensionApi {
   int iVersion;                   /* Currently always set to 3 */
