@@ -1044,6 +1044,7 @@ static int jsonBlobMakeEditable(JsonParse *pParse, u32 nExtra){
   u8 *aOld;
   u32 nSize;
   assert( !pParse->bReadOnly );
+  if( pParse->oom ) return 0;
   if( pParse->nBlobAlloc>0 ) return 1;
   aOld = pParse->aBlob;
   nSize = pParse->nBlob + nExtra;
