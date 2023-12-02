@@ -603,7 +603,7 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
   p->zBuf[p->nUsed++] = '"';
   while( 1 /*exit-by-break*/ ){
     k = 0;
-    while( k<N-1 && jsonIsOk[z[k]] && jsonIsOk[z[k+1]] ){ k += 2; }
+    while( k+1<N && jsonIsOk[z[k]] && jsonIsOk[z[k+1]] ){ k += 2; }
     while( k<N && jsonIsOk[z[k]] ){ k++; }
     if( k>=N ){
       if( k>0 ){

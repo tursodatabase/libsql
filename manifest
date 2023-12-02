@@ -1,5 +1,5 @@
-C Minor\sfix\sto\sthe\sheader\scomment\son\sjsonXlateTextToBlob().
-D 2023-12-02T14:55:46.474
+C Fix\spotential\sunsigned\sinteger\sunderflow\sin\sjsonAppendString().
+D 2023-12-02T15:06:43.574
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -688,7 +688,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 9ff2d40ed0d0199d88fa414f519a977bee38df27907702663b1cc5bc85274b05
+F src/json.c c3167c9737da0f3f45538c7599bbf3f090d1ba1e444e4e743935496f37cbddcc
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 1b89f3de98d1b59fec5bac1d66d6ece21f703821b8eaa0d53d9604c35309f6f9
@@ -2145,8 +2145,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fdf00e96239c73fb67e2acecc5b95f55a1fc51c3deed4512613c0d6070ce5805
-R dbfc8fdcf920d7c2aea651d65adda878
+P c3677ba410208c07b711f5f526eb5cf039a8eee49f632c7ae04fa55cdfbb9058
+R 13d01dca5d473a81616de1c5ea4e5269
 U drh
-Z ecc9fe8f5fc6f3c09b592aceda67d13d
+Z bee957be31c329bcce231111ed4f35d1
 # Remove this line to create a well-formed Fossil manifest.
