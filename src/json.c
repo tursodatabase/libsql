@@ -375,6 +375,7 @@ static int jsonCacheInsert(
     memmove(p->a, &p->a[1], (JSON_CACHE_SIZE-1)*sizeof(p->a[0]));
     p->nUsed = JSON_CACHE_SIZE-1;
   }
+  assert( pParse->nBlobAlloc>0 );
   pParse->eEdit = 0;
   pParse->nJPRef++;
   pParse->bReadOnly = 1;
@@ -731,7 +732,7 @@ static void jsonReturnString(
       sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
                             SQLITE_TRANSIENT, SQLITE_UTF8);
     }else if( jsonForceRCStr(p) ){
-      if( pParse && pParse->bJsonIsRCStr==0 ){
+      if( pParse && pParse->bJsonIsRCStr==0 && pParse->nBlobAlloc>0 ){
         int rc;
         pParse->zJson = sqlite3RCStrRef(p->zBuf);
         pParse->nJson = p->nUsed;
@@ -1751,6 +1752,8 @@ static void jsonReturnStringAsBlob(JsonString *pStr){
     sqlite3_free(px.aBlob);
     sqlite3_result_error_nomem(pStr->pCtx);
   }else{
+    assert( px.nBlobAlloc>0 );
+    assert( !px.bReadOnly );
     sqlite3_result_blob(pStr->pCtx, px.aBlob, px.nBlob, sqlite3_free);
   }
 }
@@ -2841,9 +2844,12 @@ static void jsonReturnParse(
   }
   flgs = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
   if( flgs & JSON_BLOB ){
-    sqlite3_result_blob(ctx, p->aBlob, p->nBlob,
-                        p->nBlobAlloc>0 ? SQLITE_DYNAMIC : SQLITE_TRANSIENT);
-    p->nBlobAlloc = 0;
+    if( p->nBlobAlloc>0 && !p->bReadOnly ){
+      sqlite3_result_blob(ctx, p->aBlob, p->nBlob, SQLITE_DYNAMIC);
+      p->nBlobAlloc = 0;
+    }else{
+      sqlite3_result_blob(ctx, p->aBlob, p->nBlob, SQLITE_TRANSIENT);
+    }
   }else{
     JsonString s;
     jsonStringInit(&s, ctx);
@@ -3063,6 +3069,8 @@ static void jsonbFunc(
     if( jsonConvertTextToBlob(pParse, ctx) ){
       sqlite3_result_error(ctx, "malformed JSON", -1);
     }else{
+      assert( pParse->nBlobAlloc>0 );
+      assert( !pParse->bReadOnly );
       sqlite3_result_blob(ctx, pParse->aBlob, pParse->nBlob, sqlite3_free);
       pParse->aBlob = 0;
       pParse->nBlob = 0;
