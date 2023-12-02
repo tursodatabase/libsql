@@ -1235,7 +1235,7 @@ static int jsonIs4HexB(const char *z, int *pOp){
 ** or one of the following special result codes:
 **
 **      0    End of input
-**     -1    Syntax error
+**     -1    Syntax error or OOM
 **     -2    '}' seen   \
 **     -3    ']' seen    \___  For these returns, pParse->iErr is set to
 **     -4    ',' seen    /     the index in zJson[] of the seen character
