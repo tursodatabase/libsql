@@ -595,17 +595,33 @@ static void jsonAppendSeparator(JsonString *p){
 ** string.
 */
 static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
-  u32 i;
-  if( zIn==0 ) return;
+  u32 k;
+  u8 c;
+  const u8 *z = (const u8*)zIn;
+  if( z==0 ) return;
   if( (N+p->nUsed+2 >= p->nAlloc) && jsonStringGrow(p,N+2)!=0 ) return;
   p->zBuf[p->nUsed++] = '"';
-  for(i=0; i<N; i++){
-    unsigned char c = ((unsigned const char*)zIn)[i];
-    if( jsonIsOk[c] ){
-      p->zBuf[p->nUsed++] = c;
-    }else if( c=='"' || c=='\\' ){
+  while( 1 /*exit-by-break*/ ){
+    k = 0;
+    while( k<N-1 && jsonIsOk[z[k]] && jsonIsOk[z[k+1]] ){ k += 2; }
+    while( k<N && jsonIsOk[z[k]] ){ k++; }
+    if( k>=N ){
+      if( k>0 ){
+        memcpy(&p->zBuf[p->nUsed], z, k);
+        p->nUsed += k;
+      }
+      break;
+    }
+    if( k>0 ){
+      memcpy(&p->zBuf[p->nUsed], z, k);
+      p->nUsed += k;
+      z += k;
+      N -= k;
+    }
+    c = z[0];
+    if( c=='"' || c=='\\' ){
       json_simple_escape:
-      if( (p->nUsed+N+3-i > p->nAlloc) && jsonStringGrow(p,N+3-i)!=0 ) return;
+      if( (p->nUsed+N+3 > p->nAlloc) && jsonStringGrow(p,N+3)!=0 ) return;
       p->zBuf[p->nUsed++] = '\\';
       p->zBuf[p->nUsed++] = c;
     }else if( c=='\'' ){
@@ -626,7 +642,7 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
         c = aSpecial[c];
         goto json_simple_escape;
       }
-      if( (p->nUsed+N+7+i > p->nAlloc) && jsonStringGrow(p,N+7-i)!=0 ) return;
+      if( (p->nUsed+N+7 > p->nAlloc) && jsonStringGrow(p,N+7)!=0 ) return;
       p->zBuf[p->nUsed++] = '\\';
       p->zBuf[p->nUsed++] = 'u';
       p->zBuf[p->nUsed++] = '0';
@@ -634,6 +650,8 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
       p->zBuf[p->nUsed++] = "0123456789abcdef"[c>>4];
       p->zBuf[p->nUsed++] = "0123456789abcdef"[c&0xf];
     }
+    z++;
+    N--;
   }
   p->zBuf[p->nUsed++] = '"';
   assert( p->nUsed<p->nAlloc );
