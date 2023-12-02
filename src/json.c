@@ -1075,6 +1075,17 @@ static int jsonBlobAppendNBytes(JsonParse *pParse, const u8 *aData, u32 N){
   return 0;
 }
 
+static void jsonBlobAppendNodeType(JsonParse*,u8,u32);
+static SQLITE_NOINLINE void jsonBlobExpandAndAppendNodeType(
+  JsonParse *pParse,
+  u8 eType,
+  u32 szPayload
+){
+  if( jsonBlobExpand(pParse, pParse->nBlob+szPayload+9) ) return;
+  jsonBlobAppendNodeType(pParse, eType, szPayload);
+}
+
+
 /* Append an node type byte together with the payload size.
 */
 static void jsonBlobAppendNodeType(
@@ -1082,25 +1093,31 @@ static void jsonBlobAppendNodeType(
   u8 eType,
   u32 szPayload
 ){
-  u8 a[5];
+  u8 *a;
+  if( pParse->nBlob+szPayload+9 > pParse->nBlobAlloc ){
+    jsonBlobExpandAndAppendNodeType(pParse,eType,szPayload);
+    return;
+  }
+  a = &pParse->aBlob[pParse->nBlob];
   if( szPayload<=11 ){
-    jsonBlobAppendOneByte(pParse, eType | (szPayload<<4));
+    a[0] = eType | (szPayload<<4);
+    pParse->nBlob += 1;
   }else if( szPayload<=0xff ){
     a[0] = eType | 0xc0;
     a[1] = szPayload & 0xff;
-    jsonBlobAppendNBytes(pParse, a, 2);
+    pParse->nBlob += 2;
   }else if( szPayload<=0xffff ){
     a[0] = eType | 0xd0;
     a[1] = (szPayload >> 8) & 0xff;
     a[2] = szPayload & 0xff;
-    jsonBlobAppendNBytes(pParse, a, 3);
+    pParse->nBlob += 3;
   }else{
     a[0] = eType | 0xe0;
     a[1] = (szPayload >> 24) & 0xff;
     a[2] = (szPayload >> 16) & 0xff;
     a[3] = (szPayload >> 8) & 0xff;
     a[4] = szPayload & 0xff;
-    jsonBlobAppendNBytes(pParse, a, 5);
+    pParse->nBlob += 5;
   }
 }
 
@@ -2169,12 +2186,9 @@ static u32 jsonLookupBlobStep(
       u32 nIns;          /* Total bytes to insert (label+value) */
       JsonParse v;       /* BLOB encoding of the value to be inserted */
       JsonParse ix;      /* Header of the label to be inserted */
-      u8 aLabel[16];     /* Buffer space for ix */
       testcase( pParse->eEdit==JEDIT_INS );
       testcase( pParse->eEdit==JEDIT_SET );
       memset(&ix, 0, sizeof(ix));
-      ix.aBlob = aLabel;
-      ix.nBlobAlloc = sizeof(aLabel);
       jsonBlobAppendNodeType(&ix,JSONB_TEXTRAW, nKey);
       memset(&v, 0, sizeof(v));
       if( zPath[i]==0 ){
@@ -2190,9 +2204,11 @@ static u32 jsonLookupBlobStep(
         if( JSON_BLOB_ISERROR(rc) || v.oom ){
           pParse->oom |= v.oom;
           jsonParseReset(&v);
+          jsonParseReset(&ix);
           return rc;
         }
       }
+      pParse->oom |= ix.oom;
       if( jsonBlobMakeEditable(pParse, ix.nBlob+nKey+v.nBlob) ){
         nIns = ix.nBlob + nKey + v.nBlob;
         jsonBlobEdit(pParse, j, 0, 0, nIns);
@@ -2204,6 +2220,7 @@ static u32 jsonLookupBlobStep(
         if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
       }
       jsonParseReset(&v);
+      jsonParseReset(&ix);
       return j;
     }
   }else if( zPath[0]=='[' ){
@@ -3323,11 +3340,11 @@ static int jsonMergePatchBlob(
   u32 iTEndBE;      /* Original first byte past end of target, before edit */
   u32 iTEnd;        /* Current first byte past end of target */
   u8 eTLabel;       /* Node type of the target label */
-  u32 iTLabel;      /* Index of the label */
-  u32 nTLabel;      /* Header size in bytes for the target label */
+  u32 iTLabel = 0;  /* Index of the label */
+  u32 nTLabel = 0;  /* Header size in bytes for the target label */
   u32 szTLabel;     /* Size of the target label payload */
-  u32 iTValue;      /* Index of the target value */
-  u32 nTValue;      /* Header size of the target value */
+  u32 iTValue = 0;  /* Index of the target value */
+  u32 nTValue = 0;  /* Header size of the target value */
   u32 szTValue;     /* Payload size for the target value */
 
   u32 iPCursor;     /* Cursor position while scanning the patch */
