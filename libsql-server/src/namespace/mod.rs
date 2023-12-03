@@ -415,6 +415,11 @@ impl<M: MakeNamespace> NamespaceStore<M> {
     ) -> Self {
         let store = Cache::<NamespaceName, NamespaceEntry<M::Database>>::builder()
             .async_eviction_listener(|name, ns, _| {
+                // TODO(sarna): not clear if we should snapshot-on-evict...
+                // On the one hand, better to do so, because we have no idea
+                // for how long we're evicting a namespace.
+                // On the other, if there's lots of cache pressure, snapshotting
+                // very often will kill the machine's I/O.
                 Box::pin(async move {
                     tracing::info!("namespace `{name}` deallocated");
                     // shutdown namespace
@@ -425,7 +430,6 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                     }
                 })
             })
-            // TODO(marin): configurable capacity
             .max_capacity(max_active_namespaces as u64)
             .time_to_idle(Duration::from_secs(300))
             .build();
