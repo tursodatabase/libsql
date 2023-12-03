@@ -818,14 +818,30 @@ static void jsonParseFree(JsonParse *pParse){
 }
 
 /*
+** Translate a single byte of Hex into an integer.
+** This routine only gives a correct answer if h really is a valid hexadecimal
+** character:  0..9a..fA..F.  But unlike sqlite3HexToInt(), it does not
+** assert() if the digit is not hex.
+*/
+static u8 jsonHexToInt(int h){
+#ifdef SQLITE_ASCII
+  h += 9*(1&(h>>6));
+#endif
+#ifdef SQLITE_EBCDIC
+  h += 9*(1&~(h>>4));
+#endif
+  return (u8)(h & 0xf);
+}
+
+/*
 ** Convert a 4-byte hex string into an integer
 */
 static u32 jsonHexToInt4(const char *z){
   u32 v;
-  v = (sqlite3HexToInt(z[0])<<12)
-    + (sqlite3HexToInt(z[1])<<8)
-    + (sqlite3HexToInt(z[2])<<4)
-    + sqlite3HexToInt(z[3]);
+  v = (jsonHexToInt(z[0])<<12)
+    + (jsonHexToInt(z[1])<<8)
+    + (jsonHexToInt(z[2])<<4)
+    + jsonHexToInt(z[3]);
   return v;
 }
 
@@ -2524,7 +2540,7 @@ static void jsonReturnFromBlob(
           }else if( c=='0' ){
             c = 0;
           }else if( c=='x' ){
-            c = (sqlite3HexToInt(z[iIn+1])<<4) | sqlite3HexToInt(z[iIn+2]);
+            c = (jsonHexToInt(z[iIn+1])<<4) | jsonHexToInt(z[iIn+2]);
             iIn += 2;
           }else if( c=='\r' && z[i+1]=='\n' ){
             iIn++;
