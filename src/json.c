@@ -3082,59 +3082,6 @@ static void jsonbTest2(
 ** Scalar SQL function implementations
 ****************************************************************************/
 
-/* SQL Function:  jsonb(JSON)
-**
-** Convert the input argument into JSONB (the SQLite binary encoding of
-** JSON).
-**
-** If the input is TEXT, or NUMERIC, try to parse it as JSON.  If the fails,
-** raise an error.  Otherwise, return the resulting BLOB value.
-**
-** If the input is a BLOB, check to see if the input is a plausible
-** JSONB.  If it is, return it unchanged.  Raise an error if it is not.
-** Note that there could be internal inconsistencies in the BLOB - this
-** routine does not do a full byte-for-byte validity check of the
-** JSON blob.
-**
-** If the input is NULL, return NULL.
-*/
-static void jsonbFunc(
-  sqlite3_context *ctx,
-  int argc,
-  sqlite3_value **argv
-){
-  JsonParse *pParse;
-  int nJson;
-  const char *zJson;
-  JsonParse x;
-  UNUSED_PARAMETER(argc);
-
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
-    /* No-op */
-  }else if( jsonFuncArgMightBeBinary(argv[0]) ){
-    sqlite3_result_value(ctx, argv[0]);
-  }else{
-    zJson = (const char*)sqlite3_value_text(argv[0]);
-    if( zJson==0 ) return;
-    nJson = sqlite3_value_bytes(argv[0]);
-    pParse = &x;
-    memset(&x, 0, sizeof(x));
-    x.zJson = (char*)zJson;
-    x.nJson = nJson;
-    if( jsonConvertTextToBlob(pParse, ctx) ){
-      sqlite3_result_error(ctx, "malformed JSON", -1);
-    }else{
-      assert( pParse->nBlobAlloc>0 );
-      assert( !pParse->bReadOnly );
-      sqlite3_result_blob(ctx, pParse->aBlob, pParse->nBlob, sqlite3_free);
-      pParse->aBlob = 0;
-      pParse->nBlob = 0;
-      pParse->nBlobAlloc = 0;
-    }
-    jsonParseReset(pParse);
-  }
-}
-
 /*
 ** Implementation of the json_quote(VALUE) function.  Return a JSON value
 ** corresponding to the SQL value input.  Mostly this means putting
@@ -3271,9 +3218,10 @@ static void jsonExtractFunc(
   for(i=1; i<argc; i++){
     /* With a single PATH argument */
     const char *zPath = (const char*)sqlite3_value_text(argv[i]);
-    int nPath = sqlite3_value_bytes(argv[i]);
+    int nPath;
     u32 j;
     if( zPath==0 ) goto json_extract_error;
+    nPath = sqlite3Strlen30(zPath);
     if( zPath[0]=='$' ){
       j = jsonLookupStep(p, 0, zPath+1, 0);
     }else if( (flags & JSON_ABPATH) ){
@@ -3633,7 +3581,7 @@ static void jsonObjectFunc(
     }
     jsonAppendSeparator(&jx);
     z = (const char*)sqlite3_value_text(argv[i]);
-    n = (u32)sqlite3_value_bytes(argv[i]);
+    n = z!=0 ? sqlite3Strlen30(z) : 0;
     jsonAppendString(&jx, z, n);
     jsonAppendChar(&jx, ':');
     jsonAppendSqlValue(&jx, argv[i+1]);
@@ -4153,7 +4101,7 @@ static void jsonObjectStep(
     }
     pStr->pCtx = ctx;
     z = (const char*)sqlite3_value_text(argv[0]);
-    n = (u32)sqlite3_value_bytes(argv[0]);
+    n = z ? sqlite3Strlen30(z) : 0;
     jsonAppendString(pStr, z, n);
     jsonAppendChar(pStr, ':');
     jsonAppendSqlValue(pStr, argv[1]);
@@ -4462,15 +4410,16 @@ static int jsonEachPathLength(JsonEachCursor *p){
   if( p->iRowid==0 && p->bRecursive && n>1 ){
     if( p->path.zBuf[n-1]==']' ){
       do{
-        n--;
         assert( n>0 );
+        n--;
       }while( p->path.zBuf[n]!='[' );
     }else{
       u32 sz = 0;
       jsonbPayloadSize(&p->sParse, p->i, &sz);
       if( p->path.zBuf[n-1]=='"' ) sz += 2;
+      assert( sz<n );
       n -= sz;
-      while( p->path.zBuf[n]!='.' ){
+      while( p->path.zBuf[n]!='.' && ALWAYS(n>0) ){
         n--;
         assert( n>0 );
       }
@@ -4666,11 +4615,15 @@ static int jsonEachFilter(
   if( idxNum==0 ) return SQLITE_OK;
   memset(&p->sParse, 0, sizeof(p->sParse));
   p->sParse.nJPRef = 1;
-  if( jsonFuncArgMightBeBinary(argv[0]) ){
-    p->sParse.nBlob = sqlite3_value_bytes(argv[0]);
-    p->sParse.aBlob = (u8*)sqlite3_value_blob(argv[0]);
-    if( p->sParse.aBlob==0 ){
-      return SQLITE_NOMEM;
+  if( sqlite3_value_type(argv[0])==SQLITE_BLOB ){
+    if( jsonFuncArgMightBeBinary(argv[0]) ){
+      p->sParse.nBlob = sqlite3_value_bytes(argv[0]);
+      p->sParse.aBlob = (u8*)sqlite3_value_blob(argv[0]);
+      if( p->sParse.aBlob==0 ){
+        return SQLITE_NOMEM;
+      }
+    }else{
+      goto json_each_malformed_input;
     }
   }else{
     p->sParse.zJson = (char*)sqlite3_value_text(argv[0]);
@@ -4683,10 +4636,7 @@ static int jsonEachFilter(
       if( p->sParse.oom ){
         return SQLITE_NOMEM;
       }
-      sqlite3_free(cur->pVtab->zErrMsg);
-      cur->pVtab->zErrMsg = sqlite3_mprintf("malformed JSON");
-      jsonEachCursorReset(p);
-      return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
+      goto json_each_malformed_input;
     }
   }
   if( idxNum==3 ){
@@ -4698,7 +4648,7 @@ static int jsonEachFilter(
       jsonEachCursorReset(p);
       return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
     }
-    p->nRoot = sqlite3_value_bytes(argv[1]);
+    p->nRoot = sqlite3Strlen30(zRoot);
     if( zRoot[1]==0 ){
       i = p->i = 0;
       p->eType = 0;
@@ -4747,6 +4697,12 @@ static int jsonEachFilter(
     p->aParent[0].iValue = i;
   }
   return SQLITE_OK;
+
+json_each_malformed_input:
+  sqlite3_free(cur->pVtab->zErrMsg);
+  cur->pVtab->zErrMsg = sqlite3_mprintf("malformed JSON");
+  jsonEachCursorReset(p);
+  return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
 }
 
 /* The methods of the json_each virtual table */
@@ -4822,7 +4778,7 @@ void sqlite3RegisterJsonFunctions(void){
     /*     Number of arguments ---, | |  | | ,--- Flags                     */
     /*                            | | |  | | |                              */
     JFUNCTION(json,               1,1,1, 0,0,0,          jsonRemoveFunc),
-    JFUNCTION(jsonb,              1,1,0, 0,1,0,          jsonbFunc),
+    JFUNCTION(jsonb,              1,1,0, 0,1,0,          jsonRemoveFunc),
     JFUNCTION(json_array,        -1,0,1, 1,0,0,          jsonArrayFunc),
     JFUNCTION(jsonb_array,       -1,0,1, 1,1,0,          jsonArrayFunc),
     JFUNCTION(json_array_length,  1,1,0, 0,0,0,          jsonArrayLengthFunc),
