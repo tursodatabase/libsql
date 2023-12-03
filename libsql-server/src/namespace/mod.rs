@@ -447,10 +447,6 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         }
         let mut bottomless_db_id_init = NamespaceBottomlessDbIdInit::FetchFromConfig;
         if let Some(ns) = self.inner.store.remove(&namespace).await {
-            // FIXME: when destroying, we are waiting for all the tasks associated with the
-            // allocation to finish, which create a lot of contention on the lock. Need to use a
-            // conccurent hashmap to deal with this issue.
-
             // deallocate in-memory resources
             if let Some(ns) = ns.write().await.take() {
                 bottomless_db_id_init = NamespaceBottomlessDbIdInit::Provided(
@@ -493,10 +489,6 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             .await;
         let mut lock = entry.write().await;
         if let Some(ns) = lock.take() {
-            // FIXME: when destroying, we are waiting for all the tasks associated with the
-            // allocation to finnish, which create a lot of contention on the lock. Need to use a
-            // conccurent hashmap to deal with this issue.
-            // deallocate in-memory resources
             ns.destroy().await?;
         }
         // destroy on-disk database
@@ -590,9 +582,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                 tracing::info!("loaded namespace: `{to}`");
                 Ok::<_, crate::error::Error>(Arc::new(RwLock::new(Some(ns))))
             })
-            .await
-            // FIXME: find how to deal with Arc<Error>
-            .unwrap();
+            .await?;
 
         let from_lock = from_entry.read().await;
         let Some(from_ns) = &*from_lock else {
