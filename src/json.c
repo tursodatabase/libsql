@@ -2667,8 +2667,12 @@ static char *jsonBadPathError(
 ){
   char *zMsg = sqlite3_mprintf("bad JSON path: %Q", zPath);
   if( ctx==0 ) return zMsg;
-  sqlite3_result_error(ctx, zMsg, -1);
-  sqlite3_free(zMsg);
+  if( zMsg ){
+    sqlite3_result_error(ctx, zMsg, -1);
+    sqlite3_free(zMsg);
+  }else{
+    sqlite3_result_error_nomem(ctx);
+  }
   return 0;
 }
 
