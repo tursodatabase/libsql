@@ -2545,9 +2545,10 @@ static void jsonReturnFromBlob(
           }else if( c=='\r' && z[i+1]=='\n' ){
             iIn++;
             continue;
-          }else if( 0xe2==(u8)c ){
-            assert( 0x80==(u8)z[i+1] );
-            assert( 0xa8==(u8)z[i+2] || 0xa9==(u8)z[i+2] );
+          }else if( 0xe2==(u8)c
+                 && 0x80==(u8)z[i+1]
+                 && (0xa8==(u8)z[i+2] || 0xa9==(u8)z[i+2])
+          ){
             iIn += 2;
             continue;
           }else{
