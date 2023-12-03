@@ -1729,6 +1729,7 @@ static int jsonConvertTextToBlob(
     if( zJson[i] ){
       i += json5Whitespace(&zJson[i]);
       if( zJson[i] ){
+        if( pCtx ) sqlite3_result_error(pCtx, "malformed JSON", -1);
         jsonParseReset(pParse);
         return 1;
       }
@@ -2801,9 +2802,6 @@ rebuild_from_cache:
     p->hasNonstd = pFromCache->hasNonstd;
     jsonParseFree(pFromCache);
     return p;
-  }else{
-    jsonParseFree(pFromCache);
-    pFromCache = 0;
   }
   if( eType==SQLITE_BLOB ){
     u32 n, sz = 0;
