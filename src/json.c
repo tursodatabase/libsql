@@ -534,7 +534,7 @@ static void jsonAppendRaw(JsonString *p, const char *zIn, u32 N){
   }
 }
 static void jsonAppendRawNZ(JsonString *p, const char *zIn, u32 N){
-  if( N==0 ) return;
+  assert( N>0 );
   if( N+p->nUsed >= p->nAlloc ){
     jsonStringExpandAndAppend(p,zIn,N);
   }else{
@@ -572,9 +572,8 @@ static void jsonAppendChar(JsonString *p, char c){
 /* Make sure there is a zero terminator on p->zBuf[]
 */
 static void jsonStringTerminate(JsonString *p){
-  if( p->nUsed<p->nAlloc || jsonStringGrow(p,1) ){
-    p->zBuf[p->nUsed] = 0;
-  }   
+  jsonAppendChar(p, 0);
+  p->nUsed--;
 }
 
 /* Try to force the string to be a zero-terminated RCStr string.  In other
@@ -990,24 +989,6 @@ static const struct NanInfName {
   { 's', 'S', 4, JSONB_NULL, 4, "SNaN", "null" },
 };
 
-
-/*
-** Compute the text of an error in JSON path syntax.
-**
-** If ctx is not NULL then push the error message into ctx and return NULL.
-*  If ctx is NULL, then return the text of the error message.
-*/
-static char *jsonPathSyntaxError(const char *zErr, sqlite3_context *ctx){
-  char *zMsg = sqlite3_mprintf("JSON path error near '%q'", zErr);
-  if( ctx==0 ) return zMsg;
-  if( zMsg==0 ){
-    sqlite3_result_error_nomem(ctx);
-  }else{
-    sqlite3_result_error(ctx, zMsg, -1);
-    sqlite3_free(zMsg);
-  }
-  return 0;
-}
 
 /*
 ** Report the wrong number of arguments for json_insert(), json_replace()
@@ -2659,15 +2640,19 @@ static int jsonFunctionArgToBlob(
 
 /*
 ** Generate a bad path error.
+**
+** If ctx is not NULL then push the error message into ctx and return NULL.
+** If ctx is NULL, then return the text of the error message.
 */
-static void jsonBadPathError(
+static char *jsonBadPathError(
   sqlite3_context *ctx,     /* The function call containing the error */
   const char *zPath         /* The path with the problem */
 ){
-  sqlite3 *db = sqlite3_context_db_handle(ctx);
-  char *zMsg = sqlite3MPrintf(db, "bad JSON path: %Q", zPath);
+  char *zMsg = sqlite3_mprintf("bad JSON path: %Q", zPath);
+  if( ctx==0 ) return zMsg;
   sqlite3_result_error(ctx, zMsg, -1);
-  sqlite3DbFree(db, zMsg);
+  sqlite3_free(zMsg);
+  return 0;
 }
 
 /* argv[0] is a BLOB that seems likely to be a JSONB.  Subsequent
@@ -3287,7 +3272,6 @@ static void jsonExtractFunc(
       }else if( zPath[0]!='[' ){
         jsonAppendRawNZ(&jx, ".", 1);
         jsonAppendRaw(&jx, zPath, nPath);
-        jsonAppendChar(&jx, 0);
       }else{
         jsonAppendRaw(&jx, zPath, nPath);
       }
@@ -3685,7 +3669,7 @@ static void jsonRemoveFunc(
 
 json_remove_patherror:
   jsonParseFree(p);
-  jsonPathSyntaxError(zPath, ctx);
+  jsonBadPathError(ctx, zPath);
   return;
 
 json_remove_return_null:
@@ -4689,7 +4673,7 @@ static int jsonEachFilter(
     if( zRoot==0 ) return SQLITE_OK;
     if( zRoot[0]!='$' ){
       sqlite3_free(cur->pVtab->zErrMsg);
-      cur->pVtab->zErrMsg = jsonPathSyntaxError(zRoot, 0);
+      cur->pVtab->zErrMsg = jsonBadPathError(0, zRoot);
       jsonEachCursorReset(p);
       return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
     }
@@ -4707,7 +4691,7 @@ static int jsonEachFilter(
           return SQLITE_OK;
         }
         sqlite3_free(cur->pVtab->zErrMsg);
-        cur->pVtab->zErrMsg = jsonPathSyntaxError(zRoot, 0);
+        cur->pVtab->zErrMsg = jsonBadPathError(0, zRoot);
         jsonEachCursorReset(p);
         return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
       }
