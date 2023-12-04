@@ -2788,7 +2788,7 @@ rebuild_from_cache:
     if( p->nBlob==0 ){
       goto json_pfa_malformed;
     }
-    if( p->aBlob==0 ){
+    if( NEVER(p->aBlob==0) ){
       goto json_pfa_oom;
     }
     if( (p->aBlob[0] & 0x0f)>JSONB_OBJECT ){
@@ -2810,7 +2810,7 @@ rebuild_from_cache:
   p->zJson = (char*)sqlite3_value_text(pArg);
   p->nJson = sqlite3_value_bytes(pArg);
   if( p->nJson==0 ) goto json_pfa_malformed;
-  if( p->zJson==0 ) goto json_pfa_oom;
+  if( NEVER(p->zJson==0) ) goto json_pfa_oom;
   if( jsonConvertTextToBlob(p, (flgs & JSON_KEEPERROR) ? 0 : ctx) ){
     if( flgs & JSON_KEEPERROR ){
       p->nErr = 1;
