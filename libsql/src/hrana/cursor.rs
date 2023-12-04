@@ -1,8 +1,9 @@
 // https://github.com/tursodatabase/libsql/blob/main/docs/HRANA_3_SPEC.md#cursor-entries
 
-use crate::hrana::proto::{Batch, Col, Value};
+use crate::hrana::proto::{Batch, BatchResult, Col, StmtResult, Value};
 use crate::hrana::{ByteStream, CursorResponseError, HranaError, Result, Row};
 use futures::{ready, Future, Stream, StreamExt};
+use serde::de::Error;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::pin::Pin;
@@ -76,6 +77,52 @@ impl Cursor {
         } else {
             Err(HranaError::CursorError(CursorResponseError::CursorClosed))
         }
+    }
+
+    pub async fn into_batch_result(mut self) -> Result<BatchResult> {
+        //FIXME: this is for the compatibility with the current libsql client API,
+        //       which expects BatchResult to be returned
+        let mut step_results = Vec::new();
+        let mut step_errors = Vec::new();
+
+        while let Ok(mut step) = self.next_step().await {
+            let cols = (&*step.cols).clone();
+            let mut rows = VecDeque::new();
+            while let Some(res) = step.next().await {
+                match res {
+                    Ok(row) => {
+                        let values = row.inner;
+                        rows.push_back(values);
+                    }
+                    Err(err) => step_errors.push(Some(crate::hrana::proto::Error {
+                        message: err.to_string(),
+                    })),
+                }
+            }
+            let affected_row_count = step.affected_rows() as u64;
+            let last_insert_rowid = if let Some(rowid) = step.last_inserted_rowid() {
+                let id = rowid.parse::<i64>().map_err(|_| {
+                    serde_json::Error::invalid_value(
+                        serde::de::Unexpected::Str(rowid),
+                        &"decimal integer as a string",
+                    )
+                })?;
+                Some(id)
+            } else {
+                None
+            };
+            let step_res = StmtResult {
+                cols,
+                rows,
+                affected_row_count,
+                last_insert_rowid,
+            };
+            step_results.push(Some(step_res));
+        }
+        Ok(BatchResult {
+            step_results,
+            step_errors,
+        })
     }
 
     pub async fn next_step(&mut self) -> Result<CursorStep> {
