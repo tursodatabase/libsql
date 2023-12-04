@@ -82,6 +82,7 @@ where
         HranaStream::open(
             client.inner.clone(),
             client.pipeline_url.clone(),
+            client.cursor_url.clone(),
             client.auth.clone(),
         )
     }

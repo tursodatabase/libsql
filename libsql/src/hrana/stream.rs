@@ -1,11 +1,12 @@
 use crate::hrana::cursor::{Cursor, CursorReq};
 use crate::hrana::pipeline::{
-    BatchStreamReq, ClientMsg, CloseSqlStreamReq, DescribeStreamReq, ExecuteStreamReq, Response,
-    SequenceStreamReq, ServerMsg, StoreSqlStreamReq, StreamRequest, StreamResponse,
-    StreamResponseOk,
+    ClientMsg, CloseSqlStreamReq, DescribeStreamReq, Response, SequenceStreamReq, ServerMsg,
+    StoreSqlStreamReq, StreamRequest, StreamResponse, StreamResponseOk,
 };
 use crate::hrana::proto::{Batch, BatchResult, DescribeResult, Stmt, StmtResult};
-use crate::hrana::{ByteStream, HranaError, HttpSend, Result};
+use crate::hrana::{
+    ByteStream, CursorResponseError, HranaError, HttpSend, Result, StreamResponseError,
+};
 use futures::lock::Mutex;
 use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::Arc;
@@ -46,14 +47,20 @@ impl<T> HranaStream<T>
 where
     T: for<'a> HttpSend<'a>,
 {
-    pub(super) fn open(client: T, base_url: Arc<str>, auth_token: Arc<str>) -> Self {
+    pub(super) fn open(
+        client: T,
+        pipeline_url: Arc<str>,
+        cursor_url: Arc<str>,
+        auth_token: Arc<str>,
+    ) -> Self {
         HranaStream {
             inner: Arc::new(Inner {
                 affected_row_count: AtomicU64::new(0),
                 last_insert_rowid: AtomicI64::new(0),
                 stream: Mutex::new(RawStream {
                     client,
-                    base_url,
+                    pipeline_url,
+                    cursor_url,
                     auth_token,
                     sql_id_generator: 0,
                     status: StreamStatus::Open,
@@ -71,34 +78,40 @@ where
     }
 
     pub async fn execute(&self, stmt: Stmt) -> Result<StmtResult> {
-        let mut client = self.inner.stream.lock().await;
-        let resp = client
-            .send(StreamRequest::Execute(ExecuteStreamReq { stmt }))
-            .await?;
-        match resp {
-            StreamResponse::Execute(resp) => {
-                let r = resp.result;
-                self.inner
-                    .affected_row_count
-                    .store(r.affected_row_count, Ordering::SeqCst);
-                self.inner
-                    .last_insert_rowid
-                    .store(r.last_insert_rowid.unwrap_or_default(), Ordering::SeqCst);
-                Ok(r)
-            }
-            other => unexpected!(other),
+        //TODO: this trait shouldn't return BatchResult but an associated
+        //      type that can respect Hrana async streaming cursor capabilities
+        let mut batch = Batch::new();
+        batch.step(None, stmt);
+        let mut batch_res = self.batch(batch).await?;
+        if let Some(Some(error)) = batch_res.step_errors.pop() {
+            return Err(HranaError::StreamError(StreamResponseError { error }));
+        }
+        if let Some(Some(resp)) = batch_res.step_results.pop() {
+            self.inner
+                .affected_row_count
+                .store(resp.affected_row_count, Ordering::SeqCst);
+            self.inner
+                .last_insert_rowid
+                .store(resp.last_insert_rowid.unwrap_or_default(), Ordering::SeqCst);
+            Ok(resp)
+        } else {
+            Err(HranaError::CursorError(CursorResponseError::Other(
+                "no result has been returned".to_string(),
+            )))
         }
     }
 
     pub async fn batch(&self, batch: Batch) -> Result<BatchResult> {
+        //TODO: this trait shouldn't return BatchResult but an associated
+        //      type that can respect Hrana async streaming cursor capabilities
+        let cursor = self.cursor(batch).await?;
+        Ok(cursor.into_batch_result().await?)
+    }
+
+    pub async fn cursor(&self, batch: Batch) -> Result<Cursor> {
         let mut client = self.inner.stream.lock().await;
-        let resp = client
-            .send(StreamRequest::Batch(BatchStreamReq { batch }))
-            .await?;
-        match resp {
-            StreamResponse::Batch(resp) => Ok(resp.result),
-            other => unexpected!(other),
-        }
+        let cursor = client.open_cursor(batch).await?;
+        Ok(cursor)
     }
 
     pub async fn store_sql(&self, sql: String) -> Result<StoredSql<T>> {
@@ -200,10 +213,11 @@ where
 {
     client: T,
     baton: Option<String>,
-    base_url: Arc<str>,
+    pipeline_url: Arc<str>,
     auth_token: Arc<str>,
     status: StreamStatus,
     sql_id_generator: SqlId,
+    cursor_url: Arc<str>,
 }
 
 impl<T> RawStream<T>
@@ -228,12 +242,12 @@ where
         let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
         let stream: ByteStream = self
             .client
-            .http_send(&self.base_url, &self.auth_token, body)
+            .http_send(&self.cursor_url, &self.auth_token, body)
             .await?
             .stream();
         let (cursor, mut response) = Cursor::open(stream).await?;
         if let Some(base_url) = response.base_url.take() {
-            self.base_url = Arc::from(base_url);
+            self.cursor_url = Arc::from(base_url);
         }
         match response.baton.take() {
             None => {
@@ -269,13 +283,13 @@ where
         let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
         let body = self
             .client
-            .http_send(&self.base_url, &self.auth_token, body)
+            .http_send(&self.pipeline_url, &self.auth_token, body)
             .await?
             .bytes()
             .await?;
         let mut response: ServerMsg = serde_json::from_slice(&body)?;
         if let Some(base_url) = response.base_url.take() {
-            self.base_url = Arc::from(base_url);
+            self.pipeline_url = Arc::from(base_url);
         }
         match response.baton.take() {
             None => {
