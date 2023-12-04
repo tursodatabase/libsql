@@ -2029,7 +2029,7 @@ static int jsonFuncArgMightBeBinary(sqlite3_value *pJson){
   const u8 *aBlob;
   int nBlob;
   JsonParse s;
-  assert( sqlite3_value_type(pJson)==SQLITE_BLOB );
+  if( sqlite3_value_type(pJson)!=SQLITE_BLOB ) return 0;
   aBlob = sqlite3_value_blob(pJson);
   nBlob = sqlite3_value_bytes(pJson);
   if( nBlob<1 ) return 0;
@@ -3555,36 +3555,39 @@ static void jsonRemoveFunc(
   p = jsonParseFuncArg(ctx, argv[0], JSON_EDITABLE);
   if( p==0 ) return;
   for(i=1; i<argc; i++){
-    if( sqlite3_value_type(argv[i])==SQLITE_NULL ){
-      goto json_remove_return_null;
-    }
     zPath = (const char*)sqlite3_value_text(argv[i]);
     if( zPath==0 ){
-      goto json_remove_patherror;
+      goto json_remove_done;
     }
     if( zPath[0]!='$' ){
       goto json_remove_patherror;
     }
     if( zPath[1]==0 ){
       /* json_remove(j,'$') returns NULL */
-      goto json_remove_return_null;
+      goto json_remove_done;
     }
     p->eEdit = JEDIT_DEL;
     p->delta = 0;
     rc = jsonLookupStep(p, 0, zPath+1, 0);
-    if( rc==JSON_LOOKUP_NOTFOUND ) continue;
-    if( JSON_LOOKUP_ISERROR(rc) ) goto json_remove_patherror;
+    if( JSON_LOOKUP_ISERROR(rc) ){
+      if( rc==JSON_LOOKUP_NOTFOUND ){
+        continue;  /* No-op */
+      }else if( rc==JSON_LOOKUP_PATHERROR ){
+        jsonBadPathError(ctx, zPath);
+      }else{
+        sqlite3_result_error(ctx, "malformed JSON", -1);
+      }
+      goto json_remove_done;
+    }
   }
   jsonReturnParse(ctx, p);
   jsonParseFree(p);
   return;
 
 json_remove_patherror:
-  jsonParseFree(p);
   jsonBadPathError(ctx, zPath);
-  return;
 
-json_remove_return_null:
+json_remove_done:
   jsonParseFree(p);
   return;
 }
@@ -3657,18 +3660,8 @@ static void jsonTypeFunc(
   p = jsonParseFuncArg(ctx, argv[0], 0);
   if( p==0 ) return;
   if( argc==2 ){
-    if( sqlite3_value_type(argv[1])==SQLITE_NULL ){
-      goto json_type_done;
-    }
-    if( sqlite3_value_bytes(argv[1])==0 ){
-      jsonBadPathError(ctx, "");
-      goto json_type_done;
-    }
     zPath = (const char*)sqlite3_value_text(argv[1]);
-    if( zPath==0 ){
-      sqlite3_result_error_nomem(ctx);
-      goto json_type_done;
-    }
+    if( zPath==0 ) goto json_type_done;
     if( zPath[0]!='$' ){
       jsonBadPathError(ctx, zPath);
       goto json_type_done;
@@ -3841,17 +3834,14 @@ static void jsonValidFunc(
 **
 ** If the argument is NULL, return NULL
 **
-** If the argument is TEXT then try to interpret that text as JSON and
+** If the argument is BLOB, do a fast validity check and return non-zero
+** if the check fails.  The returned value does not indicate where in the
+** BLOB the error occurs.
+**
+** Otherwise interpret the argument is TEXT (even if it is numeric) and
 ** return the 1-based character position for where the parser first recognized
 ** that the input was not valid JSON, or return 0 if the input text looks
 ** ok.  JSON-5 extensions are accepted.
-**
-** If the argument is a BLOB then try to interpret the blob as a JSONB
-** and return the 1-based byte offset of the first position that is
-** misformatted.  Return 0 if the input BLOB seems to be well-formed.
-**
-** Numeric inputs are converted into text, which is usually valid
-** JSON-5, so they should return 0.
 */
 static void jsonErrorFunc(
   sqlite3_context *ctx,
@@ -3863,45 +3853,41 @@ static void jsonErrorFunc(
 
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
-  switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_NULL: {
-      return;
+  memset(&s, 0, sizeof(s));
+  if( jsonFuncArgMightBeBinary(argv[0]) ){
+    JsonString out;
+    jsonStringInit(&out, 0);
+    s.aBlob = (u8*)sqlite3_value_blob(argv[0]);
+    s.nBlob = sqlite3_value_bytes(argv[0]);
+    jsonXlateBlobToText(&s, 0, &out);
+    if( out.eErr ){
+      iErrPos = (out.eErr & JSTRING_MALFORMED)!=0 ? 1 : -1;
     }
-    case SQLITE_BLOB: {
-      if( !jsonFuncArgMightBeBinary(argv[0]) ) iErrPos = 1;
-      break;
-    }
-    default: {
-      memset(&s, 0, sizeof(s));
-      s.zJson = (char*)sqlite3_value_text(argv[0]);
-      s.nJson = sqlite3_value_bytes(argv[0]);
-      if( s.nJson==0 ){
-        iErrPos = 1;
-        break;
-      }
-      if( s.zJson==0 ){
-        sqlite3_result_error_nomem(ctx);
-        return;
-      }
-      if( jsonConvertTextToBlob(&s,0) ){
-        u32 k;
-        if( s.oom ){
-          sqlite3_result_error_nomem(ctx);
-          jsonParseReset(&s);
-          return;
-        }
+    jsonStringReset(&out);
+  }else{
+    s.zJson = (char*)sqlite3_value_text(argv[0]);
+    if( s.zJson==0 ) return;  /* NULL input or OOM */
+    s.nJson = sqlite3_value_bytes(argv[0]);
+    if( jsonConvertTextToBlob(&s,0) ){
+      if( s.oom ){
+        iErrPos = -1;
+      }else{
         /* Convert byte-offset s.iErr into a character offset */
-        for(k=0; k<s.iErr && s.zJson[k]; k++){
+        u32 k;
+        for(k=0; k<s.iErr && ALWAYS(s.zJson[k]); k++){
           if( (s.zJson[k] & 0xc0)!=0x80 ) iErrPos++;
         }
         iErrPos++;
       }
-      jsonParseReset(&s);
     }
   }
-  sqlite3_result_int64(ctx, iErrPos);
+  jsonParseReset(&s);
+  if( iErrPos<0 ){
+    sqlite3_result_error_nomem(ctx);
+  }else{
+    sqlite3_result_int64(ctx, iErrPos);
+  }
 }
-
 
 /****************************************************************************
 ** Aggregate SQL function implementations
@@ -4562,9 +4548,6 @@ static int jsonEachFilter(
     if( jsonFuncArgMightBeBinary(argv[0]) ){
       p->sParse.nBlob = sqlite3_value_bytes(argv[0]);
       p->sParse.aBlob = (u8*)sqlite3_value_blob(argv[0]);
-      if( p->sParse.aBlob==0 ){
-        return SQLITE_NOMEM;
-      }
     }else{
       goto json_each_malformed_input;
     }
