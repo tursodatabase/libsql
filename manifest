@@ -1,5 +1,5 @@
-C Remove\sdead\scode.\s\sImproved\sreporting\sof\serrors\sin\sJSON\sinputs.
-D 2023-12-03T23:38:24.696
+C Back\soff\son\sthe\suse\sof\sstrlen()\sfor\ssituations\swhere\ssqlite3_value_bytes()\nwill\swork\sas\swell,\sfor\sperformance.
+D 2023-12-04T00:31:58.791
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -688,7 +688,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 2f824bf3cb7f6018476fef922afd13aaa5fbe063ded53cf556d9542c5e81a95c
+F src/json.c 4cf9581f5d58cac15136c40dc359910eda0bac0508173ac1e2c2d988c7b9f310
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 1b89f3de98d1b59fec5bac1d66d6ece21f703821b8eaa0d53d9604c35309f6f9
@@ -2145,8 +2145,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9f055091af01a5dddba1a7e9868ad030c8f206237e1569215cb161e53e54aa71
-R 37598996ac6084b4bcb164d59f053e89
+P 2eaa738e6b5c1b67b3e57c868d9c3a30eea38a0b3b8b02482f06d57a45b10921
+R 38b2727d0c66c3371d75d1e0b8d86ea5
 U drh
-Z 62d813bb1b1f385603ccfef947a3746b
+Z 2acd0d3ecb5d5f83c97261113a2445b2
 # Remove this line to create a well-formed Fossil manifest.

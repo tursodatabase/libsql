@@ -3579,7 +3579,7 @@ static void jsonObjectFunc(
     }
     jsonAppendSeparator(&jx);
     z = (const char*)sqlite3_value_text(argv[i]);
-    n = z!=0 ? sqlite3Strlen30(z) : 0;
+    n = sqlite3_value_bytes(argv[i]);
     jsonAppendString(&jx, z, n);
     jsonAppendChar(&jx, ':');
     jsonAppendSqlValue(&jx, argv[i+1]);
@@ -4099,7 +4099,7 @@ static void jsonObjectStep(
     }
     pStr->pCtx = ctx;
     z = (const char*)sqlite3_value_text(argv[0]);
-    n = z ? sqlite3Strlen30(z) : 0;
+    n = sqlite3Strlen30(z);
     jsonAppendString(pStr, z, n);
     jsonAppendChar(pStr, ':');
     jsonAppendSqlValue(pStr, argv[1]);
