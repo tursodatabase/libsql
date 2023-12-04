@@ -117,7 +117,7 @@ async fn compact(
     snapshot_dir_path: &Path,
     to_compact_path: &Path,
 ) -> anyhow::Result<()> {
-    match perform_compaction(&db_path, to_compact_file, log_id).await {
+    match perform_compaction(db_path, to_compact_file, log_id).await {
         Ok((snapshot_name, snapshot_frame_count, size_after)) => {
             tracing::info!("snapshot `{snapshot_name}` successfully created");
 
@@ -133,7 +133,7 @@ async fn compact(
                 bail!("failed to register snapshot with snapshot merger: {e}");
             }
 
-            if let Err(e) = std::fs::remove_file(&to_compact_path) {
+            if let Err(e) = std::fs::remove_file(to_compact_path) {
                 bail!("failed to remove old log file `{to_compact_path:?}`: {e}",);
             }
         }
@@ -192,7 +192,7 @@ impl LogCompactor {
 
         let (sender, mut receiver) = mpsc::channel::<(LogFile, PathBuf)>(8);
         let mut merger = SnapshotMerger::new(db_path, log_id)?;
-        let snapshot_dir_path = snapshot_dir_path(&db_path);
+        let snapshot_dir_path = snapshot_dir_path(db_path);
 
         let db_path = db_path.to_path_buf();
         // We gather pending snapshots here, so new snapshots don't interfere.

@@ -128,10 +128,10 @@ fn apply_partial_snapshot() {
                 .unwrap();
             let stats = resp.json_value().await.unwrap();
             let replication_index = &stats["replication_index"];
-            if !replication_index.is_null() {
-                if replication_index.as_i64().unwrap() == primary_replication_index {
-                    break;
-                }
+            if !replication_index.is_null()
+                && replication_index.as_i64().unwrap() == primary_replication_index
+            {
+                break;
             }
             tokio::time::sleep(Duration::from_millis(1000)).await;
         }
