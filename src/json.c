@@ -2280,7 +2280,7 @@ static u32 jsonLookupStep(
         assert( !pParse->oom );
         nIns = ix.nBlob + nKey + v.nBlob;
         jsonBlobEdit(pParse, j, 0, 0, nIns);
-        if( ALWAYS(!pParse->oom) ){
+        if( !pParse->oom ){
           memcpy(&pParse->aBlob[j], ix.aBlob, ix.nBlob);
           k = j + ix.nBlob;
           memcpy(&pParse->aBlob[k], zKey, nKey);
@@ -2401,7 +2401,7 @@ static void jsonReturnFromBlob(
   sqlite3 *db = sqlite3_context_db_handle(pCtx);
 
   n = jsonbPayloadSize(pParse, i, &sz);
-  if( NEVER(n==0) ) return;
+  if( n==0 ) return;
   switch( pParse->aBlob[i] & 0x0f ){
     case JSONB_NULL: {
       sqlite3_result_null(pCtx);
