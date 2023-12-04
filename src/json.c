@@ -1268,7 +1268,7 @@ json_parse_restart:
   case '{': {
     /* Parse object */
     iThis = pParse->nBlob;
-    jsonBlobAppendNode(pParse, JSONB_OBJECT, (pParse->nJson-i)*2, 0);
+    jsonBlobAppendNode(pParse, JSONB_OBJECT, pParse->nJson-i, 0);
     if( ++pParse->iDepth > JSON_MAX_DEPTH ){
       pParse->iErr = i;
       return -1;
