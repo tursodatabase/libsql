@@ -2802,7 +2802,6 @@ rebuild_from_cache:
     if( n==0 
      || sz+n!=p->nBlob
      || ((p->aBlob[0] & 0x0f)<=JSONB_FALSE && sz>0)
-     || sz+n!=p->nBlob
     ){
       goto json_pfa_malformed;
     }
@@ -3556,7 +3555,7 @@ static void jsonRemoveFunc(
   u32 rc;                /* Subroutine return code */
 
   if( argc<1 ) return;
-  p = jsonParseFuncArg(ctx, argv[0], JSON_EDITABLE);
+  p = jsonParseFuncArg(ctx, argv[0], argc>1 ? JSON_EDITABLE : 0);
   if( p==0 ) return;
   for(i=1; i<argc; i++){
     zPath = (const char*)sqlite3_value_text(argv[i]);
