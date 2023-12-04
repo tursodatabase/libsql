@@ -3115,11 +3115,7 @@ static void jsonArrayLengthFunc(
   if( (p->aBlob[i] & 0x0f)==JSONB_ARRAY ){
     cnt = jsonbArrayCount(p, i);
   }
-  if( eErr ){
-    if( eErr==2 ) sqlite3_result_error(ctx, "malformed JSON", -1);
-  }else{
-    sqlite3_result_int64(ctx, cnt);
-  }
+  if( !eErr ) sqlite3_result_int64(ctx, cnt);
   jsonParseFree(p);
 }
 
