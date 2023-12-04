@@ -65,10 +65,10 @@ proc term {} {
   select_one $::expanded_vocab
 }
 
-# Return a document - between 3 and 6 terms.
+# Return a document - between 3 and 10 terms.
 #
 proc document {} {
-  set nTerm [expr [random 3] + 3]
+  set nTerm [expr [random 3] + 7]
   set doc ""
   for {set ii 0} {$ii < $nTerm} {incr ii} {
     lappend doc [term]
@@ -82,11 +82,39 @@ db func document document
 set NDOC  200
 set NLOOP 100
 
-
 sqlite3_fts5_register_origintext db
+
+proc tokens {cmd} { 
+  for {set iTok 0} {$iTok < [$cmd xInstCount]} {incr iTok} {
+    set txt [$cmd xInstToken $iTok 0]
+    if {$txt==""} break
+    set txt [string map [list "\0" "."] $txt]
+    lappend ret $txt
+  }
+  set ret
+}
+sqlite3_fts5_create_function db tokens tokens
+
+proc ctrl_tokens {doc term} {
+  set ret [list]
+  set term [string tolower $term]
+  foreach a $doc {
+    if {[string tolower $a]==$term} {
+      if {$a==$term} {
+        lappend ret $a
+      } else {
+        lappend ret [string tolower $a].$a
+      }
+    }
+  }
+  set ret
+}
+db func ctrl_tokens ctrl_tokens
+
+
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE ft USING fts5(
-      x, tokenize="origintext unicode61", contentless_delete=1, content=,
+      x, tokenize="origintext unicode61", 
       tokendata=1
   );
 
@@ -105,12 +133,19 @@ do_test 1.1 {
 
 proc do_all_vocab_test {tn} {
   foreach ::v [vocab] {
-    set answer [execsql {SELECT id FROM ctrl WHERE x LIKE '%' || $::v || '%'}]
+    set answer [execsql {
+      SELECT id, ctrl_tokens(x, $::v) FROM ctrl WHERE x LIKE '%' || $::v || '%'
+    }]
     do_execsql_test $tn.$::v {
-      SELECT rowid FROM ft($::v)
+      SELECT rowid, tokens(ft) FROM ft($::v)
     } $answer
   }
 }
+
+#execsql_pp { SELECT * FROM ctrl }
+#execsql_pp { SELECT * FROM ft }
+#fts5_aux_test_functions db
+#execsql_pp { SELECT rowid, tokens(ft), fts5_test_poslist(ft) FROM ft('ghi'); }
 
 do_all_vocab_test 1.2
 

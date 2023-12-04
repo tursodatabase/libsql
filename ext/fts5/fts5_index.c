@@ -6607,6 +6607,7 @@ struct Fts5TokenDataIter {
   Fts5TokenDataMap *aMap;
 
   Fts5PoslistReader *aPoslistReader;
+  int *aPoslistToIter;
   Fts5Iter *apIter[1];
 };
 
@@ -6794,16 +6795,19 @@ static void fts5IterSetOutputsTokendata(Fts5Iter *pIter){
 
       /* Allocate array of iterators if they are not already allocated. */
       if( pT->aPoslistReader==0 ){
-        pT->aPoslistReader = sqlite3Fts5MallocZero(
-            &pIter->pIndex->rc, sizeof(Fts5PoslistReader) * pT->nIter
+        int nByte = pT->nIter * (sizeof(Fts5PoslistReader) + sizeof(int));
+        pT->aPoslistReader = (Fts5PoslistReader*)sqlite3Fts5MallocZero(
+            &pIter->pIndex->rc, nByte
         );
         if( pT->aPoslistReader==0 ) return;
+        pT->aPoslistToIter = (int*)&pT->aPoslistReader[pT->nIter];
       }
 
       /* Populate an iterator for each poslist that will be merged */
       for(ii=0; ii<pT->nIter; ii++){
         Fts5Iter *p = pT->apIter[ii];
         if( iRowid==p->base.iRowid ){
+          pT->aPoslistToIter[nReader] = ii;
           sqlite3Fts5PoslistReaderInit(
               p->base.pData, p->base.nData, &pT->aPoslistReader[nReader++]
           );
@@ -6855,7 +6859,7 @@ static void fts5IterSetOutputsTokendata(Fts5Iter *pIter){
 
         if( eDetail==FTS5_DETAIL_FULL ){
           pT->aMap[pT->nMap].iPos = iMinPos;
-          pT->aMap[pT->nMap].iIter = iMin;
+          pT->aMap[pT->nMap].iIter = pT->aPoslistToIter[iMin];
           pT->aMap[pT->nMap].iRowid = iRowid;
           pT->nMap++;
         }
