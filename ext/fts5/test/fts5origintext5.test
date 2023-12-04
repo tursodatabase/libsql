@@ -79,21 +79,28 @@ db func document document
 
 #-------------------------------------------------------------------------
 
+expr srand(6)
+
 set NDOC  200
 set NLOOP 100
 
 sqlite3_fts5_register_origintext db
 
 proc tokens {cmd} { 
+  set ret [list]
   for {set iTok 0} {$iTok < [$cmd xInstCount]} {incr iTok} {
     set txt [$cmd xInstToken $iTok 0]
-    if {$txt==""} break
     set txt [string map [list "\0" "."] $txt]
     lappend ret $txt
   }
   set ret
 }
 sqlite3_fts5_create_function db tokens tokens
+
+proc rankfunc {cmd} { 
+  $cmd xRowid
+}
+sqlite3_fts5_create_function db rankfunc rankfunc
 
 proc ctrl_tokens {doc term} {
   set ret [list]
@@ -114,12 +121,13 @@ db func ctrl_tokens ctrl_tokens
 
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE ft USING fts5(
-      x, tokenize="origintext unicode61", 
+      x, tokenize="origintext unicode61", content=, contentless_delete=1,
       tokendata=1
   );
 
   CREATE TABLE ctrl(id INTEGER PRIMARY KEY, x TEXT);
   INSERT INTO ft(ft, rank) VALUES('pgsz', 64);
+  INSERT INTO ft(ft, rank) VALUES('rank', 'rankfunc()');
 }
 do_test 1.1 {
   for {set ii 0} {$ii < $NDOC} {incr ii} {
@@ -136,8 +144,11 @@ proc do_all_vocab_test {tn} {
     set answer [execsql {
       SELECT id, ctrl_tokens(x, $::v) FROM ctrl WHERE x LIKE '%' || $::v || '%'
     }]
-    do_execsql_test $tn.$::v {
+    do_execsql_test $tn.$::v.1 {
       SELECT rowid, tokens(ft) FROM ft($::v)
+    } $answer
+    do_execsql_test $tn.$::v.2 {
+      SELECT rowid, tokens(ft) FROM ft($::v) ORDER BY rank
     } $answer
   }
 }

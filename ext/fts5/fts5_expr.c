@@ -3199,6 +3199,7 @@ int sqlite3Fts5ExprQueryToken(
 */
 int sqlite3Fts5ExprInstToken(
   Fts5Expr *pExpr, 
+  i64 iRowid,
   int iPhrase, 
   int iCol, 
   int iOff, 
@@ -3208,7 +3209,6 @@ int sqlite3Fts5ExprInstToken(
 ){
   Fts5ExprPhrase *pPhrase = 0;
   Fts5IndexIter *pIter = 0;
-  i64 iRowid = pExpr->pRoot->iRowid;
 
   if( iPhrase<0 || iPhrase>=pExpr->nPhrase ){
     return SQLITE_RANGE;

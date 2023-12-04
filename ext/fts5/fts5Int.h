@@ -787,7 +787,7 @@ int sqlite3Fts5ExprClonePhrase(Fts5Expr*, int, Fts5Expr**);
 int sqlite3Fts5ExprPhraseCollist(Fts5Expr *, int, const u8 **, int *);
 
 int sqlite3Fts5ExprQueryToken(Fts5Expr*, int, int, const char**, int*);
-int sqlite3Fts5ExprInstToken(Fts5Expr*, int, int, int, int, const char**, int*);
+int sqlite3Fts5ExprInstToken(Fts5Expr*, i64, int, int, int, int, const char**, int*);
 void sqlite3Fts5ExprClearTokens(Fts5Expr*);
 
 /*******************************************

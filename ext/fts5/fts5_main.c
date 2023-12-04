@@ -2364,9 +2364,10 @@ static int fts5ApiInstToken(
       int iPhrase = pCsr->aInst[iIdx*3];
       int iCol = pCsr->aInst[iIdx*3 + 1];
       int iOff = pCsr->aInst[iIdx*3 + 2];
+      i64 iRowid = fts5CursorRowid(pCsr);
 
       rc = sqlite3Fts5ExprInstToken(
-          pCsr->pExpr, iPhrase, iCol, iOff, iToken, ppOut, pnOut
+          pCsr->pExpr, iRowid, iPhrase, iCol, iOff, iToken, ppOut, pnOut
       );
     }
   }
