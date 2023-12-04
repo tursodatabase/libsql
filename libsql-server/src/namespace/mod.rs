@@ -414,7 +414,8 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         max_active_namespaces: usize,
     ) -> Self {
         let store = Cache::<NamespaceName, NamespaceEntry<M::Database>>::builder()
-            .async_eviction_listener(|name, ns, _| {
+            .async_eviction_listener(move |name, ns, _| {
+                tracing::info!("evicting namespace `{name}` asynchronously");
                 // TODO(sarna): not clear if we should snapshot-on-evict...
                 // On the one hand, better to do so, because we have no idea
                 // for how long we're evicting a namespace.
@@ -424,7 +425,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                     tracing::info!("namespace `{name}` deallocated");
                     // shutdown namespace
                     if let Some(ns) = ns.write().await.take() {
-                        if let Err(e) = ns.destroy().await {
+                        if let Err(e) = ns.shutdown(snapshot_at_shutdown).await {
                             tracing::error!("error deallocating `{name}`: {e}")
                         }
                     }
