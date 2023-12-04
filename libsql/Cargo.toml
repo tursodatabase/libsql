@@ -88,7 +88,8 @@ hrana = [
   "serde",
   "dep:base64",
   "dep:serde_json",
-  "dep:futures"
+  "dep:futures",
+  "dep:bytes"
 ]
 serde = ["dep:serde"]
 remote = [

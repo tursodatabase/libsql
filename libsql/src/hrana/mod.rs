@@ -24,7 +24,6 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
-use tokio_stream::StreamExt;
 
 use super::rows::{RowInner, RowsInner};
 
@@ -88,6 +87,8 @@ impl Stream for SimpleStream {
 }
 
 async fn stream_to_bytes(mut stream: ByteStream) -> Result<Bytes> {
+    use futures::StreamExt;
+
     let mut buf = BytesMut::new();
     while let Some(chunk) = stream.next().await {
         buf.extend_from_slice(&chunk?);
