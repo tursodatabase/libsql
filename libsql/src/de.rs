@@ -44,10 +44,7 @@ impl<'de> Deserializer<'de> for RowDeserializer<'de> {
                 match self.idx.next() {
                     None => Ok(None),
                     Some(i) => {
-                        let value = self
-                            .row
-                            .get_value(i as i32)
-                            .map_err(|e| DeError::custom(e))?;
+                        let value = self.row.get_value(i as i32).map_err(DeError::custom)?;
                         self.value = Some(value);
                         self.row
                             .column_name(i as i32)

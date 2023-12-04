@@ -314,7 +314,7 @@ impl<C: ReplicatorClient> Replicator<C> {
 /// Helper function to convert rpc frames results to replicator frames
 pub fn map_frame_err(f: Result<RpcFrame, Status>) -> Result<Frame, Error> {
     let frame = f?;
-    Ok(Frame::try_from(&*frame.data).map_err(|e| Error::Client(e.into()))?)
+    Frame::try_from(&*frame.data).map_err(|e| Error::Client(e.into()))
 }
 
 #[cfg(test)]
