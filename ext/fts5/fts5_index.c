@@ -2763,7 +2763,6 @@ static void fts5SegIterNextInit(
     pIter->iLeafPgno = iPg - 1;
     fts5SegIterNextPage(p, pIter);
     fts5SegIterSetNext(p, pIter);
-    fts5SegIterAllocTombstone(p, pIter);
   }
   if( pIter->pLeaf ){
     const u8 *a = pIter->pLeaf->p;
