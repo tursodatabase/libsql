@@ -198,6 +198,8 @@ pub trait MakeNamespace: Sync + Send + 'static {
         timestamp: Option<NaiveDateTime>,
         meta_store: &MetaStore,
     ) -> crate::Result<Namespace<Self::Database>>;
+
+    fn exists(&self, namespace: &NamespaceName) -> bool;
 }
 
 /// Creates new primary `Namespace`
@@ -315,6 +317,11 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         let ns = fork_task.fork().await?;
         Ok(ns)
     }
+
+    fn exists(&self, namespace: &NamespaceName) -> bool {
+        let ns_path = self.config.base_path.join("dbs").join(namespace.as_str());
+        ns_path.try_exists().unwrap_or(false)
+    }
 }
 
 /// Creates new replica `Namespace`
@@ -377,6 +384,11 @@ impl MakeNamespace for ReplicaNamespaceMaker {
         _meta_store: &MetaStore,
     ) -> crate::Result<Namespace<Self::Database>> {
         return Err(ForkError::ForkReplica.into());
+    }
+
+    fn exists(&self, namespace: &NamespaceName) -> bool {
+        let ns_path = self.config.base_path.join("dbs").join(namespace.as_str());
+        ns_path.try_exists().unwrap_or(false)
     }
 }
 
@@ -675,7 +687,6 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         Init: Future<Output = crate::Result<Option<Namespace<M::Database>>>>,
     {
         let before_load = Instant::now();
-        tracing::warn!("starting with_lock_or_init: {namespace}");
         let ns = self
             .inner
             .store
@@ -694,10 +705,8 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         restore_option: RestoreOption,
         bottomless_db_id: NamespaceBottomlessDbId,
     ) -> crate::Result<()> {
-        if self.inner.store.get(&namespace).await.is_some() {
-            return Err(crate::error::Error::NamespaceAlreadyExist(
-                namespace.to_string(),
-            ));
+        if self.inner.make_namespace.exists(&namespace) {
+            return Err(Error::NamespaceAlreadyExist(namespace.to_string()));
         }
 
         let name = namespace.clone();
