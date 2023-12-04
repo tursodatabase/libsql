@@ -674,6 +674,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         Init: Future<Output = crate::Result<Option<Namespace<M::Database>>>>,
     {
         let before_load = Instant::now();
+        tracing::warn!("starting with_lock_or_init: {namespace}");
         let ns = self
             .inner
             .store
@@ -692,6 +693,12 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         restore_option: RestoreOption,
         bottomless_db_id: NamespaceBottomlessDbId,
     ) -> crate::Result<()> {
+        if self.inner.store.get(&namespace).await.is_some() {
+            return Err(crate::error::Error::NamespaceAlreadyExist(
+                namespace.to_string(),
+            ));
+        }
+
         let name = namespace.clone();
         let bottomless_db_id_for_init = bottomless_db_id.clone();
         let init = async {
@@ -700,14 +707,13 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                 .make_namespace
                 .create(
                     name.clone(),
-                    RestoreOption::Latest,
+                    restore_option,
                     bottomless_db_id_for_init,
                     false,
                     self.make_reset_cb(),
                 )
                 .await;
             match ns {
-                // the namespace already exist, load it, and let the `f` function fail
                 Ok(ns) => {
                     tracing::info!("loaded namespace: `{name}`");
                     Ok(Some(ns))
@@ -718,39 +724,8 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             }
         };
 
-        let f = {
-            let name = namespace.clone();
-            move |ns: NamespaceEntry<M::Database>| {
-                let ns = ns.clone();
-                let name = name.clone();
-                async move {
-                    let mut lock = ns.write().await;
-                    if lock.is_some() {
-                        return Err(Error::NamespaceAlreadyExist(name.to_string()));
-                    }
-                    let ns = self
-                        .inner
-                        .make_namespace
-                        .create(
-                            name.clone(),
-                            restore_option,
-                            bottomless_db_id,
-                            true,
-                            self.make_reset_cb(),
-                            &self.inner.metadata,
-                        )
-                        .await?;
-
-                    tracing::info!("loaded namespace: `{name}`");
-
-                    lock.replace(ns);
-
-                    Ok(())
-                }
-            }
-        };
-
-        self.with_lock_or_init(namespace, f, init).await?
+        self.with_lock_or_init(namespace, |_| async { Ok(()) }, init)
+            .await?
     }
 
     pub async fn shutdown(self) -> crate::Result<()> {
