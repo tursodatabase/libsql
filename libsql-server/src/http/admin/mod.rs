@@ -73,6 +73,7 @@ where
     C: Connector,
 {
     let app_label = std::env::var("SQLD_APP_LABEL").ok();
+    let ver = env!("CARGO_PKG_VERSION");
 
     let prom_handle = if !disable_metrics {
         let lock = PROM_HANDLE.lock();
@@ -85,6 +86,7 @@ where
 
             if let Some(app_label) = app_label {
                 b.add_global_label("app", app_label)
+                    .add_global_label("version", ver)
                     .install_recorder()
                     .unwrap()
             } else {
@@ -101,6 +103,8 @@ where
 
         tracing::debug!("{} {} {:?}", req.method(), req.uri(), req.headers());
     }
+
+    metrics::increment_counter!("libsql_server_count");
 
     use axum::routing::{get, post};
     let metrics = Metrics {
