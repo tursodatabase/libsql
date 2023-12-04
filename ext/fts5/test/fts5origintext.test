@@ -252,6 +252,45 @@ do_execsql_test 5.3 {
   {0.0.0 0.0.1 0.0.2 0.0.3 0.0.4 0.0.5}
 }
 
+#-------------------------------------------------------------------------
+# Test the xInstToken() API with:
+#
+#   * a non tokendata=1 table.
+#   * prefix queries.
+#
+reset_db
+sqlite3_fts5_register_origintext db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(
+      x, y, tokenize='origintext unicode61', detail=%DETAIL%
+  );
+
+  INSERT INTO ft VALUES('One Two', 'Three two');
+  INSERT INTO ft VALUES('three Three', 'one One');
+}
+proc tokens {cmd} { 
+  set ret [list]
+  for {set iTok 0} {$iTok < [$cmd xInstCount]} {incr iTok} {
+    set txt [$cmd xInstToken $iTok 0]
+    set txt [string map [list "\0" "."] $txt]
+    lappend ret $txt
+  }
+  set ret
+}
+sqlite3_fts5_create_function db tokens tokens
+
+do_execsql_test 6.1 {
+  SELECT rowid, tokens(ft) FROM ft('One');
+} {1 one.One 2 one.One}
+
+do_execsql_test 6.2 {
+  SELECT rowid, tokens(ft) FROM ft('on*');
+} {1 {{}} 2 {{} {}}}
+
+do_execsql_test 6.3 {
+  SELECT rowid, tokens(ft) FROM ft('Three*');
+} {1 {{}} 2 {{}}}
+
 }
 
 finish_test

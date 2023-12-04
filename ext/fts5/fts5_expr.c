@@ -3208,7 +3208,8 @@ int sqlite3Fts5ExprInstToken(
   int *pnOut
 ){
   Fts5ExprPhrase *pPhrase = 0;
-  Fts5IndexIter *pIter = 0;
+  Fts5ExprTerm *pTerm = 0;
+  int rc = SQLITE_OK;
 
   if( iPhrase<0 || iPhrase>=pExpr->nPhrase ){
     return SQLITE_RANGE;
@@ -3217,9 +3218,18 @@ int sqlite3Fts5ExprInstToken(
   if( iToken<0 || iToken>=pPhrase->nTerm ){
     return SQLITE_RANGE;
   }
-  pIter = pPhrase->aTerm[iToken].pIter;
-
-  return sqlite3Fts5IterToken(pIter, iRowid, iCol, iOff+iToken, ppOut, pnOut);
+  pTerm = &pPhrase->aTerm[iToken];
+  if( pTerm->bPrefix==0 ){
+    if( pExpr->pConfig->bTokendata ){
+      rc = sqlite3Fts5IterToken(
+          pTerm->pIter, iRowid, iCol, iOff+iToken, ppOut, pnOut
+      );
+    }else{
+      *ppOut = pTerm->pTerm;
+      *pnOut = pTerm->nFullTerm;
+    }
+  }
+  return rc;
 }
 
 /*
