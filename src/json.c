@@ -2401,7 +2401,10 @@ static void jsonReturnFromBlob(
   sqlite3 *db = sqlite3_context_db_handle(pCtx);
 
   n = jsonbPayloadSize(pParse, i, &sz);
-  if( n==0 ) return;
+  if( n==0 ){
+    sqlite3_result_error(pCtx, "malformed JSON", -1);
+    return;
+  }
   switch( pParse->aBlob[i] & 0x0f ){
     case JSONB_NULL: {
       sqlite3_result_null(pCtx);
@@ -2483,7 +2486,7 @@ static void jsonReturnFromBlob(
             }else{
               u32 vlo;
               if( (v&0xfc00)==0xd800
-                && i<n-6
+                && iIn<sz-6
                 && z[iIn+1]=='\\'
                 && z[iIn+2]=='u'
                 && ((vlo = jsonHexToInt4(z+iIn+3))&0xfc00)==0xdc00
@@ -2525,8 +2528,9 @@ static void jsonReturnFromBlob(
             iIn++;
             continue;
           }else if( 0xe2==(u8)c
-                 && 0x80==(u8)z[i+1]
-                 && (0xa8==(u8)z[i+2] || 0xa9==(u8)z[i+2])
+                 && iIn<sz-2
+                 && 0x80==(u8)z[iIn+1]
+                 && (0xa8==(u8)z[iIn+2] || 0xa9==(u8)z[iIn+2])
           ){
             iIn += 2;
             continue;
