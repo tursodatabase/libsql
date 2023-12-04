@@ -570,31 +570,15 @@ static void jsonAppendChar(JsonString *p, char c){
 }
 
 /* Make sure there is a zero terminator on p->zBuf[]
-*/
-static void jsonStringTerminate(JsonString *p){
-  jsonAppendChar(p, 0);
-  p->nUsed--;
-}
-
-/* Try to force the string to be a zero-terminated RCStr string.  In other
-** words, make sure it is not still using the internal zSpace[] static
-** buffer.
 **
 ** Return true on success.  Return false if an OOM prevents this
 ** from happening.
 */
-static int jsonForceRCStr(JsonString *p){
+static int jsonStringTerminate(JsonString *p){
   jsonAppendChar(p, 0);
-  if( p->eErr ) return 0;
   p->nUsed--;
-  if( p->bStatic==0 ) return 1;
-  p->nAlloc = 0;
-  p->nUsed++;
-  jsonStringGrow(p, p->nUsed);
-  p->nUsed--;
-  return p->bStatic==0;
+  return p->eErr==0;
 }
-
 
 /* Append a comma separator to the output buffer, if the previous
 ** character is not '[' or '{'.
@@ -751,7 +735,7 @@ static void jsonReturnString(
     }else if( p->bStatic ){
       sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
                             SQLITE_TRANSIENT, SQLITE_UTF8);
-    }else if( jsonForceRCStr(p) ){
+    }else if( jsonStringTerminate(p) ){
       if( pParse && pParse->bJsonIsRCStr==0 && pParse->nBlobAlloc>0 ){
         int rc;
         pParse->zJson = sqlite3RCStrRef(p->zBuf);
@@ -1071,30 +1055,27 @@ static int jsonBlobMakeEditable(JsonParse *pParse, u32 nExtra){
   return 1;
 }
 
-
-/* Expand pParse->aBlob and append N bytes.
-**
-** Return the number of errors.
+/* Expand pParse->aBlob and append one bytes.
 */
-static SQLITE_NOINLINE int jsonBlobExpandAndAppend(
+static SQLITE_NOINLINE void jsonBlobExpandAndAppendOneByte(
   JsonParse *pParse,
-  const u8 *aData,
-  u32 N
+  u8 c
 ){
-  if( jsonBlobExpand(pParse, pParse->nBlob+N) ) return 1;
-  memcpy(&pParse->aBlob[pParse->nBlob], aData, N);
-  pParse->nBlob += N;
-  return 0;
+  jsonBlobExpand(pParse, pParse->nBlob+1);
+  if( pParse->oom==0 ){
+    assert( pParse->nBlob+1<=pParse->nBlobAlloc );
+    pParse->aBlob[pParse->nBlob++] = c;
+  }
 }
 
-/* Append a single character.  Return 1 if an error occurs.
+/* Append a single character.
 */
-static int jsonBlobAppendOneByte(JsonParse *pParse, u8 c){
+static void jsonBlobAppendOneByte(JsonParse *pParse, u8 c){
   if( pParse->nBlob >= pParse->nBlobAlloc ){
-    return jsonBlobExpandAndAppend(pParse, &c, 1);
+    jsonBlobExpandAndAppendOneByte(pParse, c);
+  }else{
+    pParse->aBlob[pParse->nBlob++] = c;
   }
-  pParse->aBlob[pParse->nBlob++] = c;
-  return 0;
 }
 
 /* Slow version of jsonBlobAppendNode() that first resizes the
@@ -1937,11 +1918,12 @@ static u32 jsonXlateBlobToText(
           sz2--;
           continue;
         }
-        if( sz2<2 ){
-          if( sz2>0 ) pOut->eErr |= JSTRING_MALFORMED;
-          if( sz2==0 ) break;
-        }
         assert( zIn[0]=='\\' );
+        assert( sz2>=1 );
+        if( sz2<2 ){
+          pOut->eErr |= JSTRING_MALFORMED;
+          break;
+        }
         switch( (u8)zIn[1] ){
           case '\'':
             jsonAppendChar(pOut, '\'');
@@ -1950,9 +1932,9 @@ static u32 jsonXlateBlobToText(
             jsonAppendRawNZ(pOut, "\\u0009", 6);
             break;
           case 'x':
-            if( sz2<2 ){
+            if( sz2<4 ){
               pOut->eErr |= JSTRING_MALFORMED;
-              sz2 = 0;
+              sz2 = 2;
               break;
             }
             jsonAppendRawNZ(pOut, "\\u00", 4);
@@ -1980,7 +1962,7 @@ static u32 jsonXlateBlobToText(
              || (0xa8!=(u8)zIn[3] && 0xa9!=(u8)zIn[3])
             ){
               pOut->eErr |= JSTRING_MALFORMED;
-              k = sz2;
+              sz2 = 2;
               break;
             }
             zIn += 2;
@@ -1990,11 +1972,7 @@ static u32 jsonXlateBlobToText(
             jsonAppendRawNZ(pOut, zIn, 2);
             break;
         }
-        if( sz2<2 ){
-          sz2 = 0;
-          pOut->eErr |= JSTRING_MALFORMED;
-          break;
-        }
+        assert( sz2>=2 );
         zIn += 2;
         sz2 -= 2;
       }
@@ -2051,11 +2029,11 @@ static int jsonFuncArgMightBeBinary(sqlite3_value *pJson){
   const u8 *aBlob;
   int nBlob;
   JsonParse s;
-  if( sqlite3_value_type(pJson)!=SQLITE_BLOB ) return 0;
+  assert( sqlite3_value_type(pJson)==SQLITE_BLOB );
   aBlob = sqlite3_value_blob(pJson);
   nBlob = sqlite3_value_bytes(pJson);
   if( nBlob<1 ) return 0;
-  if( aBlob==0 || (aBlob[0] & 0x0f)>JSONB_OBJECT ) return 0;
+  if( NEVER(aBlob==0) || (aBlob[0] & 0x0f)>JSONB_OBJECT ) return 0;
   memset(&s, 0, sizeof(s));
   s.aBlob = (u8*)aBlob;
   s.nBlob = nBlob;
@@ -2302,13 +2280,13 @@ static u32 jsonLookupStep(
         assert( !pParse->oom );
         nIns = ix.nBlob + nKey + v.nBlob;
         jsonBlobEdit(pParse, j, 0, 0, nIns);
-        if( !pParse->oom ){
+        if( ALWAYS(!pParse->oom) ){
           memcpy(&pParse->aBlob[j], ix.aBlob, ix.nBlob);
           k = j + ix.nBlob;
           memcpy(&pParse->aBlob[k], zKey, nKey);
           k += nKey;
           memcpy(&pParse->aBlob[k], v.aBlob, v.nBlob);
-          if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
+          if( ALWAYS(pParse->delta) ) jsonAfterEditSizeAdjust(pParse, iRoot);
         }
       }
       jsonParseReset(&v);
@@ -2394,7 +2372,7 @@ static void jsonReturnTextJsonFromBlob(
   JsonParse x;
   JsonString s;
 
-  if( aBlob==0 ) return;
+  if( NEVER(aBlob==0) ) return;
   memset(&x, 0, sizeof(x));
   x.aBlob = (u8*)aBlob;
   x.nBlob = nBlob;
@@ -2423,7 +2401,7 @@ static void jsonReturnFromBlob(
   sqlite3 *db = sqlite3_context_db_handle(pCtx);
 
   n = jsonbPayloadSize(pParse, i, &sz);
-  if( n==0 ) return;
+  if( NEVER(n==0) ) return;
   switch( pParse->aBlob[i] & 0x0f ){
     case JSONB_NULL: {
       sqlite3_result_null(pCtx);
@@ -2605,7 +2583,7 @@ static int jsonFunctionArgToBlob(
   static u8 aNull[] = { 0x00 };
   memset(pParse, 0, sizeof(pParse[0]));
   switch( eType ){
-    case SQLITE_NULL: {
+    default: {
       pParse->aBlob = aNull;
       pParse->nBlob = 1;
       return 0;
@@ -3040,39 +3018,6 @@ static void jsonParseFunc(
   p = jsonParseFuncArg(ctx, argv[0], 0);
   jsonShowParse(p);
   jsonParseFree(p);
-}
-
-/*
-** The json_test1(JSON) function return true (1) if the input is JSON
-** text generated by another json function.  It returns (0) if the input
-** is not known to be JSON.
-*/
-static void jsonTest1Func(
-  sqlite3_context *ctx,
-  int argc,
-  sqlite3_value **argv
-){
-  UNUSED_PARAMETER(argc);
-  sqlite3_result_int(ctx, sqlite3_value_subtype(argv[0])==JSON_SUBTYPE);
-}
-
-/* SQL Function:  jsonb_test2(BLOB_JSON)
-**
-** Render BLOB_JSON back into text.
-** Development testing only.
-*/
-static void jsonbTest2(
-  sqlite3_context *ctx,
-  int argc,
-  sqlite3_value **argv
-){
-  const u8 *aBlob;
-  int nBlob;
-  UNUSED_PARAMETER(argc);
-
-  aBlob = (const u8*)sqlite3_value_blob(argv[0]);
-  nBlob = sqlite3_value_bytes(argv[0]);
-  jsonReturnTextJsonFromBlob(ctx, aBlob, nBlob);
 }
 #endif /* SQLITE_DEBUG */
 
@@ -4805,8 +4750,6 @@ void sqlite3RegisterJsonFunctions(void){
     JFUNCTION(json_valid,         2,1,0, 0,0,0,          jsonValidFunc),
 #if SQLITE_DEBUG
     JFUNCTION(json_parse,         1,1,0, 0,0,0,          jsonParseFunc),
-    JFUNCTION(json_test1,         1,1,0, 1,0,0,          jsonTest1Func),
-    JFUNCTION(jsonb_test2,        1,1,0, 0,1,0,          jsonbTest2),
 #endif
     WAGGREGATE(json_group_array,  1, 0, 0,
        jsonArrayStep, jsonArrayFinal, jsonArrayValue, jsonGroupInverse,
