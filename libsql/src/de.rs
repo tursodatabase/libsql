@@ -1,8 +1,5 @@
 use crate::{Row, Value};
-use serde::de::{
-    value::{Error as DeError, SeqDeserializer},
-    Error, IntoDeserializer, MapAccess, Visitor,
-};
+use serde::de::{value::Error as DeError, Error, IntoDeserializer, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 
 struct RowDeserializer<'de> {
@@ -66,16 +63,7 @@ impl<'de> Deserializer<'de> for RowDeserializer<'de> {
                     .take()
                     .ok_or(DeError::custom("Expects a value but row is exhausted"))?;
 
-                match value {
-                    Value::Text(value) => seed.deserialize(value.into_deserializer()),
-                    Value::Null => seed.deserialize(().into_deserializer()),
-                    Value::Integer(value) => seed.deserialize(value.into_deserializer()),
-                    Value::Real(value) => seed.deserialize(value.into_deserializer()),
-                    Value::Blob(value) => {
-                        let seq = SeqDeserializer::new(value.iter().cloned());
-                        seed.deserialize(seq)
-                    }
-                }
+                seed.deserialize(value.into_deserializer())
             }
         }
 
