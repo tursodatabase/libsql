@@ -3,7 +3,7 @@ use std::str::FromStr;
 use crate::{Error, Result};
 
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum Value {
     Null,
     Integer(i64),
@@ -424,5 +424,109 @@ impl TryFrom<libsql_replication::rpc::proxy::Value> for Value {
 
     fn try_from(value: libsql_replication::rpc::proxy::Value) -> Result<Self> {
         bincode::deserialize(&value.data[..]).map_err(Error::from)
+    }
+}
+
+#[cfg(feature = "serde")]
+mod serde_ {
+    use std::marker::PhantomData;
+
+    use serde::de::value::SeqDeserializer;
+    use serde::de::{self, IntoDeserializer, Visitor};
+    use serde::Deserialize;
+    use serde::Deserializer;
+
+    use super::*;
+
+    impl<'de> Deserialize<'de> for Value {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            struct V;
+            impl Visitor<'_> for V {
+                type Value = Value;
+
+                fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                    write!(f, "an integer, a float, a string, a blob, or null")
+                }
+
+                fn visit_i64<E>(self, v: i64) -> std::result::Result<Self::Value, E>
+                where
+                    E: serde::de::Error,
+                {
+                    Ok(Value::Integer(v))
+                }
+
+                fn visit_f64<E>(self, v: f64) -> std::result::Result<Self::Value, E>
+                where
+                    E: serde::de::Error,
+                {
+                    Ok(Value::Real(v))
+                }
+
+                fn visit_byte_buf<E>(self, v: Vec<u8>) -> std::result::Result<Self::Value, E>
+                where
+                    E: serde::de::Error,
+                {
+                    Ok(Value::Blob(v))
+                }
+
+                fn visit_string<E>(self, v: String) -> std::result::Result<Self::Value, E>
+                where
+                    E: serde::de::Error,
+                {
+                    Ok(Value::Text(v))
+                }
+
+                fn visit_none<E>(self) -> std::result::Result<Self::Value, E>
+                where
+                    E: serde::de::Error,
+                {
+                    Ok(Value::Null)
+                }
+            }
+
+            deserializer.deserialize_any(V)
+        }
+    }
+
+    pub struct ValueDeserializer<E> {
+        value: Value,
+        _pth: PhantomData<E>,
+    }
+
+    impl<'de, E: de::Error> Deserializer<'de> for ValueDeserializer<E> {
+        type Error = E;
+
+        serde::forward_to_deserialize_any! {
+            bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
+                bytes byte_buf unit unit_struct newtype_struct seq tuple tuple_struct
+                map struct enum identifier ignored_any option
+        }
+
+        fn deserialize_any<V>(self, visitor: V) -> std::result::Result<V::Value, Self::Error>
+        where
+            V: Visitor<'de>,
+        {
+            match self.value {
+                Value::Null => visitor.visit_none(),
+                Value::Integer(i) => visitor.visit_i64(i),
+                Value::Real(x) => visitor.visit_f64(x),
+                Value::Text(s) => visitor.visit_string(s),
+                Value::Blob(b) => visitor.visit_seq(SeqDeserializer::new(b.into_iter())),
+            }
+        }
+    }
+
+    impl<'de, E: de::Error> IntoDeserializer<'de, E> for Value {
+        type Deserializer = ValueDeserializer<E>;
+
+        fn into_deserializer(self) -> Self::Deserializer {
+            ValueDeserializer {
+                value: self,
+                _pth: PhantomData,
+            }
+        }
     }
 }
