@@ -3243,7 +3243,7 @@ json_extract_error:
 }
 
 /*
-** Return codes for jsonMergePatchBlob()
+** Return codes for jsonMergePatch()
 */
 #define JSON_MERGE_OK          0     /* Success */
 #define JSON_MERGE_BADTARGET   1     /* Malformed TARGET blob */
@@ -3296,7 +3296,7 @@ json_extract_error:
 **  |
 **  ^---- Line numbers referenced in comments in the implementation
 */
-static int jsonMergePatchBlob(
+static int jsonMergePatch(
   JsonParse *pTarget,      /* The JSON parser that contains the TARGET */
   u32 iTarget,             /* Index of TARGET in pTarget->aBlob[] */
   const JsonParse *pPatch, /* The PATCH */
@@ -3427,7 +3427,7 @@ static int jsonMergePatchBlob(
         /* Algorithm line 12 */
         int rc, savedDelta = pTarget->delta;
         pTarget->delta = 0;
-        rc = jsonMergePatchBlob(pTarget, iTValue, pPatch, iPValue);
+        rc = jsonMergePatch(pTarget, iTValue, pPatch, iPValue);
         if( rc ) return rc;
         pTarget->delta += savedDelta;
       }        
@@ -3448,7 +3448,7 @@ static int jsonMergePatchBlob(
         pTarget->aBlob[iTEnd+szNew] = 0x00;
         savedDelta = pTarget->delta;
         pTarget->delta = 0;
-        rc = jsonMergePatchBlob(pTarget, iTEnd+szNew,pPatch,iPValue);
+        rc = jsonMergePatch(pTarget, iTEnd+szNew,pPatch,iPValue);
         if( rc ) return rc;
         pTarget->delta += savedDelta;
       }
@@ -3479,7 +3479,7 @@ static void jsonPatchFunc(
   if( pTarget==0 ) return;
   pPatch = jsonParseFuncArg(ctx, argv[1], 0);
   if( pPatch ){
-    rc = jsonMergePatchBlob(pTarget, 0, pPatch, 0);
+    rc = jsonMergePatch(pTarget, 0, pPatch, 0);
     if( rc==JSON_MERGE_OK ){
       jsonReturnParse(ctx, pTarget);
     }else if( rc==JSON_MERGE_OOM ){
