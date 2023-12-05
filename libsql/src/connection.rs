@@ -16,7 +16,7 @@ pub(crate) trait Conn {
 
     async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction>;
 
-    async fn is_autocommit(&self) -> Result<bool>;
+    fn is_autocommit(&self) -> bool;
 
     fn changes(&self) -> u64;
 
@@ -67,8 +67,8 @@ impl Connection {
         self.conn.transaction(tx_behavior).await
     }
 
-    pub async fn is_autocommit(&self) -> Result<bool> {
-        self.conn.is_autocommit().await
+    pub fn is_autocommit(&self) -> bool {
+        self.conn.is_autocommit()
     }
 
     pub fn changes(&self) -> u64 {
