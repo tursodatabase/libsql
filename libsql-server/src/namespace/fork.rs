@@ -109,7 +109,6 @@ impl ForkTask<'_> {
                 self.dest_namespace.clone(),
                 RestoreOption::Latest,
                 self.bottomless_db_id,
-                true,
                 // Forking works only on primary and
                 // PrimaryNamespaceMaker::create ignores
                 // reset_cb param
