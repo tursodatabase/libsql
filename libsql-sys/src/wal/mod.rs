@@ -54,6 +54,7 @@ impl Sqlite3Db {
 }
 
 /// Wrapper type around `*mut sqlite3_file`, to seal the pointer from extern usage.
+#[repr(transparent)]
 pub struct Sqlite3File {
     inner: *mut sqlite3_file,
 }
@@ -61,6 +62,30 @@ pub struct Sqlite3File {
 impl Sqlite3File {
     pub(crate) fn as_ptr(&mut self) -> *mut sqlite3_file {
         self.inner
+    }
+
+    pub fn read_at(&mut self, buf: &mut [u8], offset: u64) -> Result<()> {
+        unsafe {
+            assert!(!self.inner.is_null());
+            let inner = &mut *self.inner;
+            assert!(!inner.pMethods.is_null());
+            let io_methods = &*inner.pMethods;
+
+            let read = io_methods.xRead.unwrap();
+
+            let rc = read(
+                self.inner,
+                buf.as_mut_ptr() as *mut _,
+                buf.len() as _,
+                offset as _,
+            );
+
+            if rc == 0 {
+                Ok(())
+            } else {
+                Err(Error::new(rc))
+            }
+        }
     }
 }
 
@@ -80,7 +105,11 @@ pub struct PageHeaders {
 }
 
 impl PageHeaders {
-    pub(crate) fn as_ptr(&mut self) -> *mut libsql_pghdr {
+    pub(crate) fn as_ptr(&self) -> *const libsql_pghdr {
+        self.inner
+    }
+
+    pub(crate) fn as_mut_ptr(&mut self) -> *mut libsql_pghdr {
         self.inner
     }
 
@@ -90,9 +119,7 @@ impl PageHeaders {
         Self { inner }
     }
 
-    /// # Safety
-    /// The caller must not modify the list, unless they really know what they are doing.
-    pub unsafe fn iter(&mut self) -> PageHdrIter {
+    pub fn iter(&self) -> PageHdrIter {
         // TODO: move LIBSQL_PAGE_SIZE
         PageHdrIter::new(self.as_ptr(), 4096)
     }

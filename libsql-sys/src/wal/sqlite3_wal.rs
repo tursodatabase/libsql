@@ -143,6 +143,15 @@ pub struct Sqlite3Wal {
     inner: libsql_wal,
 }
 
+impl Sqlite3Wal {
+    pub fn db_file(&mut self) -> &mut Sqlite3File {
+        unsafe {
+            let ptr = &mut (*(self.inner.pData as *mut sqlite3_wal)).pDbFd;
+            std::mem::transmute(ptr)
+        }
+    }
+}
+
 impl Wal for Sqlite3Wal {
     fn limit(&mut self, size: i64) {
         unsafe {
@@ -281,7 +290,7 @@ impl Wal for Sqlite3Wal {
             (self.inner.methods.xFrames.unwrap())(
                 self.inner.pData,
                 page_size,
-                page_headers.as_ptr(),
+                page_headers.as_mut_ptr(),
                 size_after,
                 is_commit as _,
                 sync_flags,
