@@ -1412,11 +1412,13 @@ json_parse_restart:
     j = i+1;
     while( 1 /*exit-by-break*/ ){
       if( jsonIsOk[(u8)z[j]] ){
-        if( jsonIsOk[(u8)z[j+1]] ){
-          j += 2;
-          continue;
-        }else{
+        if( !jsonIsOk[(u8)z[j+1]] ){
           j += 1;
+        }else if( !jsonIsOk[(u8)z[j+2]] ){
+          j += 2;
+        }else{
+          j += 3;
+          continue;
         }
       }
       c = z[j];
