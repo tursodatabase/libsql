@@ -719,7 +719,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                     name.clone(),
                     restore_option,
                     bottomless_db_id_for_init,
-                    false,
+                    true,
                     self.make_reset_cb(),
                 )
                 .await;
