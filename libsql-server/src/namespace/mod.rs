@@ -634,7 +634,9 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         let init = {
             let namespace = namespace.clone();
             async move {
-                if !self.inner.make_namespace.exists(&namespace) && !self.inner.allow_lazy_creation
+                if namespace != NamespaceName::default()
+                    && !self.inner.make_namespace.exists(&namespace)
+                    && !self.inner.allow_lazy_creation
                 {
                     return Err(Error::NamespaceDoesntExist(namespace.to_string()));
                 }
@@ -701,8 +703,8 @@ impl<M: MakeNamespace> NamespaceStore<M> {
     ) -> crate::Result<()> {
         // With namespaces disabled, the default namespace can be auto-created,
         // otherwise it's an error.
-        if self.inner.allow_lazy_creation && namespace == NamespaceName::default() {
-            tracing::trace!("auto-creating default namespace");
+        if self.inner.allow_lazy_creation || namespace == NamespaceName::default() {
+            tracing::trace!("auto-creating the namespace");
         } else if self.inner.make_namespace.exists(&namespace) {
             return Err(Error::NamespaceAlreadyExist(namespace.to_string()));
         }
