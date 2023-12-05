@@ -26,7 +26,6 @@ worker = { version = "0.0.18", optional = true }
 
 bincode = { version = "1", optional = true }
 anyhow = { version = "1.0.71", optional = true }
-bytemuck = { version = "1.13.1", features = ["derive"], optional = true }
 bytes = { version = "1.4.0", features = ["serde"], optional = true }
 uuid = { version = "1.4.0", features = ["v4", "serde"], optional = true }
 tokio-stream = { version = "0.1.14", optional = true }
@@ -34,6 +33,7 @@ tonic = { version = "0.10.2", features = ["tls", "tls-roots", "tls-webpki-roots"
 tonic-web = { version = "0.10.2", optional = true }
 tower-http = { version = "0.4.4", features = ["trace", "set-header", "util"], optional = true }
 http = { version = "0.2", optional = true }
+zerocopy = { version = "0.7.28", optional = true }
 
 sqlite3-parser = { path = "../vendored/sqlite3-parser", version = "0.11", optional = true }
 fallible-iterator = { version = "0.3", optional = true }
@@ -69,7 +69,7 @@ replication = [
   "dep:tokio",
   "dep:anyhow",
   "dep:bincode",
-  "dep:bytemuck",
+  "dep:zerocopy",
   "dep:bytes",
   "dep:uuid",
   "dep:tokio-stream",

@@ -69,7 +69,7 @@ impl Injector {
 
     /// Inject a frame into the log. If this was a commit frame, returns Ok(Some(FrameNo)).
     pub fn inject_frame(&mut self, frame: Frame) -> Result<Option<FrameNo>, Error> {
-        let frame_close_txn = frame.header().size_after != 0;
+        let frame_close_txn = frame.header().size_after.get() != 0;
         self.buffer.lock().push_back(frame);
         if frame_close_txn || self.buffer.lock().len() >= self.capacity {
             return self.flush();
@@ -111,7 +111,7 @@ impl Injector {
         // (snapshot). Either way, we want to find the biggest frameno we're about to commit, and
         // that is either the front or the back of the buffer
         let last_frame_no = match lock.back().zip(lock.front()) {
-            Some((b, f)) => f.header().frame_no.max(b.header().frame_no),
+            Some((b, f)) => f.header().frame_no.get().max(b.header().frame_no.get()),
             None => {
                 tracing::trace!("nothing to inject");
                 return Ok(None);

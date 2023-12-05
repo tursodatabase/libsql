@@ -3,8 +3,9 @@ use std::fmt;
 use std::mem::size_of;
 use std::ops::{Deref, DerefMut};
 
-use bytemuck::{bytes_of, from_bytes, Pod, Zeroable};
 use bytes::Bytes;
+use zerocopy::byteorder::little_endian::{U32 as lu32, U64 as lu64};
+use zerocopy::FromBytes;
 
 use crate::error::Error;
 use crate::LIBSQL_PAGE_SIZE;
@@ -15,17 +16,17 @@ pub type FrameNo = u64;
 /// See `encode` and `decode` for actual layout.
 // repr C for stable sizing
 #[repr(C)]
-#[derive(Debug, Clone, Copy, Zeroable, Pod)]
+#[derive(Debug, Clone, Copy, zerocopy::FromZeroes, zerocopy::FromBytes, zerocopy::AsBytes)]
 pub struct FrameHeader {
     /// Incremental frame number
-    pub frame_no: FrameNo,
+    pub frame_no: lu64,
     /// Rolling checksum of all the previous frames, including this one.
-    pub checksum: u64,
+    pub checksum: lu64,
     /// page number, if frame_type is FrameType::Page
-    pub page_no: u32,
+    pub page_no: lu32,
     /// Size of the database (in page) after committing the transaction. This is passed from sqlite,
     /// and serves as commit transaction boundary
-    pub size_after: u32,
+    pub size_after: lu32,
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -121,18 +122,13 @@ impl From<FrameBorrowed> for Frame {
 
 /// The borrowed version of Frame
 #[repr(C)]
-#[derive(Pod, Zeroable, Copy, Clone)]
+#[derive(Copy, Clone, zerocopy::AsBytes, zerocopy::FromZeroes, zerocopy::FromBytes)]
 pub struct FrameBorrowed {
     header: FrameHeader,
     page: [u8; LIBSQL_PAGE_SIZE],
 }
 
 impl FrameBorrowed {
-    /// Returns the bytes for this frame. Includes the header bytes.
-    pub fn as_slice(&self) -> &[u8] {
-        bytes_of(self)
-    }
-
     /// returns this frame's page data.
     pub fn page(&self) -> &[u8] {
         &self.page
@@ -160,7 +156,7 @@ impl Deref for Frame {
     type Target = FrameBorrowed;
 
     fn deref(&self) -> &Self::Target {
-        from_bytes(&self.inner)
+        FrameBorrowed::ref_from(&self.inner).unwrap()
     }
 }
 

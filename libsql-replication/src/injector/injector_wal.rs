@@ -224,7 +224,7 @@ fn make_page_header<'a>(frames: impl Iterator<Item = &'a FrameBorrowed>) -> (Hea
     while let Some(frame) = frames.next() {
         // the last frame in a batch marks the end of the txn
         if frames.peek().is_none() {
-            size_after = frame.header().size_after;
+            size_after = frame.header().size_after.get();
         }
 
         let page = PgHdr {
@@ -234,7 +234,7 @@ fn make_page_header<'a>(frames: impl Iterator<Item = &'a FrameBorrowed>) -> (Hea
             pCache: std::ptr::null_mut(),
             pDirty: std::ptr::null_mut(),
             pPager: std::ptr::null_mut(),
-            pgno: frame.header().page_no,
+            pgno: frame.header().page_no.get(),
             pageHash: 0,
             flags: 0x02, // PGHDR_DIRTY - it works without the flag, but why risk it
             nRef: 0,

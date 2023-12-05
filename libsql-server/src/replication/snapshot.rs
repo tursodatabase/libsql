@@ -6,7 +6,6 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
-use bytemuck::bytes_of;
 use futures::TryStreamExt;
 use libsql_replication::frame::FrameMut;
 use libsql_replication::snapshot::{SnapshotFile, SnapshotFileHeader};
@@ -17,6 +16,7 @@ use tokio::sync::mpsc;
 use tokio_stream::{Stream, StreamExt};
 use tokio_util::sync::ReusableBoxFuture;
 use uuid::Uuid;
+use zerocopy::AsBytes;
 
 use crate::namespace::NamespaceName;
 use crate::replication::primary::logger::LogFileHeader;
@@ -172,7 +172,7 @@ fn pending_snapshots_list(compact_queue_dir: &Path) -> anyhow::Result<Vec<(LogFi
 
     // sort the logs by start frame_no, so that they are registered with the merger in the right
     // order.
-    to_compact.sort_unstable_by_key(|(log, _)| log.header().start_frame_no);
+    to_compact.sort_unstable_by_key(|(log, _)| log.header().start_frame_no.get());
 
     Ok(to_compact)
 }
@@ -340,11 +340,11 @@ impl SnapshotMerger {
             ))
         }
 
-        temp.sort_by_key(|(_, _, id)| *id);
+        temp.sort_by_key(|(_, _, id)| id.get());
 
         Ok(temp
             .into_iter()
-            .map(|(name, count, _)| (name, count))
+            .map(|(name, count, _)| (name, count.get()))
             .collect())
     }
 
@@ -375,8 +375,8 @@ impl SnapshotMerger {
             "created merged snapshot for {log_id} from frame {start_frame_no} to {end_frame_no}"
         );
 
-        builder.header.start_frame_no = start_frame_no;
-        builder.header.end_frame_no = end_frame_no;
+        builder.header.start_frame_no = start_frame_no.into();
+        builder.header.end_frame_no = end_frame_no.into();
         builder.header.size_after = size_after.unwrap();
 
         let meta = builder.finish().await?;
@@ -436,12 +436,12 @@ impl SnapshotBuilder {
         Ok(Self {
             seen_pages: HashSet::new(),
             header: SnapshotFileHeader {
-                log_id: log_id.as_u128(),
-                start_frame_no: u64::MAX,
-                end_frame_no: u64::MIN,
-                frame_count: 0,
-                size_after: 0,
-                _pad: 0,
+                log_id: log_id.as_u128().into(),
+                start_frame_no: u64::MAX.into(),
+                end_frame_no: u64::MIN.into(),
+                frame_count: 0.into(),
+                size_after: 0.into(),
+                _pad: Default::default(),
             },
             snapshot_file: f,
             db_path: db_path.to_path_buf(),
@@ -463,13 +463,13 @@ impl SnapshotBuilder {
         tokio::pin!(frames);
         while let Some(frame) = frames.next().await {
             let mut frame = frame?;
-            assert!(frame.header().frame_no < self.last_seen_frame_no);
-            self.last_seen_frame_no = frame.header().frame_no;
-            if frame.header().frame_no < self.header.start_frame_no {
+            assert!(frame.header().frame_no.get() < self.last_seen_frame_no);
+            self.last_seen_frame_no = frame.header().frame_no.get();
+            if frame.header().frame_no.get() < self.header.start_frame_no.get() {
                 self.header.start_frame_no = frame.header().frame_no;
             }
 
-            if frame.header().frame_no >= self.header.end_frame_no {
+            if frame.header().frame_no.get() >= self.header.end_frame_no.get() {
                 self.header.end_frame_no = frame.header().frame_no;
                 self.header.size_after = frame.header().size_after;
             }
@@ -477,13 +477,13 @@ impl SnapshotBuilder {
             // set all frames as non-commit frame in a snapshot, and let the client decide when to
             // commit. This is ok because the client will stream frames backward until caught up,
             // and then commit.
-            frame.header_mut().size_after = 0;
+            frame.header_mut().size_after = 0.into();
 
-            if !self.seen_pages.contains(&frame.header().page_no) {
-                self.seen_pages.insert(frame.header().page_no);
-                let data = frame.as_slice();
+            if !self.seen_pages.contains(&frame.header().page_no.get()) {
+                self.seen_pages.insert(frame.header().page_no.get());
+                let data = frame.as_bytes();
                 self.snapshot_file.write_all(data).await?;
-                self.header.frame_count += 1;
+                self.header.frame_count = (self.header.frame_count.get() + 1).into();
             }
         }
 
@@ -495,10 +495,10 @@ impl SnapshotBuilder {
         self.snapshot_file.flush().await?;
         let mut file = self.snapshot_file.into_inner();
         file.seek(SeekFrom::Start(0)).await?;
-        file.write_all(bytes_of(&self.header)).await?;
+        file.write_all(self.header.as_bytes()).await?;
         let snapshot_name = format!(
             "{}-{}-{}.snap",
-            Uuid::from_u128(self.header.log_id),
+            Uuid::from_u128(self.header.log_id.get()),
             self.header.start_frame_no,
             self.header.end_frame_no,
         );
@@ -513,8 +513,8 @@ impl SnapshotBuilder {
 
         Ok((
             snapshot_name,
-            self.header.frame_count,
-            self.header.size_after,
+            self.header.frame_count.get(),
+            self.header.size_after.get(),
         ))
     }
 }
@@ -528,7 +528,7 @@ async fn perform_compaction(
     tracing::info!(
         "attempting to compact {} frame from logfile {}, starting at frame no {}",
         header.frame_count,
-        Uuid::from_u128(header.log_id),
+        Uuid::from_u128(header.log_id.get()),
         header.start_frame_no,
     );
     let mut builder = SnapshotBuilder::new(db_path, log_id).await?;
@@ -543,10 +543,10 @@ mod test {
     use std::fs::read;
     use std::time::Duration;
 
-    use bytemuck::pod_read_unaligned;
     use bytes::Bytes;
     use libsql_replication::frame::Frame;
     use tempfile::tempdir;
+    use zerocopy::FromBytes;
 
     use crate::replication::primary::logger::WalPage;
     use crate::replication::snapshot::SnapshotFile;
@@ -590,8 +590,8 @@ mod test {
                     .unwrap();
                 let mut logfile = LogFile::new(file, u64::MAX, None).unwrap();
                 let header = LogFileHeader {
-                    log_id: log_id.as_u128(),
-                    start_frame_no: current_fno,
+                    log_id: log_id.as_u128().into(),
+                    start_frame_no: current_fno.into(),
                     ..*logfile.header()
                 };
 
@@ -606,7 +606,8 @@ mod test {
                     })
                     .unwrap();
                 logfile.commit().unwrap();
-                current_fno = logfile.header().start_frame_no + logfile.header().frame_count;
+                current_fno =
+                    logfile.header().start_frame_no.get() + logfile.header().frame_count.get();
                 (logfile, logfile_path)
             }
         };
@@ -708,8 +709,8 @@ mod test {
                     .unwrap();
                 let mut logfile = LogFile::new(file, u64::MAX, None).unwrap();
                 let header = LogFileHeader {
-                    log_id: log_id.as_u128(),
-                    start_frame_no: current_fno,
+                    log_id: log_id.as_u128().into(),
+                    start_frame_no: current_fno.into(),
                     ..*logfile.header()
                 };
 
@@ -724,7 +725,8 @@ mod test {
                     })
                     .unwrap();
                 logfile.commit().unwrap();
-                current_fno = logfile.header().start_frame_no + logfile.header().frame_count;
+                current_fno =
+                    logfile.header().start_frame_no.get() + logfile.header().frame_count.get();
                 (logfile, logfile_path)
             }
         };
@@ -779,7 +781,7 @@ mod test {
         let temp = tempfile::NamedTempFile::new().unwrap();
         let mut log_file = LogFile::new(temp.as_file().try_clone().unwrap(), 0, None).unwrap();
         let log_id = Uuid::new_v4();
-        log_file.header.log_id = log_id.as_u128();
+        log_file.header.log_id = log_id.as_u128().into();
         log_file.write_header().unwrap();
 
         // add 50 pages, each one in two versions
@@ -815,14 +817,16 @@ mod test {
         let snapshot_path =
             snapshot_dir_path(dump_dir.path()).join(format!("{}-{}-{}.snap", log_id, 0, 49));
         let snapshot = read(&snapshot_path).unwrap();
-        let header: SnapshotFileHeader =
-            pod_read_unaligned(&snapshot[..std::mem::size_of::<SnapshotFileHeader>()]);
+        let header = SnapshotFileHeader::read_from_prefix(
+            &snapshot[..std::mem::size_of::<SnapshotFileHeader>()],
+        )
+        .unwrap();
 
-        assert_eq!(header.start_frame_no, 0);
-        assert_eq!(header.end_frame_no, 49);
-        assert_eq!(header.frame_count, 25);
-        assert_eq!(header.log_id, log_id.as_u128());
-        assert_eq!(header.size_after, 25);
+        assert_eq!(header.start_frame_no.get(), 0);
+        assert_eq!(header.end_frame_no.get(), 49);
+        assert_eq!(header.frame_count.get(), 25);
+        assert_eq!(header.log_id.get(), log_id.as_u128());
+        assert_eq!(header.size_after.get(), 25);
 
         let mut seen_frames = HashSet::new();
         let mut seen_page_no = HashSet::new();
@@ -833,7 +837,7 @@ mod test {
             assert!(!seen_page_no.contains(&frame.header().page_no));
             seen_page_no.insert(frame.header().page_no);
             seen_frames.insert(frame.header().frame_no);
-            assert!(frame.header().frame_no >= 25);
+            assert!(frame.header().frame_no.get() >= 25);
         });
 
         assert_eq!(seen_frames.len(), 25);
@@ -846,7 +850,7 @@ mod test {
         let mut expected_frame_no = 49;
         while let Some(frame) = frames.next().await {
             let frame = frame.unwrap();
-            assert_eq!(frame.header().frame_no, expected_frame_no);
+            assert_eq!(frame.header().frame_no.get(), expected_frame_no);
             expected_frame_no -= 1;
         }
 

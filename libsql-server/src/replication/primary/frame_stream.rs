@@ -126,7 +126,7 @@ impl Stream for FrameStream {
                 Ok(frame) => {
                     self.current_frame_no += 1;
                     self.produced_frames += 1;
-                    self.transaction_boundary = frame.header().size_after != 0;
+                    self.transaction_boundary = frame.header().size_after.get() != 0;
                     self.transition_state_next_frame();
                     tracing::trace!("sending frame_no {}", frame.header().frame_no);
                     Poll::Ready(Some(Ok(frame)))
