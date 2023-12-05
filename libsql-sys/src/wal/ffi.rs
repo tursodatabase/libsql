@@ -1,4 +1,5 @@
 use std::ffi::{c_char, c_int, c_longlong, c_void, CStr};
+use std::num::NonZeroU32;
 
 use libsql_ffi::{
     libsql_wal, libsql_wal_manager, libsql_wal_methods, sqlite3, sqlite3_file, sqlite3_vfs,
@@ -178,9 +179,9 @@ pub unsafe extern "C" fn find_frame<T: Wal>(
     frame: *mut u32,
 ) -> c_int {
     let this = &mut (*(wal as *mut T));
-    match this.find_frame(pgno) {
+    match this.find_frame(NonZeroU32::new(pgno).expect("invalid page number")) {
         Ok(fno) => {
-            *frame = fno;
+            *frame = fno.map(|x| x.get()).unwrap_or(0);
             SQLITE_OK
         }
         Err(code) => code.extended_code,
@@ -195,7 +196,10 @@ pub unsafe extern "C" fn read_frame<T: Wal>(
 ) -> i32 {
     let this = &mut (*(wal as *mut T));
     let buffer = std::slice::from_raw_parts_mut(p_out, n_out as usize);
-    match this.read_frame(frame, buffer) {
+    match this.read_frame(
+        NonZeroU32::new(frame).expect("invalid frame number"),
+        buffer,
+    ) {
         Ok(_) => SQLITE_OK,
         Err(code) => code.extended_code,
     }

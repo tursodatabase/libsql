@@ -1,7 +1,6 @@
-use std::{
-    ffi::{c_int, CStr},
-    sync::Arc,
-};
+use std::ffi::{c_int, CStr};
+use std::num::NonZeroU32;
+use std::sync::Arc;
 
 use bottomless::{
     bottomless_wal::{BottomlessWal, CreateBottomlessWal},
@@ -139,14 +138,14 @@ impl Wal for ReplicationWal {
         }
     }
 
-    fn find_frame(&mut self, page_no: u32) -> Result<u32> {
+    fn find_frame(&mut self, page_no: NonZeroU32) -> Result<Option<NonZeroU32>> {
         match self {
             ReplicationWal::Bottomless(inner) => inner.find_frame(page_no),
             ReplicationWal::Logger(inner) => inner.find_frame(page_no),
         }
     }
 
-    fn read_frame(&mut self, frame_no: u32, buffer: &mut [u8]) -> Result<()> {
+    fn read_frame(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> Result<()> {
         match self {
             ReplicationWal::Bottomless(inner) => inner.read_frame(frame_no, buffer),
             ReplicationWal::Logger(inner) => inner.read_frame(frame_no, buffer),
