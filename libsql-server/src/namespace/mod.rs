@@ -433,7 +433,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                 })
             })
             .max_capacity(max_active_namespaces as u64)
-            .time_to_idle(Duration::from_secs(300))
+            .time_to_idle(Duration::from_secs(86400))
             .build();
         Self {
             inner: Arc::new(NamespaceStoreInner {
