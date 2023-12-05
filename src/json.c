@@ -169,6 +169,12 @@ static const char jsonIsSpace[] = {
 #define jsonIsspace(x) (jsonIsSpace[(unsigned char)x])
 
 /*
+** The set of all space characters recognized by jsonIsspace().
+** Useful as an argument to strspn().
+*/
+static const char jsonSpaces[] = "\011\012\015\040";
+
+/*
 ** Characters that are special to JSON.  Control characters,
 ** '"' and '\\'.
 */
@@ -1296,6 +1302,7 @@ json_parse_restart:
         j++;
       }else{
         if( jsonIsspace(z[j]) ){
+          /* strspn() is not helpful here */
           do{ j++; }while( jsonIsspace(z[j]) );
           if( z[j]==':' ){
             j++;
@@ -1322,7 +1329,7 @@ json_parse_restart:
         break;
       }else{
         if( jsonIsspace(z[j]) ){
-          do{ j++; }while( jsonIsspace(z[j]) );
+          j += 1 + strspn(&z[j+1], jsonSpaces);
           if( z[j]==',' ){
             continue;
           }else if( z[j]=='}' ){
@@ -1374,7 +1381,7 @@ json_parse_restart:
         break;
       }else{
         if( jsonIsspace(z[j]) ){
-          do{ j++; }while( jsonIsspace(z[j]) );
+          j += 1 + strspn(&z[j+1], jsonSpaces);
           if( z[j]==',' ){
             continue;
           }else if( z[j]==']' ){
@@ -1635,9 +1642,7 @@ json_parse_restart:
   case 0x0a:
   case 0x0d:
   case 0x20: {
-    do{
-      i++;
-    }while( jsonIsspace(z[i]) );
+    i += 1 + strspn(&z[i+1], jsonSpaces);
     goto json_parse_restart;
   }
   case 0x0b:
