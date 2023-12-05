@@ -8,6 +8,7 @@ pub use sqlite3_wal::{Sqlite3Wal, Sqlite3WalManager};
 
 pub(crate) mod ffi;
 mod sqlite3_wal;
+pub mod wrapper;
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 pub use ffi::make_wal_manager;
