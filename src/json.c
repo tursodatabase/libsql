@@ -10,24 +10,142 @@
 **
 ******************************************************************************
 **
-** This SQLite JSON functions.
+** SQLite JSON functions.
 **
 ** This file began as an extension in ext/misc/json1.c in 2015.  That
 ** extension proved so useful that it has now been moved into the core.
 **
-** For the time being, all JSON is stored as pure text.  (We might add
-** a JSONB type in the future which stores a binary encoding of JSON in
-** a BLOB, but there is no support for JSONB in the current implementation.
-** This implementation parses JSON text at 250 MB/s, so it is hard to see
-** how JSONB might improve on that.)
+** The original design stored all JSON as pure text, canonical RFC-8259.
+** Support for JSON-5 extensions was added with version 3.42.0 (2023-05-16).
+** All generated JSON text still conforms strictly to RFC-8259, but text
+** with JSON-5 extensions is accepted as input.
+**
+** Beginning with version 3.45.0 (pending), these routines also accept
+** BLOB values that have JSON encoded using a binary representation we
+** call JSONB.  The name JSONB comes from PostgreSQL, however the on-disk
+** format SQLite JSONB is completely different and incompatible with
+** PostgreSQL JSONB.
+**
+** Decoding and interpreting JSONB is still O(N) where N is the size of
+** the input, the same as text JSON.  However, the constant of proportionality
+** for JSONB is much smaller due to faster parsing.  The size of each
+** element in JSONB is encoded in its header, so there is no need to search
+** for delimiters using persnickety syntax rules.  JSONB seems to be about
+** 3x faster than text JSON as a result.  JSONB is also tends to be slightly
+** smaller than text JSON, by 5% or 10%, but there are corner cases where
+** JSONB can be slightly larger.  So you are not far mistaken to say that
+** a JSONB blob is the same size as the equivalent RFC-8259 text.
+**
+**
+** THE JSONB ENCODING:
+**
+** Every JSON element is encoded in JSONB as a header and a payload.
+** The header is between 1 and 9 bytes in size.  The payload is zero
+** or more bytes.
+**
+** The lower 4 bits of the first byte of the header determines the
+** element type:
+**
+**    0:   NULL
+**    1:   TRUE
+**    2:   FALSE
+**    3:   INT        -- RFC-8259 integer literal
+**    4:   INT5       -- JSON5 integer literal
+**    5:   FLOAT      -- RFC-8259 floating point literal
+**    6:   FLOAT5     -- JSON5 floating point literal
+**    7:   TEXT       -- Text literal acceptable to both SQL and JSON
+**    8:   TEXTJ      -- Text containing RFC-8259 escapes
+**    9:   TEXT5      -- Text containing JSON5 and/or RFC-8259 escapes
+**   10:   TEXTRAW    -- Text containing unescaped syntax characters
+**   11:   ARRAY
+**   12:   OBJECT
+**
+** The other three possible values (13-15) are reserved for future
+** enhancements.
+**
+** The upper 4 bits of the first byte determine the size of the header
+** and sometimes also the size of the payload.  If X is the first byte
+** of the element and if X>>4 is between 0 and 11, then the payload
+** will be that many bytes in size and the header is exactly one byte
+** in size.  Other four values for X>>4 (12-15) indicate that the header
+** is more than one byte in size and that the payload size is determined
+** by the remainder of the header, interpreted as a unsigned big-endian
+** integer.
+**
+**   Value of X>>4         Size integer        Total header size
+**   -------------     --------------------    -----------------
+**        12           1 byte (0-255)                2
+**        13           2 byte (0-65535)              3
+**        14           4 byte (0-4294967295)         5
+**        15           8 byte (0-1.8e19)             9
+**
+** The payload size need not be expressed in its minimal form.  For example,
+** if the payload size is 10, the size can be expressed in any of 5 different
+** ways: (1) (X>>4)==10, (2) (X>>4)==12 following by on 0x0a byte,
+** (3) (X>>4)==13 followed by 0x00 and 0x0a, (4) (X>>4)==14 followed by
+** 0x00 0x00 0x00 0x0a, or (5) (X>>4)==15 followed by 7 bytes of 0x00 and
+** a single byte of 0x0a.  The shorter forms are preferred, of course, but
+** sometimes when generating JSONB, the payload size is not known in advance
+** and it is convenient to reserve sufficient header space to cover the
+** largest possible payload size and then come back later and patch up
+** the size when it becomes known, resulting in a non-minimal encoding.
+**
+** The value (X>>4)==15 is not actually used in the current implementation
+** (as SQLite is currently unable handle BLOBs larger than about 2GB)
+** but is included in the design to allow for future enhancements.
+**
+** The payload follows the header.  NULL, TRUE, and FALSE have no payload and
+** their payload size must always be zero.  The payload for INT, INT5,
+** FLOAT, FLOAT5, TEXT, TEXTJ, TEXT5, and TEXTROW is text.  Note that the
+** "..." or '...' delimiters are omitted from the various text encodings.
+** The payload for ARRAY and OBJECT is a list of additional elements that
+** are the content for the array or object.  The payload for an OBJECT
+** must be an even number of elements.  The first element of each pair is
+** the label and must be of type TEXT, TEXTJ, TEXT5, or TEXTRAW.
+**
+** A valid JSONB blob consists of a single element, as described above.
+** Usually this will be an ARRAY or OBJECT element which has many more
+** elements as its content.  But the overall blob is just a single element.
+**
+** Input validation for JSONB blobs simply checks that the element type
+** code is between 0 and 12 and that the total size of the element
+** (header plus payload) is the same as the size of the BLOB.  If those
+** checks are true, the BLOB is assumed to be JSONB and processing continues.
+** Errors are only raised if some other miscoding is discovered during
+** processing.
 */
 #ifndef SQLITE_OMIT_JSON
 #include "sqliteInt.h"
 
+/* JSONB element types
+*/
+#define JSONB_NULL     0   /* "null" */
+#define JSONB_TRUE     1   /* "true" */
+#define JSONB_FALSE    2   /* "false" */
+#define JSONB_INT      3   /* integer acceptable to JSON and SQL */
+#define JSONB_INT5     4   /* integer in 0x000 notation */
+#define JSONB_FLOAT    5   /* float acceptable to JSON and SQL */
+#define JSONB_FLOAT5   6   /* float with JSON5 extensions */
+#define JSONB_TEXT     7   /* Text compatible with both JSON and SQL */
+#define JSONB_TEXTJ    8   /* Text with JSON escapes */
+#define JSONB_TEXT5    9   /* Text with JSON-5 escape */
+#define JSONB_TEXTRAW 10   /* SQL text that needs escaping for JSON */
+#define JSONB_ARRAY   11   /* An array */
+#define JSONB_OBJECT  12   /* An object */
+
+/* Human-readable names for the JSONB values.  The index for each
+** string must correspond to the JSONB_* integer above.
+*/
+static const char * const jsonbType[] = {
+  "null", "true", "false", "integer", "integer", 
+  "real", "real", "text",  "text",    "text",
+  "text", "array", "object", "", "", "", ""
+};
+
 /*
 ** Growing our own isspace() routine this way is twice as fast as
 ** the library isspace() function, resulting in a 7% overall performance
-** increase for the parser.  (Ubuntu14.10 gcc 4.8.4 x64 with -Os).
+** increase for the text-JSON parser.  (Ubuntu14.10 gcc 4.8.4 x64 with -Os).
 */
 static const char jsonIsSpace[] = {
   0, 0, 0, 0, 0, 0, 0, 0,  0, 1, 1, 0, 0, 1, 0, 0,
@@ -48,10 +166,16 @@ static const char jsonIsSpace[] = {
   0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
 };
-#define fast_isspace(x) (jsonIsSpace[(unsigned char)x])
+#define jsonIsspace(x) (jsonIsSpace[(unsigned char)x])
 
 /*
-** Characters that are special to JSON.  Control charaters,
+** The set of all space characters recognized by jsonIsspace().
+** Useful as the second argument to strspn().
+*/
+static const char jsonSpaces[] = "\011\012\015\040";
+
+/*
+** Characters that are special to JSON.  Control characters,
 ** '"' and '\\'.
 */
 static const char jsonIsOk[256] = {
@@ -74,22 +198,41 @@ static const char jsonIsOk[256] = {
   1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1
 };
 
-
-#if !defined(SQLITE_DEBUG) && !defined(SQLITE_COVERAGE_TEST)
-#  define VVA(X)
-#else
-#  define VVA(X) X
-#endif
-
 /* Objects */
+typedef struct JsonCache JsonCache;
 typedef struct JsonString JsonString;
-typedef struct JsonNode JsonNode;
 typedef struct JsonParse JsonParse;
-typedef struct JsonCleanup JsonCleanup;
+
+/*
+** Magic number used for the JSON parse cache in sqlite3_get_auxdata()
+*/
+#define JSON_CACHE_ID    (-429938)  /* Cache entry */
+#define JSON_CACHE_SIZE  4          /* Max number of cache entries */
+
+/* A cache mapping JSON text into JSONB blobs.
+**
+** Each cache entry is a JsonParse object with the following restrictions:
+**
+**    *   The bReadOnly flag must be set
+**
+**    *   The aBlob[] array must be owned by the JsonParse object.  In other
+**        words, nBlobAlloc must be non-zero.
+**
+**    *   zJson must be an RCStr.  In other words bJsonIsRCStr must be true.
+*/
+struct JsonCache {
+  sqlite3 *db;                    /* Database connection */
+  int nUsed;                      /* Number of active entries in the cache */
+  JsonParse *a[JSON_CACHE_SIZE];  /* One line for each cache entry */
+};
 
 /* An instance of this object represents a JSON string
 ** under construction.  Really, this is a generic string accumulator
 ** that can be and is used to create strings other than JSON.
+**
+** If the generated string is longer than will fit into the zSpace[] buffer,
+** then it will be an RCStr string.  This aids with caching of large
+** JSON strings.
 */
 struct JsonString {
   sqlite3_context *pCtx;   /* Function context - put error messages here */
@@ -97,120 +240,73 @@ struct JsonString {
   u64 nAlloc;              /* Bytes of storage available in zBuf[] */
   u64 nUsed;               /* Bytes of zBuf[] currently used */
   u8 bStatic;              /* True if zBuf is static space */
-  u8 bErr;                 /* True if an error has been encountered */
+  u8 eErr;                 /* True if an error has been encountered */
   char zSpace[100];        /* Initial static space */
 };
 
-/* A deferred cleanup task.  A list of JsonCleanup objects might be
-** run when the JsonParse object is destroyed.
-*/
-struct JsonCleanup {
-  JsonCleanup *pJCNext;    /* Next in a list */
-  void (*xOp)(void*);      /* Routine to run */
-  void *pArg;              /* Argument to xOp() */
-};
+/* Allowed values for JsonString.eErr */
+#define JSTRING_OOM         0x01   /* Out of memory */
+#define JSTRING_MALFORMED   0x02   /* Malformed JSONB */
+#define JSTRING_ERR         0x04   /* Error already sent to sqlite3_result */
 
-/* JSON type values
+/* The "subtype" set for text JSON values passed through using
+** sqlite3_result_subtype() and sqlite3_value_subtype().
 */
-#define JSON_SUBST    0    /* Special edit node.  Uses u.iPrev */
-#define JSON_NULL     1
-#define JSON_TRUE     2
-#define JSON_FALSE    3
-#define JSON_INT      4
-#define JSON_REAL     5
-#define JSON_STRING   6
-#define JSON_ARRAY    7
-#define JSON_OBJECT   8
-
-/* The "subtype" set for JSON values */
 #define JSON_SUBTYPE  74    /* Ascii for "J" */
 
 /*
-** Names of the various JSON types:
+** Bit values for the flags passed into various SQL function implementations
+** via the sqlite3_user_data() value.
 */
-static const char * const jsonType[] = {
-  "subst",
-  "null", "true", "false", "integer", "real", "text", "array", "object"
-};
-
-/* Bit values for the JsonNode.jnFlag field
-*/
-#define JNODE_RAW     0x01  /* Content is raw, not JSON encoded */
-#define JNODE_ESCAPE  0x02  /* Content is text with \ escapes */
-#define JNODE_REMOVE  0x04  /* Do not output */
-#define JNODE_REPLACE 0x08  /* Target of a JSON_SUBST node */
-#define JNODE_APPEND  0x10  /* More ARRAY/OBJECT entries at u.iAppend */
-#define JNODE_LABEL   0x20  /* Is a label of an object */
-#define JNODE_JSON5   0x40  /* Node contains JSON5 enhancements */
+#define JSON_JSON      0x01        /* Result is always JSON */
+#define JSON_SQL       0x02        /* Result is always SQL */
+#define JSON_ABPATH    0x03        /* Allow abbreviated JSON path specs */
+#define JSON_ISSET     0x04        /* json_set(), not json_insert() */
+#define JSON_BLOB      0x08        /* Use the BLOB output format */
 
 
-/* A single node of parsed JSON.  An array of these nodes describes
-** a parse of JSON + edits.
+/* A parsed JSON value.  Lifecycle:
 **
-** Use the json_parse() SQL function (available when compiled with
-** -DSQLITE_DEBUG) to see a dump of complete JsonParse objects, including
-** a complete listing and decoding of the array of JsonNodes.
-*/
-struct JsonNode {
-  u8 eType;              /* One of the JSON_ type values */
-  u8 jnFlags;            /* JNODE flags */
-  u8 eU;                 /* Which union element to use */
-  u32 n;                 /* Bytes of content for INT, REAL or STRING
-                         ** Number of sub-nodes for ARRAY and OBJECT
-                         ** Node that SUBST applies to */
-  union {
-    const char *zJContent; /* 1: Content for INT, REAL, and STRING */
-    u32 iAppend;           /* 2: More terms for ARRAY and OBJECT */
-    u32 iKey;              /* 3: Key for ARRAY objects in json_tree() */
-    u32 iPrev;             /* 4: Previous SUBST node, or 0 */
-  } u;
-};
-
-
-/* A parsed and possibly edited JSON string.  Lifecycle:
+**   1.  JSON comes in and is parsed into a JSONB value in aBlob.  The
+**       original text is stored in zJson.  This step is skipped if the
+**       input is JSONB instead of text JSON.
 **
-**   1.  JSON comes in and is parsed into an array aNode[].  The original
-**       JSON text is stored in zJson.
+**   2.  The aBlob[] array is searched using the JSON path notation, if needed.
+**       
+**   3.  Zero or more changes are made to aBlob[] (via json_remove() or
+**       json_replace() or json_patch() or similar).
 **
-**   2.  Zero or more changes are made (via json_remove() or json_replace()
-**       or similar) to the aNode[] array.
-**
-**   3.  A new, edited and mimified JSON string is generated from aNode
-**       and stored in zAlt.  The JsonParse object always owns zAlt.
-**
-** Step 1 always happens.  Step 2 and 3 may or may not happen, depending
-** on the operation.
-**
-** aNode[].u.zJContent entries typically point into zJson.  Hence zJson
-** must remain valid for the lifespan of the parse.  For edits,
-** aNode[].u.zJContent might point to malloced space other than zJson.
-** Entries in pClup are responsible for freeing that extra malloced space.
-**
-** When walking the parse tree in aNode[], edits are ignored if useMod is
-** false.
+**   4.  New JSON text is generated from the aBlob[] for output.  This step
+**       is skipped the function is one of the jsonb_* functions that returns
+**       JSONB instead of text JSON.
 */
 struct JsonParse {
-  u32 nNode;         /* Number of slots of aNode[] used */
-  u32 nAlloc;        /* Number of slots of aNode[] allocated */
-  JsonNode *aNode;   /* Array of nodes containing the parse */
-  char *zJson;       /* Original JSON string (before edits) */
-  char *zAlt;        /* Revised and/or mimified JSON */
-  u32 *aUp;          /* Index of parent of each node */
-  JsonCleanup *pClup;/* Cleanup operations prior to freeing this object */
+  u8 *aBlob;         /* JSONB representation of JSON value */
+  u32 nBlob;         /* Bytes of aBlob[] actually used */
+  u32 nBlobAlloc;    /* Bytes allocated to aBlob[].  0 if aBlob is external */
+  char *zJson;       /* Json text used for parsing */
+  int nJson;         /* Length of the zJson string in bytes */
   u16 iDepth;        /* Nesting depth */
   u8 nErr;           /* Number of errors seen */
   u8 oom;            /* Set to true if out of memory */
   u8 bJsonIsRCStr;   /* True if zJson is an RCStr */
   u8 hasNonstd;      /* True if input uses non-standard features like JSON5 */
-  u8 useMod;         /* Actually use the edits contain inside aNode */
-  u8 hasMod;         /* aNode contains edits from the original zJson */
+  u8 bReadOnly;      /* Do not modify. */
   u32 nJPRef;        /* Number of references to this object */
-  int nJson;         /* Length of the zJson string in bytes */
-  int nAlt;          /* Length of alternative JSON string zAlt, in bytes */
   u32 iErr;          /* Error location in zJson[] */
-  u32 iSubst;        /* Last JSON_SUBST entry in aNode[] */
-  u32 iHold;         /* Age of this entry in the cache for LRU replacement */
+  /* Search and edit information.  See jsonLookupStep() */
+  u8 eEdit;          /* Edit operation to apply */
+  int delta;         /* Size change due to the edit */
+  u32 nIns;          /* Number of bytes to insert */
+  u32 iLabel;        /* Location of label if search landed on an object value */
+  u8 *aIns;          /* Content to be inserted */
 };
+
+/* Allowed values for JsonParse.eEdit */
+#define JEDIT_DEL   1   /* Delete if exists */
+#define JEDIT_REPL  2   /* Overwrite if exists */
+#define JEDIT_INS   3   /* Insert if not exists */
+#define JEDIT_SET   4   /* Insert or overwrite */
 
 /*
 ** Maximum nesting depth of JSON for this implementation.
@@ -219,15 +315,147 @@ struct JsonParse {
 ** descent parser.  A depth of 1000 is far deeper than any sane JSON
 ** should go.  Historical note: This limit was 2000 prior to version 3.42.0
 */
-#define JSON_MAX_DEPTH  1000
+#ifndef SQLITE_JSON_MAX_DEPTH
+# define JSON_MAX_DEPTH  1000
+#else
+# define JSON_MAX_DEPTH SQLITE_JSON_MAX_DEPTH
+#endif
+
+/*
+** Allowed values for the flgs argument to jsonParseFuncArg();
+*/
+#define JSON_EDITABLE  0x01   /* Generate a writable JsonParse object */
+#define JSON_KEEPERROR 0x02   /* Return non-NULL even if there is an error */
+
+/**************************************************************************
+** Forward references
+**************************************************************************/
+static void jsonReturnStringAsBlob(JsonString*);
+static int jsonFuncArgMightBeBinary(sqlite3_value *pJson);
+static u32 jsonXlateBlobToText(const JsonParse*,u32,JsonString*);
+static void jsonReturnParse(sqlite3_context*,JsonParse*);
+static JsonParse *jsonParseFuncArg(sqlite3_context*,sqlite3_value*,u32);
+static void jsonParseFree(JsonParse*);
+
+/**************************************************************************
+** Utility routines for dealing with JsonCache objects
+**************************************************************************/
+
+/*
+** Free a JsonCache object.
+*/
+static void jsonCacheDelete(JsonCache *p){
+  int i;
+  for(i=0; i<p->nUsed; i++){
+    jsonParseFree(p->a[i]);
+  }
+  sqlite3DbFree(p->db, p);
+}
+static void jsonCacheDeleteGeneric(void *p){
+  jsonCacheDelete((JsonCache*)p);
+}
+
+/*
+** Insert a new entry into the cache.  If the cache is full, expel
+** the least recently used entry.  Return SQLITE_OK on success or a
+** result code otherwise.
+**
+** Cache entries are stored in age order, oldest first.
+*/
+static int jsonCacheInsert(
+  sqlite3_context *ctx,   /* The SQL statement context holding the cache */
+  JsonParse *pParse       /* The parse object to be added to the cache */
+){
+  JsonCache *p;
+
+  assert( pParse->zJson!=0 );
+  assert( pParse->bJsonIsRCStr );
+  p = sqlite3_get_auxdata(ctx, JSON_CACHE_ID);
+  if( p==0 ){
+    sqlite3 *db = sqlite3_context_db_handle(ctx);
+    p = sqlite3DbMallocZero(db, sizeof(*p));
+    if( p==0 ) return SQLITE_NOMEM;
+    p->db = db;
+    sqlite3_set_auxdata(ctx, JSON_CACHE_ID, p, jsonCacheDeleteGeneric);
+    p = sqlite3_get_auxdata(ctx, JSON_CACHE_ID);
+    if( p==0 ) return SQLITE_NOMEM;
+  }
+  if( p->nUsed >= JSON_CACHE_SIZE ){
+    jsonParseFree(p->a[0]);
+    memmove(p->a, &p->a[1], (JSON_CACHE_SIZE-1)*sizeof(p->a[0]));
+    p->nUsed = JSON_CACHE_SIZE-1;
+  }
+  assert( pParse->nBlobAlloc>0 );
+  pParse->eEdit = 0;
+  pParse->nJPRef++;
+  pParse->bReadOnly = 1;
+  p->a[p->nUsed] = pParse;
+  p->nUsed++;
+  return SQLITE_OK;
+}
+
+/*
+** Search for a cached translation the json text supplied by pArg.  Return
+** the JsonParse object if found.  Return NULL if not found.
+**
+** When a match if found, the matching entry is moved to become the
+** most-recently used entry if it isn't so already.
+**
+** The JsonParse object returned still belongs to the Cache and might
+** be deleted at any moment.  If the caller whants the JsonParse to
+** linger, it needs to increment the nPJRef reference counter.
+*/
+static JsonParse *jsonCacheSearch(
+  sqlite3_context *ctx,    /* The SQL statement context holding the cache */
+  sqlite3_value *pArg      /* Function argument containing SQL text */
+){
+  JsonCache *p;
+  int i;
+  const char *zJson;
+  int nJson;
+
+  if( sqlite3_value_type(pArg)!=SQLITE_TEXT ){
+    return 0;
+  }
+  zJson = (const char*)sqlite3_value_text(pArg);
+  if( zJson==0 ) return 0;
+  nJson = sqlite3_value_bytes(pArg);
+
+  p = sqlite3_get_auxdata(ctx, JSON_CACHE_ID);
+  if( p==0 ){
+    return 0;
+  }
+  for(i=0; i<p->nUsed; i++){
+    if( p->a[i]->zJson==zJson ) break;
+  }
+  if( i>=p->nUsed ){
+    for(i=0; i<p->nUsed; i++){
+      if( p->a[i]->nJson!=nJson ) continue;
+      if( memcmp(p->a[i]->zJson, zJson, nJson)==0 ) break;
+    }
+  }
+  if( i<p->nUsed ){
+    if( i<p->nUsed-1 ){
+      /* Make the matching entry the most recently used entry */
+      JsonParse *tmp = p->a[i];
+      memmove(&p->a[i], &p->a[i+1], (p->nUsed-i-1)*sizeof(tmp));
+      p->a[p->nUsed-1] = tmp;
+      i = p->nUsed - 1;
+    }
+    return p->a[i];
+  }else{
+    return 0;
+  }
+}
 
 /**************************************************************************
 ** Utility routines for dealing with JsonString objects
 **************************************************************************/
 
-/* Set the JsonString object to an empty string
+/* Turn uninitialized bulk memory into a valid JsonString object
+** holding a zero-length string.
 */
-static void jsonZero(JsonString *p){
+static void jsonStringZero(JsonString *p){
   p->zBuf = p->zSpace;
   p->nAlloc = sizeof(p->zSpace);
   p->nUsed = 0;
@@ -236,39 +464,39 @@ static void jsonZero(JsonString *p){
 
 /* Initialize the JsonString object
 */
-static void jsonInit(JsonString *p, sqlite3_context *pCtx){
+static void jsonStringInit(JsonString *p, sqlite3_context *pCtx){
   p->pCtx = pCtx;
-  p->bErr = 0;
-  jsonZero(p);
+  p->eErr = 0;
+  jsonStringZero(p);
 }
 
 /* Free all allocated memory and reset the JsonString object back to its
 ** initial state.
 */
-static void jsonReset(JsonString *p){
+static void jsonStringReset(JsonString *p){
   if( !p->bStatic ) sqlite3RCStrUnref(p->zBuf);
-  jsonZero(p);
+  jsonStringZero(p);
 }
 
 /* Report an out-of-memory (OOM) condition
 */
-static void jsonOom(JsonString *p){
-  p->bErr = 1;
-  sqlite3_result_error_nomem(p->pCtx);
-  jsonReset(p);
+static void jsonStringOom(JsonString *p){
+  p->eErr |= JSTRING_OOM;
+  if( p->pCtx ) sqlite3_result_error_nomem(p->pCtx);
+  jsonStringReset(p);
 }
 
 /* Enlarge pJson->zBuf so that it can hold at least N more bytes.
 ** Return zero on success.  Return non-zero on an OOM error
 */
-static int jsonGrow(JsonString *p, u32 N){
+static int jsonStringGrow(JsonString *p, u32 N){
   u64 nTotal = N<p->nAlloc ? p->nAlloc*2 : p->nAlloc+N+10;
   char *zNew;
   if( p->bStatic ){
-    if( p->bErr ) return 1;
+    if( p->eErr ) return 1;
     zNew = sqlite3RCStrNew(nTotal);
     if( zNew==0 ){
-      jsonOom(p);
+      jsonStringOom(p);
       return SQLITE_NOMEM;
     }
     memcpy(zNew, p->zBuf, (size_t)p->nUsed);
@@ -277,8 +505,8 @@ static int jsonGrow(JsonString *p, u32 N){
   }else{
     p->zBuf = sqlite3RCStrResize(p->zBuf, nTotal);
     if( p->zBuf==0 ){
-      p->bErr = 1;
-      jsonZero(p);
+      p->eErr |= JSTRING_OOM;
+      jsonStringZero(p);
       return SQLITE_NOMEM;
     }
   }
@@ -288,20 +516,20 @@ static int jsonGrow(JsonString *p, u32 N){
 
 /* Append N bytes from zIn onto the end of the JsonString string.
 */
-static SQLITE_NOINLINE void jsonAppendExpand(
+static SQLITE_NOINLINE void jsonStringExpandAndAppend(
   JsonString *p,
   const char *zIn,
   u32 N
 ){
   assert( N>0 );
-  if( jsonGrow(p,N) ) return;
+  if( jsonStringGrow(p,N) ) return;
   memcpy(p->zBuf+p->nUsed, zIn, N);
   p->nUsed += N;
 }
 static void jsonAppendRaw(JsonString *p, const char *zIn, u32 N){
   if( N==0 ) return;
   if( N+p->nUsed >= p->nAlloc ){
-    jsonAppendExpand(p,zIn,N);
+    jsonStringExpandAndAppend(p,zIn,N);
   }else{
     memcpy(p->zBuf+p->nUsed, zIn, N);
     p->nUsed += N;
@@ -310,7 +538,7 @@ static void jsonAppendRaw(JsonString *p, const char *zIn, u32 N){
 static void jsonAppendRawNZ(JsonString *p, const char *zIn, u32 N){
   assert( N>0 );
   if( N+p->nUsed >= p->nAlloc ){
-    jsonAppendExpand(p,zIn,N);
+    jsonStringExpandAndAppend(p,zIn,N);
   }else{
     memcpy(p->zBuf+p->nUsed, zIn, N);
     p->nUsed += N;
@@ -322,7 +550,7 @@ static void jsonAppendRawNZ(JsonString *p, const char *zIn, u32 N){
 */
 static void jsonPrintf(int N, JsonString *p, const char *zFormat, ...){
   va_list ap;
-  if( (p->nUsed + N >= p->nAlloc) && jsonGrow(p, N) ) return;
+  if( (p->nUsed + N >= p->nAlloc) && jsonStringGrow(p, N) ) return;
   va_start(ap, zFormat);
   sqlite3_vsnprintf(N, p->zBuf+p->nUsed, zFormat, ap);
   va_end(ap);
@@ -332,7 +560,7 @@ static void jsonPrintf(int N, JsonString *p, const char *zFormat, ...){
 /* Append a single character
 */
 static SQLITE_NOINLINE void jsonAppendCharExpand(JsonString *p, char c){
-  if( jsonGrow(p,1) ) return;
+  if( jsonStringGrow(p,1) ) return;
   p->zBuf[p->nUsed++] = c;
 }
 static void jsonAppendChar(JsonString *p, char c){
@@ -343,23 +571,16 @@ static void jsonAppendChar(JsonString *p, char c){
   }
 }
 
-/* Try to force the string to be a zero-terminated RCStr string.
+/* Make sure there is a zero terminator on p->zBuf[]
 **
 ** Return true on success.  Return false if an OOM prevents this
 ** from happening.
 */
-static int jsonForceRCStr(JsonString *p){
+static int jsonStringTerminate(JsonString *p){
   jsonAppendChar(p, 0);
-  if( p->bErr ) return 0;
   p->nUsed--;
-  if( p->bStatic==0 ) return 1;
-  p->nAlloc = 0;
-  p->nUsed++;
-  jsonGrow(p, p->nUsed);
-  p->nUsed--;
-  return p->bStatic==0;
+  return p->eErr==0;
 }
-
 
 /* Append a comma separator to the output buffer, if the previous
 ** character is not '[' or '{'.
@@ -373,21 +594,41 @@ static void jsonAppendSeparator(JsonString *p){
 }
 
 /* Append the N-byte string in zIn to the end of the JsonString string
-** under construction.  Enclose the string in "..." and escape
-** any double-quotes or backslash characters contained within the
+** under construction.  Enclose the string in double-quotes ("...") and
+** escape any double-quotes or backslash characters contained within the
 ** string.
+**
+** This routine is a high-runner.  There is a measurable performance
+** increase associated with unwinding the jsonIsOk[] loop.
 */
 static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
-  u32 i;
-  if( zIn==0 || ((N+p->nUsed+2 >= p->nAlloc) && jsonGrow(p,N+2)!=0) ) return;
+  u32 k;
+  u8 c;
+  const u8 *z = (const u8*)zIn;
+  if( z==0 ) return;
+  if( (N+p->nUsed+2 >= p->nAlloc) && jsonStringGrow(p,N+2)!=0 ) return;
   p->zBuf[p->nUsed++] = '"';
-  for(i=0; i<N; i++){
-    unsigned char c = ((unsigned const char*)zIn)[i];
-    if( jsonIsOk[c] ){
-      p->zBuf[p->nUsed++] = c;
-    }else if( c=='"' || c=='\\' ){
+  while( 1 /*exit-by-break*/ ){
+    k = 0;
+    while( k+1<N && jsonIsOk[z[k]] && jsonIsOk[z[k+1]] ){ k += 2; } /* <--, */
+    while( k<N && jsonIsOk[z[k]] ){ k++; }    /* <-- loop unwound for speed  */
+    if( k>=N ){
+      if( k>0 ){
+        memcpy(&p->zBuf[p->nUsed], z, k);
+        p->nUsed += k;
+      }
+      break;
+    }
+    if( k>0 ){
+      memcpy(&p->zBuf[p->nUsed], z, k);
+      p->nUsed += k;
+      z += k;
+      N -= k;
+    }
+    c = z[0];
+    if( c=='"' || c=='\\' ){
       json_simple_escape:
-      if( (p->nUsed+N+3-i > p->nAlloc) && jsonGrow(p,N+3-i)!=0 ) return;
+      if( (p->nUsed+N+3 > p->nAlloc) && jsonStringGrow(p,N+3)!=0 ) return;
       p->zBuf[p->nUsed++] = '\\';
       p->zBuf[p->nUsed++] = c;
     }else if( c=='\'' ){
@@ -408,7 +649,7 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
         c = aSpecial[c];
         goto json_simple_escape;
       }
-      if( (p->nUsed+N+7+i > p->nAlloc) && jsonGrow(p,N+7-i)!=0 ) return;
+      if( (p->nUsed+N+7 > p->nAlloc) && jsonStringGrow(p,N+7)!=0 ) return;
       p->zBuf[p->nUsed++] = '\\';
       p->zBuf[p->nUsed++] = 'u';
       p->zBuf[p->nUsed++] = '0';
@@ -416,146 +657,18 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
       p->zBuf[p->nUsed++] = "0123456789abcdef"[c>>4];
       p->zBuf[p->nUsed++] = "0123456789abcdef"[c&0xf];
     }
+    z++;
+    N--;
   }
   p->zBuf[p->nUsed++] = '"';
   assert( p->nUsed<p->nAlloc );
 }
 
 /*
-** The zIn[0..N] string is a JSON5 string literal.  Append to p a translation
-** of the string literal that standard JSON and that omits all JSON5
-** features.
+** Append an sqlite3_value (such as a function parameter) to the JSON
+** string under construction in p.
 */
-static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
-  u32 i;
-  jsonAppendChar(p, '"');
-  zIn++;
-  N -= 2;
-  while( N>0 ){
-    for(i=0; i<N && zIn[i]!='\\' && zIn[i]!='"'; i++){}
-    if( i>0 ){
-      jsonAppendRawNZ(p, zIn, i);
-      zIn += i;
-      N -= i;
-      if( N==0 ) break;
-    }
-    if( zIn[0]=='"' ){
-      jsonAppendRawNZ(p, "\\\"", 2);
-      zIn++;
-      N--;
-      continue;
-    }
-    assert( zIn[0]=='\\' );
-    switch( (u8)zIn[1] ){
-      case '\'':
-        jsonAppendChar(p, '\'');
-        break;
-      case 'v':
-        jsonAppendRawNZ(p, "\\u0009", 6);
-        break;
-      case 'x':
-        jsonAppendRawNZ(p, "\\u00", 4);
-        jsonAppendRawNZ(p, &zIn[2], 2);
-        zIn += 2;
-        N -= 2;
-        break;
-      case '0':
-        jsonAppendRawNZ(p, "\\u0000", 6);
-        break;
-      case '\r':
-        if( zIn[2]=='\n' ){
-          zIn++;
-          N--;
-        }
-        break;
-      case '\n':
-        break;
-      case 0xe2:
-        assert( N>=4 );
-        assert( 0x80==(u8)zIn[2] );
-        assert( 0xa8==(u8)zIn[3] || 0xa9==(u8)zIn[3] );
-        zIn += 2;
-        N -= 2;
-        break;
-      default:
-        jsonAppendRawNZ(p, zIn, 2);
-        break;
-    }
-    zIn += 2;
-    N -= 2;
-  }
-  jsonAppendChar(p, '"');
-}
-
-/*
-** The zIn[0..N] string is a JSON5 integer literal.  Append to p a translation
-** of the string literal that standard JSON and that omits all JSON5
-** features.
-*/
-static void jsonAppendNormalizedInt(JsonString *p, const char *zIn, u32 N){
-  if( zIn[0]=='+' ){
-    zIn++;
-    N--;
-  }else if( zIn[0]=='-' ){
-    jsonAppendChar(p, '-');
-    zIn++;
-    N--;
-  }
-  if( zIn[0]=='0' && (zIn[1]=='x' || zIn[1]=='X') ){
-    sqlite3_int64 i = 0;
-    int rc = sqlite3DecOrHexToI64(zIn, &i);
-    if( rc<=1 ){
-      jsonPrintf(100,p,"%lld",i);
-    }else{
-      assert( rc==2 );
-      jsonAppendRawNZ(p, "9.0e999", 7);
-    }
-    return;
-  }
-  assert( N>0 );
-  jsonAppendRawNZ(p, zIn, N);
-}
-
-/*
-** The zIn[0..N] string is a JSON5 real literal.  Append to p a translation
-** of the string literal that standard JSON and that omits all JSON5
-** features.
-*/
-static void jsonAppendNormalizedReal(JsonString *p, const char *zIn, u32 N){
-  u32 i;
-  if( zIn[0]=='+' ){
-    zIn++;
-    N--;
-  }else if( zIn[0]=='-' ){
-    jsonAppendChar(p, '-');
-    zIn++;
-    N--;
-  }
-  if( zIn[0]=='.' ){
-    jsonAppendChar(p, '0');
-  }
-  for(i=0; i<N; i++){
-    if( zIn[i]=='.' && (i+1==N || !sqlite3Isdigit(zIn[i+1])) ){
-      i++;
-      jsonAppendRaw(p, zIn, i);
-      zIn += i;
-      N -= i;
-      jsonAppendChar(p, '0');
-      break;
-    }
-  }
-  if( N>0 ){
-    jsonAppendRawNZ(p, zIn, N);
-  }
-}
-
-
-
-/*
-** Append a function parameter value to the JSON string under
-** construction.
-*/
-static void jsonAppendValue(
+static void jsonAppendSqlValue(
   JsonString *p,                 /* Append to this JSON string */
   sqlite3_value *pValue          /* Value to append */
 ){
@@ -585,291 +698,127 @@ static void jsonAppendValue(
       break;
     }
     default: {
-      if( p->bErr==0 ){
+      if( jsonFuncArgMightBeBinary(pValue) ){
+        JsonParse px;
+        memset(&px, 0, sizeof(px));
+        px.aBlob = (u8*)sqlite3_value_blob(pValue);
+        px.nBlob = sqlite3_value_bytes(pValue);
+        jsonXlateBlobToText(&px, 0, p);
+      }else if( p->eErr==0 ){
         sqlite3_result_error(p->pCtx, "JSON cannot hold BLOB values", -1);
-        p->bErr = 2;
-        jsonReset(p);
+        p->eErr = JSTRING_ERR;
+        jsonStringReset(p);
       }
       break;
     }
   }
 }
 
-
-/* Make the JSON in p the result of the SQL function.
+/* Make the text in p (which is probably a generated JSON text string)
+** the result of the SQL function.
 **
-** The JSON string is reset.
+** The JsonString is reset.
+**
+** If pParse and ctx are both non-NULL, then the SQL string in p is
+** loaded into the zJson field of the pParse object as a RCStr and the
+** pParse is added to the cache.
 */
-static void jsonResult(JsonString *p){
-  if( p->bErr==0 ){
-    if( p->bStatic ){
+static void jsonReturnString(
+  JsonString *p,            /* String to return */
+  JsonParse *pParse,        /* JSONB source or NULL */
+  sqlite3_context *ctx      /* Where to cache */
+){
+  assert( (pParse!=0)==(ctx!=0) );
+  assert( ctx==0 || ctx==p->pCtx );
+  if( p->eErr==0 ){
+    int flags = SQLITE_PTR_TO_INT(sqlite3_user_data(p->pCtx));
+    if( flags & JSON_BLOB ){
+      jsonReturnStringAsBlob(p);
+    }else if( p->bStatic ){
       sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
                             SQLITE_TRANSIENT, SQLITE_UTF8);
-    }else if( jsonForceRCStr(p) ){
-      sqlite3RCStrRef(p->zBuf);
-      sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
+    }else if( jsonStringTerminate(p) ){
+      if( pParse && pParse->bJsonIsRCStr==0 && pParse->nBlobAlloc>0 ){
+        int rc;
+        pParse->zJson = sqlite3RCStrRef(p->zBuf);
+        pParse->nJson = p->nUsed;
+        pParse->bJsonIsRCStr = 1;
+        rc = jsonCacheInsert(ctx, pParse);
+        if( rc==SQLITE_NOMEM ){
+          sqlite3_result_error_nomem(ctx);
+          jsonStringReset(p);
+          return;
+        }
+      }
+      sqlite3_result_text64(p->pCtx, sqlite3RCStrRef(p->zBuf), p->nUsed,
                             sqlite3RCStrUnref,
                             SQLITE_UTF8);
+    }else{
+      sqlite3_result_error_nomem(p->pCtx);
     }
-  }
-  if( p->bErr==1 ){
+  }else if( p->eErr & JSTRING_OOM ){
     sqlite3_result_error_nomem(p->pCtx);
+  }else if( p->eErr & JSTRING_MALFORMED ){
+    sqlite3_result_error(p->pCtx, "malformed JSON", -1);
   }
-  jsonReset(p);
+  jsonStringReset(p);
 }
 
 /**************************************************************************
-** Utility routines for dealing with JsonNode and JsonParse objects
+** Utility routines for dealing with JsonParse objects
 **************************************************************************/
-
-/*
-** Return the number of consecutive JsonNode slots need to represent
-** the parsed JSON at pNode.  The minimum answer is 1.  For ARRAY and
-** OBJECT types, the number might be larger.
-**
-** Appended elements are not counted.  The value returned is the number
-** by which the JsonNode counter should increment in order to go to the
-** next peer value.
-*/
-static u32 jsonNodeSize(JsonNode *pNode){
-  return pNode->eType>=JSON_ARRAY ? pNode->n+1 : 1;
-}
 
 /*
 ** Reclaim all memory allocated by a JsonParse object.  But do not
 ** delete the JsonParse object itself.
 */
 static void jsonParseReset(JsonParse *pParse){
-  while( pParse->pClup ){
-    JsonCleanup *pTask = pParse->pClup;
-    pParse->pClup = pTask->pJCNext;
-    pTask->xOp(pTask->pArg);
-    sqlite3_free(pTask);
-  }
   assert( pParse->nJPRef<=1 );
-  if( pParse->aNode ){
-    sqlite3_free(pParse->aNode);
-    pParse->aNode = 0;
-  }
-  pParse->nNode = 0;
-  pParse->nAlloc = 0;
-  if( pParse->aUp ){
-    sqlite3_free(pParse->aUp);
-    pParse->aUp = 0;
-  }
   if( pParse->bJsonIsRCStr ){
     sqlite3RCStrUnref(pParse->zJson);
     pParse->zJson = 0;
+    pParse->nJson = 0;
     pParse->bJsonIsRCStr = 0;
   }
-  if( pParse->zAlt ){
-    sqlite3RCStrUnref(pParse->zAlt);
-    pParse->zAlt = 0;
+  if( pParse->nBlobAlloc ){
+    sqlite3_free(pParse->aBlob);
+    pParse->aBlob = 0;
+    pParse->nBlob = 0;
+    pParse->nBlobAlloc = 0;
   }
 }
 
 /*
-** Free a JsonParse object that was obtained from sqlite3_malloc().
-**
-** Note that destroying JsonParse might call sqlite3RCStrUnref() to
-** destroy the zJson value.  The RCStr object might recursively invoke
-** JsonParse to destroy this pParse object again.  Take care to ensure
-** that this recursive destructor sequence terminates harmlessly.
+** Decrement the reference count on the JsonParse object.  When the
+** count reaches zero, free the object.
 */
 static void jsonParseFree(JsonParse *pParse){
-  if( pParse->nJPRef>1 ){
-    pParse->nJPRef--;
-  }else{
-    jsonParseReset(pParse);
-    sqlite3_free(pParse);
-  }
-}
-
-/*
-** Add a cleanup task to the JsonParse object.
-**
-** If an OOM occurs, the cleanup operation happens immediately
-** and this function returns SQLITE_NOMEM.
-*/
-static int jsonParseAddCleanup(
-  JsonParse *pParse,          /* Add the cleanup task to this parser */
-  void(*xOp)(void*),          /* The cleanup task */
-  void *pArg                  /* Argument to the cleanup */
-){
-  JsonCleanup *pTask = sqlite3_malloc64( sizeof(*pTask) );
-  if( pTask==0 ){
-    pParse->oom = 1;
-    xOp(pArg);
-    return SQLITE_ERROR;
-  }
-  pTask->pJCNext = pParse->pClup;
-  pParse->pClup = pTask;
-  pTask->xOp = xOp;
-  pTask->pArg = pArg;
-  return SQLITE_OK;
-}
-
-/*
-** Convert the JsonNode pNode into a pure JSON string and
-** append to pOut.  Subsubstructure is also included.  Return
-** the number of JsonNode objects that are encoded.
-*/
-static void jsonRenderNode(
-  JsonParse *pParse,             /* the complete parse of the JSON */
-  JsonNode *pNode,               /* The node to render */
-  JsonString *pOut               /* Write JSON here */
-){
-  assert( pNode!=0 );
-  while( (pNode->jnFlags & JNODE_REPLACE)!=0 && pParse->useMod ){
-    u32 idx = (u32)(pNode - pParse->aNode);
-    u32 i = pParse->iSubst;
-    while( 1 /*exit-by-break*/ ){
-      assert( i<pParse->nNode );
-      assert( pParse->aNode[i].eType==JSON_SUBST );
-      assert( pParse->aNode[i].eU==4 );
-      assert( pParse->aNode[i].u.iPrev<i );
-      if( pParse->aNode[i].n==idx ){
-        pNode = &pParse->aNode[i+1];
-        break;
-      }
-      i = pParse->aNode[i].u.iPrev;
-    }
-  }
-  switch( pNode->eType ){
-    default: {
-      assert( pNode->eType==JSON_NULL );
-      jsonAppendRawNZ(pOut, "null", 4);
-      break;
-    }
-    case JSON_TRUE: {
-      jsonAppendRawNZ(pOut, "true", 4);
-      break;
-    }
-    case JSON_FALSE: {
-      jsonAppendRawNZ(pOut, "false", 5);
-      break;
-    }
-    case JSON_STRING: {
-      assert( pNode->eU==1 );
-      if( pNode->jnFlags & JNODE_RAW ){
-        if( pNode->jnFlags & JNODE_LABEL ){
-          jsonAppendChar(pOut, '"');
-          jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
-          jsonAppendChar(pOut, '"');
-        }else{
-          jsonAppendString(pOut, pNode->u.zJContent, pNode->n);
-        }
-      }else if( pNode->jnFlags & JNODE_JSON5 ){
-        jsonAppendNormalizedString(pOut, pNode->u.zJContent, pNode->n);
-      }else{
-        assert( pNode->n>0 );
-        jsonAppendRawNZ(pOut, pNode->u.zJContent, pNode->n);
-      }
-      break;
-    }
-    case JSON_REAL: {
-      assert( pNode->eU==1 );
-      if( pNode->jnFlags & JNODE_JSON5 ){
-        jsonAppendNormalizedReal(pOut, pNode->u.zJContent, pNode->n);
-      }else{
-        assert( pNode->n>0 );
-        jsonAppendRawNZ(pOut, pNode->u.zJContent, pNode->n);
-      }
-      break;
-    }
-    case JSON_INT: {
-      assert( pNode->eU==1 );
-      if( pNode->jnFlags & JNODE_JSON5 ){
-        jsonAppendNormalizedInt(pOut, pNode->u.zJContent, pNode->n);
-      }else{
-        assert( pNode->n>0 );
-        jsonAppendRawNZ(pOut, pNode->u.zJContent, pNode->n);
-      }
-      break;
-    }
-    case JSON_ARRAY: {
-      u32 j = 1;
-      jsonAppendChar(pOut, '[');
-      for(;;){
-        while( j<=pNode->n ){
-          if( (pNode[j].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ){
-            jsonAppendSeparator(pOut);
-            jsonRenderNode(pParse, &pNode[j], pOut);
-          }
-          j += jsonNodeSize(&pNode[j]);
-        }
-        if( (pNode->jnFlags & JNODE_APPEND)==0 ) break;
-        if( pParse->useMod==0 ) break;
-        assert( pNode->eU==2 );
-        pNode = &pParse->aNode[pNode->u.iAppend];
-        j = 1;
-      }
-      jsonAppendChar(pOut, ']');
-      break;
-    }
-    case JSON_OBJECT: {
-      u32 j = 1;
-      jsonAppendChar(pOut, '{');
-      for(;;){
-        while( j<=pNode->n ){
-          if( (pNode[j+1].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ){
-            jsonAppendSeparator(pOut);
-            jsonRenderNode(pParse, &pNode[j], pOut);
-            jsonAppendChar(pOut, ':');
-            jsonRenderNode(pParse, &pNode[j+1], pOut);
-          }
-          j += 1 + jsonNodeSize(&pNode[j+1]);
-        }
-        if( (pNode->jnFlags & JNODE_APPEND)==0 ) break;
-        if( pParse->useMod==0 ) break;
-        assert( pNode->eU==2 );
-        pNode = &pParse->aNode[pNode->u.iAppend];
-        j = 1;
-      }
-      jsonAppendChar(pOut, '}');
-      break;
+  if( pParse ){
+    if( pParse->nJPRef>1 ){
+      pParse->nJPRef--;
+    }else{
+      jsonParseReset(pParse);
+      sqlite3_free(pParse);
     }
   }
 }
 
-/*
-** Return a JsonNode and all its descendants as a JSON string.
-*/
-static void jsonReturnJson(
-  JsonParse *pParse,          /* The complete JSON */
-  JsonNode *pNode,            /* Node to return */
-  sqlite3_context *pCtx,      /* Return value for this function */
-  int bGenerateAlt,           /* Also store the rendered text in zAlt */
-  int omitSubtype             /* Do not call sqlite3_result_subtype() */
-){
-  JsonString s;
-  if( pParse->oom ){
-    sqlite3_result_error_nomem(pCtx);
-    return;
-  }
-  if( pParse->nErr==0 ){
-    jsonInit(&s, pCtx);
-    jsonRenderNode(pParse, pNode, &s);
-    if( bGenerateAlt && pParse->zAlt==0 && jsonForceRCStr(&s) ){
-      pParse->zAlt = sqlite3RCStrRef(s.zBuf);
-      pParse->nAlt = s.nUsed;
-    }
-    jsonResult(&s);
-    if( !omitSubtype ) sqlite3_result_subtype(pCtx, JSON_SUBTYPE);
-  }
-}
+/**************************************************************************
+** Utility routines for the JSON text parser
+**************************************************************************/
 
 /*
 ** Translate a single byte of Hex into an integer.
-** This routine only works if h really is a valid hexadecimal
-** character:  0..9a..fA..F
+** This routine only gives a correct answer if h really is a valid hexadecimal
+** character:  0..9a..fA..F.  But unlike sqlite3HexToInt(), it does not
+** assert() if the digit is not hex.
 */
 static u8 jsonHexToInt(int h){
-  assert( (h>='0' && h<='9') ||  (h>='a' && h<='f') ||  (h>='A' && h<='F') );
+#ifdef SQLITE_ASCII
+  h += 9*(1&(h>>6));
+#endif
 #ifdef SQLITE_EBCDIC
   h += 9*(1&~(h>>4));
-#else
-  h += 9*(1&(h>>6));
 #endif
   return (u8)(h & 0xf);
 }
@@ -879,291 +828,11 @@ static u8 jsonHexToInt(int h){
 */
 static u32 jsonHexToInt4(const char *z){
   u32 v;
-  assert( sqlite3Isxdigit(z[0]) );
-  assert( sqlite3Isxdigit(z[1]) );
-  assert( sqlite3Isxdigit(z[2]) );
-  assert( sqlite3Isxdigit(z[3]) );
   v = (jsonHexToInt(z[0])<<12)
     + (jsonHexToInt(z[1])<<8)
     + (jsonHexToInt(z[2])<<4)
     + jsonHexToInt(z[3]);
   return v;
-}
-
-/*
-** Make the JsonNode the return value of the function.
-*/
-static void jsonReturn(
-  JsonParse *pParse,          /* Complete JSON parse tree */
-  JsonNode *pNode,            /* Node to return */
-  sqlite3_context *pCtx,      /* Return value for this function */
-  int omitSubtype             /* Do not call sqlite3_result_subtype() */
-){
-  switch( pNode->eType ){
-    default: {
-      assert( pNode->eType==JSON_NULL );
-      sqlite3_result_null(pCtx);
-      break;
-    }
-    case JSON_TRUE: {
-      sqlite3_result_int(pCtx, 1);
-      break;
-    }
-    case JSON_FALSE: {
-      sqlite3_result_int(pCtx, 0);
-      break;
-    }
-    case JSON_INT: {
-      sqlite3_int64 i = 0;
-      int rc;
-      int bNeg = 0;
-      const char *z;
-
-      assert( pNode->eU==1 );
-      z = pNode->u.zJContent;
-      if( z[0]=='-' ){ z++; bNeg = 1; }
-      else if( z[0]=='+' ){ z++; }
-      rc = sqlite3DecOrHexToI64(z, &i);
-      if( rc<=1 ){
-        sqlite3_result_int64(pCtx, bNeg ? -i : i);
-      }else if( rc==3 && bNeg ){
-        sqlite3_result_int64(pCtx, SMALLEST_INT64);
-      }else{
-        goto to_double;
-      }
-      break;
-    }
-    case JSON_REAL: {
-      double r;
-      const char *z;
-      assert( pNode->eU==1 );
-    to_double:
-      z = pNode->u.zJContent;
-      sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
-      sqlite3_result_double(pCtx, r);
-      break;
-    }
-    case JSON_STRING: {
-      if( pNode->jnFlags & JNODE_RAW ){
-        assert( pNode->eU==1 );
-        sqlite3_result_text(pCtx, pNode->u.zJContent, pNode->n,
-                            SQLITE_TRANSIENT);
-      }else if( (pNode->jnFlags & JNODE_ESCAPE)==0 ){
-        /* JSON formatted without any backslash-escapes */
-        assert( pNode->eU==1 );
-        sqlite3_result_text(pCtx, pNode->u.zJContent+1, pNode->n-2,
-                            SQLITE_TRANSIENT);
-      }else{
-        /* Translate JSON formatted string into raw text */
-        u32 i;
-        u32 n = pNode->n;
-        const char *z;
-        char *zOut;
-        u32 j;
-        u32 nOut = n;
-        assert( pNode->eU==1 );
-        z = pNode->u.zJContent;
-        zOut = sqlite3_malloc( nOut+1 );
-        if( zOut==0 ){
-          sqlite3_result_error_nomem(pCtx);
-          break;
-        }
-        for(i=1, j=0; i<n-1; i++){
-          char c = z[i];
-          if( c=='\\' ){
-            c = z[++i];
-            if( c=='u' ){
-              u32 v = jsonHexToInt4(z+i+1);
-              i += 4;
-              if( v==0 ) break;
-              if( v<=0x7f ){
-                zOut[j++] = (char)v;
-              }else if( v<=0x7ff ){
-                zOut[j++] = (char)(0xc0 | (v>>6));
-                zOut[j++] = 0x80 | (v&0x3f);
-              }else{
-                u32 vlo;
-                if( (v&0xfc00)==0xd800
-                  && i<n-6
-                  && z[i+1]=='\\'
-                  && z[i+2]=='u'
-                  && ((vlo = jsonHexToInt4(z+i+3))&0xfc00)==0xdc00
-                ){
-                  /* We have a surrogate pair */
-                  v = ((v&0x3ff)<<10) + (vlo&0x3ff) + 0x10000;
-                  i += 6;
-                  zOut[j++] = 0xf0 | (v>>18);
-                  zOut[j++] = 0x80 | ((v>>12)&0x3f);
-                  zOut[j++] = 0x80 | ((v>>6)&0x3f);
-                  zOut[j++] = 0x80 | (v&0x3f);
-                }else{
-                  zOut[j++] = 0xe0 | (v>>12);
-                  zOut[j++] = 0x80 | ((v>>6)&0x3f);
-                  zOut[j++] = 0x80 | (v&0x3f);
-                }
-              }
-              continue;
-            }else if( c=='b' ){
-              c = '\b';
-            }else if( c=='f' ){
-              c = '\f';
-            }else if( c=='n' ){
-              c = '\n';
-            }else if( c=='r' ){
-              c = '\r';
-            }else if( c=='t' ){
-              c = '\t';
-            }else if( c=='v' ){
-              c = '\v';
-            }else if( c=='\'' || c=='"' || c=='/' || c=='\\' ){
-              /* pass through unchanged */
-            }else if( c=='0' ){
-              c = 0;
-            }else if( c=='x' ){
-              c = (jsonHexToInt(z[i+1])<<4) | jsonHexToInt(z[i+2]);
-              i += 2;
-            }else if( c=='\r' && z[i+1]=='\n' ){
-              i++;
-              continue;
-            }else if( 0xe2==(u8)c ){
-              assert( 0x80==(u8)z[i+1] );
-              assert( 0xa8==(u8)z[i+2] || 0xa9==(u8)z[i+2] );
-              i += 2;
-              continue;
-            }else{
-              continue;
-            }
-          } /* end if( c=='\\' ) */
-          zOut[j++] = c;
-        } /* end for() */
-        zOut[j] = 0;
-        sqlite3_result_text(pCtx, zOut, j, sqlite3_free);
-      }
-      break;
-    }
-    case JSON_ARRAY:
-    case JSON_OBJECT: {
-      jsonReturnJson(pParse, pNode, pCtx, 0, omitSubtype);
-      break;
-    }
-  }
-}
-
-/* Forward reference */
-static int jsonParseAddNode(JsonParse*,u32,u32,const char*);
-
-/*
-** A macro to hint to the compiler that a function should not be
-** inlined.
-*/
-#if defined(__GNUC__)
-#  define JSON_NOINLINE  __attribute__((noinline))
-#elif defined(_MSC_VER) && _MSC_VER>=1310
-#  define JSON_NOINLINE  __declspec(noinline)
-#else
-#  define JSON_NOINLINE
-#endif
-
-
-/*
-** Add a single node to pParse->aNode after first expanding the
-** size of the aNode array.  Return the index of the new node.
-**
-** If an OOM error occurs, set pParse->oom and return -1.
-*/
-static JSON_NOINLINE int jsonParseAddNodeExpand(
-  JsonParse *pParse,        /* Append the node to this object */
-  u32 eType,                /* Node type */
-  u32 n,                    /* Content size or sub-node count */
-  const char *zContent      /* Content */
-){
-  u32 nNew;
-  JsonNode *pNew;
-  assert( pParse->nNode>=pParse->nAlloc );
-  if( pParse->oom ) return -1;
-  nNew = pParse->nAlloc*2 + 10;
-  pNew = sqlite3_realloc64(pParse->aNode, sizeof(JsonNode)*nNew);
-  if( pNew==0 ){
-    pParse->oom = 1;
-    return -1;
-  }
-  pParse->nAlloc = sqlite3_msize(pNew)/sizeof(JsonNode);
-  pParse->aNode = pNew;
-  assert( pParse->nNode<pParse->nAlloc );
-  return jsonParseAddNode(pParse, eType, n, zContent);
-}
-
-/*
-** Create a new JsonNode instance based on the arguments and append that
-** instance to the JsonParse.  Return the index in pParse->aNode[] of the
-** new node, or -1 if a memory allocation fails.
-*/
-static int jsonParseAddNode(
-  JsonParse *pParse,        /* Append the node to this object */
-  u32 eType,                /* Node type */
-  u32 n,                    /* Content size or sub-node count */
-  const char *zContent      /* Content */
-){
-  JsonNode *p;
-  assert( pParse->aNode!=0 || pParse->nNode>=pParse->nAlloc );
-  if( pParse->nNode>=pParse->nAlloc ){
-    return jsonParseAddNodeExpand(pParse, eType, n, zContent);
-  }
-  assert( pParse->aNode!=0 );
-  p = &pParse->aNode[pParse->nNode];
-  assert( p!=0 );
-  p->eType = (u8)(eType & 0xff);
-  p->jnFlags = (u8)(eType >> 8);
-  VVA( p->eU = zContent ? 1 : 0 );
-  p->n = n;
-  p->u.zJContent = zContent;
-  return pParse->nNode++;
-}
-
-/*
-** Add an array of new nodes to the current pParse->aNode array.
-** Return the index of the first node added.
-**
-** If an OOM error occurs, set pParse->oom.
-*/
-static void jsonParseAddNodeArray(
-  JsonParse *pParse,        /* Append the node to this object */
-  JsonNode *aNode,          /* Array of nodes to add */
-  u32 nNode                 /* Number of elements in aNew */
-){
-  assert( aNode!=0 );
-  assert( nNode>=1 );
-  if( pParse->nNode + nNode > pParse->nAlloc ){
-    u32 nNew = pParse->nNode + nNode;
-    JsonNode *aNew = sqlite3_realloc64(pParse->aNode, nNew*sizeof(JsonNode));
-    if( aNew==0 ){
-      pParse->oom = 1;
-      return;
-    }
-    pParse->nAlloc = sqlite3_msize(aNew)/sizeof(JsonNode);
-    pParse->aNode = aNew;
-  }
-  memcpy(&pParse->aNode[pParse->nNode], aNode, nNode*sizeof(JsonNode));
-  pParse->nNode += nNode;
-}
-
-/*
-** Add a new JSON_SUBST node.  The node immediately following
-** this new node will be the substitute content for iNode.
-*/
-static int jsonParseAddSubstNode(
-  JsonParse *pParse,       /* Add the JSON_SUBST here */
-  u32 iNode                /* References this node */
-){
-  int idx = jsonParseAddNode(pParse, JSON_SUBST, iNode, 0);
-  if( pParse->oom ) return -1;
-  pParse->aNode[iNode].jnFlags |= JNODE_REPLACE;
-  pParse->aNode[idx].eU = 4;
-  pParse->aNode[idx].u.iPrev = pParse->iSubst;
-  pParse->iSubst = idx;
-  pParse->hasMod = 1;
-  pParse->useMod = 1;
-  return idx;
 }
 
 /*
@@ -1319,63 +988,303 @@ static const struct NanInfName {
   char *zMatch;
   char *zRepl;
 } aNanInfName[] = {
-  { 'i', 'I', 3, JSON_REAL, 7, "inf", "9.0e999" },
-  { 'i', 'I', 8, JSON_REAL, 7, "infinity", "9.0e999" },
-  { 'n', 'N', 3, JSON_NULL, 4, "NaN", "null" },
-  { 'q', 'Q', 4, JSON_NULL, 4, "QNaN", "null" },
-  { 's', 'S', 4, JSON_NULL, 4, "SNaN", "null" },
+  { 'i', 'I', 3, JSONB_FLOAT, 7, "inf", "9.0e999" },
+  { 'i', 'I', 8, JSONB_FLOAT, 7, "infinity", "9.0e999" },
+  { 'n', 'N', 3, JSONB_NULL, 4, "NaN", "null" },
+  { 'q', 'Q', 4, JSONB_NULL, 4, "QNaN", "null" },
+  { 's', 'S', 4, JSONB_NULL, 4, "SNaN", "null" },
 };
 
+
 /*
-** Parse a single JSON value which begins at pParse->zJson[i].  Return the
-** index of the first character past the end of the value parsed.
+** Report the wrong number of arguments for json_insert(), json_replace()
+** or json_set().
+*/
+static void jsonWrongNumArgs(
+  sqlite3_context *pCtx,
+  const char *zFuncName
+){
+  char *zMsg = sqlite3_mprintf("json_%s() needs an odd number of arguments",
+                               zFuncName);
+  sqlite3_result_error(pCtx, zMsg, -1);
+  sqlite3_free(zMsg);
+}
+
+/****************************************************************************
+** Utility routines for dealing with the binary BLOB representation of JSON
+****************************************************************************/
+
+/*
+** Expand pParse->aBlob so that it holds at least N bytes.
 **
-** Special return values:
+** Return the number of errors.
+*/
+static int jsonBlobExpand(JsonParse *pParse, u32 N){
+  u8 *aNew;
+  u32 t;
+  assert( N>pParse->nBlobAlloc );
+  if( pParse->nBlobAlloc==0 ){
+    t = 100;
+  }else{
+    t = pParse->nBlobAlloc*2;
+  }
+  if( t<N ) t = N+100;
+  aNew = sqlite3_realloc64( pParse->aBlob, t );
+  if( aNew==0 ){ pParse->oom = 1; return 1; }
+  pParse->aBlob = aNew;
+  pParse->nBlobAlloc = t;
+  return 0;
+}
+
+/*
+** If pParse->aBlob is not previously editable (because it is taken
+** from sqlite3_value_blob(), as indicated by the fact that
+** pParse->nBlobAlloc==0 and pParse->nBlob>0) then make it editable
+** by making a copy into space obtained from malloc.
+**
+** Return true on success.  Return false on OOM.
+*/
+static int jsonBlobMakeEditable(JsonParse *pParse, u32 nExtra){
+  u8 *aOld;
+  u32 nSize;
+  assert( !pParse->bReadOnly );
+  if( pParse->oom ) return 0;
+  if( pParse->nBlobAlloc>0 ) return 1;
+  aOld = pParse->aBlob;
+  nSize = pParse->nBlob + nExtra;
+  pParse->aBlob = 0;
+  if( jsonBlobExpand(pParse, nSize) ){
+    return 0;
+  }
+  assert( pParse->nBlobAlloc >= pParse->nBlob + nExtra );
+  memcpy(pParse->aBlob, aOld, pParse->nBlob);
+  return 1;
+}
+
+/* Expand pParse->aBlob and append one bytes.
+*/
+static SQLITE_NOINLINE void jsonBlobExpandAndAppendOneByte(
+  JsonParse *pParse,
+  u8 c
+){
+  jsonBlobExpand(pParse, pParse->nBlob+1);
+  if( pParse->oom==0 ){
+    assert( pParse->nBlob+1<=pParse->nBlobAlloc );
+    pParse->aBlob[pParse->nBlob++] = c;
+  }
+}
+
+/* Append a single character.
+*/
+static void jsonBlobAppendOneByte(JsonParse *pParse, u8 c){
+  if( pParse->nBlob >= pParse->nBlobAlloc ){
+    jsonBlobExpandAndAppendOneByte(pParse, c);
+  }else{
+    pParse->aBlob[pParse->nBlob++] = c;
+  }
+}
+
+/* Slow version of jsonBlobAppendNode() that first resizes the
+** pParse->aBlob structure.
+*/
+static void jsonBlobAppendNode(JsonParse*,u8,u32,const void*);
+static SQLITE_NOINLINE void jsonBlobExpandAndAppendNode(
+  JsonParse *pParse,
+  u8 eType,
+  u32 szPayload,
+  const void *aPayload
+){
+  if( jsonBlobExpand(pParse, pParse->nBlob+szPayload+9) ) return;
+  jsonBlobAppendNode(pParse, eType, szPayload, aPayload);
+}
+
+
+/* Append an node type byte together with the payload size and
+** possibly also the payload.
+**
+** If aPayload is not NULL, then it is a pointer to the payload which
+** is also appended.  If aPayload is NULL, the pParse->aBlob[] array
+** is resized (if necessary) so that it is big enough to hold the
+** payload, but the payload is not appended and pParse->nBlob is left
+** pointing to where the first byte of payload will eventually be.
+*/
+static void jsonBlobAppendNode(
+  JsonParse *pParse,          /* The JsonParse object under construction */
+  u8 eType,                   /* Node type.  One of JSONB_* */
+  u32 szPayload,              /* Number of bytes of payload */
+  const void *aPayload        /* The payload.  Might be NULL */
+){
+  u8 *a;
+  if( pParse->nBlob+szPayload+9 > pParse->nBlobAlloc ){
+    jsonBlobExpandAndAppendNode(pParse,eType,szPayload,aPayload);
+    return;
+  }
+  assert( pParse->aBlob!=0 );
+  a = &pParse->aBlob[pParse->nBlob];
+  if( szPayload<=11 ){
+    a[0] = eType | (szPayload<<4);
+    pParse->nBlob += 1;
+  }else if( szPayload<=0xff ){
+    a[0] = eType | 0xc0;
+    a[1] = szPayload & 0xff;
+    pParse->nBlob += 2;
+  }else if( szPayload<=0xffff ){
+    a[0] = eType | 0xd0;
+    a[1] = (szPayload >> 8) & 0xff;
+    a[2] = szPayload & 0xff;
+    pParse->nBlob += 3;
+  }else{
+    a[0] = eType | 0xe0;
+    a[1] = (szPayload >> 24) & 0xff;
+    a[2] = (szPayload >> 16) & 0xff;
+    a[3] = (szPayload >> 8) & 0xff;
+    a[4] = szPayload & 0xff;
+    pParse->nBlob += 5;
+  }
+  if( aPayload ){
+    pParse->nBlob += szPayload;
+    memcpy(&pParse->aBlob[pParse->nBlob-szPayload], aPayload, szPayload);
+  }
+}
+
+/* Change the payload size for the node at index i to be szPayload.
+*/
+static int jsonBlobChangePayloadSize(
+  JsonParse *pParse,
+  u32 i,
+  u32 szPayload
+){
+  u8 *a;
+  u8 szType;
+  u8 nExtra;
+  u8 nNeeded;
+  int delta;
+  if( pParse->oom ) return 0;
+  a = &pParse->aBlob[i];
+  szType = a[0]>>4;
+  if( szType<=11 ){
+    nExtra = 0;
+  }else if( szType==12 ){
+    nExtra = 1;
+  }else if( szType==13 ){
+    nExtra = 2;
+  }else{
+    nExtra = 4;
+  }
+  if( szPayload<=11 ){
+    nNeeded = 0;
+  }else if( szPayload<=0xff ){
+    nNeeded = 1;
+  }else if( szPayload<=0xffff ){
+    nNeeded = 2;
+  }else{
+    nNeeded = 4;
+  }
+  delta = nNeeded - nExtra;
+  if( delta ){
+    u32 newSize = pParse->nBlob + delta;
+    if( delta>0 ){
+      if( newSize>pParse->nBlobAlloc && jsonBlobExpand(pParse, newSize) ){
+        return 0;  /* OOM error.  Error state recorded in pParse->oom. */
+      }
+      a = &pParse->aBlob[i];
+      memmove(&a[1+delta], &a[1], pParse->nBlob - (i+1));
+    }else{
+      memmove(&a[1], &a[1-delta], pParse->nBlob - (i+1-delta));
+    }
+    pParse->nBlob = newSize;
+  }
+  if( nNeeded==0 ){
+    a[0] = (a[0] & 0x0f) | (szPayload<<4);
+  }else if( nNeeded==1 ){
+    a[0] = (a[0] & 0x0f) | 0xc0;
+    a[1] = szPayload & 0xff;
+  }else if( nNeeded==2 ){
+    a[0] = (a[0] & 0x0f) | 0xd0;
+    a[1] = (szPayload >> 8) & 0xff;
+    a[2] = szPayload & 0xff;
+  }else{
+    a[0] = (a[0] & 0x0f) | 0xe0;
+    a[1] = (szPayload >> 24) & 0xff;
+    a[2] = (szPayload >> 16) & 0xff;
+    a[3] = (szPayload >> 8) & 0xff;
+    a[4] = szPayload & 0xff;
+  }
+  return delta;
+}
+
+/*
+** If z[0] is 'u' and is followed by exactly 4 hexadecimal character,
+** then set *pOp to JSONB_TEXTJ and return true.  If not, do not make
+** any changes to *pOp and return false.
+*/
+static int jsonIs4HexB(const char *z, int *pOp){
+  if( z[0]!='u' ) return 0;
+  if( !sqlite3Isxdigit(z[1]) ) return 0;
+  if( !sqlite3Isxdigit(z[2]) ) return 0;
+  if( !sqlite3Isxdigit(z[3]) ) return 0;
+  if( !sqlite3Isxdigit(z[4]) ) return 0;
+  *pOp = JSONB_TEXTJ;
+  return 1;
+}
+
+/*
+** Translate a single element of JSON text at pParse->zJson[i] into
+** its equivalent binary JSONB representation.  Append the translation into
+** pParse->aBlob[] beginning at pParse->nBlob.  The size of
+** pParse->aBlob[] is increased as necessary.
+**
+** Return the index of the first character past the end of the element parsed,
+** or one of the following special result codes:
 **
 **      0    End of input
-**     -1    Syntax error
-**     -2    '}' seen
-**     -3    ']' seen
-**     -4    ',' seen
-**     -5    ':' seen
+**     -1    Syntax error or OOM
+**     -2    '}' seen   \
+**     -3    ']' seen    \___  For these returns, pParse->iErr is set to
+**     -4    ',' seen    /     the index in zJson[] of the seen character
+**     -5    ':' seen   /
 */
-static int jsonParseValue(JsonParse *pParse, u32 i){
+static int jsonXlateTextToBlob(JsonParse *pParse, u32 i){
   char c;
   u32 j;
-  int iThis;
+  u32 iThis, iStart;
   int x;
-  JsonNode *pNode;
+  u8 t;
   const char *z = pParse->zJson;
 json_parse_restart:
   switch( (u8)z[i] ){
   case '{': {
     /* Parse object */
-    iThis = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
-    if( iThis<0 ) return -1;
+    iThis = pParse->nBlob;
+    jsonBlobAppendNode(pParse, JSONB_OBJECT, pParse->nJson-i, 0);
     if( ++pParse->iDepth > JSON_MAX_DEPTH ){
       pParse->iErr = i;
       return -1;
     }
+    iStart = pParse->nBlob;
     for(j=i+1;;j++){
-      u32 nNode = pParse->nNode;
-      x = jsonParseValue(pParse, j);
+      u32 iBlob = pParse->nBlob;
+      x = jsonXlateTextToBlob(pParse, j);
       if( x<=0 ){
+        int op;
         if( x==(-2) ){
           j = pParse->iErr;
-          if( pParse->nNode!=(u32)iThis+1 ) pParse->hasNonstd = 1;
+          if( pParse->nBlob!=(u32)iStart ) pParse->hasNonstd = 1;
           break;
         }
         j += json5Whitespace(&z[j]);
-        if( sqlite3JsonId1(z[j])
-         || (z[j]=='\\' && z[j+1]=='u' && jsonIs4Hex(&z[j+2]))
+        op = JSONB_TEXT;
+        if( sqlite3JsonId1(z[j]) 
+         || (z[j]=='\\' && jsonIs4HexB(&z[j+1], &op))
         ){
           int k = j+1;
           while( (sqlite3JsonId2(z[k]) && json5Whitespace(&z[k])==0)
-            || (z[k]=='\\' && z[k+1]=='u' && jsonIs4Hex(&z[k+2]))
+            || (z[k]=='\\' && jsonIs4HexB(&z[k+1], &op))
           ){
             k++;
           }
-          jsonParseAddNode(pParse, JSON_STRING | (JNODE_RAW<<8), k-j, &z[j]);
+          assert( iBlob==pParse->nBlob );
+          jsonBlobAppendNode(pParse, op, k-j, &z[j]);
           pParse->hasNonstd = 1;
           x = k;
         }else{
@@ -1384,24 +1293,24 @@ json_parse_restart:
         }
       }
       if( pParse->oom ) return -1;
-      pNode = &pParse->aNode[nNode];
-      if( pNode->eType!=JSON_STRING ){
+      t = pParse->aBlob[iBlob] & 0x0f;
+      if( t<JSONB_TEXT || t>JSONB_TEXTRAW ){
         pParse->iErr = j;
         return -1;
       }
-      pNode->jnFlags |= JNODE_LABEL;
       j = x;
       if( z[j]==':' ){
         j++;
       }else{
-        if( fast_isspace(z[j]) ){
-          do{ j++; }while( fast_isspace(z[j]) );
+        if( jsonIsspace(z[j]) ){
+          /* strspn() is not helpful here */
+          do{ j++; }while( jsonIsspace(z[j]) );
           if( z[j]==':' ){
             j++;
             goto parse_object_value;
           }
         }
-        x = jsonParseValue(pParse, j);
+        x = jsonXlateTextToBlob(pParse, j);
         if( x!=(-5) ){
           if( x!=(-1) ) pParse->iErr = j;
           return -1;
@@ -1409,7 +1318,7 @@ json_parse_restart:
         j = pParse->iErr+1;
       }
     parse_object_value:
-      x = jsonParseValue(pParse, j);
+      x = jsonXlateTextToBlob(pParse, j);
       if( x<=0 ){
         if( x!=(-1) ) pParse->iErr = j;
         return -1;
@@ -1420,15 +1329,15 @@ json_parse_restart:
       }else if( z[j]=='}' ){
         break;
       }else{
-        if( fast_isspace(z[j]) ){
-          do{ j++; }while( fast_isspace(z[j]) );
+        if( jsonIsspace(z[j]) ){
+          j += 1 + strspn(&z[j+1], jsonSpaces);
           if( z[j]==',' ){
             continue;
           }else if( z[j]=='}' ){
             break;
           }
         }
-        x = jsonParseValue(pParse, j);
+        x = jsonXlateTextToBlob(pParse, j);
         if( x==(-4) ){
           j = pParse->iErr;
           continue;
@@ -1441,25 +1350,26 @@ json_parse_restart:
       pParse->iErr = j;
       return -1;
     }
-    pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
+    jsonBlobChangePayloadSize(pParse, iThis, pParse->nBlob - iStart);
     pParse->iDepth--;
     return j+1;
   }
   case '[': {
     /* Parse array */
-    iThis = jsonParseAddNode(pParse, JSON_ARRAY, 0, 0);
-    if( iThis<0 ) return -1;
+    iThis = pParse->nBlob;
+    jsonBlobAppendNode(pParse, JSONB_ARRAY, pParse->nJson - i, 0);
+    iStart = pParse->nBlob;
+    if( pParse->oom ) return -1;
     if( ++pParse->iDepth > JSON_MAX_DEPTH ){
       pParse->iErr = i;
       return -1;
     }
-    memset(&pParse->aNode[iThis].u, 0, sizeof(pParse->aNode[iThis].u));
     for(j=i+1;;j++){
-      x = jsonParseValue(pParse, j);
+      x = jsonXlateTextToBlob(pParse, j);
       if( x<=0 ){
         if( x==(-3) ){
           j = pParse->iErr;
-          if( pParse->nNode!=(u32)iThis+1 ) pParse->hasNonstd = 1;
+          if( pParse->nBlob!=iStart ) pParse->hasNonstd = 1;
           break;
         }
         if( x!=(-1) ) pParse->iErr = j;
@@ -1471,15 +1381,15 @@ json_parse_restart:
       }else if( z[j]==']' ){
         break;
       }else{
-        if( fast_isspace(z[j]) ){
-          do{ j++; }while( fast_isspace(z[j]) );
+        if( jsonIsspace(z[j]) ){
+          j += 1 + strspn(&z[j+1], jsonSpaces);
           if( z[j]==',' ){
             continue;
           }else if( z[j]==']' ){
             break;
           }
         }
-        x = jsonParseValue(pParse, j);
+        x = jsonXlateTextToBlob(pParse, j);
         if( x==(-4) ){
           j = pParse->iErr;
           continue;
@@ -1492,23 +1402,33 @@ json_parse_restart:
       pParse->iErr = j;
       return -1;
     }
-    pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
+    jsonBlobChangePayloadSize(pParse, iThis, pParse->nBlob - iStart);
     pParse->iDepth--;
     return j+1;
   }
   case '\'': {
-    u8 jnFlags;
+    u8 opcode;
     char cDelim;
     pParse->hasNonstd = 1;
-    jnFlags = JNODE_JSON5;
+    opcode = JSONB_TEXT;
     goto parse_string;
   case '"':
     /* Parse string */
-    jnFlags = 0;
+    opcode = JSONB_TEXT;
   parse_string:
     cDelim = z[i];
-    for(j=i+1; 1; j++){
-      if( jsonIsOk[(unsigned char)z[j]] ) continue;
+    j = i+1;
+    while( 1 /*exit-by-break*/ ){
+      if( jsonIsOk[(u8)z[j]] ){
+        if( !jsonIsOk[(u8)z[j+1]] ){
+          j += 1;
+        }else if( !jsonIsOk[(u8)z[j+2]] ){
+          j += 2;
+        }else{
+          j += 3;
+          continue;
+        }
+      }
       c = z[j];
       if( c==cDelim ){
         break;
@@ -1517,16 +1437,16 @@ json_parse_restart:
         if( c=='"' || c=='\\' || c=='/' || c=='b' || c=='f'
            || c=='n' || c=='r' || c=='t'
            || (c=='u' && jsonIs4Hex(&z[j+1])) ){
-          jnFlags |= JNODE_ESCAPE;
+          if( opcode==JSONB_TEXT ) opcode = JSONB_TEXTJ;
         }else if( c=='\'' || c=='0' || c=='v' || c=='\n'
            || (0xe2==(u8)c && 0x80==(u8)z[j+1]
                 && (0xa8==(u8)z[j+2] || 0xa9==(u8)z[j+2]))
            || (c=='x' && jsonIs2Hex(&z[j+1])) ){
-          jnFlags |= (JNODE_ESCAPE|JNODE_JSON5);
+          opcode = JSONB_TEXT5;
           pParse->hasNonstd = 1;
         }else if( c=='\r' ){
           if( z[j+1]=='\n' ) j++;
-          jnFlags |= (JNODE_ESCAPE|JNODE_JSON5);
+          opcode = JSONB_TEXT5;
           pParse->hasNonstd = 1;
         }else{
           pParse->iErr = j;
@@ -1537,13 +1457,14 @@ json_parse_restart:
         pParse->iErr = j;
         return -1;
       }
+      j++;
     }
-    jsonParseAddNode(pParse, JSON_STRING | (jnFlags<<8), j+1-i, &z[i]);
+    jsonBlobAppendNode(pParse, opcode, j-1-i, &z[i+1]);
     return j+1;
   }
   case 't': {
     if( strncmp(z+i,"true",4)==0 && !sqlite3Isalnum(z[i+4]) ){
-      jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
+      jsonBlobAppendOneByte(pParse, JSONB_TRUE);
       return i+4;
     }
     pParse->iErr = i;
@@ -1551,23 +1472,22 @@ json_parse_restart:
   }
   case 'f': {
     if( strncmp(z+i,"false",5)==0 && !sqlite3Isalnum(z[i+5]) ){
-      jsonParseAddNode(pParse, JSON_FALSE, 0, 0);
+      jsonBlobAppendOneByte(pParse, JSONB_FALSE);
       return i+5;
     }
     pParse->iErr = i;
     return -1;
   }
   case '+': {
-    u8 seenDP, seenE, jnFlags;
+    u8 seenE;
     pParse->hasNonstd = 1;
-    jnFlags = JNODE_JSON5;
+    t = 0x00;            /* Bit 0x01:  JSON5.   Bit 0x02:  FLOAT */
     goto parse_number;
   case '.':
     if( sqlite3Isdigit(z[i+1]) ){
       pParse->hasNonstd = 1;
-      jnFlags = JNODE_JSON5;
+      t = 0x03;          /* Bit 0x01:  JSON5.   Bit 0x02:  FLOAT */
       seenE = 0;
-      seenDP = JSON_REAL;
       goto parse_number_2;
     }
     pParse->iErr = i;
@@ -1584,9 +1504,8 @@ json_parse_restart:
   case '8':
   case '9':
     /* Parse number */
-    jnFlags = 0;
+    t = 0x00;            /* Bit 0x01:  JSON5.   Bit 0x02:  FLOAT */
   parse_number:
-    seenDP = JSON_INT;
     seenE = 0;
     assert( '-' < '0' );
     assert( '+' < '0' );
@@ -1596,9 +1515,9 @@ json_parse_restart:
     if( c<='0' ){
       if( c=='0' ){
         if( (z[i+1]=='x' || z[i+1]=='X') && sqlite3Isxdigit(z[i+2]) ){
-          assert( seenDP==JSON_INT );
+          assert( t==0x00 );
           pParse->hasNonstd = 1;
-          jnFlags |= JNODE_JSON5;
+          t = 0x01;
           for(j=i+3; sqlite3Isxdigit(z[j]); j++){}
           goto parse_number_finish;
         }else if( sqlite3Isdigit(z[i+1]) ){
@@ -1615,15 +1534,15 @@ json_parse_restart:
           ){
             pParse->hasNonstd = 1;
             if( z[i]=='-' ){
-              jsonParseAddNode(pParse, JSON_REAL, 8, "-9.0e999");
+              jsonBlobAppendNode(pParse, JSONB_FLOAT, 6, "-9e999");
             }else{
-              jsonParseAddNode(pParse, JSON_REAL, 7, "9.0e999");
+              jsonBlobAppendNode(pParse, JSONB_FLOAT, 5, "9e999");
             }
             return i + (sqlite3StrNICmp(&z[i+4],"inity",5)==0 ? 9 : 4);
           }
           if( z[i+1]=='.' ){
             pParse->hasNonstd = 1;
-            jnFlags |= JNODE_JSON5;
+            t |= 0x01;
             goto parse_number_2;
           }
           pParse->iErr = i;
@@ -1635,30 +1554,31 @@ json_parse_restart:
             return -1;
           }else if( (z[i+2]=='x' || z[i+2]=='X') && sqlite3Isxdigit(z[i+3]) ){
             pParse->hasNonstd = 1;
-            jnFlags |= JNODE_JSON5;
+            t |= 0x01;
             for(j=i+4; sqlite3Isxdigit(z[j]); j++){}
             goto parse_number_finish;
           }
         }
       }
     }
+
   parse_number_2:
     for(j=i+1;; j++){
       c = z[j];
       if( sqlite3Isdigit(c) ) continue;
       if( c=='.' ){
-        if( seenDP==JSON_REAL ){
+        if( (t & 0x02)!=0 ){
           pParse->iErr = j;
           return -1;
         }
-        seenDP = JSON_REAL;
+        t |= 0x02;
         continue;
       }
       if( c=='e' || c=='E' ){
         if( z[j-1]<'0' ){
           if( ALWAYS(z[j-1]=='.') && ALWAYS(j-2>=i) && sqlite3Isdigit(z[j-2]) ){
             pParse->hasNonstd = 1;
-            jnFlags |= JNODE_JSON5;
+            t |= 0x01;
           }else{
             pParse->iErr = j;
             return -1;
@@ -1668,7 +1588,7 @@ json_parse_restart:
           pParse->iErr = j;
           return -1;
         }
-        seenDP = JSON_REAL;
+        t |= 0x02;
         seenE = 1;
         c = z[j+1];
         if( c=='+' || c=='-' ){
@@ -1686,14 +1606,18 @@ json_parse_restart:
     if( z[j-1]<'0' ){
       if( ALWAYS(z[j-1]=='.') && ALWAYS(j-2>=i) && sqlite3Isdigit(z[j-2]) ){
         pParse->hasNonstd = 1;
-        jnFlags |= JNODE_JSON5;
+        t |= 0x01;
       }else{
         pParse->iErr = j;
         return -1;
       }
     }
   parse_number_finish:
-    jsonParseAddNode(pParse, seenDP | (jnFlags<<8), j - i, &z[i]);
+    assert( JSONB_INT+0x01==JSONB_INT5 );
+    assert( JSONB_FLOAT+0x01==JSONB_FLOAT5 );
+    assert( JSONB_INT+0x02==JSONB_FLOAT );
+    if( z[i]=='+' ) i++;
+    jsonBlobAppendNode(pParse, JSONB_INT+t, j-i, &z[i]);
     return j;
   }
   case '}': {
@@ -1719,9 +1643,7 @@ json_parse_restart:
   case 0x0a:
   case 0x0d:
   case 0x20: {
-    do{
-      i++;
-    }while( fast_isspace(z[i]) );
+    i += 1 + strspn(&z[i+1], jsonSpaces);
     goto json_parse_restart;
   }
   case 0x0b:
@@ -1743,7 +1665,7 @@ json_parse_restart:
   }
   case 'n': {
     if( strncmp(z+i,"null",4)==0 && !sqlite3Isalnum(z[i+4]) ){
-      jsonParseAddNode(pParse, JSON_NULL, 0, 0);
+      jsonBlobAppendOneByte(pParse, JSONB_NULL);
       return i+4;
     }
     /* fall-through into the default case that checks for NaN */
@@ -1759,8 +1681,11 @@ json_parse_restart:
         continue;
       }
       if( sqlite3Isalnum(z[i+nn]) ) continue;
-      jsonParseAddNode(pParse, aNanInfName[k].eType,
-          aNanInfName[k].nRepl, aNanInfName[k].zRepl);
+      if( aNanInfName[k].eType==JSONB_FLOAT ){
+        jsonBlobAppendNode(pParse, JSONB_FLOAT, 5, "9e999");
+      }else{
+        jsonBlobAppendOneByte(pParse, JSONB_NULL);
+      }
       pParse->hasNonstd = 1;
       return i + nn;
     }
@@ -1770,6 +1695,7 @@ json_parse_restart:
   } /* End switch(z[i]) */
 }
 
+
 /*
 ** Parse a complete JSON string.  Return 0 on success or non-zero if there
 ** are any errors.  If an error occurs, free all memory held by pParse,
@@ -1778,20 +1704,21 @@ json_parse_restart:
 ** pParse must be initialized to an empty parse object prior to calling
 ** this routine.
 */
-static int jsonParse(
+static int jsonConvertTextToBlob(
   JsonParse *pParse,           /* Initialize and fill this JsonParse object */
   sqlite3_context *pCtx        /* Report errors here */
 ){
   int i;
   const char *zJson = pParse->zJson;
-  i = jsonParseValue(pParse, 0);
+  i = jsonXlateTextToBlob(pParse, 0);
   if( pParse->oom ) i = -1;
   if( i>0 ){
     assert( pParse->iDepth==0 );
-    while( fast_isspace(zJson[i]) ) i++;
+    while( jsonIsspace(zJson[i]) ) i++;
     if( zJson[i] ){
       i += json5Whitespace(&zJson[i]);
       if( zJson[i] ){
+        if( pCtx ) sqlite3_result_error(pCtx, "malformed JSON", -1);
         jsonParseReset(pParse);
         return 1;
       }
@@ -1812,248 +1739,492 @@ static int jsonParse(
   return 0;
 }
 
-
-/* Mark node i of pParse as being a child of iParent.  Call recursively
-** to fill in all the descendants of node i.
+/*
+** The input string pStr is a well-formed JSON text string.  Convert
+** this into the JSONB format and make it the return value of the
+** SQL function.
 */
-static void jsonParseFillInParentage(JsonParse *pParse, u32 i, u32 iParent){
-  JsonNode *pNode = &pParse->aNode[i];
-  u32 j;
-  pParse->aUp[i] = iParent;
-  switch( pNode->eType ){
-    case JSON_ARRAY: {
-      for(j=1; j<=pNode->n; j += jsonNodeSize(pNode+j)){
-        jsonParseFillInParentage(pParse, i+j, i);
-      }
-      break;
-    }
-    case JSON_OBJECT: {
-      for(j=1; j<=pNode->n; j += jsonNodeSize(pNode+j+1)+1){
-        pParse->aUp[i+j] = i;
-        jsonParseFillInParentage(pParse, i+j+1, i);
-      }
-      break;
-    }
-    default: {
-      break;
-    }
+static void jsonReturnStringAsBlob(JsonString *pStr){
+  JsonParse px;
+  memset(&px, 0, sizeof(px));
+  jsonStringTerminate(pStr);
+  px.zJson = pStr->zBuf;
+  px.nJson = pStr->nUsed;
+  (void)jsonXlateTextToBlob(&px, 0);
+  if( px.oom ){
+    sqlite3_free(px.aBlob);
+    sqlite3_result_error_nomem(pStr->pCtx);
+  }else{
+    assert( px.nBlobAlloc>0 );
+    assert( !px.bReadOnly );
+    sqlite3_result_blob(pStr->pCtx, px.aBlob, px.nBlob, sqlite3_free);
   }
 }
 
-/*
-** Compute the parentage of all nodes in a completed parse.
+/* The byte at index i is a node type-code.  This routine
+** determines the payload size for that node and writes that
+** payload size in to *pSz.  It returns the offset from i to the
+** beginning of the payload.  Return 0 on error.
 */
-static int jsonParseFindParents(JsonParse *pParse){
-  u32 *aUp;
-  assert( pParse->aUp==0 );
-  aUp = pParse->aUp = sqlite3_malloc64( sizeof(u32)*pParse->nNode );
-  if( aUp==0 ){
-    pParse->oom = 1;
-    return SQLITE_NOMEM;
-  }
-  jsonParseFillInParentage(pParse, 0, 0);
-  return SQLITE_OK;
-}
-
-/*
-** Magic number used for the JSON parse cache in sqlite3_get_auxdata()
-*/
-#define JSON_CACHE_ID  (-429938)  /* First cache entry */
-#define JSON_CACHE_SZ  4          /* Max number of cache entries */
-
-/*
-** Obtain a complete parse of the JSON found in the pJson argument
-**
-** Use the sqlite3_get_auxdata() cache to find a preexisting parse
-** if it is available.  If the cache is not available or if it
-** is no longer valid, parse the JSON again and return the new parse.
-** Also register the new parse so that it will be available for
-** future sqlite3_get_auxdata() calls.
-**
-** If an error occurs and pErrCtx!=0 then report the error on pErrCtx
-** and return NULL.
-**
-** The returned pointer (if it is not NULL) is owned by the cache in
-** most cases, not the caller.  The caller does NOT need to invoke
-** jsonParseFree(), in most cases.
-**
-** Except, if an error occurs and pErrCtx==0 then return the JsonParse
-** object with JsonParse.nErr non-zero and the caller will own the JsonParse
-** object.  In that case, it will be the responsibility of the caller to
-** invoke jsonParseFree().  To summarize:
-**
-**   pErrCtx!=0 || p->nErr==0      ==>   Return value p is owned by the
-**                                       cache.  Call does not need to
-**                                       free it.
-**
-**   pErrCtx==0 && p->nErr!=0      ==>   Return value is owned by the caller
-**                                       and so the caller must free it.
-*/
-static JsonParse *jsonParseCached(
-  sqlite3_context *pCtx,         /* Context to use for cache search */
-  sqlite3_value *pJson,          /* Function param containing JSON text */
-  sqlite3_context *pErrCtx,      /* Write parse errors here if not NULL */
-  int bUnedited                  /* No prior edits allowed */
-){
-  char *zJson = (char*)sqlite3_value_text(pJson);
-  int nJson = sqlite3_value_bytes(pJson);
-  JsonParse *p;
-  JsonParse *pMatch = 0;
-  int iKey;
-  int iMinKey = 0;
-  u32 iMinHold = 0xffffffff;
-  u32 iMaxHold = 0;
-  int bJsonRCStr;
-
-  if( zJson==0 ) return 0;
-  for(iKey=0; iKey<JSON_CACHE_SZ; iKey++){
-    p = (JsonParse*)sqlite3_get_auxdata(pCtx, JSON_CACHE_ID+iKey);
-    if( p==0 ){
-      iMinKey = iKey;
-      break;
-    }
-    if( pMatch==0
-     && p->nJson==nJson
-     && (p->hasMod==0 || bUnedited==0)
-     && (p->zJson==zJson || memcmp(p->zJson,zJson,nJson)==0)
-    ){
-      p->nErr = 0;
-      p->useMod = 0;
-      pMatch = p;
-    }else
-    if( pMatch==0
-     && p->zAlt!=0
-     && bUnedited==0
-     && p->nAlt==nJson
-     && memcmp(p->zAlt, zJson, nJson)==0
-    ){
-      p->nErr = 0;
-      p->useMod = 1;
-      pMatch = p;
-    }else if( p->iHold<iMinHold ){
-      iMinHold = p->iHold;
-      iMinKey = iKey;
-    }
-    if( p->iHold>iMaxHold ){
-      iMaxHold = p->iHold;
-    }
-  }
-  if( pMatch ){
-    /* The input JSON text was found in the cache.  Use the preexisting
-    ** parse of this JSON */
-    pMatch->nErr = 0;
-    pMatch->iHold = iMaxHold+1;
-    assert( pMatch->nJPRef>0 ); /* pMatch is owned by the cache */
-    return pMatch;
-  }
-
-  /* The input JSON was not found anywhere in the cache.  We will need
-  ** to parse it ourselves and generate a new JsonParse object.
-  */
-  bJsonRCStr = sqlite3ValueIsOfClass(pJson,sqlite3RCStrUnref);
-  p = sqlite3_malloc64( sizeof(*p) + (bJsonRCStr ? 0 : nJson+1) );
-  if( p==0 ){
-    sqlite3_result_error_nomem(pCtx);
+static u32 jsonbPayloadSize(const JsonParse *pParse, u32 i, u32 *pSz){
+  u8 x;
+  u32 sz;
+  u32 n;
+  if( NEVER(i>pParse->nBlob) ){
+    *pSz = 0;
     return 0;
   }
-  memset(p, 0, sizeof(*p));
-  if( bJsonRCStr ){
-    p->zJson = sqlite3RCStrRef(zJson);
-    p->bJsonIsRCStr = 1;
-  }else{
-    p->zJson = (char*)&p[1];
-    memcpy(p->zJson, zJson, nJson+1);
-  }
-  p->nJPRef = 1;
-  if( jsonParse(p, pErrCtx) ){
-    if( pErrCtx==0 ){
-      p->nErr = 1;
-      assert( p->nJPRef==1 ); /* Caller will own the new JsonParse object p */
-      return p;
-    }
-    jsonParseFree(p);
-    return 0;
-  }
-  p->nJson = nJson;
-  p->iHold = iMaxHold+1;
-  /* Transfer ownership of the new JsonParse to the cache */
-  sqlite3_set_auxdata(pCtx, JSON_CACHE_ID+iMinKey, p,
-                      (void(*)(void*))jsonParseFree);
-  return (JsonParse*)sqlite3_get_auxdata(pCtx, JSON_CACHE_ID+iMinKey);
-}
-
-/*
-** Compare the OBJECT label at pNode against zKey,nKey.  Return true on
-** a match.
-*/
-static int jsonLabelCompare(const JsonNode *pNode, const char *zKey, u32 nKey){
-  assert( pNode->eU==1 );
-  if( pNode->jnFlags & JNODE_RAW ){
-    if( pNode->n!=nKey ) return 0;
-    return strncmp(pNode->u.zJContent, zKey, nKey)==0;
-  }else{
-    if( pNode->n!=nKey+2 ) return 0;
-    return strncmp(pNode->u.zJContent+1, zKey, nKey)==0;
-  }
-}
-static int jsonSameLabel(const JsonNode *p1, const JsonNode *p2){
-  if( p1->jnFlags & JNODE_RAW ){
-    return jsonLabelCompare(p2, p1->u.zJContent, p1->n);
-  }else if( p2->jnFlags & JNODE_RAW ){
-    return jsonLabelCompare(p1, p2->u.zJContent, p2->n);
-  }else{
-    return p1->n==p2->n && strncmp(p1->u.zJContent,p2->u.zJContent,p1->n)==0;
-  }
-}
-
-/* forward declaration */
-static JsonNode *jsonLookupAppend(JsonParse*,const char*,int*,const char**);
-
-/*
-** Search along zPath to find the node specified.  Return a pointer
-** to that node, or NULL if zPath is malformed or if there is no such
-** node.
-**
-** If pApnd!=0, then try to append new nodes to complete zPath if it is
-** possible to do so and if no existing node corresponds to zPath.  If
-** new nodes are appended *pApnd is set to 1.
-*/
-static JsonNode *jsonLookupStep(
-  JsonParse *pParse,      /* The JSON to search */
-  u32 iRoot,              /* Begin the search at this node */
-  const char *zPath,      /* The path to search */
-  int *pApnd,             /* Append nodes to complete path if not NULL */
-  const char **pzErr      /* Make *pzErr point to any syntax error in zPath */
-){
-  u32 i, j, nKey;
-  const char *zKey;
-  JsonNode *pRoot;
-  if( pParse->oom ) return 0;
-  pRoot = &pParse->aNode[iRoot];
-  if( pRoot->jnFlags & (JNODE_REPLACE|JNODE_REMOVE) && pParse->useMod ){
-    while( (pRoot->jnFlags & JNODE_REPLACE)!=0 ){
-      u32 idx = (u32)(pRoot - pParse->aNode);
-      i = pParse->iSubst;
-      while( 1 /*exit-by-break*/ ){
-        assert( i<pParse->nNode );
-        assert( pParse->aNode[i].eType==JSON_SUBST );
-        assert( pParse->aNode[i].eU==4 );
-        assert( pParse->aNode[i].u.iPrev<i );
-        if( pParse->aNode[i].n==idx ){
-          pRoot = &pParse->aNode[i+1];
-          iRoot = i+1;
-          break;
-        }
-        i = pParse->aNode[i].u.iPrev;
-      }
-    }
-    if( pRoot->jnFlags & JNODE_REMOVE ){
+  x = pParse->aBlob[i]>>4;
+  if( x<=11 ){
+    sz = x;
+    n = 1;
+  }else if( x==12 ){
+    if( i+1>=pParse->nBlob ){
+      *pSz = 0;
       return 0;
     }
+    sz = pParse->aBlob[i+1];
+    n = 2;
+  }else if( x==13 ){
+    if( i+2>=pParse->nBlob ){
+      *pSz = 0;
+      return 0;
+    }
+    sz = (pParse->aBlob[i+1]<<8) + pParse->aBlob[i+2];
+    n = 3;
+  }else{
+    if( i+4>=pParse->nBlob ){
+      *pSz = 0;
+      return 0;
+    }
+    sz = (pParse->aBlob[i+1]<<24) + (pParse->aBlob[i+2]<<16) +
+         (pParse->aBlob[i+3]<<8) + pParse->aBlob[i+4];
+    n = 5;
   }
-  if( zPath[0]==0 ) return pRoot;
+  if( i+sz+n > pParse->nBlob
+   && i+sz+n > pParse->nBlob-pParse->delta
+  ){
+    sz = 0;
+    n = 0;
+  }
+  *pSz = sz;
+  return n;
+}
+
+
+/*
+** Translate the binary JSONB representation of JSON beginning at
+** pParse->aBlob[i] into a JSON text string.  Append the JSON
+** text onto the end of pOut.  Return the index in pParse->aBlob[]
+** of the first byte past the end of the element that is translated.
+**
+** If an error is detected in the BLOB input, the pOut->eErr flag
+** might get set to JSTRING_MALFORMED.  But not all BLOB input errors
+** are detected.  So a malformed JSONB input might either result
+** in an error, or in incorrect JSON.
+**
+** The pOut->eErr JSTRING_OOM flag is set on a OOM.
+*/
+static u32 jsonXlateBlobToText(
+  const JsonParse *pParse,       /* the complete parse of the JSON */
+  u32 i,                         /* Start rendering at this index */
+  JsonString *pOut               /* Write JSON here */
+){
+  u32 sz, n, j, iEnd;
+
+  n = jsonbPayloadSize(pParse, i, &sz);
+  if( n==0 ){
+    pOut->eErr |= JSTRING_MALFORMED;
+    return pParse->nBlob+1;
+  }
+  switch( pParse->aBlob[i] & 0x0f ){
+    case JSONB_NULL: {
+      jsonAppendRawNZ(pOut, "null", 4);
+      return i+1;
+    }
+    case JSONB_TRUE: {
+      jsonAppendRawNZ(pOut, "true", 4);
+      return i+1;
+    }
+    case JSONB_FALSE: {
+      jsonAppendRawNZ(pOut, "false", 5);
+      return i+1;
+    }
+    case JSONB_INT:
+    case JSONB_FLOAT: {
+      jsonAppendRaw(pOut, (const char*)&pParse->aBlob[i+n], sz);
+      break;
+    }
+    case JSONB_INT5: {  /* Integer literal in hexadecimal notation */
+      u32 k = 2;
+      sqlite3_uint64 u = 0;
+      const char *zIn = (const char*)&pParse->aBlob[i+n];
+      int bOverflow = 0;
+      if( zIn[0]=='-' ){
+        jsonAppendChar(pOut, '-');
+        k++;
+      }else if( zIn[0]=='+' ){
+        k++;
+      }
+      for(; k<sz; k++){
+        if( !sqlite3Isxdigit(zIn[k]) ){
+          pOut->eErr |= JSTRING_MALFORMED;
+          break;
+        }else if( (u>>60)!=0 ){
+          bOverflow = 1;
+        }else{
+          u = u*16 + sqlite3HexToInt(zIn[k]);
+        }
+      }
+      jsonPrintf(100,pOut,bOverflow?"9.0e999":"%llu", u);
+      break;
+    }
+    case JSONB_FLOAT5: { /* Float literal missing digits beside "." */
+      u32 k = 0;
+      const char *zIn = (const char*)&pParse->aBlob[i+n];
+      if( zIn[0]=='-' ){
+        jsonAppendChar(pOut, '-');
+        k++;
+      }
+      if( zIn[k]=='.' ){
+        jsonAppendChar(pOut, '0');
+      }
+      for(; k<sz; k++){
+        jsonAppendChar(pOut, zIn[k]);
+        if( zIn[k]=='.' && (k+1==sz || !sqlite3Isdigit(zIn[k+1])) ){
+          jsonAppendChar(pOut, '0');
+        }
+      }
+      break;
+    }
+    case JSONB_TEXTJ: {
+      jsonAppendChar(pOut, '"');
+      jsonAppendRaw(pOut, (const char*)&pParse->aBlob[i+n], sz);
+      jsonAppendChar(pOut, '"');
+      break;
+    }
+    case JSONB_TEXT:
+    case JSONB_TEXT5: {
+      const char *zIn;
+      u32 k;
+      u32 sz2 = sz;
+      zIn = (const char*)&pParse->aBlob[i+n];
+      jsonAppendChar(pOut, '"');
+      while( sz2>0 ){
+        for(k=0; k<sz2 && zIn[k]!='\\' && zIn[k]!='"'; k++){}
+        if( k>0 ){
+          jsonAppendRawNZ(pOut, zIn, k);
+          if( k>=sz2 ){
+            break;
+          }
+          zIn += k;
+          sz2 -= k;
+        }
+        if( zIn[0]=='"' ){
+          jsonAppendRawNZ(pOut, "\\\"", 2);
+          zIn++;
+          sz2--;
+          continue;
+        }
+        assert( zIn[0]=='\\' );
+        assert( sz2>=1 );
+        if( sz2<2 ){
+          pOut->eErr |= JSTRING_MALFORMED;
+          break;
+        }
+        switch( (u8)zIn[1] ){
+          case '\'':
+            jsonAppendChar(pOut, '\'');
+            break;
+          case 'v':
+            jsonAppendRawNZ(pOut, "\\u0009", 6);
+            break;
+          case 'x':
+            if( sz2<4 ){
+              pOut->eErr |= JSTRING_MALFORMED;
+              sz2 = 2;
+              break;
+            }
+            jsonAppendRawNZ(pOut, "\\u00", 4);
+            jsonAppendRawNZ(pOut, &zIn[2], 2);
+            zIn += 2;
+            sz2 -= 2;
+            break;
+          case '0':
+            jsonAppendRawNZ(pOut, "\\u0000", 6);
+            break;
+          case '\r':
+            if( sz2>2 && zIn[2]=='\n' ){
+              zIn++;
+              sz2--;
+            }
+            break;
+          case '\n':
+            break;
+          case 0xe2:
+            /* '\' followed by either U+2028 or U+2029 is ignored as
+            ** whitespace.  Not that in UTF8, U+2028 is 0xe2 0x80 0x29.
+            ** U+2029 is the same except for the last byte */
+            if( sz2<4
+             || 0x80!=(u8)zIn[2]
+             || (0xa8!=(u8)zIn[3] && 0xa9!=(u8)zIn[3])
+            ){
+              pOut->eErr |= JSTRING_MALFORMED;
+              sz2 = 2;
+              break;
+            }
+            zIn += 2;
+            sz2 -= 2;
+            break;
+          default:
+            jsonAppendRawNZ(pOut, zIn, 2);
+            break;
+        }
+        assert( sz2>=2 );
+        zIn += 2;
+        sz2 -= 2;
+      }
+      jsonAppendChar(pOut, '"');
+      break;
+    }
+    case JSONB_TEXTRAW: {
+      jsonAppendString(pOut, (const char*)&pParse->aBlob[i+n], sz);
+      break;
+    }
+    case JSONB_ARRAY: {
+      jsonAppendChar(pOut, '[');
+      j = i+n;
+      iEnd = j+sz;
+      while( j<iEnd ){
+        j = jsonXlateBlobToText(pParse, j, pOut);
+        jsonAppendChar(pOut, ',');
+      }
+      if( sz>0 ) pOut->nUsed--;
+      jsonAppendChar(pOut, ']');
+      break;
+    }
+    case JSONB_OBJECT: {
+      int x = 0;
+      jsonAppendChar(pOut, '{');
+      j = i+n;
+      iEnd = j+sz;
+      while( j<iEnd ){
+        j = jsonXlateBlobToText(pParse, j, pOut);
+        jsonAppendChar(pOut, (x++ & 1) ? ',' : ':');
+      }
+      if( x & 1 ) pOut->eErr |= JSTRING_MALFORMED;
+      if( sz>0 ) pOut->nUsed--;
+      jsonAppendChar(pOut, '}');
+      break;
+    }
+
+    default: {
+      pOut->eErr |= JSTRING_MALFORMED;
+      break;
+    }
+  }
+  return i+n+sz;
+}
+
+/* Return true if the input pJson
+**
+** For performance reasons, this routine does not do a detailed check of the
+** input BLOB to ensure that it is well-formed.  Hence, false positives are
+** possible.  False negatives should never occur, however.
+*/
+static int jsonFuncArgMightBeBinary(sqlite3_value *pJson){
+  u32 sz, n;
+  const u8 *aBlob;
+  int nBlob;
+  JsonParse s;
+  if( sqlite3_value_type(pJson)!=SQLITE_BLOB ) return 0;
+  aBlob = sqlite3_value_blob(pJson);
+  nBlob = sqlite3_value_bytes(pJson);
+  if( nBlob<1 ) return 0;
+  if( NEVER(aBlob==0) || (aBlob[0] & 0x0f)>JSONB_OBJECT ) return 0;
+  memset(&s, 0, sizeof(s));
+  s.aBlob = (u8*)aBlob;
+  s.nBlob = nBlob;
+  n = jsonbPayloadSize(&s, 0, &sz);
+  if( n==0 ) return 0;
+  if( sz+n!=(u32)nBlob ) return 0;
+  if( (aBlob[0] & 0x0f)<=JSONB_FALSE && sz>0 ) return 0;
+  return sz+n==(u32)nBlob;
+}
+
+/*
+** Given that a JSONB_ARRAY object starts at offset i, return
+** the number of entries in that array.
+*/
+static u32 jsonbArrayCount(JsonParse *pParse, u32 iRoot){
+  u32 n, sz, i, iEnd;
+  u32 k = 0;
+  n = jsonbPayloadSize(pParse, iRoot, &sz);
+  iEnd = iRoot+n+sz;
+  for(i=iRoot+n; n>0 && i<iEnd; i+=sz+n, k++){
+    n = jsonbPayloadSize(pParse, i, &sz);
+  }
+  return k;
+}
+
+/*
+** Edit the payload size of the element at iRoot by the amount in
+** pParse->delta.
+*/
+static void jsonAfterEditSizeAdjust(JsonParse *pParse, u32 iRoot){
+  u32 sz = 0;
+  u32 nBlob;
+  assert( pParse->delta!=0 );
+  assert( pParse->nBlobAlloc >= pParse->nBlob );
+  nBlob = pParse->nBlob;
+  pParse->nBlob = pParse->nBlobAlloc;
+  (void)jsonbPayloadSize(pParse, iRoot, &sz);
+  pParse->nBlob = nBlob;
+  sz += pParse->delta;
+  pParse->delta += jsonBlobChangePayloadSize(pParse, iRoot, sz);
+}
+
+/*
+** Modify the JSONB blob at pParse->aBlob by removing nDel bytes of
+** content beginning at iDel, and replacing them with nIns bytes of
+** content given by aIns.
+**
+** nDel may be zero, in which case no bytes are removed.  But iDel is
+** still important as new bytes will be insert beginning at iDel.
+**
+** aIns may be zero, in which case space is created to hold nIns bytes
+** beginning at iDel, but that space is uninitialized.
+**
+** Set pParse->oom if an OOM occurs.
+*/
+static void jsonBlobEdit(
+  JsonParse *pParse,     /* The JSONB to be modified is in pParse->aBlob */
+  u32 iDel,              /* First byte to be removed */
+  u32 nDel,              /* Number of bytes to remove */
+  const u8 *aIns,        /* Content to insert */
+  u32 nIns               /* Bytes of content to insert */
+){
+  i64 d = (i64)nIns - (i64)nDel;
+  if( d!=0 ){
+    if( pParse->nBlob + d > pParse->nBlobAlloc ){
+      jsonBlobExpand(pParse, pParse->nBlob+d);
+      if( pParse->oom ) return;
+    }
+    memmove(&pParse->aBlob[iDel+nIns],
+            &pParse->aBlob[iDel+nDel],
+            pParse->nBlob - (iDel+nDel));
+    pParse->nBlob += d;
+    pParse->delta += d;
+  }
+  if( nIns && aIns ) memcpy(&pParse->aBlob[iDel], aIns, nIns);
+}
+
+/*
+** Error returns from jsonLookupStep()
+*/
+#define JSON_LOOKUP_ERROR      0xffffffff
+#define JSON_LOOKUP_NOTFOUND   0xfffffffe
+#define JSON_LOOKUP_PATHERROR  0xfffffffd
+#define JSON_LOOKUP_ISERROR(x) ((x)>=JSON_LOOKUP_PATHERROR)
+
+/* Forward declaration */
+static u32 jsonLookupStep(JsonParse*,u32,const char*,u32);
+
+
+/* This helper routine for jsonLookupStep() populates pIns with
+** binary data that is to be inserted into pParse.
+**
+** In the common case, pIns just points to pParse->aIns and pParse->nIns.
+** But if the zPath of the original edit operation includes path elements
+** that go deeper, additional substructure must be created.
+**
+** For example:
+**
+**     json_insert('{}', '$.a.b.c', 123);
+**
+** The search stops at '$.a'  But additional substructure must be
+** created for the ".b.c" part of the patch so that the final result
+** is:  {"a":{"b":{"c"::123}}}.  This routine populates pIns with
+** the binary equivalent of {"b":{"c":123}} so that it can be inserted.
+**
+** The caller is responsible for resetting pIns when it has finished
+** using the substructure.
+*/
+static u32 jsonCreateEditSubstructure(
+  JsonParse *pParse,  /* The original JSONB that is being edited */
+  JsonParse *pIns,    /* Populate this with the blob data to insert */
+  const char *zTail   /* Tail of the path that determins substructure */
+){
+  static const u8 emptyObject[] = { JSONB_ARRAY, JSONB_OBJECT };
+  int rc;
+  memset(pIns, 0, sizeof(*pIns));
+  if( zTail[0]==0 ){
+    /* No substructure.  Just insert what is given in pParse. */
+    pIns->aBlob = pParse->aIns;
+    pIns->nBlob = pParse->nIns;
+    rc = 0;
+  }else{
+    /* Construct the binary substructure */
+    pIns->nBlob = 1;
+    pIns->aBlob = (u8*)&emptyObject[zTail[0]=='.'];
+    pIns->eEdit = pParse->eEdit;
+    pIns->nIns = pParse->nIns;
+    pIns->aIns = pParse->aIns;
+    rc = jsonLookupStep(pIns, 0, zTail, 0);
+    pParse->oom |= pIns->oom;
+  }
+  return rc;  /* Error code only */
+}
+
+/*
+** Search along zPath to find the Json element specified.  Return an
+** index into pParse->aBlob[] for the start of that element's value.
+**
+** If the value found by this routine is the value half of label/value pair
+** within an object, then set pPath->iLabel to the start of the corresponding
+** label, before returning.
+**
+** Return one of the JSON_LOOKUP error codes if problems are seen.
+**
+** This routine will also modify the blob.  If pParse->eEdit is one of
+** JEDIT_DEL, JEDIT_REPL, JEDIT_INS, or JEDIT_SET, then changes might be
+** made to the selected value.  If an edit is performed, then the return
+** value does not necessarily point to the select element.  If an edit
+** is performed, the return value is only useful for detecting error
+** conditions.
+*/
+static u32 jsonLookupStep(
+  JsonParse *pParse,      /* The JSON to search */
+  u32 iRoot,              /* Begin the search at this element of aBlob[] */
+  const char *zPath,      /* The path to search */
+  u32 iLabel              /* Label if iRoot is a value of in an object */
+){
+  u32 i, j, k, nKey, sz, n, iEnd, rc;
+  const char *zKey;
+  u8 x;
+
+  if( zPath[0]==0 ){
+    if( pParse->eEdit && jsonBlobMakeEditable(pParse, pParse->nIns) ){
+      n = jsonbPayloadSize(pParse, iRoot, &sz);
+      sz += n;
+      if( pParse->eEdit==JEDIT_DEL ){
+        if( iLabel>0 ){
+          sz += iRoot - iLabel;
+          iRoot = iLabel;
+        }
+        jsonBlobEdit(pParse, iRoot, sz, 0, 0);
+      }else if( pParse->eEdit==JEDIT_INS ){
+        /* Already exists, so json_insert() is a no-op */
+      }else{
+        /* json_set() or json_replace() */
+        jsonBlobEdit(pParse, iRoot, sz, pParse->aIns, pParse->nIns);
+      }
+    }
+    pParse->iLabel = iLabel;
+    return iRoot;
+  }
   if( zPath[0]=='.' ){
-    if( pRoot->eType!=JSON_OBJECT ) return 0;
+    x = pParse->aBlob[iRoot];
     zPath++;
     if( zPath[0]=='"' ){
       zKey = zPath + 1;
@@ -2062,8 +2233,7 @@ static JsonNode *jsonLookupStep(
       if( zPath[i] ){
         i++;
       }else{
-        *pzErr = zPath;
-        return 0;
+        return JSON_LOOKUP_PATHERROR;
       }
       testcase( nKey==0 );
     }else{
@@ -2071,242 +2241,667 @@ static JsonNode *jsonLookupStep(
       for(i=0; zPath[i] && zPath[i]!='.' && zPath[i]!='['; i++){}
       nKey = i;
       if( nKey==0 ){
-        *pzErr = zPath;
-        return 0;
+        return JSON_LOOKUP_PATHERROR;
       }
     }
-    j = 1;
-    for(;;){
-      while( j<=pRoot->n ){
-        if( jsonLabelCompare(pRoot+j, zKey, nKey) ){
-          return jsonLookupStep(pParse, iRoot+j+1, &zPath[i], pApnd, pzErr);
+    if( (x & 0x0f)!=JSONB_OBJECT ) return JSON_LOOKUP_NOTFOUND;
+    n = jsonbPayloadSize(pParse, iRoot, &sz);
+    j = iRoot + n;  /* j is the index of a label */
+    iEnd = j+sz;
+    while( j<iEnd ){
+      x = pParse->aBlob[j] & 0x0f;
+      if( x<JSONB_TEXT || x>JSONB_TEXTRAW ) return JSON_LOOKUP_ERROR;
+      n = jsonbPayloadSize(pParse, j, &sz);
+      if( n==0 ) return JSON_LOOKUP_ERROR;
+      k = j+n;  /* k is the index of the label text */
+      if( k+sz>=iEnd ) return JSON_LOOKUP_ERROR;
+      if( sz==nKey && memcmp(&pParse->aBlob[k], zKey, nKey)==0 ){
+        u32 v = k+sz;  /* v is the index of the value */
+        if( ((pParse->aBlob[v])&0x0f)>JSONB_OBJECT ) return JSON_LOOKUP_ERROR;
+        n = jsonbPayloadSize(pParse, v, &sz);
+        if( n==0 || v+n+sz>iEnd ) return JSON_LOOKUP_ERROR;
+        assert( j>0 );
+        rc = jsonLookupStep(pParse, v, &zPath[i], j);
+        if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
+        return rc;
+      }
+      j = k+sz;
+      if( ((pParse->aBlob[j])&0x0f)>JSONB_OBJECT ) return JSON_LOOKUP_ERROR;
+      n = jsonbPayloadSize(pParse, j, &sz);
+      if( n==0 ) return JSON_LOOKUP_ERROR;
+      j += n+sz;
+    }
+    if( j>iEnd ) return JSON_LOOKUP_ERROR;
+    if( pParse->eEdit>=JEDIT_INS ){
+      u32 nIns;          /* Total bytes to insert (label+value) */
+      JsonParse v;       /* BLOB encoding of the value to be inserted */
+      JsonParse ix;      /* Header of the label to be inserted */
+      testcase( pParse->eEdit==JEDIT_INS );
+      testcase( pParse->eEdit==JEDIT_SET );
+      memset(&ix, 0, sizeof(ix));
+      jsonBlobAppendNode(&ix,JSONB_TEXTRAW, nKey, 0);
+      pParse->oom |= ix.oom;
+      rc = jsonCreateEditSubstructure(pParse, &v, &zPath[i]);
+      if( !JSON_LOOKUP_ISERROR(rc)
+       && jsonBlobMakeEditable(pParse, ix.nBlob+nKey+v.nBlob)
+      ){
+        assert( !pParse->oom );
+        nIns = ix.nBlob + nKey + v.nBlob;
+        jsonBlobEdit(pParse, j, 0, 0, nIns);
+        if( !pParse->oom ){
+          assert( pParse->aBlob!=0 ); /* Because pParse->oom!=0 */
+          assert( ix.aBlob!=0 );      /* Because pPasre->oom!=0 */
+          memcpy(&pParse->aBlob[j], ix.aBlob, ix.nBlob);
+          k = j + ix.nBlob;
+          memcpy(&pParse->aBlob[k], zKey, nKey);
+          k += nKey;
+          memcpy(&pParse->aBlob[k], v.aBlob, v.nBlob);
+          if( ALWAYS(pParse->delta) ) jsonAfterEditSizeAdjust(pParse, iRoot);
         }
-        j++;
-        j += jsonNodeSize(&pRoot[j]);
       }
-      if( (pRoot->jnFlags & JNODE_APPEND)==0 ) break;
-      if( pParse->useMod==0 ) break;
-      assert( pRoot->eU==2 );
-      iRoot = pRoot->u.iAppend;
-      pRoot = &pParse->aNode[iRoot];
-      j = 1;
-    }
-    if( pApnd ){
-      u32 iStart, iLabel;
-      JsonNode *pNode;
-      assert( pParse->useMod );
-      iStart = jsonParseAddNode(pParse, JSON_OBJECT, 2, 0);
-      iLabel = jsonParseAddNode(pParse, JSON_STRING, nKey, zKey);
-      zPath += i;
-      pNode = jsonLookupAppend(pParse, zPath, pApnd, pzErr);
-      if( pParse->oom ) return 0;
-      if( pNode ){
-        pRoot = &pParse->aNode[iRoot];
-        assert( pRoot->eU==0 );
-        pRoot->u.iAppend = iStart;
-        pRoot->jnFlags |= JNODE_APPEND;
-        VVA( pRoot->eU = 2 );
-        pParse->aNode[iLabel].jnFlags |= JNODE_RAW;
-      }
-      return pNode;
+      jsonParseReset(&v);
+      jsonParseReset(&ix);
+      return rc;
     }
   }else if( zPath[0]=='[' ){
-    i = 0;
-    j = 1;
-    while( sqlite3Isdigit(zPath[j]) ){
-      i = i*10 + zPath[j] - '0';
-      j++;
+    x = pParse->aBlob[iRoot] & 0x0f;
+    if( x!=JSONB_ARRAY )  return JSON_LOOKUP_NOTFOUND;
+    n = jsonbPayloadSize(pParse, iRoot, &sz);
+    k = 0;
+    i = 1;
+    while( sqlite3Isdigit(zPath[i]) ){
+      k = k*10 + zPath[i] - '0';
+      i++;
     }
-    if( j<2 || zPath[j]!=']' ){
+    if( i<2 || zPath[i]!=']' ){
       if( zPath[1]=='#' ){
-        JsonNode *pBase = pRoot;
-        int iBase = iRoot;
-        if( pRoot->eType!=JSON_ARRAY ) return 0;
-        for(;;){
-          while( j<=pBase->n ){
-            if( (pBase[j].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ) i++;
-            j += jsonNodeSize(&pBase[j]);
-          }
-          if( (pBase->jnFlags & JNODE_APPEND)==0 ) break;
-          if( pParse->useMod==0 ) break;
-          assert( pBase->eU==2 );
-          iBase = pBase->u.iAppend;
-          pBase = &pParse->aNode[iBase];
-          j = 1;
-        }
-        j = 2;
+        k = jsonbArrayCount(pParse, iRoot);
+        i = 2;
         if( zPath[2]=='-' && sqlite3Isdigit(zPath[3]) ){
-          unsigned int x = 0;
-          j = 3;
+          unsigned int nn = 0;
+          i = 3;
           do{
-            x = x*10 + zPath[j] - '0';
-            j++;
-          }while( sqlite3Isdigit(zPath[j]) );
-          if( x>i ) return 0;
-          i -= x;
+            nn = nn*10 + zPath[i] - '0';
+            i++;
+          }while( sqlite3Isdigit(zPath[i]) );
+          if( nn>k ) return JSON_LOOKUP_NOTFOUND;
+          k -= nn;
         }
-        if( zPath[j]!=']' ){
-          *pzErr = zPath;
-          return 0;
+        if( zPath[i]!=']' ){
+          return JSON_LOOKUP_PATHERROR;
         }
       }else{
-        *pzErr = zPath;
-        return 0;
+        return JSON_LOOKUP_PATHERROR;
       }
     }
-    if( pRoot->eType!=JSON_ARRAY ) return 0;
-    zPath += j + 1;
-    j = 1;
-    for(;;){
-      while( j<=pRoot->n
-         && (i>0 || ((pRoot[j].jnFlags & JNODE_REMOVE)!=0 && pParse->useMod))
+    j = iRoot+n;
+    iEnd = j+sz;
+    while( j<iEnd ){
+      if( k==0 ){
+        rc = jsonLookupStep(pParse, j, &zPath[i+1], 0);
+        if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
+        return rc;
+      }
+      k--;
+      n = jsonbPayloadSize(pParse, j, &sz);
+      if( n==0 ) return JSON_LOOKUP_ERROR;
+      j += n+sz;
+    }
+    if( j>iEnd ) return JSON_LOOKUP_ERROR;
+    if( k>0 ) return JSON_LOOKUP_NOTFOUND;
+    if( pParse->eEdit>=JEDIT_INS ){
+      JsonParse v;
+      testcase( pParse->eEdit==JEDIT_INS );
+      testcase( pParse->eEdit==JEDIT_SET );
+      rc = jsonCreateEditSubstructure(pParse, &v, &zPath[i+1]);
+      if( !JSON_LOOKUP_ISERROR(rc)
+       && jsonBlobMakeEditable(pParse, v.nBlob)
       ){
-        if( (pRoot[j].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ) i--;
-        j += jsonNodeSize(&pRoot[j]);
+        assert( !pParse->oom );
+        jsonBlobEdit(pParse, j, 0, v.aBlob, v.nBlob);
       }
-      if( i==0 && j<=pRoot->n ) break;
-      if( (pRoot->jnFlags & JNODE_APPEND)==0 ) break;
-      if( pParse->useMod==0 ) break;
-      assert( pRoot->eU==2 );
-      iRoot = pRoot->u.iAppend;
-      pRoot = &pParse->aNode[iRoot];
-      j = 1;
-    }
-    if( j<=pRoot->n ){
-      return jsonLookupStep(pParse, iRoot+j, zPath, pApnd, pzErr);
-    }
-    if( i==0 && pApnd ){
-      u32 iStart;
-      JsonNode *pNode;
-      assert( pParse->useMod );
-      iStart = jsonParseAddNode(pParse, JSON_ARRAY, 1, 0);
-      pNode = jsonLookupAppend(pParse, zPath, pApnd, pzErr);
-      if( pParse->oom ) return 0;
-      if( pNode ){
-        pRoot = &pParse->aNode[iRoot];
-        assert( pRoot->eU==0 );
-        pRoot->u.iAppend = iStart;
-        pRoot->jnFlags |= JNODE_APPEND;
-        VVA( pRoot->eU = 2 );
-      }
-      return pNode;
+      jsonParseReset(&v);
+      if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
+      return rc;
     }
   }else{
-    *pzErr = zPath;
+    return JSON_LOOKUP_PATHERROR; 
   }
-  return 0;
+  return JSON_LOOKUP_NOTFOUND;
 }
 
 /*
-** Append content to pParse that will complete zPath.  Return a pointer
-** to the inserted node, or return NULL if the append fails.
+** Convert a JSON BLOB into text and make that text the return value
+** of an SQL function.
 */
-static JsonNode *jsonLookupAppend(
-  JsonParse *pParse,     /* Append content to the JSON parse */
-  const char *zPath,     /* Description of content to append */
-  int *pApnd,            /* Set this flag to 1 */
-  const char **pzErr     /* Make this point to any syntax error */
+static void jsonReturnTextJsonFromBlob(
+  sqlite3_context *ctx,
+  const u8 *aBlob,
+  u32 nBlob
 ){
-  *pApnd = 1;
-  if( zPath[0]==0 ){
-    jsonParseAddNode(pParse, JSON_NULL, 0, 0);
-    return pParse->oom ? 0 : &pParse->aNode[pParse->nNode-1];
+  JsonParse x;
+  JsonString s;
+
+  if( NEVER(aBlob==0) ) return;
+  memset(&x, 0, sizeof(x));
+  x.aBlob = (u8*)aBlob;
+  x.nBlob = nBlob;
+  jsonStringInit(&s, ctx);
+  jsonXlateBlobToText(&x, 0, &s);
+  jsonReturnString(&s, 0, 0);
+}
+
+
+/*
+** Return the value of the BLOB node at index i.
+**
+** If the value is a primitive, return it as an SQL value.
+** If the value is an array or object, return it as either
+** JSON text or the BLOB encoding, depending on the JSON_B flag
+** on the userdata.
+*/
+static void jsonReturnFromBlob(
+  JsonParse *pParse,          /* Complete JSON parse tree */
+  u32 i,                      /* Index of the node */
+  sqlite3_context *pCtx,      /* Return value for this function */
+  int textOnly                /* return text JSON.  Disregard user-data */
+){
+  u32 n, sz;
+  int rc;
+  sqlite3 *db = sqlite3_context_db_handle(pCtx);
+
+  n = jsonbPayloadSize(pParse, i, &sz);
+  if( n==0 ){
+    sqlite3_result_error(pCtx, "malformed JSON", -1);
+    return;
   }
-  if( zPath[0]=='.' ){
-    jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
-  }else if( strncmp(zPath,"[0]",3)==0 ){
-    jsonParseAddNode(pParse, JSON_ARRAY, 0, 0);
+  switch( pParse->aBlob[i] & 0x0f ){
+    case JSONB_NULL: {
+      sqlite3_result_null(pCtx);
+      break;
+    }
+    case JSONB_TRUE: {
+      sqlite3_result_int(pCtx, 1);
+      break;
+    }
+    case JSONB_FALSE: {
+      sqlite3_result_int(pCtx, 0);
+      break;
+    }
+    case JSONB_INT5:
+    case JSONB_INT: {
+      sqlite3_int64 iRes = 0;
+      char *z;
+      int bNeg = 0;
+      char x = (char)pParse->aBlob[i+n];
+      if( x=='-' && ALWAYS(sz>0) ){ n++; sz--; bNeg = 1; }
+      z = sqlite3DbStrNDup(db, (const char*)&pParse->aBlob[i+n], (int)sz);
+      if( z==0 ) return;
+      rc = sqlite3DecOrHexToI64(z, &iRes);
+      sqlite3DbFree(db, z);
+      if( rc<=1 ){
+        sqlite3_result_int64(pCtx, bNeg ? -iRes : iRes);
+      }else if( rc==3 && bNeg ){
+        sqlite3_result_int64(pCtx, SMALLEST_INT64);
+      }else{
+        if( bNeg ){ n--; sz++; }
+        goto to_double;
+      }
+      break;
+    }
+    case JSONB_FLOAT5:
+    case JSONB_FLOAT: {
+      double r;
+      char *z;
+    to_double:
+      z = sqlite3DbStrNDup(db, (const char*)&pParse->aBlob[i+n], (int)sz);
+      if( z==0 ) return;
+      sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
+      sqlite3DbFree(db, z);
+      sqlite3_result_double(pCtx, r);
+      break;
+    }
+    case JSONB_TEXTRAW:
+    case JSONB_TEXT: {
+      sqlite3_result_text(pCtx, (char*)&pParse->aBlob[i+n], sz,
+                          SQLITE_TRANSIENT);
+      break;
+    }
+    case JSONB_TEXT5:
+    case JSONB_TEXTJ: {
+      /* Translate JSON formatted string into raw text */
+      u32 iIn, iOut;
+      const char *z;
+      char *zOut;
+      u32 nOut = sz;
+      z = (const char*)&pParse->aBlob[i+n];
+      zOut = sqlite3_malloc( nOut+1 );
+      if( zOut==0 ){
+        sqlite3_result_error_nomem(pCtx);
+        break;
+      }
+      for(iIn=iOut=0; iIn<sz; iIn++){
+        char c = z[iIn];
+        if( c=='\\' ){
+          c = z[++iIn];
+          if( c=='u' ){
+            u32 v = jsonHexToInt4(z+iIn+1);
+            iIn += 4;
+            if( v==0 ) break;
+            if( v<=0x7f ){
+              zOut[iOut++] = (char)v;
+            }else if( v<=0x7ff ){
+              zOut[iOut++] = (char)(0xc0 | (v>>6));
+              zOut[iOut++] = 0x80 | (v&0x3f);
+            }else{
+              u32 vlo;
+              if( (v&0xfc00)==0xd800
+                && iIn<sz-6
+                && z[iIn+1]=='\\'
+                && z[iIn+2]=='u'
+                && ((vlo = jsonHexToInt4(z+iIn+3))&0xfc00)==0xdc00
+              ){
+                /* We have a surrogate pair */
+                v = ((v&0x3ff)<<10) + (vlo&0x3ff) + 0x10000;
+                iIn += 6;
+                zOut[iOut++] = 0xf0 | (v>>18);
+                zOut[iOut++] = 0x80 | ((v>>12)&0x3f);
+                zOut[iOut++] = 0x80 | ((v>>6)&0x3f);
+                zOut[iOut++] = 0x80 | (v&0x3f);
+              }else{
+                zOut[iOut++] = 0xe0 | (v>>12);
+                zOut[iOut++] = 0x80 | ((v>>6)&0x3f);
+                zOut[iOut++] = 0x80 | (v&0x3f);
+              }
+            }
+            continue;
+          }else if( c=='b' ){
+            c = '\b';
+          }else if( c=='f' ){
+            c = '\f';
+          }else if( c=='n' ){
+            c = '\n';
+          }else if( c=='r' ){
+            c = '\r';
+          }else if( c=='t' ){
+            c = '\t';
+          }else if( c=='v' ){
+            c = '\v';
+          }else if( c=='\'' || c=='"' || c=='/' || c=='\\' ){
+            /* pass through unchanged */
+          }else if( c=='0' ){
+            c = 0;
+          }else if( c=='x' ){
+            c = (jsonHexToInt(z[iIn+1])<<4) | jsonHexToInt(z[iIn+2]);
+            iIn += 2;
+          }else if( c=='\r' && z[i+1]=='\n' ){
+            iIn++;
+            continue;
+          }else if( 0xe2==(u8)c
+                 && iIn<sz-2
+                 && 0x80==(u8)z[iIn+1]
+                 && (0xa8==(u8)z[iIn+2] || 0xa9==(u8)z[iIn+2])
+          ){
+            iIn += 2;
+            continue;
+          }else{
+            continue;
+          }
+        } /* end if( c=='\\' ) */
+        zOut[iOut++] = c;
+      } /* end for() */
+      zOut[iOut] = 0;
+      sqlite3_result_text(pCtx, zOut, iOut, sqlite3_free);
+      break;
+    }
+    case JSONB_ARRAY:
+    case JSONB_OBJECT: {
+      int flags = textOnly ? 0 : SQLITE_PTR_TO_INT(sqlite3_user_data(pCtx));
+      if( flags & JSON_BLOB ){
+        sqlite3_result_blob(pCtx, &pParse->aBlob[i], sz+n, SQLITE_TRANSIENT);
+      }else{
+        jsonReturnTextJsonFromBlob(pCtx, &pParse->aBlob[i], sz+n);
+      }
+      break;
+    }
+    default: {
+      sqlite3_result_error(pCtx, "malformed JSON", -1);
+      break;
+    }
+  }
+}
+
+/*
+** pArg is a function argument that might be an SQL value or a JSON
+** value.  Figure out what it is and encode it as a JSONB blob.
+** Return the results in pParse.
+**
+** pParse is uninitialized upon entry.  This routine will handle the
+** initialization of pParse.  The result will be contained in
+** pParse->aBlob and pParse->nBlob.  pParse->aBlob might be dynamically
+** allocated (if pParse->nBlobAlloc is greater than zero) in which case
+** the caller is responsible for freeing the space allocated to pParse->aBlob
+** when it has finished with it.  Or pParse->aBlob might be a static string
+** or a value obtained from sqlite3_value_blob(pArg).
+**
+** If the argument is a BLOB that is clearly not a JSONB, then this
+** function might set an error message in ctx and return non-zero.
+** It might also set an error message and return non-zero on an OOM error.
+*/
+static int jsonFunctionArgToBlob(
+  sqlite3_context *ctx,
+  sqlite3_value *pArg,
+  JsonParse *pParse
+){
+  int eType = sqlite3_value_type(pArg);
+  static u8 aNull[] = { 0x00 };
+  memset(pParse, 0, sizeof(pParse[0]));
+  switch( eType ){
+    default: {
+      pParse->aBlob = aNull;
+      pParse->nBlob = 1;
+      return 0;
+    }
+    case SQLITE_BLOB: {
+      if( jsonFuncArgMightBeBinary(pArg) ){
+        pParse->aBlob = (u8*)sqlite3_value_blob(pArg);
+        pParse->nBlob = sqlite3_value_bytes(pArg);
+      }else{
+        sqlite3_result_error(ctx, "JSON cannot hold BLOB values", -1);
+        return 1;
+      }
+      break;
+    }
+    case SQLITE_TEXT: {
+      const char *zJson = (const char*)sqlite3_value_text(pArg);
+      int nJson = sqlite3_value_bytes(pArg);
+      if( zJson==0 ) return 1;
+      if( sqlite3_value_subtype(pArg)==JSON_SUBTYPE ){
+        pParse->zJson = (char*)zJson;
+        pParse->nJson = nJson;
+        if( jsonConvertTextToBlob(pParse, ctx) ){
+          sqlite3_result_error(ctx, "malformed JSON", -1);
+          sqlite3_free(pParse->aBlob);
+          memset(pParse, 0, sizeof(pParse[0]));
+          return 1;
+        }
+      }else{
+        jsonBlobAppendNode(pParse, JSONB_TEXTRAW, nJson, zJson);
+      }
+      break;
+    }
+    case SQLITE_FLOAT:
+    case SQLITE_INTEGER: {
+      int n = sqlite3_value_bytes(pArg);
+      const char *z = (const char*)sqlite3_value_text(pArg);
+      int e = eType==SQLITE_INTEGER ? JSONB_INT : JSONB_FLOAT;
+      if( z==0 ) return 1;
+      jsonBlobAppendNode(pParse, e, n, z);
+      break;
+    }
+  }
+  if( pParse->oom ){
+    sqlite3_result_error_nomem(ctx);
+    return 1;
   }else{
     return 0;
   }
-  if( pParse->oom ) return 0;
-  return jsonLookupStep(pParse, pParse->nNode-1, zPath, pApnd, pzErr);
 }
 
 /*
-** Return the text of a syntax error message on a JSON path.  Space is
-** obtained from sqlite3_malloc().
-*/
-static char *jsonPathSyntaxError(const char *zErr){
-  return sqlite3_mprintf("JSON path error near '%q'", zErr);
-}
-
-/*
-** Do a node lookup using zPath.  Return a pointer to the node on success.
-** Return NULL if not found or if there is an error.
+** Generate a bad path error.
 **
-** On an error, write an error message into pCtx and increment the
-** pParse->nErr counter.
-**
-** If pApnd!=NULL then try to append missing nodes and set *pApnd = 1 if
-** nodes are appended.
+** If ctx is not NULL then push the error message into ctx and return NULL.
+** If ctx is NULL, then return the text of the error message.
 */
-static JsonNode *jsonLookup(
-  JsonParse *pParse,      /* The JSON to search */
-  const char *zPath,      /* The path to search */
-  int *pApnd,             /* Append nodes to complete path if not NULL */
-  sqlite3_context *pCtx   /* Report errors here, if not NULL */
+static char *jsonBadPathError(
+  sqlite3_context *ctx,     /* The function call containing the error */
+  const char *zPath         /* The path with the problem */
 ){
-  const char *zErr = 0;
-  JsonNode *pNode = 0;
-  char *zMsg;
-
-  if( zPath==0 ) return 0;
-  if( zPath[0]!='$' ){
-    zErr = zPath;
-    goto lookup_err;
-  }
-  zPath++;
-  pNode = jsonLookupStep(pParse, 0, zPath, pApnd, &zErr);
-  if( zErr==0 ) return pNode;
-
-lookup_err:
-  pParse->nErr++;
-  assert( zErr!=0 && pCtx!=0 );
-  zMsg = jsonPathSyntaxError(zErr);
+  char *zMsg = sqlite3_mprintf("bad JSON path: %Q", zPath);
+  if( ctx==0 ) return zMsg;
   if( zMsg ){
-    sqlite3_result_error(pCtx, zMsg, -1);
+    sqlite3_result_error(ctx, zMsg, -1);
     sqlite3_free(zMsg);
   }else{
-    sqlite3_result_error_nomem(pCtx);
+    sqlite3_result_error_nomem(ctx);
   }
   return 0;
 }
 
-
-/*
-** Report the wrong number of arguments for json_insert(), json_replace()
-** or json_set().
+/* argv[0] is a BLOB that seems likely to be a JSONB.  Subsequent
+** arguments come in parse where each pair contains a JSON path and
+** content to insert or set at that patch.  Do the updates
+** and return the result.
+**
+** The specific operation is determined by eEdit, which can be one
+** of JEDIT_INS, JEDIT_REPL, or JEDIT_SET.
 */
-static void jsonWrongNumArgs(
-  sqlite3_context *pCtx,
-  const char *zFuncName
+static void jsonInsertIntoBlob(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv,
+  int eEdit                /* JEDIT_INS, JEDIT_REPL, or JEDIT_SET */
 ){
-  char *zMsg = sqlite3_mprintf("json_%s() needs an odd number of arguments",
-                               zFuncName);
-  sqlite3_result_error(pCtx, zMsg, -1);
-  sqlite3_free(zMsg);
+  int i;
+  u32 rc = 0;
+  const char *zPath = 0;
+  int flgs;
+  JsonParse *p;
+  JsonParse ax;
+
+  assert( (argc&1)==1 );
+  flgs = argc==1 ? 0 : JSON_EDITABLE;
+  p = jsonParseFuncArg(ctx, argv[0], flgs);
+  if( p==0 ) return;
+  for(i=1; i<argc-1; i+=2){
+    if( sqlite3_value_type(argv[i])==SQLITE_NULL ) continue;
+    zPath = (const char*)sqlite3_value_text(argv[i]);
+    if( zPath==0 ){
+      sqlite3_result_error_nomem(ctx);
+      jsonParseFree(p);
+      return;
+    }
+    if( zPath[0]!='$' ) goto jsonInsertIntoBlob_patherror;
+    if( jsonFunctionArgToBlob(ctx, argv[i+1], &ax) ){
+      jsonParseReset(&ax);
+      jsonParseFree(p);
+      return;
+    }
+    if( zPath[1]==0 ){
+      if( eEdit==JEDIT_REPL || eEdit==JEDIT_SET ){
+        jsonBlobEdit(p, 0, p->nBlob, ax.aBlob, ax.nBlob);
+      }
+      rc = 0;
+   }else{
+      p->eEdit = eEdit;
+      p->nIns = ax.nBlob;
+      p->aIns = ax.aBlob;
+      p->delta = 0;
+      rc = jsonLookupStep(p, 0, zPath+1, 0);
+    }
+    jsonParseReset(&ax);
+    if( rc==JSON_LOOKUP_NOTFOUND ) continue;
+    if( JSON_LOOKUP_ISERROR(rc) ) goto jsonInsertIntoBlob_patherror;
+  }
+  jsonReturnParse(ctx, p);
+  jsonParseFree(p);
+  return;
+
+jsonInsertIntoBlob_patherror:
+  jsonParseFree(p);
+  if( rc==JSON_LOOKUP_ERROR ){
+    sqlite3_result_error(ctx, "malformed JSON", -1);
+  }else{
+    jsonBadPathError(ctx, zPath);
+  }
+  return;
 }
 
 /*
-** Mark all NULL entries in the Object passed in as JNODE_REMOVE.
+** Make a copy of a JsonParse object.  The copy will be editable.
 */
-static void jsonRemoveAllNulls(JsonNode *pNode){
-  int i, n;
-  assert( pNode->eType==JSON_OBJECT );
-  n = pNode->n;
-  for(i=2; i<=n; i += jsonNodeSize(&pNode[i])+1){
-    switch( pNode[i].eType ){
-      case JSON_NULL:
-        pNode[i].jnFlags |= JNODE_REMOVE;
-        break;
-      case JSON_OBJECT:
-        jsonRemoveAllNulls(&pNode[i]);
-        break;
+
+
+/*
+** Generate a JsonParse object, containing valid JSONB in aBlob and nBlob,
+** from the SQL function argument pArg.  Return a pointer to the new
+** JsonParse object.
+**
+** Ownership of the new JsonParse object is passed to the caller.  The
+** caller should invoke jsonParseFree() on the return value when it
+** has finished using it.
+**
+** If any errors are detected, an appropriate error messages is set
+** using sqlite3_result_error() or the equivalent and this routine
+** returns NULL.  This routine also returns NULL if the pArg argument
+** is an SQL NULL value, but no error message is set in that case.  This
+** is so that SQL functions that are given NULL arguments will return
+** a NULL value.
+*/
+static JsonParse *jsonParseFuncArg(
+  sqlite3_context *ctx,
+  sqlite3_value *pArg,
+  u32 flgs
+){
+  int eType;                   /* Datatype of pArg */
+  JsonParse *p = 0;            /* Value to be returned */
+  JsonParse *pFromCache = 0;   /* Value taken from cache */
+  
+  assert( ctx!=0 );
+  eType = sqlite3_value_type(pArg);
+  if( eType==SQLITE_NULL ){
+    return 0;
+  }
+  pFromCache = jsonCacheSearch(ctx, pArg);
+  if( pFromCache ){
+    pFromCache->nJPRef++;
+    if( (flgs & JSON_EDITABLE)==0 ){
+      return pFromCache;
     }
   }
+rebuild_from_cache:
+  p = sqlite3_malloc64( sizeof(*p) );
+  if( p==0 ) goto json_pfa_oom;
+  memset(p, 0, sizeof(*p));
+  p->nJPRef = 1;
+  if( pFromCache!=0 ){
+    u32 nBlob = pFromCache->nBlob;
+    p->aBlob = sqlite3_malloc64( nBlob );
+    if( p->aBlob==0 ) goto json_pfa_oom;
+    memcpy(p->aBlob, pFromCache->aBlob, nBlob);
+    p->nBlobAlloc = p->nBlob = nBlob;
+    p->hasNonstd = pFromCache->hasNonstd;
+    jsonParseFree(pFromCache);
+    return p;
+  }
+  if( eType==SQLITE_BLOB ){
+    u32 n, sz = 0;
+    p->aBlob = (u8*)sqlite3_value_blob(pArg);
+    p->nBlob = (u32)sqlite3_value_bytes(pArg);
+    if( p->nBlob==0 ){
+      goto json_pfa_malformed;
+    }
+    if( NEVER(p->aBlob==0) ){
+      goto json_pfa_oom;
+    }
+    if( (p->aBlob[0] & 0x0f)>JSONB_OBJECT ){
+      goto json_pfa_malformed;
+    }
+    n = jsonbPayloadSize(p, 0, &sz);
+    if( n==0 
+     || sz+n!=p->nBlob
+     || ((p->aBlob[0] & 0x0f)<=JSONB_FALSE && sz>0)
+    ){
+      goto json_pfa_malformed;
+    }
+    if( (flgs & JSON_EDITABLE)!=0 && jsonBlobMakeEditable(p, 0)==0 ){
+      goto json_pfa_oom;
+    }
+    return p;
+  }
+  p->zJson = (char*)sqlite3_value_text(pArg);
+  p->nJson = sqlite3_value_bytes(pArg);
+  if( p->nJson==0 ) goto json_pfa_malformed;
+  if( NEVER(p->zJson==0) ) goto json_pfa_oom;
+  if( jsonConvertTextToBlob(p, (flgs & JSON_KEEPERROR) ? 0 : ctx) ){
+    if( flgs & JSON_KEEPERROR ){
+      p->nErr = 1;
+      return p;
+    }else{
+      jsonParseFree(p);
+      return 0;
+    }
+  }else{
+    int isRCStr = sqlite3ValueIsOfClass(pArg, sqlite3RCStrUnref);
+    int rc;
+    if( !isRCStr ){
+      char *zNew = sqlite3RCStrNew( p->nJson );
+      if( zNew==0 ) goto json_pfa_oom;
+      memcpy(zNew, p->zJson, p->nJson);
+      p->zJson = zNew;
+      p->zJson[p->nJson] = 0;
+    }else{
+      sqlite3RCStrRef(p->zJson);
+    }
+    p->bJsonIsRCStr = 1;
+    rc = jsonCacheInsert(ctx, p);
+    if( rc==SQLITE_NOMEM ) goto json_pfa_oom;
+    if( flgs & JSON_EDITABLE ){
+      pFromCache = p;
+      p = 0;
+      goto rebuild_from_cache;
+    }
+  }
+  return p;
+
+json_pfa_malformed:
+  if( flgs & JSON_KEEPERROR ){
+    p->nErr = 1;
+    return p;
+  }else{
+    jsonParseFree(p);
+    sqlite3_result_error(ctx, "malformed JSON", -1);
+    return 0;
+  }
+
+json_pfa_oom:
+  jsonParseFree(pFromCache);
+  jsonParseFree(p);
+  sqlite3_result_error_nomem(ctx);
+  return 0;
 }
 
+/*
+** Make the return value of a JSON function either the raw JSONB blob
+** or make it JSON text, depending on whether the JSON_BLOB flag is
+** set on the function.
+*/
+static void jsonReturnParse(
+  sqlite3_context *ctx,
+  JsonParse *p
+){
+  int flgs;
+  if( p->oom ){
+    sqlite3_result_error_nomem(ctx);
+    return;
+  }
+  flgs = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
+  if( flgs & JSON_BLOB ){
+    if( p->nBlobAlloc>0 && !p->bReadOnly ){
+      sqlite3_result_blob(ctx, p->aBlob, p->nBlob, SQLITE_DYNAMIC);
+      p->nBlobAlloc = 0;
+    }else{
+      sqlite3_result_blob(ctx, p->aBlob, p->nBlob, SQLITE_TRANSIENT);
+    }
+  }else{
+    JsonString s;
+    jsonStringInit(&s, ctx);
+    jsonXlateBlobToText(p, 0, &s);
+    jsonReturnString(&s, p, ctx);
+    sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+  }
+}
 
 /****************************************************************************
 ** SQL functions used for testing and debugging
@@ -2314,63 +2909,116 @@ static void jsonRemoveAllNulls(JsonNode *pNode){
 
 #if SQLITE_DEBUG
 /*
-** Print N node entries.
+** Decode JSONB bytes in aBlob[] starting at iStart through but not 
+** including iEnd.  Indent the
+** content by nIndent spaces.
 */
-static void jsonDebugPrintNodeEntries(
-  JsonNode *aNode,  /* First node entry to print */
-  int N             /* Number of node entries to print */
+static void jsonDebugPrintBlob(
+  JsonParse *pParse, /* JSON content */
+  u32 iStart,        /* Start rendering here */
+  u32 iEnd,          /* Do not render this byte or any byte after this one */
+  int nIndent        /* Indent by this many spaces */
 ){
-  int i;
-  for(i=0; i<N; i++){
-    const char *zType;
-    if( aNode[i].jnFlags & JNODE_LABEL ){
-      zType = "label";
-    }else{
-      zType = jsonType[aNode[i].eType];
+  while( iStart<iEnd ){
+    u32 i, n, nn, sz = 0;
+    int showContent = 1;
+    u8 x = pParse->aBlob[iStart] & 0x0f;
+    u32 savedNBlob = pParse->nBlob;
+    printf("%5d:%*s", iStart, nIndent, "");
+    if( pParse->nBlobAlloc>pParse->nBlob ){
+      pParse->nBlob = pParse->nBlobAlloc;
     }
-    printf("node %4u: %-7s n=%-5d", i, zType, aNode[i].n);
-    if( (aNode[i].jnFlags & ~JNODE_LABEL)!=0 ){
-      u8 f = aNode[i].jnFlags;
-      if( f & JNODE_RAW )     printf(" RAW");
-      if( f & JNODE_ESCAPE )  printf(" ESCAPE");
-      if( f & JNODE_REMOVE )  printf(" REMOVE");
-      if( f & JNODE_REPLACE ) printf(" REPLACE");
-      if( f & JNODE_APPEND )  printf(" APPEND");
-      if( f & JNODE_JSON5 )   printf(" JSON5");
+    nn = n = jsonbPayloadSize(pParse, iStart, &sz);
+    if( nn==0 ) nn = 1;
+    if( sz>0 && x<JSONB_ARRAY ){
+      nn += sz;
     }
-    switch( aNode[i].eU ){
-      case 1:  printf(" zJContent=[%.*s]\n",
-                      aNode[i].n, aNode[i].u.zJContent);           break;
-      case 2:  printf(" iAppend=%u\n", aNode[i].u.iAppend);        break;
-      case 3:  printf(" iKey=%u\n", aNode[i].u.iKey);              break;
-      case 4:  printf(" iPrev=%u\n", aNode[i].u.iPrev);            break;
-      default: printf("\n");
+    for(i=0; i<nn; i++) printf(" %02x", pParse->aBlob[iStart+i]);
+    if( n==0 ){
+      printf("   ERROR invalid node size\n");
+      iStart = n==0 ? iStart+1 : iEnd;
+      continue;
     }
+    pParse->nBlob = savedNBlob;
+    if( iStart+n+sz>iEnd ){
+      iEnd = iStart+n+sz;
+      if( iEnd>pParse->nBlob ){
+        if( pParse->nBlobAlloc>0 && iEnd>pParse->nBlobAlloc ){
+          iEnd = pParse->nBlobAlloc;
+        }else{
+          iEnd = pParse->nBlob;
+        }
+      }
+    }
+    printf("  <-- ");
+    switch( x ){
+      case JSONB_NULL:     printf("null"); break;
+      case JSONB_TRUE:     printf("true"); break;
+      case JSONB_FALSE:    printf("false"); break;
+      case JSONB_INT:      printf("int"); break;
+      case JSONB_INT5:     printf("int5"); break;
+      case JSONB_FLOAT:    printf("float"); break;
+      case JSONB_FLOAT5:   printf("float5"); break;
+      case JSONB_TEXT:     printf("text"); break;
+      case JSONB_TEXTJ:    printf("textj"); break;
+      case JSONB_TEXT5:    printf("text5"); break;
+      case JSONB_TEXTRAW:  printf("textraw"); break;
+      case JSONB_ARRAY: {
+        printf("array, %u bytes\n", sz);
+        jsonDebugPrintBlob(pParse, iStart+n, iStart+n+sz, nIndent+2);
+        showContent = 0;
+        break;
+      }
+      case JSONB_OBJECT: {
+        printf("object, %u bytes\n", sz);
+        jsonDebugPrintBlob(pParse, iStart+n, iStart+n+sz, nIndent+2);
+        showContent = 0;
+        break;
+      }
+      default: {
+        printf("ERROR: unknown node type\n");
+        showContent = 0;
+        break;
+      }
+    }
+    if( showContent ){
+      if( sz==0 && x<=JSONB_FALSE ){
+        printf("\n");
+      }else{
+        u32 i;
+        printf(": \"");
+        for(i=iStart+n; i<iStart+n+sz; i++){
+          u8 c = pParse->aBlob[i];
+          if( c<0x20 || c>=0x7f ) c = '.';
+          putchar(c);
+        }
+        printf("\"\n");
+      }
+    }
+    iStart += n + sz;
   }
 }
+static void jsonShowParse(JsonParse *pParse){
+  if( pParse==0 ){
+    printf("NULL pointer\n");
+    return;
+  }else{
+    printf("nBlobAlloc = %u\n", pParse->nBlobAlloc);
+    printf("nBlob = %u\n", pParse->nBlob);
+    printf("delta = %d\n", pParse->delta);
+    if( pParse->nBlob==0 ) return;
+    printf("content (bytes 0..%u):\n", pParse->nBlob-1);
+  }
+  jsonDebugPrintBlob(pParse, 0, pParse->nBlob, 0);
+}
 #endif /* SQLITE_DEBUG */
-
-
-#if 0  /* 1 for debugging.  0 normally.  Requires -DSQLITE_DEBUG too */
-static void jsonDebugPrintParse(JsonParse *p){
-  jsonDebugPrintNodeEntries(p->aNode, p->nNode);
-}
-static void jsonDebugPrintNode(JsonNode *pNode){
-  jsonDebugPrintNodeEntries(pNode, jsonNodeSize(pNode));
-}
-#else
-   /* The usual case */
-# define jsonDebugPrintNode(X)
-# define jsonDebugPrintParse(X)
-#endif
 
 #ifdef SQLITE_DEBUG
 /*
 ** SQL function:   json_parse(JSON)
 **
-** Parse JSON using jsonParseCached().  Then print a dump of that
-** parse on standard output.  Return the mimified JSON result, just
-** like the json() function.
+** Parse JSON using jsonParseFuncArg().  Then print a dump of that
+** parse on standard output.
 */
 static void jsonParseFunc(
   sqlite3_context *ctx,
@@ -2380,36 +3028,9 @@ static void jsonParseFunc(
   JsonParse *p;        /* The parse */
 
   assert( argc==1 );
-  p = jsonParseCached(ctx, argv[0], ctx, 0);
-  if( p==0 ) return;
-  printf("nNode     = %u\n", p->nNode);
-  printf("nAlloc    = %u\n", p->nAlloc);
-  printf("nJson     = %d\n", p->nJson);
-  printf("nAlt      = %d\n", p->nAlt);
-  printf("nErr      = %u\n", p->nErr);
-  printf("oom       = %u\n", p->oom);
-  printf("hasNonstd = %u\n", p->hasNonstd);
-  printf("useMod    = %u\n", p->useMod);
-  printf("hasMod    = %u\n", p->hasMod);
-  printf("nJPRef    = %u\n", p->nJPRef);
-  printf("iSubst    = %u\n", p->iSubst);
-  printf("iHold     = %u\n", p->iHold);
-  jsonDebugPrintNodeEntries(p->aNode, p->nNode);
-  jsonReturnJson(p, p->aNode, ctx, 1, 0);
-}
-
-/*
-** The json_test1(JSON) function return true (1) if the input is JSON
-** text generated by another json function.  It returns (0) if the input
-** is not known to be JSON.
-*/
-static void jsonTest1Func(
-  sqlite3_context *ctx,
-  int argc,
-  sqlite3_value **argv
-){
-  UNUSED_PARAMETER(argc);
-  sqlite3_result_int(ctx, sqlite3_value_subtype(argv[0])==JSON_SUBTYPE);
+  p = jsonParseFuncArg(ctx, argv[0], 0);
+  jsonShowParse(p);
+  jsonParseFree(p);
 }
 #endif /* SQLITE_DEBUG */
 
@@ -2418,7 +3039,7 @@ static void jsonTest1Func(
 ****************************************************************************/
 
 /*
-** Implementation of the json_QUOTE(VALUE) function.  Return a JSON value
+** Implementation of the json_quote(VALUE) function.  Return a JSON value
 ** corresponding to the SQL value input.  Mostly this means putting
 ** double-quotes around strings and returning the unquoted string "null"
 ** when given a NULL input.
@@ -2431,9 +3052,9 @@ static void jsonQuoteFunc(
   JsonString jx;
   UNUSED_PARAMETER(argc);
 
-  jsonInit(&jx, ctx);
-  jsonAppendValue(&jx, argv[0]);
-  jsonResult(&jx);
+  jsonStringInit(&jx, ctx);
+  jsonAppendSqlValue(&jx, argv[0]);
+  jsonReturnString(&jx, 0, 0);
   sqlite3_result_subtype(ctx, JSON_SUBTYPE);
 }
 
@@ -2450,17 +3071,16 @@ static void jsonArrayFunc(
   int i;
   JsonString jx;
 
-  jsonInit(&jx, ctx);
+  jsonStringInit(&jx, ctx);
   jsonAppendChar(&jx, '[');
   for(i=0; i<argc; i++){
     jsonAppendSeparator(&jx);
-    jsonAppendValue(&jx, argv[i]);
+    jsonAppendSqlValue(&jx, argv[i]);
   }
   jsonAppendChar(&jx, ']');
-  jsonResult(&jx);
+  jsonReturnString(&jx, 0, 0);
   sqlite3_result_subtype(ctx, JSON_SUBTYPE);
 }
-
 
 /*
 ** json_array_length(JSON)
@@ -2475,46 +3095,39 @@ static void jsonArrayLengthFunc(
   sqlite3_value **argv
 ){
   JsonParse *p;          /* The parse */
-  sqlite3_int64 n = 0;
+  sqlite3_int64 cnt = 0;
   u32 i;
-  JsonNode *pNode;
+  u8 eErr = 0;
 
-  p = jsonParseCached(ctx, argv[0], ctx, 0);
+  p = jsonParseFuncArg(ctx, argv[0], 0);
   if( p==0 ) return;
-  assert( p->nNode );
   if( argc==2 ){
     const char *zPath = (const char*)sqlite3_value_text(argv[1]);
-    pNode = jsonLookup(p, zPath, 0, ctx);
-  }else{
-    pNode = p->aNode;
-  }
-  if( pNode==0 ){
-    return;
-  }
-  if( pNode->eType==JSON_ARRAY ){
-    while( 1 /*exit-by-break*/ ){
-      i = 1;
-      while( i<=pNode->n ){
-        if( (pNode[i].jnFlags & JNODE_REMOVE)==0 ) n++;
-        i += jsonNodeSize(&pNode[i]);
-      }
-      if( (pNode->jnFlags & JNODE_APPEND)==0 ) break;
-      if( p->useMod==0 ) break;
-      assert( pNode->eU==2 );
-      pNode = &p->aNode[pNode->u.iAppend];
+    if( zPath==0 ){
+      jsonParseFree(p);
+      return;
     }
+    i = jsonLookupStep(p, 0, zPath[0]=='$' ? zPath+1 : "@", 0);
+    if( JSON_LOOKUP_ISERROR(i) ){
+      if( i==JSON_LOOKUP_NOTFOUND ){
+        /* no-op */
+      }else if( i==JSON_LOOKUP_PATHERROR ){
+        jsonBadPathError(ctx, zPath);
+      }else{
+        sqlite3_result_error(ctx, "malformed JSON", -1);
+      }
+      eErr = 1;
+      i = 0;
+    }
+  }else{
+    i = 0;
   }
-  sqlite3_result_int64(ctx, n);
+  if( (p->aBlob[i] & 0x0f)==JSONB_ARRAY ){
+    cnt = jsonbArrayCount(p, i);
+  }
+  if( !eErr ) sqlite3_result_int64(ctx, cnt);
+  jsonParseFree(p);
 }
-
-/*
-** Bit values for the flags passed into jsonExtractFunc() or
-** jsonSetFunc() via the user-data value.
-*/
-#define JSON_JSON      0x01        /* Result is always JSON */
-#define JSON_SQL       0x02        /* Result is always SQL */
-#define JSON_ABPATH    0x03        /* Allow abbreviated JSON path specs */
-#define JSON_ISSET     0x04        /* json_set(), not json_insert() */
 
 /*
 ** json_extract(JSON, PATH, ...)
@@ -2541,150 +3154,320 @@ static void jsonExtractFunc(
   int argc,
   sqlite3_value **argv
 ){
-  JsonParse *p;          /* The parse */
-  JsonNode *pNode;
-  const char *zPath;
-  int flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
-  JsonString jx;
+  JsonParse *p = 0;      /* The parse */
+  int flags;             /* Flags associated with the function */
+  int i;                 /* Loop counter */
+  JsonString jx;         /* String for array result */
 
   if( argc<2 ) return;
-  p = jsonParseCached(ctx, argv[0], ctx, 0);
+  p = jsonParseFuncArg(ctx, argv[0], 0);
   if( p==0 ) return;
-  if( argc==2 ){
-    /* With a single PATH argument */
-    zPath = (const char*)sqlite3_value_text(argv[1]);
-    if( zPath==0 ) return;
-    if( flags & JSON_ABPATH ){
-      if( zPath[0]!='$' || (zPath[1]!='.' && zPath[1]!='[' && zPath[1]!=0) ){
-        /* The -> and ->> operators accept abbreviated PATH arguments.  This
-        ** is mostly for compatibility with PostgreSQL, but also for
-        ** convenience.
-        **
-        **     NUMBER   ==>  $[NUMBER]     // PG compatible
-        **     LABEL    ==>  $.LABEL       // PG compatible
-        **     [NUMBER] ==>  $[NUMBER]     // Not PG.  Purely for convenience
-        */
-        jsonInit(&jx, ctx);
-        if( sqlite3Isdigit(zPath[0]) ){
-          jsonAppendRawNZ(&jx, "$[", 2);
-          jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
-          jsonAppendRawNZ(&jx, "]", 2);
-        }else{
-          jsonAppendRawNZ(&jx, "$.", 1 + (zPath[0]!='['));
-          jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
-          jsonAppendChar(&jx, 0);
-        }
-        pNode = jx.bErr ? 0 : jsonLookup(p, jx.zBuf, 0, ctx);
-        jsonReset(&jx);
-      }else{
-        pNode = jsonLookup(p, zPath, 0, ctx);
-      }
-      if( pNode ){
-        if( flags & JSON_JSON ){
-          jsonReturnJson(p, pNode, ctx, 0, 0);
-        }else{
-          jsonReturn(p, pNode, ctx, 1);
-        }
-      }
-    }else{
-      pNode = jsonLookup(p, zPath, 0, ctx);
-      if( p->nErr==0 && pNode ) jsonReturn(p, pNode, ctx, 0);
-    }
-  }else{
-    /* Two or more PATH arguments results in a JSON array with each
-    ** element of the array being the value selected by one of the PATHs */
-    int i;
-    jsonInit(&jx, ctx);
+  flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
+  jsonStringInit(&jx, ctx);
+  if( argc>2 ){
     jsonAppendChar(&jx, '[');
-    for(i=1; i<argc; i++){
-      zPath = (const char*)sqlite3_value_text(argv[i]);
-      pNode = jsonLookup(p, zPath, 0, ctx);
-      if( p->nErr ) break;
-      jsonAppendSeparator(&jx);
-      if( pNode ){
-        jsonRenderNode(p, pNode, &jx);
+  }
+  for(i=1; i<argc; i++){
+    /* With a single PATH argument */
+    const char *zPath = (const char*)sqlite3_value_text(argv[i]);
+    int nPath;
+    u32 j;
+    if( zPath==0 ) goto json_extract_error;
+    nPath = sqlite3Strlen30(zPath);
+    if( zPath[0]=='$' ){
+      j = jsonLookupStep(p, 0, zPath+1, 0);
+    }else if( (flags & JSON_ABPATH) ){
+      /* The -> and ->> operators accept abbreviated PATH arguments.  This
+      ** is mostly for compatibility with PostgreSQL, but also for
+      ** convenience.
+      **
+      **     NUMBER   ==>  $[NUMBER]     // PG compatible
+      **     LABEL    ==>  $.LABEL       // PG compatible
+      **     [NUMBER] ==>  $[NUMBER]     // Not PG.  Purely for convenience
+      */
+      jsonStringInit(&jx, ctx);
+      if( sqlite3Isdigit(zPath[0]) ){
+        jsonAppendRawNZ(&jx, "[", 1);
+        jsonAppendRaw(&jx, zPath, nPath);
+        jsonAppendRawNZ(&jx, "]", 2);
+      }else if( zPath[0]!='[' ){
+        jsonAppendRawNZ(&jx, ".", 1);
+        jsonAppendRaw(&jx, zPath, nPath);
       }else{
+        jsonAppendRaw(&jx, zPath, nPath);
+      }
+      jsonStringTerminate(&jx);
+      j = jsonLookupStep(p, 0, jx.zBuf, 0);
+      jsonStringReset(&jx);
+    }else{
+      jsonBadPathError(ctx, zPath);
+      goto json_extract_error;
+    }
+    if( j<p->nBlob ){
+      if( argc==2 ){
+        if( flags & JSON_JSON ){
+          jsonStringInit(&jx, ctx);
+          jsonXlateBlobToText(p, j, &jx);
+          jsonReturnString(&jx, 0, 0);
+          jsonStringReset(&jx);
+          assert( (flags & JSON_BLOB)==0 );
+          sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+        }else{
+          jsonReturnFromBlob(p, j, ctx, 0);
+          if( (flags & (JSON_SQL|JSON_BLOB))==0
+           && (p->aBlob[j]&0x0f)>=JSONB_ARRAY
+          ){
+            sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+          }
+        }
+      }else{
+        jsonAppendSeparator(&jx);
+        jsonXlateBlobToText(p, j, &jx);
+      }
+    }else if( j==JSON_LOOKUP_NOTFOUND ){
+      if( argc==2 ){
+        goto json_extract_error;  /* Return NULL if not found */
+      }else{
+        jsonAppendSeparator(&jx);
         jsonAppendRawNZ(&jx, "null", 4);
       }
+    }else if( j==JSON_LOOKUP_ERROR ){
+      sqlite3_result_error(ctx, "malformed JSON", -1);
+      goto json_extract_error;
+    }else{
+      jsonBadPathError(ctx, zPath);
+      goto json_extract_error;
     }
-    if( i==argc ){
-      jsonAppendChar(&jx, ']');
-      jsonResult(&jx);
+  }
+  if( argc>2 ){
+    jsonAppendChar(&jx, ']');
+    jsonReturnString(&jx, 0, 0);
+    if( (flags & JSON_BLOB)==0 ){
       sqlite3_result_subtype(ctx, JSON_SUBTYPE);
     }
-    jsonReset(&jx);
   }
+json_extract_error:
+  jsonStringReset(&jx);
+  jsonParseFree(p);
+  return;
 }
 
-/* This is the RFC 7396 MergePatch algorithm.
+/*
+** Return codes for jsonMergePatch()
 */
-static JsonNode *jsonMergePatch(
-  JsonParse *pParse,   /* The JSON parser that contains the TARGET */
-  u32 iTarget,         /* Node of the TARGET in pParse */
-  JsonNode *pPatch     /* The PATCH */
+#define JSON_MERGE_OK          0     /* Success */
+#define JSON_MERGE_BADTARGET   1     /* Malformed TARGET blob */
+#define JSON_MERGE_BADPATCH    2     /* Malformed PATCH blob */
+#define JSON_MERGE_OOM         3     /* Out-of-memory condition */
+
+/*
+** RFC-7396 MergePatch for two JSONB blobs.
+**
+** pTarget is the target. pPatch is the patch.  The target is updated
+** in place.  The patch is read-only.
+**
+** The original RFC-7396 algorithm is this:
+**
+**   define MergePatch(Target, Patch):
+**     if Patch is an Object:
+**       if Target is not an Object:
+**         Target = {} # Ignore the contents and set it to an empty Object
+**     for each Name/Value pair in Patch:
+**         if Value is null:
+**           if Name exists in Target:
+**             remove the Name/Value pair from Target
+**         else:
+**           Target[Name] = MergePatch(Target[Name], Value)
+**       return Target
+**     else:
+**       return Patch
+**
+** Here is an equivalent algorithm restructured to show the actual
+** implementation:
+**
+** 01   define MergePatch(Target, Patch):
+** 02      if Patch is not an Object:
+** 03         return Patch
+** 04      else: // if Patch is an Object
+** 05         if Target is not an Object:
+** 06            Target = {}
+** 07      for each Name/Value pair in Patch:
+** 08         if Name exists in Target:
+** 09            if Value is null:
+** 10               remove the Name/Value pair from Target
+** 11            else
+** 12               Target[name] = MergePatch(Target[Name], Value)
+** 13         else if Value is not NULL:
+** 14            if Value is not an Object:
+** 15               Target[name] = Value
+** 16            else:
+** 17               Target[name] = MergePatch('{}',value)
+** 18      return Target
+**  |
+**  ^---- Line numbers referenced in comments in the implementation
+*/
+static int jsonMergePatch(
+  JsonParse *pTarget,      /* The JSON parser that contains the TARGET */
+  u32 iTarget,             /* Index of TARGET in pTarget->aBlob[] */
+  const JsonParse *pPatch, /* The PATCH */
+  u32 iPatch               /* Index of PATCH in pPatch->aBlob[] */
 ){
-  u32 i, j;
-  u32 iRoot;
-  JsonNode *pTarget;
-  if( pPatch->eType!=JSON_OBJECT ){
-    return pPatch;
+  u8 x;             /* Type of a single node */
+  u32 n, sz=0;      /* Return values from jsonbPayloadSize() */
+  u32 iTCursor;     /* Cursor position while scanning the target object */
+  u32 iTStart;      /* First label in the target object */
+  u32 iTEndBE;      /* Original first byte past end of target, before edit */
+  u32 iTEnd;        /* Current first byte past end of target */
+  u8 eTLabel;       /* Node type of the target label */
+  u32 iTLabel = 0;  /* Index of the label */
+  u32 nTLabel = 0;  /* Header size in bytes for the target label */
+  u32 szTLabel = 0; /* Size of the target label payload */
+  u32 iTValue = 0;  /* Index of the target value */
+  u32 nTValue = 0;  /* Header size of the target value */
+  u32 szTValue = 0; /* Payload size for the target value */
+
+  u32 iPCursor;     /* Cursor position while scanning the patch */
+  u32 iPEnd;        /* First byte past the end of the patch */
+  u8 ePLabel;       /* Node type of the patch label */
+  u32 iPLabel;      /* Start of patch label */
+  u32 nPLabel;      /* Size of header on the patch label */
+  u32 szPLabel;     /* Payload size of the patch label */
+  u32 iPValue;      /* Start of patch value */
+  u32 nPValue;      /* Header size for the patch value */
+  u32 szPValue;     /* Payload size of the patch value */
+
+  assert( iTarget>=0 && iTarget<pTarget->nBlob );
+  assert( iPatch>=0 && iPatch<pPatch->nBlob );
+  x = pPatch->aBlob[iPatch] & 0x0f;
+  if( x!=JSONB_OBJECT ){  /* Algorithm line 02 */
+    u32 szPatch;        /* Total size of the patch, header+payload */
+    u32 szTarget;       /* Total size of the target, header+payload */
+    n = jsonbPayloadSize(pPatch, iPatch, &sz);
+    szPatch = n+sz;
+    sz = 0;
+    n = jsonbPayloadSize(pTarget, iTarget, &sz);
+    szTarget = n+sz;
+    jsonBlobEdit(pTarget, iTarget, szTarget, pPatch->aBlob+iPatch, szPatch);
+    return pTarget->oom ? JSON_MERGE_OOM : JSON_MERGE_OK;  /* Line 03 */
   }
-  assert( iTarget<pParse->nNode );
-  pTarget = &pParse->aNode[iTarget];
-  assert( (pPatch->jnFlags & JNODE_APPEND)==0 );
-  if( pTarget->eType!=JSON_OBJECT ){
-    jsonRemoveAllNulls(pPatch);
-    return pPatch;
+  x = pTarget->aBlob[iTarget] & 0x0f;
+  if( x!=JSONB_OBJECT ){  /* Algorithm line 05 */
+    n = jsonbPayloadSize(pTarget, iTarget, &sz);
+    jsonBlobEdit(pTarget, iTarget+n, sz, 0, 0);
+    x = pTarget->aBlob[iTarget];
+    pTarget->aBlob[iTarget] = (x & 0xf0) | JSONB_OBJECT;
   }
-  iRoot = iTarget;
-  for(i=1; i<pPatch->n; i += jsonNodeSize(&pPatch[i+1])+1){
-    u32 nKey;
-    const char *zKey;
-    assert( pPatch[i].eType==JSON_STRING );
-    assert( pPatch[i].jnFlags & JNODE_LABEL );
-    assert( pPatch[i].eU==1 );
-    nKey = pPatch[i].n;
-    zKey = pPatch[i].u.zJContent;
-    for(j=1; j<pTarget->n; j += jsonNodeSize(&pTarget[j+1])+1 ){
-      assert( pTarget[j].eType==JSON_STRING );
-      assert( pTarget[j].jnFlags & JNODE_LABEL );
-      if( jsonSameLabel(&pPatch[i], &pTarget[j]) ){
-        if( pTarget[j+1].jnFlags & (JNODE_REMOVE|JNODE_REPLACE) ) break;
-        if( pPatch[i+1].eType==JSON_NULL ){
-          pTarget[j+1].jnFlags |= JNODE_REMOVE;
-        }else{
-          JsonNode *pNew = jsonMergePatch(pParse, iTarget+j+1, &pPatch[i+1]);
-          if( pNew==0 ) return 0;
-          if( pNew!=&pParse->aNode[iTarget+j+1] ){
-            jsonParseAddSubstNode(pParse, iTarget+j+1);
-            jsonParseAddNodeArray(pParse, pNew, jsonNodeSize(pNew));
-          }
-          pTarget = &pParse->aNode[iTarget];
+  n = jsonbPayloadSize(pPatch, iPatch, &sz);
+  if( NEVER(n==0) ) return JSON_MERGE_BADPATCH;
+  iPCursor = iPatch+n;
+  iPEnd = iPCursor+sz;
+  n = jsonbPayloadSize(pTarget, iTarget, &sz);
+  if( NEVER(n==0) ) return JSON_MERGE_BADTARGET;
+  iTStart = iTarget+n;
+  iTEndBE = iTStart+sz;
+
+  while( iPCursor<iPEnd ){  /* Algorithm line 07 */
+    iPLabel = iPCursor;
+    ePLabel = pPatch->aBlob[iPCursor] & 0x0f;
+    if( ePLabel<JSONB_TEXT || ePLabel>JSONB_TEXTRAW ){
+      return JSON_MERGE_BADPATCH;
+    }
+    nPLabel = jsonbPayloadSize(pPatch, iPCursor, &szPLabel);
+    if( nPLabel==0 ) return JSON_MERGE_BADPATCH;
+    iPValue = iPCursor + nPLabel + szPLabel;
+    if( iPValue>=iPEnd ) return JSON_MERGE_BADPATCH;
+    nPValue = jsonbPayloadSize(pPatch, iPValue, &szPValue);
+    if( nPValue==0 ) return JSON_MERGE_BADPATCH;
+    iPCursor = iPValue + nPValue + szPValue;
+    if( iPCursor>iPEnd ) return JSON_MERGE_BADPATCH;
+
+    iTCursor = iTStart;
+    iTEnd = iTEndBE + pTarget->delta;
+    while( iTCursor<iTEnd ){
+      iTLabel = iTCursor;
+      eTLabel = pTarget->aBlob[iTCursor] & 0x0f;
+      if( eTLabel<JSONB_TEXT || eTLabel>JSONB_TEXTRAW ){
+        return JSON_MERGE_BADTARGET;
+      }
+      nTLabel = jsonbPayloadSize(pTarget, iTCursor, &szTLabel);
+      if( nTLabel==0 ) return JSON_MERGE_BADTARGET;
+      iTValue = iTLabel + nTLabel + szTLabel;
+      if( iTValue>=iTEnd ) return JSON_MERGE_BADTARGET;
+      nTValue = jsonbPayloadSize(pTarget, iTValue, &szTValue);
+      if( nTValue==0 ) return JSON_MERGE_BADTARGET;
+      if( iTValue + nTValue + szTValue > iTEnd ) return JSON_MERGE_BADTARGET;
+      if( eTLabel==ePLabel ){
+        /* Common case */
+        if( szTLabel==szPLabel
+         && memcmp(&pTarget->aBlob[iTLabel+nTLabel],
+                   &pPatch->aBlob[iPLabel+nPLabel], szTLabel)==0
+        ){
+          break;  /* Labels match. */
         }
-        break;
+      }else{
+        /* Should rarely happen */
+        JsonString s1, s2;
+        int isEqual, isOom;
+        jsonStringInit(&s1, 0);
+        jsonXlateBlobToText(pTarget, iTLabel, &s1);
+        jsonStringInit(&s2, 0);
+        jsonXlateBlobToText(pPatch, iPLabel, &s2);
+        isOom = s1.eErr || s2.eErr;
+        if( s1.nUsed==s2.nUsed && memcmp(s1.zBuf, s2.zBuf, s1.nUsed)==0 ){
+          isEqual = 1;
+        }else{
+          isEqual = 0;
+        }
+        jsonStringReset(&s1);
+        jsonStringReset(&s2);
+        if( isOom ) return JSON_MERGE_OOM;
+        if( isEqual ) break;
+      }
+      iTCursor = iTValue + nTValue + szTValue;
+    }
+    x = pPatch->aBlob[iPValue] & 0x0f;
+    if( iTCursor<iTEnd ){
+      /* A match was found.  Algorithm line 08 */
+      if( x==0 ){
+        /* Patch value is NULL.  Algorithm line 09 */
+        jsonBlobEdit(pTarget, iTLabel, nTLabel+szTLabel+nTValue+szTValue, 0,0);
+        /*  vvvvvv----- No OOM on a delete-only edit */
+        if( NEVER(pTarget->oom) ) return JSON_MERGE_OOM;
+      }else{
+        /* Algorithm line 12 */
+        int rc, savedDelta = pTarget->delta;
+        pTarget->delta = 0;
+        rc = jsonMergePatch(pTarget, iTValue, pPatch, iPValue);
+        if( rc ) return rc;
+        pTarget->delta += savedDelta;
+      }        
+    }else if( x>0 ){  /* Algorithm line 13 */
+      /* No match and patch value is not NULL */
+      u32 szNew = szPLabel+nPLabel;
+      if( (pPatch->aBlob[iPValue] & 0x0f)!=JSONB_OBJECT ){  /* Line 14 */
+        jsonBlobEdit(pTarget, iTEnd, 0, 0, szPValue+nPValue+szNew);
+        if( pTarget->oom ) return JSON_MERGE_OOM;
+        memcpy(&pTarget->aBlob[iTEnd], &pPatch->aBlob[iPLabel], szNew);
+        memcpy(&pTarget->aBlob[iTEnd+szNew], 
+               &pPatch->aBlob[iPValue], szPValue+nPValue);
+      }else{
+        int rc, savedDelta;
+        jsonBlobEdit(pTarget, iTEnd, 0, 0, szNew+1);
+        if( pTarget->oom ) return JSON_MERGE_OOM;
+        memcpy(&pTarget->aBlob[iTEnd], &pPatch->aBlob[iPLabel], szNew);
+        pTarget->aBlob[iTEnd+szNew] = 0x00;
+        savedDelta = pTarget->delta;
+        pTarget->delta = 0;
+        rc = jsonMergePatch(pTarget, iTEnd+szNew,pPatch,iPValue);
+        if( rc ) return rc;
+        pTarget->delta += savedDelta;
       }
     }
-    if( j>=pTarget->n && pPatch[i+1].eType!=JSON_NULL ){
-      int iStart;
-      JsonNode *pApnd;
-      u32 nApnd;
-      iStart = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
-      jsonParseAddNode(pParse, JSON_STRING, nKey, zKey);
-      pApnd = &pPatch[i+1];
-      if( pApnd->eType==JSON_OBJECT ) jsonRemoveAllNulls(pApnd);
-      nApnd = jsonNodeSize(pApnd);
-      jsonParseAddNodeArray(pParse, pApnd, jsonNodeSize(pApnd));
-      if( pParse->oom ) return 0;
-      pParse->aNode[iStart].n = 1+nApnd;
-      pParse->aNode[iRoot].jnFlags |= JNODE_APPEND;
-      pParse->aNode[iRoot].u.iAppend = iStart;
-      VVA( pParse->aNode[iRoot].eU = 2 );
-      iRoot = iStart;
-      pTarget = &pParse->aNode[iTarget];
-    }
   }
-  return pTarget;
+  if( pTarget->delta ) jsonAfterEditSizeAdjust(pTarget, iTarget);
+  return pTarget->oom ? JSON_MERGE_OOM : JSON_MERGE_OK;
 }
+
 
 /*
 ** Implementation of the json_mergepatch(JSON1,JSON2) function.  Return a JSON
@@ -2696,28 +3479,27 @@ static void jsonPatchFunc(
   int argc,
   sqlite3_value **argv
 ){
-  JsonParse *pX;     /* The JSON that is being patched */
-  JsonParse *pY;     /* The patch */
-  JsonNode *pResult;   /* The result of the merge */
+  JsonParse *pTarget;    /* The TARGET */
+  JsonParse *pPatch;     /* The PATCH */
+  int rc;                /* Result code */
 
   UNUSED_PARAMETER(argc);
-  pX = jsonParseCached(ctx, argv[0], ctx, 1);
-  if( pX==0 ) return;
-  assert( pX->hasMod==0 );
-  pX->hasMod = 1;
-  pY = jsonParseCached(ctx, argv[1], ctx, 1);
-  if( pY==0 ) return;
-  pX->useMod = 1;
-  pY->useMod = 1;
-  pResult = jsonMergePatch(pX, 0, pY->aNode);
-  assert( pResult!=0 || pX->oom );
-  if( pResult && pX->oom==0 ){
-    jsonDebugPrintParse(pX);
-    jsonDebugPrintNode(pResult);
-    jsonReturnJson(pX, pResult, ctx, 0, 0);
-  }else{
-    sqlite3_result_error_nomem(ctx);
+  assert( argc==2 );
+  pTarget = jsonParseFuncArg(ctx, argv[0], JSON_EDITABLE);
+  if( pTarget==0 ) return;
+  pPatch = jsonParseFuncArg(ctx, argv[1], 0);
+  if( pPatch ){
+    rc = jsonMergePatch(pTarget, 0, pPatch, 0);
+    if( rc==JSON_MERGE_OK ){
+      jsonReturnParse(ctx, pTarget);
+    }else if( rc==JSON_MERGE_OOM ){
+      sqlite3_result_error_nomem(ctx);
+    }else{
+      sqlite3_result_error(ctx, "malformed JSON", -1);
+    }
+    jsonParseFree(pPatch);
   }
+  jsonParseFree(pTarget);
 }
 
 
@@ -2741,23 +3523,23 @@ static void jsonObjectFunc(
                                   "of arguments", -1);
     return;
   }
-  jsonInit(&jx, ctx);
+  jsonStringInit(&jx, ctx);
   jsonAppendChar(&jx, '{');
   for(i=0; i<argc; i+=2){
     if( sqlite3_value_type(argv[i])!=SQLITE_TEXT ){
       sqlite3_result_error(ctx, "json_object() labels must be TEXT", -1);
-      jsonReset(&jx);
+      jsonStringReset(&jx);
       return;
     }
     jsonAppendSeparator(&jx);
     z = (const char*)sqlite3_value_text(argv[i]);
-    n = (u32)sqlite3_value_bytes(argv[i]);
+    n = sqlite3_value_bytes(argv[i]);
     jsonAppendString(&jx, z, n);
     jsonAppendChar(&jx, ':');
-    jsonAppendValue(&jx, argv[i+1]);
+    jsonAppendSqlValue(&jx, argv[i+1]);
   }
   jsonAppendChar(&jx, '}');
-  jsonResult(&jx);
+  jsonReturnString(&jx, 0, 0);
   sqlite3_result_subtype(ctx, JSON_SUBTYPE);
 }
 
@@ -2773,120 +3555,50 @@ static void jsonRemoveFunc(
   int argc,
   sqlite3_value **argv
 ){
-  JsonParse *pParse;          /* The parse */
-  JsonNode *pNode;
-  const char *zPath;
-  u32 i;
+  JsonParse *p;          /* The parse */
+  const char *zPath = 0; /* Path of element to be removed */
+  int i;                 /* Loop counter */
+  u32 rc;                /* Subroutine return code */
 
   if( argc<1 ) return;
-  pParse = jsonParseCached(ctx, argv[0], ctx, argc>1);
-  if( pParse==0 ) return;
-  for(i=1; i<(u32)argc; i++){
+  p = jsonParseFuncArg(ctx, argv[0], argc>1 ? JSON_EDITABLE : 0);
+  if( p==0 ) return;
+  for(i=1; i<argc; i++){
     zPath = (const char*)sqlite3_value_text(argv[i]);
-    if( zPath==0 ) goto remove_done;
-    pNode = jsonLookup(pParse, zPath, 0, ctx);
-    if( pParse->nErr ) goto remove_done;
-    if( pNode ){
-      pNode->jnFlags |= JNODE_REMOVE;
-      pParse->hasMod = 1;
-      pParse->useMod = 1;
+    if( zPath==0 ){
+      goto json_remove_done;
     }
-  }
-  if( (pParse->aNode[0].jnFlags & JNODE_REMOVE)==0 ){
-    jsonReturnJson(pParse, pParse->aNode, ctx, 1, 0);
-  }
-remove_done:
-  jsonDebugPrintParse(p);
-}
-
-/*
-** Substitute the value at iNode with the pValue parameter.
-*/
-static void jsonReplaceNode(
-  sqlite3_context *pCtx,
-  JsonParse *p,
-  int iNode,
-  sqlite3_value *pValue
-){
-  int idx = jsonParseAddSubstNode(p, iNode);
-  if( idx<=0 ){
-    assert( p->oom );
-    return;
-  }
-  switch( sqlite3_value_type(pValue) ){
-    case SQLITE_NULL: {
-      jsonParseAddNode(p, JSON_NULL, 0, 0);
-      break;
+    if( zPath[0]!='$' ){
+      goto json_remove_patherror;
     }
-    case SQLITE_FLOAT: {
-      char *z = sqlite3_mprintf("%!0.15g", sqlite3_value_double(pValue));
-      int n;
-      if( z==0 ){
-        p->oom = 1;
-        break;
-      }
-      n = sqlite3Strlen30(z);
-      jsonParseAddNode(p, JSON_REAL, n, z);
-      jsonParseAddCleanup(p, sqlite3_free, z);
-      break;
+    if( zPath[1]==0 ){
+      /* json_remove(j,'$') returns NULL */
+      goto json_remove_done;
     }
-    case SQLITE_INTEGER: {
-      char *z = sqlite3_mprintf("%lld", sqlite3_value_int64(pValue));
-      int n;
-      if( z==0 ){
-        p->oom = 1;
-        break;
-      }
-      n = sqlite3Strlen30(z);
-      jsonParseAddNode(p, JSON_INT, n, z);
-      jsonParseAddCleanup(p, sqlite3_free, z);
-
-      break;
-    }
-    case SQLITE_TEXT: {
-      const char *z = (const char*)sqlite3_value_text(pValue);
-      u32 n = (u32)sqlite3_value_bytes(pValue);
-      if( z==0 ){
-         p->oom = 1;
-         break;
-      }
-      if( sqlite3_value_subtype(pValue)!=JSON_SUBTYPE ){
-        char *zCopy = sqlite3_malloc64( n+1 );
-        int k;
-        if( zCopy ){
-          memcpy(zCopy, z, n);
-          zCopy[n] = 0;
-          jsonParseAddCleanup(p, sqlite3_free, zCopy);
-        }else{
-          p->oom = 1;
-          sqlite3_result_error_nomem(pCtx);
-        }
-        k = jsonParseAddNode(p, JSON_STRING, n, zCopy);
-        assert( k>0 || p->oom );
-        if( p->oom==0 ) p->aNode[k].jnFlags |= JNODE_RAW;
+    p->eEdit = JEDIT_DEL;
+    p->delta = 0;
+    rc = jsonLookupStep(p, 0, zPath+1, 0);
+    if( JSON_LOOKUP_ISERROR(rc) ){
+      if( rc==JSON_LOOKUP_NOTFOUND ){
+        continue;  /* No-op */
+      }else if( rc==JSON_LOOKUP_PATHERROR ){
+        jsonBadPathError(ctx, zPath);
       }else{
-        JsonParse *pPatch = jsonParseCached(pCtx, pValue, pCtx, 1);
-        if( pPatch==0 ){
-          p->oom = 1;
-          break;
-        }
-        jsonParseAddNodeArray(p, pPatch->aNode, pPatch->nNode);
-        /* The nodes copied out of pPatch and into p likely contain
-        ** u.zJContent pointers into pPatch->zJson.  So preserve the
-        ** content of pPatch until p is destroyed. */
-        assert( pPatch->nJPRef>=1 );
-        pPatch->nJPRef++;
-        jsonParseAddCleanup(p, (void(*)(void*))jsonParseFree, pPatch);
+        sqlite3_result_error(ctx, "malformed JSON", -1);
       }
-      break;
-    }
-    default: {
-      jsonParseAddNode(p, JSON_NULL, 0, 0);
-      sqlite3_result_error(pCtx, "JSON cannot hold BLOB values", -1);
-      p->nErr++;
-      break;
+      goto json_remove_done;
     }
   }
+  jsonReturnParse(ctx, p);
+  jsonParseFree(p);
+  return;
+
+json_remove_patherror:
+  jsonBadPathError(ctx, zPath);
+
+json_remove_done:
+  jsonParseFree(p);
+  return;
 }
 
 /*
@@ -2900,32 +3612,12 @@ static void jsonReplaceFunc(
   int argc,
   sqlite3_value **argv
 ){
-  JsonParse *pParse;          /* The parse */
-  JsonNode *pNode;
-  const char *zPath;
-  u32 i;
-
   if( argc<1 ) return;
   if( (argc&1)==0 ) {
     jsonWrongNumArgs(ctx, "replace");
     return;
   }
-  pParse = jsonParseCached(ctx, argv[0], ctx, argc>1);
-  if( pParse==0 ) return;
-  pParse->nJPRef++;
-  for(i=1; i<(u32)argc; i+=2){
-    zPath = (const char*)sqlite3_value_text(argv[i]);
-    pParse->useMod = 1;
-    pNode = jsonLookup(pParse, zPath, 0, ctx);
-    if( pParse->nErr ) goto replace_err;
-    if( pNode ){
-      jsonReplaceNode(ctx, pParse, (u32)(pNode - pParse->aNode), argv[i+1]);
-    }
-  }
-  jsonReturnJson(pParse, pParse->aNode, ctx, 1, 0);
-replace_err:
-  jsonDebugPrintParse(pParse);
-  jsonParseFree(pParse);
+  jsonInsertIntoBlob(ctx, argc, argv, JEDIT_REPL);
 }
 
 
@@ -2946,39 +3638,16 @@ static void jsonSetFunc(
   int argc,
   sqlite3_value **argv
 ){
-  JsonParse *pParse;       /* The parse */
-  JsonNode *pNode;
-  const char *zPath;
-  u32 i;
-  int bApnd;
-  int bIsSet = sqlite3_user_data(ctx)!=0;
+
+  int flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
+  int bIsSet = (flags&JSON_ISSET)!=0;
 
   if( argc<1 ) return;
   if( (argc&1)==0 ) {
     jsonWrongNumArgs(ctx, bIsSet ? "set" : "insert");
     return;
   }
-  pParse = jsonParseCached(ctx, argv[0], ctx, argc>1);
-  if( pParse==0 ) return;
-  pParse->nJPRef++;
-  for(i=1; i<(u32)argc; i+=2){
-    zPath = (const char*)sqlite3_value_text(argv[i]);
-    bApnd = 0;
-    pParse->useMod = 1;
-    pNode = jsonLookup(pParse, zPath, &bApnd, ctx);
-    if( pParse->oom ){
-      sqlite3_result_error_nomem(ctx);
-      goto jsonSetDone;
-    }else if( pParse->nErr ){
-      goto jsonSetDone;
-    }else if( pNode && (bApnd || bIsSet) ){
-      jsonReplaceNode(ctx, pParse, (u32)(pNode - pParse->aNode), argv[i+1]);
-    }
-  }
-  jsonDebugPrintParse(pParse);
-  jsonReturnJson(pParse, pParse->aNode, ctx, 1, 0);
-jsonSetDone:
-  jsonParseFree(pParse);
+  jsonInsertIntoBlob(ctx, argc, argv, bIsSet ? JEDIT_SET : JEDIT_INS);
 }
 
 /*
@@ -2994,27 +3663,93 @@ static void jsonTypeFunc(
   sqlite3_value **argv
 ){
   JsonParse *p;          /* The parse */
-  const char *zPath;
-  JsonNode *pNode;
+  const char *zPath = 0;
+  u32 i;
 
-  p = jsonParseCached(ctx, argv[0], ctx, 0);
+  p = jsonParseFuncArg(ctx, argv[0], 0);
   if( p==0 ) return;
   if( argc==2 ){
     zPath = (const char*)sqlite3_value_text(argv[1]);
-    pNode = jsonLookup(p, zPath, 0, ctx);
+    if( zPath==0 ) goto json_type_done;
+    if( zPath[0]!='$' ){
+      jsonBadPathError(ctx, zPath);
+      goto json_type_done;
+    }
+    i = jsonLookupStep(p, 0, zPath+1, 0);
+    if( JSON_LOOKUP_ISERROR(i) ){
+      if( i==JSON_LOOKUP_NOTFOUND ){
+        /* no-op */
+      }else if( i==JSON_LOOKUP_PATHERROR ){
+        jsonBadPathError(ctx, zPath);
+      }else{
+        sqlite3_result_error(ctx, "malformed JSON", -1);
+      }
+      goto json_type_done;
+    }
   }else{
-    pNode = p->aNode;
+    i = 0;
   }
-  if( pNode ){
-    sqlite3_result_text(ctx, jsonType[pNode->eType], -1, SQLITE_STATIC);
-  }
+  sqlite3_result_text(ctx, jsonbType[p->aBlob[i]&0x0f], -1, SQLITE_STATIC);
+json_type_done:
+  jsonParseFree(p);
 }
 
 /*
 ** json_valid(JSON)
+** json_valid(JSON, FLAGS)
 **
-** Return 1 if JSON is a well-formed canonical JSON string according
-** to RFC-7159. Return 0 otherwise.
+** Check the JSON argument to see if it is well-formed.  The FLAGS argument
+** encodes the various constraints on what is meant by "well-formed":
+**
+**     0x01      Canonical RFC-8259 JSON text
+**     0x02      JSON text with optional JSON-5 extensions
+**     0x04      Superficially appears to be JSONB
+**     0x08      Strictly well-formed JSONB
+**
+** If the FLAGS argument is omitted, it defaults to 1.  Useful values for
+** FLAGS include:
+**
+**    1          Strict canonical JSON text
+**    2          JSON text perhaps with JSON-5 extensions
+**    4          Superficially appears to be JSONB
+**    5          Canonical JSON text or superficial JSONB
+**    6          JSON-5 text or superficial JSONB
+**    8          Strict JSONB
+**    9          Canonical JSON text or strict JSONB
+**    10         JSON-5 text or strict JSONB
+**
+** Other flag combinations are redundant.  For example, every canonical
+** JSON text is also well-formed JSON-5 text, so FLAG values 2 and 3
+** are the same.  Similarly, any input that passes a strict JSONB validation
+** will also pass the superficial validation so 12 through 15 are the same
+** as 8 through 11 respectively.
+**
+** This routine runs in linear time to validate text and when doing strict
+** JSONB validation.  Superficial JSONB validation is constant time,
+** assuming the BLOB is already in memory.  The performance advantage
+** of superficial JSONB validation is why that option is provided.
+** Application developers can choose to do fast superficial validation or
+** slower strict validation, according to their specific needs.
+**
+** Only the lower four bits of the FLAGS argument are currently used.
+** Higher bits are reserved for future expansion.   To facilitate
+** compatibility, the current implementation raises an error if any bit
+** in FLAGS is set other than the lower four bits.
+**
+** The original circa 2015 implementation of the JSON routines in
+** SQLite only supported canonical RFC-8259 JSON text and the json_valid()
+** function only accepted one argument.  That is why the default value
+** for the FLAGS argument is 1, since FLAGS=1 causes this routine to only
+** recognize canonical RFC-8259 JSON text as valid.  The extra FLAGS
+** argument was added when the JSON routines were extended to support
+** JSON5-like extensions and binary JSONB stored in BLOBs.
+**
+** Return Values:
+**
+**   *   Raise an error if FLAGS is outside the range of 1 to 15.
+**   *   Return NULL if the input is NULL
+**   *   Return 1 if the input is well-formed.
+**   *   Return 0 if the input is not well-formed.
 */
 static void jsonValidFunc(
   sqlite3_context *ctx,
@@ -3022,78 +3757,147 @@ static void jsonValidFunc(
   sqlite3_value **argv
 ){
   JsonParse *p;          /* The parse */
-  UNUSED_PARAMETER(argc);
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
+  u8 flags = 1;
+  u8 res = 0;
+  if( argc==2 ){
+    i64 f = sqlite3_value_int64(argv[1]);
+    if( f<1 || f>15 ){
+      sqlite3_result_error(ctx, "FLAGS parameter to json_valid() must be"
+                                " between 1 and 15", -1);
+      return;
+    }
+    flags = f & 0x0f;
+  }
+  switch( sqlite3_value_type(argv[0]) ){
+    case SQLITE_NULL: {
 #ifdef SQLITE_LEGACY_JSON_VALID
-    /* Incorrect legacy behavior was to return FALSE for a NULL input */
-    sqlite3_result_int(ctx, 0);
+      /* Incorrect legacy behavior was to return FALSE for a NULL input */
+      sqlite3_result_int(ctx, 0);
 #endif
-    return;
+      return;
+    }
+    case SQLITE_BLOB: {
+      if( (flags & 0x0c)!=0 && jsonFuncArgMightBeBinary(argv[0]) ){
+        if( flags & 0x04 ){
+          /* Superficial checking only - accomplisehd by the
+          ** jsonFuncArgMightBeBinary() call above. */
+          res = 1;
+        }else{
+          /* Strict checking.  Check by translating BLOB->TEXT->BLOB.  If
+          ** no errors occur, call that a "strict check". */
+          JsonParse px;
+          JsonString sx;
+          u8 oom = 0;
+          memset(&px, 0, sizeof(px));
+          px.aBlob = (u8*)sqlite3_value_blob(argv[0]);
+          px.nBlob = sqlite3_value_bytes(argv[0]);
+          jsonStringInit(&sx, 0);
+          jsonXlateBlobToText(&px, 0, &sx);
+          jsonParseReset(&px);
+          if( sx.eErr & JSTRING_OOM ) oom = 1;
+          if( sx.eErr==0 ){
+            memset(&px, 0, sizeof(px));
+            px.zJson = sx.zBuf;
+            px.nJson = sx.nUsed;
+            if( jsonXlateTextToBlob(&px, 0)==px.nJson ){
+              res = 1;
+            }
+            oom |= px.oom;
+            jsonParseReset(&px);
+          }
+          jsonStringReset(&sx);
+          if( oom ){
+            sqlite3_result_error_nomem(ctx);
+            return;
+          }
+        }
+      }
+      break;
+    }
+    default: {
+      JsonParse px;
+      if( (flags & 0x3)==0 ) break;
+      memset(&px, 0, sizeof(px));
+     
+      p = jsonParseFuncArg(ctx, argv[0], JSON_KEEPERROR);
+      if( p ){
+        if( p->oom ){
+          sqlite3_result_error_nomem(ctx);
+        }else if( p->nErr ){
+          /* no-op */
+        }else if( (flags & 0x02)!=0 || p->hasNonstd==0 ){
+          res = 1;
+        }
+        jsonParseFree(p);
+      }else{
+        sqlite3_result_error_nomem(ctx);
+      }
+      break;
+    }
   }
-  p = jsonParseCached(ctx, argv[0], 0, 0);
-  if( p==0 || p->oom ){
-    sqlite3_result_error_nomem(ctx);
-    sqlite3_free(p);
-  }else{
-    sqlite3_result_int(ctx, p->nErr==0 && (p->hasNonstd==0 || p->useMod));
-    if( p->nErr ) jsonParseFree(p);
-  }
+  sqlite3_result_int(ctx, res);
 }
 
 /*
 ** json_error_position(JSON)
 **
-** If the argument is not an interpretable JSON string, then return the 1-based
-** character position at which the parser first recognized that the input
-** was in error.  The left-most character is 1.  If the string is valid
-** JSON, then return 0.
+** If the argument is NULL, return NULL
 **
-** Note that json_valid() is only true for strictly conforming canonical JSON.
-** But this routine returns zero if the input contains extension.  Thus:
+** If the argument is BLOB, do a fast validity check and return non-zero
+** if the check fails.  The returned value does not indicate where in the
+** BLOB the error occurs.
 **
-** (1) If the input X is strictly conforming canonical JSON:
-**
-**         json_valid(X) returns true
-**         json_error_position(X) returns 0
-**
-** (2) If the input X is JSON but it includes extension (such as JSON5) that
-**     are not part of RFC-8259:
-**
-**         json_valid(X) returns false
-**         json_error_position(X) return 0
-**
-** (3) If the input X cannot be interpreted as JSON even taking extensions
-**     into account:
-**
-**         json_valid(X) return false
-**         json_error_position(X) returns 1 or more
+** Otherwise interpret the argument is TEXT (even if it is numeric) and
+** return the 1-based character position for where the parser first recognized
+** that the input was not valid JSON, or return 0 if the input text looks
+** ok.  JSON-5 extensions are accepted.
 */
 static void jsonErrorFunc(
   sqlite3_context *ctx,
   int argc,
   sqlite3_value **argv
 ){
-  JsonParse *p;          /* The parse */
+  i64 iErrPos = 0;       /* Error position to be returned */
+  JsonParse s;
+
+  assert( argc==1 );
   UNUSED_PARAMETER(argc);
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
-  p = jsonParseCached(ctx, argv[0], 0, 0);
-  if( p==0 || p->oom ){
-    sqlite3_result_error_nomem(ctx);
-    sqlite3_free(p);
-  }else if( p->nErr==0 ){
-    sqlite3_result_int(ctx, 0);
-  }else{
-    int n = 1;
-    u32 i;
-    const char *z = (const char*)sqlite3_value_text(argv[0]);
-    for(i=0; i<p->iErr && ALWAYS(z[i]); i++){
-      if( (z[i]&0xc0)!=0x80 ) n++;
+  memset(&s, 0, sizeof(s));
+  if( jsonFuncArgMightBeBinary(argv[0]) ){
+    JsonString out;
+    jsonStringInit(&out, 0);
+    s.aBlob = (u8*)sqlite3_value_blob(argv[0]);
+    s.nBlob = sqlite3_value_bytes(argv[0]);
+    jsonXlateBlobToText(&s, 0, &out);
+    if( out.eErr ){
+      iErrPos = (out.eErr & JSTRING_MALFORMED)!=0 ? 1 : -1;
     }
-    sqlite3_result_int(ctx, n);
-    jsonParseFree(p);
+    jsonStringReset(&out);
+  }else{
+    s.zJson = (char*)sqlite3_value_text(argv[0]);
+    if( s.zJson==0 ) return;  /* NULL input or OOM */
+    s.nJson = sqlite3_value_bytes(argv[0]);
+    if( jsonConvertTextToBlob(&s,0) ){
+      if( s.oom ){
+        iErrPos = -1;
+      }else{
+        /* Convert byte-offset s.iErr into a character offset */
+        u32 k;
+        assert( s.zJson!=0 );  /* Because s.oom is false */
+        for(k=0; k<s.iErr && ALWAYS(s.zJson[k]); k++){
+          if( (s.zJson[k] & 0xc0)!=0x80 ) iErrPos++;
+        }
+        iErrPos++;
+      }
+    }
+  }
+  jsonParseReset(&s);
+  if( iErrPos<0 ){
+    sqlite3_result_error_nomem(ctx);
+  }else{
+    sqlite3_result_int64(ctx, iErrPos);
   }
 }
-
 
 /****************************************************************************
 ** Aggregate SQL function implementations
@@ -3113,24 +3917,34 @@ static void jsonArrayStep(
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, sizeof(*pStr));
   if( pStr ){
     if( pStr->zBuf==0 ){
-      jsonInit(pStr, ctx);
+      jsonStringInit(pStr, ctx);
       jsonAppendChar(pStr, '[');
     }else if( pStr->nUsed>1 ){
       jsonAppendChar(pStr, ',');
     }
     pStr->pCtx = ctx;
-    jsonAppendValue(pStr, argv[0]);
+    jsonAppendSqlValue(pStr, argv[0]);
   }
 }
 static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
   JsonString *pStr;
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
   if( pStr ){
+    int flags;
     pStr->pCtx = ctx;
     jsonAppendChar(pStr, ']');
-    if( pStr->bErr ){
-      if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
-      assert( pStr->bStatic );
+    flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
+    if( pStr->eErr ){
+      jsonReturnString(pStr, 0, 0);
+      return;
+    }else if( flags & JSON_BLOB ){
+      jsonReturnStringAsBlob(pStr);
+      if( isFinal ){
+        sqlite3RCStrUnref(pStr->zBuf);
+      }else{
+        pStr->nUsed--;
+      }
+      return;
     }else if( isFinal ){
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
                           pStr->bStatic ? SQLITE_TRANSIENT :
@@ -3219,27 +4033,38 @@ static void jsonObjectStep(
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, sizeof(*pStr));
   if( pStr ){
     if( pStr->zBuf==0 ){
-      jsonInit(pStr, ctx);
+      jsonStringInit(pStr, ctx);
       jsonAppendChar(pStr, '{');
     }else if( pStr->nUsed>1 ){
       jsonAppendChar(pStr, ',');
     }
     pStr->pCtx = ctx;
     z = (const char*)sqlite3_value_text(argv[0]);
-    n = (u32)sqlite3_value_bytes(argv[0]);
+    n = sqlite3Strlen30(z);
     jsonAppendString(pStr, z, n);
     jsonAppendChar(pStr, ':');
-    jsonAppendValue(pStr, argv[1]);
+    jsonAppendSqlValue(pStr, argv[1]);
   }
 }
 static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
   JsonString *pStr;
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
   if( pStr ){
+    int flags;
     jsonAppendChar(pStr, '}');
-    if( pStr->bErr ){
-      if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
-      assert( pStr->bStatic );
+    pStr->pCtx = ctx;
+    flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
+    if( pStr->eErr ){
+      jsonReturnString(pStr, 0, 0);
+      return;
+    }else if( flags & JSON_BLOB ){
+      jsonReturnStringAsBlob(pStr);
+      if( isFinal ){
+        sqlite3RCStrUnref(pStr->zBuf);
+      }else{
+        pStr->nUsed--;
+      }
+      return;
     }else if( isFinal ){
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
                           pStr->bStatic ? SQLITE_TRANSIENT :
@@ -3267,19 +4092,37 @@ static void jsonObjectFinal(sqlite3_context *ctx){
 /****************************************************************************
 ** The json_each virtual table
 ****************************************************************************/
+typedef struct JsonParent JsonParent;
+struct JsonParent {
+  u32 iHead;                 /* Start of object or array */
+  u32 iValue;                /* Start of the value */
+  u32 iEnd;                  /* First byte past the end */
+  u32 nPath;                 /* Length of path */
+  i64 iKey;                  /* Key for JSONB_ARRAY */
+};
+
 typedef struct JsonEachCursor JsonEachCursor;
 struct JsonEachCursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
   u32 iRowid;                /* The rowid */
-  u32 iBegin;                /* The first node of the scan */
-  u32 i;                     /* Index in sParse.aNode[] of current row */
+  u32 i;                     /* Index in sParse.aBlob[] of current row */
   u32 iEnd;                  /* EOF when i equals or exceeds this value */
-  u8 eType;                  /* Type of top-level element */
+  u32 nRoot;                 /* Size of the root path in bytes */
+  u8 eType;                  /* Type of the container for element i */
   u8 bRecursive;             /* True for json_tree().  False for json_each() */
-  char *zJson;               /* Input JSON */
-  char *zRoot;               /* Path by which to filter zJson */
+  u32 nParent;               /* Current nesting depth */
+  u32 nParentAlloc;          /* Space allocated for aParent[] */
+  JsonParent *aParent;       /* Parent elements of i */
+  sqlite3 *db;               /* Database connection */
+  JsonString path;           /* Current path */
   JsonParse sParse;          /* Parse of the input JSON */
 };
+typedef struct JsonEachConnection JsonEachConnection;
+struct JsonEachConnection {
+  sqlite3_vtab base;         /* Base class - must be first */
+  sqlite3 *db;               /* Database connection */
+};
+
 
 /* Constructor for the json_each virtual table */
 static int jsonEachConnect(
@@ -3289,7 +4132,7 @@ static int jsonEachConnect(
   sqlite3_vtab **ppVtab,
   char **pzErr
 ){
-  sqlite3_vtab *pNew;
+  JsonEachConnection *pNew;
   int rc;
 
 /* Column numbers */
@@ -3315,10 +4158,11 @@ static int jsonEachConnect(
      "CREATE TABLE x(key,value,type,atom,id,parent,fullkey,path,"
                     "json HIDDEN,root HIDDEN)");
   if( rc==SQLITE_OK ){
-    pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
+    pNew = (JsonEachConnection*)(*ppVtab = sqlite3_malloc( sizeof(*pNew) ));
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
     sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
+    pNew->db = db;
   }
   return rc;
 }
@@ -3331,12 +4175,15 @@ static int jsonEachDisconnect(sqlite3_vtab *pVtab){
 
 /* constructor for a JsonEachCursor object for json_each(). */
 static int jsonEachOpenEach(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
+  JsonEachConnection *pVtab = (JsonEachConnection*)p;
   JsonEachCursor *pCur;
 
   UNUSED_PARAMETER(p);
   pCur = sqlite3_malloc( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
+  pCur->db = pVtab->db;
+  jsonStringZero(&pCur->path);
   *ppCursor = &pCur->base;
   return SQLITE_OK;
 }
@@ -3354,20 +4201,23 @@ static int jsonEachOpenTree(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
 /* Reset a JsonEachCursor back to its original state.  Free any memory
 ** held. */
 static void jsonEachCursorReset(JsonEachCursor *p){
-  sqlite3_free(p->zRoot);
   jsonParseReset(&p->sParse);
+  jsonStringReset(&p->path);
+  sqlite3DbFree(p->db, p->aParent);
   p->iRowid = 0;
   p->i = 0;
+  p->aParent = 0;
+  p->nParent = 0;
+  p->nParentAlloc = 0;
   p->iEnd = 0;
   p->eType = 0;
-  p->zJson = 0;
-  p->zRoot = 0;
 }
 
 /* Destructor for a jsonEachCursor object */
 static int jsonEachClose(sqlite3_vtab_cursor *cur){
   JsonEachCursor *p = (JsonEachCursor*)cur;
   jsonEachCursorReset(p);
+  
   sqlite3_free(cur);
   return SQLITE_OK;
 }
@@ -3379,200 +4229,232 @@ static int jsonEachEof(sqlite3_vtab_cursor *cur){
   return p->i >= p->iEnd;
 }
 
-/* Advance the cursor to the next element for json_tree() */
-static int jsonEachNext(sqlite3_vtab_cursor *cur){
-  JsonEachCursor *p = (JsonEachCursor*)cur;
-  if( p->bRecursive ){
-    if( p->sParse.aNode[p->i].jnFlags & JNODE_LABEL ) p->i++;
-    p->i++;
-    p->iRowid++;
-    if( p->i<p->iEnd ){
-      u32 iUp = p->sParse.aUp[p->i];
-      JsonNode *pUp = &p->sParse.aNode[iUp];
-      p->eType = pUp->eType;
-      if( pUp->eType==JSON_ARRAY ){
-        assert( pUp->eU==0 || pUp->eU==3 );
-        testcase( pUp->eU==3 );
-        VVA( pUp->eU = 3 );
-        if( iUp==p->i-1 ){
-          pUp->u.iKey = 0;
-        }else{
-          pUp->u.iKey++;
+/*
+** If the cursor is currently pointing at the label of a object entry,
+** then return the index of the value.  For all other cases, return the
+** current pointer position, which is the value.
+*/
+static int jsonSkipLabel(JsonEachCursor *p){
+  if( p->eType==JSONB_OBJECT ){
+    u32 sz = 0;
+    u32 n = jsonbPayloadSize(&p->sParse, p->i, &sz);
+    return p->i + n + sz;
+  }else{
+    return p->i;
+  }
+}
+
+/*
+** Append the path name for the current element.
+*/
+static void jsonAppendPathName(JsonEachCursor *p){
+  assert( p->nParent>0 );
+  assert( p->eType==JSONB_ARRAY || p->eType==JSONB_OBJECT );
+  if( p->eType==JSONB_ARRAY ){
+    jsonPrintf(30, &p->path, "[%lld]", p->aParent[p->nParent-1].iKey);
+  }else{
+    u32 n, sz = 0, k, i;
+    const char *z;
+    int needQuote = 0;
+    n = jsonbPayloadSize(&p->sParse, p->i, &sz);
+    k = p->i + n;
+    z = (const char*)&p->sParse.aBlob[k];
+    if( sz==0 || !sqlite3Isalpha(z[0]) ){
+      needQuote = 1;
+    }else{
+      for(i=0; i<sz; i++){
+        if( !sqlite3Isalnum(z[i]) ){
+          needQuote = 1;
+          break;
         }
       }
     }
+    if( needQuote ){
+      jsonPrintf(sz+4,&p->path,".\"%.*s\"", sz, z);
+    }else{
+      jsonPrintf(sz+2,&p->path,".%.*s", sz, z);
+    }
+  }
+}
+
+/* Advance the cursor to the next element for json_tree() */
+static int jsonEachNext(sqlite3_vtab_cursor *cur){
+  JsonEachCursor *p = (JsonEachCursor*)cur;
+  int rc = SQLITE_OK;
+  if( p->bRecursive ){
+    u8 x;
+    u8 levelChange = 0;
+    u32 n, sz = 0;
+    u32 i = jsonSkipLabel(p);
+    x = p->sParse.aBlob[i] & 0x0f;
+    n = jsonbPayloadSize(&p->sParse, i, &sz);
+    if( x==JSONB_OBJECT || x==JSONB_ARRAY ){
+      JsonParent *pParent;
+      if( p->nParent>=p->nParentAlloc ){
+        JsonParent *pNew;
+        u64 nNew;
+        nNew = p->nParentAlloc*2 + 3;
+        pNew = sqlite3DbRealloc(p->db, p->aParent, sizeof(JsonParent)*nNew);
+        if( pNew==0 ) return SQLITE_NOMEM;
+        p->nParentAlloc = (u32)nNew;
+        p->aParent = pNew;
+      }
+      levelChange = 1;
+      pParent = &p->aParent[p->nParent];
+      pParent->iHead = p->i;
+      pParent->iValue = i;
+      pParent->iEnd = i + n + sz;
+      pParent->iKey = -1;
+      pParent->nPath = (u32)p->path.nUsed;
+      if( p->eType && p->nParent ){
+        jsonAppendPathName(p);
+        if( p->path.eErr ) rc = SQLITE_NOMEM;
+      }
+      p->nParent++;
+      p->i = i + n;
+    }else{
+      p->i = i + n + sz;
+    }
+    while( p->nParent>0 && p->i >= p->aParent[p->nParent-1].iEnd ){
+      p->nParent--;
+      p->path.nUsed = p->aParent[p->nParent].nPath;
+      levelChange = 1;
+    }
+    if( levelChange ){
+      if( p->nParent>0 ){
+        JsonParent *pParent = &p->aParent[p->nParent-1];
+        u32 iVal = pParent->iValue;
+        p->eType = p->sParse.aBlob[iVal] & 0x0f;
+      }else{
+        p->eType = 0;
+      }
+    }
   }else{
-    switch( p->eType ){
-      case JSON_ARRAY: {
-        p->i += jsonNodeSize(&p->sParse.aNode[p->i]);
-        p->iRowid++;
-        break;
-      }
-      case JSON_OBJECT: {
-        p->i += 1 + jsonNodeSize(&p->sParse.aNode[p->i+1]);
-        p->iRowid++;
-        break;
-      }
-      default: {
-        p->i = p->iEnd;
-        break;
+    u32 n, sz = 0;
+    u32 i = jsonSkipLabel(p);
+    n = jsonbPayloadSize(&p->sParse, i, &sz);
+    p->i = i + n + sz;
+  }
+  if( p->eType==JSONB_ARRAY && p->nParent ){
+    p->aParent[p->nParent-1].iKey++;
+  }
+  p->iRowid++;
+  return rc;
+}
+
+/* Length of the path for rowid==0 in bRecursive mode.
+*/
+static int jsonEachPathLength(JsonEachCursor *p){
+  u32 n = p->path.nUsed;
+  if( p->iRowid==0 && p->bRecursive && n>1 ){
+    if( p->path.zBuf[n-1]==']' ){
+      do{
+        assert( n>0 );
+        n--;
+      }while( p->path.zBuf[n]!='[' );
+    }else{
+      u32 sz = 0;
+      jsonbPayloadSize(&p->sParse, p->i, &sz);
+      if( p->path.zBuf[n-1]=='"' ) sz += 2;
+      assert( sz<n );
+      n -= sz;
+      while( p->path.zBuf[n]!='.' && ALWAYS(n>0) ){
+        n--;
+        assert( n>0 );
       }
     }
   }
-  return SQLITE_OK;
-}
-
-/* Append an object label to the JSON Path being constructed
-** in pStr.
-*/
-static void jsonAppendObjectPathElement(
-  JsonString *pStr,
-  JsonNode *pNode
-){
-  int jj, nn;
-  const char *z;
-  assert( pNode->eType==JSON_STRING );
-  assert( pNode->jnFlags & JNODE_LABEL );
-  assert( pNode->eU==1 );
-  z = pNode->u.zJContent;
-  nn = pNode->n;
-  if( (pNode->jnFlags & JNODE_RAW)==0 ){
-    assert( nn>=2 );
-    assert( z[0]=='"' || z[0]=='\'' );
-    assert( z[nn-1]=='"' || z[0]=='\'' );
-    if( nn>2 && sqlite3Isalpha(z[1]) ){
-      for(jj=2; jj<nn-1 && sqlite3Isalnum(z[jj]); jj++){}
-      if( jj==nn-1 ){
-        z++;
-        nn -= 2;
-      }
-    }
-  }
-  jsonPrintf(nn+2, pStr, ".%.*s", nn, z);
-}
-
-/* Append the name of the path for element i to pStr
-*/
-static void jsonEachComputePath(
-  JsonEachCursor *p,       /* The cursor */
-  JsonString *pStr,        /* Write the path here */
-  u32 i                    /* Path to this element */
-){
-  JsonNode *pNode, *pUp;
-  u32 iUp;
-  if( i==0 ){
-    jsonAppendChar(pStr, '$');
-    return;
-  }
-  iUp = p->sParse.aUp[i];
-  jsonEachComputePath(p, pStr, iUp);
-  pNode = &p->sParse.aNode[i];
-  pUp = &p->sParse.aNode[iUp];
-  if( pUp->eType==JSON_ARRAY ){
-    assert( pUp->eU==3 || (pUp->eU==0 && pUp->u.iKey==0) );
-    testcase( pUp->eU==0 );
-    jsonPrintf(30, pStr, "[%d]", pUp->u.iKey);
-  }else{
-    assert( pUp->eType==JSON_OBJECT );
-    if( (pNode->jnFlags & JNODE_LABEL)==0 ) pNode--;
-    jsonAppendObjectPathElement(pStr, pNode);
-  }
+  return n;
 }
 
 /* Return the value of a column */
 static int jsonEachColumn(
   sqlite3_vtab_cursor *cur,   /* The cursor */
   sqlite3_context *ctx,       /* First argument to sqlite3_result_...() */
-  int i                       /* Which column to return */
+  int iColumn                 /* Which column to return */
 ){
   JsonEachCursor *p = (JsonEachCursor*)cur;
-  JsonNode *pThis = &p->sParse.aNode[p->i];
-  switch( i ){
+  switch( iColumn ){
     case JEACH_KEY: {
-      if( p->i==0 ) break;
-      if( p->eType==JSON_OBJECT ){
-        jsonReturn(&p->sParse, pThis, ctx, 0);
-      }else if( p->eType==JSON_ARRAY ){
-        u32 iKey;
-        if( p->bRecursive ){
-          if( p->iRowid==0 ) break;
-          assert( p->sParse.aNode[p->sParse.aUp[p->i]].eU==3 );
-          iKey = p->sParse.aNode[p->sParse.aUp[p->i]].u.iKey;
+      if( p->nParent==0 ){
+        u32 n, j;
+        if( p->nRoot==1 ) break;
+        j = jsonEachPathLength(p);
+        n = p->nRoot - j;
+        if( n==0 ){
+          break;
+        }else if( p->path.zBuf[j]=='[' ){
+          i64 x;
+          sqlite3Atoi64(&p->path.zBuf[j+1], &x, n-1, SQLITE_UTF8);
+          sqlite3_result_int64(ctx, x);
+        }else if( p->path.zBuf[j+1]=='"' ){
+          sqlite3_result_text(ctx, &p->path.zBuf[j+2], n-3, SQLITE_TRANSIENT);
         }else{
-          iKey = p->iRowid;
+          sqlite3_result_text(ctx, &p->path.zBuf[j+1], n-1, SQLITE_TRANSIENT);
         }
-        sqlite3_result_int64(ctx, (sqlite3_int64)iKey);
+        break;
+      }
+      if( p->eType==JSONB_OBJECT ){
+        jsonReturnFromBlob(&p->sParse, p->i, ctx, 1);
+      }else{
+        assert( p->eType==JSONB_ARRAY );
+        sqlite3_result_int64(ctx, p->aParent[p->nParent-1].iKey);
       }
       break;
     }
     case JEACH_VALUE: {
-      if( pThis->jnFlags & JNODE_LABEL ) pThis++;
-      jsonReturn(&p->sParse, pThis, ctx, 0);
+      u32 i = jsonSkipLabel(p);
+      jsonReturnFromBlob(&p->sParse, i, ctx, 1);
       break;
     }
     case JEACH_TYPE: {
-      if( pThis->jnFlags & JNODE_LABEL ) pThis++;
-      sqlite3_result_text(ctx, jsonType[pThis->eType], -1, SQLITE_STATIC);
+      u32 i = jsonSkipLabel(p);
+      u8 eType = p->sParse.aBlob[i] & 0x0f;
+      sqlite3_result_text(ctx, jsonbType[eType], -1, SQLITE_STATIC);
       break;
     }
     case JEACH_ATOM: {
-      if( pThis->jnFlags & JNODE_LABEL ) pThis++;
-      if( pThis->eType>=JSON_ARRAY ) break;
-      jsonReturn(&p->sParse, pThis, ctx, 0);
+      u32 i = jsonSkipLabel(p);
+      if( (p->sParse.aBlob[i] & 0x0f)<JSONB_ARRAY ){
+        jsonReturnFromBlob(&p->sParse, i, ctx, 1);
+      }
       break;
     }
     case JEACH_ID: {
-      sqlite3_result_int64(ctx,
-         (sqlite3_int64)p->i + ((pThis->jnFlags & JNODE_LABEL)!=0));
+      sqlite3_result_int64(ctx, (sqlite3_int64)p->i);
       break;
     }
     case JEACH_PARENT: {
-      if( p->i>p->iBegin && p->bRecursive ){
-        sqlite3_result_int64(ctx, (sqlite3_int64)p->sParse.aUp[p->i]);
+      if( p->nParent>0 && p->bRecursive ){
+        sqlite3_result_int64(ctx, p->aParent[p->nParent-1].iHead);
       }
       break;
     }
     case JEACH_FULLKEY: {
-      JsonString x;
-      jsonInit(&x, ctx);
-      if( p->bRecursive ){
-        jsonEachComputePath(p, &x, p->i);
-      }else{
-        if( p->zRoot ){
-          jsonAppendRaw(&x, p->zRoot, (int)strlen(p->zRoot));
-        }else{
-          jsonAppendChar(&x, '$');
-        }
-        if( p->eType==JSON_ARRAY ){
-          jsonPrintf(30, &x, "[%d]", p->iRowid);
-        }else if( p->eType==JSON_OBJECT ){
-          jsonAppendObjectPathElement(&x, pThis);
-        }
-      }
-      jsonResult(&x);
+      u64 nBase = p->path.nUsed;
+      if( p->nParent ) jsonAppendPathName(p);
+      sqlite3_result_text64(ctx, p->path.zBuf, p->path.nUsed,
+                            SQLITE_TRANSIENT, SQLITE_UTF8);
+      p->path.nUsed = nBase;
       break;
     }
     case JEACH_PATH: {
-      if( p->bRecursive ){
-        JsonString x;
-        jsonInit(&x, ctx);
-        jsonEachComputePath(p, &x, p->sParse.aUp[p->i]);
-        jsonResult(&x);
-        break;
-      }
-      /* For json_each() path and root are the same so fall through
-      ** into the root case */
-      /* no break */ deliberate_fall_through
+      u32 n = jsonEachPathLength(p);
+      sqlite3_result_text64(ctx, p->path.zBuf, n,
+                            SQLITE_TRANSIENT, SQLITE_UTF8);
+      break;
     }
     default: {
-      const char *zRoot = p->zRoot;
-      if( zRoot==0 ) zRoot = "$";
-      sqlite3_result_text(ctx, zRoot, -1, SQLITE_STATIC);
+      sqlite3_result_text(ctx, p->path.zBuf, p->nRoot, SQLITE_STATIC);
       break;
     }
     case JEACH_JSON: {
-      assert( i==JEACH_JSON );
-      sqlite3_result_text(ctx, p->sParse.zJson, -1, SQLITE_STATIC);
+      if( p->sParse.zJson==0 ){
+        sqlite3_result_blob(ctx, p->sParse.aBlob, p->sParse.nBlob,
+                            SQLITE_STATIC);
+      }else{
+        sqlite3_result_text(ctx, p->sParse.zJson, -1, SQLITE_STATIC);
+      }
       break;
     }
   }
@@ -3663,86 +4545,100 @@ static int jsonEachFilter(
   int argc, sqlite3_value **argv
 ){
   JsonEachCursor *p = (JsonEachCursor*)cur;
-  const char *z;
   const char *zRoot = 0;
-  sqlite3_int64 n;
+  u32 i, n, sz;
 
   UNUSED_PARAMETER(idxStr);
   UNUSED_PARAMETER(argc);
   jsonEachCursorReset(p);
   if( idxNum==0 ) return SQLITE_OK;
-  z = (const char*)sqlite3_value_text(argv[0]);
-  if( z==0 ) return SQLITE_OK;
   memset(&p->sParse, 0, sizeof(p->sParse));
   p->sParse.nJPRef = 1;
-  if( sqlite3ValueIsOfClass(argv[0], sqlite3RCStrUnref) ){
-    p->sParse.zJson = sqlite3RCStrRef((char*)z);
-  }else{
-    n = sqlite3_value_bytes(argv[0]);
-    p->sParse.zJson = sqlite3RCStrNew( n+1 );
-    if( p->sParse.zJson==0 ) return SQLITE_NOMEM;
-    memcpy(p->sParse.zJson, z, (size_t)n+1);
-  }
-  p->sParse.bJsonIsRCStr = 1;
-  p->zJson = p->sParse.zJson;
-  if( jsonParse(&p->sParse, 0) ){
-    int rc = SQLITE_NOMEM;
-    if( p->sParse.oom==0 ){
-      sqlite3_free(cur->pVtab->zErrMsg);
-      cur->pVtab->zErrMsg = sqlite3_mprintf("malformed JSON");
-      if( cur->pVtab->zErrMsg ) rc = SQLITE_ERROR;
+  if( sqlite3_value_type(argv[0])==SQLITE_BLOB ){
+    if( jsonFuncArgMightBeBinary(argv[0]) ){
+      p->sParse.nBlob = sqlite3_value_bytes(argv[0]);
+      p->sParse.aBlob = (u8*)sqlite3_value_blob(argv[0]);
+    }else{
+      goto json_each_malformed_input;
     }
-    jsonEachCursorReset(p);
-    return rc;
-  }else if( p->bRecursive && jsonParseFindParents(&p->sParse) ){
-    jsonEachCursorReset(p);
-    return SQLITE_NOMEM;
   }else{
-    JsonNode *pNode = 0;
-    if( idxNum==3 ){
-      const char *zErr = 0;
-      zRoot = (const char*)sqlite3_value_text(argv[1]);
-      if( zRoot==0 ) return SQLITE_OK;
-      n = sqlite3_value_bytes(argv[1]);
-      p->zRoot = sqlite3_malloc64( n+1 );
-      if( p->zRoot==0 ) return SQLITE_NOMEM;
-      memcpy(p->zRoot, zRoot, (size_t)n+1);
-      if( zRoot[0]!='$' ){
-        zErr = zRoot;
-      }else{
-        pNode = jsonLookupStep(&p->sParse, 0, p->zRoot+1, 0, &zErr);
+    p->sParse.zJson = (char*)sqlite3_value_text(argv[0]);
+    p->sParse.nJson = sqlite3_value_bytes(argv[0]);
+    if( p->sParse.zJson==0 ){
+      p->i = p->iEnd = 0;
+      return SQLITE_OK;
+    }      
+    if( jsonConvertTextToBlob(&p->sParse, 0) ){
+      if( p->sParse.oom ){
+        return SQLITE_NOMEM;
       }
-      if( zErr ){
+      goto json_each_malformed_input;
+    }
+  }
+  if( idxNum==3 ){
+    zRoot = (const char*)sqlite3_value_text(argv[1]);
+    if( zRoot==0 ) return SQLITE_OK;
+    if( zRoot[0]!='$' ){
+      sqlite3_free(cur->pVtab->zErrMsg);
+      cur->pVtab->zErrMsg = jsonBadPathError(0, zRoot);
+      jsonEachCursorReset(p);
+      return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
+    }
+    p->nRoot = sqlite3Strlen30(zRoot);
+    if( zRoot[1]==0 ){
+      i = p->i = 0;
+      p->eType = 0;
+    }else{
+      i = jsonLookupStep(&p->sParse, 0, zRoot+1, 0);
+      if( JSON_LOOKUP_ISERROR(i) ){
+        if( i==JSON_LOOKUP_NOTFOUND ){
+          p->i = 0;
+          p->eType = 0;
+          p->iEnd = 0;
+          return SQLITE_OK;
+        }
         sqlite3_free(cur->pVtab->zErrMsg);
-        cur->pVtab->zErrMsg = jsonPathSyntaxError(zErr);
+        cur->pVtab->zErrMsg = jsonBadPathError(0, zRoot);
         jsonEachCursorReset(p);
         return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
-      }else if( pNode==0 ){
-        return SQLITE_OK;
       }
-    }else{
-      pNode = p->sParse.aNode;
-    }
-    p->iBegin = p->i = (int)(pNode - p->sParse.aNode);
-    p->eType = pNode->eType;
-    if( p->eType>=JSON_ARRAY ){
-      assert( pNode->eU==0 );
-      VVA( pNode->eU = 3 );
-      pNode->u.iKey = 0;
-      p->iEnd = p->i + pNode->n + 1;
-      if( p->bRecursive ){
-        p->eType = p->sParse.aNode[p->sParse.aUp[p->i]].eType;
-        if( p->i>0 && (p->sParse.aNode[p->i-1].jnFlags & JNODE_LABEL)!=0 ){
-          p->i--;
-        }
+      if( p->sParse.iLabel ){
+        p->i = p->sParse.iLabel;
+        p->eType = JSONB_OBJECT;
       }else{
-        p->i++;
+        p->i = i;
+        p->eType = JSONB_ARRAY;
       }
-    }else{
-      p->iEnd = p->i+1;
     }
+    jsonAppendRaw(&p->path, zRoot, p->nRoot);
+  }else{
+    i = p->i = 0;
+    p->eType = 0;
+    p->nRoot = 1;
+    jsonAppendRaw(&p->path, "$", 1);
+  }
+  p->nParent = 0;
+  n = jsonbPayloadSize(&p->sParse, i, &sz);
+  p->iEnd = i+n+sz;
+  if( (p->sParse.aBlob[i] & 0x0f)>=JSONB_ARRAY && !p->bRecursive ){
+    p->i = i + n;
+    p->eType = p->sParse.aBlob[i] & 0x0f;
+    p->aParent = sqlite3DbMallocZero(p->db, sizeof(JsonParent));
+    if( p->aParent==0 ) return SQLITE_NOMEM;
+    p->nParent = 1;
+    p->nParentAlloc = 1;
+    p->aParent[0].iKey = 0;
+    p->aParent[0].iEnd = p->iEnd;
+    p->aParent[0].iHead = p->i;
+    p->aParent[0].iValue = i;
   }
   return SQLITE_OK;
+
+json_each_malformed_input:
+  sqlite3_free(cur->pVtab->zErrMsg);
+  cur->pVtab->zErrMsg = sqlite3_mprintf("malformed JSON");
+  jsonEachCursorReset(p);
+  return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
 }
 
 /* The methods of the json_each virtual table */
@@ -3811,40 +4707,54 @@ static sqlite3_module jsonTreeModule = {
 void sqlite3RegisterJsonFunctions(void){
 #ifndef SQLITE_OMIT_JSON
   static FuncDef aJsonFunc[] = {
-    /*                     calls sqlite3_result_subtype()                    */
-    /*                                  |                                    */
-    /*              Uses cache ______   |   __ calls sqlite3_value_subtype() */
-    /*                               |  |  |                                 */
-    /*          Num args _________   |  |  |   ___ Flags                     */
-    /*                            |  |  |  |  |                              */
-    /*                            |  |  |  |  |                              */
-    JFUNCTION(json,               1, 1, 1, 0, 0,          jsonRemoveFunc),
-    JFUNCTION(json_array,        -1, 0, 1, 1, 0,          jsonArrayFunc),
-    JFUNCTION(json_array_length,  1, 1, 0, 0, 0,          jsonArrayLengthFunc),
-    JFUNCTION(json_array_length,  2, 1, 0, 0, 0,          jsonArrayLengthFunc),
-    JFUNCTION(json_error_position,1, 1, 0, 0, 0,          jsonErrorFunc),
-    JFUNCTION(json_extract,      -1, 1, 1, 0, 0,          jsonExtractFunc),
-    JFUNCTION(->,                 2, 1, 1, 0, JSON_JSON,  jsonExtractFunc),
-    JFUNCTION(->>,                2, 1, 0, 0, JSON_SQL,   jsonExtractFunc),
-    JFUNCTION(json_insert,       -1, 1, 1, 1, 0,          jsonSetFunc),
-    JFUNCTION(json_object,       -1, 0, 1, 1, 0,          jsonObjectFunc),
-    JFUNCTION(json_patch,         2, 1, 1, 0, 0,          jsonPatchFunc),
-    JFUNCTION(json_quote,         1, 0, 1, 1, 0,          jsonQuoteFunc),
-    JFUNCTION(json_remove,       -1, 1, 1, 0, 0,          jsonRemoveFunc),
-    JFUNCTION(json_replace,      -1, 1, 1, 1, 0,          jsonReplaceFunc),
-    JFUNCTION(json_set,          -1, 1, 1, 1, JSON_ISSET, jsonSetFunc),
-    JFUNCTION(json_type,          1, 1, 0, 0, 0,          jsonTypeFunc),
-    JFUNCTION(json_type,          2, 1, 0, 0, 0,          jsonTypeFunc),
-    JFUNCTION(json_valid,         1, 1, 0, 0, 0,          jsonValidFunc),
+    /*   sqlite3_result_subtype() ----,  ,--- sqlite3_value_subtype()       */
+    /*                                |  |                                  */
+    /*             Uses cache ------, |  | ,---- Returns JSONB              */
+    /*                              | |  | |                                */
+    /*     Number of arguments ---, | |  | | ,--- Flags                     */
+    /*                            | | |  | | |                              */
+    JFUNCTION(json,               1,1,1, 0,0,0,          jsonRemoveFunc),
+    JFUNCTION(jsonb,              1,1,0, 0,1,0,          jsonRemoveFunc),
+    JFUNCTION(json_array,        -1,0,1, 1,0,0,          jsonArrayFunc),
+    JFUNCTION(jsonb_array,       -1,0,1, 1,1,0,          jsonArrayFunc),
+    JFUNCTION(json_array_length,  1,1,0, 0,0,0,          jsonArrayLengthFunc),
+    JFUNCTION(json_array_length,  2,1,0, 0,0,0,          jsonArrayLengthFunc),
+    JFUNCTION(json_error_position,1,1,0, 0,0,0,          jsonErrorFunc),
+    JFUNCTION(json_extract,      -1,1,1, 0,0,0,          jsonExtractFunc),
+    JFUNCTION(jsonb_extract,     -1,1,0, 0,1,0,          jsonExtractFunc),
+    JFUNCTION(->,                 2,1,1, 0,0,JSON_JSON,  jsonExtractFunc),
+    JFUNCTION(->>,                2,1,0, 0,0,JSON_SQL,   jsonExtractFunc),
+    JFUNCTION(json_insert,       -1,1,1, 1,0,0,          jsonSetFunc),
+    JFUNCTION(jsonb_insert,      -1,1,0, 1,1,0,          jsonSetFunc),
+    JFUNCTION(json_object,       -1,0,1, 1,0,0,          jsonObjectFunc),
+    JFUNCTION(jsonb_object,      -1,0,1, 1,1,0,          jsonObjectFunc),
+    JFUNCTION(json_patch,         2,1,1, 0,0,0,          jsonPatchFunc),
+    JFUNCTION(jsonb_patch,        2,1,0, 0,1,0,          jsonPatchFunc),
+    JFUNCTION(json_quote,         1,0,1, 1,0,0,          jsonQuoteFunc),
+    JFUNCTION(json_remove,       -1,1,1, 0,0,0,          jsonRemoveFunc),
+    JFUNCTION(jsonb_remove,      -1,1,0, 0,1,0,          jsonRemoveFunc),
+    JFUNCTION(json_replace,      -1,1,1, 1,0,0,          jsonReplaceFunc),
+    JFUNCTION(jsonb_replace,     -1,1,0, 1,1,0,          jsonReplaceFunc),
+    JFUNCTION(json_set,          -1,1,1, 1,0,JSON_ISSET, jsonSetFunc),
+    JFUNCTION(jsonb_set,         -1,1,0, 1,1,JSON_ISSET, jsonSetFunc),
+    JFUNCTION(json_type,          1,1,0, 0,0,0,          jsonTypeFunc),
+    JFUNCTION(json_type,          2,1,0, 0,0,0,          jsonTypeFunc),
+    JFUNCTION(json_valid,         1,1,0, 0,0,0,          jsonValidFunc),
+    JFUNCTION(json_valid,         2,1,0, 0,0,0,          jsonValidFunc),
 #if SQLITE_DEBUG
-    JFUNCTION(json_parse,         1, 1, 1, 0, 0,          jsonParseFunc),
-    JFUNCTION(json_test1,         1, 1, 0, 1, 0,          jsonTest1Func),
+    JFUNCTION(json_parse,         1,1,0, 0,0,0,          jsonParseFunc),
 #endif
     WAGGREGATE(json_group_array,  1, 0, 0,
        jsonArrayStep, jsonArrayFinal, jsonArrayValue, jsonGroupInverse,
        SQLITE_SUBTYPE|SQLITE_RESULT_SUBTYPE|SQLITE_UTF8|
        SQLITE_DETERMINISTIC),
+    WAGGREGATE(jsonb_group_array, 1, JSON_BLOB, 0,
+       jsonArrayStep, jsonArrayFinal, jsonArrayValue, jsonGroupInverse,
+       SQLITE_SUBTYPE|SQLITE_RESULT_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC),
     WAGGREGATE(json_group_object, 2, 0, 0,
+       jsonObjectStep, jsonObjectFinal, jsonObjectValue, jsonGroupInverse,
+       SQLITE_SUBTYPE|SQLITE_RESULT_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC),
+    WAGGREGATE(jsonb_group_object,2, JSON_BLOB, 0,
        jsonObjectStep, jsonObjectFinal, jsonObjectValue, jsonGroupInverse,
        SQLITE_SUBTYPE|SQLITE_RESULT_SUBTYPE|SQLITE_UTF8|
        SQLITE_DETERMINISTIC)

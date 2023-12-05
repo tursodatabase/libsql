@@ -40,6 +40,7 @@ doCachegrind=1
 doVdbeProfile=0
 doWal=1
 doDiff=1
+doJsonB=0
 while test "$1" != ""; do
   case $1 in
     --nodiff)
@@ -53,6 +54,9 @@ while test "$1" != ""; do
         ;;
     --gcc7)
         CC=gcc-7
+        ;;
+    --jsonb)
+        doJsonB=1
         ;;
     -*)
         CC_OPTS="$CC_OPTS $1"
@@ -69,12 +73,18 @@ rm -f cachegrind.out.* jsonshell
 $CC -g -Os -Wall -I. $CC_OPTS ./shell.c ./sqlite3.c -o jsonshell -ldl -lpthread
 ls -l jsonshell | tee -a summary-$NAME.txt
 home=`echo $0 | sed -e 's,/[^/]*$,,'`
-echo ./jsonshell json100mb.db "<$home/json-q1.txt"
-valgrind --tool=cachegrind ./jsonshell json100mb.db <$home/json-q1.txt \
-      2>&1 | tee -a summary-$NAME.txt
+if test $doJsonB -eq 1; then
+  echo ./jsonshell json100mb_b.db "<$home/json-q1-b.txt"
+  valgrind --tool=cachegrind ./jsonshell json100mb_b.db <$home/json-q1-b.txt \
+        2>&1 | tee -a summary-$NAME.txt
+else
+  echo ./jsonshell json100mb.db "<$home/json-q1.txt"
+  valgrind --tool=cachegrind ./jsonshell json100mb.db <$home/json-q1.txt \
+        2>&1 | tee -a summary-$NAME.txt
+fi
 cg_anno.tcl cachegrind.out.* >jout-$NAME.txt
 echo '*****************************************************' >>jout-$NAME.txt
 sed 's/^[0-9=-]\{9\}/==00000==/' summary-$NAME.txt >>jout-$NAME.txt
-if test "$NAME" != "$BASELINE"; then
+if test "$NAME" != "$BASELINE" -a $doDiff -ne 0; then
   fossil xdiff --tk -c 20 jout-$BASELINE.txt jout-$NAME.txt
 fi
