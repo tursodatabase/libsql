@@ -1,5 +1,5 @@
-C Use\san\sassert()\sto\sfix\sa\sharmless\sstatic\sanalyzer\swarning.
-D 2023-12-05T01:44:15.015
+C Clean\sup\sthe\sJSONB\sperformance\stest\sscript.
+D 2023-12-05T12:20:58.241
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1322,7 +1322,7 @@ F test/jrnlmode2.test 8759a1d4657c064637f8b079592651530db738419e1d649c6df7048cd7
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/json/README.md 63e3e589e1df8fd3cc1588ba1faaff659214003f8b77a15af5c6452b35e30ee2
 F test/json/json-generator.tcl dc0dd0f393800c98658fc4c47eaa6af29d4e17527380cd28656fb261bddc8a3f
-F test/json/json-q1-b.txt 606818a5fba6d9e418c9f4ea7d8418af026775042dad81439b72447a147a462c
+F test/json/json-q1-b.txt 1e180fe6491efab307e318b22879e3a736ac9a96539bbde7911a13ee5b33abc7
 F test/json/json-q1.txt 65f9d1cdcc4cffa9823fb73ed936aae5658700cd001fde448f68bfb91c807307
 F test/json/json-speed-check.sh b060a9a6c696c0a807d8929400fa11bd7113edc58b0d66b9795f424f8d0db326 x
 F test/json101.test 70587d7d35ef9e2126364ba70f0c951f70827cfbd28649d779ff3df7e8f87547
@@ -2145,8 +2145,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1910feb0b7d5cc2b810c3322f6cca281d8730182d30d162bd7bb56800979ea91
-R a9ebb3d8db9982a53cbb9404704cc04b
+P a249ca657e624028bc6b3d2c2bcedd7162d118addb7d62ce519920cecebf1860
+R 458c3105955a68681dcfc6965be984aa
 U drh
-Z 17d27d3e2a2e6e4799038f7f740bf1ce
+Z 523674accd38155d2ed6d77fe8db57c8
 # Remove this line to create a well-formed Fossil manifest.
