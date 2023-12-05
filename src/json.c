@@ -3348,11 +3348,11 @@ static int jsonMergePatch(
     pTarget->aBlob[iTarget] = (x & 0xf0) | JSONB_OBJECT;
   }
   n = jsonbPayloadSize(pPatch, iPatch, &sz);
-  if( n==0 ) return JSON_MERGE_BADPATCH;
+  if( NEVER(n==0) ) return JSON_MERGE_BADPATCH;
   iPCursor = iPatch+n;
   iPEnd = iPCursor+sz;
   n = jsonbPayloadSize(pTarget, iTarget, &sz);
-  if( n==0 ) return JSON_MERGE_BADTARGET;
+  if( NEVER(n==0) ) return JSON_MERGE_BADTARGET;
   iTStart = iTarget+n;
   iTEndBE = iTStart+sz;
 
@@ -3365,7 +3365,7 @@ static int jsonMergePatch(
     nPLabel = jsonbPayloadSize(pPatch, iPCursor, &szPLabel);
     if( nPLabel==0 ) return JSON_MERGE_BADPATCH;
     iPValue = iPCursor + nPLabel + szPLabel;
-    if( iPCursor>=iPEnd ) return JSON_MERGE_BADPATCH;
+    if( iPValue>=iPEnd ) return JSON_MERGE_BADPATCH;
     nPValue = jsonbPayloadSize(pPatch, iPValue, &szPValue);
     if( nPValue==0 ) return JSON_MERGE_BADPATCH;
     iPCursor = iPValue + nPValue + szPValue;
@@ -3397,13 +3397,12 @@ static int jsonMergePatch(
       }else{
         /* Should rarely happen */
         JsonString s1, s2;
-        int isEqual;
+        int isEqual, isOom;
         jsonStringInit(&s1, 0);
         jsonXlateBlobToText(pTarget, iTLabel, &s1);
-        if( s1.eErr ) return JSON_MERGE_OOM;
         jsonStringInit(&s2, 0);
         jsonXlateBlobToText(pPatch, iPLabel, &s2);
-        if( s2.eErr ) return JSON_MERGE_OOM;
+        isOom = s1.eErr || s2.eErr;
         if( s1.nUsed==s2.nUsed && memcmp(s1.zBuf, s2.zBuf, s1.nUsed)==0 ){
           isEqual = 1;
         }else{
@@ -3411,6 +3410,7 @@ static int jsonMergePatch(
         }
         jsonStringReset(&s1);
         jsonStringReset(&s2);
+        if( isOom ) return JSON_MERGE_OOM;
         if( isEqual ) break;
       }
       iTCursor = iTValue + nTValue + szTValue;
@@ -3420,9 +3420,9 @@ static int jsonMergePatch(
       /* A match was found.  Algorithm line 08 */
       if( x==0 ){
         /* Patch value is NULL.  Algorithm line 09 */
-        jsonBlobEdit(pTarget, iTLabel, nTLabel+szTLabel+nTValue+szTValue,
-                     0, 0);
-        if( pTarget->oom ) return JSON_MERGE_OOM;
+        jsonBlobEdit(pTarget, iTLabel, nTLabel+szTLabel+nTValue+szTValue, 0,0);
+        /*  vvvvvv----- No OOM on a delete-only edit */
+        if( NEVER(pTarget->oom) ) return JSON_MERGE_OOM;
       }else{
         /* Algorithm line 12 */
         int rc, savedDelta = pTarget->delta;
