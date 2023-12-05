@@ -1,6 +1,8 @@
 #![allow(improper_ctypes)]
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroU32;
+
     use libsql_sys::wal::{WalManager, Sqlite3WalManager, Sqlite3Wal, Wal, make_wal_manager};
     use libsql_sys::rusqlite::{Connection, OpenFlags};
 
@@ -67,11 +69,11 @@ mod tests {
             self.0.end_read_txn()
         }
 
-        fn find_frame(&mut self, page_no: u32) -> libsql_sys::wal::Result<u32> {
+        fn find_frame(&mut self, page_no: NonZeroU32) -> libsql_sys::wal::Result<Option<NonZeroU32>> {
             self.0.find_frame(page_no)
         }
 
-        fn read_frame(&mut self, frame_no: u32, buffer: &mut [u8]) -> libsql_sys::wal::Result<()> {
+        fn read_frame(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> libsql_sys::wal::Result<()> {
             self.0.read_frame(frame_no, buffer)
         }
 

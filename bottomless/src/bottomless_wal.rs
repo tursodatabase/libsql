@@ -1,4 +1,5 @@
 use std::ffi::{c_int, CStr};
+use std::num::NonZeroU32;
 use std::sync::{Arc, Mutex};
 
 use libsql_sys::ffi::{SQLITE_BUSY, SQLITE_IOERR_WRITE};
@@ -110,11 +111,11 @@ impl<T: Wal> Wal for BottomlessWal<T> {
         self.inner.end_read_txn()
     }
 
-    fn find_frame(&mut self, page_no: u32) -> Result<u32> {
+    fn find_frame(&mut self, page_no: NonZeroU32) -> Result<Option<NonZeroU32>> {
         self.inner.find_frame(page_no)
     }
 
-    fn read_frame(&mut self, frame_no: u32, buffer: &mut [u8]) -> Result<()> {
+    fn read_frame(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> Result<()> {
         self.inner.read_frame(frame_no, buffer)
     }
 

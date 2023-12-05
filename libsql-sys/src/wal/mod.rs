@@ -1,4 +1,5 @@
 use std::ffi::{c_int, CStr};
+use std::num::NonZeroU32;
 
 pub use crate::ffi::Error;
 use crate::ffi::*;
@@ -122,9 +123,9 @@ pub trait Wal {
     fn end_read_txn(&mut self);
 
     /// locate the frame containing page `page_no`
-    fn find_frame(&mut self, page_no: u32) -> Result<u32>;
+    fn find_frame(&mut self, page_no: NonZeroU32) -> Result<Option<NonZeroU32>>;
     /// reads frame `frame_no` into buffer.
-    fn read_frame(&mut self, frame_no: u32, buffer: &mut [u8]) -> Result<()>;
+    fn read_frame(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> Result<()>;
 
     fn db_size(&self) -> u32;
 

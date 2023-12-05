@@ -1,5 +1,6 @@
 use std::ffi::{c_int, c_void, CStr};
 use std::mem::MaybeUninit;
+use std::num::NonZeroU32;
 
 use libsql_ffi::{
     libsql_wal, libsql_wal_manager, sqlite3_wal, sqlite3_wal_manager, Error, SQLITE_OK,
@@ -170,23 +171,24 @@ impl Wal for Sqlite3Wal {
         }
     }
 
-    fn find_frame(&mut self, page_no: u32) -> Result<u32> {
+    fn find_frame(&mut self, page_no: NonZeroU32) -> Result<Option<NonZeroU32>> {
         let mut out: u32 = 0;
         let rc = unsafe {
-            (self.inner.methods.xFindFrame.unwrap())(self.inner.pData, page_no, &mut out as *mut _)
+            (self.inner.methods.xFindFrame.unwrap())(self.inner.pData, page_no.into(), &mut out)
         };
+
         if rc != 0 {
             Err(Error::new(rc))
         } else {
-            Ok(out as _)
+            Ok(NonZeroU32::new(out))
         }
     }
 
-    fn read_frame(&mut self, frame_no: u32, buffer: &mut [u8]) -> Result<()> {
+    fn read_frame(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> Result<()> {
         let rc = unsafe {
             (self.inner.methods.xReadFrame.unwrap())(
                 self.inner.pData,
-                frame_no,
+                frame_no.into(),
                 buffer.len() as _,
                 buffer.as_mut_ptr(),
             )
