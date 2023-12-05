@@ -3873,6 +3873,7 @@ static void jsonErrorFunc(
       }else{
         /* Convert byte-offset s.iErr into a character offset */
         u32 k;
+        assert( s.zJson!=0 );  /* Because s.oom is false */
         for(k=0; k<s.iErr && ALWAYS(s.zJson[k]); k++){
           if( (s.zJson[k] & 0xc0)!=0x80 ) iErrPos++;
         }
