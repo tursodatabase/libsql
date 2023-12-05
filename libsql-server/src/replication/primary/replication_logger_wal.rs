@@ -308,3 +308,91 @@ impl ReplicationLoggerWal {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use libsql_sys::wal::wrapper::{WalWrapper, WrapWal};
+    use metrics::atomics::AtomicU64;
+    use rusqlite::ffi::{sqlite3_wal_checkpoint_v2, SQLITE_CHECKPOINT_FULL};
+    use tempfile::tempdir;
+
+    use super::*;
+
+    /// In this test, we will perform a bunch of additions, and then checkpoint. We then check that
+    /// the replication index has been flushed to the main db file.
+    #[tokio::test]
+    async fn check_replication_index() {
+        // a wrap wal implementation that catches call to checkpoint, and store the value of the
+        // replication index found on page 1 of the main database file.
+        #[derive(Clone, Default)]
+        struct VerifyReplicationIndex(Arc<AtomicU64>);
+
+        impl WrapWal<ReplicationLoggerWal> for VerifyReplicationIndex {
+            fn checkpoint<B: libsql_sys::wal::BusyHandler>(
+                &mut self,
+                wrapped: &mut ReplicationLoggerWal,
+                db: &mut libsql_sys::wal::Sqlite3Db,
+                mode: libsql_sys::wal::CheckpointMode,
+                busy_handler: Option<&mut B>,
+                sync_flags: u32,
+                // temporary scratch buffer
+                buf: &mut [u8],
+            ) -> libsql_sys::wal::Result<(u32, u32)> {
+                dbg!();
+                let ret = wrapped.checkpoint(db, mode, busy_handler, sync_flags, buf)?;
+                let buf = &mut [0; LIBSQL_PAGE_SIZE as _];
+                wrapped.inner.db_file().read_at(buf, 0).unwrap();
+                let header = Sqlite3DbHeader::mut_from_prefix(buf).unwrap();
+                self.0.store(
+                    header.replication_index.into(),
+                    std::sync::atomic::Ordering::Relaxed,
+                );
+
+                dbg!();
+                Ok(ret)
+            }
+        }
+
+        let tmp = tempdir().unwrap();
+        let verify_replication_index = VerifyReplicationIndex::default();
+        let logger = Arc::new(
+            ReplicationLogger::open(
+                tmp.path(),
+                10000000,
+                None,
+                false,
+                100000,
+                Box::new(|_| Ok(())),
+            )
+            .unwrap(),
+        );
+        let wal_manager = WalWrapper::new(
+            verify_replication_index.clone(),
+            ReplicationLoggerWalManager::new(logger.clone()),
+        );
+        let db =
+            crate::connection::libsql::open_conn(tmp.path(), wal_manager, None, 10000).unwrap();
+
+        db.execute("create table test (x)", ()).unwrap();
+        for _ in 0..100 {
+            db.execute("insert into test values (42)", ()).unwrap();
+        }
+
+        unsafe {
+            let rc = sqlite3_wal_checkpoint_v2(
+                db.handle(),
+                std::ptr::null_mut(),
+                SQLITE_CHECKPOINT_FULL,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+            );
+            assert_eq!(rc, 0);
+        };
+
+        assert_eq!(
+            verify_replication_index
+                .0
+                .load(std::sync::atomic::Ordering::Relaxed),
+            logger.new_frame_notifier.borrow().unwrap()
+        );
+    }
+}
