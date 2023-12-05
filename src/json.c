@@ -1119,6 +1119,7 @@ static void jsonBlobAppendNode(
     jsonBlobExpandAndAppendNode(pParse,eType,szPayload,aPayload);
     return;
   }
+  assert( pParse->aBlob!=0 );
   a = &pParse->aBlob[pParse->nBlob];
   if( szPayload<=11 ){
     a[0] = eType | (szPayload<<4);
@@ -2288,6 +2289,8 @@ static u32 jsonLookupStep(
         nIns = ix.nBlob + nKey + v.nBlob;
         jsonBlobEdit(pParse, j, 0, 0, nIns);
         if( !pParse->oom ){
+          assert( pParse->aBlob!=0 ); /* Because pParse->oom!=0 */
+          assert( ix.aBlob!=0 );      /* Because pPasre->oom!=0 */
           memcpy(&pParse->aBlob[j], ix.aBlob, ix.nBlob);
           k = j + ix.nBlob;
           memcpy(&pParse->aBlob[k], zKey, nKey);
@@ -4406,7 +4409,7 @@ static int jsonEachColumn(
     }
     case JEACH_TYPE: {
       u32 i = jsonSkipLabel(p);
-      u8 eType = eType = p->sParse.aBlob[i] & 0x0f;
+      u8 eType = p->sParse.aBlob[i] & 0x0f;
       sqlite3_result_text(ctx, jsonbType[eType], -1, SQLITE_STATIC);
       break;
     }
