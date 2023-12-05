@@ -414,9 +414,10 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         meta_store_path: impl AsRef<Path>,
         max_active_namespaces: usize,
     ) -> Self {
+        tracing::trace!("Max active namespaces: {max_active_namespaces}");
         let store = Cache::<NamespaceName, NamespaceEntry<M::Database>>::builder()
-            .async_eviction_listener(move |name, ns, _| {
-                tracing::info!("evicting namespace `{name}` asynchronously");
+            .async_eviction_listener(move |name, ns, cause| {
+                tracing::debug!("evicting namespace `{name}` asynchronously: {cause:?}");
                 // TODO(sarna): not clear if we should snapshot-on-evict...
                 // On the one hand, better to do so, because we have no idea
                 // for how long we're evicting a namespace.
