@@ -103,5 +103,44 @@ do_execsql_test 1.12 { SELECT rowid FROM ft('today'); } {4 5 6}
 do_execsql_test 1.13 { SELECT rowid FROM ft('world'); } {7 8 9}
 do_execsql_test 1.14 { SELECT rowid FROM ft('hello') ORDER BY rank; } {1 2 3}
 
+#------------------------------------------------------------------------
+reset_db
+sqlite3_fts5_register_origintext db
+proc tokens {cmd} { 
+  set ret [list]
+  for {set iTok 0} {$iTok < [$cmd xInstCount]} {incr iTok} {
+    set txt [$cmd xInstToken $iTok 0]
+    set txt [string map [list "\0" "."] $txt]
+    lappend ret $txt
+  }
+  set ret
+}
+sqlite3_fts5_create_function db tokens tokens
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(
+    v, tokenize="origintext unicode61", tokendata=1, detail=none
+  );
+
+  INSERT INTO x1 VALUES('xxx Xxx XXX yyy YYY yyy');
+  INSERT INTO x1 VALUES('xxx yyy xxx yyy yyy yyy');
+}
+
+do_execsql_test 2.1 {
+  SELECT tokens(x1) FROM x1('xxx');
+} {
+  {xxx xxx.Xxx xxx.XXX} {xxx xxx}
+}
+
+do_execsql_test 2.2 {
+  UPDATE x1_content SET c0 = 'xxx xxX xxx yyy yyy yyy' WHERE id=1;
+}
+
+do_execsql_test 2.3 {
+  SELECT tokens(x1) FROM x1('xxx');
+} {
+  {xxx {} xxx} {xxx xxx}
+}
+
 finish_test
 

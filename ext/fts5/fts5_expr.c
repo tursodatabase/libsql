@@ -1768,7 +1768,9 @@ static int fts5ParseTokenize(
       memset(pTerm, 0, sizeof(Fts5ExprTerm));
       pTerm->pTerm = sqlite3Fts5Strndup(&rc, pToken, nToken);
       pTerm->nFullTerm = pTerm->nQueryTerm = nToken;
-      if( pCtx->pConfig->bTokendata ) pTerm->nQueryTerm = strlen(pTerm->pTerm);
+      if( pCtx->pConfig->bTokendata && rc==SQLITE_OK ){ 
+        pTerm->nQueryTerm = strlen(pTerm->pTerm);
+      }
     }
   }
 
@@ -3027,7 +3029,7 @@ static int fts5ExprPopulatePoslistsCb(
         int rc = sqlite3Fts5PoslistWriterAppend(
             &pExpr->apExprPhrase[i]->poslist, &p->aPopulator[i].writer, p->iOff
         );
-        if( rc==SQLITE_OK && pExpr->pConfig->bTokendata ){
+        if( rc==SQLITE_OK && pExpr->pConfig->bTokendata && !pT->bPrefix ){
           int iCol = p->iOff>>32;
           int iTokOff = p->iOff & 0x7FFFFFFF;
           rc = sqlite3Fts5IndexIterWriteTokendata(

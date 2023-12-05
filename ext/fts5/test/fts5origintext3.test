@@ -74,6 +74,27 @@ foreach_detail_mode $testprefix {
   do_execsql_test 1.6 {
     SELECT insttoken(ft2, 0, 0), rowid FROM ft2('three') ORDER BY rank;
   } {three.THREE 3 three 1 three 2}
+
+  do_execsql_test 1.7 {
+    INSERT INTO ft2(rowid, x) VALUES(10, 'aaa bbb BBB');
+    INSERT INTO ft2(rowid, x) VALUES(12, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(13, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(14, 'bbb BBB bbb');
+    INSERT INTO ft2(rowid, x) VALUES(15, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(16, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(17, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(18, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(19, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(20, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(21, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(22, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(23, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(24, 'aaa bbb BBB');
+  }
+
+  do_execsql_test 1.8 { SELECT rowid FROM ft2('aaa AND bbb'); } {10 24}
+  do_execsql_test 1.9 { SELECT rowid FROM ft2('bbb AND aaa'); } {10 24}
+
 }
 
 finish_test

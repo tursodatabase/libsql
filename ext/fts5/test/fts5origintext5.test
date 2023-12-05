@@ -121,7 +121,7 @@ proc ctrl_tokens {term args} {
 db func ctrl_tokens ctrl_tokens
 
 proc do_all_vocab_test {tn} {
-  foreach ::v [vocab] {
+  foreach ::v [concat [vocab] nnn] {
     set answer [execsql {
       SELECT id, ctrl_tokens($::v, x) FROM ctrl WHERE x LIKE '%' || $::v || '%'
     }]
@@ -133,7 +133,6 @@ proc do_all_vocab_test {tn} {
     } $answer
   }
 }
-
 
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE ft USING fts5(
@@ -228,6 +227,47 @@ for {set ii 0} {$ii < $NLOOP} {incr ii} {
   }
   do_all_vocab_test 2.3.$ii
 }
+
+#-------------------------------------------------------------------------
+
+unset -nocomplain ::expanded_vocab
+proc vocab {} {
+  list abcde fghij klmno
+}
+
+proc do_all_vocab_test3 {tn} {
+  foreach ::v [concat [vocab] nnn] {
+    set answer [execsql {
+      SELECT rowid, ctrl_tokens($::v, w) FROM ctrl3 WHERE w LIKE '%' || $::v || '%'
+    }]
+    do_execsql_test $tn.$::v.1 {
+      SELECT rowid, tokens(ft3) FROM ft3($::v)
+    } $answer
+    do_execsql_test $tn.$::v.2 {
+      SELECT rowid, tokens(ft3) FROM ft3($::v) ORDER BY rank
+    } $answer
+  }
+}
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE ft3 USING fts5(
+      w, tokenize="origintext unicode61", content=, contentless_delete=1,
+      tokendata=1
+  );
+  INSERT INTO ft3(ft3, rank) VALUES('rank', 'rankfunc()');
+  CREATE TABLE ctrl3(w);
+}
+
+do_execsql_test 3.1 {
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<2
+  )
+  INSERT INTO ctrl3 SELECT document() FROM s;
+  INSERT INTO ft3(rowid, w) SELECT rowid, w FROM ctrl3;
+}
+
+do_all_vocab_test3 3.2
+
 
 finish_test
 

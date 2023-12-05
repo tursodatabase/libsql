@@ -6662,57 +6662,6 @@ static void fts5TokendataIterDelete(Fts5TokenDataIter *pSet){
 }
 
 /*
-** The iterator passed as the first argument must be a tokendata=1 iterator
-** (pIter->pTokenDataIter!=0). This function is used to access the token
-** instance located at offset iOff of column iCol of row iRowid. It is
-** returned via output pointers *ppOut and *pnOut. This is used by the
-** xInstToken() API.
-*/
-static int fts5TokendataIterToken(
-  Fts5Iter *pIter, 
-  i64 iRowid,
-  int iCol, int iOff, 
-  const char **ppOut, int *pnOut
-){
-  Fts5TokenDataIter *pT = pIter->pTokenDataIter;
-  Fts5TokenDataMap *aMap = pT->aMap;
-  i64 iPos = (((i64)iCol)<<32) + iOff;
-
-  int i1 = 0;
-  int i2 = pT->nMap;
-  int iTest = 0;
-
-  while( i2>i1 ){
-    iTest = (i1 + i2) / 2;
-
-    if( aMap[iTest].iRowid<iRowid ){
-      i1 = iTest+1;
-    }else if( aMap[iTest].iRowid>iRowid ){
-      i2 = iTest;
-    }else{
-      if( aMap[iTest].iPos<iPos ){
-        if( aMap[iTest].iPos<0 ){
-          break;
-        }
-        i1 = iTest+1;
-      }else if( aMap[iTest].iPos>iPos ){
-        i2 = iTest;
-      }else{
-        break;
-      }
-    }
-  }
-
-  if( i2>i1 ){
-    Fts5Iter *pMap = pT->apIter[aMap[iTest].iIter];
-    *ppOut = (const char*)pMap->aSeg[0].term.p+1;
-    *pnOut = pMap->aSeg[0].term.n-1;
-  }
-
-  return SQLITE_OK;
-}
-
-/*
 ** Append a mapping to the token-map belonging to object pT.
 */
 static void fts5TokendataIterAppendMap(
@@ -6960,9 +6909,7 @@ static Fts5Iter *fts5SetupTokendataIter(
             memcpy(pNewIter, pPrevIter, sizeof(Fts5SegIter));
             memset(pPrevIter, 0, sizeof(Fts5SegIter));
             bDone = 1;
-          }else if( pPrevIter->pLeaf 
-                 && pPrevIter->iEndofDoclist>pPrevIter->pLeaf->szLeaf
-          ){
+          }else if( pPrevIter->iEndofDoclist>pPrevIter->pLeaf->szLeaf ){
             fts5SegIterNextInit(p,(const char*)bSeek.p,bSeek.n-1,pSeg,pNewIter);
             bDone = 1;
           }
@@ -7071,7 +7018,7 @@ int sqlite3Fts5IndexQuery(
   if( sqlite3Fts5BufferSize(&p->rc, &buf, nToken+1)==0 ){
     int iIdx = 0;                 /* Index to search */
     int iPrefixIdx = 0;           /* +1 prefix index */
-    int bTokendata = (flags&FTS5INDEX_QUERY_NOTOKENDATA)?0:pConfig->bTokendata;
+    int bTokendata = pConfig->bTokendata;
     if( nToken>0 ) memcpy(&buf.p[1], pToken, nToken);
 
     /* Figure out which index to search and set iIdx accordingly. If this
@@ -7085,6 +7032,7 @@ int sqlite3Fts5IndexQuery(
     ** for internal sanity checking by the integrity-check in debug 
     ** mode only.  */
 #ifdef SQLITE_DEBUG
+    if( flags & FTS5INDEX_QUERY_NOTOKENDATA ) bTokendata = 0;
     if( pConfig->bPrefixIndex==0 || (flags & FTS5INDEX_QUERY_TEST_NOIDX) ){
       assert( flags & FTS5INDEX_QUERY_PREFIX );
       iIdx = 1+pConfig->nPrefix;
@@ -7208,7 +7156,8 @@ const char *sqlite3Fts5IterTerm(Fts5IndexIter *pIndexIter, int *pn){
 /*
 ** This is used by xInstToken() to access the token at offset iOff, column
 ** iCol of row iRowid. The token is returned via output variables *ppOut
-** and *pnOut.
+** and *pnOut. The iterator passed as the first argument must be a tokendata=1
+** iterator (pIter->pTokenDataIter!=0).
 */
 int sqlite3Fts5IterToken(
   Fts5IndexIter *pIndexIter, 
@@ -7218,9 +7167,39 @@ int sqlite3Fts5IterToken(
   const char **ppOut, int *pnOut
 ){
   Fts5Iter *pIter = (Fts5Iter*)pIndexIter;
+  Fts5TokenDataIter *pT = pIter->pTokenDataIter;
+  Fts5TokenDataMap *aMap = pT->aMap;
+  i64 iPos = (((i64)iCol)<<32) + iOff;
 
-  if( pIter->pTokenDataIter ){
-    return fts5TokendataIterToken(pIter, iRowid, iCol, iOff, ppOut, pnOut);
+  int i1 = 0;
+  int i2 = pT->nMap;
+  int iTest = 0;
+
+  while( i2>i1 ){
+    iTest = (i1 + i2) / 2;
+
+    if( aMap[iTest].iRowid<iRowid ){
+      i1 = iTest+1;
+    }else if( aMap[iTest].iRowid>iRowid ){
+      i2 = iTest;
+    }else{
+      if( aMap[iTest].iPos<iPos ){
+        if( aMap[iTest].iPos<0 ){
+          break;
+        }
+        i1 = iTest+1;
+      }else if( aMap[iTest].iPos>iPos ){
+        i2 = iTest;
+      }else{
+        break;
+      }
+    }
+  }
+
+  if( i2>i1 ){
+    Fts5Iter *pMap = pT->apIter[aMap[iTest].iIter];
+    *ppOut = (const char*)pMap->aSeg[0].term.p+1;
+    *pnOut = pMap->aSeg[0].term.n-1;
   }
 
   return SQLITE_OK;
@@ -7252,17 +7231,17 @@ int sqlite3Fts5IndexIterWriteTokendata(
   Fts5Iter *pIter = (Fts5Iter*)pIndexIter;
   Fts5TokenDataIter *pT = pIter->pTokenDataIter;
   Fts5Index *p = pIter->pIndex;
+  int ii;
 
   assert( p->pConfig->eDetail!=FTS5_DETAIL_FULL );
-  if( pT ){
-    int ii;
-    for(ii=0; ii<pT->nIter; ii++){
-      Fts5Buffer *pTerm = &pT->apIter[ii]->aSeg[0].term;
-      if( nToken==pTerm->n-1 && memcmp(pToken, pTerm->p+1, nToken)==0 ) break;
-    }
-    if( ii<pT->nIter ){
-      fts5TokendataIterAppendMap(p, pT, ii, iRowid, (((i64)iCol)<<32) + iOff);
-    }
+  assert( pIter->pTokenDataIter );
+
+  for(ii=0; ii<pT->nIter; ii++){
+    Fts5Buffer *pTerm = &pT->apIter[ii]->aSeg[0].term;
+    if( nToken==pTerm->n-1 && memcmp(pToken, pTerm->p+1, nToken)==0 ) break;
+  }
+  if( ii<pT->nIter ){
+    fts5TokendataIterAppendMap(p, pT, ii, iRowid, (((i64)iCol)<<32) + iOff);
   }
   return fts5IndexReturn(p);
 }
