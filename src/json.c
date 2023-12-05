@@ -10,7 +10,7 @@
 **
 ******************************************************************************
 **
-** This SQLite JSON functions.
+** SQLite JSON functions.
 **
 ** This file began as an extension in ext/misc/json1.c in 2015.  That
 ** extension proved so useful that it has now been moved into the core.
@@ -170,7 +170,7 @@ static const char jsonIsSpace[] = {
 
 /*
 ** The set of all space characters recognized by jsonIsspace().
-** Useful as an argument to strspn().
+** Useful as the second argument to strspn().
 */
 static const char jsonSpaces[] = "\011\012\015\040";
 
@@ -197,14 +197,6 @@ static const char jsonIsOk[256] = {
   1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
   1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1
 };
-
-/* Put code used only for testing inside the JSON_VVA() macro.
-*/
-#if !defined(SQLITE_DEBUG) && !defined(SQLITE_COVERAGE_TEST)
-#  define JSON_VVA(X)
-#else
-#  define JSON_VVA(X) X
-#endif
 
 /* Objects */
 typedef struct JsonCache JsonCache;
@@ -263,8 +255,8 @@ struct JsonString {
 #define JSON_SUBTYPE  74    /* Ascii for "J" */
 
 /*
-** Bit values for the flags passed into jsonExtractFunc() or
-** jsonSetFunc() via the user-data value.
+** Bit values for the flags passed into various SQL function implementations
+** via the sqlite3_user_data() value.
 */
 #define JSON_JSON      0x01        /* Result is always JSON */
 #define JSON_SQL       0x02        /* Result is always SQL */
@@ -323,7 +315,11 @@ struct JsonParse {
 ** descent parser.  A depth of 1000 is far deeper than any sane JSON
 ** should go.  Historical note: This limit was 2000 prior to version 3.42.0
 */
-#define JSON_MAX_DEPTH  1000
+#ifndef SQLITE_JSON_MAX_DEPTH
+# define JSON_MAX_DEPTH  1000
+#else
+# define JSON_MAX_DEPTH SQLITE_JSON_MAX_DEPTH
+#endif
 
 /*
 ** Allowed values for the flgs argument to jsonParseFuncArg();
@@ -806,6 +802,10 @@ static void jsonParseFree(JsonParse *pParse){
     }
   }
 }
+
+/**************************************************************************
+** Utility routines for the JSON text parser
+**************************************************************************/
 
 /*
 ** Translate a single byte of Hex into an integer.
