@@ -634,12 +634,9 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         let init = {
             let namespace = namespace.clone();
             async move {
-                if !self.inner.make_namespace.exists(&namespace) {
-                    if self.inner.allow_lazy_creation {
-                        return Ok(None);
-                    } else {
-                        return Err(Error::NamespaceDoesntExist(namespace.to_string()));
-                    }
+                if !self.inner.make_namespace.exists(&namespace) && !self.inner.allow_lazy_creation
+                {
+                    return Err(Error::NamespaceDoesntExist(namespace.to_string()));
                 }
                 let ns = self
                     .inner
