@@ -4,6 +4,7 @@
 use std::default::Default;
 use std::error;
 use std::fmt;
+use std::marker::PhantomData;
 use std::mem;
 use std::os::raw::c_int;
 
@@ -36,22 +37,24 @@ impl Default for sqlite3_vtab_cursor {
     }
 }
 
-pub struct PageHdrIter {
+pub struct PageHdrIter<'a> {
     current_ptr: *const PgHdr,
     page_size: usize,
+    _pth: PhantomData<&'a ()>,
 }
 
-impl PageHdrIter {
+impl<'a> PageHdrIter<'a> {
     pub fn new(current_ptr: *const PgHdr, page_size: usize) -> Self {
         Self {
             current_ptr,
             page_size,
+            _pth: PhantomData,
         }
     }
 }
 
-impl std::iter::Iterator for PageHdrIter {
-    type Item = (u32, &'static [u8]);
+impl<'a> std::iter::Iterator for PageHdrIter<'a> {
+    type Item = (u32, &'a [u8]);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_ptr.is_null() {
