@@ -261,7 +261,7 @@ impl ReplicationLoggerWal {
         let data = &mut [0; LIBSQL_PAGE_SIZE as _];
         // We retreive the freshest version of page 1. Either most recent page 1 is in the WAL, or
         // it is in the main db file
-        match self.find_frame(NonZeroU32::new(1).unwrap()).unwrap() {
+        match self.find_frame(NonZeroU32::new(1).unwrap())? {
             Some(fno) => {
                 self.read_frame(fno, data)?;
             }
@@ -269,6 +269,7 @@ impl ReplicationLoggerWal {
                 self.inner.db_file().read_at(data, 0)?;
             }
         }
+
         let header = Sqlite3DbHeader::mut_from_prefix(data).expect("invalid database header");
         header.replication_index =
             (self.logger().new_frame_notifier.borrow().unwrap_or(0) + 1).into();
@@ -337,7 +338,6 @@ mod test {
                 // temporary scratch buffer
                 buf: &mut [u8],
             ) -> libsql_sys::wal::Result<(u32, u32)> {
-                dbg!();
                 let ret = wrapped.checkpoint(db, mode, busy_handler, sync_flags, buf)?;
                 let buf = &mut [0; LIBSQL_PAGE_SIZE as _];
                 wrapped.inner.db_file().read_at(buf, 0).unwrap();
@@ -347,7 +347,6 @@ mod test {
                     std::sync::atomic::Ordering::Relaxed,
                 );
 
-                dbg!();
                 Ok(ret)
             }
         }
@@ -394,5 +393,36 @@ mod test {
                 .load(std::sync::atomic::Ordering::Relaxed),
             logger.new_frame_notifier.borrow().unwrap()
         );
+    }
+
+    #[tokio::test]
+    async fn checkpoint_empty_database() {
+        let tmp = tempdir().unwrap();
+        let logger = Arc::new(
+            ReplicationLogger::open(
+                tmp.path(),
+                10000000,
+                None,
+                false,
+                100000,
+                Box::new(|_| Ok(())),
+            )
+            .unwrap(),
+        );
+
+        let wal_manager = ReplicationLoggerWalManager::new(logger.clone());
+        let db =
+            crate::connection::libsql::open_conn(tmp.path(), wal_manager, None, 10000).unwrap();
+
+        unsafe {
+            let rc = sqlite3_wal_checkpoint_v2(
+                db.handle(),
+                std::ptr::null_mut(),
+                SQLITE_CHECKPOINT_FULL,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+            );
+            assert_eq!(rc, 0);
+        };
     }
 }

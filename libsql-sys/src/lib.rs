@@ -4,7 +4,7 @@ pub mod ffi {
 
     /// Patched database header file, in use by libsql
     #[repr(C)]
-    #[derive(Clone, Copy, zerocopy::FromBytes, zerocopy::FromZeroes, zerocopy::AsBytes)]
+    #[derive(Clone, Copy, zerocopy::FromBytes, zerocopy::FromZeroes, zerocopy::AsBytes, Debug)]
     pub struct Sqlite3DbHeader {
         /// The header string: "SQLite format 3\000"
         pub header_str: [u8; 16],
