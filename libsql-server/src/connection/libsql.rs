@@ -3,9 +3,11 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
+use libsql_sys::wal::wrapper::{WalWrapper, WrapWal, WrappedWal};
 use libsql_sys::wal::{Wal, WalManager};
 use metrics::{histogram, increment_counter};
 use parking_lot::{Mutex, RwLock};
+use rusqlite::ffi::SQLITE_BUSY;
 use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus, TransactionState};
 use tokio::sync::{watch, Notify};
 use tokio::time::{Duration, Instant};
@@ -164,7 +166,54 @@ impl<T> std::fmt::Debug for LibSqlConnection<T> {
     }
 }
 
+#[derive(Clone, Copy)]
+pub struct InhibitCheckpointWalWrapper;
+
+impl<W: Wal> WrapWal<W> for InhibitCheckpointWalWrapper {
+    fn checkpoint<B: libsql_sys::wal::BusyHandler>(
+        &mut self,
+        _wrapped: &mut W,
+        _db: &mut libsql_sys::wal::Sqlite3Db,
+        _mode: libsql_sys::wal::CheckpointMode,
+        _busy_handler: Option<&mut B>,
+        _sync_flags: u32,
+        _buf: &mut [u8],
+    ) -> libsql_sys::wal::Result<(u32, u32)> {
+        tracing::warn!(
+            "chackpoint inhibited: this connection is not allowed to perform checkpoints"
+        );
+        Err(rusqlite::ffi::Error::new(SQLITE_BUSY))
+    }
+}
+
+pub type InhibitCheckpoint<T> = WrappedWal<InhibitCheckpointWalWrapper, T>;
+
+// Opens a connection with checkpoint inhibited
 pub fn open_conn<T>(
+    path: &Path,
+    wal_manager: T,
+    flags: Option<OpenFlags>,
+) -> Result<libsql_sys::Connection<InhibitCheckpoint<T::Wal>>, rusqlite::Error>
+where
+    T: WalManager,
+{
+    let flags = flags.unwrap_or(
+        OpenFlags::SQLITE_OPEN_READ_WRITE
+            | OpenFlags::SQLITE_OPEN_CREATE
+            | OpenFlags::SQLITE_OPEN_URI
+            | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    );
+
+    libsql_sys::Connection::open(
+        path.join("data"),
+        flags,
+        WalWrapper::new(InhibitCheckpointWalWrapper, wal_manager),
+        u32::MAX,
+    )
+}
+
+/// Same as open_conn, but with checkpointing activated.
+pub fn open_conn_active_checkpoint<T>(
     path: &Path,
     wal_manager: T,
     flags: Option<OpenFlags>,
@@ -179,6 +228,7 @@ where
             | OpenFlags::SQLITE_OPEN_URI
             | OpenFlags::SQLITE_OPEN_NO_MUTEX,
     );
+
     libsql_sys::Connection::open(path.join("data"), flags, wal_manager, auto_checkpoint)
 }
 
@@ -442,7 +492,8 @@ impl<W: Wal> Connection<W> {
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
     ) -> Result<Self> {
-        let conn = open_conn(path, wal_manager, None, builder_config.auto_checkpoint)?;
+        let conn =
+            open_conn_active_checkpoint(path, wal_manager, None, builder_config.auto_checkpoint)?;
 
         // register the lock-stealing busy handler
         unsafe {

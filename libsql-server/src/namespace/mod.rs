@@ -1007,7 +1007,7 @@ impl Namespace<PrimaryDatabase> {
                 Err(LoadDumpError::LoadDumpExistingDb)?;
             }
             RestoreOption::Dump(dump) => {
-                load_dump(&db_path, dump, wal_manager.clone(), logger.auto_checkpoint).await?;
+                load_dump(&db_path, dump, wal_manager.clone()).await?;
             }
             _ => { /* other cases were already handled when creating bottomless */ }
         }
@@ -1090,7 +1090,6 @@ async fn load_dump<S, C>(
     db_path: &Path,
     dump: S,
     wal_manager: C,
-    auto_checkpoint: u32,
 ) -> crate::Result<(), LoadDumpError>
 where
     S: Stream<Item = std::io::Result<Bytes>> + Unpin,
@@ -1102,11 +1101,7 @@ where
     let conn = loop {
         let db_path = db_path.to_path_buf();
         let wal_manager = wal_manager.clone();
-        match tokio::task::spawn_blocking(move || {
-            open_conn(&db_path, wal_manager, None, auto_checkpoint)
-        })
-        .await?
-        {
+        match tokio::task::spawn_blocking(move || open_conn(&db_path, wal_manager, None)).await? {
             Ok(conn) => {
                 break conn;
             }
@@ -1266,9 +1261,7 @@ async fn run_storage_monitor(db_path: PathBuf, stats: Weak<Stats>) -> anyhow::Re
             // because closing the last connection interferes with opening a new one, we lazily
             // initialize a connection here, and keep it alive for the entirety of the program. If we
             // fail to open it, we wait for `duration` and try again later.
-            // We can safely open db with DEFAULT_AUTO_CHECKPOINT, since monitor is read-only: it 
-            // won't produce new updates, frames or generate checkpoints.
-            match open_conn(&db_path, Sqlite3WalManager::new(), Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), DEFAULT_AUTO_CHECKPOINT) {
+            match open_conn(&db_path, Sqlite3WalManager::new(), Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)) {
                 Ok(conn) => {
                     if let Ok(storage_bytes_used) =
                         conn.query_row("select sum(pgsize) from dbstat;", [], |row| {
