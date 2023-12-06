@@ -501,8 +501,28 @@ mod serde_ {
 
         serde::forward_to_deserialize_any! {
             bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
-                bytes byte_buf unit unit_struct newtype_struct seq tuple tuple_struct
-                map struct enum identifier ignored_any option
+                bytes byte_buf unit_struct newtype_struct seq tuple tuple_struct
+                map struct enum identifier ignored_any
+        }
+
+        fn deserialize_unit<V>(self, visitor: V) -> std::result::Result<V::Value, Self::Error>
+        where
+            V: Visitor<'de>,
+        {
+            match self.value {
+                Value::Null => visitor.visit_unit(),
+                _ => self.deserialize_any(visitor),
+            }
+        }
+
+        fn deserialize_option<V>(self, visitor: V) -> std::result::Result<V::Value, Self::Error>
+        where
+            V: Visitor<'de>,
+        {
+            match self.value {
+                Value::Null => visitor.visit_none(),
+                _ => visitor.visit_some(self),
+            }
         }
 
         fn deserialize_any<V>(self, visitor: V) -> std::result::Result<V::Value, Self::Error>
@@ -528,5 +548,36 @@ mod serde_ {
                 _pth: PhantomData,
             }
         }
+    }
+
+    #[test]
+    fn test_deserialize_value() {
+        fn de<'de, T>(value: Value) -> std::result::Result<T, de::value::Error>
+        where
+            T: Deserialize<'de>,
+        {
+            T::deserialize(value.into_deserializer())
+        }
+
+        assert_eq!(de::<()>(Value::Null), Ok(()));
+        assert_eq!(de::<i64>(Value::Integer(123)), Ok(123));
+        assert_eq!(de::<f64>(Value::Real(123.4)), Ok(123.4));
+        assert_eq!(
+            de::<String>(Value::Text("abc".to_string())),
+            Ok("abc".to_string())
+        );
+        assert_eq!(
+            de::<Vec<u8>>(Value::Blob(b"abc".to_vec())),
+            Ok(b"abc".to_vec())
+        );
+
+        assert_eq!(de::<Option<()>>(Value::Null), Ok(None));
+        assert_eq!(de::<Option<Vec<u8>>>(Value::Null), Ok(None));
+        assert_eq!(de::<Option<i64>>(Value::Integer(123)), Ok(Some(123)));
+        assert_eq!(de::<Option<f64>>(Value::Real(123.4)), Ok(Some(123.4)));
+
+        assert!(de::<i64>(Value::Null).is_err());
+        assert!(de::<Vec<u8>>(Value::Null).is_err());
+        assert!(de::<f64>(Value::Blob(b"abc".to_vec())).is_err());
     }
 }

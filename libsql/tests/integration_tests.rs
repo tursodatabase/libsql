@@ -385,6 +385,7 @@ async fn deserialize_row() {
         score: f64,
         data: Vec<u8>,
         age: Option<i64>,
+        none: Option<()>,
     }
 
     let row = conn
@@ -400,4 +401,5 @@ async fn deserialize_row() {
     assert_eq!(data.score, 3.14);
     assert_eq!(data.data, vec![0xde, 0xad, 0xbe, 0xef]);
     assert_eq!(data.age, None);
+    assert_eq!(data.none, None)
 }
