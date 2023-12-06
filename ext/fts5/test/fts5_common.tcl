@@ -438,6 +438,20 @@ proc detail_is_none {} { detail_check ; expr {$::detail == "none"} }
 proc detail_is_col {}  { detail_check ; expr {$::detail == "col" } }
 proc detail_is_full {} { detail_check ; expr {$::detail == "full"} }
 
+proc foreach_tokenizer_mode {prefix script} {
+  set saved $::testprefix
+  foreach {d mapping} {
+    ""              {}
+    "-origintext"   {, tokenize="origintext unicode61", tokendata=1}
+  } {
+    set s [string map [list %TOKENIZER% $mapping] $script]
+    set ::testprefix "$prefix$d"
+    reset_db
+    sqlite3_fts5_register_origintext db
+    uplevel $s
+  }
+  set ::testprefix $saved
+}
 
 #-------------------------------------------------------------------------
 # Convert a poslist of the type returned by fts5_test_poslist() to a 

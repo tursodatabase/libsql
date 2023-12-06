@@ -1,0 +1,93 @@
+# 2010 June 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+source $testdir/malloc_common.tcl
+set testprefix fts5faultG
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+set ::testprefix fts5faultH
+
+sqlite3_fts5_register_origintext db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(
+      x, tokenize="origintext unicode61", tokendata=1
+  );
+
+  BEGIN;
+    INSERT INTO t1 VALUES('oNe tWo thRee');
+    INSERT INTO t1 VALUES('One Two Three');
+    INSERT INTO t1 VALUES('onE twO threE');
+  COMMIT;
+  BEGIN;
+    INSERT INTO t1 VALUES('one two three');
+    INSERT INTO t1 VALUES('one two three');
+    INSERT INTO t1 VALUES('one two three');
+  COMMIT;
+}
+
+do_faultsim_test 1 -faults oom* -prep { 
+} -body {
+  execsql {
+    SELECT rowid FROM t1('three');
+  }
+} -test {
+  faultsim_integrity_check
+  faultsim_test_result {0 {1 2 3 4 5 6}}
+}
+
+
+reset_db
+sqlite3_fts5_register_origintext db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(
+      x, tokenize="origintext unicode61", tokendata=1
+  );
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
+
+  BEGIN;
+    INSERT INTO t1(rowid, x) VALUES(10, 'aaa bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(12, 'bbb bbb bbb');
+    INSERT INTO t1(rowid, x) VALUES(13, 'bbb bbb bbb');
+    INSERT INTO t1(rowid, x) VALUES(14, 'bbb BBB bbb');
+    INSERT INTO t1(rowid, x) VALUES(15, 'bbb bbb bbb');
+    INSERT INTO t1(rowid, x) VALUES(16, 'bbb bbb bbb');
+    INSERT INTO t1(rowid, x) VALUES(17, 'bbb bbb bbb');
+    INSERT INTO t1(rowid, x) VALUES(18, 'bbb bbb bbb');
+    INSERT INTO t1(rowid, x) VALUES(19, 'bbb bbb bbb');
+    INSERT INTO t1(rowid, x) VALUES(20, 'bbb bbb bbb');
+    INSERT INTO t1(rowid, x) VALUES(21, 'bbb bbb bbb');
+    INSERT INTO t1(rowid, x) VALUES(22, 'bbb bbb bbb');
+    INSERT INTO t1(rowid, x) VALUES(23, 'bbb bbb bbb');
+    INSERT INTO t1(rowid, x) VALUES(24, 'aaa bbb BBB');
+  COMMIT;
+}
+
+do_faultsim_test 2 -faults oom* -prep { 
+} -body {
+  execsql {
+    SELECT rowid FROM t1('BBB AND AAA');
+  }
+} -test {
+  faultsim_integrity_check
+  faultsim_test_result {0 {10 24}}
+}
+
+
+
+finish_test

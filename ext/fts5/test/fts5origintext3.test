@@ -1,0 +1,101 @@
+# 2023 November 22
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests focused on phrase queries.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5origintext3
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+foreach_detail_mode $testprefix {
+  reset_db
+
+  sqlite3_fts5_register_origintext db
+  fts5_aux_test_functions db
+  proc insttoken {cmd iIdx iToken} { 
+    set txt [$cmd xInstToken $iIdx $iToken]
+    string map [list "\0" "."] $txt
+  }
+  sqlite3_fts5_create_function db insttoken insttoken
+  
+  do_execsql_test 1.0 {
+    CREATE VIRTUAL TABLE ft USING fts5(
+        x, tokenize="origintext unicode61", tokendata=1, detail=%DETAIL%
+    );
+  }
+  
+  do_execsql_test 1.1 {
+    INSERT INTO ft VALUES('Hello world HELLO WORLD hello');
+  }
+  
+  do_execsql_test 1.2 {
+    SELECT fts5_test_poslist(ft) FROM ft('hello');
+  } {{0.0.0 0.0.2 0.0.4}}
+
+  do_execsql_test 1.3 {
+    SELECT 
+      insttoken(ft, 0, 0),
+      insttoken(ft, 1, 0),
+      insttoken(ft, 2, 0)
+    FROM ft('hello');
+  } {hello.Hello hello.HELLO hello}
+
+  do_execsql_test 1.4 {
+    SELECT 
+      insttoken(ft, 0, 0),
+      insttoken(ft, 1, 0),
+      insttoken(ft, 2, 0)
+    FROM ft('hello') ORDER BY rank;
+  } {hello.Hello hello.HELLO hello}
+
+  do_execsql_test 1.5 {
+    CREATE VIRTUAL TABLE ft2 USING fts5(
+        x, tokenize="origintext unicode61", tokendata=1, detail=%DETAIL%
+    );
+    INSERT INTO ft2(rowid, x) VALUES(1, 'ONE one two three ONE');
+    INSERT INTO ft2(rowid, x) VALUES(2, 'TWO one two three TWO');
+    INSERT INTO ft2(rowid, x) VALUES(3, 'THREE one two three THREE');
+  }
+
+  do_execsql_test 1.6 {
+    SELECT insttoken(ft2, 0, 0), rowid FROM ft2('three') ORDER BY rank;
+  } {three.THREE 3 three 1 three 2}
+
+  do_execsql_test 1.7 {
+    INSERT INTO ft2(rowid, x) VALUES(10, 'aaa bbb BBB');
+    INSERT INTO ft2(rowid, x) VALUES(12, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(13, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(14, 'bbb BBB bbb');
+    INSERT INTO ft2(rowid, x) VALUES(15, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(16, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(17, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(18, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(19, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(20, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(21, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(22, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(23, 'bbb bbb bbb');
+    INSERT INTO ft2(rowid, x) VALUES(24, 'aaa bbb BBB');
+  }
+
+  do_execsql_test 1.8 { SELECT rowid FROM ft2('aaa AND bbb'); } {10 24}
+  do_execsql_test 1.9 { SELECT rowid FROM ft2('bbb AND aaa'); } {10 24}
+
+}
+
+finish_test
+
