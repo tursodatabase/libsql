@@ -1,5 +1,5 @@
-C Increased\srigor\sin\scomparisons\sbetween\sobject\slabels\sin\sJSON.
-D 2023-12-06T14:50:48.135
+C The\srule\sfor\sthe\sRHS\sof\sthe\s->>\sand\s->\soperators\swhen\sthe\sRHS\sdoes\snot\sbegin\nwith\s$\sis\sthat\sit\smust\sbe\s(1)\sall\sdigits,\sor\s(2)\sall\salphanumerics,\sor\n(3)\scontained\swithin\s&#91;..&#93;\sor\selse\sit\swill\sbecome\sa\squoted\slabel.
+D 2023-12-06T15:35:38.860
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -690,7 +690,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 15efd213cc95bde5b714ec068fdb1f6817b1ed9a253644833fed5f196957445a
+F src/json.c 9d0b8fa594a931d3f84056020c6581bb631cee02ea5f0530a4fd5876a2cb6560
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 1b89f3de98d1b59fec5bac1d66d6ece21f703821b8eaa0d53d9604c35309f6f9
@@ -2147,11 +2147,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7f0c79b94e8f55e5013e52ba64ba8b32dad1dc4e2224d2099733cbc561de1810
-R 2684d5ad233d4af8d84cd782c9755832
-T *branch * json-label-compare
-T *sym-json-label-compare *
-T -sym-trunk *
+P 2bc86d145fccc07107b7753cb1a69122676d4096fe59c454497bd81a6142d45e
+R 5951a4c9f5e0f75219c7e2d971403d09
 U drh
-Z 93dccc3939eaec1e85cde17c2d8ca8af
+Z 93fae7007061a25e3b1f2103eb12e9f0
 # Remove this line to create a well-formed Fossil manifest.

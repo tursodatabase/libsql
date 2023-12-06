@@ -3272,6 +3272,20 @@ static void jsonArrayLengthFunc(
   jsonParseFree(p);
 }
 
+/* True if the string is all digits */
+static int jsonAllDigits(const char *z, int n){
+  int i;
+  for(i=0; i<n && sqlite3Isdigit(z[i]); i++){}
+  return i==n;
+}
+
+/* True if the string is all alphanumerics and underscores */
+static int jsonAllAlphanum(const char *z, int n){
+  int i;
+  for(i=0; i<n && (sqlite3Isalnum(z[i]) || z[i]=='_'); i++){}
+  return i==n;
+}
+
 /*
 ** json_extract(JSON, PATH, ...)
 ** "->"(JSON,PATH)
@@ -3329,15 +3343,19 @@ static void jsonExtractFunc(
       **     [NUMBER] ==>  $[NUMBER]     // Not PG.  Purely for convenience
       */
       jsonStringInit(&jx, ctx);
-      if( sqlite3Isdigit(zPath[0]) ){
+      if( jsonAllDigits(zPath, nPath) ){
         jsonAppendRawNZ(&jx, "[", 1);
         jsonAppendRaw(&jx, zPath, nPath);
         jsonAppendRawNZ(&jx, "]", 2);
-      }else if( zPath[0]!='[' ){
+      }else if( jsonAllAlphanum(zPath, nPath) ){
         jsonAppendRawNZ(&jx, ".", 1);
         jsonAppendRaw(&jx, zPath, nPath);
-      }else{
+      }else if( zPath[0]=='[' && nPath>=3 && zPath[nPath-1]==']' ){
         jsonAppendRaw(&jx, zPath, nPath);
+      }else{
+        jsonAppendRawNZ(&jx, ".\"", 2);
+        jsonAppendRaw(&jx, zPath, nPath);
+        jsonAppendRawNZ(&jx, "\"", 1);
       }
       jsonStringTerminate(&jx);
       j = jsonLookupStep(p, 0, jx.zBuf, 0);
