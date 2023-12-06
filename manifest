@@ -1,5 +1,5 @@
-C The\srule\sfor\sthe\sRHS\sof\sthe\s->>\sand\s->\soperators\swhen\sthe\sRHS\sdoes\snot\sbegin\nwith\s$\sis\sthat\sit\smust\sbe\s(1)\sall\sdigits,\sor\s(2)\sall\salphanumerics,\sor\n(3)\scontained\swithin\s&#91;..&#93;\sor\selse\sit\swill\sbecome\sa\squoted\slabel.
-D 2023-12-06T15:35:38.860
+C Test\scases\sfor\sobject\slabel\smatching\swith\sescape\ssequences.
+D 2023-12-06T15:50:13.951
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1333,7 +1333,7 @@ F test/json103.test 53df87f83a4e5fa0c0a56eb29ff6c94055c6eb919f33316d62161a888011
 F test/json104.test 1b844a70cddcfa2e4cd81a5db0657b2e61e7f00868310f24f56a9ba0114348c1
 F test/json105.test e64a8d73677fbae67886642cd5076e2ef3efe89f8483b87595cf9c030216c9bd
 F test/json501.test ab168a12eb6eb14d479f8c1cdae3ac062fd5a4679f17f976e96f1af518408330
-F test/json502.test 98c38e3c4573841028a1381dfb81d4c3f9b105d39668167da10d055e503f6d0b
+F test/json502.test 73dd17721c0b4a1320b163c3a1092d714aae5d100faf46f305515e1b3591c3a6
 F test/jsonb01.test cace70765b36a36aec9a85a41ea65667d3bbf647d4400ddc3ac76f8fe7d94f90
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/kvtest.c 6e0228409ea7ca0497dad503fbd109badb5e59545d131014b6aaac68b56f484a
@@ -2147,8 +2147,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2bc86d145fccc07107b7753cb1a69122676d4096fe59c454497bd81a6142d45e
-R 5951a4c9f5e0f75219c7e2d971403d09
+P 0e059a546ec11fa5c6d007bd65c249ee2422f1facbdb2792c53e0bc0ccc97e14
+R 4550d328e20b914ec87aa1544ecc75dd
 U drh
-Z 93fae7007061a25e3b1f2103eb12e9f0
+Z 5fceb780d654fe6791112d65204ddb27
 # Remove this line to create a well-formed Fossil manifest.
