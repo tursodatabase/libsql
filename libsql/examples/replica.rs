@@ -46,7 +46,7 @@ async fn main() {
             .unwrap();
 
         println!("Rows insert call");
-        while let Some(row) = rows.next().unwrap() {
+        while let Some(row) = rows.next().await.unwrap() {
             println!("Row: {}", row.get_str(0).unwrap());
         }
 
@@ -55,7 +55,7 @@ async fn main() {
         let mut rows = conn.query("SELECT * FROM foo", ()).await.unwrap();
 
         println!("Rows coming from a read after write call");
-        while let Some(row) = rows.next().unwrap() {
+        while let Some(row) = rows.next().await.unwrap() {
             println!("Row: {}", row.get_str(0).unwrap());
         }
 

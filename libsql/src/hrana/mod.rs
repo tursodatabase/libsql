@@ -232,8 +232,9 @@ pub struct Rows {
     rows: VecDeque<Vec<proto::Value>>,
 }
 
+#[async_trait::async_trait]
 impl RowsInner for Rows {
-    fn next(&mut self) -> crate::Result<Option<super::Row>> {
+    async fn next(&mut self) -> crate::Result<Option<super::Row>> {
         let row = match self.rows.pop_front() {
             Some(row) => Row {
                 cols: self.cols.clone(),

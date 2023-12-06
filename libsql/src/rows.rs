@@ -37,8 +37,9 @@ impl Column<'_> {
     }
 }
 
+#[async_trait::async_trait]
 pub(crate) trait RowsInner {
-    fn next(&mut self) -> Result<Option<Row>>;
+    async fn next(&mut self) -> Result<Option<Row>>;
 
     fn column_count(&self) -> i32;
 
@@ -56,8 +57,8 @@ impl Rows {
     /// Get the next [`Row`] returning an error if it failed and
     /// `None` if there are no more rows.
     #[allow(clippy::should_implement_trait)]
-    pub fn next(&mut self) -> Result<Option<Row>> {
-        self.inner.next()
+    pub async fn next(&mut self) -> Result<Option<Row>> {
+        self.inner.next().await
     }
 
     /// Get the count of columns in this set of rows.

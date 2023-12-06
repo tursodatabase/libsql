@@ -353,8 +353,9 @@ pub unsafe extern "C" fn libsql_next_row(
         *out_row = libsql_row_t::null();
         return 0;
     }
-    let res = res.get_ref_mut();
-    match res.next() {
+    let rows = res.get_ref_mut();
+    let res = tokio::runtime::Handle::current().block_on(rows.next());
+    match res {
         Ok(Some(row)) => {
             let row = Box::leak(Box::new(libsql_row { result: row }));
             *out_row = libsql_row_t::from(row);

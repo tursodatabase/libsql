@@ -1,3 +1,4 @@
+use futures::StreamExt;
 use libsql::{
     named_params, params,
     params::{IntoParams, IntoValue},
@@ -29,7 +30,7 @@ async fn connection_query() {
         .await
         .unwrap();
     let mut rows = conn.query("SELECT * FROM users", ()).await.unwrap();
-    let row = rows.next().unwrap().unwrap();
+    let row = rows.next().await.unwrap().unwrap();
     assert_eq!(row.get::<i32>(0).unwrap(), 2);
     assert_eq!(row.get::<String>(1).unwrap(), "Alice");
 }
@@ -61,13 +62,13 @@ async fn connection_execute_batch() {
         .await
         .unwrap();
 
-    let row = rows.next().unwrap().unwrap();
+    let row = rows.next().await.unwrap().unwrap();
     assert_eq!(row.get::<String>(0).unwrap(), "users");
 
-    let row = rows.next().unwrap().unwrap();
+    let row = rows.next().await.unwrap().unwrap();
     assert_eq!(row.get::<String>(0).unwrap(), "foo");
 
-    let row = rows.next().unwrap().unwrap();
+    let row = rows.next().await.unwrap().unwrap();
     assert_eq!(row.get::<String>(0).unwrap(), "bar");
 }
 
@@ -121,7 +122,7 @@ async fn statement_query() {
         .unwrap();
 
     let mut rows = stmt.query(&params).await.unwrap();
-    let row = rows.next().unwrap().unwrap();
+    let row = rows.next().await.unwrap().unwrap();
 
     assert_eq!(row.get::<i32>(0).unwrap(), 2);
     assert_eq!(row.get::<String>(1).unwrap(), "Alice");
@@ -140,7 +141,7 @@ async fn statement_query() {
         .await
         .unwrap();
 
-    let name = names.next().unwrap().unwrap();
+    let name = names.next().await.unwrap().unwrap();
 
     assert_eq!(name, "Alice");
 }
@@ -252,7 +253,7 @@ async fn prepare_and_dont_query() {
 async fn check_insert(conn: &Connection, sql: &str, params: impl IntoParams) {
     let _ = conn.execute(sql, params).await.unwrap();
     let mut rows = conn.query("SELECT * FROM users", ()).await.unwrap();
-    let row = rows.next().unwrap().unwrap();
+    let row = rows.next().await.unwrap().unwrap();
     // Use two since if you forget to insert an id it will automatically
     // be set to 1 which defeats the purpose of checking it here.
     assert_eq!(row.get::<i32>(0).unwrap(), 2);
@@ -267,7 +268,7 @@ async fn nulls() {
         .await
         .unwrap();
     let mut rows = conn.query("SELECT * FROM users", ()).await.unwrap();
-    let row = rows.next().unwrap().unwrap();
+    let row = rows.next().await.unwrap().unwrap();
     assert!(row.get::<i32>(0).is_err());
     assert!(row.get::<String>(1).is_err());
 }
@@ -287,7 +288,7 @@ async fn blob() {
         .unwrap();
 
     let mut rows = conn.query("SELECT * FROM bbb", ()).await.unwrap();
-    let row = rows.next().unwrap().unwrap();
+    let row = rows.next().await.unwrap().unwrap();
 
     let out = row.get::<Vec<u8>>(1).unwrap();
     assert_eq!(&out, &bytes);
@@ -305,10 +306,10 @@ async fn transaction() {
         .unwrap();
     tx.rollback().await.unwrap();
     let mut rows = conn.query("SELECT * FROM users", ()).await.unwrap();
-    let row = rows.next().unwrap().unwrap();
+    let row = rows.next().await.unwrap().unwrap();
     assert_eq!(row.get::<i32>(0).unwrap(), 2);
     assert_eq!(row.get::<String>(1).unwrap(), "Alice");
-    assert!(rows.next().unwrap().is_none());
+    assert!(rows.next().await.unwrap().is_none());
 }
 
 #[tokio::test]
@@ -356,7 +357,7 @@ async fn debug_print_row() {
     let mut stmt = conn.prepare("SELECT * FROM users").await.unwrap();
     let mut rows = stmt.query(()).await.unwrap();
     assert_eq!(
-        format!("{:?}", rows.next().unwrap().unwrap()),
+        format!("{:?}", rows.next().await.unwrap().unwrap()),
         "{Some(\"id\"): (Integer, 123), Some(\"name\"): (Text, \"potato\"), Some(\"score\"): (Real, 3.14), Some(\"data\"): (Blob, 4), Some(\"age\"): (Null, ())}"
     );
 }
@@ -393,6 +394,7 @@ async fn deserialize_row() {
         .await
         .unwrap()
         .next()
+        .await
         .unwrap()
         .unwrap();
     let data: Data = libsql::de::from_row(&row).unwrap();

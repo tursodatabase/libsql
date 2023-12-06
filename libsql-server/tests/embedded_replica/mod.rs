@@ -283,6 +283,7 @@ fn replica_primary_reset() {
             .await
             .unwrap()
             .next()
+            .await
             .unwrap()
             .unwrap()
             .get_value(0)
@@ -296,6 +297,7 @@ fn replica_primary_reset() {
             .await
             .unwrap()
             .next()
+            .await
             .unwrap()
             .unwrap()
             .get_value(0)
@@ -339,6 +341,7 @@ fn replica_primary_reset() {
             .await
             .unwrap()
             .next()
+            .await
             .unwrap()
             .unwrap()
             .get_value(0)
@@ -352,6 +355,7 @@ fn replica_primary_reset() {
             .await
             .unwrap()
             .next()
+            .await
             .unwrap()
             .unwrap()
             .get_value(0)
@@ -519,6 +523,7 @@ fn replicate_with_snapshots() {
         let mut res = conn.query("select count(*) from test", ()).await.unwrap();
         assert_eq!(
             *res.next()
+                .await
                 .unwrap()
                 .unwrap()
                 .get_value(0)

@@ -2,6 +2,9 @@ use crate::params::IntoParams;
 use crate::params::Params;
 pub use crate::Column;
 use crate::{Error, Result};
+use futures::ready;
+use std::pin::Pin;
+use std::task::{Context, Poll};
 
 use crate::{Row, Rows};
 
@@ -60,7 +63,7 @@ impl Statement {
     pub async fn query_row(&mut self, params: impl IntoParams) -> Result<Row> {
         let mut rows = self.query(params).await?;
 
-        let row = rows.next()?.ok_or(Error::QueryReturnedNoRows)?;
+        let row = rows.next().await?.ok_or(Error::QueryReturnedNoRows)?;
 
         Ok(row)
     }
@@ -92,18 +95,33 @@ pub struct MappedRows<F> {
     map: F,
 }
 
-impl<F, T> Iterator for MappedRows<F>
+impl<F> MappedRows<F> {
+    pub fn new(rows: Rows, map: F) -> Self {
+        Self { rows, map }
+    }
+}
+
+impl<F, T> futures::Stream for MappedRows<F>
 where
-    F: FnMut(Row) -> Result<T>,
+    F: FnMut(Row) -> Result<T> + Unpin,
 {
     type Item = Result<T>;
 
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        let map = &mut self.map;
-        self.rows
-            .next()
-            .transpose()
-            .map(|row_result| row_result.and_then(map))
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        use futures::Future;
+
+        let mut rows = unsafe { self.as_mut().map_unchecked_mut(|pin| &mut pin.rows) };
+        let mut fut = Box::pin(rows.next());
+        let res = ready!(fut.as_mut().poll(cx));
+        match res {
+            Ok(None) => Poll::Ready(None),
+            Ok(Some(row)) => {
+                drop(fut);
+                drop(rows);
+                let map = &mut self.get_mut().map;
+                Poll::Ready(Some(map(row)))
+            }
+            Err(e) => Poll::Ready(Some(Err(e.into()))),
+        }
     }
 }

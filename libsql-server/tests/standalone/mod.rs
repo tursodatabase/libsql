@@ -49,7 +49,7 @@ fn basic_query() {
         let mut rows = conn.query("select count(*) from test", ()).await?;
 
         assert!(matches!(
-            rows.next().unwrap().unwrap().get_value(0).unwrap(),
+            rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
             libsql::Value::Integer(1)
         ));
 
@@ -75,7 +75,7 @@ fn basic_metrics() {
         let mut rows = conn.query("select count(*) from test", ()).await?;
 
         assert!(matches!(
-            rows.next().unwrap().unwrap().get_value(0).unwrap(),
+            rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
             libsql::Value::Integer(1)
         ));
 
@@ -134,7 +134,7 @@ fn primary_serializability() {
             let mut rows = conn.query("select count(*) from test", ()).await?;
 
             assert!(matches!(
-                rows.next().unwrap().unwrap().get_value(0).unwrap(),
+                rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
                 Value::Integer(1)
             ));
 
@@ -170,7 +170,7 @@ fn execute_transaction() {
             // we can read our write:
             let mut rows = txn.query("select count(*) from test", ()).await?;
             assert!(matches!(
-                rows.next().unwrap().unwrap().get_value(0).unwrap(),
+                rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
                 Value::Integer(1)
             ));
             txn.commit().await?;
@@ -190,7 +190,7 @@ fn execute_transaction() {
             // at this point we should not see the written row.
             let mut rows = conn.query("select count(*) from test", ()).await?;
             assert!(matches!(
-                rows.next().unwrap().unwrap().get_value(0).unwrap(),
+                rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
                 Value::Integer(0)
             ));
             notify.notify_waiters();
@@ -204,7 +204,7 @@ fn execute_transaction() {
             // now we can read the inserted row
             let mut rows = conn.query("select count(*) from test", ()).await?;
             assert!(matches!(
-                rows.next().unwrap().unwrap().get_value(0).unwrap(),
+                rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
                 Value::Integer(1)
             ));
             notify.notify_waiters();
