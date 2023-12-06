@@ -1223,9 +1223,7 @@ void sqlite3ExprAddFunctionOrderBy(
   assert( ExprUseXList(pExpr) );
   if( pExpr->x.pList==0 || NEVER(pExpr->x.pList->nExpr==0) ){
     /* Ignore ORDER BY on zero-argument aggregates */
-    sqlite3ParserAddCleanup(pParse,
-        (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
-        pOrderBy);
+    sqlite3ParserAddCleanup(pParse, sqlite3ExprListDeleteGeneric, pOrderBy);
     return;
   }
   if( IsWindowFunc(pExpr) ){
@@ -1406,6 +1404,9 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
 void sqlite3ExprDelete(sqlite3 *db, Expr *p){
   if( p ) sqlite3ExprDeleteNN(db, p);
 }
+void sqlite3ExprDeleteGeneric(sqlite3 *db, void *p){
+  if( p ) sqlite3ExprDeleteNN(db, (Expr*)p);
+}
 
 /*
 ** Clear both elements of an OnOrUsing object
@@ -1431,9 +1432,7 @@ void sqlite3ClearOnOrUsing(sqlite3 *db, OnOrUsing *p){
 ** pExpr to the pParse->pConstExpr list with a register number of 0.
 */
 void sqlite3ExprDeferredDelete(Parse *pParse, Expr *pExpr){
-  sqlite3ParserAddCleanup(pParse,
-    (void(*)(sqlite3*,void*))sqlite3ExprDelete,
-    pExpr);
+  sqlite3ParserAddCleanup(pParse, sqlite3ExprDeleteGeneric, pExpr);
 }
 
 /* Invoke sqlite3RenameExprUnmap() and sqlite3ExprDelete() on the
@@ -2238,6 +2237,9 @@ static SQLITE_NOINLINE void exprListDeleteNN(sqlite3 *db, ExprList *pList){
 }
 void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
   if( pList ) exprListDeleteNN(db, pList);
+}
+void sqlite3ExprListDeleteGeneric(sqlite3 *db, void *pList){
+  if( pList ) exprListDeleteNN(db, (ExprList*)pList);
 }
 
 /*

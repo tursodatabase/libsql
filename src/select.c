@@ -184,6 +184,9 @@ Select *sqlite3SelectNew(
 void sqlite3SelectDelete(sqlite3 *db, Select *p){
   if( OK_IF_ALWAYS_TRUE(p) ) clearSelect(db, p, 1);
 }
+void sqlite3SelectDeleteGeneric(sqlite3 *db, void *p){
+  if( p ) clearSelect(db, (Select*)p, 1);
+}
 
 /*
 ** Return a pointer to the right-most SELECT statement in a compound.
@@ -3204,9 +3207,7 @@ multi_select_end:
   pDest->iSdst = dest.iSdst;
   pDest->nSdst = dest.nSdst;
   if( pDelete ){
-    sqlite3ParserAddCleanup(pParse,
-        (void(*)(sqlite3*,void*))sqlite3SelectDelete,
-        pDelete);
+    sqlite3ParserAddCleanup(pParse, sqlite3SelectDeleteGeneric, pDelete);
   }
   return rc;
 }
@@ -3757,8 +3758,7 @@ static int multiSelectOrderBy(
   /* Make arrangements to free the 2nd and subsequent arms of the compound
   ** after the parse has finished */
   if( pSplit->pPrior ){
-    sqlite3ParserAddCleanup(pParse,
-       (void(*)(sqlite3*,void*))sqlite3SelectDelete, pSplit->pPrior);
+    sqlite3ParserAddCleanup(pParse, sqlite3SelectDeleteGeneric, pSplit->pPrior);
   }
   pSplit->pPrior = pPrior;
   pPrior->pNext = pSplit;
@@ -4579,9 +4579,7 @@ static int flattenSubquery(
     Table *pTabToDel = pSubitem->pTab;
     if( pTabToDel->nTabRef==1 ){
       Parse *pToplevel = sqlite3ParseToplevel(pParse);
-      sqlite3ParserAddCleanup(pToplevel,
-         (void(*)(sqlite3*,void*))sqlite3DeleteTable,
-         pTabToDel);
+      sqlite3ParserAddCleanup(pToplevel, sqlite3DeleteTableGeneric, pTabToDel);
       testcase( pToplevel->earlyCleanup );
     }else{
       pTabToDel->nTabRef--;
@@ -5628,8 +5626,7 @@ static struct Cte *searchWith(
 With *sqlite3WithPush(Parse *pParse, With *pWith, u8 bFree){
   if( pWith ){
     if( bFree ){
-      pWith = (With*)sqlite3ParserAddCleanup(pParse,
-                      (void(*)(sqlite3*,void*))sqlite3WithDelete,
+      pWith = (With*)sqlite3ParserAddCleanup(pParse, sqlite3WithDeleteGeneric,
                       pWith);
       if( pWith==0 ) return 0;
     }
@@ -7037,7 +7034,8 @@ static SrcItem *isSelfJoinView(
 /*
 ** Deallocate a single AggInfo object
 */
-static void agginfoFree(sqlite3 *db, AggInfo *p){
+static void agginfoFree(sqlite3 *db, void *pArg){
+  AggInfo *p = (AggInfo*)pArg;
   sqlite3DbFree(db, p->aCol);
   sqlite3DbFree(db, p->aFunc);
   sqlite3DbFreeNN(db, p);
@@ -7291,9 +7289,8 @@ int sqlite3Select(
         sqlite3TreeViewExprList(0, p->pOrderBy, 0, "ORDERBY");
       }
 #endif   
-      sqlite3ParserAddCleanup(pParse,
-        (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
-        p->pOrderBy);
+      sqlite3ParserAddCleanup(pParse, sqlite3ExprListDeleteGeneric,
+                              p->pOrderBy);
       testcase( pParse->earlyCleanup );
       p->pOrderBy = 0;
     }
@@ -7485,9 +7482,8 @@ int sqlite3Select(
     ){
       TREETRACE(0x800,pParse,p,
                 ("omit superfluous ORDER BY on %r FROM-clause subquery\n",i+1));
-      sqlite3ParserAddCleanup(pParse,
-         (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
-         pSub->pOrderBy);
+      sqlite3ParserAddCleanup(pParse, sqlite3ExprListDeleteGeneric,
+                              pSub->pOrderBy);
       pSub->pOrderBy = 0;
     }
 
@@ -8016,8 +8012,7 @@ int sqlite3Select(
     */
     pAggInfo = sqlite3DbMallocZero(db, sizeof(*pAggInfo) );
     if( pAggInfo ){
-      sqlite3ParserAddCleanup(pParse,
-          (void(*)(sqlite3*,void*))agginfoFree, pAggInfo);
+      sqlite3ParserAddCleanup(pParse, agginfoFree, pAggInfo);
       testcase( pParse->earlyCleanup );
     }
     if( db->mallocFailed ){
