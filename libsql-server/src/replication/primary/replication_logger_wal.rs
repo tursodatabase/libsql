@@ -368,8 +368,13 @@ mod test {
             verify_replication_index.clone(),
             ReplicationLoggerWalManager::new(logger.clone()),
         );
-        let db =
-            crate::connection::libsql::open_conn(tmp.path(), wal_manager, None, 10000).unwrap();
+        let db = crate::connection::libsql::open_conn_active_checkpoint(
+            tmp.path(),
+            wal_manager,
+            None,
+            u32::MAX,
+        )
+        .unwrap();
 
         db.execute("create table test (x)", ()).unwrap();
         for _ in 0..100 {
@@ -411,8 +416,13 @@ mod test {
         );
 
         let wal_manager = ReplicationLoggerWalManager::new(logger.clone());
-        let db =
-            crate::connection::libsql::open_conn(tmp.path(), wal_manager, None, 10000).unwrap();
+        let db = crate::connection::libsql::open_conn_active_checkpoint(
+            tmp.path(),
+            wal_manager,
+            None,
+            u32::MAX,
+        )
+        .unwrap();
 
         unsafe {
             let rc = sqlite3_wal_checkpoint_v2(
