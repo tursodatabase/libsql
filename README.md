@@ -159,7 +159,7 @@ extension and only later escaped to the wild as an independent library.)
 
 Test scripts and programs are found in the **test/** subdirectory.
 Additional test code is found in other source repositories.
-See [How SQLite Is Tested](http://www.sqlite.org/testing.html) for
+See [How SQLite Is Tested](https://www.sqlite.org/testing.html) for
 additional information.
 
 The **ext/** subdirectory contains code for extensions.  The
@@ -183,7 +183,7 @@ manually-edited files and automatically-generated files.
 
 The SQLite interface is defined by the **sqlite3.h** header file, which is
 generated from src/sqlite.h.in, ./manifest.uuid, and ./VERSION.  The
-[Tcl script](http://www.tcl.tk) at tool/mksqlite3h.tcl does the conversion.
+[Tcl script](https://www.tcl.tk) at tool/mksqlite3h.tcl does the conversion.
 The manifest.uuid file contains the SHA3 hash of the particular check-in
 and is used to generate the SQLITE\_SOURCE\_ID macro.  The VERSION file
 contains the current SQLite version number.  The sqlite3.h header is really
@@ -250,14 +250,14 @@ individual source file exceeds 32K lines in length.
 ## How It All Fits Together
 
 SQLite is modular in design.
-See the [architectural description](http://www.sqlite.org/arch.html)
+See the [architectural description](https://www.sqlite.org/arch.html)
 for details. Other documents that are useful in
 (helping to understand how SQLite works include the
-[file format](http://www.sqlite.org/fileformat2.html) description,
-the [virtual machine](http://www.sqlite.org/opcode.html) that runs
+[file format](https://www.sqlite.org/fileformat2.html) description,
+the [virtual machine](https://www.sqlite.org/opcode.html) that runs
 prepared statements, the description of
-[how transactions work](http://www.sqlite.org/atomiccommit.html), and
-the [overview of the query planner](http://www.sqlite.org/optoverview.html).
+[how transactions work](https://www.sqlite.org/atomiccommit.html), and
+the [overview of the query planner](https://www.sqlite.org/optoverview.html).
 
 Years of effort have gone into optimizing SQLite, both
 for small size and high performance.  And optimizations tend to result in
@@ -353,7 +353,7 @@ hidden by also modifying the makefiles.
 
 ## Contacts
 
-The main SQLite website is [http:/sqlite.org/](http://sqlite.org/)
+The main SQLite website is [https://sqlite.org/](https://sqlite.org/)
 with geographically distributed backups at
-[http://www2.sqlite.org/](http://www2.sqlite.org) and
-[http://www3.sqlite.org/](http://www3.sqlite.org).
+[https://www2.sqlite.org/](https://www2.sqlite.org) and
+[https://www3.sqlite.org/](https://www3.sqlite.org).
