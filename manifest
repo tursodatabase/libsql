@@ -1,5 +1,5 @@
-C In\sCLI,\smove\s-interactive\sflag\shandling\sback\sto\sarg-loop\spass\s2.
-D 2023-12-06T16:27:29.628
+C Correctly\shandle\s8-byte\ssizes\sin\sthe\sJSONB\sformat.\n[forum:/forumpost/283daf08e91183fc|Forum\spost\s283daf08e91183fc].
+D 2023-12-06T17:39:31.569
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -696,7 +696,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 0a6095d10a8c8251e1838a1f12abc89125b0b05f82497ad12896a7f714e397ce
+F src/json.c 07247c969e80e0a70241235ea4d00bb823830ce6a48f101fbcb1c72e8abf6f91
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 1b89f3de98d1b59fec5bac1d66d6ece21f703821b8eaa0d53d9604c35309f6f9
@@ -2153,8 +2153,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a76a636b23c0ebd95d47fdf8358de4729e51a5f68f1a730cd4d89b378e94ac0d
-R 66c08e25d4bc58dda9bee0684e3ee757
-U larrybr
-Z 3fccc4c8303ad91f158ca989e0b5a086
+P 63cb05a862532d2d56e9e81fe32ced09bf58f03146587a118f11c2a84e195e69
+R 3207d50f882d9851bd1114b702910d8f
+U drh
+Z 9fdc41964fbd72df8cb3bfd54d04d4f1
 # Remove this line to create a well-formed Fossil manifest.

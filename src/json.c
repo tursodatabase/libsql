@@ -1792,7 +1792,7 @@ static u32 jsonbPayloadSize(const JsonParse *pParse, u32 i, u32 *pSz){
     }
     sz = (pParse->aBlob[i+1]<<8) + pParse->aBlob[i+2];
     n = 3;
-  }else{
+  }else if( x==14 ){
     if( i+4>=pParse->nBlob ){
       *pSz = 0;
       return 0;
@@ -1800,6 +1800,19 @@ static u32 jsonbPayloadSize(const JsonParse *pParse, u32 i, u32 *pSz){
     sz = (pParse->aBlob[i+1]<<24) + (pParse->aBlob[i+2]<<16) +
          (pParse->aBlob[i+3]<<8) + pParse->aBlob[i+4];
     n = 5;
+  }else{
+    if( i+8>=pParse->nBlob
+     || pParse->aBlob[i+1]!=0
+     || pParse->aBlob[i+2]!=0
+     || pParse->aBlob[i+3]!=0
+     || pParse->aBlob[i+4]!=0
+    ){
+      *pSz = 0;
+      return 0;
+    }
+    sz = (pParse->aBlob[i+5]<<24) + (pParse->aBlob[i+6]<<16) +
+         (pParse->aBlob[i+7]<<8) + pParse->aBlob[i+8];
+    n = 9;
   }
   if( i+sz+n > pParse->nBlob
    && i+sz+n > pParse->nBlob-pParse->delta
