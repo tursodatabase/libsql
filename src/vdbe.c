@@ -8321,6 +8321,7 @@ case OP_VColumn: {           /* ncycle */
   const sqlite3_module *pModule;
   Mem *pDest;
   sqlite3_context sContext;
+  FuncDef nullFunc;
 
   VdbeCursor *pCur = p->apCsr[pOp->p1];
   assert( pCur!=0 );
@@ -8338,6 +8339,9 @@ case OP_VColumn: {           /* ncycle */
   memset(&sContext, 0, sizeof(sContext));
   sContext.pOut = pDest;
   sContext.enc = encoding;
+  nullFunc.pUserData = 0;
+  nullFunc.funcFlags = SQLITE_RESULT_SUBTYPE;
+  sContext.pFunc = &nullFunc;
   assert( pOp->p5==OPFLAG_NOCHNG || pOp->p5==0 );
   if( pOp->p5 & OPFLAG_NOCHNG ){
     sqlite3VdbeMemSetNull(pDest);

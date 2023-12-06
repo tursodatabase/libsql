@@ -1369,7 +1369,7 @@ void sqlite3_str_appendf(StrAccum *p, const char *zFormat, ...){
 
 
 /*****************************************************************************
-** Reference counted string storage
+** Reference counted string/blob storage
 *****************************************************************************/
 
 /*
