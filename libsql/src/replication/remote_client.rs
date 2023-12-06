@@ -1,4 +1,3 @@
-use std::mem::size_of;
 use std::path::Path;
 use std::pin::Pin;
 
@@ -12,6 +11,7 @@ use libsql_replication::rpc::replication::{
 };
 use tokio_stream::Stream;
 use tonic::metadata::AsciiMetadataValue;
+use zerocopy::FromBytes;
 
 /// A remote replicator client, that pulls frames over RPC
 pub struct RemoteClient {
@@ -109,9 +109,8 @@ impl ReplicatorClient for RemoteClient {
             .frames;
 
         if let Some(f) = frames.last() {
-            let header: FrameHeader =
-                bytemuck::pod_read_unaligned(&f.data[0..size_of::<FrameHeader>()]);
-            self.last_received = Some(header.frame_no);
+            let header: FrameHeader = FrameHeader::read_from_prefix(&f.data).ok_or_else(|| Error::Internal("invalid frame header".into()))?;
+            self.last_received = Some(header.frame_no.get());
         }
 
         let frames_iter = frames
@@ -143,7 +142,7 @@ impl ReplicatorClient for RemoteClient {
 
             // the first frame is the one with the highest frame_no in the snapshot
             if let Some(Ok(f)) = frames.peek().await {
-                self.last_received = Some(f.header().frame_no);
+                self.last_received = Some(f.header().frame_no.get());
             }
         }
 

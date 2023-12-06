@@ -3,11 +3,12 @@ use std::mem::size_of;
 use std::path::Path;
 use std::str::FromStr;
 
-use bytemuck::{bytes_of, try_pod_read_unaligned, Pod, Zeroable};
 use tokio::fs::File;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use tokio::pin;
 use uuid::Uuid;
+use zerocopy::byteorder::little_endian::{U128 as lu128, U64 as lu64};
+use zerocopy::{AsBytes, FromBytes};
 
 use crate::frame::FrameNo;
 use crate::rpc::replication::HelloResponse;
@@ -27,13 +28,13 @@ pub enum Error {
 }
 
 #[repr(C)]
-#[derive(Debug, Pod, Zeroable, Clone, Copy)]
+#[derive(Debug, Clone, Copy, zerocopy::FromBytes, zerocopy::FromZeroes, zerocopy::AsBytes)]
 pub struct WalIndexMetaData {
     /// id of the replicated log
-    log_id: u128,
+    log_id: lu128,
     /// committed frame index
-    pub committed_frame_no: FrameNo,
-    _padding: u64,
+    pub committed_frame_no: lu64,
+    _padding: [u8; 8],
 }
 
 impl WalIndexMetaData {
@@ -42,8 +43,7 @@ impl WalIndexMetaData {
         let mut buf = [0; size_of::<WalIndexMetaData>()];
         let meta = match file.read_exact(&mut buf).await {
             Ok(_) => {
-                let meta: Self =
-                    try_pod_read_unaligned(&buf).map_err(|_| Error::InvalidMetaFile)?;
+                let meta: Self = Self::read_from(&buf).ok_or(Error::InvalidMetaFile)?;
                 Some(meta)
             }
             Err(e) if e.kind() == ErrorKind::UnexpectedEof => None,
@@ -85,7 +85,7 @@ impl WalIndexMeta {
 
         match self.data {
             Some(meta) => {
-                if meta.log_id != hello_log_id {
+                if meta.log_id.get() != hello_log_id {
                     Err(Error::LogIncompatible)
                 } else {
                     Ok(())
@@ -93,9 +93,9 @@ impl WalIndexMeta {
             }
             None => {
                 self.data = Some(WalIndexMetaData {
-                    log_id: hello_log_id,
-                    committed_frame_no: FrameNo::MAX,
-                    _padding: 0,
+                    log_id: hello_log_id.into(),
+                    committed_frame_no: FrameNo::MAX.into(),
+                    _padding: Default::default(),
                 });
                 Ok(())
             }
@@ -112,7 +112,7 @@ impl WalIndexMeta {
         if let Some(data) = self.data {
             // FIXME: we can save a syscall by calling read_exact_at, but let's use tokio API for now
             self.file.seek(SeekFrom::Start(0)).await?;
-            self.file.write_all(bytes_of(&data)).await?;
+            self.file.write_all(data.as_bytes()).await?;
             self.file.flush().await?;
         }
 
@@ -128,7 +128,7 @@ impl WalIndexMeta {
                 .data
                 .as_mut()
                 .expect("call set_commit_frame_no before initializing meta");
-            data.committed_frame_no = commit_fno;
+            data.committed_frame_no = commit_fno.into();
         }
 
         if let Err(e) = self.flush_inner().await {
@@ -140,10 +140,10 @@ impl WalIndexMeta {
 
     pub fn current_frame_no(&self) -> Option<FrameNo> {
         self.data.and_then(|d| {
-            if d.committed_frame_no == FrameNo::MAX {
+            if d.committed_frame_no.get() == FrameNo::MAX {
                 None
             } else {
-                Some(d.committed_frame_no)
+                Some(d.committed_frame_no.get())
             }
         })
     }
@@ -153,9 +153,9 @@ impl WalIndexMeta {
     pub fn init_default(&mut self) {
         if self.data.is_none() {
             let meta = WalIndexMetaData {
-                log_id: 0,
-                committed_frame_no: FrameNo::MAX,
-                _padding: 0,
+                log_id: 0.into(),
+                committed_frame_no: FrameNo::MAX.into(),
+                _padding: Default::default(),
             };
 
             self.data.replace(meta);

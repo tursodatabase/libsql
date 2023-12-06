@@ -18,16 +18,16 @@ async fn inject_frames() {
         .enumerate()
         .map(|(i, data)| {
             let header = FrameHeader {
-                frame_no: i as _,
-                checksum: 0,
-                page_no: i as u32 + 1,
-                size_after: 0,
+                frame_no: (i as u64).into(),
+                checksum: 0.into(),
+                page_no: (i as u32 + 1).into(),
+                size_after: 0.into(),
             };
             FrameBorrowed::from_parts(&header, data).into()
         })
         .collect();
 
-    frames.last_mut().unwrap().header_mut().size_after = frames.len() as _;
+    frames.last_mut().unwrap().header_mut().size_after = (frames.len() as u32).into();
 
     let frames = frames.into_iter().map(Into::into).collect();
 
@@ -59,16 +59,16 @@ async fn inject_frames() {
         .enumerate()
         .map(|(i, data)| {
             let header = FrameHeader {
-                frame_no: i as u64 + 3,
-                checksum: 0,
-                page_no: i as u32 + 1,
-                size_after: 0,
+                frame_no: (i as u64 + 3).into(),
+                checksum: 0.into(),
+                page_no: (i as u32 + 1).into(),
+                size_after: 0.into(),
             };
             FrameBorrowed::from_parts(&header, data).into()
         })
         .collect();
 
-    frames.last_mut().unwrap().header_mut().size_after = frames.len() as _;
+    frames.last_mut().unwrap().header_mut().size_after = (frames.len() as u32).into();
 
     let frames = frames.into_iter().map(Into::into).collect();
 
@@ -104,10 +104,10 @@ async fn inject_frames_split_txn() {
 
     let mut frames = DB.chunks(LIBSQL_PAGE_SIZE).enumerate().map(|(i, data)| {
         let header = FrameHeader {
-            frame_no: i as _,
-            checksum: 0,
-            page_no: i as u32 + 1,
-            size_after: 0,
+            frame_no: (i as u64).into(),
+            checksum: 0.into(),
+            page_no: (i as u32 + 1).into(),
+            size_after: 0.into(),
         };
         FrameBorrowed::from_parts(&header, data)
     });
@@ -136,7 +136,7 @@ async fn inject_frames_split_txn() {
         db.sync_frames(Frames::Vec(vec![frames
             .next()
             .map(|mut f| {
-                f.header_mut().size_after = 3;
+                f.header_mut().size_after = 3.into();
                 f
             })
             .unwrap()

@@ -7,7 +7,6 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{bail, ensure};
-use bytemuck::{bytes_of, pod_read_unaligned, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
 use libsql_replication::frame::{Frame, FrameHeader, FrameMut};
 use libsql_replication::snapshot::SnapshotFile;
@@ -17,6 +16,10 @@ use tokio::sync::watch;
 use tokio::time::{Duration, Instant};
 use tokio_stream::Stream;
 use uuid::Uuid;
+use zerocopy::byteorder::little_endian::{
+    I32 as li32, U128 as lu128, U16 as lu16, U32 as lu32, U64 as lu64,
+};
+use zerocopy::{AsBytes, FromBytes};
 
 use crate::replication::snapshot::{find_snapshot_file, LogCompactor};
 use crate::replication::{FrameNo, SnapshotCallback, CRC_64_GO_ISO, WAL_MAGIC};
@@ -94,14 +97,14 @@ impl LogFile {
         let header = if file_end == 0 {
             let log_id = Uuid::new_v4();
             LogFileHeader {
-                version: 2,
-                start_frame_no: 0,
-                magic: WAL_MAGIC,
-                page_size: LIBSQL_PAGE_SIZE as i32,
-                start_checksum: 0,
-                log_id: log_id.as_u128(),
-                frame_count: 0,
-                sqld_version: Version::current().0,
+                version: 2.into(),
+                start_frame_no: 0.into(),
+                magic: WAL_MAGIC.into(),
+                page_size: (LIBSQL_PAGE_SIZE as i32).into(),
+                start_checksum: 0.into(),
+                log_id: log_id.as_u128().into(),
+                frame_count: 0.into(),
+                sqld_version: Version::current().0.map(Into::into),
             }
         } else {
             Self::read_header(&file)?
@@ -123,12 +126,12 @@ impl LogFile {
         } else if let Some(last_commited) = this.last_commited_frame_no() {
             // file is not empty, the starting checksum is the checksum from the last entry
             let last_frame = this.frame(last_commited)?;
-            this.commited_checksum = last_frame.header().checksum;
-            this.uncommitted_checksum = last_frame.header().checksum;
+            this.commited_checksum = last_frame.header().checksum.get();
+            this.uncommitted_checksum = last_frame.header().checksum.get();
         } else {
             // file contains no entry, start with the initial checksum from the file header.
-            this.commited_checksum = this.header.start_checksum;
-            this.uncommitted_checksum = this.header.start_checksum;
+            this.commited_checksum = this.header.start_checksum.get();
+            this.uncommitted_checksum = this.header.start_checksum.get();
         }
 
         Ok(this)
@@ -137,8 +140,9 @@ impl LogFile {
     pub fn read_header(file: &File) -> anyhow::Result<LogFileHeader> {
         let mut buf = [0; size_of::<LogFileHeader>()];
         file.read_exact_at(&mut buf, 0)?;
-        let header: LogFileHeader = pod_read_unaligned(&buf);
-        if header.magic != WAL_MAGIC {
+        let header = LogFileHeader::read_from(&buf)
+            .ok_or_else(|| anyhow::anyhow!("invalid log file header"))?;
+        if header.magic.get() != WAL_MAGIC {
             bail!("invalid replication log header");
         }
 
@@ -150,7 +154,7 @@ impl LogFile {
     }
 
     pub fn commit(&mut self) -> anyhow::Result<()> {
-        self.header.frame_count += self.uncommitted_frame_count;
+        self.header.frame_count += self.uncommitted_frame_count.into();
         self.uncommitted_frame_count = 0;
         self.commited_checksum = self.uncommitted_checksum;
         self.write_header()?;
@@ -164,7 +168,7 @@ impl LogFile {
     }
 
     pub fn write_header(&mut self) -> anyhow::Result<()> {
-        self.file.write_all_at(bytes_of(&self.header), 0)?;
+        self.file.write_all_at(self.header.as_bytes(), 0)?;
         self.file.flush()?;
 
         Ok(())
@@ -176,7 +180,7 @@ impl LogFile {
     ) -> anyhow::Result<impl Iterator<Item = anyhow::Result<Frame>> + '_> {
         let mut current_frame_offset = 0;
         Ok(std::iter::from_fn(move || {
-            if current_frame_offset >= self.header.frame_count {
+            if current_frame_offset >= self.header.frame_count.get() {
                 return None;
             }
             let read_byte_offset = Self::absolute_byte_offset(current_frame_offset);
@@ -192,7 +196,7 @@ impl LogFile {
     pub fn rev_frames_iter_mut(
         &self,
     ) -> anyhow::Result<impl Iterator<Item = anyhow::Result<FrameMut>> + '_> {
-        let mut current_frame_offset = self.header.frame_count;
+        let mut current_frame_offset = self.header.frame_count.get();
 
         Ok(std::iter::from_fn(move || {
             if current_frame_offset == 0 {
@@ -206,7 +210,7 @@ impl LogFile {
     }
 
     pub fn into_rev_stream_mut(self) -> impl Stream<Item = anyhow::Result<FrameMut>> {
-        let mut current_frame_offset = self.header.frame_count;
+        let mut current_frame_offset = self.header.frame_count.get();
         let file = Arc::new(Mutex::new(self));
         async_stream::try_stream! {
             loop {
@@ -234,10 +238,10 @@ impl LogFile {
         let checksum = self.compute_checksum(page);
         let frame = Frame::from_parts(
             &FrameHeader {
-                frame_no: self.next_frame_no(),
-                checksum,
-                page_no: page.page_no,
-                size_after: page.size_after,
+                frame_no: self.next_frame_no().into(),
+                checksum: checksum.into(),
+                page_no: page.page_no.into(),
+                size_after: page.size_after.into(),
             },
             &page.data,
         );
@@ -247,7 +251,7 @@ impl LogFile {
             "writing frame {} at offset {byte_offset}",
             frame.header().frame_no
         );
-        self.file.write_all_at(frame.as_slice(), byte_offset)?;
+        self.file.write_all_at(frame.as_bytes(), byte_offset)?;
 
         self.uncommitted_frame_count += 1;
         self.uncommitted_checksum = checksum;
@@ -257,11 +261,13 @@ impl LogFile {
 
     /// offset in bytes at which to write the next frame
     fn next_byte_offset(&self) -> u64 {
-        Self::absolute_byte_offset(self.header().frame_count + self.uncommitted_frame_count)
+        Self::absolute_byte_offset(self.header().frame_count.get() + self.uncommitted_frame_count)
     }
 
     fn next_frame_no(&self) -> FrameNo {
-        self.header().start_frame_no + self.header().frame_count + self.uncommitted_frame_count
+        self.header().start_frame_no.get()
+            + self.header().frame_count.get()
+            + self.uncommitted_frame_count
     }
 
     /// Returns the bytes position of the `nth` entry in the log
@@ -270,12 +276,12 @@ impl LogFile {
     }
 
     fn byte_offset(&self, id: FrameNo) -> anyhow::Result<Option<u64>> {
-        if id < self.header.start_frame_no
-            || id > self.header.start_frame_no + self.header.frame_count
+        if id < self.header.start_frame_no.get()
+            || id > self.header.start_frame_no.get() + self.header.frame_count.get()
         {
             return Ok(None);
         }
-        Ok(Self::absolute_byte_offset(id - self.header.start_frame_no).into())
+        Ok(Self::absolute_byte_offset(id - self.header.start_frame_no.get()).into())
     }
 
     /// Returns bytes representing a WalFrame for frame `frame_no`
@@ -283,11 +289,11 @@ impl LogFile {
     /// If the requested frame is before the first frame in the log, or after the last frame,
     /// Ok(None) is returned.
     pub fn frame(&self, frame_no: FrameNo) -> std::result::Result<Frame, LogReadError> {
-        if frame_no < self.header.start_frame_no {
+        if frame_no < self.header.start_frame_no.get() {
             return Err(LogReadError::SnapshotRequired);
         }
 
-        if frame_no >= self.header.start_frame_no + self.header.frame_count {
+        if frame_no >= self.header.start_frame_no.get() + self.header.frame_count.get() {
             return Err(LogReadError::Ahead);
         }
 
@@ -298,7 +304,7 @@ impl LogFile {
 
     fn should_compact(&self) -> bool {
         let mut compact = false;
-        compact |= self.header.frame_count > self.max_log_frame_count;
+        compact |= self.header.frame_count.get() > self.max_log_frame_count;
         if let Some(max_log_duration) = self.max_log_duration {
             compact |= self.last_compact_instant.elapsed() > max_log_duration;
         }
@@ -319,7 +325,7 @@ impl LogFile {
         assert_eq!(self.uncommitted_frame_count, 0);
 
         // nothing to compact
-        if self.header().frame_count == 0 {
+        if self.header().frame_count.get() == 0 {
             return Ok(());
         }
 
@@ -338,9 +344,9 @@ impl LogFile {
             .open(&to_compact_log_path)?;
         let mut new_log_file = LogFile::new(file, self.max_log_frame_count, self.max_log_duration)?;
         let new_header = LogFileHeader {
-            start_frame_no: self.header.last_frame_no().unwrap() + 1,
-            frame_count: 0,
-            start_checksum: self.commited_checksum,
+            start_frame_no: (self.header.last_frame_no().unwrap() + 1).into(),
+            frame_count: 0.into(),
+            start_checksum: self.commited_checksum.into(),
             ..self.header
         };
         new_log_file.header = new_header;
@@ -362,10 +368,10 @@ impl LogFile {
     }
 
     fn last_commited_frame_no(&self) -> Option<FrameNo> {
-        if self.header.frame_count == 0 {
+        if self.header.frame_count.get() == 0 {
             None
         } else {
-            Some(self.header.start_frame_no + self.header.frame_count - 1)
+            Some(self.header.start_frame_no.get() + self.header.frame_count.get() - 1)
         }
     }
 
@@ -419,40 +425,40 @@ fn atomic_rename(p1: impl AsRef<Path>, p2: impl AsRef<Path>) -> anyhow::Result<(
     Ok(())
 }
 
-#[derive(Debug, Clone, Copy, Zeroable, Pod)]
+#[derive(Debug, Clone, Copy, zerocopy::FromBytes, zerocopy::FromZeroes, zerocopy::AsBytes)]
 #[repr(C)]
 pub struct LogFileHeader {
     /// magic number: b"SQLDWAL\0" as u64
-    pub magic: u64,
+    pub magic: lu64,
     /// Initial checksum value for the rolling CRC checksum
     /// computed with the 64 bits CRC_64_GO_ISO
-    pub start_checksum: u64,
+    pub start_checksum: lu64,
     /// Uuid of the this log.
-    pub log_id: u128,
+    pub log_id: lu128,
     /// Frame_no of the first frame in the log
-    pub start_frame_no: FrameNo,
+    pub start_frame_no: lu64,
     /// entry count in file
-    pub frame_count: u64,
+    pub frame_count: lu64,
     /// Wal file version number, currently: 2
-    pub version: u32,
+    pub version: lu32,
     /// page size: 4096
-    pub page_size: i32,
+    pub page_size: li32,
     /// sqld version when creating this log
-    pub sqld_version: [u16; 4],
+    pub sqld_version: [lu16; 4],
 }
 
 impl LogFileHeader {
     pub fn last_frame_no(&self) -> Option<FrameNo> {
-        if self.start_frame_no == 0 && self.frame_count == 0 {
+        if self.start_frame_no.get() == 0 && self.frame_count.get() == 0 {
             // The log does not contain any frame yet
             None
         } else {
-            Some(self.start_frame_no + self.frame_count - 1)
+            Some(self.start_frame_no.get() + self.frame_count.get() - 1)
         }
     }
 
     fn sqld_version(&self) -> Version {
-        Version(self.sqld_version)
+        Version(self.sqld_version.map(Into::into))
     }
 }
 
@@ -516,7 +522,7 @@ impl ReplicationLogger {
                 // there is no database; nothing to recover
                 false
             }
-        } else if header.version < 2 || header.sqld_version() != Version::current() {
+        } else if header.version.get() < 2 || header.sqld_version() != Version::current() {
             tracing::info!("replication log version not compatible with current sqld version, recovering from database file.");
             true
         } else if fresh && data_path.exists() {
@@ -563,7 +569,7 @@ impl ReplicationLogger {
             generation: Generation::new(generation_start_frame_no.unwrap_or(0)),
             compactor: LogCompactor::new(
                 &db_path,
-                Uuid::from_u128(log_file.header.log_id),
+                Uuid::from_u128(log_file.header.log_id.get()),
                 callback,
             )?,
             log_file: RwLock::new(log_file),
@@ -615,7 +621,7 @@ impl ReplicationLogger {
     }
 
     pub fn log_id(&self) -> Uuid {
-        Uuid::from_u128((self.log_file.read()).header().log_id)
+        Uuid::from_u128((self.log_file.read()).header().log_id.get())
     }
 
     /// Write pages to the log, without updating the file header.
@@ -633,13 +639,13 @@ impl ReplicationLogger {
     fn compute_checksum(wal_header: &LogFileHeader, log_file: &LogFile) -> anyhow::Result<u64> {
         tracing::debug!("computing WAL log running checksum...");
         let mut iter = log_file.frames_iter()?;
-        iter.try_fold(wal_header.start_checksum, |sum, frame| {
+        iter.try_fold(wal_header.start_checksum.get(), |sum, frame| {
             let frame = frame?;
             let mut digest = CRC_64_GO_ISO.digest_with_initial(sum);
             digest.update(frame.page());
             let cs = digest.finalize();
             ensure!(
-                cs == frame.header().checksum,
+                cs == frame.header().checksum.get(),
                 "invalid WAL file: invalid checksum"
             );
             Ok(cs)
@@ -677,7 +683,7 @@ impl ReplicationLogger {
             last_frame_res?
         };
 
-        let size_after = last_frame.header().size_after;
+        let size_after = last_frame.header().size_after.get();
         assert!(size_after != 0);
 
         log_file.do_compaction(self.compactor.clone(), &self.db_path)?;
@@ -781,12 +787,12 @@ mod test {
         let log_file = logger.log_file.write();
         for i in 0..10 {
             let frame = log_file.frame(i).unwrap();
-            assert_eq!(frame.header().page_no, i as u32);
+            assert_eq!(frame.header().page_no.get(), i as u32);
             assert!(frame.page().iter().all(|x| i as u8 == *x));
         }
 
         assert_eq!(
-            log_file.header.start_frame_no + log_file.header.frame_count,
+            log_file.header.start_frame_no.get() + log_file.header.frame_count.get(),
             10
         );
     }
@@ -927,7 +933,7 @@ mod test {
             if !seen.contains(&page_no) {
                 seen.insert(page_no);
                 new_db_file
-                    .write_all_at(frame.page(), (page_no as u64 - 1) * LIBSQL_PAGE_SIZE)
+                    .write_all_at(frame.page(), (page_no.get() as u64 - 1) * LIBSQL_PAGE_SIZE)
                     .unwrap();
             }
         }
