@@ -2120,6 +2120,188 @@ static void jsonBlobEdit(
 }
 
 /*
+** Return the number of escaped newlines to be ignored.
+** An escaped newline is a one of the following byte sequences:
+**
+**    0x5c 0x0a
+**    0x5c 0x0d
+**    0x5c 0x0d 0x0a
+**    0x5c 0xe2 0x80 0xa8
+**    0x5c 0xe2 0x80 0xa9
+*/
+static u32 jsonBytesToBypass(const char *z, u32 n){
+  u32 i = 0;
+  while( i+1<n ){
+    if( z[i]!='\\' ) return i;
+    if( z[i+1]=='\n' ){
+      i += 2;
+      continue;
+    }
+    if( z[i+1]=='\r' ){
+      if( i+2<n && z[i+2]=='\n' ){
+        i += 3;
+      }else{
+        i += 2;
+      }
+      continue;
+    }
+    if( 0xe2==(u8)z[i+1]
+     && i+3<n
+     && 0x80==(u8)z[i+2]
+     && (0xa8==(u8)z[i+3] || 0xa9==(u8)z[i+3])
+    ){
+      i += 4;
+      continue;
+    }
+    break;
+  }
+  return i;
+}
+
+/*
+** Input z[0..n] defines JSON escape sequence including the leading '\\'.
+** Decode that escape sequence into a single character.  Write that
+** character into *piOut.  Return the number of bytes in the escape sequence.
+*/
+static u32 jsonUnescapeOneChar(const char *z, u32 n, u32 *piOut){
+  assert( n>0 );
+  assert( z[0]=='\\' );
+  if( n<2 ){
+    *piOut = 0xFFFD;
+    return n;
+  }
+  switch( (u8)z[1] ){
+    case 'u': {
+      u32 v, vlo;
+      if( n<6 ){
+        *piOut = 0xFFFD;
+        return n;
+      }
+      v = jsonHexToInt4(&z[2]);
+      if( (v & 0xfc00)==0xd800
+       && n>=12
+       && z[6]=='\\'
+       && z[7]=='u'
+       && ((vlo = jsonHexToInt4(&z[8]))&0xfc00)==0xdc00
+      ){
+        *piOut = ((v&0x3ff)<<10) + (vlo&0x3ff) + 0x10000;
+        return 12;
+      }else{
+        *piOut = v;
+        return 6;
+      }
+    }
+    case 'b': {   *piOut = '\b';  return 2; }
+    case 'f': {   *piOut = '\f';  return 2; }
+    case 'n': {   *piOut = '\n';  return 2; }
+    case 'r': {   *piOut = '\r';  return 2; }
+    case 't': {   *piOut = '\t';  return 2; }
+    case 'v': {   *piOut = '\v';  return 2; }
+    case '0': {   *piOut = 0;     return 2; }
+    case '\'':
+    case '"':
+    case '/':
+    case '\\':{   *piOut = z[1];  return 2; }
+    case 'x': {
+      if( n<4 ){
+        *piOut = 0xFFFD;
+        return n;
+      }
+      *piOut = (jsonHexToInt(z[2])<<4) | jsonHexToInt(z[3]);
+      return 4;
+    }
+    case 0xe2:
+    case '\r':
+    case '\n': {
+      u32 nSkip = jsonBytesToBypass(z, n);
+      if( nSkip==0 ){
+        *piOut = 0xFFFD;
+        return n;
+      }else if( nSkip==n ){
+        *piOut = 0;
+        return n;
+      }else if( z[nSkip]=='\\' ){
+        return nSkip + jsonUnescapeOneChar(&z[nSkip], n-nSkip, piOut);
+      }else{
+        *piOut = z[nSkip];
+        return nSkip+1;
+      }
+    }
+    default: {
+      *piOut = 0xFFFD;
+      return 2;
+    }
+  }
+}
+
+
+/*
+** Compare two object labels.  Return 1 if they are equal and
+** 0 if they differ.
+**
+** In this version, we know that one or the other or both of the
+** two comparands contains an escape sequence.
+*/
+static SQLITE_NOINLINE int jsonLabelCompareEscaped(
+  const char *zLeft,          /* The left label */
+  u32 nLeft,                  /* Size of the left label in bytes */
+  int rawLeft,                /* True if zLeft contains no escapes */
+  const char *zRight,         /* The right label */
+  u32 nRight,                 /* Size of the right label in bytes */
+  int rawRight                /* True if zRight is escape-free */
+){
+  u32 cLeft, cRight;
+  assert( rawLeft==0 || rawRight==0 );
+  while( nLeft>0 && nRight>0 ){
+    if( rawLeft || zLeft[0]!='\\' ){
+      cLeft = ((u8*)zLeft)[0];
+      zLeft++;
+      nLeft--;
+    }else{
+      u32 n = jsonUnescapeOneChar(zLeft, nLeft, &cLeft);
+      zLeft += n;
+      assert( n<=nLeft );
+      nLeft -= n;
+    }
+    if( rawRight || zRight[0]!='\\' ){
+      cRight = ((u8*)zRight)[0];
+      zRight++;
+      nRight--;
+    }else{
+      u32 n = jsonUnescapeOneChar(zRight, nRight, &cRight);
+      zRight += n;
+      assert( n<=nRight );
+      nRight -= n;
+    }
+    if( cLeft!=cRight ) return 0;
+  }
+  return nLeft==0 && nRight==0;
+}
+
+/*
+** Compare two object labels.  Return 1 if they are equal and
+** 0 if they differ.  Return -1 if an OOM occurs.
+*/
+static int jsonLabelCompare(
+  const char *zLeft,          /* The left label */
+  u32 nLeft,                  /* Size of the left label in bytes */
+  int rawLeft,                /* True if zLeft contains no escapes */
+  const char *zRight,         /* The right label */
+  u32 nRight,                 /* Size of the right label in bytes */
+  int rawRight                /* True if zRight is escape-free */
+){
+  if( rawLeft && rawRight ){
+    /* Simpliest case:  Neither label contains escapes.  A simple
+    ** memcmp() is sufficient. */
+    if( nLeft!=nRight ) return 0;
+    return memcmp(zLeft, zRight, nLeft)==0;
+  }else{
+    return jsonLabelCompareEscaped(zLeft, nLeft, rawLeft,
+                                   zRight, nRight, rawRight);
+  }
+}
+
+/*
 ** Error returns from jsonLookupStep()
 */
 #define JSON_LOOKUP_ERROR      0xffffffff
@@ -2224,6 +2406,7 @@ static u32 jsonLookupStep(
     return iRoot;
   }
   if( zPath[0]=='.' ){
+    int rawKey = 1;
     x = pParse->aBlob[iRoot];
     zPath++;
     if( zPath[0]=='"' ){
@@ -2236,6 +2419,7 @@ static u32 jsonLookupStep(
         return JSON_LOOKUP_PATHERROR;
       }
       testcase( nKey==0 );
+      rawKey = memchr(zKey, '\\', nKey)==0;
     }else{
       zKey = zPath;
       for(i=0; zPath[i] && zPath[i]!='.' && zPath[i]!='['; i++){}
@@ -2249,13 +2433,17 @@ static u32 jsonLookupStep(
     j = iRoot + n;  /* j is the index of a label */
     iEnd = j+sz;
     while( j<iEnd ){
+      int rawLabel;
+      const char *zLabel;
       x = pParse->aBlob[j] & 0x0f;
       if( x<JSONB_TEXT || x>JSONB_TEXTRAW ) return JSON_LOOKUP_ERROR;
       n = jsonbPayloadSize(pParse, j, &sz);
       if( n==0 ) return JSON_LOOKUP_ERROR;
       k = j+n;  /* k is the index of the label text */
       if( k+sz>=iEnd ) return JSON_LOOKUP_ERROR;
-      if( sz==nKey && memcmp(&pParse->aBlob[k], zKey, nKey)==0 ){
+      zLabel = (const char*)&pParse->aBlob[k];
+      rawLabel = x==JSONB_TEXT || x==JSONB_TEXTRAW;
+      if( jsonLabelCompare(zKey, nKey, rawKey, zLabel, sz, rawLabel) ){
         u32 v = k+sz;  /* v is the index of the value */
         if( ((pParse->aBlob[v])&0x0f)>JSONB_OBJECT ) return JSON_LOOKUP_ERROR;
         n = jsonbPayloadSize(pParse, v, &sz);
@@ -2279,7 +2467,7 @@ static u32 jsonLookupStep(
       testcase( pParse->eEdit==JEDIT_INS );
       testcase( pParse->eEdit==JEDIT_SET );
       memset(&ix, 0, sizeof(ix));
-      jsonBlobAppendNode(&ix,JSONB_TEXTRAW, nKey, 0);
+      jsonBlobAppendNode(&ix, rawKey?JSONB_TEXTRAW:JSONB_TEXT5, nKey, 0);
       pParse->oom |= ix.oom;
       rc = jsonCreateEditSubstructure(pParse, &v, &zPath[i]);
       if( !JSON_LOOKUP_ISERROR(rc)
@@ -2483,72 +2671,27 @@ static void jsonReturnFromBlob(
       for(iIn=iOut=0; iIn<sz; iIn++){
         char c = z[iIn];
         if( c=='\\' ){
-          c = z[++iIn];
-          if( c=='u' ){
-            u32 v = jsonHexToInt4(z+iIn+1);
-            iIn += 4;
-            if( v==0 ) break;
-            if( v<=0x7f ){
-              zOut[iOut++] = (char)v;
-            }else if( v<=0x7ff ){
-              zOut[iOut++] = (char)(0xc0 | (v>>6));
-              zOut[iOut++] = 0x80 | (v&0x3f);
-            }else{
-              u32 vlo;
-              if( (v&0xfc00)==0xd800
-                && iIn<sz-6
-                && z[iIn+1]=='\\'
-                && z[iIn+2]=='u'
-                && ((vlo = jsonHexToInt4(z+iIn+3))&0xfc00)==0xdc00
-              ){
-                /* We have a surrogate pair */
-                v = ((v&0x3ff)<<10) + (vlo&0x3ff) + 0x10000;
-                iIn += 6;
-                zOut[iOut++] = 0xf0 | (v>>18);
-                zOut[iOut++] = 0x80 | ((v>>12)&0x3f);
-                zOut[iOut++] = 0x80 | ((v>>6)&0x3f);
-                zOut[iOut++] = 0x80 | (v&0x3f);
-              }else{
-                zOut[iOut++] = 0xe0 | (v>>12);
-                zOut[iOut++] = 0x80 | ((v>>6)&0x3f);
-                zOut[iOut++] = 0x80 | (v&0x3f);
-              }
-            }
-            continue;
-          }else if( c=='b' ){
-            c = '\b';
-          }else if( c=='f' ){
-            c = '\f';
-          }else if( c=='n' ){
-            c = '\n';
-          }else if( c=='r' ){
-            c = '\r';
-          }else if( c=='t' ){
-            c = '\t';
-          }else if( c=='v' ){
-            c = '\v';
-          }else if( c=='\'' || c=='"' || c=='/' || c=='\\' ){
-            /* pass through unchanged */
-          }else if( c=='0' ){
-            c = 0;
-          }else if( c=='x' ){
-            c = (jsonHexToInt(z[iIn+1])<<4) | jsonHexToInt(z[iIn+2]);
-            iIn += 2;
-          }else if( c=='\r' && z[i+1]=='\n' ){
-            iIn++;
-            continue;
-          }else if( 0xe2==(u8)c
-                 && iIn<sz-2
-                 && 0x80==(u8)z[iIn+1]
-                 && (0xa8==(u8)z[iIn+2] || 0xa9==(u8)z[iIn+2])
-          ){
-            iIn += 2;
-            continue;
+          u32 v;
+          u32 szEscape = jsonUnescapeOneChar(&z[iIn], sz-iIn, &v);
+          if( v<=0x7f ){
+            zOut[iOut++] = (char)v;
+          }else if( v<=0x7ff ){
+            zOut[iOut++] = (char)(0xc0 | (v>>6));
+            zOut[iOut++] = 0x80 | (v&0x3f);
+          }else if( v<0x10000 ){
+            zOut[iOut++] = 0xe0 | (v>>12);
+            zOut[iOut++] = 0x80 | ((v>>6)&0x3f);
+            zOut[iOut++] = 0x80 | (v&0x3f);
           }else{
-            continue;
+            zOut[iOut++] = 0xf0 | (v>>18);
+            zOut[iOut++] = 0x80 | ((v>>12)&0x3f);
+            zOut[iOut++] = 0x80 | ((v>>6)&0x3f);
+            zOut[iOut++] = 0x80 | (v&0x3f);
           }
-        } /* end if( c=='\\' ) */
-        zOut[iOut++] = c;
+          iIn += szEscape - 1;
+        }else{
+          zOut[iOut++] = c;
+        }
       } /* end for() */
       zOut[iOut] = 0;
       sqlite3_result_text(pCtx, zOut, iOut, sqlite3_free);
@@ -3384,6 +3527,7 @@ static int jsonMergePatch(
     iTCursor = iTStart;
     iTEnd = iTEndBE + pTarget->delta;
     while( iTCursor<iTEnd ){
+      int isEqual;   /* true if the patch and target labels match */
       iTLabel = iTCursor;
       eTLabel = pTarget->aBlob[iTCursor] & 0x0f;
       if( eTLabel<JSONB_TEXT || eTLabel>JSONB_TEXTRAW ){
@@ -3396,33 +3540,14 @@ static int jsonMergePatch(
       nTValue = jsonbPayloadSize(pTarget, iTValue, &szTValue);
       if( nTValue==0 ) return JSON_MERGE_BADTARGET;
       if( iTValue + nTValue + szTValue > iTEnd ) return JSON_MERGE_BADTARGET;
-      if( eTLabel==ePLabel ){
-        /* Common case */
-        if( szTLabel==szPLabel
-         && memcmp(&pTarget->aBlob[iTLabel+nTLabel],
-                   &pPatch->aBlob[iPLabel+nPLabel], szTLabel)==0
-        ){
-          break;  /* Labels match. */
-        }
-      }else{
-        /* Should rarely happen */
-        JsonString s1, s2;
-        int isEqual, isOom;
-        jsonStringInit(&s1, 0);
-        jsonXlateBlobToText(pTarget, iTLabel, &s1);
-        jsonStringInit(&s2, 0);
-        jsonXlateBlobToText(pPatch, iPLabel, &s2);
-        isOom = s1.eErr || s2.eErr;
-        if( s1.nUsed==s2.nUsed && memcmp(s1.zBuf, s2.zBuf, s1.nUsed)==0 ){
-          isEqual = 1;
-        }else{
-          isEqual = 0;
-        }
-        jsonStringReset(&s1);
-        jsonStringReset(&s2);
-        if( isOom ) return JSON_MERGE_OOM;
-        if( isEqual ) break;
-      }
+      isEqual = jsonLabelCompare(
+                   (const char*)&pPatch->aBlob[iPLabel+nPLabel],
+                   szPLabel,
+                   (ePLabel==JSONB_TEXT || ePLabel==JSONB_TEXTRAW),
+                   (const char*)&pTarget->aBlob[iTLabel+nTLabel],
+                   szTLabel,
+                   (eTLabel==JSONB_TEXT || eTLabel==JSONB_TEXTRAW));
+      if( isEqual ) break;
       iTCursor = iTValue + nTValue + szTValue;
     }
     x = pPatch->aBlob[iPValue] & 0x0f;
