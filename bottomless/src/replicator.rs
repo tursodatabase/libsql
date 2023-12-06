@@ -684,6 +684,9 @@ impl Replicator {
         db_path: &Path,
         compression: CompressionKind,
     ) -> Result<ByteStream> {
+        if !tokio::fs::try_exists(db_path).await? {
+            bail!("database file was not found at `{}`", db_path.display())
+        }
         match compression {
             CompressionKind::None => Ok(ByteStream::from_path(db_path).await?),
             CompressionKind::Gzip => {
@@ -840,8 +843,9 @@ impl Replicator {
                 Ok(file) => file,
                 Err(e) => {
                     tracing::error!(
-                        "Failed to compress db file (generation {}): {:?}",
+                        "Failed to compress db file (generation `{}`, path: `{}`): {:?}",
                         generation,
+                        db_path.display(),
                         e
                     );
                     let _ = snapshot_notifier.send(Err(e));
