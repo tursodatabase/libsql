@@ -12061,10 +12061,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( cli_strcmp(z,"-init")==0 ){
       zInitFile = cmdline_option_value(argc, argv, ++i);
     }else if( cli_strcmp(z,"-interactive")==0 ){
-      /* Need to check for interactive override here to so that it can
-      ** affect console setup (for Windows only) and testing thereof.
-      */
-      stdin_is_interactive = 1;
     }else if( cli_strcmp(z,"-batch")==0 ){
       /* Need to check for batch mode here to so we can avoid printing
       ** informational messages (like from process_sqliterc) before
@@ -12338,7 +12334,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
             sqlite3_libversion(), sqlite3_sourceid(), 8*(int)sizeof(char*));
       return 0;
     }else if( cli_strcmp(z,"-interactive")==0 ){
-      /* already handled */
+      /* Need to check for interactive override here to so that it can
+      ** affect console setup (for Windows only) and testing thereof.
+      */
+      stdin_is_interactive = 1;
     }else if( cli_strcmp(z,"-batch")==0 ){
       /* already handled */
     }else if( cli_strcmp(z,"-utf8")==0 ){
