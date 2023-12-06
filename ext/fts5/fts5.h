@@ -274,7 +274,11 @@ struct Fts5PhraseIter {
 **
 ** xInstToken(pFts5, iIdx, iToken, ppToken, pnToken)
 **   This is used to access token iToken of phrase hit iIdx within the
-**   current row.
+**   current row. Output variable (*ppToken) is set to point to a buffer
+**   containing the matching document token, and (*pnToken) to the size
+**   of that buffer in bytes. This API is not available if the specified 
+**   token matches a prefix query term. In that case both output variables 
+**   are always set to 0.
 **
 **   The output text is not a copy of the document text that was tokenized.
 **   It is the output of the tokenizer module. For tokendata=1 tables, this 

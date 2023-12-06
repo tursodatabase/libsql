@@ -1,5 +1,5 @@
-C Do\scorrect\scomparisons\sbetween\sobject\slabels\sin\sJSON\seven\swhen\sthe\stwo\slabels\ncontain\sdifferent\sJSON\sescapes.
-D 2023-12-06T17:50:16.616
+C Update\sdocumentation\scomments\sin\sfts5.h.
+D 2023-12-06T18:10:50.884
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -88,8 +88,8 @@ F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl d5aebf022fa4577ee8cdf27468f0d847879993959101f6dbd6348ef0cfc324a7
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
-F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
-F ext/fts5/fts5.h ff90acaa97f8e865b66d1177d1b56b8c110fd5548ab5863bab43f055a1d745fe
+F ext/fts5/extract_api_docs.tcl bc3a0ca78be7d3df08e7602c00ca48021ebae40682d75eb001bfdf6e54ffb44e
+F ext/fts5/fts5.h 9d7867cc63631296462c90bafe57c4881b56e480fa510ffaee6a77049258c714
 F ext/fts5/fts5Int.h defa43c0932265138ee910ca416e6baccf8b774e0f3d610e74be1ab2880e9834
 F ext/fts5/fts5_aux.c ee770eec0af8646db9e18fc01a0dad7345b5f5e8cbba236704cfae2d777022ad
 F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b729225eeaf6a5
@@ -2153,9 +2153,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 73d390f39c0bbbc017e01544e4d43c76761f2599bd57f900131c706270dfd202 b9243ee8a37c62eb8848e765bd4af83bc1b3d3eb24fb4268a1357ad1f8b2e1fb
-R fd697485adcd3130674f1a92f5c02f3d
-T +closed b9243ee8a37c62eb8848e765bd4af83bc1b3d3eb24fb4268a1357ad1f8b2e1fb
-U drh
-Z 9804c6a78387d2d6c50275c2413cc6ef
+P bda2e30cc22e180b19a7a05824dd345880eb402ae5450b2d2dd954946c3ae135
+R 17f891969e2a492b1525813205840ba9
+U dan
+Z b2b93165d3875994ffe922a4d9022c9c
 # Remove this line to create a well-formed Fossil manifest.
