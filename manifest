@@ -1,5 +1,5 @@
-C Work\saround\sLLVM's\snewfound\shatred\sof\sfunction\spointer\scasts.\n[forum:/forumpost/1a7d257346636292|Forum\spost\s1a7d257346636292].
-D 2023-12-06T18:25:41.085
+C Fix\scompiler\swarning\sabout\sshadowed\svariable\sin\sfts5_index.c.
+D 2023-12-06T18:34:59.649
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -96,7 +96,7 @@ F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b7292
 F ext/fts5/fts5_config.c 8072a207034b51ae9b7694121d1b5715c794e94b275e088f70ae532378ca5cdf
 F ext/fts5/fts5_expr.c b1ec526371b9ffde82341423a5b9753c42cbea629a41b69f26fa377d13b95a8e
 F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a0ec91b1
-F ext/fts5/fts5_index.c be39b44ff8773cff56bcbc01f74701a83e068c20d773cafd01e8bb2fa0fc1bc5
+F ext/fts5/fts5_index.c 111fdb22e4d78a5c3813ac2c782409b3567291a48f19ae834cd50268c8e9fafc
 F ext/fts5/fts5_main.c fb7ec495d663f40d18e420e1986316591041a70e1e4b4696ab2a7384e4c7fd7a
 F ext/fts5/fts5_storage.c 5d10b9bdcce5b90656cad13c7d12ad4148677d4b9e3fca0481fca56d6601426d
 F ext/fts5/fts5_tcl.c cf0fd0dbe64ec272491b749e0d594f563cda03336aeb60900129e6d18b0aefb8
@@ -2153,8 +2153,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38c50e22c98607e6c1fd78d7615cda534773b6d4fd85c712b54749fcd7af0c83
-R 46759d7734ecdddbd46479e0808766c4
-U drh
-Z d4b23af7ef5680cfa48b70dc8dcb0c9b
+P ec0ae4030968c782af48d1c776351c14b2ada21d40aeb97915f33df30706e18f
+R edfe66d6aa99b5210c61e8b6b973888d
+U dan
+Z 66c944797bd4988ebf2844c99b4718ad
 # Remove this line to create a well-formed Fossil manifest.

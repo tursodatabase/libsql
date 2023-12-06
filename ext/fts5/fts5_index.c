@@ -6743,9 +6743,9 @@ static void fts5IterSetOutputsTokendata(Fts5Iter *pIter){
 
       /* Allocate array of iterators if they are not already allocated. */
       if( pT->aPoslistReader==0 ){
-        int nByte = pT->nIter * (sizeof(Fts5PoslistReader) + sizeof(int));
         pT->aPoslistReader = (Fts5PoslistReader*)sqlite3Fts5MallocZero(
-            &pIter->pIndex->rc, nByte
+            &pIter->pIndex->rc,
+            pT->nIter * (sizeof(Fts5PoslistReader) + sizeof(int))
         );
         if( pT->aPoslistReader==0 ) return;
         pT->aPoslistToIter = (int*)&pT->aPoslistReader[pT->nIter];
