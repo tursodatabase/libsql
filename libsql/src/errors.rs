@@ -42,6 +42,13 @@ pub enum Error {
     Replication(crate::BoxError),
 }
 
+#[cfg(feature = "hrana")]
+impl From<crate::hrana::HranaError> for Error {
+    fn from(e: crate::hrana::HranaError) -> Self {
+        Error::Hrana(e.into())
+    }
+}
+
 impl From<std::convert::Infallible> for Error {
     fn from(_: std::convert::Infallible) -> Self {
         unreachable!()

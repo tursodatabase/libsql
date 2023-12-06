@@ -90,7 +90,7 @@ where
         let mut step_errors = Vec::new();
 
         while let Ok(mut step) = self.next_step().await {
-            let cols = (&*step.cols).clone();
+            let cols = (&*step.cols()).to_vec();
             let mut rows = VecDeque::new();
             while let Some(res) = step.next().await {
                 match res {
@@ -131,6 +131,10 @@ where
 
     pub async fn next_step(&mut self) -> Result<CursorStep<S>> {
         CursorStep::new(self).await
+    }
+
+    pub async fn next_step_owned(self) -> Result<OwnedCursorStep> {
+        OwnedCursorStep::new(self).await
     }
 
     pub async fn next_line(&mut self) -> Option<Result<String>> {
@@ -191,70 +195,163 @@ where
     }
 }
 
-pub struct CursorStep<'a, S> {
-    cursor: Option<&'a mut Cursor<S>>,
-    cols: Arc<Vec<Col>>,
-    step_no: u32,
-    affected_rows: u32,
-    last_inserted_rowid: Option<String>,
+pub struct OwnedCursorStep<S> {
+    cursor: Option<Cursor<S>>,
+    state: CursorStepState,
 }
 
-impl<'a, S> CursorStep<'a, S>
+impl<S> OwnedCursorStep<S> 
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
-{
-    async fn new(cursor: &'a mut Cursor<S>) -> Result<CursorStep<'a, S>> {
-        let mut begin = None;
-        while let Some(res) = cursor.next().await {
-            match res? {
-                CursorEntry::StepBegin(entry) => {
-                    begin = Some(entry);
-                    break;
-                }
-                CursorEntry::Row(_) => {
-                    tracing::trace!("skipping over row message for previous cursor step")
-                }
-                CursorEntry::StepEnd(_) => {
-                    tracing::debug!("skipping over StepEnd message for previous cursor step")
-                }
-                CursorEntry::StepError(e) => {
-                    return Err(HranaError::CursorError(CursorResponseError::StepError {
-                        step: e.step,
-                        error: e.error,
-                    }))
-                }
-                CursorEntry::Error(e) => {
-                    return Err(HranaError::CursorError(CursorResponseError::Other(e.error)))
-                }
-            }
-        }
-        if let Some(begin) = begin {
-            Ok(CursorStep {
-                cursor: Some(cursor),
+    S: Stream<Item = Result<Bytes>> + Unpin,{
+    async fn new(mut cursor: Cursor<S>) -> Result<Self> {
+        let begin = get_next_step(&mut cursor).await?;
+        Ok(OwnedCursorStep {
+            cursor: Some(cursor),
+            state: CursorStepState {
                 cols: Arc::new(begin.cols),
                 step_no: begin.step,
                 affected_rows: 0,
                 last_inserted_rowid: None,
-            })
-        } else {
-            Err(HranaError::CursorError(CursorResponseError::CursorClosed))
+            },
+        })
+    }
+
+    pub fn cursor(&self) -> Option<&Cursor> {
+        self.cursor.as_ref()
+    }
+
+    pub fn cursor_mut(&mut self) -> Option<&mut Cursor> {
+        self.cursor.as_mut()
+    }
+
+    /// Consume and discard all rows, fast running current cursor step to the end.
+    pub async fn consume(&mut self) -> Result<Option<Cursor>> {
+        while let Some(res) = self.next().await {
+            res?;
         }
+        Ok(self.cursor.take())
     }
 
     pub fn cols(&self) -> &[Col] {
-        &self.cols
+        &self.state.cols
     }
 
     pub fn step_no(&self) -> u32 {
-        self.step_no
+        self.state.step_no
     }
 
     pub fn affected_rows(&self) -> u32 {
-        self.affected_rows
+        self.state.affected_rows
     }
 
     pub fn last_inserted_rowid(&self) -> Option<&str> {
-        self.last_inserted_rowid.as_deref()
+        self.state.last_inserted_rowid.as_deref()
+    }
+}
+
+impl<S> Stream for OwnedCursorStep<S>
+where
+    S: Stream<Item = Result<Bytes>> + Unpin, {
+    type Item = Result<Row>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let cursor = if let Some(cursor) = &mut self.cursor {
+            Pin::new(cursor)
+        } else {
+            return Poll::Ready(None);
+        };
+        match ready!(cursor.poll_next(cx)) {
+            None => {
+                self.cursor = None;
+                Poll::Ready(None)
+            }
+            Some(Err(e)) => Poll::Ready(Some(Err(e))),
+            Some(Ok(entry)) => {
+                let result = self.state.update(entry);
+                if result.is_none() {
+                    self.cursor.take();
+                }
+                Poll::Ready(result)
+            }
+        }
+    }
+}
+
+pub struct CursorStep<'a, S> {
+    cursor: Option<&'a mut Cursor<S>>,
+    state: CursorStepState,
+}
+
+impl<'a, S> CursorStep<'a, S>
+where
+    S: Stream<Item = Result<Bytes>> + Unpin,{
+    async fn new(cursor: &'a mut Cursor<S>) -> Result<CursorStep<'a, S>> {
+        let begin = get_next_step(cursor).await?;
+        Ok(CursorStep {
+            cursor: Some(cursor),
+            state: CursorStepState {
+                cols: Arc::new(begin.cols),
+                step_no: begin.step,
+                affected_rows: 0,
+                last_inserted_rowid: None,
+            },
+        })
+    }
+
+    /// Consume and discard all rows, fast running current cursor step to the end.
+    pub async fn consume(&mut self) -> Result<()> {
+        while let Some(res) = self.next().await {
+            res?;
+        }
+        Ok(())
+    }
+
+    pub fn cols(&self) -> &[Col] {
+        &self.state.cols
+    }
+
+    pub fn step_no(&self) -> u32 {
+        self.state.step_no
+    }
+
+    pub fn affected_rows(&self) -> u32 {
+        self.state.affected_rows
+    }
+
+    pub fn last_inserted_rowid(&self) -> Option<&str> {
+        self.state.last_inserted_rowid.as_deref()
+    }
+}
+
+async fn get_next_step(cursor: &mut Cursor) -> Result<StepBeginEntry> {
+    let mut begin = None;
+    while let Some(res) = cursor.next().await {
+        match res? {
+            CursorEntry::StepBegin(entry) => {
+                begin = Some(entry);
+                break;
+            }
+            CursorEntry::Row(_) => {
+                tracing::trace!("skipping over row message for previous cursor step")
+            }
+            CursorEntry::StepEnd(_) => {
+                tracing::debug!("skipping over StepEnd message for previous cursor step")
+            }
+            CursorEntry::StepError(e) => {
+                return Err(HranaError::CursorError(CursorResponseError::StepError {
+                    step: e.step,
+                    error: e.error,
+                }))
+            }
+            CursorEntry::Error(e) => {
+                return Err(HranaError::CursorError(CursorResponseError::Other(e.error)))
+            }
+        }
+    }
+    if let Some(begin) = begin {
+        Ok(begin)
+    } else {
+        Err(HranaError::CursorError(CursorResponseError::CursorClosed))
     }
 }
 
@@ -276,33 +373,52 @@ where
                 Poll::Ready(None)
             }
             Some(Err(e)) => Poll::Ready(Some(Err(e))),
-            Some(Ok(entry)) => match entry {
-                CursorEntry::Row(row) => {
-                    let row = Row::new(self.cols.clone(), row.row);
-                    Poll::Ready(Some(Ok(row)))
+            Some(Ok(entry)) => {
+                let result = self.state.update(entry);
+                if result.is_none() {
+                    self.cursor.take();
                 }
-                CursorEntry::StepEnd(end) => {
-                    self.affected_rows = end.affected_row_count;
-                    self.last_inserted_rowid = end.last_inserted_rowid;
-                    self.cursor = None;
-                    Poll::Ready(None)
-                }
-                CursorEntry::StepBegin(begin) => Poll::Ready(Some(Err(HranaError::CursorError(
-                    CursorResponseError::NotClosed {
-                        expected: self.step_no,
-                        actual: begin.step,
-                    },
-                )))),
-                CursorEntry::StepError(e) => Poll::Ready(Some(Err(HranaError::CursorError(
-                    CursorResponseError::StepError {
-                        step: e.step,
-                        error: e.error,
-                    },
-                )))),
-                CursorEntry::Error(e) => Poll::Ready(Some(Err(HranaError::CursorError(
-                    CursorResponseError::Other(e.error),
-                )))),
-            },
+                Poll::Ready(result)
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
+struct CursorStepState {
+    cols: Arc<Vec<Col>>,
+    step_no: u32,
+    affected_rows: u32,
+    last_inserted_rowid: Option<String>,
+}
+
+impl CursorStepState {
+    fn update(&mut self, entry: CursorEntry) -> Option<Result<Row>> {
+        match entry {
+            CursorEntry::Row(row) => {
+                let row = Row::new(self.cols.clone(), row.row);
+                Some(Ok(row))
+            }
+            CursorEntry::StepEnd(end) => {
+                self.affected_rows = end.affected_row_count;
+                self.last_inserted_rowid = end.last_inserted_rowid;
+                None
+            }
+            CursorEntry::StepBegin(begin) => Some(Err(HranaError::CursorError(
+                CursorResponseError::NotClosed {
+                    expected: self.step_no,
+                    actual: begin.step,
+                },
+            ))),
+            CursorEntry::StepError(e) => Some(Err(HranaError::CursorError(
+                CursorResponseError::StepError {
+                    step: e.step,
+                    error: e.error,
+                },
+            ))),
+            CursorEntry::Error(e) => Some(Err(HranaError::CursorError(
+                CursorResponseError::Other(e.error),
+            ))),
         }
     }
 }
@@ -350,7 +466,7 @@ mod test {
         assert_eq!(step.step_no(), 0);
         {
             let cols: Vec<_> = step
-                .cols
+                .cols()
                 .iter()
                 .map(|col| col.name.as_deref().unwrap_or(""))
                 .collect();

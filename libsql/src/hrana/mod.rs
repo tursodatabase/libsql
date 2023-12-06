@@ -13,8 +13,9 @@ mod stream;
 pub mod transaction;
 
 use crate::hrana::connection::HttpConnection;
+use crate::hrana::cursor::{Cursor, OwnedCursorStep};
 pub(crate) use crate::hrana::pipeline::StreamResponseError;
-use crate::hrana::proto::{Col, Stmt, StmtResult};
+use crate::hrana::proto::{Batch, Col, Stmt};
 use crate::hrana::stream::HranaStream;
 use crate::{params::Params, ValueType};
 use bytes::Bytes;
@@ -169,9 +170,9 @@ impl<T> StatementExecutor<T>
 where
     T: HttpSend,
 {
-    async fn execute(&self, stmt: Stmt) -> crate::Result<StmtResult> {
+    async fn execute(&self, stmt: Stmt) -> crate::Result<Cursor> {
         let res = match self {
-            StatementExecutor::Stream(stream) => stream.execute(stmt).await,
+            StatementExecutor::Stream(stream) => stream.cursor(Batch::single(stmt)).await,
             StatementExecutor::Connection(conn) => conn.execute_inner(stmt).await,
         };
         res.map_err(|e| crate::Error::Hrana(e.into()))
@@ -208,38 +209,47 @@ where
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
-        let v = self.executor.execute(stmt).await?;
-        Ok(v.affected_row_count as usize)
+        let mut v = self.executor.execute(stmt).await?;
+        let mut step = v
+            .next_step()
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        step.consume()
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        Ok(step.affected_rows() as usize)
     }
 
     pub async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
-        let StmtResult { rows, cols, .. } = self.executor.execute(stmt).await?;
+        let cursor = self.executor.execute(stmt).await?;
+        let rows = HranaRows::from_cursor(cursor).await?;
 
         Ok(super::Rows {
-            inner: Box::new(Rows {
-                rows,
-                cols: Arc::new(cols),
-            }),
+            inner: Box::new(rows),
         })
     }
 }
 
-pub struct Rows {
-    cols: Arc<Vec<Col>>,
-    rows: VecDeque<Vec<proto::Value>>,
+pub struct HranaRows {
+    cursor_step: OwnedCursorStep,
+}
+
+impl HranaRows {
+    async fn from_cursor(cursor: Cursor) -> Result<Self> {
+        let cursor_step = cursor.next_step_owned().await?;
+        Ok(HranaRows { cursor_step })
+    }
 }
 
 #[async_trait::async_trait]
-impl RowsInner for Rows {
+impl RowsInner for HranaRows {
     async fn next(&mut self) -> crate::Result<Option<super::Row>> {
-        let row = match self.rows.pop_front() {
-            Some(row) => Row {
-                cols: self.cols.clone(),
-                inner: row,
-            },
+        let row = match self.cursor_step.next().await {
+            Some(Ok(row)) => row,
+            Some(Err(e)) => return Err(crate::Error::Hrana(Box::new(e))),
             None => return Ok(None),
         };
 
@@ -249,32 +259,19 @@ impl RowsInner for Rows {
     }
 
     fn column_count(&self) -> i32 {
-        self.cols.len() as i32
+        self.cursor_step.cols().len() as i32
     }
 
     fn column_name(&self, idx: i32) -> Option<&str> {
-        self.cols
+        self.cursor_step
+            .cols()
             .get(idx as usize)
             .and_then(|c| c.name.as_ref())
             .map(|s| s.as_str())
     }
 
-    fn column_type(&self, idx: i32) -> crate::Result<ValueType> {
-        let row = match self.rows.get(0) {
-            None => return Err(crate::Error::QueryReturnedNoRows),
-            Some(row) => row,
-        };
-        let cell = match row.get(idx as usize) {
-            None => return Err(crate::Error::ColumnNotFound(idx)),
-            Some(cell) => cell,
-        };
-        Ok(match cell {
-            proto::Value::Null => ValueType::Null,
-            proto::Value::Integer { .. } => ValueType::Integer,
-            proto::Value::Float { .. } => ValueType::Real,
-            proto::Value::Text { .. } => ValueType::Text,
-            proto::Value::Blob { .. } => ValueType::Blob,
-        })
+    fn column_type(&self, _idx: i32) -> crate::Result<ValueType> {
+        todo!()
     }
 }
 
