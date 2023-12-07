@@ -6887,7 +6887,7 @@ static Fts5Iter *fts5SetupTokendataIter(
   fts5IndexFlush(p);
   pStruct = fts5StructureRead(p);
 
-  while( 1 ){
+  while( p->rc==SQLITE_OK ){
     Fts5Iter *pPrev = pSet ? pSet->apIter[pSet->nIter-1] : 0;
     Fts5Iter *pNew = 0;
     Fts5SegIter *pNewIter = 0;
