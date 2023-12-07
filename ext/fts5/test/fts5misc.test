@@ -91,7 +91,6 @@ do_execsql_test 2.2.1 {
   INSERT INTO vt0(c0) VALUES ('xyz');
 }
 
-breakpoint
 do_execsql_test 2.2.2 {
   ALTER TABLE t0 RENAME TO t1;
 }
@@ -500,6 +499,21 @@ do_execsql_test 17.5 {
   SELECT c0 FROM t0 WHERE c0 GLOB '*faul*';
 } {assertionfaultproblem}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 18.0 {
+  BEGIN;
+    CREATE VIRTUAL TABLE t1 USING fts5(text);
+    ALTER TABLE t1 RENAME TO t2;
+}
+
+do_execsql_test 18.1 {
+    DROP TABLE t2;
+}
+
+do_execsql_test 18.2 {
+  COMMIT;
+}
 
 finish_test
 

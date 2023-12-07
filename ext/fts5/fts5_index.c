@@ -360,6 +360,7 @@ struct Fts5Index {
 
   /* Error state. */
   int rc;                         /* Current error code */
+  int flushRc;
 
   /* State used by the fts5DataXXX() functions. */
   sqlite3_blob *pReader;          /* RO incr-blob open on %_data table */
@@ -4120,6 +4121,7 @@ static void fts5IndexDiscardData(Fts5Index *p){
     sqlite3Fts5HashClear(p->pHash);
     p->nPendingData = 0;
     p->nPendingRow = 0;
+    p->flushRc = SQLITE_OK;
   }
   p->nContentlessDelete = 0;
 }
@@ -5701,6 +5703,10 @@ static void fts5FlushOneHash(Fts5Index *p){
 */
 static void fts5IndexFlush(Fts5Index *p){
   /* Unless it is empty, flush the hash table to disk */
+  if( p->flushRc ){
+    p->rc = p->flushRc;
+    return;
+  }
   if( p->nPendingData || p->nContentlessDelete ){
     assert( p->pHash );
     fts5FlushOneHash(p);
@@ -5709,6 +5715,8 @@ static void fts5IndexFlush(Fts5Index *p){
       p->nPendingData = 0;
       p->nPendingRow = 0;
       p->nContentlessDelete = 0;
+    }else if( p->nPendingData || p->nContentlessDelete ){
+      p->flushRc = p->rc;
     }
   }
 }
@@ -6888,13 +6896,15 @@ static Fts5Iter *fts5SetupTokendataIter(
     int iLvl, iSeg, ii;
 
     pNew = fts5MultiIterAlloc(p, pStruct->nSegment);
-    if( pNew==0 ) break;
-
     if( pSmall ){
       fts5BufferSet(&p->rc, &bSeek, pSmall->n, pSmall->p);
       fts5BufferAppendBlob(&p->rc, &bSeek, 1, (const u8*)"\0");
     }else{
       fts5BufferSet(&p->rc, &bSeek, nToken, pToken);
+    }
+    if( p->rc ){
+      sqlite3Fts5IterClose((Fts5IndexIter*)pNew);
+      break;
     }
 
     pNewIter = &pNew->aSeg[0];

@@ -118,7 +118,7 @@ struct Fts5FullTable {
   Fts5Global *pGlobal;            /* Global (connection wide) data */
   Fts5Cursor *pSortCsr;           /* Sort data from this cursor */
   int iSavepoint;                 /* Successful xSavepoint()+1 */
-  int bInSavepoint;
+  
 #ifdef SQLITE_DEBUG
   struct Fts5TransactionState ts;
 #endif
@@ -2667,9 +2667,7 @@ static int fts5RenameMethod(
 ){
   int rc;
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
-  pTab->bInSavepoint = 1;
   rc = sqlite3Fts5StorageRename(pTab->pStorage, zName);
-  pTab->bInSavepoint = 0;
   return rc;
 }
 
@@ -2686,26 +2684,12 @@ int sqlite3Fts5FlushToDisk(Fts5Table *pTab){
 static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
   int rc = SQLITE_OK;
-  char *zSql = 0;
+
   fts5CheckTransactionState(pTab, FTS5_SAVEPOINT, iSavepoint);
-
-  if( pTab->bInSavepoint==0 ){
-    zSql = sqlite3_mprintf("INSERT INTO %Q.%Q(%Q) VALUES('flush')",
-        pTab->p.pConfig->zDb, pTab->p.pConfig->zName, pTab->p.pConfig->zName
-    );
-    if( zSql ){
-      pTab->bInSavepoint = 1;
-      rc = sqlite3_exec(pTab->p.pConfig->db, zSql, 0, 0, 0);
-      pTab->bInSavepoint = 0;
-      sqlite3_free(zSql);
-    }else{
-      rc = SQLITE_NOMEM;
-    }
-    if( rc==SQLITE_OK ){
-      pTab->iSavepoint = iSavepoint+1;
-    }
+  rc = sqlite3Fts5FlushToDisk((Fts5Table*)pVtab);
+  if( rc==SQLITE_OK ){
+    pTab->iSavepoint = iSavepoint+1;
   }
-
   return rc;
 }
 
@@ -2966,7 +2950,7 @@ static int fts5ShadowName(const char *zName){
 ** if anything is found amiss.  Return a NULL pointer if everything is
 ** OK.
 */
-static int fts5Integrity(
+static int fts5IntegrityMethod(
   sqlite3_vtab *pVtab,    /* the FTS5 virtual table to check */
   const char *zSchema,    /* Name of schema in which this table lives */
   const char *zTabname,   /* Name of the table itself */
@@ -3024,7 +3008,7 @@ static int fts5Init(sqlite3 *db){
     /* xRelease      */ fts5ReleaseMethod,
     /* xRollbackTo   */ fts5RollbackToMethod,
     /* xShadowName   */ fts5ShadowName,
-    /* xIntegrity    */ fts5Integrity
+    /* xIntegrity    */ fts5IntegrityMethod
   };
 
   int rc;
