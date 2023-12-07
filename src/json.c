@@ -2618,14 +2618,17 @@ static void jsonReturnFromBlob(
   }
   switch( pParse->aBlob[i] & 0x0f ){
     case JSONB_NULL: {
+      if( sz ) goto returnfromblob_malformed;
       sqlite3_result_null(pCtx);
       break;
     }
     case JSONB_TRUE: {
+      if( sz ) goto returnfromblob_malformed;
       sqlite3_result_int(pCtx, 1);
       break;
     }
     case JSONB_FALSE: {
+      if( sz ) goto returnfromblob_malformed;
       sqlite3_result_int(pCtx, 0);
       break;
     }
@@ -2634,16 +2637,25 @@ static void jsonReturnFromBlob(
       sqlite3_int64 iRes = 0;
       char *z;
       int bNeg = 0;
-      char x = (char)pParse->aBlob[i+n];
-      if( x=='-' && ALWAYS(sz>0) ){ n++; sz--; bNeg = 1; }
+      char x;
+      if( sz==0 ) goto returnfromblob_malformed;
+      x = (char)pParse->aBlob[i+n];
+      if( x=='-' ){
+        if( sz<2 ) goto returnfromblob_malformed;
+        n++;
+        sz--;
+        bNeg = 1;
+      }
       z = sqlite3DbStrNDup(db, (const char*)&pParse->aBlob[i+n], (int)sz);
-      if( z==0 ) return;
+      if( z==0 ) goto returnfromblob_oom;
       rc = sqlite3DecOrHexToI64(z, &iRes);
       sqlite3DbFree(db, z);
-      if( rc<=1 ){
+      if( rc==0 ){
         sqlite3_result_int64(pCtx, bNeg ? -iRes : iRes);
       }else if( rc==3 && bNeg ){
         sqlite3_result_int64(pCtx, SMALLEST_INT64);
+      }else if( rc==1 ){
+        goto returnfromblob_malformed;
       }else{
         if( bNeg ){ n--; sz++; }
         goto to_double;
@@ -2654,11 +2666,13 @@ static void jsonReturnFromBlob(
     case JSONB_FLOAT: {
       double r;
       char *z;
+      if( sz==0 ) goto returnfromblob_malformed;
     to_double:
       z = sqlite3DbStrNDup(db, (const char*)&pParse->aBlob[i+n], (int)sz);
-      if( z==0 ) return;
-      sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
+      if( z==0 ) goto returnfromblob_oom;
+      rc = sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
       sqlite3DbFree(db, z);
+      if( rc<=0 ) goto returnfromblob_malformed;
       sqlite3_result_double(pCtx, r);
       break;
     }
@@ -2677,10 +2691,7 @@ static void jsonReturnFromBlob(
       u32 nOut = sz;
       z = (const char*)&pParse->aBlob[i+n];
       zOut = sqlite3_malloc( nOut+1 );
-      if( zOut==0 ){
-        sqlite3_result_error_nomem(pCtx);
-        break;
-      }
+      if( zOut==0 ) goto returnfromblob_oom;
       for(iIn=iOut=0; iIn<sz; iIn++){
         char c = z[iIn];
         if( c=='\\' ){
@@ -2721,10 +2732,18 @@ static void jsonReturnFromBlob(
       break;
     }
     default: {
-      sqlite3_result_error(pCtx, "malformed JSON", -1);
-      break;
+      goto returnfromblob_malformed;
     }
   }
+  return;
+
+returnfromblob_oom:
+  sqlite3_result_error_nomem(pCtx);
+  return;
+
+returnfromblob_malformed:
+  sqlite3_result_error(pCtx, "malformed JSON", -1);
+  return;
 }
 
 /*
