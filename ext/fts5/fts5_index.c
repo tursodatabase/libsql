@@ -7031,6 +7031,10 @@ int sqlite3Fts5IndexQuery(
     int bTokendata = pConfig->bTokendata;
     if( nToken>0 ) memcpy(&buf.p[1], pToken, nToken);
 
+    if( flags & (FTS5INDEX_QUERY_NOTOKENDATA|FTS5INDEX_QUERY_SCAN) ){
+      bTokendata = 0;
+    }
+
     /* Figure out which index to search and set iIdx accordingly. If this
     ** is a prefix query for which there is no prefix index, set iIdx to
     ** greater than pConfig->nPrefix to indicate that the query will be
@@ -7042,7 +7046,6 @@ int sqlite3Fts5IndexQuery(
     ** for internal sanity checking by the integrity-check in debug 
     ** mode only.  */
 #ifdef SQLITE_DEBUG
-    if( flags & FTS5INDEX_QUERY_NOTOKENDATA ) bTokendata = 0;
     if( pConfig->bPrefixIndex==0 || (flags & FTS5INDEX_QUERY_TEST_NOIDX) ){
       assert( flags & FTS5INDEX_QUERY_PREFIX );
       iIdx = 1+pConfig->nPrefix;
