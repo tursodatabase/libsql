@@ -7221,7 +7221,7 @@ int sqlite3Fts5IterToken(
 */
 void sqlite3Fts5IndexIterClearTokendata(Fts5IndexIter *pIndexIter){
   Fts5Iter *pIter = (Fts5Iter*)pIndexIter;
-  if( pIter->pTokenDataIter ){
+  if( pIter && pIter->pTokenDataIter ){
     pIter->pTokenDataIter->nMap = 0;
   }
 }
