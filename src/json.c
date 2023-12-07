@@ -4521,23 +4521,20 @@ static int jsonEachNext(sqlite3_vtab_cursor *cur){
 */
 static int jsonEachPathLength(JsonEachCursor *p){
   u32 n = p->path.nUsed;
-  const char *z = p->path.zBuf;
-  if( p->iRowid==0 && p->bRecursive && n>1 ){
-    if( z[n-1]==']' ){
-      do{
-        assert( n>1 );
-        n--;
-      }while( z[n]!='[' );
-    }else if( z[n-1]=='"' ){
-      do{
-        assert( n>1 );
-        n--;
-      }while( z[n]!='.' || z[n+1]!='"' );
-    }else{
-      do{
-        assert( n>1 );
-        n--;
-      }while( z[n]!='.' );
+  char *z = p->path.zBuf;
+  if( p->iRowid==0 && p->bRecursive && n>=2 ){
+    while( n>1 ){
+      n--;
+      if( z[n]=='[' || z[n]=='.' ){
+        u32 x, sz = 0;
+        char cSaved = z[n];
+        z[n] = 0;
+        assert( p->sParse.eEdit==0 );
+        x = jsonLookupStep(&p->sParse, 0, z+1, 0);
+        z[n] = cSaved;
+        if( JSON_LOOKUP_ISERROR(x) ) continue;
+        if( x + jsonbPayloadSize(&p->sParse, x, &sz) == p->i ) break;
+      }
     }
   }
   return n;
