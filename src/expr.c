@@ -1405,7 +1405,7 @@ void sqlite3ExprDelete(sqlite3 *db, Expr *p){
   if( p ) sqlite3ExprDeleteNN(db, p);
 }
 void sqlite3ExprDeleteGeneric(sqlite3 *db, void *p){
-  if( p ) sqlite3ExprDeleteNN(db, (Expr*)p);
+  if( ALWAYS(p) ) sqlite3ExprDeleteNN(db, (Expr*)p);
 }
 
 /*
@@ -2239,7 +2239,7 @@ void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
   if( pList ) exprListDeleteNN(db, pList);
 }
 void sqlite3ExprListDeleteGeneric(sqlite3 *db, void *pList){
-  if( pList ) exprListDeleteNN(db, (ExprList*)pList);
+  if( ALWAYS(pList) ) exprListDeleteNN(db, (ExprList*)pList);
 }
 
 /*

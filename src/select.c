@@ -185,7 +185,7 @@ void sqlite3SelectDelete(sqlite3 *db, Select *p){
   if( OK_IF_ALWAYS_TRUE(p) ) clearSelect(db, p, 1);
 }
 void sqlite3SelectDeleteGeneric(sqlite3 *db, void *p){
-  if( p ) clearSelect(db, (Select*)p, 1);
+  if( ALWAYS(p) ) clearSelect(db, (Select*)p, 1);
 }
 
 /*
