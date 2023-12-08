@@ -4115,7 +4115,7 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
     }else if( flags & JSON_BLOB ){
       jsonReturnStringAsBlob(pStr);
       if( isFinal ){
-        sqlite3RCStrUnref(pStr->zBuf);
+        if( !pStr->bStatic ) sqlite3RCStrUnref(pStr->zBuf);
       }else{
         pStr->nUsed--;
       }
@@ -4235,7 +4235,7 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
     }else if( flags & JSON_BLOB ){
       jsonReturnStringAsBlob(pStr);
       if( isFinal ){
-        sqlite3RCStrUnref(pStr->zBuf);
+        if( !pStr->bStatic ) sqlite3RCStrUnref(pStr->zBuf);
       }else{
         pStr->nUsed--;
       }
