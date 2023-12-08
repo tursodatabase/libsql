@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sproblem\sRCStr\saccess\son\sa\sJsonString\sobject\sthat\sis\snot\nreally\sand\sRCStr.\s\sFuzzer/UBSAN\sfind.
-D 2023-12-08T14:54:22.333
+C Fix\sa\sharmless\sUBSAN\swarning.
+D 2023-12-08T16:56:50.764
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -696,7 +696,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 0b92947cc3762e10f0c9afb5b3f42df3ac60bf0bae3ceb9751a0f0f5c3cab219
+F src/json.c 5631fd482c13680f142cc9f3403022232584978fa9d0e86ac282c310bc3d8902
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 1b89f3de98d1b59fec5bac1d66d6ece21f703821b8eaa0d53d9604c35309f6f9
@@ -2153,8 +2153,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 34f9e9a8c4bea13f60f43062e25cd7d9422f2e7f5b371ed0ddadc9abeb3ca256
-R 5b24ba3b196cb17162e42a315ae717a9
+P d2f2174ce2cc89606034e158149a2d05fc3627ec4d5cdb772add7a2250f29d78
+R 4e2efed7bb86322a932c64421cda8002
 U drh
-Z 497d51b892f444b107e833dd38c8bfdf
+Z d8061dc139c0b2205f580742f9475aee
 # Remove this line to create a well-formed Fossil manifest.
