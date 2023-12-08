@@ -88,6 +88,54 @@ do_faultsim_test 2 -faults oom* -prep {
   faultsim_test_result {0 {10 24}}
 }
 
+reset_db
+sqlite3_fts5_register_origintext db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(
+      x, tokenize="origintext unicode61", tokendata=1
+  );
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
+
+  INSERT INTO t1(rowid, x) VALUES(9, 'bbb Bbb BBB');
+  BEGIN;
+    INSERT INTO t1(rowid, x) VALUES(10, 'aaa bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(11, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(12, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(13, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(14, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(15, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(16, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(17, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(18, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(19, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(20, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(21, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(22, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(23, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(24, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(25, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(26, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(27, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(28, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(29, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(30, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(31, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(32, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(33, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(34, 'bbb Bbb BBB');
+    INSERT INTO t1(rowid, x) VALUES(35, 'aaa bbb BBB');
+  COMMIT;
+}
+
+do_faultsim_test 3 -faults oom* -prep { 
+} -body {
+  execsql {
+    SELECT rowid FROM t1('BBB AND AAA');
+  }
+} -test {
+  faultsim_integrity_check
+  faultsim_test_result {0 {10 35}}
+}
 
 
 finish_test

@@ -6940,6 +6940,7 @@ static Fts5Iter *fts5SetupTokendataIter(
 
         pNewIter++;
         if( pPrevIter ) pPrevIter++;
+        if( p->rc ) break;
       }
     }
     fts5TokendataSetTermIfEof(pPrev, pSmall);
