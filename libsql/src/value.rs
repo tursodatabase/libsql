@@ -500,7 +500,7 @@ mod serde_ {
         type Error = E;
 
         serde::forward_to_deserialize_any! {
-            bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
+            i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
                 bytes byte_buf unit_struct newtype_struct seq tuple tuple_struct
                 map struct enum identifier ignored_any
         }
@@ -522,6 +522,17 @@ mod serde_ {
             match self.value {
                 Value::Null => visitor.visit_none(),
                 _ => visitor.visit_some(self),
+            }
+        }
+
+        fn deserialize_bool<V>(self, visitor: V) -> std::result::Result<V::Value, Self::Error>
+        where
+            V: Visitor<'de>,
+        {
+            match self.value {
+                Value::Integer(0) => visitor.visit_bool(false),
+                Value::Integer(1) => visitor.visit_bool(true),
+                _ => Err(de::Error::invalid_value(de::Unexpected::Other(&format!("{:?}", self.value)), &"a valid sqlite boolean representation (0 or 1)")),
             }
         }
 
@@ -571,6 +582,11 @@ mod serde_ {
             Ok(b"abc".to_vec())
         );
 
+        assert_eq!(de::<i64>(Value::Integer(0)), Ok(0));
+        assert_eq!(de::<i64>(Value::Integer(1)), Ok(1));
+        assert_eq!(de::<bool>(Value::Integer(0)), Ok(false));
+        assert_eq!(de::<bool>(Value::Integer(1)), Ok(true));
+
         assert_eq!(de::<Option<()>>(Value::Null), Ok(None));
         assert_eq!(de::<Option<Vec<u8>>>(Value::Null), Ok(None));
         assert_eq!(de::<Option<i64>>(Value::Integer(123)), Ok(Some(123)));
@@ -579,5 +595,6 @@ mod serde_ {
         assert!(de::<i64>(Value::Null).is_err());
         assert!(de::<Vec<u8>>(Value::Null).is_err());
         assert!(de::<f64>(Value::Blob(b"abc".to_vec())).is_err());
+        assert!(de::<bool>(Value::Integer(2)).is_err());
     }
 }
