@@ -64,6 +64,32 @@ pub fn namespace_from_headers(
     }
 }
 
+pub struct MakeConnectionExtractorPath<D>(pub Arc<dyn MakeConnection<Connection = D>>);
+#[async_trait::async_trait]
+impl<F> FromRequestParts<AppState<F>>
+    for MakeConnectionExtractorPath<<F::Database as Database>::Connection>
+where
+    F: MakeNamespace,
+{
+    type Rejection = Error;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState<F>,
+    ) -> Result<Self, Self::Rejection> {
+        let auth = Authenticated::from_request_parts(parts, state).await?;
+        let ns = axum::extract::Path::<NamespaceName>::from_request_parts(parts, state)
+            .await
+            .map_err(|e| Error::InvalidPath(e.to_string()))?;
+        Ok(Self(
+            state
+                .namespaces
+                .with_authenticated(ns.to_owned(), auth, |ns| ns.db.connection_maker())
+                .await?,
+        ))
+    }
+}
+
 fn split_namespace(host: &str) -> crate::Result<NamespaceName> {
     let (ns, _) = host.split_once('.').ok_or_else(|| {
         Error::InvalidHost("host header should be in the format <namespace>.<...>".into())

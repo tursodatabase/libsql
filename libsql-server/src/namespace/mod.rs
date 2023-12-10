@@ -18,6 +18,8 @@ use libsql_replication::rpc::replication::replication_log_client::ReplicationLog
 use libsql_sys::wal::{Sqlite3WalManager, WalManager};
 use parking_lot::Mutex;
 use rusqlite::ErrorCode;
+use serde::de::Visitor;
+use serde::Deserialize;
 use tokio::io::AsyncBufReadExt;
 use tokio::sync::watch;
 use tokio::task::JoinSet;
@@ -103,6 +105,32 @@ impl NamespaceName {
 impl fmt::Display for NamespaceName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.as_str().fmt(f)
+    }
+}
+
+impl<'de> Deserialize<'de> for NamespaceName {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct V;
+
+        impl<'de> Visitor<'de> for V {
+            type Value = NamespaceName;
+
+            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(f, "a valid namespace name")
+            }
+
+            fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                NamespaceName::from_string(v).map_err(|e| E::custom(e))
+            }
+        }
+
+        deserializer.deserialize_string(V)
     }
 }
 

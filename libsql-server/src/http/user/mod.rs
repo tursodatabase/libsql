@@ -33,6 +33,7 @@ use crate::connection::Connection;
 use crate::database::Database;
 use crate::error::Error;
 use crate::hrana;
+use crate::http::user::db_factory::MakeConnectionExtractorPath;
 use crate::http::user::types::HttpQuery;
 use crate::metrics::LEGACY_HTTP_CALL;
 use crate::namespace::{MakeNamespace, NamespaceStore};
@@ -193,6 +194,27 @@ async fn handle_version() -> Response<Body> {
 
 async fn handle_fallback() -> impl IntoResponse {
     (StatusCode::NOT_FOUND).into_response()
+}
+
+async fn handle_hrana_pipeline<F: MakeNamespace>(
+    AxumState(state): AxumState<AppState<F>>,
+    MakeConnectionExtractorPath(connection_maker): MakeConnectionExtractorPath<
+        <F::Database as Database>::Connection,
+    >,
+    auth: Authenticated,
+    req: Request<Body>,
+) -> Result<Response<Body>, Error> {
+    Ok(state
+        .hrana_http_srv
+        .handle_request(
+            connection_maker,
+            auth,
+            req,
+            hrana::http::Endpoint::Pipeline,
+            hrana::Version::Hrana2,
+            hrana::Encoding::Json,
+        )
+        .await?)
 }
 
 /// Router wide state that each request has access too via
@@ -387,6 +409,8 @@ where
                         hrana::Encoding::Protobuf,
                     )),
                 )
+                // turso dev routes
+                .route("/dev/:namespace/v2/pipeline", post(handle_hrana_pipeline))
                 .with_state(state);
 
             // Merge the grpc based axum router into our regular http router

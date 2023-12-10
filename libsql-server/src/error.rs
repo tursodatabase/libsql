@@ -56,6 +56,8 @@ pub enum Error {
     Anyhow(#[from] anyhow::Error),
     #[error("Invalid host header: `{0}`")]
     InvalidHost(String),
+    #[error("Invalid path in URI: `{0}`")]
+    InvalidPath(String),
     #[error("Namespace `{0}` doesn't exist")]
     NamespaceDoesntExist(String),
     #[error("Namespace `{0}` already exists")]
@@ -132,6 +134,7 @@ impl IntoResponse for Error {
             TooManyRequests => self.format_err(StatusCode::TOO_MANY_REQUESTS),
             QueryError(_) => self.format_err(StatusCode::BAD_REQUEST),
             InvalidHost(_) => self.format_err(StatusCode::BAD_REQUEST),
+            InvalidPath(_) => self.format_err(StatusCode::BAD_REQUEST),
             NamespaceDoesntExist(_) => self.format_err(StatusCode::BAD_REQUEST),
             PrimaryConnectionTimeout => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             NamespaceAlreadyExist(_) => self.format_err(StatusCode::BAD_REQUEST),
