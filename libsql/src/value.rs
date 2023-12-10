@@ -444,7 +444,7 @@ mod serde_ {
             D: serde::Deserializer<'de>,
         {
             struct V;
-            impl Visitor<'_> for V {
+            impl<'de> Visitor<'de> for V {
                 type Value = Value;
 
                 fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -477,6 +477,16 @@ mod serde_ {
                     E: serde::de::Error,
                 {
                     Ok(Value::Text(v))
+                }
+
+                fn visit_some<D>(
+                    self,
+                    deserializer: D,
+                ) -> std::result::Result<Self::Value, D::Error>
+                where
+                    D: Deserializer<'de>,
+                {
+                    Deserialize::deserialize(deserializer)
                 }
 
                 fn visit_none<E>(self) -> std::result::Result<Self::Value, E>
@@ -581,3 +591,4 @@ mod serde_ {
         assert!(de::<f64>(Value::Blob(b"abc".to_vec())).is_err());
     }
 }
+
