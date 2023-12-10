@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::extract::FromRequestParts;
+use axum::extract::{FromRequestParts, Path};
 use hyper::http::request::Parts;
 use hyper::HeaderMap;
 
@@ -78,13 +78,13 @@ where
         state: &AppState<F>,
     ) -> Result<Self, Self::Rejection> {
         let auth = Authenticated::from_request_parts(parts, state).await?;
-        let ns = axum::extract::Path::<NamespaceName>::from_request_parts(parts, state)
+        let Path((ns, _)) = Path::<(NamespaceName, String)>::from_request_parts(parts, state)
             .await
             .map_err(|e| Error::InvalidPath(e.to_string()))?;
         Ok(Self(
             state
                 .namespaces
-                .with_authenticated(ns.to_owned(), auth, |ns| ns.db.connection_maker())
+                .with_authenticated(ns, auth, |ns| ns.db.connection_maker())
                 .await?,
         ))
     }

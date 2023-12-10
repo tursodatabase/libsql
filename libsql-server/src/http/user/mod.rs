@@ -202,8 +202,14 @@ async fn handle_hrana_pipeline<F: MakeNamespace>(
         <F::Database as Database>::Connection,
     >,
     auth: Authenticated,
+    axum::extract::Path((_, version)): axum::extract::Path<(String, String)>,
     req: Request<Body>,
 ) -> Result<Response<Body>, Error> {
+    let hrana_version = match version.as_str() {
+        "2" => hrana::Version::Hrana2,
+        "3" => hrana::Version::Hrana3,
+        _ => return Err(Error::InvalidPath("invalid hrana version".to_string())),
+    };
     Ok(state
         .hrana_http_srv
         .handle_request(
@@ -211,7 +217,7 @@ async fn handle_hrana_pipeline<F: MakeNamespace>(
             auth,
             req,
             hrana::http::Endpoint::Pipeline,
-            hrana::Version::Hrana2,
+            hrana_version,
             hrana::Encoding::Json,
         )
         .await?)
@@ -410,7 +416,10 @@ where
                     )),
                 )
                 // turso dev routes
-                .route("/dev/:namespace/v2/pipeline", post(handle_hrana_pipeline))
+                .route(
+                    "/dev/:namespace/v:version/pipeline",
+                    post(handle_hrana_pipeline),
+                )
                 .with_state(state);
 
             // Merge the grpc based axum router into our regular http router
