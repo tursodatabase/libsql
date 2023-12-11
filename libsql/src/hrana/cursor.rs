@@ -337,6 +337,12 @@ async fn get_next_step(cursor: &mut Cursor) -> Result<StepBeginEntry> {
             CursorEntry::StepEnd(_) => {
                 tracing::debug!("skipping over StepEnd message for previous cursor step")
             }
+            CursorEntry::StepEnd(end) => {
+                tracing::trace!(
+                    "end current cursor step - affected rows: {}",
+                    end.affected_row_count
+                );
+            }
             CursorEntry::StepError(e) => {
                 return Err(HranaError::CursorError(CursorResponseError::StepError {
                     step: e.step,
@@ -349,6 +355,7 @@ async fn get_next_step(cursor: &mut Cursor) -> Result<StepBeginEntry> {
         }
     }
     if let Some(begin) = begin {
+        tracing::trace!("begin cursor step: {}", begin.step);
         Ok(begin)
     } else {
         Err(HranaError::CursorError(CursorResponseError::CursorClosed))

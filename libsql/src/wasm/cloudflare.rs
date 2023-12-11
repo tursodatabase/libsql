@@ -59,6 +59,12 @@ impl HttpSend for CloudflareSender {
         let fut = Self::send(url, auth, body);
         Box::pin(fut)
     }
+
+    fn oneshot(self, url: Arc<str>, auth: Arc<str>, body: String) {
+        worker::wasm_bindgen_futures::spawn_local(async move {
+            let _ = Self::send(&url, &auth, body).await;
+        });
+    }
 }
 
 impl From<worker::Error> for HranaError {

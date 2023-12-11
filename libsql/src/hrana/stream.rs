@@ -53,6 +53,7 @@ where
         cursor_url: Arc<str>,
         auth_token: Arc<str>,
     ) -> Self {
+        tracing::trace!("opening stream");
         HranaStream {
             inner: Arc::new(Inner {
                 affected_row_count: AtomicU64::new(0),
@@ -350,18 +351,31 @@ where
         self.status = StreamStatus::Closed;
     }
 
-    async fn close(&mut self) -> Result<()> {
-        if self.status == StreamStatus::Closed {
-            return Ok(());
-        }
-        self.send(StreamRequest::Close).await?;
-        self.done();
-        Ok(())
-    }
-
     fn next_sql_id(&mut self) -> SqlId {
         self.sql_id_generator = self.sql_id_generator.wrapping_add(1);
         self.sql_id_generator
+    }
+}
+
+#[cfg(feature = "remote")]
+impl<T> Drop for RawStream<T>
+where
+    T: HttpSend,
+{
+    fn drop(&mut self) {
+        if self.status == StreamStatus::Closed {
+            return;
+        }
+        tracing::trace!("closing stream");
+        let req = serde_json::to_string(&ClientMsg {
+            baton: self.baton.clone(),
+            requests: vec![StreamRequest::Close],
+        })
+        .unwrap();
+        self.client
+            .clone()
+            .oneshot(self.pipeline_url.clone(), self.auth_token.clone(), req);
+        self.done();
     }
 }
 

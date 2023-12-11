@@ -43,6 +43,9 @@ pub trait HttpSend: Clone {
     type Stream: Stream<Item = Result<Bytes>> + Unpin;
     type Result: Future<Output = Result<Self::Stream>>;
     fn http_send(&self, url: Arc<str>, auth: Arc<str>, body: String) -> Self::Result;
+
+    /// Schedule sending a HTTP post request without waiting for the completion.
+    fn oneshot(self, url: Arc<str>, auth: Arc<str>, body: String);
 }
 
 pub enum HttpBody<S> {

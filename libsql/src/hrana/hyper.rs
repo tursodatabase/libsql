@@ -81,6 +81,10 @@ impl HttpSend for HttpSender {
         let fut = self.clone().send(url, auth, body);
         Box::pin(fut)
     }
+
+    fn oneshot(self, url: Arc<str>, auth: Arc<str>, body: String) {
+        let _ = tokio::spawn(async move { self.send(&url, &auth, body).await });
+    }
 }
 
 impl From<hyper::Error> for HranaError {
