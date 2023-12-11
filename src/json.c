@@ -3870,6 +3870,128 @@ json_type_done:
 }
 
 /*
+** Check a single element of the JSONB in pParse for validity.
+**
+** The element to be checked starts at offset i and must end at on the
+** last byte before iEnd.
+**
+** Return 0 if everything is correct.  Return the 1-based byte offset of the
+** error if a problem is detected.  (In other words, if the error is at offset
+** 0, return 1).
+*/
+static u32 jsonbValidityCheck(JsonParse *pParse, u32 i, u32 iEnd, u32 iDepth){
+  u32 n, sz, j, k;
+  const u8 *z;
+  u8 x;
+  if( iDepth>JSON_MAX_DEPTH ) return i+1;
+  sz = 0;
+  n = jsonbPayloadSize(pParse, i, &sz);
+  if( n==0 ) return i+1;
+  if( i+n+sz!=iEnd ) return i+1;
+  z = pParse->aBlob;
+  x = z[i] & 0x0f;
+  switch( x ){
+    case JSONB_NULL:
+    case JSONB_TRUE:
+    case JSONB_FALSE: {
+      return n+sz==1 ? 0 : i+1;
+    }
+    default: {
+      return i+1;
+    }
+    case JSONB_INT: {
+      if( sz<1 ) return i+1;
+      j = i+n;
+      if( z[j]=='-' ){
+        j++;
+        if( sz<2 ) return j;
+      }
+      k = i+n+sz;
+      while( j<k ){
+        if( sqlite3Isdigit(z[j]) ){
+          j++;
+        }else{
+          return j+1;
+        }
+      }
+      return 0;
+    }
+    case JSONB_INT5: {
+      if( sz<3 ) return i+1;
+      j = i+n;
+      if( z[j]!='0' ) return j+1;
+      if( z[j+1]!='x' && z[j+1]!='X' ) return j+2;
+      j += 2;
+      k = i+n+sz;
+      while( j<k ){
+        if( sqlite3Isxdigit(z[j]) ){
+          j++;
+        }else{
+          return j+1;
+        }
+      }
+      return 0;
+    }
+    case JSONB_FLOAT:
+    case JSONB_FLOAT5: {
+      if( sz<2 ) return i+1;
+      j = i+n;
+      k = j+sz;
+      if( z[j]=='-' ){
+        j++;
+        if( sz<3 ) return i+1;
+      }
+      return 0;
+    }
+    case JSONB_TEXT:
+    case JSONB_TEXTJ:
+    case JSONB_TEXT5:
+    case JSONB_TEXTRAW: {
+      return 0;
+    }
+    case JSONB_ARRAY: {
+      u32 sub;
+      j = i+n;
+      k = j+sz;
+      while( j<k ){
+        sz = 0;
+        n = jsonbPayloadSize(pParse, j, &sz);
+        if( n==0 ) return j+1;
+        if( j+n+sz>k ) return j+1;
+        sub = jsonbValidityCheck(pParse, j, k, iDepth+1);
+        if( sub ) return sub;
+        j += n + sz;
+      }
+      assert( j==k );
+      return 0;
+    }
+    case JSONB_OBJECT: {
+      u32 cnt = 0;
+      u32 sub;
+      j = i+n;
+      k = j+sz;
+      while( j<k ){
+        sz = 0;
+        n = jsonbPayloadSize(pParse, j, &sz);
+        if( n==0 ) return j+1;
+        if( j+n+sz>k ) return j+1;
+        if( (cnt & 1)==0 ){
+          x = z[j] & 0x0f;
+          if( x<JSONB_TEXT || x>JSONB_TEXTRAW ) return j+1;
+        }
+        sub = jsonbValidityCheck(pParse, j, k, iDepth+1);
+        if( sub ) return sub;
+        cnt++;
+        j += n + sz;
+      }
+      assert( j==k );
+      if( (cnt & 1)!=0 ) return j+1;
+      return 0;
+    }
+  }
+}
+
+/*
 ** json_valid(JSON)
 ** json_valid(JSON, FLAGS)
 **
@@ -3954,38 +4076,19 @@ static void jsonValidFunc(
     case SQLITE_BLOB: {
       if( (flags & 0x0c)!=0 && jsonFuncArgMightBeBinary(argv[0]) ){
         if( flags & 0x04 ){
-          /* Superficial checking only - accomplisehd by the
+          /* Superficial checking only - accomplished by the
           ** jsonFuncArgMightBeBinary() call above. */
           res = 1;
         }else{
           /* Strict checking.  Check by translating BLOB->TEXT->BLOB.  If
           ** no errors occur, call that a "strict check". */
           JsonParse px;
-          JsonString sx;
-          u8 oom = 0;
+          u32 iErr;
           memset(&px, 0, sizeof(px));
           px.aBlob = (u8*)sqlite3_value_blob(argv[0]);
           px.nBlob = sqlite3_value_bytes(argv[0]);
-          jsonStringInit(&sx, 0);
-          jsonXlateBlobToText(&px, 0, &sx);
-          jsonParseReset(&px);
-          if( sx.eErr & JSTRING_OOM ) oom = 1;
-          if( sx.eErr==0 ){
-            memset(&px, 0, sizeof(px));
-            jsonStringTerminate(&sx);
-            px.zJson = sx.zBuf;
-            px.nJson = sx.nUsed;
-            if( jsonXlateTextToBlob(&px, 0)==px.nJson ){
-              res = 1;
-            }
-            oom |= px.oom;
-            jsonParseReset(&px);
-          }
-          jsonStringReset(&sx);
-          if( oom ){
-            sqlite3_result_error_nomem(ctx);
-            return;
-          }
+          iErr = jsonbValidityCheck(&px, 0, px.nBlob, 1);
+          res = iErr==0;
         }
       }
       break;
