@@ -31,7 +31,7 @@ pub trait WalManager {
         wal: &mut Self::Wal,
         db: &mut Sqlite3Db,
         sync_flags: c_int,
-        scratch: &mut [u8],
+        scratch: Option<&mut [u8]>,
     ) -> Result<()>;
 
     fn destroy_log(&self, vfs: &mut Vfs, db_path: &CStr) -> Result<()>;

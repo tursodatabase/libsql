@@ -1,4 +1,4 @@
-use std::num::NonZeroU32;
+use std::{ffi::c_int, num::NonZeroU32};
 
 use super::{Wal, WalManager};
 
@@ -57,10 +57,10 @@ where
         wal: &mut Self::Wal,
         db: &mut super::Sqlite3Db,
         sync_flags: std::ffi::c_int,
-        scratch: &mut [u8],
+        scratch: Option<&mut [u8]>,
     ) -> super::Result<()> {
-        self.wrapped
-            .close(&mut wal.wrapped, db, sync_flags, scratch)
+        self.wrapper
+            .close(&self.wrapped, &mut wal.wrapped, db, sync_flags, scratch)
     }
 
     fn destroy_log(&self, vfs: &mut super::Vfs, db_path: &std::ffi::CStr) -> super::Result<()> {
@@ -284,5 +284,16 @@ pub trait WrapWal<W: Wal> {
 
     fn last_fame_index(&self, wrapped: &W) -> u32 {
         wrapped.last_fame_index()
+    }
+
+    fn close<M: WalManager<Wal = W>>(
+        &self,
+        manager: &M,
+        wrapped: &mut W,
+        db: &mut super::Sqlite3Db,
+        sync_flags: c_int,
+        scratch: Option<&mut [u8]>,
+    ) -> super::Result<()> {
+        manager.close(wrapped, db, sync_flags, scratch)
     }
 }

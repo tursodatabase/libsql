@@ -184,6 +184,19 @@ impl<W: Wal> WrapWal<W> for InhibitCheckpointWalWrapper {
         );
         Err(rusqlite::ffi::Error::new(SQLITE_BUSY))
     }
+
+    fn close<M: WalManager<Wal = W>>(
+        &self,
+        manager: &M,
+        wrapped: &mut W,
+        db: &mut libsql_sys::wal::Sqlite3Db,
+        sync_flags: c_int,
+        _scratch: Option<&mut [u8]>,
+    ) -> libsql_sys::wal::Result<()> {
+        // sqlite3 wall will not checkpoint if it's not provided with a scratch buffer. We take
+        // advantage of that to prevent checpoint on such connections.
+        manager.close(wrapped, db, sync_flags, None)
+    }
 }
 
 pub type InhibitCheckpoint<T> = WrappedWal<InhibitCheckpointWalWrapper, T>;
