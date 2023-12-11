@@ -92,6 +92,8 @@ pub enum Error {
     UrlParseError(#[from] url::ParseError),
     #[error("Namespace store has shutdown")]
     NamespaceStoreShutdown,
+    #[error("Unable to update metastore: {0}")]
+    MetaStoreUpdateFailure(Box<dyn std::error::Error + Send + Sync>),
 }
 
 trait ResponseError: std::error::Error {
@@ -150,6 +152,7 @@ impl IntoResponse for Error {
             PrimaryStreamInterupted => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             UrlParseError(_) => self.format_err(StatusCode::BAD_REQUEST),
             NamespaceStoreShutdown => self.format_err(StatusCode::SERVICE_UNAVAILABLE),
+            MetaStoreUpdateFailure(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }

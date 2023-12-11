@@ -516,8 +516,18 @@ where
             checkpoint_interval: self.db_config.checkpoint_interval,
             disable_namespace: self.disable_namespaces,
         };
+
+        let meta_store_path = conf.base_path.join("metastore");
+
         let factory = PrimaryNamespaceMaker::new(conf);
-        let namespaces = NamespaceStore::new(factory, false, self.db_config.snapshot_at_shutdown);
+
+        let namespaces = NamespaceStore::new(
+            factory,
+            false,
+            self.db_config.snapshot_at_shutdown,
+            meta_store_path,
+        )
+        .await?;
 
         // eagerly load the default namespace when namespaces are disabled
         if self.disable_namespaces {
@@ -604,8 +614,11 @@ impl<C: Connector> Replica<C> {
             max_response_size: self.db_config.max_response_size,
             max_total_response_size: self.db_config.max_total_response_size,
         };
+
+        let meta_store_path = conf.base_path.join("metastore");
+
         let factory = ReplicaNamespaceMaker::new(conf);
-        let namespaces = NamespaceStore::new(factory, true, false);
+        let namespaces = NamespaceStore::new(factory, true, false, meta_store_path).await?;
         let replication_service = ReplicationLogProxyService::new(channel.clone(), uri.clone());
         let proxy_service = ReplicaProxyService::new(channel, uri, self.auth.clone());
 
