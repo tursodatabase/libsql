@@ -336,6 +336,7 @@ static u32 jsonXlateBlobToText(const JsonParse*,u32,JsonString*);
 static void jsonReturnParse(sqlite3_context*,JsonParse*);
 static JsonParse *jsonParseFuncArg(sqlite3_context*,sqlite3_value*,u32);
 static void jsonParseFree(JsonParse*);
+static u32 jsonbPayloadSize(const JsonParse*, u32, u32*);
 
 /**************************************************************************
 ** Utility routines for dealing with JsonCache objects
@@ -1228,6 +1229,166 @@ static int jsonIs4HexB(const char *z, int *pOp){
   return 1;
 }
 
+
+/*
+** Check a single element of the JSONB in pParse for validity.
+**
+** The element to be checked starts at offset i and must end at on the
+** last byte before iEnd.
+**
+** Return 0 if everything is correct.  Return the 1-based byte offset of the
+** error if a problem is detected.  (In other words, if the error is at offset
+** 0, return 1).
+*/
+static u32 jsonbValidityCheck(JsonParse *pParse, u32 i, u32 iEnd, u32 iDepth){
+  u32 n, sz, j, k;
+  const u8 *z;
+  u8 x;
+  if( iDepth>JSON_MAX_DEPTH ) return i+1;
+  sz = 0;
+  n = jsonbPayloadSize(pParse, i, &sz);
+  if( n==0 ) return i+1;
+  if( i+n+sz!=iEnd ) return i+1;
+  z = pParse->aBlob;
+  x = z[i] & 0x0f;
+  switch( x ){
+    case JSONB_NULL:
+    case JSONB_TRUE:
+    case JSONB_FALSE: {
+      return n+sz==1 ? 0 : i+1;
+    }
+    default: {
+      return i+1;
+    }
+    case JSONB_INT: {
+      if( sz<1 ) return i+1;
+      j = i+n;
+      if( z[j]=='-' ){
+        j++;
+        if( sz<2 ) return j;
+      }
+      k = i+n+sz;
+      while( j<k ){
+        if( sqlite3Isdigit(z[j]) ){
+          j++;
+        }else{
+          return j+1;
+        }
+      }
+      return 0;
+    }
+    case JSONB_INT5: {
+      if( sz<3 ) return i+1;
+      j = i+n;
+      if( z[j]!='0' ) return j+1;
+      if( z[j+1]!='x' && z[j+1]!='X' ) return j+2;
+      j += 2;
+      k = i+n+sz;
+      while( j<k ){
+        if( sqlite3Isxdigit(z[j]) ){
+          j++;
+        }else{
+          return j+1;
+        }
+      }
+      return 0;
+    }
+    case JSONB_FLOAT:
+    case JSONB_FLOAT5: {
+      u8 seen = 0;   /* 0: initial.  1: '.' seen  2: 'e' seen */
+      if( sz<2 ) return i+1;
+      j = i+n;
+      k = j+sz;
+      if( z[j]=='-' ){
+        j++;
+        if( sz<3 ) return i+1;
+      }
+      if( z[j]=='.' ){
+        if( !sqlite3Isdigit(z[j+1]) ) return i+1;
+        j += 2;
+        seen = 1;
+      }else if( z[j]=='0' && x==JSONB_FLOAT ){
+        if( j+3>k ) return i+1;
+        if( z[j+1]!='.' ) return i+1;
+        j += 2;
+        seen = 1;
+      }
+      for(; j<k; j++){
+        if( sqlite3Isdigit(z[j]) ) continue;
+        if( z[j]=='.' ){
+          if( seen>0 ) return i+1;
+          if( x==JSONB_FLOAT && (j==k-1 || !sqlite3Isdigit(z[j+1])) ){
+            return i+1;
+          }
+          seen = 1;
+          continue;
+        }
+        if( z[j]=='e' || z[j]=='E' ){
+          if( seen==2 ) return i+1;
+          if( j==k-1 ) return i+1;
+          if( z[j+1]=='+' || z[j+1]=='-' ){
+            j++;
+            if( j==k-1 ) return i+1;
+          }
+          seen = 2;
+          continue;
+        }
+        return i+1;
+      }
+      return 0;
+    }
+    case JSONB_TEXT: {
+      return 0;
+    }
+    case JSONB_TEXTJ:
+    case JSONB_TEXT5: {
+      return 0;
+    }
+    case JSONB_TEXTRAW: {
+      return 0;
+    }
+    case JSONB_ARRAY: {
+      u32 sub;
+      j = i+n;
+      k = j+sz;
+      while( j<k ){
+        sz = 0;
+        n = jsonbPayloadSize(pParse, j, &sz);
+        if( n==0 ) return j+1;
+        if( j+n+sz>k ) return j+1;
+        sub = jsonbValidityCheck(pParse, j, j+n+sz, iDepth+1);
+        if( sub ) return sub;
+        j += n + sz;
+      }
+      assert( j==k );
+      return 0;
+    }
+    case JSONB_OBJECT: {
+      u32 cnt = 0;
+      u32 sub;
+      j = i+n;
+      k = j+sz;
+      while( j<k ){
+        sz = 0;
+        n = jsonbPayloadSize(pParse, j, &sz);
+        if( n==0 ) return j+1;
+        if( j+n+sz>k ) return j+1;
+        if( (cnt & 1)==0 ){
+          x = z[j] & 0x0f;
+          if( x<JSONB_TEXT || x>JSONB_TEXTRAW ) return j+1;
+        }
+        sub = jsonbValidityCheck(pParse, j, j+n+sz, iDepth+1);
+        if( sub ) return sub;
+        cnt++;
+        j += n + sz;
+      }
+      assert( j==k );
+      if( (cnt & 1)!=0 ) return j+1;
+      return 0;
+    }
+  }
+}
+
 /*
 ** Translate a single element of JSON text at pParse->zJson[i] into
 ** its equivalent binary JSONB representation.  Append the translation into
@@ -1713,7 +1874,12 @@ static int jsonConvertTextToBlob(
   i = jsonXlateTextToBlob(pParse, 0);
   if( pParse->oom ) i = -1;
   if( i>0 ){
+#ifdef SQLITE_DEBUG
     assert( pParse->iDepth==0 );
+    if( sqlite3Config.bJsonbValidate ){
+      assert( jsonbValidityCheck(pParse, 0, pParse->nBlob, 0)==0 );
+    }   
+#endif
     while( jsonIsspace(zJson[i]) ) i++;
     if( zJson[i] ){
       i += json5Whitespace(&zJson[i]);
@@ -3867,128 +4033,6 @@ static void jsonTypeFunc(
   sqlite3_result_text(ctx, jsonbType[p->aBlob[i]&0x0f], -1, SQLITE_STATIC);
 json_type_done:
   jsonParseFree(p);
-}
-
-/*
-** Check a single element of the JSONB in pParse for validity.
-**
-** The element to be checked starts at offset i and must end at on the
-** last byte before iEnd.
-**
-** Return 0 if everything is correct.  Return the 1-based byte offset of the
-** error if a problem is detected.  (In other words, if the error is at offset
-** 0, return 1).
-*/
-static u32 jsonbValidityCheck(JsonParse *pParse, u32 i, u32 iEnd, u32 iDepth){
-  u32 n, sz, j, k;
-  const u8 *z;
-  u8 x;
-  if( iDepth>JSON_MAX_DEPTH ) return i+1;
-  sz = 0;
-  n = jsonbPayloadSize(pParse, i, &sz);
-  if( n==0 ) return i+1;
-  if( i+n+sz!=iEnd ) return i+1;
-  z = pParse->aBlob;
-  x = z[i] & 0x0f;
-  switch( x ){
-    case JSONB_NULL:
-    case JSONB_TRUE:
-    case JSONB_FALSE: {
-      return n+sz==1 ? 0 : i+1;
-    }
-    default: {
-      return i+1;
-    }
-    case JSONB_INT: {
-      if( sz<1 ) return i+1;
-      j = i+n;
-      if( z[j]=='-' ){
-        j++;
-        if( sz<2 ) return j;
-      }
-      k = i+n+sz;
-      while( j<k ){
-        if( sqlite3Isdigit(z[j]) ){
-          j++;
-        }else{
-          return j+1;
-        }
-      }
-      return 0;
-    }
-    case JSONB_INT5: {
-      if( sz<3 ) return i+1;
-      j = i+n;
-      if( z[j]!='0' ) return j+1;
-      if( z[j+1]!='x' && z[j+1]!='X' ) return j+2;
-      j += 2;
-      k = i+n+sz;
-      while( j<k ){
-        if( sqlite3Isxdigit(z[j]) ){
-          j++;
-        }else{
-          return j+1;
-        }
-      }
-      return 0;
-    }
-    case JSONB_FLOAT:
-    case JSONB_FLOAT5: {
-      if( sz<2 ) return i+1;
-      j = i+n;
-      k = j+sz;
-      if( z[j]=='-' ){
-        j++;
-        if( sz<3 ) return i+1;
-      }
-      return 0;
-    }
-    case JSONB_TEXT:
-    case JSONB_TEXTJ:
-    case JSONB_TEXT5:
-    case JSONB_TEXTRAW: {
-      return 0;
-    }
-    case JSONB_ARRAY: {
-      u32 sub;
-      j = i+n;
-      k = j+sz;
-      while( j<k ){
-        sz = 0;
-        n = jsonbPayloadSize(pParse, j, &sz);
-        if( n==0 ) return j+1;
-        if( j+n+sz>k ) return j+1;
-        sub = jsonbValidityCheck(pParse, j, k, iDepth+1);
-        if( sub ) return sub;
-        j += n + sz;
-      }
-      assert( j==k );
-      return 0;
-    }
-    case JSONB_OBJECT: {
-      u32 cnt = 0;
-      u32 sub;
-      j = i+n;
-      k = j+sz;
-      while( j<k ){
-        sz = 0;
-        n = jsonbPayloadSize(pParse, j, &sz);
-        if( n==0 ) return j+1;
-        if( j+n+sz>k ) return j+1;
-        if( (cnt & 1)==0 ){
-          x = z[j] & 0x0f;
-          if( x<JSONB_TEXT || x>JSONB_TEXTRAW ) return j+1;
-        }
-        sub = jsonbValidityCheck(pParse, j, k, iDepth+1);
-        if( sub ) return sub;
-        cnt++;
-        j += n + sz;
-      }
-      assert( j==k );
-      if( (cnt & 1)!=0 ) return j+1;
-      return 0;
-    }
-  }
 }
 
 /*

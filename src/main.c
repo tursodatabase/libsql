@@ -4659,6 +4659,19 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 #endif
+
+    /* sqlite3_test_control(SQLITE_TESTCTRL_VALIDATE_JSONB, (u8)trueFalse);
+    **
+    ** Activate or deactivate validation of JSONB that is generated from
+    ** text.  Off by default, as the validation is slow.  Validation is
+    ** only available if compiled using SQLITE_DEBUG.
+    */
+    case SQLITE_TESTCTRL_VALIDATE_JSONB: {
+#if defined(SQLITE_DEBUG)
+      sqlite3Config.bJsonbValidate = (u8)(va_arg(ap, int)&0xff);
+#endif
+      break;
+    }
   }
   va_end(ap);
 #endif /* SQLITE_UNTESTABLE */

@@ -1,5 +1,5 @@
-C Work\stoward\senhanced\sfunctionality\sfor\sjson_valid()\swith\sdeep\schecking\nof\sthe\sJSONB\s(second\sargument\shas\sbit\s0x08).
-D 2023-12-11T14:01:38.458
+C Add\sSQLITE_TESTCTRL_VALIDATE_JSONB,\swhich\sif\senabled\sunder\sSQLITE_DEBUG\scauses\ncross-checking\sof\sgenerate\sJSONB.
+D 2023-12-11T17:03:12.559
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -690,16 +690,16 @@ F src/expr.c 05278def9c186b5875d6903ea26148c7461b9ce0344f0fd7be9a0dfea0a4538a
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c a47610f0a5c6cb0ad79f8fcef039c01833dec0c751bb695f28dc0ec6a4c3ba00
 F src/func.c 472f6dcfa39cf54f89a6aec76c79c225fb880a6c14469c15d361331662b9bf43
-F src/global.c 29f56a330ed9d1b5cd9b79ac0ca36f97ac3afc730ff8bfa987b0db9e559d684d
+F src/global.c c32438e08249ca9440cccff110283bc93b65d05320c8b162e492e8aef865d15c
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 683a85f8b35a79c817b05723cee14ce7281a9f76e78d64950cfb50be10caf6d0
+F src/json.c ea4b13e85f81a61d0331cec790e55648785864f31eba51a74b7190e895a37ac5
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
-F src/main.c 1b89f3de98d1b59fec5bac1d66d6ece21f703821b8eaa0d53d9604c35309f6f9
+F src/main.c f8bfeb360386291b1f5b9ab216ab8d8655bdb52c977bc8287db3fbfd3f8a2611
 F src/malloc.c f016922435dc7d1f1f5083a03338a3e91f8c67ce2c5bdcfa4cdef62e612f5fcc
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -737,11 +737,11 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d017bad7ba8e778617701a0e986fdeb393d67d6afa84fb28ef4e8b8ad2acf916
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 9f55c9f3307b9888f62abe709eec245e98ff217bd14c044f93d72810bb7dc445
-F src/shell.c.in 9b6c3e641de45651ad0b5e9c26cd2f72efabee28179a5315d15c54239515ee3a
-F src/sqlite.h.in d93a4821d2f792467a60f7dc81268d1bb8634f40c31694ef254cab4f9921f96a
+F src/shell.c.in 64feb9fdb6829f7643b4e64e83f3b6261331474c4876abb8ebe70cfd33f25086
+F src/sqlite.h.in d6dee6231a2b248f6f2453bf9832a51694d90578f096bcfe49414c2d0211b6eb
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h 39b6fe0652c763d8ff6bd0a2427c009e5abe05fb70f5a0cb145a34bcc614fb90
+F src/sqliteInt.h f34c338e2c34e4f0795f8110ecb64ad90252306c7b3f0587ad6cf82f68e7c401
 F src/sqliteLimit.h 33b1c9baba578d34efe7dfdb43193b366111cdf41476b1e82699e14c11ee1fb6
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2153,11 +2153,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa102036fe46eeb71b7df3e265be1935ae5c78e0b939b08841bcfb8abadbc77a
-R d66c4373e6cbfb5a424f82330e7184cd
-T *branch * jsonb-valid
-T *sym-jsonb-valid *
-T -sym-trunk *
+P c370d573198b151767f04e91bf8baa4ae0076751ae468c5709742a0b0ed16770
+R c7157327882c9dc5aa9e50e7e992741a
 U drh
-Z 18d49697fdb46dc3745b2a8b7db33d7b
+Z 3bfa19b437a7164afac8549d2bca446e
 # Remove this line to create a well-formed Fossil manifest.

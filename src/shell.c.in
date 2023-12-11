@@ -10770,6 +10770,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     {"sorter_mmap",        SQLITE_TESTCTRL_SORTER_MMAP, 0, "NMAX"           },
     {"tune",               SQLITE_TESTCTRL_TUNE,        1, "ID VALUE"       },
     {"uselongdouble",  SQLITE_TESTCTRL_USELONGDOUBLE,0,"?BOOLEAN|\"default\"?"},
+    {"validate_jsonb",   SQLITE_TESTCTRL_VALIDATE_JSONB,0, "BOOLEAN"        },
     };
     int testctrl = -1;
     int iCtrl = -1;
@@ -10971,6 +10972,12 @@ static int do_meta_command(char *zLine, ShellState *p){
           if( nArg==3 ){
             int opt = (unsigned int)integerValue(azArg[2]);
             rc2 = sqlite3_test_control(testctrl, p->db, opt);
+            isOk = 3;
+          }
+          break;
+        case SQLITE_TESTCTRL_VALIDATE_JSONB:
+          if( nArg==3 ){
+            sqlite3_test_control(testctrl, booleanValue(azArg[2]));
             isOk = 3;
           }
           break;
