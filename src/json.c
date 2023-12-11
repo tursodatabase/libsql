@@ -1240,7 +1240,12 @@ static int jsonIs4HexB(const char *z, int *pOp){
 ** error if a problem is detected.  (In other words, if the error is at offset
 ** 0, return 1).
 */
-static u32 jsonbValidityCheck(JsonParse *pParse, u32 i, u32 iEnd, u32 iDepth){
+static u32 jsonbValidityCheck(
+  const JsonParse *pParse,    /* Input JSONB.  Only aBlob and nBlob are used */
+  u32 i,                      /* Start of element as pParse->aBlob[i] */
+  u32 iEnd,                   /* One more than the last byte of the element */
+  u32 iDepth                  /* Current nesting depth */
+){
   u32 n, sz, j, k;
   const u8 *z;
   u8 x;
@@ -1265,7 +1270,7 @@ static u32 jsonbValidityCheck(JsonParse *pParse, u32 i, u32 iEnd, u32 iDepth){
       j = i+n;
       if( z[j]=='-' ){
         j++;
-        if( sz<2 ) return j;
+        if( sz<2 ) return i+1;
       }
       k = i+n+sz;
       while( j<k ){
@@ -1284,7 +1289,7 @@ static u32 jsonbValidityCheck(JsonParse *pParse, u32 i, u32 iEnd, u32 iDepth){
         if( sz<4 ) return i+1;
         j++;
       }
-      if( z[j]!='0' ) return j+1;
+      if( z[j]!='0' ) return i+1;
       if( z[j+1]!='x' && z[j+1]!='X' ) return j+2;
       j += 2;
       k = i+n+sz;
@@ -1308,36 +1313,35 @@ static u32 jsonbValidityCheck(JsonParse *pParse, u32 i, u32 iEnd, u32 iDepth){
         if( sz<3 ) return i+1;
       }
       if( z[j]=='.' ){
-        if( !sqlite3Isdigit(z[j+1]) ) return i+1;
+        if( !sqlite3Isdigit(z[j+1]) ) return j+1;
         j += 2;
         seen = 1;
       }else if( z[j]=='0' && x==JSONB_FLOAT ){
-        if( j+3>k ) return i+1;
-        if( z[j+1]!='.' ) return i+1;
-        j += 2;
-        seen = 1;
+        if( j+3>k ) return j+1;
+        if( z[j+1]!='.' && z[j+1]!='e' && z[j+1]!='E' ) return j+1;
+        j++;
       }
       for(; j<k; j++){
         if( sqlite3Isdigit(z[j]) ) continue;
         if( z[j]=='.' ){
           if( seen>0 ) return i+1;
           if( x==JSONB_FLOAT && (j==k-1 || !sqlite3Isdigit(z[j+1])) ){
-            return i+1;
+            return j+1;
           }
           seen = 1;
           continue;
         }
         if( z[j]=='e' || z[j]=='E' ){
-          if( seen==2 ) return i+1;
-          if( j==k-1 ) return i+1;
+          if( seen==2 ) return j+1;
+          if( j==k-1 ) return j+1;
           if( z[j+1]=='+' || z[j+1]=='-' ){
             j++;
-            if( j==k-1 ) return i+1;
+            if( j==k-1 ) return j+1;
           }
           seen = 2;
           continue;
         }
-        return i+1;
+        return j+1;
       }
       return 0;
     }
