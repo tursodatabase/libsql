@@ -1876,7 +1876,7 @@ static int jsonConvertTextToBlob(
   if( i>0 ){
 #ifdef SQLITE_DEBUG
     assert( pParse->iDepth==0 );
-    if( sqlite3Config.bJsonbValidate ){
+    if( sqlite3Config.bJsonSelfcheck ){
       assert( jsonbValidityCheck(pParse, 0, pParse->nBlob, 0)==0 );
     }   
 #endif

@@ -245,7 +245,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    1,                         /* bExtraSchemaChecks */
    sizeof(LONGDOUBLE_TYPE)>8, /* bUseLongDouble */
 #ifdef SQLITE_DEBUG
-   0,                         /* bJsonbValidate */
+   0,                         /* bJsonSelfcheck */
 #endif
    0x7ffffffe,                /* mxStrlen */
    0,                         /* neverCorrupt */
