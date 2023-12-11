@@ -1280,6 +1280,10 @@ static u32 jsonbValidityCheck(JsonParse *pParse, u32 i, u32 iEnd, u32 iDepth){
     case JSONB_INT5: {
       if( sz<3 ) return i+1;
       j = i+n;
+      if( z[j]=='-' ){
+        if( sz<4 ) return i+1;
+        j++;
+      }
       if( z[j]!='0' ) return j+1;
       if( z[j+1]!='x' && z[j+1]!='X' ) return j+2;
       j += 2;
