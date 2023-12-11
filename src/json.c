@@ -3972,6 +3972,7 @@ static void jsonValidFunc(
           if( sx.eErr & JSTRING_OOM ) oom = 1;
           if( sx.eErr==0 ){
             memset(&px, 0, sizeof(px));
+            jsonStringTerminate(&sx);
             px.zJson = sx.zBuf;
             px.nJson = sx.nUsed;
             if( jsonXlateTextToBlob(&px, 0)==px.nJson ){
