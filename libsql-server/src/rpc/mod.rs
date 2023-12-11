@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use anyhow::Context;
 use hyper_rustls::TlsAcceptor;
 use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
 use rustls::server::AllowAnyAuthenticatedClient;
@@ -40,8 +39,6 @@ pub async fn run_rpc_server<A: crate::net::Accept>(
         None,
         disable_namespaces,
     );
-
-    // tracing::info!("serving write proxy server at {addr}");
 
     if let Some(tls_config) = maybe_tls {
         let cert_pem = tokio::fs::read_to_string(&tls_config.cert).await?;
@@ -93,11 +90,9 @@ pub async fn run_rpc_server<A: crate::net::Accept>(
             )
             .service(router);
 
+        tracing::info!("serving internal rpc server with tls");
         let h2c = crate::h2c::H2cMaker::new(svc);
-        hyper::server::Server::builder(acceptor)
-            .serve(h2c)
-            .await
-            .context("http server")?;
+        hyper::server::Server::builder(acceptor).serve(h2c).await?;
     } else {
         let proxy = ProxyServer::new(proxy_service);
         let replication = ReplicationLogServer::new(logger_service);
@@ -122,10 +117,9 @@ pub async fn run_rpc_server<A: crate::net::Accept>(
 
         let h2c = crate::h2c::H2cMaker::new(svc);
 
-        hyper::server::Server::builder(acceptor)
-            .serve(h2c)
-            .await
-            .context("http server")?;
+        tracing::info!("serving internal rpc server without tls");
+
+        hyper::server::Server::builder(acceptor).serve(h2c).await?;
     }
     Ok(())
 }

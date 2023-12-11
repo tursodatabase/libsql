@@ -80,6 +80,7 @@ impl Client {
 impl ReplicatorClient for Client {
     type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
 
+    #[tracing::instrument(skip(self))]
     async fn handshake(&mut self) -> Result<(), Error> {
         tracing::info!("Attempting to perform handshake with primary.");
         let req = self.make_request(HelloRequest::new());
@@ -91,6 +92,8 @@ impl ReplicatorClient for Client {
         self.meta.init_from_hello(hello)?;
         self.current_frame_no_notifier
             .send_replace(self.meta.current_frame_no());
+
+        tracing::trace!("handshake completed");
 
         Ok(())
     }
