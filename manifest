@@ -1,5 +1,5 @@
-C Rename\sthe\snew\stest-control\sto\sSQLITE_TESTCTRL_JSON_SELFCHECK.\s\sMake\sit\sso\nthat\sthe\scurrent\svalue\sof\sthe\ssetting\scan\sbe\sinterrogated.
-D 2023-12-11T19:00:44.322
+C Activate\sJSON_SELFCHECK\swithin\sfuzzcheck.
+D 2023-12-11T19:21:06.298
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1229,7 +1229,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 69b8549e112fb815931a8c14c7955a0c407ae91a79356eecb82458384f2cb989
+F test/fuzzcheck.c 442b0b02146bb905c47c4ee1388949e7fd9d27acf22d9535e9abf216e582b956
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -2153,8 +2153,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b410a4db74a650003539ffaaea18519d5159b504daac47db6a4874b730f40ac8
-R 2937e9cc9e961c36660161b1501df048
+P 7aff1d9a4cb17ecd5abab21ab032f35a78741dd641ddd8cbcc85fc4a81a0707d
+R 73f673c74c17eaf64270ba7fabaefbeb
 U drh
-Z a13ee25229a871327250064e3f63946b
+Z 036937c49ad3c44a290e0f1c7a504e81
 # Remove this line to create a well-formed Fossil manifest.
