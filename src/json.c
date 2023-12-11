@@ -4170,9 +4170,9 @@ static void jsonValidFunc(
 **
 ** If the argument is NULL, return NULL
 **
-** If the argument is BLOB, do a fast validity check and return non-zero
-** if the check fails.  The returned value does not indicate where in the
-** BLOB the error occurs.
+** If the argument is BLOB, do a full validity check and return non-zero
+** if the check fails.  The return value is the approximate 1-based offset
+** to the byte of the element that contains the first error.
 **
 ** Otherwise interpret the argument is TEXT (even if it is numeric) and
 ** return the 1-based character position for where the parser first recognized
@@ -4191,15 +4191,9 @@ static void jsonErrorFunc(
   UNUSED_PARAMETER(argc);
   memset(&s, 0, sizeof(s));
   if( jsonFuncArgMightBeBinary(argv[0]) ){
-    JsonString out;
-    jsonStringInit(&out, 0);
     s.aBlob = (u8*)sqlite3_value_blob(argv[0]);
     s.nBlob = sqlite3_value_bytes(argv[0]);
-    jsonXlateBlobToText(&s, 0, &out);
-    if( out.eErr ){
-      iErrPos = (out.eErr & JSTRING_MALFORMED)!=0 ? 1 : -1;
-    }
-    jsonStringReset(&out);
+    iErrPos = (i64)jsonbValidityCheck(&s, 0, s.nBlob, 0);
   }else{
     s.zJson = (char*)sqlite3_value_text(argv[0]);
     if( s.zJson==0 ) return;  /* NULL input or OOM */
