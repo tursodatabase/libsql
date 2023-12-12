@@ -508,7 +508,7 @@ where
             db_is_dirty: self.db_is_dirty,
             max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
             snapshot_callback: self.snapshot_callback,
-            bottomless_replication: self.db_config.bottomless_replication,
+            bottomless_replication: self.db_config.bottomless_replication.clone(),
             extensions: self.extensions,
             stats_sender: self.stats_sender.clone(),
             max_response_size: self.db_config.max_response_size,
@@ -528,6 +528,15 @@ where
                     NamespaceBottomlessDbId::NotProvided,
                 )
                 .await?;
+        }
+
+        // if namespaces are enabled, then bottomless must have set DB ID
+        if !self.disable_namespaces {
+            if let Some(bottomless) = &self.db_config.bottomless_replication {
+                if bottomless.db_id.is_none() {
+                    anyhow::bail!("bottomless replication with namespaces requires a DB ID");
+                }
+            }
         }
 
         if let Some(config) = self.rpc_config.take() {

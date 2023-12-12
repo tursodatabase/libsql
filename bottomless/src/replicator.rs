@@ -155,12 +155,19 @@ impl Options {
     pub fn from_env() -> Result<Self> {
         fn env_var(key: &str) -> Result<String> {
             match std::env::var(key) {
-                Ok(res) => Ok(res),
+                Ok(res) => {
+                    let res = res.trim().to_string();
+                    if res.is_empty() {
+                        bail!("{} environment variable is empty", key)
+                    } else {
+                        Ok(res)
+                    }
+                }
                 Err(_) => bail!("{} environment variable not set", key),
             }
         }
         fn env_var_or<S: ToString>(key: &str, default_value: S) -> String {
-            match std::env::var(key) {
+            match env_var(key) {
                 Ok(res) => res,
                 Err(_) => default_value.to_string(),
             }

@@ -5,3 +5,6 @@
 
 libsql-server/testrollbackrestore/**
 libsql-sqlite3/**.o.tmp
+
+/Cargo.lock
+
