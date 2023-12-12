@@ -1,5 +1,5 @@
-C Worker1\sPromiser\sAPI:\swhen\smultiple\sdb\sconnections\sare\sactive\sthen\suse\sthe\srequested\sconnection\sinstead\sof\salways\sthe\sfirst-opened\sconnection.\sBug\sreported\sin\s[forum:894c330e7f23b177|forum\spost\s894c330e7f23b177].
-D 2023-12-12T17:52:27.818
+C Fix\sthe\sJSON\sobject\slabel\scomparison\sobject\sso\sthat\sit\sworks\scorrectly\seven\nif\sthe\slabel\sends\swith\sescaped\swhitespace.
+D 2023-12-12T18:38:53.139
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -696,7 +696,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c cd270629b4b99d065522b45c3d2b5185491b1ab3544843c6f780aa50755d54dc
+F src/json.c 59f357a5f88f3a944b97b87217c21727581a40db7273c266c1c378bcc741200e
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c ce714ee501122c76eb2e69b292bebe443aba611fc3b88e6786eb910285515fe4
@@ -2153,8 +2153,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 840efb33a3934a9bdccad65ea15c70d5c335a517502c9844aaad8405d16d1604
-R 5c3d83f631ee20b7dd8bc56f0a1d21a8
-U stephan
-Z 26c52cb9495b2f9f42b5f7d1f0a8e853
+P 194276e18e0268829061c09317e7f9f527a703eb45f1755ff1dd30bd99dc1b68
+R 26c549712092afaef6e0f29bf123d45a
+U drh
+Z cc3e1f772eba8a30a8b1158560fbf9b2
 # Remove this line to create a well-formed Fossil manifest.

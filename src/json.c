@@ -2478,8 +2478,10 @@ static SQLITE_NOINLINE int jsonLabelCompareEscaped(
 ){
   u32 cLeft, cRight;
   assert( rawLeft==0 || rawRight==0 );
-  while( nLeft>0 && nRight>0 ){
-    if( rawLeft || zLeft[0]!='\\' ){
+  while( 1 /*exit-by-return*/ ){
+    if( nLeft==0 ){
+      cLeft = 0;
+    }else if( rawLeft || zLeft[0]!='\\' ){
       cLeft = ((u8*)zLeft)[0];
       zLeft++;
       nLeft--;
@@ -2489,7 +2491,9 @@ static SQLITE_NOINLINE int jsonLabelCompareEscaped(
       assert( n<=nLeft );
       nLeft -= n;
     }
-    if( rawRight || zRight[0]!='\\' ){
+    if( nRight==0 ){
+      cRight = 0;
+    }else if( rawRight || zRight[0]!='\\' ){
       cRight = ((u8*)zRight)[0];
       zRight++;
       nRight--;
@@ -2500,8 +2504,8 @@ static SQLITE_NOINLINE int jsonLabelCompareEscaped(
       nRight -= n;
     }
     if( cLeft!=cRight ) return 0;
+    if( cLeft==0 ) return 1;
   }
-  return nLeft==0 && nRight==0;
 }
 
 /*
