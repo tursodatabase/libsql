@@ -176,7 +176,9 @@ static const char jsonSpaces[] = "\011\012\015\040";
 
 /*
 ** Characters that are special to JSON.  Control characters,
-** '"' and '\\'.
+** '"' and '\\' and '\''.  Actually, '\'' is not special to
+** canonical JSON, but it is special in JSON-5, so we include
+** it in the set of special characters.
 */
 static const char jsonIsOk[256] = {
   0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
@@ -337,6 +339,7 @@ static void jsonReturnParse(sqlite3_context*,JsonParse*);
 static JsonParse *jsonParseFuncArg(sqlite3_context*,sqlite3_value*,u32);
 static void jsonParseFree(JsonParse*);
 static u32 jsonbPayloadSize(const JsonParse*, u32, u32*);
+static u32 jsonUnescapeOneChar(const char*, u32, u32*);
 
 /**************************************************************************
 ** Utility routines for dealing with JsonCache objects
@@ -1346,10 +1349,42 @@ static u32 jsonbValidityCheck(
       return 0;
     }
     case JSONB_TEXT: {
+      j = i+n;
+      k = j+sz;
+      while( j<k ){
+        if( !jsonIsOk[z[j]] && z[j]!='\'' ) return j+1;
+        j++;
+      }
       return 0;
     }
     case JSONB_TEXTJ:
     case JSONB_TEXT5: {
+      j = i+n;
+      k = j+sz;
+      while( j<k ){
+        if( !jsonIsOk[z[j]] && z[j]!='\'' ){
+          if( z[j]=='"' ){
+            if( x==JSONB_TEXTJ ) return j+1;
+            j++;
+          }else if( z[j]!='\\' || j+1>=k ){
+            return j+1;
+          }else if( strchr("\"\\/bfnrt",z[j+1])!=0 ){
+            j++;
+          }else if( z[j+1]=='u' ){
+            if( j+5>=k ) return j+1;
+            if( !jsonIs4Hex((const char*)&z[j+2]) ) return j+1;
+            j++;
+          }else if( x!=JSONB_TEXT5 ){
+            return j+1;
+          }else{
+            u32 c = 0;
+            u32 szC = jsonUnescapeOneChar((const char*)&z[j], k-j, &c);
+            if( c==0xfffd ) return j+1;
+            j += szC - 1;
+          }
+        }
+        j++;
+      }
       return 0;
     }
     case JSONB_TEXTRAW: {
@@ -1625,6 +1660,8 @@ json_parse_restart:
         /* Control characters are not allowed in strings */
         pParse->iErr = j;
         return -1;
+      }else if( c=='"' ){
+        opcode = JSONB_TEXT5;
       }
       j++;
     }
@@ -2084,13 +2121,13 @@ static u32 jsonXlateBlobToText(
       }
       break;
     }
+    case JSONB_TEXT:
     case JSONB_TEXTJ: {
       jsonAppendChar(pOut, '"');
       jsonAppendRaw(pOut, (const char*)&pParse->aBlob[i+n], sz);
       jsonAppendChar(pOut, '"');
       break;
     }
-    case JSONB_TEXT:
     case JSONB_TEXT5: {
       const char *zIn;
       u32 k;
