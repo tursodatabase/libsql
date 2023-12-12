@@ -143,7 +143,7 @@ impl Conn for HttpConnection<HttpSender> {
     }
 
     fn is_autocommit(&self) -> bool {
-        true // connection without transaction always commits at the end of execution step
+        self.is_autocommit()
     }
 
     fn changes(&self) -> u64 {
