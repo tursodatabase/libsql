@@ -1255,8 +1255,8 @@ static u32 jsonbValidityCheck(
   if( iDepth>JSON_MAX_DEPTH ) return i+1;
   sz = 0;
   n = jsonbPayloadSize(pParse, i, &sz);
-  if( n==0 ) return i+1;
-  if( i+n+sz!=iEnd ) return i+1;
+  if( NEVER(n==0) ) return i+1;          /* Checked by caller */
+  if( NEVER(i+n+sz!=iEnd) ) return i+1;  /* Checked by caller */
   z = pParse->aBlob;
   x = z[i] & 0x0f;
   switch( x ){
