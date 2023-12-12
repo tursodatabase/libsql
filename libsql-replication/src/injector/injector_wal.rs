@@ -62,7 +62,7 @@ impl WalManager for InjectorWalManager {
         wal: &mut Self::Wal,
         db: &mut Sqlite3Db,
         sync_flags: c_int,
-        scratch: &mut [u8],
+        scratch: Option<&mut [u8]>,
     ) -> Result<()> {
         self.inner.close(&mut wal.inner, db, sync_flags, scratch)
     }

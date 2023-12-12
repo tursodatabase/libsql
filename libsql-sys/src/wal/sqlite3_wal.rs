@@ -1,6 +1,7 @@
 use std::ffi::{c_int, c_void, CStr};
 use std::mem::MaybeUninit;
 use std::num::NonZeroU32;
+use std::ptr::null_mut;
 
 use libsql_ffi::{
     libsql_wal, libsql_wal_manager, sqlite3_wal, sqlite3_wal_manager, Error, SQLITE_OK,
@@ -78,16 +79,18 @@ impl WalManager for Sqlite3WalManager {
         wal: &mut Self::Wal,
         db: &mut Sqlite3Db,
         sync_flags: c_int,
-        scratch: &mut [u8],
+        scratch: Option<&mut [u8]>,
     ) -> Result<()> {
+        let scratch_len = scratch.as_ref().map(|s| s.len()).unwrap_or(0);
+        let scratch_ptr = scratch.map(|s| s.as_mut_ptr()).unwrap_or(null_mut());
         let rc = unsafe {
             (self.inner.xClose.unwrap())(
                 self.inner.pData,
                 wal.inner.pData,
                 db.as_ptr(),
                 sync_flags,
-                scratch.len() as _,
-                scratch.as_mut_ptr() as _,
+                scratch_len as _,
+                scratch_ptr as _,
             )
         };
 

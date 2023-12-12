@@ -73,7 +73,7 @@ impl WalManager for ReplicationWalManager {
         wal: &mut Self::Wal,
         db: &mut Sqlite3Db,
         sync_flags: c_int,
-        scratch: &mut [u8],
+        scratch: Option<&mut [u8]>,
     ) -> Result<()> {
         match (self, wal) {
             (ReplicationWalManager::Bottomless(inner), ReplicationWal::Bottomless(wal)) => {

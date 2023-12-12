@@ -64,7 +64,7 @@ impl WalManager for ReplicationLoggerWalManager {
         wal: &mut Self::Wal,
         db: &mut Sqlite3Db,
         sync_flags: c_int,
-        scratch: &mut [u8],
+        scratch: Option<&mut [u8]>,
     ) -> Result<()> {
         self.sqlite_wal_manager
             .close(&mut wal.inner, db, sync_flags, scratch)
