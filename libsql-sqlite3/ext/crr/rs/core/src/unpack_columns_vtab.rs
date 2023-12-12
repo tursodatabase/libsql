@@ -38,6 +38,7 @@ extern "C" fn connect(
             nRef: 0,
             pModule: core::ptr::null(),
             zErrMsg: core::ptr::null_mut(),
+            pLibsqlModule: core::ptr::null_mut(),
         }));
         let _ = sqlite::vtab_config(db, sqlite::INNOCUOUS);
     }
@@ -253,8 +254,7 @@ static MODULE: sqlite_nostd::module = sqlite_nostd::module {
     xRelease: None,
     xRollbackTo: None,
     xShadowName: None,
-    #[cfg(feature = "libsql")]
-    xPreparedSql: None,
+    xIntegrity: None,
 };
 
 /**

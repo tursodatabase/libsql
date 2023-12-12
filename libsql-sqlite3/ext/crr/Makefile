@@ -4,10 +4,10 @@ else
 CC:=$(CI_GCC)
 endif
 
-# SHARED_CFLAGS=-DLIBSQL=1
+SHARED_CFLAGS=-DLIBSQL=1
 LOADABLE_CFLAGS=-std=c99 -fPIC -shared -Wall $(SHARED_CFLAGS)
 STATIC_CFLAGS=-std=c99 -fPIC -c -Wall $(SHARED_CFLAGS)
-# libsql_feature=,libsql
+libsql_feature=,libsql
 
 ifeq ($(shell uname -s),Darwin)
 CONFIG_DARWIN=y
@@ -168,7 +168,7 @@ $(shell.c):
 	cd $(sqlite_src) && make shell.c
 
 $(sqlite3.c):
-	cd $(sqlite_src) && make sqlite3.c
+	cd $(sqlite_src) && ./configure && make sqlite3.c
 
 $(rs_lib_dbg_static_cpy): FORCE $(dbg_prefix)
 	cd ./rs/$(bundle) && cargo rustc $(RS_TARGET) --features static,omit_load_extension$(libsql_feature) $(rs_build_flags)
