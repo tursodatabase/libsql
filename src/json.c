@@ -1265,9 +1265,6 @@ static u32 jsonbValidityCheck(
     case JSONB_FALSE: {
       return n+sz==1 ? 0 : i+1;
     }
-    default: {
-      return i+1;
-    }
     case JSONB_INT: {
       if( sz<1 ) return i+1;
       j = i+n;
@@ -1316,6 +1313,7 @@ static u32 jsonbValidityCheck(
         if( sz<3 ) return i+1;
       }
       if( z[j]=='.' ){
+        if( x==JSONB_FLOAT ) return j+1;
         if( !sqlite3Isdigit(z[j+1]) ) return j+1;
         j += 2;
         seen = 1;
@@ -1327,7 +1325,7 @@ static u32 jsonbValidityCheck(
       for(; j<k; j++){
         if( sqlite3Isdigit(z[j]) ) continue;
         if( z[j]=='.' ){
-          if( seen>0 ) return i+1;
+          if( seen>0 ) return j+1;
           if( x==JSONB_FLOAT && (j==k-1 || !sqlite3Isdigit(z[j+1])) ){
             return j+1;
           }
@@ -1346,6 +1344,7 @@ static u32 jsonbValidityCheck(
         }
         return j+1;
       }
+      if( seen==0 ) return i+1;
       return 0;
     }
     case JSONB_TEXT: {
@@ -1428,6 +1427,9 @@ static u32 jsonbValidityCheck(
       assert( j==k );
       if( (cnt & 1)!=0 ) return j+1;
       return 0;
+    }
+    default: {
+      return i+1;
     }
   }
 }
@@ -4234,7 +4236,7 @@ static void jsonErrorFunc(
   if( jsonFuncArgMightBeBinary(argv[0]) ){
     s.aBlob = (u8*)sqlite3_value_blob(argv[0]);
     s.nBlob = sqlite3_value_bytes(argv[0]);
-    iErrPos = (i64)jsonbValidityCheck(&s, 0, s.nBlob, 0);
+    iErrPos = (i64)jsonbValidityCheck(&s, 0, s.nBlob, 1);
   }else{
     s.zJson = (char*)sqlite3_value_text(argv[0]);
     if( s.zJson==0 ) return;  /* NULL input or OOM */
