@@ -11,7 +11,7 @@ use sqlite::{Connection, Context, Value};
 use sqlite_nostd as sqlite;
 use sqlite_nostd::ResultCode;
 
-use crate::{unpack_columns, ColumnValue};
+use crate::pack_columns::{unpack_columns, ColumnValue};
 
 #[derive(Debug)]
 enum Columns {
@@ -37,7 +37,6 @@ extern "C" fn connect(
         *vtab = Box::into_raw(Box::new(sqlite::vtab {
             nRef: 0,
             pModule: core::ptr::null(),
-            pLibsqlModule: core::ptr::null(),
             zErrMsg: core::ptr::null_mut(),
         }));
         let _ = sqlite::vtab_config(db, sqlite::INNOCUOUS);
@@ -254,7 +253,8 @@ static MODULE: sqlite_nostd::module = sqlite_nostd::module {
     xRelease: None,
     xRollbackTo: None,
     xShadowName: None,
-    xIntegrity: None,
+    #[cfg(feature = "libsql")]
+    xPreparedSql: None,
 };
 
 /**

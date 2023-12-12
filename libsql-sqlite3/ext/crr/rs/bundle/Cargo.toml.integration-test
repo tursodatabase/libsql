@@ -1,0 +1,42 @@
+[package]
+name = "crsql_bundle"
+version = "0.1.0"
+edition = "2021"
+authors = ["Matt Wonlaw"]
+keywords = ["sqlite", "cr-sqlite"]
+license = "Apache 2"
+
+[lib]
+name = "crsql_bundle"
+crate-type = ["rlib"]
+
+# "cdylib" <-- only enable cdylib if loadable_extension is enabled
+
+[dependencies]
+crsql_fractindex_core = {path="../fractindex-core"}
+crsql_core = { path="../core" }
+sqlite_nostd = { path="../sqlite-rs-embedded/sqlite_nostd" }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[features]
+test = []
+loadable_extension = [
+  "sqlite_nostd/loadable_extension",
+  "crsql_fractindex_core/loadable_extension",
+  "crsql_core/loadable_extension"
+]
+static = [
+  "sqlite_nostd/static",
+  "crsql_fractindex_core/static",
+  "crsql_core/static"
+]
+omit_load_extension = [
+  "sqlite_nostd/omit_load_extension",
+  "crsql_fractindex_core/omit_load_extension",
+  "crsql_core/omit_load_extension"
+]

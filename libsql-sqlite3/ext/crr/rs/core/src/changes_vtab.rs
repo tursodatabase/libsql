@@ -1,15 +1,15 @@
 extern crate alloc;
 use crate::alloc::string::ToString;
 use crate::changes_vtab_write::crsql_merge_insert;
-use crate::stmt_cache::{
-    get_cache_key, get_cached_stmt, reset_cached_stmt, set_cached_stmt, CachedStmtType,
-};
+use crate::stmt_cache::reset_cached_stmt;
+use crate::tableinfo::{crsql_ensure_table_infos_are_up_to_date, TableInfo};
+use alloc::boxed::Box;
 use alloc::format;
 use alloc::string::String;
+use alloc::vec::Vec;
 use core::ffi::{c_char, c_int, CStr};
-use core::mem::forget;
+use core::mem::{self, forget};
 use core::ptr::null_mut;
-use core::slice;
 
 use alloc::ffi::CString;
 #[cfg(not(feature = "std"))]
@@ -19,12 +19,11 @@ use sqlite_nostd as sqlite;
 use sqlite_nostd::ResultCode;
 
 use crate::c::{
-    crsql_Changes_cursor, crsql_Changes_vtab, crsql_ensureTableInfosAreUpToDate, ChangeRowType,
-    ClockUnionColumn, CrsqlChangesColumn,
+    crsql_Changes_cursor, crsql_Changes_vtab, ChangeRowType, ClockUnionColumn, CrsqlChangesColumn,
 };
-use crate::changes_vtab_read::{changes_union_query, row_patch_data_query};
+use crate::changes_vtab_read::changes_union_query;
 use crate::pack_columns::bind_package_to_stmt;
-use crate::unpack_columns;
+use crate::pack_columns::unpack_columns;
 
 fn changes_crsr_finalize(crsr: *mut crsql_Changes_cursor) -> c_int {
     // Assign pointers to null after freeing
@@ -275,8 +274,11 @@ unsafe fn changes_filter(
         (*cursor).pChangesStmt = null_mut();
     }
 
-    let c_rc =
-        crsql_ensureTableInfosAreUpToDate(db, (*tab).pExtData, &mut (*tab).base.zErrMsg as *mut _);
+    let c_rc = crsql_ensure_table_infos_are_up_to_date(
+        db,
+        (*tab).pExtData,
+        &mut (*tab).base.zErrMsg as *mut _,
+    );
     if c_rc != 0 {
         if let Some(rc) = ResultCode::from_i32(c_rc) {
             return Err(rc);
@@ -286,15 +288,14 @@ unsafe fn changes_filter(
     }
 
     // nothing to fetch, no crrs exist.
-    if (*(*tab).pExtData).tableInfosLen == 0 {
+    let tbl_infos = mem::ManuallyDrop::new(Box::from_raw(
+        (*(*tab).pExtData).tableInfos as *mut Vec<TableInfo>,
+    ));
+    if tbl_infos.len() == 0 {
         return Ok(ResultCode::OK);
     }
 
-    let table_infos = sqlite::args!(
-        (*(*tab).pExtData).tableInfosLen,
-        (*(*tab).pExtData).zpTableInfos
-    );
-    let sql = changes_union_query(table_infos, idx_str)?;
+    let sql = changes_union_query(&tbl_infos, idx_str)?;
 
     let stmt = db.prepare_v2(&sql)?;
     for (i, arg) in args.iter().enumerate() {
@@ -370,28 +371,25 @@ unsafe fn changes_next(
         .column_int64(ClockUnionColumn::RowId as i32);
     (*cursor).dbVersion = db_version;
 
-    let tbl_info_index = crate::c::crsql_indexofTableInfo(
-        (*(*(*cursor).pTab).pExtData).zpTableInfos,
-        (*(*(*cursor).pTab).pExtData).tableInfosLen,
-        // this should be safe since the underlying memory from column_text is null terminated at slice_len + 1.
-        tbl.as_ptr() as *const c_char,
-    );
+    let tbl_infos = mem::ManuallyDrop::new(Box::from_raw(
+        (*(*(*cursor).pTab).pExtData).tableInfos as *mut Vec<TableInfo>,
+    ));
+    // TODO: will this work given `insert_tbl` is null termed?
+    let tbl_info_index = tbl_infos.iter().position(|x| x.tbl_name == tbl);
 
-    if tbl_info_index < 0 {
+    if tbl_info_index.is_none() {
         let err = CString::new(format!("could not find schema for table {}", tbl))?;
         (*vtab).zErrMsg = err.into_raw();
         return Err(ResultCode::ERROR);
     }
+    // TODO: technically safe since we checked `is_none` but this should be more idiomatic
+    let tbl_info_index = tbl_info_index.unwrap();
 
-    let tbl_infos = sqlite::args!(
-        (*(*(*cursor).pTab).pExtData).tableInfosLen,
-        (*(*(*cursor).pTab).pExtData).zpTableInfos
-    );
-    let tbl_info = tbl_infos[tbl_info_index as usize];
+    let tbl_info = &tbl_infos[tbl_info_index];
     (*cursor).changesRowid = changes_rowid;
-    (*cursor).tblInfoIdx = tbl_info_index;
+    (*cursor).tblInfoIdx = tbl_info_index as i32;
 
-    if (*tbl_info).pksLen == 0 {
+    if tbl_info.pks.len() == 0 {
         let err = CString::new(format!("crr {} is missing primary keys", tbl))?;
         (*vtab).zErrMsg = err.into_raw();
         return Err(ResultCode::ERROR);
@@ -407,49 +405,25 @@ unsafe fn changes_next(
         (*cursor).rowType = ChangeRowType::Update as c_int;
     }
 
-    let stmt_key = get_cache_key(CachedStmtType::RowPatchData, tbl, Some(cid))?;
-    let mut row_stmt = if let Some(stmt) = get_cached_stmt((*(*cursor).pTab).pExtData, &stmt_key) {
-        stmt
-    } else {
-        null_mut()
-    };
-
-    if row_stmt.is_null() {
-        let sql = row_patch_data_query(tbl_info, cid);
-        if let Some(sql) = sql {
-            let stmt = (*(*cursor).pTab)
-                .db
-                .prepare_v3(&sql, sqlite::PREPARE_PERSISTENT)?;
-            // the cache takes ownership of stmt and stmt_key
-            set_cached_stmt((*(*cursor).pTab).pExtData, stmt_key, stmt.stmt);
-            row_stmt = stmt.stmt;
-            forget(stmt);
-        } else {
-            let err = CString::new(format!(
-                "could not generate row data fetch query for {}",
-                tbl
-            ))?;
-            (*vtab).zErrMsg = err.into_raw();
-            return Err(ResultCode::ERROR);
-        }
-    }
+    let row_stmt_ref = tbl_info.get_row_patch_data_stmt((*(*cursor).pTab).db, cid)?;
+    let row_stmt = row_stmt_ref.as_ref().ok_or(ResultCode::ERROR)?;
 
     let packed_pks = pks.blob();
     let unpacked_pks = unpack_columns(packed_pks)?;
-    bind_package_to_stmt(row_stmt, &unpacked_pks, 0)?;
+    bind_package_to_stmt(row_stmt.stmt, &unpacked_pks, 0)?;
 
     match row_stmt.step() {
         Ok(ResultCode::DONE) => {
-            reset_cached_stmt(row_stmt)?;
+            reset_cached_stmt(row_stmt.stmt)?;
         }
         Ok(_) => {}
         Err(rc) => {
-            reset_cached_stmt(row_stmt)?;
+            reset_cached_stmt(row_stmt.stmt)?;
             return Err(rc);
         }
     }
 
-    (*cursor).pRowStmt = row_stmt;
+    (*cursor).pRowStmt = row_stmt.stmt;
     Ok(ResultCode::OK)
 }
 

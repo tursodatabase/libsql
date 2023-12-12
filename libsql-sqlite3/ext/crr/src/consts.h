@@ -10,6 +10,7 @@
 
 #define CRR_SPACE 0
 #define USER_SPACE 1
+#define ROWID_SLAB_SIZE 10000000000000
 
 #define CLOCK_TABLES_SELECT                                                  \
   "SELECT tbl_name FROM sqlite_master WHERE type='table' AND tbl_name LIKE " \
@@ -18,8 +19,8 @@
 #define SET_SYNC_BIT "SELECT crsql_internal_sync_bit(1)"
 #define CLEAR_SYNC_BIT "SELECT crsql_internal_sync_bit(0)"
 
-#define TBL_SITE_ID "__crsql_site_id"
-#define TBL_DB_VERSION "__crsql_db_version"
+#define TBL_SITE_ID "site_id"
+#define TBL_DB_VERSION "db_version"
 #define TBL_SCHEMA "crsql_master"
 #define UNION_ALL "UNION ALL"
 

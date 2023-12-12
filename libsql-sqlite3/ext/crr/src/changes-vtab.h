@@ -45,7 +45,6 @@ SQLITE_EXTENSION_INIT3
 
 #include "crsqlite.h"
 #include "ext-data.h"
-#include "tableinfo.h"
 
 extern sqlite3_module crsql_changesModule;
 

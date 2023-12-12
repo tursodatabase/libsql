@@ -18,8 +18,9 @@ static void testManyPkTable() {
   int rc;
   rc = sqlite3_open(":memory:", &db);
 
-  rc = sqlite3_exec(db, "CREATE TABLE foo (a, b, c, primary key (a, b));", 0, 0,
-                    0);
+  rc = sqlite3_exec(
+      db, "CREATE TABLE foo (a not null, b not null, c, primary key (a, b));",
+      0, 0, 0);
   rc += sqlite3_exec(db, "SELECT crsql_as_crr('foo');", 0, 0, 0);
   assert(rc == SQLITE_OK);
   rc += sqlite3_exec(db, "INSERT INTO foo VALUES (4,5,6);", 0, 0, 0);
@@ -63,7 +64,8 @@ static void testFilters() {
   int rc;
   rc = sqlite3_open(":memory:", &db);
 
-  rc = sqlite3_exec(db, "CREATE TABLE foo (a primary key, b);", 0, 0, 0);
+  rc = sqlite3_exec(db, "CREATE TABLE foo (a primary key not null, b);", 0, 0,
+                    0);
   rc += sqlite3_exec(db, "SELECT crsql_as_crr('foo');", 0, 0, 0);
   assert(rc == SQLITE_OK);
   rc += sqlite3_exec(db, "INSERT INTO foo VALUES (1,2);", 0, 0, 0);
@@ -81,16 +83,16 @@ static void testFilters() {
 
   printf("is null\n");
   assertCount(db, "SELECT count(*) FROM crsql_changes WHERE site_id IS NULL",
-              3);
+              0);
 
   printf("is not null\n");
   assertCount(
-      db, "SELECT count(*) FROM crsql_changes WHERE site_id IS NOT NULL", 0);
+      db, "SELECT count(*) FROM crsql_changes WHERE site_id IS NOT NULL", 3);
 
   printf("equals\n");
   assertCount(
       db, "SELECT count(*) FROM crsql_changes WHERE site_id = crsql_site_id()",
-      0);
+      3);
 
   // 0 rows is actually correct ANSI sql behavior. NULLs are never equal, or not
   // equal, to anything in ANSI SQL. So users must use `IS NOT` to check rather
@@ -103,10 +105,10 @@ static void testFilters() {
       0);
 
   printf("is not\n");
-  // All rows are currently null for site_id
+  // All rows are currently equal to site_id since all rows are currently local
+  // writes
   assertCount(
-      db,
-      "SELECT count(*) FROM crsql_changes WHERE site_id IS NOT crsql_site_id()",
+      db, "SELECT count(*) FROM crsql_changes WHERE site_id IS crsql_site_id()",
       3);
 
   // compare on db_version _and_ site_id
@@ -121,7 +123,7 @@ static void testFilters() {
   printf("OR condition\n");
   assertCount(db,
               "SELECT count(*) FROM crsql_changes WHERE db_version > 2 OR "
-              "site_id IS NULL",
+              "site_id IS crsql_site_id()",
               3);
 
   // compare on pks, table name, other not perfectly supported columns

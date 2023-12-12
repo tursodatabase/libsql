@@ -3,7 +3,6 @@
 
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT3
-#include "tableinfo.h"
 
 // NOTE: any changes here must be updated in `c.rs` until we've finished porting
 // to rust.
@@ -22,6 +21,7 @@ struct crsql_ExtData {
   // if that transaction were to commit at the time this value is checked.
   sqlite3_int64 pendingDbVersion;
   int pragmaSchemaVersion;
+  int updatedTableInfosThisTx;
 
   // we need another schema version number that tracks when we checked it
   // for zpTableInfos.
@@ -29,8 +29,7 @@ struct crsql_ExtData {
 
   unsigned char *siteId;
   sqlite3_stmt *pDbVersionStmt;
-  crsql_TableInfo **zpTableInfos;
-  int tableInfosLen;
+  void *tableInfos;
 
   // tracks the number of rows impacted by all inserts into crsql_changes in the
   // current transaction. This number is reset on transaction commit.
@@ -42,7 +41,7 @@ struct crsql_ExtData {
   sqlite3_stmt *pClearSyncBitStmt;
   sqlite3_stmt *pSetSiteIdOrdinalStmt;
   sqlite3_stmt *pSelectSiteIdOrdinalStmt;
-  void *pStmtCache;
+  sqlite3_stmt *pSelectClockTablesStmt;
 };
 
 crsql_ExtData *crsql_newExtData(sqlite3 *db, unsigned char *siteIdBuffer);
@@ -50,12 +49,7 @@ void crsql_freeExtData(crsql_ExtData *pExtData);
 int crsql_fetchPragmaSchemaVersion(sqlite3 *db, crsql_ExtData *pExtData,
                                    int which);
 int crsql_fetchPragmaDataVersion(sqlite3 *db, crsql_ExtData *pExtData);
-int crsql_recreateDbVersionStmt(sqlite3 *db, crsql_ExtData *pExtData);
-int crsql_fetchDbVersionFromStorage(sqlite3 *db, crsql_ExtData *pExtData,
-                                    char **errmsg);
-int crsql_getDbVersion(sqlite3 *db, crsql_ExtData *pExtData, char **errmsg);
+int crsql_recreate_db_version_stmt(sqlite3 *db, crsql_ExtData *pExtData);
 void crsql_finalize(crsql_ExtData *pExtData);
-int crsql_ensureTableInfosAreUpToDate(sqlite3 *db, crsql_ExtData *pExtData,
-                                      char **errmsg);
 
 #endif

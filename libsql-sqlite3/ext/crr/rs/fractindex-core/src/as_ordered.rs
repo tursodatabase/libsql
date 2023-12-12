@@ -101,7 +101,7 @@ fn table_has_all_columns(
 
     let step_code = stmt.step()?;
     if step_code == ResultCode::ROW {
-        let count = stmt.column_int(0)?;
+        let count = stmt.column_int(0);
         if count != columns.len() as i32 {
             return Ok(false);
         }

@@ -16,7 +16,7 @@ pub fn is_crr(db: *mut sqlite::sqlite3, table: &str) -> Result<bool, ResultCode>
         sqlite::Destructor::TRANSIENT,
     )?;
     stmt.step()?;
-    let count = stmt.column_int(0)?;
+    let count = stmt.column_int(0);
 
     if count == 0 {
         Ok(false)
