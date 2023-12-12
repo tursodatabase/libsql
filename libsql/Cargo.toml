@@ -92,7 +92,6 @@ hrana = [
 ]
 serde = ["dep:serde"]
 remote = [
-  "core",
   "hrana",
   "dep:tower",
   "dep:hyper",
