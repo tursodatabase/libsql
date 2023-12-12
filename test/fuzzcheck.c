@@ -1267,6 +1267,8 @@ int runCombinedDbSqlInput(
   }
   sqlite3_limit(cx.db, SQLITE_LIMIT_LIKE_PATTERN_LENGTH, 100);
   sqlite3_hard_heap_limit64(heapLimit);
+  rc = 1;
+  sqlite3_test_control(SQLITE_TESTCTRL_JSON_SELFCHECK, &rc);
 
   if( nDb>=20 && aDb[18]==2 && aDb[19]==2 ){
     aDb[18] = aDb[19] = 1;

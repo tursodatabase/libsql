@@ -4659,6 +4659,28 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 #endif
+
+    /* sqlite3_test_control(SQLITE_TESTCTRL_JSON_SELFCHECK, &onOff);
+    **
+    ** Activate or deactivate validation of JSONB that is generated from
+    ** text.  Off by default, as the validation is slow.  Validation is
+    ** only available if compiled using SQLITE_DEBUG.
+    **
+    ** If onOff is initially 1, then turn it on.  If onOff is initially
+    ** off, turn it off.  If onOff is initially -1, then change onOff
+    ** to be the current setting.
+    */
+    case SQLITE_TESTCTRL_JSON_SELFCHECK: {
+#if defined(SQLITE_DEBUG)
+      int *pOnOff = va_arg(ap, int*);
+      if( *pOnOff<0 ){
+        *pOnOff = sqlite3Config.bJsonSelfcheck;
+      }else{
+        sqlite3Config.bJsonSelfcheck = (u8)((*pOnOff)&0xff);
+      }
+#endif
+      break;
+    }
   }
   va_end(ap);
 #endif /* SQLITE_UNTESTABLE */

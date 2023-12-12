@@ -10756,6 +10756,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     {"fk_no_action",       SQLITE_TESTCTRL_FK_NO_ACTION, 0, "BOOLEAN"       },
     {"imposter",         SQLITE_TESTCTRL_IMPOSTER,1,"SCHEMA ON/OFF ROOTPAGE"},
     {"internal_functions", SQLITE_TESTCTRL_INTERNAL_FUNCTIONS,0,""          },
+    {"json_selfcheck",     SQLITE_TESTCTRL_JSON_SELFCHECK ,0,"BOOLEAN"      },
     {"localtime_fault",    SQLITE_TESTCTRL_LOCALTIME_FAULT,0,"BOOLEAN"      },
     {"never_corrupt",      SQLITE_TESTCTRL_NEVER_CORRUPT,1, "BOOLEAN"       },
     {"optimizations",      SQLITE_TESTCTRL_OPTIMIZATIONS,0,"DISABLE-MASK"   },
@@ -10973,6 +10974,16 @@ static int do_meta_command(char *zLine, ShellState *p){
             rc2 = sqlite3_test_control(testctrl, p->db, opt);
             isOk = 3;
           }
+          break;
+        case SQLITE_TESTCTRL_JSON_SELFCHECK:
+          if( nArg==2 ){
+            rc2 = -1;
+            isOk = 1;
+          }else{
+            rc2 = booleanValue(azArg[2]);
+            isOk = 3;
+          }
+          sqlite3_test_control(testctrl, &rc2);
           break;
       }
     }
