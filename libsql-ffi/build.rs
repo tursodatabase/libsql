@@ -10,7 +10,9 @@ const SQLITE_DIR: &str = "../libsql-sqlite3";
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
+
     println!("cargo:rerun-if-changed={BUNDLED_DIR}/src");
+
     if std::env::var("LIBSQL_DEV").is_ok() || cfg!(feature = "wasmtime-bindings") {
         println!("cargo:rerun-if-changed={SQLITE_DIR}/src");
         make_amalgation();

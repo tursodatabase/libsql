@@ -38,6 +38,8 @@ impl Proxy for ReplicaProxyService {
         &self,
         req: tonic::Request<tonic::Streaming<ExecReq>>,
     ) -> Result<tonic::Response<Self::StreamExecStream>, tonic::Status> {
+        tracing::debug!("stream_exec");
+
         let (meta, ext, mut stream) = req.into_parts();
         let stream = async_stream::stream! {
             while let Some(it) = stream.next().await {
@@ -61,6 +63,7 @@ impl Proxy for ReplicaProxyService {
         &self,
         mut req: tonic::Request<ProgramReq>,
     ) -> Result<tonic::Response<ExecuteResults>, tonic::Status> {
+        tracing::debug!("execute");
         self.do_auth(&mut req)?;
 
         let mut client = self.client.clone();
