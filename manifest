@@ -1,5 +1,5 @@
-C The\sjson_valid(*,8)\sfunction\sdoes\sa\smuch\sbetter\scheck\sof\sthe\svalidity\sof\nthe\sJSONB\sinput.\s\sThe\sjson_error_position()\sfunction\sreturns\san\sapproximate\nbyte\soffset\sto\sthe\spoint\sof\sthe\sfirst\sdetected\serror\sin\sthe\sJSONB.
-D 2023-12-12T17:31:17.429
+C Worker1\sPromiser\sAPI:\swhen\smultiple\sdb\sconnections\sare\sactive\sthen\suse\sthe\srequested\sconnection\sinstead\sof\salways\sthe\sfirst-opened\sconnection.\sBug\sreported\sin\s[forum:894c330e7f23b177|forum\spost\s894c330e7f23b177].
+D 2023-12-12T17:52:27.818
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -602,7 +602,7 @@ F ext/wasm/api/sqlite3-v-helper.js 7daa0eab0a513a25b05e9abae7b5beaaa39209b3ed12f
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 595953994aa3ae2287c889c4da39ab3d6f17b6461ecf4bec334b7a3faafddb02
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 46c4afa6c50d7369252c104f274ad977a97e91ccfafc38b400fe36e90bdda88e
 F ext/wasm/api/sqlite3-wasm.c d0e09eb5ed3743c00294e30019e591c3aa150572ae7ffe8a8994568a7377589f
-F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js 569d4e859968e65f55dec5fac0b879828a23c8b179162cc7812fec19f844dd21
+F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js a94e3f0ca25a777bb73779368f97be0e103e02d067ad3ee3e9c4cc5bcefbd01c
 F ext/wasm/api/sqlite3-worker1.c-pp.js a541112aa51e16705f13a99bb943c64efe178aa28c86704a955f8fd9afe4ba37
 F ext/wasm/batch-runner-sahpool.html e9a38fdeb36a13eac7b50241dfe7ae066fe3f51f5c0b0151e7baee5fce0d07a7
 F ext/wasm/batch-runner-sahpool.js 54a3ac228e6c4703fe72fb65c897e19156263a51fe9b7e21d2834a45e876aabd
@@ -2153,9 +2153,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa102036fe46eeb71b7df3e265be1935ae5c78e0b939b08841bcfb8abadbc77a c96ebb086feb89341565cc52b970ae7799ce1327fe1ad4fc790f1b0dcaa6e229
-R 6e221a94cd5525fe9f8a7e94ea467b60
-T +closed c96ebb086feb89341565cc52b970ae7799ce1327fe1ad4fc790f1b0dcaa6e229
-U drh
-Z 749a6c45182c15aa056f901d03cf2368
+P 840efb33a3934a9bdccad65ea15c70d5c335a517502c9844aaad8405d16d1604
+R 5c3d83f631ee20b7dd8bc56f0a1d21a8
+U stephan
+Z 26c52cb9495b2f9f42b5f7d1f0a8e853
 # Remove this line to create a well-formed Fossil manifest.
