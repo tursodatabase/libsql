@@ -4,7 +4,7 @@ use axum::routing::delete;
 use axum::Json;
 use chrono::NaiveDateTime;
 use futures::TryStreamExt;
-use hyper::Body;
+use hyper::{Body, Request};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
@@ -15,6 +15,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Notify;
 use tokio_util::io::ReaderStream;
+use tower_http::trace::DefaultOnResponse;
 use url::Url;
 
 use crate::database::Database;
@@ -95,6 +96,12 @@ where
         None
     };
 
+    fn trace_request<B>(req: &Request<B>, span: &tracing::Span) {
+        let _s = span.enter();
+
+        tracing::debug!("{} {} {:?}", req.method(), req.uri(), req.headers());
+    }
+
     use axum::routing::{get, post};
     let metrics = Metrics {
         handle: prom_handle,
@@ -126,7 +133,16 @@ where
             connector,
             user_http_server,
             metrics,
-        }));
+        }))
+        .layer(
+            tower_http::trace::TraceLayer::new_for_http()
+                .on_request(trace_request)
+                .on_response(
+                    DefaultOnResponse::new()
+                        .level(tracing::Level::DEBUG)
+                        .latency_unit(tower_http::LatencyUnit::Micros),
+                ),
+        );
 
     hyper::server::Server::builder(acceptor)
         .serve(router.into_make_service())
@@ -225,7 +241,7 @@ async fn handle_post_config<M: MakeNamespace, C>(
         config.heartbeat_url = Some(Url::parse(&url)?);
     }
 
-    store.store(config)?;
+    store.store(config).await?;
 
     Ok(())
 }
@@ -268,7 +284,7 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
     if let Some(url) = req.heartbeat_url {
         config.heartbeat_url = Some(Url::parse(&url)?)
     }
-    store.store(config)?;
+    store.store(config).await?;
 
     Ok(())
 }
@@ -296,8 +312,7 @@ async fn handle_fork_namespace<M: MakeNamespace, C>(
     let mut to_config = (*to_store.get()).clone();
     to_config.max_db_pages = from_config.max_db_pages;
     to_config.heartbeat_url = from_config.heartbeat_url.clone();
-    to_config.bottomless_db_id = from_config.bottomless_db_id.clone();
-    to_store.store(to_config)?;
+    to_store.store(to_config).await?;
     Ok(())
 }
 

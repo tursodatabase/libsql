@@ -233,6 +233,7 @@ fn create_namespace() {
                 json!({}),
             )
             .await?;
+
         assert_eq!(resp.status(), 200);
 
         conn.execute("create table test (x)", ()).await.unwrap();
