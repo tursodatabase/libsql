@@ -42,7 +42,7 @@ cfg_cloudflare! {
 #[derive(Debug, Clone)]
 pub struct Connection<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     conn: HttpConnection<T>,
 }
@@ -59,7 +59,7 @@ cfg_cloudflare! {
 
 impl<T> Connection<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     pub async fn execute(&self, sql: &str, params: impl IntoParams) -> crate::Result<u64> {
         tracing::trace!("executing `{}`", sql);
@@ -105,14 +105,14 @@ where
 #[derive(Debug, Clone)]
 pub struct Transaction<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     inner: HttpTransaction<T>,
 }
 
 impl<T> Transaction<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     pub async fn query(&self, sql: &str, params: impl IntoParams) -> crate::Result<Rows> {
         tracing::trace!("querying `{}`", sql);

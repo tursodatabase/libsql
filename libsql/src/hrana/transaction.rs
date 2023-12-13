@@ -7,14 +7,14 @@ use crate::TransactionBehavior;
 #[derive(Debug, Clone)]
 pub(crate) struct HttpTransaction<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     stream: HranaStream<T>,
 }
 
 impl<T> HttpTransaction<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     pub fn stream(&self) -> &HranaStream<T> {
         &self.stream

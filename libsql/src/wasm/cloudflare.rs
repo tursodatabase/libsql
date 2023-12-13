@@ -6,6 +6,8 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use worker::wasm_bindgen::JsValue;
 
+pub type ByteStream = Pin<Box<dyn Stream<Item = Result<Bytes>>>>;
+
 #[derive(Debug, Copy, Clone)]
 pub struct CloudflareSender(());
 
@@ -14,45 +16,49 @@ impl CloudflareSender {
         CloudflareSender(())
     }
 
-    async fn send(url: &str, auth: &str, body: String) -> Result<HttpBody> {
-        use worker::*;
+    async fn send(url: &str, auth: &str, body: String) -> Result<HttpBody<ByteStream>> {
+        todo!()
+        // use worker::*;
 
-        let mut response = Fetch::Request(Request::new_with_init(
-            url,
-            &RequestInit {
-                body: Some(JsValue::from(body)),
-                headers: {
-                    let mut headers = Headers::new();
-                    headers.append("Authorization", auth)?;
-                    headers
-                },
-                cf: CfProperties::new(),
-                method: Method::Post,
-                redirect: RequestRedirect::Follow,
-            },
-        )?)
-        .send()
-        .await?;
-        if response.status_code() != 200 {
-            let body = response.text().await?;
-            Err(HranaError::Api(body))
-        } else {
-            let body = match response.body() {
-                ResponseBody::Empty => HttpBody::Body(Bytes::new()),
-                ResponseBody::Body(body) => HttpBody::Body(Bytes::from(body.clone())),
-                _ => HttpBody::Stream(Box::new(HttpStream(response.stream()?))),
-            };
-            Ok(body)
-        }
+        // let mut response = Fetch::Request(Request::new_with_init(
+        //     url,
+        //     &RequestInit {
+        //         body: Some(JsValue::from(body)),
+        //         headers: {
+        //             let mut headers = Headers::new();
+        //             headers.append("Authorization", auth)?;
+        //             headers
+        //         },
+        //         cf: CfProperties::new(),
+        //         method: Method::Post,
+        //         redirect: RequestRedirect::Follow,
+        //     },
+        // )?)
+        // .send()
+        // .await?;
+        // if response.status_code() != 200 {
+        //     let body = response.text().await?;
+        //     Err(HranaError::Api(body))
+        // } else {
+        //     let body = match response.body() {
+        //         ResponseBody::Empty => HttpBody::Body(Bytes::new()),
+        //         ResponseBody::Body(body) => HttpBody::Body(Bytes::from(body.clone())),
+        //         _ => HttpBody::Stream(Box::new(HttpStream(response.stream()?))),
+        //     };
+        //     Ok(body)
+        // }
     }
 }
 
-impl<'a> HttpSend<'a> for CloudflareSender {
-    type Result = Pin<Box<dyn Future<Output = Result<HttpBody>> + 'a>>;
+impl HttpSend for CloudflareSender {
+    type Stream = ByteStream;
+    type Result = Pin<Box<dyn Future<Output = Result<HttpBody<Self::Stream>>>>>;
 
-    fn http_send(&'a self, url: &'a str, auth: &'a str, body: String) -> Self::Result {
-        let fut = Self::send(url, auth, body);
-        Box::pin(fut)
+    fn http_send(&self, url: &str, auth: &str, body: String) -> Self::Result {
+        let url = url.to_string();
+        let auth = auth.to_string();
+
+        Box::pin(async move { Self::send(&url, &auth, body).await })
     }
 }
 

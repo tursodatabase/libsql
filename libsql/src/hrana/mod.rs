@@ -37,23 +37,28 @@ struct Cookie {
     base_url: Option<String>,
 }
 
-pub trait HttpSend<'a>: Clone {
-    type Result: Future<Output = Result<HttpBody>> + 'a;
-    fn http_send(&'a self, url: &'a str, auth: &'a str, body: String) -> Self::Result;
+pub trait HttpSend: Clone {
+    type Stream: Stream<Item = Result<Bytes>> + Unpin;
+    type Result: Future<Output = Result<HttpBody<Self::Stream>>> + 'static;
+
+    fn http_send(&self, url: &str, auth: &str, body: String) -> Self::Result;
 }
 
-#[cfg(feature = "wasm")]
-pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Unpin>;
+// // #[cfg(feature = "wasm")]
+// pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Unpin>;
 
-#[cfg(not(feature = "wasm"))]
-pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Send + Unpin>;
+// #[cfg(not(feature = "wasm"))]
+// pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Send + Unpin>;
 
-pub enum HttpBody {
+pub enum HttpBody<S> {
     Body(Bytes),
-    Stream(ByteStream),
+    Stream(S),
 }
 
-impl HttpBody {
+impl<S> HttpBody<S>
+where
+    S: Stream<Item = Result<Bytes>> + Unpin,
+{
     pub async fn bytes(self) -> Result<Bytes> {
         match self {
             HttpBody::Body(bytes) => Ok(bytes),
@@ -61,10 +66,11 @@ impl HttpBody {
         }
     }
 
-    pub fn stream(self) -> ByteStream {
+    pub fn stream(self) -> S {
         match self {
             HttpBody::Stream(stream) => stream,
-            HttpBody::Body(bytes) => Box::new(SimpleStream::new(bytes)),
+            // HttpBody::Body(bytes) => Box::new(SimpleStream::new(bytes)),
+            _ => todo!(),
         }
     }
 }
@@ -86,7 +92,7 @@ impl Stream for SimpleStream {
     }
 }
 
-async fn stream_to_bytes(mut stream: ByteStream) -> Result<Bytes> {
+async fn stream_to_bytes(mut stream: impl Stream<Item = Result<Bytes>> + Unpin) -> Result<Bytes> {
     use futures::StreamExt;
 
     let mut buf = BytesMut::new();
@@ -126,7 +132,7 @@ pub enum CursorResponseError {
     Other(String),
 }
 
-enum StatementExecutor<T: for<'a> HttpSend<'a>> {
+enum StatementExecutor<T: HttpSend> {
     /// An opened HTTP Hrana stream - usually in scope of executing transaction. Operations over it
     /// will be scheduled for sequential execution.
     Stream(HranaStream<T>),
@@ -137,7 +143,7 @@ enum StatementExecutor<T: for<'a> HttpSend<'a>> {
 
 impl<T> StatementExecutor<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     async fn execute(&self, stmt: Stmt) -> crate::Result<StmtResult> {
         let res = match self {
@@ -150,7 +156,7 @@ where
 
 pub struct Statement<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     executor: StatementExecutor<T>,
     inner: Stmt,
@@ -158,7 +164,7 @@ where
 
 impl<T> Statement<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     pub(crate) fn from_stream(stream: HranaStream<T>, sql: String, want_rows: bool) -> Self {
         Statement {
