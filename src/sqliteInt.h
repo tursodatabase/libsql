@@ -5171,6 +5171,7 @@ int sqlite3Utf16ByteLen(const void *pData, int nChar);
 #endif
 int sqlite3Utf8CharLen(const char *pData, int nByte);
 u32 sqlite3Utf8Read(const u8**);
+int sqlite3Utf8ReadLimited(const u8*, int, u32*);
 LogEst sqlite3LogEst(u64);
 LogEst sqlite3LogEstAdd(LogEst,LogEst);
 LogEst sqlite3LogEstFromDouble(double);

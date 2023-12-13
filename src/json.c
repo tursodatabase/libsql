@@ -2449,8 +2449,8 @@ static u32 jsonUnescapeOneChar(const char *z, u32 n, u32 *piOut){
       }else if( z[nSkip]=='\\' ){
         return nSkip + jsonUnescapeOneChar(&z[nSkip], n-nSkip, piOut);
       }else{
-        *piOut = z[nSkip];
-        return nSkip+1;
+        int sz = sqlite3Utf8ReadLimited((u8*)&z[nSkip], n-nSkip, piOut);
+        return nSkip + sz;
       }
     }
     default: {
@@ -2483,8 +2483,14 @@ static SQLITE_NOINLINE int jsonLabelCompareEscaped(
       cLeft = 0;
     }else if( rawLeft || zLeft[0]!='\\' ){
       cLeft = ((u8*)zLeft)[0];
-      zLeft++;
-      nLeft--;
+      if( cLeft>=0xc0 ){
+        int sz = sqlite3Utf8ReadLimited((u8*)zLeft, nLeft, &cLeft);
+        zLeft += sz;
+        nLeft -= sz;
+      }else{
+        zLeft++;
+        nLeft--;
+      }
     }else{
       u32 n = jsonUnescapeOneChar(zLeft, nLeft, &cLeft);
       zLeft += n;
@@ -2495,8 +2501,14 @@ static SQLITE_NOINLINE int jsonLabelCompareEscaped(
       cRight = 0;
     }else if( rawRight || zRight[0]!='\\' ){
       cRight = ((u8*)zRight)[0];
-      zRight++;
-      nRight--;
+      if( cRight>=0xc0 ){
+        int sz = sqlite3Utf8ReadLimited((u8*)zRight, nRight, &cRight);
+        zRight += sz;
+        nRight -= sz;
+      }else{
+        zRight++;
+        nRight--;
+      }
     }else{
       u32 n = jsonUnescapeOneChar(zRight, nRight, &cRight);
       zRight += n;
@@ -2916,14 +2928,19 @@ static void jsonReturnFromBlob(
           u32 szEscape = jsonUnescapeOneChar(&z[iIn], sz-iIn, &v);
           if( v<=0x7f ){
             zOut[iOut++] = (char)v;
+          }else if( v==0xfffd ){
+            /* Silently ignore illegal unicode */
           }else if( v<=0x7ff ){
+            assert( szEscape>=2 );
             zOut[iOut++] = (char)(0xc0 | (v>>6));
             zOut[iOut++] = 0x80 | (v&0x3f);
           }else if( v<0x10000 ){
+            assert( szEscape>=3 );
             zOut[iOut++] = 0xe0 | (v>>12);
             zOut[iOut++] = 0x80 | ((v>>6)&0x3f);
             zOut[iOut++] = 0x80 | (v&0x3f);
           }else{
+            assert( szEscape>=4 );
             zOut[iOut++] = 0xf0 | (v>>18);
             zOut[iOut++] = 0x80 | ((v>>12)&0x3f);
             zOut[iOut++] = 0x80 | ((v>>6)&0x3f);
@@ -2934,6 +2951,7 @@ static void jsonReturnFromBlob(
           zOut[iOut++] = c;
         }
       } /* end for() */
+      assert( iOut<=nOut );
       zOut[iOut] = 0;
       sqlite3_result_text(pCtx, zOut, iOut, sqlite3_free);
       break;
