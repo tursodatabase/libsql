@@ -76,7 +76,6 @@ fn test_update_references_foreign_key() {
     // Inserting a row with a non-existent foreign key is ok, because those are not validated by default
     assert!(conn
         .execute("INSERT INTO t2 VALUES (1, 'a', 42)", ())
-        .map_err(|e| dbg!(e))
         .is_ok());
     // Now they should be validated
     conn.execute("PRAGMA foreign_keys = ON", ()).unwrap();

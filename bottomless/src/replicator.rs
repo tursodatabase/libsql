@@ -933,7 +933,7 @@ impl Replicator {
 
                     if Some(key) != last_gen {
                         last_gen = Some(key);
-                        if let Ok(generation) = Uuid::parse_str(dbg!(key)) {
+                        if let Ok(generation) = Uuid::parse_str(key) {
                             match threshold.as_ref() {
                                 None => return Some(generation),
                                 Some(threshold) => match Self::generation_to_timestamp(&generation)

@@ -2609,6 +2609,7 @@ name = "libsql"
 version = "0.2.0-alpha.1"
 dependencies = [
  "anyhow",
+ "async-stream",
  "async-trait",
  "base64 0.21.5",
  "bincode",
