@@ -1,5 +1,5 @@
-C Improvements\sto\sUTF8\shandling,\sand\sespecially\sthe\shandling\sof\sinvalid\sUTF8,\nin\sthe\sJSON\sroutines.
-D 2023-12-13T14:31:15.535
+C Bug\sfix\sin\sthe\sJSONB\svalidator.\ndbsqlfuzz\sac6fa521a08609a642198e7decf64180e750b3c4
+D 2023-12-13T15:27:03.130
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -696,7 +696,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c f5b41d1515ea91a43cf55cc3096bd671d06fde2d9d495008787aae114d41b6fe
+F src/json.c 64e5ed9b56127f6e74db01b0943ebc04af5e4690a6b30937f420d6a7278c57de
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c ce714ee501122c76eb2e69b292bebe443aba611fc3b88e6786eb910285515fe4
@@ -2153,8 +2153,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4d5353cadd7b7c5f105bc197f3ec739e2d041472d6b3e939654c9f9cfc2749ae
-R a4f8b9329a75039f2cc7d3c3b3a11e22
+P 1b229c1101d6c384a30f343c5e47b471ab084b2d8e81170eb8f642afc1c67e3b
+R 9712267960fcb4221f5d0c5eee069b9a
 U drh
-Z f5b89926c0a743c6929f7891e073ce93
+Z 12d7bcafc8f212e81442662dadd8f2af
 # Remove this line to create a well-formed Fossil manifest.

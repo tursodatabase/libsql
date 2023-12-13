@@ -1364,7 +1364,6 @@ static u32 jsonbValidityCheck(
         if( !jsonIsOk[z[j]] && z[j]!='\'' ){
           if( z[j]=='"' ){
             if( x==JSONB_TEXTJ ) return j+1;
-            j++;
           }else if( z[j]!='\\' || j+1>=k ){
             return j+1;
           }else if( strchr("\"\\/bfnrt",z[j+1])!=0 ){
