@@ -178,7 +178,7 @@ cfg_replication! {
         }
 
 
-        /// Sync database from remote, and returns the commited frame_no after syncing, if
+        /// Sync database from remote, and returns the committed frame_no after syncing, if
         /// applicable.
         pub async fn sync(&self) -> Result<Option<FrameNo>> {
             if let DbType::Sync { db } = &self.db_type {
@@ -188,7 +188,7 @@ cfg_replication! {
             }
         }
 
-        /// Apply a set of frames to the database and returns the commited frame_no after syncing, if
+        /// Apply a set of frames to the database and returns the committed frame_no after syncing, if
         /// applicable.
         pub async fn sync_frames(&self, frames: crate::replication::Frames) -> Result<Option<FrameNo>> {
             if let DbType::Sync { db } = &self.db_type {
@@ -203,6 +203,15 @@ cfg_replication! {
         pub async fn flush_replicator(&self) -> Result<Option<FrameNo>> {
             if let DbType::Sync { db } = &self.db_type {
                 db.flush_replicator().await
+            } else {
+                Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
+            }
+        }
+
+        /// Returns the database currently committed replication index
+        pub async fn replication_index(&self) -> Result<Option<FrameNo>> {
+            if let DbType::Sync { db } = &self.db_type {
+                db.replication_index().await
             } else {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
             }

@@ -311,4 +311,18 @@ if let Some(ReplicationContext {
             ))
         }
     }
+
+    #[cfg(feature = "replication")]
+    pub async fn replication_index(&self) -> Result<Option<FrameNo>> {
+        use libsql_replication::replicator::ReplicatorClient;
+
+        if let Some(ref ctx) = self.replication_ctx {
+            Ok(ctx.replicator.lock().await.client_mut().committed_frame_no())
+        } else {
+            Err(crate::errors::Error::Misuse(
+                "No replicator available. Use Database::with_replicator() to enable replication"
+                    .to_string(),
+            ))
+        }
+    }
 }
