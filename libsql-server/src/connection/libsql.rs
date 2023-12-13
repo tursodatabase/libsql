@@ -181,7 +181,7 @@ impl<W: Wal> WrapWal<W> for InhibitCheckpointWalWrapper {
         _buf: &mut [u8],
     ) -> libsql_sys::wal::Result<(u32, u32)> {
         tracing::warn!(
-            "chackpoint inhibited: this connection is not allowed to perform checkpoints"
+            "checkpoint inhibited: this connection is not allowed to perform checkpoints"
         );
         Err(rusqlite::ffi::Error::new(SQLITE_BUSY))
     }
@@ -710,12 +710,32 @@ impl<W: Wal> Connection<W> {
             StmtKind::Read | StmtKind::TxnBegin | StmtKind::Other => config.block_reads,
             StmtKind::Write => config.block_reads || config.block_writes,
             StmtKind::TxnEnd | StmtKind::Release | StmtKind::Savepoint => false,
+            StmtKind::Attach | StmtKind::Detach => false,
         };
         if blocked {
             return Err(Error::Blocked(config.block_reason.clone()));
         }
 
-        let mut stmt = self.conn.prepare(&query.stmt.stmt)?;
+        let mut stmt = if matches!(query.stmt.kind, StmtKind::Attach) {
+            let attached_db_name: &str = query.stmt.id.as_deref().unwrap_or("");
+            let path = PathBuf::from(self.conn.path().unwrap_or("."));
+            let dbs_path = path
+                .parent()
+                .unwrap_or_else(|| std::path::Path::new(".."))
+                .parent()
+                .unwrap_or_else(|| std::path::Path::new(".."))
+                .canonicalize()
+                .unwrap_or_else(|_| std::path::PathBuf::from(".."));
+            let query = format!(
+                "ATTACH DATABASE 'file:{}?mode=ro' AS \"{attached_db_name}\"",
+                dbs_path.join(attached_db_name).join("data").display()
+            );
+            tracing::trace!("ATTACH rewritten to: {query}");
+            self.conn.prepare(&query)?
+        } else {
+            self.conn.prepare(&query.stmt.stmt)?
+        };
+
         if stmt.readonly() {
             READ_QUERY_COUNT.increment(1);
         } else {
