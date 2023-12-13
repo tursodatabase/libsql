@@ -736,14 +736,14 @@ static int strlenChar(const char *z){
 */
 static FILE * openChrSource(const char *zFile){
 #if defined(_WIN32) || defined(WIN32)
-  struct _stat x = {0};
+  struct __stat64 x = {0};
 # define STAT_CHR_SRC(mode) ((mode & (_S_IFCHR|_S_IFIFO|_S_IFREG))!=0)
   /* On Windows, open first, then check the stream nature. This order
   ** is necessary because _stat() and sibs, when checking a named pipe,
   ** effectively break the pipe as its supplier sees it. */
   FILE *rv = fopen(zFile, "rb");
   if( rv==0 ) return 0;
-  if( _fstat(_fileno(rv), &x) != 0
+  if( _fstat64(_fileno(rv), &x) != 0
       || !STAT_CHR_SRC(x.st_mode)){
     fclose(rv);
     rv = 0;
