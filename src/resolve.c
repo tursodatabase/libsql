@@ -182,6 +182,7 @@ Bitmask sqlite3ExprColUsed(Expr *pExpr){
   assert( ExprUseYTab(pExpr) );
   pExTab = pExpr->y.pTab;
   assert( pExTab!=0 );
+  assert( n < pExTab->nCol );
   if( (pExTab->tabFlags & TF_HasGenerated)!=0
    && (pExTab->aCol[n].colFlags & COLFLAG_GENERATED)!=0
   ){
@@ -784,7 +785,7 @@ static int lookupName(
   ** If a generated column is referenced, set bits for every column
   ** of the table.
   */
-  if( pExpr->iColumn>=0 && pMatch!=0 ){
+  if( pExpr->iColumn>=0 && cnt==1 && pMatch!=0 ){
     pMatch->colUsed |= sqlite3ExprColUsed(pExpr);
   }
 
