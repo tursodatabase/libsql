@@ -2,7 +2,7 @@
 
 use crate::{Error, Result};
 use fallible_iterator::FallibleIterator;
-use sqlite3_parser::ast::{Cmd, PragmaBody, QualifiedName, Stmt, TransactionType};
+use sqlite3_parser::ast::{Cmd, PragmaBody, QualifiedName, Stmt, TransactionType, Expr, Id};
 use sqlite3_parser::lexer::sql::{Parser, ParserError};
 
 /// A group of statements to be executed together.
@@ -30,6 +30,8 @@ pub enum StmtKind {
     Write,
     Savepoint,
     Release,
+    Attach,
+    Detach,
     Other,
 }
 
@@ -116,6 +118,12 @@ impl StmtKind {
                 savepoint_name: Some(_),
                 ..
             }) => Some(Self::Release),
+            Cmd::Stmt(Stmt::Attach {
+                expr: Expr::Id(Id(expr)),
+                db_name: Expr::Id(Id(name)),
+                ..
+            }) if expr == name => Some(Self::Attach),
+            Cmd::Stmt(Stmt::Detach(_)) => Some(Self::Detach),
             _ => None,
         }
     }

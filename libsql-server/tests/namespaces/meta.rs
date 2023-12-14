@@ -169,9 +169,8 @@ fn meta_store() {
             )?;
             let foo_conn = foo.connect()?;
 
-            foo_conn.execute("attach foo as foo", ()).await.unwrap();
             foo_conn
-                .execute("select * from foo.sqlite_master", ())
+                .execute_batch("attach foo as foo; select * from foo.sqlite_master")
                 .await
                 .unwrap();
         }

@@ -66,7 +66,7 @@ impl State {
             (State::Txn, StmtKind::Release) => State::Txn,
             (_, StmtKind::Release) => State::Invalid,
 
-            (state, StmtKind::Other | StmtKind::Write | StmtKind::Read) => state,
+            (state, StmtKind::Other | StmtKind::Write | StmtKind::Read | StmtKind::Attach | StmtKind::Detach) => state,
             (State::Invalid, _) => State::Invalid,
 
             (State::Init, StmtKind::TxnBegin) => State::Txn,
