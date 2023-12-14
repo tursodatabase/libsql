@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sJSON\sand\sFTS5.
-D 2023-12-14T15:38:57.969
+C Add\sassert()s\sto\sFTS5\sto\sfix\sstatic\sanalyzer\swarnings.
+D 2023-12-14T16:34:47.115
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -92,7 +92,7 @@ F ext/fts5/extract_api_docs.tcl bc3a0ca78be7d3df08e7602c00ca48021ebae40682d75eb0
 F ext/fts5/fts5.h 9d7867cc63631296462c90bafe57c4881b56e480fa510ffaee6a77049258c714
 F ext/fts5/fts5Int.h defa43c0932265138ee910ca416e6baccf8b774e0f3d610e74be1ab2880e9834
 F ext/fts5/fts5_aux.c ee770eec0af8646db9e18fc01a0dad7345b5f5e8cbba236704cfae2d777022ad
-F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b729225eeaf6a5
+F ext/fts5/fts5_buffer.c 0eec58bff585f1a44ea9147eae5da2447292080ea435957f7488c70673cb6f09
 F ext/fts5/fts5_config.c 8072a207034b51ae9b7694121d1b5715c794e94b275e088f70ae532378ca5cdf
 F ext/fts5/fts5_expr.c 248ecadbacdbeb85c433f907e57bb91224678c829e57ecf098e3543b5df8c3f9
 F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a0ec91b1
@@ -2153,8 +2153,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0fbf4b8a58fde1c187908934da6f59999b146f32e07ac255cc531c5c4d7007fd
-R 067cf0081390ed7a5ecc529d5227732e
+P 90135efccfeb1046f002bfcbd8dfec9a1a3b40cbe1b5c714ae065b06368e354f
+R de9e2e3a911515ec6a18e21a77463b2b
 U drh
-Z effe63d1d640400eeacf84541f3b1661
+Z 4f0b96c5c3315c731e117e005cc67ca9
 # Remove this line to create a well-formed Fossil manifest.
