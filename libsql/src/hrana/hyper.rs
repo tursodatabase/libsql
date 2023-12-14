@@ -28,7 +28,7 @@ impl HttpSender {
         let version = HeaderValue::try_from(format!("libsql-remote-{ver}")).unwrap();
 
         let https = HttpsConnectorBuilder::new()
-            .with_native_roots()
+            .with_webpki_roots()
             .https_or_http()
             .enable_http1()
             .wrap_connector(connector);
