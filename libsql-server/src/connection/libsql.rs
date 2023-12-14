@@ -764,7 +764,7 @@ impl<W: Wal> Connection<W> {
             StmtKind::Read | StmtKind::TxnBegin | StmtKind::Other => config.block_reads,
             StmtKind::Write => config.block_reads || config.block_writes,
             StmtKind::TxnEnd | StmtKind::Release | StmtKind::Savepoint => false,
-            StmtKind::Attach | StmtKind::Detach => false,
+            StmtKind::Attach | StmtKind::Detach => !config.allow_attach,
         };
         if blocked {
             return Err(Error::Blocked(config.block_reason.clone()));
