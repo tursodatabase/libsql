@@ -532,7 +532,10 @@ mod serde_ {
             match self.value {
                 Value::Integer(0) => visitor.visit_bool(false),
                 Value::Integer(1) => visitor.visit_bool(true),
-                _ => Err(de::Error::invalid_value(de::Unexpected::Other(&format!("{:?}", self.value)), &"a valid sqlite boolean representation (0 or 1)")),
+                _ => Err(de::Error::invalid_value(
+                    de::Unexpected::Other(&format!("{:?}", self.value)),
+                    &"a valid sqlite boolean representation (0 or 1)",
+                )),
             }
         }
 
