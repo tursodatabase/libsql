@@ -81,6 +81,7 @@ fn embedded_replica() {
             "http://foo.primary:8080",
             "",
             TurmoilConnector,
+            false,
         )
         .await?;
 
@@ -150,6 +151,7 @@ fn execute_batch() {
             "http://foo.primary:8080",
             "",
             TurmoilConnector,
+            false,
         )
         .await?;
 
@@ -256,6 +258,7 @@ fn replica_primary_reset() {
             "http://primary:8080",
             "",
             TurmoilConnector,
+            false,
         )
         .await
         .unwrap();
@@ -311,6 +314,7 @@ fn replica_primary_reset() {
             "http://primary:8080",
             "",
             TurmoilConnector,
+            false,
         )
         .await
         .unwrap();
@@ -412,6 +416,7 @@ fn replica_no_resync_on_restart() {
                 "http://primary:8080",
                 "",
                 TurmoilConnector,
+                false,
             )
             .await
             .unwrap();
@@ -426,6 +431,7 @@ fn replica_no_resync_on_restart() {
                 "http://primary:8080",
                 "",
                 TurmoilConnector,
+                false,
             )
             .await
             .unwrap();
@@ -498,6 +504,7 @@ fn replicate_with_snapshots() {
             "http://primary:8080",
             "",
             TurmoilConnector,
+            false,
         )
         .await
         .unwrap();
@@ -517,6 +524,48 @@ fn replicate_with_snapshots() {
                 .unwrap(),
             200
         );
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn read_your_writes() {
+    let mut sim = Builder::new().build();
+
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_host = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let client = Client::new();
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let path = tmp_embedded_path.join("embedded");
+        let db = Database::open_with_remote_sync_connector(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080",
+            "",
+            TurmoilConnector,
+            true,
+        )
+        .await?;
+
+        let conn = db.connect()?;
+
+        conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
+            .await?;
+
+        conn.execute("INSERT INTO user(id) VALUES (1)", ())
+            .await
+            .unwrap();
 
         Ok(())
     });

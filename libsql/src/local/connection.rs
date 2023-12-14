@@ -7,10 +7,10 @@ use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
 use crate::TransactionBehavior;
 
 use libsql_sys::ffi;
-use std::{ffi::c_int, sync::Arc};
+use std::{ffi::c_int, fmt, sync::Arc};
 
 /// A connection to a libSQL database.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Connection {
     pub(crate) raw: *mut ffi::sqlite3,
 
@@ -225,5 +225,11 @@ impl Connection {
     #[cfg(feature = "replication")]
     pub fn writer(&self) -> Option<&crate::replication::Writer> {
         self.writer.as_ref()
+    }
+}
+
+impl fmt::Debug for Connection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Connection").finish()
     }
 }
