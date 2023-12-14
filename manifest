@@ -1,5 +1,5 @@
-C Enhance\saggregate\sorder-by\sso\sthat\sit\stransmits\ssubtype\sinformation\sthrough\sthe\nsorter.\s\sFix\sfor\sthe\sdeficiency\sreported\sby\n[forum:/forumpost/87347ad2fb5a8f76|forum\spost\s87347ad2fb5a8f76].
-D 2023-12-14T15:11:39.232
+C Improve\sthe\serror\smessage\sreturned\sby\san\sfts5\s'rebuild'\scommand\son\san\sexternal\scontent\stable\sif\sthere\sis\sa\sproblem\swith\sthe\scontent\stable\sor\sview.
+D 2023-12-14T15:31:35.537
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -98,7 +98,7 @@ F ext/fts5/fts5_expr.c b1ec526371b9ffde82341423a5b9753c42cbea629a41b69f26fa377d1
 F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a0ec91b1
 F ext/fts5/fts5_index.c ed206045ff0f2226d870fa41fba45f738c0cc953ab74ba68477091b9a574ccd3
 F ext/fts5/fts5_main.c b908696c52410e8383019ac0657c8a5cd0c8f60e78edc169e9b3c4b93f24c933
-F ext/fts5/fts5_storage.c 5d10b9bdcce5b90656cad13c7d12ad4148677d4b9e3fca0481fca56d6601426d
+F ext/fts5/fts5_storage.c f9e31b0d155e9b2c92d5d3a09ad7a56b937fbf1c7f962e10f4ca6281349f3934
 F ext/fts5/fts5_tcl.c cf0fd0dbe64ec272491b749e0d594f563cda03336aeb60900129e6d18b0aefb8
 F ext/fts5/fts5_test_mi.c 08c11ec968148d4cb4119d96d819f8c1f329812c568bac3684f5464be177d3ee
 F ext/fts5/fts5_test_tok.c 3cb0a9b508b30d17ef025ccddd26ae3dc8ddffbe76c057616e59a9aa85d36f3b
@@ -135,7 +135,7 @@ F ext/fts5/test/fts5columnsize.test 45459ce4dd9fd853b6044cdc9674921bff89e3d840f3
 F ext/fts5/test/fts5config.test 60094712debc59286c59aef0e6cf511c37d866802776a825ce437d26afe0817f
 F ext/fts5/test/fts5conflict.test bf6030a77dbb1bedfcc42e589ed7980846c995765d77460551e448b56d741244
 F ext/fts5/test/fts5connect.test 08030168fc96fc278fa81f28654fb7e90566f33aff269c073e19b3ae9126b2f4
-F ext/fts5/test/fts5content.test 219a4e49386b9b197b9b7cadca97ea10ddff858ecd8b763a1cb8bb07575afc2a
+F ext/fts5/test/fts5content.test 282b373c58c8e798568ec2ced18b23f29bffa8d61317a0e51a035000ad6cd731
 F ext/fts5/test/fts5contentless.test 1cd1237894eeff11feb1ff8180044eac0b17dde22c181f7a722f2dcbfdb3377c
 F ext/fts5/test/fts5contentless2.test 14c83bdacf8230f5f7ca74ecf2926b87d8a7cb788a69ce9937020428ac4fe192
 F ext/fts5/test/fts5contentless3.test 353d871c5ea08992aed3e2ebda0b1bdc35116cd24fe330fe7cf05be1e2b49fd7
@@ -2153,9 +2153,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 56c80a62d2e033d64ba5d545ae9cbe3ed7c9d046c0a3fafb6cfa2f0b562d1ef0 3536f4030eab6d650b7ed729d2f71eb6cc3b5fbe16b4e96b99008d66522aaccb
-R a357e72346e8e28e4704317786acd8b6
-T +closed 3536f4030eab6d650b7ed729d2f71eb6cc3b5fbe16b4e96b99008d66522aaccb
-U drh
-Z 5db0e9f6ed931739d68be6389c9135e2
+P d302a389460d0c15775a8b5f5afbac2c1d8a91bc282bc9b04c583ca04a8c09c6
+R f189902254bb18753480255d64c90698
+U dan
+Z a26bc23a688b8f3ee065a8250ea163d3
 # Remove this line to create a well-formed Fossil manifest.
