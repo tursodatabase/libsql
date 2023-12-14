@@ -6821,6 +6821,8 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
               }else{
                 pItem->bOBPayload = 1;
               }
+              pItem->bUseSubtype =
+                    (pItem->pFunc->funcFlags & SQLITE_SUBTYPE)!=0;
             }else{
               pItem->iOBTab = -1;
             }

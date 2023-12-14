@@ -6659,6 +6659,7 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
       assert( pFunc->pFExpr->pLeft!=0 );
       assert( pFunc->pFExpr->pLeft->op==TK_ORDER );
       assert( ExprUseXList(pFunc->pFExpr->pLeft) );
+      assert( pFunc->pFunc!=0 );
       pOBList = pFunc->pFExpr->pLeft->x.pList;
       if( !pFunc->bOBUnique ){
         nExtra++;  /* One extra column for the OP_Sequence */
@@ -6666,6 +6667,9 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
       if( pFunc->bOBPayload ){
         /* extra columns for the function arguments */
         assert( ExprUseXList(pFunc->pFExpr) );
+        nExtra += pFunc->pFExpr->x.pList->nExpr;
+      }
+      if( pFunc->bUseSubtype ){
         nExtra += pFunc->pFExpr->x.pList->nExpr;
       }
       pKeyInfo = sqlite3KeyInfoFromExprList(pParse, pOBList, 0, nExtra);
@@ -6694,16 +6698,17 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
     assert( ExprUseXList(pF->pFExpr) );
     pList = pF->pFExpr->x.pList;
     if( pF->iOBTab>=0 ){
-      /* For an ORDER BY aggregate, calls to OP_AggStep where deferred and
-      ** all content was stored in emphermal table pF->iOBTab.  Extract that
-      ** content now (in ORDER BY order) and make all calls to OP_AggStep
+      /* For an ORDER BY aggregate, calls to OP_AggStep were deferred.  Inputs
+      ** were stored in emphermal table pF->iOBTab.  Here, we extract those
+      ** inputs (in ORDER BY order) and make all calls to OP_AggStep
       ** before doing the OP_AggFinal call. */
       int iTop;        /* Start of loop for extracting columns */
       int nArg;        /* Number of columns to extract */
       int nKey;        /* Key columns to be skipped */
       int regAgg;      /* Extract into this array */
       int j;           /* Loop counter */
-      
+     
+      assert( pF->pFunc!=0 );
       nArg = pList->nExpr;
       regAgg = sqlite3GetTempRange(pParse, nArg);
 
@@ -6719,6 +6724,15 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
       iTop = sqlite3VdbeAddOp1(v, OP_Rewind, pF->iOBTab); VdbeCoverage(v);
       for(j=nArg-1; j>=0; j--){
         sqlite3VdbeAddOp3(v, OP_Column, pF->iOBTab, nKey+j, regAgg+j);
+      }
+      if( pF->bUseSubtype ){
+        int regSubtype = sqlite3GetTempReg(pParse);
+        int iBaseCol = nKey + nArg + (pF->bOBPayload==0 && pF->bOBUnique==0);
+        for(j=nArg-1; j>=0; j--){
+          sqlite3VdbeAddOp3(v, OP_Column, pF->iOBTab, iBaseCol+j, regSubtype);
+          sqlite3VdbeAddOp2(v, OP_SetSubtype, regSubtype, regAgg+j);
+        }
+        sqlite3ReleaseTempReg(pParse, regSubtype);
       }
       sqlite3VdbeAddOp3(v, OP_AggStep, 0, regAgg, AggInfoFuncReg(pAggInfo,i));
       sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
@@ -6774,6 +6788,7 @@ static void updateAccumulator(
     ExprList *pList;
     assert( ExprUseXList(pF->pFExpr) );
     assert( !IsWindowFunc(pF->pFExpr) );
+    assert( pF->pFunc!=0 );
     pList = pF->pFExpr->x.pList;
     if( ExprHasProperty(pF->pFExpr, EP_WinFunc) ){
       Expr *pFilter = pF->pFExpr->y.pWin->pFilter;
@@ -6818,6 +6833,9 @@ static void updateAccumulator(
       if( pF->bOBPayload ){
         regAggSz += nArg;
       }
+      if( pF->bUseSubtype ){
+        regAggSz += nArg;
+      }
       regAggSz++;  /* One extra register to hold result of MakeRecord */
       regAgg = sqlite3GetTempRange(pParse, regAggSz);
       regDistinct = regAgg;
@@ -6830,6 +6848,14 @@ static void updateAccumulator(
       if( pF->bOBPayload ){
         regDistinct = regAgg+jj;
         sqlite3ExprCodeExprList(pParse, pList, regDistinct, 0, SQLITE_ECEL_DUP);
+        jj += nArg;
+      }
+      if( pF->bUseSubtype ){
+        int kk;
+        int regBase = pF->bOBPayload ? regDistinct : regAgg;
+        for(kk=0; kk<nArg; kk++, jj++){
+          sqlite3VdbeAddOp2(v, OP_GetSubtype, regBase+kk, regAgg+jj);
+        }
       }
     }else if( pList ){
       nArg = pList->nExpr;

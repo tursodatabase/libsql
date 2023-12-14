@@ -2866,6 +2866,7 @@ struct AggInfo {
     int iOBTab;              /* Ephemeral table to implement ORDER BY */
     u8 bOBPayload;           /* iOBTab has payload columns separate from key */
     u8 bOBUnique;            /* Enforce uniqueness on iOBTab keys */
+    u8 bUseSubtype;          /* Transfer subtype info through sorter */
   } *aFunc;
   int nFunc;              /* Number of entries in aFunc[] */
   u32 selId;              /* Select to which this AggInfo belongs */

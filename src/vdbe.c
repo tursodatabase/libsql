@@ -8674,6 +8674,42 @@ case OP_ClrSubtype: {   /* in1 */
   break;
 }
 
+/* Opcode: GetSubtype P1 P2 * * *
+** Synopsis:  r[P2] = r[P1].subtype
+**
+** Extract the subtype value from register P1 and write that subtype
+** into register P2.  If P1 has no subtype, then P1 gets a NULL.
+*/
+case OP_GetSubtype: {   /* in1 out2 */
+  pIn1 = &aMem[pOp->p1];
+  pOut = &aMem[pOp->p2];
+  if( pIn1->flags & MEM_Subtype ){
+    sqlite3VdbeMemSetInt64(pOut, pIn1->eSubtype);
+  }else{
+    sqlite3VdbeMemSetNull(pOut);
+  }
+  break;
+}
+
+/* Opcode: SetSubtype P1 P2 * * *
+** Synopsis:  r[P2].subtype = r[P1]
+**
+** Set the subtype value of register P2 to the integer from register P1.
+** If P1 is NULL, clear the subtype from p2.
+*/
+case OP_SetSubtype: {   /* in1 out2 */
+  pIn1 = &aMem[pOp->p1];
+  pOut = &aMem[pOp->p2];
+  if( pIn1->flags & MEM_Null ){
+    pOut->flags &= ~MEM_Subtype;
+  }else{
+    assert( pIn1->flags & MEM_Int );
+    pOut->flags |= MEM_Subtype;
+    pOut->eSubtype = (u8)(pIn1->u.i & 0xff);
+  }
+  break;
+}
+
 /* Opcode: FilterAdd P1 * P3 P4 *
 ** Synopsis: filter(P1) += key(P3@P4)
 **
