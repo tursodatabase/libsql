@@ -1535,7 +1535,7 @@ json_parse_restart:
         break;
       }else{
         if( jsonIsspace(z[j]) ){
-          j += 1 + strspn(&z[j+1], jsonSpaces);
+          j += 1 + (u32)strspn(&z[j+1], jsonSpaces);
           if( z[j]==',' ){
             continue;
           }else if( z[j]=='}' ){
@@ -1587,7 +1587,7 @@ json_parse_restart:
         break;
       }else{
         if( jsonIsspace(z[j]) ){
-          j += 1 + strspn(&z[j+1], jsonSpaces);
+          j += 1 + (u32)strspn(&z[j+1], jsonSpaces);
           if( z[j]==',' ){
             continue;
           }else if( z[j]==']' ){
@@ -1850,7 +1850,7 @@ json_parse_restart:
   case 0x0a:
   case 0x0d:
   case 0x20: {
-    i += 1 + strspn(&z[i+1], jsonSpaces);
+    i += 1 + (u32)strspn(&z[i+1], jsonSpaces);
     goto json_parse_restart;
   }
   case 0x0b:
