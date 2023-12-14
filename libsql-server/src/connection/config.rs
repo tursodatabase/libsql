@@ -14,6 +14,8 @@ pub struct DatabaseConfig {
     pub heartbeat_url: Option<Url>,
     pub bottomless_db_id: Option<String>,
     pub jwt_key: Option<String>,
+    #[serde(default)]
+    pub allow_attach: bool,
 }
 
 const fn default_max_size() -> u64 {
@@ -30,6 +32,7 @@ impl Default for DatabaseConfig {
             heartbeat_url: None,
             bottomless_db_id: None,
             jwt_key: None,
+            allow_attach: false,
         }
     }
 }
@@ -47,6 +50,7 @@ impl From<&metadata::DatabaseConfig> for DatabaseConfig {
                 .map(|s| Url::parse(&s).unwrap()),
             bottomless_db_id: value.bottomless_db_id.clone(),
             jwt_key: value.jwt_key.clone(),
+            allow_attach: value.allow_attach,
         }
     }
 }
@@ -61,6 +65,7 @@ impl From<&DatabaseConfig> for metadata::DatabaseConfig {
             heartbeat_url: value.heartbeat_url.as_ref().map(|s| s.to_string()),
             bottomless_db_id: value.bottomless_db_id.clone(),
             jwt_key: value.jwt_key.clone(),
+            allow_attach: value.allow_attach,
         }
     }
 }

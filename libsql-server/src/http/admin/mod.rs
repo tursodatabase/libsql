@@ -192,6 +192,7 @@ async fn handle_get_config<M: MakeNamespace, C: Connector>(
         max_db_size: Some(max_db_size),
         heartbeat_url: config.heartbeat_url.clone().map(|u| u.into()),
         jwt_key: config.jwt_key.clone(),
+        allow_attach: config.allow_attach,
     };
 
     Ok(Json(resp))
@@ -236,6 +237,8 @@ struct HttpDatabaseConfig {
     heartbeat_url: Option<String>,
     #[serde(default)]
     jwt_key: Option<String>,
+    #[serde(default)]
+    allow_attach: bool,
 }
 
 async fn handle_post_config<M: MakeNamespace, C>(
@@ -255,6 +258,7 @@ async fn handle_post_config<M: MakeNamespace, C>(
     config.block_reads = req.block_reads;
     config.block_writes = req.block_writes;
     config.block_reason = req.block_reason;
+    config.allow_attach = req.allow_attach;
     if let Some(size) = req.max_db_size {
         config.max_db_pages = size.as_u64() / LIBSQL_PAGE_SIZE;
     }

@@ -137,6 +137,45 @@ fn meta_store() {
             foo_conn.execute("select 1", ()).await.unwrap();
         }
 
+        // STEP 4: try attaching a database
+        {
+            let foo = Database::open_remote_with_connector(
+                "http://foo.primary:8080",
+                "",
+                TurmoilConnector,
+            )?;
+            let foo_conn = foo.connect()?;
+
+            foo_conn.execute("attach foo as foo", ()).await.unwrap_err();
+        }
+
+        // STEP 5: update config to allow attaching databases
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/foo/config",
+                json!({
+                    "block_reads": false,
+                    "block_writes": false,
+                    "allow_attach": true,
+                }),
+            )
+            .await?;
+
+        {
+            let foo = Database::open_remote_with_connector(
+                "http://foo.primary:8080",
+                "",
+                TurmoilConnector,
+            )?;
+            let foo_conn = foo.connect()?;
+
+            foo_conn.execute("attach foo as foo", ()).await.unwrap();
+            foo_conn
+                .execute("select * from foo.sqlite_master", ())
+                .await
+                .unwrap();
+        }
+
         Ok(())
     });
 

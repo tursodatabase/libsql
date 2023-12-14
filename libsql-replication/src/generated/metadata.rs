@@ -19,4 +19,6 @@ pub struct DatabaseConfig {
     pub bottomless_db_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "7")]
     pub jwt_key: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, tag = "8", default = "false")]
+    pub allow_attach: bool,
 }
