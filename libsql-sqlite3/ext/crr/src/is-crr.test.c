@@ -12,7 +12,8 @@ static void testTableIsNotCrr() {
   int rc;
   rc = sqlite3_open(":memory:", &db);
 
-  rc = sqlite3_exec(db, "CREATE TABLE foo (a PRIMARY KEY, b)", 0, 0, 0);
+  rc =
+      sqlite3_exec(db, "CREATE TABLE foo (a PRIMARY KEY NOT NULL, b)", 0, 0, 0);
   assert(rc == SQLITE_OK);
   assert(crsql_is_crr(db, "foo") == 0);
 
@@ -26,7 +27,8 @@ static void testCrrIsCrr() {
   int rc;
   rc = sqlite3_open(":memory:", &db);
 
-  rc = sqlite3_exec(db, "CREATE TABLE foo (a PRIMARY KEY, b)", 0, 0, 0);
+  rc =
+      sqlite3_exec(db, "CREATE TABLE foo (a PRIMARY KEY NOT NULL, b)", 0, 0, 0);
   assert(rc == SQLITE_OK);
   rc = sqlite3_exec(db, "SELECT crsql_as_crr('foo')", 0, 0, 0);
   assert(rc == SQLITE_OK);
@@ -43,7 +45,8 @@ static void testDestroyedCrrIsNotCrr() {
   int rc;
   rc = sqlite3_open(":memory:", &db);
 
-  rc = sqlite3_exec(db, "CREATE TABLE foo (a PRIMARY KEY, b)", 0, 0, 0);
+  rc =
+      sqlite3_exec(db, "CREATE TABLE foo (a PRIMARY KEY NOT NULL, b)", 0, 0, 0);
   assert(rc == SQLITE_OK);
   rc = sqlite3_exec(db, "SELECT crsql_as_crr('foo')", 0, 0, 0);
   assert(rc == SQLITE_OK);

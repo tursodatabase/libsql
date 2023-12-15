@@ -33,9 +33,8 @@ static void textNewExtData() {
   assert(pExtData->siteId != 0);
   // no db version extraction yet
   assert(pExtData->pDbVersionStmt == 0);
-  // no table info allocation yet
-  assert(pExtData->zpTableInfos == 0);
-  assert(pExtData->tableInfosLen == 0);
+  // table info allocated to an empty vec
+  assert(pExtData->tableInfos != 0);
 
   // data version should have been fetched
   assert(pExtData->pragmaDataVersion != -1);
@@ -214,79 +213,26 @@ static void testRecreateDbVersionStmt() {
   unsigned char *siteIdBuffer = sqlite3_malloc(SITE_ID_LEN * sizeof(char *));
   crsql_ExtData *pExtData = crsql_newExtData(db, siteIdBuffer);
 
-  rc = crsql_recreateDbVersionStmt(db, pExtData);
+  rc = crsql_recreate_db_version_stmt(db, pExtData);
 
   // there are no clock tables yet. nothing to create.
   assert(rc == -1);
   assert(pExtData->pDbVersionStmt == 0);
 
-  sqlite3_exec(db, "CREATE TABLE foo (a primary key, b);", 0, 0, 0);
+  sqlite3_exec(db, "CREATE TABLE foo (a primary key not null, b);", 0, 0, 0);
   sqlite3_exec(db, "SELECT crsql_as_crr('foo')", 0, 0, 0);
 
-  rc = crsql_recreateDbVersionStmt(db, pExtData);
+  rc = crsql_recreate_db_version_stmt(db, pExtData);
   assert(rc == 0);
   assert(pExtData->pDbVersionStmt != 0);
 
   // recreating while a created statement exists isn't an error
-  rc = crsql_recreateDbVersionStmt(db, pExtData);
+  rc = crsql_recreate_db_version_stmt(db, pExtData);
   assert(rc == 0);
   assert(pExtData->pDbVersionStmt != 0);
 
   crsql_finalize(pExtData);
   assert(pExtData->pDbVersionStmt == 0);
-  crsql_freeExtData(pExtData);
-  crsql_close(db);
-  printf("\t\e[0;32mSuccess\e[0m\n");
-}
-
-static void fetchDbVersionFromStorage() {
-  printf("FetchDBVersionFromStorage\n");
-  sqlite3 *db;
-  int rc;
-  char *errmsg;
-  rc = sqlite3_open(":memory:", &db);
-  unsigned char *siteIdBuffer = sqlite3_malloc(SITE_ID_LEN * sizeof(char *));
-  crsql_ExtData *pExtData = crsql_newExtData(db, siteIdBuffer);
-
-  rc = crsql_fetchDbVersionFromStorage(db, pExtData, &errmsg);
-  // no clock tables, no version.
-  assert(pExtData->dbVersion == 0);
-  assert(rc == SQLITE_OK);
-
-  // this was a bug where calling twice on a fresh db would fail the second
-  // time.
-  rc = crsql_fetchDbVersionFromStorage(db, pExtData, &errmsg);
-  // should still return same data on a subsequent call with no schema changes
-  assert(pExtData->dbVersion == 0);
-  assert(rc == SQLITE_OK);
-
-  // create some schemas
-  sqlite3_exec(db, "CREATE TABLE foo (a primary key, b);", 0, 0, 0);
-  sqlite3_exec(db, "SELECT crsql_as_crr('foo')", 0, 0, 0);
-  // still v0 since no rows are inserted
-  rc = crsql_fetchDbVersionFromStorage(db, pExtData, &errmsg);
-  assert(pExtData->dbVersion == 0);
-  assert(rc == SQLITE_OK);
-
-  // version is bumped due to insert
-  sqlite3_exec(db, "INSERT INTO foo VALUES (1, 2)", 0, 0, 0);
-  rc = crsql_fetchDbVersionFromStorage(db, pExtData, &errmsg);
-  assert(pExtData->dbVersion == 1);
-  assert(rc == SQLITE_OK);
-
-  sqlite3_exec(db, "CREATE TABLE bar (a primary key, b);", 0, 0, 0);
-  sqlite3_exec(db, "SELECT crsql_as_crr('bar')", 0, 0, 0);
-  sqlite3_exec(db, "INSERT INTO bar VALUES (1, 2)", 0, 0, 0);
-  // we catch the schema change and get a version from the new table
-  rc = crsql_fetchDbVersionFromStorage(db, pExtData, &errmsg);
-  assert(pExtData->dbVersion == 2);
-  assert(rc == SQLITE_OK);
-
-  rc = crsql_fetchDbVersionFromStorage(db, pExtData, &errmsg);
-  assert(pExtData->dbVersion == 2);
-  assert(rc == SQLITE_OK);
-
-  crsql_finalize(pExtData);
   crsql_freeExtData(pExtData);
   crsql_close(db);
   printf("\t\e[0;32mSuccess\e[0m\n");
@@ -299,6 +245,5 @@ void crsqlExtDataTestSuite() {
   testFinalize();
   testFetchPragmaSchemaVersion();
   testRecreateDbVersionStmt();
-  fetchDbVersionFromStorage();
   testFetchPragmaDataVersion();
 }

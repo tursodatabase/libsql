@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "consts.h"
 #include "crsqlite.h"
 
 int crsql_close(sqlite3 *db);
@@ -23,8 +24,8 @@ int crsql_close(sqlite3 *db);
 //   int rc;
 //   rc = sqlite3_open(":memory:", &db);
 
-//   rc = sqlite3_exec(db, "CREATE TABLE foo (a primary key, b);", 0, 0, 0);
-//   rc += sqlite3_exec(db, "SELECT crsql_as_crr('foo');", 0, 0, 0);
+//   rc = sqlite3_exec(db, "CREATE TABLE foo (a primary key not null, b);", 0,
+//   0, 0); rc += sqlite3_exec(db, "SELECT crsql_as_crr('foo');", 0, 0, 0);
 //   assert(rc == SQLITE_OK);
 
 //   char *zSql =
@@ -54,7 +55,8 @@ static void testRowidsForReads() {
   int rc;
   rc = sqlite3_open(":memory:", &db);
 
-  rc = sqlite3_exec(db, "CREATE TABLE foo (a primary key, b);", 0, 0, 0);
+  rc = sqlite3_exec(db, "CREATE TABLE foo (a primary key not null, b);", 0, 0,
+                    0);
   rc += sqlite3_exec(db, "SELECT crsql_as_crr('foo');", 0, 0, 0);
   assert(rc == SQLITE_OK);
   sqlite3_exec(db, "INSERT INTO foo VALUES (1,2);", 0, 0, 0);
@@ -70,12 +72,14 @@ static void testRowidsForReads() {
   assert(sqlite3_column_int64(pStmt, 0) == 2);
   sqlite3_finalize(pStmt);
 
-  rc = sqlite3_exec(db, "CREATE TABLE bar (a primary key, b)", 0, 0, 0);
+  rc =
+      sqlite3_exec(db, "CREATE TABLE bar (a primary key not null, b)", 0, 0, 0);
   rc += sqlite3_exec(db, "SELECT crsql_as_crr('bar');", 0, 0, 0);
   rc += sqlite3_exec(db, "INSERT INTO bar VALUES (1,2);", 0, 0, 0);
   rc += sqlite3_exec(db, "INSERT INTO bar VALUES (2,3);", 0, 0, 0);
 
-  rc += sqlite3_exec(db, "CREATE TABLE baz (a primary key, b)", 0, 0, 0);
+  rc +=
+      sqlite3_exec(db, "CREATE TABLE baz (a primary key not null, b)", 0, 0, 0);
   rc += sqlite3_exec(db, "SELECT crsql_as_crr('baz');", 0, 0, 0);
   rc += sqlite3_exec(db, "INSERT INTO baz VALUES (1,2);", 0, 0, 0);
   rc += sqlite3_exec(db, "INSERT INTO baz VALUES (2,3);", 0, 0, 0);

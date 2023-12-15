@@ -4,7 +4,6 @@ use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use bytes::{Buf, BufMut};
-use core::slice;
 #[cfg(not(feature = "std"))]
 use num_traits::FromPrimitive;
 use sqlite_nostd as sqlite;
@@ -185,7 +184,7 @@ pub fn unpack_columns(data: &[u8]) -> Result<Vec<ColumnValue>, ResultCode> {
 
 pub fn bind_package_to_stmt(
     stmt: *mut sqlite::stmt,
-    values: &Vec<crate::ColumnValue>,
+    values: &Vec<ColumnValue>,
     offset: usize,
 ) -> Result<ResultCode, ResultCode> {
     for (i, val) in values.iter().enumerate() {

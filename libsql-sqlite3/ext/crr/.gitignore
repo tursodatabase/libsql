@@ -5,3 +5,4 @@ dbg/
 dist-ios/
 dist-ios-sim/
 dist-macos/
+test_leak_condition

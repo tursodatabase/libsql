@@ -7,8 +7,6 @@
 
 #include "consts.h"
 #include "rust.h"
-#include "tableinfo.h"
-#include "util.h"
 
 #ifndef CHECK_OK
 #define CHECK_OK         \
@@ -81,57 +79,11 @@ int syncLeftToRight(sqlite3 *db1, sqlite3 *db2, sqlite3_int64 since) {
   return SQLITE_OK;
 }
 
-static void testCreateClockTable() {
-  printf("CreateClockTable\n");
-
-  sqlite3 *db;
-  int rc;
-  crsql_TableInfo *tc1;
-  crsql_TableInfo *tc2;
-  crsql_TableInfo *tc3;
-  crsql_TableInfo *tc4;
-  char *err = 0;
-
-  rc = sqlite3_open(":memory:", &db);
-  sqlite3_exec(db, "CREATE TABLE foo (a, b, primary key (a, b))", 0, 0, 0);
-  sqlite3_exec(db, "CREATE TABLE bar (a primary key)", 0, 0, 0);
-  sqlite3_exec(db, "CREATE TABLE baz (a primary key, b)", 0, 0, 0);
-  sqlite3_exec(db, "CREATE TABLE boo (a primary key, b, c)", 0, 0, 0);
-
-  rc = crsql_getTableInfo(db, "foo", &tc1, &err);
-  CHECK_OK
-  rc = crsql_getTableInfo(db, "bar", &tc2, &err);
-  CHECK_OK
-  rc = crsql_getTableInfo(db, "baz", &tc3, &err);
-  CHECK_OK
-  rc = crsql_getTableInfo(db, "boo", &tc4, &err);
-  CHECK_OK
-
-  rc = crsql_create_clock_table(db, tc1, &err);
-  CHECK_OK
-  rc = crsql_create_clock_table(db, tc2, &err);
-  CHECK_OK
-  rc = crsql_create_clock_table(db, tc3, &err);
-  CHECK_OK
-  rc = crsql_create_clock_table(db, tc4, &err);
-  CHECK_OK
-
-  crsql_freeTableInfo(tc1);
-  crsql_freeTableInfo(tc2);
-  crsql_freeTableInfo(tc3);
-  crsql_freeTableInfo(tc4);
-
-  // TODO: check that the tables have the expected schema
-
-  printf("\t\e[0;32mSuccess\e[0m\n");
-  crsql_close(db);
-  return;
-
-fail:
-  printf("err: %s %d\n", err, rc);
-  sqlite3_free(err);
-  crsql_close(db);
-  assert(rc == SQLITE_OK);
+static char *crsql_strdup(const char *s) {
+  size_t l = strlen(s);
+  char *d = sqlite3_malloc(l + 1);
+  if (!d) return NULL;
+  return memcpy(d, s, l + 1);
 }
 
 static char *getQuotedSiteId(sqlite3 *db) {
@@ -152,7 +104,8 @@ static char *getQuotedSiteId(sqlite3 *db) {
 
 static int createSimpleSchema(sqlite3 *db, char **err) {
   int rc = SQLITE_OK;
-  rc += sqlite3_exec(db, "create table foo (a primary key, b);", 0, 0, err);
+  rc += sqlite3_exec(db, "create table foo (a primary key not null, b);", 0, 0,
+                     err);
   rc += sqlite3_exec(db, "select crsql_as_crr('foo');", 0, 0, err);
 
   return rc;
@@ -280,11 +233,11 @@ static void teste2e() {
   // printf("db2sid: %s\n", db2siteid);
   // printf("db3sid: %s\n", db3siteid);
   // printf("tempsid: %s\n", tmpSiteid);
-  assert(strcmp(tmpSiteid, "NULL") == 0);
+  assert(strcmp(tmpSiteid, db1siteid) == 0);
 
   rc = sqlite3_step(pStmt3);
   assert(rc == SQLITE_ROW);
-  assert(strcmp((const char *)sqlite3_column_text(pStmt3, 0), "NULL") == 0);
+  assert(strcmp((const char *)sqlite3_column_text(pStmt3, 0), db1siteid) == 0);
   sqlite3_finalize(pStmt3);
 
   rc = sqlite3_prepare_v2(db2, "SELECT * FROM foo ORDER BY a ASC", -1, &pStmt2,
@@ -332,7 +285,8 @@ static void testSelectChangesAfterChangingColumnName() {
   sqlite3_stmt *pStmt = 0;
   rc = sqlite3_open(":memory:", &db);
 
-  rc += sqlite3_exec(db, "CREATE TABLE foo(a primary key, b);", 0, 0, 0);
+  rc +=
+      sqlite3_exec(db, "CREATE TABLE foo(a primary key not null, b);", 0, 0, 0);
   rc += sqlite3_exec(db, "SELECT crsql_as_crr('foo')", 0, 0, 0);
   assert(rc == SQLITE_OK);
 
@@ -417,10 +371,10 @@ static void testSelectChangesAfterChangingColumnName() {
 //   rc = sqlite3_open(":memory:", &db1);
 //   rc += sqlite3_open(":memory:", &db2);
 
-//   rc += sqlite3_exec(db1, "CREATE TABLE foo(a primary key, b);", 0, 0, 0);
-//   rc += sqlite3_exec(db1, "SELECT crsql_as_crr('foo')", 0, 0, 0);
-//   rc += sqlite3_exec(db2, "CREATE TABLE foo(a primary key, c);", 0, 0, 0);
-//   rc += sqlite3_exec(db2, "SELECT crsql_as_crr('foo')", 0, 0, 0);
+//   rc += sqlite3_exec(db1, "CREATE TABLE foo(a primary key not null, b);", 0,
+//   0, 0); rc += sqlite3_exec(db1, "SELECT crsql_as_crr('foo')", 0, 0, 0); rc
+//   += sqlite3_exec(db2, "CREATE TABLE foo(a primary key not null, c);", 0, 0,
+//   0); rc += sqlite3_exec(db2, "SELECT crsql_as_crr('foo')", 0, 0, 0);
 //   assert(rc == SQLITE_OK);
 
 //   rc += sqlite3_exec(db1, "INSERT INTO foo VALUES (1, 2);", 0, 0, 0);
@@ -499,9 +453,11 @@ static void testLamportCondition() {
   rc += sqlite3_open(":memory:", &db2);
 
   rc += sqlite3_exec(
-      db1, "CREATE TABLE \"hoot\" (\"a\", \"b\" primary key, \"c\")", 0, 0, 0);
+      db1, "CREATE TABLE \"hoot\" (\"a\", \"b\" primary key not null, \"c\")",
+      0, 0, 0);
   rc += sqlite3_exec(
-      db2, "CREATE TABLE \"hoot\" (\"a\", \"b\" primary key, \"c\")", 0, 0, 0);
+      db2, "CREATE TABLE \"hoot\" (\"a\", \"b\" primary key not null, \"c\")",
+      0, 0, 0);
   rc += sqlite3_exec(db1, "SELECT crsql_as_crr('hoot');", 0, 0, 0);
   rc += sqlite3_exec(db2, "SELECT crsql_as_crr('hoot');", 0, 0, 0);
   assert(rc == SQLITE_OK);
@@ -555,10 +511,14 @@ static void noopsDoNotMoveClocks() {
   rc += sqlite3_open(":memory:", &db1);
   rc += sqlite3_open(":memory:", &db2);
 
+  // swap dbs based on site id compare to make it a noop.
+
   rc += sqlite3_exec(
-      db1, "CREATE TABLE \"hoot\" (\"a\", \"b\" primary key, \"c\")", 0, 0, 0);
+      db1, "CREATE TABLE \"hoot\" (\"a\", \"b\" primary key not null, \"c\")",
+      0, 0, 0);
   rc += sqlite3_exec(
-      db2, "CREATE TABLE \"hoot\" (\"a\", \"b\" primary key, \"c\")", 0, 0, 0);
+      db2, "CREATE TABLE \"hoot\" (\"a\", \"b\" primary key not null, \"c\")",
+      0, 0, 0);
   rc += sqlite3_exec(db1, "SELECT crsql_as_crr('hoot');", 0, 0, 0);
   rc += sqlite3_exec(db2, "SELECT crsql_as_crr('hoot');", 0, 0, 0);
   assert(rc == SQLITE_OK);
@@ -606,8 +566,8 @@ static void testPullingOnlyLocalChanges() {
   int rc = SQLITE_OK;
 
   rc = sqlite3_open(":memory:", &db);
-  rc +=
-      sqlite3_exec(db, "CREATE TABLE node (id primary key, content)", 0, 0, 0);
+  rc += sqlite3_exec(db, "CREATE TABLE node (id primary key not null, content)",
+                     0, 0, 0);
   rc += sqlite3_exec(db, "SELECT crsql_as_crr('node')", 0, 0, 0);
   rc += sqlite3_exec(db, "INSERT INTO node VALUES (1, 'some str')", 0, 0, 0);
   rc += sqlite3_exec(db, "INSERT INTO node VALUES (2, 'other str')", 0, 0, 0);
@@ -617,9 +577,9 @@ static void testPullingOnlyLocalChanges() {
   // TODO: why does `IS NULL` not work in the vtab???
   // `IS NOT NULL` also fails to call the virtual table bestIndex function with
   // any constraints p pIdxInfo->nConstraint
-  sqlite3_prepare_v2(db,
-                     "SELECT count(*) FROM crsql_changes WHERE site_id IS NULL",
-                     -1, &pStmt, 0);
+  sqlite3_prepare_v2(
+      db, "SELECT count(*) FROM crsql_changes WHERE site_id IS crsql_site_id()",
+      -1, &pStmt, 0);
 
   rc = sqlite3_step(pStmt);
   assert(rc == SQLITE_ROW);
@@ -632,8 +592,9 @@ static void testPullingOnlyLocalChanges() {
   sqlite3_finalize(pStmt);
 
   sqlite3_prepare_v2(
-      db, "SELECT count(*) FROM crsql_changes WHERE site_id IS NOT NULL", -1,
-      &pStmt, 0);
+      db,
+      "SELECT count(*) FROM crsql_changes WHERE site_id IS NOT crsql_site_id()",
+      -1, &pStmt, 0);
   rc = sqlite3_step(pStmt);
   assert(rc == SQLITE_ROW);
   count = sqlite3_column_int(pStmt, 0);
@@ -657,7 +618,7 @@ static void testPullingOnlyLocalChanges() {
 void crsqlTestSuite() {
   printf("\e[47m\e[1;30mSuite: crsql\e[0m\n");
 
-  testCreateClockTable();
+  // testCreateClockTable();
   teste2e();
   testSelectChangesAfterChangingColumnName();
   // testInsertChangesWithUnkownColumnNames();

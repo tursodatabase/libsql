@@ -8,7 +8,7 @@ license = "Apache 2"
 
 [lib]
 name = "crsql_bundle"
-crate-type = ["staticlib"]
+crate-type = ["rlib"]
 
 # "cdylib" <-- only enable cdylib if loadable_extension is enabled
 
@@ -24,6 +24,8 @@ panic = "abort"
 panic = "abort"
 
 [features]
+test = ["crsql_core/test"]
+libsql = ["crsql_core/libsql"]
 loadable_extension = [
   "sqlite_nostd/loadable_extension",
   "crsql_fractindex_core/loadable_extension",

@@ -15,8 +15,10 @@ static void testSandbox() {
   rc = sqlite3_open(":memory:", &db1);
   rc += sqlite3_open(":memory:", &db2);
 
-  rc += sqlite3_exec(db1, "CREATE TABLE foo (a primary key);", 0, 0, 0);
-  rc += sqlite3_exec(db2, "CREATE TABLE foo (a primary key);", 0, 0, 0);
+  rc +=
+      sqlite3_exec(db1, "CREATE TABLE foo (a primary key not null);", 0, 0, 0);
+  rc +=
+      sqlite3_exec(db2, "CREATE TABLE foo (a primary key not null);", 0, 0, 0);
   rc += sqlite3_exec(db1, "SELECT crsql_as_crr('foo')", 0, 0, 0);
   rc += sqlite3_exec(db2, "SELECT crsql_as_crr('foo')", 0, 0, 0);
   rc += sqlite3_exec(db1, "INSERT INTO foo VALUES (1)", 0, 0, 0);

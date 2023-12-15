@@ -1,5 +1,29 @@
 # @vlcn.io/crsqlite
 
+## 0.16.0-next.2
+
+### Patch Changes
+
+- fix error where separate connections would not report the correct db version
+
+## 0.16.0-next.1
+
+### Patch Changes
+
+- prepare `tables_used` query, correctly unzip native library from pre-builds
+
+## 0.16.0-next.0
+
+### Minor Changes
+
+- v0.16.0-next
+
+## 0.15.1
+
+### Patch Changes
+
+- c113d8c: ensure statements are finalized when closing db, allow automigrating fractindex tables, fractindex w/o list columns fix
+
 ## 0.15.1-next.0
 
 ### Patch Changes

@@ -11,7 +11,8 @@ static sqlite3 *createDb() {
   int rc = SQLITE_OK;
   sqlite3 *db;
   rc = sqlite3_open(":memory:", &db);
-  rc += sqlite3_exec(db, "CREATE TABLE foo (a primary key, b)", 0, 0, 0);
+  rc +=
+      sqlite3_exec(db, "CREATE TABLE foo (a primary key not null, b)", 0, 0, 0);
   rc += sqlite3_exec(db, "SELECT crsql_as_crr('foo')", 0, 0, 0);
   assert(rc == SQLITE_OK);
   return db;
@@ -325,7 +326,7 @@ static void testValueWin() {
   rc = sqlite3_exec(db, "BEGIN", 0, 0, 0);
   rc += sqlite3_exec(db,
                      "INSERT INTO crsql_changes VALUES ('foo', X'010901', 'b', "
-                     "3, 1, 1, NULL, 1, 1)",
+                     "3, 1, 1, X'00000000000000000000000000000000', 1, 1)",
                      0, 0, &err);
   sqlite3_prepare_v2(db, "SELECT crsql_rows_impacted()", -1, &pStmt, 0);
   sqlite3_step(pStmt);
