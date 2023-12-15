@@ -1,5 +1,5 @@
-C Avoid\srunning\sthe\s"no_mutex_try"\stests\swith\sSQLITE_ENABLE_SETLK_TIMEOUT\sbuilds\sas\spart\sof\sthe\srelease\stest.
-D 2023-12-15T14:33:50.141
+C Do\snot\srun\stest\sscript\sfts5origintest4.test\swith\seither\s"memsubsys1"\sor\s"mmap"\spermutations.
+D 2023-12-15T15:17:39.739
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -194,7 +194,7 @@ F ext/fts5/test/fts5optimize3.test bf9c91bb927d0fb2b9a06318a217a0419183ac5913842
 F ext/fts5/test/fts5origintext.test d2796fa08ee7aecfabdc0c45bb8a2fb16a00ea8757e63fbc153b718dbe430a39
 F ext/fts5/test/fts5origintext2.test f3b9436de540828d01f0672df855b09ebc0863e126d5b56234701d71dfa73634
 F ext/fts5/test/fts5origintext3.test 0d25933506600452a5ab3873cbb418ed5f2de2446c3672b9997b1ea104b0e7f0
-F ext/fts5/test/fts5origintext4.test 296b1b1e6630d492b99db0769e8127087548f0e939376047716a68b77ca3c871
+F ext/fts5/test/fts5origintext4.test a33e8f64b9762e0e0c722ac2b301017e1d7745635724c1ca04b2c010b451fab4
 F ext/fts5/test/fts5origintext5.test a037bdf7235a22033c4663837bdb12d9738245464a3ac2f60c71fc40d07ede7d
 F ext/fts5/test/fts5phrase.test 13e5d8e9083077b3d9c74315b3c92ec723cc6eb37c8155e0bfe1bba00559f07b
 F ext/fts5/test/fts5plan.test b65cfcca9ddd6fdaa118c61e17aeec8e8433bc5b6bb307abd116514f79c49c5a
@@ -2153,8 +2153,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7b9b757d872a31395b0f6454e2309a6a4664b8bdd8749f6a15371cbe72c05b60
-R 93bf736458df619f69356c11ae1b79c8
+P 6b4e1344a28c213cbe8fb97f7f3f6688de93fb73ed96bf460ff74c959da1a712
+R 5009aa3a7688d2e0f2d3fd5b288c1e45
 U dan
-Z 5cc92eee4b8244bffbd15f83cef00a45
+Z a7e6258d44595ae5e733a4da3cda0926
 # Remove this line to create a well-formed Fossil manifest.
