@@ -1,5 +1,5 @@
-C Correct\s--enable-sab\sflag\sin\sext/wasm/GNUmakefile\sto\sfix\sa\ssilent\salhttpd\sargs-parsing\serror.
-D 2023-12-15T13:38:47.959
+C Avoid\srunning\sthe\s"no_mutex_try"\stests\swith\sSQLITE_ENABLE_SETLK_TIMEOUT\sbuilds\sas\spart\sof\sthe\srelease\stest.
+D 2023-12-15T14:33:50.141
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -738,7 +738,7 @@ F src/resolve.c da0a596a645cd7a8a9fd030e5126600b5639cc63f8ead18c1b67ff5a8a9b6a7f
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c f69e8e37c8bbe3bb02c890ad38a43c36757b87c7863d071d8ecd720732ed46cb
 F src/shell.c.in 0df801a0445af3fc55c7330bcd8396ca5433154bb0f728edc8be2d6f27764361
-F src/sqlite.h.in adcc7dbfeea1e69d6d487139a7e90db8a48fe998f3f5bb0f85c683e6a6fa68ca
+F src/sqlite.h.in 61a60b4ea04db8ead15e1579b20b64cb56e9f55d52c5f9f9694de630110593a3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h 134457f62bb1d0ff1dd037cc23dd46b1d16efbbfc2211dc2b15c380af731d9ac
@@ -1664,7 +1664,7 @@ F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 68454ef88508c196d19e8694daa27bff7107a91857799eaa12f417188ae53ede
 F test/testrunner.tcl e18d71f2e797da808ba6d31335e504ed6b2791581b89287a72b697a2f31b1ea1
-F test/testrunner_data.tcl e4d5017290a6d5c11785e36cc94c67d8bb950c8cdc2dbe4c1db2a3a583812560
+F test/testrunner_data.tcl 72bbd60e8ffbe5694cf871cbe8f8f6e542c9f1e6a33765309331aeb5e4f16553
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -2153,8 +2153,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 990211357badf0ab08bd34cf6d25b58849d0fd8503e289c1839fc837a74e1909
-R c42864716310151758eb639de7583cae
-U stephan
-Z e5ecf8b504178fb4baeba45ef6151951
+P 7b9b757d872a31395b0f6454e2309a6a4664b8bdd8749f6a15371cbe72c05b60
+R 93bf736458df619f69356c11ae1b79c8
+U dan
+Z 5cc92eee4b8244bffbd15f83cef00a45
 # Remove this line to create a well-formed Fossil manifest.

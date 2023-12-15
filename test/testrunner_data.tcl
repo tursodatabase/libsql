@@ -30,7 +30,7 @@ namespace eval trd {
 
   set tcltest(osx.Locking-Style)          veryquick
   set tcltest(osx.Have-Not)               veryquick
-  set tcltest(osx.Apple)                  all
+  set tcltest(osx.Apple)                  all_less_no_mutex_try
 
   set tcltest(win.Stdcall)                veryquick
   set tcltest(win.Have-Not)               veryquick
@@ -367,6 +367,9 @@ proc trd_configs {platform bld} {
       set clist $all_configs
     } elseif {$clist=="all_plus_autovacuum_crash"} {
       set clist [concat $all_configs autovacuum_crash]
+    } elseif {$clist=="all_less_no_mutex_try"} {
+      set idx [lsearch $all_configs no_mutex_try]
+      set clist [lreplace $all_configs $idx $idx]
     }
   }
 

@@ -8039,9 +8039,11 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 **
 ** ^(Some systems (for example, Windows 95) do not support the operation
 ** implemented by sqlite3_mutex_try().  On those systems, sqlite3_mutex_try()
-** will always return SQLITE_BUSY. The SQLite core only ever uses
-** sqlite3_mutex_try() as an optimization so this is acceptable
-** behavior.)^
+** will always return SQLITE_BUSY. In most cases the SQLite core only uses
+** sqlite3_mutex_try() as an optimization, so this is acceptable
+** behavior. The exceptions are unix builds that set the 
+** SQLITE_ENABLE_SETLK_TIMEOUT build option. In that case a working
+** sqlite3_mutex_try() is required.)^
 **
 ** ^The sqlite3_mutex_leave() routine exits a mutex that was
 ** previously entered by the same thread.   The behavior
