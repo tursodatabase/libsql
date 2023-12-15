@@ -1,5 +1,5 @@
-C Fix\sa\snew\sJSON\stest\scase\sso\sthat\sit\sworks\seven\sif\sSQLITE_OMIT_VIRTUALTABLE\nis\sdefined.
-D 2023-12-15T15:22:03.625
+C Add\smention\sof\s--buildonly\sand\s--dryrun\sto\sthe\stestrunner.tcl\susage\sscreen.
+D 2023-12-15T16:28:02.853
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1663,7 +1663,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 68454ef88508c196d19e8694daa27bff7107a91857799eaa12f417188ae53ede
-F test/testrunner.tcl e18d71f2e797da808ba6d31335e504ed6b2791581b89287a72b697a2f31b1ea1
+F test/testrunner.tcl 8e2a5c7550b78d3283eee6103104ae2bcf56aa1df892dbd1608f27b93ebf4de8
 F test/testrunner_data.tcl 72bbd60e8ffbe5694cf871cbe8f8f6e542c9f1e6a33765309331aeb5e4f16553
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2153,8 +2153,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 05a63d9603ef42cbee6dadff72d97583a9c78e549f70e9a808534d5c1ae7c28a
-R 3314c5bf0699d50c465bd6395bdb0dc5
+P b995aae510888a9746b46545d176a0885d4738e1f1bc0b7ad7937ed023efd7d6
+R e9d176533dea184874a9bb1447a17bcc
 U drh
-Z 6217845991b9f421ba875e859fa5fd55
+Z 1206a14cd99f29a5172802ae7d99e8c8
 # Remove this line to create a well-formed Fossil manifest.

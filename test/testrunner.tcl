@@ -58,6 +58,8 @@ Usage:
     $a0 status
 
   where SWITCHES are:
+    --buildonly
+    --dryrun
     --jobs NUMBER-OF-JOBS
     --zipvfs ZIPVFS-SOURCE-DIR
 
