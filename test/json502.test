@@ -47,7 +47,7 @@ do_execsql_test 3.2 {
 
 db null null
 do_execsql_test 3.3 {
-  DROP TABLE t1;
+  DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(x);
   INSERT INTO t1 VALUES(json_insert('{}','$.a\',111,'$."b\\"',222));
   INSERT INTO t1 VALUES(jsonb_insert('{}','$.a\',111,'$."b\\"',222));
@@ -58,8 +58,10 @@ do_execsql_test 3.4 {
   SELECT json_patch('{"a\x62c":123}','{"ab\x63":456}') ->> 'abc';
 } 456
 
-do_execsql_test 4.1 {
-  SELECT * FROM json_tree('{"\u0017":1}','$."\x17"');
-} {{\x17} 1 integer 1 1 null {$."\x17"} {$}}
+ifcapable vtab {
+  do_execsql_test 4.1 {
+    SELECT * FROM json_tree('{"\u0017":1}','$."\x17"');
+  } {{\x17} 1 integer 1 1 null {$."\x17"} {$}}
+}
 
 finish_test
