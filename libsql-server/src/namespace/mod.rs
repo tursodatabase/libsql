@@ -2,8 +2,6 @@ mod fork;
 pub mod meta_store;
 pub mod replication_wal;
 
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -203,8 +201,6 @@ pub trait MakeNamespace: Sync + Send + 'static {
         timestamp: Option<NaiveDateTime>,
         meta_store: &MetaStore,
     ) -> crate::Result<Namespace<Self::Database>>;
-
-    async fn exists(&self, namespace: &NamespaceName) -> bool;
 }
 
 /// Creates new primary `Namespace`
@@ -320,34 +316,6 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         let ns = fork_task.fork().await?;
         Ok(ns)
     }
-
-    async fn exists(&self, namespace: &NamespaceName) -> bool {
-        let ns_path = self.config.base_path.join("dbs").join(namespace.as_str());
-        if let Ok(true) = ns_path.try_exists() {
-            return true;
-        }
-
-        if let Some(replication_options) = self.config.bottomless_replication.as_ref() {
-            tracing::info!("Bottomless: {:?}", replication_options);
-            match bottomless::replicator::Replicator::has_backup_of(namespace, replication_options)
-                .await
-            {
-                Ok(true) => {
-                    tracing::debug!("Bottomless: Backup found");
-                    return true;
-                }
-                Ok(false) => {
-                    tracing::debug!("Bottomless: No backup found");
-                }
-                Err(err) => {
-                    tracing::debug!("Bottomless: Error checking backup: {}", err);
-                }
-            }
-        } else {
-            tracing::debug!("Bottomless: No backup configured");
-        }
-        false
-    }
 }
 
 /// Creates new replica `Namespace`
@@ -403,11 +371,6 @@ impl MakeNamespace for ReplicaNamespaceMaker {
     ) -> crate::Result<Namespace<Self::Database>> {
         return Err(ForkError::ForkReplica.into());
     }
-
-    async fn exists(&self, namespace: &NamespaceName) -> bool {
-        let ns_path = self.config.base_path.join("dbs").join(namespace.as_str());
-        ns_path.try_exists().unwrap_or(false)
-    }
 }
 
 type NamespaceEntry<T> = Arc<RwLock<Option<Namespace<T>>>>;
@@ -436,13 +399,14 @@ struct NamespaceStoreInner<M: MakeNamespace> {
 }
 
 impl<M: MakeNamespace> NamespaceStore<M> {
-    pub fn new(
+    pub async fn new(
         make_namespace: M,
         allow_lazy_creation: bool,
         snapshot_at_shutdown: bool,
         meta_store_path: impl AsRef<Path>,
         max_active_namespaces: usize,
-    ) -> Self {
+    ) -> crate::Result<Self> {
+        let metadata = MetaStore::new(meta_store_path).await?;
         tracing::trace!("Max active namespaces: {max_active_namespaces}");
         let store = Cache::<NamespaceName, NamespaceEntry<M::Database>>::builder()
             .async_eviction_listener(move |name, ns, cause| {
@@ -465,7 +429,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             .max_capacity(max_active_namespaces as u64)
             .time_to_idle(Duration::from_secs(86400))
             .build();
-        Self {
+        Ok(Self {
             inner: Arc::new(NamespaceStoreInner {
                 store,
                 metadata,
@@ -474,7 +438,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                 has_shutdown: AtomicBool::new(false),
                 snapshot_at_shutdown,
             }),
-        }
+        })
     }
 
     pub async fn destroy(&self, namespace: NamespaceName) -> crate::Result<()> {
@@ -587,6 +551,11 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             return Err(Error::NamespaceStoreShutdown);
         }
 
+        // check that the source namespace exists
+        if !self.inner.metadata.exists(&from) {
+            return Err(crate::error::Error::NamespaceDoesntExist(from.to_string()));
+        }
+
         let to_entry = self
             .inner
             .store
@@ -595,11 +564,6 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         let mut to_lock = to_entry.write().await;
         if to_lock.is_some() {
             return Err(crate::error::Error::NamespaceAlreadyExist(to.to_string()));
-        }
-
-        // check that the source namespace exists
-        if !self.inner.make_namespace.exists(&from).await {
-            return Err(crate::error::Error::NamespaceDoesntExist(from.to_string()));
         }
 
         let from_entry = self
@@ -665,7 +629,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             let namespace = namespace.clone();
             async move {
                 if namespace != NamespaceName::default()
-                    && !self.inner.make_namespace.exists(&namespace).await
+                    && !self.inner.metadata.exists(&namespace)
                     && !self.inner.allow_lazy_creation
                 {
                     return Err(Error::NamespaceDoesntExist(namespace.to_string()));
@@ -678,6 +642,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                         RestoreOption::Latest,
                         NamespaceBottomlessDbId::NotProvided,
                         self.make_reset_cb(),
+                        &self.inner.metadata,
                     )
                     .await?;
                 tracing::info!("loaded namespace: `{namespace}`");
@@ -735,7 +700,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         // otherwise it's an error.
         if self.inner.allow_lazy_creation || namespace == NamespaceName::default() {
             tracing::trace!("auto-creating the namespace");
-        } else if self.inner.make_namespace.exists(&namespace).await {
+        } else if self.inner.metadata.exists(&namespace) {
             return Err(Error::NamespaceAlreadyExist(namespace.to_string()));
         }
 
@@ -750,6 +715,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                     restore_option,
                     bottomless_db_id_for_init,
                     self.make_reset_cb(),
+                    &self.inner.metadata,
                 )
                 .await;
             match ns {

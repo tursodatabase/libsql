@@ -531,7 +531,8 @@ where
             self.db_config.snapshot_at_shutdown,
             meta_store_path,
             self.max_active_namespaces,
-        );
+        )
+        .await?;
 
         // eagerly load the default namespace when namespaces are disabled
         if self.disable_namespaces {
@@ -638,7 +639,8 @@ impl<C: Connector> Replica<C> {
             false,
             meta_store_path,
             self.max_active_namespaces,
-        );
+        )
+        .await?;
         let replication_service = ReplicationLogProxyService::new(channel.clone(), uri.clone());
         let proxy_service = ReplicaProxyService::new(channel, uri, self.auth.clone());
 

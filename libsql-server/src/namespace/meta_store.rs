@@ -177,6 +177,13 @@ impl MetaStore {
             inner: HandleState::External(change_tx, rx),
         }
     }
+
+    // TODO: we need to either make sure that the metastore is restored
+    // before we start accepting connections or we need to contact bottomless
+    // here to check if a namespace exists. Preferably the former.
+    pub fn exists(&self, namespace: &NamespaceName) -> bool {
+        self.inner.lock().configs.contains_key(namespace)
+    }
 }
 
 impl MetaStoreHandle {
