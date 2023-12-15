@@ -12,12 +12,11 @@ use crate::{Rows, Statement};
 use futures::future::BoxFuture;
 use http::header::AUTHORIZATION;
 use http::{HeaderValue, StatusCode};
-use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct HttpSender {
-    inner: hyper::Client<HttpsConnector<ConnectorService>, hyper::Body>,
+    inner: hyper::Client<ConnectorService, hyper::Body>,
     version: HeaderValue,
 }
 
@@ -27,12 +26,7 @@ impl HttpSender {
 
         let version = HeaderValue::try_from(format!("libsql-remote-{ver}")).unwrap();
 
-        let https = HttpsConnectorBuilder::new()
-            .with_native_roots()
-            .https_or_http()
-            .enable_http1()
-            .wrap_connector(connector);
-        let inner = hyper::Client::builder().build(https);
+        let inner = hyper::Client::builder().build(connector);
 
         Self { inner, version }
     }

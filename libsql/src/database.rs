@@ -105,11 +105,19 @@ cfg_replication! {
             url: impl Into<String>,
             token: impl Into<String>,
         ) -> Result<Database> {
+            use hyper_rustls::HttpsConnectorBuilder;
+
             let mut http = hyper::client::HttpConnector::new();
             http.enforce_http(false);
             http.set_nodelay(true);
 
-            Self::open_with_remote_sync_connector(db_path, url, token, http).await
+            let https = HttpsConnectorBuilder::new()
+                .with_native_roots()
+                .https_or_http()
+                .enable_http1()
+                .wrap_connector(http);
+
+            Self::open_with_remote_sync_connector(db_path, url, token, https).await
         }
 
         #[doc(hidden)]
@@ -126,7 +134,8 @@ cfg_replication! {
             Self::open_with_remote_sync_connector_internal(db_path, url, token, http, version).await
         }
 
-        #[doc(hidden)]
+        /// Connect an embedded replica to a remote primary with a custom
+        /// http connector.
         pub async fn open_with_remote_sync_connector<C>(
             db_path: impl Into<String>,
             url: impl Into<String>,
@@ -236,14 +245,22 @@ cfg_remote! {
             auth_token: impl Into<String>,
             version: impl Into<String>,
         ) -> Result<Self> {
-            let mut connector = hyper::client::HttpConnector::new();
-            connector.enforce_http(false);
+            use hyper_rustls::HttpsConnectorBuilder;
 
-            Self::open_remote_with_connector_internal(url, auth_token, connector, Some(version.into()))
+            let mut http = hyper::client::HttpConnector::new();
+            http.enforce_http(false);
+            http.set_nodelay(true);
+
+            let https = HttpsConnectorBuilder::new()
+                .with_native_roots()
+                .https_or_http()
+                .enable_http1()
+                .wrap_connector(http);
+
+            Self::open_remote_with_connector_internal(url, auth_token, https, Some(version.into()))
         }
 
-        // For now, only expose this for sqld testing purposes
-        #[doc(hidden)]
+        /// Connect to a remote libsql with a custom connector.
         pub fn open_remote_with_connector<C>(
             url: impl Into<String>,
             auth_token: impl Into<String>,
