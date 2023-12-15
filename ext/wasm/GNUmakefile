@@ -1087,4 +1087,4 @@ endif
 
 # Run local web server for the test/demo pages.
 httpd:
-	althttpd -max-age 1 -enable-sab -page index.html
+	althttpd -max-age 1 -enable-sab 1 -page index.html
