@@ -101,6 +101,15 @@ pub unsafe extern "C" fn libsql_open_ext(
     out_db: *mut libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
+    libsql_open_file(url, out_db, out_err_msg)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_open_file(
+    url: *const std::ffi::c_char,
+    out_db: *mut libsql_database_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
     let url = unsafe { std::ffi::CStr::from_ptr(url) };
     let url = match url.to_str() {
         Ok(url) => url,
@@ -110,6 +119,46 @@ pub unsafe extern "C" fn libsql_open_ext(
         }
     };
     match libsql::Database::open(url.to_string()) {
+        Ok(db) => {
+            let db = Box::leak(Box::new(libsql_database { db }));
+            *out_db = libsql_database_t::from(db);
+            0
+        }
+        Err(e) => {
+            set_err_msg(format!("Error opening URL {url}: {e}"), out_err_msg);
+            1
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_open_remote(
+    url: *const std::ffi::c_char,
+    auth_token: *const std::ffi::c_char,
+    out_db: *mut libsql_database_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    let url = unsafe { std::ffi::CStr::from_ptr(url) };
+    let url = match url.to_str() {
+        Ok(url) => url,
+        Err(e) => {
+            set_err_msg(format!("Wrong URL: {e}"), out_err_msg);
+            return 1;
+        }
+    };
+    let auth_token = unsafe { std::ffi::CStr::from_ptr(auth_token) };
+    let auth_token = match auth_token.to_str() {
+        Ok(token) => token,
+        Err(e) => {
+            set_err_msg(format!("Wrong Auth Token: {e}"), out_err_msg);
+            return 2;
+        }
+    };
+    match RT.block_on(libsql::Database::open_with_remote_sync(
+        url.to_string(),
+        url,
+        auth_token,
+    )) {
         Ok(db) => {
             let db = Box::leak(Box::new(libsql_database { db }));
             *out_db = libsql_database_t::from(db);
