@@ -472,6 +472,16 @@ do_execsql_test 9.5 {
   FROM t1;
 } {6}
 
- 
+# 2023-12-16
+# New test case for check-in [4470f657d2069972] from 2023-11-02
+# https://bugs.chromium.org/p/chromium/issues/detail?id=1511689
+#
+do_execsql_test 10.1 {
+  DROP TABLE IF EXISTS t0;
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t0(c1, c2);  INSERT INTO t0 VALUES(1,2);
+  CREATE TABLE t1(c3, c4);  INSERT INTO t1 VALUES(3,4);
+  SELECT * FROM t0 WHERE EXISTS (SELECT 1 FROM t1 GROUP BY c3 HAVING ( SELECT count(*) FROM (SELECT 1 UNION ALL SELECT sum(DISTINCT c1) ) ) ) BETWEEN 1 AND 1;
+} {1 2}
 
 finish_test

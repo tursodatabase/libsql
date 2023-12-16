@@ -1,5 +1,5 @@
-C In\sthe\scount-of-view\soptimization,\sdeferring\sfreeing\sobsolete\sparts\sof\sthe\nparse\stree,\son\sthe\soff-chance\sthat\ssome\sother\spart\sof\sthe\scode\smight\sbe\nholding\sa\spointer\sto\sthose\sparts.
-D 2023-12-15T20:13:09.193
+C New\stest\scase\sbased\son\sChromium\sbug\sreport\s1511689.
+D 2023-12-16T10:50:06.926
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -831,7 +831,7 @@ F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867d
 F test/affinity3.test f094773025eddf31135c7ad4cde722b7696f8eb07b97511f98585addf2a510a9
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggfault.test 777f269d0da5b0c2524c7ff6d99ae9a93db4f1b1839a914dd2a12e3035c29829
-F test/aggnested.test ce85a6af7d59c3109e35c5f03b2cd11da1a9b1417371e2f942102d0f0d77fd62
+F test/aggnested.test 610b0ce2c3e8f3daee25f9752800ee8d785db10da4aa1fbeea0ea1aabaf1d704
 F test/aggorderby.test cc3abf5de64d46ff66395ca8c2346b66c2576d5aedb7bffc5b0742508856e3bf
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 2ecb8bbd52416642e41c9081182a8df05d42c75637afd4488aace78cc4b69e13
@@ -2154,8 +2154,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 88beb48472da4667c0727c8ebabe046ea526450ff837fe789d041ed3f1ff105e
-R 9b65ab74c9a005ec2c0f339522792a80
+P da442578856c87137eb1677d9b13b7c1cf15828cc41d4756572b278060f69bae
+R 7b23e47043e006e68f536d37e207685d
 U drh
-Z 954ebb3c0337beba214faae55272d5ff
+Z b495e05ec6841a5d9dda5bfbcac17be5
 # Remove this line to create a well-formed Fossil manifest.
