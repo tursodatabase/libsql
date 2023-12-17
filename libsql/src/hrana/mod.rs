@@ -37,9 +37,9 @@ struct Cookie {
     base_url: Option<String>,
 }
 
-pub trait HttpSend<'a>: Clone {
-    type Result: Future<Output = Result<HttpBody>> + 'a;
-    fn http_send(&'a self, url: &'a str, auth: &'a str, body: String) -> Self::Result;
+pub trait HttpSend: Clone {
+    type Result: Future<Output = Result<HttpBody>>;
+    fn http_send(&self, url: Arc<str>, auth: Arc<str>, body: String) -> Self::Result;
 }
 
 #[cfg(feature = "wasm")]
@@ -126,7 +126,7 @@ pub enum CursorResponseError {
     Other(String),
 }
 
-enum StatementExecutor<T: for<'a> HttpSend<'a>> {
+enum StatementExecutor<T: HttpSend> {
     /// An opened HTTP Hrana stream - usually in scope of executing transaction. Operations over it
     /// will be scheduled for sequential execution.
     Stream(HranaStream<T>),
@@ -137,7 +137,7 @@ enum StatementExecutor<T: for<'a> HttpSend<'a>> {
 
 impl<T> StatementExecutor<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     async fn execute(&self, stmt: Stmt) -> crate::Result<StmtResult> {
         let res = match self {
@@ -150,7 +150,7 @@ where
 
 pub struct Statement<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     executor: StatementExecutor<T>,
     inner: Stmt,
@@ -158,7 +158,7 @@ where
 
 impl<T> Statement<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     pub(crate) fn from_stream(stream: HranaStream<T>, sql: String, want_rows: bool) -> Self {
         Statement {

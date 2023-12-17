@@ -3,6 +3,7 @@ use bytes::Bytes;
 use futures::{ready, Stream};
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::Arc;
 use std::task::{Context, Poll};
 use worker::wasm_bindgen::JsValue;
 
@@ -14,16 +15,16 @@ impl CloudflareSender {
         CloudflareSender(())
     }
 
-    async fn send(url: &str, auth: &str, body: String) -> Result<HttpBody> {
+    async fn send(url: Arc<str>, auth: Arc<str>, body: String) -> Result<HttpBody> {
         use worker::*;
 
         let mut response = Fetch::Request(Request::new_with_init(
-            url,
+            &url,
             &RequestInit {
                 body: Some(JsValue::from(body)),
                 headers: {
                     let mut headers = Headers::new();
-                    headers.append("Authorization", auth)?;
+                    headers.append("Authorization", &auth)?;
                     headers
                 },
                 cf: CfProperties::new(),
@@ -47,10 +48,10 @@ impl CloudflareSender {
     }
 }
 
-impl<'a> HttpSend<'a> for CloudflareSender {
-    type Result = Pin<Box<dyn Future<Output = Result<HttpBody>> + 'a>>;
+impl HttpSend for CloudflareSender {
+    type Result = Pin<Box<dyn Future<Output = Result<HttpBody>>>>;
 
-    fn http_send(&'a self, url: &'a str, auth: &'a str, body: String) -> Self::Result {
+    fn http_send(&self, url: Arc<str>, auth: Arc<str>, body: String) -> Self::Result {
         let fut = Self::send(url, auth, body);
         Box::pin(fut)
     }

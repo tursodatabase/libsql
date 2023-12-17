@@ -27,14 +27,14 @@ pub type SqlId = i32;
 #[derive(Debug)]
 pub struct HranaStream<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     inner: Arc<Inner<T>>,
 }
 
 impl<T> Clone for HranaStream<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     fn clone(&self) -> Self {
         HranaStream {
@@ -45,7 +45,7 @@ where
 
 impl<T> HranaStream<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     pub(super) fn open(
         client: T,
@@ -199,7 +199,7 @@ where
 #[derive(Debug)]
 struct Inner<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     affected_row_count: AtomicU64,
     last_insert_rowid: AtomicI64,
@@ -209,7 +209,7 @@ where
 #[derive(Debug)]
 struct RawStream<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     client: T,
     baton: Option<String>,
@@ -222,7 +222,7 @@ where
 
 impl<T> RawStream<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     async fn send(&mut self, req: StreamRequest) -> Result<StreamResponse> {
         let [resp] = self.send_requests([req]).await?;
@@ -242,7 +242,7 @@ where
         let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
         let stream: ByteStream = self
             .client
-            .http_send(&self.cursor_url, &self.auth_token, body)
+            .http_send(self.cursor_url.clone(), self.auth_token.clone(), body)
             .await?
             .stream();
         let (cursor, mut response) = Cursor::open(stream).await?;
@@ -283,7 +283,7 @@ where
         let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
         let body = self
             .client
-            .http_send(&self.pipeline_url, &self.auth_token, body)
+            .http_send(self.pipeline_url.clone(), self.auth_token.clone(), body)
             .await?
             .bytes()
             .await?;
@@ -376,7 +376,7 @@ pub enum StreamStatus {
 #[derive(Debug, Clone)]
 pub struct StoredSql<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     stream: HranaStream<T>,
     sql_id: SqlId,
@@ -384,7 +384,7 @@ where
 
 impl<T> StoredSql<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     fn new(stream: HranaStream<T>, sql_id: SqlId) -> Self {
         StoredSql { stream, sql_id }
@@ -419,7 +419,7 @@ impl SqlDescriptor for String {
 
 impl<T> SqlDescriptor for StoredSql<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     fn sql_description(&self) -> SqlDescription {
         SqlDescription::SqlId(self.sql_id)

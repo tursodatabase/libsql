@@ -13,7 +13,6 @@ use futures::TryStreamExt;
 use http::header::AUTHORIZATION;
 use http::{HeaderValue, StatusCode};
 use hyper::body::HttpBody;
-use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
@@ -33,9 +32,9 @@ impl HttpSender {
         Self { inner, version }
     }
 
-    async fn send(&self, url: &str, auth: &str, body: String) -> Result<super::HttpBody> {
-        let req = hyper::Request::post(url)
-            .header(AUTHORIZATION, auth)
+    async fn send(self, url: Arc<str>, auth: Arc<str>, body: String) -> Result<super::HttpBody> {
+        let req = hyper::Request::post(url.as_ref())
+            .header(AUTHORIZATION, auth.as_ref())
             .header("x-libsql-client-version", self.version.clone())
             .body(hyper::Body::from(body))
             .map_err(|err| HranaError::Http(format!("{:?}", err)))?;
@@ -67,11 +66,11 @@ impl HttpSender {
     }
 }
 
-impl<'a> HttpSend<'a> for HttpSender {
-    type Result = BoxFuture<'a, Result<super::HttpBody>>;
+impl HttpSend for HttpSender {
+    type Result = BoxFuture<'static, Result<super::HttpBody>>;
 
-    fn http_send(&'a self, url: &'a str, auth: &'a str, body: String) -> Self::Result {
-        let fut = self.send(url, auth, body);
+    fn http_send(&self, url: Arc<str>, auth: Arc<str>, body: String) -> Self::Result {
+        let fut = self.clone().send(url, auth, body);
         Box::pin(fut)
     }
 }

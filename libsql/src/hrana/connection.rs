@@ -9,12 +9,12 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct HttpConnection<T>(Arc<InnerClient<T>>)
 where
-    T: for<'a> HttpSend<'a>;
+    T: HttpSend;
 
 #[derive(Debug)]
 struct InnerClient<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     inner: T,
     pipeline_url: Arc<str>,
@@ -27,7 +27,7 @@ where
 
 impl<T> HttpConnection<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     pub fn new(url: String, token: String, inner: T) -> Self {
         // The `libsql://` protocol is an alias for `https://`.
@@ -128,7 +128,7 @@ where
 
 impl<T> Clone for HttpConnection<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     fn clone(&self) -> Self {
         HttpConnection(self.0.clone())
