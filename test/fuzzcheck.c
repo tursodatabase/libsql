@@ -159,9 +159,10 @@ static struct GlobalVars {
 } g;
 
 /*
-** Include the external vt02.c module.
+** Include the external vt02.c and randomjson.c modules.
 */
 extern int sqlite3_vt02_init(sqlite3*,char***,void*);
+extern int sqlite3_randomjson_init(sqlite3*,char***,void*);
 
 
 /*
@@ -1296,6 +1297,9 @@ int runCombinedDbSqlInput(
 
   /* Add the vt02 virtual table */
   sqlite3_vt02_init(cx.db, 0, 0);
+
+  /* Add the random_json() and random_json5() functions */
+  sqlite3_randomjson_init(cx.db, 0, 0);
 
   /* Add support for sqlite_dbdata and sqlite_dbptr virtual tables used
   ** by the recovery API */

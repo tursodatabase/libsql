@@ -27,8 +27,12 @@
 **     .load ./randomjson
 **     SELECT random_json(1);
 */
-#include "sqlite3ext.h"
-SQLITE_EXTENSION_INIT1
+#ifdef SQLITE_STATIC_RANDOMJSON
+#  include "sqlite3.h"
+#else
+#  include "sqlite3ext.h"
+   SQLITE_EXTENSION_INIT1
+#endif
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
@@ -52,7 +56,7 @@ static unsigned int prngInt(Prng *p){
 }
 
 static const char *azJsonAtoms[] = {
-  /* JSON                    /* JSON-5 */
+  /* JSON                    JSON-5 */
   "0",                       "0",
   "1",                       "1",
   "-1",                      "-1",
@@ -95,13 +99,13 @@ static const char *azJsonTemplate[] = {
   /* JSON                                      JSON-5 */
   "{\"a\":%,\"b\":%,\"c\":%}",                 "{a:%,b:%,c:%}",
   "{\"a\":%,\"b\":%,\"c\":%,\"d\":%,\"e\":%}", "{a:%,b:%,c:%,d:%,e:%}",
-  "{\"a\":%,\"b\":%,\"c\":%,\"d\":%,\"\":%}",  "{a:%,b:%,c:%,d:%,\"\":%}",
+  "{\"a\":%,\"b\":%,\"c\":%,\"d\":%,\"\":%}",  "{a:%,b:%,c:%,d:%,'':%}",
   "{\"d\":%}",                                 "{d:%}",
   "{\"eeee\":%, \"ffff\":%}",                  "{eeee:% /*and*/, ffff:%}",
   "{\"$g\":%,\"_h_\":%}",                      "{$g:%,_h_:%,}",
   "{\"x\":%,\n  \"y\":%}",                     "{\"x\":%,\n  \"y\":%}",
-  "{\"a b c d\":%,\"e\":%,\"f\":%,\"x\":%,\"y\":%}",
-                                           "{\"a b c d\":%,e:%,f:%,x:%,y:%}",
+  "{\"a b c d\":%,\"e\":%,\"f\":%,\"\\u0078\":%,\"y\":%}",
+            "{\"a b c d\":%,\"\\x65\":%,\"\\u0066\":%,x:%,y:%}",
   "{\"Z\":%}",                                 "{Z:%,}",
   "[%]",                                       "[%,]",
   "[%,%]",                                     "[%,%]",
@@ -151,7 +155,7 @@ static void jsonExpand(
     n = strlen(z);
     if( j+n<STRSZ ){
       memcpy(&zDest[j], z, n);
-      j += n;
+      j += (int)n;
     }
   }
   zDest[STRSZ-1] = 0;
@@ -178,7 +182,7 @@ static void randJsonFunc(
 }
 
 #ifdef _WIN32
-__declspec(dllexport)
+  __declspec(dllexport)
 #endif
 int sqlite3_randomjson_init(
   sqlite3 *db, 
@@ -188,7 +192,11 @@ int sqlite3_randomjson_init(
   static int cOne = 1;
   static int cZero = 0;
   int rc = SQLITE_OK;
+#ifdef SQLITE_STATIC_RANDOMJSON
+  (void)pApi;      /* Unused parameter */
+#else
   SQLITE_EXTENSION_INIT2(pApi);
+#endif
   (void)pzErrMsg;  /* Unused parameter */
   rc = sqlite3_create_function(db, "random_json", 1,
                    SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC,

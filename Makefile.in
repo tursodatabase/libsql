@@ -632,7 +632,8 @@ FUZZCHECK_OPT += \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_PRINTF_PRECISION_LIMIT=1000 \
   -DSQLITE_PRIVATE="" \
-  -DSQLITE_STRICT_SUBTYPE=1
+  -DSQLITE_STRICT_SUBTYPE=1 \
+  -DSQLITE_STATIC_RANDOMJSON
 
 FUZZCHECK_SRC += $(TOP)/test/fuzzcheck.c
 FUZZCHECK_SRC += $(TOP)/test/ossfuzz.c
@@ -640,6 +641,7 @@ FUZZCHECK_SRC += $(TOP)/test/fuzzinvariants.c
 FUZZCHECK_SRC += $(TOP)/ext/recover/dbdata.c
 FUZZCHECK_SRC += $(TOP)/ext/recover/sqlite3recover.c
 FUZZCHECK_SRC += $(TOP)/test/vt02.c
+FUZZCHECK_SRC += $(TOP)/ext/misc/randomjson.c
 DBFUZZ_OPT =
 ST_OPT = -DSQLITE_OS_KV_OPTIONAL
 
