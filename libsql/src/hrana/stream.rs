@@ -63,7 +63,7 @@ where
     }
 
     /// Executes a final request and immediately closes current stream - all in one request.
-    pub async fn finalize(&mut self, req: StreamRequest) -> Result<StreamResponse> {
+    pub async fn finalize(&mut self, req: StreamRequest) -> Result<(StreamResponse, bool)> {
         let mut client = self.inner.stream.lock().await;
         let resp = client.finalize(req).await?;
         Ok(resp)
@@ -265,8 +265,8 @@ where
             )))?;
         }
         let mut responses = std::array::from_fn(|_| StreamResponse::Close);
-        for i in 0..N {
-            match response.results.swap_remove(0) {
+        for (i, result) in response.results.into_iter().enumerate() {
+            match result {
                 Response::Ok(StreamResponseOk { response }) => responses[i] = response,
                 Response::Error(e) => return Err(HranaError::StreamError(e)),
             }
@@ -274,10 +274,21 @@ where
         Ok(responses)
     }
 
-    async fn finalize(&mut self, req: StreamRequest) -> Result<StreamResponse> {
-        let [resp, _] = self.send_requests([req, StreamRequest::Close]).await?;
+    async fn finalize(&mut self, req: StreamRequest) -> Result<(StreamResponse, bool)> {
+        let [resp, get_autocommit, _] = self
+            .send_requests([req, StreamRequest::GetAutocommit, StreamRequest::Close])
+            .await?;
+        let is_autocommit = match get_autocommit {
+            StreamResponse::GetAutocommit(resp) => resp.is_autocommit,
+            other => {
+                return Err(HranaError::UnexpectedResponse(format!(
+                    "expected GetAutocommitResp but got {:?}",
+                    other
+                )))
+            }
+        };
         self.done();
-        Ok(resp)
+        Ok((resp, is_autocommit))
     }
 
     fn done(&mut self) {

@@ -136,8 +136,8 @@ impl Conn for HttpConnection<HttpSender> {
         })
     }
 
-    async fn is_autocommit(&self) -> crate::Result<bool> {
-        Ok(true) // connection without transaction always commits at the end of execution step
+    fn is_autocommit(&self) -> bool {
+        self.is_autocommit()
     }
 
     fn changes(&self) -> u64 {
@@ -232,12 +232,8 @@ impl Conn for HttpStream<HttpSender> {
         todo!("sounds like nested transactions innit?")
     }
 
-    async fn is_autocommit(&self) -> crate::Result<bool> {
-        let is_autocommit = self
-            .get_autocommit()
-            .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
-        Ok(is_autocommit)
+    fn is_autocommit(&self) -> bool {
+        false // for streams this method is callable only when we're within explicit transaction
     }
 
     fn changes(&self) -> u64 {
