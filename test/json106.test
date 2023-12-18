@@ -17,7 +17,7 @@ set testprefix json106
 
 load_static_extension db randomjson
 db eval {
-  CREATE TEMP TABLE t1(j0,j5);
+  CREATE TEMP TABLE t1(j0,j5,p);
   CREATE TEMP TABLE kv(n,key,val);
 }
 unset -nocomplain ii
@@ -57,6 +57,12 @@ for {set ii 1} {$ii<=5000} {incr ii} {
       FROM t1, kv
      WHERE key NOT LIKE '%]'
        AND json_insert(json_remove(j5,key),key,val)->>key IS NOT val
+  } 0
+  do_execsql_test $ii.7 {
+    UPDATE t1 SET p=json_patch(j0,j5);
+    SELECT count(*)
+      FROM t1, kv
+     WHERE p->>key IS NOT val
   } 0
 }
 
