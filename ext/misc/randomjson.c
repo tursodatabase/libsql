@@ -138,11 +138,7 @@ static void jsonExpand(
   char zBuf[200];
 
   j = 0;
-  if( zSrc==0 ){
-    k = prngInt(p)%(count(azJsonTemplate)/2);
-    k = k*2 + eType;
-    zSrc = azJsonTemplate[k];
-  }
+  if( zSrc==0 ) zSrc = "%";
   if( strlen(zSrc)>=STRSZ/10 ) r = 0;
   for(i=0; zSrc[i]; i++){
     if( zSrc[i]!='%' ){
@@ -182,6 +178,8 @@ static void jsonExpand(
         zX = strstr(zX, "DD");
       }
     }
+    assert( strstr(z, "XX")==0 );
+    assert( strstr(z, "DD")==0 );
     if( j+n<STRSZ ){
       memcpy(&zDest[j], z, n);
       j += (int)n;
