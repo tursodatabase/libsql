@@ -3043,7 +3043,7 @@ static int jsonFunctionArgToBlob(
     }
     case SQLITE_FLOAT: {
       double r = sqlite3_value_double(pArg);
-      if( sqlite3IsNaN(r) ){
+      if( NEVER(sqlite3IsNaN(r)) ){
         jsonBlobAppendNode(pParse, JSONB_NULL, 0, 0);
       }else{
         int n = sqlite3_value_bytes(pArg);
