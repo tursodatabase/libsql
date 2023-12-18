@@ -3041,13 +3041,29 @@ static int jsonFunctionArgToBlob(
       }
       break;
     }
-    case SQLITE_FLOAT:
+    case SQLITE_FLOAT: {
+      double r = sqlite3_value_double(pArg);
+      if( sqlite3IsNaN(r) ){
+        jsonBlobAppendNode(pParse, JSONB_NULL, 0, 0);
+      }else{
+        int n = sqlite3_value_bytes(pArg);
+        const char *z = (const char*)sqlite3_value_text(pArg);
+        if( z==0 ) return 1;
+        if( z[0]=='I' ){
+          jsonBlobAppendNode(pParse, JSONB_FLOAT, 5, "9e999");
+        }else if( z[0]=='-' && z[1]=='I' ){
+          jsonBlobAppendNode(pParse, JSONB_FLOAT, 6, "-9e999");
+        }else{
+          jsonBlobAppendNode(pParse, JSONB_FLOAT, n, z);
+        }
+      }
+      break;
+    }
     case SQLITE_INTEGER: {
       int n = sqlite3_value_bytes(pArg);
       const char *z = (const char*)sqlite3_value_text(pArg);
-      int e = eType==SQLITE_INTEGER ? JSONB_INT : JSONB_FLOAT;
       if( z==0 ) return 1;
-      jsonBlobAppendNode(pParse, e, n, z);
+      jsonBlobAppendNode(pParse, JSONB_INT, n, z);
       break;
     }
   }

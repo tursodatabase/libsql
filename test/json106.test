@@ -18,6 +18,7 @@ set testprefix json106
 load_static_extension db randomjson
 db eval {
   CREATE TEMP TABLE t1(j0,j5);
+  CREATE TEMP TABLE kv(n,key,val);
 }
 unset -nocomplain ii
 for {set ii 1} {$ii<=5000} {incr ii} {
@@ -37,6 +38,25 @@ for {set ii 1} {$ii<=5000} {incr ii} {
       FROM t1, json_tree(j5) AS rt
      WHERE rt.type NOT IN ('object','array')
        AND rt.atom IS NOT (j0 ->> rt.fullkey);
+  } 0
+  do_execsql_test $ii.4 {
+    DELETE FROM kv;
+    INSERT INTO kv
+      SELECT rt.rowid, rt.fullkey, rt.atom
+        FROM t1, json_tree(j0) AS rt
+       WHERE rt.type NOT IN ('object','array');
+  }
+  do_execsql_test $ii.5 {
+    SELECT count(*)
+      FROM t1, kv
+     WHERE key NOT LIKE '%]'
+       AND json_remove(j5,key)->>key IS NOT NULL
+  } 0
+  do_execsql_test $ii.6 {
+    SELECT count(*)
+      FROM t1, kv
+     WHERE key NOT LIKE '%]'
+       AND json_insert(json_remove(j5,key),key,val)->>key IS NOT val
   } 0
 }
 
