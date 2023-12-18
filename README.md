@@ -36,6 +36,7 @@ To get started with the libSQL API:
 
 * [JavaScript](https://github.com/libsql/libsql-experimental-node)
 * [Rust](libsql) 
+* [.NET](https://github.com/tvandinther/libsql-client-dotnet) (community maintained)
 * [Python](https://github.com/libsql/libsql-experimental-python) (experimental)
 * [Go](bindings/go) (experimental)
 * [C](bindings/c) (experimental)
