@@ -108,10 +108,9 @@ static char *azJsonTemplate[] = {
   "{\"a\":%,\"b\":%,\"c\":%,\"d\":%,\"\":%}",  "{a:%,b:%,c:%,d:%,'':%}",
   "{\"d\":%}",                                 "{d:%}",
   "{\"eeee\":%, \"ffff\":%}",                  "{eeee:% /*and*/, ffff:%}",
-  "{\"$g\":%,\"_h_\":%}",                      "{$g:%,_h_:%,}",
+  "{\"$g\":%,\"_h_\":%,\"a b c d\":%}",        "{$g:%,_h_:%,\"a b c d\":%}",
   "{\"x\":%,\n  \"y\":%}",                     "{\"x\":%,\n  \"y\":%}",
-  "{\"a b c d\":%,\"\\u00XX\":%,\"\\uXXXX\":%,\"x\":%,\"y\":%}",
-            "{\"a b c d\":%,\"\\xXX\":%,\"\\uXXXX\":%,x:%,y:%}",
+  "{\"\\u00XX\":%,\"\\uXXXX\":%}",             "{\"\\xXX\":%,\"\\uXXXX\":%}",
   "{\"Z\":%}",                                 "{Z:%,}",
   "[%]",                                       "[%,]",
   "[%,%]",                                     "[%,%]",
@@ -159,6 +158,10 @@ static void jsonExpand(
     n = strlen(z);
     if( (zX = strstr(z,"XX"))!=0 ){
       unsigned int r = prngInt(p);
+      if( (r&0xff)==((r>>8)&0xff) ) r += 0x100;
+      while( (r&0xff)==((r>>16)&0xff) || ((r>>8)&0xff)==((r>>16)&0xff) ){
+        r += 0x10000;
+      }
       memcpy(zBuf, z, n+1);
       z = zBuf;
       zX = strstr(z,"XX");
