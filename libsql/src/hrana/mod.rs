@@ -236,14 +236,8 @@ where
         let cursor_step = cursor.next_step_owned().await?;
         Ok(HranaRows { cursor_step })
     }
-}
 
-#[async_trait::async_trait]
-impl<S> RowsInner for HranaRows<S>
-where
-    S: Stream<Item = Result<Bytes>> + Send + Sync + Unpin,
-{
-    async fn next(&mut self) -> crate::Result<Option<super::Row>> {
+    pub async fn next(&mut self) -> crate::Result<Option<super::Row>> {
         let row = match self.cursor_step.next().await {
             Some(Ok(row)) => row,
             Some(Err(e)) => return Err(crate::Error::Hrana(Box::new(e))),
@@ -255,16 +249,34 @@ where
         }))
     }
 
-    fn column_count(&self) -> i32 {
+    pub fn column_count(&self) -> i32 {
         self.cursor_step.cols().len() as i32
     }
 
-    fn column_name(&self, idx: i32) -> Option<&str> {
+    pub fn column_name(&self, idx: i32) -> Option<&str> {
         self.cursor_step
             .cols()
             .get(idx as usize)
             .and_then(|c| c.name.as_ref())
             .map(|s| s.as_str())
+    }
+}
+
+#[async_trait::async_trait]
+impl<S> RowsInner for HranaRows<S>
+where
+    S: Stream<Item = Result<Bytes>> + Send + Sync + Unpin,
+{
+    async fn next(&mut self) -> crate::Result<Option<super::Row>> {
+        self.next().await
+    }
+
+    fn column_count(&self) -> i32 {
+        self.column_count()
+    }
+
+    fn column_name(&self, idx: i32) -> Option<&str> {
+        self.column_name(idx)
     }
 
     fn column_type(&self, _idx: i32) -> crate::Result<ValueType> {
