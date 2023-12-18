@@ -265,8 +265,8 @@ where
             )))?;
         }
         let mut responses = std::array::from_fn(|_| StreamResponse::Close);
-        for i in 0..N {
-            match response.results.swap_remove(0) {
+        for (i, result) in response.results.into_iter().enumerate() {
+            match result {
                 Response::Ok(StreamResponseOk { response }) => responses[i] = response,
                 Response::Error(e) => return Err(HranaError::StreamError(e)),
             }
@@ -275,7 +275,7 @@ where
     }
 
     async fn finalize(&mut self, req: StreamRequest) -> Result<(StreamResponse, bool)> {
-        let [resp, _, get_autocommit] = self
+        let [resp, get_autocommit, _] = self
             .send_requests([req, StreamRequest::GetAutocommit, StreamRequest::Close])
             .await?;
         let is_autocommit = match get_autocommit {
