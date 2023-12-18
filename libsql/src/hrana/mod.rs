@@ -17,7 +17,7 @@ pub(crate) use crate::hrana::pipeline::StreamResponseError;
 use crate::hrana::proto::{Col, Stmt, StmtResult};
 use crate::hrana::stream::HranaStream;
 use crate::{params::Params, ValueType};
-use bytes::{Bytes, BytesMut};
+use bytes::Bytes;
 use futures::Stream;
 use std::collections::VecDeque;
 use std::future::Future;
@@ -38,62 +38,43 @@ struct Cookie {
 }
 
 pub trait HttpSend: Clone {
-    type Result: Future<Output = Result<HttpBody>>;
+    type Stream: Stream<Item = Result<Bytes>> + Unpin;
+    type Result: Future<Output = Result<Self::Stream>>;
     fn http_send(&self, url: Arc<str>, auth: Arc<str>, body: String) -> Self::Result;
 }
 
-#[cfg(feature = "wasm")]
-pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Unpin>;
-
-#[cfg(not(feature = "wasm"))]
-pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Send + Unpin>;
-
-pub enum HttpBody {
-    Body(Bytes),
-    Stream(ByteStream),
+pub enum HttpBody<S> {
+    Body(Option<Bytes>),
+    Stream(S),
 }
 
-impl HttpBody {
-    pub async fn bytes(self) -> Result<Bytes> {
-        match self {
-            HttpBody::Body(bytes) => Ok(bytes),
-            HttpBody::Stream(stream) => stream_to_bytes(stream).await,
-        }
-    }
-
-    pub fn stream(self) -> ByteStream {
-        match self {
-            HttpBody::Stream(stream) => stream,
-            HttpBody::Body(bytes) => Box::new(SimpleStream::new(bytes)),
-        }
+impl<S> From<Bytes> for HttpBody<S> {
+    fn from(value: Bytes) -> Self {
+        HttpBody::Body(Some(value))
     }
 }
 
-struct SimpleStream(Option<Bytes>);
-impl SimpleStream {
-    fn new(bytes: Bytes) -> Self {
-        SimpleStream(Some(bytes))
-    }
-}
-impl Stream for SimpleStream {
+impl<S> Stream for HttpBody<S>
+where
+    S: Stream<Item = Result<Bytes>> + Unpin,
+{
     type Item = Result<Bytes>;
 
-    fn poll_next(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        match self.0.take() {
-            None => Poll::Ready(None),
-            Some(bytes) => Poll::Ready(Some(Ok(bytes))),
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        match self.get_mut() {
+            HttpBody::Body(bytes) => {
+                if let Some(bytes) = bytes.take() {
+                    Poll::Ready(Some(Ok(bytes)))
+                } else {
+                    Poll::Ready(None)
+                }
+            }
+            HttpBody::Stream(stream) => {
+                let pinned = Pin::new(stream);
+                pinned.poll_next(cx)
+            }
         }
     }
-}
-
-async fn stream_to_bytes(mut stream: ByteStream) -> Result<Bytes> {
-    use futures::StreamExt;
-
-    let mut buf = BytesMut::new();
-    while let Some(chunk) = stream.next().await {
-        buf.extend_from_slice(&chunk?);
-    }
-    Ok(buf.freeze())
 }
 
 #[derive(Debug, thiserror::Error)]

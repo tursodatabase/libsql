@@ -4,10 +4,10 @@ use crate::hrana::pipeline::{
     StoreSqlStreamReq, StreamRequest, StreamResponse, StreamResponseOk,
 };
 use crate::hrana::proto::{Batch, BatchResult, DescribeResult, Stmt, StmtResult};
-use crate::hrana::{
-    ByteStream, CursorResponseError, HranaError, HttpSend, Result, StreamResponseError,
-};
+use crate::hrana::{CursorResponseError, HranaError, HttpSend, Result, StreamResponseError};
+use bytes::{Bytes, BytesMut};
 use futures::lock::Mutex;
+use futures::Stream;
 use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::Arc;
 
@@ -108,7 +108,7 @@ where
         Ok(cursor.into_batch_result().await?)
     }
 
-    pub async fn cursor(&self, batch: Batch) -> Result<Cursor> {
+    pub async fn cursor(&self, batch: Batch) -> Result<Cursor<T::Stream>> {
         let mut client = self.inner.stream.lock().await;
         let cursor = client.open_cursor(batch).await?;
         Ok(cursor)
@@ -229,7 +229,7 @@ where
         Ok(resp)
     }
 
-    pub async fn open_cursor(&mut self, batch: Batch) -> Result<Cursor> {
+    pub async fn open_cursor(&mut self, batch: Batch) -> Result<Cursor<T::Stream>> {
         if self.status == StreamStatus::Closed {
             return Err(HranaError::StreamClosed(
                 "client stream has been closed by the servers".to_string(),
@@ -240,11 +240,10 @@ where
             batch,
         };
         let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
-        let stream: ByteStream = self
+        let stream = self
             .client
             .http_send(self.cursor_url.clone(), self.auth_token.clone(), body)
-            .await?
-            .stream();
+            .await?;
         let (cursor, mut response) = Cursor::open(stream).await?;
         if let Some(base_url) = response.base_url.take() {
             self.cursor_url = Arc::from(base_url);
@@ -284,9 +283,8 @@ where
         let body = self
             .client
             .http_send(self.pipeline_url.clone(), self.auth_token.clone(), body)
-            .await?
-            .bytes()
             .await?;
+        let body = stream_to_bytes(body).await?;
         let mut response: ServerMsg = serde_json::from_slice(&body)?;
         if let Some(base_url) = response.base_url.take() {
             self.pipeline_url = Arc::from(base_url);
@@ -364,6 +362,19 @@ where
         self.sql_id_generator = self.sql_id_generator.wrapping_add(1);
         self.sql_id_generator
     }
+}
+
+async fn stream_to_bytes<S>(mut stream: S) -> Result<Bytes>
+where
+    S: Stream<Item = Result<Bytes>> + Unpin,
+{
+    use futures::StreamExt;
+
+    let mut buf = BytesMut::new();
+    while let Some(chunk) = stream.next().await {
+        buf.extend_from_slice(&chunk?);
+    }
+    Ok(buf.freeze())
 }
 
 #[repr(u8)]

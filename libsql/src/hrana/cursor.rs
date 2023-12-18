@@ -1,7 +1,8 @@
 // https://github.com/tursodatabase/libsql/blob/main/docs/HRANA_3_SPEC.md#cursor-entries
 
 use crate::hrana::proto::{Batch, BatchResult, Col, StmtResult, Value};
-use crate::hrana::{ByteStream, CursorResponseError, HranaError, Result, Row};
+use crate::hrana::{CursorResponseError, HranaError, Result, Row};
+use bytes::Bytes;
 use futures::{ready, Future, Stream, StreamExt};
 use serde::de::Error;
 use serde::{Deserialize, Serialize};
@@ -60,13 +61,16 @@ pub struct ErrorEntry {
     pub error: String,
 }
 
-pub struct Cursor {
-    stream: ByteStream,
+pub struct Cursor<S> {
+    stream: S,
     buf: VecDeque<u8>,
 }
 
-impl Cursor {
-    pub(super) async fn open(stream: ByteStream) -> Result<(Self, CursorResp)> {
+impl<S> Cursor<S>
+where
+    S: Stream<Item = Result<Bytes>> + Unpin,
+{
+    pub(super) async fn open(stream: S) -> Result<(Self, CursorResp)> {
         let mut cursor = Cursor {
             stream,
             buf: VecDeque::new(),
@@ -125,7 +129,7 @@ impl Cursor {
         })
     }
 
-    pub async fn next_step(&mut self) -> Result<CursorStep> {
+    pub async fn next_step(&mut self) -> Result<CursorStep<S>> {
         CursorStep::new(self).await
     }
 
@@ -164,7 +168,10 @@ impl Cursor {
     }
 }
 
-impl Stream for Cursor {
+impl<S> Stream for Cursor<S>
+where
+    S: Stream<Item = Result<Bytes>> + Unpin,
+{
     type Item = Result<CursorEntry>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -184,16 +191,19 @@ impl Stream for Cursor {
     }
 }
 
-pub struct CursorStep<'a> {
-    cursor: Option<&'a mut Cursor>,
+pub struct CursorStep<'a, S> {
+    cursor: Option<&'a mut Cursor<S>>,
     cols: Arc<Vec<Col>>,
     step_no: u32,
     affected_rows: u32,
     last_inserted_rowid: Option<String>,
 }
 
-impl<'a> CursorStep<'a> {
-    async fn new(cursor: &'a mut Cursor) -> Result<CursorStep<'a>> {
+impl<'a, S> CursorStep<'a, S>
+where
+    S: Stream<Item = Result<Bytes>> + Unpin,
+{
+    async fn new(cursor: &'a mut Cursor<S>) -> Result<CursorStep<'a, S>> {
         let mut begin = None;
         while let Some(res) = cursor.next().await {
             match res? {
@@ -246,7 +256,10 @@ impl<'a> CursorStep<'a> {
     }
 }
 
-impl<'a> Stream for CursorStep<'a> {
+impl<'a, S> Stream for CursorStep<'a, S>
+where
+    S: Stream<Item = Result<Bytes>> + Unpin,
+{
     type Item = Result<Row>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -295,12 +308,14 @@ impl<'a> Stream for CursorStep<'a> {
 #[cfg(test)]
 mod test {
     use crate::hrana::cursor::Cursor;
-    use crate::hrana::ByteStream;
+    use crate::hrana::Result;
     use crate::rows::RowInner;
     use crate::Value;
     use bytes::Bytes;
-    use futures::StreamExt;
+    use futures::{Stream, StreamExt};
     use serde_json::json;
+
+    type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Unpin>;
 
     fn byte_stream(entries: impl IntoIterator<Item = serde_json::Value>) -> ByteStream {
         let mut payload = Vec::new();

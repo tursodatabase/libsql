@@ -15,8 +15,11 @@ impl CloudflareSender {
         CloudflareSender(())
     }
 
-    async fn send(url: Arc<str>, auth: Arc<str>, body: String) -> Result<HttpBody> {
-        use worker::*;
+    async fn send(url: Arc<str>, auth: Arc<str>, body: String) -> Result<HttpBody<HttpStream>> {
+        use worker::{
+            CfProperties, Fetch, Headers, Method, Request, RequestInit, RequestRedirect,
+            ResponseBody,
+        };
 
         let mut response = Fetch::Request(Request::new_with_init(
             &url,
@@ -38,10 +41,10 @@ impl CloudflareSender {
             let body = response.text().await?;
             Err(HranaError::Api(body))
         } else {
-            let body = match response.body() {
-                ResponseBody::Empty => HttpBody::Body(Bytes::new()),
-                ResponseBody::Body(body) => HttpBody::Body(Bytes::from(body.clone())),
-                _ => HttpBody::Stream(Box::new(HttpStream(response.stream()?))),
+            let body: HttpBody<HttpStream> = match response.body() {
+                ResponseBody::Empty => HttpBody::from(Bytes::new()),
+                ResponseBody::Body(body) => HttpBody::from(Bytes::from(body.clone())),
+                _ => HttpBody::Stream(HttpStream(response.stream()?)),
             };
             Ok(body)
         }
@@ -49,7 +52,8 @@ impl CloudflareSender {
 }
 
 impl HttpSend for CloudflareSender {
-    type Result = Pin<Box<dyn Future<Output = Result<HttpBody>>>>;
+    type Stream = HttpBody<HttpStream>;
+    type Result = Pin<Box<dyn Future<Output = Result<Self::Stream>>>>;
 
     fn http_send(&self, url: Arc<str>, auth: Arc<str>, body: String) -> Self::Result {
         let fut = Self::send(url, auth, body);
@@ -65,7 +69,7 @@ impl From<worker::Error> for HranaError {
     }
 }
 
-struct HttpStream(worker::ByteStream);
+pub struct HttpStream(worker::ByteStream);
 
 impl Stream for HttpStream {
     type Item = Result<Bytes>;

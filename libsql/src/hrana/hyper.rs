@@ -8,12 +8,15 @@ use crate::params::Params;
 use crate::transaction::Tx;
 use crate::util::ConnectorService;
 use crate::{Rows, Statement};
+use bytes::Bytes;
 use futures::future::BoxFuture;
-use futures::TryStreamExt;
+use futures::{Stream, TryStreamExt};
 use http::header::AUTHORIZATION;
 use http::{HeaderValue, StatusCode};
 use hyper::body::HttpBody;
 use std::sync::Arc;
+
+pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Send + Unpin>;
 
 #[derive(Clone, Debug)]
 pub struct HttpSender {
@@ -32,7 +35,12 @@ impl HttpSender {
         Self { inner, version }
     }
 
-    async fn send(self, url: Arc<str>, auth: Arc<str>, body: String) -> Result<super::HttpBody> {
+    async fn send(
+        self,
+        url: Arc<str>,
+        auth: Arc<str>,
+        body: String,
+    ) -> Result<super::HttpBody<ByteStream>> {
         let req = hyper::Request::post(url.as_ref())
             .header(AUTHORIZATION, auth.as_ref())
             .header("x-libsql-client-version", self.version.clone())
@@ -49,11 +57,11 @@ impl HttpSender {
             return Err(HranaError::Api(body));
         }
 
-        let body = if resp.is_end_stream() {
+        let body: super::HttpBody<ByteStream> = if resp.is_end_stream() {
             let body = hyper::body::to_bytes(resp.into_body())
                 .await
                 .map_err(HranaError::from)?;
-            super::HttpBody::Body(body)
+            super::HttpBody::from(body)
         } else {
             let stream = resp
                 .into_body()
@@ -67,7 +75,8 @@ impl HttpSender {
 }
 
 impl HttpSend for HttpSender {
-    type Result = BoxFuture<'static, Result<super::HttpBody>>;
+    type Stream = super::HttpBody<ByteStream>;
+    type Result = BoxFuture<'static, Result<Self::Stream>>;
 
     fn http_send(&self, url: Arc<str>, auth: Arc<str>, body: String) -> Self::Result {
         let fut = self.clone().send(url, auth, body);
