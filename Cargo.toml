@@ -60,6 +60,3 @@ allow-dirty = ["ci"] # we've edited the release yml to narrow the tag scope
 inherits = "release"
 lto = "thin"
 
-[patch.crates-io]
-s3s-fs = { git = "https://github.com/LucioFranco/s3s", rev = "e2b4f44f711b527f6e18dc9ababd80ab050746a3" }
-s3s = { git = "https://github.com/LucioFranco/s3s", rev = "e2b4f44f711b527f6e18dc9ababd80ab050746a3" }
