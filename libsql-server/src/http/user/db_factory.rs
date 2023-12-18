@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::extract::FromRequestParts;
+use axum::extract::{FromRequestParts, Path};
 use hyper::http::request::Parts;
 use hyper::HeaderMap;
 
@@ -61,6 +61,32 @@ pub fn namespace_from_headers(
         Ok(ns) => Ok(ns),
         Err(_) if !disable_default_namespace => Ok(NamespaceName::default()),
         Err(e) => Err(e),
+    }
+}
+
+pub struct MakeConnectionExtractorPath<D>(pub Arc<dyn MakeConnection<Connection = D>>);
+#[async_trait::async_trait]
+impl<F> FromRequestParts<AppState<F>>
+    for MakeConnectionExtractorPath<<F::Database as Database>::Connection>
+where
+    F: MakeNamespace,
+{
+    type Rejection = Error;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState<F>,
+    ) -> Result<Self, Self::Rejection> {
+        let auth = Authenticated::from_request_parts(parts, state).await?;
+        let Path((ns, _)) = Path::<(NamespaceName, String)>::from_request_parts(parts, state)
+            .await
+            .map_err(|e| Error::InvalidPath(e.to_string()))?;
+        Ok(Self(
+            state
+                .namespaces
+                .with_authenticated(ns, auth, |ns| ns.db.connection_maker())
+                .await?,
+        ))
     }
 }
 
