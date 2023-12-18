@@ -1,4 +1,4 @@
-use libsql::{Database, Frames};
+use libsql::{replication::Frames, Database};
 use libsql_replication::{
     frame::{FrameBorrowed, FrameHeader, FrameMut},
     LIBSQL_PAGE_SIZE,
@@ -32,10 +32,7 @@ async fn inject_frames() {
     let frames = frames.into_iter().map(Into::into).collect();
 
     assert_eq!(
-        db.sync_frames(libsql::Frames::Vec(frames))
-            .await
-            .unwrap()
-            .unwrap(),
+        db.sync_frames(Frames::Vec(frames)).await.unwrap().unwrap(),
         2
     );
 
@@ -73,7 +70,7 @@ async fn inject_frames() {
     let frames = frames.into_iter().map(Into::into).collect();
 
     assert_eq!(
-        db.sync_frames(libsql::Frames::Vec(frames))
+        db.sync_frames(libsql::replication::Frames::Vec(frames))
             .await
             .unwrap()
             .unwrap(),

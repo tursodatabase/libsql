@@ -153,7 +153,7 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub fn writer(&self) -> Result<Option<crate::replication::Writer>> {
+    pub(crate) fn writer(&self) -> Result<Option<crate::replication::Writer>> {
         use crate::replication::Writer;
         if let Some(ReplicationContext {
             client: Some(ref client),

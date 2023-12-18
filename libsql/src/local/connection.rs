@@ -223,7 +223,7 @@ impl Connection {
     }
 
     #[cfg(feature = "replication")]
-    pub fn writer(&self) -> Option<&crate::replication::Writer> {
+    pub(crate) fn writer(&self) -> Option<&crate::replication::Writer> {
         self.writer.as_ref()
     }
 }

@@ -1,7 +1,7 @@
-//! Copied from https://docs.rs/tower/latest/tower/util/struct.BoxCloneService.html
-//! This is because in the tower version the trait object only implements `Send` which
-//! means we can't call clients from context that need `Sync` like an `async fn` that needs
-//! to be `Send` (must be sync as well to impl Send).
+// Copied from https://docs.rs/tower/latest/tower/util/struct.BoxCloneService.html
+// This is because in the tower version the trait object only implements `Send` which
+// means we can't call clients from context that need `Sync` like an `async fn` that needs
+// to be `Send` (must be sync as well to impl Send).
 
 use std::fmt;
 use std::future::Future;

@@ -39,6 +39,13 @@
 //! # }
 //! ```
 //!
+//! ## WASM
+//!
+//! Due to WASM requiring `!Send` support and the [`Database`] type supporting async and using
+//! `async_trait` to abstract between the different database types, we are unable to support WASM
+//! via the [`Database`] type. Instead, we have provided simpler parallel types in the `wasm`
+//! module that provide access to our remote HTTP protocol in WASM.
+//!
 //! ## Examples
 //!
 //! You can find more examples in the [`examples`](https://github.com/tursodatabase/libsql/tree/main/crates/core/examples) directory.
@@ -56,10 +63,7 @@ cfg_core! {
 pub mod params;
 
 cfg_replication! {
-    mod replication;
-    pub use libsql_replication::frame::{FrameNo, Frame};
-    pub use libsql_replication::snapshot::SnapshotFile;
-    pub use replication::Frames;
+    pub mod replication;
 }
 
 cfg_core! {
@@ -79,9 +83,11 @@ pub use params::params_from_iter;
 
 mod connection;
 mod database;
+
 cfg_parser! {
     mod parser;
 }
+
 mod rows;
 mod statement;
 mod transaction;
@@ -104,5 +110,6 @@ pub use self::{
     transaction::{Transaction, TransactionBehavior},
 };
 
+/// Convenient alias for `Result` using the `libsql::Error` type.
 pub type Result<T> = std::result::Result<T, errors::Error>;
 pub(crate) type BoxError = Box<dyn std::error::Error + Send + Sync>;

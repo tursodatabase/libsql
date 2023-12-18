@@ -1,13 +1,16 @@
+//! Utilities used when using a replicated version of libsql.
+
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use libsql_replication::frame::{Frame, FrameNo};
+pub use libsql_replication::frame::{Frame, FrameNo};
 use libsql_replication::replicator::{Either, Replicator};
+pub use libsql_replication::snapshot::SnapshotFile;
+
 use libsql_replication::rpc::proxy::{
     query::Params, DescribeRequest, DescribeResult, ExecuteResults, Positional, Program,
     ProgramReq, Query, Step,
 };
-use libsql_replication::snapshot::SnapshotFile;
 use tokio::sync::Mutex;
 
 use crate::parser::Statement;
@@ -15,7 +18,7 @@ use crate::Result;
 
 use libsql_replication::replicator::ReplicatorClient;
 
-pub use connection::RemoteConnection;
+pub(crate) use connection::RemoteConnection;
 
 use self::local_client::LocalClient;
 use self::remote_client::RemoteClient;
@@ -25,6 +28,7 @@ mod connection;
 pub(crate) mod local_client;
 pub(crate) mod remote_client;
 
+/// A set of rames to be injected via `sync_frames`.
 pub enum Frames {
     /// A set of frames, in increasing frame_no.
     Vec(Vec<Frame>),
@@ -34,13 +38,13 @@ pub enum Frames {
 }
 
 #[derive(Clone)]
-pub struct Writer {
+pub(crate) struct Writer {
     pub(crate) client: client::Client,
     pub(crate) replicator: Option<EmbeddedReplicator>,
 }
 
 impl Writer {
-    pub async fn execute_program(
+    pub(crate) async fn execute_program(
         &self,
         steps: Vec<Statement>,
         params: impl Into<Params>,
@@ -72,7 +76,7 @@ impl Writer {
             .await
     }
 
-    pub async fn describe(&self, stmt: impl Into<String>) -> anyhow::Result<DescribeResult> {
+    pub(crate) async fn describe(&self, stmt: impl Into<String>) -> anyhow::Result<DescribeResult> {
         let stmt = stmt.into();
 
         self.client
