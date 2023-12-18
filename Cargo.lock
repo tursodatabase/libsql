@@ -4138,8 +4138,9 @@ checksum = "1ad4cc8da4ef723ed60bced201181d83791ad433213d8c24efffda1eec85d741"
 
 [[package]]
 name = "s3s"
-version = "0.8.1-dev"
-source = "git+https://github.com/LucioFranco/s3s?rev=e2b4f44f711b527f6e18dc9ababd80ab050746a3#e2b4f44f711b527f6e18dc9ababd80ab050746a3"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17419b26b83f810a49eb1087213e889da16b446f9cf5149aaad777c0b1e5f56f"
 dependencies = [
  "arrayvec",
  "async-trait",
@@ -4177,8 +4178,9 @@ dependencies = [
 
 [[package]]
 name = "s3s-fs"
-version = "0.8.1-dev"
-source = "git+https://github.com/LucioFranco/s3s?rev=e2b4f44f711b527f6e18dc9ababd80ab050746a3#e2b4f44f711b527f6e18dc9ababd80ab050746a3"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfed24ce7b786e2d8979f0468e7745482cc1f5114ed75dd214c71e5c5620d87e"
 dependencies = [
  "async-trait",
  "base64-simd",
