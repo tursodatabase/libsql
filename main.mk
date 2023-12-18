@@ -360,6 +360,7 @@ TESTSRC += \
   $(TOP)/ext/misc/percentile.c \
   $(TOP)/ext/misc/prefixes.c \
   $(TOP)/ext/misc/qpvtab.c \
+  $(TOP)/ext/misc/randomjson.c \
   $(TOP)/ext/misc/regexp.c \
   $(TOP)/ext/misc/remember.c \
   $(TOP)/ext/misc/series.c \
@@ -901,6 +902,8 @@ TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_DBPAGE_VTAB
 TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_BYTECODE_VTAB
 TESTFIXTURE_FLAGS += -DTCLSH_INIT_PROC=sqlite3TestInit
 TESTFIXTURE_FLAGS += -DSQLITE_CKSUMVFS_STATIC
+TESTFIXTURE_FLAGS += -DSQLITE_STATIC_RANDOMJSON
+TESTFIXTURE_FLAGS += -DSQLITE_STRICT_SUBTYPE=1
 
 testfixture$(EXE): $(TESTSRC2) libsqlite3.a $(TESTSRC) $(TOP)/src/tclsqlite.c
 	$(TCCX) $(TCL_FLAGS) $(TESTFIXTURE_FLAGS)                            \

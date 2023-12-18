@@ -13,7 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix json104
+set testprefix json105
 
 # This is the example from pages 2 and 3 of RFC-7396
 db eval {
