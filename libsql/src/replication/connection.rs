@@ -191,6 +191,10 @@ impl RemoteConnection {
                 .into();
         }
 
+        if let Some(replicator) = writer.replicator() {
+            replicator.sync_oneshot().await?;
+        }
+
         Ok(res)
     }
 

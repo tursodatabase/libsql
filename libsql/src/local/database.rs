@@ -1,26 +1,24 @@
 use std::sync::Once;
 
 cfg_replication!(
-    use tokio::sync::Mutex;
-    use libsql_replication::replicator::Replicator;
     use libsql_replication::frame::FrameNo;
-    use libsql_replication::replicator::Either;
 
     use crate::replication::client::Client;
     use crate::replication::local_client::LocalClient;
     use crate::replication::remote_client::RemoteClient;
+    use crate::replication::EmbeddedReplicator;
     pub use crate::replication::Frames;
+
+    pub struct ReplicationContext {
+        pub(crate) replicator: EmbeddedReplicator,
+        client: Option<Client>,
+        read_your_writes: bool,
+    }
 );
 
 use crate::{database::OpenFlags, local::connection::Connection};
 use crate::{Error::ConnectionFailed, Result};
 use libsql_sys::ffi;
-
-#[cfg(feature = "replication")]
-pub struct ReplicationContext {
-    pub replicator: Mutex<Replicator<Either<RemoteClient, LocalClient>>>,
-    client: Option<Client>,
-}
 
 // A libSQL database.
 pub struct Database {
@@ -54,34 +52,7 @@ impl Database {
         endpoint: String,
         auth_token: String,
     ) -> Result<Database> {
-        use std::path::PathBuf;
-
-        use crate::util::coerce_url_scheme;
-
-        let mut db = Database::open(&db_path, OpenFlags::default())?;
-
-        let endpoint = coerce_url_scheme(&endpoint);
-        let remote = crate::replication::client::Client::new(
-            connector,
-            endpoint.as_str().try_into().unwrap(),
-            auth_token,
-            None,
-        )
-        .unwrap();
-        let path = PathBuf::from(db_path);
-        let client = RemoteClient::new(remote.clone(), &path).await.unwrap();
-        let replicator = Mutex::new(
-            Replicator::new(Either::Left(client), path, 1000)
-                .await
-                .unwrap(),
-        );
-
-        db.replication_ctx = Some(ReplicationContext {
-            replicator,
-            client: Some(remote),
-        });
-
-        Ok(db)
+        Self::open_http_sync_internal(connector, db_path, endpoint, auth_token, None, false).await
     }
 
     #[cfg(feature = "replication")]
@@ -92,6 +63,7 @@ impl Database {
         endpoint: String,
         auth_token: String,
         version: Option<String>,
+        read_your_writes: bool,
     ) -> Result<Database> {
         use std::path::PathBuf;
 
@@ -108,16 +80,16 @@ impl Database {
         )
         .unwrap();
         let path = PathBuf::from(db_path);
-        let client = RemoteClient::new(remote.clone(), &path).await.map_err(|e| crate::errors::Error::ConnectionFailed(e.to_string()))?;
-        let replicator = Mutex::new(
-            Replicator::new(Either::Left(client), path, 1000)
+        let client = RemoteClient::new(remote.clone(), &path)
             .await
-            .map_err(|e| crate::errors::Error::ConnectionFailed(e.to_string()))?
-        );
+            .map_err(|e| crate::errors::Error::ConnectionFailed(e.to_string()))?;
+
+        let replicator = EmbeddedReplicator::with_remote(client, path, 1000).await;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,
             client: Some(remote),
+            read_your_writes,
         });
 
         Ok(db)
@@ -132,14 +104,13 @@ impl Database {
 
         let path = PathBuf::from(db_path);
         let client = LocalClient::new(&path).await.unwrap();
-        let replicator = Mutex::new(
-            Replicator::new(Either::Right(client), path, 1000)
-                .await
-                .map_err(|e| ConnectionFailed(format!("{e}")))?,
-        );
+
+        let replicator = EmbeddedReplicator::with_local(client, path, 1000).await;
+
         db.replication_ctx = Some(ReplicationContext {
             replicator,
             client: None,
+            read_your_writes: false,
         });
 
         Ok(db)
@@ -184,13 +155,19 @@ impl Database {
     #[cfg(feature = "replication")]
     pub fn writer(&self) -> Result<Option<crate::replication::Writer>> {
         use crate::replication::Writer;
-if let Some(ReplicationContext {
+        if let Some(ReplicationContext {
             client: Some(ref client),
-            ..
+            replicator,
+            read_your_writes,
         }) = &self.replication_ctx
         {
             Ok(Some(Writer {
                 client: client.clone(),
+                replicator: if *read_your_writes {
+                    Some(replicator.clone())
+                } else {
+                    None
+                },
             }))
         } else {
             Ok(None)
@@ -201,43 +178,8 @@ if let Some(ReplicationContext {
     /// Perform a sync step, returning the new replication index, or None, if the nothing was
     /// replicated yet
     pub async fn sync_oneshot(&self) -> Result<Option<FrameNo>> {
-        use libsql_replication::replicator::ReplicatorClient;
-
         if let Some(ref ctx) = self.replication_ctx {
-            let mut replicator = ctx.replicator.lock().await;
-            if !matches!(replicator.client_mut(), Either::Left(_)) {
-                return Err(crate::errors::Error::Misuse(
-                    "Trying to replicate from HTTP, but this is a local replicator".into(),
-                ));
-            }
-
-            // we force a handshake to get the most up to date replication index from the primary.
-            replicator.force_handshake();
-
-            loop {
-                match replicator
-                    .replicate()
-                    .await {
-                        Err(libsql_replication::replicator::Error::Meta(libsql_replication::meta::Error::LogIncompatible)) => {
-                            // The meta must have been marked as dirty, replicate again from scratch
-                            // this time.
-                            tracing::debug!("re-replicating database after LogIncompatible error");
-                            replicator.replicate().await.map_err(|e| crate::Error::Replication(e.into()))?;
-                        }
-                        Err(e) => return Err(crate::Error::Replication(e.into())),
-                        Ok(_) => {
-                            let Either::Left(client) = replicator.client_mut() else { unreachable!() };
-                            let Some(primary_index) = client.last_handshake_replication_index() else { return Ok(None) };
-                            if let Some(replica_index) = replicator.client_mut().committed_frame_no() {
-                                if replica_index >= primary_index {
-                                    break
-                                }
-                            }
-                        },
-                    }
-            }
-
-            Ok(replicator.client_mut().committed_frame_no())
+            ctx.replicator.sync_oneshot().await
         } else {
             Err(crate::errors::Error::Misuse(
                 "No replicator available. Use Database::with_replicator() to enable replication"
@@ -265,26 +207,8 @@ if let Some(ReplicationContext {
 
     #[cfg(feature = "replication")]
     pub async fn sync_frames(&self, frames: Frames) -> Result<Option<FrameNo>> {
-        use libsql_replication::replicator::ReplicatorClient;
-
         if let Some(ref ctx) = self.replication_ctx {
-            let mut replicator = ctx.replicator.lock().await;
-            match replicator.client_mut() {
-                Either::Right(c) => {
-                    c.load_frames(frames);
-                }
-                Either::Left(_) => {
-                    return Err(crate::errors::Error::Misuse(
-                        "Trying to call sync_frames with an HTTP replicator".into(),
-                    ))
-                }
-            }
-            replicator
-                .replicate()
-                .await
-                .map_err(|e| crate::Error::Replication(e.into()))?;
-
-            Ok(replicator.client_mut().committed_frame_no())
+            ctx.replicator.sync_frames(frames).await
         } else {
             Err(crate::errors::Error::Misuse(
                 "No replicator available. Use Database::with_replicator() to enable replication"
@@ -295,15 +219,8 @@ if let Some(ReplicationContext {
 
     #[cfg(feature = "replication")]
     pub async fn flush_replicator(&self) -> Result<Option<FrameNo>> {
-        use libsql_replication::replicator::ReplicatorClient;
-
         if let Some(ref ctx) = self.replication_ctx {
-            let mut replicator = ctx.replicator.lock().await;
-            replicator
-                .flush()
-                .await
-                .map_err(|e| crate::Error::Replication(e.into()))?;
-            Ok(replicator.client_mut().committed_frame_no())
+            ctx.replicator.flush().await
         } else {
             Err(crate::errors::Error::Misuse(
                 "No replicator available. Use Database::with_replicator() to enable replication"
@@ -314,10 +231,8 @@ if let Some(ReplicationContext {
 
     #[cfg(feature = "replication")]
     pub async fn replication_index(&self) -> Result<Option<FrameNo>> {
-        use libsql_replication::replicator::ReplicatorClient;
-
         if let Some(ref ctx) = self.replication_ctx {
-            Ok(ctx.replicator.lock().await.client_mut().committed_frame_no())
+            Ok(ctx.replicator.committed_frame_no().await)
         } else {
             Err(crate::errors::Error::Misuse(
                 "No replicator available. Use Database::with_replicator() to enable replication"

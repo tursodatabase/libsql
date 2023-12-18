@@ -105,19 +105,40 @@ cfg_replication! {
             url: impl Into<String>,
             token: impl Into<String>,
         ) -> Result<Database> {
-            use hyper_rustls::HttpsConnectorBuilder;
-
             let mut http = hyper::client::HttpConnector::new();
             http.enforce_http(false);
             http.set_nodelay(true);
 
-            let https = HttpsConnectorBuilder::new()
+            let https = hyper_rustls::HttpsConnectorBuilder::new()
                 .with_native_roots()
                 .https_or_http()
                 .enable_http1()
                 .wrap_connector(http);
 
-            Self::open_with_remote_sync_connector(db_path, url, token, https).await
+            Self::open_with_remote_sync_connector(db_path, url, token, https, false).await
+        }
+
+        /// Open a local database file with the ability to sync from a remote database
+        /// in consistent mode.
+        ///
+        /// Consistent mode means that when a write happens it will not complete until
+        /// that write is visible in the local db.
+        pub async fn open_with_remote_sync_consistent(
+            db_path: impl Into<String>,
+            url: impl Into<String>,
+            token: impl Into<String>,
+        ) -> Result<Database> {
+            let mut http = hyper::client::HttpConnector::new();
+            http.enforce_http(false);
+            http.set_nodelay(true);
+
+            let https = hyper_rustls::HttpsConnectorBuilder::new()
+                .with_native_roots()
+                .https_or_http()
+                .enable_http1()
+                .wrap_connector(http);
+
+            Self::open_with_remote_sync_connector(db_path, url, token, https, true).await
         }
 
         #[doc(hidden)]
@@ -125,13 +146,21 @@ cfg_replication! {
             db_path: impl Into<String>,
             url: impl Into<String>,
             token: impl Into<String>,
-            version: Option<String>
+            version: Option<String>,
+            read_your_writes: bool,
         ) -> Result<Database> {
             let mut http = hyper::client::HttpConnector::new();
             http.enforce_http(false);
             http.set_nodelay(true);
 
-            Self::open_with_remote_sync_connector_internal(db_path, url, token, http, version).await
+            Self::open_with_remote_sync_connector_internal(
+                db_path,
+                url,
+                token,
+                http,
+                version,
+                read_your_writes
+            ).await
         }
 
         /// Connect an embedded replica to a remote primary with a custom
@@ -141,6 +170,7 @@ cfg_replication! {
             url: impl Into<String>,
             token: impl Into<String>,
             connector: C,
+            read_your_writes: bool,
         ) -> Result<Database>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
@@ -148,7 +178,14 @@ cfg_replication! {
             C::Future: Send + 'static,
             C::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
         {
-            Self::open_with_remote_sync_connector_internal(db_path, url, token, connector, None).await
+            Self::open_with_remote_sync_connector_internal(
+                db_path,
+                url,
+                token,
+                connector,
+                None,
+                read_your_writes
+            ).await
         }
 
         #[doc(hidden)]
@@ -157,7 +194,8 @@ cfg_replication! {
             url: impl Into<String>,
             token: impl Into<String>,
             connector: C,
-            version: Option<String>
+            version: Option<String>,
+            read_your_writes: bool,
         ) -> Result<Database>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
@@ -178,7 +216,8 @@ cfg_replication! {
                 db_path.into(),
                 url.into(),
                 token.into(),
-                version
+                version,
+                read_your_writes
             ).await?;
 
             Ok(Database {
