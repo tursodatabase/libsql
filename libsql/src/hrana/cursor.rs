@@ -1,6 +1,6 @@
 // https://github.com/tursodatabase/libsql/blob/main/docs/HRANA_3_SPEC.md#cursor-entries
 
-use crate::hrana::proto::{Batch, BatchResult, Col, StmtResult, HttpSend, Value};
+use crate::hrana::proto::{Batch, BatchResult, Col, StmtResult, Value};
 use crate::hrana::{CursorResponseError, HranaError, Result, Row};
 use bytes::Bytes;
 use futures::{ready, Future, Stream, StreamExt};
@@ -133,7 +133,7 @@ where
         CursorStep::new(self).await
     }
 
-    pub async fn next_step_owned(self) -> Result<OwnedCursorStep> {
+    pub async fn next_step_owned(self) -> Result<OwnedCursorStep<S>> {
         OwnedCursorStep::new(self).await
     }
 
@@ -200,9 +200,10 @@ pub struct OwnedCursorStep<S> {
     state: CursorStepState,
 }
 
-impl<S> OwnedCursorStep<S> 
+impl<S> OwnedCursorStep<S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,{
+    S: Stream<Item = Result<Bytes>> + Unpin,
+{
     async fn new(mut cursor: Cursor<S>) -> Result<Self> {
         let begin = get_next_step(&mut cursor).await?;
         Ok(OwnedCursorStep {
@@ -216,16 +217,16 @@ where
         })
     }
 
-    pub fn cursor(&self) -> Option<&Cursor> {
+    pub fn cursor(&self) -> Option<&Cursor<S>> {
         self.cursor.as_ref()
     }
 
-    pub fn cursor_mut(&mut self) -> Option<&mut Cursor> {
+    pub fn cursor_mut(&mut self) -> Option<&mut Cursor<S>> {
         self.cursor.as_mut()
     }
 
     /// Consume and discard all rows, fast running current cursor step to the end.
-    pub async fn consume(&mut self) -> Result<Option<Cursor>> {
+    pub async fn consume(&mut self) -> Result<Option<Cursor<S>>> {
         while let Some(res) = self.next().await {
             res?;
         }
@@ -251,7 +252,8 @@ where
 
 impl<S> Stream for OwnedCursorStep<S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin, {
+    S: Stream<Item = Result<Bytes>> + Unpin,
+{
     type Item = Result<Row>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -284,7 +286,8 @@ pub struct CursorStep<'a, S> {
 
 impl<'a, S> CursorStep<'a, S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,{
+    S: Stream<Item = Result<Bytes>> + Unpin,
+{
     async fn new(cursor: &'a mut Cursor<S>) -> Result<CursorStep<'a, S>> {
         let begin = get_next_step(cursor).await?;
         Ok(CursorStep {
@@ -323,7 +326,10 @@ where
     }
 }
 
-async fn get_next_step(cursor: &mut Cursor) -> Result<StepBeginEntry> {
+async fn get_next_step<S>(cursor: &mut Cursor<S>) -> Result<StepBeginEntry>
+where
+    S: Stream<Item = Result<Bytes>> + Unpin,
+{
     let mut begin = None;
     while let Some(res) = cursor.next().await {
         match res? {

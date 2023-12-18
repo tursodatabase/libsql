@@ -8,6 +8,7 @@ use crate::params::Params;
 use crate::transaction::Tx;
 use crate::util::ConnectorService;
 use crate::{Rows, Statement};
+use bytes::Bytes;
 use futures::future::BoxFuture;
 use futures::{Stream, TryStreamExt};
 use http::header::AUTHORIZATION;
@@ -15,7 +16,7 @@ use http::{HeaderValue, StatusCode};
 use hyper::body::HttpBody;
 use std::sync::Arc;
 
-pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Send + Unpin>;
+pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Send + Sync + Unpin>;
 
 #[derive(Clone, Debug)]
 pub struct HttpSender {
@@ -83,7 +84,7 @@ impl HttpSend for HttpSender {
     }
 
     fn oneshot(self, url: Arc<str>, auth: Arc<str>, body: String) {
-        let _ = tokio::spawn(async move { self.send(&url, &auth, body).await });
+        let _ = tokio::spawn(self.send(url, auth, body));
     }
 }
 

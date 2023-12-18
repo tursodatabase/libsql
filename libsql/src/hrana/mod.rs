@@ -20,7 +20,6 @@ use crate::hrana::stream::HranaStream;
 use crate::{params::Params, ValueType};
 use bytes::Bytes;
 use futures::Stream;
-use std::collections::VecDeque;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -106,30 +105,6 @@ where
     }
 }
 
-pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Unpin>;
-
-pub enum HttpBody {
-    Body(Bytes),
-    Stream(ByteStream),
-}
-
-impl HttpBody {
-    pub async fn bytes(self) -> Result<Bytes> {
-        match self {
-            HttpBody::Body(bytes) => Ok(bytes),
-            HttpBody::Stream(stream) => stream_to_bytes(stream).await,
-        }
-    }
-}
-
-async fn stream_to_bytes(mut stream: ByteStream) -> Result<Bytes> {
-    let mut buf = BytesMut::new();
-    while let Some(chunk) = stream.next().await {
-        buf.extend_from_slice(&chunk?);
-    }
-    Ok(buf.freeze())
-}
-
 #[derive(Debug, thiserror::Error)]
 pub enum HranaError {
     #[error("unexpected response: `{0}`")]
@@ -173,7 +148,7 @@ impl<T> StatementExecutor<T>
 where
     T: HttpSend,
 {
-    async fn execute(&self, stmt: Stmt) -> crate::Result<Cursor> {
+    async fn execute(&self, stmt: Stmt) -> crate::Result<Cursor<T::Stream>> {
         let res = match self {
             StatementExecutor::Stream(stream) => stream.cursor(Batch::single(stmt)).await,
             StatementExecutor::Connection(conn) => conn.execute_inner(stmt).await,
@@ -223,32 +198,51 @@ where
         Ok(step.affected_rows() as usize)
     }
 
-    pub async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
+    pub(crate) async fn query_raw(
+        &mut self,
+        params: &Params,
+    ) -> crate::Result<HranaRows<T::Stream>> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
         let cursor = self.executor.execute(stmt).await?;
         let rows = HranaRows::from_cursor(cursor).await?;
 
+        Ok(rows)
+    }
+}
+impl<T> Statement<T>
+where
+    T: HttpSend,
+    <T as HttpSend>::Stream: Send + Sync + 'static,
+{
+    pub async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
+        let rows = self.query_raw(params).await?;
         Ok(super::Rows {
             inner: Box::new(rows),
         })
     }
 }
 
-pub struct HranaRows {
-    cursor_step: OwnedCursorStep,
+pub struct HranaRows<S> {
+    cursor_step: OwnedCursorStep<S>,
 }
 
-impl HranaRows {
-    async fn from_cursor(cursor: Cursor) -> Result<Self> {
+impl<S> HranaRows<S>
+where
+    S: Stream<Item = Result<Bytes>> + Unpin,
+{
+    async fn from_cursor(cursor: Cursor<S>) -> Result<Self> {
         let cursor_step = cursor.next_step_owned().await?;
         Ok(HranaRows { cursor_step })
     }
 }
 
 #[async_trait::async_trait]
-impl RowsInner for HranaRows {
+impl<S> RowsInner for HranaRows<S>
+where
+    S: Stream<Item = Result<Bytes>> + Send + Sync + Unpin,
+{
     async fn next(&mut self) -> crate::Result<Option<super::Row>> {
         let row = match self.cursor_step.next().await {
             Some(Ok(row)) => row,

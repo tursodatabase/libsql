@@ -62,7 +62,7 @@ impl HttpSend for CloudflareSender {
 
     fn oneshot(self, url: Arc<str>, auth: Arc<str>, body: String) {
         worker::wasm_bindgen_futures::spawn_local(async move {
-            let _ = Self::send(&url, &auth, body).await;
+            let _ = Self::send(url, auth, body).await;
         });
     }
 }

@@ -118,6 +118,16 @@ fn transaction_timeout() {
 
         // transaction with temporary data
         let tx = conn.transaction().await?;
+        tx.execute("insert into t(x) values('hello');", ()).await?;
+
+        let mut rows = tx
+            .query("select * from t where x = ?", params!["hello"])
+            .await?;
+
+        assert_eq!(rows.column_count(), 1);
+        assert_eq!(rows.column_name(0), Some("x"));
+        assert_eq!(rows.next().await?.unwrap().get::<String>(0)?, "hello");
+        assert!(rows.next().await?.is_none());
 
         // Sleep to trigger stream expiration
         tokio::time::sleep(Duration::from_secs(300)).await;
