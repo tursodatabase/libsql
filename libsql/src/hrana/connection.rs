@@ -32,7 +32,7 @@ where
     pub fn new(url: String, token: String, inner: T) -> Self {
         // The `libsql://` protocol is an alias for `https://`.
         let base_url = coerce_url_scheme(&url);
-        let pipeline_url = Arc::from(format!("{base_url}/v2/pipeline"));
+        let pipeline_url = Arc::from(format!("{base_url}/v3/pipeline"));
         let cursor_url = Arc::from(format!("{base_url}/v3/cursor"));
         HttpConnection(Arc::new(InnerClient {
             inner,
