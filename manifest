@@ -1,5 +1,5 @@
-C Add\srandomjson.c\sto\stestfixture.\s\sUse\sit\sfor\sa\snew\sset\sof\sinvariant\stests\nagainst\sJSON\sfunctions.
-D 2023-12-18T14:24:13.030
+C Ensure\sthat\sthe\sinsert/delete\ssize\sdelta\son\sJSONB\sobjects\sin\sthe\sJSON\scache\nare\salways\sset\sto\szero.
+D 2023-12-18T15:53:48.421
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -696,7 +696,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 55aaffca9b1a136ea5937564f2159f300c2d7c3711cdb1c23356a7d27885827b
+F src/json.c 953ac749c4d348ddbcbb2851a66188d6ff9928ddc1daa7a56f8555fc1cecb806
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c ce714ee501122c76eb2e69b292bebe443aba611fc3b88e6786eb910285515fe4
@@ -2155,8 +2155,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 29c46aca231b3f1e997ef306a5a651408185bf3ad09ab9fc1fe21ed18caa4d02
-R 3b15382c1a769a7c8cb14a6589eb5342
+P f1c040606bfe784804134d8f3ca130908fad5212b47e3c32792baab977470943
+R 01dea41071f1e54cd13e89135ed2f4ac
 U drh
-Z 9a206cabf99e0d7c9b2e0213613cb0fd
+Z 65bb882629df28755f3c8ef3dc1544eb
 # Remove this line to create a well-formed Fossil manifest.

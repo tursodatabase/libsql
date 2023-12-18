@@ -374,6 +374,7 @@ static int jsonCacheInsert(
 
   assert( pParse->zJson!=0 );
   assert( pParse->bJsonIsRCStr );
+  assert( pParse->delta==0 );
   p = sqlite3_get_auxdata(ctx, JSON_CACHE_ID);
   if( p==0 ){
     sqlite3 *db = sqlite3_context_db_handle(ctx);
@@ -446,6 +447,7 @@ static JsonParse *jsonCacheSearch(
       p->a[p->nUsed-1] = tmp;
       i = p->nUsed - 1;
     }
+    assert( p->a[i]->delta==0 );
     return p->a[i];
   }else{
     return 0;
@@ -3306,6 +3308,7 @@ static void jsonReturnParse(
   }else{
     JsonString s;
     jsonStringInit(&s, ctx);
+    p->delta = 0;
     jsonXlateBlobToText(p, 0, &s);
     jsonReturnString(&s, p, ctx);
     sqlite3_result_subtype(ctx, JSON_SUBTYPE);
