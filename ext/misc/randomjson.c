@@ -26,6 +26,7 @@
 **
 **     .load ./randomjson
 **     SELECT random_json(1);
+**     SELECT random_json5(1);
 */
 #ifdef SQLITE_STATIC_RANDOMJSON
 #  include "sqlite3.h"
@@ -55,17 +56,18 @@ static unsigned int prngInt(Prng *p){
   return p->x ^ p->y;
 }
 
-static const char *azJsonAtoms[] = {
+static char *azJsonAtoms[] = {
   /* JSON                    JSON-5 */
   "0",                       "0",
   "1",                       "1",
   "-1",                      "-1",
   "2",                       "+2",
-  "3",                       "3",
-  "2.5",                     "2.5",
+  "3DDDD",                   "3DDDD",
+  "2.5DD",                   "2.5DD",
   "0.75",                    ".75",
   "-4.0e2",                  "-4.e2",
   "5.0e-3",                  "+5e-3",
+  "6.DDe+0DD",                "6.DDe+0DD",
   "0",                       "0x0",
   "512",                     "0x200",
   "256",                     "+0x100",
@@ -77,12 +79,14 @@ static const char *azJsonAtoms[] = {
   "-9.0e999",                "-Infinity",
   "9.0e999",                 "+Infinity",
   "null",                    "NaN",
-  "-0.0005123",              "-0.0005123",
+  "-0.0005DD",              "-0.0005DD",
   "4.35e-3",                 "+4.35e-3",
   "\"gem\\\"hay\"",          "\"gem\\\"hay\"",
   "\"icy'joy\"",             "'icy\\'joy\'",
   "\"keylog\"",              "\"key\\\nlog\"",
   "\"mix\\\\\\tnet\"",       "\"mix\\\\\\tnet\"",
+  "\"oat\\r\\n\"",           "\"oat\\r\\n\"",
+  "\"\\fpan\\b\"",           "\"\\fpan\\b\"",
   "{}",                      "{}",
   "[]",                      "[]",
   "[]",                      "[/*empty*/]",
@@ -93,19 +97,21 @@ static const char *azJsonAtoms[] = {
   "\"day\"",                 "\"day\"",
   "\"end\"",                 "'end'",
   "\"fly\"",                 "\"fly\"",
+  "\"\\u00XX\\u00XX\"",      "\"\\xXX\\xXX\"",
+  "\"y\\uXXXXz\"",           "\"y\\uXXXXz\"",
   "\"\"",                    "\"\"",
 };
-static const char *azJsonTemplate[] = {
+static char *azJsonTemplate[] = {
   /* JSON                                      JSON-5 */
-  "{\"a\":%,\"b\":%,\"c\":%}",                 "{a:%,b:%,c:%}",
+  "{\"a\":%,\"b\":%,\"cDD\":%}",               "{a:%,b:%,cDD:%}",
   "{\"a\":%,\"b\":%,\"c\":%,\"d\":%,\"e\":%}", "{a:%,b:%,c:%,d:%,e:%}",
   "{\"a\":%,\"b\":%,\"c\":%,\"d\":%,\"\":%}",  "{a:%,b:%,c:%,d:%,'':%}",
   "{\"d\":%}",                                 "{d:%}",
   "{\"eeee\":%, \"ffff\":%}",                  "{eeee:% /*and*/, ffff:%}",
   "{\"$g\":%,\"_h_\":%}",                      "{$g:%,_h_:%,}",
   "{\"x\":%,\n  \"y\":%}",                     "{\"x\":%,\n  \"y\":%}",
-  "{\"a b c d\":%,\"e\":%,\"f\":%,\"\\u0078\":%,\"y\":%}",
-            "{\"a b c d\":%,\"\\x65\":%,\"\\u0066\":%,x:%,y:%}",
+  "{\"a b c d\":%,\"\\u00XX\":%,\"\\uXXXX\":%,\"x\":%,\"y\":%}",
+            "{\"a b c d\":%,\"\\xXX\":%,\"\\uXXXX\":%,x:%,y:%}",
   "{\"Z\":%}",                                 "{Z:%,}",
   "[%]",                                       "[%,]",
   "[%,%]",                                     "[%,%]",
@@ -126,8 +132,10 @@ static void jsonExpand(
   unsigned int r        /* Growth probability 0..1000.  0 means no growth */
 ){
   unsigned int i, j, k;
-  const char *z;
+  char *z;
+  char *zX;
   size_t n;
+  char zBuf[200];
 
   j = 0;
   if( zSrc==0 ){
@@ -153,6 +161,27 @@ static void jsonExpand(
       z = azJsonTemplate[k];
     }
     n = strlen(z);
+    if( (zX = strstr(z,"XX"))!=0 ){
+      unsigned int r = prngInt(p);
+      memcpy(zBuf, z, n+1);
+      z = zBuf;
+      zX = strstr(z,"XX");
+      while( zX!=0 ){
+        zX[0] = "0123456789abcdef"[r%16];  r /= 16;
+        zX[1] = "0123456789abcdef"[r%16];  r /= 16;
+        zX = strstr(zX, "XX");
+      }
+    }else if( (zX = strstr(z,"DD"))!=0 ){
+      unsigned int r = prngInt(p);
+      memcpy(zBuf, z, n+1);
+      z = zBuf;
+      zX = strstr(z,"DD");
+      while( zX!=0 ){
+        zX[0] = "0123456789"[r%10];  r /= 10;
+        zX[1] = "0123456789"[r%10];  r /= 10;
+        zX = strstr(zX, "DD");
+      }
+    }
     if( j+n<STRSZ ){
       memcpy(&zDest[j], z, n);
       j += (int)n;
