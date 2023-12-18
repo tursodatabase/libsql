@@ -19,12 +19,11 @@ use crate::hrana::proto::{Batch, Col, Stmt};
 use crate::hrana::stream::HranaStream;
 use crate::{params::Params, ValueType};
 use bytes::Bytes;
-use futures::Stream;
+use futures::{Stream, StreamExt};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
-use tokio_stream::StreamExt;
 
 use super::rows::{RowInner, RowsInner};
 
