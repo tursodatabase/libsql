@@ -759,6 +759,7 @@ static int lookupName(
     sqlite3RecordErrorOffsetOfExpr(pParse->db, pExpr);
     pParse->checkSchema = 1;
     pTopNC->nNcErr++;
+    eNewExprOp = TK_NULL;
   }
   assert( pFJMatch==0 );
 
