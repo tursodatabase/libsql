@@ -1,6 +1,10 @@
 #![allow(dead_code)]
 
-use std::{collections::HashMap, path::Path, sync::Arc};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use crate::{connection::config::DatabaseConfig, error::Error, Result};
 use parking_lot::Mutex;
@@ -16,6 +20,7 @@ type ChangeMsg = (NamespaceName, Arc<DatabaseConfig>);
 
 #[derive(Debug)]
 pub struct MetaStore {
+    base_path: PathBuf,
     changes_tx: mpsc::Sender<ChangeMsg>,
     inner: Arc<Mutex<MetaStoreInner>>,
 }
@@ -131,7 +136,8 @@ fn restore(db: &Connection) -> Result<HashMap<NamespaceName, Sender<Arc<Database
 
 impl MetaStore {
     pub async fn new(base_path: impl AsRef<Path>) -> Result<Self> {
-        let db = Connection::open(base_path)?;
+        let base_path = base_path.as_ref().to_path_buf();
+        let db = Connection::open(&base_path)?;
 
         let configs = restore(&db)?;
 
@@ -153,7 +159,11 @@ impl MetaStore {
             }
         });
 
-        Ok(Self { changes_tx, inner })
+        Ok(Self {
+            base_path,
+            changes_tx,
+            inner,
+        })
     }
 
     pub fn handle(&self, namespace: NamespaceName) -> MetaStoreHandle {
