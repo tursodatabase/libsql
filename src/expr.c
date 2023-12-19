@@ -2743,7 +2743,6 @@ int sqlite3ExprCanBeNull(const Expr *p){
              NEVER(p->y.pTab==0) ||  /* Reference to column of index on expr */
              (p->iColumn>=0
               && p->y.pTab->aCol!=0 /* Possible due to prior error */
-              && ALWAYS(p->iColumn>=0)
               && ALWAYS(p->iColumn<p->y.pTab->nCol)
               && p->y.pTab->aCol[p->iColumn].notNull==0);
     default:

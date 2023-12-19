@@ -1,5 +1,5 @@
-C On\ssecond\sthought,\swe\sdon't\sreally\sneed\ssqlite_dbdata\saccessible\sto\sthe\sCLI.
-D 2023-12-19T15:10:25.467
+C Remove\sredundant\sconditional\sfrom\ssqlite3ExprCanBeNull().
+D 2023-12-19T15:51:14.357
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -686,7 +686,7 @@ F src/date.c 3b8d02977d160e128469de38493b4085f7c5cf4073193459909a6af3cf6d7c91
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
 F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
-F src/expr.c 49e629c339d3d4f287006325e60878526da0eeb1eb945ff22c8ce1872f6991fe
+F src/expr.c 125e6966297727b5d647d73893873b5d0730377f73208dc70e39dea9aa29f366
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c a47610f0a5c6cb0ad79f8fcef039c01833dec0c751bb695f28dc0ec6a4c3ba00
 F src/func.c 472f6dcfa39cf54f89a6aec76c79c225fb880a6c14469c15d361331662b9bf43
@@ -2155,9 +2155,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P debe7060b16669ada7304ffb9bf7616c8fa30bd286d8be871ed17fd6d64a3d4c
-Q -e5fd3b32ad87586a7413570e568c9c1859a37a4f836cca074126471b125fb682
-R 2046736d122f4a4df664dffbbe842afc
+P 36fe6a61ef8fb393281a5e15119d716521219c7b971fbfd63bdea07d27a78ac9
+R 8d141472bcc17284a46ea446e12c41f3
 U drh
-Z a020f3de47e20cdfc71436e3b7fdedad
+Z 7720e1377fde94e934586312bc65b10d
 # Remove this line to create a well-formed Fossil manifest.
