@@ -158,6 +158,10 @@ impl RowInner for LibsqlRow {
         self.0.column_name(idx)
     }
 
+    fn column_index(&self, name: &str) -> Option<i32> {
+        self.0.column_index(name)
+    }
+
     fn column_str(&self, idx: i32) -> Result<&str> {
         self.0.get::<&str>(idx)
     }

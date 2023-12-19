@@ -37,6 +37,42 @@ impl Column<'_> {
     }
 }
 
+pub trait ColumnIndex: fmt::Debug {
+    fn index(self, row: &Row) -> Result<i32>;
+}
+
+impl ColumnIndex for &str {
+    fn index(self, row: &Row) -> Result<i32> {
+        row.column_index(self)
+            .ok_or_else(|| crate::Error::InvalidColumnName(self.to_string()))
+    }
+}
+
+impl ColumnIndex for String {
+    fn index(self, row: &Row) -> Result<i32> {
+        row.column_index(&self)
+            .ok_or_else(|| crate::Error::InvalidColumnName(self))
+    }
+}
+
+impl ColumnIndex for i32 {
+    fn index(self, _: &Row) -> Result<i32> {
+        Ok(self)
+    }
+}
+
+impl ColumnIndex for i64 {
+    fn index(self, _: &Row) -> Result<i32> {
+        Ok(self as i32)
+    }
+}
+
+impl ColumnIndex for usize {
+    fn index(self, _: &Row) -> Result<i32> {
+        Ok(self as i32)
+    }
+}
+
 pub(crate) trait RowsInner {
     fn next(&mut self) -> Result<Option<Row>>;
 
@@ -75,28 +111,42 @@ pub struct Row {
 }
 
 impl Row {
-    pub fn get<T>(&self, idx: i32) -> Result<T>
+    pub fn get<T, I>(&self, idx: I) -> Result<T>
     where
         T: FromValue,
+        I: ColumnIndex,
     {
-        let val = self.inner.column_value(idx)?;
+        let val = self.inner.column_value(idx.index(self)?)?;
         T::from_sql(val)
     }
 
-    pub fn get_value(&self, idx: i32) -> Result<Value> {
-        self.inner.column_value(idx)
+    pub fn get_value<I>(&self, idx: I) -> Result<Value>
+    where
+        I: ColumnIndex,
+    {
+        self.inner.column_value(idx.index(self)?)
     }
 
-    pub fn get_str(&self, idx: i32) -> Result<&str> {
-        self.inner.column_str(idx)
+    pub fn get_str<I>(&self, idx: I) -> Result<&str>
+    where
+        I: ColumnIndex,
+    {
+        self.inner.column_str(idx.index(self)?)
     }
 
     pub fn column_name(&self, idx: i32) -> Option<&str> {
         self.inner.column_name(idx)
     }
 
-    pub fn column_type(&self, idx: i32) -> Result<ValueType> {
-        self.inner.column_type(idx)
+    pub fn column_index(&self, name: &str) -> Option<i32> {
+        self.inner.column_index(name)
+    }
+
+    pub fn column_type<I>(&self, idx: I) -> Result<ValueType>
+    where
+        I: ColumnIndex,
+    {
+        self.inner.column_type(idx.index(self)?)
     }
 }
 
@@ -218,6 +268,7 @@ pub(crate) trait RowInner: fmt::Debug {
     fn column_value(&self, idx: i32) -> Result<Value>;
     fn column_str(&self, idx: i32) -> Result<&str>;
     fn column_name(&self, idx: i32) -> Option<&str>;
+    fn column_index(&self, name: &str) -> Option<i32>;
     fn column_type(&self, idx: i32) -> Result<ValueType>;
     fn column_count(&self) -> usize;
 }

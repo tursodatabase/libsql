@@ -632,6 +632,13 @@ impl RowInner for RemoteRow {
         self.1.get(idx as usize).map(|s| s.name.as_str())
     }
 
+    fn column_index(&self, column_name: &str) -> Option<i32> {
+        self.1
+            .iter()
+            .position(|c| c.name.as_str() == column_name)
+            .map(|idx| idx as i32)
+    }
+
     fn column_str(&self, idx: i32) -> Result<&str> {
         let value = self.0.get(idx as usize).ok_or(Error::InvalidColumnIndex)?;
 

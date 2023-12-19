@@ -4,9 +4,9 @@ use crate::{errors, Error, Result};
 use crate::{Value, ValueRef};
 use libsql_sys::ValueType;
 
-use std::fmt;
 use std::cell::RefCell;
 use std::ffi::c_char;
+use std::fmt;
 /// Query result rows.
 #[derive(Debug, Clone)]
 pub struct Rows {
@@ -144,6 +144,10 @@ impl Row {
         self.stmt.inner.column_name(idx)
     }
 
+    pub fn column_index(&self, name: &str) -> Option<i32> {
+        self.stmt.inner.column_index(name)
+    }
+
     pub fn get_ref(&self, idx: i32) -> Result<ValueRef<'_>> {
         Ok(crate::local::Statement::value_ref(
             &self.stmt.inner,
@@ -165,7 +169,9 @@ impl fmt::Debug for Row {
                         ValueRef::Null => dbg_map.value(&(value_type, ())),
                         ValueRef::Integer(i) => dbg_map.value(&(value_type, i)),
                         ValueRef::Real(f) => dbg_map.value(&(value_type, f)),
-                        ValueRef::Text(s) => dbg_map.value(&(value_type, String::from_utf8_lossy(s))),
+                        ValueRef::Text(s) => {
+                            dbg_map.value(&(value_type, String::from_utf8_lossy(s)))
+                        }
                         ValueRef::Blob(b) => dbg_map.value(&(value_type, b.len())),
                     };
                 }

@@ -30,8 +30,8 @@ async fn connection_query() {
         .unwrap();
     let mut rows = conn.query("SELECT * FROM users", ()).await.unwrap();
     let row = rows.next().unwrap().unwrap();
-    assert_eq!(row.get::<i32>(0).unwrap(), 2);
-    assert_eq!(row.get::<String>(1).unwrap(), "Alice");
+    assert_eq!(row.get::<i32, _>(0).unwrap(), 2);
+    assert_eq!(row.get::<String, _>(1).unwrap(), "Alice");
 }
 
 #[tokio::test]
@@ -62,13 +62,13 @@ async fn connection_execute_batch() {
         .unwrap();
 
     let row = rows.next().unwrap().unwrap();
-    assert_eq!(row.get::<String>(0).unwrap(), "users");
+    assert_eq!(row.get::<String, _>(0).unwrap(), "users");
 
     let row = rows.next().unwrap().unwrap();
-    assert_eq!(row.get::<String>(0).unwrap(), "foo");
+    assert_eq!(row.get::<String, _>(0).unwrap(), "foo");
 
     let row = rows.next().unwrap().unwrap();
-    assert_eq!(row.get::<String>(0).unwrap(), "bar");
+    assert_eq!(row.get::<String, _>(0).unwrap(), "bar");
 }
 
 #[tokio::test]
@@ -123,20 +123,20 @@ async fn statement_query() {
     let mut rows = stmt.query(&params).await.unwrap();
     let row = rows.next().unwrap().unwrap();
 
-    assert_eq!(row.get::<i32>(0).unwrap(), 2);
-    assert_eq!(row.get::<String>(1).unwrap(), "Alice");
+    assert_eq!(row.get::<i32, _>(0).unwrap(), 2);
+    assert_eq!(row.get::<String, _>(1).unwrap(), "Alice");
 
     stmt.reset();
 
     let row = stmt.query_row(&params).await.unwrap();
 
-    assert_eq!(row.get::<i32>(0).unwrap(), 2);
-    assert_eq!(row.get::<String>(1).unwrap(), "Alice");
+    assert_eq!(row.get::<i32, _>(0).unwrap(), 2);
+    assert_eq!(row.get::<String, _>(1).unwrap(), "Alice");
 
     stmt.reset();
 
     let mut names = stmt
-        .query_map(&params, |r: libsql::Row| r.get::<String>(1))
+        .query_map(&params, |r: libsql::Row| r.get::<String, _>(1))
         .await
         .unwrap();
 
@@ -255,8 +255,8 @@ async fn check_insert(conn: &Connection, sql: &str, params: impl IntoParams) {
     let row = rows.next().unwrap().unwrap();
     // Use two since if you forget to insert an id it will automatically
     // be set to 1 which defeats the purpose of checking it here.
-    assert_eq!(row.get::<i32>(0).unwrap(), 2);
-    assert_eq!(row.get::<String>(1).unwrap(), "Alice");
+    assert_eq!(row.get::<i32, _>(0).unwrap(), 2);
+    assert_eq!(row.get::<String, _>(1).unwrap(), "Alice");
 }
 
 #[tokio::test]
@@ -268,8 +268,8 @@ async fn nulls() {
         .unwrap();
     let mut rows = conn.query("SELECT * FROM users", ()).await.unwrap();
     let row = rows.next().unwrap().unwrap();
-    assert!(row.get::<i32>(0).is_err());
-    assert!(row.get::<String>(1).is_err());
+    assert!(row.get::<i32, _>(0).is_err());
+    assert!(row.get::<String, _>(1).is_err());
 }
 
 #[tokio::test]
@@ -289,7 +289,7 @@ async fn blob() {
     let mut rows = conn.query("SELECT * FROM bbb", ()).await.unwrap();
     let row = rows.next().unwrap().unwrap();
 
-    let out = row.get::<Vec<u8>>(1).unwrap();
+    let out = row.get::<Vec<u8>, _>(1).unwrap();
     assert_eq!(&out, &bytes);
 }
 
@@ -306,8 +306,8 @@ async fn transaction() {
     tx.rollback().await.unwrap();
     let mut rows = conn.query("SELECT * FROM users", ()).await.unwrap();
     let row = rows.next().unwrap().unwrap();
-    assert_eq!(row.get::<i32>(0).unwrap(), 2);
-    assert_eq!(row.get::<String>(1).unwrap(), "Alice");
+    assert_eq!(row.get::<i32, _>(0).unwrap(), 2);
+    assert_eq!(row.get::<String, _>(1).unwrap(), "Alice");
     assert!(rows.next().unwrap().is_none());
 }
 
