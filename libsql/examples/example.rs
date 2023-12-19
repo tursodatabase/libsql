@@ -2,9 +2,9 @@ use libsql::Database;
 
 #[tokio::main]
 async fn main() {
-    let db = if let Ok(url) = std::env::var("LIBSQL_HRANA_URL") {
-        let token = std::env::var("TURSO_AUTH_TOKEN").unwrap_or_else(|_| {
-            println!("TURSO_AUTH_TOKEN not set, using empty token...");
+    let db = if let Ok(url) = std::env::var("LIBSQL_URL") {
+        let token = std::env::var("LIBSQL_AUTH_TOKEN").unwrap_or_else(|_| {
+            println!("LIBSQL_TOKEN not set, using empty token...");
             "".to_string()
         });
 
