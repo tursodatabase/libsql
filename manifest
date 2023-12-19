@@ -1,5 +1,5 @@
-C More\sprecise\scomputation\sof\sthe\ssize\sof\sdata\sstructures\sin\sthe\squery\splanner.\nResponse\sto\s[forum:/forumpost/7d8685d49d|Forum\spost\s7d8685d49d].
-D 2023-12-19T14:54:52.797
+C Fix\sharmless\scompiler\swarning\sin\sthe\srandomjson.c\sextension.
+D 2023-12-19T15:06:40.294
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -394,7 +394,7 @@ F ext/misc/pcachetrace.c f4227ce03fb16aa8d6f321b72dd051097419d7a028a9853af048bee
 F ext/misc/percentile.c b9086e223d583bdaf8cb73c98a6539d501a2fc4282654adbfea576453d82e691
 F ext/misc/prefixes.c 82645f79229877afab08c8b08ca1e7fa31921280906b90a61c294e4f540cd2a6
 F ext/misc/qpvtab.c fc189e127f68f791af90a487f4460ec91539a716daf45a0c357e963fd47cc06c
-F ext/misc/randomjson.c 182cabbeb294f56f68ba2fd0879790e6d4889bb50b6a532604cc6f360d6dd516
+F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
 F ext/misc/regexp.c 4bdd0045912f81c84908bd535ec5ad3b1c8540b4287c70ab84070963624047db
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
@@ -2155,8 +2155,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c50e6c2ace49d0928b05cbfd877c621e9a0f77dc4e056ccb1dbe5cf118a00d00
-R 5113ea05f125ae14859665eea256b645
+P 0c8d88e41167ea92341dd1129be01b596a73f46bdcd5b0dd931441a979c013d0
+R c1042677b8772f9b1fe3fffc7f447d0a
 U drh
-Z f458582e6d386df7f8168eaec2603f07
+Z b0164381c9418cb1da631e7b0aaa5ec5
 # Remove this line to create a well-formed Fossil manifest.

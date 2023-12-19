@@ -157,27 +157,27 @@ static void jsonExpand(
     }
     n = strlen(z);
     if( (zX = strstr(z,"XX"))!=0 ){
-      unsigned int r = prngInt(p);
-      if( (r&0xff)==((r>>8)&0xff) ) r += 0x100;
-      while( (r&0xff)==((r>>16)&0xff) || ((r>>8)&0xff)==((r>>16)&0xff) ){
-        r += 0x10000;
+      unsigned int y = prngInt(p);
+      if( (y&0xff)==((y>>8)&0xff) ) y += 0x100;
+      while( (y&0xff)==((y>>16)&0xff) || ((y>>8)&0xff)==((y>>16)&0xff) ){
+        y += 0x10000;
       }
       memcpy(zBuf, z, n+1);
       z = zBuf;
       zX = strstr(z,"XX");
       while( zX!=0 ){
-        zX[0] = "0123456789abcdef"[r%16];  r /= 16;
-        zX[1] = "0123456789abcdef"[r%16];  r /= 16;
+        zX[0] = "0123456789abcdef"[y%16];  y /= 16;
+        zX[1] = "0123456789abcdef"[y%16];  y /= 16;
         zX = strstr(zX, "XX");
       }
     }else if( (zX = strstr(z,"DD"))!=0 ){
-      unsigned int r = prngInt(p);
+      unsigned int y = prngInt(p);
       memcpy(zBuf, z, n+1);
       z = zBuf;
       zX = strstr(z,"DD");
       while( zX!=0 ){
-        zX[0] = "0123456789"[r%10];  r /= 10;
-        zX[1] = "0123456789"[r%10];  r /= 10;
+        zX[0] = "0123456789"[y%10];  y /= 10;
+        zX[1] = "0123456789"[y%10];  y /= 10;
         zX = strstr(zX, "DD");
       }
     }
