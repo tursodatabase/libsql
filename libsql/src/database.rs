@@ -275,6 +275,12 @@ cfg_remote! {
             let mut connector = hyper::client::HttpConnector::new();
             connector.enforce_http(false);
 
+            let connector = hyper_rustls::HttpsConnectorBuilder::new()
+                .with_native_roots()
+                .https_or_http()
+                .enable_http1()
+                .wrap_connector(connector);
+
             Self::open_remote_with_connector_internal(url, auth_token, connector, None)
         }
 
