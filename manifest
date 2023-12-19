@@ -1,5 +1,5 @@
-C When\sunable\sto\sresolve\san\sidentifier,\schange\sthe\sExpr\snode\sinto\sTK_NULL\nrather\sthan\sTK_COLUMN,\sto\sprevent\sany\sdownstream\smisuse\sof\sthe\snon-existent\ncolumn.\s\sdbsqlfuzz\s71869261db80a95e4733afa10ff5724bf3c78592.
-D 2023-12-19T12:49:35.296
+C Test\scase\sfor\sthe\sprevious\scheck-in.
+D 2023-12-19T13:00:35.897
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1864,7 +1864,7 @@ F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 1aeb81976841a91eef292723649b5c4fe3bc3cac
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
 F test/unhex.test b7f1b806207cb77fa31c3e434fe92fba524464e3e9356809bfcc28f15af1a8b7
-F test/unionall.test eb9afa030897af75fd2f0dd28354ef63c8a5897b6c76aa1f15acae61a12eabcf
+F test/unionall.test 6a1cf76f9a35dca9a2d8fbb0d9c709d63338ca3208e6b58972ddff5f4267df89
 F test/unionall2.test 71e8fa08d5699d50dc9f9dc0c9799c2e7a6bb7931a330d369307a4df7f157fa1
 F test/unionallfault.test 652bfbb630e6c43135965dc1e8f0a9a791da83aec885d626a632fe1909c56f73
 F test/unionvtab.test e1704ab1b4c1bb3ffc9da4681f8e85a0b909fd80b937984fc94b27415ac8e5a4
@@ -2155,8 +2155,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e5fd3b32ad87586a7413570e568c9c1859a37a4f836cca074126471b125fb682
-R 48b9c71249fc940d37d3cf9881db1921
+P d2e6117e4f97ab98b01deb5fcad5520f8181d00bed8d904d34963c01d73df857
+R 90dde9152d7c6b35edb0cb5f83423d69
 U drh
-Z 1b1e95f8d5ee358910316b6cde4b39c4
+Z 69483924e6d2b900a24835137337ec8c
 # Remove this line to create a well-formed Fossil manifest.
