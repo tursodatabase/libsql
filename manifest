@@ -1,5 +1,5 @@
-C Ignore\sCOLLATE\soperators\swhen\sdetermining\swhether\sthe\sresult\sof\sa\ssubexpression\nshould\sbe\sshallow-copied\sor\sdeep-copied.
-D 2023-12-19T13:45:05.259
+C Add\sALWAYS()\sand\sNEVER()\son\sbranches\smade\sunreachable\sby\srecent\schanges.
+D 2023-12-19T14:53:39.236
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -686,7 +686,7 @@ F src/date.c 3b8d02977d160e128469de38493b4085f7c5cf4073193459909a6af3cf6d7c91
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
 F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
-F src/expr.c 74c96889f705c83cb7f19d1dd25d937d28708ba079e9b0f8ee6440c7b272b228
+F src/expr.c 49e629c339d3d4f287006325e60878526da0eeb1eb945ff22c8ce1872f6991fe
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c a47610f0a5c6cb0ad79f8fcef039c01833dec0c751bb695f28dc0ec6a4c3ba00
 F src/func.c 472f6dcfa39cf54f89a6aec76c79c225fb880a6c14469c15d361331662b9bf43
@@ -2155,8 +2155,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P df5a07e1a5122e08c2fa6076ac08adb2820f997ee11dd88b84863666899dfb57
-R 88cb52429199464661f76b121d4935cc
+P 34ae36a45e814bed7c8340412c7ef3fc849b82357656d0eb5f0f805e59d846d0
+R 230ae607a1ac4af9df29a9d81c13bbb8
 U drh
-Z 118a5efad123e5c170192e2943b0be05
+Z 438b65489898c6edaccdbf5c80ee427e
 # Remove this line to create a well-formed Fossil manifest.
