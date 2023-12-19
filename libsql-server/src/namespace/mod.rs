@@ -31,8 +31,7 @@ use tokio_util::io::StreamReader;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
-use crate::auth::parse_jwt_key;
-use crate::auth::Authenticated;
+use crate::auth::{parse_jwt_key, Authenticated, Authorized, Permission};
 use crate::config::MetaStoreConfig;
 use crate::connection::config::DatabaseConfig;
 use crate::connection::libsql::{open_conn, MakeLibSqlConn};
@@ -41,7 +40,9 @@ use crate::connection::Connection;
 use crate::connection::MakeConnection;
 use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
+use crate::http::user::JsonHttpPayloadBuilder;
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
+use crate::query_result_builder::QueryResultBuilder;
 use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
@@ -765,6 +766,38 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         namespace: NamespaceName,
     ) -> crate::Result<MetaStoreHandle> {
         self.with(namespace, |ns| ns.db_config_store.clone()).await
+    }
+
+    // FIXME: instead of appending results to a huge vector,
+    // we wanta custom QueryBuilder implementation that combines results
+    // from all namespaces to a single result.
+    pub(crate) async fn execute_for_each(
+        &self,
+        sql: String,
+    ) -> crate::Result<<JsonHttpPayloadBuilder as QueryResultBuilder>::Ret> {
+        let lock = self.inner.store.upgradable_read().await;
+        let mut combined_results = Vec::new();
+        for ns in lock.values() {
+            tracing::trace!("Executing {sql} on {}", ns.name.as_str());
+            let conn = ns.db.connection_maker().create().await?;
+            let batch = vec![crate::query::Query {
+                stmt: crate::query_analysis::Statement::parse(&sql)
+                    .next()
+                    .unwrap()
+                    .unwrap(),
+                params: crate::query::Params::empty(),
+                want_rows: true,
+            }];
+            let auth = Authenticated::Authorized(Authorized {
+                namespace: None,
+                permission: Permission::FullAccess,
+            });
+            let json_builder = conn
+                .execute_batch_or_rollback(batch, auth, JsonHttpPayloadBuilder::new(), None)
+                .await?;
+            combined_results.append(&mut json_builder.into_ret());
+        }
+        Ok(combined_results)
     }
 }
 

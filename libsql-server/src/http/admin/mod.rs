@@ -140,6 +140,7 @@ where
             "/v1/namespaces/:namespace/stats/:stats_type",
             delete(stats::handle_delete_stats),
         )
+        .route("/v1/execute_on_all", post(handle_execute_on_all))
         .route("/v1/diagnostics", get(handle_diagnostics))
         .route("/metrics", get(handle_metrics))
         .with_state(Arc::new(AppState {
@@ -195,6 +196,15 @@ async fn handle_get_config<M: MakeNamespace, C: Connector>(
     };
 
     Ok(Json(resp))
+}
+
+async fn handle_execute_on_all<M: MakeNamespace, C: Connector>(
+    State(app_state): State<Arc<AppState<M, C>>>,
+    Json(req): Json<ExecuteOnAllReq>,
+) -> crate::Result<Vec<u8>> {
+    let ret = app_state.namespaces.execute_for_each(req.sql).await?;
+
+    Ok(ret)
 }
 
 async fn handle_diagnostics<M: MakeNamespace, C>(
@@ -275,6 +285,11 @@ struct CreateNamespaceReq {
     heartbeat_url: Option<String>,
     bottomless_db_id: Option<String>,
     jwt_key: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ExecuteOnAllReq {
+    sql: String,
 }
 
 async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
