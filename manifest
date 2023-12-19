@@ -1,5 +1,5 @@
-C Remove\sredundant\sconditional\sfrom\ssqlite3ExprCanBeNull().
-D 2023-12-19T15:51:14.357
+C In\sJSON\s-\sminor\scode\scleanup\sand\srefactoring\swith\sa\ssmall\ssize\sreduction\nand\sperformance\sincrease.
+D 2023-12-19T21:39:58.157
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -696,7 +696,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 661b6da631185152c635161d52c274255c8de3f5769570bbbde0311cd9ad7460
+F src/json.c c6fae579d681d5ab43387c8667cc6ef0c0f8769fd881fde3af6260e837cae762
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c ce714ee501122c76eb2e69b292bebe443aba611fc3b88e6786eb910285515fe4
@@ -2155,8 +2155,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 36fe6a61ef8fb393281a5e15119d716521219c7b971fbfd63bdea07d27a78ac9
-R 8d141472bcc17284a46ea446e12c41f3
+P 257f96a2d22c605885fa66220c28cf7dc5941c330bccee3f132b9e7b70d89d30
+R 1e43c523c137344cae8cdc90cc8b1706
 U drh
-Z 7720e1377fde94e934586312bc65b10d
+Z 35aaca72ca93a246000bef5de54a54bb
 # Remove this line to create a well-formed Fossil manifest.
