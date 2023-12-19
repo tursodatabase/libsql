@@ -3166,11 +3166,6 @@ jsonInsertIntoBlob_patherror:
 }
 
 /*
-** Make a copy of a JsonParse object.  The copy will be editable.
-*/
-
-
-/*
 ** Generate a JsonParse object, containing valid JSONB in aBlob and nBlob,
 ** from the SQL function argument pArg.  Return a pointer to the new
 ** JsonParse object.
