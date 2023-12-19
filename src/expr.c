@@ -5326,8 +5326,10 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
   inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
   if( inReg!=target ){
     u8 op;
-    if( ALWAYS(pExpr)
-     && (ExprHasProperty(pExpr,EP_Subquery) || pExpr->op==TK_REGISTER)
+    Expr *pX = sqlite3ExprSkipCollateAndLikely(pExpr);
+    testcase( pX!=pExpr );
+    if( ALWAYS(pX)
+     && (ExprHasProperty(pX,EP_Subquery) || pX->op==TK_REGISTER)
     ){
       op = OP_Copy;
     }else{
