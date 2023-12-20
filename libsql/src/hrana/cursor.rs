@@ -211,9 +211,11 @@ where
                     begin = Some(entry);
                     break;
                 }
-                CursorEntry::Row(_) | CursorEntry::StepEnd(_) => {
-                    // skipping over entries: Cursor::next_step might
-                    // have been called before previous step ended
+                CursorEntry::Row(_) => {
+                    tracing::trace!("skipping over row message for previous cursor step")
+                }
+                CursorEntry::StepEnd(_) => {
+                    tracing::debug!("skipping over StepEnd message for previous cursor step")
                 }
                 CursorEntry::StepError(e) => {
                     return Err(HranaError::CursorError(CursorResponseError::StepError {

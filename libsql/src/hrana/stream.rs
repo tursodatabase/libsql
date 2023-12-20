@@ -214,10 +214,10 @@ where
     client: T,
     baton: Option<String>,
     pipeline_url: Arc<str>,
+    cursor_url: Arc<str>,
     auth_token: Arc<str>,
     status: StreamStatus,
     sql_id_generator: SqlId,
-    cursor_url: Arc<str>,
 }
 
 impl<T> RawStream<T>
@@ -246,7 +246,8 @@ where
             .await?;
         let (cursor, mut response) = Cursor::open(stream).await?;
         if let Some(base_url) = response.base_url.take() {
-            self.cursor_url = Arc::from(base_url);
+            self.pipeline_url = Arc::from(format!("{base_url}/v3/pipeline"));
+            self.cursor_url = Arc::from(format!("{base_url}/v3/cursor"));
         }
         match response.baton.take() {
             None => {
