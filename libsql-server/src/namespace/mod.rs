@@ -769,33 +769,54 @@ impl<M: MakeNamespace> NamespaceStore<M> {
     }
 
     // FIXME: instead of appending results to a huge vector,
-    // we wanta custom QueryBuilder implementation that combines results
+    // we want a custom QueryBuilder implementation that combines results
     // from all namespaces to a single result.
     pub(crate) async fn execute_for_each(
         &self,
         sql: String,
     ) -> crate::Result<<JsonHttpPayloadBuilder as QueryResultBuilder>::Ret> {
-        let lock = self.inner.store.upgradable_read().await;
         let mut combined_results = Vec::new();
-        for ns in lock.values() {
-            tracing::trace!("Executing {sql} on {}", ns.name.as_str());
-            let conn = ns.db.connection_maker().create().await?;
-            let batch = vec![crate::query::Query {
-                stmt: crate::query_analysis::Statement::parse(&sql)
-                    .next()
-                    .unwrap()
-                    .unwrap(),
-                params: crate::query::Params::empty(),
-                want_rows: true,
-            }];
-            let auth = Authenticated::Authorized(Authorized {
-                namespace: None,
-                permission: Permission::FullAccess,
-            });
-            let json_builder = conn
-                .execute_batch_or_rollback(batch, auth, JsonHttpPayloadBuilder::new(), None)
+        for ns_name in self.inner.metadata.namespace_names() {
+            tracing::trace!("Executing {sql} on {}", ns_name.as_str());
+            let entry = self
+                .inner
+                .store
+                .try_get_with(ns_name.clone(), async {
+                    let ns = self
+                        .inner
+                        .make_namespace
+                        .create(
+                            ns_name.clone(),
+                            RestoreOption::Latest,
+                            NamespaceBottomlessDbId::NotProvided,
+                            self.make_reset_cb(),
+                            &self.inner.metadata,
+                        )
+                        .await?;
+                    tracing::info!("loaded namespace: `{}`", ns_name.as_str());
+                    Ok::<_, crate::error::Error>(Arc::new(RwLock::new(Some(ns))))
+                })
                 .await?;
-            combined_results.append(&mut json_builder.into_ret());
+            let lock = entry.read().await;
+            if let Some(ns) = &*lock {
+                let conn = ns.db.connection_maker().create().await?;
+                let batch = vec![crate::query::Query {
+                    stmt: crate::query_analysis::Statement::parse(&sql)
+                        .next()
+                        .unwrap()
+                        .unwrap(),
+                    params: crate::query::Params::empty(),
+                    want_rows: true,
+                }];
+                let auth = Authenticated::Authorized(Authorized {
+                    namespace: None,
+                    permission: Permission::FullAccess,
+                });
+                let json_builder = conn
+                    .execute_batch_or_rollback(batch, auth, JsonHttpPayloadBuilder::new(), None)
+                    .await?;
+                combined_results.append(&mut json_builder.into_ret());
+            }
         }
         Ok(combined_results)
     }
