@@ -132,7 +132,7 @@ async fn backup_restore() {
     assert_bucket_occupancy(BUCKET, true).await;
 
     let options = bottomless::replicator::Options {
-        db_id: Some(DB_ID.to_string()),
+        db_id: DB_ID.to_string(),
         create_bucket_if_not_exists: true,
         verify_crc: true,
         use_compression: bottomless::replicator::CompressionKind::Gzip,
@@ -283,7 +283,7 @@ async fn rollback_restore() {
         .unwrap();
     let conn = Url::parse(&format!("http://localhost:{}", PORT)).unwrap();
     let options = bottomless::replicator::Options {
-        db_id: Some(DB_ID.to_string()),
+        db_id: DB_ID.to_string(),
         create_bucket_if_not_exists: true,
         verify_crc: true,
         use_compression: bottomless::replicator::CompressionKind::Gzip,

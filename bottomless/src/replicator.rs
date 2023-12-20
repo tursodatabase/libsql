@@ -92,7 +92,7 @@ pub struct Options {
     pub access_key_id: Option<String>,
     pub secret_access_key: Option<String>,
     pub region: Option<String>,
-    pub db_id: Option<String>,
+    pub db_id: String,
     /// Bucket directory name where all S3 objects are backed up. General schema is:
     /// - `{db-name}-{uuid-v7}` subdirectories:
     ///   - `.meta` file with database page size and initial WAL checksum.
@@ -173,7 +173,7 @@ impl Options {
             }
         }
 
-        let db_id = env_var("LIBSQL_BOTTOMLESS_DATABASE_ID").ok();
+        let db_id = env_var("LIBSQL_BOTTOMLESS_DATABASE_ID")?;
         let aws_endpoint = env_var("LIBSQL_BOTTOMLESS_ENDPOINT").ok();
         let bucket_name = env_var_or("LIBSQL_BOTTOMLESS_BUCKET", "bottomless");
         let max_batch_interval = Duration::from_secs(
@@ -256,11 +256,7 @@ impl Replicator {
         }
 
         let db_path = db_path.into();
-        let db_name = if let Some(db_id) = options.db_id.clone() {
-            db_id
-        } else {
-            bail!("database id was not set")
-        };
+        let db_name = options.db_id.clone();
         tracing::debug!("Database path: '{}', name: '{}'", db_path, db_name);
 
         let (flush_trigger, mut flush_trigger_rx) = channel(());

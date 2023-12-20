@@ -545,15 +545,6 @@ where
                 .await?;
         }
 
-        // if namespaces are enabled, then bottomless must have set DB ID
-        if !self.disable_namespaces {
-            if let Some(bottomless) = &self.db_config.bottomless_replication {
-                if bottomless.db_id.is_none() {
-                    anyhow::bail!("bottomless replication with namespaces requires a DB ID");
-                }
-            }
-        }
-
         if let Some(config) = self.rpc_config.take() {
             let proxy_service =
                 ProxyService::new(namespaces.clone(), None, self.disable_namespaces);

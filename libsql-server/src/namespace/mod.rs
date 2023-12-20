@@ -964,11 +964,11 @@ fn make_bottomless_options(
     let mut options = options.clone();
     let mut db_id = match namespace_db_id {
         NamespaceBottomlessDbId::Namespace(id) => id,
-        NamespaceBottomlessDbId::NotProvided => options.db_id.unwrap_or_default(),
+        NamespaceBottomlessDbId::NotProvided => "",
     };
 
     db_id = format!("ns-{db_id}:{name}");
-    options.db_id = Some(db_id);
+    options.db_id = db_id;
     options
 }
 
