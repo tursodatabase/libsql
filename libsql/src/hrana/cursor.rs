@@ -343,12 +343,6 @@ where
             CursorEntry::StepEnd(_) => {
                 tracing::debug!("skipping over StepEnd message for previous cursor step")
             }
-            CursorEntry::StepEnd(end) => {
-                tracing::trace!(
-                    "end current cursor step - affected rows: {}",
-                    end.affected_row_count
-                );
-            }
             CursorEntry::StepError(e) => {
                 return Err(HranaError::CursorError(CursorResponseError::StepError {
                     step: e.step,

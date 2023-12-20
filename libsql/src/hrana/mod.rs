@@ -55,30 +55,6 @@ impl<S> From<Bytes> for HttpBody<S> {
     fn from(value: Bytes) -> Self {
         HttpBody::Body(Some(value))
     }
-
-    pub fn stream(self) -> ByteStream {
-        match self {
-            HttpBody::Stream(stream) => stream,
-            HttpBody::Body(bytes) => Box::new(SimpleStream::new(bytes)),
-        }
-    }
-}
-
-struct SimpleStream(Option<Bytes>);
-impl SimpleStream {
-    fn new(bytes: Bytes) -> Self {
-        SimpleStream(Some(bytes))
-    }
-}
-impl Stream for SimpleStream {
-    type Item = Result<Bytes>;
-
-    fn poll_next(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        match self.0.take() {
-            None => Poll::Ready(None),
-            Some(bytes) => Poll::Ready(Some(Ok(bytes))),
-        }
-    }
 }
 
 impl<S> Stream for HttpBody<S>
