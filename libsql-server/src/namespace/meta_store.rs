@@ -194,6 +194,12 @@ impl MetaStore {
     pub fn exists(&self, namespace: &NamespaceName) -> bool {
         self.inner.lock().configs.contains_key(namespace)
     }
+
+    // FIXME(sarna): racy, we should actually just iterate over the namespaces
+    // under a lock.
+    pub fn namespace_names(&self) -> Vec<NamespaceName> {
+        self.inner.lock().configs.keys().cloned().collect()
+    }
 }
 
 impl MetaStoreHandle {
