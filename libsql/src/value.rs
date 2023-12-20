@@ -446,7 +446,7 @@ mod serde_ {
             D: serde::Deserializer<'de>,
         {
             struct V;
-            impl Visitor<'_> for V {
+            impl<'de> Visitor<'de> for V {
                 type Value = Value;
 
                 fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -460,11 +460,74 @@ mod serde_ {
                     Ok(Value::Integer(v))
                 }
 
+                fn visit_i32<E>(self, v: i32) -> std::result::Result<Self::Value, E>
+                where
+                    E: serde::de::Error,
+                {
+                    Ok(Value::Integer(v as i64))
+                }
+
+                fn visit_i16<E>(self, v: i16) -> std::result::Result<Self::Value, E>
+                where
+                    E: serde::de::Error,
+                {
+                    Ok(Value::Integer(v as i64))
+                }
+
+                fn visit_i8<E>(self, v: i8) -> std::result::Result<Self::Value, E>
+                where
+                    E: serde::de::Error,
+                {
+                    Ok(Value::Integer(v as i64))
+                }
+
+                fn visit_u64<E>(self, v: u64) -> std::result::Result<Self::Value, E>
+                where
+                    E: serde::de::Error,
+                {
+                    if v > i64::MAX as u64 {
+                        Err(serde::de::Error::invalid_value(
+                            de::Unexpected::Unsigned(v),
+                            &"u64 is too large to fit in an i64",
+                        ))
+                    } else {
+                        Ok(Value::Integer(v as i64))
+                    }
+                }
+
+                fn visit_u32<E>(self, v: u32) -> std::result::Result<Self::Value, E>
+                where
+                    E: serde::de::Error,
+                {
+                    Ok(Value::Integer(v as i64))
+                }
+
+                fn visit_u16<E>(self, v: u16) -> std::result::Result<Self::Value, E>
+                where
+                    E: serde::de::Error,
+                {
+                    Ok(Value::Integer(v as i64))
+                }
+
+                fn visit_u8<E>(self, v: u8) -> std::result::Result<Self::Value, E>
+                where
+                    E: serde::de::Error,
+                {
+                    Ok(Value::Integer(v as i64))
+                }
+
                 fn visit_f64<E>(self, v: f64) -> std::result::Result<Self::Value, E>
                 where
                     E: serde::de::Error,
                 {
                     Ok(Value::Real(v))
+                }
+
+                fn visit_f32<E>(self, v: f32) -> std::result::Result<Self::Value, E>
+                where
+                    E: serde::de::Error,
+                {
+                    Ok(Value::Real(v as f64))
                 }
 
                 fn visit_byte_buf<E>(self, v: Vec<u8>) -> std::result::Result<Self::Value, E>
@@ -479,6 +542,16 @@ mod serde_ {
                     E: serde::de::Error,
                 {
                     Ok(Value::Text(v))
+                }
+
+                fn visit_some<D>(
+                    self,
+                    deserializer: D,
+                ) -> std::result::Result<Self::Value, D::Error>
+                where
+                    D: Deserializer<'de>,
+                {
+                    Deserialize::deserialize(deserializer)
                 }
 
                 fn visit_none<E>(self) -> std::result::Result<Self::Value, E>
