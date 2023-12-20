@@ -1,5 +1,5 @@
-C Avoid\sharmless\sinteger\soverflow\sin\spager\sstatus\sstatistics\sgathering.\nResponse\sto\s[forum:/forumpost/7f4cdf23f9|forum\spost\s7f4cdf23f9].
-D 2023-12-20T11:34:17.563
+C Fix\sSQLITE_ENABLE_SETLK_TIMEOUT\sassert()\sstatements\sin\sos_unix.c\sto\savoid\sreading\spast\sthe\send\sof\sthe\sunixShmNode.aMutex[]\sarray.
+D 2023-12-20T19:33:41.679
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -720,7 +720,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 97bdcd43315da7aaec9fea2da1ff7c9de458f93dd363e073f2742403a7f2e011
+F src/os_unix.c 1672c708df279fca1b6ba619cbb26a88baa7913b21dda95817290d76666a9688
 F src/os_win.c 4a50a154aeebc66a1f8fb79c1ff6dd5fe3d005556533361e0d460d41cb6a45a8
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c dc0cccda12d1675f461ef47090ec6bd7bb7611e77dbf5e0796667120d9b67f37
@@ -2155,8 +2155,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 215fabda38daecdbd38b1eca5a6aafbc61b6a36a8303f1d7164d5a1138e63134
-R d4f2caa7842856e1d7a2268ee871a371
-U drh
-Z 1d76cf71ba5b0710fab4dfb939c1e975
+P 206d8c650d937bc700946c40a82a62ea6bc4a80e5f3fb42d0ae2968de25f0644
+R f91549b5ba9f8490543a9270abff43ad
+U dan
+Z 03359f67466d165815d902ddaee87b98
 # Remove this line to create a well-formed Fossil manifest.

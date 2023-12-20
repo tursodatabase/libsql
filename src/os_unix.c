@@ -4434,9 +4434,15 @@ static int unixShmSystemLock(
 
   pShmNode = pFile->pInode->pShmNode;
 
-  /* Assert that the correct mutex or mutexes are held. */
-  if( pShmNode->nRef==0 ){
-    assert( ofst==UNIX_SHM_DMS && n==1 && unixMutexHeld() );
+  /* Assert that the parameters are within expected range and that the
+  ** correct mutex or mutexes are held. */
+  assert( pShmNode->nRef>=0 );
+  assert( (ofst==UNIX_SHM_DMS && n==1)
+       || (ofst>=UNIX_SHM_BASE && ofst+n<=(UNIX_SHM_BASE+SQLITE_SHM_NLOCK))
+  );
+  if( ofst==UNIX_SHM_DMS ){
+    assert( pShmNode->nRef>0 || unixMutexHeld() );
+    assert( pShmNode->nRef==0 || sqlite3_mutex_held(pShmNode->pShmMutex) );
   }else{
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
     int ii;
