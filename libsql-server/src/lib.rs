@@ -100,6 +100,7 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub heartbeat_config: Option<HeartbeatConfig>,
     pub disable_namespaces: bool,
     pub shutdown: Arc<Notify>,
+    pub max_active_namespaces: usize,
 }
 
 impl<C, A, D> Default for Server<C, A, D> {
@@ -117,6 +118,7 @@ impl<C, A, D> Default for Server<C, A, D> {
             heartbeat_config: Default::default(),
             disable_namespaces: true,
             shutdown: Default::default(),
+            max_active_namespaces: 100,
         }
     }
 }
@@ -384,6 +386,7 @@ where
                     db_config: self.db_config.clone(),
                     base_path: self.path.clone(),
                     auth: auth.clone(),
+                    max_active_namespaces: self.max_active_namespaces,
                 };
                 let (namespaces, proxy_service, replication_service) = replica.configure().await?;
                 self.rpc_client_config = None;
@@ -422,6 +425,7 @@ where
                     extensions,
                     base_path: self.path.clone(),
                     disable_namespaces: self.disable_namespaces,
+                    max_active_namespaces: self.max_active_namespaces,
                     join_set: &mut join_set,
                     auth: auth.clone(),
                 };
@@ -487,6 +491,7 @@ struct Primary<'a, A> {
     extensions: Arc<[PathBuf]>,
     base_path: Arc<Path>,
     disable_namespaces: bool,
+    max_active_namespaces: usize,
     auth: Arc<Auth>,
     join_set: &'a mut JoinSet<anyhow::Result<()>>,
 }
@@ -520,12 +525,12 @@ where
         let meta_store_path = conf.base_path.join("metastore");
 
         let factory = PrimaryNamespaceMaker::new(conf);
-
         let namespaces = NamespaceStore::new(
             factory,
             false,
             self.db_config.snapshot_at_shutdown,
             meta_store_path,
+            self.max_active_namespaces,
         )
         .await?;
 
@@ -602,6 +607,7 @@ struct Replica<C> {
     db_config: DbConfig,
     base_path: Arc<Path>,
     auth: Arc<Auth>,
+    max_active_namespaces: usize,
 }
 
 impl<C: Connector> Replica<C> {
@@ -627,7 +633,14 @@ impl<C: Connector> Replica<C> {
         let meta_store_path = conf.base_path.join("metastore");
 
         let factory = ReplicaNamespaceMaker::new(conf);
-        let namespaces = NamespaceStore::new(factory, true, false, meta_store_path).await?;
+        let namespaces = NamespaceStore::new(
+            factory,
+            true,
+            false,
+            meta_store_path,
+            self.max_active_namespaces,
+        )
+        .await?;
         let replication_service = ReplicationLogProxyService::new(channel.clone(), uri.clone());
         let proxy_service = ReplicaProxyService::new(channel, uri, self.auth.clone());
 

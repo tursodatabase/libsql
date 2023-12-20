@@ -109,15 +109,7 @@ cfg_replication! {
             url: impl Into<String>,
             token: impl Into<String>,
         ) -> Result<Database> {
-            let mut http = hyper::client::HttpConnector::new();
-            http.enforce_http(false);
-            http.set_nodelay(true);
-
-            let https = hyper_rustls::HttpsConnectorBuilder::new()
-                .with_native_roots()
-                .https_or_http()
-                .enable_http1()
-                .wrap_connector(http);
+            let https = connector();
 
             Self::open_with_remote_sync_connector(db_path, url, token, https, false).await
         }
@@ -132,20 +124,10 @@ cfg_replication! {
             url: impl Into<String>,
             token: impl Into<String>,
         ) -> Result<Database> {
-            let mut http = hyper::client::HttpConnector::new();
-            http.enforce_http(false);
-            http.set_nodelay(true);
-
-            let https = hyper_rustls::HttpsConnectorBuilder::new()
-                .with_native_roots()
-                .https_or_http()
-                .enable_http1()
-                .wrap_connector(http);
+            let https = connector();
 
             Self::open_with_remote_sync_connector(db_path, url, token, https, true).await
         }
-
-
 
         /// Connect an embedded replica to a remote primary with a custom
         /// http connector.
@@ -180,15 +162,13 @@ cfg_replication! {
             version: Option<String>,
             read_your_writes: bool,
         ) -> Result<Database> {
-            let mut http = hyper::client::HttpConnector::new();
-            http.enforce_http(false);
-            http.set_nodelay(true);
+            let https = connector();
 
             Self::open_with_remote_sync_connector_internal(
                 db_path,
                 url,
                 token,
-                http,
+                https,
                 version,
                 read_your_writes
             ).await
@@ -279,10 +259,9 @@ cfg_remote! {
     impl Database {
         /// Open a remote based HTTP database using libsql's hrana protocol.
         pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
-            let mut connector = hyper::client::HttpConnector::new();
-            connector.enforce_http(false);
+            let https = connector();
 
-            Self::open_remote_with_connector_internal(url, auth_token, connector, None)
+            Self::open_remote_with_connector_internal(url, auth_token, https, None)
         }
 
         #[doc(hidden)]
@@ -291,17 +270,7 @@ cfg_remote! {
             auth_token: impl Into<String>,
             version: impl Into<String>,
         ) -> Result<Self> {
-            use hyper_rustls::HttpsConnectorBuilder;
-
-            let mut http = hyper::client::HttpConnector::new();
-            http.enforce_http(false);
-            http.set_nodelay(true);
-
-            let https = HttpsConnectorBuilder::new()
-                .with_native_roots()
-                .https_or_http()
-                .enable_http1()
-                .wrap_connector(http);
+            let https = connector();
 
             Self::open_remote_with_connector_internal(url, auth_token, https, Some(version.into()))
         }
@@ -424,4 +393,17 @@ impl Database {
             _ => unreachable!("no database type set"),
         }
     }
+}
+
+#[cfg(any(feature = "replication", feature = "remote"))]
+fn connector() -> hyper_rustls::HttpsConnector<hyper::client::HttpConnector> {
+    let mut http = hyper::client::HttpConnector::new();
+    http.enforce_http(false);
+    http.set_nodelay(true);
+
+    hyper_rustls::HttpsConnectorBuilder::new()
+        .with_native_roots()
+        .https_or_http()
+        .enable_http1()
+        .wrap_connector(http)
 }

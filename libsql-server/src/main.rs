@@ -195,6 +195,10 @@ struct Cli {
     /// Enable snapshot at shutdown
     #[clap(long)]
     snapshot_at_shutdown: bool,
+
+    /// Max active namespaces kept in-memory
+    #[clap(long, env = "SQLD_MAX_ACTIVE_NAMESPACES", default_value = "100")]
+    max_active_namespaces: usize,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -506,6 +510,7 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
         disable_default_namespace: config.disable_default_namespace,
         disable_namespaces: !config.enable_namespaces,
         shutdown,
+        max_active_namespaces: config.max_active_namespaces,
     })
 }
 

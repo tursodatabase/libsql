@@ -105,6 +105,7 @@ async fn configure_server(
         },
         path: path.into().into(),
         disable_default_namespace: false,
+        max_active_namespaces: 100,
         heartbeat_config: None,
         idle_shutdown_timeout: None,
         initial_idle_shutdown_timeout: None,

@@ -520,7 +520,9 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_set_clientdata
 };
 
-static const libsql_api_routines libsqlApis = { };
+static const libsql_api_routines libsqlApis = {
+    libsql_close_hook,
+};
 /* True if x is the directory separator character
 */
 #if SQLITE_OS_WIN
