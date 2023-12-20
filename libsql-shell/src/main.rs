@@ -12,7 +12,7 @@ use rusqlite::ffi::{
     SQLITE_DBCONFIG_REVERSE_SCANORDER, SQLITE_DBCONFIG_STMT_SCANSTATUS,
     SQLITE_DBCONFIG_TRIGGER_EQP, SQLITE_DBCONFIG_TRUSTED_SCHEMA, SQLITE_DBCONFIG_WRITABLE_SCHEMA,
 };
-use rusqlite::{types::ValueRef, Connection, OpenFlags, Statement};
+use rusqlite::{types::ValueRef, Connection, LoadExtensionGuard, OpenFlags, Statement};
 use rusqlite::{DatabaseName, Params};
 use rustyline::completion::{Completer, Pair};
 use rustyline::error::ReadlineError;
@@ -22,7 +22,7 @@ use rustyline_derive::{Helper, Highlighter, Hinter, Validator};
 use std::collections::BTreeMap;
 use std::fmt;
 use std::io::{BufRead, BufReader, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::exit;
 use tabled::settings::Style;
 use tabled::Table;
@@ -513,6 +513,19 @@ impl Shell {
             }
             ".help" => self.show_help(args),
             ".indexes" => result = Some(self.list_tables(args.first().copied(), true)),
+            ".load" => {
+                let (filename, entrypoint) = match args.len() {
+                    1 => (args[0], None),
+                    2 => (args[0], Some(args[1])),
+                    _ => {
+                        writeln!(self.out, "Usage: .load FILENAME ?ENTRYPOINT?")?;
+                        return Ok(());
+                    }
+                };
+                if let Err(e) = load_my_extension(&self.db, filename, entrypoint) {
+                    println!("Error: {}", e);
+                }
+            }
             ".nullvalue" => {
                 if args.len() != 1 {
                     writeln!(self.out, "Usage: .nullvalue STRING")?;
@@ -809,6 +822,7 @@ impl Shell {
 .indexes ?TABLE?         Show names of indexes
 .limit ?LIMIT? ?VAL?     Display or change the value of an SQLITE_LIMIT
 .lint OPTIONS            Report potential schema issues.
+.load FILE ?ENTRY?       Load an extension library
 .log FILE|off            Turn logging on or off.  FILE can be stderr/stdout
 .mode MODE ?TABLE?       Set output mode
 .nonce STRING            Disable safe mode for one command if the nonce matches
@@ -955,6 +969,15 @@ fn toggle_option(name: &str, value: &mut bool, args: &[&str]) {
             }
         }
     }
+}
+
+fn load_my_extension<P: AsRef<Path>>(
+    conn: &Connection,
+    dylib_path: P,
+    entry_point: Option<&str>,
+) -> rusqlite::Result<()> {
+    let _guard = unsafe { LoadExtensionGuard::new(conn)? };
+    unsafe { conn.load_extension(dylib_path, entry_point) }
 }
 
 #[cfg(test)]

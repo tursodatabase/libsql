@@ -1,6 +1,6 @@
-use core::ffi::{c_char, c_int, CStr};
+use core::ffi::{c_char, c_int};
 
-use crate::{c::crsql_TableInfo, consts};
+use crate::{consts, tableinfo::TableInfo};
 use alloc::{ffi::CString, format};
 use core::slice;
 use sqlite::{sqlite3, Connection, Destructor, ResultCode};
@@ -40,7 +40,7 @@ fn insert_site_id(db: *mut sqlite3) -> Result<[u8; 16], ResultCode> {
 
 fn create_site_id_and_site_id_table(db: *mut sqlite3) -> Result<[u8; 16], ResultCode> {
     db.exec_safe(&format!(
-        "CREATE TABLE \"{tbl}\" (site_id BLOB NOT NULL, ordinal INTEGER PRIMARY KEY AUTOINCREMENT);
+        "CREATE TABLE \"{tbl}\" (site_id BLOB NOT NULL, ordinal INTEGER PRIMARY KEY);
         CREATE UNIQUE INDEX {tbl}_site_id ON \"{tbl}\" (site_id);",
         tbl = consts::TBL_SITE_ID
     ))?;
@@ -143,7 +143,7 @@ fn maybe_update_db_inner(
             db.prepare_v2("SELECT value FROM crsql_master WHERE key = 'crsqlite_version'")?;
         let step_result = stmt.step()?;
         if step_result == ResultCode::ROW {
-            recorded_version = stmt.column_int(0)?;
+            recorded_version = stmt.column_int(0);
         }
     }
 
@@ -192,44 +192,44 @@ fn maybe_update_db_inner(
  *
  * @param tableInfo
  */
-#[no_mangle]
-pub extern "C" fn crsql_create_clock_table(
+pub fn create_clock_table(
     db: *mut sqlite3,
-    table_info: *mut crsql_TableInfo,
-    err: *mut *mut c_char,
-) -> c_int {
-    match create_clock_table(db, table_info, err) {
-        Ok(_) => ResultCode::OK as c_int,
-        Err(code) => code as c_int,
-    }
-}
-
-fn create_clock_table(
-    db: *mut sqlite3,
-    table_info: *mut crsql_TableInfo,
+    table_info: &TableInfo,
     _err: *mut *mut c_char,
 ) -> Result<ResultCode, ResultCode> {
-    let columns = sqlite::args!((*table_info).pksLen, (*table_info).pks);
-    let pk_list = crate::util::as_identifier_list(columns, None)?;
-    let table_name = unsafe { CStr::from_ptr((*table_info).tblName).to_str() }?;
+    let pk_list = crate::util::as_identifier_list(&table_info.pks, None)?;
+    let table_name = &table_info.tbl_name;
 
     db.exec_safe(&format!(
         "CREATE TABLE IF NOT EXISTS \"{table_name}__crsql_clock\" (
-      {pk_list},
-      __crsql_col_name TEXT NOT NULL,
-      __crsql_col_version INT NOT NULL,
-      __crsql_db_version INT NOT NULL,
-      __crsql_site_id INT,
-      __crsql_seq INT NOT NULL,
-      PRIMARY KEY ({pk_list}, __crsql_col_name)
-    )",
-        pk_list = pk_list,
-        table_name = crate::util::escape_ident(table_name)
+      key INTEGER NOT NULL,
+      col_name TEXT NOT NULL,
+      col_version INTEGER NOT NULL,
+      db_version INTEGER NOT NULL,
+      site_id INTEGER NOT NULL DEFAULT 0,
+      seq INTEGER NOT NULL,
+      PRIMARY KEY (key, col_name)
+    ) WITHOUT ROWID, STRICT",
+        table_name = crate::util::escape_ident(table_name),
     ))?;
 
     db.exec_safe(
       &format!(
-        "CREATE INDEX IF NOT EXISTS \"{table_name}__crsql_clock_dbv_idx\" ON \"{table_name}__crsql_clock\" (\"__crsql_db_version\")",
+        "CREATE INDEX IF NOT EXISTS \"{table_name}__crsql_clock_dbv_idx\" ON \"{table_name}__crsql_clock\" (\"db_version\")",
         table_name = crate::util::escape_ident(table_name),
-      ))
+      ))?;
+    db.exec_safe(
+      &format!(
+        "CREATE TABLE IF NOT EXISTS \"{table_name}__crsql_pks\" (__crsql_key INTEGER PRIMARY KEY, {pk_list})",
+        table_name = table_name,
+        pk_list = pk_list,
+      )
+    )?;
+    db.exec_safe(
+      &format!(
+        "CREATE UNIQUE INDEX IF NOT EXISTS \"{table_name}__crsql_pks_pks\" ON \"{table_name}__crsql_pks\" ({pk_list})",
+        table_name = table_name,
+        pk_list = pk_list
+      )
+    )
 }

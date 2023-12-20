@@ -1,3 +1,5 @@
+//! This module contains all `Param` related utilities and traits.
+
 use crate::{Error, Result, Value};
 
 mod sealed {
@@ -303,6 +305,7 @@ impl From<Params> for libsql_replication::rpc::proxy::query::Params {
     }
 }
 
+/// Construct positional params from a hetergeneous set of params types.
 #[macro_export]
 macro_rules! params {
     () => {
@@ -315,6 +318,7 @@ macro_rules! params {
     }};
 }
 
+/// Construct named params from a hetergeneous set of params types.
 #[macro_export]
 macro_rules! named_params {
     () => {

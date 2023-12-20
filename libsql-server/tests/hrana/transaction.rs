@@ -1,4 +1,6 @@
-use crate::common::net::TurmoilConnector;
+use std::time::Duration;
+
+use crate::common::{net::TurmoilConnector, snapshot_metrics};
 use libsql::{params, Database, TransactionBehavior};
 
 #[test]
@@ -94,5 +96,51 @@ fn multiple_concurrent_transactions() {
 
         Ok(())
     });
+    sim.run().unwrap();
+}
+
+#[test]
+fn transaction_timeout() {
+    let mut sim = turmoil::Builder::new()
+        .tick_duration(Duration::from_millis(500))
+        .simulation_duration(Duration::from_secs(3600))
+        .build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        // initialize tables
+        let tx = conn.transaction().await?;
+        tx.execute_batch(r#"create table t(x text);"#).await?;
+        tx.commit().await?;
+
+        // transaction with temporary data
+        let tx = conn.transaction().await?;
+        tx.execute("insert into t(x) values('hello');", ()).await?;
+
+        let mut rows = tx
+            .query("select * from t where x = ?", params!["hello"])
+            .await?;
+
+        assert_eq!(rows.column_count(), 1);
+        assert_eq!(rows.column_name(0), Some("x"));
+        assert_eq!(rows.next()?.unwrap().get::<String>(0)?, "hello");
+        assert!(rows.next()?.is_none());
+
+        // Sleep to trigger stream expiration
+        tokio::time::sleep(Duration::from_secs(300)).await;
+
+        tx.rollback().await.unwrap_err();
+
+        snapshot_metrics().assert_counter_label(
+            "libsql_server_user_http_response",
+            ("status", "400"),
+            1,
+        );
+
+        Ok(())
+    });
+
     sim.run().unwrap();
 }

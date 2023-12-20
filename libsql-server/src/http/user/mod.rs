@@ -33,6 +33,7 @@ use crate::connection::Connection;
 use crate::database::Database;
 use crate::error::Error;
 use crate::hrana;
+use crate::http::user::db_factory::MakeConnectionExtractorPath;
 use crate::http::user::types::HttpQuery;
 use crate::metrics::LEGACY_HTTP_CALL;
 use crate::namespace::{MakeNamespace, NamespaceStore};
@@ -193,6 +194,33 @@ async fn handle_version() -> Response<Body> {
 
 async fn handle_fallback() -> impl IntoResponse {
     (StatusCode::NOT_FOUND).into_response()
+}
+
+async fn handle_hrana_pipeline<F: MakeNamespace>(
+    AxumState(state): AxumState<AppState<F>>,
+    MakeConnectionExtractorPath(connection_maker): MakeConnectionExtractorPath<
+        <F::Database as Database>::Connection,
+    >,
+    auth: Authenticated,
+    axum::extract::Path((_, version)): axum::extract::Path<(String, String)>,
+    req: Request<Body>,
+) -> Result<Response<Body>, Error> {
+    let hrana_version = match version.as_str() {
+        "2" => hrana::Version::Hrana2,
+        "3" => hrana::Version::Hrana3,
+        _ => return Err(Error::InvalidPath("invalid hrana version".to_string())),
+    };
+    Ok(state
+        .hrana_http_srv
+        .handle_request(
+            connection_maker,
+            auth,
+            req,
+            hrana::http::Endpoint::Pipeline,
+            hrana_version,
+            hrana::Encoding::Json,
+        )
+        .await?)
 }
 
 /// Router wide state that each request has access too via
@@ -386,6 +414,11 @@ where
                         hrana::Version::Hrana3,
                         hrana::Encoding::Protobuf,
                     )),
+                )
+                // turso dev routes
+                .route(
+                    "/dev/:namespace/v:version/pipeline",
+                    post(handle_hrana_pipeline),
                 )
                 .with_state(state);
 

@@ -103,7 +103,11 @@ pub unsafe extern "C" fn close<T: WalManager>(
 ) -> c_int {
     let this = &*(wal_manager as *mut T);
     let mut wal = Box::from_raw(wal as *mut T::Wal);
-    let scratch = std::slice::from_raw_parts_mut(z_buf, n_buf as usize);
+    let scratch = if z_buf.is_null() {
+        None
+    } else {
+        Some(std::slice::from_raw_parts_mut(z_buf, n_buf as usize))
+    };
     let mut db = Sqlite3Db { inner: db };
 
     match this.close(&mut wal, &mut db, sync_flags, scratch) {

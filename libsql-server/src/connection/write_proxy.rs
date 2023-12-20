@@ -20,6 +20,7 @@ use crate::auth::Authenticated;
 use crate::connection::program::{DescribeCol, DescribeParam};
 use crate::error::Error;
 use crate::metrics::{REPLICA_LOCAL_EXEC_MISPREDICT, REPLICA_LOCAL_PROGRAM_EXEC};
+use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::NamespaceName;
 use crate::query_analysis::TxnStatus;
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
@@ -27,7 +28,6 @@ use crate::replication::FrameNo;
 use crate::stats::Stats;
 use crate::{Result, DEFAULT_AUTO_CHECKPOINT};
 
-use super::config::DatabaseConfigStore;
 use super::libsql::{LibSqlConnection, MakeLibSqlConn};
 use super::program::DescribeResponse;
 use super::Connection;
@@ -54,7 +54,7 @@ impl MakeWriteProxyConn {
         channel: Channel,
         uri: tonic::transport::Uri,
         stats: Arc<Stats>,
-        config_store: Arc<DatabaseConfigStore>,
+        config_store: MetaStoreHandle,
         applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         max_response_size: u64,
         max_total_response_size: u64,

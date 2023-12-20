@@ -157,7 +157,7 @@ async fn prepare_and_query() {
     check_insert(
         &conn,
         "INSERT INTO users (id, name) VALUES (?1, ?2)",
-        params![2, "Alice"],
+        params![2u64, "Alice".to_string()],
     )
     .await;
     check_insert(

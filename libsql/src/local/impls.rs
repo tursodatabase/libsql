@@ -48,8 +48,8 @@ impl Conn for LibsqlConnection {
         })
     }
 
-    async fn is_autocommit(&self) -> Result<bool> {
-        Ok(self.conn.is_autocommit())
+    fn is_autocommit(&self) -> bool {
+        self.conn.is_autocommit()
     }
 
     fn changes(&self) -> u64 {

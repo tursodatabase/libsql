@@ -155,12 +155,19 @@ impl Options {
     pub fn from_env() -> Result<Self> {
         fn env_var(key: &str) -> Result<String> {
             match std::env::var(key) {
-                Ok(res) => Ok(res),
+                Ok(res) => {
+                    let res = res.trim().to_string();
+                    if res.is_empty() {
+                        bail!("{} environment variable is empty", key)
+                    } else {
+                        Ok(res)
+                    }
+                }
                 Err(_) => bail!("{} environment variable not set", key),
             }
         }
         fn env_var_or<S: ToString>(key: &str, default_value: S) -> String {
-            match std::env::var(key) {
+            match env_var(key) {
                 Ok(res) => res,
                 Err(_) => default_value.to_string(),
             }
@@ -367,6 +374,33 @@ impl Replicator {
             s3_upload_max_parallelism: options.s3_upload_max_parallelism,
             join_set,
         })
+    }
+
+    /// Checks if there exists any backup of given database
+    pub async fn has_backup_of(db_name: impl AsRef<str>, options: &Options) -> Result<bool> {
+        let prefix = match &options.db_id {
+            Some(db_id) => format!("{db_id}-"),
+            None => format!("ns-:{}-", db_name.as_ref()),
+        };
+        let config = options.client_config().await?;
+        let client = Client::from_conf(config);
+        let bucket = options.bucket_name.clone();
+
+        match client.head_bucket().bucket(&bucket).send().await {
+            Ok(_) => tracing::trace!("Bucket {bucket} exists and is accessible"),
+            Err(e) => {
+                tracing::trace!("Bucket checking error: {e}");
+                return Err(e.into());
+            }
+        }
+
+        let mut last_frame = 0;
+        let list_objects = client.list_objects().bucket(&bucket).prefix(&prefix);
+        let response = list_objects.send().await?;
+        let _ = Self::try_get_last_frame_no(response, &mut last_frame);
+        tracing::trace!("Last frame of {prefix}: {last_frame}");
+
+        Ok(last_frame > 0)
     }
 
     pub async fn shutdown_gracefully(&mut self) -> Result<()> {
@@ -926,7 +960,7 @@ impl Replicator {
 
                     if Some(key) != last_gen {
                         last_gen = Some(key);
-                        if let Ok(generation) = Uuid::parse_str(dbg!(key)) {
+                        if let Ok(generation) = Uuid::parse_str(key) {
                             match threshold.as_ref() {
                                 None => return Some(generation),
                                 Some(threshold) => match Self::generation_to_timestamp(&generation)

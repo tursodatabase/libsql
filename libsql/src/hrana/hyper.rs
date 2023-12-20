@@ -12,12 +12,11 @@ use crate::{Rows, Statement};
 use futures::future::BoxFuture;
 use http::header::AUTHORIZATION;
 use http::{HeaderValue, StatusCode};
-use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct HttpSender {
-    inner: hyper::Client<HttpsConnector<ConnectorService>, hyper::Body>,
+    inner: hyper::Client<ConnectorService, hyper::Body>,
     version: HeaderValue,
 }
 
@@ -27,12 +26,7 @@ impl HttpSender {
 
         let version = HeaderValue::try_from(format!("libsql-remote-{ver}")).unwrap();
 
-        let https = HttpsConnectorBuilder::new()
-            .with_native_roots()
-            .https_or_http()
-            .enable_http1()
-            .wrap_connector(connector);
-        let inner = hyper::Client::builder().build(https);
+        let inner = hyper::Client::builder().build(connector);
 
         Self { inner, version }
     }
@@ -142,8 +136,8 @@ impl Conn for HttpConnection<HttpSender> {
         })
     }
 
-    async fn is_autocommit(&self) -> crate::Result<bool> {
-        Ok(true) // connection without transaction always commits at the end of execution step
+    fn is_autocommit(&self) -> bool {
+        self.is_autocommit()
     }
 
     fn changes(&self) -> u64 {
@@ -238,12 +232,8 @@ impl Conn for HttpStream<HttpSender> {
         todo!("sounds like nested transactions innit?")
     }
 
-    async fn is_autocommit(&self) -> crate::Result<bool> {
-        let is_autocommit = self
-            .get_autocommit()
-            .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
-        Ok(is_autocommit)
+    fn is_autocommit(&self) -> bool {
+        false // for streams this method is callable only when we're within explicit transaction
     }
 
     fn changes(&self) -> u64 {

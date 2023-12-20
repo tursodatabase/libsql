@@ -34,7 +34,7 @@ mod tests {
             wal: &mut Self::Wal,
             db: &mut libsql_sys::wal::Sqlite3Db,
             sync_flags: std::ffi::c_int,
-            scratch: &mut [u8],
+            scratch: Option<&mut [u8]>,
         ) -> libsql_sys::wal::Result<()> {
             self.inner.close(&mut wal.0, db, sync_flags, scratch)
         }

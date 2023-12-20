@@ -39,6 +39,7 @@ sqlite3-parser = { path = "../vendored/sqlite3-parser", version = "0.11", option
 fallible-iterator = { version = "0.3", optional = true }
 
 libsql-replication = { path = "../libsql-replication", optional = true }
+async-stream = { version = "0.3.5", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports", "async", "async_futures", "async_tokio"] }
@@ -81,7 +82,8 @@ replication = [
   "dep:tower",
   "dep:hyper-rustls",
   "dep:futures",
-  "dep:libsql-replication"
+  "dep:libsql-replication",
+  "dep:async-stream",
 ]
 hrana = [
   "parser",
@@ -92,7 +94,6 @@ hrana = [
 ]
 serde = ["dep:serde"]
 remote = [
-  "core",
   "hrana",
   "dep:tower",
   "dep:hyper",

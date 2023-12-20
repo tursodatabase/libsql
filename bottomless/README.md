@@ -7,7 +7,7 @@ This project implements a virtual write-ahead log (WAL) which continuously backs
 ```
 LIBSQL_DIR=/path/to/your/libsql/directory make
 ```
-will produce a loadable `.so` libSQL/SQLite extension with bottomless WAL implementation.
+will produce a loadable `.so` libSQL extension with bottomless WAL implementation.
 ```
 LIBSQL_DIR=/path/to/your/libsql/directory make release
 ```
@@ -29,7 +29,7 @@ export LIBSQL_BOTTOMLESS_BUCKET='custom-bucket'
 On top of that, bottomless is implemented on top of the official [Rust SDK for S3](https://crates.io/crates/aws-sdk-s3), so all AWS-specific environment variables like `AWS_DEFAULT_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` also work, as well as the `~/.aws/credentials` file.
 
 ## How to use
-From libSQL/SQLite shell, load the extension and open a database file with `bottomless` WAL, e.g.:
+From libSQL shell, load the extension and open a database file with `bottomless` WAL, e.g.:
 ```sql
 .load ../target/debug/bottomless
 .open file:test.db?wal=bottomless

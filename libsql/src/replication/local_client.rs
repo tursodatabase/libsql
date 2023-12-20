@@ -1,7 +1,7 @@
 use std::pin::Pin;
 use std::path::Path;
 
-use futures::TryStreamExt;
+use futures::{TryStreamExt, StreamExt};
 use libsql_replication::{replicator::{ReplicatorClient, Error}, frame::{Frame, FrameNo}, meta::WalIndexMeta};
 use tokio_stream::Stream;
 
@@ -60,7 +60,21 @@ impl ReplicatorClient for LocalClient {
     /// NeedSnapshot error
     async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
         match self.frames.take() {
-            Some(Frames::Snapshot(frames)) => Ok(Box::pin(frames.into_stream_mut().map_ok(Frame::from).map_err(|e| Error::Client(Box::new(e))))),
+            Some(Frames::Snapshot(frames)) => { 
+                let size_after = frames.header().size_after.get();
+                let stream = async_stream::try_stream! {
+                    let s = frames.into_stream_mut().map_err(|e| Error::Client(Box::new(e))).peekable();
+                    tokio::pin!(s);
+                    while let Some(mut next) = s.as_mut().next().await.transpose()? {
+                        if s.as_mut().peek().await.is_none() {
+                            next.header_mut().size_after = size_after.into();
+                        }
+                        yield Frame::from(next);
+                    }
+                };
+
+                Ok(Box::pin(stream))
+            },
             Some(Frames::Vec(_)) | None => Ok(Box::pin(tokio_stream::empty()))
         }
     }
@@ -76,4 +90,25 @@ impl ReplicatorClient for LocalClient {
     }
 
     fn rollback(&mut self) {}
+}
+
+#[cfg(test)]
+mod test {
+    use libsql_replication::snapshot::SnapshotFile;
+    use tempfile::tempdir;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn snapshot_stream_commited() {
+        let tmp = tempdir().unwrap();
+        let snapshot = SnapshotFile::open("assets/test/snapshot.snap").await.unwrap();
+        let mut client = LocalClient::new(&tmp.path().join("data")).await.unwrap();
+        client.load_frames(Frames::Snapshot(snapshot));
+        let mut s = client.snapshot().await.unwrap();
+        assert!(matches!(s.next().await, Some(Ok(_))));
+        let last = s.next().await.unwrap().unwrap();
+        assert_eq!(last.header().size_after.get(), 2);
+        assert!(s.next().await.is_none());
+    }
 }

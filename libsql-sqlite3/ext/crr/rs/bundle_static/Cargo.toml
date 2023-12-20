@@ -1,0 +1,35 @@
+[package]
+name = "crsql_bundle_static"
+version = "0.1.0"
+edition = "2021"
+authors = ["Matt Wonlaw"]
+keywords = ["sqlite", "cr-sqlite"]
+license = "Apache 2"
+
+[lib]
+name = "crsql_bundle_static"
+crate-type = ["staticlib"]
+
+[dependencies]
+crsql_bundle = {path="../bundle"}
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[features]
+libsql = ["crsql_bundle/libsql"]
+test = [
+  "crsql_bundle/test"
+]
+loadable_extension = [
+  "crsql_bundle/loadable_extension"
+]
+static = [
+  "crsql_bundle/static"
+]
+omit_load_extension = [
+  "crsql_bundle/omit_load_extension"
+]

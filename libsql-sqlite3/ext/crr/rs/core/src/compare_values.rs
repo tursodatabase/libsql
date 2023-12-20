@@ -1,12 +1,12 @@
+use alloc::format;
+use alloc::string::String;
 use core::ffi::c_int;
+use sqlite::value;
 use sqlite::Value;
 use sqlite_nostd as sqlite;
 
-#[no_mangle]
-pub extern "C" fn crsql_compare_sqlite_values(
-    l: *mut sqlite::value,
-    r: *mut sqlite::value,
-) -> c_int {
+// TODO: add an integration test that ensures NULL == NULL!
+pub fn crsql_compare_sqlite_values(l: *mut sqlite::value, r: *mut sqlite::value) -> c_int {
     let l_type = l.value_type();
     let r_type = r.value_type();
 
@@ -42,4 +42,22 @@ pub extern "C" fn crsql_compare_sqlite_values(
         sqlite::ColumnType::Null => 0,
         sqlite::ColumnType::Text => l.text().cmp(r.text()) as c_int,
     }
+}
+
+pub fn any_value_changed(left: &[*mut value], right: &[*mut value]) -> Result<bool, String> {
+    if left.len() != right.len() {
+        return Err(format!(
+            "left and right values must have the same length: {} != {}",
+            left.len(),
+            right.len()
+        ));
+    }
+
+    for (l, r) in left.iter().zip(right.iter()) {
+        if crsql_compare_sqlite_values(*l, *r) != 0 {
+            return Ok(true);
+        }
+    }
+
+    Ok(false)
 }

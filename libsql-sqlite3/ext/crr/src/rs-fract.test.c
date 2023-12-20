@@ -12,10 +12,11 @@ static void testAsOrdered() {
   int rc;
 
   rc = sqlite3_open(":memory:", &db);
-  rc += sqlite3_exec(db,
-                     "CREATE TABLE todo (id primary key, list_id, ordering, "
-                     "content, complete);",
-                     0, 0, 0);
+  rc += sqlite3_exec(
+      db,
+      "CREATE TABLE todo (id primary key not null, list_id, ordering, "
+      "content, complete);",
+      0, 0, 0);
   rc += sqlite3_exec(
       db, "CREATE INDEX todo_list_id_ordering ON todo (list_id, ordering);", 0,
       0, 0);
@@ -43,7 +44,7 @@ static void testAsOrdered() {
   assert(rc == SQLITE_OK);
   sqlite3_step(pStmt);
   const unsigned char *order = sqlite3_column_text(pStmt, 0);
-  assert(strcmp((const char *)order, "a0") == 0);
+  assert(strcmp((const char *)order, "a ") == 0);
   sqlite3_finalize(pStmt);
 
   // test append
@@ -55,7 +56,7 @@ static void testAsOrdered() {
   assert(rc == SQLITE_OK);
   sqlite3_step(pStmt);
   order = sqlite3_column_text(pStmt, 0);
-  assert(strcmp((const char *)order, "a1") == 0);
+  assert(strcmp((const char *)order, "a!") == 0);
   sqlite3_finalize(pStmt);
 
   // test insert after head
@@ -71,7 +72,7 @@ static void testAsOrdered() {
   while (sqlite3_step(pStmt) == SQLITE_ROW) {
     assert(sqlite3_column_int(pStmt, 0) == i);
     if (i == 2) {
-      assert(strcmp((const char *)sqlite3_column_text(pStmt, 1), "a0V") == 0);
+      assert(strcmp((const char *)sqlite3_column_text(pStmt, 1), "a P") == 0);
     }
     i += 1;
   }
@@ -88,7 +89,7 @@ static void testAsOrdered() {
   assert(rc == SQLITE_OK);
   sqlite3_step(pStmt);
   order = sqlite3_column_text(pStmt, 0);
-  assert(strcmp((const char *)order, "Zz") == 0);
+  assert(strcmp((const char *)order, "Z~") == 0);
   sqlite3_finalize(pStmt);
 
   // append to a list with items via 1 trick
@@ -102,7 +103,7 @@ static void testAsOrdered() {
   assert(rc == SQLITE_OK);
   sqlite3_step(pStmt);
   order = sqlite3_column_text(pStmt, 0);
-  assert(strcmp((const char *)order, "a2") == 0);
+  assert(strcmp((const char *)order, "a\"") == 0);
   sqlite3_finalize(pStmt);
 
   // before head via view and null
@@ -116,7 +117,7 @@ static void testAsOrdered() {
   assert(rc == SQLITE_OK);
   sqlite3_step(pStmt);
   order = sqlite3_column_text(pStmt, 0);
-  assert(strcmp((const char *)order, "Zy") == 0);
+  assert(strcmp((const char *)order, "Z}") == 0);
   sqlite3_finalize(pStmt);
 
   // after tail view view
@@ -130,7 +131,7 @@ static void testAsOrdered() {
   assert(rc == SQLITE_OK);
   sqlite3_step(pStmt);
   order = sqlite3_column_text(pStmt, 0);
-  assert(strcmp((const char *)order, "a3") == 0);
+  assert(strcmp((const char *)order, "a#") == 0);
   sqlite3_finalize(pStmt);
 
   // test move after
@@ -142,17 +143,17 @@ static void testAsOrdered() {
   assert(rc == SQLITE_OK);
   sqlite3_step(pStmt);
   order = sqlite3_column_text(pStmt, 0);
-  assert(strcmp((const char *)order, "a2V") == 0);
+  assert(strcmp((const char *)order, "a\"P") == 0);
   sqlite3_finalize(pStmt);
 
   /*
-  -1 -> Zy
-  0 -> Zz
-  1 -> a0
+  -1 -> Z}
+  0 -> Z~
+  1 -> a
   2 -> ?
-  4 -> a2
-  3 -> a2V
-  5 -> a3
+  4 -> a"
+  3 -> a"P
+  5 -> a#
   */
 
   // insert between / insert after
@@ -166,17 +167,17 @@ static void testAsOrdered() {
   assert(rc == SQLITE_OK);
   sqlite3_step(pStmt);
   order = sqlite3_column_text(pStmt, 0);
-  assert(strcmp((const char *)order, "a0V") == 0);
+  assert(strcmp((const char *)order, "a P") == 0);
   sqlite3_finalize(pStmt);
 
   /*
-  -1 -> Zy
-  0 -> Zz
-  1 -> a0
-  2 -> a0V
-  4 -> a2
-  3 -> a2V
-  5 -> a3
+  -1 -> Z}
+  0 -> Z~
+  1 -> a
+  2 -> a P
+  4 -> a"
+  3 -> a"P
+  5 -> a#
   */
 
   // move before
@@ -189,24 +190,24 @@ static void testAsOrdered() {
   assert(rc == SQLITE_OK);
   sqlite3_step(pStmt);
   order = sqlite3_column_text(pStmt, 0);
-  assert(strcmp((const char *)order, "a1") == 0);
+  assert(strcmp((const char *)order, "a!") == 0);
   sqlite3_finalize(pStmt);
 
   /*
-  -1 -> Zy
-  0 -> Zz
-  1 -> a0
-  2 -> a0V
-  3 -> a1
-  4 -> a2
-  5 -> a3
+  -1 -> Z}
+  0 -> Z~
+  1 -> a
+  2 -> a P
+  3 -> a!
+  4 -> a"
+  5 -> a#
   */
 
   // make some collisions
   rc = sqlite3_exec(
       db,
       "INSERT INTO todo (id, list_id, content, complete, ordering) "
-      "VALUES (6, 1, 'xx', false, 'a1')",
+      "VALUES (6, 1, 'xx', false, 'a!')",
       0, 0, 0);
   assert(rc == SQLITE_OK);
   // 3 & 6 collide, try insertion after 3
@@ -222,7 +223,7 @@ static void testAsOrdered() {
   assert(rc == SQLITE_OK);
   sqlite3_step(pStmt);
   order = sqlite3_column_text(pStmt, 0);
-  assert(strcmp((const char *)order, "a0t") == 0);
+  assert(strcmp((const char *)order, "a t") == 0);
   sqlite3_finalize(pStmt);
 
   rc += sqlite3_prepare_v2(db, "SELECT ordering FROM todo WHERE id = 3", -1,
@@ -230,7 +231,7 @@ static void testAsOrdered() {
   assert(rc == SQLITE_OK);
   sqlite3_step(pStmt);
   order = sqlite3_column_text(pStmt, 0);
-  assert(strcmp((const char *)order, "a0l") == 0);
+  assert(strcmp((const char *)order, "a h") == 0);
   sqlite3_finalize(pStmt);
 
   rc += sqlite3_prepare_v2(db, "SELECT ordering FROM todo WHERE id = 6", -1,
@@ -238,7 +239,7 @@ static void testAsOrdered() {
   assert(rc == SQLITE_OK);
   sqlite3_step(pStmt);
   order = sqlite3_column_text(pStmt, 0);
-  assert(strcmp((const char *)order, "a1") == 0);
+  assert(strcmp((const char *)order, "a!") == 0);
   sqlite3_finalize(pStmt);
 
   // Test many list column

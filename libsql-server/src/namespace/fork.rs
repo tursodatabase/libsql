@@ -16,6 +16,7 @@ use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};
 
+use super::meta_store::MetaStore;
 use super::{MakeNamespace, NamespaceBottomlessDbId, NamespaceName, RestoreOption};
 
 type Result<T> = crate::Result<T, ForkError>;
@@ -58,6 +59,7 @@ pub struct ForkTask<'a> {
     pub make_namespace: &'a dyn MakeNamespace<Database = PrimaryDatabase>,
     pub restore_to: Option<PointInTimeRestore>,
     pub bottomless_db_id: NamespaceBottomlessDbId,
+    pub meta_store: &'a MetaStore,
 }
 
 pub struct PointInTimeRestore {
@@ -107,11 +109,11 @@ impl ForkTask<'_> {
                 self.dest_namespace.clone(),
                 RestoreOption::Latest,
                 self.bottomless_db_id,
-                true,
                 // Forking works only on primary and
                 // PrimaryNamespaceMaker::create ignores
                 // reset_cb param
                 Box::new(|_op| {}),
+                &self.meta_store,
             )
             .await
             .map_err(|e| ForkError::CreateNamespace(Box::new(e)))

@@ -4,6 +4,8 @@ use crate::{Connection, Result};
 
 cfg_core! {
     bitflags::bitflags! {
+        /// Flags that can be passed to libsql to open a database in specific
+        /// modes.
         #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         #[repr(C)]
         pub struct OpenFlags: ::std::os::raw::c_int {
@@ -21,9 +23,6 @@ cfg_core! {
     }
 }
 
-// TODO(lucio): Improve construction via
-//      1) Move open errors into open fn rather than connect
-//      2) Support replication setup
 enum DbType {
     #[cfg(feature = "core")]
     Memory,
@@ -57,22 +56,27 @@ impl fmt::Debug for DbType {
     }
 }
 
+/// A struct that knows how to build [`Connection`]'s, this type does
+/// not do much work until the [`Database::connect`] fn is called.
 pub struct Database {
     db_type: DbType,
 }
 
 cfg_core! {
     impl Database {
+        /// Open an in-memory libsql database.
         pub fn open_in_memory() -> Result<Self> {
             Ok(Database {
                 db_type: DbType::Memory,
             })
         }
 
+        /// Open a file backed libsql database.
         pub fn open(db_path: impl Into<String>) -> Result<Database> {
             Database::open_with_flags(db_path, OpenFlags::default())
         }
 
+        /// Open a file backed libsql database with flags.
         pub fn open_with_flags(db_path: impl Into<String>, flags: OpenFlags) -> Result<Database> {
             Ok(Database {
                 db_type: DbType::File {
@@ -105,33 +109,34 @@ cfg_replication! {
             url: impl Into<String>,
             token: impl Into<String>,
         ) -> Result<Database> {
-            let mut http = hyper::client::HttpConnector::new();
-            http.enforce_http(false);
-            http.set_nodelay(true);
+            let https = connector();
 
-            Self::open_with_remote_sync_connector(db_path, url, token, http).await
+            Self::open_with_remote_sync_connector(db_path, url, token, https, false).await
         }
 
-        #[doc(hidden)]
-        pub async fn open_with_remote_sync_internal(
+        /// Open a local database file with the ability to sync from a remote database
+        /// in consistent mode.
+        ///
+        /// Consistent mode means that when a write happens it will not complete until
+        /// that write is visible in the local db.
+        pub async fn open_with_remote_sync_consistent(
             db_path: impl Into<String>,
             url: impl Into<String>,
             token: impl Into<String>,
-            version: Option<String>
         ) -> Result<Database> {
-            let mut http = hyper::client::HttpConnector::new();
-            http.enforce_http(false);
-            http.set_nodelay(true);
+            let https = connector();
 
-            Self::open_with_remote_sync_connector_internal(db_path, url, token, http, version).await
+            Self::open_with_remote_sync_connector(db_path, url, token, https, true).await
         }
 
-        #[doc(hidden)]
+        /// Connect an embedded replica to a remote primary with a custom
+        /// http connector.
         pub async fn open_with_remote_sync_connector<C>(
             db_path: impl Into<String>,
             url: impl Into<String>,
             token: impl Into<String>,
             connector: C,
+            read_your_writes: bool,
         ) -> Result<Database>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
@@ -139,7 +144,34 @@ cfg_replication! {
             C::Future: Send + 'static,
             C::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
         {
-            Self::open_with_remote_sync_connector_internal(db_path, url, token, connector, None).await
+            Self::open_with_remote_sync_connector_internal(
+                db_path,
+                url,
+                token,
+                connector,
+                None,
+                read_your_writes
+            ).await
+        }
+
+        #[doc(hidden)]
+        pub async fn open_with_remote_sync_internal(
+            db_path: impl Into<String>,
+            url: impl Into<String>,
+            token: impl Into<String>,
+            version: Option<String>,
+            read_your_writes: bool,
+        ) -> Result<Database> {
+            let https = connector();
+
+            Self::open_with_remote_sync_connector_internal(
+                db_path,
+                url,
+                token,
+                https,
+                version,
+                read_your_writes
+            ).await
         }
 
         #[doc(hidden)]
@@ -148,7 +180,8 @@ cfg_replication! {
             url: impl Into<String>,
             token: impl Into<String>,
             connector: C,
-            version: Option<String>
+            version: Option<String>,
+            read_your_writes: bool,
         ) -> Result<Database>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
@@ -169,7 +202,8 @@ cfg_replication! {
                 db_path.into(),
                 url.into(),
                 token.into(),
-                version
+                version,
+                read_your_writes
             ).await?;
 
             Ok(Database {
@@ -178,7 +212,7 @@ cfg_replication! {
         }
 
 
-        /// Sync database from remote, and returns the commited frame_no after syncing, if
+        /// Sync database from remote, and returns the committed frame_no after syncing, if
         /// applicable.
         pub async fn sync(&self) -> Result<Option<FrameNo>> {
             if let DbType::Sync { db } = &self.db_type {
@@ -188,7 +222,7 @@ cfg_replication! {
             }
         }
 
-        /// Apply a set of frames to the database and returns the commited frame_no after syncing, if
+        /// Apply a set of frames to the database and returns the committed frame_no after syncing, if
         /// applicable.
         pub async fn sync_frames(&self, frames: crate::replication::Frames) -> Result<Option<FrameNo>> {
             if let DbType::Sync { db } = &self.db_type {
@@ -207,6 +241,15 @@ cfg_replication! {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
             }
         }
+
+        /// Returns the database currently committed replication index
+        pub async fn replication_index(&self) -> Result<Option<FrameNo>> {
+            if let DbType::Sync { db } = &self.db_type {
+                db.replication_index().await
+            } else {
+                Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
+            }
+        }
     }
 }
 
@@ -214,11 +257,11 @@ impl Database {}
 
 cfg_remote! {
     impl Database {
+        /// Open a remote based HTTP database using libsql's hrana protocol.
         pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
-            let mut connector = hyper::client::HttpConnector::new();
-            connector.enforce_http(false);
+            let https = connector();
 
-            Self::open_remote_with_connector_internal(url, auth_token, connector, None)
+            Self::open_remote_with_connector_internal(url, auth_token, https, None)
         }
 
         #[doc(hidden)]
@@ -227,14 +270,12 @@ cfg_remote! {
             auth_token: impl Into<String>,
             version: impl Into<String>,
         ) -> Result<Self> {
-            let mut connector = hyper::client::HttpConnector::new();
-            connector.enforce_http(false);
+            let https = connector();
 
-            Self::open_remote_with_connector_internal(url, auth_token, connector, Some(version.into()))
+            Self::open_remote_with_connector_internal(url, auth_token, https, Some(version.into()))
         }
 
-        // For now, only expose this for sqld testing purposes
-        #[doc(hidden)]
+        /// Connect to a remote libsql using libsql's hrana protocol with a custom connector.
         pub fn open_remote_with_connector<C>(
             url: impl Into<String>,
             auth_token: impl Into<String>,
@@ -249,6 +290,7 @@ cfg_remote! {
             Self::open_remote_with_connector_internal(url, auth_token, connector, None)
         }
 
+        #[doc(hidden)]
         fn open_remote_with_connector_internal<C>(
             url: impl Into<String>,
             auth_token: impl Into<String>,
@@ -279,6 +321,15 @@ cfg_remote! {
 }
 
 impl Database {
+    /// Connect to the database this can mean a few things depending on how it was constructed:
+    ///
+    /// - When constructed with `open`/`open_with_flags`/`open_in_memory` this will call into the
+    ///     libsql C ffi and create a connection to the libsql database.
+    /// - When constructed with `open_remote` and friends it will not call any C ffi and will
+    ///     lazily create a HTTP connection to the provided endpoint.
+    /// - When constructed with `open_with_remote_sync_` and friends it will attempt to perform a
+    ///     handshake with the remote server and will attempt to replicate the remote database
+    ///     locally.
     #[allow(unreachable_patterns)]
     pub fn connect(&self) -> Result<Connection> {
         match &self.db_type {
@@ -342,4 +393,17 @@ impl Database {
             _ => unreachable!("no database type set"),
         }
     }
+}
+
+#[cfg(any(feature = "replication", feature = "remote"))]
+fn connector() -> hyper_rustls::HttpsConnector<hyper::client::HttpConnector> {
+    let mut http = hyper::client::HttpConnector::new();
+    http.enforce_http(false);
+    http.set_nodelay(true);
+
+    hyper_rustls::HttpsConnectorBuilder::new()
+        .with_native_roots()
+        .https_or_http()
+        .enable_http1()
+        .wrap_connector(http)
 }

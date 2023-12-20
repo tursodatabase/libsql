@@ -1,4 +1,6 @@
 pub mod ffi {
+    //! C ffi for libsql.
+
     pub use libsql_ffi::*;
     use zerocopy::byteorder::big_endian::{U16 as bu16, U32 as bu32, U64 as bu64};
 

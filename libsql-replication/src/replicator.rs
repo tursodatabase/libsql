@@ -197,7 +197,12 @@ impl<C: ReplicatorClient> Replicator<C> {
                     return Ok(());
                 }
                 Err(Error::Client(e)) if !error_printed => {
-                    tracing::error!("error connecting to primary. retrying. error: {e}");
+                    if e.downcast_ref::<uuid::Error>().is_some() {
+                        tracing::error!("error connecting to primary. retrying. Verify that the libsql server version is `>=0.22` error: {e}");
+                    } else {
+                        tracing::error!("error connecting to primary. retrying. error: {e}");
+                    }
+
                     error_printed = true;
                 }
                 Err(Error::Client(_)) if error_printed => (),

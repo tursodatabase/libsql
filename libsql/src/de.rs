@@ -1,3 +1,5 @@
+//! Deserialization utilities.
+
 use crate::{Row, Value};
 use serde::de::{value::Error as DeError, Error, IntoDeserializer, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};

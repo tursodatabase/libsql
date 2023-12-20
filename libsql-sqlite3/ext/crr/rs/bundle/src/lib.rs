@@ -6,10 +6,12 @@ extern crate alloc;
 
 use core::alloc::GlobalAlloc;
 use core::alloc::Layout;
-use core::ffi::{c_char, c_int};
+use core::ffi::c_char;
 use core::panic::PanicInfo;
 use crsql_core;
 use crsql_core::sqlite3_crsqlcore_init;
+#[cfg(feature = "test")]
+pub use crsql_core::test_exports;
 use crsql_fractindex_core::sqlite3_crsqlfractionalindex_init;
 use sqlite_nostd as sqlite;
 use sqlite_nostd::SQLite3Allocator;
@@ -41,12 +43,12 @@ pub extern "C" fn sqlite3_crsqlrustbundle_init(
     db: *mut sqlite::sqlite3,
     err_msg: *mut *mut c_char,
     api: *mut sqlite::api_routines,
-) -> c_int {
+) -> *mut ::core::ffi::c_void {
     sqlite::EXTENSION_INIT2(api);
 
     let rc = sqlite3_crsqlfractionalindex_init(db, err_msg, api);
     if rc != 0 {
-        return rc;
+        return core::ptr::null_mut();
     }
 
     sqlite3_crsqlcore_init(db, err_msg, api)

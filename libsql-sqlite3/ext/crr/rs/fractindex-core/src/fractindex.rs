@@ -5,21 +5,21 @@ use alloc::{
     string::{String, ToString},
 };
 
-pub static BASE_62_DIGITS: &'static str =
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+pub static BASE_95_DIGITS: &'static str =
+    " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
 
-static SMALLEST_INTEGER: &'static str = "A00000000000000000000000000";
-static INTEGER_ZERO: &'static str = "a0";
+static SMALLEST_INTEGER: &'static str = "A                          ";
+static INTEGER_ZERO: &'static str = "a ";
 
 static a_charcode: u8 = 97;
 static z_charcode: u8 = 122;
 static A_charcode: u8 = 65;
 static Z_charcode: u8 = 90;
-static zero_charcode: u8 = 48;
+static min_charcode: u8 = 32;
 
 pub fn key_between(a: Option<&str>, b: Option<&str>) -> Result<Option<String>, &'static str> {
     // configurable digits not yet supported
-    let digits = BASE_62_DIGITS;
+    let digits = BASE_95_DIGITS;
 
     a.map(|a| validate_order_key(a)).transpose()?;
     b.map(|b| validate_order_key(b)).transpose()?;
@@ -91,10 +91,10 @@ fn midpoint(a: &str, b: Option<&str>, digits: &str) -> Result<String, &'static s
         let b_bytes = b.as_bytes();
         b_bytes[b_bytes.len() - 1]
     });
-    if a_bytes.len() > 0 && a_bytes[a_bytes.len() - 1] == zero_charcode
-        || (b_last_char.map_or(false, |b| b == zero_charcode))
+    if a_bytes.len() > 0 && a_bytes[a_bytes.len() - 1] == min_charcode
+        || (b_last_char.map_or(false, |b| b == min_charcode))
     {
-        return Err("midpoint - a or b must not end with 0");
+        return Err("midpoint - a or b must not end with ' ' (space)");
     }
 
     if let Some(b) = b {
@@ -104,7 +104,7 @@ fn midpoint(a: &str, b: Option<&str>, digits: &str) -> Result<String, &'static s
         while (if n < a_bytes.len() {
             a_bytes[n]
         } else {
-            zero_charcode
+            min_charcode
         } == b_bytes[n])
         {
             n += 1;
@@ -174,8 +174,8 @@ fn validate_order_key(key: &str) -> Result<(), &'static str> {
     let i = get_integer_part(key)?;
     let f = &key[i.len()..];
     let as_bytes = f.as_bytes();
-    if as_bytes.len() > 0 && as_bytes[as_bytes.len() - 1] == zero_charcode {
-        return Err("Fractional part should not end with 0");
+    if as_bytes.len() > 0 && as_bytes[as_bytes.len() - 1] == min_charcode {
+        return Err("Fractional part should not end with ' ' (space)");
     }
 
     Ok(())
@@ -224,7 +224,7 @@ fn increment_integer(x: &str, digits: &str) -> Result<Option<String>, &'static s
             let d = temp + 1;
 
             if d == digits.len() {
-                digs.replace_range(ui..ui + 1, "0");
+                digs.replace_range(ui..ui + 1, &digits[0..1]);
             } else {
                 digs.replace_range(ui..ui + 1, &digits[d..d + 1]);
                 carry = false;
@@ -237,14 +237,14 @@ fn increment_integer(x: &str, digits: &str) -> Result<Option<String>, &'static s
 
     if carry {
         if head == "Z" {
-            return Ok(Some(String::from("a0")));
+            return Ok(Some(String::from(INTEGER_ZERO)));
         }
         if head == "z" {
             return Ok(None);
         }
         let h = head.as_bytes()[0] + 1;
         if h > a_charcode {
-            digs.push('0');
+            digs.push(digits.chars().nth(0).unwrap());
         } else {
             digs.pop();
         }
@@ -333,34 +333,34 @@ mod tests {
             assert_eq!(btwn, exp);
         }
 
-        test(None, None, Ok(Some(String::from("a0"))));
-        test(None, Some("a0"), Ok(Some(String::from("Zz"))));
-        test(None, Some("Zz"), Ok(Some(String::from("Zy"))));
-        test(Some("a0"), None, Ok(Some(String::from("a1"))));
-        test(Some("a1"), None, Ok(Some(String::from("a2"))));
-        test(Some("a0"), Some("a1"), Ok(Some(String::from("a0V"))));
-        test(Some("a1"), Some("a2"), Ok(Some(String::from("a1V"))));
-        test(Some("a0V"), Some("a1"), Ok(Some(String::from("a0l"))));
-        test(Some("Zz"), Some("a0"), Ok(Some(String::from("ZzV"))));
-        test(Some("Zz"), Some("a1"), Ok(Some(String::from("a0"))));
-        test(None, Some("Y00"), Ok(Some(String::from("Xzzz"))));
-        test(Some("bzz"), None, Ok(Some(String::from("c000"))));
-        test(Some("a0"), Some("a0V"), Ok(Some(String::from("a0G"))));
-        test(Some("a0"), Some("a0G"), Ok(Some(String::from("a08"))));
+        test(None, None, Ok(Some(String::from("a "))));
+        test(None, Some("a "), Ok(Some(String::from("Z~"))));
+        test(None, Some("Z~"), Ok(Some(String::from("Z}"))));
+        test(Some("a "), None, Ok(Some(String::from("a!"))));
+        test(Some("a!"), None, Ok(Some(String::from("a\""))));
+        test(Some("a0"), Some("a1"), Ok(Some(String::from("a0P"))));
+        test(Some("a1"), Some("a2"), Ok(Some(String::from("a1P"))));
+        test(Some("a0V"), Some("a1"), Ok(Some(String::from("a0k"))));
+        test(Some("Z~"), Some("a "), Ok(Some(String::from("Z~P"))));
+        test(Some("Z~"), Some("a!"), Ok(Some(String::from("a "))));
+        test(None, Some("Y  "), Ok(Some(String::from("X~~~"))));
+        test(Some("b~~"), None, Ok(Some(String::from("c   "))));
+        test(Some("a0"), Some("a0V"), Ok(Some(String::from("a0;"))));
+        test(Some("a0"), Some("a0G"), Ok(Some(String::from("a04"))));
         test(Some("b125"), Some("b129"), Ok(Some(String::from("b127"))));
         test(Some("a0"), Some("a1V"), Ok(Some(String::from("a1"))));
-        test(Some("Zz"), Some("a01"), Ok(Some(String::from("a0"))));
+        test(Some("Z~"), Some("a 1"), Ok(Some(String::from("a "))));
         test(None, Some("a0V"), Ok(Some(String::from("a0"))));
         test(None, Some("b999"), Ok(Some(String::from("b99"))));
         test(
             None,
-            Some("A00000000000000000000000000"),
+            Some("A                          "),
             Err("Key is too small"),
         );
         test(
             None,
-            Some("A000000000000000000000000001"),
-            Ok(Some(String::from("A000000000000000000000000000V"))),
+            Some("A                          !"),
+            Ok(Some(String::from("A                           P"))),
         );
         test(
             Some("zzzzzzzzzzzzzzzzzzzzzzzzzzy"),
@@ -368,19 +368,19 @@ mod tests {
             Ok(Some(String::from("zzzzzzzzzzzzzzzzzzzzzzzzzzz"))),
         );
         test(
-            Some("zzzzzzzzzzzzzzzzzzzzzzzzzzz"),
+            Some("z~~~~~~~~~~~~~~~~~~~~~~~~~~"),
             None,
-            Ok(Some(String::from("zzzzzzzzzzzzzzzzzzzzzzzzzzzV"))),
+            Ok(Some(String::from("z~~~~~~~~~~~~~~~~~~~~~~~~~~P"))),
         );
         test(
-            Some("a00"),
+            Some("a0 "),
             None,
-            Err("Fractional part should not end with 0"),
+            Err("Fractional part should not end with ' ' (space)"),
         );
         test(
-            Some("a00"),
+            Some("a0 "),
             Some("a1"),
-            Err("Fractional part should not end with 0"),
+            Err("Fractional part should not end with ' ' (space)"),
         );
         test(Some("0"), Some("1"), Err("head is out of range"));
         test(

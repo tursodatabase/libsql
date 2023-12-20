@@ -56,6 +56,8 @@ pub enum Error {
     Anyhow(#[from] anyhow::Error),
     #[error("Invalid host header: `{0}`")]
     InvalidHost(String),
+    #[error("Invalid path in URI: `{0}`")]
+    InvalidPath(String),
     #[error("Namespace `{0}` doesn't exist")]
     NamespaceDoesntExist(String),
     #[error("Namespace `{0}` already exists")]
@@ -92,6 +94,11 @@ pub enum Error {
     UrlParseError(#[from] url::ParseError),
     #[error("Namespace store has shutdown")]
     NamespaceStoreShutdown,
+    #[error("Unable to update metastore: {0}")]
+    MetaStoreUpdateFailure(Box<dyn std::error::Error + Send + Sync>),
+    // This is for errors returned by moka
+    #[error(transparent)]
+    Ref(#[from] std::sync::Arc<Self>),
 }
 
 trait ResponseError: std::error::Error {
@@ -105,6 +112,12 @@ trait ResponseError: std::error::Error {
 impl ResponseError for Error {}
 
 impl IntoResponse for Error {
+    fn into_response(self) -> axum::response::Response {
+        (&self).into_response()
+    }
+}
+
+impl IntoResponse for &Error {
     fn into_response(self) -> axum::response::Response {
         use Error::*;
 
@@ -132,6 +145,7 @@ impl IntoResponse for Error {
             TooManyRequests => self.format_err(StatusCode::TOO_MANY_REQUESTS),
             QueryError(_) => self.format_err(StatusCode::BAD_REQUEST),
             InvalidHost(_) => self.format_err(StatusCode::BAD_REQUEST),
+            InvalidPath(_) => self.format_err(StatusCode::BAD_REQUEST),
             NamespaceDoesntExist(_) => self.format_err(StatusCode::BAD_REQUEST),
             PrimaryConnectionTimeout => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             NamespaceAlreadyExist(_) => self.format_err(StatusCode::BAD_REQUEST),
@@ -150,6 +164,8 @@ impl IntoResponse for Error {
             PrimaryStreamInterupted => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             UrlParseError(_) => self.format_err(StatusCode::BAD_REQUEST),
             NamespaceStoreShutdown => self.format_err(StatusCode::SERVICE_UNAVAILABLE),
+            MetaStoreUpdateFailure(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            Ref(this) => this.as_ref().into_response(),
         }
     }
 }
@@ -224,7 +240,7 @@ pub enum LoadDumpError {
 
 impl ResponseError for LoadDumpError {}
 
-impl IntoResponse for LoadDumpError {
+impl IntoResponse for &LoadDumpError {
     fn into_response(self) -> axum::response::Response {
         use LoadDumpError::*;
 
@@ -244,7 +260,7 @@ impl IntoResponse for LoadDumpError {
 
 impl ResponseError for ForkError {}
 
-impl IntoResponse for ForkError {
+impl IntoResponse for &ForkError {
     fn into_response(self) -> axum::response::Response {
         match self {
             ForkError::Internal(_)

@@ -119,6 +119,7 @@ pub async fn acquire<'srv, D: Connection>(
 
             let mut state = server.stream_state.lock();
             let handle = state.handles.get_mut(&stream_id);
+
             match handle {
                 None => {
                     return Err(ProtocolError::BatonInvalid)

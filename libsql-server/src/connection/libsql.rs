@@ -18,6 +18,7 @@ use crate::metrics::{
     DESCRIBE_COUNT, PROGRAM_EXEC_COUNT, READ_QUERY_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT,
     WRITE_QUERY_COUNT, WRITE_TXN_DURATION,
 };
+use crate::namespace::meta_store::MetaStoreHandle;
 use crate::query::Query;
 use crate::query_analysis::{StmtKind, TxnStatus};
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
@@ -25,7 +26,6 @@ use crate::replication::FrameNo;
 use crate::stats::Stats;
 use crate::Result;
 
-use super::config::DatabaseConfigStore;
 use super::program::{Cond, DescribeCol, DescribeParam, DescribeResponse};
 use super::{MakeConnection, Program, Step, TXN_TIMEOUT};
 
@@ -33,7 +33,7 @@ pub struct MakeLibSqlConn<T: WalManager> {
     db_path: PathBuf,
     wal_manager: T,
     stats: Arc<Stats>,
-    config_store: Arc<DatabaseConfigStore>,
+    config_store: MetaStoreHandle,
     extensions: Arc<[PathBuf]>,
     max_response_size: u64,
     max_total_response_size: u64,
@@ -55,7 +55,7 @@ where
         db_path: PathBuf,
         wal_manager: T,
         stats: Arc<Stats>,
-        config_store: Arc<DatabaseConfigStore>,
+        config_store: MetaStoreHandle,
         extensions: Arc<[PathBuf]>,
         max_response_size: u64,
         max_total_response_size: u64,
@@ -184,6 +184,19 @@ impl<W: Wal> WrapWal<W> for InhibitCheckpointWalWrapper {
         );
         Err(rusqlite::ffi::Error::new(SQLITE_BUSY))
     }
+
+    fn close<M: WalManager<Wal = W>>(
+        &self,
+        manager: &M,
+        wrapped: &mut W,
+        db: &mut libsql_sys::wal::Sqlite3Db,
+        sync_flags: c_int,
+        _scratch: Option<&mut [u8]>,
+    ) -> libsql_sys::wal::Result<()> {
+        // sqlite3 wall will not checkpoint if it's not provided with a scratch buffer. We take
+        // advantage of that to prevent checpoint on such connections.
+        manager.close(wrapped, db, sync_flags, None)
+    }
 }
 
 pub type InhibitCheckpoint<T> = WrappedWal<InhibitCheckpointWalWrapper, T>;
@@ -241,7 +254,7 @@ where
         extensions: Arc<[PathBuf]>,
         wal_manager: T,
         stats: Arc<Stats>,
-        config_store: Arc<DatabaseConfigStore>,
+        config_store: MetaStoreHandle,
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
@@ -292,7 +305,7 @@ impl LibSqlConnection<libsql_sys::wal::Sqlite3Wal> {
             Arc::new([]),
             libsql_sys::wal::Sqlite3WalManager::new(),
             Default::default(),
-            DatabaseConfigStore::new_test().into(),
+            MetaStoreHandle::new_test().into(),
             QueryBuilderConfig::default(),
             rcv,
             Default::default(),
@@ -308,7 +321,7 @@ impl LibSqlConnection<libsql_sys::wal::Sqlite3Wal> {
 struct Connection<T> {
     conn: libsql_sys::Connection<T>,
     stats: Arc<Stats>,
-    config_store: Arc<DatabaseConfigStore>,
+    config_store: MetaStoreHandle,
     builder_config: QueryBuilderConfig,
     current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
     // must be dropped after the connection because the connection refers to it
@@ -487,7 +500,7 @@ impl<W: Wal> Connection<W> {
         extensions: Arc<[PathBuf]>,
         wal_manager: T,
         stats: Arc<Stats>,
-        config_store: Arc<DatabaseConfigStore>,
+        config_store: MetaStoreHandle,
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
@@ -674,6 +687,7 @@ impl<W: Wal> Connection<W> {
 
         let start = Instant::now();
         let config = self.config_store.get();
+
         let blocked = match query.stmt.kind {
             StmtKind::Read | StmtKind::TxnBegin | StmtKind::Other => config.block_reads,
             StmtKind::Write => config.block_reads || config.block_writes,
@@ -987,7 +1001,7 @@ mod test {
         let conn = Connection {
             conn: libsql_sys::Connection::test(),
             stats: Arc::new(Stats::default()),
-            config_store: Arc::new(DatabaseConfigStore::new_test()),
+            config_store: MetaStoreHandle::new_test(),
             builder_config: QueryBuilderConfig::default(),
             current_frame_no_receiver: watch::channel(None).1,
             state: Default::default(),
@@ -1019,7 +1033,7 @@ mod test {
             tmp.path().into(),
             Sqlite3WalManager::new(),
             Default::default(),
-            Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
+            MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
             100000000,
@@ -1060,7 +1074,7 @@ mod test {
             tmp.path().into(),
             Sqlite3WalManager::new(),
             Default::default(),
-            Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
+            MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
             100000000,
@@ -1102,7 +1116,7 @@ mod test {
             tmp.path().into(),
             Sqlite3WalManager::new(),
             Default::default(),
-            Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
+            MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
             100000000,
@@ -1180,7 +1194,7 @@ mod test {
             tmp.path().into(),
             Sqlite3WalManager::new(),
             Default::default(),
-            Arc::new(DatabaseConfigStore::load(tmp.path()).unwrap()),
+            MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
             100000000,
@@ -1245,7 +1259,7 @@ mod test {
             }
         };
 
-        tokio::time::timeout(Duration::from_secs(30), join_all)
+        tokio::time::timeout(Duration::from_secs(60), join_all)
             .await
             .expect("timed out running connections");
     }

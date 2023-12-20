@@ -10,7 +10,7 @@ crate-type = ["rlib"]
 [dependencies]
 
 [build-dependencies]
-bindgen = "0.63.0"
+bindgen = "0.68.1"
 
 [features]
 loadable_extension = []

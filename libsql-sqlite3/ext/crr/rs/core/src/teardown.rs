@@ -11,6 +11,10 @@ pub fn remove_crr_clock_table_if_exists(
     db.exec_safe(&format!(
         "DROP TABLE IF EXISTS \"{table}__crsql_clock\"",
         table = escaped_table
+    ))?;
+    db.exec_safe(&format!(
+        "DROP TABLE IF EXISTS \"{table}__crsql_pks\"",
+        table = escaped_table
     ))
 }
 

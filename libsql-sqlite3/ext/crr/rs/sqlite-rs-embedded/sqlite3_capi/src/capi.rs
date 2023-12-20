@@ -1,6 +1,6 @@
 extern crate alloc;
 
-use core::ffi::{c_char, c_uchar, c_int, c_uint, c_void, CStr};
+use core::ffi::{c_char, c_int, c_uchar, c_uint, c_void, CStr};
 use core::ptr;
 
 use alloc::borrow::ToOwned;
@@ -41,19 +41,21 @@ mod aliased {
         sqlite3_bind_parameter_index as bind_parameter_index,
         sqlite3_bind_parameter_name as bind_parameter_name, sqlite3_bind_pointer as bind_pointer,
         sqlite3_bind_text as bind_text, sqlite3_bind_value as bind_value,
-        sqlite3_bind_zeroblob as bind_zeroblob, sqlite3_clear_bindings as clear_bindings,
-        sqlite3_close as close, sqlite3_column_blob as column_blob,
-        sqlite3_column_bytes as column_bytes, sqlite3_column_count as column_count,
-        sqlite3_column_decltype as column_decltype, sqlite3_column_double as column_double,
-        sqlite3_column_int as column_int, sqlite3_column_int64 as column_int64,
-        sqlite3_column_name as column_name, sqlite3_column_origin_name as column_origin_name,
+        sqlite3_bind_zeroblob as bind_zeroblob, sqlite3_changes64 as changes64,
+        sqlite3_clear_bindings as clear_bindings, sqlite3_close as close,
+        sqlite3_column_blob as column_blob, sqlite3_column_bytes as column_bytes,
+        sqlite3_column_count as column_count, sqlite3_column_decltype as column_decltype,
+        sqlite3_column_double as column_double, sqlite3_column_int as column_int,
+        sqlite3_column_int64 as column_int64, sqlite3_column_name as column_name,
+        sqlite3_column_origin_name as column_origin_name,
         sqlite3_column_table_name as column_table_name, sqlite3_column_text as column_text,
         sqlite3_column_type as column_type, sqlite3_column_value as column_value,
         sqlite3_commit_hook as commit_hook, sqlite3_context_db_handle as context_db_handle,
         sqlite3_create_function_v2 as create_function_v2,
         sqlite3_create_module_v2 as create_module_v2, sqlite3_declare_vtab as declare_vtab,
         sqlite3_errcode as errcode, sqlite3_errmsg as errmsg, sqlite3_exec as exec,
-        sqlite3_finalize as finalize, sqlite3_free as free, sqlite3_get_auxdata as get_auxdata,
+        sqlite3_finalize as finalize, sqlite3_free as free,
+        sqlite3_get_autocommit as get_autocommit, sqlite3_get_auxdata as get_auxdata,
         sqlite3_malloc as malloc, sqlite3_malloc64 as malloc64, sqlite3_next_stmt as next_stmt,
         sqlite3_open as open, sqlite3_prepare_v2 as prepare_v2, sqlite3_prepare_v3 as prepare_v3,
         sqlite3_randomness as randomness, sqlite3_reset as reset,
@@ -71,7 +73,7 @@ mod aliased {
         sqlite3_value_text as value_text, sqlite3_value_type as value_type,
         sqlite3_vtab_collation as vtab_collation, sqlite3_vtab_config as vtab_config,
         sqlite3_vtab_distinct as vtab_distinct, sqlite3_vtab_nochange as vtab_nochange,
-        sqlite3_vtab_on_conflict as vtab_on_conflict, sqlite3_get_autocommit as get_autocommit
+        sqlite3_vtab_on_conflict as vtab_on_conflict,
     };
 }
 
@@ -109,14 +111,14 @@ pub extern "C" fn droprust(ptr: *mut c_void) {
 #[macro_export]
 macro_rules! args {
     ($argc:expr, $argv:expr) => {
-        unsafe { slice::from_raw_parts($argv, $argc as usize) }
+        unsafe { ::core::slice::from_raw_parts($argv, $argc as usize) }
     };
 }
 
 #[macro_export]
 macro_rules! args_mut {
     ($argc:expr, $argv:expr) => {
-        unsafe { slice::from_raw_parts_mut($argv, $argc as usize) }
+        unsafe { ::core::slice::from_raw_parts_mut($argv, $argc as usize) }
     };
 }
 
@@ -149,6 +151,10 @@ pub fn bind_blob(
             }
         )
     }
+}
+
+pub fn changes64(db: *mut sqlite3) -> int64 {
+    unsafe { invoke_sqlite!(changes64, db) }
 }
 
 pub fn shutdown() -> c_int {
@@ -459,15 +465,8 @@ pub fn result_pointer(
     unsafe { invoke_sqlite!(result_pointer, context, pointer, name, destructor) }
 }
 
-pub fn result_error(context: *mut context, text: &str) {
-    unsafe {
-        invoke_sqlite!(
-            result_error,
-            context,
-            text.as_ptr() as *mut c_char,
-            text.len() as c_int
-        )
-    }
+pub fn result_error(context: *mut context, text: *mut c_char, len: c_int) {
+    unsafe { invoke_sqlite!(result_error, context, text, len) }
 }
 
 pub fn result_error_code(context: *mut context, code: c_int) {
