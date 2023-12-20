@@ -276,6 +276,23 @@ where
             )?;
             conn.conn
                 .pragma_update(None, "max_page_count", max_db_size)?;
+            let namespace = path
+                .as_ref()
+                .file_name()
+                .unwrap_or_default()
+                .to_os_string()
+                .into_string()
+                .unwrap_or_default();
+            conn.conn.create_scalar_function(
+                "libsql_server_namespace_name",
+                0,
+                rusqlite::functions::FunctionFlags::SQLITE_UTF8
+                    | rusqlite::functions::FunctionFlags::SQLITE_DETERMINISTIC,
+                {
+                    let namespace = namespace;
+                    move |_| Ok(namespace.clone())
+                },
+            )?;
             Ok(conn)
         })
         .await
