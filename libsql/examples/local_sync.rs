@@ -1,4 +1,7 @@
-use libsql::{Database, Frames, SnapshotFile};
+use libsql::{
+    replication::{Frames, SnapshotFile},
+    Database,
+};
 
 #[tokio::main]
 async fn main() {
