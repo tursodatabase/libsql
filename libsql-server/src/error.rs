@@ -96,6 +96,9 @@ pub enum Error {
     NamespaceStoreShutdown,
     #[error("Unable to update metastore: {0}")]
     MetaStoreUpdateFailure(Box<dyn std::error::Error + Send + Sync>),
+    // This is for errors returned by moka
+    #[error(transparent)]
+    Ref(#[from] std::sync::Arc<Self>),
 }
 
 trait ResponseError: std::error::Error {
@@ -109,6 +112,12 @@ trait ResponseError: std::error::Error {
 impl ResponseError for Error {}
 
 impl IntoResponse for Error {
+    fn into_response(self) -> axum::response::Response {
+        (&self).into_response()
+    }
+}
+
+impl IntoResponse for &Error {
     fn into_response(self) -> axum::response::Response {
         use Error::*;
 
@@ -156,6 +165,7 @@ impl IntoResponse for Error {
             UrlParseError(_) => self.format_err(StatusCode::BAD_REQUEST),
             NamespaceStoreShutdown => self.format_err(StatusCode::SERVICE_UNAVAILABLE),
             MetaStoreUpdateFailure(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            Ref(this) => this.as_ref().into_response(),
         }
     }
 }
@@ -230,7 +240,7 @@ pub enum LoadDumpError {
 
 impl ResponseError for LoadDumpError {}
 
-impl IntoResponse for LoadDumpError {
+impl IntoResponse for &LoadDumpError {
     fn into_response(self) -> axum::response::Response {
         use LoadDumpError::*;
 
@@ -250,7 +260,7 @@ impl IntoResponse for LoadDumpError {
 
 impl ResponseError for ForkError {}
 
-impl IntoResponse for ForkError {
+impl IntoResponse for &ForkError {
     fn into_response(self) -> axum::response::Response {
         match self {
             ForkError::Internal(_)

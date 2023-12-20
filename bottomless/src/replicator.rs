@@ -376,6 +376,33 @@ impl Replicator {
         })
     }
 
+    /// Checks if there exists any backup of given database
+    pub async fn has_backup_of(db_name: impl AsRef<str>, options: &Options) -> Result<bool> {
+        let prefix = match &options.db_id {
+            Some(db_id) => format!("{db_id}-"),
+            None => format!("ns-:{}-", db_name.as_ref()),
+        };
+        let config = options.client_config().await?;
+        let client = Client::from_conf(config);
+        let bucket = options.bucket_name.clone();
+
+        match client.head_bucket().bucket(&bucket).send().await {
+            Ok(_) => tracing::trace!("Bucket {bucket} exists and is accessible"),
+            Err(e) => {
+                tracing::trace!("Bucket checking error: {e}");
+                return Err(e.into());
+            }
+        }
+
+        let mut last_frame = 0;
+        let list_objects = client.list_objects().bucket(&bucket).prefix(&prefix);
+        let response = list_objects.send().await?;
+        let _ = Self::try_get_last_frame_no(response, &mut last_frame);
+        tracing::trace!("Last frame of {prefix}: {last_frame}");
+
+        Ok(last_frame > 0)
+    }
+
     pub async fn shutdown_gracefully(&mut self) -> Result<()> {
         tracing::info!("bottomless replicator: shutting down...");
         // 1. wait for all committed WAL frames to be committed locally
