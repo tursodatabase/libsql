@@ -379,6 +379,7 @@ where
         let extensions = self.db_config.validate_extensions()?;
         let namespace_store_shutdown_fut: Pin<Box<dyn Future<Output = Result<()>> + Send>>;
 
+        let service_shutdown = Arc::new(Notify::new());
         match self.rpc_client_config {
             Some(rpc_config) => {
                 let (stats_sender, stats_receiver) = mpsc::channel(8);
@@ -412,7 +413,7 @@ where
                     db_config: self.db_config,
                     auth,
                     path: self.path.clone(),
-                    shutdown: self.shutdown.clone(),
+                    shutdown: service_shutdown.clone(),
                 };
 
                 services.configure(&mut join_set);
@@ -454,7 +455,7 @@ where
                     db_config: self.db_config,
                     auth,
                     path: self.path.clone(),
-                    shutdown: self.shutdown.clone(),
+                    shutdown: service_shutdown.clone(),
                 };
 
                 services.configure(&mut join_set);
@@ -464,6 +465,7 @@ where
         tokio::select! {
             _ = self.shutdown.notified() => {
                 join_set.shutdown().await;
+                service_shutdown.notify_waiters();
                 namespace_store_shutdown_fut.await?;
                 // clean shutdown, remove sentinel file
                 std::fs::remove_file(sentinel_file_path(&self.path))?;
