@@ -1,20 +1,25 @@
 #![allow(dead_code)]
 
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::path::Path;
+use std::sync::Arc;
 
-use bottomless::replicator::CompressionKind;
 use bottomless::bottomless_wal::BottomlessWalWrapper;
-use libsql_sys::wal::{wrapper::{WrappedWal, WalWrapper}, Sqlite3Wal, Sqlite3WalManager};
+use bottomless::replicator::CompressionKind;
+use libsql_sys::wal::{
+    wrapper::{WalWrapper, WrappedWal},
+    Sqlite3Wal, Sqlite3WalManager,
+};
 use parking_lot::Mutex;
 use tokio::sync::{
     mpsc,
     watch::{self, Receiver, Sender},
 };
 
-use crate::{error::Error, Result, config::MetaStoreConfig, connection::libsql::open_conn_active_checkpoint};
 use crate::connection::config::DatabaseConfig;
+use crate::{
+    config::MetaStoreConfig, connection::libsql::open_conn_active_checkpoint, error::Error, Result,
+};
 
 use super::NamespaceName;
 
@@ -159,14 +164,20 @@ impl MetaStore {
                     restore_transaction_cache_fpath: ".bottomless.restore".into(),
                     s3_max_retries: 10,
                 };
-                let mut replicator = bottomless::replicator::Replicator::with_options(db_path.join("data").to_str().unwrap(), options).await?;
+                let mut replicator = bottomless::replicator::Replicator::with_options(
+                    db_path.join("data").to_str().unwrap(),
+                    options,
+                )
+                .await?;
                 let (action, _did_recover) = replicator.restore(None, None).await?;
                 // TODO: this logic should probably be moved to bottomless.
                 match action {
                     bottomless::replicator::RestoreAction::SnapshotMainDbFile => {
                         replicator.new_generation();
                         if let Some(_handle) = replicator.snapshot_main_db_file().await? {
-                            tracing::trace!("got snapshot handle after restore with generation upgrade");
+                            tracing::trace!(
+                                "got snapshot handle after restore with generation upgrade"
+                            );
                         }
                         // Restoration process only leaves the local WAL file if it was
                         // detected to be newer than its remote counterpart.
@@ -182,14 +193,21 @@ impl MetaStore {
             None => None,
         };
 
-        let wal_manager = WalWrapper::new(replicator.map(BottomlessWalWrapper::new), Sqlite3WalManager::default());
+        let wal_manager = WalWrapper::new(
+            replicator.map(BottomlessWalWrapper::new),
+            Sqlite3WalManager::default(),
+        );
         let conn = open_conn_active_checkpoint(&db_path, wal_manager.clone(), None, 1000)?;
 
         let configs = restore(&conn)?;
 
         let (changes_tx, mut changes_rx) = mpsc::channel(256);
 
-        let inner = Arc::new(Mutex::new(MetaStoreInner { configs, conn, wal_manager }));
+        let inner = Arc::new(Mutex::new(MetaStoreInner {
+            configs,
+            conn,
+            wal_manager,
+        }));
 
         tokio::spawn({
             let inner = inner.clone();
@@ -238,13 +256,14 @@ impl MetaStore {
     }
 
     pub(crate) async fn shutdown(&self) -> crate::Result<()> {
-        let replicator =  self.inner
+        let replicator = self
+            .inner
             .lock()
             .wal_manager
             .wrapper()
             .as_ref()
             .and_then(|b| b.shutdown());
-        
+
         if let Some(mut replicator) = replicator {
             replicator.shutdown_gracefully().await?;
             tracing::info!("meta store backed up");

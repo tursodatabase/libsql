@@ -496,13 +496,35 @@ async fn shutdown_signal() -> Result<&'static str> {
 fn make_meta_store_config(config: &Cli) -> anyhow::Result<Option<MetaStoreConfig>> {
     if config.backup_meta_store {
         Ok(Some(MetaStoreConfig {
-            access_key_id: config.meta_store_access_key_id.clone().context("missing meta store bucket access key id")?,
-            secret_access_key: config.meta_store_secret_access_key.clone().context("missing meta store bucket secret access key")?,
-            region: config.meta_store_region.clone().context("missing meta store bucket region")?,
-            backup_id: config.meta_store_backup_id.clone().context("missing meta store backup id")?,
-            bucket_name: config.meta_store_bucket_name.clone().context("missing meta store bucket name")?,
-            backup_interval: Duration::from_secs(config.meta_store_backup_interval_s.context("missing meta store backup internal")? as _),
-            bucket_endpoint: config.meta_store_bucket_endpoint.clone().context("missing meta store bucket name")?,
+            access_key_id: config
+                .meta_store_access_key_id
+                .clone()
+                .context("missing meta store bucket access key id")?,
+            secret_access_key: config
+                .meta_store_secret_access_key
+                .clone()
+                .context("missing meta store bucket secret access key")?,
+            region: config
+                .meta_store_region
+                .clone()
+                .context("missing meta store bucket region")?,
+            backup_id: config
+                .meta_store_backup_id
+                .clone()
+                .context("missing meta store backup id")?,
+            bucket_name: config
+                .meta_store_bucket_name
+                .clone()
+                .context("missing meta store bucket name")?,
+            backup_interval: Duration::from_secs(
+                config
+                    .meta_store_backup_interval_s
+                    .context("missing meta store backup internal")? as _,
+            ),
+            bucket_endpoint: config
+                .meta_store_bucket_endpoint
+                .clone()
+                .context("missing meta store bucket name")?,
         }))
     } else {
         Ok(None)

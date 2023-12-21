@@ -337,7 +337,7 @@ impl<T: WrapWal<W>, W: Wal> WrapWal<W> for Option<T> {
     ) -> super::Result<Option<NonZeroU32>> {
         match self {
             Some(t) => t.find_frame(wrapped, page_no),
-            None => wrapped.find_frame(page_no)
+            None => wrapped.find_frame(page_no),
         }
     }
 
@@ -409,8 +409,17 @@ impl<T: WrapWal<W>, W: Wal> WrapWal<W> for Option<T> {
         sync_flags: std::ffi::c_int,
     ) -> super::Result<()> {
         match self {
-            Some(t) => t.insert_frames(wrapped, page_size, page_headers, size_after, is_commit, sync_flags),
-            None => wrapped.insert_frames(page_size, page_headers, size_after, is_commit, sync_flags),
+            Some(t) => t.insert_frames(
+                wrapped,
+                page_size,
+                page_headers,
+                size_after,
+                is_commit,
+                sync_flags,
+            ),
+            None => {
+                wrapped.insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)
+            }
         }
     }
 

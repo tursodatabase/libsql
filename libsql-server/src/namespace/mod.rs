@@ -51,9 +51,9 @@ use crate::{
 use crate::namespace::fork::PointInTimeRestore;
 pub use fork::ForkError;
 
-use self::replication_wal::make_replication_wal;
 use self::fork::ForkTask;
 use self::meta_store::{MetaStore, MetaStoreHandle};
+use self::replication_wal::make_replication_wal;
 
 pub type ResetCb = Box<dyn Fn(ResetOp) + Send + Sync + 'static>;
 

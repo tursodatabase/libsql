@@ -1,10 +1,8 @@
 use std::sync::{Arc, Mutex};
 
 use libsql_sys::ffi::{SQLITE_BUSY, SQLITE_IOERR_WRITE};
-use libsql_sys::wal::wrapper::{WrapWal, WalWrapper};
-use libsql_sys::wal::{
-    CheckpointMode, Error,Result, Wal,
-};
+use libsql_sys::wal::wrapper::{WalWrapper, WrapWal};
+use libsql_sys::wal::{CheckpointMode, Error, Result, Wal};
 
 use crate::replicator::Replicator;
 
@@ -36,7 +34,11 @@ impl BottomlessWalWrapper {
 }
 
 impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
-    fn savepoint_undo(&mut self, wrapped: &mut T, rollback_data: &mut [u32]) -> libsql_sys::wal::Result<()> {
+    fn savepoint_undo(
+        &mut self,
+        wrapped: &mut T,
+        rollback_data: &mut [u32],
+    ) -> libsql_sys::wal::Result<()> {
         wrapped.savepoint_undo(rollback_data)?;
 
         {
@@ -53,18 +55,17 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
     }
 
     fn insert_frames(
-            &mut self,
-            wrapped: &mut T,
-            page_size: std::ffi::c_int,
-            page_headers: &mut libsql_sys::wal::PageHeaders,
-            size_after: u32,
-            is_commit: bool,
-            sync_flags: std::ffi::c_int,
-        ) -> libsql_sys::wal::Result<()> {
+        &mut self,
+        wrapped: &mut T,
+        page_size: std::ffi::c_int,
+        page_headers: &mut libsql_sys::wal::PageHeaders,
+        size_after: u32,
+        is_commit: bool,
+        sync_flags: std::ffi::c_int,
+    ) -> libsql_sys::wal::Result<()> {
         let last_valid_frame = wrapped.last_fame_index();
 
-        wrapped
-            .insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)?;
+        wrapped.insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)?;
 
         self.try_with_replicator(|replicator| {
             if let Err(e) = replicator.set_page_size(page_size as usize) {
@@ -80,15 +81,15 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
     }
 
     fn checkpoint<B: libsql_sys::wal::BusyHandler>(
-            &mut self,
-            wrapped: &mut T,
-            db: &mut libsql_sys::wal::Sqlite3Db,
-            mode: libsql_sys::wal::CheckpointMode,
-            busy_handler: Option<&mut B>,
-            sync_flags: u32,
-            // temporary scratch buffer
-            buf: &mut [u8],
-        ) -> libsql_sys::wal::Result<(u32, u32)> {
+        &mut self,
+        wrapped: &mut T,
+        db: &mut libsql_sys::wal::Sqlite3Db,
+        mode: libsql_sys::wal::CheckpointMode,
+        busy_handler: Option<&mut B>,
+        sync_flags: u32,
+        // temporary scratch buffer
+        buf: &mut [u8],
+    ) -> libsql_sys::wal::Result<(u32, u32)> {
         {
             tracing::trace!("bottomless checkpoint");
 
