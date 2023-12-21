@@ -42,7 +42,7 @@ use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
 use crate::http::user::JsonHttpPayloadBuilder;
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
-use crate::query_result_builder::QueryResultBuilder;
+use crate::query_result_builder::{QueryResultBuilder, ReusableBuilder};
 use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
@@ -768,14 +768,11 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         self.with(namespace, |ns| ns.db_config_store.clone()).await
     }
 
-    // FIXME: instead of appending results to a huge vector,
-    // we want a custom QueryBuilder implementation that combines results
-    // from all namespaces to a single result.
     pub(crate) async fn execute_for_each(
         &self,
         sql: String,
-    ) -> crate::Result<<JsonHttpPayloadBuilder as QueryResultBuilder>::Ret> {
-        let mut combined_results = Vec::new();
+    ) -> crate::Result<<ReusableBuilder<JsonHttpPayloadBuilder> as QueryResultBuilder>::Ret> {
+        let mut json_builder = ReusableBuilder::new(JsonHttpPayloadBuilder::new());
         for ns_name in self.inner.metadata.namespace_names() {
             tracing::trace!("Executing {sql} on {}", ns_name.as_str());
             let entry = self
@@ -812,13 +809,12 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                     namespace: None,
                     permission: Permission::FullAccess,
                 });
-                let json_builder = conn
-                    .execute_batch_or_rollback(batch, auth, JsonHttpPayloadBuilder::new(), None)
+                json_builder = conn
+                    .execute_batch_or_rollback(batch, auth, json_builder, None)
                     .await?;
-                combined_results.append(&mut json_builder.into_ret());
             }
         }
-        Ok(combined_results)
+        Ok(json_builder.into_ret())
     }
 }
 
