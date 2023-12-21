@@ -200,20 +200,28 @@ struct Cli {
     #[clap(long, env = "SQLD_MAX_ACTIVE_NAMESPACES", default_value = "100")]
     max_active_namespaces: usize,
 
+    /// Enable backup for the metadata store
     #[clap(long)]
     backup_meta_store: bool,
+    /// S3 access key ID for the meta store backup
     #[clap(long)]
     meta_store_access_key_id: Option<String>,
+    /// S3 secret access key for the meta store backup
     #[clap(long)]
     meta_store_secret_access_key: Option<String>,
+    /// S3 region for the metastore backup
     #[clap(long)]
     meta_store_region: Option<String>,
+    /// Id for the meta store backup
     #[clap(long)]
     meta_store_backup_id: Option<String>,
+    /// S3 bucket name for the meta store backup
     #[clap(long)]
     meta_store_bucket_name: Option<String>,
+    /// Interval at which to perform backups of the meta store
     #[clap(long)]
     meta_store_backup_interval_s: Option<usize>,
+    /// S3 endpoint for the meta store backups
     #[clap(long)]
     meta_store_bucket_endpoint: Option<String>,
 }
