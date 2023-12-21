@@ -1,5 +1,8 @@
 #include "crsqlite.h"
 SQLITE_EXTENSION_INIT1
+#ifdef LIBSQL
+LIBSQL_EXTENSION_INIT1
+#endif
 
 #include <assert.h>
 #include <ctype.h>
