@@ -8,7 +8,6 @@ import fs from "fs";
 import https from "https";
 import pkg from "./package.json" assert { type: "json" };
 import { exec } from "child_process";
-import unzipper from "unzipper";
 let { version } = pkg;
 
 let arch = process.arch;
@@ -89,10 +88,30 @@ if (process.env.CRSQLITE_NOPREBUILD) {
       return;
     }
 
-    res.pipe(unzipper.Extract({ path: join(".", "dist") })).on("close", () => {
+    const file = fs.createWriteStream(join("dist", "crsqlite.zip"));
+    res.pipe(file);
+    file.on("finish", () => {
+      file.close();
       console.log("Prebuilt binary downloaded");
-      process.exit(0);
+      process.chdir(join(".", "dist"));
+      exec("unzip crsqlite.zip", (err, stdout, stderr) => {
+        if (err) {
+          console.log("Error extracting");
+          console.log(err.message);
+          process.exit(1);
+        }
+        if (stderr) {
+          console.log(stderr);
+        }
+        console.log("Prebuilt binary extracted");
+        process.exit(0);
+      });
     });
+    // unzipper incorrectly unzips the file -- it becomes unloadable by sqlite.
+    // res.pipe(unzipper.Extract({ path: join(".", "dist") })).on("close", () => {
+    //   console.log("Prebuilt binary downloaded");
+    //   process.exit(0);
+    // });
   });
 }
 

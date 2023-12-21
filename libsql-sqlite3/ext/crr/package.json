@@ -1,6 +1,6 @@
 {
   "name": "@vlcn.io/crsqlite",
-  "version": "0.16.0-next.2",
+  "version": "0.16.1",
   "description": "CR-SQLite loadable extension",
   "homepage": "https://vlcn.io",
   "repository": {
@@ -32,8 +32,5 @@
     "sqlite",
     "sqlite3",
     "crdt"
-  ],
-  "dependencies": {
-    "unzipper": "^0.10.14"
-  }
+  ]
 }
