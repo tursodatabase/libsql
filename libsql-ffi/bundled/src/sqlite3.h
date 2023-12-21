@@ -89,9 +89,6 @@ extern "C" {
 #ifndef SQLITE_SYSAPI
 # define SQLITE_SYSAPI
 #endif
-#ifndef LIBSQL_API
-# define LIBSQL_API
-#endif
 
 /*
 ** These no-op macros are used in front of interfaces to mark those
@@ -149,11 +146,9 @@ extern "C" {
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
 */
-#define SQLITE_VERSION        "3.44.0"
-#define SQLITE_VERSION_NUMBER 3044000
-#define SQLITE_SOURCE_ID      "2023-11-01 11:23:50 17129ba1ff7f0daf37100ee82d507aef7827cf38de1866e2633096ae6ad8alt1"
-
-#define LIBSQL_VERSION        "0.2.3"
+#define SQLITE_VERSION        "3.44.2"
+#define SQLITE_VERSION_NUMBER 3044002
+#define SQLITE_SOURCE_ID      "2023-11-24 11:41:44 ebead0e7230cd33bcec9f95d2183069565b9e709bf745c9b5db65cc0cbf92c0f"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -191,8 +186,6 @@ SQLITE_API SQLITE_EXTERN const char sqlite3_version[];
 SQLITE_API const char *sqlite3_libversion(void);
 SQLITE_API const char *sqlite3_sourceid(void);
 SQLITE_API int sqlite3_libversion_number(void);
-
-SQLITE_API const char *libsql_libversion(void);
 
 /*
 ** CAPI3REF: Run-Time Library Compilation Options Diagnostics
@@ -1014,13 +1007,6 @@ struct sqlite3_io_methods {
 ** ^When there are multiple VFS shims in the stack, this opcode finds the
 ** upper-most shim only.
 **
-** <li>[[SQLITE_FCNTL_WAL_METHODS_POINTER]]
-** ^The [SQLITE_FCNTL_WAL_METHODS_POINTER] opcode finds a pointer to the top-level
-** WAL methods currently in use.  ^(The argument X in
-** sqlite3_file_control(db,SQLITE_FCNTL_WAL_METHODS_POINTER,X) must be
-** of type "[libsql_wal_methods] **".  This opcodes will set *X
-** to a pointer to the top-level WAL methods.)^
-**
 ** <li>[[SQLITE_FCNTL_PRAGMA]]
 ** ^Whenever a [PRAGMA] statement is parsed, an [SQLITE_FCNTL_PRAGMA]
 ** file control is sent to the open [sqlite3_file] object corresponding
@@ -1257,9 +1243,6 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_CKSM_FILE              41
 #define SQLITE_FCNTL_RESET_CACHE            42
 
-// libSQL extension
-#define SQLITE_FCNTL_WAL_METHODS_POINTER   129
-
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
 #define SQLITE_SET_LOCKPROXYFILE      SQLITE_FCNTL_SET_LOCKPROXYFILE
@@ -1287,16 +1270,6 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** on some platforms.
 */
 typedef struct sqlite3_api_routines sqlite3_api_routines;
-
-/*
-** CAPI3REF: Loadable Extension Thunk
-**
-** A pointer to the opaque libsql_api_routines structure is passed as
-** the fourth parameter to entry points of [loadable extensions].  This
-** structure must be typedefed in order to work around compiler warnings
-** on some platforms.
-*/
-typedef struct libsql_api_routines libsql_api_routines;
 
 /*
 ** CAPI3REF: File Name
@@ -3778,36 +3751,6 @@ SQLITE_API int sqlite3_open_v2(
   const char *zVfs        /* Name of VFS module to use */
 );
 
-typedef struct libsql_wal_manager libsql_wal_manager;
-
-SQLITE_API int libsql_open(
-  const char *filename,   /* Database filename (UTF-8) */
-  sqlite3 **ppDb,         /* OUT: SQLite db handle */
-  int flags,              /* Flags */
-  const char *zVfs,       /* Name of VFS module to use, NULL for default */
-  const char *zWal        /* Name of WAL module to use */
-);
-
-/* deprecated, only works with zWal == NULL */
-SQLITE_API int libsql_open_v2(
-  const char *filename,   /* Database filename (UTF-8) */
-  sqlite3 **ppDb,         /* OUT: SQLite db handle */
-  int flags,              /* Flags */
-  const char *zVfs,       /* Name of VFS module to use, NULL for default */
-  const char *zWal,       /* Name of WAL module to use */
-  void* pWalMethodsData   /* User data, passed to the libsql_wal struct*/
-);
-
-SQLITE_API int libsql_open_v3(
-  const char *filename,   /* Database filename (UTF-8) */
-  sqlite3 **ppDb,         /* OUT: SQLite db handle */
-  int flags,              /* Flags */
-  const char *zVfs,       /* Name of VFS module to use, NULL for default */
-  libsql_wal_manager wal_manager   /* wal_manager instance, in charge of instanciating a wal */
-);
-
-SQLITE_API LIBSQL_API int libsql_try_initialize_wasm_func_table(sqlite3 *db);
-
 /*
 ** CAPI3REF: Obtain Values For URI Parameters
 **
@@ -5630,13 +5573,27 @@ SQLITE_API int sqlite3_create_window_function(
 ** </dd>
 **
 ** [[SQLITE_SUBTYPE]] <dt>SQLITE_SUBTYPE</dt><dd>
-** The SQLITE_SUBTYPE flag indicates to SQLite that a function may call
+** The SQLITE_SUBTYPE flag indicates to SQLite that a function might call
 ** [sqlite3_value_subtype()] to inspect the sub-types of its arguments.
-** Specifying this flag makes no difference for scalar or aggregate user
-** functions. However, if it is not specified for a user-defined window
-** function, then any sub-types belonging to arguments passed to the window
-** function may be discarded before the window function is called (i.e.
-** sqlite3_value_subtype() will always return 0).
+** This flag instructs SQLite to omit some corner-case optimizations that
+** might disrupt the operation of the [sqlite3_value_subtype()] function,
+** causing it to return zero rather than the correct subtype().
+** SQL functions that invokes [sqlite3_value_subtype()] should have this
+** property.  If the SQLITE_SUBTYPE property is omitted, then the return
+** value from [sqlite3_value_subtype()] might sometimes be zero even though
+** a non-zero subtype was specified by the function argument expression.
+**
+** [[SQLITE_RESULT_SUBTYPE]] <dt>SQLITE_RESULT_SUBTYPE</dt><dd>
+** The SQLITE_RESULT_SUBTYPE flag indicates to SQLite that a function might call
+** [sqlite3_result_subtype()] to cause a sub-type to be associated with its
+** result.
+** Every function that invokes [sqlite3_result_subtype()] should have this
+** property.  If it does not, then the call to [sqlite3_result_subtype()]
+** might become a no-op if the function is used as term in an
+** [expression index].  On the other hand, SQL functions that never invoke
+** [sqlite3_result_subtype()] should avoid setting this property, as the
+** purpose of this property is to disable certain optimizations that are
+** incompatible with subtypes.
 ** </dd>
 ** </dl>
 */
@@ -5644,6 +5601,7 @@ SQLITE_API int sqlite3_create_window_function(
 #define SQLITE_DIRECTONLY       0x000080000
 #define SQLITE_SUBTYPE          0x000100000
 #define SQLITE_INNOCUOUS        0x000200000
+#define SQLITE_RESULT_SUBTYPE   0x001000000
 
 /*
 ** CAPI3REF: Deprecated Functions
@@ -5840,6 +5798,12 @@ SQLITE_API int sqlite3_value_encoding(sqlite3_value*);
 ** information can be used to pass a limited amount of context from
 ** one SQL function to another.  Use the [sqlite3_result_subtype()]
 ** routine to set the subtype for the return value of an SQL function.
+**
+** Every [application-defined SQL function] that invoke this interface
+** should include the [SQLITE_SUBTYPE] property in the text
+** encoding argument when the function is [sqlite3_create_function|registered].
+** If the [SQLITE_SUBTYPE] property is omitted, then sqlite3_value_subtype()
+** might return zero instead of the upstream subtype in some corner cases.
 */
 SQLITE_API unsigned int sqlite3_value_subtype(sqlite3_value*);
 
@@ -5970,14 +5934,22 @@ SQLITE_API sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
 ** <li> ^(when sqlite3_set_auxdata() is invoked again on the same
 **       parameter)^, or
 ** <li> ^(during the original sqlite3_set_auxdata() call when a memory
-**      allocation error occurs.)^ </ul>
+**      allocation error occurs.)^
+** <li> ^(during the original sqlite3_set_auxdata() call if the function
+**      is evaluated during query planning instead of during query execution,
+**      as sometimes happens with [SQLITE_ENABLE_STAT4].)^ </ul>
 **
-** Note the last bullet in particular.  The destructor X in
+** Note the last two bullets in particular.  The destructor X in
 ** sqlite3_set_auxdata(C,N,P,X) might be called immediately, before the
 ** sqlite3_set_auxdata() interface even returns.  Hence sqlite3_set_auxdata()
 ** should be called near the end of the function implementation and the
 ** function implementation should not make any use of P after
-** sqlite3_set_auxdata() has been called.
+** sqlite3_set_auxdata() has been called.  Furthermore, a call to
+** sqlite3_get_auxdata() that occurs immediately after a corresponding call
+** to sqlite3_set_auxdata() might still return NULL if an out-of-memory
+** condition occurred during the sqlite3_set_auxdata() call or if the
+** function is being evaluated during query planning rather than during
+** query execution.
 **
 ** ^(In practice, auxiliary data is preserved between function calls for
 ** function parameters that are compile-time constants, including literal
@@ -6251,6 +6223,20 @@ SQLITE_API int sqlite3_result_zeroblob64(sqlite3_context*, sqlite3_uint64 n);
 ** higher order bits are discarded.
 ** The number of subtype bytes preserved by SQLite might increase
 ** in future releases of SQLite.
+**
+** Every [application-defined SQL function] that invokes this interface
+** should include the [SQLITE_RESULT_SUBTYPE] property in its
+** text encoding argument when the SQL function is
+** [sqlite3_create_function|registered].  If the [SQLITE_RESULT_SUBTYPE]
+** property is omitted from the function that invokes sqlite3_result_subtype(),
+** then in some cases the sqlite3_result_subtype() might fail to set
+** the result subtype.
+**
+** If SQLite is compiled with -DSQLITE_STRICT_SUBTYPE=1, then any
+** SQL function that invokes the sqlite3_result_subtype() interface
+** and that does not have the SQLITE_RESULT_SUBTYPE property will raise
+** an error.  Future versions of SQLite might enable -DSQLITE_STRICT_SUBTYPE=1
+** by default.
 */
 SQLITE_API void sqlite3_result_subtype(sqlite3_context*,unsigned int);
 
@@ -7280,7 +7266,6 @@ typedef struct sqlite3_vtab sqlite3_vtab;
 typedef struct sqlite3_index_info sqlite3_index_info;
 typedef struct sqlite3_vtab_cursor sqlite3_vtab_cursor;
 typedef struct sqlite3_module sqlite3_module;
-typedef struct libsql_module libsql_module;
 
 /*
 ** CAPI3REF: Virtual Table Object
@@ -7338,12 +7323,6 @@ struct sqlite3_module {
   ** Those below are for version 4 and greater. */
   int (*xIntegrity)(sqlite3_vtab *pVTab, const char *zSchema,
                     const char *zTabName, int mFlags, char **pzErr);
-};
-
-/* libSQL extensions for modules */
-struct libsql_module {
-  int iVersion;
-  int (*xPreparedSql)(sqlite3_vtab_cursor*, const char*);
 };
 
 /*
@@ -7590,14 +7569,6 @@ SQLITE_API int sqlite3_create_module_v2(
   void *pClientData,         /* Client data for xCreate/xConnect */
   void(*xDestroy)(void*)     /* Module destructor function */
 );
-SQLITE_API int libsql_create_module(
-  sqlite3 *db,                  /* SQLite connection to register module with */
-  const char *zName,            /* Name of the module */
-  const sqlite3_module *p,      /* Methods for the module */
-  const libsql_module *pLibsql, /* Methods for the module */
-  void *pClientData,            /* Client data for xCreate/xConnect */
-  void(*xDestroy)(void*)        /* Module destructor function */
-);
 
 /*
 ** CAPI3REF: Remove Unnecessary Virtual Table Implementations
@@ -7635,10 +7606,9 @@ SQLITE_API int sqlite3_drop_modules(
 ** freed by sqlite3_free() and the zErrMsg field will be zeroed.
 */
 struct sqlite3_vtab {
-  const sqlite3_module *pModule;      /* The module for this virtual table */
-  const libsql_module *pLibsqlModule; /* The libSQL module for this virtual table */
-  int nRef;                           /* Number of open cursors */
-  char *zErrMsg;                      /* Error message from sqlite3_mprintf() */
+  const sqlite3_module *pModule;  /* The module for this virtual table */
+  int nRef;                       /* Number of open cursors */
+  char *zErrMsg;                  /* Error message from sqlite3_mprintf() */
   /* Virtual table implementations will typically add additional fields */
 };
 
@@ -7967,28 +7937,6 @@ SQLITE_API int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOff
 SQLITE_API sqlite3_vfs *sqlite3_vfs_find(const char *zVfsName);
 SQLITE_API int sqlite3_vfs_register(sqlite3_vfs*, int makeDflt);
 SQLITE_API int sqlite3_vfs_unregister(sqlite3_vfs*);
-
-/*
-** CAPI3REF: Virtual WAL Methods
-**
-** Virtual WAL methods can be redefined in order to change the default
-** behavior of the write-ahead log.
-** Methods can be registered and unregistered.
-** The following interfaces are provided.
-**
-** ^The libsql_wal_methods_find() interface returns a pointer
-** to the methods given their identifier.
-** ^Names are case sensitive.
-** ^Names are zero-terminated UTF-8 strings.
-** ^If there is no match, a NULL pointer is returned.
-** ^If zName is NULL then the default implementation is returned.
-**
-** ^New WAL methods are registered with libsql_wal_methods_register().
-** ^Same methods can be registered multiple times without injury.
-**
-** ^Unregister WAL methods with the libsql_wal_methods_unregister() interface.
-*/
-typedef struct libsql_wal_methods libsql_wal_methods;
 
 /*
 ** CAPI3REF: Mutexes
@@ -8912,14 +8860,6 @@ SQLITE_API int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 ** is ignored when the opcode is SQLITE_STMTSTATUS_MEMUSED.
 ** </dd>
 ** </dl>
-**
-** [[LIBSQL_STMTSTATUS_ROWS_READ]]
-** [[LIBSQL_STMTSTATUS_ROWS_WRITTEN]]
-** <dt>LIBSQL_STMTSTATUS_ROWS_READ<br>
-** LIBSQL_STMTSTATUS_ROWS_WRITTEN</dt>
-** <dd>^LIBSQL_STMTSTATUS_ROWS_READ is the number of rows read when executing
-** this statement. LIBSQL_STMTSTATUS_ROWS_WRITTEN value is the number of
-** rows written.
 */
 #define SQLITE_STMTSTATUS_FULLSCAN_STEP     1
 #define SQLITE_STMTSTATUS_SORT              2
@@ -8930,10 +8870,6 @@ SQLITE_API int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 #define SQLITE_STMTSTATUS_FILTER_MISS       7
 #define SQLITE_STMTSTATUS_FILTER_HIT        8
 #define SQLITE_STMTSTATUS_MEMUSED           99
-
-#define LIBSQL_STMTSTATUS_BASE              1024
-#define LIBSQL_STMTSTATUS_ROWS_READ         LIBSQL_STMTSTATUS_BASE + 1
-#define LIBSQL_STMTSTATUS_ROWS_WRITTEN      LIBSQL_STMTSTATUS_BASE + 2
 
 /*
 ** CAPI3REF: Custom Page Cache Object
@@ -10489,22 +10425,6 @@ SQLITE_API int sqlite3_preupdate_blobwrite(sqlite3 *);
 #endif
 
 /*
-** CAPI3REF: The close hook.
-** METHOD: sqlite3
-**
-** ^The [libsql_close_hook()] interface registers a callback function
-** that is invoked prior to closing the database connection.
-** ^At most one close hook may be registered at a time on a single
-** [database connection]; each call to [libsql_close_hook()] overrides
-** the previous setting.
-** ^The close hook is disabled by invoking [libsql_close_hook()]
-** with a NULL pointer as the second parameter.
-** ^The third parameter to [libsql_close_hook()] is passed through as
-** the first parameter to callbacks.
-*/
-SQLITE_API void *libsql_close_hook(sqlite3 *db, void (*xClose)(void *pCtx, sqlite3 *db), void *arg);
-
-/*
 ** CAPI3REF: Low-level system error code
 ** METHOD: sqlite3
 **
@@ -10861,9 +10781,8 @@ SQLITE_API int sqlite3_deserialize(
 #if defined(__wasi__)
 # undef SQLITE_WASI
 # define SQLITE_WASI 1
-// NOTICE: we do support WAL mode, we just don't support shared memory
-//# undef SQLITE_OMIT_WAL
-//# define SQLITE_OMIT_WAL 1/* because it requires shared memory APIs */
+# undef SQLITE_OMIT_WAL
+# define SQLITE_OMIT_WAL 1/* because it requires shared memory APIs */
 # ifndef SQLITE_OMIT_LOAD_EXTENSION
 #  define SQLITE_OMIT_LOAD_EXTENSION
 # endif
@@ -13379,345 +13298,3 @@ struct fts5_api {
 #endif /* _FTS5_H */
 
 /******** End of fts5.h *********/
-/******** Begin file page_header.h *********/
-// SPDX-License-Identifier: MIT
-
-#ifndef LIBSQL_PAGE_HEADER_H
-#define LIBSQL_PAGE_HEADER_H
-
-typedef struct sqlite3_pcache_page sqlite3_pcache_page;
-typedef struct Pager Pager;
-typedef struct libsql_pghdr PgHdr;
-typedef struct PCache PCache;
-
-/*
-** Every page in the cache is controlled by an instance of the following
-** structure.
-*/
-struct libsql_pghdr {
-  sqlite3_pcache_page *pPage;    /* Pcache object page handle */
-  void *pData;                   /* Page data */
-  void *pExtra;                  /* Extra content */
-  PCache *pCache;                /* PRIVATE: Cache that owns this page */
-  PgHdr *pDirty;                 /* Transient list of dirty sorted by pgno */
-  Pager *pPager;                 /* The pager this page is part of */
-  unsigned int pgno;             /* Page number for this page */
-  unsigned int pageHash;         /* Hash of page content */
-  unsigned short flags;          /* PGHDR flags defined below */
-
-  /**********************************************************************
-  ** Elements above, except pCache, are public.  All that follow are
-  ** private to pcache.c and should not be accessed by other modules.
-  ** pCache is grouped with the public elements for efficiency.
-  */
-  unsigned long long nRef;       /* Number of users of this page */
-  PgHdr *pDirtyNext;             /* Next element in list of dirty pages */
-  PgHdr *pDirtyPrev;             /* Previous element in list of dirty pages */
-                          /* NB: pDirtyNext and pDirtyPrev are undefined if the
-                          ** PgHdr object is not dirty */
-};
-
-typedef struct libsql_pghdr libsql_pghdr;
-
-#endif // LIBSQL_PAGE_HEADER_H
-
-/******** End of page_header.h *********/
-/******** Begin file wal.h *********/
-/*
-** 2010 February 1
-**
-** The author disclaims copyright to this source code.  In place of
-** a legal notice, here is a blessing:
-**
-**    May you do good and not evil.
-**    May you find forgiveness for yourself and forgive others.
-**    May you share freely, never taking more than you give.
-**
-*************************************************************************
-** This header file defines the interface to the write-ahead logging
-** system. Refer to the comments below and the header comment attached to
-** the implementation of each function in log.c for further details.
-*/
-
-#ifndef SQLITE_WAL_H
-#define SQLITE_WAL_H
-
-
-/* Macros for extracting appropriate sync flags for either transaction
-** commits (WAL_SYNC_FLAGS(X)) or for checkpoint ops (CKPT_SYNC_FLAGS(X)):
-*/
-#define WAL_SYNC_FLAGS(X)   ((X)&0x03)
-#define CKPT_SYNC_FLAGS(X)  (((X)>>2)&0x03)
-
-#define WAL_SAVEPOINT_NDATA 4
-
-/* Connection to a write-ahead log (WAL) file.
-** There is one object of this type for each pager.
-*/
-typedef struct libsql_wal libsql_wal;
-typedef struct libsql_wal_manager libsql_wal_manager;
-/* Opaque types for wal method data */
-typedef struct wal_impl wal_impl;
-typedef struct wal_manager_impl wal_manager_impl;
-
-typedef struct libsql_wal_methods {
-  int iVersion; /* Current version is 1, versioning is here for backward compatibility */
-
-  /* Set the limiting size of a WAL file. */
-  void (*xLimit)(wal_impl* pWal, long long limit);
-
-  /* Used by readers to open (lock) and close (unlock) a snapshot.  A
-  ** snapshot is like a read-transaction.  It is the state of the database
-  ** at an instant in time.  sqlite3WalOpenSnapshot gets a read lock and
-  ** preserves the current state even if the other threads or processes
-  ** write to or checkpoint the WAL.  sqlite3WalCloseSnapshot() closes the
-  ** transaction and releases the lock.
-  */
-  int (*xBeginReadTransaction)(wal_impl* pWal, int *);
-  void (*xEndReadTransaction)(wal_impl *);
-
-  /* Read a page from the write-ahead log, if it is present. */
-  int (*xFindFrame)(wal_impl* pWal, unsigned int, unsigned int *);
-  int (*xReadFrame)(wal_impl* pWal, unsigned int, int, unsigned char *);
-
-  /* If the WAL is not empty, return the size of the database. */
-  unsigned int (*xDbsize)(wal_impl* pWal);
-
-  /* Obtain or release the WRITER lock. */
-  int (*xBeginWriteTransaction)(wal_impl* pWal);
-  int (*xEndWriteTransaction)(wal_impl* pWal);
-
-  /* Undo any frames written (but not committed) to the log */
-  int (*xUndo)(wal_impl* pWal, int (*xUndo)(void *, unsigned int), void *pUndoCtx);
-
-  /* Return an integer that records the current (uncommitted) write
-  ** position in the WAL */
-  void (*xSavepoint)(wal_impl* pWal, unsigned int *aWalData);
-
-  /* Move the write position of the WAL back to iFrame.  Called in
-  ** response to a ROLLBACK TO command. */
-  int (*xSavepointUndo)(wal_impl* pWal, unsigned int *aWalData);
-
-  /* Write a frame or frames to the log. */
-  int (*xFrames)(wal_impl* pWal, int, libsql_pghdr *, unsigned int, int, int);
-
-  /* Copy pages from the log to the database file */
-  int (*xCheckpoint)(
-    wal_impl* pWal,                     /* Write-ahead log connection */
-    sqlite3 *db,                    /* Check this handle's interrupt flag */
-    int eMode,                      /* One of PASSIVE, FULL and RESTART */
-    int (*xBusy)(void*),            /* Function to call when busy */
-    void *pBusyArg,                 /* Context argument for xBusyHandler */
-    int sync_flags,                 /* Flags to sync db file with (or 0) */
-    int nBuf,                       /* Size of buffer nBuf */
-    unsigned char *zBuf,                       /* Temporary buffer to use */
-    int *pnLog,                     /* OUT: Number of frames in WAL */
-    int *pnCkpt                     /* OUT: Number of backfilled frames in WAL */
-  );
-
-  /* Return the value to pass to a sqlite3_wal_hook callback, the
-  ** number of frames in the WAL at the point of the last commit since
-  ** sqlite3WalCallback() was called.  If no commits have occurred since
-  ** the last call, then return 0.
-  */
-  int (*xCallback)(wal_impl* pWal);
-
-  /* Tell the wal layer that an EXCLUSIVE lock has been obtained (or released)
-  ** by the pager layer on the database file.
-  */
-  int (*xExclusiveMode)(wal_impl* pWal, int op);
-
-  /* Return true if the argument is non-NULL and the WAL module is using
-  ** heap-memory for the wal-index. Otherwise, if the argument is NULL or the
-  ** WAL module is using shared-memory, return false.
-  */
-  int (*xHeapMemory)(wal_impl* pWal);
-
-  // Only needed with SQLITE_ENABLE_SNAPSHOT, but part of the ABI
-  int (*xSnapshotGet)(wal_impl* pWal, sqlite3_snapshot **ppSnapshot);
-  void (*xSnapshotOpen)(wal_impl* pWal, sqlite3_snapshot *pSnapshot);
-  int (*xSnapshotRecover)(wal_impl* pWal);
-  int (*xSnapshotCheck)(void* pWal, sqlite3_snapshot *pSnapshot);
-  void (*xSnapshotUnlock)(wal_impl* pWal);
-
-  // Only needed with SQLITE_ENABLE_ZIPVFS, but part of the ABI
-  /* If the WAL file is not empty, return the number of bytes of content
-  ** stored in each frame (i.e. the db page-size when the WAL was created).
-  */
-  int (*xFramesize)(wal_impl* pWal);
-
-
-  /* Return the sqlite3_file object for the WAL file */
-  sqlite3_file *(*xFile)(wal_impl* pWal);
-
-  // Only needed with  SQLITE_ENABLE_SETLK_TIMEOUT
-  int (*xWriteLock)(wal_impl* pWal, int bLock);
-
-  void (*xDb)(wal_impl* pWal, sqlite3 *db);
-} libsql_wal_methods;
-
-
-/* Object declarations */
-typedef struct WalIndexHdr WalIndexHdr;
-typedef struct WalIterator WalIterator;
-typedef struct WalCkptInfo WalCkptInfo;
-
-
-/*
-** The following object holds a copy of the wal-index header content.
-**
-** The actual header in the wal-index consists of two copies of this
-** object followed by one instance of the WalCkptInfo object.
-** For all versions of SQLite through 3.10.0 and probably beyond,
-** the locking bytes (WalCkptInfo.aLock) start at offset 120 and
-** the total header size is 136 bytes.
-**
-** The szPage value can be any power of 2 between 512 and 32768, inclusive.
-** Or it can be 1 to represent a 65536-byte page.  The latter case was
-** added in 3.7.1 when support for 64K pages was added.
-*/
-struct WalIndexHdr {
-  unsigned int iVersion;                   /* Wal-index version */
-  unsigned int unused;                     /* Unused (padding) field */
-  unsigned int iChange;                    /* Counter incremented each transaction */
-  unsigned char isInit;                    /* 1 when initialized */
-  unsigned char bigEndCksum;               /* True if checksums in WAL are big-endian */
-  unsigned short szPage;                   /* Database page size in bytes. 1==64K */
-  unsigned int mxFrame;                    /* Index of last valid frame in the WAL */
-  unsigned int nPage;                      /* Size of database in pages */
-  unsigned int aFrameCksum[2];             /* Checksum of last frame in log */
-  unsigned int aSalt[2];                   /* Two salt values copied from WAL header */
-  unsigned int aCksum[2];                  /* Checksum over all prior fields */
-};
-
-struct libsql_wal_manager {
-  /* True if the implementation relies on shared memory routines (e.g. locks) */
-  int bUsesShm;
-
-  /* Open and close a connection to a write-ahead log. */
-  int (*xOpen)(wal_manager_impl* pData, sqlite3_vfs*, sqlite3_file*, int no_shm_mode, long long max_size, const char* zMainDbFileName, libsql_wal* out_wal);
-  int (*xClose)(wal_manager_impl* pData, wal_impl* pWal, sqlite3* db, int sync_flags, int nBuf, unsigned char *zBuf);
-
-  /* destroy resources for this wal */
-  int (*xLogDestroy)(wal_manager_impl* pData, sqlite3_vfs *vfs, const char* zMainDbFileName);
-  /* returns whether this wal exists */
-  int (*xLogExists)(wal_manager_impl* pData, sqlite3_vfs *vfs, const char* zMainDbFileName, int* exist);
-  /* destructor */
-  void (*xDestroy)(wal_manager_impl* pData);
-
-  wal_manager_impl* pData;
-};
-
-/*
-** An open write-ahead log file is represented by an instance of the
-** following object.
-*/
-typedef struct sqlite3_wal {
-  sqlite3_vfs *pVfs;                  /* The VFS used to create pDbFd */
-  sqlite3_file *pDbFd;                /* File handle for the database file */
-  sqlite3_file *pWalFd;               /* File handle for WAL file */
-  unsigned int iCallback;             /* Value to pass to log callback (or 0) */
-  long long mxWalSize;                     /* Truncate WAL to this size upon reset */
-  int nWiData;                        /* Size of array apWiData */
-  int szFirstBlock;                   /* Size of first block written to WAL file */
-  volatile unsigned int **apWiData;   /* Pointer to wal-index content in memory */
-  unsigned int szPage;                /* Database page size */
-  short readLock;                     /* Which read lock is being held.  -1 for none */
-  unsigned char syncFlags;            /* Flags to use to sync header writes */
-  unsigned char exclusiveMode;        /* Non-zero if connection is in exclusive mode */
-  unsigned char writeLock;            /* True if in a write transaction */
-  unsigned char ckptLock;             /* True if holding a checkpoint lock */
-  unsigned char readOnly;             /* WAL_RDWR, WAL_RDONLY, or WAL_SHM_RDONLY */
-  unsigned char truncateOnCommit;     /* True to truncate WAL file on commit */
-  unsigned char syncHeader;           /* Fsync the WAL header if true */
-  unsigned char padToSectorBoundary;  /* Pad transactions out to the next sector */
-  unsigned char bShmUnreliable;       /* SHM content is read-only and unreliable */
-  WalIndexHdr hdr;                    /* Wal-index header for current transaction */
-  unsigned int minFrame;              /* Ignore wal frames before this one */
-  unsigned int iReCksum;              /* On commit, recalculate checksums from here */
-  const char *zWalName;               /* Name of WAL file */
-  unsigned int nCkpt;                 /* Checkpoint sequence counter in the wal-header */
-  unsigned char lockError;            /* True if a locking error has occurred */
-  WalIndexHdr *pSnapshot;             /* Start transaction here if not NULL */
-  sqlite3 *db;
-} sqlite3_wal;
-
-struct libsql_wal {
-    libsql_wal_methods methods; /* virtual wal methods */
-    wal_impl* pData; /* methods receiver */
-};
-
-typedef struct RefCountedWalManager {
-    int n;
-    libsql_wal_manager ref;
-    int is_static;
-} RefCountedWalManager;
-
-int make_ref_counted_wal_manager(libsql_wal_manager wal_manager, RefCountedWalManager **out);
-void destroy_wal_manager(RefCountedWalManager *p);
-RefCountedWalManager* clone_wal_manager(RefCountedWalManager *p);
-
-RefCountedWalManager *make_sqlite3_wal_manager_rc();
-
-SQLITE_API extern const libsql_wal_manager sqlite3_wal_manager;
-
-#endif /* SQLITE_WAL_H */
-
-/******** End of wal.h *********/
-/******** Begin file wasm_bindings.h *********/
-/* SPDX-License-Identifier: MIT */
-#ifdef LIBSQL_ENABLE_WASM_RUNTIME
-
-#ifndef LIBSQL_WASM_BINDINGS_H
-#define LIBSQL_WASM_BINDINGS_H
-
-typedef struct libsql_wasm_engine_t libsql_wasm_engine_t;
-typedef struct libsql_wasm_module_t libsql_wasm_module_t;
-
-typedef struct libsql_wasm_udf_api {
-    int (*libsql_value_type)(sqlite3_value*);
-    int (*libsql_value_int)(sqlite3_value*);
-    double (*libsql_value_double)(sqlite3_value*);
-    const unsigned char *(*libsql_value_text)(sqlite3_value*);
-    const void *(*libsql_value_blob)(sqlite3_value*);
-    int (*libsql_value_bytes)(sqlite3_value*);
-    void (*libsql_result_error)(sqlite3_context*, const char*, int);
-    void (*libsql_result_error_nomem)(sqlite3_context*);
-    void (*libsql_result_int)(sqlite3_context*, int);
-    void (*libsql_result_double)(sqlite3_context*, double);
-    void (*libsql_result_text)(sqlite3_context*, const char*, int, void(*)(void*));
-    void (*libsql_result_blob)(sqlite3_context*, const void*, int, void(*)(void*));
-    void (*libsql_result_null)(sqlite3_context*);
-    void *(*libsql_malloc)(int);
-    void (*libsql_free)(void *);
-} libsql_wasm_udf_api;
-
-/*
-** Runs a WebAssembly user-defined function.
-** Additional data can be accessed via sqlite3_user_data(context)
-*/
-SQLITE_API void libsql_run_wasm(struct libsql_wasm_udf_api *api, sqlite3_context *context,
-    libsql_wasm_engine_t *engine, libsql_wasm_module_t *module, const char *func_name, int argc, sqlite3_value **argv);
-
-/*
-** Compiles a WebAssembly module. Can accept both .wat and binary Wasm format, depending on the implementation.
-** err_msg_buf needs to be deallocated with libsql_free_wasm_module.
-*/
-SQLITE_API libsql_wasm_module_t *libsql_compile_wasm_module(libsql_wasm_engine_t* engine, const char *pSrcBody, int nBody,
-    void *(*alloc_err_buf)(unsigned long long), char **err_msg_buf);
-
-/*
-** Frees a module allocated with libsql_compile_wasm_module
-*/
-SQLITE_API void libsql_free_wasm_module(void *module);
-
-/*
-** Creates a new wasm engine
-*/
-SQLITE_API libsql_wasm_engine_t *libsql_wasm_engine_new();
-SQLITE_API void libsql_wasm_engine_free(libsql_wasm_engine_t *);
-
-#endif //LIBSQL_WASM_BINDINGS_H
-#endif //LIBSQL_ENABLE_WASM_RUNTIME
-
-/******** End of wasm_bindings.h *********/

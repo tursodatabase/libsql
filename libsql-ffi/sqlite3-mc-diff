@@ -1,0 +1,123 @@
+--- src/sqlite3.c	2023-12-21 08:07:35.282320794 +0100
++++ src/sqlite3patched.c	2023-12-21 08:07:35.292320783 +0100
+@@ -11108,6 +11108,17 @@
+ }  /* End of the 'extern "C"' block */
+ #endif
+ #endif /* SQLITE3_H */
++ 
++/* Function prototypes of SQLite3 Multiple Ciphers */
++SQLITE_PRIVATE int sqlite3mcCheckVfs(const char*);
++SQLITE_PRIVATE int sqlite3mcFileControlPragma(sqlite3*, const char*, int, void*);
++SQLITE_PRIVATE int sqlite3mcHandleAttachKey(sqlite3*, const char*, const char*, sqlite3_value*, char**);
++SQLITE_PRIVATE int sqlite3mcHandleMainKey(sqlite3*, const char*);
++typedef struct PgHdr PgHdrMC;
++SQLITE_PRIVATE void* sqlite3mcPagerCodec(PgHdrMC* pPg);
++typedef struct Pager PagerMC;
++SQLITE_PRIVATE int sqlite3mcPagerHasCodec(PagerMC* pPager);
++SQLITE_PRIVATE void sqlite3mcInitMemoryMethods();
+ 
+ /******** Begin file sqlite3rtree.h *********/
+ /*
+@@ -29982,6 +29993,12 @@
+   }
+   rc = sqlite3GlobalConfig.m.xInit(sqlite3GlobalConfig.m.pAppData);
+   if( rc!=SQLITE_OK ) memset(&mem0, 0, sizeof(mem0));
++
++  /* Initialize wrapper for memory management.*/
++  if( rc==SQLITE_OK ) {
++    sqlite3mcInitMemoryMethods();
++  }
++
+   return rc;
+ }
+ 
+@@ -38016,7 +38033,11 @@
+ /*
+ ** Maximum supported path-length.
+ */
++#if SQLITE3MC_MAX_PATHNAME > 512
++#define MAX_PATHNAME SQLITE3MC_MAX_PATHNAME
++#else
+ #define MAX_PATHNAME 512
++#endif
+ 
+ /*
+ ** Maximum supported symbolic links
+@@ -57245,6 +57266,7 @@
+ SQLITE_PRIVATE int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
+   if( pPager->fd->pMethods==0 ) return 0;
+   if( sqlite3PCacheIsDirty(pPager->pPCache) ) return 0;
++  if( sqlite3mcPagerHasCodec(pPager) != 0 ) return 0;
+ #ifndef SQLITE_OMIT_WAL
+   if( pPager->pWal ){
+     u32 iRead = 0;
+@@ -57478,7 +57500,7 @@
+   if( pPager->errCode ){
+     pPager->xGet = getPageError;
+ #if SQLITE_MAX_MMAP_SIZE>0
+-  }else if( USEFETCH(pPager) ){
++  }else if( USEFETCH(pPager) && sqlite3mcPagerHasCodec(pPager) == 0 ){
+     pPager->xGet = getPageMMap;
+ #endif /* SQLITE_MAX_MMAP_SIZE>0 */
+   }else{
+@@ -68082,7 +68104,7 @@
+   int rc;                         /* Result code from subfunctions */
+   void *pData;                    /* Data actually written */
+   u8 aFrame[WAL_FRAME_HDRSIZE];   /* Buffer to assemble frame-header in */
+-  pData = pPage->pData;
++  if( (pData = sqlite3mcPagerCodec(pPage))==0 ) return SQLITE_NOMEM_BKPT;
+   walEncodeFrame(p->pWal, pPage->pgno, nTruncate, pData, aFrame);
+   rc = walWriteToLog(p, aFrame, sizeof(aFrame), iOffset);
+   if( rc ) return rc;
+@@ -68267,7 +68289,7 @@
+         if( pWal->iReCksum==0 || iWrite<pWal->iReCksum ){
+           pWal->iReCksum = iWrite;
+         }
+-        pData = p->pData;
++        if( (pData = sqlite3mcPagerCodec(p))==0 ) return SQLITE_NOMEM;
+         rc = sqlite3OsWrite(pWal->pWalFd, pData, szPage, iOff);
+         if( rc ) return rc;
+         p->flags &= ~PGHDR_WAL_APPEND;
+@@ -119457,6 +119479,11 @@
+   if( rc==SQLITE_OK && pNew->zDbSName==0 ){
+     rc = SQLITE_NOMEM_BKPT;
+   }
++
++  /* Handle KEY parameter. */
++  if( rc==SQLITE_OK ){
++    rc = sqlite3mcHandleAttachKey(db, zName, zPath, argv[2], &zErrDyn);
++  }
+   sqlite3_free_filename( zPath );
+ 
+   /* If the file was opened successfully, read the schema for the new database.
+@@ -137724,7 +137751,7 @@
+   aFcntl[2] = zRight;
+   aFcntl[3] = 0;
+   db->busyHandler.nBusy = 0;
+-  rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_PRAGMA, (void*)aFcntl);
++  rc = sqlite3mcFileControlPragma(db, zDb, SQLITE_FCNTL_PRAGMA, (void*)aFcntl);
+   if( rc==SQLITE_OK ){
+     sqlite3VdbeSetNumCols(v, 1);
+     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, aFcntl[0], SQLITE_TRANSIENT);
+@@ -180778,6 +180805,9 @@
+     flags &= ~SQLITE_OPEN_URI;
+   }
+ 
++  /* Check VFS. */
++  sqlite3mcCheckVfs(zVfs);
++
+   *ppVfs = sqlite3_vfs_find(zVfs);
+   if( *ppVfs==0 ){
+     *pzErrMsg = sqlite3_mprintf("no such vfs: %s", zVfs);
+@@ -181164,6 +181194,11 @@
+     sqlite3GlobalConfig.xSqllog(pArg, db, zFilename, 0);
+   }
+ #endif
++
++  /* Handle encryption related URI parameters. */
++  if( rc==SQLITE_OK ){
++    rc = sqlite3mcHandleMainKey(db, zOpen);
++  }
+   sqlite3_free_filename(zOpen);
+   return rc;
+ }

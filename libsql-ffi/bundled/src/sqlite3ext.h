@@ -368,20 +368,14 @@ struct sqlite3_api_routines {
   int (*set_clientdata)(sqlite3*, const char*, void*, void(*)(void*));
 };
 
-struct libsql_api_routines {
-  /* libSQL 0.2.3 */
-  void *(*close_hook)(sqlite3*, void(*)(void*,sqlite3*), void *pArg);
-};
-
 /*
 ** This is the function signature used for all extension entry points.  It
 ** is also defined in the file "loadext.c".
 */
 typedef int (*sqlite3_loadext_entry)(
-  sqlite3 *db,                            /* Handle to the database. */
-  char **pzErrMsg,                        /* Used to set error string on failure. */
-  const sqlite3_api_routines *pThunk,     /* Extension API function pointers. */
-  const libsql_api_routines *pThunkLibsql /* Extension API function pointers - libSQL.*/
+  sqlite3 *db,                       /* Handle to the database. */
+  char **pzErrMsg,                   /* Used to set error string on failure. */
+  const sqlite3_api_routines *pThunk /* Extension API function pointers. */
 );
 
 /*
@@ -702,8 +696,6 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_is_interrupted         sqlite3_api->is_interrupted
 /* Version 3.43.0 and later */
 #define sqlite3_stmt_explain           sqlite3_api->stmt_explain
-/* libSQL 0.2.3 */
-#define libsql_close_hook              libsql_api->close_hook
 /* Version 3.44.0 and later */
 #define sqlite3_get_clientdata         sqlite3_api->get_clientdata
 #define sqlite3_set_clientdata         sqlite3_api->set_clientdata
@@ -716,23 +708,12 @@ typedef int (*sqlite3_loadext_entry)(
 # define SQLITE_EXTENSION_INIT2(v)  sqlite3_api=v;
 # define SQLITE_EXTENSION_INIT3     \
     extern const sqlite3_api_routines *sqlite3_api;
-
-# define LIBSQL_EXTENSION_INIT1     const libsql_api_routines *libsql_api=0;
-# define LIBSQL_EXTENSION_INIT2(v)  libsql_api=v;
-# define LIBSQL_EXTENSION_INIT3     \
-    extern const libsql_api_routines *libsql_api;
-
 #else
   /* This case when the file is being statically linked into the 
   ** application */
 # define SQLITE_EXTENSION_INIT1     /*no-op*/
 # define SQLITE_EXTENSION_INIT2(v)  (void)v; /* unused parameter */
 # define SQLITE_EXTENSION_INIT3     /*no-op*/
-
-# define LIBSQL_EXTENSION_INIT1     /*no-op*/
-# define LIBSQL_EXTENSION_INIT2(v)  (void)v; /* unused parameter */
-# define LIBSQL_EXTENSION_INIT3     /*no-op*/
-
 #endif
 
 #endif /* SQLITE3EXT_H */
