@@ -1,18 +1,22 @@
 use crate::connection::Conn;
 use crate::hrana::connection::HttpConnection;
-use crate::hrana::pipeline::ServerMsg;
 use crate::hrana::proto::{Batch, Stmt};
-use crate::hrana::stream::HttpStream;
+use crate::hrana::stream::HranaStream;
 use crate::hrana::transaction::HttpTransaction;
 use crate::hrana::{bind_params, HranaError, HttpSend, Result};
 use crate::params::Params;
 use crate::transaction::Tx;
 use crate::util::ConnectorService;
 use crate::{Rows, Statement};
+use bytes::Bytes;
 use futures::future::BoxFuture;
+use futures::{Stream, TryStreamExt};
 use http::header::AUTHORIZATION;
 use http::{HeaderValue, StatusCode};
+use hyper::body::HttpBody;
 use std::sync::Arc;
+
+pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Send + Unpin>;
 
 #[derive(Clone, Debug)]
 pub struct HttpSender {
@@ -31,35 +35,51 @@ impl HttpSender {
         Self { inner, version }
     }
 
-    async fn send(&self, url: String, auth: String, body: String) -> Result<ServerMsg> {
-        let req = hyper::Request::post(url)
-            .header(AUTHORIZATION, auth)
+    async fn send(
+        self,
+        url: Arc<str>,
+        auth: Arc<str>,
+        body: String,
+    ) -> Result<super::HttpBody<ByteStream>> {
+        let req = hyper::Request::post(url.as_ref())
+            .header(AUTHORIZATION, auth.as_ref())
             .header("x-libsql-client-version", self.version.clone())
             .body(hyper::Body::from(body))
             .map_err(|err| HranaError::Http(format!("{:?}", err)))?;
 
-        let res = self.inner.request(req).await?;
+        let resp = self.inner.request(req).await.map_err(HranaError::from)?;
 
-        if res.status() != StatusCode::OK {
-            let body = hyper::body::to_bytes(res.into_body()).await?;
-            let msg = String::from_utf8(body.into())
-                .unwrap_or_else(|err| format!("Invalid payload: {}", err));
-            return Err(HranaError::Api(msg));
+        if resp.status() != StatusCode::OK {
+            let body = hyper::body::to_bytes(resp.into_body())
+                .await
+                .map_err(HranaError::from)?;
+            let body = String::from_utf8(body.into()).unwrap();
+            return Err(HranaError::Api(body));
         }
 
-        let body = hyper::body::to_bytes(res.into_body()).await?;
+        let body: super::HttpBody<ByteStream> = if resp.is_end_stream() {
+            let body = hyper::body::to_bytes(resp.into_body())
+                .await
+                .map_err(HranaError::from)?;
+            super::HttpBody::from(body)
+        } else {
+            let stream = resp
+                .into_body()
+                .into_stream()
+                .map_err(|e| HranaError::Http(e.to_string()));
+            super::HttpBody::Stream(Box::new(stream))
+        };
 
-        let msg = serde_json::from_slice::<ServerMsg>(&body[..])?;
-
-        Ok(msg)
+        Ok(body)
     }
 }
 
-impl<'a> HttpSend<'a> for HttpSender {
-    type Result = BoxFuture<'a, Result<ServerMsg>>;
+impl HttpSend for HttpSender {
+    type Stream = super::HttpBody<ByteStream>;
+    type Result = BoxFuture<'static, Result<Self::Stream>>;
 
-    fn http_send(&'a self, url: String, auth: String, body: String) -> Self::Result {
-        let fut = self.send(url, auth, body);
+    fn http_send(&self, url: Arc<str>, auth: Arc<str>, body: String) -> Self::Result {
+        let fut = self.clone().send(url, auth, body);
         Box::pin(fut)
     }
 }
@@ -194,7 +214,7 @@ impl Tx for HttpTransaction<HttpSender> {
 }
 
 #[async_trait::async_trait]
-impl Conn for HttpStream<HttpSender> {
+impl Conn for HranaStream<HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
         let mut stmt = Stmt::new(sql, false);
         bind_params(params, &mut stmt);
@@ -206,13 +226,13 @@ impl Conn for HttpStream<HttpSender> {
     }
 
     async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
-        let mut batch = Batch::new();
-        let stmts = crate::parser::Statement::parse(sql);
-        for s in stmts {
+        let mut stmts = Vec::new();
+        let parse = crate::parser::Statement::parse(sql);
+        for s in parse {
             let s = s?;
-            batch.step(None, Stmt::new(s.stmt, false));
+            stmts.push(Stmt::new(s.stmt, false));
         }
-        self.batch(batch)
+        self.batch(Batch::from_iter(stmts, false))
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
         Ok(())

@@ -1,11 +1,13 @@
+use crate::hrana::cursor::{Cursor, CursorReq};
 use crate::hrana::pipeline::{
-    BatchStreamReq, ClientMsg, CloseSqlStreamReq, DescribeStreamReq, ExecuteStreamReq, Response,
-    SequenceStreamReq, ServerMsg, StoreSqlStreamReq, StreamRequest, StreamResponse,
-    StreamResponseOk,
+    ClientMsg, CloseSqlStreamReq, DescribeStreamReq, Response, SequenceStreamReq, ServerMsg,
+    StoreSqlStreamReq, StreamRequest, StreamResponse, StreamResponseOk,
 };
 use crate::hrana::proto::{Batch, BatchResult, DescribeResult, Stmt, StmtResult};
-use crate::hrana::{HranaError, HttpSend, Result};
+use crate::hrana::{CursorResponseError, HranaError, HttpSend, Result, StreamResponseError};
+use bytes::{Bytes, BytesMut};
 use futures::lock::Mutex;
+use futures::Stream;
 use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::Arc;
 
@@ -23,36 +25,42 @@ pub type SqlId = i32;
 /// A representation of Hrana HTTP stream. Since streams rely on sequential execution of requests,
 /// it's realized internally as a mutex lock.
 #[derive(Debug)]
-pub struct HttpStream<T>
+pub struct HranaStream<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     inner: Arc<Inner<T>>,
 }
 
-impl<T> Clone for HttpStream<T>
+impl<T> Clone for HranaStream<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     fn clone(&self) -> Self {
-        HttpStream {
+        HranaStream {
             inner: self.inner.clone(),
         }
     }
 }
 
-impl<T> HttpStream<T>
+impl<T> HranaStream<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
-    pub(super) fn open(client: T, base_url: String, auth_token: String) -> Self {
-        HttpStream {
+    pub(super) fn open(
+        client: T,
+        pipeline_url: Arc<str>,
+        cursor_url: Arc<str>,
+        auth_token: Arc<str>,
+    ) -> Self {
+        HranaStream {
             inner: Arc::new(Inner {
                 affected_row_count: AtomicU64::new(0),
                 last_insert_rowid: AtomicI64::new(0),
                 stream: Mutex::new(RawStream {
                     client,
-                    base_url,
+                    pipeline_url,
+                    cursor_url,
                     auth_token,
                     sql_id_generator: 0,
                     status: StreamStatus::Open,
@@ -70,34 +78,40 @@ where
     }
 
     pub async fn execute(&self, stmt: Stmt) -> Result<StmtResult> {
-        let mut client = self.inner.stream.lock().await;
-        let resp = client
-            .send(StreamRequest::Execute(ExecuteStreamReq { stmt }))
-            .await?;
-        match resp {
-            StreamResponse::Execute(resp) => {
-                let r = resp.result;
-                self.inner
-                    .affected_row_count
-                    .store(r.affected_row_count, Ordering::SeqCst);
-                self.inner
-                    .last_insert_rowid
-                    .store(r.last_insert_rowid.unwrap_or_default(), Ordering::SeqCst);
-                Ok(r)
-            }
-            other => unexpected!(other),
+        //TODO: this trait shouldn't return BatchResult but an associated
+        //      type that can respect Hrana async streaming cursor capabilities
+        let mut batch = Batch::new();
+        batch.step(None, stmt);
+        let mut batch_res = self.batch(batch).await?;
+        if let Some(Some(error)) = batch_res.step_errors.pop() {
+            return Err(HranaError::StreamError(StreamResponseError { error }));
+        }
+        if let Some(Some(resp)) = batch_res.step_results.pop() {
+            self.inner
+                .affected_row_count
+                .store(resp.affected_row_count, Ordering::SeqCst);
+            self.inner
+                .last_insert_rowid
+                .store(resp.last_insert_rowid.unwrap_or_default(), Ordering::SeqCst);
+            Ok(resp)
+        } else {
+            Err(HranaError::CursorError(CursorResponseError::Other(
+                "no result has been returned".to_string(),
+            )))
         }
     }
 
     pub async fn batch(&self, batch: Batch) -> Result<BatchResult> {
+        //TODO: this trait shouldn't return BatchResult but an associated
+        //      type that can respect Hrana async streaming cursor capabilities
+        let cursor = self.cursor(batch).await?;
+        Ok(cursor.into_batch_result().await?)
+    }
+
+    pub async fn cursor(&self, batch: Batch) -> Result<Cursor<T::Stream>> {
         let mut client = self.inner.stream.lock().await;
-        let resp = client
-            .send(StreamRequest::Batch(BatchStreamReq { batch }))
-            .await?;
-        match resp {
-            StreamResponse::Batch(resp) => Ok(resp.result),
-            other => unexpected!(other),
-        }
+        let cursor = client.open_cursor(batch).await?;
+        Ok(cursor)
     }
 
     pub async fn store_sql(&self, sql: String) -> Result<StoredSql<T>> {
@@ -185,7 +199,7 @@ where
 #[derive(Debug)]
 struct Inner<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     affected_row_count: AtomicU64,
     last_insert_rowid: AtomicI64,
@@ -195,23 +209,57 @@ where
 #[derive(Debug)]
 struct RawStream<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     client: T,
     baton: Option<String>,
-    base_url: String,
-    auth_token: String,
+    pipeline_url: Arc<str>,
+    cursor_url: Arc<str>,
+    auth_token: Arc<str>,
     status: StreamStatus,
     sql_id_generator: SqlId,
 }
 
 impl<T> RawStream<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     async fn send(&mut self, req: StreamRequest) -> Result<StreamResponse> {
         let [resp] = self.send_requests([req]).await?;
         Ok(resp)
+    }
+
+    pub async fn open_cursor(&mut self, batch: Batch) -> Result<Cursor<T::Stream>> {
+        if self.status == StreamStatus::Closed {
+            return Err(HranaError::StreamClosed(
+                "client stream has been closed by the servers".to_string(),
+            ));
+        }
+        let msg = CursorReq {
+            baton: self.baton.clone(),
+            batch,
+        };
+        let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
+        let stream = self
+            .client
+            .http_send(self.cursor_url.clone(), self.auth_token.clone(), body)
+            .await?;
+        let (cursor, mut response) = Cursor::open(stream).await?;
+        if let Some(base_url) = response.base_url.take() {
+            self.pipeline_url = Arc::from(format!("{base_url}/v3/pipeline"));
+            self.cursor_url = Arc::from(format!("{base_url}/v3/cursor"));
+        }
+        match response.baton.take() {
+            None => {
+                tracing::trace!("client stream has been closed by the server");
+                self.done();
+            } // stream has been closed by the server
+            Some(baton) => {
+                tracing::trace!("client stream has been assigned with baton: `{}`", baton);
+                self.baton = Some(baton)
+            }
+        }
+        Ok(cursor)
     }
 
     async fn send_requests<const N: usize>(
@@ -233,12 +281,14 @@ where
             requests: Vec::from(requests),
         };
         let body = serde_json::to_string(&msg).map_err(HranaError::Json)?;
-        let mut response: ServerMsg = self
+        let body = self
             .client
-            .http_send(self.base_url.clone(), self.auth_token.clone(), body)
+            .http_send(self.pipeline_url.clone(), self.auth_token.clone(), body)
             .await?;
+        let body = stream_to_bytes(body).await?;
+        let mut response: ServerMsg = serde_json::from_slice(&body)?;
         if let Some(base_url) = response.base_url.take() {
-            self.base_url = base_url;
+            self.pipeline_url = Arc::from(base_url);
         }
         match response.baton.take() {
             None => {
@@ -315,6 +365,19 @@ where
     }
 }
 
+async fn stream_to_bytes<S>(mut stream: S) -> Result<Bytes>
+where
+    S: Stream<Item = Result<Bytes>> + Unpin,
+{
+    use futures::StreamExt;
+
+    let mut buf = BytesMut::new();
+    while let Some(chunk) = stream.next().await {
+        buf.extend_from_slice(&chunk?);
+    }
+    Ok(buf.freeze())
+}
+
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub enum StreamStatus {
@@ -325,17 +388,17 @@ pub enum StreamStatus {
 #[derive(Debug, Clone)]
 pub struct StoredSql<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
-    stream: HttpStream<T>,
+    stream: HranaStream<T>,
     sql_id: SqlId,
 }
 
 impl<T> StoredSql<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
-    fn new(stream: HttpStream<T>, sql_id: SqlId) -> Self {
+    fn new(stream: HranaStream<T>, sql_id: SqlId) -> Self {
         StoredSql { stream, sql_id }
     }
 
@@ -368,7 +431,7 @@ impl SqlDescriptor for String {
 
 impl<T> SqlDescriptor for StoredSql<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     fn sql_description(&self) -> SqlDescription {
         SqlDescription::SqlId(self.sql_id)

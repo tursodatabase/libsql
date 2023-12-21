@@ -6,19 +6,24 @@ cfg_remote! {
     mod hyper;
 }
 
+mod cursor;
 pub mod pipeline;
 pub mod proto;
 mod stream;
 pub mod transaction;
 
 use crate::hrana::connection::HttpConnection;
-pub(crate) use crate::hrana::pipeline::{ServerMsg, StreamResponseError};
+pub(crate) use crate::hrana::pipeline::StreamResponseError;
 use crate::hrana::proto::{Col, Stmt, StmtResult};
-use crate::hrana::stream::HttpStream;
+use crate::hrana::stream::HranaStream;
 use crate::{params::Params, ValueType};
+use bytes::Bytes;
+use futures::Stream;
 use std::collections::VecDeque;
 use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
+use std::task::{Context, Poll};
 
 use super::rows::{RowInner, RowsInner};
 
@@ -32,9 +37,44 @@ struct Cookie {
     base_url: Option<String>,
 }
 
-pub trait HttpSend<'a>: Clone {
-    type Result: Future<Output = Result<ServerMsg>> + 'a;
-    fn http_send(&'a self, url: String, auth: String, body: String) -> Self::Result;
+pub trait HttpSend: Clone {
+    type Stream: Stream<Item = Result<Bytes>> + Unpin;
+    type Result: Future<Output = Result<Self::Stream>>;
+    fn http_send(&self, url: Arc<str>, auth: Arc<str>, body: String) -> Self::Result;
+}
+
+pub enum HttpBody<S> {
+    Body(Option<Bytes>),
+    Stream(S),
+}
+
+impl<S> From<Bytes> for HttpBody<S> {
+    fn from(value: Bytes) -> Self {
+        HttpBody::Body(Some(value))
+    }
+}
+
+impl<S> Stream for HttpBody<S>
+where
+    S: Stream<Item = Result<Bytes>> + Unpin,
+{
+    type Item = Result<Bytes>;
+
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        match self.get_mut() {
+            HttpBody::Body(bytes) => {
+                if let Some(bytes) = bytes.take() {
+                    Poll::Ready(Some(Ok(bytes)))
+                } else {
+                    Poll::Ready(None)
+                }
+            }
+            HttpBody::Stream(stream) => {
+                let pinned = Pin::new(stream);
+                pinned.poll_next(cx)
+            }
+        }
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -45,6 +85,8 @@ pub enum HranaError {
     StreamClosed(String),
     #[error("stream error: `{0:?}`")]
     StreamError(StreamResponseError),
+    #[error("cursor error: `{0}`")]
+    CursorError(CursorResponseError),
     #[error("json error: `{0}`")]
     Json(#[from] serde_json::Error),
     #[error("http error: `{0}`")]
@@ -53,10 +95,22 @@ pub enum HranaError {
     Api(String),
 }
 
-enum StatementExecutor<T: for<'a> HttpSend<'a>> {
+#[derive(Debug, thiserror::Error)]
+pub enum CursorResponseError {
+    #[error("cursor step {actual} arrived before step {expected} end message")]
+    NotClosed { expected: u32, actual: u32 },
+    #[error("error at step {step}: `{error}`")]
+    StepError { step: u32, error: String },
+    #[error("cursor stream ended prematurely")]
+    CursorClosed,
+    #[error("{0}")]
+    Other(String),
+}
+
+enum StatementExecutor<T: HttpSend> {
     /// An opened HTTP Hrana stream - usually in scope of executing transaction. Operations over it
     /// will be scheduled for sequential execution.
-    Stream(HttpStream<T>),
+    Stream(HranaStream<T>),
     /// Hrana HTTP connection. Operations executing over it are not attached to any sequential
     /// order of execution.
     Connection(HttpConnection<T>),
@@ -64,7 +118,7 @@ enum StatementExecutor<T: for<'a> HttpSend<'a>> {
 
 impl<T> StatementExecutor<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     async fn execute(&self, stmt: Stmt) -> crate::Result<StmtResult> {
         let res = match self {
@@ -77,7 +131,7 @@ where
 
 pub struct Statement<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     executor: StatementExecutor<T>,
     inner: Stmt,
@@ -85,9 +139,9 @@ where
 
 impl<T> Statement<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
-    pub(crate) fn from_stream(stream: HttpStream<T>, sql: String, want_rows: bool) -> Self {
+    pub(crate) fn from_stream(stream: HranaStream<T>, sql: String, want_rows: bool) -> Self {
         Statement {
             executor: StatementExecutor::Stream(stream),
             inner: Stmt::new(sql, want_rows),
@@ -178,6 +232,12 @@ impl RowsInner for Rows {
 pub struct Row {
     cols: Arc<Vec<Col>>,
     inner: Vec<proto::Value>,
+}
+
+impl Row {
+    pub(super) fn new(cols: Arc<Vec<Col>>, inner: Vec<proto::Value>) -> Self {
+        Row { cols, inner }
+    }
 }
 
 impl RowInner for Row {

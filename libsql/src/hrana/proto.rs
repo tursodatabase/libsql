@@ -186,6 +186,27 @@ impl Batch {
     pub fn step(&mut self, condition: Option<BatchCond>, stmt: Stmt) {
         self.steps.push(BatchStep { condition, stmt });
     }
+
+    pub fn from_iter(stmts: impl IntoIterator<Item = Stmt>, protocol_v3: bool) -> Self {
+        let mut batch = Batch::new();
+        let mut step = -1;
+        for stmt in stmts.into_iter() {
+            let cond = if step >= 0 {
+                let mut cond = BatchCond::Ok { step };
+                if protocol_v3 {
+                    cond = BatchCond::And {
+                        conds: vec![cond, BatchCond::IsAutocommit],
+                    };
+                }
+                Some(cond)
+            } else {
+                None
+            };
+            batch.step(cond, stmt);
+            step += 1;
+        }
+        batch
+    }
 }
 
 #[derive(Serialize, Debug)]

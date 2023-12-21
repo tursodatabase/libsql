@@ -1,6 +1,6 @@
 use crate::hrana::pipeline::{BatchStreamReq, ExecuteStreamReq, StreamRequest, StreamResponse};
-use crate::hrana::proto::{Batch, BatchCond, BatchResult, Stmt, StmtResult};
-use crate::hrana::stream::HttpStream;
+use crate::hrana::proto::{Batch, BatchResult, Stmt, StmtResult};
+use crate::hrana::stream::HranaStream;
 use crate::hrana::{HranaError, HttpSend, Result, Statement};
 use crate::util::coerce_url_scheme;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
@@ -9,16 +9,17 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct HttpConnection<T>(Arc<InnerClient<T>>)
 where
-    T: for<'a> HttpSend<'a>;
+    T: HttpSend;
 
 #[derive(Debug)]
 struct InnerClient<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     inner: T,
-    url_for_queries: String,
-    auth: String,
+    pipeline_url: Arc<str>,
+    cursor_url: Arc<str>,
+    auth: Arc<str>,
     affected_row_count: AtomicU64,
     last_insert_rowid: AtomicI64,
     is_autocommit: AtomicBool,
@@ -26,16 +27,18 @@ where
 
 impl<T> HttpConnection<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     pub fn new(url: String, token: String, inner: T) -> Self {
         // The `libsql://` protocol is an alias for `https://`.
         let base_url = coerce_url_scheme(&url);
-        let url_for_queries = format!("{base_url}/v3/pipeline");
+        let pipeline_url = Arc::from(format!("{base_url}/v3/pipeline"));
+        let cursor_url = Arc::from(format!("{base_url}/v3/cursor"));
         HttpConnection(Arc::new(InnerClient {
             inner,
-            url_for_queries,
-            auth: format!("Bearer {token}"),
+            pipeline_url,
+            cursor_url,
+            auth: Arc::from(format!("Bearer {token}")),
             affected_row_count: AtomicU64::new(0),
             last_insert_rowid: AtomicI64::new(0),
             is_autocommit: AtomicBool::new(true),
@@ -74,11 +77,12 @@ where
         &self.0
     }
 
-    pub(crate) fn open_stream(&self) -> HttpStream<T> {
+    pub(crate) fn open_stream(&self) -> HranaStream<T> {
         let client = self.client();
-        HttpStream::open(
+        HranaStream::open(
             client.inner.clone(),
-            client.url_for_queries.clone(),
+            client.pipeline_url.clone(),
+            client.cursor_url.clone(),
             client.auth.clone(),
         )
     }
@@ -87,7 +91,7 @@ where
         &self,
         stmts: impl IntoIterator<Item = Stmt>,
     ) -> Result<BatchResult> {
-        let batch = stmts_to_batch(false, stmts);
+        let batch = Batch::from_iter(stmts, false);
         let (resp, is_autocommit) = self
             .open_stream()
             .finalize(StreamRequest::Batch(BatchStreamReq { batch }))
@@ -124,7 +128,7 @@ where
 
 impl<T> Clone for HttpConnection<T>
 where
-    T: for<'a> HttpSend<'a>,
+    T: HttpSend,
 {
     fn clone(&self) -> Self {
         HttpConnection(self.0.clone())
@@ -134,25 +138,4 @@ where
 pub(crate) enum CommitBehavior {
     Commit,
     Rollback,
-}
-
-pub(super) fn stmts_to_batch(protocol_v3: bool, stmts: impl IntoIterator<Item = Stmt>) -> Batch {
-    let mut batch = Batch::new();
-    let mut step = -1;
-    for stmt in stmts.into_iter() {
-        let cond = if step >= 0 {
-            let mut cond = BatchCond::Ok { step };
-            if protocol_v3 {
-                cond = BatchCond::And {
-                    conds: vec![cond, BatchCond::IsAutocommit],
-                };
-            }
-            Some(cond)
-        } else {
-            None
-        };
-        batch.step(cond, stmt);
-        step += 1;
-    }
-    batch
 }
