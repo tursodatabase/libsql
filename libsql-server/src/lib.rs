@@ -514,7 +514,7 @@ where
         ReplicationLogService,
     )> {
         let conf = PrimaryNamespaceConfig {
-            base_path: self.base_path,
+            base_path: self.base_path.clone(),
             max_log_size: self.db_config.max_log_size,
             db_is_dirty: self.db_is_dirty,
             max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
@@ -528,15 +528,14 @@ where
             disable_namespace: self.disable_namespaces,
         };
 
-        let meta_store_path = conf.base_path.join("metastore");
-
         let factory = PrimaryNamespaceMaker::new(conf);
         let namespaces = NamespaceStore::new(
             factory,
             false,
             self.db_config.snapshot_at_shutdown,
-            meta_store_path,
             self.max_active_namespaces,
+            &self.base_path,
+            self.meta_store_config,
         )
         .await?;
 
@@ -632,20 +631,19 @@ impl<C: Connector> Replica<C> {
             uri: uri.clone(),
             extensions: self.extensions.clone(),
             stats_sender: self.stats_sender.clone(),
-            base_path: self.base_path,
+            base_path: self.base_path.clone(),
             max_response_size: self.db_config.max_response_size,
             max_total_response_size: self.db_config.max_total_response_size,
         };
-
-        let meta_store_path = conf.base_path.join("metastore");
 
         let factory = ReplicaNamespaceMaker::new(conf);
         let namespaces = NamespaceStore::new(
             factory,
             true,
             false,
-            meta_store_path,
             self.max_active_namespaces,
+            &self.base_path,
+            self.meta_store_config,
         )
         .await?;
         let replication_service = ReplicationLogProxyService::new(channel.clone(), uri.clone());

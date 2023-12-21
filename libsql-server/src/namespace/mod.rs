@@ -32,6 +32,7 @@ use tonic::transport::Channel;
 use uuid::Uuid;
 
 use crate::auth::Authenticated;
+use crate::config::MetaStoreConfig;
 use crate::connection::config::DatabaseConfig;
 use crate::connection::libsql::{open_conn, MakeLibSqlConn};
 use crate::connection::write_proxy::MakeWriteProxyConn;
@@ -400,10 +401,11 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         make_namespace: M,
         allow_lazy_creation: bool,
         snapshot_at_shutdown: bool,
-        meta_store_path: impl AsRef<Path>,
         max_active_namespaces: usize,
+        base_path: &Path,
+        meta_store_config: Option<MetaStoreConfig>,
     ) -> crate::Result<Self> {
-        let metadata = MetaStore::new(meta_store_path).await?;
+        let metadata = MetaStore::new(meta_store_config, base_path).await?;
         tracing::trace!("Max active namespaces: {max_active_namespaces}");
         let store = Cache::<NamespaceName, NamespaceEntry<M::Database>>::builder()
             .async_eviction_listener(move |name, ns, cause| {
@@ -426,6 +428,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             .max_capacity(max_active_namespaces as u64)
             .time_to_idle(Duration::from_secs(86400))
             .build();
+
         Ok(Self {
             inner: Arc::new(NamespaceStoreInner {
                 store,
@@ -738,6 +741,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                 ns.shutdown(self.inner.snapshot_at_shutdown).await?;
             }
         }
+        self.inner.metadata.shutdown().await?;
         self.inner.store.invalidate_all();
         self.inner.store.run_pending_tasks().await;
         Ok(())
