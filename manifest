@@ -1,5 +1,5 @@
-C Fix\sSQLITE_ENABLE_SETLK_TIMEOUT\sassert()\sstatements\sin\sos_unix.c\sto\savoid\sreading\spast\sthe\send\sof\sthe\sunixShmNode.aMutex[]\sarray.
-D 2023-12-20T19:33:41.679
+C Add\sinternal\score-developer-only\sdocumentation\sof\sthe\sJSONB\sformat.
+D 2023-12-21T18:08:05.881
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -39,6 +39,7 @@ F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/compile-for-windows.md 50b27d77be96195c66031a3181cb8684ed822327ea834e07f9c014213e5e3bcf
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
+F doc/jsonb.md 5fab4b8613aa9153fbeb6259297bd4697988af8b3d23900deba588fa7841456b
 F doc/lemon.html 44a53a1d2b42d7751f7b2f478efb23c978e258d794bfd172442307a755b9fa44
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/testrunner.md 8d36ec692cf4994bb66d84a4645b9afa1ce9d47dc12cbf8d437c5a5fb6ddeedb
@@ -696,7 +697,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c c6fae579d681d5ab43387c8667cc6ef0c0f8769fd881fde3af6260e837cae762
+F src/json.c 498cbe3346f216e3119e6d01585c3bc09994612c16459f2fa682a1cec61b1cf7
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c ce714ee501122c76eb2e69b292bebe443aba611fc3b88e6786eb910285515fe4
@@ -2155,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 206d8c650d937bc700946c40a82a62ea6bc4a80e5f3fb42d0ae2968de25f0644
-R f91549b5ba9f8490543a9270abff43ad
-U dan
-Z 03359f67466d165815d902ddaee87b98
+P 029a05cd2928d43d81e4549cce5388c432e2c9e75e3fa0b2fe6e91021b2fb9ac
+R 37c4deae61c278596f4d5133c7cb9761
+U drh
+Z eab6e0f06a97a969bebac69bfb9fe946
 # Remove this line to create a well-formed Fossil manifest.

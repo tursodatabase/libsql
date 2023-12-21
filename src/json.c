@@ -113,6 +113,9 @@
 ** checks are true, the BLOB is assumed to be JSONB and processing continues.
 ** Errors are only raised if some other miscoding is discovered during
 ** processing.
+**
+** Additional information can be found in the doc/jsonb.md file of the
+** canonical SQLite source tree.
 */
 #ifndef SQLITE_OMIT_JSON
 #include "sqliteInt.h"
