@@ -42,6 +42,7 @@ use tokio::time::Duration;
 use url::Url;
 use utils::services::idle_shutdown::IdleShutdownKicker;
 
+use self::config::MetaStoreConfig;
 use self::net::AddrIncoming;
 
 pub mod config;
@@ -101,6 +102,7 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub disable_namespaces: bool,
     pub shutdown: Arc<Notify>,
     pub max_active_namespaces: usize,
+    pub meta_store_config: Option<MetaStoreConfig>,
 }
 
 impl<C, A, D> Default for Server<C, A, D> {
@@ -119,6 +121,7 @@ impl<C, A, D> Default for Server<C, A, D> {
             disable_namespaces: true,
             shutdown: Default::default(),
             max_active_namespaces: 100,
+            meta_store_config: None,
         }
     }
 }
@@ -387,6 +390,7 @@ where
                     base_path: self.path.clone(),
                     auth: auth.clone(),
                     max_active_namespaces: self.max_active_namespaces,
+                    meta_store_config: self.meta_store_config.take(),
                 };
                 let (namespaces, proxy_service, replication_service) = replica.configure().await?;
                 self.rpc_client_config = None;
@@ -428,6 +432,7 @@ where
                     max_active_namespaces: self.max_active_namespaces,
                     join_set: &mut join_set,
                     auth: auth.clone(),
+                    meta_store_config: self.meta_store_config.take(),
                 };
                 let (namespaces, proxy_service, replication_service) = primary.configure().await?;
                 self.rpc_server_config = None;
@@ -494,6 +499,7 @@ struct Primary<'a, A> {
     max_active_namespaces: usize,
     auth: Arc<Auth>,
     join_set: &'a mut JoinSet<anyhow::Result<()>>,
+    meta_store_config: Option<MetaStoreConfig>,
 }
 
 impl<A> Primary<'_, A>
@@ -608,6 +614,7 @@ struct Replica<C> {
     base_path: Arc<Path>,
     auth: Arc<Auth>,
     max_active_namespaces: usize,
+    meta_store_config: Option<MetaStoreConfig>,
 }
 
 impl<C: Connector> Replica<C> {
