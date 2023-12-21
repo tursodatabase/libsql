@@ -92,12 +92,19 @@ where
                 b.install_recorder().unwrap()
             }
         });
+
+        tokio::task::spawn(async move {
+            loop {
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+
+                crate::metrics::SERVER_COUNT.set(1.0);
+            }
+        });
+
         Some(prom_handle.clone())
     } else {
         None
     };
-
-    metrics::increment_counter!("libsql_server_count");
 
     use axum::routing::{get, post};
     let metrics = Metrics {

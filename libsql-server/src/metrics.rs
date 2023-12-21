@@ -117,3 +117,8 @@ pub static DIRTY_STARTUP: Lazy<Counter> = Lazy::new(|| {
     );
     register_counter!(NAME)
 });
+pub static SERVER_COUNT: Lazy<Gauge> = Lazy::new(|| {
+    const NAME: &str = "libsql_server_count";
+    describe_gauge!(NAME, "a gauge counting the number of active servers");
+    register_gauge!(NAME)
+});
