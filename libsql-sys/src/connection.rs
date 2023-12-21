@@ -84,6 +84,8 @@ impl<W: Wal> Connection<W> {
                     make_wal_manager(wal_manager),
                 )
             }?;
+            conn.pragma_update(None, "key", "heyhey")?;
+            tracing::debug!("KEY set to heyhey");
             conn.pragma_update(None, "journal_mode", "WAL")?;
             unsafe {
                 let rc =
