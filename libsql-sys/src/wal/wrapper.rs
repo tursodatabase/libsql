@@ -17,6 +17,14 @@ where
     pub fn new(wrapper: T, wrapped: W) -> Self {
         Self { wrapper, wrapped }
     }
+
+    pub fn wrapped(&self) -> &W {
+        &self.wrapped
+    }
+
+    pub fn wrapper(&self) -> &T {
+        &self.wrapper
+    }
 }
 
 pub struct WrappedWal<T, W> {
