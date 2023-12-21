@@ -165,7 +165,7 @@ impl ReplicationLog for ReplicationLogService {
         let req = req.into_inner();
         let logger = self
             .namespaces
-            .with(namespace, |ns| ns.db.wal_manager.logger())
+            .with(namespace, |ns| ns.db.wal_manager.wrapped().logger())
             .await
             .map_err(|e| {
                 if let crate::error::Error::NamespaceDoesntExist(_) = e {
@@ -196,7 +196,7 @@ impl ReplicationLog for ReplicationLogService {
         let req = req.into_inner();
         let logger = self
             .namespaces
-            .with(namespace, |ns| ns.db.wal_manager.logger().clone())
+            .with(namespace, |ns| ns.db.wal_manager.wrapped().logger().clone())
             .await
             .map_err(|e| {
                 if let crate::error::Error::NamespaceDoesntExist(_) = e {
@@ -240,7 +240,7 @@ impl ReplicationLog for ReplicationLogService {
 
         let logger = self
             .namespaces
-            .with(namespace, |ns| ns.db.wal_manager.logger().clone())
+            .with(namespace, |ns| ns.db.wal_manager.wrapped().logger().clone())
             .await
             .map_err(|e| {
                 if let crate::error::Error::NamespaceDoesntExist(_) = e {
@@ -272,7 +272,7 @@ impl ReplicationLog for ReplicationLogService {
 
         let logger = self
             .namespaces
-            .with(namespace, |ns| ns.db.wal_manager.logger().clone())
+            .with(namespace, |ns| ns.db.wal_manager.wrapped().logger().clone())
             .await
             .unwrap();
         let offset = req.next_offset;

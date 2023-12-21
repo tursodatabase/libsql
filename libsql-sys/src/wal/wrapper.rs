@@ -1,9 +1,11 @@
-use std::{ffi::c_int, num::NonZeroU32};
+use std::ffi::c_int;
+use std::num::NonZeroU32;
 
 use super::{Wal, WalManager};
 
 /// A convenient wrapper struct that implement WAL with a `wrapper` where the wrapper needs to
 /// implement `WrapWal` instead of `Wal`, where all methods delegate to wrapped by default.
+#[derive(Clone)]
 pub struct WalWrapper<T, W> {
     wrapper: T,
     wrapped: W,

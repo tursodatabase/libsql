@@ -9,7 +9,6 @@ use std::sync::{Arc, Weak};
 
 use anyhow::Context as _;
 use async_lock::RwLock;
-use bottomless::bottomless_wal::CreateBottomlessWal;
 use bottomless::replicator::Options;
 use bytes::Bytes;
 use chrono::NaiveDateTime;
@@ -41,7 +40,6 @@ use crate::connection::MakeConnection;
 use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
-use crate::replication::primary::replication_logger_wal::ReplicationLoggerWalManager;
 use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
@@ -52,9 +50,8 @@ use crate::{
 use crate::namespace::fork::PointInTimeRestore;
 pub use fork::ForkError;
 
+use self::replication_wal::make_replication_wal;
 use self::fork::ForkTask;
-use self::replication_wal::ReplicationWalManager;
-
 use self::meta_store::{MetaStore, MetaStoreHandle};
 
 pub type ResetCb = Box<dyn Fn(ResetOp) + Send + Sync + 'static>;
@@ -307,7 +304,7 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         let fork_task = ForkTask {
             base_path: self.config.base_path.clone(),
             dest_namespace: to,
-            logger: from.db.wal_manager.logger(),
+            logger: from.db.wal_manager.wrapped().logger(),
             make_namespace: self,
             restore_to,
             bottomless_db_id,
@@ -1083,15 +1080,7 @@ impl Namespace<PrimaryDatabase> {
         )
         .await?;
 
-        let base_wal_manager = ReplicationLoggerWalManager::new(logger.clone());
-        let wal_manager = match bottomless_replicator {
-            Some(replicator) => ReplicationWalManager::Bottomless(CreateBottomlessWal::new(
-                base_wal_manager,
-                replicator,
-            )),
-            None => ReplicationWalManager::Logger(base_wal_manager),
-        };
-
+        let wal_manager = make_replication_wal(bottomless_replicator, logger.clone());
         let connection_maker: Arc<_> = MakeLibSqlConn::new(
             db_path.clone(),
             wal_manager.clone(),
