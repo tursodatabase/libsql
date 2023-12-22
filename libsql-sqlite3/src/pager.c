@@ -699,6 +699,10 @@ struct Pager {
 #ifndef SQLITE_OMIT_WAL
   RefCountedWalManager* wal_manager;
   libsql_wal *wal;
+  char *zWal;                 /* Name of the WAL file:
+                                FIXME: to remove, and be handled by virtual WAL.
+                                We leave it temporarily to keep sqlite3_filename_wal working
+                              */
 #endif
 };
 
@@ -4866,6 +4870,7 @@ int sqlite3PagerOpen(
     4 +                                  /* Database prefix */
     nPathname + 1 +                      /* database filename */
     nUriByte +                           /* query parameters */
+    nPathname + 4 + 1 +                  /* WAL filename (FIXME: move to virtual WAL) */
     nPathname + 8 + 1 +                  /* Journal filename */
     3                                    /* Terminator */
   );
@@ -4908,6 +4913,23 @@ int sqlite3PagerOpen(
   }else{
     pPager->zJournal = 0;
   }
+
+  /* Fill in Pager.zWal: FIXME: it will make sqlite3_filename_database work for regular WAL,
+     but those routines need to be rewritten to take virtual WAL into account. */
+#ifndef SQLITE_OMIT_WAL
+  /* Fill in Pager.zWal */
+  if( nPathname>0 ){
+    pPager->zWal = (char*)pPtr;
+    memcpy(pPtr, zPathname, nPathname);   pPtr += nPathname;
+    memcpy(pPtr, "-wal", 4);              pPtr += 4 + 1;
+#ifdef SQLITE_ENABLE_8_3_NAMES
+    sqlite3FileSuffix3(zFilename, pPager->zWal);
+    pPtr = (u8*)(pPager->zWal + sqlite3Strlen30(pPager->zWal)+1);
+#endif
+  }else{
+    pPager->zWal = 0;
+  }
+#endif
 
 #ifndef SQLITE_OMIT_WAL
   pPager->wal = NULL;
