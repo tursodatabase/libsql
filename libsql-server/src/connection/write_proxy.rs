@@ -343,12 +343,7 @@ where
                         move || -> Result<bool> {
                             let mut ctx = cb_context.lock();
                             let (ref mut response_cb, ref mut arg) = *ctx;
-                            if !response_cb(resp.response.ok_or(Error::PrimaryStreamMisuse)?, arg)?
-                            {
-                                Ok(false)
-                            } else {
-                                Ok(true)
-                            }
+                            response_cb(resp.response.ok_or(Error::PrimaryStreamMisuse)?, arg)
                         }
                     })
                     .await

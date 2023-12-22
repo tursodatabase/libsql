@@ -28,7 +28,7 @@ use crate::query_result_builder::{
 };
 use crate::replication::FrameNo;
 
-const MAX_RESPONSE_SIZE: usize = bytesize::ByteSize::mb(1).as_u64() as usize;
+const MAX_RESPONSE_SIZE: usize = bytesize::ByteSize::kb(100).as_u64() as usize;
 
 pub fn make_proxy_stream<S, C>(
     conn: C,
@@ -148,6 +148,7 @@ where
                     }
                 },
                 Some(res) = recv.recv() => {
+                    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
                     yield Ok(res);
                 },
                 (ret, request_id) = &mut current_request_fut => {

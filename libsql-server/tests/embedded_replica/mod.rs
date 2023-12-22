@@ -452,7 +452,10 @@ fn replica_no_resync_on_restart() {
 
 #[test]
 fn replicate_with_snapshots() {
-    let mut sim = Builder::new().tcp_capacity(200).build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .tcp_capacity(200)
+        .build();
 
     let tmp = tempdir().unwrap();
 
