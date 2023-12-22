@@ -100,11 +100,11 @@ namespace eval trd {
   }
   set build(All-Sanitize) { 
     -DSQLITE_OMIT_LOOKASIDE=1
-    --enable-all -fsanitize=address,undefined 
+    --enable-all -fsanitize=address,undefined -fno-sanitize-recover=undefined
   }
 
   set build(Sanitize) {
-    CC=clang -fsanitize=address,undefined
+    CC=clang -fsanitize=address,undefined -fno-sanitize-recover=undefined
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_OMIT_LOOKASIDE=1
     -DCONFIG_SLOWDOWN_FACTOR=5.0
