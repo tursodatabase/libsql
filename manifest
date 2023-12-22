@@ -1,5 +1,5 @@
-C Add\sinternal\score-developer-only\sdocumentation\sof\sthe\sJSONB\sformat.
-D 2023-12-21T18:08:05.881
+C Add\sa\snew\scomment\sto\sdebugging\soutput\sroutine\ssqlite3WhereLoopPrint()\sto\nremind\sus\sof\swhat\sthe\svarious\sfields\sof\sthe\sdebug\soutput\smean.\s\sNo\schanges\nto\scode.
+D 2023-12-22T12:57:49.653
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -822,7 +822,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c e5247a3406531b705b44630e9ccf9ca0e5c74955ef19c06fbb146d765c500c20
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c e80c22f033edc5bdaf992e32bb740831d90a19e8bc3e68523a27add2478c1f65
+F src/where.c 3c171949ddb5994b1bcf571130bc125fb3197fd1c86ed47c55c9fc0d8d7d0a67
 F src/whereInt.h 4b38c5889514e3aead3f27d0ee9a26e47c3f150efc59e2a8b4e3bc8835e4d7a1
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 029a05cd2928d43d81e4549cce5388c432e2c9e75e3fa0b2fe6e91021b2fb9ac
-R 37c4deae61c278596f4d5133c7cb9761
+P 4d30478863b2a60512010de9ec6e3099bfaf75d4afee20acec536713fe94334d
+R bb6cc7c6adcae554d705e47acb1f531c
 U drh
-Z eab6e0f06a97a969bebac69bfb9fe946
+Z 17fb9a9e25ef316e762bdf861f70c582
 # Remove this line to create a well-formed Fossil manifest.

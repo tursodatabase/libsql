@@ -2245,6 +2245,18 @@ void sqlite3WhereClausePrint(WhereClause *pWC){
 #ifdef WHERETRACE_ENABLED
 /*
 ** Print a WhereLoop object for debugging purposes
+**
+** Format example:
+**
+**     .--- Position in WHERE clause           rSetup, rRun, nOut ---.
+**     |                                                             |
+**     |  .--- selfMask                       nTerm ------.          |
+**     |  |                                               |          |
+**     |  |   .-- prereq    Idx          wsFlags----.     |          |
+**     |  |   |             Name                    |     |          |
+**     |  |   |           __|__        nEq ---.  ___|__   |        __|__
+**     | / \ / \         /     \              | /      \ / \      /     \
+**     1.002.001         t2.t2xy              2 f 010241 N 2 cost 0,56,31
 */
 void sqlite3WhereLoopPrint(WhereLoop *p, WhereClause *pWC){
   WhereInfo *pWInfo = pWC->pWInfo;
