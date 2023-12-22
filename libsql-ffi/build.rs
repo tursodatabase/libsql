@@ -24,21 +24,34 @@ fn main() {
 fn make_amalgation() {
     let flags = ["-DSQLITE_ENABLE_COLUMN_METADATA=1"];
 
-    Command::new("make")
-        .current_dir(SQLITE_DIR)
-        .arg("clean")
-        .output()
-        .unwrap();
+    if std::env::var_os("CARGO_CFG_WINDOWS").is_some() {
+        Command::new("nmake")
+            .current_dir(SQLITE_DIR)
+            .arg("/f Makefile.msc")
+            .output()
+            .unwrap();
+        Command::new("nmake")
+            .current_dir(SQLITE_DIR)
+            .arg("/f Makefile.msc sqlite3.c")
+            .output()
+            .unwrap();
+    } else {
+        Command::new("make")
+            .current_dir(SQLITE_DIR)
+            .arg("clean")
+            .output()
+            .unwrap();
 
-    Command::new("./configure")
-        .current_dir(SQLITE_DIR)
-        .env("CFLAGS", flags.join(" "))
-        .output()
-        .unwrap();
-    Command::new("make")
-        .current_dir(SQLITE_DIR)
-        .output()
-        .unwrap();
+        Command::new("./configure")
+            .current_dir(SQLITE_DIR)
+            .env("CFLAGS", flags.join(" "))
+            .output()
+            .unwrap();
+        Command::new("make")
+            .current_dir(SQLITE_DIR)
+            .output()
+            .unwrap();
+    }
 
     std::fs::copy(
         (SQLITE_DIR.as_ref() as &Path).join("sqlite3.c"),
