@@ -2258,7 +2258,7 @@ void sqlite3WhereClausePrint(WhereClause *pWC){
 **     | / \ / \         /     \              | /      \ / \      /     \
 **     1.002.001         t2.t2xy              2 f 010241 N 2 cost 0,56,31
 */
-void sqlite3WhereLoopPrint(WhereLoop *p, WhereClause *pWC){
+void sqlite3WhereLoopPrint(const WhereLoop *p, const WhereClause *pWC){
   WhereInfo *pWInfo = pWC->pWInfo;
   int nb = 1+(pWInfo->pTabList->nSrc+3)/4;
   SrcItem *pItem = pWInfo->pTabList->a + p->iTab;

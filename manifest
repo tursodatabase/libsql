@@ -1,5 +1,5 @@
-C Add\sthe\s-fno-sanitize-recover=undefined\sto\sthe\ssanitizer\sbuilds\sused\sfor\ssdevtest\sand\srelease\stesting.\sTo\sensure\sthat\sany\stest\sthat\sprovokes\sundefined\sbehaviour\sfails.
-D 2023-12-22T16:03:45.305
+C Change\sparameters\son\sa\sdebugging\sfunction\sto\sinclude\s"const".
+D 2023-12-22T21:22:55.369
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -822,8 +822,8 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c e5247a3406531b705b44630e9ccf9ca0e5c74955ef19c06fbb146d765c500c20
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 3c171949ddb5994b1bcf571130bc125fb3197fd1c86ed47c55c9fc0d8d7d0a67
-F src/whereInt.h 4b38c5889514e3aead3f27d0ee9a26e47c3f150efc59e2a8b4e3bc8835e4d7a1
+F src/where.c a97ed10fccacadff0377243ec277046dec572b86e8819621d2851de95210e1e9
+F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
 F src/window.c 5b1387d59df30d481ed14cceef5f4d1dab1f8752aa106ba72c8b62777bd139d2
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f22d809a1c6c80e381f6bcd931fe4ec36dca0e28d07ab4f4f7f83c813424f60
-R 0b3afe428e241ba40819bcf8993b604e
-U dan
-Z 0e99aa8a06949f0b1d93d30c00bd8ab5
+P 89563311adb0ab7c7a3eadb11c2e27fbca50c56fce8ca616628facbc00d72b88
+R b050502a9d7d16c5a5f212017732a147
+U drh
+Z 4b93a4c74d01e1f20841ce3c527299a7
 # Remove this line to create a well-formed Fossil manifest.
