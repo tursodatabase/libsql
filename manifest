@@ -1,5 +1,5 @@
-C Fix\sa\susan\scomplaint\sabout\ssigned\sinteger\soverflow.
-D 2023-12-22T14:47:30.926
+C Update\s#ifdef\schecks\sin\spager.c\sand\sutil.c\sto\saccount\sfor\s[0462a2612d1fc1d0]\sto\sresolve\sthe\sbuild\sproblem\sreported\sin\s[forum:9819032aac|forum\spost\s9819032aac].
+D 2023-12-22T15:41:13.699
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -724,7 +724,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c 1672c708df279fca1b6ba619cbb26a88baa7913b21dda95817290d76666a9688
 F src/os_win.c 4a50a154aeebc66a1f8fb79c1ff6dd5fe3d005556533361e0d460d41cb6a45a8
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c dc0cccda12d1675f461ef47090ec6bd7bb7611e77dbf5e0796667120d9b67f37
+F src/pager.c fef16beb072d934ca4f3ef496b2b65703fe2291c4b858782a94cf031c626e816
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
 F src/parse.y 020d80386eb216ec9520549106353c517d2bbc89be28752ffdca649a9eaf56ec
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
@@ -805,7 +805,7 @@ F src/trigger.c 0905b96b04bb6658509f711a8207287f1315cdbc3df1a1b13ba6483c8e341c81
 F src/update.c 6904814dd62a7a93bbb86d9f1419c7f134a9119582645854ab02b36b676d9f92
 F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
 F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
-F src/util.c b22cc9f203a8c0b9ee5338a67f8860347d14845864c10248bebe84518a781677
+F src/util.c 078f040366d5bd5f47658d045f901c768c1c636c6eaea121f3a1cbd63c3edb5b
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
 F src/vdbe.c 96ac876e57f480bd35ec8d74ed992bca6ae9deebe8b527a3a718e7b4714d6c2e
 F src/vdbe.h 88e19a982df9027ec1c177c793d1a5d34dc23d8f06e3b2d997f43688b05ee0eb
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P da5f34fd4052432b1ae27bb12e56b358cdc5c1282653d60ed0f0fe62f727e4ee
-R 2c6195726c124c3dadd04ddbe5a976af
-U dan
-Z 5c86608ddefb4b77281d134add392a7d
+P e65907e0279f4814ec957f0790777d8b94a86926cd27c52442b311b27efc0185
+R f2929f99f64e2aabe695286ebcbb1f7d
+U stephan
+Z 9fe589dab0cefe8e50c14fab29339e68
 # Remove this line to create a well-formed Fossil manifest.
