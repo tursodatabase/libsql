@@ -67,7 +67,15 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     let dir = env!("CARGO_MANIFEST_DIR");
     std::fs::copy(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
 
-    std::fs::copy(format!("{BUNDLED_DIR}/libsqlite3mc.so"), format!("{out_dir}/libsqlite3mc.so")).unwrap();
+    let output = Command::new("./build_libsqlite3mc.sh")
+        .current_dir(BUNDLED_DIR)
+        .output()
+        .unwrap();
+    std::fs::copy(
+        format!("{BUNDLED_DIR}/SQLite3MultipleCiphers/build/libsqlite3mc.so"),
+        format!("{out_dir}/libsqlite3mc.so"),
+    )
+    .unwrap();
     println!("cargo:rustc-link-lib=dylib=sqlite3mc");
     println!("cargo:rustc-link-search={out_dir}");
 
