@@ -492,5 +492,27 @@ foreach disabled_opt {none omit-noop-join all} {
   } {123}
 }
 
+# 2023-12-23
+# https://sqlite.org/forum/forumpost/2568d1f6e6
+#
+# Index usage should be "x=? and y=?" - equality on both values.
+# Not: "x=? AND y>?" - inequality on "y"
+# 
+reset_db
+do_execsql_test where3-8.1 {
+  CREATE TABLE t1(a,b,c,d);  INSERT INTO t1 VALUES(1,2,3,4);
+  CREATE TABLE t2(x,y);      INSERT INTO t2 VALUES(3,4);
+  CREATE INDEX t2xy ON t2(x,y);
+  SELECT 1 FROM t1 JOIN t2 ON x=c AND y=d WHERE d>0;
+} 1
+do_eqp_test where3-8.2 {
+  SELECT 1 FROM t1 JOIN t2 ON x=c AND y=d WHERE d>0;
+} {
+  QUERY PLAN
+  |--SCAN t1
+  `--SEARCH t2 USING COVERING INDEX t2xy (x=? AND y=?)
+}
+
+
 
 finish_test
