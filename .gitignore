@@ -6,6 +6,3 @@
 libsql-server/testrollbackrestore/**
 libsql-server/testbackuprestore/**
 libsql-sqlite3/**.o.tmp
-
-/Cargo.lock
-
