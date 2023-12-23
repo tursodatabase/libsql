@@ -2259,15 +2259,20 @@ void sqlite3WhereClausePrint(WhereClause *pWC){
 **     1.002.001         t2.t2xy              2 f 010241 N 2 cost 0,56,31
 */
 void sqlite3WhereLoopPrint(const WhereLoop *p, const WhereClause *pWC){
-  WhereInfo *pWInfo = pWC->pWInfo;
-  int nb = 1+(pWInfo->pTabList->nSrc+3)/4;
-  SrcItem *pItem = pWInfo->pTabList->a + p->iTab;
-  Table *pTab = pItem->pTab;
-  Bitmask mAll = (((Bitmask)1)<<(nb*4)) - 1;
-  sqlite3DebugPrintf("%c%2d.%0*llx.%0*llx", p->cId,
-                     p->iTab, nb, p->maskSelf, nb, p->prereq & mAll);
-  sqlite3DebugPrintf(" %12s",
-                     pItem->zAlias ? pItem->zAlias : pTab->zName);
+  if( pWC ){
+    WhereInfo *pWInfo = pWC->pWInfo;
+    int nb = 1+(pWInfo->pTabList->nSrc+3)/4;
+    SrcItem *pItem = pWInfo->pTabList->a + p->iTab;
+    Table *pTab = pItem->pTab;
+    Bitmask mAll = (((Bitmask)1)<<(nb*4)) - 1;
+    sqlite3DebugPrintf("%c%2d.%0*llx.%0*llx", p->cId,
+                       p->iTab, nb, p->maskSelf, nb, p->prereq & mAll);
+    sqlite3DebugPrintf(" %12s",
+                       pItem->zAlias ? pItem->zAlias : pTab->zName);
+  }else{
+    sqlite3DebugPrintf("%c%2d.%03llx.%03llx %c%d",
+         p->cId, p->iTab, p->maskSelf, p->prereq & 0xfff, p->cId, p->iTab);
+  }
   if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
     const char *zName;
     if( p->u.btree.pIndex && (zName = p->u.btree.pIndex->zName)!=0 ){
@@ -2302,6 +2307,15 @@ void sqlite3WhereLoopPrint(const WhereLoop *p, const WhereClause *pWC){
     for(i=0; i<p->nLTerm; i++){
       sqlite3WhereTermPrint(p->aLTerm[i], i);
     }
+  }
+}
+void sqlite3ShowWhereLoop(const WhereLoop *p){
+  sqlite3WhereLoopPrint(p, 0);
+}
+void sqlite3ShowWhereLoopList(const WhereLoop *p){
+  while( p ){
+    sqlite3WhereLoopPrint(p, 0);
+    p = p->pNextLoop;
   }
 }
 #endif
