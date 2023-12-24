@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sassociated\swith\s[5db30bcc338aac1c]
-D 2023-12-24T11:43:49.460
+C Remove\san\sALWAYS()\sadded\sin\s[c50e6c2ace49d092]\sbecause\sit\sis\ssometimes\sfalse.\ndbsqlfuzz\sc393a4f783d42efd9552772110aff7e5d937f15e.
+D 2023-12-24T12:02:36.449
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -687,7 +687,7 @@ F src/date.c 3b8d02977d160e128469de38493b4085f7c5cf4073193459909a6af3cf6d7c91
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
 F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
-F src/expr.c 125e6966297727b5d647d73893873b5d0730377f73208dc70e39dea9aa29f366
+F src/expr.c 3381ee4c9aa7ccde22a2a7f35ce343925a7a25d96bdc943649131f9decdebad2
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c a47610f0a5c6cb0ad79f8fcef039c01833dec0c751bb695f28dc0ec6a4c3ba00
 F src/func.c 472f6dcfa39cf54f89a6aec76c79c225fb880a6c14469c15d361331662b9bf43
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5937df3b25799eceaadfb04d7226c9995d44c8d8edb5ac3ad02af9d7e3570726
-R f383e5dfc66b947bc00ea28ad85dc8b1
+P e55d1c2333f35fc20615aa83a7843d08cae7945710a2156d44eee0cc37d90ade
+R 3402eea35cb157b90bc34e52efc1a052
 U drh
-Z 93113c6d4b8e5085563bd90cb3fc82d6
+Z 3f09f0e552099f2a662787477373f861
 # Remove this line to create a well-formed Fossil manifest.

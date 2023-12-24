@@ -6476,7 +6476,7 @@ static int exprRefToSrcList(Walker *pWalker, Expr *pExpr){
     int i;
     struct RefSrcList *p = pWalker->u.pRefSrcList;
     SrcList *pSrc = p->pRef;
-    int nSrc = ALWAYS(pSrc) ? pSrc->nSrc : 0;
+    int nSrc = pSrc ? pSrc->nSrc : 0;
     for(i=0; i<nSrc; i++){
       if( pExpr->iTable==pSrc->a[i].iCursor ){
         pWalker->eCode |= 1;
