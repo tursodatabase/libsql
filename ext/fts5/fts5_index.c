@@ -7944,7 +7944,7 @@ static void fts5IndexIntegrityCheckEmpty(
 }
 
 static void fts5IntegrityCheckPgidx(Fts5Index *p, Fts5Data *pLeaf){
-  int iTermOff = 0;
+  i64 iTermOff = 0;
   int ii;
 
   Fts5Buffer buf1 = {0,0,0};
@@ -7953,7 +7953,7 @@ static void fts5IntegrityCheckPgidx(Fts5Index *p, Fts5Data *pLeaf){
   ii = pLeaf->szLeaf;
   while( ii<pLeaf->nn && p->rc==SQLITE_OK ){
     int res;
-    int iOff;
+    i64 iOff;
     int nIncr;
 
     ii += fts5GetVarint32(&pLeaf->p[ii], nIncr);

@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\squery\splanner\sto\saddress\sthe\sinefficiency\sdescribed\nby\s[forum/forumpost/2568d1f6e6|forum\spost\s2568d1f6e6].
-D 2023-12-23T19:03:50.123
+C Avoid\ssigned\sinteger\soverflow\sduring\sintegrity_check\sof\sFTS5.
+D 2023-12-24T11:31:20.545
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -97,7 +97,7 @@ F ext/fts5/fts5_buffer.c 0eec58bff585f1a44ea9147eae5da2447292080ea435957f7488c70
 F ext/fts5/fts5_config.c 8072a207034b51ae9b7694121d1b5715c794e94b275e088f70ae532378ca5cdf
 F ext/fts5/fts5_expr.c 248ecadbacdbeb85c433f907e57bb91224678c829e57ecf098e3543b5df8c3f9
 F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a0ec91b1
-F ext/fts5/fts5_index.c cf00132cf9c81e2be2e98f2c96d7c81de07935177e9868750b620c9bd843bb96
+F ext/fts5/fts5_index.c bb1965c3965f6fe5f64160bf1c0694a9684a790a783f293a76da1d38d319b258
 F ext/fts5/fts5_main.c b908696c52410e8383019ac0657c8a5cd0c8f60e78edc169e9b3c4b93f24c933
 F ext/fts5/fts5_storage.c f9e31b0d155e9b2c92d5d3a09ad7a56b937fbf1c7f962e10f4ca6281349f3934
 F ext/fts5/fts5_tcl.c cf0fd0dbe64ec272491b749e0d594f563cda03336aeb60900129e6d18b0aefb8
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5db30bcc338aac1cf081de2deec7e60749ae012e2b6f95ccf745623adb4a31dc
-R 448157c6fb649e47b8145db2a0559aa3
+P 72fcc12cda910a0e3f7875eb3d117b2a5608705c97703985427a02960f1ab5c5
+R 9dd3dbd9eae73b546b307507a5926f2d
 U drh
-Z 1a62d7dd3eca74dd62a870ea245ac4e3
+Z 09eda7ff6cea8413533fe43e801321e8
 # Remove this line to create a well-formed Fossil manifest.
