@@ -2310,11 +2310,11 @@ void sqlite3WhereLoopPrint(const WhereLoop *p, const WhereClause *pWC){
   }
 }
 void sqlite3ShowWhereLoop(const WhereLoop *p){
-  sqlite3WhereLoopPrint(p, 0);
+  if( p ) sqlite3WhereLoopPrint(p, 0);
 }
 void sqlite3ShowWhereLoopList(const WhereLoop *p){
   while( p ){
-    sqlite3WhereLoopPrint(p, 0);
+    sqlite3ShowWhereLoop(p);
     p = p->pNextLoop;
   }
 }
@@ -6643,6 +6643,11 @@ whereBeginError:
     pParse->nQueryLoop = pWInfo->savedNQueryLoop;
     whereInfoFree(db, pWInfo);
   }
+#ifdef WHERETRACE_ENABLED
+  /* Prevent harmless compiler warnings about debugging routines
+  ** being declared but never used */
+  sqlite3ShowWhereLoopList(0);
+#endif /* WHERETRACE_ENABLED */
   return 0;
 }
 
