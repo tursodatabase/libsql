@@ -22,12 +22,12 @@ impl CloudflareSender {
         };
 
         let mut response = Fetch::Request(Request::new_with_init(
-            url,
+            url.as_ref(),
             &RequestInit {
                 body: Some(JsValue::from(body)),
                 headers: {
                     let mut headers = Headers::new();
-                    headers.append("Authorization", auth)?;
+                    headers.append("Authorization", auth.as_ref())?;
                     headers
                 },
                 cf: CfProperties::new(),
