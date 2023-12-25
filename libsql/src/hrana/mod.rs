@@ -208,7 +208,7 @@ pub struct HranaRows<S> {
 
 impl<S> HranaRows<S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     async fn from_cursor(cursor: Cursor<S>) -> Result<Self> {
         let cursor_step = cursor.next_step_owned().await?;

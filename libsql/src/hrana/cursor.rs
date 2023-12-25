@@ -192,7 +192,7 @@ pub struct OwnedCursorStep<S> {
 
 impl<S> OwnedCursorStep<S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     async fn new(mut cursor: Cursor<S>) -> Result<Self> {
         let begin = get_next_step(&mut cursor).await?;
@@ -243,7 +243,7 @@ where
 
 impl<S> Stream for OwnedCursorStep<S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     type Item = Result<Row>;
 
@@ -279,7 +279,7 @@ pub struct CursorStep<'a, S> {
 
 impl<'a, S> CursorStep<'a, S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     async fn new(cursor: &'a mut Cursor<S>) -> Result<CursorStep<'a, S>> {
         let begin = get_next_step(cursor).await?;
@@ -321,7 +321,7 @@ where
 
 async fn get_next_step<S>(cursor: &mut Cursor<S>) -> Result<StepBeginEntry>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     let mut begin = None;
     while let Some(res) = cursor.next().await {

@@ -99,7 +99,7 @@ hrana = [
   "dep:futures",
   "dep:tokio",
   "dep:tokio-util",
-  "dep:bytes",
+  "dep:bytes"
 ]
 serde = ["dep:serde"]
 remote = [

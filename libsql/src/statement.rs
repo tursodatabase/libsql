@@ -2,6 +2,11 @@ use crate::params::IntoParams;
 use crate::params::Params;
 pub use crate::Column;
 use crate::{Error, Result};
+<<<<<<< HEAD
+=======
+use std::task::{Context, Poll};
+
+>>>>>>> efd7d8f49b (replaced custom read lines with tokio-util::Lines)
 use crate::{Row, Rows};
 
 #[async_trait::async_trait]

@@ -17,7 +17,7 @@ use hyper::body::HttpBody;
 use std::io::ErrorKind;
 use std::sync::Arc;
 
-pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Send + Sync + Unpin>;
+pub type ByteStream = Box<dyn Stream<Item = std::io::Result<Bytes>> + Send + Sync + Unpin>;
 
 #[derive(Clone, Debug)]
 pub struct HttpSender {
