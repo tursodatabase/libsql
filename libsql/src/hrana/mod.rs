@@ -38,7 +38,7 @@ struct Cookie {
 }
 
 pub trait HttpSend: Clone {
-    type Stream: Stream<Item = Result<Bytes>> + Unpin;
+    type Stream: Stream<Item = std::io::Result<Bytes>> + Unpin;
     type Result: Future<Output = Result<Self::Stream>>;
     fn http_send(&self, url: Arc<str>, auth: Arc<str>, body: String) -> Self::Result;
 
@@ -59,9 +59,9 @@ impl<S> From<Bytes> for HttpBody<S> {
 
 impl<S> Stream for HttpBody<S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
-    type Item = Result<Bytes>;
+    type Item = std::io::Result<Bytes>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         match self.get_mut() {
@@ -205,7 +205,7 @@ pub struct HranaRows<S> {
 
 impl<S> HranaRows<S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     async fn from_cursor(cursor: Cursor<S>) -> Result<Self> {
         let cursor_step = cursor.next_step_owned().await?;
@@ -240,7 +240,7 @@ where
 #[async_trait::async_trait]
 impl<S> RowsInner for HranaRows<S>
 where
-    S: Stream<Item = Result<Bytes>> + Send + Sync + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Send + Sync + Unpin,
 {
     async fn next(&mut self) -> crate::Result<Option<super::Row>> {
         self.next().await

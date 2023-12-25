@@ -2,7 +2,6 @@ use crate::params::IntoParams;
 use crate::params::Params;
 pub use crate::Column;
 use crate::{Error, Result};
-use std::pin::Pin;
 use std::task::{Context, Poll};
 
 use crate::{Row, Rows};
@@ -107,7 +106,10 @@ where
 {
     type Item = Result<T>;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    fn poll_next(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Option<Self::Item>> {
         use futures::{ready, Future};
 
         let mut rows = unsafe { self.as_mut().map_unchecked_mut(|pin| &mut pin.rows) };

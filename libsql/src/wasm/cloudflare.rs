@@ -2,6 +2,7 @@ use crate::hrana::{HranaError, HttpBody, HttpSend, Result};
 use bytes::Bytes;
 use futures::{ready, Stream};
 use std::future::Future;
+use std::io::ErrorKind;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
@@ -78,7 +79,7 @@ impl From<worker::Error> for HranaError {
 pub struct HttpStream(worker::ByteStream);
 
 impl Stream for HttpStream {
-    type Item = Result<Bytes>;
+    type Item = std::io::Result<Bytes>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let pin = Pin::new(&mut self.0);
@@ -86,10 +87,10 @@ impl Stream for HttpStream {
         match res {
             None => Poll::Ready(None),
             Some(Ok(data)) => Poll::Ready(Some(Ok(Bytes::from(data)))),
-            Some(Err(e)) => Poll::Ready(Some(Err(HranaError::Http(format!(
-                "cloudflare HTTP stream error: {}",
-                e
-            ))))),
+            Some(Err(e)) => Poll::Ready(Some(Err(std::io::Error::new(
+                ErrorKind::Other,
+                e.to_string(),
+            )))),
         }
     }
 }

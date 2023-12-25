@@ -14,9 +14,10 @@ use futures::{Stream, TryStreamExt};
 use http::header::AUTHORIZATION;
 use http::{HeaderValue, StatusCode};
 use hyper::body::HttpBody;
+use std::io::ErrorKind;
 use std::sync::Arc;
 
-pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Send + Sync + Unpin>;
+pub type ByteStream = Box<dyn Stream<Item = std::io::Result<Bytes>> + Send + Sync + Unpin>;
 
 #[derive(Clone, Debug)]
 pub struct HttpSender {
@@ -66,7 +67,7 @@ impl HttpSender {
             let stream = resp
                 .into_body()
                 .into_stream()
-                .map_err(|e| HranaError::Http(e.to_string()));
+                .map_err(|e| std::io::Error::new(ErrorKind::Other, e));
             super::HttpBody::Stream(Box::new(stream))
         };
 

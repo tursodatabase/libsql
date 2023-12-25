@@ -10,6 +10,8 @@ use std::collections::VecDeque;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
+use tokio::io::{AsyncBufReadExt, Lines};
+use tokio_util::io::StreamReader;
 
 #[derive(Serialize, Debug)]
 pub struct CursorReq {
@@ -62,24 +64,22 @@ pub struct ErrorEntry {
 }
 
 pub struct Cursor<S> {
-    stream: S,
-    buf: VecDeque<u8>,
+    stream: Lines<StreamReader<S, Bytes>>,
 }
 
 impl<S> Cursor<S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     pub(super) async fn open(stream: S) -> Result<(Self, CursorResp)> {
-        let mut cursor = Cursor {
-            stream,
-            buf: VecDeque::new(),
-        };
-        if let Some(line) = cursor.next_line().await {
-            let response: CursorResp = serde_json::from_str(&line?)?;
-            Ok((cursor, response))
-        } else {
-            Err(HranaError::CursorError(CursorResponseError::CursorClosed))
+        let stream = StreamReader::new(stream).lines();
+        let mut cursor = Cursor { stream };
+        match cursor.next_line().await? {
+            None => Err(HranaError::CursorError(CursorResponseError::CursorClosed)),
+            Some(line) => {
+                let response: CursorResp = serde_json::from_str(&line)?;
+                Ok((cursor, response))
+            }
         }
     }
 
@@ -137,44 +137,18 @@ where
         OwnedCursorStep::new(self).await
     }
 
-    pub async fn next_line(&mut self) -> Option<Result<String>> {
-        //TODO: this could be optimized into dedicated async STM
-        const NEW_LINE: u8 = '\n' as u8;
-        let mut len = self.buf.len();
-        let mut index = self.buf.iter().position(|b| *b == NEW_LINE);
-        while index.is_none() {
-            match self.stream.next().await {
-                Some(Err(e)) => return Some(Err(e.into())),
-                Some(Ok(bytes)) if !bytes.is_empty() => {
-                    index = bytes.iter().position(|b| *b == NEW_LINE).map(|i| i + len);
-                    self.buf.extend(bytes);
-                    len = self.buf.len();
-                }
-                _ => break,
-            };
-        }
-
-        let line: Vec<_> = if let Some(index) = index {
-            let line = self.buf.drain(..index).collect();
-            self.buf.pop_front(); // remove new line character from the buffer
-            line
-        } else {
-            self.buf.drain(..).collect()
-        };
-        if line.is_empty() {
-            None
-        } else {
-            let result = String::from_utf8(line).map_err(|_| {
-                HranaError::UnexpectedResponse("Response is not a valid UTF-8 string".to_string())
-            });
-            Some(result)
-        }
+    pub async fn next_line(&mut self) -> Result<Option<String>> {
+        Ok(self
+            .stream
+            .next_line()
+            .await
+            .map_err(|e| HranaError::CursorError(CursorResponseError::Other(e.to_string())))?)
     }
 }
 
 impl<S> Stream for Cursor<S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     type Item = Result<CursorEntry>;
 
@@ -182,9 +156,9 @@ where
         let mut fut = Box::pin(self.next_line());
         let res = ready!(Pin::new(&mut fut).poll(cx));
         match res {
-            None => Poll::Ready(None),
-            Some(Err(e)) => Poll::Ready(Some(Err(e))),
-            Some(Ok(line)) => {
+            Err(e) => Poll::Ready(Some(Err(e))),
+            Ok(None) => Poll::Ready(None),
+            Ok(Some(line)) => {
                 let entry: CursorEntry = match serde_json::from_str(line.as_str()) {
                     Ok(entry) => entry,
                     Err(e) => return Poll::Ready(Some(Err(e.into()))),
@@ -202,7 +176,7 @@ pub struct OwnedCursorStep<S> {
 
 impl<S> OwnedCursorStep<S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     async fn new(mut cursor: Cursor<S>) -> Result<Self> {
         let begin = get_next_step(&mut cursor).await?;
@@ -252,7 +226,7 @@ where
 
 impl<S> Stream for OwnedCursorStep<S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     type Item = Result<Row>;
 
@@ -267,7 +241,9 @@ where
                 self.cursor = None;
                 Poll::Ready(None)
             }
-            Some(Err(e)) => Poll::Ready(Some(Err(e))),
+            Some(Err(e)) => Poll::Ready(Some(Err(HranaError::CursorError(
+                CursorResponseError::Other(e.to_string()),
+            )))),
             Some(Ok(entry)) => {
                 let result = self.state.update(entry);
                 if result.is_none() {
@@ -286,7 +262,7 @@ pub struct CursorStep<'a, S> {
 
 impl<'a, S> CursorStep<'a, S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     async fn new(cursor: &'a mut Cursor<S>) -> Result<CursorStep<'a, S>> {
         let begin = get_next_step(cursor).await?;
@@ -328,7 +304,7 @@ where
 
 async fn get_next_step<S>(cursor: &mut Cursor<S>) -> Result<StepBeginEntry>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     let mut begin = None;
     while let Some(res) = cursor.next().await {
@@ -364,7 +340,7 @@ where
 
 impl<'a, S> Stream for CursorStep<'a, S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     type Item = Result<Row>;
 
@@ -433,14 +409,13 @@ impl CursorStepState {
 #[cfg(test)]
 mod test {
     use crate::hrana::cursor::Cursor;
-    use crate::hrana::Result;
     use crate::rows::RowInner;
     use crate::Value;
     use bytes::Bytes;
     use futures::{Stream, StreamExt};
     use serde_json::json;
 
-    type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Unpin>;
+    type ByteStream = Box<dyn Stream<Item = std::io::Result<Bytes>> + Unpin>;
 
     fn byte_stream(entries: impl IntoIterator<Item = serde_json::Value>) -> ByteStream {
         let mut payload = Vec::new();

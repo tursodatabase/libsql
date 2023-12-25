@@ -381,13 +381,13 @@ where
 
 async fn stream_to_bytes<S>(mut stream: S) -> Result<Bytes>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     use futures::StreamExt;
 
     let mut buf = BytesMut::new();
     while let Some(chunk) = stream.next().await {
-        buf.extend_from_slice(&chunk?);
+        buf.extend_from_slice(&chunk.map_err(|e| HranaError::Http(e.to_string()))?);
     }
     Ok(buf.freeze())
 }

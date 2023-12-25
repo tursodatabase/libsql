@@ -33,7 +33,7 @@ pub(super) trait RowsInner {
 #[async_trait::async_trait(?Send)]
 impl<S> RowsInner for HranaRows<S>
 where
-    S: Stream<Item = crate::hrana::Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     async fn next(&mut self) -> crate::Result<Option<Row>> {
         self.next().await
