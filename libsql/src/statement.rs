@@ -2,7 +2,6 @@ use crate::params::IntoParams;
 use crate::params::Params;
 pub use crate::Column;
 use crate::{Error, Result};
-use futures::ready;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
@@ -101,6 +100,7 @@ impl<F> MappedRows<F> {
     }
 }
 
+#[cfg(feature = "core")]
 impl<F, T> futures::Stream for MappedRows<F>
 where
     F: FnMut(Row) -> Result<T> + Unpin,
@@ -108,7 +108,7 @@ where
     type Item = Result<T>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        use futures::Future;
+        use futures::{ready, Future};
 
         let mut rows = unsafe { self.as_mut().map_unchecked_mut(|pin| &mut pin.rows) };
         let mut fut = Box::pin(rows.next());

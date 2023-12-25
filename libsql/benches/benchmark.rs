@@ -54,7 +54,7 @@ fn bench(c: &mut Criterion) {
     group.bench_function("in-memory-select-1-unprepared", |b| {
         b.to_async(&rt).iter(|| async {
             let mut rows = conn.query("SELECT 1", ()).await.unwrap();
-            let row = rows.next().unwrap().unwrap();
+            let row = rows.next().await.unwrap().unwrap();
             assert_eq!(row.get::<i32>(0).unwrap(), 1);
         });
     });
@@ -93,7 +93,7 @@ fn bench(c: &mut Criterion) {
             || block_on(conn.prepare("SELECT 1")).unwrap(),
             |mut stmt| async move {
                 let mut rows = stmt.query(()).await.unwrap();
-                let row = rows.next().unwrap().unwrap();
+                let row = rows.next().await.unwrap().unwrap();
                 assert_eq!(row.get::<i32>(0).unwrap(), 1);
                 stmt.reset();
             },
@@ -113,7 +113,7 @@ fn bench(c: &mut Criterion) {
             || block_on(conn.prepare("SELECT * FROM users LIMIT 1")).unwrap(),
             |mut stmt| async move {
                 let mut rows = stmt.query(()).await.unwrap();
-                let row = rows.next().unwrap().unwrap();
+                let row = rows.next().await.unwrap().unwrap();
                 assert_eq!(row.get::<i32>(0).unwrap(), 1);
                 stmt.reset();
             },
@@ -128,7 +128,7 @@ fn bench(c: &mut Criterion) {
                 || block_on(conn.prepare("SELECT * FROM users LIMIT 100")).unwrap(),
                 |mut stmt| async move {
                     let mut rows = stmt.query(()).await.unwrap();
-                    let row = rows.next().unwrap().unwrap();
+                    let row = rows.next().await.unwrap().unwrap();
                     assert_eq!(row.get::<i32>(0).unwrap(), 1);
                     stmt.reset();
                 },
@@ -146,7 +146,7 @@ fn bench(c: &mut Criterion) {
     group.bench_function("local-replica-select-1-unprepared", |b| {
         b.to_async(&rt).iter(|| async {
             let mut rows = conn.query("SELECT 1", ()).await.unwrap();
-            let row = rows.next().unwrap().unwrap();
+            let row = rows.next().await.unwrap().unwrap();
             assert_eq!(row.get::<i32>(0).unwrap(), 1);
         });
     });
@@ -156,7 +156,7 @@ fn bench(c: &mut Criterion) {
             || block_on(conn.prepare("SELECT 1")).unwrap(),
             |mut stmt| async move {
                 let mut rows = stmt.query(()).await.unwrap();
-                let row = rows.next().unwrap().unwrap();
+                let row = rows.next().await.unwrap().unwrap();
                 assert_eq!(row.get::<i32>(0).unwrap(), 1);
                 stmt.reset();
             },
@@ -188,7 +188,7 @@ fn bench(c: &mut Criterion) {
                 || block_on(conn.prepare("SELECT * FROM users LIMIT 1")).unwrap(),
                 |mut stmt| async move {
                     let mut rows = stmt.query(()).await.unwrap();
-                    let row = rows.next().unwrap().unwrap();
+                    let row = rows.next().await.unwrap().unwrap();
                     assert_eq!(row.get::<i32>(0).unwrap(), 1);
                     stmt.reset();
                 },
@@ -204,7 +204,7 @@ fn bench(c: &mut Criterion) {
                 || block_on(conn.prepare("SELECT * FROM users LIMIT 100")).unwrap(),
                 |mut stmt| async move {
                     let mut rows = stmt.query(()).await.unwrap();
-                    let row = rows.next().unwrap().unwrap();
+                    let row = rows.next().await.unwrap().unwrap();
                     assert_eq!(row.get::<i32>(0).unwrap(), 1);
                     stmt.reset();
                 },
