@@ -84,7 +84,11 @@ impl HttpSend for HttpSender {
     }
 
     fn oneshot(self, url: Arc<str>, auth: Arc<str>, body: String) {
-        let _ = tokio::spawn(self.send(url, auth, body));
+        if let Ok(rt) = tokio::runtime::Handle::try_current() {
+            rt.spawn(self.send(url, auth, body));
+        } else {
+            tracing::warn!("couldn't send Hrana oneshot request: no tokio runtime active")
+        }
     }
 }
 
