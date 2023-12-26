@@ -1911,7 +1911,10 @@ static int fts5ApiColumnText(
 ){
   int rc = SQLITE_OK;
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
-  if( fts5IsContentless((Fts5FullTable*)(pCsr->base.pVtab)) 
+  Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
+  if( iCol<0 || iCol>=pTab->pConfig->nCol ){
+    rc = SQLITE_RANGE;
+  }else if( fts5IsContentless((Fts5FullTable*)(pCsr->base.pVtab)) 
    || pCsr->ePlan==FTS5_PLAN_SPECIAL 
   ){
     *pz = 0;
@@ -1936,8 +1939,9 @@ static int fts5CsrPoslist(
   int rc = SQLITE_OK;
   int bLive = (pCsr->pSorter==0);
 
-  if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_POSLIST) ){
-
+  if( iPhrase<0 || iPhrase>=sqlite3Fts5ExprPhraseCount(pCsr->pExpr) ){
+    rc = SQLITE_RANGE;
+  }else if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_POSLIST) ){
     if( pConfig->eDetail!=FTS5_DETAIL_FULL ){
       Fts5PoslistPopulator *aPopulator;
       int i;
@@ -1961,14 +1965,20 @@ static int fts5CsrPoslist(
     CsrFlagClear(pCsr, FTS5CSR_REQUIRE_POSLIST);
   }
 
-  if( pCsr->pSorter && pConfig->eDetail==FTS5_DETAIL_FULL ){
-    Fts5Sorter *pSorter = pCsr->pSorter;
-    int i1 = (iPhrase==0 ? 0 : pSorter->aIdx[iPhrase-1]);
-    *pn = pSorter->aIdx[iPhrase] - i1;
-    *pa = &pSorter->aPoslist[i1];
+  if( rc==SQLITE_OK ){
+    if( pCsr->pSorter && pConfig->eDetail==FTS5_DETAIL_FULL ){
+      Fts5Sorter *pSorter = pCsr->pSorter;
+      int i1 = (iPhrase==0 ? 0 : pSorter->aIdx[iPhrase-1]);
+      *pn = pSorter->aIdx[iPhrase] - i1;
+      *pa = &pSorter->aPoslist[i1];
+    }else{
+      *pn = sqlite3Fts5ExprPoslist(pCsr->pExpr, iPhrase, pa);
+    }
   }else{
-    *pn = sqlite3Fts5ExprPoslist(pCsr->pExpr, iPhrase, pa);
+    *pa = 0;
+    *pn = 0;
   }
+
 
   return rc;
 }

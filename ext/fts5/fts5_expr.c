@@ -1890,8 +1890,12 @@ int sqlite3Fts5ExprClonePhrase(
   Fts5ExprPhrase *pOrig;          /* The phrase extracted from pExpr */
   Fts5Expr *pNew = 0;             /* Expression to return via *ppNew */
   TokenCtx sCtx = {0,0,0};        /* Context object for fts5ParseTokenize */
-  pOrig = pExpr->apExprPhrase[iPhrase];
-  pNew = (Fts5Expr*)sqlite3Fts5MallocZero(&rc, sizeof(Fts5Expr));
+  if( iPhrase<0 || iPhrase>=pExpr->nPhrase ){
+    rc = SQLITE_RANGE;
+  }else{
+    pOrig = pExpr->apExprPhrase[iPhrase];
+    pNew = (Fts5Expr*)sqlite3Fts5MallocZero(&rc, sizeof(Fts5Expr));
+  }
   if( rc==SQLITE_OK ){
     pNew->apExprPhrase = (Fts5ExprPhrase**)sqlite3Fts5MallocZero(&rc, 
         sizeof(Fts5ExprPhrase*));
@@ -1918,25 +1922,27 @@ int sqlite3Fts5ExprClonePhrase(
     }
   }
 
-  if( pOrig->nTerm ){
-    int i;                          /* Used to iterate through phrase terms */
-    sCtx.pConfig = pExpr->pConfig;
-    for(i=0; rc==SQLITE_OK && i<pOrig->nTerm; i++){
-      int tflags = 0;
-      Fts5ExprTerm *p;
-      for(p=&pOrig->aTerm[i]; p && rc==SQLITE_OK; p=p->pSynonym){
-        rc = fts5ParseTokenize((void*)&sCtx, tflags, p->pTerm,p->nFullTerm,0,0);
-        tflags = FTS5_TOKEN_COLOCATED;
+  if( rc==SQLITE_OK ){
+    if( pOrig->nTerm ){
+      int i;                          /* Used to iterate through phrase terms */
+      sCtx.pConfig = pExpr->pConfig;
+      for(i=0; rc==SQLITE_OK && i<pOrig->nTerm; i++){
+        int tflags = 0;
+        Fts5ExprTerm *p;
+        for(p=&pOrig->aTerm[i]; p && rc==SQLITE_OK; p=p->pSynonym){
+          rc = fts5ParseTokenize((void*)&sCtx,tflags,p->pTerm,p->nFullTerm,0,0);
+          tflags = FTS5_TOKEN_COLOCATED;
+        }
+        if( rc==SQLITE_OK ){
+          sCtx.pPhrase->aTerm[i].bPrefix = pOrig->aTerm[i].bPrefix;
+          sCtx.pPhrase->aTerm[i].bFirst = pOrig->aTerm[i].bFirst;
+        }
       }
-      if( rc==SQLITE_OK ){
-        sCtx.pPhrase->aTerm[i].bPrefix = pOrig->aTerm[i].bPrefix;
-        sCtx.pPhrase->aTerm[i].bFirst = pOrig->aTerm[i].bFirst;
-      }
+    }else{
+      /* This happens when parsing a token or quoted phrase that contains
+      ** no token characters at all. (e.g ... MATCH '""'). */
+      sCtx.pPhrase = sqlite3Fts5MallocZero(&rc, sizeof(Fts5ExprPhrase));
     }
-  }else{
-    /* This happens when parsing a token or quoted phrase that contains
-    ** no token characters at all. (e.g ... MATCH '""'). */
-    sCtx.pPhrase = sqlite3Fts5MallocZero(&rc, sizeof(Fts5ExprPhrase));
   }
 
   if( rc==SQLITE_OK && ALWAYS(sCtx.pPhrase) ){

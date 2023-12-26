@@ -252,8 +252,10 @@ static void fts5HighlightFunction(
   ctx.zClose = (const char*)sqlite3_value_text(apVal[2]);
   ctx.iRangeEnd = -1;
   rc = pApi->xColumnText(pFts, iCol, &ctx.zIn, &ctx.nIn);
-
-  if( ctx.zIn ){
+  if( rc==SQLITE_RANGE ){
+    sqlite3_result_text(pCtx, "", -1, SQLITE_STATIC);
+    rc = SQLITE_OK;
+  }else if( ctx.zIn ){
     if( rc==SQLITE_OK ){
       rc = fts5CInstIterInit(pApi, pFts, iCol, &ctx.iter);
     }
