@@ -499,7 +499,7 @@ fn replicate_with_snapshots() {
         let conn = db.connect().unwrap();
         conn.execute("create table test (x)", ()).await.unwrap();
         // insert enough to trigger snapshot creation.
-        for _ in 0..200 {
+        for _ in 0..ROW_COUNT {
             conn.execute("INSERT INTO test values (randomblob(6000))", ())
                 .await
                 .unwrap();
@@ -530,7 +530,7 @@ fn replicate_with_snapshots() {
                 .unwrap()
                 .as_integer()
                 .unwrap(),
-            200
+            ROW_COUNT
         );
 
         Ok(())
