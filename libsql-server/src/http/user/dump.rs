@@ -90,7 +90,15 @@ pub(super) async fn handle_dump<F: MakeNamespace>(
 
     let db_path = state.path.join("dbs").join(namespace.as_str()).join("data");
 
-    let connection = rusqlite::Connection::open(db_path)?;
+    let connection = if cfg!(feature = "unix-excl-vfs") {
+        rusqlite::Connection::open_with_flags_and_vfs(
+            db_path,
+            rusqlite::OpenFlags::default(),
+            "unix-excl",
+        )
+    } else {
+        rusqlite::Connection::open(db_path)
+    }?;
 
     let (reader, writer) = tokio::io::duplex(8 * 1024);
 

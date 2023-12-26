@@ -267,7 +267,15 @@ fn perform_dump(dump_path: Option<&Path>, db_path: &Path) -> anyhow::Result<()> 
         }
         None => Box::new(stdout()),
     };
-    let conn = rusqlite::Connection::open(db_path.join("data"))?;
+    let conn = if cfg!(feature = "unix-excl-vfs") {
+        rusqlite::Connection::open_with_flags_and_vfs(
+            db_path.join("data"),
+            rusqlite::OpenFlags::default(),
+            "unix-excl",
+        )
+    } else {
+        rusqlite::Connection::open(db_path.join("data"))
+    }?;
 
     export_dump(conn, out)?;
 
