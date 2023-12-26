@@ -150,6 +150,10 @@ impl FrameBorrowed {
             page: page.try_into().unwrap(),
         }
     }
+
+    pub fn is_commit(&self) -> bool {
+        self.header().size_after.get() != 0
+    }
 }
 
 impl Deref for Frame {

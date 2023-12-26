@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::task::{ready, Poll};
 use std::{pin::Pin, task::Context};
 
+use chrono::{DateTime, Utc};
 use futures::future::BoxFuture;
 use futures::{FutureExt, Stream};
 use libsql_replication::frame::{Frame, FrameNo};
@@ -97,7 +98,7 @@ enum FrameStreamState {
 }
 
 impl Stream for FrameStream {
-    type Item = Result<Frame, LogReadError>;
+    type Item = Result<(Frame, Option<DateTime<Utc>>), LogReadError>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         if self.logger_closed_fut.poll_unpin(cx).is_ready() {
@@ -129,7 +130,15 @@ impl Stream for FrameStream {
                     self.transaction_boundary = frame.header().size_after.get() != 0;
                     self.transition_state_next_frame();
                     tracing::trace!("sending frame_no {}", frame.header().frame_no);
-                    Poll::Ready(Some(Ok(frame)))
+                    let timestamp = if frame.is_commit() {
+                        self.logger
+                            .commit_timestamp_cache
+                            .get(&frame.header().frame_no.get())
+                    } else {
+                        None
+                    };
+
+                    Poll::Ready(Some(Ok((frame, timestamp))))
                 }
 
                 Err(LogReadError::Ahead) => {
