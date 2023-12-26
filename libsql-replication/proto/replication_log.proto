@@ -24,6 +24,9 @@ message HelloResponse {
 
 message Frame {
     bytes data = 1;
+    // if this frames is a commit frame, then this can be set
+    // to the time when the transaction was commited
+    optional int64 timestamp = 2;
 }
 
 message Frames {

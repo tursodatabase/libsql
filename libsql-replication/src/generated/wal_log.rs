@@ -34,6 +34,10 @@ pub struct HelloResponse {
 pub struct Frame {
     #[prost(bytes = "bytes", tag = "1")]
     pub data: ::prost::bytes::Bytes,
+    /// if this frames is a commit frame, then this can be set
+    /// to the time when the transaction was commited
+    #[prost(int64, optional, tag = "2")]
+    pub timestamp: ::core::option::Option<i64>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
