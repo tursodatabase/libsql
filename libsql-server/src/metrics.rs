@@ -117,3 +117,11 @@ pub static DIRTY_STARTUP: Lazy<Counter> = Lazy::new(|| {
     );
     register_counter!(NAME)
 });
+pub static REPLICATION_LATENCY: Lazy<Histogram> = Lazy::new(|| {
+    const NAME: &str = "libsql_server_replication_latency";
+    describe_counter!(
+        NAME,
+        "Latency between the time a transaction was commited on the primary and the commit frame was received by the replica"
+    );
+    register_histogram!(NAME)
+});

@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 tonic = { version = "0.10.0", features = ["tls"] }
 prost = "0.12"
-libsql-sys = { path = "../libsql-sys", default-features = false, features = ["wal", "rusqlite"] }
+libsql-sys = { path = "../libsql-sys", default-features = false, features = ["wal", "rusqlite", "api"] }
 rusqlite = { workspace = true }
 parking_lot = "0.12.1"
 bytes = { version = "1.5.0", features = ["serde"] } 

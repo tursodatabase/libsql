@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 use anyhow::{bail, ensure};
 use bytes::{Bytes, BytesMut};
+use chrono::{DateTime, Utc};
 use libsql_replication::frame::{Frame, FrameHeader, FrameMut};
 use libsql_replication::snapshot::SnapshotFile;
 use parking_lot::{Mutex, RwLock};
@@ -481,6 +482,7 @@ impl Generation {
 pub struct ReplicationLogger {
     pub generation: Generation,
     pub log_file: RwLock<LogFile>,
+    pub commit_timestamp_cache: moka::sync::Cache<FrameNo, DateTime<Utc>>,
     compactor: LogCompactor,
     db_path: PathBuf,
     /// a notifier channel other tasks can subscribe to, and get notified when new frames become
@@ -577,6 +579,8 @@ impl ReplicationLogger {
             closed_signal,
             new_frame_notifier,
             auto_checkpoint,
+            // we keep the last 100 commit transaction timestamps
+            commit_timestamp_cache: moka::sync::Cache::new(100),
         })
     }
 
@@ -656,6 +660,9 @@ impl ReplicationLogger {
     pub(crate) fn commit(&self) -> anyhow::Result<Option<FrameNo>> {
         let mut log_file = self.log_file.write();
         log_file.commit()?;
+        if let Some(frame_no) = log_file.header().last_frame_no() {
+            self.commit_timestamp_cache.insert(frame_no, Utc::now());
+        }
         Ok(log_file.header().last_frame_no())
     }
 
