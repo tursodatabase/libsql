@@ -214,6 +214,12 @@ typedef struct JsonParse JsonParse;
 #define JSON_CACHE_ID    (-429938)  /* Cache entry */
 #define JSON_CACHE_SIZE  4          /* Max number of cache entries */
 
+/*
+** jsonUnescapeOneChar() returns this invalid code point if it encounters
+** a syntax error.
+*/
+#define JSON_INVALID_CHAR 0x99999
+
 /* A cache mapping JSON text into JSONB blobs.
 **
 ** Each cache entry is a JsonParse object with the following restrictions:
@@ -1380,7 +1386,7 @@ static u32 jsonbValidityCheck(
           }else{
             u32 c = 0;
             u32 szC = jsonUnescapeOneChar((const char*)&z[j], k-j, &c);
-            if( c==0xfffd ) return j+1;
+            if( c==JSON_INVALID_CHAR ) return j+1;
             j += szC - 1;
           }
         }
@@ -2390,19 +2396,23 @@ static u32 jsonBytesToBypass(const char *z, u32 n){
 ** Input z[0..n] defines JSON escape sequence including the leading '\\'.
 ** Decode that escape sequence into a single character.  Write that
 ** character into *piOut.  Return the number of bytes in the escape sequence.
+**
+** If there is a syntax error of some kind (for example too few characters
+** after the '\\' to complete the encoding) then *piOut is set to
+** JSON_INVALID_CHAR.
 */
 static u32 jsonUnescapeOneChar(const char *z, u32 n, u32 *piOut){
   assert( n>0 );
   assert( z[0]=='\\' );
   if( n<2 ){
-    *piOut = 0xFFFD;
+    *piOut = JSON_INVALID_CHAR;
     return n;
   }
   switch( (u8)z[1] ){
     case 'u': {
       u32 v, vlo;
       if( n<6 ){
-        *piOut = 0xFFFD;
+        *piOut = JSON_INVALID_CHAR;
         return n;
       }
       v = jsonHexToInt4(&z[2]);
@@ -2432,7 +2442,7 @@ static u32 jsonUnescapeOneChar(const char *z, u32 n, u32 *piOut){
     case '\\':{   *piOut = z[1];  return 2; }
     case 'x': {
       if( n<4 ){
-        *piOut = 0xFFFD;
+        *piOut = JSON_INVALID_CHAR;
         return n;
       }
       *piOut = (jsonHexToInt(z[2])<<4) | jsonHexToInt(z[3]);
@@ -2443,7 +2453,7 @@ static u32 jsonUnescapeOneChar(const char *z, u32 n, u32 *piOut){
     case '\n': {
       u32 nSkip = jsonBytesToBypass(z, n);
       if( nSkip==0 ){
-        *piOut = 0xFFFD;
+        *piOut = JSON_INVALID_CHAR;
         return n;
       }else if( nSkip==n ){
         *piOut = 0;
@@ -2456,7 +2466,7 @@ static u32 jsonUnescapeOneChar(const char *z, u32 n, u32 *piOut){
       }
     }
     default: {
-      *piOut = 0xFFFD;
+      *piOut = JSON_INVALID_CHAR;
       return 2;
     }
   }
@@ -2930,8 +2940,6 @@ static void jsonReturnFromBlob(
           u32 szEscape = jsonUnescapeOneChar(&z[iIn], sz-iIn, &v);
           if( v<=0x7f ){
             zOut[iOut++] = (char)v;
-          }else if( v==0xfffd ){
-            /* Silently ignore illegal unicode */
           }else if( v<=0x7ff ){
             assert( szEscape>=2 );
             zOut[iOut++] = (char)(0xc0 | (v>>6));
@@ -2941,6 +2949,8 @@ static void jsonReturnFromBlob(
             zOut[iOut++] = 0xe0 | (v>>12);
             zOut[iOut++] = 0x80 | ((v>>6)&0x3f);
             zOut[iOut++] = 0x80 | (v&0x3f);
+          }else if( v==JSON_INVALID_CHAR ){
+            /* Silently ignore illegal unicode */
           }else{
             assert( szEscape>=4 );
             zOut[iOut++] = 0xf0 | (v>>18);
