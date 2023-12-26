@@ -6,10 +6,10 @@ use crate::hrana::pipeline::{
 use crate::hrana::proto::{Batch, BatchResult, DescribeResult, Stmt, StmtResult};
 use crate::hrana::{CursorResponseError, HranaError, HttpSend, Result, StreamResponseError};
 use bytes::{Bytes, BytesMut};
-use futures::lock::Mutex;
 use futures::Stream;
 use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::Arc;
+use tokio::sync::Mutex;
 
 macro_rules! unexpected {
     ($value:ident) => {
