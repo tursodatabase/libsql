@@ -11,6 +11,7 @@ use bytes::{Bytes, BytesMut};
 use chrono::{DateTime, Utc};
 use libsql_replication::frame::{Frame, FrameHeader, FrameMut};
 use libsql_replication::snapshot::SnapshotFile;
+use once_cell::sync::Lazy;
 use parking_lot::{Mutex, RwLock};
 use rusqlite::ffi::SQLITE_CHECKPOINT_TRUNCATE;
 use tokio::sync::watch;
@@ -25,6 +26,10 @@ use zerocopy::{AsBytes, FromBytes};
 use crate::replication::snapshot::{find_snapshot_file, LogCompactor};
 use crate::replication::{FrameNo, SnapshotCallback, CRC_64_GO_ISO, WAL_MAGIC};
 use crate::LIBSQL_PAGE_SIZE;
+
+static REPLICATION_LATENCY_CACHE_SIZE: Lazy<usize> = Lazy::new(|| {
+    std::env::var("SQLD_REPLICATION_LATENCY_CACHE_SIZE").unwrap_or(100)
+});
 
 #[derive(PartialEq, Eq)]
 struct Version([u16; 4]);
@@ -580,7 +585,7 @@ impl ReplicationLogger {
             new_frame_notifier,
             auto_checkpoint,
             // we keep the last 100 commit transaction timestamps
-            commit_timestamp_cache: moka::sync::Cache::new(100),
+            commit_timestamp_cache: moka::sync::Cache::new(REPLICATION_LATENCY_CACHE_SIZE),
         })
     }
 
