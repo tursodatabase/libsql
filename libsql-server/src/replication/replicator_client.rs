@@ -17,7 +17,7 @@ use tonic::metadata::{AsciiMetadataValue, BinaryMetadataValue};
 use tonic::transport::Channel;
 use tonic::Request;
 
-use crate::metrics::REPLICATION_LATENCY;
+use crate::metrics::{REPLICATION_LATENCY, REPLICATION_LATENCY_OUT_OF_SYNC};
 use crate::namespace::NamespaceName;
 use crate::replication::FrameNo;
 
@@ -121,6 +121,8 @@ impl ReplicatorClient for Client {
                             // we can record negative values if the clocks are out-of-sync. There is not
                             // point in recording those values.
                             REPLICATION_LATENCY.record(lat);
+                        } else {
+                            REPLICATION_LATENCY_OUT_OF_SYNC.increment(1);
                         }
                     }
                 }
