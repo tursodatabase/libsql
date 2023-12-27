@@ -125,3 +125,11 @@ pub static REPLICATION_LATENCY: Lazy<Histogram> = Lazy::new(|| {
     );
     register_histogram!(NAME)
 });
+pub static REPLICATION_LATENCY_OUT_OF_SYNC: Lazy<Counter> = Lazy::new(|| {
+    const NAME: &str = "libsql_server_replication_latency_out_of_sync";
+    describe_counter!(
+        NAME,
+        "Number of replication latency timestamps that were out-of-sync (clocks likely not synchronized)"
+    );
+    register_counter!(NAME)
+});
