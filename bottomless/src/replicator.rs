@@ -373,11 +373,7 @@ impl Replicator {
     }
 
     /// Checks if there exists any backup of given database
-    pub async fn has_backup_of(db_name: impl AsRef<str>, options: &Options) -> Result<bool> {
-        let prefix = match &options.db_id {
-            Some(db_id) => format!("{db_id}-"),
-            None => format!("ns-:{}-", db_name.as_ref()),
-        };
+    pub async fn has_backup_of(options: &Options) -> Result<bool> {
         let config = options.client_config().await?;
         let client = Client::from_conf(config);
         let bucket = options.bucket_name.clone();
@@ -391,10 +387,10 @@ impl Replicator {
         }
 
         let mut last_frame = 0;
-        let list_objects = client.list_objects().bucket(&bucket).prefix(&prefix);
+        let list_objects = client.list_objects().bucket(&bucket).prefix(&options.db_id);
         let response = list_objects.send().await?;
         let _ = Self::try_get_last_frame_no(response, &mut last_frame);
-        tracing::trace!("Last frame of {prefix}: {last_frame}");
+        tracing::trace!("Last frame of {}: {}", options.db_id, last_frame);
 
         Ok(last_frame > 0)
     }

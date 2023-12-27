@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Weak};
 
-use anyhow::Context as _;
+use anyhow::{anyhow, Context as _};
 use async_lock::RwLock;
 use bottomless::bottomless_wal::CreateBottomlessWal;
 use bottomless::replicator::Options;
@@ -962,13 +962,11 @@ fn make_bottomless_options(
     name: NamespaceName,
 ) -> Options {
     let mut options = options.clone();
-    let mut db_id = match namespace_db_id {
-        NamespaceBottomlessDbId::Namespace(id) => id,
+    let db_id = match &namespace_db_id {
         NamespaceBottomlessDbId::NotProvided => "",
+        NamespaceBottomlessDbId::Namespace(id) => &id,
     };
-
-    db_id = format!("ns-{db_id}:{name}");
-    options.db_id = db_id;
+    options.db_id = format!("ns-{db_id}:{name}");
     options
 }
 
@@ -1045,6 +1043,12 @@ impl Namespace<PrimaryDatabase> {
 
         let bottomless_replicator = if let Some(options) = &config.bottomless_replication {
             let options = make_bottomless_options(options, bottomless_db_id, name.clone());
+            if bottomless::replicator::Replicator::has_backup_of(&options).await? {
+                return Err(Error::Anyhow(anyhow!(
+                    "cannot create new database: found backup for existing database with the same id `{}`",
+                    options.db_id
+                )));
+            }
             let (replicator, did_recover) =
                 init_bottomless_replicator(db_path.join("data"), options, &restore_option).await?;
             is_dirty |= did_recover;
