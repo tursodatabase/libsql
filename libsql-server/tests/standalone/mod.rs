@@ -83,15 +83,16 @@ fn basic_metrics() {
 
         let snapshot = snapshot_metrics();
         snapshot.assert_counter("libsql_server_libsql_execute_program", 3);
-        snapshot.assert_counter("libsql_server_user_http_response", 3);
+        // cursor-based execution produces two responses per execution request
+        snapshot.assert_counter("libsql_server_user_http_response", 6);
 
         for (key, (_, _, val)) in snapshot.snapshot() {
             if key.kind() == metrics_util::MetricKind::Counter
                 && key.key().name() == "libsql_client_version"
             {
-                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(3));
                 let label = key.key().labels().next().unwrap();
                 assert!(label.value().starts_with("libsql-remote-"));
+                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(6));
             }
         }
 
