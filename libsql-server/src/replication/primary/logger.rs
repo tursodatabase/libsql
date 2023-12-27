@@ -27,8 +27,8 @@ use crate::replication::snapshot::{find_snapshot_file, LogCompactor};
 use crate::replication::{FrameNo, SnapshotCallback, CRC_64_GO_ISO, WAL_MAGIC};
 use crate::LIBSQL_PAGE_SIZE;
 
-static REPLICATION_LATENCY_CACHE_SIZE: Lazy<usize> = Lazy::new(|| {
-    std::env::var("SQLD_REPLICATION_LATENCY_CACHE_SIZE").unwrap_or(100)
+static REPLICATION_LATENCY_CACHE_SIZE: Lazy<u64> = Lazy::new(|| {
+    std::env::var("SQLD_REPLICATION_LATENCY_CACHE_SIZE").map_or(100, |s| s.parse().unwrap_or(100))
 });
 
 #[derive(PartialEq, Eq)]
@@ -585,7 +585,7 @@ impl ReplicationLogger {
             new_frame_notifier,
             auto_checkpoint,
             // we keep the last 100 commit transaction timestamps
-            commit_timestamp_cache: moka::sync::Cache::new(REPLICATION_LATENCY_CACHE_SIZE),
+            commit_timestamp_cache: moka::sync::Cache::new(*REPLICATION_LATENCY_CACHE_SIZE),
         })
     }
 
