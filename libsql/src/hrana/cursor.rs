@@ -4,9 +4,9 @@ use crate::hrana::proto::{Batch, BatchResult, Col, StmtResult, Value};
 use crate::hrana::{CursorResponseError, HranaError, Result, Row};
 use bytes::Bytes;
 use futures::{ready, Future, Stream, StreamExt};
-use serde::de::Error;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
+use std::fmt::Formatter;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
@@ -55,7 +55,19 @@ pub struct RowEntry {
 #[derive(Deserialize, Debug)]
 pub struct StepErrorEntry {
     pub step: u32,
-    pub error: String,
+    pub error: Error,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Error {
+    pub message: String,
+    pub code: String,
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(error code: {}) `{}`", self.code, self.message)
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -84,6 +96,7 @@ where
     }
 
     pub async fn into_batch_result(mut self) -> Result<BatchResult> {
+        use serde::de::Error;
         //FIXME: this is for the compatibility with the current libsql client API,
         //       which expects BatchResult to be returned
         let mut step_results = Vec::new();

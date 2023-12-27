@@ -13,7 +13,7 @@ mod stream;
 pub mod transaction;
 
 use crate::hrana::connection::HttpConnection;
-use crate::hrana::cursor::{Cursor, OwnedCursorStep};
+use crate::hrana::cursor::{Cursor, Error, OwnedCursorStep};
 pub(crate) use crate::hrana::pipeline::StreamResponseError;
 use crate::hrana::proto::{Batch, Col, Stmt};
 use crate::hrana::stream::HranaStream;
@@ -102,8 +102,8 @@ pub enum HranaError {
 pub enum CursorResponseError {
     #[error("cursor step {actual} arrived before step {expected} end message")]
     NotClosed { expected: u32, actual: u32 },
-    #[error("error at step {step}: `{error}`")]
-    StepError { step: u32, error: String },
+    #[error("error at step {step}: {error}")]
+    StepError { step: u32, error: Error },
     #[error("cursor stream ended prematurely")]
     CursorClosed,
     #[error("{0}")]
