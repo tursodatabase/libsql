@@ -1887,7 +1887,7 @@ int sqlite3Fts5ExprClonePhrase(
   Fts5Expr **ppNew
 ){
   int rc = SQLITE_OK;             /* Return code */
-  Fts5ExprPhrase *pOrig;          /* The phrase extracted from pExpr */
+  Fts5ExprPhrase *pOrig = 0;      /* The phrase extracted from pExpr */
   Fts5Expr *pNew = 0;             /* Expression to return via *ppNew */
   TokenCtx sCtx = {0,0,0};        /* Context object for fts5ParseTokenize */
   if( iPhrase<0 || iPhrase>=pExpr->nPhrase ){
@@ -1908,7 +1908,7 @@ int sqlite3Fts5ExprClonePhrase(
     pNew->pRoot->pNear = (Fts5ExprNearset*)sqlite3Fts5MallocZero(&rc, 
         sizeof(Fts5ExprNearset) + sizeof(Fts5ExprPhrase*));
   }
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && ALWAYS(pOrig!=0) ){
     Fts5Colset *pColsetOrig = pOrig->pNode->pNear->pColset;
     if( pColsetOrig ){
       sqlite3_int64 nByte;

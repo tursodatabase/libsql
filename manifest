@@ -1,5 +1,5 @@
-C Enhance\sthe\s(undocumented,\sdebug-only)\sjson_parse()\sSQL\sfunction\sso\sthat\sit\nreturns\sthe\stext\srendering\sof\sthe\sJSONB\sparse\sof\sthe\sinput,\srather\sthan\sprinting\nthe\srendering\son\sstdout.
-D 2023-12-28T16:21:22.018
+C Fix\sharmless\scompiler\swarnings\sin\sFTS5.
+D 2023-12-28T16:25:48.632
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -95,7 +95,7 @@ F ext/fts5/fts5Int.h defa43c0932265138ee910ca416e6baccf8b774e0f3d610e74be1ab2880
 F ext/fts5/fts5_aux.c 4584e88878e54828bf7d4d0d83deedd232ec60628b7731be02bad6adb62304b1
 F ext/fts5/fts5_buffer.c 0eec58bff585f1a44ea9147eae5da2447292080ea435957f7488c70673cb6f09
 F ext/fts5/fts5_config.c 8072a207034b51ae9b7694121d1b5715c794e94b275e088f70ae532378ca5cdf
-F ext/fts5/fts5_expr.c e5fb9dd9e31e9e6ae9604bdb0d183ecec720964f3b974fc37c43ce73d8833d6d
+F ext/fts5/fts5_expr.c e91156ebdcc08d837f4f324168f69f3c0d7fdef0e521fd561efb48ef3297b696
 F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a0ec91b1
 F ext/fts5/fts5_index.c bb1965c3965f6fe5f64160bf1c0694a9684a790a783f293a76da1d38d319b258
 F ext/fts5/fts5_main.c 93e5bc8676dbaaec365576d26cdafc5c21f0052f8f68b86ee4de22237c2e2143
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 026618b9e321576f616a32e41329066ba629814170c6cfeef35430343f5003f3
-R 4f345097ec9904c5b67a6755cec93b7a
+P 056de8d551dcbdf1d162e2db15ed418fa9c786f900cd3972ef8a1dea3f4f3aa1
+R a054d36d3399814c54294e63ea00ca79
 U drh
-Z 755e762b4bd7fb34fd05935917357de5
+Z 9a8f01391d6842f16881c897399abbc0
 # Remove this line to create a well-formed Fossil manifest.
