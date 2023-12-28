@@ -329,6 +329,19 @@
 #endif
 
 /*
+** Enable SQLITE_DIRECT_OVERFLOW_READ, unless the build explicitly
+** disables it using -DSQLITE_DIRECT_OVERFLOW_READ=0
+*/
+#if defined(SQLITE_DIRECT_OVERFLOW_READ) && SQLITE_DIRECT_OVERFLOW_READ+1==1
+  /* Disable if -DSQLITE_DIRECT_OVERFLOW_READ=0 */
+# undef SQLITE_DIRECT_OVERFLOW_READ
+#else
+  /* In all other cases, enable */
+# define SQLITE_DIRECT_OVERFLOW_READ 1
+#endif
+
+
+/*
 ** The SQLITE_THREADSAFE macro must be defined as 0, 1, or 2.
 ** 0 means mutexes are permanently disable and the library is never
 ** threadsafe.  1 means the library is serialized which is the highest
