@@ -36,6 +36,7 @@ if {[permutation]=="memsubsys1" || [permutation]=="mmap"} {
 
 sqlite3_fts5_register_origintext db
 do_execsql_test 1.0 {
+  PRAGMA page_size = 4096;
   CREATE VIRTUAL TABLE ft USING fts5(
       x, tokenize="origintext unicode61", tokendata=1
   );

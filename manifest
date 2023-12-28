@@ -1,5 +1,5 @@
-C Performance\simprovement\sby\sunwinding\sa\sloop\sin\sjsonAppendString().
-D 2023-12-28T19:18:08.833
+C Update\sfts5origintext4.test\sto\swork\swith\sSQLITE_DIRECT_OVERFLOW_READ.
+D 2023-12-28T20:54:12.871
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -195,7 +195,7 @@ F ext/fts5/test/fts5optimize3.test bf9c91bb927d0fb2b9a06318a217a0419183ac5913842
 F ext/fts5/test/fts5origintext.test d2796fa08ee7aecfabdc0c45bb8a2fb16a00ea8757e63fbc153b718dbe430a39
 F ext/fts5/test/fts5origintext2.test f3b9436de540828d01f0672df855b09ebc0863e126d5b56234701d71dfa73634
 F ext/fts5/test/fts5origintext3.test 0d25933506600452a5ab3873cbb418ed5f2de2446c3672b9997b1ea104b0e7f0
-F ext/fts5/test/fts5origintext4.test a33e8f64b9762e0e0c722ac2b301017e1d7745635724c1ca04b2c010b451fab4
+F ext/fts5/test/fts5origintext4.test 0c4e4514b68d9ddb15e5a538d9d234da85747a3fd62432265dbdba5c8708e457
 F ext/fts5/test/fts5origintext5.test a037bdf7235a22033c4663837bdb12d9738245464a3ac2f60c71fc40d07ede7d
 F ext/fts5/test/fts5phrase.test 13e5d8e9083077b3d9c74315b3c92ec723cc6eb37c8155e0bfe1bba00559f07b
 F ext/fts5/test/fts5plan.test b65cfcca9ddd6fdaa118c61e17aeec8e8433bc5b6bb307abd116514f79c49c5a
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3cd5ef44e40570c357f913a9483fa1cd72e7f2827a5ed5826bff99febae213b1
-R 1e6a2dd6f87f9d0628f571e967da7d98
-U drh
-Z 7e6ac710b6732b62be341bd93538e4ea
+P 190ab3c08431a0ba24d76392eab251f5c1792add05e4ec780998b299208eca95
+R 4943b60b261f8c7a6ac606918009691b
+U dan
+Z fb03567f575be0bb5e8370f46dac37ef
 # Remove this line to create a well-formed Fossil manifest.
