@@ -3351,14 +3351,15 @@ static void jsonDebugPrintBlob(
   JsonParse *pParse, /* JSON content */
   u32 iStart,        /* Start rendering here */
   u32 iEnd,          /* Do not render this byte or any byte after this one */
-  int nIndent        /* Indent by this many spaces */
+  int nIndent,       /* Indent by this many spaces */
+  sqlite3_str *pOut  /* Generate output into this sqlite3_str object */
 ){
   while( iStart<iEnd ){
     u32 i, n, nn, sz = 0;
     int showContent = 1;
     u8 x = pParse->aBlob[iStart] & 0x0f;
     u32 savedNBlob = pParse->nBlob;
-    printf("%5d:%*s", iStart, nIndent, "");
+    sqlite3_str_appendf(pOut, "%5d:%*s", iStart, nIndent, "");
     if( pParse->nBlobAlloc>pParse->nBlob ){
       pParse->nBlob = pParse->nBlobAlloc;
     }
@@ -3367,9 +3368,11 @@ static void jsonDebugPrintBlob(
     if( sz>0 && x<JSONB_ARRAY ){
       nn += sz;
     }
-    for(i=0; i<nn; i++) printf(" %02x", pParse->aBlob[iStart+i]);
+    for(i=0; i<nn; i++){
+      sqlite3_str_appendf(pOut, " %02x", pParse->aBlob[iStart+i]);
+    }
     if( n==0 ){
-      printf("   ERROR invalid node size\n");
+      sqlite3_str_appendf(pOut, "   ERROR invalid node size\n");
       iStart = n==0 ? iStart+1 : iEnd;
       continue;
     }
@@ -3384,55 +3387,57 @@ static void jsonDebugPrintBlob(
         }
       }
     }
-    printf("  <-- ");
+    sqlite3_str_appendall(pOut,"  <-- ");
     switch( x ){
-      case JSONB_NULL:     printf("null"); break;
-      case JSONB_TRUE:     printf("true"); break;
-      case JSONB_FALSE:    printf("false"); break;
-      case JSONB_INT:      printf("int"); break;
-      case JSONB_INT5:     printf("int5"); break;
-      case JSONB_FLOAT:    printf("float"); break;
-      case JSONB_FLOAT5:   printf("float5"); break;
-      case JSONB_TEXT:     printf("text"); break;
-      case JSONB_TEXTJ:    printf("textj"); break;
-      case JSONB_TEXT5:    printf("text5"); break;
-      case JSONB_TEXTRAW:  printf("textraw"); break;
+      case JSONB_NULL:     sqlite3_str_appendall(pOut,"null"); break;
+      case JSONB_TRUE:     sqlite3_str_appendall(pOut,"true"); break;
+      case JSONB_FALSE:    sqlite3_str_appendall(pOut,"false"); break;
+      case JSONB_INT:      sqlite3_str_appendall(pOut,"int"); break;
+      case JSONB_INT5:     sqlite3_str_appendall(pOut,"int5"); break;
+      case JSONB_FLOAT:    sqlite3_str_appendall(pOut,"float"); break;
+      case JSONB_FLOAT5:   sqlite3_str_appendall(pOut,"float5"); break;
+      case JSONB_TEXT:     sqlite3_str_appendall(pOut,"text"); break;
+      case JSONB_TEXTJ:    sqlite3_str_appendall(pOut,"textj"); break;
+      case JSONB_TEXT5:    sqlite3_str_appendall(pOut,"text5"); break;
+      case JSONB_TEXTRAW:  sqlite3_str_appendall(pOut,"textraw"); break;
       case JSONB_ARRAY: {
-        printf("array, %u bytes\n", sz);
-        jsonDebugPrintBlob(pParse, iStart+n, iStart+n+sz, nIndent+2);
+        sqlite3_str_appendf(pOut,"array, %u bytes\n", sz);
+        jsonDebugPrintBlob(pParse, iStart+n, iStart+n+sz, nIndent+2, pOut);
         showContent = 0;
         break;
       }
       case JSONB_OBJECT: {
-        printf("object, %u bytes\n", sz);
-        jsonDebugPrintBlob(pParse, iStart+n, iStart+n+sz, nIndent+2);
+        sqlite3_str_appendf(pOut, "object, %u bytes\n", sz);
+        jsonDebugPrintBlob(pParse, iStart+n, iStart+n+sz, nIndent+2, pOut);
         showContent = 0;
         break;
       }
       default: {
-        printf("ERROR: unknown node type\n");
+        sqlite3_str_appendall(pOut, "ERROR: unknown node type\n");
         showContent = 0;
         break;
       }
     }
     if( showContent ){
       if( sz==0 && x<=JSONB_FALSE ){
-        printf("\n");
+        sqlite3_str_append(pOut, "\n", 1);
       }else{
         u32 i;
-        printf(": \"");
+        sqlite3_str_appendall(pOut, ": \"");
         for(i=iStart+n; i<iStart+n+sz; i++){
           u8 c = pParse->aBlob[i];
           if( c<0x20 || c>=0x7f ) c = '.';
-          putchar(c);
+          sqlite3_str_append(pOut, (char*)&c, 1);
         }
-        printf("\"\n");
+        sqlite3_str_append(pOut, "\"\n", 2);
       }
     }
     iStart += n + sz;
   }
 }
 static void jsonShowParse(JsonParse *pParse){
+  sqlite3_str out;
+  char zBuf[1000];
   if( pParse==0 ){
     printf("NULL pointer\n");
     return;
@@ -3443,7 +3448,10 @@ static void jsonShowParse(JsonParse *pParse){
     if( pParse->nBlob==0 ) return;
     printf("content (bytes 0..%u):\n", pParse->nBlob-1);
   }
-  jsonDebugPrintBlob(pParse, 0, pParse->nBlob, 0);
+  sqlite3StrAccumInit(&out, 0, zBuf, sizeof(zBuf), 1000000);
+  jsonDebugPrintBlob(pParse, 0, pParse->nBlob, 0, &out);
+  printf("%s", sqlite3_str_value(&out));
+  sqlite3_str_reset(&out);
 }
 #endif /* SQLITE_DEBUG */
 
@@ -3451,8 +3459,8 @@ static void jsonShowParse(JsonParse *pParse){
 /*
 ** SQL function:   json_parse(JSON)
 **
-** Parse JSON using jsonParseFuncArg().  Then print a dump of that
-** parse on standard output.
+** Parse JSON using jsonParseFuncArg().  Return text that is a
+** human-readable dump of the binary JSONB for the input parameter.
 */
 static void jsonParseFunc(
   sqlite3_context *ctx,
@@ -3460,10 +3468,18 @@ static void jsonParseFunc(
   sqlite3_value **argv
 ){
   JsonParse *p;        /* The parse */
+  sqlite3_str out;
 
-  assert( argc==1 );
+  assert( argc>=1 );
+  sqlite3StrAccumInit(&out, 0, 0, 0, 1000000);
   p = jsonParseFuncArg(ctx, argv[0], 0);
-  jsonShowParse(p);
+  if( p==0 ) return;
+  if( argc==1 ){
+    jsonDebugPrintBlob(p, 0, p->nBlob, 0, &out);
+    sqlite3_result_text64(ctx, out.zText, out.nChar, sqlite3_free, SQLITE_UTF8);
+  }else{
+    jsonShowParse(p);
+  }
   jsonParseFree(p);
 }
 #endif /* SQLITE_DEBUG */
