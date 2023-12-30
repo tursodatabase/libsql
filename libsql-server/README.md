@@ -1,5 +1,7 @@
 # `sqld` - a server mode for libSQL
 
+hello
+
 The `sqld` ("SQL daemon") project is a server mode for
 [libSQL](https://github.com/libsql/libsql/).
 
