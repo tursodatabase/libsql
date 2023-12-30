@@ -106,3 +106,4 @@ vergen = { version = "8", features = ["build", "git", "gitcl"] }
 default = []
 debug-tools = ["console-subscriber", "rusqlite/trace", "tokio/tracing"]
 wasm-udfs = ["rusqlite/libsql-wasm-experimental"]
+unix-excl-vfs = ["libsql-sys/unix-excl-vfs"]

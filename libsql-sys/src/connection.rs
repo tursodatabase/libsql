@@ -70,11 +70,20 @@ impl<W: Wal> Connection<W> {
 
         #[cfg(feature = "rusqlite")]
         let conn = {
-            let conn = rusqlite::Connection::open_with_flags_and_wal(
-                path,
-                flags,
-                make_wal_manager(wal_manager),
-            )?;
+            let conn = if cfg!(feature = "unix-excl-vfs") {
+                rusqlite::Connection::open_with_flags_vfs_and_wal(
+                    path,
+                    flags,
+                    "unix-excl",
+                    make_wal_manager(wal_manager),
+                )
+            } else {
+                rusqlite::Connection::open_with_flags_and_wal(
+                    path,
+                    flags,
+                    make_wal_manager(wal_manager),
+                )
+            }?;
             conn.pragma_update(None, "journal_mode", "WAL")?;
             unsafe {
                 let rc =
@@ -101,11 +110,16 @@ impl<W: Wal> Connection<W> {
             // We pass a pointer to the WAL methods data to the database connection. This means
             // that the reference must outlive the connection. This is guaranteed by the marker in
             // the returned connection.
+            let vfs = if cfg!(feature = "unix-excl-vfs") {
+                "unix-excl\0".as_ptr() as *const _
+            } else {
+                std::ptr::null_mut()
+            };
             let mut rc = libsql_ffi::libsql_open_v3(
                 path.as_ptr(),
                 &mut conn as *mut _,
                 flags,
-                std::ptr::null_mut(),
+                vfs,
                 make_wal_manager(wal_manager),
             );
 
