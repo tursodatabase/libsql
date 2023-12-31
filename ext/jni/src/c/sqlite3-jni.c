@@ -76,6 +76,9 @@
 //#ifndef SQLITE_ENABLE_SESSION
 //#  define SQLITE_ENABLE_SESSION 1
 //#endif
+#ifndef SQLITE_ENABLE_STAT4
+#  define SQLITE_ENABLE_STAT4 1
+#endif
 #ifndef SQLITE_ENABLE_STMTVTAB
 #  define SQLITE_ENABLE_STMTVTAB 1
 #endif
