@@ -1,5 +1,5 @@
-C Extra\ssteps\staken\sto\savoid\susing\slow-quality\sindexes\sin\sa\squery\splan.\nThis\sbranch\saccomplishes\sthe\ssame\send\sas\sthe\snearby\senhanced-stat1\sbranch,\nbut\swith\smuch\sless\schange\sand\shence\sless\srisk.
-D 2024-01-01T17:48:02.427
+C Remove\ssome\sunnecessary\scomputations\sfrom\sANALYZE\sso\sthat\sANALYZE\sruns\swith\nfewer\sCPU\scycles.\s\sThese\schanges\swere\sspotted\swhile\sworking\son\sthe\snearby\nenhanced-stat1\sbranch.\s\sSo\seven\sif\senhanced-stat1\sis\sabandoned,\sthat\seffort\nput\sinto\sit\swill\snot\shave\sbeen\sin\svain.
+D 2024-01-01T17:58:57.875
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -670,7 +670,7 @@ F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F sqlite_cfg.h.in baf2e409c63d4e7a765e17769b6ff17c5a82bbd9cbf1e284fd2e4cefaff3fcf2
 F src/alter.c 30c2333b8bb3af71e4eb9adeadee8aa20edb15917ed44b8422e5cd15f3dfcddc
-F src/analyze.c 64ac1dd3b7044c7a7981a5f6d3796bc007b7e31514c674283bf440586681501e
+F src/analyze.c 0f15753308c3bca7674f31fa7e0807ffcb8b120c36eef7d00b62b33079ddc854
 F src/attach.c cc9d00d30da916ff656038211410ccf04ed784b7564639b9b61d1839ed69fd39
 F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
@@ -2156,11 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dc501275fcfab3ad9b6ebbadf7588b225a9dd07a0abac5be83d96f15bfba99e9
-R 4e0f7b3b61e72c244a187959e2e9f486
-T *branch * avoid-low-quality-indexes
-T *sym-avoid-low-quality-indexes *
-T -sym-trunk *
+P c030e646262fee43a59b45fdc1630d972f8bf88ac3c142b6bdaf4cbb36695a4f
+R a1cdb8f6aed6a59edfbfbd0410b4be3d
 U drh
-Z ac10d23b30667bc4467501c1b744109a
+Z fe0456d193300bdd1fb2616e0f9641df
 # Remove this line to create a well-formed Fossil manifest.
