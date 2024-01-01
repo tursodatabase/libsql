@@ -2766,6 +2766,7 @@ struct Index {
   unsigned isCovering:1;   /* True if this is a covering index */
   unsigned noSkipScan:1;   /* Do not try to use skip-scan if true */
   unsigned hasStat1:1;     /* aiRowLogEst values come from sqlite_stat1 */
+  unsigned bLowQual:1;     /* sqlite_stat1 says this is a low-quality index */
   unsigned bNoQuery:1;     /* Do not use this index to optimize queries */
   unsigned bAscKeyBug:1;   /* True if the bba7b69f9849b5bf bug applies */
   unsigned bHasVCol:1;     /* Index references one or more VIRTUAL columns */

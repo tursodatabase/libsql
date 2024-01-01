@@ -2973,7 +2973,10 @@ static int whereLoopAddBtreeIndex(
     assert( pNew->u.btree.nBtm==0 );
     opMask = WO_EQ|WO_IN|WO_GT|WO_GE|WO_LT|WO_LE|WO_ISNULL|WO_IS;
   }
-  if( pProbe->bUnordered ) opMask &= ~(WO_GT|WO_GE|WO_LT|WO_LE);
+  if( pProbe->bUnordered || pProbe->bLowQual ){
+    if( pProbe->bUnordered ) opMask &= ~(WO_GT|WO_GE|WO_LT|WO_LE);
+    if( pProbe->bLowQual )   opMask &= ~(WO_EQ|WO_IN|WO_IS);
+  }
 
   assert( pNew->u.btree.nEq<pProbe->nColumn );
   assert( pNew->u.btree.nEq<pProbe->nKeyCol
