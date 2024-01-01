@@ -1556,6 +1556,16 @@ static void decodeIntArray(
       while( z[0]!=0 && z[0]!=' ' ) z++;
       while( z[0]==' ' ) z++;
     }
+
+    /* Set the bLowQual flag if the peak number of rows obtained
+    ** from a full equality match is so large that a full table scan
+    ** seems likely to be faster than using the index.
+    */
+    if( aLog[0] > 66              /* Index has more than 100 rows */
+     && aLog[0] <= aLog[nOut-1]   /* And only a single value seen */
+    ){
+      pIndex->bLowQual = 1;
+    }
   }
 }
 
