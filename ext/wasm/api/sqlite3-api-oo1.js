@@ -1,3 +1,4 @@
+//#ifnot omit-oo1
 /*
   2022-07-22
 
@@ -1940,4 +1941,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/*main-window-only bits*/
 
 });
-
+//#else
+/* Built with the omit-oo1 flag. */
+//#endif ifnot omit-oo1

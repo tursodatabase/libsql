@@ -1,3 +1,4 @@
+//#ifnot omit-oo1
 /*
   2022-08-24
 
@@ -276,3 +277,6 @@ globalThis.sqlite3Worker1Promiser.defaultConfig = {
   ,
   onerror: (...args)=>console.error('worker1 promiser error',...args)
 };
+//#else
+/* Built with the omit-oo1 flag. */
+//#endif ifnot omit-oo1

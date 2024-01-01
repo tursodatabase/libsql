@@ -54,6 +54,9 @@ release: oz
 # JS_BUILD_MODES exists solely to reduce repetition in documentation
 # below.
 JS_BUILD_MODES := vanilla esm bunder-friendly node
+# JS_BUILD_NAMES exists solely to reduce repetition in documentation
+# below.
+JS_BUILD_NAMES := sqlite3 sqlite3-wasmfs
 # Emscripten SDK home dir and related binaries...
 EMSDK_HOME ?= $(word 1,$(wildcard $(HOME)/emsdk $(HOME)/src/emsdk))
 emcc.bin ?= $(word 1,$(wildcard $(EMSDK_HOME)/upstream/emscripten/emcc) $(shell which emcc))
@@ -287,6 +290,9 @@ DISTCLEAN_FILES += $(bin.stripccomments)
 # c-pp.c was written specifically for the sqlite project's JavaScript
 # builds but is maintained as a standalone project:
 # https://fossil.wanderinghorse.net/r/c-pp
+#
+# Note that the SQLITE_... build flags used here have NO EFFECT on the
+# JS/WASM build. They are solely for use with $(bin.c-pp) itself.
 bin.c-pp := ./c-pp
 $(bin.c-pp): c-pp.c $(sqlite3.c) $(MAKEFILE)
 	$(CC) -O0 -o $@ c-pp.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top) \
@@ -518,13 +524,14 @@ emcc.jsflags += -sSTACK_SIZE=512KB
 # extern-post-js.js. However...  using a temporary symbol name here
 # and then adding sqlite3InitModule() ourselves results in 2 global
 # symbols: we cannot "delete" the Emscripten-defined
-# $(sqlite3.js.init-func) because it's declared with "var".
+# $(sqlite3.js.init-func) from vanilla builds (as opposed to ESM
+# builds) because it's declared with "var".
 sqlite3.js.init-func := sqlite3InitModule
 emcc.jsflags += -sEXPORT_NAME=$(sqlite3.js.init-func)
 emcc.jsflags += -sGLOBAL_BASE=4096 # HYPOTHETICALLY keep func table indexes from overlapping w/ heap addr.
 #emcc.jsflags += -sSTRICT # fails due to missing __syscall_...()
 #emcc.jsflags += -sALLOW_UNIMPLEMENTED_SYSCALLS
-#emcc.jsflags += -sFILESYSTEM=0 # only for experimentation. sqlite3 needs the FS API
+#emcc.jsflags += -sFILESYSTEM=0 # only for experimentation. fiddle needs the FS API
 #emcc.jsflags += -sABORTING_MALLOC # only for experimentation
 emcc.jsflags += -sALLOW_TABLE_GROWTH
 # ^^^^ -sALLOW_TABLE_GROWTH is required for installing new SQL UDFs
@@ -568,15 +575,20 @@ emcc.jsflags += -sLLD_REPORT_UNDEFINED
 # -g3 debugging info, _huge_.
 ########################################################################
 
+# $(sqlite3-api-build-version.js) injects the build version info into
+# the bundle.
 $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 	@echo "Making $@..."
 	@{ \
-  echo 'globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
-	echo -n '  sqlite3.version = '; \
-  $(bin.version-info) --json; \
-  echo ';'; \
-	echo '});'; \
+    echo 'globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
+    echo -n '  sqlite3.version = '; \
+    $(bin.version-info) --json; \
+    echo ';'; \
+    echo '});'; \
   } > $@
+
+# $(sqlite3-license-version.js) contains the license header and build
+# version info.
 $(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js) \
   $(MAKEFILE)
 	@echo "Making $@..."; { \
@@ -594,7 +606,11 @@ $(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js)
 ########################################################################
 # --post-js and --pre-js are emcc flags we use to append/prepend JS to
 # the generated emscripten module file. These rules set up the core
-# pre/post files for use by the various builds.
+# pre/post files for use by the various builds. --pre-js is used to
+# inject code which needs to run as part of the pre-WASM-load phase.
+# --post-js injects code which runs after the WASM module is loaded
+# and includes the entirety of the library plus some
+# Emscripten-specific post-bootstrapping code.
 pre-js.js.in := $(dir.api)/pre-js.c-pp.js
 post-js.js.in := $(dir.tmp)/post-js.c-pp.js
 post-jses.js := \
@@ -612,18 +628,26 @@ $(post-js.js.in): $(post-jses.js) $(MAKEFILE)
 
 ########################################################################
 # call-make-pre-post is a $(call)able which creates rules for
-# pre-js-$(1)-$(2).js. $1 = the base name of the JS file on whose
-# behalf this pre-js is for (one of: sqlite3, sqlite3-wasmfs). $2 is
+# pre-js.$(1)-$(2).js. $1 = the base name of the JS file on whose
+# behalf this pre-js is for (one of: $(JS_BUILD_NAMES)). $2 is
 # the build mode: one of $(JS_BUILD_MODES).  This sets up
 # --[extern-][pre/post]-js flags in $(pre-post-$(1)-$(2).flags) and
 # dependencies in $(pre-post-$(1)-$(2).deps). The resulting files get
 # filtered using $(C-PP.FILTER). Any flags necessary for such
 # filtering need to be set in $(c-pp.D.$(1)-$(2)) before $(call)ing
 # this.
+#
+# Maintenance note: a shell script was written to generate these rules
+# with the hope that it would make them more legible and maintainable,
+# but embedding makefile code in another language makes it even less
+# legible than having the level of $(eval) indirection which we have
+# here.
 define call-make-pre-post
 pre-post-$(1)-$(2).flags ?=
-pre-js.js.$(1)-$(2) := $$(dir.tmp)/pre-js.$(1)-$(2).intermediary.js
-$$(eval $$(call C-PP.FILTER,$$(pre-js.js.in),$$(pre-js.js.$(1)-$(2)),$$(c-pp.D.$(1)-$(2))))
+pre-js.js.$(1)-$(2).intermediary := $$(dir.tmp)/pre-js.$(1)-$(2).intermediary.js
+pre-js.js.$(1)-$(2) := $$(dir.tmp)/pre-js.$(1)-$(2).js
+#$$(error $$(pre-js.js.$(1)-$(2).intermediary) $$(pre-js.js.$(1)-$(2)))
+$$(eval $$(call C-PP.FILTER,$$(pre-js.js.in),$$(pre-js.js.$(1)-$(2).intermediary),$$(c-pp.D.$(1)-$(2))))
 post-js.js.$(1)-$(2) := $$(dir.tmp)/post-js.$(1)-$(2).js
 $$(eval $$(call C-PP.FILTER,$$(post-js.js.in),$$(post-js.js.$(1)-$(2)),$$(c-pp.D.$(1)-$(2))))
 extern-post-js.js.$(1)-$(2) := $$(dir.tmp)/extern-post-js.$(1)-$(2).js
@@ -634,8 +658,8 @@ pre-post-common.flags.$(1)-$(2) := \
   --extern-post-js=$$(extern-post-js.js.$(1)-$(2))
 pre-post-jses.$(1)-$(2).deps := $$(pre-post-jses.deps.common) \
   $$(post-js.js.$(1)-$(2)) $$(extern-post-js.js.$(1)-$(2))
-$$(dir.tmp)/pre-js-$(1)-$(2).js: $$(pre-js.js.$(1)-$(2)) $$(MAKEFILE)
-	cp $$(pre-js.js.$(1)-$(2)) $$@
+$$(pre-js.js.$(1)-$(2)): $$(pre-js.js.$(1)-$(2).intermediary) $$(MAKEFILE)
+	cp $$(pre-js.js.$(1)-$(2).intermediary) $$@
 	@if [ sqlite3-wasmfs = $(1) ]; then \
 		echo "delete Module[xNameOfInstantiateWasm] /*for WASMFS build*/;"; \
 	elif [ sqlite3 != $(1) ]; then \
@@ -643,10 +667,10 @@ $$(dir.tmp)/pre-js-$(1)-$(2).js: $$(pre-js.js.$(1)-$(2)) $$(MAKEFILE)
 	fi >> $$@
 pre-post-$(1)-$(2).deps := \
   $$(pre-post-jses.$(1)-$(2).deps) \
-  $$(dir.tmp)/pre-js-$(1)-$(2).js
+  $$(dir.tmp)/pre-js.$(1)-$(2).js
 pre-post-$(1)-$(2).flags += \
   $$(pre-post-common.flags.$(1)-$(2)) \
-  --pre-js=$$(dir.tmp)/pre-js-$(1)-$(2).js
+  --pre-js=$$(dir.tmp)/pre-js.$(1)-$(2).js
 endef
 # /post-js and pre-js
 ########################################################################
@@ -715,7 +739,7 @@ pre-post-jses.deps.common := $(extern-pre-js.js) $(sqlite3-license-version.js)
 # SETUP_LIB_BUILD_MODE is a $(call)'able which sets up numerous pieces
 # for one of the build modes.
 #
-# $1 = one of: sqlite3, sqlite3-wasmfs
+# $1 = one of: $(JS_BUILD_NAMES)
 # $2 = build mode name: one of $(JS_BUILD_MODES)
 # $3 = 1 for ESM build mode, else 0
 # $4 = resulting sqlite-api JS/MJS file
@@ -781,8 +805,7 @@ sqlite3-node.mjs := $(dir.dout)/sqlite3-node.mjs
 $(eval $(call SETUP_LIB_BUILD_MODE,sqlite3,vanilla,0,\
          $(sqlite3-api.js), $(sqlite3.js)))
 $(eval $(call SETUP_LIB_BUILD_MODE,sqlite3,esm,1,\
-         $(sqlite3-api.mjs), $(sqlite3.mjs), \
-       -Dtarget=es6-module, -sEXPORT_ES6 -sUSE_ES6_IMPORT_META))
+         $(sqlite3-api.mjs), $(sqlite3.mjs), -Dtarget=es6-module))
 $(eval $(call SETUP_LIB_BUILD_MODE,sqlite3,bundler-friendly,1,\
        $(sqlite3-api-bundler-friendly.mjs),$(sqlite3-bundler-friendly.mjs),\
        $(c-pp.D.sqlite3-esm) -Dtarget=es6-bundler-friendly))

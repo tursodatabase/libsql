@@ -1,3 +1,4 @@
+//#ifnot omit-oo1
 /**
   2022-07-22
 
@@ -689,3 +690,6 @@ sqlite3.initWorker1API = function(){
   globalThis.postMessage({type:'sqlite3-api',result:'worker1-ready'});
 }.bind({sqlite3});
 });
+//#else
+/* Built with the omit-oo1 flag. */
+//#endif ifnot omit-oo1
