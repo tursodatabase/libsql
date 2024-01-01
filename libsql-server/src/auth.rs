@@ -231,14 +231,6 @@ impl Authenticated {
             }) => true,
         }
     }
-
-    /// Returns `true` if the authenticated is [`Anonymous`].
-    ///
-    /// [`Anonymous`]: Authenticated::Anonymous
-    #[must_use]
-    pub fn is_anonymous(&self) -> bool {
-        matches!(self, Self::Anonymous)
-    }
 }
 
 #[derive(Debug)]
