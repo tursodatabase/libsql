@@ -256,7 +256,7 @@ public final class CApi {
      sqlite3_bind_nio_buffer().
   */
   @Experimental
-  public static int sqlite3_bind_blob(
+  /*public*/ static int sqlite3_bind_blob(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable java.nio.ByteBuffer data,
     int begin, int n
   ){
@@ -269,7 +269,7 @@ public final class CApi {
      final two arguments.
   */
   @Experimental
-  public static int sqlite3_bind_blob(
+  /*public*/ static int sqlite3_bind_blob(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable java.nio.ByteBuffer data
   ){
     return sqlite3_bind_nio_buffer(stmt, ndx, data, 0, -1);
@@ -346,7 +346,7 @@ public final class CApi {
      @see https://docs.oracle.com/javase/8/docs/api/java/nio/Buffer.html
   */
   @Experimental
-  public static native int sqlite3_bind_nio_buffer(
+  /*public*/ static native int sqlite3_bind_nio_buffer(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable java.nio.ByteBuffer data,
     int beginPos, int howMany
   );
@@ -356,7 +356,7 @@ public final class CApi {
      contents, up to its limit() (as opposed to its capacity()).
   */
   @Experimental
-  public static int sqlite3_bind_nio_buffer(
+  /*public*/ static int sqlite3_bind_nio_buffer(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable java.nio.ByteBuffer data
   ){
     return sqlite3_bind_nio_buffer(stmt, ndx, data, 0, -1);
@@ -600,7 +600,7 @@ public final class CApi {
      sqlite3_blob_read() (0 on success).
   */
   @Experimental
-  public static int sqlite3_blob_read_nio_buffer(
+  /*public*/ static int sqlite3_blob_read_nio_buffer(
     @NotNull sqlite3_blob src, int srcOffset,
     @NotNull java.nio.ByteBuffer tgt, int tgtOffset, int howMany
   ){
@@ -624,7 +624,7 @@ public final class CApi {
      for any reason.
   */
   @Experimental
-  public static java.nio.ByteBuffer sqlite3_blob_read_nio_buffer(
+  /*public*/ static java.nio.ByteBuffer sqlite3_blob_read_nio_buffer(
     @NotNull sqlite3_blob src, int srcOffset, int howMany
   ){
     if( !JNI_SUPPORTS_NIO || src==null ) return null;
@@ -645,7 +645,7 @@ public final class CApi {
      Overload alias for sqlite3_blob_read_nio_buffer().
   */
   @Experimental
-  public static int sqlite3_blob_read(
+  /*public*/ static int sqlite3_blob_read(
     @NotNull sqlite3_blob src, int srcOffset,
     @NotNull java.nio.ByteBuffer tgt,
     int tgtOffset, int howMany
@@ -668,7 +668,7 @@ public final class CApi {
      the result of the underlying call to sqlite3_blob_read().
   */
   @Experimental
-  public static int sqlite3_blob_read(
+  /*public*/ static int sqlite3_blob_read(
     @NotNull sqlite3_blob src,
     @NotNull java.nio.ByteBuffer tgt
   ){
@@ -727,7 +727,7 @@ public final class CApi {
      returns the result of the underlying call to sqlite3_blob_read().
   */
   @Experimental
-  public static int sqlite3_blob_write_nio_buffer(
+  /*public*/ static int sqlite3_blob_write_nio_buffer(
     @NotNull sqlite3_blob tgt, int tgtOffset,
     @NotNull java.nio.ByteBuffer src,
     int srcOffset, int howMany
@@ -756,7 +756,7 @@ public final class CApi {
      of b.
   */
   @Experimental
-  public static int sqlite3_blob_write(
+  /*public*/ static int sqlite3_blob_write(
     @NotNull sqlite3_blob tgt, int tgtOffset,
     @NotNull java.nio.ByteBuffer src
   ){
@@ -770,7 +770,7 @@ public final class CApi {
      of tgt.
    */
   @Experimental
-  public static int sqlite3_blob_write(
+  /*public*/ static int sqlite3_blob_write(
     @NotNull sqlite3_blob tgt,
     @NotNull java.nio.ByteBuffer src
   ){
@@ -926,7 +926,7 @@ public final class CApi {
      would return null for the same inputs.
   */
   @Experimental
-  public static native java.nio.ByteBuffer sqlite3_column_nio_buffer(
+  /*public*/ static native java.nio.ByteBuffer sqlite3_column_nio_buffer(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
@@ -1848,7 +1848,7 @@ public final class CApi {
      then this function behaves like sqlite3_result_error_toobig().
   */
   @Experimental
-  public static native void sqlite3_result_nio_buffer(
+  /*public*/ static native void sqlite3_result_nio_buffer(
     @NotNull sqlite3_context cx, @Nullable java.nio.ByteBuffer blob,
     int begin, int n
   );
@@ -1858,7 +1858,7 @@ public final class CApi {
      as the result blob content.
   */
   @Experimental
-  public static void sqlite3_result_nio_buffer(
+  /*public*/ static void sqlite3_result_nio_buffer(
     @NotNull sqlite3_context cx, @Nullable java.nio.ByteBuffer blob
   ){
     sqlite3_result_nio_buffer(cx, blob, 0, -1);
@@ -1963,7 +1963,7 @@ public final class CApi {
      sqlite3_result_nio_buffer().
   */
   @Experimental
-  public static void sqlite3_result_blob(
+  /*public*/ static void sqlite3_result_blob(
     @NotNull sqlite3_context cx, @Nullable java.nio.ByteBuffer blob,
     int begin, int n
   ){
@@ -1975,7 +1975,7 @@ public final class CApi {
      sqlite3_result_nio_buffer().
   */
   @Experimental
-  public static void sqlite3_result_blob(
+  /*public*/ static void sqlite3_result_blob(
     @NotNull sqlite3_context cx, @Nullable java.nio.ByteBuffer blob
   ){
     sqlite3_result_nio_buffer(cx, blob);
@@ -2387,7 +2387,7 @@ public final class CApi {
      would return null for the same input.
   */
   @Experimental
-  public static native java.nio.ByteBuffer sqlite3_value_nio_buffer(
+  /*public*/ static native java.nio.ByteBuffer sqlite3_value_nio_buffer(
     @NotNull sqlite3_value v
   );
 
