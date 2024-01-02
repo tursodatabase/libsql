@@ -589,7 +589,7 @@ impl RowsInner for RemoteRows {
         let values = row
             .values
             .iter()
-            .map(|v| bincode::deserialize(&v.data[..]).map_err(Error::from))
+            .map(Value::try_from)
             .collect::<Result<Vec<_>>>()?;
 
         let row = RemoteRow(values, self.0.column_descriptions.clone());

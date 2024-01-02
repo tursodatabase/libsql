@@ -602,10 +602,10 @@ fn proxy_write_returning_row() {
 
         let conn = db.connect()?;
 
-        conn.execute("create table test (x)", ())
-            .await?;
+        conn.execute("create table test (x)", ()).await?;
 
-        let mut rows = conn.query("insert into test values (12) returning rowid as id", ())
+        let mut rows = conn
+            .query("insert into test values (12) returning rowid as id", ())
             .await
             .unwrap();
 
