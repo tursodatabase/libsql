@@ -1,7 +1,7 @@
 use crate::hrana::cursor::{Cursor, CursorReq};
 use crate::hrana::pipeline::{
-    ClientMsg, CloseSqlStreamReq, DescribeStreamReq, Response, SequenceStreamReq, ServerMsg,
-    StoreSqlStreamReq, StreamRequest, StreamResponse, StreamResponseOk,
+    BatchStreamReq, ClientMsg, CloseSqlStreamReq, DescribeStreamReq, Response, SequenceStreamReq,
+    ServerMsg, StoreSqlStreamReq, StreamRequest, StreamResponse, StreamResponseOk,
 };
 use crate::hrana::proto::{Batch, BatchResult, DescribeResult, Stmt, StmtResult};
 use crate::hrana::{CursorResponseError, HranaError, HttpSend, Result, StreamResponseError};
@@ -104,10 +104,26 @@ where
     }
 
     pub async fn batch(&self, batch: Batch) -> Result<BatchResult> {
-        //TODO: this trait shouldn't return BatchResult but an associated
-        //      type that can respect Hrana async streaming cursor capabilities
-        let cursor = self.cursor(batch).await?;
-        Ok(cursor.into_batch_result().await?)
+        let mut client = self.inner.stream.lock().await;
+        let [resp, get_autocommit] = client
+            .send_requests([
+                StreamRequest::Batch(BatchStreamReq { batch }),
+                StreamRequest::GetAutocommit,
+            ])
+            .await?;
+        drop(client);
+        match get_autocommit {
+            StreamResponse::GetAutocommit(r) => {
+                self.inner
+                    .is_autocommit
+                    .store(r.is_autocommit, Ordering::SeqCst);
+            }
+            other => unexpected!(other),
+        };
+        match resp {
+            StreamResponse::Batch(resp) => Ok(resp.result),
+            other => unexpected!(other),
+        }
     }
 
     pub async fn cursor(&self, batch: Batch) -> Result<Cursor<T::Stream>> {

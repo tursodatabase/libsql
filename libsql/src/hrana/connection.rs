@@ -1,4 +1,3 @@
-use crate::hrana::cursor::Cursor;
 use crate::hrana::proto::{Batch, BatchResult, Stmt};
 use crate::hrana::stream::{parse_hrana_urls, HranaStream};
 use crate::hrana::{HttpSend, Result, Statement};
@@ -84,11 +83,6 @@ where
     ) -> Result<BatchResult> {
         let batch = Batch::from_iter(stmts, false);
         self.current_stream().batch(batch).await
-    }
-
-    pub(crate) async fn execute_inner(&self, stmt: Stmt) -> Result<Cursor<T::Stream>> {
-        let resp = self.current_stream().cursor(Batch::single(stmt)).await?;
-        Ok(resp)
     }
 
     pub fn prepare(&self, sql: &str) -> Statement<T> {

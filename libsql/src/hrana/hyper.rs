@@ -112,10 +112,10 @@ impl Conn for HttpConnection<HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
         let mut stmt = Stmt::new(sql, false);
         bind_params(params, &mut stmt);
-        let cursor = self.execute_inner(stmt).await?;
-        let mut step = cursor.next_step_owned().await?;
-        step.consume().await?;
-        Ok(step.affected_rows() as u64)
+        self.batch_inner([stmt])
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        Ok(self.affected_row_count())
     }
 
     async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
