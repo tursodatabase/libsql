@@ -84,7 +84,7 @@ pub(super) async fn handle_dump<F: MakeNamespace>(
         state.disable_namespaces,
     )?;
 
-    if !auth.is_namespace_authorized(&namespace) | auth.is_anonymous() {
+    if !auth.is_namespace_authorized(&namespace) {
         return Err(Error::NamespaceDoesntExist(namespace.to_string()));
     }
 
