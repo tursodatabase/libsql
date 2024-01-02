@@ -24,6 +24,7 @@ pub struct SingleStatementBuilder {
     current_size: u64,
     max_response_size: u64,
     max_total_response_size: u64,
+    last_frame_no: Option<FrameNo>,
 }
 
 struct SizeFormatter {
@@ -226,9 +227,10 @@ impl QueryResultBuilder for SingleStatementBuilder {
 
     fn finish(
         &mut self,
-        _last_frame_no: Option<FrameNo>,
+        last_frame_no: Option<FrameNo>,
         _is_autocommit: bool,
     ) -> Result<(), QueryResultBuilderError> {
+        self.last_frame_no = last_frame_no;
         Ok(())
     }
 
@@ -240,6 +242,7 @@ impl QueryResultBuilder for SingleStatementBuilder {
                 rows: std::mem::take(&mut self.rows),
                 affected_row_count: std::mem::take(&mut self.affected_row_count),
                 last_insert_rowid: std::mem::take(&mut self.last_insert_rowid),
+                replication_index: self.last_frame_no,
             }),
         }
     }

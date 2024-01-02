@@ -53,6 +53,9 @@ pub struct StmtResult {
     #[serde(with = "option_i64_as_str")]
     #[prost(sint64, optional, tag = "4")]
     pub last_insert_rowid: Option<i64>,
+    #[serde(with = "option_u64_as_str")]
+    #[prost(uint64, optional, tag = "5")]
+    pub replication_index: Option<u64>,
 }
 
 #[derive(Serialize, prost::Message)]
@@ -237,6 +240,14 @@ mod option_i64_as_str {
     use serde::{ser, Serialize as _};
 
     pub fn serialize<S: ser::Serializer>(value: &Option<i64>, ser: S) -> Result<S::Ok, S::Error> {
+        value.map(|v| v.to_string()).serialize(ser)
+    }
+}
+
+mod option_u64_as_str {
+    use serde::{ser, Serialize as _};
+
+    pub fn serialize<S: ser::Serializer>(value: &Option<u64>, ser: S) -> Result<S::Ok, S::Error> {
         value.map(|v| v.to_string()).serialize(ser)
     }
 }
