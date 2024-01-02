@@ -3505,6 +3505,7 @@ static int walFindFrame(
         iRead = iFrame;
       }
       if( (nCollide--)==0 ){
+        *piRead = 0;
         return SQLITE_CORRUPT_BKPT;
       }
       iKey = walNextHash(iKey);

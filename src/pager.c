@@ -818,9 +818,8 @@ int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
 #ifndef SQLITE_OMIT_WAL
   if( pPager->pWal ){
     u32 iRead = 0;
-    int rc;
-    rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iRead);
-    return (rc==SQLITE_OK && iRead==0);
+    (void)sqlite3WalFindFrame(pPager->pWal, pgno, &iRead);
+    return iRead==0;
   }
 #endif
   return 1;
