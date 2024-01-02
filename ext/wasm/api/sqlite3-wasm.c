@@ -1103,7 +1103,7 @@ const char * sqlite3_wasm_enum_json(void){
       M(xShadowName,    "i(s)");
     } _StructBinder;
 #undef CurrentStruct
-    
+
     /**
      ** Workaround: in order to map the various inner structs from
      ** sqlite3_index_info, we have to uplift those into constructs we
