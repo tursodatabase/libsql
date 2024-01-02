@@ -1,5 +1,5 @@
-C Elaborate\son\sthe\svarious\sbuild\sflavors\sused\sby\sext/wasm/.\sDoc\schanges\sonly.
-D 2024-01-02T09:20:53.920
+C Increase\sthe\sdefault\s"max_page_count"\sto\sits\stheoretical\smaximum\sof\n4294967294.
+D 2024-01-02T20:34:27.723
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -743,7 +743,7 @@ F src/sqlite.h.in 61a60b4ea04db8ead15e1579b20b64cb56e9f55d52c5f9f9694de630110593
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h 73800d73e21180e6b3df8d0fe7d11758dc24367fd2b0b0075b48fc116de406bb
-F src/sqliteLimit.h 33b1c9baba578d34efe7dfdb43193b366111cdf41476b1e82699e14c11ee1fb6
+F src/sqliteLimit.h 0c4b40bfebb193b5a4eb13db928413e618be8b05fcb572ddf03664c036568f7f
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c ecbc3c99c0d0c3ed122a913f143026c26d38d57f33e06bb71185dd5c1efe37cd
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7a7b295e6d7e95ee4a46cc42761895d11700ab295870c5a4380072bb4a5b7099
-R dbfbc413c8ad5978806e35b24ed8829e
-U stephan
-Z 4ad8f4d46176eebccf80225f45577976
+P d489232aa492618d4c8e5817addb2323d0ca067742d7140216914239a66fb221
+R a0497c811eff87495d0c9ffce0ab9884
+U drh
+Z d3582aa92c333af17186884e8cd6645f
 # Remove this line to create a well-formed Fossil manifest.
