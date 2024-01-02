@@ -305,7 +305,7 @@ impl LibSqlConnection<libsql_sys::wal::Sqlite3Wal> {
             Arc::new([]),
             libsql_sys::wal::Sqlite3WalManager::new(),
             Default::default(),
-            MetaStoreHandle::new_test().into(),
+            MetaStoreHandle::new_test(),
             QueryBuilderConfig::default(),
             rcv,
             Default::default(),

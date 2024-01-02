@@ -136,6 +136,13 @@ impl<'de> Deserialize<'de> for NamespaceName {
             {
                 NamespaceName::from_string(v).map_err(|e| E::custom(e))
             }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                NamespaceName::from_string(v.to_string()).map_err(|e| E::custom(e))
+            }
         }
 
         deserializer.deserialize_string(V)

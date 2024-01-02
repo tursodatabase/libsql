@@ -114,7 +114,7 @@ impl ForkTask<'_> {
                 // PrimaryNamespaceMaker::create ignores
                 // reset_cb param
                 Box::new(|_op| {}),
-                &self.meta_store,
+                self.meta_store,
             )
             .await
             .map_err(|e| ForkError::CreateNamespace(Box::new(e)))
