@@ -11,8 +11,8 @@ pub struct Statement {
     /// Is the statement an INSERT, UPDATE or DELETE?
     pub is_iud: bool,
     pub is_insert: bool,
-    // Optional id associated with the statement (used for attach/detach)
-    pub id: Option<String>,
+    // Optional id and alias associated with the statement (used for attach/detach)
+    pub attach_info: Option<(String, String)>,
 }
 
 impl Default for Statement {
@@ -117,11 +117,7 @@ impl StmtKind {
                 savepoint_name: Some(_),
                 ..
             }) => Some(Self::Release),
-            Cmd::Stmt(Stmt::Attach {
-                expr: Expr::Id(Id(expr)),
-                db_name: Expr::Id(Id(name)),
-                ..
-            }) if expr == name => Some(Self::Attach),
+            Cmd::Stmt(Stmt::Attach { .. }) => Some(Self::Attach),
             Cmd::Stmt(Stmt::Detach(_)) => Some(Self::Detach),
             _ => None,
         }
@@ -247,7 +243,7 @@ impl Statement {
             kind: StmtKind::Read,
             is_iud: false,
             is_insert: false,
-            id: None,
+            attach_info: None,
         }
     }
 
@@ -269,7 +265,7 @@ impl Statement {
                         kind,
                         is_iud: false,
                         is_insert: false,
-                        id: None,
+                        attach_info: None,
                     });
                 }
             }
@@ -280,13 +276,12 @@ impl Statement {
             );
             let is_insert = matches!(c, Cmd::Stmt(Stmt::Insert { .. }));
 
-            let id = match &c {
+            let attach_info = match &c {
                 Cmd::Stmt(Stmt::Attach {
                     expr: Expr::Id(Id(expr)),
                     db_name: Expr::Id(Id(name)),
                     ..
-                }) if expr == name => Some(name.clone()),
-                Cmd::Stmt(Stmt::Detach(Expr::Id(Id(expr)))) => Some(expr.clone()),
+                }) => Some((expr.clone(), name.clone())),
                 _ => None,
             };
 
@@ -295,7 +290,7 @@ impl Statement {
                 kind,
                 is_iud,
                 is_insert,
-                id,
+                attach_info,
             })
         }
         // The parser needs to be boxed because it's large, and you don't want it on the stack.
