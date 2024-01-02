@@ -7,7 +7,7 @@ use crate::hrana::proto::{Batch, BatchResult, DescribeResult, Stmt, StmtResult};
 use crate::hrana::{CursorResponseError, HranaError, HttpSend, Result, StreamResponseError};
 use bytes::{Bytes, BytesMut};
 use futures::Stream;
-use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -58,6 +58,7 @@ where
             inner: Arc::new(Inner {
                 affected_row_count: AtomicU64::new(0),
                 last_insert_rowid: AtomicI64::new(0),
+                is_autocommit: AtomicBool::new(true),
                 stream: Mutex::new(RawStream {
                     client,
                     pipeline_url,
@@ -195,6 +196,10 @@ where
     pub fn last_insert_rowid(&self) -> i64 {
         self.inner.last_insert_rowid.load(Ordering::SeqCst)
     }
+
+    pub fn is_autocommit(&self) -> bool {
+        self.inner.is_autocommit.load(Ordering::SeqCst)
+    }
 }
 
 #[derive(Debug)]
@@ -204,6 +209,7 @@ where
 {
     affected_row_count: AtomicU64,
     last_insert_rowid: AtomicI64,
+    is_autocommit: AtomicBool,
     stream: Mutex<RawStream<T>>,
 }
 

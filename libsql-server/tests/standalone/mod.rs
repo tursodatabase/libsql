@@ -243,6 +243,43 @@ fn basic_query_fail() {
 }
 
 #[test]
+fn query_begin_rollback() {
+    let mut sim = turmoil::Builder::new().build();
+
+    sim.host("primary", make_standalone_server);
+
+    sim.client("test", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        conn.execute("create table test (x)", ()).await?;
+
+        conn.execute("begin;", ()).await?;
+        conn.execute("insert into test values (12);", ()).await?;
+
+        // we can read the inserted row
+        let mut rows = conn.query("select count(*) from test", ()).await?;
+        assert_eq!(
+            rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
+            Value::Integer(1)
+        );
+
+        conn.execute("rollback;", ()).await?;
+
+        // after rollback row is no longer there
+        let mut rows = conn.query("select count(*) from test", ()).await?;
+        assert_eq!(
+            rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
+            Value::Integer(0)
+        );
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
 fn random_rowid() {
     let mut sim = turmoil::Builder::new().build();
 
