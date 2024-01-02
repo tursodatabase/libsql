@@ -5,8 +5,6 @@ on:
     branches: ['main']
     tags:
       - libsql-server-v*.*.*
-  # REMOVE BEFORE MERGING
-  pull_request:
 
 env:
   REGISTRY: ghcr.io
@@ -31,13 +29,12 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
 
-      # UNCOMMENT BEFORE MERGING
-      # - name: Log in to the Container registry
-      #   uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
-      #   with:
-      #     registry: ${{ env.REGISTRY }}
-      #     username: ${{ github.actor }}
-      #     password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to the Container registry
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -52,8 +49,7 @@ jobs:
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
           context: .
-          # SET BACK TO TRUE BEFORE MERGING
-          push: false
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
