@@ -284,7 +284,7 @@ impl Statement {
                 }) => Some((expr.clone(), name.clone())),
                 _ => None,
             };
-
+            tracing::info!("attachiu: {:?}", attach_info);
             Ok(Statement {
                 stmt: c.to_string(),
                 kind,

@@ -694,6 +694,31 @@ impl<W: Wal> Connection<W> {
         Ok(enabled)
     }
 
+    fn prepare_attach_query(&self, attached: &str, attached_alias: &str) -> Result<String> {
+        let attached = attached.strip_prefix('"').unwrap_or(attached);
+        let attached = attached.strip_suffix('"').unwrap_or(attached);
+        if attached.contains('/') {
+            return Err(Error::Internal(format!(
+                "Invalid attached database name: {:?}",
+                attached
+            )));
+        }
+        let path = PathBuf::from(self.conn.path().unwrap_or("."));
+        let dbs_path = path
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new(".."))
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new(".."))
+            .canonicalize()
+            .unwrap_or_else(|_| std::path::PathBuf::from(".."));
+        let query = format!(
+            "ATTACH DATABASE 'file:{}?mode=ro' AS \"{attached_alias}\"",
+            dbs_path.join(attached).join("data").display()
+        );
+        tracing::trace!("ATTACH rewritten to: {query}");
+        Ok(query)
+    }
+
     fn execute_query(
         &self,
         query: &Query,
@@ -719,19 +744,7 @@ impl<W: Wal> Connection<W> {
         let mut stmt = if matches!(query.stmt.kind, StmtKind::Attach) {
             match &query.stmt.attach_info {
                 Some((attached, attached_alias)) => {
-                    let path = PathBuf::from(self.conn.path().unwrap_or("."));
-                    let dbs_path = path
-                        .parent()
-                        .unwrap_or_else(|| std::path::Path::new(".."))
-                        .parent()
-                        .unwrap_or_else(|| std::path::Path::new(".."))
-                        .canonicalize()
-                        .unwrap_or_else(|_| std::path::PathBuf::from(".."));
-                    let query = format!(
-                        "ATTACH DATABASE 'file:{}?mode=ro' AS \"{attached_alias}\"",
-                        dbs_path.join(attached).join("data").display()
-                    );
-                    tracing::trace!("ATTACH rewritten to: {query}");
+                    let query = self.prepare_attach_query(attached, attached_alias)?;
                     self.conn.prepare(&query)?
                 }
                 None => {
