@@ -2731,8 +2731,8 @@ static int fts5RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   int rc = SQLITE_OK;
   fts5CheckTransactionState(pTab, FTS5_ROLLBACKTO, iSavepoint);
   fts5TripCursors(pTab);
-  pTab->p.pConfig->pgsz = 0;
   if( (iSavepoint+1)<=pTab->iSavepoint ){
+    pTab->p.pConfig->pgsz = 0;
     rc = sqlite3Fts5StorageRollback(pTab->pStorage);
   }
   return rc;

@@ -515,5 +515,25 @@ do_execsql_test 18.2 {
   COMMIT;
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 19.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(text);
+  CREATE TABLE t2(text);
+  BEGIN;
+    INSERT INTO t1 VALUES('one');
+    INSERT INTO t1 VALUES('two');
+    INSERT INTO t1 VALUES('three');
+    INSERT INTO t1 VALUES('one');
+    INSERT INTO t1 VALUES('two');
+    INSERT INTO t1 VALUES('three');
+    SAVEPOINT one;
+      INSERT INTO t2 VALUES('one');
+      INSERT INTO t2 VALUES('two');
+      INSERT INTO t2 VALUES('three');
+    ROLLBACK TO one;
+  COMMIT;
+}
+
 finish_test
 
