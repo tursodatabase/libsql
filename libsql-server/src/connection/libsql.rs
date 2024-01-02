@@ -771,21 +771,30 @@ impl<W: Wal> Connection<W> {
         }
 
         let mut stmt = if matches!(query.stmt.kind, StmtKind::Attach) {
-            let attached_db_name: &str = query.stmt.id.as_deref().unwrap_or("");
-            let path = PathBuf::from(self.conn.path().unwrap_or("."));
-            let dbs_path = path
-                .parent()
-                .unwrap_or_else(|| std::path::Path::new(".."))
-                .parent()
-                .unwrap_or_else(|| std::path::Path::new(".."))
-                .canonicalize()
-                .unwrap_or_else(|_| std::path::PathBuf::from(".."));
-            let query = format!(
-                "ATTACH DATABASE 'file:{}?mode=ro' AS \"{attached_db_name}\"",
-                dbs_path.join(attached_db_name).join("data").display()
-            );
-            tracing::trace!("ATTACH rewritten to: {query}");
-            self.conn.prepare(&query)?
+            match &query.stmt.attach_info {
+                Some((attached, attached_alias)) => {
+                    let path = PathBuf::from(self.conn.path().unwrap_or("."));
+                    let dbs_path = path
+                        .parent()
+                        .unwrap_or_else(|| std::path::Path::new(".."))
+                        .parent()
+                        .unwrap_or_else(|| std::path::Path::new(".."))
+                        .canonicalize()
+                        .unwrap_or_else(|_| std::path::PathBuf::from(".."));
+                    let query = format!(
+                        "ATTACH DATABASE 'file:{}?mode=ro' AS \"{attached_alias}\"",
+                        dbs_path.join(attached).join("data").display()
+                    );
+                    tracing::trace!("ATTACH rewritten to: {query}");
+                    self.conn.prepare(&query)?
+                }
+                None => {
+                    return Err(Error::Internal(format!(
+                        "Failed to ATTACH: {:?}",
+                        query.stmt.attach_info
+                    )))
+                }
+            }
         } else {
             self.conn.prepare(&query.stmt.stmt)?
         };
