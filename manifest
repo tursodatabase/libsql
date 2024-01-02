@@ -1,5 +1,5 @@
-C Update\sand\sclean\sup\sthe\sin-makefile\sdocs\sfor\sext/wasm.
-D 2024-01-02T09:03:42.100
+C Elaborate\son\sthe\svarious\sbuild\sflavors\sused\sby\sext/wasm/.\sDoc\schanges\sonly.
+D 2024-01-02T09:20:53.920
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -575,7 +575,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 5b1f425d3619578d4e17312a3d920cbf0d22caff67d1fc30330046ca0ae24bc6
+F ext/wasm/GNUmakefile 99aad6d6a28c43573f80825e986427c1a024a3298aaf0c69c56a0c6b336f12c8
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cd7929ee2e2c305475fa5a4dff2edaccf90067126ef04a1c2714cf464925453f
-R de6e93274e75f378c4f5110a14f6c9e3
+P 7a7b295e6d7e95ee4a46cc42761895d11700ab295870c5a4380072bb4a5b7099
+R dbfbc413c8ad5978806e35b24ed8829e
 U stephan
-Z 326fdaaa6c149e5a91868eade9fb0075
+Z 4ad8f4d46176eebccf80225f45577976
 # Remove this line to create a well-formed Fossil manifest.

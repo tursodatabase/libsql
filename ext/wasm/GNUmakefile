@@ -55,21 +55,34 @@ DISTCLEAN_FILES := ./--dummy--
 release: oz
 
 ########################################################################
-# JS_BUILD_NAMES exists solely to reduce repetition in documentation
-# below. It enumerates the core build styles:
+# JS_BUILD_NAMES exists for documentation purposes only. It enumerates
+# the core build styles:
 #
-# - sqlite3 = main build
-# - sqlite3-wasmfs = WASMFS-capable build
+# - sqlite3 = canonical library build
+#
+# - sqlite3-wasmfs = WASMFS-capable library build
+#
 JS_BUILD_NAMES := sqlite3 sqlite3-wasmfs
 
 ########################################################################
-# JS_BUILD_MODES exists solely to reduce repetition in documentation
-# below. It enumerates the various flavors of build:
+# JS_BUILD_MODES exists for documentation purposes only. It enumerates
+# the various "flavors" of build, each of which requires slight
+# customization of the output:
 #
-# - vanilla = plain-vanilla JS
-# - ecm = ES6 module a.k.a. ESM
-# - bundler-friendly = esm slightly tweaked for "bundler" tools
-# - node = for use with node.js
+# - vanilla = plain-vanilla JS for use in browsers. This is the
+#   canonical build mode.
+#
+# - esm = ES6 module, a.k.a. ESM, for use in browsers.
+#
+# - bundler-friendly = esm slightly tweaked for "bundler"
+#   tools. Bundlers are invariably based on node.js, so these builds
+#   are intended to be read at build-time by node.js but with a final
+#   target of browsers.
+#
+# - node = for use by node.js for node.js, as opposed to by node.js on
+#   behalf o browser-side code (use bundler-friendly for that). Note
+#   that persistent storage (OPFS) is not available in these builds.
+#
 JS_BUILD_MODES := vanilla esm bunder-friendly node
 
 ########################################################################
@@ -874,7 +887,7 @@ $(eval $(call SETUP_LIB_BUILD_MODE,sqlite3,node,1,\
 # -Dtarget=es6-module -Dtarget=es6-bundler-friendly: intended for
 #    "bundler-friendly" ESM module build. These have some restrictions
 #    on how URL() objects are constructed in some contexts: URLs which
-#    refer to files which are part of this project must be references
+#    refer to files which are part of this project must be referenced
 #    as string literals so that bundlers' static-analysis tools can
 #    find those files and include them in their bundles.
 #
