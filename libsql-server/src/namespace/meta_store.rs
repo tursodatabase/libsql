@@ -198,7 +198,7 @@ impl MetaStoreHandle {
 
         let config_path = db_path.as_ref().join("config.json");
 
-        let config = match fs::read(&config_path) {
+        let config = match fs::read(config_path) {
             Ok(data) => serde_json::from_slice(&data)?,
             Err(err) if err.kind() == io::ErrorKind::NotFound => DatabaseConfig::default(),
             Err(err) => return Err(Error::IOError(err)),
