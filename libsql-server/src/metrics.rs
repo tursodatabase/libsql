@@ -133,3 +133,8 @@ pub static REPLICATION_LATENCY_OUT_OF_SYNC: Lazy<Counter> = Lazy::new(|| {
     );
     register_counter!(NAME)
 });
+pub static REPLICATION_LATENCY_CACHE_MISS: Lazy<Counter> = Lazy::new(|| {
+    const NAME: &str = "libsql_server_replication_latencies_cache_misses";
+    describe_counter!(NAME, "Number of replication latency cache misses");
+    register_counter!(NAME)
+});
