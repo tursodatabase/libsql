@@ -1,3 +1,4 @@
+use crate::hrana::cursor::Cursor;
 use crate::hrana::proto::{Batch, BatchResult, Stmt};
 use crate::hrana::stream::{parse_hrana_urls, HranaStream};
 use crate::hrana::{HttpSend, Result, Statement};
