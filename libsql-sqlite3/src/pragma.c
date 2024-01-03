@@ -449,6 +449,11 @@ void sqlite3Pragma(
   aFcntl[3] = 0;
   db->busyHandler.nBusy = 0;
   rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_PRAGMA, (void*)aFcntl);
+#ifdef LIBSQL_EXTRA_PRAGMAS
+  if(rc == SQLITE_NOTFOUND) {
+    rc = libsql_extra_pragma(db, zDb, (void*)aFcntl);
+  }
+#endif
   if( rc==SQLITE_OK ){
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, aFcntl[0], SQLITE_TRANSIENT);

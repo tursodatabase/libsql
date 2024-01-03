@@ -211,6 +211,11 @@ static void attachFunc(
   if( rc==SQLITE_OK && pNew->zDbSName==0 ){
     rc = SQLITE_NOMEM_BKPT;
   }
+#ifdef LIBSQL_EXTRA_URI_PARAMS
+  if (rc == SQLITE_OK) {
+    rc = libsql_handle_extra_attach_params(db, zName, zPath, argv, &zErrDyn);
+  }
+#endif
   sqlite3_free_filename( zPath );
 
   /* If the file was opened successfully, read the schema for the new database.
