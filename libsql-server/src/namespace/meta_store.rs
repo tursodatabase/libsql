@@ -142,8 +142,9 @@ fn restore(db: &Connection) -> Result<HashMap<NamespaceName, Sender<Arc<Database
 }
 
 impl MetaStore {
+    #[tracing::instrument(skip(config, base_path))]
     pub async fn new(config: Option<MetaStoreConfig>, base_path: &Path) -> Result<Self> {
-        let db_path = base_path.join("meta-store");
+        let db_path = base_path.join("metastore");
         tokio::fs::create_dir_all(&db_path).await?;
         let replicator = match config {
             Some(config) => {
@@ -265,6 +266,7 @@ impl MetaStore {
             .and_then(|b| b.shutdown());
 
         if let Some(mut replicator) = replicator {
+            tracing::info!("Started meta store backup");
             replicator.shutdown_gracefully().await?;
             tracing::info!("meta store backed up");
         }
