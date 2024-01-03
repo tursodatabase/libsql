@@ -4671,7 +4671,7 @@ int sqlite3_test_control(int op, ...){
     ** to be the current setting.
     */
     case SQLITE_TESTCTRL_JSON_SELFCHECK: {
-#if defined(SQLITE_DEBUG)
+#if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_WSD)
       int *pOnOff = va_arg(ap, int*);
       if( *pOnOff<0 ){
         *pOnOff = sqlite3Config.bJsonSelfcheck;

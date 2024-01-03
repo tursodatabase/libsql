@@ -1,5 +1,5 @@
-C Convert\sthe\sJSON\sfunctions\sto\suse\slookaside\smemory\sallocation\swhenever\nfeasible,\sto\savoid\shitting\sthe\sglobal\smemory\sallocator\smutex.
-D 2024-01-03T16:41:50.573
+C Fix\sa\s#ifdef\sin\ssqlite3_test_control()\sthat\swas\spreventing\sbuilds\swith\nSQLITE_OMIT_WSD.
+D 2024-01-03T20:40:17.581
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -700,7 +700,7 @@ F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
 F src/json.c 4913fd22c4f0fa30643afb93a4d78d289cd490620e782b31016c3d4b2049b1cc
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
-F src/main.c ce714ee501122c76eb2e69b292bebe443aba611fc3b88e6786eb910285515fe4
+F src/main.c 438b95162acfa17b7d218f586f5bde11d6ae82bcf030c9611fc537556870ad6b
 F src/malloc.c f016922435dc7d1f1f5083a03338a3e91f8c67ce2c5bdcfa4cdef62e612f5fcc
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e3acb8a43ad544fd5b5341058276bd3b61b6bdb6b719790476a90e0de4320f90
-R 951d215a027ca002df153a3678fabcb5
+P a79a244954f728596da3c0e28fa3b887258d1bd831f53881970f418f3fba84c7
+R 2cb03286d1de4c61e0953028252fab0a
 U drh
-Z 4bd172c52ecc91bae1ff8ea6834cc34c
+Z a9b64d69ed9b2889c84934f6dec5097d
 # Remove this line to create a well-formed Fossil manifest.
