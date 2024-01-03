@@ -298,6 +298,7 @@ struct JsonParse {
   u32 nBlob;         /* Bytes of aBlob[] actually used */
   u32 nBlobAlloc;    /* Bytes allocated to aBlob[].  0 if aBlob is external */
   char *zJson;       /* Json text used for parsing */
+  sqlite3 *db;       /* The database connection to which this object belongs */
   int nJson;         /* Length of the zJson string in bytes */
   u32 nJPRef;        /* Number of references to this object */
   u32 iErr;          /* Error location in zJson[] */
@@ -823,7 +824,7 @@ static void jsonParseReset(JsonParse *pParse){
     pParse->bJsonIsRCStr = 0;
   }
   if( pParse->nBlobAlloc ){
-    sqlite3_free(pParse->aBlob);
+    sqlite3DbFree(pParse->db, pParse->aBlob);
     pParse->aBlob = 0;
     pParse->nBlob = 0;
     pParse->nBlobAlloc = 0;
@@ -840,7 +841,7 @@ static void jsonParseFree(JsonParse *pParse){
       pParse->nJPRef--;
     }else{
       jsonParseReset(pParse);
-      sqlite3_free(pParse);
+      sqlite3DbFree(pParse->db, pParse);
     }
   }
 }
@@ -1071,7 +1072,7 @@ static int jsonBlobExpand(JsonParse *pParse, u32 N){
     t = pParse->nBlobAlloc*2;
   }
   if( t<N ) t = N+100;
-  aNew = sqlite3_realloc64( pParse->aBlob, t );
+  aNew = sqlite3DbRealloc(pParse->db, pParse->aBlob, t);
   if( aNew==0 ){ pParse->oom = 1; return 1; }
   pParse->aBlob = aNew;
   pParse->nBlobAlloc = t;
@@ -1996,14 +1997,15 @@ static void jsonReturnStringAsBlob(JsonString *pStr){
   jsonStringTerminate(pStr);
   px.zJson = pStr->zBuf;
   px.nJson = pStr->nUsed;
+  px.db = sqlite3_context_db_handle(pStr->pCtx);
   (void)jsonTranslateTextToBlob(&px, 0);
   if( px.oom ){
-    sqlite3_free(px.aBlob);
+    sqlite3DbFree(px.db, px.aBlob);
     sqlite3_result_error_nomem(pStr->pCtx);
   }else{
     assert( px.nBlobAlloc>0 );
     assert( !px.bReadOnly );
-    sqlite3_result_blob(pStr->pCtx, px.aBlob, px.nBlob, sqlite3_free);
+    sqlite3_result_blob(pStr->pCtx, px.aBlob, px.nBlob, SQLITE_DYNAMIC);
   }
 }
 
@@ -2619,6 +2621,7 @@ static u32 jsonCreateEditSubstructure(
   static const u8 emptyObject[] = { JSONB_ARRAY, JSONB_OBJECT };
   int rc;
   memset(pIns, 0, sizeof(*pIns));
+  pIns->db = pParse->db;
   if( zTail[0]==0 ){
     /* No substructure.  Just insert what is given in pParse. */
     pIns->aBlob = pParse->aIns;
@@ -2746,6 +2749,7 @@ static u32 jsonLookupStep(
       testcase( pParse->eEdit==JEDIT_INS );
       testcase( pParse->eEdit==JEDIT_SET );
       memset(&ix, 0, sizeof(ix));
+      ix.db = pParse->db;
       jsonBlobAppendNode(&ix, rawKey?JSONB_TEXTRAW:JSONB_TEXT5, nKey, 0);
       pParse->oom |= ix.oom;
       rc = jsonCreateEditSubstructure(pParse, &v, &zPath[i]);
@@ -2956,7 +2960,7 @@ static void jsonReturnFromBlob(
       char *zOut;
       u32 nOut = sz;
       z = (const char*)&pParse->aBlob[i+n];
-      zOut = sqlite3_malloc( nOut+1 );
+      zOut = sqlite3DbMallocRaw(db, nOut+1);
       if( zOut==0 ) goto returnfromblob_oom;
       for(iIn=iOut=0; iIn<sz; iIn++){
         char c = z[iIn];
@@ -2990,7 +2994,7 @@ static void jsonReturnFromBlob(
       } /* end for() */
       assert( iOut<=nOut );
       zOut[iOut] = 0;
-      sqlite3_result_text(pCtx, zOut, iOut, sqlite3_free);
+      sqlite3_result_text(pCtx, zOut, iOut, SQLITE_DYNAMIC);
       break;
     }
     case JSONB_ARRAY:
@@ -3043,6 +3047,7 @@ static int jsonFunctionArgToBlob(
   int eType = sqlite3_value_type(pArg);
   static u8 aNull[] = { 0x00 };
   memset(pParse, 0, sizeof(pParse[0]));
+  pParse->db = sqlite3_context_db_handle(ctx);
   switch( eType ){
     default: {
       pParse->aBlob = aNull;
@@ -3068,7 +3073,7 @@ static int jsonFunctionArgToBlob(
         pParse->nJson = nJson;
         if( jsonConvertTextToBlob(pParse, ctx) ){
           sqlite3_result_error(ctx, "malformed JSON", -1);
-          sqlite3_free(pParse->aBlob);
+          sqlite3DbFree(pParse->db, pParse->aBlob);
           memset(pParse, 0, sizeof(pParse[0]));
           return 1;
         }
@@ -3225,6 +3230,7 @@ static JsonParse *jsonParseFuncArg(
   int eType;                   /* Datatype of pArg */
   JsonParse *p = 0;            /* Value to be returned */
   JsonParse *pFromCache = 0;   /* Value taken from cache */
+  sqlite3 *db;                 /* The database connection */
   
   assert( ctx!=0 );
   eType = sqlite3_value_type(pArg);
@@ -3238,14 +3244,16 @@ static JsonParse *jsonParseFuncArg(
       return pFromCache;
     }
   }
+  db = sqlite3_context_db_handle(ctx);
 rebuild_from_cache:
-  p = sqlite3_malloc64( sizeof(*p) );
+  p = sqlite3DbMallocZero(db, sizeof(*p));
   if( p==0 ) goto json_pfa_oom;
   memset(p, 0, sizeof(*p));
+  p->db = db;
   p->nJPRef = 1;
   if( pFromCache!=0 ){
     u32 nBlob = pFromCache->nBlob;
-    p->aBlob = sqlite3_malloc64( nBlob );
+    p->aBlob = sqlite3DbMallocRaw(db, nBlob);
     if( p->aBlob==0 ) goto json_pfa_oom;
     memcpy(p->aBlob, pFromCache->aBlob, nBlob);
     p->nBlobAlloc = p->nBlob = nBlob;
@@ -3501,7 +3509,7 @@ static void jsonParseFunc(
   if( p==0 ) return;
   if( argc==1 ){
     jsonDebugPrintBlob(p, 0, p->nBlob, 0, &out);
-    sqlite3_result_text64(ctx, out.zText, out.nChar, sqlite3_free, SQLITE_UTF8);
+    sqlite3_result_text64(ctx, out.zText, out.nChar, SQLITE_DYNAMIC, SQLITE_UTF8);
   }else{
     jsonShowParse(p);
   }
@@ -4320,6 +4328,7 @@ static void jsonErrorFunc(
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   memset(&s, 0, sizeof(s));
+  s.db = sqlite3_context_db_handle(ctx);
   if( jsonFuncArgMightBeBinary(argv[0]) ){
     s.aBlob = (u8*)sqlite3_value_blob(argv[0]);
     s.nBlob = sqlite3_value_bytes(argv[0]);
@@ -4609,9 +4618,9 @@ static int jsonEachConnect(
      "CREATE TABLE x(key,value,type,atom,id,parent,fullkey,path,"
                     "json HIDDEN,root HIDDEN)");
   if( rc==SQLITE_OK ){
-    pNew = (JsonEachConnection*)(*ppVtab = sqlite3_malloc( sizeof(*pNew) ));
+    pNew = (JsonEachConnection*)sqlite3DbMallocZero(db, sizeof(*pNew));
+    *ppVtab = (sqlite3_vtab*)pNew;
     if( pNew==0 ) return SQLITE_NOMEM;
-    memset(pNew, 0, sizeof(*pNew));
     sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
     pNew->db = db;
   }
@@ -4620,7 +4629,8 @@ static int jsonEachConnect(
 
 /* destructor for json_each virtual table */
 static int jsonEachDisconnect(sqlite3_vtab *pVtab){
-  sqlite3_free(pVtab);
+  JsonEachConnection *p = (JsonEachConnection*)pVtab;
+  sqlite3DbFree(p->db, pVtab);
   return SQLITE_OK;
 }
 
@@ -4630,9 +4640,8 @@ static int jsonEachOpenEach(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   JsonEachCursor *pCur;
 
   UNUSED_PARAMETER(p);
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3DbMallocZero(pVtab->db, sizeof(*pCur));
   if( pCur==0 ) return SQLITE_NOMEM;
-  memset(pCur, 0, sizeof(*pCur));
   pCur->db = pVtab->db;
   jsonStringZero(&pCur->path);
   *ppCursor = &pCur->base;
@@ -4669,7 +4678,7 @@ static int jsonEachClose(sqlite3_vtab_cursor *cur){
   JsonEachCursor *p = (JsonEachCursor*)cur;
   jsonEachCursorReset(p);
   
-  sqlite3_free(cur);
+  sqlite3DbFree(p->db, cur);
   return SQLITE_OK;
 }
 
@@ -5003,6 +5012,7 @@ static int jsonEachFilter(
   if( idxNum==0 ) return SQLITE_OK;
   memset(&p->sParse, 0, sizeof(p->sParse));
   p->sParse.nJPRef = 1;
+  p->sParse.db = p->db;
   if( sqlite3_value_type(argv[0])==SQLITE_BLOB ){
     if( jsonFuncArgMightBeBinary(argv[0]) ){
       p->sParse.nBlob = sqlite3_value_bytes(argv[0]);

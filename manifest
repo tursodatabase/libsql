@@ -1,5 +1,5 @@
-C Change\sa\sconstant\sfrom\sdecimal\sto\shex\sto\savoid\sa\scompiler\swarning\son\sMac.
-D 2024-01-03T15:49:04.315
+C Convert\sthe\sJSON\sfunctions\sto\suse\slookaside\smemory\sallocation\swhenever\nfeasible,\sto\savoid\shitting\sthe\sglobal\smemory\sallocator\smutex.
+D 2024-01-03T16:41:50.573
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -697,7 +697,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c a84de35816b8aebf6a97e08887cce486c0591d0b6147088fa888325f0c17f9ef
+F src/json.c 4913fd22c4f0fa30643afb93a4d78d289cd490620e782b31016c3d4b2049b1cc
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c ce714ee501122c76eb2e69b292bebe443aba611fc3b88e6786eb910285515fe4
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 769de0b98e136e4a0945b80216d0c9583c1ccd9de69cb0494875c2300e172646
-R e916baf59c351e9547549cf9c20af1c2
+P e3acb8a43ad544fd5b5341058276bd3b61b6bdb6b719790476a90e0de4320f90
+R 951d215a027ca002df153a3678fabcb5
 U drh
-Z 9cefdf7e48b570cbd02d35dc60bf134c
+Z 4bd172c52ecc91bae1ff8ea6834cc34c
 # Remove this line to create a well-formed Fossil manifest.
