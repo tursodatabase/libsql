@@ -1,11 +1,11 @@
-C Back\sout\s[b517a52fa36df0a0]\swhich\sis\sno\slonger\sreachable\sdue\sto\searly\nerror\sdetection\senhancements\sin\s[166e82dd20efbfd3].
-D 2024-01-02T22:49:14.643
+C Update\sthe\ssqldiff.exe\sutility\sprogram\sso\sthat\sit\suses\sthe\ssqlite3_str\nstring\sinterface,\sand\sso\sthat\sit\sdoes\sconsole\soutput\susing\sthe\next/consio\sextension.
+D 2024-01-03T12:26:02.221
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 24be65ae641c5727bbc247d60286a15ecc24fb80f14f8fb2d32533bf0ec96e79
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc ddca98e096947fc26e3bb1a20678999dd0a590456278ad7dc55b882fca108bd6
+F Makefile.msc 8d4860af68385187806e16757bcbca0b852a7ae1f0618fa2eb42fe51166c5bb6
 F README.md 6358805260a03ebead84e168bbf3740ddf3f683b477e478567186aa7afb490d3
 F VERSION 73573d4545343f001bf5dc5461173a7c78c203dd046cabcf99153878cf25d3a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -2117,7 +2117,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
 F tool/split-sqlite3c.tcl 5aa60643afca558bc732b1444ae81a522326f91e1dc5665b369c54f09e20de60
-F tool/sqldiff.c fcccbc07da942b4534d0c769e9fcc21c67cbd7086ddc1c8f13372c40a83d4634
+F tool/sqldiff.c 985452ffc8554baee0f945d078859d393a22abc0bbf553a9f12acae1b6e1fdd0
 F tool/sqlite3_analyzer.c.in f88615bf33098945e0a42f17733f472083d150b58bdaaa5555a7129d0a51621c
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
@@ -2156,9 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eed670ea2a9424f7df4eeb01c152fc38f7190a5e39aa891651b28dc91fcdc019
-Q -b517a52fa36df0a0854a75858b5e81861771d2e9032a5a0ad79aa76ae64130a2
-R 9543e433ed40d6e55dfb715e04bc981d
+P 704943e96f2620b99260667ac9922c2f72bc3e92e2dfe1d9c2a91c7b704564d9
+R e56f90f682975bdbaf88cd4673a534d1
 U drh
-Z 20a621e221a4c4291644be7f432a4510
+Z a3427ef23d574bfd370854aa9641acf2
 # Remove this line to create a well-formed Fossil manifest.
