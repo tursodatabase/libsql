@@ -57,6 +57,10 @@ int sqlite3DbIsNamed(sqlite3 *db, int iDb, const char *zName){
   );
 }
 
+#ifdef LIBSQL_EXTRA_URI_PARAMS
+int libsql_handle_extra_attach_params(sqlite3* db, const char* zName, const char* zPath, sqlite3_value* pKey, char** zErrDyn);
+#endif
+
 /*
 ** An SQL user-function registered to do the work of an ATTACH statement. The
 ** three arguments to the function come directly from an attach statement:

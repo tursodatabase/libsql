@@ -707,6 +707,12 @@ struct Pager {
 
 
 /* libSQL extension: pager codec */
+
+#ifdef LIBSQL_CUSTOM_PAGER_CODEC
+int libsql_pager_has_codec_impl(struct Pager *_p);
+void *libsql_pager_codec_impl(libsql_pghdr *hdr);
+#endif
+
 int libsql_pager_has_codec(struct Pager *_p) {
 #ifdef LIBSQL_CUSTOM_PAGER_CODEC
   return libsql_pager_has_codec_impl(_p);

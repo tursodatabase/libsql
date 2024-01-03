@@ -363,6 +363,10 @@ static int integrityCheckResultRow(Vdbe *v){
   return addr;
 }
 
+#ifdef LIBSQL_EXTRA_PRAGMAS
+int libsql_extra_pragma(sqlite3* db, const char* zDbName, void* pArg);
+#endif
+
 /*
 ** Process a pragma statement. 
 **
