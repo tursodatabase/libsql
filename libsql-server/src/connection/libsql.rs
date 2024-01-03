@@ -6,6 +6,7 @@ use std::sync::Arc;
 use libsql_sys::wal::wrapper::{WalWrapper, WrapWal, WrappedWal};
 use libsql_sys::wal::{Wal, WalManager};
 use metrics::{histogram, increment_counter};
+use once_cell::sync::Lazy;
 use parking_lot::{Mutex, RwLock};
 use rusqlite::ffi::SQLITE_BUSY;
 use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus, TransactionState};
@@ -914,6 +915,14 @@ fn check_describe_auth(auth: Authenticated) -> Result<()> {
     }
 }
 
+/// We use a different runtime to run the connection, because long running tasks block turmoil
+static CONN_RT: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_time()
+        .build()
+        .unwrap()
+});
+
 #[async_trait::async_trait]
 impl<T> super::Connection for LibSqlConnection<T>
 where
@@ -930,7 +939,8 @@ where
 
         check_program_auth(auth, &pgm)?;
         let conn = self.inner.clone();
-        tokio::task::spawn_blocking(move || Connection::run(conn, pgm, builder))
+        CONN_RT
+            .spawn_blocking(move || Connection::run(conn, pgm, builder))
             .await
             .unwrap()
     }

@@ -248,3 +248,37 @@ fn create_namespace() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn large_proxy_query() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(10000))
+        .tcp_capacity(100000)
+        .build();
+    make_cluster(&mut sim, 1, true);
+
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)
+            .unwrap();
+        let conn = db.connect().unwrap();
+
+        conn.execute("create table test (x)", ()).await.unwrap();
+        for _ in 0..5000 {
+            conn.execute("insert into test values (randomblob(1000))", ())
+                .await
+                .unwrap();
+        }
+
+        let db = Database::open_remote_with_connector("http://replica0:8080", "", TurmoilConnector)
+            .unwrap();
+        let conn = db.connect().unwrap();
+
+        conn.execute_batch("begin immediate; select * from test limit (4000)")
+            .await
+            .unwrap();
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}

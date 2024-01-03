@@ -301,11 +301,16 @@ where
 {
     /// Perform a request on to the remote peer, and call message_cb for every message received for
     /// that request. message cb should return whether to expect more message for that request.
-    async fn make_request(
+    async fn make_request<T, F>(
         &mut self,
         req: exec_req::Request,
-        mut response_cb: impl FnMut(exec_resp::Response) -> crate::Result<bool>,
-    ) -> crate::Result<()> {
+        arg: T,
+        response_cb: F,
+    ) -> crate::Result<T>
+    where
+        T: Send + 'static,
+        F: for<'a> FnMut(exec_resp::Response, &'a mut T) -> crate::Result<bool> + Send + 'static,
+    {
         let request_id = self.current_request_id;
         self.current_request_id += 1;
 
@@ -319,6 +324,7 @@ where
             .await
             .map_err(|_| Error::PrimaryStreamDisconnect)?;
 
+        let cb_context = Arc::new(parking_lot::Mutex::new((response_cb, arg)));
         while let Some(resp) = self.response_stream.next().await {
             match resp {
                 Ok(resp) => {
@@ -332,7 +338,18 @@ where
                         continue;
                     }
 
-                    if !response_cb(resp.response.ok_or(Error::PrimaryStreamMisuse)?)? {
+                    let should_continue = tokio::task::spawn_blocking({
+                        let cb_context = cb_context.clone();
+                        move || -> Result<bool> {
+                            let mut ctx = cb_context.lock();
+                            let (ref mut response_cb, ref mut arg) = *ctx;
+                            response_cb(resp.response.ok_or(Error::PrimaryStreamMisuse)?, arg)
+                        }
+                    })
+                    .await
+                    .unwrap()?;
+
+                    if !should_continue {
                         break;
                     }
                 }
@@ -343,22 +360,27 @@ where
             }
         }
 
-        Ok(())
+        let Ok(mutex) = Arc::try_unwrap(cb_context) else {
+            panic!("failed to get ownership on callback context")
+        };
+        let (_, arg) = mutex.into_inner();
+
+        Ok(arg)
     }
 
     async fn execute<B: QueryResultBuilder>(
         &mut self,
         program: Program,
-        mut builder: B,
+        builder: B,
     ) -> crate::Result<(B, TxnStatus, Option<FrameNo>)> {
         let mut txn_status = TxnStatus::Invalid;
         let mut new_frame_no = None;
         let builder_config = self.builder_config;
-        let cb = |response: exec_resp::Response| match response {
+        let cb = move |response: exec_resp::Response, builder: &mut B| match response {
             exec_resp::Response::ProgramResp(resp) => {
                 crate::rpc::streaming_exec::apply_program_resp_to_builder(
                     &builder_config,
-                    &mut builder,
+                    builder,
                     resp,
                     |last_frame_no, is_autocommit| {
                         txn_status = if is_autocommit {
@@ -374,23 +396,25 @@ where
             exec_resp::Response::Error(e) => Err(Error::RpcQueryError(e)),
         };
 
-        self.make_request(
-            exec_req::Request::Execute(StreamProgramReq {
-                pgm: Some(program.into()),
-            }),
-            cb,
-        )
-        .await?;
+        let builder = self
+            .make_request(
+                exec_req::Request::Execute(StreamProgramReq {
+                    pgm: Some(program.into()),
+                }),
+                builder,
+                cb,
+            )
+            .await?;
 
         Ok((builder, txn_status, new_frame_no))
     }
 
     #[allow(dead_code)] // reference implementation
     async fn describe(&mut self, stmt: String) -> crate::Result<DescribeResponse> {
-        let mut out = None;
-        let cb = |response: exec_resp::Response| match response {
+        let cb = |response: exec_resp::Response, out: &mut Option<DescribeResponse>| match response
+        {
             exec_resp::Response::DescribeResp(resp) => {
-                out = Some(DescribeResponse {
+                *out = Some(DescribeResponse {
                     params: resp
                         .params
                         .into_iter()
@@ -414,7 +438,12 @@ where
             exec_resp::Response::ProgramResp(_) => Err(Error::PrimaryStreamMisuse),
         };
 
-        self.make_request(exec_req::Request::Describe(StreamDescribeReq { stmt }), cb)
+        let out = self
+            .make_request(
+                exec_req::Request::Describe(StreamDescribeReq { stmt }),
+                None,
+                cb,
+            )
             .await?;
 
         out.ok_or(Error::PrimaryStreamMisuse)
