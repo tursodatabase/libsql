@@ -1,5 +1,5 @@
-C Enhance\ssqlite3_analyzer.exe\sso\sthat\sit\suses\sthe\sext/consio\sextension.
-D 2024-01-03T14:13:27.590
+C Change\sa\sconstant\sfrom\sdecimal\sto\shex\sto\savoid\sa\scompiler\swarning\son\sMac.
+D 2024-01-03T15:49:04.315
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -743,7 +743,7 @@ F src/sqlite.h.in 61a60b4ea04db8ead15e1579b20b64cb56e9f55d52c5f9f9694de630110593
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h 73800d73e21180e6b3df8d0fe7d11758dc24367fd2b0b0075b48fc116de406bb
-F src/sqliteLimit.h 0c4b40bfebb193b5a4eb13db928413e618be8b05fcb572ddf03664c036568f7f
+F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c ecbc3c99c0d0c3ed122a913f143026c26d38d57f33e06bb71185dd5c1efe37cd
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4443b7e592da97d1cb1b3b79ed0559452d8057a33aba4d184c2fffbf200e05f5
-R f76eccd563bb40276e5cf372a3372f6a
+P 769de0b98e136e4a0945b80216d0c9583c1ccd9de69cb0494875c2300e172646
+R e916baf59c351e9547549cf9c20af1c2
 U drh
-Z 389ec51294279a741a10f4bf32e2923d
+Z 9cefdf7e48b570cbd02d35dc60bf134c
 # Remove this line to create a well-formed Fossil manifest.
