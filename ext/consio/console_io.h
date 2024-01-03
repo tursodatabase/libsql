@@ -28,7 +28,7 @@
 ** CIO_WIN_WC_XLATE is defined as 0 or 1, reflecting whether console I/O
 ** translation for Windows is effected for the build.
 */
-
+#define HAVE_CONSOLE_IO_H 1
 #ifndef SQLITE_INTERNAL_LINKAGE
 # define SQLITE_INTERNAL_LINKAGE extern /* external to translation unit */
 # include <stdio.h>

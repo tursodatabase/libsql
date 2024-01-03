@@ -24,8 +24,10 @@
 # include <stdlib.h>
 # include <limits.h>
 # include <assert.h>
-# include "console_io.h"
 # include "sqlite3.h"
+#endif
+#ifndef HAVE_CONSOLE_IO_H
+# include "console_io.h"
 #endif
 
 #ifndef SQLITE_CIO_NO_TRANSLATE
