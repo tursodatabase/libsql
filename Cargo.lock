@@ -873,7 +873,7 @@ dependencies = [
  "bytes",
  "chrono",
  "clap 4.4.12",
- "rusqlite",
+ "libsql-rusqlite",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -2660,12 +2660,12 @@ dependencies = [
  "hyper",
  "hyper-rustls 0.24.2",
  "libsql-replication",
+ "libsql-sqlite3-parser",
  "libsql-sys",
  "parking_lot",
  "pprof",
  "serde",
  "serde_json",
- "sqlite3-parser",
  "tempfile",
  "thiserror",
  "tokio",
@@ -2715,11 +2715,11 @@ dependencies = [
  "async-trait",
  "bincode",
  "bytes",
+ "libsql-rusqlite",
  "libsql-sys",
  "parking_lot",
  "prost",
  "prost-build",
- "rusqlite",
  "serde",
  "tempfile",
  "thiserror",
@@ -2731,6 +2731,30 @@ dependencies = [
  "tracing",
  "uuid",
  "zerocopy",
+]
+
+[[package]]
+name = "libsql-rusqlite"
+version = "0.29.0"
+dependencies = [
+ "bencher",
+ "bitflags 2.4.1",
+ "chrono",
+ "csv",
+ "doc-comment",
+ "fallible-iterator 0.2.0",
+ "fallible-streaming-iterator",
+ "hashlink",
+ "lazy_static",
+ "libsql-ffi",
+ "regex",
+ "serde_json",
+ "smallvec",
+ "tempfile",
+ "time",
+ "unicase",
+ "url",
+ "uuid",
 ]
 
 [[package]]
@@ -2772,6 +2796,8 @@ dependencies = [
  "libsql",
  "libsql-client",
  "libsql-replication",
+ "libsql-rusqlite",
+ "libsql-sqlite3-parser",
  "libsql-sys",
  "metrics",
  "metrics-exporter-prometheus",
@@ -2790,7 +2816,6 @@ dependencies = [
  "rand",
  "regex",
  "reqwest",
- "rusqlite",
  "rustls 0.21.10",
  "rustls-pemfile",
  "s3s",
@@ -2800,7 +2825,6 @@ dependencies = [
  "serde_json",
  "sha2",
  "sha256",
- "sqlite3-parser",
  "tempfile",
  "thiserror",
  "tokio",
@@ -2829,8 +2853,8 @@ dependencies = [
  "base64 0.21.5",
  "clap 4.4.12",
  "home",
+ "libsql-rusqlite",
  "once_cell",
- "rusqlite",
  "rustyline",
  "rustyline-derive",
  "tabled",
@@ -2838,12 +2862,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "libsql-sqlite3-parser"
+version = "0.11.0"
+dependencies = [
+ "bitflags 2.4.1",
+ "cc",
+ "env_logger",
+ "fallible-iterator 0.3.0",
+ "indexmap 2.1.0",
+ "log",
+ "memchr",
+ "phf",
+ "phf_codegen",
+ "phf_shared",
+ "smallvec",
+ "uncased",
+]
+
+[[package]]
 name = "libsql-sys"
-version = "0.2.14"
+version = "0.3.0"
 dependencies = [
  "libsql-ffi",
+ "libsql-rusqlite",
  "once_cell",
- "rusqlite",
  "tracing",
  "zerocopy",
 ]
@@ -4015,30 +4057,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rusqlite"
-version = "0.29.0"
-dependencies = [
- "bencher",
- "bitflags 2.4.1",
- "chrono",
- "csv",
- "doc-comment",
- "fallible-iterator 0.2.0",
- "fallible-streaming-iterator",
- "hashlink",
- "lazy_static",
- "libsql-ffi",
- "regex",
- "serde_json",
- "smallvec",
- "tempfile",
- "time",
- "unicase",
- "url",
- "uuid",
-]
-
-[[package]]
 name = "rustc-demangle"
 version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4582,24 +4600,6 @@ dependencies = [
  "lazy_static",
  "libsql",
  "tokio",
-]
-
-[[package]]
-name = "sqlite3-parser"
-version = "0.11.0"
-dependencies = [
- "bitflags 2.4.1",
- "cc",
- "env_logger",
- "fallible-iterator 0.3.0",
- "indexmap 2.1.0",
- "log",
- "memchr",
- "phf",
- "phf_codegen",
- "phf_shared",
- "smallvec",
- "uncased",
 ]
 
 [[package]]

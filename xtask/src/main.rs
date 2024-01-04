@@ -18,6 +18,7 @@ fn try_main() -> Result<()> {
         Some("build-wasm") => build_wasm(&arg)?,
         Some("sim-tests") => sim_tests(&arg)?,
         Some("test") => run_tests(&arg)?,
+        Some("publish") => publish(&arg)?,
         _ => print_help(),
     }
     Ok(())
@@ -32,8 +33,28 @@ build-wasm             builds the wasm components in wasm32-unknown-unknown
 build-bundled          builds sqlite3 and updates the bundeled code for ffi
 test                   runs the entire libsql test suite using nextest
 sim-tests <test name>  runs the libsql-server simulation test suite
+publish-cratesio       publish libsql client crates to crates.io
 "
     )
+}
+
+fn publish(arg: &str) -> Result<()> {
+    let pkgs = [
+        "libsql-ffi",
+        "libsql-sqlite3-parser",
+        "libsql-rusqlite",
+        "libsql-sys",
+        "libsql",
+    ];
+
+    for pkg in pkgs {
+        println!("publishing {pkg}");
+        run_cargo(&["publish", "-p", pkg, arg])?;
+    }
+
+    println!("all libsql packges published");
+
+    Ok(())
 }
 
 fn build_wasm(_arg: &str) -> Result<()> {
