@@ -107,7 +107,7 @@ fallible-iterator = "0.2"
 fallible-streaming-iterator = "0.1"
 uuid = { version = "1.0", optional = true }
 smallvec = "1.6.1"
-libsql-ffi = { path = "../../libsql-ffi" }
+libsql-ffi = { version = "0.1", path = "../../libsql-ffi" }
 
 [dev-dependencies]
 doc-comment = "0.3"
