@@ -198,3 +198,13 @@ pub struct HeartbeatConfig {
     pub heartbeat_period: Duration,
     pub heartbeat_auth: Option<String>,
 }
+
+pub struct MetaStoreConfig {
+    pub access_key_id: String,
+    pub secret_access_key: String,
+    pub region: String,
+    pub backup_id: String,
+    pub bucket_name: String,
+    pub backup_interval: Duration,
+    pub bucket_endpoint: String,
+}

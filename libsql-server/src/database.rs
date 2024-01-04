@@ -57,14 +57,24 @@ impl Database for PrimaryDatabase {
     }
 
     fn destroy(self) {
-        self.wal_manager.logger().closed_signal.send_replace(true);
+        self.wal_manager
+            .wrapped()
+            .logger()
+            .closed_signal
+            .send_replace(true);
     }
 
     async fn shutdown(self) -> Result<()> {
-        self.wal_manager.logger().closed_signal.send_replace(true);
+        self.wal_manager
+            .wrapped()
+            .logger()
+            .closed_signal
+            .send_replace(true);
         let wal_manager = self.wal_manager;
-        if let Some(mut replicator) =
-            tokio::task::spawn_blocking(move || wal_manager.shutdown()).await?
+        if let Some(mut replicator) = tokio::task::spawn_blocking(move || {
+            wal_manager.wrapper().as_ref().and_then(|r| r.shutdown())
+        })
+        .await?
         {
             replicator.shutdown_gracefully().await?;
         }

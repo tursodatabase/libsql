@@ -9,7 +9,6 @@ use std::sync::{Arc, Weak};
 
 use anyhow::Context as _;
 use async_lock::RwLock;
-use bottomless::bottomless_wal::CreateBottomlessWal;
 use bottomless::replicator::Options;
 use bytes::Bytes;
 use chrono::NaiveDateTime;
@@ -33,6 +32,7 @@ use tonic::transport::Channel;
 use uuid::Uuid;
 
 use crate::auth::Authenticated;
+use crate::config::MetaStoreConfig;
 use crate::connection::config::DatabaseConfig;
 use crate::connection::libsql::{open_conn, MakeLibSqlConn};
 use crate::connection::write_proxy::MakeWriteProxyConn;
@@ -41,7 +41,6 @@ use crate::connection::MakeConnection;
 use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
-use crate::replication::primary::replication_logger_wal::ReplicationLoggerWalManager;
 use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
@@ -53,9 +52,8 @@ use crate::namespace::fork::PointInTimeRestore;
 pub use fork::ForkError;
 
 use self::fork::ForkTask;
-use self::replication_wal::ReplicationWalManager;
-
 use self::meta_store::{MetaStore, MetaStoreHandle};
+use self::replication_wal::make_replication_wal;
 
 pub type ResetCb = Box<dyn Fn(ResetOp) + Send + Sync + 'static>;
 
@@ -314,7 +312,7 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         let fork_task = ForkTask {
             base_path: self.config.base_path.clone(),
             dest_namespace: to,
-            logger: from.db.wal_manager.logger(),
+            logger: from.db.wal_manager.wrapped().logger(),
             make_namespace: self,
             restore_to,
             bottomless_db_id,
@@ -410,10 +408,11 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         make_namespace: M,
         allow_lazy_creation: bool,
         snapshot_at_shutdown: bool,
-        meta_store_path: impl AsRef<Path>,
         max_active_namespaces: usize,
+        base_path: &Path,
+        meta_store_config: Option<MetaStoreConfig>,
     ) -> crate::Result<Self> {
-        let metadata = MetaStore::new(meta_store_path).await?;
+        let metadata = MetaStore::new(meta_store_config, base_path).await?;
         tracing::trace!("Max active namespaces: {max_active_namespaces}");
         let store = Cache::<NamespaceName, NamespaceEntry<M::Database>>::builder()
             .async_eviction_listener(move |name, ns, cause| {
@@ -436,6 +435,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             .max_capacity(max_active_namespaces as u64)
             .time_to_idle(Duration::from_secs(86400))
             .build();
+
         Ok(Self {
             inner: Arc::new(NamespaceStoreInner {
                 store,
@@ -748,6 +748,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                 ns.shutdown(self.inner.snapshot_at_shutdown).await?;
             }
         }
+        self.inner.metadata.shutdown().await?;
         self.inner.store.invalidate_all();
         self.inner.store.run_pending_tasks().await;
         Ok(())
@@ -1090,15 +1091,7 @@ impl Namespace<PrimaryDatabase> {
         )
         .await?;
 
-        let base_wal_manager = ReplicationLoggerWalManager::new(logger.clone());
-        let wal_manager = match bottomless_replicator {
-            Some(replicator) => ReplicationWalManager::Bottomless(CreateBottomlessWal::new(
-                base_wal_manager,
-                replicator,
-            )),
-            None => ReplicationWalManager::Logger(base_wal_manager),
-        };
-
+        let wal_manager = make_replication_wal(bottomless_replicator, logger.clone());
         let connection_maker: Arc<_> = MakeLibSqlConn::new(
             db_path.clone(),
             wal_manager.clone(),

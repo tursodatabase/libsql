@@ -17,8 +17,8 @@ use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::Layer;
 
 use libsql_server::config::{
-    AdminApiConfig, DbConfig, HeartbeatConfig, RpcClientConfig, RpcServerConfig, TlsConfig,
-    UserApiConfig,
+    AdminApiConfig, DbConfig, HeartbeatConfig, MetaStoreConfig, RpcClientConfig, RpcServerConfig,
+    TlsConfig, UserApiConfig,
 };
 use libsql_server::net::AddrIncoming;
 use libsql_server::Server;
@@ -199,6 +199,31 @@ struct Cli {
     /// Max active namespaces kept in-memory
     #[clap(long, env = "SQLD_MAX_ACTIVE_NAMESPACES", default_value = "100")]
     max_active_namespaces: usize,
+
+    /// Enable backup for the metadata store
+    #[clap(long)]
+    backup_meta_store: bool,
+    /// S3 access key ID for the meta store backup
+    #[clap(long)]
+    meta_store_access_key_id: Option<String>,
+    /// S3 secret access key for the meta store backup
+    #[clap(long)]
+    meta_store_secret_access_key: Option<String>,
+    /// S3 region for the metastore backup
+    #[clap(long)]
+    meta_store_region: Option<String>,
+    /// Id for the meta store backup
+    #[clap(long)]
+    meta_store_backup_id: Option<String>,
+    /// S3 bucket name for the meta store backup
+    #[clap(long)]
+    meta_store_bucket_name: Option<String>,
+    /// Interval at which to perform backups of the meta store
+    #[clap(long)]
+    meta_store_backup_interval_s: Option<usize>,
+    /// S3 endpoint for the meta store backups
+    #[clap(long)]
+    meta_store_bucket_endpoint: Option<String>,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -476,6 +501,44 @@ async fn shutdown_signal() -> Result<&'static str> {
     Ok(signal)
 }
 
+fn make_meta_store_config(config: &Cli) -> anyhow::Result<Option<MetaStoreConfig>> {
+    if config.backup_meta_store {
+        Ok(Some(MetaStoreConfig {
+            access_key_id: config
+                .meta_store_access_key_id
+                .clone()
+                .context("missing meta store bucket access key id")?,
+            secret_access_key: config
+                .meta_store_secret_access_key
+                .clone()
+                .context("missing meta store bucket secret access key")?,
+            region: config
+                .meta_store_region
+                .clone()
+                .context("missing meta store bucket region")?,
+            backup_id: config
+                .meta_store_backup_id
+                .clone()
+                .context("missing meta store backup id")?,
+            bucket_name: config
+                .meta_store_bucket_name
+                .clone()
+                .context("missing meta store bucket name")?,
+            backup_interval: Duration::from_secs(
+                config
+                    .meta_store_backup_interval_s
+                    .context("missing meta store backup internal")? as _,
+            ),
+            bucket_endpoint: config
+                .meta_store_bucket_endpoint
+                .clone()
+                .context("missing meta store bucket name")?,
+        }))
+    } else {
+        Ok(None)
+    }
+}
+
 async fn build_server(config: &Cli) -> anyhow::Result<Server> {
     let db_config = make_db_config(config)?;
     let user_api_config = make_user_api_config(config).await?;
@@ -483,6 +546,7 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
     let rpc_server_config = make_rpc_server_config(config).await?;
     let rpc_client_config = make_rpc_client_config(config).await?;
     let heartbeat_config = make_hearbeat_config(config);
+    let meta_store_config = make_meta_store_config(config)?;
 
     let shutdown = Arc::new(Notify::new());
     tokio::spawn({
@@ -519,6 +583,7 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
         disable_namespaces: !config.enable_namespaces,
         shutdown,
         max_active_namespaces: config.max_active_namespaces,
+        meta_store_config,
     })
 }
 

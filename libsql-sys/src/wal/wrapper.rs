@@ -1,9 +1,11 @@
-use std::{ffi::c_int, num::NonZeroU32};
+use std::ffi::c_int;
+use std::num::NonZeroU32;
 
 use super::{Wal, WalManager};
 
 /// A convenient wrapper struct that implement WAL with a `wrapper` where the wrapper needs to
 /// implement `WrapWal` instead of `Wal`, where all methods delegate to wrapped by default.
+#[derive(Clone)]
 pub struct WalWrapper<T, W> {
     wrapper: T,
     wrapped: W,
@@ -16,6 +18,14 @@ where
 {
     pub fn new(wrapper: T, wrapped: W) -> Self {
         Self { wrapper, wrapped }
+    }
+
+    pub fn wrapped(&self) -> &W {
+        &self.wrapped
+    }
+
+    pub fn wrapper(&self) -> &T {
+        &self.wrapper
     }
 }
 
@@ -295,5 +305,186 @@ pub trait WrapWal<W: Wal> {
         scratch: Option<&mut [u8]>,
     ) -> super::Result<()> {
         manager.close(wrapped, db, sync_flags, scratch)
+    }
+}
+
+impl<T: WrapWal<W>, W: Wal> WrapWal<W> for Option<T> {
+    fn limit(&mut self, wrapped: &mut W, size: i64) {
+        match self {
+            Some(t) => t.limit(wrapped, size),
+            None => wrapped.limit(size),
+        }
+    }
+
+    fn begin_read_txn(&mut self, wrapped: &mut W) -> super::Result<bool> {
+        match self {
+            Some(t) => t.begin_read_txn(wrapped),
+            None => wrapped.begin_read_txn(),
+        }
+    }
+
+    fn end_read_txn(&mut self, wrapped: &mut W) {
+        match self {
+            Some(t) => t.end_read_txn(wrapped),
+            None => wrapped.end_read_txn(),
+        }
+    }
+
+    fn find_frame(
+        &mut self,
+        wrapped: &mut W,
+        page_no: NonZeroU32,
+    ) -> super::Result<Option<NonZeroU32>> {
+        match self {
+            Some(t) => t.find_frame(wrapped, page_no),
+            None => wrapped.find_frame(page_no),
+        }
+    }
+
+    fn read_frame(
+        &mut self,
+        wrapped: &mut W,
+        frame_no: NonZeroU32,
+        buffer: &mut [u8],
+    ) -> super::Result<()> {
+        match self {
+            Some(t) => t.read_frame(wrapped, frame_no, buffer),
+            None => wrapped.read_frame(frame_no, buffer),
+        }
+    }
+
+    fn db_size(&self, wrapped: &W) -> u32 {
+        match self {
+            Some(t) => t.db_size(wrapped),
+            None => wrapped.db_size(),
+        }
+    }
+
+    fn begin_write_txn(&mut self, wrapped: &mut W) -> super::Result<()> {
+        match self {
+            Some(t) => t.begin_write_txn(wrapped),
+            None => wrapped.begin_write_txn(),
+        }
+    }
+
+    fn end_write_txn(&mut self, wrapped: &mut W) -> super::Result<()> {
+        match self {
+            Some(t) => t.end_write_txn(wrapped),
+            None => wrapped.end_write_txn(),
+        }
+    }
+
+    fn undo<U: super::UndoHandler>(
+        &mut self,
+        wrapped: &mut W,
+        handler: Option<&mut U>,
+    ) -> super::Result<()> {
+        match self {
+            Some(t) => t.undo(wrapped, handler),
+            None => wrapped.undo(handler),
+        }
+    }
+
+    fn savepoint(&mut self, wrapped: &mut W, rollback_data: &mut [u32]) {
+        match self {
+            Some(t) => t.savepoint(wrapped, rollback_data),
+            None => wrapped.savepoint(rollback_data),
+        }
+    }
+
+    fn savepoint_undo(&mut self, wrapped: &mut W, rollback_data: &mut [u32]) -> super::Result<()> {
+        match self {
+            Some(t) => t.savepoint_undo(wrapped, rollback_data),
+            None => wrapped.savepoint_undo(rollback_data),
+        }
+    }
+
+    fn insert_frames(
+        &mut self,
+        wrapped: &mut W,
+        page_size: std::ffi::c_int,
+        page_headers: &mut super::PageHeaders,
+        size_after: u32,
+        is_commit: bool,
+        sync_flags: std::ffi::c_int,
+    ) -> super::Result<()> {
+        match self {
+            Some(t) => t.insert_frames(
+                wrapped,
+                page_size,
+                page_headers,
+                size_after,
+                is_commit,
+                sync_flags,
+            ),
+            None => {
+                wrapped.insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)
+            }
+        }
+    }
+
+    fn checkpoint<B: super::BusyHandler>(
+        &mut self,
+        wrapped: &mut W,
+        db: &mut super::Sqlite3Db,
+        mode: super::CheckpointMode,
+        busy_handler: Option<&mut B>,
+        sync_flags: u32,
+        // temporary scratch buffer
+        buf: &mut [u8],
+    ) -> super::Result<(u32, u32)> {
+        match self {
+            Some(t) => t.checkpoint(wrapped, db, mode, busy_handler, sync_flags, buf),
+            None => wrapped.checkpoint(db, mode, busy_handler, sync_flags, buf),
+        }
+    }
+
+    fn exclusive_mode(&mut self, wrapped: &mut W, op: std::ffi::c_int) -> super::Result<()> {
+        match self {
+            Some(t) => t.exclusive_mode(wrapped, op),
+            None => wrapped.exclusive_mode(op),
+        }
+    }
+
+    fn uses_heap_memory(&self, wrapped: &W) -> bool {
+        match self {
+            Some(t) => t.uses_heap_memory(wrapped),
+            None => wrapped.uses_heap_memory(),
+        }
+    }
+
+    fn set_db(&mut self, wrapped: &mut W, db: &mut super::Sqlite3Db) {
+        match self {
+            Some(t) => t.set_db(wrapped, db),
+            None => wrapped.set_db(db),
+        }
+    }
+
+    fn callback(&self, wrapped: &W) -> i32 {
+        match self {
+            Some(t) => t.callback(wrapped),
+            None => wrapped.callback(),
+        }
+    }
+
+    fn last_fame_index(&self, wrapped: &W) -> u32 {
+        match self {
+            Some(t) => t.last_fame_index(wrapped),
+            None => wrapped.last_fame_index(),
+        }
+    }
+
+    fn close<M: WalManager<Wal = W>>(
+        &self,
+        manager: &M,
+        wrapped: &mut W,
+        db: &mut super::Sqlite3Db,
+        sync_flags: c_int,
+        scratch: Option<&mut [u8]>,
+    ) -> super::Result<()> {
+        match self {
+            Some(t) => t.close(manager, wrapped, db, sync_flags, scratch),
+            None => manager.close(wrapped, db, sync_flags, scratch),
+        }
     }
 }

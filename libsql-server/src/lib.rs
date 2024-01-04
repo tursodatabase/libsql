@@ -42,6 +42,7 @@ use tokio::time::Duration;
 use url::Url;
 use utils::services::idle_shutdown::IdleShutdownKicker;
 
+use self::config::MetaStoreConfig;
 use self::net::AddrIncoming;
 
 pub mod config;
@@ -101,6 +102,7 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub disable_namespaces: bool,
     pub shutdown: Arc<Notify>,
     pub max_active_namespaces: usize,
+    pub meta_store_config: Option<MetaStoreConfig>,
 }
 
 impl<C, A, D> Default for Server<C, A, D> {
@@ -119,6 +121,7 @@ impl<C, A, D> Default for Server<C, A, D> {
             disable_namespaces: true,
             shutdown: Default::default(),
             max_active_namespaces: 100,
+            meta_store_config: None,
         }
     }
 }
@@ -376,6 +379,7 @@ where
         let extensions = self.db_config.validate_extensions()?;
         let namespace_store_shutdown_fut: Pin<Box<dyn Future<Output = Result<()>> + Send>>;
 
+        let service_shutdown = Arc::new(Notify::new());
         match self.rpc_client_config {
             Some(rpc_config) => {
                 let (stats_sender, stats_receiver) = mpsc::channel(8);
@@ -387,6 +391,7 @@ where
                     base_path: self.path.clone(),
                     auth: auth.clone(),
                     max_active_namespaces: self.max_active_namespaces,
+                    meta_store_config: self.meta_store_config.take(),
                 };
                 let (namespaces, proxy_service, replication_service) = replica.configure().await?;
                 self.rpc_client_config = None;
@@ -408,7 +413,7 @@ where
                     db_config: self.db_config,
                     auth,
                     path: self.path.clone(),
-                    shutdown: self.shutdown.clone(),
+                    shutdown: service_shutdown.clone(),
                 };
 
                 services.configure(&mut join_set);
@@ -428,6 +433,7 @@ where
                     max_active_namespaces: self.max_active_namespaces,
                     join_set: &mut join_set,
                     auth: auth.clone(),
+                    meta_store_config: self.meta_store_config.take(),
                 };
                 let (namespaces, proxy_service, replication_service) = primary.configure().await?;
                 self.rpc_server_config = None;
@@ -449,7 +455,7 @@ where
                     db_config: self.db_config,
                     auth,
                     path: self.path.clone(),
-                    shutdown: self.shutdown.clone(),
+                    shutdown: service_shutdown.clone(),
                 };
 
                 services.configure(&mut join_set);
@@ -459,6 +465,7 @@ where
         tokio::select! {
             _ = self.shutdown.notified() => {
                 join_set.shutdown().await;
+                service_shutdown.notify_waiters();
                 namespace_store_shutdown_fut.await?;
                 // clean shutdown, remove sentinel file
                 std::fs::remove_file(sentinel_file_path(&self.path))?;
@@ -494,6 +501,7 @@ struct Primary<'a, A> {
     max_active_namespaces: usize,
     auth: Arc<Auth>,
     join_set: &'a mut JoinSet<anyhow::Result<()>>,
+    meta_store_config: Option<MetaStoreConfig>,
 }
 
 impl<A> Primary<'_, A>
@@ -508,7 +516,7 @@ where
         ReplicationLogService,
     )> {
         let conf = PrimaryNamespaceConfig {
-            base_path: self.base_path,
+            base_path: self.base_path.clone(),
             max_log_size: self.db_config.max_log_size,
             db_is_dirty: self.db_is_dirty,
             max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
@@ -522,15 +530,14 @@ where
             disable_namespace: self.disable_namespaces,
         };
 
-        let meta_store_path = conf.base_path.join("metastore");
-
         let factory = PrimaryNamespaceMaker::new(conf);
         let namespaces = NamespaceStore::new(
             factory,
             false,
             self.db_config.snapshot_at_shutdown,
-            meta_store_path,
             self.max_active_namespaces,
+            &self.base_path,
+            self.meta_store_config,
         )
         .await?;
 
@@ -608,6 +615,7 @@ struct Replica<C> {
     base_path: Arc<Path>,
     auth: Arc<Auth>,
     max_active_namespaces: usize,
+    meta_store_config: Option<MetaStoreConfig>,
 }
 
 impl<C: Connector> Replica<C> {
@@ -625,20 +633,19 @@ impl<C: Connector> Replica<C> {
             uri: uri.clone(),
             extensions: self.extensions.clone(),
             stats_sender: self.stats_sender.clone(),
-            base_path: self.base_path,
+            base_path: self.base_path.clone(),
             max_response_size: self.db_config.max_response_size,
             max_total_response_size: self.db_config.max_total_response_size,
         };
-
-        let meta_store_path = conf.base_path.join("metastore");
 
         let factory = ReplicaNamespaceMaker::new(conf);
         let namespaces = NamespaceStore::new(
             factory,
             true,
             false,
-            meta_store_path,
             self.max_active_namespaces,
+            &self.base_path,
+            self.meta_store_config,
         )
         .await?;
         let replication_service = ReplicationLogProxyService::new(channel.clone(), uri.clone());
