@@ -84,8 +84,10 @@ impl<W: Wal> Connection<W> {
                     make_wal_manager(wal_manager),
                 )
             }?;
-            conn.pragma_update(None, "key", "heyhey")?;
-            tracing::debug!("KEY set to heyhey");
+            if cfg!(feature = "encryption-at-rest") {
+                conn.pragma_update(None, "key", "s3cr3t")?;
+                tracing::debug!("KEY set to s3cr3t: don't tell anyone, SOC2 compliance, shhh");
+            }
             conn.pragma_update(None, "journal_mode", "WAL")?;
             unsafe {
                 let rc =
