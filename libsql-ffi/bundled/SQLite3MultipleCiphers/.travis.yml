@@ -1,0 +1,46 @@
+# This is the control file for Travis continuous integration system.
+#
+# It is used automatically for the repositories on Github if it's found in the
+# root directory of the project.
+language: c
+
+# Specify the default platform.
+os: linux
+dist: xenial
+
+jobs:
+    include:
+#        - dist: xenial
+#          compiler: gcc
+#          env: WXGTK_PACKAGE=libwxgtk3.0-dev
+        - dist: xenial
+          compiler: gcc
+          env: WXGTK_PACKAGE=libwxgtk3.0-dev
+          arch: arm64
+# Disable OS X builds for now
+#        - os: osx
+#          osx_image: xcode11.4
+#          compiler: clang
+
+branches:
+    only:
+        - main
+
+before_install:
+    - autoreconf
+
+script:
+    - set -e && echo 'Configuring...' && echo -en 'travis_fold:start:script.configure\\r'
+    - ./configure
+    - echo -en 'travis_fold:end:script.configure\\r'
+    - echo 'Building...' && echo -en 'travis_fold:start:script.build\\r'
+    - make
+    - echo -en 'travis_fold:end:script.build\\r'
+    - echo 'Testing...' && echo -en 'travis_fold:start:script.test\\r'
+    - ./sqlite3shell test1.db3 ".read test/test1.sql"
+    - ./sqlite3shell test2.db3 ".read test/test2.sql"
+    - ./sqlite3shell dummy.db3 ".read test/sqlciphertest.sql"
+    - echo -en 'travis_fold:end:script.test\\r'
+
+# The "set +e" is a workaround for https://github.com/travis-ci/travis-ci/issues/6522
+

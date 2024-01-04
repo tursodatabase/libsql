@@ -1,3 +1,0 @@
-[submodule "libsql-ffi/bundled/SQLite3MultipleCiphers"]
-	path = libsql-ffi/bundled/SQLite3MultipleCiphers
-	url = https://github.com/psarna/SQLite3MultipleCiphers

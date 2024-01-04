@@ -1,0 +1,6 @@
+SPDXVersion: SPDX-2.1
+DataLicense: CC0-1.0
+PackageName: SQLite3MultipleCiphers
+PackageOriginator: Ulrich Telle
+PackageHomePage: https://github.com/utelle/SQLite3MultipleCiphers
+PackageLicenseDeclared: MIT
