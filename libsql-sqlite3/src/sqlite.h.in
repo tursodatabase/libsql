@@ -482,6 +482,9 @@ int sqlite3_exec(
 #define SQLITE_DONE        101  /* sqlite3_step() has finished executing */
 /* end-of-error-codes */
 
+/* libSQL extension */
+#define LIBSQL_CONTINUE    159  /* libsql_step() got preempted, and should be continued */
+
 /*
 ** CAPI3REF: Extended Result Codes
 ** KEYWORDS: {extended result code definitions}
@@ -5038,6 +5041,12 @@ const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
 ** by sqlite3_step().  The use of the "vX" interfaces is recommended.
 */
 int sqlite3_step(sqlite3_stmt*);
+/*
+** libSQL extension: like sqlite3_step, but returns LIBSQL_CONTINUE
+** after N virtual machine steps.
+*/
+#define LIBSQL_NEVER_PREEMPT ((sqlite3_uint64)1 << 63)
+int libsql_step(sqlite3_stmt*, sqlite_uint64);
 
 /*
 ** CAPI3REF: Number of columns in a result set

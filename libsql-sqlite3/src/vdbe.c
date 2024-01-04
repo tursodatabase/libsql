@@ -809,7 +809,8 @@ int deregister_wasm_function(sqlite3 *db, const char *zName);
 ** This is the core of sqlite3_step(). 
 */
 int sqlite3VdbeExec(
-  Vdbe *p                    /* The VDBE */
+  Vdbe *p,                   /* The VDBE */
+  u64 preempt_after_steps    /* Number of steps after which LIBSQL_CONTINUE is returned */
 ){
   Op *aOp = p->aOp;          /* Copy of p->aOp */
   Op *pOp = aOp;             /* Current operation */
@@ -894,6 +895,14 @@ int sqlite3VdbeExec(
   sqlite3EndBenignMalloc();
 #endif
   for(pOp=&aOp[p->pc]; 1; pOp++){
+#ifndef LIBSQL_DISABLE_PREEMPTION
+    if (unlikely(nVmStep >= preempt_after_steps)) {
+      p->pc = (int)(pOp - aOp);
+      p->rc = rc = LIBSQL_CONTINUE;
+      goto vdbe_return;
+    }
+#endif
+
     /* Errors are detected by individual opcodes, with an immediate
     ** jumps to abort_due_to_error. */
     assert( rc==SQLITE_OK );
