@@ -1655,7 +1655,8 @@ char sqlite3AffinityType(const char *zIn, Column *pCol){
 
   assert( zIn!=0 );
   while( zIn[0] ){
-    h = (h<<8) + sqlite3UpperToLower[(*zIn)&0xff];
+    u8 x = *(u8*)zIn;
+    h = (h<<8) + sqlite3UpperToLower[x];
     zIn++;
     if( h==(('c'<<24)+('h'<<16)+('a'<<8)+'r') ){             /* CHAR */
       aff = SQLITE_AFF_TEXT;

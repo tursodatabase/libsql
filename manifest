@@ -1,5 +1,5 @@
-C Fix\sa\s#ifdef\sin\ssqlite3_test_control()\sthat\swas\spreventing\sbuilds\swith\nSQLITE_OMIT_WSD.
-D 2024-01-03T20:40:17.581
+C Restructure\ssome\scode\sto\sfix\swhat\sappears\sto\sbe\sa\sfalse-positive\sUBSAN\swarning.
+D 2024-01-04T13:01:02.910
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -679,7 +679,7 @@ F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c dee25e097b749275333b55d64a5ffc079249576f8e88a2ee476468cf67510f4b
 F src/btree.h 03e3356f5208bcab8eed4e094240fdac4a7f9f5ddf5e91045ce589f67d47c240
 F src/btreeInt.h 3e2589726c4f105e653461814f65857465da68be1fac688de340c43b873f4062
-F src/build.c 386eadecabe2e99a3783eb802ca01e665f8e0c2af0e0aab28161fd7def219a9d
+F src/build.c f640dbe723e35f29a91870ff8bd9fb015b1cbc49666014b1d422c012eb333de9
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 23331529e654be40ca97d171cbbffe9b3d4c71cc53b78fe5501230675952da8b
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a79a244954f728596da3c0e28fa3b887258d1bd831f53881970f418f3fba84c7
-R 2cb03286d1de4c61e0953028252fab0a
+P d546a9c94caf7408cc6e4530ec190d3a13fae09dc15b71b03d6369e02ee62abd
+R e1f7197b52fbcc05b1cd044084aa5ecc
 U drh
-Z a9b64d69ed9b2889c84934f6dec5097d
+Z 2859a9df9b5c4d7ab26ab170564bfb9b
 # Remove this line to create a well-formed Fossil manifest.
