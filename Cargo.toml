@@ -28,7 +28,7 @@ codegen-units = 1
 panic = "unwind"
 
 [workspace.dependencies]
-rusqlite = { path = "vendored/rusqlite", version = "0.29", default-features = false, features = [
+rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = "0.29", default-features = false, features = [
     "libsql-experimental",
     "column_decltype",
     "load_extension",
