@@ -346,11 +346,13 @@ do_execsql_test 5.10 {
 do_execsql_test 5.20 {
   SELECT *, '+' FROM t1 LEFT JOIN t3 ON (a NOT IN(SELECT v FROM t1 LEFT JOIN t2 ON (a=k))=k);
 } {0 {} {} {} + 1 one {} {} + 2 two {} {} + 5 five {} {} + 3 three {} {} + 6 six {} {} +}
+ifcapable vtab {
 do_catchsql_test 5.30 {
   SELECT * FROM (t1 NATURAL JOIN pragma_table_xinfo('t1_a') NATURAL JOIN t3) t1
                 NATURAL JOIN t2 NATURAL JOIN t3
    WHERE rowid ISNULL>0 AND 0%y;
 } {1 {no such column: rowid}}
+}
 
 reset_db
 do_execsql_test 6.0 {

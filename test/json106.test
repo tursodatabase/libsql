@@ -15,6 +15,9 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix json106
 
+# These tests require virtual table "json_tree" to run.
+ifcapable !vtab { finish_test ; return }
+
 load_static_extension db randomjson
 db eval {
   CREATE TEMP TABLE t1(j0,j5,p);
