@@ -138,3 +138,8 @@ pub static REPLICATION_LATENCY_CACHE_MISS: Lazy<Counter> = Lazy::new(|| {
     describe_counter!(NAME, "Number of replication latency cache misses");
     register_counter!(NAME)
 });
+pub static SERVER_COUNT: Lazy<Gauge> = Lazy::new(|| {
+    const NAME: &str = "libsql_server_count";
+    describe_gauge!(NAME, "a gauge counting the number of active servers");
+    register_gauge!(NAME)
+});
