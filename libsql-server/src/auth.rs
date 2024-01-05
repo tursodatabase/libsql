@@ -101,7 +101,7 @@ impl Auth {
                     Err(AuthError::BasicRejected)
                 }
             }
-            HttpAuthHeader::Bearer(token) => self.validate_jwt(&token, disable_namespaces),
+            HttpAuthHeader::Bearer(token) => self.validate_jwt(&token, disable_namespaces, None),
         }
     }
 
@@ -137,16 +137,21 @@ impl Auth {
             return Err(AuthError::JwtMissing);
         };
 
-        self.validate_jwt(jwt, disable_namespaces)
+        self.validate_jwt(jwt, disable_namespaces, None)
     }
 
     fn validate_jwt(
         &self,
         jwt: &str,
         disable_namespaces: bool,
+        namespace_jwt_key: Option<jsonwebtoken::DecodingKey>,
     ) -> Result<Authenticated, AuthError> {
-        let Some(jwt_key) = self.jwt_key.as_ref() else {
-            return Err(AuthError::JwtNotAllowed);
+        let jwt_key = match namespace_jwt_key.as_ref() {
+            Some(jwt_key) => jwt_key,
+            None => match self.jwt_key.as_ref() {
+                Some(jwt_key) => jwt_key,
+                None => return Err(AuthError::JwtNotAllowed),
+            },
         };
         validate_jwt(jwt_key, jwt, disable_namespaces)
     }
