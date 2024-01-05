@@ -71,6 +71,7 @@ impl Auth {
         &self,
         auth_header: Option<&hyper::header::HeaderValue>,
         disable_namespaces: bool,
+        namespace_jwt_key: Option<jsonwebtoken::DecodingKey>,
     ) -> Result<Authenticated, AuthError> {
         if self.disabled {
             return Ok(Authenticated::Authorized(Authorized {
@@ -101,7 +102,9 @@ impl Auth {
                     Err(AuthError::BasicRejected)
                 }
             }
-            HttpAuthHeader::Bearer(token) => self.validate_jwt(&token, disable_namespaces, None),
+            HttpAuthHeader::Bearer(token) => {
+                self.validate_jwt(&token, disable_namespaces, namespace_jwt_key)
+            }
         }
     }
 
@@ -117,7 +120,7 @@ impl Auth {
             .map(|v| v.to_bytes().expect("Auth should always be ASCII"))
             .map(|v| HeaderValue::from_maybe_shared(v).expect("Should already be valid header"));
 
-        self.authenticate_http(auth.as_ref(), disable_namespaces)
+        self.authenticate_http(auth.as_ref(), disable_namespaces, None)
             .map_err(Into::into)
     }
 
@@ -373,7 +376,7 @@ mod tests {
     use hyper::header::HeaderValue;
 
     fn authenticate_http(auth: &Auth, header: &str) -> Result<Authenticated, AuthError> {
-        auth.authenticate_http(Some(&HeaderValue::from_str(header).unwrap()), false)
+        auth.authenticate_http(Some(&HeaderValue::from_str(header).unwrap()), false, None)
     }
 
     const VALID_JWT_KEY: &str = "zaMv-aFGmB7PXkjM4IrMdF6B5zCYEiEGXW3RgMjNAtc";
@@ -405,7 +408,7 @@ mod tests {
     #[test]
     fn test_default() {
         let auth = Auth::default();
-        assert_err!(auth.authenticate_http(None, false));
+        assert_err!(auth.authenticate_http(None, false, None));
         assert_err!(authenticate_http(&auth, "Basic d29qdGVrOnRoZWJlYXI="));
         assert_err!(auth.authenticate_jwt(Some(VALID_JWT), false));
     }
@@ -425,7 +428,7 @@ mod tests {
         assert_err!(authenticate_http(&auth, "Basic d29qdgvronrozwjlyxi="));
         assert_err!(authenticate_http(&auth, "Basic d29qdGVrOnRoZWZveA=="));
 
-        assert_err!(auth.authenticate_http(None, false));
+        assert_err!(auth.authenticate_http(None, false, None));
         assert_err!(authenticate_http(&auth, ""));
         assert_err!(authenticate_http(&auth, "foobar"));
         assert_err!(authenticate_http(&auth, "foo bar"));
