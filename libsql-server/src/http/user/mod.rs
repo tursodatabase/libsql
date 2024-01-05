@@ -479,10 +479,18 @@ where
         parts: &mut Parts,
         state: &AppState<M>,
     ) -> Result<Self, Self::Rejection> {
+        let ns = db_factory::namespace_from_headers(
+            &parts.headers,
+            state.disable_default_namespace,
+            state.disable_namespaces,
+        )?;
+        let namespace_jwt_key = state.namespaces.jwt_key(ns).await?;
         let auth_header = parts.headers.get(hyper::header::AUTHORIZATION);
-        let auth = state
-            .auth
-            .authenticate_http(auth_header, state.disable_namespaces)?;
+        let auth = state.auth.authenticate_http(
+            auth_header,
+            state.disable_namespaces,
+            namespace_jwt_key,
+        )?;
 
         Ok(auth)
     }
