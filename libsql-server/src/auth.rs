@@ -112,6 +112,7 @@ impl Auth {
         &self,
         req: &tonic::Request<T>,
         disable_namespaces: bool,
+        namespace_jwt_key: Option<jsonwebtoken::DecodingKey>,
     ) -> Result<Authenticated, Status> {
         let metadata = req.metadata();
 
@@ -120,7 +121,7 @@ impl Auth {
             .map(|v| v.to_bytes().expect("Auth should always be ASCII"))
             .map(|v| HeaderValue::from_maybe_shared(v).expect("Should already be valid header"));
 
-        self.authenticate_http(auth.as_ref(), disable_namespaces, None)
+        self.authenticate_http(auth.as_ref(), disable_namespaces, namespace_jwt_key)
             .map_err(Into::into)
     }
 

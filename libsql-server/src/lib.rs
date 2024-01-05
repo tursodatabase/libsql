@@ -390,6 +390,7 @@ where
                     db_config: self.db_config.clone(),
                     base_path: self.path.clone(),
                     auth: auth.clone(),
+                    disable_namespaces: self.disable_namespaces,
                     max_active_namespaces: self.max_active_namespaces,
                     meta_store_config: self.meta_store_config.take(),
                 };
@@ -614,6 +615,7 @@ struct Replica<C> {
     db_config: DbConfig,
     base_path: Arc<Path>,
     auth: Arc<Auth>,
+    disable_namespaces: bool,
     max_active_namespaces: usize,
     meta_store_config: Option<MetaStoreConfig>,
 }
@@ -649,7 +651,13 @@ impl<C: Connector> Replica<C> {
         )
         .await?;
         let replication_service = ReplicationLogProxyService::new(channel.clone(), uri.clone());
-        let proxy_service = ReplicaProxyService::new(channel, uri, self.auth.clone());
+        let proxy_service = ReplicaProxyService::new(
+            channel,
+            uri,
+            namespaces.clone(),
+            self.auth.clone(),
+            self.disable_namespaces,
+        );
 
         Ok((namespaces, proxy_service, replication_service))
     }

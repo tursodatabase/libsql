@@ -58,9 +58,18 @@ impl ReplicationLogService {
         }
     }
 
-    fn authenticate<T>(&self, req: &tonic::Request<T>) -> Result<(), Status> {
+    async fn authenticate<T>(
+        &self,
+        req: &tonic::Request<T>,
+        namespace: NamespaceName,
+    ) -> Result<(), Status> {
+        let namespace_jwt_key = self
+            .namespaces
+            .jwt_key(namespace)
+            .await
+            .map_err(|_| Status::internal("Error fetching jwt key for a namespace"))?;
         if let Some(auth) = &self.auth {
-            let _ = auth.authenticate_grpc(req, self.disable_namespaces)?;
+            let _ = auth.authenticate_grpc(req, self.disable_namespaces, namespace_jwt_key)?;
         }
 
         Ok(())
@@ -159,10 +168,10 @@ impl ReplicationLog for ReplicationLogService {
         &self,
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::LogEntriesStream>, Status> {
-        self.authenticate(&req)?;
-        self.verify_session_token(&req)?;
-
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
+
+        self.authenticate(&req, namespace.clone()).await?;
+        self.verify_session_token(&req)?;
 
         let req = req.into_inner();
         let logger = self
@@ -191,9 +200,9 @@ impl ReplicationLog for ReplicationLogService {
         &self,
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Frames>, Status> {
-        self.authenticate(&req)?;
-        self.verify_session_token(&req)?;
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
+        self.authenticate(&req, namespace.clone()).await?;
+        self.verify_session_token(&req)?;
 
         let req = req.into_inner();
         let logger = self
@@ -224,8 +233,8 @@ impl ReplicationLog for ReplicationLogService {
         &self,
         req: tonic::Request<HelloRequest>,
     ) -> Result<tonic::Response<HelloResponse>, Status> {
-        self.authenticate(&req)?;
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
+        self.authenticate(&req, namespace.clone()).await?;
 
         // legacy support
         if req.get_ref().handshake_version.is_none() {
@@ -278,9 +287,9 @@ impl ReplicationLog for ReplicationLogService {
         &self,
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::SnapshotStream>, Status> {
-        self.authenticate(&req)?;
-        self.verify_session_token(&req)?;
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
+        self.authenticate(&req, namespace.clone()).await?;
+        self.verify_session_token(&req)?;
         let req = req.into_inner();
 
         let logger = self
