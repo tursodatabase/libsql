@@ -1,5 +1,5 @@
-C Avoid\serrors\swith\sSQLITE_OMIT_VIRTUALTABLE\sbuilds\sin\sjson106.test\sand\sunionall.test.
-D 2024-01-04T17:13:39.373
+C Update\sextension\sext/misc/totext.c\sto\savoid\sboth\subsan\swarnings\sand\sdubious\sreal->integer\sconversions.
+D 2024-01-05T15:53:58.837
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -408,7 +408,7 @@ F ext/misc/spellfix.c c0aa7b80d6df45f7da59d912b38752bcac1af53a5766966160e6c5cdd3
 F ext/misc/sqlar.c 53e7d48f68d699a24f1a92e68e71eca8b3a9ff991fe9588c2a05bde103c6e7b7
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/templatevtab.c 10f15b165b95423ddef593bc5dcb915ec4eb5e0f1066d585e5435a368b8bc22b
-F ext/misc/totype.c fa4aedeb07f66169005dffa8de3b0a2b621779fd44f85c103228a42afa71853b
+F ext/misc/totype.c 75ed9827d19cc3b434fc2aeb60725d4d46e1534373615612a4d1cfdcc3d60922
 F ext/misc/uint.c 053fed3bce2e89583afcd4bf804d75d659879bbcedac74d0fa9ed548839a030b
 F ext/misc/unionvtab.c 716d385256d5fb4beea31b0efede640807e423e85c9784d21d22f0cce010a785
 F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917b9c751
@@ -1218,7 +1218,7 @@ F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test 3a29323b640c0552f6e9f1577407ced3a68e7d8c0bc04b61dd6040fa593a3a02
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 600a632c305a88f3946d38f9a51efe145c989b2e13bd2b2a488db47fe76bab6a
-F test/func4.test 2285fb5792d593fef442358763f0fd9de806eda47dbc7a5934df57ffdc484c31
+F test/func4.test e8ef9b2bd6a192a213cbd5cf31a3b35e25cd6ff2fdaeea0b58d63be31b03d220
 F test/func5.test 863e6d1bd0013d09c17236f8a13ea34008dd857d87d85a13a673960e4c25d82a
 F test/func6.test 9cc9b1f43b435af34fe1416eb1e318c8920448ea7a6962f2121972f5215cb9b0
 F test/func7.test adbfc910385a6ffd15dc47be3c619ef070c542fcb7488964badb17b2d9a4d080
@@ -2156,9 +2156,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe952c12903ea2150880c8bb57cda2efc00ce9fa801568a68c619e0745f30567 90e8a233549a2d31e6959ce3fec927693b772ab3c0abce65e81d7350d2ca5cc6
-R 1b0244f5731b1e66c7e1ef8d70f19d5b
-T +closed 90e8a233549a2d31e6959ce3fec927693b772ab3c0abce65e81d7350d2ca5cc6
-U drh
-Z 5d98a22501c46b821d62bf99693fba4a
+P 8940e2a1054fbc19fae3f76e743d744840c3a5aad001be8d3d56ca134226c34b
+R a29b7304699ca19c7db12a157b970ee6
+T *branch * totype-fix
+T *sym-totype-fix *
+T -sym-trunk *
+U dan
+Z 319246ea9e64ae191c32df6aa7328756
 # Remove this line to create a well-formed Fossil manifest.
