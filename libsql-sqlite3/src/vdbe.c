@@ -20,6 +20,7 @@
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
+#include <stdio.h>
 #ifdef LIBSQL_ENABLE_WASM_RUNTIME
 #include "ext/udf/wasm_bindings.h"
 #endif
@@ -896,6 +897,7 @@ int sqlite3VdbeExec(
 #endif
   for(pOp=&aOp[p->pc]; 1; pOp++){
 #ifndef LIBSQL_DISABLE_PREEMPTION
+    fprintf(stderr, "step %d: %s\n", (int)(pOp - aOp), sqlite3OpcodeName(pOp->opcode));
     if (unlikely(nVmStep >= preempt_after_steps)) {
       p->pc = (int)(pOp - aOp);
       p->rc = rc = LIBSQL_CONTINUE;

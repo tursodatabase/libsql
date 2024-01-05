@@ -3972,7 +3972,11 @@ static void exec_prepared_stmt_columnar(
   const char *zEmpty = "";
   const char *zShowNull = p->nullValue;
 
-  rc = sqlite3_step(pStmt);
+  rc = libsql_step(pStmt, 5);
+  while (rc == LIBSQL_CONTINUE) {
+    fprintf(stderr, "\t<just got preempted>\n");
+    rc = libsql_step(pStmt, 5);
+  }
   if( rc!=SQLITE_ROW ) return;
   nColumn = sqlite3_column_count(pStmt);
   nAlloc = nColumn*4;
@@ -4193,7 +4197,11 @@ static void exec_prepared_stmt(
   /* perform the first step.  this will tell us if we
   ** have a result set or not and how wide it is.
   */
-  rc = sqlite3_step(pStmt);
+  rc = libsql_step(pStmt, 5);
+  while (rc == LIBSQL_CONTINUE) {
+    fprintf(stderr, "\t<just got preempted>\n");
+    rc = libsql_step(pStmt, 5);
+  }
   /* if we have a result set... */
   if( SQLITE_ROW == rc ){
     /* allocate space for col name ptr, value ptr, and type */
