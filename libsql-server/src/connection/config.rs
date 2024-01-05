@@ -18,6 +18,8 @@ pub struct DatabaseConfig {
     pub heartbeat_url: Option<Url>,
     #[serde(default)]
     pub bottomless_db_id: Option<String>,
+    #[serde(default)]
+    pub jwt_key: Option<String>,
 }
 
 const fn default_max_size() -> u64 {
@@ -33,6 +35,7 @@ impl Default for DatabaseConfig {
             max_db_pages: default_max_size(),
             heartbeat_url: None,
             bottomless_db_id: None,
+            jwt_key: None,
         }
     }
 }
