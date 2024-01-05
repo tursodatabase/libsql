@@ -128,6 +128,7 @@ impl Auth {
         &self,
         jwt: Option<&str>,
         disable_namespaces: bool,
+        namespace_jwt_key: Option<jsonwebtoken::DecodingKey>,
     ) -> Result<Authenticated, AuthError> {
         if self.disabled {
             return Ok(Authenticated::Authorized(Authorized {
@@ -140,7 +141,7 @@ impl Auth {
             return Err(AuthError::JwtMissing);
         };
 
-        self.validate_jwt(jwt, disable_namespaces, None)
+        self.validate_jwt(jwt, disable_namespaces, namespace_jwt_key)
     }
 
     fn validate_jwt(
@@ -410,7 +411,7 @@ mod tests {
         let auth = Auth::default();
         assert_err!(auth.authenticate_http(None, false, None));
         assert_err!(authenticate_http(&auth, "Basic d29qdGVrOnRoZWJlYXI="));
-        assert_err!(auth.authenticate_jwt(Some(VALID_JWT), false));
+        assert_err!(auth.authenticate_jwt(Some(VALID_JWT), false, None));
     }
 
     #[test]
@@ -465,7 +466,7 @@ mod tests {
             jwt_key: Some(parse_jwt_key(VALID_JWT_KEY).unwrap()),
             ..Auth::default()
         };
-        assert_ok!(auth.authenticate_jwt(Some(VALID_JWT), false));
-        assert_err!(auth.authenticate_jwt(Some(&VALID_JWT[..80]), false));
+        assert_ok!(auth.authenticate_jwt(Some(VALID_JWT), false, None));
+        assert_err!(auth.authenticate_jwt(Some(&VALID_JWT[..80]), false, None));
     }
 }

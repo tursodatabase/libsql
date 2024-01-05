@@ -217,9 +217,14 @@ async fn handle_hello_msg<F: MakeNamespace>(
     jwt: Option<String>,
 ) -> Result<bool> {
     let hello_res = match conn.session.as_mut() {
-        None => session::handle_initial_hello(&conn.server, conn.version, jwt)
-            .map(|session| conn.session = Some(session)),
-        Some(session) => session::handle_repeated_hello(&conn.server, session, jwt),
+        None => {
+            session::handle_initial_hello(&conn.server, conn.version, jwt, conn.namespace.clone())
+                .await
+                .map(|session| conn.session = Some(session))
+        }
+        Some(session) => {
+            session::handle_repeated_hello(&conn.server, session, jwt, conn.namespace.clone()).await
+        }
     };
 
     match hello_res {
