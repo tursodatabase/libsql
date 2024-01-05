@@ -31,6 +31,7 @@ use tokio_util::io::StreamReader;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
+use crate::auth::parse_jwt_key;
 use crate::auth::Authenticated;
 use crate::config::MetaStoreConfig;
 use crate::connection::config::DatabaseConfig;
@@ -764,6 +765,21 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         namespace: NamespaceName,
     ) -> crate::Result<MetaStoreHandle> {
         self.with(namespace, |ns| ns.db_config_store.clone()).await
+    }
+
+    pub async fn jwt_key(
+        &self,
+        namespace: NamespaceName,
+    ) -> crate::Result<Option<jsonwebtoken::DecodingKey>> {
+        let config_store = self.config_store(namespace).await?;
+        let config = config_store.get();
+        if let Some(jwt_key) = config.jwt_key.as_deref() {
+            Ok(Some(
+                parse_jwt_key(jwt_key).context("Could not parse JWT decoding key")?,
+            ))
+        } else {
+            Ok(None)
+        }
     }
 }
 
