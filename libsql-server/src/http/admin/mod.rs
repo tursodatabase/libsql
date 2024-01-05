@@ -18,6 +18,7 @@ use tokio_util::io::ReaderStream;
 use tower_http::trace::DefaultOnResponse;
 use url::Url;
 
+use crate::auth::parse_jwt_key;
 use crate::database::Database;
 use crate::error::LoadDumpError;
 use crate::hrana;
@@ -190,6 +191,7 @@ async fn handle_get_config<M: MakeNamespace, C: Connector>(
         block_reason: config.block_reason.clone(),
         max_db_size: Some(max_db_size),
         heartbeat_url: config.heartbeat_url.clone().map(|u| u.into()),
+        jwt_key: config.jwt_key.clone(),
     };
 
     Ok(Json(resp))
@@ -232,6 +234,8 @@ struct HttpDatabaseConfig {
     max_db_size: Option<bytesize::ByteSize>,
     #[serde(default)]
     heartbeat_url: Option<String>,
+    #[serde(default)]
+    jwt_key: Option<String>,
 }
 
 async fn handle_post_config<M: MakeNamespace, C>(
@@ -239,6 +243,10 @@ async fn handle_post_config<M: MakeNamespace, C>(
     Path(namespace): Path<String>,
     Json(req): Json<HttpDatabaseConfig>,
 ) -> crate::Result<()> {
+    if let Some(jwt_key) = req.jwt_key.as_deref() {
+        // Check that the jwt key is correct
+        parse_jwt_key(jwt_key).context("Could not parse JWT decoding key")?;
+    }
     let store = app_state
         .namespaces
         .config_store(NamespaceName::from_string(namespace)?)
@@ -253,6 +261,7 @@ async fn handle_post_config<M: MakeNamespace, C>(
     if let Some(url) = req.heartbeat_url {
         config.heartbeat_url = Some(Url::parse(&url)?);
     }
+    config.jwt_key = req.jwt_key;
 
     store.store(config).await?;
 
@@ -265,6 +274,7 @@ struct CreateNamespaceReq {
     max_db_size: Option<bytesize::ByteSize>,
     heartbeat_url: Option<String>,
     bottomless_db_id: Option<String>,
+    jwt_key: Option<String>,
 }
 
 async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
@@ -272,6 +282,10 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
     Path(namespace): Path<String>,
     Json(req): Json<CreateNamespaceReq>,
 ) -> crate::Result<()> {
+    if let Some(jwt_key) = req.jwt_key.as_deref() {
+        // Check that the jwt key is correct
+        parse_jwt_key(jwt_key).context("Could not parse JWT decoding key")?;
+    }
     let dump = match req.dump_url {
         Some(ref url) => {
             RestoreOption::Dump(dump_stream_from_url(url, app_state.connector.clone()).await?)
@@ -297,6 +311,7 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
     if let Some(url) = req.heartbeat_url {
         config.heartbeat_url = Some(Url::parse(&url)?)
     }
+    config.jwt_key = req.jwt_key;
     store.store(config).await?;
 
     Ok(())
