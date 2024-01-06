@@ -18,7 +18,7 @@ use uuid::Uuid;
 use crate::auth::{Auth, Authenticated};
 use crate::connection::Connection;
 use crate::database::{Database, PrimaryConnection};
-use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
+use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
 };
@@ -302,6 +302,16 @@ impl ProxyService {
     pub fn clients(&self) -> Arc<RwLock<HashMap<Uuid, Arc<PrimaryConnection>>>> {
         self.clients.clone()
     }
+
+    async fn namespace_jwt_key(
+        &self,
+        namespace: NamespaceName,
+    ) -> Result<Option<jsonwebtoken::DecodingKey>, tonic::Status> {
+        self.namespaces
+            .jwt_key(namespace)
+            .await
+            .map_err(|_| tonic::Status::internal("Error fetching jwt key for a namespace"))
+    }
 }
 
 #[derive(Debug, Default)]
@@ -494,11 +504,7 @@ impl Proxy for ProxyService {
         req: tonic::Request<tonic::Streaming<ExecReq>>,
     ) -> Result<tonic::Response<Self::StreamExecStream>, tonic::Status> {
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
-        let namespace_jwt_key = self
-            .namespaces
-            .jwt_key(namespace.clone())
-            .await
-            .map_err(|_| tonic::Status::internal("Error fetching jwt key for a namespace"))?;
+        let namespace_jwt_key = self.namespace_jwt_key(namespace.clone()).await?;
         let auth = if let Some(auth) = &self.auth {
             auth.authenticate_grpc(&req, self.disable_namespaces, namespace_jwt_key)?
         } else {
@@ -539,11 +545,7 @@ impl Proxy for ProxyService {
         req: tonic::Request<rpc::ProgramReq>,
     ) -> Result<tonic::Response<ExecuteResults>, tonic::Status> {
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
-        let namespace_jwt_key = self
-            .namespaces
-            .jwt_key(namespace.clone())
-            .await
-            .map_err(|_| tonic::Status::internal("Error fetching jwt key for a namespace"))?;
+        let namespace_jwt_key = self.namespace_jwt_key(namespace.clone()).await?;
         let auth = if let Some(auth) = &self.auth {
             auth.authenticate_grpc(&req, self.disable_namespaces, namespace_jwt_key)?
         } else {
@@ -615,11 +617,7 @@ impl Proxy for ProxyService {
         msg: tonic::Request<DescribeRequest>,
     ) -> Result<tonic::Response<DescribeResult>, tonic::Status> {
         let namespace = super::extract_namespace(self.disable_namespaces, &msg)?;
-        let namespace_jwt_key = self
-            .namespaces
-            .jwt_key(namespace.clone())
-            .await
-            .map_err(|_| tonic::Status::internal("Error fetching jwt key for a namespace"))?;
+        let namespace_jwt_key = self.namespace_jwt_key(namespace.clone()).await?;
         let auth = if let Some(auth) = &self.auth {
             auth.authenticate_grpc(&msg, self.disable_namespaces, namespace_jwt_key)?
         } else {
