@@ -766,21 +766,6 @@ impl<M: MakeNamespace> NamespaceStore<M> {
     ) -> crate::Result<MetaStoreHandle> {
         self.with(namespace, |ns| ns.db_config_store.clone()).await
     }
-
-    pub async fn jwt_key(
-        &self,
-        namespace: NamespaceName,
-    ) -> crate::Result<Option<jsonwebtoken::DecodingKey>> {
-        let config_store = self.config_store(namespace).await?;
-        let config = config_store.get();
-        if let Some(jwt_key) = config.jwt_key.as_deref() {
-            Ok(Some(
-                parse_jwt_key(jwt_key).context("Could not parse JWT decoding key")?,
-            ))
-        } else {
-            Ok(None)
-        }
-    }
 }
 
 /// A namespace isolates the resources pertaining to a database of type T
@@ -823,6 +808,17 @@ impl<T: Database> Namespace<T> {
 
     pub fn config(&self) -> Arc<DatabaseConfig> {
         self.db_config_store.get()
+    }
+
+    pub fn jwt_key(&self) -> crate::Result<Option<jsonwebtoken::DecodingKey>> {
+        let config = self.db_config_store.get();
+        if let Some(jwt_key) = config.jwt_key.as_deref() {
+            Ok(Some(
+                parse_jwt_key(jwt_key).context("Could not parse JWT decoding key")?,
+            ))
+        } else {
+            Ok(None)
+        }
     }
 }
 

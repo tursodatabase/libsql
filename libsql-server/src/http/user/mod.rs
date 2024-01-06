@@ -484,7 +484,7 @@ where
             state.disable_default_namespace,
             state.disable_namespaces,
         )?;
-        let namespace_jwt_key = state.namespaces.jwt_key(ns).await?;
+        let namespace_jwt_key = state.namespaces.with(ns, |ns| ns.jwt_key()).await??;
         let auth_header = parts.headers.get(hyper::header::AUTHORIZATION);
         let auth = state.auth.authenticate_http(
             auth_header,

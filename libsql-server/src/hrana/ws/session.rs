@@ -70,7 +70,10 @@ pub(super) async fn handle_initial_hello<F: MakeNamespace>(
     jwt: Option<String>,
     namespace: NamespaceName,
 ) -> Result<Session<<F::Database as Database>::Connection>> {
-    let namespace_jwt_key = server.namespaces.jwt_key(namespace).await?;
+    let namespace_jwt_key = server
+        .namespaces
+        .with(namespace, |ns| ns.jwt_key())
+        .await??;
     let authenticated = server
         .auth
         .authenticate_jwt(jwt.as_deref(), server.disable_namespaces, namespace_jwt_key)
@@ -97,7 +100,10 @@ pub(super) async fn handle_repeated_hello<F: MakeNamespace>(
             min_version: Version::Hrana2,
         })
     }
-    let namespace_jwt_key = server.namespaces.jwt_key(namespace).await?;
+    let namespace_jwt_key = server
+        .namespaces
+        .with(namespace, |ns| ns.jwt_key())
+        .await??;
     session.authenticated = server
         .auth
         .authenticate_jwt(jwt.as_deref(), server.disable_namespaces, namespace_jwt_key)

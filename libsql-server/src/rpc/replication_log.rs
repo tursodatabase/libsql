@@ -63,16 +63,16 @@ impl ReplicationLogService {
         req: &tonic::Request<T>,
         namespace: NamespaceName,
     ) -> Result<(), Status> {
-        let namespace_jwt_key = self
-            .namespaces
-            .jwt_key(namespace)
-            .await
-            .map_err(|_| Status::internal("Error fetching jwt key for a namespace"))?;
-        if let Some(auth) = &self.auth {
-            let _ = auth.authenticate_grpc(req, self.disable_namespaces, namespace_jwt_key)?;
+        let namespace_jwt_key = self.namespaces.with(namespace, |ns| ns.jwt_key()).await;
+        match namespace_jwt_key {
+            Ok(Ok(jwt_key)) => {
+                if let Some(auth) = &self.auth {
+                    auth.authenticate_grpc(req, self.disable_namespaces, jwt_key)?;
+                }
+                Ok(())
+            }
+            _ => Err(Status::internal("Error fetching jwt key for a namespace")),
         }
-
-        Ok(())
     }
 
     fn verify_session_token<R>(&self, req: &tonic::Request<R>) -> Result<(), Status> {
