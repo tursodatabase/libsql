@@ -307,10 +307,13 @@ impl ProxyService {
         &self,
         namespace: NamespaceName,
     ) -> Result<Option<jsonwebtoken::DecodingKey>, tonic::Status> {
-        self.namespaces
-            .jwt_key(namespace)
-            .await
-            .map_err(|_| tonic::Status::internal("Error fetching jwt key for a namespace"))
+        let namespace_jwt_key = self.namespaces.with(namespace, |ns| ns.jwt_key()).await;
+        match namespace_jwt_key {
+            Ok(Ok(jwt_key)) => Ok(jwt_key),
+            _ => Err(tonic::Status::internal(
+                "Error fetching jwt key for a namespace",
+            )),
+        }
     }
 }
 

@@ -39,16 +39,15 @@ impl ReplicaProxyService {
 
     async fn do_auth<T>(&self, req: &mut Request<T>) -> Result<(), Status> {
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
-        let namespace_jwt_key = self
-            .namespaces
-            .jwt_key(namespace.clone())
-            .await
-            .map_err(|_| tonic::Status::internal("Error fetching jwt key for a namespace"))?;
-        let authenticated = self.auth.authenticate_grpc(req, false, namespace_jwt_key)?;
-
-        authenticated.upgrade_grpc_request(req);
-
-        Ok(())
+        let namespace_jwt_key = self.namespaces.with(namespace, |ns| ns.jwt_key()).await;
+        match namespace_jwt_key {
+            Ok(Ok(jwt_key)) => {
+                let authenticated = self.auth.authenticate_grpc(req, false, jwt_key)?;
+                authenticated.upgrade_grpc_request(req);
+                Ok(())
+            }
+            _ => Err(Status::internal("Error fetching jwt key for a namespace")),
+        }
     }
 }
 
