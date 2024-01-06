@@ -35,6 +35,7 @@ LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_PROGRESS_CALLBACK"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_SHARED_CACHE"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_USE_ALLOCA"
 BASELINE="trunk"
+TYPE="json"
 doExplain=0
 doCachegrind=1
 doVdbeProfile=0
@@ -57,6 +58,7 @@ while test "$1" != ""; do
         ;;
     --jsonb)
         doJsonB=1
+        TYPE="jsonb"
         ;;
     -*)
         CC_OPTS="$CC_OPTS $1"
@@ -73,18 +75,13 @@ rm -f cachegrind.out.* jsonshell
 $CC -g -Os -Wall -I. $CC_OPTS ./shell.c ./sqlite3.c -o jsonshell -ldl -lpthread
 ls -l jsonshell | tee -a summary-$NAME.txt
 home=`echo $0 | sed -e 's,/[^/]*$,,'`
-if test $doJsonB -eq 1; then
-  echo ./jsonshell json100mb_b.db "<$home/json-q1-b.txt"
-  valgrind --tool=cachegrind ./jsonshell json100mb_b.db <$home/json-q1-b.txt \
+DB=$TYPE''100mb.db
+echo ./jsonshell $DB "<$home/$TYPE-q1.txt"
+valgrind --tool=cachegrind ./jsonshell json100mb_b.db <$home/$TYPE-q1.txt \
         2>&1 | tee -a summary-$NAME.txt
-else
-  echo ./jsonshell json100mb.db "<$home/json-q1.txt"
-  valgrind --tool=cachegrind ./jsonshell json100mb.db <$home/json-q1.txt \
-        2>&1 | tee -a summary-$NAME.txt
-fi
-cg_anno.tcl cachegrind.out.* >jout-$NAME.txt
-echo '*****************************************************' >>jout-$NAME.txt
-sed 's/^[0-9=-]\{9\}/==00000==/' summary-$NAME.txt >>jout-$NAME.txt
+cg_anno.tcl cachegrind.out.* >$TYPE-$NAME.txt
+echo '*****************************************************' >>$TYPE-$NAME.txt
+sed 's/^[0-9=-]\{9\}/==00000==/' summary-$NAME.txt >>$TYPE-$NAME.txt
 if test "$NAME" != "$BASELINE" -a $doDiff -ne 0; then
-  fossil xdiff --tk -c 20 jout-$BASELINE.txt jout-$NAME.txt
+  fossil xdiff --tk -c 20 $TYPE-$BASELINE.txt $TYPE-$NAME.txt
 fi
