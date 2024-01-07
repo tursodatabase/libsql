@@ -2730,7 +2730,7 @@ static int removeNode(Rtree *pRtree, RtreeNode *pNode, int iHeight){
 
   /* Remove the entry in the parent cell. */
   rc = nodeParentIndex(pRtree, pNode, &iCell);
-  if( ALWAYS(rc==SQLITE_OK) ){
+  if( rc==SQLITE_OK ){
     pParent = pNode->pParent;
     pNode->pParent = 0;
     rc = deleteCell(pRtree, pParent, iCell, iHeight+1);

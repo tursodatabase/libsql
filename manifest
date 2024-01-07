@@ -1,5 +1,5 @@
-C Updates\sto\sRTREE\sto\sfacility\stesting.
-D 2024-01-07T00:45:53.145
+C Remove\san\sALWAYS()\sfrom\sRTREE.\s\sDbsqlfuzz\sfound\sa\sway\sto\smake\sit\sfalse.
+D 2024-01-07T20:27:54.639
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 0dd4775e896cee6067979d67aff7c998e75c2c9d9cd8d62a1a790c09cde7adca
-F ext/rtree/rtree.c a8305eed6d9c24425e8db33c9a5b0742de68125af876d59dda1878496aabbf6e
+F ext/rtree/rtree.c d0134bb75bc92b18a1dc011ec10419642f055c67af8ff44fc4a07c5fa9f189cb
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 2b5b8c719c6a4abe377f57766f428a49af36a93061cb146cccfdc3b30000c0a4
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b115b4f75bc7c4e6d9bab5edf13297f27a36f30083c80d2c502b01208da5dfc0
-R c7c920ea2735b30b51b5fdaba02f0c8a
+P 7a5b42ff74882c58493dc8b710fde73d4ff251f5d42271d84be73ceaabc01698
+R e24ddedf31de297bbf4b76d307641631
 U drh
-Z ea09a8b203a6132b84da0854911ece51
+Z ac5f82bfe64ed7224d42f062673e1893
 # Remove this line to create a well-formed Fossil manifest.
