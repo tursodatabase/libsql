@@ -245,7 +245,7 @@ impl ReplicationLog for ReplicationLogService {
             .with(namespace, |ns| ns.db.wal_manager.wrapped().logger().clone())
             .await
             .map_err(|e| {
-                if let crate::error::Error::NamespaceDoesntExist(_) = e {
+                if let crate::error::Error::NamespaceDoesntExist(_) = e.as_ref() {
                     Status::failed_precondition(NAMESPACE_DOESNT_EXIST)
                 } else {
                     Status::internal(e.to_string())

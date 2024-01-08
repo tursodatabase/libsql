@@ -101,6 +101,15 @@ pub enum Error {
     Ref(#[from] std::sync::Arc<Self>),
 }
 
+impl AsRef<Self> for Error {
+    fn as_ref(&self) -> &Self {
+        match self {
+            Self::Ref(this) => this.as_ref(),
+            _ => self,
+        }
+    }
+}
+
 trait ResponseError: std::error::Error {
     fn format_err(&self, status: StatusCode) -> axum::response::Response {
         let json = serde_json::json!({ "error": self.to_string() });

@@ -1,6 +1,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use insta::assert_debug_snapshot;
+use libsql::Database;
 use libsql_server::config::{AdminApiConfig, DbConfig, RpcClientConfig, RpcServerConfig};
 use tokio::sync::Notify;
 
@@ -135,6 +137,98 @@ fn apply_partial_snapshot() {
             }
             tokio::time::sleep(Duration::from_millis(1000)).await;
         }
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn replica_lazy_creation() {
+    let mut sim = turmoil::Builder::new().build();
+
+    let prim_tmp = tempfile::tempdir().unwrap();
+
+    sim.host("primary", {
+        let prim_path = prim_tmp.path().to_path_buf();
+        move || {
+            let prim_path = prim_path.clone();
+            async move {
+                let primary = TestServer {
+                    path: prim_path.into(),
+                    db_config: DbConfig {
+                        max_log_size: 1,
+                        ..Default::default()
+                    },
+                    admin_api_config: Some(AdminApiConfig {
+                        acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
+                        connector: TurmoilConnector,
+                        disable_metrics: true,
+                    }),
+                    rpc_server_config: Some(RpcServerConfig {
+                        acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 5050)).await.unwrap(),
+                        tls_config: None,
+                    }),
+                    disable_namespaces: false,
+                    disable_default_namespace: true,
+                    ..Default::default()
+                };
+
+                primary.start_sim(8080).await.unwrap();
+
+                Ok(())
+            }
+        }
+    });
+
+    sim.host("replica", {
+        move || async move {
+            let tmp = tempfile::tempdir().unwrap();
+            let replica = TestServer {
+                path: tmp.path().to_path_buf().into(),
+                db_config: DbConfig {
+                    max_log_size: 1,
+                    ..Default::default()
+                },
+                admin_api_config: Some(AdminApiConfig {
+                    acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
+                    connector: TurmoilConnector,
+                    disable_metrics: true,
+                }),
+                rpc_client_config: Some(RpcClientConfig {
+                    remote_url: "http://primary:5050".into(),
+                    tls_config: None,
+                    connector: TurmoilConnector,
+                }),
+                disable_namespaces: false,
+                disable_default_namespace: true,
+                ..Default::default()
+            };
+
+            replica.start_sim(8080).await.unwrap();
+
+            Ok(())
+        }
+    });
+
+    sim.client("client", async move {
+        let db =
+            Database::open_remote_with_connector("http://test.replica:8080", "", TurmoilConnector)
+                .unwrap();
+        let conn = db.connect().unwrap();
+        assert_debug_snapshot!(conn.execute("create table test (x)", ()).await.unwrap_err());
+        let primary_http = Client::new();
+        primary_http
+            .post(
+                "http://primary:9090/v1/namespaces/test/create",
+                serde_json::json!({}),
+            )
+            .await
+            .unwrap();
+
+        // try again
+        conn.execute("create table test (x)", ()).await.unwrap();
 
         Ok(())
     });
