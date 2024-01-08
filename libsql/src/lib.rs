@@ -50,6 +50,8 @@
 //!
 //! You can find more examples in the [`examples`](https://github.com/tursodatabase/libsql/tree/main/crates/core/examples) directory.
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 #[macro_use]
 mod macros;
 
