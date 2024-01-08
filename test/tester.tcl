@@ -884,6 +884,15 @@ proc catchcmd {db {cmd ""}} {
   set rc [catch { eval $line } msg]
   list $rc $msg
 }
+proc catchsafecmd {db {cmd ""}} {
+  global CLI
+  set out [open cmds.txt w]
+  puts $out $cmd
+  close $out
+  set line "exec $CLI -safe $db < cmds.txt"
+  set rc [catch { eval $line } msg]
+  list $rc $msg
+}
 
 proc catchcmdex {db {cmd ""}} {
   global CLI

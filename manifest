@@ -1,5 +1,5 @@
-C Minor\schange\sto\sos_unix.c\sto\sfacilitate\s100%\sMC/DC\stesting.
-D 2024-01-08T15:23:45.210
+C Automatically\sturn\soff\sDEFENSIVE\smode\sin\sthe\sshell\stool\swhen\sexecuting\sscripts\sgenerated\sby\sthe\s".dump"\scommand\sagainst\san\sempty\sdatabase.\sAdd\sa\swarning\sto\sthe\stop\sof\sgenerated\s".dump"\sscripts\sthat\spopulate\svirtual\stables.
+D 2024-01-08T18:46:34.303
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -738,7 +738,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c e25f51a473a5f30a0d978e4df2aaa98aeec84eac29ecae1ad4708a6c3e669345
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c f1a81ff4f8e9e76c224e2ab3a4baa799add0db22158c7fcede65d8cc4a6fa2da
-F src/shell.c.in 85f8d52fa4f7773823736dd39d0a268fd739207fcae95883c9ec8ce4af59f7df
+F src/shell.c.in 3d19abd924ed1cec9c9908d5a10cb1580b8ca30df24c26bfe80efa0c00f664d8
 F src/sqlite.h.in 61a60b4ea04db8ead15e1579b20b64cb56e9f55d52c5f9f9694de630110593a3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
@@ -1588,6 +1588,7 @@ F test/shell5.test c8b6c54f26ec537f8558273d7ed293ca3725ef42e6b12b8f151718628bd14
 F test/shell6.test 1ceb51b2678c472ba6cf1e5da96679ce8347889fe2c3bf93a0e0fa73f00b00d3
 F test/shell7.test 115132f66d0463417f408562cc2cf534f6bbc6d83a6d50f0072a9eb171bae97f
 F test/shell8.test 3fd093d481aaa94dc77fb73f1044c1f19c7efe3477a395cc4f7450133bc54915
+F test/shell9.test e540b457297efcd737a84505c23367ed6eb5d2f239a5e1901d89518a9f794c67
 F test/shmlock.test 3dbf017d34ab0c60abe6a44e447d3552154bd0c87b41eaf5ceacd408dd13fda5
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -1665,7 +1666,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d1631311a16
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl 68454ef88508c196d19e8694daa27bff7107a91857799eaa12f417188ae53ede
+F test/tester.tcl 6f6e53981b4bdd42ef088f52e23236bc1ba0ca41ed395cbd7f33cbcff7d74d3c
 F test/testrunner.tcl 8e2a5c7550b78d3283eee6103104ae2bcf56aa1df892dbd1608f27b93ebf4de8
 F test/testrunner_data.tcl 7ffd951527bbc614e723fd8d123b6834321878530696adecfdf6035100bac64e
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2156,8 +2157,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a8e9af1356f5fb2ec460f932dfbe89283bb4e3cf9fa677d1acdbe77ffa11dd04
-R 37733634dd468dc6ea6d1e6aa3b50fba
-U drh
-Z 78db706fe3fe0ce3a2f3eeab5f6bda34
+P 0dfa7b4da134db281c3c4eddb4569c53a450f955f0af2f410e13db801aff4ea2
+R 42cc9dd174017b0dfd22a357c6d362d7
+T *branch * shell-dump-fix
+T *sym-shell-dump-fix *
+T -sym-trunk *
+U dan
+Z e611ff595823ddf49b515f1d4f66f784
 # Remove this line to create a well-formed Fossil manifest.
