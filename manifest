@@ -1,5 +1,5 @@
-C Automatically\sturn\soff\sDEFENSIVE\smode\sin\sthe\sshell\stool\swhen\sexecuting\sscripts\sgenerated\sby\sthe\s".dump"\scommand\sagainst\san\sempty\sdatabase.\sAdd\sa\swarning\sto\sthe\stop\sof\sgenerated\s".dump"\sscripts\sthat\spopulate\svirtual\stables.
-D 2024-01-08T18:46:34.303
+C Fix\sdate\son\snew\sfile\sshell9.test.
+D 2024-01-08T18:53:27.004
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1588,7 +1588,7 @@ F test/shell5.test c8b6c54f26ec537f8558273d7ed293ca3725ef42e6b12b8f151718628bd14
 F test/shell6.test 1ceb51b2678c472ba6cf1e5da96679ce8347889fe2c3bf93a0e0fa73f00b00d3
 F test/shell7.test 115132f66d0463417f408562cc2cf534f6bbc6d83a6d50f0072a9eb171bae97f
 F test/shell8.test 3fd093d481aaa94dc77fb73f1044c1f19c7efe3477a395cc4f7450133bc54915
-F test/shell9.test e540b457297efcd737a84505c23367ed6eb5d2f239a5e1901d89518a9f794c67
+F test/shell9.test fe41f890a89f57bdde7351d7a828a1d4b503ebe239d413137369f20faf7f8865
 F test/shmlock.test 3dbf017d34ab0c60abe6a44e447d3552154bd0c87b41eaf5ceacd408dd13fda5
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -2157,11 +2157,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0dfa7b4da134db281c3c4eddb4569c53a450f955f0af2f410e13db801aff4ea2
-R 42cc9dd174017b0dfd22a357c6d362d7
-T *branch * shell-dump-fix
-T *sym-shell-dump-fix *
-T -sym-trunk *
+P 6e9e96b7e7afb9420110f4b93d10b945c9eadfde5e9c81e59ae9ee8167e75707
+R 546d683a554613be241caf7c62f4af75
 U dan
-Z e611ff595823ddf49b515f1d4f66f784
+Z 7765674d9beaa13d6df1501e23fc25e4
 # Remove this line to create a well-formed Fossil manifest.
