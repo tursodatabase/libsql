@@ -28,6 +28,14 @@ pub struct HelloResponse {
     pub session_token: ::prost::bytes::Bytes,
     #[prost(uint64, optional, tag = "5")]
     pub current_replication_index: ::core::option::Option<u64>,
+    #[prost(message, optional, tag = "6")]
+    pub config: ::core::option::Option<ReplicaConfig>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReplicaConfig {
+    #[prost(bytes = "bytes", tag = "1")]
+    pub data: ::prost::bytes::Bytes,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

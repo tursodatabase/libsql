@@ -9,7 +9,7 @@ use futures::stream::BoxStream;
 pub use libsql_replication::rpc::replication as rpc;
 use libsql_replication::rpc::replication::replication_log_server::ReplicationLog;
 use libsql_replication::rpc::replication::{
-    Frame, Frames, HelloRequest, HelloResponse, LogOffset, NAMESPACE_DOESNT_EXIST,
+    Frame, Frames, HelloRequest, HelloResponse, LogOffset, ReplicaConfig, NAMESPACE_DOESNT_EXIST,
     NEED_SNAPSHOT_ERROR_MSG, NO_HELLO_ERROR_MSG, SESSION_TOKEN_KEY,
 };
 use tokio_stream::StreamExt;
@@ -258,6 +258,7 @@ impl ReplicationLog for ReplicationLogService {
             generation_id: self.generation_id.to_string(),
             generation_start_index: 0,
             current_replication_index: *logger.new_frame_notifier.borrow(),
+            config: Some(ReplicaConfig { data: Bytes::new() }),
         };
 
         Ok(tonic::Response::new(response))
