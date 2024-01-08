@@ -2659,9 +2659,9 @@ dependencies = [
  "http",
  "hyper",
  "hyper-rustls 0.24.2",
- "libsql-replication",
  "libsql-sqlite3-parser",
  "libsql-sys",
+ "libsql_replication",
  "parking_lot",
  "pprof",
  "serde",
@@ -2704,33 +2704,6 @@ dependencies = [
  "bindgen",
  "cc",
  "libsql-wasmtime-bindings",
-]
-
-[[package]]
-name = "libsql-replication"
-version = "0.1.0"
-dependencies = [
- "arbitrary",
- "async-stream",
- "async-trait",
- "bincode",
- "bytes",
- "libsql-rusqlite",
- "libsql-sys",
- "parking_lot",
- "prost",
- "prost-build",
- "serde",
- "tempfile",
- "thiserror",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "tonic",
- "tonic-build",
- "tracing",
- "uuid",
- "zerocopy",
 ]
 
 [[package]]
@@ -2795,10 +2768,10 @@ dependencies = [
  "jsonwebtoken",
  "libsql",
  "libsql-client",
- "libsql-replication",
  "libsql-rusqlite",
  "libsql-sqlite3-parser",
  "libsql-sys",
+ "libsql_replication",
  "metrics",
  "metrics-exporter-prometheus",
  "metrics-util",
@@ -2907,6 +2880,33 @@ checksum = "5c4794ff21e37f83839dad45f8c7977b071315f18705cf73badc9850b9fb6b6f"
 dependencies = [
  "wasmtime",
  "wasmtime-wasi",
+]
+
+[[package]]
+name = "libsql_replication"
+version = "0.2.0"
+dependencies = [
+ "arbitrary",
+ "async-stream",
+ "async-trait",
+ "bincode",
+ "bytes",
+ "libsql-rusqlite",
+ "libsql-sys",
+ "parking_lot",
+ "prost",
+ "prost-build",
+ "serde",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "tonic",
+ "tonic-build",
+ "tracing",
+ "uuid",
+ "zerocopy",
 ]
 
 [[package]]
