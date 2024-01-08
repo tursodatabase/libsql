@@ -1,0 +1,9 @@
+---
+source: libsql-server/tests/cluster/replication.rs
+expression: "conn.execute(\"create table test (x)\", ()).await.unwrap_err()"
+---
+Hrana(
+    Api(
+        "{\"error\":\"Replicator error: Requested namespace doesn't exist\"}",
+    ),
+)
