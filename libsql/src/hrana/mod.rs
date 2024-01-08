@@ -106,6 +106,8 @@ pub enum CursorResponseError {
     StepError { step: u32, error: Error },
     #[error("cursor stream ended prematurely")]
     CursorClosed,
+    #[error("cursor hasn't fetched any rows yet")]
+    NoRowsFetched,
     #[error("{0}")]
     Other(String),
 }
@@ -201,6 +203,7 @@ where
 
 pub struct HranaRows<S> {
     cursor_step: OwnedCursorStep<S>,
+    column_types: Option<Vec<ValueType>>,
 }
 
 impl<S> HranaRows<S>
@@ -209,7 +212,10 @@ where
 {
     async fn from_cursor(cursor: Cursor<S>) -> Result<Self> {
         let cursor_step = cursor.next_step_owned().await?;
-        Ok(HranaRows { cursor_step })
+        Ok(HranaRows {
+            cursor_step,
+            column_types: None,
+        })
     }
 
     pub async fn next(&mut self) -> crate::Result<Option<super::Row>> {
@@ -219,9 +225,28 @@ where
             None => return Ok(None),
         };
 
+        if self.column_types.is_none() {
+            self.init_column_types(&row);
+        }
+
         Ok(Some(super::Row {
             inner: Box::new(row),
         }))
+    }
+
+    fn init_column_types(&mut self, row: &Row) {
+        self.column_types = Some(
+            row.inner
+                .iter()
+                .map(|value| match value {
+                    proto::Value::Null => ValueType::Null,
+                    proto::Value::Integer { value: _ } => ValueType::Integer,
+                    proto::Value::Float { value: _ } => ValueType::Real,
+                    proto::Value::Text { value: _ } => ValueType::Text,
+                    proto::Value::Blob { value: _ } => ValueType::Blob,
+                })
+                .collect(),
+        );
     }
 
     pub fn column_count(&self) -> i32 {
@@ -254,8 +279,18 @@ where
         self.column_name(idx)
     }
 
-    fn column_type(&self, _idx: i32) -> crate::Result<ValueType> {
-        todo!()
+    fn column_type(&self, idx: i32) -> crate::Result<ValueType> {
+        if let Some(col_types) = &self.column_types {
+            if let Some(t) = col_types.get(idx as usize) {
+                Ok(*t)
+            } else {
+                Err(crate::Error::ColumnNotFound(idx))
+            }
+        } else {
+            Err(crate::Error::Hrana(Box::new(HranaError::CursorError(
+                CursorResponseError::NoRowsFetched,
+            ))))
+        }
     }
 }
 
@@ -284,8 +319,16 @@ impl RowInner for Row {
             .map(|s| s.as_str())
     }
 
-    fn column_str(&self, _idx: i32) -> crate::Result<&str> {
-        todo!()
+    fn column_str(&self, idx: i32) -> crate::Result<&str> {
+        if let Some(value) = self.inner.get(idx as usize) {
+            if let proto::Value::Text { value } = value {
+                Ok(&value)
+            } else {
+                Err(crate::Error::InvalidColumnType)
+            }
+        } else {
+            Err(crate::Error::ColumnNotFound(idx))
+        }
     }
 
     fn column_type(&self, idx: i32) -> crate::Result<ValueType> {
