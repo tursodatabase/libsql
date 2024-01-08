@@ -16,6 +16,6 @@ expression: resp.json_value().await.unwrap()
     "step_errors": [
       null
     ],
-    "replication_index": 1
+    "replication_index": "1"
   }
 }

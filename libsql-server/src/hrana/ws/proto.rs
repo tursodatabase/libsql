@@ -143,7 +143,7 @@ pub struct ExecuteReq {
     pub stream_id: i32,
     #[prost(message, required, tag = "2")]
     pub stmt: Stmt,
-    #[serde(default)]
+    #[serde(default, with = "option_u64_as_str")]
     #[prost(uint64, optional, tag = "3")]
     pub replication_index: Option<u64>,
 }
@@ -216,7 +216,7 @@ pub struct SequenceReq {
     #[serde(default)]
     #[prost(int32, optional, tag = "3")]
     pub sql_id: Option<i32>,
-    #[serde(default)]
+    #[serde(default, with = "option_u64_as_str")]
     #[prost(uint64, optional, tag = "4")]
     pub replication_index: Option<u64>,
 }
@@ -234,7 +234,7 @@ pub struct DescribeReq {
     #[serde(default)]
     #[prost(int32, optional, tag = "3")]
     pub sql_id: Option<i32>,
-    #[serde(default)]
+    #[serde(default, with = "option_u64_as_str")]
     #[prost(uint64, optional, tag = "4")]
     pub replication_index: Option<u64>,
 }

@@ -1,7 +1,9 @@
 //! Structures for Hrana-over-HTTP.
 
-pub use super::super::proto::*;
 use serde::{Deserialize, Serialize};
+
+use super::super::proto::option_u64_as_str;
+pub use super::super::proto::*;
 
 #[derive(Deserialize, prost::Message)]
 pub struct PipelineReqBody {
@@ -117,7 +119,7 @@ pub struct SequenceStreamReq {
     #[serde(default)]
     #[prost(int32, optional, tag = "2")]
     pub sql_id: Option<i32>,
-    #[serde(default)]
+    #[serde(default, with = "option_u64_as_str")]
     #[prost(uint64, optional, tag = "3")]
     pub replication_index: Option<u64>,
 }
@@ -133,7 +135,7 @@ pub struct DescribeStreamReq {
     #[serde(default)]
     #[prost(int32, optional, tag = "2")]
     pub sql_id: Option<i32>,
-    #[serde(default)]
+    #[serde(default, with = "option_u64_as_str")]
     #[prost(uint64, optional, tag = "3")]
     pub replication_index: Option<u64>,
 }
