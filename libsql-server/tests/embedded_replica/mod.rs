@@ -461,6 +461,7 @@ fn replicate_with_snapshots() {
         .tcp_capacity(200)
         .build();
 
+    const ROW_COUNT: i64 = 200;
     let tmp = tempdir().unwrap();
 
     init_tracing();
@@ -617,7 +618,7 @@ fn proxy_write_returning_row() {
             .await
             .unwrap();
 
-        rows.next().unwrap().unwrap();
+        rows.next().await.unwrap().unwrap();
 
         Ok(())
     });

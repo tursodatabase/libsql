@@ -19,6 +19,17 @@ impl Rows {
     pub fn column_name(&self, idx: i32) -> Option<&str> {
         self.inner.column_name(idx)
     }
+
+    /// Converts current [crate::Rows] into asynchronous stream, fetching rows
+    /// one by one. This stream can be further used with [futures::StreamExt]
+    /// operators.
+    pub fn into_stream(mut self) -> impl Stream<Item = crate::Result<Row>> + Unpin {
+        Box::pin(async_stream::try_stream! {
+            if let Some(row) = self.next().await? {
+                yield row
+            }
+        })
+    }
 }
 
 #[async_trait::async_trait(?Send)]

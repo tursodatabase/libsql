@@ -1,4 +1,4 @@
-use futures::StreamExt;
+use futures::{StreamExt, TryStreamExt};
 use libsql::{
     named_params, params,
     params::{IntoParams, IntoValue},
@@ -136,10 +136,8 @@ async fn statement_query() {
 
     stmt.reset();
 
-    let mut names = stmt
-        .query_map(&params, |r: libsql::Row| r.get::<String>(1))
-        .await
-        .unwrap();
+    let rows = stmt.query(&params).await.unwrap();
+    let mut names = rows.into_stream().map_ok(|r| r.get::<String>(1).unwrap());
 
     let name = names.next().await.unwrap().unwrap();
 

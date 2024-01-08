@@ -13,7 +13,7 @@ thiserror = "1.0.40"
 futures = { version = "0.3.28", optional = true }
 libsql-sys = { version = "0.3", path = "../libsql-sys", optional = true }
 tokio = { version = "1.29.1", features = ["fs", "sync"], optional = true }
-tokio-util = { version = "0.7", features = ["io-util","codec"], optional = true }
+tokio-util = { version = "0.7", features = ["io-util", "codec"], optional = true }
 parking_lot = { version = "0.12.1", optional = true }
 hyper = { version = "0.14", features = ["client", "stream"], optional = true }
 hyper-rustls = { version = "0.24", features = ["webpki-roots"], optional = true }
@@ -94,7 +94,8 @@ hrana = [
   "dep:futures",
   "dep:tokio",
   "dep:tokio-util",
-  "dep:bytes"
+  "dep:bytes",
+  "dep:async-stream"
 ]
 serde = ["dep:serde"]
 remote = [

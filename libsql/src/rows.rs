@@ -1,4 +1,5 @@
 use crate::{Result, Value, ValueType};
+use futures::Stream;
 use std::fmt;
 
 /// Represents a libsql column.
@@ -74,6 +75,17 @@ impl Rows {
     /// Fetch the column type from the provided column index.
     pub fn column_type(&self, idx: i32) -> Result<ValueType> {
         self.inner.column_type(idx)
+    }
+
+    /// Converts current [Rows] into asynchronous stream, fetching rows
+    /// one by one. This stream can be further used with [futures::StreamExt]
+    /// operators.
+    pub fn into_stream(mut self) -> impl Stream<Item = Result<Row>> + Unpin {
+        Box::pin(async_stream::try_stream! {
+            if let Some(row) = self.next().await? {
+                yield row
+            }
+        })
     }
 }
 
