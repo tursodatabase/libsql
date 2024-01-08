@@ -57,6 +57,10 @@ int sqlite3DbIsNamed(sqlite3 *db, int iDb, const char *zName){
   );
 }
 
+#ifdef LIBSQL_EXTRA_URI_PARAMS
+int libsql_handle_extra_attach_params(sqlite3* db, const char* zName, const char* zPath, sqlite3_value* pKey, char** zErrDyn);
+#endif
+
 /*
 ** An SQL user-function registered to do the work of an ATTACH statement. The
 ** three arguments to the function come directly from an attach statement:
@@ -211,6 +215,11 @@ static void attachFunc(
   if( rc==SQLITE_OK && pNew->zDbSName==0 ){
     rc = SQLITE_NOMEM_BKPT;
   }
+#ifdef LIBSQL_EXTRA_URI_PARAMS
+  if (rc == SQLITE_OK) {
+    rc = libsql_handle_extra_attach_params(db, zName, zPath, argv, &zErrDyn);
+  }
+#endif
   sqlite3_free_filename( zPath );
 
   /* If the file was opened successfully, read the schema for the new database.

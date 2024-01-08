@@ -414,7 +414,6 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 */
 #define MAX_SECTOR_SIZE 0x10000
 
-
 /*
 ** An instance of the following structure is allocated for each active
 ** savepoint and statement transaction in the system. All such structures
@@ -706,6 +705,32 @@ struct Pager {
 #endif
 };
 
+
+/* libSQL extension: pager codec */
+
+#ifdef LIBSQL_CUSTOM_PAGER_CODEC
+int libsql_pager_has_codec_impl(struct Pager *_p);
+void *libsql_pager_codec_impl(libsql_pghdr *hdr);
+#endif
+
+int libsql_pager_has_codec(struct Pager *_p) {
+#ifdef LIBSQL_CUSTOM_PAGER_CODEC
+  return libsql_pager_has_codec_impl(_p);
+#else
+  return 0;
+#endif
+}
+
+void *libsql_pager_codec(libsql_pghdr *hdr) {
+#ifdef LIBSQL_CUSTOM_PAGER_CODEC
+  return libsql_pager_codec_impl(hdr);
+#else
+  return hdr->pData;
+#endif
+}
+/* end of libSQL extension: pager codec */
+
+
 /*
 ** Indexes for use with Pager.aStat[]. The Pager.aStat[] array contains
 ** the values accessed by passing SQLITE_DBSTATUS_CACHE_HIT, CACHE_MISS
@@ -819,6 +844,7 @@ static const unsigned char aJournalMagic[] = {
 int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
   if( pPager->fd->pMethods==0 ) return 0;
   if( sqlite3PCacheIsDirty(pPager->pPCache) ) return 0;
+  if( libsql_pager_has_codec(pPager) != 0 ) return 0;
 #ifndef SQLITE_OMIT_WAL
   if( pagerUseWal(pPager) ){
     u32 iRead = 0;
@@ -1052,7 +1078,7 @@ static void setGetterMethod(Pager *pPager){
   if( pPager->errCode ){
     pPager->xGet = getPageError;
 #if SQLITE_MAX_MMAP_SIZE>0
-  }else if( USEFETCH(pPager) ){
+  }else if( USEFETCH(pPager) && libsql_pager_has_codec(pPager) == 0 ){
     pPager->xGet = getPageMMap;
 #endif /* SQLITE_MAX_MMAP_SIZE>0 */
   }else{

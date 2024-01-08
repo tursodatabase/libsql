@@ -2990,6 +2990,10 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
   return oldLimit;                     /* IMP: R-53341-35419 */
 }
 
+#ifdef LIBSQL_PRE_VFS_HOOK
+void libsql_pre_vfs_hook(const char *zVfs);
+#endif
+
 /*
 ** This function is used to parse both URIs and non-URI filenames passed by the
 ** user to API functions sqlite3_open() or sqlite3_open_v2(), and for database
@@ -3236,6 +3240,10 @@ int sqlite3ParseUri(
     flags &= ~SQLITE_OPEN_URI;
   }
 
+#ifdef LIBSQL_PRE_VFS_HOOK
+  libsql_pre_vfs_hook(zVfs);
+#endif
+
   *ppVfs = sqlite3_vfs_find(zVfs);
   if( *ppVfs==0 ){
     *pzErrMsg = sqlite3_mprintf("no such vfs: %s", zVfs);
@@ -3266,7 +3274,9 @@ static const char *uriParameter(const char *zFilename, const char *zParam){
   return 0;
 }
 
-
+#ifdef LIBSQL_EXTRA_URI_PARAMS
+int libsql_handle_extra_uri_params(sqlite3 *db, const char *zOpen);
+#endif
 
 /*
 ** This routine does the work of opening a database on behalf of
@@ -3624,6 +3634,11 @@ opendb_out:
     /* Opening a db handle. Fourth parameter is passed 0. */
     void *pArg = sqlite3GlobalConfig.pSqllogArg;
     sqlite3GlobalConfig.xSqllog(pArg, db, zFilename, 0);
+  }
+#endif
+#ifdef LIBSQL_EXTRA_URI_PARAMS
+  if (rc == SQLITE_OK) {
+    rc = libsql_handle_extra_uri_params(db, zOpen);
   }
 #endif
   sqlite3_free_filename(zOpen);
