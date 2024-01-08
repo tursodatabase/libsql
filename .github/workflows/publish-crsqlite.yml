@@ -1,0 +1,43 @@
+name: publish-crsqlite
+
+on:
+  push:
+    tags:
+      - "v*"
+      - "prebuild-test.*"
+
+jobs:
+  prebuild:
+    name: Prebuild for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            library_name: crsqlite.so
+            artifact_name: crsqlite.zip
+            asset_name: crsqlite-linux-x86_64.zip
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Load .env file
+        uses: xom9ikk/dotenv@v2
+        with:
+          path: ./
+
+      - name: Build
+        run: |
+          cd libsql-sqlite3/ext/crr
+          make loadable
+          cd dist; zip crsqlite.zip ${{ matrix.library_name }}
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: libsql-sqlite3/ext/crr/dist/${{ matrix.artifact_name }}
+          asset_name: ${{ matrix.asset_name }}
+          tag: ${{ github.ref }}
