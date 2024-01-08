@@ -57,6 +57,10 @@ core = [
   "dep:bitflags",
   "dep:futures"
 ]
+stream = [
+  "dep:futures",
+  "dep:async-stream"
+]
 parser = [
   "dep:sqlite3-parser",
   "dep:fallible-iterator"
@@ -65,6 +69,7 @@ replication = [
   "core",
   "parser",
   "serde",
+  "stream",
   "dep:tower",
   "dep:hyper",
   "dep:http",
@@ -83,19 +88,18 @@ replication = [
   "dep:tower",
   "dep:hyper-rustls",
   "dep:futures",
-  "dep:libsql_replication",
-  "dep:async-stream",
+  "dep:libsql-replication",
 ]
 hrana = [
   "parser",
   "serde",
+  "stream",
   "dep:base64",
   "dep:serde_json",
   "dep:futures",
   "dep:tokio",
   "dep:tokio-util",
   "dep:bytes",
-  "dep:async-stream"
 ]
 serde = ["dep:serde"]
 remote = [

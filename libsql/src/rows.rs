@@ -1,5 +1,4 @@
 use crate::{Result, Value, ValueType};
-use futures::Stream;
 use std::fmt;
 
 /// Represents a libsql column.
@@ -80,7 +79,8 @@ impl Rows {
     /// Converts current [Rows] into asynchronous stream, fetching rows
     /// one by one. This stream can be further used with [futures::StreamExt]
     /// operators.
-    pub fn into_stream(mut self) -> impl Stream<Item = Result<Row>> + Unpin {
+    #[cfg(feature = "stream")]
+    pub fn into_stream(mut self) -> impl futures::Stream<Item = Result<Row>> + Unpin {
         Box::pin(async_stream::try_stream! {
             if let Some(row) = self.next().await? {
                 yield row
