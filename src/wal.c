@@ -2903,6 +2903,37 @@ static int walBeginShmUnreliable(Wal *pWal, int *pChanged){
 }
 
 /*
+** The final argument passed to walTryBeginRead() is of type (int*). The
+** caller should invoke walTryBeginRead as follows:
+**
+**   int cnt = 0;
+**   do {
+**     rc = walTryBeginRead(..., &cnt);
+**   }while( rc==WAL_RETRY );
+**
+** The final value of "cnt" is of no use to the caller. It is used by
+** the implementation of walTryBeginRead() as follows:
+**
+**   + Each time walTryBeginRead() is called, it is incremented. Once
+**     it reaches WAL_RETRY_PROTOCOL_LIMIT - indicating that walTryBeginRead()
+**     has many times been invoked and failed with WAL_RETRY - walTryBeginRead()
+**     returns SQLITE_PROTOCOL.
+**
+**   + If SQLITE_ENABLE_SETLK_TIMEOUT is defined and walTryBeginRead() failed
+**     because a blocking lock timed out (SQLITE_BUSY_TIMEOUT from the OS
+**     layer), the WAL_RETRY_BLOCKED_MASK bit is set in "cnt". In this case
+**     the next invocation of walTryBeginRead() may omit an expected call to 
+**     sqlite3OsSleep(). There has already been a delay when the previous call
+**     waited on a lock.
+*/
+#define WAL_RETRY_PROTOCOL_LIMIT 100
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+# define WAL_RETRY_BLOCKED_MASK    0x10000000
+#else
+# define WAL_RETRY_BLOCKED_MASK    0
+#endif
+
+/*
 ** Attempt to start a read transaction.  This might fail due to a race or
 ** other transient condition.  When that happens, it returns WAL_RETRY to
 ** indicate to the caller that it is safe to retry immediately.
@@ -2952,7 +2983,7 @@ static int walBeginShmUnreliable(Wal *pWal, int *pChanged){
 ** so it takes care to hold an exclusive lock on the corresponding
 ** WAL_READ_LOCK() while changing values.
 */
-static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
+static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int *pCnt){
   volatile WalCkptInfo *pInfo;    /* Checkpoint information in wal-index */
   u32 mxReadMark;                 /* Largest aReadMark[] value */
   int mxI;                        /* Index of largest aReadMark[] value */
@@ -2985,27 +3016,34 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   ** so that on the 100th (and last) RETRY we delay for 323 milliseconds.
   ** The total delay time before giving up is less than 10 seconds.
   */
-  if( cnt>5 ){
+  (*pCnt)++;
+  if( *pCnt>5 ){
     int nDelay = 1;                      /* Pause time in microseconds */
-    if( cnt>100 ){
+    int cnt = (*pCnt & ~WAL_RETRY_BLOCKED_MASK);
+    if( cnt>WAL_RETRY_PROTOCOL_LIMIT ){
       VVA_ONLY( pWal->lockError = 1; )
       return SQLITE_PROTOCOL;
     }
-    if( cnt>=10 ) nDelay = (cnt-9)*(cnt-9)*39;
+    if( *pCnt>=10 ) nDelay = (cnt-9)*(cnt-9)*39;
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
     /* In SQLITE_ENABLE_SETLK_TIMEOUT builds, configure the file-descriptor
     ** to block for locks for approximately nDelay us. This affects three
     ** locks: (a) the shared lock taken on the DMS slot in os_unix.c (if
     ** using os_unix.c), (b) the WRITER lock taken in walIndexReadHdr() if the
-    ** first attempted read fails, and (c) the shared lock taken on the DMS
-    ** slot in os_unix.c. All three of these locks are attempted from within 
-    ** the call to walIndexReadHdr() below.  */
+    ** first attempted read fails, and (c) the shared lock taken on the 
+    ** read-mark.  
+    **
+    ** If the previous call failed due to an SQLITE_BUSY_TIMEOUT error,
+    ** then sleep for the minimum of 1us. The previous call already provided 
+    ** an extra delay while it was blocking on the lock.
+    */
     nBlockTmout = (nDelay+998) / 1000;
     if( !useWal && walEnableBlockingMs(pWal, nBlockTmout) ){
-      nDelay = 1;
+      if( *pCnt & WAL_RETRY_BLOCKED_MASK ) nDelay = 1;
     }
 #endif
     sqlite3OsSleep(pWal->pVfs, nDelay);
+    *pCnt &= ~WAL_RETRY_BLOCKED_MASK;
   }
 
   if( !useWal ){
@@ -3015,7 +3053,10 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     }
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
     walDisableBlocking(pWal);
-    if( rc==SQLITE_BUSY_TIMEOUT ) rc = SQLITE_BUSY;
+    if( rc==SQLITE_BUSY_TIMEOUT ){
+      rc = SQLITE_BUSY;
+      *pCnt |= WAL_RETRY_BLOCKED_MASK;
+    }
 #endif
     if( rc==SQLITE_BUSY ){
       /* If there is not a recovery running in another thread or process
@@ -3135,6 +3176,9 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   rc = walLockShared(pWal, WAL_READ_LOCK(mxI));
   walDisableBlocking(pWal);
   if( rc ){
+    if( rc==SQLITE_BUSY_TIMEOUT ){
+      *pCnt |= WAL_RETRY_BLOCKED_MASK;
+    }
     assert( (rc&0xFF)!=SQLITE_BUSY||rc==SQLITE_BUSY||rc==SQLITE_BUSY_TIMEOUT );
     return (rc&0xFF)==SQLITE_BUSY ? WAL_RETRY : rc;
   }
@@ -3324,7 +3368,7 @@ static int walBeginReadTransaction(Wal *pWal, int *pChanged){
 #endif
 
   do{
-    rc = walTryBeginRead(pWal, pChanged, 0, ++cnt);
+    rc = walTryBeginRead(pWal, pChanged, 0, &cnt);
   }while( rc==WAL_RETRY );
   testcase( (rc&0xff)==SQLITE_BUSY );
   testcase( (rc&0xff)==SQLITE_IOERR );
@@ -3809,7 +3853,7 @@ static int walRestartLog(Wal *pWal){
     cnt = 0;
     do{
       int notUsed;
-      rc = walTryBeginRead(pWal, &notUsed, 1, ++cnt);
+      rc = walTryBeginRead(pWal, &notUsed, 1, &cnt);
     }while( rc==WAL_RETRY );
     assert( (rc&0xff)!=SQLITE_BUSY ); /* BUSY not possible when useWal==1 */
     testcase( (rc&0xff)==SQLITE_IOERR );
