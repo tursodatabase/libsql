@@ -56,6 +56,8 @@ impl Injector {
                 | OpenFlags::SQLITE_OPEN_NO_MUTEX,
             wal_manager,
             auto_checkpoint,
+            #[cfg(feature = "encryption-at-rest")]
+            None,
         )?;
 
         Ok(Self {

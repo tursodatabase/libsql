@@ -373,6 +373,8 @@ mod test {
             wal_manager,
             None,
             u32::MAX,
+            #[cfg(feature = "encryption-at-rest")]
+            None,
         )
         .unwrap();
 
@@ -421,6 +423,8 @@ mod test {
             wal_manager,
             None,
             u32::MAX,
+            #[cfg(feature = "encryption-at-rest")]
+            None,
         )
         .unwrap();
 

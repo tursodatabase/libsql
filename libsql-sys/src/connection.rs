@@ -59,6 +59,7 @@ impl<W: Wal> Connection<W> {
         flags: OpenFlags,
         wal_manager: T,
         auto_checkpoint: u32,
+        #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
     ) -> Result<Self, Error>
     where
         T: WalManager<Wal = W>,
@@ -84,10 +85,15 @@ impl<W: Wal> Connection<W> {
                     make_wal_manager(wal_manager),
                 )
             }?;
-            if cfg!(feature = "encryption-at-rest") {
-                conn.pragma_update(None, "key", "s3cr3t")?;
-                tracing::debug!("KEY set to s3cr3t: don't tell anyone, SOC2 compliance, shhh");
+
+            #[cfg(feature = "encryption-at-rest")]
+            if let Some(passphrase) = passphrase {
+                conn.pragma_update(None, "key", &passphrase)?;
+                tracing::debug!(
+                    "KEY set to {passphrase}: don't tell anyone, SOC2 compliance, shhh"
+                );
             }
+
             conn.pragma_update(None, "journal_mode", "WAL")?;
             unsafe {
                 let rc =

@@ -82,11 +82,13 @@ impl<'a> From<&'a rusqlite::Column<'a>> for Column<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct QueryBuilderConfig {
     pub max_size: Option<u64>,
     pub max_total_size: Option<u64>,
     pub auto_checkpoint: u32,
+    #[cfg(feature = "encryption-at-rest")]
+    pub passphrase: Option<String>,
 }
 
 pub trait QueryResultBuilder: Send + 'static {

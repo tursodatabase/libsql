@@ -224,6 +224,10 @@ struct Cli {
     /// S3 endpoint for the meta store backups
     #[clap(long)]
     meta_store_bucket_endpoint: Option<String>,
+    /// Passphrase for encryption at rest
+    #[cfg(feature = "encryption-at-rest")]
+    #[clap(long)]
+    passphrase: Option<String>,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -338,6 +342,8 @@ fn make_db_config(config: &Cli) -> anyhow::Result<DbConfig> {
         snapshot_exec: config.snapshot_exec.clone(),
         checkpoint_interval: config.checkpoint_interval_s.map(Duration::from_secs),
         snapshot_at_shutdown: config.snapshot_at_shutdown,
+        #[cfg(feature = "encryption-at-rest")]
+        passphrase: config.passphrase.clone(),
     })
 }
 
