@@ -5095,7 +5095,7 @@ static int unixShmLock(
     for(iMutex=ofst; iMutex<ofst+n; iMutex++){
       if( flags==(SQLITE_SHM_LOCK|SQLITE_SHM_EXCLUSIVE) ){
         rc = sqlite3_mutex_try(pShmNode->aMutex[iMutex]);
-        if( rc!=SQLITE_OK ) break;
+        if( rc!=SQLITE_OK ) goto leave_shmnode_mutexes;
       }else{
         sqlite3_mutex_enter(pShmNode->aMutex[iMutex]);
       }
@@ -5104,7 +5104,7 @@ static int unixShmLock(
     sqlite3_mutex_enter(pShmNode->pShmMutex);
 #endif
 
-    if( rc==SQLITE_OK ){
+    if( ALWAYS(rc==SQLITE_OK) ){
       if( flags & SQLITE_SHM_UNLOCK ){
         /* Case (a) - unlock.  */
         int bUnlock = 1;
@@ -5183,6 +5183,7 @@ static int unixShmLock(
 
     /* Drop the mutexes acquired above. */
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  leave_shmnode_mutexes:
     for(iMutex--; iMutex>=ofst; iMutex--){
       sqlite3_mutex_leave(pShmNode->aMutex[iMutex]);
     }
