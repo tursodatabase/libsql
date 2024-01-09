@@ -271,6 +271,12 @@ static int sqlite3WalCheckpoint(
 );
 static void sqlite3WalEndReadTransaction(Wal *pWal);
 static int sqlite3WalEndWriteTransaction(Wal *pWal);
+static int walFindFrame(
+  Wal *pWal,                      /* WAL handle */
+  Pgno pgno,                      /* Database page number to read data for */
+  u32 iLast,                      /* Last page in WAL for this reader */
+  u32 *piRead                     /* OUT: Frame number (or zero) */
+);
 
 /*
 ** Trace output macros
@@ -531,6 +537,12 @@ struct WalIterator {
     int nEntry;                   /* Nr. of entries in aPgno[] and aIndex[] */
     int iZero;                    /* Frame number associated with aPgno[0] */
   } aSegment[1];                  /* One for every 32KB page in the wal-index */
+};
+
+struct WalIteratorRev {
+    u32 current;
+    /* A sparse array of page no, where frames[frame_no] = page_no if frame_no is the most recent version of this page, page_no = 0 otherwise */
+    u32 *frames;
 };
 
 /*
@@ -1504,6 +1516,31 @@ static int walIteratorNext(
 }
 
 /*
+** Return 0 on success.  If there are no pages in the WAL with a page
+** number larger than *piPage, then return 1.
+*/
+static int walIteratorRevNext(
+  struct WalIteratorRev *p,               /* Iterator */
+  u32 *piPage,                  /* OUT: The page number of the next page */
+  u32 *piFrame                  /* OUT: Wal frame index of next page */
+){
+    while (p->current > 0 && p->frames[p->current] == 0) {
+        p->current -= 1;
+    }
+
+    if (p->current == 0) {
+        return 1;
+    }
+
+    *piFrame = p->current;
+    *piPage = p->frames[p->current];
+
+    p->current--;
+
+    return 0;
+}
+
+/*
 ** This function merges two sorted lists into a single sorted list.
 **
 ** aLeft[] and aRight[] are arrays of indices.  The sort key is
@@ -1729,6 +1766,51 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
   return rc;
 }
 
+static int walIteratorRevInit(Wal *pWal, u32 nBackfill, struct WalIteratorRev *p, u32 mxSafeFrame, int ignoreFrameIfNewerExist){
+    WalIterator *pIter;
+    u32 *frames;
+    u32 iFrame, iPageno;
+    int rc;
+
+    frames = (u32*)sqlite3MallocZero((pWal->hdr.mxFrame + 1) * sizeof(u32));
+    if (!frames) return SQLITE_NOMEM_BKPT;
+    rc = walIteratorInit(pWal, nBackfill, &pIter);
+    if (rc || !pIter) {
+        sqlite3_free(frames);
+        return rc;
+    }
+
+    while (walIteratorNext(pIter, &iPageno, &iFrame) == 0) {
+        /*
+         * If we get a page with a frame_no greater than mxSafeFrame, and ignoreFrameIfNewerExist is false,
+         * then we replace it with the latest page with frame_no <= mxSafeFrame.
+         */
+        if (iFrame > mxSafeFrame && !ignoreFrameIfNewerExist) {
+           rc = walFindFrame(pWal, iPageno, mxSafeFrame, &iFrame);
+           if( rc!=SQLITE_OK ) break;
+           if (iFrame == 0) {
+               continue;
+           }
+        }
+        frames[iFrame] = iPageno;
+    }
+    walIteratorFree(pIter);
+    if (rc != 0) {
+        sqlite3_free(frames);
+        return rc;
+    }
+
+    p->current = pWal->hdr.mxFrame;
+    p->frames = frames;
+
+    return SQLITE_OK;
+}
+
+static void walIteratorRevFree(struct WalIteratorRev *p) {
+    p->current = 0;
+    sqlite3_free(p->frames);
+}
+
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
 /*
 ** Attempt to enable blocking locks. Blocking locks are enabled only if (a)
@@ -1921,7 +2003,7 @@ static int walCheckpoint(
 ){
   int rc = SQLITE_OK;             /* Return code */
   int szPage;                     /* Database page-size */
-  WalIterator *pIter = 0;         /* Wal iterator context */
+  struct WalIteratorRev pIter = { 0 };         /* Wal iterator context */
   u32 iDbpage = 0;                /* Next database page to write */
   u32 iFrame = 0;                 /* Wal frame containing data for iDbpage */
   u32 mxSafeFrame;                /* Max frame that can be backfilled */
@@ -1966,13 +2048,11 @@ static int walCheckpoint(
 
     /* Allocate the iterator */
     if( pInfo->nBackfill<mxSafeFrame ){
-      rc = walIteratorInit(pWal, pInfo->nBackfill, &pIter);
-      assert( rc==SQLITE_OK || pIter==0 );
+      rc = walIteratorRevInit(pWal, pInfo->nBackfill, &pIter, mxSafeFrame, 1);
+      assert(rc == SQLITE_OK || pIter.frames == NULL);
     }
 
-    if( pIter
-     && (rc = walBusyLock(pWal,xBusy,pBusyArg,WAL_READ_LOCK(0),1))==SQLITE_OK
-    ){
+    if(( pIter.frames != NULL && (rc = walBusyLock(pWal,xBusy,pBusyArg,WAL_READ_LOCK(0),1))==SQLITE_OK)){
       u32 nBackfill = pInfo->nBackfill;
       pInfo->nBackfillAttempted = mxSafeFrame; SEH_INJECT_FAULT;
 
@@ -2002,7 +2082,7 @@ static int walCheckpoint(
       }
 
       /* Iterate through the contents of the WAL, copying data to the db file */
-      while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
+      while( rc==SQLITE_OK && 0==walIteratorRevNext(&pIter, &iDbpage, &iFrame) ){
         i64 iOffset;
         assert( walFramePgno(pWal, iFrame)==iDbpage );
         SEH_INJECT_FAULT;
@@ -2090,7 +2170,7 @@ static int walCheckpoint(
 
  walcheckpoint_out:
   SEH_FREE_ON_ERROR(pIter, 0);
-  walIteratorFree(pIter);
+  walIteratorRevFree(&pIter);
   return rc;
 }
 
@@ -3057,10 +3137,10 @@ static void sqlite3WalEndReadTransaction(Wal *pWal){
 static int walFindFrame(
   Wal *pWal,                      /* WAL handle */
   Pgno pgno,                      /* Database page number to read data for */
+  u32 iLast,                      /* Last page in WAL for this reader */
   u32 *piRead                     /* OUT: Frame number (or zero) */
 ){
   u32 iRead = 0;                  /* If !=0, WAL frame to return data from */
-  u32 iLast = pWal->hdr.mxFrame;  /* Last page in WAL for this reader */
   int iHash;                      /* Used to loop through N hash tables */
   int iMinHash;
 
@@ -3172,7 +3252,7 @@ int sqlite3WalFindFrame(
 ){
   int rc;
   SEH_TRY {
-    rc = walFindFrame(pWal, pgno, piRead);
+    rc = walFindFrame(pWal, pgno, pWal->hdr.mxFrame, piRead);
   }
   SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
   return rc;
