@@ -3325,6 +3325,17 @@ pub struct libsql_wal_methods {
             zBuf: *mut ::std::os::raw::c_uchar,
             pnLog: *mut ::std::os::raw::c_int,
             pnCkpt: *mut ::std::os::raw::c_int,
+            pCbData: *mut ::std::os::raw::c_void,
+            xCb: ::std::option::Option<
+                unsafe extern "C" fn(
+                    pCbData: *mut ::std::os::raw::c_void,
+                    mxSafeFrame: ::std::os::raw::c_int,
+                    pPage: *const ::std::os::raw::c_uchar,
+                    nPage: ::std::os::raw::c_int,
+                    page_no: ::std::os::raw::c_int,
+                    frame_no: ::std::os::raw::c_int,
+                ) -> ::std::os::raw::c_int,
+            >,
         ) -> ::std::os::raw::c_int,
     >,
     pub xCallback:
