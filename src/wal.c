@@ -3176,9 +3176,13 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int *pCnt){
   rc = walLockShared(pWal, WAL_READ_LOCK(mxI));
   walDisableBlocking(pWal);
   if( rc ){
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
     if( rc==SQLITE_BUSY_TIMEOUT ){
       *pCnt |= WAL_RETRY_BLOCKED_MASK;
     }
+#else
+    assert( rc!=SQLITE_BUSY_TIMEOUT );
+#endif
     assert( (rc&0xFF)!=SQLITE_BUSY||rc==SQLITE_BUSY||rc==SQLITE_BUSY_TIMEOUT );
     return (rc&0xFF)==SQLITE_BUSY ? WAL_RETRY : rc;
   }
