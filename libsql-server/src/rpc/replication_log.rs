@@ -240,9 +240,14 @@ impl ReplicationLog for ReplicationLogService {
             }
         }
 
-        let logger = self
+        let (logger, config) = self
             .namespaces
-            .with(namespace, |ns| ns.db.wal_manager.wrapped().logger().clone())
+            .with(namespace, |ns| {
+                let logger = ns.db.wal_manager.wrapped().logger().clone();
+                let config = ns.config();
+
+                (logger, config)
+            })
             .await
             .map_err(|e| {
                 if let crate::error::Error::NamespaceDoesntExist(_) = e.as_ref() {
@@ -252,13 +257,18 @@ impl ReplicationLog for ReplicationLogService {
                 }
             })?;
 
+        let data = serde_json::to_vec(&config)
+            .map_err(|e| Status::internal(format!("unable to serialize config: {e}")))?;
+
         let response = HelloResponse {
             log_id: logger.log_id().to_string(),
             session_token: self.session_token.clone(),
             generation_id: self.generation_id.to_string(),
             generation_start_index: 0,
             current_replication_index: *logger.new_frame_notifier.borrow(),
-            config: Some(ReplicaConfig { data: Bytes::new() }),
+            config: Some(ReplicaConfig {
+                data: Bytes::from(data),
+            }),
         };
 
         Ok(tonic::Response::new(response))

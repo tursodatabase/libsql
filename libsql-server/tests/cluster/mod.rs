@@ -17,7 +17,7 @@ use crate::common::{http::Client, net::SimServer, snapshot_metrics};
 mod replica_restart;
 mod replication;
 
-fn make_cluster(sim: &mut Sim, num_replica: usize, disable_namespaces: bool) {
+pub fn make_cluster(sim: &mut Sim, num_replica: usize, disable_namespaces: bool) {
     init_tracing();
     let tmp = tempdir().unwrap();
     sim.host("primary", move || {
