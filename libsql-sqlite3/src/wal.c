@@ -274,7 +274,7 @@ static int sqlite3WalEndWriteTransaction(Wal *pWal);
 static int walFindFrame(
   Wal *pWal,                      /* WAL handle */
   Pgno pgno,                      /* Database page number to read data for */
-  u32 iLast,
+  u32 iLast,                      /* Last page in WAL for this reader */
   u32 *piRead                     /* OUT: Frame number (or zero) */
 );
 
@@ -541,6 +541,7 @@ struct WalIterator {
 
 struct WalIteratorRev {
     u32 current;
+    /* A sparse array of page no, where frames[frame_no] = page_no if frame_no is the most recent version of this page, page_no = 0 otherwise */
     u32 *frames;
 };
 
@@ -1514,6 +1515,10 @@ static int walIteratorNext(
   return (iRet==0xFFFFFFFF);
 }
 
+/*
+** Return 0 on success.  If there are no pages in the WAL with a page
+** number larger than *piPage, then return 1.
+*/
 static int walIteratorRevNext(
   struct WalIteratorRev *p,               /* Iterator */
   u32 *piPage,                  /* OUT: The page number of the next page */
@@ -2044,10 +2049,10 @@ static int walCheckpoint(
     /* Allocate the iterator */
     if( pInfo->nBackfill<mxSafeFrame ){
       rc = walIteratorRevInit(pWal, pInfo->nBackfill, &pIter, mxSafeFrame, 0);
-      assert(rc == SQLITE_OK || !pIter.frames);
+      assert(rc == SQLITE_OK || pIter.frames == NULL);
     }
 
-    if(( pIter.frames && (rc = walBusyLock(pWal,xBusy,pBusyArg,WAL_READ_LOCK(0),1))==SQLITE_OK)){
+    if(( pIter.frames != NULL && (rc = walBusyLock(pWal,xBusy,pBusyArg,WAL_READ_LOCK(0),1))==SQLITE_OK)){
       u32 nBackfill = pInfo->nBackfill;
       pInfo->nBackfillAttempted = mxSafeFrame; SEH_INJECT_FAULT;
 
@@ -3132,7 +3137,7 @@ static void sqlite3WalEndReadTransaction(Wal *pWal){
 static int walFindFrame(
   Wal *pWal,                      /* WAL handle */
   Pgno pgno,                      /* Database page number to read data for */
-  u32 iLast,
+  u32 iLast,                      /* Last page in WAL for this reader */
   u32 *piRead                     /* OUT: Frame number (or zero) */
 ){
   u32 iRead = 0;                  /* If !=0, WAL frame to return data from */
