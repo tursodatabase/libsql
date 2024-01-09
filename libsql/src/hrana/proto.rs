@@ -8,6 +8,7 @@ use base64::Engine;
 use std::collections::VecDeque;
 use std::fmt;
 
+use crate::parser::StmtKind;
 use serde::{Deserialize, Serialize, Serializer};
 
 #[derive(Serialize, Debug)]
@@ -191,6 +192,31 @@ impl Batch {
         let mut batch = Batch::new();
         batch.step(None, stmt);
         batch
+    }
+
+    pub(crate) fn explicit_transaction(&self) -> crate::hrana::Result<(bool, bool)> {
+        let mut begin = false; // batch contains BEGIN transaction
+        let mut end = false; // batch contains COMMIT/ROLLBACK
+        for step in self.steps.iter() {
+            if let Some(Ok(parsed)) = crate::parser::Statement::parse(&step.stmt.sql).next() {
+                match parsed.kind {
+                    StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly => {
+                        begin = true;
+                        end = false;
+                    }
+                    StmtKind::TxnEnd => {
+                        end = true;
+                        begin = false;
+                    }
+                    _ => {}
+                }
+            }
+        }
+        Ok((begin, end))
+    }
+
+    pub fn len(&self) -> usize {
+        self.steps.len()
     }
 
     pub fn from_iter(stmts: impl IntoIterator<Item = Stmt>, protocol_v3: bool) -> Self {

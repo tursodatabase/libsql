@@ -132,15 +132,8 @@ where
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
-        let mut v = self.stream.cursor(Batch::single(stmt)).await?;
-        let mut step = v
-            .next_step()
-            .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
-        step.consume()
-            .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
-        Ok(step.affected_rows() as usize)
+        let result = self.stream.execute(stmt).await?;
+        Ok(result.affected_row_count as usize)
     }
 
     pub(crate) async fn query_raw(

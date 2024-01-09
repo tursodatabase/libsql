@@ -91,7 +91,7 @@ fn basic_metrics() {
             {
                 let label = key.key().labels().next().unwrap();
                 assert!(label.value().starts_with("libsql-remote-"));
-                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(6));
+                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(3));
             }
         }
 
