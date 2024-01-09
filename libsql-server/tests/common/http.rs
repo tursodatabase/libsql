@@ -50,4 +50,19 @@ impl Client {
 
         Ok(Response(resp))
     }
+
+    pub(crate) async fn delete<T: Serialize>(
+        &self,
+        url: &str,
+        body: T,
+    ) -> anyhow::Result<Response> {
+        let bytes: Bytes = serde_json::to_vec(&body)?.into();
+        let body = Body::from(bytes);
+        let request = hyper::Request::delete(url)
+            .header("Content-Type", "application/json")
+            .body(body)?;
+        let resp = self.0.request(request).await?;
+
+        Ok(Response(resp))
+    }
 }

@@ -116,11 +116,12 @@ fn delete_namespace() {
         foo_conn.execute("create table test (c)", ()).await?;
 
         client
-            .post("http://primary:9090/v1/namespaces/foo/destroy", json!({}))
+            .delete("http://primary:9090/v1/namespaces/foo", json!({}))
             .await
             .unwrap();
         // namespace doesn't exist anymore
-        assert!(foo_conn.execute("create table test (c)", ()).await.is_err());
+        let res = foo_conn.execute("create table test (c)", ()).await;
+        assert!(res.is_err());
 
         Ok(())
     });
