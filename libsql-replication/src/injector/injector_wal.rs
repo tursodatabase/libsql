@@ -3,8 +3,8 @@ use std::num::NonZeroU32;
 
 use libsql_sys::ffi::{Pager, PgHdr};
 use libsql_sys::wal::{
-    BusyHandler, CheckpointMode, PageHeaders, Result, Sqlite3Db, Sqlite3File, Sqlite3Wal,
-    Sqlite3WalManager, UndoHandler, Vfs, Wal, WalManager, CheckpointCallback,
+    BusyHandler, CheckpointCallback, CheckpointMode, PageHeaders, Result, Sqlite3Db, Sqlite3File,
+    Sqlite3Wal, Sqlite3WalManager, UndoHandler, Vfs, Wal, WalManager,
 };
 
 use crate::frame::FrameBorrowed;
@@ -191,8 +191,16 @@ impl Wal for InjectorWal {
         in_wal: Option<&mut i32>,
         backfilled: Option<&mut i32>,
     ) -> Result<()> {
-        self.inner
-            .checkpoint(db, mode, busy_handler, sync_flags, buf, checkpoint_cb, in_wal, backfilled)
+        self.inner.checkpoint(
+            db,
+            mode,
+            busy_handler,
+            sync_flags,
+            buf,
+            checkpoint_cb,
+            in_wal,
+            backfilled,
+        )
     }
 
     fn exclusive_mode(&mut self, op: c_int) -> Result<()> {

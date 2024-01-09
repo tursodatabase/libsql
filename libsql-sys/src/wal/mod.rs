@@ -144,7 +144,13 @@ pub enum CheckpointMode {
 }
 
 pub trait CheckpointCallback {
-    fn frame(&mut self, max_safe_frame_no: u32, frame: &[u8], page_no: NonZeroU32, frame_no: NonZeroU32) -> Result<()>;
+    fn frame(
+        &mut self,
+        max_safe_frame_no: u32,
+        frame: &[u8],
+        page_no: NonZeroU32,
+        frame_no: NonZeroU32,
+    ) -> Result<()>;
     fn finish(&mut self) -> Result<()>;
 }
 

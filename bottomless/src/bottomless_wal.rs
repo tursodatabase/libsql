@@ -2,7 +2,9 @@ use std::sync::{Arc, Mutex};
 
 use libsql_sys::ffi::{SQLITE_BUSY, SQLITE_IOERR_WRITE};
 use libsql_sys::wal::wrapper::{WalWrapper, WrapWal};
-use libsql_sys::wal::{CheckpointMode, Error, Result, Wal, Sqlite3Db, BusyHandler, CheckpointCallback};
+use libsql_sys::wal::{
+    BusyHandler, CheckpointCallback, CheckpointMode, Error, Result, Sqlite3Db, Wal,
+};
 
 use crate::replicator::Replicator;
 
@@ -144,7 +146,16 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
             })??;
         }
 
-        wrapped.checkpoint(db, mode, busy_handler, sync_flags, buf, checkpoint_cb, in_wal, backfilled)?;
+        wrapped.checkpoint(
+            db,
+            mode,
+            busy_handler,
+            sync_flags,
+            buf,
+            checkpoint_cb,
+            in_wal,
+            backfilled,
+        )?;
 
         #[allow(clippy::await_holding_lock)]
         // uncontended -> only gets called under a libSQL write lock

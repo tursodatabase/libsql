@@ -9,8 +9,8 @@ use libsql_ffi::{
 };
 
 use super::{
-    BusyHandler, CheckpointMode, PageHeaders, Result, Sqlite3Db, Sqlite3File, UndoHandler, Vfs,
-    Wal, WalManager, CheckpointCallback,
+    BusyHandler, CheckpointCallback, CheckpointMode, PageHeaders, Result, Sqlite3Db, Sqlite3File,
+    UndoHandler, Vfs, Wal, WalManager,
 };
 
 /// SQLite3 default wal_manager implementation.
@@ -323,12 +323,24 @@ impl Wal for Sqlite3Wal {
             this.handle_busy() as _
         }
 
-        unsafe extern "C" fn call_cb(data: *mut c_void, max_safe_frame_no: c_int, page: *const u8, page_len: c_int, page_no: c_int, frame_no: c_int) -> c_int {
+        unsafe extern "C" fn call_cb(
+            data: *mut c_void,
+            max_safe_frame_no: c_int,
+            page: *const u8,
+            page_len: c_int,
+            page_no: c_int,
+            frame_no: c_int,
+        ) -> c_int {
             let this = &mut *(data as *mut &mut dyn CheckpointCallback);
             let ret = if page.is_null() {
                 this.finish()
             } else {
-                this.frame(max_safe_frame_no as _, std::slice::from_raw_parts(page, page_len as _), NonZeroU32::new(page_no as _).unwrap(), NonZeroU32::new(frame_no as _).unwrap())
+                this.frame(
+                    max_safe_frame_no as _,
+                    std::slice::from_raw_parts(page, page_len as _),
+                    NonZeroU32::new(page_no as _).unwrap(),
+                    NonZeroU32::new(frame_no as _).unwrap(),
+                )
             };
 
             match ret {
@@ -346,10 +358,15 @@ impl Wal for Sqlite3Wal {
             .unwrap_or(std::ptr::null_mut());
 
         let checkpoint_cb_fn = checkpoint_cb.is_some().then_some(call_cb as _);
-        let checkpoint_cb_data = checkpoint_cb.as_mut().map(|d| d as *mut &mut dyn CheckpointCallback as *mut _).unwrap_or(std::ptr::null_mut());
+        let checkpoint_cb_data = checkpoint_cb
+            .as_mut()
+            .map(|d| d as *mut &mut dyn CheckpointCallback as *mut _)
+            .unwrap_or(std::ptr::null_mut());
 
         let out_log_num_frames = in_wal.map(|ptr| ptr as _).unwrap_or(std::ptr::null_mut());
-        let out_backfilled = backfilled.map(|ptr| ptr as _).unwrap_or(std::ptr::null_mut());
+        let out_backfilled = backfilled
+            .map(|ptr| ptr as _)
+            .unwrap_or(std::ptr::null_mut());
 
         let rc = unsafe {
             (self.inner.methods.xCheckpoint.unwrap())(

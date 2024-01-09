@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use libsql_sys::wal::wrapper::{WalWrapper, WrapWal, WrappedWal};
-use libsql_sys::wal::{Wal, WalManager, CheckpointCallback, BusyHandler};
+use libsql_sys::wal::{BusyHandler, CheckpointCallback, Wal, WalManager};
 use metrics::{histogram, increment_counter};
 use once_cell::sync::Lazy;
 use parking_lot::{Mutex, RwLock};

@@ -1,7 +1,7 @@
 use std::ffi::c_int;
 use std::num::NonZeroU32;
 
-use super::{Wal, WalManager, BusyHandler, CheckpointCallback};
+use super::{BusyHandler, CheckpointCallback, Wal, WalManager};
 
 /// A convenient wrapper struct that implement WAL with a `wrapper` where the wrapper needs to
 /// implement `WrapWal` instead of `Wal`, where all methods delegate to wrapped by default.
@@ -178,7 +178,7 @@ where
             buf,
             checkpoint_cb,
             in_wal,
-            backfilled
+            backfilled,
         )
     }
 
@@ -288,7 +288,16 @@ pub trait WrapWal<W: Wal> {
         in_wal: Option<&mut i32>,
         backfilled: Option<&mut i32>,
     ) -> super::Result<()> {
-        wrapped.checkpoint(db, mode, busy_handler, sync_flags, buf, checkpoint_cb, in_wal, backfilled)
+        wrapped.checkpoint(
+            db,
+            mode,
+            busy_handler,
+            sync_flags,
+            buf,
+            checkpoint_cb,
+            in_wal,
+            backfilled,
+        )
     }
 
     fn exclusive_mode(&mut self, wrapped: &mut W, op: std::ffi::c_int) -> super::Result<()> {
@@ -452,8 +461,27 @@ impl<T: WrapWal<W>, W: Wal> WrapWal<W> for Option<T> {
         backfilled: Option<&mut i32>,
     ) -> super::Result<()> {
         match self {
-            Some(t) => t.checkpoint(wrapped, db, mode, busy_handler, sync_flags, buf, checkpoint_cb, in_wal, backfilled),
-            None => wrapped.checkpoint(db, mode, busy_handler, sync_flags, buf, checkpoint_cb, in_wal, backfilled),
+            Some(t) => t.checkpoint(
+                wrapped,
+                db,
+                mode,
+                busy_handler,
+                sync_flags,
+                buf,
+                checkpoint_cb,
+                in_wal,
+                backfilled,
+            ),
+            None => wrapped.checkpoint(
+                db,
+                mode,
+                busy_handler,
+                sync_flags,
+                buf,
+                checkpoint_cb,
+                in_wal,
+                backfilled,
+            ),
         }
     }
 

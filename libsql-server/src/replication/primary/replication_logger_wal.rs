@@ -4,7 +4,9 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use libsql_sys::ffi::Sqlite3DbHeader;
-use libsql_sys::wal::{BusyHandler, Result, Sqlite3Wal, Sqlite3WalManager, WalManager, CheckpointCallback};
+use libsql_sys::wal::{
+    BusyHandler, CheckpointCallback, Result, Sqlite3Wal, Sqlite3WalManager, WalManager,
+};
 use libsql_sys::wal::{PageHeaders, Sqlite3Db, Sqlite3File, UndoHandler};
 use libsql_sys::wal::{Vfs, Wal};
 use rusqlite::ffi::{libsql_pghdr, SQLITE_IOERR, SQLITE_SYNC_NORMAL};
@@ -234,8 +236,16 @@ impl Wal for ReplicationLoggerWal {
         backfilled: Option<&mut i32>,
     ) -> Result<()> {
         self.inject_replication_index()?;
-        self.inner
-            .checkpoint(db, mode, busy_handler, sync_flags, buf, checkpoint_cb, in_wal, backfilled)
+        self.inner.checkpoint(
+            db,
+            mode,
+            busy_handler,
+            sync_flags,
+            buf,
+            checkpoint_cb,
+            in_wal,
+            backfilled,
+        )
     }
 
     fn exclusive_mode(&mut self, op: c_int) -> Result<()> {
@@ -318,7 +328,10 @@ impl ReplicationLoggerWal {
 
 #[cfg(test)]
 mod test {
-    use libsql_sys::wal::{wrapper::{WalWrapper, WrapWal}, CheckpointMode};
+    use libsql_sys::wal::{
+        wrapper::{WalWrapper, WrapWal},
+        CheckpointMode,
+    };
     use metrics::atomics::AtomicU64;
     use rusqlite::ffi::{sqlite3_wal_checkpoint_v2, SQLITE_CHECKPOINT_FULL};
     use tempfile::tempdir;
@@ -348,7 +361,16 @@ mod test {
                 in_wal: Option<&mut i32>,
                 backfilled: Option<&mut i32>,
             ) -> libsql_sys::wal::Result<()> {
-                wrapped.checkpoint(db, mode, busy_handler, sync_flags, buf, checkpoint_cb, in_wal, backfilled)?;
+                wrapped.checkpoint(
+                    db,
+                    mode,
+                    busy_handler,
+                    sync_flags,
+                    buf,
+                    checkpoint_cb,
+                    in_wal,
+                    backfilled,
+                )?;
                 let buf = &mut [0; LIBSQL_PAGE_SIZE as _];
                 wrapped.inner.db_file().read_at(buf, 0).unwrap();
                 let header = Sqlite3DbHeader::mut_from_prefix(buf).unwrap();

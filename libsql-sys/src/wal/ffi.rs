@@ -4,11 +4,11 @@ use std::ptr::null;
 
 use libsql_ffi::{
     libsql_wal, libsql_wal_manager, libsql_wal_methods, sqlite3, sqlite3_file, sqlite3_vfs,
-    wal_impl, wal_manager_impl, PgHdr, SQLITE_CHECKPOINT_FULL, SQLITE_CHECKPOINT_PASSIVE,
-    SQLITE_CHECKPOINT_RESTART, SQLITE_CHECKPOINT_TRUNCATE, SQLITE_OK, WAL_SAVEPOINT_NDATA, Error,
+    wal_impl, wal_manager_impl, Error, PgHdr, SQLITE_CHECKPOINT_FULL, SQLITE_CHECKPOINT_PASSIVE,
+    SQLITE_CHECKPOINT_RESTART, SQLITE_CHECKPOINT_TRUNCATE, SQLITE_OK, WAL_SAVEPOINT_NDATA,
 };
 
-use crate::wal::{BusyHandler, CheckpointMode, UndoHandler, CheckpointCallback};
+use crate::wal::{BusyHandler, CheckpointCallback, CheckpointMode, UndoHandler};
 
 use super::{PageHeaders, Sqlite3Db, Sqlite3File, Vfs, Wal, WalManager};
 
