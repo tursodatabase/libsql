@@ -1766,7 +1766,7 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
   return rc;
 }
 
-static int walIteratorRevInit(Wal *pWal, u32 nBackfill, struct WalIteratorRev *p, u32 mxSafeFrame, int getMissingFrame){
+static int walIteratorRevInit(Wal *pWal, u32 nBackfill, struct WalIteratorRev *p, u32 mxSafeFrame, int ignoreFrameIfNewerExist){
     WalIterator *pIter;
     u32 *frames;
     u32 iFrame, iPageno;
@@ -1782,10 +1782,10 @@ static int walIteratorRevInit(Wal *pWal, u32 nBackfill, struct WalIteratorRev *p
 
     while (walIteratorNext(pIter, &iPageno, &iFrame) == 0) {
         /*
-         * If we get a page with a frame_no greater than mxSafeFrame, and getMissingFrame is true,
+         * If we get a page with a frame_no greater than mxSafeFrame, and ignoreFrameIfNewerExist is false,
          * then we replace it with the latest page with frame_no <= mxSafeFrame.
          */
-        if (iFrame > mxSafeFrame && getMissingFrame) {
+        if (iFrame > mxSafeFrame && !ignoreFrameIfNewerExist) {
            rc = walFindFrame(pWal, iPageno, mxSafeFrame, &iFrame);
            if( rc!=SQLITE_OK ) break;
            if (iFrame == 0) {
@@ -2048,7 +2048,7 @@ static int walCheckpoint(
 
     /* Allocate the iterator */
     if( pInfo->nBackfill<mxSafeFrame ){
-      rc = walIteratorRevInit(pWal, pInfo->nBackfill, &pIter, mxSafeFrame, 0);
+      rc = walIteratorRevInit(pWal, pInfo->nBackfill, &pIter, mxSafeFrame, 1);
       assert(rc == SQLITE_OK || pIter.frames == NULL);
     }
 
