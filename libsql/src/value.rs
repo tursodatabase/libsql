@@ -576,6 +576,13 @@ mod serde_ {
                 {
                     Ok(Value::Null)
                 }
+
+                fn visit_bool<E>(self, v: bool) -> std::result::Result<Self::Value, E>
+                where
+                    E: de::Error,
+                {
+                    Ok(Value::Integer(v as i64))
+                }
             }
 
             deserializer.deserialize_any(V)
