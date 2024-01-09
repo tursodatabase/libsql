@@ -1,7 +1,7 @@
 use std::ffi::c_int;
 use std::num::NonZeroU32;
 
-use super::{Wal, WalManager};
+use super::{Wal, WalManager, BusyHandler, CheckpointCallback};
 
 /// A convenient wrapper struct that implement WAL with a `wrapper` where the wrapper needs to
 /// implement `WrapWal` instead of `Wal`, where all methods delegate to wrapped by default.
@@ -157,17 +157,29 @@ where
         )
     }
 
-    fn checkpoint<B: super::BusyHandler>(
+    fn checkpoint(
         &mut self,
         db: &mut super::Sqlite3Db,
         mode: super::CheckpointMode,
-        busy_handler: Option<&mut B>,
+        busy_handler: Option<&mut dyn BusyHandler>,
         sync_flags: u32,
         // temporary scratch buffer
         buf: &mut [u8],
-    ) -> super::Result<(u32, u32)> {
-        self.wrapper
-            .checkpoint(&mut self.wrapped, db, mode, busy_handler, sync_flags, buf)
+        checkpoint_cb: Option<&mut dyn CheckpointCallback>,
+        in_wal: Option<&mut i32>,
+        backfilled: Option<&mut i32>,
+    ) -> super::Result<()> {
+        self.wrapper.checkpoint(
+            &mut self.wrapped,
+            db,
+            mode,
+            busy_handler,
+            sync_flags,
+            buf,
+            checkpoint_cb,
+            in_wal,
+            backfilled
+        )
     }
 
     fn exclusive_mode(&mut self, op: std::ffi::c_int) -> super::Result<()> {
@@ -263,17 +275,20 @@ pub trait WrapWal<W: Wal> {
         wrapped.insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)
     }
 
-    fn checkpoint<B: super::BusyHandler>(
+    fn checkpoint(
         &mut self,
         wrapped: &mut W,
         db: &mut super::Sqlite3Db,
         mode: super::CheckpointMode,
-        busy_handler: Option<&mut B>,
+        busy_handler: Option<&mut dyn BusyHandler>,
         sync_flags: u32,
         // temporary scratch buffer
         buf: &mut [u8],
-    ) -> super::Result<(u32, u32)> {
-        wrapped.checkpoint(db, mode, busy_handler, sync_flags, buf)
+        checkpoint_cb: Option<&mut dyn CheckpointCallback>,
+        in_wal: Option<&mut i32>,
+        backfilled: Option<&mut i32>,
+    ) -> super::Result<()> {
+        wrapped.checkpoint(db, mode, busy_handler, sync_flags, buf, checkpoint_cb, in_wal, backfilled)
     }
 
     fn exclusive_mode(&mut self, wrapped: &mut W, op: std::ffi::c_int) -> super::Result<()> {
@@ -423,19 +438,22 @@ impl<T: WrapWal<W>, W: Wal> WrapWal<W> for Option<T> {
         }
     }
 
-    fn checkpoint<B: super::BusyHandler>(
+    fn checkpoint(
         &mut self,
         wrapped: &mut W,
         db: &mut super::Sqlite3Db,
         mode: super::CheckpointMode,
-        busy_handler: Option<&mut B>,
+        busy_handler: Option<&mut dyn BusyHandler>,
         sync_flags: u32,
         // temporary scratch buffer
         buf: &mut [u8],
-    ) -> super::Result<(u32, u32)> {
+        checkpoint_cb: Option<&mut dyn CheckpointCallback>,
+        in_wal: Option<&mut i32>,
+        backfilled: Option<&mut i32>,
+    ) -> super::Result<()> {
         match self {
-            Some(t) => t.checkpoint(wrapped, db, mode, busy_handler, sync_flags, buf),
-            None => wrapped.checkpoint(db, mode, busy_handler, sync_flags, buf),
+            Some(t) => t.checkpoint(wrapped, db, mode, busy_handler, sync_flags, buf, checkpoint_cb, in_wal, backfilled),
+            None => wrapped.checkpoint(db, mode, busy_handler, sync_flags, buf, checkpoint_cb, in_wal, backfilled),
         }
     }
 

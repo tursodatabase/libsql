@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use libsql_sys::ffi::{SQLITE_BUSY, SQLITE_IOERR_WRITE};
 use libsql_sys::wal::wrapper::{WalWrapper, WrapWal};
-use libsql_sys::wal::{CheckpointMode, Error, Result, Wal};
+use libsql_sys::wal::{CheckpointMode, Error, Result, Wal, Sqlite3Db, BusyHandler, CheckpointCallback};
 
 use crate::replicator::Replicator;
 
@@ -80,16 +80,19 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
         Ok(())
     }
 
-    fn checkpoint<B: libsql_sys::wal::BusyHandler>(
+    fn checkpoint(
         &mut self,
         wrapped: &mut T,
-        db: &mut libsql_sys::wal::Sqlite3Db,
-        mode: libsql_sys::wal::CheckpointMode,
-        busy_handler: Option<&mut B>,
+        db: &mut Sqlite3Db,
+        mode: CheckpointMode,
+        busy_handler: Option<&mut dyn BusyHandler>,
         sync_flags: u32,
         // temporary scratch buffer
         buf: &mut [u8],
-    ) -> libsql_sys::wal::Result<(u32, u32)> {
+        checkpoint_cb: Option<&mut dyn CheckpointCallback>,
+        in_wal: Option<&mut i32>,
+        backfilled: Option<&mut i32>,
+    ) -> Result<()> {
         {
             tracing::trace!("bottomless checkpoint");
 
@@ -141,7 +144,7 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
             })??;
         }
 
-        let ret = wrapped.checkpoint(db, mode, busy_handler, sync_flags, buf)?;
+        wrapped.checkpoint(db, mode, busy_handler, sync_flags, buf, checkpoint_cb, in_wal, backfilled)?;
 
         #[allow(clippy::await_holding_lock)]
         // uncontended -> only gets called under a libSQL write lock
@@ -159,6 +162,6 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
             })??;
         }
 
-        Ok(ret)
+        Ok(())
     }
 }

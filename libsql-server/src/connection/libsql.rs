@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use libsql_sys::wal::wrapper::{WalWrapper, WrapWal, WrappedWal};
-use libsql_sys::wal::{Wal, WalManager};
+use libsql_sys::wal::{Wal, WalManager, CheckpointCallback, BusyHandler};
 use metrics::{histogram, increment_counter};
 use once_cell::sync::Lazy;
 use parking_lot::{Mutex, RwLock};
@@ -175,17 +175,20 @@ impl<T> std::fmt::Debug for LibSqlConnection<T> {
 pub struct InhibitCheckpointWalWrapper;
 
 impl<W: Wal> WrapWal<W> for InhibitCheckpointWalWrapper {
-    fn checkpoint<B: libsql_sys::wal::BusyHandler>(
+    fn checkpoint(
         &mut self,
         _wrapped: &mut W,
         _db: &mut libsql_sys::wal::Sqlite3Db,
         _mode: libsql_sys::wal::CheckpointMode,
-        _busy_handler: Option<&mut B>,
+        _busy_handler: Option<&mut dyn BusyHandler>,
         _sync_flags: u32,
         _buf: &mut [u8],
-    ) -> libsql_sys::wal::Result<(u32, u32)> {
+        _checkpoint_cb: Option<&mut dyn CheckpointCallback>,
+        _in_wal: Option<&mut i32>,
+        _backfilled: Option<&mut i32>,
+    ) -> libsql_sys::wal::Result<()> {
         tracing::warn!(
-            "chackpoint inhibited: this connection is not allowed to perform checkpoints"
+            "checkpoint inhibited: this connection is not allowed to perform checkpoints"
         );
         Err(rusqlite::ffi::Error::new(SQLITE_BUSY))
     }
