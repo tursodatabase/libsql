@@ -279,6 +279,7 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         }
 
         if ns_path.try_exists()? {
+            tracing::debug!("removing database directory: {}", ns_path.display());
             tokio::fs::remove_dir_all(ns_path).await?;
         }
 
@@ -473,7 +474,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                 &self.inner.metadata,
             )
             .await?;
-
+        self.inner.metadata.remove(&namespace)?;
         tracing::info!("destroyed namespace: {namespace}");
 
         Ok(())

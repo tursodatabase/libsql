@@ -256,6 +256,16 @@ impl MetaStore {
         self.inner.lock().configs.contains_key(namespace)
     }
 
+    pub fn remove(&self, namespace: &NamespaceName) -> Result<bool> {
+        tracing::debug!("removing a namespace from meta store `{}`", namespace);
+        let mut guard = self.inner.lock();
+        guard.conn.execute(
+            "DELETE FROM namespace_configs WHERE namespace = ?",
+            [namespace.as_str()],
+        )?;
+        Ok(guard.configs.remove(namespace).is_some())
+    }
+
     pub(crate) async fn shutdown(&self) -> crate::Result<()> {
         let replicator = self
             .inner
