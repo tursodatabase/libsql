@@ -76,6 +76,28 @@ impl Rows {
     }
 }
 
+impl IntoIterator for Rows {
+    type Item = Result<Row>;
+    type IntoIter = RowsIntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        RowsIntoIter { rows: self }
+    }
+}
+
+/// An iterator over a set of rows.
+pub struct RowsIntoIter {
+    rows: Rows,
+}
+
+impl Iterator for RowsIntoIter {
+    type Item = Result<Row>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.rows.next().transpose()
+    }
+}
+
 /// A libsql row.
 pub struct Row {
     pub(crate) inner: Box<dyn RowInner + Send + Sync>,
