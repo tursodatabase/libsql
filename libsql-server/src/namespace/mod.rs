@@ -867,6 +867,8 @@ impl Namespace<ReplicaDatabase> {
             client,
             db_path.join("data"),
             DEFAULT_AUTO_CHECKPOINT,
+            #[cfg(feature = "encryption-at-rest")]
+            config.passphrase.clone(),
         )
         .await?;
 

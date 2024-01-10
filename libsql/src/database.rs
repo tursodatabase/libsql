@@ -29,7 +29,11 @@ enum DbType {
     #[cfg(feature = "core")]
     File { path: String, flags: OpenFlags },
     #[cfg(feature = "replication")]
-    Sync { db: crate::local::Database },
+    Sync {
+        db: crate::local::Database,
+        #[cfg(feature = "encryption-at-rest")]
+        passphrase: Option<String>,
+    },
     #[cfg(feature = "remote")]
     Remote {
         url: String,
@@ -95,11 +99,11 @@ cfg_replication! {
 
     impl Database {
         /// Open a local database file with the ability to sync from snapshots from local filesystem.
-        pub async fn open_with_local_sync(db_path: impl Into<String>) -> Result<Database> {
-            let db = crate::local::Database::open_local_sync(db_path, OpenFlags::default()).await?;
+        pub async fn open_with_local_sync(db_path: impl Into<String>, #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>) -> Result<Database> {
+            let db = crate::local::Database::open_local_sync(db_path, OpenFlags::default(), #[cfg(feature = "encryption-at-rest")] passphrase.clone()).await?;
 
             Ok(Database {
-                db_type: DbType::Sync { db },
+                db_type: DbType::Sync { db, #[cfg(feature = "encryption-at-rest")] passphrase },
             })
         }
 
@@ -108,10 +112,11 @@ cfg_replication! {
             db_path: impl Into<String>,
             url: impl Into<String>,
             token: impl Into<String>,
+            #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
         ) -> Result<Database> {
             let https = connector();
 
-            Self::open_with_remote_sync_connector(db_path, url, token, https, false).await
+            Self::open_with_remote_sync_connector(db_path, url, token, https, false, #[cfg(feature = "encryption-at-rest")] passphrase).await
         }
 
         /// Open a local database file with the ability to sync from a remote database
@@ -123,10 +128,11 @@ cfg_replication! {
             db_path: impl Into<String>,
             url: impl Into<String>,
             token: impl Into<String>,
+            #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
         ) -> Result<Database> {
             let https = connector();
 
-            Self::open_with_remote_sync_connector(db_path, url, token, https, true).await
+            Self::open_with_remote_sync_connector(db_path, url, token, https, true, #[cfg(feature = "encryption-at-rest")] passphrase).await
         }
 
         /// Connect an embedded replica to a remote primary with a custom
@@ -137,6 +143,7 @@ cfg_replication! {
             token: impl Into<String>,
             connector: C,
             read_your_writes: bool,
+            #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
         ) -> Result<Database>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
@@ -150,7 +157,8 @@ cfg_replication! {
                 token,
                 connector,
                 None,
-                read_your_writes
+                read_your_writes,
+                #[cfg(feature = "encryption-at-rest")] passphrase,
             ).await
         }
 
@@ -161,6 +169,7 @@ cfg_replication! {
             token: impl Into<String>,
             version: Option<String>,
             read_your_writes: bool,
+            #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
         ) -> Result<Database> {
             let https = connector();
 
@@ -170,7 +179,8 @@ cfg_replication! {
                 token,
                 https,
                 version,
-                read_your_writes
+                read_your_writes,
+                #[cfg(feature = "encryption-at-rest")] passphrase,
             ).await
         }
 
@@ -182,6 +192,7 @@ cfg_replication! {
             connector: C,
             version: Option<String>,
             read_your_writes: bool,
+            #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
         ) -> Result<Database>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
@@ -203,11 +214,12 @@ cfg_replication! {
                 url.into(),
                 token.into(),
                 version,
-                read_your_writes
+                read_your_writes,
+                #[cfg(feature = "encryption-at-rest")] passphrase.clone()
             ).await?;
 
             Ok(Database {
-                db_type: DbType::Sync { db },
+                db_type: DbType::Sync { db, #[cfg(feature = "encryption-at-rest")] passphrase },
             })
         }
 
@@ -215,7 +227,7 @@ cfg_replication! {
         /// Sync database from remote, and returns the committed frame_no after syncing, if
         /// applicable.
         pub async fn sync(&self) -> Result<Option<FrameNo>> {
-            if let DbType::Sync { db } = &self.db_type {
+            if let DbType::Sync { db, #[cfg(feature = "encryption-at-rest")] passphrase: _ } = &self.db_type {
                 db.sync().await
             } else {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
@@ -225,7 +237,7 @@ cfg_replication! {
         /// Apply a set of frames to the database and returns the committed frame_no after syncing, if
         /// applicable.
         pub async fn sync_frames(&self, frames: crate::replication::Frames) -> Result<Option<FrameNo>> {
-            if let DbType::Sync { db } = &self.db_type {
+            if let DbType::Sync { db, #[cfg(feature = "encryption-at-rest")] passphrase: _ } = &self.db_type {
                 db.sync_frames(frames).await
             } else {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
@@ -235,7 +247,7 @@ cfg_replication! {
         /// Force buffered replication frames to be applied, and return the current commit frame_no
         /// if applicable.
         pub async fn flush_replicator(&self) -> Result<Option<FrameNo>> {
-            if let DbType::Sync { db } = &self.db_type {
+            if let DbType::Sync { db, #[cfg(feature = "encryption-at-rest")] passphrase: _ } = &self.db_type {
                 db.flush_replicator().await
             } else {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
@@ -244,7 +256,7 @@ cfg_replication! {
 
         /// Returns the database currently committed replication index
         pub async fn replication_index(&self) -> Result<Option<FrameNo>> {
-            if let DbType::Sync { db } = &self.db_type {
+            if let DbType::Sync { db, #[cfg(feature = "encryption-at-rest")] passphrase: _ } = &self.db_type {
                 db.replication_index().await
             } else {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
@@ -320,6 +332,15 @@ cfg_remote! {
     }
 }
 
+#[cfg(feature = "encryption-at-rest")]
+extern "C" {
+    fn sqlite3_key(
+        db: *mut crate::ffi::sqlite3,
+        pKey: *const std::ffi::c_void,
+        nKey: std::ffi::c_int,
+    ) -> std::ffi::c_int;
+}
+
 impl Database {
     /// Connect to the database this can mean a few things depending on how it was constructed:
     ///
@@ -358,10 +379,31 @@ impl Database {
             }
 
             #[cfg(feature = "replication")]
-            DbType::Sync { db } => {
+            DbType::Sync {
+                db,
+                #[cfg(feature = "encryption-at-rest")]
+                passphrase,
+            } => {
                 use crate::local::impls::LibsqlConnection;
 
                 let conn = db.connect()?;
+
+                #[cfg(feature = "encryption-at-rest")]
+                if let Some(passphrase) = passphrase {
+                    let passphrase = std::ffi::CString::new(passphrase.as_str()).unwrap();
+                    let rc = unsafe {
+                        sqlite3_key(
+                            conn.raw,
+                            passphrase.as_ptr() as *const _,
+                            passphrase.as_bytes().len() as _,
+                        )
+                    };
+                    if rc != crate::ffi::SQLITE_OK {
+                        return Err(Error::SyncNotSupported(format!(
+                            "Setting encryption passphrase failed: {rc}"
+                        )));
+                    }
+                }
 
                 let local = LibsqlConnection { conn };
                 let writer = local.conn.writer().cloned();
@@ -391,6 +433,21 @@ impl Database {
             }
 
             _ => unreachable!("no database type set"),
+        }
+    }
+
+    #[cfg(feature = "encryption-at-rest")]
+    pub fn set_passphrase(&mut self, passphrase: impl AsRef<str>) {
+        match self.db_type {
+            DbType::Sync {
+                db: _,
+                passphrase: ref mut p,
+            } => *p = Some(passphrase.as_ref().to_string()),
+            _ => {
+                tracing::warn!(
+                    "set_passphrase is only implemented for embedded replicas with sync enabled"
+                );
+            }
         }
     }
 }

@@ -7,7 +7,13 @@ use libsql::{
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let db = Database::open_with_local_sync("test.db").await.unwrap();
+    let db = Database::open_with_local_sync(
+        "test.db",
+        #[cfg(feature = "encryption-at-rest")]
+        None,
+    )
+    .await
+    .unwrap();
     let conn = db.connect().unwrap();
 
     let args = std::env::args().collect::<Vec<String>>();
