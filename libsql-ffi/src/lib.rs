@@ -51,6 +51,10 @@ impl<'a> PageHdrIter<'a> {
             _pth: PhantomData,
         }
     }
+
+    pub fn current_ptr(&self) -> *const PgHdr {
+        self.current_ptr
+    }
 }
 
 impl<'a> std::iter::Iterator for PageHdrIter<'a> {
