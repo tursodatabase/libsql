@@ -21,18 +21,14 @@ Use the `--help` flag to discover how to change its runtime behavior.
 You can query sqld using one of the provided [client
 libraries](../#client-libraries).
 
-You can also use the sqlite3 CLI to query the SQLite 3 compatible database file
-managed by sqld.
-
-```bash
-sqlite3 ./data.sqld/data
+You can also use the [turso cli](https://docs.turso.tech/reference/turso-cli) to connect to the sqld instance:
 ```
-
-Be sure to stop sqld before using `sqlite3` like this.
+turso db shell http://127.0.0.1:8000    
+```
 
 ## Download a prebuilt binary
 
-The [sqld releases page] for this repository lists released versions of sqld
+The [libsql-server release page](https://github.com/tursodatabase/libsql/releases) for this repository lists released versions of sqld
 along with downloads for macOS and Linux.
 
 ## Build and install with Homebrew
@@ -67,14 +63,14 @@ Registry. The URL is https://ghcr.io/libsql/sqld. You can run the latest image l
 on port 8080 with the following:
 
 ```bash
-docker run -p 8080:8080 -d ghcr.io/libsql/sqld:latest
+docker run -p 8080:8080 -d ghcr.io/tursodatabase/libsql-server:latest
 ```
 
 Or you can run a specific version using one of the [sqld container release
 tags] in the following form for version X.Y.Z:
 
 ```bash
-docker run -p 8080:8080 -d ghcr.io/libsql/sqld:vX.Y.Z
+docker run -p 8080:8080 -d ghcr.io/tursodatabase/libsql-server:vX.Y.Z
 ```
 
 ## Build from source using Docker / Podman
@@ -88,8 +84,6 @@ your machine with its CLI in your shell PATH.
 
 Clone this repo using your preferred mechanism. You may want to use one of the
 [sqld release tags].
-
-Change to the `sqld` directory.
 
 ### 2. Build with Docker
 
@@ -155,22 +149,14 @@ available in your PATH.
 Currently we only support building sqld on macOS and Linux (including WSL). We
 are working native Windows build instructions.
 
-### 1. Setup
-
-Install dependencies:
-
-```bash
-./scripts/install-deps.sh
-```
-
-### 2. Clone this repo
+### 1. Clone this repo
 
 Clone this repo using your preferred mechanism. You may want to use one of the
 [sqld release tags].
 
 Change to the `sqld` directory.
 
-### 3. Build with cargo
+### 2. Build with cargo
 
 ```bash
 cargo build
@@ -178,7 +164,7 @@ cargo build
 
 The sqld binary will be in `./target/debug/sqld`.
 
-### 4. Verify the build
+### 3. Verify the build
 
 Check that sqld built successfully using its --help flag:
 
@@ -186,7 +172,7 @@ Check that sqld built successfully using its --help flag:
 ./target/debug/sqld --help
 ```
 
-### 5. Run sqld with all defaults
+### 4. Run sqld with all defaults
 
 The following starts sqld, taking the following defaults:
 
@@ -202,10 +188,10 @@ With this container running, you can use the URL `http://127.0.0.1:8080` or
 `ws://127.0.0.1:8080` to configure one of the libSQL client SDKs for local
 development.
 
-### 6. Run tests (optional)
+### 5. Run tests (optional)
 
 ```console
-make test
+cargo xtask test
 ```
 
 
