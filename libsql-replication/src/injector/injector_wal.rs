@@ -1,7 +1,7 @@
 use std::ffi::{c_int, CStr};
 use std::num::NonZeroU32;
 
-use libsql_sys::ffi::PgHdr;
+use libsql_sys::ffi::{Pager, PgHdr};
 use libsql_sys::wal::{
     BusyHandler, CheckpointMode, PageHeaders, Result, Sqlite3Db, Sqlite3File, Sqlite3Wal,
     Sqlite3WalManager, UndoHandler, Vfs, Wal, WalManager,
@@ -137,7 +137,7 @@ impl Wal for InjectorWal {
     fn insert_frames(
         &mut self,
         page_size: c_int,
-        _page_headers: &mut PageHeaders,
+        orig_page_headers: &mut PageHeaders,
         _size_after: u32,
         _is_commit: bool,
         sync_flags: c_int,
@@ -146,7 +146,10 @@ impl Wal for InjectorWal {
         let mut buffer = self.buffer.lock();
 
         {
-            let (mut headers, size_after) = make_page_header(buffer.iter().map(|f| &**f));
+            // NOTICE: unwrap() is safe, because we never call insert_frames() without any frames
+            let page_hdr = orig_page_headers.iter().current_ptr();
+            let pager = unsafe { &*page_hdr }.pPager;
+            let (mut headers, size_after) = make_page_header(pager, buffer.iter().map(|f| &**f));
             let mut page_headers = unsafe { PageHeaders::from_raw(headers.as_mut_ptr()) };
             if let Err(e) = self.inner.insert_frames(
                 page_size,
@@ -213,7 +216,10 @@ impl Wal for InjectorWal {
 /// Turn a list of `WalFrame` into a list of PgHdr.
 /// The caller has the responsibility to free the returned headers.
 /// return (headers, last_frame_no, size_after)
-fn make_page_header<'a>(frames: impl Iterator<Item = &'a FrameBorrowed>) -> (Headers<'a>, u32) {
+fn make_page_header<'a>(
+    pager: *mut Pager,
+    frames: impl Iterator<Item = &'a FrameBorrowed>,
+) -> (Headers<'a>, u32) {
     let mut first_pg: *mut PgHdr = std::ptr::null_mut();
     let mut current_pg;
     let mut size_after = 0;
@@ -233,7 +239,7 @@ fn make_page_header<'a>(frames: impl Iterator<Item = &'a FrameBorrowed>) -> (Hea
             pExtra: std::ptr::null_mut(),
             pCache: std::ptr::null_mut(),
             pDirty: std::ptr::null_mut(),
-            pPager: std::ptr::null_mut(),
+            pPager: pager,
             pgno: frame.header().page_no.get(),
             pageHash: 0,
             flags: 0x02, // PGHDR_DIRTY - it works without the flag, but why risk it

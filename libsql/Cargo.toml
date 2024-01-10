@@ -110,6 +110,7 @@ cloudflare = [
   "wasm",
   "dep:worker"
 ]
+encryption-at-rest = ["libsql_replication/encryption-at-rest", "libsql-sys/encryption-at-rest"]
 
 [[bench]]
 name = "benchmark"
