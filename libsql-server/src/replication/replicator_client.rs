@@ -17,9 +17,11 @@ use tonic::metadata::{AsciiMetadataValue, BinaryMetadataValue};
 use tonic::transport::Channel;
 use tonic::Request;
 
+use crate::connection::config::DatabaseConfig;
 use crate::metrics::{
     REPLICATION_LATENCY, REPLICATION_LATENCY_CACHE_MISS, REPLICATION_LATENCY_OUT_OF_SYNC,
 };
+use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::NamespaceName;
 use crate::replication::FrameNo;
 
@@ -29,6 +31,7 @@ pub struct Client {
     pub current_frame_no_notifier: watch::Sender<Option<FrameNo>>,
     namespace: NamespaceName,
     session_token: Option<Bytes>,
+    meta_store_handle: MetaStoreHandle,
     // the primary current replication index, as reported by the last handshake
     pub primary_replication_index: Option<FrameNo>,
 }
@@ -38,6 +41,7 @@ impl Client {
         namespace: NamespaceName,
         client: ReplicationLogClient<Channel>,
         path: &Path,
+        meta_store_handle: MetaStoreHandle,
     ) -> crate::Result<Self> {
         let (current_frame_no_notifier, _) = watch::channel(None);
         let meta = WalIndexMeta::open(path).await?;
@@ -48,6 +52,7 @@ impl Client {
             current_frame_no_notifier,
             meta,
             session_token: None,
+            meta_store_handle,
             primary_replication_index: None,
         })
     }
@@ -94,6 +99,21 @@ impl ReplicatorClient for Client {
         verify_session_token(&hello.session_token).map_err(Error::Client)?;
         self.primary_replication_index = hello.current_replication_index;
         self.session_token.replace(hello.session_token.clone());
+
+        if let Some(config) = &hello.config {
+            let config = serde_json::from_slice::<DatabaseConfig>(&config.data[..])
+                .map_err(|e| Error::Internal(e.into()))?;
+
+            self.meta_store_handle
+                .store(config)
+                .await
+                .map_err(|e| Error::Internal(e.into()))?;
+
+            tracing::debug!("replica config has been updated");
+        } else {
+            tracing::debug!("no config passed in handshake");
+        }
+
         self.meta.init_from_hello(hello)?;
         self.current_frame_no_notifier
             .send_replace(self.meta.current_frame_no());

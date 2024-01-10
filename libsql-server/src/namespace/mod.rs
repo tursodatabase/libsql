@@ -804,6 +804,10 @@ impl<T: Database> Namespace<T> {
         self.db.shutdown().await?;
         Ok(())
     }
+
+    pub fn config(&self) -> Arc<DatabaseConfig> {
+        self.db_config_store.get()
+    }
 }
 
 pub struct ReplicaNamespaceConfig {
@@ -833,9 +837,13 @@ impl Namespace<ReplicaDatabase> {
 
         let rpc_client =
             ReplicationLogClient::with_origin(config.channel.clone(), config.uri.clone());
-        let client =
-            crate::replication::replicator_client::Client::new(name.clone(), rpc_client, &db_path)
-                .await?;
+        let client = crate::replication::replicator_client::Client::new(
+            name.clone(),
+            rpc_client,
+            &db_path,
+            meta_store_handle.clone(),
+        )
+        .await?;
         let applied_frame_no_receiver = client.current_frame_no_notifier.subscribe();
         let mut replicator = libsql_replication::replicator::Replicator::new(
             client,
