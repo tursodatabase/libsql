@@ -24,6 +24,8 @@ pub struct StatsResponse {
 
 impl From<&Stats> for StatsResponse {
     fn from(stats: &Stats) -> Self {
+        let lock = stats.get_snapshot();
+        let stats = lock.read().unwrap();
         Self {
             rows_read_count: stats.rows_read(),
             rows_written_count: stats.rows_written(),

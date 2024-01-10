@@ -59,7 +59,7 @@ pub struct Stats {
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-struct StatsData {
+pub struct StatsData {
     #[serde(default)]
     rows_written: AtomicU64,
     #[serde(default)]
@@ -84,7 +84,7 @@ struct StatsData {
 }
 
 impl StatsData {
-    /// copies the stats data into a new instance
+    /// snapshots the stats data into a new instance
     fn snapshot(&self) -> Self {
         StatsData {
             rows_written: self.rows_written.load(Ordering::Relaxed).into(),
@@ -97,6 +97,37 @@ impl StatsData {
             top_queries: Arc::new(RwLock::new(self.top_queries.read().unwrap().clone())),
             slowest_queries: Arc::new(RwLock::new(self.slowest_queries.read().unwrap().clone())),
         }
+    }
+
+    /// returns the total number of rows read since this database was created
+    pub fn rows_read(&self) -> u64 {
+        self.rows_read.load(Ordering::Relaxed)
+    }
+
+    /// returns the total number of rows written since this database was created
+    pub fn rows_written(&self) -> u64 {
+        self.rows_written.load(Ordering::Relaxed)
+    }
+
+    /// returns the total number of bytes used by the database (excluding uncheckpointed WAL entries)
+    pub fn storage_bytes_used(&self) -> u64 {
+        self.storage_bytes_used.load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn top_queries(&self) -> Arc<RwLock<BTreeSet<TopQuery>>> {
+        self.top_queries.clone()
+    }
+
+    pub(crate) fn slowest_queries(&self) -> Arc<RwLock<BTreeSet<SlowestQuery>>> {
+        self.slowest_queries.clone()
+    }
+
+    pub fn write_requests_delegated(&self) -> u64 {
+        self.write_requests_delegated.load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn get_current_frame_no(&self) -> FrameNo {
+        self.current_frame_no.load(Ordering::Relaxed)
     }
 }
 
@@ -128,8 +159,8 @@ impl Stats {
         Ok(this)
     }
 
-    /// gets the latest snapshot of the stats
-    fn get_snapshot(&self) -> StatsData {
+    /// creates a snapshot from current the stats
+    fn create_snapshot(&self) -> StatsData {
         self.current.snapshot()
     }
 
@@ -137,6 +168,11 @@ impl Stats {
     fn set_snapshot(&self, new: StatsData) {
         let mut snapshot = self.snapshot.write().unwrap();
         *snapshot = new;
+    }
+
+    /// get a copy from the latest snapshot
+    pub fn get_snapshot(&self) -> Arc<RwLock<StatsData>> {
+        self.snapshot.clone()
     }
 
     /// increments the number of written rows by n
@@ -156,21 +192,6 @@ impl Stats {
         self.current.storage_bytes_used.store(n, Ordering::Relaxed);
     }
 
-    /// returns the total number of rows read since this database was created
-    pub fn rows_read(&self) -> u64 {
-        self.current.rows_read.load(Ordering::Relaxed)
-    }
-
-    /// returns the total number of rows written since this database was created
-    pub fn rows_written(&self) -> u64 {
-        self.current.rows_written.load(Ordering::Relaxed)
-    }
-
-    /// returns the total number of bytes used by the database (excluding uncheckpointed WAL entries)
-    pub fn storage_bytes_used(&self) -> u64 {
-        self.current.storage_bytes_used.load(Ordering::Relaxed)
-    }
-
     /// increments the number of the write requests which were delegated from a replica to primary
     pub fn inc_write_requests_delegated(&self) {
         increment_counter!("libsql_server_write_requests_delegated", "namespace" => self.namespace.to_string());
@@ -179,19 +200,9 @@ impl Stats {
             .fetch_add(1, Ordering::Relaxed);
     }
 
-    pub fn write_requests_delegated(&self) -> u64 {
-        self.current
-            .write_requests_delegated
-            .load(Ordering::Relaxed)
-    }
-
     pub fn set_current_frame_no(&self, fno: FrameNo) {
         gauge!("libsql_server_current_frame_no", fno as f64, "namespace" => self.namespace.to_string());
         self.current.current_frame_no.store(fno, Ordering::Relaxed);
-    }
-
-    pub(crate) fn get_current_frame_no(&self) -> FrameNo {
-        self.current.current_frame_no.load(Ordering::Relaxed)
     }
 
     pub(crate) fn add_top_query(&self, query: TopQuery) {
@@ -215,10 +226,6 @@ impl Stats {
         weight >= self.current.top_query_threshold.load(Ordering::Relaxed)
     }
 
-    pub(crate) fn top_queries(&self) -> &Arc<RwLock<BTreeSet<TopQuery>>> {
-        &self.current.top_queries
-    }
-
     pub(crate) fn reset_top_queries(&self) {
         self.current.top_queries.write().unwrap().clear();
         self.current.top_query_threshold.store(0, Ordering::Relaxed);
@@ -239,10 +246,6 @@ impl Stats {
 
     pub(crate) fn qualifies_as_slowest_query(&self, elapsed_ms: u64) -> bool {
         elapsed_ms >= self.current.slowest_query_threshold.load(Ordering::Relaxed)
-    }
-
-    pub(crate) fn slowest_queries(&self) -> &Arc<RwLock<BTreeSet<SlowestQuery>>> {
-        &self.current.slowest_queries
     }
 
     pub(crate) fn reset_slowest_queries(&self) {
@@ -287,7 +290,7 @@ async fn try_persist_stats(stats: Weak<Stats>, path: &Path) -> anyhow::Result<()
         .await?;
 
     let stats = stats.upgrade().unwrap();
-    let snapshot = stats.get_snapshot();
+    let snapshot = stats.create_snapshot();
 
     file.set_len(0).await?;
     file.write_all(&serde_json::to_vec(&snapshot)?).await?;
