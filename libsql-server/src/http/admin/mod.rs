@@ -245,7 +245,7 @@ async fn handle_post_config<M: MakeNamespace, C>(
 ) -> crate::Result<()> {
     if let Some(jwt_key) = req.jwt_key.as_deref() {
         // Check that the jwt key is correct
-        parse_jwt_key(jwt_key).context("Could not parse JWT decoding key")?;
+        parse_jwt_key(jwt_key)?;
     }
     let store = app_state
         .namespaces
@@ -284,7 +284,7 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
 ) -> crate::Result<()> {
     if let Some(jwt_key) = req.jwt_key.as_deref() {
         // Check that the jwt key is correct
-        parse_jwt_key(jwt_key).context("Could not parse JWT decoding key")?;
+        parse_jwt_key(jwt_key)?;
     }
     let dump = match req.dump_url {
         Some(ref url) => {
