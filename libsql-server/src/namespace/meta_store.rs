@@ -249,6 +249,24 @@ impl MetaStore {
         }
     }
 
+    pub fn remove(&self, namespace: NamespaceName) -> Result<Option<Arc<DatabaseConfig>>> {
+        tracing::debug!("removing namespace `{}` from meta store", namespace);
+
+        let mut guard = self.inner.lock();
+        guard.conn.execute(
+            "DELETE FROM namespace_configs WHERE namespace = ?",
+            [namespace.as_str()],
+        )?;
+        if let Some(sender) = guard.configs.remove(&namespace) {
+            tracing::debug!("removed namespace `{}` from meta store", namespace);
+            let config = sender.borrow().clone();
+            Ok(Some(config))
+        } else {
+            tracing::trace!("namespace `{}` not found in meta store", namespace);
+            Ok(None)
+        }
+    }
+
     // TODO: we need to either make sure that the metastore is restored
     // before we start accepting connections or we need to contact bottomless
     // here to check if a namespace exists. Preferably the former.
