@@ -51,12 +51,11 @@ impl SlowestQuery {
     }
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default)]
 pub struct Stats {
-    #[serde(skip)]
     namespace: NamespaceName,
-    #[serde(flatten)]
     current: StatsData,
+    snapshot: Arc<RwLock<StatsData>>,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -84,6 +83,23 @@ struct StatsData {
     slowest_queries: Arc<RwLock<BTreeSet<SlowestQuery>>>,
 }
 
+impl StatsData {
+    /// copies the stats data into a new instance
+    fn snapshot(&self) -> Self {
+        StatsData {
+            rows_written: self.rows_written.load(Ordering::Relaxed).into(),
+            rows_read: self.rows_read.load(Ordering::Relaxed).into(),
+            storage_bytes_used: self.storage_bytes_used.load(Ordering::Relaxed).into(),
+            write_requests_delegated: self.write_requests_delegated.load(Ordering::Relaxed).into(),
+            current_frame_no: self.current_frame_no.load(Ordering::Relaxed).into(),
+            top_query_threshold: self.top_query_threshold.load(Ordering::Relaxed).into(),
+            slowest_query_threshold: self.slowest_query_threshold.load(Ordering::Relaxed).into(),
+            top_queries: Arc::new(RwLock::new(self.top_queries.read().unwrap().clone())),
+            slowest_queries: Arc::new(RwLock::new(self.slowest_queries.read().unwrap().clone())),
+        }
+    }
+}
+
 impl Stats {
     pub async fn new(
         namespace: NamespaceName,
@@ -100,6 +116,7 @@ impl Stats {
 
         let this = Arc::new(Stats {
             namespace,
+            snapshot: Arc::new(RwLock::new(data.snapshot())),
             current: data,
         });
 
@@ -109,6 +126,17 @@ impl Stats {
         ));
 
         Ok(this)
+    }
+
+    /// gets the latest snapshot of the stats
+    fn get_snapshot(&self) -> StatsData {
+        self.current.snapshot()
+    }
+
+    /// sets the latest snapshot of the stats
+    fn set_snapshot(&self, new: StatsData) {
+        let mut snapshot = self.snapshot.write().unwrap();
+        *snapshot = new;
     }
 
     /// increments the number of written rows by n
@@ -257,9 +285,15 @@ async fn try_persist_stats(stats: Weak<Stats>, path: &Path) -> anyhow::Result<()
         .create(true)
         .open(&temp_path)
         .await?;
+
+    let stats = stats.upgrade().unwrap();
+    let snapshot = stats.get_snapshot();
+
     file.set_len(0).await?;
-    file.write_all(&serde_json::to_vec(&stats)?).await?;
+    file.write_all(&serde_json::to_vec(&snapshot)?).await?;
     file.flush().await?;
     tokio::fs::rename(temp_path, path).await?;
+
+    stats.set_snapshot(snapshot);
     Ok(())
 }
