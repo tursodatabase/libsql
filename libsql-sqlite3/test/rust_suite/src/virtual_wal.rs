@@ -3,7 +3,7 @@
 mod tests {
     use std::num::NonZeroU32;
 
-    use libsql_sys::wal::{WalManager, Sqlite3WalManager, Sqlite3Wal, Wal, make_wal_manager};
+    use libsql_sys::wal::{WalManager, Sqlite3WalManager, Sqlite3Wal, Wal, make_wal_manager, BusyHandler, CheckpointCallback};
     use libsql_sys::rusqlite::{Connection, OpenFlags};
 
     /// A wal_manager the simple wraps sqlite3 WAL
@@ -112,16 +112,19 @@ mod tests {
             self.0.insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)
         }
 
-        fn checkpoint<B: libsql_sys::wal::BusyHandler>(
+        fn checkpoint(
             &mut self,
             db: &mut libsql_sys::wal::Sqlite3Db,
             mode: libsql_sys::wal::CheckpointMode,
-            busy_handler: Option<&mut B>,
+            busy_handler: Option<&mut dyn BusyHandler>,
             sync_flags: u32,
             // temporary scratch buffer
             buf: &mut [u8],
-        ) -> libsql_sys::wal::Result<(u32, u32)> {
-            self.0.checkpoint(db, mode, busy_handler, sync_flags, buf)
+            cb: Option<&mut dyn CheckpointCallback>,
+            in_wal: Option<&mut i32>,
+            backfilled: Option<&mut i32>,
+        ) -> libsql_sys::wal::Result<()> {
+            self.0.checkpoint(db, mode, busy_handler, sync_flags, buf, cb, in_wal, backfilled)
         }
 
         fn exclusive_mode(&mut self, op: std::ffi::c_int) -> libsql_sys::wal::Result<()> {
