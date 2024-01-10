@@ -249,21 +249,29 @@ impl MetaStore {
         }
     }
 
-    // TODO: we need to either make sure that the metastore is restored
-    // before we start accepting connections or we need to contact bottomless
-    // here to check if a namespace exists. Preferably the former.
-    pub fn exists(&self, namespace: &NamespaceName) -> bool {
-        self.inner.lock().configs.contains_key(namespace)
-    }
+    pub fn remove(&self, namespace: NamespaceName) -> Result<Option<Arc<DatabaseConfig>>> {
+        tracing::debug!("removing namespace `{}` from meta store", namespace);
 
-    pub fn remove(&self, namespace: &NamespaceName) -> Result<bool> {
-        tracing::debug!("removing a namespace from meta store `{}`", namespace);
         let mut guard = self.inner.lock();
         guard.conn.execute(
             "DELETE FROM namespace_configs WHERE namespace = ?",
             [namespace.as_str()],
         )?;
-        Ok(guard.configs.remove(namespace).is_some())
+        if let Some(sender) = guard.configs.remove(&namespace) {
+            tracing::debug!("removed namespace `{}` from meta store", namespace);
+            let config = sender.borrow().clone();
+            Ok(Some(config))
+        } else {
+            tracing::trace!("namespace `{}` not found in meta store", namespace);
+            Ok(None)
+        }
+    }
+
+    // TODO: we need to either make sure that the metastore is restored
+    // before we start accepting connections or we need to contact bottomless
+    // here to check if a namespace exists. Preferably the former.
+    pub fn exists(&self, namespace: &NamespaceName) -> bool {
+        self.inner.lock().configs.contains_key(namespace)
     }
 
     pub(crate) async fn shutdown(&self) -> crate::Result<()> {

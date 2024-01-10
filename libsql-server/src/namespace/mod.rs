@@ -250,7 +250,7 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         meta_store: &MetaStore,
     ) -> crate::Result<()> {
         let ns_path = self.config.base_path.join("dbs").join(namespace.as_str());
-        let meta_store_handle = meta_store.handle(namespace.clone());
+        let db_config = meta_store.remove(namespace.clone())?;
 
         if prune_all {
             if let Some(ref options) = self.config.bottomless_replication {
@@ -259,9 +259,10 @@ impl MakeNamespace for PrimaryNamespaceMaker {
                     NamespaceBottomlessDbIdInit::FetchFromConfig => {
                         if !ns_path.try_exists()? {
                             NamespaceBottomlessDbId::NotProvided
-                        } else {
-                            let config = meta_store_handle.get();
+                        } else if let Some(config) = db_config {
                             NamespaceBottomlessDbId::from_config(&config)
+                        } else {
+                            return Err(Error::NamespaceDoesntExist(namespace.to_string()));
                         }
                     }
                 };
@@ -474,7 +475,6 @@ impl<M: MakeNamespace> NamespaceStore<M> {
                 &self.inner.metadata,
             )
             .await?;
-        self.inner.metadata.remove(&namespace)?;
         tracing::info!("destroyed namespace: {namespace}");
 
         Ok(())
