@@ -84,7 +84,8 @@ where
         self.conn
             .batch_inner(statements)
             .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
+            .map_err(|e| crate::Error::Hrana(e.into()))?
+            .into_result()?;
         Ok(())
     }
 

@@ -269,6 +269,16 @@ pub struct BatchResult {
     pub step_errors: Vec<Option<Error>>,
 }
 
+impl BatchResult {
+    pub fn into_result(mut self) -> crate::Result<()> {
+        if let Some(Some(error)) = self.step_errors.pop() {
+            Err(crate::Error::Hrana(Box::new(error)))
+        } else {
+            Ok(())
+        }
+    }
+}
+
 #[derive(Deserialize, Debug)]
 pub struct DescribeResult {
     pub params: Vec<DescribeParam>,

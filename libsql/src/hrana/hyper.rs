@@ -114,7 +114,8 @@ impl Conn for HttpConnection<HttpSender> {
         bind_params(params, &mut stmt);
         self.batch_inner([stmt])
             .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
+            .map_err(|e| crate::Error::Hrana(e.into()))?
+            .into_result()?;
         Ok(self.affected_row_count())
     }
 
@@ -127,7 +128,8 @@ impl Conn for HttpConnection<HttpSender> {
         }
         self.batch_inner(statements)
             .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
+            .map_err(|e| crate::Error::Hrana(e.into()))?
+            .into_result()?;
         Ok(())
     }
 
@@ -238,7 +240,8 @@ impl Conn for HranaStream<HttpSender> {
         }
         self.batch(Batch::from_iter(stmts, false))
             .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
+            .map_err(|e| crate::Error::Hrana(e.into()))?
+            .into_result()?;
         Ok(())
     }
 
