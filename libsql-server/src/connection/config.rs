@@ -2,6 +2,8 @@ use crate::LIBSQL_PAGE_SIZE;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
+use libsql_replication::rpc::metadata;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DatabaseConfig {
     #[serde(default)]
@@ -36,6 +38,35 @@ impl Default for DatabaseConfig {
             heartbeat_url: None,
             bottomless_db_id: None,
             jwt_key: None,
+        }
+    }
+}
+
+impl From<&metadata::DatabaseConfig> for DatabaseConfig {
+    fn from(value: &metadata::DatabaseConfig) -> Self {
+        DatabaseConfig {
+            block_reads: value.block_reads,
+            block_writes: value.block_writes,
+            block_reason: value.block_reason.clone(),
+            max_db_pages: value.max_db_pages,
+            heartbeat_url: value
+                .heartbeat_url
+                .as_ref()
+                .map(|s| Url::parse(&s).unwrap()),
+            bottomless_db_id: value.bottomless_db_id.clone(),
+        }
+    }
+}
+
+impl From<&DatabaseConfig> for metadata::DatabaseConfig {
+    fn from(value: &DatabaseConfig) -> Self {
+        metadata::DatabaseConfig {
+            block_reads: value.block_reads,
+            block_writes: value.block_writes,
+            block_reason: value.block_reason.clone(),
+            max_db_pages: value.max_db_pages,
+            heartbeat_url: value.heartbeat_url.as_ref().map(|s| s.to_string()),
+            bottomless_db_id: value.bottomless_db_id.clone(),
         }
     }
 }

@@ -53,3 +53,8 @@ pub mod replication {
         }
     }
 }
+
+pub mod metadata {
+    #![allow(clippy::all)]
+    include!("generated/metadata.rs");
+}
