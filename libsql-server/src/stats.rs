@@ -55,7 +55,12 @@ impl SlowestQuery {
 pub struct Stats {
     #[serde(skip)]
     namespace: NamespaceName,
+    #[serde(flatten)]
+    current: StatsData,
+}
 
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct StatsData {
     #[serde(default)]
     rows_written: AtomicU64,
     #[serde(default)]
@@ -86,15 +91,17 @@ impl Stats {
         join_set: &mut JoinSet<anyhow::Result<()>>,
     ) -> anyhow::Result<Arc<Self>> {
         let stats_path = db_path.join("stats.json");
-        let mut this = if stats_path.try_exists()? {
-            let data = tokio::fs::read_to_string(&stats_path).await?;
-            serde_json::from_str(&data)?
+        let data = if stats_path.try_exists()? {
+            let raw = tokio::fs::read_to_string(&stats_path).await?;
+            serde_json::from_str(&raw)?
         } else {
-            Stats::default()
+            StatsData::default()
         };
 
-        this.namespace = namespace;
-        let this = Arc::new(this);
+        let this = Arc::new(Stats {
+            namespace,
+            current: data,
+        });
 
         join_set.spawn(spawn_stats_persist_thread(
             Arc::downgrade(&this),
@@ -107,57 +114,60 @@ impl Stats {
     /// increments the number of written rows by n
     pub fn inc_rows_written(&self, n: u64) {
         counter!("libsql_server_rows_written", n, "namespace" => self.namespace.to_string());
-        self.rows_written.fetch_add(n, Ordering::Relaxed);
+        self.current.rows_written.fetch_add(n, Ordering::Relaxed);
     }
 
     /// increments the number of read rows by n
     pub fn inc_rows_read(&self, n: u64) {
         counter!("libsql_server_rows_read", n, "namespace" => self.namespace.to_string());
-        self.rows_read.fetch_add(n, Ordering::Relaxed);
+        self.current.rows_read.fetch_add(n, Ordering::Relaxed);
     }
 
     pub fn set_storage_bytes_used(&self, n: u64) {
         gauge!("libsql_server_storage", n as f64, "namespace" => self.namespace.to_string());
-        self.storage_bytes_used.store(n, Ordering::Relaxed);
+        self.current.storage_bytes_used.store(n, Ordering::Relaxed);
     }
 
     /// returns the total number of rows read since this database was created
     pub fn rows_read(&self) -> u64 {
-        self.rows_read.load(Ordering::Relaxed)
+        self.current.rows_read.load(Ordering::Relaxed)
     }
 
     /// returns the total number of rows written since this database was created
     pub fn rows_written(&self) -> u64 {
-        self.rows_written.load(Ordering::Relaxed)
+        self.current.rows_written.load(Ordering::Relaxed)
     }
 
     /// returns the total number of bytes used by the database (excluding uncheckpointed WAL entries)
     pub fn storage_bytes_used(&self) -> u64 {
-        self.storage_bytes_used.load(Ordering::Relaxed)
+        self.current.storage_bytes_used.load(Ordering::Relaxed)
     }
 
     /// increments the number of the write requests which were delegated from a replica to primary
     pub fn inc_write_requests_delegated(&self) {
         increment_counter!("libsql_server_write_requests_delegated", "namespace" => self.namespace.to_string());
-        self.write_requests_delegated
+        self.current
+            .write_requests_delegated
             .fetch_add(1, Ordering::Relaxed);
     }
 
     pub fn write_requests_delegated(&self) -> u64 {
-        self.write_requests_delegated.load(Ordering::Relaxed)
+        self.current
+            .write_requests_delegated
+            .load(Ordering::Relaxed)
     }
 
     pub fn set_current_frame_no(&self, fno: FrameNo) {
         gauge!("libsql_server_current_frame_no", fno as f64, "namespace" => self.namespace.to_string());
-        self.current_frame_no.store(fno, Ordering::Relaxed);
+        self.current.current_frame_no.store(fno, Ordering::Relaxed);
     }
 
     pub(crate) fn get_current_frame_no(&self) -> FrameNo {
-        self.current_frame_no.load(Ordering::Relaxed)
+        self.current.current_frame_no.load(Ordering::Relaxed)
     }
 
     pub(crate) fn add_top_query(&self, query: TopQuery) {
-        let mut top_queries = self.top_queries.write().unwrap();
+        let mut top_queries = self.current.top_queries.write().unwrap();
         tracing::debug!(
             "top query: {},{}:{}",
             query.rows_read,
@@ -167,31 +177,32 @@ impl Stats {
         top_queries.insert(query);
         if top_queries.len() > 10 {
             top_queries.pop_first();
-            self.top_query_threshold
+            self.current
+                .top_query_threshold
                 .store(top_queries.first().unwrap().weight, Ordering::Relaxed);
         }
     }
 
     pub(crate) fn qualifies_as_top_query(&self, weight: u64) -> bool {
-        weight >= self.top_query_threshold.load(Ordering::Relaxed)
+        weight >= self.current.top_query_threshold.load(Ordering::Relaxed)
     }
 
     pub(crate) fn top_queries(&self) -> &Arc<RwLock<BTreeSet<TopQuery>>> {
-        &self.top_queries
+        &self.current.top_queries
     }
 
     pub(crate) fn reset_top_queries(&self) {
-        self.top_queries.write().unwrap().clear();
-        self.top_query_threshold.store(0, Ordering::Relaxed);
+        self.current.top_queries.write().unwrap().clear();
+        self.current.top_query_threshold.store(0, Ordering::Relaxed);
     }
 
     pub(crate) fn add_slowest_query(&self, query: SlowestQuery) {
-        let mut slowest_queries = self.slowest_queries.write().unwrap();
+        let mut slowest_queries = self.current.slowest_queries.write().unwrap();
         tracing::debug!("slowest query: {}: {}", query.elapsed_ms, query.query);
         slowest_queries.insert(query);
         if slowest_queries.len() > 10 {
             slowest_queries.pop_first();
-            self.slowest_query_threshold.store(
+            self.current.slowest_query_threshold.store(
                 slowest_queries.first().unwrap().elapsed_ms,
                 Ordering::Relaxed,
             );
@@ -199,16 +210,18 @@ impl Stats {
     }
 
     pub(crate) fn qualifies_as_slowest_query(&self, elapsed_ms: u64) -> bool {
-        elapsed_ms >= self.slowest_query_threshold.load(Ordering::Relaxed)
+        elapsed_ms >= self.current.slowest_query_threshold.load(Ordering::Relaxed)
     }
 
     pub(crate) fn slowest_queries(&self) -> &Arc<RwLock<BTreeSet<SlowestQuery>>> {
-        &self.slowest_queries
+        &self.current.slowest_queries
     }
 
     pub(crate) fn reset_slowest_queries(&self) {
-        self.slowest_queries.write().unwrap().clear();
-        self.slowest_query_threshold.store(0, Ordering::Relaxed);
+        self.current.slowest_queries.write().unwrap().clear();
+        self.current
+            .slowest_query_threshold
+            .store(0, Ordering::Relaxed);
     }
 
     // TOOD: Update these metrics with namespace labels in the future so we can localize
