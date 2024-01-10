@@ -57,7 +57,7 @@ impl Injector {
             wal_manager,
             auto_checkpoint,
             #[cfg(feature = "encryption-at-rest")]
-            None,
+            Some("pekka".to_string()),
         )?;
 
         Ok(Self {

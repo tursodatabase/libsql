@@ -31,6 +31,10 @@ unsafe impl Send for Connection {}
 // SAFETY: This is safe because we compile sqlite3 w/ SQLITE_THREADSAFE=1
 unsafe impl Sync for Connection {}
 
+extern "C" {
+    fn sqlite3_key(db: *mut ffi::sqlite3, key: *const std::ffi::c_char, n: std::ffi::c_int) -> c_int;
+}
+
 impl Connection {
     /// Connect to the database.
     pub(crate) fn connect(db: &Database) -> Result<Connection> {
@@ -53,6 +57,9 @@ impl Connection {
                 return Err(Error::ConnectionFailed(db_path));
             }
         }
+
+        let rc = unsafe { sqlite3_key(raw, "pekka".as_ptr() as *const _, 5) };
+        tracing::info!("Setting secret key to 'pekka': {rc}");
 
         Ok(Connection {
             raw,
