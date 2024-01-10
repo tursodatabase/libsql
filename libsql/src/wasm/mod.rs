@@ -69,7 +69,7 @@ where
     pub async fn execute(&self, sql: &str, params: impl IntoParams) -> crate::Result<u64> {
         tracing::trace!("executing `{}`", sql);
         let mut stmt =
-            crate::hrana::Statement::from_connection(self.conn.clone(), sql.to_string(), true);
+            crate::hrana::Statement::new(self.conn.current_stream().clone(), sql.to_string(), true);
         let rows = stmt.execute(&params.into_params()?).await?;
         Ok(rows as u64)
     }
@@ -92,7 +92,7 @@ where
     pub async fn query(&self, sql: &str, params: impl IntoParams) -> crate::Result<Rows> {
         tracing::trace!("querying `{}`", sql);
         let mut stmt =
-            crate::hrana::Statement::from_connection(self.conn.clone(), sql.to_string(), true);
+            crate::hrana::Statement::new(self.conn.current_stream().clone(), sql.to_string(), true);
         let rows = stmt.query_raw(&params.into_params()?).await?;
         Ok(Rows {
             inner: Box::new(rows),

@@ -63,7 +63,7 @@ where
         self.current_stream().is_autocommit()
     }
 
-    pub(super) fn current_stream(&self) -> &HranaStream<T> {
+    pub(crate) fn current_stream(&self) -> &HranaStream<T> {
         &self.0.conn_stream
     }
 
