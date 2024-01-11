@@ -71,10 +71,18 @@ impl ReplicationLogService {
                 }
                 Ok(())
             }
-            Err(e) => Err(Status::internal(format!(
-                "Error fetching jwt key for a namespace: {}",
-                e
-            ))),
+            Err(e) => match e.as_ref() {
+                crate::error::Error::NamespaceDoesntExist(_) => {
+                    if let Some(auth) = &self.auth {
+                        auth.authenticate_grpc(req, self.disable_namespaces, None)?;
+                    }
+                    Ok(())
+                }
+                _ => Err(Status::internal(format!(
+                    "Error fetching jwt key for a namespace: {}",
+                    e
+                ))),
+            },
             Ok(Err(e)) => Err(Status::internal(format!(
                 "Error fetching jwt key for a namespace: {}",
                 e
