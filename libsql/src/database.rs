@@ -335,7 +335,7 @@ cfg_remote! {
 #[cfg(feature = "encryption-at-rest")]
 extern "C" {
     fn sqlite3_key(
-        db: *mut crate::ffi::sqlite3,
+        db: *mut libsql_sys::ffi::sqlite3,
         pKey: *const std::ffi::c_void,
         nKey: std::ffi::c_int,
     ) -> std::ffi::c_int;
@@ -398,7 +398,7 @@ impl Database {
                             passphrase.as_bytes().len() as _,
                         )
                     };
-                    if rc != crate::ffi::SQLITE_OK {
+                    if rc != libsql_sys::ffi::SQLITE_OK {
                         return Err(Error::SyncNotSupported(format!(
                             "Setting encryption passphrase failed: {rc}"
                         )));
@@ -439,6 +439,7 @@ impl Database {
     #[cfg(feature = "encryption-at-rest")]
     pub fn set_passphrase(&mut self, passphrase: impl AsRef<str>) {
         match self.db_type {
+            #[cfg(feature = "replication")]
             DbType::Sync {
                 db: _,
                 passphrase: ref mut p,
