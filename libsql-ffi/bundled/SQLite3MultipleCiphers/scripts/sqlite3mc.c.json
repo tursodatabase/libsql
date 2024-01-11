@@ -1,0 +1,11 @@
+{
+	"project": "sqlite3mc.c",
+	"target": "sqlite3mc_amalgamation.c",
+	"sources": [
+		"sqlite3mc.c"
+	],
+	"include_paths": [
+		"src", "."
+	]
+}
+

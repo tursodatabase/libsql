@@ -6,3 +6,4 @@
 libsql-server/testrollbackrestore/**
 libsql-server/testbackuprestore/**
 libsql-sqlite3/**.o.tmp
+/libsql-ffi/bundled/SQLite3MultipleCiphers/build/**

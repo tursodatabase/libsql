@@ -1,0 +1,6 @@
+---
+sources:
+  "1.8.0":
+    url: "https://github.com/utelle/SQLite3MultipleCiphers/archive/refs/tags/v1.8.0.tar.gz"
+    sha256: "13D9B939BEF7C7371D58A3874F83B18CF330EB2171205B3680ACDDB2215BE0E5"
+    strip_root: true

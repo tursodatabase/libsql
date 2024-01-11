@@ -19,3 +19,4 @@ cc = "1.0"
 [features]
 session = []
 wasmtime-bindings = ["dep:libsql-wasmtime-bindings"]
+multiple-ciphers = []

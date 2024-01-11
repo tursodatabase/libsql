@@ -1,0 +1,68 @@
+#ifdef APSTUDIO_INVOKED
+  #error This file is not editable by Microsoft Visual C++
+#endif  /* APSTUDIO_INVOKED */
+
+/*
+** SQLITE3MC_STRINGIZE works as the preprocessor # operator but also works with macros
+*/
+#define SQLITE3MC_STRINGIZE_HELPER(x)  #x
+#define SQLITE3MC_STRINGIZE(x)         SQLITE3MC_STRINGIZE_HELPER(x)
+
+/*
+** Version
+*/
+#include "sqlite3mc_version.h"
+#include <windows.h>
+
+#define SQLITE3MC_MAKE_VERSION_DOT_STRING(x, y, z, w) \
+  SQLITE3MC_STRINGIZE(x) "." SQLITE3MC_STRINGIZE(y) "." SQLITE3MC_STRINGIZE(z) "." SQLITE3MC_STRINGIZE(w)
+ 
+#define SQLITE3MC_FILE_VERSION_NUM_DOT_STRING \
+  SQLITE3MC_MAKE_VERSION_DOT_STRING(SQLITE3MC_VERSION_MAJOR, SQLITE3MC_VERSION_MINOR, SQLITE3MC_VERSION_RELEASE, SQLITE3MC_VERSION_SUBRELEASE)
+#define SQLITE3MC_PROD_VERSION_NUM_DOT_STRING \
+  SQLITE3MC_MAKE_VERSION_DOT_STRING(SQLITE3MC_VERSION_MAJOR, SQLITE3MC_VERSION_MINOR, SQLITE3MC_VERSION_RELEASE, SQLITE3MC_VERSION_SUBRELEASE)
+
+// 0x0409 is US English, 0x04b0 is Unicode and 0x0000 is 7 bit ASCII. see
+// http://msdn.microsoft.com/en-us/library/aa381049(VS.85).aspx for the full
+// list of languages and charsets
+#define LANG 0x0409
+#ifdef _UNICODE
+  #define CHARSET 0x4b0
+  #define LANG_WITH_CHARSET "040904b0"
+#else
+  #define CHARSET 0
+  #define LANG_WITH_CHARSET "04090000"
+#endif
+
+VS_VERSION_INFO VERSIONINFO
+  FILEVERSION SQLITE3MC_VERSION_MAJOR,SQLITE3MC_VERSION_MINOR,SQLITE3MC_VERSION_RELEASE,SQLITE3MC_VERSION_SUBRELEASE
+  PRODUCTVERSION SQLITE3MC_VERSION_MAJOR,SQLITE3MC_VERSION_MINOR,SQLITE3MC_VERSION_RELEASE,SQLITE3MC_VERSION_SUBRELEASE
+  FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+  FILEFLAGS 0x1L
+#else
+  FILEFLAGS 0x0L
+#endif
+  FILEOS VOS_NT_WINDOWS32
+  FILETYPE VFT_DLL
+  FILESUBTYPE 0x0L
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK LANG_WITH_CHARSET
+    BEGIN
+      VALUE "CompanyName",      "SQLite3 Multiple Ciphers Development Team"
+      VALUE "FileDescription",  "SQLite3 Multiple Ciphers Database Library"
+      VALUE "FileVersion",      SQLITE3MC_FILE_VERSION_NUM_DOT_STRING
+      VALUE "InternalName",     "sqlite3mc.dll"
+      VALUE "LegalCopyright",   "Copyright (C) 2019-2023, Ulrich Telle"
+      VALUE "OriginalFilename", "sqlite3mc.dll"
+      VALUE "ProductName",      "SQLite3 Multiple Ciphers"
+      VALUE "ProductVersion",   SQLITE3MC_PROD_VERSION_NUM_DOT_STRING
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", LANG, CHARSET
+  END
+END
