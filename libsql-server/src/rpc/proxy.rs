@@ -311,9 +311,14 @@ impl ProxyService {
         let namespace_jwt_key = self.namespaces.with(namespace, |ns| ns.jwt_key()).await;
         let namespace_jwt_key = match namespace_jwt_key {
             Ok(Ok(jwt_key)) => Ok(jwt_key),
-            _ => Err(tonic::Status::internal(
-                "Error fetching jwt key for a namespace",
-            )),
+            Err(e) => Err(tonic::Status::internal(format!(
+                "Error fetching jwt key for a namespace: {}",
+                e
+            ))),
+            Ok(Err(e)) => Err(tonic::Status::internal(format!(
+                "Error fetching jwt key for a namespace: {}",
+                e
+            ))),
         }?;
         Ok(if let Some(auth) = &self.auth {
             auth.authenticate_grpc(&req, self.disable_namespaces, namespace_jwt_key)?

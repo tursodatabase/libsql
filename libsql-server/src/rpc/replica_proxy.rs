@@ -46,7 +46,14 @@ impl ReplicaProxyService {
                 authenticated.upgrade_grpc_request(req);
                 Ok(())
             }
-            _ => Err(Status::internal("Error fetching jwt key for a namespace")),
+            Err(e) => Err(Status::internal(format!(
+                "Error fetching jwt key for a namespace: {}",
+                e
+            ))),
+            Ok(Err(e)) => Err(Status::internal(format!(
+                "Error fetching jwt key for a namespace: {}",
+                e
+            ))),
         }
     }
 }
