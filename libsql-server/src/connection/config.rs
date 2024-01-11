@@ -1,26 +1,18 @@
 use crate::LIBSQL_PAGE_SIZE;
-use serde::{Deserialize, Serialize};
 use url::Url;
 
 use libsql_replication::rpc::metadata;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct DatabaseConfig {
-    #[serde(default)]
     pub block_reads: bool,
-    #[serde(default)]
     pub block_writes: bool,
     /// The reason why operations are blocked. This will be included in [`Error::Blocked`].
-    #[serde(default)]
     pub block_reason: Option<String>,
     /// maximum db size (in pages)
-    #[serde(default = "default_max_size")]
     pub max_db_pages: u64,
-    #[serde(default)]
     pub heartbeat_url: Option<Url>,
-    #[serde(default)]
     pub bottomless_db_id: Option<String>,
-    #[serde(default)]
     pub jwt_key: Option<String>,
 }
 
