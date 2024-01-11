@@ -1271,6 +1271,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     checkRc: function(resultCode){
       return checkSqlite3Rc(this, resultCode);
+    },
+
+    getAutocommit: function(){
+      return capi.sqlite3_get_autocommit(this.pointer);
     }
   }/*DB.prototype*/;
 
