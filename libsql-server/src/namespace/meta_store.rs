@@ -6,11 +6,13 @@ use std::sync::Arc;
 
 use bottomless::bottomless_wal::BottomlessWalWrapper;
 use bottomless::replicator::CompressionKind;
+use libsql_replication::rpc::metadata;
 use libsql_sys::wal::{
     wrapper::{WalWrapper, WrappedWal},
     Sqlite3Wal, Sqlite3WalManager,
 };
 use parking_lot::Mutex;
+use prost::Message;
 use tokio::sync::{
     mpsc,
     watch::{self, Receiver, Sender},
@@ -58,7 +60,7 @@ struct MetaStoreInner {
 fn process(msg: ChangeMsg, inner: Arc<Mutex<MetaStoreInner>>) -> Result<()> {
     let (namespace, config) = msg;
 
-    let config_encoded = serde_json::to_vec(&config)?;
+    let config_encoded = metadata::DatabaseConfig::from(&*config).encode_to_vec();
 
     let inner = &mut inner.lock();
 
@@ -116,8 +118,8 @@ fn restore(db: &Connection) -> Result<HashMap<NamespaceName, Sender<Arc<Database
                     }
                 };
 
-                let config = match serde_json::from_slice::<DatabaseConfig>(&v[..]) {
-                    Ok(c) => c,
+                let config = match metadata::DatabaseConfig::decode(&v[..]) {
+                    Ok(c) => DatabaseConfig::from(&c),
                     Err(e) => {
                         tracing::warn!("unable to convert config: {}", e);
                         continue;
@@ -306,7 +308,10 @@ impl MetaStoreHandle {
         let config_path = db_path.as_ref().join("config.json");
 
         let config = match fs::read(config_path) {
-            Ok(data) => serde_json::from_slice(&data)?,
+            Ok(data) => {
+                let c = metadata::DatabaseConfig::decode(&data[..])?;
+                DatabaseConfig::from(&c)
+            }
             Err(err) if err.kind() == io::ErrorKind::NotFound => DatabaseConfig::default(),
             Err(err) => return Err(Error::IOError(err)),
         };

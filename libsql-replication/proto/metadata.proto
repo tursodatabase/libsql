@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package metadata;
+
+// Database config used to send db configs over the wire and stored
+// in the meta store.
+message DatabaseConfig {
+    bool block_reads = 1;
+    bool block_writes = 2;
+    // The reason why operations are blocked. This will be included in [`Error::Blocked`].
+    optional string block_reason = 3;
+    // maximum db size (in pages)
+    uint64 max_db_pages = 4;
+    optional string heartbeat_url = 5;
+    optional string bottomless_db_id = 6; 
+    optional string jwt_key = 7;
+}

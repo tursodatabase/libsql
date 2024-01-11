@@ -101,11 +101,8 @@ impl ReplicatorClient for Client {
         self.session_token.replace(hello.session_token.clone());
 
         if let Some(config) = &hello.config {
-            let config = serde_json::from_slice::<DatabaseConfig>(&config.data[..])
-                .map_err(|e| Error::Internal(e.into()))?;
-
             self.meta_store_handle
-                .store(config)
+                .store(DatabaseConfig::from(config))
                 .await
                 .map_err(|e| Error::Internal(e.into()))?;
 
