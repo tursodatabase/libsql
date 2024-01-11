@@ -18,9 +18,10 @@ use tonic::Status;
 use uuid::Uuid;
 
 use crate::auth::Auth;
+use crate::connection::config::DatabaseConfig;
 use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
 use crate::replication::primary::frame_stream::FrameStream;
-use crate::replication::LogReadError;
+use crate::replication::{LogReadError, ReplicationLogger};
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 
 use super::extract_namespace;
@@ -90,7 +91,11 @@ impl ReplicationLogService {
         }
     }
 
-    fn verify_session_token<R>(&self, req: &tonic::Request<R>) -> Result<(), Status> {
+    fn verify_session_token<R>(
+        &self,
+        req: &tonic::Request<R>,
+        _version: usize,
+    ) -> Result<(), Status> {
         let no_hello = || Err(Status::failed_precondition(NO_HELLO_ERROR_MSG));
         match req.metadata().get(SESSION_TOKEN_KEY) {
             Some(token) => {
@@ -114,6 +119,37 @@ impl ReplicationLogService {
         }
 
         Ok(())
+    }
+
+    async fn logger_from_namespace<T>(
+        &self,
+        namespace: NamespaceName,
+        req: &tonic::Request<T>,
+        verify_session: bool,
+    ) -> Result<(Arc<ReplicationLogger>, Arc<DatabaseConfig>, usize), Status> {
+        let (logger, config, version) = self
+            .namespaces
+            .with(namespace, |ns| {
+                let logger = ns.db.wal_manager.wrapped().logger().clone();
+                let config = ns.config();
+                let version = ns.config_version();
+
+                (logger, config, version)
+            })
+            .await
+            .map_err(|e| {
+                if let crate::error::Error::NamespaceDoesntExist(_) = e.as_ref() {
+                    Status::failed_precondition(NAMESPACE_DOESNT_EXIST)
+                } else {
+                    Status::internal(e.to_string())
+                }
+            })?;
+
+        if verify_session {
+            self.verify_session_token(req, version)?;
+        }
+
+        Ok((logger, config, version))
     }
 }
 
@@ -186,20 +222,10 @@ impl ReplicationLog for ReplicationLogService {
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
         self.authenticate(&req, namespace.clone()).await?;
-        self.verify_session_token(&req)?;
+
+        let (logger, _, _) = self.logger_from_namespace(namespace, &req, true).await?;
 
         let req = req.into_inner();
-        let logger = self
-            .namespaces
-            .with(namespace, |ns| ns.db.wal_manager.wrapped().logger())
-            .await
-            .map_err(|e| {
-                if let crate::error::Error::NamespaceDoesntExist(_) = e {
-                    Status::failed_precondition(NAMESPACE_DOESNT_EXIST)
-                } else {
-                    Status::internal(e.to_string())
-                }
-            })?;
 
         let stream = StreamGuard::new(
             FrameStream::new(logger, req.next_offset, true, None)
@@ -217,20 +243,10 @@ impl ReplicationLog for ReplicationLogService {
     ) -> Result<tonic::Response<Frames>, Status> {
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
         self.authenticate(&req, namespace.clone()).await?;
-        self.verify_session_token(&req)?;
+
+        let (logger, _, _) = self.logger_from_namespace(namespace, &req, true).await?;
 
         let req = req.into_inner();
-        let logger = self
-            .namespaces
-            .with(namespace, |ns| ns.db.wal_manager.wrapped().logger().clone())
-            .await
-            .map_err(|e| {
-                if let crate::error::Error::NamespaceDoesntExist(_) = e {
-                    Status::failed_precondition(NAMESPACE_DOESNT_EXIST)
-                } else {
-                    Status::internal(e.to_string())
-                }
-            })?;
 
         let frames = StreamGuard::new(
             FrameStream::new(logger, req.next_offset, false, Some(MAX_FRAMES_PER_BATCH))
@@ -264,22 +280,7 @@ impl ReplicationLog for ReplicationLogService {
             }
         }
 
-        let (logger, config) = self
-            .namespaces
-            .with(namespace, |ns| {
-                let logger = ns.db.wal_manager.wrapped().logger().clone();
-                let config = ns.config();
-
-                (logger, config)
-            })
-            .await
-            .map_err(|e| {
-                if let crate::error::Error::NamespaceDoesntExist(_) = e.as_ref() {
-                    Status::failed_precondition(NAMESPACE_DOESNT_EXIST)
-                } else {
-                    Status::internal(e.to_string())
-                }
-            })?;
+        let (logger, config, _) = self.logger_from_namespace(namespace, &req, false).await?;
 
         let response = HelloResponse {
             log_id: logger.log_id().to_string(),
@@ -299,14 +300,11 @@ impl ReplicationLog for ReplicationLogService {
     ) -> Result<tonic::Response<Self::SnapshotStream>, Status> {
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
         self.authenticate(&req, namespace.clone()).await?;
-        self.verify_session_token(&req)?;
+
+        let (logger, _, _) = self.logger_from_namespace(namespace, &req, true).await?;
+
         let req = req.into_inner();
 
-        let logger = self
-            .namespaces
-            .with(namespace, |ns| ns.db.wal_manager.wrapped().logger().clone())
-            .await
-            .unwrap();
         let offset = req.next_offset;
         match logger.get_snapshot_file(offset).await {
             Ok(Some(snapshot)) => Ok(tonic::Response::new(Box::pin(
