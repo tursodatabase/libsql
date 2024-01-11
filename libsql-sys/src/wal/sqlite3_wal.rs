@@ -382,4 +382,11 @@ impl Wal for Sqlite3Wal {
             wal.hdr.mxFrame
         }
     }
+
+    fn db_file(&self) -> &Sqlite3File {
+        unsafe {
+            let ptr = &mut (*(self.inner.pData as *mut sqlite3_wal)).pDbFd;
+            std::mem::transmute(ptr)
+        }
+    }
 }

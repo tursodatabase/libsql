@@ -1009,7 +1009,9 @@ impl Namespace<PrimaryDatabase> {
         bottomless_db_id: NamespaceBottomlessDbId,
         meta_store_handle: MetaStoreHandle,
     ) -> crate::Result<Self> {
+        let db_path = config.base_path.join("dbs").join(name.as_str());
         // FIXME: make that truly atomic. explore the idea of using temp directories, and it's implications
+        let exist_before = db_path.try_exists()?;
         match Self::try_new_primary(
             config,
             name.clone(),
@@ -1020,13 +1022,14 @@ impl Namespace<PrimaryDatabase> {
         .await
         {
             Ok(ns) => Ok(ns),
-            Err(e) => {
+            Err(e) if !exist_before => {
                 let path = config.base_path.join("dbs").join(name.as_str());
                 if let Err(e) = tokio::fs::remove_dir_all(path).await {
                     tracing::error!("failed to clean dirty namespace: {e}");
                 }
                 Err(e)
             }
+            Err(e) => Err(e),
         }
     }
 

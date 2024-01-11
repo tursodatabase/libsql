@@ -50,6 +50,7 @@ pub mod connection;
 pub mod net;
 pub mod rpc;
 pub mod version;
+mod encryption_wal;
 
 pub use hrana::proto as hrana_proto;
 

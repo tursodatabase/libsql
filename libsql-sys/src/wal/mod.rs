@@ -64,7 +64,7 @@ impl Sqlite3File {
         self.inner
     }
 
-    pub fn read_at(&mut self, buf: &mut [u8], offset: u64) -> Result<()> {
+    pub fn read_at(&self, buf: &mut [u8], offset: u64) -> Result<()> {
         unsafe {
             assert!(!self.inner.is_null());
             let inner = &mut *self.inner;
@@ -196,4 +196,5 @@ pub trait Wal {
     fn callback(&self) -> i32;
 
     fn last_fame_index(&self) -> u32;
+    fn db_file(&self) -> &Sqlite3File;
 }

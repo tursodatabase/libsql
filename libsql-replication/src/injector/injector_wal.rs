@@ -208,12 +208,16 @@ impl Wal for InjectorWal {
     fn last_fame_index(&self) -> u32 {
         todo!()
     }
+
+    fn db_file(&self) -> &Sqlite3File {
+        self.inner.db_file()
+    }
 }
 
 /// Turn a list of `WalFrame` into a list of PgHdr.
 /// The caller has the responsibility to free the returned headers.
 /// return (headers, last_frame_no, size_after)
-fn make_page_header<'a>(frames: impl Iterator<Item = &'a FrameBorrowed>) -> (Headers<'a>, u32) {
+pub fn make_page_header<'a>(frames: impl Iterator<Item = &'a FrameBorrowed>) -> (Headers<'a>, u32) {
     let mut first_pg: *mut PgHdr = std::ptr::null_mut();
     let mut current_pg;
     let mut size_after = 0;

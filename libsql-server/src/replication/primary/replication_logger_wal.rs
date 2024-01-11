@@ -4,12 +4,14 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use libsql_sys::ffi::Sqlite3DbHeader;
+use libsql_sys::wal::wrapper::{WalWrapper, WrappedWal};
 use libsql_sys::wal::{BusyHandler, Result, Sqlite3Wal, Sqlite3WalManager, WalManager};
 use libsql_sys::wal::{PageHeaders, Sqlite3Db, Sqlite3File, UndoHandler};
 use libsql_sys::wal::{Vfs, Wal};
 use rusqlite::ffi::{libsql_pghdr, SQLITE_IOERR, SQLITE_SYNC_NORMAL};
 use zerocopy::FromBytes;
 
+use crate::encryption_wal::EncryptionWrapper;
 use crate::replication::ReplicationLogger;
 use crate::LIBSQL_PAGE_SIZE;
 
@@ -17,14 +19,15 @@ use super::logger::WalPage;
 
 #[derive(Clone)]
 pub struct ReplicationLoggerWalManager {
-    sqlite_wal_manager: Sqlite3WalManager,
+    sqlite_wal_manager: WalWrapper<EncryptionWrapper, Sqlite3WalManager>,
     logger: Arc<ReplicationLogger>,
 }
 
 impl ReplicationLoggerWalManager {
     pub fn new(logger: Arc<ReplicationLogger>) -> Self {
+        let wal_manager = WalWrapper::new(EncryptionWrapper::new("secret-key"), Sqlite3WalManager::new());
         Self {
-            sqlite_wal_manager: Sqlite3WalManager::new(),
+            sqlite_wal_manager: wal_manager,
             logger,
         }
     }
@@ -87,7 +90,7 @@ impl WalManager for ReplicationLoggerWalManager {
 }
 
 pub struct ReplicationLoggerWal {
-    inner: Sqlite3Wal,
+    inner: WrappedWal<EncryptionWrapper, Sqlite3Wal>,
     buffer: Vec<WalPage>,
     logger: Arc<ReplicationLogger>,
 }
@@ -253,6 +256,10 @@ impl Wal for ReplicationLoggerWal {
 
     fn last_fame_index(&self) -> u32 {
         self.inner.last_fame_index()
+    }
+
+    fn db_file(&self) -> &Sqlite3File {
+        self.inner.db_file()
     }
 }
 

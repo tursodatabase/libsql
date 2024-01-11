@@ -18,6 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 */
+#include "pager.h"
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
 #include "wal.h"
@@ -3925,17 +3926,39 @@ int sqlite3PagerReadFileheader(Pager *pPager, int N, unsigned char *pDest){
   assert( !pagerUseWal(pPager) );
 
   if( isOpen(pPager->fd) ){
-    IOTRACE(("DBHDR %p 0 %d\n", pPager, N))
-    rc = sqlite3OsRead(pPager->fd, pDest, N, 0);
-    if( rc==SQLITE_IOERR_SHORT_READ ){
-      rc = SQLITE_OK;
-    }
+      if (!pPager->wal_manager->is_static) {
+          pPager->journalMode = PAGER_JOURNALMODE_WAL;
+          int out;
+          rc = sqlite3PagerOpenWal(pPager, &out);
+
+          libsql_wal *wal = pPager->wal;
+          int ignore;
+          rc = wal->methods.xBeginReadTransaction(wal->pData, &ignore);
+          unsigned int fno;
+          rc = wal->methods.xFindFrame(wal->pData, 1, &fno);
+          if (fno == 0) {
+              goto normal;
+          }
+          rc = wal->methods.xReadFrame(wal->pData, fno, N, pDest);
+          if( rc==SQLITE_IOERR_SHORT_READ ){
+              rc = SQLITE_OK;
+          }
+          wal->methods.xEndReadTransaction(wal->pData);
+
+      } else {
+normal:
+          IOTRACE(("DBHDR %p 0 %d\n", pPager, N))
+              rc = sqlite3OsRead(pPager->fd, pDest, N, 0);
+          if( rc==SQLITE_IOERR_SHORT_READ ){
+              rc = SQLITE_OK;
+          }
+      }
   }
   return rc;
 }
 
 /*
-** This function may only be called when a read-transaction is open on
+ ** This function may only be called when a read-transaction is open on
 ** the pager. It returns the total number of pages in the database.
 **
 ** However, if the file is between 1 and <page-size> bytes in size, then

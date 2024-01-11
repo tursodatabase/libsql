@@ -189,6 +189,10 @@ where
     fn last_fame_index(&self) -> u32 {
         self.wrapper.last_fame_index(&self.wrapped)
     }
+
+    fn db_file(&self) -> &super::Sqlite3File {
+        self.wrapped.db_file()
+    }
 }
 
 /// Trait implemented by implementor that only need to wrap around another Wal implementation.

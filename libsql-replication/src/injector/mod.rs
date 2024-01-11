@@ -17,6 +17,8 @@ mod error;
 mod headers;
 mod injector_wal;
 
+pub use injector_wal::make_page_header;
+
 #[derive(Debug)]
 pub enum InjectError {}
 
