@@ -217,6 +217,8 @@ impl<C: ReplicatorClient> Replicator<C> {
     pub async fn replicate(&mut self) -> Result<(), Error> {
         loop {
             self.try_replicate_step().await?;
+            tracing::info!("replicator going to sleep for 60 seconds (try_replicate_step)");
+            tokio::time::sleep(Duration::from_secs(60)).await;
             if self.state == ReplicatorState::Exit {
                 self.state = ReplicatorState::NeedFrames;
                 return Ok(());
@@ -269,9 +271,13 @@ impl<C: ReplicatorClient> Replicator<C> {
     }
 
     async fn try_replicate(&mut self) -> Result<(), Error> {
+        tracing::info!("replicator going to sleep for 60 seconds (try_replicate)");
+        tokio::time::sleep(Duration::from_secs(60)).await;
         let mut stream = self.client.next_frames().await?;
 
         while let Some(frame) = stream.next().await.transpose()? {
+            tracing::info!("replicator going to sleep for one second (before inject_frame)");
+            tokio::time::sleep(Duration::from_secs(1)).await;
             self.inject_frame(frame).await?;
         }
 
