@@ -289,7 +289,11 @@ async fn try_persist_stats(stats: Weak<Stats>, path: &Path) -> anyhow::Result<()
         .open(&temp_path)
         .await?;
 
-    let stats = stats.upgrade().unwrap();
+    let stats = match stats.upgrade() {
+        Some(stats) => stats,
+        None => anyhow::bail!("stats handle doesn't exist, not persisting stats"),
+    };
+
     let snapshot = stats.create_snapshot();
 
     file.set_len(0).await?;
