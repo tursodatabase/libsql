@@ -311,11 +311,13 @@ impl ProxyService {
         let namespace_jwt_key = self.namespaces.with(namespace, |ns| ns.jwt_key()).await;
         let namespace_jwt_key = match namespace_jwt_key {
             Ok(Ok(jwt_key)) => Ok(jwt_key),
-            Err(crate::error::Error::NamespaceDoesntExist(_)) => Ok(None),
-            Err(e) => Err(tonic::Status::internal(format!(
-                "Error fetching jwt key for a namespace: {}",
-                e
-            ))),
+            Err(e) => match e.as_ref() {
+                crate::error::Error::NamespaceDoesntExist(_) => Ok(None),
+                _ => Err(tonic::Status::internal(format!(
+                    "Error fetching jwt key for a namespace: {}",
+                    e
+                ))),
+            },
             Ok(Err(e)) => Err(tonic::Status::internal(format!(
                 "Error fetching jwt key for a namespace: {}",
                 e
