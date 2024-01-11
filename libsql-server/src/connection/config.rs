@@ -54,6 +54,7 @@ impl From<&metadata::DatabaseConfig> for DatabaseConfig {
                 .as_ref()
                 .map(|s| Url::parse(&s).unwrap()),
             bottomless_db_id: value.bottomless_db_id.clone(),
+            jwt_key: value.jwt_key.clone(),
         }
     }
 }
@@ -67,6 +68,7 @@ impl From<&DatabaseConfig> for metadata::DatabaseConfig {
             max_db_pages: value.max_db_pages,
             heartbeat_url: value.heartbeat_url.as_ref().map(|s| s.to_string()),
             bottomless_db_id: value.bottomless_db_id.clone(),
+            jwt_key: value.jwt_key.clone(),
         }
     }
 }

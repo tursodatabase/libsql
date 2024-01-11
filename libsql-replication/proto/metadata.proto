@@ -13,4 +13,5 @@ message DatabaseConfig {
     uint64 max_db_pages = 4;
     optional string heartbeat_url = 5;
     optional string bottomless_db_id = 6; 
+    optional string jwt_key = 7;
 }
