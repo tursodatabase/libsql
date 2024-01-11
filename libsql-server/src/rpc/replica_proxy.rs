@@ -46,15 +46,17 @@ impl ReplicaProxyService {
                 authenticated.upgrade_grpc_request(req);
                 Ok(())
             }
-            Err(crate::error::Error::NamespaceDoesntExist(_)) => {
-                let authenticated = self.auth.authenticate_grpc(req, false, None)?;
-                authenticated.upgrade_grpc_request(req);
-                Ok(())
-            }
-            Err(e) => Err(Status::internal(format!(
-                "Error fetching jwt key for a namespace: {}",
-                e
-            ))),
+            Err(e) => match e.as_ref() {
+                crate::error::Error::NamespaceDoesntExist(_) => {
+                    let authenticated = self.auth.authenticate_grpc(req, false, None)?;
+                    authenticated.upgrade_grpc_request(req);
+                    Ok(())
+                }
+                _ => Err(Status::internal(format!(
+                    "Error fetching jwt key for a namespace: {}",
+                    e
+                ))),
+            },
             Ok(Err(e)) => Err(Status::internal(format!(
                 "Error fetching jwt key for a namespace: {}",
                 e
