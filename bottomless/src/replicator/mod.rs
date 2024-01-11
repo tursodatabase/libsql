@@ -1,19 +1,18 @@
+mod s3;
+
 use crate::backup::WalCopier;
 use crate::read::BatchReader;
+use crate::replicator::s3::{S3Client, S3Options};
 use crate::transaction_cache::TransactionPageCache;
 use crate::uuid_utils::decode_unix_timestamp;
 use crate::wal::WalFileReader;
 use anyhow::{anyhow, bail};
 use arc_swap::ArcSwapOption;
 use async_compression::tokio::write::{GzipEncoder, ZstdEncoder};
-use aws_sdk_s3::config::{Credentials, Region};
 use aws_sdk_s3::error::SdkError;
-use aws_sdk_s3::operation::get_object::builders::GetObjectFluentBuilder;
 use aws_sdk_s3::operation::get_object::GetObjectError;
-use aws_sdk_s3::operation::list_objects::builders::ListObjectsFluentBuilder;
 use aws_sdk_s3::operation::list_objects::ListObjectsOutput;
 use aws_sdk_s3::primitives::ByteStream;
-use aws_sdk_s3::{Client, Config};
 use bytes::{Buf, Bytes};
 use chrono::{NaiveDateTime, TimeZone, Utc};
 use std::io::SeekFrom;
@@ -39,7 +38,7 @@ pub type Result<T> = anyhow::Result<T>;
 
 #[derive(Debug)]
 pub struct Replicator {
-    pub client: Client,
+    pub client: S3Client,
 
     /// Frame number, incremented whenever a new frame is written from SQLite.
     next_frame_no: Arc<AtomicU32>,
@@ -82,110 +81,37 @@ pub enum RestoreAction {
 
 #[derive(Clone, Debug)]
 pub struct Options {
-    pub create_bucket_if_not_exists: bool,
     /// If `true` when restoring, frames checksums will be verified prior their pages being flushed
     /// into the main database file.
     pub verify_crc: bool,
     /// Kind of compression algorithm used on the WAL frames to be sent to S3.
     pub use_compression: CompressionKind,
-    pub aws_endpoint: Option<String>,
-    pub access_key_id: Option<String>,
-    pub secret_access_key: Option<String>,
-    pub region: Option<String>,
     pub db_id: Option<String>,
-    /// Bucket directory name where all S3 objects are backed up. General schema is:
-    /// - `{db-name}-{uuid-v7}` subdirectories:
-    ///   - `.meta` file with database page size and initial WAL checksum.
-    ///   - Series of files `{first-frame-no}-{last-frame-no}.{compression-kind}` containing
-    ///     the batches of frames from which the restore will be made.
-    pub bucket_name: String,
     /// Max number of WAL frames per S3 object.
     pub max_frames_per_batch: usize,
     /// Max time before next frame of batched frames should be synced. This works in the case
     /// when we don't explicitly run into `max_frames_per_batch` threshold and the corresponding
     /// checkpoint never commits.
     pub max_batch_interval: Duration,
-    /// Maximum number of S3 file upload requests that may happen in parallel.
-    pub s3_upload_max_parallelism: usize,
     /// When recovering a transaction, if number of affected pages is greater than page swap,
     /// start flushing these pages on disk instead of keeping them in memory.
     pub restore_transaction_page_swap_after: u32,
     /// When recovering a transaction, when its page cache needs to be swapped onto local file,
     /// this field contains a path for a file to be used.
     pub restore_transaction_cache_fpath: String,
-    /// Max number of retries for S3 operations
-    pub s3_max_retries: u32,
+
+    /// S3 related options.
+    pub s3: S3Options,
 }
 
 impl Options {
-    pub async fn client_config(&self) -> Result<Config> {
-        let mut loader = aws_config::from_env();
-        if let Some(endpoint) = self.aws_endpoint.as_deref() {
-            loader = loader.endpoint_url(endpoint);
-        }
-        let region = self
-            .region
-            .clone()
-            .ok_or(anyhow!("LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION was not set"))?;
-        let access_key_id = self
-            .access_key_id
-            .clone()
-            .ok_or(anyhow!("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID was not set"))?;
-        let secret_access_key = self.secret_access_key.clone().ok_or(anyhow!(
-            "LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY was not set"
-        ))?;
-        let conf = aws_sdk_s3::config::Builder::from(&loader.load().await)
-            .force_path_style(true)
-            .region(Region::new(region))
-            .credentials_provider(Credentials::new(
-                access_key_id,
-                secret_access_key,
-                None,
-                None,
-                "Static",
-            ))
-            .retry_config(
-                aws_sdk_s3::config::retry::RetryConfig::standard()
-                    .with_max_attempts(self.s3_max_retries),
-            )
-            .build();
-        Ok(conf)
-    }
-
     pub fn from_env() -> Result<Self> {
-        fn env_var(key: &str) -> Result<String> {
-            match std::env::var(key) {
-                Ok(res) => {
-                    let res = res.trim().to_string();
-                    if res.is_empty() {
-                        bail!("{} environment variable is empty", key)
-                    } else {
-                        Ok(res)
-                    }
-                }
-                Err(_) => bail!("{} environment variable not set", key),
-            }
-        }
-        fn env_var_or<S: ToString>(key: &str, default_value: S) -> String {
-            match env_var(key) {
-                Ok(res) => res,
-                Err(_) => default_value.to_string(),
-            }
-        }
-
         let db_id = env_var("LIBSQL_BOTTOMLESS_DATABASE_ID").ok();
-        let aws_endpoint = env_var("LIBSQL_BOTTOMLESS_ENDPOINT").ok();
-        let bucket_name = env_var_or("LIBSQL_BOTTOMLESS_BUCKET", "bottomless");
         let max_batch_interval = Duration::from_secs(
             env_var_or("LIBSQL_BOTTOMLESS_BATCH_INTERVAL_SECS", 15).parse::<u64>()?,
         );
-        let access_key_id = env_var("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID").ok();
-        let secret_access_key = env_var("LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY").ok();
-        let region = env_var("LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION").ok();
         let max_frames_per_batch =
             env_var_or("LIBSQL_BOTTOMLESS_BATCH_MAX_FRAMES", 10000).parse::<usize>()?;
-        let s3_upload_max_parallelism =
-            env_var_or("LIBSQL_BOTTOMLESS_S3_PARALLEL_MAX", 32).parse::<usize>()?;
         let restore_transaction_page_swap_after =
             env_var_or("LIBSQL_BOTTOMLESS_RESTORE_TXN_SWAP_THRESHOLD", 1000).parse::<u32>()?;
         let restore_transaction_cache_fpath =
@@ -204,23 +130,16 @@ impl Options {
                 other
             ),
         };
-        let s3_max_retries = env_var_or("LIBSQL_BOTTOMLESS_S3_MAX_RETRIES", 10).parse::<u32>()?;
+
         Ok(Options {
             db_id,
-            create_bucket_if_not_exists: true,
             verify_crc,
             use_compression,
             max_batch_interval,
             max_frames_per_batch,
-            s3_upload_max_parallelism,
             restore_transaction_page_swap_after,
-            aws_endpoint,
-            access_key_id,
-            secret_access_key,
-            region,
             restore_transaction_cache_fpath,
-            bucket_name,
-            s3_max_retries,
+            s3: S3Options::from_env()?,
         })
     }
 }
@@ -233,27 +152,10 @@ impl Replicator {
     }
 
     pub async fn with_options<S: Into<String>>(db_path: S, options: Options) -> Result<Self> {
-        let config = options.client_config().await?;
-        let client = Client::from_conf(config);
-        let bucket = options.bucket_name.clone();
-        let generation = Arc::new(ArcSwapOption::default());
+        let s3_client = S3Client::from_options(&options.s3).await?;
+        s3_client.check_bucket(false).await?;
 
-        match client.head_bucket().bucket(&bucket).send().await {
-            Ok(_) => tracing::info!("Bucket {} exists and is accessible", bucket),
-            Err(SdkError::ServiceError(err)) if err.err().is_not_found() => {
-                if options.create_bucket_if_not_exists {
-                    tracing::info!("Bucket {} not found, recreating", bucket);
-                    client.create_bucket().bucket(&bucket).send().await?;
-                } else {
-                    tracing::error!("Bucket {} does not exist", bucket);
-                    return Err(SdkError::ServiceError(err).into());
-                }
-            }
-            Err(e) => {
-                tracing::error!("Bucket checking error: {}", e);
-                return Err(e.into());
-            }
-        }
+        let generation = Arc::new(ArcSwapOption::default());
 
         let db_path = db_path.into();
         let db_name = if let Some(db_id) = options.db_id.clone() {
@@ -274,7 +176,7 @@ impl Replicator {
         let (frames_outbox, mut frames_inbox) = tokio::sync::mpsc::channel(64);
         let _local_backup = {
             let mut copier = WalCopier::new(
-                bucket.clone(),
+                s3_client.bucket().to_string(),
                 db_name.clone().into(),
                 generation.clone(),
                 &db_path,
@@ -317,9 +219,9 @@ impl Replicator {
         };
 
         let _s3_upload = {
-            let client = client.clone();
-            let bucket = options.bucket_name.clone();
-            let max_parallelism = options.s3_upload_max_parallelism;
+            let client = s3_client.clone();
+            let bucket = client.options().bucket_name.clone();
+            let max_parallelism = client.options().s3_upload_max_parallelism;
             join_set.spawn(async move {
                 let sem = Arc::new(tokio::sync::Semaphore::new(max_parallelism));
                 let mut join_set = JoinSet::new();
@@ -333,14 +235,7 @@ impl Replicator {
                     join_set.spawn(async move {
                         let fpath = format!("{}/{}", bucket, fdesc);
                         let body = ByteStream::from_path(&fpath).await.unwrap();
-                        if let Err(e) = client
-                            .put_object()
-                            .bucket(bucket)
-                            .key(fdesc)
-                            .body(body)
-                            .send()
-                            .await
-                        {
+                        if let Err(e) = client.put_object(&fdesc, body).await {
                             tracing::error!("Failed to send {} to S3: {}", fpath, e);
                         } else {
                             tokio::fs::remove_file(&fpath).await.unwrap();
@@ -354,8 +249,8 @@ impl Replicator {
         };
         let (snapshot_notifier, snapshot_waiter) = channel(Ok(None));
         Ok(Self {
-            client,
-            bucket,
+            client: s3_client.clone(),
+            bucket: s3_client.bucket().to_string(),
             page_size: Self::UNSET_PAGE_SIZE,
             generation,
             next_frame_no,
@@ -371,7 +266,7 @@ impl Replicator {
             restore_transaction_cache_fpath: options.restore_transaction_cache_fpath.into(),
             use_compression: options.use_compression,
             max_frames_per_batch: options.max_frames_per_batch,
-            s3_upload_max_parallelism: options.s3_upload_max_parallelism,
+            s3_upload_max_parallelism: s3_client.options().s3_upload_max_parallelism,
             join_set,
         })
     }
@@ -382,21 +277,12 @@ impl Replicator {
             Some(db_id) => format!("{db_id}-"),
             None => format!("ns-:{}-", db_name.as_ref()),
         };
-        let config = options.client_config().await?;
-        let client = Client::from_conf(config);
-        let bucket = options.bucket_name.clone();
 
-        match client.head_bucket().bucket(&bucket).send().await {
-            Ok(_) => tracing::trace!("Bucket {bucket} exists and is accessible"),
-            Err(e) => {
-                tracing::trace!("Bucket checking error: {e}");
-                return Err(e.into());
-            }
-        }
+        let s3_client = S3Client::from_options(&options.s3).await?;
+        s3_client.check_bucket(false).await?;
 
         let mut last_frame = 0;
-        let list_objects = client.list_objects().bucket(&bucket).prefix(&prefix);
-        let response = list_objects.send().await?;
+        let response = s3_client.list_objects(&prefix).await?;
         let _ = Self::try_get_last_frame_no(response, &mut last_frame);
         tracing::trace!("Last frame of {prefix}: {last_frame}");
 
@@ -512,16 +398,6 @@ impl Replicator {
         Ok(())
     }
 
-    // Gets an object from the current bucket
-    fn get_object(&self, key: String) -> GetObjectFluentBuilder {
-        self.client.get_object().bucket(&self.bucket).key(key)
-    }
-
-    // Lists objects from the current bucket
-    fn list_objects(&self) -> ListObjectsFluentBuilder {
-        self.client.list_objects().bucket(&self.bucket)
-    }
-
     fn reset_frames(&mut self, frame_no: u32) {
         let last_sent = self.last_sent_frame_no();
         self.next_frame_no.store(frame_no + 1, Ordering::Release);
@@ -595,14 +471,13 @@ impl Replicator {
     /// extra undesired latency and this method may be called during SQLite checkpoint.
     fn store_dependency(&self, prev: Uuid, curr: Uuid) {
         let key = format!("{}-{}/.dep", self.db_name, curr);
-        let request =
-            self.client
-                .put_object()
-                .bucket(&self.bucket)
-                .key(key)
-                .body(ByteStream::from(Bytes::copy_from_slice(
-                    prev.into_bytes().as_slice(),
-                )));
+        let request = self
+            .client
+            .put_object_builder()
+            .key(&key)
+            .body(ByteStream::from(Bytes::copy_from_slice(
+                prev.into_bytes().as_slice(),
+            )));
         tokio::spawn(async move {
             if let Err(e) = request.send().await {
                 tracing::error!(
@@ -623,13 +498,7 @@ impl Replicator {
 
     pub async fn get_dependency(&self, generation: &Uuid) -> Result<Option<Uuid>> {
         let key = format!("{}-{}/.dep", self.db_name, generation);
-        let resp = self
-            .client
-            .get_object()
-            .bucket(&self.bucket)
-            .key(key)
-            .send()
-            .await;
+        let resp = self.client.get_object_builder().key(key).send().await;
         match resp {
             Ok(out) => {
                 let bytes = out.body.collect().await?.into_bytes();
@@ -847,7 +716,7 @@ impl Replicator {
             let mut db_file = File::open(&self.db_path).await?;
             Self::read_change_counter(&mut db_file).await?
         };
-        let snapshot_req = client.put_object().bucket(self.bucket.clone()).key(format!(
+        let snapshot_req = client.put_object_builder().key(format!(
             "{}-{}/db.{}",
             self.db_name, generation, self.use_compression
         ));
@@ -861,9 +730,8 @@ impl Replicator {
         let change_counter_key = format!("{}-{}/.changecounter", self.db_name, generation);
         let change_counter_req = self
             .client
-            .put_object()
-            .bucket(&self.bucket)
-            .key(change_counter_key)
+            .put_object_builder()
+            .key(&change_counter_key)
             .body(ByteStream::from(Bytes::copy_from_slice(
                 change_counter.as_ref(),
             )));
@@ -934,7 +802,7 @@ impl Replicator {
         let prefix = format!("{}-", self.db_name);
         let threshold = timestamp.map(|ts| ts.timestamp() as u64);
         loop {
-            let mut request = self.list_objects().prefix(prefix.clone());
+            let mut request = self.client.list_objects_builder().prefix(prefix.clone());
             if threshold.is_none() {
                 request = request.max_keys(1);
             }
@@ -1003,8 +871,8 @@ impl Replicator {
     pub async fn get_remote_change_counter(&self, generation: &Uuid) -> Result<[u8; 4]> {
         let mut remote_change_counter = [0u8; 4];
         if let Ok(response) = self
-            .get_object(format!("{}-{}/.changecounter", self.db_name, generation))
-            .send()
+            .client
+            .get_object(&format!("{}-{}/.changecounter", self.db_name, generation))
             .await
         {
             response
@@ -1286,7 +1154,7 @@ impl Replicator {
                 CompressionKind::Gzip => format!("{}-{}/db.gz", self.db_name, generation),
                 CompressionKind::Zstd => format!("{}-{}/db.zstd", self.db_name, generation),
             };
-            if let Ok(db_file) = self.get_object(main_db_path).send().await {
+            if let Ok(db_file) = self.client.get_object(&main_db_path).await {
                 let mut body_reader = db_file.body.into_async_read();
                 let db_size = match algo {
                     CompressionKind::None => tokio::io::copy(&mut body_reader, db).await?,
@@ -1335,7 +1203,7 @@ impl Replicator {
         let mut next_marker = None;
         let mut applied_wal_frame = false;
         'restore_wal: loop {
-            let mut list_request = self.list_objects().prefix(&prefix);
+            let mut list_request = self.client.list_objects_builder().prefix(&prefix);
             if let Some(marker) = next_marker {
                 list_request = list_request.marker(marker);
             }
@@ -1401,7 +1269,7 @@ impl Replicator {
                         }
                     }
                 }
-                let frame = self.get_object(key.into()).send().await?;
+                let frame = self.client.get_object(key.into()).await?;
                 let mut frameno = first_frame_no;
                 let mut reader = BatchReader::new(
                     frameno,
@@ -1487,7 +1355,7 @@ impl Replicator {
         let mut marker: Option<String> = None;
         let mut last_frame = 0;
         while {
-            let mut list_objects = self.list_objects().prefix(&prefix);
+            let mut list_objects = self.client.list_objects_builder().prefix(&prefix);
             if let Some(marker) = marker.take() {
                 list_objects = list_objects.marker(marker);
             }
@@ -1523,19 +1391,11 @@ impl Replicator {
                 if let Some(key) = Self::fpath_to_key(&fpath, &prefix) {
                     tracing::trace!("Requesting upload of the remaining backup file: {}", key);
                     let permit = sem.clone().acquire_owned().await?;
-                    let bucket = self.bucket.clone();
                     let key = key.to_string();
                     let client = self.client.clone();
                     tokio::spawn(async move {
                         let body = ByteStream::from_path(&fpath).await.unwrap();
-                        if let Err(e) = client
-                            .put_object()
-                            .bucket(bucket)
-                            .key(key.clone())
-                            .body(body)
-                            .send()
-                            .await
-                        {
+                        if let Err(e) = client.put_object(&key, body).await {
                             tracing::error!("Failed to send {} to S3: {}", key, e);
                         } else {
                             tokio::fs::remove_file(&fpath).await.unwrap();
@@ -1586,27 +1446,13 @@ impl Replicator {
         body.extend_from_slice(page_size.to_be_bytes().as_slice());
         body.extend_from_slice(checksum.0.to_be_bytes().as_slice());
         body.extend_from_slice(checksum.1.to_be_bytes().as_slice());
-        let _ = self
-            .client
-            .put_object()
-            .bucket(self.bucket.clone())
-            .key(key)
-            .body(ByteStream::from(body))
-            .send()
-            .await?;
+        let _ = self.client.put_object(&key, ByteStream::from(body)).await?;
         Ok(())
     }
 
     pub async fn get_metadata(&self, generation: &Uuid) -> Result<Option<(u32, (u32, u32))>> {
         let key = format!("{}-{}/.meta", self.db_name, generation);
-        if let Ok(obj) = self
-            .client
-            .get_object()
-            .bucket(&self.bucket)
-            .key(key)
-            .send()
-            .await
-        {
+        if let Ok(obj) = self.client.get_object(&key).await {
             let mut data = obj.body.collect().await?;
             let page_size = data.get_u32();
             let checksum = (data.get_u32(), data.get_u32());
@@ -1625,33 +1471,19 @@ impl Replicator {
         let key = format!("{}.tombstone", self.db_name);
         let threshold = older_than.unwrap_or(NaiveDateTime::MAX);
         self.client
-            .put_object()
-            .bucket(&self.bucket)
-            .key(key)
-            .body(ByteStream::from(
-                threshold.timestamp().to_be_bytes().to_vec(),
-            ))
-            .send()
+            .put_object(
+                &key,
+                ByteStream::from(threshold.timestamp().to_be_bytes().to_vec()),
+            )
             .await?;
-        let delete_task = DeleteAll::new(
-            self.client.clone(),
-            self.bucket.clone(),
-            self.db_name.clone(),
-            threshold,
-        );
+        let delete_task = DeleteAll::new(self.client.clone(), self.db_name.clone(), threshold);
         Ok(delete_task)
     }
 
     /// Checks if current replicator database has been marked as deleted.
     pub async fn get_tombstone(&self) -> Result<Option<NaiveDateTime>> {
         let key = format!("{}.tombstone", self.db_name);
-        let resp = self
-            .client
-            .get_object()
-            .bucket(&self.bucket)
-            .key(key)
-            .send()
-            .await;
+        let resp = self.client.get_object_builder().key(key).send().await;
         match resp {
             Ok(out) => {
                 let mut buf = [0u8; 8];
@@ -1674,17 +1506,15 @@ impl Replicator {
 /// performs hard deletion of corresponding S3 objects.
 #[derive(Debug)]
 pub struct DeleteAll {
-    client: Client,
-    bucket: String,
+    client: S3Client,
     db_name: String,
     threshold: NaiveDateTime,
 }
 
 impl DeleteAll {
-    fn new(client: Client, bucket: String, db_name: String, threshold: NaiveDateTime) -> Self {
+    fn new(client: S3Client, db_name: String, threshold: NaiveDateTime) -> Self {
         DeleteAll {
             client,
-            bucket,
             db_name,
             threshold,
         }
@@ -1702,8 +1532,7 @@ impl DeleteAll {
         loop {
             let mut list_request = self
                 .client
-                .list_objects()
-                .bucket(&self.bucket)
+                .list_objects_builder()
                 .set_delimiter(Some("/".to_string()))
                 .prefix(&self.db_name);
 
@@ -1747,12 +1576,7 @@ impl DeleteAll {
 
     pub async fn remove_tombstone(&self) -> Result<()> {
         let key = format!("{}.tombstone", self.db_name);
-        self.client
-            .delete_object()
-            .bucket(&self.bucket)
-            .key(key)
-            .send()
-            .await?;
+        self.client.delete_object(&key).await?;
         Ok(())
     }
 
@@ -1762,8 +1586,7 @@ impl DeleteAll {
         loop {
             let mut list_request = self
                 .client
-                .list_objects()
-                .bucket(&self.bucket)
+                .list_objects_builder()
                 .prefix(format!("{}-{}/", &self.db_name, generation));
 
             if let Some(marker) = next_marker {
@@ -1781,12 +1604,7 @@ impl DeleteAll {
             for obj in objs {
                 if let Some(key) = obj.key() {
                     tracing::trace!("Removing {}", key);
-                    self.client
-                        .delete_object()
-                        .bucket(&self.bucket)
-                        .key(key)
-                        .send()
-                        .await?;
+                    self.client.delete_object(key).await?;
                     removed += 1;
                 }
             }
@@ -1831,5 +1649,26 @@ impl std::fmt::Display for CompressionKind {
             CompressionKind::Gzip => write!(f, "gz"),
             CompressionKind::Zstd => write!(f, "zstd"),
         }
+    }
+}
+
+pub(super) fn env_var(key: &str) -> Result<String> {
+    match std::env::var(key) {
+        Ok(res) => {
+            let res = res.trim().to_string();
+            if res.is_empty() {
+                bail!("{} environment variable is empty", key)
+            } else {
+                Ok(res)
+            }
+        }
+        Err(_) => bail!("{} environment variable not set", key),
+    }
+}
+
+pub(super) fn env_var_or<S: ToString>(key: &str, default_value: S) -> String {
+    match env_var(key) {
+        Ok(res) => res,
+        Err(_) => default_value.to_string(),
     }
 }
