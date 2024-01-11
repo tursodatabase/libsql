@@ -1586,7 +1586,10 @@ static int fts5SpecialInsert(
   }else if( 0==sqlite3_stricmp("flush", zCmd) ){
     rc = sqlite3Fts5FlushToDisk(&pTab->p);
   }else{
-    rc = sqlite3Fts5IndexLoadConfig(pTab->p.pIndex);
+    rc = sqlite3Fts5FlushToDisk(&pTab->p);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3Fts5IndexLoadConfig(pTab->p.pIndex);
+    }
     if( rc==SQLITE_OK ){
       rc = sqlite3Fts5ConfigSetValue(pTab->p.pConfig, zCmd, pVal, &bError);
     }
