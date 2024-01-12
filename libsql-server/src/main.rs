@@ -9,7 +9,6 @@ use anyhow::{bail, Context as _, Result};
 use bytesize::ByteSize;
 use clap::Parser;
 use hyper::client::HttpConnector;
-use mimalloc::MiMalloc;
 use tokio::sync::Notify;
 use tokio::time::Duration;
 use tracing_subscriber::prelude::*;
@@ -25,7 +24,11 @@ use libsql_server::Server;
 use libsql_server::{connection::dump::exporter::export_dump, version::Version};
 
 #[global_allocator]
-static GLOBAL: MiMalloc = MiMalloc;
+static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
+#[allow(non_upper_case_globals)]
+#[export_name = "malloc_conf"]
+pub static malloc_conf: &[u8] = b"prof:true,prof_active:true,lg_prof_sample:19\0";
 
 /// SQL daemon
 #[derive(Debug, Parser)]

@@ -141,6 +141,7 @@ where
         )
         .route("/v1/diagnostics", get(handle_diagnostics))
         .route("/metrics", get(handle_metrics))
+        .route("debug/heap-profile", get(handle_heap_profile))
         .with_state(Arc::new(AppState {
             namespaces,
             connector,
@@ -164,6 +165,14 @@ where
         .context("Could not bind admin HTTP API server")?;
 
     Ok(())
+}
+
+async fn handle_heap_profile() {
+    let mut prof_ctl = jemalloc_pprof::PROF_CTL.as_ref().unwrap().lock().await;
+    let pprof = prof_ctl
+        .dump_pprof()
+        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
+    Ok(pprof)
 }
 
 async fn handle_get_index() -> &'static str {

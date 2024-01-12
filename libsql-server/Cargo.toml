@@ -40,7 +40,8 @@ libsql-replication = { path = "../libsql-replication" }
 metrics = "0.21.1"
 metrics-util = "0.15"
 metrics-exporter-prometheus = "0.12.2"
-mimalloc = { version = "0.1.36", default-features = false }
+# mimalloc = { version = "0.1.36", default-features = false }
+tikv-jemallocator = { version = "0.5.4", features = ["profiling", "unprefixed_malloc_on_supported_platforms"] }
 moka = { version = "0.12.1", features = ["future", "sync"] }
 nix = { version = "0.26.2", features = ["fs"] }
 once_cell = "1.17.0"
@@ -77,6 +78,7 @@ http-body = "0.4"
 url = { version = "2.3", features = ["serde"] }
 uuid = { version = "1.3", features = ["v4", "serde"] }
 zerocopy = { version = "0.7.28", features = ["derive"] }
+jemalloc_pprof = "0.1.0"
 
 [dev-dependencies]
 arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }
