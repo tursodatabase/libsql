@@ -11424,61 +11424,69 @@ static int line_is_complete(char *zSql, int nSql){
 **
 **    0: Have not seen any SQL.
 **    1: Have seen "PRAGMA foreign_keys=OFF;".
-**    2: Currently assuming we are parsing ".dump" restore, defensive mode
-**       should be disabled following the current transaction.
-**    3: Nothing left to do.
+**    2-6: Currently running .dump transaction. If the "2" bit is set,
+**         disable DEFENSIVE when done. If "4" is set, disable DQS_DDL.
+**    7: Nothing left to do. This function becomes a no-op.
 */
 static int doAutoDetectRestore(ShellState *p, const char *zSql){
   int rc = SQLITE_OK;
 
-  switch( p->eRestoreState ){
-    case 0: {
-      int bDefense = 0;           /* True if in defensive mode */ 
-      const char *zExpect = "PRAGMA foreign_keys=OFF;";
-      assert( strlen(zExpect)==24 );
-      sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, -1, &bDefense);
-      if( p->bSafeMode==0 && bDefense && memcmp(zSql, zExpect, 25)==0 ){
-        p->eRestoreState = 1;
-      }else{
-        p->eRestoreState = 3;
-      }
-      break;
-    };
-
-    case 1: {
-      const char *zExpect = "BEGIN TRANSACTION;";
-      assert( strlen(zExpect)==18 );
-      if( memcmp(zSql, zExpect, 19)==0 ){
-        /* Now check if the database is empty. */
-        const char *zQuery = "SELECT 1 FROM sqlite_schema LIMIT 1";
-        sqlite3_stmt *pStmt = 0;
-        int bEmpty = 1;
-
-        shellPrepare(p->db, &rc, zQuery, &pStmt);
-        if( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
-          bEmpty = 0;
-        }
-        shellFinalize(&rc, pStmt);
-        if( bEmpty && rc==SQLITE_OK ){
-          sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
+  if( p->eRestoreState<7 ){
+    switch( p->eRestoreState ){
+      case 0: {
+        const char *zExpect = "PRAGMA foreign_keys=OFF;";
+        assert( strlen(zExpect)==24 );
+        if( p->bSafeMode==0 && memcmp(zSql, zExpect, 25)==0 ){
+          p->eRestoreState = 1;
         }else{
-          p->eRestoreState = 3;
+          p->eRestoreState = 7;
         }
+        break;
+      };
+  
+      case 1: {
+        int bIsDump = 0;
+        const char *zExpect = "BEGIN TRANSACTION;";
+        assert( strlen(zExpect)==18 );
+        if( memcmp(zSql, zExpect, 19)==0 ){
+          /* Now check if the database is empty. */
+          const char *zQuery = "SELECT 1 FROM sqlite_schema LIMIT 1";
+          sqlite3_stmt *pStmt = 0;
+  
+          bIsDump = 1;
+          shellPrepare(p->db, &rc, zQuery, &pStmt);
+          if( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+            bIsDump = 0;
+          }
+          shellFinalize(&rc, pStmt);
+        }
+        if( bIsDump && rc==SQLITE_OK ){
+          int bDefense = 0;
+          int bDqsDdl = 0;
+          sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, -1, &bDefense);
+          sqlite3_db_config(p->db, SQLITE_DBCONFIG_DQS_DDL, -1, &bDqsDdl);
+          sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
+          sqlite3_db_config(p->db, SQLITE_DBCONFIG_DQS_DDL, 1, 0);
+          p->eRestoreState = (bDefense ? 2 : 0) + (bDqsDdl ? 4 : 0);
+        }else{
+          p->eRestoreState = 7;
+        }
+        break;
       }
-      break;
-    }
-
-    case 2: {
-      if( sqlite3_get_autocommit(p->db) ){
-        sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
-        p->eRestoreState = 3;
+  
+      default: {
+        if( sqlite3_get_autocommit(p->db) ){
+          if( (p->eRestoreState & 2) ){
+            sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 1, 0);
+          }
+          if( (p->eRestoreState & 4) ){
+            sqlite3_db_config(p->db, SQLITE_DBCONFIG_DQS_DDL, 0, 0);
+          }
+          p->eRestoreState = 7;
+        }
+        break;
       }
-      break;
     }
-
-    default: /* Nothing to do */
-      assert( p->eRestoreState==3 );
-      break;
   }
 
   return rc;

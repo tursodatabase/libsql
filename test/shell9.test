@@ -13,6 +13,9 @@
 # testing that it is possible to run a ".dump" script that creates
 # virtual tables without explicitly disabling defensive mode.
 #
+# And, that it can process a ".dump" script that contains strings
+# delimited using double-quotes in the schema (DQS_DDL setting).
+#
 
 # Test plan:
 #
@@ -123,5 +126,23 @@ do_test 2.2.1 {
 do_test 2.2.2 {
   contains_warning [catchcmd test.db ".dump r1"]
 } 1
+
+#-------------------------------------------------------------------------
+reset_db
+sqlite3_db_config db DQS_DDL 1
+do_execsql_test 3.1.0 {
+  CREATE TABLE t4(hello, check( hello IS NOT "xyz") );
+}
+db close
+
+# Create .dump file in "testdump.txt".
+#
+set out [open testdump.txt w]
+puts $out [lindex [catchcmd test.db .dump] 1]
+close $out
+do_test 3.1.1 {
+  forcedelete test.db
+  catchcmd test.db ".read testdump.txt"
+} {0 {}}
 
 finish_test

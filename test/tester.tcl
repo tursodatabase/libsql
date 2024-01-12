@@ -554,7 +554,7 @@ if {[info exists cmdlinearg]==0} {
   }
   unset -nocomplain a
   set testdir [file normalize $testdir]
-  set cmdlinearg(TESTFIXTURE_HOME) [pwd]
+  set cmdlinearg(TESTFIXTURE_HOME) [file dirname [info nameofexec]]
   set cmdlinearg(INFO_SCRIPT) [file normalize [info script]]
   set argv0 [file normalize $argv0]
   if {$cmdlinearg(testdir)!=""} {
