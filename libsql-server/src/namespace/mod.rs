@@ -838,7 +838,7 @@ pub struct ReplicaNamespaceConfig {
     pub extensions: Arc<[PathBuf]>,
     /// Stats monitor
     pub stats_sender: StatsSender,
-    #[cfg(feature = "encryption-at-rest")]
+
     pub passphrase: Option<String>,
 }
 
@@ -867,7 +867,6 @@ impl Namespace<ReplicaDatabase> {
             client,
             db_path.join("data"),
             DEFAULT_AUTO_CHECKPOINT,
-            #[cfg(feature = "encryption-at-rest")]
             config.passphrase.clone(),
         )
         .await?;
@@ -940,7 +939,6 @@ impl Namespace<ReplicaDatabase> {
             config.stats_sender.clone(),
             name.clone(),
             applied_frame_no_receiver.clone(),
-            #[cfg(feature = "encryption-at-rest")]
             config.passphrase.clone(),
         )
         .await?;
@@ -957,7 +955,6 @@ impl Namespace<ReplicaDatabase> {
             config.max_total_response_size,
             name.clone(),
             primary_current_replicatio_index,
-            #[cfg(feature = "encryption-at-rest")]
             config.passphrase.clone(),
         )
         .await?
@@ -992,7 +989,7 @@ pub struct PrimaryNamespaceConfig {
     pub max_total_response_size: u64,
     pub checkpoint_interval: Option<Duration>,
     pub disable_namespace: bool,
-    #[cfg(feature = "encryption-at-rest")]
+
     pub passphrase: Option<String>,
 }
 
@@ -1123,7 +1120,6 @@ impl Namespace<PrimaryDatabase> {
             config.stats_sender.clone(),
             name.clone(),
             logger.new_frame_notifier.subscribe(),
-            #[cfg(feature = "encryption-at-rest")]
             config.passphrase.clone(),
         )
         .await?;
@@ -1139,7 +1135,6 @@ impl Namespace<PrimaryDatabase> {
             config.max_total_response_size,
             auto_checkpoint,
             logger.new_frame_notifier.subscribe(),
-            #[cfg(feature = "encryption-at-rest")]
             config.passphrase.clone(),
         )
         .await?
@@ -1162,7 +1157,6 @@ impl Namespace<PrimaryDatabase> {
                     &db_path,
                     dump,
                     wal_manager.clone(),
-                    #[cfg(feature = "encryption-at-rest")]
                     config.passphrase.clone(),
                 )
                 .await?;
@@ -1198,7 +1192,7 @@ async fn make_stats(
     stats_sender: StatsSender,
     name: NamespaceName,
     mut current_frame_no: watch::Receiver<Option<FrameNo>>,
-    #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
+    passphrase: Option<String>,
 ) -> anyhow::Result<Arc<Stats>> {
     let stats = Stats::new(name.clone(), db_path, join_set).await?;
 
@@ -1226,7 +1220,6 @@ async fn make_stats(
     join_set.spawn(run_storage_monitor(
         db_path.into(),
         Arc::downgrade(&stats),
-        #[cfg(feature = "encryption-at-rest")]
         passphrase,
     ));
 
@@ -1254,7 +1247,7 @@ async fn load_dump<S, C>(
     db_path: &Path,
     dump: S,
     wal_manager: C,
-    #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
+    passphrase: Option<String>,
 ) -> crate::Result<(), LoadDumpError>
 where
     S: Stream<Item = std::io::Result<Bytes>> + Unpin,
@@ -1266,16 +1259,10 @@ where
     let conn = loop {
         let db_path = db_path.to_path_buf();
         let wal_manager = wal_manager.clone();
-        #[cfg(feature = "encryption-at-rest")]
+
         let passphrase = passphrase.clone();
         match tokio::task::spawn_blocking(move || {
-            open_conn(
-                &db_path,
-                wal_manager,
-                None,
-                #[cfg(feature = "encryption-at-rest")]
-                passphrase,
-            )
+            open_conn(&db_path, wal_manager, None, passphrase)
         })
         .await?
         {
@@ -1425,7 +1412,7 @@ fn check_fresh_db(path: &Path) -> crate::Result<bool> {
 async fn run_storage_monitor(
     db_path: PathBuf,
     stats: Weak<Stats>,
-    #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
+    passphrase: Option<String>,
 ) -> anyhow::Result<()> {
     // on initialization, the database file doesn't exist yet, so we wait a bit for it to be
     // created
@@ -1438,13 +1425,13 @@ async fn run_storage_monitor(
         let Some(stats) = stats.upgrade() else {
             return Ok(());
         };
-        #[cfg(feature = "encryption-at-rest")]
+
         let passphrase = passphrase.clone();
         let _ = tokio::task::spawn_blocking(move || {
             // because closing the last connection interferes with opening a new one, we lazily
             // initialize a connection here, and keep it alive for the entirety of the program. If we
             // fail to open it, we wait for `duration` and try again later.
-            match open_conn(&db_path, Sqlite3WalManager::new(), Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), #[cfg(feature = "encryption-at-rest")] passphrase) {
+            match open_conn(&db_path, Sqlite3WalManager::new(), Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), passphrase) {
                 Ok(conn) => {
                     if let Ok(storage_bytes_used) =
                         conn.query_row("select sum(pgsize) from dbstat;", [], |row| {

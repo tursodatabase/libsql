@@ -9,13 +9,9 @@ const DB: &[u8] = include_bytes!("test.db");
 #[tokio::test]
 async fn inject_frames() {
     let tmp = tempfile::tempdir().unwrap();
-    let db = Database::open_with_local_sync(
-        tmp.path().join("data").to_str().unwrap(),
-        #[cfg(feature = "encryption-at-rest")]
-        None,
-    )
-    .await
-    .unwrap();
+    let db = Database::open_with_local_sync(tmp.path().join("data").to_str().unwrap(), None)
+        .await
+        .unwrap();
 
     let mut frames: Vec<FrameMut> = DB
         .chunks(LIBSQL_PAGE_SIZE)
@@ -99,13 +95,9 @@ async fn inject_frames() {
 #[tokio::test]
 async fn inject_frames_split_txn() {
     let tmp = tempfile::tempdir().unwrap();
-    let db = Database::open_with_local_sync(
-        tmp.path().join("data").to_str().unwrap(),
-        #[cfg(feature = "encryption-at-rest")]
-        None,
-    )
-    .await
-    .unwrap();
+    let db = Database::open_with_local_sync(tmp.path().join("data").to_str().unwrap(), None)
+        .await
+        .unwrap();
 
     let mut frames = DB.chunks(LIBSQL_PAGE_SIZE).enumerate().map(|(i, data)| {
         let header = FrameHeader {

@@ -44,7 +44,7 @@ pub struct MakeLibSqlConn<T: WalManager> {
     /// In wal mode, closing the last database takes time, and causes other databases creation to
     /// return sqlite busy. To mitigate that, we hold on to one connection
     _db: Option<LibSqlConnection<T::Wal>>,
-    #[cfg(feature = "encryption-at-rest")]
+
     passphrase: Option<String>,
 }
 
@@ -64,7 +64,7 @@ where
         max_total_response_size: u64,
         auto_checkpoint: u32,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
-        #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
+        passphrase: Option<String>,
     ) -> Result<Self> {
         let mut this = Self {
             db_path,
@@ -78,7 +78,7 @@ where
             _db: None,
             state: Default::default(),
             wal_manager,
-            #[cfg(feature = "encryption-at-rest")]
+
             passphrase,
         };
 
@@ -128,7 +128,7 @@ where
                 max_size: Some(self.max_response_size),
                 max_total_size: Some(self.max_total_response_size),
                 auto_checkpoint: self.auto_checkpoint,
-                #[cfg(feature = "encryption-at-rest")]
+
                 passphrase: self.passphrase.clone(),
             },
             self.current_frame_no_receiver.clone(),
@@ -214,7 +214,7 @@ pub fn open_conn<T>(
     path: &Path,
     wal_manager: T,
     flags: Option<OpenFlags>,
-    #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
+    passphrase: Option<String>,
 ) -> Result<libsql_sys::Connection<InhibitCheckpoint<T::Wal>>, rusqlite::Error>
 where
     T: WalManager,
@@ -231,7 +231,6 @@ where
         flags,
         WalWrapper::new(InhibitCheckpointWalWrapper, wal_manager),
         u32::MAX,
-        #[cfg(feature = "encryption-at-rest")]
         passphrase,
     )
 }
@@ -242,7 +241,7 @@ pub fn open_conn_active_checkpoint<T>(
     wal_manager: T,
     flags: Option<OpenFlags>,
     auto_checkpoint: u32,
-    #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
+    passphrase: Option<String>,
 ) -> Result<libsql_sys::Connection<T::Wal>, rusqlite::Error>
 where
     T: WalManager,
@@ -259,7 +258,6 @@ where
         flags,
         wal_manager,
         auto_checkpoint,
-        #[cfg(feature = "encryption-at-rest")]
         passphrase,
     )
 }
@@ -546,7 +544,6 @@ impl<W: Wal> Connection<W> {
             wal_manager,
             None,
             builder_config.auto_checkpoint,
-            #[cfg(feature = "encryption-at-rest")]
             builder_config.passphrase.clone(),
         )?;
 
@@ -1090,7 +1087,6 @@ mod test {
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
-            #[cfg(feature = "encryption-at-rest")]
             None,
         )
         .await
@@ -1133,7 +1129,6 @@ mod test {
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
-            #[cfg(feature = "encryption-at-rest")]
             None,
         )
         .await
@@ -1177,7 +1172,6 @@ mod test {
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
-            #[cfg(feature = "encryption-at-rest")]
             None,
         )
         .await
@@ -1257,7 +1251,6 @@ mod test {
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
-            #[cfg(feature = "encryption-at-rest")]
             None,
         )
         .await

@@ -92,7 +92,7 @@ async fn configure_server(
             snapshot_exec: None,
             checkpoint_interval: Some(Duration::from_secs(3)),
             snapshot_at_shutdown: false,
-            #[cfg(feature = "encryption-at-rest")]
+
             passphrase: None,
         },
         admin_api_config: None,

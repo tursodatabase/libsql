@@ -82,7 +82,6 @@ fn embedded_replica() {
             "",
             TurmoilConnector,
             false,
-            #[cfg(feature = "encryption-at-rest")]
             None,
         )
         .await?;
@@ -154,7 +153,6 @@ fn execute_batch() {
             "",
             TurmoilConnector,
             false,
-            #[cfg(feature = "encryption-at-rest")]
             None,
         )
         .await?;
@@ -263,7 +261,6 @@ fn replica_primary_reset() {
             "",
             TurmoilConnector,
             false,
-            #[cfg(feature = "encryption-at-rest")]
             None,
         )
         .await
@@ -321,7 +318,6 @@ fn replica_primary_reset() {
             "",
             TurmoilConnector,
             false,
-            #[cfg(feature = "encryption-at-rest")]
             None,
         )
         .await
@@ -425,7 +421,6 @@ fn replica_no_resync_on_restart() {
                 "",
                 TurmoilConnector,
                 false,
-                #[cfg(feature = "encryption-at-rest")]
                 None,
             )
             .await
@@ -442,7 +437,6 @@ fn replica_no_resync_on_restart() {
                 "",
                 TurmoilConnector,
                 false,
-                #[cfg(feature = "encryption-at-rest")]
                 None,
             )
             .await
@@ -520,7 +514,6 @@ fn replicate_with_snapshots() {
             "",
             TurmoilConnector,
             false,
-            #[cfg(feature = "encryption-at-rest")]
             None,
         )
         .await
@@ -572,7 +565,6 @@ fn read_your_writes() {
             "",
             TurmoilConnector,
             true,
-            #[cfg(feature = "encryption-at-rest")]
             None,
         )
         .await?;
@@ -616,7 +608,6 @@ fn proxy_write_returning_row() {
             "",
             TurmoilConnector,
             true,
-            #[cfg(feature = "encryption-at-rest")]
             None,
         )
         .await?;

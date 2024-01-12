@@ -44,7 +44,7 @@ pub struct MakeWriteProxyConn {
     namespace: NamespaceName,
     primary_replication_index: Option<FrameNo>,
     make_read_only_conn: MakeLibSqlConn<Sqlite3WalManager>,
-    #[cfg(feature = "encryption-at-rest")]
+
     passphrase: Option<String>,
 }
 
@@ -62,7 +62,7 @@ impl MakeWriteProxyConn {
         max_total_response_size: u64,
         namespace: NamespaceName,
         primary_replication_index: Option<FrameNo>,
-        #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
+        passphrase: Option<String>,
     ) -> crate::Result<Self> {
         let client = ProxyClient::with_origin(channel, uri);
         let make_read_only_conn = MakeLibSqlConn::new(
@@ -75,7 +75,6 @@ impl MakeWriteProxyConn {
             max_total_response_size,
             DEFAULT_AUTO_CHECKPOINT,
             applied_frame_no_receiver.clone(),
-            #[cfg(feature = "encryption-at-rest")]
             passphrase.clone(),
         )
         .await?;
@@ -89,7 +88,7 @@ impl MakeWriteProxyConn {
             namespace,
             make_read_only_conn,
             primary_replication_index,
-            #[cfg(feature = "encryption-at-rest")]
+
             passphrase,
         })
     }
@@ -107,7 +106,7 @@ impl MakeConnection for MakeWriteProxyConn {
                 max_size: Some(self.max_response_size),
                 max_total_size: Some(self.max_total_response_size),
                 auto_checkpoint: DEFAULT_AUTO_CHECKPOINT,
-                #[cfg(feature = "encryption-at-rest")]
+
                 passphrase: self.passphrase.clone(),
             },
             self.namespace.clone(),

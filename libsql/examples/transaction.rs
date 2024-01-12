@@ -16,7 +16,6 @@ async fn main() {
         db_file.path().to_str().unwrap(),
         "http://localhost:8080",
         auth_token,
-        #[cfg(feature = "encryption-at-rest")]
         None,
     )
     .await

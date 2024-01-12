@@ -926,7 +926,6 @@ mod test {
             tmp.path(),
             ReplicationLoggerWalManager::new(logger),
             None,
-            #[cfg(feature = "encryption-at-rest")]
             None,
         )
         .unwrap();
@@ -969,14 +968,7 @@ mod test {
 
         new_db_file.flush().unwrap();
 
-        let conn2 = open_conn(
-            tmp2.path(),
-            Sqlite3WalManager::new(),
-            None,
-            #[cfg(feature = "encryption-at-rest")]
-            None,
-        )
-        .unwrap();
+        let conn2 = open_conn(tmp2.path(), Sqlite3WalManager::new(), None, None).unwrap();
 
         conn2
             .query_row("SELECT count(*) FROM test", (), |row| {

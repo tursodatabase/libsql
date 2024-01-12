@@ -125,7 +125,7 @@ pub struct DbConfig {
     pub snapshot_exec: Option<String>,
     pub checkpoint_interval: Option<Duration>,
     pub snapshot_at_shutdown: bool,
-    #[cfg(feature = "encryption-at-rest")]
+
     pub passphrase: Option<String>,
 }
 
@@ -143,7 +143,7 @@ impl Default for DbConfig {
             snapshot_exec: None,
             checkpoint_interval: None,
             snapshot_at_shutdown: false,
-            #[cfg(feature = "encryption-at-rest")]
+
             passphrase: None,
         }
     }

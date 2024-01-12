@@ -51,9 +51,9 @@ impl Database {
         db_path: String,
         endpoint: String,
         auth_token: String,
-        #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
+        passphrase: Option<String>,
     ) -> Result<Database> {
-        Self::open_http_sync_internal(connector, db_path, endpoint, auth_token, None, false, #[cfg(feature = "encryption-at-rest")] passphrase).await
+        Self::open_http_sync_internal(connector, db_path, endpoint, auth_token, None, false, passphrase).await
     }
 
     #[cfg(feature = "replication")]
@@ -65,7 +65,7 @@ impl Database {
         auth_token: String,
         version: Option<String>,
         read_your_writes: bool,
-        #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
+        passphrase: Option<String>,
     ) -> Result<Database> {
         use std::path::PathBuf;
 
@@ -86,7 +86,7 @@ impl Database {
             .await
             .map_err(|e| crate::errors::Error::ConnectionFailed(e.to_string()))?;
 
-        let replicator = EmbeddedReplicator::with_remote(client, path, 1000, #[cfg(feature = "encryption-at-rest")] passphrase).await;
+        let replicator = EmbeddedReplicator::with_remote(client, path, 1000, passphrase).await;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,
@@ -98,7 +98,7 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub async fn open_local_sync(db_path: impl Into<String>, flags: OpenFlags, #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>) -> Result<Database> {
+    pub async fn open_local_sync(db_path: impl Into<String>, flags: OpenFlags, passphrase: Option<String>) -> Result<Database> {
         use std::path::PathBuf;
 
         let db_path = db_path.into();
@@ -107,7 +107,7 @@ impl Database {
         let path = PathBuf::from(db_path);
         let client = LocalClient::new(&path).await.unwrap();
 
-        let replicator = EmbeddedReplicator::with_local(client, path, 1000, #[cfg(feature = "encryption-at-rest")] passphrase).await;
+        let replicator = EmbeddedReplicator::with_local(client, path, 1000, passphrase).await;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,

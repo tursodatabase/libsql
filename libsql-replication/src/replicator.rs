@@ -157,7 +157,7 @@ impl<C: ReplicatorClient> Replicator<C> {
         client: C,
         db_path: PathBuf,
         auto_checkpoint: u32,
-        #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
+        passphrase: Option<String>,
     ) -> Result<Self, Error> {
         let injector = {
             let db_path = db_path.clone();
@@ -166,7 +166,6 @@ impl<C: ReplicatorClient> Replicator<C> {
                     db_path,
                     INJECTOR_BUFFER_CAPACITY,
                     auto_checkpoint,
-                    #[cfg(feature = "encryption-at-rest")]
                     passphrase,
                 )
             })
@@ -377,15 +376,9 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(
-            Client,
-            tmp.path().to_path_buf(),
-            10000,
-            #[cfg(feature = "encryption-at-rest")]
-            None,
-        )
-        .await
-        .unwrap();
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+            .await
+            .unwrap();
 
         assert!(matches!(
             replicator.try_replicate_step().await.unwrap_err(),
@@ -426,15 +419,9 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(
-            Client,
-            tmp.path().to_path_buf(),
-            10000,
-            #[cfg(feature = "encryption-at-rest")]
-            None,
-        )
-        .await
-        .unwrap();
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+            .await
+            .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
         replicator.state = ReplicatorState::NeedFrames;
         replicator.try_replicate_step().await.unwrap();
@@ -476,15 +463,9 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(
-            Client,
-            tmp.path().to_path_buf(),
-            10000,
-            #[cfg(feature = "encryption-at-rest")]
-            None,
-        )
-        .await
-        .unwrap();
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+            .await
+            .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
         replicator.state = ReplicatorState::NeedFrames;
         replicator.try_replicate_step().await.unwrap();
@@ -526,15 +507,9 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(
-            Client,
-            tmp.path().to_path_buf(),
-            10000,
-            #[cfg(feature = "encryption-at-rest")]
-            None,
-        )
-        .await
-        .unwrap();
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+            .await
+            .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
         replicator.state = ReplicatorState::NeedFrames;
         replicator.try_replicate_step().await.unwrap();
@@ -574,15 +549,9 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(
-            Client,
-            tmp.path().to_path_buf(),
-            10000,
-            #[cfg(feature = "encryption-at-rest")]
-            None,
-        )
-        .await
-        .unwrap();
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+            .await
+            .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
         replicator.state = ReplicatorState::NeedFrames;
         replicator.try_replicate_step().await.unwrap();
@@ -622,15 +591,9 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(
-            Client,
-            tmp.path().to_path_buf(),
-            10000,
-            #[cfg(feature = "encryption-at-rest")]
-            None,
-        )
-        .await
-        .unwrap();
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+            .await
+            .unwrap();
         replicator.state = ReplicatorState::NeedSnapshot;
         replicator.try_replicate_step().await.unwrap();
         assert_eq!(replicator.state, ReplicatorState::NeedHandshake);
@@ -671,15 +634,9 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(
-            Client,
-            tmp.path().to_path_buf(),
-            10000,
-            #[cfg(feature = "encryption-at-rest")]
-            None,
-        )
-        .await
-        .unwrap();
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+            .await
+            .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
         replicator.state = ReplicatorState::NeedSnapshot;
         replicator.try_replicate_step().await.unwrap();
@@ -720,15 +677,9 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(
-            Client,
-            tmp.path().to_path_buf(),
-            10000,
-            #[cfg(feature = "encryption-at-rest")]
-            None,
-        )
-        .await
-        .unwrap();
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+            .await
+            .unwrap();
         replicator.state = ReplicatorState::NeedHandshake;
         assert!(matches!(
             replicator.try_replicate_step().await.unwrap_err(),
@@ -814,15 +765,9 @@ mod test {
             committed_frame_no: None,
         };
 
-        let mut replicator = Replicator::new(
-            client,
-            tmp.path().to_path_buf(),
-            10000,
-            #[cfg(feature = "encryption-at-rest")]
-            None,
-        )
-        .await
-        .unwrap();
+        let mut replicator = Replicator::new(client, tmp.path().to_path_buf(), 10000, None)
+            .await
+            .unwrap();
 
         replicator.try_replicate_step().await.unwrap();
         assert_eq!(replicator.state, ReplicatorState::NeedFrames);

@@ -20,13 +20,11 @@ async fn main() {
         })
         .replace("libsql", "https");
 
-    #[cfg(feature = "encryption-at-rest")]
     let passphrase = Some("s3cr3t".to_string());
     let db = Database::open_with_remote_sync(
         db_file.path().to_str().unwrap(),
         url,
         auth_token,
-        #[cfg(feature = "encryption-at-rest")]
         passphrase,
     )
     .await

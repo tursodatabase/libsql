@@ -98,9 +98,9 @@ pub(crate) struct EmbeddedReplicator {
 }
 
 impl EmbeddedReplicator {
-    pub async fn with_remote(client: RemoteClient, db_path: PathBuf, auto_checkpoint: u32, #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>) -> Self {
+    pub async fn with_remote(client: RemoteClient, db_path: PathBuf, auto_checkpoint: u32, passphrase: Option<String>) -> Self {
         let replicator = Arc::new(Mutex::new(
-            Replicator::new(Either::Left(client), db_path, auto_checkpoint, #[cfg(feature = "encryption-at-rest")] passphrase)
+            Replicator::new(Either::Left(client), db_path, auto_checkpoint, passphrase)
                 .await
                 .unwrap(),
         ));
@@ -108,9 +108,9 @@ impl EmbeddedReplicator {
         Self { replicator }
     }
 
-    pub async fn with_local(client: LocalClient, db_path: PathBuf, auto_checkpoint: u32, #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>) -> Self {
+    pub async fn with_local(client: LocalClient, db_path: PathBuf, auto_checkpoint: u32, passphrase: Option<String>) -> Self {
         let replicator = Arc::new(Mutex::new(
-            Replicator::new(Either::Right(client), db_path, auto_checkpoint, #[cfg(feature = "encryption-at-rest")] passphrase)
+            Replicator::new(Either::Right(client), db_path, auto_checkpoint, passphrase)
                 .await
                 .unwrap(),
         ));

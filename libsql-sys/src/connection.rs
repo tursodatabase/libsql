@@ -59,7 +59,7 @@ impl<W: Wal> Connection<W> {
         flags: OpenFlags,
         wal_manager: T,
         auto_checkpoint: u32,
-        #[cfg(feature = "encryption-at-rest")] passphrase: Option<String>,
+        passphrase: Option<String>,
     ) -> Result<Self, Error>
     where
         T: WalManager<Wal = W>,
@@ -86,7 +86,6 @@ impl<W: Wal> Connection<W> {
                 )
             }?;
 
-            #[cfg(feature = "encryption-at-rest")]
             if let Some(passphrase) = passphrase {
                 conn.pragma_update(None, "key", &passphrase)?;
                 tracing::debug!(
