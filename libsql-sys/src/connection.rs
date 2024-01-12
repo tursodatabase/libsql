@@ -110,9 +110,6 @@ impl<W: Wal> Connection<W> {
                         encryption_key.len() as _,
                     )
                 };
-                tracing::debug!(
-                    "KEY set to {encryption_key:?}: don't tell anyone, SOC2 compliance, shhh"
-                );
             }
 
             conn.pragma_update(None, "journal_mode", "WAL")?;
