@@ -331,7 +331,7 @@ cfg_remote! {
     }
 }
 
-#[cfg(feature = "encryption-at-rest")]
+#[cfg(all(feature = "encryption-at-rest", feature = "replication"))]
 extern "C" {
     fn sqlite3_key(
         db: *mut libsql_sys::ffi::sqlite3,
@@ -434,9 +434,9 @@ impl Database {
         }
     }
 
+    #[cfg(all(feature = "encryption-at-rest", feature = "replication"))]
     pub fn set_encryption_key(&mut self, encryption_key: impl AsRef<[u8]>) {
         match self.db_type {
-            #[cfg(feature = "replication")]
             DbType::Sync {
                 db: _,
                 encryption_key: ref mut p,
