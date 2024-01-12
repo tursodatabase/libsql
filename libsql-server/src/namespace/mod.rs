@@ -839,7 +839,7 @@ pub struct ReplicaNamespaceConfig {
     /// Stats monitor
     pub stats_sender: StatsSender,
 
-    pub passphrase: Option<String>,
+    pub encryption_key: Option<bytes::Bytes>,
 }
 
 impl Namespace<ReplicaDatabase> {
@@ -867,7 +867,7 @@ impl Namespace<ReplicaDatabase> {
             client,
             db_path.join("data"),
             DEFAULT_AUTO_CHECKPOINT,
-            config.passphrase.clone(),
+            config.encryption_key.clone(),
         )
         .await?;
 
@@ -939,7 +939,7 @@ impl Namespace<ReplicaDatabase> {
             config.stats_sender.clone(),
             name.clone(),
             applied_frame_no_receiver.clone(),
-            config.passphrase.clone(),
+            config.encryption_key.clone(),
         )
         .await?;
 
@@ -955,7 +955,7 @@ impl Namespace<ReplicaDatabase> {
             config.max_total_response_size,
             name.clone(),
             primary_current_replicatio_index,
-            config.passphrase.clone(),
+            config.encryption_key.clone(),
         )
         .await?
         .throttled(
@@ -990,7 +990,7 @@ pub struct PrimaryNamespaceConfig {
     pub checkpoint_interval: Option<Duration>,
     pub disable_namespace: bool,
 
-    pub passphrase: Option<String>,
+    pub encryption_key: Option<bytes::Bytes>,
 }
 
 pub type DumpStream =
@@ -1120,7 +1120,7 @@ impl Namespace<PrimaryDatabase> {
             config.stats_sender.clone(),
             name.clone(),
             logger.new_frame_notifier.subscribe(),
-            config.passphrase.clone(),
+            config.encryption_key.clone(),
         )
         .await?;
 
@@ -1135,7 +1135,7 @@ impl Namespace<PrimaryDatabase> {
             config.max_total_response_size,
             auto_checkpoint,
             logger.new_frame_notifier.subscribe(),
-            config.passphrase.clone(),
+            config.encryption_key.clone(),
         )
         .await?
         .throttled(
@@ -1157,7 +1157,7 @@ impl Namespace<PrimaryDatabase> {
                     &db_path,
                     dump,
                     wal_manager.clone(),
-                    config.passphrase.clone(),
+                    config.encryption_key.clone(),
                 )
                 .await?;
             }
@@ -1192,7 +1192,7 @@ async fn make_stats(
     stats_sender: StatsSender,
     name: NamespaceName,
     mut current_frame_no: watch::Receiver<Option<FrameNo>>,
-    passphrase: Option<String>,
+    encryption_key: Option<bytes::Bytes>,
 ) -> anyhow::Result<Arc<Stats>> {
     let stats = Stats::new(name.clone(), db_path, join_set).await?;
 
@@ -1220,7 +1220,7 @@ async fn make_stats(
     join_set.spawn(run_storage_monitor(
         db_path.into(),
         Arc::downgrade(&stats),
-        passphrase,
+        encryption_key,
     ));
 
     Ok(stats)
@@ -1247,7 +1247,7 @@ async fn load_dump<S, C>(
     db_path: &Path,
     dump: S,
     wal_manager: C,
-    passphrase: Option<String>,
+    encryption_key: Option<bytes::Bytes>,
 ) -> crate::Result<(), LoadDumpError>
 where
     S: Stream<Item = std::io::Result<Bytes>> + Unpin,
@@ -1260,9 +1260,9 @@ where
         let db_path = db_path.to_path_buf();
         let wal_manager = wal_manager.clone();
 
-        let passphrase = passphrase.clone();
+        let encryption_key = encryption_key.clone();
         match tokio::task::spawn_blocking(move || {
-            open_conn(&db_path, wal_manager, None, passphrase)
+            open_conn(&db_path, wal_manager, None, encryption_key)
         })
         .await?
         {
@@ -1412,7 +1412,7 @@ fn check_fresh_db(path: &Path) -> crate::Result<bool> {
 async fn run_storage_monitor(
     db_path: PathBuf,
     stats: Weak<Stats>,
-    passphrase: Option<String>,
+    encryption_key: Option<bytes::Bytes>,
 ) -> anyhow::Result<()> {
     // on initialization, the database file doesn't exist yet, so we wait a bit for it to be
     // created
@@ -1426,12 +1426,12 @@ async fn run_storage_monitor(
             return Ok(());
         };
 
-        let passphrase = passphrase.clone();
+        let encryption_key = encryption_key.clone();
         let _ = tokio::task::spawn_blocking(move || {
             // because closing the last connection interferes with opening a new one, we lazily
             // initialize a connection here, and keep it alive for the entirety of the program. If we
             // fail to open it, we wait for `duration` and try again later.
-            match open_conn(&db_path, Sqlite3WalManager::new(), Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), passphrase) {
+            match open_conn(&db_path, Sqlite3WalManager::new(), Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), encryption_key) {
                 Ok(conn) => {
                     if let Ok(storage_bytes_used) =
                         conn.query_row("select sum(pgsize) from dbstat;", [], |row| {

@@ -126,7 +126,7 @@ pub struct DbConfig {
     pub checkpoint_interval: Option<Duration>,
     pub snapshot_at_shutdown: bool,
 
-    pub passphrase: Option<String>,
+    pub encryption_key: Option<bytes::Bytes>,
 }
 
 impl Default for DbConfig {
@@ -143,8 +143,7 @@ impl Default for DbConfig {
             snapshot_exec: None,
             checkpoint_interval: None,
             snapshot_at_shutdown: false,
-
-            passphrase: None,
+            encryption_key: None,
         }
     }
 }

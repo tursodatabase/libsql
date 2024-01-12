@@ -20,12 +20,12 @@ async fn main() {
         })
         .replace("libsql", "https");
 
-    let passphrase = Some("s3cr3t".to_string());
+    let encryption_key = Some(bytes::Bytes::from("s3cr3t"));
     let db = Database::open_with_remote_sync(
         db_file.path().to_str().unwrap(),
         url,
         auth_token,
-        passphrase,
+        encryption_key,
     )
     .await
     .unwrap();

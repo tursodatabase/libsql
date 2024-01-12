@@ -530,7 +530,7 @@ where
             checkpoint_interval: self.db_config.checkpoint_interval,
             disable_namespace: self.disable_namespaces,
 
-            passphrase: self.db_config.passphrase.clone(),
+            encryption_key: self.db_config.encryption_key.clone(),
         };
 
         let factory = PrimaryNamespaceMaker::new(conf);
@@ -641,7 +641,7 @@ impl<C: Connector> Replica<C> {
             max_response_size: self.db_config.max_response_size,
             max_total_response_size: self.db_config.max_total_response_size,
 
-            passphrase: self.db_config.passphrase.clone(),
+            encryption_key: self.db_config.encryption_key.clone(),
         };
 
         let factory = ReplicaNamespaceMaker::new(conf);

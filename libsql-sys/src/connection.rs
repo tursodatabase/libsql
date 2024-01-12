@@ -52,6 +52,15 @@ impl Connection<crate::wal::Sqlite3Wal> {
     }
 }
 
+#[cfg(feature = "encryption-at-rest")]
+extern "C" {
+    fn sqlite3_key(
+        db: *mut libsql_ffi::sqlite3,
+        pKey: *const std::ffi::c_void,
+        nKey: std::ffi::c_int,
+    ) -> std::ffi::c_int;
+}
+
 impl<W: Wal> Connection<W> {
     /// Opens a database with the regular wal methods in the directory pointed to by path
     pub fn open<T>(
@@ -59,7 +68,7 @@ impl<W: Wal> Connection<W> {
         flags: OpenFlags,
         wal_manager: T,
         auto_checkpoint: u32,
-        passphrase: Option<String>,
+        encryption_key: Option<bytes::Bytes>,
     ) -> Result<Self, Error>
     where
         T: WalManager<Wal = W>,
@@ -86,10 +95,23 @@ impl<W: Wal> Connection<W> {
                 )
             }?;
 
-            if let Some(passphrase) = passphrase {
-                conn.pragma_update(None, "key", &passphrase)?;
+            if !cfg!(feature = "encryption-at-rest") {
+                let _ = encryption_key;
+                tracing::warn!(
+                    "Encryption-at-rest is not enabled, the database will not be encrypted on disk"
+                );
+            }
+            #[cfg(feature = "encryption-at-rest")]
+            if let Some(encryption_key) = encryption_key {
+                unsafe {
+                    sqlite3_key(
+                        conn.handle(),
+                        encryption_key.as_ptr() as _,
+                        encryption_key.len() as _,
+                    )
+                };
                 tracing::debug!(
-                    "KEY set to {passphrase}: don't tell anyone, SOC2 compliance, shhh"
+                    "KEY set to {encryption_key:?}: don't tell anyone, SOC2 compliance, shhh"
                 );
             }
 
