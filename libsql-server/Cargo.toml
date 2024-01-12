@@ -57,6 +57,7 @@ rustls-pemfile = "1.0.3"
 semver = "1.0.18"
 serde = { version = "1.0.149", features = ["derive", "rc"] }
 serde_json = { version = "1.0.91", features = ["preserve_order"] }
+md-5 = "0.10"
 sha2 = "0.10"
 sha256 = "1.1.3"
 libsql-sys = { path = "../libsql-sys", features = ["wal"], default-features = false }

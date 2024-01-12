@@ -12,6 +12,7 @@ use libsql_replication::rpc::replication::{
     Frame, Frames, HelloRequest, HelloResponse, LogOffset, NAMESPACE_DOESNT_EXIST,
     NEED_SNAPSHOT_ERROR_MSG, NO_HELLO_ERROR_MSG, SESSION_TOKEN_KEY,
 };
+use md5::{Digest, Md5};
 use tokio_stream::StreamExt;
 use tonic::transport::server::TcpConnectInfo;
 use tonic::Status;
@@ -94,12 +95,14 @@ impl ReplicationLogService {
     fn verify_session_token<R>(
         &self,
         req: &tonic::Request<R>,
-        _version: usize,
+        version: usize,
     ) -> Result<(), Status> {
         let no_hello = || Err(Status::failed_precondition(NO_HELLO_ERROR_MSG));
         match req.metadata().get(SESSION_TOKEN_KEY) {
             Some(token) => {
-                if token.as_bytes() != self.session_token {
+                let session_token_hash = self.encode_session_token(version);
+
+                if token.as_bytes() != session_token_hash.to_string().as_bytes() {
                     return no_hello();
                 }
             }
@@ -150,6 +153,16 @@ impl ReplicationLogService {
         }
 
         Ok((logger, config, version))
+    }
+
+    fn encode_session_token(&self, version: usize) -> Uuid {
+        let mut sha = Md5::new();
+        sha.update(&self.session_token[..]);
+        sha.update(&version.to_le_bytes());
+
+        let num = sha.finalize();
+        let num = u128::from_le_bytes(num.into());
+        Uuid::from_u128(num)
     }
 }
 
@@ -280,11 +293,13 @@ impl ReplicationLog for ReplicationLogService {
             }
         }
 
-        let (logger, config, _) = self.logger_from_namespace(namespace, &req, false).await?;
+        let (logger, config, version) = self.logger_from_namespace(namespace, &req, false).await?;
+
+        let session_hash = self.encode_session_token(version);
 
         let response = HelloResponse {
             log_id: logger.log_id().to_string(),
-            session_token: self.session_token.clone(),
+            session_token: session_hash.to_string().into(),
             generation_id: self.generation_id.to_string(),
             generation_start_index: 0,
             current_replication_index: *logger.new_frame_notifier.borrow(),

@@ -109,7 +109,8 @@ impl ReplicatorClient for RemoteClient {
             .frames;
 
         if let Some(f) = frames.last() {
-            let header: FrameHeader = FrameHeader::read_from_prefix(&f.data).ok_or_else(|| Error::Internal("invalid frame header".into()))?;
+            let header: FrameHeader = FrameHeader::read_from_prefix(&f.data)
+                .ok_or_else(|| Error::Internal("invalid frame header".into()))?;
             self.last_received = Some(header.frame_no.get());
         }
 

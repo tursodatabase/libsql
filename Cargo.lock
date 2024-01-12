@@ -2772,6 +2772,7 @@ dependencies = [
  "libsql-sqlite3-parser",
  "libsql-sys",
  "libsql_replication",
+ "md-5",
  "metrics",
  "metrics-exporter-prometheus",
  "metrics-util",
