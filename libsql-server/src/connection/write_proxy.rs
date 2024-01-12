@@ -44,7 +44,6 @@ pub struct MakeWriteProxyConn {
     namespace: NamespaceName,
     primary_replication_index: Option<FrameNo>,
     make_read_only_conn: MakeLibSqlConn<Sqlite3WalManager>,
-
     encryption_key: Option<bytes::Bytes>,
 }
 
@@ -88,7 +87,6 @@ impl MakeWriteProxyConn {
             namespace,
             make_read_only_conn,
             primary_replication_index,
-
             encryption_key,
         })
     }
@@ -106,7 +104,6 @@ impl MakeConnection for MakeWriteProxyConn {
                 max_size: Some(self.max_response_size),
                 max_total_size: Some(self.max_total_response_size),
                 auto_checkpoint: DEFAULT_AUTO_CHECKPOINT,
-
                 encryption_key: self.encryption_key.clone(),
             },
             self.namespace.clone(),

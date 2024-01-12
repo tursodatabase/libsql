@@ -838,7 +838,6 @@ pub struct ReplicaNamespaceConfig {
     pub extensions: Arc<[PathBuf]>,
     /// Stats monitor
     pub stats_sender: StatsSender,
-
     pub encryption_key: Option<bytes::Bytes>,
 }
 
@@ -989,7 +988,6 @@ pub struct PrimaryNamespaceConfig {
     pub max_total_response_size: u64,
     pub checkpoint_interval: Option<Duration>,
     pub disable_namespace: bool,
-
     pub encryption_key: Option<bytes::Bytes>,
 }
 

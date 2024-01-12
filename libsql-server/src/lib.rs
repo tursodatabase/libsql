@@ -529,7 +529,6 @@ where
             max_total_response_size: self.db_config.max_total_response_size,
             checkpoint_interval: self.db_config.checkpoint_interval,
             disable_namespace: self.disable_namespaces,
-
             encryption_key: self.db_config.encryption_key.clone(),
         };
 
@@ -640,7 +639,6 @@ impl<C: Connector> Replica<C> {
             base_path: self.base_path.clone(),
             max_response_size: self.db_config.max_response_size,
             max_total_response_size: self.db_config.max_total_response_size,
-
             encryption_key: self.db_config.encryption_key.clone(),
         };
 

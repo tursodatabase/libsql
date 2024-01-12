@@ -44,7 +44,6 @@ pub struct MakeLibSqlConn<T: WalManager> {
     /// In wal mode, closing the last database takes time, and causes other databases creation to
     /// return sqlite busy. To mitigate that, we hold on to one connection
     _db: Option<LibSqlConnection<T::Wal>>,
-
     encryption_key: Option<bytes::Bytes>,
 }
 
@@ -78,7 +77,6 @@ where
             _db: None,
             state: Default::default(),
             wal_manager,
-
             encryption_key,
         };
 
@@ -128,7 +126,6 @@ where
                 max_size: Some(self.max_response_size),
                 max_total_size: Some(self.max_total_response_size),
                 auto_checkpoint: self.auto_checkpoint,
-
                 encryption_key: self.encryption_key.clone(),
             },
             self.current_frame_no_receiver.clone(),

@@ -125,7 +125,6 @@ pub struct DbConfig {
     pub snapshot_exec: Option<String>,
     pub checkpoint_interval: Option<Duration>,
     pub snapshot_at_shutdown: bool,
-
     pub encryption_key: Option<bytes::Bytes>,
 }
 

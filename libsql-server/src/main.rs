@@ -341,7 +341,6 @@ fn make_db_config(config: &Cli) -> anyhow::Result<DbConfig> {
         snapshot_exec: config.snapshot_exec.clone(),
         checkpoint_interval: config.checkpoint_interval_s.map(Duration::from_secs),
         snapshot_at_shutdown: config.snapshot_at_shutdown,
-
         encryption_key: config.encryption_key.clone(),
     })
 }
