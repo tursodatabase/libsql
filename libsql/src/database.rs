@@ -380,7 +380,13 @@ impl Database {
                 }
                 #[cfg(feature = "encryption")]
                 if let Some(encryption_key) = encryption_key {
-                    libsql_sys::connection::set_encryption_key(conn.raw, &encryption_key)?;
+                    if libsql_sys::connection::set_encryption_key(conn.raw, &encryption_key)
+                        != crate::ffi::SQLITE_OK
+                    {
+                        return Err(crate::Error::Misuse(
+                            "failed to set encryption key".to_string(),
+                        ));
+                    }
                 }
 
                 let local = LibsqlConnection { conn };

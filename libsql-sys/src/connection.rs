@@ -62,18 +62,8 @@ extern "C" {
 }
 
 #[cfg(feature = "encryption")]
-pub fn set_encryption_key(db: *mut libsql_ffi::sqlite3, key: &[u8]) -> Result<(), Error> {
-    let rc = unsafe { sqlite3_key(db, key.as_ptr() as _, key.len() as _) };
-    if rc != 0 {
-        #[cfg(feature = "rusqlite")]
-        return Err(Error::SqliteFailure(
-            rusqlite::ffi::Error::new(rc),
-            Some("failed to set encryption key".into()),
-        ));
-        #[cfg(not(feature = "rusqlite"))]
-        return Err(Error::Bug("Failed to set encryption key to the database"));
-    }
-    Ok(())
+pub fn set_encryption_key(db: *mut libsql_ffi::sqlite3, key: &[u8]) -> i32 {
+    unsafe { sqlite3_key(db, key.as_ptr() as _, key.len() as _) as i32 }
 }
 
 impl<W: Wal> Connection<W> {
@@ -119,7 +109,14 @@ impl<W: Wal> Connection<W> {
             }
             #[cfg(feature = "encryption")]
             if let Some(encryption_key) = encryption_key {
-                set_encryption_key(unsafe { conn.handle() }, &encryption_key)?;
+                if set_encryption_key(unsafe { conn.handle() }, &encryption_key)
+                    != rusqlite::ffi::SQLITE_OK
+                {
+                    return Err(Error::SqliteFailure(
+                        rusqlite::ffi::Error::new(21),
+                        Some("failed to set encryption key".into()),
+                    ));
+                };
             }
 
             conn.pragma_update(None, "journal_mode", "WAL")?;
@@ -168,7 +165,9 @@ impl<W: Wal> Connection<W> {
             }
             #[cfg(feature = "encryption")]
             if let Some(encryption_key) = encryption_key {
-                set_encryption_key(conn, &encryption_key)?;
+                if set_encryption_key(conn, &encryption_key) != libsql_ffi::SQLITE_OK {
+                    return Err(Error::Bug("failed to set encryption key"));
+                };
             }
 
             if rc == 0 {
