@@ -433,21 +433,6 @@ impl Database {
             _ => unreachable!("no database type set"),
         }
     }
-
-    #[cfg(all(feature = "encryption", feature = "replication"))]
-    pub fn set_encryption_key(&mut self, encryption_key: impl AsRef<[u8]>) {
-        match self.db_type {
-            DbType::Sync {
-                db: _,
-                encryption_key: ref mut p,
-            } => *p = Some(bytes::Bytes::from(encryption_key.as_ref().to_owned())),
-            _ => {
-                tracing::warn!(
-                    "set_encryption_key is only implemented for embedded replicas with sync enabled"
-                );
-            }
-        }
-    }
 }
 
 #[cfg(any(feature = "replication", feature = "remote"))]
