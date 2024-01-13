@@ -331,15 +331,6 @@ cfg_remote! {
     }
 }
 
-#[cfg(all(feature = "encryption", feature = "replication"))]
-extern "C" {
-    fn sqlite3_key(
-        db: *mut libsql_sys::ffi::sqlite3,
-        pKey: *const std::ffi::c_void,
-        nKey: std::ffi::c_int,
-    ) -> std::ffi::c_int;
-}
-
 impl Database {
     /// Connect to the database this can mean a few things depending on how it was constructed:
     ///
@@ -389,18 +380,7 @@ impl Database {
                 }
                 #[cfg(feature = "encryption")]
                 if let Some(encryption_key) = encryption_key {
-                    let rc = unsafe {
-                        sqlite3_key(
-                            conn.raw,
-                            encryption_key.as_ptr() as *const _,
-                            encryption_key.len() as _,
-                        )
-                    };
-                    if rc != libsql_sys::ffi::SQLITE_OK {
-                        return Err(Error::SyncNotSupported(format!(
-                            "Setting encryption encryption_key failed: {rc}"
-                        )));
-                    }
+                    libsql_sys::connection::set_encryption_key(conn.raw, &encryption_key)?;
                 }
 
                 let local = LibsqlConnection { conn };
