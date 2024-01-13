@@ -65,10 +65,13 @@ extern "C" {
 pub fn set_encryption_key(db: *mut libsql_ffi::sqlite3, key: &[u8]) -> Result<(), Error> {
     let rc = unsafe { sqlite3_key(db, key.as_ptr() as _, key.len() as _) };
     if rc != 0 {
+        #[cfg(feature = "rusqlite")]
         return Err(Error::SqliteFailure(
             rusqlite::ffi::Error::new(rc),
             Some("failed to set encryption key".into()),
         ));
+        #[cfg(not(feature = "rusqlite"))]
+        return Err(Error::Bug("Failed to set encryption key to the database"));
     }
     Ok(())
 }
