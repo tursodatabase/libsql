@@ -119,7 +119,7 @@ impl<W: Wal> Connection<W> {
             }
             #[cfg(feature = "encryption")]
             if let Some(encryption_key) = encryption_key {
-                set_encryption_key(conn.handle(), &encryption_key)?;
+                set_encryption_key(unsafe { conn.handle() }, &encryption_key)?;
             }
 
             conn.pragma_update(None, "journal_mode", "WAL")?;
