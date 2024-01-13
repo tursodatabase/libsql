@@ -61,6 +61,18 @@ extern "C" {
     ) -> std::ffi::c_int;
 }
 
+#[cfg(feature = "encryption")]
+pub fn set_encryption_key(db: *mut libsql_ffi::sqlite3, key: &[u8]) -> Result<(), Error> {
+    let rc = unsafe { sqlite3_key(db, key.as_ptr() as _, key.len() as _) };
+    if rc != 0 {
+        return Err(Error::SqliteFailure(
+            rusqlite::ffi::Error::new(rc),
+            Some("failed to set encryption key".into()),
+        ));
+    }
+    Ok(())
+}
+
 impl<W: Wal> Connection<W> {
     /// Opens a database with the regular wal methods in the directory pointed to by path
     pub fn open<T>(
@@ -95,21 +107,16 @@ impl<W: Wal> Connection<W> {
                 )
             }?;
 
-            if !cfg!(feature = "encryption") {
-                let _ = encryption_key;
-                tracing::warn!(
-                    "Encryption is not enabled, the database will not be encrypted on disk"
-                );
+            if !cfg!(feature = "encryption") && encryption_key.is_some() {
+                return Err(Error::SqliteFailure(
+                    rusqlite::ffi::Error::new(21),
+                    Some("encryption feature is not enabled, the database will not be encrypted on disk"
+                        .to_string()),
+                ));
             }
             #[cfg(feature = "encryption")]
             if let Some(encryption_key) = encryption_key {
-                unsafe {
-                    sqlite3_key(
-                        conn.handle(),
-                        encryption_key.as_ptr() as _,
-                        encryption_key.len() as _,
-                    )
-                };
+                set_encryption_key(conn.handle(), &encryption_key)?;
             }
 
             conn.pragma_update(None, "journal_mode", "WAL")?;
@@ -150,6 +157,16 @@ impl<W: Wal> Connection<W> {
                 vfs,
                 make_wal_manager(wal_manager),
             );
+
+            if !cfg!(feature = "encryption") && encryption_key.is_some() {
+                return Err(Error::Bug(
+                    "encryption feature is not enabled, the database will not be encrypted on disk",
+                ));
+            }
+            #[cfg(feature = "encryption")]
+            if let Some(encryption_key) = encryption_key {
+                set_encryption_key(conn, &encryption_key)?;
+            }
 
             if rc == 0 {
                 rc = libsql_ffi::sqlite3_wal_autocheckpoint(conn, auto_checkpoint as _);
