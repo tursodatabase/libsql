@@ -123,6 +123,10 @@ jobs:
     - name: Run tests
       run: cargo nextest run
 
+    - name: Run documentation tests
+      # Nextest doesn't have the `--doc` flag, so we are forced to use `cargo test` here.
+      run: cargo test --doc
+
   # test-rust-wasm:
   #   runs-on: ubuntu-latest
   #   name: Run Rust Wasm Tests
