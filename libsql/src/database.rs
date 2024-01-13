@@ -331,7 +331,7 @@ cfg_remote! {
     }
 }
 
-#[cfg(all(feature = "encryption-at-rest", feature = "replication"))]
+#[cfg(all(feature = "encryption", feature = "replication"))]
 extern "C" {
     fn sqlite3_key(
         db: *mut libsql_sys::ffi::sqlite3,
@@ -383,11 +383,11 @@ impl Database {
 
                 let conn = db.connect()?;
 
-                if !cfg!(feature = "encryption-at-rest") {
+                if !cfg!(feature = "encryption") {
                     let _ = encryption_key;
                     tracing::warn!("Encryption at rest is not enabled, ignoring encryption_key");
                 }
-                #[cfg(feature = "encryption-at-rest")]
+                #[cfg(feature = "encryption")]
                 if let Some(encryption_key) = encryption_key {
                     let rc = unsafe {
                         sqlite3_key(
@@ -434,7 +434,7 @@ impl Database {
         }
     }
 
-    #[cfg(all(feature = "encryption-at-rest", feature = "replication"))]
+    #[cfg(all(feature = "encryption", feature = "replication"))]
     pub fn set_encryption_key(&mut self, encryption_key: impl AsRef<[u8]>) {
         match self.db_type {
             DbType::Sync {

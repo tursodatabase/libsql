@@ -52,7 +52,7 @@ impl Connection<crate::wal::Sqlite3Wal> {
     }
 }
 
-#[cfg(feature = "encryption-at-rest")]
+#[cfg(feature = "encryption")]
 extern "C" {
     fn sqlite3_key(
         db: *mut libsql_ffi::sqlite3,
@@ -95,13 +95,13 @@ impl<W: Wal> Connection<W> {
                 )
             }?;
 
-            if !cfg!(feature = "encryption-at-rest") {
+            if !cfg!(feature = "encryption") {
                 let _ = encryption_key;
                 tracing::warn!(
-                    "Encryption-at-rest is not enabled, the database will not be encrypted on disk"
+                    "Encryption is not enabled, the database will not be encrypted on disk"
                 );
             }
-            #[cfg(feature = "encryption-at-rest")]
+            #[cfg(feature = "encryption")]
             if let Some(encryption_key) = encryption_key {
                 unsafe {
                     sqlite3_key(

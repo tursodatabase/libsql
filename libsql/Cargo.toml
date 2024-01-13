@@ -110,7 +110,7 @@ cloudflare = [
   "wasm",
   "dep:worker"
 ]
-encryption-at-rest = ["core", "libsql-sys/encryption-at-rest"]
+encryption = ["core", "libsql-sys/encryption"]
 
 [[bench]]
 name = "benchmark"
