@@ -374,9 +374,10 @@ impl Database {
 
                 let conn = db.connect()?;
 
-                if !cfg!(feature = "encryption") {
-                    let _ = encryption_key;
-                    tracing::warn!("Encryption at rest is not enabled, ignoring encryption_key");
+                if !cfg!(feature = "encryption") && encryption_key.is_some() {
+                    return Err(crate::Error::Misuse(
+                        "Encryption is not enabled: enable the `encryption` feature in order to enable encryption-at-rest".to_string(),
+                    ));
                 }
                 #[cfg(feature = "encryption")]
                 if let Some(encryption_key) = encryption_key {
