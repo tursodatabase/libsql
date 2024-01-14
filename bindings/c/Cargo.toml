@@ -14,4 +14,3 @@ cbindgen = "0.24.0"
 lazy_static = "1.4.0"
 libsql = { path = "../../libsql" }
 tokio = { version = "1.29.1", features = [ "rt-multi-thread" ] }
-
