@@ -797,14 +797,15 @@ impl<M: MakeNamespace> NamespaceStore<M> {
             let lock = entry.read().await;
             if let Some(ns) = &*lock {
                 let conn = ns.db.connection_maker().create().await?;
-                let batch = vec![crate::query::Query {
-                    stmt: crate::query_analysis::Statement::parse(&sql)
-                        .next()
-                        .unwrap()
-                        .unwrap(),
-                    params: crate::query::Params::empty(),
-                    want_rows: true,
-                }];
+                let batch = crate::query_analysis::Statement::parse(&sql)
+                    .map(|stmt| {
+                        stmt.map(|stmt| crate::query::Query {
+                            stmt: stmt,
+                            params: crate::query::Params::empty(),
+                            want_rows: true,
+                        })
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
                 let auth = Authenticated::Authorized(Authorized {
                     namespace: None,
                     permission: Permission::FullAccess,
