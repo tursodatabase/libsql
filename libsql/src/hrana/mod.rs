@@ -123,9 +123,21 @@ impl<T> Statement<T>
 where
     T: HttpSend,
 {
-    pub(crate) fn new(stream: HranaStream<T>, sql: String, want_rows: bool) -> Self {
-        let inner = Stmt::new(sql, want_rows);
-        Statement { stream, inner }
+    pub(crate) fn new(stream: HranaStream<T>, sql: String, want_rows: bool) -> crate::Result<Self> {
+        // in SQLite when a multiple statements are glued together into one string, only the first one is
+        // executed and then a handle to continue execution is returned. However Hrana API doesn't allow
+        // passing multi-statement strings, so we just pick first one.
+        let mut parse = crate::parser::Statement::parse(&sql);
+        match parse.next() {
+            None => Err(crate::Error::Misuse(
+                "no SQL statement provided".to_string(),
+            )),
+            Some(Err(e)) => Err(e.into()),
+            Some(Ok(stmt)) => {
+                let inner = Stmt::new(stmt.stmt, want_rows);
+                Ok(Statement { stream, inner })
+            }
+        }
     }
 
     pub async fn execute(&mut self, params: &Params) -> crate::Result<usize> {

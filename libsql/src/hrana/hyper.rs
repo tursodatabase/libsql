@@ -135,7 +135,7 @@ impl Conn for HttpConnection<HttpSender> {
 
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
         let stream = self.current_stream().clone();
-        let stmt = crate::hrana::Statement::new(stream, sql.to_string(), true);
+        let stmt = crate::hrana::Statement::new(stream, sql.to_string(), true)?;
         Ok(Statement {
             inner: Box::new(stmt),
         })
@@ -246,7 +246,7 @@ impl Conn for HranaStream<HttpSender> {
     }
 
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
-        let stmt = crate::hrana::Statement::new(self.clone(), sql.to_string(), true);
+        let stmt = crate::hrana::Statement::new(self.clone(), sql.to_string(), true)?;
         Ok(Statement {
             inner: Box::new(stmt),
         })
