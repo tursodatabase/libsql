@@ -88,7 +88,7 @@ replication = [
   "dep:tower",
   "dep:hyper-rustls",
   "dep:futures",
-  "dep:libsql-replication",
+  "dep:libsql_replication",
 ]
 hrana = [
   "parser",
