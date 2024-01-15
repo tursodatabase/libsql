@@ -28,7 +28,7 @@ fn print_help() {
     eprintln!(
         "Tasks:
 
-build                  builds all languages 
+build                  builds all languages
 build-wasm             builds the wasm components in wasm32-unknown-unknown
 build-bundled          builds sqlite3 and updates the bundeled code for ffi
 test                   runs the entire libsql test suite using nextest
@@ -75,8 +75,13 @@ fn build_wasm(_arg: &str) -> Result<()> {
 fn run_tests(arg: &str) -> Result<()> {
     println!("installing nextest");
     run_cargo(&["install", "cargo-nextest"])?;
+
     println!("running nextest run");
     run_cargo(&["nextest", "run", arg])?;
+
+    // Nextest doesn't have the `--doc` flag, so we are forced to use `cargo test`.
+    println!("running cargo test --doc");
+    run_cargo(&["test", "--doc"])?;
 
     Ok(())
 }
