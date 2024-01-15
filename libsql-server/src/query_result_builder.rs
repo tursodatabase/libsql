@@ -145,6 +145,7 @@ pub trait QueryResultBuilder: Send + 'static {
 // accepts multiple calls to rows and steps.
 pub struct ReusableBuilder<InnerBuilder> {
     began_rows: bool,
+    is_step_error: bool,
     inner: InnerBuilder,
 }
 
@@ -152,6 +153,7 @@ impl<InnerBuilder: QueryResultBuilder> ReusableBuilder<InnerBuilder> {
     pub fn new(inner: InnerBuilder) -> Self {
         Self {
             began_rows: false,
+            is_step_error: false,
             inner,
         }
     }
@@ -187,6 +189,7 @@ impl<InnerBuilder: QueryResultBuilder> QueryResultBuilder for ReusableBuilder<In
     }
 
     fn step_error(&mut self, error: crate::error::Error) -> Result<(), QueryResultBuilderError> {
+        self.is_step_error = true;
         self.inner.step_error(error)
     }
 
@@ -236,7 +239,9 @@ impl<InnerBuilder: QueryResultBuilder> QueryResultBuilder for ReusableBuilder<In
 
     fn into_ret(mut self) -> Self::Ret {
         tracing::trace!("Called into_ret on ReusableBuilder: {}", self.began_rows);
-        self.inner.finish_rows().ok();
+        if !self.is_step_error {
+            self.inner.finish_rows().ok();
+        }
         // FIXME: remember and forward the finish parameters from the last call
         self.inner.finish_step(0, None).ok();
         self.inner.finish(None, false).ok();
