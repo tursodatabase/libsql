@@ -35,7 +35,7 @@ pub enum Error {
     NeedSnapshot,
     #[error("Replication meta error: {0}")]
     Meta(#[from] super::meta::Error),
-    #[error("Hanshake required")]
+    #[error("Handshake required")]
     NoHandshake,
     #[error("Requested namespace doesn't exist")]
     NamespaceDoesntExist,

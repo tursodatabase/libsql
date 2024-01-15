@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
@@ -43,14 +41,23 @@ pub struct MetaStoreHandle {
 #[derive(Debug, Clone)]
 enum HandleState {
     Internal(Arc<Mutex<Arc<DatabaseConfig>>>),
-    External(mpsc::Sender<ChangeMsg>, Receiver<Arc<DatabaseConfig>>),
+    External(mpsc::Sender<ChangeMsg>, Receiver<InnerConfig>),
+}
+
+#[derive(Debug, Default, Clone)]
+struct InnerConfig {
+    /// Version of this config _per_ each running process of sqld, this means
+    /// that this version is not stored between restarts and is only used to track
+    /// config changes during the lifetime of the sqld process.
+    version: usize,
+    config: Arc<DatabaseConfig>,
 }
 
 struct MetaStoreInner {
     // TODO(lucio): Use a concurrent hashmap so we don't block connection creation
     // when we are updating the config. The config si already synced via the watch
     // channel.
-    configs: HashMap<NamespaceName, Sender<Arc<DatabaseConfig>>>,
+    configs: HashMap<NamespaceName, Sender<InnerConfig>>,
     conn: Connection,
     wal_manager: WalManager,
 }
@@ -72,11 +79,16 @@ fn process(msg: ChangeMsg, inner: Arc<Mutex<MetaStoreInner>>) -> Result<()> {
     let configs = &mut inner.configs;
 
     if let Some(config_watch) = configs.get_mut(&namespace) {
+        let new_version = config_watch.borrow().version.wrapping_add(1);
+
         config_watch.send_modify(|c| {
-            *c = config;
+            *c = InnerConfig {
+                version: new_version,
+                config,
+            };
         });
     } else {
-        let (tx, _) = watch::channel(config);
+        let (tx, _) = watch::channel(InnerConfig { version: 0, config });
         configs.insert(namespace, tx);
     }
 
@@ -84,7 +96,7 @@ fn process(msg: ChangeMsg, inner: Arc<Mutex<MetaStoreInner>>) -> Result<()> {
 }
 
 #[tracing::instrument(skip(db))]
-fn restore(db: &Connection) -> Result<HashMap<NamespaceName, Sender<Arc<DatabaseConfig>>>> {
+fn restore(db: &Connection) -> Result<HashMap<NamespaceName, Sender<InnerConfig>>> {
     tracing::info!("restoring meta store");
 
     db.execute(
@@ -119,14 +131,17 @@ fn restore(db: &Connection) -> Result<HashMap<NamespaceName, Sender<Arc<Database
                 };
 
                 let config = match metadata::DatabaseConfig::decode(&v[..]) {
-                    Ok(c) => DatabaseConfig::from(&c),
+                    Ok(c) => Arc::new(DatabaseConfig::from(&c)),
                     Err(e) => {
                         tracing::warn!("unable to convert config: {}", e);
                         continue;
                     }
                 };
 
-                let (tx, _) = watch::channel(Arc::new(config));
+                // We don't store the version in the sqlitedb due to the session token
+                // changed each time we start the primary, this will cause the replica to
+                // handshake again and get the latest config.
+                let (tx, _) = watch::channel(InnerConfig { version: 0, config });
 
                 configs.insert(ns, tx);
             }
@@ -237,7 +252,7 @@ impl MetaStore {
         let sender = lock.entry(namespace.clone()).or_insert_with(|| {
             // TODO(lucio): if no entry exists we need to ensure we send the update to
             // the bg channel.
-            let (tx, _) = watch::channel(Arc::new(DatabaseConfig::default()));
+            let (tx, _) = watch::channel(InnerConfig::default());
             tx
         });
 
@@ -262,7 +277,7 @@ impl MetaStore {
         if let Some(sender) = guard.configs.remove(&namespace) {
             tracing::debug!("removed namespace `{}` from meta store", namespace);
             let config = sender.borrow().clone();
-            Ok(Some(config))
+            Ok(Some(config.config))
         } else {
             tracing::trace!("namespace `{}` not found in meta store", namespace);
             Ok(None)
@@ -332,7 +347,14 @@ impl MetaStoreHandle {
     pub fn get(&self) -> Arc<DatabaseConfig> {
         match &self.inner {
             HandleState::Internal(config) => config.lock().clone(),
-            HandleState::External(_, config) => config.borrow().clone(),
+            HandleState::External(_, config) => config.borrow().clone().config,
+        }
+    }
+
+    pub fn version(&self) -> usize {
+        match &self.inner {
+            HandleState::Internal(_) => 0,
+            HandleState::External(_, config) => config.borrow().version,
         }
     }
 
