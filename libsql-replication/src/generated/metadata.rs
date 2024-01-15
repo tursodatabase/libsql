@@ -21,4 +21,6 @@ pub struct DatabaseConfig {
     pub jwt_key: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(uint64, optional, tag = "8")]
     pub txn_timeout_s: ::core::option::Option<u64>,
+    #[prost(bool, tag = "9")]
+    pub allow_attach: bool,
 }
