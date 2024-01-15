@@ -810,6 +810,10 @@ impl<T: Database> Namespace<T> {
         self.db_config_store.get()
     }
 
+    pub fn config_version(&self) -> usize {
+        self.db_config_store.version()
+    }
+
     pub fn jwt_key(&self) -> crate::Result<Option<jsonwebtoken::DecodingKey>> {
         let config = self.db_config_store.get();
         if let Some(jwt_key) = config.jwt_key.as_deref() {
