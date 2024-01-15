@@ -28,7 +28,6 @@ type WalManager = WalWrapper<Option<BottomlessWalWrapper>, Sqlite3WalManager>;
 type Connection = libsql_sys::Connection<WrappedWal<Option<BottomlessWalWrapper>, Sqlite3Wal>>;
 
 pub struct MetaStore {
-    base_path: std::path::PathBuf,
     changes_tx: mpsc::Sender<ChangeMsg>,
     inner: Arc<Mutex<MetaStoreInner>>,
 }
@@ -243,7 +242,6 @@ impl MetaStore {
         });
 
         Ok(Self {
-            base_path: base_path.to_owned(),
             changes_tx,
             inner,
         })
