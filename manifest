@@ -1,5 +1,5 @@
-C Version\s3.45.0
-D 2024-01-15T17:01:13.164
+C wasm\sbuild:\sreformulate\san\sawk\sinvocation\sto\saccount\sfor\sawks\swhich\sdo\snot\ssupport\sthe\s-e\sflag.\sProblem\sreported\son\sthe\sforum\svia\sa\sdocker-hosted\sbuild.
+D 2024-01-16T14:28:59.125
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -575,7 +575,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 99aad6d6a28c43573f80825e986427c1a024a3298aaf0c69c56a0c6b336f12c8
+F ext/wasm/GNUmakefile 8a4d5ca21d7f21c4751ef732f2bb837c915641ee8ad25753929998fa44847e61
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -2157,10 +2157,14 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f47a5f4e0ce078e6cc1183e6cbb3c4013af379b496efae94863a42e5c39928ed
-R ab5a4296dc153e787688d4ab18626d94
-T +sym-release *
-T +sym-version-3.45.0 *
-U drh
-Z fb1ecde834264212c972e5b30790a005
+P 1066602b2b1976fe58b5150777cced894af17c803e068f5918390d6915b46e1d
+Q +5836657929d7d6d3f0d5865c9f6de4e4c00edd53d15a246802b375fa15d0f255
+R db1e652f52a6c391acbbefee0c13a4c1
+T *branch * branch-3.45
+T *sym-branch-3.45 *
+T -sym-release * Cancelled\sby\sbranch.
+T -sym-trunk * Cancelled\sby\sbranch.
+T -sym-version-3.45.0 * Cancelled\sby\sbranch.
+U stephan
+Z 763d16740affbc27389541de43d084d3
 # Remove this line to create a well-formed Fossil manifest.
