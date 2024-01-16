@@ -62,6 +62,7 @@ _sqlite3_extended_result_codes
 _sqlite3_file_control
 _sqlite3_finalize
 _sqlite3_free
+_sqlite3_get_autocommit
 _sqlite3_get_auxdata
 _sqlite3_initialize
 _sqlite3_keyword_count
