@@ -128,3 +128,68 @@ fn delete_namespace() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn execute_on_all() {
+    let mut sim = Builder::new().build();
+    let tmp = tempdir().unwrap();
+    make_primary(&mut sim, tmp.path().to_path_buf());
+
+    sim.client("client", async {
+        let client = Client::new();
+        for i in 0..12 {
+            client
+                .post(
+                    &format!("http://primary:9090/v1/namespaces/foo{i:02}/create"),
+                    json!({}),
+                )
+                .await?;
+        }
+
+        client
+            .post(
+                "http://primary:9090/v1/execute_on_all",
+                json!({
+                    "sql": "begin; create table test (c); insert into test values (42); commit;",
+                }),
+            )
+            .await?;
+
+        let res = client
+            .post(
+                "http://primary:9090/v1/execute_on_all",
+                json!({
+                    "sql": "select libsql_server_database_name() as db, c from test",
+                }),
+            )
+            .await?;
+
+        let mut res = res.json_value().await?;
+
+        let dbs = res[0]["results"]["rows"].as_array_mut().unwrap();
+        dbs.sort_by(|v1, v2| v1[0].as_str().cmp(&v2[0].as_str()));
+
+        for i in 0..12 {
+            assert_eq!(dbs[i][0].as_str().unwrap(), &format!("foo{:02}", i));
+            assert_eq!(dbs[i][1].as_i64().unwrap(), 42);
+        }
+
+        let res = client
+            .post(
+                "http://primary:9090/v1/execute_on_all",
+                json!({
+                    "sql": "select * from i_do_not_exist",
+                }),
+            )
+            .await?;
+
+        assert!(res.json_value().await.unwrap()[0]["error"]
+            .as_str()
+            .unwrap()
+            .contains("i_do_not_exist"));
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}

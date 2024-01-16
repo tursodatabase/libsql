@@ -241,10 +241,7 @@ impl MetaStore {
             }
         });
 
-        Ok(Self {
-            changes_tx,
-            inner,
-        })
+        Ok(Self { changes_tx, inner })
     }
 
     pub fn handle(&self, namespace: NamespaceName) -> MetaStoreHandle {

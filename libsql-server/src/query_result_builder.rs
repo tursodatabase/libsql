@@ -220,6 +220,9 @@ impl<InnerBuilder: QueryResultBuilder> QueryResultBuilder for ReusableBuilder<In
     }
 
     fn finish_row(&mut self) -> Result<(), QueryResultBuilderError> {
+        if self.is_step_error {
+            return Ok(());
+        }
         self.inner.finish_row()
     }
 
@@ -238,12 +241,13 @@ impl<InnerBuilder: QueryResultBuilder> QueryResultBuilder for ReusableBuilder<In
     }
 
     fn into_ret(mut self) -> Self::Ret {
-        tracing::trace!("Called into_ret on ReusableBuilder: {}", self.began_rows);
         if !self.is_step_error {
             self.inner.finish_rows().ok();
         }
+        if self.began_rows {
+            self.inner.finish_step(0, None).ok();
+        }
         // FIXME: remember and forward the finish parameters from the last call
-        self.inner.finish_step(0, None).ok();
         self.inner.finish(None, false).ok();
         self.inner.into_ret()
     }
