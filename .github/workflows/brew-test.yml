@@ -1,0 +1,27 @@
+name: Workflow to test our brew installations
+
+on:
+  workflow_dispatch:
+
+jobs:
+  install:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Brew install tap
+        run: |
+          brew tap libsql/sqld
+          brew install libsql-server
+
+      - name: Verify CLI installation
+        run: sqld --version
