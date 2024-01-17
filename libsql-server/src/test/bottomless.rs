@@ -92,6 +92,7 @@ async fn configure_server(
             snapshot_exec: None,
             checkpoint_interval: Some(Duration::from_secs(3)),
             snapshot_at_shutdown: false,
+            encryption_key: None,
         },
         admin_api_config: None,
         disable_namespaces: true,

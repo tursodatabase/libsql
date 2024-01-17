@@ -52,6 +52,20 @@ impl Connection<crate::wal::Sqlite3Wal> {
     }
 }
 
+#[cfg(feature = "encryption")]
+extern "C" {
+    fn sqlite3_key(
+        db: *mut libsql_ffi::sqlite3,
+        pKey: *const std::ffi::c_void,
+        nKey: std::ffi::c_int,
+    ) -> std::ffi::c_int;
+}
+
+#[cfg(feature = "encryption")]
+pub fn set_encryption_key(db: *mut libsql_ffi::sqlite3, key: &[u8]) -> i32 {
+    unsafe { sqlite3_key(db, key.as_ptr() as _, key.len() as _) as i32 }
+}
+
 impl<W: Wal> Connection<W> {
     /// Opens a database with the regular wal methods in the directory pointed to by path
     pub fn open<T>(
@@ -59,6 +73,7 @@ impl<W: Wal> Connection<W> {
         flags: OpenFlags,
         wal_manager: T,
         auto_checkpoint: u32,
+        encryption_key: Option<bytes::Bytes>,
     ) -> Result<Self, Error>
     where
         T: WalManager<Wal = W>,
@@ -84,10 +99,26 @@ impl<W: Wal> Connection<W> {
                     make_wal_manager(wal_manager),
                 )
             }?;
-            if cfg!(feature = "encryption-at-rest") {
-                conn.pragma_update(None, "key", "s3cr3t")?;
-                tracing::debug!("KEY set to s3cr3t: don't tell anyone, SOC2 compliance, shhh");
+
+            if !cfg!(feature = "encryption") && encryption_key.is_some() {
+                return Err(Error::SqliteFailure(
+                    rusqlite::ffi::Error::new(21),
+                    Some("encryption feature is not enabled, the database will not be encrypted on disk"
+                        .to_string()),
+                ));
             }
+            #[cfg(feature = "encryption")]
+            if let Some(encryption_key) = encryption_key {
+                if set_encryption_key(unsafe { conn.handle() }, &encryption_key)
+                    != rusqlite::ffi::SQLITE_OK
+                {
+                    return Err(Error::SqliteFailure(
+                        rusqlite::ffi::Error::new(21),
+                        Some("failed to set encryption key".into()),
+                    ));
+                };
+            }
+
             conn.pragma_update(None, "journal_mode", "WAL")?;
             unsafe {
                 let rc =
@@ -126,6 +157,18 @@ impl<W: Wal> Connection<W> {
                 vfs,
                 make_wal_manager(wal_manager),
             );
+
+            if !cfg!(feature = "encryption") && encryption_key.is_some() {
+                return Err(Error::Bug(
+                    "encryption feature is not enabled, the database will not be encrypted on disk",
+                ));
+            }
+            #[cfg(feature = "encryption")]
+            if let Some(encryption_key) = encryption_key {
+                if set_encryption_key(conn, &encryption_key) != libsql_ffi::SQLITE_OK {
+                    return Err(Error::Bug("failed to set encryption key"));
+                };
+            }
 
             if rc == 0 {
                 rc = libsql_ffi::sqlite3_wal_autocheckpoint(conn, auto_checkpoint as _);

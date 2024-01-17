@@ -153,11 +153,21 @@ enum ReplicatorState {
 
 impl<C: ReplicatorClient> Replicator<C> {
     /// Creates a repicator for the db file pointed at by `db_path`
-    pub async fn new(client: C, db_path: PathBuf, auto_checkpoint: u32) -> Result<Self, Error> {
+    pub async fn new(
+        client: C,
+        db_path: PathBuf,
+        auto_checkpoint: u32,
+        encryption_key: Option<bytes::Bytes>,
+    ) -> Result<Self, Error> {
         let injector = {
             let db_path = db_path.clone();
             spawn_blocking(move || {
-                Injector::new(db_path, INJECTOR_BUFFER_CAPACITY, auto_checkpoint)
+                Injector::new(
+                    db_path,
+                    INJECTOR_BUFFER_CAPACITY,
+                    auto_checkpoint,
+                    encryption_key,
+                )
             })
             .await??
         };
@@ -366,7 +376,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
 
@@ -409,7 +419,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
@@ -453,7 +463,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
@@ -497,7 +507,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
@@ -539,7 +549,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
@@ -581,7 +591,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
         replicator.state = ReplicatorState::NeedSnapshot;
@@ -624,7 +634,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
@@ -667,7 +677,7 @@ mod test {
             fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
         replicator.state = ReplicatorState::NeedHandshake;
@@ -755,7 +765,7 @@ mod test {
             committed_frame_no: None,
         };
 
-        let mut replicator = Replicator::new(client, tmp.path().to_path_buf(), 10000)
+        let mut replicator = Replicator::new(client, tmp.path().to_path_buf(), 10000, None)
             .await
             .unwrap();
 

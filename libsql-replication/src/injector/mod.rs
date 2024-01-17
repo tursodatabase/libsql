@@ -44,10 +44,10 @@ impl Injector {
         path: impl AsRef<Path>,
         capacity: usize,
         auto_checkpoint: u32,
+        encryption_key: Option<bytes::Bytes>,
     ) -> Result<Self, Error> {
         let buffer = FrameBuffer::default();
         let wal_manager = InjectorWalManager::new(buffer.clone());
-
         let connection = libsql_sys::Connection::open(
             path,
             OpenFlags::SQLITE_OPEN_READ_WRITE
@@ -56,6 +56,7 @@ impl Injector {
                 | OpenFlags::SQLITE_OPEN_NO_MUTEX,
             wal_manager,
             auto_checkpoint,
+            encryption_key,
         )?;
 
         Ok(Self {
@@ -201,7 +202,7 @@ mod test {
     fn test_simple_inject_frames() {
         let temp = tempfile::tempdir().unwrap();
 
-        let mut injector = Injector::new(temp.path().join("data"), 10, 10000).unwrap();
+        let mut injector = Injector::new(temp.path().join("data"), 10, 10000, None).unwrap();
         let log = wal_log();
         for frame in log {
             injector.inject_frame(frame).unwrap();
@@ -221,7 +222,7 @@ mod test {
         let temp = tempfile::tempdir().unwrap();
 
         // inject one frame at a time
-        let mut injector = Injector::new(temp.path().join("data"), 1, 10000).unwrap();
+        let mut injector = Injector::new(temp.path().join("data"), 1, 10000, None).unwrap();
         let log = wal_log();
         for frame in log {
             injector.inject_frame(frame).unwrap();
@@ -241,7 +242,7 @@ mod test {
         let temp = tempfile::tempdir().unwrap();
 
         // inject one frame at a time
-        let mut injector = Injector::new(temp.path().join("data"), 10, 1000).unwrap();
+        let mut injector = Injector::new(temp.path().join("data"), 10, 1000, None).unwrap();
         let mut frames = wal_log();
 
         assert!(injector

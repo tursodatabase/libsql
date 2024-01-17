@@ -32,7 +32,7 @@ async fn open_local_replica() -> Option<Database> {
         }
     };
     Some(
-        Database::open_with_remote_sync(db_path, url, auth_token)
+        Database::open_with_remote_sync(db_path, url, auth_token, None)
             .await
             .unwrap(),
     )

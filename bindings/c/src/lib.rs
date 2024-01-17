@@ -79,6 +79,7 @@ pub unsafe extern "C" fn libsql_open_sync(
         db_path.to_string(),
         primary_url,
         auth_token,
+        None,
     )) {
         Ok(db) => {
             let db = Box::leak(Box::new(libsql_database { db }));
@@ -158,6 +159,7 @@ pub unsafe extern "C" fn libsql_open_remote(
         url.to_string(),
         url,
         auth_token,
+        None,
     )) {
         Ok(db) => {
             let db = Box::leak(Box::new(libsql_database { db }));

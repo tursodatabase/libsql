@@ -373,6 +373,7 @@ mod test {
             wal_manager,
             None,
             u32::MAX,
+            None,
         )
         .unwrap();
 
@@ -421,6 +422,7 @@ mod test {
             wal_manager,
             None,
             u32::MAX,
+            None,
         )
         .unwrap();
 

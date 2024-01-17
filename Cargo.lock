@@ -2845,6 +2845,7 @@ dependencies = [
 name = "libsql-sys"
 version = "0.3.0"
 dependencies = [
+ "bytes",
  "libsql-ffi",
  "libsql-rusqlite",
  "once_cell",

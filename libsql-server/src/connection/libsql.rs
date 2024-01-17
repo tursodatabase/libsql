@@ -44,6 +44,7 @@ pub struct MakeLibSqlConn<T: WalManager> {
     /// In wal mode, closing the last database takes time, and causes other databases creation to
     /// return sqlite busy. To mitigate that, we hold on to one connection
     _db: Option<LibSqlConnection<T::Wal>>,
+    encryption_key: Option<bytes::Bytes>,
 }
 
 impl<T> MakeLibSqlConn<T>
@@ -62,6 +63,7 @@ where
         max_total_response_size: u64,
         auto_checkpoint: u32,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+        encryption_key: Option<bytes::Bytes>,
     ) -> Result<Self> {
         let mut this = Self {
             db_path,
@@ -75,6 +77,7 @@ where
             _db: None,
             state: Default::default(),
             wal_manager,
+            encryption_key,
         };
 
         let db = this.try_create_db().await?;
@@ -123,6 +126,7 @@ where
                 max_size: Some(self.max_response_size),
                 max_total_size: Some(self.max_total_response_size),
                 auto_checkpoint: self.auto_checkpoint,
+                encryption_key: self.encryption_key.clone(),
             },
             self.current_frame_no_receiver.clone(),
             self.state.clone(),
@@ -207,6 +211,7 @@ pub fn open_conn<T>(
     path: &Path,
     wal_manager: T,
     flags: Option<OpenFlags>,
+    encryption_key: Option<bytes::Bytes>,
 ) -> Result<libsql_sys::Connection<InhibitCheckpoint<T::Wal>>, rusqlite::Error>
 where
     T: WalManager,
@@ -223,6 +228,7 @@ where
         flags,
         WalWrapper::new(InhibitCheckpointWalWrapper, wal_manager),
         u32::MAX,
+        encryption_key,
     )
 }
 
@@ -232,6 +238,7 @@ pub fn open_conn_active_checkpoint<T>(
     wal_manager: T,
     flags: Option<OpenFlags>,
     auto_checkpoint: u32,
+    encryption_key: Option<bytes::Bytes>,
 ) -> Result<libsql_sys::Connection<T::Wal>, rusqlite::Error>
 where
     T: WalManager,
@@ -243,7 +250,13 @@ where
             | OpenFlags::SQLITE_OPEN_NO_MUTEX,
     );
 
-    libsql_sys::Connection::open(path.join("data"), flags, wal_manager, auto_checkpoint)
+    libsql_sys::Connection::open(
+        path.join("data"),
+        flags,
+        wal_manager,
+        auto_checkpoint,
+        encryption_key,
+    )
 }
 
 impl<W> LibSqlConnection<W>
@@ -523,8 +536,13 @@ impl<W: Wal> Connection<W> {
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
     ) -> Result<Self> {
-        let conn =
-            open_conn_active_checkpoint(path, wal_manager, None, builder_config.auto_checkpoint)?;
+        let conn = open_conn_active_checkpoint(
+            path,
+            wal_manager,
+            None,
+            builder_config.auto_checkpoint,
+            builder_config.encryption_key.clone(),
+        )?;
 
         // register the lock-stealing busy handler
         unsafe {
@@ -1066,6 +1084,7 @@ mod test {
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
+            None,
         )
         .await
         .unwrap();
@@ -1107,6 +1126,7 @@ mod test {
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
+            None,
         )
         .await
         .unwrap();
@@ -1149,6 +1169,7 @@ mod test {
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
+            None,
         )
         .await
         .unwrap();
@@ -1227,6 +1248,7 @@ mod test {
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
+            None,
         )
         .await
         .unwrap();
