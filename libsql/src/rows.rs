@@ -80,12 +80,12 @@ impl Rows {
     /// one by one. This stream can be further used with [futures::StreamExt]
     /// operators.
     #[cfg(feature = "stream")]
-    pub fn into_stream(mut self) -> impl futures::Stream<Item = Result<Row>> + Unpin {
-        Box::pin(async_stream::try_stream! {
+    pub fn into_stream(mut self) -> impl futures::Stream<Item = Result<Row>> {
+        async_stream::try_stream! {
             if let Some(row) = self.next().await? {
                 yield row
             }
-        })
+        }
     }
 }
 

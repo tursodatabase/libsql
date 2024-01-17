@@ -85,8 +85,7 @@ impl HttpSend for HttpSender {
     }
 
     fn oneshot(self, url: Arc<str>, auth: Arc<str>, body: String) {
-        let rt = tokio::runtime::Handle::current();
-        rt.spawn(self.send(url, auth, body));
+        tokio::spawn(self.send(url, auth, body));
     }
 }
 

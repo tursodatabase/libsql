@@ -3,10 +3,11 @@
 use crate::hrana::proto::{Batch, BatchResult, Col, StmtResult, Value};
 use crate::hrana::{CursorResponseError, HranaError, Result, Row};
 use bytes::Bytes;
-use futures::{ready, Future, Stream, StreamExt};
+use futures::{ready, Stream, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::fmt::Formatter;
+use std::future::poll_fn;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
@@ -151,11 +152,14 @@ where
     }
 
     pub async fn next_line(&mut self) -> Result<Option<String>> {
-        Ok(self
-            .stream
-            .next_line()
-            .await
-            .map_err(|e| HranaError::CursorError(CursorResponseError::Other(e.to_string())))?)
+        let mut pin = Pin::new(self);
+        poll_fn(move |cx| pin.as_mut().poll_next_line(cx)).await
+    }
+
+    fn poll_next_line(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<Option<String>>> {
+        let ret = ready!(Pin::new(&mut self.stream).poll_next_line(cx))
+            .map_err(|e| HranaError::CursorError(CursorResponseError::Other(e.to_string())));
+        Poll::Ready(ret)
     }
 }
 
@@ -165,9 +169,8 @@ where
 {
     type Item = Result<CursorEntry>;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let mut fut = Box::pin(self.next_line());
-        let res = ready!(Pin::new(&mut fut).poll(cx));
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let res = ready!(self.poll_next_line(cx));
         match res {
             Err(e) => Poll::Ready(Some(Err(e))),
             Ok(None) => Poll::Ready(None),
@@ -196,7 +199,7 @@ where
         Ok(OwnedCursorStep {
             cursor: Some(cursor),
             state: CursorStepState {
-                cols: Arc::new(begin.cols),
+                cols: begin.cols.into(),
                 step_no: begin.step,
                 affected_rows: 0,
                 last_inserted_rowid: None,
@@ -213,11 +216,12 @@ where
     }
 
     /// Consume and discard all rows, fast running current cursor step to the end.
-    pub async fn consume(&mut self) -> Result<Option<Cursor<S>>> {
+    pub async fn consume(&mut self) -> Result<()> {
         while let Some(res) = self.next().await {
             res?;
         }
-        Ok(self.cursor.take())
+        self.cursor.take();
+        Ok(())
     }
 
     pub fn cols(&self) -> &[Col] {
@@ -282,7 +286,7 @@ where
         Ok(CursorStep {
             cursor: Some(cursor),
             state: CursorStepState {
-                cols: Arc::new(begin.cols),
+                cols: begin.cols.into(),
                 step_no: begin.step,
                 affected_rows: 0,
                 last_inserted_rowid: None,
@@ -382,7 +386,7 @@ where
 
 #[derive(Debug)]
 struct CursorStepState {
-    cols: Arc<Vec<Col>>,
+    cols: Arc<[Col]>,
     step_no: u32,
     affected_rows: u32,
     last_inserted_rowid: Option<String>,

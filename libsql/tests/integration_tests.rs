@@ -137,7 +137,10 @@ async fn statement_query() {
     stmt.reset();
 
     let rows = stmt.query(&params).await.unwrap();
-    let mut names = rows.into_stream().map_ok(|r| r.get::<String>(1).unwrap());
+    let mut names = rows
+        .into_stream()
+        .boxed()
+        .map_ok(|r| r.get::<String>(1).unwrap());
 
     let name = names.next().await.unwrap().unwrap();
 

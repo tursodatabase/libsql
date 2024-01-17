@@ -296,12 +296,12 @@ where
 
 #[derive(Debug)]
 pub struct Row {
-    cols: Arc<Vec<Col>>,
+    cols: Arc<[Col]>,
     inner: Vec<proto::Value>,
 }
 
 impl Row {
-    pub(super) fn new(cols: Arc<Vec<Col>>, inner: Vec<proto::Value>) -> Self {
+    pub(super) fn new(cols: Arc<[Col]>, inner: Vec<proto::Value>) -> Self {
         Row { cols, inner }
     }
 }
