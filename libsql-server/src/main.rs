@@ -225,7 +225,7 @@ struct Cli {
     #[clap(long)]
     meta_store_bucket_endpoint: Option<String>,
     /// encryption_key for encryption at rest
-    #[clap(long)]
+    #[clap(long, env = "SQLD_ENCRYPTION_KEY")]
     encryption_key: Option<bytes::Bytes>,
 }
 
@@ -280,6 +280,8 @@ impl Cli {
         eprintln!("\t- extensions path: {extensions_str}");
         eprintln!("\t- listening for HTTP requests on: {}", self.http_listen_addr);
         eprintln!("\t- grpc_tls: {}", if self.grpc_tls { "yes" } else { "no" });
+        #[cfg(feature = "encryption")]
+        eprintln!("\t- encryption at rest: {}", if self.encryption_key.is_some() { "enabled" } else { "disabled" });
     }
 }
 
