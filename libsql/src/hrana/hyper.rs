@@ -14,9 +14,10 @@ use futures::{Stream, TryStreamExt};
 use http::header::AUTHORIZATION;
 use http::{HeaderValue, StatusCode};
 use hyper::body::HttpBody;
+use std::io::ErrorKind;
 use std::sync::Arc;
 
-pub type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Send + Unpin>;
+pub type ByteStream = Box<dyn Stream<Item = std::io::Result<Bytes>> + Send + Sync + Unpin>;
 
 #[derive(Clone, Debug)]
 pub struct HttpSender {
@@ -66,7 +67,7 @@ impl HttpSender {
             let stream = resp
                 .into_body()
                 .into_stream()
-                .map_err(|e| HranaError::Http(e.to_string()));
+                .map_err(|e| std::io::Error::new(ErrorKind::Other, e));
             super::HttpBody::Stream(Box::new(stream))
         };
 
@@ -81,6 +82,10 @@ impl HttpSend for HttpSender {
     fn http_send(&self, url: Arc<str>, auth: Arc<str>, body: String) -> Self::Result {
         let fut = self.clone().send(url, auth, body);
         Box::pin(fut)
+    }
+
+    fn oneshot(self, url: Arc<str>, auth: Arc<str>, body: String) {
+        tokio::spawn(self.send(url, auth, body));
     }
 }
 
@@ -107,11 +112,10 @@ impl Conn for HttpConnection<HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
         let mut stmt = Stmt::new(sql, false);
         bind_params(params, &mut stmt);
-        let res = self
-            .execute_inner(stmt)
-            .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
-        Ok(res.affected_row_count)
+        let cursor = self.execute_inner(stmt).await?;
+        let mut step = cursor.next_step_owned().await?;
+        step.consume().await?;
+        Ok(step.affected_rows() as u64)
     }
 
     async fn execute_batch(&self, sql: &str) -> crate::Result<()> {

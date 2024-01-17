@@ -2,7 +2,6 @@ use crate::params::IntoParams;
 use crate::params::Params;
 pub use crate::Column;
 use crate::{Error, Result};
-
 use crate::{Row, Rows};
 
 #[async_trait::async_trait]
@@ -45,13 +44,6 @@ impl Statement {
         self.inner.query(&params.into_params()?).await
     }
 
-    /// Execute a query on the statment and return a mapped iterator.
-    pub async fn query_map<F>(&mut self, params: impl IntoParams, map: F) -> Result<MappedRows<F>> {
-        let rows = self.query(params).await?;
-
-        Ok(MappedRows { rows, map })
-    }
-
     /// Execute a query that returns the first [`Row`].
     ///
     /// # Errors
@@ -60,7 +52,7 @@ impl Statement {
     pub async fn query_row(&mut self, params: impl IntoParams) -> Result<Row> {
         let mut rows = self.query(params).await?;
 
-        let row = rows.next()?.ok_or(Error::QueryReturnedNoRows)?;
+        let row = rows.next().await?.ok_or(Error::QueryReturnedNoRows)?;
 
         Ok(row)
     }
@@ -83,27 +75,5 @@ impl Statement {
     /// Fetch the list of columns for the prepared statement.
     pub fn columns(&self) -> Vec<Column> {
         self.inner.columns()
-    }
-}
-
-/// An iterator that maps over all the rows.
-pub struct MappedRows<F> {
-    rows: Rows,
-    map: F,
-}
-
-impl<F, T> Iterator for MappedRows<F>
-where
-    F: FnMut(Row) -> Result<T>,
-{
-    type Item = Result<T>;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        let map = &mut self.map;
-        self.rows
-            .next()
-            .transpose()
-            .map(|row_result| row_result.and_then(map))
     }
 }

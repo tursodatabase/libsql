@@ -125,8 +125,9 @@ impl Tx for LibsqlTx {
 
 pub(crate) struct LibsqlRows(pub(crate) crate::local::Rows);
 
+#[async_trait::async_trait]
 impl RowsInner for LibsqlRows {
-    fn next(&mut self) -> Result<Option<Row>> {
+    async fn next(&mut self) -> Result<Option<Row>> {
         let row = self.0.next()?.map(|r| Row {
             inner: Box::new(LibsqlRow(r)),
         });

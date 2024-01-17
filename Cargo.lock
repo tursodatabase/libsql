@@ -2662,6 +2662,7 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tokio-test",
+ "tokio-util",
  "tonic",
  "tonic-web",
  "tower",

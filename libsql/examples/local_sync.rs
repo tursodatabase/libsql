@@ -41,7 +41,7 @@ async fn main() {
         }
 
         let mut rows = conn.query("SELECT * FROM sqlite_master", ()).await.unwrap();
-        while let Ok(Some(row)) = rows.next() {
+        while let Ok(Some(row)) = rows.next().await {
             println!(
                 "| {:024} | {:024} | {:024} | {:024} |",
                 row.get_str(0).unwrap(),

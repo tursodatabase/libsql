@@ -573,8 +573,9 @@ impl Stmt for RemoteStatement {
 
 pub(crate) struct RemoteRows(pub(crate) ResultRows, pub(crate) usize);
 
+#[async_trait::async_trait]
 impl RowsInner for RemoteRows {
-    fn next(&mut self) -> Result<Option<Row>> {
+    async fn next(&mut self) -> Result<Option<Row>> {
         // TODO(lucio): Switch to a vecdeque and reduce allocations
         let cursor = self.1;
         self.1 += 1;

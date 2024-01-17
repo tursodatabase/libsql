@@ -187,6 +187,12 @@ impl Batch {
         self.steps.push(BatchStep { condition, stmt });
     }
 
+    pub fn single(stmt: Stmt) -> Self {
+        let mut batch = Batch::new();
+        batch.step(None, stmt);
+        batch
+    }
+
     pub fn from_iter(stmts: impl IntoIterator<Item = Stmt>, protocol_v3: bool) -> Self {
         let mut batch = Batch::new();
         let mut step = -1;

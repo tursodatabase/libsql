@@ -54,8 +54,8 @@ fn execute_individual_statements() {
 
         assert_eq!(rows.column_count(), 1);
         assert_eq!(rows.column_name(0), Some("x"));
-        assert_eq!(rows.next()?.unwrap().get::<String>(0)?, "hello");
-        assert!(rows.next()?.is_none());
+        assert_eq!(rows.next().await?.unwrap().get::<String>(0)?, "hello");
+        assert!(rows.next().await?.is_none());
 
         Ok(())
     });
@@ -85,8 +85,11 @@ fn execute_batch() {
 
         assert_eq!(rows.column_count(), 1);
         assert_eq!(rows.column_name(0), Some("x"));
-        assert_eq!(rows.next()?.unwrap().get::<String>(0)?, "hello; world");
-        assert!(rows.next()?.is_none());
+        assert_eq!(
+            rows.next().await?.unwrap().get::<String>(0)?,
+            "hello; world"
+        );
+        assert!(rows.next().await?.is_none());
 
         Ok(())
     });

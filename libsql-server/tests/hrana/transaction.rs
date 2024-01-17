@@ -26,8 +26,8 @@ fn transaction_commit_and_rollback() {
 
         assert_eq!(rows.column_count(), 1);
         assert_eq!(rows.column_name(0), Some("x"));
-        assert_eq!(rows.next()?.unwrap().get::<String>(0)?, "hello");
-        assert!(rows.next()?.is_none());
+        assert_eq!(rows.next().await?.unwrap().get::<String>(0)?, "hello");
+        assert!(rows.next().await?.is_none());
         tx.rollback().await?;
 
         // confirm that temporary that was not committed
@@ -37,7 +37,7 @@ fn transaction_commit_and_rollback() {
 
         assert_eq!(rows.column_count(), 1);
         assert_eq!(rows.column_name(0), Some("x"));
-        assert!(rows.next()?.is_none());
+        assert!(rows.next().await?.is_none());
 
         Ok(())
     });
@@ -69,7 +69,7 @@ fn multiple_concurrent_transactions() {
             .await?;
         assert_eq!(rows.column_count(), 1);
         assert_eq!(rows.column_name(0), Some("x"));
-        assert!(rows.next()?.is_none());
+        assert!(rows.next().await?.is_none());
 
         // commit first transaction - T2 should still read old data
         tx1.commit().await?;
@@ -79,7 +79,7 @@ fn multiple_concurrent_transactions() {
             .await?;
         assert_eq!(rows.column_count(), 1);
         assert_eq!(rows.column_name(0), Some("x"));
-        assert!(rows.next()?.is_none());
+        assert!(rows.next().await?.is_none());
         tx2.commit().await?;
 
         // finally open new transaction - it now should read actual data
@@ -91,8 +91,8 @@ fn multiple_concurrent_transactions() {
             .await?;
         assert_eq!(rows.column_count(), 1);
         assert_eq!(rows.column_name(0), Some("x"));
-        assert_eq!(rows.next()?.unwrap().get::<String>(0)?, "hello");
-        assert!(rows.next()?.is_none());
+        assert_eq!(rows.next().await?.unwrap().get::<String>(0)?, "hello");
+        assert!(rows.next().await?.is_none());
 
         Ok(())
     });
@@ -118,6 +118,16 @@ fn transaction_timeout() {
 
         // transaction with temporary data
         let tx = conn.transaction().await?;
+        tx.execute("insert into t(x) values('hello');", ()).await?;
+
+        let mut rows = tx
+            .query("select * from t where x = ?", params!["hello"])
+            .await?;
+
+        assert_eq!(rows.column_count(), 1);
+        assert_eq!(rows.column_name(0), Some("x"));
+        assert_eq!(rows.next().await?.unwrap().get::<String>(0)?, "hello");
+        assert!(rows.next().await?.is_none());
 
         // Sleep to trigger stream expiration
         tokio::time::sleep(Duration::from_secs(300)).await;

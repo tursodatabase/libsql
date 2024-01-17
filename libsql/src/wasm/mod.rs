@@ -27,12 +27,16 @@
 //! conn.execute("select 1", ()).await?;
 //! conn.query("select 1", ()).await?;
 //! ```
+mod rows;
+
 use crate::hrana::transaction::HttpTransaction;
 use crate::{
     hrana::{connection::HttpConnection, HttpSend},
     params::IntoParams,
-    Rows, TransactionBehavior,
+    TransactionBehavior,
 };
+
+pub use crate::wasm::rows::Rows;
 
 cfg_cloudflare! {
     mod cloudflare;
@@ -60,6 +64,7 @@ cfg_cloudflare! {
 impl<T> Connection<T>
 where
     T: HttpSend,
+    <T as HttpSend>::Stream: 'static,
 {
     pub async fn execute(&self, sql: &str, params: impl IntoParams) -> crate::Result<u64> {
         tracing::trace!("executing `{}`", sql);
@@ -87,7 +92,10 @@ where
         tracing::trace!("querying `{}`", sql);
         let mut stmt =
             crate::hrana::Statement::from_connection(self.conn.clone(), sql.to_string(), true);
-        stmt.query(&params.into_params()?).await
+        let rows = stmt.query_raw(&params.into_params()?).await?;
+        Ok(Rows {
+            inner: Box::new(rows),
+        })
     }
 
     pub async fn transaction(
@@ -113,12 +121,16 @@ where
 impl<T> Transaction<T>
 where
     T: HttpSend,
+    <T as HttpSend>::Stream: 'static,
 {
     pub async fn query(&self, sql: &str, params: impl IntoParams) -> crate::Result<Rows> {
         tracing::trace!("querying `{}`", sql);
         let stream = self.inner.stream().clone();
         let mut stmt = crate::hrana::Statement::from_stream(stream, sql.to_string(), true);
-        stmt.query(&params.into_params()?).await
+        let rows = stmt.query_raw(&params.into_params()?).await?;
+        Ok(Rows {
+            inner: Box::new(rows),
+        })
     }
 
     pub async fn execute(&self, sql: &str, params: impl IntoParams) -> crate::Result<u64> {

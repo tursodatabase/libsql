@@ -6,10 +6,10 @@ use crate::hrana::pipeline::{
 use crate::hrana::proto::{Batch, BatchResult, DescribeResult, Stmt, StmtResult};
 use crate::hrana::{CursorResponseError, HranaError, HttpSend, Result, StreamResponseError};
 use bytes::{Bytes, BytesMut};
-use futures::lock::Mutex;
 use futures::Stream;
 use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::Arc;
+use tokio::sync::Mutex;
 
 macro_rules! unexpected {
     ($value:ident) => {
@@ -53,6 +53,7 @@ where
         cursor_url: Arc<str>,
         auth_token: Arc<str>,
     ) -> Self {
+        tracing::trace!("opening stream");
         HranaStream {
             inner: Arc::new(Inner {
                 affected_row_count: AtomicU64::new(0),
@@ -350,30 +351,43 @@ where
         self.status = StreamStatus::Closed;
     }
 
-    async fn close(&mut self) -> Result<()> {
-        if self.status == StreamStatus::Closed {
-            return Ok(());
-        }
-        self.send(StreamRequest::Close).await?;
-        self.done();
-        Ok(())
-    }
-
     fn next_sql_id(&mut self) -> SqlId {
         self.sql_id_generator = self.sql_id_generator.wrapping_add(1);
         self.sql_id_generator
     }
 }
 
+#[cfg(feature = "remote")]
+impl<T> Drop for RawStream<T>
+where
+    T: HttpSend,
+{
+    fn drop(&mut self) {
+        if self.status == StreamStatus::Closed {
+            return;
+        }
+        tracing::trace!("closing stream");
+        let req = serde_json::to_string(&ClientMsg {
+            baton: self.baton.clone(),
+            requests: vec![StreamRequest::Close],
+        })
+        .unwrap();
+        self.client
+            .clone()
+            .oneshot(self.pipeline_url.clone(), self.auth_token.clone(), req);
+        self.done();
+    }
+}
+
 async fn stream_to_bytes<S>(mut stream: S) -> Result<Bytes>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     use futures::StreamExt;
 
     let mut buf = BytesMut::new();
     while let Some(chunk) = stream.next().await {
-        buf.extend_from_slice(&chunk?);
+        buf.extend_from_slice(&chunk.map_err(|e| HranaError::Http(e.to_string()))?);
     }
     Ok(buf.freeze())
 }

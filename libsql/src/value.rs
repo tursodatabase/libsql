@@ -13,7 +13,7 @@ pub enum Value {
 }
 
 /// The possible types a column can be in libsql.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum ValueType {
     Integer = 1,
     Real,
