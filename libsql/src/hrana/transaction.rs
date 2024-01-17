@@ -1,5 +1,5 @@
 use crate::hrana::pipeline::{ExecuteStreamReq, StreamRequest};
-use crate::hrana::proto::{Batch, BatchResult, Stmt, StmtResult};
+use crate::hrana::proto::Stmt;
 use crate::hrana::stream::HranaStream;
 use crate::hrana::{HttpSend, Result};
 use crate::TransactionBehavior;
@@ -27,20 +27,10 @@ where
             TransactionBehavior::Exclusive => "BEGIN EXCLUSIVE",
             TransactionBehavior::ReadOnly => "BEGIN READONLY",
         };
-        stream.execute(Stmt::new(begin_stmt, false)).await?;
+        stream
+            .execute_inner(Stmt::new(begin_stmt, false), false)
+            .await?;
         Ok(HttpTransaction { stream })
-    }
-
-    pub async fn execute(&self, stmt: Stmt) -> Result<StmtResult> {
-        self.stream.execute(stmt).await
-    }
-
-    pub async fn execute_batch(
-        &self,
-        stmts: impl IntoIterator<Item = Stmt>,
-    ) -> Result<BatchResult> {
-        let batch = Batch::from_iter(stmts, false);
-        self.stream.batch(batch).await
     }
 
     pub async fn commit(&mut self) -> Result<()> {

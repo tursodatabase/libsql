@@ -5,6 +5,7 @@ use crate::hrana::stream::HranaStream;
 use crate::hrana::transaction::HttpTransaction;
 use crate::hrana::{bind_params, HranaError, HttpSend, Result};
 use crate::params::Params;
+use crate::parser::StmtKind;
 use crate::transaction::Tx;
 use crate::util::ConnectorService;
 use crate::{Rows, Statement};
@@ -14,6 +15,7 @@ use futures::{Stream, TryStreamExt};
 use http::header::AUTHORIZATION;
 use http::{HeaderValue, StatusCode};
 use hyper::body::HttpBody;
+use libsql_sys::hrana::proto::BatchResult;
 use std::io::ErrorKind;
 use std::sync::Arc;
 
@@ -110,27 +112,11 @@ impl HttpConnection<HttpSender> {
 #[async_trait::async_trait]
 impl Conn for HttpConnection<HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
-        let mut stmt = Stmt::new(sql, false);
-        bind_params(params, &mut stmt);
-        self.batch_inner([stmt])
-            .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?
-            .into_result()?;
-        Ok(self.affected_row_count())
+        self.current_stream().execute(sql, params).await
     }
 
     async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
-        let mut statements = Vec::new();
-        let stmts = crate::parser::Statement::parse(sql);
-        for s in stmts {
-            let s = s?;
-            statements.push(Stmt::new(s.stmt, false));
-        }
-        self.batch_inner(statements)
-            .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?
-            .into_result()?;
-        Ok(())
+        self.current_stream().execute_batch(sql).await
     }
 
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
@@ -219,29 +205,59 @@ impl Tx for HttpTransaction<HttpSender> {
     }
 }
 
+fn unwrap_err(batch_res: BatchResult) -> crate::Result<()> {
+    for maybe_err in batch_res.step_errors {
+        if let Some(e) = maybe_err {
+            return Err(crate::Error::Hrana(Box::new(HranaError::Api(e.message))));
+        }
+    }
+    Ok(())
+}
+
 #[async_trait::async_trait]
 impl Conn for HranaStream<HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
-        let mut stmt = Stmt::new(sql, false);
-        bind_params(params, &mut stmt);
-        let result = self
-            .execute(stmt)
-            .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
-        Ok(result.affected_row_count)
+        // SQLite: execute() will only execute a single SQL statement
+        let mut parsed = crate::parser::Statement::parse(sql);
+        if let Some(s) = parsed.next() {
+            let s = s?;
+            let autocommit_or_commit = match s.kind {
+                StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly => false,
+                _ => true,
+            };
+            let mut stmt = Stmt::new(s.stmt, false);
+            bind_params(params, &mut stmt);
+            let result = self
+                .execute_inner(stmt, autocommit_or_commit)
+                .await
+                .map_err(|e| crate::Error::Hrana(e.into()))?;
+            Ok(result.affected_row_count)
+        } else {
+            Err(crate::Error::Misuse(
+                "no SQL statement provided".to_string(),
+            ))
+        }
     }
 
     async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
         let mut stmts = Vec::new();
         let parse = crate::parser::Statement::parse(sql);
+        let mut i = 0i32;
         for s in parse {
             let s = s?;
+            match s.kind {
+                StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly => i = i + 1,
+                StmtKind::TxnEnd => i = i - 1,
+                _ => {}
+            }
             stmts.push(Stmt::new(s.stmt, false));
         }
-        self.batch(Batch::from_iter(stmts, false))
+        let autocommit_or_ends_with_commit = i <= 0;
+        let res = self
+            .batch_inner(Batch::from_iter(stmts), autocommit_or_ends_with_commit)
             .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?
-            .into_result()?;
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        unwrap_err(res)?;
         Ok(())
     }
 

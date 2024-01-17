@@ -8,17 +8,18 @@ cfg_remote! {
 
 mod cursor;
 pub mod pipeline;
-pub mod proto;
 mod stream;
 pub mod transaction;
 
 use crate::hrana::cursor::{Cursor, Error, OwnedCursorStep};
 pub(crate) use crate::hrana::pipeline::StreamResponseError;
-use crate::hrana::proto::{Batch, Col, Stmt};
 use crate::hrana::stream::HranaStream;
+use crate::parser::StmtKind;
 use crate::{params::Params, ValueType};
 use bytes::Bytes;
 use futures::{Stream, StreamExt};
+pub use libsql_sys::hrana::proto;
+use libsql_sys::hrana::proto::{Batch, Col, Stmt};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -116,6 +117,7 @@ where
     T: HttpSend,
 {
     stream: HranaStream<T>,
+    close_stream: bool,
     inner: Stmt,
 }
 
@@ -134,8 +136,16 @@ where
             )),
             Some(Err(e)) => Err(e.into()),
             Some(Ok(stmt)) => {
+                let close_stream = match stmt.kind {
+                    StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly => false,
+                    _ => true,
+                };
                 let inner = Stmt::new(stmt.stmt, want_rows);
-                Ok(Statement { stream, inner })
+                Ok(Statement {
+                    stream,
+                    close_stream,
+                    inner,
+                })
             }
         }
     }
@@ -144,7 +154,7 @@ where
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
-        let result = self.stream.execute(stmt).await?;
+        let result = self.stream.execute_inner(stmt, self.close_stream).await?;
         Ok(result.affected_row_count as usize)
     }
 
@@ -193,7 +203,7 @@ where
 
     pub async fn next(&mut self) -> crate::Result<Option<super::Row>> {
         let row = match self.cursor_step.next().await {
-            Some(Ok(row)) => row,
+            Some(Ok(row)) => row.into(),
             Some(Err(e)) => return Err(crate::Error::Hrana(Box::new(e))),
             None => return Ok(None),
         };
@@ -212,7 +222,7 @@ where
             row.inner
                 .iter()
                 .map(|value| match value {
-                    proto::Value::Null => ValueType::Null,
+                    proto::Value::Null | proto::Value::None => ValueType::Null,
                     proto::Value::Integer { value: _ } => ValueType::Integer,
                     proto::Value::Float { value: _ } => ValueType::Real,
                     proto::Value::Text { value: _ } => ValueType::Text,
@@ -312,6 +322,7 @@ impl RowInner for Row {
                 proto::Value::Float { value: _ } => ValueType::Real,
                 proto::Value::Text { value: _ } => ValueType::Text,
                 proto::Value::Blob { value: _ } => ValueType::Blob,
+                proto::Value::None => return Err(crate::Error::InvalidColumnType),
             })
         } else {
             Err(crate::Error::ColumnNotFound(idx))
@@ -344,17 +355,21 @@ fn into_value(value: crate::Value) -> proto::Value {
         crate::Value::Null => proto::Value::Null,
         crate::Value::Integer(value) => proto::Value::Integer { value },
         crate::Value::Real(value) => proto::Value::Float { value },
-        crate::Value::Text(value) => proto::Value::Text { value },
-        crate::Value::Blob(value) => proto::Value::Blob { value },
+        crate::Value::Text(value) => proto::Value::Text {
+            value: value.into(),
+        },
+        crate::Value::Blob(value) => proto::Value::Blob {
+            value: value.into(),
+        },
     }
 }
 
 fn into_value2(value: proto::Value) -> crate::Value {
     match value {
-        proto::Value::Null => crate::Value::Null,
+        proto::Value::Null | proto::Value::None => crate::Value::Null,
         proto::Value::Integer { value } => crate::Value::Integer(value),
         proto::Value::Float { value } => crate::Value::Real(value),
-        proto::Value::Text { value } => crate::Value::Text(value),
-        proto::Value::Blob { value } => crate::Value::Blob(value),
+        proto::Value::Text { value } => crate::Value::Text(value.to_string()),
+        proto::Value::Blob { value } => crate::Value::Blob(value.into()),
     }
 }

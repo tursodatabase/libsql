@@ -96,8 +96,8 @@ where
         Ok(())
     }
 
-    pub(super) async fn execute(&self, stmt: Stmt) -> Result<StmtResult> {
-        let mut batch_res = self.batch(Batch::single(stmt)).await?;
+    pub(super) async fn execute_inner(&self, stmt: Stmt, close_stream: bool) -> Result<StmtResult> {
+        let mut batch_res = self.batch_inner(Batch::single(stmt), close_stream).await?;
         if let Some(Some(error)) = batch_res.step_errors.pop() {
             return Err(HranaError::StreamError(StreamResponseError { error }));
         }
@@ -110,13 +110,13 @@ where
         }
     }
 
-    pub(super) async fn batch(&self, batch: Batch) -> Result<BatchResult> {
-        let (tx_begin, tx_end) = batch.explicit_transaction()?;
-        // close current stream if we're not in explicit transaction scope
-        let in_transaction_scope = !self.is_autocommit() || tx_begin;
-        let close = !in_transaction_scope || tx_end;
+    pub(super) async fn batch_inner(
+        &self,
+        batch: Batch,
+        close_stream: bool,
+    ) -> Result<BatchResult> {
         let mut client = self.inner.stream.lock().await;
-        let (resp, get_autocommit) = if close {
+        let (resp, get_autocommit) = if close_stream {
             tracing::trace!("send Hrana SQL batch (with closing the stream)");
             let [resp, get_autocommit, _] = client
                 .send_requests([

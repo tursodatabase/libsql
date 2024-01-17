@@ -4,7 +4,7 @@ use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-#[derive(Serialize, prost::Message)]
+#[derive(Clone, Deserialize, Serialize, prost::Message)]
 pub struct Error {
     #[prost(string, tag = "1")]
     pub message: String,
@@ -12,7 +12,7 @@ pub struct Error {
     pub code: String,
 }
 
-#[derive(Deserialize, Serialize, prost::Message)]
+#[derive(Clone, Deserialize, Serialize, prost::Message)]
 pub struct Stmt {
     #[serde(default)]
     #[prost(string, optional, tag = "1")]
@@ -34,7 +34,28 @@ pub struct Stmt {
     pub replication_index: Option<u64>,
 }
 
-#[derive(Deserialize, Serialize, prost::Message)]
+impl Stmt {
+    pub fn new<S: Into<String>>(sql: S, want_rows: bool) -> Self {
+        Stmt {
+            sql: Some(sql.into()),
+            sql_id: None,
+            args: vec![],
+            named_args: vec![],
+            want_rows: Some(want_rows),
+            replication_index: None,
+        }
+    }
+
+    pub fn bind(&mut self, value: Value) {
+        self.args.push(value);
+    }
+
+    pub fn bind_named(&mut self, name: String, value: Value) {
+        self.named_args.push(NamedArg { name, value });
+    }
+}
+
+#[derive(Clone, Deserialize, Serialize, prost::Message)]
 pub struct NamedArg {
     #[prost(string, tag = "1")]
     pub name: String,
@@ -42,7 +63,7 @@ pub struct NamedArg {
     pub value: Value,
 }
 
-#[derive(Serialize, prost::Message)]
+#[derive(Clone, Serialize, Deserialize, prost::Message)]
 pub struct StmtResult {
     #[prost(message, repeated, tag = "1")]
     pub cols: Vec<Col>,
@@ -58,7 +79,7 @@ pub struct StmtResult {
     pub replication_index: Option<u64>,
 }
 
-#[derive(Serialize, prost::Message)]
+#[derive(Clone, Deserialize, Serialize, prost::Message)]
 pub struct Col {
     #[prost(string, optional, tag = "1")]
     pub name: Option<String>,
@@ -66,14 +87,14 @@ pub struct Col {
     pub decltype: Option<String>,
 }
 
-#[derive(Serialize, prost::Message)]
+#[derive(Clone, Deserialize, Serialize, prost::Message)]
 #[serde(transparent)]
 pub struct Row {
     #[prost(message, repeated, tag = "1")]
     pub values: Vec<Value>,
 }
 
-#[derive(Deserialize, Serialize, prost::Message)]
+#[derive(Clone, Deserialize, Serialize, prost::Message)]
 pub struct Batch {
     #[prost(message, repeated, tag = "1")]
     pub steps: Vec<BatchStep>,
@@ -82,7 +103,39 @@ pub struct Batch {
     pub replication_index: Option<u64>,
 }
 
-#[derive(Deserialize, Serialize, prost::Message)]
+impl Batch {
+    pub fn single(stmt: Stmt) -> Self {
+        Batch {
+            steps: vec![BatchStep {
+                condition: None,
+                stmt,
+            }],
+            replication_index: None,
+        }
+    }
+}
+
+impl FromIterator<Stmt> for Batch {
+    fn from_iter<T: IntoIterator<Item = Stmt>>(stmts: T) -> Self {
+        let mut steps = Vec::new();
+        let mut step = 0;
+        for stmt in stmts.into_iter() {
+            let condition = if step > 0 {
+                Some(BatchCond::Ok { step: step - 1 })
+            } else {
+                None
+            };
+            steps.push(BatchStep { condition, stmt });
+            step += 1;
+        }
+        Batch {
+            steps,
+            replication_index: None,
+        }
+    }
+}
+
+#[derive(Clone, Deserialize, Serialize, prost::Message)]
 pub struct BatchStep {
     #[serde(default)]
     #[prost(message, optional, tag = "1")]
@@ -91,7 +144,7 @@ pub struct BatchStep {
     pub stmt: Stmt,
 }
 
-#[derive(Serialize, Debug, Default)]
+#[derive(Clone, Deserialize, Serialize, Debug, Default)]
 pub struct BatchResult {
     pub step_results: Vec<Option<StmtResult>>,
     pub step_errors: Vec<Option<Error>>,
@@ -99,7 +152,7 @@ pub struct BatchResult {
     pub replication_index: Option<u64>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Default)]
+#[derive(Clone, Deserialize, Serialize, Debug, Default)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum BatchCond {
     #[serde(skip_deserializing)]
@@ -119,13 +172,13 @@ pub enum BatchCond {
     IsAutocommit {},
 }
 
-#[derive(Deserialize, Serialize, prost::Message)]
+#[derive(Clone, Deserialize, Serialize, prost::Message)]
 pub struct BatchCondList {
     #[prost(message, repeated, tag = "1")]
     pub conds: Vec<BatchCond>,
 }
 
-#[derive(Serialize, Debug, Default)]
+#[derive(Clone, Deserialize, Serialize, Debug, Default)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum CursorEntry {
     #[serde(skip_deserializing)]
@@ -145,7 +198,7 @@ pub enum CursorEntry {
     },
 }
 
-#[derive(Serialize, prost::Message)]
+#[derive(Clone, Deserialize, Serialize, prost::Message)]
 pub struct StepBeginEntry {
     #[prost(uint32, tag = "1")]
     pub step: u32,
@@ -153,7 +206,7 @@ pub struct StepBeginEntry {
     pub cols: Vec<Col>,
 }
 
-#[derive(Serialize, prost::Message)]
+#[derive(Clone, Deserialize, Serialize, prost::Message)]
 pub struct StepEndEntry {
     #[prost(uint64, tag = "1")]
     pub affected_row_count: u64,
@@ -161,7 +214,7 @@ pub struct StepEndEntry {
     pub last_insert_rowid: Option<i64>,
 }
 
-#[derive(Serialize, prost::Message)]
+#[derive(Clone, Deserialize, Serialize, prost::Message)]
 pub struct StepErrorEntry {
     #[prost(uint32, tag = "1")]
     pub step: u32,
@@ -169,7 +222,7 @@ pub struct StepErrorEntry {
     pub error: Error,
 }
 
-#[derive(Serialize, prost::Message)]
+#[derive(Clone, Deserialize, Serialize, prost::Message)]
 pub struct DescribeResult {
     #[prost(message, repeated, tag = "1")]
     pub params: Vec<DescribeParam>,
@@ -181,13 +234,13 @@ pub struct DescribeResult {
     pub is_readonly: bool,
 }
 
-#[derive(Serialize, prost::Message)]
+#[derive(Clone, Deserialize, Serialize, prost::Message)]
 pub struct DescribeParam {
     #[prost(string, optional, tag = "1")]
     pub name: Option<String>,
 }
 
-#[derive(Serialize, prost::Message)]
+#[derive(Clone, Deserialize, Serialize, prost::Message)]
 pub struct DescribeCol {
     #[prost(string, tag = "1")]
     pub name: String,
@@ -195,7 +248,7 @@ pub struct DescribeCol {
     pub decltype: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Value {
     #[serde(skip_deserializing)]
@@ -238,14 +291,65 @@ mod i64_as_str {
 }
 
 mod option_i64_as_str {
-    use serde::{ser, Serialize as _};
+    use serde::de::{Error, Visitor};
+    use serde::{ser, Deserializer, Serialize as _};
 
     pub fn serialize<S: ser::Serializer>(value: &Option<i64>, ser: S) -> Result<S::Ok, S::Error> {
         value.map(|v| v.to_string()).serialize(ser)
     }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Option<i64>, D::Error> {
+        struct V;
+
+        impl<'de> Visitor<'de> for V {
+            type Value = Option<i64>;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(formatter, "a string representing a signed integer, or null")
+            }
+
+            fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                deserializer.deserialize_any(V)
+            }
+
+            fn visit_none<E>(self) -> Result<Self::Value, E>
+            where
+                E: Error,
+            {
+                Ok(None)
+            }
+
+            fn visit_unit<E>(self) -> Result<Self::Value, E>
+            where
+                E: Error,
+            {
+                Ok(None)
+            }
+
+            fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
+            where
+                E: Error,
+            {
+                Ok(Some(v))
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: Error,
+            {
+                v.parse().map_err(E::custom).map(Some)
+            }
+        }
+
+        d.deserialize_option(V)
+    }
 }
 
 pub mod option_u64_as_str {
+    use serde::de::Error;
     use serde::{de::Visitor, ser, Deserializer, Serialize as _};
 
     pub fn serialize<S: ser::Serializer>(value: &Option<u64>, ser: S) -> Result<S::Ok, S::Error> {
@@ -269,23 +373,30 @@ pub mod option_u64_as_str {
                 deserializer.deserialize_any(V)
             }
 
+            fn visit_unit<E>(self) -> Result<Self::Value, E>
+            where
+                E: Error,
+            {
+                Ok(None)
+            }
+
             fn visit_none<E>(self) -> Result<Self::Value, E>
             where
-                E: serde::de::Error,
+                E: Error,
             {
                 Ok(None)
             }
 
             fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
             where
-                E: serde::de::Error,
+                E: Error,
             {
                 Ok(Some(v))
             }
 
             fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
             where
-                E: serde::de::Error,
+                E: Error,
             {
                 v.parse().map_err(E::custom).map(Some)
             }

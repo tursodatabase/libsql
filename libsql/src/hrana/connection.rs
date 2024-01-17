@@ -1,6 +1,5 @@
-use crate::hrana::proto::{Batch, BatchResult, Stmt};
 use crate::hrana::stream::{parse_hrana_urls, HranaStream};
-use crate::hrana::{HttpSend, Result, Statement};
+use crate::hrana::{HttpSend, Statement};
 use crate::util::coerce_url_scheme;
 use std::ops::Deref;
 use std::sync::Arc;
@@ -75,14 +74,6 @@ where
             client.cursor_url.clone(),
             client.auth.clone(),
         )
-    }
-
-    pub(crate) async fn batch_inner(
-        &self,
-        stmts: impl IntoIterator<Item = Stmt>,
-    ) -> Result<BatchResult> {
-        let batch = Batch::from_iter(stmts, false);
-        self.current_stream().batch(batch).await
     }
 
     pub fn prepare(&self, sql: &str) -> crate::Result<Statement<T>> {

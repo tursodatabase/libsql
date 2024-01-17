@@ -2839,6 +2839,9 @@ dependencies = [
  "libsql-ffi",
  "libsql-rusqlite",
  "once_cell",
+ "prost",
+ "serde",
+ "serde_json",
  "tracing",
  "zerocopy",
 ]
