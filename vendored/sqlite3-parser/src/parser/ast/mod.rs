@@ -1965,6 +1965,7 @@ pub enum AlterTableBody {
     AddColumn(ColumnDefinition), // TODO distinction between ADD and ADD COLUMN
     RenameColumn { old: Name, new: Name },
     DropColumn(Name), // TODO distinction between DROP and DROP COLUMN
+    AlterColumn { old: Name, cd: ColumnDefinition },
 }
 impl ToTokens for AlterTableBody {
     fn to_tokens<S: TokenStream>(&self, s: &mut S) -> Result<(), S::Error> {
@@ -1989,6 +1990,13 @@ impl ToTokens for AlterTableBody {
                 s.append(TK_DROP, None)?;
                 s.append(TK_COLUMNKW, None)?;
                 name.to_tokens(s)
+            }
+            AlterTableBody::AlterColumn { old, cd } => {
+                s.append(TK_ALTER, None)?;
+                s.append(TK_COLUMNKW, None)?;
+                old.to_tokens(s)?;
+                s.append(TK_TO, None)?;
+                cd.to_tokens(s)
             }
         }
     }
