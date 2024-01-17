@@ -1,6 +1,6 @@
 [package]
 name = "libsql-sqlite3-parser"
-version = "0.11.0"
+version = "0.11.1"
 edition = "2021"
 authors = ["gwenn"]
 description = "SQL parser (as understood by SQLite) (libsql fork)"
