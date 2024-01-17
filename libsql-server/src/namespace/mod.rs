@@ -1013,8 +1013,7 @@ impl Namespace<PrimaryDatabase> {
         bottomless_db_id: NamespaceBottomlessDbId,
         meta_store_handle: MetaStoreHandle,
     ) -> crate::Result<Self> {
-        // FIXME: make that truly atomic. explore the idea of using temp directories, and it's implications
-        match Self::try_new_primary(
+        Self::try_new_primary(
             config,
             name.clone(),
             restore_option,
@@ -1022,16 +1021,6 @@ impl Namespace<PrimaryDatabase> {
             meta_store_handle,
         )
         .await
-        {
-            Ok(ns) => Ok(ns),
-            Err(e) => {
-                let path = config.base_path.join("dbs").join(name.as_str());
-                if let Err(e) = tokio::fs::remove_dir_all(path).await {
-                    tracing::error!("failed to clean dirty namespace: {e}");
-                }
-                Err(e)
-            }
-        }
     }
 
     async fn try_new_primary(
@@ -1118,7 +1107,7 @@ impl Namespace<PrimaryDatabase> {
 
         let wal_manager = make_replication_wal(bottomless_replicator, logger.clone());
         let connection_maker: Arc<_> = MakeLibSqlConn::new(
-            db_path.clone(),
+            db_path.to_path_buf(),
             wal_manager.clone(),
             stats.clone(),
             meta_store_handle.clone(),
