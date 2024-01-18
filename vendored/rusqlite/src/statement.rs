@@ -954,7 +954,7 @@ mod test {
         let db = Connection::open_in_memory()?;
         let sql = r#"
         CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag INTEGER);
-        INSERT INTO test(id, name) VALUES (1, "one");
+        INSERT INTO test(id, name) VALUES (1, 'one');
         "#;
         db.execute_batch(sql)?;
 
@@ -970,7 +970,7 @@ mod test {
         let db = Connection::open_in_memory()?;
         let sql = r#"
         CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag INTEGER);
-        INSERT INTO test(id, name) VALUES (1, "one");
+        INSERT INTO test(id, name) VALUES (1, 'one');
         "#;
         db.execute_batch(sql)?;
 
@@ -990,8 +990,8 @@ mod test {
         let db = Connection::open_in_memory()?;
         let sql = r#"
         CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag INTEGER);
-        INSERT INTO test(id, name) VALUES (1, "one");
-        INSERT INTO test(id, name) VALUES (2, "one");
+        INSERT INTO test(id, name) VALUES (1, 'one');
+        INSERT INTO test(id, name) VALUES (2, 'one');
         "#;
         db.execute_batch(sql)?;
 
