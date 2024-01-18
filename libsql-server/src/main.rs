@@ -195,6 +195,9 @@ struct Cli {
     /// Enable snapshot at shutdown
     #[clap(long)]
     snapshot_at_shutdown: bool,
+
+    #[clap(long, default_value = "128")]
+    max_concurrent_connections: usize,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -506,6 +509,7 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
         disable_default_namespace: config.disable_default_namespace,
         disable_namespaces: !config.enable_namespaces,
         shutdown,
+        max_concurrent_connections: config.max_concurrent_connections,
     })
 }
 

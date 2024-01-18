@@ -37,7 +37,7 @@ use once_cell::sync::Lazy;
 use replication::NamespacedSnapshotCallback;
 pub use sqld_libsql_bindings as libsql_bindings;
 use tokio::runtime::Runtime;
-use tokio::sync::{mpsc, Notify};
+use tokio::sync::{mpsc, Notify, Semaphore};
 use tokio::task::JoinSet;
 use tokio::time::Duration;
 use url::Url;
@@ -72,7 +72,6 @@ mod stats;
 mod test;
 mod utils;
 
-const MAX_CONCURRENT_DBS: usize = 128;
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 const DEFAULT_AUTO_CHECKPOINT: u32 = 1000;
 const LIBSQL_PAGE_SIZE: u64 = 4096;
@@ -101,6 +100,7 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub heartbeat_config: Option<HeartbeatConfig>,
     pub disable_namespaces: bool,
     pub shutdown: Arc<Notify>,
+    pub max_concurrent_connections: usize,
 }
 
 impl<C, A, D> Default for Server<C, A, D> {
@@ -118,6 +118,7 @@ impl<C, A, D> Default for Server<C, A, D> {
             heartbeat_config: Default::default(),
             disable_namespaces: true,
             shutdown: Default::default(),
+            max_concurrent_connections: 128,
         }
     }
 }
@@ -393,6 +394,7 @@ where
                     db_config: self.db_config.clone(),
                     base_path: self.path.clone(),
                     auth: auth.clone(),
+                    max_concurrent_connections: self.max_concurrent_connections,
                 };
                 let (namespaces, proxy_service, replication_service) = replica.configure().await?;
                 self.rpc_client_config = None;
@@ -433,6 +435,7 @@ where
                     disable_namespaces: self.disable_namespaces,
                     join_set: &mut join_set,
                     auth: auth.clone(),
+                    max_concurrent_connections: self.max_concurrent_connections,
                 };
                 let (namespaces, proxy_service, replication_service) = primary.configure().await?;
                 self.rpc_server_config = None;
@@ -498,6 +501,7 @@ struct Primary<'a, A> {
     disable_namespaces: bool,
     auth: Arc<Auth>,
     join_set: &'a mut JoinSet<anyhow::Result<()>>,
+    max_concurrent_connections: usize,
 }
 
 impl<A> Primary<'_, A>
@@ -524,6 +528,7 @@ where
             max_total_response_size: self.db_config.max_total_response_size,
             checkpoint_interval: self.db_config.checkpoint_interval,
             disable_namespace: self.disable_namespaces,
+            max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
         };
         let factory = PrimaryNamespaceMaker::new(conf);
         let namespaces = NamespaceStore::new(factory, false, self.db_config.snapshot_at_shutdown);
@@ -592,6 +597,7 @@ struct Replica<C> {
     db_config: DbConfig,
     base_path: Arc<Path>,
     auth: Arc<Auth>,
+    max_concurrent_connections: usize,
 }
 
 impl<C: Connector> Replica<C> {
@@ -612,6 +618,7 @@ impl<C: Connector> Replica<C> {
             base_path: self.base_path,
             max_response_size: self.db_config.max_response_size,
             max_total_response_size: self.db_config.max_total_response_size,
+            max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
         };
         let factory = ReplicaNamespaceMaker::new(conf);
         let namespaces = NamespaceStore::new(factory, true, false);

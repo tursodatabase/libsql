@@ -70,6 +70,7 @@ async fn configure_server(
         rpc_server_config: None,
         rpc_client_config: None,
         shutdown: Default::default(),
+        max_concurrent_connections: 128,
     }
 }
 
