@@ -253,10 +253,10 @@ fn export_dump() {
         foo_conn.execute("create table test (x)", ()).await?;
         foo_conn.execute("insert into test values (42)", ()).await?;
         foo_conn
-            .execute("insert into test values (\"foo\")", ())
+            .execute("insert into test values ('foo')", ())
             .await?;
         foo_conn
-            .execute("insert into test values (\"bar\")", ())
+            .execute("insert into test values ('bar')", ())
             .await?;
 
         let resp = client.get("http://foo.primary:8080/dump").await?;
