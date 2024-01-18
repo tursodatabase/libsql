@@ -100,7 +100,7 @@ fn proxy_write() {
         let mut rows = conn.query("select count(*) from test", ()).await?;
 
         assert!(matches!(
-            rows.next().unwrap().unwrap().get_value(0).unwrap(),
+            rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
             Value::Integer(1)
         ));
 
@@ -128,7 +128,7 @@ fn replica_read_write() {
         let mut rows = conn.query("select count(*) from test", ()).await?;
 
         assert!(matches!(
-            rows.next().unwrap().unwrap().get_value(0).unwrap(),
+            rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
             Value::Integer(1)
         ));
 
@@ -200,7 +200,7 @@ fn sync_many_replica() {
             let conn = db.connect()?;
             let mut rows = conn.query("select count(*) from test", ()).await?;
             assert!(matches!(
-                rows.next().unwrap().unwrap().get_value(0).unwrap(),
+                rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
                 Value::Integer(1)
             ));
         }
@@ -239,7 +239,7 @@ fn create_namespace() {
         conn.execute("create table test (x)", ()).await.unwrap();
         let mut rows = conn.query("select count(*) from test", ()).await.unwrap();
         assert!(matches!(
-            rows.next().unwrap().unwrap().get_value(0).unwrap(),
+            rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
             Value::Integer(0)
         ));
 

@@ -215,7 +215,7 @@ impl MetaStore {
             replicator.map(BottomlessWalWrapper::new),
             Sqlite3WalManager::default(),
         );
-        let conn = open_conn_active_checkpoint(&db_path, wal_manager.clone(), None, 1000)?;
+        let conn = open_conn_active_checkpoint(&db_path, wal_manager.clone(), None, 1000, None)?;
 
         let configs = restore(&conn)?;
 

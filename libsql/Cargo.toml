@@ -13,6 +13,7 @@ thiserror = "1.0.40"
 futures = { version = "0.3.28", optional = true }
 libsql-sys = { version = "0.3", path = "../libsql-sys", optional = true }
 tokio = { version = "1.29.1", features = ["fs", "sync"], optional = true }
+tokio-util = { version = "0.7", features = ["io-util", "codec"], optional = true }
 parking_lot = { version = "0.12.1", optional = true }
 hyper = { version = "0.14", features = ["client", "stream"], optional = true }
 hyper-rustls = { version = "0.24", features = ["webpki-roots"], optional = true }
@@ -56,6 +57,10 @@ core = [
   "dep:bitflags",
   "dep:futures"
 ]
+stream = [
+  "dep:futures",
+  "dep:async-stream"
+]
 parser = [
   "dep:sqlite3-parser",
   "dep:fallible-iterator"
@@ -64,6 +69,7 @@ replication = [
   "core",
   "parser",
   "serde",
+  "stream",
   "dep:tower",
   "dep:hyper",
   "dep:http",
@@ -83,15 +89,17 @@ replication = [
   "dep:hyper-rustls",
   "dep:futures",
   "dep:libsql_replication",
-  "dep:async-stream",
 ]
 hrana = [
   "parser",
   "serde",
+  "stream",
   "dep:base64",
   "dep:serde_json",
   "dep:futures",
-  "dep:bytes"
+  "dep:tokio",
+  "dep:tokio-util",
+  "dep:bytes",
 ]
 serde = ["dep:serde"]
 remote = [
@@ -110,6 +118,7 @@ cloudflare = [
   "wasm",
   "dep:worker"
 ]
+encryption = ["core", "libsql-sys/encryption"]
 
 [[bench]]
 name = "benchmark"

@@ -9,7 +9,7 @@ const DB: &[u8] = include_bytes!("test.db");
 #[tokio::test]
 async fn inject_frames() {
     let tmp = tempfile::tempdir().unwrap();
-    let db = Database::open_with_local_sync(tmp.path().join("data").to_str().unwrap())
+    let db = Database::open_with_local_sync(tmp.path().join("data").to_str().unwrap(), None)
         .await
         .unwrap();
 
@@ -41,6 +41,7 @@ async fn inject_frames() {
     assert_eq!(
         *rows
             .next()
+            .await
             .unwrap()
             .unwrap()
             .get_value(0)
@@ -82,6 +83,7 @@ async fn inject_frames() {
     assert_eq!(
         *rows
             .next()
+            .await
             .unwrap()
             .unwrap()
             .get_value(0)
@@ -95,7 +97,7 @@ async fn inject_frames() {
 #[tokio::test]
 async fn inject_frames_split_txn() {
     let tmp = tempfile::tempdir().unwrap();
-    let db = Database::open_with_local_sync(tmp.path().join("data").to_str().unwrap())
+    let db = Database::open_with_local_sync(tmp.path().join("data").to_str().unwrap(), None)
         .await
         .unwrap();
 
@@ -148,6 +150,7 @@ async fn inject_frames_split_txn() {
     assert_eq!(
         *rows
             .next()
+            .await
             .unwrap()
             .unwrap()
             .get_value(0)

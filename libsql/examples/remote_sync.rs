@@ -31,7 +31,7 @@ async fn main() {
     // The authentication token to use.
     let auth_token = std::env::var("LIBSQL_AUTH_TOKEN").unwrap_or("".to_string());
 
-    let db = match Database::open_with_remote_sync(db_path, sync_url, auth_token).await {
+    let db = match Database::open_with_remote_sync(db_path, sync_url, auth_token, None).await {
         Ok(db) => db,
         Err(error) => {
             eprintln!("Error connecting to remote sync server: {}", error);
@@ -74,7 +74,7 @@ async fn main() {
         .await
         .unwrap();
     println!("Guest book entries:");
-    while let Some(row) = results.next().unwrap() {
+    while let Some(row) = results.next().await.unwrap() {
         let text: String = row.get(0).unwrap();
         println!("  {}", text);
     }

@@ -1,5 +1,6 @@
-use crate::hrana::pipeline::{BatchStreamReq, ExecuteStreamReq, StreamRequest, StreamResponse};
-use crate::hrana::proto::{Batch, BatchResult, Stmt, StmtResult};
+use crate::hrana::cursor::Cursor;
+use crate::hrana::pipeline::{BatchStreamReq, StreamRequest, StreamResponse};
+use crate::hrana::proto::{Batch, BatchResult, Stmt};
 use crate::hrana::stream::HranaStream;
 use crate::hrana::{HranaError, HttpSend, Result, Statement};
 use crate::util::coerce_url_scheme;
@@ -106,19 +107,9 @@ where
         }
     }
 
-    pub(crate) async fn execute_inner(&self, stmt: Stmt) -> Result<StmtResult> {
-        let (resp, is_autocommit) = self
-            .open_stream()
-            .finalize(StreamRequest::Execute(ExecuteStreamReq { stmt }))
-            .await?;
-        self.set_autocommit(is_autocommit);
-        match resp {
-            StreamResponse::Execute(resp) => Ok(resp.result),
-            other => Err(HranaError::UnexpectedResponse(format!(
-                "Unexpected response from server: {:?}",
-                other
-            ))),
-        }
+    pub(crate) async fn execute_inner(&self, stmt: Stmt) -> Result<Cursor<T::Stream>> {
+        let resp = self.open_stream().cursor(Batch::single(stmt)).await?;
+        Ok(resp)
     }
 
     pub fn prepare(&self, sql: &str) -> Statement<T> {

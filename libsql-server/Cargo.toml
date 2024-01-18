@@ -98,9 +98,6 @@ s3s = "0.8.1"
 s3s-fs = "0.8.1"
 
 [build-dependencies]
-prost-build = "0.12.0"
-protobuf-src = "1.1.0"
-tonic-build = "0.10"
 vergen = { version = "8", features = ["build", "git", "gitcl"] }
 
 [features]
@@ -108,4 +105,4 @@ default = []
 debug-tools = ["console-subscriber", "rusqlite/trace", "tokio/tracing"]
 wasm-udfs = ["rusqlite/libsql-wasm-experimental"]
 unix-excl-vfs = ["libsql-sys/unix-excl-vfs"]
-encryption-at-rest = ["libsql-sys/encryption-at-rest"]
+encryption = ["libsql-sys/encryption"]

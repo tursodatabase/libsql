@@ -37,8 +37,9 @@ impl Column<'_> {
     }
 }
 
+#[async_trait::async_trait]
 pub(crate) trait RowsInner {
-    fn next(&mut self) -> Result<Option<Row>>;
+    async fn next(&mut self) -> Result<Option<Row>>;
 
     fn column_count(&self) -> i32;
 
@@ -56,8 +57,8 @@ impl Rows {
     /// Get the next [`Row`] returning an error if it failed and
     /// `None` if there are no more rows.
     #[allow(clippy::should_implement_trait)]
-    pub fn next(&mut self) -> Result<Option<Row>> {
-        self.inner.next()
+    pub async fn next(&mut self) -> Result<Option<Row>> {
+        self.inner.next().await
     }
 
     /// Get the count of columns in this set of rows.
@@ -73,6 +74,18 @@ impl Rows {
     /// Fetch the column type from the provided column index.
     pub fn column_type(&self, idx: i32) -> Result<ValueType> {
         self.inner.column_type(idx)
+    }
+
+    /// Converts current [Rows] into asynchronous stream, fetching rows
+    /// one by one. This stream can be further used with [futures::StreamExt]
+    /// operators.
+    #[cfg(feature = "stream")]
+    pub fn into_stream(mut self) -> impl futures::Stream<Item = Result<Row>> {
+        async_stream::try_stream! {
+            if let Some(row) = self.next().await? {
+                yield row
+            }
+        }
     }
 }
 

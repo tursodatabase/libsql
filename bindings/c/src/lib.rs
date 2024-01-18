@@ -79,6 +79,7 @@ pub unsafe extern "C" fn libsql_open_sync(
         db_path.to_string(),
         primary_url,
         auth_token,
+        None,
     )) {
         Ok(db) => {
             let db = Box::leak(Box::new(libsql_database { db }));
@@ -158,6 +159,7 @@ pub unsafe extern "C" fn libsql_open_remote(
         url.to_string(),
         url,
         auth_token,
+        None,
     )) {
         Ok(db) => {
             let db = Box::leak(Box::new(libsql_database { db }));
@@ -353,8 +355,9 @@ pub unsafe extern "C" fn libsql_next_row(
         *out_row = libsql_row_t::null();
         return 0;
     }
-    let res = res.get_ref_mut();
-    match res.next() {
+    let rows = res.get_ref_mut();
+    let res = RT.block_on(rows.next());
+    match res {
         Ok(Some(row)) => {
             let row = Box::leak(Box::new(libsql_row { result: row }));
             *out_row = libsql_row_t::from(row);

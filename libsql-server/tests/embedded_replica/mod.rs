@@ -82,6 +82,7 @@ fn embedded_replica() {
             "",
             TurmoilConnector,
             false,
+            None,
         )
         .await?;
 
@@ -152,6 +153,7 @@ fn execute_batch() {
             "",
             TurmoilConnector,
             false,
+            None,
         )
         .await?;
 
@@ -259,6 +261,7 @@ fn replica_primary_reset() {
             "",
             TurmoilConnector,
             false,
+            None,
         )
         .await
         .unwrap();
@@ -283,6 +286,7 @@ fn replica_primary_reset() {
             .await
             .unwrap()
             .next()
+            .await
             .unwrap()
             .unwrap()
             .get_value(0)
@@ -296,6 +300,7 @@ fn replica_primary_reset() {
             .await
             .unwrap()
             .next()
+            .await
             .unwrap()
             .unwrap()
             .get_value(0)
@@ -315,6 +320,7 @@ fn replica_primary_reset() {
             "",
             TurmoilConnector,
             false,
+            None,
         )
         .await
         .unwrap();
@@ -339,6 +345,7 @@ fn replica_primary_reset() {
             .await
             .unwrap()
             .next()
+            .await
             .unwrap()
             .unwrap()
             .get_value(0)
@@ -352,6 +359,7 @@ fn replica_primary_reset() {
             .await
             .unwrap()
             .next()
+            .await
             .unwrap()
             .unwrap()
             .get_value(0)
@@ -417,6 +425,7 @@ fn replica_no_resync_on_restart() {
                 "",
                 TurmoilConnector,
                 false,
+                None,
             )
             .await
             .unwrap();
@@ -432,6 +441,7 @@ fn replica_no_resync_on_restart() {
                 "",
                 TurmoilConnector,
                 false,
+                None,
             )
             .await
             .unwrap();
@@ -457,6 +467,7 @@ fn replicate_with_snapshots() {
         .tcp_capacity(200)
         .build();
 
+    const ROW_COUNT: i64 = 200;
     let tmp = tempdir().unwrap();
 
     init_tracing();
@@ -495,7 +506,7 @@ fn replicate_with_snapshots() {
         let conn = db.connect().unwrap();
         conn.execute("create table test (x)", ()).await.unwrap();
         // insert enough to trigger snapshot creation.
-        for _ in 0..200 {
+        for _ in 0..ROW_COUNT {
             conn.execute("INSERT INTO test values (randomblob(6000))", ())
                 .await
                 .unwrap();
@@ -508,6 +519,7 @@ fn replicate_with_snapshots() {
             "",
             TurmoilConnector,
             false,
+            None,
         )
         .await
         .unwrap();
@@ -519,13 +531,14 @@ fn replicate_with_snapshots() {
         let mut res = conn.query("select count(*) from test", ()).await.unwrap();
         assert_eq!(
             *res.next()
+                .await
                 .unwrap()
                 .unwrap()
                 .get_value(0)
                 .unwrap()
                 .as_integer()
                 .unwrap(),
-            200
+            ROW_COUNT
         );
 
         Ok(())
@@ -558,6 +571,7 @@ fn read_your_writes() {
             "",
             TurmoilConnector,
             true,
+            None,
         )
         .await?;
 
@@ -600,6 +614,7 @@ fn proxy_write_returning_row() {
             "",
             TurmoilConnector,
             true,
+            None,
         )
         .await?;
 
@@ -612,7 +627,7 @@ fn proxy_write_returning_row() {
             .await
             .unwrap();
 
-        rows.next().unwrap().unwrap();
+        rows.next().await.unwrap().unwrap();
 
         Ok(())
     });

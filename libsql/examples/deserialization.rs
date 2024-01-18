@@ -39,6 +39,7 @@ async fn main() {
         .await
         .unwrap()
         .next()
+        .await
         .unwrap()
         .unwrap();
 

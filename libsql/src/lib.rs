@@ -28,7 +28,8 @@
 //!
 //! ```rust,no_run
 //! # async fn run() {
-//! use libsql::{Database, replication::Frames};
+//! use libsql::{Database};
+//! use libsql::replication::Frames;
 //!
 //! let mut db = Database::open_with_local_sync("/tmp/test.db").await.unwrap();
 //!

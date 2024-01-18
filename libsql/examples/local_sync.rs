@@ -7,7 +7,9 @@ use libsql::{
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let db = Database::open_with_local_sync("test.db").await.unwrap();
+    let db = Database::open_with_local_sync("test.db", None)
+        .await
+        .unwrap();
     let conn = db.connect().unwrap();
 
     let args = std::env::args().collect::<Vec<String>>();
@@ -39,7 +41,7 @@ async fn main() {
         }
 
         let mut rows = conn.query("SELECT * FROM sqlite_master", ()).await.unwrap();
-        while let Ok(Some(row)) = rows.next() {
+        while let Ok(Some(row)) = rows.next().await {
             println!(
                 "| {:024} | {:024} | {:024} | {:024} |",
                 row.get_str(0).unwrap(),

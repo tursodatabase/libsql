@@ -3,13 +3,16 @@
 use crate::hrana::proto::{Batch, BatchResult, Col, StmtResult, Value};
 use crate::hrana::{CursorResponseError, HranaError, Result, Row};
 use bytes::Bytes;
-use futures::{ready, Future, Stream, StreamExt};
-use serde::de::Error;
+use futures::{ready, Stream, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
+use std::fmt::Formatter;
+use std::future::poll_fn;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
+use tokio::io::{AsyncBufReadExt, Lines};
+use tokio_util::io::StreamReader;
 
 #[derive(Serialize, Debug)]
 pub struct CursorReq {
@@ -53,7 +56,19 @@ pub struct RowEntry {
 #[derive(Deserialize, Debug)]
 pub struct StepErrorEntry {
     pub step: u32,
-    pub error: String,
+    pub error: Error,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Error {
+    pub message: String,
+    pub code: String,
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(error code: {}) `{}`", self.code, self.message)
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -62,35 +77,34 @@ pub struct ErrorEntry {
 }
 
 pub struct Cursor<S> {
-    stream: S,
-    buf: VecDeque<u8>,
+    stream: Lines<StreamReader<S, Bytes>>,
 }
 
 impl<S> Cursor<S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     pub(super) async fn open(stream: S) -> Result<(Self, CursorResp)> {
-        let mut cursor = Cursor {
-            stream,
-            buf: VecDeque::new(),
-        };
-        if let Some(line) = cursor.next_line().await {
-            let response: CursorResp = serde_json::from_str(&line?)?;
-            Ok((cursor, response))
-        } else {
-            Err(HranaError::CursorError(CursorResponseError::CursorClosed))
+        let stream = StreamReader::new(stream).lines();
+        let mut cursor = Cursor { stream };
+        match cursor.next_line().await? {
+            None => Err(HranaError::CursorError(CursorResponseError::CursorClosed)),
+            Some(line) => {
+                let response: CursorResp = serde_json::from_str(&line)?;
+                Ok((cursor, response))
+            }
         }
     }
 
     pub async fn into_batch_result(mut self) -> Result<BatchResult> {
+        use serde::de::Error;
         //FIXME: this is for the compatibility with the current libsql client API,
         //       which expects BatchResult to be returned
         let mut step_results = Vec::new();
         let mut step_errors = Vec::new();
 
         while let Ok(mut step) = self.next_step().await {
-            let cols = (&*step.cols).clone();
+            let cols = (&*step.cols()).to_vec();
             let mut rows = VecDeque::new();
             while let Some(res) = step.next().await {
                 match res {
@@ -133,54 +147,34 @@ where
         CursorStep::new(self).await
     }
 
-    pub async fn next_line(&mut self) -> Option<Result<String>> {
-        //TODO: this could be optimized into dedicated async STM
-        const NEW_LINE: u8 = '\n' as u8;
-        let mut len = self.buf.len();
-        let mut index = self.buf.iter().position(|b| *b == NEW_LINE);
-        while index.is_none() {
-            match self.stream.next().await {
-                Some(Err(e)) => return Some(Err(e.into())),
-                Some(Ok(bytes)) if !bytes.is_empty() => {
-                    index = bytes.iter().position(|b| *b == NEW_LINE).map(|i| i + len);
-                    self.buf.extend(bytes);
-                    len = self.buf.len();
-                }
-                _ => break,
-            };
-        }
+    pub async fn next_step_owned(self) -> Result<OwnedCursorStep<S>> {
+        OwnedCursorStep::new(self).await
+    }
 
-        let line: Vec<_> = if let Some(index) = index {
-            let line = self.buf.drain(..index).collect();
-            self.buf.pop_front(); // remove new line character from the buffer
-            line
-        } else {
-            self.buf.drain(..).collect()
-        };
-        if line.is_empty() {
-            None
-        } else {
-            let result = String::from_utf8(line).map_err(|_| {
-                HranaError::UnexpectedResponse("Response is not a valid UTF-8 string".to_string())
-            });
-            Some(result)
-        }
+    pub async fn next_line(&mut self) -> Result<Option<String>> {
+        let mut pin = Pin::new(self);
+        poll_fn(move |cx| pin.as_mut().poll_next_line(cx)).await
+    }
+
+    fn poll_next_line(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<Option<String>>> {
+        let ret = ready!(Pin::new(&mut self.stream).poll_next_line(cx))
+            .map_err(|e| HranaError::CursorError(CursorResponseError::Other(e.to_string())));
+        Poll::Ready(ret)
     }
 }
 
 impl<S> Stream for Cursor<S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     type Item = Result<CursorEntry>;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let mut fut = Box::pin(self.next_line());
-        let res = ready!(Pin::new(&mut fut).poll(cx));
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let res = ready!(self.poll_next_line(cx));
         match res {
-            None => Poll::Ready(None),
-            Some(Err(e)) => Poll::Ready(Some(Err(e))),
-            Some(Ok(line)) => {
+            Err(e) => Poll::Ready(Some(Err(e))),
+            Ok(None) => Poll::Ready(None),
+            Ok(Some(line)) => {
                 let entry: CursorEntry = match serde_json::from_str(line.as_str()) {
                     Ok(entry) => entry,
                     Err(e) => return Poll::Ready(Some(Err(e.into()))),
@@ -191,76 +185,179 @@ where
     }
 }
 
+pub struct OwnedCursorStep<S> {
+    cursor: Option<Cursor<S>>,
+    state: CursorStepState,
+}
+
+impl<S> OwnedCursorStep<S>
+where
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
+{
+    async fn new(mut cursor: Cursor<S>) -> Result<Self> {
+        let begin = get_next_step(&mut cursor).await?;
+        Ok(OwnedCursorStep {
+            cursor: Some(cursor),
+            state: CursorStepState {
+                cols: begin.cols.into(),
+                step_no: begin.step,
+                affected_rows: 0,
+                last_inserted_rowid: None,
+            },
+        })
+    }
+
+    pub fn cursor(&self) -> Option<&Cursor<S>> {
+        self.cursor.as_ref()
+    }
+
+    pub fn cursor_mut(&mut self) -> Option<&mut Cursor<S>> {
+        self.cursor.as_mut()
+    }
+
+    /// Consume and discard all rows, fast running current cursor step to the end.
+    pub async fn consume(&mut self) -> Result<()> {
+        while let Some(res) = self.next().await {
+            res?;
+        }
+        self.cursor.take();
+        Ok(())
+    }
+
+    pub fn cols(&self) -> &[Col] {
+        &self.state.cols
+    }
+
+    pub fn step_no(&self) -> u32 {
+        self.state.step_no
+    }
+
+    pub fn affected_rows(&self) -> u32 {
+        self.state.affected_rows
+    }
+
+    pub fn last_inserted_rowid(&self) -> Option<&str> {
+        self.state.last_inserted_rowid.as_deref()
+    }
+}
+
+impl<S> Stream for OwnedCursorStep<S>
+where
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
+{
+    type Item = Result<Row>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let cursor = if let Some(cursor) = &mut self.cursor {
+            Pin::new(cursor)
+        } else {
+            return Poll::Ready(None);
+        };
+        match ready!(cursor.poll_next(cx)) {
+            None => {
+                self.cursor = None;
+                Poll::Ready(None)
+            }
+            Some(Err(e)) => Poll::Ready(Some(Err(HranaError::CursorError(
+                CursorResponseError::Other(e.to_string()),
+            )))),
+            Some(Ok(entry)) => {
+                let result = self.state.update(entry);
+                if result.is_none() {
+                    self.cursor.take();
+                }
+                Poll::Ready(result)
+            }
+        }
+    }
+}
+
 pub struct CursorStep<'a, S> {
     cursor: Option<&'a mut Cursor<S>>,
-    cols: Arc<Vec<Col>>,
-    step_no: u32,
-    affected_rows: u32,
-    last_inserted_rowid: Option<String>,
+    state: CursorStepState,
 }
 
 impl<'a, S> CursorStep<'a, S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     async fn new(cursor: &'a mut Cursor<S>) -> Result<CursorStep<'a, S>> {
-        let mut begin = None;
-        while let Some(res) = cursor.next().await {
-            match res? {
-                CursorEntry::StepBegin(entry) => {
-                    begin = Some(entry);
-                    break;
-                }
-                CursorEntry::Row(_) => {
-                    tracing::trace!("skipping over row message for previous cursor step")
-                }
-                CursorEntry::StepEnd(_) => {
-                    tracing::debug!("skipping over StepEnd message for previous cursor step")
-                }
-                CursorEntry::StepError(e) => {
-                    return Err(HranaError::CursorError(CursorResponseError::StepError {
-                        step: e.step,
-                        error: e.error,
-                    }))
-                }
-                CursorEntry::Error(e) => {
-                    return Err(HranaError::CursorError(CursorResponseError::Other(e.error)))
-                }
-            }
-        }
-        if let Some(begin) = begin {
-            Ok(CursorStep {
-                cursor: Some(cursor),
-                cols: Arc::new(begin.cols),
+        let begin = get_next_step(cursor).await?;
+        Ok(CursorStep {
+            cursor: Some(cursor),
+            state: CursorStepState {
+                cols: begin.cols.into(),
                 step_no: begin.step,
                 affected_rows: 0,
                 last_inserted_rowid: None,
-            })
-        } else {
-            Err(HranaError::CursorError(CursorResponseError::CursorClosed))
+            },
+        })
+    }
+
+    /// Consume and discard all rows, fast running current cursor step to the end.
+    pub async fn consume(&mut self) -> Result<()> {
+        while let Some(res) = self.next().await {
+            res?;
         }
+        Ok(())
     }
 
     pub fn cols(&self) -> &[Col] {
-        &self.cols
+        &self.state.cols
     }
 
     pub fn step_no(&self) -> u32 {
-        self.step_no
+        self.state.step_no
     }
 
     pub fn affected_rows(&self) -> u32 {
-        self.affected_rows
+        self.state.affected_rows
     }
 
     pub fn last_inserted_rowid(&self) -> Option<&str> {
-        self.last_inserted_rowid.as_deref()
+        self.state.last_inserted_rowid.as_deref()
+    }
+}
+
+async fn get_next_step<S>(cursor: &mut Cursor<S>) -> Result<StepBeginEntry>
+where
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
+{
+    let mut begin = None;
+    while let Some(res) = cursor.next().await {
+        match res? {
+            CursorEntry::StepBegin(entry) => {
+                begin = Some(entry);
+                break;
+            }
+            CursorEntry::Row(_) => {
+                tracing::trace!("skipping over row message for previous cursor step")
+            }
+            CursorEntry::StepEnd(_) => {
+                tracing::debug!("skipping over StepEnd message for previous cursor step")
+            }
+            CursorEntry::StepError(e) => {
+                return Err(HranaError::CursorError(CursorResponseError::StepError {
+                    step: e.step,
+                    error: e.error,
+                }))
+            }
+            CursorEntry::Error(e) => {
+                return Err(HranaError::CursorError(CursorResponseError::Other(e.error)))
+            }
+        }
+    }
+    if let Some(begin) = begin {
+        tracing::trace!("begin cursor step: {}", begin.step);
+        Ok(begin)
+    } else {
+        Err(HranaError::CursorError(CursorResponseError::CursorClosed))
     }
 }
 
 impl<'a, S> Stream for CursorStep<'a, S>
 where
-    S: Stream<Item = Result<Bytes>> + Unpin,
+    S: Stream<Item = std::io::Result<Bytes>> + Unpin,
 {
     type Item = Result<Row>;
 
@@ -276,33 +373,52 @@ where
                 Poll::Ready(None)
             }
             Some(Err(e)) => Poll::Ready(Some(Err(e))),
-            Some(Ok(entry)) => match entry {
-                CursorEntry::Row(row) => {
-                    let row = Row::new(self.cols.clone(), row.row);
-                    Poll::Ready(Some(Ok(row)))
+            Some(Ok(entry)) => {
+                let result = self.state.update(entry);
+                if result.is_none() {
+                    self.cursor.take();
                 }
-                CursorEntry::StepEnd(end) => {
-                    self.affected_rows = end.affected_row_count;
-                    self.last_inserted_rowid = end.last_inserted_rowid;
-                    self.cursor = None;
-                    Poll::Ready(None)
-                }
-                CursorEntry::StepBegin(begin) => Poll::Ready(Some(Err(HranaError::CursorError(
-                    CursorResponseError::NotClosed {
-                        expected: self.step_no,
-                        actual: begin.step,
-                    },
-                )))),
-                CursorEntry::StepError(e) => Poll::Ready(Some(Err(HranaError::CursorError(
-                    CursorResponseError::StepError {
-                        step: e.step,
-                        error: e.error,
-                    },
-                )))),
-                CursorEntry::Error(e) => Poll::Ready(Some(Err(HranaError::CursorError(
-                    CursorResponseError::Other(e.error),
-                )))),
-            },
+                Poll::Ready(result)
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
+struct CursorStepState {
+    cols: Arc<[Col]>,
+    step_no: u32,
+    affected_rows: u32,
+    last_inserted_rowid: Option<String>,
+}
+
+impl CursorStepState {
+    fn update(&mut self, entry: CursorEntry) -> Option<Result<Row>> {
+        match entry {
+            CursorEntry::Row(row) => {
+                let row = Row::new(self.cols.clone(), row.row);
+                Some(Ok(row))
+            }
+            CursorEntry::StepEnd(end) => {
+                self.affected_rows = end.affected_row_count;
+                self.last_inserted_rowid = end.last_inserted_rowid;
+                None
+            }
+            CursorEntry::StepBegin(begin) => Some(Err(HranaError::CursorError(
+                CursorResponseError::NotClosed {
+                    expected: self.step_no,
+                    actual: begin.step,
+                },
+            ))),
+            CursorEntry::StepError(e) => Some(Err(HranaError::CursorError(
+                CursorResponseError::StepError {
+                    step: e.step,
+                    error: e.error,
+                },
+            ))),
+            CursorEntry::Error(e) => Some(Err(HranaError::CursorError(
+                CursorResponseError::Other(e.error),
+            ))),
         }
     }
 }
@@ -310,14 +426,13 @@ where
 #[cfg(test)]
 mod test {
     use crate::hrana::cursor::Cursor;
-    use crate::hrana::Result;
     use crate::rows::RowInner;
     use crate::Value;
     use bytes::Bytes;
     use futures::{Stream, StreamExt};
     use serde_json::json;
 
-    type ByteStream = Box<dyn Stream<Item = Result<Bytes>> + Unpin>;
+    type ByteStream = Box<dyn Stream<Item = std::io::Result<Bytes>> + Unpin>;
 
     fn byte_stream(entries: impl IntoIterator<Item = serde_json::Value>) -> ByteStream {
         let mut payload = Vec::new();
@@ -350,7 +465,7 @@ mod test {
         assert_eq!(step.step_no(), 0);
         {
             let cols: Vec<_> = step
-                .cols
+                .cols()
                 .iter()
                 .map(|col| col.name.as_deref().unwrap_or(""))
                 .collect();

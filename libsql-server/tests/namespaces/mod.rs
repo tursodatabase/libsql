@@ -72,7 +72,7 @@ fn fork_namespace() {
         // what's in foo is in bar as well
         let mut rows = bar_conn.query("select count(*) from test", ()).await?;
         assert!(matches!(
-            rows.next().unwrap().unwrap().get_value(0).unwrap(),
+            rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
             Value::Integer(1)
         ));
 
@@ -81,14 +81,14 @@ fn fork_namespace() {
         // add something to bar
         let mut rows = bar_conn.query("select count(*) from test", ()).await?;
         assert!(matches!(
-            rows.next().unwrap().unwrap().get_value(0)?,
+            rows.next().await.unwrap().unwrap().get_value(0)?,
             Value::Integer(2)
         ));
 
         // ... and make sure it doesn't exist in foo
         let mut rows = foo_conn.query("select count(*) from test", ()).await?;
         assert!(matches!(
-            rows.next().unwrap().unwrap().get_value(0)?,
+            rows.next().await.unwrap().unwrap().get_value(0)?,
             Value::Integer(1)
         ));
 

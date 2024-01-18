@@ -922,8 +922,13 @@ mod test {
             )
             .unwrap(),
         );
-        let mut conn =
-            open_conn(tmp.path(), ReplicationLoggerWalManager::new(logger), None).unwrap();
+        let mut conn = open_conn(
+            tmp.path(),
+            ReplicationLoggerWalManager::new(logger),
+            None,
+            None,
+        )
+        .unwrap();
         conn.execute("BEGIN", ()).unwrap();
 
         conn.execute("CREATE TABLE test (x)", ()).unwrap();
@@ -963,7 +968,7 @@ mod test {
 
         new_db_file.flush().unwrap();
 
-        let conn2 = open_conn(tmp2.path(), Sqlite3WalManager::new(), None).unwrap();
+        let conn2 = open_conn(tmp2.path(), Sqlite3WalManager::new(), None, None).unwrap();
 
         conn2
             .query_row("SELECT count(*) FROM test", (), |row| {

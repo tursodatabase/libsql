@@ -56,7 +56,7 @@ fn load_namespace_from_dump_from_url() {
         let foo_conn = foo.connect()?;
         let mut rows = foo_conn.query("select count(*) from test", ()).await?;
         assert!(matches!(
-            rows.next().unwrap().unwrap().get_value(0)?,
+            rows.next().await.unwrap().unwrap().get_value(0)?,
             Value::Integer(1)
         ));
 
@@ -125,7 +125,7 @@ fn load_namespace_from_dump_from_file() {
         let foo_conn = foo.connect()?;
         let mut rows = foo_conn.query("select count(*) from test", ()).await?;
         assert!(matches!(
-            rows.next().unwrap().unwrap().get_value(0)?,
+            rows.next().await.unwrap().unwrap().get_value(0)?,
             Value::Integer(1)
         ));
 

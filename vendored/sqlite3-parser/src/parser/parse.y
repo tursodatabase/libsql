@@ -1327,6 +1327,13 @@ cmd ::= ALTER TABLE fullname(X) DROP kwcolumn_opt nm(Y). {
   self.ctx.stmt = Some(Stmt::AlterTable(X, AlterTableBody::DropColumn(Y)));
 }
 
+cmd ::= ALTER TABLE fullname(X) ALTER COLUMNKW columnname(Y) TO columnname(Z) carglist(C). {
+  let (colfrom_name, _) = Y;
+  let (col_name, col_type) = Z;
+  let cd = ColumnDefinition{ col_name, col_type, constraints: C };
+  self.ctx.stmt = Some(Stmt::AlterTable(X, AlterTableBody::AlterColumn{ old: colfrom_name, cd }));
+}
+
 kwcolumn_opt ::= .
 kwcolumn_opt ::= COLUMNKW.
 %endif  SQLITE_OMIT_ALTERTABLE
