@@ -2826,7 +2826,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-sqlite3-parser"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "bitflags 2.4.1",
  "cc",

@@ -24,7 +24,7 @@ use rusqlite::ErrorCode;
 use serde::de::Visitor;
 use serde::Deserialize;
 use tokio::io::AsyncBufReadExt;
-use tokio::sync::watch;
+use tokio::sync::{watch, Semaphore};
 use tokio::task::JoinSet;
 use tokio::time::{Duration, Instant};
 use tokio_util::io::StreamReader;
@@ -46,7 +46,6 @@ use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger}
 use crate::stats::Stats;
 use crate::{
     run_periodic_checkpoint, StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT,
-    MAX_CONCURRENT_DBS,
 };
 
 use crate::namespace::fork::PointInTimeRestore;
@@ -839,6 +838,7 @@ pub struct ReplicaNamespaceConfig {
     /// Stats monitor
     pub stats_sender: StatsSender,
     pub encryption_key: Option<bytes::Bytes>,
+    pub max_concurrent_connections: Arc<Semaphore>,
 }
 
 impl Namespace<ReplicaDatabase> {
@@ -958,7 +958,7 @@ impl Namespace<ReplicaDatabase> {
         )
         .await?
         .throttled(
-            MAX_CONCURRENT_DBS,
+            config.max_concurrent_connections.clone(),
             Some(DB_CREATE_TIMEOUT),
             config.max_total_response_size,
         );
@@ -989,6 +989,7 @@ pub struct PrimaryNamespaceConfig {
     pub checkpoint_interval: Option<Duration>,
     pub disable_namespace: bool,
     pub encryption_key: Option<bytes::Bytes>,
+    pub max_concurrent_connections: Arc<Semaphore>,
 }
 
 pub type DumpStream =
@@ -1137,7 +1138,7 @@ impl Namespace<PrimaryDatabase> {
         )
         .await?
         .throttled(
-            MAX_CONCURRENT_DBS,
+            config.max_concurrent_connections.clone(),
             Some(DB_CREATE_TIMEOUT),
             config.max_total_response_size,
         )
