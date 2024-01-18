@@ -234,10 +234,13 @@ fn build_multiple_ciphers(out_dir: &str, out_path: &Path) {
     let dir = env!("CARGO_MANIFEST_DIR");
     std::fs::copy(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
 
-    let _output = Command::new("./build_libsqlite3mc.sh")
-        .current_dir(BUNDLED_DIR)
-        .output()
-        .unwrap();
+    let mut cmd = Command::new("./build_libsqlite3mc.sh");
+    cmd.current_dir(BUNDLED_DIR);
+
+    #[cfg(feature = "libsql-wasm-experimental")]
+    cmd.arg("-DLIBSQL_ENABLE_WASM_RUNTIME");
+
+    cmd.output().unwrap();
     std::fs::copy(
         format!("{BUNDLED_DIR}/SQLite3MultipleCiphers/build/libsqlite3mc_static.a"),
         format!("{out_dir}/libsqlite3mc.a"),
