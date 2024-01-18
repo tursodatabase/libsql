@@ -273,13 +273,17 @@ impl ReplicationLoggerWal {
         let header = Sqlite3DbHeader::mut_from_prefix(data).expect("invalid database header");
         header.replication_index =
             (self.logger().new_frame_notifier.borrow().unwrap_or(0) + 1).into();
+        #[cfg(feature = "encryption")]
+        let pager = libsql_sys::connection::leak_pager(db.as_ptr());
+        #[cfg(not(feature = "encryption"))]
+        let pager = std::ptr::null_mut();
         let mut header = libsql_pghdr {
             pPage: std::ptr::null_mut(),
             pData: data.as_mut_ptr() as _,
             pExtra: std::ptr::null_mut(),
             pCache: std::ptr::null_mut(),
             pDirty: std::ptr::null_mut(),
-            pPager: libsql_sys::connection::leak_pager(db.as_ptr()),
+            pPager: pager,
             pgno: 1,
             pageHash: 0x02, // DIRTY
             flags: 0,
