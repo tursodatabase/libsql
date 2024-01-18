@@ -458,10 +458,7 @@ pub mod test {
         let resp = stream.next().await.unwrap().unwrap();
         assert_eq!(resp.request_id, 0);
         for i in 1..50 {
-            let req = exec_req_stmt(
-                r#"insert into test values ("something moderately long")"#,
-                i,
-            );
+            let req = exec_req_stmt("insert into test values ('something moderately long')", i);
             snd.send(Ok(req)).await.unwrap();
             let resp = stream.next().await.unwrap().unwrap();
             assert_eq!(resp.request_id, i);
