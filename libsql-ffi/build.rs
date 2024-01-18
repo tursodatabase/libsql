@@ -234,6 +234,17 @@ fn build_multiple_ciphers(out_dir: &str, out_path: &Path) {
     let dir = env!("CARGO_MANIFEST_DIR");
     std::fs::copy(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
 
+    std::fs::copy(
+        (BUNDLED_DIR.as_ref() as &Path)
+            .join("src")
+            .join("sqlite3.c"),
+        (BUNDLED_DIR.as_ref() as &Path)
+            .join("SQLite3MultipleCiphers")
+            .join("src")
+            .join("sqlite3.c"),
+    )
+    .unwrap();
+
     let mut cmd = Command::new("./build_libsqlite3mc.sh");
     cmd.current_dir(BUNDLED_DIR);
 
