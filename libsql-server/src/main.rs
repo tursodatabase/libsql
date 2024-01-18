@@ -227,6 +227,9 @@ struct Cli {
     /// encryption_key for encryption at rest
     #[clap(long, env = "SQLD_ENCRYPTION_KEY")]
     encryption_key: Option<bytes::Bytes>,
+
+    #[clap(long, default_value = "128")]
+    max_concurrent_connections: usize,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -590,6 +593,7 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
         shutdown,
         max_active_namespaces: config.max_active_namespaces,
         meta_store_config,
+        max_concurrent_connections: config.max_concurrent_connections,
     })
 }
 

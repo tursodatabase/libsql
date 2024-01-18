@@ -156,14 +156,14 @@ pub trait MakeConnection: Send + Sync + 'static {
 
     fn throttled(
         self,
-        conccurency: usize,
+        semaphore: Arc<Semaphore>,
         timeout: Option<Duration>,
         max_total_response_size: u64,
     ) -> MakeThrottledConnection<Self>
     where
         Self: Sized,
     {
-        MakeThrottledConnection::new(conccurency, self, timeout, max_total_response_size)
+        MakeThrottledConnection::new(semaphore, self, timeout, max_total_response_size)
     }
 }
 
@@ -194,13 +194,13 @@ pub struct MakeThrottledConnection<F> {
 
 impl<F> MakeThrottledConnection<F> {
     fn new(
-        conccurency: usize,
+        semaphore: Arc<Semaphore>,
         connection_maker: F,
         timeout: Option<Duration>,
         max_total_response_size: u64,
     ) -> Self {
         Self {
-            semaphore: Arc::new(Semaphore::new(conccurency)),
+            semaphore,
             connection_maker,
             timeout,
             max_total_response_size,
@@ -419,8 +419,11 @@ pub mod test {
 
     #[tokio::test]
     async fn throttle_db_creation() {
-        let factory =
-            (|| async { Ok(DummyDb) }).throttled(10, Some(Duration::from_millis(100)), u64::MAX);
+        let factory = (|| async { Ok(DummyDb) }).throttled(
+            Arc::new(Semaphore::new(10)),
+            Some(Duration::from_millis(100)),
+            u64::MAX,
+        );
 
         let mut conns = Vec::with_capacity(10);
         for _ in 0..10 {
