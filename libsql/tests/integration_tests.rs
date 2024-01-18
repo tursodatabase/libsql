@@ -351,7 +351,7 @@ async fn debug_print_row() {
             (),
         )
         .await;
-    conn.execute("INSERT INTO users (id, name, score, data, age) VALUES (123, \"potato\", 3.14, X'deadbeef', NULL)", ())
+    conn.execute("INSERT INTO users (id, name, score, data, age) VALUES (123, 'potato', 3.14, X'deadbeef', NULL)", ())
     .await
     .unwrap();
 
@@ -374,7 +374,7 @@ async fn deserialize_row() {
             (),
         )
         .await;
-    conn.execute("INSERT INTO users (id, name, score, data, age) VALUES (123, \"potato\", 3.14, X'deadbeef', NULL)", ())
+    conn.execute("INSERT INTO users (id, name, score, data, age) VALUES (123, 'potato', 3.14, X'deadbeef', NULL)", ())
     .await
     .unwrap();
 
