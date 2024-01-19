@@ -1111,6 +1111,7 @@ impl Namespace<PrimaryDatabase> {
                 let cb = config.snapshot_callback.clone();
                 move |path: &Path| cb(path, &name)
             }),
+            config.encryption_key.clone(),
         )?);
 
         let stats = make_stats(
