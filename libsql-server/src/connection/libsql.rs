@@ -14,6 +14,7 @@ use tokio::sync::{watch, Notify};
 use tokio::time::{Duration, Instant};
 
 use crate::auth::{Authenticated, Authorized, Permission};
+use crate::connection::TXN_TIMEOUT;
 use crate::error::Error;
 use crate::metrics::{
     DESCRIBE_COUNT, PROGRAM_EXEC_COUNT, READ_QUERY_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT,
@@ -28,7 +29,7 @@ use crate::stats::Stats;
 use crate::Result;
 
 use super::program::{Cond, DescribeCol, DescribeParam, DescribeResponse};
-use super::{MakeConnection, Program, Step, TXN_TIMEOUT};
+use super::{MakeConnection, Program, Step};
 
 pub struct MakeLibSqlConn<T: WalManager> {
     db_path: PathBuf,
@@ -378,12 +379,13 @@ struct TxnSlot<T> {
     created_at: tokio::time::Instant,
     /// The transaction lock was stolen
     is_stolen: AtomicBool,
+    txn_timeout: Duration,
 }
 
 impl<T> TxnSlot<T> {
     #[inline]
     fn expires_at(&self) -> Instant {
-        self.created_at + TXN_TIMEOUT
+        self.created_at + self.txn_timeout
     }
 
     /// abort the connection for that slot.
@@ -581,7 +583,11 @@ impl<W: Wal> Connection<W> {
     ) -> Result<B> {
         use rusqlite::TransactionState as Tx;
 
-        let state = this.lock().state.clone();
+        let (state, txn_timeout) = {
+            let lock = this.lock();
+            let txn_timeout = lock.config_store.get().txn_timeout.unwrap_or(TXN_TIMEOUT);
+            (lock.state.clone(), txn_timeout)
+        };
 
         let mut results = Vec::with_capacity(pgm.steps.len());
         builder.init(&this.lock().builder_config)?;
@@ -622,6 +628,7 @@ impl<W: Wal> Connection<W> {
                         conn: this.clone(),
                         created_at: Instant::now(),
                         is_stolen: AtomicBool::new(false),
+                        txn_timeout,
                     });
 
                     lock.slot.replace(slot.clone());

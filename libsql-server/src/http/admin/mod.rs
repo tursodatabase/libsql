@@ -275,6 +275,7 @@ struct CreateNamespaceReq {
     heartbeat_url: Option<String>,
     bottomless_db_id: Option<String>,
     jwt_key: Option<String>,
+    txn_timeout_s: Option<u64>,
 }
 
 async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
@@ -311,6 +312,11 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
     if let Some(url) = req.heartbeat_url {
         config.heartbeat_url = Some(Url::parse(&url)?)
     }
+
+    if let Some(txn_timeout_s) = req.txn_timeout_s {
+        config.txn_timeout = Some(Duration::from_secs(txn_timeout_s));
+    }
+
     config.jwt_key = req.jwt_key;
     store.store(config).await?;
 

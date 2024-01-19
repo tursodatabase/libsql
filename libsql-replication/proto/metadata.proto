@@ -14,4 +14,5 @@ message DatabaseConfig {
     optional string heartbeat_url = 5;
     optional string bottomless_db_id = 6; 
     optional string jwt_key = 7;
+    optional uint64 txn_timeout_s = 8;
 }
