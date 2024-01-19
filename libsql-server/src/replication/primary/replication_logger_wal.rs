@@ -407,6 +407,7 @@ mod test {
                 100000,
                 None,
                 "test".into(),
+                None,
             )
             .unwrap(),
         );
@@ -459,6 +460,7 @@ mod test {
                 100000,
                 None,
                 "test".into(),
+                None,
             )
             .unwrap(),
         );
