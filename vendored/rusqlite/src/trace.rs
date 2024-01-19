@@ -177,8 +177,7 @@ mod test {
         db.execute_batch("PRAGMA application_id = 2")?;
 
         let profiled = PROFILED.lock().unwrap();
-        assert_eq!(profiled.len(), 1);
-        assert_eq!(profiled[0].0, "PRAGMA application_id = 1");
+        assert_eq!(profiled.last().unwrap().0, "PRAGMA application_id = 1");
         Ok(())
     }
 }

@@ -230,7 +230,7 @@ impl Wal for ReplicationLoggerWal {
         sync_flags: u32,
         buf: &mut [u8],
     ) -> Result<(u32, u32)> {
-        self.inject_replication_index()?;
+        self.inject_replication_index(db)?;
         self.inner
             .checkpoint(db, mode, busy_handler, sync_flags, buf)
     }
@@ -257,7 +257,7 @@ impl Wal for ReplicationLoggerWal {
 }
 
 impl ReplicationLoggerWal {
-    fn inject_replication_index(&mut self) -> Result<()> {
+    fn inject_replication_index(&mut self, db: &mut Sqlite3Db) -> Result<()> {
         let data = &mut [0; LIBSQL_PAGE_SIZE as _];
         // We retreive the freshest version of page 1. Either most recent page 1 is in the WAL, or
         // it is in the main db file
@@ -273,13 +273,17 @@ impl ReplicationLoggerWal {
         let header = Sqlite3DbHeader::mut_from_prefix(data).expect("invalid database header");
         header.replication_index =
             (self.logger().new_frame_notifier.borrow().unwrap_or(0) + 1).into();
+        #[cfg(feature = "encryption")]
+        let pager = libsql_sys::connection::leak_pager(db.as_ptr());
+        #[cfg(not(feature = "encryption"))]
+        let pager = std::ptr::null_mut();
         let mut header = libsql_pghdr {
             pPage: std::ptr::null_mut(),
             pData: data.as_mut_ptr() as _,
             pExtra: std::ptr::null_mut(),
             pCache: std::ptr::null_mut(),
             pDirty: std::ptr::null_mut(),
-            pPager: std::ptr::null_mut(),
+            pPager: pager,
             pgno: 1,
             pageHash: 0x02, // DIRTY
             flags: 0,

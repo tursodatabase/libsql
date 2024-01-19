@@ -48,7 +48,7 @@ pub struct Sqlite3Db {
 }
 
 impl Sqlite3Db {
-    pub(crate) fn as_ptr(&mut self) -> *mut sqlite3 {
+    pub fn as_ptr(&mut self) -> *mut sqlite3 {
         self.inner
     }
 }
