@@ -312,7 +312,6 @@ pub unsafe extern "C" fn checkpoint<T: Wal>(
     z_buf: *mut u8,
     frames_in_wal_out: *mut c_int,
     checkpointed_frames_out: *mut c_int,
-    checkpoint_cb_data: *mut c_void,
     checkpoint_cb: Option<
         unsafe extern "C" fn(
             data: *mut c_void,
@@ -323,6 +322,7 @@ pub unsafe extern "C" fn checkpoint<T: Wal>(
             frame_no: c_int,
         ) -> c_int,
     >,
+    checkpoint_cb_data: *mut c_void,
 ) -> i32 {
     let this = &mut (*(wal as *mut T));
     struct SqliteBusyHandler {

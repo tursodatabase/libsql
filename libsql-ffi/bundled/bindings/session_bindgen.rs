@@ -3837,7 +3837,6 @@ pub struct libsql_wal_methods {
             zBuf: *mut ::std::os::raw::c_uchar,
             pnLog: *mut ::std::os::raw::c_int,
             pnCkpt: *mut ::std::os::raw::c_int,
-            pCbData: *mut ::std::os::raw::c_void,
             xCb: ::std::option::Option<
                 unsafe extern "C" fn(
                     pCbData: *mut ::std::os::raw::c_void,
@@ -3848,6 +3847,7 @@ pub struct libsql_wal_methods {
                     frame_no: ::std::os::raw::c_int,
                 ) -> ::std::os::raw::c_int,
             >,
+            pCbData: *mut ::std::os::raw::c_void,
         ) -> ::std::os::raw::c_int,
     >,
     pub xCallback:

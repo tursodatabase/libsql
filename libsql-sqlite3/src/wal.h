@@ -90,12 +90,11 @@ typedef struct libsql_wal_methods {
     unsigned char *zBuf,                       /* Temporary buffer to use */
     int *pnLog,                     /* OUT: Number of frames in WAL */
     int *pnCkpt,                    /* OUT: Number of backfilled frames in WAL */
-    void* pCbData,                  /* user data passed to xCb */
-
     /*
      * Called for each page being inserted in the wal, and once if the whole checkpoint operation was successfull with pPage == NULL
      */
-    int (*xCb)(void* pCbData, int mxSafeFrame, const unsigned char* pPage, int nPage, int page_no, int frame_no) /* called */
+    int (*xCb)(void* pCbData, int mxSafeFrame, const unsigned char* pPage, int nPage, int page_no, int frame_no), /* called */
+    void* pCbData                  /* user data passed to xCb */
   );
 
   /* Return the value to pass to a sqlite3_wal_hook callback, the

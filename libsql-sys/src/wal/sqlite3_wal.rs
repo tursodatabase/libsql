@@ -380,8 +380,8 @@ impl Wal for Sqlite3Wal {
                 buf.as_mut_ptr(),
                 out_log_num_frames,
                 out_backfilled,
-                checkpoint_cb_data,
                 checkpoint_cb_fn,
+                checkpoint_cb_data,
             )
         };
 

@@ -235,7 +235,7 @@ impl Wal for ReplicationLoggerWal {
         in_wal: Option<&mut i32>,
         backfilled: Option<&mut i32>,
     ) -> Result<()> {
-        self.inject_replication_index()?;
+        self.inject_replication_index(db)?;
         self.inner.checkpoint(
             db,
             mode,
