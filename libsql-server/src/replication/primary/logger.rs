@@ -53,6 +53,54 @@ pub struct WalPage {
     pub data: Bytes,
 }
 
+#[derive(Debug, Clone)]
+pub struct Encryptor {
+    enc: cbc::Encryptor<aes::Aes256>,
+    dec: cbc::Decryptor<aes::Aes256>,
+}
+
+impl Encryptor {
+    pub fn new(key: Bytes) -> Self {
+        use aes::cipher::KeyIvInit;
+        // TODO: convolute the key into 16 bytes in a reasonable way.
+        let key = if key.len() < 32 {
+            let mut key = key.to_vec();
+            key.resize(32, 42);
+            Bytes::copy_from_slice(&key)
+        } else {
+            key
+        };
+        let iv = &key[..16];
+        let key_ref = &key[..32];
+        let enc = cbc::Encryptor::new(key_ref.into(), iv.into());
+        let dec = cbc::Decryptor::new(key_ref.into(), iv.into());
+        Self { enc, dec }
+    }
+
+    pub fn encrypt(&self, data: &mut [u8]) -> anyhow::Result<()> {
+        use aes::cipher::{block_padding::NoPadding, BlockEncryptMut};
+        // NOTICE: We don't want to return padding errors, it will make the code
+        // prone to CBC padding oracle attacks.
+        self.enc
+            .clone()
+            .encrypt_padded_mut::<NoPadding>(data, data.len())
+            .map_err(|_| rusqlite::ffi::Error::new(libsql_sys::ffi::SQLITE_IOERR_WRITE))?;
+        Ok(())
+    }
+
+    pub fn decrypt(&self, data: &mut [u8]) -> anyhow::Result<()> {
+        use aes::cipher::{block_padding::NoPadding, BlockDecryptMut};
+        // NOTICE: We don't want to return padding errors, it will make the code
+        // prone to CBC padding oracle attacks.
+        self.dec
+            .clone()
+            .decrypt_padded_mut::<NoPadding>(data)
+            .map_err(|_| rusqlite::ffi::Error::new(libsql_sys::ffi::SQLITE_IOERR_READ))?;
+        tracing::warn!("decrypted data!");
+        Ok(())
+    }
+}
+
 /// Represent a LogFile, and operations that can be performed on it.
 /// A log file must only ever be opened by a single instance of LogFile, since it caches the file
 /// header.
@@ -77,6 +125,9 @@ pub struct LogFile {
 
     /// checksum of the last committed frame
     commited_checksum: u64,
+
+    /// Encryption layer
+    encryption: Option<Encryptor>,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -97,6 +148,7 @@ impl LogFile {
         file: File,
         max_log_frame_count: u64,
         max_log_duration: Option<Duration>,
+        encryption: Option<Encryptor>,
     ) -> anyhow::Result<Self> {
         // FIXME: we should probably take a lock on this file, to prevent anybody else to write to
         // it.
@@ -127,6 +179,7 @@ impl LogFile {
             uncommitted_frame_count: 0,
             uncommitted_checksum: 0,
             commited_checksum: 0,
+            encryption,
         };
 
         if file_end == 0 {
@@ -244,6 +297,14 @@ impl LogFile {
 
     pub fn push_page(&mut self, page: &WalPage) -> anyhow::Result<()> {
         let checksum = self.compute_checksum(page);
+        let data = if let Some(encryption) = &self.encryption {
+            let mut data = BytesMut::with_capacity(page.data.len());
+            data.extend_from_slice(&page.data);
+            encryption.encrypt(&mut data)?;
+            data.freeze()
+        } else {
+            page.data.clone()
+        };
         let frame = Frame::from_parts(
             &FrameHeader {
                 frame_no: self.next_frame_no().into(),
@@ -251,7 +312,7 @@ impl LogFile {
                 page_no: page.page_no.into(),
                 size_after: page.size_after.into(),
             },
-            &page.data,
+            &data,
         );
 
         let byte_offset = self.next_byte_offset();
@@ -350,7 +411,12 @@ impl LogFile {
             .write(true)
             .create(true)
             .open(&to_compact_log_path)?;
-        let mut new_log_file = LogFile::new(file, self.max_log_frame_count, self.max_log_duration)?;
+        let mut new_log_file = LogFile::new(
+            file,
+            self.max_log_frame_count,
+            self.max_log_duration,
+            self.encryption.clone(),
+        )?;
         let new_header = LogFileHeader {
             start_frame_no: (self.header.last_frame_no().unwrap() + 1).into(),
             frame_count: 0.into(),
@@ -371,6 +437,9 @@ impl LogFile {
     fn read_frame_byte_offset_mut(&self, offset: u64) -> anyhow::Result<FrameMut> {
         let mut buffer = BytesMut::zeroed(LogFile::FRAME_SIZE);
         self.file.read_exact_at(&mut buffer, offset)?;
+        if let Some(encryption) = &self.encryption {
+            encryption.decrypt(&mut buffer)?;
+        }
 
         Ok(FrameMut::try_from(&*buffer)?)
     }
@@ -388,7 +457,8 @@ impl LogFile {
         let max_log_duration = self.max_log_duration;
         // truncate file
         self.file.set_len(0)?;
-        Self::new(self.file, max_log_frame_count, max_log_duration)
+        let encryption = self.encryption;
+        Self::new(self.file, max_log_frame_count, max_log_duration, encryption)
     }
 }
 
@@ -508,6 +578,7 @@ impl ReplicationLogger {
         auto_checkpoint: u32,
         scripted_backup: Option<ScriptBackupManager>,
         namespace: NamespaceName,
+        encryption_key: Option<Bytes>,
     ) -> anyhow::Result<Self> {
         let log_path = db_path.join("wallog");
         let data_path = db_path.join("data");
@@ -521,7 +592,8 @@ impl ReplicationLogger {
             .open(log_path)?;
 
         let max_log_frame_count = max_log_size * 1_000_000 / LogFile::FRAME_SIZE as u64;
-        let log_file = LogFile::new(file, max_log_frame_count, max_log_duration)?;
+        let encryption = encryption_key.clone().map(Encryptor::new);
+        let log_file = LogFile::new(file, max_log_frame_count, max_log_duration, encryption)?;
         let header = log_file.header();
 
         let should_recover = if dirty {
@@ -549,6 +621,7 @@ impl ReplicationLogger {
                 auto_checkpoint,
                 scripted_backup,
                 namespace,
+                encryption_key,
             )
         } else {
             Self::from_log_file(
@@ -557,6 +630,7 @@ impl ReplicationLogger {
                 auto_checkpoint,
                 scripted_backup,
                 namespace,
+                encryption_key,
             )
         }
     }
@@ -567,6 +641,7 @@ impl ReplicationLogger {
         auto_checkpoint: u32,
         scripted_backup: Option<ScriptBackupManager>,
         namespace: NamespaceName,
+        encryption_key: Option<Bytes>,
     ) -> anyhow::Result<Self> {
         let header = log_file.header();
         let generation_start_frame_no = header.last_frame_no();
@@ -596,6 +671,7 @@ impl ReplicationLogger {
 
         let (closed_signal, _) = watch::channel(false);
 
+        let encryption = encryption_key.map(Encryptor::new);
         Ok(Self {
             generation: Generation::new(generation_start_frame_no.unwrap_or(0)),
             compactor: LogCompactor::new(
@@ -603,6 +679,7 @@ impl ReplicationLogger {
                 Uuid::from_u128(log_file.header.log_id.get()),
                 scripted_backup,
                 namespace,
+                encryption,
             )?,
             log_file: RwLock::new(log_file),
             db_path,
@@ -620,6 +697,7 @@ impl ReplicationLogger {
         auto_checkpoint: u32,
         scripted_backup: Option<ScriptBackupManager>,
         namespace: NamespaceName,
+        encryption_key: Option<Bytes>,
     ) -> anyhow::Result<Self> {
         // It is necessary to checkpoint before we restore the replication log, since the WAL may
         // contain pages that are not in the database file.
@@ -638,8 +716,14 @@ impl ReplicationLogger {
         let num_page = size / LIBSQL_PAGE_SIZE;
         let mut buf = [0; LIBSQL_PAGE_SIZE as usize];
         let mut page_no = 1; // page numbering starts at 1
+        let encryptor = encryption_key.clone().map(Encryptor::new);
         for i in 0..num_page {
             data_file.read_exact_at(&mut buf, i * LIBSQL_PAGE_SIZE)?;
+            // NOTICE: we could instead copy encrypted pages to the log file, but that way
+            // we also detect decryption failures early
+            if let Some(encryptor) = &encryptor {
+                encryptor.decrypt(&mut buf)?;
+            }
             log_file.push_page(&WalPage {
                 page_no,
                 size_after: if i == num_page - 1 { num_page as _ } else { 0 },
@@ -659,6 +743,7 @@ impl ReplicationLogger {
             auto_checkpoint,
             scripted_backup,
             namespace,
+            encryption_key,
         )
     }
 
@@ -825,6 +910,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             None,
             "test".into(),
+            None,
         )
         .unwrap();
 
@@ -862,6 +948,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             None,
             "test".into(),
+            None,
         )
         .unwrap();
         let log_file = logger.log_file.write();
@@ -880,6 +967,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             None,
             "test".into(),
+            None,
         )
         .unwrap();
         let entry = WalPage {
@@ -895,7 +983,7 @@ mod test {
     #[test]
     fn log_file_test_rollback() {
         let f = tempfile::tempfile().unwrap();
-        let mut log_file = LogFile::new(f, 100, None).unwrap();
+        let mut log_file = LogFile::new(f, 100, None, None).unwrap();
         (0..5)
             .map(|i| WalPage {
                 page_no: i,
@@ -948,6 +1036,7 @@ mod test {
                 100000,
                 None,
                 "test".into(),
+                None,
             )
             .unwrap(),
         );
@@ -981,7 +1070,7 @@ mod test {
         // now we restore from the log and make sure the two db are consistent.
         let tmp2 = tempfile::tempdir().unwrap();
         let f = File::open(tmp.path().join("wallog")).unwrap();
-        let logfile = LogFile::new(f, 1000000000, None).unwrap();
+        let logfile = LogFile::new(f, 1000000000, None, None).unwrap();
         let mut seen = HashSet::new();
         let mut new_db_file = File::create(tmp2.path().join("data")).unwrap();
         for frame in logfile.rev_frames_iter_mut().unwrap() {

@@ -21,7 +21,7 @@ use zerocopy::AsBytes;
 use crate::namespace::NamespaceName;
 use crate::replication::primary::logger::LogFileHeader;
 
-use super::primary::logger::LogFile;
+use super::primary::logger::{Encryptor, LogFile};
 use super::script_backup_manager::ScriptBackupManager;
 use super::FrameNo;
 
@@ -139,7 +139,10 @@ async fn compact(
 
 /// Returns a list of pending snapshots to compact by reading the `to_compact` directory. Those
 /// snapshots should be processed before any other.
-fn pending_snapshots_list(compact_queue_dir: &Path) -> anyhow::Result<Vec<(LogFile, PathBuf)>> {
+fn pending_snapshots_list(
+    compact_queue_dir: &Path,
+    encryption: Option<Encryptor>,
+) -> anyhow::Result<Vec<(LogFile, PathBuf)>> {
     let dir = std::fs::read_dir(compact_queue_dir)?;
     let mut to_compact = Vec::new();
     for entry in dir {
@@ -157,7 +160,7 @@ fn pending_snapshots_list(compact_queue_dir: &Path) -> anyhow::Result<Vec<(LogFi
             }
             // max log duration and frame number don't  matter, we compact the file and discard it
             // immediately.
-            let to_compact_file = LogFile::new(file, u64::MAX, None)?;
+            let to_compact_file = LogFile::new(file, u64::MAX, None, encryption.clone())?;
             to_compact.push((to_compact_file, to_compact_path));
         }
     }
@@ -170,11 +173,12 @@ fn pending_snapshots_list(compact_queue_dir: &Path) -> anyhow::Result<Vec<(LogFi
 }
 
 impl LogCompactor {
-    pub(crate) fn new(
+    pub fn new(
         db_path: &Path,
         log_id: Uuid,
         scripted_backup: Option<ScriptBackupManager>,
         namespace: NamespaceName,
+        encryption: Option<Encryptor>,
     ) -> anyhow::Result<Self> {
         // a directory containing logs that need compaction
         let compact_queue_dir = db_path.join("to_compact");
@@ -192,7 +196,7 @@ impl LogCompactor {
             SnapshotMerger::new(db_path, log_id, scripted_backup.clone(), namespace.clone())?;
         let db_path = db_path.to_path_buf();
         // We gather pending snapshots here, so new snapshots don't interfere.
-        let pending = pending_snapshots_list(&compact_queue_dir)?;
+        let pending = pending_snapshots_list(&compact_queue_dir, encryption)?;
         // FIXME(marin): we somehow need to make this code more robust. How to deal with a
         // compaction error?
         tokio::task::spawn(async move {
@@ -619,7 +623,7 @@ mod test {
                     .read(true)
                     .open(&logfile_path)
                     .unwrap();
-                let mut logfile = LogFile::new(file, u64::MAX, None).unwrap();
+                let mut logfile = LogFile::new(file, u64::MAX, None, None).unwrap();
                 let header = LogFileHeader {
                     log_id: log_id.as_u128().into(),
                     start_frame_no: current_fno.into(),
@@ -655,7 +659,7 @@ mod test {
         // start processing pending logs, but a correct implementation should always processs the
         // log _after_ the pending logs have been processed. A failure to do so will trigger
         // assertions in the merger code.
-        let compactor = LogCompactor::new(tmp.path(), log_id, None, "test".into()).unwrap();
+        let compactor = LogCompactor::new(tmp.path(), log_id, None, "test".into(), None).unwrap();
         let compactor_clone = compactor.clone();
         tokio::task::spawn_blocking(move || {
             let (logfile, logfile_path) = make_logfile();
@@ -704,11 +708,11 @@ mod test {
             .read(true)
             .open(&logfile_path)
             .unwrap();
-        let mut logfile = LogFile::new(file, u64::MAX, None).unwrap();
+        let mut logfile = LogFile::new(file, u64::MAX, None, None).unwrap();
         logfile.write_header().unwrap();
 
         let _compactor =
-            LogCompactor::new(tmp.path(), Uuid::new_v4(), None, "test".into()).unwrap();
+            LogCompactor::new(tmp.path(), Uuid::new_v4(), None, "test".into(), None).unwrap();
         tokio::time::sleep(Duration::from_millis(1000)).await;
 
         // emtpy snapshot was discarded
@@ -738,7 +742,7 @@ mod test {
                     .read(true)
                     .open(&logfile_path)
                     .unwrap();
-                let mut logfile = LogFile::new(file, u64::MAX, None).unwrap();
+                let mut logfile = LogFile::new(file, u64::MAX, None, None).unwrap();
                 let header = LogFileHeader {
                     log_id: log_id.as_u128().into(),
                     start_frame_no: current_fno.into(),
@@ -770,7 +774,7 @@ mod test {
         // start processing pending logs, but a correct implementation should always processs the
         // log _after_ the pending logs have been processed. A failure to do so will trigger
         // assertions in the merger code.
-        let compactor = LogCompactor::new(tmp.path(), log_id, None, "test".into()).unwrap();
+        let compactor = LogCompactor::new(tmp.path(), log_id, None, "test".into(), None).unwrap();
         let compactor_clone = compactor.clone();
         tokio::task::spawn_blocking(move || {
             for _ in 0..10 {
@@ -810,7 +814,8 @@ mod test {
     #[tokio::test]
     async fn compact_file_create_snapshot() {
         let temp = tempfile::NamedTempFile::new().unwrap();
-        let mut log_file = LogFile::new(temp.as_file().try_clone().unwrap(), 0, None).unwrap();
+        let mut log_file =
+            LogFile::new(temp.as_file().try_clone().unwrap(), 0, None, None).unwrap();
         let log_id = Uuid::new_v4();
         log_file.header.log_id = log_id.as_u128().into();
         log_file.write_header().unwrap();
@@ -831,7 +836,8 @@ mod test {
         log_file.commit().unwrap();
 
         let dump_dir = tempdir().unwrap();
-        let compactor = LogCompactor::new(dump_dir.path(), log_id, None, "test".into()).unwrap();
+        let compactor =
+            LogCompactor::new(dump_dir.path(), log_id, None, "test".into(), None).unwrap();
         tokio::task::spawn_blocking({
             let compactor = compactor.clone();
             move || {
