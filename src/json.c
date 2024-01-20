@@ -589,6 +589,16 @@ static void jsonAppendChar(JsonString *p, char c){
   }
 }
 
+/* Remove a single character from the end of the string
+*/
+static void jsonStringTrimOneChar(JsonString *p){
+  if( p->eErr==0 ){
+    assert( p->nUsed>0 );
+    p->nUsed--;
+  }
+}
+
+
 /* Make sure there is a zero terminator on p->zBuf[]
 **
 ** Return true on success.  Return false if an OOM prevents this
@@ -596,7 +606,7 @@ static void jsonAppendChar(JsonString *p, char c){
 */
 static int jsonStringTerminate(JsonString *p){
   jsonAppendChar(p, 0);
-  p->nUsed--;
+  jsonStringTrimOneChar(p);
   return p->eErr==0;
 }
 
@@ -2260,7 +2270,7 @@ static u32 jsonTranslateBlobToText(
         j = jsonTranslateBlobToText(pParse, j, pOut);
         jsonAppendChar(pOut, ',');
       }
-      if( sz>0 ) pOut->nUsed--;
+      if( sz>0 ) jsonStringTrimOneChar(pOut);
       jsonAppendChar(pOut, ']');
       break;
     }
@@ -2274,7 +2284,7 @@ static u32 jsonTranslateBlobToText(
         jsonAppendChar(pOut, (x++ & 1) ? ',' : ':');
       }
       if( x & 1 ) pOut->eErr |= JSTRING_MALFORMED;
-      if( sz>0 ) pOut->nUsed--;
+      if( sz>0 ) jsonStringTrimOneChar(pOut);
       jsonAppendChar(pOut, '}');
       break;
     }
@@ -4402,7 +4412,7 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
       if( isFinal ){
         if( !pStr->bStatic ) sqlite3RCStrUnref(pStr->zBuf);
       }else{
-        pStr->nUsed--;
+        jsonStringTrimOneChar(pStr);
       }
       return;
     }else if( isFinal ){
@@ -4412,7 +4422,7 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
       pStr->bStatic = 1;
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);
-      pStr->nUsed--;
+      jsonStringTrimOneChar(pStr);
     }
   }else{
     sqlite3_result_text(ctx, "[]", 2, SQLITE_STATIC);
@@ -4522,7 +4532,7 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
       if( isFinal ){
         if( !pStr->bStatic ) sqlite3RCStrUnref(pStr->zBuf);
       }else{
-        pStr->nUsed--;
+        jsonStringTrimOneChar(pStr);
       }
       return;
     }else if( isFinal ){
@@ -4532,7 +4542,7 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
       pStr->bStatic = 1;
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);
-      pStr->nUsed--;
+      jsonStringTrimOneChar(pStr);
     }
   }else{
     sqlite3_result_text(ctx, "{}", 2, SQLITE_STATIC);
