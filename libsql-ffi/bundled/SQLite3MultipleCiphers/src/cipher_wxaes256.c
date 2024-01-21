@@ -155,6 +155,23 @@ GenerateKeyAES256Cipher(void* cipher, BtShared* pBt, char* userPassword, int pas
   memcpy(aesCipher->m_key, digest, aesCipher->m_keyLength);
 }
 
+// Assumes the digest is at least KEYLENGTH_AES256 bytes long (32),
+// generates the key in the digest.
+void libsql_generate_aes256_key(char *userPassword, int passwordLength, char *digest) {
+  unsigned char userPad[32];
+  int keyLength = KEYLENGTH_AES256;
+  int k;
+
+  /* Pad password */
+  sqlite3mcPadPassword(userPassword, passwordLength, userPad);
+
+  sha256(userPad, 32, digest);
+  for (k = 0; k < CODEC_SHA_ITER; ++k)
+  {
+    sha256(digest, KEYLENGTH_AES256, digest);
+  }
+}
+
 static int
 EncryptPageAES256Cipher(void* cipher, int page, unsigned char* data, int len, int reserved)
 {
