@@ -52,19 +52,12 @@ pub struct WalPage {
 }
 
 #[derive(Debug, Clone)]
-pub struct Encryptor {
+pub struct FrameEncryptor {
     enc: cbc::Encryptor<aes::Aes256>,
     dec: cbc::Decryptor<aes::Aes256>,
 }
 
-impl Encryptor {
-    // 24 bytes of WAL header are not encrypted.
-    // This is double-important:
-    // 1. the header keeps the checksum,
-    // 2. the header is not a multiple of aes256's block size,
-    //    and we don't want to pad it.
-    const UNENCRYPTED_HEADER_SIZE: usize = 24;
-
+impl FrameEncryptor {
     pub fn new(key: Bytes) -> Self {
         const SEED: u32 = 911;
         use aes::cipher::KeyIvInit;
@@ -80,8 +73,6 @@ impl Encryptor {
     }
 
     pub fn encrypt(&self, data: &mut [u8]) -> anyhow::Result<()> {
-        assert_eq!(data.len(), LogFile::FRAME_SIZE);
-        let data = &mut data[Self::UNENCRYPTED_HEADER_SIZE..];
         use aes::cipher::{block_padding::NoPadding, BlockEncryptMut};
         // NOTICE: We don't want to return padding errors, it will make the code
         // prone to CBC padding oracle attacks.
@@ -93,12 +84,6 @@ impl Encryptor {
     }
 
     pub fn decrypt(&self, data: &mut [u8]) -> anyhow::Result<()> {
-        let data = if data.len() == LogFile::FRAME_SIZE {
-            &mut data[Self::UNENCRYPTED_HEADER_SIZE..]
-        } else {
-            assert_eq!(data.len(), LIBSQL_PAGE_SIZE);
-            data
-        };
         use aes::cipher::{block_padding::NoPadding, BlockDecryptMut};
         // NOTICE: We don't want to return padding errors, it will make the code
         // prone to CBC padding oracle attacks.
@@ -136,7 +121,7 @@ pub struct LogFile {
     commited_checksum: u64,
 
     /// Encryption layer
-    encryption: Option<Encryptor>,
+    encryption: Option<FrameEncryptor>,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -157,7 +142,7 @@ impl LogFile {
         file: File,
         max_log_frame_count: u64,
         max_log_duration: Option<Duration>,
-        encryption: Option<Encryptor>,
+        encryption: Option<FrameEncryptor>,
     ) -> anyhow::Result<Self> {
         // FIXME: we should probably take a lock on this file, to prevent anybody else to write to
         // it.
@@ -447,7 +432,7 @@ impl LogFile {
         let mut buffer = BytesMut::zeroed(LogFile::FRAME_SIZE);
         self.file.read_exact_at(&mut buffer, offset)?;
         if let Some(encryption) = &self.encryption {
-            encryption.decrypt(&mut buffer)?;
+            encryption.decrypt(&mut buffer[size_of::<FrameHeader>()..])?;
         }
 
         Ok(FrameMut::try_from(&*buffer)?)
@@ -600,7 +585,7 @@ impl ReplicationLogger {
             .open(log_path)?;
 
         let max_log_frame_count = max_log_size * 1_000_000 / LogFile::FRAME_SIZE as u64;
-        let encryption = encryption_key.clone().map(Encryptor::new);
+        let encryption = encryption_key.clone().map(FrameEncryptor::new);
         let log_file = LogFile::new(file, max_log_frame_count, max_log_duration, encryption)?;
         let header = log_file.header();
 
@@ -676,7 +661,7 @@ impl ReplicationLogger {
 
         let (closed_signal, _) = watch::channel(false);
 
-        let encryption = encryption_key.map(Encryptor::new);
+        let encryption = encryption_key.map(FrameEncryptor::new);
         Ok(Self {
             generation: Generation::new(generation_start_frame_no.unwrap_or(0)),
             compactor: LogCompactor::new(
@@ -719,7 +704,7 @@ impl ReplicationLogger {
         let num_page = size / LIBSQL_PAGE_SIZE;
         let mut buf = [0; LIBSQL_PAGE_SIZE as usize];
         let mut page_no = 1; // page numbering starts at 1
-        let encryptor = encryption_key.clone().map(Encryptor::new);
+        let encryptor = encryption_key.clone().map(FrameEncryptor::new);
         for i in 0..num_page {
             data_file.read_exact_at(&mut buf, i * LIBSQL_PAGE_SIZE)?;
             // NOTICE: we could instead copy encrypted pages to the log file, but that way
