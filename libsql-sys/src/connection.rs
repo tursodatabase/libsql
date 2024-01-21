@@ -61,6 +61,8 @@ extern "C" {
     ) -> std::ffi::c_int;
 
     fn libsql_leak_pager(db: *mut libsql_ffi::sqlite3) -> *mut crate::ffi::Pager;
+    fn libsql_generate_initial_vector(seed: u32, iv: *mut u8);
+    fn libsql_generate_aes256_key(user_password: *const u8, password_length: u32, digest: *mut u8);
 }
 
 #[cfg(feature = "encryption")]
@@ -71,6 +73,22 @@ pub fn set_encryption_key(db: *mut libsql_ffi::sqlite3, key: &[u8]) -> i32 {
 #[cfg(feature = "encryption")]
 pub fn leak_pager(db: *mut libsql_ffi::sqlite3) -> *mut crate::ffi::Pager {
     unsafe { libsql_leak_pager(db) }
+}
+
+#[cfg(feature = "encryption")]
+pub fn generate_initial_vector(seed: u32, iv: &mut [u8]) {
+    unsafe { libsql_generate_initial_vector(seed, iv.as_mut_ptr()) }
+}
+
+#[cfg(feature = "encryption")]
+pub fn generate_aes256_key(user_password: &[u8], digest: &mut [u8]) {
+    unsafe {
+        libsql_generate_aes256_key(
+            user_password.as_ptr(),
+            user_password.len() as u32,
+            digest.as_mut_ptr(),
+        )
+    }
 }
 
 impl<W: Wal> Connection<W> {
