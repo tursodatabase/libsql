@@ -58,24 +58,30 @@ pub struct Encryptor {
 }
 
 impl Encryptor {
+    // 24 bytes of WAL header are not encrypted.
+    // This is double-important:
+    // 1. the header keeps the checksum,
+    // 2. the header is not a multiple of aes256's block size,
+    //    and we don't want to pad it.
+    const UNENCRYPTED_HEADER_SIZE: usize = 24;
+
     pub fn new(key: Bytes) -> Self {
+        const SEED: u32 = 911;
         use aes::cipher::KeyIvInit;
-        // TODO: convolute the key into 16 bytes in a reasonable way.
-        let key = if key.len() < 32 {
-            let mut key = key.to_vec();
-            key.resize(32, 42);
-            Bytes::copy_from_slice(&key)
-        } else {
-            key
-        };
-        let iv = &key[..16];
-        let key_ref = &key[..32];
-        let enc = cbc::Encryptor::new(key_ref.into(), iv.into());
-        let dec = cbc::Decryptor::new(key_ref.into(), iv.into());
+
+        let mut iv: [u8; 16] = [0; 16];
+        let mut digest: [u8; 32] = [0; 32];
+        libsql_sys::connection::generate_initial_vector(SEED, &mut iv);
+        libsql_sys::connection::generate_aes256_key(&key, &mut digest);
+
+        let enc = cbc::Encryptor::new((&digest).into(), (&iv).into());
+        let dec = cbc::Decryptor::new((&digest).into(), (&iv).into());
         Self { enc, dec }
     }
 
     pub fn encrypt(&self, data: &mut [u8]) -> anyhow::Result<()> {
+        assert_eq!(data.len(), LogFile::FRAME_SIZE);
+        let data = &mut data[Self::UNENCRYPTED_HEADER_SIZE..];
         use aes::cipher::{block_padding::NoPadding, BlockEncryptMut};
         // NOTICE: We don't want to return padding errors, it will make the code
         // prone to CBC padding oracle attacks.
@@ -87,6 +93,12 @@ impl Encryptor {
     }
 
     pub fn decrypt(&self, data: &mut [u8]) -> anyhow::Result<()> {
+        let data = if data.len() == LogFile::FRAME_SIZE {
+            &mut data[Self::UNENCRYPTED_HEADER_SIZE..]
+        } else {
+            assert_eq!(data.len(), LIBSQL_PAGE_SIZE);
+            data
+        };
         use aes::cipher::{block_padding::NoPadding, BlockDecryptMut};
         // NOTICE: We don't want to return padding errors, it will make the code
         // prone to CBC padding oracle attacks.
@@ -94,7 +106,6 @@ impl Encryptor {
             .clone()
             .decrypt_padded_mut::<NoPadding>(data)
             .map_err(|_| rusqlite::ffi::Error::new(libsql_sys::ffi::SQLITE_IOERR_READ))?;
-        tracing::warn!("decrypted data!");
         Ok(())
     }
 }
