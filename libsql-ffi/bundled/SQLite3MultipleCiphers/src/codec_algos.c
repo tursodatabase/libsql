@@ -89,6 +89,10 @@ sqlite3mcGenerateInitialVector(int seed, unsigned char iv[16])
   sqlite3mcGetMD5Binary((unsigned char*) initkey, 16, iv);
 }
 
+void libsql_generate_initial_vector(int seed, unsigned char iv[16]) {
+  sqlite3mcGenerateInitialVector(seed, iv);
+}
+
 #if HAVE_CIPHER_AES_128_CBC
 
 SQLITE_PRIVATE int
