@@ -21,7 +21,7 @@ use zerocopy::AsBytes;
 use crate::namespace::NamespaceName;
 use crate::replication::primary::logger::LogFileHeader;
 
-use super::primary::logger::{Encryptor, LogFile};
+use super::primary::logger::{FrameEncryptor, LogFile};
 use super::FrameNo;
 
 /// This is the ratio of the space required to store snapshot vs size of the actual database.
@@ -149,7 +149,7 @@ async fn compact(
 /// snapshots should be processed before any other.
 fn pending_snapshots_list(
     compact_queue_dir: &Path,
-    encryption: Option<Encryptor>,
+    encryption: Option<FrameEncryptor>,
 ) -> anyhow::Result<Vec<(LogFile, PathBuf)>> {
     let dir = std::fs::read_dir(compact_queue_dir)?;
     let mut to_compact = Vec::new();
@@ -185,7 +185,7 @@ impl LogCompactor {
         db_path: &Path,
         log_id: Uuid,
         callback: SnapshotCallback,
-        encryption: Option<Encryptor>,
+        encryption: Option<FrameEncryptor>,
     ) -> anyhow::Result<Self> {
         // a directory containing logs that need compaction
         let compact_queue_dir = db_path.join("to_compact");
