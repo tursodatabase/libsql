@@ -241,7 +241,7 @@ func TestRemote(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, name, gpa, cv) VALUES (%d, '%d', %d.5, randomblob(10));", tableName, 0, 0, 0))
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, name, gpa, cv) VALUES (?, ?, ?, randomblob(10));", tableName), 0, fmt.Sprint(0), 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -416,7 +416,7 @@ func TestQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 		for i := 0; i < 10; i++ {
-			if _, err := db.ExecContext(context.Background(), "INSERT INTO test VALUES("+fmt.Sprint(i)+", '"+fmt.Sprint(i)+"', "+fmt.Sprint(i)+".5, randomblob(10))"); err != nil {
+			if _, err := db.ExecContext(context.Background(), "INSERT INTO test VALUES(?, ?, ?, randomblob(10))", i, fmt.Sprint(i), float64(i)+0.5); err != nil {
 				t.Fatal(err)
 			}
 		}

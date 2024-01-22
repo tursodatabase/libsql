@@ -258,7 +258,7 @@ func (c *conn) BeginTx(ctx context.Context, opts sqldriver.TxOptions) (sqldriver
 	return nil, fmt.Errorf("begin() is not implemented")
 }
 
-func (c *conn) execute(query string) (C.libsql_rows_t, error) {
+func (c *conn) executeNoArgs(query string) (C.libsql_rows_t, error) {
 	queryCString := C.CString(query)
 	defer C.free(unsafe.Pointer(queryCString))
 
@@ -271,8 +271,59 @@ func (c *conn) execute(query string) (C.libsql_rows_t, error) {
 	return rows, nil
 }
 
+func (c *conn) execute(query string, args []sqldriver.NamedValue) (C.libsql_rows_t, error) {
+	if len(args) == 0 {
+		return c.executeNoArgs(query)
+	}
+	queryCString := C.CString(query)
+	defer C.free(unsafe.Pointer(queryCString))
+
+	var stmt C.libsql_stmt_t
+	var errMsg *C.char
+	statusCode := C.libsql_prepare(queryCString, &stmt, &errMsg)
+	if statusCode != 0 {
+		return nil, libsqlError(fmt.Sprint("failed to prepare query ", query), statusCode, errMsg)
+	}
+	defer C.libsql_free_stmt(stmt)
+
+	for _, arg := range args {
+		var errMsg *C.char
+		var statusCode C.int
+		idx := arg.Ordinal
+		switch arg.Value.(type) {
+		case int64:
+			statusCode = C.libsql_bind_int(stmt, C.int(idx), C.longlong(arg.Value.(int64)), &errMsg)
+		case float64:
+			statusCode = C.libsql_bind_float(stmt, C.int(idx), C.double(arg.Value.(float64)), &errMsg)
+		case []byte:
+			blob := arg.Value.([]byte)
+			nativeBlob := C.CBytes(blob)
+			statusCode = C.libsql_bind_blob(stmt, C.int(idx), (*C.uchar)(nativeBlob), C.int(len(blob)), &errMsg)
+			C.free(nativeBlob)
+		case string:
+			valueStr := C.CString(arg.Value.(string))
+			statusCode = C.libsql_bind_string(stmt, C.int(idx), valueStr, &errMsg)
+			C.free(unsafe.Pointer(valueStr))
+		case nil:
+			statusCode = C.libsql_bind_null(stmt, C.int(idx), &errMsg)
+		default:
+			return nil, fmt.Errorf("unsupported type %T", arg.Value)
+		}
+		if statusCode != 0 {
+			return nil, libsqlError(fmt.Sprintf("failed to bind argument no. %d with value %v and type %T", idx, arg.Value, arg.Value), statusCode, errMsg)
+		}
+	}
+
+	var rows C.libsql_rows_t
+	statusCode = C.libsql_execute_stmt(c.nativePtr, stmt, &rows, &errMsg)
+	if statusCode != 0 {
+		return nil, libsqlError(fmt.Sprint("failed to execute query ", query), statusCode, errMsg)
+	}
+	return rows, nil
+}
+
 func (c *conn) ExecContext(ctx context.Context, query string, args []sqldriver.NamedValue) (sqldriver.Result, error) {
-	rows, err := c.execute(query)
+	rows, err := c.execute(query, args)
 	if err != nil {
 		return nil, err
 	}
@@ -404,7 +455,7 @@ func (r *rows) Next(dest []sqldriver.Value) error {
 }
 
 func (c *conn) QueryContext(ctx context.Context, query string, args []sqldriver.NamedValue) (sqldriver.Rows, error) {
-	rowsNativePtr, err := c.execute(query)
+	rowsNativePtr, err := c.execute(query, args)
 	if err != nil {
 		return nil, err
 	}
