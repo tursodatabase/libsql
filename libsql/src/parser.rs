@@ -124,7 +124,7 @@ impl StmtKind {
         let name = name.name.0.as_str();
         match name {
             // always ok to be served by primary or replicas - pure readonly pragmas
-            "table_list" | "index_list" | "table_info" | "table_xinfo" | "index_xinfo"
+            "table_list" | "index_list" | "table_info" | "table_xinfo" | "index_info" | "index_xinfo"
             | "pragma_list" | "compile_options" | "database_list" | "function_list"
             | "module_list" => Some(Self::Read),
             // special case for `encoding` - it's effectively readonly for connections
