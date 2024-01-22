@@ -34,3 +34,6 @@ bincode = "1.3.3"
 tempfile = "3.8.0"
 prost-build = "0.12.0"
 tonic-build = "0.10"
+
+[features]
+encryption = ["libsql-sys/encryption"]
