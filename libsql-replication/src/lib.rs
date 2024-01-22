@@ -54,4 +54,3 @@ impl FrameEncryptor {
         Ok(())
     }
 }
-
