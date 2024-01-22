@@ -225,6 +225,66 @@ func TestSync(t *testing.T) {
 	})
 }
 
+func TestRemote(t *testing.T) {
+	primaryUrl := os.Getenv("LIBSQL_PRIMARY_URL")
+	if primaryUrl == "" {
+		t.Skip("LIBSQL_PRIMARY_URL is not set")
+		return
+	}
+	authToken := os.Getenv("LIBSQL_AUTH_TOKEN")
+	db, err := sql.Open("libsql", primaryUrl+"?authToken="+authToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tableName := fmt.Sprintf("test_%d", time.Now().UnixNano())
+	_, err = db.Exec(fmt.Sprintf("CREATE TABLE %s (id INTEGER, name TEXT, gpa REAL, cv BLOB);", tableName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, name, gpa, cv) VALUES (%d, '%d', %d.5, randomblob(10));", tableName, 0, 0, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows, err := db.QueryContext(context.Background(), "SELECT NULL, id, name, gpa, cv FROM "+tableName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	idx := 0
+	for rows.Next() {
+		if idx > 0 {
+			t.Fatal("idx should be <= ", 0)
+		}
+		var null any
+		var id int
+		var name string
+		var gpa float64
+		var cv []byte
+		if err := rows.Scan(&null, &id, &name, &gpa, &cv); err != nil {
+			t.Fatal(err)
+		}
+		if null != nil {
+			t.Fatal("null should be nil")
+		}
+		if id != int(idx) {
+			t.Fatal("id should be ", idx, " got ", id)
+		}
+		if name != fmt.Sprint(idx) {
+			t.Fatal("name should be", idx)
+		}
+		if gpa != float64(idx)+0.5 {
+			t.Fatal("gpa should be", float64(idx)+0.5)
+		}
+		if len(cv) != 10 {
+			t.Fatal("cv should be 10 bytes")
+		}
+		idx++
+	}
+	if idx != 1 {
+		t.Fatal("idx should be 1 got ", idx)
+	}
+}
+
 func runFileTest(t *testing.T, test func(*testing.T, *sql.DB)) {
 	t.Parallel()
 	dir, err := os.MkdirTemp("", "libsql-*")
@@ -232,7 +292,7 @@ func runFileTest(t *testing.T, test func(*testing.T, *sql.DB)) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(dir)
-	db, err := sql.Open("libsql", dir+"/test.db")
+	db, err := sql.Open("libsql", "file:"+dir+"/test.db")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -266,7 +326,7 @@ func runMemoryAndFileTests(t *testing.T, test func(*testing.T, *sql.DB)) {
 
 func TestErrorNonUtf8URL(t *testing.T) {
 	t.Parallel()
-	db, err := sql.Open("libsql", "a\xc5z")
+	db, err := sql.Open("libsql", "file:a\xc5z")
 	if err == nil {
 		defer func() {
 			if err := db.Close(); err != nil {
@@ -275,7 +335,7 @@ func TestErrorNonUtf8URL(t *testing.T) {
 		}()
 		t.Fatal("expected error")
 	}
-	if err.Error() != "failed to open database a\xc5z\nerror code = 1: Wrong URL: invalid utf-8 sequence of 1 bytes from index 1" {
+	if err.Error() != "failed to open local database file:a\xc5z\nerror code = 1: Wrong URL: invalid utf-8 sequence of 1 bytes from index 6" {
 		t.Fatal("unexpected error:", err)
 	}
 }
@@ -299,7 +359,7 @@ func TestErrorWrongURL(t *testing.T) {
 
 func TestErrorCanNotConnect(t *testing.T) {
 	t.Parallel()
-	db, err := sql.Open("libsql", "/root/test.db")
+	db, err := sql.Open("libsql", "file:/root/test.db")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -317,7 +377,7 @@ func TestErrorCanNotConnect(t *testing.T) {
 		}()
 		t.Fatal("expected error")
 	}
-	if err.Error() != "failed to connect to database\nerror code = 1: Unable to connect: Failed to connect to database: `/root/test.db`" {
+	if err.Error() != "failed to connect to database\nerror code = 1: Unable to connect: Failed to connect to database: `file:/root/test.db`" {
 		t.Fatal("unexpected error:", err)
 	}
 }
