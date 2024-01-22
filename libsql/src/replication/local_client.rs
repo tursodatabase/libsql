@@ -102,7 +102,7 @@ mod test {
     #[tokio::test]
     async fn snapshot_stream_commited() {
         let tmp = tempdir().unwrap();
-        let snapshot = SnapshotFile::open("assets/test/snapshot.snap").await.unwrap();
+        let snapshot = SnapshotFile::open("assets/test/snapshot.snap", None).await.unwrap();
         let mut client = LocalClient::new(&tmp.path().join("data")).await.unwrap();
         client.load_frames(Frames::Snapshot(snapshot));
         let mut s = client.snapshot().await.unwrap();
