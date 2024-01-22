@@ -80,6 +80,7 @@ fn snapshot_list(db_path: &Path) -> impl Stream<Item = anyhow::Result<String>> +
 pub async fn find_snapshot_file(
     db_path: &Path,
     frame_no: FrameNo,
+    encryptor: Option<FrameEncryptor>,
 ) -> anyhow::Result<Option<SnapshotFile>> {
     let snapshot_dir_path = snapshot_dir_path(db_path);
     let snapshots = snapshot_list(db_path);
@@ -92,7 +93,7 @@ pub async fn find_snapshot_file(
         if (start_frame_no..=end_frame_no).contains(&frame_no) {
             let snapshot_path = snapshot_dir_path.join(&name);
             tracing::debug!("found snapshot for frame {frame_no} at {snapshot_path:?}");
-            let snapshot_file = SnapshotFile::open(&snapshot_path).await?;
+            let snapshot_file = SnapshotFile::open(&snapshot_path, encryptor).await?;
             return Ok(Some(snapshot_file));
         }
     }
@@ -344,7 +345,8 @@ impl SnapshotMerger {
         tokio::pin!(snapshots);
         while let Some(snapshot_name) = snapshots.next().await.transpose()? {
             let snapshot_path = snapshot_dir_path.join(&snapshot_name);
-            let snapshot = SnapshotFile::open(&snapshot_path).await?;
+            // NOTICE: no encryptor needed for reading unencrypted headers
+            let snapshot = SnapshotFile::open(&snapshot_path, None).await?;
             temp.push((
                 snapshot_name,
                 snapshot.header().frame_count,
@@ -372,7 +374,8 @@ impl SnapshotMerger {
         let mut size_after = None;
         tracing::debug!("merging {} snashots for {log_id}", snapshots.len());
         for (name, _) in snapshots.iter().rev() {
-            let snapshot = SnapshotFile::open(&snapshot_dir_path.join(name)).await?;
+            // NOTICE: no encryptor passed in order to read frames as is, still encrypted
+            let snapshot = SnapshotFile::open(&snapshot_dir_path.join(name), None).await?;
             // The size after the merged snapshot is the size after the first snapshot to be merged
             if size_after.is_none() {
                 size_after.replace(snapshot.header().size_after);
@@ -568,7 +571,7 @@ async fn perform_compaction(
     );
     let mut builder = SnapshotBuilder::new(db_path, log_id, scripted_backup, namespace).await?;
     builder
-        .append_frames(file_to_compact.into_rev_stream_mut())
+        .append_frames(file_to_compact.into_not_decrypted_rev_stream_mut())
         .await?;
     builder.finish().await
 }
@@ -880,7 +883,7 @@ mod test {
         assert_eq!(seen_frames.len(), 25);
         assert_eq!(seen_page_no.len(), 25);
 
-        let snapshot_file = SnapshotFile::open(&snapshot_path).await.unwrap();
+        let snapshot_file = SnapshotFile::open(&snapshot_path, None).await.unwrap();
 
         let frames = snapshot_file.into_stream_mut_from(0);
         tokio::pin!(frames);

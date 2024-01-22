@@ -29,6 +29,8 @@ use crate::replication::snapshot::{find_snapshot_file, LogCompactor};
 use crate::replication::{FrameNo, CRC_64_GO_ISO, WAL_MAGIC};
 use crate::LIBSQL_PAGE_SIZE;
 
+pub use libsql_replication::FrameEncryptor;
+
 static REPLICATION_LATENCY_CACHE_SIZE: Lazy<u64> = Lazy::new(|| {
     std::env::var("SQLD_REPLICATION_LATENCY_CACHE_SIZE").map_or(100, |s| s.parse().unwrap_or(100))
 });
@@ -51,50 +53,6 @@ pub struct WalPage {
     /// 0 for non-commit frames
     pub size_after: u32,
     pub data: Bytes,
-}
-
-#[derive(Debug, Clone)]
-pub struct FrameEncryptor {
-    enc: cbc::Encryptor<aes::Aes256>,
-    dec: cbc::Decryptor<aes::Aes256>,
-}
-
-impl FrameEncryptor {
-    pub fn new(key: Bytes) -> Self {
-        const SEED: u32 = 911;
-        use aes::cipher::KeyIvInit;
-
-        let mut iv: [u8; 16] = [0; 16];
-        let mut digest: [u8; 32] = [0; 32];
-        libsql_sys::connection::generate_initial_vector(SEED, &mut iv);
-        libsql_sys::connection::generate_aes256_key(&key, &mut digest);
-
-        let enc = cbc::Encryptor::new((&digest).into(), (&iv).into());
-        let dec = cbc::Decryptor::new((&digest).into(), (&iv).into());
-        Self { enc, dec }
-    }
-
-    pub fn encrypt(&self, data: &mut [u8]) -> anyhow::Result<()> {
-        use aes::cipher::{block_padding::NoPadding, BlockEncryptMut};
-        // NOTICE: We don't want to return padding errors, it will make the code
-        // prone to CBC padding oracle attacks.
-        self.enc
-            .clone()
-            .encrypt_padded_mut::<NoPadding>(data, data.len())
-            .map_err(|_| rusqlite::ffi::Error::new(libsql_sys::ffi::SQLITE_IOERR_WRITE))?;
-        Ok(())
-    }
-
-    pub fn decrypt(&self, data: &mut [u8]) -> anyhow::Result<()> {
-        use aes::cipher::{block_padding::NoPadding, BlockDecryptMut};
-        // NOTICE: We don't want to return padding errors, it will make the code
-        // prone to CBC padding oracle attacks.
-        self.dec
-            .clone()
-            .decrypt_padded_mut::<NoPadding>(data)
-            .map_err(|_| rusqlite::ffi::Error::new(libsql_sys::ffi::SQLITE_IOERR_READ))?;
-        Ok(())
-    }
 }
 
 /// Represent a LogFile, and operations that can be performed on it.
@@ -266,7 +224,8 @@ impl LogFile {
         }))
     }
 
-    pub fn into_rev_stream_mut(self) -> impl Stream<Item = anyhow::Result<FrameMut>> {
+    // NOTICE: Frames are yielded as is, without decrypting their contents. Headers are not encrypted anyway.
+    pub fn into_not_decrypted_rev_stream_mut(self) -> impl Stream<Item = anyhow::Result<FrameMut>> {
         let mut current_frame_offset = self.header.frame_count.get();
         let file = Arc::new(Mutex::new(self));
         async_stream::try_stream! {
@@ -278,7 +237,7 @@ impl LogFile {
                 let read_byte_offset = Self::absolute_byte_offset(current_frame_offset);
                 let frame = tokio::task::spawn_blocking({
                     let file = file.clone();
-                    move || file.lock().read_frame_byte_offset_mut(read_byte_offset)
+                    move || file.lock().read_not_decrypted_frame_byte_offset_mut(read_byte_offset)
                 }).await??;
                 yield frame
             }
@@ -440,6 +399,13 @@ impl LogFile {
         Ok(FrameMut::try_from(&*buffer)?)
     }
 
+    fn read_not_decrypted_frame_byte_offset_mut(&self, offset: u64) -> anyhow::Result<FrameMut> {
+        let mut buffer = BytesMut::zeroed(LogFile::FRAME_SIZE);
+        self.file.read_exact_at(&mut buffer, offset)?;
+
+        Ok(FrameMut::try_from(&*buffer)?)
+    }
+
     fn last_commited_frame_no(&self) -> Option<FrameNo> {
         if self.header.frame_count.get() == 0 {
             None
@@ -563,6 +529,7 @@ pub struct ReplicationLogger {
     pub new_frame_notifier: watch::Sender<Option<FrameNo>>,
     pub closed_signal: watch::Sender<bool>,
     pub auto_checkpoint: u32,
+    encryptor: Option<FrameEncryptor>,
 }
 
 impl ReplicationLogger {
@@ -667,7 +634,7 @@ impl ReplicationLogger {
 
         let (closed_signal, _) = watch::channel(false);
 
-        let encryption = encryption_key.map(FrameEncryptor::new);
+        let encryptor = encryption_key.map(FrameEncryptor::new);
         Ok(Self {
             generation: Generation::new(generation_start_frame_no.unwrap_or(0)),
             compactor: LogCompactor::new(
@@ -675,7 +642,7 @@ impl ReplicationLogger {
                 Uuid::from_u128(log_file.header.log_id.get()),
                 scripted_backup,
                 namespace,
-                encryption,
+                encryptor.clone(),
             )?,
             log_file: RwLock::new(log_file),
             db_path,
@@ -684,6 +651,7 @@ impl ReplicationLogger {
             auto_checkpoint,
             // we keep the last 100 commit transaction timestamps
             commit_timestamp_cache: moka::sync::Cache::new(*REPLICATION_LATENCY_CACHE_SIZE),
+            encryptor,
         })
     }
 
@@ -786,7 +754,7 @@ impl ReplicationLogger {
     }
 
     pub async fn get_snapshot_file(&self, from: FrameNo) -> anyhow::Result<Option<SnapshotFile>> {
-        find_snapshot_file(&self.db_path, from).await
+        find_snapshot_file(&self.db_path, from, self.encryptor.clone()).await
     }
 
     pub fn get_frame(&self, frame_no: FrameNo) -> Result<Frame, LogReadError> {
