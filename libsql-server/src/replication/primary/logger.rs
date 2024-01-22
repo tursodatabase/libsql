@@ -989,6 +989,58 @@ mod test {
     }
 
     #[tokio::test]
+    #[cfg(feature = "encryption")]
+    async fn log_with_encryption() {
+        let tmp = tempfile::tempdir().unwrap();
+        let logger = ReplicationLogger::open(
+            tmp.path(),
+            100000000,
+            None,
+            false,
+            100000,
+            Box::new(|_| Ok(())),
+            Some(Bytes::from_static("HEAVILYguardedSECRET".as_bytes())),
+        )
+        .unwrap();
+
+        let frames = (0..10)
+            .map(|i| WalPage {
+                page_no: i,
+                size_after: 0,
+                data: Bytes::from(vec![i as _; 4096]),
+            })
+            .collect::<Vec<_>>();
+        logger.write_pages(&frames).unwrap();
+        logger.commit().unwrap();
+
+        let log_file = logger.log_file.write();
+        for i in 0..10 {
+            let frame = log_file.frame(i).unwrap();
+            assert_eq!(frame.header().page_no.get(), i as u32);
+            assert!(frame.page().iter().all(|x| i as u8 == *x));
+        }
+
+        assert_eq!(
+            log_file.header.start_frame_no.get() + log_file.header.frame_count.get(),
+            10
+        );
+
+        // The file contents do not contain raw data when read directly - it's encrypted
+        let file = File::open(tmp.path().join("wallog")).unwrap();
+        for i in 0..10 {
+            let mut buf = [0; 4096];
+            file.read_exact_at(&mut buf, i * 4096).unwrap();
+            assert!(!buf.iter().all(|x| i as u8 == *x));
+        }
+        // When we read via the log file API though, we get the decrypted data
+        for i in 0..10 {
+            let frame = log_file.frame(i).unwrap();
+            assert_eq!(frame.header().page_no.get(), i as u32);
+            assert!(frame.page().iter().all(|x| i as u8 == *x));
+        }
+    }
+
+    #[tokio::test]
     async fn savepoint_and_rollback() {
         let tmp = tempfile::tempdir().unwrap();
         let logger = Arc::new(
