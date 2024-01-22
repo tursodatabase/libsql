@@ -22,7 +22,9 @@ impl FrameEncryptor {
 
         let mut iv: [u8; 16] = [0; 16];
         let mut digest: [u8; 32] = [0; 32];
+        #[cfg(feature = "encryption")]
         libsql_sys::connection::generate_initial_vector(SEED, &mut iv);
+        #[cfg(feature = "encryption")]
         libsql_sys::connection::generate_aes256_key(&key, &mut digest);
 
         let enc = cbc::Encryptor::new((&digest).into(), (&iv).into());
