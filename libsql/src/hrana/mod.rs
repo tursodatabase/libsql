@@ -12,7 +12,6 @@ pub mod proto;
 mod stream;
 pub mod transaction;
 
-use crate::hrana::connection::HttpConnection;
 use crate::hrana::cursor::{Cursor, Error, OwnedCursorStep};
 pub(crate) use crate::hrana::pipeline::StreamResponseError;
 use crate::hrana::proto::{Batch, Col, Stmt};
@@ -112,33 +111,11 @@ pub enum CursorResponseError {
     Other(String),
 }
 
-enum StatementExecutor<T: HttpSend> {
-    /// An opened HTTP Hrana stream - usually in scope of executing transaction. Operations over it
-    /// will be scheduled for sequential execution.
-    Stream(HranaStream<T>),
-    /// Hrana HTTP connection. Operations executing over it are not attached to any sequential
-    /// order of execution.
-    Connection(HttpConnection<T>),
-}
-
-impl<T> StatementExecutor<T>
-where
-    T: HttpSend,
-{
-    async fn execute(&self, stmt: Stmt) -> crate::Result<Cursor<T::Stream>> {
-        let res = match self {
-            StatementExecutor::Stream(stream) => stream.cursor(Batch::single(stmt)).await,
-            StatementExecutor::Connection(conn) => conn.execute_inner(stmt).await,
-        };
-        res.map_err(|e| crate::Error::Hrana(e.into()))
-    }
-}
-
 pub struct Statement<T>
 where
     T: HttpSend,
 {
-    executor: StatementExecutor<T>,
+    stream: HranaStream<T>,
     inner: Stmt,
 }
 
@@ -146,33 +123,17 @@ impl<T> Statement<T>
 where
     T: HttpSend,
 {
-    pub(crate) fn from_stream(stream: HranaStream<T>, sql: String, want_rows: bool) -> Self {
-        Statement {
-            executor: StatementExecutor::Stream(stream),
-            inner: Stmt::new(sql, want_rows),
-        }
-    }
-
-    pub(crate) fn from_connection(conn: HttpConnection<T>, sql: String, want_rows: bool) -> Self {
-        Statement {
-            executor: StatementExecutor::Connection(conn),
-            inner: Stmt::new(sql, want_rows),
-        }
+    pub(crate) fn new(stream: HranaStream<T>, sql: String, want_rows: bool) -> Self {
+        let inner = Stmt::new(sql, want_rows);
+        Statement { stream, inner }
     }
 
     pub async fn execute(&mut self, params: &Params) -> crate::Result<usize> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
-        let mut v = self.executor.execute(stmt).await?;
-        let mut step = v
-            .next_step()
-            .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
-        step.consume()
-            .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
-        Ok(step.affected_rows() as usize)
+        let result = self.stream.execute(stmt).await?;
+        Ok(result.affected_row_count as usize)
     }
 
     pub(crate) async fn query_raw(
@@ -182,7 +143,7 @@ where
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
-        let cursor = self.executor.execute(stmt).await?;
+        let cursor = self.stream.cursor(Batch::single(stmt)).await?;
         let rows = HranaRows::from_cursor(cursor).await?;
 
         Ok(rows)

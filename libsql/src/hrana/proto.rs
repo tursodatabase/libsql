@@ -8,6 +8,7 @@ use base64::Engine;
 use std::collections::VecDeque;
 use std::fmt;
 
+use crate::parser::StmtKind;
 use serde::{Deserialize, Serialize, Serializer};
 
 #[derive(Serialize, Debug)]
@@ -193,6 +194,31 @@ impl Batch {
         batch
     }
 
+    pub(crate) fn explicit_transaction(&self) -> crate::hrana::Result<(bool, bool)> {
+        let mut begin = false; // batch contains BEGIN transaction
+        let mut end = false; // batch contains COMMIT/ROLLBACK
+        for step in self.steps.iter() {
+            if let Some(Ok(parsed)) = crate::parser::Statement::parse(&step.stmt.sql).next() {
+                match parsed.kind {
+                    StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly => {
+                        begin = true;
+                        end = false;
+                    }
+                    StmtKind::TxnEnd => {
+                        end = true;
+                        begin = false;
+                    }
+                    _ => {}
+                }
+            }
+        }
+        Ok((begin, end))
+    }
+
+    pub fn len(&self) -> usize {
+        self.steps.len()
+    }
+
     pub fn from_iter(stmts: impl IntoIterator<Item = Stmt>, protocol_v3: bool) -> Self {
         let mut batch = Batch::new();
         let mut step = -1;
@@ -241,6 +267,16 @@ pub struct BatchResp {
 pub struct BatchResult {
     pub step_results: Vec<Option<StmtResult>>,
     pub step_errors: Vec<Option<Error>>,
+}
+
+impl BatchResult {
+    pub fn into_result(mut self) -> crate::Result<()> {
+        if let Some(Some(error)) = self.step_errors.pop() {
+            Err(crate::Error::Hrana(Box::new(error)))
+        } else {
+            Ok(())
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
