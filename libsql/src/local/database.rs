@@ -53,7 +53,16 @@ impl Database {
         auth_token: String,
         encryption_key: Option<bytes::Bytes>,
     ) -> Result<Database> {
-        Self::open_http_sync_internal(connector, db_path, endpoint, auth_token, None, false, encryption_key).await
+        Self::open_http_sync_internal(
+            connector,
+            db_path,
+            endpoint,
+            auth_token,
+            None,
+            false,
+            encryption_key,
+        )
+        .await
     }
 
     #[cfg(feature = "replication")]
@@ -73,7 +82,7 @@ impl Database {
 
         let mut db = Database::open(&db_path, OpenFlags::default())?;
 
-        let endpoint = coerce_url_scheme(&endpoint);
+        let endpoint = coerce_url_scheme(endpoint);
         let remote = crate::replication::client::Client::new(
             connector,
             endpoint.as_str().try_into().unwrap(),
@@ -98,7 +107,11 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub async fn open_local_sync(db_path: impl Into<String>, flags: OpenFlags, encryption_key: Option<bytes::Bytes>) -> Result<Database> {
+    pub async fn open_local_sync(
+        db_path: impl Into<String>,
+        flags: OpenFlags,
+        encryption_key: Option<bytes::Bytes>,
+    ) -> Result<Database> {
         use std::path::PathBuf;
 
         let db_path = db_path.into();
