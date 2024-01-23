@@ -7,7 +7,7 @@ cfg_replication_or_remote! {
 }
 
 cfg_replication_or_remote_or_hrana! {
-    pub(crate) fn coerce_url_scheme(url: &str) -> String {
+    pub(crate) fn coerce_url_scheme(url: String) -> String {
         let mut url = url.replace("libsql://", "https://");
 
         if !url.contains("://") {

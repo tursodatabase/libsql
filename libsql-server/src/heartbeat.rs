@@ -55,7 +55,7 @@ async fn send_stats(
                         if let Some(url) = config.heartbeat_url.as_ref() {
                             heartbeat_url = url.clone();
                         } else {
-                            tracing::warn!(
+                            tracing::debug!(
                                 "No heartbeat url for namespace {}. Can't send stats!",
                                 ns.as_str()
                             );

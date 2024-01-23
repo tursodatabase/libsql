@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use libsql_sys::wal::wrapper::{WalWrapper, WrapWal, WrappedWal};
-use libsql_sys::wal::{Wal, WalManager};
+use libsql_sys::wal::{BusyHandler, CheckpointCallback, Wal, WalManager};
 use metrics::{histogram, increment_counter};
 use once_cell::sync::Lazy;
 use parking_lot::{Mutex, RwLock};
@@ -14,6 +14,7 @@ use tokio::sync::{watch, Notify};
 use tokio::time::{Duration, Instant};
 
 use crate::auth::{Authenticated, Authorized, Permission};
+use crate::connection::TXN_TIMEOUT;
 use crate::error::Error;
 use crate::metrics::{
     DESCRIBE_COUNT, PROGRAM_EXEC_COUNT, READ_QUERY_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT,
@@ -28,7 +29,7 @@ use crate::stats::Stats;
 use crate::Result;
 
 use super::program::{Cond, DescribeCol, DescribeParam, DescribeResponse};
-use super::{MakeConnection, Program, Step, TXN_TIMEOUT};
+use super::{MakeConnection, Program, Step};
 
 pub struct MakeLibSqlConn<T: WalManager> {
     db_path: PathBuf,
@@ -175,17 +176,20 @@ impl<T> std::fmt::Debug for LibSqlConnection<T> {
 pub struct InhibitCheckpointWalWrapper;
 
 impl<W: Wal> WrapWal<W> for InhibitCheckpointWalWrapper {
-    fn checkpoint<B: libsql_sys::wal::BusyHandler>(
+    fn checkpoint(
         &mut self,
         _wrapped: &mut W,
         _db: &mut libsql_sys::wal::Sqlite3Db,
         _mode: libsql_sys::wal::CheckpointMode,
-        _busy_handler: Option<&mut B>,
+        _busy_handler: Option<&mut dyn BusyHandler>,
         _sync_flags: u32,
         _buf: &mut [u8],
-    ) -> libsql_sys::wal::Result<(u32, u32)> {
+        _checkpoint_cb: Option<&mut dyn CheckpointCallback>,
+        _in_wal: Option<&mut i32>,
+        _backfilled: Option<&mut i32>,
+    ) -> libsql_sys::wal::Result<()> {
         tracing::warn!(
-            "chackpoint inhibited: this connection is not allowed to perform checkpoints"
+            "checkpoint inhibited: this connection is not allowed to perform checkpoints"
         );
         Err(rusqlite::ffi::Error::new(SQLITE_BUSY))
     }
@@ -378,12 +382,13 @@ struct TxnSlot<T> {
     created_at: tokio::time::Instant,
     /// The transaction lock was stolen
     is_stolen: AtomicBool,
+    txn_timeout: Duration,
 }
 
 impl<T> TxnSlot<T> {
     #[inline]
     fn expires_at(&self) -> Instant {
-        self.created_at + TXN_TIMEOUT
+        self.created_at + self.txn_timeout
     }
 
     /// abort the connection for that slot.
@@ -581,7 +586,11 @@ impl<W: Wal> Connection<W> {
     ) -> Result<B> {
         use rusqlite::TransactionState as Tx;
 
-        let state = this.lock().state.clone();
+        let (state, txn_timeout) = {
+            let lock = this.lock();
+            let txn_timeout = lock.config_store.get().txn_timeout.unwrap_or(TXN_TIMEOUT);
+            (lock.state.clone(), txn_timeout)
+        };
 
         let mut results = Vec::with_capacity(pgm.steps.len());
         builder.init(&this.lock().builder_config)?;
@@ -622,6 +631,7 @@ impl<W: Wal> Connection<W> {
                         conn: this.clone(),
                         created_at: Instant::now(),
                         is_stolen: AtomicBool::new(false),
+                        txn_timeout,
                     });
 
                     lock.slot.replace(slot.clone());

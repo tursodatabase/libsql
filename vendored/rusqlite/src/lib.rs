@@ -1582,10 +1582,10 @@ mod test {
         let db = Connection::open_in_memory()?;
         let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER, y TEXT);
-                   INSERT INTO foo VALUES(4, \"hello\");
-                   INSERT INTO foo VALUES(3, \", \");
-                   INSERT INTO foo VALUES(2, \"world\");
-                   INSERT INTO foo VALUES(1, \"!\");
+                   INSERT INTO foo VALUES(4, 'hello');
+                   INSERT INTO foo VALUES(3, ', ');
+                   INSERT INTO foo VALUES(2, 'world');
+                   INSERT INTO foo VALUES(1, '!');
                    END;";
         db.execute_batch(sql)?;
 
@@ -1912,10 +1912,10 @@ mod test {
             let db = Connection::open_in_memory()?;
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
-                       INSERT INTO foo VALUES(4, \"hello\");
-                       INSERT INTO foo VALUES(3, \", \");
-                       INSERT INTO foo VALUES(2, \"world\");
-                       INSERT INTO foo VALUES(1, \"!\");
+                       INSERT INTO foo VALUES(4, 'hello');
+                       INSERT INTO foo VALUES(3, ', ');
+                       INSERT INTO foo VALUES(2, 'world');
+                       INSERT INTO foo VALUES(1, '!');
                        END;";
             db.execute_batch(sql)?;
 
@@ -1932,10 +1932,10 @@ mod test {
             let db = Connection::open_in_memory()?;
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
-                       INSERT INTO foo VALUES(4, \"hello\");
-                       INSERT INTO foo VALUES(3, \", \");
-                       INSERT INTO foo VALUES(2, \"world\");
-                       INSERT INTO foo VALUES(1, \"!\");
+                       INSERT INTO foo VALUES(4, 'hello');
+                       INSERT INTO foo VALUES(3, ', ');
+                       INSERT INTO foo VALUES(2, 'world');
+                       INSERT INTO foo VALUES(1, '!');
                        END;";
             db.execute_batch(sql)?;
 
@@ -1962,10 +1962,10 @@ mod test {
             let db = Connection::open_in_memory()?;
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
-                       INSERT INTO foo VALUES(4, \"hello\");
-                       INSERT INTO foo VALUES(3, \", \");
-                       INSERT INTO foo VALUES(2, \"world\");
-                       INSERT INTO foo VALUES(1, \"!\");
+                       INSERT INTO foo VALUES(4, 'hello');
+                       INSERT INTO foo VALUES(3, ', ');
+                       INSERT INTO foo VALUES(2, 'world');
+                       INSERT INTO foo VALUES(1, '!');
                        END;";
             db.execute_batch(sql)?;
 
@@ -1983,10 +1983,10 @@ mod test {
             let db = Connection::open_in_memory()?;
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
-                       INSERT INTO foo VALUES(4, \"hello\");
-                       INSERT INTO foo VALUES(3, \", \");
-                       INSERT INTO foo VALUES(2, \"world\");
-                       INSERT INTO foo VALUES(1, \"!\");
+                       INSERT INTO foo VALUES(4, 'hello');
+                       INSERT INTO foo VALUES(3, ', ');
+                       INSERT INTO foo VALUES(2, 'world');
+                       INSERT INTO foo VALUES(1, '!');
                        END;";
             db.execute_batch(sql)?;
 
@@ -2025,7 +2025,7 @@ mod test {
             let db = Connection::open_in_memory()?;
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
-                       INSERT INTO foo VALUES(4, \"hello\");
+                       INSERT INTO foo VALUES(4, 'hello');
                        END;";
             db.execute_batch(sql)?;
 
@@ -2042,7 +2042,7 @@ mod test {
             let db = Connection::open_in_memory()?;
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
-                       INSERT INTO foo VALUES(4, \"hello\");
+                       INSERT INTO foo VALUES(4, 'hello');
                        END;";
             db.execute_batch(sql)?;
 
@@ -2079,7 +2079,7 @@ mod test {
         let db = Connection::open_in_memory()?;
         let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
-                       INSERT INTO foo VALUES(4, \"hello\");
+                       INSERT INTO foo VALUES(4, 'hello');
                        END;";
         db.execute_batch(sql)?;
 

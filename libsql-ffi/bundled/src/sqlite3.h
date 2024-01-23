@@ -8695,6 +8695,10 @@ SQLITE_API int sqlite3_status64(
 */
 SQLITE_API int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 
+#ifdef LIBSQL_CUSTOM_PAGER_CODEC
+SQLITE_API void *libsql_leak_pager(sqlite3*);
+#endif
+
 /*
 ** CAPI3REF: Status Parameters for database connections
 ** KEYWORDS: {SQLITE_DBSTATUS options}
@@ -13512,7 +13516,12 @@ typedef struct libsql_wal_methods {
     int nBuf,                       /* Size of buffer nBuf */
     unsigned char *zBuf,                       /* Temporary buffer to use */
     int *pnLog,                     /* OUT: Number of frames in WAL */
-    int *pnCkpt                     /* OUT: Number of backfilled frames in WAL */
+    int *pnCkpt,                    /* OUT: Number of backfilled frames in WAL */
+    /*
+     * Called for each page being inserted in the wal, and once if the whole checkpoint operation was successfull with pPage == NULL
+     */
+    int (*xCb)(void* pCbData, int mxSafeFrame, const unsigned char* pPage, int nPage, int page_no, int frame_no), /* called */
+    void* pCbData                  /* user data passed to xCb */
   );
 
   /* Return the value to pass to a sqlite3_wal_hook callback, the

@@ -154,7 +154,7 @@ mod tests {
     fn test_close_hook() {
         let conn = Connection::open_in_memory().unwrap();
         let mut closed = false;
-        
+
         extern "C" fn cb(closed: *mut c_void, _db: *mut libsql_sys::ffi::sqlite3) {
             unsafe {
                 println!("Close hook called!");
@@ -163,11 +163,7 @@ mod tests {
             }
         }
         unsafe {
-            libsql_close_hook(
-                conn.handle(),
-                Some(cb),
-                &mut closed as *mut _ as *mut _,
-            );
+            libsql_close_hook(conn.handle(), Some(cb), &mut closed as *mut _ as *mut _);
         }
         assert!(!closed);
         drop(conn);

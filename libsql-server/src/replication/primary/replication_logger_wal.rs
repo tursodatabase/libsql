@@ -4,7 +4,9 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use libsql_sys::ffi::Sqlite3DbHeader;
-use libsql_sys::wal::{BusyHandler, Result, Sqlite3Wal, Sqlite3WalManager, WalManager};
+use libsql_sys::wal::{
+    BusyHandler, CheckpointCallback, Result, Sqlite3Wal, Sqlite3WalManager, WalManager,
+};
 use libsql_sys::wal::{PageHeaders, Sqlite3Db, Sqlite3File, UndoHandler};
 use libsql_sys::wal::{Vfs, Wal};
 use rusqlite::ffi::{libsql_pghdr, SQLITE_IOERR, SQLITE_SYNC_NORMAL};
@@ -222,17 +224,28 @@ impl Wal for ReplicationLoggerWal {
         Ok(())
     }
 
-    fn checkpoint<B: BusyHandler>(
+    fn checkpoint(
         &mut self,
         db: &mut Sqlite3Db,
         mode: libsql_sys::wal::CheckpointMode,
-        busy_handler: Option<&mut B>,
+        busy_handler: Option<&mut dyn BusyHandler>,
         sync_flags: u32,
         buf: &mut [u8],
-    ) -> Result<(u32, u32)> {
-        self.inject_replication_index()?;
-        self.inner
-            .checkpoint(db, mode, busy_handler, sync_flags, buf)
+        checkpoint_cb: Option<&mut dyn CheckpointCallback>,
+        in_wal: Option<&mut i32>,
+        backfilled: Option<&mut i32>,
+    ) -> Result<()> {
+        self.inject_replication_index(db)?;
+        self.inner.checkpoint(
+            db,
+            mode,
+            busy_handler,
+            sync_flags,
+            buf,
+            checkpoint_cb,
+            in_wal,
+            backfilled,
+        )
     }
 
     fn exclusive_mode(&mut self, op: c_int) -> Result<()> {
@@ -257,7 +270,7 @@ impl Wal for ReplicationLoggerWal {
 }
 
 impl ReplicationLoggerWal {
-    fn inject_replication_index(&mut self) -> Result<()> {
+    fn inject_replication_index(&mut self, db: &mut Sqlite3Db) -> Result<()> {
         let data = &mut [0; LIBSQL_PAGE_SIZE as _];
         // We retreive the freshest version of page 1. Either most recent page 1 is in the WAL, or
         // it is in the main db file
@@ -273,13 +286,17 @@ impl ReplicationLoggerWal {
         let header = Sqlite3DbHeader::mut_from_prefix(data).expect("invalid database header");
         header.replication_index =
             (self.logger().new_frame_notifier.borrow().unwrap_or(0) + 1).into();
+        #[cfg(feature = "encryption")]
+        let pager = libsql_sys::connection::leak_pager(db.as_ptr());
+        #[cfg(not(feature = "encryption"))]
+        let pager = std::ptr::null_mut();
         let mut header = libsql_pghdr {
             pPage: std::ptr::null_mut(),
             pData: data.as_mut_ptr() as _,
             pExtra: std::ptr::null_mut(),
             pCache: std::ptr::null_mut(),
             pDirty: std::ptr::null_mut(),
-            pPager: std::ptr::null_mut(),
+            pPager: pager,
             pgno: 1,
             pageHash: 0x02, // DIRTY
             flags: 0,
@@ -311,7 +328,10 @@ impl ReplicationLoggerWal {
 
 #[cfg(test)]
 mod test {
-    use libsql_sys::wal::wrapper::{WalWrapper, WrapWal};
+    use libsql_sys::wal::{
+        wrapper::{WalWrapper, WrapWal},
+        CheckpointMode,
+    };
     use metrics::atomics::AtomicU64;
     use rusqlite::ffi::{sqlite3_wal_checkpoint_v2, SQLITE_CHECKPOINT_FULL};
     use tempfile::tempdir;
@@ -328,17 +348,29 @@ mod test {
         struct VerifyReplicationIndex(Arc<AtomicU64>);
 
         impl WrapWal<ReplicationLoggerWal> for VerifyReplicationIndex {
-            fn checkpoint<B: libsql_sys::wal::BusyHandler>(
+            fn checkpoint(
                 &mut self,
                 wrapped: &mut ReplicationLoggerWal,
-                db: &mut libsql_sys::wal::Sqlite3Db,
-                mode: libsql_sys::wal::CheckpointMode,
-                busy_handler: Option<&mut B>,
+                db: &mut super::Sqlite3Db,
+                mode: CheckpointMode,
+                busy_handler: Option<&mut dyn BusyHandler>,
                 sync_flags: u32,
                 // temporary scratch buffer
                 buf: &mut [u8],
-            ) -> libsql_sys::wal::Result<(u32, u32)> {
-                let ret = wrapped.checkpoint(db, mode, busy_handler, sync_flags, buf)?;
+                checkpoint_cb: Option<&mut dyn CheckpointCallback>,
+                in_wal: Option<&mut i32>,
+                backfilled: Option<&mut i32>,
+            ) -> libsql_sys::wal::Result<()> {
+                wrapped.checkpoint(
+                    db,
+                    mode,
+                    busy_handler,
+                    sync_flags,
+                    buf,
+                    checkpoint_cb,
+                    in_wal,
+                    backfilled,
+                )?;
                 let buf = &mut [0; LIBSQL_PAGE_SIZE as _];
                 wrapped.inner.db_file().read_at(buf, 0).unwrap();
                 let header = Sqlite3DbHeader::mut_from_prefix(buf).unwrap();
@@ -347,7 +379,7 @@ mod test {
                     std::sync::atomic::Ordering::Relaxed,
                 );
 
-                Ok(ret)
+                Ok(())
             }
         }
 

@@ -36,7 +36,7 @@ use net::Connector;
 use once_cell::sync::Lazy;
 use replication::NamespacedSnapshotCallback;
 use tokio::runtime::Runtime;
-use tokio::sync::{mpsc, Notify};
+use tokio::sync::{mpsc, Notify, Semaphore};
 use tokio::task::JoinSet;
 use tokio::time::Duration;
 use url::Url;
@@ -72,7 +72,6 @@ mod stats;
 mod test;
 mod utils;
 
-const MAX_CONCURRENT_DBS: usize = 128;
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 const DEFAULT_AUTO_CHECKPOINT: u32 = 1000;
 const LIBSQL_PAGE_SIZE: u64 = 4096;
@@ -103,6 +102,7 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub shutdown: Arc<Notify>,
     pub max_active_namespaces: usize,
     pub meta_store_config: Option<MetaStoreConfig>,
+    pub max_concurrent_connections: usize,
 }
 
 impl<C, A, D> Default for Server<C, A, D> {
@@ -122,6 +122,7 @@ impl<C, A, D> Default for Server<C, A, D> {
             shutdown: Default::default(),
             max_active_namespaces: 100,
             meta_store_config: None,
+            max_concurrent_connections: 128,
         }
     }
 }
@@ -393,6 +394,7 @@ where
                     disable_namespaces: self.disable_namespaces,
                     max_active_namespaces: self.max_active_namespaces,
                     meta_store_config: self.meta_store_config.take(),
+                    max_concurrent_connections: self.max_concurrent_connections,
                 };
                 let (namespaces, proxy_service, replication_service) = replica.configure().await?;
                 self.rpc_client_config = None;
@@ -435,6 +437,7 @@ where
                     join_set: &mut join_set,
                     auth: auth.clone(),
                     meta_store_config: self.meta_store_config.take(),
+                    max_concurrent_connections: self.max_concurrent_connections,
                 };
                 let (namespaces, proxy_service, replication_service) = primary.configure().await?;
                 self.rpc_server_config = None;
@@ -503,6 +506,7 @@ struct Primary<'a, A> {
     auth: Arc<Auth>,
     join_set: &'a mut JoinSet<anyhow::Result<()>>,
     meta_store_config: Option<MetaStoreConfig>,
+    max_concurrent_connections: usize,
 }
 
 impl<A> Primary<'_, A>
@@ -530,6 +534,7 @@ where
             checkpoint_interval: self.db_config.checkpoint_interval,
             disable_namespace: self.disable_namespaces,
             encryption_key: self.db_config.encryption_key.clone(),
+            max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
         };
 
         let factory = PrimaryNamespaceMaker::new(conf);
@@ -619,6 +624,7 @@ struct Replica<C> {
     disable_namespaces: bool,
     max_active_namespaces: usize,
     meta_store_config: Option<MetaStoreConfig>,
+    max_concurrent_connections: usize,
 }
 
 impl<C: Connector> Replica<C> {
@@ -640,6 +646,7 @@ impl<C: Connector> Replica<C> {
             max_response_size: self.db_config.max_response_size,
             max_total_response_size: self.db_config.max_total_response_size,
             encryption_key: self.db_config.encryption_key.clone(),
+            max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
         };
 
         let factory = ReplicaNamespaceMaker::new(conf);

@@ -289,7 +289,9 @@ where
         let body = stream_to_bytes(body).await?;
         let mut response: ServerMsg = serde_json::from_slice(&body)?;
         if let Some(base_url) = response.base_url.take() {
-            self.pipeline_url = Arc::from(base_url);
+            let (pipeline_url, cursor_url) = parse_hrana_urls(&base_url);
+            self.pipeline_url = pipeline_url;
+            self.cursor_url = cursor_url;
         }
         match response.baton.take() {
             None => {
@@ -377,6 +379,19 @@ where
             .oneshot(self.pipeline_url.clone(), self.auth_token.clone(), req);
         self.done();
     }
+}
+
+pub(super) fn parse_hrana_urls(url: &str) -> (Arc<str>, Arc<str>) {
+    let (mut base_url, query) = match url.rfind('?') {
+        Some(i) => url.split_at(i),
+        None => (url, ""),
+    };
+    if base_url.ends_with('/') {
+        base_url = &base_url[0..(base_url.len() - 1)];
+    }
+    let pipeline_url = Arc::from(format!("{base_url}/v3/pipeline{query}"));
+    let cursor_url = Arc::from(format!("{base_url}/v3/cursor{query}"));
+    (pipeline_url, cursor_url)
 }
 
 async fn stream_to_bytes<S>(mut stream: S) -> Result<Bytes>

@@ -1,7 +1,7 @@
 use crate::hrana::cursor::Cursor;
 use crate::hrana::pipeline::{BatchStreamReq, StreamRequest, StreamResponse};
 use crate::hrana::proto::{Batch, BatchResult, Stmt};
-use crate::hrana::stream::HranaStream;
+use crate::hrana::stream::{parse_hrana_urls, HranaStream};
 use crate::hrana::{HranaError, HttpSend, Result, Statement};
 use crate::util::coerce_url_scheme;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
@@ -32,9 +32,8 @@ where
 {
     pub fn new(url: String, token: String, inner: T) -> Self {
         // The `libsql://` protocol is an alias for `https://`.
-        let base_url = coerce_url_scheme(&url);
-        let pipeline_url = Arc::from(format!("{base_url}/v3/pipeline"));
-        let cursor_url = Arc::from(format!("{base_url}/v3/cursor"));
+        let base_url = coerce_url_scheme(url);
+        let (pipeline_url, cursor_url) = parse_hrana_urls(&base_url);
         HttpConnection(Arc::new(InnerClient {
             inner,
             pipeline_url,

@@ -936,7 +936,7 @@ mod test {
         // try to write a few pages
         for i in 0..10000 {
             savepoint
-                .execute(&format!("INSERT INTO test values (\"foobar{i}\")"), ())
+                .execute(&format!("INSERT INTO test values ('foobar{i}')"), ())
                 .unwrap();
             // force a flush
             savepoint.cache_flush().unwrap();
