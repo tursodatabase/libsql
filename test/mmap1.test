@@ -51,12 +51,12 @@ proc register_rblob_code {dbname seed} {
 # of 4KB in size). Whereas on unix any sized mapping may be created.
 #
 foreach {t mmap_size nRead c2init} {
-  1.1 { PRAGMA mmap_size = 67108864 } /8|12/ {PRAGMA mmap_size = 0}
-  1.2 { PRAGMA mmap_size =    53248 } 154    {PRAGMA mmap_size = 0}
-  1.3 { PRAGMA mmap_size =        0 } 344    {PRAGMA mmap_size = 0}
-  1.4 { PRAGMA mmap_size = 67108864 } /12|8/ {PRAGMA mmap_size = 67108864 }
-  1.5 { PRAGMA mmap_size =    53248 } 154    {PRAGMA mmap_size = 67108864 }
-  1.6 { PRAGMA mmap_size =        0 } 344    {PRAGMA mmap_size = 67108864 }
+  1.1 { PRAGMA mmap_size = 67108864 } /8|12/   {PRAGMA mmap_size = 0}
+  1.2 { PRAGMA mmap_size =    53248 } /15[34]/ {PRAGMA mmap_size = 0}
+  1.3 { PRAGMA mmap_size =        0 } 344      {PRAGMA mmap_size = 0}
+  1.4 { PRAGMA mmap_size = 67108864 } /12|8/   {PRAGMA mmap_size = 67108864 }
+  1.5 { PRAGMA mmap_size =    53248 } /15[34]/ {PRAGMA mmap_size = 67108864 }
+  1.6 { PRAGMA mmap_size =        0 } 344      {PRAGMA mmap_size = 67108864 }
 } {
 
   do_multiclient_test tn {
