@@ -16,7 +16,7 @@ use tempfile::NamedTempFile;
 use uuid::Uuid;
 use zerocopy::{AsBytes, FromZeroes};
 
-use crate::connection::libsql::open_conn_active_checkpoint;
+use crate::connection::libsql::open_conn_enable_checkpoint;
 use crate::namespace::NamespaceName;
 
 use super::FrameNo;
@@ -103,7 +103,7 @@ impl SnapshotStore {
 
         let temp_path = base_path.join("tmp");
         tokio::fs::create_dir_all(&temp_path).await?;
-        let conn = open_conn_active_checkpoint(
+        let conn = open_conn_enable_checkpoint(
             &store_path,
             Sqlite3WalManager::default(),
             None,

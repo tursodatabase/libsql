@@ -227,10 +227,10 @@ impl QueryResultBuilder for SingleStatementBuilder {
 
     fn finish(
         &mut self,
-        last_frame_no: Option<FrameNo>,
+        last_frame_no: FrameNo,
         _is_autocommit: bool,
     ) -> Result<(), QueryResultBuilderError> {
-        self.last_frame_no = last_frame_no;
+        self.last_frame_no = Some(last_frame_no);
         Ok(())
     }
 
@@ -351,10 +351,10 @@ impl QueryResultBuilder for HranaBatchProtoBuilder {
 
     fn finish(
         &mut self,
-        last_frame_no: Option<FrameNo>,
+        last_frame_no: FrameNo,
         _is_autocommit: bool,
     ) -> Result<(), QueryResultBuilderError> {
-        self.last_frame_no = last_frame_no;
+        self.last_frame_no = Some(last_frame_no);
         Ok(())
     }
 

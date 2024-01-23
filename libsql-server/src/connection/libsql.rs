@@ -31,7 +31,7 @@ use super::program::{Cond, DescribeCol, DescribeParam, DescribeResponse};
 use super::{MakeConnection, Program, Step};
 
 pub struct MakeLibSqlConn<T: WalManager> {
-    db_path: PathBuf,
+    db_path: Arc<Path>,
     wal_manager: T,
     stats: Arc<Stats>,
     config_store: MetaStoreHandle,
@@ -39,7 +39,7 @@ pub struct MakeLibSqlConn<T: WalManager> {
     max_response_size: u64,
     max_total_response_size: u64,
     auto_checkpoint: u32,
-    current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+    current_frame_no_receiver: watch::Receiver<FrameNo>,
     state: Arc<TxnState<T::Wal>>,
     /// In wal mode, closing the last database takes time, and causes other databases creation to
     /// return sqlite busy. To mitigate that, we hold on to one connection
@@ -54,7 +54,7 @@ where
 {
     #[allow(clippy::too_many_arguments)]
     pub async fn new(
-        db_path: PathBuf,
+        db_path: Arc<Path>,
         wal_manager: T,
         stats: Arc<Stats>,
         config_store: MetaStoreHandle,
@@ -62,7 +62,7 @@ where
         max_response_size: u64,
         max_total_response_size: u64,
         auto_checkpoint: u32,
-        current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+        current_frame_no_receiver: watch::Receiver<FrameNo>,
         encryption_key: Option<bytes::Bytes>,
     ) -> Result<Self> {
         let mut this = Self {
@@ -257,7 +257,7 @@ where
 }
 
 /// Same as open_conn, but with checkpointing activated.
-pub fn open_conn_active_checkpoint<T>(
+pub fn open_conn_enable_checkpoint<T>(
     path: &Path,
     wal_manager: T,
     flags: Option<OpenFlags>,
@@ -294,7 +294,7 @@ where
         stats: Arc<Stats>,
         config_store: MetaStoreHandle,
         builder_config: QueryBuilderConfig,
-        current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+        current_frame_no_receiver: watch::Receiver<FrameNo>,
         state: Arc<TxnState<W>>,
     ) -> crate::Result<Self>
     where
@@ -351,7 +351,7 @@ where
 #[cfg(test)]
 impl LibSqlConnection<libsql_sys::wal::Sqlite3Wal> {
     pub fn new_test(path: &Path) -> Self {
-        let (_snd, rcv) = watch::channel(None);
+        let (_snd, rcv) = watch::channel(0);
         let conn = Connection::new(
             path,
             Arc::new([]),
@@ -375,7 +375,7 @@ struct Connection<T> {
     stats: Arc<Stats>,
     config_store: MetaStoreHandle,
     builder_config: QueryBuilderConfig,
-    current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+    current_frame_no_receiver: watch::Receiver<FrameNo>,
     // must be dropped after the connection because the connection refers to it
     state: Arc<TxnState<T>>,
     // current txn slot if any
@@ -571,10 +571,10 @@ impl<W: Wal> Connection<W> {
         stats: Arc<Stats>,
         config_store: MetaStoreHandle,
         builder_config: QueryBuilderConfig,
-        current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+        current_frame_no_receiver: watch::Receiver<FrameNo>,
         state: Arc<TxnState<W>>,
     ) -> Result<Self> {
-        let conn = open_conn_active_checkpoint(
+        let conn = open_conn_enable_checkpoint(
             path,
             wal_manager,
             None,
@@ -1115,7 +1115,7 @@ mod test {
             stats: Arc::new(Stats::default()),
             config_store: MetaStoreHandle::new_test(),
             builder_config: QueryBuilderConfig::default(),
-            current_frame_no_receiver: watch::channel(None).1,
+            current_frame_no_receiver: watch::channel(0).1,
             state: Default::default(),
             slot: None,
         };
@@ -1150,7 +1150,7 @@ mod test {
             100000000,
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
-            watch::channel(None).1,
+            watch::channel(0).1,
             None,
         )
         .await
@@ -1192,7 +1192,7 @@ mod test {
             100000000,
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
-            watch::channel(None).1,
+            watch::channel(0).1,
             None,
         )
         .await
@@ -1239,7 +1239,7 @@ mod test {
             100000000,
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
-            watch::channel(None).1,
+            watch::channel(0).1,
             None,
         )
         .await
@@ -1318,7 +1318,7 @@ mod test {
             100000000,
             100000000,
             DEFAULT_AUTO_CHECKPOINT,
-            watch::channel(None).1,
+            watch::channel(0).1,
             None,
         )
         .await

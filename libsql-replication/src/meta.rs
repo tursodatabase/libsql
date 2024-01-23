@@ -54,6 +54,7 @@ impl WalIndexMetaData {
     }
 }
 
+#[derive(Debug)]
 pub struct WalIndexMeta {
     file: File,
     pub data: Option<WalIndexMetaData>,

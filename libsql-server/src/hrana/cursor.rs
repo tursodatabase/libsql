@@ -257,12 +257,12 @@ impl QueryResultBuilder for CursorResultBuilder {
 
     fn finish(
         &mut self,
-        last_frame_no: Option<FrameNo>,
+        last_frame_no: FrameNo,
         _is_autocommit: bool,
     ) -> Result<(), QueryResultBuilderError> {
         self.emit_entry(Ok(SizedEntry {
             entry: proto::CursorEntry::ReplicationIndex {
-                replication_index: last_frame_no,
+                replication_index: Some(last_frame_no),
             },
             size: std::mem::size_of::<FrameNo>() as u64,
         }));

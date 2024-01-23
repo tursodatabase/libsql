@@ -6,6 +6,7 @@ use std::sync::{Arc, RwLock};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use futures::stream::BoxStream;
+use futures::TryStreamExt;
 pub use libsql_replication::rpc::replication as rpc;
 use libsql_replication::rpc::replication::replication_log_server::ReplicationLog;
 use libsql_replication::rpc::replication::{
@@ -19,11 +20,9 @@ use tonic::Status;
 use uuid::Uuid;
 
 use crate::auth::Auth;
-use crate::connection::config::DatabaseConfig;
-use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
-use crate::replication::primary::frame_stream::FrameStream;
-use crate::replication::{LogReadError, ReplicationLogger};
-use crate::stats::Stats;
+use crate::database::PrimaryDatabase;
+use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker, Namespace};
+use crate::replication::LogReadError;
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 
 use super::extract_namespace;
@@ -34,7 +33,6 @@ pub struct ReplicationLogService {
     auth: Option<Arc<Auth>>,
     disable_namespaces: bool,
     session_token: Bytes,
-    collect_stats: bool,
 
     //deprecated:
     generation_id: Uuid,
@@ -49,7 +47,6 @@ impl ReplicationLogService {
         idle_shutdown_layer: Option<IdleShutdownKicker>,
         auth: Option<Arc<Auth>>,
         disable_namespaces: bool,
-        collect_stats: bool,
     ) -> Self {
         let session_token = Uuid::new_v4().to_string().into();
         Self {
@@ -58,7 +55,6 @@ impl ReplicationLogService {
             idle_shutdown_layer,
             auth,
             disable_namespaces,
-            collect_stats,
             generation_id: Uuid::new_v4(),
             replicas_with_hello: Default::default(),
         }
@@ -128,29 +124,21 @@ impl ReplicationLogService {
         Ok(())
     }
 
-    async fn logger_from_namespace<T>(
+    async fn with_verified_session<T, F, R>(
         &self,
         namespace: NamespaceName,
         req: &tonic::Request<T>,
         verify_session: bool,
-    ) -> Result<
-        (
-            Arc<ReplicationLogger>,
-            Arc<DatabaseConfig>,
-            usize,
-            Arc<Stats>,
-        ),
-        Status,
-    > {
-        let (logger, config, version, stats) = self
-            .namespaces
-            .with(namespace, |ns| {
-                let logger = ns.db.wal_manager.wrapped().logger().clone();
-                let config = ns.config();
-                let version = ns.config_version();
-                let stats = ns.stats();
-
-                (logger, config, version, stats)
+        f: F
+    ) -> Result<R, Status>
+    where
+        F: FnOnce(&Namespace<PrimaryDatabase>) -> R,
+        {
+            self.namespaces.with(namespace, |ns| -> Result<R, Status> {
+                if verify_session {
+                    self.verify_session_token(req, ns.config_version())?;
+                }
+                Ok(f(ns))
             })
             .await
             .map_err(|e| {
@@ -159,14 +147,8 @@ impl ReplicationLogService {
                 } else {
                     Status::internal(e.to_string())
                 }
-            })?;
-
-        if verify_session {
-            self.verify_session_token(req, version)?;
+            })?
         }
-
-        Ok((logger, config, version, stats))
-    }
 
     fn encode_session_token(&self, version: usize) -> Uuid {
         let mut sha = Md5::new();
@@ -206,7 +188,7 @@ pub struct StreamGuard<S> {
 }
 
 impl<S> StreamGuard<S> {
-    fn new(s: S, mut idle_shutdown_layer: Option<IdleShutdownKicker>) -> Self {
+    pub fn new(s: S, mut idle_shutdown_layer: Option<IdleShutdownKicker>) -> Self {
         if let Some(isl) = idle_shutdown_layer.as_mut() {
             isl.add_connected_replica()
         }
@@ -249,22 +231,11 @@ impl ReplicationLog for ReplicationLogService {
 
         self.authenticate(&req, namespace.clone()).await?;
 
-        let (logger, _, _, stats) = self.logger_from_namespace(namespace, &req, true).await?;
-
-        let stats = if self.collect_stats {
-            Some(stats)
-        } else {
-            None
-        };
-
-        let req = req.into_inner();
-
-        let stream = StreamGuard::new(
-            FrameStream::new(logger, req.next_offset, true, None, stats)
-                .map_err(|e| Status::internal(e.to_string()))?,
-            self.idle_shutdown_layer.clone(),
-        )
-        .map(map_frame_stream_output);
+        let stream = self.with_verified_session(namespace, &req, true, |ns| {
+            ns.db.stream_replication_log(ns.name(), req.get_ref().next_offset, true)
+        }).await?.map_err(|e| Status::internal(e.to_string()))?;
+        let stream =
+            StreamGuard::new(stream, self.idle_shutdown_layer.clone()).map(map_frame_stream_output);
 
         Ok(tonic::Response::new(Box::pin(stream)))
     }
@@ -276,25 +247,15 @@ impl ReplicationLog for ReplicationLogService {
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
         self.authenticate(&req, namespace.clone()).await?;
 
-        let (logger, _, _, stats) = self.logger_from_namespace(namespace, &req, true).await?;
+        let stream = self.with_verified_session(namespace, &req, true, |ns| {
+            ns.db.stream_replication_log(ns.name(), req.get_ref().next_offset, false)
+        })
+        .await?
+        .map_err(|e| Status::internal(e.to_string()))?;
 
-        let stats = if self.collect_stats {
-            Some(stats)
-        } else {
-            None
-        };
-
-        let req = req.into_inner();
 
         let frames = StreamGuard::new(
-            FrameStream::new(
-                logger,
-                req.next_offset,
-                false,
-                Some(MAX_FRAMES_PER_BATCH),
-                stats,
-            )
-            .map_err(|e| Status::internal(e.to_string()))?,
+            stream.take(MAX_FRAMES_PER_BATCH),
             self.idle_shutdown_layer.clone(),
         )
         .map(map_frame_stream_output)
@@ -324,17 +285,22 @@ impl ReplicationLog for ReplicationLogService {
             }
         }
 
-        let (logger, config, version, _) =
-            self.logger_from_namespace(namespace, &req, false).await?;
+        let (current_replication_index, log_id, version, config) = self.with_verified_session(namespace, &req, false, |ns| {
+            let current_replication_index = ns.db.current_replication_index();
+            let log_id = ns.db.log_id();
+            let version = ns.config_version();
+            let config = ns.config().clone();
+            (current_replication_index, log_id, version, config)
+        }).await?;
 
         let session_hash = self.encode_session_token(version);
 
         let response = HelloResponse {
-            log_id: logger.log_id().to_string(),
+            log_id: log_id.to_string(),
             session_token: session_hash.to_string().into(),
             generation_id: self.generation_id.to_string(),
             generation_start_index: 0,
-            current_replication_index: *logger.new_frame_notifier.borrow(),
+            current_replication_index: Some(current_replication_index),
             config: Some(config.as_ref().into()),
         };
 
@@ -348,74 +314,23 @@ impl ReplicationLog for ReplicationLogService {
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
         self.authenticate(&req, namespace.clone()).await?;
 
-        let (logger, _, _, stats) = self.logger_from_namespace(namespace, &req, true).await?;
+        let maybe_stream = self.with_verified_session(namespace, &req, true, |ns| {
+            ns.db.stream_snapshot(req.get_ref().next_offset)
+        })
+        .await?
+        .await;
 
-        let stats = if self.collect_stats {
-            Some(stats)
-        } else {
-            None
-        };
-
-        let req = req.into_inner();
-
-        let offset = req.next_offset;
-        match logger.get_snapshot_file(offset).await {
-            Ok(Some(snapshot)) => Ok(tonic::Response::new(Box::pin(
-                snapshot_stream::make_snapshot_stream(snapshot, offset, stats),
+        match maybe_stream {
+            Ok(Some(stream)) => Ok(tonic::Response::new(Box::pin(
+                        stream
+                        .map_ok(|f| Frame {
+                            data: f.bytes(),
+                            timestamp: None,
+                        })
+                        .map_err(|e| Status::internal(e.to_string())),
             ))),
             Ok(None) => Err(Status::new(tonic::Code::Unavailable, "snapshot not found")),
             Err(e) => Err(Status::new(tonic::Code::Internal, e.to_string())),
-        }
-    }
-}
-
-mod snapshot_stream {
-    use std::sync::Arc;
-
-    use futures::{Stream, StreamExt};
-    use libsql_replication::frame::FrameNo;
-    use libsql_replication::rpc::replication::Frame;
-    use libsql_replication::snapshot::SnapshotFile;
-    use tonic::Status;
-
-    use crate::stats::Stats;
-
-    pub fn make_snapshot_stream(
-        snapshot: SnapshotFile,
-        offset: FrameNo,
-        stats: Option<Arc<Stats>>,
-    ) -> impl Stream<Item = Result<Frame, Status>> {
-        let size_after = snapshot.header().size_after;
-        let frames = snapshot.into_stream_mut_from(offset).peekable();
-        async_stream::stream! {
-            tokio::pin!(frames);
-            while let Some(frame) = frames.next().await {
-                match frame {
-                    Ok(mut frame) => {
-                        // this is the last frame we're sending for this snapshot, set the
-                        // frame_no
-                        if frames.as_mut().peek().await.is_none() {
-                            frame.header_mut().size_after = size_after;
-                        }
-
-                        if let Some(stats) = &stats {
-                            stats.inc_embedded_replica_frames_replicated();
-                        }
-
-                        yield Ok(Frame {
-                            data: libsql_replication::frame::Frame::from(frame).bytes(),
-                            timestamp: None,
-                        });
-                    }
-                    Err(e) => {
-                        yield Err(Status::new(
-                                tonic::Code::Internal,
-                                e.to_string(),
-                        ));
-                        break;
-                    }
-                }
-            }
         }
     }
 }

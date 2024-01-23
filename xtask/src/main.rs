@@ -88,6 +88,7 @@ fn sim_tests(arg: &str) -> Result<()> {
 }
 
 fn build() -> Result<()> {
+    run_libsql_sqlite3("make clean")?;
     run_libsql_sqlite3("./configure")?;
     run_libsql_sqlite3("make")?;
 
@@ -123,8 +124,16 @@ fn run_cargo(cmd: &[&str]) -> Result<()> {
 }
 
 fn run_libsql_sqlite3(cmd: &str) -> Result<()> {
-    let mut out = Command::new(cmd).current_dir("libsql-sqlite3").spawn()?;
+    let mut cmd = cmd.split_whitespace();
+    let mut builder = Command::new(cmd.next().unwrap());
 
+    builder.current_dir("libsql-sqlite3");
+
+    for arg in cmd {
+        builder.arg(arg);
+    }
+
+    let mut out = builder.spawn()?;
     let exit = out.wait()?;
 
     if !exit.success() {

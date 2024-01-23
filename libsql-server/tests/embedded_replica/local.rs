@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use libsql::{replication::Frames, Database};
 use libsql_replication::snapshot::SnapshotFile;
+use libsql_server::USE_REPLICATION_V2;
 use serde_json::json;
 use tempfile::tempdir;
 use turmoil::Builder;
@@ -12,6 +13,7 @@ use super::make_primary;
 
 #[test]
 fn local_sync_with_writes() {
+    if *USE_REPLICATION_V2 { return }
     let mut sim = Builder::new()
         .simulation_duration(Duration::from_secs(120))
         .build();

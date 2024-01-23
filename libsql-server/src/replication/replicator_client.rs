@@ -1,17 +1,15 @@
-use std::path::Path;
 use std::pin::Pin;
 
 use bytes::Bytes;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use futures::TryStreamExt;
 use libsql_replication::frame::Frame;
-use libsql_replication::meta::WalIndexMeta;
 use libsql_replication::replicator::{map_frame_err, Error, ReplicatorClient};
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use libsql_replication::rpc::replication::{
-    verify_session_token, HelloRequest, LogOffset, NAMESPACE_METADATA_KEY, SESSION_TOKEN_KEY,
+    verify_session_token, HelloRequest, HelloResponse, LogOffset, NAMESPACE_METADATA_KEY,
+    SESSION_TOKEN_KEY,
 };
-use tokio::sync::watch;
 use tokio_stream::{Stream, StreamExt};
 use tonic::metadata::{AsciiMetadataValue, BinaryMetadataValue};
 use tonic::transport::Channel;
@@ -27,8 +25,6 @@ use crate::replication::FrameNo;
 
 pub struct Client {
     client: ReplicationLogClient<Channel>,
-    meta: WalIndexMeta,
-    pub current_frame_no_notifier: watch::Sender<Option<FrameNo>>,
     namespace: NamespaceName,
     session_token: Option<Bytes>,
     meta_store_handle: MetaStoreHandle,
@@ -40,17 +36,11 @@ impl Client {
     pub async fn new(
         namespace: NamespaceName,
         client: ReplicationLogClient<Channel>,
-        path: &Path,
         meta_store_handle: MetaStoreHandle,
     ) -> crate::Result<Self> {
-        let (current_frame_no_notifier, _) = watch::channel(None);
-        let meta = WalIndexMeta::open(path).await?;
-
         Ok(Self {
             namespace,
             client,
-            current_frame_no_notifier,
-            meta,
             session_token: None,
             meta_store_handle,
             primary_replication_index: None,
@@ -74,13 +64,6 @@ impl Client {
         req
     }
 
-    fn next_frame_no(&self) -> FrameNo {
-        match *self.current_frame_no_notifier.borrow() {
-            Some(fno) => fno + 1,
-            None => 0,
-        }
-    }
-
     pub(crate) fn reset_token(&mut self) {
         self.session_token = None;
     }
@@ -91,7 +74,7 @@ impl ReplicatorClient for Client {
     type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
 
     #[tracing::instrument(skip(self))]
-    async fn handshake(&mut self) -> Result<(), Error> {
+    async fn handshake(&mut self) -> Result<Option<HelloResponse>, Error> {
         tracing::info!("Attempting to perform handshake with primary.");
         let req = self.make_request(HelloRequest::new());
         let resp = self.client.hello(req).await?;
@@ -111,19 +94,14 @@ impl ReplicatorClient for Client {
             tracing::debug!("no config passed in handshake");
         }
 
-        self.meta.init_from_hello(hello)?;
-        self.current_frame_no_notifier
-            .send_replace(self.meta.current_frame_no());
-
         tracing::trace!("handshake completed");
 
-        Ok(())
+        Ok(Some(hello))
     }
 
-    async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
-        let offset = LogOffset {
-            next_offset: self.next_frame_no(),
-        };
+    async fn next_frames(&mut self, next_offset: FrameNo) -> Result<Self::FrameStream, Error> {
+        dbg!(next_offset);
+        let offset = LogOffset { next_offset };
         let req = self.make_request(offset);
         let stream = self
             .client
@@ -157,10 +135,8 @@ impl ReplicatorClient for Client {
         Ok(Box::pin(stream))
     }
 
-    async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
-        let offset = LogOffset {
-            next_offset: self.next_frame_no(),
-        };
+    async fn snapshot(&mut self, next_offset: FrameNo) -> Result<Self::FrameStream, Error> {
+        let offset = LogOffset { next_offset };
         let req = self.make_request(offset);
         let stream = self
             .client
@@ -170,20 +146,4 @@ impl ReplicatorClient for Client {
             .map(map_frame_err);
         Ok(Box::pin(stream))
     }
-
-    async fn commit_frame_no(
-        &mut self,
-        frame_no: libsql_replication::frame::FrameNo,
-    ) -> Result<(), Error> {
-        self.current_frame_no_notifier.send_replace(Some(frame_no));
-        self.meta.set_commit_frame_no(frame_no).await?;
-
-        Ok(())
-    }
-
-    fn committed_frame_no(&self) -> Option<FrameNo> {
-        self.meta.current_frame_no()
-    }
-
-    fn rollback(&mut self) {}
 }

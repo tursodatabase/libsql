@@ -15,7 +15,7 @@ use crate::BLOCKING_RT;
 /// Only stops if the current frame is not in the log anymore.
 pub struct FrameStream {
     pub(crate) current_frame_no: FrameNo,
-    pub(crate) max_available_frame_no: Option<FrameNo>,
+    pub(crate) max_available_frame_no: FrameNo,
     logger: Arc<ReplicationLogger>,
     state: FrameStreamState,
     wait_for_more: bool,
@@ -96,7 +96,7 @@ impl FrameStream {
 enum FrameStreamState {
     Init,
     /// waiting for new frames to replicate
-    WaitingFrameNo(BoxFuture<'static, anyhow::Result<Option<FrameNo>>>),
+    WaitingFrameNo(BoxFuture<'static, anyhow::Result<FrameNo>>),
     WaitingFrame(BoxFuture<'static, Result<Frame, LogReadError>>),
     Closed,
 }

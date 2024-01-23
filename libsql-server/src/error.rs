@@ -101,6 +101,12 @@ pub enum Error {
     Ref(#[from] std::sync::Arc<Self>),
     #[error("Unable to decode protobuf: {0}")]
     ProstDecode(#[from] prost::DecodeError),
+
+    #[error("Error processing snapshot file")]
+    SnapshotFileError(#[from] libsql_replication::snapshot::Error),
+
+    #[error("replicator error: {0}")]
+    WalReplicatorError(#[from] crate::replication::wal::replicator::Error),
 }
 
 impl AsRef<Self> for Error {
@@ -178,6 +184,8 @@ impl IntoResponse for &Error {
             MetaStoreUpdateFailure(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             Ref(this) => this.as_ref().into_response(),
             ProstDecode(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            SnapshotFileError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            WalReplicatorError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }

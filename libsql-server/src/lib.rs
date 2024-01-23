@@ -41,8 +41,10 @@ use url::Url;
 use utils::services::idle_shutdown::IdleShutdownKicker;
 
 use self::config::MetaStoreConfig;
+use self::namespace::ConfigV1;
 use self::net::AddrIncoming;
 use self::replication::script_backup_manager::{CommandHandler, ScriptBackupManager};
+use self::replication::snapshot_store::SnapshotStore;
 
 pub mod config;
 pub mod connection;
@@ -74,6 +76,9 @@ mod utils;
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 const DEFAULT_AUTO_CHECKPOINT: u32 = 1000;
 const LIBSQL_PAGE_SIZE: u64 = 4096;
+
+pub static USE_REPLICATION_V2: Lazy<bool> =
+    Lazy::new(|| std::env::var("LIBSQL_REPLICATION_V2").is_ok());
 
 pub(crate) static BLOCKING_RT: Lazy<Runtime> = Lazy::new(|| {
     tokio::runtime::Builder::new_multi_thread()
@@ -510,20 +515,34 @@ where
             None => None,
         };
 
-        let conf = PrimaryNamespaceConfig {
-            base_path: self.base_path.clone(),
-            max_log_size: self.db_config.max_log_size,
-            db_is_dirty: self.db_is_dirty,
-            max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
-            bottomless_replication: self.db_config.bottomless_replication.clone(),
-            extensions: self.extensions,
-            stats_sender: self.stats_sender.clone(),
-            max_response_size: self.db_config.max_response_size,
-            max_total_response_size: self.db_config.max_total_response_size,
-            checkpoint_interval: self.db_config.checkpoint_interval,
-            encryption_key: self.db_config.encryption_key.clone(),
-            max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
-            scripted_backup,
+        let conf = if *USE_REPLICATION_V2 {
+            let snapshot_store = SnapshotStore::new(&self.base_path).await?;
+            PrimaryNamespaceConfig::V2(namespace::ConfigV2 {
+                base_path: self.base_path.clone(),
+                snapshot_store,
+                stats_sender: self.stats_sender.clone(),
+                extensions: self.extensions.clone(),
+                max_response_size: self.db_config.max_response_size,
+                max_total_response_size: self.db_config.max_total_response_size,
+                encryption_key: self.db_config.encryption_key.clone(),
+                max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
+            })
+        } else {
+            PrimaryNamespaceConfig::V1(ConfigV1 {
+                base_path: self.base_path.clone(),
+                max_log_size: self.db_config.max_log_size,
+                db_is_dirty: self.db_is_dirty,
+                max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
+                bottomless_replication: self.db_config.bottomless_replication.clone(),
+                extensions: self.extensions,
+                stats_sender: self.stats_sender.clone(),
+                max_response_size: self.db_config.max_response_size,
+                max_total_response_size: self.db_config.max_total_response_size,
+                checkpoint_interval: self.db_config.checkpoint_interval,
+                encryption_key: self.db_config.encryption_key.clone(),
+                max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
+                scripted_backup,
+            })
         };
 
         let factory = PrimaryNamespaceMaker::new(conf);
@@ -585,7 +604,6 @@ where
             self.idle_shutdown_kicker,
             Some(self.auth.clone()),
             self.disable_namespaces,
-            true,
         );
 
         let proxy_service =

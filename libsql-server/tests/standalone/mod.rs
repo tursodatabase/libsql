@@ -84,6 +84,7 @@ fn basic_metrics() {
 
         let snapshot = snapshot_metrics();
         snapshot.assert_counter("libsql_server_libsql_execute_program", 3);
+        // cursor-based execution produces two responses per execution request
         snapshot.assert_counter("libsql_server_user_http_response", 3);
 
         for (key, (_, _, val)) in snapshot.snapshot() {
@@ -231,11 +232,10 @@ fn basic_query_fail() {
         conn.execute("create unique index test_index on test(x)", ())
             .await?;
         conn.execute("insert into test values (12)", ()).await?;
-        let e = conn
+        assert_debug_snapshot!(conn
             .execute("insert into test values (12)", ())
             .await
-            .unwrap_err();
-        assert_debug_snapshot!(e);
+            .unwrap_err());
 
         Ok(())
     });

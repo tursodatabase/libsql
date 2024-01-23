@@ -310,8 +310,8 @@ cfg_replication! {
 
         /// Sync database from remote, and returns the committed frame_no after syncing, if
         /// applicable.
-        pub async fn sync(&self) -> Result<Option<FrameNo>> {
-            if let DbType::Sync { db, encryption_key: _ } = &self.db_type {
+        pub async fn sync(&self) -> Result<(FrameNo, usize)> {
+            if let DbType::Sync { db, .. } = &self.db_type {
                 db.sync().await
             } else {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
@@ -320,9 +320,9 @@ cfg_replication! {
 
         /// Apply a set of frames to the database and returns the committed frame_no after syncing, if
         /// applicable.
-        pub async fn sync_frames(&self, frames: crate::replication::Frames) -> Result<Option<FrameNo>> {
-            if let DbType::Sync { db, encryption_key: _ } = &self.db_type {
-                db.sync_frames(frames).await
+        pub async fn sync_frames(&self, frames: crate::replication::Frames) -> Result<FrameNo> {
+            if let DbType::Sync { db, .. } = &self.db_type {
+                dbg!(db.sync_frames(frames).await)
             } else {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
             }
@@ -330,8 +330,8 @@ cfg_replication! {
 
         /// Force buffered replication frames to be applied, and return the current commit frame_no
         /// if applicable.
-        pub async fn flush_replicator(&self) -> Result<Option<FrameNo>> {
-            if let DbType::Sync { db, encryption_key: _ } = &self.db_type {
+        pub async fn flush_replicator(&self) -> Result<FrameNo> {
+            if let DbType::Sync { db, .. } = &self.db_type {
                 db.flush_replicator().await
             } else {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))

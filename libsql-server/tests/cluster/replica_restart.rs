@@ -3,7 +3,10 @@ use std::time::Duration;
 
 use futures::FutureExt;
 use libsql::Database;
-use libsql_server::config::{AdminApiConfig, RpcClientConfig, RpcServerConfig, UserApiConfig};
+use libsql_server::{
+    config::{AdminApiConfig, RpcClientConfig, RpcServerConfig, UserApiConfig},
+    USE_REPLICATION_V2,
+};
 use tempfile::tempdir;
 use tokio::sync::Notify;
 use turmoil::Builder;
@@ -162,6 +165,9 @@ fn replica_restart() {
 /// self heal. During this process the replica is not shutdown.
 #[test]
 fn primary_regenerate_log_no_replica_restart() {
+    if *USE_REPLICATION_V2 {
+        return;
+    }
     let mut sim = Builder::new().build();
     let tmp = tempdir().unwrap();
 
@@ -338,6 +344,9 @@ fn primary_regenerate_log_no_replica_restart() {
 /// and it should self heal.
 #[test]
 fn primary_regenerate_log_with_replica_restart() {
+    if *USE_REPLICATION_V2 {
+        return;
+    }
     let mut sim = Builder::new().build();
     let tmp = tempdir().unwrap();
 

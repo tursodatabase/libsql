@@ -1,4 +1,5 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 use futures_core::future::BoxFuture;
@@ -8,8 +9,9 @@ use libsql_replication::rpc::proxy::{
     exec_req, exec_resp, ExecReq, ExecResp, StreamDescribeReq, StreamProgramReq,
 };
 use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
-use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager};
-use parking_lot::Mutex as PMutex;
+use libsql_sys::wal::wrapper::{WalWrapper, WrappedWal};
+use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager, WalManager};
+use metrics::atomics::AtomicU64;
 use tokio::sync::{mpsc, watch, Mutex};
 use tokio_stream::StreamExt;
 use tonic::metadata::BinaryMetadataValue;
@@ -28,35 +30,38 @@ use crate::replication::FrameNo;
 use crate::stats::Stats;
 use crate::{Result, DEFAULT_AUTO_CHECKPOINT};
 
-use super::libsql::{LibSqlConnection, MakeLibSqlConn};
+use super::libsql::{InhibitCheckpointWalWrapper, LibSqlConnection, MakeLibSqlConn};
 use super::program::DescribeResponse;
 use super::Connection;
 use super::{MakeConnection, Program};
 
 pub type RpcStream = Streaming<ExecResp>;
 
+type ReplicaWalManager = WalWrapper<InhibitCheckpointWalWrapper, Sqlite3WalManager>;
+type ReplicaWal = WrappedWal<InhibitCheckpointWalWrapper, Sqlite3Wal>;
+
 pub struct MakeWriteProxyConn {
     client: ProxyClient<Channel>,
     stats: Arc<Stats>,
-    applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+    applied_frame_no_receiver: watch::Receiver<FrameNo>,
     max_response_size: u64,
     max_total_response_size: u64,
     namespace: NamespaceName,
     primary_replication_index: Option<FrameNo>,
-    make_read_only_conn: MakeLibSqlConn<Sqlite3WalManager>,
+    make_read_only_conn: MakeLibSqlConn<ReplicaWalManager>,
     encryption_key: Option<bytes::Bytes>,
 }
 
 impl MakeWriteProxyConn {
     #[allow(clippy::too_many_arguments)]
     pub async fn new(
-        db_path: PathBuf,
+        db_path: Arc<Path>,
         extensions: Arc<[PathBuf]>,
         channel: Channel,
         uri: tonic::transport::Uri,
         stats: Arc<Stats>,
         config_store: MetaStoreHandle,
-        applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+        applied_frame_no_receiver: watch::Receiver<FrameNo>,
         max_response_size: u64,
         max_total_response_size: u64,
         namespace: NamespaceName,
@@ -64,9 +69,11 @@ impl MakeWriteProxyConn {
         encryption_key: Option<bytes::Bytes>,
     ) -> crate::Result<Self> {
         let client = ProxyClient::with_origin(channel, uri);
+        let wal_manager =
+            Sqlite3WalManager::default().wrap(InhibitCheckpointWalWrapper::new(false));
         let make_read_only_conn = MakeLibSqlConn::new(
             db_path.clone(),
-            Sqlite3WalManager::new(),
+            wal_manager,
             stats.clone(),
             config_store.clone(),
             extensions.clone(),
@@ -115,15 +122,15 @@ impl MakeConnection for MakeWriteProxyConn {
 
 pub struct WriteProxyConnection<R> {
     /// Lazily initialized read connection
-    read_conn: LibSqlConnection<Sqlite3Wal>,
+    read_conn: LibSqlConnection<ReplicaWal>,
     write_proxy: ProxyClient<Channel>,
     state: Mutex<TxnStatus>,
     /// FrameNo of the last write performed by this connection on the primary.
     /// any subsequent read on this connection must wait for the replicator to catch up with this
     /// frame_no
-    last_write_frame_no: PMutex<Option<FrameNo>>,
+    last_write_frame_no: AtomicU64,
     /// Notifier from the repliator of the currently applied frameno
-    applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+    applied_frame_no_receiver: watch::Receiver<FrameNo>,
     builder_config: QueryBuilderConfig,
     stats: Arc<Stats>,
     namespace: NamespaceName,
@@ -138,11 +145,11 @@ impl WriteProxyConnection<RpcStream> {
     fn new(
         write_proxy: ProxyClient<Channel>,
         stats: Arc<Stats>,
-        applied_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+        applied_frame_no_receiver: watch::Receiver<FrameNo>,
         builder_config: QueryBuilderConfig,
         namespace: NamespaceName,
         primary_replication_index: Option<u64>,
-        read_conn: LibSqlConnection<Sqlite3Wal>,
+        read_conn: LibSqlConnection<ReplicaWal>,
     ) -> Result<Self> {
         Ok(Self {
             read_conn,
@@ -218,31 +225,35 @@ impl WriteProxyConnection<RpcStream> {
     }
 
     fn update_last_write_frame_no(&self, new_frame_no: FrameNo) {
-        let mut last_frame_no = self.last_write_frame_no.lock();
-        if last_frame_no.is_none() || new_frame_no > last_frame_no.unwrap() {
-            *last_frame_no = Some(new_frame_no);
+        loop {
+            let last_write_frame_no = self.last_write_frame_no.load(Ordering::SeqCst);
+            if new_frame_no >= last_write_frame_no {
+                match self.last_write_frame_no.compare_exchange(
+                    last_write_frame_no,
+                    new_frame_no,
+                    Ordering::SeqCst,
+                    Ordering::SeqCst,
+                ) {
+                    Ok(_) => break,
+                    Err(v) if v >= new_frame_no => break,
+                    _ => (),
+                }
+            }
         }
     }
 
     /// wait for the replicator to have caught up with the replication_index if `Some` or our
     /// current write frame_no
     async fn wait_replication_sync(&self, replication_index: Option<FrameNo>) -> Result<()> {
-        let current_fno = replication_index.or_else(|| *self.last_write_frame_no.lock());
-        match current_fno {
-            Some(current_frame_no) => {
-                let mut receiver = self.applied_frame_no_receiver.clone();
-                receiver
-                    .wait_for(|last_applied| match last_applied {
-                        Some(x) => *x >= current_frame_no,
-                        None => true,
-                    })
-                    .await
-                    .map_err(|_| Error::ReplicatorExited)?;
+        let current_fno =
+            replication_index.unwrap_or_else(|| self.last_write_frame_no.load(Ordering::Relaxed));
+        let mut receiver = self.applied_frame_no_receiver.clone();
+        receiver
+            .wait_for(|last_applied| *last_applied >= current_fno)
+            .await
+            .map_err(|_| Error::ReplicatorExited)?;
 
-                Ok(())
-            }
-            None => Ok(()),
-        }
+        Ok(())
     }
 
     /// returns whether a request should be unconditionally proxied based on the current state of
@@ -254,13 +265,7 @@ impl WriteProxyConnection<RpcStream> {
             // if we either don't have data while the primary has, or the data we have is
             // anterior to that of the primary when we loaded the namespace, then proxy the
             // request to the primary
-            if last_applied.is_none() {
-                return true;
-            }
-
-            if let Some(last_applied) = last_applied {
-                return last_applied < primary_index;
-            }
+            return last_applied < primary_index;
         }
 
         false

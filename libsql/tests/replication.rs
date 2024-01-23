@@ -33,10 +33,7 @@ async fn inject_frames() {
 
     let frames = frames.into_iter().map(Into::into).collect();
 
-    assert_eq!(
-        db.sync_frames(Frames::Vec(frames)).await.unwrap().unwrap(),
-        2
-    );
+    assert_eq!(db.sync_frames(Frames::Vec(frames)).await.unwrap(), 2);
 
     let conn = db.connect().unwrap();
     let mut rows = conn.query("select count(*) from test", ()).await.unwrap();
@@ -75,7 +72,6 @@ async fn inject_frames() {
     assert_eq!(
         db.sync_frames(libsql::replication::Frames::Vec(frames))
             .await
-            .unwrap()
             .unwrap(),
         5
     );
@@ -116,20 +112,22 @@ async fn inject_frames_split_txn() {
     let conn = db.connect().unwrap();
     assert!(conn.query("select count(*) from test", ()).await.is_err());
 
-    assert!(db
-        .sync_frames(Frames::Vec(vec![frames.next().unwrap().into()]))
-        .await
-        .unwrap()
-        .is_none());
-    assert!(db.flush_replicator().await.unwrap().is_none());
+    assert_eq!(
+        db.sync_frames(Frames::Vec(vec![frames.next().unwrap().into()]))
+            .await
+            .unwrap(),
+        0
+    );
+    assert_eq!(db.flush_replicator().await.unwrap(), 0);
     assert!(conn.query("select count(*) from test", ()).await.is_err());
 
-    assert!(db
-        .sync_frames(Frames::Vec(vec![frames.next().unwrap().into()]))
-        .await
-        .unwrap()
-        .is_none());
-    assert!(db.flush_replicator().await.unwrap().is_none());
+    assert_eq!(
+        db.sync_frames(Frames::Vec(vec![frames.next().unwrap().into()]))
+            .await
+            .unwrap(),
+        0
+    );
+    assert_eq!(db.flush_replicator().await.unwrap(), 0);
     assert!(conn.query("select count(*) from test", ()).await.is_err());
 
     // commit frame
@@ -143,11 +141,10 @@ async fn inject_frames_split_txn() {
             .unwrap()
             .into()]))
             .await
-            .unwrap()
             .unwrap(),
         2
     );
-    assert_eq!(db.flush_replicator().await.unwrap().unwrap(), 2);
+    assert_eq!(db.flush_replicator().await.unwrap(), 2);
     let mut rows = conn.query("select count(*) from test", ()).await.unwrap();
     assert_eq!(
         *rows

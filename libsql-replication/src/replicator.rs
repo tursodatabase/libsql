@@ -1,6 +1,8 @@
+use std::fmt;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use tokio::task::spawn_blocking;
 use tokio::time::Duration;
@@ -9,13 +11,18 @@ use tonic::{Code, Status};
 
 use crate::frame::{Frame, FrameNo};
 use crate::injector::Injector;
+use crate::meta::WalIndexMeta;
 use crate::rpc::replication::{
-    Frame as RpcFrame, NAMESPACE_DOESNT_EXIST, NEED_SNAPSHOT_ERROR_MSG, NO_HELLO_ERROR_MSG,
+    Frame as RpcFrame, HelloResponse, NAMESPACE_DOESNT_EXIST, NEED_SNAPSHOT_ERROR_MSG,
+    NO_HELLO_ERROR_MSG,
 };
 
 pub use tokio_util::either::Either;
 
 const HANDSHAKE_MAX_RETRIES: usize = 100;
+
+pub static USE_REPLICATION_V2: Lazy<bool> =
+    Lazy::new(|| std::env::var("LIBSQL_REPLICATION_V2").is_ok());
 
 type BoxError = Box<dyn std::error::Error + Sync + Send + 'static>;
 
@@ -67,18 +74,12 @@ pub trait ReplicatorClient {
     type FrameStream: Stream<Item = Result<Frame, Error>> + Unpin + Send;
 
     /// Perform handshake with remote
-    async fn handshake(&mut self) -> Result<(), Error>;
+    async fn handshake(&mut self) -> Result<Option<HelloResponse>, Error>;
     /// Return a stream of frames to apply to the database
-    async fn next_frames(&mut self) -> Result<Self::FrameStream, Error>;
+    async fn next_frames(&mut self, next_frame_no: FrameNo) -> Result<Self::FrameStream, Error>;
     /// Return a snapshot for the current replication index. Called after next_frame has returned a
     /// NeedSnapshot error
-    async fn snapshot(&mut self) -> Result<Self::FrameStream, Error>;
-    /// set the new commit frame_no
-    async fn commit_frame_no(&mut self, frame_no: FrameNo) -> Result<(), Error>;
-    /// Returns the currently committed replication index
-    fn committed_frame_no(&self) -> Option<FrameNo>;
-    /// rollback the client to previously commited index.
-    fn rollback(&mut self);
+    async fn snapshot(&mut self, next_frame_no: FrameNo) -> Result<Self::FrameStream, Error>;
 }
 
 #[async_trait::async_trait]
@@ -89,46 +90,25 @@ where
 {
     type FrameStream = Either<A::FrameStream, B::FrameStream>;
 
-    async fn handshake(&mut self) -> Result<(), Error> {
+    async fn handshake(&mut self) -> Result<Option<HelloResponse>, Error> {
         match self {
             Either::Left(a) => a.handshake().await,
             Either::Right(b) => b.handshake().await,
         }
     }
     /// Return a stream of frames to apply to the database
-    async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+    async fn next_frames(&mut self, next_frame: FrameNo) -> Result<Self::FrameStream, Error> {
         match self {
-            Either::Left(a) => a.next_frames().await.map(Either::Left),
-            Either::Right(b) => b.next_frames().await.map(Either::Right),
+            Either::Left(a) => a.next_frames(next_frame).await.map(Either::Left),
+            Either::Right(b) => b.next_frames(next_frame).await.map(Either::Right),
         }
     }
     /// Return a snapshot for the current replication index. Called after next_frame has returned a
     /// NeedSnapshot error
-    async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+    async fn snapshot(&mut self, next_frame: FrameNo) -> Result<Self::FrameStream, Error> {
         match self {
-            Either::Left(a) => a.snapshot().await.map(Either::Left),
-            Either::Right(b) => b.snapshot().await.map(Either::Right),
-        }
-    }
-    /// set the new commit frame_no
-    async fn commit_frame_no(&mut self, frame_no: FrameNo) -> Result<(), Error> {
-        match self {
-            Either::Left(a) => a.commit_frame_no(frame_no).await,
-            Either::Right(b) => b.commit_frame_no(frame_no).await,
-        }
-    }
-
-    fn committed_frame_no(&self) -> Option<FrameNo> {
-        match self {
-            Either::Left(a) => a.committed_frame_no(),
-            Either::Right(b) => b.committed_frame_no(),
-        }
-    }
-
-    fn rollback(&mut self) {
-        match self {
-            Either::Left(a) => a.rollback(),
-            Either::Right(b) => b.rollback(),
+            Either::Left(a) => a.snapshot(next_frame).await.map(Either::Left),
+            Either::Right(b) => b.snapshot(next_frame).await.map(Either::Right),
         }
     }
 }
@@ -139,6 +119,26 @@ pub struct Replicator<C> {
     client: C,
     injector: Arc<Mutex<Injector>>,
     state: ReplicatorState,
+    errors_in_a_row: usize,
+    commit_index: FrameNo,
+    last_injected: FrameNo,
+    meta: Option<WalIndexMeta>,
+    on_commit: Box<dyn Fn(FrameNo) + Sync + Send + 'static>,
+}
+
+impl<C: fmt::Debug> fmt::Debug for Replicator<C> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Replicator")
+            .field("client", &self.client)
+            .field("injector", &self.injector)
+            .field("state", &self.state)
+            .field("errors_in_a_row", &self.errors_in_a_row)
+            .field("commit_index", &self.commit_index)
+            .field("last_injected", &self.last_injected)
+            .field("meta", &self.meta)
+            .field("on_commit", &"<fn>")
+            .finish()
+    }
 }
 
 const INJECTOR_BUFFER_CAPACITY: usize = 10;
@@ -157,26 +157,59 @@ impl<C: ReplicatorClient> Replicator<C> {
         client: C,
         db_path: PathBuf,
         auto_checkpoint: u32,
+        on_commit: impl Fn(FrameNo) + Sync + Send + 'static,
         encryption_key: Option<bytes::Bytes>,
     ) -> Result<Self, Error> {
-        let injector = {
+        dbg!();
+        let (injector, commit_index, meta) = {
             let db_path = db_path.clone();
-            spawn_blocking(move || {
-                Injector::new(
-                    db_path,
-                    INJECTOR_BUFFER_CAPACITY,
-                    auto_checkpoint,
-                    encryption_key,
-                )
+            spawn_blocking(move || -> Result<_, Error> {
+                dbg!();
+                let injector = Injector::new(&db_path, INJECTOR_BUFFER_CAPACITY, auto_checkpoint, encryption_key)?;
+                if *USE_REPLICATION_V2 {
+                    dbg!();
+                    let commit_index = injector.get_replication_index()?;
+                    dbg!(commit_index);
+                    Ok((injector, commit_index, None))
+                } else {
+                    dbg!();
+                    let meta = tokio::runtime::Handle::current()
+                        .block_on(WalIndexMeta::open(db_path.parent().unwrap()))?;
+                    let commit_index = meta.current_frame_no().unwrap_or(0);
+                    dbg!();
+                    Ok((injector, commit_index, Some(meta)))
+                }
             })
             .await??
         };
+
+        (on_commit)(commit_index);
 
         Ok(Self {
             client,
             injector: Arc::new(Mutex::new(injector)),
             state: ReplicatorState::NeedHandshake,
+            errors_in_a_row: 0,
+            commit_index,
+            last_injected: commit_index,
+            meta,
+            on_commit: Box::new(on_commit),
         })
+    }
+
+    async fn update_commit_index(&mut self, commit_index: FrameNo) -> Result<(), Error> {
+        if let Some(meta) = self.meta.as_mut() {
+            meta.set_commit_frame_no(commit_index).await?;
+        }
+
+        self.commit_index = commit_index;
+        (self.on_commit)(self.commit_index);
+
+        Ok(())
+    }
+
+    pub fn current_commit_index(&self) -> FrameNo {
+        self.commit_index
     }
 
     /// for a handshake on next call to replicate.
@@ -192,19 +225,61 @@ impl<C: ReplicatorClient> Replicator<C> {
     pub async fn run(&mut self) -> Error {
         loop {
             if let Err(e) = self.replicate().await {
+                self.errors_in_a_row += 1;
+                // If too many error occur, upgrade the error to a fatal error
+                if self.errors_in_a_row > 10 {
+                    return Error::Fatal(e.into());
+                }
                 return e;
+            } else {
+                self.errors_in_a_row = 0;
             }
         }
     }
 
-    pub async fn try_perform_handshake(&mut self) -> Result<(), Error> {
+    async fn handle_hello_response(&mut self, hello: HelloResponse) -> Result<(), Error> {
+        match self.meta.as_mut() {
+            Some(meta) => {
+                match meta.init_from_hello(hello) {
+                    Ok(()) => {
+                        meta.flush().await?;
+                    }
+                    Err(crate::meta::Error::LogIncompatible) => {
+                        // The logs are incompatible; start replicating from scratch again
+                        self.commit_index = 0;
+                        self.last_injected = self.commit_index;
+                    }
+                    Err(e) => return Err(Error::Meta(e)),
+                }
+            }
+            None => {
+                // do nothing?
+            }
+        }
+
+        self.state = ReplicatorState::NeedFrames;
+
+        Ok(())
+    }
+
+    pub async fn try_perform_handshake(&mut self) -> Result<usize, Error> {
         let mut error_printed = false;
         for _ in 0..HANDSHAKE_MAX_RETRIES {
             tracing::info!("Attempting to perform handshake with primary.");
             match self.client.handshake().await {
-                Ok(_) => {
+                Ok(Some(hello)) => {
+                    self.handle_hello_response(hello).await?;
+                    return Ok(0);
+                }
+                Ok(None) => {
+                    if let Some(ref mut meta) = self.meta {
+                        // init dummy meta
+                        meta.init_default();
+                        meta.flush().await?;
+                    }
+                    // yolo
                     self.state = ReplicatorState::NeedFrames;
-                    return Ok(());
+                    return Ok(0);
                 }
                 Err(Error::Client(e)) if !error_printed => {
                     if e.downcast_ref::<uuid::Error>().is_some() {
@@ -224,17 +299,18 @@ impl<C: ReplicatorClient> Replicator<C> {
         Err(Error::PrimaryHandshakeTimeout)
     }
 
-    pub async fn replicate(&mut self) -> Result<(), Error> {
+    pub async fn replicate(&mut self) -> Result<usize, Error> {
+        let mut count_frames = 0;
         loop {
-            self.try_replicate_step().await?;
+            count_frames += self.try_replicate_step().await?;
             if self.state == ReplicatorState::Exit {
                 self.state = ReplicatorState::NeedFrames;
-                return Ok(());
+                return Ok(count_frames);
             }
         }
     }
 
-    async fn try_replicate_step(&mut self) -> Result<(), Error> {
+    async fn try_replicate_step(&mut self) -> Result<usize, Error> {
         let state = self.state;
         let ret = match state {
             ReplicatorState::NeedHandshake => self.try_perform_handshake().await,
@@ -243,21 +319,26 @@ impl<C: ReplicatorClient> Replicator<C> {
             ReplicatorState::Exit => unreachable!("trying to step replicator on exit"),
         };
 
-        // in case of error we rollback the current injector transaction, and start over.
+        // in case of error we rollback the current injector transaction, and start over from last
+        // commit
         if ret.is_err() {
-            self.client.rollback();
+            self.last_injected = self.commit_index;
             self.injector.lock().rollback();
         }
 
+        let mut count_frames = 0;
         self.state = match ret {
             // perform normal operation state transition
-            Ok(()) => match state {
-                ReplicatorState::Exit => unreachable!(),
-                ReplicatorState::NeedFrames => ReplicatorState::Exit,
-                ReplicatorState::NeedSnapshot | ReplicatorState::NeedHandshake => {
-                    ReplicatorState::NeedFrames
+            Ok(n) => {
+                count_frames += n;
+                match state {
+                    ReplicatorState::Exit => unreachable!(),
+                    ReplicatorState::NeedFrames => ReplicatorState::Exit,
+                    ReplicatorState::NeedSnapshot | ReplicatorState::NeedHandshake => {
+                        ReplicatorState::NeedFrames
+                    }
                 }
-            },
+            }
             Err(Error::NoHandshake) => {
                 if state == ReplicatorState::NeedHandshake {
                     return Err(Error::Fatal(
@@ -275,48 +356,64 @@ impl<C: ReplicatorClient> Replicator<C> {
             }
         };
 
-        Ok(())
+        Ok(count_frames)
     }
 
-    async fn try_replicate(&mut self) -> Result<(), Error> {
-        let mut stream = self.client.next_frames().await?;
+    async fn try_replicate(&mut self) -> Result<usize, Error> {
+        let mut stream = self.client.next_frames(&self.last_injected + 1).await?;
+        let mut count_frames = 0;
 
         while let Some(frame) = stream.next().await.transpose()? {
             self.inject_frame(frame).await?;
+            count_frames += 1;
         }
 
-        Ok(())
+        Ok(count_frames)
     }
 
-    async fn load_snapshot(&mut self) -> Result<(), Error> {
-        self.injector.lock().clear_buffer();
-        let mut stream = self.client.snapshot().await?;
+    async fn load_snapshot(&mut self) -> Result<usize, Error> {
+        {
+            // we load the snapshot from the last commit index.
+            let mut injector = self.injector.lock();
+            injector.clear_buffer();
+            injector.rollback();
+            self.last_injected = self.commit_index;
+        }
+
+        let mut stream = self.client.snapshot(self.commit_index + 1).await?;
+        let mut count_frames = 0;
         while let Some(frame) = stream.next().await {
             let frame = frame?;
             self.inject_frame(frame).await?;
+            count_frames += 1;
         }
 
-        Ok(())
+        Ok(count_frames)
     }
 
-    async fn inject_frame(&mut self, frame: Frame) -> Result<(), Error> {
+    async fn inject_frame(&mut self, frame: Frame) -> Result<Option<FrameNo>, Error> {
         let injector = self.injector.clone();
-        match spawn_blocking(move || injector.lock().inject_frame(frame)).await? {
-            Ok(Some(commit_fno)) => {
-                self.client.commit_frame_no(commit_fno).await?;
-            }
-            Ok(None) => (),
-            Err(e) => Err(e)?,
-        }
+        let frame_no = frame.header().frame_no.get();
 
-        Ok(())
+        let ret = match spawn_blocking(move || injector.lock().inject_frame(frame)).await? {
+            Ok(Some(commit_fno)) => {
+                self.update_commit_index(commit_fno).await?;
+                Ok(Some(commit_fno))
+            }
+            Ok(None) => Ok(None),
+            Err(e) => Err(e)?,
+        };
+
+        self.last_injected = self.last_injected.max(frame_no);
+
+        ret
     }
 
     pub async fn flush(&mut self) -> Result<(), Error> {
         let injector = self.injector.clone();
         match spawn_blocking(move || injector.lock().flush()).await? {
-            Ok(Some(commit_fno)) => {
-                self.client.commit_frame_no(commit_fno).await?;
+            Ok(Some(commit_index)) => {
+                self.update_commit_index(commit_index).await?;
             }
             Ok(None) => (),
             Err(e) => Err(e)?,
@@ -337,6 +434,7 @@ mod test {
     use std::{mem::size_of, pin::Pin};
 
     use async_stream::stream;
+    use tempfile::tempdir;
 
     use crate::frame::{FrameBorrowed, FrameMut};
 
@@ -352,31 +450,21 @@ mod test {
             type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
-            async fn handshake(&mut self) -> Result<(), Error> {
+            async fn handshake(&mut self) -> Result<Option<HelloResponse>, Error> {
                 Err(Error::NamespaceDoesntExist)
             }
             /// Return a stream of frames to apply to the database
-            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn next_frames(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 unreachable!()
             }
             /// Return a snapshot for the current replication index. Called after next_frame has returned a
             /// NeedSnapshot error
-            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn snapshot(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 unreachable!()
             }
-            /// set the new commit frame_no
-            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
-                unreachable!()
-            }
-            /// Returns the currently committed replication index
-            fn committed_frame_no(&self) -> Option<FrameNo> {
-                unreachable!()
-            }
-
-            fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, |_| (), None)
             .await
             .unwrap();
 
@@ -396,30 +484,21 @@ mod test {
             type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
-            async fn handshake(&mut self) -> Result<(), Error> {
+            async fn handshake(&mut self) -> Result<Option<HelloResponse>, Error> {
                 unimplemented!()
             }
             /// Return a stream of frames to apply to the database
-            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn next_frames(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 Err(Error::NoHandshake)
             }
             /// Return a snapshot for the current replication index. Called after next_frame has returned a
             /// NeedSnapshot error
-            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn snapshot(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 unreachable!()
             }
-            /// set the new commit frame_no
-            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
-                unreachable!()
-            }
-            /// Returns the currently committed replication index
-            fn committed_frame_no(&self) -> Option<FrameNo> {
-                unreachable!()
-            }
-            fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, |_| (), None)
             .await
             .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
@@ -438,32 +517,23 @@ mod test {
             type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
-            async fn handshake(&mut self) -> Result<(), Error> {
+            async fn handshake(&mut self) -> Result<Option<HelloResponse>, Error> {
                 unimplemented!()
             }
             /// Return a stream of frames to apply to the database
-            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn next_frames(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 Ok(Box::pin(stream! {
                     yield Err(Error::NoHandshake);
                 }))
             }
             /// Return a snapshot for the current replication index. Called after next_frame has returned a
             /// NeedSnapshot error
-            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn snapshot(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 unreachable!()
             }
-            /// set the new commit frame_no
-            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
-                unreachable!()
-            }
-            /// Returns the currently committed replication index
-            fn committed_frame_no(&self) -> Option<FrameNo> {
-                unreachable!()
-            }
-            fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, |_| (), None)
             .await
             .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
@@ -482,32 +552,23 @@ mod test {
             type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
-            async fn handshake(&mut self) -> Result<(), Error> {
+            async fn handshake(&mut self) -> Result<Option<HelloResponse>, Error> {
                 unimplemented!()
             }
             /// Return a stream of frames to apply to the database
-            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn next_frames(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 Ok(Box::pin(stream! {
                     yield Err(Error::NeedSnapshot);
                 }))
             }
             /// Return a snapshot for the current replication index. Called after next_frame has returned a
             /// NeedSnapshot error
-            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn snapshot(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 unreachable!()
             }
-            /// set the new commit frame_no
-            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
-                unreachable!()
-            }
-            /// Returns the currently committed replication index
-            fn committed_frame_no(&self) -> Option<FrameNo> {
-                unreachable!()
-            }
-            fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, |_| (), None)
             .await
             .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
@@ -526,30 +587,21 @@ mod test {
             type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
-            async fn handshake(&mut self) -> Result<(), Error> {
+            async fn handshake(&mut self) -> Result<Option<HelloResponse>, Error> {
                 unimplemented!()
             }
             /// Return a stream of frames to apply to the database
-            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn next_frames(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 Err(Error::NeedSnapshot)
             }
             /// Return a snapshot for the current replication index. Called after next_frame has returned a
             /// NeedSnapshot error
-            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn snapshot(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 unreachable!()
             }
-            /// set the new commit frame_no
-            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
-                unreachable!()
-            }
-            /// Returns the currently committed replication index
-            fn committed_frame_no(&self) -> Option<FrameNo> {
-                unreachable!()
-            }
-            fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, |_| (), None)
             .await
             .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
@@ -568,30 +620,21 @@ mod test {
             type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
-            async fn handshake(&mut self) -> Result<(), Error> {
+            async fn handshake(&mut self) -> Result<Option<HelloResponse>, Error> {
                 unimplemented!()
             }
             /// Return a stream of frames to apply to the database
-            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn next_frames(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 unimplemented!()
             }
             /// Return a snapshot for the current replication index. Called after next_frame has returned a
             /// NeedSnapshot error
-            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn snapshot(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 Err(Error::NoHandshake)
             }
-            /// set the new commit frame_no
-            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
-                unreachable!()
-            }
-            /// Returns the currently committed replication index
-            fn committed_frame_no(&self) -> Option<FrameNo> {
-                unreachable!()
-            }
-            fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, |_| (), None)
             .await
             .unwrap();
         replicator.state = ReplicatorState::NeedSnapshot;
@@ -609,32 +652,23 @@ mod test {
             type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
-            async fn handshake(&mut self) -> Result<(), Error> {
+            async fn handshake(&mut self) -> Result<Option<HelloResponse>, Error> {
                 unimplemented!()
             }
             /// Return a stream of frames to apply to the database
-            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn next_frames(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 unimplemented!()
             }
             /// Return a snapshot for the current replication index. Called after next_frame has returned a
             /// NeedSnapshot error
-            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn snapshot(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 Ok(Box::pin(stream! {
                     yield Err(Error::NoHandshake)
                 }))
             }
-            /// set the new commit frame_no
-            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
-                unreachable!()
-            }
-            /// Returns the currently committed replication index
-            fn committed_frame_no(&self) -> Option<FrameNo> {
-                unreachable!()
-            }
-            fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, |_| (), None)
             .await
             .unwrap();
         // we assume that we already received the handshake and the handshake is not valid anymore
@@ -654,30 +688,21 @@ mod test {
             type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
-            async fn handshake(&mut self) -> Result<(), Error> {
+            async fn handshake(&mut self) -> Result<Option<HelloResponse>, Error> {
                 Err(Error::NoHandshake)
             }
             /// Return a stream of frames to apply to the database
-            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn next_frames(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 unimplemented!()
             }
             /// Return a snapshot for the current replication index. Called after next_frame has returned a
             /// NeedSnapshot error
-            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn snapshot(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 unimplemented!()
             }
-            /// set the new commit frame_no
-            async fn commit_frame_no(&mut self, _frame_no: FrameNo) -> Result<(), Error> {
-                unreachable!()
-            }
-            /// Returns the currently committed replication index
-            fn committed_frame_no(&self) -> Option<FrameNo> {
-                unreachable!()
-            }
-            fn rollback(&mut self) {}
         }
 
-        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new(Client, tmp.path().to_path_buf(), 10000, |_| (), None)
             .await
             .unwrap();
         replicator.state = ReplicatorState::NeedHandshake;
@@ -709,12 +734,12 @@ mod test {
             frames.into_iter().map(Into::into).collect()
         }
 
-        let tmp = tempfile::NamedTempFile::new().unwrap();
+        let tmp = tempdir().unwrap();
 
+        #[derive(Debug)]
         struct Client {
             frames: Vec<Frame>,
             should_error: bool,
-            committed_frame_no: Option<FrameNo>,
         }
 
         #[async_trait::async_trait]
@@ -722,11 +747,14 @@ mod test {
             type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
 
             /// Perform handshake with remote
-            async fn handshake(&mut self) -> Result<(), Error> {
-                Ok(())
+            async fn handshake(&mut self) -> Result<Option<HelloResponse>, Error> {
+                Ok(None)
             }
             /// Return a stream of frames to apply to the database
-            async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn next_frames(
+                &mut self,
+                _frame_no: FrameNo,
+            ) -> Result<Self::FrameStream, Error> {
                 if self.should_error {
                     let frames = self
                         .frames
@@ -744,28 +772,17 @@ mod test {
             }
             /// Return a snapshot for the current replication index. Called after next_frame has returned a
             /// NeedSnapshot error
-            async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+            async fn snapshot(&mut self, _: FrameNo) -> Result<Self::FrameStream, Error> {
                 unimplemented!()
             }
-            /// set the new commit frame_no
-            async fn commit_frame_no(&mut self, frame_no: FrameNo) -> Result<(), Error> {
-                self.committed_frame_no = Some(frame_no);
-                Ok(())
-            }
-            /// Returns the currently committed replication index
-            fn committed_frame_no(&self) -> Option<FrameNo> {
-                unimplemented!()
-            }
-            fn rollback(&mut self) {}
         }
 
         let client = Client {
             frames: make_wal_log(),
             should_error: true,
-            committed_frame_no: None,
         };
 
-        let mut replicator = Replicator::new(client, tmp.path().to_path_buf(), 10000, None)
+        let mut replicator = Replicator::new(client, tmp.path().join("data"), 10000, |_| (), None)
             .await
             .unwrap();
 
@@ -777,7 +794,7 @@ mod test {
             Error::Client(_)
         ));
         assert!(!replicator.injector.lock().is_txn());
-        assert!(replicator.client_mut().committed_frame_no.is_none());
+        assert_eq!(replicator.current_commit_index(), 0);
         assert_eq!(replicator.state, ReplicatorState::NeedHandshake);
 
         replicator.try_replicate_step().await.unwrap();
@@ -788,6 +805,6 @@ mod test {
         replicator.try_replicate_step().await.unwrap();
         assert!(!replicator.injector.lock().is_txn());
         assert_eq!(replicator.state, ReplicatorState::Exit);
-        assert_eq!(replicator.client_mut().committed_frame_no, Some(6));
+        assert_eq!(replicator.current_commit_index(), 6);
     }
 }
