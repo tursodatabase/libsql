@@ -15,6 +15,7 @@ aws-config = { version = "0.55" }
 aws-sdk-s3 = { version = "0.28" }
 bytes = "1"
 libsql-sys = { path = "../libsql-sys" }
+libsql_replication = { path = "../libsql-replication" }
 tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs"] }
 tokio-util = "0.7"
 tracing = "0.1.37"
@@ -26,7 +27,9 @@ rand = "0.8.5"
 futures-core = "0.3.29"
 
 [features]
+default = ["encryption"]
 libsql_linked_statically = []
+encryption = ["libsql-sys/encryption", "libsql_replication/encryption"]
 
 [lib]
 crate-type = ["rlib", "staticlib"]

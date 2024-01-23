@@ -1,5 +1,5 @@
 pub mod frame;
-mod injector;
+pub mod injector;
 pub mod meta;
 pub mod replicator;
 pub mod rpc;

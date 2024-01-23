@@ -55,4 +55,8 @@ impl BatchReader {
         self.next_frame_no += 1;
         Ok(())
     }
+
+    pub fn next_frame_no(&self) -> u32 {
+        self.next_frame_no
+    }
 }
