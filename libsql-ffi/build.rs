@@ -72,6 +72,7 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     println!("cargo:rerun-if-changed={BUNDLED_DIR}/src/sqlite3.c");
     let mut cfg = cc::Build::new();
     cfg.file(format!("{BUNDLED_DIR}/src/sqlite3.c"))
+        .flag("-std=c11")
         .flag("-DSQLITE_CORE")
         .flag("-DSQLITE_DEFAULT_FOREIGN_KEYS=1")
         .flag("-DSQLITE_ENABLE_API_ARMOR")
