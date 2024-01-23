@@ -3217,6 +3217,38 @@ jsonInsertIntoBlob_patherror:
 }
 
 /*
+** If pArg is a blob that seems like a JSONB blob, then initialize
+** p to point to that JSONB and return TRUE.  If pArg does not seem like
+** a JSONB blob, then return FALSE;
+**
+** This routine is only called if it is already known that pArg is a
+** blob.  The only open question is whether or not the blob appears
+** to be a JSONB blob.
+*/
+static int jsonArgIsJsonb(sqlite3_value *pArg, JsonParse *p){
+  u32 n, sz = 0;
+  p->aBlob = (u8*)sqlite3_value_blob(pArg);
+  p->nBlob = (u32)sqlite3_value_bytes(pArg);
+  if( p->nBlob==0 ){
+    p->aBlob = 0;
+    return 0;
+  }
+  if( NEVER(p->aBlob==0) ){
+    return 0;
+  }
+  if( (p->aBlob[0] & 0x0f)<=JSONB_OBJECT
+   && (n = jsonbPayloadSize(p, 0, &sz))>0
+   && sz+n==p->nBlob
+   && ((p->aBlob[0] & 0x0f)>JSONB_FALSE || sz==0)
+  ){
+    return 1;
+  }
+  p->aBlob = 0;
+  p->nBlob = 0;
+  return 0;
+}
+
+/*
 ** Generate a JsonParse object, containing valid JSONB in aBlob and nBlob,
 ** from the SQL function argument pArg.  Return a pointer to the new
 ** JsonParse object.
@@ -3272,29 +3304,24 @@ rebuild_from_cache:
     return p;
   }
   if( eType==SQLITE_BLOB ){
-    u32 n, sz = 0;
-    p->aBlob = (u8*)sqlite3_value_blob(pArg);
-    p->nBlob = (u32)sqlite3_value_bytes(pArg);
-    if( p->nBlob==0 ){
-      goto json_pfa_malformed;
+    if( jsonArgIsJsonb(pArg,p) ){
+      if( (flgs & JSON_EDITABLE)!=0 && jsonBlobMakeEditable(p, 0)==0 ){
+        goto json_pfa_oom;
+      }
+      return p;
     }
-    if( NEVER(p->aBlob==0) ){
-      goto json_pfa_oom;
-    }
-    if( (p->aBlob[0] & 0x0f)>JSONB_OBJECT ){
-      goto json_pfa_malformed;
-    }
-    n = jsonbPayloadSize(p, 0, &sz);
-    if( n==0 
-     || sz+n!=p->nBlob
-     || ((p->aBlob[0] & 0x0f)<=JSONB_FALSE && sz>0)
-    ){
-      goto json_pfa_malformed;
-    }
-    if( (flgs & JSON_EDITABLE)!=0 && jsonBlobMakeEditable(p, 0)==0 ){
-      goto json_pfa_oom;
-    }
-    return p;
+    /* If the blob is not valid JSONB, fall through into trying to cast
+    ** the blob into text which is then interpreted as JSON.  (tag-20240123-a)
+    **
+    ** This goes against all historical documentation about how the SQLite
+    ** JSON functions were suppose to work.  From the beginning, blob was
+    ** reserved for expansion and a blob value should have raised an error.
+    ** But it did not, due to a bug.  And many applications came to depend
+    ** upon this buggy behavior, espeically when using the CLI and reading
+    ** JSON text using readfile(), which returns a blob.  For this reason
+    ** we will continue to support the bug moving forward.
+    ** See for example https://sqlite.org/forum/forumpost/012136abd5292b8d
+    */
   }
   p->zJson = (char*)sqlite3_value_text(pArg);
   p->nJson = sqlite3_value_bytes(pArg);
@@ -4270,12 +4297,12 @@ static void jsonValidFunc(
       return;
     }
     case SQLITE_BLOB: {
-      if( (flags & 0x0c)!=0 && jsonFuncArgMightBeBinary(argv[0]) ){
+      if( jsonFuncArgMightBeBinary(argv[0]) ){
         if( flags & 0x04 ){
           /* Superficial checking only - accomplished by the
           ** jsonFuncArgMightBeBinary() call above. */
           res = 1;
-        }else{
+        }else if( flags & 0x08 ){
           /* Strict checking.  Check by translating BLOB->TEXT->BLOB.  If
           ** no errors occur, call that a "strict check". */
           JsonParse px;
@@ -4286,8 +4313,11 @@ static void jsonValidFunc(
           iErr = jsonbValidityCheck(&px, 0, px.nBlob, 1);
           res = iErr==0;
         }
+        break;
       }
-      break;
+      /* Fall through into interpreting the input as text.  See note
+      ** above at tag-20240123-a. */
+      /* no break */ deliberate_fall_through
     }
     default: {
       JsonParse px;
@@ -5023,13 +5053,9 @@ static int jsonEachFilter(
   memset(&p->sParse, 0, sizeof(p->sParse));
   p->sParse.nJPRef = 1;
   p->sParse.db = p->db;
-  if( sqlite3_value_type(argv[0])==SQLITE_BLOB ){
-    if( jsonFuncArgMightBeBinary(argv[0]) ){
-      p->sParse.nBlob = sqlite3_value_bytes(argv[0]);
-      p->sParse.aBlob = (u8*)sqlite3_value_blob(argv[0]);
-    }else{
-      goto json_each_malformed_input;
-    }
+  if( jsonFuncArgMightBeBinary(argv[0]) ){
+    p->sParse.nBlob = sqlite3_value_bytes(argv[0]);
+    p->sParse.aBlob = (u8*)sqlite3_value_blob(argv[0]);
   }else{
     p->sParse.zJson = (char*)sqlite3_value_text(argv[0]);
     p->sParse.nJson = sqlite3_value_bytes(argv[0]);
