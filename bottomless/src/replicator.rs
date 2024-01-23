@@ -60,6 +60,7 @@ pub struct Replicator {
     pub db_name: String,
 
     use_compression: CompressionKind,
+    encryption_key: Option<Bytes>,
     max_frames_per_batch: usize,
     s3_upload_max_parallelism: usize,
     join_set: JoinSet<()>,
@@ -85,6 +86,7 @@ pub struct Options {
     pub verify_crc: bool,
     /// Kind of compression algorithm used on the WAL frames to be sent to S3.
     pub use_compression: CompressionKind,
+    pub encryption_key: Option<Bytes>,
     pub aws_endpoint: Option<String>,
     pub access_key_id: Option<String>,
     pub secret_access_key: Option<String>,
@@ -180,6 +182,7 @@ impl Options {
         let use_compression =
             CompressionKind::parse(&env_var_or("LIBSQL_BOTTOMLESS_COMPRESSION", "zstd"))
                 .map_err(|e| anyhow!("unknown compression kind: {}", e))?;
+        let encryption_key = env_var("SQLD_ENCRYPTION_KEY").map(Bytes::from).ok();
         let verify_crc = match env_var_or("LIBSQL_BOTTOMLESS_VERIFY_CRC", true)
             .to_lowercase()
             .as_ref()
@@ -197,6 +200,7 @@ impl Options {
             create_bucket_if_not_exists: true,
             verify_crc,
             use_compression,
+            encryption_key,
             max_batch_interval,
             max_frames_per_batch,
             s3_upload_max_parallelism,
@@ -353,6 +357,7 @@ impl Replicator {
             snapshot_waiter,
             snapshot_notifier: Arc::new(snapshot_notifier),
             use_compression: options.use_compression,
+            encryption_key: options.encryption_key,
             max_frames_per_batch: options.max_frames_per_batch,
             s3_upload_max_parallelism: options.s3_upload_max_parallelism,
             join_set,
@@ -1308,8 +1313,7 @@ impl Replicator {
         utc_time: Option<NaiveDateTime>,
         db_path: &Path,
     ) -> Result<bool> {
-        // FIXME: pass the encryption key down
-        let encryption_key = None;
+        let encryption_key = self.encryption_key.clone();
         let mut injector =
             libsql_replication::injector::Injector::new(db_path, 4096, u32::MAX, encryption_key)?;
         let prefix = format!("{}-{}/", self.db_name, generation);
