@@ -1,6 +1,5 @@
 use crate::backup::WalCopier;
 use crate::read::BatchReader;
-use crate::transaction_cache::TransactionPageCache;
 use crate::uuid_utils::decode_unix_timestamp;
 use crate::wal::WalFileReader;
 use anyhow::{anyhow, bail};
@@ -54,8 +53,6 @@ pub struct Replicator {
     snapshot_notifier: Arc<Sender<Result<Option<Uuid>>>>,
 
     pub page_size: usize,
-    restore_transaction_page_swap_after: u32,
-    restore_transaction_cache_fpath: Arc<str>,
     generation: Arc<ArcSwapOption<Uuid>>,
     verify_crc: bool,
     pub bucket: String,
@@ -107,12 +104,6 @@ pub struct Options {
     pub max_batch_interval: Duration,
     /// Maximum number of S3 file upload requests that may happen in parallel.
     pub s3_upload_max_parallelism: usize,
-    /// When recovering a transaction, if number of affected pages is greater than page swap,
-    /// start flushing these pages on disk instead of keeping them in memory.
-    pub restore_transaction_page_swap_after: u32,
-    /// When recovering a transaction, when its page cache needs to be swapped onto local file,
-    /// this field contains a path for a file to be used.
-    pub restore_transaction_cache_fpath: String,
     /// Max number of retries for S3 operations
     pub s3_max_retries: u32,
 }
@@ -186,10 +177,6 @@ impl Options {
             env_var_or("LIBSQL_BOTTOMLESS_BATCH_MAX_FRAMES", 10000).parse::<usize>()?;
         let s3_upload_max_parallelism =
             env_var_or("LIBSQL_BOTTOMLESS_S3_PARALLEL_MAX", 32).parse::<usize>()?;
-        let restore_transaction_page_swap_after =
-            env_var_or("LIBSQL_BOTTOMLESS_RESTORE_TXN_SWAP_THRESHOLD", 1000).parse::<u32>()?;
-        let restore_transaction_cache_fpath =
-            env_var_or("LIBSQL_BOTTOMLESS_RESTORE_TXN_FILE", ".bottomless.restore");
         let use_compression =
             CompressionKind::parse(&env_var_or("LIBSQL_BOTTOMLESS_COMPRESSION", "zstd"))
                 .map_err(|e| anyhow!("unknown compression kind: {}", e))?;
@@ -213,12 +200,10 @@ impl Options {
             max_batch_interval,
             max_frames_per_batch,
             s3_upload_max_parallelism,
-            restore_transaction_page_swap_after,
             aws_endpoint,
             access_key_id,
             secret_access_key,
             region,
-            restore_transaction_cache_fpath,
             bucket_name,
             s3_max_retries,
         })
@@ -367,8 +352,6 @@ impl Replicator {
             db_name,
             snapshot_waiter,
             snapshot_notifier: Arc::new(snapshot_notifier),
-            restore_transaction_page_swap_after: options.restore_transaction_page_swap_after,
-            restore_transaction_cache_fpath: options.restore_transaction_cache_fpath.into(),
             use_compression: options.use_compression,
             max_frames_per_batch: options.max_frames_per_batch,
             s3_upload_max_parallelism: options.s3_upload_max_parallelism,
@@ -1175,7 +1158,7 @@ impl Replicator {
                     last_frame,
                     checksum,
                     timestamp,
-                    &mut db,
+                    restore_path,
                 )
                 .await?;
                 applied_wal_frame = true;
@@ -1323,8 +1306,12 @@ impl Replicator {
         last_consistent_frame: Option<u32>,
         mut checksum: (u32, u32),
         utc_time: Option<NaiveDateTime>,
-        db: &mut File,
+        db_path: &Path,
     ) -> Result<bool> {
+        // FIXME: pass the encryption key down
+        let encryption_key = None;
+        let mut injector =
+            libsql_replication::injector::Injector::new(db_path, 4096, u32::MAX, encryption_key)?;
         let prefix = format!("{}-{}/", self.db_name, generation);
         let mut page_buf = {
             let mut v = Vec::with_capacity(page_size);
@@ -1347,11 +1334,6 @@ impl Replicator {
                     break;
                 }
             };
-            let mut pending_pages = TransactionPageCache::new(
-                self.restore_transaction_page_swap_after,
-                page_size as u32,
-                self.restore_transaction_cache_fpath.clone(),
-            );
             let mut last_received_frame_no = 0;
             for obj in objs {
                 let key = obj
@@ -1402,38 +1384,33 @@ impl Replicator {
                     }
                 }
                 let frame = self.get_object(key.into()).send().await?;
-                let mut frameno = first_frame_no;
                 let mut reader = BatchReader::new(
-                    frameno,
+                    first_frame_no,
                     tokio_util::io::StreamReader::new(frame.body),
                     self.page_size,
                     compression_kind,
                 );
 
                 while let Some(frame) = reader.next_frame_header().await? {
-                    let pgno = frame.pgno();
-                    let page_size = self.page_size;
+                    last_received_frame_no = reader.next_frame_no();
                     reader.next_page(&mut page_buf).await?;
                     if self.verify_crc {
                         checksum = frame.verify(checksum, &page_buf)?;
                     }
-                    pending_pages.insert(pgno, &page_buf).await?;
-                    if frame.is_committed() {
-                        let pending_pages = std::mem::replace(
-                            &mut pending_pages,
-                            TransactionPageCache::new(
-                                self.restore_transaction_page_swap_after,
-                                page_size as u32,
-                                self.restore_transaction_cache_fpath.clone(),
-                            ),
-                        );
-                        pending_pages.flush(db).await?;
-                        applied_wal_frame = true;
-                    }
-                    frameno += 1;
-                    last_received_frame_no += 1;
+                    let (crc1, crc2) = frame.crc();
+                    let checksum = (crc1 as u64) << 32 | crc2 as u64;
+                    let frame_to_inject = libsql_replication::frame::Frame::from_parts(
+                        &libsql_replication::frame::FrameHeader {
+                            frame_no: (last_received_frame_no as u64).into(),
+                            checksum: checksum.into(),
+                            page_no: frame.pgno().into(),
+                            size_after: frame.size_after().into(),
+                        },
+                        page_buf.as_slice(),
+                    );
+                    injector.inject_frame(frame_to_inject)?;
+                    applied_wal_frame = true;
                 }
-                db.flush().await?;
             }
             next_marker = response
                 .is_truncated()

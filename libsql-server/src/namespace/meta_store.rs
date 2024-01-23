@@ -179,8 +179,6 @@ impl MetaStore {
                     max_frames_per_batch: 10_000,
                     max_batch_interval: config.backup_interval,
                     s3_upload_max_parallelism: 32,
-                    restore_transaction_page_swap_after: 1000,
-                    restore_transaction_cache_fpath: ".bottomless.restore".into(),
                     s3_max_retries: 10,
                 };
                 let mut replicator = bottomless::replicator::Replicator::with_options(
