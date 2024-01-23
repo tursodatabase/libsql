@@ -2971,27 +2971,21 @@ static int fts5IntegrityMethod(
   char **pzErr            /* Write error message here */
 ){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
-  Fts5Config *pConfig = pTab->p.pConfig;
-  char *zSql;
-  char *zErr = 0;
   int rc;
+
   assert( pzErr!=0 && *pzErr==0 );
   UNUSED_PARAM(isQuick);
-  zSql = sqlite3_mprintf(
-            "INSERT INTO \"%w\".\"%w\"(\"%w\") VALUES('integrity-check');",
-            zSchema, zTabname, pConfig->zName);
-  if( zSql==0 ) return SQLITE_NOMEM;
-  rc = sqlite3_exec(pConfig->db, zSql, 0, 0, &zErr);
-  sqlite3_free(zSql);
+  rc = sqlite3Fts5StorageIntegrity(pTab->pStorage, 0);
   if( (rc&0xff)==SQLITE_CORRUPT ){
     *pzErr = sqlite3_mprintf("malformed inverted index for FTS5 table %s.%s",
                 zSchema, zTabname);
   }else if( rc!=SQLITE_OK ){
     *pzErr = sqlite3_mprintf("unable to validate the inverted index for"
                              " FTS5 table %s.%s: %s",
-                zSchema, zTabname, zErr);
+                zSchema, zTabname, sqlite3_errstr(rc));
   }
-  sqlite3_free(zErr);
+  sqlite3Fts5IndexCloseReader(pTab->p.pIndex);
+
   return SQLITE_OK;
 }
 
