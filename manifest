@@ -1,5 +1,5 @@
-C Bump\sthe\sversion\snumber\sto\s3.45.1
-D 2024-01-23T13:58:41.131
+C Fix\sharmless\s"unused\sparameter"\scompiler\swarning\sin\sthe\snew\sfts3IntegrityMethod\nimplementation.
+D 2024-01-23T15:04:07.477
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -63,7 +63,7 @@ F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 16366d9e422be6022255fcb6bb2838387a0fe0a6afb12d14e21fe8f74386ab6a
+F ext/fts3/fts3.c fd64a588471ce00b19da08acb0d6f904277a21ac1d15141d5913c83591afa027
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 968f7d7cae541a6926146e9fd3fb2b2ccbd3845b7890a8ed03de0c06ac776682
 F ext/fts3/fts3_aux.c 7eab82a9cf0830f6551ba3abfdbe73ed39e322a4d3940ee82fbf723674ecd9f3
@@ -2158,8 +2158,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4c2c1b97dce46a279846380c937ac6de5c367927c6843516641eead7ea6db472
-R cdedeab18729a0f4c43fb75aa7a511fc
+P 54d34edb89430b266221b7e6eea0afbd2c9dafbe774344469473abc8ad1e13fd
+Q +bb1fe53a97672fc868e3f3897162ea0d714dc1da95187f9c7e35255049f2b0e7
+R be8ef569a6982a529df53ff45211ffcb
 U drh
-Z 4cf80e7afd21206f04550d37dcc7ef64
+Z 52aa2adfde564692461c5347addf09a1
 # Remove this line to create a well-formed Fossil manifest.

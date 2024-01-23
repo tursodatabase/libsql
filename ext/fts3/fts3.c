@@ -4017,6 +4017,7 @@ static int fts3IntegrityMethod(
   int rc;
   int bOk = 0;
 
+  UNUSED_PARAMETER(isQuick);
   rc = sqlite3Fts3IntegrityCheck(p, &bOk);
   assert( rc!=SQLITE_CORRUPT_VTAB || bOk==0 );
   if( rc!=SQLITE_OK && rc!=SQLITE_CORRUPT_VTAB ){
