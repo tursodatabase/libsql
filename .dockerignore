@@ -66,3 +66,5 @@ libsql-sqlite3/testfixture
 libsql-sqlite3/libsql
 libsql-sqlite3/src-verify
 libsql-sqlite3/crates/target/
+
+libsql-ffi/bundled/SQLite3MultipleCiphers/build
