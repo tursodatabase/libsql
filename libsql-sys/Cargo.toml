@@ -32,8 +32,9 @@ rusqlite = ["dep:rusqlite"]
 wasmtime-bindings = ["libsql-ffi/wasmtime-bindings"]
 unix-excl-vfs = []
 encryption = ["libsql-ffi/multiple-ciphers"]
+serde = ["dep:serde"]
 hrana = [
-    "dep:serde",
+    "serde",
     "dep:prost",
     "dep:base64"
 ]
