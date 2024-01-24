@@ -1,3 +1,5 @@
+mod local;
+
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -34,6 +36,11 @@ fn make_primary(sim: &mut Sim, path: PathBuf) {
         async move {
             let server = TestServer {
                 path: path.into(),
+                db_config: DbConfig {
+                    max_log_size: 1,
+                    max_log_duration: Some(5.0),
+                    ..Default::default()
+                },
                 user_api_config: UserApiConfig {
                     ..Default::default()
                 },
