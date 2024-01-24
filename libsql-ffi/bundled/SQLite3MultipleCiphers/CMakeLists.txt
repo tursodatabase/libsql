@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24.0.0)
+cmake_minimum_required(VERSION 3.18.0.0)
 project(sqlite3mc)
 
 # Helper macro
