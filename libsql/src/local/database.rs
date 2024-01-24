@@ -131,6 +131,46 @@ impl Database {
         Ok(db)
     }
 
+    #[cfg(feature = "replication")]
+    pub async fn open_local_sync_remote_writes(
+        connector: crate::util::ConnectorService,
+        db_path: impl Into<String>,
+        endpoint: String,
+        auth_token: String,
+        version: Option<String>,
+        flags: OpenFlags,
+        encryption_key: Option<bytes::Bytes>,
+    ) -> Result<Database> {
+        use std::path::PathBuf;
+
+        let db_path = db_path.into();
+        let mut db = Database::open(&db_path, flags)?;
+
+        use crate::util::coerce_url_scheme;
+
+        let endpoint = coerce_url_scheme(endpoint);
+        let remote = crate::replication::client::Client::new(
+            connector,
+            endpoint.as_str().try_into().unwrap(),
+            auth_token,
+            version.as_deref(),
+        )
+        .unwrap();
+
+        let path = PathBuf::from(db_path);
+        let client = LocalClient::new(&path).await.unwrap();
+
+        let replicator = EmbeddedReplicator::with_local(client, path, 1000, encryption_key).await;
+
+        db.replication_ctx = Some(ReplicationContext {
+            replicator,
+            client: Some(remote),
+            read_your_writes: false,
+        });
+
+        Ok(db)
+    }
+
     pub fn new(db_path: String, flags: OpenFlags) -> Database {
         static LIBSQL_INIT: Once = Once::new();
 
