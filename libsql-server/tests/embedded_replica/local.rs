@@ -37,6 +37,7 @@ fn local_sync_with_writes() {
             Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
         let conn = primary.connect()?;
 
+        // Do enough writes to ensure that we can force the server to write some snapshots
         conn.execute("create table test (x)", ()).await.unwrap();
         for _ in 0..233 {
             conn.execute("insert into test values (randomblob(4092))", ())
@@ -93,11 +94,24 @@ fn local_sync_with_writes() {
 
         tracing::info!("executing write delegated inserts");
 
+        // Attempt to write and ensure it writes only to the primary
         for _ in 0..300 {
             conn.execute("insert into test values (randomblob(4092))", ())
                 .await
                 .unwrap();
         }
+
+        // Verify no new writes were done locally
+        let row = conn
+            .query("select count(*) from test", ())
+            .await
+            .unwrap()
+            .next()
+            .await
+            .unwrap()
+            .unwrap();
+        let count = row.get::<u64>(0).unwrap();
+        assert_eq!(count, 233);
 
         let snapshots_path = tmp_host_path.join("dbs").join("foo").join("snapshots");
 
