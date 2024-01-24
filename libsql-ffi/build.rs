@@ -22,7 +22,7 @@ fn main() {
     }
 
     if cfg!(feature = "multiple-ciphers") {
-        copy_multiple_ciphers(&out_dir);
+        copy_multiple_ciphers(&out_dir, &out_path);
         return;
     }
 
@@ -228,12 +228,13 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     println!("cargo:lib_dir={out_dir}");
 }
 
-fn copy_multiple_ciphers(out_dir: &str) {
-    std::fs::copy(
-        format!("{BUNDLED_DIR}/SQLite3MultipleCiphers/build/libsqlite3mc_static.a"),
-        format!("{out_dir}/libsqlite3mc.a"),
-    )
-    .unwrap();
+fn copy_multiple_ciphers(out_dir: &str, out_path: &Path) {
+    let dylib = format!("{BUNDLED_DIR}/SQLite3MultipleCiphers/build/libsqlite3mc_static.a");
+    if !Path::new(&dylib).exists() {
+        build_multiple_ciphers(&out_path);
+    }
+
+    std::fs::copy(dylib, format!("{out_dir}/libsqlite3mc.a")).unwrap();
     println!("cargo:rustc-link-lib=static=sqlite3mc");
     println!("cargo:rustc-link-search={out_dir}");
 }
