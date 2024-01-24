@@ -146,7 +146,7 @@ where
         size_after: u32,
         is_commit: bool,
         sync_flags: std::ffi::c_int,
-    ) -> super::Result<()> {
+    ) -> super::Result<usize> {
         self.wrapper.insert_frames(
             &mut self.wrapped,
             page_size,
@@ -271,7 +271,7 @@ pub trait WrapWal<W: Wal> {
         size_after: u32,
         is_commit: bool,
         sync_flags: std::ffi::c_int,
-    ) -> super::Result<()> {
+    ) -> super::Result<usize> {
         wrapped.insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)
     }
 
@@ -431,7 +431,7 @@ impl<T: WrapWal<W>, W: Wal> WrapWal<W> for Option<T> {
         size_after: u32,
         is_commit: bool,
         sync_flags: std::ffi::c_int,
-    ) -> super::Result<()> {
+    ) -> super::Result<usize> {
         match self {
             Some(t) => t.insert_frames(
                 wrapped,

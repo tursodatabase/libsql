@@ -132,7 +132,7 @@ mod tests {
             size_after: u32,
             is_commit: bool,
             sync_flags: std::ffi::c_int,
-        ) -> libsql_sys::wal::Result<()> {
+        ) -> libsql_sys::wal::Result<usize> {
             self.0
                 .insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)
         }
