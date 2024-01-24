@@ -1,12 +1,13 @@
 use crate::hrana::cursor::{Cursor, CursorReq};
-use crate::hrana::pipeline::{
-    BatchStreamReq, ClientMsg, CloseSqlStreamReq, DescribeStreamReq, Response, SequenceStreamReq,
-    ServerMsg, StoreSqlStreamReq, StreamRequest, StreamResponse, StreamResponseOk,
-};
 use crate::hrana::proto::{Batch, BatchResult, DescribeResult, Stmt, StmtResult};
-use crate::hrana::{CursorResponseError, HranaError, HttpSend, Result, StreamResponseError};
+use crate::hrana::{CursorResponseError, HranaError, HttpSend, Result};
 use bytes::{Bytes, BytesMut};
 use futures::Stream;
+use libsql_sys::hrana::proto::{
+    BatchStreamReq, CloseSqlStreamReq, CloseStreamReq, CloseStreamResp, DescribeStreamReq,
+    GetAutocommitStreamReq, PipelineReqBody, PipelineRespBody, SequenceStreamReq,
+    StoreSqlStreamReq, StreamRequest, StreamResponse, StreamResult,
+};
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -104,7 +105,7 @@ where
     pub(super) async fn execute_inner(&self, stmt: Stmt, close_stream: bool) -> Result<StmtResult> {
         let mut batch_res = self.batch_inner(Batch::single(stmt), close_stream).await?;
         if let Some(Some(error)) = batch_res.step_errors.pop() {
-            return Err(HranaError::StreamError(StreamResponseError { error }));
+            return Err(HranaError::StreamError(error));
         }
         if let Some(Some(resp)) = batch_res.step_results.pop() {
             Ok(resp)
@@ -126,8 +127,8 @@ where
             let [resp, get_autocommit, _] = client
                 .send_requests([
                     StreamRequest::Batch(BatchStreamReq { batch }),
-                    StreamRequest::GetAutocommit,
-                    StreamRequest::Close,
+                    StreamRequest::GetAutocommit(GetAutocommitStreamReq {}),
+                    StreamRequest::Close(CloseStreamReq {}),
                 ])
                 .await?;
             client.reset();
@@ -137,7 +138,7 @@ where
             let [resp, get_autocommit] = client
                 .send_requests([
                     StreamRequest::Batch(BatchStreamReq { batch }),
-                    StreamRequest::GetAutocommit,
+                    StreamRequest::GetAutocommit(GetAutocommitStreamReq {}),
                 ])
                 .await?;
             (resp, get_autocommit)
@@ -180,7 +181,7 @@ where
             .send(StreamRequest::StoreSql(StoreSqlStreamReq { sql, sql_id }))
             .await?;
         match resp {
-            StreamResponse::StoreSql => {
+            StreamResponse::StoreSql(_) => {
                 drop(client);
                 Ok(StoredSql::new(self.clone(), sql_id))
             }
@@ -194,7 +195,7 @@ where
             .send(StreamRequest::CloseSql(CloseSqlStreamReq { sql_id }))
             .await?;
         match resp {
-            StreamResponse::CloseSql => Ok(()),
+            StreamResponse::CloseSql(_) => Ok(()),
             other => unexpected!(other),
         }
     }
@@ -205,10 +206,12 @@ where
             SqlDescription::Sql(sql) => DescribeStreamReq {
                 sql: Some(sql),
                 sql_id: None,
+                replication_index: None,
             },
             SqlDescription::SqlId(sql_id) => DescribeStreamReq {
                 sql: None,
                 sql_id: Some(sql_id),
+                replication_index: None,
             },
         };
         let resp = client.send(StreamRequest::Describe(req)).await?;
@@ -224,22 +227,26 @@ where
             SqlDescription::Sql(sql) => SequenceStreamReq {
                 sql: Some(sql),
                 sql_id: None,
+                replication_index: None,
             },
             SqlDescription::SqlId(sql_id) => SequenceStreamReq {
                 sql: None,
                 sql_id: Some(sql_id),
+                replication_index: None,
             },
         };
         let resp = client.send(StreamRequest::Sequence(req)).await?;
         match resp {
-            StreamResponse::Sequence => Ok(()),
+            StreamResponse::Sequence(_) => Ok(()),
             other => unexpected!(other),
         }
     }
 
     pub async fn get_autocommit(&self) -> Result<bool> {
         let mut client = self.inner.stream.lock().await;
-        let resp = client.send(StreamRequest::GetAutocommit).await?;
+        let resp = client
+            .send(StreamRequest::GetAutocommit(GetAutocommitStreamReq {}))
+            .await?;
         match resp {
             StreamResponse::GetAutocommit(resp) => Ok(resp.is_autocommit),
             other => unexpected!(other),
@@ -330,7 +337,7 @@ where
             self.baton.as_deref().unwrap_or_default(),
             requests
         );
-        let msg = ClientMsg {
+        let msg = PipelineReqBody {
             baton: self.baton.clone(),
             requests: Vec::from(requests),
         };
@@ -340,7 +347,7 @@ where
             .http_send(self.pipeline_url.clone(), self.auth_token.clone(), body)
             .await?;
         let body = stream_to_bytes(body).await?;
-        let mut response: ServerMsg = serde_json::from_slice(&body)?;
+        let mut response: PipelineRespBody = serde_json::from_slice(&body)?;
         if let Some(base_url) = response.base_url.take() {
             let (pipeline_url, cursor_url) = parse_hrana_urls(&base_url);
             self.pipeline_url = pipeline_url;
@@ -370,11 +377,12 @@ where
                 response.results
             )))?;
         }
-        let mut responses = std::array::from_fn(|_| StreamResponse::Close);
+        let mut responses = std::array::from_fn(|_| StreamResponse::Close(CloseStreamResp {}));
         for (i, result) in response.results.into_iter().enumerate() {
             match result {
-                Response::Ok(StreamResponseOk { response }) => responses[i] = response,
-                Response::Error(e) => return Err(HranaError::StreamError(e)),
+                StreamResult::Ok { response } => responses[i] = response,
+                StreamResult::Error { error } => return Err(HranaError::StreamError(error)),
+                StreamResult::None => {}
             }
         }
         Ok(responses)
@@ -382,7 +390,11 @@ where
 
     async fn finalize(&mut self, req: StreamRequest) -> Result<(StreamResponse, bool)> {
         let [resp, get_autocommit, _] = self
-            .send_requests([req, StreamRequest::GetAutocommit, StreamRequest::Close])
+            .send_requests([
+                req,
+                StreamRequest::GetAutocommit(GetAutocommitStreamReq {}),
+                StreamRequest::Close(CloseStreamReq {}),
+            ])
             .await?;
         let is_autocommit = match get_autocommit {
             StreamResponse::GetAutocommit(resp) => resp.is_autocommit,
@@ -419,9 +431,9 @@ where
         if let Some(baton) = self.baton.take() {
             // only send a close request if stream was ever used to send the data
             tracing::trace!("closing client stream (baton: `{}`)", baton);
-            let req = serde_json::to_string(&ClientMsg {
+            let req = serde_json::to_string(&PipelineReqBody {
                 baton: Some(baton),
-                requests: vec![StreamRequest::Close],
+                requests: vec![StreamRequest::Close(CloseStreamReq {})],
             })
             .unwrap();
             self.client

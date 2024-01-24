@@ -7,12 +7,10 @@ cfg_remote! {
 }
 
 mod cursor;
-pub mod pipeline;
 mod stream;
 pub mod transaction;
 
 use crate::hrana::cursor::{Cursor, Error, OwnedCursorStep};
-pub(crate) use crate::hrana::pipeline::StreamResponseError;
 use crate::hrana::stream::HranaStream;
 use crate::parser::StmtKind;
 use crate::{params::Params, ValueType};
@@ -87,7 +85,7 @@ pub enum HranaError {
     #[error("stream closed: `{0}`")]
     StreamClosed(String),
     #[error("stream error: `{0:?}`")]
-    StreamError(StreamResponseError),
+    StreamError(proto::Error),
     #[error("cursor error: `{0}`")]
     CursorError(CursorResponseError),
     #[error("json error: `{0}`")]

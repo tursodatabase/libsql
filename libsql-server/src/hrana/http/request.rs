@@ -2,9 +2,10 @@ use anyhow::{anyhow, bail, Result};
 use bytesize::ByteSize;
 
 use super::super::{batch, stmt, ProtocolError, Version};
-use super::{proto, stream};
+use super::stream;
 use crate::auth::Authenticated;
 use crate::connection::Connection;
+use libsql_sys::hrana::proto;
 
 const MAX_SQL_COUNT: usize = 50;
 const MAX_STORED_SQL_SIZE: ByteSize = ByteSize::kb(5);
