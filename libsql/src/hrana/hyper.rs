@@ -2,10 +2,9 @@ use crate::connection::Conn;
 use crate::hrana::connection::HttpConnection;
 use crate::hrana::proto::{Batch, Stmt};
 use crate::hrana::stream::HranaStream;
-use crate::hrana::transaction::HttpTransaction;
-use crate::hrana::{bind_params, HranaError, HttpSend, Result};
+use crate::hrana::transaction::{HttpTransaction, TxScopeCounter};
+use crate::hrana::{bind_params, unwrap_err, HranaError, HttpSend, Result};
 use crate::params::Params;
-use crate::parser::StmtKind;
 use crate::transaction::Tx;
 use crate::util::ConnectorService;
 use crate::{Rows, Statement};
@@ -15,7 +14,6 @@ use futures::{Stream, TryStreamExt};
 use http::header::AUTHORIZATION;
 use http::{HeaderValue, StatusCode};
 use hyper::body::HttpBody;
-use libsql_sys::hrana::proto::BatchResult;
 use std::io::ErrorKind;
 use std::sync::Arc;
 
@@ -205,15 +203,6 @@ impl Tx for HttpTransaction<HttpSender> {
     }
 }
 
-fn unwrap_err(batch_res: BatchResult) -> crate::Result<()> {
-    for maybe_err in batch_res.step_errors {
-        if let Some(e) = maybe_err {
-            return Err(crate::Error::Hrana(Box::new(HranaError::Api(e.message))));
-        }
-    }
-    Ok(())
-}
-
 #[async_trait::async_trait]
 impl Conn for HranaStream<HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
@@ -254,8 +243,7 @@ impl Conn for HranaStream<HttpSender> {
             .batch_inner(Batch::from_iter(stmts), close)
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
-        unwrap_err(res)?;
-        Ok(())
+        unwrap_err(res)
     }
 
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
@@ -282,34 +270,5 @@ impl Conn for HranaStream<HttpSender> {
 
     fn last_insert_rowid(&self) -> i64 {
         self.last_insert_rowid()
-    }
-}
-
-/// Counts number of transaction begin statements and transaction commits/rollback
-/// in order to determine if current statement execution will end within transaction
-/// scope, will start a new transaction or end existing one.
-#[repr(transparent)]
-#[derive(Default)]
-struct TxScopeCounter {
-    scope: i32,
-}
-
-impl TxScopeCounter {
-    fn count(&mut self, stmt_kind: StmtKind) {
-        match stmt_kind {
-            StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly => self.scope += 1,
-            StmtKind::TxnEnd => self.scope -= 1,
-            _ => {}
-        }
-    }
-
-    /// Check if within current scope we will eventually begin new transaction.
-    fn begin_tx(&self) -> bool {
-        self.scope > 0
-    }
-
-    /// Check if within current scope we will eventually close existing transaction.
-    fn end_tx(&self) -> bool {
-        self.scope < 0
     }
 }

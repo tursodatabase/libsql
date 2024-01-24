@@ -2,6 +2,7 @@ use crate::hrana::pipeline::{ExecuteStreamReq, StreamRequest};
 use crate::hrana::proto::Stmt;
 use crate::hrana::stream::HranaStream;
 use crate::hrana::{HttpSend, Result};
+use crate::parser::StmtKind;
 use crate::TransactionBehavior;
 
 #[derive(Debug, Clone)]
@@ -47,5 +48,34 @@ where
             .finalize(StreamRequest::Execute(ExecuteStreamReq { stmt }))
             .await?;
         Ok(())
+    }
+}
+
+/// Counts number of transaction begin statements and transaction commits/rollback
+/// in order to determine if current statement execution will end within transaction
+/// scope, will start a new transaction or end existing one.
+#[repr(transparent)]
+#[derive(Default)]
+pub(crate) struct TxScopeCounter {
+    scope: i32,
+}
+
+impl TxScopeCounter {
+    pub(crate) fn count(&mut self, stmt_kind: StmtKind) {
+        match stmt_kind {
+            StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly => self.scope += 1,
+            StmtKind::TxnEnd => self.scope -= 1,
+            _ => {}
+        }
+    }
+
+    /// Check if within current scope we will eventually begin new transaction.
+    pub(crate) fn begin_tx(&self) -> bool {
+        self.scope > 0
+    }
+
+    /// Check if within current scope we will eventually close existing transaction.
+    pub(crate) fn end_tx(&self) -> bool {
+        self.scope < 0
     }
 }

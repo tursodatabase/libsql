@@ -19,7 +19,7 @@ use crate::{params::Params, ValueType};
 use bytes::Bytes;
 use futures::{Stream, StreamExt};
 pub use libsql_sys::hrana::proto;
-use libsql_sys::hrana::proto::{Batch, Col, Stmt};
+use libsql_sys::hrana::proto::{Batch, BatchResult, Col, Stmt};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -372,4 +372,13 @@ fn into_value2(value: proto::Value) -> crate::Value {
         proto::Value::Text { value } => crate::Value::Text(value.to_string()),
         proto::Value::Blob { value } => crate::Value::Blob(value.into()),
     }
+}
+
+pub(crate) fn unwrap_err(batch_res: BatchResult) -> crate::Result<()> {
+    for maybe_err in batch_res.step_errors {
+        if let Some(e) = maybe_err {
+            return Err(crate::Error::Hrana(Box::new(HranaError::Api(e.message))));
+        }
+    }
+    Ok(())
 }

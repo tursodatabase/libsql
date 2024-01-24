@@ -115,7 +115,7 @@ where
         }
     }
 
-    pub(super) async fn batch_inner(
+    pub(crate) async fn batch_inner(
         &self,
         batch: Batch,
         close_stream: bool,

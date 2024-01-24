@@ -29,12 +29,14 @@
 //! ```
 mod rows;
 
-use crate::hrana::transaction::HttpTransaction;
+use crate::hrana::transaction::{HttpTransaction, TxScopeCounter};
+use crate::hrana::unwrap_err;
 use crate::{
     hrana::{connection::HttpConnection, HttpSend},
     params::IntoParams,
     TransactionBehavior,
 };
+use libsql_sys::hrana::proto::{Batch, Stmt};
 
 pub use crate::wasm::rows::Rows;
 
@@ -78,18 +80,22 @@ where
     }
 
     pub async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
-        let mut statements = Vec::new();
-        let stmts = crate::parser::Statement::parse(sql);
-        for s in stmts {
+        let mut stmts = Vec::new();
+        let parse = crate::parser::Statement::parse(sql);
+        let mut c = TxScopeCounter::default();
+        for s in parse {
             let s = s?;
-            statements.push(crate::hrana::proto::Stmt::new(s.stmt, false));
+            c.count(s.kind);
+            stmts.push(Stmt::new(s.stmt, false));
         }
-        self.conn
-            .batch_inner(statements)
+        let stream = self.conn.current_stream();
+        let in_tx_scope = !stream.is_autocommit() || c.begin_tx();
+        let close = !in_tx_scope || c.end_tx();
+        let res = stream
+            .batch_inner(Batch::from_iter(stmts), close)
             .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?
-            .into_result()?;
-        Ok(())
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        unwrap_err(res)
     }
 
     pub async fn query(&self, sql: &str, params: impl IntoParams) -> crate::Result<Rows> {
@@ -151,13 +157,18 @@ where
     pub async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
         let mut statements = Vec::new();
         let stmts = crate::parser::Statement::parse(sql);
+        let mut c = TxScopeCounter::default();
         for s in stmts {
             let s = s?;
+            c.count(s.kind);
             statements.push(crate::hrana::proto::Stmt::new(s.stmt, false));
         }
 
-        self.inner
-            .execute_batch(statements)
+        let stream = self.inner.stream();
+        let in_tx_scope = !stream.is_autocommit() || c.begin_tx();
+        let close = !in_tx_scope || c.end_tx();
+        stream
+            .batch_inner(Batch::from_iter(statements), close)
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
         Ok(())
