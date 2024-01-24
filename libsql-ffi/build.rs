@@ -11,13 +11,15 @@ fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
 
-    if std::env::var("LIBSQL_DEV").is_ok() || cfg!(feature = "wasmtime-bindings") {
-        make_amalgation();
-    }
+    println!("cargo:rerun-if-changed={BUNDLED_DIR}/src/sqlite3.c");
 
-    if cfg!(feature = "multiple-ciphers") {
-        build_multiple_ciphers(&out_dir, &out_path);
-        return;
+    if std::env::var("LIBSQL_DEV").is_ok() {
+        make_amalgation();
+
+        if cfg!(feature = "multiple-ciphers") {
+            build_multiple_ciphers(&out_dir, &out_path);
+            return;
+        }
     }
 
     build_bundled(&out_dir, &out_path);
