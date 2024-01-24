@@ -11,6 +11,8 @@ fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
 
+    println!("cargo:rerun-if-changed={BUNDLED_DIR}/src/sqlite3.c");
+
     if std::env::var("LIBSQL_DEV").is_ok() || cfg!(feature = "wasmtime-bindings") {
         make_amalgation();
     }
@@ -69,7 +71,6 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     let dir = env!("CARGO_MANIFEST_DIR");
     std::fs::copy(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
 
-    println!("cargo:rerun-if-changed={BUNDLED_DIR}/src/sqlite3.c");
     let mut cfg = cc::Build::new();
     cfg.file(format!("{BUNDLED_DIR}/src/sqlite3.c"))
         .flag("-std=c11")

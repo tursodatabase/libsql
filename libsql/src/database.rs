@@ -98,8 +98,73 @@ cfg_replication! {
 
     impl Database {
         /// Open a local database file with the ability to sync from snapshots from local filesystem.
-        pub async fn open_with_local_sync(db_path: impl Into<String>, encryption_key: Option<bytes::Bytes>) -> Result<Database> {
-            let db = crate::local::Database::open_local_sync(db_path, OpenFlags::default(), encryption_key.clone()).await?;
+        pub async fn open_with_local_sync(
+            db_path: impl Into<String>,
+            encryption_key: Option<bytes::Bytes>
+        ) -> Result<Database> {
+            let db = crate::local::Database::open_local_sync(
+                db_path,
+                OpenFlags::default(),
+                encryption_key.clone()
+            ).await?;
+
+            Ok(Database {
+                db_type: DbType::Sync { db, encryption_key },
+            })
+        }
+
+
+        /// Open a local database file with the ability to sync from snapshots from local filesystem
+        /// and forward writes to the provided endpoint.
+        pub async fn open_with_local_sync_remote_writes(
+            db_path: impl Into<String>,
+            endpoint: String,
+            auth_token: String,
+            encryption_key: Option<bytes::Bytes>,
+        ) -> Result<Database> {
+            let https = connector();
+
+            Self::open_with_local_sync_remote_writes_connector(
+                db_path,
+                endpoint,
+                auth_token,
+                https,
+                encryption_key
+            ).await
+        }
+
+        /// Open a local database file with the ability to sync from snapshots from local filesystem
+        /// and forward writes to the provided endpoint and a custom http connector.
+        pub async fn open_with_local_sync_remote_writes_connector<C>(
+            db_path: impl Into<String>,
+            endpoint: String,
+            auth_token: String,
+            connector: C,
+            encryption_key: Option<bytes::Bytes>,
+        ) -> Result<Database>
+        where
+            C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
+            C::Response: crate::util::Socket,
+            C::Future: Send + 'static,
+            C::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
+        {
+            use tower::ServiceExt;
+
+            let svc = connector
+                .map_err(|e| e.into())
+                .map_response(|s| Box::new(s) as Box<dyn crate::util::Socket>);
+
+            let svc = crate::util::ConnectorService::new(svc);
+
+            let db = crate::local::Database::open_local_sync_remote_writes(
+                svc,
+                db_path.into(),
+                endpoint,
+                auth_token,
+                None,
+                OpenFlags::default(),
+                encryption_key.clone()
+            ).await?;
 
             Ok(Database {
                 db_type: DbType::Sync { db, encryption_key },
