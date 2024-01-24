@@ -3,7 +3,7 @@ FROM rust:slim-bullseye AS builder
 RUN apt update \
     && apt install -y libclang-dev clang \
         build-essential tcl protobuf-compiler file \
-        libssl-dev pkg-config git tcl cmake \
+        libssl-dev pkg-config git tcl cmake\
     && apt clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -14,12 +14,14 @@ RUN cargo build -p libsql-server
 FROM debian:bullseye-slim
 RUN apt update
 
-EXPOSE 8080
+EXPOSE 5001 8080
+VOLUME [ "/var/lib/sqld" ]
+
 RUN groupadd --system --gid 666 sqld
 RUN adduser --system --home /var/lib/sqld --uid 666 --gid 666 sqld
 WORKDIR /var/lib/sqld
 USER sqld
 
-COPY --from=builder /target/release/sqld /bin/sqld
+COPY --from=builder /target/debug/sqld /bin/sqld
 
 CMD ["/bin/sqld"]

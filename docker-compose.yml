@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  primary:
+    image: sqld-debug
+    environment:
+      - SQLD_NODE=primary
+    command: /bin/sqld --grpc-listen-addr 0.0.0.0:5500 --http-listen-addr 0.0.0.0:8080 --admin-listen-addr 0.0.0.0:9090 --enable-bottomless-replication
+  reader:
+    build: sqld-debug
+    environment:
+      - SQLD_NODE=replica
+      - SQLD_PRIMARY_URL=http://primary:5001
+      - SQLD_HTTP_LISTEN_ADDR=0.0.0.0:8080
+    depends_on:
+      - writer
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - reader
+    ports:
+      - "6001:6001"
+      - "8080:8080"
