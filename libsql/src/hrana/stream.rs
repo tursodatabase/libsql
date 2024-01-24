@@ -71,9 +71,14 @@ where
         }
     }
 
-    /// Executes a final request and immediately closes current stream - all in one request.
-    pub(super) async fn finalize(&mut self, req: StreamRequest) -> Result<()> {
+    /// Executes a final request and immediately closes current stream - all in one request
+    /// Returns true if request was finalized correctly, false if stream was already closed.
+    pub(super) async fn finalize(&mut self, req: StreamRequest) -> Result<bool> {
         let mut client = self.inner.stream.lock().await;
+        if client.baton.is_none() {
+            tracing::trace!("baton not found - skipping finalize for {:?}", req);
+            return Ok(false);
+        }
         let (resp, is_autocommit) = client.finalize(req).await?;
         self.inner
             .is_autocommit
@@ -93,7 +98,7 @@ where
         self.inner
             .last_insert_rowid
             .store(last_insert_rowid, Ordering::SeqCst);
-        Ok(())
+        Ok(true)
     }
 
     pub(super) async fn execute_inner(&self, stmt: Stmt, close_stream: bool) -> Result<StmtResult> {
@@ -320,9 +325,10 @@ where
         requests: [StreamRequest; N],
     ) -> Result<[StreamResponse; N]> {
         tracing::trace!(
-            "client stream sending {} requests with baton `{}`",
+            "client stream sending {} requests with baton `{}`: {:?}",
             N,
-            self.baton.as_deref().unwrap_or_default()
+            self.baton.as_deref().unwrap_or_default(),
+            requests
         );
         let msg = ClientMsg {
             baton: self.baton.clone(),
@@ -392,10 +398,9 @@ where
     }
 
     fn reset(&mut self) {
-        if let Some(baton) = &self.baton {
+        if let Some(baton) = self.baton.take() {
             tracing::trace!("closing client stream (baton: `{}`)", baton);
         }
-        self.baton = None;
         self.sql_id_generator = 0;
     }
 

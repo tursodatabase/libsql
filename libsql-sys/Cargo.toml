@@ -35,6 +35,5 @@ encryption = ["libsql-ffi/multiple-ciphers"]
 hrana = [
     "dep:serde",
     "dep:prost",
-    "dep:base64",
-    "dep:bytes"
+    "dep:base64"
 ]

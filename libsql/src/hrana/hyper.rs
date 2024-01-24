@@ -219,16 +219,16 @@ impl Conn for HranaStream<HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
         // SQLite: execute() will only execute a single SQL statement
         let mut parsed = crate::parser::Statement::parse(sql);
+        let mut c = TxScopeCounter::default();
         if let Some(s) = parsed.next() {
             let s = s?;
-            let autocommit_or_commit = match s.kind {
-                StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly => false,
-                _ => true,
-            };
+            c.count(s.kind);
+            let in_tx_scope = !self.is_autocommit() || c.begin_tx();
+            let close = !in_tx_scope || c.end_tx();
             let mut stmt = Stmt::new(s.stmt, false);
             bind_params(params, &mut stmt);
             let result = self
-                .execute_inner(stmt, autocommit_or_commit)
+                .execute_inner(stmt, close)
                 .await
                 .map_err(|e| crate::Error::Hrana(e.into()))?;
             Ok(result.affected_row_count)
@@ -242,19 +242,16 @@ impl Conn for HranaStream<HttpSender> {
     async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
         let mut stmts = Vec::new();
         let parse = crate::parser::Statement::parse(sql);
-        let mut i = 0i32;
+        let mut c = TxScopeCounter::default();
         for s in parse {
             let s = s?;
-            match s.kind {
-                StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly => i = i + 1,
-                StmtKind::TxnEnd => i = i - 1,
-                _ => {}
-            }
+            c.count(s.kind);
             stmts.push(Stmt::new(s.stmt, false));
         }
-        let autocommit_or_ends_with_commit = i <= 0;
+        let in_tx_scope = !self.is_autocommit() || c.begin_tx();
+        let close = !in_tx_scope || c.end_tx();
         let res = self
-            .batch_inner(Batch::from_iter(stmts), autocommit_or_ends_with_commit)
+            .batch_inner(Batch::from_iter(stmts), close)
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
         unwrap_err(res)?;
@@ -285,5 +282,34 @@ impl Conn for HranaStream<HttpSender> {
 
     fn last_insert_rowid(&self) -> i64 {
         self.last_insert_rowid()
+    }
+}
+
+/// Counts number of transaction begin statements and transaction commits/rollback
+/// in order to determine if current statement execution will end within transaction
+/// scope, will start a new transaction or end existing one.
+#[repr(transparent)]
+#[derive(Default)]
+struct TxScopeCounter {
+    scope: i32,
+}
+
+impl TxScopeCounter {
+    fn count(&mut self, stmt_kind: StmtKind) {
+        match stmt_kind {
+            StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly => self.scope += 1,
+            StmtKind::TxnEnd => self.scope -= 1,
+            _ => {}
+        }
+    }
+
+    /// Check if within current scope we will eventually begin new transaction.
+    fn begin_tx(&self) -> bool {
+        self.scope > 0
+    }
+
+    /// Check if within current scope we will eventually close existing transaction.
+    fn end_tx(&self) -> bool {
+        self.scope < 0
     }
 }
