@@ -150,8 +150,13 @@ func (c *Connector) Close() error {
 	if c.closeCh != nil {
 		c.closeCh <- struct{}{}
 		<-c.closeAckCh
+		c.closeCh = nil
+		c.closeAckCh = nil
 	}
-	C.libsql_close(c.nativeDbPtr)
+	if c.nativeDbPtr != nil {
+		C.libsql_close(c.nativeDbPtr)
+	}
+	c.nativeDbPtr = nil
 	return nil
 }
 
