@@ -101,7 +101,7 @@ s3s-fs = "0.8.1"
 vergen = { version = "8", features = ["build", "git", "gitcl"] }
 
 [features]
-default = []
+default = ["encryption"]
 debug-tools = ["console-subscriber", "rusqlite/trace", "tokio/tracing"]
 wasm-udfs = ["rusqlite/libsql-wasm-experimental"]
 unix-excl-vfs = ["libsql-sys/unix-excl-vfs"]
