@@ -332,12 +332,19 @@ fn enable_libsql_logging() {
 }
 
 fn make_db_config(config: &Cli) -> anyhow::Result<DbConfig> {
+    let mut bottomless_replication = config
+        .enable_bottomless_replication
+        .then(bottomless::replicator::Options::from_env)
+        .transpose()?;
+    // Inherit encryption key for bottomless from the db config, if not specified.
+    if let Some(ref mut bottomless_replication) = bottomless_replication {
+        if bottomless_replication.encryption_key.is_none() {
+            bottomless_replication.encryption_key = config.encryption_key.clone();
+        }
+    }
     Ok(DbConfig {
         extensions_path: config.extensions_path.clone().map(Into::into),
-        bottomless_replication: config
-            .enable_bottomless_replication
-            .then(bottomless::replicator::Options::from_env)
-            .transpose()?,
+        bottomless_replication,
         max_log_size: config.max_log_size,
         max_log_duration: config.max_log_duration,
         soft_heap_limit_mb: config.soft_heap_limit_mb,
