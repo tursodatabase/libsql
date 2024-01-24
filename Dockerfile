@@ -3,7 +3,7 @@ FROM rust:slim-bullseye AS chef
 RUN apt update \
     && apt install -y libclang-dev clang \
         build-essential tcl protobuf-compiler file \
-        libssl-dev pkg-config git tcl \
+        libssl-dev pkg-config git tcl cmake \
     && apt clean \
     && rm -rf /var/lib/apt/lists/*
 

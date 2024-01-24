@@ -252,7 +252,8 @@ fn build_multiple_ciphers(out_dir: &str, out_path: &Path) {
     #[cfg(feature = "libsql-wasm-experimental")]
     cmd.arg("-DLIBSQL_ENABLE_WASM_RUNTIME");
 
-    cmd.output().unwrap();
+    let out = cmd.output().unwrap();
+    assert!(out.status.success(), "{:?}", out);
     std::fs::copy(
         format!("{BUNDLED_DIR}/SQLite3MultipleCiphers/build/libsqlite3mc_static.a"),
         format!("{out_dir}/libsqlite3mc.a"),
