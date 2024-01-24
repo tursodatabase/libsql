@@ -8,6 +8,7 @@ use std::collections::BTreeSet;
 use tokio::io::AsyncWriteExt;
 use tokio::task::JoinSet;
 use tokio::time::Duration;
+use uuid::Uuid;
 
 use crate::namespace::NamespaceName;
 use crate::replication::FrameNo;
@@ -57,6 +58,8 @@ pub struct Stats {
     namespace: NamespaceName,
 
     #[serde(default)]
+    id: Option<Uuid>,
+    #[serde(default)]
     rows_written: AtomicU64,
     #[serde(default)]
     rows_read: AtomicU64,
@@ -92,6 +95,10 @@ impl Stats {
         } else {
             Stats::default()
         };
+
+        if this.id.is_none() {
+            this.id = Some(Uuid::new_v4());
+        }
 
         this.namespace = namespace;
         let this = Arc::new(this);
@@ -225,6 +232,10 @@ impl Stats {
         counter!("libsql_server_query_rows_read", rows_read);
         counter!("libsql_server_query_rows_written", rows_written);
         counter!("libsql_server_query_mem_used", mem_used);
+    }
+
+    pub fn id(&self) -> Option<Uuid> {
+        self.id.clone()
     }
 }
 
