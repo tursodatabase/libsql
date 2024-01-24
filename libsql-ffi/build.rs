@@ -21,6 +21,21 @@ fn main() {
         build_multiple_ciphers(&out_path);
     }
 
+    let bindgen_rs_path = if cfg!(feature = "session") {
+        "bundled/bindings/session_bindgen.rs"
+    } else {
+        "bundled/bindings/bindgen.rs"
+    };
+
+    let dir = env!("CARGO_MANIFEST_DIR");
+    std::fs::copy(format!("{dir}/{bindgen_rs_path}"), &out_path).unwrap();
+
+    println!("cargo:lib_dir={out_dir}");
+
+    if cfg!(feature = "wasmtime-bindings") && !cfg!(feature = "multiple-ciphers") {
+        build_bundled(&out_dir, &out_path);
+    }
+
     if cfg!(feature = "multiple-ciphers") {
         copy_multiple_ciphers(&out_dir, &out_path);
         return;
@@ -266,8 +281,9 @@ fn build_multiple_ciphers(out_path: &Path) {
     let mut cmd = Command::new("./build_libsqlite3mc.sh");
     cmd.current_dir(BUNDLED_DIR);
 
-    #[cfg(feature = "libsql-wasm-experimental")]
-    cmd.arg("-DLIBSQL_ENABLE_WASM_RUNTIME");
+    if cfg!(feature = "wasmtime-bindings") {
+        cmd.arg("-DLIBSQL_ENABLE_WASM_RUNTIME=1");
+    }
 
     let out = cmd.output().unwrap();
     assert!(out.status.success(), "{:?}", out);
