@@ -80,6 +80,7 @@ pub struct LogFile {
 
     /// Encryption layer
     encryption: Option<FrameEncryptor>,
+    encryption_buf: BytesMut,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -122,6 +123,11 @@ impl LogFile {
             Self::read_header(&file)?
         };
 
+        let encryption_buf = if encryption.is_some() {
+            BytesMut::with_capacity(LIBSQL_PAGE_SIZE as usize)
+        } else {
+            BytesMut::new()
+        };
         let mut this = Self {
             file,
             header,
@@ -132,6 +138,7 @@ impl LogFile {
             uncommitted_checksum: 0,
             commited_checksum: 0,
             encryption,
+            encryption_buf,
         };
 
         if file_end == 0 {
@@ -251,12 +258,12 @@ impl LogFile {
     pub fn push_page(&mut self, page: &WalPage) -> anyhow::Result<()> {
         let checksum = self.compute_checksum(page);
         let data = if let Some(encryption) = &self.encryption {
-            let mut data = BytesMut::with_capacity(page.data.len());
-            data.extend_from_slice(&page.data);
-            encryption.encrypt(&mut data)?;
-            data.freeze()
+            self.encryption_buf.clear();
+            self.encryption_buf.extend_from_slice(&page.data);
+            encryption.encrypt(self.encryption_buf.as_mut())?;
+            self.encryption_buf.as_ref()
         } else {
-            page.data.clone()
+            &page.data
         };
         let frame = Frame::from_parts(
             &FrameHeader {
