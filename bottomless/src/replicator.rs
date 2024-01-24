@@ -182,7 +182,9 @@ impl Options {
         let use_compression =
             CompressionKind::parse(&env_var_or("LIBSQL_BOTTOMLESS_COMPRESSION", "zstd"))
                 .map_err(|e| anyhow!("unknown compression kind: {}", e))?;
-        let encryption_key = env_var("SQLD_ENCRYPTION_KEY").map(Bytes::from).ok();
+        let encryption_key = env_var("LIBSQL_BOTTOMLESS_ENCRYPTION_KEY")
+            .map(Bytes::from)
+            .ok();
         let verify_crc = match env_var_or("LIBSQL_BOTTOMLESS_VERIFY_CRC", true)
             .to_lowercase()
             .as_ref()
