@@ -104,6 +104,12 @@ impl From<FrameBorrowed> for FrameMut {
     }
 }
 
+impl From<Box<FrameBorrowed>> for FrameMut {
+    fn from(inner: Box<FrameBorrowed>) -> Self {
+        Self { inner }
+    }
+}
+
 impl Frame {
     pub fn from_parts(header: &FrameHeader, data: &[u8]) -> Self {
         FrameBorrowed::from_parts(header, data).into()
@@ -132,6 +138,10 @@ impl FrameBorrowed {
     /// returns this frame's page data.
     pub fn page(&self) -> &[u8] {
         &self.page
+    }
+
+    pub fn page_mut(&mut self) -> &mut [u8] {
+        &mut self.page
     }
 
     pub fn header(&self) -> &FrameHeader {
