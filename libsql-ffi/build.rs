@@ -284,7 +284,6 @@ fn build_multiple_ciphers(out_path: &Path) {
         cmd.arg("-DLIBSQL_ENABLE_WASM_RUNTIME=1");
     }
 
-    // TODO: this isn't being passed through for some reason
     if cfg!(feature = "session") {
         cmd.arg("-DSQLITE_ENABLE_PREUPDATE_HOOK=ON");
         cmd.arg("-DSQLITE_ENABLE_SESSION=ON");
