@@ -1215,7 +1215,7 @@ impl Replicator {
         // Check if the database needs to be restored by inspecting the database
         // change counter and the WAL size.
         let local_counter = self.read_change_counter().unwrap_or([0u8; 4]);
-        if local_counter != [0u8; 4] {
+        if local_counter != [0u8; 4] && local_counter != [0, 0, 0, 1] {
             // if a non-empty database file exists always treat it as new and more up to date,
             // skipping the restoration process and calling for a new generation to be made
             return Ok(Some(RestoreAction::SnapshotMainDbFile));
