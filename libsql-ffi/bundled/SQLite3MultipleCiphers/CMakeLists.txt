@@ -289,6 +289,11 @@ else()
   set(SHARED_LIB_EXPORT_DEFINITION "__declspec(dllexport)")
 endif()
 
+if (CMAKE_C_COMPILER_ID STREQUAL "Clang")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2 -maes -Wno-error=incompatible-function-pointer-types")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2 -maes")
+endif()
+
 set(_LIB_DIFINITIONS
   _LIB
 )
