@@ -337,15 +337,30 @@ func (c *conn) execute(query string, args []sqldriver.NamedValue) (C.libsql_rows
 	return rows, nil
 }
 
+type execResult struct {
+	id      int64
+	changes int64
+}
+
+func (r execResult) LastInsertId() (int64, error) {
+	return r.id, nil
+}
+
+func (r execResult) RowsAffected() (int64, error) {
+	return r.changes, nil
+}
+
 func (c *conn) ExecContext(ctx context.Context, query string, args []sqldriver.NamedValue) (sqldriver.Result, error) {
 	rows, err := c.execute(query, args)
 	if err != nil {
 		return nil, err
 	}
+	id := int64(C.libsql_last_insert_rowid(c.nativePtr))
+	changes := int64(C.libsql_changes(c.nativePtr))
 	if rows != nil {
 		C.libsql_free_rows(rows)
 	}
-	return nil, nil
+	return execResult{id, changes}, nil
 }
 
 type tx struct {

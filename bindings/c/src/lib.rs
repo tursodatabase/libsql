@@ -202,8 +202,10 @@ pub unsafe extern "C" fn libsql_disconnect(conn: libsql_connection_t) {
     if conn.is_null() {
         return;
     }
-    let _conn = unsafe { Box::from_raw(conn.get_ref_mut()) };
-    // TODO close conn
+    let conn = unsafe { Box::from_raw(conn.get_ref_mut()) };
+    RT.spawn_blocking(|| {
+        drop(conn);
+    });
 }
 
 #[no_mangle]
