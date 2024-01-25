@@ -15,13 +15,12 @@ use aws_sdk_s3::primitives::ByteStream;
 use aws_sdk_s3::{Client, Config};
 use bytes::{Buf, Bytes};
 use chrono::{NaiveDateTime, TimeZone, Utc};
-use std::io::SeekFrom;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 use tokio::fs::{File, OpenOptions};
-use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 use tokio::sync::watch::{channel, Receiver, Sender};
 use tokio::task::JoinHandle;
 use tokio::task::JoinSet;
@@ -683,23 +682,46 @@ impl Replicator {
         tracing::debug!("Rolled back to {}", last_valid_frame);
     }
 
+    // Opens a raw libSQL connection that doesn't checkpoint.
+    // Useful for reading metadata from the database file.
+    fn open_db(&self) -> Result<libsql_sys::Connection<libsql_sys::wal::Sqlite3Wal>> {
+        use libsql_sys::connection::OpenFlags;
+        use libsql_sys::wal::Sqlite3WalManager;
+        let flags = OpenFlags::SQLITE_OPEN_READ_WRITE
+            | OpenFlags::SQLITE_OPEN_CREATE
+            | OpenFlags::SQLITE_OPEN_URI
+            | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+
+        let conn = libsql_sys::Connection::open(
+            &self.db_path,
+            flags,
+            Sqlite3WalManager::new(),
+            u32::MAX, // no checkpointing
+            self.encryption_key.clone(),
+        )?;
+        Ok(conn)
+    }
+
     // Tries to read the local change counter from the given database file
-    async fn read_change_counter(reader: &mut File) -> Result<[u8; 4]> {
-        let mut counter = [0u8; 4];
-        reader.seek(std::io::SeekFrom::Start(24)).await?;
-        reader.read_exact(&mut counter).await?;
-        Ok(counter)
+    fn read_change_counter(&self) -> Result<[u8; 4]> {
+        let conn = self.open_db()?;
+        let change_counter = conn.db_change_counter().map_err(|rc| {
+            anyhow::anyhow!(
+                "Failed to read local change counter from `{}`: {rc}",
+                self.db_path,
+            )
+        })?;
+        tracing::trace!("Local change counter: {change_counter}");
+
+        Ok(change_counter.to_be_bytes())
     }
 
     // Tries to read the local page size from the given database file
-    async fn read_page_size(reader: &mut File) -> Result<usize> {
-        reader.seek(SeekFrom::Start(16)).await?;
-        let page_size = reader.read_u16().await?;
-        if page_size == 1 {
-            Ok(65536)
-        } else {
-            Ok(page_size as usize)
-        }
+    async fn read_page_size(&self) -> Result<usize> {
+        let conn = self.open_db()?;
+        let page_size = conn.query_row("PRAGMA page_size", (), |r| r.get::<usize, usize>(0))?;
+        tracing::trace!("Local page size: {page_size}");
+        Ok(page_size)
     }
 
     // Returns the compressed database file path and its change counter, extracted
@@ -833,10 +855,7 @@ impl Replicator {
         let generation = self.generation()?;
         let start_ts = Instant::now();
         let client = self.client.clone();
-        let change_counter = {
-            let mut db_file = File::open(&self.db_path).await?;
-            Self::read_change_counter(&mut db_file).await?
-        };
+        let change_counter = self.read_change_counter()?;
         let snapshot_req = client.put_object().bucket(self.bucket.clone()).key(format!(
             "{}-{}/db.{}",
             self.db_name, generation, self.use_compression
@@ -1195,18 +1214,7 @@ impl Replicator {
     ) -> Result<Option<RestoreAction>> {
         // Check if the database needs to be restored by inspecting the database
         // change counter and the WAL size.
-        let local_counter = match File::open(&self.db_path).await {
-            Ok(mut db) => {
-                // While reading the main database file for the first time,
-                // page size from an existing database should be set.
-                if let Ok(page_size) = Self::read_page_size(&mut db).await {
-                    self.set_page_size(page_size)?;
-                }
-                Self::read_change_counter(&mut db).await.unwrap_or([0u8; 4])
-            }
-            Err(_) => [0u8; 4],
-        };
-
+        let local_counter = self.read_change_counter().unwrap_or([0u8; 4]);
         if local_counter != [0u8; 4] {
             // if a non-empty database file exists always treat it as new and more up to date,
             // skipping the restoration process and calling for a new generation to be made
@@ -1297,7 +1305,7 @@ impl Replicator {
                 };
                 db.flush().await?;
 
-                let page_size = Self::read_page_size(db).await?;
+                let page_size = self.read_page_size().await?;
                 self.set_page_size(page_size)?;
                 tracing::info!("Restored the main database file ({} bytes)", db_size);
                 return Ok(true);
