@@ -508,8 +508,14 @@ fn replicate_with_snapshots() {
     });
 
     sim.client("client", async {
-        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)
-            .unwrap();
+        let client = Client::new();
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let db =
+            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)
+                .unwrap();
         let conn = db.connect().unwrap();
         conn.execute("create table test (x)", ()).await.unwrap();
         // insert enough to trigger snapshot creation.
@@ -522,7 +528,7 @@ fn replicate_with_snapshots() {
         let tmp = tempdir().unwrap();
         let db = Database::open_with_remote_sync_connector(
             tmp.path().join("data").display().to_string(),
-            "http://primary:8080",
+            "http://foo.primary:8080",
             "",
             TurmoilConnector,
             false,

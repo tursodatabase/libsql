@@ -823,6 +823,10 @@ impl<T: Database> Namespace<T> {
             Ok(None)
         }
     }
+
+    pub fn stats(&self) -> Arc<Stats> {
+        self.stats.clone()
+    }
 }
 
 pub struct ReplicaNamespaceConfig {

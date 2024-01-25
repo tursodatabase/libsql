@@ -23,6 +23,7 @@ use crate::connection::config::DatabaseConfig;
 use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
+use crate::stats::Stats;
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 
 use super::extract_namespace;
@@ -33,6 +34,7 @@ pub struct ReplicationLogService {
     auth: Option<Arc<Auth>>,
     disable_namespaces: bool,
     session_token: Bytes,
+    collect_stats: bool,
 
     //deprecated:
     generation_id: Uuid,
@@ -47,6 +49,7 @@ impl ReplicationLogService {
         idle_shutdown_layer: Option<IdleShutdownKicker>,
         auth: Option<Arc<Auth>>,
         disable_namespaces: bool,
+        collect_stats: bool,
     ) -> Self {
         let session_token = Uuid::new_v4().to_string().into();
         Self {
@@ -55,6 +58,7 @@ impl ReplicationLogService {
             idle_shutdown_layer,
             auth,
             disable_namespaces,
+            collect_stats,
             generation_id: Uuid::new_v4(),
             replicas_with_hello: Default::default(),
         }
@@ -129,15 +133,24 @@ impl ReplicationLogService {
         namespace: NamespaceName,
         req: &tonic::Request<T>,
         verify_session: bool,
-    ) -> Result<(Arc<ReplicationLogger>, Arc<DatabaseConfig>, usize), Status> {
-        let (logger, config, version) = self
+    ) -> Result<
+        (
+            Arc<ReplicationLogger>,
+            Arc<DatabaseConfig>,
+            usize,
+            Arc<Stats>,
+        ),
+        Status,
+    > {
+        let (logger, config, version, stats) = self
             .namespaces
             .with(namespace, |ns| {
                 let logger = ns.db.wal_manager.wrapped().logger().clone();
                 let config = ns.config();
                 let version = ns.config_version();
+                let stats = ns.stats();
 
-                (logger, config, version)
+                (logger, config, version, stats)
             })
             .await
             .map_err(|e| {
@@ -152,7 +165,7 @@ impl ReplicationLogService {
             self.verify_session_token(req, version)?;
         }
 
-        Ok((logger, config, version))
+        Ok((logger, config, version, stats))
     }
 
     fn encode_session_token(&self, version: usize) -> Uuid {
@@ -236,12 +249,18 @@ impl ReplicationLog for ReplicationLogService {
 
         self.authenticate(&req, namespace.clone()).await?;
 
-        let (logger, _, _) = self.logger_from_namespace(namespace, &req, true).await?;
+        let (logger, _, _, stats) = self.logger_from_namespace(namespace, &req, true).await?;
+
+        let stats = if self.collect_stats {
+            Some(stats)
+        } else {
+            None
+        };
 
         let req = req.into_inner();
 
         let stream = StreamGuard::new(
-            FrameStream::new(logger, req.next_offset, true, None)
+            FrameStream::new(logger, req.next_offset, true, None, stats)
                 .map_err(|e| Status::internal(e.to_string()))?,
             self.idle_shutdown_layer.clone(),
         )
@@ -257,13 +276,25 @@ impl ReplicationLog for ReplicationLogService {
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
         self.authenticate(&req, namespace.clone()).await?;
 
-        let (logger, _, _) = self.logger_from_namespace(namespace, &req, true).await?;
+        let (logger, _, _, stats) = self.logger_from_namespace(namespace, &req, true).await?;
+
+        let stats = if self.collect_stats {
+            Some(stats)
+        } else {
+            None
+        };
 
         let req = req.into_inner();
 
         let frames = StreamGuard::new(
-            FrameStream::new(logger, req.next_offset, false, Some(MAX_FRAMES_PER_BATCH))
-                .map_err(|e| Status::internal(e.to_string()))?,
+            FrameStream::new(
+                logger,
+                req.next_offset,
+                false,
+                Some(MAX_FRAMES_PER_BATCH),
+                stats,
+            )
+            .map_err(|e| Status::internal(e.to_string()))?,
             self.idle_shutdown_layer.clone(),
         )
         .map(map_frame_stream_output)
@@ -293,7 +324,8 @@ impl ReplicationLog for ReplicationLogService {
             }
         }
 
-        let (logger, config, version) = self.logger_from_namespace(namespace, &req, false).await?;
+        let (logger, config, version, _) =
+            self.logger_from_namespace(namespace, &req, false).await?;
 
         let session_hash = self.encode_session_token(version);
 
@@ -316,14 +348,20 @@ impl ReplicationLog for ReplicationLogService {
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
         self.authenticate(&req, namespace.clone()).await?;
 
-        let (logger, _, _) = self.logger_from_namespace(namespace, &req, true).await?;
+        let (logger, _, _, stats) = self.logger_from_namespace(namespace, &req, true).await?;
+
+        let stats = if self.collect_stats {
+            Some(stats)
+        } else {
+            None
+        };
 
         let req = req.into_inner();
 
         let offset = req.next_offset;
         match logger.get_snapshot_file(offset).await {
             Ok(Some(snapshot)) => Ok(tonic::Response::new(Box::pin(
-                snapshot_stream::make_snapshot_stream(snapshot, offset),
+                snapshot_stream::make_snapshot_stream(snapshot, offset, stats),
             ))),
             Ok(None) => Err(Status::new(tonic::Code::Unavailable, "snapshot not found")),
             Err(e) => Err(Status::new(tonic::Code::Internal, e.to_string())),
@@ -332,15 +370,20 @@ impl ReplicationLog for ReplicationLogService {
 }
 
 mod snapshot_stream {
+    use std::sync::Arc;
+
     use futures::{Stream, StreamExt};
     use libsql_replication::frame::FrameNo;
     use libsql_replication::rpc::replication::Frame;
     use libsql_replication::snapshot::SnapshotFile;
     use tonic::Status;
 
+    use crate::stats::Stats;
+
     pub fn make_snapshot_stream(
         snapshot: SnapshotFile,
         offset: FrameNo,
+        stats: Option<Arc<Stats>>,
     ) -> impl Stream<Item = Result<Frame, Status>> {
         let size_after = snapshot.header().size_after;
         let frames = snapshot.into_stream_mut_from(offset).peekable();
@@ -353,6 +396,10 @@ mod snapshot_stream {
                         // frame_no
                         if frames.as_mut().peek().await.is_none() {
                             frame.header_mut().size_after = size_after;
+                        }
+
+                        if let Some(stats) = &stats {
+                            stats.inc_embedded_replica_frames_replicated();
                         }
 
                         yield Ok(Frame {
