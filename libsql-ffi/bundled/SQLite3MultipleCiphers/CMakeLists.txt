@@ -33,8 +33,8 @@ OPTION(SQLITE_ENABLE_RTREE "Enable extension 'rtree'" ON)
 OPTION(SQLITE_ENABLE_UUID "Enable extension 'uuid'" ON)
 OPTION(SQLITE_USE_URI "Enable the URI filename process logic" ON)
 OPTION(SQLITE_USER_AUTHENTICATION "Enable extension 'user authentication'" ON)
-OPTION(SQLITE_ENABLE_PREUPDATE_HOOK "Enable preupdate hooks" OFF)
-OPTION(SQLITE_ENABLE_SESSION "Enable session extension" OFF)
+OPTION(SQLITE_ENABLE_PREUPDATE_HOOK "Enable preupdate hooks" ON)
+OPTION(SQLITE_ENABLE_SESSION "Enable session extension" ON)
 OPTION(SQLITE_SHELL_IS_UTF8 "Shell command line arguments in UTF-8 encoding" ON)
 
 # Options for library only
