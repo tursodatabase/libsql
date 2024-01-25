@@ -260,7 +260,17 @@ func (c *conn) PrepareContext(ctx context.Context, query string) (sqldriver.Stmt
 }
 
 func (c *conn) BeginTx(ctx context.Context, opts sqldriver.TxOptions) (sqldriver.Tx, error) {
-	return nil, fmt.Errorf("begin() is not implemented")
+	if opts.ReadOnly {
+		return nil, fmt.Errorf("read only transactions are not supported")
+	}
+	if opts.Isolation != sqldriver.IsolationLevel(sql.LevelDefault) {
+		return nil, fmt.Errorf("isolation level %d is not supported", opts.Isolation)
+	}
+	_, err := c.ExecContext(ctx, "BEGIN", nil)
+	if err != nil {
+		return nil, err
+	}
+	return &tx{c}, nil
 }
 
 func (c *conn) executeNoArgs(query string) (C.libsql_rows_t, error) {
@@ -327,15 +337,44 @@ func (c *conn) execute(query string, args []sqldriver.NamedValue) (C.libsql_rows
 	return rows, nil
 }
 
+type execResult struct {
+	id      int64
+	changes int64
+}
+
+func (r execResult) LastInsertId() (int64, error) {
+	return r.id, nil
+}
+
+func (r execResult) RowsAffected() (int64, error) {
+	return r.changes, nil
+}
+
 func (c *conn) ExecContext(ctx context.Context, query string, args []sqldriver.NamedValue) (sqldriver.Result, error) {
 	rows, err := c.execute(query, args)
 	if err != nil {
 		return nil, err
 	}
+	id := int64(C.libsql_last_insert_rowid(c.nativePtr))
+	changes := int64(C.libsql_changes(c.nativePtr))
 	if rows != nil {
 		C.libsql_free_rows(rows)
 	}
-	return nil, nil
+	return execResult{id, changes}, nil
+}
+
+type tx struct {
+	conn *conn
+}
+
+func (t tx) Commit() error {
+	_, err := t.conn.ExecContext(context.Background(), "COMMIT", nil)
+	return err
+}
+
+func (t tx) Rollback() error {
+	_, err := t.conn.ExecContext(context.Background(), "ROLLBACK", nil)
+	return err
 }
 
 const (
