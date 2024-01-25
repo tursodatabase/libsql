@@ -260,7 +260,17 @@ func (c *conn) PrepareContext(ctx context.Context, query string) (sqldriver.Stmt
 }
 
 func (c *conn) BeginTx(ctx context.Context, opts sqldriver.TxOptions) (sqldriver.Tx, error) {
-	return nil, fmt.Errorf("begin() is not implemented")
+	if opts.ReadOnly {
+		return nil, fmt.Errorf("read only transactions are not supported")
+	}
+	if opts.Isolation != sqldriver.IsolationLevel(sql.LevelDefault) {
+		return nil, fmt.Errorf("isolation level %d is not supported", opts.Isolation)
+	}
+	_, err := c.ExecContext(ctx, "BEGIN", nil)
+	if err != nil {
+		return nil, err
+	}
+	return &tx{c}, nil
 }
 
 func (c *conn) executeNoArgs(query string) (C.libsql_rows_t, error) {
@@ -336,6 +346,20 @@ func (c *conn) ExecContext(ctx context.Context, query string, args []sqldriver.N
 		C.libsql_free_rows(rows)
 	}
 	return nil, nil
+}
+
+type tx struct {
+	conn *conn
+}
+
+func (t tx) Commit() error {
+	_, err := t.conn.ExecContext(context.Background(), "COMMIT", nil)
+	return err
+}
+
+func (t tx) Rollback() error {
+	_, err := t.conn.ExecContext(context.Background(), "ROLLBACK", nil)
+	return err
 }
 
 const (
