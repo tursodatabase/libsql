@@ -9,9 +9,9 @@ type RawConnection = *mut crate::ffi::sqlite3;
 type RawConnection = rusqlite::Connection;
 
 #[cfg(not(feature = "rusqlite"))]
-type OpenFlags = std::ffi::c_int;
+pub type OpenFlags = std::ffi::c_int;
 #[cfg(feature = "rusqlite")]
-type OpenFlags = rusqlite::OpenFlags;
+pub type OpenFlags = rusqlite::OpenFlags;
 
 #[cfg(feature = "rusqlite")]
 type Error = rusqlite::Error;
@@ -240,6 +240,22 @@ impl<W: Wal> Connection<W> {
         {
             self.conn
         }
+    }
+
+    pub fn db_change_counter(&self) -> Result<u32, std::ffi::c_int> {
+        let mut counter: u32 = 0;
+        let rc = unsafe {
+            libsql_ffi::sqlite3_file_control(
+                self.conn.handle(),
+                "main\0".as_ptr() as *const _,
+                libsql_ffi::SQLITE_FCNTL_DATA_VERSION,
+                &mut counter as *mut _ as *mut _,
+            )
+        };
+        if rc != libsql_ffi::SQLITE_OK {
+            return Err(rc);
+        }
+        Ok(counter)
     }
 }
 // pub struct Connection<'a> {
