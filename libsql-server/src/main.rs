@@ -9,7 +9,7 @@ use anyhow::{bail, Context as _, Result};
 use bytesize::ByteSize;
 use clap::Parser;
 use hyper::client::HttpConnector;
-use mimalloc::MiMalloc;
+// use mimalloc::MiMalloc;
 use tokio::sync::Notify;
 use tokio::time::Duration;
 use tracing_subscriber::prelude::*;
@@ -24,8 +24,9 @@ use libsql_server::net::AddrIncoming;
 use libsql_server::Server;
 use libsql_server::{connection::dump::exporter::export_dump, version::Version};
 
-#[global_allocator]
-static GLOBAL: MiMalloc = MiMalloc;
+// Use system allocator for now, seems like we are getting too much fragmentation.
+// #[global_allocator]
+// static GLOBAL: MiMalloc = MiMalloc;
 
 /// SQL daemon
 #[derive(Debug, Parser)]
