@@ -243,18 +243,24 @@ impl<W: Wal> Connection<W> {
     }
 
     pub fn db_change_counter(&self) -> Result<u32, std::ffi::c_int> {
-        let mut counter: u32 = 0;
+        let mut file_ptr: *mut libsql_ffi::sqlite3_file = std::ptr::null_mut();
         let rc = unsafe {
             libsql_ffi::sqlite3_file_control(
-                self.conn.handle(),
+                self.handle(),
                 "main\0".as_ptr() as *const _,
-                libsql_ffi::SQLITE_FCNTL_DATA_VERSION,
-                &mut counter as *mut _ as *mut _,
+                libsql_ffi::SQLITE_FCNTL_FILE_POINTER,
+                &mut file_ptr as *mut _ as *mut _,
             )
         };
         if rc != libsql_ffi::SQLITE_OK {
             return Err(rc);
         }
+        let counter = unsafe {
+            let mut counter: u32 = 0;
+            let file = &*file_ptr;
+            (*file.pMethods).xRead.unwrap()(file_ptr, &mut counter as *mut _ as *mut _, 4, 24);
+            u32::from_be(counter)
+        };
         Ok(counter)
     }
 }
