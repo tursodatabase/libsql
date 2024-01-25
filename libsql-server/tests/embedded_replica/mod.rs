@@ -513,9 +513,8 @@ fn replicate_with_snapshots() {
             .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
             .await?;
 
-        let db =
-            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)
-                .unwrap();
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)
+            .unwrap();
         let conn = db.connect().unwrap();
         conn.execute("create table test (x)", ()).await.unwrap();
         // insert enough to trigger snapshot creation.
@@ -528,7 +527,7 @@ fn replicate_with_snapshots() {
         let tmp = tempdir().unwrap();
         let db = Database::open_with_remote_sync_connector(
             tmp.path().join("data").display().to_string(),
-            "http://foo.primary:8080",
+            "http://primary:8080",
             "",
             TurmoilConnector,
             false,
@@ -553,6 +552,21 @@ fn replicate_with_snapshots() {
                 .unwrap(),
             ROW_COUNT
         );
+
+        let stats = client
+            .get("http://primary:9090/v1/namespaces/default/stats")
+            .await?
+            .json_value()
+            .await
+            .unwrap();
+
+        let stat = stats
+            .get("embedded_replica_frames_replicated")
+            .unwrap()
+            .as_u64()
+            .unwrap();
+
+        assert_eq!(stat, 427);
 
         Ok(())
     });

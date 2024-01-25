@@ -159,6 +159,11 @@ impl Stats {
             .fetch_add(1, Ordering::Relaxed);
     }
 
+    pub fn get_embedded_replica_frames_replicated(&self) -> u64 {
+        self.embedded_replica_frames_replicated
+            .load(Ordering::Relaxed)
+    }
+
     pub fn write_requests_delegated(&self) -> u64 {
         self.write_requests_delegated.load(Ordering::Relaxed)
     }
