@@ -141,7 +141,7 @@ impl Wal for InjectorWal {
         _size_after: u32,
         _is_commit: bool,
         sync_flags: c_int,
-    ) -> Result<()> {
+    ) -> Result<usize> {
         self.is_txn = true;
         let mut buffer = self.buffer.lock();
 

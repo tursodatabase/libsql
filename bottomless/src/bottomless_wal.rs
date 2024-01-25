@@ -64,10 +64,11 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
         size_after: u32,
         is_commit: bool,
         sync_flags: std::ffi::c_int,
-    ) -> libsql_sys::wal::Result<()> {
+    ) -> libsql_sys::wal::Result<usize> {
         let last_valid_frame = wrapped.last_fame_index();
 
-        wrapped.insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)?;
+        let ret =
+            wrapped.insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)?;
 
         self.try_with_replicator(|replicator| {
             if let Err(e) = replicator.set_page_size(page_size as usize) {
@@ -79,7 +80,7 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
             replicator.submit_frames(new_valid_valid_frame_index - last_valid_frame);
         })?;
 
-        Ok(())
+        Ok(ret)
     }
 
     fn checkpoint(

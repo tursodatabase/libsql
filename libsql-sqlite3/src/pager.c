@@ -3245,7 +3245,7 @@ static int pagerWalFrames(
 
   if( pList->pgno==1 ) pager_write_changecounter(pList);
   rc = pPager->wal->methods.xFrames(pPager->wal->pData,
-      pPager->pageSize, pList, nTruncate, isCommit, pPager->walSyncFlags
+      pPager->pageSize, pList, nTruncate, isCommit, pPager->walSyncFlags, NULL
   );
   if( rc==SQLITE_OK && pPager->pBackup ){
     for(p=pList; p; p=p->pDirty){

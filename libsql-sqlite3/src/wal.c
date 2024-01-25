@@ -3487,9 +3487,11 @@ static int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
 ** or not pWal->hdr.mxFrame is modified). An SQLite error code is returned
 ** if an error occurs.
 */
-static int walRestartLog(Wal *pWal){
+static int walRestartLog(Wal *pWal, int *pRestarted){
   int rc = SQLITE_OK;
   int cnt;
+
+  *pRestarted = 0;
 
   if( pWal->readLock==0 ){
     volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
@@ -3510,6 +3512,7 @@ static int walRestartLog(Wal *pWal){
         ** to handle if this transaction is rolled back.  */
         walRestartHdr(pWal, salt1);
         walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
+        *pRestarted = 1;
       }else if( rc!=SQLITE_BUSY ){
         return rc;
       }
@@ -3657,7 +3660,8 @@ static int walFrames(
   PgHdr *pList,                   /* List of dirty pages to write */
   Pgno nTruncate,                 /* Database size after this commit */
   int isCommit,                   /* True if this is a commit */
-  int sync_flags                  /* Flags to pass to OsSync() (or 0) */
+  int sync_flags,                 /* Flags to pass to OsSync() (or 0) */
+  int *pnFrames                   /* Number of frames written to the wal in the transaction. 0 for non-commit call*/
 ){
   int rc;                         /* Used to catch return codes */
   u32 iFrame;                     /* Next frame address */
@@ -3669,6 +3673,7 @@ static int walFrames(
   WalWriter w;                    /* The writer */
   u32 iFirst = 0;                 /* First frame that may be overwritten */
   WalIndexHdr *pLive;             /* Pointer to shared header */
+  int walRestarted;               /* Whether the wal was restarted */
 
   assert( pList );
   assert( pWal->writeLock );
@@ -3692,7 +3697,7 @@ static int walFrames(
   /* See if it is possible to write these frames into the start of the
   ** log file, instead of appending to it at pWal->hdr.mxFrame.
   */
-  if( SQLITE_OK!=(rc = walRestartLog(pWal)) ){
+  if( SQLITE_OK!=(rc = walRestartLog(pWal, &walRestarted)) ){
     return rc;
   }
 
@@ -3865,6 +3870,17 @@ static int walFrames(
     pWal->hdr.szPage = (u16)((szPage&0xff00) | (szPage>>16));
     testcase( szPage<=32768 );
     testcase( szPage>=65536 );
+    if (pnFrames) {
+        if (isCommit) {
+            if (walRestarted) {
+                *pnFrames = iFrame;
+            } else {
+                *pnFrames = iFrame - pWal->hdr.mxFrame;
+            }
+        } else {
+            *pnFrames = 0;
+        }
+    }
     pWal->hdr.mxFrame = iFrame;
     if( isCommit ){
       pWal->hdr.iChange++;
@@ -3894,11 +3910,12 @@ int sqlite3WalFrames(
   PgHdr *pList,                   /* List of dirty pages to write */
   Pgno nTruncate,                 /* Database size after this commit */
   int isCommit,                   /* True if this is a commit */
-  int sync_flags                  /* Flags to pass to OsSync() (or 0) */
+  int sync_flags,                 /* Flags to pass to OsSync() (or 0) */
+  int *pnFrames                   /* OUT: Number of frames appended to the wal on commit */
 ){
   int rc;
   SEH_TRY {
-    rc = walFrames(pWal, szPage, pList, nTruncate, isCommit, sync_flags);
+    rc = walFrames(pWal, szPage, pList, nTruncate, isCommit, sync_flags, pnFrames);
   }
   SEH_EXCEPT( rc = walHandleException(pWal); )
   return rc;

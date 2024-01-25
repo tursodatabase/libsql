@@ -76,7 +76,7 @@ typedef struct libsql_wal_methods {
   int (*xSavepointUndo)(wal_impl* pWal, unsigned int *aWalData);
 
   /* Write a frame or frames to the log. */
-  int (*xFrames)(wal_impl* pWal, int, libsql_pghdr *, unsigned int, int, int);
+  int (*xFrames)(wal_impl* pWal, int, libsql_pghdr *, unsigned int, int, int, int*);
 
   /* Copy pages from the log to the database file */ 
   int (*xCheckpoint)(

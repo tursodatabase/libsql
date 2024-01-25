@@ -185,7 +185,7 @@ impl Wal for ReplicationLoggerWal {
         size_after: u32,
         is_commit: bool,
         sync_flags: c_int,
-    ) -> Result<()> {
+    ) -> Result<usize> {
         assert_eq!(page_size, 4096);
         let iter = page_headers.iter();
         for (page_no, data) in iter {
@@ -197,8 +197,9 @@ impl Wal for ReplicationLoggerWal {
             return Err(rusqlite::ffi::Error::new(SQLITE_IOERR));
         }
 
-        self.inner
-            .insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)?;
+        let ret =
+            self.inner
+                .insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)?;
 
         if is_commit {
             if let Err(e) = self.commit() {
@@ -221,7 +222,7 @@ impl Wal for ReplicationLoggerWal {
             }
         }
 
-        Ok(())
+        Ok(ret)
     }
 
     fn checkpoint(
