@@ -187,7 +187,7 @@ impl SnapshotStore {
                     .inner
                     .snapshots_path(namespace)
                     .join(snapshot_id.to_string());
-                let file = SnapshotFile::open(path).await?;
+                let file = SnapshotFile::open(path, None).await?;
                 Ok(Some(file))
             }
             None => Ok(None),
