@@ -22,6 +22,7 @@ pub struct StatsResponse {
     pub replication_index: FrameNo,
     pub top_queries: Vec<TopQuery>,
     pub slowest_queries: Vec<SlowestQuery>,
+    pub embedded_replica_frames_replicated: u64,
 }
 
 impl From<&Stats> for StatsResponse {
@@ -33,6 +34,7 @@ impl From<&Stats> for StatsResponse {
             storage_bytes_used: stats.storage_bytes_used(),
             write_requests_delegated: stats.write_requests_delegated(),
             replication_index: stats.get_current_frame_no(),
+            embedded_replica_frames_replicated: stats.get_embedded_replica_frames_replicated(),
             top_queries: stats
                 .top_queries()
                 .read()

@@ -508,6 +508,11 @@ fn replicate_with_snapshots() {
     });
 
     sim.client("client", async {
+        let client = Client::new();
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
         let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)
             .unwrap();
         let conn = db.connect().unwrap();
@@ -547,6 +552,21 @@ fn replicate_with_snapshots() {
                 .unwrap(),
             ROW_COUNT
         );
+
+        let stats = client
+            .get("http://primary:9090/v1/namespaces/default/stats")
+            .await?
+            .json_value()
+            .await
+            .unwrap();
+
+        let stat = stats
+            .get("embedded_replica_frames_replicated")
+            .unwrap()
+            .as_u64()
+            .unwrap();
+
+        assert_eq!(stat, 427);
 
         Ok(())
     });
