@@ -85,7 +85,7 @@ where
         self.current_stream().batch(batch).await
     }
 
-    pub fn prepare(&self, sql: &str) -> Statement<T> {
+    pub fn prepare(&self, sql: &str) -> crate::Result<Statement<T>> {
         let stream = self.current_stream().clone();
         Statement::new(stream, sql.to_string(), true)
     }

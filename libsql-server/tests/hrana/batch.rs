@@ -96,3 +96,24 @@ fn execute_batch() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn multistatement_query() {
+    let mut sim = turmoil::Builder::new().build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+        let mut rows = conn
+            .query("select 1 + ?; select 'abc';", params![1])
+            .await?;
+
+        assert_eq!(rows.column_count(), 1);
+        assert_eq!(rows.next().await?.unwrap().get::<i32>(0)?, 2);
+        assert!(rows.next().await?.is_none());
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
