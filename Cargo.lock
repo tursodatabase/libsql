@@ -2795,6 +2795,7 @@ dependencies = [
  "fallible-iterator 0.3.0",
  "futures",
  "futures-core",
+ "hashbrown 0.14.3",
  "hmac",
  "http-body",
  "hyper",
