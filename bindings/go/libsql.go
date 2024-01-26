@@ -295,7 +295,7 @@ func (c *conn) execute(query string, args []sqldriver.NamedValue) (C.libsql_rows
 
 	var stmt C.libsql_stmt_t
 	var errMsg *C.char
-	statusCode := C.libsql_prepare(queryCString, &stmt, &errMsg)
+	statusCode := C.libsql_prepare(c.nativePtr, queryCString, &stmt, &errMsg)
 	if statusCode != 0 {
 		return nil, libsqlError(fmt.Sprint("failed to prepare query ", query), statusCode, errMsg)
 	}
@@ -330,7 +330,7 @@ func (c *conn) execute(query string, args []sqldriver.NamedValue) (C.libsql_rows
 	}
 
 	var rows C.libsql_rows_t
-	statusCode = C.libsql_execute_stmt(c.nativePtr, stmt, &rows, &errMsg)
+	statusCode = C.libsql_execute_stmt(stmt, &rows, &errMsg)
 	if statusCode != 0 {
 		return nil, libsqlError(fmt.Sprint("failed to execute query ", query), statusCode, errMsg)
 	}
