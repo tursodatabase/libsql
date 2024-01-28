@@ -1,5 +1,5 @@
-C Slight\sadjustment\sto\stest\sresults\sfor\sWindows\sin\smmap1.test\sdue\sto\nthe\sprevious\scheck-in.
-D 2024-01-23T21:10:28.876
+C Apply\sthe\ssame\sfix\sfound\sin\s[99057383acc8f920]\sto\sdescending\sscans.
+D 2024-01-28T00:35:24.523
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -676,7 +676,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c dee25e097b749275333b55d64a5ffc079249576f8e88a2ee476468cf67510f4b
+F src/btree.c c64df2b1623501e397128261de58d3ab44c301e4eb993a4055aa971444420200
 F src/btree.h 03e3356f5208bcab8eed4e094240fdac4a7f9f5ddf5e91045ce589f67d47c240
 F src/btreeInt.h 3e2589726c4f105e653461814f65857465da68be1fac688de340c43b873f4062
 F src/build.c e7d9044592eeeea8e78d8ae53ca8d31fd6e92ca0d4f53e2f2e8ccf7352e0b04b
@@ -2159,9 +2159,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d131cab652ac11795322af13d0b330e7e44ab91587a1a3e73fe7b9a14b2dd531
-Q +5cf9ea9b1fff4625a50a2343d0fd3812da6612d6b24c07e10edb6c1ff03ca2df
-R 61a2ccbb3e5a974f351c4434d9e27410
+P a8043eaed899285b5cf4aab0c23c3dabb8975910c353cb579fd1f1655db390f6
+Q +e1d463c2d6e93e0ae0a60a05a79cd346bd07142de2fe631b370a9b946763b5d6
+R 8a87cc127f7e11df3d6cc1208d913978
 U drh
-Z ed81ef45911a13fb442d4224507d6537
+Z 45229d4427630a6075d708c87527a979
 # Remove this line to create a well-formed Fossil manifest.
