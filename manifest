@@ -1,5 +1,5 @@
-C Apply\sthe\ssame\sfix\sfound\sin\s[99057383acc8f920]\sto\sdescending\sscans.
-D 2024-01-28T00:35:24.523
+C Automatically\sdisable\sthe\sDISTINCT\soptimization\sduring\squery\splanning\sif\sthe\nORDER\sBY\sclause\sexceeds\s63\sterms.
+D 2024-01-28T17:44:47.120
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -822,7 +822,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 217fe82a26c0fb6a3c7fd01865d821e752f9c01fb72f114af3f0b77ce234d1fb
+F src/where.c 56277e7110e6c81918434908bb7d597b917adfa9a176f5d95eb954b93dbc57b8
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
@@ -2159,9 +2159,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a8043eaed899285b5cf4aab0c23c3dabb8975910c353cb579fd1f1655db390f6
-Q +e1d463c2d6e93e0ae0a60a05a79cd346bd07142de2fe631b370a9b946763b5d6
-R 8a87cc127f7e11df3d6cc1208d913978
+P 593d6a1c2e9256d797f160e867278414e882a3d04d7fea269bea86965eaa7576
+Q +d4c193f0b49f4950b20c2f0e6aa037d2ed7d8c0b4687c14923b3a0d0d4a1b3fd
+R ca3283f0789d8e4b41a57bb59df1a9ad
 U drh
-Z 45229d4427630a6075d708c87527a979
+Z 2b9e32c39e2bfe542af85a77c540b8a3
 # Remove this line to create a well-formed Fossil manifest.

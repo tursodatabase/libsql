@@ -6056,7 +6056,10 @@ WhereInfo *sqlite3WhereBegin(
 
   /* An ORDER/GROUP BY clause of more than 63 terms cannot be optimized */
   testcase( pOrderBy && pOrderBy->nExpr==BMS-1 );
-  if( pOrderBy && pOrderBy->nExpr>=BMS ) pOrderBy = 0;
+  if( pOrderBy && pOrderBy->nExpr>=BMS ){
+    pOrderBy = 0;
+    wctrlFlags &= ~WHERE_WANT_DISTINCT;
+  }
 
   /* The number of tables in the FROM clause is limited by the number of
   ** bits in a Bitmask
