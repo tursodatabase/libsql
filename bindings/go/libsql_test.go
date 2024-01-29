@@ -459,6 +459,20 @@ func TestExecAndQuery(t *testing.T) {
 	table.assertRowExists(19)
 }
 
+func TestPreparedStatements(t *testing.T) {
+	t.Parallel()
+	db := getRemoteDb(T{t})
+	if db == nil {
+		return
+	}
+	table := db.createTable()
+	stmt := table.prepareInsertStmt()
+	stmt.exec(1, "1")
+	db.t.FatalOnError(stmt.Close())
+	table.assertRowsCount(1)
+	table.assertRowExists(1)
+}
+
 func TestTransaction(t *testing.T) {
 	t.Parallel()
 	db := getRemoteDb(T{t})
@@ -478,6 +492,58 @@ func TestTransaction(t *testing.T) {
 	table.assertRowDoesNotExist(20)
 	table.assertRowExists(0)
 	table.assertRowExists(19)
+}
+
+func TestMultiLineStatement(t *testing.T) {
+	t.Skip("Make it work")
+	t.Parallel()
+	db := getRemoteDb(T{t})
+	if db == nil {
+		return
+	}
+	db.exec("CREATE TABLE IF NOT EXISTS my_table (my_data TEXT); INSERT INTO my_table (my_data) VALUES ('hello');")
+	t.Cleanup(func() {
+		db.exec("DROP TABLE my_table")
+	})
+	table := Table{"my_table", *db}
+	db.assertTable("my_table")
+	table.assertRowsCount(1)
+}
+
+func TestPreparedStatementInTransaction(t *testing.T) {
+	t.Parallel()
+	db := getRemoteDb(T{t})
+	if db == nil {
+		return
+	}
+	table := db.createTable()
+	tx := table.beginTx()
+	stmt := tx.prepareInsertStmt()
+	stmt.exec(1, "1")
+	db.t.FatalOnError(stmt.Close())
+	tx.assertRowsCount(1)
+	tx.assertRowExists(1)
+	db.t.FatalOnError(tx.Commit())
+	table.assertRowsCount(1)
+	table.assertRowExists(1)
+}
+
+func TestPreparedStatementInTransactionRollback(t *testing.T) {
+	t.Parallel()
+	db := getRemoteDb(T{t})
+	if db == nil {
+		return
+	}
+	table := db.createTable()
+	tx := table.beginTx()
+	stmt := tx.prepareInsertStmt()
+	stmt.exec(1, "1")
+	db.t.FatalOnError(stmt.Close())
+	tx.assertRowsCount(1)
+	tx.assertRowExists(1)
+	db.t.FatalOnError(tx.Rollback())
+	table.assertRowsCount(0)
+	table.assertRowDoesNotExist(1)
 }
 
 func TestCancelContext(t *testing.T) {

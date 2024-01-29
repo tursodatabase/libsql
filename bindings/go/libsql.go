@@ -20,8 +20,12 @@ import (
 	"database/sql"
 	sqldriver "database/sql/driver"
 	"fmt"
+	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
+	"github.com/libsql/sqlite-antlr4-parser/sqliteparser"
+	"github.com/libsql/sqlite-antlr4-parser/sqliteparserutils"
 	"io"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 	"unsafe"
@@ -255,8 +259,99 @@ func (c *conn) Close() error {
 	return nil
 }
 
+type ParamsInfo struct {
+	NamedParameters           []string
+	PositionalParametersCount int
+}
+
+func isPositionalParameter(param string) (ok bool, err error) {
+	re := regexp.MustCompile(`\?([0-9]*).*`)
+	match := re.FindSubmatch([]byte(param))
+	if match == nil {
+		return false, nil
+	}
+
+	posS := string(match[1])
+	if posS == "" {
+		return true, nil
+	}
+
+	return true, fmt.Errorf("unsuppoted positional parameter. This driver does not accept positional parameters with indexes (like ?<number>)")
+}
+
+func removeParamPrefix(paramName string) (string, error) {
+	if paramName[0] == ':' || paramName[0] == '@' || paramName[0] == '$' {
+		return paramName[1:], nil
+	}
+	return "", fmt.Errorf("all named parameters must start with ':', or '@' or '$'")
+}
+
+func extractParameters(stmt string) (nameParams []string, positionalParamsCount int, err error) {
+	statementStream := antlr.NewInputStream(stmt)
+	sqliteparser.NewSQLiteLexer(statementStream)
+	lexer := sqliteparser.NewSQLiteLexer(statementStream)
+
+	allTokens := lexer.GetAllTokens()
+
+	nameParamsSet := make(map[string]bool)
+
+	for _, token := range allTokens {
+		tokenType := token.GetTokenType()
+		if tokenType == sqliteparser.SQLiteLexerBIND_PARAMETER {
+			parameter := token.GetText()
+
+			isPositionalParameter, err := isPositionalParameter(parameter)
+			if err != nil {
+				return []string{}, 0, err
+			}
+
+			if isPositionalParameter {
+				positionalParamsCount++
+			} else {
+				paramWithoutPrefix, err := removeParamPrefix(parameter)
+				if err != nil {
+					return []string{}, 0, err
+				} else {
+					nameParamsSet[paramWithoutPrefix] = true
+				}
+			}
+		}
+	}
+	nameParams = make([]string, 0, len(nameParamsSet))
+	for k := range nameParamsSet {
+		nameParams = append(nameParams, k)
+	}
+
+	return nameParams, positionalParamsCount, nil
+}
+
+func parseStatement(sql string) ([]string, []ParamsInfo, error) {
+	stmts, _ := sqliteparserutils.SplitStatement(sql)
+
+	stmtsParams := make([]ParamsInfo, len(stmts))
+	for idx, stmt := range stmts {
+		nameParams, positionalParamsCount, err := extractParameters(stmt)
+		if err != nil {
+			return nil, nil, err
+		}
+		stmtsParams[idx] = ParamsInfo{nameParams, positionalParamsCount}
+	}
+	return stmts, stmtsParams, nil
+}
+
 func (c *conn) PrepareContext(ctx context.Context, query string) (sqldriver.Stmt, error) {
-	return nil, fmt.Errorf("prepare() is not implemented")
+	stmts, paramInfos, err := parseStatement(query)
+	if err != nil {
+		return nil, err
+	}
+	if len(stmts) != 1 {
+		return nil, fmt.Errorf("only one statement is supported got %d", len(stmts))
+	}
+	numInput := -1
+	if len(paramInfos[0].NamedParameters) == 0 {
+		numInput = paramInfos[0].PositionalParametersCount
+	}
+	return &stmt{c, query, numInput}, nil
 }
 
 func (c *conn) BeginTx(ctx context.Context, opts sqldriver.TxOptions) (sqldriver.Tx, error) {
@@ -361,6 +456,47 @@ func (c *conn) ExecContext(ctx context.Context, query string, args []sqldriver.N
 		C.libsql_free_rows(rows)
 	}
 	return execResult{id, changes}, nil
+}
+
+type stmt struct {
+	conn     *conn
+	sql      string
+	numInput int
+}
+
+func (s *stmt) Close() error {
+	return nil
+}
+
+func (s *stmt) NumInput() int {
+	return s.numInput
+}
+
+func convertToNamed(args []sqldriver.Value) []sqldriver.NamedValue {
+	if len(args) == 0 {
+		return nil
+	}
+	result := make([]sqldriver.NamedValue, 0, len(args))
+	for idx := range args {
+		result = append(result, sqldriver.NamedValue{Ordinal: idx, Value: args[idx]})
+	}
+	return result
+}
+
+func (s *stmt) Exec(args []sqldriver.Value) (sqldriver.Result, error) {
+	return s.ExecContext(context.Background(), convertToNamed(args))
+}
+
+func (s *stmt) Query(args []sqldriver.Value) (sqldriver.Rows, error) {
+	return s.QueryContext(context.Background(), convertToNamed(args))
+}
+
+func (s *stmt) ExecContext(ctx context.Context, args []sqldriver.NamedValue) (sqldriver.Result, error) {
+	return s.conn.ExecContext(ctx, s.sql, args)
+}
+
+func (s *stmt) QueryContext(ctx context.Context, args []sqldriver.NamedValue) (sqldriver.Rows, error) {
+	return s.conn.QueryContext(ctx, s.sql, args)
 }
 
 type tx struct {
