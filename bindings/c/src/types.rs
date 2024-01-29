@@ -98,7 +98,7 @@ impl From<&mut libsql_connection> for libsql_connection_t {
 }
 
 pub struct stmt {
-    pub sql: String,
+    pub stmt: libsql::Statement,
     pub params: Vec<libsql::Value>,
 }
 

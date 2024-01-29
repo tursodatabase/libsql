@@ -210,6 +210,7 @@ pub unsafe extern "C" fn libsql_disconnect(conn: libsql_connection_t) {
 
 #[no_mangle]
 pub unsafe extern "C" fn libsql_prepare(
+    conn: libsql_connection_t,
     sql: *const std::ffi::c_char,
     out_stmt: *mut libsql_stmt_t,
     out_err_msg: *mut *const std::ffi::c_char,
@@ -222,13 +223,26 @@ pub unsafe extern "C" fn libsql_prepare(
             return 1;
         }
     };
-    let stmt = Box::leak(Box::new(libsql_stmt {
-        stmt: stmt {
-            sql: sql.to_string(),
-            params: vec![],
-        },
-    }));
-    *out_stmt = libsql_stmt_t::from(stmt);
+    if conn.is_null() {
+        set_err_msg(format!("Null connection"), out_err_msg);
+        return 2;
+    }
+    let conn = conn.get_ref();
+    match RT.block_on(conn.prepare(sql)) {
+        Ok(stmt) => {
+            let stmt = Box::leak(Box::new(libsql_stmt {
+                stmt: stmt {
+                    stmt,
+                    params: vec![],
+                },
+            }));
+            *out_stmt = libsql_stmt_t::from(stmt);
+        }
+        Err(e) => {
+            set_err_msg(format!("Error preparing statement: {}", e), out_err_msg);
+            return 3;
+        }
+    };
     0
 }
 
@@ -361,14 +375,16 @@ pub unsafe extern "C" fn libsql_bind_blob(
 
 #[no_mangle]
 pub unsafe extern "C" fn libsql_execute_stmt(
-    conn: libsql_connection_t,
     stmt: libsql_stmt_t,
     out_rows: *mut libsql_rows_t,
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
-    let conn = conn.get_ref();
-    let stmt = stmt.get_ref();
-    match RT.block_on(conn.query(&stmt.sql, stmt.params.clone())) {
+    if stmt.is_null() {
+        set_err_msg(format!("Null statement"), out_err_msg);
+        return 1;
+    }
+    let stmt = stmt.get_ref_mut();
+    match RT.block_on(stmt.stmt.query(stmt.params.clone())) {
         Ok(rows) => {
             let rows = Box::leak(Box::new(libsql_rows { result: rows }));
             *out_rows = libsql_rows_t::from(rows);
