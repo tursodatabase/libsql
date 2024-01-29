@@ -666,6 +666,24 @@ func TestRemoteArguments(t *testing.T) {
 	}
 }
 
+func TestPing(t *testing.T) {
+	t.Parallel()
+	db := getRemoteDb(T{t})
+
+	// This ping should succeed because the database is up and running
+	db.t.FatalOnError(db.Ping())
+
+	t.Cleanup(func() {
+		db.Close()
+
+		// This ping should return an error because the database is already closed
+		err := db.Ping()
+		if err == nil {
+			db.t.Fatal("db.Ping succeeded when it should have failed")
+		}
+	})
+}
+
 func TestDataTypes(t *testing.T) {
 	t.Parallel()
 	db := getRemoteDb(T{t})
