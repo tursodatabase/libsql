@@ -2123,6 +2123,7 @@ static u32 jsonTranslateBlobToText(
     }
     case JSONB_INT:
     case JSONB_FLOAT: {
+      if( sz==0 ) goto malformed_jsonb;
       jsonAppendRaw(pOut, (const char*)&pParse->aBlob[i+n], sz);
       break;
     }
@@ -2131,6 +2132,7 @@ static u32 jsonTranslateBlobToText(
       sqlite3_uint64 u = 0;
       const char *zIn = (const char*)&pParse->aBlob[i+n];
       int bOverflow = 0;
+      if( sz==0 ) goto malformed_jsonb;
       if( zIn[0]=='-' ){
         jsonAppendChar(pOut, '-');
         k++;
@@ -2153,6 +2155,7 @@ static u32 jsonTranslateBlobToText(
     case JSONB_FLOAT5: { /* Float literal missing digits beside "." */
       u32 k = 0;
       const char *zIn = (const char*)&pParse->aBlob[i+n];
+      if( sz==0 ) goto malformed_jsonb;
       if( zIn[0]=='-' ){
         jsonAppendChar(pOut, '-');
         k++;
@@ -2290,6 +2293,7 @@ static u32 jsonTranslateBlobToText(
     }
 
     default: {
+      malformed_jsonb:
       pOut->eErr |= JSTRING_MALFORMED;
       break;
     }
