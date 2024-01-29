@@ -4398,7 +4398,7 @@ static int sqlite3WalOpen(
     out->methods.xUndo = (int (*)(wal_impl *, int (*)(void *, unsigned int), void *))sqlite3WalUndo;
     out->methods.xSavepoint = (void (*)(wal_impl *, unsigned int *))sqlite3WalSavepoint;
     out->methods.xSavepointUndo = (int (*)(wal_impl *, unsigned int *))sqlite3WalSavepointUndo;
-    out->methods.xFrames = (int (*)(wal_impl *, int, libsql_pghdr *, unsigned int, int, int))sqlite3WalFrames;
+    out->methods.xFrames = (int (*)(wal_impl *, int, libsql_pghdr *, unsigned int, int, int, int *))sqlite3WalFrames;
     out->methods.xCheckpoint = (int (*)(wal_impl *, sqlite3 *, int, int (*)(void *), void *, int, int, unsigned char *, int *, int *, int (*)(void*, int, const unsigned char*, int, int, int), void*))sqlite3WalCheckpoint;
     out->methods.xCallback = (int (*)(wal_impl *))sqlite3WalCallback;
     out->methods.xExclusiveMode = (int (*)(wal_impl *, int))sqlite3WalExclusiveMode;
