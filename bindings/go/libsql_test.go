@@ -15,6 +15,8 @@ import (
 	"runtime/debug"
 	"testing"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type T struct {
@@ -662,6 +664,80 @@ func TestRemoteArguments(t *testing.T) {
 	if idx != 1 {
 		t.Fatal("idx should be 1 got ", idx)
 	}
+}
+
+func TestConcurrentOnSingleConnection(t *testing.T) {
+	t.Parallel()
+	db := getRemoteDb(T{t})
+	t1 := db.createTable()
+	t2 := db.createTable()
+	t3 := db.createTable()
+	t1.insertRowsInternal(1, 10, func(i int) sql.Result {
+		return t1.db.exec("INSERT INTO "+t1.name+" VALUES(?, ?)", i, i)
+	})
+	t2.insertRowsInternal(1, 10, func(i int) sql.Result {
+		return t2.db.exec("INSERT INTO "+t2.name+" VALUES(?, ?)", i, -1*i)
+	})
+	t3.insertRowsInternal(1, 10, func(i int) sql.Result {
+		return t3.db.exec("INSERT INTO "+t3.name+" VALUES(?, ?)", i, 0)
+	})
+	g, ctx := errgroup.WithContext(context.Background())
+	conn, err := db.Conn(context.Background())
+	db.t.FatalOnError(err)
+	defer conn.Close()
+	worker := func(t Table, check func(int) error) func() error {
+		return func() error {
+			for i := 1; i < 100; i++ {
+				// Each iteration is wrapped into a function to make sure that `defer rows.Close()`
+				// is called after each iteration not at the end of the outer function
+				err := func() error {
+					rows, err := conn.QueryContext(ctx, "SELECT b FROM "+t.name)
+					if err != nil {
+						return fmt.Errorf("%w: %s", err, string(debug.Stack()))
+					}
+					defer rows.Close()
+					for rows.Next() {
+						var v int
+						err := rows.Scan(&v)
+						if err != nil {
+							return fmt.Errorf("%w: %s", err, string(debug.Stack()))
+						}
+						if err := check(v); err != nil {
+							return fmt.Errorf("%w: %s", err, string(debug.Stack()))
+						}
+					}
+					err = rows.Err()
+					if err != nil {
+						return fmt.Errorf("%w: %s", err, string(debug.Stack()))
+					}
+					return nil
+				}()
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}
+	g.Go(worker(t1, func(v int) error {
+		if v <= 0 {
+			return fmt.Errorf("got non-positive value from table1: %d", v)
+		}
+		return nil
+	}))
+	g.Go(worker(t2, func(v int) error {
+		if v >= 0 {
+			return fmt.Errorf("got non-negative value from table2: %d", v)
+		}
+		return nil
+	}))
+	g.Go(worker(t3, func(v int) error {
+		if v != 0 {
+			return fmt.Errorf("got non-zero value from table3: %d", v)
+		}
+		return nil
+	}))
+	db.t.FatalOnError(g.Wait())
 }
 
 func runFileTest(t *testing.T, test func(*testing.T, *sql.DB)) {
