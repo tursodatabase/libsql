@@ -38,6 +38,22 @@ fn sample_request() {
 }
 
 #[test]
+fn execute_results() {
+    let mut sim = turmoil::Builder::new().build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        conn.execute("create table t(x text)", ()).await?;
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
 fn execute_individual_statements() {
     let mut sim = turmoil::Builder::new().build();
     sim.host("primary", super::make_standalone_server);
