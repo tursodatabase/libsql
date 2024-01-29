@@ -3,7 +3,10 @@ source: libsql-server/tests/standalone/mod.rs
 expression: "conn.execute(\"insert into test values (12)\", ()).await.unwrap_err()"
 ---
 Hrana(
-    Error {
-        message: "SQLite error: UNIQUE constraint failed: test.x",
-    },
+    StreamError(
+        Error {
+            message: "SQLite error: UNIQUE constraint failed: test.x",
+            code: "SQLITE_CONSTRAINT",
+        },
+    ),
 )

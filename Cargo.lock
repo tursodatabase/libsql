@@ -2835,10 +2835,14 @@ dependencies = [
 name = "libsql-sys"
 version = "0.3.0"
 dependencies = [
+ "base64 0.21.5",
  "bytes",
  "libsql-ffi",
  "libsql-rusqlite",
  "once_cell",
+ "prost",
+ "serde",
+ "serde_json",
  "tracing",
  "zerocopy",
 ]

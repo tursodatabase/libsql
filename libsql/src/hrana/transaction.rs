@@ -1,8 +1,9 @@
-use crate::hrana::pipeline::{ExecuteStreamReq, StreamRequest};
-use crate::hrana::proto::{Batch, BatchResult, Stmt, StmtResult};
+use crate::hrana::proto::Stmt;
 use crate::hrana::stream::HranaStream;
 use crate::hrana::{HttpSend, Result};
+use crate::parser::StmtKind;
 use crate::TransactionBehavior;
+use libsql_sys::hrana::proto::{ExecuteStreamReq, StreamRequest};
 
 #[derive(Debug, Clone)]
 pub(crate) struct HttpTransaction<T>
@@ -27,20 +28,10 @@ where
             TransactionBehavior::Exclusive => "BEGIN EXCLUSIVE",
             TransactionBehavior::ReadOnly => "BEGIN READONLY",
         };
-        stream.execute(Stmt::new(begin_stmt, false)).await?;
+        stream
+            .execute_inner(Stmt::new(begin_stmt, false), false)
+            .await?;
         Ok(HttpTransaction { stream })
-    }
-
-    pub async fn execute(&self, stmt: Stmt) -> Result<StmtResult> {
-        self.stream.execute(stmt).await
-    }
-
-    pub async fn execute_batch(
-        &self,
-        stmts: impl IntoIterator<Item = Stmt>,
-    ) -> Result<BatchResult> {
-        let batch = Batch::from_iter(stmts, false);
-        self.stream.batch(batch).await
     }
 
     pub async fn commit(&mut self) -> Result<()> {
@@ -57,5 +48,34 @@ where
             .finalize(StreamRequest::Execute(ExecuteStreamReq { stmt }))
             .await?;
         Ok(())
+    }
+}
+
+/// Counts number of transaction begin statements and transaction commits/rollback
+/// in order to determine if current statement execution will end within transaction
+/// scope, will start a new transaction or end existing one.
+#[repr(transparent)]
+#[derive(Default)]
+pub(crate) struct TxScopeCounter {
+    scope: i32,
+}
+
+impl TxScopeCounter {
+    pub(crate) fn count(&mut self, stmt_kind: StmtKind) {
+        match stmt_kind {
+            StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly => self.scope += 1,
+            StmtKind::TxnEnd => self.scope -= 1,
+            _ => {}
+        }
+    }
+
+    /// Check if within current scope we will eventually begin new transaction.
+    pub(crate) fn begin_tx(&self) -> bool {
+        self.scope > 0
+    }
+
+    /// Check if within current scope we will eventually close existing transaction.
+    pub(crate) fn end_tx(&self) -> bool {
+        self.scope < 0
     }
 }

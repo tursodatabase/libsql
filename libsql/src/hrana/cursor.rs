@@ -5,7 +5,6 @@ use crate::hrana::{CursorResponseError, HranaError, Result, Row};
 use bytes::Bytes;
 use futures::{ready, Stream, StreamExt};
 use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
 use std::fmt::Formatter;
 use std::future::poll_fn;
 use std::pin::Pin;
@@ -104,16 +103,16 @@ where
         let mut step_errors = Vec::new();
 
         while let Ok(mut step) = self.next_step().await {
-            let cols = (&*step.cols()).to_vec();
-            let mut rows = VecDeque::new();
+            let cols = step.state.cols.to_vec();
+            let mut rows = Vec::new();
             while let Some(res) = step.next().await {
                 match res {
                     Ok(row) => {
-                        let values = row.inner;
-                        rows.push_back(values);
+                        rows.push(crate::hrana::proto::Row { values: row.inner });
                     }
                     Err(err) => step_errors.push(Some(crate::hrana::proto::Error {
                         message: err.to_string(),
+                        code: String::default(),
                     })),
                 }
             }
@@ -134,12 +133,14 @@ where
                 rows,
                 affected_row_count,
                 last_insert_rowid,
+                replication_index: None,
             };
             step_results.push(Some(step_res));
         }
         Ok(BatchResult {
             step_results,
             step_errors,
+            replication_index: None,
         })
     }
 
