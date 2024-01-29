@@ -52,7 +52,7 @@ fn local_sync_with_writes() {
         let mut snapshots = Vec::new();
 
         while let Some(snapshot) = dir.next_entry().await.unwrap() {
-            let snap = SnapshotFile::open(snapshot.path()).await.unwrap();
+            let snap = SnapshotFile::open(snapshot.path(), None).await.unwrap();
 
             snapshots.push(snap);
         }
@@ -120,7 +120,7 @@ fn local_sync_with_writes() {
         let mut snapshots = Vec::new();
 
         while let Some(snapshot) = dir.next_entry().await.unwrap() {
-            let snap = SnapshotFile::open(snapshot.path()).await.unwrap();
+            let snap = SnapshotFile::open(snapshot.path(), None).await.unwrap();
 
             snapshots.push(snap);
         }
