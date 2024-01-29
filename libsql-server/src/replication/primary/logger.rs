@@ -627,10 +627,11 @@ impl ReplicationLogger {
                 size_after: if i == num_page - 1 { num_page as _ } else { 0 },
                 data: Bytes::copy_from_slice(&buf),
             })?;
-            log_file.commit()?;
 
             page_no += 1;
         }
+
+        log_file.commit()?;
 
         assert!(data_path.pop());
 

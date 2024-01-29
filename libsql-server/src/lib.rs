@@ -596,6 +596,7 @@ where
             self.idle_shutdown_kicker,
             Some(self.auth.clone()),
             self.disable_namespaces,
+            true,
         );
 
         let proxy_service =

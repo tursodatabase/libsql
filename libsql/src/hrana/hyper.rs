@@ -112,10 +112,11 @@ impl Conn for HttpConnection<HttpSender> {
     async fn execute(&self, sql: &str, params: Params) -> crate::Result<u64> {
         let mut stmt = Stmt::new(sql, false);
         bind_params(params, &mut stmt);
-        let cursor = self.execute_inner(stmt).await?;
-        let mut step = cursor.next_step_owned().await?;
-        step.consume().await?;
-        Ok(step.affected_rows() as u64)
+        self.batch_inner([stmt])
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?
+            .into_result()?;
+        Ok(self.affected_row_count())
     }
 
     async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
@@ -127,13 +128,14 @@ impl Conn for HttpConnection<HttpSender> {
         }
         self.batch_inner(statements)
             .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
+            .map_err(|e| crate::Error::Hrana(e.into()))?
+            .into_result()?;
         Ok(())
     }
 
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
-        let stream = self.open_stream();
-        let stmt = crate::hrana::Statement::from_stream(stream, sql.to_string(), true);
+        let stream = self.current_stream().clone();
+        let stmt = crate::hrana::Statement::new(stream, sql.to_string(), true)?;
         Ok(Statement {
             inner: Box::new(stmt),
         })
@@ -238,12 +240,13 @@ impl Conn for HranaStream<HttpSender> {
         }
         self.batch(Batch::from_iter(stmts, false))
             .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
+            .map_err(|e| crate::Error::Hrana(e.into()))?
+            .into_result()?;
         Ok(())
     }
 
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
-        let stmt = crate::hrana::Statement::from_stream(self.clone(), sql.to_string(), true);
+        let stmt = crate::hrana::Statement::new(self.clone(), sql.to_string(), true)?;
         Ok(Statement {
             inner: Box::new(stmt),
         })

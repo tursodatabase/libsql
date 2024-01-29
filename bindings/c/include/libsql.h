@@ -13,9 +13,13 @@ typedef struct libsql_rows libsql_rows;
 
 typedef struct libsql_rows_future libsql_rows_future;
 
+typedef struct libsql_stmt libsql_stmt;
+
 typedef const libsql_database *libsql_database_t;
 
 typedef const libsql_connection *libsql_connection_t;
+
+typedef const libsql_stmt *libsql_stmt_t;
 
 typedef const libsql_rows *libsql_rows_t;
 
@@ -51,6 +55,25 @@ void libsql_close(libsql_database_t db);
 int libsql_connect(libsql_database_t db, libsql_connection_t *out_conn, const char **out_err_msg);
 
 void libsql_disconnect(libsql_connection_t conn);
+
+int libsql_prepare(const char *sql, libsql_stmt_t *out_stmt, const char **out_err_msg);
+
+int libsql_bind_int(libsql_stmt_t stmt, int idx, long long value, const char **out_err_msg);
+
+int libsql_bind_float(libsql_stmt_t stmt, int idx, double value, const char **out_err_msg);
+
+int libsql_bind_null(libsql_stmt_t stmt, int idx, const char **out_err_msg);
+
+int libsql_bind_string(libsql_stmt_t stmt, int idx, const char *value, const char **out_err_msg);
+
+int libsql_bind_blob(libsql_stmt_t stmt, int idx, const unsigned char *value, int value_len, const char **out_err_msg);
+
+int libsql_execute_stmt(libsql_connection_t conn,
+                        libsql_stmt_t stmt,
+                        libsql_rows_t *out_rows,
+                        const char **out_err_msg);
+
+void libsql_free_stmt(libsql_stmt_t stmt);
 
 int libsql_execute(libsql_connection_t conn, const char *sql, libsql_rows_t *out_rows, const char **out_err_msg);
 

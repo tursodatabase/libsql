@@ -1,10 +1,8 @@
-use crate::hrana::cursor::Cursor;
-use crate::hrana::pipeline::{BatchStreamReq, StreamRequest, StreamResponse};
 use crate::hrana::proto::{Batch, BatchResult, Stmt};
 use crate::hrana::stream::{parse_hrana_urls, HranaStream};
-use crate::hrana::{HranaError, HttpSend, Result, Statement};
+use crate::hrana::{HttpSend, Result, Statement};
 use crate::util::coerce_url_scheme;
-use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
+use std::ops::Deref;
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -17,13 +15,16 @@ struct InnerClient<T>
 where
     T: HttpSend,
 {
+    /// Actual implementation of a client used to send HTTP requests.
     inner: T,
+    /// Hrana stream used to execute statements directly on the connection itself.
+    conn_stream: HranaStream<T>,
+    /// URL of a pipeline API: `{base_url}/v3/pipeline`.
     pipeline_url: Arc<str>,
+    /// URL of a cursor API: `{base_url}/v3/cursor`.
     cursor_url: Arc<str>,
+    /// Authentication token.
     auth: Arc<str>,
-    affected_row_count: AtomicU64,
-    last_insert_rowid: AtomicI64,
-    is_autocommit: AtomicBool,
 }
 
 impl<T> HttpConnection<T>
@@ -34,51 +35,40 @@ where
         // The `libsql://` protocol is an alias for `https://`.
         let base_url = coerce_url_scheme(url);
         let (pipeline_url, cursor_url) = parse_hrana_urls(&base_url);
+        let auth: Arc<str> = Arc::from(format!("Bearer {token}"));
+        let conn_stream = HranaStream::open(
+            inner.clone(),
+            pipeline_url.clone(),
+            cursor_url.clone(),
+            auth.clone(),
+        );
         HttpConnection(Arc::new(InnerClient {
             inner,
             pipeline_url,
             cursor_url,
-            auth: Arc::from(format!("Bearer {token}")),
-            affected_row_count: AtomicU64::new(0),
-            last_insert_rowid: AtomicI64::new(0),
-            is_autocommit: AtomicBool::new(true),
+            conn_stream,
+            auth,
         }))
     }
 
     pub fn affected_row_count(&self) -> u64 {
-        self.client().affected_row_count.load(Ordering::SeqCst)
-    }
-
-    pub fn set_affected_row_count(&self, value: u64) {
-        self.client()
-            .affected_row_count
-            .store(value, Ordering::SeqCst)
+        self.current_stream().affected_row_count()
     }
 
     pub fn last_insert_rowid(&self) -> i64 {
-        self.client().last_insert_rowid.load(Ordering::SeqCst)
-    }
-
-    pub fn set_last_insert_rowid(&self, value: i64) {
-        self.client()
-            .last_insert_rowid
-            .store(value, Ordering::SeqCst)
+        self.current_stream().last_insert_rowid()
     }
 
     pub fn is_autocommit(&self) -> bool {
-        self.client().is_autocommit.load(Ordering::SeqCst)
+        self.current_stream().is_autocommit()
     }
 
-    fn set_autocommit(&self, value: bool) {
-        self.client().is_autocommit.store(value, Ordering::SeqCst)
-    }
-
-    fn client(&self) -> &InnerClient<T> {
-        &self.0
+    pub(crate) fn current_stream(&self) -> &HranaStream<T> {
+        &self.0.conn_stream
     }
 
     pub(crate) fn open_stream(&self) -> HranaStream<T> {
-        let client = self.client();
+        let client = self.0.deref();
         HranaStream::open(
             client.inner.clone(),
             client.pipeline_url.clone(),
@@ -92,27 +82,12 @@ where
         stmts: impl IntoIterator<Item = Stmt>,
     ) -> Result<BatchResult> {
         let batch = Batch::from_iter(stmts, false);
-        let (resp, is_autocommit) = self
-            .open_stream()
-            .finalize(StreamRequest::Batch(BatchStreamReq { batch }))
-            .await?;
-        self.set_autocommit(is_autocommit);
-        match resp {
-            StreamResponse::Batch(resp) => Ok(resp.result),
-            other => Err(HranaError::UnexpectedResponse(format!(
-                "Unexpected response from server: {:?}",
-                other
-            ))),
-        }
+        self.current_stream().batch(batch).await
     }
 
-    pub(crate) async fn execute_inner(&self, stmt: Stmt) -> Result<Cursor<T::Stream>> {
-        let resp = self.open_stream().cursor(Batch::single(stmt)).await?;
-        Ok(resp)
-    }
-
-    pub fn prepare(&self, sql: &str) -> Statement<T> {
-        Statement::from_connection(self.clone(), sql.to_string(), true)
+    pub fn prepare(&self, sql: &str) -> crate::Result<Statement<T>> {
+        let stream = self.current_stream().clone();
+        Statement::new(stream, sql.to_string(), true)
     }
 }
 

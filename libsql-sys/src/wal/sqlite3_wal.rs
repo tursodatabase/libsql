@@ -288,7 +288,8 @@ impl Wal for Sqlite3Wal {
         size_after: u32,
         is_commit: bool,
         sync_flags: c_int,
-    ) -> Result<()> {
+    ) -> Result<usize> {
+        let mut frames = 0;
         let rc = unsafe {
             (self.inner.methods.xFrames.unwrap())(
                 self.inner.pData,
@@ -297,12 +298,13 @@ impl Wal for Sqlite3Wal {
                 size_after,
                 is_commit as _,
                 sync_flags,
+                &mut frames,
             )
         };
         if rc != 0 {
             Err(Error::new(rc))
         } else {
-            Ok(())
+            Ok(frames as _)
         }
     }
 

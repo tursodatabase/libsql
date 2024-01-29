@@ -185,7 +185,7 @@ impl Wal for ReplicationLoggerWal {
         size_after: u32,
         is_commit: bool,
         sync_flags: c_int,
-    ) -> Result<()> {
+    ) -> Result<usize> {
         assert_eq!(page_size, 4096);
         let iter = page_headers.iter();
         for (page_no, data) in iter {
@@ -197,8 +197,9 @@ impl Wal for ReplicationLoggerWal {
             return Err(rusqlite::ffi::Error::new(SQLITE_IOERR));
         }
 
-        self.inner
-            .insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)?;
+        let ret =
+            self.inner
+                .insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)?;
 
         if is_commit {
             if let Err(e) = self.commit() {
@@ -221,7 +222,7 @@ impl Wal for ReplicationLoggerWal {
             }
         }
 
-        Ok(())
+        Ok(ret)
     }
 
     fn checkpoint(
@@ -270,7 +271,7 @@ impl Wal for ReplicationLoggerWal {
 }
 
 impl ReplicationLoggerWal {
-    fn inject_replication_index(&mut self, db: &mut Sqlite3Db) -> Result<()> {
+    fn inject_replication_index(&mut self, _db: &mut Sqlite3Db) -> Result<()> {
         let data = &mut [0; LIBSQL_PAGE_SIZE as _];
         // We retreive the freshest version of page 1. Either most recent page 1 is in the WAL, or
         // it is in the main db file
@@ -287,7 +288,7 @@ impl ReplicationLoggerWal {
         header.replication_index =
             (self.logger().new_frame_notifier.borrow().unwrap_or(0) + 1).into();
         #[cfg(feature = "encryption")]
-        let pager = libsql_sys::connection::leak_pager(db.as_ptr());
+        let pager = libsql_sys::connection::leak_pager(_db.as_ptr());
         #[cfg(not(feature = "encryption"))]
         let pager = std::ptr::null_mut();
         let mut header = libsql_pghdr {

@@ -11,12 +11,33 @@ fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
 
-    if std::env::var("LIBSQL_DEV").is_ok() || cfg!(feature = "wasmtime-bindings") {
+    println!("cargo:rerun-if-changed={BUNDLED_DIR}/src/sqlite3.c");
+    println!(
+        "cargo:rerun-if-changed={BUNDLED_DIR}/SQLite3MultipleCiphers/build/libsqlite3mc_static.a"
+    );
+
+    if std::env::var("LIBSQL_DEV").is_ok() {
         make_amalgation();
+        build_multiple_ciphers(&out_path);
+    }
+
+    let bindgen_rs_path = if cfg!(feature = "session") {
+        "bundled/bindings/session_bindgen.rs"
+    } else {
+        "bundled/bindings/bindgen.rs"
+    };
+
+    let dir = env!("CARGO_MANIFEST_DIR");
+    std::fs::copy(format!("{dir}/{bindgen_rs_path}"), &out_path).unwrap();
+
+    println!("cargo:lib_dir={out_dir}");
+
+    if cfg!(feature = "wasmtime-bindings") && !cfg!(feature = "multiple-ciphers") {
+        build_bundled(&out_dir, &out_path);
     }
 
     if cfg!(feature = "multiple-ciphers") {
-        build_multiple_ciphers(&out_dir, &out_path);
+        copy_multiple_ciphers(&out_dir, &out_path);
         return;
     }
 
@@ -69,9 +90,9 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     let dir = env!("CARGO_MANIFEST_DIR");
     std::fs::copy(format!("{dir}/{bindgen_rs_path}"), out_path).unwrap();
 
-    println!("cargo:rerun-if-changed={BUNDLED_DIR}/src/sqlite3.c");
     let mut cfg = cc::Build::new();
     cfg.file(format!("{BUNDLED_DIR}/src/sqlite3.c"))
+        .flag("-std=c11")
         .flag("-DSQLITE_CORE")
         .flag("-DSQLITE_DEFAULT_FOREIGN_KEYS=1")
         .flag("-DSQLITE_ENABLE_API_ARMOR")
@@ -221,7 +242,18 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     println!("cargo:lib_dir={out_dir}");
 }
 
-fn build_multiple_ciphers(out_dir: &str, out_path: &Path) {
+fn copy_multiple_ciphers(out_dir: &str, out_path: &Path) {
+    let dylib = format!("{BUNDLED_DIR}/SQLite3MultipleCiphers/build/libsqlite3mc_static.a");
+    if !Path::new(&dylib).exists() {
+        build_multiple_ciphers(&out_path);
+    }
+
+    std::fs::copy(dylib, format!("{out_dir}/libsqlite3mc.a")).unwrap();
+    println!("cargo:rustc-link-lib=static=sqlite3mc");
+    println!("cargo:rustc-link-search={out_dir}");
+}
+
+fn build_multiple_ciphers(out_path: &Path) {
     let bindgen_rs_path = if cfg!(feature = "session") {
         "bundled/bindings/session_bindgen.rs"
     } else {
@@ -248,17 +280,17 @@ fn build_multiple_ciphers(out_dir: &str, out_path: &Path) {
     let mut cmd = Command::new("./build_libsqlite3mc.sh");
     cmd.current_dir(BUNDLED_DIR);
 
-    #[cfg(feature = "libsql-wasm-experimental")]
-    cmd.arg("-DLIBSQL_ENABLE_WASM_RUNTIME");
+    if cfg!(feature = "wasmtime-bindings") {
+        cmd.arg("-DLIBSQL_ENABLE_WASM_RUNTIME=1");
+    }
 
-    cmd.output().unwrap();
-    std::fs::copy(
-        format!("{BUNDLED_DIR}/SQLite3MultipleCiphers/build/libsqlite3mc_static.a"),
-        format!("{out_dir}/libsqlite3mc.a"),
-    )
-    .unwrap();
-    println!("cargo:rustc-link-lib=static=sqlite3mc");
-    println!("cargo:rustc-link-search={out_dir}");
+    if cfg!(feature = "session") {
+        cmd.arg("-DSQLITE_ENABLE_PREUPDATE_HOOK=ON");
+        cmd.arg("-DSQLITE_ENABLE_SESSION=ON");
+    }
+
+    let out = cmd.output().unwrap();
+    assert!(out.status.success(), "{:?}", out);
 }
 
 fn env(name: &str) -> Option<OsString> {
