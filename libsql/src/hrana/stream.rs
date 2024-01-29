@@ -1,13 +1,14 @@
 use crate::hrana::cursor::{Cursor, CursorReq};
-use crate::hrana::pipeline::{
-    ClientMsg, CloseSqlStreamReq, DescribeStreamReq, Response, SequenceStreamReq, ServerMsg,
-    StoreSqlStreamReq, StreamRequest, StreamResponse, StreamResponseOk,
-};
 use crate::hrana::proto::{Batch, BatchResult, DescribeResult, Stmt, StmtResult};
-use crate::hrana::{CursorResponseError, HranaError, HttpSend, Result, StreamResponseError};
+use crate::hrana::{CursorResponseError, HranaError, HttpSend, Result};
 use bytes::{Bytes, BytesMut};
 use futures::Stream;
-use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
+use libsql_sys::hrana::proto::{
+    BatchStreamReq, CloseSqlStreamReq, CloseStreamReq, CloseStreamResp, DescribeStreamReq,
+    GetAutocommitStreamReq, PipelineReqBody, PipelineRespBody, SequenceStreamReq,
+    StoreSqlStreamReq, StreamRequest, StreamResponse, StreamResult,
+};
+use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -58,42 +59,55 @@ where
             inner: Arc::new(Inner {
                 affected_row_count: AtomicU64::new(0),
                 last_insert_rowid: AtomicI64::new(0),
+                is_autocommit: AtomicBool::new(true),
                 stream: Mutex::new(RawStream {
                     client,
                     pipeline_url,
                     cursor_url,
                     auth_token,
                     sql_id_generator: 0,
-                    status: StreamStatus::Open,
                     baton: None,
                 }),
             }),
         }
     }
 
-    /// Executes a final request and immediately closes current stream - all in one request.
-    pub async fn finalize(&mut self, req: StreamRequest) -> Result<(StreamResponse, bool)> {
+    /// Executes a final request and immediately closes current stream - all in one request
+    /// Returns true if request was finalized correctly, false if stream was already closed.
+    pub(super) async fn finalize(&mut self, req: StreamRequest) -> Result<bool> {
         let mut client = self.inner.stream.lock().await;
-        let resp = client.finalize(req).await?;
-        Ok(resp)
+        if client.baton.is_none() {
+            tracing::trace!("baton not found - skipping finalize for {:?}", req);
+            return Ok(false);
+        }
+        let (resp, is_autocommit) = client.finalize(req).await?;
+        self.inner
+            .is_autocommit
+            .store(is_autocommit, Ordering::SeqCst);
+        let (affected_row_count, last_insert_rowid) = if let StreamResponse::Execute(resp) = resp {
+            (
+                resp.result.affected_row_count,
+                resp.result.last_insert_rowid.unwrap_or(0),
+            )
+        } else {
+            (0, 0)
+        };
+
+        self.inner
+            .affected_row_count
+            .store(affected_row_count, Ordering::SeqCst);
+        self.inner
+            .last_insert_rowid
+            .store(last_insert_rowid, Ordering::SeqCst);
+        Ok(true)
     }
 
-    pub async fn execute(&self, stmt: Stmt) -> Result<StmtResult> {
-        //TODO: this trait shouldn't return BatchResult but an associated
-        //      type that can respect Hrana async streaming cursor capabilities
-        let mut batch = Batch::new();
-        batch.step(None, stmt);
-        let mut batch_res = self.batch(batch).await?;
+    pub(super) async fn execute_inner(&self, stmt: Stmt, close_stream: bool) -> Result<StmtResult> {
+        let mut batch_res = self.batch_inner(Batch::single(stmt), close_stream).await?;
         if let Some(Some(error)) = batch_res.step_errors.pop() {
-            return Err(HranaError::StreamError(StreamResponseError { error }));
+            return Err(HranaError::StreamError(error));
         }
         if let Some(Some(resp)) = batch_res.step_results.pop() {
-            self.inner
-                .affected_row_count
-                .store(resp.affected_row_count, Ordering::SeqCst);
-            self.inner
-                .last_insert_rowid
-                .store(resp.last_insert_rowid.unwrap_or_default(), Ordering::SeqCst);
             Ok(resp)
         } else {
             Err(HranaError::CursorError(CursorResponseError::Other(
@@ -102,11 +116,56 @@ where
         }
     }
 
-    pub async fn batch(&self, batch: Batch) -> Result<BatchResult> {
-        //TODO: this trait shouldn't return BatchResult but an associated
-        //      type that can respect Hrana async streaming cursor capabilities
-        let cursor = self.cursor(batch).await?;
-        Ok(cursor.into_batch_result().await?)
+    pub(crate) async fn batch_inner(
+        &self,
+        batch: Batch,
+        close_stream: bool,
+    ) -> Result<BatchResult> {
+        let mut client = self.inner.stream.lock().await;
+        let (resp, get_autocommit) = if close_stream {
+            tracing::trace!("send Hrana SQL batch (with closing the stream)");
+            let [resp, get_autocommit, _] = client
+                .send_requests([
+                    StreamRequest::Batch(BatchStreamReq { batch }),
+                    StreamRequest::GetAutocommit(GetAutocommitStreamReq {}),
+                    StreamRequest::Close(CloseStreamReq {}),
+                ])
+                .await?;
+            client.reset();
+            (resp, get_autocommit)
+        } else {
+            tracing::trace!("send Hrana SQL batch (leave the stream open)");
+            let [resp, get_autocommit] = client
+                .send_requests([
+                    StreamRequest::Batch(BatchStreamReq { batch }),
+                    StreamRequest::GetAutocommit(GetAutocommitStreamReq {}),
+                ])
+                .await?;
+            (resp, get_autocommit)
+        };
+        drop(client);
+        match get_autocommit {
+            StreamResponse::GetAutocommit(r) => {
+                self.inner
+                    .is_autocommit
+                    .store(r.is_autocommit, Ordering::SeqCst);
+            }
+            other => unexpected!(other),
+        };
+        match resp {
+            StreamResponse::Batch(resp) => {
+                if let Some(Some(result)) = resp.result.step_results.last() {
+                    self.inner
+                        .affected_row_count
+                        .store(result.affected_row_count, Ordering::SeqCst);
+                    self.inner
+                        .last_insert_rowid
+                        .store(result.last_insert_rowid.unwrap_or(0), Ordering::SeqCst);
+                }
+                Ok(resp.result)
+            }
+            other => unexpected!(other),
+        }
     }
 
     pub async fn cursor(&self, batch: Batch) -> Result<Cursor<T::Stream>> {
@@ -122,7 +181,7 @@ where
             .send(StreamRequest::StoreSql(StoreSqlStreamReq { sql, sql_id }))
             .await?;
         match resp {
-            StreamResponse::StoreSql => {
+            StreamResponse::StoreSql(_) => {
                 drop(client);
                 Ok(StoredSql::new(self.clone(), sql_id))
             }
@@ -136,7 +195,7 @@ where
             .send(StreamRequest::CloseSql(CloseSqlStreamReq { sql_id }))
             .await?;
         match resp {
-            StreamResponse::CloseSql => Ok(()),
+            StreamResponse::CloseSql(_) => Ok(()),
             other => unexpected!(other),
         }
     }
@@ -147,10 +206,12 @@ where
             SqlDescription::Sql(sql) => DescribeStreamReq {
                 sql: Some(sql),
                 sql_id: None,
+                replication_index: None,
             },
             SqlDescription::SqlId(sql_id) => DescribeStreamReq {
                 sql: None,
                 sql_id: Some(sql_id),
+                replication_index: None,
             },
         };
         let resp = client.send(StreamRequest::Describe(req)).await?;
@@ -166,22 +227,26 @@ where
             SqlDescription::Sql(sql) => SequenceStreamReq {
                 sql: Some(sql),
                 sql_id: None,
+                replication_index: None,
             },
             SqlDescription::SqlId(sql_id) => SequenceStreamReq {
                 sql: None,
                 sql_id: Some(sql_id),
+                replication_index: None,
             },
         };
         let resp = client.send(StreamRequest::Sequence(req)).await?;
         match resp {
-            StreamResponse::Sequence => Ok(()),
+            StreamResponse::Sequence(_) => Ok(()),
             other => unexpected!(other),
         }
     }
 
     pub async fn get_autocommit(&self) -> Result<bool> {
         let mut client = self.inner.stream.lock().await;
-        let resp = client.send(StreamRequest::GetAutocommit).await?;
+        let resp = client
+            .send(StreamRequest::GetAutocommit(GetAutocommitStreamReq {}))
+            .await?;
         match resp {
             StreamResponse::GetAutocommit(resp) => Ok(resp.is_autocommit),
             other => unexpected!(other),
@@ -195,6 +260,10 @@ where
     pub fn last_insert_rowid(&self) -> i64 {
         self.inner.last_insert_rowid.load(Ordering::SeqCst)
     }
+
+    pub fn is_autocommit(&self) -> bool {
+        self.inner.is_autocommit.load(Ordering::SeqCst)
+    }
 }
 
 #[derive(Debug)]
@@ -204,6 +273,7 @@ where
 {
     affected_row_count: AtomicU64,
     last_insert_rowid: AtomicI64,
+    is_autocommit: AtomicBool,
     stream: Mutex<RawStream<T>>,
 }
 
@@ -217,7 +287,6 @@ where
     pipeline_url: Arc<str>,
     cursor_url: Arc<str>,
     auth_token: Arc<str>,
-    status: StreamStatus,
     sql_id_generator: SqlId,
 }
 
@@ -231,11 +300,6 @@ where
     }
 
     pub async fn open_cursor(&mut self, batch: Batch) -> Result<Cursor<T::Stream>> {
-        if self.status == StreamStatus::Closed {
-            return Err(HranaError::StreamClosed(
-                "client stream has been closed by the servers".to_string(),
-            ));
-        }
         let msg = CursorReq {
             baton: self.baton.clone(),
             batch,
@@ -253,7 +317,7 @@ where
         match response.baton.take() {
             None => {
                 tracing::trace!("client stream has been closed by the server");
-                self.done();
+                self.reset();
             } // stream has been closed by the server
             Some(baton) => {
                 tracing::trace!("client stream has been assigned with baton: `{}`", baton);
@@ -267,17 +331,13 @@ where
         &mut self,
         requests: [StreamRequest; N],
     ) -> Result<[StreamResponse; N]> {
-        if self.status == StreamStatus::Closed {
-            return Err(HranaError::StreamClosed(
-                "client stream has been closed by the servers".to_string(),
-            ));
-        }
         tracing::trace!(
-            "client stream sending {} requests with baton `{}`",
+            "client stream sending {} requests with baton `{}`: {:?}",
             N,
-            self.baton.as_deref().unwrap_or_default()
+            self.baton.as_deref().unwrap_or_default(),
+            requests
         );
-        let msg = ClientMsg {
+        let msg = PipelineReqBody {
             baton: self.baton.clone(),
             requests: Vec::from(requests),
         };
@@ -287,14 +347,16 @@ where
             .http_send(self.pipeline_url.clone(), self.auth_token.clone(), body)
             .await?;
         let body = stream_to_bytes(body).await?;
-        let mut response: ServerMsg = serde_json::from_slice(&body)?;
+        let mut response: PipelineRespBody = serde_json::from_slice(&body)?;
         if let Some(base_url) = response.base_url.take() {
-            self.pipeline_url = Arc::from(base_url);
+            let (pipeline_url, cursor_url) = parse_hrana_urls(&base_url);
+            self.pipeline_url = pipeline_url;
+            self.cursor_url = cursor_url;
         }
         match response.baton.take() {
             None => {
                 tracing::trace!("client stream has been closed by the server");
-                self.done();
+                self.reset();
             } // stream has been closed by the server
             Some(baton) => {
                 tracing::trace!("client stream has been assigned with baton: `{}`", baton);
@@ -315,11 +377,12 @@ where
                 response.results
             )))?;
         }
-        let mut responses = std::array::from_fn(|_| StreamResponse::Close);
+        let mut responses = std::array::from_fn(|_| StreamResponse::Close(CloseStreamResp {}));
         for (i, result) in response.results.into_iter().enumerate() {
             match result {
-                Response::Ok(StreamResponseOk { response }) => responses[i] = response,
-                Response::Error(e) => return Err(HranaError::StreamError(e)),
+                StreamResult::Ok { response } => responses[i] = response,
+                StreamResult::Error { error } => return Err(HranaError::StreamError(error)),
+                StreamResult::None => {}
             }
         }
         Ok(responses)
@@ -327,7 +390,11 @@ where
 
     async fn finalize(&mut self, req: StreamRequest) -> Result<(StreamResponse, bool)> {
         let [resp, get_autocommit, _] = self
-            .send_requests([req, StreamRequest::GetAutocommit, StreamRequest::Close])
+            .send_requests([
+                req,
+                StreamRequest::GetAutocommit(GetAutocommitStreamReq {}),
+                StreamRequest::Close(CloseStreamReq {}),
+            ])
             .await?;
         let is_autocommit = match get_autocommit {
             StreamResponse::GetAutocommit(resp) => resp.is_autocommit,
@@ -338,17 +405,15 @@ where
                 )))
             }
         };
-        self.done();
+        self.reset();
         Ok((resp, is_autocommit))
     }
 
-    fn done(&mut self) {
-        if let Some(baton) = &self.baton {
+    fn reset(&mut self) {
+        if let Some(baton) = self.baton.take() {
             tracing::trace!("closing client stream (baton: `{}`)", baton);
         }
-        self.baton = None;
         self.sql_id_generator = 0;
-        self.status = StreamStatus::Closed;
     }
 
     fn next_sql_id(&mut self) -> SqlId {
@@ -363,20 +428,33 @@ where
     T: HttpSend,
 {
     fn drop(&mut self) {
-        if self.status == StreamStatus::Closed {
-            return;
+        if let Some(baton) = self.baton.take() {
+            // only send a close request if stream was ever used to send the data
+            tracing::trace!("closing client stream (baton: `{}`)", baton);
+            let req = serde_json::to_string(&PipelineReqBody {
+                baton: Some(baton),
+                requests: vec![StreamRequest::Close(CloseStreamReq {})],
+            })
+            .unwrap();
+            self.client
+                .clone()
+                .oneshot(self.pipeline_url.clone(), self.auth_token.clone(), req);
+            self.reset();
         }
-        tracing::trace!("closing stream");
-        let req = serde_json::to_string(&ClientMsg {
-            baton: self.baton.clone(),
-            requests: vec![StreamRequest::Close],
-        })
-        .unwrap();
-        self.client
-            .clone()
-            .oneshot(self.pipeline_url.clone(), self.auth_token.clone(), req);
-        self.done();
     }
+}
+
+pub(super) fn parse_hrana_urls(url: &str) -> (Arc<str>, Arc<str>) {
+    let (mut base_url, query) = match url.rfind('?') {
+        Some(i) => url.split_at(i),
+        None => (url, ""),
+    };
+    if base_url.ends_with('/') {
+        base_url = &base_url[0..(base_url.len() - 1)];
+    }
+    let pipeline_url = Arc::from(format!("{base_url}/v3/pipeline{query}"));
+    let cursor_url = Arc::from(format!("{base_url}/v3/cursor{query}"));
+    (pipeline_url, cursor_url)
 }
 
 async fn stream_to_bytes<S>(mut stream: S) -> Result<Bytes>
@@ -390,13 +468,6 @@ where
         buf.extend_from_slice(&chunk.map_err(|e| HranaError::Http(e.to_string()))?);
     }
     Ok(buf.freeze())
-}
-
-#[repr(u8)]
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
-pub enum StreamStatus {
-    Open,
-    Closed,
 }
 
 #[derive(Debug, Clone)]

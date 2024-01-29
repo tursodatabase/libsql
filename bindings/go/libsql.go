@@ -20,7 +20,13 @@ import (
 	"database/sql"
 	sqldriver "database/sql/driver"
 	"fmt"
+	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
+	"github.com/libsql/sqlite-antlr4-parser/sqliteparser"
+	"github.com/libsql/sqlite-antlr4-parser/sqliteparserutils"
 	"io"
+	"net/url"
+	"regexp"
+	"strings"
 	"time"
 	"unsafe"
 )
@@ -30,25 +36,44 @@ func init() {
 }
 
 func NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken string) (*Connector, error) {
-	return openConnector(dbPath, primaryUrl, authToken, 0)
+	return openEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, 0)
 }
 
 func NewEmbeddedReplicaConnectorWithAutoSync(dbPath, primaryUrl, authToken string, syncInterval time.Duration) (*Connector, error) {
-	return openConnector(dbPath, primaryUrl, authToken, syncInterval)
+	return openEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, syncInterval)
 }
 
 type driver struct{}
 
-func (d driver) Open(dbPath string) (sqldriver.Conn, error) {
-	connector, err := d.OpenConnector(dbPath)
+func (d driver) Open(dbAddress string) (sqldriver.Conn, error) {
+	connector, err := d.OpenConnector(dbAddress)
 	if err != nil {
 		return nil, err
 	}
 	return connector.Connect(context.Background())
 }
 
-func (d driver) OpenConnector(dbPath string) (sqldriver.Connector, error) {
-	return openConnector(dbPath, "", "", 0)
+func (d driver) OpenConnector(dbAddress string) (sqldriver.Connector, error) {
+	if strings.HasPrefix(dbAddress, ":memory:") {
+		return openLocalConnector(dbAddress)
+	}
+	u, err := url.Parse(dbAddress)
+	if err != nil {
+		return nil, err
+	}
+	switch u.Scheme {
+	case "file":
+		return openLocalConnector(dbAddress)
+	case "http":
+		fallthrough
+	case "https":
+		fallthrough
+	case "libsql":
+		authToken := u.Query().Get("authToken")
+		u.RawQuery = ""
+		return openRemoteConnector(u.String(), authToken)
+	}
+	return nil, fmt.Errorf("unsupported URL scheme: %s\nThis driver supports only URLs that start with libsql://, file://, https:// or http://", u.Scheme)
 }
 
 func libsqlSync(nativeDbPtr C.libsql_database_t) error {
@@ -60,44 +85,54 @@ func libsqlSync(nativeDbPtr C.libsql_database_t) error {
 	return nil
 }
 
-func openConnector(dbPath, primaryUrl, authToken string, syncInterval time.Duration) (*Connector, error) {
-	var nativeDbPtr C.libsql_database_t
-	var err error
+func openLocalConnector(dbPath string) (*Connector, error) {
+	nativeDbPtr, err := libsqlOpenLocal(dbPath)
+	if err != nil {
+		return nil, err
+	}
+	return &Connector{nativeDbPtr: nativeDbPtr}, nil
+}
+
+func openRemoteConnector(primaryUrl, authToken string) (*Connector, error) {
+	nativeDbPtr, err := libsqlOpenRemote(primaryUrl, authToken)
+	if err != nil {
+		return nil, err
+	}
+	return &Connector{nativeDbPtr: nativeDbPtr}, nil
+}
+
+func openEmbeddedReplicaConnector(dbPath, primaryUrl, authToken string, syncInterval time.Duration) (*Connector, error) {
 	var closeCh chan struct{}
 	var closeAckCh chan struct{}
-	if primaryUrl != "" {
-		nativeDbPtr, err = libsqlOpenWithSync(dbPath, primaryUrl, authToken)
-		if err != nil {
-			return nil, err
-		}
-		if err := libsqlSync(nativeDbPtr); err != nil {
-			C.libsql_close(nativeDbPtr)
-			return nil, err
-		}
-		if syncInterval != 0 {
-			closeCh = make(chan struct{}, 1)
-			closeAckCh = make(chan struct{}, 1)
-			go func() {
-				for {
-					timerCh := make(chan struct{}, 1)
-					go func() {
-						time.Sleep(syncInterval)
-						timerCh <- struct{}{}
-					}()
-					select {
-					case <-closeCh:
-						closeAckCh <- struct{}{}
-						return
-					case <-timerCh:
-						if err := libsqlSync(nativeDbPtr); err != nil {
-							fmt.Println(err)
-						}
+	nativeDbPtr, err := libsqlOpenWithSync(dbPath, primaryUrl, authToken)
+	if err != nil {
+		return nil, err
+	}
+	if err := libsqlSync(nativeDbPtr); err != nil {
+		C.libsql_close(nativeDbPtr)
+		return nil, err
+	}
+	if syncInterval != 0 {
+		closeCh = make(chan struct{}, 1)
+		closeAckCh = make(chan struct{}, 1)
+		go func() {
+			for {
+				timerCh := make(chan struct{}, 1)
+				go func() {
+					time.Sleep(syncInterval)
+					timerCh <- struct{}{}
+				}()
+				select {
+				case <-closeCh:
+					closeAckCh <- struct{}{}
+					return
+				case <-timerCh:
+					if err := libsqlSync(nativeDbPtr); err != nil {
+						fmt.Println(err)
 					}
 				}
-			}()
-		}
-	} else {
-		nativeDbPtr, err = libsqlOpen(dbPath)
+			}
+		}()
 	}
 	if err != nil {
 		return nil, err
@@ -119,8 +154,13 @@ func (c *Connector) Close() error {
 	if c.closeCh != nil {
 		c.closeCh <- struct{}{}
 		<-c.closeAckCh
+		c.closeCh = nil
+		c.closeAckCh = nil
 	}
-	C.libsql_close(c.nativeDbPtr)
+	if c.nativeDbPtr != nil {
+		C.libsql_close(c.nativeDbPtr)
+	}
+	c.nativeDbPtr = nil
 	return nil
 }
 
@@ -147,15 +187,30 @@ func libsqlError(message string, statusCode C.int, errMsg *C.char) error {
 	}
 }
 
-func libsqlOpen(dataSourceName string) (C.libsql_database_t, error) {
+func libsqlOpenLocal(dataSourceName string) (C.libsql_database_t, error) {
 	connectionString := C.CString(dataSourceName)
 	defer C.free(unsafe.Pointer(connectionString))
 
 	var db C.libsql_database_t
 	var errMsg *C.char
-	statusCode := C.libsql_open_ext(connectionString, &db, &errMsg)
+	statusCode := C.libsql_open_file(connectionString, &db, &errMsg)
 	if statusCode != 0 {
-		return nil, libsqlError(fmt.Sprint("failed to open database ", dataSourceName), statusCode, errMsg)
+		return nil, libsqlError(fmt.Sprint("failed to open local database ", dataSourceName), statusCode, errMsg)
+	}
+	return db, nil
+}
+
+func libsqlOpenRemote(url, authToken string) (C.libsql_database_t, error) {
+	connectionString := C.CString(url)
+	defer C.free(unsafe.Pointer(connectionString))
+	authTokenNativeString := C.CString(authToken)
+	defer C.free(unsafe.Pointer(authTokenNativeString))
+
+	var db C.libsql_database_t
+	var errMsg *C.char
+	statusCode := C.libsql_open_remote(connectionString, authTokenNativeString, &db, &errMsg)
+	if statusCode != 0 {
+		return nil, libsqlError(fmt.Sprint("failed to open remote database ", url), statusCode, errMsg)
 	}
 	return db, nil
 }
@@ -204,15 +259,116 @@ func (c *conn) Close() error {
 	return nil
 }
 
+type ParamsInfo struct {
+	NamedParameters           []string
+	PositionalParametersCount int
+}
+
+func isPositionalParameter(param string) (ok bool, err error) {
+	re := regexp.MustCompile(`\?([0-9]*).*`)
+	match := re.FindSubmatch([]byte(param))
+	if match == nil {
+		return false, nil
+	}
+
+	posS := string(match[1])
+	if posS == "" {
+		return true, nil
+	}
+
+	return true, fmt.Errorf("unsuppoted positional parameter. This driver does not accept positional parameters with indexes (like ?<number>)")
+}
+
+func removeParamPrefix(paramName string) (string, error) {
+	if paramName[0] == ':' || paramName[0] == '@' || paramName[0] == '$' {
+		return paramName[1:], nil
+	}
+	return "", fmt.Errorf("all named parameters must start with ':', or '@' or '$'")
+}
+
+func extractParameters(stmt string) (nameParams []string, positionalParamsCount int, err error) {
+	statementStream := antlr.NewInputStream(stmt)
+	sqliteparser.NewSQLiteLexer(statementStream)
+	lexer := sqliteparser.NewSQLiteLexer(statementStream)
+
+	allTokens := lexer.GetAllTokens()
+
+	nameParamsSet := make(map[string]bool)
+
+	for _, token := range allTokens {
+		tokenType := token.GetTokenType()
+		if tokenType == sqliteparser.SQLiteLexerBIND_PARAMETER {
+			parameter := token.GetText()
+
+			isPositionalParameter, err := isPositionalParameter(parameter)
+			if err != nil {
+				return []string{}, 0, err
+			}
+
+			if isPositionalParameter {
+				positionalParamsCount++
+			} else {
+				paramWithoutPrefix, err := removeParamPrefix(parameter)
+				if err != nil {
+					return []string{}, 0, err
+				} else {
+					nameParamsSet[paramWithoutPrefix] = true
+				}
+			}
+		}
+	}
+	nameParams = make([]string, 0, len(nameParamsSet))
+	for k := range nameParamsSet {
+		nameParams = append(nameParams, k)
+	}
+
+	return nameParams, positionalParamsCount, nil
+}
+
+func parseStatement(sql string) ([]string, []ParamsInfo, error) {
+	stmts, _ := sqliteparserutils.SplitStatement(sql)
+
+	stmtsParams := make([]ParamsInfo, len(stmts))
+	for idx, stmt := range stmts {
+		nameParams, positionalParamsCount, err := extractParameters(stmt)
+		if err != nil {
+			return nil, nil, err
+		}
+		stmtsParams[idx] = ParamsInfo{nameParams, positionalParamsCount}
+	}
+	return stmts, stmtsParams, nil
+}
+
 func (c *conn) PrepareContext(ctx context.Context, query string) (sqldriver.Stmt, error) {
-	return nil, fmt.Errorf("prepare() is not implemented")
+	stmts, paramInfos, err := parseStatement(query)
+	if err != nil {
+		return nil, err
+	}
+	if len(stmts) != 1 {
+		return nil, fmt.Errorf("only one statement is supported got %d", len(stmts))
+	}
+	numInput := -1
+	if len(paramInfos[0].NamedParameters) == 0 {
+		numInput = paramInfos[0].PositionalParametersCount
+	}
+	return &stmt{c, query, numInput}, nil
 }
 
 func (c *conn) BeginTx(ctx context.Context, opts sqldriver.TxOptions) (sqldriver.Tx, error) {
-	return nil, fmt.Errorf("begin() is not implemented")
+	if opts.ReadOnly {
+		return nil, fmt.Errorf("read only transactions are not supported")
+	}
+	if opts.Isolation != sqldriver.IsolationLevel(sql.LevelDefault) {
+		return nil, fmt.Errorf("isolation level %d is not supported", opts.Isolation)
+	}
+	_, err := c.ExecContext(ctx, "BEGIN", nil)
+	if err != nil {
+		return nil, err
+	}
+	return &tx{c}, nil
 }
 
-func (c *conn) execute(query string) (C.libsql_rows_t, error) {
+func (c *conn) executeNoArgs(query string) (C.libsql_rows_t, error) {
 	queryCString := C.CString(query)
 	defer C.free(unsafe.Pointer(queryCString))
 
@@ -225,15 +381,136 @@ func (c *conn) execute(query string) (C.libsql_rows_t, error) {
 	return rows, nil
 }
 
+func (c *conn) execute(query string, args []sqldriver.NamedValue) (C.libsql_rows_t, error) {
+	if len(args) == 0 {
+		return c.executeNoArgs(query)
+	}
+	queryCString := C.CString(query)
+	defer C.free(unsafe.Pointer(queryCString))
+
+	var stmt C.libsql_stmt_t
+	var errMsg *C.char
+	statusCode := C.libsql_prepare(c.nativePtr, queryCString, &stmt, &errMsg)
+	if statusCode != 0 {
+		return nil, libsqlError(fmt.Sprint("failed to prepare query ", query), statusCode, errMsg)
+	}
+	defer C.libsql_free_stmt(stmt)
+
+	for _, arg := range args {
+		var errMsg *C.char
+		var statusCode C.int
+		idx := arg.Ordinal
+		switch arg.Value.(type) {
+		case int64:
+			statusCode = C.libsql_bind_int(stmt, C.int(idx), C.longlong(arg.Value.(int64)), &errMsg)
+		case float64:
+			statusCode = C.libsql_bind_float(stmt, C.int(idx), C.double(arg.Value.(float64)), &errMsg)
+		case []byte:
+			blob := arg.Value.([]byte)
+			nativeBlob := C.CBytes(blob)
+			statusCode = C.libsql_bind_blob(stmt, C.int(idx), (*C.uchar)(nativeBlob), C.int(len(blob)), &errMsg)
+			C.free(nativeBlob)
+		case string:
+			valueStr := C.CString(arg.Value.(string))
+			statusCode = C.libsql_bind_string(stmt, C.int(idx), valueStr, &errMsg)
+			C.free(unsafe.Pointer(valueStr))
+		case nil:
+			statusCode = C.libsql_bind_null(stmt, C.int(idx), &errMsg)
+		default:
+			return nil, fmt.Errorf("unsupported type %T", arg.Value)
+		}
+		if statusCode != 0 {
+			return nil, libsqlError(fmt.Sprintf("failed to bind argument no. %d with value %v and type %T", idx, arg.Value, arg.Value), statusCode, errMsg)
+		}
+	}
+
+	var rows C.libsql_rows_t
+	statusCode = C.libsql_execute_stmt(stmt, &rows, &errMsg)
+	if statusCode != 0 {
+		return nil, libsqlError(fmt.Sprint("failed to execute query ", query), statusCode, errMsg)
+	}
+	return rows, nil
+}
+
+type execResult struct {
+	id      int64
+	changes int64
+}
+
+func (r execResult) LastInsertId() (int64, error) {
+	return r.id, nil
+}
+
+func (r execResult) RowsAffected() (int64, error) {
+	return r.changes, nil
+}
+
 func (c *conn) ExecContext(ctx context.Context, query string, args []sqldriver.NamedValue) (sqldriver.Result, error) {
-	rows, err := c.execute(query)
+	rows, err := c.execute(query, args)
 	if err != nil {
 		return nil, err
 	}
+	id := int64(C.libsql_last_insert_rowid(c.nativePtr))
+	changes := int64(C.libsql_changes(c.nativePtr))
 	if rows != nil {
 		C.libsql_free_rows(rows)
 	}
-	return nil, nil
+	return execResult{id, changes}, nil
+}
+
+type stmt struct {
+	conn     *conn
+	sql      string
+	numInput int
+}
+
+func (s *stmt) Close() error {
+	return nil
+}
+
+func (s *stmt) NumInput() int {
+	return s.numInput
+}
+
+func convertToNamed(args []sqldriver.Value) []sqldriver.NamedValue {
+	if len(args) == 0 {
+		return nil
+	}
+	result := make([]sqldriver.NamedValue, 0, len(args))
+	for idx := range args {
+		result = append(result, sqldriver.NamedValue{Ordinal: idx, Value: args[idx]})
+	}
+	return result
+}
+
+func (s *stmt) Exec(args []sqldriver.Value) (sqldriver.Result, error) {
+	return s.ExecContext(context.Background(), convertToNamed(args))
+}
+
+func (s *stmt) Query(args []sqldriver.Value) (sqldriver.Rows, error) {
+	return s.QueryContext(context.Background(), convertToNamed(args))
+}
+
+func (s *stmt) ExecContext(ctx context.Context, args []sqldriver.NamedValue) (sqldriver.Result, error) {
+	return s.conn.ExecContext(ctx, s.sql, args)
+}
+
+func (s *stmt) QueryContext(ctx context.Context, args []sqldriver.NamedValue) (sqldriver.Rows, error) {
+	return s.conn.QueryContext(ctx, s.sql, args)
+}
+
+type tx struct {
+	conn *conn
+}
+
+func (t tx) Commit() error {
+	_, err := t.conn.ExecContext(context.Background(), "COMMIT", nil)
+	return err
+}
+
+func (t tx) Rollback() error {
+	_, err := t.conn.ExecContext(context.Background(), "ROLLBACK", nil)
+	return err
 }
 
 const (
@@ -249,18 +526,8 @@ func newRows(nativePtr C.libsql_rows_t) (*rows, error) {
 		return &rows{nil, nil, nil}, nil
 	}
 	columnCount := int(C.libsql_column_count(nativePtr))
-	columnTypes := make([]int, columnCount)
+	columns := make([]string, columnCount)
 	for i := 0; i < columnCount; i++ {
-		var columnType C.int
-		var errMsg *C.char
-		statusCode := C.libsql_column_type(nativePtr, C.int(i), &columnType, &errMsg)
-		if statusCode != 0 {
-			return nil, libsqlError(fmt.Sprint("failed to get column type for index ", i), statusCode, errMsg)
-		}
-		columnTypes[i] = int(columnType)
-	}
-	columns := make([]string, len(columnTypes))
-	for i := 0; i < len(columnTypes); i++ {
 		var ptr *C.char
 		var errMsg *C.char
 		statusCode := C.libsql_column_name(nativePtr, C.int(i), &ptr, &errMsg)
@@ -270,7 +537,7 @@ func newRows(nativePtr C.libsql_rows_t) (*rows, error) {
 		columns[i] = C.GoString(ptr)
 		C.libsql_free_string(ptr)
 	}
-	return &rows{nativePtr, columnTypes, columns}, nil
+	return &rows{nativePtr, nil, columns}, nil
 }
 
 type rows struct {
@@ -306,9 +573,23 @@ func (r *rows) Next(dest []sqldriver.Value) error {
 		return io.EOF
 	}
 	defer C.libsql_free_row(row)
+	if len(r.columnTypes) == 0 {
+		columnCount := len(r.columnNames)
+		columnTypes := make([]int, columnCount)
+		for i := 0; i < columnCount; i++ {
+			var columnType C.int
+			var errMsg *C.char
+			statusCode := C.libsql_column_type(r.nativePtr, C.int(i), &columnType, &errMsg)
+			if statusCode != 0 {
+				return libsqlError(fmt.Sprint("failed to get column type for index ", i), statusCode, errMsg)
+			}
+			columnTypes[i] = int(columnType)
+		}
+		r.columnTypes = columnTypes
+	}
 	count := len(dest)
-	if count > len(r.columnTypes) {
-		count = len(r.columnTypes)
+	if count > len(r.columnNames) {
+		count = len(r.columnNames)
 	}
 	for i := 0; i < count; i++ {
 		switch r.columnTypes[i] {
@@ -354,7 +635,7 @@ func (r *rows) Next(dest []sqldriver.Value) error {
 }
 
 func (c *conn) QueryContext(ctx context.Context, query string, args []sqldriver.NamedValue) (sqldriver.Rows, error) {
-	rowsNativePtr, err := c.execute(query)
+	rowsNativePtr, err := c.execute(query, args)
 	if err != nil {
 		return nil, err
 	}

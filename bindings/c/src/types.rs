@@ -97,6 +97,57 @@ impl From<&mut libsql_connection> for libsql_connection_t {
     }
 }
 
+pub struct stmt {
+    pub stmt: libsql::Statement,
+    pub params: Vec<libsql::Value>,
+}
+
+pub struct libsql_stmt {
+    pub stmt: stmt,
+}
+
+#[derive(Clone, Debug)]
+#[repr(transparent)]
+pub struct libsql_stmt_t {
+    ptr: *const libsql_stmt,
+}
+
+impl libsql_stmt_t {
+    pub fn null() -> libsql_stmt_t {
+        libsql_stmt_t {
+            ptr: std::ptr::null(),
+        }
+    }
+
+    pub fn is_null(&self) -> bool {
+        self.ptr.is_null()
+    }
+
+    pub fn get_ref(&self) -> &stmt {
+        &unsafe { &*self.ptr }.stmt
+    }
+
+    #[allow(clippy::mut_from_ref)]
+    pub fn get_ref_mut(&self) -> &mut stmt {
+        let ptr_mut = self.ptr as *mut libsql_stmt;
+        &mut unsafe { &mut (*ptr_mut) }.stmt
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl From<&libsql_stmt> for libsql_stmt_t {
+    fn from(value: &libsql_stmt) -> Self {
+        Self { ptr: value }
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl From<&mut libsql_stmt> for libsql_stmt_t {
+    fn from(value: &mut libsql_stmt) -> Self {
+        Self { ptr: value }
+    }
+}
+
 pub struct libsql_rows {
     pub(crate) result: libsql::Rows,
 }

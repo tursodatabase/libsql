@@ -634,7 +634,7 @@ mod test {
         .unwrap();
 
         // wait a bit for snapshot to be compated
-        tokio::time::sleep(Duration::from_millis(300)).await;
+        tokio::time::sleep(Duration::from_millis(1500)).await;
 
         // no error occured: the loop is still running.
         assert!(!compactor.sender.is_closed());
@@ -678,7 +678,7 @@ mod test {
 
         let _compactor =
             LogCompactor::new(tmp.path(), Uuid::new_v4(), Box::new(|_| Ok(()))).unwrap();
-        tokio::time::sleep(Duration::from_millis(100)).await;
+        tokio::time::sleep(Duration::from_millis(1000)).await;
 
         // emtpy snapshot was discarded
         assert_dir_is_empty(&tmp.path().join("to_compact")).await;
@@ -751,7 +751,7 @@ mod test {
         .unwrap();
 
         // wait a bit for snapshot to be compated
-        tokio::time::sleep(Duration::from_millis(300)).await;
+        tokio::time::sleep(Duration::from_millis(1500)).await;
 
         // no error occured: the loop is still running.
         assert!(!compactor.sender.is_closed());

@@ -143,6 +143,17 @@ pub enum CheckpointMode {
     Truncate = SQLITE_CHECKPOINT_TRUNCATE,
 }
 
+pub trait CheckpointCallback {
+    fn frame(
+        &mut self,
+        max_safe_frame_no: u32,
+        frame: &[u8],
+        page_no: NonZeroU32,
+        frame_no: NonZeroU32,
+    ) -> Result<()>;
+    fn finish(&mut self) -> Result<()>;
+}
+
 pub trait Wal {
     /// Set the WAL limit in pages
     fn limit(&mut self, size: i64);
@@ -165,6 +176,8 @@ pub trait Wal {
     fn savepoint(&mut self, rollback_data: &mut [u32]);
     fn savepoint_undo(&mut self, rollback_data: &mut [u32]) -> Result<()>;
 
+    /// Insert frames in the wal. On commit, returns the number of inserted frames for that
+    /// transaction, or 0 for non-commit calls.
     fn insert_frames(
         &mut self,
         page_size: c_int,
@@ -172,18 +185,21 @@ pub trait Wal {
         size_after: u32,
         is_commit: bool,
         sync_flags: c_int,
-    ) -> Result<()>;
+    ) -> Result<usize>;
 
     /// Returns the number of frames in the log and the number of checkpointed frames in the WAL.
-    fn checkpoint<B: BusyHandler>(
+    fn checkpoint(
         &mut self,
         db: &mut Sqlite3Db,
         mode: CheckpointMode,
-        busy_handler: Option<&mut B>,
+        busy_handler: Option<&mut dyn BusyHandler>,
         sync_flags: u32,
         // temporary scratch buffer
         buf: &mut [u8],
-    ) -> Result<(u32, u32)>;
+        checkpoint_cb: Option<&mut dyn CheckpointCallback>,
+        in_wal: Option<&mut i32>,
+        backfilled: Option<&mut i32>,
+    ) -> Result<()>;
 
     fn exclusive_mode(&mut self, op: c_int) -> Result<()>;
     fn uses_heap_memory(&self) -> bool;

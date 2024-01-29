@@ -40,7 +40,7 @@ libsql_replication = { path = "../libsql-replication" }
 metrics = "0.21.1"
 metrics-util = "0.15"
 metrics-exporter-prometheus = "0.12.2"
-mimalloc = { version = "0.1.36", default-features = false }
+# mimalloc = { version = "0.1.36", default-features = false }
 moka = { version = "0.12.1", features = ["future", "sync"] }
 nix = { version = "0.26.2", features = ["fs"] }
 once_cell = "1.17.0"
@@ -60,7 +60,7 @@ serde_json = { version = "1.0.91", features = ["preserve_order"] }
 md-5 = "0.10"
 sha2 = "0.10"
 sha256 = "1.1.3"
-libsql-sys = { path = "../libsql-sys", features = ["wal"], default-features = false }
+libsql-sys = { path = "../libsql-sys", features = ["wal", "hrana"], default-features = false }
 sqlite3-parser = { package = "libsql-sqlite3-parser", path = "../vendored/sqlite3-parser", version = "0.11.0", default-features = false, features = [ "YYNOERRORRECOVERY" ] }
 tempfile = "3.7.0"
 thiserror = "1.0.38"

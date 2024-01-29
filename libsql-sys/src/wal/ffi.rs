@@ -1,13 +1,14 @@
 use std::ffi::{c_char, c_int, c_longlong, c_void, CStr};
 use std::num::NonZeroU32;
+use std::ptr::null;
 
 use libsql_ffi::{
     libsql_wal, libsql_wal_manager, libsql_wal_methods, sqlite3, sqlite3_file, sqlite3_vfs,
-    wal_impl, wal_manager_impl, PgHdr, SQLITE_CHECKPOINT_FULL, SQLITE_CHECKPOINT_PASSIVE,
+    wal_impl, wal_manager_impl, Error, PgHdr, SQLITE_CHECKPOINT_FULL, SQLITE_CHECKPOINT_PASSIVE,
     SQLITE_CHECKPOINT_RESTART, SQLITE_CHECKPOINT_TRUNCATE, SQLITE_OK, WAL_SAVEPOINT_NDATA,
 };
 
-use crate::wal::{BusyHandler, CheckpointMode, UndoHandler};
+use crate::wal::{BusyHandler, CheckpointCallback, CheckpointMode, UndoHandler};
 
 use super::{PageHeaders, Sqlite3Db, Sqlite3File, Vfs, Wal, WalManager};
 
@@ -282,6 +283,7 @@ pub unsafe extern "C" fn frames<T: Wal>(
     size_after: u32,
     is_commit: c_int,
     sync_flags: c_int,
+    out_commited_frames: *mut c_int,
 ) -> c_int {
     let this = &mut (*(wal as *mut T));
     let mut headers = PageHeaders {
@@ -294,7 +296,14 @@ pub unsafe extern "C" fn frames<T: Wal>(
         is_commit != 0,
         sync_flags,
     ) {
-        Ok(_) => SQLITE_OK,
+        Ok(n) => {
+            if !out_commited_frames.is_null() {
+                unsafe {
+                    *out_commited_frames = n as _;
+                }
+            }
+            SQLITE_OK
+        }
         Err(code) => code.extended_code,
     }
 }
@@ -311,6 +320,17 @@ pub unsafe extern "C" fn checkpoint<T: Wal>(
     z_buf: *mut u8,
     frames_in_wal_out: *mut c_int,
     checkpointed_frames_out: *mut c_int,
+    checkpoint_cb: Option<
+        unsafe extern "C" fn(
+            data: *mut c_void,
+            max_safe_frame_no: c_int,
+            page: *const u8,
+            page_size: c_int,
+            page_no: c_int,
+            frame_no: c_int,
+        ) -> c_int,
+    >,
+    checkpoint_cb_data: *mut c_void,
 ) -> i32 {
     let this = &mut (*(wal as *mut T));
     struct SqliteBusyHandler {
@@ -324,7 +344,60 @@ pub unsafe extern "C" fn checkpoint<T: Wal>(
         }
     }
 
+    struct SqliteCheckpointCallback {
+        data: *mut c_void,
+        f: unsafe extern "C" fn(
+            data: *mut c_void,
+            max_safe_frame_no: c_int,
+            page: *const u8,
+            page_size: c_int,
+            page_no: c_int,
+            frame_no: c_int,
+        ) -> c_int,
+    }
+
+    impl CheckpointCallback for SqliteCheckpointCallback {
+        fn frame(
+            &mut self,
+            max_safe_frame_no: u32,
+            page: &[u8],
+            page_no: NonZeroU32,
+            frame_no: NonZeroU32,
+        ) -> crate::wal::Result<()> {
+            unsafe {
+                let rc = (self.f)(
+                    self.data,
+                    max_safe_frame_no as _,
+                    page.as_ptr(),
+                    page.len() as _,
+                    page_no.get() as _,
+                    frame_no.get() as _,
+                );
+                if rc == 0 {
+                    Ok(())
+                } else {
+                    Err(Error::new(rc))
+                }
+            }
+        }
+
+        fn finish(&mut self) -> crate::wal::Result<()> {
+            unsafe {
+                let rc = (self.f)(self.data, 0, null(), 0, 0, 0);
+                if rc == 0 {
+                    Ok(())
+                } else {
+                    Err(Error::new(rc))
+                }
+            }
+        }
+    }
+
     let mut busy_handler = busy_handler.map(|f| SqliteBusyHandler { data: busy_arg, f });
+    let mut checkpoint_cb = checkpoint_cb.map(|f| SqliteCheckpointCallback {
+        f,
+        data: checkpoint_cb_data,
+    });
     let buf = std::slice::from_raw_parts_mut(z_buf, n_buf as usize);
 
     let mode = match emode {
@@ -335,17 +408,20 @@ pub unsafe extern "C" fn checkpoint<T: Wal>(
         _ => panic!("invalid checkpoint mode"),
     };
 
+    let in_wal = (!frames_in_wal_out.is_null()).then_some(&mut *frames_in_wal_out);
+    let backfilled = (!checkpointed_frames_out.is_null()).then_some(&mut *checkpointed_frames_out);
     let mut db = Sqlite3Db { inner: db };
-    match this.checkpoint(&mut db, mode, busy_handler.as_mut(), sync_flags as _, buf) {
-        Ok((frames_in_wal, backfilled_frames)) => {
-            if !frames_in_wal_out.is_null() {
-                *frames_in_wal_out = frames_in_wal as _;
-            }
-            if !checkpointed_frames_out.is_null() {
-                *checkpointed_frames_out = backfilled_frames as _;
-            }
-            SQLITE_OK
-        }
+    match this.checkpoint(
+        &mut db,
+        mode,
+        busy_handler.as_mut().map(|x| x as _),
+        sync_flags as _,
+        buf,
+        checkpoint_cb.as_mut().map(|x| x as _),
+        in_wal,
+        backfilled,
+    ) {
+        Ok(()) => SQLITE_OK,
         Err(code) => code.extended_code,
     }
 }

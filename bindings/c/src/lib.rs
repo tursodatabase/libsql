@@ -8,7 +8,8 @@ mod types;
 use tokio::runtime::Runtime;
 use types::{
     blob, libsql_connection, libsql_connection_t, libsql_database, libsql_database_t, libsql_row,
-    libsql_row_t, libsql_rows, libsql_rows_future_t, libsql_rows_t,
+    libsql_row_t, libsql_rows, libsql_rows_future_t, libsql_rows_t, libsql_stmt, libsql_stmt_t,
+    stmt,
 };
 
 lazy_static! {
@@ -155,12 +156,7 @@ pub unsafe extern "C" fn libsql_open_remote(
             return 2;
         }
     };
-    match RT.block_on(libsql::Database::open_with_remote_sync(
-        url.to_string(),
-        url,
-        auth_token,
-        None,
-    )) {
+    match libsql::Database::open_remote(url, auth_token) {
         Ok(db) => {
             let db = Box::leak(Box::new(libsql_database { db }));
             *out_db = libsql_database_t::from(db);
@@ -206,8 +202,207 @@ pub unsafe extern "C" fn libsql_disconnect(conn: libsql_connection_t) {
     if conn.is_null() {
         return;
     }
-    let _conn = unsafe { Box::from_raw(conn.get_ref_mut()) };
-    // TODO close conn
+    let conn = unsafe { Box::from_raw(conn.get_ref_mut()) };
+    RT.spawn_blocking(|| {
+        drop(conn);
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_prepare(
+    conn: libsql_connection_t,
+    sql: *const std::ffi::c_char,
+    out_stmt: *mut libsql_stmt_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    let sql = unsafe { std::ffi::CStr::from_ptr(sql) };
+    let sql = match sql.to_str() {
+        Ok(sql) => sql,
+        Err(e) => {
+            set_err_msg(format!("Wrong SQL: {}", e), out_err_msg);
+            return 1;
+        }
+    };
+    if conn.is_null() {
+        set_err_msg(format!("Null connection"), out_err_msg);
+        return 2;
+    }
+    let conn = conn.get_ref();
+    match RT.block_on(conn.prepare(sql)) {
+        Ok(stmt) => {
+            let stmt = Box::leak(Box::new(libsql_stmt {
+                stmt: stmt {
+                    stmt,
+                    params: vec![],
+                },
+            }));
+            *out_stmt = libsql_stmt_t::from(stmt);
+        }
+        Err(e) => {
+            set_err_msg(format!("Error preparing statement: {}", e), out_err_msg);
+            return 3;
+        }
+    };
+    0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_bind_int(
+    stmt: libsql_stmt_t,
+    idx: std::ffi::c_int,
+    value: std::ffi::c_longlong,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    let idx: usize = match idx.try_into() {
+        Ok(x) => x,
+        Err(e) => {
+            set_err_msg(format!("Wrong param index: {}", e), out_err_msg);
+            return 1;
+        }
+    };
+    let stmt = stmt.get_ref_mut();
+    if stmt.params.len() < idx {
+        stmt.params.resize(idx, libsql::Value::Null);
+    }
+    stmt.params[idx - 1] = value.into();
+    0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_bind_float(
+    stmt: libsql_stmt_t,
+    idx: std::ffi::c_int,
+    value: std::ffi::c_double,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    let idx: usize = match idx.try_into() {
+        Ok(x) => x,
+        Err(e) => {
+            set_err_msg(format!("Wrong param index: {}", e), out_err_msg);
+            return 1;
+        }
+    };
+    let stmt = stmt.get_ref_mut();
+    if stmt.params.len() < idx {
+        stmt.params.resize(idx, libsql::Value::Null);
+    }
+    stmt.params[idx - 1] = value.into();
+    0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_bind_null(
+    stmt: libsql_stmt_t,
+    idx: std::ffi::c_int,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    let idx: usize = match idx.try_into() {
+        Ok(x) => x,
+        Err(e) => {
+            set_err_msg(format!("Wrong param index: {}", e), out_err_msg);
+            return 1;
+        }
+    };
+    let stmt = stmt.get_ref_mut();
+    if stmt.params.len() < idx {
+        stmt.params.resize(idx, libsql::Value::Null);
+    }
+    stmt.params[idx - 1] = libsql::Value::Null;
+    0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_bind_string(
+    stmt: libsql_stmt_t,
+    idx: std::ffi::c_int,
+    value: *const std::ffi::c_char,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    let idx: usize = match idx.try_into() {
+        Ok(x) => x,
+        Err(e) => {
+            set_err_msg(format!("Wrong param index: {}", e), out_err_msg);
+            return 1;
+        }
+    };
+    let value = unsafe { std::ffi::CStr::from_ptr(value) };
+    let value = match value.to_str() {
+        Ok(v) => v,
+        Err(e) => {
+            set_err_msg(format!("Wrong param value: {}", e), out_err_msg);
+            return 2;
+        }
+    };
+    let stmt = stmt.get_ref_mut();
+    if stmt.params.len() < idx {
+        stmt.params.resize(idx, libsql::Value::Null);
+    }
+    stmt.params[idx - 1] = value.to_string().into();
+    0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_bind_blob(
+    stmt: libsql_stmt_t,
+    idx: std::ffi::c_int,
+    value: *const std::ffi::c_uchar,
+    value_len: std::ffi::c_int,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    let idx: usize = match idx.try_into() {
+        Ok(x) => x,
+        Err(e) => {
+            set_err_msg(format!("Wrong param index: {}", e), out_err_msg);
+            return 1;
+        }
+    };
+    let value_len: usize = match value_len.try_into() {
+        Ok(v) => v,
+        Err(e) => {
+            set_err_msg(format!("Wrong param value len: {}", e), out_err_msg);
+            return 2;
+        }
+    };
+    let value = unsafe { core::slice::from_raw_parts(value, value_len) };
+    let value = Vec::from(value);
+    let stmt = stmt.get_ref_mut();
+    if stmt.params.len() < idx {
+        stmt.params.resize(idx, libsql::Value::Null);
+    }
+    stmt.params[idx - 1] = value.into();
+    0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_execute_stmt(
+    stmt: libsql_stmt_t,
+    out_rows: *mut libsql_rows_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if stmt.is_null() {
+        set_err_msg(format!("Null statement"), out_err_msg);
+        return 1;
+    }
+    let stmt = stmt.get_ref_mut();
+    match RT.block_on(stmt.stmt.query(stmt.params.clone())) {
+        Ok(rows) => {
+            let rows = Box::leak(Box::new(libsql_rows { result: rows }));
+            *out_rows = libsql_rows_t::from(rows);
+        }
+        Err(e) => {
+            set_err_msg(format!("Error executing statement: {}", e), out_err_msg);
+            return 1;
+        }
+    };
+    0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_free_stmt(stmt: libsql_stmt_t) {
+    if stmt.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(stmt.get_ref_mut()) };
 }
 
 #[no_mangle]

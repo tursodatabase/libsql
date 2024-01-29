@@ -3,11 +3,10 @@ use std::fmt;
 pub mod batch;
 mod cursor;
 pub mod http;
-pub mod proto;
-mod protobuf;
 mod result_builder;
 pub mod stmt;
 pub mod ws;
+pub use libsql_sys::hrana::proto;
 
 #[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub enum Version {

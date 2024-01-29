@@ -7,19 +7,17 @@ cfg_remote! {
 }
 
 mod cursor;
-pub mod pipeline;
-pub mod proto;
 mod stream;
 pub mod transaction;
 
-use crate::hrana::connection::HttpConnection;
 use crate::hrana::cursor::{Cursor, Error, OwnedCursorStep};
-pub(crate) use crate::hrana::pipeline::StreamResponseError;
-use crate::hrana::proto::{Batch, Col, Stmt};
 use crate::hrana::stream::HranaStream;
+use crate::parser::StmtKind;
 use crate::{params::Params, ValueType};
 use bytes::Bytes;
 use futures::{Stream, StreamExt};
+pub use libsql_sys::hrana::proto;
+use libsql_sys::hrana::proto::{Batch, BatchResult, Col, Stmt};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -87,7 +85,7 @@ pub enum HranaError {
     #[error("stream closed: `{0}`")]
     StreamClosed(String),
     #[error("stream error: `{0:?}`")]
-    StreamError(StreamResponseError),
+    StreamError(proto::Error),
     #[error("cursor error: `{0}`")]
     CursorError(CursorResponseError),
     #[error("json error: `{0}`")]
@@ -112,33 +110,12 @@ pub enum CursorResponseError {
     Other(String),
 }
 
-enum StatementExecutor<T: HttpSend> {
-    /// An opened HTTP Hrana stream - usually in scope of executing transaction. Operations over it
-    /// will be scheduled for sequential execution.
-    Stream(HranaStream<T>),
-    /// Hrana HTTP connection. Operations executing over it are not attached to any sequential
-    /// order of execution.
-    Connection(HttpConnection<T>),
-}
-
-impl<T> StatementExecutor<T>
-where
-    T: HttpSend,
-{
-    async fn execute(&self, stmt: Stmt) -> crate::Result<Cursor<T::Stream>> {
-        let res = match self {
-            StatementExecutor::Stream(stream) => stream.cursor(Batch::single(stmt)).await,
-            StatementExecutor::Connection(conn) => conn.execute_inner(stmt).await,
-        };
-        res.map_err(|e| crate::Error::Hrana(e.into()))
-    }
-}
-
 pub struct Statement<T>
 where
     T: HttpSend,
 {
-    executor: StatementExecutor<T>,
+    stream: HranaStream<T>,
+    close_stream: bool,
     inner: Stmt,
 }
 
@@ -146,17 +123,28 @@ impl<T> Statement<T>
 where
     T: HttpSend,
 {
-    pub(crate) fn from_stream(stream: HranaStream<T>, sql: String, want_rows: bool) -> Self {
-        Statement {
-            executor: StatementExecutor::Stream(stream),
-            inner: Stmt::new(sql, want_rows),
-        }
-    }
-
-    pub(crate) fn from_connection(conn: HttpConnection<T>, sql: String, want_rows: bool) -> Self {
-        Statement {
-            executor: StatementExecutor::Connection(conn),
-            inner: Stmt::new(sql, want_rows),
+    pub(crate) fn new(stream: HranaStream<T>, sql: String, want_rows: bool) -> crate::Result<Self> {
+        // in SQLite when a multiple statements are glued together into one string, only the first one is
+        // executed and then a handle to continue execution is returned. However Hrana API doesn't allow
+        // passing multi-statement strings, so we just pick first one.
+        let mut parse = crate::parser::Statement::parse(&sql);
+        match parse.next() {
+            None => Err(crate::Error::Misuse(
+                "no SQL statement provided".to_string(),
+            )),
+            Some(Err(e)) => Err(e.into()),
+            Some(Ok(stmt)) => {
+                let close_stream = match stmt.kind {
+                    StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly => false,
+                    _ => true,
+                };
+                let inner = Stmt::new(stmt.stmt, want_rows);
+                Ok(Statement {
+                    stream,
+                    close_stream,
+                    inner,
+                })
+            }
         }
     }
 
@@ -164,15 +152,8 @@ where
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
-        let mut v = self.executor.execute(stmt).await?;
-        let mut step = v
-            .next_step()
-            .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
-        step.consume()
-            .await
-            .map_err(|e| crate::Error::Hrana(e.into()))?;
-        Ok(step.affected_rows() as usize)
+        let result = self.stream.execute_inner(stmt, self.close_stream).await?;
+        Ok(result.affected_row_count as usize)
     }
 
     pub(crate) async fn query_raw(
@@ -182,7 +163,7 @@ where
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
-        let cursor = self.executor.execute(stmt).await?;
+        let cursor = self.stream.cursor(Batch::single(stmt)).await?;
         let rows = HranaRows::from_cursor(cursor).await?;
 
         Ok(rows)
@@ -220,7 +201,7 @@ where
 
     pub async fn next(&mut self) -> crate::Result<Option<super::Row>> {
         let row = match self.cursor_step.next().await {
-            Some(Ok(row)) => row,
+            Some(Ok(row)) => row.into(),
             Some(Err(e)) => return Err(crate::Error::Hrana(Box::new(e))),
             None => return Ok(None),
         };
@@ -239,7 +220,7 @@ where
             row.inner
                 .iter()
                 .map(|value| match value {
-                    proto::Value::Null => ValueType::Null,
+                    proto::Value::Null | proto::Value::None => ValueType::Null,
                     proto::Value::Integer { value: _ } => ValueType::Integer,
                     proto::Value::Float { value: _ } => ValueType::Real,
                     proto::Value::Text { value: _ } => ValueType::Text,
@@ -339,6 +320,7 @@ impl RowInner for Row {
                 proto::Value::Float { value: _ } => ValueType::Real,
                 proto::Value::Text { value: _ } => ValueType::Text,
                 proto::Value::Blob { value: _ } => ValueType::Blob,
+                proto::Value::None => return Err(crate::Error::InvalidColumnType),
             })
         } else {
             Err(crate::Error::ColumnNotFound(idx))
@@ -371,17 +353,30 @@ fn into_value(value: crate::Value) -> proto::Value {
         crate::Value::Null => proto::Value::Null,
         crate::Value::Integer(value) => proto::Value::Integer { value },
         crate::Value::Real(value) => proto::Value::Float { value },
-        crate::Value::Text(value) => proto::Value::Text { value },
-        crate::Value::Blob(value) => proto::Value::Blob { value },
+        crate::Value::Text(value) => proto::Value::Text {
+            value: value.into(),
+        },
+        crate::Value::Blob(value) => proto::Value::Blob {
+            value: value.into(),
+        },
     }
 }
 
 fn into_value2(value: proto::Value) -> crate::Value {
     match value {
-        proto::Value::Null => crate::Value::Null,
+        proto::Value::Null | proto::Value::None => crate::Value::Null,
         proto::Value::Integer { value } => crate::Value::Integer(value),
         proto::Value::Float { value } => crate::Value::Real(value),
-        proto::Value::Text { value } => crate::Value::Text(value),
-        proto::Value::Blob { value } => crate::Value::Blob(value),
+        proto::Value::Text { value } => crate::Value::Text(value.to_string()),
+        proto::Value::Blob { value } => crate::Value::Blob(value.into()),
     }
+}
+
+pub(crate) fn unwrap_err(batch_res: BatchResult) -> crate::Result<()> {
+    for maybe_err in batch_res.step_errors {
+        if let Some(e) = maybe_err {
+            return Err(crate::Error::Hrana(Box::new(HranaError::Api(e.message))));
+        }
+    }
+    Ok(())
 }

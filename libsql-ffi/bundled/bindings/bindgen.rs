@@ -937,7 +937,7 @@ extern "C" {
 extern "C" {
     pub fn sqlite3_vmprintf(
         arg1: *const ::std::os::raw::c_char,
-        arg2: va_list,
+        arg2: *mut __va_list_tag,
     ) -> *mut ::std::os::raw::c_char;
 }
 extern "C" {
@@ -953,7 +953,7 @@ extern "C" {
         arg1: ::std::os::raw::c_int,
         arg2: *mut ::std::os::raw::c_char,
         arg3: *const ::std::os::raw::c_char,
-        arg4: va_list,
+        arg4: *mut __va_list_tag,
     ) -> *mut ::std::os::raw::c_char;
 }
 extern "C" {
@@ -2506,7 +2506,7 @@ extern "C" {
     pub fn sqlite3_str_vappendf(
         arg1: *mut sqlite3_str,
         zFormat: *const ::std::os::raw::c_char,
-        arg2: va_list,
+        arg2: *mut __va_list_tag,
     );
 }
 extern "C" {
@@ -3309,6 +3309,7 @@ pub struct libsql_wal_methods {
             arg3: ::std::os::raw::c_uint,
             arg4: ::std::os::raw::c_int,
             arg5: ::std::os::raw::c_int,
+            arg6: *mut ::std::os::raw::c_int,
         ) -> ::std::os::raw::c_int,
     >,
     pub xCheckpoint: ::std::option::Option<
@@ -3325,6 +3326,17 @@ pub struct libsql_wal_methods {
             zBuf: *mut ::std::os::raw::c_uchar,
             pnLog: *mut ::std::os::raw::c_int,
             pnCkpt: *mut ::std::os::raw::c_int,
+            xCb: ::std::option::Option<
+                unsafe extern "C" fn(
+                    pCbData: *mut ::std::os::raw::c_void,
+                    mxSafeFrame: ::std::os::raw::c_int,
+                    pPage: *const ::std::os::raw::c_uchar,
+                    nPage: ::std::os::raw::c_int,
+                    page_no: ::std::os::raw::c_int,
+                    frame_no: ::std::os::raw::c_int,
+                ) -> ::std::os::raw::c_int,
+            >,
+            pCbData: *mut ::std::os::raw::c_void,
         ) -> ::std::os::raw::c_int,
     >,
     pub xCallback:
@@ -3497,4 +3509,12 @@ extern "C" {
 extern "C" {
     pub static sqlite3_wal_manager: libsql_wal_manager;
 }
-pub type __builtin_va_list = *mut ::std::os::raw::c_char;
+pub type __builtin_va_list = [__va_list_tag; 1usize];
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct __va_list_tag {
+    pub gp_offset: ::std::os::raw::c_uint,
+    pub fp_offset: ::std::os::raw::c_uint,
+    pub overflow_arg_area: *mut ::std::os::raw::c_void,
+    pub reg_save_area: *mut ::std::os::raw::c_void,
+}
