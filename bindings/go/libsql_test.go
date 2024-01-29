@@ -666,6 +666,42 @@ func TestRemoteArguments(t *testing.T) {
 	}
 }
 
+func TestDataTypes(t *testing.T) {
+	t.Parallel()
+	db := getRemoteDb(T{t})
+	var (
+		text        string
+		nullText    sql.NullString
+		integer     sql.NullInt64
+		nullInteger sql.NullInt64
+		boolean     bool
+		float8      float64
+		nullFloat   sql.NullFloat64
+		bytea       []byte
+	)
+	db.t.FatalOnError(db.QueryRowContext(db.ctx, "SELECT 'foobar' as text, NULL as text,  NULL as integer, 42 as integer, 1 as boolean, X'000102' as bytea, 3.14 as float8, NULL as float8;").Scan(&text, &nullText, &nullInteger, &integer, &boolean, &bytea, &float8, &nullFloat))
+	switch {
+	case text != "foobar":
+		t.Error("value mismatch - text")
+	case nullText.Valid:
+		t.Error("null text is valid")
+	case nullInteger.Valid:
+		t.Error("null integer is valid")
+	case !integer.Valid:
+		t.Error("integer is not valid")
+	case integer.Int64 != 42:
+		t.Error("value mismatch - integer")
+	case !boolean:
+		t.Error("value mismatch - boolean")
+	case float8 != 3.14:
+		t.Error("value mismatch - float8")
+	case !bytes.Equal(bytea, []byte{0, 1, 2}):
+		t.Error("value mismatch - bytea")
+	case nullFloat.Valid:
+		t.Error("null float is valid")
+	}
+}
+
 func TestConcurrentOnSingleConnection(t *testing.T) {
 	t.Parallel()
 	db := getRemoteDb(T{t})
