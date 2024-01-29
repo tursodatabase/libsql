@@ -2072,8 +2072,8 @@ static u32 jsonbPayloadSize(const JsonParse *pParse, u32 i, u32 *pSz){
          (pParse->aBlob[i+7]<<8) + pParse->aBlob[i+8];
     n = 9;
   }
-  if( i+sz+n > pParse->nBlob
-   && i+sz+n > pParse->nBlob-pParse->delta
+  if( (i64)i+sz+n > pParse->nBlob
+   && (i64)i+sz+n > pParse->nBlob-pParse->delta
   ){
     sz = 0;
     n = 0;

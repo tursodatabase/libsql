@@ -46,4 +46,8 @@ foreach {id path res} {
   } $res
 }
 
+do_catchsql_test jsonb01-2.0 {
+  SELECT x'8ce6ffffffff171333' -> '$';
+} {1 {malformed JSON}}
+
 finish_test
