@@ -324,9 +324,9 @@ impl ProxyService {
             ))),
         }?;
         Ok(if let Some(auth) = &self.auth {
-            auth.authenticate_grpc(&req, self.disable_namespaces, namespace_jwt_key)?
+            auth.authenticate_grpc(req, self.disable_namespaces, namespace_jwt_key)?
         } else {
-            Authenticated::from_proxy_grpc_request(&req, self.disable_namespaces)?
+            Authenticated::from_proxy_grpc_request(req, self.disable_namespaces)?
         })
     }
 }

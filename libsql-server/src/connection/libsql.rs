@@ -306,10 +306,7 @@ where
                 0,
                 rusqlite::functions::FunctionFlags::SQLITE_UTF8
                     | rusqlite::functions::FunctionFlags::SQLITE_DETERMINISTIC,
-                {
-                    let namespace = namespace;
-                    move |_| Ok(namespace.clone())
-                },
+                move |_| Ok(namespace.clone()),
             )?;
             Ok(conn)
         })

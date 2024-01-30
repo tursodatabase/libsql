@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![allow(clippy::mutable_key_type)]
 
 use std::collections::HashMap;
 

@@ -249,7 +249,7 @@ impl Stats {
     }
 
     pub fn id(&self) -> Option<Uuid> {
-        self.id.clone()
+        self.id
     }
 }
 

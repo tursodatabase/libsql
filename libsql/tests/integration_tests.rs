@@ -374,7 +374,7 @@ async fn deserialize_row() {
             (),
         )
         .await;
-    conn.execute("INSERT INTO users (id, name, score, data, age) VALUES (123, 'potato', 3.14, X'deadbeef', NULL)", ())
+    conn.execute("INSERT INTO users (id, name, score, data, age) VALUES (123, 'potato', 42.0, X'deadbeef', NULL)", ())
     .await
     .unwrap();
 
@@ -401,7 +401,7 @@ async fn deserialize_row() {
     let data: Data = libsql::de::from_row(&row).unwrap();
     assert_eq!(data.id, 123);
     assert_eq!(data.name, "potato".to_string());
-    assert_eq!(data.score, 3.14);
+    assert_eq!(data.score, 42.0);
     assert_eq!(data.data, vec![0xde, 0xad, 0xbe, 0xef]);
     assert_eq!(data.age, None);
     assert_eq!(data.none, None)

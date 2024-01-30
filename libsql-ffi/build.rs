@@ -245,7 +245,7 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
 fn copy_multiple_ciphers(out_dir: &str, out_path: &Path) {
     let dylib = format!("{BUNDLED_DIR}/SQLite3MultipleCiphers/build/libsqlite3mc_static.a");
     if !Path::new(&dylib).exists() {
-        build_multiple_ciphers(&out_path);
+        build_multiple_ciphers(out_path);
     }
 
     std::fs::copy(dylib, format!("{out_dir}/libsqlite3mc.a")).unwrap();

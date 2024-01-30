@@ -288,7 +288,7 @@ impl ReplicationLoggerWal {
         header.replication_index =
             (self.logger().new_frame_notifier.borrow().unwrap_or(0) + 1).into();
         #[cfg(feature = "encryption")]
-        let pager = libsql_sys::connection::leak_pager(_db.as_ptr());
+        let pager = unsafe { libsql_sys::connection::leak_pager(_db.as_ptr()) };
         #[cfg(not(feature = "encryption"))]
         let pager = std::ptr::null_mut();
         let mut header = libsql_pghdr {

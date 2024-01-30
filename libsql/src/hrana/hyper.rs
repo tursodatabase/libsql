@@ -141,7 +141,7 @@ impl Conn for HttpConnection<HttpSender> {
             close: Some(Box::new(|| {
                 // make sure that Hrana connection is closed and all uncommitted changes
                 // are rolled back when we're about to drop the transaction
-                let _ = tokio::task::spawn(async move { tx.rollback().await });
+                drop(tokio::task::spawn(async move { tx.rollback().await }));
             })),
         })
     }

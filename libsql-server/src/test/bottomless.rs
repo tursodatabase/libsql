@@ -21,7 +21,7 @@ use crate::Server;
 
 const S3_URL: &str = "http://localhost:9000/";
 
-const S3_SERVER: Once = Once::new();
+static S3_SERVER: Once = Once::new();
 
 async fn start_s3_server() {
     std::env::set_var("LIBSQL_BOTTOMLESS_ENDPOINT", "http://localhost:9000");

@@ -64,12 +64,16 @@ extern "C" {
 }
 
 #[cfg(feature = "encryption")]
-pub fn set_encryption_key(db: *mut libsql_ffi::sqlite3, key: &[u8]) -> i32 {
+/// # Safety
+/// db must point to a vaid sqlite database
+pub unsafe fn set_encryption_key(db: *mut libsql_ffi::sqlite3, key: &[u8]) -> i32 {
     unsafe { sqlite3_key(db, key.as_ptr() as _, key.len() as _) as i32 }
 }
 
 #[cfg(feature = "encryption")]
-pub fn leak_pager(db: *mut libsql_ffi::sqlite3) -> *mut crate::ffi::Pager {
+/// # Safety
+/// db must point to a vaid sqlite database
+pub unsafe fn leak_pager(db: *mut libsql_ffi::sqlite3) -> *mut crate::ffi::Pager {
     unsafe { libsql_leak_pager(db) }
 }
 
@@ -116,7 +120,7 @@ impl<W: Wal> Connection<W> {
             }
             #[cfg(feature = "encryption")]
             if let Some(encryption_key) = encryption_key {
-                if set_encryption_key(unsafe { conn.handle() }, &encryption_key)
+                if unsafe { set_encryption_key(conn.handle(), &encryption_key) }
                     != rusqlite::ffi::SQLITE_OK
                 {
                     return Err(Error::SqliteFailure(

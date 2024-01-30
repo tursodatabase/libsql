@@ -560,6 +560,13 @@ mod serde_ {
                     Ok(Value::Text(v))
                 }
 
+                fn visit_str<E>(self, v: &str) -> std::result::Result<Self::Value, E>
+                where
+                    E: de::Error,
+                {
+                    Ok(Value::Text(v.to_string()))
+                }
+
                 fn visit_some<D>(
                     self,
                     deserializer: D,

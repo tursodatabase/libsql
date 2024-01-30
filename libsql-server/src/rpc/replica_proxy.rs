@@ -38,7 +38,7 @@ impl ReplicaProxyService {
     }
 
     async fn do_auth<T>(&self, req: &mut Request<T>) -> Result<(), Status> {
-        let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
+        let namespace = super::extract_namespace(self.disable_namespaces, req)?;
         let namespace_jwt_key = self.namespaces.with(namespace, |ns| ns.jwt_key()).await;
         match namespace_jwt_key {
             Ok(Ok(jwt_key)) => {
