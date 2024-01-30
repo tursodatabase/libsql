@@ -49,13 +49,40 @@ func getRemoteDb(t T) *Database {
 		db.Close()
 		cancel()
 	})
-	return &Database{db, t, ctx}
+	return &Database{db, nil, t, ctx}
+}
+
+func getEmbeddedDb(t T) *Database {
+	primaryUrl := os.Getenv("LIBSQL_PRIMARY_URL")
+	if primaryUrl == "" {
+		t.Skip("LIBSQL_PRIMARY_URL is not set")
+		return nil
+	}
+	authToken := os.Getenv("LIBSQL_AUTH_TOKEN")
+	dir, err := os.MkdirTemp("", "libsql-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dbPath := dir + "/test.db"
+
+	connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken)
+	t.FatalOnError(err)
+	db := sql.OpenDB(connector)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	t.Cleanup(func() {
+		db.Close()
+		connector.Close()
+		cancel()
+		defer os.RemoveAll(dir)
+	})
+	return &Database{db, connector, t, ctx}
 }
 
 type Database struct {
 	*sql.DB
-	t   T
-	ctx context.Context
+	connector *Connector
+	t         T
+	ctx       context.Context
 }
 
 func (db Database) exec(sql string, args ...any) sql.Result {
@@ -68,6 +95,12 @@ func (db Database) query(sql string, args ...any) *sql.Rows {
 	rows, err := db.QueryContext(db.ctx, sql, args...)
 	db.t.FatalOnError(err)
 	return rows
+}
+
+func (db Database) sync() {
+	if db.connector != nil {
+		db.connector.Sync()
+	}
 }
 
 type Table struct {
@@ -726,6 +759,16 @@ func TestDataTypes(t *testing.T) {
 func TestConcurrentOnSingleConnection(t *testing.T) {
 	t.Parallel()
 	db := getRemoteDb(T{t})
+	testConcurrentOnSingleConnection(db)
+}
+
+func TestConcurrentOnSingleConnectionEmbedded(t *testing.T) {
+	t.Parallel()
+	db := getEmbeddedDb(T{t})
+	testConcurrentOnSingleConnection(db)
+}
+
+func testConcurrentOnSingleConnection(db *Database) {
 	t1 := db.createTable()
 	t2 := db.createTable()
 	t3 := db.createTable()
@@ -738,6 +781,7 @@ func TestConcurrentOnSingleConnection(t *testing.T) {
 	t3.insertRowsInternal(1, 10, func(i int) sql.Result {
 		return t3.db.exec("INSERT INTO "+t3.name+" VALUES(?, ?)", i, 0)
 	})
+	db.sync()
 	g, ctx := errgroup.WithContext(context.Background())
 	conn, err := db.Conn(context.Background())
 	db.t.FatalOnError(err)
