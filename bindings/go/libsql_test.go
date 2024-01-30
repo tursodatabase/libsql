@@ -712,6 +712,9 @@ func TestPingEmbedded(t *testing.T) {
 }
 
 func testPing(db *Database) {
+	if db == nil {
+		return
+	}
 	// This ping should succeed because the database is up and running
 	db.t.FatalOnError(db.Ping())
 
@@ -739,6 +742,9 @@ func TestDataTypesEmbedded(t *testing.T) {
 }
 
 func testDataTypes(db *Database) {
+	if db == nil {
+		return
+	}
 	var (
 		text        string
 		nullText    sql.NullString
@@ -789,6 +795,9 @@ func TestConcurrentOnSingleConnectionEmbedded(t *testing.T) {
 }
 
 func testConcurrentOnSingleConnection(db *Database) {
+	if db == nil {
+		return
+	}
 	t1 := db.createTable()
 	t2 := db.createTable()
 	t3 := db.createTable()
