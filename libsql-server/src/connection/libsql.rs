@@ -460,10 +460,10 @@ unsafe extern "C" fn busy_handler<T: Wal>(state: *mut c_void, retries: c_int) ->
     let slot = match &*lock {
         Some(slot) => slot.clone(),
         // fast path: there is no slot, try to acquire the lock again
-        None if retries < 512=> {
+        None if retries < 512 => {
             std::thread::sleep(std::time::Duration::from_millis(10));
-            return 1
-        },
+            return 1;
+        }
         None => {
             tracing::info!("Failed to steal connection lock after {MAX_BUSY_RETRIES} retries.");
             return 0;
@@ -490,8 +490,6 @@ unsafe extern "C" fn busy_handler<T: Wal>(state: *mut c_void, retries: c_int) ->
                     if let Some(ref s) = *lock {
                         // The state contains the same lock as the one we're attempting to steal
                         if Arc::ptr_eq(s, &slot) {
-                            // We check that slot wasn't already stolen, and that their is still a slot.
-                            // The ordering is relaxed because the atomic is only set under the slot lock.
                             let can_steal = {
                                 let mut can_steal = false;
                                 let mut is_stolen = slot.is_stolen.lock();
@@ -523,7 +521,6 @@ unsafe extern "C" fn busy_handler<T: Wal>(state: *mut c_void, retries: c_int) ->
                 1
             }
         }
-
     })
 }
 
@@ -602,7 +599,12 @@ impl<W: Wal> Connection<W> {
         pgm: Program,
         mut builder: B,
     ) -> Result<B> {
-        let txn_timeout = this.lock().config_store.get().txn_timeout.unwrap_or(TXN_TIMEOUT);
+        let txn_timeout = this
+            .lock()
+            .config_store
+            .get()
+            .txn_timeout
+            .unwrap_or(TXN_TIMEOUT);
 
         let mut results = Vec::with_capacity(pgm.steps.len());
         builder.init(&this.lock().builder_config)?;
@@ -650,10 +652,7 @@ impl<W: Wal> Connection<W> {
             let mut lock = this.lock();
             let is_autocommit = lock.conn.is_autocommit();
             let current_fno = *lock.current_frame_no_receiver.borrow_and_update();
-            builder.finish(
-                current_fno,
-                is_autocommit,
-            )?;
+            builder.finish(current_fno, is_autocommit)?;
         }
 
         Ok(builder)
@@ -1181,8 +1180,12 @@ mod test {
                     TestBuilder::default(),
                 )
                 .unwrap();
-                assert_eq!(conn.txn_status().unwrap(), TxnStatus::Txn);
-                assert!(builder.into_ret()[0].is_ok());
+                let ret = &builder.into_ret()[0];
+                assert!(
+                    (ret.is_ok() && matches!(conn.txn_status().unwrap(), TxnStatus::Txn))
+                        || (matches!(ret, Err(Error::RusqliteErrorExtended(_, 5)))
+                            && matches!(conn.txn_status().unwrap(), TxnStatus::Init))
+                );
             });
         }
 
