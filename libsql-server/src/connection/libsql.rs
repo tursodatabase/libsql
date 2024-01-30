@@ -649,8 +649,9 @@ impl<W: Wal> Connection<W> {
         {
             let mut lock = this.lock();
             let is_autocommit = lock.conn.is_autocommit();
+            let current_fno = *lock.current_frame_no_receiver.borrow_and_update();
             builder.finish(
-                *(lock.current_frame_no_receiver.borrow_and_update()),
+                current_fno,
                 is_autocommit,
             )?;
         }
