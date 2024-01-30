@@ -451,7 +451,9 @@ impl<T> Default for TxnState<T> {
 /// - If the handler waits until the txn timeout and isn't notified of the termination of the txn, it will attempt to steal the lock.
 ///   This is done by calling rollback on the slot's txn, and marking the slot as stolen.
 /// - When a connection notices that it's slot has been stolen, it returns a timedout error to the next request.
-unsafe extern "C" fn busy_handler<T: Wal>(state: *mut c_void, _retries: c_int) -> c_int {
+const MAX_BUSY_RETRIES: c_int = 512;
+
+unsafe extern "C" fn busy_handler<T: Wal>(state: *mut c_void, retries: c_int) -> c_int {
     let state = &*(state as *mut TxnState<T>);
     let lock = state.slot.read();
     // we take a reference to the slot we will attempt to steal. this is to make sure that we
@@ -459,7 +461,14 @@ unsafe extern "C" fn busy_handler<T: Wal>(state: *mut c_void, _retries: c_int) -
     let slot = match &*lock {
         Some(slot) => slot.clone(),
         // fast path: there is no slot, try to acquire the lock again
-        None => return 1,
+        None if retries < 512=> {
+            std::thread::sleep(std::time::Duration::from_millis(10));
+            return 1
+        },
+        None => {
+            tracing::info!("Failed to steal connection lock after {MAX_BUSY_RETRIES} retries.");
+            return 0;
+        }
     };
 
     tokio::runtime::Handle::current().block_on(async move {
