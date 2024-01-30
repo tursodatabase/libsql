@@ -644,12 +644,23 @@ func TestTransactionRollback(t *testing.T) {
 	table.assertRowsCount(0)
 }
 
-func TestRemoteArguments(t *testing.T) {
+func TestArguments(t *testing.T) {
 	t.Parallel()
 	db := getRemoteDb(T{t})
+	testArguments(db)
+}
+
+func TestArgumentsEmbedded(t *testing.T) {
+	t.Parallel()
+	db := getEmbeddedDb(T{t})
+	testArguments(db)
+}
+
+func testArguments(db *Database) {
 	if db == nil {
 		return
 	}
+	t := db.t
 	tableName := fmt.Sprintf("test_%d", time.Now().UnixNano())
 	_, err := db.Exec(fmt.Sprintf("CREATE TABLE %s (id INTEGER, name TEXT, gpa REAL, cv BLOB);", tableName))
 	if err != nil {
@@ -659,6 +670,7 @@ func TestRemoteArguments(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	db.sync()
 	rows, err := db.QueryContext(context.Background(), "SELECT NULL, id, name, gpa, cv FROM "+tableName)
 	if err != nil {
 		t.Fatal(err)
