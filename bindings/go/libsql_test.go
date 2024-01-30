@@ -702,11 +702,20 @@ func TestRemoteArguments(t *testing.T) {
 func TestPing(t *testing.T) {
 	t.Parallel()
 	db := getRemoteDb(T{t})
+	testPing(db)
+}
 
+func TestPingEmbedded(t *testing.T) {
+	t.Parallel()
+	db := getEmbeddedDb(T{t})
+	testPing(db)
+}
+
+func testPing(db *Database) {
 	// This ping should succeed because the database is up and running
 	db.t.FatalOnError(db.Ping())
 
-	t.Cleanup(func() {
+	db.t.Cleanup(func() {
 		db.Close()
 
 		// This ping should return an error because the database is already closed
