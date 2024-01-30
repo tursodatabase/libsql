@@ -1,5 +1,5 @@
-C Detect\smalformed\snested\sJSONB\searlier\sand\sstop\srendering\sto\savoid\slong\ndelays.
-D 2024-01-29T21:29:22.163
+C Version\s3.45.1
+D 2024-01-30T16:01:20.753
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2159,10 +2159,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac402cc551b2cbe3f8fbbc9c711a04942eab5eeb9d2f4a394e9370d2380427b5
-Q +72f3e1d0eca2b9ebd7c4b4cdccc6d7a0173b2fdb204cb1aa207917aedab6098a
-Q +97666ec052ebaceab002874d7ca5c5e6883c3d04fb7d3992235a8c4c8d08407a
+P ab40e282465c989bf249453d7c6f60072a38b691f579411cdf9aad234b20f0f7
 R 733155be1814ed819345d16353d7d6cc
+T +sym-release *
+T +sym-vesion-3.45.1 *
 U drh
-Z 18340cdcfaea76204a33f87984917190
+Z 27c9e9ada796013bdfd50fea314c088d
 # Remove this line to create a well-formed Fossil manifest.
