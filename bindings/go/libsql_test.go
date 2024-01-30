@@ -482,12 +482,23 @@ func TestSync(t *testing.T) {
 func TestExecAndQuery(t *testing.T) {
 	t.Parallel()
 	db := getRemoteDb(T{t})
+	testExecAndQuery(db)
+}
+
+func TestExecAndQueryEmbedded(t *testing.T) {
+	t.Parallel()
+	db := getEmbeddedDb(T{t})
+	testExecAndQuery(db)
+}
+
+func testExecAndQuery(db *Database) {
 	if db == nil {
 		return
 	}
 	table := db.createTable()
 	table.insertRows(0, 10)
 	table.insertRowsWithArgs(10, 10)
+	db.sync()
 	table.assertRowsCount(20)
 	table.assertRowDoesNotExist(20)
 	table.assertRowExists(0)
