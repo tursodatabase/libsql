@@ -602,13 +602,7 @@ impl<W: Wal> Connection<W> {
         pgm: Program,
         mut builder: B,
     ) -> Result<B> {
-        use rusqlite::TransactionState as Tx;
-
-        let (state, txn_timeout) = {
-            let lock = this.lock();
-            let txn_timeout = lock.config_store.get().txn_timeout.unwrap_or(TXN_TIMEOUT);
-            (lock.state.clone(), txn_timeout)
-        };
+        let txn_timeout = this.lock().config_store.get().txn_timeout.unwrap_or(TXN_TIMEOUT);
 
         let mut results = Vec::with_capacity(pgm.steps.len());
         builder.init(&this.lock().builder_config)?;
@@ -644,45 +638,10 @@ impl<W: Wal> Connection<W> {
                 continue;
             }
 
-            let res = lock.execute_step(step, &results, &mut builder)?;
-
-            let new_state = lock.conn.transaction_state(Some(DatabaseName::Main))?;
-            match (previous_state, new_state) {
-                // lock was upgraded, claim the slot
-                (Tx::None | Tx::Read, Tx::Write) => {
-                    let slot = Arc::new(TxnSlot {
-                        conn: this.clone(),
-                        created_at: Instant::now(),
-                        is_stolen: AtomicBool::new(false),
-                        txn_timeout,
-                    });
-
-                    lock.slot.replace(slot.clone());
-                    state.slot.write().replace(slot);
-                }
-                // lock was downgraded, notify a waiter
-                (Tx::Write, Tx::None | Tx::Read) => {
-                    let old_slot = lock
-                        .slot
-                        .take()
-                        .expect("there should be a slot right after downgrading a txn");
-                    let mut maybe_state_slot = state.slot.write();
-                    // We need to make sure that the state slot is our slot before removing it.
-                    if let Some(ref state_slot) = *maybe_state_slot {
-                        if Arc::ptr_eq(state_slot, &old_slot) {
-                            maybe_state_slot.take();
-                        }
-                    }
-
-                    drop(maybe_state_slot);
-
-                    state.notify.notify_waiters();
-                }
-                // nothing to do
-                (_, _) => (),
-            }
-
-            previous_state = new_state;
+            let ret = lock.execute_step(step, &results, &mut builder);
+            // /!\ always make sure that the state is updated before returning
+            previous_state = lock.update_state(this.clone(), previous_state, txn_timeout)?;
+            let res = ret?;
 
             results.push(res);
         }
@@ -697,6 +656,53 @@ impl<W: Wal> Connection<W> {
         }
 
         Ok(builder)
+    }
+
+    fn update_state(
+        &mut self,
+        arc_this: Arc<Mutex<Self>>,
+        previous_state: TransactionState,
+        txn_timeout: Duration,
+    ) -> Result<TransactionState> {
+        use rusqlite::TransactionState as Tx;
+
+        let new_state = self.conn.transaction_state(Some(DatabaseName::Main))?;
+        match (previous_state, new_state) {
+            // lock was upgraded, claim the slot
+            (Tx::None | Tx::Read, Tx::Write) => {
+                let slot = Arc::new(TxnSlot {
+                    conn: arc_this,
+                    created_at: Instant::now(),
+                    is_stolen: false.into(),
+                    txn_timeout,
+                });
+
+                self.slot.replace(slot.clone());
+                self.state.slot.write().replace(slot);
+            }
+            // lock was downgraded, notify a waiter
+            (Tx::Write, Tx::None | Tx::Read) => {
+                let old_slot = self
+                    .slot
+                    .take()
+                    .expect("there should be a slot right after downgrading a txn");
+                let mut maybe_state_slot = self.state.slot.write();
+                // We need to make sure that the state slot is our slot before removing it.
+                if let Some(ref state_slot) = *maybe_state_slot {
+                    if Arc::ptr_eq(state_slot, &old_slot) {
+                        maybe_state_slot.take();
+                    }
+                }
+
+                drop(maybe_state_slot);
+
+                self.state.notify.notify_waiters();
+            }
+            // nothing to do
+            (_, _) => (),
+        }
+
+        Ok(new_state)
     }
 
     fn execute_step(
