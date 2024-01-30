@@ -696,8 +696,9 @@ func TestDataTypes(t *testing.T) {
 		float8      float64
 		nullFloat   sql.NullFloat64
 		bytea       []byte
+		Time        time.Time
 	)
-	db.t.FatalOnError(db.QueryRowContext(db.ctx, "SELECT 'foobar' as text, NULL as text,  NULL as integer, 42 as integer, 1 as boolean, X'000102' as bytea, 3.14 as float8, NULL as float8;").Scan(&text, &nullText, &nullInteger, &integer, &boolean, &bytea, &float8, &nullFloat))
+	db.t.FatalOnError(db.QueryRowContext(db.ctx, "SELECT 'foobar' as text, NULL as text,  NULL as integer, 42 as integer, 1 as boolean, X'000102' as bytea, 3.14 as float8, NULL as float8, '0001-01-01 01:00:00+00:00' as time;").Scan(&text, &nullText, &nullInteger, &integer, &boolean, &bytea, &float8, &nullFloat, &Time))
 	switch {
 	case text != "foobar":
 		t.Error("value mismatch - text")
@@ -717,6 +718,8 @@ func TestDataTypes(t *testing.T) {
 		t.Error("value mismatch - bytea")
 	case nullFloat.Valid:
 		t.Error("null float is valid")
+	case !Time.Equal(time.Time{}.Add(time.Hour)):
+		t.Error("value mismatch - time")
 	}
 }
 
