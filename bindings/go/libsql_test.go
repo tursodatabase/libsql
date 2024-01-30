@@ -508,6 +508,16 @@ func testExecAndQuery(db *Database) {
 func TestPreparedStatements(t *testing.T) {
 	t.Parallel()
 	db := getRemoteDb(T{t})
+	testPreparedStatements(db)
+}
+
+func TestPreparedStatementsEmbedded(t *testing.T) {
+	t.Parallel()
+	db := getEmbeddedDb(T{t})
+	testPreparedStatements(db)
+}
+
+func testPreparedStatements(db *Database) {
 	if db == nil {
 		return
 	}
@@ -515,6 +525,7 @@ func TestPreparedStatements(t *testing.T) {
 	stmt := table.prepareInsertStmt()
 	stmt.exec(1, "1")
 	db.t.FatalOnError(stmt.Close())
+	db.sync()
 	table.assertRowsCount(1)
 	table.assertRowExists(1)
 }
