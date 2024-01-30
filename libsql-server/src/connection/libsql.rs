@@ -1,6 +1,5 @@
 use std::ffi::{c_int, c_void};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use libsql_sys::wal::wrapper::{WalWrapper, WrapWal, WrappedWal};
@@ -381,7 +380,7 @@ struct TxnSlot<T> {
     /// Time at which the transaction can be stolen
     created_at: tokio::time::Instant,
     /// The transaction lock was stolen
-    is_stolen: AtomicBool,
+    is_stolen: parking_lot::Mutex<bool>,
     txn_timeout: Duration,
 }
 
@@ -407,7 +406,7 @@ impl<T> TxnSlot<T> {
 
 impl<T> std::fmt::Debug for TxnSlot<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let stolen = self.is_stolen.load(Ordering::Relaxed);
+        let stolen = self.is_stolen.lock();
         let time_left = self.expires_at().duration_since(Instant::now());
         write!(
             f,
@@ -493,7 +492,17 @@ unsafe extern "C" fn busy_handler<T: Wal>(state: *mut c_void, retries: c_int) ->
                         if Arc::ptr_eq(s, &slot) {
                             // We check that slot wasn't already stolen, and that their is still a slot.
                             // The ordering is relaxed because the atomic is only set under the slot lock.
-                            if slot.is_stolen.compare_exchange(false, true, Ordering::Relaxed, Ordering::Relaxed).is_ok() {
+                            let can_steal = {
+                                let mut can_steal = false;
+                                let mut is_stolen = slot.is_stolen.lock();
+                                if !*is_stolen {
+                                    can_steal = true;
+                                    *is_stolen = true;
+                                }
+                                can_steal
+                            };
+
+                            if can_steal {
                                 // The connection holding the current txn will set itself as stolen when it
                                 // detects a timeout, so if we arrive to this point, then there is
                                 // necessarily a slot, and this slot has to be the one we attempted to
@@ -612,12 +621,17 @@ impl<W: Wal> Connection<W> {
         for step in pgm.steps() {
             let mut lock = this.lock();
 
-            if let Some(slot) = &lock.slot {
-                if slot.is_stolen.load(Ordering::Relaxed) || Instant::now() > slot.expires_at() {
-                    // we mark ourselves as stolen to notify any waiting lock thief.
-                    slot.is_stolen.store(true, Ordering::Relaxed);
-                    lock.rollback();
-                    has_timeout = true;
+            if !has_timeout {
+                if let Some(slot) = &lock.slot {
+                    let mut is_stolen = slot.is_stolen.lock();
+                    if *is_stolen || Instant::now() > slot.expires_at() {
+                        // we mark ourselves as stolen to notify any waiting lock thief.
+                        if !*is_stolen {
+                            lock.rollback();
+                        }
+                        *is_stolen = true;
+                        has_timeout = true;
+                    }
                 }
             }
 
