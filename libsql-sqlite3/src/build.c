@@ -189,16 +189,19 @@ void sqlite3FinishCoding(Parse *pParse){
     }
     sqlite3VdbeAddOp0(v, OP_Halt);
 
-#if SQLITE_USER_AUTHENTICATION
-    if( pParse->nTableLock>0 && db->init.busy==0 ){
-      sqlite3UserAuthInit(db);
-      if( db->auth.authLevel<UAUTH_User ){
-        sqlite3ErrorMsg(pParse, "user not authenticated");
-        pParse->rc = SQLITE_AUTH_USER;
-        return;
+    #ifndef SQLITE_OMIT_SHARED_CACHE
+    if( pParse->nTableLock>0 )
+    #endif
+    {
+      if( db->init.busy==0 ){
+        sqlite3UserAuthInit(db);
+        if( db->auth.authLevel<UAUTH_User ){
+          sqlite3ErrorMsg(pParse, "user not authenticated");
+          pParse->rc = SQLITE_AUTH_USER;
+          return;
+        }
       }
     }
-#endif
 
     /* The cookie mask contains one bit for each database file open.
     ** (Bit 0 is for main, bit 1 is for temp, and so forth.)  Bits are
