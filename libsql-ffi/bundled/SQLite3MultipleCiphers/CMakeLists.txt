@@ -274,8 +274,18 @@ endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux"
     OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2 -maes")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2 -maes")
+
+  # Do not set `-maes -msee4.2` when we are on arm which doesn't support
+  # this instruction set.
+  if (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarach64"
+      OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  else()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2 -maes")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2 -maes")
+  endif()
+  
   set(SQLITE3MC_LINK_LIBRARIES
     pthread
     dl
