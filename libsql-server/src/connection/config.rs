@@ -46,10 +46,7 @@ impl From<&metadata::DatabaseConfig> for DatabaseConfig {
             block_writes: value.block_writes,
             block_reason: value.block_reason.clone(),
             max_db_pages: value.max_db_pages,
-            heartbeat_url: value
-                .heartbeat_url
-                .as_ref()
-                .map(|s| Url::parse(&s).unwrap()),
+            heartbeat_url: value.heartbeat_url.as_ref().map(|s| Url::parse(s).unwrap()),
             bottomless_db_id: value.bottomless_db_id.clone(),
             jwt_key: value.jwt_key.clone(),
             txn_timeout: value.txn_timeout_s.map(Duration::from_secs),

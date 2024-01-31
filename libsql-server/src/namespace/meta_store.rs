@@ -1,3 +1,4 @@
+#![allow(clippy::mutable_key_type)]
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;

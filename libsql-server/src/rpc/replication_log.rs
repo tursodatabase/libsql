@@ -171,7 +171,7 @@ impl ReplicationLogService {
     fn encode_session_token(&self, version: usize) -> Uuid {
         let mut sha = Md5::new();
         sha.update(&self.session_token[..]);
-        sha.update(&version.to_le_bytes());
+        sha.update(version.to_le_bytes());
 
         let num = sha.finalize();
         let num = u128::from_le_bytes(num.into());

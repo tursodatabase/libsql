@@ -288,15 +288,15 @@ impl Batch {
 impl FromIterator<Stmt> for Batch {
     fn from_iter<T: IntoIterator<Item = Stmt>>(stmts: T) -> Self {
         let mut steps = Vec::new();
-        let mut step = 0;
-        for stmt in stmts.into_iter() {
+        for (step, stmt) in stmts.into_iter().enumerate() {
             let condition = if step > 0 {
-                Some(BatchCond::Ok { step: step - 1 })
+                Some(BatchCond::Ok {
+                    step: (step - 1) as u32,
+                })
             } else {
                 None
             };
             steps.push(BatchStep { condition, stmt });
-            step += 1;
         }
         Batch {
             steps,

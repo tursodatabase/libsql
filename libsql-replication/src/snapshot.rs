@@ -48,7 +48,7 @@ impl SnapshotFile {
     pub async fn open(path: impl AsRef<Path>) -> Result<Self, Error> {
         let mut file = File::open(path).await?;
         let mut header = SnapshotFileHeader::new_zeroed();
-        file.read_exact(&mut header.as_bytes_mut()).await?;
+        file.read_exact(header.as_bytes_mut()).await?;
 
         Ok(Self { file, header })
     }

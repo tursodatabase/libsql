@@ -132,12 +132,9 @@ where
             None => Err(crate::Error::Misuse(
                 "no SQL statement provided".to_string(),
             )),
-            Some(Err(e)) => Err(e.into()),
+            Some(Err(e)) => Err(e),
             Some(Ok(stmt)) => {
-                let close_stream = match stmt.kind {
-                    StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly => false,
-                    _ => true,
-                };
+                let close_stream = !matches!(stmt.kind, StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly);
                 let inner = Stmt::new(stmt.stmt, want_rows);
                 Ok(Statement {
                     stream,
@@ -201,7 +198,7 @@ where
 
     pub async fn next(&mut self) -> crate::Result<Option<super::Row>> {
         let row = match self.cursor_step.next().await {
-            Some(Ok(row)) => row.into(),
+            Some(Ok(row)) => row,
             Some(Err(e)) => return Err(crate::Error::Hrana(Box::new(e))),
             None => return Ok(None),
         };
@@ -303,7 +300,7 @@ impl RowInner for Row {
     fn column_str(&self, idx: i32) -> crate::Result<&str> {
         if let Some(value) = self.inner.get(idx as usize) {
             if let proto::Value::Text { value } = value {
-                Ok(&value)
+                Ok(value)
             } else {
                 Err(crate::Error::InvalidColumnType)
             }
@@ -373,10 +370,9 @@ fn into_value2(value: proto::Value) -> crate::Value {
 }
 
 pub(crate) fn unwrap_err(batch_res: BatchResult) -> crate::Result<()> {
-    for maybe_err in batch_res.step_errors {
-        if let Some(e) = maybe_err {
-            return Err(crate::Error::Hrana(Box::new(HranaError::Api(e.message))));
-        }
-    }
-    Ok(())
+    batch_res.step_errors
+        .into_iter()
+        .find_map(|e| e)
+        .map(|e| Err(crate::Error::Hrana(Box::new(HranaError::Api(e.message)))))
+        .unwrap_or(Ok(()))
 }

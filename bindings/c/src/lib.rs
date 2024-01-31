@@ -224,7 +224,7 @@ pub unsafe extern "C" fn libsql_prepare(
         }
     };
     if conn.is_null() {
-        set_err_msg(format!("Null connection"), out_err_msg);
+        set_err_msg("Null connection".to_string(), out_err_msg);
         return 2;
     }
     let conn = conn.get_ref();
@@ -380,7 +380,7 @@ pub unsafe extern "C" fn libsql_execute_stmt(
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
     if stmt.is_null() {
-        set_err_msg(format!("Null statement"), out_err_msg);
+        set_err_msg("Null statement".to_string(), out_err_msg);
         return 1;
     }
     let stmt = stmt.get_ref_mut();
