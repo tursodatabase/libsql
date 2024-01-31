@@ -19,8 +19,8 @@ const MAX_RETRIES_THRESHOLD: u32 = 64;
 pub enum Error {
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
-    #[error("Snaphot handler failure")]
-    HandlerFailure,
+    #[error("Snaphot handler failure.\nstderr:\n{stderr}\nstdout:\n{stdout}")]
+    HandlerFailure { stderr: String, stdout: String },
     #[error("Could not parse snapshot path: {0}")]
     InvalidSnapshotPath(PathBuf),
 }
@@ -91,26 +91,36 @@ pub(crate) struct ScriptBackupTask<H> {
     handler: H,
 }
 
-struct CommandHandler {
+pub struct CommandHandler {
     command: String,
+}
+
+impl CommandHandler {
+    pub fn new(command: String) -> Self { Self { command } }
 }
 
 impl Handler for CommandHandler {
     async fn handle(&mut self, entry: &SnapshotEntry) -> Result<()> {
-        tokio::process::Command::new(&self.command)
+        let output = tokio::process::Command::new(&self.command)
             .arg(&entry.path)
             .arg(entry.namespace.as_str())
             .arg(entry.start_frame_no.to_string())
             .arg(entry.end_frame_no.to_string())
-            .status()
+            .output()
             .await?;
+        if !output.status.success() {
+            return Err(Error::HandlerFailure {
+                stderr: String::from_utf8(output.stderr).unwrap_or_default(),
+                stdout: String::from_utf8(output.stdout).unwrap_or_default(),
+            })
+        }
 
         Ok(())
     }
 }
 
 impl<H: Handler> ScriptBackupTask<H> {
-    pub async fn run(&mut self) -> crate::Result<()> {
+    pub async fn run(mut self) -> anyhow::Result<()> {
         loop {
             self.process_one().await?;
         }

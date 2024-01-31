@@ -5,11 +5,13 @@ use crate::common::{http::Client, snapshot_metrics};
 
 use super::common;
 
+use std::fs::Permissions;
+use std::os::unix::prelude::PermissionsExt;
 use std::{sync::Arc, time::Duration};
 
 use insta::assert_debug_snapshot;
 use libsql::{Database, Value};
-use tempfile::tempdir;
+use tempfile::{tempdir, NamedTempFile};
 use tokio::sync::Notify;
 
 use libsql_server::config::{AdminApiConfig, UserApiConfig};

@@ -23,8 +23,10 @@ use zerocopy::byteorder::little_endian::{
 };
 use zerocopy::{AsBytes, FromBytes};
 
+use crate::namespace::NamespaceName;
+use crate::replication::script_backup_manager::ScriptBackupManager;
 use crate::replication::snapshot::{find_snapshot_file, LogCompactor};
-use crate::replication::{FrameNo, SnapshotCallback, CRC_64_GO_ISO, WAL_MAGIC};
+use crate::replication::{FrameNo, CRC_64_GO_ISO, WAL_MAGIC};
 use crate::LIBSQL_PAGE_SIZE;
 
 static REPLICATION_LATENCY_CACHE_SIZE: Lazy<u64> = Lazy::new(|| {
@@ -498,13 +500,14 @@ pub struct ReplicationLogger {
 }
 
 impl ReplicationLogger {
-    pub fn open(
+    pub(crate) fn open(
         db_path: &Path,
         max_log_size: u64,
         max_log_duration: Option<Duration>,
         dirty: bool,
         auto_checkpoint: u32,
-        callback: SnapshotCallback,
+        scripted_backup: Option<ScriptBackupManager>,
+        namespace: NamespaceName,
     ) -> anyhow::Result<Self> {
         let log_path = db_path.join("wallog");
         let data_path = db_path.join("data");
@@ -540,17 +543,18 @@ impl ReplicationLogger {
         };
 
         if should_recover {
-            Self::recover(log_file, data_path, callback, auto_checkpoint)
+            Self::recover(log_file, data_path, auto_checkpoint, scripted_backup, namespace)
         } else {
-            Self::from_log_file(db_path.to_path_buf(), log_file, callback, auto_checkpoint)
+            Self::from_log_file(db_path.to_path_buf(), log_file, auto_checkpoint, scripted_backup, namespace)
         }
     }
 
     fn from_log_file(
         db_path: PathBuf,
         log_file: LogFile,
-        callback: SnapshotCallback,
         auto_checkpoint: u32,
+        scripted_backup: Option<ScriptBackupManager>,
+        namespace: NamespaceName,
     ) -> anyhow::Result<Self> {
         let header = log_file.header();
         let generation_start_frame_no = header.last_frame_no();
@@ -585,7 +589,8 @@ impl ReplicationLogger {
             compactor: LogCompactor::new(
                 &db_path,
                 Uuid::from_u128(log_file.header.log_id.get()),
-                callback,
+                scripted_backup,
+                namespace,
             )?,
             log_file: RwLock::new(log_file),
             db_path,
@@ -600,8 +605,9 @@ impl ReplicationLogger {
     fn recover(
         log_file: LogFile,
         mut data_path: PathBuf,
-        callback: SnapshotCallback,
         auto_checkpoint: u32,
+        scripted_backup: Option<ScriptBackupManager>,
+        namespace: NamespaceName,
     ) -> anyhow::Result<Self> {
         // It is necessary to checkpoint before we restore the replication log, since the WAL may
         // contain pages that are not in the database file.
@@ -635,7 +641,7 @@ impl ReplicationLogger {
 
         assert!(data_path.pop());
 
-        Self::from_log_file(data_path, log_file, callback, auto_checkpoint)
+        Self::from_log_file(data_path, log_file, auto_checkpoint, scripted_backup, namespace)
     }
 
     pub fn log_id(&self) -> Uuid {
@@ -799,7 +805,8 @@ mod test {
             None,
             false,
             DEFAULT_AUTO_CHECKPOINT,
-            Box::new(|_| Ok(())),
+            None,
+            "test".into(),
         )
         .unwrap();
 
@@ -835,7 +842,8 @@ mod test {
             None,
             false,
             DEFAULT_AUTO_CHECKPOINT,
-            Box::new(|_| Ok(())),
+            None,
+            "test".into(),
         )
         .unwrap();
         let log_file = logger.log_file.write();
@@ -852,7 +860,8 @@ mod test {
             None,
             false,
             DEFAULT_AUTO_CHECKPOINT,
-            Box::new(|_| Ok(())),
+            None,
+            "test".into(),
         )
         .unwrap();
         let entry = WalPage {
@@ -919,7 +928,8 @@ mod test {
                 None,
                 false,
                 100000,
-                Box::new(|_| Ok(())),
+                None,
+                "test".into(),
             )
             .unwrap(),
         );
