@@ -22,8 +22,8 @@ use crate::namespace::NamespaceName;
 use crate::replication::primary::logger::LogFileHeader;
 
 use super::primary::logger::LogFile;
-use super::FrameNo;
 use super::script_backup_manager::ScriptBackupManager;
+use super::FrameNo;
 
 /// This is the ratio of the space required to store snapshot vs size of the actual database.
 /// When this ratio is exceeded, compaction is triggered.
@@ -170,7 +170,12 @@ fn pending_snapshots_list(compact_queue_dir: &Path) -> anyhow::Result<Vec<(LogFi
 }
 
 impl LogCompactor {
-    pub(crate) fn new(db_path: &Path, log_id: Uuid, scripted_backup: Option<ScriptBackupManager>, namespace: NamespaceName) -> anyhow::Result<Self> {
+    pub(crate) fn new(
+        db_path: &Path,
+        log_id: Uuid,
+        scripted_backup: Option<ScriptBackupManager>,
+        namespace: NamespaceName,
+    ) -> anyhow::Result<Self> {
         // a directory containing logs that need compaction
         let compact_queue_dir = db_path.join("to_compact");
         std::fs::create_dir_all(&compact_queue_dir)?;
@@ -183,7 +188,8 @@ impl LogCompactor {
         std::fs::create_dir_all(&tmp_path)?;
 
         let (sender, mut receiver) = mpsc::channel::<(LogFile, PathBuf)>(8);
-        let mut merger = SnapshotMerger::new(db_path, log_id, scripted_backup.clone(), namespace.clone())?;
+        let mut merger =
+            SnapshotMerger::new(db_path, log_id, scripted_backup.clone(), namespace.clone())?;
         let db_path = db_path.to_path_buf();
         // We gather pending snapshots here, so new snapshots don't interfere.
         let pending = pending_snapshots_list(&compact_queue_dir)?;
@@ -199,7 +205,7 @@ impl LogCompactor {
                     &mut merger,
                     &to_compact_path,
                     scripted_backup.clone(),
-                    namespace.clone()
+                    namespace.clone(),
                 )
                 .await
                 {
@@ -216,7 +222,7 @@ impl LogCompactor {
                     &mut merger,
                     &to_compact_path,
                     scripted_backup.clone(),
-                    namespace.clone()
+                    namespace.clone(),
                 )
                 .await
                 {
@@ -247,12 +253,18 @@ struct SnapshotMerger {
 }
 
 impl SnapshotMerger {
-    fn new(db_path: &Path, log_id: Uuid, scripted_backup: Option<ScriptBackupManager>, namespace: NamespaceName) -> anyhow::Result<Self> {
+    fn new(
+        db_path: &Path,
+        log_id: Uuid,
+        scripted_backup: Option<ScriptBackupManager>,
+        namespace: NamespaceName,
+    ) -> anyhow::Result<Self> {
         let (sender, receiver) = mpsc::channel(1);
 
         let db_path = db_path.to_path_buf();
         let handle = tokio::task::spawn(async move {
-            Self::run_snapshot_merger_loop(receiver, &db_path, log_id, scripted_backup, namespace).await
+            Self::run_snapshot_merger_loop(receiver, &db_path, log_id, scripted_backup, namespace)
+                .await
         });
 
         Ok(Self {
@@ -285,14 +297,14 @@ impl SnapshotMerger {
                     if !working && Self::should_compact(&snapshots, db_page_count) {
                         let snapshots = std::mem::take(&mut snapshots);
                         let db_path = db_path.clone();
-                        let handle = tokio::spawn({ 
+                        let handle = tokio::spawn({
                             let scripted_backup = scripted_backup.clone();
                             let namespace = namespace.clone();
                             async move {
                                 let compacted_snapshot_info =
                                     Self::merge_snapshots(snapshots, db_path.as_ref(), log_id, scripted_backup, namespace).await?;
                                 anyhow::Result::<_, anyhow::Error>::Ok(compacted_snapshot_info)
-                            } 
+                            }
                         });
                         job.set(async move { Ok(handle.await?) });
                         working = true;
@@ -425,7 +437,12 @@ fn snapshot_dir_path(db_path: &Path) -> PathBuf {
 }
 
 impl SnapshotBuilder {
-    async fn new(db_path: &Path, log_id: Uuid, scripted_backup: Option<ScriptBackupManager>, namespace: NamespaceName) -> anyhow::Result<Self> {
+    async fn new(
+        db_path: &Path,
+        log_id: Uuid,
+        scripted_backup: Option<ScriptBackupManager>,
+        namespace: NamespaceName,
+    ) -> anyhow::Result<Self> {
         let snapshot_dir_path = snapshot_dir_path(db_path);
         std::fs::create_dir_all(&snapshot_dir_path)?;
         let mut f =
@@ -508,7 +525,14 @@ impl SnapshotBuilder {
         file.sync_all().await?;
 
         if let Some(manager) = self.scripted_backup {
-            manager.register(self.namespace, self.header.start_frame_no.into(), self.header.end_frame_no.into(), file.file_path()).await?;
+            manager
+                .register(
+                    self.namespace,
+                    self.header.start_frame_no.into(),
+                    self.header.end_frame_no.into(),
+                    file.file_path(),
+                )
+                .await?;
         }
         tokio::fs::rename(
             file.file_path(),

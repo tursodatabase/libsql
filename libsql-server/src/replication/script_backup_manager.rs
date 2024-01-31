@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
-use std::sync::Arc;
-use std::path::{Path, PathBuf};
 use std::collections::BinaryHeap;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
@@ -69,7 +69,7 @@ impl Ord for SnapshotEntry {
                     // whichever has the greated end frame no. That way the script can decide to
                     // drop the following
                     self.end_frame_no.cmp(&other.end_frame_no)
-                },
+                }
                 // we process first a snapshot that has a lower start_frame_no
                 Ordering::Less => Ordering::Greater,
                 Ordering::Greater => Ordering::Less,
@@ -96,7 +96,9 @@ pub struct CommandHandler {
 }
 
 impl CommandHandler {
-    pub fn new(command: String) -> Self { Self { command } }
+    pub fn new(command: String) -> Self {
+        Self { command }
+    }
 }
 
 impl Handler for CommandHandler {
@@ -112,7 +114,7 @@ impl Handler for CommandHandler {
             return Err(Error::HandlerFailure {
                 stderr: String::from_utf8(output.stderr).unwrap_or_default(),
                 stdout: String::from_utf8(output.stdout).unwrap_or_default(),
-            })
+            });
         }
 
         Ok(())
@@ -134,12 +136,17 @@ impl<H: Handler> ScriptBackupTask<H> {
                     match self.handler.handle(&entry).await {
                         Ok(_) => {
                             assert!(!entry.path.try_exists()?, "snapshot handler returned success, yet snapshot file is still present.");
-                        },
+                        }
                         Err(e) => {
-                            tracing::error!("failed to process scripted snapshot backup for {entry:?}: {e}");
+                            tracing::error!(
+                                "failed to process scripted snapshot backup for {entry:?}: {e}"
+                            );
                             assert!(entry.path.try_exists()?, "snapshot file was removed, but script returned an error. Can't ensure consistency");
                             // exponential backoff
-                            tokio::time::sleep(Duration::from_millis(500) * 2u32.pow(entry.retries)).await;
+                            tokio::time::sleep(
+                                Duration::from_millis(500) * 2u32.pow(entry.retries),
+                            )
+                            .await;
 
                             entry.retries += 1;
                             if entry.retries > MAX_RETRIES_THRESHOLD {
@@ -153,7 +160,7 @@ impl<H: Handler> ScriptBackupTask<H> {
                 }
                 None => {
                     self.notifier.notified().await;
-                },
+                }
             }
         }
     }
@@ -171,18 +178,28 @@ fn make_snapshot_path(
 }
 
 fn parse_snapshot_path(path: PathBuf) -> Result<SnapshotEntry> {
-    static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"([\w-]+?):([0-9a-f]{20})-([0-9a-f]{20}).snap"#).unwrap());
+    static RE: Lazy<Regex> =
+        Lazy::new(|| Regex::new(r#"([\w-]+?):([0-9a-f]{20})-([0-9a-f]{20}).snap"#).unwrap());
 
-    let name = path.file_name()
+    let name = path
+        .file_name()
         .and_then(|n| n.to_str())
         .ok_or_else(|| Error::InvalidSnapshotPath(path.clone()))?;
 
-    let captures = RE.captures(name).ok_or_else(|| Error::InvalidSnapshotPath(path.clone()))?;
+    let captures = RE
+        .captures(name)
+        .ok_or_else(|| Error::InvalidSnapshotPath(path.clone()))?;
     let namespace = NamespaceName::from_string(captures[1].to_string()).unwrap();
     let start_frame_no = FrameNo::from_str_radix(&captures[2], 16).unwrap();
     let end_frame_no = FrameNo::from_str_radix(&captures[3], 16).unwrap();
 
-    Ok(SnapshotEntry { namespace, start_frame_no, end_frame_no, path, retries: 0 })
+    Ok(SnapshotEntry {
+        namespace,
+        start_frame_no,
+        end_frame_no,
+        path,
+        retries: 0,
+    })
 }
 
 async fn seed_queue(queue_dir: &Path) -> Result<BinaryHeap<SnapshotEntry>> {
@@ -197,11 +214,14 @@ async fn seed_queue(queue_dir: &Path) -> Result<BinaryHeap<SnapshotEntry>> {
 }
 
 impl ScriptBackupManager {
-    pub async fn new<H: Handler>(base_path: &Path, handler: H) -> Result<(Self, ScriptBackupTask<H>)> {
+    pub async fn new<H: Handler>(
+        base_path: &Path,
+        handler: H,
+    ) -> Result<(Self, ScriptBackupTask<H>)> {
         let script_backup_path = base_path.join("script_backup");
 
         tokio::fs::create_dir_all(&script_backup_path).await?;
-        
+
         let notifier = Arc::new(Notify::new());
         // on startup we recover missing snapshots
         let queue = Arc::new(Mutex::new(seed_queue(&script_backup_path).await?));
@@ -279,17 +299,29 @@ mod test {
     #[test]
     fn compare_entries() {
         // different namespace name can be processed in any order
-        assert!(dummy_entry("test2", 1, 50).cmp(&dummy_entry("test1", 30, 50)).is_eq());
+        assert!(dummy_entry("test2", 1, 50)
+            .cmp(&dummy_entry("test1", 30, 50))
+            .is_eq());
         // the relation is reflexive
-        assert!(dummy_entry("test1", 1, 50).cmp(&dummy_entry("test2", 30, 50)).is_eq());
+        assert!(dummy_entry("test1", 1, 50)
+            .cmp(&dummy_entry("test2", 30, 50))
+            .is_eq());
 
         // snapshot with lower frameno has priority
-        assert!(dummy_entry("test1", 1, 50).cmp(&dummy_entry("test1", 30, 50)).is_gt());
-        assert!(dummy_entry("test1", 30, 50).cmp(&dummy_entry("test1", 1, 50)).is_lt());
+        assert!(dummy_entry("test1", 1, 50)
+            .cmp(&dummy_entry("test1", 30, 50))
+            .is_gt());
+        assert!(dummy_entry("test1", 30, 50)
+            .cmp(&dummy_entry("test1", 1, 50))
+            .is_lt());
 
         // same start point, the largest has a higher priority
-        assert!(dummy_entry("test1", 1, 50).cmp(&dummy_entry("test1", 1, 100)).is_lt());
-        assert!(dummy_entry("test1", 1, 100).cmp(&dummy_entry("test1", 1, 50)).is_gt());
+        assert!(dummy_entry("test1", 1, 50)
+            .cmp(&dummy_entry("test1", 1, 100))
+            .is_lt());
+        assert!(dummy_entry("test1", 1, 100)
+            .cmp(&dummy_entry("test1", 1, 50))
+            .is_gt());
     }
 
     #[test]
@@ -299,13 +331,39 @@ mod test {
         queue.push(dummy_entry("test1", 29, 31));
         queue.push(dummy_entry("test1", 1, 52));
 
-        assert!(matches!(queue.pop().unwrap(), SnapshotEntry {start_frame_no: 1, end_frame_no: 52, .. }));
-        assert!(matches!(queue.pop().unwrap(), SnapshotEntry {start_frame_no: 1, end_frame_no: 12, .. }));
-        assert!(matches!(queue.pop().unwrap(), SnapshotEntry {start_frame_no: 29, end_frame_no: 31, .. }));
+        assert!(matches!(
+            queue.pop().unwrap(),
+            SnapshotEntry {
+                start_frame_no: 1,
+                end_frame_no: 52,
+                ..
+            }
+        ));
+        assert!(matches!(
+            queue.pop().unwrap(),
+            SnapshotEntry {
+                start_frame_no: 1,
+                end_frame_no: 12,
+                ..
+            }
+        ));
+        assert!(matches!(
+            queue.pop().unwrap(),
+            SnapshotEntry {
+                start_frame_no: 29,
+                end_frame_no: 31,
+                ..
+            }
+        ));
         assert!(queue.pop().is_none());
     }
 
-    async fn dummy_entry_in(path: &Path, name: &str, start: FrameNo, end: FrameNo) -> SnapshotEntry {
+    async fn dummy_entry_in(
+        path: &Path,
+        name: &str,
+        start: FrameNo,
+        end: FrameNo,
+    ) -> SnapshotEntry {
         let dummy_path = path.join(Uuid::new_v4().to_string());
         tokio::fs::File::create(&dummy_path).await.unwrap();
         let mut entry = dummy_entry(name, start, end);
@@ -315,10 +373,9 @@ mod test {
 
     #[tokio::test]
     async fn retry_failed_entry() {
-
         #[derive(Default)]
         struct FailHandler {
-            last_entry: Option<SnapshotEntry>
+            last_entry: Option<SnapshotEntry>,
         }
 
         impl Handler for FailHandler {
@@ -329,13 +386,31 @@ mod test {
         }
 
         let tmp = tempdir().unwrap();
-        let (manager, mut task) = ScriptBackupManager::new(tmp.path(), FailHandler::default()).await.unwrap();
-        
+        let (manager, mut task) = ScriptBackupManager::new(tmp.path(), FailHandler::default())
+            .await
+            .unwrap();
+
         let entry = dummy_entry_in(tmp.path(), "test1", 1, 10).await;
-        manager.register(entry.namespace.clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
+        manager
+            .register(
+                entry.namespace.clone(),
+                entry.start_frame_no,
+                entry.end_frame_no,
+                &entry.path,
+            )
+            .await
+            .unwrap();
 
         let entry = dummy_entry_in(tmp.path(), "test1", 11, 21).await;
-        manager.register(entry.namespace.clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
+        manager
+            .register(
+                entry.namespace.clone(),
+                entry.start_frame_no,
+                entry.end_frame_no,
+                &entry.path,
+            )
+            .await
+            .unwrap();
 
         task.process_one().await.unwrap();
         assert_eq!(task.handler.last_entry.as_ref().unwrap().start_frame_no, 1);
@@ -360,10 +435,20 @@ mod test {
         }
 
         let tmp = tempdir().unwrap();
-        let (manager, mut task) = ScriptBackupManager::new(tmp.path(), OkHandler).await.unwrap();
-        
+        let (manager, mut task) = ScriptBackupManager::new(tmp.path(), OkHandler)
+            .await
+            .unwrap();
+
         let entry = dummy_entry_in(tmp.path(), "test1", 1, 10).await;
-        manager.register(entry.namespace.clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
+        manager
+            .register(
+                entry.namespace.clone(),
+                entry.start_frame_no,
+                entry.end_frame_no,
+                &entry.path,
+            )
+            .await
+            .unwrap();
 
         task.process_one().await.unwrap();
     }
@@ -380,10 +465,20 @@ mod test {
         }
 
         let tmp = tempdir().unwrap();
-        let (manager, mut task) = ScriptBackupManager::new(tmp.path(), FailHandler).await.unwrap();
-        
+        let (manager, mut task) = ScriptBackupManager::new(tmp.path(), FailHandler)
+            .await
+            .unwrap();
+
         let entry = dummy_entry_in(tmp.path(), "test1", 1, 10).await;
-        manager.register(entry.namespace.clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
+        manager
+            .register(
+                entry.namespace.clone(),
+                entry.start_frame_no,
+                entry.end_frame_no,
+                &entry.path,
+            )
+            .await
+            .unwrap();
 
         task.process_one().await.unwrap();
     }
@@ -399,13 +494,31 @@ mod test {
         }
 
         let tmp = tempdir().unwrap();
-        let (manager, mut task) = ScriptBackupManager::new(tmp.path(), OkHandler).await.unwrap();
-        
+        let (manager, mut task) = ScriptBackupManager::new(tmp.path(), OkHandler)
+            .await
+            .unwrap();
+
         let entry = dummy_entry_in(tmp.path(), "test1", 1, 10).await;
-        manager.register(entry.namespace.clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
+        manager
+            .register(
+                entry.namespace.clone(),
+                entry.start_frame_no,
+                entry.end_frame_no,
+                &entry.path,
+            )
+            .await
+            .unwrap();
 
         let entry = dummy_entry_in(tmp.path(), "test1", 11, 50).await;
-        manager.register(entry.namespace.clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
+        manager
+            .register(
+                entry.namespace.clone(),
+                entry.start_frame_no,
+                entry.end_frame_no,
+                &entry.path,
+            )
+            .await
+            .unwrap();
 
         task.process_one().await.unwrap();
         assert_eq!(task.queue.lock().len(), 1);
@@ -424,16 +537,30 @@ mod test {
             }
         }
 
-        let (manager, mut task) = ScriptBackupManager::new(tmp.path(), OkHandler).await.unwrap();
-        
+        let (manager, mut task) = ScriptBackupManager::new(tmp.path(), OkHandler)
+            .await
+            .unwrap();
+
         let step_fut = task.process_one();
         tokio::pin!(step_fut);
 
         // nothing to do, waiting
-        assert!(tokio::time::timeout(Duration::from_millis(50), &mut step_fut).await.is_err());
+        assert!(
+            tokio::time::timeout(Duration::from_millis(50), &mut step_fut)
+                .await
+                .is_err()
+        );
 
         let entry = dummy_entry_in(tmp.path(), "test1", 1, 10).await;
-        manager.register(entry.namespace.clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
+        manager
+            .register(
+                entry.namespace.clone(),
+                entry.start_frame_no,
+                entry.end_frame_no,
+                &entry.path,
+            )
+            .await
+            .unwrap();
 
         assert!(step_fut.await.is_ok());
     }

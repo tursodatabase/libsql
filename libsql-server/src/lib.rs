@@ -42,7 +42,7 @@ use utils::services::idle_shutdown::IdleShutdownKicker;
 
 use self::config::MetaStoreConfig;
 use self::net::AddrIncoming;
-use self::replication::script_backup_manager::{ScriptBackupManager, CommandHandler};
+use self::replication::script_backup_manager::{CommandHandler, ScriptBackupManager};
 
 pub mod config;
 pub mod connection;
@@ -500,16 +500,15 @@ where
         ProxyService,
         ReplicationLogService,
     )> {
-
         let scripted_backup = match self.db_config.snapshot_exec {
             Some(command) => {
-                let (scripted_backup, script_backup_task) = ScriptBackupManager::new(&self.base_path, CommandHandler::new(command)).await?;
+                let (scripted_backup, script_backup_task) =
+                    ScriptBackupManager::new(&self.base_path, CommandHandler::new(command)).await?;
                 self.join_set.spawn(script_backup_task.run());
                 Some(scripted_backup)
             }
             None => None,
         };
-
 
         let conf = PrimaryNamespaceConfig {
             base_path: self.base_path.clone(),
