@@ -78,6 +78,7 @@ impl Ord for SnapshotEntry {
     }
 }
 
+#[derive(Clone)]
 pub(crate) struct ScriptBackupManager {
     path: PathBuf,
     queue: Arc<Mutex<BinaryHeap<SnapshotEntry>>>,

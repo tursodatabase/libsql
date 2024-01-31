@@ -23,6 +23,7 @@ use crate::replication::primary::logger::LogFileHeader;
 
 use super::primary::logger::LogFile;
 use super::FrameNo;
+use super::script_backup_manager::ScriptBackupManager;
 
 /// This is the ratio of the space required to store snapshot vs size of the actual database.
 /// When this ratio is exceeded, compaction is triggered.
@@ -116,6 +117,7 @@ async fn compact(
     callback: &SnapshotCallback,
     snapshot_dir_path: &Path,
     to_compact_path: &Path,
+    scripted_backup: Option<ScriptBackupManager>,
 ) -> anyhow::Result<()> {
     match perform_compaction(db_path, to_compact_file, log_id).await {
         Ok((snapshot_name, snapshot_frame_count, size_after)) => {
@@ -178,7 +180,7 @@ fn pending_snapshots_list(compact_queue_dir: &Path) -> anyhow::Result<Vec<(LogFi
 }
 
 impl LogCompactor {
-    pub fn new(db_path: &Path, log_id: Uuid, callback: SnapshotCallback) -> anyhow::Result<Self> {
+    pub fn new(db_path: &Path, log_id: Uuid, callback: SnapshotCallback, scripted_backup: Option<ScriptBackupManager>) -> anyhow::Result<Self> {
         // a directory containing logs that need compaction
         let compact_queue_dir = db_path.join("to_compact");
         std::fs::create_dir_all(&compact_queue_dir)?;
@@ -418,6 +420,7 @@ struct SnapshotBuilder {
     snapshot_file: tokio::io::BufWriter<async_tempfile::TempFile>,
     db_path: PathBuf,
     last_seen_frame_no: u64,
+    scripted_backup: Option<ScriptBackupManager>,
 }
 
 fn snapshot_dir_path(db_path: &Path) -> PathBuf {
@@ -425,7 +428,7 @@ fn snapshot_dir_path(db_path: &Path) -> PathBuf {
 }
 
 impl SnapshotBuilder {
-    async fn new(db_path: &Path, log_id: Uuid) -> anyhow::Result<Self> {
+    async fn new(db_path: &Path, log_id: Uuid, scripted_backup: Option<ScriptBackupManager>, namespace: NamespaceName) -> anyhow::Result<Self> {
         let snapshot_dir_path = snapshot_dir_path(db_path);
         std::fs::create_dir_all(&snapshot_dir_path)?;
         let mut f =
@@ -446,6 +449,7 @@ impl SnapshotBuilder {
             snapshot_file: f,
             db_path: db_path.to_path_buf(),
             last_seen_frame_no: u64::MAX,
+            scripted_backup,
         })
     }
 
@@ -505,6 +509,9 @@ impl SnapshotBuilder {
 
         file.sync_all().await?;
 
+        if let Some(manager) = self.scripted_backup {
+            manager.register(self.namespace, self.header.start_frame_no.into(), self.header.end_frame_no.into(), file.file_path()).await?;
+        }
         tokio::fs::rename(
             file.file_path(),
             snapshot_dir_path(&self.db_path).join(&snapshot_name),
