@@ -321,19 +321,19 @@ mod test {
         let (manager, mut task) = ScriptBackupManager::new(tmp.path(), FailHandler::default()).await.unwrap();
         
         let entry = dummy_entry_in(tmp.path(), "test1", 1, 10).await;
-        manager.register(entry.namespace().clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
+        manager.register(entry.namespace.clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
 
         let entry = dummy_entry_in(tmp.path(), "test1", 11, 21).await;
-        manager.register(entry.namespace().clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
+        manager.register(entry.namespace.clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
 
         task.process_one().await.unwrap();
-        assert_eq!(task.handler.last_entry.as_ref().unwrap().start_frame_no(), 1);
+        assert_eq!(task.handler.last_entry.as_ref().unwrap().start_frame_no, 1);
         assert_eq!(task.handler.last_entry.as_ref().unwrap().retries, 0);
         assert_eq!(task.queue.lock().len(), 2);
 
         // next step, we retry
         task.process_one().await.unwrap();
-        assert_eq!(task.handler.last_entry.as_ref().unwrap().start_frame_no(), 1);
+        assert_eq!(task.handler.last_entry.as_ref().unwrap().start_frame_no, 1);
         assert_eq!(task.handler.last_entry.as_ref().unwrap().retries, 1);
         assert_eq!(task.queue.lock().len(), 2);
     }
@@ -352,7 +352,7 @@ mod test {
         let (manager, mut task) = ScriptBackupManager::new(tmp.path(), OkHandler).await.unwrap();
         
         let entry = dummy_entry_in(tmp.path(), "test1", 1, 10).await;
-        manager.register(entry.namespace().clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
+        manager.register(entry.namespace.clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
 
         task.process_one().await.unwrap();
     }
@@ -363,7 +363,7 @@ mod test {
         struct FailHandler;
         impl Handler for FailHandler {
             async fn handle(&mut self, entry: &SnapshotEntry) -> Result<()> {
-                tokio::fs::remove_file(entry.path()).await.unwrap();
+                tokio::fs::remove_file(&entry.path).await.unwrap();
                 Err(Error::HandlerFailure)
             }
         }
@@ -372,7 +372,7 @@ mod test {
         let (manager, mut task) = ScriptBackupManager::new(tmp.path(), FailHandler).await.unwrap();
         
         let entry = dummy_entry_in(tmp.path(), "test1", 1, 10).await;
-        manager.register(entry.namespace().clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
+        manager.register(entry.namespace.clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
 
         task.process_one().await.unwrap();
     }
@@ -382,7 +382,7 @@ mod test {
         struct OkHandler;
         impl Handler for OkHandler {
             async fn handle(&mut self, entry: &SnapshotEntry) -> Result<()> {
-                tokio::fs::remove_file(entry.path()).await.unwrap();
+                tokio::fs::remove_file(&entry.path).await.unwrap();
                 Ok(())
             }
         }
@@ -391,10 +391,10 @@ mod test {
         let (manager, mut task) = ScriptBackupManager::new(tmp.path(), OkHandler).await.unwrap();
         
         let entry = dummy_entry_in(tmp.path(), "test1", 1, 10).await;
-        manager.register(entry.namespace().clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
+        manager.register(entry.namespace.clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
 
         let entry = dummy_entry_in(tmp.path(), "test1", 11, 50).await;
-        manager.register(entry.namespace().clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
+        manager.register(entry.namespace.clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
 
         task.process_one().await.unwrap();
         assert_eq!(task.queue.lock().len(), 1);
@@ -408,7 +408,7 @@ mod test {
         struct OkHandler;
         impl Handler for OkHandler {
             async fn handle(&mut self, entry: &SnapshotEntry) -> Result<()> {
-                tokio::fs::remove_file(entry.path()).await.unwrap();
+                tokio::fs::remove_file(&entry.path).await.unwrap();
                 Ok(())
             }
         }
@@ -422,7 +422,7 @@ mod test {
         assert!(tokio::time::timeout(Duration::from_millis(50), &mut step_fut).await.is_err());
 
         let entry = dummy_entry_in(tmp.path(), "test1", 1, 10).await;
-        manager.register(entry.namespace().clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
+        manager.register(entry.namespace.clone(), entry.start_frame_no, entry.end_frame_no, &entry.path).await.unwrap();
 
         assert!(step_fut.await.is_ok());
     }
