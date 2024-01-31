@@ -272,8 +272,9 @@ if(MSVC)
   )
 endif()
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Linux"
+if ((CMAKE_SYSTEM_NAME STREQUAL "Linux"
     OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    AND NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2 -maes")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2 -maes")
   set(SQLITE3MC_LINK_LIBRARIES
@@ -286,7 +287,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux"
   endif()
   set(SHARED_LIB_EXPORT_DEFINITION "__attribute__((visibility(\"default\")))")
 else()
-  if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+  if (CMAKE_C_COMPILER_ID STREQUAL "GNU" 
+  AND NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2 -maes")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2 -maes")
   endif()
