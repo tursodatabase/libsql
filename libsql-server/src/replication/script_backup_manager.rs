@@ -381,7 +381,10 @@ mod test {
         impl Handler for FailHandler {
             async fn handle(&mut self, entry: &SnapshotEntry) -> Result<()> {
                 self.last_entry = Some(entry.clone());
-                Err(Error::HandlerFailure)
+                Err(Error::HandlerFailure {
+                    stdout: String::new(),
+                    stderr: String::new(),
+                })
             }
         }
 
@@ -460,7 +463,10 @@ mod test {
         impl Handler for FailHandler {
             async fn handle(&mut self, entry: &SnapshotEntry) -> Result<()> {
                 tokio::fs::remove_file(&entry.path).await.unwrap();
-                Err(Error::HandlerFailure)
+                Err(Error::HandlerFailure {
+                    stdout: String::new(),
+                    stderr: String::new(),
+                })
             }
         }
 
