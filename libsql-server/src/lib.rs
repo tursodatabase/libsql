@@ -521,7 +521,6 @@ where
             max_response_size: self.db_config.max_response_size,
             max_total_response_size: self.db_config.max_total_response_size,
             checkpoint_interval: self.db_config.checkpoint_interval,
-            disable_namespace: self.disable_namespaces,
             encryption_key: self.db_config.encryption_key.clone(),
             max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
             scripted_backup,

@@ -997,7 +997,6 @@ pub struct PrimaryNamespaceConfig {
     pub(crate) max_response_size: u64,
     pub(crate) max_total_response_size: u64,
     pub(crate) checkpoint_interval: Option<Duration>,
-    pub(crate) disable_namespace: bool,
     pub(crate) encryption_key: Option<bytes::Bytes>,
     pub(crate) max_concurrent_connections: Arc<Semaphore>,
     pub(crate) scripted_backup: Option<ScriptBackupManager>,
