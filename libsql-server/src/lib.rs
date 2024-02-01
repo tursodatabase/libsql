@@ -1,6 +1,7 @@
 #![allow(clippy::type_complexity, clippy::too_many_arguments)]
 
 use std::future::Future;
+use std::iter::Once;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::str::FromStr;
@@ -352,16 +353,23 @@ where
     }
 
     pub async fn start(mut self) -> anyhow::Result<()> {
+        static INIT: std::sync::Once = std::sync::Once::new();
         let mut join_set = JoinSet::new();
 
-        if let Ok(size) = std::env::var("LIBSQL_EXPERIMENTAL_PAGER") {
-            let size = size.parse()?;
-            PAGER_CACHE_SIZE.store(size, std::sync::atomic::Ordering::SeqCst);
-            unsafe {
-                let rc = sqlite3_config(SQLITE_CONFIG_PCACHE2, &make_pager());
-                assert_eq!(rc, 0);
+        INIT.call_once(|| {
+            if let Ok(size) = std::env::var("LIBSQL_EXPERIMENTAL_PAGER") {
+                let size = size.parse().unwrap();
+                PAGER_CACHE_SIZE.store(size, std::sync::atomic::Ordering::SeqCst);
+                unsafe {
+                    let rc = sqlite3_config(SQLITE_CONFIG_PCACHE2, &make_pager());
+                    if rc != 0 {
+                        // necessary because in some tests there is race between client and server
+                        // to initialize global state.
+                        tracing::error!("failed to setup sqld pager, using sqlite3 default instead");
+                    }
+                }
             }
-        }
+        });
 
         init_version_file(&self.path)?;
         maybe_migrate(&self.path)?;
