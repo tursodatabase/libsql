@@ -1,16 +1,16 @@
-use std::ffi::{c_void, c_int};
-use std::mem::{size_of, align_of};
 use std::alloc::Layout;
-use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
 use std::cell::UnsafeCell;
+use std::ffi::{c_int, c_void};
+use std::mem::{align_of, size_of};
+use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
 
-use rusqlite::ffi::{sqlite3_pcache, sqlite3_pcache_methods2, sqlite3_pcache_page};
 use hashbrown::HashMap;
+use rusqlite::ffi::{sqlite3_pcache, sqlite3_pcache_methods2, sqlite3_pcache_page};
 
 use crate::LIBSQL_PAGE_SIZE;
 
-unsafe impl Send for Allocator { }
-unsafe impl Sync for Allocator { }
+unsafe impl Send for Allocator {}
+unsafe impl Sync for Allocator {}
 
 struct Allocator {
     // points the first page in the free list
@@ -88,7 +88,7 @@ impl Page {
 }
 
 impl Allocator {
-    fn new(page_size: usize, extra_size: usize ,max_pages: usize) -> Self {
+    fn new(page_size: usize, extra_size: usize, max_pages: usize) -> Self {
         assert_eq!(page_size, PAGER_PAGE_SIZE);
         assert_eq!(extra_size, PAGER_EXTRA_SIZE);
         // todo: round up to a multiple aligned to 8
@@ -104,16 +104,14 @@ impl Allocator {
         };
 
         // initialize the intrusive list: each page is initially linked to the next
-        slab
-            .iter_mut()
-            .enumerate()
-            .for_each(|(i, p)| {
-                let page = p.get_mut();
-                page.free((i + 1) as u32);
-                page.p_page = page.data.as_mut_ptr() as *mut _;
-                page.p_extra = unsafe { page.data.as_mut_ptr().offset(LIBSQL_PAGE_SIZE as _) as *mut _ };
-                assert_eq!((page.p_page as usize) % 8, 0);
-            });
+        slab.iter_mut().enumerate().for_each(|(i, p)| {
+            let page = p.get_mut();
+            page.free((i + 1) as u32);
+            page.p_page = page.data.as_mut_ptr() as *mut _;
+            page.p_extra =
+                unsafe { page.data.as_mut_ptr().offset(LIBSQL_PAGE_SIZE as _) as *mut _ };
+            assert_eq!((page.p_page as usize) % 8, 0);
+        });
 
         Self {
             free_list_head: 0.into(),
@@ -139,11 +137,11 @@ impl Allocator {
             None
         }
     }
-    
+
     fn free(&self, page: &mut Page) {
         assert!(!page.is_free(), "page already freed");
-       let mut current = self.free_list_head.lock();
-       *current = page.free(*current);
+        let mut current = self.free_list_head.lock();
+        *current = page.free(*current);
     }
 }
 
@@ -172,8 +170,18 @@ extern "C" fn init(_arg: *mut c_void) -> c_int {
     0
 }
 
-extern "C" fn create(page_size: c_int, extra_size: c_int, _purgeable: c_int) -> *mut sqlite3_pcache {
-    let allocator = PAGER_CACHE.get_or_init(|| Allocator::new(page_size as usize, extra_size as usize, PAGER_CACHE_SIZE.load(SeqCst)));
+extern "C" fn create(
+    page_size: c_int,
+    extra_size: c_int,
+    _purgeable: c_int,
+) -> *mut sqlite3_pcache {
+    let allocator = PAGER_CACHE.get_or_init(|| {
+        Allocator::new(
+            page_size as usize,
+            extra_size as usize,
+            PAGER_CACHE_SIZE.load(SeqCst),
+        )
+    });
     let pager = Pager {
         alloc: allocator,
         pages: HashMap::new().into(),
@@ -182,13 +190,17 @@ extern "C" fn create(page_size: c_int, extra_size: c_int, _purgeable: c_int) -> 
     Box::leak(Box::new(pager)) as *mut Pager as *mut _
 }
 
-extern "C" fn cache_size(_cache: *mut sqlite3_pcache, _size: c_int) { }
+extern "C" fn cache_size(_cache: *mut sqlite3_pcache, _size: c_int) {}
 extern "C" fn page_count(cache: *mut sqlite3_pcache) -> c_int {
     let cache = unsafe { &*(cache as *mut Pager) };
     cache.pages.len() as _
 }
 
-extern "C" fn fetch(cache: *mut sqlite3_pcache, key: u32, create_flag: c_int) -> *mut sqlite3_pcache_page {
+extern "C" fn fetch(
+    cache: *mut sqlite3_pcache,
+    key: u32,
+    create_flag: c_int,
+) -> *mut sqlite3_pcache_page {
     let cache = unsafe { &mut *(cache as *mut Pager) };
     let pages = &mut cache.pages;
     match pages.get_mut(&key) {
@@ -201,10 +213,10 @@ extern "C" fn fetch(cache: *mut sqlite3_pcache, key: u32, create_flag: c_int) ->
             match pages.extract_if(|_, p| !p.is_pinned()).next() {
                 Some((_, page)) => {
                     page.pin(key as u16);
-                    let ptr = page as *mut _; 
+                    let ptr = page as *mut _;
                     pages.insert(key, page);
                     ptr as *mut _
-                },
+                }
                 None if create_flag == 0 => std::ptr::null_mut(),
                 None if create_flag != 0 => {
                     // try alloc one from global pool
@@ -214,15 +226,13 @@ extern "C" fn fetch(cache: *mut sqlite3_pcache, key: u32, create_flag: c_int) ->
                             let ptr = page as *mut _;
                             assert!(pages.insert(key, page).is_none());
                             ptr as *mut _
-                        },
-                        None => {
-                            std::ptr::null_mut()
-                        },
+                        }
+                        None => std::ptr::null_mut(),
                     }
                 }
                 None => unreachable!(),
             }
-        },
+        }
     }
 }
 
@@ -239,7 +249,12 @@ extern "C" fn unpin(cache: *mut sqlite3_pcache, page: *mut sqlite3_pcache_page, 
     }
 }
 
-extern "C" fn rekey(cache: *mut sqlite3_pcache, data: *mut sqlite3_pcache_page, old_key: u32, new_key: u32) {
+extern "C" fn rekey(
+    cache: *mut sqlite3_pcache,
+    data: *mut sqlite3_pcache_page,
+    old_key: u32,
+    new_key: u32,
+) {
     let cache = unsafe { &mut *(cache as *mut Pager) };
     let _new_page = unsafe { &mut *(data as *mut Page) };
     let pages = &mut cache.pages;
@@ -251,11 +266,12 @@ extern "C" fn rekey(cache: *mut sqlite3_pcache, data: *mut sqlite3_pcache_page, 
     }
 }
 
-
 extern "C" fn truncate(cache: *mut sqlite3_pcache, limit: u32) {
     let cache = unsafe { &mut *(cache as *mut Pager) };
     let pages = &mut cache.pages;
-    pages.extract_if(|k, _| *k >= limit).for_each(|(_, p)| cache.alloc.free(p));
+    pages
+        .extract_if(|k, _| *k >= limit)
+        .for_each(|(_, p)| cache.alloc.free(p));
 }
 
 extern "C" fn destroy(cache: *mut sqlite3_pcache) {
@@ -267,7 +283,9 @@ extern "C" fn destroy(cache: *mut sqlite3_pcache) {
 extern "C" fn shrink(cache: *mut sqlite3_pcache) {
     let cache = unsafe { &mut *(cache as *mut Pager) };
     let pages = &mut cache.pages;
-    pages.extract_if(|_, p| !p.is_pinned()).for_each(|(_, p)| cache.alloc.free(p));
+    pages
+        .extract_if(|_, p| !p.is_pinned())
+        .for_each(|(_, p)| cache.alloc.free(p));
 }
 
 pub const fn make_pager() -> sqlite3_pcache_methods2 {
@@ -299,9 +317,15 @@ mod test {
         assert!(!page1.is_free());
         assert_eq!(page1.page_no(), 0);
         assert_eq!(page1.p_page as usize, page1.data.as_ptr() as usize);
-        assert_eq!(page1.p_extra as usize, page1.p_page as usize + LIBSQL_PAGE_SIZE as usize);
+        assert_eq!(
+            page1.p_extra as usize,
+            page1.p_page as usize + LIBSQL_PAGE_SIZE as usize
+        );
         let page2 = alloc.alloc().unwrap();
-        assert_eq!(page2 as *mut _ as usize, page1 as *mut _ as usize + size_of::<Page>());
+        assert_eq!(
+            page2 as *mut _ as usize,
+            page1 as *mut _ as usize + size_of::<Page>()
+        );
         assert!(!page2.is_free());
         assert_eq!(page2.page_no(), 1);
         let page3 = alloc.alloc().unwrap();

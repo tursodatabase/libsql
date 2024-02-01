@@ -12,7 +12,7 @@ use crate::error::Error;
 use crate::metrics::DIRTY_STARTUP;
 use crate::migration::maybe_migrate;
 use crate::net::Accept;
-use crate::pager::{PAGER_CACHE_SIZE, make_pager};
+use crate::pager::{make_pager, PAGER_CACHE_SIZE};
 use crate::rpc::proxy::rpc::proxy_server::Proxy;
 use crate::rpc::proxy::ProxyService;
 use crate::rpc::replica_proxy::ReplicaProxyService;
@@ -64,6 +64,7 @@ mod http;
 mod metrics;
 mod migration;
 mod namespace;
+mod pager;
 mod query;
 mod query_analysis;
 mod query_result_builder;
@@ -72,7 +73,6 @@ mod stats;
 #[cfg(test)]
 mod test;
 mod utils;
-mod pager;
 
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 const DEFAULT_AUTO_CHECKPOINT: u32 = 1000;
