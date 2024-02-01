@@ -140,10 +140,7 @@ async fn compact(
 
 /// Returns a list of pending snapshots to compact by reading the `to_compact` directory. Those
 /// snapshots should be processed before any other.
-fn pending_snapshots_list(
-    compact_queue_dir: &Path,
-    encryption: Option<FrameEncryptor>,
-) -> anyhow::Result<Vec<(LogFile, PathBuf)>> {
+fn pending_snapshots_list(compact_queue_dir: &Path) -> anyhow::Result<Vec<(LogFile, PathBuf)>> {
     let dir = std::fs::read_dir(compact_queue_dir)?;
     let mut to_compact = Vec::new();
     for entry in dir {
@@ -161,7 +158,7 @@ fn pending_snapshots_list(
             }
             // max log duration and frame number don't  matter, we compact the file and discard it
             // immediately.
-            let to_compact_file = LogFile::new(file, u64::MAX, None, encryption.clone())?;
+            let to_compact_file = LogFile::new(file, u64::MAX, None, None)?;
             to_compact.push((to_compact_file, to_compact_path));
         }
     }
@@ -179,7 +176,6 @@ impl LogCompactor {
         log_id: Uuid,
         scripted_backup: Option<ScriptBackupManager>,
         namespace: NamespaceName,
-        encryption: Option<FrameEncryptor>,
     ) -> anyhow::Result<Self> {
         // a directory containing logs that need compaction
         let compact_queue_dir = db_path.join("to_compact");
@@ -197,7 +193,7 @@ impl LogCompactor {
             SnapshotMerger::new(db_path, log_id, scripted_backup.clone(), namespace.clone())?;
         let db_path = db_path.to_path_buf();
         // We gather pending snapshots here, so new snapshots don't interfere.
-        let pending = pending_snapshots_list(&compact_queue_dir, encryption)?;
+        let pending = pending_snapshots_list(&compact_queue_dir)?;
         // FIXME(marin): we somehow need to make this code more robust. How to deal with a
         // compaction error?
         tokio::task::spawn(async move {
@@ -662,7 +658,7 @@ mod test {
         // start processing pending logs, but a correct implementation should always processs the
         // log _after_ the pending logs have been processed. A failure to do so will trigger
         // assertions in the merger code.
-        let compactor = LogCompactor::new(tmp.path(), log_id, None, "test".into(), None).unwrap();
+        let compactor = LogCompactor::new(tmp.path(), log_id, None, "test".into()).unwrap();
         let compactor_clone = compactor.clone();
         tokio::task::spawn_blocking(move || {
             let (logfile, logfile_path) = make_logfile();
@@ -777,7 +773,7 @@ mod test {
         // start processing pending logs, but a correct implementation should always processs the
         // log _after_ the pending logs have been processed. A failure to do so will trigger
         // assertions in the merger code.
-        let compactor = LogCompactor::new(tmp.path(), log_id, None, "test".into(), None).unwrap();
+        let compactor = LogCompactor::new(tmp.path(), log_id, None, "test".into()).unwrap();
         let compactor_clone = compactor.clone();
         tokio::task::spawn_blocking(move || {
             for _ in 0..10 {
@@ -840,7 +836,7 @@ mod test {
 
         let dump_dir = tempdir().unwrap();
         let compactor =
-            LogCompactor::new(dump_dir.path(), log_id, None, "test".into(), None).unwrap();
+            LogCompactor::new(dump_dir.path(), log_id, None, "test".into()).unwrap();
         tokio::task::spawn_blocking({
             let compactor = compactor.clone();
             move || {
