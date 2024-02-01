@@ -427,6 +427,10 @@ impl LogFile {
         let encryption = self.encryption;
         Self::new(self.file, max_log_frame_count, max_log_duration, encryption)
     }
+
+    pub fn set_encryptor(&mut self, encryption: Option<FrameEncryptor>) -> Option<FrameEncryptor> {
+        std::mem::replace(&mut self.encryption, encryption)
+    }
 }
 
 #[cfg(target_os = "macos")]
@@ -656,7 +660,7 @@ impl ReplicationLogger {
     }
 
     fn recover(
-        log_file: LogFile,
+        mut log_file: LogFile,
         mut data_path: PathBuf,
         callback: SnapshotCallback,
         auto_checkpoint: u32,
@@ -679,14 +683,11 @@ impl ReplicationLogger {
         let num_page = size / LIBSQL_PAGE_SIZE;
         let mut buf = [0; LIBSQL_PAGE_SIZE as usize];
         let mut page_no = 1; // page numbering starts at 1
-        let encryptor = encryption_key.clone().map(FrameEncryptor::new);
+                             // We take the encryption implementation out to restore undecrypted frames,
+                             // and later set it back in to create the replicator.
+        let encryptor = log_file.set_encryptor(None);
         for i in 0..num_page {
             data_file.read_exact_at(&mut buf, i * LIBSQL_PAGE_SIZE)?;
-            // NOTICE: we could instead copy encrypted pages to the log file, but that way
-            // we also detect decryption failures early
-            if let Some(encryptor) = &encryptor {
-                encryptor.decrypt(&mut buf)?;
-            }
             log_file.push_page(&WalPage {
                 page_no,
                 size_after: if i == num_page - 1 { num_page as _ } else { 0 },
@@ -697,6 +698,7 @@ impl ReplicationLogger {
         }
 
         log_file.commit()?;
+        log_file.set_encryptor(encryptor);
 
         assert!(data_path.pop());
 
