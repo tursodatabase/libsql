@@ -39,7 +39,7 @@ jobs:
       matrix:
         os: 
           - linux-x86_64
-          - macos-arm64
+          - macos-14
           - ${{ needs.start-runner.outputs.label }}
         variant: 
           - 'wasm-udf-dynamic'
