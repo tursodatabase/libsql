@@ -9,7 +9,7 @@ use std::sync::Arc;
 use anyhow::{bail, ensure};
 use bytes::{Bytes, BytesMut};
 use chrono::{DateTime, Utc};
-use libsql_replication::frame::{Frame, FrameHeader, FrameMut};
+use libsql_replication::frame::{Frame, FrameBorrowed, FrameHeader, FrameMut};
 use libsql_replication::snapshot::SnapshotFile;
 use once_cell::sync::Lazy;
 use parking_lot::{Mutex, RwLock};
@@ -397,20 +397,21 @@ impl LogFile {
     }
 
     fn read_frame_byte_offset_mut(&self, offset: u64) -> anyhow::Result<FrameMut> {
-        let mut buffer = BytesMut::zeroed(LogFile::FRAME_SIZE);
-        self.file.read_exact_at(&mut buffer, offset)?;
+        use zerocopy::FromZeroes;
+        let mut frame = FrameBorrowed::new_zeroed();
+        self.file.read_exact_at(frame.as_bytes_mut(), offset)?;
         if let Some(encryption) = &self.encryption {
-            encryption.decrypt(&mut buffer[size_of::<FrameHeader>()..])?;
+            encryption.decrypt(frame.page_mut())?;
         }
-
-        Ok(FrameMut::try_from(&*buffer)?)
+        Ok(frame.into())
     }
 
     fn read_not_decrypted_frame_byte_offset_mut(&self, offset: u64) -> anyhow::Result<FrameMut> {
-        let mut buffer = BytesMut::zeroed(LogFile::FRAME_SIZE);
-        self.file.read_exact_at(&mut buffer, offset)?;
+        use zerocopy::FromZeroes;
+        let mut frame = FrameBorrowed::new_zeroed();
+        self.file.read_exact_at(frame.as_bytes_mut(), offset)?;
 
-        Ok(FrameMut::try_from(&*buffer)?)
+        Ok(frame.into())
     }
 
     fn last_commited_frame_no(&self) -> Option<FrameNo> {
