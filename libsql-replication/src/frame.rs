@@ -142,6 +142,10 @@ impl FrameBorrowed {
         &mut self.header
     }
 
+    pub fn page_mut(&mut self) -> &mut [u8] {
+        &mut self.page
+    }
+
     pub fn from_parts(header: &FrameHeader, page: &[u8]) -> Self {
         assert_eq!(page.len(), LIBSQL_PAGE_SIZE);
 
