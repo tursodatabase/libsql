@@ -277,7 +277,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux"
 
   # Do not set `-maes -msee4.2` when we are on arm which doesn't support
   # this instruction set.
-  if (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarach64"
+  if (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64"
       OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
