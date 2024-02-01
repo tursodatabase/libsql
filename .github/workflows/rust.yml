@@ -126,6 +126,11 @@ jobs:
     - name: Run tests
       run: cargo nextest run
 
+    - name: Run tests with custom pager
+      env:
+        - LIBSQL_EXPERIMENTAL_PAGER=100
+      run: cargo nextest run
+
   # test-rust-wasm:
   #   runs-on: ubuntu-latest
   #   name: Run Rust Wasm Tests
