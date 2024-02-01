@@ -646,7 +646,6 @@ impl ReplicationLogger {
                 &db_path,
                 Uuid::from_u128(log_file.header.log_id.get()),
                 callback,
-                encryptor.clone(),
             )?,
             log_file: RwLock::new(log_file),
             db_path,
@@ -660,7 +659,7 @@ impl ReplicationLogger {
     }
 
     fn recover(
-        mut log_file: LogFile,
+        log_file: LogFile,
         mut data_path: PathBuf,
         callback: SnapshotCallback,
         auto_checkpoint: u32,
