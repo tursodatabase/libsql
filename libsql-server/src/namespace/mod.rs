@@ -903,6 +903,11 @@ impl Namespace<ReplicaDatabase> {
                         (reset)(ResetOp::Destroy(namespace.clone()));
                         Err(err)?;
                     }
+                    e @ Error::Injector(_) => {
+                        tracing::error!("potential corruption detected while replicating, reseting  replica: {e}");
+                        (reset)(ResetOp::Reset(namespace.clone()));
+                        Err(e)?;
+                    },
                     Error::Meta(err) => {
                         use libsql_replication::meta::Error;
                         match err {
@@ -921,7 +926,6 @@ impl Namespace<ReplicaDatabase> {
                         }
                     }
                     e @ (Error::Internal(_)
-                    | Error::Injector(_)
                     | Error::Client(_)
                     | Error::PrimaryHandshakeTimeout
                     | Error::NeedSnapshot) => {

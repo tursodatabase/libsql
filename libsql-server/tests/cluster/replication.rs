@@ -14,7 +14,7 @@ use crate::common::{
 /// In this test, we first create a primary with a very small max_log_size, and then add a good
 /// amount of data to it. This will cause the primary to create a bunch of snaphots a large enough
 /// to prevent the replica from applying them all at once. We then start the replica, and check
-/// that it replicates correctly to the primary's replicaton index.
+/// that it replicates correctly to the primary's replicaton index. #[test]
 #[test]
 fn apply_partial_snapshot() {
     let mut sim = turmoil::Builder::new()
