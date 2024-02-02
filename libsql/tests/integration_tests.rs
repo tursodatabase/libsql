@@ -73,6 +73,31 @@ async fn connection_execute_batch() {
 }
 
 #[tokio::test]
+async fn connection_execute_batch_inserts() {
+    let conn = setup().await;
+
+    conn.execute("CREATE TABLE foo(x INTEGER)", ())
+        .await
+        .unwrap();
+
+    conn.execute_batch(
+        "BEGIN;
+        INSERT INTO foo VALUES (1);
+        INSERT INTO foo VALUES (2);
+        INSERT INTO foo VALUES (3);
+        COMMIT;
+        ",
+    )
+    .await
+    .unwrap();
+
+    let mut rows = conn.query("SELECT count(*) FROM foo", ()).await.unwrap();
+
+    let count = rows.next().await.unwrap().unwrap().get::<u64>(0).unwrap();
+    assert_eq!(count, 3);
+}
+
+#[tokio::test]
 async fn connection_execute_batch_newline() {
     // This test checks that we handle a null raw
     // stament in execute_batch. What happens when there
