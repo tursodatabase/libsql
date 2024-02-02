@@ -56,6 +56,8 @@
 #[macro_use]
 mod macros;
 
+mod query;
+
 cfg_core! {
     mod local;
 
