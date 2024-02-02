@@ -1,5 +1,5 @@
-use std::time::Duration;
 use std::sync::Arc;
+use std::time::Duration;
 
 use insta::assert_debug_snapshot;
 use libsql::Database;
