@@ -696,7 +696,7 @@ impl Replicator {
             &self.db_path,
             flags,
             Sqlite3WalManager::new(),
-            libsql_sys::Connection::NO_AUTOCHECKPOINT, // no checkpointing
+            libsql_sys::connection::NO_AUTOCHECKPOINT, // no checkpointing
             self.encryption_key.clone(),
         )?;
         Ok(conn)
@@ -1324,8 +1324,12 @@ impl Replicator {
         db_path: &Path,
     ) -> Result<bool> {
         let encryption_key = self.encryption_key.clone();
-        let mut injector =
-            libsql_replication::injector::Injector::new(db_path, 4096, libsql_sys::Connection::NO_AUTOCHECKPOINT, encryption_key)?;
+        let mut injector = libsql_replication::injector::Injector::new(
+            db_path,
+            4096,
+            libsql_sys::connection::NO_AUTOCHECKPOINT,
+            encryption_key,
+        )?;
         let prefix = format!("{}-{}/", self.db_name, generation);
         let mut page_buf = {
             let mut v = Vec::with_capacity(page_size);

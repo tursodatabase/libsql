@@ -105,9 +105,9 @@ pub fn generate_aes256_key(user_password: &[u8], digest: &mut [u8]) {
     }
 }
 
-impl<W: Wal> Connection<W> {
-    const NO_AUTOCHECKPOINT: u32 = 0;
+pub const NO_AUTOCHECKPOINT: u32 = 0;
 
+impl<W: Wal> Connection<W> {
     /// Opens a database with the regular wal methods in the directory pointed to by path
     pub fn open<T>(
         path: impl AsRef<Path>,
