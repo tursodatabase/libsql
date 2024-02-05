@@ -9,7 +9,7 @@ use tokio_stream::StreamExt;
 use zerocopy::byteorder::little_endian::{U128 as lu128, U32 as lu32, U64 as lu64};
 use zerocopy::{AsBytes, FromZeroes};
 
-use crate::frame::{FrameBorrowed,  FrameMut, FrameNo};
+use crate::frame::{FrameBorrowed, FrameMut, FrameNo};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
