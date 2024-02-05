@@ -29,6 +29,7 @@ pub enum StmtKind {
     Read,
     Write,
     Savepoint,
+    Vacuum,
     Release,
     Other,
 }
@@ -108,6 +109,7 @@ impl StmtKind {
             }) => Some(Self::Write),
             Cmd::Stmt(Stmt::DropView { .. }) => Some(Self::Write),
             Cmd::Stmt(Stmt::Savepoint(_)) => Some(Self::Savepoint),
+            Cmd::Stmt(Stmt::Vacuum(_, _)) => Some(Self::Vacuum),
             Cmd::Stmt(Stmt::Release(_))
             | Cmd::Stmt(Stmt::Rollback {
                 savepoint_name: Some(_),

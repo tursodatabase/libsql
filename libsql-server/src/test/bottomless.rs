@@ -93,6 +93,7 @@ async fn configure_server(
             checkpoint_interval: Some(Duration::from_secs(3)),
             snapshot_at_shutdown: false,
             encryption_key: None,
+            block_vacuum: true,
         },
         admin_api_config: None,
         disable_namespaces: true,

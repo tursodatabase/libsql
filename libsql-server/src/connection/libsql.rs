@@ -45,6 +45,7 @@ pub struct MakeLibSqlConn<T: WalManager> {
     /// return sqlite busy. To mitigate that, we hold on to one connection
     _db: Option<LibSqlConnection<T::Wal>>,
     encryption_key: Option<bytes::Bytes>,
+    block_vacuum: bool,
 }
 
 impl<T> MakeLibSqlConn<T>
@@ -64,6 +65,7 @@ where
         auto_checkpoint: u32,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         encryption_key: Option<bytes::Bytes>,
+        block_vacuum: bool,
     ) -> Result<Self> {
         let mut this = Self {
             db_path,
@@ -78,6 +80,7 @@ where
             state: Default::default(),
             wal_manager,
             encryption_key,
+            block_vacuum,
         };
 
         let db = this.try_create_db().await?;
@@ -127,6 +130,7 @@ where
                 max_total_size: Some(self.max_total_response_size),
                 auto_checkpoint: self.auto_checkpoint,
                 encryption_key: self.encryption_key.clone(),
+                block_vacuum: self.block_vacuum,
             },
             self.current_frame_no_receiver.clone(),
             self.state.clone(),
@@ -764,6 +768,7 @@ impl<W: Wal> Connection<W> {
             StmtKind::Read | StmtKind::TxnBegin | StmtKind::Other => config.block_reads,
             StmtKind::Write => config.block_reads || config.block_writes,
             StmtKind::TxnEnd | StmtKind::Release | StmtKind::Savepoint => false,
+            StmtKind::Vacuum => self.builder_config.block_vacuum,
         };
         if blocked {
             return Err(Error::Blocked(config.block_reason.clone()));
@@ -1121,6 +1126,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            true,
         )
         .await
         .unwrap();
@@ -1163,6 +1169,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            true,
         )
         .await
         .unwrap();
@@ -1210,6 +1217,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            true,
         )
         .await
         .unwrap();
@@ -1289,6 +1297,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            true,
         )
         .await
         .unwrap();
