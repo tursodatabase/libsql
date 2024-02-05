@@ -142,6 +142,118 @@ pub trait QueryResultBuilder: Send + 'static {
     }
 }
 
+// Builder that only initializes itself once, and then
+// accepts multiple calls to rows and steps.
+pub struct ReusableBuilder<InnerBuilder> {
+    began_rows: bool,
+    is_step_error: bool,
+    inner: InnerBuilder,
+}
+
+impl<InnerBuilder: QueryResultBuilder> ReusableBuilder<InnerBuilder> {
+    pub fn new(inner: InnerBuilder) -> Self {
+        Self {
+            began_rows: false,
+            is_step_error: false,
+            inner,
+        }
+    }
+}
+
+impl<InnerBuilder: QueryResultBuilder> QueryResultBuilder for ReusableBuilder<InnerBuilder> {
+    type Ret = <InnerBuilder as QueryResultBuilder>::Ret;
+
+    fn init(&mut self, config: &QueryBuilderConfig) -> Result<(), QueryResultBuilderError> {
+        if self.began_rows {
+            return Ok(());
+        }
+        self.inner.init(config)
+    }
+
+    fn begin_step(&mut self) -> Result<(), QueryResultBuilderError> {
+        if self.began_rows {
+            return Ok(());
+        }
+        self.inner.begin_step()
+    }
+
+    fn finish_step(
+        &mut self,
+        _affected_row_count: u64,
+        _last_insert_rowid: Option<i64>,
+    ) -> Result<(), QueryResultBuilderError> {
+        if self.began_rows {
+            return Ok(());
+        }
+        self.inner
+            .finish_step(_affected_row_count, _last_insert_rowid)
+    }
+
+    fn step_error(&mut self, error: crate::error::Error) -> Result<(), QueryResultBuilderError> {
+        self.is_step_error = true;
+        self.inner.step_error(error)
+    }
+
+    fn cols_description<'a>(
+        &mut self,
+        cols: impl IntoIterator<Item = impl Into<Column<'a>>>,
+    ) -> Result<(), QueryResultBuilderError> {
+        if self.began_rows {
+            return Ok(());
+        }
+        self.inner.cols_description(cols)
+    }
+
+    fn begin_rows(&mut self) -> Result<(), QueryResultBuilderError> {
+        if self.began_rows {
+            return Ok(());
+        }
+        self.began_rows = true;
+        self.inner.begin_rows()
+    }
+
+    fn begin_row(&mut self) -> Result<(), QueryResultBuilderError> {
+        self.inner.begin_row()
+    }
+
+    fn add_row_value(&mut self, v: ValueRef) -> Result<(), QueryResultBuilderError> {
+        self.inner.add_row_value(v)
+    }
+
+    fn finish_row(&mut self) -> Result<(), QueryResultBuilderError> {
+        if self.is_step_error {
+            return Ok(());
+        }
+        self.inner.finish_row()
+    }
+
+    // Will be called in into_ret instead
+    fn finish_rows(&mut self) -> Result<(), QueryResultBuilderError> {
+        Ok(())
+    }
+
+    // Will be called in into_ret instead
+    fn finish(
+        &mut self,
+        _last_frame_no: Option<FrameNo>,
+        _is_autocommit: bool,
+    ) -> Result<(), QueryResultBuilderError> {
+        Ok(())
+    }
+
+    fn into_ret(mut self) -> Self::Ret {
+        if !self.is_step_error {
+            self.inner.finish_rows().ok();
+        }
+        if self.began_rows {
+            self.inner.finish_step(0, None).ok();
+        }
+        // FIXME: remember and forward the finish parameters from the last call
+        self.inner.finish(None, false).ok();
+        self.inner.into_ret()
+    }
+}
+
 pub struct JsonFormatter<F>(pub F);
 
 impl<F: Formatter> JsonFormatter<F> {

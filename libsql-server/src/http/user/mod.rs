@@ -48,7 +48,7 @@ use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 use crate::version;
 
 use self::db_factory::MakeConnectionExtractor;
-use self::result_builder::JsonHttpPayloadBuilder;
+pub use self::result_builder::JsonHttpPayloadBuilder;
 use self::types::QueryObject;
 
 impl TryFrom<query::Value> for serde_json::Value {

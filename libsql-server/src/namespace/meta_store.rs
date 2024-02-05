@@ -309,6 +309,12 @@ impl MetaStore {
 
         Ok(())
     }
+
+    // FIXME(sarna): racy, we should actually just iterate over the namespaces
+    // under a lock.
+    pub fn namespace_names(&self) -> Vec<NamespaceName> {
+        self.inner.lock().configs.keys().cloned().collect()
+    }
 }
 
 impl MetaStoreHandle {

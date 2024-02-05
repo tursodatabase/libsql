@@ -31,8 +31,7 @@ use tokio_util::io::StreamReader;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
-use crate::auth::parse_jwt_key;
-use crate::auth::Authenticated;
+use crate::auth::{parse_jwt_key, Authenticated, Authorized, Permission};
 use crate::config::MetaStoreConfig;
 use crate::connection::config::DatabaseConfig;
 use crate::connection::libsql::{open_conn, MakeLibSqlConn};
@@ -41,7 +40,9 @@ use crate::connection::Connection;
 use crate::connection::MakeConnection;
 use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
 use crate::error::{Error, LoadDumpError};
+use crate::http::user::JsonHttpPayloadBuilder;
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
+use crate::query_result_builder::{QueryResultBuilder, ReusableBuilder};
 use crate::replication::{FrameNo, NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
@@ -764,6 +765,56 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         namespace: NamespaceName,
     ) -> crate::Result<MetaStoreHandle> {
         self.with(namespace, |ns| ns.db_config_store.clone()).await
+    }
+
+    pub(crate) async fn execute_for_each(
+        &self,
+        sql: String,
+    ) -> crate::Result<<ReusableBuilder<JsonHttpPayloadBuilder> as QueryResultBuilder>::Ret> {
+        let mut json_builder = ReusableBuilder::new(JsonHttpPayloadBuilder::new());
+        for ns_name in self.inner.metadata.namespace_names() {
+            tracing::trace!("Executing {sql} on {}", ns_name.as_str());
+            let entry = self
+                .inner
+                .store
+                .try_get_with(ns_name.clone(), async {
+                    let ns = self
+                        .inner
+                        .make_namespace
+                        .create(
+                            ns_name.clone(),
+                            RestoreOption::Latest,
+                            NamespaceBottomlessDbId::NotProvided,
+                            self.make_reset_cb(),
+                            &self.inner.metadata,
+                        )
+                        .await?;
+                    tracing::info!("loaded namespace: `{}`", ns_name.as_str());
+                    Ok::<_, crate::error::Error>(Arc::new(RwLock::new(Some(ns))))
+                })
+                .await?;
+            let lock = entry.read().await;
+            if let Some(ns) = &*lock {
+                let conn = ns.db.connection_maker().create().await?;
+                let batch = crate::query_analysis::Statement::parse(&sql)
+                    .map(|stmt| {
+                        stmt.map(|stmt| crate::query::Query {
+                            stmt: stmt,
+                            params: crate::query::Params::empty(),
+                            want_rows: true,
+                        })
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let auth = Authenticated::Authorized(Authorized {
+                    namespace: None,
+                    permission: Permission::FullAccess,
+                });
+                json_builder = conn
+                    .execute_batch_or_rollback(batch, auth, json_builder, None)
+                    .await?;
+            }
+        }
+        Ok(json_builder.into_ret())
     }
 }
 
