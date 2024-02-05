@@ -73,6 +73,38 @@ impl<'a> std::iter::Iterator for PageHdrIter<'a> {
     }
 }
 
+pub struct PageHdrIterMut<'a> {
+    current_ptr: *mut PgHdr,
+    page_size: usize,
+    _pth: PhantomData<&'a ()>,
+}
+
+impl<'a> PageHdrIterMut<'a> {
+    pub fn new(current_ptr: *mut PgHdr, page_size: usize) -> Self {
+        Self {
+            current_ptr,
+            page_size,
+            _pth: PhantomData,
+        }
+    }
+}
+
+impl<'a> std::iter::Iterator for PageHdrIterMut<'a> {
+    type Item = (u32, &'a mut [u8]);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_ptr.is_null() {
+            return None;
+        }
+        let current_hdr: &PgHdr = unsafe { &*self.current_ptr };
+        let raw_data =
+            unsafe { std::slice::from_raw_parts_mut(current_hdr.pData as *mut u8, self.page_size) };
+        let item = Some((current_hdr.pgno, raw_data));
+        self.current_ptr = current_hdr.pDirty;
+        item
+    }
+}
+
 /// Error Codes
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[non_exhaustive]

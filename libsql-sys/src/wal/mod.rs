@@ -6,12 +6,15 @@ use crate::ffi::*;
 
 pub use sqlite3_wal::{Sqlite3Wal, Sqlite3WalManager};
 
+pub mod either;
 pub(crate) mod ffi;
 mod sqlite3_wal;
 pub mod wrapper;
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 pub use ffi::make_wal_manager;
+
+use self::wrapper::{WalWrapper, WrapWal};
 
 pub trait WalManager {
     type Wal: Wal;
@@ -26,6 +29,7 @@ pub trait WalManager {
         max_log_size: i64,
         db_path: &CStr,
     ) -> Result<Self::Wal>;
+
     fn close(
         &self,
         wal: &mut Self::Wal,
@@ -40,6 +44,14 @@ pub trait WalManager {
     fn destroy(self)
     where
         Self: Sized;
+
+    fn wrap<U>(self, wrapper: U) -> WalWrapper<U, Self>
+    where
+        U: WrapWal<Self::Wal> + Clone,
+        Self: Sized,
+    {
+        WalWrapper::new(wrapper, self)
+    }
 }
 
 /// Wrapper type around `*mut sqlite3`, to seal the pointer from extern usage.
@@ -64,7 +76,7 @@ impl Sqlite3File {
         self.inner
     }
 
-    pub fn read_at(&mut self, buf: &mut [u8], offset: u64) -> Result<()> {
+    pub fn read_at(&self, buf: &mut [u8], offset: u64) -> Result<()> {
         unsafe {
             assert!(!self.inner.is_null());
             let inner = &mut *self.inner;
@@ -123,6 +135,10 @@ impl PageHeaders {
         // TODO: move LIBSQL_PAGE_SIZE
         PageHdrIter::new(self.as_ptr(), 4096)
     }
+
+    pub unsafe fn iter_mut(&mut self) -> PageHdrIterMut {
+        PageHdrIterMut::new(self.as_mut_ptr(), 4096)
+    }
 }
 
 pub trait BusyHandler {
@@ -130,11 +146,20 @@ pub trait BusyHandler {
     fn handle_busy(&mut self) -> bool;
 }
 
+impl<F> BusyHandler for F
+where
+    F: FnMut() -> bool,
+{
+    fn handle_busy(&mut self) -> bool {
+        (self)()
+    }
+}
+
 pub trait UndoHandler {
     fn handle_undo(&mut self, page_no: u32) -> Result<()>;
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy)]
 #[repr(i32)]
 pub enum CheckpointMode {
     Passive = SQLITE_CHECKPOINT_PASSIVE,
@@ -165,6 +190,7 @@ pub trait Wal {
     fn find_frame(&mut self, page_no: NonZeroU32) -> Result<Option<NonZeroU32>>;
     /// reads frame `frame_no` into buffer.
     fn read_frame(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> Result<()>;
+    fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32>;
 
     fn db_size(&self) -> u32;
 
@@ -211,5 +237,7 @@ pub trait Wal {
     /// the last call, then return 0.
     fn callback(&self) -> i32;
 
-    fn last_fame_index(&self) -> u32;
+    fn frames_in_wal(&self) -> u32;
+    fn backfilled(&self) -> u32;
+    fn db_file(&self) -> &Sqlite3File;
 }

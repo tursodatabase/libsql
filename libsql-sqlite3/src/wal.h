@@ -239,6 +239,9 @@ int make_ref_counted_wal_manager(libsql_wal_manager wal_manager, RefCountedWalMa
 void destroy_wal_manager(RefCountedWalManager *p);
 RefCountedWalManager* clone_wal_manager(RefCountedWalManager *p);
 
+int sqlite3_wal_backfilled(sqlite3_wal* pWal);
+unsigned int sqlite3_wal_frame_page_no(sqlite3_wal *pWal, unsigned int iFrame);
+
 RefCountedWalManager *make_sqlite3_wal_manager_rc();
 
 extern const libsql_wal_manager sqlite3_wal_manager;

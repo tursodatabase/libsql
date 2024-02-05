@@ -160,7 +160,7 @@ int libsql_wasi_wal_savepoint_undo(libsql_wal* wal, unsigned int* aWalData) {
 }
 
 int libsql_wasi_wal_frames(libsql_wal* wal, int n, libsql_pghdr* aPgHdr, unsigned int cksum, int mode, int readonly) {
-    return the_wal_methods->xFrames(wal, n, aPgHdr, cksum, mode, readonly);
+    return the_wal_methods->xFrames(wal, n, aPgHdr, cksum, mode, readonly, NULL);
 }
 
 int libsql_wasi_wal_checkpoint(libsql_wal* wal, sqlite3* db, int eMode, int (*xBusy)(void*), void* pBusyArg, int sync_flags, int nBuf, unsigned char* zBuf, int* pnLog, int* pnCkpt) {

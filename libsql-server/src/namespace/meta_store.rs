@@ -213,7 +213,7 @@ impl MetaStore {
         };
 
         let wal_manager = WalWrapper::new(
-            replicator.map(BottomlessWalWrapper::new),
+            replicator.map(|b| BottomlessWalWrapper::new(Arc::new(std::sync::Mutex::new(Some(b))))),
             Sqlite3WalManager::default(),
         );
         let conn = open_conn_active_checkpoint(&db_path, wal_manager.clone(), None, 1000, None)?;

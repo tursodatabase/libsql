@@ -954,7 +954,7 @@ extern "C" {
 extern "C" {
     pub fn sqlite3_vmprintf(
         arg1: *const ::std::os::raw::c_char,
-        arg2: *mut __va_list_tag,
+        arg2: va_list,
     ) -> *mut ::std::os::raw::c_char;
 }
 extern "C" {
@@ -970,7 +970,7 @@ extern "C" {
         arg1: ::std::os::raw::c_int,
         arg2: *mut ::std::os::raw::c_char,
         arg3: *const ::std::os::raw::c_char,
-        arg4: *mut __va_list_tag,
+        arg4: va_list,
     ) -> *mut ::std::os::raw::c_char;
 }
 extern "C" {
@@ -1119,6 +1119,15 @@ extern "C" {
         zVfs: *const ::std::os::raw::c_char,
         wal_manager: libsql_wal_manager,
     ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3_wal_backfilled(pWal: *mut sqlite3_wal) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3_wal_frame_page_no(
+        pWal: *mut sqlite3_wal,
+        iFrame: ::std::os::raw::c_uint,
+    ) -> ::std::os::raw::c_uint;
 }
 extern "C" {
     pub fn libsql_try_initialize_wasm_func_table(db: *mut sqlite3) -> ::std::os::raw::c_int;
@@ -2523,7 +2532,7 @@ extern "C" {
     pub fn sqlite3_str_vappendf(
         arg1: *mut sqlite3_str,
         zFormat: *const ::std::os::raw::c_char,
-        arg2: *mut __va_list_tag,
+        arg2: va_list,
     );
 }
 extern "C" {
@@ -4021,12 +4030,4 @@ extern "C" {
 extern "C" {
     pub static sqlite3_wal_manager: libsql_wal_manager;
 }
-pub type __builtin_va_list = [__va_list_tag; 1usize];
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct __va_list_tag {
-    pub gp_offset: ::std::os::raw::c_uint,
-    pub fp_offset: ::std::os::raw::c_uint,
-    pub overflow_arg_area: *mut ::std::os::raw::c_void,
-    pub reg_save_area: *mut ::std::os::raw::c_void,
-}
+pub type __builtin_va_list = *mut ::std::os::raw::c_char;

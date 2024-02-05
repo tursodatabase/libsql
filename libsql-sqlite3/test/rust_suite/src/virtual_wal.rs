@@ -180,6 +180,22 @@ mod tests {
         fn last_fame_index(&self) -> u32 {
             self.0.last_fame_index()
         }
+
+        fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
+            todo!()
+        }
+
+        fn frames_in_wal(&self) -> u32 {
+            todo!()
+        }
+
+        fn backfilled(&self) -> u32 {
+            todo!()
+        }
+
+        fn db_file(&self) -> &libsql_sys::wal::Sqlite3File {
+            todo!()
+        }
     }
 
     #[test]

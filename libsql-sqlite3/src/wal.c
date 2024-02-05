@@ -1061,7 +1061,14 @@ static u32 walFramePgno(Wal *pWal, u32 iFrame){
   if( iHash==0 ){
     return pWal->apWiData[0][WALINDEX_HDR_SIZE/sizeof(u32) + iFrame - 1];
   }
-  return pWal->apWiData[iHash][(iFrame-1-HASHTABLE_NPAGE_ONE)%HASHTABLE_NPAGE];
+
+  volatile u32 *page;
+  int rc = walIndexPage(pWal, iHash, &page);
+  assert( rc==SQLITE_OK || iHash>0 );
+  if (rc != SQLITE_OK) {
+      return 0;
+  }
+  return page[(iFrame-1-HASHTABLE_NPAGE_ONE)%HASHTABLE_NPAGE];
 }
 
 /*
@@ -4492,5 +4499,13 @@ RefCountedWalManager *make_sqlite3_wal_manager_rc() {
 }
 
 typedef struct wal_impl wal_impl;
+
+int sqlite3_wal_backfilled(sqlite3_wal *pWal) {
+  return walCkptInfo(pWal)->nBackfill;
+}
+
+u32 sqlite3_wal_frame_page_no(sqlite3_wal *pWal, u32 iFrame) {
+  return walFramePgno(pWal, iFrame);
+}
 
 #endif /* #ifndef SQLITE_OMIT_WAL */

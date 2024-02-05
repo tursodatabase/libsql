@@ -3806,6 +3806,10 @@ SQLITE_API int libsql_open_v3(
   libsql_wal_manager wal_manager   /* wal_manager instance, in charge of instanciating a wal */
 );
 
+typedef struct sqlite3_wal sqlite3_wal;
+SQLITE_API int sqlite3_wal_backfilled(sqlite3_wal *pWal);
+SQLITE_API unsigned int sqlite3_wal_frame_page_no(sqlite3_wal *pWal, unsigned int iFrame);
+
 SQLITE_API LIBSQL_API int libsql_try_initialize_wasm_func_table(sqlite3 *db);
 
 /*
@@ -13665,6 +13669,9 @@ typedef struct RefCountedWalManager {
 int make_ref_counted_wal_manager(libsql_wal_manager wal_manager, RefCountedWalManager **out);
 void destroy_wal_manager(RefCountedWalManager *p);
 RefCountedWalManager* clone_wal_manager(RefCountedWalManager *p);
+
+SQLITE_API int sqlite3_wal_backfilled(sqlite3_wal* pWal);
+SQLITE_API unsigned int sqlite3_wal_frame_page_no(sqlite3_wal *pWal, unsigned int iFrame);
 
 RefCountedWalManager *make_sqlite3_wal_manager_rc();
 

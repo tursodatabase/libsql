@@ -1,7 +1,7 @@
-use std::ffi::c_int;
+use std::ffi::{c_int, CStr};
 use std::num::NonZeroU32;
 
-use super::{BusyHandler, CheckpointCallback, Wal, WalManager};
+use super::{BusyHandler, CheckpointCallback, Sqlite3File, Vfs, Wal, WalManager};
 
 /// A convenient wrapper struct that implement WAL with a `wrapper` where the wrapper needs to
 /// implement `WrapWal` instead of `Wal`, where all methods delegate to wrapped by default.
@@ -53,9 +53,9 @@ where
         max_log_size: i64,
         db_path: &std::ffi::CStr,
     ) -> super::Result<Self::Wal> {
-        let wrapped = self
-            .wrapped
-            .open(vfs, file, no_shm_mode, max_log_size, db_path)?;
+        let wrapped =
+            self.wrapper
+                .open(&self.wrapped, vfs, file, no_shm_mode, max_log_size, db_path)?;
         Ok(Self::Wal {
             wrapper: self.wrapper.clone(),
             wrapped,
@@ -70,6 +70,7 @@ where
         scratch: Option<&mut [u8]>,
     ) -> super::Result<()> {
         self.wrapper
+            .clone()
             .close(&self.wrapped, &mut wal.wrapped, db, sync_flags, scratch)
     }
 
@@ -198,8 +199,20 @@ where
         self.wrapper.callback(&self.wrapped)
     }
 
-    fn last_fame_index(&self) -> u32 {
-        self.wrapper.last_fame_index(&self.wrapped)
+    fn frames_in_wal(&self) -> u32 {
+        self.wrapper.frames_in_wal(&self.wrapped)
+    }
+
+    fn db_file(&self) -> &super::Sqlite3File {
+        self.wrapped.db_file()
+    }
+
+    fn backfilled(&self) -> u32 {
+        self.wrapped.backfilled()
+    }
+
+    fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
+        self.wrapper.frame_page_no(&self.wrapped, frame_no)
     }
 }
 
@@ -316,12 +329,24 @@ pub trait WrapWal<W: Wal> {
         wrapped.callback()
     }
 
-    fn last_fame_index(&self, wrapped: &W) -> u32 {
-        wrapped.last_fame_index()
+    fn frames_in_wal(&self, wrapped: &W) -> u32 {
+        wrapped.frames_in_wal()
+    }
+
+    fn open<M: WalManager<Wal = W>>(
+        &self,
+        manager: &M,
+        vfs: &mut Vfs,
+        file: &mut Sqlite3File,
+        no_shm_mode: c_int,
+        max_log_size: i64,
+        db_path: &CStr,
+    ) -> super::Result<W> {
+        manager.open(vfs, file, no_shm_mode, max_log_size, db_path)
     }
 
     fn close<M: WalManager<Wal = W>>(
-        &self,
+        &mut self,
         manager: &M,
         wrapped: &mut W,
         db: &mut super::Sqlite3Db,
@@ -329,6 +354,10 @@ pub trait WrapWal<W: Wal> {
         scratch: Option<&mut [u8]>,
     ) -> super::Result<()> {
         manager.close(wrapped, db, sync_flags, scratch)
+    }
+
+    fn frame_page_no(&self, wrapped: &W, frame_no: NonZeroU32) -> Option<NonZeroU32> {
+        wrapped.frame_page_no(frame_no)
     }
 }
 
@@ -513,15 +542,15 @@ impl<T: WrapWal<W>, W: Wal> WrapWal<W> for Option<T> {
         }
     }
 
-    fn last_fame_index(&self, wrapped: &W) -> u32 {
+    fn frames_in_wal(&self, wrapped: &W) -> u32 {
         match self {
-            Some(t) => t.last_fame_index(wrapped),
-            None => wrapped.last_fame_index(),
+            Some(t) => t.frames_in_wal(wrapped),
+            None => wrapped.frames_in_wal(),
         }
     }
 
     fn close<M: WalManager<Wal = W>>(
-        &self,
+        &mut self,
         manager: &M,
         wrapped: &mut W,
         db: &mut super::Sqlite3Db,
