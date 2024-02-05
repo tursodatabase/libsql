@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 mod local;
 
 use std::path::PathBuf;

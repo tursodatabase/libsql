@@ -1,4 +1,5 @@
 //! Tests for sqld in cluster mode
+#![allow(deprecated)]
 
 use super::common;
 

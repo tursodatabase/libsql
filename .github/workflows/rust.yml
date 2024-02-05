@@ -76,6 +76,9 @@ jobs:
       - uses: taiki-e/install-action@cargo-udeps
       - uses: Swatinem/rust-cache@v2
       - run: cargo +nightly hack udeps -p libsql --each-feature
+      - run: RUSTFLAGS="-D warnings" cargo check -p libsql --no-default-features --features core 
+      - run: RUSTFLAGS="-D warnings" cargo check -p libsql --no-default-features --features replication 
+      - run: RUSTFLAGS="-D warnings" cargo check -p libsql --no-default-features --features remote
 
   test:
     runs-on: ubuntu-latest

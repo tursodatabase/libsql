@@ -1,15 +1,13 @@
 use libsql::{
     replication::{Frames, SnapshotFile},
-    Database,
+    Builder,
 };
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let db = Database::open_with_local_sync("test.db", None)
-        .await
-        .unwrap();
+    let db = Builder::new_local_replica("test.db").build().await.unwrap();
     let conn = db.connect().unwrap();
 
     let args = std::env::args().collect::<Vec<String>>();

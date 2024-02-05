@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use futures::{StreamExt, TryStreamExt};
 use libsql::{
     named_params, params,

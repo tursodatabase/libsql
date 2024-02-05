@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use libsql::{replication::Frames, Database};
 use libsql_replication::{
     frame::{FrameBorrowed, FrameHeader, FrameMut},

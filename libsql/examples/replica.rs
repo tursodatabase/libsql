@@ -1,4 +1,4 @@
-use libsql::{Database, Value};
+use libsql::{Builder, Value};
 use std::time::Duration;
 
 #[tokio::main]
@@ -20,15 +20,12 @@ async fn main() {
         })
         .replace("libsql", "https");
 
-    let encryption_key = Some(bytes::Bytes::from("s3cr3t"));
-    let db = Database::open_with_remote_sync(
-        db_file.path().to_str().unwrap(),
-        url,
-        auth_token,
-        encryption_key,
-    )
-    .await
-    .unwrap();
+    let db = Builder::new_remote_replica(db_file.path(), url, auth_token)
+        .encryption_key("s3cr3t")
+        .build()
+        .await
+        .unwrap();
+
     let conn = db.connect().unwrap();
 
     let f = db.sync().await.unwrap();

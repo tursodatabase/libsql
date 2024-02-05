@@ -1,4 +1,5 @@
 //! Tests for standalone primary configuration
+#![allow(deprecated)]
 
 use crate::common::net::{SimServer, TurmoilAcceptor};
 use crate::common::{http::Client, snapshot_metrics};

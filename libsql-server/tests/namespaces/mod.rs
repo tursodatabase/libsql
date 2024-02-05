@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 mod dumps;
 mod meta;
 
