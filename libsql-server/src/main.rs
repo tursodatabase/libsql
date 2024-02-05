@@ -228,6 +228,9 @@ struct Cli {
     /// encryption_key for encryption at rest
     #[clap(long, env = "SQLD_ENCRYPTION_KEY")]
     encryption_key: Option<bytes::Bytes>,
+    /// encryption_key for encryption at rest
+    #[clap(long, env = "SQLD_BLOCK_VACUUM")]
+    block_vacuum: bool,
 
     #[clap(long, default_value = "128")]
     max_concurrent_connections: usize,
@@ -348,6 +351,7 @@ fn make_db_config(config: &Cli) -> anyhow::Result<DbConfig> {
         checkpoint_interval: config.checkpoint_interval_s.map(Duration::from_secs),
         snapshot_at_shutdown: config.snapshot_at_shutdown,
         encryption_key: config.encryption_key.clone(),
+        block_vacuum: config.block_vacuum,
     })
 }
 

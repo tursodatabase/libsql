@@ -88,6 +88,7 @@ pub struct QueryBuilderConfig {
     pub max_total_size: Option<u64>,
     pub auto_checkpoint: u32,
     pub encryption_key: Option<bytes::Bytes>,
+    pub block_vacuum: bool,
 }
 
 pub trait QueryResultBuilder: Send + 'static {

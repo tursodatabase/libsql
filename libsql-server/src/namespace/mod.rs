@@ -843,6 +843,7 @@ pub struct ReplicaNamespaceConfig {
     pub stats_sender: StatsSender,
     pub encryption_key: Option<bytes::Bytes>,
     pub max_concurrent_connections: Arc<Semaphore>,
+    pub block_vacuum: bool,
 }
 
 impl Namespace<ReplicaDatabase> {
@@ -963,6 +964,7 @@ impl Namespace<ReplicaDatabase> {
             name.clone(),
             primary_current_replicatio_index,
             config.encryption_key.clone(),
+            config.block_vacuum,
         )
         .await?
         .throttled(
@@ -997,6 +999,7 @@ pub struct PrimaryNamespaceConfig {
     pub checkpoint_interval: Option<Duration>,
     pub disable_namespace: bool,
     pub encryption_key: Option<bytes::Bytes>,
+    pub block_vacuum: bool,
     pub max_concurrent_connections: Arc<Semaphore>,
 }
 
@@ -1143,6 +1146,7 @@ impl Namespace<PrimaryDatabase> {
             auto_checkpoint,
             logger.new_frame_notifier.subscribe(),
             config.encryption_key.clone(),
+            config.block_vacuum,
         )
         .await?
         .throttled(
