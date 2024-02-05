@@ -2,6 +2,7 @@
 
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 
 pub use libsql_replication::frame::{Frame, FrameNo};
 use libsql_replication::replicator::{Either, Replicator};
@@ -12,6 +13,8 @@ use libsql_replication::rpc::proxy::{
     ProgramReq, Query, Step,
 };
 use tokio::sync::Mutex;
+use tokio::task::AbortHandle;
+use tracing::Instrument;
 
 use crate::parser::Statement;
 use crate::Result;
@@ -95,27 +98,76 @@ impl Writer {
 #[derive(Clone)]
 pub(crate) struct EmbeddedReplicator {
     replicator: Arc<Mutex<Replicator<Either<RemoteClient, LocalClient>>>>,
+    bg_abort: Option<Arc<DropAbort>>,
 }
 
 impl EmbeddedReplicator {
-    pub async fn with_remote(client: RemoteClient, db_path: PathBuf, auto_checkpoint: u32, encryption_key: Option<bytes::Bytes>) -> Self {
+    pub async fn with_remote(
+        client: RemoteClient,
+        db_path: PathBuf,
+        auto_checkpoint: u32,
+        encryption_key: Option<bytes::Bytes>,
+        perodic_sync: Option<Duration>,
+    ) -> Self {
         let replicator = Arc::new(Mutex::new(
-            Replicator::new(Either::Left(client), db_path, auto_checkpoint, encryption_key)
-                .await
-                .unwrap(),
+            Replicator::new(
+                Either::Left(client),
+                db_path,
+                auto_checkpoint,
+                encryption_key,
+            )
+            .await
+            .unwrap(),
         ));
 
-        Self { replicator }
+        let mut replicator = Self {
+            replicator,
+            bg_abort: None,
+        };
+
+        if let Some(sync_duration) = perodic_sync {
+            let replicator2 = replicator.clone();
+
+            let jh = tokio::spawn(
+                async move {
+                    loop {
+                        if let Err(e) = replicator2.sync_oneshot().await {
+                            tracing::error!("replicator sync error: {}", e);
+                        }
+
+                        tokio::time::sleep(sync_duration).await;
+                    }
+                }
+                .instrument(tracing::info_span!("periodic_sync")),
+            );
+
+            replicator.bg_abort = Some(Arc::new(DropAbort(jh.abort_handle())));
+        }
+
+        replicator
     }
 
-    pub async fn with_local(client: LocalClient, db_path: PathBuf, auto_checkpoint: u32, encryption_key: Option<bytes::Bytes>) -> Self {
+    pub async fn with_local(
+        client: LocalClient,
+        db_path: PathBuf,
+        auto_checkpoint: u32,
+        encryption_key: Option<bytes::Bytes>,
+    ) -> Self {
         let replicator = Arc::new(Mutex::new(
-            Replicator::new(Either::Right(client), db_path, auto_checkpoint, encryption_key)
-                .await
-                .unwrap(),
+            Replicator::new(
+                Either::Right(client),
+                db_path,
+                auto_checkpoint,
+                encryption_key,
+            )
+            .await
+            .unwrap(),
         ));
 
-        Self { replicator }
+        Self {
+            replicator,
+            bg_abort: None,
+        }
     }
 
     pub async fn sync_oneshot(&self) -> Result<Option<FrameNo>> {
@@ -200,5 +252,13 @@ impl EmbeddedReplicator {
             .await
             .client_mut()
             .committed_frame_no()
+    }
+}
+
+struct DropAbort(AbortHandle);
+
+impl Drop for DropAbort {
+    fn drop(&mut self) {
+        self.0.abort();
     }
 }
