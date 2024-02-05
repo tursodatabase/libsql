@@ -101,6 +101,8 @@ pub enum Error {
     Ref(#[from] std::sync::Arc<Self>),
     #[error("Unable to decode protobuf: {0}")]
     ProstDecode(#[from] prost::DecodeError),
+    #[error("backup service error: {0}")]
+    RestoreError(#[from] crate::replication::backup::Error),
 }
 
 impl AsRef<Self> for Error {
@@ -178,6 +180,7 @@ impl IntoResponse for &Error {
             MetaStoreUpdateFailure(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             Ref(this) => this.as_ref().into_response(),
             ProstDecode(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            RestoreError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }

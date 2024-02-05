@@ -1,3 +1,4 @@
+pub mod backup;
 pub mod primary;
 pub mod replicator_client;
 pub mod script_backup_manager;

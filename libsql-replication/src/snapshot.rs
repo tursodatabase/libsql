@@ -90,4 +90,8 @@ impl SnapshotFile {
     pub fn header(&self) -> &SnapshotFileHeader {
         &self.header
     }
+
+    pub fn into_file(self) -> File {
+        self.file
+    }
 }
