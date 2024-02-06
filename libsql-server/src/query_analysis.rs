@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use anyhow::Result;
 use fallible_iterator::FallibleIterator;
 use sqlite3_parser::ast::{Cmd, PragmaBody, QualifiedName, Stmt};
@@ -119,7 +121,7 @@ impl StmtKind {
 
     fn pragma_kind(name: &QualifiedName, body: Option<&PragmaBody>) -> Option<Self> {
         let name = name.name.0.as_str();
-        match name {
+        match to_ascii_lower(name).as_ref() {
             // always ok to be served by primary or replicas - pure readonly pragmas
             "table_list" | "index_list" | "table_info" | "table_xinfo" | "index_info" | "index_xinfo"
             | "pragma_list" | "compile_options" | "database_list" | "function_list"
@@ -195,6 +197,14 @@ impl StmtKind {
     #[must_use]
     pub fn is_release(&self) -> bool {
         matches!(self, Self::Release)
+    }
+}
+
+fn to_ascii_lower(s: &str) -> Cow<str> {
+    if s.chars().all(|c| char::is_ascii_lowercase(&c)) {
+        Cow::Borrowed(s)
+    } else {
+        Cow::Owned(s.to_ascii_lowercase())
     }
 }
 
