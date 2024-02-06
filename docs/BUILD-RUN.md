@@ -154,7 +154,7 @@ are working native Windows build instructions.
 Clone this repo using your preferred mechanism. You may want to use one of the
 [sqld release tags].
 
-Change to the `sqld` directory.
+Change to the `libsql-server` directory.
 
 ### 2. Build with cargo
 
