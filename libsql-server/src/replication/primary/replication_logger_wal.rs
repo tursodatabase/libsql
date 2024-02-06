@@ -393,7 +393,8 @@ mod test {
                 None,
                 false,
                 100000,
-                Box::new(|_| Ok(())),
+                None,
+                "test".into(),
             )
             .unwrap(),
         );
@@ -444,7 +445,8 @@ mod test {
                 None,
                 false,
                 100000,
-                Box::new(|_| Ok(())),
+                None,
+                "test".into(),
             )
             .unwrap(),
         );

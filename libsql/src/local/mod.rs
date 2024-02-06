@@ -11,9 +11,8 @@ pub mod transaction;
 pub(crate) mod impls;
 
 pub use libsql_sys::ffi;
-pub use libsql_sys::ValueType;
 
-pub use crate::{errors, Error, Result};
+pub use crate::{Error, Result};
 pub use connection::Connection;
 pub use database::Database;
 pub use rows::Row;
