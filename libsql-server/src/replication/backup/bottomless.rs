@@ -2,11 +2,13 @@ use crate::replication::backup::{Backup, Restore, RestoreOptions};
 use async_stream::try_stream;
 use async_tempfile::{Error, TempFile};
 use async_trait::async_trait;
+use bytes::Bytes;
 use futures_core::{ready, Stream};
 use libsql_replication::frame::FrameMut;
 use libsql_replication::snapshot::{SnapshotFile, SnapshotFileHeader};
 use opendal::raw::HttpClient;
 use opendal::{Entry, Operator};
+use std::cmp::Ordering;
 use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -18,22 +20,25 @@ use uuid::{NoContext, Timestamp, Uuid};
 use zerocopy::AsBytes;
 
 #[derive(Debug, Clone)]
-pub struct S3BackupService {
+pub struct BackupSession {
     db_id: Arc<str>,
     generation: Uuid,
     operator: Operator,
 }
 
-impl S3BackupService {
-    pub async fn open_s3(options: Options) -> super::Result<Self> {
-        let operator = Self::create_operator(&options.s3).await?;
-        let generation = Self::setup_generation(&operator, &options.db_id).await?;
-
-        Ok(S3BackupService {
+impl BackupSession {
+    pub async fn open<O>(options: Options<O>, change_counter: u64) -> super::Result<Self>
+    where
+        O: OperatorOptions,
+    {
+        let operator = options.operator_options.create_operator()?;
+        let mut session = BackupSession {
             db_id: options.db_id,
-            generation,
+            generation: Uuid::v7_reversed(),
             operator,
-        })
+        };
+        session.setup_generation(change_counter).await?;
+        Ok(session)
     }
 
     pub fn db_id(&self) -> &str {
@@ -44,37 +49,61 @@ impl S3BackupService {
         &self.generation
     }
 
-    async fn create_operator(client_options: &S3Options) -> super::Result<Operator> {
-        let mut builder = opendal::services::S3::default();
-        builder.bucket(&client_options.bucket);
-        builder.region(&client_options.region);
-        if let Some(endpoint) = client_options.aws_endpoint.as_deref() {
-            builder.endpoint(endpoint);
-        }
-        if let Some(access_key_id) = client_options.access_key_id.as_deref() {
-            builder.access_key_id(access_key_id);
-        }
-        if let Some(secret_access_key) = client_options.secret_access_key.as_deref() {
-            builder.secret_access_key(secret_access_key);
-        }
-        if let Some(http_client) = client_options.client.clone() {
-            builder.http_client(http_client);
-        }
-        Ok(Operator::new(builder)?.finish())
+    async fn read_change_counter(&self, generation: &Uuid) -> super::Result<u64> {
+        let path = self.change_counter_path(generation);
+        let bytes = self.operator.read_with(&path).await?;
+        let change_counter = u64::from_be_bytes(
+            bytes
+                .try_into()
+                .map_err(|e| super::Error::ChangeCounterError(generation.clone()))?,
+        );
+        Ok(change_counter)
     }
 
-    async fn setup_generation(o: &Operator, db_id: &str) -> super::Result<Uuid> {
-        let latest = Self::latest_generation_with(o, db_id, None).await?;
-        if let Some(generation) = latest {
+    async fn write_change_counter(&self, change_counter: u64) -> super::Result<()> {
+        let generation = self.current_generation();
+        let path = self.change_counter_path(generation);
+        self.operator
+            .write_with(
+                &path,
+                Bytes::copy_from_slice(change_counter.to_be_bytes().as_slice()),
+            )
+            .await?;
+        Ok(())
+    }
+
+    fn change_counter_path(&self, generation: &Uuid) -> String {
+        let db_id = self.db_id();
+        format!("{db_id}/{generation}/.changecounter")
+    }
+
+    async fn setup_generation(&mut self, change_counter: u64) -> super::Result<()> {
+        let latest = self.latest_generation_with(None).await?;
+        let generation = if let Some(generation) = latest {
             //FIXME: this generation may still be used by living process. We need to confirm that this generation is no
             //       longer used.
-            tracing::info!("reusing previous backup generation `{generation}`");
-            Ok(generation)
+            let remote_change_counter = self.read_change_counter(&generation).await?;
+            match change_counter.cmp(&remote_change_counter) {
+                Ordering::Equal => {
+                    tracing::info!("reusing previous backup generation `{generation}`");
+                    generation
+                }
+                Ordering::Less => {
+                    tracing::info!("remote change counter ({remote_change_counter}) is higher than local one ({change_counter}). Restore required.");
+                    todo!()
+                }
+                Ordering::Greater => {
+                    tracing::info!("local change counter ({change_counter}) is higher than remote one ({remote_change_counter}). We need to snapshot database.");
+                    todo!()
+                }
+            }
         } else {
             let generation = Uuid::v7_reversed(); // timestamp in reversed order
             tracing::info!("created new backup generation `{generation}`");
-            Ok(generation)
-        }
+            generation
+        };
+        self.generation = generation;
+        Ok(())
     }
 
     pub fn snapshot_path(&self, header: &SnapshotFileHeader, tier: u8) -> String {
@@ -102,7 +131,7 @@ impl S3BackupService {
             let unix_secs = up_to.to_unix().0;
             let generation = if let Some(generation) = options.generation {
                 generation
-            } else if let Some(generation) = Self::latest_generation_with(&self.operator, self.db_id(), Some(up_to)).await? {
+            } else if let Some(generation) = self.latest_generation_with(Some(up_to)).await? {
                 generation
             } else {
                 tracing::info!("stopping database restoration: no matching backup generation found");
@@ -166,11 +195,11 @@ impl S3BackupService {
     }
 
     async fn latest_generation_with(
-        operator: &Operator,
-        db_id: &str,
+        &self,
         up_to: Option<Timestamp>,
     ) -> super::Result<Option<Uuid>> {
-        let mut lister = operator.lister_with(&format!("{db_id}/")).await?;
+        let db_id = self.db_id();
+        let mut lister = self.operator.lister_with(&format!("{db_id}/")).await?;
         let ts = up_to.map(|ts| ts.to_unix().0).unwrap_or(u64::MAX);
         while let Some(res) = lister.next().await {
             let e = res?;
@@ -204,8 +233,8 @@ impl S3BackupService {
 }
 
 #[async_trait]
-impl Backup for S3BackupService {
-    async fn backup(&mut self, snapshot: SnapshotFile) -> super::Result<()> {
+impl Backup for BackupSession {
+    async fn backup(&mut self, change_counter: u64, snapshot: SnapshotFile) -> super::Result<()> {
         use tokio::io::AsyncWriteExt;
         /// Adapter between `tokio::io::AsyncRead` and `futures_core::AsyncRead`.
         struct AsyncReader(tokio::fs::File);
@@ -233,12 +262,15 @@ impl Backup for S3BackupService {
         let file = AsyncReader(snapshot.into_file());
         w.copy(file).await?;
         w.shutdown().await?;
+
+        self.write_change_counter(change_counter).await?;
+
         Ok(())
     }
 }
 
 #[async_trait]
-impl Restore for S3BackupService {
+impl Restore for BackupSession {
     type Stream = Pin<Box<dyn Stream<Item = super::Result<FrameMut>> + Send>>;
 
     async fn restore(&mut self, options: RestoreOptions) -> super::Result<Self::Stream> {
@@ -248,11 +280,15 @@ impl Restore for S3BackupService {
 }
 
 #[derive(Debug, Clone)]
-pub struct Options {
-    pub s3: S3Options,
+pub struct Options<O: OperatorOptions> {
+    pub operator_options: O,
     pub db_id: Arc<str>,
     pub db_path: PathBuf,
     pub restore: RestoreOptions,
+}
+
+pub trait OperatorOptions: Clone {
+    fn create_operator(&self) -> super::Result<Operator>;
 }
 
 #[derive(Debug, Clone)]
@@ -263,6 +299,27 @@ pub struct S3Options {
     pub secret_access_key: Option<Arc<str>>,
     pub region: Arc<str>,
     pub bucket: Arc<str>,
+}
+
+impl OperatorOptions for S3Options {
+    fn create_operator(&self) -> super::Result<Operator> {
+        let mut builder = opendal::services::S3::default();
+        builder.bucket(&self.bucket);
+        builder.region(&self.region);
+        if let Some(endpoint) = self.aws_endpoint.as_deref() {
+            builder.endpoint(endpoint);
+        }
+        if let Some(access_key_id) = self.access_key_id.as_deref() {
+            builder.access_key_id(access_key_id);
+        }
+        if let Some(secret_access_key) = self.secret_access_key.as_deref() {
+            builder.secret_access_key(secret_access_key);
+        }
+        if let Some(http_client) = self.client.clone() {
+            builder.http_client(http_client);
+        }
+        Ok(Operator::new(builder)?.finish())
+    }
 }
 
 #[derive(Debug)]

@@ -21,11 +21,13 @@ pub enum Error {
     IO(#[from] std::io::Error),
     #[error("snapshots were missing frames - expected {0} but got {1}")]
     MissingFrames(u64, u64),
+    #[error("failed to read change counter for generation `{0}`")]
+    ChangeCounterError(Uuid),
 }
 
 #[async_trait::async_trait]
 pub trait Backup {
-    async fn backup(&mut self, snapshot: SnapshotFile) -> Result<()>;
+    async fn backup(&mut self, change_counter: u64, snapshot: SnapshotFile) -> Result<()>;
 }
 
 #[async_trait::async_trait]
@@ -46,4 +48,6 @@ pub struct RestoreOptions {
     /// restored. The precise point in time is a subject of granularity in which snapshots are being
     /// made.
     pub point_in_time: Option<Timestamp>,
+    /// Current change counter of the database.
+    pub change_counter: u64,
 }
