@@ -23,11 +23,13 @@ pub enum Error {
     MissingFrames(u64, u64),
     #[error("failed to read change counter for generation `{0}`")]
     ChangeCounterError(Uuid),
+    #[error("need to restore database - remote frame ({1}) for generation `{0}` is ahead of local one {2}")]
+    RestorationRequired(Uuid, u64, u64),
 }
 
 #[async_trait::async_trait]
 pub trait Backup {
-    async fn backup(&mut self, change_counter: u64, snapshot: SnapshotFile) -> Result<()>;
+    async fn backup(&mut self, snapshot: SnapshotFile) -> Result<()>;
 }
 
 #[async_trait::async_trait]
@@ -48,6 +50,6 @@ pub struct RestoreOptions {
     /// restored. The precise point in time is a subject of granularity in which snapshots are being
     /// made.
     pub point_in_time: Option<Timestamp>,
-    /// Current change counter of the local database.
-    pub change_counter: u64,
+    /// Last known frame in the replication index.
+    pub last_known_frame_no: u64,
 }
