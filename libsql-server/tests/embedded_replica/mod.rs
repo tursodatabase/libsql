@@ -665,6 +665,79 @@ fn proxy_write_returning_row() {
 }
 
 #[test]
+fn freeze() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(u64::MAX))
+        .build();
+
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_host = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let client = Client::new();
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let path = tmp_embedded_path.join("embedded");
+        let db = Database::open_with_remote_sync_connector(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080",
+            "",
+            TurmoilConnector,
+            true,
+            None,
+        )
+        .await?;
+
+        let conn = db.connect()?;
+
+        conn.execute("create table test (x)", ()).await?;
+
+        for _ in 0..50 {
+            conn.execute("insert into test values (12)", ())
+                .await
+                .unwrap();
+        }
+
+        drop(conn);
+        drop(db);
+
+        let db = Database::open_with_remote_sync_connector(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080",
+            "",
+            TurmoilConnector,
+            true,
+            None,
+        )
+        .await?;
+
+        db.sync().await.unwrap();
+
+        let db = db.freeze().unwrap();
+
+        let conn = db.connect().unwrap();
+
+        let mut rows = conn.query("select count(*) from test", ()).await.unwrap();
+
+        let row = rows.next().await.unwrap().unwrap();
+
+        let count = row.get::<u64>(0).unwrap();
+
+        assert_eq!(count, 50);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
 fn periodic_sync() {
     let mut sim = Builder::new().build();
 
