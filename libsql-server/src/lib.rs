@@ -1,7 +1,6 @@
 #![allow(clippy::type_complexity, clippy::too_many_arguments)]
 
 use std::future::Future;
-use std::iter::Once;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::str::FromStr;

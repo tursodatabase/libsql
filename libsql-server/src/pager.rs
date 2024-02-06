@@ -5,6 +5,7 @@ use std::mem::{align_of, size_of};
 use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
 
 use hashbrown::HashMap;
+use parking_lot::Mutex;
 use rusqlite::ffi::{sqlite3_pcache, sqlite3_pcache_methods2, sqlite3_pcache_page};
 
 use crate::LIBSQL_PAGE_SIZE;
@@ -78,10 +79,6 @@ impl Page {
         self.flags as u32
     }
 
-    fn data_ptr(&mut self) -> *mut u8 {
-        (&mut self.data) as *mut _
-    }
-
     fn allocate(&mut self, current: u32) {
         self.flags = current as u64;
     }
@@ -150,13 +147,13 @@ const PAGER_EXTRA_SIZE: usize = 224;
 
 struct Pager {
     alloc: &'static Allocator,
-    pages: HashMap<u32, &'static mut Page>,
+    pages: Mutex<HashMap<u32, &'static mut Page>>,
 }
 
 impl Drop for Pager {
     fn drop(&mut self) {
-        //return pages to allocator
-        for (_, page) in std::mem::take(&mut self.pages).into_iter() {
+        // return pages to allocator
+        for (_, page) in std::mem::take(&mut *self.pages.lock()).into_iter() {
             // make the list fist, and then bulk free.
             self.alloc.free(page);
         }
@@ -187,13 +184,13 @@ extern "C" fn create(
         pages: HashMap::new().into(),
     };
 
-    Box::leak(Box::new(pager)) as *mut Pager as *mut _
+    Box::into_raw(Box::new(pager)) as *mut Pager as *mut _
 }
 
 extern "C" fn cache_size(_cache: *mut sqlite3_pcache, _size: c_int) {}
 extern "C" fn page_count(cache: *mut sqlite3_pcache) -> c_int {
     let cache = unsafe { &*(cache as *mut Pager) };
-    cache.pages.len() as _
+    cache.pages.lock().len() as _
 }
 
 extern "C" fn fetch(
@@ -201,8 +198,8 @@ extern "C" fn fetch(
     key: u32,
     create_flag: c_int,
 ) -> *mut sqlite3_pcache_page {
-    let cache = unsafe { &mut *(cache as *mut Pager) };
-    let pages = &mut cache.pages;
+    let cache = unsafe { &*(cache as *mut Pager) };
+    let mut pages = cache.pages.lock();
     match pages.get_mut(&key) {
         Some(page) => {
             page.pin(key as u16);
@@ -244,7 +241,7 @@ extern "C" fn unpin(cache: *mut sqlite3_pcache, page: *mut sqlite3_pcache_page, 
     let key = page.unpin() as u32;
 
     if discard != 0 {
-        let page = pages.remove(&key).expect("missing page");
+        let page = pages.lock().remove(&key).expect("missing page");
         cache.alloc.free(page);
     }
 }
@@ -256,8 +253,8 @@ extern "C" fn rekey(
     new_key: u32,
 ) {
     let cache = unsafe { &mut *(cache as *mut Pager) };
-    let _new_page = unsafe { &mut *(data as *mut Page) };
-    let pages = &mut cache.pages;
+    let _new_page = unsafe { &*(data as *mut Page) };
+    let mut pages = cache.pages.lock();
     let page = pages.remove(&old_key).expect("missing page when rekeying");
     page.pin(new_key as u16);
     if let Some(page) = pages.insert(new_key, page) {
@@ -267,8 +264,8 @@ extern "C" fn rekey(
 }
 
 extern "C" fn truncate(cache: *mut sqlite3_pcache, limit: u32) {
-    let cache = unsafe { &mut *(cache as *mut Pager) };
-    let pages = &mut cache.pages;
+    let cache = unsafe { &*(cache as *mut Pager) };
+    let mut pages = cache.pages.lock();
     pages
         .extract_if(|k, _| *k >= limit)
         .for_each(|(_, p)| cache.alloc.free(p));
@@ -282,7 +279,7 @@ extern "C" fn destroy(cache: *mut sqlite3_pcache) {
 
 extern "C" fn shrink(cache: *mut sqlite3_pcache) {
     let cache = unsafe { &mut *(cache as *mut Pager) };
-    let pages = &mut cache.pages;
+    let mut pages = cache.pages.lock();
     pages
         .extract_if(|_, p| !p.is_pinned())
         .for_each(|(_, p)| cache.alloc.free(p));
