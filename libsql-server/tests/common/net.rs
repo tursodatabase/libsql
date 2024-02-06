@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use std::io::Error as IoError;
 use std::net::SocketAddr;
 use std::pin::Pin;

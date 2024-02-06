@@ -1,4 +1,4 @@
-use libsql::Database;
+use libsql::Builder;
 
 #[tokio::main]
 async fn main() {
@@ -12,12 +12,12 @@ async fn main() {
         "".to_string()
     });
 
-    let db = Database::open_with_remote_sync(
-        db_file.path().to_str().unwrap(),
-        "http://localhost:8080",
+    let db = Builder::new_remote_replica(
+        db_file.path(),
+        "http://localhost:8080".to_string(),
         auth_token,
-        None,
     )
+    .build()
     .await
     .unwrap();
 

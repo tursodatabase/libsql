@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion, Throughput};
 use libsql::Database;
 use pprof::criterion::{Output, PProfProfiler};

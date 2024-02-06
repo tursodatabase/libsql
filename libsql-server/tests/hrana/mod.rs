@@ -1,4 +1,5 @@
 //! Test hrana related functionalities
+#![allow(deprecated)]
 
 use libsql_server::config::UserApiConfig;
 use tempfile::tempdir;

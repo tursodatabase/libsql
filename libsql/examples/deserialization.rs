@@ -1,4 +1,4 @@
-use libsql::{de, Database};
+use libsql::{de, Builder};
 
 #[tokio::main]
 async fn main() {
@@ -8,9 +8,9 @@ async fn main() {
             "".to_string()
         });
 
-        Database::open_remote(url, token).unwrap()
+        Builder::new_remote(url, token).build().await.unwrap()
     } else {
-        Database::open_in_memory().unwrap()
+        Builder::new_local(":memory:").build().await.unwrap()
     };
 
     let conn = db.connect().unwrap();

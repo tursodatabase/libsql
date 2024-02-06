@@ -1,3 +1,9 @@
+#![allow(deprecated)]
+
+mod builder;
+
+pub use builder::Builder;
+
 use std::fmt;
 
 use crate::{Connection, Result};
@@ -68,6 +74,7 @@ pub struct Database {
 cfg_core! {
     impl Database {
         /// Open an in-memory libsql database.
+        #[deprecated = "Use the new `Builder` to construct `Database`"]
         pub fn open_in_memory() -> Result<Self> {
             Ok(Database {
                 db_type: DbType::Memory,
@@ -75,11 +82,13 @@ cfg_core! {
         }
 
         /// Open a file backed libsql database.
+        #[deprecated = "Use the new `Builder` to construct `Database`"]
         pub fn open(db_path: impl Into<String>) -> Result<Database> {
             Database::open_with_flags(db_path, OpenFlags::default())
         }
 
         /// Open a file backed libsql database with flags.
+        #[deprecated = "Use the new `Builder` to construct `Database`"]
         pub fn open_with_flags(db_path: impl Into<String>, flags: OpenFlags) -> Result<Database> {
             Ok(Database {
                 db_type: DbType::File {
@@ -98,6 +107,7 @@ cfg_replication! {
 
     impl Database {
         /// Open a local database file with the ability to sync from snapshots from local filesystem.
+        #[deprecated = "Use the new `Builder` to construct `Database`"]
         pub async fn open_with_local_sync(
             db_path: impl Into<String>,
             encryption_key: Option<bytes::Bytes>
@@ -116,6 +126,7 @@ cfg_replication! {
 
         /// Open a local database file with the ability to sync from snapshots from local filesystem
         /// and forward writes to the provided endpoint.
+        #[deprecated = "Use the new `Builder` to construct `Database`"]
         pub async fn open_with_local_sync_remote_writes(
             db_path: impl Into<String>,
             endpoint: String,
@@ -135,6 +146,7 @@ cfg_replication! {
 
         /// Open a local database file with the ability to sync from snapshots from local filesystem
         /// and forward writes to the provided endpoint and a custom http connector.
+        #[deprecated = "Use the new `Builder` to construct `Database`"]
         pub async fn open_with_local_sync_remote_writes_connector<C>(
             db_path: impl Into<String>,
             endpoint: String,
@@ -172,6 +184,7 @@ cfg_replication! {
         }
 
         /// Open a local database file with the ability to sync from a remote database.
+        #[deprecated = "Use the new `Builder` to construct `Database`"]
         pub async fn open_with_remote_sync(
             db_path: impl Into<String>,
             url: impl Into<String>,
@@ -188,6 +201,7 @@ cfg_replication! {
         ///
         /// Consistent mode means that when a write happens it will not complete until
         /// that write is visible in the local db.
+        #[deprecated = "Use the new `Builder` to construct `Database`"]
         pub async fn open_with_remote_sync_consistent(
             db_path: impl Into<String>,
             url: impl Into<String>,
@@ -201,6 +215,7 @@ cfg_replication! {
 
         /// Connect an embedded replica to a remote primary with a custom
         /// http connector.
+        #[deprecated = "Use the new `Builder` to construct `Database`"]
         pub async fn open_with_remote_sync_connector<C>(
             db_path: impl Into<String>,
             url: impl Into<String>,
@@ -334,6 +349,7 @@ impl Database {}
 cfg_remote! {
     impl Database {
         /// Open a remote based HTTP database using libsql's hrana protocol.
+        #[deprecated = "Use the new `Builder` to construct `Database`"]
         pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
             let https = connector();
 
@@ -352,6 +368,7 @@ cfg_remote! {
         }
 
         /// Connect to a remote libsql using libsql's hrana protocol with a custom connector.
+        #[deprecated = "Use the new `Builder` to construct `Database`"]
         pub fn open_remote_with_connector<C>(
             url: impl Into<String>,
             auth_token: impl Into<String>,

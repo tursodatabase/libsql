@@ -40,6 +40,8 @@ pub enum Error {
     RemoteSqliteFailure(i32, i32, String),
     #[error("replication error: {0}")]
     Replication(crate::BoxError),
+    #[error("path has invalid UTF-8")]
+    InvalidUTF8Path,
 }
 
 #[cfg(feature = "hrana")]

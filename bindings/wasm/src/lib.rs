@@ -9,6 +9,7 @@ pub struct Database {
 #[wasm_bindgen]
 impl Database {
     #[wasm_bindgen(constructor)]
+    #[allow(deprecated)]
     pub fn new() -> Database {
         Database {
             inner: libsql::Database::open(":memory:").unwrap(),
