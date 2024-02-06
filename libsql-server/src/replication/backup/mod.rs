@@ -48,6 +48,6 @@ pub struct RestoreOptions {
     /// restored. The precise point in time is a subject of granularity in which snapshots are being
     /// made.
     pub point_in_time: Option<Timestamp>,
-    /// Current change counter of the database.
+    /// Current change counter of the local database.
     pub change_counter: u64,
 }

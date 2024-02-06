@@ -27,7 +27,7 @@ pub struct BackupSession {
 }
 
 impl BackupSession {
-    pub async fn open<O>(options: Options<O>, change_counter: u64) -> super::Result<Self>
+    pub async fn open<O>(options: Options<O>) -> super::Result<Self>
     where
         O: OperatorOptions,
     {
@@ -37,7 +37,9 @@ impl BackupSession {
             generation: Uuid::v7_reversed(),
             operator,
         };
-        session.setup_generation(change_counter).await?;
+        session
+            .setup_generation(options.restore.change_counter)
+            .await?;
         Ok(session)
     }
 
@@ -55,7 +57,7 @@ impl BackupSession {
         let change_counter = u64::from_be_bytes(
             bytes
                 .try_into()
-                .map_err(|e| super::Error::ChangeCounterError(generation.clone()))?,
+                .map_err(|_| super::Error::ChangeCounterError(generation.clone()))?,
         );
         Ok(change_counter)
     }
@@ -89,12 +91,12 @@ impl BackupSession {
                     generation
                 }
                 Ordering::Less => {
-                    tracing::info!("remote change counter ({remote_change_counter}) is higher than local one ({change_counter}). Restore required.");
-                    todo!()
+                    tracing::info!("remote change counter ({remote_change_counter}) is higher than local one ({change_counter}) - restore required.");
+                    todo!() // current local database state is behind remote backup, we should restore
                 }
                 Ordering::Greater => {
                     tracing::info!("local change counter ({change_counter}) is higher than remote one ({remote_change_counter}). We need to snapshot database.");
-                    todo!()
+                    todo!() // remote backup is behind local database state, we should start new generation and upload the database snapshot
                 }
             }
         } else {
@@ -149,6 +151,15 @@ impl BackupSession {
                     let entry = res?;
                     tracing::trace!("restoring found entry: `{}`", entry.path());
                     match EntryKind::parse(&entry)? {
+                        EntryKind::ChangeCounter => {
+                            let remote_change_counter = self.read_change_counter(&generation).await?;
+                            let local_change_counter = options.change_counter;
+                            if generation_stack.is_empty() && local_change_counter > remote_change_counter {
+                                // this is the last generation, we expect that is should be more up-to-date than local replica
+                                tracing::info!("local change counter ({local_change_counter}) is higher than remote ({remote_change_counter}) - skipping restoration.");
+                                return;
+                            }
+                        }
                         EntryKind::Dependency => {
                             drop(lister);
                             let parent = self.operator.read_with(entry.path()).await?;
@@ -281,9 +292,11 @@ impl Restore for BackupSession {
 
 #[derive(Debug, Clone)]
 pub struct Options<O: OperatorOptions> {
+    /// Options used to create a client to remote passive data store ie. AWS S3.
     pub operator_options: O,
+    /// Unique database identifier.
     pub db_id: Arc<str>,
-    pub db_path: PathBuf,
+    /// Options used for database restoration.
     pub restore: RestoreOptions,
 }
 
@@ -325,6 +338,7 @@ impl OperatorOptions for S3Options {
 #[derive(Debug)]
 pub enum EntryKind {
     Dependency,
+    ChangeCounter,
     Snapshot {
         tier: u8,
         start_frame: u64,
@@ -335,15 +349,18 @@ pub enum EntryKind {
 
 impl EntryKind {
     pub fn parse(entry: &opendal::Entry) -> Result<Self, super::Error> {
-        let name = entry.name();
-        if name == ".dep" {
-            Ok(Self::Dependency)
-        } else if let Some(e) = Self::try_parse_snapshot_entry_name(name) {
-            Ok(e)
-        } else {
-            Err(super::Error::SnapshotRestoreFailed(
-                entry.path().to_string(),
-            ))
+        match entry.name() {
+            ".dep" => Ok(Self::Dependency),
+            ".changecounter" => Ok(Self::ChangeCounter),
+            name => {
+                if let Some(e) = Self::try_parse_snapshot_entry_name(name) {
+                    Ok(e)
+                } else {
+                    Err(super::Error::SnapshotRestoreFailed(
+                        entry.path().to_string(),
+                    ))
+                }
+            }
         }
     }
 
