@@ -2,7 +2,7 @@ use std::ffi::{c_int, c_void};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use libsql_sys::wal::wrapper::{WalWrapper, WrapWal, WrappedWal};
+use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
 use libsql_sys::wal::{BusyHandler, CheckpointCallback, Wal, WalManager};
 use metrics::{histogram, increment_counter};
 use once_cell::sync::Lazy;
@@ -172,29 +172,50 @@ impl<T> std::fmt::Debug for LibSqlConnection<T> {
 }
 
 #[derive(Clone, Copy)]
-pub struct InhibitCheckpointWalWrapper;
+pub struct InhibitCheckpointWalWrapper {
+    close_only: bool,
+}
+
+impl InhibitCheckpointWalWrapper {
+    pub fn new(close_only: bool) -> Self {
+        Self { close_only }
+    }
+}
 
 impl<W: Wal> WrapWal<W> for InhibitCheckpointWalWrapper {
     fn checkpoint(
         &mut self,
-        _wrapped: &mut W,
-        _db: &mut libsql_sys::wal::Sqlite3Db,
-        _mode: libsql_sys::wal::CheckpointMode,
-        _busy_handler: Option<&mut dyn BusyHandler>,
-        _sync_flags: u32,
-        _buf: &mut [u8],
-        _checkpoint_cb: Option<&mut dyn CheckpointCallback>,
-        _in_wal: Option<&mut i32>,
-        _backfilled: Option<&mut i32>,
+        wrapped: &mut W,
+        db: &mut libsql_sys::wal::Sqlite3Db,
+        mode: libsql_sys::wal::CheckpointMode,
+        busy_handler: Option<&mut dyn BusyHandler>,
+        sync_flags: u32,
+        buf: &mut [u8],
+        checkpoint_cb: Option<&mut dyn CheckpointCallback>,
+        in_wal: Option<&mut i32>,
+        backfilled: Option<&mut i32>,
     ) -> libsql_sys::wal::Result<()> {
-        tracing::warn!(
-            "checkpoint inhibited: this connection is not allowed to perform checkpoints"
-        );
-        Err(rusqlite::ffi::Error::new(SQLITE_BUSY))
+        if !self.close_only {
+            wrapped.checkpoint(
+                db,
+                mode,
+                busy_handler,
+                sync_flags,
+                buf,
+                checkpoint_cb,
+                in_wal,
+                backfilled,
+            )
+        } else {
+            tracing::warn!(
+                "checkpoint inhibited: this connection is not allowed to perform checkpoints"
+            );
+            Err(rusqlite::ffi::Error::new(SQLITE_BUSY))
+        }
     }
 
     fn close<M: WalManager<Wal = W>>(
-        &self,
+        &mut self,
         manager: &M,
         wrapped: &mut W,
         db: &mut libsql_sys::wal::Sqlite3Db,
@@ -229,7 +250,7 @@ where
     libsql_sys::Connection::open(
         path.join("data"),
         flags,
-        WalWrapper::new(InhibitCheckpointWalWrapper, wal_manager),
+        wal_manager.wrap(InhibitCheckpointWalWrapper::new(false)),
         u32::MAX,
         encryption_key,
     )

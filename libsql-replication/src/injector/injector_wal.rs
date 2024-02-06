@@ -162,7 +162,6 @@ impl Wal for InjectorWal {
                 return Err(libsql_sys::wal::Error::new(LIBSQL_INJECT_FATAL));
             }
 
-            debug_assert!(headers.all_applied());
             drop(headers);
             if size_after != 0 {
                 self.is_txn = false;
@@ -219,8 +218,20 @@ impl Wal for InjectorWal {
         self.inner.callback()
     }
 
-    fn last_fame_index(&self) -> u32 {
-        todo!()
+    fn frames_in_wal(&self) -> u32 {
+        self.inner.frames_in_wal()
+    }
+
+    fn db_file(&self) -> &Sqlite3File {
+        self.inner.db_file()
+    }
+
+    fn backfilled(&self) -> u32 {
+        self.inner.backfilled()
+    }
+
+    fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
+        self.inner.frame_page_no(frame_no)
     }
 }
 

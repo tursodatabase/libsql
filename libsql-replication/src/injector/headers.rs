@@ -19,21 +19,6 @@ impl<'a> Headers<'a> {
     pub(crate) fn as_mut_ptr(&mut self) -> *mut PgHdr {
         self.ptr
     }
-
-    pub(crate) fn all_applied(&self) -> bool {
-        let mut current = self.ptr;
-        while !current.is_null() {
-            unsafe {
-                // WAL appended
-                if (*current).flags & 0x040 == 0 {
-                    return false;
-                }
-                current = (*current).pDirty;
-            }
-        }
-
-        true
-    }
 }
 
 impl Drop for Headers<'_> {

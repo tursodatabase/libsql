@@ -197,7 +197,7 @@ impl Wal for ReplicationLoggerWal {
             return Err(rusqlite::ffi::Error::new(SQLITE_IOERR));
         }
 
-        let ret =
+        let num_frames =
             self.inner
                 .insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)?;
 
@@ -222,7 +222,7 @@ impl Wal for ReplicationLoggerWal {
             }
         }
 
-        Ok(ret)
+        Ok(num_frames)
     }
 
     fn checkpoint(
@@ -265,8 +265,20 @@ impl Wal for ReplicationLoggerWal {
         self.inner.callback()
     }
 
-    fn last_fame_index(&self) -> u32 {
-        self.inner.last_fame_index()
+    fn frames_in_wal(&self) -> u32 {
+        self.inner.frames_in_wal()
+    }
+
+    fn db_file(&self) -> &Sqlite3File {
+        self.inner.db_file()
+    }
+
+    fn backfilled(&self) -> u32 {
+        self.inner.backfilled()
+    }
+
+    fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
+        self.inner.frame_page_no(frame_no)
     }
 }
 

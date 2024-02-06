@@ -1,3 +1,4 @@
+use std::ffi::c_int;
 use std::sync::{Arc, Mutex};
 
 use libsql_sys::ffi::{SQLITE_BUSY, SQLITE_IOERR_WRITE};
@@ -16,10 +17,8 @@ pub struct BottomlessWalWrapper {
 }
 
 impl BottomlessWalWrapper {
-    pub fn new(replicator: Replicator) -> Self {
-        Self {
-            replicator: Arc::new(Mutex::new(Some(replicator))),
-        }
+    pub fn new(replicator: Arc<Mutex<Option<Replicator>>>) -> Self {
+        Self { replicator }
     }
 
     fn try_with_replicator<Ret>(&self, f: impl FnOnce(&mut Replicator) -> Ret) -> Result<Ret> {
@@ -63,11 +62,11 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
         page_headers: &mut libsql_sys::wal::PageHeaders,
         size_after: u32,
         is_commit: bool,
-        sync_flags: std::ffi::c_int,
-    ) -> libsql_sys::wal::Result<usize> {
-        let last_valid_frame = wrapped.last_fame_index();
+        sync_flags: c_int,
+    ) -> Result<usize> {
+        let last_valid_frame = wrapped.frames_in_wal();
 
-        let ret =
+        let num_frames =
             wrapped.insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)?;
 
         self.try_with_replicator(|replicator| {
@@ -76,11 +75,11 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
                 std::process::abort()
             }
             replicator.register_last_valid_frame(last_valid_frame);
-            let new_valid_valid_frame_index = wrapped.last_fame_index();
+            let new_valid_valid_frame_index = wrapped.frames_in_wal();
             replicator.submit_frames(new_valid_valid_frame_index - last_valid_frame);
         })?;
 
-        Ok(ret)
+        Ok(num_frames)
     }
 
     fn checkpoint(

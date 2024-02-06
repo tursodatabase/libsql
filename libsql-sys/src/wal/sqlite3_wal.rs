@@ -146,15 +146,6 @@ pub struct Sqlite3Wal {
     inner: libsql_wal,
 }
 
-impl Sqlite3Wal {
-    pub fn db_file(&mut self) -> &mut Sqlite3File {
-        unsafe {
-            let ptr = &mut (*(self.inner.pData as *mut sqlite3_wal)).pDbFd;
-            std::mem::transmute(ptr)
-        }
-    }
-}
-
 impl Wal for Sqlite3Wal {
     fn limit(&mut self, size: i64) {
         unsafe {
@@ -418,10 +409,36 @@ impl Wal for Sqlite3Wal {
         unsafe { (self.inner.methods.xCallback.unwrap())(self.inner.pData) }
     }
 
-    fn last_fame_index(&self) -> u32 {
+    fn frames_in_wal(&self) -> u32 {
         unsafe {
             let wal = &*(self.inner.pData as *const sqlite3_wal);
             wal.hdr.mxFrame
+        }
+    }
+
+    fn db_file(&self) -> &Sqlite3File {
+        unsafe {
+            let ptr = &mut (*(self.inner.pData as *mut sqlite3_wal)).pDbFd;
+            std::mem::transmute(ptr)
+        }
+    }
+
+    fn backfilled(&self) -> u32 {
+        unsafe {
+            let ptr = &mut (*(self.inner.pData as *mut sqlite3_wal));
+            if ptr.apWiData.is_null() {
+                panic!("unititialized wal")
+            }
+            return libsql_ffi::sqlite3_wal_backfilled(ptr) as _;
+        }
+    }
+
+    /// ported from wal.c
+    /// returns the page_no corresponding to a given frame_no
+    fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
+        unsafe {
+            let ptr = &mut (*(self.inner.pData as *mut sqlite3_wal));
+            NonZeroU32::new(libsql_ffi::sqlite3_wal_frame_page_no(ptr, frame_no.get()))
         }
     }
 }

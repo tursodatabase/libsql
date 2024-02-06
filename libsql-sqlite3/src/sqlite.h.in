@@ -3806,6 +3806,10 @@ int libsql_open_v3(
   libsql_wal_manager wal_manager   /* wal_manager instance, in charge of instanciating a wal */
 );
 
+typedef struct sqlite3_wal sqlite3_wal;
+int sqlite3_wal_backfilled(sqlite3_wal *pWal);
+unsigned int sqlite3_wal_frame_page_no(sqlite3_wal *pWal, unsigned int iFrame);
+
 LIBSQL_API int libsql_try_initialize_wasm_func_table(sqlite3 *db);
 
 /*

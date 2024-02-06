@@ -18,7 +18,7 @@ pub fn make_replication_wal(
     logger: Arc<ReplicationLogger>,
 ) -> ReplicationWalManager {
     WalWrapper::new(
-        bottomless.map(BottomlessWalWrapper::new),
+        bottomless.map(|b| BottomlessWalWrapper::new(Arc::new(std::sync::Mutex::new(Some(b))))),
         ReplicationLoggerWalManager::new(logger),
     )
 }
