@@ -177,24 +177,20 @@ mod tests {
             self.0.callback()
         }
 
-        fn last_fame_index(&self) -> u32 {
-            self.0.last_fame_index()
-        }
-
         fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
-            todo!()
+            self.0.frame_page_no(frame_no)
         }
 
         fn frames_in_wal(&self) -> u32 {
-            todo!()
+            self.0.frames_in_wal()
         }
 
         fn backfilled(&self) -> u32 {
-            todo!()
+            self.0.backfilled()
         }
 
         fn db_file(&self) -> &libsql_sys::wal::Sqlite3File {
-            todo!()
+            self.0.db_file()
         }
     }
 
