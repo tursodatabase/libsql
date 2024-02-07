@@ -10,6 +10,7 @@ use opendal::raw::HttpClient;
 use opendal::{Entry, Operator};
 use std::pin::Pin;
 use std::sync::Arc;
+use tokio::io::AsyncWriteExt;
 use tokio::pin;
 use uuid::{NoContext, Timestamp, Uuid};
 
@@ -69,17 +70,33 @@ impl BackupSession {
             self.generation = generation;
             let remote_frame_no = self.last_frame_no(&generation).await?;
             if remote_frame_no < last_frame_no {
-                return Err(super::Error::RestorationRequired(
-                    generation,
-                    last_frame_no,
-                    remote_frame_no,
-                ));
+                let new_gen = Uuid::v7_reversed(); // timestamp in reversed order
+                self.write_dependency(&generation, &new_gen, remote_frame_no)
+                    .await?;
+                tracing::info!("created generation `{new_gen}` dependent on `{generation}`");
+                self.generation = new_gen;
             }
         } else {
             let generation = Uuid::v7_reversed(); // timestamp in reversed order
-            tracing::info!("created new backup generation `{generation}`");
+            tracing::info!("created generation `{generation}`");
             self.generation = generation;
         };
+        Ok(())
+    }
+
+    /// Saves the information that the `child` generation is dependent on `parent` generation up to `frame_no`.
+    async fn write_dependency(
+        &self,
+        parent: &Uuid,
+        child: &Uuid,
+        frame_no: u64,
+    ) -> super::Result<()> {
+        let db_id = self.db_id();
+        let path = format!("{db_id}/{child}/.dep");
+        let mut writer = self.operator.writer_with(&path).await?;
+        writer.write_all(parent.as_ref()).await?;
+        writer.write_all(frame_no.to_be_bytes().as_slice()).await?;
+        writer.shutdown().await?;
         Ok(())
     }
 
@@ -114,9 +131,9 @@ impl BackupSession {
                 return; // there's no matching backup to restore from
             };
             tracing::info!("restoring database to {} using generation {}", display_date(unix_secs), generation);
-            let mut generation_stack = vec![generation];
+            let mut generation_stack = vec![(generation, options.last_known_frame_no)];
             let mut last_frame = 0;
-            while let Some(generation) = generation_stack.pop() {
+            while let Some((generation, max_gen_frame)) = generation_stack.pop() {
                 let mut lister = self
                     .operator
                     .lister_with(&format!("{}/{}/", self.db_id(), generation))
@@ -127,19 +144,28 @@ impl BackupSession {
                     match EntryKind::parse(&entry)? {
                         EntryKind::Dependency => {
                             drop(lister);
-                            let parent = self.operator.read_with(entry.path()).await?;
-                            let parent = Uuid::from_slice(&parent)?;
-                            tracing::debug!("generation `{generation}` is dependent on `{parent}`");
-                            generation_stack.push(generation);
-                            generation_stack.push(parent);
+                            let bytes = self.operator.read_with(entry.path()).await?;
+                            let parent = Uuid::from_slice(&bytes[0..16])?;
+                            // `max_parent_frame` is used when a new generation is based on point-in-time recovery from
+                            // previous generation. In such cases we don't apply all frames from parent generation, but
+                            // only until specific frame. Then child generation continues from that frame onward:
+                            //
+                            // parent frames: | 1 | 2 | 3 | 4 | 5 | 6 |
+                            //  child frames:                 | 5 | 6 | 7 | 8 |
+                            //                                ^-- child generation was created after point in time restoration from parent
+                            let max_parent_frame = u64::from_be_bytes(bytes[16..20].try_into().unwrap());
+                            tracing::debug!("generation `{generation}` is dependent on `{parent}` up to frame {max_parent_frame}");
+                            generation_stack.push((generation, max_gen_frame));
+                            generation_stack.push((parent, max_parent_frame));
                             break;
                         }
                         EntryKind::Snapshot {
                             timestamp,
+                            end_frame,
                             ..
                         } => {
                             let timestamp_secs = timestamp.to_unix().0;
-                            if timestamp_secs <= unix_secs {
+                            if end_frame <= max_gen_frame && timestamp_secs <= unix_secs {
                                 let temp_file = self
                                     .into_snapshot_file(&entry)
                                     .await?;
@@ -158,11 +184,12 @@ impl BackupSession {
                                     yield frame;
                                 }
                             } else {
-                                tracing::debug!("skipping snapshot {} - timestmap {} reached end of restoration period",
+                                tracing::debug!("skipping over snapshot {} - timestamp {} / frame {} reached end of restore",
                                     entry.name(),
-                                    display_date(timestamp_secs)
+                                    display_date(timestamp_secs),
+                                    end_frame
                                 );
-                                break;
+                                continue;
                             }
                         }
                     }
@@ -366,7 +393,6 @@ mod test {
     use crate::LIBSQL_PAGE_SIZE;
     use async_stream::stream;
     use async_tempfile::TempFile;
-    use bytes::Bytes;
     use futures_core::Stream;
     use libsql_replication::frame::{FrameBorrowed, FrameHeader};
     use libsql_replication::snapshot::{SnapshotFile, SnapshotFileHeader};
@@ -390,9 +416,14 @@ mod test {
         .await
         .unwrap();
 
-        let expected = [b"hello", b"world"];
-        let pages = vec![expected.iter().map(|&b| Bytes::from_static(b)).collect()];
-        let mut snapshots = generate_snapshots(pages);
+        let expected_pages: Vec<&'static [u8]> = vec![
+            b"hello", // 1st frame
+            b"world", // 2nd frame
+        ];
+        let snapshots = vec![
+            expected_pages.clone(), // 1st snapshot file
+        ];
+        let mut snapshots = generate_snapshots(snapshots);
 
         // backup incoming data
         while let Some(tmp_file) = snapshots.next().await {
@@ -406,13 +437,13 @@ mod test {
         while let Some(frame) = frames.next().await {
             let frame = frame.unwrap();
             let page = frame.page();
-            let expected = expected[i];
+            let expected = expected_pages[i];
             assert!(page.starts_with(expected), "page no {i}");
             i += 1;
         }
     }
 
-    fn generate_snapshots<I: IntoIterator<Item = Vec<Bytes>>>(
+    fn generate_snapshots<'a, I: IntoIterator<Item = Vec<&'a [u8]>>>(
         segments: I,
     ) -> impl Stream<Item = TempFile> {
         Box::pin(stream! {
@@ -438,7 +469,7 @@ mod test {
                 let mut page_no = 1;
                 for data in pages {
                     let page = page.as_mut_slice();
-                    page[0..data.len()].copy_from_slice(&data);
+                    page[0..data.len()].copy_from_slice(data);
                     let frame_header = FrameHeader {
                         frame_no: (frame_no - page_no + 1).into(),
                         checksum: Default::default(),
