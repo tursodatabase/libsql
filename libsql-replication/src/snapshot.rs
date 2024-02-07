@@ -1,9 +1,10 @@
+use std::io::SeekFrom;
 use std::mem::size_of;
 use std::mem::MaybeUninit;
 use std::path::Path;
 
 use tokio::fs::File;
-use tokio::io::AsyncReadExt;
+use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWrite};
 use tokio_stream::Stream;
 use tokio_stream::StreamExt;
 use zerocopy::byteorder::little_endian::{U128 as lu128, U32 as lu32, U64 as lu64};
@@ -91,7 +92,9 @@ impl SnapshotFile {
         &self.header
     }
 
-    pub fn into_file(self) -> File {
-        self.file
+    pub async fn write<W: AsyncWrite + Unpin>(mut self, w: &mut W) -> Result<(), Error> {
+        self.file.seek(SeekFrom::Start(0)).await?;
+        tokio::io::copy(&mut self.file, w).await?;
+        Ok(())
     }
 }

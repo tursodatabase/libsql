@@ -3,18 +3,15 @@ use async_stream::try_stream;
 use async_tempfile::{Error, TempFile};
 use async_trait::async_trait;
 use futures::StreamExt;
-use futures_core::{ready, Stream};
+use futures_core::Stream;
 use libsql_replication::frame::FrameMut;
 use libsql_replication::snapshot::{SnapshotFile, SnapshotFileHeader};
 use opendal::raw::HttpClient;
 use opendal::{Entry, Operator};
 use std::pin::Pin;
 use std::sync::Arc;
-use std::task::{Context, Poll};
-use tokio::io::ReadBuf;
 use tokio::pin;
 use uuid::{NoContext, Timestamp, Uuid};
-use zerocopy::AsBytes;
 
 #[derive(Debug, Clone)]
 pub struct BackupSession {
@@ -118,7 +115,7 @@ impl BackupSession {
             };
             tracing::info!("restoring database to {} using generation {}", display_date(unix_secs), generation);
             let mut generation_stack = vec![generation];
-            let mut next_frame = 1;
+            let mut last_frame = 0;
             while let Some(generation) = generation_stack.pop() {
                 let mut lister = self
                     .operator
@@ -147,17 +144,18 @@ impl BackupSession {
                                     .into_snapshot_file(&entry)
                                     .await?;
                                 let snapshot = SnapshotFile::open(temp_file.file_path()).await?;
+                                let snapshot_header = snapshot.header();
+                                let start_frame_no: u64 = snapshot_header.start_frame_no.into();
+                                if last_frame + 1 != start_frame_no {
+                                    Err(super::Error::MissingFrames(last_frame, start_frame_no))?;
+                                } else {
+                                    last_frame = snapshot_header.end_frame_no.into();
+                                }
                                 let snapshot_stream = snapshot.into_stream_mut();
                                 pin!(snapshot_stream);
                                 while let Some(res) = snapshot_stream.next().await {
                                     let frame = res?;
-                                    let frame_no: u64 = frame.header().frame_no.into();
-                                    if frame_no != next_frame {
-                                        Err(super::Error::MissingFrames(next_frame, frame_no))?;
-                                    } else {
-                                        next_frame += 1;
-                                        yield frame;
-                                    }
+                                    yield frame;
                                 }
                             } else {
                                 tracing::debug!("skipping snapshot {} - timestmap {} reached end of restoration period",
@@ -215,31 +213,11 @@ impl BackupSession {
 impl Backup for BackupSession {
     async fn backup(&mut self, snapshot: SnapshotFile) -> super::Result<()> {
         use tokio::io::AsyncWriteExt;
-        /// Adapter between `tokio::io::AsyncRead` and `futures_core::AsyncRead`.
-        struct AsyncReader(tokio::fs::File);
-        impl futures::AsyncRead for AsyncReader {
-            fn poll_read(
-                mut self: Pin<&mut Self>,
-                cx: &mut Context<'_>,
-                buf: &mut [u8],
-            ) -> Poll<std::io::Result<usize>> {
-                use tokio::io::AsyncRead;
-                let pinned = unsafe { Pin::new_unchecked(&mut self.0) };
-                let mut buf = ReadBuf::new(buf);
-                let res = ready!(pinned.poll_read(cx, &mut buf));
-                match res {
-                    Ok(()) => Poll::Ready(Ok(buf.filled().len())),
-                    Err(e) => Poll::Ready(Err(e.into())),
-                }
-            }
-        }
 
         let header = snapshot.header();
         let path = self.snapshot_path(header, 0);
         let mut w = self.operator.writer(&path).await?;
-        w.write_all(header.as_bytes()).await?;
-        let file = AsyncReader(snapshot.into_file());
-        w.copy(file).await?;
+        snapshot.write(&mut w).await?;
         w.shutdown().await?;
 
         Ok(())
@@ -390,6 +368,7 @@ mod test {
     use async_tempfile::TempFile;
     use bytes::Bytes;
     use futures_core::Stream;
+    use libsql_replication::frame::{FrameBorrowed, FrameHeader};
     use libsql_replication::snapshot::{SnapshotFile, SnapshotFileHeader};
     use opendal::Operator;
     use tokio::io::AsyncWriteExt;
@@ -443,7 +422,7 @@ mod test {
                 let frame_count = pages.len() as u64;
                 let start_frame_no = frame_no;
                 let end_frame_no = start_frame_no + frame_count;
-                frame_no = end_frame_no + 1;
+                frame_no += frame_count;
 
                 let header = SnapshotFileHeader {
                     log_id: 0.into(),
@@ -453,15 +432,24 @@ mod test {
                     size_after: 1.into(),
                     _pad: Default::default(),
                 };
-
                 tmp.write_all(header.as_bytes()).await.unwrap();
 
                 let mut page = [0u8; LIBSQL_PAGE_SIZE as usize];
+                let mut page_no = 1;
                 for data in pages {
                     let page = page.as_mut_slice();
                     page[0..data.len()].copy_from_slice(&data);
-                    tmp.write_all(page).await.unwrap();
+                    let frame_header = FrameHeader {
+                        frame_no: (frame_no - page_no + 1).into(),
+                        checksum: Default::default(),
+                        page_no: (page_no as u32).into(),
+                        size_after: ((page_no * LIBSQL_PAGE_SIZE) as u32).into(),
+                    };
+                    let frame = FrameBorrowed::from_parts(&frame_header, &page);
+                    tmp.write_all(frame.as_bytes()).await.unwrap();
+                    page_no += 1;
                 }
+                tmp.flush().await.unwrap();
                 yield tmp;
             }
         })
