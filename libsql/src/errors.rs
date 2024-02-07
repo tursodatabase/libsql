@@ -42,6 +42,10 @@ pub enum Error {
     Replication(crate::BoxError),
     #[error("path has invalid UTF-8")]
     InvalidUTF8Path,
+    #[error("io error: {0}")]
+    IoError(#[from] std::io::Error),
+    #[error("db path is a file but must be a folder, consider deleting and recreating")]
+    DbPathIsFileNotFolder,
 }
 
 #[cfg(feature = "hrana")]

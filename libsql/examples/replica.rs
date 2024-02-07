@@ -5,8 +5,9 @@ use std::time::Duration;
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let db_file = tempfile::NamedTempFile::new().unwrap();
-    println!("Database {}", db_file.path().display());
+    // let db_file = tempfile::NamedTempFile::new().unwrap();
+    let db_file = std::path::Path::new("replica.data");
+    // println!("Database {}", db_file.path().display());
 
     let auth_token = std::env::var("LIBSQL_AUTH_TOKEN").unwrap_or_else(|_| {
         println!("Using empty token since LIBSQL_TOKEN was not set");
@@ -20,8 +21,8 @@ async fn main() {
         })
         .replace("libsql", "https");
 
-    let db = Builder::new_remote_replica(db_file.path(), url, auth_token)
-        .encryption_key("s3cr3t")
+    let db = Builder::new_remote_replica(db_file, url, auth_token)
+        // .encryption_key("s3cr3t")
         .build()
         .await
         .unwrap();

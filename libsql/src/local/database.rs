@@ -81,9 +81,19 @@ impl Database {
     ) -> Result<Database> {
         use std::path::PathBuf;
 
-        use crate::util::coerce_url_scheme;
+        use crate::{util::coerce_url_scheme, Error};
 
-        let mut db = Database::open(&db_path, OpenFlags::default())?;
+        let path = PathBuf::from(&db_path);
+
+        if std::fs::metadata(&path)?.is_file() {
+            return Err(Error::DbPathIsFileNotFolder);
+        }
+
+        std::fs::create_dir_all(&db_path)?;
+
+        let db_file = path.join("data");
+
+        let mut db = Database::open(db_file.as_path().to_str().unwrap(), OpenFlags::default())?;
 
         let endpoint = coerce_url_scheme(endpoint);
         let remote = crate::replication::client::Client::new(
@@ -93,7 +103,7 @@ impl Database {
             version.as_deref(),
         )
         .unwrap();
-        let path = PathBuf::from(db_path);
+
         let client = RemoteClient::new(remote.clone(), &path)
             .await
             .map_err(|e| crate::errors::Error::ConnectionFailed(e.to_string()))?;
@@ -119,10 +129,21 @@ impl Database {
     ) -> Result<Database> {
         use std::path::PathBuf;
 
-        let db_path = db_path.into();
-        let mut db = Database::open(&db_path, flags)?;
+        use crate::Error;
 
-        let path = PathBuf::from(db_path);
+        let db_path = db_path.into();
+        let path = PathBuf::from(&db_path);
+
+        if std::fs::metadata(&path)?.is_file() {
+            return Err(Error::DbPathIsFileNotFolder);
+        }
+
+        std::fs::create_dir_all(&db_path)?;
+
+        let db_file = path.join("data");
+
+        let mut db = Database::open(db_file.as_path().to_str().unwrap(), flags)?;
+
         let client = LocalClient::new(&path).await.unwrap();
 
         let replicator = EmbeddedReplicator::with_local(client, path, 1000, encryption_key).await;
@@ -148,8 +169,20 @@ impl Database {
     ) -> Result<Database> {
         use std::path::PathBuf;
 
+        use crate::Error;
+
         let db_path = db_path.into();
-        let mut db = Database::open(&db_path, flags)?;
+        let path = PathBuf::from(&db_path);
+
+        if std::fs::metadata(&path)?.is_file() {
+            return Err(Error::DbPathIsFileNotFolder);
+        }
+
+        std::fs::create_dir_all(&db_path)?;
+
+        let db_file = path.join("data");
+
+        let mut db = Database::open(db_file.as_path().to_str().unwrap(), flags)?;
 
         use crate::util::coerce_url_scheme;
 

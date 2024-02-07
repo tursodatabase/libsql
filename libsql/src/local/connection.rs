@@ -34,11 +34,16 @@ unsafe impl Sync for Connection {}
 impl Connection {
     /// Connect to the database.
     pub(crate) fn connect(db: &Database) -> Result<Connection> {
+        let path = if std::fs::metadata(&db.db_path)?.is_dir() {
+            todo!()
+        } else {
+            db.db_path.clone()
+        };
+
         let mut raw = std::ptr::null_mut();
-        let db_path = db.db_path.clone();
         let err = unsafe {
             ffi::sqlite3_open_v2(
-                std::ffi::CString::new(db_path.as_str())
+                std::ffi::CString::new(path.as_str())
                     .unwrap()
                     .as_c_str()
                     .as_ptr() as *const _,
