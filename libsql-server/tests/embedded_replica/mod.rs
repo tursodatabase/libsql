@@ -663,3 +663,53 @@ fn proxy_write_returning_row() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn periodic_sync() {
+    let mut sim = Builder::new().build();
+
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_host = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let client = Client::new();
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let path = tmp_embedded_path.join("embedded");
+        let db = libsql::Builder::new_remote_replica(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080".to_string(),
+            "".to_string(),
+        )
+        .connector(TurmoilConnector)
+        .periodic_sync(Duration::from_millis(100))
+        .build()
+        .await?;
+
+        let conn = db.connect()?;
+
+        conn.execute("create table test (x)", ()).await?;
+
+        conn.execute("insert into test values (12)", ())
+            .await
+            .unwrap();
+
+        tokio::time::sleep(Duration::from_millis(500)).await;
+
+        let mut rows = conn.query("select * from test", ()).await.unwrap();
+
+        let row = rows.next().await.unwrap().unwrap();
+
+        assert_eq!(row.get::<u64>(0).unwrap(), 12);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}

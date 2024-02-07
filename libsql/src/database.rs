@@ -238,6 +238,7 @@ cfg_replication! {
                 None,
                 read_your_writes,
                 encryption_key,
+                None
             ).await
         }
 
@@ -249,6 +250,7 @@ cfg_replication! {
             version: Option<String>,
             read_your_writes: bool,
             encryption_key: Option<bytes::Bytes>,
+            periodic_sync: Option<std::time::Duration>,
         ) -> Result<Database> {
             let https = connector();
 
@@ -260,6 +262,7 @@ cfg_replication! {
                 version,
                 read_your_writes,
                 encryption_key,
+                periodic_sync
             ).await
         }
 
@@ -272,6 +275,7 @@ cfg_replication! {
             version: Option<String>,
             read_your_writes: bool,
             encryption_key: Option<bytes::Bytes>,
+            periodic_sync: Option<std::time::Duration>,
         ) -> Result<Database>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
@@ -294,7 +298,8 @@ cfg_replication! {
                 token.into(),
                 version,
                 read_your_writes,
-                encryption_key.clone()
+                encryption_key.clone(),
+                periodic_sync
             ).await?;
 
             Ok(Database {

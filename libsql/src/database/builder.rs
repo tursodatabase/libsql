@@ -49,6 +49,7 @@ impl Builder<()> {
                     },
                     encryption_key: None,
                     read_your_writes: false,
+                    periodic_sync: None
                 },
             }
         }
@@ -139,6 +140,7 @@ cfg_replication! {
         remote: Remote,
         encryption_key: Option<bytes::Bytes>,
         read_your_writes: bool,
+        periodic_sync: Option<std::time::Duration>,
     }
 
     /// Local replica configuration type in [`Builder`].
@@ -178,6 +180,14 @@ cfg_replication! {
             self
         }
 
+        /// Set the duration at which the replicator will automatically call `sync` in the
+        /// background. The sync will continue for the duration that the resulted `Database`
+        /// type is alive for, once it is dropped the background task will get dropped and stop.
+        pub fn periodic_sync(mut self, duration: std::time::Duration) -> Builder<RemoteReplica> {
+            self.inner.periodic_sync = Some(duration);
+            self
+        }
+
         #[doc(hidden)]
         pub fn version(mut self, version: String) -> Builder<RemoteReplica> {
             self.inner.remote = self.inner.remote.version(version);
@@ -197,6 +207,7 @@ cfg_replication! {
                     },
                 encryption_key,
                 read_your_writes,
+                periodic_sync
             } = self.inner;
 
             let connector = if let Some(connector) = connector {
@@ -222,6 +233,7 @@ cfg_replication! {
                 version,
                 read_your_writes,
                 encryption_key.clone(),
+                periodic_sync
             )
             .await?;
 
