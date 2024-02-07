@@ -46,6 +46,8 @@ pub enum Error {
     IoError(#[from] std::io::Error),
     #[error("db path is a file but must be a folder, consider deleting and recreating")]
     DbPathIsFileNotFolder,
+    #[error("freeze is not supported in {0} mode.")]
+    FreezeNotSupported(String),
 }
 
 #[cfg(feature = "hrana")]
