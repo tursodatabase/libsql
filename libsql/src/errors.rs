@@ -42,6 +42,8 @@ pub enum Error {
     Replication(crate::BoxError),
     #[error("path has invalid UTF-8")]
     InvalidUTF8Path,
+    #[error("freeze is not supported in {0} mode.")]
+    FreezeNotSupported(String),
 }
 
 #[cfg(feature = "hrana")]

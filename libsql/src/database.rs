@@ -346,6 +346,25 @@ cfg_replication! {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
             }
         }
+
+        /// Freeze this embedded replica and convert it into a regular
+        /// non-embedded replica database.
+        ///
+        /// # Error
+        ///
+        /// Returns `FreezeNotSupported` if the database is not configured in
+        /// embedded replica mode.
+        pub fn freeze(self) -> Result<Database> {
+           match self.db_type {
+               DbType::Sync { db, .. } => {
+                   let path = db.path().to_string();
+                   Ok(Database {
+                       db_type: DbType::File { path, flags: OpenFlags::default() }
+                   })
+               }
+               t => Err(Error::FreezeNotSupported(format!("{:?}", t)))
+           }
+        }
     }
 }
 
