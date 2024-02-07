@@ -883,6 +883,16 @@ impl<W: Wal> Connection<W> {
         let elapsed = elapsed.as_millis() as u64;
         let rows_read = stmt.get_status(StatementStatus::RowsRead) as u64;
         let rows_written = stmt.get_status(StatementStatus::RowsWritten) as u64;
+
+        if rows_read >= 10_000 || rows_written >= 1_000 {
+            tracing::info!(
+                "high read ({}) or write ({}) query: {}",
+                rows_read,
+                rows_written,
+                sql
+            );
+        }
+
         let mem_used = stmt.get_status(StatementStatus::MemUsed) as u64;
         histogram!("libsql_server_statement_mem_used_bytes", mem_used as f64);
         let rows_read = if rows_read == 0 && rows_written == 0 {
