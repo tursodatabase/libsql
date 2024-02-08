@@ -59,7 +59,9 @@ ExecResp {
                         step: Some(
                             Finish(
                                 Finish {
-                                    last_frame_no: None,
+                                    last_frame_no: Some(
+                                        0,
+                                    ),
                                     is_autocommit: true,
                                 },
                             ),

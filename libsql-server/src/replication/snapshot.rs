@@ -422,7 +422,7 @@ impl SnapshotMerger {
 }
 
 /// An utility to build a snapshots from log frames
-struct SnapshotBuilder {
+pub struct SnapshotBuilder {
     seen_pages: HashSet<u32>,
     header: SnapshotFileHeader,
     snapshot_file: tokio::io::BufWriter<async_tempfile::TempFile>,
@@ -510,7 +510,7 @@ impl SnapshotBuilder {
     }
 
     /// Persist the snapshot, and returns the name and size is frame on the snapshot.
-    async fn finish(mut self) -> anyhow::Result<(String, u64, u32)> {
+    pub async fn finish(mut self) -> anyhow::Result<(String, u64, u32)> {
         self.snapshot_file.flush().await?;
         let mut file = self.snapshot_file.into_inner();
         file.seek(SeekFrom::Start(0)).await?;
@@ -846,15 +846,15 @@ mod test {
         tokio::time::sleep(Duration::from_secs(1)).await;
 
         let snapshot_path =
-            snapshot_dir_path(dump_dir.path()).join(format!("{}-{}-{}.snap", log_id, 0, 49));
+            snapshot_dir_path(dump_dir.path()).join(format!("{}-{}-{}.snap", log_id, 1, 50));
         let snapshot = read(&snapshot_path).unwrap();
         let header = SnapshotFileHeader::read_from_prefix(
             &snapshot[..std::mem::size_of::<SnapshotFileHeader>()],
         )
         .unwrap();
 
-        assert_eq!(header.start_frame_no.get(), 0);
-        assert_eq!(header.end_frame_no.get(), 49);
+        assert_eq!(header.start_frame_no.get(), 1);
+        assert_eq!(header.end_frame_no.get(), 50);
         assert_eq!(header.frame_count.get(), 25);
         assert_eq!(header.log_id.get(), log_id.as_u128());
         assert_eq!(header.size_after.get(), 25);
@@ -878,13 +878,13 @@ mod test {
 
         let frames = snapshot_file.into_stream_mut_from(0);
         tokio::pin!(frames);
-        let mut expected_frame_no = 49;
+        let mut expected_frame_no = 50;
         while let Some(frame) = frames.next().await {
             let frame = frame.unwrap();
             assert_eq!(frame.header().frame_no.get(), expected_frame_no);
             expected_frame_no -= 1;
         }
 
-        assert_eq!(expected_frame_no, 24);
+        assert_eq!(expected_frame_no, 25);
     }
 }

@@ -106,7 +106,7 @@ impl LogFile {
             let log_id = Uuid::new_v4();
             LogFileHeader {
                 version: 2.into(),
-                start_frame_no: 0.into(),
+                start_frame_no: 1.into(),
                 magic: WAL_MAGIC.into(),
                 page_size: (LIBSQL_PAGE_SIZE as i32).into(),
                 start_checksum: 0.into(),
@@ -494,7 +494,7 @@ pub struct ReplicationLogger {
     db_path: PathBuf,
     /// a notifier channel other tasks can subscribe to, and get notified when new frames become
     /// available.
-    pub new_frame_notifier: watch::Sender<Option<FrameNo>>,
+    pub new_frame_notifier: watch::Sender<FrameNo>,
     pub closed_signal: watch::Sender<bool>,
     pub auto_checkpoint: u32,
 }
@@ -571,7 +571,7 @@ impl ReplicationLogger {
         let header = log_file.header();
         let generation_start_frame_no = header.last_frame_no();
 
-        let (new_frame_notifier, _) = watch::channel(generation_start_frame_no);
+        let (new_frame_notifier, _) = watch::channel(generation_start_frame_no.unwrap_or(0));
         unsafe {
             let conn = if cfg!(feature = "unix-excl-vfs") {
                 rusqlite::Connection::open_with_flags_and_vfs(
@@ -840,14 +840,14 @@ mod test {
 
         let log_file = logger.log_file.write();
         for i in 0..10 {
-            let frame = log_file.frame(i).unwrap();
+            let frame = log_file.frame(i + 1).unwrap();
             assert_eq!(frame.header().page_no.get(), i as u32);
             assert!(frame.page().iter().all(|x| i as u8 == *x));
         }
 
         assert_eq!(
             log_file.header.start_frame_no.get() + log_file.header.frame_count.get(),
-            10
+            11
         );
     }
 

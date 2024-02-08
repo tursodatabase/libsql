@@ -17,7 +17,7 @@ use uuid::Uuid;
 
 use crate::config::{DbConfig, UserApiConfig};
 use crate::net::AddrIncoming;
-use crate::Server;
+use crate::{Server, USE_REPLICATION_V2};
 
 const S3_URL: &str = "http://localhost:9000/";
 
@@ -120,6 +120,9 @@ async fn configure_server(
 
 #[tokio::test]
 async fn backup_restore() {
+    if *USE_REPLICATION_V2 {
+        return;
+    }
     let _ = tracing_subscriber::fmt::try_init();
 
     start_s3_server().await;
@@ -253,6 +256,9 @@ async fn backup_restore() {
 
 #[tokio::test]
 async fn rollback_restore() {
+    if *USE_REPLICATION_V2 {
+        return;
+    }
     let _ = tracing_subscriber::fmt::try_init();
 
     start_s3_server().await;

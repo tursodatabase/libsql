@@ -585,8 +585,8 @@ struct WalIteratorRev {
 #ifdef SQLITE_USE_SEH
 # error "SEH is not supported in libSQL due to virtual WAL backward compatibility!"
 #else
-# define SEH_TRY          
-# define SEH_EXCEPT(X)    
+# define SEH_TRY
+# define SEH_EXCEPT(X)
 # define SEH_INJECT_FAULT
 # define SEH_FREE_ON_ERROR(X,Y)
 # define SEH_SET_ON_ERROR(X,Y)
@@ -2044,6 +2044,7 @@ static int walCheckpoint(
       if( mxSafeFrame>y ){
         assert( y<=pWal->hdr.mxFrame );
         rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(i), 1);
+
         if( rc==SQLITE_OK ){
           u32 iMark = (i==1 ? mxSafeFrame : READMARK_NOT_USED);
           AtomicStore(pInfo->aReadMark+i, iMark); SEH_INJECT_FAULT;
@@ -2101,15 +2102,20 @@ static int walCheckpoint(
           rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_INTERRUPT;
           break;
         }
+
         if( iFrame<=nBackfill || iFrame>mxSafeFrame || iDbpage>mxPage ){
           continue;
         }
+
         iOffset = walFrameOffset(iFrame, szPage) + WAL_FRAME_HDRSIZE;
         /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL file */
         rc = sqlite3OsRead(pWal->pWalFd, zBuf, szPage, iOffset);
         if( rc!=SQLITE_OK ) break;
         iOffset = (iDbpage-1)*(i64)szPage;
         testcase( IS_BIG_INT(iOffset) );
+        /* sqlite in not expecting this page to be checkpointed, but we do,
+         * so we call the callback, but do not write it to the main db file
+         * */
         rc = sqlite3OsWrite(pWal->pDbFd, zBuf, szPage, iOffset);
         if( rc!=SQLITE_OK ) break;
         if (xCb) {
@@ -3002,7 +3008,7 @@ static int sqlite3WalSnapshotRecover(Wal *pWal){
 #endif /* SQLITE_ENABLE_SNAPSHOT */
 
 /*
-** This function does the work of sqlite3WalBeginReadTransaction() (see 
+** This function does the work of sqlite3WalBeginReadTransaction() (see
 ** below). That function simply calls this one inside an SEH_TRY{...} block.
 */
 static int walBeginReadTransaction(Wal *pWal, int *pChanged){
@@ -3303,6 +3309,7 @@ static int sqlite3WalReadFrame(
 */
 static Pgno sqlite3WalDbsize(Wal *pWal){
   if( pWal && ALWAYS(pWal->readLock>=0) ){
+
     return pWal->hdr.nPage;
   }
   return 0;
@@ -3405,12 +3412,12 @@ static int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx)
 
     SEH_TRY {
       /* Restore the clients cache of the wal-index header to the state it
-      ** was in before the client began writing to the database. 
+      ** was in before the client began writing to the database.
       */
       memcpy(&pWal->hdr, (void *)walIndexHdr(pWal), sizeof(WalIndexHdr));
-  
-      for(iFrame=pWal->hdr.mxFrame+1; 
-          ALWAYS(rc==SQLITE_OK) && iFrame<=iMax; 
+
+      for(iFrame=pWal->hdr.mxFrame+1;
+          ALWAYS(rc==SQLITE_OK) && iFrame<=iMax;
           iFrame++
       ){
         /* This call cannot fail. Unless the page for which the page number
@@ -3904,7 +3911,7 @@ static int walFrames(
   return rc;
 }
 
-/* 
+/*
 ** Write a set of frames to the log. The caller must hold the write-lock
 ** on the log file (obtained using sqlite3WalBeginWriteTransaction()).
 **
@@ -4018,13 +4025,13 @@ static int sqlite3WalCheckpoint(
         sqlite3OsUnfetch(pWal->pDbFd, 0, 0);
       }
     }
-  
+
     /* Copy data from the log to the database file. */
     if( rc==SQLITE_OK ){
       if( pWal->hdr.mxFrame && walPagesize(pWal)!=nBuf ){
         rc = SQLITE_CORRUPT_BKPT;
       }else{
-        rc = walCheckpoint(pWal, db, eMode2, xBusy2, pBusyArg, sync_flags,zBuf, pCbData, xCb);
+        rc = walCheckpoint(pWal, db, eMode2, xBusy2, pBusyArg, sync_flags, zBuf, pCbData, xCb);
       }
 
       /* If no error occurred, set the output variables. */
@@ -4177,7 +4184,7 @@ static int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot){
 /* Try to open on pSnapshot when the next read-transaction starts
 */
 static void sqlite3WalSnapshotOpen(
-  Wal *pWal, 
+  Wal *pWal,
   sqlite3_snapshot *pSnapshot
 ){
   pWal->pSnapshot = (WalIndexHdr*)pSnapshot;
@@ -4420,6 +4427,8 @@ static int sqlite3WalOpen(
 
 #ifdef SQLITE_ENABLE_ZIPVFS
     outWal->methods.xFramesize = sqlite3WalFramesize;
+
+
 #endif
 
     out->methods.xFile = (sqlite3_file *(*)(wal_impl *))sqlite3WalFile;
@@ -4472,8 +4481,8 @@ RefCountedWalManager* clone_wal_manager(RefCountedWalManager *p) {
     return p;
 }
 
-const libsql_wal_manager sqlite3_wal_manager = { 
-    .pData = NULL, 
+const libsql_wal_manager sqlite3_wal_manager = {
+    .pData = NULL,
     .xOpen = (int (*)(wal_manager_impl *, sqlite3_vfs *, sqlite3_file *, int, long long, const char*, libsql_wal *))sqlite3WalOpen,
     .xClose = (int (*)(wal_manager_impl *, wal_impl *, sqlite3 *, int, int, unsigned char *))sqlite3WalClose,
     .bUsesShm = 1,

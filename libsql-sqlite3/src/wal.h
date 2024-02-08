@@ -9,8 +9,8 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This header file defines the interface to the write-ahead logging 
-** system. Refer to the comments below and the header comment attached to 
+** This header file defines the interface to the write-ahead logging
+** system. Refer to the comments below and the header comment attached to
 ** the implementation of each function in log.c for further details.
 */
 
@@ -28,8 +28,8 @@
 
 #define WAL_SAVEPOINT_NDATA 4
 
-/* Connection to a write-ahead log (WAL) file. 
-** There is one object of this type for each pager. 
+/* Connection to a write-ahead log (WAL) file.
+** There is one object of this type for each pager.
 */
 typedef struct libsql_wal libsql_wal;
 typedef struct libsql_wal_manager libsql_wal_manager;
@@ -43,8 +43,7 @@ typedef struct libsql_wal_methods {
   /* Set the limiting size of a WAL file. */
   void (*xLimit)(wal_impl* pWal, long long limit);
 
-  /* Used by readers to open (lock) and close (unlock) a snapshot.  A 
-  ** snapshot is like a read-transaction.  It is the state of the database
+  /* Used by readers to open (lock) and close (unlock) a snapshot.  A ** snapshot is like a read-transaction.  It is the state of the database
   ** at an instant in time.  sqlite3WalOpenSnapshot gets a read lock and
   ** preserves the current state even if the other threads or processes
   ** write to or checkpoint the WAL.  sqlite3WalCloseSnapshot() closes the
@@ -78,7 +77,7 @@ typedef struct libsql_wal_methods {
   /* Write a frame or frames to the log. */
   int (*xFrames)(wal_impl* pWal, int, libsql_pghdr *, unsigned int, int, int, int*);
 
-  /* Copy pages from the log to the database file */ 
+  /* Copy pages from the log to the database file */
   int (*xCheckpoint)(
     wal_impl* pWal,                     /* Write-ahead log connection */
     sqlite3 *db,                    /* Check this handle's interrupt flag */
@@ -111,7 +110,7 @@ typedef struct libsql_wal_methods {
 
   /* Return true if the argument is non-NULL and the WAL module is using
   ** heap-memory for the wal-index. Otherwise, if the argument is NULL or the
-  ** WAL module is using shared-memory, return false. 
+  ** WAL module is using shared-memory, return false.
   */
   int (*xHeapMemory)(wal_impl* pWal);
 
@@ -156,7 +155,7 @@ typedef struct WalCkptInfo WalCkptInfo;
 **
 ** The szPage value can be any power of 2 between 512 and 32768, inclusive.
 ** Or it can be 1 to represent a 65536-byte page.  The latter case was
-** added in 3.7.1 when support for 64K pages was added.  
+** added in 3.7.1 when support for 64K pages was added.
 */
 struct WalIndexHdr {
   unsigned int iVersion;                   /* Wal-index version */

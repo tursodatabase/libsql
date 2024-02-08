@@ -13474,8 +13474,7 @@ typedef struct libsql_wal_methods {
   /* Set the limiting size of a WAL file. */
   void (*xLimit)(wal_impl* pWal, long long limit);
 
-  /* Used by readers to open (lock) and close (unlock) a snapshot.  A
-  ** snapshot is like a read-transaction.  It is the state of the database
+  /* Used by readers to open (lock) and close (unlock) a snapshot.  A ** snapshot is like a read-transaction.  It is the state of the database
   ** at an instant in time.  sqlite3WalOpenSnapshot gets a read lock and
   ** preserves the current state even if the other threads or processes
   ** write to or checkpoint the WAL.  sqlite3WalCloseSnapshot() closes the

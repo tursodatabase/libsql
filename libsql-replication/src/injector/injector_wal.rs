@@ -1,11 +1,12 @@
 use std::ffi::{c_int, CStr};
 use std::num::NonZeroU32;
 
-use libsql_sys::ffi::{Pager, PgHdr};
+use libsql_sys::ffi::{Pager, PgHdr, Sqlite3DbHeader};
 use libsql_sys::wal::{
     BusyHandler, CheckpointCallback, CheckpointMode, PageHeaders, Result, Sqlite3Db, Sqlite3File,
     Sqlite3Wal, Sqlite3WalManager, UndoHandler, Vfs, Wal, WalManager,
 };
+use zerocopy::{FromZeroes, AsBytes};
 
 use crate::frame::FrameBorrowed;
 
@@ -62,9 +63,9 @@ impl WalManager for InjectorWalManager {
         wal: &mut Self::Wal,
         db: &mut Sqlite3Db,
         sync_flags: c_int,
-        scratch: Option<&mut [u8]>,
+        _scratch: Option<&mut [u8]>,
     ) -> Result<()> {
-        self.inner.close(&mut wal.inner, db, sync_flags, scratch)
+        self.inner.close(&mut wal.inner, db, sync_flags, None)
     }
 
     fn destroy_log(&self, vfs: &mut Vfs, db_path: &CStr) -> Result<()> {
@@ -180,26 +181,28 @@ impl Wal for InjectorWal {
 
     fn checkpoint(
         &mut self,
-        db: &mut Sqlite3Db,
-        mode: CheckpointMode,
-        busy_handler: Option<&mut dyn BusyHandler>,
-        sync_flags: u32,
+        _db: &mut Sqlite3Db,
+        _mode: CheckpointMode,
+        _busy_handler: Option<&mut dyn BusyHandler>,
+        _sync_flags: u32,
         // temporary scratch buffer
-        buf: &mut [u8],
-        checkpoint_cb: Option<&mut dyn CheckpointCallback>,
+        _buf: &mut [u8],
+        _checkpoint_cb: Option<&mut dyn CheckpointCallback>,
         in_wal: Option<&mut i32>,
         backfilled: Option<&mut i32>,
     ) -> Result<()> {
-        self.inner.checkpoint(
-            db,
-            mode,
-            busy_handler,
-            sync_flags,
-            buf,
-            checkpoint_cb,
-            in_wal,
-            backfilled,
-        )
+        // this is a super hacky way to retrieve the replication index
+        if let Some((in_wal, backfilled)) = in_wal.zip(backfilled) {
+            dbg!();
+            let replication_index = get_replication_index(&mut self.inner)?;
+            dbg!(replication_index);
+            *backfilled = replication_index as i32;
+            *in_wal = (replication_index >> u32::BITS as u64) as i32;
+        }
+
+        // TODO: support checkpoint
+
+        Ok(())
     }
 
     fn exclusive_mode(&mut self, op: c_int) -> Result<()> {
@@ -232,6 +235,24 @@ impl Wal for InjectorWal {
 
     fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
         self.inner.frame_page_no(frame_no)
+    }
+}
+
+fn get_replication_index<T: Wal>(wal: &mut T) -> libsql_sys::wal::Result<u64> {
+    let mut header = Sqlite3DbHeader::new_zeroed();
+    let frames_in_wal = dbg!(wal.frames_in_wal());
+    match wal.find_frame(NonZeroU32::new(1).unwrap())? {
+        Some(i) => {
+            dbg!(i);
+            wal.read_frame(i, header.as_bytes_mut())?;
+            dbg!(Ok(
+                header.replication_index.get() + (frames_in_wal - i.get()) as u64
+            ))
+        }
+        None => {
+            wal.db_file().read_at(header.as_bytes_mut(), 0)?;
+            Ok(header.replication_index.get() + frames_in_wal as u64)
+        }
     }
 }
 

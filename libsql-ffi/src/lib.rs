@@ -13,7 +13,7 @@ pub use libsql_wasm::{
     libsql_compile_wasm_module, libsql_free_wasm_module, libsql_run_wasm, libsql_wasm_engine_new,
 };
 
-include!(concat!(env!("OUT_DIR"), "/bindgen.rs"));
+include!("../bundled/bindings/bindgen.rs");
 
 #[must_use]
 pub fn SQLITE_STATIC() -> sqlite3_destructor_type {

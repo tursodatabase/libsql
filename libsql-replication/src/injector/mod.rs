@@ -3,7 +3,10 @@ use std::path::Path;
 use std::sync::Arc;
 
 use parking_lot::Mutex;
-use rusqlite::OpenFlags;
+use rusqlite::{
+    ffi::{sqlite3_wal_checkpoint_v2, SQLITE_CHECKPOINT_FULL},
+    OpenFlags,
+};
 
 use crate::frame::{Frame, FrameNo};
 
@@ -35,6 +38,17 @@ pub struct Injector {
     biggest_uncommitted_seen: FrameNo,
 }
 
+impl std::fmt::Debug for Injector {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Injector")
+            .field("is_txn", &self.is_txn)
+            .field("buffer", &self.buffer)
+            .field("capacity", &self.capacity)
+            .field("biggest_uncommitted_seen", &self.biggest_uncommitted_seen)
+            .finish()
+    }
+}
+
 /// Methods from this trait are called before and after performing a frame injection.
 /// This trait trait is used to record the last committed frame_no to the log.
 /// The implementer can persist the pre and post commit frame no, and compare them in the event of
@@ -46,6 +60,7 @@ impl Injector {
         auto_checkpoint: u32,
         encryption_key: Option<bytes::Bytes>,
     ) -> Result<Self, Error> {
+        dbg!(path.as_ref());
         let buffer = FrameBuffer::default();
         let wal_manager = InjectorWalManager::new(buffer.clone());
         let connection = libsql_sys::Connection::open(
@@ -68,9 +83,37 @@ impl Injector {
         })
     }
 
+    pub fn get_replication_index(&self) -> Result<FrameNo, Error> {
+        // This is a hack to retrieve the replication index. If in_wal and backfilled is not None,
+        // the wal implementation for the injector will return the replication index in those
+        // pointer instead of checkpointing. in wal contains the most significant bytes of
+        // replication index, and backfilled the least significant
+        let mut in_wal = 0;
+        let mut backfilled = 0;
+
+        let conn = self.connection.lock();
+        unsafe {
+            let rc = sqlite3_wal_checkpoint_v2(
+                conn.handle(),
+                std::ptr::null(),
+                SQLITE_CHECKPOINT_FULL,
+                &mut in_wal,
+                &mut backfilled,
+            );
+            if rc != 0 {
+                todo!();
+            }
+        }
+
+        dbg!(in_wal);
+        dbg!(backfilled);
+
+        Ok((in_wal as u64) << u32::BITS as u64 | backfilled as u64)
+    }
+
     /// Inject a frame into the log. If this was a commit frame, returns Ok(Some(FrameNo)).
     pub fn inject_frame(&mut self, frame: Frame) -> Result<Option<FrameNo>, Error> {
-        let frame_close_txn = frame.header().size_after.get() != 0;
+        let frame_close_txn = dbg!(frame.header().size_after.get()) != 0;
         self.buffer.lock().push_back(frame);
         if frame_close_txn || self.buffer.lock().len() >= self.capacity {
             return self.flush();

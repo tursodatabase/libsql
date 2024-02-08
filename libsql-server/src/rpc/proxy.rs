@@ -477,7 +477,7 @@ impl QueryResultBuilder for ExecuteResultsBuilder {
 
     fn finish(
         &mut self,
-        last_frame_no: Option<FrameNo>,
+        last_frame_no: FrameNo,
         is_autocommit: bool,
     ) -> Result<(), QueryResultBuilderError> {
         use libsql_replication::rpc::proxy::State;
@@ -489,7 +489,7 @@ impl QueryResultBuilder for ExecuteResultsBuilder {
             } else {
                 State::Txn.into()
             },
-            current_frame_no: last_frame_no,
+            current_frame_no: Some(last_frame_no),
         });
         Ok(())
     }
@@ -523,18 +523,11 @@ impl Proxy for ProxyService {
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
         let auth = self.auth(&mut req, namespace.clone()).await?;
 
-        let (connection_maker, _new_frame_notifier) = self
+        let connection_maker = self
             .namespaces
             .with(namespace, |ns| {
                 let connection_maker = ns.db.connection_maker();
-                let notifier = ns
-                    .db
-                    .wal_manager
-                    .wrapped()
-                    .logger()
-                    .new_frame_notifier
-                    .subscribe();
-                (connection_maker, notifier)
+                connection_maker
             })
             .await
             .map_err(|e| {
@@ -628,19 +621,9 @@ impl Proxy for ProxyService {
 
         // FIXME: copypasta from execute(), creatively extract to a helper function
         let lock = self.clients.upgradable_read().await;
-        let (connection_maker, _new_frame_notifier) = self
+        let connection_maker = self
             .namespaces
-            .with(namespace, |ns| {
-                let connection_maker = ns.db.connection_maker();
-                let notifier = ns
-                    .db
-                    .wal_manager
-                    .wrapped()
-                    .logger()
-                    .new_frame_notifier
-                    .subscribe();
-                (connection_maker, notifier)
-            })
+            .with(namespace, |ns| ns.db.connection_maker())
             .await
             .map_err(|e| {
                 if let crate::error::Error::NamespaceDoesntExist(_) = e {

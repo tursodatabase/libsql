@@ -295,7 +295,7 @@ impl QueryResultBuilder for JsonHttpPayloadBuilder {
     // TODO: how do we return last_frame_no?
     fn finish(
         &mut self,
-        _last_frame_no: Option<FrameNo>,
+        _last_frame_no: FrameNo,
         _is_autocommit: bool,
     ) -> Result<(), QueryResultBuilderError> {
         self.formatter.end_array(&mut self.buffer)?;

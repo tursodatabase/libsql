@@ -36,44 +36,25 @@ func init() {
 }
 
 func NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken string) (*Connector, error) {
-	return openEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, 0)
+	return openConnector(dbPath, primaryUrl, authToken, 0)
 }
 
 func NewEmbeddedReplicaConnectorWithAutoSync(dbPath, primaryUrl, authToken string, syncInterval time.Duration) (*Connector, error) {
-	return openEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, syncInterval)
+	return openConnector(dbPath, primaryUrl, authToken, syncInterval)
 }
 
 type driver struct{}
 
-func (d driver) Open(dbAddress string) (sqldriver.Conn, error) {
-	connector, err := d.OpenConnector(dbAddress)
+func (d driver) Open(dbPath string) (sqldriver.Conn, error) {
+	connector, err := d.OpenConnector(dbPath)
 	if err != nil {
 		return nil, err
 	}
 	return connector.Connect(context.Background())
 }
 
-func (d driver) OpenConnector(dbAddress string) (sqldriver.Connector, error) {
-	if strings.HasPrefix(dbAddress, ":memory:") {
-		return openLocalConnector(dbAddress)
-	}
-	u, err := url.Parse(dbAddress)
-	if err != nil {
-		return nil, err
-	}
-	switch u.Scheme {
-	case "file":
-		return openLocalConnector(dbAddress)
-	case "http":
-		fallthrough
-	case "https":
-		fallthrough
-	case "libsql":
-		authToken := u.Query().Get("authToken")
-		u.RawQuery = ""
-		return openRemoteConnector(u.String(), authToken)
-	}
-	return nil, fmt.Errorf("unsupported URL scheme: %s\nThis driver supports only URLs that start with libsql://, file://, https:// or http://", u.Scheme)
+func (d driver) OpenConnector(dbPath string) (sqldriver.Connector, error) {
+	return openConnector(dbPath, "", "", 0)
 }
 
 func libsqlSync(nativeDbPtr C.libsql_database_t) error {
@@ -85,54 +66,44 @@ func libsqlSync(nativeDbPtr C.libsql_database_t) error {
 	return nil
 }
 
-func openLocalConnector(dbPath string) (*Connector, error) {
-	nativeDbPtr, err := libsqlOpenLocal(dbPath)
-	if err != nil {
-		return nil, err
-	}
-	return &Connector{nativeDbPtr: nativeDbPtr}, nil
-}
-
-func openRemoteConnector(primaryUrl, authToken string) (*Connector, error) {
-	nativeDbPtr, err := libsqlOpenRemote(primaryUrl, authToken)
-	if err != nil {
-		return nil, err
-	}
-	return &Connector{nativeDbPtr: nativeDbPtr}, nil
-}
-
-func openEmbeddedReplicaConnector(dbPath, primaryUrl, authToken string, syncInterval time.Duration) (*Connector, error) {
+func openConnector(dbPath, primaryUrl, authToken string, syncInterval time.Duration) (*Connector, error) {
+	var nativeDbPtr C.libsql_database_t
+	var err error
 	var closeCh chan struct{}
 	var closeAckCh chan struct{}
-	nativeDbPtr, err := libsqlOpenWithSync(dbPath, primaryUrl, authToken)
-	if err != nil {
-		return nil, err
-	}
-	if err := libsqlSync(nativeDbPtr); err != nil {
-		C.libsql_close(nativeDbPtr)
-		return nil, err
-	}
-	if syncInterval != 0 {
-		closeCh = make(chan struct{}, 1)
-		closeAckCh = make(chan struct{}, 1)
-		go func() {
-			for {
-				timerCh := make(chan struct{}, 1)
-				go func() {
-					time.Sleep(syncInterval)
-					timerCh <- struct{}{}
-				}()
-				select {
-				case <-closeCh:
-					closeAckCh <- struct{}{}
-					return
-				case <-timerCh:
-					if err := libsqlSync(nativeDbPtr); err != nil {
-						fmt.Println(err)
+	if primaryUrl != "" {
+		nativeDbPtr, err = libsqlOpenWithSync(dbPath, primaryUrl, authToken)
+		if err != nil {
+			return nil, err
+		}
+		if err := libsqlSync(nativeDbPtr); err != nil {
+			C.libsql_close(nativeDbPtr)
+			return nil, err
+		}
+		if syncInterval != 0 {
+			closeCh = make(chan struct{}, 1)
+			closeAckCh = make(chan struct{}, 1)
+			go func() {
+				for {
+					timerCh := make(chan struct{}, 1)
+					go func() {
+						time.Sleep(syncInterval)
+						timerCh <- struct{}{}
+					}()
+					select {
+					case <-closeCh:
+						closeAckCh <- struct{}{}
+						return
+					case <-timerCh:
+						if err := libsqlSync(nativeDbPtr); err != nil {
+							fmt.Println(err)
+						}
 					}
 				}
-			}
-		}()
+			}()
+		}
+	} else {
+		nativeDbPtr, err = libsqlOpen(dbPath)
 	}
 	if err != nil {
 		return nil, err
@@ -187,30 +158,15 @@ func libsqlError(message string, statusCode C.int, errMsg *C.char) error {
 	}
 }
 
-func libsqlOpenLocal(dataSourceName string) (C.libsql_database_t, error) {
+func libsqlOpen(dataSourceName string) (C.libsql_database_t, error) {
 	connectionString := C.CString(dataSourceName)
 	defer C.free(unsafe.Pointer(connectionString))
 
 	var db C.libsql_database_t
 	var errMsg *C.char
-	statusCode := C.libsql_open_file(connectionString, &db, &errMsg)
+	statusCode := C.libsql_open_ext(connectionString, &db, &errMsg)
 	if statusCode != 0 {
-		return nil, libsqlError(fmt.Sprint("failed to open local database ", dataSourceName), statusCode, errMsg)
-	}
-	return db, nil
-}
-
-func libsqlOpenRemote(url, authToken string) (C.libsql_database_t, error) {
-	connectionString := C.CString(url)
-	defer C.free(unsafe.Pointer(connectionString))
-	authTokenNativeString := C.CString(authToken)
-	defer C.free(unsafe.Pointer(authTokenNativeString))
-
-	var db C.libsql_database_t
-	var errMsg *C.char
-	statusCode := C.libsql_open_remote(connectionString, authTokenNativeString, &db, &errMsg)
-	if statusCode != 0 {
-		return nil, libsqlError(fmt.Sprint("failed to open remote database ", url), statusCode, errMsg)
+		return nil, libsqlError(fmt.Sprint("failed to open database ", dataSourceName), statusCode, errMsg)
 	}
 	return db, nil
 }
@@ -526,8 +482,18 @@ func newRows(nativePtr C.libsql_rows_t) (*rows, error) {
 		return &rows{nil, nil, nil}, nil
 	}
 	columnCount := int(C.libsql_column_count(nativePtr))
-	columns := make([]string, columnCount)
+	columnTypes := make([]int, columnCount)
 	for i := 0; i < columnCount; i++ {
+		var columnType C.int
+		var errMsg *C.char
+		statusCode := C.libsql_column_type(nativePtr, C.int(i), &columnType, &errMsg)
+		if statusCode != 0 {
+			return nil, libsqlError(fmt.Sprint("failed to get column type for index ", i), statusCode, errMsg)
+		}
+		columnTypes[i] = int(columnType)
+	}
+	columns := make([]string, len(columnTypes))
+	for i := 0; i < len(columnTypes); i++ {
 		var ptr *C.char
 		var errMsg *C.char
 		statusCode := C.libsql_column_name(nativePtr, C.int(i), &ptr, &errMsg)
@@ -537,7 +503,7 @@ func newRows(nativePtr C.libsql_rows_t) (*rows, error) {
 		columns[i] = C.GoString(ptr)
 		C.libsql_free_string(ptr)
 	}
-	return &rows{nativePtr, nil, columns}, nil
+	return &rows{nativePtr, columnTypes, columns}, nil
 }
 
 type rows struct {
@@ -573,23 +539,9 @@ func (r *rows) Next(dest []sqldriver.Value) error {
 		return io.EOF
 	}
 	defer C.libsql_free_row(row)
-	if len(r.columnTypes) == 0 {
-		columnCount := len(r.columnNames)
-		columnTypes := make([]int, columnCount)
-		for i := 0; i < columnCount; i++ {
-			var columnType C.int
-			var errMsg *C.char
-			statusCode := C.libsql_column_type(r.nativePtr, C.int(i), &columnType, &errMsg)
-			if statusCode != 0 {
-				return libsqlError(fmt.Sprint("failed to get column type for index ", i), statusCode, errMsg)
-			}
-			columnTypes[i] = int(columnType)
-		}
-		r.columnTypes = columnTypes
-	}
 	count := len(dest)
-	if count > len(r.columnNames) {
-		count = len(r.columnNames)
+	if count > len(r.columnTypes) {
+		count = len(r.columnTypes)
 	}
 	for i := 0; i < count; i++ {
 		switch r.columnTypes[i] {

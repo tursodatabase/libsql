@@ -105,7 +105,7 @@ fn proxy_write() {
             Value::Integer(1)
         ));
 
-        snapshot_metrics().assert_gauge("libsql_server_current_frame_no", 2.0);
+        snapshot_metrics().assert_gauge("libsql_server_current_frame_no", 3.0);
 
         Ok(())
     });

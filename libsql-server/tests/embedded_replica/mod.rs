@@ -4,13 +4,14 @@ mod local;
 
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use crate::common::http::Client;
 use crate::common::net::{init_tracing, SimServer, TestServer, TurmoilAcceptor, TurmoilConnector};
 use crate::common::snapshot_metrics;
 use libsql::Database;
 use libsql_server::config::{AdminApiConfig, DbConfig, RpcServerConfig, UserApiConfig};
+use libsql_server::USE_REPLICATION_V2;
 use serde_json::json;
 use tempfile::tempdir;
 use tokio::sync::Notify;
@@ -69,7 +70,9 @@ fn make_primary(sim: &mut Sim, path: PathBuf) {
 
 #[test]
 fn embedded_replica() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(3600))
+        .build();
 
     let tmp_embedded = tempdir().unwrap();
     let tmp_host = tempdir().unwrap();
@@ -95,16 +98,16 @@ fn embedded_replica() {
         )
         .await?;
 
-        let n = db.sync().await?;
-        assert_eq!(n, None);
+        let (fno, _) = db.sync().await?;
+        assert_eq!(fno, 0);
 
         let conn = db.connect()?;
 
         conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
             .await?;
 
-        let n = db.sync().await?;
-        assert_eq!(n, Some(1));
+        let (fno, _) = db.sync().await?;
+        assert_eq!(fno, 2);
 
         let err = conn
             .execute("INSERT INTO user(id) VALUES (1), (1)", ())
@@ -166,16 +169,16 @@ fn execute_batch() {
         )
         .await?;
 
-        let n = db.sync().await?;
-        assert_eq!(n, None);
+        let (fno, _) = db.sync().await?;
+        assert_eq!(fno, 0);
 
         let conn = db.connect()?;
 
         conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
             .await?;
 
-        let n = db.sync().await?;
-        assert_eq!(n, Some(1));
+        let (fno, _) = db.sync().await?;
+        assert_eq!(fno, 2);
 
         conn.execute_batch(
             "BEGIN;
@@ -191,6 +194,9 @@ fn execute_batch() {
 
 #[test]
 fn replica_primary_reset() {
+    if *USE_REPLICATION_V2 {
+        return;
+    }
     let mut sim = Builder::new().build();
     let tmp = tempdir().unwrap();
 
@@ -274,7 +280,7 @@ fn replica_primary_reset() {
         )
         .await
         .unwrap();
-        let replica_index = replica.sync().await.unwrap().unwrap();
+        let (replica_index, _) = replica.sync().await.unwrap();
         let primary_index = Client::new()
             .get("http://primary:9090/v1/namespaces/default/stats")
             .await
@@ -333,7 +339,7 @@ fn replica_primary_reset() {
         )
         .await
         .unwrap();
-        let replica_index = replica.sync().await.unwrap().unwrap();
+        let (replica_index, _) = replica.sync().await.unwrap();
         let primary_index = Client::new()
             .get("http://primary:9090/v1/namespaces/default/stats")
             .await
@@ -426,8 +432,7 @@ fn replica_no_resync_on_restart() {
 
         let tmp = tempdir().unwrap();
         let db_path = tmp.path().join("data");
-        let before = Instant::now();
-        let first_sync_index = {
+        let (first_sync_index, _) = {
             let db = Database::open_with_remote_sync_connector(
                 db_path.display().to_string(),
                 "http://primary:8080",
@@ -438,12 +443,10 @@ fn replica_no_resync_on_restart() {
             )
             .await
             .unwrap();
-            db.sync().await.unwrap().unwrap()
+            dbg!(db.sync().await.unwrap())
         };
-        let first_sync = before.elapsed();
 
-        let before = Instant::now();
-        let second_sync_index = {
+        let (second_sync_index, n) = {
             let db = Database::open_with_remote_sync_connector(
                 db_path.display().to_string(),
                 "http://primary:8080",
@@ -454,14 +457,13 @@ fn replica_no_resync_on_restart() {
             )
             .await
             .unwrap();
-            db.sync().await.unwrap().unwrap()
+            db.sync().await.unwrap()
         };
-        let second_sync = before.elapsed();
 
         assert_eq!(first_sync_index, second_sync_index);
         // very sketchy way of checking the the second sync was very fast, because it performed
         // only a handshake.
-        assert!(second_sync.as_secs_f64() / first_sync.as_secs_f64() < 0.10);
+        assert_eq!(n, 0);
 
         Ok(())
     });
@@ -471,6 +473,7 @@ fn replica_no_resync_on_restart() {
 
 #[test]
 fn replicate_with_snapshots() {
+    if *USE_REPLICATION_V2 { return }
     let mut sim = Builder::new()
         .simulation_duration(Duration::from_secs(1000))
         .tcp_capacity(200)

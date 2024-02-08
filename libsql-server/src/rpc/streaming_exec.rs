@@ -256,7 +256,7 @@ pub fn apply_program_resp_to_builder<B: QueryResultBuilder>(
                 is_autocommit,
             }) => {
                 on_finish(last_frame_no, is_autocommit);
-                builder.finish(last_frame_no, is_autocommit)?;
+                builder.finish(last_frame_no.unwrap_or(0), is_autocommit)?;
                 return Ok(false);
             }
             _ => return Err(Error::PrimaryStreamMisuse),
@@ -344,11 +344,11 @@ impl QueryResultBuilder for StreamResponseBuilder {
 
     fn finish(
         &mut self,
-        last_frame_no: Option<FrameNo>,
+        last_frame_no: FrameNo,
         is_autocommit: bool,
     ) -> Result<(), QueryResultBuilderError> {
         self.push(Step::Finish(Finish {
-            last_frame_no,
+            last_frame_no: Some(last_frame_no),
             is_autocommit,
         }))?;
         self.flush()?;
