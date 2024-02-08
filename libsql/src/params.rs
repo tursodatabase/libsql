@@ -8,7 +8,7 @@ mod sealed {
 
 use sealed::Sealed;
 
-/// Converts some type into paramters that can be passed
+/// Converts some type into parameters that can be passed
 /// to libsql.
 ///
 /// The trait is sealed and not designed to be implemented by hand
