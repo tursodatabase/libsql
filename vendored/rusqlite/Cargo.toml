@@ -46,7 +46,7 @@ limits = []
 hooks = []
 i128_blob = []
 sqlcipher = []
-libsql-experimental = []
+libsql-experimental = ["libsql-ffi/wasmtime-bindings"]
 libsql-wasm-experimental = ["libsql-experimental"]
 # xSavepoint, xRelease and xRollbackTo: 3.7.7 (2011-06-23)
 vtab = []
