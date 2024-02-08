@@ -19,7 +19,7 @@ pub struct Transaction {
     pub(crate) inner: Box<dyn Tx + Send + Sync>,
     pub(crate) conn: Connection,
     /// An optional action executed whenever a transaction needs to be dropped.
-    pub(crate) close: Option<Box<dyn FnOnce()>>,
+    pub(crate) close: Option<Box<dyn FnOnce() + Send + Sync + 'static>>,
 }
 
 impl Transaction {
