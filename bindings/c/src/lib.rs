@@ -503,6 +503,7 @@ pub unsafe extern "C" fn libsql_column_name(
 #[no_mangle]
 pub unsafe extern "C" fn libsql_column_type(
     res: libsql_rows_t,
+    row: libsql_row_t,
     col: std::ffi::c_int,
     out_type: *mut std::ffi::c_int,
     out_err_msg: *mut *const std::ffi::c_char,
@@ -519,12 +520,25 @@ pub unsafe extern "C" fn libsql_column_type(
         );
         return 1;
     }
-    match res.column_type(col) {
-        Ok(t) => {
-            *out_type = t as i32;
+    let row = row.get_ref();
+    match row.get_value(col) {
+        Ok(libsql::Value::Null) => {
+            *out_type = 5 as i32;
+        }
+        Ok(libsql::Value::Text(_)) => {
+            *out_type = 3 as i32;
+        }
+        Ok(libsql::Value::Integer(_)) => {
+            *out_type = 1 as i32;
+        }
+        Ok(libsql::Value::Real(_)) => {
+            *out_type = 2 as i32;
+        }
+        Ok(libsql::Value::Blob(_)) => {
+            *out_type = 4 as i32;
         }
         Err(e) => {
-            set_err_msg(format!("Invalid type: {}", e), out_err_msg);
+            set_err_msg(format!("Error fetching value: {e}"), out_err_msg);
             return 2;
         }
     };

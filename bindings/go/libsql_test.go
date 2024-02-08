@@ -170,7 +170,7 @@ func (t Table) assertCount(expectedCount int, queryFn func() *sql.Rows) {
 	rows := queryFn()
 	defer rows.Close()
 	if !rows.Next() {
-		t.db.t.FatalWithMsg("expected at least one row")
+		t.db.t.FatalWithMsg(fmt.Sprintf("expected at least one row: %v", rows.Err()))
 	}
 	var rowCount int
 	t.db.t.FatalOnError(rows.Scan(&rowCount))
@@ -533,6 +533,16 @@ func testPreparedStatements(db *Database) {
 func TestTransaction(t *testing.T) {
 	t.Parallel()
 	db := getRemoteDb(T{t})
+	testTransaction(db)
+}
+
+func TestTransactionEmbedded(t *testing.T) {
+	t.Parallel()
+	db := getEmbeddedDb(T{t})
+	testTransaction(db)
+}
+
+func testTransaction(db *Database) {
 	if db == nil {
 		return
 	}
@@ -545,6 +555,7 @@ func TestTransaction(t *testing.T) {
 	tx.assertRowExists(0)
 	tx.assertRowExists(19)
 	db.t.FatalOnError(tx.Commit())
+	db.sync()
 	table.assertRowsCount(20)
 	table.assertRowDoesNotExist(20)
 	table.assertRowExists(0)

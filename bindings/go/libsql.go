@@ -523,7 +523,7 @@ const (
 
 func newRows(nativePtr C.libsql_rows_t) (*rows, error) {
 	if nativePtr == nil {
-		return &rows{nil, nil, nil}, nil
+		return &rows{nil, nil}, nil
 	}
 	columnCount := int(C.libsql_column_count(nativePtr))
 	columns := make([]string, columnCount)
@@ -537,12 +537,11 @@ func newRows(nativePtr C.libsql_rows_t) (*rows, error) {
 		columns[i] = C.GoString(ptr)
 		C.libsql_free_string(ptr)
 	}
-	return &rows{nativePtr, nil, columns}, nil
+	return &rows{nativePtr, columns}, nil
 }
 
 type rows struct {
 	nativePtr   C.libsql_rows_t
-	columnTypes []int
 	columnNames []string
 }
 
@@ -573,26 +572,19 @@ func (r *rows) Next(dest []sqldriver.Value) error {
 		return io.EOF
 	}
 	defer C.libsql_free_row(row)
-	if len(r.columnTypes) == 0 {
-		columnCount := len(r.columnNames)
-		columnTypes := make([]int, columnCount)
-		for i := 0; i < columnCount; i++ {
-			var columnType C.int
-			var errMsg *C.char
-			statusCode := C.libsql_column_type(r.nativePtr, C.int(i), &columnType, &errMsg)
-			if statusCode != 0 {
-				return libsqlError(fmt.Sprint("failed to get column type for index ", i), statusCode, errMsg)
-			}
-			columnTypes[i] = int(columnType)
-		}
-		r.columnTypes = columnTypes
-	}
 	count := len(dest)
 	if count > len(r.columnNames) {
 		count = len(r.columnNames)
 	}
 	for i := 0; i < count; i++ {
-		switch r.columnTypes[i] {
+		var columnType C.int
+		var errMsg *C.char
+		statusCode := C.libsql_column_type(r.nativePtr, row, C.int(i), &columnType, &errMsg)
+		if statusCode != 0 {
+			return libsqlError(fmt.Sprint("failed to get column type for index ", i), statusCode, errMsg)
+		}
+
+		switch int(columnType) {
 		case TYPE_NULL:
 			dest[i] = nil
 		case TYPE_INT:
