@@ -17,10 +17,16 @@ pub struct FrameEncryptor {
 
 impl FrameEncryptor {
     pub fn new(key: bytes::Bytes) -> Self {
+        #[cfg(feature = "encryption")]
         const SEED: u32 = 911;
+        #[cfg(not(feature = "encryption"))]
+        let _ = key;
+
         use aes::cipher::KeyIvInit;
 
+        #[allow(unused_mut)]
         let mut iv: [u8; 16] = [0; 16];
+        #[allow(unused_mut)]
         let mut digest: [u8; 32] = [0; 32];
         #[cfg(feature = "encryption")]
         libsql_sys::connection::generate_initial_vector(SEED, &mut iv);
