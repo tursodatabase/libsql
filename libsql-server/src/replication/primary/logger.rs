@@ -1007,8 +1007,9 @@ mod test {
             None,
             false,
             100000,
-            Box::new(|_| Ok(())),
-            Some(Bytes::from_static("HEAVILYguardedSECRET".as_bytes())),
+            None,
+            "test".into(),
+            None,
         )
         .unwrap();
 

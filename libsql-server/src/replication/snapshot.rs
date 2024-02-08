@@ -835,8 +835,7 @@ mod test {
         log_file.commit().unwrap();
 
         let dump_dir = tempdir().unwrap();
-        let compactor =
-            LogCompactor::new(dump_dir.path(), log_id, None, "test".into()).unwrap();
+        let compactor = LogCompactor::new(dump_dir.path(), log_id, None, "test".into()).unwrap();
         tokio::task::spawn_blocking({
             let compactor = compactor.clone();
             move || {
