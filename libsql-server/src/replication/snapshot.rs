@@ -171,7 +171,7 @@ fn pending_snapshots_list(compact_queue_dir: &Path) -> anyhow::Result<Vec<(LogFi
 }
 
 impl LogCompactor {
-    pub fn new(
+    pub(crate) fn new(
         db_path: &Path,
         log_id: Uuid,
         scripted_backup: Option<ScriptBackupManager>,
