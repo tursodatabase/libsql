@@ -33,7 +33,11 @@ enum DbType {
     #[cfg(feature = "core")]
     Memory,
     #[cfg(feature = "core")]
-    File { path: String, flags: OpenFlags },
+    File {
+        path: String,
+        flags: OpenFlags,
+        encryption_key: Option<bytes::Bytes>,
+    },
     #[cfg(feature = "replication")]
     Sync {
         db: crate::local::Database,
@@ -94,6 +98,7 @@ cfg_core! {
                 db_type: DbType::File {
                     path: db_path.into(),
                     flags,
+                    encryption_key: None,
                 },
             })
         }
@@ -359,7 +364,7 @@ cfg_replication! {
                DbType::Sync { db, .. } => {
                    let path = db.path().to_string();
                    Ok(Database {
-                       db_type: DbType::File { path, flags: OpenFlags::default() }
+                       db_type: DbType::File { path, flags: OpenFlags::default(), encryption_key: None}
                    })
                }
                t => Err(Error::FreezeNotSupported(format!("{:?}", t)))
@@ -463,11 +468,33 @@ impl Database {
             }
 
             #[cfg(feature = "core")]
-            DbType::File { path, flags } => {
+            DbType::File {
+                path,
+                flags,
+                encryption_key,
+            } => {
                 use crate::local::impls::LibsqlConnection;
 
                 let db = crate::local::Database::open(path, *flags)?;
                 let conn = db.connect()?;
+
+                if !cfg!(feature = "encryption") && encryption_key.is_some() {
+                    return Err(crate::Error::Misuse(
+                        "Encryption is not enabled: enable the `encryption` feature in order to enable encryption-at-rest".to_string(),
+                    ));
+                }
+
+                #[cfg(feature = "encryption")]
+                if let Some(encryption_key) = encryption_key {
+                    if unsafe {
+                        libsql_sys::connection::set_encryption_key(conn.raw, encryption_key)
+                    } != crate::ffi::SQLITE_OK
+                    {
+                        return Err(crate::Error::Misuse(
+                            "failed to set encryption key".to_string(),
+                        ));
+                    }
+                }
 
                 let conn = std::sync::Arc::new(LibsqlConnection { conn });
 
