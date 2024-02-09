@@ -26,6 +26,7 @@ impl Builder<()> {
                 inner: Local {
                     path: path.as_ref().to_path_buf(),
                     flags: crate::OpenFlags::default(),
+                    encryption_key: None,
                 },
             }
         }
@@ -97,12 +98,22 @@ cfg_core! {
     pub struct Local {
         path: std::path::PathBuf,
         flags: crate::OpenFlags,
+        encryption_key: Option<bytes::Bytes>,
     }
 
     impl Builder<Local> {
         /// Set [`OpenFlags`] for this database.
         pub fn flags(mut self, flags: crate::OpenFlags) -> Builder<Local> {
             self.inner.flags = flags;
+            self
+        }
+
+        /// Set an encryption key that will encrypt the local database.
+        pub fn encryption_key(
+            mut self,
+            encryption_key: impl Into<bytes::Bytes>,
+        ) -> Builder<Local> {
+            self.inner.encryption_key = Some(encryption_key.into());
             self
         }
 
@@ -124,6 +135,7 @@ cfg_core! {
                     db_type: DbType::File {
                         path,
                         flags: self.inner.flags,
+                        encryption_key: self.inner.encryption_key,
                     },
                 }
             };

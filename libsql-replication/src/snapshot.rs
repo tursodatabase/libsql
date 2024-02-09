@@ -9,9 +9,7 @@ use tokio_stream::StreamExt;
 use zerocopy::byteorder::little_endian::{U128 as lu128, U32 as lu32, U64 as lu64};
 use zerocopy::{AsBytes, FromZeroes};
 
-use crate::frame::FrameBorrowed;
-use crate::frame::FrameMut;
-use crate::frame::FrameNo;
+use crate::frame::{FrameBorrowed, FrameMut, FrameNo};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -42,15 +40,23 @@ pub struct SnapshotFileHeader {
 pub struct SnapshotFile {
     file: File,
     header: SnapshotFileHeader,
+    encryptor: Option<crate::FrameEncryptor>,
 }
 
 impl SnapshotFile {
-    pub async fn open(path: impl AsRef<Path>) -> Result<Self, Error> {
+    pub async fn open(
+        path: impl AsRef<Path>,
+        encryptor: Option<crate::FrameEncryptor>,
+    ) -> Result<Self, Error> {
         let mut file = File::open(path).await?;
         let mut header = SnapshotFileHeader::new_zeroed();
         file.read_exact(header.as_bytes_mut()).await?;
 
-        Ok(Self { file, header })
+        Ok(Self {
+            file,
+            header,
+            encryptor,
+        })
     }
 
     pub fn into_stream_mut(mut self) -> impl Stream<Item = Result<FrameMut, Error>> {
@@ -60,7 +66,10 @@ impl SnapshotFile {
                 let mut frame: MaybeUninit<FrameBorrowed> = MaybeUninit::uninit();
                 let buf = unsafe { std::slice::from_raw_parts_mut(frame.as_mut_ptr() as *mut u8, size_of::<FrameBorrowed>()) };
                 self.file.read_exact(buf).await?;
-                let frame = unsafe { frame.assume_init() };
+                let mut frame = unsafe { frame.assume_init() };
+                if let Some(encryptor) = &self.encryptor {
+                    encryptor.decrypt(frame.page_mut()).map_err(|_| Error::InvalidSnapshot)?;
+                }
 
                 if previous_frame_no.is_none() {
                     previous_frame_no = Some(frame.header().frame_no);

@@ -33,7 +33,7 @@ jobs:
         restore-keys: ${{ runner.os }}-cargo-
 
     - name: Build crates
-      run: cargo build
+      run: cargo build --release
 
     - name: Build C bindings example
       working-directory: bindings/c

@@ -9,7 +9,7 @@ use std::sync::Arc;
 use anyhow::{bail, ensure};
 use bytes::{Bytes, BytesMut};
 use chrono::{DateTime, Utc};
-use libsql_replication::frame::{Frame, FrameHeader, FrameMut};
+use libsql_replication::frame::{Frame, FrameBorrowed, FrameHeader, FrameMut};
 use libsql_replication::snapshot::SnapshotFile;
 use once_cell::sync::Lazy;
 use parking_lot::{Mutex, RwLock};
@@ -28,6 +28,8 @@ use crate::replication::script_backup_manager::ScriptBackupManager;
 use crate::replication::snapshot::{find_snapshot_file, LogCompactor};
 use crate::replication::{FrameNo, CRC_64_GO_ISO, WAL_MAGIC};
 use crate::LIBSQL_PAGE_SIZE;
+
+pub use libsql_replication::FrameEncryptor;
 
 static REPLICATION_LATENCY_CACHE_SIZE: Lazy<u64> = Lazy::new(|| {
     std::env::var("SQLD_REPLICATION_LATENCY_CACHE_SIZE").map_or(100, |s| s.parse().unwrap_or(100))
@@ -77,6 +79,10 @@ pub struct LogFile {
 
     /// checksum of the last committed frame
     commited_checksum: u64,
+
+    /// Encryption layer
+    encryption: Option<FrameEncryptor>,
+    encryption_buf: BytesMut,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -97,6 +103,7 @@ impl LogFile {
         file: File,
         max_log_frame_count: u64,
         max_log_duration: Option<Duration>,
+        encryption: Option<FrameEncryptor>,
     ) -> anyhow::Result<Self> {
         // FIXME: we should probably take a lock on this file, to prevent anybody else to write to
         // it.
@@ -118,6 +125,11 @@ impl LogFile {
             Self::read_header(&file)?
         };
 
+        let encryption_buf = if encryption.is_some() {
+            BytesMut::with_capacity(LIBSQL_PAGE_SIZE as usize)
+        } else {
+            BytesMut::new()
+        };
         let mut this = Self {
             file,
             header,
@@ -127,6 +139,8 @@ impl LogFile {
             uncommitted_frame_count: 0,
             uncommitted_checksum: 0,
             commited_checksum: 0,
+            encryption,
+            encryption_buf,
         };
 
         if file_end == 0 {
@@ -217,7 +231,8 @@ impl LogFile {
         }))
     }
 
-    pub fn into_rev_stream_mut(self) -> impl Stream<Item = anyhow::Result<FrameMut>> {
+    // NOTICE: Frames are yielded as is, without decrypting their contents. Headers are not encrypted anyway.
+    pub fn into_not_decrypted_rev_stream_mut(self) -> impl Stream<Item = anyhow::Result<FrameMut>> {
         let mut current_frame_offset = self.header.frame_count.get();
         let file = Arc::new(Mutex::new(self));
         async_stream::try_stream! {
@@ -229,7 +244,7 @@ impl LogFile {
                 let read_byte_offset = Self::absolute_byte_offset(current_frame_offset);
                 let frame = tokio::task::spawn_blocking({
                     let file = file.clone();
-                    move || file.lock().read_frame_byte_offset_mut(read_byte_offset)
+                    move || file.lock().read_not_decrypted_frame_byte_offset_mut(read_byte_offset)
                 }).await??;
                 yield frame
             }
@@ -244,6 +259,14 @@ impl LogFile {
 
     pub fn push_page(&mut self, page: &WalPage) -> anyhow::Result<()> {
         let checksum = self.compute_checksum(page);
+        let data = if let Some(encryption) = &self.encryption {
+            self.encryption_buf.clear();
+            self.encryption_buf.extend_from_slice(&page.data);
+            encryption.encrypt(self.encryption_buf.as_mut())?;
+            self.encryption_buf.as_ref()
+        } else {
+            &page.data
+        };
         let frame = Frame::from_parts(
             &FrameHeader {
                 frame_no: self.next_frame_no().into(),
@@ -251,7 +274,7 @@ impl LogFile {
                 page_no: page.page_no.into(),
                 size_after: page.size_after.into(),
             },
-            &page.data,
+            &data,
         );
 
         let byte_offset = self.next_byte_offset();
@@ -350,7 +373,12 @@ impl LogFile {
             .write(true)
             .create(true)
             .open(&to_compact_log_path)?;
-        let mut new_log_file = LogFile::new(file, self.max_log_frame_count, self.max_log_duration)?;
+        let mut new_log_file = LogFile::new(
+            file,
+            self.max_log_frame_count,
+            self.max_log_duration,
+            self.encryption.clone(),
+        )?;
         let new_header = LogFileHeader {
             start_frame_no: (self.header.last_frame_no().unwrap() + 1).into(),
             frame_count: 0.into(),
@@ -369,10 +397,21 @@ impl LogFile {
     }
 
     fn read_frame_byte_offset_mut(&self, offset: u64) -> anyhow::Result<FrameMut> {
-        let mut buffer = BytesMut::zeroed(LogFile::FRAME_SIZE);
-        self.file.read_exact_at(&mut buffer, offset)?;
+        use zerocopy::FromZeroes;
+        let mut frame = FrameBorrowed::new_zeroed();
+        self.file.read_exact_at(frame.as_bytes_mut(), offset)?;
+        if let Some(encryption) = &self.encryption {
+            encryption.decrypt(frame.page_mut())?;
+        }
+        Ok(frame.into())
+    }
 
-        Ok(FrameMut::try_from(&*buffer)?)
+    fn read_not_decrypted_frame_byte_offset_mut(&self, offset: u64) -> anyhow::Result<FrameMut> {
+        use zerocopy::FromZeroes;
+        let mut frame = FrameBorrowed::new_zeroed();
+        self.file.read_exact_at(frame.as_bytes_mut(), offset)?;
+
+        Ok(frame.into())
     }
 
     fn last_commited_frame_no(&self) -> Option<FrameNo> {
@@ -388,7 +427,12 @@ impl LogFile {
         let max_log_duration = self.max_log_duration;
         // truncate file
         self.file.set_len(0)?;
-        Self::new(self.file, max_log_frame_count, max_log_duration)
+        let encryption = self.encryption;
+        Self::new(self.file, max_log_frame_count, max_log_duration, encryption)
+    }
+
+    pub fn set_encryptor(&mut self, encryption: Option<FrameEncryptor>) -> Option<FrameEncryptor> {
+        std::mem::replace(&mut self.encryption, encryption)
     }
 }
 
@@ -497,6 +541,7 @@ pub struct ReplicationLogger {
     pub new_frame_notifier: watch::Sender<Option<FrameNo>>,
     pub closed_signal: watch::Sender<bool>,
     pub auto_checkpoint: u32,
+    encryptor: Option<FrameEncryptor>,
 }
 
 impl ReplicationLogger {
@@ -508,6 +553,7 @@ impl ReplicationLogger {
         auto_checkpoint: u32,
         scripted_backup: Option<ScriptBackupManager>,
         namespace: NamespaceName,
+        encryption_key: Option<Bytes>,
     ) -> anyhow::Result<Self> {
         let log_path = db_path.join("wallog");
         let data_path = db_path.join("data");
@@ -521,7 +567,8 @@ impl ReplicationLogger {
             .open(log_path)?;
 
         let max_log_frame_count = max_log_size * 1_000_000 / LogFile::FRAME_SIZE as u64;
-        let log_file = LogFile::new(file, max_log_frame_count, max_log_duration)?;
+        let encryption = encryption_key.clone().map(FrameEncryptor::new);
+        let log_file = LogFile::new(file, max_log_frame_count, max_log_duration, encryption)?;
         let header = log_file.header();
 
         let should_recover = if dirty {
@@ -549,6 +596,7 @@ impl ReplicationLogger {
                 auto_checkpoint,
                 scripted_backup,
                 namespace,
+                encryption_key,
             )
         } else {
             Self::from_log_file(
@@ -557,6 +605,7 @@ impl ReplicationLogger {
                 auto_checkpoint,
                 scripted_backup,
                 namespace,
+                encryption_key,
             )
         }
     }
@@ -567,6 +616,7 @@ impl ReplicationLogger {
         auto_checkpoint: u32,
         scripted_backup: Option<ScriptBackupManager>,
         namespace: NamespaceName,
+        encryption_key: Option<Bytes>,
     ) -> anyhow::Result<Self> {
         let header = log_file.header();
         let generation_start_frame_no = header.last_frame_no();
@@ -596,6 +646,7 @@ impl ReplicationLogger {
 
         let (closed_signal, _) = watch::channel(false);
 
+        let encryptor = encryption_key.map(FrameEncryptor::new);
         Ok(Self {
             generation: Generation::new(generation_start_frame_no.unwrap_or(0)),
             compactor: LogCompactor::new(
@@ -611,6 +662,7 @@ impl ReplicationLogger {
             auto_checkpoint,
             // we keep the last 100 commit transaction timestamps
             commit_timestamp_cache: moka::sync::Cache::new(*REPLICATION_LATENCY_CACHE_SIZE),
+            encryptor,
         })
     }
 
@@ -620,6 +672,7 @@ impl ReplicationLogger {
         auto_checkpoint: u32,
         scripted_backup: Option<ScriptBackupManager>,
         namespace: NamespaceName,
+        encryption_key: Option<Bytes>,
     ) -> anyhow::Result<Self> {
         // It is necessary to checkpoint before we restore the replication log, since the WAL may
         // contain pages that are not in the database file.
@@ -638,6 +691,9 @@ impl ReplicationLogger {
         let num_page = size / LIBSQL_PAGE_SIZE;
         let mut buf = [0; LIBSQL_PAGE_SIZE as usize];
         let mut page_no = 1; // page numbering starts at 1
+                             // We take the encryption implementation out to restore undecrypted frames,
+                             // and later set it back in to create the replicator.
+        let encryptor = log_file.set_encryptor(None);
         for i in 0..num_page {
             data_file.read_exact_at(&mut buf, i * LIBSQL_PAGE_SIZE)?;
             log_file.push_page(&WalPage {
@@ -650,6 +706,7 @@ impl ReplicationLogger {
         }
 
         log_file.commit()?;
+        log_file.set_encryptor(encryptor);
 
         assert!(data_path.pop());
 
@@ -659,6 +716,7 @@ impl ReplicationLogger {
             auto_checkpoint,
             scripted_backup,
             namespace,
+            encryption_key,
         )
     }
 
@@ -705,7 +763,7 @@ impl ReplicationLogger {
     }
 
     pub async fn get_snapshot_file(&self, from: FrameNo) -> anyhow::Result<Option<SnapshotFile>> {
-        find_snapshot_file(&self.db_path, from).await
+        find_snapshot_file(&self.db_path, from, self.encryptor.clone()).await
     }
 
     pub fn get_frame(&self, frame_no: FrameNo) -> Result<Frame, LogReadError> {
@@ -825,6 +883,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             None,
             "test".into(),
+            None,
         )
         .unwrap();
 
@@ -862,6 +921,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             None,
             "test".into(),
+            None,
         )
         .unwrap();
         let log_file = logger.log_file.write();
@@ -880,6 +940,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             None,
             "test".into(),
+            None,
         )
         .unwrap();
         let entry = WalPage {
@@ -895,7 +956,7 @@ mod test {
     #[test]
     fn log_file_test_rollback() {
         let f = tempfile::tempfile().unwrap();
-        let mut log_file = LogFile::new(f, 100, None).unwrap();
+        let mut log_file = LogFile::new(f, 100, None, None).unwrap();
         (0..5)
             .map(|i| WalPage {
                 page_no: i,
@@ -937,6 +998,59 @@ mod test {
     }
 
     #[tokio::test]
+    #[cfg(feature = "encryption")]
+    async fn log_with_encryption() {
+        let tmp = tempfile::tempdir().unwrap();
+        let logger = ReplicationLogger::open(
+            tmp.path(),
+            100000000,
+            None,
+            false,
+            100000,
+            None,
+            "test".into(),
+            None,
+        )
+        .unwrap();
+
+        let frames = (0..10)
+            .map(|i| WalPage {
+                page_no: i,
+                size_after: 0,
+                data: Bytes::from(vec![i as _; 4096]),
+            })
+            .collect::<Vec<_>>();
+        logger.write_pages(&frames).unwrap();
+        logger.commit().unwrap();
+
+        let log_file = logger.log_file.write();
+        for i in 0..10 {
+            let frame = log_file.frame(i).unwrap();
+            assert_eq!(frame.header().page_no.get(), i as u32);
+            assert!(frame.page().iter().all(|x| i as u8 == *x));
+        }
+
+        assert_eq!(
+            log_file.header.start_frame_no.get() + log_file.header.frame_count.get(),
+            10
+        );
+
+        // The file contents do not contain raw data when read directly - it's encrypted
+        let file = File::open(tmp.path().join("wallog")).unwrap();
+        for i in 0..10 {
+            let mut buf = [0; 4096];
+            file.read_exact_at(&mut buf, i * 4096).unwrap();
+            assert!(!buf.iter().all(|x| i as u8 == *x));
+        }
+        // When we read via the log file API though, we get the decrypted data
+        for i in 0..10 {
+            let frame = log_file.frame(i).unwrap();
+            assert_eq!(frame.header().page_no.get(), i as u32);
+            assert!(frame.page().iter().all(|x| i as u8 == *x));
+        }
+    }
+
+    #[tokio::test]
     async fn savepoint_and_rollback() {
         let tmp = tempfile::tempdir().unwrap();
         let logger = Arc::new(
@@ -948,6 +1062,7 @@ mod test {
                 100000,
                 None,
                 "test".into(),
+                None,
             )
             .unwrap(),
         );
@@ -981,7 +1096,7 @@ mod test {
         // now we restore from the log and make sure the two db are consistent.
         let tmp2 = tempfile::tempdir().unwrap();
         let f = File::open(tmp.path().join("wallog")).unwrap();
-        let logfile = LogFile::new(f, 1000000000, None).unwrap();
+        let logfile = LogFile::new(f, 1000000000, None, None).unwrap();
         let mut seen = HashSet::new();
         let mut new_db_file = File::create(tmp2.path().join("data")).unwrap();
         for frame in logfile.rev_frames_iter_mut().unwrap() {

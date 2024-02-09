@@ -25,7 +25,7 @@ async fn main() {
                 "Applying snapshot to local database: {}\n",
                 snapshot_path.display()
             );
-            let snapshot = SnapshotFile::open(&snapshot_path).await.unwrap();
+            let snapshot = SnapshotFile::open(&snapshot_path, None).await.unwrap();
             match db.sync_frames(Frames::Snapshot(snapshot)).await {
                 Ok(n) => println!(
                     "{} applied, new commit index: {n:?}",

@@ -141,7 +141,6 @@ async fn backup_restore() {
         use_compression: bottomless::replicator::CompressionKind::Gzip,
         bucket_name: BUCKET.to_string(),
         max_batch_interval: Duration::from_millis(250),
-        restore_transaction_page_swap_after: 1, // in this test swap should happen at least once
         ..bottomless::replicator::Options::from_env().unwrap()
     };
     let connection_addr = Url::parse(&format!("http://localhost:{}", PORT)).unwrap();
@@ -292,7 +291,6 @@ async fn rollback_restore() {
         use_compression: bottomless::replicator::CompressionKind::Gzip,
         bucket_name: BUCKET.to_string(),
         max_batch_interval: Duration::from_millis(250),
-        restore_transaction_page_swap_after: 1, // in this test swap should happen at least once
         ..bottomless::replicator::Options::from_env().unwrap()
     };
     let make_server = || async { configure_server(&options, listener_addr, PATH).await };

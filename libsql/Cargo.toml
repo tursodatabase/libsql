@@ -55,7 +55,8 @@ default = ["core", "replication", "remote"]
 core = [
   "libsql-sys",
   "dep:bitflags",
-  "dep:futures"
+  "dep:bytes",
+  "dep:futures",
 ]
 stream = [
   "dep:futures",
@@ -119,7 +120,7 @@ cloudflare = [
   "wasm",
   "dep:worker"
 ]
-encryption = ["core", "libsql-sys/encryption"]
+encryption = ["core", "libsql-sys/encryption", "dep:bytes"]
 
 [[bench]]
 name = "benchmark"

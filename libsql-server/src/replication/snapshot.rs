@@ -21,7 +21,7 @@ use zerocopy::AsBytes;
 use crate::namespace::NamespaceName;
 use crate::replication::primary::logger::LogFileHeader;
 
-use super::primary::logger::LogFile;
+use super::primary::logger::{FrameEncryptor, LogFile};
 use super::script_backup_manager::ScriptBackupManager;
 use super::FrameNo;
 
@@ -80,6 +80,7 @@ fn snapshot_list(db_path: &Path) -> impl Stream<Item = anyhow::Result<String>> +
 pub async fn find_snapshot_file(
     db_path: &Path,
     frame_no: FrameNo,
+    encryptor: Option<FrameEncryptor>,
 ) -> anyhow::Result<Option<SnapshotFile>> {
     let snapshot_dir_path = snapshot_dir_path(db_path);
     let snapshots = snapshot_list(db_path);
@@ -92,7 +93,7 @@ pub async fn find_snapshot_file(
         if (start_frame_no..=end_frame_no).contains(&frame_no) {
             let snapshot_path = snapshot_dir_path.join(&name);
             tracing::debug!("found snapshot for frame {frame_no} at {snapshot_path:?}");
-            let snapshot_file = SnapshotFile::open(&snapshot_path).await?;
+            let snapshot_file = SnapshotFile::open(&snapshot_path, encryptor).await?;
             return Ok(Some(snapshot_file));
         }
     }
@@ -157,7 +158,7 @@ fn pending_snapshots_list(compact_queue_dir: &Path) -> anyhow::Result<Vec<(LogFi
             }
             // max log duration and frame number don't  matter, we compact the file and discard it
             // immediately.
-            let to_compact_file = LogFile::new(file, u64::MAX, None)?;
+            let to_compact_file = LogFile::new(file, u64::MAX, None, None)?;
             to_compact.push((to_compact_file, to_compact_path));
         }
     }
@@ -340,7 +341,8 @@ impl SnapshotMerger {
         tokio::pin!(snapshots);
         while let Some(snapshot_name) = snapshots.next().await.transpose()? {
             let snapshot_path = snapshot_dir_path.join(&snapshot_name);
-            let snapshot = SnapshotFile::open(&snapshot_path).await?;
+            // NOTICE: no encryptor needed for reading unencrypted headers
+            let snapshot = SnapshotFile::open(&snapshot_path, None).await?;
             temp.push((
                 snapshot_name,
                 snapshot.header().frame_count,
@@ -368,7 +370,8 @@ impl SnapshotMerger {
         let mut size_after = None;
         tracing::debug!("merging {} snashots for {log_id}", snapshots.len());
         for (name, _) in snapshots.iter().rev() {
-            let snapshot = SnapshotFile::open(&snapshot_dir_path.join(name)).await?;
+            // NOTICE: no encryptor passed in order to read frames as is, still encrypted
+            let snapshot = SnapshotFile::open(&snapshot_dir_path.join(name), None).await?;
             // The size after the merged snapshot is the size after the first snapshot to be merged
             if size_after.is_none() {
                 size_after.replace(snapshot.header().size_after);
@@ -564,7 +567,7 @@ async fn perform_compaction(
     );
     let mut builder = SnapshotBuilder::new(db_path, log_id, scripted_backup, namespace).await?;
     builder
-        .append_frames(file_to_compact.into_rev_stream_mut())
+        .append_frames(file_to_compact.into_not_decrypted_rev_stream_mut())
         .await?;
     builder.finish().await
 }
@@ -619,7 +622,7 @@ mod test {
                     .read(true)
                     .open(&logfile_path)
                     .unwrap();
-                let mut logfile = LogFile::new(file, u64::MAX, None).unwrap();
+                let mut logfile = LogFile::new(file, u64::MAX, None, None).unwrap();
                 let header = LogFileHeader {
                     log_id: log_id.as_u128().into(),
                     start_frame_no: current_fno.into(),
@@ -704,7 +707,7 @@ mod test {
             .read(true)
             .open(&logfile_path)
             .unwrap();
-        let mut logfile = LogFile::new(file, u64::MAX, None).unwrap();
+        let mut logfile = LogFile::new(file, u64::MAX, None, None).unwrap();
         logfile.write_header().unwrap();
 
         let _compactor =
@@ -738,7 +741,7 @@ mod test {
                     .read(true)
                     .open(&logfile_path)
                     .unwrap();
-                let mut logfile = LogFile::new(file, u64::MAX, None).unwrap();
+                let mut logfile = LogFile::new(file, u64::MAX, None, None).unwrap();
                 let header = LogFileHeader {
                     log_id: log_id.as_u128().into(),
                     start_frame_no: current_fno.into(),
@@ -810,7 +813,8 @@ mod test {
     #[tokio::test]
     async fn compact_file_create_snapshot() {
         let temp = tempfile::NamedTempFile::new().unwrap();
-        let mut log_file = LogFile::new(temp.as_file().try_clone().unwrap(), 0, None).unwrap();
+        let mut log_file =
+            LogFile::new(temp.as_file().try_clone().unwrap(), 0, None, None).unwrap();
         let log_id = Uuid::new_v4();
         log_file.header.log_id = log_id.as_u128().into();
         log_file.write_header().unwrap();
@@ -874,7 +878,7 @@ mod test {
         assert_eq!(seen_frames.len(), 25);
         assert_eq!(seen_page_no.len(), 25);
 
-        let snapshot_file = SnapshotFile::open(&snapshot_path).await.unwrap();
+        let snapshot_file = SnapshotFile::open(&snapshot_path, None).await.unwrap();
 
         let frames = snapshot_file.into_stream_mut_from(0);
         tokio::pin!(frames);

@@ -1122,6 +1122,7 @@ impl Namespace<PrimaryDatabase> {
             auto_checkpoint,
             config.scripted_backup.clone(),
             name.clone(),
+            config.encryption_key.clone(),
         )?);
 
         let stats = make_stats(

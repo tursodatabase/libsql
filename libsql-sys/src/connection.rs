@@ -9,9 +9,9 @@ type RawConnection = *mut crate::ffi::sqlite3;
 type RawConnection = rusqlite::Connection;
 
 #[cfg(not(feature = "rusqlite"))]
-type OpenFlags = std::ffi::c_int;
+pub type OpenFlags = std::ffi::c_int;
 #[cfg(feature = "rusqlite")]
-type OpenFlags = rusqlite::OpenFlags;
+pub type OpenFlags = rusqlite::OpenFlags;
 
 #[cfg(feature = "rusqlite")]
 type Error = rusqlite::Error;
@@ -59,8 +59,15 @@ extern "C" {
         pKey: *const std::ffi::c_void,
         nKey: std::ffi::c_int,
     ) -> std::ffi::c_int;
+    fn sqlite3_rekey(
+        db: *mut libsql_ffi::sqlite3,
+        pKey: *const std::ffi::c_void,
+        nKey: std::ffi::c_int,
+    ) -> std::ffi::c_int;
 
     fn libsql_leak_pager(db: *mut libsql_ffi::sqlite3) -> *mut crate::ffi::Pager;
+    fn libsql_generate_initial_vector(seed: u32, iv: *mut u8);
+    fn libsql_generate_aes256_key(user_password: *const u8, password_length: u32, digest: *mut u8);
 }
 
 #[cfg(feature = "encryption")]
@@ -72,10 +79,33 @@ pub unsafe fn set_encryption_key(db: *mut libsql_ffi::sqlite3, key: &[u8]) -> i3
 
 #[cfg(feature = "encryption")]
 /// # Safety
-/// db must point to a vaid sqlite database
-pub unsafe fn leak_pager(db: *mut libsql_ffi::sqlite3) -> *mut crate::ffi::Pager {
+/// db must point to a valid sqlite database
+pub fn reset_encryption_key(db: *mut libsql_ffi::sqlite3, key: &[u8]) -> i32 {
+    unsafe { sqlite3_rekey(db, key.as_ptr() as _, key.len() as _) as i32 }
+}
+
+#[cfg(feature = "encryption")]
+pub fn leak_pager(db: *mut libsql_ffi::sqlite3) -> *mut crate::ffi::Pager {
     unsafe { libsql_leak_pager(db) }
 }
+
+#[cfg(feature = "encryption")]
+pub fn generate_initial_vector(seed: u32, iv: &mut [u8]) {
+    unsafe { libsql_generate_initial_vector(seed, iv.as_mut_ptr()) }
+}
+
+#[cfg(feature = "encryption")]
+pub fn generate_aes256_key(user_password: &[u8], digest: &mut [u8]) {
+    unsafe {
+        libsql_generate_aes256_key(
+            user_password.as_ptr(),
+            user_password.len() as u32,
+            digest.as_mut_ptr(),
+        )
+    }
+}
+
+pub const NO_AUTOCHECKPOINT: u32 = 0;
 
 impl<W: Wal> Connection<W> {
     /// Opens a database with the regular wal methods in the directory pointed to by path
@@ -216,6 +246,28 @@ impl<W: Wal> Connection<W> {
         {
             self.conn
         }
+    }
+
+    pub fn db_change_counter(&self) -> Result<u32, std::ffi::c_int> {
+        let mut file_ptr: *mut libsql_ffi::sqlite3_file = std::ptr::null_mut();
+        let rc = unsafe {
+            libsql_ffi::sqlite3_file_control(
+                self.handle(),
+                "main\0".as_ptr() as *const _,
+                libsql_ffi::SQLITE_FCNTL_FILE_POINTER,
+                &mut file_ptr as *mut _ as *mut _,
+            )
+        };
+        if rc != libsql_ffi::SQLITE_OK {
+            return Err(rc);
+        }
+        let counter = unsafe {
+            let mut counter: u32 = 0;
+            let file = &*file_ptr;
+            (*file.pMethods).xRead.unwrap()(file_ptr, &mut counter as *mut _ as *mut _, 4, 24);
+            u32::from_be(counter)
+        };
+        Ok(counter)
     }
 }
 // pub struct Connection<'a> {

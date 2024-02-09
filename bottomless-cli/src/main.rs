@@ -1,5 +1,6 @@
 use anyhow::Result;
 use aws_sdk_s3::Client;
+use bytes::Bytes;
 use chrono::NaiveDateTime;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
@@ -22,6 +23,8 @@ struct Cli {
     database: Option<String>,
     #[clap(long, short)]
     namespace: Option<String>,
+    #[clap(long)]
+    encryption_key: Option<Bytes>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -174,6 +177,12 @@ async fn run() -> Result<()> {
             println!("Namespace should start with 'ns-'");
             std::process::exit(1)
         }
+    }
+    if let Some(encryption_key) = options.encryption_key.as_ref() {
+        std::env::set_var(
+            "LIBSQL_BOTTOMLESS_ENCRYPTION_KEY",
+            std::str::from_utf8(encryption_key)?,
+        );
     }
     let namespace = options.namespace.as_deref().unwrap_or("ns-default");
     std::env::set_var("LIBSQL_BOTTOMLESS_DATABASE_ID", namespace);

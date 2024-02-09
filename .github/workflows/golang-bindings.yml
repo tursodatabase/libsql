@@ -36,8 +36,8 @@ jobs:
         restore-keys: ${{ runner.os }}-cargo-
 
     - name: Build crates
-      run: cargo build
+      run: cargo build --release
 
     - name: Run Go bindings tests
       working-directory: bindings/go
-      run: LD_LIBRARY_PATH=../../target/debug go test
+      run: LD_LIBRARY_PATH=../../target/release go test

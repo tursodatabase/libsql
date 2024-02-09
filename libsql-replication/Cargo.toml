@@ -25,6 +25,8 @@ uuid = { version = "1.5.0", features = ["v4"] }
 tokio-util = "0.7.9"
 async-stream = "0.3.5"
 zerocopy = { version = "0.7.28", features = ["derive"] }
+aes = "0.8.3"
+cbc = "0.1.2"
  
 [dev-dependencies]
 arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }
@@ -32,3 +34,6 @@ bincode = "1.3.3"
 tempfile = "3.8.0"
 prost-build = "0.12.0"
 tonic-build = "0.10"
+
+[features]
+encryption = ["libsql-sys/encryption"]
