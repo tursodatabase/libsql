@@ -6,13 +6,13 @@
 <img src="https://user-images.githubusercontent.com/331197/205099307-3f20b4e5-96cf-466c-be62-73907e9f2325.png">
 </p>
 
-# What is libSQL?
+What is libSQL?
 
 [libSQL](https://turso.tech/libsql) is an open source, open contribution fork of SQLite, created and maintained by [Turso](https://turso.tech). We aim to evolve it to suit many more use cases than SQLite was originally designed for, and plan to use third-party OSS code wherever it makes sense.
 
 libSQL is licensed under an [Open Source License](LICENSE.md), and we adhere to a clear [Code of Conduct](CODE_OF_CONDUCT.md)
 
-## Features
+Features
 
 * Embedded replicas that allow you to have replicated database inside your app.
 * [libSQL server](libsql-server) for remote SQLite access, similar to PostgreSQL or MySQL
@@ -28,7 +28,7 @@ There are also various improvements and extensions to the core SQLite:
 
 The comprehensive description can be found [here](libsql-sqlite3/doc/libsql_extensions.md)
 
-## Getting Started
+Getting Started
 
 The project provides two interfaces: the libSQL API, which supports all the features, and the SQLite C API for compatibility.
 
@@ -57,7 +57,7 @@ Use ".open FILENAME" to reopen on a persistent database.
 libsql>
 ```
 
-## Why a fork?
+Why a fork?
 
 SQLite has solidified its place in modern technology stacks, embedded in nearly any computing device you can think of. Its open source nature and public domain availability make it a popular choice for modification to meet specific use cases.
 
@@ -69,7 +69,7 @@ We want to see a world where everyone can benefit from all of the great ideas an
 
 You can read more about our goals an motivation in our [product vision](https://turso.tech/libsql-manifesto) and our [announcement article](https://glaubercosta-11125.medium.com/sqlite-qemu-all-over-again-aedad19c9a1c)
 
-## Compatibility with SQLite
+Compatibility with SQLite
 
 Compatibility with SQLite is of great importance for us. But it can mean many things. So here's our stance:
 
