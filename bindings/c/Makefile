@@ -10,4 +10,4 @@ endif
 all: example
 
 example: example.c
-	$(CC) -o $@ $(CFLAGS) $< ../../target/debug/libsql_experimental.a $(LDFLAGS)
+	$(CC) -o $@ $(CFLAGS) $< ../../target/release/libsql_experimental.a $(LDFLAGS)
