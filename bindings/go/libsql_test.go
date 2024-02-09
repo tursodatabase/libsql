@@ -581,6 +581,16 @@ func TestMultiLineStatement(t *testing.T) {
 func TestPreparedStatementInTransaction(t *testing.T) {
 	t.Parallel()
 	db := getRemoteDb(T{t})
+	testPreparedStatementInTransaction(db)
+}
+
+func TestPreparedStatementInTransactionEmbedded(t *testing.T) {
+	t.Parallel()
+	db := getEmbeddedDb(T{t})
+	testPreparedStatementInTransaction(db)
+}
+
+func testPreparedStatementInTransaction(db *Database) {
 	if db == nil {
 		return
 	}
@@ -592,6 +602,7 @@ func TestPreparedStatementInTransaction(t *testing.T) {
 	tx.assertRowsCount(1)
 	tx.assertRowExists(1)
 	db.t.FatalOnError(tx.Commit())
+	db.sync()
 	table.assertRowsCount(1)
 	table.assertRowExists(1)
 }
@@ -599,6 +610,16 @@ func TestPreparedStatementInTransaction(t *testing.T) {
 func TestPreparedStatementInTransactionRollback(t *testing.T) {
 	t.Parallel()
 	db := getRemoteDb(T{t})
+	testPreparedStatementInTransactionRollback(db)
+}
+
+func TestPreparedStatementInTransactionRollbackEmbedded(t *testing.T) {
+	t.Parallel()
+	db := getEmbeddedDb(T{t})
+	testPreparedStatementInTransactionRollback(db)
+}
+
+func testPreparedStatementInTransactionRollback(db *Database) {
 	if db == nil {
 		return
 	}
@@ -610,6 +631,7 @@ func TestPreparedStatementInTransactionRollback(t *testing.T) {
 	tx.assertRowsCount(1)
 	tx.assertRowExists(1)
 	db.t.FatalOnError(tx.Rollback())
+	db.sync()
 	table.assertRowsCount(0)
 	table.assertRowDoesNotExist(1)
 }
@@ -617,6 +639,16 @@ func TestPreparedStatementInTransactionRollback(t *testing.T) {
 func TestCancelContext(t *testing.T) {
 	t.Parallel()
 	db := getRemoteDb(T{t})
+	testCancelContext(db)
+}
+
+func TestCancelContextEmbedded(t *testing.T) {
+	t.Parallel()
+	db := getEmbeddedDb(T{t})
+	testCancelContext(db)
+}
+
+func testCancelContext(db *Database) {
 	if db == nil {
 		return
 	}
@@ -634,6 +666,16 @@ func TestCancelContext(t *testing.T) {
 func TestCancelContextWithTransaction(t *testing.T) {
 	t.Parallel()
 	db := getRemoteDb(T{t})
+	testCancelContextWithTransaction(db)
+}
+
+func TestCancelContextWithTransactionEmbedded(t *testing.T) {
+	t.Parallel()
+	db := getEmbeddedDb(T{t})
+	testCancelContextWithTransaction(db)
+}
+
+func testCancelContextWithTransaction(db *Database) {
 	if db == nil {
 		return
 	}
@@ -662,6 +704,16 @@ func TestCancelContextWithTransaction(t *testing.T) {
 func TestTransactionRollback(t *testing.T) {
 	t.Parallel()
 	db := getRemoteDb(T{t})
+	testTransactionRollback(db)
+}
+
+func TestTransactionRollbackEmbedded(t *testing.T) {
+	t.Parallel()
+	db := getEmbeddedDb(T{t})
+	testTransactionRollback(db)
+}
+
+func testTransactionRollback(db *Database) {
 	if db == nil {
 		return
 	}
@@ -674,6 +726,7 @@ func TestTransactionRollback(t *testing.T) {
 	tx.assertRowExists(0)
 	tx.assertRowExists(19)
 	db.t.FatalOnError(tx.Rollback())
+	db.sync()
 	table.assertRowsCount(0)
 }
 
