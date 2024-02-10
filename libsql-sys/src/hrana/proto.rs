@@ -244,7 +244,7 @@ pub struct StmtResult {
     #[serde(with = "option_i64_as_str")]
     #[prost(sint64, optional, tag = "4")]
     pub last_insert_rowid: Option<i64>,
-    #[serde(with = "option_u64_as_str")]
+    #[serde(default, with = "option_u64_as_str")]
     #[prost(uint64, optional, tag = "5")]
     pub replication_index: Option<u64>,
 }
