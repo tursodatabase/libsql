@@ -27,7 +27,7 @@ rand = "0.8.5"
 futures-core = "0.3.29"
 
 [features]
-default = ["encryption"]
+default = []
 libsql_linked_statically = []
 encryption = ["libsql-sys/encryption", "libsql_replication/encryption"]
 
