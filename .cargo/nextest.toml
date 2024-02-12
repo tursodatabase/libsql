@@ -8,3 +8,4 @@ serial-integration = { max-threads = 1 }
 [[profile.default.overrides]]
 filter = 'test(test::bottomless)'
 test-group = 'serial-integration'
+retries = 3
