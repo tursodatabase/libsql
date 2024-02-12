@@ -162,6 +162,8 @@ impl Injector {
 
     fn begin_txn(&mut self) -> Result<(), Error> {
         let conn = self.connection.lock();
+        conn.pragma_update(None, "writable_schema", "true")?;
+
         let mut stmt = conn.prepare_cached("BEGIN IMMEDIATE")?;
         stmt.execute(())?;
         // we create a dummy table. This table MUST not be persisted, otherwise the replica schema
