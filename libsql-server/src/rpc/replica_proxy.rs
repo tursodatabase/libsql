@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use hyper::Uri;
 use libsql_replication::rpc::proxy::{
     proxy_client::ProxyClient, proxy_server::Proxy, Ack, DescribeRequest, DescribeResult,
@@ -9,13 +7,13 @@ use tokio_stream::StreamExt;
 use tonic::{transport::Channel, Request, Status};
 
 use crate::{
-    auth::Auth,
+    auth::{parsers::parse_grpc_auth_header, user_auth_strategies::UserAuthContext, Auth},
     namespace::{NamespaceStore, ReplicaNamespaceMaker},
 };
 
 pub struct ReplicaProxyService {
     client: ProxyClient<Channel>,
-    auth: Arc<Auth>,
+    user_auth_strategy: Auth,
     disable_namespaces: bool,
     namespaces: NamespaceStore<ReplicaNamespaceMaker>,
 }
@@ -25,13 +23,13 @@ impl ReplicaProxyService {
         channel: Channel,
         uri: Uri,
         namespaces: NamespaceStore<ReplicaNamespaceMaker>,
-        auth: Arc<Auth>,
+        user_auth_strategy: Auth,
         disable_namespaces: bool,
     ) -> Self {
         let client = ProxyClient::with_origin(channel, uri);
         Self {
             client,
-            auth,
+            user_auth_strategy,
             disable_namespaces,
             namespaces,
         }
@@ -39,16 +37,33 @@ impl ReplicaProxyService {
 
     async fn do_auth<T>(&self, req: &mut Request<T>) -> Result<(), Status> {
         let namespace = super::extract_namespace(self.disable_namespaces, req)?;
-        let namespace_jwt_key = self.namespaces.with(namespace, |ns| ns.jwt_key()).await;
+
+        let namespace_jwt_key = self
+            .namespaces
+            .with(namespace.clone(), |ns| ns.jwt_key())
+            .await;
+
+        let user_credential = parse_grpc_auth_header(req.metadata());
+
         match namespace_jwt_key {
             Ok(Ok(jwt_key)) => {
-                let authenticated = self.auth.authenticate_grpc(req, false, jwt_key)?;
+                let authenticated = self.user_auth_strategy.authenticate(UserAuthContext {
+                    namespace,
+                    namespace_credential: jwt_key,
+                    user_credential,
+                })?;
+
                 authenticated.upgrade_grpc_request(req);
                 Ok(())
             }
             Err(e) => match e.as_ref() {
                 crate::error::Error::NamespaceDoesntExist(_) => {
-                    let authenticated = self.auth.authenticate_grpc(req, false, None)?;
+                    let authenticated = self.user_auth_strategy.authenticate(UserAuthContext {
+                        namespace,
+                        namespace_credential: None,
+                        user_credential,
+                    })?;
+
                     authenticated.upgrade_grpc_request(req);
                     Ok(())
                 }

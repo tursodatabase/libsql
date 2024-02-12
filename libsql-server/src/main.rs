@@ -9,6 +9,7 @@ use anyhow::{bail, Context as _, Result};
 use bytesize::ByteSize;
 use clap::Parser;
 use hyper::client::HttpConnector;
+use libsql_server::auth::{parse_http_basic_auth_arg, parse_jwt_key, user_auth_strategies};
 // use mimalloc::MiMalloc;
 use tokio::sync::Notify;
 use tokio::time::Duration;
@@ -367,7 +368,20 @@ fn make_db_config(config: &Cli) -> anyhow::Result<DbConfig> {
     })
 }
 
-async fn make_user_api_config(config: &Cli) -> anyhow::Result<UserApiConfig> {
+async fn make_user_auth_strategy(
+    config: &Cli,
+) -> anyhow::Result<Arc<dyn user_auth_strategies::UserAuthStrategy>> {
+    if let Some(http_auth) = config.http_auth.as_deref() {
+        tracing::info!("Using legacy HTTP basic authentication");
+
+        let credential =
+            parse_http_basic_auth_arg(http_auth)?.expect("Invalid HTTP Basic configuration");
+
+        return Ok(Arc::new(user_auth_strategies::HttpBasic::new(
+            credential.into(),
+        )));
+    }
+
     let auth_jwt_key = if let Some(ref file_path) = config.auth_jwt_key_file {
         let data = tokio::fs::read_to_string(file_path)
             .await
@@ -382,6 +396,18 @@ async fn make_user_api_config(config: &Cli) -> anyhow::Result<UserApiConfig> {
             }
         }
     };
+
+    if let Some(jwt_key) = auth_jwt_key.as_deref() {
+        let jwt_key: jsonwebtoken::DecodingKey =
+            parse_jwt_key(jwt_key).context("Could not parse JWT decoding key")?;
+        tracing::info!("Using JWT-based authentication");
+        return Ok(Arc::new(user_auth_strategies::Jwt::new(jwt_key)));
+    }
+
+    Ok(Arc::new(user_auth_strategies::Disabled::new()))
+}
+
+async fn make_user_api_config(config: &Cli) -> anyhow::Result<UserApiConfig> {
     let http_acceptor =
         AddrIncoming::new(tokio::net::TcpListener::bind(config.http_listen_addr).await?);
     tracing::info!(
@@ -403,13 +429,14 @@ async fn make_user_api_config(config: &Cli) -> anyhow::Result<UserApiConfig> {
         None => None,
     };
 
+    let auth_strategy = make_user_auth_strategy(&config).await?;
+
     Ok(UserApiConfig {
         http_acceptor: Some(http_acceptor),
         hrana_ws_acceptor,
         enable_http_console: config.enable_http_console,
         self_url: config.http_self_url.clone(),
-        http_auth: config.http_auth.clone(),
-        auth_jwt_key,
+        auth_strategy,
     })
 }
 

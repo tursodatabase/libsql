@@ -18,7 +18,8 @@ use tonic::transport::server::TcpConnectInfo;
 use tonic::Status;
 use uuid::Uuid;
 
-use crate::auth::Auth;
+use crate::auth::user_auth_strategies::UserAuthContext;
+use crate::auth::{parsers::parse_grpc_auth_header, Auth};
 use crate::connection::config::DatabaseConfig;
 use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
 use crate::replication::primary::frame_stream::FrameStream;
@@ -31,7 +32,7 @@ use super::extract_namespace;
 pub struct ReplicationLogService {
     namespaces: NamespaceStore<PrimaryNamespaceMaker>,
     idle_shutdown_layer: Option<IdleShutdownKicker>,
-    auth: Option<Arc<Auth>>,
+    user_auth_strategy: Option<Auth>,
     disable_namespaces: bool,
     session_token: Bytes,
     collect_stats: bool,
@@ -47,7 +48,7 @@ impl ReplicationLogService {
     pub fn new(
         namespaces: NamespaceStore<PrimaryNamespaceMaker>,
         idle_shutdown_layer: Option<IdleShutdownKicker>,
-        auth: Option<Arc<Auth>>,
+        user_auth_strategy: Option<Auth>,
         disable_namespaces: bool,
         collect_stats: bool,
     ) -> Self {
@@ -56,7 +57,7 @@ impl ReplicationLogService {
             namespaces,
             session_token,
             idle_shutdown_layer,
-            auth,
+            user_auth_strategy,
             disable_namespaces,
             collect_stats,
             generation_id: Uuid::new_v4(),
@@ -69,18 +70,32 @@ impl ReplicationLogService {
         req: &tonic::Request<T>,
         namespace: NamespaceName,
     ) -> Result<(), Status> {
-        let namespace_jwt_key = self.namespaces.with(namespace, |ns| ns.jwt_key()).await;
+        let namespace_jwt_key = self
+            .namespaces
+            .with(namespace.clone(), |ns| ns.jwt_key())
+            .await;
+
+        let user_credential = parse_grpc_auth_header(req.metadata());
+
         match namespace_jwt_key {
             Ok(Ok(jwt_key)) => {
-                if let Some(auth) = &self.auth {
-                    auth.authenticate_grpc(req, self.disable_namespaces, jwt_key)?;
+                if let Some(auth) = &self.user_auth_strategy {
+                    auth.authenticate(UserAuthContext {
+                        namespace,
+                        namespace_credential: jwt_key,
+                        user_credential,
+                    })?;
                 }
                 Ok(())
             }
             Err(e) => match e.as_ref() {
                 crate::error::Error::NamespaceDoesntExist(_) => {
-                    if let Some(auth) = &self.auth {
-                        auth.authenticate_grpc(req, self.disable_namespaces, None)?;
+                    if let Some(auth) = &self.user_auth_strategy {
+                        auth.authenticate(UserAuthContext {
+                            namespace,
+                            namespace_credential: None,
+                            user_credential,
+                        })?;
                     }
                     Ok(())
                 }

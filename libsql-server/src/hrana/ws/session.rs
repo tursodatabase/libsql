@@ -2,11 +2,13 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Result};
+use axum::http::HeaderValue;
 use futures::future::BoxFuture;
 use tokio::sync::{mpsc, oneshot};
 
 use super::super::{batch, cursor, stmt, ProtocolError, Version};
 use super::{proto, Server};
+use crate::auth::user_auth_strategies::UserAuthContext;
 use crate::auth::{AuthError, Authenticated};
 use crate::connection::Connection;
 use crate::database::Database;
@@ -72,11 +74,21 @@ pub(super) async fn handle_initial_hello<F: MakeNamespace>(
 ) -> Result<Session<<F::Database as Database>::Connection>> {
     let namespace_jwt_key = server
         .namespaces
-        .with(namespace, |ns| ns.jwt_key())
+        .with(namespace.clone(), |ns| ns.jwt_key())
         .await??;
+
+    // Convert jwt token into a HeaderValue to be compatible with UserAuthStrategy
+    let user_credential = jwt
+        .clone()
+        .and_then(|t| HeaderValue::from_str(&format!("Bearer {t}")).ok());
+
     let authenticated = server
-        .auth
-        .authenticate_jwt(jwt.as_deref(), server.disable_namespaces, namespace_jwt_key)
+        .user_auth_strategy
+        .authenticate(UserAuthContext {
+            namespace,
+            user_credential,
+            namespace_credential: namespace_jwt_key,
+        })
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
 
     Ok(Session {
@@ -102,12 +114,23 @@ pub(super) async fn handle_repeated_hello<F: MakeNamespace>(
     }
     let namespace_jwt_key = server
         .namespaces
-        .with(namespace, |ns| ns.jwt_key())
+        .with(namespace.clone(), |ns| ns.jwt_key())
         .await??;
+
+    // Convert jwt token into a HeaderValue to be compatible with UserAuthStrategy
+    let user_credential = jwt
+        .clone()
+        .and_then(|t| HeaderValue::from_str(&format!("Bearer {t}")).ok());
+
     session.authenticated = server
-        .auth
-        .authenticate_jwt(jwt.as_deref(), server.disable_namespaces, namespace_jwt_key)
+        .user_auth_strategy
+        .authenticate(UserAuthContext {
+            namespace,
+            user_credential,
+            namespace_credential: namespace_jwt_key,
+        })
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
+
     Ok(())
 }
 

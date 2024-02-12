@@ -9,12 +9,14 @@ use s3s::auth::SimpleAuth;
 use s3s::service::S3ServiceBuilder;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::sync::Once;
 use tokio::time::sleep;
 use tokio::time::Duration;
 use url::Url;
 use uuid::Uuid;
 
+use crate::auth::user_auth_strategies::Disabled;
 use crate::config::{DbConfig, UserApiConfig};
 use crate::net::AddrIncoming;
 use crate::Server;
@@ -102,8 +104,7 @@ async fn configure_server(
             http_acceptor: Some(http_acceptor),
             enable_http_console: false,
             self_url: None,
-            http_auth: None,
-            auth_jwt_key: None,
+            auth_strategy: Arc::new(Disabled::new()),
         },
         path: path.into().into(),
         disable_default_namespace: false,

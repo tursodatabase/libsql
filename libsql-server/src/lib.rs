@@ -6,7 +6,6 @@ use std::pin::Pin;
 use std::str::FromStr;
 use std::sync::{Arc, Weak};
 
-use crate::auth::Auth;
 use crate::connection::{Connection, MakeConnection};
 use crate::error::Error;
 use crate::metrics::DIRTY_STARTUP;
@@ -22,6 +21,7 @@ use crate::rpc::replication_log_proxy::ReplicationLogProxyService;
 use crate::rpc::run_rpc_server;
 use crate::stats::Stats;
 use anyhow::Context as AnyhowContext;
+use auth::Auth;
 use config::{
     AdminApiConfig, DbConfig, HeartbeatConfig, RpcClientConfig, RpcServerConfig, UserApiConfig,
 };
@@ -46,6 +46,7 @@ use self::config::MetaStoreConfig;
 use self::net::AddrIncoming;
 use self::replication::script_backup_manager::{CommandHandler, ScriptBackupManager};
 
+pub mod auth;
 pub mod config;
 pub mod connection;
 pub mod net;
@@ -54,7 +55,6 @@ pub mod version;
 
 pub use hrana::proto as hrana_proto;
 
-mod auth;
 mod database;
 mod error;
 mod h2c;
@@ -139,7 +139,7 @@ struct Services<M: MakeNamespace, A, P, S, C> {
     disable_namespaces: bool,
     disable_default_namespace: bool,
     db_config: DbConfig,
-    auth: Arc<Auth>,
+    user_auth_strategy: Auth,
     path: Arc<Path>,
     shutdown: Arc<Notify>,
 }
@@ -156,7 +156,7 @@ where
         let user_http = UserApi {
             http_acceptor: self.user_api_config.http_acceptor,
             hrana_ws_acceptor: self.user_api_config.hrana_ws_acceptor,
-            auth: self.auth,
+            user_auth_strategy: self.user_auth_strategy,
             namespaces: self.namespaces.clone(),
             idle_shutdown_kicker: self.idle_shutdown_kicker.clone(),
             proxy_service: self.proxy_service,
@@ -378,9 +378,9 @@ where
         let db_is_dirty = init_sentinel_file(&self.path)?;
         let idle_shutdown_kicker = self.setup_shutdown();
 
-        let auth = self.user_api_config.get_auth().map(Arc::new)?;
         let extensions = self.db_config.validate_extensions()?;
         let namespace_store_shutdown_fut: Pin<Box<dyn Future<Output = Result<()>> + Send>>;
+        let user_auth_strategy = self.user_api_config.auth_strategy.clone();
 
         let service_shutdown = Arc::new(Notify::new());
         match self.rpc_client_config {
@@ -392,7 +392,7 @@ where
                     extensions,
                     db_config: self.db_config.clone(),
                     base_path: self.path.clone(),
-                    auth: auth.clone(),
+                    user_auth_strategy: user_auth_strategy.clone(),
                     disable_namespaces: self.disable_namespaces,
                     max_active_namespaces: self.max_active_namespaces,
                     meta_store_config: self.meta_store_config.clone(),
@@ -416,7 +416,7 @@ where
                     disable_namespaces: self.disable_namespaces,
                     disable_default_namespace: self.disable_default_namespace,
                     db_config: self.db_config,
-                    auth,
+                    user_auth_strategy,
                     path: self.path.clone(),
                     shutdown: service_shutdown.clone(),
                 };
@@ -425,6 +425,7 @@ where
             }
             None => {
                 let (stats_sender, stats_receiver) = mpsc::channel(8);
+
                 let primary = Primary {
                     rpc_config: self.rpc_server_config,
                     db_config: self.db_config.clone(),
@@ -436,7 +437,7 @@ where
                     disable_namespaces: self.disable_namespaces,
                     max_active_namespaces: self.max_active_namespaces,
                     join_set: &mut join_set,
-                    auth: auth.clone(),
+                    user_auth_strategy: user_auth_strategy.clone(),
                     meta_store_config: self.meta_store_config.clone(),
                     max_concurrent_connections: self.max_concurrent_connections,
                 };
@@ -459,7 +460,7 @@ where
                     disable_namespaces: self.disable_namespaces,
                     disable_default_namespace: self.disable_default_namespace,
                     db_config: self.db_config,
-                    auth,
+                    user_auth_strategy,
                     path: self.path.clone(),
                     shutdown: service_shutdown.clone(),
                 };
@@ -504,10 +505,10 @@ struct Primary<'a, A> {
     base_path: Arc<Path>,
     disable_namespaces: bool,
     max_active_namespaces: usize,
-    auth: Arc<Auth>,
     join_set: &'a mut JoinSet<anyhow::Result<()>>,
     meta_store_config: MetaStoreConfig,
     max_concurrent_connections: usize,
+    user_auth_strategy: Auth,
 }
 
 impl<A> Primary<'_, A>
@@ -605,13 +606,16 @@ where
         let logger_service = ReplicationLogService::new(
             namespaces.clone(),
             self.idle_shutdown_kicker,
-            Some(self.auth.clone()),
+            Some(self.user_auth_strategy.clone()),
             self.disable_namespaces,
             true,
         );
 
-        let proxy_service =
-            ProxyService::new(namespaces.clone(), Some(self.auth), self.disable_namespaces);
+        let proxy_service = ProxyService::new(
+            namespaces.clone(),
+            Some(self.user_auth_strategy),
+            self.disable_namespaces,
+        );
         // Garbage collect proxy clients every 30 seconds
         self.join_set.spawn({
             let clients = proxy_service.clients();
@@ -632,11 +636,11 @@ struct Replica<C> {
     extensions: Arc<[PathBuf]>,
     db_config: DbConfig,
     base_path: Arc<Path>,
-    auth: Arc<Auth>,
     disable_namespaces: bool,
     max_active_namespaces: usize,
     meta_store_config: MetaStoreConfig,
     max_concurrent_connections: usize,
+    user_auth_strategy: Auth,
 }
 
 impl<C: Connector> Replica<C> {
@@ -677,7 +681,7 @@ impl<C: Connector> Replica<C> {
             channel,
             uri,
             namespaces.clone(),
-            self.auth.clone(),
+            self.user_auth_strategy.clone(),
             self.disable_namespaces,
         );
 

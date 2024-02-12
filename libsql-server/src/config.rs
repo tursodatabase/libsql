@@ -9,7 +9,7 @@ use tokio::time::Duration;
 use tonic::transport::Channel;
 use tower::ServiceExt;
 
-use crate::auth::{self, Auth};
+use crate::auth::{Auth, Disabled};
 use crate::net::{AddrIncoming, Connector};
 
 pub struct RpcClientConfig<C = HttpConnector> {
@@ -60,8 +60,7 @@ pub struct UserApiConfig<A = AddrIncoming> {
     pub http_acceptor: Option<A>,
     pub enable_http_console: bool,
     pub self_url: Option<String>,
-    pub http_auth: Option<String>,
-    pub auth_jwt_key: Option<String>,
+    pub auth_strategy: Auth,
 }
 
 impl<A> Default for UserApiConfig<A> {
@@ -71,38 +70,8 @@ impl<A> Default for UserApiConfig<A> {
             http_acceptor: Default::default(),
             enable_http_console: Default::default(),
             self_url: Default::default(),
-            http_auth: Default::default(),
-            auth_jwt_key: Default::default(),
+            auth_strategy: Arc::new(Disabled::new()),
         }
-    }
-}
-
-impl<A> UserApiConfig<A> {
-    pub fn get_auth(&self) -> anyhow::Result<Auth> {
-        let mut auth = Auth::default();
-
-        if let Some(arg) = self.http_auth.as_deref() {
-            if let Some(param) = auth::parse_http_basic_auth_arg(arg)? {
-                auth.http_basic = Some(param);
-                tracing::info!("Using legacy HTTP basic authentication");
-            }
-        }
-
-        if let Some(jwt_key) = self.auth_jwt_key.as_deref() {
-            let jwt_key =
-                auth::parse_jwt_key(jwt_key).context("Could not parse JWT decoding key")?;
-            auth.jwt_key = Some(jwt_key);
-            tracing::info!("Using JWT-based authentication");
-        }
-
-        auth.disabled = auth.http_basic.is_none() && auth.jwt_key.is_none();
-        if auth.disabled {
-            tracing::warn!(
-                "No authentication specified, the server will not require authentication"
-            )
-        }
-
-        Ok(auth)
     }
 }
 
