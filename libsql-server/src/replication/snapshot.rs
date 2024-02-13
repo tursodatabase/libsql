@@ -4,6 +4,7 @@ use std::mem::size_of;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::Instant;
 
 use anyhow::{bail, Context};
 use futures::TryStreamExt;
@@ -115,9 +116,13 @@ async fn compact(
     scripted_backup: Option<ScriptBackupManager>,
     namespace: NamespaceName,
 ) -> anyhow::Result<()> {
+    let before = Instant::now();
     match perform_compaction(db_path, to_compact_file, log_id, namespace, scripted_backup).await {
         Ok((snapshot_name, snapshot_frame_count, size_after)) => {
-            tracing::info!("snapshot `{snapshot_name}` successfully created");
+            tracing::info!(
+                "snapshot `{snapshot_name}` successfully created, in {:?}",
+                before.elapsed()
+            );
 
             if let Err(e) = merger
                 .register_snapshot(snapshot_name, snapshot_frame_count, size_after)

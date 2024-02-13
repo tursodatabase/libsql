@@ -15,7 +15,7 @@ use tokio::sync::watch;
 use tokio_stream::{Stream, StreamExt};
 use tonic::metadata::{AsciiMetadataValue, BinaryMetadataValue};
 use tonic::transport::Channel;
-use tonic::Request;
+use tonic::{Code, Request};
 
 use crate::connection::config::DatabaseConfig;
 use crate::metrics::{
@@ -162,13 +162,14 @@ impl ReplicatorClient for Client {
             next_offset: self.next_frame_no(),
         };
         let req = self.make_request(offset);
-        let stream = self
-            .client
-            .snapshot(req)
-            .await?
-            .into_inner()
-            .map(map_frame_err);
-        Ok(Box::pin(stream))
+        match self.client.snapshot(req).await {
+            Ok(resp) => {
+                let stream = resp.into_inner().map(map_frame_err);
+                Ok(Box::pin(stream))
+            }
+            Err(e) if e.code() == Code::Unavailable => Err(Error::SnapshotPending),
+            Err(e) => return Err(e.into()),
+        }
     }
 
     async fn commit_frame_no(
