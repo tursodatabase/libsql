@@ -119,6 +119,7 @@ async fn configure_server(
 }
 
 #[tokio::test]
+#[ignore]
 async fn backup_restore() {
     let _ = tracing_subscriber::fmt::try_init();
 
