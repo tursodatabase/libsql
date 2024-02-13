@@ -12,9 +12,12 @@ fn main() {
     let out_path = Path::new(&out_dir).join("bindgen.rs");
 
     println!("cargo:rerun-if-changed={BUNDLED_DIR}/src/sqlite3.c");
-    println!(
-        "cargo:rerun-if-changed={BUNDLED_DIR}/SQLite3MultipleCiphers/build/libsqlite3mc_static.a"
-    );
+
+    if cfg!(feature = "multiple-ciphers") {
+        println!(
+            "cargo:rerun-if-changed={BUNDLED_DIR}/SQLite3MultipleCiphers/build/libsqlite3mc_static.a"
+        );
+    }
 
     if std::env::var("LIBSQL_DEV").is_ok() {
         make_amalgation();
