@@ -229,7 +229,7 @@ struct Cli {
     #[clap(long, env = "SQLD_ENCRYPTION_KEY")]
     encryption_key: Option<bytes::Bytes>,
 
-    #[clap(long, default_value = "128")]
+    #[clap(long, default_value = "128", env = "SQLD_MAX_CONCURRENT_CONNECTIONS")]
     max_concurrent_connections: usize,
 }
 
