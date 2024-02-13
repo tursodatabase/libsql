@@ -280,8 +280,9 @@ fn build_multiple_ciphers(out_path: &Path) {
     )
     .unwrap();
 
-    let mut cmd = Command::new("./build_libsqlite3mc.sh");
+    let mut cmd = Command::new("bash");
     cmd.current_dir(BUNDLED_DIR);
+    cmd.arg("build_libsqlite3mc.sh");
 
     if cfg!(feature = "wasmtime-bindings") {
         cmd.arg("-DLIBSQL_ENABLE_WASM_RUNTIME=1");
