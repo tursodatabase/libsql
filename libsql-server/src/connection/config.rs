@@ -18,6 +18,7 @@ pub struct DatabaseConfig {
     pub bottomless_db_id: Option<String>,
     pub jwt_key: Option<String>,
     pub txn_timeout: Option<Duration>,
+    pub allow_attach: bool,
 }
 
 const fn default_max_size() -> u64 {
@@ -35,6 +36,7 @@ impl Default for DatabaseConfig {
             bottomless_db_id: None,
             jwt_key: None,
             txn_timeout: Some(TXN_TIMEOUT),
+            allow_attach: false,
         }
     }
 }
@@ -50,6 +52,7 @@ impl From<&metadata::DatabaseConfig> for DatabaseConfig {
             bottomless_db_id: value.bottomless_db_id.clone(),
             jwt_key: value.jwt_key.clone(),
             txn_timeout: value.txn_timeout_s.map(Duration::from_secs),
+            allow_attach: value.allow_attach,
         }
     }
 }
@@ -65,6 +68,7 @@ impl From<&DatabaseConfig> for metadata::DatabaseConfig {
             bottomless_db_id: value.bottomless_db_id.clone(),
             jwt_key: value.jwt_key.clone(),
             txn_timeout_s: value.txn_timeout.map(|d| d.as_secs()),
+            allow_attach: value.allow_attach,
         }
     }
 }
