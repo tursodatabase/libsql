@@ -524,6 +524,7 @@ where
             encryption_key: self.db_config.encryption_key.clone(),
             max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
             scripted_backup,
+            max_concurrent_requests: self.db_config.max_concurrent_requests,
         };
 
         let factory = PrimaryNamespaceMaker::new(conf);
@@ -637,6 +638,7 @@ impl<C: Connector> Replica<C> {
             max_total_response_size: self.db_config.max_total_response_size,
             encryption_key: self.db_config.encryption_key.clone(),
             max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
+            max_concurrent_requests: self.db_config.max_concurrent_requests,
         };
 
         let factory = ReplicaNamespaceMaker::new(conf);
