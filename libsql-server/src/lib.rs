@@ -12,6 +12,7 @@ use crate::error::Error;
 use crate::metrics::DIRTY_STARTUP;
 use crate::migration::maybe_migrate;
 use crate::net::Accept;
+use crate::pager::{make_pager, PAGER_CACHE_SIZE};
 use crate::rpc::proxy::rpc::proxy_server::Proxy;
 use crate::rpc::proxy::ProxyService;
 use crate::rpc::replica_proxy::ReplicaProxyService;
@@ -33,6 +34,7 @@ use namespace::{
 };
 use net::Connector;
 use once_cell::sync::Lazy;
+use rusqlite::ffi::{sqlite3_config, SQLITE_CONFIG_PCACHE2};
 use tokio::runtime::Runtime;
 use tokio::sync::{mpsc, Notify, Semaphore};
 use tokio::task::JoinSet;
@@ -62,6 +64,7 @@ mod http;
 mod metrics;
 mod migration;
 mod namespace;
+mod pager;
 mod query;
 mod query_analysis;
 mod query_result_builder;
@@ -349,7 +352,25 @@ where
     }
 
     pub async fn start(mut self) -> anyhow::Result<()> {
+        static INIT: std::sync::Once = std::sync::Once::new();
         let mut join_set = JoinSet::new();
+
+        INIT.call_once(|| {
+            if let Ok(size) = std::env::var("LIBSQL_EXPERIMENTAL_PAGER") {
+                let size = size.parse().unwrap();
+                PAGER_CACHE_SIZE.store(size, std::sync::atomic::Ordering::SeqCst);
+                unsafe {
+                    let rc = sqlite3_config(SQLITE_CONFIG_PCACHE2, &make_pager());
+                    if rc != 0 {
+                        // necessary because in some tests there is race between client and server
+                        // to initialize global state.
+                        tracing::error!(
+                            "failed to setup sqld pager, using sqlite3 default instead"
+                        );
+                    }
+                }
+            }
+        });
 
         init_version_file(&self.path)?;
         maybe_migrate(&self.path)?;
