@@ -128,7 +128,7 @@ jobs:
 
     - name: Run tests with custom pager
       env:
-        - LIBSQL_EXPERIMENTAL_PAGER=100
+        LIBSQL_EXPERIMENTAL_PAGER: 1000
       run: cargo nextest run
 
   # test-rust-wasm:
