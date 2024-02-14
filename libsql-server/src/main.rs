@@ -231,6 +231,9 @@ struct Cli {
 
     #[clap(long, default_value = "128", env = "SQLD_MAX_CONCURRENT_CONNECTIONS")]
     max_concurrent_connections: usize,
+    // max number of concurrent requests across all connections
+    #[clap(long, default_value = "128", env = "SQLD_MAX_CONCURRENT_REQUESTS")]
+    max_concurrent_requests: u64,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -355,6 +358,7 @@ fn make_db_config(config: &Cli) -> anyhow::Result<DbConfig> {
         checkpoint_interval: config.checkpoint_interval_s.map(Duration::from_secs),
         snapshot_at_shutdown: config.snapshot_at_shutdown,
         encryption_key: config.encryption_key.clone(),
+        max_concurrent_requests: config.max_concurrent_requests,
     })
 }
 
