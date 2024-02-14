@@ -529,6 +529,7 @@ where
             checkpoint_interval: self.db_config.checkpoint_interval,
             disable_namespace: self.disable_namespaces,
             max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
+            max_concurrent_requests: self.db_config.max_concurrent_requests,
         };
         let factory = PrimaryNamespaceMaker::new(conf);
         let namespaces = NamespaceStore::new(factory, false, self.db_config.snapshot_at_shutdown);
@@ -619,6 +620,7 @@ impl<C: Connector> Replica<C> {
             max_response_size: self.db_config.max_response_size,
             max_total_response_size: self.db_config.max_total_response_size,
             max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
+            max_concurrent_requests: self.db_config.max_concurrent_requests,
         };
         let factory = ReplicaNamespaceMaker::new(conf);
         let namespaces = NamespaceStore::new(factory, true, false);

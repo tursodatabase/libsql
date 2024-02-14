@@ -669,6 +669,7 @@ pub struct ReplicaNamespaceConfig {
     /// Stats monitor
     pub stats_sender: StatsSender,
     pub max_concurrent_connections: Arc<Semaphore>,
+    pub max_concurrent_requests: u64,
 }
 
 impl Namespace<ReplicaDatabase> {
@@ -789,6 +790,7 @@ impl Namespace<ReplicaDatabase> {
             config.max_concurrent_connections.clone(),
             Some(DB_CREATE_TIMEOUT),
             config.max_total_response_size,
+            config.max_concurrent_requests,
         );
 
         Ok(Self {
@@ -817,6 +819,7 @@ pub struct PrimaryNamespaceConfig {
     pub checkpoint_interval: Option<Duration>,
     pub disable_namespace: bool,
     pub max_concurrent_connections: Arc<Semaphore>,
+    pub max_concurrent_requests: u64,
 }
 
 pub type DumpStream =
@@ -991,6 +994,7 @@ impl Namespace<PrimaryDatabase> {
             config.max_concurrent_connections.clone(),
             Some(DB_CREATE_TIMEOUT),
             config.max_total_response_size,
+            config.max_concurrent_requests,
         )
         .into();
 

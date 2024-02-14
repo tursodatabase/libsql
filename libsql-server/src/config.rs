@@ -125,6 +125,7 @@ pub struct DbConfig {
     pub snapshot_exec: Option<String>,
     pub checkpoint_interval: Option<Duration>,
     pub snapshot_at_shutdown: bool,
+    pub max_concurrent_requests: u64,
 }
 
 impl Default for DbConfig {
@@ -141,6 +142,7 @@ impl Default for DbConfig {
             snapshot_exec: None,
             checkpoint_interval: None,
             snapshot_at_shutdown: false,
+            max_concurrent_requests: 128,
         }
     }
 }
