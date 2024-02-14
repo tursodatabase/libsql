@@ -7640,7 +7640,6 @@ int sqlite3_drop_modules(
 */
 struct sqlite3_vtab {
   const sqlite3_module *pModule;      /* The module for this virtual table */
-  const libsql_module *pLibsqlModule; /* The libSQL module for this virtual table */
   int nRef;                           /* Number of open cursors */
   char *zErrMsg;                      /* Error message from sqlite3_mprintf() */
   /* Virtual table implementations will typically add additional fields */

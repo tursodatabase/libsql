@@ -8309,7 +8309,6 @@ case OP_VInitIn: {        /* out2, ncycle */
 */
 case OP_VPreparedSql: {
   const sqlite3_module *pModule;
-  const libsql_module *pLibsqlModule;
   sqlite3_vtab_cursor *pVCur;
   sqlite3_vtab *pVtab;
   VdbeCursor *pCur;
@@ -8320,15 +8319,8 @@ case OP_VPreparedSql: {
   pVCur = pCur->uc.pVCur;
   pVtab = pVCur->pVtab;
   pModule = pVtab->pModule;
-  pLibsqlModule = pVtab->pLibsqlModule;
 
-  /* Invoke the xPreparedSql method */
-   if (pLibsqlModule) {
-    if( pLibsqlModule->xPreparedSql && p->zSql ){
-      rc = pLibsqlModule->xPreparedSql(pVCur, p->zSql);
-      if( rc ) goto abort_due_to_error;
-    }
-  }
+  // TODO: Invoke the xPreparedSql method
 
   break;
 }

@@ -650,7 +650,7 @@ static int vtabCallConstructor(
     ** the sqlite3_vtab object if successful.  */
     memset(pVTable->pVtab, 0, sizeof(pVTable->pVtab[0]));
     pVTable->pVtab->pModule = pMod->pModule;
-    pVTable->pVtab->pLibsqlModule = pMod->pLibsqlModule;
+    // pVTable->pVtab->pLibsqlModule = pMod->pLibsqlModule;
     pMod->nRefModule++;
     pVTable->nRef = 1;
     if( sCtx.bDeclared==0 ){
