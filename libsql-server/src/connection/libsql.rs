@@ -769,6 +769,31 @@ impl<W: Wal> Connection<W> {
         Ok(enabled)
     }
 
+    fn prepare_attach_query(&self, attached: &str, attached_alias: &str) -> Result<String> {
+        let attached = attached.strip_prefix('"').unwrap_or(attached);
+        let attached = attached.strip_suffix('"').unwrap_or(attached);
+        if attached.contains('/') {
+            return Err(Error::Internal(format!(
+                "Invalid attached database name: {:?}",
+                attached
+            )));
+        }
+        let path = PathBuf::from(self.conn.path().unwrap_or("."));
+        let dbs_path = path
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new(".."))
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new(".."))
+            .canonicalize()
+            .unwrap_or_else(|_| std::path::PathBuf::from(".."));
+        let query = format!(
+            "ATTACH DATABASE 'file:{}?mode=ro' AS \"{attached_alias}\"",
+            dbs_path.join(attached).join("data").display()
+        );
+        tracing::trace!("ATTACH rewritten to: {query}");
+        Ok(query)
+    }
+
     fn execute_query(
         &self,
         query: &Query,
@@ -785,12 +810,29 @@ impl<W: Wal> Connection<W> {
             StmtKind::Read | StmtKind::TxnBegin | StmtKind::Other => config.block_reads,
             StmtKind::Write => config.block_reads || config.block_writes,
             StmtKind::TxnEnd | StmtKind::Release | StmtKind::Savepoint => false,
+            StmtKind::Attach | StmtKind::Detach => !config.allow_attach,
         };
         if blocked {
             return Err(Error::Blocked(config.block_reason.clone()));
         }
 
-        let mut stmt = self.conn.prepare(&query.stmt.stmt)?;
+        let mut stmt = if matches!(query.stmt.kind, StmtKind::Attach) {
+            match &query.stmt.attach_info {
+                Some((attached, attached_alias)) => {
+                    let query = self.prepare_attach_query(attached, attached_alias)?;
+                    self.conn.prepare(&query)?
+                }
+                None => {
+                    return Err(Error::Internal(format!(
+                        "Failed to ATTACH: {:?}",
+                        query.stmt.attach_info
+                    )))
+                }
+            }
+        } else {
+            self.conn.prepare(&query.stmt.stmt)?
+        };
+
         if stmt.readonly() {
             READ_QUERY_COUNT.increment(1);
         } else {
