@@ -7,6 +7,7 @@ use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
 use hashbrown::HashMap;
 use parking_lot::Mutex;
 use rusqlite::ffi::{sqlite3_pcache, sqlite3_pcache_methods2, sqlite3_pcache_page};
+use uuid::Uuid;
 
 use crate::LIBSQL_PAGE_SIZE;
 
@@ -37,38 +38,40 @@ struct Page {
 }
 
 impl Page {
-    fn free(&mut self, next: u32) -> u32 {
-        let current = self.flags as u32;
+    fn free(&mut self, next: u32) {
         self.flags = (1 << FLAG_FREE) | next as u64;
-        self.data.fill(0);
-        current
+        self.clear();
     }
 
     fn is_free(&self) -> bool {
         self.flags & 1 << FLAG_FREE != 0
     }
 
-    #[allow(dead_code)]
-    fn page_no(&self) -> u32 {
-        assert!(!self.is_free(), "can't get page no for free page");
-        self.flags as u32
-    }
-
     fn is_pinned(&self) -> bool {
         self.flags & 1 << FLAG_PIN != 0
     }
 
-    fn pin(&mut self, key: u16) {
-        self.flags |= 1 << FLAG_PIN;
-        self.flags |= (key as u64) << 32;
+    fn clear(&mut self) {
+        self.data[PAGER_PAGE_SIZE..].fill(0);
     }
 
-    fn unpin(&mut self) -> u16 {
-        let key = (self.flags >> 32) & (u16::MAX as u64);
+    fn pin(&mut self, key: u32) {
+        tracing::trace!(key, "pin");
+        self.flags = 1 << FLAG_PIN | key as u64;
+    }
+
+    fn unpin(&mut self) -> u32 {
+        let key = self.flags as u32;
         // TODO: maybe not necessary to have a flag since key > 0
         // clean pin flag and pinned key
-        self.flags &= !(1 << FLAG_PIN) | !((u16::MAX as u64) << 32);
-        key as u16
+        self.flags &= !(1 << FLAG_PIN);
+        assert!(!self.is_pinned());
+        self.flags &= !(u32::MAX as u64);
+        key
+    }
+
+    fn key(&self) -> u32 {
+        self.flags as u32
     }
 
     fn next(&self) -> u32 {
@@ -135,10 +138,17 @@ impl Allocator {
         }
     }
 
+    fn offset_of(&self, p: &Page) -> u32 {
+        (((p as *const _ as usize) - (self.slab.as_ptr() as usize)) / size_of::<Page>()) as u32
+    }
+
     fn free(&self, page: &mut Page) {
-        assert!(!page.is_free(), "page already freed");
-        let mut current = self.free_list_head.lock();
-        *current = page.free(*current);
+        tracing::trace!(page = self.offset_of(page), "free");
+        assert!(!page.is_free());
+        let mut next = self.free_list_head.lock();
+        let current = self.offset_of(page);
+        page.free(*next);
+        *next = current as u32;
     }
 }
 
@@ -148,6 +158,7 @@ const PAGER_EXTRA_SIZE: usize = 224;
 struct Pager {
     alloc: &'static Allocator,
     pages: Mutex<HashMap<u32, &'static mut Page>>,
+    span: tracing::Span,
 }
 
 impl Drop for Pager {
@@ -179,9 +190,15 @@ extern "C" fn create(
             PAGER_CACHE_SIZE.load(SeqCst),
         )
     });
+    let span = tracing::span!(
+        tracing::Level::INFO,
+        "pager",
+        uuid = Uuid::new_v4().to_string()
+    );
     let pager = Pager {
         alloc: allocator,
         pages: HashMap::new().into(),
+        span,
     };
 
     Box::into_raw(Box::new(pager)) as *mut Pager as *mut _
@@ -199,17 +216,23 @@ extern "C" fn fetch(
     create_flag: c_int,
 ) -> *mut sqlite3_pcache_page {
     let cache = unsafe { &*(cache as *mut Pager) };
+    let _span = cache.span.enter();
+    tracing::trace!(key = key, "fetch");
     let mut pages = cache.pages.lock();
     match pages.get_mut(&key) {
         Some(page) => {
-            page.pin(key as u16);
+            tracing::trace!(key = key, "found");
+            page.pin(key);
+            assert_eq!(page.key(), key);
             (*page) as *mut _ as *mut _
         }
         None => {
             // try to find an unpinned page
             match pages.extract_if(|_, p| !p.is_pinned()).next() {
                 Some((_, page)) => {
-                    page.pin(key as u16);
+                    tracing::trace!(key, page = cache.alloc.offset_of(page), "reuse");
+                    page.clear();
+                    page.pin(key);
                     let ptr = page as *mut _;
                     pages.insert(key, page);
                     ptr as *mut _
@@ -219,7 +242,9 @@ extern "C" fn fetch(
                     // try alloc one from global pool
                     match cache.alloc.alloc() {
                         Some(page) => {
-                            page.pin(key as u16);
+                            tracing::trace!(key, page = cache.alloc.offset_of(page), "alloc");
+                            page.pin(key);
+                            assert_eq!(page.key(), key);
                             let ptr = page as *mut _;
                             assert!(pages.insert(key, page).is_none());
                             ptr as *mut _
@@ -236,9 +261,11 @@ extern "C" fn fetch(
 extern "C" fn unpin(cache: *mut sqlite3_pcache, page: *mut sqlite3_pcache_page, discard: c_int) {
     let page: &mut Page = unsafe { &mut *(page as *mut Page) };
     let cache = unsafe { &mut *(cache as *mut Pager) };
+    let _span = cache.span.enter();
     let pages = &mut cache.pages;
 
-    let key = page.unpin() as u32;
+    let key = page.unpin();
+    tracing::trace!(key, page = cache.alloc.offset_of(page), "unpin");
 
     if discard != 0 {
         let page = pages.lock().remove(&key).expect("missing page");
@@ -253,10 +280,18 @@ extern "C" fn rekey(
     new_key: u32,
 ) {
     let cache = unsafe { &mut *(cache as *mut Pager) };
+    let _span = cache.span.enter();
     let _new_page = unsafe { &*(data as *mut Page) };
+    tracing::trace!(
+        old = old_key,
+        new = new_key,
+        old_page_key = _new_page.key(),
+        page = cache.alloc.offset_of(_new_page),
+        "rekey"
+    );
     let mut pages = cache.pages.lock();
-    let page = pages.remove(&old_key).expect("missing page when rekeying");
-    page.pin(new_key as u16);
+    let page = pages.remove(&old_key).expect("rekeyed key doesn't exist");
+    page.pin(new_key);
     if let Some(page) = pages.insert(new_key, page) {
         assert!(!page.is_pinned());
         cache.alloc.free(page);
@@ -265,6 +300,8 @@ extern "C" fn rekey(
 
 extern "C" fn truncate(cache: *mut sqlite3_pcache, limit: u32) {
     let cache = unsafe { &*(cache as *mut Pager) };
+    let _span = cache.span.enter();
+    tracing::trace!(limit = limit, "truncate");
     let mut pages = cache.pages.lock();
     pages
         .extract_if(|k, _| *k >= limit)
@@ -279,6 +316,8 @@ extern "C" fn destroy(cache: *mut sqlite3_pcache) {
 
 extern "C" fn shrink(cache: *mut sqlite3_pcache) {
     let cache = unsafe { &mut *(cache as *mut Pager) };
+    let _span = cache.span.enter();
+    tracing::trace!("shrink");
     let mut pages = cache.pages.lock();
     pages
         .extract_if(|_, p| !p.is_pinned())
@@ -312,7 +351,7 @@ mod test {
         let alloc = Allocator::new(4096, 224, 3);
         let page1 = alloc.alloc().unwrap();
         assert!(!page1.is_free());
-        assert_eq!(page1.page_no(), 0);
+        assert_eq!(alloc.offset_of(page1), 0);
         assert_eq!(page1.p_page as usize, page1.data.as_ptr() as usize);
         assert_eq!(
             page1.p_extra as usize,
@@ -324,17 +363,17 @@ mod test {
             page1 as *mut _ as usize + size_of::<Page>()
         );
         assert!(!page2.is_free());
-        assert_eq!(page2.page_no(), 1);
+        assert_eq!(alloc.offset_of(page2), 1);
         let page3 = alloc.alloc().unwrap();
         assert!(!page3.is_free());
-        assert_eq!(page3.page_no(), 2);
+        assert_eq!(alloc.offset_of(page3), 2);
 
         assert!(alloc.alloc().is_none());
 
         alloc.free(page2);
 
         let page4 = alloc.alloc().unwrap();
-        assert_eq!(page4.page_no(), 1);
+        assert_eq!(alloc.offset_of(page4), 1);
         assert!(alloc.alloc().is_none());
     }
 }

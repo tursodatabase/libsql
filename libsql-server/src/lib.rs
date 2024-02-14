@@ -364,7 +364,9 @@ where
                     if rc != 0 {
                         // necessary because in some tests there is race between client and server
                         // to initialize global state.
-                        tracing::error!("failed to setup sqld pager, using sqlite3 default instead");
+                        tracing::error!(
+                            "failed to setup sqld pager, using sqlite3 default instead"
+                        );
                     }
                 }
             }
