@@ -8320,7 +8320,13 @@ case OP_VPreparedSql: {
   pVtab = pVCur->pVtab;
   pModule = pVtab->pModule;
 
-  // TODO: Invoke the xPreparedSql method
+  /* Invoke the xPreparedSql method */
+  if( pModule->iVersion>=700 ) {
+      if (pModule->xPreparedSql && p->zSql) {
+          rc = pModule->xPreparedSql(pVCur, p->zSql);
+          if (rc) goto abort_due_to_error;
+      }
+  }
 
   break;
 }
