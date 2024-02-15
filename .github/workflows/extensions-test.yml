@@ -17,6 +17,7 @@ jobs:
     name: CR SQLite C Tests
 
     steps:
+      - uses: hecrj/setup-rust-action@v1
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: build
