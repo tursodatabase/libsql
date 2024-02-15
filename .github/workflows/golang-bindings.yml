@@ -14,12 +14,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@stable
-    - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          cache: true
-          go-version: '>=1.21'
 
     # needed because we run out of disk space during tests
     - name: Free Disk Space (Ubuntu)
@@ -29,6 +23,11 @@ jobs:
         # when set to "true" but frees about 6 GB
         tool-cache: true
 
+    - uses: dtolnay/rust-toolchain@stable
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: '>=1.21'
     - name: get TCL
       run: sudo apt-get install -y tcl8.6-dev
 
