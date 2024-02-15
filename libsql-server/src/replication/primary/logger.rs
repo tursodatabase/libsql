@@ -935,6 +935,9 @@ impl ReplicationLogger {
         let snapshot_path = data_path.parent().unwrap().join("snapshots");
         // best effort, there may be no snapshots
         let _ = remove_dir_all(snapshot_path);
+        let to_compact_path = data_path.parent().unwrap().join("to_compact");
+        // best effort, there may nothing to compact
+        let _ = remove_dir_all(to_compact_path);
 
         let data_file = File::open(&data_path)?;
         let size = data_path.metadata()?.len();
