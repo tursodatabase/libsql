@@ -55,3 +55,25 @@ jobs:
         run: |
           cd ext/crr/rs/core
           cargo test --features=loadable_extension
+
+  extensions-tests:
+    runs-on: ubuntu-latest
+    name: Extensions Tests
+
+    steps:
+      - uses: hecrj/setup-rust-action@v1
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: build libsql and ffi bindings
+        run: |
+          cargo xtask build-bundled
+      - name: download extensions
+        run: |
+          cd libsql-sqlite3/test/rust_suite
+          export VSS_VERSION="v0.1.2"
+          wget https://github.com/asg017/sqlite-vss/releases/download/$VSS_VERSION/sqlite-vss-$VSS_VERSION-loadable-linux-x86_64.tar.gz
+          tar -xvf sqlite-vss-$VSS_VERSION-loadable-linux-x86_64.tar.gz -C src
+      - name: test
+        run: |
+          cd libsql-sqlite3/test/rust_suite
+          cargo test --features extensions
