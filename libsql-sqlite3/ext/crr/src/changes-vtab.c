@@ -179,6 +179,7 @@ sqlite3_module crsql_changesModule = {
     /* xShadowName */ 0
 #ifdef LIBSQL
     ,
+    /* reserved */ NULL,
     /* xPreparedSql */ 0
 #endif
 };
