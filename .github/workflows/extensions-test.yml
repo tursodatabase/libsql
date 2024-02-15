@@ -1,0 +1,57 @@
+name: Extensions Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+  merge_group:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  PROTOC_VERSION: 3.23.4
+
+jobs:
+  c-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: libsql-sqlite3
+    name: CR SQLite C Tests
+
+    steps:
+      - uses: hecrj/setup-rust-action@v1
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: build libsql
+        run: |
+          ./configure
+          make libsql
+      - name: build
+        run: |
+          cd ext/crr
+          make loadable
+      - name: test
+        run: |
+          cd ext/crr
+          make test
+
+  rs-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: libsql-sqlite3
+    name: CR SQLite Rust Tests
+
+    steps:
+      - uses: hecrj/setup-rust-action@v1
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: build libsql
+        run: |
+          ./configure
+          make libsql
+      - name: test
+        run: |
+          cd ext/crr/rs/core
+          cargo test --features=loadable_extension
