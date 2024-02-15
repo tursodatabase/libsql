@@ -19,4 +19,5 @@ hex = "0.4.3"
 default = []
 udf = []
 wasm = []
+extensions = []
 full = ["udf", "wasm"]
