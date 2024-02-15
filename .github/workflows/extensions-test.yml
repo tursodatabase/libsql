@@ -43,5 +43,5 @@ jobs:
           make loadable
       - name: test
         run: |
-          cd libsql-sqlite3/ext/crr/core/rs/core
+          cd libsql-sqlite3/ext/crr/rs/core
           cargo test --features=loadable_extension
