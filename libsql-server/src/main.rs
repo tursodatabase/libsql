@@ -17,8 +17,8 @@ use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::Layer;
 
 use libsql_server::config::{
-    AdminApiConfig, DbConfig, HeartbeatConfig, MetaStoreConfig, RpcClientConfig, RpcServerConfig,
-    TlsConfig, UserApiConfig,
+    AdminApiConfig, BottomlessConfig, DbConfig, HeartbeatConfig, MetaStoreConfig, RpcClientConfig,
+    RpcServerConfig, TlsConfig, UserApiConfig,
 };
 use libsql_server::net::AddrIncoming;
 use libsql_server::Server;
@@ -234,6 +234,11 @@ struct Cli {
     // max number of concurrent requests across all connections
     #[clap(long, default_value = "128", env = "SQLD_MAX_CONCURRENT_REQUESTS")]
     max_concurrent_requests: u64,
+
+    /// Allow meta store to recover config from filesystem from older version, if meta store is
+    /// empty on startup
+    #[clap(long)]
+    allow_metastore_recovery: bool,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -522,9 +527,9 @@ async fn shutdown_signal() -> Result<&'static str> {
     Ok(signal)
 }
 
-fn make_meta_store_config(config: &Cli) -> anyhow::Result<Option<MetaStoreConfig>> {
-    if config.backup_meta_store {
-        Ok(Some(MetaStoreConfig {
+fn make_meta_store_config(config: &Cli) -> anyhow::Result<MetaStoreConfig> {
+    let bottomless = if config.backup_meta_store {
+        Some(BottomlessConfig {
             access_key_id: config
                 .meta_store_access_key_id
                 .clone()
@@ -554,10 +559,15 @@ fn make_meta_store_config(config: &Cli) -> anyhow::Result<Option<MetaStoreConfig
                 .meta_store_bucket_endpoint
                 .clone()
                 .context("missing meta store bucket name")?,
-        }))
+        })
     } else {
-        Ok(None)
-    }
+        None
+    };
+
+    Ok(MetaStoreConfig {
+        bottomless,
+        allow_recover_from_fs: config.allow_metastore_recovery,
+    })
 }
 
 async fn build_server(config: &Cli) -> anyhow::Result<Server> {

@@ -1,7 +1,7 @@
 #![allow(clippy::mutable_key_type)]
-use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
+use std::{collections::HashMap, fs::read_dir};
 
 use bottomless::bottomless_wal::BottomlessWalWrapper;
 use bottomless::replicator::CompressionKind;
@@ -63,108 +63,11 @@ struct MetaStoreInner {
     wal_manager: WalManager,
 }
 
-/// Handles config change updates by inserting them into the database and in-memory
-/// cache of configs.
-fn process(msg: ChangeMsg, inner: Arc<Mutex<MetaStoreInner>>) -> Result<()> {
-    let (namespace, config) = msg;
-
-    let config_encoded = metadata::DatabaseConfig::from(&*config).encode_to_vec();
-
-    let inner = &mut inner.lock();
-
-    inner.conn.execute(
-        "INSERT OR REPLACE INTO namespace_configs (namespace, config) VALUES (?1, ?2)",
-        rusqlite::params![namespace.to_string(), config_encoded],
-    )?;
-
-    let configs = &mut inner.configs;
-
-    if let Some(config_watch) = configs.get_mut(&namespace) {
-        let new_version = config_watch.borrow().version.wrapping_add(1);
-
-        config_watch.send_modify(|c| {
-            *c = InnerConfig {
-                version: new_version,
-                config,
-            };
-        });
-    } else {
-        let (tx, _) = watch::channel(InnerConfig { version: 0, config });
-        configs.insert(namespace, tx);
-    }
-
-    Ok(())
-}
-
-#[tracing::instrument(skip(db))]
-fn restore(db: &Connection) -> Result<HashMap<NamespaceName, Sender<InnerConfig>>> {
-    tracing::info!("restoring meta store");
-
-    db.execute(
-        "CREATE TABLE IF NOT EXISTS namespace_configs (
-            namespace TEXT NOT NULL PRIMARY KEY,
-            config BLOB NOT NULL
-        )
-        ",
-        (),
-    )?;
-
-    let mut stmt = db.prepare("SELECT namespace, config FROM namespace_configs")?;
-
-    let rows = stmt.query(())?.mapped(|r| {
-        let ns = r.get::<_, String>(0)?;
-        let config = r.get::<_, Vec<u8>>(1)?;
-
-        Ok((ns, config))
-    });
-
-    let mut configs = HashMap::new();
-
-    for row in rows {
-        match row {
-            Ok((k, v)) => {
-                let ns = match NamespaceName::from_string(k) {
-                    Ok(ns) => ns,
-                    Err(e) => {
-                        tracing::warn!("unable to convert namespace name: {}", e);
-                        continue;
-                    }
-                };
-
-                let config = match metadata::DatabaseConfig::decode(&v[..]) {
-                    Ok(c) => Arc::new(DatabaseConfig::from(&c)),
-                    Err(e) => {
-                        tracing::warn!("unable to convert config: {}", e);
-                        continue;
-                    }
-                };
-
-                // We don't store the version in the sqlitedb due to the session token
-                // changed each time we start the primary, this will cause the replica to
-                // handshake again and get the latest config.
-                let (tx, _) = watch::channel(InnerConfig { version: 0, config });
-
-                configs.insert(ns, tx);
-            }
-
-            Err(e) => {
-                tracing::error!("meta store restore failed: {}", e);
-                return Err(Error::from(e));
-            }
-        }
-    }
-
-    tracing::info!("meta store restore completed");
-
-    Ok(configs)
-}
-
-impl MetaStore {
-    #[tracing::instrument(skip(config, base_path))]
-    pub async fn new(config: Option<MetaStoreConfig>, base_path: &Path) -> Result<Self> {
+impl MetaStoreInner {
+    async fn new(base_path: &Path, mut config: MetaStoreConfig) -> Result<Self> {
         let db_path = base_path.join("metastore");
         tokio::fs::create_dir_all(&db_path).await?;
-        let replicator = match config {
+        let replicator = match config.bottomless.take() {
             Some(config) => {
                 let options = bottomless::replicator::Options {
                     create_bucket_if_not_exists: true,
@@ -216,16 +119,163 @@ impl MetaStore {
             Sqlite3WalManager::default(),
         );
         let conn = open_conn_active_checkpoint(&db_path, wal_manager.clone(), None, 1000, None)?;
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS namespace_configs (
+                namespace TEXT NOT NULL PRIMARY KEY,
+                config BLOB NOT NULL
+            )
+            ",
+            (),
+        )?;
 
-        let configs = restore(&conn)?;
-
-        let (changes_tx, mut changes_rx) = mpsc::channel(256);
-
-        let inner = Arc::new(Mutex::new(MetaStoreInner {
-            configs,
+        let mut this = MetaStoreInner {
+            configs: Default::default(),
             conn,
             wal_manager,
-        }));
+        };
+
+        if config.allow_recover_from_fs {
+            this.maybe_recover_from_fs(base_path)?;
+        }
+
+        this.restore()?;
+
+        Ok(this)
+    }
+
+    fn maybe_recover_from_fs(&mut self, base_path: &Path) -> Result<()> {
+        let count = self
+            .conn
+            .query_row("SELECT count(*) FROM namespace_configs", (), |row| {
+                row.get::<_, u64>(0)
+            })?;
+
+        let txn = self.conn.transaction()?;
+        // nothing in the meta store, check fs
+        if count == 0 {
+            tracing::info!("Recovering metastore from filesystem...");
+            let db_dir = read_dir(base_path.join("dbs"))?;
+            for entry in db_dir {
+                let entry = entry?;
+                if !entry.path().is_dir() {
+                    continue;
+                }
+                let config_path = entry.path().join("config.json");
+                let name =
+                    NamespaceName::from_string(entry.file_name().to_str().unwrap().to_string())?;
+                let config = if config_path.try_exists()? {
+                    let config_bytes = std::fs::read(&config_path)?;
+                    serde_json::from_slice(&config_bytes)?
+                } else {
+                    DatabaseConfig::default()
+                };
+                let config_encoded = metadata::DatabaseConfig::from(&config).encode_to_vec();
+                tracing::info!("Recovered namespace config: `{name}`");
+                txn.execute(
+                    "INSERT INTO namespace_configs VALUES (?1, ?2)",
+                    (name.as_str(), &config_encoded),
+                )?;
+            }
+        }
+
+        txn.commit()?;
+
+        Ok(())
+    }
+
+    #[tracing::instrument(skip(self))]
+    fn restore(&mut self) -> Result<()> {
+        tracing::info!("restoring meta store");
+
+        let mut stmt = self
+            .conn
+            .prepare("SELECT namespace, config FROM namespace_configs")?;
+
+        let rows = stmt.query(())?.mapped(|r| {
+            let ns = r.get::<_, String>(0)?;
+            let config = r.get::<_, Vec<u8>>(1)?;
+
+            Ok((ns, config))
+        });
+
+        for row in rows {
+            match row {
+                Ok((k, v)) => {
+                    let ns = match NamespaceName::from_string(k) {
+                        Ok(ns) => ns,
+                        Err(e) => {
+                            tracing::warn!("unable to convert namespace name: {}", e);
+                            continue;
+                        }
+                    };
+
+                    let config = match metadata::DatabaseConfig::decode(&v[..]) {
+                        Ok(c) => Arc::new(DatabaseConfig::from(&c)),
+                        Err(e) => {
+                            tracing::warn!("unable to convert config: {}", e);
+                            continue;
+                        }
+                    };
+
+                    // We don't store the version in the sqlitedb due to the session token
+                    // changed each time we start the primary, this will cause the replica to
+                    // handshake again and get the latest config.
+                    let (tx, _) = watch::channel(InnerConfig { version: 0, config });
+
+                    self.configs.insert(ns, tx);
+                }
+
+                Err(e) => {
+                    tracing::error!("meta store restore failed: {}", e);
+                    return Err(Error::from(e));
+                }
+            }
+        }
+
+        tracing::info!("meta store restore completed");
+
+        Ok(())
+    }
+}
+
+/// Handles config change updates by inserting them into the database and in-memory
+/// cache of configs.
+fn process(msg: ChangeMsg, inner: Arc<Mutex<MetaStoreInner>>) -> Result<()> {
+    let (namespace, config) = msg;
+
+    let config_encoded = metadata::DatabaseConfig::from(&*config).encode_to_vec();
+
+    let inner = &mut inner.lock();
+
+    inner.conn.execute(
+        "INSERT OR REPLACE INTO namespace_configs (namespace, config) VALUES (?1, ?2)",
+        rusqlite::params![namespace.as_str(), config_encoded],
+    )?;
+
+    let configs = &mut inner.configs;
+
+    if let Some(config_watch) = configs.get_mut(&namespace) {
+        let new_version = config_watch.borrow().version.wrapping_add(1);
+
+        config_watch.send_modify(|c| {
+            *c = InnerConfig {
+                version: new_version,
+                config,
+            };
+        });
+    } else {
+        let (tx, _) = watch::channel(InnerConfig { version: 0, config });
+        configs.insert(namespace, tx);
+    }
+
+    Ok(())
+}
+
+impl MetaStore {
+    #[tracing::instrument(skip(config, base_path))]
+    pub async fn new(config: MetaStoreConfig, base_path: &Path) -> Result<Self> {
+        let (changes_tx, mut changes_rx) = mpsc::channel(256);
+        let inner = Arc::new(Mutex::new(MetaStoreInner::new(base_path, config).await?));
 
         tokio::spawn({
             let inner = inner.clone();

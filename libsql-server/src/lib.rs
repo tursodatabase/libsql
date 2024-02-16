@@ -103,7 +103,7 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub disable_namespaces: bool,
     pub shutdown: Arc<Notify>,
     pub max_active_namespaces: usize,
-    pub meta_store_config: Option<MetaStoreConfig>,
+    pub meta_store_config: MetaStoreConfig,
     pub max_concurrent_connections: usize,
 }
 
@@ -123,7 +123,7 @@ impl<C, A, D> Default for Server<C, A, D> {
             disable_namespaces: true,
             shutdown: Default::default(),
             max_active_namespaces: 100,
-            meta_store_config: None,
+            meta_store_config: Default::default(),
             max_concurrent_connections: 128,
         }
     }
@@ -395,7 +395,7 @@ where
                     auth: auth.clone(),
                     disable_namespaces: self.disable_namespaces,
                     max_active_namespaces: self.max_active_namespaces,
-                    meta_store_config: self.meta_store_config.take(),
+                    meta_store_config: self.meta_store_config.clone(),
                     max_concurrent_connections: self.max_concurrent_connections,
                 };
                 let (namespaces, proxy_service, replication_service) = replica.configure().await?;
@@ -437,7 +437,7 @@ where
                     max_active_namespaces: self.max_active_namespaces,
                     join_set: &mut join_set,
                     auth: auth.clone(),
-                    meta_store_config: self.meta_store_config.take(),
+                    meta_store_config: self.meta_store_config.clone(),
                     max_concurrent_connections: self.max_concurrent_connections,
                 };
 
@@ -506,7 +506,7 @@ struct Primary<'a, A> {
     max_active_namespaces: usize,
     auth: Arc<Auth>,
     join_set: &'a mut JoinSet<anyhow::Result<()>>,
-    meta_store_config: Option<MetaStoreConfig>,
+    meta_store_config: MetaStoreConfig,
     max_concurrent_connections: usize,
 }
 
@@ -635,7 +635,7 @@ struct Replica<C> {
     auth: Arc<Auth>,
     disable_namespaces: bool,
     max_active_namespaces: usize,
-    meta_store_config: Option<MetaStoreConfig>,
+    meta_store_config: MetaStoreConfig,
     max_concurrent_connections: usize,
 }
 
