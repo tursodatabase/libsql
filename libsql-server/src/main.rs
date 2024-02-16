@@ -237,7 +237,7 @@ struct Cli {
 
     /// Allow meta store to recover config from filesystem from older version, if meta store is
     /// empty on startup
-    #[clap(long)]
+    #[clap(long, env = "SQLD_ALLOW_METASTORE_RECOVERY")]
     allow_metastore_recovery: bool,
 }
 
