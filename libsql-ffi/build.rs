@@ -284,13 +284,6 @@ fn build_multiple_ciphers(out_path: &Path) {
 
     let bundled_dir = fs::canonicalize(BUNDLED_DIR).unwrap();
 
-    let mut cmd = Command::new("git");
-    cmd.args(&["submodule", "update", "--init", "SQLite3MultipleCiphers"]);
-    cmd.current_dir(bundled_dir.clone());
-    // The submodule is there only for development builds, but the
-    // command is expected to fail when libsql is fetched via cargo.
-    cmd.status().unwrap();
-
     let build_dir = bundled_dir.join("SQLite3MultipleCiphers").join("build");
     let _ = fs::remove_dir_all(build_dir.clone());
     fs::create_dir_all(build_dir.clone()).unwrap();
