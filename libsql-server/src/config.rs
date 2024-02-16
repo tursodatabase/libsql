@@ -203,7 +203,14 @@ pub struct HeartbeatConfig {
     pub heartbeat_auth: Option<String>,
 }
 
+#[derive(Debug, Clone, Default)]
 pub struct MetaStoreConfig {
+    pub bottomless: Option<BottomlessConfig>,
+    pub allow_recover_from_fs: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct BottomlessConfig {
     pub access_key_id: String,
     pub secret_access_key: String,
     pub region: String,

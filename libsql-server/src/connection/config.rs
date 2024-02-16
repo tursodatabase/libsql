@@ -6,7 +6,7 @@ use tokio::time::Duration;
 
 use super::TXN_TIMEOUT;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct DatabaseConfig {
     pub block_reads: bool,
     pub block_writes: bool,
@@ -16,8 +16,11 @@ pub struct DatabaseConfig {
     pub max_db_pages: u64,
     pub heartbeat_url: Option<Url>,
     pub bottomless_db_id: Option<String>,
+    #[serde(default)]
     pub jwt_key: Option<String>,
+    #[serde(default)]
     pub txn_timeout: Option<Duration>,
+    #[serde(default)]
     pub allow_attach: bool,
 }
 

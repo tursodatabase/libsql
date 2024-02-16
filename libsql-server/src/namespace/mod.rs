@@ -419,7 +419,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         snapshot_at_shutdown: bool,
         max_active_namespaces: usize,
         base_path: &Path,
-        meta_store_config: Option<MetaStoreConfig>,
+        meta_store_config: MetaStoreConfig,
     ) -> crate::Result<Self> {
         let metadata = MetaStore::new(meta_store_config, base_path).await?;
         tracing::trace!("Max active namespaces: {max_active_namespaces}");
