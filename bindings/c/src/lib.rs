@@ -564,13 +564,13 @@ pub unsafe extern "C" fn libsql_column_type(
 #[no_mangle]
 pub unsafe extern "C" fn libsql_changes(conn: libsql_connection_t) -> u64 {
     let conn = conn.get_ref();
-    conn.changes()
+    RT.block_on(conn.changes())
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn libsql_last_insert_rowid(conn: libsql_connection_t) -> i64 {
     let conn = conn.get_ref();
-    conn.last_insert_rowid()
+    RT.block_on(conn.last_insert_rowid())
 }
 
 #[no_mangle]
