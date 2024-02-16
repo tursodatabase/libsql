@@ -3,6 +3,7 @@ use std::io::{self, ErrorKind};
 use std::ops::{Deref, DerefMut};
 
 use bytesize::ByteSize;
+use libsql_sys::EncryptionConfig;
 use rusqlite::types::ValueRef;
 use serde::Serialize;
 use serde_json::ser::Formatter;
@@ -87,7 +88,7 @@ pub struct QueryBuilderConfig {
     pub max_size: Option<u64>,
     pub max_total_size: Option<u64>,
     pub auto_checkpoint: u32,
-    pub encryption_key: Option<bytes::Bytes>,
+    pub encryption_config: Option<EncryptionConfig>,
 }
 
 pub trait QueryResultBuilder: Send + 'static {

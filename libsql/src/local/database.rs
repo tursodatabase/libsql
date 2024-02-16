@@ -1,6 +1,7 @@
 use std::sync::Once;
 
 cfg_replication!(
+    use crate::database::EncryptionConfig;
     use libsql_replication::frame::FrameNo;
 
     use crate::replication::client::Client;
@@ -51,7 +52,7 @@ impl Database {
         db_path: String,
         endpoint: String,
         auth_token: String,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<EncryptionConfig>,
         periodic_sync: Option<std::time::Duration>,
     ) -> Result<Database> {
         Self::open_http_sync_internal(
@@ -61,7 +62,7 @@ impl Database {
             auth_token,
             None,
             false,
-            encryption_key,
+            encryption_config,
             periodic_sync,
         )
         .await
@@ -76,7 +77,7 @@ impl Database {
         auth_token: String,
         version: Option<String>,
         read_your_writes: bool,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<EncryptionConfig>,
         periodic_sync: Option<std::time::Duration>,
     ) -> Result<Database> {
         use std::path::PathBuf;
@@ -99,7 +100,7 @@ impl Database {
             .map_err(|e| crate::errors::Error::ConnectionFailed(e.to_string()))?;
 
         let replicator =
-            EmbeddedReplicator::with_remote(client, path, 1000, encryption_key, periodic_sync)
+            EmbeddedReplicator::with_remote(client, path, 1000, encryption_config, periodic_sync)
                 .await;
 
         db.replication_ctx = Some(ReplicationContext {
@@ -115,7 +116,7 @@ impl Database {
     pub async fn open_local_sync(
         db_path: impl Into<String>,
         flags: OpenFlags,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<EncryptionConfig>,
     ) -> Result<Database> {
         use std::path::PathBuf;
 
@@ -125,7 +126,7 @@ impl Database {
         let path = PathBuf::from(db_path);
         let client = LocalClient::new(&path).await.unwrap();
 
-        let replicator = EmbeddedReplicator::with_local(client, path, 1000, encryption_key).await;
+        let replicator = EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,
@@ -144,7 +145,7 @@ impl Database {
         auth_token: String,
         version: Option<String>,
         flags: OpenFlags,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<EncryptionConfig>,
     ) -> Result<Database> {
         use std::path::PathBuf;
 
@@ -165,7 +166,7 @@ impl Database {
         let path = PathBuf::from(db_path);
         let client = LocalClient::new(&path).await.unwrap();
 
-        let replicator = EmbeddedReplicator::with_local(client, path, 1000, encryption_key).await;
+        let replicator = EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,

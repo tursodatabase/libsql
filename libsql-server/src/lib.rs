@@ -542,7 +542,7 @@ where
             max_response_size: self.db_config.max_response_size,
             max_total_response_size: self.db_config.max_total_response_size,
             checkpoint_interval: self.db_config.checkpoint_interval,
-            encryption_key: self.db_config.encryption_key.clone(),
+            encryption_config: self.db_config.encryption_config.clone(),
             max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
             scripted_backup,
             max_concurrent_requests: self.db_config.max_concurrent_requests,
@@ -657,7 +657,7 @@ impl<C: Connector> Replica<C> {
             base_path: self.base_path.clone(),
             max_response_size: self.db_config.max_response_size,
             max_total_response_size: self.db_config.max_total_response_size,
-            encryption_key: self.db_config.encryption_key.clone(),
+            encryption_config: self.db_config.encryption_config.clone(),
             max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
             max_concurrent_requests: self.db_config.max_concurrent_requests,
         };

@@ -75,7 +75,11 @@ pub mod value;
 pub mod wal;
 
 #[cfg(feature = "api")]
+pub use connection::Cipher;
+#[cfg(feature = "api")]
 pub use connection::Connection;
+#[cfg(feature = "api")]
+pub use connection::EncryptionConfig;
 #[cfg(feature = "api")]
 pub use error::{Error, Result};
 #[cfg(feature = "api")]

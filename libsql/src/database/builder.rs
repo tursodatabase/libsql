@@ -1,3 +1,6 @@
+cfg_core! {
+    use crate::EncryptionConfig;
+}
 use crate::{Database, Result};
 
 use super::DbType;
@@ -26,7 +29,7 @@ impl Builder<()> {
                 inner: Local {
                     path: path.as_ref().to_path_buf(),
                     flags: crate::OpenFlags::default(),
-                    encryption_key: None,
+                    encryption_config: None,
                 },
             }
         }
@@ -48,7 +51,7 @@ impl Builder<()> {
                         connector: None,
                         version: None,
                     },
-                    encryption_key: None,
+                    encryption_config: None,
                     read_your_writes: false,
                     periodic_sync: None
                 },
@@ -62,7 +65,7 @@ impl Builder<()> {
                     path: path.as_ref().to_path_buf(),
                     flags: crate::OpenFlags::default(),
                     remote: None,
-                    encryption_key: None,
+                    encryption_config: None,
                 },
             }
         }
@@ -98,7 +101,7 @@ cfg_core! {
     pub struct Local {
         path: std::path::PathBuf,
         flags: crate::OpenFlags,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<EncryptionConfig>,
     }
 
     impl Builder<Local> {
@@ -108,12 +111,12 @@ cfg_core! {
             self
         }
 
-        /// Set an encryption key that will encrypt the local database.
-        pub fn encryption_key(
+        /// Set an encryption config that will encrypt the local database.
+        pub fn encryption_config(
             mut self,
-            encryption_key: impl Into<bytes::Bytes>,
+            encryption_config: EncryptionConfig,
         ) -> Builder<Local> {
-            self.inner.encryption_key = Some(encryption_key.into());
+            self.inner.encryption_config = Some(encryption_config);
             self
         }
 
@@ -135,7 +138,7 @@ cfg_core! {
                     db_type: DbType::File {
                         path,
                         flags: self.inner.flags,
-                        encryption_key: self.inner.encryption_key,
+                        encryption_config: self.inner.encryption_config,
                     },
                 }
             };
@@ -150,7 +153,7 @@ cfg_replication! {
     pub struct RemoteReplica {
         path: std::path::PathBuf,
         remote: Remote,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<EncryptionConfig>,
         read_your_writes: bool,
         periodic_sync: Option<std::time::Duration>,
     }
@@ -160,7 +163,7 @@ cfg_replication! {
         path: std::path::PathBuf,
         flags: crate::OpenFlags,
         remote: Option<Remote>,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<EncryptionConfig>,
     }
 
     impl Builder<RemoteReplica> {
@@ -177,11 +180,11 @@ cfg_replication! {
         }
 
         /// Set an encryption key that will encrypt the local database.
-        pub fn encryption_key(
+        pub fn encryption_config(
             mut self,
-            encryption_key: impl Into<bytes::Bytes>,
+            encryption_config: EncryptionConfig,
         ) -> Builder<RemoteReplica> {
-            self.inner.encryption_key = Some(encryption_key.into());
+            self.inner.encryption_config = Some(encryption_config.into());
             self
         }
 
@@ -217,7 +220,7 @@ cfg_replication! {
                         connector,
                         version,
                     },
-                encryption_key,
+                encryption_config,
                 read_your_writes,
                 periodic_sync
             } = self.inner;
@@ -244,13 +247,13 @@ cfg_replication! {
                 auth_token,
                 version,
                 read_your_writes,
-                encryption_key.clone(),
+                encryption_config.clone(),
                 periodic_sync
             )
             .await?;
 
             Ok(Database {
-                db_type: DbType::Sync { db, encryption_key },
+                db_type: DbType::Sync { db, encryption_config },
             })
         }
     }
@@ -268,7 +271,7 @@ cfg_replication! {
                 path,
                 flags,
                 remote,
-                encryption_key,
+                encryption_config,
             } = self.inner;
 
             let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
@@ -300,15 +303,15 @@ cfg_replication! {
                     auth_token,
                     version,
                     flags,
-                    encryption_key.clone(),
+                    encryption_config.clone(),
                 )
                 .await?
             } else {
-                crate::local::Database::open_local_sync(path, flags, encryption_key.clone()).await?
+                crate::local::Database::open_local_sync(path, flags, encryption_config.clone()).await?
             };
 
             Ok(Database {
-                db_type: DbType::Sync { db, encryption_key },
+                db_type: DbType::Sync { db, encryption_config },
             })
         }
     }

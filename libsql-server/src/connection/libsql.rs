@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
 use libsql_sys::wal::{BusyHandler, CheckpointCallback, Wal, WalManager};
+use libsql_sys::EncryptionConfig;
 use metrics::{histogram, increment_counter};
 use once_cell::sync::Lazy;
 use parking_lot::{Mutex, RwLock};
@@ -44,7 +45,7 @@ pub struct MakeLibSqlConn<T: WalManager> {
     /// In wal mode, closing the last database takes time, and causes other databases creation to
     /// return sqlite busy. To mitigate that, we hold on to one connection
     _db: Option<LibSqlConnection<T::Wal>>,
-    encryption_key: Option<bytes::Bytes>,
+    encryption_config: Option<EncryptionConfig>,
 }
 
 impl<T> MakeLibSqlConn<T>
@@ -63,7 +64,7 @@ where
         max_total_response_size: u64,
         auto_checkpoint: u32,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<EncryptionConfig>,
     ) -> Result<Self> {
         let mut this = Self {
             db_path,
@@ -77,7 +78,7 @@ where
             _db: None,
             state: Default::default(),
             wal_manager,
-            encryption_key,
+            encryption_config,
         };
 
         let db = this.try_create_db().await?;
@@ -126,7 +127,7 @@ where
                 max_size: Some(self.max_response_size),
                 max_total_size: Some(self.max_total_response_size),
                 auto_checkpoint: self.auto_checkpoint,
-                encryption_key: self.encryption_key.clone(),
+                encryption_config: self.encryption_config.clone(),
             },
             self.current_frame_no_receiver.clone(),
             self.state.clone(),
@@ -235,7 +236,7 @@ pub fn open_conn<T>(
     path: &Path,
     wal_manager: T,
     flags: Option<OpenFlags>,
-    encryption_key: Option<bytes::Bytes>,
+    encryption_config: Option<EncryptionConfig>,
 ) -> Result<libsql_sys::Connection<InhibitCheckpoint<T::Wal>>, rusqlite::Error>
 where
     T: WalManager,
@@ -252,7 +253,7 @@ where
         flags,
         wal_manager.wrap(InhibitCheckpointWalWrapper::new(false)),
         u32::MAX,
-        encryption_key,
+        encryption_config,
     )
 }
 
@@ -262,7 +263,7 @@ pub fn open_conn_active_checkpoint<T>(
     wal_manager: T,
     flags: Option<OpenFlags>,
     auto_checkpoint: u32,
-    encryption_key: Option<bytes::Bytes>,
+    encryption_config: Option<EncryptionConfig>,
 ) -> Result<libsql_sys::Connection<T::Wal>, rusqlite::Error>
 where
     T: WalManager,
@@ -279,7 +280,7 @@ where
         flags,
         wal_manager,
         auto_checkpoint,
-        encryption_key,
+        encryption_config,
     )
 }
 
@@ -579,7 +580,7 @@ impl<W: Wal> Connection<W> {
             wal_manager,
             None,
             builder_config.auto_checkpoint,
-            builder_config.encryption_key.clone(),
+            builder_config.encryption_config.clone(),
         )?;
 
         // register the lock-stealing busy handler

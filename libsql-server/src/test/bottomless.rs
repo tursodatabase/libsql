@@ -92,7 +92,7 @@ async fn configure_server(
             snapshot_exec: None,
             checkpoint_interval: Some(Duration::from_secs(3)),
             snapshot_at_shutdown: false,
-            encryption_key: None,
+            encryption_config: None,
             max_concurrent_requests: 128,
         },
         admin_api_config: None,

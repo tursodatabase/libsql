@@ -73,7 +73,7 @@ impl MetaStoreInner {
                     create_bucket_if_not_exists: true,
                     verify_crc: true,
                     use_compression: CompressionKind::None,
-                    encryption_key: None,
+                    encryption_config: None,
                     aws_endpoint: Some(config.bucket_endpoint),
                     access_key_id: Some(config.access_key_id),
                     secret_access_key: Some(config.secret_access_key),
