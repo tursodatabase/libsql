@@ -280,6 +280,7 @@ struct CreateNamespaceReq {
     bottomless_db_id: Option<String>,
     jwt_key: Option<String>,
     txn_timeout_s: Option<u64>,
+    max_row_size: Option<u64>,
 }
 
 async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
@@ -319,6 +320,10 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
 
     if let Some(txn_timeout_s) = req.txn_timeout_s {
         config.txn_timeout = Some(Duration::from_secs(txn_timeout_s));
+    }
+
+    if let Some(max_row_size) = req.max_row_size {
+        config.max_row_size = max_row_size;
     }
 
     config.jwt_key = req.jwt_key;
