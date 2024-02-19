@@ -3064,7 +3064,7 @@ static int xferOptimization(
       }
       autoIncStep(pParse, regNextRowid, regRowid);
     }else if( pDest->pIndex==0 && !(db->mDbFlags & DBFLAG_VacuumInto) ){
-      addr1 = sqlite3VdbeAddOp2(v, OP_NewRowid, iDest, regRowid);
+      addr1 = sqlite3VdbeAddOp3(v, OP_NewRowid, iDest, regRowid, regNextRowid);
     }else{
       addr1 = sqlite3VdbeAddOp2(v, OP_Rowid, iSrc, regRowid);
       assert( (pDest->tabFlags & TF_Autoincrement)==0 );
