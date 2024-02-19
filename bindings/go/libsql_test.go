@@ -480,13 +480,11 @@ func TestSync(t *testing.T) {
 }
 
 func TestExecAndQuery(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testExecAndQuery(db)
 }
 
 func TestExecAndQueryEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testExecAndQuery(db)
 }
@@ -506,13 +504,11 @@ func testExecAndQuery(db *Database) {
 }
 
 func TestPreparedStatements(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testPreparedStatements(db)
 }
 
 func TestPreparedStatementsEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testPreparedStatements(db)
 }
@@ -531,13 +527,11 @@ func testPreparedStatements(db *Database) {
 }
 
 func TestTransaction(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testTransaction(db)
 }
 
 func TestTransactionEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testTransaction(db)
 }
@@ -564,7 +558,6 @@ func testTransaction(db *Database) {
 
 func TestMultiLineStatement(t *testing.T) {
 	t.Skip("Make it work")
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	if db == nil {
 		return
@@ -579,13 +572,11 @@ func TestMultiLineStatement(t *testing.T) {
 }
 
 func TestPreparedStatementInTransaction(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testPreparedStatementInTransaction(db)
 }
 
 func TestPreparedStatementInTransactionEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testPreparedStatementInTransaction(db)
 }
@@ -608,13 +599,11 @@ func testPreparedStatementInTransaction(db *Database) {
 }
 
 func TestPreparedStatementInTransactionRollback(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testPreparedStatementInTransactionRollback(db)
 }
 
 func TestPreparedStatementInTransactionRollbackEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testPreparedStatementInTransactionRollback(db)
 }
@@ -637,13 +626,11 @@ func testPreparedStatementInTransactionRollback(db *Database) {
 }
 
 func TestCancelContext(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testCancelContext(db)
 }
 
 func TestCancelContextEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testCancelContext(db)
 }
@@ -664,13 +651,11 @@ func testCancelContext(db *Database) {
 }
 
 func TestCancelContextWithTransaction(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testCancelContextWithTransaction(db)
 }
 
 func TestCancelContextWithTransactionEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testCancelContextWithTransaction(db)
 }
@@ -702,13 +687,11 @@ func testCancelContextWithTransaction(db *Database) {
 }
 
 func TestTransactionRollback(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testTransactionRollback(db)
 }
 
 func TestTransactionRollbackEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testTransactionRollback(db)
 }
@@ -731,13 +714,11 @@ func testTransactionRollback(db *Database) {
 }
 
 func TestArguments(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testArguments(db)
 }
 
 func TestArgumentsEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testArguments(db)
 }
@@ -798,13 +779,11 @@ func testArguments(db *Database) {
 }
 
 func TestPing(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testPing(db)
 }
 
 func TestPingEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testPing(db)
 }
@@ -828,13 +807,11 @@ func testPing(db *Database) {
 }
 
 func TestDataTypes(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testDataTypes(db)
 }
 
 func TestDataTypesEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testDataTypes(db)
 }
@@ -881,13 +858,11 @@ func testDataTypes(db *Database) {
 }
 
 func TestConcurrentOnSingleConnection(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testConcurrentOnSingleConnection(db)
 }
 
 func TestConcurrentOnSingleConnectionEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testConcurrentOnSingleConnection(db)
 }
@@ -969,7 +944,6 @@ func testConcurrentOnSingleConnection(db *Database) {
 }
 
 func runFileTest(t *testing.T, test func(*testing.T, *sql.DB)) {
-	t.Parallel()
 	dir, err := os.MkdirTemp("", "libsql-*")
 	if err != nil {
 		t.Fatal(err)
