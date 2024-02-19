@@ -24,7 +24,7 @@ use crate::error::LoadDumpError;
 use crate::hrana;
 use crate::namespace::{
     DumpStream, MakeNamespace, NamespaceBottomlessDbId, NamespaceName, NamespaceStore,
-    RestoreOption,
+    RestoreOption, SharedSchemaOptions,
 };
 use crate::net::Connector;
 use crate::LIBSQL_PAGE_SIZE;
@@ -281,6 +281,12 @@ struct CreateNamespaceReq {
     jwt_key: Option<String>,
     txn_timeout_s: Option<u64>,
     max_row_size: Option<u64>,
+    /// If true, current namespace acts as a DB used solely for multi-db schema updates.
+    #[serde(default)]
+    shared_schema: bool,
+    /// If some, this is a [NamespaceName] reference to a shared schema DB.
+    #[serde(default)]
+    shared_schema_name: Option<String>,
 }
 
 async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
@@ -288,6 +294,8 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
     Path(namespace): Path<String>,
     Json(req): Json<CreateNamespaceReq>,
 ) -> crate::Result<()> {
+    let shared_schema_options =
+        SharedSchemaOptions::new(req.shared_schema, req.shared_schema_name)?;
     if let Some(jwt_key) = req.jwt_key.as_deref() {
         // Check that the jwt key is correct
         parse_jwt_key(jwt_key)?;
@@ -303,10 +311,16 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
         Some(db_id) => NamespaceBottomlessDbId::Namespace(db_id),
         None => NamespaceBottomlessDbId::NotProvided,
     };
+
     let namespace = NamespaceName::from_string(namespace)?;
     app_state
         .namespaces
-        .create(namespace.clone(), dump, bottomless_db_id)
+        .create(
+            namespace.clone(),
+            dump,
+            bottomless_db_id,
+            shared_schema_options,
+        )
         .await?;
 
     let store = app_state.namespaces.config_store(namespace).await?;

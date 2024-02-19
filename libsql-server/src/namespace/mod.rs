@@ -711,6 +711,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         namespace: NamespaceName,
         restore_option: RestoreOption,
         bottomless_db_id: NamespaceBottomlessDbId,
+        shared_schema: Option<SharedSchemaOptions>,
     ) -> crate::Result<()> {
         // With namespaces disabled, the default namespace can be auto-created,
         // otherwise it's an error.
@@ -834,6 +835,34 @@ impl<T: Database> Namespace<T> {
 
     pub fn stats(&self) -> Arc<Stats> {
         self.stats.clone()
+    }
+}
+
+pub enum SharedSchemaOptions {
+    Seed,
+    Link(NamespaceName),
+}
+
+impl SharedSchemaOptions {
+    pub fn new(
+        is_shared_schema: bool,
+        shared_schema_name: Option<String>,
+    ) -> crate::Result<Option<Self>> {
+        if is_shared_schema {
+            if shared_schema_name.is_some() {
+                Err(Error::SharedSchemaError(
+                    "shared-schema database cannot reference to other shared schema database"
+                        .to_string(),
+                ))
+            } else {
+                Ok(Some(Self::Seed))
+            }
+        } else if let Some(name) = shared_schema_name {
+            let ns = NamespaceName::from_string(name)?;
+            Ok(Some(SharedSchemaOptions::Link(ns)))
+        } else {
+            Ok(None)
+        }
     }
 }
 
