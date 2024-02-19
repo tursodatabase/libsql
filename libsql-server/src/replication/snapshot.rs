@@ -4,6 +4,7 @@ use std::mem::size_of;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::Instant;
 
 use anyhow::{bail, Context};
 use bytemuck::bytes_of;
@@ -117,9 +118,13 @@ async fn compact(
     snapshot_dir_path: &Path,
     to_compact_path: &Path,
 ) -> anyhow::Result<()> {
+    let before = Instant::now();
     match perform_compaction(&db_path, to_compact_file, log_id).await {
         Ok((snapshot_name, snapshot_frame_count, size_after)) => {
-            tracing::info!("snapshot `{snapshot_name}` successfully created");
+            tracing::info!(
+                "snapshot `{snapshot_name}` successfully created, in {:?}",
+                before.elapsed()
+            );
 
             let snapshot_file = snapshot_dir_path.join(&snapshot_name);
             if let Err(e) = (*callback)(&snapshot_file) {

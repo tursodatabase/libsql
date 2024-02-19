@@ -759,6 +759,7 @@ impl Namespace<ReplicaDatabase> {
                         // we reset the client state.
                         replicator.client_mut().reset_token();
                     }
+                    Error::SnapshotPending => unreachable!(),
                 }
             }
         });
