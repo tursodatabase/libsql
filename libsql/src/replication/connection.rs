@@ -343,6 +343,8 @@ impl Conn for RemoteConnection {
     async fn last_insert_rowid(&self) -> i64 {
         self.inner.lock().last_insert_rowid
     }
+
+    async fn reset(&self) {}
 }
 
 pub struct ColumnMeta {

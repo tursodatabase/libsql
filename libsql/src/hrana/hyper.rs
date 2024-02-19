@@ -157,6 +157,10 @@ impl Conn for HttpConnection<HttpSender> {
     async fn last_insert_rowid(&self) -> i64 {
         self.last_insert_rowid()
     }
+
+    async fn reset(&self) {
+        self.current_stream().reset().await;
+    }
 }
 
 #[async_trait::async_trait]
@@ -283,5 +287,9 @@ impl Conn for HranaStream<HttpSender> {
 
     async fn last_insert_rowid(&self) -> i64 {
         self.last_insert_rowid()
+    }
+
+    async fn reset(&self) {
+        self.reset().await;
     }
 }

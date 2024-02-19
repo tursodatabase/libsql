@@ -59,6 +59,8 @@ impl Conn for LibsqlConnection {
     async fn last_insert_rowid(&self) -> i64 {
         self.conn.last_insert_rowid()
     }
+
+    async fn reset(&self) {}
 }
 
 impl Drop for LibsqlConnection {

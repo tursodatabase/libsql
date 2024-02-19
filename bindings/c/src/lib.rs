@@ -217,6 +217,20 @@ pub unsafe extern "C" fn libsql_connect(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn libsql_reset(
+    conn: libsql_connection_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if conn.is_null() {
+        set_err_msg("Null connection".to_string(), out_err_msg);
+        return 1;
+    }
+    let conn = conn.get_ref();
+    RT.block_on(conn.reset());
+    0
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn libsql_disconnect(conn: libsql_connection_t) {
     if conn.is_null() {
         return;
