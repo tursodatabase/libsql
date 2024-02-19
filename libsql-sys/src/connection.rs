@@ -21,13 +21,15 @@ type Error = crate::Error;
 
 #[derive(Clone, Debug)]
 pub enum Cipher {
+    // SQLCipher: AES 256 Bit (recommended)
+    SQLCipher,
     // AES 256 Bit CBC - No HMAC (wxSQLite3)
     Aes256Cbc,
 }
 
 impl Default for Cipher {
     fn default() -> Self {
-        Cipher::Aes256Cbc
+        Cipher::SQLCipher
     }
 }
 
@@ -36,6 +38,7 @@ impl FromStr for Cipher {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
+            "sqlcipher" => Ok(Cipher::SQLCipher),
             "aes256cbc" => Ok(Cipher::Aes256Cbc),
             _ => Err(Self::Err::new(21)),
         }
@@ -46,6 +49,7 @@ impl Cipher {
     #[cfg(feature = "encryption")]
     pub fn cipher_id(&self) -> i32 {
         let name = match self {
+            Cipher::SQLCipher => "sqlcipher\0",
             Cipher::Aes256Cbc => "aes256cbc\0",
         };
         unsafe { sqlite3mc_cipher_index(name.as_ptr() as _) }
