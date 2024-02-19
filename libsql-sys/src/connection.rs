@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 use std::path::Path;
+use std::str::FromStr;
 
 use crate::wal::{ffi::make_wal_manager, Wal, WalManager};
 
@@ -17,6 +18,63 @@ pub type OpenFlags = rusqlite::OpenFlags;
 type Error = rusqlite::Error;
 #[cfg(not(feature = "rusqlite"))]
 type Error = crate::Error;
+
+#[derive(Clone, Debug)]
+pub enum Cipher {
+    // SQLCipher: AES 256 Bit (recommended)
+    SQLCipher,
+    // AES 256 Bit CBC - No HMAC (wxSQLite3)
+    Aes256Cbc,
+}
+
+impl Default for Cipher {
+    fn default() -> Self {
+        Cipher::SQLCipher
+    }
+}
+
+impl FromStr for Cipher {
+    type Err = libsql_ffi::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "sqlcipher" => Ok(Cipher::SQLCipher),
+            "aes256cbc" => Ok(Cipher::Aes256Cbc),
+            _ => Err(Self::Err::new(21)),
+        }
+    }
+}
+
+impl Cipher {
+    #[cfg(feature = "encryption")]
+    pub fn cipher_id(&self) -> i32 {
+        let name = match self {
+            Cipher::SQLCipher => "sqlcipher\0",
+            Cipher::Aes256Cbc => "aes256cbc\0",
+        };
+        unsafe { sqlite3mc_cipher_index(name.as_ptr() as _) }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct EncryptionConfig {
+    pub cipher: Cipher,
+    pub encryption_key: bytes::Bytes,
+}
+
+impl EncryptionConfig {
+    pub fn new(cipher: Cipher, encryption_key: bytes::Bytes) -> Self {
+        Self {
+            cipher,
+            encryption_key,
+        }
+    }
+
+    #[cfg(feature = "encryption")]
+    pub fn cipher_id(&self) -> i32 {
+        self.cipher.cipher_id()
+    }
+}
 
 #[derive(Debug)]
 pub struct Connection<W> {
@@ -54,6 +112,12 @@ impl Connection<crate::wal::Sqlite3Wal> {
 
 #[cfg(feature = "encryption")]
 extern "C" {
+    fn sqlite3mc_cipher_index(cipher: *const std::ffi::c_void) -> std::ffi::c_int;
+    fn sqlite3mc_config(
+        db: *mut libsql_ffi::sqlite3,
+        cipher: *const std::ffi::c_void,
+        nKey: std::ffi::c_int,
+    ) -> std::ffi::c_int;
     fn sqlite3_key(
         db: *mut libsql_ffi::sqlite3,
         pKey: *const std::ffi::c_void,
@@ -68,6 +132,13 @@ extern "C" {
     fn libsql_leak_pager(db: *mut libsql_ffi::sqlite3) -> *mut crate::ffi::Pager;
     fn libsql_generate_initial_vector(seed: u32, iv: *mut u8);
     fn libsql_generate_aes256_key(user_password: *const u8, password_length: u32, digest: *mut u8);
+}
+
+#[cfg(feature = "encryption")]
+/// # Safety
+/// db must point to a vaid sqlite database
+pub unsafe fn set_encryption_cipher(db: *mut libsql_ffi::sqlite3, cipher_id: i32) -> i32 {
+    unsafe { sqlite3mc_config(db, "default:cipher\0".as_ptr() as _, cipher_id) as i32 }
 }
 
 #[cfg(feature = "encryption")]
@@ -114,7 +185,7 @@ impl<W: Wal> Connection<W> {
         flags: OpenFlags,
         wal_manager: T,
         auto_checkpoint: u32,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<EncryptionConfig>,
     ) -> Result<Self, Error>
     where
         T: WalManager<Wal = W>,
@@ -141,7 +212,7 @@ impl<W: Wal> Connection<W> {
                 )
             }?;
 
-            if !cfg!(feature = "encryption") && encryption_key.is_some() {
+            if !cfg!(feature = "encryption") && encryption_config.is_some() {
                 return Err(Error::SqliteFailure(
                     rusqlite::ffi::Error::new(21),
                     Some("encryption feature is not enabled, the database will not be encrypted on disk"
@@ -149,8 +220,15 @@ impl<W: Wal> Connection<W> {
                 ));
             }
             #[cfg(feature = "encryption")]
-            if let Some(encryption_key) = encryption_key {
-                if unsafe { set_encryption_key(conn.handle(), &encryption_key) }
+            if let Some(cfg) = encryption_config {
+                let cipher_id = cfg.cipher_id();
+                if unsafe { set_encryption_cipher(conn.handle(), cipher_id) } == -1 {
+                    return Err(Error::SqliteFailure(
+                        rusqlite::ffi::Error::new(21),
+                        Some("failed to set encryption cipher".into()),
+                    ));
+                };
+                if unsafe { set_encryption_key(conn.handle(), &cfg.encryption_key) }
                     != rusqlite::ffi::SQLITE_OK
                 {
                     return Err(Error::SqliteFailure(
@@ -199,16 +277,20 @@ impl<W: Wal> Connection<W> {
                 make_wal_manager(wal_manager),
             );
 
-            if !cfg!(feature = "encryption") && encryption_key.is_some() {
+            if !cfg!(feature = "encryption") && encryption_config.is_some() {
                 return Err(Error::Bug(
                     "encryption feature is not enabled, the database will not be encrypted on disk",
                 ));
             }
             #[cfg(feature = "encryption")]
-            if let Some(encryption_key) = encryption_key {
-                if set_encryption_key(conn, &encryption_key) != libsql_ffi::SQLITE_OK {
+            if let Some(cfg) = encryption_config {
+                let cipher_id = cfg.cipher_id();
+                if set_encryption_cipher(conn, cipher_id) == -1 {
+                    return Err(Error::Bug("failed to set encryption cipher"));
+                }
+                if set_encryption_key(conn, &cfg.encryption_key) != libsql_ffi::SQLITE_OK {
                     return Err(Error::Bug("failed to set encryption key"));
-                };
+                }
             }
 
             if rc == 0 {

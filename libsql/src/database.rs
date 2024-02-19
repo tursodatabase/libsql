@@ -4,6 +4,9 @@ mod builder;
 
 pub use builder::Builder;
 
+#[cfg(feature = "core")]
+pub use libsql_sys::{Cipher, EncryptionConfig};
+
 use std::fmt;
 
 use crate::{Connection, Result};
@@ -36,12 +39,12 @@ enum DbType {
     File {
         path: String,
         flags: OpenFlags,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<EncryptionConfig>,
     },
     #[cfg(feature = "replication")]
     Sync {
         db: crate::local::Database,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<EncryptionConfig>,
     },
     #[cfg(feature = "remote")]
     Remote {
@@ -98,7 +101,7 @@ cfg_core! {
                 db_type: DbType::File {
                     path: db_path.into(),
                     flags,
-                    encryption_key: None,
+                    encryption_config: None,
                 },
             })
         }
@@ -115,16 +118,16 @@ cfg_replication! {
         #[deprecated = "Use the new `Builder` to construct `Database`"]
         pub async fn open_with_local_sync(
             db_path: impl Into<String>,
-            encryption_key: Option<bytes::Bytes>
+            encryption_config: Option<EncryptionConfig>
         ) -> Result<Database> {
             let db = crate::local::Database::open_local_sync(
                 db_path,
                 OpenFlags::default(),
-                encryption_key.clone()
+                encryption_config.clone()
             ).await?;
 
             Ok(Database {
-                db_type: DbType::Sync { db, encryption_key },
+                db_type: DbType::Sync { db, encryption_config },
             })
         }
 
@@ -136,7 +139,7 @@ cfg_replication! {
             db_path: impl Into<String>,
             endpoint: String,
             auth_token: String,
-            encryption_key: Option<bytes::Bytes>,
+            encryption_config: Option<EncryptionConfig>,
         ) -> Result<Database> {
             let https = connector();
 
@@ -145,7 +148,7 @@ cfg_replication! {
                 endpoint,
                 auth_token,
                 https,
-                encryption_key
+                encryption_config
             ).await
         }
 
@@ -157,7 +160,7 @@ cfg_replication! {
             endpoint: String,
             auth_token: String,
             connector: C,
-            encryption_key: Option<bytes::Bytes>,
+            encryption_config: Option<EncryptionConfig>,
         ) -> Result<Database>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
@@ -180,11 +183,11 @@ cfg_replication! {
                 auth_token,
                 None,
                 OpenFlags::default(),
-                encryption_key.clone()
+                encryption_config.clone()
             ).await?;
 
             Ok(Database {
-                db_type: DbType::Sync { db, encryption_key },
+                db_type: DbType::Sync { db, encryption_config },
             })
         }
 
@@ -194,11 +197,11 @@ cfg_replication! {
             db_path: impl Into<String>,
             url: impl Into<String>,
             token: impl Into<String>,
-            encryption_key: Option<bytes::Bytes>,
+            encryption_config: Option<EncryptionConfig>,
         ) -> Result<Database> {
             let https = connector();
 
-            Self::open_with_remote_sync_connector(db_path, url, token, https, false, encryption_key).await
+            Self::open_with_remote_sync_connector(db_path, url, token, https, false, encryption_config).await
         }
 
         /// Open a local database file with the ability to sync from a remote database
@@ -211,11 +214,11 @@ cfg_replication! {
             db_path: impl Into<String>,
             url: impl Into<String>,
             token: impl Into<String>,
-            encryption_key: Option<bytes::Bytes>,
+            encryption_config: Option<EncryptionConfig>,
         ) -> Result<Database> {
             let https = connector();
 
-            Self::open_with_remote_sync_connector(db_path, url, token, https, true, encryption_key).await
+            Self::open_with_remote_sync_connector(db_path, url, token, https, true, encryption_config).await
         }
 
         /// Connect an embedded replica to a remote primary with a custom
@@ -227,7 +230,7 @@ cfg_replication! {
             token: impl Into<String>,
             connector: C,
             read_your_writes: bool,
-            encryption_key: Option<bytes::Bytes>,
+            encryption_config: Option<EncryptionConfig>,
         ) -> Result<Database>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
@@ -242,7 +245,7 @@ cfg_replication! {
                 connector,
                 None,
                 read_your_writes,
-                encryption_key,
+                encryption_config,
                 None
             ).await
         }
@@ -254,7 +257,7 @@ cfg_replication! {
             token: impl Into<String>,
             version: Option<String>,
             read_your_writes: bool,
-            encryption_key: Option<bytes::Bytes>,
+            encryption_config: Option<EncryptionConfig>,
             periodic_sync: Option<std::time::Duration>,
         ) -> Result<Database> {
             let https = connector();
@@ -266,7 +269,7 @@ cfg_replication! {
                 https,
                 version,
                 read_your_writes,
-                encryption_key,
+                encryption_config,
                 periodic_sync
             ).await
         }
@@ -279,7 +282,7 @@ cfg_replication! {
             connector: C,
             version: Option<String>,
             read_your_writes: bool,
-            encryption_key: Option<bytes::Bytes>,
+            encryption_config: Option<EncryptionConfig>,
             periodic_sync: Option<std::time::Duration>,
         ) -> Result<Database>
         where
@@ -303,12 +306,12 @@ cfg_replication! {
                 token.into(),
                 version,
                 read_your_writes,
-                encryption_key.clone(),
+                encryption_config.clone(),
                 periodic_sync
             ).await?;
 
             Ok(Database {
-                db_type: DbType::Sync { db, encryption_key },
+                db_type: DbType::Sync { db, encryption_config },
             })
         }
 
@@ -316,7 +319,7 @@ cfg_replication! {
         /// Sync database from remote, and returns the committed frame_no after syncing, if
         /// applicable.
         pub async fn sync(&self) -> Result<Option<FrameNo>> {
-            if let DbType::Sync { db, encryption_key: _ } = &self.db_type {
+            if let DbType::Sync { db, encryption_config: _ } = &self.db_type {
                 db.sync().await
             } else {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
@@ -326,7 +329,7 @@ cfg_replication! {
         /// Apply a set of frames to the database and returns the committed frame_no after syncing, if
         /// applicable.
         pub async fn sync_frames(&self, frames: crate::replication::Frames) -> Result<Option<FrameNo>> {
-            if let DbType::Sync { db, encryption_key: _ } = &self.db_type {
+            if let DbType::Sync { db, encryption_config: _ } = &self.db_type {
                 db.sync_frames(frames).await
             } else {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
@@ -336,7 +339,7 @@ cfg_replication! {
         /// Force buffered replication frames to be applied, and return the current commit frame_no
         /// if applicable.
         pub async fn flush_replicator(&self) -> Result<Option<FrameNo>> {
-            if let DbType::Sync { db, encryption_key: _ } = &self.db_type {
+            if let DbType::Sync { db, encryption_config: _ } = &self.db_type {
                 db.flush_replicator().await
             } else {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
@@ -345,7 +348,7 @@ cfg_replication! {
 
         /// Returns the database currently committed replication index
         pub async fn replication_index(&self) -> Result<Option<FrameNo>> {
-            if let DbType::Sync { db, encryption_key: _ } = &self.db_type {
+            if let DbType::Sync { db, encryption_config: _ } = &self.db_type {
                 db.replication_index().await
             } else {
                 Err(Error::SyncNotSupported(format!("{:?}", self.db_type)))
@@ -364,7 +367,7 @@ cfg_replication! {
                DbType::Sync { db, .. } => {
                    let path = db.path().to_string();
                    Ok(Database {
-                       db_type: DbType::File { path, flags: OpenFlags::default(), encryption_key: None}
+                       db_type: DbType::File { path, flags: OpenFlags::default(), encryption_config: None}
                    })
                }
                t => Err(Error::FreezeNotSupported(format!("{:?}", t)))
@@ -471,23 +474,31 @@ impl Database {
             DbType::File {
                 path,
                 flags,
-                encryption_key,
+                encryption_config,
             } => {
                 use crate::local::impls::LibsqlConnection;
 
                 let db = crate::local::Database::open(path, *flags)?;
                 let conn = db.connect()?;
 
-                if !cfg!(feature = "encryption") && encryption_key.is_some() {
+                if !cfg!(feature = "encryption") && encryption_config.is_some() {
                     return Err(crate::Error::Misuse(
                         "Encryption is not enabled: enable the `encryption` feature in order to enable encryption-at-rest".to_string(),
                     ));
                 }
 
                 #[cfg(feature = "encryption")]
-                if let Some(encryption_key) = encryption_key {
+                if let Some(cfg) = encryption_config {
                     if unsafe {
-                        libsql_sys::connection::set_encryption_key(conn.raw, encryption_key)
+                        libsql_sys::connection::set_encryption_cipher(conn.raw, cfg.cipher_id())
+                    } == -1
+                    {
+                        return Err(crate::Error::Misuse(
+                            "failed to set encryption cipher".to_string(),
+                        ));
+                    }
+                    if unsafe {
+                        libsql_sys::connection::set_encryption_key(conn.raw, &cfg.encryption_key)
                     } != crate::ffi::SQLITE_OK
                     {
                         return Err(crate::Error::Misuse(
@@ -502,20 +513,31 @@ impl Database {
             }
 
             #[cfg(feature = "replication")]
-            DbType::Sync { db, encryption_key } => {
+            DbType::Sync {
+                db,
+                encryption_config,
+            } => {
                 use crate::local::impls::LibsqlConnection;
 
                 let conn = db.connect()?;
 
-                if !cfg!(feature = "encryption") && encryption_key.is_some() {
+                if !cfg!(feature = "encryption") && encryption_config.is_some() {
                     return Err(crate::Error::Misuse(
                         "Encryption is not enabled: enable the `encryption` feature in order to enable encryption-at-rest".to_string(),
                     ));
                 }
                 #[cfg(feature = "encryption")]
-                if let Some(encryption_key) = encryption_key {
+                if let Some(cfg) = encryption_config {
                     if unsafe {
-                        libsql_sys::connection::set_encryption_key(conn.raw, encryption_key)
+                        libsql_sys::connection::set_encryption_cipher(conn.raw, cfg.cipher_id())
+                    } == -1
+                    {
+                        return Err(crate::Error::Misuse(
+                            "failed to set encryption cipher".to_string(),
+                        ));
+                    }
+                    if unsafe {
+                        libsql_sys::connection::set_encryption_key(conn.raw, &cfg.encryption_key)
                     } != crate::ffi::SQLITE_OK
                     {
                         return Err(crate::Error::Misuse(

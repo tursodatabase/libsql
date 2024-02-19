@@ -16,6 +16,7 @@ use tokio::sync::Mutex;
 use tokio::task::AbortHandle;
 use tracing::Instrument;
 
+use crate::database::EncryptionConfig;
 use crate::parser::Statement;
 use crate::Result;
 
@@ -106,7 +107,7 @@ impl EmbeddedReplicator {
         client: RemoteClient,
         db_path: PathBuf,
         auto_checkpoint: u32,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<EncryptionConfig>,
         perodic_sync: Option<Duration>,
     ) -> Self {
         let replicator = Arc::new(Mutex::new(
@@ -114,7 +115,7 @@ impl EmbeddedReplicator {
                 Either::Left(client),
                 db_path,
                 auto_checkpoint,
-                encryption_key,
+                encryption_config,
             )
             .await
             .unwrap(),
@@ -151,14 +152,14 @@ impl EmbeddedReplicator {
         client: LocalClient,
         db_path: PathBuf,
         auto_checkpoint: u32,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<EncryptionConfig>,
     ) -> Self {
         let replicator = Arc::new(Mutex::new(
             Replicator::new(
                 Either::Right(client),
                 db_path,
                 auto_checkpoint,
-                encryption_key,
+                encryption_config,
             )
             .await
             .unwrap(),

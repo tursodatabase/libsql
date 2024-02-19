@@ -157,7 +157,7 @@ impl<C: ReplicatorClient> Replicator<C> {
         client: C,
         db_path: PathBuf,
         auto_checkpoint: u32,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<libsql_sys::EncryptionConfig>,
     ) -> Result<Self, Error> {
         let injector = {
             let db_path = db_path.clone();
@@ -166,7 +166,7 @@ impl<C: ReplicatorClient> Replicator<C> {
                     db_path,
                     INJECTOR_BUFFER_CAPACITY,
                     auto_checkpoint,
-                    encryption_key,
+                    encryption_config,
                 )
             })
             .await??

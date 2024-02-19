@@ -99,6 +99,8 @@ cfg_core! {
 
     pub use local::{version, version_number, RowsFuture};
     pub use database::OpenFlags;
+
+    pub use database::{Cipher, EncryptionConfig};
 }
 
 pub mod params;
