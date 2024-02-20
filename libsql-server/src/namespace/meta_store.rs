@@ -24,7 +24,10 @@ use crate::{
 
 use super::NamespaceName;
 
-type ChangeMsg = (NamespaceName, Arc<DatabaseConfig>);
+pub enum ChangeMsg {
+    ChangeConfig(NamespaceName, Arc<DatabaseConfig>),
+    Link(NamespaceName, NamespaceName),
+}
 type WalManager = WalWrapper<Option<BottomlessWalWrapper>, Sqlite3WalManager>;
 type Connection = libsql_sys::Connection<WrappedWal<Option<BottomlessWalWrapper>, Sqlite3Wal>>;
 
@@ -123,6 +126,15 @@ impl MetaStoreInner {
             "CREATE TABLE IF NOT EXISTS namespace_configs (
                 namespace TEXT NOT NULL PRIMARY KEY,
                 config BLOB NOT NULL
+            )
+            ",
+            (),
+        )?;
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS shared_schema_links (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                shared_schema_name TEXT NOT NULL,
+                db_name TEXT NOT NULL
             )
             ",
             (),
@@ -239,34 +251,41 @@ impl MetaStoreInner {
     }
 }
 
-/// Handles config change updates by inserting them into the database and in-memory
-/// cache of configs.
 fn process(msg: ChangeMsg, inner: Arc<Mutex<MetaStoreInner>>) -> Result<()> {
-    let (namespace, config) = msg;
+    match msg {
+        ChangeMsg::ChangeConfig(namespace, config) => {
+            let config_encoded = metadata::DatabaseConfig::from(&*config).encode_to_vec();
 
-    let config_encoded = metadata::DatabaseConfig::from(&*config).encode_to_vec();
+            let inner = &mut inner.lock();
 
-    let inner = &mut inner.lock();
+            inner.conn.execute(
+                "INSERT OR REPLACE INTO namespace_configs (namespace, config) VALUES (?1, ?2)",
+                rusqlite::params![namespace.as_str(), config_encoded],
+            )?;
 
-    inner.conn.execute(
-        "INSERT OR REPLACE INTO namespace_configs (namespace, config) VALUES (?1, ?2)",
-        rusqlite::params![namespace.as_str(), config_encoded],
-    )?;
+            let configs = &mut inner.configs;
 
-    let configs = &mut inner.configs;
+            if let Some(config_watch) = configs.get_mut(&namespace) {
+                let new_version = config_watch.borrow().version.wrapping_add(1);
 
-    if let Some(config_watch) = configs.get_mut(&namespace) {
-        let new_version = config_watch.borrow().version.wrapping_add(1);
-
-        config_watch.send_modify(|c| {
-            *c = InnerConfig {
-                version: new_version,
-                config,
-            };
-        });
-    } else {
-        let (tx, _) = watch::channel(InnerConfig { version: 0, config });
-        configs.insert(namespace, tx);
+                config_watch.send_modify(|c| {
+                    *c = InnerConfig {
+                        version: new_version,
+                        config,
+                    };
+                });
+            } else {
+                let (tx, _) = watch::channel(InnerConfig { version: 0, config });
+                configs.insert(namespace, tx);
+            }
+        }
+        ChangeMsg::Link(parent, child) => {
+            let inner = &mut inner.lock();
+            inner.conn.execute(
+                "INSERT OR REPLACE INTO shared_schema_links (shared_schema_name, db_name) VALUES (?1, ?2)",
+                rusqlite::params![parent.as_str(), child.as_str()],
+            )?;
+        }
     }
 
     Ok(())
@@ -321,13 +340,32 @@ impl MetaStore {
         tracing::debug!("removing namespace `{}` from meta store", namespace);
 
         let mut guard = self.inner.lock();
-        guard.conn.execute(
-            "DELETE FROM namespace_configs WHERE namespace = ?",
-            [namespace.as_str()],
-        )?;
         if let Some(sender) = guard.configs.remove(&namespace) {
             tracing::debug!("removed namespace `{}` from meta store", namespace);
             let config = sender.borrow().clone();
+            if let Some(shared_schema) = config.config.shared_schema_name.as_deref() {
+                guard.conn.execute(
+                    "DELETE FROM shared_schema_links WHERE shared_schema_name = ? AND db_name = ?",
+                    [shared_schema, namespace.as_str()],
+                )?;
+            }
+            if config.config.is_shared_schema {
+                let res: rusqlite::Result<u32> = guard.conn.query_row(
+                    "SELECT COUNT(1) FROM shared_schema_links WHERE shared_schema_name = ?",
+                    [namespace.as_str()],
+                    |row| row.get(0),
+                );
+                match res {
+                    Ok(0) | Err(rusqlite::Error::QueryReturnedNoRows) => { /* ok */ }
+                    Ok(n) => return Err(Error::SharedSchemaDestroyError(namespace.to_string(), n)),
+                    Err(e) => return Err(e.into()),
+                }
+            }
+            guard.conn.execute(
+                "DELETE FROM namespace_configs WHERE namespace = ?",
+                [namespace.as_str()],
+            )?;
+
             Ok(Some(config.config))
         } else {
             tracing::trace!("namespace `{}` not found in meta store", namespace);
@@ -409,6 +447,22 @@ impl MetaStoreHandle {
         }
     }
 
+    pub async fn link(&self, shared_schema: NamespaceName, linked_db: NamespaceName) -> Result<()> {
+        match &self.inner {
+            HandleState::Internal(_) => {
+                //FIXME: what is this even for?
+            }
+            HandleState::External(changes_tx, _) => {
+                changes_tx
+                    .send(ChangeMsg::Link(shared_schema, linked_db))
+                    .await
+                    .map_err(|e| Error::MetaStoreUpdateFailure(e.into()))?;
+            }
+        };
+
+        Ok(())
+    }
+
     pub async fn store(&self, new_config: impl Into<Arc<DatabaseConfig>>) -> Result<()> {
         match &self.inner {
             HandleState::Internal(config) => {
@@ -421,7 +475,7 @@ impl MetaStoreHandle {
                 let changed = c.changed();
 
                 changes_tx
-                    .send((self.namespace.clone(), new_config))
+                    .send(ChangeMsg::ChangeConfig(self.namespace.clone(), new_config))
                     .await
                     .map_err(|e| Error::MetaStoreUpdateFailure(e.into()))?;
 

@@ -300,15 +300,15 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
     }
     let shared_schema_name = if let Some(ns) = req.shared_schema_name {
         if req.shared_schema {
-            return Err(Error::SharedSchemaError(
+            return Err(Error::SharedSchemaCreationError(
                 "shared schema database cannot reference another shared schema".to_string(),
             ));
         }
         let namespace = NamespaceName::from_string(ns)?;
-        if !app_state.namespaces.exists(&namespace).await {
+        if !app_state.namespaces.exists(&namespace) {
             return Err(Error::NamespaceDoesntExist(namespace.to_string()));
         }
-        Some(namespace.to_string())
+        Some(namespace)
     } else {
         None
     };
@@ -330,11 +330,11 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
         .create(namespace.clone(), dump, bottomless_db_id)
         .await?;
 
-    let store = app_state.namespaces.config_store(namespace).await?;
+    let store = app_state.namespaces.config_store(namespace.clone()).await?;
     let mut config = (*store.get()).clone();
 
     config.is_shared_schema = req.shared_schema;
-    config.shared_schema_name = shared_schema_name;
+    config.shared_schema_name = shared_schema_name.as_ref().map(NamespaceName::to_string);
     if let Some(max_db_size) = req.max_db_size {
         config.max_db_pages = max_db_size.as_u64() / LIBSQL_PAGE_SIZE;
     }
@@ -352,6 +352,13 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
 
     config.jwt_key = req.jwt_key;
     store.store(config).await?;
+
+    if let Some(shared_schema) = shared_schema_name {
+        app_state
+            .namespaces
+            .shared_schema_link(shared_schema, namespace)
+            .await?;
+    }
 
     Ok(())
 }

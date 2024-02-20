@@ -458,9 +458,28 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         })
     }
 
-    pub async fn exists(&self, namespace: &NamespaceName) -> bool {
-        let e = self.inner.store.get(namespace).await;
-        e.is_some()
+    pub(crate) async fn shared_schema_link(
+        &self,
+        shared_schema_db: NamespaceName,
+        linked_db: NamespaceName,
+    ) -> crate::Result<()> {
+        let ns = self
+            .inner
+            .make_namespace
+            .create(
+                shared_schema_db.clone(),
+                RestoreOption::Latest,
+                NamespaceBottomlessDbId::NotProvided,
+                self.make_reset_cb(),
+                &self.inner.metadata,
+            )
+            .await?;
+        ns.db_config_store.link(shared_schema_db, linked_db).await?;
+        Ok(())
+    }
+
+    pub fn exists(&self, namespace: &NamespaceName) -> bool {
+        self.inner.metadata.exists(namespace)
     }
 
     pub async fn destroy(&self, namespace: NamespaceName) -> crate::Result<()> {
