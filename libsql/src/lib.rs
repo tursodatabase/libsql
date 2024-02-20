@@ -65,7 +65,7 @@
 //!
 //! ## Examples
 //!
-//! You can find more examples in the [`examples`](https://github.com/tursodatabase/libsql/tree/main/crates/core/examples) directory.
+//! You can find more examples in the [`examples`](https://github.com/tursodatabase/libsql/tree/main/libsql/examples) directory.
 //!
 //! ## Feature flags
 //!
