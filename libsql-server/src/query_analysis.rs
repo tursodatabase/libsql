@@ -116,8 +116,8 @@ impl StmtKind {
             // and thus disallowed in sqld.
             Cmd::Stmt(Stmt::CreateView {
                 temporary: false, ..
-            }) => Some(Self::Write),
-            Cmd::Stmt(Stmt::DropView { .. }) => Some(Self::Write),
+            }) => Some(Self::DDL),
+            Cmd::Stmt(Stmt::DropView { .. }) => Some(Self::DDL),
             Cmd::Stmt(Stmt::Savepoint(_)) => Some(Self::Savepoint),
             Cmd::Stmt(Stmt::Release(_))
             | Cmd::Stmt(Stmt::Rollback {
