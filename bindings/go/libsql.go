@@ -73,7 +73,7 @@ func (d driver) OpenConnector(dbAddress string) (sqldriver.Connector, error) {
 		u.RawQuery = ""
 		return openRemoteConnector(u.String(), authToken)
 	}
-	return nil, fmt.Errorf("unsupported URL scheme: %s\nThis driver supports only URLs that start with libsql://, file://, https:// or http://", u.Scheme)
+	return nil, fmt.Errorf("unsupported URL scheme: %s\nThis driver supports only URLs that start with libsql://, file:, https:// or http://", u.Scheme)
 }
 
 func libsqlSync(nativeDbPtr C.libsql_database_t) error {
