@@ -9,8 +9,6 @@ use anyhow::{bail, Context};
 use futures::TryStreamExt;
 use libsql_replication::frame::FrameMut;
 use libsql_replication::snapshot::{SnapshotFile, SnapshotFileHeader};
-use once_cell::sync::Lazy;
-use regex::Regex;
 use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 use tokio::sync::mpsc;
 use tokio_stream::{Stream, StreamExt};
@@ -33,30 +31,13 @@ const MAX_SNAPSHOT_NUMBER: usize = 32;
 
 /// returns (db_id, start_frame_no, end_frame_no) for the given snapshot name
 fn parse_snapshot_name(name: &str) -> Option<(Uuid, u64, u64)> {
-    static SNAPSHOT_FILE_MATCHER: Lazy<Regex> = Lazy::new(|| {
-        Regex::new(
-            r"(?x)
-            # match database id
-            (\w{8}-\w{4}-\w{4}-\w{4}-\w{12})-
-            # match start frame_no
-            (\d*)-
-            # match end frame_no
-            (\d*).snap",
-        )
-        .unwrap()
-    });
-    let Some(captures) = SNAPSHOT_FILE_MATCHER.captures(name) else {
-        return None;
-    };
-    let db_id = captures.get(1).unwrap();
-    let start_index: u64 = captures.get(2).unwrap().as_str().parse().unwrap();
-    let end_index: u64 = captures.get(3).unwrap().as_str().parse().unwrap();
+    let (db_id_str, remaining) = name.split_at(36);
+    let mut split = remaining.split("-");
+    split.next()?;
+    let start_index: u64 = split.next()?.parse().ok()?;
+    let end_index: u64 = split.next()?.trim_end_matches(".snap").parse().ok()?;
 
-    Some((
-        Uuid::from_str(db_id.as_str()).unwrap(),
-        start_index,
-        end_index,
-    ))
+    Some((Uuid::from_str(db_id_str).ok()?, start_index, end_index))
 }
 
 fn snapshot_list(db_path: &Path) -> impl Stream<Item = anyhow::Result<String>> + '_ {
