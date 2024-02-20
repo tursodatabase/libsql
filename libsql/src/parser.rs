@@ -2,7 +2,7 @@
 
 use crate::{Error, Result};
 use fallible_iterator::FallibleIterator;
-use sqlite3_parser::ast::{Cmd, PragmaBody, QualifiedName, Stmt, TransactionType, Expr, Id};
+use sqlite3_parser::ast::{Cmd, Expr, Id, PragmaBody, QualifiedName, Stmt, TransactionType};
 use sqlite3_parser::lexer::sql::{Parser, ParserError};
 
 /// A group of statements to be executed together.
@@ -260,5 +260,45 @@ impl Statement {
             self.kind,
             StmtKind::Read | StmtKind::TxnBeginReadOnly | StmtKind::TxnEnd
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_attach_same_db() {
+        let input = "ATTACH test AS test;";
+        let mut result = Statement::parse(input);
+
+        let stmt = result.next().unwrap().unwrap();
+        assert_eq!(stmt.kind, StmtKind::Attach);
+    }
+
+    #[test]
+    fn test_attach_database() {
+        let input = "ATTACH DATABASE test AS test;";
+        let mut result = Statement::parse(input);
+
+        let stmt = result.next().unwrap().unwrap();
+        assert_eq!(stmt.kind, StmtKind::Attach);
+    }
+
+    #[test]
+    fn test_attach_diff_db() {
+        let input = "ATTACH \"random\" AS test;";
+        let mut result = Statement::parse(input);
+
+        let stmt = result.next().unwrap().unwrap();
+        assert_eq!(stmt.kind, StmtKind::Attach);
+    }
+
+    #[test]
+    fn test_attach_database_diff_db() {
+        let input = "ATTACH DATABASE \"random\" AS test;";
+        let mut result = Statement::parse(input);
+
+        let stmt = result.next().unwrap().unwrap();
+        assert_eq!(stmt.kind, StmtKind::Attach);
     }
 }
