@@ -606,7 +606,7 @@ impl<W: Wal> Connection<W> {
                     tracing::error!("failed to load extension: {}", ext.display());
                     Err(e)?;
                 }
-                tracing::debug!("Loaded extension {}", ext.display());
+                tracing::trace!("Loaded extension {}", ext.display());
             }
         }
 
@@ -800,7 +800,7 @@ impl<W: Wal> Connection<W> {
         query: &Query,
         builder: &mut impl QueryResultBuilder,
     ) -> Result<(u64, Option<i64>)> {
-        tracing::trace!("executing query: {}", query.stmt.stmt);
+        tracing::debug!("executing query: {}", query.stmt.stmt);
 
         increment_counter!("libsql_server_libsql_query_execute");
 
@@ -915,7 +915,7 @@ impl<W: Wal> Connection<W> {
             tracing::info!("Vacuuming: pages={page_count} freelist={freelist_count}");
             self.conn.execute("VACUUM", ())?;
         } else {
-            tracing::debug!("Not vacuuming: pages={page_count} freelist={freelist_count}");
+            tracing::trace!("Not vacuuming: pages={page_count} freelist={freelist_count}");
         }
         VACUUM_COUNT.increment(1);
         Ok(())
