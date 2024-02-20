@@ -806,7 +806,6 @@ impl<W: Wal> Connection<W> {
         let blocked = match query.stmt.kind {
             StmtKind::Read | StmtKind::TxnBegin | StmtKind::Other => config.block_reads,
             StmtKind::Write => config.block_reads || config.block_writes,
-            StmtKind::DDL => config.block_reads || config.block_writes || config.block_ddl(),
             StmtKind::TxnEnd | StmtKind::Release | StmtKind::Savepoint => false,
             StmtKind::Attach | StmtKind::Detach => !config.allow_attach,
         };

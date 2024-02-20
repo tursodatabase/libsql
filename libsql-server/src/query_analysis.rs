@@ -36,7 +36,6 @@ pub enum StmtKind {
     Release,
     Attach,
     Detach,
-    DDL,
     Other,
 }
 
@@ -51,10 +50,6 @@ fn is_reserved_tbl(name: &QualifiedName) -> bool {
 
 fn write_if_not_reserved(name: &QualifiedName) -> Option<StmtKind> {
     (!is_reserved_tbl(name)).then_some(StmtKind::Write)
-}
-
-fn ddl_if_not_reserved(name: &QualifiedName) -> Option<StmtKind> {
-    (!is_reserved_tbl(name)).then_some(StmtKind::DDL)
 }
 
 impl StmtKind {
@@ -78,7 +73,7 @@ impl StmtKind {
                     temporary: false,
                     ..
                 },
-            ) if !is_temp(tbl_name) => Some(Self::DDL),
+            ) if !is_temp(tbl_name) => Some(Self::Write),
             Cmd::Stmt(
                 Stmt::Insert {
                     with: _,
@@ -100,8 +95,8 @@ impl StmtKind {
             Cmd::Stmt(Stmt::DropTable {
                 if_exists: _,
                 tbl_name,
-            }) => ddl_if_not_reserved(tbl_name),
-            Cmd::Stmt(Stmt::AlterTable(tbl_name, _)) => ddl_if_not_reserved(tbl_name),
+            }) => write_if_not_reserved(tbl_name),
+            Cmd::Stmt(Stmt::AlterTable(tbl_name, _)) => write_if_not_reserved(tbl_name),
             Cmd::Stmt(
                 Stmt::DropIndex { .. }
                 | Stmt::DropTrigger { .. }
@@ -109,7 +104,7 @@ impl StmtKind {
                     temporary: false, ..
                 }
                 | Stmt::CreateIndex { .. },
-            ) => Some(Self::DDL),
+            ) => Some(Self::Write),
             Cmd::Stmt(Stmt::Select { .. }) => Some(Self::Read),
             Cmd::Stmt(Stmt::Pragma(name, body)) => Self::pragma_kind(name, body.as_ref()),
             // Creating regular views is OK, temporary views are bound to a connection
@@ -237,7 +232,7 @@ impl TxnStatus {
                 TxnStatus::Invalid
             }
             (TxnStatus::Txn, StmtKind::TxnEnd) => TxnStatus::Init,
-            (state, StmtKind::Other | StmtKind::Write | StmtKind::Read | StmtKind::DDL) => state,
+            (state, StmtKind::Other | StmtKind::Write | StmtKind::Read) => state,
             (TxnStatus::Invalid, _) => TxnStatus::Invalid,
             (TxnStatus::Init, StmtKind::TxnBegin) => TxnStatus::Txn,
             _ => TxnStatus::Invalid,
