@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
 use libsql_sys::wal::{BusyHandler, CheckpointCallback, Wal, WalManager};
+use libsql_sys::EncryptionConfig;
 use metrics::{histogram, increment_counter};
 use once_cell::sync::Lazy;
 use parking_lot::{Mutex, RwLock};
@@ -44,7 +45,7 @@ pub struct MakeLibSqlConn<T: WalManager> {
     /// In wal mode, closing the last database takes time, and causes other databases creation to
     /// return sqlite busy. To mitigate that, we hold on to one connection
     _db: Option<LibSqlConnection<T::Wal>>,
-    encryption_key: Option<bytes::Bytes>,
+    encryption_config: Option<EncryptionConfig>,
 }
 
 impl<T> MakeLibSqlConn<T>
@@ -63,7 +64,7 @@ where
         max_total_response_size: u64,
         auto_checkpoint: u32,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<EncryptionConfig>,
     ) -> Result<Self> {
         let mut this = Self {
             db_path,
@@ -77,7 +78,7 @@ where
             _db: None,
             state: Default::default(),
             wal_manager,
-            encryption_key,
+            encryption_config,
         };
 
         let db = this.try_create_db().await?;
@@ -126,7 +127,7 @@ where
                 max_size: Some(self.max_response_size),
                 max_total_size: Some(self.max_total_response_size),
                 auto_checkpoint: self.auto_checkpoint,
-                encryption_key: self.encryption_key.clone(),
+                encryption_config: self.encryption_config.clone(),
             },
             self.current_frame_no_receiver.clone(),
             self.state.clone(),
@@ -235,24 +236,17 @@ pub fn open_conn<T>(
     path: &Path,
     wal_manager: T,
     flags: Option<OpenFlags>,
-    encryption_key: Option<bytes::Bytes>,
+    encryption_config: Option<EncryptionConfig>,
 ) -> Result<libsql_sys::Connection<InhibitCheckpoint<T::Wal>>, rusqlite::Error>
 where
     T: WalManager,
 {
-    let flags = flags.unwrap_or(
-        OpenFlags::SQLITE_OPEN_READ_WRITE
-            | OpenFlags::SQLITE_OPEN_CREATE
-            | OpenFlags::SQLITE_OPEN_URI
-            | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-    );
-
-    libsql_sys::Connection::open(
-        path.join("data"),
-        flags,
+    open_conn_active_checkpoint(
+        path,
         wal_manager.wrap(InhibitCheckpointWalWrapper::new(false)),
+        flags,
         u32::MAX,
-        encryption_key,
+        encryption_config,
     )
 }
 
@@ -262,7 +256,7 @@ pub fn open_conn_active_checkpoint<T>(
     wal_manager: T,
     flags: Option<OpenFlags>,
     auto_checkpoint: u32,
-    encryption_key: Option<bytes::Bytes>,
+    encryption_config: Option<EncryptionConfig>,
 ) -> Result<libsql_sys::Connection<T::Wal>, rusqlite::Error>
 where
     T: WalManager,
@@ -279,7 +273,7 @@ where
         flags,
         wal_manager,
         auto_checkpoint,
-        encryption_key,
+        encryption_config,
     )
 }
 
@@ -300,7 +294,6 @@ where
     where
         T: WalManager<Wal = W> + Send + 'static,
     {
-        let max_db_size = config_store.get().max_db_pages;
         let conn = tokio::task::spawn_blocking(move || -> crate::Result<_> {
             let conn = Connection::new(
                 path.as_ref(),
@@ -312,8 +305,6 @@ where
                 current_frame_no_receiver,
                 state,
             )?;
-            conn.conn
-                .pragma_update(None, "max_page_count", max_db_size)?;
             let namespace = path
                 .as_ref()
                 .file_name()
@@ -579,9 +570,15 @@ impl<W: Wal> Connection<W> {
             wal_manager,
             None,
             builder_config.auto_checkpoint,
-            builder_config.encryption_key.clone(),
+            builder_config.encryption_config.clone(),
         )?;
 
+        let config = config_store.get();
+        conn.pragma_update(None, "max_page_count", config.max_db_pages)?;
+        conn.set_limit(
+            rusqlite::limits::Limit::SQLITE_LIMIT_LENGTH,
+            config.max_row_size as i32,
+        );
         // register the lock-stealing busy handler
         unsafe {
             let ptr = Arc::as_ptr(&state) as *mut _;
@@ -605,7 +602,7 @@ impl<W: Wal> Connection<W> {
                     tracing::error!("failed to load extension: {}", ext.display());
                     Err(e)?;
                 }
-                tracing::debug!("Loaded extension {}", ext.display());
+                tracing::trace!("Loaded extension {}", ext.display());
             }
         }
 
@@ -769,12 +766,37 @@ impl<W: Wal> Connection<W> {
         Ok(enabled)
     }
 
+    fn prepare_attach_query(&self, attached: &str, attached_alias: &str) -> Result<String> {
+        let attached = attached.strip_prefix('"').unwrap_or(attached);
+        let attached = attached.strip_suffix('"').unwrap_or(attached);
+        if attached.contains('/') {
+            return Err(Error::Internal(format!(
+                "Invalid attached database name: {:?}",
+                attached
+            )));
+        }
+        let path = PathBuf::from(self.conn.path().unwrap_or("."));
+        let dbs_path = path
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new(".."))
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new(".."))
+            .canonicalize()
+            .unwrap_or_else(|_| std::path::PathBuf::from(".."));
+        let query = format!(
+            "ATTACH DATABASE 'file:{}?mode=ro' AS \"{attached_alias}\"",
+            dbs_path.join(attached).join("data").display()
+        );
+        tracing::trace!("ATTACH rewritten to: {query}");
+        Ok(query)
+    }
+
     fn execute_query(
         &self,
         query: &Query,
         builder: &mut impl QueryResultBuilder,
     ) -> Result<(u64, Option<i64>)> {
-        tracing::trace!("executing query: {}", query.stmt.stmt);
+        tracing::debug!("executing query: {}", query.stmt.stmt);
 
         increment_counter!("libsql_server_libsql_query_execute");
 
@@ -785,12 +807,29 @@ impl<W: Wal> Connection<W> {
             StmtKind::Read | StmtKind::TxnBegin | StmtKind::Other => config.block_reads,
             StmtKind::Write => config.block_reads || config.block_writes,
             StmtKind::TxnEnd | StmtKind::Release | StmtKind::Savepoint => false,
+            StmtKind::Attach | StmtKind::Detach => !config.allow_attach,
         };
         if blocked {
             return Err(Error::Blocked(config.block_reason.clone()));
         }
 
-        let mut stmt = self.conn.prepare(&query.stmt.stmt)?;
+        let mut stmt = if matches!(query.stmt.kind, StmtKind::Attach) {
+            match &query.stmt.attach_info {
+                Some((attached, attached_alias)) => {
+                    let query = self.prepare_attach_query(attached, attached_alias)?;
+                    self.conn.prepare(&query)?
+                }
+                None => {
+                    return Err(Error::Internal(format!(
+                        "Failed to ATTACH: {:?}",
+                        query.stmt.attach_info
+                    )))
+                }
+            }
+        } else {
+            self.conn.prepare(&query.stmt.stmt)?
+        };
+
         if stmt.readonly() {
             READ_QUERY_COUNT.increment(1);
         } else {
@@ -872,7 +911,7 @@ impl<W: Wal> Connection<W> {
             tracing::info!("Vacuuming: pages={page_count} freelist={freelist_count}");
             self.conn.execute("VACUUM", ())?;
         } else {
-            tracing::debug!("Not vacuuming: pages={page_count} freelist={freelist_count}");
+            tracing::trace!("Not vacuuming: pages={page_count} freelist={freelist_count}");
         }
         VACUUM_COUNT.increment(1);
         Ok(())

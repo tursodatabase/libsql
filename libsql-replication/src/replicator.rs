@@ -33,6 +33,8 @@ pub enum Error {
     PrimaryHandshakeTimeout,
     #[error("Replicator needs to load from snapshot")]
     NeedSnapshot,
+    #[error("Snapshot not ready yet")]
+    SnapshotPending,
     #[error("Replication meta error: {0}")]
     Meta(#[from] super::meta::Error),
     #[error("Handshake required")]
@@ -157,7 +159,7 @@ impl<C: ReplicatorClient> Replicator<C> {
         client: C,
         db_path: PathBuf,
         auto_checkpoint: u32,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<libsql_sys::EncryptionConfig>,
     ) -> Result<Self, Error> {
         let injector = {
             let db_path = db_path.clone();
@@ -166,7 +168,7 @@ impl<C: ReplicatorClient> Replicator<C> {
                     db_path,
                     INJECTOR_BUFFER_CAPACITY,
                     auto_checkpoint,
-                    encryption_key,
+                    encryption_config,
                 )
             })
             .await??
@@ -290,13 +292,22 @@ impl<C: ReplicatorClient> Replicator<C> {
 
     async fn load_snapshot(&mut self) -> Result<(), Error> {
         self.injector.lock().clear_buffer();
-        let mut stream = self.client.snapshot().await?;
-        while let Some(frame) = stream.next().await {
-            let frame = frame?;
-            self.inject_frame(frame).await?;
+        loop {
+            match self.client.snapshot().await {
+                Ok(mut stream) => {
+                    while let Some(frame) = stream.next().await {
+                        let frame = frame?;
+                        self.inject_frame(frame).await?;
+                    }
+                    return Ok(());
+                }
+                Err(Error::SnapshotPending) => {
+                    tracing::info!("snaphot not ready yet, waiting 1s...");
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                }
+                Err(e) => return Err(e),
+            }
         }
-
-        Ok(())
     }
 
     async fn inject_frame(&mut self, frame: Frame) -> Result<(), Error> {

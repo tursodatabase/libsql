@@ -159,11 +159,18 @@ pub trait MakeConnection: Send + Sync + 'static {
         semaphore: Arc<Semaphore>,
         timeout: Option<Duration>,
         max_total_response_size: u64,
+        max_concurrent_requests: u64,
     ) -> MakeThrottledConnection<Self>
     where
         Self: Sized,
     {
-        MakeThrottledConnection::new(semaphore, self, timeout, max_total_response_size)
+        MakeThrottledConnection::new(
+            semaphore,
+            self,
+            timeout,
+            max_total_response_size,
+            max_concurrent_requests,
+        )
     }
 }
 
@@ -190,6 +197,7 @@ pub struct MakeThrottledConnection<F> {
     // will result in reducing concurrency to prevent out-of-memory errors.
     max_total_response_size: u64,
     waiters: AtomicUsize,
+    max_concurrent_requests: u64,
 }
 
 impl<F> MakeThrottledConnection<F> {
@@ -198,6 +206,7 @@ impl<F> MakeThrottledConnection<F> {
         connection_maker: F,
         timeout: Option<Duration>,
         max_total_response_size: u64,
+        max_concurrent_requests: u64,
     ) -> Self {
         Self {
             semaphore,
@@ -205,6 +214,7 @@ impl<F> MakeThrottledConnection<F> {
             timeout,
             max_total_response_size,
             waiters: AtomicUsize::new(0),
+            max_concurrent_requests,
         }
     }
 
@@ -263,7 +273,7 @@ impl<F: MakeConnection> MakeConnection for MakeThrottledConnection<F> {
         );
         let units = self.units_to_take();
         let waiters_guard = WaitersGuard::new(&self.waiters);
-        if waiters_guard.waiters.load(Ordering::Relaxed) >= 128 {
+        if (waiters_guard.waiters.load(Ordering::Relaxed) as u64) >= self.max_concurrent_requests {
             return Err(Error::TooManyRequests);
         }
         let fut = self.semaphore.clone().acquire_many_owned(units);
@@ -422,6 +432,7 @@ pub mod test {
         let factory = (|| async { Ok(DummyDb) }).throttled(
             Arc::new(Semaphore::new(10)),
             Some(Duration::from_millis(100)),
+            u64::MAX,
             u64::MAX,
         );
 

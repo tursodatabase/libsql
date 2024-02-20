@@ -11,6 +11,7 @@ use bytes::{Bytes, BytesMut};
 use chrono::{DateTime, Utc};
 use libsql_replication::frame::{Frame, FrameBorrowed, FrameHeader, FrameMut};
 use libsql_replication::snapshot::SnapshotFile;
+use libsql_sys::EncryptionConfig;
 use once_cell::sync::Lazy;
 use parking_lot::{Mutex, RwLock};
 use rusqlite::ffi::SQLITE_CHECKPOINT_TRUNCATE;
@@ -553,7 +554,7 @@ impl ReplicationLogger {
         auto_checkpoint: u32,
         scripted_backup: Option<ScriptBackupManager>,
         namespace: NamespaceName,
-        encryption_key: Option<Bytes>,
+        encryption_config: Option<EncryptionConfig>,
     ) -> anyhow::Result<Self> {
         let log_path = db_path.join("wallog");
         let data_path = db_path.join("data");
@@ -567,7 +568,7 @@ impl ReplicationLogger {
             .open(log_path)?;
 
         let max_log_frame_count = max_log_size * 1_000_000 / LogFile::FRAME_SIZE as u64;
-        let encryption = encryption_key.clone().map(FrameEncryptor::new);
+        let encryption = encryption_config.clone().map(FrameEncryptor::new);
         let log_file = LogFile::new(file, max_log_frame_count, max_log_duration, encryption)?;
         let header = log_file.header();
 
@@ -596,7 +597,7 @@ impl ReplicationLogger {
                 auto_checkpoint,
                 scripted_backup,
                 namespace,
-                encryption_key,
+                encryption_config,
             )
         } else {
             Self::from_log_file(
@@ -605,7 +606,7 @@ impl ReplicationLogger {
                 auto_checkpoint,
                 scripted_backup,
                 namespace,
-                encryption_key,
+                encryption_config,
             )
         }
     }
@@ -616,7 +617,7 @@ impl ReplicationLogger {
         auto_checkpoint: u32,
         scripted_backup: Option<ScriptBackupManager>,
         namespace: NamespaceName,
-        encryption_key: Option<Bytes>,
+        encryption_config: Option<EncryptionConfig>,
     ) -> anyhow::Result<Self> {
         let header = log_file.header();
         let generation_start_frame_no = header.last_frame_no();
@@ -646,7 +647,7 @@ impl ReplicationLogger {
 
         let (closed_signal, _) = watch::channel(false);
 
-        let encryptor = encryption_key.map(FrameEncryptor::new);
+        let encryptor = encryption_config.map(FrameEncryptor::new);
         Ok(Self {
             generation: Generation::new(generation_start_frame_no.unwrap_or(0)),
             compactor: LogCompactor::new(
@@ -672,7 +673,7 @@ impl ReplicationLogger {
         auto_checkpoint: u32,
         scripted_backup: Option<ScriptBackupManager>,
         namespace: NamespaceName,
-        encryption_key: Option<Bytes>,
+        encryption_config: Option<EncryptionConfig>,
     ) -> anyhow::Result<Self> {
         // It is necessary to checkpoint before we restore the replication log, since the WAL may
         // contain pages that are not in the database file.
@@ -681,6 +682,9 @@ impl ReplicationLogger {
         let snapshot_path = data_path.parent().unwrap().join("snapshots");
         // best effort, there may be no snapshots
         let _ = remove_dir_all(snapshot_path);
+        let to_compact_path = data_path.parent().unwrap().join("to_compact");
+        // best effort, there may nothing to compact
+        let _ = remove_dir_all(to_compact_path);
 
         let data_file = File::open(&data_path)?;
         let size = data_path.metadata()?.len();
@@ -716,7 +720,7 @@ impl ReplicationLogger {
             auto_checkpoint,
             scripted_backup,
             namespace,
-            encryption_key,
+            encryption_config,
         )
     }
 

@@ -9,6 +9,7 @@ use libsql_replication::rpc::proxy::{
 };
 use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
 use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager};
+use libsql_sys::EncryptionConfig;
 use parking_lot::Mutex as PMutex;
 use tokio::sync::{mpsc, watch, Mutex};
 use tokio_stream::StreamExt;
@@ -44,7 +45,7 @@ pub struct MakeWriteProxyConn {
     namespace: NamespaceName,
     primary_replication_index: Option<FrameNo>,
     make_read_only_conn: MakeLibSqlConn<Sqlite3WalManager>,
-    encryption_key: Option<bytes::Bytes>,
+    encryption_config: Option<EncryptionConfig>,
 }
 
 impl MakeWriteProxyConn {
@@ -61,7 +62,7 @@ impl MakeWriteProxyConn {
         max_total_response_size: u64,
         namespace: NamespaceName,
         primary_replication_index: Option<FrameNo>,
-        encryption_key: Option<bytes::Bytes>,
+        encryption_config: Option<EncryptionConfig>,
     ) -> crate::Result<Self> {
         let client = ProxyClient::with_origin(channel, uri);
         let make_read_only_conn = MakeLibSqlConn::new(
@@ -74,7 +75,7 @@ impl MakeWriteProxyConn {
             max_total_response_size,
             DEFAULT_AUTO_CHECKPOINT,
             applied_frame_no_receiver.clone(),
-            encryption_key.clone(),
+            encryption_config.clone(),
         )
         .await?;
 
@@ -87,7 +88,7 @@ impl MakeWriteProxyConn {
             namespace,
             make_read_only_conn,
             primary_replication_index,
-            encryption_key,
+            encryption_config,
         })
     }
 }
@@ -104,7 +105,7 @@ impl MakeConnection for MakeWriteProxyConn {
                 max_size: Some(self.max_response_size),
                 max_total_size: Some(self.max_total_response_size),
                 auto_checkpoint: DEFAULT_AUTO_CHECKPOINT,
-                encryption_key: self.encryption_key.clone(),
+                encryption_config: self.encryption_config.clone(),
             },
             self.namespace.clone(),
             self.primary_replication_index,

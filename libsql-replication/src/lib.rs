@@ -7,6 +7,8 @@ pub mod snapshot;
 
 mod error;
 
+use libsql_sys::Cipher;
+
 pub const LIBSQL_PAGE_SIZE: usize = 4096;
 
 #[derive(Debug, Clone)]
@@ -16,13 +18,16 @@ pub struct FrameEncryptor {
 }
 
 impl FrameEncryptor {
-    pub fn new(key: bytes::Bytes) -> Self {
+    pub fn new(encryption_config: libsql_sys::EncryptionConfig) -> Self {
         #[cfg(feature = "encryption")]
         const SEED: u32 = 911;
         #[cfg(not(feature = "encryption"))]
-        let _ = key;
+        let _ = encryption_config;
 
         use aes::cipher::KeyIvInit;
+
+        // TODO: make cipher configurable
+        assert!(matches!(encryption_config.cipher, Cipher::Aes256Cbc));
 
         #[allow(unused_mut)]
         let mut iv: [u8; 16] = [0; 16];
@@ -31,7 +36,7 @@ impl FrameEncryptor {
         #[cfg(feature = "encryption")]
         libsql_sys::connection::generate_initial_vector(SEED, &mut iv);
         #[cfg(feature = "encryption")]
-        libsql_sys::connection::generate_aes256_key(&key, &mut digest);
+        libsql_sys::connection::generate_aes256_key(&encryption_config.encryption_key, &mut digest);
 
         let enc = cbc::Encryptor::new((&digest).into(), (&iv).into());
         let dec = cbc::Decryptor::new((&digest).into(), (&iv).into());

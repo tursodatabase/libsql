@@ -4,6 +4,7 @@ use std::sync::Arc;
 use anyhow::Context;
 use hyper::client::HttpConnector;
 use hyper_rustls::HttpsConnector;
+use libsql_sys::EncryptionConfig;
 use sha256::try_digest;
 use tokio::time::Duration;
 use tonic::transport::Channel;
@@ -125,7 +126,8 @@ pub struct DbConfig {
     pub snapshot_exec: Option<String>,
     pub checkpoint_interval: Option<Duration>,
     pub snapshot_at_shutdown: bool,
-    pub encryption_key: Option<bytes::Bytes>,
+    pub encryption_config: Option<EncryptionConfig>,
+    pub max_concurrent_requests: u64,
 }
 
 impl Default for DbConfig {
@@ -142,7 +144,8 @@ impl Default for DbConfig {
             snapshot_exec: None,
             checkpoint_interval: None,
             snapshot_at_shutdown: false,
-            encryption_key: None,
+            encryption_config: None,
+            max_concurrent_requests: 128,
         }
     }
 }
@@ -201,7 +204,14 @@ pub struct HeartbeatConfig {
     pub heartbeat_auth: Option<String>,
 }
 
+#[derive(Debug, Clone, Default)]
 pub struct MetaStoreConfig {
+    pub bottomless: Option<BottomlessConfig>,
+    pub allow_recover_from_fs: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct BottomlessConfig {
     pub access_key_id: String,
     pub secret_access_key: String,
     pub region: String,

@@ -4,13 +4,12 @@ use std::mem::size_of;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::Instant;
 
 use anyhow::{bail, Context};
 use futures::TryStreamExt;
 use libsql_replication::frame::FrameMut;
 use libsql_replication::snapshot::{SnapshotFile, SnapshotFileHeader};
-use once_cell::sync::Lazy;
-use regex::Regex;
 use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 use tokio::sync::mpsc;
 use tokio_stream::{Stream, StreamExt};
@@ -33,30 +32,13 @@ const MAX_SNAPSHOT_NUMBER: usize = 32;
 
 /// returns (db_id, start_frame_no, end_frame_no) for the given snapshot name
 fn parse_snapshot_name(name: &str) -> Option<(Uuid, u64, u64)> {
-    static SNAPSHOT_FILE_MATCHER: Lazy<Regex> = Lazy::new(|| {
-        Regex::new(
-            r"(?x)
-            # match database id
-            (\w{8}-\w{4}-\w{4}-\w{4}-\w{12})-
-            # match start frame_no
-            (\d*)-
-            # match end frame_no
-            (\d*).snap",
-        )
-        .unwrap()
-    });
-    let Some(captures) = SNAPSHOT_FILE_MATCHER.captures(name) else {
-        return None;
-    };
-    let db_id = captures.get(1).unwrap();
-    let start_index: u64 = captures.get(2).unwrap().as_str().parse().unwrap();
-    let end_index: u64 = captures.get(3).unwrap().as_str().parse().unwrap();
+    let (db_id_str, remaining) = name.split_at(36);
+    let mut split = remaining.split("-");
+    split.next()?;
+    let start_index: u64 = split.next()?.parse().ok()?;
+    let end_index: u64 = split.next()?.trim_end_matches(".snap").parse().ok()?;
 
-    Some((
-        Uuid::from_str(db_id.as_str()).unwrap(),
-        start_index,
-        end_index,
-    ))
+    Some((Uuid::from_str(db_id_str).ok()?, start_index, end_index))
 }
 
 fn snapshot_list(db_path: &Path) -> impl Stream<Item = anyhow::Result<String>> + '_ {
@@ -115,9 +97,13 @@ async fn compact(
     scripted_backup: Option<ScriptBackupManager>,
     namespace: NamespaceName,
 ) -> anyhow::Result<()> {
+    let before = Instant::now();
     match perform_compaction(db_path, to_compact_file, log_id, namespace, scripted_backup).await {
         Ok((snapshot_name, snapshot_frame_count, size_after)) => {
-            tracing::info!("snapshot `{snapshot_name}` successfully created");
+            tracing::info!(
+                "snapshot `{snapshot_name}` successfully created, in {:?}",
+                before.elapsed()
+            );
 
             if let Err(e) = merger
                 .register_snapshot(snapshot_name, snapshot_frame_count, size_after)
@@ -588,7 +574,7 @@ mod test {
 
     use super::*;
 
-    async fn assert_dir_is_empty(p: &Path) {
+    async fn dir_is_empty(p: &Path) -> bool {
         // there is nothing left in the to_compact directory
         if p.try_exists().unwrap() {
             let mut dir = tokio::fs::read_dir(p).await.unwrap();
@@ -599,7 +585,9 @@ mod test {
                 }
             }
 
-            assert_eq!(count, 0);
+            count == 0
+        } else {
+            true
         }
     }
 
@@ -689,8 +677,7 @@ mod test {
 
         // assert that all indexes are covered
         assert_eq!((start_idx, end_idx), (0, 3));
-
-        assert_dir_is_empty(&to_compact_path).await;
+        assert!(dir_is_empty(&to_compact_path).await);
     }
 
     /// Simulate an empty pending snapshot left by the logger if the logswapping operation was
@@ -715,8 +702,8 @@ mod test {
         tokio::time::sleep(Duration::from_millis(1000)).await;
 
         // emtpy snapshot was discarded
-        assert_dir_is_empty(&tmp.path().join("to_compact")).await;
-        assert_dir_is_empty(&tmp.path().join("snapshots")).await;
+        assert!(dir_is_empty(&tmp.path().join("to_compact")).await);
+        assert!(dir_is_empty(&tmp.path().join("snapshots")).await);
     }
 
     /// In this test, we send a bunch of snapshot to the compactor, and see if it handles it
@@ -784,30 +771,33 @@ mod test {
         .await
         .unwrap();
 
-        // wait a bit for snapshot to be compated
-        tokio::time::sleep(Duration::from_millis(1500)).await;
-
         // no error occured: the loop is still running.
         assert!(!compactor.sender.is_closed());
         assert!(tmp.path().join("snapshots").exists());
-        let mut dir = tokio::fs::read_dir(tmp.path().join("snapshots"))
-            .await
-            .unwrap();
         let mut start_idx = u64::MAX;
         let mut end_idx = u64::MIN;
-        while let Some(entry) = dir.next_entry().await.unwrap() {
-            if entry.file_type().await.unwrap().is_file() {
-                let (_, start, end) =
-                    parse_snapshot_name(entry.file_name().to_str().unwrap()).unwrap();
-                start_idx = start_idx.min(start);
-                end_idx = end_idx.max(end);
+        while end_idx != 9 {
+            let mut dir = tokio::fs::read_dir(tmp.path().join("snapshots"))
+                .await
+                .unwrap();
+            while let Some(entry) = dir.next_entry().await.unwrap() {
+                if entry.file_type().await.unwrap().is_file() {
+                    let name = entry.file_name();
+                    let name = name.to_str().unwrap();
+                    let (_, start, end) = parse_snapshot_name(name).unwrap();
+                    start_idx = start_idx.min(start);
+                    end_idx = end_idx.max(end);
+                }
             }
+            tokio::time::sleep(Duration::from_millis(100)).await;
         }
 
         // assert that all indexes are covered
-        assert_eq!((start_idx, end_idx), (0, 9));
+        assert_eq!(start_idx, 0);
 
-        assert_dir_is_empty(&to_compact_path).await;
+        while !dir_is_empty(&to_compact_path).await {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
     }
 
     #[tokio::test]
