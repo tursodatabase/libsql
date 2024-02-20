@@ -250,5 +250,63 @@ do_catchsql_test 9.11 {
   SELECT oid FROM wo2 JOIN (wo3 JOIN x3)
 } {0 99}
 
+reset_db
+do_execsql_test 10.0 {
+  CREATE TABLE rt0 (c0 INTEGER, c1 INTEGER, c2 INTEGER, c3 INTEGER, c4 INTEGER);
+  CREATE TABLE rt3 (c3 INTEGER);
+
+  INSERT INTO rt0(c3, c1) VALUES (x'', '1');
+  INSERT INTO rt0(c3, c1) VALUES ('-1', -1e500);
+  INSERT INTO rt0(c3, c1) VALUES (1, x'');
+
+  CREATE VIEW v6(c0, c1, c2) AS SELECT 0, 0, 0;
+}
+
+do_execsql_test 10.1 {
+  SELECT COUNT(*) FROM rt0 LEFT JOIN rt3 JOIN v6 ON ((CASE v6.c0 WHEN rt0.c4 THEN rt3.c3 END) NOT BETWEEN (rt0.c4) AND (NULL)) WHERE (rt0.c1); -- 2
+} {0}
+
+do_execsql_test 10.2 {
+  SELECT COUNT(*) FROM rt0 LEFT JOIN rt3 RIGHT OUTER JOIN v6 ON ((CASE v6.c0 WHEN rt0.c4 THEN rt3.c3 END) NOT BETWEEN (rt0.c4) AND (NULL)) WHERE (rt0.c1); -- 2
+} {0}
+
+#-------------------------------------------------------------------------
+
+do_execsql_test 11.1 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, d);
+  CREATE TABLE t3(e, f);
+
+  INSERT INTO t1 VALUES(1, 1);
+  INSERT INTO t2 VALUES(2, 2);
+  INSERT INTO t3 VALUES(3, 3);
+}
+
+do_execsql_test 11.2 {
+  SELECT * FROM t1 LEFT JOIN t2 RIGHT JOIN t3 ON (t2.c=10)
+} {{} {} {} {} 3 3}
+
+do_execsql_test 11.3 {
+  SELECT * FROM t1 LEFT JOIN t2 RIGHT JOIN t3 ON (t2.c=10) WHERE t1.a=1
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 12.1 {
+  CREATE TABLE t1(a1 INT, b1 TEXT);
+  INSERT INTO t1 VALUES(88,'');
+  CREATE TABLE t2(c2 INT, d2 TEXT);
+  INSERT INTO t2 VALUES(88,'');
+  CREATE TABLE t3(e3 TEXT PRIMARY KEY);
+  INSERT INTO t3 VALUES('');
+}
+
+do_execsql_test 12.2 {
+  SELECT * FROM t1 LEFT JOIN t2 ON true RIGHT JOIN t3 ON d2=e3 WHERE c2 BETWEEN NULL AND a1;
+}
+do_execsql_test 12.3 {
+  SELECT * FROM t1 LEFT JOIN t2 ON true RIGHT JOIN t3 ON d2=e3 WHERE c2 BETWEEN NULL AND a1;
+}
 
 finish_test

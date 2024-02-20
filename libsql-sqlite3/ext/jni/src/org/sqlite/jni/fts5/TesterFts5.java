@@ -625,10 +625,20 @@ public class TesterFts5 {
       "SELECT fts5_columntext(ft, 1) FROM ft('x') ORDER BY rowid",
       "[x, x, x y z, x z, x y z, x]"
     );
-    do_execsql_test(db, 
-      "SELECT fts5_columntext(ft, 2) FROM ft('x') ORDER BY rowid",
-      "[null, null, null, null, null, null]"
-    );
+    boolean threw = false;
+    try{
+      /* columntext() used to return NULLs when given an out-of bounds column
+         but now results in a range error. */
+      do_execsql_test(db, 
+        "SELECT fts5_columntext(ft, 2) FROM ft('x') ORDER BY rowid",
+        "[null, null, null, null, null, null]"
+      );
+    }catch(Exception e){
+      threw = true;
+      affirm( e.getMessage().matches(".*column index out of range") );
+    }
+    affirm( threw );
+    threw = false;
 
     /* Test fts5_columntotalsize() */
     do_execsql_test(db, 

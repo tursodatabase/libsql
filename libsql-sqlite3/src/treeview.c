@@ -781,7 +781,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       assert( pExpr->x.pList->nExpr==2 );
       pY = pExpr->x.pList->a[0].pExpr;
       pZ = pExpr->x.pList->a[1].pExpr;
-      sqlite3TreeViewLine(pView, "BETWEEN");
+      sqlite3TreeViewLine(pView, "BETWEEN%s", zFlgs);
       sqlite3TreeViewExpr(pView, pX, 1);
       sqlite3TreeViewExpr(pView, pY, 1);
       sqlite3TreeViewExpr(pView, pZ, 0);

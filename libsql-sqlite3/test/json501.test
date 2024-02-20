@@ -252,13 +252,13 @@ do_execsql_test 8.11 {
 
 do_execsql_test 9.1 {
   WITH c(x) AS (VALUES('{x: +Infinity}')) SELECT x->>'x', json(x) FROM c;
-} {Inf {{"x":9.0e999}}}
+} {Inf {{"x":9e999}}}
 do_execsql_test 9.2 {
   WITH c(x) AS (VALUES('{x: -Infinity}')) SELECT x->>'x', json(x) FROM c;
-} {-Inf {{"x":-9.0e999}}}
+} {-Inf {{"x":-9e999}}}
 do_execsql_test 9.3 {
   WITH c(x) AS (VALUES('{x: Infinity}')) SELECT x->>'x', json(x) FROM c;
-} {Inf {{"x":9.0e999}}}
+} {Inf {{"x":9e999}}}
 do_execsql_test 9.4 {
   WITH c(x) AS (VALUES('{x: NaN}')) SELECT x->>'x', json(x) FROM c;
 } {{} {{"x":null}}}
@@ -300,5 +300,10 @@ do_execsql_test 12.4 {
           || ' "xyz"}')->>'a';
 } xyz
 
+# 2023-11-08 forum/forumpost/ddcad3e884
+#
+do_execsql_test 13.1 {
+  SELECT json('{x:''a "b" c''}');
+} {{{"x":"a \"b\" c"}}}
 
 finish_test

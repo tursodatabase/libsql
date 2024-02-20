@@ -211,10 +211,11 @@ static int growOpArray(Vdbe *v, int nOp){
 **   sqlite3CantopenError(lineno)
 */
 static void test_addop_breakpoint(int pc, Op *pOp){
-  static int n = 0;
+  static u64 n = 0;
   (void)pc;
   (void)pOp;
   n++;
+  if( n==LARGEST_UINT64 ) abort(); /* so that n is used, preventing a warning */
 }
 #endif
 
@@ -1399,6 +1400,10 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
       if( db->pnBytesFreed==0 ) sqlite3VtabUnlock((VTable *)p4);
       break;
     }
+    case P4_TABLEREF: {
+      if( db->pnBytesFreed==0 ) sqlite3DeleteTable(db, (Table*)p4);
+      break;
+    }
   }
 }
 
@@ -1526,7 +1531,7 @@ static void SQLITE_NOINLINE vdbeChangeP4Full(
   int n
 ){
   if( pOp->p4type ){
-    freeP4(p->db, pOp->p4type, pOp->p4.p);
+    assert( pOp->p4type > P4_FREE_IF_LE );
     pOp->p4type = 0;
     pOp->p4.p = 0;
   }

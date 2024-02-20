@@ -146,6 +146,8 @@ datetest 2.49 {datetime('2003-10-22 12:24','0000 second')} {2003-10-22 12:24:00}
 datetest 2.50 {datetime('2003-10-22 12:24','0001 second')} {2003-10-22 12:24:01}
 datetest 2.51 {datetime('2003-10-22 12:24','nonsense')} NULL
 
+datetest 2.60 {datetime('2023-02-31')} {2023-03-03 00:00:00}
+
 datetest 3.1 {strftime('%d','2003-10-31 12:34:56.432')} 31
 datetest 3.2.1 {strftime('pre%fpost','2003-10-31 12:34:56.432')} pre56.432post
 datetest 3.2.2 {strftime('%f','2003-10-31 12:34:59.9999999')} 59.999
@@ -452,6 +454,9 @@ datetest 13.31 {date('2001-01-01','+1.5 years')} {2002-07-02}
 datetest 13.32 {date('2002-01-01','+1.5 years')} {2003-07-02}
 datetest 13.33 {date('2002-01-01','-1.5 years')} {2000-07-02}
 datetest 13.34 {date('2001-01-01','-1.5 years')} {1999-07-02}
+datetest 13.35 {date('2023-02-28')} {2023-02-28}
+datetest 13.36 {date('2023-02-29')} {2023-03-01}
+datetest 13.37 {date('2023-04-31')} {2023-05-01}
 
 # Test for issues reported by BareFeet (list.sql at tandb.com.au)
 # on mailing list on 2008-06-12.
