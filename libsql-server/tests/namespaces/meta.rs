@@ -172,31 +172,7 @@ fn meta_attach() {
 
             foo_conn.execute("select 1", ()).await.unwrap();
         }
-
         // STEP 2: try attaching a database
-        {
-            let foo = Database::open_remote_with_connector(
-                "http://foo.primary:8080",
-                "",
-                TurmoilConnector,
-            )?;
-            let foo_conn = foo.connect()?;
-
-            foo_conn.execute("attach foo as foo", ()).await.unwrap_err();
-        }
-
-        // STEP 3: update config to allow attaching databases
-        client
-            .post(
-                "http://primary:9090/v1/namespaces/foo/config",
-                json!({
-                    "block_reads": false,
-                    "block_writes": false,
-                    "allow_attach": true,
-                }),
-            )
-            .await?;
-
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.primary:8080",
@@ -210,7 +186,28 @@ fn meta_attach() {
                 .await
                 .unwrap();
         }
+        // STEP 3: update config to disable attaching databases
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/foo/config",
+                json!({
+                    "block_reads": false,
+                    "block_writes": false,
+                    "allow_attach": false,
+                }),
+            )
+            .await?;
+        // STEP 4: try attaching a database
+        {
+            let foo = Database::open_remote_with_connector(
+                "http://foo.primary:8080",
+                "",
+                TurmoilConnector,
+            )?;
+            let foo_conn = foo.connect()?;
 
+            foo_conn.execute("attach foo as foo", ()).await.unwrap_err();
+        }
         Ok(())
     });
 
