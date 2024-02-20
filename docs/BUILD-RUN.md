@@ -59,7 +59,7 @@ sqld --help
 ## Using a prebuilt Docker image
 
 The sqld release process publishes a Docker image to the GitHub Container
-Registry. The URL is https://ghcr.io/libsql/sqld. You can run the latest image locally
+Registry. The URL is https://ghcr.io/tursodatabase/libsql-server. You can run the latest image locally
 on port 8080 with the following:
 
 ```bash
