@@ -203,29 +203,30 @@ struct Cli {
     max_active_namespaces: usize,
 
     /// Enable backup for the metadata store
-    #[clap(long)]
+    #[clap(long, env = "SQLD_BACKUP_META_STORE")]
     backup_meta_store: bool,
     /// S3 access key ID for the meta store backup
-    #[clap(long)]
+    #[clap(long, env = "SQLD_META_STORE_ACCESS_KEY_ID")]
     meta_store_access_key_id: Option<String>,
     /// S3 secret access key for the meta store backup
-    #[clap(long)]
+    #[clap(long, env = "SQLD_META_STORE_SECRET_ACCESS")]
     meta_store_secret_access_key: Option<String>,
     /// S3 region for the metastore backup
-    #[clap(long)]
+    #[clap(long, env = "SQLD_META_STORE_REGION")]
     meta_store_region: Option<String>,
     /// Id for the meta store backup
-    #[clap(long)]
+    #[clap(long, env = "SQLD_META_STORE_BACKUP_ID")]
     meta_store_backup_id: Option<String>,
     /// S3 bucket name for the meta store backup
-    #[clap(long)]
+    #[clap(long, env = "SQLD_META_STORE_BUCKET_NAME")]
     meta_store_bucket_name: Option<String>,
     /// Interval at which to perform backups of the meta store
-    #[clap(long)]
+    #[clap(long, env = "SQLD_META_STORE_BACKUP_INTERVAL_S")]
     meta_store_backup_interval_s: Option<usize>,
     /// S3 endpoint for the meta store backups
-    #[clap(long)]
+    #[clap(long, env = "SQLD_META_STORE_BUCKET_ENDPOINT")]
     meta_store_bucket_endpoint: Option<String>,
+
     /// encryption_key for encryption at rest
     #[clap(long, env = "SQLD_ENCRYPTION_KEY")]
     encryption_key: Option<bytes::Bytes>,
