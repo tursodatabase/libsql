@@ -23,6 +23,7 @@ pub struct DatabaseConfig {
     pub txn_timeout: Option<Duration>,
     #[serde(default)]
     pub allow_attach: bool,
+    #[serde(default = "default_max_row_size")]
     pub max_row_size: u64,
     #[serde(default)]
     pub is_shared_schema: bool,
