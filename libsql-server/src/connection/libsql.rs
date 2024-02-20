@@ -241,17 +241,10 @@ pub fn open_conn<T>(
 where
     T: WalManager,
 {
-    let flags = flags.unwrap_or(
-        OpenFlags::SQLITE_OPEN_READ_WRITE
-            | OpenFlags::SQLITE_OPEN_CREATE
-            | OpenFlags::SQLITE_OPEN_URI
-            | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-    );
-
-    libsql_sys::Connection::open(
-        path.join("data"),
-        flags,
+    open_conn_active_checkpoint(
+        path,
         wal_manager.wrap(InhibitCheckpointWalWrapper::new(false)),
+        flags,
         u32::MAX,
         encryption_config,
     )
@@ -301,7 +294,6 @@ where
     where
         T: WalManager<Wal = W> + Send + 'static,
     {
-        let max_db_size = config_store.get().max_db_pages;
         let conn = tokio::task::spawn_blocking(move || -> crate::Result<_> {
             let conn = Connection::new(
                 path.as_ref(),
@@ -313,8 +305,6 @@ where
                 current_frame_no_receiver,
                 state,
             )?;
-            conn.conn
-                .pragma_update(None, "max_page_count", max_db_size)?;
             let namespace = path
                 .as_ref()
                 .file_name()
@@ -583,6 +573,12 @@ impl<W: Wal> Connection<W> {
             builder_config.encryption_config.clone(),
         )?;
 
+        let config = config_store.get();
+        conn.pragma_update(None, "max_page_count", config.max_db_pages)?;
+        conn.set_limit(
+            rusqlite::limits::Limit::SQLITE_LIMIT_LENGTH,
+            config.max_row_size as i32,
+        );
         // register the lock-stealing busy handler
         unsafe {
             let ptr = Arc::as_ptr(&state) as *mut _;
