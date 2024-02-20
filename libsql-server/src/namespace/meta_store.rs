@@ -152,9 +152,10 @@ impl MetaStoreInner {
 
         let txn = self.conn.transaction()?;
         // nothing in the meta store, check fs
-        if count == 0 {
+        let dbs_dir_path = base_path.join("dbs");
+        if count == 0 && dbs_dir_path.try_exists()? {
             tracing::info!("Recovering metastore from filesystem...");
-            let db_dir = read_dir(base_path.join("dbs"))?;
+            let db_dir = read_dir(&dbs_dir_path)?;
             for entry in db_dir {
                 let entry = entry?;
                 if !entry.path().is_dir() {
