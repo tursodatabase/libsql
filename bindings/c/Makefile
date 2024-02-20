@@ -3,7 +3,7 @@ CFLAGS := -Iinclude
 LDFLAGS := -lm
 
 # Set LIBSQL_PATH to the default path if not provided
-LIBSQL_PATH ?= ../../target/release/libsql_experimental.a
+LIBSQL_EXPERIMENTAL_PATH ?= ../../target/release/libsql_experimental.a
 
 ifeq ($(OS),Darwin)
 	CFLAGS += -framework Security -framework CoreServices
@@ -13,4 +13,4 @@ endif
 all: example
 
 example: example.c
-	$(CC) -o $@ $(CFLAGS) $< $(LIBSQL_PATH) $(LDFLAGS)
+	$(CC) -o $@ $(CFLAGS) $< $(LIBSQL_EXPERIMENTAL_PATH) $(LDFLAGS)

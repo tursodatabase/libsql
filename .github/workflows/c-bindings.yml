@@ -44,4 +44,6 @@ jobs:
 
     - name: Build C bindings example
       working-directory: bindings/c
+      env:
+        LIBSQL_EXPERIMENTAL_PATH: libsql_experimental.a
       run: make
