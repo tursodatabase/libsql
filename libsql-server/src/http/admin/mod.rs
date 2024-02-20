@@ -24,7 +24,7 @@ use crate::error::{Error, LoadDumpError};
 use crate::hrana;
 use crate::namespace::{
     DumpStream, MakeNamespace, NamespaceBottomlessDbId, NamespaceName, NamespaceStore,
-    RestoreOption, SharedSchemaOptions,
+    RestoreOption,
 };
 use crate::net::Connector;
 use crate::LIBSQL_PAGE_SIZE;
@@ -294,8 +294,6 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
     Path(namespace): Path<String>,
     Json(req): Json<CreateNamespaceReq>,
 ) -> crate::Result<()> {
-    let shared_schema_options =
-        SharedSchemaOptions::new(req.shared_schema, req.shared_schema_name)?;
     if let Some(jwt_key) = req.jwt_key.as_deref() {
         // Check that the jwt key is correct
         parse_jwt_key(jwt_key)?;
@@ -329,12 +327,7 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
     let namespace = NamespaceName::from_string(namespace)?;
     app_state
         .namespaces
-        .create(
-            namespace.clone(),
-            dump,
-            bottomless_db_id,
-            shared_schema_options,
-        )
+        .create(namespace.clone(), dump, bottomless_db_id)
         .await?;
 
     let store = app_state.namespaces.config_store(namespace).await?;
