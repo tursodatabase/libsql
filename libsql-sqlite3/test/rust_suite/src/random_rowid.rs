@@ -65,4 +65,63 @@ mod tests {
             .unwrap();
         assert_eq!(rowid, 42);
     }
+
+    // Test that checks VACUUM does not insert sequential rowid values
+    #[test]
+    fn test_random_rowid_vacuum() {
+        let conn = Connection::open_in_memory().unwrap();
+
+        conn.execute("CREATE TABLE t(id) RANDOM ROWID", ()).unwrap();
+        for _ in 1..=1024 {
+            conn.execute("INSERT INTO t(id) VALUES (42)", ()).unwrap();
+        }
+
+        let old_random_rowids: Vec<i64> = conn
+            .prepare("SELECT rowid FROM t")
+            .unwrap()
+            .query_map([], |row| Ok(row.get_unwrap(0)))
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
+
+        assert_ne!(old_random_rowids, (1..=1024_i64).collect::<Vec<i64>>());
+
+        // run vacuum to reindex the table
+        conn.execute("VACUUM", ()).unwrap();
+        let random_rowids: Vec<i64> = conn
+            .prepare("SELECT rowid FROM t")
+            .unwrap()
+            .query_map([], |row| Ok(row.get_unwrap(0)))
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
+
+        assert_ne!(random_rowids, (1..=1024_i64).collect::<Vec<i64>>());
+        assert_ne!(random_rowids, old_random_rowids);
+    }
+
+    // Test that checks bulk insert into a fresh table does not
+    // insert sequential rowid values
+    #[test]
+    fn test_random_rowid_bulk_insert() {
+        let conn = Connection::open_in_memory().unwrap();
+
+        conn.execute("CREATE TABLE t(id) RANDOM ROWID", ()).unwrap();
+        conn.execute("CREATE TABLE s(id) RANDOM ROWID", ()).unwrap();
+        for _ in 1..=1024 {
+            conn.execute("INSERT INTO t(id) VALUES (42)", ()).unwrap();
+        }
+
+        // insert data from t to s
+        conn.execute("INSERT INTO s SELECT * FROM t", ()).unwrap();
+        let random_rowids: Vec<i64> = conn
+            .prepare("SELECT rowid FROM s")
+            .unwrap()
+            .query_map([], |row| Ok(row.get_unwrap(0)))
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
+
+        assert_ne!(random_rowids, (1..=1024_i64).collect::<Vec<i64>>());
+    }
 }

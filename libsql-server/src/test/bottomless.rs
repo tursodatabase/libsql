@@ -92,7 +92,7 @@ async fn configure_server(
             snapshot_exec: None,
             checkpoint_interval: Some(Duration::from_secs(3)),
             snapshot_at_shutdown: false,
-            encryption_key: None,
+            encryption_config: None,
             max_concurrent_requests: 128,
         },
         admin_api_config: None,
@@ -114,7 +114,7 @@ async fn configure_server(
         rpc_server_config: None,
         rpc_client_config: None,
         shutdown: Default::default(),
-        meta_store_config: None,
+        meta_store_config: Default::default(),
         max_concurrent_connections: 128,
     }
 }

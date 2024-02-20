@@ -15,8 +15,10 @@ use aws_sdk_s3::primitives::ByteStream;
 use aws_sdk_s3::{Client, Config};
 use bytes::{Buf, Bytes};
 use chrono::{NaiveDateTime, TimeZone, Utc};
+use libsql_sys::{Cipher, EncryptionConfig};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 use tokio::fs::{File, OpenOptions};
@@ -59,7 +61,7 @@ pub struct Replicator {
     pub db_name: String,
 
     use_compression: CompressionKind,
-    encryption_key: Option<Bytes>,
+    encryption_config: Option<EncryptionConfig>,
     max_frames_per_batch: usize,
     s3_upload_max_parallelism: usize,
     join_set: JoinSet<()>,
@@ -85,7 +87,7 @@ pub struct Options {
     pub verify_crc: bool,
     /// Kind of compression algorithm used on the WAL frames to be sent to S3.
     pub use_compression: CompressionKind,
-    pub encryption_key: Option<Bytes>,
+    pub encryption_config: Option<EncryptionConfig>,
     pub aws_endpoint: Option<String>,
     pub access_key_id: Option<String>,
     pub secret_access_key: Option<String>,
@@ -181,6 +183,7 @@ impl Options {
         let use_compression =
             CompressionKind::parse(&env_var_or("LIBSQL_BOTTOMLESS_COMPRESSION", "zstd"))
                 .map_err(|e| anyhow!("unknown compression kind: {}", e))?;
+        let encryption_cipher = env_var("LIBSQL_BOTTOMLESS_ENCRYPTION_CIPHER").ok();
         let encryption_key = env_var("LIBSQL_BOTTOMLESS_ENCRYPTION_KEY")
             .map(Bytes::from)
             .ok();
@@ -196,12 +199,20 @@ impl Options {
             ),
         };
         let s3_max_retries = env_var_or("LIBSQL_BOTTOMLESS_S3_MAX_RETRIES", 10).parse::<u32>()?;
+        let cipher = match encryption_cipher {
+            Some(cipher) => Cipher::from_str(&cipher)?,
+            None => Cipher::default(),
+        };
+        let encryption_config = match encryption_key {
+            Some(key) => Some(EncryptionConfig::new(cipher, key)),
+            None => None,
+        };
         Ok(Options {
             db_id,
             create_bucket_if_not_exists: true,
             verify_crc,
             use_compression,
-            encryption_key,
+            encryption_config,
             max_batch_interval,
             max_frames_per_batch,
             s3_upload_max_parallelism,
@@ -358,7 +369,7 @@ impl Replicator {
             snapshot_waiter,
             snapshot_notifier: Arc::new(snapshot_notifier),
             use_compression: options.use_compression,
-            encryption_key: options.encryption_key,
+            encryption_config: options.encryption_config,
             max_frames_per_batch: options.max_frames_per_batch,
             s3_upload_max_parallelism: options.s3_upload_max_parallelism,
             join_set,
@@ -697,7 +708,7 @@ impl Replicator {
             flags,
             Sqlite3WalManager::new(),
             libsql_sys::connection::NO_AUTOCHECKPOINT, // no checkpointing
-            self.encryption_key.clone(),
+            self.encryption_config.clone(),
         )?;
         Ok(conn)
     }
@@ -1323,12 +1334,12 @@ impl Replicator {
         utc_time: Option<NaiveDateTime>,
         db_path: &Path,
     ) -> Result<bool> {
-        let encryption_key = self.encryption_key.clone();
+        let encryption_config = self.encryption_config.clone();
         let mut injector = libsql_replication::injector::Injector::new(
             db_path,
             4096,
             libsql_sys::connection::NO_AUTOCHECKPOINT,
-            encryption_key,
+            encryption_config,
         )?;
         let prefix = format!("{}-{}/", self.db_name, generation);
         let mut page_buf = {

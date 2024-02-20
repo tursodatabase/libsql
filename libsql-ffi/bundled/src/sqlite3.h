@@ -7284,7 +7284,6 @@ typedef struct sqlite3_vtab sqlite3_vtab;
 typedef struct sqlite3_index_info sqlite3_index_info;
 typedef struct sqlite3_vtab_cursor sqlite3_vtab_cursor;
 typedef struct sqlite3_module sqlite3_module;
-typedef struct libsql_module libsql_module;
 
 /*
 ** CAPI3REF: Virtual Table Object
@@ -7342,11 +7341,10 @@ struct sqlite3_module {
   ** Those below are for version 4 and greater. */
   int (*xIntegrity)(sqlite3_vtab *pVTab, const char *zSchema,
                     const char *zTabName, int mFlags, char **pzErr);
-};
 
-/* libSQL extensions for modules */
-struct libsql_module {
-  int iVersion;
+  // reserved for sqlite extension
+  void (*reserved[5])();
+  // following methods are added by libsql
   int (*xPreparedSql)(sqlite3_vtab_cursor*, const char*);
 };
 
@@ -7594,14 +7592,6 @@ SQLITE_API int sqlite3_create_module_v2(
   void *pClientData,         /* Client data for xCreate/xConnect */
   void(*xDestroy)(void*)     /* Module destructor function */
 );
-SQLITE_API int libsql_create_module(
-  sqlite3 *db,                  /* SQLite connection to register module with */
-  const char *zName,            /* Name of the module */
-  const sqlite3_module *p,      /* Methods for the module */
-  const libsql_module *pLibsql, /* Methods for the module */
-  void *pClientData,            /* Client data for xCreate/xConnect */
-  void(*xDestroy)(void*)        /* Module destructor function */
-);
 
 /*
 ** CAPI3REF: Remove Unnecessary Virtual Table Implementations
@@ -7640,7 +7630,6 @@ SQLITE_API int sqlite3_drop_modules(
 */
 struct sqlite3_vtab {
   const sqlite3_module *pModule;      /* The module for this virtual table */
-  const libsql_module *pLibsqlModule; /* The libSQL module for this virtual table */
   int nRef;                           /* Number of open cursors */
   char *zErrMsg;                      /* Error message from sqlite3_mprintf() */
   /* Virtual table implementations will typically add additional fields */

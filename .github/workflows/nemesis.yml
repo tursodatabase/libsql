@@ -20,6 +20,14 @@ jobs:
     steps:
       - uses: hecrj/setup-rust-action@v1
 
+      # needed because we run out of disk space during tests
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # when set to "true" but frees about 6 GB
+          tool-cache: true
+
       - name: Install deps
         run: sudo apt update && sudo apt install -y libclang-dev
 

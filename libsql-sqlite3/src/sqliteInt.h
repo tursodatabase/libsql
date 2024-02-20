@@ -2200,7 +2200,6 @@ struct Savepoint {
 */
 struct Module {
   const sqlite3_module *pModule;       /* Callback pointers */
-  const libsql_module *pLibsqlModule;  /* Callback pointers for libSQL */
   const char *zName;                   /* Name passed to create_module() */
   int nRefModule;                      /* Number of pointers to this object */
   void *pAux;                          /* pAux passed to create_module() */
@@ -5475,7 +5474,6 @@ void sqlite3AutoLoadExtensions(sqlite3*);
      sqlite3*,
      const char*,
      const sqlite3_module*,
-     const libsql_module*,
      void*,
      void(*)(void*)
    );
