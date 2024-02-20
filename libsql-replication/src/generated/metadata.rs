@@ -25,4 +25,8 @@ pub struct DatabaseConfig {
     pub allow_attach: bool,
     #[prost(uint64, optional, tag = "10")]
     pub max_row_size: ::core::option::Option<u64>,
+    #[prost(bool, optional, tag = "11")]
+    pub shared_schema: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "12")]
+    pub shared_schema_name: ::core::option::Option<::prost::alloc::string::String>,
 }

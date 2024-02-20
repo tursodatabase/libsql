@@ -20,7 +20,7 @@ use url::Url;
 
 use crate::auth::parse_jwt_key;
 use crate::database::Database;
-use crate::error::LoadDumpError;
+use crate::error::{Error, LoadDumpError};
 use crate::hrana;
 use crate::namespace::{
     DumpStream, MakeNamespace, NamespaceBottomlessDbId, NamespaceName, NamespaceStore,
@@ -281,6 +281,12 @@ struct CreateNamespaceReq {
     jwt_key: Option<String>,
     txn_timeout_s: Option<u64>,
     max_row_size: Option<u64>,
+    /// If true, current namespace acts as a DB used solely for multi-db schema updates.
+    #[serde(default)]
+    shared_schema: bool,
+    /// If some, this is a [NamespaceName] reference to a shared schema DB.
+    #[serde(default)]
+    shared_schema_name: Option<String>,
 }
 
 async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
@@ -292,6 +298,20 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
         // Check that the jwt key is correct
         parse_jwt_key(jwt_key)?;
     }
+    let shared_schema_name = if let Some(ns) = req.shared_schema_name {
+        if req.shared_schema {
+            return Err(Error::SharedSchemaError(
+                "shared schema database cannot reference another shared schema".to_string(),
+            ));
+        }
+        let namespace = NamespaceName::from_string(ns)?;
+        if !app_state.namespaces.exists(&namespace).await {
+            return Err(Error::NamespaceDoesntExist(namespace.to_string()));
+        }
+        Some(namespace.to_string())
+    } else {
+        None
+    };
     let dump = match req.dump_url {
         Some(ref url) => {
             RestoreOption::Dump(dump_stream_from_url(url, app_state.connector.clone()).await?)
@@ -303,6 +323,7 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
         Some(db_id) => NamespaceBottomlessDbId::Namespace(db_id),
         None => NamespaceBottomlessDbId::NotProvided,
     };
+
     let namespace = NamespaceName::from_string(namespace)?;
     app_state
         .namespaces
@@ -311,6 +332,9 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
 
     let store = app_state.namespaces.config_store(namespace).await?;
     let mut config = (*store.get()).clone();
+
+    config.is_shared_schema = req.shared_schema;
+    config.shared_schema_name = shared_schema_name;
     if let Some(max_db_size) = req.max_db_size {
         config.max_db_pages = max_db_size.as_u64() / LIBSQL_PAGE_SIZE;
     }

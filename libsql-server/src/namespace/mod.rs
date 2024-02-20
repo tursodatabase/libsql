@@ -458,6 +458,11 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         })
     }
 
+    pub async fn exists(&self, namespace: &NamespaceName) -> bool {
+        let e = self.inner.store.get(namespace).await;
+        e.is_some()
+    }
+
     pub async fn destroy(&self, namespace: NamespaceName) -> crate::Result<()> {
         if self.inner.has_shutdown.load(Ordering::Relaxed) {
             return Err(Error::NamespaceStoreShutdown);
