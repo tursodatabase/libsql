@@ -566,7 +566,6 @@ where
                     NamespaceName::default(),
                     namespace::RestoreOption::Latest,
                     NamespaceBottomlessDbId::NotProvided,
-                    None,
                 )
                 .await?;
         }

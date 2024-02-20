@@ -70,7 +70,7 @@ impl From<&metadata::DatabaseConfig> for DatabaseConfig {
             txn_timeout: value.txn_timeout_s.map(Duration::from_secs),
             allow_attach: value.allow_attach,
             max_row_size: value.max_row_size.unwrap_or_else(default_max_row_size),
-            is_shared_schema: value.is_shared_schema,
+            is_shared_schema: value.shared_schema.unwrap_or(false),
             shared_schema_name: value.shared_schema_name.clone(),
         }
     }
@@ -89,7 +89,7 @@ impl From<&DatabaseConfig> for metadata::DatabaseConfig {
             txn_timeout_s: value.txn_timeout.map(|d| d.as_secs()),
             allow_attach: value.allow_attach,
             max_row_size: Some(value.max_row_size),
-            is_shared_schema: value.is_shared_schema,
+            shared_schema: Some(value.is_shared_schema),
             shared_schema_name: value.shared_schema_name.clone(),
         }
     }
