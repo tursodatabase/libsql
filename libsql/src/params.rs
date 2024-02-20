@@ -93,7 +93,7 @@ pub trait IntoParams: Sealed {
     fn into_params(self) -> Result<Params>;
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 #[doc(hidden)]
 pub enum Params {
     None,
