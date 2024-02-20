@@ -57,7 +57,7 @@ impl Default for DatabaseConfig {
             bottomless_db_id: None,
             jwt_key: None,
             txn_timeout: Some(TXN_TIMEOUT),
-            allow_attach: false,
+            allow_attach: true,
             max_row_size: default_max_row_size(),
             is_shared_schema: false,
             shared_schema_name: None,
