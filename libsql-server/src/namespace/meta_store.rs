@@ -1,4 +1,5 @@
 #![allow(clippy::mutable_key_type)]
+use hashbrown::HashSet;
 use std::path::Path;
 use std::sync::Arc;
 use std::{collections::HashMap, fs::read_dir};
@@ -44,8 +45,24 @@ pub struct MetaStoreHandle {
 
 #[derive(Debug, Clone)]
 enum HandleState {
-    Internal(Arc<Mutex<Arc<DatabaseConfig>>>),
+    Internal(Arc<Mutex<MetaState>>),
     External(mpsc::Sender<ChangeMsg>, Receiver<InnerConfig>),
+}
+
+#[derive(Debug, Default)]
+struct MetaState {
+    config: Arc<DatabaseConfig>,
+    shared_schemas: HashMap<NamespaceName, HashSet<NamespaceName>>,
+}
+
+impl MetaState {
+    #[allow(dead_code)] // only used in tests
+    fn new(config: Arc<DatabaseConfig>) -> Self {
+        MetaState {
+            config,
+            shared_schemas: HashMap::default(),
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -422,20 +439,20 @@ impl MetaStoreHandle {
 
         Ok(Self {
             namespace: NamespaceName("testmetastore".into()),
-            inner: HandleState::Internal(Arc::new(Mutex::new(Arc::new(config)))),
+            inner: HandleState::Internal(Arc::new(Mutex::new(MetaState::new(Arc::new(config))))),
         })
     }
 
     pub fn internal() -> Self {
         MetaStoreHandle {
             namespace: NamespaceName("testmetastore".into()),
-            inner: HandleState::Internal(Arc::new(Mutex::new(Arc::new(DatabaseConfig::default())))),
+            inner: HandleState::Internal(Arc::new(Mutex::new(MetaState::default()))),
         }
     }
 
     pub fn get(&self) -> Arc<DatabaseConfig> {
         match &self.inner {
-            HandleState::Internal(config) => config.lock().clone(),
+            HandleState::Internal(config) => config.lock().config.clone(),
             HandleState::External(_, config) => config.borrow().clone().config,
         }
     }
@@ -449,8 +466,13 @@ impl MetaStoreHandle {
 
     pub async fn link(&self, shared_schema: NamespaceName, linked_db: NamespaceName) -> Result<()> {
         match &self.inner {
-            HandleState::Internal(_) => {
-                //FIXME: what is this even for?
+            HandleState::Internal(configs) => {
+                let mut guard = configs.lock();
+                guard
+                    .shared_schemas
+                    .entry(shared_schema)
+                    .or_default()
+                    .insert(linked_db);
             }
             HandleState::External(changes_tx, _) => {
                 changes_tx
@@ -466,7 +488,8 @@ impl MetaStoreHandle {
     pub async fn store(&self, new_config: impl Into<Arc<DatabaseConfig>>) -> Result<()> {
         match &self.inner {
             HandleState::Internal(config) => {
-                *config.lock() = new_config.into();
+                let mut lock = config.lock();
+                lock.config = new_config.into();
             }
             HandleState::External(changes_tx, config) => {
                 let new_config = new_config.into();
