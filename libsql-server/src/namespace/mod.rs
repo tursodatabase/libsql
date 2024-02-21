@@ -1,5 +1,6 @@
 mod fork;
 pub mod meta_store;
+mod multi_db;
 pub mod replication_wal;
 
 use std::fmt;

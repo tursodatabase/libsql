@@ -12,12 +12,14 @@ use libsql_sys::wal::{
 };
 use parking_lot::Mutex;
 use prost::Message;
+use rusqlite::params;
 use tokio::sync::{
     mpsc,
     watch::{self, Receiver, Sender},
 };
 
 use crate::connection::config::DatabaseConfig;
+use crate::namespace::multi_db::{LastUpdateStatus, MultiDbUpdate, UpdateStatus};
 use crate::{
     config::MetaStoreConfig, connection::libsql::open_conn_active_checkpoint, error::Error, Result,
 };
@@ -119,6 +121,24 @@ impl MetaStoreInner {
             Sqlite3WalManager::default(),
         );
         let conn = open_conn_active_checkpoint(&db_path, wal_manager.clone(), None, 1000, None)?;
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS multi_db_update(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                shared_schema TEXT NOT NULL,
+                script TEXT NOT NULL)",
+            (),
+        )?;
+        conn.execute(
+            "CRATE TABLE IF NOT EXISTS multi_db_update_progress(
+                id INTEGER NOT NULL,
+                namespace TEXT NOT NULL,
+                status INTEGER,
+                err_msg TEXT,
+                PRIMARY KEY(id, namespace),
+                FOREIGN KEY(id) REFERENCES libsql_jobs(id))
+            ",
+            (),
+        )?;
         conn.execute(
             "CREATE TABLE IF NOT EXISTS namespace_configs (
                 namespace TEXT NOT NULL PRIMARY KEY,
@@ -434,5 +454,118 @@ impl MetaStoreHandle {
         };
 
         Ok(())
+    }
+}
+
+impl MultiDbUpdate {
+    pub fn restore_last(
+        shared_schema: &NamespaceName,
+        meta_store: &mut MetaStore,
+    ) -> Result<Option<Self>> {
+        let id = {
+            let mut inner = meta_store.inner.lock();
+
+            let tx = inner.conn.transaction()?;
+            let last_job = Self::last_update_status(&tx, shared_schema.as_str())?;
+            match last_job {
+                LastUpdateStatus::NeedsRetry(id) => Some(id),
+                LastUpdateStatus::None | LastUpdateStatus::Completed(_) => None,
+            }
+        };
+        match id {
+            None => Ok(None),
+            Some(id) => Self::restore(id, shared_schema, meta_store).map(Some),
+        }
+    }
+
+    pub fn restore(
+        id: i64,
+        shared_schema: &NamespaceName,
+        meta_store: &mut MetaStore,
+    ) -> Result<Self> {
+        let mut inner = meta_store.inner.lock();
+
+        let tx = inner.conn.transaction()?;
+        let sql = tx.query_row(
+            "SELECT script FROM multi_db_update WHERE id = ?",
+            params![id],
+            |row| row.get(0),
+        )?;
+        let mut stmt = tx.prepare(
+            r#"SELECT namespace FROM multi_db_update_progress WHERE status != 0 AND id = ?"#,
+        )?;
+        let mut rows = stmt.query(params![&id])?;
+        let mut namespaces = Vec::new();
+        while let Ok(Some(row)) = rows.next() {
+            let ns = NamespaceName::from_string(row.get(0)?)?;
+            if &ns == shared_schema {
+                // shared schema db should be evaluated first
+                namespaces.insert(0, (ns, UpdateStatus::Pending));
+            } else {
+                namespaces.push((ns, UpdateStatus::Pending));
+            }
+        }
+
+        Ok(MultiDbUpdate::new(id, sql, namespaces))
+    }
+
+    /// Prepare new multi-db update.
+    ///
+    /// # Errors
+    ///
+    /// If there's already an unfinished SQL script waiting to be executed, this method will
+    /// return [crate::Error::SharedSchemaRetryRequired] with ID of an update that should be
+    /// retried first. In that case use [MultiDbUpdate::retry] instead of prepare.
+    pub fn prepare(
+        sql: String,
+        shared_schema: &NamespaceName,
+        meta_store: &mut MetaStore,
+    ) -> Result<Self> {
+        let mut inner = meta_store.inner.lock();
+
+        let tx = inner.conn.transaction()?;
+        let last_job = Self::last_update_status(&tx, shared_schema.as_str())?;
+        match last_job {
+            LastUpdateStatus::NeedsRetry(id) => {
+                // another job was in progress and not finished yet
+                return Err(crate::Error::SharedSchemaRetryRequired(id));
+            }
+            LastUpdateStatus::None | LastUpdateStatus::Completed(_) => {
+                //TODO: what if previous script is equal to current one?
+            }
+        }
+
+        tx.execute("INSERT INTO multi_db_update(script) VALUES (?)", [&sql])?;
+        let id = tx.last_insert_rowid();
+        // insert shared schema db
+        tx.execute(
+            r#"INSERT INTO multi_db_update_progress(id, namespace) VALUES(?,?)"#,
+            params![&id, shared_schema.as_str()],
+        )?;
+        // insert databases linking shared schema db
+        tx.execute(
+            r#"INSERT INTO multi_db_update_progress(id, namespace) 
+            SELECT ? as id, namespace shared_schema_links"#,
+            [&id],
+        )?;
+        let mut namespaces = Vec::new();
+        {
+            let mut stmt = tx.prepare(
+                r#"SELECT namespace FROM multi_db_update_progress WHERE status != 0 AND id = ?"#,
+            )?;
+            let mut rows = stmt.query(params![&id])?;
+            while let Ok(Some(row)) = rows.next() {
+                let ns = NamespaceName::from_string(row.get(0)?)?;
+                if &ns == shared_schema {
+                    // shared schema db should be evaluated first
+                    namespaces.insert(0, (ns, UpdateStatus::Pending));
+                } else {
+                    namespaces.push((ns, UpdateStatus::Pending));
+                }
+            }
+        }
+        tx.commit()?;
+
+        Ok(MultiDbUpdate::new(id, sql, namespaces))
     }
 }

@@ -101,6 +101,8 @@ pub enum Error {
     Ref(#[from] std::sync::Arc<Self>),
     #[error("Unable to decode protobuf: {0}")]
     ProstDecode(#[from] prost::DecodeError),
+    #[error("Shared schema update (ID: {0}) needs to be retried.")]
+    SharedSchemaRetryRequired(i64),
     #[error("Shared schema error: {0}")]
     SharedSchemaError(String),
 }
@@ -181,6 +183,7 @@ impl IntoResponse for &Error {
             Ref(this) => this.as_ref().into_response(),
             ProstDecode(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             SharedSchemaError(_) => self.format_err(StatusCode::BAD_REQUEST),
+            SharedSchemaRetryRequired(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }
