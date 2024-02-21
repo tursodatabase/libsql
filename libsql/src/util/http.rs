@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use super::box_clone_service::BoxCloneService;
 use tokio::io::{AsyncRead, AsyncWrite};
 
@@ -23,4 +21,4 @@ pub type ConnectorService =
     BoxCloneService<http::Uri, Box<dyn Socket>, Box<dyn std::error::Error + Sync + Send + 'static>>;
 
 #[cfg(feature = "replication")]
-pub type HttpRequestCallback = Arc<dyn Fn(&mut http::Request<()>) + Send + Sync>;
+pub type HttpRequestCallback = std::sync::Arc<dyn Fn(&mut http::Request<()>) + Send + Sync>;
