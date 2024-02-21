@@ -1366,6 +1366,7 @@ mod test {
         let auth = Authenticated::Authorized(Authorized {
             namespace: None,
             permission: Permission::FullAccess,
+            token_type: None,
         });
 
         let conn = make_conn.make_connection().await.unwrap();

@@ -49,6 +49,7 @@ pub enum AuthError {
 pub struct Authorized {
     pub namespace: Option<NamespaceName>,
     pub permission: Permission,
+    pub token_type: Option<TokenType>,
 }
 
 #[non_exhaustive]
@@ -56,6 +57,13 @@ pub struct Authorized {
 pub enum Permission {
     FullAccess,
     ReadOnly,
+}
+
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TokenType {
+    DBToken,
+    GroupToken,
 }
 
 /// A witness that the user has been authenticated.
@@ -77,6 +85,7 @@ impl Auth {
             return Ok(Authenticated::Authorized(Authorized {
                 namespace: None,
                 permission: Permission::FullAccess,
+                token_type: None,
             }));
         }
 
@@ -97,6 +106,7 @@ impl Auth {
                     Ok(Authenticated::Authorized(Authorized {
                         namespace: None,
                         permission: Permission::FullAccess,
+                        token_type: None,
                     }))
                 } else {
                     Err(AuthError::BasicRejected)
@@ -135,6 +145,7 @@ impl Auth {
             return Ok(Authenticated::Authorized(Authorized {
                 namespace: None,
                 permission: Permission::FullAccess,
+                token_type: None,
             }));
         }
 
@@ -190,17 +201,19 @@ impl Authenticated {
             Some("full_access") => Authenticated::Authorized(Authorized {
                 namespace,
                 permission: Permission::FullAccess,
+                token_type: None,
             }),
             Some("read_only") => Authenticated::Authorized(Authorized {
                 namespace,
                 permission: Permission::ReadOnly,
+                token_type: None,
             }),
             Some("anonymous") => Authenticated::Anonymous,
             Some(level) => {
                 return Err(Status::permission_denied(format!(
                     "invalid authorization level: {}",
                     level
-                )))
+                )));
             }
             None => return Err(Status::invalid_argument("x-proxy-authorization not set")),
         };
@@ -298,9 +311,16 @@ fn validate_jwt(
                 None => Permission::FullAccess,
             };
 
+            let token_type = if claims.contains_key("gid") {
+                Some(TokenType::GroupToken)
+            } else {
+                Some(TokenType::DBToken)
+            };
+
             Ok(Authenticated::Authorized(Authorized {
                 namespace,
                 permission,
+                token_type,
             }))
         }
         Ok(_) => Err(AuthError::JwtInvalid),
@@ -456,7 +476,7 @@ mod tests {
             authenticate_http(&auth, &format!("Bearer {VALID_READONLY_JWT}")).unwrap(),
             Authenticated::Authorized(Authorized {
                 namespace: None,
-                permission: Permission::ReadOnly
+                permission: Permission::ReadOnly,
             })
         );
     }
