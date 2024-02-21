@@ -9,7 +9,6 @@ use s3s::auth::SimpleAuth;
 use s3s::service::S3ServiceBuilder;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::sync::Once;
 use tokio::time::sleep;
 use tokio::time::Duration;
@@ -104,7 +103,7 @@ async fn configure_server(
             http_acceptor: Some(http_acceptor),
             enable_http_console: false,
             self_url: None,
-            auth_strategy: Arc::new(Disabled::new()),
+            auth_strategy: Auth::new(Disabled::new()),
         },
         path: path.into().into(),
         disable_default_namespace: false,

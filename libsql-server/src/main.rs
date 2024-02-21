@@ -9,7 +9,7 @@ use anyhow::{bail, Context as _, Result};
 use bytesize::ByteSize;
 use clap::Parser;
 use hyper::client::HttpConnector;
-use libsql_server::auth::{parse_http_basic_auth_arg, parse_jwt_key, user_auth_strategies};
+use libsql_server::auth::{parse_http_basic_auth_arg, parse_jwt_key, user_auth_strategies, Auth};
 // use mimalloc::MiMalloc;
 use tokio::sync::Notify;
 use tokio::time::Duration;
@@ -368,16 +368,14 @@ fn make_db_config(config: &Cli) -> anyhow::Result<DbConfig> {
     })
 }
 
-async fn make_user_auth_strategy(
-    config: &Cli,
-) -> anyhow::Result<Arc<dyn user_auth_strategies::UserAuthStrategy>> {
+async fn make_user_auth_strategy(config: &Cli) -> anyhow::Result<Auth> {
     if let Some(http_auth) = config.http_auth.as_deref() {
         tracing::info!("Using legacy HTTP basic authentication");
 
         let credential =
             parse_http_basic_auth_arg(http_auth)?.expect("Invalid HTTP Basic configuration");
 
-        return Ok(Arc::new(user_auth_strategies::HttpBasic::new(
+        return Ok(Auth::new(user_auth_strategies::HttpBasic::new(
             credential.into(),
         )));
     }
@@ -401,10 +399,10 @@ async fn make_user_auth_strategy(
         let jwt_key: jsonwebtoken::DecodingKey =
             parse_jwt_key(jwt_key).context("Could not parse JWT decoding key")?;
         tracing::info!("Using JWT-based authentication");
-        return Ok(Arc::new(user_auth_strategies::Jwt::new(jwt_key)));
+        return Ok(Auth::new(user_auth_strategies::Jwt::new(jwt_key)));
     }
 
-    Ok(Arc::new(user_auth_strategies::Disabled::new()))
+    Ok(Auth::new(user_auth_strategies::Disabled::new()))
 }
 
 async fn make_user_api_config(config: &Cli) -> anyhow::Result<UserApiConfig> {

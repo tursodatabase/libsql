@@ -70,7 +70,7 @@ impl<A> Default for UserApiConfig<A> {
             http_acceptor: Default::default(),
             enable_http_console: Default::default(),
             self_url: Default::default(),
-            auth_strategy: Arc::new(Disabled::new()),
+            auth_strategy: Auth::new(Disabled::new()),
         }
     }
 }
