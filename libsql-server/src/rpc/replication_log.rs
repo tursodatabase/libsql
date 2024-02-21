@@ -145,7 +145,7 @@ impl ReplicationLogService {
         let (logger, config, version, stats) = self
             .namespaces
             .with(namespace, |ns| {
-                let logger = ns.db.wal_manager.wrapped().logger().clone();
+                let logger = ns.db.wal_manager().wrapped().logger().clone();
                 let config = ns.config();
                 let version = ns.config_version();
                 let stats = ns.stats();

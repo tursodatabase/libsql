@@ -43,9 +43,34 @@ impl Database for ReplicaDatabase {
     }
 }
 
-pub struct PrimaryDatabase {
+pub enum PrimaryDatabase {
+    Standard(StandardPrimaryDatabase),
+    SharedSchema(SharedSchemaDatabase),
+}
+
+pub struct StandardPrimaryDatabase {
     pub wal_manager: ReplicationWalManager,
     pub connection_maker: Arc<dyn MakeConnection<Connection = PrimaryConnection>>,
+}
+
+pub struct SharedSchemaDatabase {
+    pub wal_manager: ReplicationWalManager,
+    pub connection_maker: Arc<dyn MakeConnection<Connection = PrimaryConnection>>,
+}
+
+impl PrimaryDatabase {
+    pub fn wal_manager(&self) -> &ReplicationWalManager {
+        match self {
+            PrimaryDatabase::Standard(db) => &db.wal_manager,
+            PrimaryDatabase::SharedSchema(db) => &db.wal_manager,
+        }
+    }
+    pub fn connection_maker(&self) -> &Arc<dyn MakeConnection<Connection = PrimaryConnection>> {
+        match self {
+            PrimaryDatabase::Standard(db) => &db.connection_maker,
+            PrimaryDatabase::SharedSchema(db) => &db.connection_maker,
+        }
+    }
 }
 
 #[async_trait]
@@ -53,11 +78,11 @@ impl Database for PrimaryDatabase {
     type Connection = PrimaryConnection;
 
     fn connection_maker(&self) -> Arc<dyn MakeConnection<Connection = Self::Connection>> {
-        self.connection_maker.clone()
+        self.connection_maker().clone()
     }
 
     fn destroy(self) {
-        self.wal_manager
+        self.wal_manager()
             .wrapped()
             .logger()
             .closed_signal
@@ -65,13 +90,13 @@ impl Database for PrimaryDatabase {
     }
 
     async fn shutdown(self) -> Result<()> {
-        self.wal_manager
+        self.wal_manager()
             .wrapped()
             .logger()
             .closed_signal
             .send_replace(true);
-        let wal_manager = self.wal_manager;
         if let Some(mut replicator) = tokio::task::spawn_blocking(move || {
+            let wal_manager = self.wal_manager();
             wal_manager.wrapper().as_ref().and_then(|r| r.shutdown())
         })
         .await?

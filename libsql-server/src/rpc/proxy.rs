@@ -17,7 +17,7 @@ use uuid::Uuid;
 
 use crate::auth::{Auth, Authenticated};
 use crate::connection::Connection;
-use crate::database::{Database, PrimaryConnection};
+use crate::database::PrimaryConnection;
 use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
@@ -526,10 +526,10 @@ impl Proxy for ProxyService {
         let (connection_maker, _new_frame_notifier) = self
             .namespaces
             .with(namespace, |ns| {
-                let connection_maker = ns.db.connection_maker();
+                let connection_maker = ns.db.connection_maker().clone();
                 let notifier = ns
                     .db
-                    .wal_manager
+                    .wal_manager()
                     .wrapped()
                     .logger()
                     .new_frame_notifier
@@ -565,7 +565,7 @@ impl Proxy for ProxyService {
 
         let connection_maker = self
             .namespaces
-            .with(namespace, |ns| ns.db.connection_maker())
+            .with(namespace, |ns| ns.db.connection_maker().clone())
             .await
             .map_err(|e| {
                 if let crate::error::Error::NamespaceDoesntExist(_) = e {
@@ -631,10 +631,10 @@ impl Proxy for ProxyService {
         let (connection_maker, _new_frame_notifier) = self
             .namespaces
             .with(namespace, |ns| {
-                let connection_maker = ns.db.connection_maker();
+                let connection_maker = ns.db.connection_maker().clone();
                 let notifier = ns
                     .db
-                    .wal_manager
+                    .wal_manager()
                     .wrapped()
                     .logger()
                     .new_frame_notifier

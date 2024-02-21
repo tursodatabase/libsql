@@ -40,7 +40,9 @@ use crate::connection::libsql::{open_conn, MakeLibSqlConn};
 use crate::connection::write_proxy::MakeWriteProxyConn;
 use crate::connection::Connection;
 use crate::connection::MakeConnection;
-use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
+use crate::database::{
+    Database, PrimaryDatabase, ReplicaDatabase, SharedSchemaDatabase, StandardPrimaryDatabase,
+};
 use crate::error::{Error, LoadDumpError};
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
 use crate::replication::script_backup_manager::ScriptBackupManager;
@@ -322,7 +324,7 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         let fork_task = ForkTask {
             base_path: self.config.base_path.clone(),
             dest_namespace: to,
-            logger: from.db.wal_manager.wrapped().logger(),
+            logger: from.db.wal_manager().wrapped().logger(),
             make_namespace: self,
             restore_to,
             bottomless_db_id,
@@ -1097,18 +1099,24 @@ impl Namespace<PrimaryDatabase> {
 
         tokio::fs::create_dir_all(&db_path).await?;
 
-        let bottomless_db_id = match bottomless_db_id {
+        let (bottomless_db_id, is_shared_schema_db) = match bottomless_db_id {
             NamespaceBottomlessDbId::Namespace(ref db_id) => {
                 let config = &*(meta_store_handle.get()).clone();
+                let is_shared_schema_db = config.is_shared_schema;
                 let config = DatabaseConfig {
                     bottomless_db_id: Some(db_id.clone()),
                     ..config.clone()
                 };
                 meta_store_handle.store(config).await?;
-                bottomless_db_id
+                (bottomless_db_id, is_shared_schema_db)
             }
             NamespaceBottomlessDbId::NotProvided => {
-                NamespaceBottomlessDbId::from_config(&meta_store_handle.get())
+                let config = &meta_store_handle.get();
+                let is_shared_schema_db = config.is_shared_schema;
+                (
+                    NamespaceBottomlessDbId::from_config(config),
+                    is_shared_schema_db,
+                )
             }
         };
 
@@ -1214,12 +1222,21 @@ impl Namespace<PrimaryDatabase> {
             ));
         }
 
-        Ok(Self {
-            tasks: join_set,
-            db: PrimaryDatabase {
+        let db = if is_shared_schema_db {
+            PrimaryDatabase::SharedSchema(SharedSchemaDatabase {
                 wal_manager,
                 connection_maker,
-            },
+            })
+        } else {
+            PrimaryDatabase::Standard(StandardPrimaryDatabase {
+                wal_manager,
+                connection_maker,
+            })
+        };
+
+        Ok(Self {
+            tasks: join_set,
+            db,
             name,
             stats,
             db_config_store: meta_store_handle,
