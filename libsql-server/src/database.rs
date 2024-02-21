@@ -1,14 +1,12 @@
-use std::sync::Arc;
-
-use async_trait::async_trait;
-
 use crate::connection::libsql::LibSqlConnection;
 use crate::connection::write_proxy::{RpcStream, WriteProxyConnection};
 use crate::connection::{Connection, MakeConnection, TrackedConnection};
 use crate::namespace::replication_wal::{ReplicationWal, ReplicationWalManager};
+use async_trait::async_trait;
+use std::sync::Arc;
 
-pub type PrimaryConnection = TrackedConnection<LibSqlConnection<ReplicationWal>>;
-
+pub type PrimaryConnection =
+    crate::connection::PrimaryConnection<TrackedConnection<LibSqlConnection<ReplicationWal>>>;
 pub type Result<T> = anyhow::Result<T>;
 
 #[async_trait]

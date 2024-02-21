@@ -1097,18 +1097,24 @@ impl Namespace<PrimaryDatabase> {
 
         tokio::fs::create_dir_all(&db_path).await?;
 
-        let bottomless_db_id = match bottomless_db_id {
+        let (bottomless_db_id, is_shared_schema_db) = match bottomless_db_id {
             NamespaceBottomlessDbId::Namespace(ref db_id) => {
                 let config = &*(meta_store_handle.get()).clone();
+                let is_shared_schema_db = config.is_shared_schema;
                 let config = DatabaseConfig {
                     bottomless_db_id: Some(db_id.clone()),
                     ..config.clone()
                 };
                 meta_store_handle.store(config).await?;
-                bottomless_db_id
+                (bottomless_db_id, is_shared_schema_db)
             }
             NamespaceBottomlessDbId::NotProvided => {
-                NamespaceBottomlessDbId::from_config(&meta_store_handle.get())
+                let config = &meta_store_handle.get();
+                let is_shared_schema_db = config.is_shared_schema;
+                (
+                    NamespaceBottomlessDbId::from_config(config),
+                    is_shared_schema_db,
+                )
             }
         };
 
@@ -1184,6 +1190,7 @@ impl Namespace<PrimaryDatabase> {
             config.max_total_response_size,
             config.max_concurrent_requests,
         )
+        .shared_schema(is_shared_schema_db)
         .into();
 
         // this must happen after we create the connection maker. The connection maker old on a

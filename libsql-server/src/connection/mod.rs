@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use tokio::time::{Duration, Instant};
@@ -30,7 +31,7 @@ const TXN_TIMEOUT: Duration = Duration::from_secs(5);
 const TXN_TIMEOUT: Duration = Duration::from_millis(100);
 
 #[async_trait::async_trait]
-pub trait Connection: Send + Sync + 'static {
+pub trait Connection: Send + Sync + Sized + 'static {
     /// Executes a query program
     async fn execute_program<B: QueryResultBuilder>(
         &self,
@@ -172,6 +173,13 @@ pub trait MakeConnection: Send + Sync + 'static {
             max_concurrent_requests,
         )
     }
+
+    fn shared_schema(self, is_shared_schema: bool) -> MakeSharedSchemaConnection<Self>
+    where
+        Self: Sized,
+    {
+        MakeSharedSchemaConnection::new(self, is_shared_schema)
+    }
 }
 
 #[async_trait::async_trait]
@@ -186,6 +194,89 @@ where
     async fn create(&self) -> Result<Self::Connection, Error> {
         let db = (self)().await?;
         Ok(db)
+    }
+}
+
+pub struct MakeSharedSchemaConnection<F> {
+    inner: F,
+    is_shared_schema: bool,
+}
+
+impl<F> MakeSharedSchemaConnection<F> {
+    pub fn new(inner: F, is_shared_schema: bool) -> Self {
+        MakeSharedSchemaConnection {
+            inner,
+            is_shared_schema,
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl<F: MakeConnection> MakeConnection for MakeSharedSchemaConnection<F> {
+    type Connection = PrimaryConnection<F::Connection>;
+
+    async fn create(&self) -> Result<Self::Connection, Error> {
+        let conn = self.inner.create().await?;
+        Ok(if self.is_shared_schema {
+            PrimaryConnection::SharedSchema(SharedSchemaConnection::new(conn))
+        } else {
+            PrimaryConnection::Tracked(conn)
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct SharedSchemaConnection<DB> {
+    inner: DB,
+}
+
+impl<DB> SharedSchemaConnection<DB> {
+    fn new(inner: DB) -> Self {
+        SharedSchemaConnection { inner }
+    }
+}
+
+#[async_trait::async_trait]
+impl<DB: Connection> Connection for SharedSchemaConnection<DB> {
+    async fn execute_program<B: QueryResultBuilder>(
+        &self,
+        pgm: Program,
+        auth: Authenticated,
+        response_builder: B,
+        replication_index: Option<FrameNo>,
+    ) -> Result<B> {
+        //TODO: execute multi-database execution procedure
+        todo!()
+    }
+
+    #[inline]
+    async fn describe(
+        &self,
+        sql: String,
+        auth: Authenticated,
+        replication_index: Option<FrameNo>,
+    ) -> Result<Result<DescribeResponse>> {
+        self.inner.describe(sql, auth, replication_index).await
+    }
+
+    #[inline]
+    async fn is_autocommit(&self) -> Result<bool> {
+        self.inner.is_autocommit()
+    }
+
+    #[inline]
+    async fn checkpoint(&self) -> Result<()> {
+        self.inner.checkpoint()
+    }
+
+    #[inline]
+    async fn vacuum_if_needed(&self) -> Result<()> {
+        self.inner.vacuum_if_needed()
+    }
+
+    #[inline]
+    fn diagnostics(&self) -> String {
+        self.inner.diagnostics()
     }
 }
 
@@ -306,6 +397,86 @@ impl<F: MakeConnection> MakeConnection for MakeThrottledConnection<F> {
             atime: AtomicU64::new(now_millis()),
             created_at: Instant::now(),
         })
+    }
+}
+
+pub enum PrimaryConnection<DB> {
+    Tracked(DB),
+    SharedSchema(SharedSchemaConnection<DB>),
+}
+
+impl<DB> PrimaryConnection<TrackedConnection<DB>> {
+    pub fn idle_time(&self) -> Duration {
+        let now = crate::connection::now_millis();
+        let atime = match self {
+            PrimaryConnection::Tracked(conn) => conn.atime.load(Ordering::Relaxed),
+            PrimaryConnection::SharedSchema(conn) => conn.inner.atime.load(Ordering::Relaxed),
+        };
+        Duration::from_millis(now.saturating_sub(atime))
+    }
+}
+
+#[async_trait]
+impl<DB: Connection> Connection for PrimaryConnection<DB> {
+    async fn execute_program<B: QueryResultBuilder>(
+        &self,
+        pgm: Program,
+        auth: Authenticated,
+        response_builder: B,
+        replication_index: Option<FrameNo>,
+    ) -> Result<B> {
+        match self {
+            PrimaryConnection::Tracked(conn) => {
+                conn.execute_program(pgm, auth, response_builder, replication_index)
+                    .await
+            }
+            PrimaryConnection::SharedSchema(conn) => {
+                conn.execute_program(pgm, auth, response_builder, replication_index)
+                    .await
+            }
+        }
+    }
+
+    async fn describe(
+        &self,
+        sql: String,
+        auth: Authenticated,
+        replication_index: Option<FrameNo>,
+    ) -> Result<Result<DescribeResponse>> {
+        match self {
+            PrimaryConnection::Tracked(conn) => conn.describe(sql, auth, replication_index).await,
+            PrimaryConnection::SharedSchema(conn) => {
+                conn.describe(sql, auth, replication_index).await
+            }
+        }
+    }
+
+    async fn is_autocommit(&self) -> Result<bool> {
+        match self {
+            PrimaryConnection::Tracked(conn) => conn.is_autocommit().await,
+            PrimaryConnection::SharedSchema(conn) => conn.is_autocommit().await,
+        }
+    }
+
+    async fn checkpoint(&self) -> Result<()> {
+        match self {
+            PrimaryConnection::Tracked(conn) => conn.checkpoint().await,
+            PrimaryConnection::SharedSchema(conn) => conn.checkpoint().await,
+        }
+    }
+
+    async fn vacuum_if_needed(&self) -> Result<()> {
+        match self {
+            PrimaryConnection::Tracked(conn) => conn.vacuum_if_needed().await,
+            PrimaryConnection::SharedSchema(conn) => conn.vacuum_if_needed().await,
+        }
+    }
+
+    fn diagnostics(&self) -> String {
+        match self {
+            PrimaryConnection::Tracked(conn) => conn.diagnostics(),
+            PrimaryConnection::SharedSchema(conn) => conn.diagnostics(),
+        }
     }
 }
 
