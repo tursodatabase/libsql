@@ -53,7 +53,8 @@ impl Builder<()> {
                     },
                     encryption_config: None,
                     read_your_writes: false,
-                    periodic_sync: None
+                    periodic_sync: None,
+                    http_request_callback: None
                 },
             }
         }
@@ -66,6 +67,7 @@ impl Builder<()> {
                     flags: crate::OpenFlags::default(),
                     remote: None,
                     encryption_config: None,
+                    http_request_callback: None
                 },
             }
         }
@@ -156,6 +158,7 @@ cfg_replication! {
         encryption_config: Option<EncryptionConfig>,
         read_your_writes: bool,
         periodic_sync: Option<std::time::Duration>,
+        http_request_callback: Option<crate::util::HttpRequestCallback>,
     }
 
     /// Local replica configuration type in [`Builder`].
@@ -164,6 +167,7 @@ cfg_replication! {
         flags: crate::OpenFlags,
         remote: Option<Remote>,
         encryption_config: Option<EncryptionConfig>,
+        http_request_callback: Option<crate::util::HttpRequestCallback>,
     }
 
     impl Builder<RemoteReplica> {
@@ -203,6 +207,15 @@ cfg_replication! {
             self
         }
 
+        pub fn http_request_callback<F>(mut self, f: F) -> Builder<RemoteReplica>
+        where
+            F: Fn(&mut http::Request<()>) + Send + Sync + 'static
+        {
+            self.inner.http_request_callback = Some(std::sync::Arc::new(f));
+            self
+
+        }
+
         #[doc(hidden)]
         pub fn version(mut self, version: String) -> Builder<RemoteReplica> {
             self.inner.remote = self.inner.remote.version(version);
@@ -222,7 +235,8 @@ cfg_replication! {
                     },
                 encryption_config,
                 read_your_writes,
-                periodic_sync
+                periodic_sync,
+                http_request_callback
             } = self.inner;
 
             let connector = if let Some(connector) = connector {
@@ -248,7 +262,8 @@ cfg_replication! {
                 version,
                 read_your_writes,
                 encryption_config.clone(),
-                periodic_sync
+                periodic_sync,
+                http_request_callback
             )
             .await?;
 
@@ -265,6 +280,15 @@ cfg_replication! {
             self
         }
 
+        pub fn http_request_callback<F>(mut self, f: F) -> Builder<LocalReplica>
+        where
+            F: Fn(&mut http::Request<()>) + Send + Sync + 'static
+        {
+            self.inner.http_request_callback = Some(std::sync::Arc::new(f));
+            self
+
+        }
+
         /// Build the local embedded replica database.
         pub async fn build(self) -> Result<Database> {
             let LocalReplica {
@@ -272,6 +296,7 @@ cfg_replication! {
                 flags,
                 remote,
                 encryption_config,
+                http_request_callback
             } = self.inner;
 
             let path = path.to_str().ok_or(crate::Error::InvalidUTF8Path)?.to_owned();
@@ -304,6 +329,7 @@ cfg_replication! {
                     version,
                     flags,
                     encryption_config.clone(),
+                    http_request_callback
                 )
                 .await?
             } else {
