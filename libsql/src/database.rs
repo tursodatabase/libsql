@@ -183,7 +183,8 @@ cfg_replication! {
                 auth_token,
                 None,
                 OpenFlags::default(),
-                encryption_config.clone()
+                encryption_config.clone(),
+                None
             ).await?;
 
             Ok(Database {
@@ -307,7 +308,8 @@ cfg_replication! {
                 version,
                 read_your_writes,
                 encryption_config.clone(),
-                periodic_sync
+                periodic_sync,
+                None
             ).await?;
 
             Ok(Database {

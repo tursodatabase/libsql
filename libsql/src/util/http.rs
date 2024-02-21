@@ -19,3 +19,6 @@ impl hyper::client::connect::Connection for Box<dyn Socket> {
 
 pub type ConnectorService =
     BoxCloneService<http::Uri, Box<dyn Socket>, Box<dyn std::error::Error + Sync + Send + 'static>>;
+
+#[cfg(feature = "replication")]
+pub type HttpRequestCallback = std::sync::Arc<dyn Fn(&mut http::Request<()>) + Send + Sync>;

@@ -7,7 +7,16 @@ use libsql::{
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let db = Builder::new_local_replica("test.db").build().await.unwrap();
+    let db = Builder::new_local_replica("test.db")
+        .http_request_callback(|r| {
+            let _uri = r.uri_mut();
+
+            // You can modify any part of the http request you would like including headers
+            // and the URI.
+        })
+        .build()
+        .await
+        .unwrap();
     let conn = db.connect().unwrap();
 
     let args = std::env::args().collect::<Vec<String>>();

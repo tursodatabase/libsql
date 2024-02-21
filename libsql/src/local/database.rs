@@ -64,6 +64,7 @@ impl Database {
             false,
             encryption_config,
             periodic_sync,
+            None,
         )
         .await
     }
@@ -79,6 +80,7 @@ impl Database {
         read_your_writes: bool,
         encryption_config: Option<EncryptionConfig>,
         periodic_sync: Option<std::time::Duration>,
+        http_request_callback: Option<crate::util::HttpRequestCallback>,
     ) -> Result<Database> {
         use std::path::PathBuf;
 
@@ -92,6 +94,7 @@ impl Database {
             endpoint.as_str().try_into().unwrap(),
             auth_token,
             version.as_deref(),
+            http_request_callback,
         )
         .unwrap();
         let path = PathBuf::from(db_path);
@@ -126,7 +129,8 @@ impl Database {
         let path = PathBuf::from(db_path);
         let client = LocalClient::new(&path).await.unwrap();
 
-        let replicator = EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await;
+        let replicator =
+            EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,
@@ -146,6 +150,7 @@ impl Database {
         version: Option<String>,
         flags: OpenFlags,
         encryption_config: Option<EncryptionConfig>,
+        http_request_callback: Option<crate::util::HttpRequestCallback>,
     ) -> Result<Database> {
         use std::path::PathBuf;
 
@@ -160,13 +165,15 @@ impl Database {
             endpoint.as_str().try_into().unwrap(),
             auth_token,
             version.as_deref(),
+            http_request_callback,
         )
         .unwrap();
 
         let path = PathBuf::from(db_path);
         let client = LocalClient::new(&path).await.unwrap();
 
-        let replicator = EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await;
+        let replicator =
+            EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,

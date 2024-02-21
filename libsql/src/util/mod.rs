@@ -2,8 +2,10 @@ cfg_replication_or_remote! {
     pub mod box_clone_service;
     mod http;
     pub(crate) use self::http::{ConnectorService, Socket};
+}
 
-
+cfg_replication! {
+    pub(crate) use self::http::HttpRequestCallback;
 }
 
 cfg_replication_or_remote_or_hrana! {
