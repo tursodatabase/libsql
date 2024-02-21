@@ -13,7 +13,7 @@ use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus, TransactionS
 use tokio::sync::{watch, Notify};
 use tokio::time::{Duration, Instant};
 
-use crate::auth::{Authenticated, Authorized, Permission};
+use crate::auth::{Authenticated, Authorized, Permission, TokenType};
 use crate::connection::TXN_TIMEOUT;
 use crate::error::Error;
 use crate::metrics::{
@@ -824,7 +824,7 @@ impl<W: Wal> Connection<W> {
                     return Err(Error::Internal(format!(
                         "Failed to ATTACH: {:?}",
                         query.stmt.attach_info
-                    )))
+                    )));
                 }
             }
         } else {
@@ -1030,6 +1030,13 @@ fn check_program_auth(auth: Authenticated, pgm: &Program) -> Result<()> {
             }
             (StmtKind::Read, Authenticated::Authorized(_)) => (),
             (StmtKind::TxnBegin, _) | (StmtKind::TxnEnd, _) => (),
+            (
+                StmtKind::Attach,
+                Authenticated::Authorized(Authorized {
+                    token_type: Some(TokenType::GroupToken),
+                    ..
+                }),
+            ) => (),
             (
                 _,
                 Authenticated::Authorized(Authorized {
