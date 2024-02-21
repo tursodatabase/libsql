@@ -351,6 +351,8 @@ impl Replicator {
                         drop(permit);
                     });
                 }
+
+                while join_set.join_next().await.is_some() {}
             })
         };
         let (snapshot_notifier, snapshot_waiter) = channel(Ok(None));
@@ -715,6 +717,10 @@ impl Replicator {
 
     // Tries to read the local change counter from the given database file
     fn read_change_counter(&self) -> Result<[u8; 4]> {
+        if !<str as AsRef<Path>>::as_ref(self.db_path.as_str()).try_exists()? {
+            return Ok([0; 4]);
+        }
+
         let conn = self.open_db()?;
         let change_counter = conn.db_change_counter().map_err(|rc| {
             anyhow::anyhow!(
