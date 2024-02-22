@@ -15,6 +15,7 @@ use tokio::time::Duration;
 use url::Url;
 use uuid::Uuid;
 
+use crate::auth::Auth;
 use crate::auth::user_auth_strategies::Disabled;
 use crate::config::{DbConfig, UserApiConfig};
 use crate::net::AddrIncoming;
