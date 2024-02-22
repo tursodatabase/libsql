@@ -8,7 +8,7 @@ pub struct HttpBasic {
 
 impl UserAuthStrategy for HttpBasic {
     fn authenticate(&self, context: UserAuthContext) -> Result<Authenticated, AuthError> {
-        tracing::info!("executing http basic auth");
+        tracing::trace!("executing http basic auth");
 
         let param = parse_http_auth_header("basic", &context.user_credential)?;
 

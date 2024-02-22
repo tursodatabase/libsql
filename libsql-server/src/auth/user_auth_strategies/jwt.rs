@@ -11,7 +11,7 @@ pub struct Jwt {
 
 impl UserAuthStrategy for Jwt {
     fn authenticate(&self, context: UserAuthContext) -> Result<Authenticated, AuthError> {
-        tracing::info!("executing jwt auth");
+        tracing::trace!("executing jwt auth");
 
         let param = parse_http_auth_header("bearer", &context.user_credential)?;
 
