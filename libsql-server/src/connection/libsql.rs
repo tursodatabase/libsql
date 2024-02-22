@@ -929,7 +929,7 @@ impl<W: Wal> Connection<W> {
                 "high read ({}) or write ({}) query: {}",
                 rows_read,
                 rows_written,
-                sql
+                &sql[..512]
             );
         }
 
