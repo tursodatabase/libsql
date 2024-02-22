@@ -7,6 +7,8 @@ members = [
   "libsql-sys",
   "libsql-shell",
   "libsql-server",
+  "libsql-storage",
+  "libsql-storage-server",
   "bottomless",
   "bottomless-cli",
   "libsql-replication",

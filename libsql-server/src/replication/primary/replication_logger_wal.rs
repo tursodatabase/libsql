@@ -19,14 +19,17 @@ use super::logger::WalPage;
 
 #[derive(Clone)]
 pub struct ReplicationLoggerWalManager {
-    sqlite_wal_manager: Sqlite3WalManager,
+    sqlite_wal_manager: libsql_storage::DurableWalManager,
     logger: Arc<ReplicationLogger>,
 }
 
 impl ReplicationLoggerWalManager {
-    pub fn new(logger: Arc<ReplicationLogger>) -> Self {
+    pub fn new(
+        sqlite_wal_manager: libsql_storage::DurableWalManager,
+        logger: Arc<ReplicationLogger>,
+    ) -> Self {
         Self {
-            sqlite_wal_manager: Sqlite3WalManager::new(),
+            sqlite_wal_manager,
             logger,
         }
     }
@@ -89,7 +92,7 @@ impl WalManager for ReplicationLoggerWalManager {
 }
 
 pub struct ReplicationLoggerWal {
-    inner: Sqlite3Wal,
+    inner: libsql_storage::DurableWal,
     buffer: Vec<WalPage>,
     logger: Arc<ReplicationLogger>,
 }

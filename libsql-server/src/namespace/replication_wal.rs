@@ -17,8 +17,9 @@ pub fn make_replication_wal(
     bottomless: Option<Replicator>,
     logger: Arc<ReplicationLogger>,
 ) -> ReplicationWalManager {
+    let wal_manager = libsql_storage::DurableWalManager::new();
     WalWrapper::new(
         bottomless.map(|b| BottomlessWalWrapper::new(Arc::new(std::sync::Mutex::new(Some(b))))),
-        ReplicationLoggerWalManager::new(logger),
+        ReplicationLoggerWalManager::new(wal_manager, logger),
     )
 }

@@ -2808,6 +2808,7 @@ dependencies = [
  "libsql-client",
  "libsql-rusqlite",
  "libsql-sqlite3-parser",
+ "libsql-storage",
  "libsql-sys",
  "libsql_replication",
  "md-5",
@@ -2885,6 +2886,35 @@ dependencies = [
  "phf_shared",
  "smallvec",
  "uncased",
+]
+
+[[package]]
+name = "libsql-storage"
+version = "0.2.0"
+dependencies = [
+ "libsql-sys",
+ "prost",
+ "prost-build",
+ "sieve-cache",
+ "tokio",
+ "tonic",
+ "tonic-build",
+ "tracing",
+]
+
+[[package]]
+name = "libsql-storage-server"
+version = "0.23.0"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "clap 4.4.18",
+ "libsql-storage",
+ "tokio",
+ "tonic",
+ "tracing",
+ "tracing-subscriber",
+ "vergen",
 ]
 
 [[package]]
@@ -4543,6 +4573,12 @@ name = "shlex"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
+
+[[package]]
+name = "sieve-cache"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "51bf3a9dccf2c079bf1465d449a485c85b36443caf765f2f127bfec28b180f75"
 
 [[package]]
 name = "signal-hook-registry"
