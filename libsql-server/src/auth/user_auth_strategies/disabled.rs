@@ -5,7 +5,7 @@ pub struct Disabled {}
 
 impl UserAuthStrategy for Disabled {
     fn authenticate(&self, _context: UserAuthContext) -> Result<Authenticated, AuthError> {
-        tracing::info!("executing disabled auth");
+        tracing::trace!("executing disabled auth");
 
         Ok(Authenticated::Authorized(Authorized {
             namespace: None,
