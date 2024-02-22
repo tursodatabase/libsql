@@ -22,7 +22,7 @@ mod session;
 
 struct Server<F: MakeNamespace> {
     namespaces: NamespaceStore<F>,
-    auth: Arc<Auth>,
+    user_auth_strategy: Auth,
     idle_kicker: Option<IdleKicker>,
     max_response_size: u64,
     next_conn_id: AtomicU64,
@@ -43,7 +43,7 @@ pub struct Upgrade {
 
 #[allow(clippy::too_many_arguments)]
 pub async fn serve<F: MakeNamespace>(
-    auth: Arc<Auth>,
+    user_auth_strategy: Auth,
     idle_kicker: Option<IdleKicker>,
     max_response_size: u64,
     mut accept_rx: mpsc::Receiver<Accept>,
@@ -53,7 +53,7 @@ pub async fn serve<F: MakeNamespace>(
     disable_namespaces: bool,
 ) -> Result<()> {
     let server = Arc::new(Server {
-        auth,
+        user_auth_strategy,
         idle_kicker,
         max_response_size,
         next_conn_id: AtomicU64::new(0),

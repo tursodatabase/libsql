@@ -28,6 +28,7 @@ use tonic::transport::Server;
 
 use tower_http::{compression::CompressionLayer, cors};
 
+use crate::auth::user_auth_strategies::UserAuthContext;
 use crate::auth::{Auth, Authenticated};
 use crate::connection::Connection;
 use crate::database::Database;
@@ -226,7 +227,7 @@ async fn handle_hrana_pipeline<F: MakeNamespace>(
 /// Router wide state that each request has access too via
 /// axum's `State` extractor.
 pub(crate) struct AppState<F: MakeNamespace> {
-    auth: Arc<Auth>,
+    user_auth_strategy: Auth,
     namespaces: NamespaceStore<F>,
     upgrade_tx: mpsc::Sender<hrana::ws::Upgrade>,
     hrana_http_srv: Arc<hrana::http::Server<<F::Database as Database>::Connection>>,
@@ -239,7 +240,7 @@ pub(crate) struct AppState<F: MakeNamespace> {
 impl<F: MakeNamespace> Clone for AppState<F> {
     fn clone(&self) -> Self {
         Self {
-            auth: self.auth.clone(),
+            user_auth_strategy: self.user_auth_strategy.clone(),
             namespaces: self.namespaces.clone(),
             upgrade_tx: self.upgrade_tx.clone(),
             hrana_http_srv: self.hrana_http_srv.clone(),
@@ -252,7 +253,7 @@ impl<F: MakeNamespace> Clone for AppState<F> {
 }
 
 pub struct UserApi<M: MakeNamespace, A, P, S> {
-    pub auth: Arc<Auth>,
+    pub user_auth_strategy: Auth,
     pub http_acceptor: Option<A>,
     pub hrana_ws_acceptor: Option<A>,
     pub namespaces: NamespaceStore<M>,
@@ -285,7 +286,7 @@ where
 
         join_set.spawn({
             let namespaces = self.namespaces.clone();
-            let auth = self.auth.clone();
+            let user_auth_strategy = self.user_auth_strategy.clone();
             let idle_kicker = self
                 .idle_shutdown_kicker
                 .clone()
@@ -295,7 +296,7 @@ where
             let max_response_size = self.max_response_size;
             async move {
                 hrana::ws::serve(
-                    auth,
+                    user_auth_strategy,
                     idle_kicker,
                     max_response_size,
                     hrana_accept_rx,
@@ -326,7 +327,7 @@ where
 
         if let Some(acceptor) = self.http_acceptor {
             let state = AppState {
-                auth: self.auth,
+                user_auth_strategy: self.user_auth_strategy,
                 upgrade_tx: hrana_upgrade_tx,
                 hrana_http_srv: hrana_http_srv.clone(),
                 enable_console: self.enable_console,
@@ -484,21 +485,27 @@ where
             state.disable_default_namespace,
             state.disable_namespaces,
         )?;
-        let namespace_jwt_key = state.namespaces.with(ns, |ns| ns.jwt_key()).await??;
+
+        let namespace_jwt_key = state
+            .namespaces
+            .with(ns.clone(), |ns| ns.jwt_key())
+            .await??;
+
         let auth_header = parts.headers.get(hyper::header::AUTHORIZATION);
-        let auth = state.auth.authenticate_http(
-            auth_header,
-            state.disable_namespaces,
-            namespace_jwt_key,
-        )?;
+
+        let auth = state.user_auth_strategy.authenticate(UserAuthContext {
+            namespace: ns,
+            namespace_credential: namespace_jwt_key,
+            user_credential: auth_header.cloned(),
+        })?;
 
         Ok(auth)
     }
 }
 
-impl<F: MakeNamespace> FromRef<AppState<F>> for Arc<Auth> {
+impl<F: MakeNamespace> FromRef<AppState<F>> for Auth {
     fn from_ref(input: &AppState<F>) -> Self {
-        input.auth.clone()
+        input.user_auth_strategy.clone()
     }
 }
 
