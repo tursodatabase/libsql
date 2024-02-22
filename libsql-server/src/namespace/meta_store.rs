@@ -5,6 +5,7 @@ use std::{collections::HashMap, fs::read_dir};
 
 use bottomless::bottomless_wal::BottomlessWalWrapper;
 use bottomless::replicator::CompressionKind;
+use futures_core::Future;
 use libsql_replication::rpc::metadata;
 use libsql_sys::wal::{
     wrapper::{WalWrapper, WrappedWal},
@@ -409,6 +410,18 @@ impl MetaStoreHandle {
         }
     }
 
+    pub fn changed(&self) -> impl Future<Output = ()> {
+        let mut rcv = match &self.inner {
+            HandleState::Internal(_) => panic!("can't wait for change on internal handle"),
+            HandleState::External(_, rcv) => rcv.clone(),
+        };
+        // ack the current value.
+        rcv.borrow_and_update();
+        async move {
+            let _ = rcv.changed().await;
+        }
+    }
+
     pub async fn store(&self, new_config: impl Into<Arc<DatabaseConfig>>) -> Result<()> {
         match &self.inner {
             HandleState::Internal(config) => {
@@ -418,6 +431,8 @@ impl MetaStoreHandle {
                 let new_config = new_config.into();
                 tracing::debug!(?new_config, "storing new namespace config");
                 let mut c = config.clone();
+                // ack the current value.
+                c.borrow_and_update();
                 let changed = c.changed();
 
                 changes_tx
