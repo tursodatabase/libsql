@@ -21,7 +21,7 @@ use tower_http::{
 };
 use uuid::Uuid;
 
-use crate::util::ConnectorService;
+use crate::util::{ConnectorService, HttpRequestCallback};
 
 use crate::util::box_clone_service::BoxCloneService;
 
@@ -46,6 +46,7 @@ impl Client {
         origin: Uri,
         auth_token: impl AsRef<str>,
         version: Option<&str>,
+        http_request_callback: Option<HttpRequestCallback>,
     ) -> anyhow::Result<Self> {
         let ver = version.unwrap_or(env!("CARGO_PKG_VERSION"));
 
@@ -60,7 +61,7 @@ impl Client {
         let ns = split_namespace(origin.host().unwrap()).unwrap_or_else(|_| "default".to_string());
         let namespace = BinaryMetadataValue::from_bytes(ns.as_bytes());
 
-        let channel = GrpcChannel::new(connector);
+        let channel = GrpcChannel::new(connector, http_request_callback);
 
         let interceptor = GrpcInterceptor {
             auth_token,
@@ -119,7 +120,10 @@ pub struct GrpcChannel {
 }
 
 impl GrpcChannel {
-    pub fn new(connector: ConnectorService) -> Self {
+    pub fn new(
+        connector: ConnectorService,
+        http_request_callback: Option<HttpRequestCallback>,
+    ) -> Self {
         let client = hyper::Client::builder().build(connector);
         let client = GrpcWebClientService::new(client);
 
@@ -127,6 +131,19 @@ impl GrpcChannel {
 
         let svc = ServiceBuilder::new()
             .layer(TraceLayer::new(SharedClassifier::new(classifier)))
+            .map_request(move |request: http::Request<BoxBody>| {
+                if let Some(cb) = &http_request_callback {
+                    let (parts, body) = request.into_parts();
+                    let mut req_copy = http::Request::from_parts(parts, ());
+                    cb(&mut req_copy);
+
+                    let (parts, _) = req_copy.into_parts();
+
+                    http::Request::from_parts(parts, body)
+                } else {
+                    request
+                }
+            })
             .service(client);
 
         let client = BoxCloneService::new(svc);

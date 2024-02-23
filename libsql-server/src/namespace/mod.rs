@@ -840,6 +840,10 @@ impl<T: Database> Namespace<T> {
     pub fn stats(&self) -> Arc<Stats> {
         self.stats.clone()
     }
+
+    pub fn config_changed(&self) -> impl Future<Output = ()> {
+        self.db_config_store.changed()
+    }
 }
 
 pub struct ReplicaNamespaceConfig {

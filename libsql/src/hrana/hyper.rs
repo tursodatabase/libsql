@@ -174,15 +174,28 @@ impl crate::statement::Stmt for crate::hrana::Statement<HttpSender> {
     fn reset(&mut self) {}
 
     fn parameter_count(&self) -> usize {
-        todo!()
+        let stmt = &self.inner;
+        stmt.args.len() + stmt.named_args.len()
     }
 
-    fn parameter_name(&self, _idx: i32) -> Option<&str> {
-        todo!()
+    fn parameter_name(&self, idx: i32) -> Option<&str> {
+        //FIXME: actual rules of named args are pretty convoluted and may require full AST parsing. Here we basically
+        //       assume, that if one needs a param name, they don't use named and un-named params mixed in.
+        if !self.inner.args.is_empty() {
+            return None;
+        }
+        let named_param = self.inner.named_args.get(idx as usize)?;
+        Some(&named_param.name)
     }
 
     fn columns(&self) -> Vec<crate::Column> {
-        todo!()
+        //FIXME: there are several blockers here:
+        // 1. We cannot know the column types before sending a query, so this method will never return results right
+        //    away.
+        // 2. Even if we do execute query, Hrana doesn't return all info that Column exposes.
+        // 3. Even if we would like to return some of the column info ie. column [ValueType], this information is not
+        //    present in Hrana [Col] but rather inferred from the row cell type.
+        vec![]
     }
 }
 

@@ -15,6 +15,8 @@ use libsql_replication::rpc::replication::NAMESPACE_DOESNT_EXIST;
 use rusqlite::types::ValueRef;
 use uuid::Uuid;
 
+use crate::auth::parsers::parse_grpc_auth_header;
+use crate::auth::user_auth_strategies::UserAuthContext;
 use crate::auth::{Auth, Authenticated};
 use crate::connection::Connection;
 use crate::database::{Database, PrimaryConnection};
@@ -281,20 +283,20 @@ pub mod rpc {
 pub struct ProxyService {
     clients: Arc<RwLock<HashMap<Uuid, Arc<PrimaryConnection>>>>,
     namespaces: NamespaceStore<PrimaryNamespaceMaker>,
-    auth: Option<Arc<Auth>>,
+    user_auth_strategy: Option<Auth>,
     disable_namespaces: bool,
 }
 
 impl ProxyService {
     pub fn new(
         namespaces: NamespaceStore<PrimaryNamespaceMaker>,
-        auth: Option<Arc<Auth>>,
+        user_auth_strategy: Option<Auth>,
         disable_namespaces: bool,
     ) -> Self {
         Self {
             clients: Default::default(),
             namespaces,
-            auth,
+            user_auth_strategy,
             disable_namespaces,
         }
     }
@@ -308,7 +310,11 @@ impl ProxyService {
         req: &mut tonic::Request<T>,
         namespace: NamespaceName,
     ) -> Result<Authenticated, tonic::Status> {
-        let namespace_jwt_key = self.namespaces.with(namespace, |ns| ns.jwt_key()).await;
+        let namespace_jwt_key = self
+            .namespaces
+            .with(namespace.clone(), |ns| ns.jwt_key())
+            .await;
+
         let namespace_jwt_key = match namespace_jwt_key {
             Ok(Ok(jwt_key)) => Ok(jwt_key),
             Err(e) => match e.as_ref() {
@@ -323,8 +329,13 @@ impl ProxyService {
                 e
             ))),
         }?;
-        Ok(if let Some(auth) = &self.auth {
-            auth.authenticate_grpc(req, self.disable_namespaces, namespace_jwt_key)?
+
+        Ok(if let Some(auth) = &self.user_auth_strategy {
+            auth.authenticate(UserAuthContext {
+                namespace,
+                namespace_credential: namespace_jwt_key,
+                user_credential: parse_grpc_auth_header(req.metadata()),
+            })?
         } else {
             Authenticated::from_proxy_grpc_request(req, self.disable_namespaces)?
         })

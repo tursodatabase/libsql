@@ -6,6 +6,7 @@ use std::sync::{Arc, RwLock};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use futures::stream::BoxStream;
+use futures_core::Future;
 pub use libsql_replication::rpc::replication as rpc;
 use libsql_replication::rpc::replication::replication_log_server::ReplicationLog;
 use libsql_replication::rpc::replication::{
@@ -13,12 +14,13 @@ use libsql_replication::rpc::replication::{
     NEED_SNAPSHOT_ERROR_MSG, NO_HELLO_ERROR_MSG, SESSION_TOKEN_KEY,
 };
 use md5::{Digest, Md5};
-use tokio_stream::StreamExt;
+use tokio_stream::StreamExt as _;
 use tonic::transport::server::TcpConnectInfo;
 use tonic::Status;
 use uuid::Uuid;
 
-use crate::auth::Auth;
+use crate::auth::user_auth_strategies::UserAuthContext;
+use crate::auth::{parsers::parse_grpc_auth_header, Auth};
 use crate::connection::config::DatabaseConfig;
 use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
 use crate::replication::primary::frame_stream::FrameStream;
@@ -31,7 +33,7 @@ use super::extract_namespace;
 pub struct ReplicationLogService {
     namespaces: NamespaceStore<PrimaryNamespaceMaker>,
     idle_shutdown_layer: Option<IdleShutdownKicker>,
-    auth: Option<Arc<Auth>>,
+    user_auth_strategy: Option<Auth>,
     disable_namespaces: bool,
     session_token: Bytes,
     collect_stats: bool,
@@ -47,7 +49,7 @@ impl ReplicationLogService {
     pub fn new(
         namespaces: NamespaceStore<PrimaryNamespaceMaker>,
         idle_shutdown_layer: Option<IdleShutdownKicker>,
-        auth: Option<Arc<Auth>>,
+        user_auth_strategy: Option<Auth>,
         disable_namespaces: bool,
         collect_stats: bool,
     ) -> Self {
@@ -56,7 +58,7 @@ impl ReplicationLogService {
             namespaces,
             session_token,
             idle_shutdown_layer,
-            auth,
+            user_auth_strategy,
             disable_namespaces,
             collect_stats,
             generation_id: Uuid::new_v4(),
@@ -69,18 +71,32 @@ impl ReplicationLogService {
         req: &tonic::Request<T>,
         namespace: NamespaceName,
     ) -> Result<(), Status> {
-        let namespace_jwt_key = self.namespaces.with(namespace, |ns| ns.jwt_key()).await;
+        let namespace_jwt_key = self
+            .namespaces
+            .with(namespace.clone(), |ns| ns.jwt_key())
+            .await;
+
+        let user_credential = parse_grpc_auth_header(req.metadata());
+
         match namespace_jwt_key {
             Ok(Ok(jwt_key)) => {
-                if let Some(auth) = &self.auth {
-                    auth.authenticate_grpc(req, self.disable_namespaces, jwt_key)?;
+                if let Some(auth) = &self.user_auth_strategy {
+                    auth.authenticate(UserAuthContext {
+                        namespace,
+                        namespace_credential: jwt_key,
+                        user_credential,
+                    })?;
                 }
                 Ok(())
             }
             Err(e) => match e.as_ref() {
                 crate::error::Error::NamespaceDoesntExist(_) => {
-                    if let Some(auth) = &self.auth {
-                        auth.authenticate_grpc(req, self.disable_namespaces, None)?;
+                    if let Some(auth) = &self.user_auth_strategy {
+                        auth.authenticate(UserAuthContext {
+                            namespace,
+                            namespace_credential: None,
+                            user_credential,
+                        })?;
                     }
                     Ok(())
                 }
@@ -139,18 +155,20 @@ impl ReplicationLogService {
             Arc<DatabaseConfig>,
             usize,
             Arc<Stats>,
+            impl Future<Output = ()>,
         ),
         Status,
     > {
-        let (logger, config, version, stats) = self
+        let (logger, config, version, stats, config_changed) = self
             .namespaces
             .with(namespace, |ns| {
                 let logger = ns.db.wal_manager.wrapped().logger().clone();
+                let config_changed = ns.config_changed();
                 let config = ns.config();
                 let version = ns.config_version();
                 let stats = ns.stats();
 
-                (logger, config, version, stats)
+                (logger, config, version, stats, config_changed)
             })
             .await
             .map_err(|e| {
@@ -165,7 +183,7 @@ impl ReplicationLogService {
             self.verify_session_token(req, version)?;
         }
 
-        Ok((logger, config, version, stats))
+        Ok((logger, config, version, stats, config_changed))
     }
 
     fn encode_session_token(&self, version: usize) -> Uuid {
@@ -249,7 +267,8 @@ impl ReplicationLog for ReplicationLogService {
 
         self.authenticate(&req, namespace.clone()).await?;
 
-        let (logger, _, _, stats) = self.logger_from_namespace(namespace, &req, true).await?;
+        let (logger, _, _, stats, config_changed) =
+            self.logger_from_namespace(namespace, &req, true).await?;
 
         let stats = if self.collect_stats {
             Some(stats)
@@ -259,12 +278,28 @@ impl ReplicationLog for ReplicationLogService {
 
         let req = req.into_inner();
 
-        let stream = StreamGuard::new(
+        let mut stream = StreamGuard::new(
             FrameStream::new(logger, req.next_offset, true, None, stats)
                 .map_err(|e| Status::internal(e.to_string()))?,
             self.idle_shutdown_layer.clone(),
         )
         .map(map_frame_stream_output);
+
+        // if only tokio_stream had futures::Stream::take_until...
+        let stream = async_stream::stream! {
+            tokio::pin!(config_changed);
+            loop {
+                tokio::select! {
+                    _ = &mut config_changed => {
+                        break
+                    },
+                    Some(next) = stream.next() => {
+                        yield next
+                    }
+                    else => break,
+                }
+            }
+        };
 
         Ok(tonic::Response::new(Box::pin(stream)))
     }
@@ -276,7 +311,7 @@ impl ReplicationLog for ReplicationLogService {
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
         self.authenticate(&req, namespace.clone()).await?;
 
-        let (logger, _, _, stats) = self.logger_from_namespace(namespace, &req, true).await?;
+        let (logger, _, _, stats, _) = self.logger_from_namespace(namespace, &req, true).await?;
 
         let stats = if self.collect_stats {
             Some(stats)
@@ -324,7 +359,7 @@ impl ReplicationLog for ReplicationLogService {
             }
         }
 
-        let (logger, config, version, _) =
+        let (logger, config, version, _, _) =
             self.logger_from_namespace(namespace, &req, false).await?;
 
         let session_hash = self.encode_session_token(version);
@@ -348,7 +383,7 @@ impl ReplicationLog for ReplicationLogService {
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
         self.authenticate(&req, namespace.clone()).await?;
 
-        let (logger, _, _, stats) = self.logger_from_namespace(namespace, &req, true).await?;
+        let (logger, _, _, stats, _) = self.logger_from_namespace(namespace, &req, true).await?;
 
         let stats = if self.collect_stats {
             Some(stats)
