@@ -1,3 +1,4 @@
+use std::path::{Path, PathBuf};
 use std::sync::Once;
 
 cfg_replication!(
@@ -16,6 +17,8 @@ cfg_replication!(
         read_your_writes: bool,
     }
 );
+
+static DB_DATA_FILE: &str = "data.db";
 
 use crate::{database::OpenFlags, local::connection::Connection};
 use crate::{Error::ConnectionFailed, Result};
@@ -42,7 +45,15 @@ impl Database {
                 "Unable to open local database {db_path} with Database::open()"
             )))
         } else {
-            Ok(Database::new(db_path, flags))
+            // Support loading a db that is embedded in a folder
+            let p = Path::new(&db_path);
+            if p.is_dir() {
+                let db_file = p.join(DB_DATA_FILE).to_str().unwrap().to_string();
+
+                Ok(Database::new(db_file, flags))
+            } else {
+                Ok(Database::new(db_path, flags))
+            }
         }
     }
 
@@ -82,11 +93,11 @@ impl Database {
         periodic_sync: Option<std::time::Duration>,
         http_request_callback: Option<crate::util::HttpRequestCallback>,
     ) -> Result<Database> {
-        use std::path::PathBuf;
-
         use crate::util::coerce_url_scheme;
 
-        let mut db = Database::open(&db_path, OpenFlags::default())?;
+        let (db_data_path, db_meta_folder) = db_paths(&db_path)?;
+
+        let mut db = Database::open(db_data_path.to_str().unwrap(), OpenFlags::default())?;
 
         let endpoint = coerce_url_scheme(endpoint);
         let remote = crate::replication::client::Client::new(
@@ -97,14 +108,18 @@ impl Database {
             http_request_callback,
         )
         .unwrap();
-        let path = PathBuf::from(db_path);
-        let client = RemoteClient::new(remote.clone(), &path)
+        let client = RemoteClient::new(remote.clone(), &db_meta_folder)
             .await
             .map_err(|e| crate::errors::Error::ConnectionFailed(e.to_string()))?;
 
-        let replicator =
-            EmbeddedReplicator::with_remote(client, path, 1000, encryption_config, periodic_sync)
-                .await;
+        let replicator = EmbeddedReplicator::with_remote(
+            client,
+            db_data_path,
+            1000,
+            encryption_config,
+            periodic_sync,
+        )
+        .await;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,
@@ -121,16 +136,14 @@ impl Database {
         flags: OpenFlags,
         encryption_config: Option<EncryptionConfig>,
     ) -> Result<Database> {
-        use std::path::PathBuf;
+        let (db_data_path, db_meta_folder) = db_paths(&db_path.into())?;
 
-        let db_path = db_path.into();
-        let mut db = Database::open(&db_path, flags)?;
+        let mut db = Database::open(&db_data_path.to_str().unwrap().to_string(), flags)?;
 
-        let path = PathBuf::from(db_path);
-        let client = LocalClient::new(&path).await.unwrap();
+        let client = LocalClient::new(&db_meta_folder).await.unwrap();
 
         let replicator =
-            EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await;
+            EmbeddedReplicator::with_local(client, db_data_path, 1000, encryption_config).await;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,
@@ -152,10 +165,9 @@ impl Database {
         encryption_config: Option<EncryptionConfig>,
         http_request_callback: Option<crate::util::HttpRequestCallback>,
     ) -> Result<Database> {
-        use std::path::PathBuf;
+        let (db_data_path, db_meta_folder) = db_paths(&db_path.into())?;
 
-        let db_path = db_path.into();
-        let mut db = Database::open(&db_path, flags)?;
+        let mut db = Database::open(&db_data_path.to_str().unwrap().to_string(), flags)?;
 
         use crate::util::coerce_url_scheme;
 
@@ -169,11 +181,10 @@ impl Database {
         )
         .unwrap();
 
-        let path = PathBuf::from(db_path);
-        let client = LocalClient::new(&path).await.unwrap();
+        let client = LocalClient::new(&db_meta_folder).await.unwrap();
 
         let replicator =
-            EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await;
+            EmbeddedReplicator::with_local(client, db_data_path, 1000, encryption_config).await;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,
@@ -312,4 +323,21 @@ impl Database {
     pub(crate) fn path(&self) -> &str {
         &self.db_path
     }
+}
+
+fn db_paths(p: impl AsRef<Path>) -> crate::Result<(PathBuf, PathBuf)> {
+    let p = p.as_ref();
+
+    let paths = if p.is_file() {
+        (p.to_path_buf(), p.parent().unwrap().to_path_buf())
+    } else {
+        // TODO: map to error
+        std::fs::create_dir_all(&p).unwrap();
+
+        let db_data_file = p.join(DB_DATA_FILE);
+
+        (db_data_file.to_path_buf(), p.to_path_buf())
+    };
+
+    Ok(paths)
 }
