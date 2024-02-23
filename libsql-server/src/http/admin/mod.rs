@@ -305,7 +305,7 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
             ));
         }
         let namespace = NamespaceName::from_string(ns)?;
-        if !app_state.namespaces.exists(&namespace).await {
+        if !app_state.namespaces.exists(&namespace) {
             return Err(Error::NamespaceDoesntExist(namespace.to_string()));
         }
         Some(namespace.to_string())
