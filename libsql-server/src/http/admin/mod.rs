@@ -300,7 +300,7 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
     }
     let shared_schema_name = if let Some(ns) = req.shared_schema_name {
         if req.shared_schema {
-            return Err(Error::SharedSchemaError(
+            return Err(Error::SharedSchemaCreationError(
                 "shared schema database cannot reference another shared schema".to_string(),
             ));
         }
