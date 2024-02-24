@@ -30,7 +30,7 @@ pub fn parse_jwt_key(data: &str) -> Result<jsonwebtoken::DecodingKey> {
         bail!("Key is in unsupported PEM format")
     } else {
         jsonwebtoken::DecodingKey::from_ed_components(data)
-            .context("Could not decode Ed25519 public key from base64")
+            .map_err(|e| anyhow::anyhow!("Could not decode Ed25519 public key from base64: {e}"))
     }
 }
 
