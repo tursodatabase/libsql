@@ -316,30 +316,35 @@ impl ProxyService {
             .with(namespace.clone(), |ns| ns.jwt_key())
             .await;
 
-        let namespace_jwt_key = match namespace_jwt_key {
-            Ok(Ok(jwt_key)) => Ok(jwt_key),
+        let auth = match namespace_jwt_key {
+            Ok(Ok(Some(key))) => Some(Auth::new(Jwt::new(key))),
+            Ok(Ok(None)) => self.user_auth_strategy.clone(),
             Err(e) => match e.as_ref() {
-                crate::error::Error::NamespaceDoesntExist(_) => Ok(None),
+                crate::error::Error::NamespaceDoesntExist(_) => None,
                 _ => Err(tonic::Status::internal(format!(
                     "Error fetching jwt key for a namespace: {}",
                     e
-                ))),
+                )))?,
             },
             Ok(Err(e)) => Err(tonic::Status::internal(format!(
                 "Error fetching jwt key for a namespace: {}",
                 e
-            ))),
-        }?;
+            )))?,
+        };
 
-        Ok(if let Some(auth) = &self.user_auth_strategy {
+        let auth = if let Some(auth) = auth {
             auth.authenticate(UserAuthContext {
-                namespace,
-                namespace_credential: namespace_jwt_key,
                 user_credential: parse_grpc_auth_header(req.metadata()),
             })?
         } else {
-            Authenticated::from_proxy_grpc_request(req, self.disable_namespaces)?
-        })
+            Authenticated::from_proxy_grpc_request(req)?
+        };
+
+        Ok(RequestContext::new(
+            auth,
+            namespace,
+            self.namespaces.meta_store(),
+        ))
     }
 }
 

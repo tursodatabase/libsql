@@ -494,11 +494,13 @@ where
 
         let auth_header = parts.headers.get(hyper::header::AUTHORIZATION);
 
-        let auth = state.user_auth_strategy.authenticate(UserAuthContext {
-            namespace: ns,
-            namespace_credential: namespace_jwt_key,
-            user_credential: auth_header.cloned(),
-        })?;
+        let auth = namespace_jwt_key
+            .map(Jwt::new)
+            .map(Auth::new)
+            .unwrap_or_else(|| state.user_auth_strategy.clone())
+            .authenticate(UserAuthContext {
+                user_credential: auth_header.cloned(),
+            })?;
 
         Ok(auth)
     }

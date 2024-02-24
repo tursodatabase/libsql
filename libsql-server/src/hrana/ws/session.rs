@@ -82,17 +82,15 @@ pub(super) async fn handle_initial_hello<F: MakeNamespace>(
         .clone()
         .and_then(|t| HeaderValue::from_str(&format!("Bearer {t}")).ok());
 
-    let authenticated = server
-        .user_auth_strategy
-        .authenticate(UserAuthContext {
-            namespace,
-            user_credential,
-            namespace_credential: namespace_jwt_key,
-        })
+    let auth = namespace_jwt_key
+        .map(Jwt::new)
+        .map(Auth::new)
+        .unwrap_or(server.user_auth_strategy.clone())
+        .authenticate(UserAuthContext { user_credential })
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
 
     Ok(Session {
-        authenticated,
+        auth,
         version,
         streams: HashMap::new(),
         sqls: HashMap::new(),
@@ -122,13 +120,11 @@ pub(super) async fn handle_repeated_hello<F: MakeNamespace>(
         .clone()
         .and_then(|t| HeaderValue::from_str(&format!("Bearer {t}")).ok());
 
-    session.authenticated = server
-        .user_auth_strategy
-        .authenticate(UserAuthContext {
-            namespace,
-            user_credential,
-            namespace_credential: namespace_jwt_key,
-        })
+    session.auth = namespace_jwt_key
+        .map(Jwt::new)
+        .map(Auth::new)
+        .unwrap_or_else(|| server.user_auth_strategy.clone())
+        .authenticate(UserAuthContext { user_credential })
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
 
     Ok(())
