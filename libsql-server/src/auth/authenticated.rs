@@ -4,8 +4,8 @@ use crate::auth::{constants::GRPC_PROXY_AUTH_HEADER, Authorized};
 use crate::namespace::NamespaceName;
 use tonic::Status;
 
-use super::Permission;
 use super::authorized::Scope;
+use super::Permission;
 
 /// A witness that the user has been authenticated.
 #[non_exhaustive]
