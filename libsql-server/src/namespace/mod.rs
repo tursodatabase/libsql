@@ -155,6 +155,15 @@ impl<'de> Deserialize<'de> for NamespaceName {
     }
 }
 
+impl serde::Serialize for NamespaceName {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
 pub enum ResetOp {
     Reset(NamespaceName),
     Destroy(NamespaceName),
@@ -777,6 +786,10 @@ impl<M: MakeNamespace> NamespaceStore<M> {
     ) -> crate::Result<MetaStoreHandle> {
         self.with(namespace, |ns| ns.db_config_store.clone()).await
     }
+
+    pub(crate) fn meta_store(&self) -> MetaStore {
+        self.inner.metadata.clone()
+    }
 }
 
 /// A namespace isolates the resources pertaining to a database of type T
@@ -978,7 +991,6 @@ impl Namespace<ReplicaDatabase> {
             applied_frame_no_receiver,
             config.max_response_size,
             config.max_total_response_size,
-            name.clone(),
             primary_current_replicatio_index,
             config.encryption_config.clone(),
         )
