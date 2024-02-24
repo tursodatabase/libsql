@@ -9,14 +9,14 @@ use tokio::sync::{mpsc, oneshot};
 use super::super::{batch, cursor, stmt, ProtocolError, Version};
 use super::{proto, Server};
 use crate::auth::user_auth_strategies::UserAuthContext;
-use crate::auth::{AuthError, Authenticated};
-use crate::connection::Connection;
+use crate::auth::{Auth, AuthError, Authenticated, Jwt};
+use crate::connection::{Connection, RequestContext};
 use crate::database::Database;
 use crate::namespace::{MakeNamespace, NamespaceName};
 
 /// Session-level state of an authenticated Hrana connection.
 pub struct Session<D> {
-    authenticated: Authenticated,
+    auth: Authenticated,
     version: Version,
     streams: HashMap<i32, StreamHandle<D>>,
     sqls: HashMap<i32, String>,
@@ -221,10 +221,10 @@ pub(super) async fn handle_request<F: MakeNamespace>(
             );
 
             let namespaces = server.namespaces.clone();
-            let authenticated = session.authenticated.clone();
+            let auth = session.auth.clone();
             stream_respond!(&mut stream_hnd, async move |stream| {
                 let db = namespaces
-                    .with_authenticated(namespace, authenticated, |ns| ns.db.connection_maker())
+                    .with_authenticated(namespace, auth, |ns| ns.db.connection_maker())
                     .await?
                     .create()
                     .await?;
@@ -253,11 +253,12 @@ pub(super) async fn handle_request<F: MakeNamespace>(
 
             let query = stmt::proto_stmt_to_query(&req.stmt, &session.sqls, session.version)
                 .map_err(catch_stmt_error)?;
-            let auth = session.authenticated.clone();
+            let auth = session.auth.clone();
+            let ctx = RequestContext::new(auth, namespace, server.namespaces.meta_store());
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                let result = stmt::execute_stmt(&**db, auth, query, req.replication_index)
+                let result = stmt::execute_stmt(&**db, ctx, query, req.replication_index)
                     .await
                     .map_err(catch_stmt_error)?;
                 Ok(proto::Response::Execute(proto::ExecuteResp { result }))
@@ -269,11 +270,15 @@ pub(super) async fn handle_request<F: MakeNamespace>(
 
             let pgm = batch::proto_batch_to_program(&req.batch, &session.sqls, session.version)
                 .map_err(catch_stmt_error)?;
-            let auth = session.authenticated.clone();
+            let ctx = RequestContext::new(
+                session.auth.clone(),
+                namespace,
+                server.namespaces.meta_store(),
+            );
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                let result = batch::execute_batch(&**db, auth, pgm, req.batch.replication_index)
+                let result = batch::execute_batch(&**db, ctx, pgm, req.batch.replication_index)
                     .await
                     .map_err(catch_batch_error)?;
                 Ok(proto::Response::Batch(proto::BatchResp { result }))
@@ -291,11 +296,15 @@ pub(super) async fn handle_request<F: MakeNamespace>(
                 session.version,
             )?;
             let pgm = batch::proto_sequence_to_program(sql).map_err(catch_stmt_error)?;
-            let auth = session.authenticated.clone();
+            let ctx = RequestContext::new(
+                session.auth.clone(),
+                namespace,
+                server.namespaces.meta_store(),
+            );
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                batch::execute_sequence(&**db, auth, pgm, req.replication_index)
+                batch::execute_sequence(&**db, ctx, pgm, req.replication_index)
                     .await
                     .map_err(catch_stmt_error)
                     .map_err(catch_batch_error)?;
@@ -314,11 +323,15 @@ pub(super) async fn handle_request<F: MakeNamespace>(
                 session.version,
             )?
             .into();
-            let auth = session.authenticated.clone();
+            let ctx = RequestContext::new(
+                session.auth.clone(),
+                namespace,
+                server.namespaces.meta_store(),
+            );
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                let result = stmt::describe_stmt(&**db, auth, sql, req.replication_index)
+                let result = stmt::describe_stmt(&**db, ctx, sql, req.replication_index)
                     .await
                     .map_err(catch_stmt_error)?;
                 Ok(proto::Response::Describe(proto::DescribeResp { result }))
@@ -359,12 +372,16 @@ pub(super) async fn handle_request<F: MakeNamespace>(
 
             let pgm = batch::proto_batch_to_program(&req.batch, &session.sqls, session.version)
                 .map_err(catch_stmt_error)?;
-            let auth = session.authenticated.clone();
-
+            let ctx = RequestContext::new(
+                session.auth.clone(),
+                namespace,
+                server.namespaces.meta_store(),
+            );
             let mut cursor_hnd = cursor::CursorHandle::spawn(join_set);
+
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                cursor_hnd.open(db.clone(), auth, pgm, req.batch.replication_index);
+                cursor_hnd.open(db.clone(), ctx, pgm, req.batch.replication_index);
                 stream.cursor_hnd = Some(cursor_hnd);
                 Ok(proto::Response::OpenCursor(proto::OpenCursorResp {}))
             });

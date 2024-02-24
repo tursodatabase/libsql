@@ -17,10 +17,10 @@ use uuid::Uuid;
 
 use crate::auth::parsers::parse_grpc_auth_header;
 use crate::auth::user_auth_strategies::UserAuthContext;
-use crate::auth::{Auth, Authenticated};
-use crate::connection::Connection;
+use crate::auth::{Auth, Authenticated, Jwt};
+use crate::connection::{Connection, RequestContext};
 use crate::database::{Database, PrimaryConnection};
-use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
+use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
 };
@@ -305,11 +305,12 @@ impl ProxyService {
         self.clients.clone()
     }
 
-    async fn auth<T>(
+    async fn extract_context<T>(
         &self,
         req: &mut tonic::Request<T>,
-        namespace: NamespaceName,
-    ) -> Result<Authenticated, tonic::Status> {
+    ) -> Result<RequestContext, tonic::Status> {
+        let namespace = super::extract_namespace(self.disable_namespaces, req)?;
+
         let namespace_jwt_key = self
             .namespaces
             .with(namespace.clone(), |ns| ns.jwt_key())
@@ -531,12 +532,11 @@ impl Proxy for ProxyService {
         &self,
         mut req: tonic::Request<tonic::Streaming<ExecReq>>,
     ) -> Result<tonic::Response<Self::StreamExecStream>, tonic::Status> {
-        let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
-        let auth = self.auth(&mut req, namespace.clone()).await?;
+        let ctx = self.extract_context(&mut req).await?;
 
         let (connection_maker, _new_frame_notifier) = self
             .namespaces
-            .with(namespace, |ns| {
+            .with(ctx.namespace().clone(), |ns| {
                 let connection_maker = ns.db.connection_maker();
                 let notifier = ns
                     .db
@@ -558,7 +558,7 @@ impl Proxy for ProxyService {
 
         let conn = connection_maker.create().await.unwrap();
 
-        let stream = make_proxy_stream(conn, auth, req.into_inner());
+        let stream = make_proxy_stream(conn, ctx, req.into_inner());
 
         Ok(tonic::Response::new(Box::pin(stream)))
     }
@@ -567,8 +567,7 @@ impl Proxy for ProxyService {
         &self,
         mut req: tonic::Request<rpc::ProgramReq>,
     ) -> Result<tonic::Response<ExecuteResults>, tonic::Status> {
-        let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
-        let auth = self.auth(&mut req, namespace.clone()).await?;
+        let ctx = self.extract_context(&mut req).await?;
         let req = req.into_inner();
         let pgm = crate::connection::program::Program::try_from(req.pgm.unwrap())
             .map_err(|e| tonic::Status::new(tonic::Code::InvalidArgument, e.to_string()))?;
@@ -576,7 +575,7 @@ impl Proxy for ProxyService {
 
         let connection_maker = self
             .namespaces
-            .with(namespace, |ns| ns.db.connection_maker())
+            .with(ctx.namespace().clone(), |ns| ns.db.connection_maker())
             .await
             .map_err(|e| {
                 if let crate::error::Error::NamespaceDoesntExist(_) = e {
@@ -607,7 +606,7 @@ impl Proxy for ProxyService {
 
         let builder = ExecuteResultsBuilder::default();
         let builder = db
-            .execute_program(pgm, auth, builder, None)
+            .execute_program(pgm, ctx, builder, None)
             .await
             // TODO: this is no necessarily a permission denied error!
             .map_err(|e| tonic::Status::new(tonic::Code::PermissionDenied, e.to_string()))?;
@@ -632,16 +631,15 @@ impl Proxy for ProxyService {
 
     async fn describe(
         &self,
-        mut msg: tonic::Request<DescribeRequest>,
+        mut req: tonic::Request<DescribeRequest>,
     ) -> Result<tonic::Response<DescribeResult>, tonic::Status> {
-        let namespace = super::extract_namespace(self.disable_namespaces, &msg)?;
-        let auth = self.auth(&mut msg, namespace.clone()).await?;
+        let ctx = self.extract_context(&mut req).await?;
 
         // FIXME: copypasta from execute(), creatively extract to a helper function
         let lock = self.clients.upgradable_read().await;
         let (connection_maker, _new_frame_notifier) = self
             .namespaces
-            .with(namespace, |ns| {
+            .with(ctx.namespace().clone(), |ns| {
                 let connection_maker = ns.db.connection_maker();
                 let notifier = ns
                     .db
@@ -661,7 +659,7 @@ impl Proxy for ProxyService {
                 }
             })?;
 
-        let DescribeRequest { client_id, stmt } = msg.into_inner();
+        let DescribeRequest { client_id, stmt } = req.into_inner();
         let client_id = Uuid::from_str(&client_id).unwrap();
 
         let db = match lock.get(&client_id) {
@@ -681,7 +679,7 @@ impl Proxy for ProxyService {
         };
 
         let description = db
-            .describe(stmt, auth, None)
+            .describe(stmt, ctx, None)
             .await
             // TODO: this is no necessarily a permission denied error!
             // FIXME: the double map_err looks off

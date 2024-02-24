@@ -1,15 +1,19 @@
+use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use tokio::time::{Duration, Instant};
 
 use futures::Future;
 use tokio::{sync::Semaphore, time::timeout};
+use tonic::metadata::BinaryMetadataValue;
 
 use crate::auth::Authenticated;
 use crate::error::Error;
 use crate::metrics::{
     CONCCURENT_CONNECTIONS_COUNT, CONNECTION_ALIVE_DURATION, CONNECTION_CREATE_TIME,
 };
+use crate::namespace::meta_store::MetaStore;
+use crate::namespace::NamespaceName;
 use crate::query::{Params, Query};
 use crate::query_analysis::Statement;
 use crate::query_result_builder::{IgnoreResult, QueryResultBuilder};
@@ -29,13 +33,47 @@ const TXN_TIMEOUT: Duration = Duration::from_secs(5);
 #[cfg(test)]
 const TXN_TIMEOUT: Duration = Duration::from_millis(100);
 
+#[derive(Clone)]
+pub struct RequestContext {
+    /// Authentication for this request
+    auth: Authenticated,
+    /// current namespace
+    namespace: NamespaceName,
+    meta_store: MetaStore,
+}
+
+impl RequestContext {
+    pub fn new(auth: Authenticated, namespace: NamespaceName, meta_store: MetaStore) -> Self {
+        Self {
+            auth,
+            namespace,
+            meta_store,
+        }
+    }
+
+    pub fn upgrade_grpc_request<T>(&self, req: &mut tonic::Request<T>) {
+        let namespace = BinaryMetadataValue::from_bytes(self.namespace.as_slice());
+        req.metadata_mut()
+            .insert_bin(NAMESPACE_METADATA_KEY, namespace);
+        self.auth.upgrade_grpc_request(req);
+    }
+
+    pub fn namespace(&self) -> &NamespaceName {
+        &self.namespace
+    }
+
+    pub fn auth(&self) -> &Authenticated {
+        &self.auth
+    }
+}
+
 #[async_trait::async_trait]
 pub trait Connection: Send + Sync + 'static {
     /// Executes a query program
     async fn execute_program<B: QueryResultBuilder>(
         &self,
         pgm: Program,
-        auth: Authenticated,
+        ctx: RequestContext,
         response_builder: B,
         replication_index: Option<FrameNo>,
     ) -> Result<B>;
@@ -46,7 +84,7 @@ pub trait Connection: Send + Sync + 'static {
     async fn execute_batch_or_rollback<B: QueryResultBuilder>(
         &self,
         batch: Vec<Query>,
-        auth: Authenticated,
+        ctx: RequestContext,
         result_builder: B,
         replication_index: Option<FrameNo>,
     ) -> Result<B> {
@@ -74,7 +112,7 @@ pub trait Connection: Send + Sync + 'static {
         // ignore the rollback result
         let builder = result_builder.take(batch_len);
         let builder = self
-            .execute_program(pgm, auth, builder, replication_index)
+            .execute_program(pgm, ctx, builder, replication_index)
             .await?;
 
         Ok(builder.into_inner())
@@ -85,24 +123,24 @@ pub trait Connection: Send + Sync + 'static {
     async fn execute_batch<B: QueryResultBuilder>(
         &self,
         batch: Vec<Query>,
-        auth: Authenticated,
+        ctx: RequestContext,
         result_builder: B,
         replication_index: Option<FrameNo>,
     ) -> Result<B> {
         let steps = make_batch_program(batch);
         let pgm = Program::new(steps);
-        self.execute_program(pgm, auth, result_builder, replication_index)
+        self.execute_program(pgm, ctx, result_builder, replication_index)
             .await
     }
 
-    async fn rollback(&self, auth: Authenticated) -> Result<()> {
+    async fn rollback(&self, ctx: RequestContext) -> Result<()> {
         self.execute_batch(
             vec![Query {
                 stmt: Statement::parse("ROLLBACK").next().unwrap().unwrap(),
                 params: Params::empty(),
                 want_rows: false,
             }],
-            auth,
+            ctx,
             IgnoreResult,
             None,
         )
@@ -115,7 +153,7 @@ pub trait Connection: Send + Sync + 'static {
     async fn describe(
         &self,
         sql: String,
-        auth: Authenticated,
+        ctx: RequestContext,
         replication_index: Option<FrameNo>,
     ) -> Result<Result<DescribeResponse>>;
 
@@ -339,13 +377,13 @@ impl<DB: Connection> Connection for TrackedConnection<DB> {
     async fn execute_program<B: QueryResultBuilder>(
         &self,
         pgm: Program,
-        auth: Authenticated,
+        ctx: RequestContext,
         builder: B,
         replication_index: Option<FrameNo>,
     ) -> crate::Result<B> {
         self.atime.store(now_millis(), Ordering::Relaxed);
         self.inner
-            .execute_program(pgm, auth, builder, replication_index)
+            .execute_program(pgm, ctx, builder, replication_index)
             .await
     }
 
@@ -353,11 +391,11 @@ impl<DB: Connection> Connection for TrackedConnection<DB> {
     async fn describe(
         &self,
         sql: String,
-        auth: Authenticated,
+        ctx: RequestContext,
         replication_index: Option<FrameNo>,
     ) -> crate::Result<crate::Result<DescribeResponse>> {
         self.atime.store(now_millis(), Ordering::Relaxed);
-        self.inner.describe(sql, auth, replication_index).await
+        self.inner.describe(sql, ctx, replication_index).await
     }
 
     #[inline]
@@ -394,7 +432,7 @@ pub mod test {
         async fn execute_program<B: QueryResultBuilder>(
             &self,
             _pgm: Program,
-            _auth: Authenticated,
+            _ctx: RequestContext,
             _builder: B,
             _replication_index: Option<FrameNo>,
         ) -> crate::Result<B> {
@@ -404,7 +442,7 @@ pub mod test {
         async fn describe(
             &self,
             _sql: String,
-            _auth: Authenticated,
+            _ctx: RequestContext,
             _replication_index: Option<FrameNo>,
         ) -> crate::Result<crate::Result<DescribeResponse>> {
             unreachable!()

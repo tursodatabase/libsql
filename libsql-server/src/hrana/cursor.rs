@@ -5,9 +5,8 @@ use std::sync::Arc;
 use std::task;
 use tokio::sync::{mpsc, oneshot};
 
-use crate::auth::Authenticated;
 use crate::connection::program::Program;
-use crate::connection::Connection;
+use crate::connection::{Connection, RequestContext};
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
 };
@@ -29,7 +28,7 @@ pub struct SizedEntry {
 
 struct OpenReq<C> {
     db: Arc<C>,
-    auth: Authenticated,
+    ctx: RequestContext,
     pgm: Program,
     replication_index: Option<FrameNo>,
 }
@@ -52,14 +51,14 @@ impl<C> CursorHandle<C> {
     pub fn open(
         &mut self,
         db: Arc<C>,
-        auth: Authenticated,
+        ctx: RequestContext,
         pgm: Program,
         replication_index: Option<FrameNo>,
     ) {
         let open_tx = self.open_tx.take().unwrap();
         let _: Result<_, _> = open_tx.send(OpenReq {
             db,
-            auth,
+            ctx,
             pgm,
             replication_index,
         });
@@ -90,7 +89,7 @@ async fn run_cursor<C: Connection>(
         .db
         .execute_program(
             open_req.pgm,
-            open_req.auth,
+            open_req.ctx,
             result_builder,
             open_req.replication_index,
         )

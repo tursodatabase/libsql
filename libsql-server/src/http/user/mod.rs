@@ -1,5 +1,6 @@
 pub mod db_factory;
 mod dump;
+mod extract;
 mod hrana_over_http_1;
 mod result_builder;
 mod trace;
@@ -29,8 +30,8 @@ use tonic::transport::Server;
 use tower_http::{compression::CompressionLayer, cors};
 
 use crate::auth::user_auth_strategies::UserAuthContext;
-use crate::auth::{Auth, Authenticated};
-use crate::connection::Connection;
+use crate::auth::{Auth, Authenticated, Jwt};
+use crate::connection::{Connection, RequestContext};
 use crate::database::Database;
 use crate::error::Error;
 use crate::hrana;
@@ -126,7 +127,7 @@ fn parse_queries(queries: Vec<QueryObject>) -> crate::Result<Vec<Query>> {
 }
 
 async fn handle_query<C: Connection>(
-    auth: Authenticated,
+    ctx: RequestContext,
     MakeConnectionExtractor(connection_maker): MakeConnectionExtractor<C>,
     Json(query): Json<HttpQuery>,
 ) -> Result<axum::response::Response, Error> {
@@ -137,7 +138,7 @@ async fn handle_query<C: Connection>(
 
     let builder = JsonHttpPayloadBuilder::new();
     let builder = db
-        .execute_batch_or_rollback(batch, auth, builder, query.replication_index)
+        .execute_batch_or_rollback(batch, ctx, builder, query.replication_index)
         .await?;
 
     let res = (
@@ -202,7 +203,7 @@ async fn handle_hrana_pipeline<F: MakeNamespace>(
     MakeConnectionExtractorPath(connection_maker): MakeConnectionExtractorPath<
         <F::Database as Database>::Connection,
     >,
-    auth: Authenticated,
+    ctx: RequestContext,
     axum::extract::Path((_, version)): axum::extract::Path<(String, String)>,
     req: Request<Body>,
 ) -> Result<Response<Body>, Error> {
@@ -215,7 +216,7 @@ async fn handle_hrana_pipeline<F: MakeNamespace>(
         .hrana_http_srv
         .handle_request(
             connection_maker,
-            auth,
+            ctx,
             req,
             hrana::http::Endpoint::Pipeline,
             hrana_version,
@@ -344,14 +345,14 @@ where
                         MakeConnectionExtractor(connection_maker): MakeConnectionExtractor<
                             <F::Database as Database>::Connection,
                         >,
-                        auth: Authenticated,
+                        ctx: RequestContext,
                         req: Request<Body>,
                     ) -> Result<Response<Body>, Error> {
                         Ok(state
                             .hrana_http_srv
                             .handle_request(
                                 connection_maker,
-                                auth,
+                                ctx,
                                 req,
                                 $endpoint,
                                 $version,

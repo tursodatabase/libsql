@@ -13,7 +13,7 @@ use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus, TransactionS
 use tokio::sync::{watch, Notify};
 use tokio::time::{Duration, Instant};
 
-use crate::auth::{Authenticated, Authorized, Permission};
+use crate::auth::Permission;
 use crate::connection::TXN_TIMEOUT;
 use crate::error::Error;
 use crate::metrics::{
@@ -29,7 +29,7 @@ use crate::stats::Stats;
 use crate::Result;
 
 use super::program::{Cond, DescribeCol, DescribeParam, DescribeResponse};
-use super::{MakeConnection, Program, Step};
+use super::{MakeConnection, Program, RequestContext, Step};
 
 pub struct MakeLibSqlConn<T: WalManager> {
     db_path: PathBuf,
@@ -1073,13 +1073,13 @@ where
     async fn execute_program<B: QueryResultBuilder>(
         &self,
         pgm: Program,
-        auth: Authenticated,
+        ctx: RequestContext,
         builder: B,
         _replication_index: Option<FrameNo>,
     ) -> Result<B> {
         PROGRAM_EXEC_COUNT.increment(1);
 
-        check_program_auth(auth, &pgm)?;
+        check_program_auth(&ctx, &pgm)?;
         let conn = self.inner.clone();
         CONN_RT
             .spawn_blocking(move || Connection::run(conn, pgm, builder))
@@ -1090,11 +1090,11 @@ where
     async fn describe(
         &self,
         sql: String,
-        auth: Authenticated,
+        ctx: RequestContext,
         _replication_index: Option<FrameNo>,
     ) -> Result<crate::Result<DescribeResponse>> {
         DESCRIBE_COUNT.increment(1);
-        check_describe_auth(auth)?;
+        check_describe_auth(ctx)?;
         let conn = self.inner.clone();
         let res = tokio::task::spawn_blocking(move || conn.lock().describe(&sql))
             .await
@@ -1142,7 +1142,10 @@ mod test {
     use tempfile::tempdir;
     use tokio::task::JoinSet;
 
+    use crate::auth::Authenticated;
     use crate::connection::Connection as _;
+    use crate::namespace::meta_store::MetaStore;
+    use crate::namespace::NamespaceName;
     use crate::query_result_builder::test::{test_driver, TestBuilder};
     use crate::query_result_builder::QueryResultBuilder;
     use crate::DEFAULT_AUTO_CHECKPOINT;
@@ -1363,28 +1366,31 @@ mod test {
         )
         .await
         .unwrap();
-        let auth = Authenticated::Authorized(Authorized {
-            namespace: None,
-            permission: Permission::FullAccess,
-        });
 
         let conn = make_conn.make_connection().await.unwrap();
+        let ctx = RequestContext::new(
+            Authenticated::FullAccess,
+            NamespaceName::default(),
+            MetaStore::new(Default::default(), tmp.path())
+                .await
+                .unwrap(),
+        );
         conn.execute_program(
             Program::seq(&["CREATE TABLE test (x)"]),
-            auth.clone(),
+            ctx.clone(),
             TestBuilder::default(),
             None,
         )
         .await
         .unwrap();
         let run_conn = |maker: Arc<MakeLibSqlConn<Sqlite3WalManager>>| {
-            let auth = auth.clone();
+            let ctx = ctx.clone();
             async move {
                 for _ in 0..1000 {
                     let conn = maker.make_connection().await.unwrap();
                     let pgm = Program::seq(&["BEGIN IMMEDIATE", "INSERT INTO test VALUES (42)"]);
                     let res = conn
-                        .execute_program(pgm, auth.clone(), TestBuilder::default(), None)
+                        .execute_program(pgm, ctx.clone(), TestBuilder::default(), None)
                         .await
                         .unwrap()
                         .into_ret();
@@ -1395,7 +1401,7 @@ mod test {
                     if rand::thread_rng().gen_range(0..100) > 1 {
                         let pgm = Program::seq(&["INSERT INTO test VALUES (43)", "COMMIT"]);
                         let res = conn
-                            .execute_program(pgm, auth.clone(), TestBuilder::default(), None)
+                            .execute_program(pgm, ctx.clone(), TestBuilder::default(), None)
                             .await
                             .unwrap()
                             .into_ret();

@@ -3,9 +3,8 @@ use std::collections::HashMap;
 
 use super::result_builder::SingleStatementBuilder;
 use super::{proto, ProtocolError, Version};
-use crate::auth::Authenticated;
 use crate::connection::program::DescribeResponse;
-use crate::connection::Connection;
+use crate::connection::{Connection, RequestContext};
 use crate::error::Error as SqldError;
 use crate::hrana;
 use crate::query::{Params, Query, Value};
@@ -53,13 +52,13 @@ pub enum StmtError {
 
 pub async fn execute_stmt(
     db: &impl Connection,
-    auth: Authenticated,
+    ctx: RequestContext,
     query: Query,
     replication_index: Option<FrameNo>,
 ) -> Result<proto::StmtResult> {
     let builder = SingleStatementBuilder::default();
     let stmt_res = db
-        .execute_batch(vec![query], auth, builder, replication_index)
+        .execute_batch(vec![query], ctx, builder, replication_index)
         .await
         .map_err(catch_stmt_error)?;
     stmt_res.into_ret().map_err(catch_stmt_error)
@@ -67,11 +66,11 @@ pub async fn execute_stmt(
 
 pub async fn describe_stmt(
     db: &impl Connection,
-    auth: Authenticated,
+    ctx: RequestContext,
     sql: String,
     replication_index: Option<FrameNo>,
 ) -> Result<proto::DescribeResult> {
-    match db.describe(sql, auth, replication_index).await? {
+    match db.describe(sql, ctx, replication_index).await? {
         Ok(describe_response) => Ok(proto_describe_result_from_describe_response(
             describe_response,
         )),
