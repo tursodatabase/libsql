@@ -120,10 +120,22 @@ impl MetaStoreInner {
             Sqlite3WalManager::default(),
         );
         let conn = open_conn_active_checkpoint(&db_path, wal_manager.clone(), None, 1000, None)?;
+        conn.execute("PRAGMA foreign_keys=ON", ())?;
         conn.execute(
             "CREATE TABLE IF NOT EXISTS namespace_configs (
                 namespace TEXT NOT NULL PRIMARY KEY,
                 config BLOB NOT NULL
+            )
+            ",
+            (),
+        )?;
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS shared_schema_links (
+                shared_schema_name TEXT NOT NULL,
+                namespace TEXT NOT NULL,
+                PRIMARY KEY (shared_schema_name, namespace),
+                FOREIGN KEY (shared_schema_name) REFERENCES namespace_configs (namespace) ON DELETE RESTRICT ON UPDATE RESTRICT,
+                FOREIGN KEY (namespace) REFERENCES namespace_configs (namespace) ON DELETE RESTRICT ON UPDATE RESTRICT
             )
             ",
             (),
@@ -249,10 +261,27 @@ fn process(msg: ChangeMsg, inner: Arc<Mutex<MetaStoreInner>>) -> Result<()> {
 
     let inner = &mut inner.lock();
 
-    inner.conn.execute(
-        "INSERT OR REPLACE INTO namespace_configs (namespace, config) VALUES (?1, ?2)",
-        rusqlite::params![namespace.as_str(), config_encoded],
-    )?;
+    if let Some(schema) = config.shared_schema_name.as_ref() {
+        let tx = inner.conn.transaction()?;
+        tx.execute(
+            "INSERT OR REPLACE INTO namespace_configs (namespace, config) VALUES (?1, ?2)",
+            rusqlite::params![namespace.as_str(), config_encoded],
+        )?;
+        tx.execute(
+            "DELETE FROM shared_schema_links WHERE namespace = ?",
+            rusqlite::params![namespace.as_str()],
+        )?;
+        tx.execute(
+            "INSERT OR REPLACE INTO shared_schema_links (shared_schema_name, namespace) VALUES (?1, ?2)",
+            rusqlite::params![schema.as_str(), namespace.as_str()],
+        )?;
+        tx.commit()?;
+    } else {
+        inner.conn.execute(
+            "INSERT OR REPLACE INTO namespace_configs (namespace, config) VALUES (?1, ?2)",
+            rusqlite::params![namespace.as_str(), config_encoded],
+        )?;
+    }
 
     let configs = &mut inner.configs;
 
@@ -322,18 +351,28 @@ impl MetaStore {
         tracing::debug!("removing namespace `{}` from meta store", namespace);
 
         let mut guard = self.inner.lock();
-        guard.conn.execute(
-            "DELETE FROM namespace_configs WHERE namespace = ?",
-            [namespace.as_str()],
-        )?;
-        if let Some(sender) = guard.configs.remove(&namespace) {
+        let r = if let Some(sender) = guard.configs.get(&namespace) {
             tracing::debug!("removed namespace `{}` from meta store", namespace);
             let config = sender.borrow().clone();
+            let tx = guard.conn.transaction()?;
+            if let Some(shared_schema) = config.config.shared_schema_name.as_deref() {
+                tx.execute(
+                    "DELETE FROM shared_schema_links WHERE shared_schema_name = ? AND namespace = ?",
+                    [shared_schema, namespace.as_str()],
+                )?;
+            }
+            tx.execute(
+                "DELETE FROM namespace_configs WHERE namespace = ?",
+                [namespace.as_str()],
+            )?;
+            tx.commit()?;
             Ok(Some(config.config))
         } else {
             tracing::trace!("namespace `{}` not found in meta store", namespace);
             Ok(None)
-        }
+        };
+        guard.configs.remove(&namespace);
+        r
     }
 
     // TODO: we need to either make sure that the metastore is restored

@@ -286,7 +286,7 @@ struct CreateNamespaceReq {
     shared_schema: bool,
     /// If some, this is a [NamespaceName] reference to a shared schema DB.
     #[serde(default)]
-    shared_schema_name: Option<String>,
+    shared_schema_name: Option<NamespaceName>,
 }
 
 async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
@@ -304,11 +304,11 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
                 "shared schema database cannot reference another shared schema".to_string(),
             ));
         }
-        let namespace = NamespaceName::from_string(ns)?;
-        if !app_state.namespaces.exists(&namespace) {
-            return Err(Error::NamespaceDoesntExist(namespace.to_string()));
+        // TODO: move this check into meta store
+        if !app_state.namespaces.exists(&ns) {
+            return Err(Error::NamespaceDoesntExist(ns.to_string()));
         }
-        Some(namespace.to_string())
+        Some(ns)
     } else {
         None
     };
@@ -334,7 +334,7 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
     let mut config = (*store.get()).clone();
 
     config.is_shared_schema = req.shared_schema;
-    config.shared_schema_name = shared_schema_name;
+    config.shared_schema_name = shared_schema_name.as_ref().map(|x| x.to_string());
     if let Some(max_db_size) = req.max_db_size {
         config.max_db_pages = max_db_size.as_u64() / LIBSQL_PAGE_SIZE;
     }
@@ -379,6 +379,7 @@ async fn handle_fork_namespace<M: MakeNamespace, C>(
     let mut to_config = (*to_store.get()).clone();
     to_config.max_db_pages = from_config.max_db_pages;
     to_config.heartbeat_url = from_config.heartbeat_url.clone();
+    to_config.shared_schema_name = from_config.shared_schema_name.clone();
     to_store.store(to_config).await?;
     Ok(())
 }
