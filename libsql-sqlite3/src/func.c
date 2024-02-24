@@ -2646,9 +2646,9 @@ int libsql_try_initialize_wasm_func_table(sqlite3 *db) {
           sqlite3_finalize(stmt);
           return rc;
         }
-        const char *pName = sqlite3_column_text(stmt, 0);
+        const unsigned char *pName = sqlite3_column_text(stmt, 0);
         const void *pBody = body_type == SQLITE_TEXT ? sqlite3_column_text(stmt, 1) : sqlite3_column_blob(stmt, 1);
-        try_instantiate_wasm_function(db, pName, name_size, pBody, body_size, -1, NULL);
+        try_instantiate_wasm_function(db, (const char *)pName, name_size, pBody, body_size, -1, NULL);
       }
     }
     sqlite3_finalize(stmt);
