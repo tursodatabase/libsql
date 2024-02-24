@@ -287,6 +287,8 @@ struct CreateNamespaceReq {
     /// If some, this is a [NamespaceName] reference to a shared schema DB.
     #[serde(default)]
     shared_schema_name: Option<NamespaceName>,
+    #[serde(default)]
+    allow_attach: bool,
 }
 
 async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
@@ -335,6 +337,7 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
 
     config.is_shared_schema = req.shared_schema;
     config.shared_schema_name = shared_schema_name.as_ref().map(|x| x.to_string());
+    config.allow_attach = req.allow_attach;
     if let Some(max_db_size) = req.max_db_size {
         config.max_db_pages = max_db_size.as_u64() / LIBSQL_PAGE_SIZE;
     }
