@@ -804,17 +804,20 @@ impl<W: Wal> Connection<W> {
         let config = self.config_store.get();
 
         let blocked = match query.stmt.kind {
-            StmtKind::Read | StmtKind::TxnBegin | StmtKind::Other => config.block_reads,
+            StmtKind::Read | StmtKind::TxnBegin => config.block_reads,
             StmtKind::Write => config.block_reads || config.block_writes,
             StmtKind::DDL => config.block_reads || config.block_writes || config.block_ddl(),
-            StmtKind::TxnEnd | StmtKind::Release | StmtKind::Savepoint => false,
-            StmtKind::Attach | StmtKind::Detach => !config.allow_attach,
+            StmtKind::TxnEnd
+            | StmtKind::Release
+            | StmtKind::Savepoint
+            | StmtKind::Detach
+            | StmtKind::Attach(_) => false,
         };
         if blocked {
             return Err(Error::Blocked(config.block_reason.clone()));
         }
 
-        let mut stmt = if matches!(query.stmt.kind, StmtKind::Attach) {
+        let mut stmt = if matches!(query.stmt.kind, StmtKind::Attach(_)) {
             match &query.stmt.attach_info {
                 Some((attached, attached_alias)) => {
                     let query = self.prepare_attach_query(attached, attached_alias)?;
@@ -1019,42 +1022,37 @@ fn eval_cond(cond: &Cond, results: &[bool], is_autocommit: bool) -> Result<bool>
     })
 }
 
-fn check_program_auth(auth: Authenticated, pgm: &Program) -> Result<()> {
+fn check_program_auth(ctx: &RequestContext, pgm: &Program) -> Result<()> {
     for step in pgm.steps() {
-        let query = &step.query;
-        match (query.stmt.kind, &auth) {
-            (_, Authenticated::Anonymous) => {
-                return Err(Error::NotAuthorized(
-                    "anonymous access not allowed".to_string(),
-                ));
+        match step.query.stmt.kind {
+            StmtKind::TxnBegin
+            | StmtKind::TxnEnd
+            | StmtKind::Read
+            | StmtKind::Savepoint
+            | StmtKind::Release => {
+                ctx.auth.has_right(&ctx.namespace, Permission::Read)?;
             }
-            (StmtKind::Read, Authenticated::Authorized(_)) => (),
-            (StmtKind::TxnBegin, _) | (StmtKind::TxnEnd, _) => (),
-            (
-                _,
-                Authenticated::Authorized(Authorized {
-                    permission: Permission::FullAccess,
-                    ..
-                }),
-            ) => (),
-            _ => {
-                return Err(Error::NotAuthorized(format!(
-                    "Current session is not authorized to run: {}",
-                    query.stmt.stmt
-                )));
+            StmtKind::DDL | StmtKind::Write => {
+                ctx.auth.has_right(&ctx.namespace, Permission::Write)?;
             }
+            StmtKind::Attach(ref ns) => {
+                ctx.auth.has_right(ns, Permission::AttachRead)?;
+                if !ctx.meta_store.handle(ns.clone()).get().allow_attach {
+                    return Err(Error::NotAuthorized(format!(
+                        "Namespace `{ns}` doesn't allow attach"
+                    )));
+                }
+            }
+            StmtKind::Detach => (),
         }
     }
+
     Ok(())
 }
 
-fn check_describe_auth(auth: Authenticated) -> Result<()> {
-    match auth {
-        Authenticated::Anonymous => {
-            Err(Error::NotAuthorized("anonymous access not allowed".into()))
-        }
-        Authenticated::Authorized(_) => Ok(()),
-    }
+fn check_describe_auth(ctx: RequestContext) -> Result<()> {
+    ctx.auth().has_right(ctx.namespace(), Permission::Read)?;
+    Ok(())
 }
 
 /// We use a different runtime to run the connection, because long running tasks block turmoil
