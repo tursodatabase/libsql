@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use itertools::Itertools;
 use serde::Serialize;
 
 use axum::extract::{Path, State};
@@ -8,7 +9,7 @@ use uuid::Uuid;
 
 use crate::namespace::NamespaceName;
 use crate::replication::FrameNo;
-use crate::stats::{SlowestQuery, Stats, TopQuery};
+use crate::stats::{QueryStats, SlowestQuery, Stats, TopQuery};
 
 use super::AppState;
 
@@ -18,13 +19,12 @@ pub struct StatsResponse {
     pub rows_read_count: u64,
     pub rows_written_count: u64,
     pub storage_bytes_used: u64,
-    pub query_count: u64,
-    pub query_latency: u64,
     pub write_requests_delegated: u64,
     pub replication_index: FrameNo,
     pub top_queries: Vec<TopQuery>,
     pub slowest_queries: Vec<SlowestQuery>,
     pub embedded_replica_frames_replicated: u64,
+    pub queries: QueriesStatsResponse,
 }
 
 impl From<&Stats> for StatsResponse {
@@ -37,8 +37,6 @@ impl From<&Stats> for StatsResponse {
             write_requests_delegated: stats.write_requests_delegated(),
             replication_index: stats.get_current_frame_no(),
             embedded_replica_frames_replicated: stats.get_embedded_replica_frames_replicated(),
-            query_count: stats.get_query_count(),
-            query_latency: stats.get_query_latency(),
             top_queries: stats
                 .top_queries()
                 .read()
@@ -53,6 +51,7 @@ impl From<&Stats> for StatsResponse {
                 .iter()
                 .cloned()
                 .collect(),
+            queries: QueriesStatsResponse::from(stats),
         }
     }
 }
@@ -61,6 +60,42 @@ impl From<Stats> for StatsResponse {
     fn from(stats: Stats) -> Self {
         (&stats).into()
     }
+}
+
+#[derive(Serialize)]
+pub struct QueriesStatsResponse {
+    pub id: Option<Uuid>,
+    pub count: u64,
+    pub elapsed_ms: u64,
+    pub stats: Vec<QueryAndStats>,
+}
+
+impl From<&Stats> for QueriesStatsResponse {
+    fn from(stats: &Stats) -> Self {
+        let count = stats.get_query_count();
+        let elapsed_ms = stats.get_query_latency();
+        let queries = stats.get_queries().read().unwrap();
+        Self {
+            count,
+            elapsed_ms,
+            id: queries.id(),
+            stats: queries
+                .stats()
+                .iter()
+                .map(|(k, v)| QueryAndStats {
+                    query: k.clone(),
+                    stat: v.clone(),
+                })
+                .collect_vec(),
+        }
+    }
+}
+
+#[derive(Serialize)]
+pub struct QueryAndStats {
+    pub query: String,
+    #[serde(flatten)]
+    pub stat: QueryStats,
 }
 
 pub(super) async fn handle_stats<C>(

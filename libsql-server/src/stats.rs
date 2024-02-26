@@ -2,9 +2,10 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, RwLock, Weak};
 
+use itertools::Itertools;
 use metrics::{counter, gauge, increment_counter};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 use tokio::io::AsyncWriteExt;
 use tokio::task::JoinSet;
 use tokio::time::Duration;
@@ -52,6 +53,100 @@ impl SlowestQuery {
     }
 }
 
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+pub struct QueryStats {
+    pub elapsed_ms: u64,
+    pub count: u64,
+    pub rows_written: u64,
+    pub rows_read: u64,
+}
+
+impl QueryStats {
+    pub fn new(elapsed_ms: u64, rows_read: u64, rows_written: u64) -> Self {
+        Self {
+            elapsed_ms,
+            count: 1,
+            rows_read,
+            rows_written,
+        }
+    }
+    pub fn empty() -> Self {
+        Self {
+            elapsed_ms: 0,
+            count: 0,
+            rows_read: 0,
+            rows_written: 0,
+        }
+    }
+    pub fn merge(&self, another: &QueryStats) -> Self {
+        Self {
+            elapsed_ms: self.elapsed_ms + another.elapsed_ms,
+            count: self.count + another.count,
+            rows_read: self.rows_read + another.rows_read,
+            rows_written: self.rows_written + another.rows_written,
+        }
+    }
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct QueriesStats {
+    #[serde(default)]
+    id: Option<Uuid>,
+
+    #[serde(default)]
+    stats_threshold: AtomicU64,
+    #[serde(default)]
+    stats: HashMap<String, QueryStats>,
+}
+
+impl QueriesStats {
+    pub fn new() -> Arc<RwLock<Self>> {
+        let mut this = QueriesStats::default();
+        this.id = Some(Uuid::new_v4());
+        Arc::new(RwLock::new(this))
+    }
+
+    pub fn register_query(&mut self, sql: &String, stat: QueryStats) {
+        let (aggregated, new) = match self.stats.get(sql) {
+            Some(stat) => (stat.clone(), false),
+            None => (QueryStats::empty(), true),
+        };
+
+        let aggregated = aggregated.merge(&stat);
+        if aggregated.elapsed_ms < self.stats_threshold.load(Ordering::Relaxed) {
+            return;
+        }
+
+        self.stats.insert(sql.clone(), aggregated);
+
+        if !new || self.stats.len() <= 30 {
+            return;
+        }
+
+        let mut vec = self.stats.clone().into_iter().collect_vec();
+        vec.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+        let len = vec.len();
+        if len <= 30 {
+            return;
+        }
+
+        for i in 0..len - 30 {
+            self.stats.remove(&vec[i].0);
+        }
+
+        self.stats_threshold
+            .store(vec[len - 30].1.elapsed_ms, Ordering::Relaxed);
+    }
+
+    pub fn id(&self) -> Option<Uuid> {
+        self.id
+    }
+
+    pub fn stats(&self) -> &HashMap<String, QueryStats> {
+        &self.stats
+    }
+}
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Stats {
     #[serde(skip)]
@@ -86,6 +181,8 @@ pub struct Stats {
     query_count: AtomicU64,
     #[serde(default)]
     query_latency: AtomicU64,
+    #[serde(skip)]
+    queries: Arc<RwLock<QueriesStats>>,
 }
 
 impl Stats {
@@ -105,6 +202,8 @@ impl Stats {
         if this.id.is_none() {
             this.id = Some(Uuid::new_v4());
         }
+
+        this.queries = QueriesStats::new();
 
         this.namespace = namespace;
         let this = Arc::new(this);
@@ -188,12 +287,20 @@ impl Stats {
         self.current_frame_no.load(Ordering::Relaxed)
     }
 
-    pub(crate) fn get_query_count(&self) -> FrameNo {
+    pub(crate) fn get_query_count(&self) -> u64 {
         self.query_count.load(Ordering::Relaxed)
     }
 
-    pub(crate) fn get_query_latency(&self) -> FrameNo {
+    pub(crate) fn get_query_latency(&self) -> u64 {
         self.query_latency.load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn get_queries(&self) -> &Arc<RwLock<QueriesStats>> {
+        &self.queries
+    }
+
+    pub(crate) fn register_query(&self, sql: &String, stat: QueryStats) {
+        self.queries.write().unwrap().register_query(sql, stat)
     }
 
     pub(crate) fn add_top_query(&self, query: TopQuery) {

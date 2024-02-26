@@ -953,6 +953,10 @@ impl<W: Wal> Connection<W> {
         self.stats.inc_rows_written(rows_written);
         self.stats.inc_query(elapsed);
         let weight = rows_read + rows_written;
+        self.stats.register_query(
+            &sql,
+            crate::stats::QueryStats::new(elapsed, rows_read, rows_written),
+        );
         if self.stats.qualifies_as_top_query(weight) {
             self.stats.add_top_query(crate::stats::TopQuery::new(
                 sql.clone(),
