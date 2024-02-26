@@ -130,3 +130,59 @@ fn delete_namespace() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn shared_schema() {
+    let mut sim = Builder::new().build();
+    let tmp = tempdir().unwrap();
+    make_primary(&mut sim, tmp.path().to_path_buf());
+
+    sim.client("client", async {
+        let client = Client::new();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/main/create",
+                json!({"shared_schema": true}),
+            )
+            .await?;
+        for i in 1..4 {
+            client
+                .post(
+                    &format!("http://primary:9090/v1/namespaces/db-{i}/create"),
+                    json!({"shared_schema_name": "main"}),
+                )
+                .await?;
+        }
+
+        let main =
+            Database::open_remote_with_connector("http://main.primary:8080", "", TurmoilConnector)?;
+        let main_conn = main.connect()?;
+        main_conn
+            .execute_batch("create table test (c text); insert into test(c) values('hello')")
+            .await?;
+
+        for i in 1..4 {
+            let db = Database::open_remote_with_connector(
+                &format!("http://db-{i}.primary:8080"),
+                "",
+                TurmoilConnector,
+            )?;
+            let conn = db.connect()?;
+            let mut res = conn.query("select c from test", ()).await?;
+            let value = res.next().await?.map(|row| row.get::<String>(0).unwrap());
+            assert_eq!(value, Some("hello".to_string()));
+        }
+
+        client
+            .delete("http://primary:9090/v1/namespaces/db-1", json!({}))
+            .await
+            .unwrap();
+        // namespace db-1 doesn't exist anymore - only propagate changes to db-2..<4
+        let res = main_conn.execute("create table test2 (c2 text)", ()).await;
+        assert!(res.is_ok());
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
