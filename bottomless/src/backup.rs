@@ -2,7 +2,7 @@ use crate::replicator::CompressionKind;
 use crate::wal::WalFileReader;
 use anyhow::{anyhow, bail, Result};
 use arc_swap::ArcSwapOption;
-use std::ops::Range;
+use std::ops::{Range, RangeInclusive};
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::mpsc::Sender;
@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 #[derive(Debug)]
 pub(crate) struct WalCopier {
-    outbox: Sender<String>,
+    outbox: Sender<SendReq>,
     use_compression: CompressionKind,
     max_frames_per_batch: usize,
     wal_path: String,
@@ -28,7 +28,7 @@ impl WalCopier {
         db_path: &str,
         max_frames_per_batch: usize,
         use_compression: CompressionKind,
-        outbox: Sender<String>,
+        outbox: Sender<SendReq>,
     ) -> Self {
         WalCopier {
             bucket,
@@ -76,7 +76,7 @@ impl WalCopier {
             meta_file.write_all(buf.as_ref()).await?;
             meta_file.flush().await?;
             let msg = format!("{}-{}/.meta", self.db_name, generation);
-            if self.outbox.send(msg).await.is_err() {
+            if self.outbox.send(SendReq::new(msg)).await.is_err() {
                 return Err(anyhow!("couldn't initialize local backup dir: {}", dir));
             }
         }
@@ -121,7 +121,12 @@ impl WalCopier {
                 tracing::debug!("written {} bytes to {} in {:?}", file_len, fdesc, elapsed);
             }
             drop(out);
-            if self.outbox.send(fdesc).await.is_err() {
+            if self
+                .outbox
+                .send(SendReq::wal_segment(fdesc, start, end - 1))
+                .await
+                .is_err()
+            {
                 tracing::warn!(
                     "WAL local cloning ended prematurely. Last cloned frame no.: {}",
                     end - 1
@@ -130,5 +135,26 @@ impl WalCopier {
             }
         }
         Ok(frames.end - 1)
+    }
+}
+
+pub(crate) struct SendReq {
+    /// Path to a file to be uploaded.
+    pub path: String,
+    /// If uploaded file refers to WAL segment, this field contains range of frames it contains.
+    pub frames: Option<RangeInclusive<u32>>,
+}
+
+impl SendReq {
+    pub fn new(path: String) -> Self {
+        SendReq { path, frames: None }
+    }
+    /// Creates a send request for a WAL segment, given its file path and \[start,end] frames
+    /// (both sides inclusive).
+    pub fn wal_segment(path: String, start_frame: u32, end_frame: u32) -> Self {
+        SendReq {
+            path,
+            frames: Some(start_frame..=end_frame),
+        }
     }
 }
