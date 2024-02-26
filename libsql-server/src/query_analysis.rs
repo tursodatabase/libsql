@@ -5,6 +5,8 @@ use fallible_iterator::FallibleIterator;
 use sqlite3_parser::ast::{Cmd, Expr, Id, PragmaBody, QualifiedName, Stmt};
 use sqlite3_parser::lexer::sql::{Parser, ParserError};
 
+use crate::namespace::NamespaceName;
+
 /// A group of statements to be executed together.
 #[derive(Debug, Clone)]
 pub struct Statement {
@@ -24,7 +26,7 @@ impl Default for Statement {
 }
 
 /// Classify statement in categories of interest.
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum StmtKind {
     /// The beginning of a transaction
     TxnBegin,
@@ -34,10 +36,9 @@ pub enum StmtKind {
     Write,
     Savepoint,
     Release,
-    Attach,
+    Attach(NamespaceName),
     Detach,
     DDL,
-    Other,
 }
 
 fn is_temp(name: &QualifiedName) -> bool {
@@ -61,8 +62,8 @@ impl StmtKind {
     fn kind(cmd: &Cmd) -> Option<Self> {
         match cmd {
             Cmd::Explain(Stmt::Pragma(name, body)) => Self::pragma_kind(name, body.as_ref()),
-            Cmd::Explain(_) => Some(Self::Other),
-            Cmd::ExplainQueryPlan(_) => Some(Self::Other),
+            Cmd::Explain(_) => Some(Self::Read),
+            Cmd::ExplainQueryPlan(_) => Some(Self::Read),
             Cmd::Stmt(Stmt::Begin { .. }) => Some(Self::TxnBegin),
             Cmd::Stmt(
                 Stmt::Commit { .. }
@@ -124,7 +125,9 @@ impl StmtKind {
                 savepoint_name: Some(_),
                 ..
             }) => Some(Self::Release),
-            Cmd::Stmt(Stmt::Attach { .. }) => Some(Self::Attach),
+            Cmd::Stmt(Stmt::Attach { db_name, .. }) => Some(Self::Attach(
+                NamespaceName::from_string(db_name.to_string()).ok()?,
+            )),
             Cmd::Stmt(Stmt::Detach(_)) => Some(Self::Detach),
             _ => None,
         }
@@ -231,13 +234,13 @@ pub enum TxnStatus {
 }
 
 impl TxnStatus {
-    pub fn step(&mut self, kind: StmtKind) {
+    pub fn step(&mut self, kind: &StmtKind) {
         *self = match (*self, kind) {
             (TxnStatus::Txn, StmtKind::TxnBegin) | (TxnStatus::Init, StmtKind::TxnEnd) => {
                 TxnStatus::Invalid
             }
             (TxnStatus::Txn, StmtKind::TxnEnd) => TxnStatus::Init,
-            (state, StmtKind::Other | StmtKind::Write | StmtKind::Read | StmtKind::DDL) => state,
+            (state, StmtKind::Write | StmtKind::Read | StmtKind::DDL) => state,
             (TxnStatus::Invalid, _) => TxnStatus::Invalid,
             (TxnStatus::Init, StmtKind::TxnBegin) => TxnStatus::Txn,
             _ => TxnStatus::Invalid,
@@ -352,7 +355,7 @@ pub fn predict_final_state<'a>(
     stmts: impl Iterator<Item = &'a Statement>,
 ) -> TxnStatus {
     for stmt in stmts {
-        state.step(stmt.kind);
+        state.step(&stmt.kind);
     }
     state
 }

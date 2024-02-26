@@ -17,6 +17,8 @@ use libsql_server::config::{AdminApiConfig, UserApiConfig};
 
 use common::net::{init_tracing, TestServer, TurmoilConnector};
 
+mod attach;
+
 async fn make_standalone_server() -> Result<(), Box<dyn std::error::Error>> {
     init_tracing();
     let tmp = tempdir()?;
@@ -26,6 +28,12 @@ async fn make_standalone_server() -> Result<(), Box<dyn std::error::Error>> {
             hrana_ws_acceptor: None,
             ..Default::default()
         },
+        admin_api_config: Some(AdminApiConfig {
+            acceptor: TurmoilAcceptor::bind(([0, 0, 0, 0], 9090)).await.unwrap(),
+            connector: TurmoilConnector,
+            disable_metrics: true,
+        }),
+        disable_namespaces: false,
         ..Default::default()
     };
 

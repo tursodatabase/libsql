@@ -1,3 +1,5 @@
+use chrono::{DateTime, Utc};
+
 use crate::{
     auth::{parse_http_auth_header, AuthError, Authenticated, Authorized, Permission},
     namespace::NamespaceName,
@@ -12,15 +14,8 @@ pub struct Jwt {
 impl UserAuthStrategy for Jwt {
     fn authenticate(&self, context: UserAuthContext) -> Result<Authenticated, AuthError> {
         tracing::trace!("executing jwt auth");
-
         let param = parse_http_auth_header("bearer", &context.user_credential)?;
-
-        let jwt_key = match context.namespace_credential.as_ref() {
-            Some(jwt_key) => jwt_key,
-            None => &self.key,
-        };
-
-        validate_jwt(jwt_key, param, context.namespace)
+        validate_jwt(&self.key, param)
     }
 }
 
@@ -30,41 +25,69 @@ impl Jwt {
     }
 }
 
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
+struct Token {
+    #[serde(default)]
+    id: Option<NamespaceName>,
+    #[serde(default)]
+    a: Option<Permission>,
+    #[serde(default)]
+    p: Option<Authorized>,
+    #[serde(with = "jwt_time", default)]
+    exp: Option<DateTime<Utc>>,
+}
+
+mod jwt_time {
+    use chrono::{DateTime, Utc};
+    use serde::{de::Error, Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(date: &Option<DateTime<Utc>>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match date {
+            Some(date) => serializer.serialize_i64(date.timestamp()),
+            None => serializer.serialize_none(),
+        }
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<DateTime<Utc>>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Option::<i64>::deserialize(deserializer)?
+            .map(|x| {
+                DateTime::from_timestamp(x, 0).ok_or_else(|| D::Error::custom("invalid exp claim"))
+            })
+            .transpose()
+    }
+}
+
 fn validate_jwt(
     jwt_key: &jsonwebtoken::DecodingKey,
     jwt: &str,
-    namespace: NamespaceName,
 ) -> Result<Authenticated, AuthError> {
     use jsonwebtoken::errors::ErrorKind;
 
     let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::EdDSA);
     validation.required_spec_claims.remove("exp");
 
-    match jsonwebtoken::decode::<serde_json::Value>(jwt, jwt_key, &validation).map(|t| t.claims) {
-        Ok(serde_json::Value::Object(claims)) => {
-            tracing::trace!("Claims: {claims:#?}");
-            let namespace = if namespace == NamespaceName::default() {
-                None
+    match jsonwebtoken::decode::<Token>(jwt, jwt_key, &validation).map(|t| t.claims) {
+        Ok(Token { id, a, p, .. }) => {
+            // This is legacy: when nothing is specified, then it's full access
+            if p.is_none() && id.is_none() && a.is_none() {
+                return Ok(Authenticated::FullAccess);
             } else {
-                claims
-                    .get("id")
-                    .and_then(|ns| NamespaceName::from_string(ns.as_str()?.into()).ok())
-            };
+                let mut auth = p.unwrap_or_default();
 
-            let permission = match claims.get("a").and_then(|s| s.as_str()) {
-                Some("ro") => Permission::ReadOnly,
-                Some("rw") => Permission::FullAccess,
-                Some(_) => return Ok(Authenticated::Anonymous),
-                // Backward compatibility - no access claim means full access
-                None => Permission::FullAccess,
-            };
+                // We only allow tokens if they contains a ns and a perm
+                if let Some((ns, a)) = id.zip(a) {
+                    auth.merge_legacy(ns, a);
+                }
 
-            Ok(Authenticated::Authorized(Authorized {
-                namespace,
-                permission,
-            }))
+                Ok(Authenticated::Authorized(auth.into()))
+            }
         }
-        Ok(_) => Err(AuthError::JwtInvalid),
         Err(error) => Err(match error.kind() {
             ErrorKind::InvalidToken
             | ErrorKind::InvalidSignature
@@ -81,71 +104,162 @@ fn validate_jwt(
 
 #[cfg(test)]
 mod tests {
-    use axum::http::HeaderValue;
+    use std::time::Duration;
 
-    use crate::auth::parse_jwt_key;
+    use axum::http::HeaderValue;
+    use jsonwebtoken::{DecodingKey, EncodingKey};
+    use ring::signature::{Ed25519KeyPair, KeyPair};
+    use serde::Serialize;
+
+    use crate::auth::authorized::Scope;
 
     use super::*;
 
-    const KEY: &str = "zaMv-aFGmB7PXkjM4IrMdF6B5zCYEiEGXW3RgMjNAtc";
+    fn strategy(dec: jsonwebtoken::DecodingKey) -> Jwt {
+        Jwt::new(dec)
+    }
 
-    fn strategy() -> Jwt {
-        Jwt::new(parse_jwt_key(KEY).unwrap())
+    fn key_pair() -> (jsonwebtoken::EncodingKey, jsonwebtoken::DecodingKey) {
+        let doc = Ed25519KeyPair::generate_pkcs8(&ring::rand::SystemRandom::new()).unwrap();
+        let encoding_key = EncodingKey::from_ed_der(doc.as_ref());
+        let pair = Ed25519KeyPair::from_pkcs8(doc.as_ref()).unwrap();
+        let decoding_key = DecodingKey::from_ed_der(pair.public_key().as_ref());
+        (encoding_key, decoding_key)
+    }
+
+    fn encode<T: Serialize>(claims: &T, key: &EncodingKey) -> String {
+        let header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::EdDSA);
+        jsonwebtoken::encode(&header, &claims, key).unwrap()
     }
 
     #[test]
     fn authenticates_valid_jwt_token_with_full_access() {
-        let token = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.\
-            eyJleHAiOjc5ODg0ODM4Mjd9.\
-            MatB2aLnPFusagqH2RMoVExP37o2GFLmaJbmd52OdLtAehRNeqeJZPrefP1t2GBFidApUTLlaBRL6poKq_s3CQ";
+        // this is a full access token
+        let (enc, dec) = key_pair();
+        let token = Token {
+            id: None,
+            a: None,
+            p: None,
+            exp: None,
+        };
+        let token = encode(&token, &enc);
 
         let context = UserAuthContext {
-            namespace: NamespaceName::default(),
-            namespace_credential: None,
             user_credential: HeaderValue::from_str(&format!("Bearer {token}")).ok(),
         };
 
-        assert_eq!(
-            strategy().authenticate(context).unwrap(),
-            Authenticated::Authorized(Authorized {
-                namespace: None,
-                permission: Permission::FullAccess,
-            })
-        )
+        assert!(matches!(
+            strategy(dec).authenticate(context).unwrap(),
+            Authenticated::FullAccess
+        ))
     }
 
     #[test]
     fn authenticates_valid_jwt_token_with_read_only_access() {
-        let token = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.\
-            eyJleHAiOjc5ODg0ODM4MjcsImEiOiJybyJ9.\
-            _2ZZiO2HC8b3CbCHSCufXXBmwpl-dLCv5O9Owvpy7LZ9aiQhXODpgV-iCdTsLQJ5FVanWhfn3FtJSnmWHn25DQ";
+        let (enc, dec) = key_pair();
+        let token = Token {
+            id: Some(NamespaceName::default()),
+            a: Some(Permission::Read),
+            p: None,
+            exp: None,
+        };
+        let token = encode(&token, &enc);
 
         let context = UserAuthContext {
-            namespace: NamespaceName::default(),
-            namespace_credential: None,
             user_credential: HeaderValue::from_str(&format!("Bearer {token}")).ok(),
         };
 
+        let Authenticated::Authorized(a) = strategy(dec).authenticate(context).unwrap() else {
+            panic!()
+        };
+
+        let mut perms = a.perms_iter();
         assert_eq!(
-            strategy().authenticate(context).unwrap(),
-            Authenticated::Authorized(Authorized {
-                namespace: None,
-                permission: Permission::ReadOnly,
-            })
-        )
+            perms.next().unwrap(),
+            (Scope::Namespace(NamespaceName::default()), Permission::Read)
+        );
+        assert!(perms.next().is_none());
     }
 
     #[test]
     fn errors_when_jwt_token_invalid() {
+        let (_enc, dec) = key_pair();
         let context = UserAuthContext {
-            namespace: NamespaceName::default(),
-            namespace_credential: None,
             user_credential: HeaderValue::from_str("Bearer abc").ok(),
         };
 
         assert_eq!(
-            strategy().authenticate(context).unwrap_err(),
+            strategy(dec).authenticate(context).unwrap_err(),
             AuthError::JwtInvalid
         )
+    }
+
+    #[test]
+    fn expired_token() {
+        let (enc, dec) = key_pair();
+        let token = Token {
+            id: None,
+            a: None,
+            p: None,
+            exp: Some(Utc::now() - Duration::from_secs(5 * 60)),
+        };
+
+        let token = encode(&token, &enc);
+
+        let context = UserAuthContext {
+            user_credential: HeaderValue::from_str(&format!("Bearer {token}")).ok(),
+        };
+
+        assert_eq!(
+            strategy(dec).authenticate(context).unwrap_err(),
+            AuthError::JwtExpired
+        );
+    }
+
+    #[test]
+    fn multi_scopes() {
+        let (enc, dec) = key_pair();
+        let token = serde_json::json!({
+            "id": "foobar",
+            "a": "ro",
+            "p": {
+                "rw": { "ns": ["foo"] },
+                "roa": { "ns": ["bar"] }
+            }
+        });
+
+        let token = encode(&token, &enc);
+
+        let context = UserAuthContext {
+            user_credential: HeaderValue::from_str(&format!("Bearer {token}")).ok(),
+        };
+
+        let Authenticated::Authorized(a) = strategy(dec).authenticate(context).unwrap() else {
+            panic!()
+        };
+
+        let mut perms = a.perms_iter();
+        assert_eq!(
+            perms.next().unwrap(),
+            (
+                Scope::Namespace(NamespaceName::from_string("foobar".into()).unwrap()),
+                Permission::Read
+            )
+        );
+        assert_eq!(
+            perms.next().unwrap(),
+            (
+                Scope::Namespace(NamespaceName::from_string("foo".into()).unwrap()),
+                Permission::Write
+            )
+        );
+        assert_eq!(
+            perms.next().unwrap(),
+            (
+                Scope::Namespace(NamespaceName::from_string("bar".into()).unwrap()),
+                Permission::AttachRead
+            )
+        );
+        assert!(perms.next().is_none());
     }
 }

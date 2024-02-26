@@ -13,7 +13,7 @@ use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus, TransactionS
 use tokio::sync::{watch, Notify};
 use tokio::time::{Duration, Instant};
 
-use crate::auth::{Authenticated, Authorized, Permission};
+use crate::auth::Permission;
 use crate::connection::TXN_TIMEOUT;
 use crate::error::Error;
 use crate::metrics::{
@@ -29,7 +29,7 @@ use crate::stats::Stats;
 use crate::Result;
 
 use super::program::{Cond, DescribeCol, DescribeParam, DescribeResponse};
-use super::{MakeConnection, Program, Step};
+use super::{MakeConnection, Program, RequestContext, Step};
 
 pub struct MakeLibSqlConn<T: WalManager> {
     db_path: PathBuf,
@@ -804,17 +804,20 @@ impl<W: Wal> Connection<W> {
         let config = self.config_store.get();
 
         let blocked = match query.stmt.kind {
-            StmtKind::Read | StmtKind::TxnBegin | StmtKind::Other => config.block_reads,
+            StmtKind::Read | StmtKind::TxnBegin => config.block_reads,
             StmtKind::Write => config.block_reads || config.block_writes,
             StmtKind::DDL => config.block_reads || config.block_writes || config.block_ddl(),
-            StmtKind::TxnEnd | StmtKind::Release | StmtKind::Savepoint => false,
-            StmtKind::Attach | StmtKind::Detach => !config.allow_attach,
+            StmtKind::TxnEnd
+            | StmtKind::Release
+            | StmtKind::Savepoint
+            | StmtKind::Detach
+            | StmtKind::Attach(_) => false,
         };
         if blocked {
             return Err(Error::Blocked(config.block_reason.clone()));
         }
 
-        let mut stmt = if matches!(query.stmt.kind, StmtKind::Attach) {
+        let mut stmt = if matches!(query.stmt.kind, StmtKind::Attach(_)) {
             match &query.stmt.attach_info {
                 Some((attached, attached_alias)) => {
                     let query = self.prepare_attach_query(attached, attached_alias)?;
@@ -1019,42 +1022,37 @@ fn eval_cond(cond: &Cond, results: &[bool], is_autocommit: bool) -> Result<bool>
     })
 }
 
-fn check_program_auth(auth: Authenticated, pgm: &Program) -> Result<()> {
+fn check_program_auth(ctx: &RequestContext, pgm: &Program) -> Result<()> {
     for step in pgm.steps() {
-        let query = &step.query;
-        match (query.stmt.kind, &auth) {
-            (_, Authenticated::Anonymous) => {
-                return Err(Error::NotAuthorized(
-                    "anonymous access not allowed".to_string(),
-                ));
+        match step.query.stmt.kind {
+            StmtKind::TxnBegin
+            | StmtKind::TxnEnd
+            | StmtKind::Read
+            | StmtKind::Savepoint
+            | StmtKind::Release => {
+                ctx.auth.has_right(&ctx.namespace, Permission::Read)?;
             }
-            (StmtKind::Read, Authenticated::Authorized(_)) => (),
-            (StmtKind::TxnBegin, _) | (StmtKind::TxnEnd, _) => (),
-            (
-                _,
-                Authenticated::Authorized(Authorized {
-                    permission: Permission::FullAccess,
-                    ..
-                }),
-            ) => (),
-            _ => {
-                return Err(Error::NotAuthorized(format!(
-                    "Current session is not authorized to run: {}",
-                    query.stmt.stmt
-                )));
+            StmtKind::DDL | StmtKind::Write => {
+                ctx.auth.has_right(&ctx.namespace, Permission::Write)?;
             }
+            StmtKind::Attach(ref ns) => {
+                ctx.auth.has_right(ns, Permission::AttachRead)?;
+                if !ctx.meta_store.handle(ns.clone()).get().allow_attach {
+                    return Err(Error::NotAuthorized(format!(
+                        "Namespace `{ns}` doesn't allow attach"
+                    )));
+                }
+            }
+            StmtKind::Detach => (),
         }
     }
+
     Ok(())
 }
 
-fn check_describe_auth(auth: Authenticated) -> Result<()> {
-    match auth {
-        Authenticated::Anonymous => {
-            Err(Error::NotAuthorized("anonymous access not allowed".into()))
-        }
-        Authenticated::Authorized(_) => Ok(()),
-    }
+fn check_describe_auth(ctx: RequestContext) -> Result<()> {
+    ctx.auth().has_right(ctx.namespace(), Permission::Read)?;
+    Ok(())
 }
 
 /// We use a different runtime to run the connection, because long running tasks block turmoil
@@ -1073,13 +1071,13 @@ where
     async fn execute_program<B: QueryResultBuilder>(
         &self,
         pgm: Program,
-        auth: Authenticated,
+        ctx: RequestContext,
         builder: B,
         _replication_index: Option<FrameNo>,
     ) -> Result<B> {
         PROGRAM_EXEC_COUNT.increment(1);
 
-        check_program_auth(auth, &pgm)?;
+        check_program_auth(&ctx, &pgm)?;
         let conn = self.inner.clone();
         CONN_RT
             .spawn_blocking(move || Connection::run(conn, pgm, builder))
@@ -1090,11 +1088,11 @@ where
     async fn describe(
         &self,
         sql: String,
-        auth: Authenticated,
+        ctx: RequestContext,
         _replication_index: Option<FrameNo>,
     ) -> Result<crate::Result<DescribeResponse>> {
         DESCRIBE_COUNT.increment(1);
-        check_describe_auth(auth)?;
+        check_describe_auth(ctx)?;
         let conn = self.inner.clone();
         let res = tokio::task::spawn_blocking(move || conn.lock().describe(&sql))
             .await
@@ -1142,7 +1140,10 @@ mod test {
     use tempfile::tempdir;
     use tokio::task::JoinSet;
 
+    use crate::auth::Authenticated;
     use crate::connection::Connection as _;
+    use crate::namespace::meta_store::MetaStore;
+    use crate::namespace::NamespaceName;
     use crate::query_result_builder::test::{test_driver, TestBuilder};
     use crate::query_result_builder::QueryResultBuilder;
     use crate::DEFAULT_AUTO_CHECKPOINT;
@@ -1363,28 +1364,31 @@ mod test {
         )
         .await
         .unwrap();
-        let auth = Authenticated::Authorized(Authorized {
-            namespace: None,
-            permission: Permission::FullAccess,
-        });
 
         let conn = make_conn.make_connection().await.unwrap();
+        let ctx = RequestContext::new(
+            Authenticated::FullAccess,
+            NamespaceName::default(),
+            MetaStore::new(Default::default(), tmp.path())
+                .await
+                .unwrap(),
+        );
         conn.execute_program(
             Program::seq(&["CREATE TABLE test (x)"]),
-            auth.clone(),
+            ctx.clone(),
             TestBuilder::default(),
             None,
         )
         .await
         .unwrap();
         let run_conn = |maker: Arc<MakeLibSqlConn<Sqlite3WalManager>>| {
-            let auth = auth.clone();
+            let ctx = ctx.clone();
             async move {
                 for _ in 0..1000 {
                     let conn = maker.make_connection().await.unwrap();
                     let pgm = Program::seq(&["BEGIN IMMEDIATE", "INSERT INTO test VALUES (42)"]);
                     let res = conn
-                        .execute_program(pgm, auth.clone(), TestBuilder::default(), None)
+                        .execute_program(pgm, ctx.clone(), TestBuilder::default(), None)
                         .await
                         .unwrap()
                         .into_ret();
@@ -1395,7 +1399,7 @@ mod test {
                     if rand::thread_rng().gen_range(0..100) > 1 {
                         let pgm = Program::seq(&["INSERT INTO test VALUES (43)", "COMMIT"]);
                         let res = conn
-                            .execute_program(pgm, auth.clone(), TestBuilder::default(), None)
+                            .execute_program(pgm, ctx.clone(), TestBuilder::default(), None)
                             .await
                             .unwrap()
                             .into_ret();

@@ -1,34 +1,23 @@
-use crate::auth::{constants::GRPC_PROXY_AUTH_HEADER, Authorized, Permission};
+use std::sync::Arc;
+
+use crate::auth::{constants::GRPC_PROXY_AUTH_HEADER, Authorized};
 use crate::namespace::NamespaceName;
-use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
 use tonic::Status;
+
+use super::authorized::Scope;
+use super::Permission;
 
 /// A witness that the user has been authenticated.
 #[non_exhaustive]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub enum Authenticated {
     Anonymous,
-    Authorized(Authorized),
+    Authorized(Arc<Authorized>),
+    FullAccess,
 }
 
 impl Authenticated {
-    pub fn from_proxy_grpc_request<T>(
-        req: &tonic::Request<T>,
-        disable_namespace: bool,
-    ) -> Result<Self, Status> {
-        let namespace = if disable_namespace {
-            None
-        } else {
-            req.metadata()
-                .get_bin(NAMESPACE_METADATA_KEY)
-                .map(|c| c.to_bytes())
-                .transpose()
-                .map_err(|_| Status::invalid_argument("failed to parse namespace header"))?
-                .map(NamespaceName::from_bytes)
-                .transpose()
-                .map_err(|_| Status::invalid_argument("invalid namespace name"))?
-        };
-
+    pub fn from_proxy_grpc_request<T>(req: &tonic::Request<T>) -> Result<Self, Status> {
         let auth = match req
             .metadata()
             .get(GRPC_PROXY_AUTH_HEADER)
@@ -36,21 +25,7 @@ impl Authenticated {
             .transpose()
             .map_err(|_| Status::invalid_argument("missing authorization header"))?
         {
-            Some("full_access") => Authenticated::Authorized(Authorized {
-                namespace,
-                permission: Permission::FullAccess,
-            }),
-            Some("read_only") => Authenticated::Authorized(Authorized {
-                namespace,
-                permission: Permission::ReadOnly,
-            }),
-            Some("anonymous") => Authenticated::Anonymous,
-            Some(level) => {
-                return Err(Status::permission_denied(format!(
-                    "invalid authorization level: {}",
-                    level
-                )))
-            }
+            Some(s) => serde_json::from_str::<Authenticated>(s).unwrap(),
             None => return Err(Status::invalid_argument("x-proxy-authorization not set")),
         };
 
@@ -60,18 +35,7 @@ impl Authenticated {
     pub fn upgrade_grpc_request<T>(&self, req: &mut tonic::Request<T>) {
         let key = tonic::metadata::AsciiMetadataKey::from_static(GRPC_PROXY_AUTH_HEADER);
 
-        let auth = match self {
-            Authenticated::Anonymous => "anonymous",
-            Authenticated::Authorized(Authorized {
-                permission: Permission::FullAccess,
-                ..
-            }) => "full_access",
-            Authenticated::Authorized(Authorized {
-                permission: Permission::ReadOnly,
-                ..
-            }) => "read_only",
-        };
-
+        let auth = serde_json::to_string(self).unwrap();
         let value = tonic::metadata::AsciiMetadataValue::try_from(auth).unwrap();
 
         req.metadata_mut().insert(key, value);
@@ -80,14 +44,31 @@ impl Authenticated {
     pub fn is_namespace_authorized(&self, namespace: &NamespaceName) -> bool {
         match self {
             Authenticated::Anonymous => false,
-            Authenticated::Authorized(Authorized {
-                namespace: Some(ns),
-                ..
-            }) => ns == namespace,
-            // we threat the absence of a specific namespace has a permission to any namespace
-            Authenticated::Authorized(Authorized {
-                namespace: None, ..
-            }) => true,
+            Authenticated::Authorized(auth) => {
+                auth.has_right(Scope::Namespace(namespace.clone()), Permission::Read)
+            }
+            Authenticated::FullAccess => true,
+        }
+    }
+
+    pub(crate) fn has_right(
+        &self,
+        namespace: &NamespaceName,
+        perm: Permission,
+    ) -> crate::Result<()> {
+        match self {
+            Authenticated::Anonymous => Err(crate::Error::NotAuthorized(
+                "anonymous access not allowed".to_string(),
+            )),
+            Authenticated::Authorized(a) => {
+                if !a.has_right(Scope::Namespace(namespace.clone()), perm) {
+                    Err(crate::Error::NotAuthorized(format!(
+                                "Current session doest not have {perm:?} permission to namespace {namespace}")))
+                } else {
+                    Ok(())
+                }
+            }
+            Authenticated::FullAccess => Ok(()),
         }
     }
 }

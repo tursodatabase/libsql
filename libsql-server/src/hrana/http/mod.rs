@@ -9,8 +9,7 @@ use std::sync::Arc;
 use std::task;
 
 use super::{batch, cursor, Encoding, ProtocolError, Version};
-use crate::auth::Authenticated;
-use crate::connection::{Connection, MakeConnection};
+use crate::connection::{Connection, MakeConnection, RequestContext};
 use crate::hrana::http::stream::StreamError;
 
 mod request;
@@ -44,7 +43,7 @@ impl<C: Connection> Server<C> {
     pub async fn handle_request(
         &self,
         connection_maker: Arc<dyn MakeConnection<Connection = C>>,
-        auth: Authenticated,
+        ctx: RequestContext,
         req: hyper::Request<hyper::Body>,
         endpoint: Endpoint,
         version: Version,
@@ -53,7 +52,7 @@ impl<C: Connection> Server<C> {
         handle_request(
             self,
             connection_maker,
-            auth,
+            ctx,
             req,
             endpoint,
             version,
@@ -86,7 +85,7 @@ pub(crate) async fn handle_index() -> hyper::Response<hyper::Body> {
 async fn handle_request<C: Connection>(
     server: &Server<C>,
     connection_maker: Arc<dyn MakeConnection<Connection = C>>,
-    auth: Authenticated,
+    ctx: RequestContext,
     req: hyper::Request<hyper::Body>,
     endpoint: Endpoint,
     version: Version,
@@ -94,10 +93,10 @@ async fn handle_request<C: Connection>(
 ) -> Result<hyper::Response<hyper::Body>> {
     match endpoint {
         Endpoint::Pipeline => {
-            handle_pipeline(server, connection_maker, auth, req, version, encoding).await
+            handle_pipeline(server, connection_maker, ctx, req, version, encoding).await
         }
         Endpoint::Cursor => {
-            handle_cursor(server, connection_maker, auth, req, version, encoding).await
+            handle_cursor(server, connection_maker, ctx, req, version, encoding).await
         }
     }
 }
@@ -105,7 +104,7 @@ async fn handle_request<C: Connection>(
 async fn handle_pipeline<C: Connection>(
     server: &Server<C>,
     connection_maker: Arc<dyn MakeConnection<Connection = C>>,
-    auth: Authenticated,
+    ctx: RequestContext,
     req: hyper::Request<hyper::Body>,
     version: Version,
     encoding: Encoding,
@@ -117,7 +116,7 @@ async fn handle_pipeline<C: Connection>(
     let mut results = Vec::with_capacity(req_body.requests.len());
     for request in req_body.requests.into_iter() {
         tracing::debug!("pipeline:{{ {:?}, {:?} }}", version, request);
-        let result = request::handle(&mut stream_guard, auth.clone(), request, version).await?;
+        let result = request::handle(&mut stream_guard, ctx.clone(), request, version).await?;
         results.push(result);
     }
 
@@ -132,7 +131,7 @@ async fn handle_pipeline<C: Connection>(
 async fn handle_cursor<C: Connection>(
     server: &Server<C>,
     connection_maker: Arc<dyn MakeConnection<Connection = C>>,
-    auth: Authenticated,
+    ctx: RequestContext,
     req: hyper::Request<hyper::Body>,
     version: Version,
     encoding: Encoding,
@@ -145,7 +144,7 @@ async fn handle_cursor<C: Connection>(
     let db = stream_guard.get_db_owned()?;
     let sqls = stream_guard.sqls();
     let pgm = batch::proto_batch_to_program(&req_body.batch, sqls, version)?;
-    cursor_hnd.open(db, auth, pgm, req_body.batch.replication_index);
+    cursor_hnd.open(db, ctx, pgm, req_body.batch.replication_index);
 
     let resp_body = proto::CursorRespBody {
         baton: stream_guard.release(),

@@ -7,7 +7,10 @@ use tokio_stream::StreamExt;
 use tonic::{transport::Channel, Request, Status};
 
 use crate::{
-    auth::{parsers::parse_grpc_auth_header, user_auth_strategies::UserAuthContext, Auth},
+    auth::{
+        parsers::parse_grpc_auth_header, user_auth_strategies::UserAuthContext, Auth, Jwt,
+        UserAuthStrategy,
+    },
     namespace::{NamespaceStore, ReplicaNamespaceMaker},
 };
 
@@ -46,23 +49,26 @@ impl ReplicaProxyService {
         let user_credential = parse_grpc_auth_header(req.metadata());
 
         match namespace_jwt_key {
-            Ok(Ok(jwt_key)) => {
-                let authenticated = self.user_auth_strategy.authenticate(UserAuthContext {
-                    namespace,
-                    namespace_credential: jwt_key,
-                    user_credential,
-                })?;
+            Ok(Ok(Some(key))) => {
+                let authenticated =
+                    Jwt::new(key).authenticate(UserAuthContext { user_credential })?;
+                authenticated.upgrade_grpc_request(req);
+
+                Ok(())
+            }
+            Ok(Ok(None)) => {
+                let authenticated = self
+                    .user_auth_strategy
+                    .authenticate(UserAuthContext { user_credential })?;
 
                 authenticated.upgrade_grpc_request(req);
                 Ok(())
             }
             Err(e) => match e.as_ref() {
                 crate::error::Error::NamespaceDoesntExist(_) => {
-                    let authenticated = self.user_auth_strategy.authenticate(UserAuthContext {
-                        namespace,
-                        namespace_credential: None,
-                        user_credential,
-                    })?;
+                    let authenticated = self
+                        .user_auth_strategy
+                        .authenticate(UserAuthContext { user_credential })?;
 
                     authenticated.upgrade_grpc_request(req);
                     Ok(())

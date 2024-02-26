@@ -20,6 +20,7 @@ use tonic::Status;
 use uuid::Uuid;
 
 use crate::auth::user_auth_strategies::UserAuthContext;
+use crate::auth::Jwt;
 use crate::auth::{parsers::parse_grpc_auth_header, Auth};
 use crate::connection::config::DatabaseConfig;
 use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
@@ -78,38 +79,27 @@ impl ReplicationLogService {
 
         let user_credential = parse_grpc_auth_header(req.metadata());
 
-        match namespace_jwt_key {
-            Ok(Ok(jwt_key)) => {
-                if let Some(auth) = &self.user_auth_strategy {
-                    auth.authenticate(UserAuthContext {
-                        namespace,
-                        namespace_credential: jwt_key,
-                        user_credential,
-                    })?;
-                }
-                Ok(())
-            }
+        let auth = match namespace_jwt_key {
+            Ok(Ok(Some(key))) => Some(Auth::new(Jwt::new(key))),
+            Ok(Ok(None)) => self.user_auth_strategy.clone(),
             Err(e) => match e.as_ref() {
-                crate::error::Error::NamespaceDoesntExist(_) => {
-                    if let Some(auth) = &self.user_auth_strategy {
-                        auth.authenticate(UserAuthContext {
-                            namespace,
-                            namespace_credential: None,
-                            user_credential,
-                        })?;
-                    }
-                    Ok(())
-                }
+                crate::error::Error::NamespaceDoesntExist(_) => self.user_auth_strategy.clone(),
                 _ => Err(Status::internal(format!(
                     "Error fetching jwt key for a namespace: {}",
                     e
-                ))),
+                )))?,
             },
             Ok(Err(e)) => Err(Status::internal(format!(
                 "Error fetching jwt key for a namespace: {}",
                 e
-            ))),
+            )))?,
+        };
+
+        if let Some(auth) = auth {
+            auth.authenticate(UserAuthContext { user_credential })?;
         }
+
+        Ok(())
     }
 
     fn verify_session_token<R>(

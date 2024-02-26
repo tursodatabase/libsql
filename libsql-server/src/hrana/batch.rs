@@ -2,9 +2,8 @@ use anyhow::{anyhow, bail, Result};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::auth::Authenticated;
 use crate::connection::program::{Cond, Program, Step};
-use crate::connection::Connection;
+use crate::connection::{Connection, RequestContext};
 use crate::error::Error as SqldError;
 use crate::hrana::stmt::StmtError;
 use crate::query::{Params, Query};
@@ -105,13 +104,13 @@ pub fn proto_batch_to_program(
 
 pub async fn execute_batch(
     db: &impl Connection,
-    auth: Authenticated,
+    ctx: RequestContext,
     pgm: Program,
     replication_index: Option<u64>,
 ) -> Result<proto::BatchResult> {
     let batch_builder = HranaBatchProtoBuilder::default();
     let builder = db
-        .execute_program(pgm, auth, batch_builder, replication_index)
+        .execute_program(pgm, ctx, batch_builder, replication_index)
         .await
         .map_err(catch_batch_error)?;
 
@@ -146,13 +145,13 @@ pub fn proto_sequence_to_program(sql: &str) -> Result<Program> {
 
 pub async fn execute_sequence(
     db: &impl Connection,
-    auth: Authenticated,
+    ctx: RequestContext,
     pgm: Program,
     replication_index: Option<FrameNo>,
 ) -> Result<()> {
     let builder = StepResultsBuilder::default();
     let builder = db
-        .execute_program(pgm, auth, builder, replication_index)
+        .execute_program(pgm, ctx, builder, replication_index)
         .await
         .map_err(catch_batch_error)?;
     builder
