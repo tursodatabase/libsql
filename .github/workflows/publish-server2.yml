@@ -12,6 +12,7 @@ env:
 
 jobs:
   build:
+    permissions: write-all
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -77,6 +78,7 @@ jobs:
           retention-days: 1
 
   merge:
+    permissions: write-all
     runs-on: ubuntu-latest
     needs:
       - build
