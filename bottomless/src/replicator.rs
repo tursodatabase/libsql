@@ -1,5 +1,5 @@
 use crate::backup::WalCopier;
-use crate::completion_progress::CompletionProgress;
+use crate::completion_progress::{CompletionProgress, SavepointTracker};
 use crate::read::BatchReader;
 use crate::uuid_utils::decode_unix_timestamp;
 use crate::wal::WalFileReader;
@@ -480,14 +480,14 @@ impl Replicator {
         }
     }
 
-    pub async fn savepoint(&mut self) -> Result<u32> {
-        self.wait_until_snapshotted().await?;
-        let frame_no = self.last_known_frame();
-        let res = self
-            .last_uploaded_frame_no
-            .wait_for(|frame| *frame >= frame_no)
-            .await?;
-        Ok(*res)
+    pub fn savepoint(&self) -> SavepointTracker {
+        SavepointTracker::new(
+            self.generation.clone(),
+            self.snapshot_waiter.clone(),
+            self.next_frame_no.clone(),
+            self.last_uploaded_frame_no.clone(),
+            self.db_path.clone(),
+        )
     }
 
     /// Waits until the commit for a given frame_no or higher was given.
