@@ -82,6 +82,10 @@ pub struct Stats {
     slowest_queries: Arc<RwLock<BTreeSet<SlowestQuery>>>,
     #[serde(default)]
     embedded_replica_frames_replicated: AtomicU64,
+    #[serde(default)]
+    query_count: AtomicU64,
+    #[serde(default)]
+    query_latency: AtomicU64,
 }
 
 impl Stats {
@@ -117,6 +121,13 @@ impl Stats {
     pub fn inc_rows_written(&self, n: u64) {
         counter!("libsql_server_rows_written", n, "namespace" => self.namespace.to_string());
         self.rows_written.fetch_add(n, Ordering::Relaxed);
+    }
+
+    pub fn inc_query(&self, ms: u64) {
+        counter!("libsql_server_query_count", 1, "namespace" => self.namespace.to_string());
+        counter!("libsql_server_query_latency", ms, "namespace" => self.namespace.to_string());
+        self.query_count.fetch_add(1, Ordering::Relaxed);
+        self.query_latency.fetch_add(ms, Ordering::Relaxed);
     }
 
     /// increments the number of read rows by n
@@ -175,6 +186,14 @@ impl Stats {
 
     pub(crate) fn get_current_frame_no(&self) -> FrameNo {
         self.current_frame_no.load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn get_query_count(&self) -> FrameNo {
+        self.query_count.load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn get_query_latency(&self) -> FrameNo {
+        self.query_latency.load(Ordering::Relaxed)
     }
 
     pub(crate) fn add_top_query(&self, query: TopQuery) {
