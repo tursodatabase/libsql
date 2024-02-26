@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use itertools::Itertools;
 use serde::Serialize;
 
 use axum::extract::{Path, State};
@@ -8,7 +9,7 @@ use uuid::Uuid;
 
 use crate::namespace::NamespaceName;
 use crate::replication::FrameNo;
-use crate::stats::{SlowestQuery, Stats, TopQuery};
+use crate::stats::{QueryStats, SlowestQuery, Stats, TopQuery};
 
 use super::AppState;
 
@@ -23,6 +24,9 @@ pub struct StatsResponse {
     pub top_queries: Vec<TopQuery>,
     pub slowest_queries: Vec<SlowestQuery>,
     pub embedded_replica_frames_replicated: u64,
+    pub query_count: u64,
+    pub elapsed_ms: u64,
+    pub queries: QueriesStatsResponse,
 }
 
 impl From<&Stats> for StatsResponse {
@@ -35,6 +39,8 @@ impl From<&Stats> for StatsResponse {
             write_requests_delegated: stats.write_requests_delegated(),
             replication_index: stats.get_current_frame_no(),
             embedded_replica_frames_replicated: stats.get_embedded_replica_frames_replicated(),
+            query_count: stats.get_query_count(),
+            elapsed_ms: stats.get_query_latency(),
             top_queries: stats
                 .top_queries()
                 .read()
@@ -49,6 +55,7 @@ impl From<&Stats> for StatsResponse {
                 .iter()
                 .cloned()
                 .collect(),
+            queries: QueriesStatsResponse::from(stats),
         }
     }
 }
@@ -57,6 +64,38 @@ impl From<Stats> for StatsResponse {
     fn from(stats: Stats) -> Self {
         (&stats).into()
     }
+}
+
+#[derive(Serialize)]
+pub struct QueriesStatsResponse {
+    pub id: Option<Uuid>,
+    pub stats: Vec<QueryAndStats>,
+}
+
+impl From<&Stats> for QueriesStatsResponse {
+    fn from(stats: &Stats) -> Self {
+        let queries = stats.get_queries().read().unwrap();
+        Self {
+            id: queries.id(),
+            stats: queries
+                .stats()
+                .iter()
+                .map(|(k, v)| QueryAndStats {
+                    query: k.clone(),
+                    elapsed_ms: v.elapsed.as_millis() as u64,
+                    stat: v.clone(),
+                })
+                .collect_vec(),
+        }
+    }
+}
+
+#[derive(Serialize)]
+pub struct QueryAndStats {
+    pub query: String,
+    pub elapsed_ms: u64,
+    #[serde(flatten)]
+    pub stat: QueryStats,
 }
 
 pub(super) async fn handle_stats<C>(
