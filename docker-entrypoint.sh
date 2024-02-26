@@ -7,8 +7,6 @@ SQLD_NODE="${SQLD_NODE:-primary}"
 SQLD_DB_PATH="${SQLD_DB_PATH:-iku.db}"
 SQLD_HTTP_LISTEN_ADDR="${SQLD_HTTP_LISTEN_ADDR:-"0.0.0.0:8080"}"
 
-SQLD_HTTP_AUTH="${SQLD_HTTP_AUTH:-"always"}"
-
 if [ "$1" = '/bin/sqld' ]; then
   # We are running the server.
   declare -a server_args=()
