@@ -33,8 +33,8 @@ impl Authorized {
     pub fn merge_legacy(&mut self, namespace: NamespaceName, perm: Permission) {
         let scope = match perm {
             Permission::Read => self.read_only.get_or_insert_with(Default::default),
-            Permission::Write => self.read_only.get_or_insert_with(Default::default),
-            Permission::AttachRead => todo!("unsupported"),
+            Permission::Write => self.read_write.get_or_insert_with(Default::default),
+            Permission::AttachRead => self.read_only_attach.get_or_insert_with(Default::default),
         };
 
         scope
