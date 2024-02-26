@@ -57,6 +57,9 @@ Use ".open FILENAME" to reopen on a persistent database.
 libsql>
 ```
 
+### Docker
+To run libSQL using docker, refer to the [Docker Docs](docs/DOCKER.md)
+
 ## Why a fork?
 
 SQLite has solidified its place in modern technology stacks, embedded in nearly any computing device you can think of. Its open source nature and public domain availability make it a popular choice for modification to meet specific use cases.
