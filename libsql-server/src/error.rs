@@ -102,7 +102,7 @@ pub enum Error {
     #[error("Unable to decode protobuf: {0}")]
     ProstDecode(#[from] prost::DecodeError),
     #[error("Shared schema error: {0}")]
-    SharedSchemaError(String),
+    SharedSchemaCreationError(String),
 }
 
 impl AsRef<Self> for Error {
@@ -180,7 +180,7 @@ impl IntoResponse for &Error {
             MetaStoreUpdateFailure(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             Ref(this) => this.as_ref().into_response(),
             ProstDecode(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
-            SharedSchemaError(_) => self.format_err(StatusCode::BAD_REQUEST),
+            SharedSchemaCreationError(_) => self.format_err(StatusCode::BAD_REQUEST),
         }
     }
 }

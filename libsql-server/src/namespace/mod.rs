@@ -458,9 +458,8 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         })
     }
 
-    pub async fn exists(&self, namespace: &NamespaceName) -> bool {
-        let e = self.inner.store.get(namespace).await;
-        e.is_some()
+    pub fn exists(&self, namespace: &NamespaceName) -> bool {
+        self.inner.metadata.exists(namespace)
     }
 
     pub async fn destroy(&self, namespace: NamespaceName) -> crate::Result<()> {
