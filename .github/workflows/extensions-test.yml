@@ -76,4 +76,5 @@ jobs:
       - name: test
         run: |
           cd libsql-sqlite3/test/rust_suite
-          cargo test --features extensions
+          # Only execute extensions tests
+          cargo test --features=extensions extensions
