@@ -328,7 +328,6 @@ impl NamespaceStore {
         db_config: MetaStoreHandle,
         restore_option: RestoreOption,
     ) -> crate::Result<NamespaceEntry> {
-        println!("{}", std::backtrace::Backtrace::force_capture());
         let init = {
             let namespace = namespace.clone();
             async move {
