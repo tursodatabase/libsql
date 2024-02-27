@@ -1,6 +1,8 @@
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::pin::Pin;
 use std::str::FromStr;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
@@ -13,14 +15,15 @@ use libsql_replication::rpc::proxy::{
 };
 use libsql_replication::rpc::replication::NAMESPACE_DOESNT_EXIST;
 use rusqlite::types::ValueRef;
+use tokio::time::Duration;
 use uuid::Uuid;
 
 use crate::auth::parsers::parse_grpc_auth_header;
 use crate::auth::user_auth_strategies::UserAuthContext;
 use crate::auth::{Auth, Authenticated, Jwt};
-use crate::connection::{Connection, RequestContext};
-use crate::database::{Database, PrimaryConnection};
-use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
+use crate::connection::{Connection as _, RequestContext};
+use crate::database::Connection;
+use crate::namespace::NamespaceStore;
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
 };
@@ -281,15 +284,15 @@ pub mod rpc {
 }
 
 pub struct ProxyService {
-    clients: Arc<RwLock<HashMap<Uuid, Arc<PrimaryConnection>>>>,
-    namespaces: NamespaceStore<PrimaryNamespaceMaker>,
+    clients: Arc<RwLock<HashMap<Uuid, Arc<TimeoutConnection>>>>,
+    namespaces: NamespaceStore,
     user_auth_strategy: Option<Auth>,
     disable_namespaces: bool,
 }
 
 impl ProxyService {
     pub fn new(
-        namespaces: NamespaceStore<PrimaryNamespaceMaker>,
+        namespaces: NamespaceStore,
         user_auth_strategy: Option<Auth>,
         disable_namespaces: bool,
     ) -> Self {
@@ -301,7 +304,7 @@ impl ProxyService {
         }
     }
 
-    pub fn clients(&self) -> Arc<RwLock<HashMap<Uuid, Arc<PrimaryConnection>>>> {
+    pub fn clients(&self) -> Arc<RwLock<HashMap<Uuid, Arc<TimeoutConnection>>>> {
         self.clients.clone()
     }
 
@@ -343,7 +346,7 @@ impl ProxyService {
         Ok(RequestContext::new(
             auth,
             namespace,
-            self.namespaces.meta_store(),
+            self.namespaces.meta_store().clone(),
         ))
     }
 }
@@ -516,11 +519,50 @@ impl QueryResultBuilder for ExecuteResultsBuilder {
     }
 }
 
+pub struct TimeoutConnection {
+    inner: Connection,
+    atime: AtomicU64,
+}
+
+impl TimeoutConnection {
+    fn new(inner: Connection) -> Self {
+        Self {
+            inner,
+            atime: now_millis().into(),
+        }
+    }
+}
+
+impl Deref for TimeoutConnection {
+    type Target = Connection;
+
+    fn deref(&self) -> &Self::Target {
+        self.atime.store(now_millis(), Ordering::Relaxed);
+        &self.inner
+    }
+}
+
+fn now_millis() -> u64 {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as u64
+}
+
+impl TimeoutConnection {
+    pub fn idle_time(&self) -> Duration {
+        let now = now_millis();
+        let atime = self.atime.load(Ordering::Relaxed);
+        Duration::from_millis(now.saturating_sub(atime))
+    }
+}
+
 // Disconnects all clients that have been idle for more than 30 seconds.
 // FIXME: we should also keep a list of recently disconnected clients,
 // and if one should arrive with a late message, it should be rejected
 // with an error. A similar mechanism is already implemented in hrana-over-http.
-pub async fn garbage_collect(clients: &mut HashMap<Uuid, Arc<PrimaryConnection>>) {
+pub async fn garbage_collect(clients: &mut HashMap<Uuid, Arc<TimeoutConnection>>) {
     let limit = std::time::Duration::from_secs(30);
 
     clients.retain(|_, db| db.idle_time() < limit);
@@ -545,6 +587,8 @@ impl Proxy for ProxyService {
                 let connection_maker = ns.db.connection_maker();
                 let notifier = ns
                     .db
+                    .as_primary()
+                    .expect("invalid call to stream_exec: not a primary")
                     .wal_manager
                     .wrapped()
                     .logger()
@@ -591,16 +635,17 @@ impl Proxy for ProxyService {
             })?;
 
         let lock = self.clients.upgradable_read().await;
-        let db = match lock.get(&client_id) {
-            Some(db) => db.clone(),
+        let conn = match lock.get(&client_id) {
+            Some(conn) => conn.clone(),
             None => {
                 tracing::debug!("connected: {client_id}");
                 match connection_maker.create().await {
-                    Ok(db) => {
-                        let db = Arc::new(db);
+                    Ok(conn) => {
+                        assert!(conn.is_primary());
+                        let conn = Arc::new(TimeoutConnection::new(conn));
                         let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
-                        lock.insert(client_id, db.clone());
-                        db
+                        lock.insert(client_id, conn.clone());
+                        conn
                     }
                     Err(e) => return Err(tonic::Status::new(tonic::Code::Internal, e.to_string())),
                 }
@@ -610,7 +655,7 @@ impl Proxy for ProxyService {
         tracing::debug!("executing request for {client_id}");
 
         let builder = ExecuteResultsBuilder::default();
-        let builder = db
+        let builder = conn
             .execute_program(pgm, ctx, builder, None)
             .await
             // TODO: this is no necessarily a permission denied error!
@@ -648,6 +693,8 @@ impl Proxy for ProxyService {
                 let connection_maker = ns.db.connection_maker();
                 let notifier = ns
                     .db
+                    .as_primary()
+                    .unwrap()
                     .wal_manager
                     .wrapped()
                     .logger()
@@ -667,23 +714,24 @@ impl Proxy for ProxyService {
         let DescribeRequest { client_id, stmt } = req.into_inner();
         let client_id = Uuid::from_str(&client_id).unwrap();
 
-        let db = match lock.get(&client_id) {
-            Some(db) => db.clone(),
+        let conn = match lock.get(&client_id) {
+            Some(conn) => conn.clone(),
             None => {
                 tracing::debug!("connected: {client_id}");
                 match connection_maker.create().await {
-                    Ok(db) => {
-                        let db = Arc::new(db);
+                    Ok(conn) => {
+                        assert!(conn.is_primary());
+                        let conn = Arc::new(TimeoutConnection::new(conn));
                         let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
-                        lock.insert(client_id, db.clone());
-                        db
+                        lock.insert(client_id, conn.clone());
+                        conn
                     }
                     Err(e) => return Err(tonic::Status::new(tonic::Code::Internal, e.to_string())),
                 }
             }
         };
 
-        let description = db
+        let description = conn
             .describe(stmt, ctx, None)
             .await
             // TODO: this is no necessarily a permission denied error!

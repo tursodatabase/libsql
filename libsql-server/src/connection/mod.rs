@@ -1,5 +1,5 @@
 use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use tokio::time::{Duration, Instant};
 
@@ -327,14 +327,6 @@ impl Drop for WaitersGuard<'_> {
     }
 }
 
-fn now_millis() -> u64 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_millis() as u64
-}
-
 #[async_trait::async_trait]
 impl<F: MakeConnection> MakeConnection for MakeThrottledConnection<F> {
     type Connection = TrackedConnection<F::Connection>;
@@ -378,7 +370,6 @@ impl<F: MakeConnection> MakeConnection for MakeThrottledConnection<F> {
         Ok(TrackedConnection {
             permit,
             inner,
-            atime: AtomicU64::new(now_millis()),
             created_at: Instant::now(),
         })
     }
@@ -389,7 +380,6 @@ pub struct TrackedConnection<DB> {
     inner: DB,
     #[allow(dead_code)] // just hold on to it
     permit: tokio::sync::OwnedSemaphorePermit,
-    atime: AtomicU64,
     created_at: Instant,
 }
 
@@ -397,14 +387,6 @@ impl<T> Drop for TrackedConnection<T> {
     fn drop(&mut self) {
         CONCCURENT_CONNECTIONS_COUNT.decrement(1.0);
         CONNECTION_ALIVE_DURATION.record(self.created_at.elapsed());
-    }
-}
-
-impl<DB: Connection> TrackedConnection<DB> {
-    pub fn idle_time(&self) -> Duration {
-        let now = now_millis();
-        let atime = self.atime.load(Ordering::Relaxed);
-        Duration::from_millis(now.saturating_sub(atime))
     }
 }
 
@@ -418,7 +400,6 @@ impl<DB: Connection> Connection for TrackedConnection<DB> {
         builder: B,
         replication_index: Option<FrameNo>,
     ) -> crate::Result<B> {
-        self.atime.store(now_millis(), Ordering::Relaxed);
         self.inner
             .execute_program(pgm, ctx, builder, replication_index)
             .await
@@ -431,7 +412,6 @@ impl<DB: Connection> Connection for TrackedConnection<DB> {
         ctx: RequestContext,
         replication_index: Option<FrameNo>,
     ) -> crate::Result<crate::Result<DescribeResponse>> {
-        self.atime.store(now_millis(), Ordering::Relaxed);
         self.inner.describe(sql, ctx, replication_index).await
     }
 
@@ -442,7 +422,6 @@ impl<DB: Connection> Connection for TrackedConnection<DB> {
 
     #[inline]
     async fn checkpoint(&self) -> Result<()> {
-        self.atime.store(now_millis(), Ordering::Relaxed);
         self.inner.checkpoint().await
     }
 
