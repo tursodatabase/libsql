@@ -50,6 +50,7 @@ pub unsafe extern "C" fn libsql_open_sync(
     primary_url: *const std::ffi::c_char,
     auth_token: *const std::ffi::c_char,
     read_your_writes: std::ffi::c_char,
+    encryption_key: *const std::ffi::c_char,
     out_db: *mut libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
@@ -83,6 +84,21 @@ pub unsafe extern "C" fn libsql_open_sync(
         auth_token.to_string(),
     );
     let builder = builder.read_your_writes(read_your_writes != 0);
+    let builder = if encryption_key.is_null() {
+        builder
+    } else {
+        let key = unsafe { std::ffi::CStr::from_ptr(encryption_key) };
+        let key = match key.to_str() {
+            Ok(k) => k,
+            Err(e) => {
+                set_err_msg(format!("Wrong encryption key: {e}"), out_err_msg);
+                return 4;
+            }
+        };
+        let key = bytes::Bytes::copy_from_slice(key.as_bytes());
+        let config = libsql::EncryptionConfig::new(libsql::Cipher::SQLCipher, key);
+        builder.encryption_config(config)
+    };
     match RT.block_on(builder.build(),
     ) {
         Ok(db) => {
@@ -95,7 +111,7 @@ pub unsafe extern "C" fn libsql_open_sync(
                 format!("Error opening db path {db_path}, primary url {primary_url}: {e}"),
                 out_err_msg,
             );
-            1
+            5
         }
     }
 }
