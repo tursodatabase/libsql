@@ -10,15 +10,16 @@ use std::sync::Arc;
 use std::{future, mem, task};
 use tokio::time::{Duration, Instant};
 
-use crate::connection::{Connection, MakeConnection};
+use crate::connection::MakeConnection;
+use crate::database::Connection;
 
 use super::super::ProtocolError;
 use super::Server;
 
 /// Mutable state related to streams, owned by [`Server`] and protected with a mutex.
-pub struct ServerStreamState<D> {
+pub struct ServerStreamState {
     /// Map from stream ids to stream handles. The stream ids are random integers.
-    handles: HashMap<u64, Handle<D>>,
+    handles: HashMap<u64, Handle>,
     /// Queue of streams ordered by the instant when they should expire. All these stream ids
     /// should refer to handles in the [`Handle::Available`] variant.
     expire_queue: PriorityQueue<u64, Reverse<Instant>>,
@@ -35,10 +36,10 @@ pub struct ServerStreamState<D> {
 
 /// Handle to a stream, owned by the [`ServerStreamState`].
 #[derive(Debug)]
-pub(crate) enum Handle<D> {
+pub(crate) enum Handle {
     /// A stream that is open and ready to be used by requests. [`Stream::db`] should always be
     /// `Some`.
-    Available(Box<Stream<D>>),
+    Available(Box<Stream>),
     /// A stream that has been acquired by a request that hasn't finished processing. This will be
     /// replaced with `Available` when the request completes and releases the stream.
     Acquired,
@@ -53,10 +54,10 @@ pub(crate) enum Handle<D> {
 /// The stream is either owned by [`Handle::Available`] (when it's not in use) or by [`Guard`]
 /// (when it's being used by a request).
 #[derive(Debug)]
-pub(crate) struct Stream<D> {
+pub(crate) struct Stream {
     /// The database connection that corresponds to this stream. This is `None` after the `"close"`
     /// request was executed.
-    pub(crate) db: Option<Arc<D>>,
+    pub(crate) db: Option<Arc<Connection>>,
     /// The cache of SQL texts stored on the server with `"store_sql"` requests.
     sqls: HashMap<i32, String>,
     /// Stream id of this stream. The id is generated randomly (it should be unguessable).
@@ -70,10 +71,10 @@ pub(crate) struct Stream<D> {
 /// Guard object that is used to access a stream from the outside. The guard makes sure that the
 /// stream's entry in [`ServerStreamState::handles`] is either removed or replaced with
 /// [`Handle::Available`] after the guard goes out of scope.
-pub struct Guard<'srv, D> {
-    server: &'srv Server<D>,
+pub struct Guard<'srv> {
+    server: &'srv Server,
     /// The guarded stream. This is only set to `None` in the destructor.
-    stream: Option<Box<Stream<D>>>,
+    stream: Option<Box<Stream>>,
     /// If set to `true`, the destructor will release the stream for further use (saving it as
     /// [`Handle::Available`] in [`ServerStreamState::handles`]. If false, the stream is removed on
     /// drop.
@@ -89,7 +90,7 @@ pub enum StreamError {
     StreamExpired,
 }
 
-impl<D> ServerStreamState<D> {
+impl ServerStreamState {
     pub fn new() -> Self {
         Self {
             handles: HashMap::new(),
@@ -101,18 +102,18 @@ impl<D> ServerStreamState<D> {
         }
     }
 
-    pub(crate) fn handles(&self) -> &HashMap<u64, Handle<D>> {
+    pub(crate) fn handles(&self) -> &HashMap<u64, Handle> {
         &self.handles
     }
 }
 
 /// Acquire a guard to a new or existing stream. If baton is `Some`, we try to look up the stream,
 /// otherwise we create a new stream.
-pub async fn acquire<'srv, D: Connection>(
-    server: &'srv Server<D>,
-    connection_maker: Arc<dyn MakeConnection<Connection = D>>,
+pub async fn acquire<'srv>(
+    server: &'srv Server,
+    connection_maker: Arc<dyn MakeConnection<Connection = Connection>>,
     baton: Option<&str>,
-) -> Result<Guard<'srv, D>> {
+) -> Result<Guard<'srv>> {
     let stream = match baton {
         Some(baton) => {
             let (stream_id, baton_seq) = decode_baton(server, baton)?;
@@ -183,13 +184,13 @@ pub async fn acquire<'srv, D: Connection>(
     })
 }
 
-impl<'srv, D: Connection> Guard<'srv, D> {
-    pub fn get_db(&self) -> Result<&D, ProtocolError> {
+impl<'srv> Guard<'srv> {
+    pub fn get_db(&self) -> Result<&Connection, ProtocolError> {
         let stream = self.stream.as_ref().unwrap();
         stream.db.as_deref().ok_or(ProtocolError::BatonStreamClosed)
     }
 
-    pub fn get_db_owned(&self) -> Result<Arc<D>, ProtocolError> {
+    pub fn get_db_owned(&self) -> Result<Arc<Connection>, ProtocolError> {
         let stream = self.stream.as_ref().unwrap();
         stream.db.clone().ok_or(ProtocolError::BatonStreamClosed)
     }
@@ -227,7 +228,7 @@ impl<'srv, D: Connection> Guard<'srv, D> {
     }
 }
 
-impl<'srv, D> Drop for Guard<'srv, D> {
+impl<'srv> Drop for Guard<'srv> {
     fn drop(&mut self) {
         let stream = self.stream.take().unwrap();
         let stream_id = stream.stream_id;
@@ -256,7 +257,7 @@ impl<'srv, D> Drop for Guard<'srv, D> {
     }
 }
 
-fn gen_stream_id(state: &mut ServerStreamState<impl Connection>) -> u64 {
+fn gen_stream_id(state: &mut ServerStreamState) -> u64 {
     for _ in 0..10 {
         let stream_id = rand::random();
         if !state.handles.contains_key(&stream_id) {
@@ -278,7 +279,7 @@ fn gen_stream_id(state: &mut ServerStreamState<impl Connection>) -> u64 {
 /// The MAC is used to cryptographically verify that the baton was generated by this server. It is
 /// unlikely that we ever issue the same baton twice, because there are 2^128 possible combinations
 /// for payload (note that both `stream_id` and the initial `baton_seq` are generated randomly).
-fn encode_baton<D>(server: &Server<D>, stream_id: u64, baton_seq: u64) -> String {
+fn encode_baton(server: &Server, stream_id: u64, baton_seq: u64) -> String {
     let mut payload = [0; 16];
     payload[0..8].copy_from_slice(&stream_id.to_be_bytes());
     payload[8..16].copy_from_slice(&baton_seq.to_be_bytes());
@@ -296,7 +297,7 @@ fn encode_baton<D>(server: &Server<D>, stream_id: u64, baton_seq: u64) -> String
 /// Decodes a baton encoded with `encode_baton()` and returns `(stream_id, baton_seq)`. Always
 /// returns a [`ProtocolError::BatonInvalid`] if the baton is invalid, but it attaches an anyhow
 /// context that describes the precise cause.
-fn decode_baton<D>(server: &Server<D>, baton_str: &str) -> Result<(u64, u64)> {
+fn decode_baton(server: &Server, baton_str: &str) -> Result<(u64, u64)> {
     let baton_data = BASE64_STANDARD_NO_PAD.decode(baton_str).map_err(|err| {
         anyhow!(ProtocolError::BatonInvalid)
             .context(format!("Could not base64-decode baton: {err}"))
@@ -330,7 +331,7 @@ const EXPIRATION: Duration = Duration::from_secs(10);
 /// How long do we keep an expired stream in [`Handle::Expired`] state before removing it for good.
 const CLEANUP: Duration = Duration::from_secs(300);
 
-fn mark_expire<D>(state: &mut ServerStreamState<D>, stream_id: u64) {
+fn mark_expire(state: &mut ServerStreamState, stream_id: u64) {
     let expire_at = roundup_instant(state, Instant::now() + EXPIRATION);
     if state.expire_sleep.deadline() > expire_at {
         if let Some(waker) = state.expire_waker.take() {
@@ -340,12 +341,12 @@ fn mark_expire<D>(state: &mut ServerStreamState<D>, stream_id: u64) {
     state.expire_queue.push(stream_id, Reverse(expire_at));
 }
 
-fn unmark_expire<D>(state: &mut ServerStreamState<D>, stream_id: u64) {
+fn unmark_expire(state: &mut ServerStreamState, stream_id: u64) {
     state.expire_queue.remove(&stream_id);
 }
 
 /// Handles stream expiration (and cleanup). The returned future is never resolved.
-pub async fn run_expire<D>(server: &Server<D>) {
+pub async fn run_expire(server: &Server) {
     future::poll_fn(|cx| {
         let mut state = server.stream_state.lock();
         pump_expire(&mut state, cx);
@@ -354,7 +355,7 @@ pub async fn run_expire<D>(server: &Server<D>) {
     .await
 }
 
-fn pump_expire<D>(state: &mut ServerStreamState<D>, cx: &mut task::Context) {
+fn pump_expire(state: &mut ServerStreamState, cx: &mut task::Context) {
     let now = Instant::now();
 
     // expire all streams in the `expire_queue` that have passed their expiration time
@@ -405,7 +406,7 @@ fn pump_expire<D>(state: &mut ServerStreamState<D>, cx: &mut task::Context) {
 /// Rounds the `instant` to the next second. This is used to ensure that streams that expire close
 /// together are expired at exactly the same instant, thus reducing the number of times that
 /// [`pump_expire()`] is called during periods of high load.
-fn roundup_instant<D>(state: &ServerStreamState<D>, instant: Instant) -> Instant {
+fn roundup_instant(state: &ServerStreamState, instant: Instant) -> Instant {
     let duration_s = (instant - state.expire_round_base).as_secs();
     state.expire_round_base + Duration::from_secs(duration_s + 1)
 }

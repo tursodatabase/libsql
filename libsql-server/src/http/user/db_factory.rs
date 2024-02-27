@@ -6,25 +6,21 @@ use hyper::HeaderMap;
 
 use crate::auth::Authenticated;
 use crate::connection::MakeConnection;
-use crate::database::Database;
+use crate::database::Connection;
 use crate::error::Error;
-use crate::namespace::{MakeNamespace, NamespaceName};
+use crate::namespace::NamespaceName;
 
 use super::AppState;
 
-pub struct MakeConnectionExtractor<D>(pub Arc<dyn MakeConnection<Connection = D>>);
+pub struct MakeConnectionExtractor(pub Arc<dyn MakeConnection<Connection = Connection>>);
 
 #[async_trait::async_trait]
-impl<F> FromRequestParts<AppState<F>>
-    for MakeConnectionExtractor<<F::Database as Database>::Connection>
-where
-    F: MakeNamespace,
-{
+impl FromRequestParts<AppState> for MakeConnectionExtractor {
     type Rejection = Error;
 
     async fn from_request_parts(
         parts: &mut Parts,
-        state: &AppState<F>,
+        state: &AppState,
     ) -> Result<Self, Self::Rejection> {
         let auth = Authenticated::from_request_parts(parts, state).await?;
         let ns = namespace_from_headers(
@@ -64,18 +60,14 @@ pub fn namespace_from_headers(
     }
 }
 
-pub struct MakeConnectionExtractorPath<D>(pub Arc<dyn MakeConnection<Connection = D>>);
+pub struct MakeConnectionExtractorPath(pub Arc<dyn MakeConnection<Connection = Connection>>);
 #[async_trait::async_trait]
-impl<F> FromRequestParts<AppState<F>>
-    for MakeConnectionExtractorPath<<F::Database as Database>::Connection>
-where
-    F: MakeNamespace,
-{
+impl FromRequestParts<AppState> for MakeConnectionExtractorPath {
     type Rejection = Error;
 
     async fn from_request_parts(
         parts: &mut Parts,
-        state: &AppState<F>,
+        state: &AppState,
     ) -> Result<Self, Self::Rejection> {
         let auth = Authenticated::from_request_parts(parts, state).await?;
         let Path((ns, _)) = Path::<(NamespaceName, String)>::from_request_parts(parts, state)
