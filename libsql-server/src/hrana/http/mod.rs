@@ -9,16 +9,17 @@ use std::sync::Arc;
 use std::task;
 
 use super::{batch, cursor, Encoding, ProtocolError, Version};
-use crate::connection::{Connection, MakeConnection, RequestContext};
+use crate::connection::{MakeConnection, RequestContext};
+use crate::database::Connection;
 use crate::hrana::http::stream::StreamError;
 
 mod request;
 pub(crate) mod stream;
 
-pub struct Server<C> {
+pub struct Server {
     self_url: Option<String>,
     baton_key: [u8; 32],
-    stream_state: Mutex<stream::ServerStreamState<C>>,
+    stream_state: Mutex<stream::ServerStreamState>,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -27,7 +28,7 @@ pub enum Endpoint {
     Cursor,
 }
 
-impl<C: Connection> Server<C> {
+impl Server {
     pub fn new(self_url: Option<String>) -> Self {
         Self {
             self_url,
@@ -42,7 +43,7 @@ impl<C: Connection> Server<C> {
 
     pub async fn handle_request(
         &self,
-        connection_maker: Arc<dyn MakeConnection<Connection = C>>,
+        connection_maker: Arc<dyn MakeConnection<Connection = Connection>>,
         ctx: RequestContext,
         req: hyper::Request<hyper::Body>,
         endpoint: Endpoint,
@@ -70,7 +71,7 @@ impl<C: Connection> Server<C> {
         .or_else(|err| err.downcast::<ProtocolError>().map(protocol_error_response))
     }
 
-    pub(crate) fn stream_state(&self) -> &Mutex<stream::ServerStreamState<C>> {
+    pub(crate) fn stream_state(&self) -> &Mutex<stream::ServerStreamState> {
         &self.stream_state
     }
 }
@@ -82,9 +83,9 @@ pub(crate) async fn handle_index() -> hyper::Response<hyper::Body> {
     )
 }
 
-async fn handle_request<C: Connection>(
-    server: &Server<C>,
-    connection_maker: Arc<dyn MakeConnection<Connection = C>>,
+async fn handle_request(
+    server: &Server,
+    connection_maker: Arc<dyn MakeConnection<Connection = Connection>>,
     ctx: RequestContext,
     req: hyper::Request<hyper::Body>,
     endpoint: Endpoint,
@@ -101,9 +102,9 @@ async fn handle_request<C: Connection>(
     }
 }
 
-async fn handle_pipeline<C: Connection>(
-    server: &Server<C>,
-    connection_maker: Arc<dyn MakeConnection<Connection = C>>,
+async fn handle_pipeline(
+    server: &Server,
+    connection_maker: Arc<dyn MakeConnection<Connection = Connection>>,
     ctx: RequestContext,
     req: hyper::Request<hyper::Body>,
     version: Version,
@@ -128,9 +129,9 @@ async fn handle_pipeline<C: Connection>(
     Ok(encode_response(hyper::StatusCode::OK, &resp_body, encoding))
 }
 
-async fn handle_cursor<C: Connection>(
-    server: &Server<C>,
-    connection_maker: Arc<dyn MakeConnection<Connection = C>>,
+async fn handle_cursor(
+    server: &Server,
+    connection_maker: Arc<dyn MakeConnection<Connection = Connection>>,
     ctx: RequestContext,
     req: hyper::Request<hyper::Body>,
     version: Version,
@@ -168,14 +169,14 @@ async fn handle_cursor<C: Connection>(
         .unwrap())
 }
 
-struct CursorStream<D> {
+struct CursorStream {
     resp_body: Option<proto::CursorRespBody>,
     join_set: tokio::task::JoinSet<()>,
-    cursor_hnd: cursor::CursorHandle<D>,
+    cursor_hnd: cursor::CursorHandle,
     encoding: Encoding,
 }
 
-impl<D> Stream for CursorStream<D> {
+impl Stream for CursorStream {
     type Item = Result<Bytes>;
 
     fn poll_next(

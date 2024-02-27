@@ -1,4 +1,4 @@
-use crate::LIBSQL_PAGE_SIZE;
+use crate::{namespace::NamespaceName, LIBSQL_PAGE_SIZE};
 use bytesize::mb;
 use url::Url;
 
@@ -28,7 +28,7 @@ pub struct DatabaseConfig {
     #[serde(default)]
     pub is_shared_schema: bool,
     #[serde(default)]
-    pub shared_schema_name: Option<String>,
+    pub shared_schema_name: Option<NamespaceName>,
 }
 
 impl DatabaseConfig {
@@ -79,7 +79,11 @@ impl From<&metadata::DatabaseConfig> for DatabaseConfig {
             allow_attach: value.allow_attach,
             max_row_size: value.max_row_size.unwrap_or_else(default_max_row_size),
             is_shared_schema: value.shared_schema.unwrap_or(false),
-            shared_schema_name: value.shared_schema_name.clone(),
+            // namespace name is coming from primary, we assume it's valid
+            shared_schema_name: value
+                .shared_schema_name
+                .clone()
+                .map(NamespaceName::new_unchecked),
         }
     }
 }
@@ -98,7 +102,7 @@ impl From<&DatabaseConfig> for metadata::DatabaseConfig {
             allow_attach: value.allow_attach,
             max_row_size: Some(value.max_row_size),
             shared_schema: Some(value.is_shared_schema),
-            shared_schema_name: value.shared_schema_name.clone(),
+            shared_schema_name: value.shared_schema_name.as_ref().map(|s| s.to_string()),
         }
     }
 }

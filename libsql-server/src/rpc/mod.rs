@@ -12,7 +12,7 @@ use tracing::Span;
 
 use crate::config::TlsConfig;
 use crate::metrics::CLIENT_VERSION;
-use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
+use crate::namespace::{NamespaceName, NamespaceStore};
 use crate::rpc::proxy::rpc::proxy_server::ProxyServer;
 use crate::rpc::proxy::ProxyService;
 pub use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLogServer;
@@ -30,7 +30,7 @@ pub async fn run_rpc_server<A: crate::net::Accept>(
     acceptor: A,
     maybe_tls: Option<TlsConfig>,
     idle_shutdown_layer: Option<IdleShutdownKicker>,
-    namespaces: NamespaceStore<PrimaryNamespaceMaker>,
+    namespaces: NamespaceStore,
     disable_namespaces: bool,
 ) -> anyhow::Result<()> {
     let logger_service = ReplicationLogService::new(

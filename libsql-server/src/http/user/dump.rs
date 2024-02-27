@@ -10,7 +10,6 @@ use pin_project_lite::pin_project;
 use crate::auth::Authenticated;
 use crate::connection::dump::exporter::export_dump;
 use crate::error::Error;
-use crate::namespace::MakeNamespace;
 use crate::BLOCKING_RT;
 
 use super::db_factory::namespace_from_headers;
@@ -72,9 +71,9 @@ where
     }
 }
 
-pub(super) async fn handle_dump<F: MakeNamespace>(
+pub(super) async fn handle_dump(
     auth: Authenticated,
-    AxumState(state): AxumState<AppState<F>>,
+    AxumState(state): AxumState<AppState>,
     headers: HeaderMap,
 ) -> crate::Result<axum::body::StreamBody<impl futures::Stream<Item = Result<bytes::Bytes, Error>>>>
 {

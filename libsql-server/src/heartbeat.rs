@@ -8,7 +8,7 @@ use url::Url;
 use tokio::sync::mpsc;
 
 use crate::http::admin::stats::StatsResponse;
-use crate::namespace::{MakeNamespace, NamespaceName, NamespaceStore};
+use crate::namespace::{NamespaceName, NamespaceStore};
 use crate::stats::Stats;
 
 pub async fn server_heartbeat(
@@ -16,7 +16,7 @@ pub async fn server_heartbeat(
     auth: Option<String>,
     update_period: Duration,
     mut stats_subs: mpsc::Receiver<(NamespaceName, Weak<Stats>)>,
-    namespaces: NamespaceStore<impl MakeNamespace>,
+    namespaces: NamespaceStore,
 ) {
     let mut watched = HashMap::new();
     let client = reqwest::Client::new();
@@ -37,7 +37,7 @@ pub async fn server_heartbeat(
 async fn send_stats(
     watched: &mut HashMap<NamespaceName, Weak<Stats>>,
     client: &reqwest::Client,
-    namespaces: &NamespaceStore<impl MakeNamespace>,
+    namespaces: &NamespaceStore,
     url: Option<&Url>,
     auth: Option<&str>,
 ) {

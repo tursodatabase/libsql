@@ -6,7 +6,8 @@ use std::task;
 use tokio::sync::{mpsc, oneshot};
 
 use crate::connection::program::Program;
-use crate::connection::{Connection, RequestContext};
+use crate::connection::{Connection as _, RequestContext};
+use crate::database::Connection;
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
 };
@@ -15,8 +16,8 @@ use crate::replication::FrameNo;
 use super::result_builder::{estimate_cols_json_size, value_json_size, value_to_proto};
 use super::{batch, proto, stmt};
 
-pub struct CursorHandle<C> {
-    open_tx: Option<oneshot::Sender<OpenReq<C>>>,
+pub struct CursorHandle {
+    open_tx: Option<oneshot::Sender<OpenReq>>,
     entry_rx: mpsc::Receiver<Result<SizedEntry>>,
 }
 
@@ -26,18 +27,15 @@ pub struct SizedEntry {
     pub size: u64,
 }
 
-struct OpenReq<C> {
-    db: Arc<C>,
+struct OpenReq {
+    db: Arc<Connection>,
     ctx: RequestContext,
     pgm: Program,
     replication_index: Option<FrameNo>,
 }
 
-impl<C> CursorHandle<C> {
-    pub fn spawn(join_set: &mut tokio::task::JoinSet<()>) -> Self
-    where
-        C: Connection,
-    {
+impl CursorHandle {
+    pub fn spawn(join_set: &mut tokio::task::JoinSet<()>) -> Self {
         let (open_tx, open_rx) = oneshot::channel();
         let (entry_tx, entry_rx) = mpsc::channel(1);
 
@@ -50,7 +48,7 @@ impl<C> CursorHandle<C> {
 
     pub fn open(
         &mut self,
-        db: Arc<C>,
+        db: Arc<Connection>,
         ctx: RequestContext,
         pgm: Program,
         replication_index: Option<FrameNo>,
@@ -73,8 +71,8 @@ impl<C> CursorHandle<C> {
     }
 }
 
-async fn run_cursor<C: Connection>(
-    open_rx: oneshot::Receiver<OpenReq<C>>,
+async fn run_cursor(
+    open_rx: oneshot::Receiver<OpenReq>,
     entry_tx: mpsc::Sender<Result<SizedEntry>>,
 ) {
     let Ok(open_req) = open_rx.await else { return };

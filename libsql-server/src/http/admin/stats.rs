@@ -6,7 +6,7 @@ use axum::extract::{Path, State};
 use axum::Json;
 use uuid::Uuid;
 
-use crate::namespace::{MakeNamespace, NamespaceName};
+use crate::namespace::NamespaceName;
 use crate::replication::FrameNo;
 use crate::stats::{SlowestQuery, Stats, TopQuery};
 
@@ -59,8 +59,8 @@ impl From<Stats> for StatsResponse {
     }
 }
 
-pub(super) async fn handle_stats<M: MakeNamespace, C>(
-    State(app_state): State<Arc<AppState<M, C>>>,
+pub(super) async fn handle_stats<C>(
+    State(app_state): State<Arc<AppState<C>>>,
     Path(namespace): Path<String>,
 ) -> crate::Result<Json<StatsResponse>> {
     let stats = app_state
@@ -72,8 +72,8 @@ pub(super) async fn handle_stats<M: MakeNamespace, C>(
     Ok(Json(resp))
 }
 
-pub(super) async fn handle_delete_stats<M: MakeNamespace, C>(
-    State(app_state): State<Arc<AppState<M, C>>>,
+pub(super) async fn handle_delete_stats<C>(
+    State(app_state): State<Arc<AppState<C>>>,
     Path((namespace, stats_type)): Path<(String, String)>,
 ) -> crate::Result<()> {
     let stats = app_state
