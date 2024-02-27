@@ -49,6 +49,7 @@ pub unsafe extern "C" fn libsql_open_sync(
     db_path: *const std::ffi::c_char,
     primary_url: *const std::ffi::c_char,
     auth_token: *const std::ffi::c_char,
+    read_your_writes: std::ffi::c_char,
     out_db: *mut libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
@@ -76,13 +77,13 @@ pub unsafe extern "C" fn libsql_open_sync(
             return 3;
         }
     };
-    match RT.block_on(
-        libsql::Builder::new_remote_replica(
-            db_path,
-            primary_url.to_string(),
-            auth_token.to_string(),
-        )
-        .build(),
+    let builder = libsql::Builder::new_remote_replica(
+        db_path,
+        primary_url.to_string(),
+        auth_token.to_string(),
+    );
+    let builder = builder.read_your_writes(read_your_writes != 0);
+    match RT.block_on(builder.build(),
     ) {
         Ok(db) => {
             let db = Box::leak(Box::new(libsql_database { db }));

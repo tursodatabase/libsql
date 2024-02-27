@@ -41,6 +41,7 @@ int libsql_sync(libsql_database_t db, const char **out_err_msg);
 int libsql_open_sync(const char *db_path,
                      const char *primary_url,
                      const char *auth_token,
+                     char read_your_writes,
                      libsql_database_t *out_db,
                      const char **out_err_msg);
 

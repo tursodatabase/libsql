@@ -65,7 +65,7 @@ func getEmbeddedDb(t T) *Database {
 	}
 	dbPath := dir + "/test.db"
 
-	connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken)
+	connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, false)
 	t.FatalOnError(err)
 	db := sql.OpenDB(connector)
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -455,7 +455,7 @@ func testSync(t *testing.T, connect func(dbPath, primaryUrl, authToken string) *
 func TestAutoSync(t *testing.T) {
 	syncInterval := 1 * time.Second
 	testSync(t, func(dbPath, primaryUrl, authToken string) *Connector {
-		connector, err := NewEmbeddedReplicaConnectorWithAutoSync(dbPath, primaryUrl, authToken, syncInterval)
+		connector, err := NewEmbeddedReplicaConnectorWithAutoSync(dbPath, primaryUrl, authToken, false, syncInterval)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -467,7 +467,7 @@ func TestAutoSync(t *testing.T) {
 
 func TestSync(t *testing.T) {
 	testSync(t, func(dbPath, primaryUrl, authToken string) *Connector {
-		connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken)
+		connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, false)
 		if err != nil {
 			t.Fatal(err)
 		}
