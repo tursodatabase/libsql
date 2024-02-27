@@ -16,7 +16,7 @@ fn main() -> anyhow::Result<()> {
     let db_file = args.next().expect("expected 2nd db file location arg");
 
     let mut log_file = std::fs::File::open(log_file).unwrap();
-    let mut db_file = std::fs::OpenOptions::new()
+    let db_file = std::fs::OpenOptions::new()
         .write(true)
         .create(true)
         .open(db_file)
