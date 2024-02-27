@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::{fs::File, mem::size_of, os::unix::prelude::FileExt};
 
 use anyhow::bail;
@@ -37,6 +38,8 @@ fn main() -> anyhow::Result<()> {
 
     println!("starting to recover log");
 
+    let mut page_seen = HashSet::new();
+
     loop {
         if current_frame_offset == 0 {
             break;
@@ -48,9 +51,14 @@ fn main() -> anyhow::Result<()> {
         let frame = read_frame_byte_offset_mut(&mut log_file, read_byte_offset).unwrap();
 
         let page_no = frame.header.page_no.get();
-        let offset = (page_no - 1) * LIBSQL_PAGE_SIZE as u32;
 
-        db_file.write_at(&frame.page[..], offset as u64).unwrap();
+        if page_seen.get(&page_no).is_none() {
+            page_seen.insert(page_no);
+
+            let offset = (page_no - 1) * LIBSQL_PAGE_SIZE as u32;
+
+            db_file.write_at(&frame.page[..], offset as u64).unwrap();
+        }
     }
 
     println!("finished recovering {} frames", header.frame_count.get());
