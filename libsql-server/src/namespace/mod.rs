@@ -85,109 +85,18 @@ pub enum NamespaceBottomlessDbIdInit {
     FetchFromConfig,
 }
 
-/// Creates a new `Namespace` for database of the `Self::Database` type.
-#[async_trait::async_trait]
-pub trait MakeNamespace: Sync + Send + 'static {
-    type Database: Database;
 
-    /// Create a new Namespace instance
-    async fn create(
-        &self,
-        name: NamespaceName,
         restore_option: RestoreOption,
-        bottomless_db_id: NamespaceBottomlessDbId,
         reset: ResetCb,
-        meta_store: &MetaStore,
-    ) -> crate::Result<Namespace<Self::Database>>;
-
-    /// Destroy all resources associated with `namespace`.
-    /// When `prune_all` is false, remove only files from local disk.
-    /// When `prune_all` is true remove local database files as well as remote backup.
-    async fn destroy(
-        &self,
-        namespace: NamespaceName,
-        bottomless_db_id_init: NamespaceBottomlessDbIdInit,
-        prune_all: bool,
-        meta_store: &MetaStore,
-    ) -> crate::Result<()>;
-
-    async fn fork(
-        &self,
-        from: &Namespace<Self::Database>,
-        to: NamespaceName,
-        timestamp: Option<NaiveDateTime>,
-        meta_store: &MetaStore,
-    ) -> crate::Result<Namespace<Self::Database>>;
-}
-
-/// Creates new primary `Namespace`
-pub struct PrimaryNamespaceMaker {
-    /// base config to create primary namespaces
-    config: PrimaryNamespaceConfig,
-}
-
-impl PrimaryNamespaceMaker {
-    pub fn new(config: PrimaryNamespaceConfig) -> Self {
-        Self { config }
     }
 }
 
-#[async_trait::async_trait]
-impl MakeNamespace for PrimaryNamespaceMaker {
-    type Database = PrimaryDatabase;
-
-    async fn create(
-        &self,
-        name: NamespaceName,
-        restore_option: RestoreOption,
-        bottomless_db_id: NamespaceBottomlessDbId,
-        _reset: ResetCb,
-        meta_store: &MetaStore,
-    ) -> crate::Result<Namespace<Self::Database>> {
-        Namespace::new_primary(
-            &self.config,
-            name.clone(),
-            restore_option,
-            bottomless_db_id,
-            meta_store.handle(name),
-        )
-        .await
     }
 
-    async fn destroy(
-        &self,
-        namespace: NamespaceName,
-        bottomless_db_id_init: NamespaceBottomlessDbIdInit,
         prune_all: bool,
         meta_store: &MetaStore,
     ) -> crate::Result<()> {
-        let ns_path = self.config.base_path.join("dbs").join(namespace.as_str());
-        let db_config = meta_store.remove(namespace.clone())?;
-
-        if prune_all {
-            if let Some(ref options) = self.config.bottomless_replication {
-                let bottomless_db_id = match bottomless_db_id_init {
-                    NamespaceBottomlessDbIdInit::Provided(db_id) => db_id,
-                    NamespaceBottomlessDbIdInit::FetchFromConfig => {
-                        if !ns_path.try_exists()? {
-                            NamespaceBottomlessDbId::NotProvided
-                        } else if let Some(config) = db_config {
-                            NamespaceBottomlessDbId::from_config(&config)
-                        } else {
-                            return Err(Error::NamespaceDoesntExist(namespace.to_string()));
-                        }
                     }
-                };
-                let options = make_bottomless_options(options, bottomless_db_id, namespace);
-                let replicator = bottomless::replicator::Replicator::with_options(
-                    ns_path.join("data").to_str().unwrap(),
-                    options,
-                )
-                .await?;
-                let delete_all = replicator.delete_all(None).await?;
-
-                // perform hard deletion in the background
-                tokio::spawn(delete_all.commit());
             }
         }
 
@@ -198,101 +107,6 @@ impl MakeNamespace for PrimaryNamespaceMaker {
 
         Ok(())
     }
-
-    async fn fork(
-        &self,
-        from: &Namespace<Self::Database>,
-        to: NamespaceName,
-        timestamp: Option<NaiveDateTime>,
-        meta_store: &MetaStore,
-    ) -> crate::Result<Namespace<Self::Database>> {
-        let bottomless_db_id = NamespaceBottomlessDbId::from_config(&from.db_config_store.get());
-        let restore_to = if let Some(timestamp) = timestamp {
-            if let Some(ref options) = self.config.bottomless_replication {
-                Some(PointInTimeRestore {
-                    timestamp,
-                    replicator_options: make_bottomless_options(
-                        options,
-                        bottomless_db_id.clone(),
-                        from.name().clone(),
-                    ),
-                })
-            } else {
-                return Err(Error::Fork(ForkError::BackupServiceNotConfigured));
-            }
-        } else {
-            None
-        };
-        let fork_task = ForkTask {
-            base_path: self.config.base_path.clone(),
-            dest_namespace: to,
-            logger: from.db.wal_manager.wrapped().logger(),
-            make_namespace: self,
-            restore_to,
-            bottomless_db_id,
-            meta_store,
-        };
-        let ns = fork_task.fork().await?;
-        Ok(ns)
-    }
-}
-
-/// Creates new replica `Namespace`
-pub struct ReplicaNamespaceMaker {
-    /// base config to create replica namespaces
-    config: ReplicaNamespaceConfig,
-}
-
-impl ReplicaNamespaceMaker {
-    pub fn new(config: ReplicaNamespaceConfig) -> Self {
-        Self { config }
-    }
-}
-
-#[async_trait::async_trait]
-impl MakeNamespace for ReplicaNamespaceMaker {
-    type Database = ReplicaDatabase;
-
-    async fn create(
-        &self,
-        name: NamespaceName,
-        restore_option: RestoreOption,
-        _bottomless_db_id: NamespaceBottomlessDbId,
-        reset: ResetCb,
-        meta_store: &MetaStore,
-    ) -> crate::Result<Namespace<Self::Database>> {
-        match restore_option {
-            RestoreOption::Latest => { /* move on*/ }
-            _ => Err(LoadDumpError::ReplicaLoadDump)?,
-        }
-
-        Namespace::new_replica(&self.config, name.clone(), reset, meta_store.handle(name)).await
-    }
-
-    async fn destroy(
-        &self,
-        namespace: NamespaceName,
-        _bottomless_db_id_init: NamespaceBottomlessDbIdInit,
-        _prune_all: bool,
-        _meta_store: &MetaStore,
-    ) -> crate::Result<()> {
-        let ns_path = self.config.base_path.join("dbs").join(namespace.as_str());
-        tokio::fs::remove_dir_all(ns_path).await?;
-        Ok(())
-    }
-
-    async fn fork(
-        &self,
-        _from: &Namespace<Self::Database>,
-        _to: NamespaceName,
-        _timestamp: Option<NaiveDateTime>,
-        _meta_store: &MetaStore,
-    ) -> crate::Result<Namespace<Self::Database>> {
-        return Err(ForkError::ForkReplica.into());
-    }
-}
-
-type NamespaceEntry<T> = Arc<RwLock<Option<Namespace<T>>>>;
 
     async fn destroy(mut self) -> anyhow::Result<()> {
         self.tasks.shutdown().await;
@@ -342,24 +156,7 @@ type NamespaceEntry<T> = Arc<RwLock<Option<Namespace<T>>>>;
     pub fn config_changed(&self) -> impl Future<Output = ()> {
         self.db_config_store.changed()
     }
-}
 
-pub struct ReplicaNamespaceConfig {
-    pub base_path: Arc<Path>,
-    pub max_response_size: u64,
-    pub max_total_response_size: u64,
-    /// grpc channel
-    pub channel: Channel,
-    /// grpc uri
-    pub uri: Uri,
-    /// Extensions to load for the database connection
-    pub extensions: Arc<[PathBuf]>,
-    /// Stats monitor
-    pub stats_sender: StatsSender,
-    pub encryption_config: Option<EncryptionConfig>,
-    pub max_concurrent_connections: Arc<Semaphore>,
-    pub max_concurrent_requests: u64,
-}
 
 impl Namespace<ReplicaDatabase> {
     #[tracing::instrument(skip(config, reset, meta_store_handle))]
@@ -500,21 +297,32 @@ impl Namespace<ReplicaDatabase> {
     }
 }
 
-pub struct PrimaryNamespaceConfig {
+pub struct NamespaceConfig {
+    /// Default database kind the store should be Creating
+    pub(crate) db_kind: DatabaseKind,
+    // Common config
     pub(crate) base_path: Arc<Path>,
     pub(crate) max_log_size: u64,
     pub(crate) db_is_dirty: bool,
     pub(crate) max_log_duration: Option<Duration>,
-    pub(crate) bottomless_replication: Option<bottomless::replicator::Options>,
     pub(crate) extensions: Arc<[PathBuf]>,
     pub(crate) stats_sender: StatsSender,
     pub(crate) max_response_size: u64,
     pub(crate) max_total_response_size: u64,
     pub(crate) checkpoint_interval: Option<Duration>,
-    pub(crate) encryption_config: Option<EncryptionConfig>,
     pub(crate) max_concurrent_connections: Arc<Semaphore>,
-    pub(crate) scripted_backup: Option<ScriptBackupManager>,
     pub(crate) max_concurrent_requests: u64,
+    pub(crate) encryption_config: Option<EncryptionConfig>,
+
+    // Replica specific config
+    /// grpc channel for replica
+    pub channel: Option<Channel>,
+    /// grpc uri
+    pub uri: Option<Uri>,
+
+    // primary only config
+    pub(crate) bottomless_replication: Option<bottomless::replicator::Options>,
+    pub(crate) scripted_backup: Option<ScriptBackupManager>,
 }
 
 pub type DumpStream =
