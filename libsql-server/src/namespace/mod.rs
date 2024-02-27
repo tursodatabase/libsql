@@ -1,48 +1,40 @@
 mod fork;
 pub mod meta_store;
+mod name;
 pub mod replication_wal;
+mod store;
 
-use std::fmt;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Weak};
 
 use anyhow::Context as _;
-use async_lock::RwLock;
 use bottomless::replicator::Options;
 use bytes::Bytes;
 use chrono::NaiveDateTime;
 use enclose::enclose;
-use futures::TryFutureExt;
 use futures_core::{Future, Stream};
 use hyper::Uri;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
 use libsql_sys::wal::{Sqlite3WalManager, WalManager};
 use libsql_sys::EncryptionConfig;
-use moka::future::Cache;
 use parking_lot::Mutex;
 use rusqlite::ErrorCode;
-use serde::de::Visitor;
-use serde::Deserialize;
 use tokio::io::AsyncBufReadExt;
 use tokio::sync::{watch, Semaphore};
 use tokio::task::JoinSet;
-use tokio::time::{Duration, Instant};
+use tokio::time::Duration;
 use tokio_util::io::StreamReader;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
 use crate::auth::parse_jwt_key;
-use crate::auth::Authenticated;
-use crate::config::MetaStoreConfig;
 use crate::connection::config::DatabaseConfig;
 use crate::connection::libsql::{open_conn, MakeLibSqlConn};
 use crate::connection::write_proxy::MakeWriteProxyConn;
 use crate::connection::Connection;
 use crate::connection::MakeConnection;
-use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
-use crate::error::{Error, LoadDumpError};
-use crate::metrics::NAMESPACE_LOAD_LATENCY;
+use crate::database::{Database, DatabaseKind, PrimaryDatabase, ReplicaDatabase};
+use crate::error::LoadDumpError;
 use crate::replication::script_backup_manager::ScriptBackupManager;
 use crate::replication::{FrameNo, ReplicationLogger};
 use crate::stats::Stats;
@@ -50,12 +42,13 @@ use crate::{
     run_periodic_checkpoint, StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT,
 };
 
-use crate::namespace::fork::PointInTimeRestore;
 pub use fork::ForkError;
 
-use self::fork::ForkTask;
-use self::meta_store::{MetaStore, MetaStoreHandle};
+use self::fork::{ForkTask, PointInTimeRestore};
+use self::meta_store::MetaStoreHandle;
+pub use self::name::NamespaceName;
 use self::replication_wal::make_replication_wal;
+pub use self::store::NamespaceStore;
 
 pub type ResetCb = Box<dyn Fn(ResetOp) + Send + Sync + 'static>;
 
@@ -85,19 +78,73 @@ pub enum NamespaceBottomlessDbIdInit {
     FetchFromConfig,
 }
 
-
-        restore_option: RestoreOption,
-        reset: ResetCb,
-    }
+/// A namespace isolates the resources pertaining to a database of type T
+#[derive(Debug)]
+pub struct Namespace {
+    pub db: Database,
+    name: NamespaceName,
+    /// The set of tasks associated with this namespace
+    tasks: JoinSet<anyhow::Result<()>>,
+    stats: Arc<Stats>,
+    db_config_store: MetaStoreHandle,
 }
 
+impl Namespace {
+    async fn from_config(
+        ns_config: &NamespaceConfig,
+        db_config: MetaStoreHandle,
+        restore_option: RestoreOption,
+        name: &NamespaceName,
+        reset: ResetCb,
+    ) -> crate::Result<Self> {
+        match ns_config.db_kind {
+            DatabaseKind::Primary => {
+                Self::new_primary(ns_config, name.clone(), db_config, restore_option).await
+            }
+            DatabaseKind::Replica => {
+                Self::new_replica(ns_config, name.clone(), db_config, reset).await
+            }
+        }
     }
 
+    pub(crate) fn name(&self) -> &NamespaceName {
+        &self.name
+    }
+
+    /// completely remove resources associated with the namespace
+    pub(crate) async fn cleanup(
+        ns_config: &NamespaceConfig,
+        name: &NamespaceName,
+        db_config: &DatabaseConfig,
         prune_all: bool,
-        meta_store: &MetaStore,
+        bottomless_db_id_init: NamespaceBottomlessDbIdInit,
     ) -> crate::Result<()> {
+        let ns_path = ns_config.base_path.join("dbs").join(name.as_str());
+        match ns_config.db_kind {
+            DatabaseKind::Primary => {
+                if prune_all {
+                    if let Some(ref options) = ns_config.bottomless_replication {
+                        let bottomless_db_id = match bottomless_db_id_init {
+                            NamespaceBottomlessDbIdInit::Provided(db_id) => db_id,
+                            NamespaceBottomlessDbIdInit::FetchFromConfig => {
+                                NamespaceBottomlessDbId::from_config(&db_config)
+                            }
+                        };
+                        let options =
+                            make_bottomless_options(options, bottomless_db_id, name.clone());
+                        let replicator = bottomless::replicator::Replicator::with_options(
+                            ns_path.join("data").to_str().unwrap(),
+                            options,
+                        )
+                        .await?;
+                        let delete_all = replicator.delete_all(None).await?;
+
+                        // perform hard deletion in the background
+                        tokio::spawn(delete_all.commit());
                     }
+                }
             }
+            DatabaseKind::Replica => (),
         }
 
         if ns_path.try_exists()? {
@@ -157,20 +204,169 @@ pub enum NamespaceBottomlessDbIdInit {
         self.db_config_store.changed()
     }
 
+    async fn new_primary(
+        config: &NamespaceConfig,
+        name: NamespaceName,
+        meta_store_handle: MetaStoreHandle,
+        restore_option: RestoreOption,
+    ) -> crate::Result<Self> {
+        // FIXME: make that truly atomic. explore the idea of using temp directories, and it's implications
+        match Self::try_new_primary(config, name.clone(), meta_store_handle, restore_option).await {
+            Ok(ns) => Ok(ns),
+            Err(e) => {
+                let path = config.base_path.join("dbs").join(name.as_str());
+                if let Err(e) = tokio::fs::remove_dir_all(path).await {
+                    tracing::error!("failed to clean dirty namespace: {e}");
+                }
+                Err(e)
+            }
+        }
+    }
 
-impl Namespace<ReplicaDatabase> {
+    async fn try_new_primary(
+        ns_config: &NamespaceConfig,
+        name: NamespaceName,
+        meta_store_handle: MetaStoreHandle,
+        restore_option: RestoreOption,
+    ) -> crate::Result<Self> {
+        let db_config = meta_store_handle.get();
+        let mut join_set = JoinSet::new();
+        let db_path = ns_config.base_path.join("dbs").join(name.as_str());
+
+        // FIXME: figure how to to it per-db
+        let mut is_dirty = ns_config.db_is_dirty;
+
+        tokio::fs::create_dir_all(&db_path).await?;
+
+        let bottomless_db_id = NamespaceBottomlessDbId::from_config(&db_config);
+
+        // FIXME: due to a bug in logger::checkpoint_db we call regular checkpointing code
+        // instead of our virtual WAL one. It's a bit tangled to fix right now, because
+        // we need WAL context for checkpointing, and WAL context needs the ReplicationLogger...
+        // So instead we checkpoint early, *before* bottomless gets initialized. That way
+        // we're sure bottomless won't try to back up any existing WAL frames and will instead
+        // treat the existing db file as the source of truth.
+
+        let bottomless_replicator = match ns_config.bottomless_replication {
+            Some(ref options) => {
+                tracing::debug!("Checkpointing before initializing bottomless");
+                crate::replication::primary::logger::checkpoint_db(&db_path.join("data"))?;
+                tracing::debug!("Checkpointed before initializing bottomless");
+                let options = make_bottomless_options(options, bottomless_db_id, name.clone());
+                let (replicator, did_recover) =
+                    init_bottomless_replicator(db_path.join("data"), options, &restore_option)
+                        .await?;
+                is_dirty |= did_recover;
+                Some(replicator)
+            }
+            None => None,
+        };
+
+        let is_fresh_db = check_fresh_db(&db_path)?;
+        // switch frame-count checkpoint to time-based one
+        let auto_checkpoint = if ns_config.checkpoint_interval.is_some() {
+            0
+        } else {
+            DEFAULT_AUTO_CHECKPOINT
+        };
+
+        let logger = Arc::new(ReplicationLogger::open(
+            &db_path,
+            ns_config.max_log_size,
+            ns_config.max_log_duration,
+            is_dirty,
+            auto_checkpoint,
+            ns_config.scripted_backup.clone(),
+            name.clone(),
+            ns_config.encryption_config.clone(),
+        )?);
+
+        let stats = make_stats(
+            &db_path,
+            &mut join_set,
+            ns_config.stats_sender.clone(),
+            name.clone(),
+            logger.new_frame_notifier.subscribe(),
+            ns_config.encryption_config.clone(),
+        )
+        .await?;
+
+        let wal_manager = make_replication_wal(bottomless_replicator, logger.clone());
+        let connection_maker = Arc::new(
+            MakeLibSqlConn::new(
+                db_path.clone(),
+                wal_manager.clone(),
+                stats.clone(),
+                meta_store_handle.clone(),
+                ns_config.extensions.clone(),
+                ns_config.max_response_size,
+                ns_config.max_total_response_size,
+                auto_checkpoint,
+                logger.new_frame_notifier.subscribe(),
+                ns_config.encryption_config.clone(),
+            )
+            .await?
+            .throttled(
+                ns_config.max_concurrent_connections.clone(),
+                Some(DB_CREATE_TIMEOUT),
+                ns_config.max_total_response_size,
+                ns_config.max_concurrent_requests,
+            ),
+        );
+
+        // this must happen after we create the connection maker. The connection maker old on a
+        // connection to ensure that no other connection is closing while we try to open the dump.
+        // that would cause a SQLITE_LOCKED error.
+        match restore_option {
+            RestoreOption::Dump(_) if !is_fresh_db => {
+                Err(LoadDumpError::LoadDumpExistingDb)?;
+            }
+            RestoreOption::Dump(dump) => {
+                load_dump(
+                    &db_path,
+                    dump,
+                    wal_manager.clone(),
+                    ns_config.encryption_config.clone(),
+                )
+                .await?;
+            }
+            _ => { /* other cases were already handled when creating bottomless */ }
+        }
+
+        join_set.spawn(run_periodic_compactions(logger.clone()));
+
+        if let Some(checkpoint_interval) = ns_config.checkpoint_interval {
+            join_set.spawn(run_periodic_checkpoint(
+                connection_maker.clone(),
+                checkpoint_interval,
+            ));
+        }
+
+        Ok(Self {
+            tasks: join_set,
+            db: Database::Primary(PrimaryDatabase {
+                wal_manager,
+                connection_maker,
+            }),
+            name,
+            stats,
+            db_config_store: meta_store_handle,
+        })
+    }
+
     #[tracing::instrument(skip(config, reset, meta_store_handle))]
     async fn new_replica(
-        config: &ReplicaNamespaceConfig,
+        config: &NamespaceConfig,
         name: NamespaceName,
-        reset: ResetCb,
         meta_store_handle: MetaStoreHandle,
+        reset: ResetCb,
     ) -> crate::Result<Self> {
         tracing::debug!("creating replica namespace");
         let db_path = config.base_path.join("dbs").join(name.as_str());
+        let channel = config.channel.clone().expect("bad replica config");
+        let uri = config.uri.clone().expect("bad replica config");
 
-        let rpc_client =
-            ReplicationLogClient::with_origin(config.channel.clone(), config.uri.clone());
+        let rpc_client = ReplicationLogClient::with_origin(channel.clone(), uri.clone());
         let client = crate::replication::replicator_client::Client::new(
             name.clone(),
             rpc_client,
@@ -267,8 +463,8 @@ impl Namespace<ReplicaDatabase> {
         let connection_maker = MakeWriteProxyConn::new(
             db_path.clone(),
             config.extensions.clone(),
-            config.channel.clone(),
-            config.uri.clone(),
+            channel.clone(),
+            uri.clone(),
             stats.clone(),
             meta_store_handle.clone(),
             applied_frame_no_receiver,
@@ -287,13 +483,68 @@ impl Namespace<ReplicaDatabase> {
 
         Ok(Self {
             tasks: join_set,
-            db: ReplicaDatabase {
+            db: Database::Replica(ReplicaDatabase {
                 connection_maker: Arc::new(connection_maker),
-            },
+            }),
             name,
             stats,
             db_config_store: meta_store_handle,
         })
+    }
+
+    async fn fork(
+        ns_config: &NamespaceConfig,
+        from_ns: &Namespace,
+        from_config: MetaStoreHandle,
+        to_ns: NamespaceName,
+        to_config: MetaStoreHandle,
+        timestamp: Option<NaiveDateTime>,
+    ) -> crate::Result<Namespace> {
+        let from_config = from_config.get();
+        match ns_config.db_kind {
+            DatabaseKind::Primary => {
+                let bottomless_db_id = NamespaceBottomlessDbId::from_config(&from_config);
+                let restore_to = if let Some(timestamp) = timestamp {
+                    if let Some(ref options) = ns_config.bottomless_replication {
+                        Some(PointInTimeRestore {
+                            timestamp,
+                            replicator_options: make_bottomless_options(
+                                options,
+                                bottomless_db_id.clone(),
+                                from_ns.name().clone(),
+                            ),
+                        })
+                    } else {
+                        return Err(crate::Error::Fork(ForkError::BackupServiceNotConfigured));
+                    }
+                } else {
+                    None
+                };
+
+                // fork share config with original db
+                to_config.store(from_config).await?;
+
+                let fork_task = ForkTask {
+                    base_path: ns_config.base_path.clone(),
+                    to_namespace: to_ns,
+                    logger: from_ns
+                        .db
+                        .as_primary()
+                        .unwrap()
+                        .wal_manager
+                        .wrapped()
+                        .logger(),
+                    restore_to,
+                    bottomless_db_id,
+                    to_config,
+                    ns_config,
+                };
+
+                let ns = fork_task.fork().await?;
+                Ok(ns)
+            }
+            DatabaseKind::Replica => Err(ForkError::ForkReplica.into()),
+        }
     }
 }
 
@@ -336,185 +587,13 @@ fn make_bottomless_options(
     let mut options = options.clone();
     let mut db_id = match namespace_db_id {
         NamespaceBottomlessDbId::Namespace(id) => id,
+        // FIXME(marin): I don't like that, if bottomless is enabled, proper config must be passed.
         NamespaceBottomlessDbId::NotProvided => options.db_id.unwrap_or_default(),
     };
 
     db_id = format!("ns-{db_id}:{name}");
     options.db_id = Some(db_id);
     options
-}
-
-impl Namespace<PrimaryDatabase> {
-    async fn new_primary(
-        config: &PrimaryNamespaceConfig,
-        name: NamespaceName,
-        restore_option: RestoreOption,
-        bottomless_db_id: NamespaceBottomlessDbId,
-        meta_store_handle: MetaStoreHandle,
-    ) -> crate::Result<Self> {
-        // FIXME: make that truly atomic. explore the idea of using temp directories, and it's implications
-        match Self::try_new_primary(
-            config,
-            name.clone(),
-            restore_option,
-            bottomless_db_id,
-            meta_store_handle,
-        )
-        .await
-        {
-            Ok(ns) => Ok(ns),
-            Err(e) => {
-                let path = config.base_path.join("dbs").join(name.as_str());
-                if let Err(e) = tokio::fs::remove_dir_all(path).await {
-                    tracing::error!("failed to clean dirty namespace: {e}");
-                }
-                Err(e)
-            }
-        }
-    }
-
-    async fn try_new_primary(
-        config: &PrimaryNamespaceConfig,
-        name: NamespaceName,
-        restore_option: RestoreOption,
-        bottomless_db_id: NamespaceBottomlessDbId,
-        meta_store_handle: MetaStoreHandle,
-    ) -> crate::Result<Self> {
-        let mut join_set = JoinSet::new();
-        let db_path = config.base_path.join("dbs").join(name.as_str());
-
-        let mut is_dirty = config.db_is_dirty;
-
-        tokio::fs::create_dir_all(&db_path).await?;
-
-        let bottomless_db_id = match bottomless_db_id {
-            NamespaceBottomlessDbId::Namespace(ref db_id) => {
-                let config = &*(meta_store_handle.get()).clone();
-                let config = DatabaseConfig {
-                    bottomless_db_id: Some(db_id.clone()),
-                    ..config.clone()
-                };
-                meta_store_handle.store(config).await?;
-                bottomless_db_id
-            }
-            NamespaceBottomlessDbId::NotProvided => {
-                NamespaceBottomlessDbId::from_config(&meta_store_handle.get())
-            }
-        };
-
-        // FIXME: due to a bug in logger::checkpoint_db we call regular checkpointing code
-        // instead of our virtual WAL one. It's a bit tangled to fix right now, because
-        // we need WAL context for checkpointing, and WAL context needs the ReplicationLogger...
-        // So instead we checkpoint early, *before* bottomless gets initialized. That way
-        // we're sure bottomless won't try to back up any existing WAL frames and will instead
-        // treat the existing db file as the source of truth.
-
-        if config.bottomless_replication.is_some() {
-            tracing::debug!("Checkpointing before initializing bottomless");
-            crate::replication::primary::logger::checkpoint_db(&db_path.join("data"))?;
-            tracing::debug!("Checkpointed before initializing bottomless");
-        }
-
-        let bottomless_replicator = if let Some(options) = &config.bottomless_replication {
-            let options = make_bottomless_options(options, bottomless_db_id, name.clone());
-            let (replicator, did_recover) =
-                init_bottomless_replicator(db_path.join("data"), options, &restore_option).await?;
-            is_dirty |= did_recover;
-            Some(replicator)
-        } else {
-            None
-        };
-
-        let is_fresh_db = check_fresh_db(&db_path)?;
-        // switch frame-count checkpoint to time-based one
-        let auto_checkpoint = if config.checkpoint_interval.is_some() {
-            0
-        } else {
-            DEFAULT_AUTO_CHECKPOINT
-        };
-
-        let logger = Arc::new(ReplicationLogger::open(
-            &db_path,
-            config.max_log_size,
-            config.max_log_duration,
-            is_dirty,
-            auto_checkpoint,
-            config.scripted_backup.clone(),
-            name.clone(),
-            config.encryption_config.clone(),
-        )?);
-
-        let stats = make_stats(
-            &db_path,
-            &mut join_set,
-            config.stats_sender.clone(),
-            name.clone(),
-            logger.new_frame_notifier.subscribe(),
-            config.encryption_config.clone(),
-        )
-        .await?;
-
-        let wal_manager = make_replication_wal(bottomless_replicator, logger.clone());
-        let connection_maker: Arc<_> = MakeLibSqlConn::new(
-            db_path.clone(),
-            wal_manager.clone(),
-            stats.clone(),
-            meta_store_handle.clone(),
-            config.extensions.clone(),
-            config.max_response_size,
-            config.max_total_response_size,
-            auto_checkpoint,
-            logger.new_frame_notifier.subscribe(),
-            config.encryption_config.clone(),
-        )
-        .await?
-        .throttled(
-            config.max_concurrent_connections.clone(),
-            Some(DB_CREATE_TIMEOUT),
-            config.max_total_response_size,
-            config.max_concurrent_requests,
-        )
-        .into();
-
-        // this must happen after we create the connection maker. The connection maker old on a
-        // connection to ensure that no other connection is closing while we try to open the dump.
-        // that would cause a SQLITE_LOCKED error.
-        match restore_option {
-            RestoreOption::Dump(_) if !is_fresh_db => {
-                Err(LoadDumpError::LoadDumpExistingDb)?;
-            }
-            RestoreOption::Dump(dump) => {
-                load_dump(
-                    &db_path,
-                    dump,
-                    wal_manager.clone(),
-                    config.encryption_config.clone(),
-                )
-                .await?;
-            }
-            _ => { /* other cases were already handled when creating bottomless */ }
-        }
-
-        join_set.spawn(run_periodic_compactions(logger.clone()));
-
-        if let Some(checkpoint_interval) = config.checkpoint_interval {
-            join_set.spawn(run_periodic_checkpoint(
-                connection_maker.clone(),
-                checkpoint_interval,
-            ));
-        }
-
-        Ok(Self {
-            tasks: join_set,
-            db: PrimaryDatabase {
-                wal_manager,
-                connection_maker,
-            },
-            name,
-            stats,
-            db_config_store: meta_store_handle,
-        })
-    }
 }
 
 async fn make_stats(
