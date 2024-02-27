@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "main"
+      - "lucio/test-docker"
     tags:
       - libsql-server-v*.*.*
 
