@@ -70,14 +70,6 @@ impl QueryStats {
             rows_written,
         }
     }
-    pub fn empty() -> Self {
-        Self {
-            elapsed_ms: 0,
-            count: 0,
-            rows_read: 0,
-            rows_written: 0,
-        }
-    }
     pub fn merge(&self, another: &QueryStats) -> Self {
         Self {
             elapsed_ms: self.elapsed_ms + another.elapsed_ms,
@@ -92,7 +84,6 @@ impl QueryStats {
 pub struct QueriesStats {
     #[serde(default)]
     id: Option<Uuid>,
-
     #[serde(default)]
     stats_threshold: AtomicU64,
     #[serde(default)]
@@ -108,11 +99,10 @@ impl QueriesStats {
 
     pub fn register_query(&mut self, sql: &String, stat: QueryStats) {
         let (aggregated, new) = match self.stats.get(sql) {
-            Some(stat) => (stat.clone(), false),
-            None => (QueryStats::empty(), true),
+            Some(aggregated) => (aggregated.merge(&stat), false),
+            None => (stat, true),
         };
 
-        let aggregated = aggregated.merge(&stat);
         if aggregated.elapsed_ms < self.stats_threshold.load(Ordering::Relaxed) {
             return;
         }
@@ -124,7 +114,7 @@ impl QueriesStats {
         }
 
         let mut vec = self.stats.clone().into_iter().collect_vec();
-        vec.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+        vec.sort_by(|a, b| a.1.cmp(&b.1));
         let len = vec.len();
         if len <= 30 {
             return;
