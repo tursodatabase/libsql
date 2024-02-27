@@ -356,10 +356,10 @@ impl MetaStore {
             tracing::debug!("removed namespace `{}` from meta store", namespace);
             let config = sender.borrow().clone();
             let tx = guard.conn.transaction()?;
-            if let Some(shared_schema) = config.config.shared_schema_name.as_deref() {
+            if let Some(ref shared_schema) = config.config.shared_schema_name {
                 tx.execute(
                     "DELETE FROM shared_schema_links WHERE shared_schema_name = ? AND namespace = ?",
-                    [shared_schema, namespace.as_str()],
+                    (shared_schema.as_str(), namespace.as_str()),
                 )?;
             }
             tx.execute(
@@ -424,14 +424,14 @@ impl MetaStoreHandle {
         };
 
         Ok(Self {
-            namespace: NamespaceName("testmetastore".into()),
+            namespace: NamespaceName::new_unchecked("testmetastore"),
             inner: HandleState::Internal(Arc::new(Mutex::new(Arc::new(config)))),
         })
     }
 
     pub fn internal() -> Self {
         MetaStoreHandle {
-            namespace: NamespaceName("testmetastore".into()),
+            namespace: NamespaceName::new_unchecked("testmetastore"),
             inner: HandleState::Internal(Arc::new(Mutex::new(Arc::new(DatabaseConfig::default())))),
         }
     }
