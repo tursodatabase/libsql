@@ -340,12 +340,6 @@ impl ReplicationLog for ReplicationLogService {
         &self,
         req: tonic::Request<HelloRequest>,
     ) -> Result<tonic::Response<HelloResponse>, Status> {
-        struct DropMe;
-        impl Drop for DropMe {
-            fn drop(&mut self) {}
-        }
-        let _d = DropMe;
-
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
         self.authenticate(&req, namespace.clone()).await?;
 
