@@ -83,12 +83,16 @@ impl CompletionProgress {
     }
 
     pub fn update(&mut self, mut start_frame: u32, mut end_frame: u32) {
-        if start_frame - 1 == self.baseline {
-            while start_frame - 1 == self.baseline {
+        if start_frame == self.baseline + 1 {
+            loop {
                 self.baseline = end_frame;
                 if let Some((s, e)) = self.detached_ranges.pop_first() {
                     start_frame = s;
                     end_frame = e;
+                    if start_frame != self.baseline + 1 {
+                        self.detached_ranges.insert(start_frame, end_frame);
+                        break;
+                    }
                 } else {
                     break;
                 }
@@ -97,5 +101,38 @@ impl CompletionProgress {
         } else {
             self.detached_ranges.insert(start_frame, end_frame);
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::completion_progress::CompletionProgress;
+
+    #[test]
+    fn completion_progress_update() {
+        let (mut p, rx) = CompletionProgress::new(0);
+        p.update(1, 4);
+        assert_eq!(*rx.borrow(), 4);
+
+        p.update(5, 7);
+        assert_eq!(*rx.borrow(), 7);
+
+        p.update(9, 10); // hole: missing 8
+        assert_eq!(*rx.borrow(), 7);
+
+        p.update(13, 14); // 3 holes: missing 8, 11, 12
+        assert_eq!(*rx.borrow(), 7);
+
+        p.update(15, 20);
+        assert_eq!(*rx.borrow(), 7);
+
+        p.update(8, 8); // 2 holes: missing 11, 12
+        assert_eq!(*rx.borrow(), 10);
+
+        p.update(11, 11); // hole: missing 12
+        assert_eq!(*rx.borrow(), 11);
+
+        p.update(12, 12);
+        assert_eq!(*rx.borrow(), 20);
     }
 }
