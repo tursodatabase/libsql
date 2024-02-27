@@ -210,6 +210,43 @@ pub trait MakeConnection: Send + Sync + 'static {
             max_concurrent_requests,
         )
     }
+
+    fn map<F, T>(self, f: F) -> Map<Self, F>
+    where
+        F: Fn(Self::Connection) -> T + Send + Sync + 'static,
+        Self: Sized,
+    {
+        Map { inner: self, f }
+    }
+}
+
+pub struct Map<T, F> {
+    inner: T,
+    f: F,
+}
+
+#[async_trait::async_trait]
+impl<F, T, O> MakeConnection for Map<T, F>
+where
+    F: Fn(T::Connection) -> O + Send + Sync + 'static,
+    T: MakeConnection,
+    O: Connection,
+{
+    type Connection = O;
+
+    async fn create(&self) -> Result<Self::Connection, Error> {
+        let conn = self.inner.create().await?;
+        Ok((self.f)(conn))
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: MakeConnection> MakeConnection for Arc<T> {
+    type Connection = T::Connection;
+
+    async fn create(&self) -> Result<Self::Connection, Error> {
+        self.as_ref().create().await
+    }
 }
 
 #[async_trait::async_trait]
