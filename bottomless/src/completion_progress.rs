@@ -11,9 +11,9 @@ use uuid::Uuid;
 pub struct SavepointTracker {
     next_frame_no: Arc<AtomicU32>,
     receiver: Receiver<u32>,
-    pub generation: Arc<ArcSwapOption<Uuid>>,
-    pub generation_snapshot: Receiver<Result<Option<Uuid>>>,
-    pub db_path: String,
+    generation: Arc<ArcSwapOption<Uuid>>,
+    generation_snapshot: Receiver<Result<Option<Uuid>>>,
+    db_path: String,
 }
 
 impl SavepointTracker {
@@ -41,7 +41,7 @@ impl SavepointTracker {
                     .wait_for(|gen| match gen {
                         Ok(Some(gen)) => gen == &*generation,
                         Ok(None) => false,
-                        Err(e) => true,
+                        Err(_) => true,
                     })
                     .await?;
                 return match &*res {
@@ -97,9 +97,5 @@ impl CompletionProgress {
         } else {
             self.detached_ranges.insert(start_frame, end_frame);
         }
-    }
-
-    pub(crate) fn subscribe(&mut self) -> Receiver<u32> {
-        self.tx.subscribe()
     }
 }
