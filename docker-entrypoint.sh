@@ -7,6 +7,18 @@ SQLD_NODE="${SQLD_NODE:-primary}"
 SQLD_DB_PATH="${SQLD_DB_PATH:-iku.db}"
 SQLD_HTTP_LISTEN_ADDR="${SQLD_HTTP_LISTEN_ADDR:-"0.0.0.0:8080"}"
 
+if [ -z "${SQLD_HTTP_AUTH}" ]; then
+    # Generate a random password and encode the username:password pair in Base64
+    PASSWORD=$(openssl rand -base64 10)
+    ENCODED=$(echo -n "turso:${PASSWORD}" | base64)
+    
+    # Set SQLD_HTTP_AUTH and display the encoded value and the password
+    SQLD_HTTP_AUTH="basic:${ENCODED}"
+    echo "Basic HTTP_AUTH is \"turso:${PASSWORD}\""
+else
+    echo "SQLD_HTTP_AUTH is already set."
+fi
+
 if [ "$1" = '/bin/sqld' ]; then
   # We are running the server.
   declare -a server_args=()
