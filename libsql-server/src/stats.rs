@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, RwLock, Weak};
 
 use itertools::Itertools;
-use metrics::{counter, gauge, increment_counter};
+use metrics::{counter, gauge, histogram, increment_counter};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap};
 use tokio::io::AsyncWriteExt;
@@ -137,6 +137,15 @@ impl QueriesStats {
     }
 }
 
+#[derive(Debug, Default, Clone)]
+pub struct StatsUpdateMessage {
+    pub sql: String,
+    pub elapsed: Duration,
+    pub rows_read: u64,
+    pub rows_written: u64,
+    pub mem_used: u64,
+}
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Stats {
     #[serde(skip)]
@@ -204,6 +213,64 @@ impl Stats {
         ));
 
         Ok(this)
+    }
+
+    pub fn update(&self, msg: StatsUpdateMessage) {
+        let sql = msg.sql;
+        let rows_read = msg.rows_read;
+        let rows_written = msg.rows_written;
+        let mem_used = msg.mem_used;
+        let elapsed = msg.elapsed;
+        let elapsed_ms = elapsed.as_millis() as u64;
+        let rows_read = if rows_read == 0 && rows_written == 0 {
+            1
+        } else {
+            rows_read
+        };
+        let weight = rows_read + rows_written;
+
+        histogram!("libsql_server_statement_execution_time", elapsed);
+        histogram!("libsql_server_statement_mem_used_bytes", mem_used as f64);
+
+        if rows_read >= 10_000 || rows_written >= 1_000 {
+            let sql = if sql.len() >= 512 {
+                &sql[..512]
+            } else {
+                &sql[..]
+            };
+
+            tracing::info!(
+                "high read ({}) or write ({}) query: {}",
+                rows_read,
+                rows_written,
+                sql
+            );
+        }
+
+        self.inc_rows_read(rows_read);
+        self.inc_rows_written(rows_written);
+        self.inc_query(elapsed_ms);
+        self.register_query(
+            &sql,
+            crate::stats::QueryStats::new(elapsed_ms, rows_read, rows_written),
+        );
+        if self.qualifies_as_top_query(weight) {
+            self.add_top_query(crate::stats::TopQuery::new(
+                sql.clone(),
+                rows_read,
+                rows_written,
+            ));
+        }
+        if self.qualifies_as_slowest_query(elapsed_ms) {
+            self.add_slowest_query(crate::stats::SlowestQuery::new(
+                sql.clone(),
+                elapsed_ms,
+                rows_read,
+                rows_written,
+            ));
+        }
+
+        self.update_query_metrics(rows_read, rows_written, mem_used, elapsed_ms)
     }
 
     /// increments the number of written rows by n
