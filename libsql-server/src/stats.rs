@@ -5,8 +5,8 @@ use std::sync::{Arc, RwLock, Weak};
 use metrics::{counter, gauge, histogram, increment_counter};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap};
-use std::sync::mpsc;
 use tokio::io::AsyncWriteExt;
+use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 use tokio::time::Duration;
 use tracing::debug;
@@ -166,7 +166,7 @@ pub struct Stats {
     #[serde(skip)]
     namespace: NamespaceName,
     #[serde(skip)]
-    sender: Option<mpsc::SyncSender<StatsUpdateMessage>>,
+    sender: Option<mpsc::Sender<StatsUpdateMessage>>,
 
     #[serde(default)]
     id: Option<Uuid>,
@@ -219,7 +219,7 @@ impl Stats {
             this.id = Some(Uuid::new_v4());
         }
 
-        let (update_sender, update_receiver) = mpsc::sync_channel(256);
+        let (update_sender, update_receiver) = mpsc::channel(256);
 
         this.queries = QueriesStats::new();
         this.namespace = namespace;
@@ -239,11 +239,11 @@ impl Stats {
 
     pub fn send(&self, msg: StatsUpdateMessage) {
         if let Some(sender) = &self.sender {
-            let _ = sender.send(msg);
+            let _ = sender.blocking_send(msg);
         }
     }
 
-    fn update(&self, msg: StatsUpdateMessage) {
+    pub fn update(&self, msg: StatsUpdateMessage) {
         let sql = msg.sql;
         let rows_read = msg.rows_read;
         let rows_written = msg.rows_written;
@@ -460,11 +460,11 @@ impl Stats {
 
 async fn spawn_stats_thread(
     stats: Weak<Stats>,
-    receiver: mpsc::Receiver<StatsUpdateMessage>,
+    mut receiver: mpsc::Receiver<StatsUpdateMessage>,
 ) -> anyhow::Result<()> {
     loop {
-        match (receiver.recv(), stats.upgrade()) {
-            (Ok(msg), Some(stats)) => stats.update(msg),
+        match (receiver.recv().await, stats.upgrade()) {
+            (Some(msg), Some(stats)) => stats.update(msg),
             _ => return Ok(()),
         }
     }
