@@ -4,7 +4,7 @@ use hashbrown::HashSet;
 
 use crate::namespace::NamespaceName;
 
-use super::{Permission, AuthError, Authenticated};
+use super::{AuthError, Authenticated, Permission};
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, Default)]
 pub struct Authorized {
@@ -33,16 +33,25 @@ impl Authorized {
     }
 
     fn is_empty(&self) -> bool {
-        self.read_write.is_none() && self.read_only.is_none() && self.read_only_attach.is_none() && self.read_write_attach.is_none()
+        self.read_write.is_none()
+            && self.read_only.is_none()
+            && self.read_only_attach.is_none()
+            && self.read_write_attach.is_none()
     }
 
-    pub fn merge_legacy(mut self, namespace: Option<NamespaceName>, perm: Option<Permission>) -> Result<Authenticated, AuthError> {
+    pub fn merge_legacy(
+        mut self,
+        namespace: Option<NamespaceName>,
+        perm: Option<Permission>,
+    ) -> Result<Authenticated, AuthError> {
         match (namespace, perm) {
             (Some(ns), Some(perm)) => {
                 let scope = match perm {
                     Permission::Read => self.read_only.get_or_insert_with(Default::default),
                     Permission::Write => self.read_write.get_or_insert_with(Default::default),
-                    Permission::AttachRead => self.read_only_attach.get_or_insert_with(Default::default),
+                    Permission::AttachRead => {
+                        self.read_only_attach.get_or_insert_with(Default::default)
+                    }
                 };
                 scope
                     .namespaces
@@ -58,15 +67,15 @@ impl Authorized {
                     .get_or_insert_with(Default::default)
                     .insert(ns);
                 Ok(Authenticated::Authorized(Arc::new(self)))
-            },
-            (None, None) => { 
+            }
+            (None, None) => {
                 // if there are no other claims, no claims is interpreted as full access.
                 if self.is_empty() {
                     Ok(Authenticated::FullAccess)
                 } else {
                     Ok(Authenticated::Authorized(Arc::new(self)))
                 }
-            },
+            }
             _ => Err(AuthError::JwtInvalid),
         }
     }

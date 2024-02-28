@@ -14,4 +14,3 @@ pub fn encode<T: serde::Serialize>(claims: &T, key: &EncodingKey) -> String {
     let header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::EdDSA);
     jsonwebtoken::encode(&header, &claims, key).unwrap()
 }
-

@@ -1,6 +1,9 @@
 use libsql::Database;
 
-use crate::{common::{http::Client, net::TurmoilConnector}, standalone::utils::{key_pair, encode}};
+use crate::{
+    common::{http::Client, net::TurmoilConnector},
+    standalone::utils::{encode, key_pair},
+};
 
 use super::make_standalone_server;
 
@@ -36,10 +39,7 @@ fn jwt_auth_namespace_access() {
             TurmoilConnector,
         )?;
         let foo_conn = foo_db.connect().unwrap();
-        foo_conn
-            .execute("SELECT 1", ())
-            .await
-            .unwrap();
+        foo_conn.execute("SELECT 1", ()).await.unwrap();
 
         Ok(())
     });

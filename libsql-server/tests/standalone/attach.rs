@@ -1,7 +1,10 @@
 use insta::assert_debug_snapshot;
 use libsql::Database;
 
-use crate::{common::{http::Client, net::TurmoilConnector}, standalone::utils::{key_pair, encode}};
+use crate::{
+    common::{http::Client, net::TurmoilConnector},
+    standalone::utils::{encode, key_pair},
+};
 
 use super::make_standalone_server;
 
