@@ -9,6 +9,7 @@ use std::sync::mpsc;
 use tokio::io::AsyncWriteExt;
 use tokio::task::JoinSet;
 use tokio::time::Duration;
+use tracing::debug;
 use uuid::Uuid;
 
 use crate::namespace::NamespaceName;
@@ -55,16 +56,17 @@ impl SlowestQuery {
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryStats {
-    pub elapsed_ms: u64,
+    #[serde(skip)]
+    pub elapsed: Duration,
     pub count: u64,
     pub rows_written: u64,
     pub rows_read: u64,
 }
 
 impl QueryStats {
-    fn new(elapsed_ms: u64, rows_read: u64, rows_written: u64) -> Self {
+    fn new(elapsed: Duration, rows_read: u64, rows_written: u64) -> Self {
         Self {
-            elapsed_ms,
+            elapsed,
             count: 1,
             rows_read,
             rows_written,
@@ -72,7 +74,7 @@ impl QueryStats {
     }
     fn merge(&self, another: &QueryStats) -> Self {
         Self {
-            elapsed_ms: self.elapsed_ms + another.elapsed_ms,
+            elapsed: self.elapsed + another.elapsed,
             count: self.count + another.count,
             rows_read: self.rows_read + another.rows_read,
             rows_written: self.rows_written + another.rows_written,
@@ -103,7 +105,8 @@ impl QueriesStats {
             None => (stat, true),
         };
 
-        if aggregated.elapsed_ms < self.stats_threshold.load(Ordering::Relaxed) {
+        debug!("query: {}, elapsed: {:?}", sql, aggregated.elapsed);
+        if (aggregated.elapsed.as_micros() as u64) < self.stats_threshold.load(Ordering::Relaxed) {
             return;
         }
 
@@ -123,12 +126,13 @@ impl QueriesStats {
     fn min(&self) -> Option<(&String, &QueryStats)> {
         self.stats
             .iter()
-            .min_by(|a, b| a.1.elapsed_ms.cmp(&b.1.elapsed_ms))
+            .min_by(|a, b| a.1.elapsed.cmp(&b.1.elapsed))
     }
 
     fn update_threshold(&mut self) {
         if let Some((_, v)) = self.min() {
-            self.stats_threshold.store(v.elapsed_ms, Ordering::Relaxed);
+            self.stats_threshold
+                .store(v.elapsed.as_micros() as u64, Ordering::Relaxed);
         }
     }
 
@@ -276,7 +280,7 @@ impl Stats {
         self.inc_query(elapsed_ms);
         self.register_query(
             &sql,
-            crate::stats::QueryStats::new(elapsed_ms, rows_read, rows_written),
+            crate::stats::QueryStats::new(elapsed, rows_read, rows_written),
         );
         if self.qualifies_as_top_query(weight) {
             self.add_top_query(crate::stats::TopQuery::new(

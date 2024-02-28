@@ -84,6 +84,7 @@ impl From<&Stats> for QueriesStatsResponse {
                 .iter()
                 .map(|(k, v)| QueryAndStats {
                     query: k.clone(),
+                    elapsed_ms: v.elapsed.as_millis() as u64,
                     stat: v.clone(),
                 })
                 .collect_vec(),
@@ -94,6 +95,7 @@ impl From<&Stats> for QueriesStatsResponse {
 #[derive(Serialize)]
 pub struct QueryAndStats {
     pub query: String,
+    pub elapsed_ms: u64,
     #[serde(flatten)]
     pub stat: QueryStats,
 }
