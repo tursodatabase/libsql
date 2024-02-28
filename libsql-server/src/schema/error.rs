@@ -9,16 +9,16 @@ pub enum Error {
     Registration(Box<dyn std::error::Error + Send + Sync + 'static>),
     #[error("migration scheduler exited")]
     SchedulerExited,
+    #[error("corrupted job status: {0}")]
+    CorruptedJobStatus(serde_json::Error),
+    #[error("sqlite error: {0}")]
+    Sqlite(#[from] rusqlite::Error),
 }
 
 impl ResponseError for Error {}
 
 impl IntoResponse for &Error {
     fn into_response(self) -> axum::response::Response {
-        match self {
-            Error::Registration(_) | Error::SchedulerExited => {
-                self.format_err(StatusCode::INTERNAL_SERVER_ERROR)
-            }
-        }
+        self.format_err(StatusCode::INTERNAL_SERVER_ERROR)
     }
 }

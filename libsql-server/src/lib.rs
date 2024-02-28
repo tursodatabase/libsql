@@ -18,7 +18,7 @@ use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLog;
 use crate::rpc::replication_log::ReplicationLogService;
 use crate::rpc::replication_log_proxy::ReplicationLogProxyService;
 use crate::rpc::run_rpc_server;
-use crate::schema_migration::Scheduler;
+use crate::schema::Scheduler;
 use crate::stats::Stats;
 use anyhow::Context as AnyhowContext;
 use auth::Auth;
@@ -67,7 +67,7 @@ mod query;
 mod query_analysis;
 mod query_result_builder;
 mod replication;
-mod schema_migration;
+mod schema;
 mod stats;
 #[cfg(test)]
 mod test;

@@ -105,7 +105,7 @@ pub enum Error {
     SharedSchemaCreationError(String),
 
     #[error("migration error: {0}")]
-    Migration(#[from] crate::schema_migration::Error),
+    Migration(#[from] crate::schema::Error),
 }
 
 impl AsRef<Self> for Error {

@@ -1,4 +1,5 @@
 use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
+use std::ops::Deref;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use tokio::time::{Duration, Instant};
@@ -387,6 +388,14 @@ impl<T> Drop for TrackedConnection<T> {
     fn drop(&mut self) {
         CONCCURENT_CONNECTIONS_COUNT.decrement(1.0);
         CONNECTION_ALIVE_DURATION.record(self.created_at.elapsed());
+    }
+}
+
+impl<T> Deref for TrackedConnection<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
     }
 }
 

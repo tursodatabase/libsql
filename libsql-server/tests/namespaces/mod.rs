@@ -2,6 +2,7 @@
 
 mod dumps;
 mod meta;
+mod shared_schema;
 
 use std::path::PathBuf;
 

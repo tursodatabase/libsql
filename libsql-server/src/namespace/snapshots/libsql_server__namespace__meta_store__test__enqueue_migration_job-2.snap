@@ -1,10 +1,16 @@
 ---
 source: libsql-server/src/namespace/meta_store.rs
-expression: stmt.query(()).unwrap().next().unwrap().unwrap()
+expression: rows.next().unwrap().unwrap()
 ---
 {
     Ok(
-        "job",
+        "task_id",
+    ): (
+        Integer,
+        1,
+    ),
+    Ok(
+        "job_id",
     ): (
         Integer,
         1,
@@ -18,7 +24,13 @@ expression: stmt.query(()).unwrap().next().unwrap().unwrap()
     Ok(
         "status",
     ): (
-        Text,
-        "enqueued",
+        Integer,
+        0,
+    ),
+    Ok(
+        "error",
+    ): (
+        Null,
+        (),
     ),
 }

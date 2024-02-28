@@ -5,7 +5,7 @@ use std::sync::Arc;
 use crate::connection::program::Program;
 use crate::connection::{MakeConnection, RequestContext};
 use crate::namespace::NamespaceName;
-use crate::schema_migration::SchedulerHandle;
+use crate::schema::{perform_migration, SchedulerHandle};
 
 use super::primary::PrimaryConnectionMaker;
 use super::PrimaryConnection;
@@ -13,7 +13,13 @@ use super::PrimaryConnection;
 pub struct SchemaConnection {
     migration_scheduler: SchedulerHandle,
     schema: NamespaceName,
-    connection: PrimaryConnection,
+    connection: Arc<PrimaryConnection>,
+}
+
+impl SchemaConnection {
+    pub(crate) fn connection(&self) -> &PrimaryConnection {
+        &self.connection
+    }
 }
 
 #[async_trait::async_trait]
@@ -22,15 +28,38 @@ impl crate::connection::Connection for SchemaConnection {
         &self,
         pgm: Program,
         ctx: RequestContext,
-        response_builder: B,
+        builder: B,
         replication_index: Option<crate::replication::FrameNo>,
     ) -> crate::Result<B> {
-        self.migration_scheduler
-            .register_migration_task(self.schema.clone(), pgm.clone())
-            .await?;
-        self.connection
-            .execute_program(pgm, ctx, response_builder, replication_index)
+        if pgm.is_read_only() {
+            self.connection
+                .execute_program(pgm, ctx, builder, replication_index)
+                .await
+        } else {
+            let connection = self.connection.clone();
+            let pgm = Arc::new(pgm);
+            let pgm_clone = pgm.clone();
+            let ret = tokio::task::spawn_blocking(move || {
+                connection.with_raw(|conn| -> crate::Result<B> {
+                    let mut txn = conn
+                        .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+                        .unwrap();
+                    let (ret, _) = perform_migration(&mut txn, &pgm_clone, true, builder);
+                    txn.rollback().unwrap();
+                    Ok(ret?)
+                })
+            })
             .await
+            .unwrap();
+            // if dry run is successfull, enqueue
+            self.migration_scheduler
+                .register_migration_task(self.schema.clone(), pgm)
+                .await?;
+
+            // TODO here wait for dry run to be executed on all dbs
+
+            ret
+        }
     }
 
     async fn describe(
@@ -71,7 +100,7 @@ impl MakeConnection for SchemaDatabase {
     type Connection = SchemaConnection;
 
     async fn create(&self) -> crate::Result<Self::Connection, crate::error::Error> {
-        let connection = self.connection_maker.create().await?;
+        let connection = Arc::new(self.connection_maker.create().await?);
         Ok(SchemaConnection {
             migration_scheduler: self.migration_scheduler.clone(),
             schema: self.schema.clone(),
