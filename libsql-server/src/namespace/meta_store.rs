@@ -687,8 +687,11 @@ mod test {
 
         let mut lock = meta_store.inner.lock();
         // create a migration task
-        lock.register_schema_migration_task(&"schema1".into(), &Program::seq(&["select * from test"]))
-            .unwrap();
+        lock.register_schema_migration_task(
+            &"schema1".into(),
+            &Program::seq(&["select * from test"]),
+        )
+        .unwrap();
         let mut stmt = lock.conn.prepare("select * from migration_jobs").unwrap();
         assert_debug_snapshot!(stmt.query(()).unwrap().next().unwrap().unwrap());
         stmt.finalize().unwrap();
