@@ -16,6 +16,29 @@ pub use ffi::make_wal_manager;
 
 use self::wrapper::{WalWrapper, WrapWal};
 
+pub fn pghdr_creator(data: &mut [u8; 4096], _db: *mut sqlite3) -> libsql_pghdr {
+    let pager = if cfg!(feature = "encryption") {
+        crate::connection::leak_pager(_db)
+    } else {
+        std::ptr::null_mut()
+    };
+
+    libsql_pghdr {
+        pPage: std::ptr::null_mut(),
+        pData: data.as_mut_ptr() as _,
+        pExtra: std::ptr::null_mut(),
+        pCache: std::ptr::null_mut(),
+        pDirty: std::ptr::null_mut(),
+        pPager: pager,
+        pgno: 1,
+        pageHash: 0x02, // DIRTY
+        flags: 0,
+        nRef: 0,
+        pDirtyNext: std::ptr::null_mut(),
+        pDirtyPrev: std::ptr::null_mut(),
+    }
+}
+
 pub trait WalManager {
     type Wal: Wal;
 
