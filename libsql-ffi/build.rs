@@ -10,6 +10,13 @@ const BUNDLED_DIR: &str = "bundled";
 const SQLITE_DIR: &str = "../libsql-sqlite3";
 
 fn main() {
+    let target = env::var("TARGET").unwrap();
+    let host = env::var("HOST").unwrap();
+
+    let is_apple = host.contains("apple") && target.contains("apple");
+    if is_apple {
+        println!("cargo:rustc-link-lib=framework=Security");
+    }
     let out_dir = env::var("OUT_DIR").unwrap();
     let out_path = Path::new(&out_dir).join("bindgen.rs");
 
