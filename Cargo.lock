@@ -859,6 +859,7 @@ dependencies = [
  "libsql-sys",
  "libsql_replication",
  "rand",
+ "serde",
  "tokio",
  "tokio-util",
  "tracing",

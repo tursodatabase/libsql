@@ -171,10 +171,10 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
         {
             let runtime = tokio::runtime::Handle::current();
             self.try_with_replicator(|replicator| {
-                let _prev = replicator.new_generation();
-                if let Err(e) =
-                    runtime.block_on(async move { replicator.snapshot_main_db_file().await })
-                {
+                if let Err(e) = runtime.block_on(async move {
+                    replicator.new_generation().await;
+                    replicator.snapshot_main_db_file().await
+                }) {
                     tracing::error!("Failed to snapshot the main db file during checkpoint: {e}");
                     return Err(Error::new(SQLITE_IOERR_WRITE));
                 }

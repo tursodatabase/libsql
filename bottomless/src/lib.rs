@@ -10,3 +10,5 @@ pub mod replicator;
 pub mod transaction_cache;
 pub mod uuid_utils;
 mod wal;
+
+pub use crate::completion_progress::{BackupThreshold, SavepointTracker};

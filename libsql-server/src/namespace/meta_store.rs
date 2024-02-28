@@ -96,7 +96,7 @@ impl MetaStoreInner {
                 // TODO: this logic should probably be moved to bottomless.
                 match action {
                     bottomless::replicator::RestoreAction::SnapshotMainDbFile => {
-                        replicator.new_generation();
+                        replicator.new_generation().await;
                         if let Some(_handle) = replicator.snapshot_main_db_file().await? {
                             tracing::trace!(
                                 "got snapshot handle after restore with generation upgrade"

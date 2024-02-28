@@ -1,5 +1,6 @@
 use anyhow::{bail, Result};
 use arc_swap::ArcSwapOption;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -55,12 +56,21 @@ impl SavepointTracker {
 
     /// Wait until WAL segment upload has been confirmed up until the frame which number has been
     /// snapshotted at the beginning of the call.
-    pub async fn confirmed(&mut self) -> Result<u32> {
+    pub async fn confirmed(&mut self) -> Result<BackupThreshold> {
         let last_frame_no = self.next_frame_no.load(Ordering::SeqCst) - 1;
-        let res = *self.receiver.wait_for(|fno| *fno >= last_frame_no).await?;
-        self.confirm_snapshotted().await?;
-        Ok(res)
+        let frame_no = *self.receiver.wait_for(|fno| *fno >= last_frame_no).await?;
+        let generation = self.confirm_snapshotted().await?;
+        Ok(BackupThreshold {
+            generation: generation.as_ref().map(Uuid::to_string),
+            frame_no,
+        })
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BackupThreshold {
+    pub generation: Option<String>,
+    pub frame_no: u32,
 }
 
 /// Track completion progress for WAL frame segments uploaded in parallel.
@@ -101,6 +111,12 @@ impl CompletionProgress {
         } else {
             self.detached_ranges.insert(start_frame, end_frame);
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.baseline = 0;
+        self.detached_ranges.clear();
+        self.tx.send_replace(0);
     }
 }
 

@@ -480,7 +480,15 @@ impl Replicator {
         }
     }
 
+    async fn reset_wal_tracker(&self) {
+        let mut lock = self.upload_progress.lock().await;
+        lock.reset();
+    }
+
     pub fn savepoint(&self) -> SavepointTracker {
+        if let Some(tx) = &self.flush_trigger {
+            let _ = tx.send(());
+        }
         SavepointTracker::new(
             self.generation.clone(),
             self.snapshot_waiter.clone(),
@@ -580,7 +588,8 @@ impl Replicator {
     }
 
     // Starts a new generation for this replicator instance
-    pub fn new_generation(&mut self) -> Option<Uuid> {
+    pub async fn new_generation(&mut self) -> Option<Uuid> {
+        self.reset_wal_tracker().await;
         let curr = Self::generate_generation();
         let prev = self.set_generation(curr);
         if let Some(prev) = prev {
