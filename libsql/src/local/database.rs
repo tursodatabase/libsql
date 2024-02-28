@@ -17,6 +17,7 @@ cfg_replication!(
     }
 );
 
+use crate::Error;
 use crate::{database::OpenFlags, local::connection::Connection};
 use crate::{Error::ConnectionFailed, Result};
 use libsql_sys::ffi;
@@ -42,6 +43,10 @@ impl Database {
                 "Unable to open local database {db_path} with Database::open()"
             )))
         } else {
+            if let Some(parent) = std::path::Path::new(&db_path).parent() {
+                std::fs::create_dir_all(&parent).map_err(|e| Error::UnableToCreateDirAll(e))?;
+            }
+
             Ok(Database::new(db_path, flags))
         }
     }

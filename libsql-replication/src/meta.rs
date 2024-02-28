@@ -25,6 +25,8 @@ pub enum Error {
     LogIncompatible,
     #[error("Failed to commit replication index")]
     FailedToCommit(std::io::Error),
+    #[error("Invalid replication path")]
+    InvalidReplicationPath,
 }
 
 #[repr(C)]
@@ -64,6 +66,25 @@ impl WalIndexMeta {
         let path = db_path.join("client_wal_index");
 
         tokio::fs::create_dir_all(db_path).await?;
+
+        let mut file = tokio::fs::OpenOptions::new()
+            .create(true)
+            .read(true)
+            .write(true)
+            .open(&path)
+            .await?;
+
+        let data = WalIndexMetaData::read(&mut file).await?;
+
+        Ok(Self { file, data })
+    }
+
+    pub async fn open_prefixed(db_path: &Path) -> Result<Self, Error> {
+        let file_name = db_path.file_name().ok_or(Error::InvalidReplicationPath)?;
+
+        let wal_index_file = format!("{}-client_wal_index", file_name.to_str().unwrap());
+
+        let path = db_path.with_file_name(wal_index_file);
 
         let mut file = tokio::fs::OpenOptions::new()
             .create(true)
