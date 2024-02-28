@@ -22,8 +22,8 @@ enum StreamResponseError {
     Batch(batch::BatchError),
 }
 
-pub async fn handle<D: Connection>(
-    stream_guard: &mut stream::Guard<'_, D>,
+pub async fn handle(
+    stream_guard: &mut stream::Guard<'_>,
     ctx: RequestContext,
     request: proto::StreamRequest,
     version: Version,
@@ -42,8 +42,8 @@ pub async fn handle<D: Connection>(
     Ok(result)
 }
 
-async fn try_handle<D: Connection>(
-    stream_guard: &mut stream::Guard<'_, D>,
+async fn try_handle(
+    stream_guard: &mut stream::Guard<'_>,
     ctx: RequestContext,
     request: proto::StreamRequest,
     version: Version,

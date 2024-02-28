@@ -19,20 +19,14 @@ use tower_http::trace::DefaultOnResponse;
 use url::Url;
 
 use crate::auth::parse_jwt_key;
-use crate::database::Database;
+use crate::connection::config::DatabaseConfig;
 use crate::error::{Error, LoadDumpError};
 use crate::hrana;
-use crate::namespace::{
-    DumpStream, MakeNamespace, NamespaceBottomlessDbId, NamespaceName, NamespaceStore,
-    RestoreOption,
-};
+use crate::namespace::{DumpStream, NamespaceName, NamespaceStore, RestoreOption};
 use crate::net::Connector;
 use crate::LIBSQL_PAGE_SIZE;
 
 pub mod stats;
-
-type UserHttpServer<M> =
-    Arc<hrana::http::Server<<<M as MakeNamespace>::Database as Database>::Connection>>;
 
 #[derive(Clone)]
 struct Metrics {
@@ -45,32 +39,31 @@ impl Metrics {
     }
 }
 
-struct AppState<M: MakeNamespace, C> {
-    namespaces: NamespaceStore<M>,
-    user_http_server: UserHttpServer<M>,
+struct AppState<C> {
+    namespaces: NamespaceStore,
+    user_http_server: Arc<hrana::http::Server>,
     connector: C,
     metrics: Metrics,
 }
 
-impl<M: MakeNamespace, C> FromRef<Arc<AppState<M, C>>> for Metrics {
-    fn from_ref(input: &Arc<AppState<M, C>>) -> Self {
+impl<C> FromRef<Arc<AppState<C>>> for Metrics {
+    fn from_ref(input: &Arc<AppState<C>>) -> Self {
         input.metrics.clone()
     }
 }
 
 static PROM_HANDLE: Mutex<OnceCell<PrometheusHandle>> = Mutex::new(OnceCell::new());
 
-pub async fn run<M, A, C>(
+pub async fn run<A, C>(
     acceptor: A,
-    user_http_server: UserHttpServer<M>,
-    namespaces: NamespaceStore<M>,
+    user_http_server: Arc<hrana::http::Server>,
+    namespaces: NamespaceStore,
     connector: C,
     disable_metrics: bool,
     shutdown: Arc<Notify>,
 ) -> anyhow::Result<()>
 where
     A: crate::net::Accept,
-    M: MakeNamespace,
     C: Connector,
 {
     let app_label = std::env::var("SQLD_APP_LABEL").ok();
@@ -175,8 +168,8 @@ async fn handle_metrics(State(metrics): State<Metrics>) -> String {
     metrics.render()
 }
 
-async fn handle_get_config<M: MakeNamespace, C: Connector>(
-    State(app_state): State<Arc<AppState<M, C>>>,
+async fn handle_get_config<C: Connector>(
+    State(app_state): State<Arc<AppState<C>>>,
     Path(namespace): Path<String>,
 ) -> crate::Result<Json<HttpDatabaseConfig>> {
     let store = app_state
@@ -198,8 +191,8 @@ async fn handle_get_config<M: MakeNamespace, C: Connector>(
     Ok(Json(resp))
 }
 
-async fn handle_diagnostics<M: MakeNamespace, C>(
-    State(app_state): State<Arc<AppState<M, C>>>,
+async fn handle_diagnostics<C>(
+    State(app_state): State<Arc<AppState<C>>>,
 ) -> crate::Result<Json<Vec<String>>> {
     use crate::connection::Connection;
     use hrana::http::stream;
@@ -241,8 +234,8 @@ struct HttpDatabaseConfig {
     allow_attach: bool,
 }
 
-async fn handle_post_config<M: MakeNamespace, C>(
-    State(app_state): State<Arc<AppState<M, C>>>,
+async fn handle_post_config<C>(
+    State(app_state): State<Arc<AppState<C>>>,
     Path(namespace): Path<String>,
     Json(req): Json<HttpDatabaseConfig>,
 ) -> crate::Result<()> {
@@ -291,16 +284,20 @@ struct CreateNamespaceReq {
     allow_attach: bool,
 }
 
-async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
-    State(app_state): State<Arc<AppState<M, C>>>,
-    Path(namespace): Path<String>,
+async fn handle_create_namespace<C: Connector>(
+    State(app_state): State<Arc<AppState<C>>>,
+    Path(namespace): Path<NamespaceName>,
     Json(req): Json<CreateNamespaceReq>,
 ) -> crate::Result<()> {
-    if let Some(jwt_key) = req.jwt_key.as_deref() {
+    let mut config = DatabaseConfig::default();
+
+    if let Some(jwt_key) = req.jwt_key {
         // Check that the jwt key is correct
-        parse_jwt_key(jwt_key)?;
+        parse_jwt_key(&jwt_key)?;
+        config.jwt_key = Some(jwt_key);
     }
-    let shared_schema_name = if let Some(ns) = req.shared_schema_name {
+
+    if let Some(ns) = req.shared_schema_name {
         if req.shared_schema {
             return Err(Error::SharedSchemaCreationError(
                 "shared schema database cannot reference another shared schema".to_string(),
@@ -310,10 +307,10 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
         if !app_state.namespaces.exists(&ns) {
             return Err(Error::NamespaceDoesntExist(ns.to_string()));
         }
-        Some(ns)
-    } else {
-        None
-    };
+
+        config.shared_schema_name = Some(ns);
+    }
+
     let dump = match req.dump_url {
         Some(ref url) => {
             RestoreOption::Dump(dump_stream_from_url(url, app_state.connector.clone()).await?)
@@ -321,40 +318,20 @@ async fn handle_create_namespace<M: MakeNamespace, C: Connector>(
         None => RestoreOption::Latest,
     };
 
-    let bottomless_db_id = match req.bottomless_db_id {
-        Some(db_id) => NamespaceBottomlessDbId::Namespace(db_id),
-        None => NamespaceBottomlessDbId::NotProvided,
-    };
-
-    let namespace = NamespaceName::from_string(namespace)?;
-    app_state
-        .namespaces
-        .create(namespace.clone(), dump, bottomless_db_id)
-        .await?;
-
-    let store = app_state.namespaces.config_store(namespace).await?;
-    let mut config = (*store.get()).clone();
-
+    config.bottomless_db_id = req.bottomless_db_id;
     config.is_shared_schema = req.shared_schema;
-    config.shared_schema_name = shared_schema_name.as_ref().map(|x| x.to_string());
+    config.heartbeat_url = req.heartbeat_url.as_deref().map(Url::parse).transpose()?;
+    config.txn_timeout = req.txn_timeout_s.map(Duration::from_secs);
+    config.max_row_size = req.max_row_size.unwrap_or(config.max_row_size);
     config.allow_attach = req.allow_attach;
     if let Some(max_db_size) = req.max_db_size {
         config.max_db_pages = max_db_size.as_u64() / LIBSQL_PAGE_SIZE;
     }
-    if let Some(url) = req.heartbeat_url {
-        config.heartbeat_url = Some(Url::parse(&url)?)
-    }
 
-    if let Some(txn_timeout_s) = req.txn_timeout_s {
-        config.txn_timeout = Some(Duration::from_secs(txn_timeout_s));
-    }
-
-    if let Some(max_row_size) = req.max_row_size {
-        config.max_row_size = max_row_size;
-    }
-
-    config.jwt_key = req.jwt_key;
-    store.store(config).await?;
+    app_state
+        .namespaces
+        .create(namespace.clone(), dump, config)
+        .await?;
 
     Ok(())
 }
@@ -364,8 +341,8 @@ struct ForkNamespaceReq {
     timestamp: NaiveDateTime,
 }
 
-async fn handle_fork_namespace<M: MakeNamespace, C>(
-    State(app_state): State<Arc<AppState<M, C>>>,
+async fn handle_fork_namespace<C>(
+    State(app_state): State<Arc<AppState<C>>>,
     Path((from, to)): Path<(String, String)>,
     req: Option<Json<ForkNamespaceReq>>,
 ) -> crate::Result<()> {
@@ -422,8 +399,8 @@ where
     }
 }
 
-async fn handle_delete_namespace<F: MakeNamespace, C>(
-    State(app_state): State<Arc<AppState<F, C>>>,
+async fn handle_delete_namespace<C>(
+    State(app_state): State<Arc<AppState<C>>>,
     Path(namespace): Path<String>,
 ) -> crate::Result<()> {
     app_state

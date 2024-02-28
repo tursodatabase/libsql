@@ -18,6 +18,8 @@ use libsql_server::config::{AdminApiConfig, UserApiConfig};
 use common::net::{init_tracing, TestServer, TurmoilConnector};
 
 mod attach;
+mod auth;
+mod utils;
 
 async fn make_standalone_server() -> Result<(), Box<dyn std::error::Error>> {
     init_tracing();

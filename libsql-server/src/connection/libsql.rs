@@ -928,11 +928,17 @@ impl<W: Wal> Connection<W> {
         let rows_written = stmt.get_status(StatementStatus::RowsWritten) as u64;
 
         if rows_read >= 10_000 || rows_written >= 1_000 {
+            let sql = if sql.len() >= 512 {
+                &sql[..512]
+            } else {
+                &sql[..]
+            };
+
             tracing::info!(
                 "high read ({}) or write ({}) query: {}",
                 rows_read,
                 rows_written,
-                &sql[..512]
+                sql
             );
         }
 

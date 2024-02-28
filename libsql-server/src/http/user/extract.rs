@@ -3,21 +3,17 @@ use axum::extract::FromRequestParts;
 use crate::{
     auth::{Jwt, UserAuthContext, UserAuthStrategy},
     connection::RequestContext,
-    namespace::MakeNamespace,
 };
 
 use super::{db_factory, AppState};
 
 #[async_trait::async_trait]
-impl<F> FromRequestParts<AppState<F>> for RequestContext
-where
-    F: MakeNamespace,
-{
+impl FromRequestParts<AppState> for RequestContext {
     type Rejection = crate::error::Error;
 
     async fn from_request_parts(
         parts: &mut axum::http::request::Parts,
-        state: &AppState<F>,
+        state: &AppState,
     ) -> std::result::Result<Self, Self::Rejection> {
         let namespace = db_factory::namespace_from_headers(
             &parts.headers,
@@ -41,6 +37,10 @@ where
             })?,
         };
 
-        Ok(Self::new(auth, namespace, state.namespaces.meta_store()))
+        Ok(Self::new(
+            auth,
+            namespace,
+            state.namespaces.meta_store().clone(),
+        ))
     }
 }
