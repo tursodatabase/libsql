@@ -1,3 +1,4 @@
+use bottomless::SavepointTracker;
 use std::sync::Arc;
 
 use bottomless::bottomless_wal::BottomlessWalWrapper;
@@ -49,5 +50,14 @@ impl PrimaryDatabase {
         }
 
         Ok(())
+    }
+
+    pub fn backup_savepoint(&self) -> Result<Option<SavepointTracker>> {
+        if let Some(wal) = self.wal_manager.wrapper() {
+            if let Some(savepoint) = wal.backup_savepoint() {
+                return Ok(Some(savepoint));
+            }
+        }
+        Ok(None)
     }
 }
