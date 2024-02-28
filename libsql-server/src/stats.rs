@@ -2,7 +2,6 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, RwLock, Weak};
 
-use itertools::Itertools;
 use metrics::{counter, gauge, histogram, increment_counter};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap};
@@ -114,19 +113,30 @@ impl QueriesStats {
             return;
         }
 
-        let mut vec = self.stats.clone().into_iter().collect_vec();
-        vec.sort_by(|a, b| a.1.cmp(&b.1));
-        let len = vec.len();
-        if len <= 30 {
-            return;
+        while self.stats.len() > 30 {
+            self.pop()
         }
 
-        for i in 0..len - 30 {
-            self.stats.remove(&vec[i].0);
-        }
+        self.update_threshold();
+    }
 
-        self.stats_threshold
-            .store(vec[len - 30].1.elapsed_ms, Ordering::Relaxed);
+    fn min(&self) -> Option<(&String, &QueryStats)> {
+        self.stats
+            .iter()
+            .min_by(|a, b| a.1.elapsed_ms.cmp(&b.1.elapsed_ms))
+    }
+
+    fn update_threshold(&mut self) {
+        if let Some((_, v)) = self.min() {
+            self.stats_threshold.store(v.elapsed_ms, Ordering::Relaxed);
+        }
+    }
+
+    fn pop(&mut self) {
+        let min = self.min();
+        if let Some(min) = min {
+            self.stats.remove(&min.0.clone());
+        }
     }
 
     pub(crate) fn id(&self) -> Option<Uuid> {
