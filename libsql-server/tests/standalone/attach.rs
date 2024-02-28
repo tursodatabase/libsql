@@ -1,24 +1,9 @@
-use base64::Engine;
 use insta::assert_debug_snapshot;
-use jsonwebtoken::EncodingKey;
 use libsql::Database;
-use ring::signature::{Ed25519KeyPair, KeyPair};
 
-use crate::common::{http::Client, net::TurmoilConnector};
+use crate::{common::{http::Client, net::TurmoilConnector}, standalone::utils::{key_pair, encode}};
 
 use super::make_standalone_server;
-
-fn key_pair() -> (EncodingKey, Ed25519KeyPair) {
-    let doc = Ed25519KeyPair::generate_pkcs8(&ring::rand::SystemRandom::new()).unwrap();
-    let encoding_key = EncodingKey::from_ed_der(doc.as_ref());
-    let pair = Ed25519KeyPair::from_pkcs8(doc.as_ref()).unwrap();
-    (encoding_key, pair)
-}
-
-fn encode<T: serde::Serialize>(claims: &T, key: &EncodingKey) -> String {
-    let header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::EdDSA);
-    jsonwebtoken::encode(&header, &claims, key).unwrap()
-}
 
 #[test]
 fn attach_no_auth() {
@@ -92,9 +77,8 @@ fn attach_auth() {
     sim.client("test", async {
         let client = Client::new();
 
-        let (enc, pair) = key_pair();
+        let (enc, jwt_key) = key_pair();
 
-        let jwt_key = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(pair.public_key().as_ref());
         assert!(client
             .post(
                 "http://primary:9090/v1/namespaces/foo/create",
