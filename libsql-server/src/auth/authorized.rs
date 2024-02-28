@@ -1,8 +1,10 @@
+use std::sync::Arc;
+
 use hashbrown::HashSet;
 
 use crate::namespace::NamespaceName;
 
-use super::Permission;
+use super::{Permission, AuthError, Authenticated};
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, Default)]
 pub struct Authorized {
@@ -30,17 +32,43 @@ impl Authorized {
         }
     }
 
-    pub fn merge_legacy(&mut self, namespace: NamespaceName, perm: Permission) {
-        let scope = match perm {
-            Permission::Read => self.read_only.get_or_insert_with(Default::default),
-            Permission::Write => self.read_write.get_or_insert_with(Default::default),
-            Permission::AttachRead => self.read_only_attach.get_or_insert_with(Default::default),
-        };
+    fn is_empty(&self) -> bool {
+        self.read_write.is_none() && self.read_only.is_none() && self.read_only_attach.is_none() && self.read_write_attach.is_none()
+    }
 
-        scope
-            .namespaces
-            .get_or_insert_with(Default::default)
-            .insert(namespace);
+    pub fn merge_legacy(mut self, namespace: Option<NamespaceName>, perm: Option<Permission>) -> Result<Authenticated, AuthError> {
+        match (namespace, perm) {
+            (Some(ns), Some(perm)) => {
+                let scope = match perm {
+                    Permission::Read => self.read_only.get_or_insert_with(Default::default),
+                    Permission::Write => self.read_write.get_or_insert_with(Default::default),
+                    Permission::AttachRead => self.read_only_attach.get_or_insert_with(Default::default),
+                };
+                scope
+                    .namespaces
+                    .get_or_insert_with(Default::default)
+                    .insert(ns);
+                Ok(Authenticated::Authorized(Arc::new(self)))
+            }
+            // legacy shit: interpret that as full access to ns
+            (Some(ns), None) => {
+                self.read_write
+                    .get_or_insert_with(Default::default)
+                    .namespaces
+                    .get_or_insert_with(Default::default)
+                    .insert(ns);
+                Ok(Authenticated::Authorized(Arc::new(self)))
+            },
+            (None, None) => { 
+                // if there are no other claims, no claims is interpreted as full access.
+                if self.is_empty() {
+                    Ok(Authenticated::FullAccess)
+                } else {
+                    Ok(Authenticated::Authorized(Arc::new(self)))
+                }
+            },
+            _ => Err(AuthError::JwtInvalid),
+        }
     }
 
     fn can_write_ns(&self, name: &NamespaceName) -> bool {
