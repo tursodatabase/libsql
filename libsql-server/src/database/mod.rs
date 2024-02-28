@@ -3,9 +3,9 @@ use std::sync::Arc;
 
 use crate::connection::{MakeConnection, RequestContext};
 
-pub use self::primary::{PrimaryConnection, PrimaryDatabase, PrimaryConnectionMaker};
+pub use self::primary::{PrimaryConnection, PrimaryConnectionMaker, PrimaryDatabase};
 pub use self::replica::{ReplicaConnection, ReplicaDatabase};
-pub use self::schema::{SchemaDatabase, SchemaConnection};
+pub use self::schema::{SchemaConnection, SchemaDatabase};
 
 mod primary;
 mod replica;
@@ -85,7 +85,7 @@ impl crate::connection::Connection for Connection {
             Connection::Schema(conn) => {
                 conn.execute_program(pgm, ctx, response_builder, replication_index)
                     .await
-            },
+            }
         }
     }
 

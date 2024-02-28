@@ -29,7 +29,11 @@ use crate::{
 
 use super::NamespaceName;
 
-type ChangeMsg = (NamespaceName, Arc<DatabaseConfig>, oneshot::Sender<Result<()>>);
+type ChangeMsg = (
+    NamespaceName,
+    Arc<DatabaseConfig>,
+    oneshot::Sender<Result<()>>,
+);
 type WalManager = WalWrapper<Option<BottomlessWalWrapper>, Sqlite3WalManager>;
 type Connection = libsql_sys::Connection<WrappedWal<Option<BottomlessWalWrapper>, Sqlite3Wal>>;
 
@@ -93,7 +97,7 @@ impl FromStr for MigrationJobStatus {
             "enqueued" => Ok(MigrationJobStatus::Enqueued),
             "success" => Ok(MigrationJobStatus::Success),
             "failure" => Ok(MigrationJobStatus::Failure),
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
@@ -252,13 +256,20 @@ impl MetaStoreInner {
     }
 
     /// Create a migration task, and returns the jobn id
-    fn register_schema_migration_task(&mut self, schema: &NamespaceName, migration: &Program) -> Result<i64> {
+    fn register_schema_migration_task(
+        &mut self,
+        schema: &NamespaceName,
+        migration: &Program,
+    ) -> Result<i64> {
         let txn = self.conn.transaction()?;
 
         // get the config for the schema and validate that it's actually a schema
-        let mut stmt = txn.prepare("SELECT namespace, config FROM namespace_configs where namespace = ?")?;
+        let mut stmt =
+            txn.prepare("SELECT namespace, config FROM namespace_configs where namespace = ?")?;
         let mut rows = stmt.query([schema.as_str()])?;
-        let Some(row) = rows.next()? else { todo!("no such schema") };
+        let Some(row) = rows.next()? else {
+            todo!("no such schema")
+        };
         let config_bytes = row.get_ref(1)?.as_blob().unwrap();
         let config = DatabaseConfig::from(&metadata::DatabaseConfig::decode(config_bytes)?);
         if !config.is_shared_schema {
@@ -270,17 +281,26 @@ impl MetaStoreInner {
         stmt.finalize()?;
 
         let migration_serialized = serde_json::to_string(&migration).unwrap();
-        txn.execute("INSERT INTO migration_jobs (schema_name, migration) VALUES (?, ?)", (schema.as_str(), &migration_serialized))?;
+        txn.execute(
+            "INSERT INTO migration_jobs (schema_name, migration) VALUES (?, ?)",
+            (schema.as_str(), &migration_serialized),
+        )?;
         let job_id = txn.last_insert_rowid();
 
-        txn.execute("
+        txn.execute(
+            "
             INSERT INTO
                 migration_job_pending_tasks (job, target_namespace, status)
             SELECT job_id, namespace, status
                 FROM shared_schema_links 
                 CROSS JOIN (SELECT ? as job_id, ? as status)
             WHERE shared_schema_name = ?",
-        (job_id, MigrationJobStatus::Enqueued.as_ref(), schema.as_ref()))?;
+            (
+                job_id,
+                MigrationJobStatus::Enqueued.as_ref(),
+                schema.as_ref(),
+            ),
+        )?;
 
         txn.commit()?;
 
@@ -368,7 +388,11 @@ fn process(msg: ChangeMsg, inner: Arc<Mutex<MetaStoreInner>>) {
     let _ = ret_chan.send(ret);
 }
 
-fn try_process(inner: &mut MetaStoreInner, namespace: &NamespaceName, config: &DatabaseConfig) -> Result<()> {
+fn try_process(
+    inner: &mut MetaStoreInner,
+    namespace: &NamespaceName,
+    config: &DatabaseConfig,
+) -> Result<()> {
     let config_encoded = metadata::DatabaseConfig::from(&*config).encode_to_vec();
 
     if let Some(schema) = config.shared_schema_name.as_ref() {
@@ -394,7 +418,6 @@ fn try_process(inner: &mut MetaStoreInner, namespace: &NamespaceName, config: &D
     }
 
     Ok(())
-
 }
 
 impl MetaStore {
@@ -495,11 +518,19 @@ impl MetaStore {
         Ok(())
     }
 
-    pub async fn register_schema_migration(&self, schema: NamespaceName, migration: Program) -> crate::Result<i64> {
+    pub async fn register_schema_migration(
+        &self,
+        schema: NamespaceName,
+        migration: Program,
+    ) -> crate::Result<i64> {
         let inner = self.inner.clone();
         let job_id = tokio::task::spawn_blocking(move || {
-            inner.lock().register_schema_migration_task(&schema, &migration)
-        }).await.unwrap()?;
+            inner
+                .lock()
+                .register_schema_migration_task(&schema, &migration)
+        })
+        .await
+        .unwrap()?;
 
         Ok(job_id)
     }
@@ -584,7 +615,6 @@ impl MetaStoreHandle {
                     .await
                     .map_err(|e| Error::MetaStoreUpdateFailure(e.into()))?;
 
-
                 rcv.await??;
                 changed
                     .await
@@ -608,54 +638,86 @@ mod test {
     #[tokio::test]
     async fn enqueue_migration_job() {
         let tmp = tempdir().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path()).await.unwrap();
-         // create 2 shared schema tables
-         meta_store.handle("schema1".into()).store(DatabaseConfig {
-             is_shared_schema: true,
-             ..Default::default()
-         }).await.unwrap();
-         meta_store.handle("schema2".into()).store(DatabaseConfig {
-             is_shared_schema: true,
-             ..Default::default()
-         }).await.unwrap();
+        let meta_store = MetaStore::new(Default::default(), tmp.path())
+            .await
+            .unwrap();
+        // create 2 shared schema tables
+        meta_store
+            .handle("schema1".into())
+            .store(DatabaseConfig {
+                is_shared_schema: true,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        meta_store
+            .handle("schema2".into())
+            .store(DatabaseConfig {
+                is_shared_schema: true,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
 
-         // create namespaces
-         meta_store.handle("ns1".into()).store(DatabaseConfig {
-             shared_schema_name: Some("schema1".into()),
-             ..Default::default()
-         }).await.unwrap();
-         meta_store.handle("ns2".into()).store(DatabaseConfig {
-             shared_schema_name: Some("schema2".into()),
-             ..Default::default()
-         }).await.unwrap();
-         meta_store.handle("ns3".into()).store(DatabaseConfig {
-             shared_schema_name: Some("schema1".into()),
-             ..Default::default()
-         }).await.unwrap();
+        // create namespaces
+        meta_store
+            .handle("ns1".into())
+            .store(DatabaseConfig {
+                shared_schema_name: Some("schema1".into()),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        meta_store
+            .handle("ns2".into())
+            .store(DatabaseConfig {
+                shared_schema_name: Some("schema2".into()),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        meta_store
+            .handle("ns3".into())
+            .store(DatabaseConfig {
+                shared_schema_name: Some("schema1".into()),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
 
-         let mut lock = meta_store.inner.lock();
-         // create a migration task
-         lock.register_schema_migration_task(&"schema1".into(), &["select * from test".to_string()]).unwrap();
-         let mut stmt = lock.conn.prepare("select * from migration_jobs").unwrap();
-         assert_debug_snapshot!(stmt.query(()).unwrap().next().unwrap().unwrap());
-         stmt.finalize().unwrap();
+        let mut lock = meta_store.inner.lock();
+        // create a migration task
+        lock.register_schema_migration_task(&"schema1".into(), &["select * from test".to_string()])
+            .unwrap();
+        let mut stmt = lock.conn.prepare("select * from migration_jobs").unwrap();
+        assert_debug_snapshot!(stmt.query(()).unwrap().next().unwrap().unwrap());
+        stmt.finalize().unwrap();
 
-         let mut stmt = lock.conn.prepare("select * from migration_job_pending_tasks").unwrap();
-         let mut rows = stmt.query(()).unwrap();
-         assert_debug_snapshot!(rows.next().unwrap().unwrap());
-         assert_debug_snapshot!(rows.next().unwrap().unwrap());
-         assert!(rows.next().unwrap().is_none());
+        let mut stmt = lock
+            .conn
+            .prepare("select * from migration_job_pending_tasks")
+            .unwrap();
+        let mut rows = stmt.query(()).unwrap();
+        assert_debug_snapshot!(rows.next().unwrap().unwrap());
+        assert_debug_snapshot!(rows.next().unwrap().unwrap());
+        assert!(rows.next().unwrap().is_none());
     }
 
     #[tokio::test]
     async fn schema_doesnt_exist() {
         let tmp = tempdir().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path()).await.unwrap();
+        let meta_store = MetaStore::new(Default::default(), tmp.path())
+            .await
+            .unwrap();
         // FIXME: the actual error reported here is a shitty constraint error, we should make the
         // necessary checks beforehand, and return a nice error message.
-         assert!(meta_store.handle("ns1".into()).store(DatabaseConfig {
-             shared_schema_name: Some("schema1".into()),
-             ..Default::default()
-         }).await.is_err());
+        assert!(meta_store
+            .handle("ns1".into())
+            .store(DatabaseConfig {
+                shared_schema_name: Some("schema1".into()),
+                ..Default::default()
+            })
+            .await
+            .is_err());
     }
 }

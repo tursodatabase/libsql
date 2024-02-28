@@ -67,11 +67,11 @@ mod query;
 mod query_analysis;
 mod query_result_builder;
 mod replication;
+mod schema_migration;
 mod stats;
 #[cfg(test)]
 mod test;
 mod utils;
-mod schema_migration;
 
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 const DEFAULT_AUTO_CHECKPOINT: u32 = 1000;

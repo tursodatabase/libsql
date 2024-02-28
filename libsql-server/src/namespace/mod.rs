@@ -33,7 +33,10 @@ use crate::connection::libsql::{open_conn, MakeLibSqlConn};
 use crate::connection::write_proxy::MakeWriteProxyConn;
 use crate::connection::Connection;
 use crate::connection::MakeConnection;
-use crate::database::{Database, DatabaseKind, PrimaryDatabase, ReplicaDatabase, SchemaDatabase, PrimaryConnectionMaker};
+use crate::database::{
+    Database, DatabaseKind, PrimaryConnectionMaker, PrimaryDatabase, ReplicaDatabase,
+    SchemaDatabase,
+};
 use crate::error::LoadDumpError;
 use crate::replication::script_backup_manager::ScriptBackupManager;
 use crate::replication::{FrameNo, ReplicationLogger};

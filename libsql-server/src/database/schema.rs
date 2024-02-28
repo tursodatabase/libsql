@@ -7,8 +7,8 @@ use crate::connection::{MakeConnection, RequestContext};
 use crate::namespace::NamespaceName;
 use crate::schema_migration::SchedulerHandle;
 
-use super::PrimaryConnection;
 use super::primary::PrimaryConnectionMaker;
+use super::PrimaryConnection;
 
 pub struct SchemaConnection {
     migration_scheduler: SchedulerHandle,

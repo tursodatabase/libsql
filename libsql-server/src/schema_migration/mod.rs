@@ -1,9 +1,9 @@
-mod scheduler;
 mod error;
-mod message;
 mod handle;
+mod message;
+mod scheduler;
 
+pub use error::Error;
+pub use handle::SchedulerHandle;
 pub use message::SchedulerMessage;
 pub use scheduler::Scheduler;
-pub use handle::SchedulerHandle;
-pub use error::Error;

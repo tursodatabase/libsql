@@ -1,10 +1,10 @@
 use tokio::sync::mpsc;
 
 use crate::connection::program::Program;
-use crate::namespace::{NamespaceStore, NamespaceName};
+use crate::namespace::{NamespaceName, NamespaceStore};
 
-use super::SchedulerMessage;
 use super::error::Error;
+use super::SchedulerMessage;
 
 #[derive(Clone)]
 pub struct Scheduler {
@@ -15,18 +15,27 @@ impl Scheduler {
     pub async fn run(self, mut receiver: mpsc::Receiver<SchedulerMessage>) {
         while let Some(msg) = receiver.recv().await {
             match msg {
-                SchedulerMessage::ScheduleMigration { schema, migration, ret } => {
+                SchedulerMessage::ScheduleMigration {
+                    schema,
+                    migration,
+                    ret,
+                } => {
                     let res = self.register_migration_task(schema, migration).await;
                     let _ = ret.send(res);
-                },
+                }
             }
         }
 
         tracing::info!("all scheduler handles dropped: exiting.");
     }
 
-    pub async fn register_migration_task(&self, schema: NamespaceName, migration: Program) -> Result<i64, Error> {
-        let job_id = self.namespace_store
+    pub async fn register_migration_task(
+        &self,
+        schema: NamespaceName,
+        migration: Program,
+    ) -> Result<i64, Error> {
+        let job_id = self
+            .namespace_store
             .meta_store()
             .register_schema_migration(schema, migration)
             .await

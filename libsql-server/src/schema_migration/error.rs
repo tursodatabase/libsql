@@ -11,13 +11,14 @@ pub enum Error {
     SchedulerExited,
 }
 
-impl ResponseError for Error { }
+impl ResponseError for Error {}
 
 impl IntoResponse for &Error {
     fn into_response(self) -> axum::response::Response {
         match self {
-            Error::Registration(_)
-            | Error::SchedulerExited => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            Error::Registration(_) | Error::SchedulerExited => {
+                self.format_err(StatusCode::INTERNAL_SERVER_ERROR)
+            }
         }
     }
 }
