@@ -1,6 +1,14 @@
+use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
+use metrics::{histogram, increment_counter};
+
+use crate::error::Error;
+use crate::metrics::{READ_QUERY_COUNT, WRITE_QUERY_COUNT};
 use crate::query::Query;
+use crate::query_analysis::StmtKind;
+use crate::query_result_builder::QueryResultBuilder;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Program {
@@ -77,4 +85,253 @@ pub struct DescribeParam {
 pub struct DescribeCol {
     pub name: String,
     pub decltype: Option<String>,
+}
+
+pub struct Vm<B, F, S> {
+    results: Vec<bool>,
+    builder: B,
+    program: Program,
+    current_step: usize,
+    should_block: F,
+    update_stats: S,
+}
+
+impl<B, F, S> Vm<B, F, S>
+where
+    B: QueryResultBuilder,
+    F: Fn(&StmtKind) -> (bool, Option<String>),
+    S: Fn(String, &rusqlite::Statement, Duration),
+{
+    pub fn new(builder: B, program: Program, should_block: F, update_stats: S) -> Self {
+        Self {
+            results: Vec::with_capacity(program.steps().len()),
+            builder,
+            program,
+            current_step: 0,
+            should_block,
+            update_stats,
+        }
+    }
+
+    #[inline]
+    fn current_step(&self) -> &Step {
+        &self.program.steps()[self.current_step]
+    }
+
+    pub fn step(&mut self, conn: &rusqlite::Connection) -> crate::Result<bool> {
+        match self.try_step(conn) {
+            Ok(res) => {
+                self.results.push(res);
+                self.current_step += 1;
+                Ok(self.current_step < self.program.steps().len())
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    fn try_step(&mut self, conn: &rusqlite::Connection) -> crate::Result<bool> {
+        self.builder.begin_step()?;
+        let mut enabled = match self.current_step().cond.as_ref() {
+            Some(cond) => match eval_cond(cond, &self.results, conn.is_autocommit()) {
+                Ok(enabled) => enabled,
+                Err(e) => {
+                    self.builder.step_error(e).unwrap();
+                    false
+                }
+            },
+            None => true,
+        };
+
+        let (affected_row_count, last_insert_rowid) = if enabled {
+            match self.execute_query(conn) {
+                // builder error interrupt the execution of query. we should exit immediately.
+                Err(e @ Error::BuilderError(_)) => return Err(e),
+                Err(mut e) => {
+                    if let Error::RusqliteError(err) = e {
+                        let extended_code =
+                            unsafe { rusqlite::ffi::sqlite3_extended_errcode(conn.handle()) };
+
+                        e = Error::RusqliteErrorExtended(err, extended_code as i32);
+                    };
+
+                    self.builder.step_error(e)?;
+                    enabled = false;
+                    (0, None)
+                }
+                Ok(x) => x,
+            }
+        } else {
+            (0, None)
+        };
+
+        self.builder
+            .finish_step(affected_row_count, last_insert_rowid)?;
+
+        Ok(enabled)
+    }
+
+    fn prepare_attach_query(
+        &self,
+        conn: &rusqlite::Connection,
+        attached: &str,
+        attached_alias: &str,
+    ) -> crate::Result<String> {
+        let attached = attached.strip_prefix('"').unwrap_or(attached);
+        let attached = attached.strip_suffix('"').unwrap_or(attached);
+        if attached.contains('/') {
+            return Err(Error::Internal(format!(
+                "Invalid attached database name: {attached:?}"
+            )));
+        }
+        let path = PathBuf::from(conn.path().unwrap_or("."));
+        let dbs_path = path
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new(".."))
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new(".."))
+            .canonicalize()
+            .unwrap_or_else(|_| std::path::PathBuf::from(".."));
+        let query = format!(
+            "ATTACH DATABASE 'file:{}?mode=ro' AS \"{attached_alias}\"",
+            dbs_path.join(attached).join("data").display()
+        );
+        tracing::trace!("ATTACH rewritten to: {query}");
+        Ok(query)
+    }
+
+    fn execute_query(&mut self, conn: &rusqlite::Connection) -> crate::Result<(u64, Option<i64>)> {
+        tracing::debug!("executing query: {}", self.current_step().query.stmt.stmt);
+
+        increment_counter!("libsql_server_libsql_query_execute");
+
+        let start = Instant::now();
+        let (blocked, reason) = (self.should_block)(&self.current_step().query.stmt.kind);
+        if blocked {
+            return Err(Error::Blocked(reason));
+        }
+
+        let mut stmt = if matches!(self.current_step().query.stmt.kind, StmtKind::Attach(_)) {
+            match &self.current_step().query.stmt.attach_info {
+                Some((attached, attached_alias)) => {
+                    // nope nope nope: only builder error should return
+                    let query = self.prepare_attach_query(conn, attached, attached_alias)?;
+                    conn.prepare(&query)?
+                }
+                None => {
+                    return Err(Error::Internal(format!(
+                        "Failed to ATTACH: {:?}",
+                        self.current_step().query.stmt.attach_info
+                    )))
+                }
+            }
+        } else {
+            conn.prepare(&self.current_step().query.stmt.stmt)?
+        };
+
+        if stmt.readonly() {
+            READ_QUERY_COUNT.increment(1);
+        } else {
+            WRITE_QUERY_COUNT.increment(1);
+        }
+
+        let cols = stmt.columns();
+        let cols_count = cols.len();
+        self.builder.cols_description(cols.iter())?;
+        drop(cols);
+
+        self.current_step()
+            .query
+            .params
+            .bind(&mut stmt)
+            .map_err(Error::LibSqlInvalidQueryParams)?;
+
+        let mut qresult = stmt.raw_query();
+
+        let mut values_total_bytes = 0;
+        self.builder.begin_rows()?;
+        while let Some(row) = qresult.next()? {
+            self.builder.begin_row()?;
+            for i in 0..cols_count {
+                let val = row.get_ref(i)?;
+                values_total_bytes += value_size(&val);
+                self.builder.add_row_value(val)?;
+            }
+            self.builder.finish_row()?;
+        }
+        histogram!("libsql_server_returned_bytes", values_total_bytes as f64);
+
+        self.builder.finish_rows()?;
+
+        // sqlite3_changes() is only modified for INSERT, UPDATE or DELETE; it is not reset for SELECT,
+        // but we want to return 0 in that case.
+        let affected_row_count = match self.current_step().query.stmt.is_iud {
+            true => conn.changes(),
+            false => 0,
+        };
+
+        // sqlite3_last_insert_rowid() only makes sense for INSERTs into a rowid table. we can't detect
+        // a rowid table, but at least we can detect an INSERT
+        let last_insert_rowid = match self.current_step().query.stmt.is_insert {
+            true => Some(conn.last_insert_rowid()),
+            false => None,
+        };
+
+        drop(qresult);
+
+        (self.update_stats)(
+            self.current_step().query.stmt.stmt.clone(),
+            &stmt,
+            Instant::now() - start,
+        );
+
+        Ok((affected_row_count, last_insert_rowid))
+    }
+
+    pub fn builder(&mut self) -> &mut B {
+        &mut self.builder
+    }
+
+    /// advance the program without executing the step
+    pub(crate) fn advance(&mut self) {
+        self.current_step += 1;
+    }
+
+    pub(crate) fn finished(&self) -> bool {
+        self.current_step >= self.program.steps().len()
+    }
+
+    pub(crate) fn into_builder(self) -> B {
+        self.builder
+    }
+}
+
+fn eval_cond(cond: &Cond, results: &[bool], is_autocommit: bool) -> crate::Result<bool> {
+    let get_step_res = |step: usize| -> crate::Result<bool> {
+        let res = results.get(step).ok_or(Error::InvalidBatchStep(step))?;
+        Ok(*res)
+    };
+
+    Ok(match cond {
+        Cond::Ok { step } => get_step_res(*step)?,
+        Cond::Err { step } => !get_step_res(*step)?,
+        Cond::Not { cond } => !eval_cond(cond, results, is_autocommit)?,
+        Cond::And { conds } => conds.iter().try_fold(true, |x, cond| {
+            eval_cond(cond, results, is_autocommit).map(|y| x & y)
+        })?,
+        Cond::Or { conds } => conds.iter().try_fold(false, |x, cond| {
+            eval_cond(cond, results, is_autocommit).map(|y| x | y)
+        })?,
+        Cond::IsAutocommit => is_autocommit,
+    })
+}
+
+fn value_size(val: &rusqlite::types::ValueRef) -> usize {
+    use rusqlite::types::ValueRef;
+    match val {
+        ValueRef::Null => 0,
+        ValueRef::Integer(_) => 8,
+        ValueRef::Real(_) => 8,
+        ValueRef::Text(s) => s.len(),
+        ValueRef::Blob(b) => b.len(),
+    }
 }
