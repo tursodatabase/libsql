@@ -16,15 +16,9 @@ expression: stmt.query(()).unwrap().next().unwrap().unwrap()
         "schema1",
     ),
     Ok(
-        "query",
+        "migration",
     ): (
         Text,
-        "[\"select * from test\"]",
-    ),
-    Ok(
-        "status",
-    ): (
-        Text,
-        "enqueued",
+        "{\"steps\":[{\"cond\":null,\"query\":{\"stmt\":{\"stmt\":\"SELECT * FROM test;\",\"kind\":\"Read\",\"is_iud\":false,\"is_insert\":false,\"attach_info\":null},\"params\":{\"Positional\":[]},\"want_rows\":true}}]}",
     ),
 }
