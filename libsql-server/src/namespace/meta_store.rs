@@ -597,3 +597,65 @@ impl MetaStoreHandle {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod test {
+    use insta::assert_debug_snapshot;
+    use tempfile::tempdir;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn enqueue_migration_job() {
+        let tmp = tempdir().unwrap();
+        let meta_store = MetaStore::new(Default::default(), tmp.path()).await.unwrap();
+         // create 2 shared schema tables
+         meta_store.handle("schema1".into()).store(DatabaseConfig {
+             is_shared_schema: true,
+             ..Default::default()
+         }).await.unwrap();
+         meta_store.handle("schema2".into()).store(DatabaseConfig {
+             is_shared_schema: true,
+             ..Default::default()
+         }).await.unwrap();
+
+         // create namespaces
+         meta_store.handle("ns1".into()).store(DatabaseConfig {
+             shared_schema_name: Some("schema1".into()),
+             ..Default::default()
+         }).await.unwrap();
+         meta_store.handle("ns2".into()).store(DatabaseConfig {
+             shared_schema_name: Some("schema2".into()),
+             ..Default::default()
+         }).await.unwrap();
+         meta_store.handle("ns3".into()).store(DatabaseConfig {
+             shared_schema_name: Some("schema1".into()),
+             ..Default::default()
+         }).await.unwrap();
+
+         let mut lock = meta_store.inner.lock();
+         // create a migration task
+         lock.register_schema_migration_task(&"schema1".into(), &["select * from test".to_string()]).unwrap();
+         let mut stmt = lock.conn.prepare("select * from migration_jobs").unwrap();
+         assert_debug_snapshot!(stmt.query(()).unwrap().next().unwrap().unwrap());
+         stmt.finalize().unwrap();
+
+         let mut stmt = lock.conn.prepare("select * from migration_job_pending_tasks").unwrap();
+         let mut rows = stmt.query(()).unwrap();
+         assert_debug_snapshot!(rows.next().unwrap().unwrap());
+         assert_debug_snapshot!(rows.next().unwrap().unwrap());
+         assert!(rows.next().unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn schema_doesnt_exist() {
+        let tmp = tempdir().unwrap();
+        let meta_store = MetaStore::new(Default::default(), tmp.path()).await.unwrap();
+        // FIXME: the actual error reported here is a shitty constraint error, we should make the
+        // necessary checks beforehand, and return a nice error message.
+         assert!(meta_store.handle("ns1".into()).store(DatabaseConfig {
+             shared_schema_name: Some("schema1".into()),
+             ..Default::default()
+         }).await.is_err());
+    }
+}
