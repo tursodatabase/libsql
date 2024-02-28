@@ -99,8 +99,7 @@ pub unsafe extern "C" fn libsql_open_sync(
         let config = libsql::EncryptionConfig::new(libsql::Cipher::SQLCipher, key);
         builder.encryption_config(config)
     };
-    match RT.block_on(builder.build(),
-    ) {
+    match RT.block_on(builder.build()) {
         Ok(db) => {
             let db = Box::leak(Box::new(libsql_database { db }));
             *out_db = libsql_database_t::from(db);
