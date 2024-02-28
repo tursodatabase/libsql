@@ -344,12 +344,32 @@ impl MetaStoreInner {
 
 /// Handles config change updates by inserting them into the database and in-memory
 /// cache of configs.
-fn process(msg: ChangeMsg, inner: Arc<Mutex<MetaStoreInner>>) -> Result<()> {
-    let (namespace, config) = msg;
+fn process(msg: ChangeMsg, inner: Arc<Mutex<MetaStoreInner>>) {
+    let (namespace, config, ret_chan) = msg;
 
+    let mut inner = inner.lock();
+    let ret = try_process(&mut *inner, &namespace, &config);
+
+    let configs = &mut inner.configs;
+    if let Some(config_watch) = configs.get_mut(&namespace) {
+        let new_version = config_watch.borrow().version.wrapping_add(1);
+
+        config_watch.send_modify(|c| {
+            *c = InnerConfig {
+                version: new_version,
+                config,
+            };
+        });
+    } else {
+        let (tx, _) = watch::channel(InnerConfig { version: 0, config });
+        configs.insert(namespace, tx);
+    }
+
+    let _ = ret_chan.send(ret);
+}
+
+fn try_process(inner: &mut MetaStoreInner, namespace: &NamespaceName, config: &DatabaseConfig) -> Result<()> {
     let config_encoded = metadata::DatabaseConfig::from(&*config).encode_to_vec();
-
-    let inner = &mut inner.lock();
 
     if let Some(schema) = config.shared_schema_name.as_ref() {
         let tx = inner.conn.transaction()?;
@@ -373,23 +393,8 @@ fn process(msg: ChangeMsg, inner: Arc<Mutex<MetaStoreInner>>) -> Result<()> {
         )?;
     }
 
-    let configs = &mut inner.configs;
-
-    if let Some(config_watch) = configs.get_mut(&namespace) {
-        let new_version = config_watch.borrow().version.wrapping_add(1);
-
-        config_watch.send_modify(|c| {
-            *c = InnerConfig {
-                version: new_version,
-                config,
-            };
-        });
-    } else {
-        let (tx, _) = watch::channel(InnerConfig { version: 0, config });
-        configs.insert(namespace, tx);
-    }
-
     Ok(())
+
 }
 
 impl MetaStore {
@@ -573,11 +578,14 @@ impl MetaStoreHandle {
                 c.borrow_and_update();
                 let changed = c.changed();
 
+                let (snd, rcv) = oneshot::channel();
                 changes_tx
-                    .send((self.namespace.clone(), new_config))
+                    .send((self.namespace.clone(), new_config, snd))
                     .await
                     .map_err(|e| Error::MetaStoreUpdateFailure(e.into()))?;
 
+
+                rcv.await??;
                 changed
                     .await
                     .map_err(|e| Error::MetaStoreUpdateFailure(e.into()))?;
