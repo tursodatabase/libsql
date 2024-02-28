@@ -25,7 +25,7 @@ pub struct TopQuery {
 }
 
 impl TopQuery {
-    pub fn new(query: String, rows_read: u64, rows_written: u64) -> Self {
+    fn new(query: String, rows_read: u64, rows_written: u64) -> Self {
         Self {
             weight: rows_read + rows_written,
             rows_read,
@@ -44,7 +44,7 @@ pub struct SlowestQuery {
 }
 
 impl SlowestQuery {
-    pub fn new(query: String, elapsed_ms: u64, rows_read: u64, rows_written: u64) -> Self {
+    fn new(query: String, elapsed_ms: u64, rows_read: u64, rows_written: u64) -> Self {
         Self {
             elapsed_ms,
             query,
@@ -63,7 +63,7 @@ pub struct QueryStats {
 }
 
 impl QueryStats {
-    pub fn new(elapsed_ms: u64, rows_read: u64, rows_written: u64) -> Self {
+    fn new(elapsed_ms: u64, rows_read: u64, rows_written: u64) -> Self {
         Self {
             elapsed_ms,
             count: 1,
@@ -71,7 +71,7 @@ impl QueryStats {
             rows_written,
         }
     }
-    pub fn merge(&self, another: &QueryStats) -> Self {
+    fn merge(&self, another: &QueryStats) -> Self {
         Self {
             elapsed_ms: self.elapsed_ms + another.elapsed_ms,
             count: self.count + another.count,
@@ -92,13 +92,13 @@ pub struct QueriesStats {
 }
 
 impl QueriesStats {
-    pub fn new() -> Arc<RwLock<Self>> {
+    fn new() -> Arc<RwLock<Self>> {
         let mut this = QueriesStats::default();
         this.id = Some(Uuid::new_v4());
         Arc::new(RwLock::new(this))
     }
 
-    pub fn register_query(&mut self, sql: &String, stat: QueryStats) {
+    fn register_query(&mut self, sql: &String, stat: QueryStats) {
         let (aggregated, new) = match self.stats.get(sql) {
             Some(aggregated) => (aggregated.merge(&stat), false),
             None => (stat, true),
@@ -129,11 +129,11 @@ impl QueriesStats {
             .store(vec[len - 30].1.elapsed_ms, Ordering::Relaxed);
     }
 
-    pub fn id(&self) -> Option<Uuid> {
+    pub(crate) fn id(&self) -> Option<Uuid> {
         self.id
     }
 
-    pub fn stats(&self) -> &HashMap<String, QueryStats> {
+    pub(crate) fn stats(&self) -> &HashMap<String, QueryStats> {
         &self.stats
     }
 }
@@ -229,7 +229,7 @@ impl Stats {
         }
     }
 
-    pub fn update(&self, msg: StatsUpdateMessage) {
+    fn update(&self, msg: StatsUpdateMessage) {
         let sql = msg.sql;
         let rows_read = msg.rows_read;
         let rows_written = msg.rows_written;
@@ -288,12 +288,12 @@ impl Stats {
     }
 
     /// increments the number of written rows by n
-    pub fn inc_rows_written(&self, n: u64) {
+    fn inc_rows_written(&self, n: u64) {
         counter!("libsql_server_rows_written", n, "namespace" => self.namespace.to_string());
         self.rows_written.fetch_add(n, Ordering::Relaxed);
     }
 
-    pub fn inc_query(&self, ms: u64) {
+    fn inc_query(&self, ms: u64) {
         counter!("libsql_server_query_count", 1, "namespace" => self.namespace.to_string());
         counter!("libsql_server_query_latency", ms, "namespace" => self.namespace.to_string());
         self.query_count.fetch_add(1, Ordering::Relaxed);
@@ -301,7 +301,7 @@ impl Stats {
     }
 
     /// increments the number of read rows by n
-    pub fn inc_rows_read(&self, n: u64) {
+    fn inc_rows_read(&self, n: u64) {
         counter!("libsql_server_rows_read", n, "namespace" => self.namespace.to_string());
         self.rows_read.fetch_add(n, Ordering::Relaxed);
     }
@@ -312,17 +312,17 @@ impl Stats {
     }
 
     /// returns the total number of rows read since this database was created
-    pub fn rows_read(&self) -> u64 {
+    pub(crate) fn rows_read(&self) -> u64 {
         self.rows_read.load(Ordering::Relaxed)
     }
 
     /// returns the total number of rows written since this database was created
-    pub fn rows_written(&self) -> u64 {
+    pub(crate) fn rows_written(&self) -> u64 {
         self.rows_written.load(Ordering::Relaxed)
     }
 
     /// returns the total number of bytes used by the database (excluding uncheckpointed WAL entries)
-    pub fn storage_bytes_used(&self) -> u64 {
+    pub(crate) fn storage_bytes_used(&self) -> u64 {
         self.storage_bytes_used.load(Ordering::Relaxed)
     }
 
@@ -370,11 +370,11 @@ impl Stats {
         &self.queries
     }
 
-    pub(crate) fn register_query(&self, sql: &String, stat: QueryStats) {
+    fn register_query(&self, sql: &String, stat: QueryStats) {
         self.queries.write().unwrap().register_query(sql, stat)
     }
 
-    pub(crate) fn add_top_query(&self, query: TopQuery) {
+    fn add_top_query(&self, query: TopQuery) {
         let mut top_queries = self.top_queries.write().unwrap();
         tracing::debug!(
             "top query: {},{}:{}",
@@ -390,7 +390,7 @@ impl Stats {
         }
     }
 
-    pub(crate) fn qualifies_as_top_query(&self, weight: u64) -> bool {
+    fn qualifies_as_top_query(&self, weight: u64) -> bool {
         weight >= self.top_query_threshold.load(Ordering::Relaxed)
     }
 
@@ -403,7 +403,7 @@ impl Stats {
         self.top_query_threshold.store(0, Ordering::Relaxed);
     }
 
-    pub(crate) fn add_slowest_query(&self, query: SlowestQuery) {
+    fn add_slowest_query(&self, query: SlowestQuery) {
         let mut slowest_queries = self.slowest_queries.write().unwrap();
         tracing::debug!("slowest query: {}: {}", query.elapsed_ms, query.query);
         slowest_queries.insert(query);
@@ -416,7 +416,7 @@ impl Stats {
         }
     }
 
-    pub(crate) fn qualifies_as_slowest_query(&self, elapsed_ms: u64) -> bool {
+    fn qualifies_as_slowest_query(&self, elapsed_ms: u64) -> bool {
         elapsed_ms >= self.slowest_query_threshold.load(Ordering::Relaxed)
     }
 
@@ -431,13 +431,7 @@ impl Stats {
 
     // TOOD: Update these metrics with namespace labels in the future so we can localize
     // issues to a specific namespace.
-    pub(crate) fn update_query_metrics(
-        &self,
-        rows_read: u64,
-        rows_written: u64,
-        mem_used: u64,
-        elapsed: u64,
-    ) {
+    fn update_query_metrics(&self, rows_read: u64, rows_written: u64, mem_used: u64, elapsed: u64) {
         increment_counter!("libsql_server_query_count");
         counter!("libsql_server_query_latency", elapsed);
         counter!("libsql_server_query_rows_read", rows_read);
@@ -445,7 +439,7 @@ impl Stats {
         counter!("libsql_server_query_mem_used", mem_used);
     }
 
-    pub fn id(&self) -> Option<Uuid> {
+    pub(crate) fn id(&self) -> Option<Uuid> {
         self.id
     }
 }

@@ -926,7 +926,7 @@ impl<W: Wal> Connection<W> {
         let rows_written = stmt.get_status(StatementStatus::RowsWritten) as u64;
         let mem_used = stmt.get_status(StatementStatus::MemUsed) as u64;
 
-        self.stats.update(StatsUpdateMessage {
+        self.stats.send(StatsUpdateMessage {
             sql,
             elapsed,
             rows_read,
