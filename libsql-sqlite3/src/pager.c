@@ -710,7 +710,7 @@ struct Pager {
 
 #ifdef LIBSQL_CUSTOM_PAGER_CODEC
 int libsql_pager_has_codec_impl(struct Pager *_p);
-void *libsql_pager_codec_impl(libsql_pghdr *hdr);
+int libsql_pager_codec_impl(libsql_pghdr *hdr, void **ret);
 #endif
 
 int libsql_pager_has_codec(struct Pager *_p) {
@@ -721,11 +721,15 @@ int libsql_pager_has_codec(struct Pager *_p) {
 #endif
 }
 
-void *libsql_pager_codec(libsql_pghdr *hdr) {
+int libsql_pager_codec(libsql_pghdr *hdr, void **ret) {
+  if (!ret) {
+	return SQLITE_MISUSE_BKPT;
+  }
 #ifdef LIBSQL_CUSTOM_PAGER_CODEC
-  return libsql_pager_codec_impl(hdr);
+  return libsql_pager_codec_impl(hdr, ret);
 #else
-  return hdr->pData;
+  *ret = hdr->pData;
+  return SQLITE_OK;
 #endif
 }
 /* end of libSQL extension: pager codec */
