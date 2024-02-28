@@ -18,6 +18,7 @@ use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLog;
 use crate::rpc::replication_log::ReplicationLogService;
 use crate::rpc::replication_log_proxy::ReplicationLogProxyService;
 use crate::rpc::run_rpc_server;
+use crate::schema_migration::Scheduler;
 use crate::stats::Stats;
 use anyhow::Context as AnyhowContext;
 use auth::Auth;
@@ -70,6 +71,7 @@ mod stats;
 #[cfg(test)]
 mod test;
 mod utils;
+mod schema_migration;
 
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 const DEFAULT_AUTO_CHECKPOINT: u32 = 1000;
@@ -428,6 +430,8 @@ where
             None => (None, None),
         };
 
+        let (scheduler_sender, scheduler_receiver) = mpsc::channel(128);
+
         let (stats_sender, stats_receiver) = mpsc::channel(8);
         let ns_config = NamespaceConfig {
             db_kind,
@@ -447,6 +451,7 @@ where
             max_concurrent_requests: self.db_config.max_concurrent_requests,
             channel: channel.clone(),
             uri: uri.clone(),
+            migration_scheduler: scheduler_sender.into(),
         };
 
         let namespace_store: NamespaceStore = NamespaceStore::new(
@@ -458,6 +463,13 @@ where
             ns_config,
         )
         .await?;
+
+        let scheduler = Scheduler::new(namespace_store.clone());
+
+        join_set.spawn(async move {
+            scheduler.run(scheduler_receiver).await;
+            Ok(())
+        });
 
         self.spawn_monitoring_tasks(&mut join_set, stats_receiver, namespace_store.clone())?;
 
