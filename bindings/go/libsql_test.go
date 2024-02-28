@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"runtime/debug"
+	"strings"
 	"testing"
 	"time"
 
@@ -477,6 +478,101 @@ func TestSync(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+}
+
+func TestEncryption(tt *testing.T) {
+	t := T{tt}
+	primaryUrl := os.Getenv("LIBSQL_PRIMARY_URL")
+	if primaryUrl == "" {
+		t.Skip("LIBSQL_PRIMARY_URL is not set")
+		return
+	}
+	authToken := os.Getenv("LIBSQL_AUTH_TOKEN")
+	dir, err := os.MkdirTemp("", "libsql-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dbPath := dir + "/test.db"
+	t.Cleanup(func() {
+		defer os.RemoveAll(dir)
+	})
+
+	encryptionKey := "SuperSecretKey"
+	table := "test_" + fmt.Sprint(rand.Int()) + "_" + time.Now().Format("20060102150405")
+
+	connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, false, encryptionKey)
+	t.FatalOnError(err)
+	db := sql.OpenDB(connector)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	_, err = db.ExecContext(ctx, "CREATE TABLE "+table+" (id INTEGER PRIMARY KEY, name TEXT)")
+	if err != nil {
+		cancel()
+		db.Close()
+		connector.Close()
+		t.FatalOnError(err)
+	}
+	_, err = db.ExecContext(ctx, "INSERT INTO "+table+" (id, name) VALUES (1, 'hello')")
+	if err != nil {
+		cancel()
+		db.Close()
+		connector.Close()
+		t.FatalOnError(err)
+	}
+	err = db.Close()
+	t.FatalOnError(err)
+	err = connector.Close()
+	t.FatalOnError(err)
+	connector, err = NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, false, encryptionKey)
+	t.FatalOnError(err)
+	db = sql.OpenDB(connector)
+	rows, err := db.QueryContext(ctx, "SELECT * FROM "+table)
+	if err != nil {
+		cancel()
+		db.Close()
+		connector.Close()
+		t.FatalOnError(err)
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		cancel()
+		db.Close()
+		connector.Close()
+		t.Fatal("expected one row")
+	}
+	var id int
+	var name string
+	err = rows.Scan(&id, &name)
+	if err != nil {
+		cancel()
+		db.Close()
+		connector.Close()
+		t.FatalOnError(err)
+	}
+	if id != 1 {
+		cancel()
+		db.Close()
+		connector.Close()
+		t.Fatal("id should be 1")
+	}
+	if name != "hello" {
+		cancel()
+		db.Close()
+		connector.Close()
+		t.Fatal("name should be hello")
+	}
+	err = rows.Close()
+	t.FatalOnError(err)
+	err = db.Close()
+	t.FatalOnError(err)
+	err = connector.Close()
+	t.FatalOnError(err)
+	connector, err = NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, false, "WrongKey")
+	if err == nil {
+		t.Fatal("using wrong encryption key should have failed")
+	}
+	if !strings.Contains(err.Error(), "SQLite error: file is not a database") {
+		t.Fatal("using wrong encryption key should have failed with a different error")
+	}
 }
 
 func TestExecAndQuery(t *testing.T) {
