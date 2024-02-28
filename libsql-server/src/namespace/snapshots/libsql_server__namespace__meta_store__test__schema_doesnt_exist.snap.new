@@ -1,0 +1,31 @@
+---
+source: libsql-server/src/namespace/meta_store.rs
+assertion_line: 645
+expression: stmt.query(()).unwrap().next().unwrap().unwrap()
+---
+{
+    Ok(
+        "job_id",
+    ): (
+        Integer,
+        1,
+    ),
+    Ok(
+        "schema_name",
+    ): (
+        Text,
+        "schema1",
+    ),
+    Ok(
+        "query",
+    ): (
+        Text,
+        "[\"select * from test\"]",
+    ),
+    Ok(
+        "status",
+    ): (
+        Text,
+        "enqueued",
+    ),
+}
