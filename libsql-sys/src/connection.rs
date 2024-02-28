@@ -134,6 +134,31 @@ extern "C" {
     fn libsql_generate_aes256_key(user_password: *const u8, password_length: u32, digest: *mut u8);
 }
 
+pub fn pghdr_creator(
+    data: &mut [u8; 4096],
+    _db: *mut libsql_ffi::sqlite3,
+) -> libsql_ffi::libsql_pghdr {
+    #[cfg(feature = "encryption")]
+    let pager = crate::connection::leak_pager(_db);
+    #[cfg(not(feature = "encryption"))]
+    let pager = std::ptr::null_mut();
+
+    libsql_ffi::libsql_pghdr {
+        pPage: std::ptr::null_mut(),
+        pData: data.as_mut_ptr() as _,
+        pExtra: std::ptr::null_mut(),
+        pCache: std::ptr::null_mut(),
+        pDirty: std::ptr::null_mut(),
+        pPager: pager,
+        pgno: 1,
+        pageHash: 0x02, // DIRTY
+        flags: 0,
+        nRef: 0,
+        pDirtyNext: std::ptr::null_mut(),
+        pDirtyPrev: std::ptr::null_mut(),
+    }
+}
+
 #[cfg(feature = "encryption")]
 /// # Safety
 /// db must point to a vaid sqlite database

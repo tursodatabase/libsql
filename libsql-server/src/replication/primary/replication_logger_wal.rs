@@ -300,7 +300,7 @@ impl ReplicationLoggerWal {
         header.replication_index =
             (self.logger().new_frame_notifier.borrow().unwrap_or(0) + 1).into();
 
-        let mut header = libsql_sys::wal::pghdr_creator(data, db.as_ptr());
+        let mut header = libsql_sys::connection::pghdr_creator(data, db.as_ptr());
 
         let mut headers = unsafe { PageHeaders::from_raw(&mut header) };
 
