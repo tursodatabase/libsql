@@ -1,5 +1,7 @@
 #![allow(clippy::mutable_key_type)]
+use std::convert::Infallible;
 use std::path::Path;
+use std::str::FromStr;
 use std::sync::Arc;
 use std::{collections::HashMap, fs::read_dir};
 
@@ -13,19 +15,21 @@ use libsql_sys::wal::{
 };
 use parking_lot::Mutex;
 use prost::Message;
+use tokio::sync::oneshot;
 use tokio::sync::{
     mpsc,
     watch::{self, Receiver, Sender},
 };
 
 use crate::connection::config::DatabaseConfig;
+use crate::connection::program::Program;
 use crate::{
     config::MetaStoreConfig, connection::libsql::open_conn_active_checkpoint, error::Error, Result,
 };
 
 use super::NamespaceName;
 
-type ChangeMsg = (NamespaceName, Arc<DatabaseConfig>);
+type ChangeMsg = (NamespaceName, Arc<DatabaseConfig>, oneshot::Sender<Result<()>>);
 type WalManager = WalWrapper<Option<BottomlessWalWrapper>, Sqlite3WalManager>;
 type Connection = libsql_sys::Connection<WrappedWal<Option<BottomlessWalWrapper>, Sqlite3Wal>>;
 
@@ -63,6 +67,35 @@ struct MetaStoreInner {
     configs: HashMap<NamespaceName, Sender<InnerConfig>>,
     conn: Connection,
     wal_manager: WalManager,
+}
+
+pub enum MigrationJobStatus {
+    Enqueued,
+    Success,
+    Failure,
+}
+
+impl AsRef<str> for MigrationJobStatus {
+    fn as_ref(&self) -> &str {
+        match self {
+            MigrationJobStatus::Enqueued => "enqueued",
+            MigrationJobStatus::Success => "success",
+            MigrationJobStatus::Failure => "failure",
+        }
+    }
+}
+
+impl FromStr for MigrationJobStatus {
+    type Err = Infallible;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s {
+            "enqueued" => Ok(MigrationJobStatus::Enqueued),
+            "success" => Ok(MigrationJobStatus::Success),
+            "failure" => Ok(MigrationJobStatus::Failure),
+            _ => unreachable!()
+        }
+    }
 }
 
 impl MetaStoreInner {
@@ -142,6 +175,26 @@ impl MetaStoreInner {
             (),
         )?;
 
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS migration_jobs (
+                job_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                schema_name TEXT NOT NULL,
+                migration TEXT NOT NULL
+            )
+            ",
+            (),
+        )?;
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS migration_job_pending_tasks (
+                job INTEGER,
+                target_namespace TEXT NOT NULL,
+                status INTEGER,
+                FOREIGN KEY (job) REFERENCES migration_jobs (job_id)
+            )
+            ",
+            (),
+        )?;
+
         let mut this = MetaStoreInner {
             configs: Default::default(),
             conn,
@@ -196,6 +249,42 @@ impl MetaStoreInner {
         txn.commit()?;
 
         Ok(())
+    }
+
+    /// Create a migration task, and returns the jobn id
+    fn register_schema_migration_task(&mut self, schema: &NamespaceName, migration: &Program) -> Result<i64> {
+        let txn = self.conn.transaction()?;
+
+        // get the config for the schema and validate that it's actually a schema
+        let mut stmt = txn.prepare("SELECT namespace, config FROM namespace_configs where namespace = ?")?;
+        let mut rows = stmt.query([schema.as_str()])?;
+        let Some(row) = rows.next()? else { todo!("no such schema") };
+        let config_bytes = row.get_ref(1)?.as_blob().unwrap();
+        let config = DatabaseConfig::from(&metadata::DatabaseConfig::decode(config_bytes)?);
+        if !config.is_shared_schema {
+            todo!("not a shared schema table");
+        }
+
+        drop(rows);
+
+        stmt.finalize()?;
+
+        let migration_serialized = serde_json::to_string(&migration).unwrap();
+        txn.execute("INSERT INTO migration_jobs (schema_name, migration) VALUES (?, ?)", (schema.as_str(), &migration_serialized))?;
+        let job_id = txn.last_insert_rowid();
+
+        txn.execute("
+            INSERT INTO
+                migration_job_pending_tasks (job, target_namespace, status)
+            SELECT job_id, namespace, status
+                FROM shared_schema_links 
+                CROSS JOIN (SELECT ? as job_id, ? as status)
+            WHERE shared_schema_name = ?",
+        (job_id, MigrationJobStatus::Enqueued.as_ref(), schema.as_ref()))?;
+
+        txn.commit()?;
+
+        Ok(job_id)
     }
 
     #[tracing::instrument(skip(self))]
@@ -399,6 +488,15 @@ impl MetaStore {
         }
 
         Ok(())
+    }
+
+    pub async fn register_schema_migration(&self, schema: NamespaceName, migration: Program) -> crate::Result<i64> {
+        let inner = self.inner.clone();
+        let job_id = tokio::task::spawn_blocking(move || {
+            inner.lock().register_schema_migration_task(&schema, &migration)
+        }).await.unwrap()?;
+
+        Ok(job_id)
     }
 }
 
