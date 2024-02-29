@@ -614,6 +614,43 @@ func testExecAndQuery(db *Database) {
 	table.assertRowExists(19)
 }
 
+func TestReadYourWrites(tt *testing.T) {
+	t := T{tt}
+	primaryUrl := os.Getenv("LIBSQL_PRIMARY_URL")
+	if primaryUrl == "" {
+		t.Skip("LIBSQL_PRIMARY_URL is not set")
+		return
+	}
+	authToken := os.Getenv("LIBSQL_AUTH_TOKEN")
+	dir, err := os.MkdirTemp("", "libsql-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dbPath := dir + "/test.db"
+	options := []Option{}
+	if authToken != "" {
+		options = append(options, WithAuthToken(authToken))
+	}
+	connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, options...)
+	t.FatalOnError(err)
+	database := sql.OpenDB(connector)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	t.Cleanup(func() {
+		database.Close()
+		connector.Close()
+		cancel()
+		defer os.RemoveAll(dir)
+	})
+	db := &Database{database, connector, t, ctx}
+	table := db.createTable()
+	table.insertRows(0, 10)
+	table.insertRowsWithArgs(10, 10)
+	table.assertRowsCount(20)
+	table.assertRowDoesNotExist(20)
+	table.assertRowExists(0)
+	table.assertRowExists(19)
+}
+
 func TestPreparedStatements(t *testing.T) {
 	db := getRemoteDb(T{t})
 	testPreparedStatements(db)
