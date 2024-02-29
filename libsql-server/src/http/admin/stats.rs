@@ -93,6 +93,8 @@ impl From<&Histogram<u32>> for QueriesStatsPercentiles {
 #[derive(Serialize)]
 pub struct QueriesStatsResponse {
     pub id: Option<Uuid>,
+    pub count: Option<u64>,
+    pub elapsed_ms: u64,
     pub stats: Vec<QueryAndStats>,
     pub quantiles: Option<QueriesStatsPercentiles>,
 }
@@ -103,6 +105,8 @@ impl From<&Stats> for QueriesStatsResponse {
         Self {
             id: queries.id(),
             quantiles: queries.hist().as_ref().map(|h| h.into()),
+            count: queries.count(),
+            elapsed_ms: queries.elapsed().as_millis() as u64,
             stats: queries
                 .stats()
                 .iter()

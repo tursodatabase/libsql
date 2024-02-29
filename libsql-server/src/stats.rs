@@ -91,6 +91,8 @@ pub struct QueriesStats {
     #[serde(default)]
     stats: HashMap<String, QueryStats>,
     #[serde(skip)]
+    elapsed: Duration,
+    #[serde(skip)]
     stats_threshold: u64,
     #[serde(skip)]
     hist: Option<Histogram<u32>>,
@@ -108,6 +110,8 @@ impl QueriesStats {
     }
 
     fn register_query(&mut self, sql: &String, stat: QueryStats) {
+        self.elapsed += stat.elapsed;
+
         if let Some(hist) = self.hist.as_mut() {
             let _ = hist.record(stat.elapsed.as_millis() as u64);
         }
@@ -168,6 +172,14 @@ impl QueriesStats {
 
     pub(crate) fn start(&self) -> &DateTime<Utc> {
         &self.start
+    }
+
+    pub(crate) fn elapsed(&self) -> &Duration {
+        &self.elapsed
+    }
+
+    pub(crate) fn count(&self) -> Option<u64> {
+        self.hist.as_ref().map(|h| h.len() as u64)
     }
 }
 
