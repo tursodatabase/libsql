@@ -158,6 +158,10 @@ impl QueriesStats {
     pub(crate) fn stats(&self) -> &HashMap<String, QueryStats> {
         &self.stats
     }
+
+    pub(crate) fn hist(&self) -> &Option<Histogram<u32>> {
+        &self.hist
+    }
 }
 
 #[derive(Debug, Default, Clone)]

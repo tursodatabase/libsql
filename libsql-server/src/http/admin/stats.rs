@@ -67,9 +67,20 @@ impl From<Stats> for StatsResponse {
 }
 
 #[derive(Serialize)]
+pub struct QueriesStatsPercentiles {
+    pub p50: u64,
+    pub p75: u64,
+    pub p90: u64,
+    pub p95: u64,
+    pub p99: u64,
+    pub p999: u64,
+}
+
+#[derive(Serialize)]
 pub struct QueriesStatsResponse {
     pub id: Option<Uuid>,
     pub stats: Vec<QueryAndStats>,
+    pub quantiles: Option<QueriesStatsPercentiles>,
 }
 
 impl From<&Stats> for QueriesStatsResponse {
@@ -86,6 +97,16 @@ impl From<&Stats> for QueriesStatsResponse {
                     stat: v.clone(),
                 })
                 .collect_vec(),
+            quantiles: queries.hist().as_ref().map_or(None, |hist| {
+                Some(QueriesStatsPercentiles {
+                    p50: hist.value_at_percentile(50.0),
+                    p75: hist.value_at_percentile(75.0),
+                    p90: hist.value_at_percentile(90.0),
+                    p95: hist.value_at_percentile(95.0),
+                    p99: hist.value_at_percentile(99.0),
+                    p999: hist.value_at_percentile(99.9),
+                })
+            }),
         }
     }
 }
