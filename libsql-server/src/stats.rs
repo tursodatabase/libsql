@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, RwLock, Weak};
 
+use chrono::{DateTime, DurationRound, Utc};
 use hdrhistogram::Histogram;
 use metrics::{counter, gauge, histogram, increment_counter};
 use serde::{Deserialize, Serialize};
@@ -93,14 +94,17 @@ pub struct QueriesStats {
     stats: HashMap<String, QueryStats>,
     #[serde(skip)]
     hist: Option<Histogram<u32>>,
+    #[serde(skip)]
+    start: DateTime<Utc>,
 }
 
 impl QueriesStats {
-    fn new() -> Arc<RwLock<Self>> {
+    fn new(time: DateTime<Utc>) -> Self {
         let mut this = QueriesStats::default();
         this.id = Some(Uuid::new_v4());
         this.hist = Histogram::<u32>::new(3).ok();
-        Arc::new(RwLock::new(this))
+        this.start = time;
+        this
     }
 
     fn register_query(&mut self, sql: &String, stat: QueryStats) {
@@ -161,6 +165,10 @@ impl QueriesStats {
 
     pub(crate) fn hist(&self) -> &Option<Histogram<u32>> {
         &self.hist
+    }
+
+    pub(crate) fn start(&self) -> &DateTime<Utc> {
+        &self.start
     }
 }
 
@@ -233,7 +241,11 @@ impl Stats {
 
         let (update_sender, update_receiver) = mpsc::channel(256);
 
-        this.queries = QueriesStats::new();
+        let current_hour = Utc::now()
+            .duration_trunc(chrono::Duration::hours(1))
+            .unwrap();
+
+        this.queries = Arc::new(RwLock::new(QueriesStats::new(current_hour)));
         this.namespace = namespace;
         this.sender = Some(update_sender);
 
@@ -474,11 +486,32 @@ async fn spawn_stats_thread(
     stats: Weak<Stats>,
     mut receiver: mpsc::Receiver<StatsUpdateMessage>,
 ) -> anyhow::Result<()> {
+    let mut interval = tokio::time::interval(Duration::from_secs(60));
     loop {
-        match (receiver.recv().await, stats.upgrade()) {
-            (Some(msg), Some(stats)) => stats.update(msg),
-            _ => return Ok(()),
+        tokio::select! {
+            _ = interval.tick() => {
+                match stats.upgrade() {
+                    Some(stats) => reset_query_stats_hourly(stats),
+                    None => return Ok(()),
+                }
+            }
+            msg = receiver.recv() => {
+                match (msg, stats.upgrade()) {
+                    (Some(msg), Some(stats)) => stats.update(msg),
+                    _ => return Ok(()),
+                }
+            }
         }
+    }
+}
+
+fn reset_query_stats_hourly(stats: Arc<Stats>) {
+    let current_hour = Utc::now()
+        .duration_trunc(chrono::Duration::hours(1))
+        .unwrap();
+    if &current_hour != stats.queries.read().unwrap().start() {
+        let mut queries = stats.queries.write().unwrap();
+        *queries = QueriesStats::new(current_hour);
     }
 }
 
