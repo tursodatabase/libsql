@@ -104,7 +104,7 @@ impl Database {
 
         let replicator =
             EmbeddedReplicator::with_remote(client, path, 1000, encryption_config, periodic_sync)
-                .await;
+                .await?;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,

@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"runtime/debug"
+	"strings"
 	"testing"
 	"time"
 
@@ -65,7 +66,7 @@ func getEmbeddedDb(t T) *Database {
 	}
 	dbPath := dir + "/test.db"
 
-	connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken)
+	connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, false, "")
 	t.FatalOnError(err)
 	db := sql.OpenDB(connector)
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -455,7 +456,7 @@ func testSync(t *testing.T, connect func(dbPath, primaryUrl, authToken string) *
 func TestAutoSync(t *testing.T) {
 	syncInterval := 1 * time.Second
 	testSync(t, func(dbPath, primaryUrl, authToken string) *Connector {
-		connector, err := NewEmbeddedReplicaConnectorWithAutoSync(dbPath, primaryUrl, authToken, syncInterval)
+		connector, err := NewEmbeddedReplicaConnectorWithAutoSync(dbPath, primaryUrl, authToken, false, "", syncInterval)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -467,7 +468,7 @@ func TestAutoSync(t *testing.T) {
 
 func TestSync(t *testing.T) {
 	testSync(t, func(dbPath, primaryUrl, authToken string) *Connector {
-		connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken)
+		connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, false, "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -479,14 +480,107 @@ func TestSync(t *testing.T) {
 	})
 }
 
+func TestEncryption(tt *testing.T) {
+	t := T{tt}
+	primaryUrl := os.Getenv("LIBSQL_PRIMARY_URL")
+	if primaryUrl == "" {
+		t.Skip("LIBSQL_PRIMARY_URL is not set")
+		return
+	}
+	authToken := os.Getenv("LIBSQL_AUTH_TOKEN")
+	dir, err := os.MkdirTemp("", "libsql-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dbPath := dir + "/test.db"
+	t.Cleanup(func() {
+		defer os.RemoveAll(dir)
+	})
+
+	encryptionKey := "SuperSecretKey"
+	table := "test_" + fmt.Sprint(rand.Int()) + "_" + time.Now().Format("20060102150405")
+
+	connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, false, encryptionKey)
+	t.FatalOnError(err)
+	db := sql.OpenDB(connector)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	_, err = db.ExecContext(ctx, "CREATE TABLE "+table+" (id INTEGER PRIMARY KEY, name TEXT)")
+	if err != nil {
+		cancel()
+		db.Close()
+		connector.Close()
+		t.FatalOnError(err)
+	}
+	_, err = db.ExecContext(ctx, "INSERT INTO "+table+" (id, name) VALUES (1, 'hello')")
+	if err != nil {
+		cancel()
+		db.Close()
+		connector.Close()
+		t.FatalOnError(err)
+	}
+	err = db.Close()
+	t.FatalOnError(err)
+	err = connector.Close()
+	t.FatalOnError(err)
+	connector, err = NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, false, encryptionKey)
+	t.FatalOnError(err)
+	db = sql.OpenDB(connector)
+	rows, err := db.QueryContext(ctx, "SELECT * FROM "+table)
+	if err != nil {
+		cancel()
+		db.Close()
+		connector.Close()
+		t.FatalOnError(err)
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		cancel()
+		db.Close()
+		connector.Close()
+		t.Fatal("expected one row")
+	}
+	var id int
+	var name string
+	err = rows.Scan(&id, &name)
+	if err != nil {
+		cancel()
+		db.Close()
+		connector.Close()
+		t.FatalOnError(err)
+	}
+	if id != 1 {
+		cancel()
+		db.Close()
+		connector.Close()
+		t.Fatal("id should be 1")
+	}
+	if name != "hello" {
+		cancel()
+		db.Close()
+		connector.Close()
+		t.Fatal("name should be hello")
+	}
+	err = rows.Close()
+	t.FatalOnError(err)
+	err = db.Close()
+	t.FatalOnError(err)
+	err = connector.Close()
+	t.FatalOnError(err)
+	connector, err = NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, false, "WrongKey")
+	if err == nil {
+		t.Fatal("using wrong encryption key should have failed")
+	}
+	if !strings.Contains(err.Error(), "SQLite error: file is not a database") {
+		t.Fatal("using wrong encryption key should have failed with a different error")
+	}
+}
+
 func TestExecAndQuery(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testExecAndQuery(db)
 }
 
 func TestExecAndQueryEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testExecAndQuery(db)
 }
@@ -506,13 +600,11 @@ func testExecAndQuery(db *Database) {
 }
 
 func TestPreparedStatements(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testPreparedStatements(db)
 }
 
 func TestPreparedStatementsEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testPreparedStatements(db)
 }
@@ -531,13 +623,11 @@ func testPreparedStatements(db *Database) {
 }
 
 func TestTransaction(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testTransaction(db)
 }
 
 func TestTransactionEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testTransaction(db)
 }
@@ -564,7 +654,6 @@ func testTransaction(db *Database) {
 
 func TestMultiLineStatement(t *testing.T) {
 	t.Skip("Make it work")
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	if db == nil {
 		return
@@ -579,13 +668,11 @@ func TestMultiLineStatement(t *testing.T) {
 }
 
 func TestPreparedStatementInTransaction(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testPreparedStatementInTransaction(db)
 }
 
 func TestPreparedStatementInTransactionEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testPreparedStatementInTransaction(db)
 }
@@ -608,13 +695,11 @@ func testPreparedStatementInTransaction(db *Database) {
 }
 
 func TestPreparedStatementInTransactionRollback(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testPreparedStatementInTransactionRollback(db)
 }
 
 func TestPreparedStatementInTransactionRollbackEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testPreparedStatementInTransactionRollback(db)
 }
@@ -637,13 +722,11 @@ func testPreparedStatementInTransactionRollback(db *Database) {
 }
 
 func TestCancelContext(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testCancelContext(db)
 }
 
 func TestCancelContextEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testCancelContext(db)
 }
@@ -664,13 +747,11 @@ func testCancelContext(db *Database) {
 }
 
 func TestCancelContextWithTransaction(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testCancelContextWithTransaction(db)
 }
 
 func TestCancelContextWithTransactionEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testCancelContextWithTransaction(db)
 }
@@ -702,13 +783,11 @@ func testCancelContextWithTransaction(db *Database) {
 }
 
 func TestTransactionRollback(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testTransactionRollback(db)
 }
 
 func TestTransactionRollbackEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testTransactionRollback(db)
 }
@@ -731,13 +810,11 @@ func testTransactionRollback(db *Database) {
 }
 
 func TestArguments(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testArguments(db)
 }
 
 func TestArgumentsEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testArguments(db)
 }
@@ -798,13 +875,11 @@ func testArguments(db *Database) {
 }
 
 func TestPing(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testPing(db)
 }
 
 func TestPingEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testPing(db)
 }
@@ -828,13 +903,11 @@ func testPing(db *Database) {
 }
 
 func TestDataTypes(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testDataTypes(db)
 }
 
 func TestDataTypesEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testDataTypes(db)
 }
@@ -881,13 +954,11 @@ func testDataTypes(db *Database) {
 }
 
 func TestConcurrentOnSingleConnection(t *testing.T) {
-	t.Parallel()
 	db := getRemoteDb(T{t})
 	testConcurrentOnSingleConnection(db)
 }
 
 func TestConcurrentOnSingleConnectionEmbedded(t *testing.T) {
-	t.Parallel()
 	db := getEmbeddedDb(T{t})
 	testConcurrentOnSingleConnection(db)
 }
@@ -969,7 +1040,6 @@ func testConcurrentOnSingleConnection(db *Database) {
 }
 
 func runFileTest(t *testing.T, test func(*testing.T, *sql.DB)) {
-	t.Parallel()
 	dir, err := os.MkdirTemp("", "libsql-*")
 	if err != nil {
 		t.Fatal(err)
