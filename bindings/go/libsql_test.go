@@ -65,8 +65,11 @@ func getEmbeddedDb(t T) *Database {
 		t.Fatal(err)
 	}
 	dbPath := dir + "/test.db"
-
-	connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, false, "")
+	options := []Option{WithReadYourWrites(false)}
+	if authToken != "" {
+		options = append(options, WithAuthToken(authToken))
+	}
+	connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, options...)
 	t.FatalOnError(err)
 	db := sql.OpenDB(connector)
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -456,7 +459,11 @@ func testSync(t *testing.T, connect func(dbPath, primaryUrl, authToken string) *
 func TestAutoSync(t *testing.T) {
 	syncInterval := 1 * time.Second
 	testSync(t, func(dbPath, primaryUrl, authToken string) *Connector {
-		connector, err := NewEmbeddedReplicaConnectorWithAutoSync(dbPath, primaryUrl, authToken, false, "", syncInterval)
+		options := []Option{WithReadYourWrites(false), WithAutoSync(syncInterval)}
+		if authToken != "" {
+			options = append(options, WithAuthToken(authToken))
+		}
+		connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, options...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -468,7 +475,11 @@ func TestAutoSync(t *testing.T) {
 
 func TestSync(t *testing.T) {
 	testSync(t, func(dbPath, primaryUrl, authToken string) *Connector {
-		connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, false, "")
+		options := []Option{WithReadYourWrites(false)}
+		if authToken != "" {
+			options = append(options, WithAuthToken(authToken))
+		}
+		connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, options...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -500,7 +511,11 @@ func TestEncryption(tt *testing.T) {
 	encryptionKey := "SuperSecretKey"
 	table := "test_" + fmt.Sprint(rand.Int()) + "_" + time.Now().Format("20060102150405")
 
-	connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, false, encryptionKey)
+	options := []Option{WithReadYourWrites(false)}
+	if authToken != "" {
+		options = append(options, WithAuthToken(authToken))
+	}
+	connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, append(options, WithEncryption(encryptionKey))...)
 	t.FatalOnError(err)
 	db := sql.OpenDB(connector)
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -522,7 +537,7 @@ func TestEncryption(tt *testing.T) {
 	t.FatalOnError(err)
 	err = connector.Close()
 	t.FatalOnError(err)
-	connector, err = NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, false, encryptionKey)
+	connector, err = NewEmbeddedReplicaConnector(dbPath, primaryUrl, append(options, WithEncryption(encryptionKey))...)
 	t.FatalOnError(err)
 	db = sql.OpenDB(connector)
 	rows, err := db.QueryContext(ctx, "SELECT * FROM "+table)
@@ -566,7 +581,7 @@ func TestEncryption(tt *testing.T) {
 	t.FatalOnError(err)
 	err = connector.Close()
 	t.FatalOnError(err)
-	connector, err = NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, false, "WrongKey")
+	connector, err = NewEmbeddedReplicaConnector(dbPath, primaryUrl, append(options, WithEncryption("WrongKey"))...)
 	if err == nil {
 		t.Fatal("using wrong encryption key should have failed")
 	}
@@ -593,6 +608,43 @@ func testExecAndQuery(db *Database) {
 	table.insertRows(0, 10)
 	table.insertRowsWithArgs(10, 10)
 	db.sync()
+	table.assertRowsCount(20)
+	table.assertRowDoesNotExist(20)
+	table.assertRowExists(0)
+	table.assertRowExists(19)
+}
+
+func TestReadYourWrites(tt *testing.T) {
+	t := T{tt}
+	primaryUrl := os.Getenv("LIBSQL_PRIMARY_URL")
+	if primaryUrl == "" {
+		t.Skip("LIBSQL_PRIMARY_URL is not set")
+		return
+	}
+	authToken := os.Getenv("LIBSQL_AUTH_TOKEN")
+	dir, err := os.MkdirTemp("", "libsql-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dbPath := dir + "/test.db"
+	options := []Option{}
+	if authToken != "" {
+		options = append(options, WithAuthToken(authToken))
+	}
+	connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, options...)
+	t.FatalOnError(err)
+	database := sql.OpenDB(connector)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	t.Cleanup(func() {
+		database.Close()
+		connector.Close()
+		cancel()
+		defer os.RemoveAll(dir)
+	})
+	db := &Database{database, connector, t, ctx}
+	table := db.createTable()
+	table.insertRows(0, 10)
+	table.insertRowsWithArgs(10, 10)
 	table.assertRowsCount(20)
 	table.assertRowDoesNotExist(20)
 	table.assertRowExists(0)

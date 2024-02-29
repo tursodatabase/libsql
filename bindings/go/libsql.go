@@ -19,6 +19,7 @@ import (
 	"context"
 	"database/sql"
 	sqldriver "database/sql/driver"
+	"errors"
 	"fmt"
 	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
 	"github.com/libsql/sqlite-antlr4-parser/sqliteparser"
@@ -35,11 +36,96 @@ func init() {
 	sql.Register("libsql", driver{})
 }
 
-func NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken string, readYourWrites bool, encryptionKey string) (*Connector, error) {
-	return openEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, readYourWrites, encryptionKey, 0)
+type config struct {
+	authToken      *string
+	readYourWrites *bool
+	encryptionKey  *string
+	syncInterval   *time.Duration
 }
 
-func NewEmbeddedReplicaConnectorWithAutoSync(dbPath, primaryUrl, authToken string, readYourWrites bool, encryptionKey string, syncInterval time.Duration) (*Connector, error) {
+type Option interface {
+	apply(*config) error
+}
+
+type option func(*config) error
+
+func (o option) apply(c *config) error {
+	return o(c)
+}
+
+func WithAuthToken(authToken string) Option {
+	return option(func(o *config) error {
+		if o.authToken != nil {
+			return fmt.Errorf("authToken already set")
+		}
+		if authToken == "" {
+			return fmt.Errorf("authToken must not be empty")
+		}
+		o.authToken = &authToken
+		return nil
+	})
+}
+
+func WithReadYourWrites(readYourWrites bool) Option {
+	return option(func(o *config) error {
+		if o.readYourWrites != nil {
+			return fmt.Errorf("read your writes already set")
+		}
+		o.readYourWrites = &readYourWrites
+		return nil
+	})
+}
+
+func WithEncryption(key string) Option {
+	return option(func(o *config) error {
+		if o.encryptionKey != nil {
+			return fmt.Errorf("encryption key already set")
+		}
+		if key == "" {
+			return fmt.Errorf("encryption key must not be empty")
+		}
+		o.encryptionKey = &key
+		return nil
+	})
+}
+
+func WithAutoSync(interval time.Duration) Option {
+	return option(func(o *config) error {
+		if o.syncInterval != nil {
+			return fmt.Errorf("auto sync already set")
+		}
+		o.syncInterval = &interval
+		return nil
+	})
+}
+
+func NewEmbeddedReplicaConnector(dbPath string, primaryUrl string, opts ...Option) (*Connector, error) {
+	var config config
+	errs := make([]error, 0, len(opts))
+	for _, opt := range opts {
+		if err := opt.apply(&config); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
+	}
+	authToken := ""
+	if config.authToken != nil {
+		authToken = *config.authToken
+	}
+	readYourWrites := true
+	if config.readYourWrites != nil {
+		readYourWrites = *config.readYourWrites
+	}
+	encryptionKey := ""
+	if config.encryptionKey != nil {
+		encryptionKey = *config.encryptionKey
+	}
+	syncInterval := time.Duration(0)
+	if config.syncInterval != nil {
+		syncInterval = *config.syncInterval
+	}
 	return openEmbeddedReplicaConnector(dbPath, primaryUrl, authToken, readYourWrites, encryptionKey, syncInterval)
 }
 
