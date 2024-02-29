@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, RwLock, Weak};
 
+use hdrhistogram::Histogram;
 use metrics::{counter, gauge, histogram, increment_counter};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap};
@@ -90,16 +91,23 @@ pub struct QueriesStats {
     stats_threshold: AtomicU64,
     #[serde(default)]
     stats: HashMap<String, QueryStats>,
+    #[serde(skip)]
+    hist: Option<Histogram<u32>>,
 }
 
 impl QueriesStats {
     fn new() -> Arc<RwLock<Self>> {
         let mut this = QueriesStats::default();
         this.id = Some(Uuid::new_v4());
+        this.hist = Histogram::<u32>::new(3).ok();
         Arc::new(RwLock::new(this))
     }
 
     fn register_query(&mut self, sql: &String, stat: QueryStats) {
+        if let Some(hist) = self.hist.as_mut() {
+            let _ = hist.record(stat.elapsed.as_millis() as u64);
+        }
+
         let (aggregated, new) = match self.stats.get(sql) {
             Some(aggregated) => (aggregated.merge(&stat), false),
             None => (stat, true),
