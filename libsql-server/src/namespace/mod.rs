@@ -33,10 +33,14 @@ use crate::connection::libsql::{open_conn, MakeLibSqlConn};
 use crate::connection::write_proxy::MakeWriteProxyConn;
 use crate::connection::Connection;
 use crate::connection::MakeConnection;
-use crate::database::{Database, DatabaseKind, PrimaryDatabase, ReplicaDatabase};
+use crate::database::{
+    Database, DatabaseKind, PrimaryConnectionMaker, PrimaryDatabase, ReplicaDatabase,
+    SchemaDatabase,
+};
 use crate::error::LoadDumpError;
 use crate::replication::script_backup_manager::ScriptBackupManager;
 use crate::replication::{FrameNo, ReplicationLogger};
+use crate::schema_migration::SchedulerHandle;
 use crate::stats::Stats;
 use crate::{
     run_periodic_checkpoint, StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT,
@@ -47,7 +51,7 @@ pub use fork::ForkError;
 use self::fork::{ForkTask, PointInTimeRestore};
 use self::meta_store::MetaStoreHandle;
 pub use self::name::NamespaceName;
-use self::replication_wal::make_replication_wal;
+use self::replication_wal::{make_replication_wal, ReplicationWalManager};
 pub use self::store::NamespaceStore;
 
 pub type ResetCb = Box<dyn Fn(ResetOp) + Send + Sync + 'static>;
@@ -98,6 +102,9 @@ impl Namespace {
         reset: ResetCb,
     ) -> crate::Result<Self> {
         match ns_config.db_kind {
+            DatabaseKind::Primary if db_config.get().is_shared_schema => {
+                Self::new_schema(ns_config, name.clone(), db_config, restore_option).await
+            }
             DatabaseKind::Primary => {
                 Self::new_primary(ns_config, name.clone(), db_config, restore_option).await
             }
@@ -223,22 +230,18 @@ impl Namespace {
         }
     }
 
-    async fn try_new_primary(
+    async fn make_primary_connection_maker(
         ns_config: &NamespaceConfig,
-        name: NamespaceName,
-        meta_store_handle: MetaStoreHandle,
+        meta_store_handle: &MetaStoreHandle,
+        db_path: &Path,
+        name: &NamespaceName,
         restore_option: RestoreOption,
-    ) -> crate::Result<Self> {
+        join_set: &mut JoinSet<anyhow::Result<()>>,
+    ) -> crate::Result<(PrimaryConnectionMaker, ReplicationWalManager, Arc<Stats>)> {
         let db_config = meta_store_handle.get();
-        let mut join_set = JoinSet::new();
-        let db_path = ns_config.base_path.join("dbs").join(name.as_str());
-
+        let bottomless_db_id = NamespaceBottomlessDbId::from_config(&db_config);
         // FIXME: figure how to to it per-db
         let mut is_dirty = ns_config.db_is_dirty;
-
-        tokio::fs::create_dir_all(&db_path).await?;
-
-        let bottomless_db_id = NamespaceBottomlessDbId::from_config(&db_config);
 
         // FIXME: due to a bug in logger::checkpoint_db we call regular checkpointing code
         // instead of our virtual WAL one. It's a bit tangled to fix right now, because
@@ -283,7 +286,7 @@ impl Namespace {
 
         let stats = make_stats(
             &db_path,
-            &mut join_set,
+            join_set,
             ns_config.stats_sender.clone(),
             name.clone(),
             logger.new_frame_notifier.subscribe(),
@@ -292,26 +295,24 @@ impl Namespace {
         .await?;
 
         let wal_manager = make_replication_wal(bottomless_replicator, logger.clone());
-        let connection_maker = Arc::new(
-            MakeLibSqlConn::new(
-                db_path.clone(),
-                wal_manager.clone(),
-                stats.clone(),
-                meta_store_handle.clone(),
-                ns_config.extensions.clone(),
-                ns_config.max_response_size,
-                ns_config.max_total_response_size,
-                auto_checkpoint,
-                logger.new_frame_notifier.subscribe(),
-                ns_config.encryption_config.clone(),
-            )
-            .await?
-            .throttled(
-                ns_config.max_concurrent_connections.clone(),
-                Some(DB_CREATE_TIMEOUT),
-                ns_config.max_total_response_size,
-                ns_config.max_concurrent_requests,
-            ),
+        let connection_maker = MakeLibSqlConn::new(
+            db_path.to_path_buf(),
+            wal_manager.clone(),
+            stats.clone(),
+            meta_store_handle.clone(),
+            ns_config.extensions.clone(),
+            ns_config.max_response_size,
+            ns_config.max_total_response_size,
+            auto_checkpoint,
+            logger.new_frame_notifier.subscribe(),
+            ns_config.encryption_config.clone(),
+        )
+        .await?
+        .throttled(
+            ns_config.max_concurrent_connections.clone(),
+            Some(DB_CREATE_TIMEOUT),
+            ns_config.max_total_response_size,
+            ns_config.max_concurrent_requests,
         );
 
         // this must happen after we create the connection maker. The connection maker old on a
@@ -334,6 +335,31 @@ impl Namespace {
         }
 
         join_set.spawn(run_periodic_compactions(logger.clone()));
+
+        Ok((connection_maker, wal_manager, stats))
+    }
+
+    async fn try_new_primary(
+        ns_config: &NamespaceConfig,
+        name: NamespaceName,
+        meta_store_handle: MetaStoreHandle,
+        restore_option: RestoreOption,
+    ) -> crate::Result<Self> {
+        let mut join_set = JoinSet::new();
+        let db_path = ns_config.base_path.join("dbs").join(name.as_str());
+
+        tokio::fs::create_dir_all(&db_path).await?;
+
+        let (connection_maker, wal_manager, stats) = Self::make_primary_connection_maker(
+            ns_config,
+            &meta_store_handle,
+            &db_path,
+            &name,
+            restore_option,
+            &mut join_set,
+        )
+        .await?;
+        let connection_maker = Arc::new(connection_maker);
 
         if let Some(checkpoint_interval) = ns_config.checkpoint_interval {
             join_set.spawn(run_periodic_checkpoint(
@@ -502,6 +528,9 @@ impl Namespace {
     ) -> crate::Result<Namespace> {
         let from_config = from_config.get();
         match ns_config.db_kind {
+            DatabaseKind::Primary if from_config.is_shared_schema => {
+                panic!("forking schema not supported");
+            }
             DatabaseKind::Primary => {
                 let bottomless_db_id = NamespaceBottomlessDbId::from_config(&from_config);
                 let restore_to = if let Some(timestamp) = timestamp {
@@ -546,6 +575,40 @@ impl Namespace {
             DatabaseKind::Replica => Err(ForkError::ForkReplica.into()),
         }
     }
+
+    async fn new_schema(
+        ns_config: &NamespaceConfig,
+        name: NamespaceName,
+        meta_store_handle: MetaStoreHandle,
+        restore_option: RestoreOption,
+    ) -> crate::Result<Namespace> {
+        let mut join_set = JoinSet::new();
+        let db_path = ns_config.base_path.join("dbs").join(name.as_str());
+
+        tokio::fs::create_dir_all(&db_path).await?;
+
+        let (connection_maker, _wal_manager, stats) = Self::make_primary_connection_maker(
+            ns_config,
+            &meta_store_handle,
+            &db_path,
+            &name,
+            restore_option,
+            &mut join_set,
+        )
+        .await?;
+
+        Ok(Namespace {
+            db: Database::Schema(SchemaDatabase::new(
+                ns_config.migration_scheduler.clone(),
+                name.clone(),
+                connection_maker,
+            )),
+            name,
+            tasks: join_set,
+            stats,
+            db_config_store: meta_store_handle,
+        })
+    }
 }
 
 pub struct NamespaceConfig {
@@ -574,6 +637,7 @@ pub struct NamespaceConfig {
     // primary only config
     pub(crate) bottomless_replication: Option<bottomless::replicator::Options>,
     pub(crate) scripted_backup: Option<ScriptBackupManager>,
+    pub(crate) migration_scheduler: SchedulerHandle,
 }
 
 pub type DumpStream =

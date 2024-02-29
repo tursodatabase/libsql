@@ -8,7 +8,7 @@ use sqlite3_parser::lexer::sql::{Parser, ParserError};
 use crate::namespace::NamespaceName;
 
 /// A group of statements to be executed together.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Statement {
     pub stmt: String,
     pub kind: StmtKind,
@@ -26,7 +26,7 @@ impl Default for Statement {
 }
 
 /// Classify statement in categories of interest.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum StmtKind {
     /// The beginning of a transaction
     TxnBegin,

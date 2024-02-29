@@ -46,7 +46,7 @@ impl TryFrom<rusqlite::types::ValueRef<'_>> for Value {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Query {
     pub stmt: Statement,
     pub params: Params,
@@ -67,7 +67,7 @@ impl ToSql for Value {
     }
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum Params {
     Named(HashMap<String, Value>),
     Positional(Vec<Value>),
