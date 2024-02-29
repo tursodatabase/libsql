@@ -44,8 +44,6 @@ pub enum Error {
     InvalidUTF8Path,
     #[error("freeze is not supported in {0} mode.")]
     FreezeNotSupported(String),
-    #[error("Unable to create directory: {0}")]
-    UnableToCreateDirAll(std::io::Error),
 }
 
 #[cfg(feature = "hrana")]
