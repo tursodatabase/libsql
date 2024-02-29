@@ -63,7 +63,7 @@ impl Authenticated {
             Authenticated::Authorized(a) => {
                 if !a.has_right(Scope::Namespace(namespace.clone()), perm) {
                     Err(crate::Error::NotAuthorized(format!(
-                                "Current session doest not have {perm:?} permission to namespace {namespace}")))
+                                "Current session doesn't not have {perm:?} permission to namespace {namespace}")))
                 } else {
                     Ok(())
                 }

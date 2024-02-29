@@ -125,7 +125,10 @@ impl StmtKind {
                 savepoint_name: Some(_),
                 ..
             }) => Some(Self::Release),
-            Cmd::Stmt(Stmt::Attach { db_name, .. }) => Some(Self::Attach(
+            Cmd::Stmt(Stmt::Attach {
+                expr: Expr::Id(Id(db_name)),
+                ..
+            }) => Some(Self::Attach(
                 NamespaceName::from_string(db_name.to_string()).ok()?,
             )),
             Cmd::Stmt(Stmt::Detach(_)) => Some(Self::Detach),
