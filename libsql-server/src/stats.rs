@@ -89,9 +89,9 @@ pub struct QueriesStats {
     #[serde(default)]
     id: Option<Uuid>,
     #[serde(default)]
-    stats_threshold: AtomicU64,
-    #[serde(default)]
     stats: HashMap<String, QueryStats>,
+    #[serde(skip)]
+    stats_threshold: u64,
     #[serde(skip)]
     hist: Option<Histogram<u32>>,
     #[serde(skip)]
@@ -118,7 +118,7 @@ impl QueriesStats {
         };
 
         debug!("query: {}, elapsed: {:?}", sql, aggregated.elapsed);
-        if (aggregated.elapsed.as_micros() as u64) < self.stats_threshold.load(Ordering::Relaxed) {
+        if (aggregated.elapsed.as_micros() as u64) < self.stats_threshold {
             return;
         }
 
@@ -143,8 +143,7 @@ impl QueriesStats {
 
     fn update_threshold(&mut self) {
         if let Some((_, v)) = self.min() {
-            self.stats_threshold
-                .store(v.elapsed.as_micros() as u64, Ordering::Relaxed);
+            self.stats_threshold = v.elapsed.as_micros() as u64;
         }
     }
 
