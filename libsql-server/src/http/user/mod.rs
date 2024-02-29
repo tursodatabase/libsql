@@ -29,7 +29,7 @@ use tonic::transport::Server;
 
 use tower_http::{compression::CompressionLayer, cors};
 
-use crate::auth::user_auth_strategies::UserAuthContext;
+use crate::auth::parsers::auth_string_to_auth_context;
 use crate::auth::{Auth, Authenticated, Jwt};
 use crate::connection::{Connection, RequestContext};
 use crate::database::Database;
@@ -492,15 +492,15 @@ where
             .with(ns.clone(), |ns| ns.jwt_key())
             .await??;
 
-        let auth_header = parts.headers.get(hyper::header::AUTHORIZATION);
+        let header = parts.headers.get(hyper::header::AUTHORIZATION).context("auth header not found")?;
+        let header_str = header.to_str().context("non ASCII auth token")?;
+        let context = auth_string_to_auth_context(header_str).context("auth header parsing failed")?;
 
         let auth = namespace_jwt_key
             .map(Jwt::new)
             .map(Auth::new)
             .unwrap_or_else(|| state.user_auth_strategy.clone())
-            .authenticate(UserAuthContext {
-                user_credential: auth_header.cloned(),
-            })?;
+            .authenticate(context)?;
 
         Ok(auth)
     }

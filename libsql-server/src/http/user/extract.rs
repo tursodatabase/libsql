@@ -1,7 +1,8 @@
+use anyhow::Context;
 use axum::extract::FromRequestParts;
 
 use crate::{
-    auth::{Jwt, UserAuthContext, UserAuthStrategy},
+    auth::{parsers::auth_string_to_auth_context, Jwt, Auth},
     connection::RequestContext,
     namespace::MakeNamespace,
 };
@@ -19,6 +20,8 @@ where
         parts: &mut axum::http::request::Parts,
         state: &AppState<F>,
     ) -> std::result::Result<Self, Self::Rejection> {
+
+        // start todo this block is same as the one in mod.rs
         let namespace = db_factory::namespace_from_headers(
             &parts.headers,
             state.disable_default_namespace,
@@ -30,16 +33,17 @@ where
             .with(namespace.clone(), |ns| ns.jwt_key())
             .await??;
 
-        let auth_header = parts.headers.get(hyper::header::AUTHORIZATION);
+        let header = parts.headers.get(hyper::header::AUTHORIZATION).context("auth header not found")?;
+        let header_str = header.to_str().context("non ASCII auth token")?;
+        let context = auth_string_to_auth_context(header_str).context("auth header parsing failed")?;
 
-        let auth = match namespace_jwt_key {
-            Some(key) => Jwt::new(key).authenticate(UserAuthContext {
-                user_credential: auth_header.cloned(),
-            })?,
-            None => state.user_auth_strategy.authenticate(UserAuthContext {
-                user_credential: auth_header.cloned(),
-            })?,
-        };
+        let auth = namespace_jwt_key
+        .map(Jwt::new)
+        .map(Auth::new)
+        .unwrap_or_else(|| state.user_auth_strategy.clone())
+        .authenticate(context)?;
+
+    // end todo
 
         Ok(Self::new(auth, namespace, state.namespaces.meta_store()))
     }

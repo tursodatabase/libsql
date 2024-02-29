@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 
 use crate::{
-    auth::{parse_http_auth_header, AuthError, Authenticated, Authorized, Permission},
+    auth::{AuthError, Authenticated, Authorized, Permission},
     namespace::NamespaceName,
 };
 
@@ -14,8 +14,20 @@ pub struct Jwt {
 impl UserAuthStrategy for Jwt {
     fn authenticate(&self, context: UserAuthContext) -> Result<Authenticated, AuthError> {
         tracing::trace!("executing jwt auth");
-        let param = parse_http_auth_header("bearer", &context.user_credential)?;
-        validate_jwt(&self.key, param)
+
+        let Some(scheme) = context.scheme else {
+            return Err(AuthError::HttpAuthHeaderInvalid);
+        };
+
+        if !scheme.eq_ignore_ascii_case("bearer") {
+            return Err(AuthError::HttpAuthHeaderUnsupportedScheme);
+        }
+
+        let Some(token) = context.token else {
+            return Err(AuthError::HttpAuthHeaderInvalid);
+        };
+
+        return validate_jwt(&self.key, &token);
     }
 }
 
@@ -106,7 +118,6 @@ fn validate_jwt(
 mod tests {
     use std::time::Duration;
 
-    use axum::http::HeaderValue;
     use jsonwebtoken::{DecodingKey, EncodingKey};
     use ring::signature::{Ed25519KeyPair, KeyPair};
     use serde::Serialize;
@@ -145,7 +156,8 @@ mod tests {
         let token = encode(&token, &enc);
 
         let context = UserAuthContext {
-            user_credential: HeaderValue::from_str(&format!("Bearer {token}")).ok(),
+            scheme: Some("bearer".into()),
+            token: token.into(),
         };
 
         assert!(matches!(
@@ -166,7 +178,8 @@ mod tests {
         let token = encode(&token, &enc);
 
         let context = UserAuthContext {
-            user_credential: HeaderValue::from_str(&format!("Bearer {token}")).ok(),
+            scheme: Some("bearer".into()),
+            token: token.into(),
         };
 
         let Authenticated::Authorized(a) = strategy(dec).authenticate(context).unwrap() else {
@@ -185,7 +198,8 @@ mod tests {
     fn errors_when_jwt_token_invalid() {
         let (_enc, dec) = key_pair();
         let context = UserAuthContext {
-            user_credential: HeaderValue::from_str("Bearer abc").ok(),
+            scheme: Some("bearer".into()),
+            token: Some("abc".into()),
         };
 
         assert_eq!(
@@ -207,7 +221,8 @@ mod tests {
         let token = encode(&token, &enc);
 
         let context = UserAuthContext {
-            user_credential: HeaderValue::from_str(&format!("Bearer {token}")).ok(),
+            scheme: Some("bearer".into()),
+            token: Some(token.into()),
         };
 
         assert_eq!(
@@ -231,7 +246,8 @@ mod tests {
         let token = encode(&token, &enc);
 
         let context = UserAuthContext {
-            user_credential: HeaderValue::from_str(&format!("Bearer {token}")).ok(),
+            scheme: Some("bearer".into()),
+            token: token.into(),
         };
 
         let Authenticated::Authorized(a) = strategy(dec).authenticate(context).unwrap() else {

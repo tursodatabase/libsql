@@ -24,7 +24,8 @@ mod tests {
     fn authenticates() {
         let strategy = Disabled::new();
         let context = UserAuthContext {
-            user_credential: None,
+            scheme: None,
+            token: None,
         };
 
         assert!(matches!(

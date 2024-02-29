@@ -4,6 +4,8 @@ use anyhow::{bail, Context as _, Result};
 use axum::http::HeaderValue;
 use tonic::metadata::MetadataMap;
 
+use super::UserAuthContext;
+
 pub fn parse_http_basic_auth_arg(arg: &str) -> Result<Option<String>> {
     if arg == "always" {
         return Ok(None);
@@ -34,12 +36,28 @@ pub fn parse_jwt_key(data: &str) -> Result<jsonwebtoken::DecodingKey> {
     }
 }
 
-pub(crate) fn parse_grpc_auth_header(metadata: &MetadataMap) -> Option<HeaderValue> {
-    metadata
-        .get(GRPC_AUTH_HEADER)
-        .map(|v| v.to_bytes().expect("Auth should always be ASCII"))
-        .map(|v| HeaderValue::from_maybe_shared(v).expect("Should already be valid header"))
+pub(crate) fn parse_grpc_auth_header(metadata: &MetadataMap) -> Result<UserAuthContext, tonic::Status> {
+
+    metadata.get(GRPC_AUTH_HEADER)
+        .map(|v| v.to_str().expect("Auth should be ASCII")) // fixme we should not use expect
+        .and_then(|auth_str| auth_string_to_auth_context(auth_str).ok())
+        .context("Failed to parse grpc auth header")
+        .map_err(|err| tonic::Status::new(tonic::Code::InvalidArgument, format!("{}", err)))
 }
+
+// todo this should be a constructor or a factory associates iwth userauthcontext
+pub fn auth_string_to_auth_context(
+    auth_string: &str,
+) -> Result<UserAuthContext> {
+
+    let(scheme, token) = auth_string.split_once(' ').context("malformed auth header string")?;
+    
+    Ok(UserAuthContext{
+        scheme: Some(scheme.into()), 
+        token: Some(token.into()),
+    })
+}
+
 
 pub fn parse_http_auth_header<'a>(
     expected_scheme: &str,
@@ -112,3 +130,4 @@ mod tests {
         )
     }
 }
+

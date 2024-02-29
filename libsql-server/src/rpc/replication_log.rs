@@ -19,7 +19,6 @@ use tonic::transport::server::TcpConnectInfo;
 use tonic::Status;
 use uuid::Uuid;
 
-use crate::auth::user_auth_strategies::UserAuthContext;
 use crate::auth::Jwt;
 use crate::auth::{parsers::parse_grpc_auth_header, Auth};
 use crate::connection::config::DatabaseConfig;
@@ -77,8 +76,7 @@ impl ReplicationLogService {
             .with(namespace.clone(), |ns| ns.jwt_key())
             .await;
 
-        let user_credential = parse_grpc_auth_header(req.metadata());
-
+        
         let auth = match namespace_jwt_key {
             Ok(Ok(Some(key))) => Some(Auth::new(Jwt::new(key))),
             Ok(Ok(None)) => self.user_auth_strategy.clone(),
@@ -94,9 +92,10 @@ impl ReplicationLogService {
                 e
             )))?,
         };
-
+        
+        let user_credential = parse_grpc_auth_header(req.metadata())?;
         if let Some(auth) = auth {
-            auth.authenticate(UserAuthContext { user_credential })?;
+            auth.authenticate(user_credential)?;
         }
 
         Ok(())

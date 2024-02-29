@@ -8,7 +8,7 @@ use tonic::{transport::Channel, Request, Status};
 
 use crate::{
     auth::{
-        parsers::parse_grpc_auth_header, user_auth_strategies::UserAuthContext, Auth, Jwt,
+        parsers::parse_grpc_auth_header, Auth, Jwt,
         UserAuthStrategy,
     },
     namespace::{NamespaceStore, ReplicaNamespaceMaker},
@@ -46,12 +46,13 @@ impl ReplicaProxyService {
             .with(namespace.clone(), |ns| ns.jwt_key())
             .await;
 
-        let user_credential = parse_grpc_auth_header(req.metadata());
+            //todo julian figure this out
+        let auth_context = parse_grpc_auth_header(req.metadata())?;
 
         match namespace_jwt_key {
             Ok(Ok(Some(key))) => {
                 let authenticated =
-                    Jwt::new(key).authenticate(UserAuthContext { user_credential })?;
+                    Jwt::new(key).authenticate(auth_context)?;
                 authenticated.upgrade_grpc_request(req);
 
                 Ok(())
@@ -59,7 +60,7 @@ impl ReplicaProxyService {
             Ok(Ok(None)) => {
                 let authenticated = self
                     .user_auth_strategy
-                    .authenticate(UserAuthContext { user_credential })?;
+                    .authenticate(auth_context)?;
 
                 authenticated.upgrade_grpc_request(req);
                 Ok(())
@@ -68,7 +69,7 @@ impl ReplicaProxyService {
                 crate::error::Error::NamespaceDoesntExist(_) => {
                     let authenticated = self
                         .user_auth_strategy
-                        .authenticate(UserAuthContext { user_credential })?;
+                        .authenticate(auth_context)?;
 
                     authenticated.upgrade_grpc_request(req);
                     Ok(())
