@@ -512,6 +512,14 @@ func (c *conn) execute(query string, args []sqldriver.NamedValue) (C.libsql_rows
 			C.free(unsafe.Pointer(valueStr))
 		case nil:
 			statusCode = C.libsql_bind_null(stmt, C.int(idx), &errMsg)
+		case bool:
+			var valueInt int
+			if arg.Value.(bool) {
+				valueInt = 1
+			} else {
+				valueInt = 0
+			}
+			statusCode = C.libsql_bind_int(stmt, C.int(idx), C.longlong(valueInt), &errMsg)
 		default:
 			return nil, fmt.Errorf("unsupported type %T", arg.Value)
 		}
