@@ -181,6 +181,34 @@ fn attach_auth() {
         // succeeds!
         assert_debug_snapshot!(rows.next().await);
 
+        // mixed claims
+        let claims = serde_json::json!({
+            "id": "foo",
+            "p": {
+                "roa": {
+                    "ns": ["bar"]
+                }
+            }
+        });
+        let token = encode(&claims, &enc);
+
+        let foo_db = Database::open_remote_with_connector(
+            "http://foo.primary:8080",
+            &token,
+            TurmoilConnector,
+        )?;
+        let foo_conn = foo_db.connect().unwrap();
+        let txn = foo_conn.transaction().await.unwrap();
+        txn.execute("ATTACH DATABASE bar as attached", ())
+            .await
+            .unwrap();
+        let mut rows = txn
+            .query("SELECT * FROM attached.bar_table", ())
+            .await
+            .unwrap();
+        // succeeds!
+        assert_debug_snapshot!(rows.next().await);
+
         Ok(())
     });
 
