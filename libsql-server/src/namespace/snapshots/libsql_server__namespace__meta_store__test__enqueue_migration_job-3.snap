@@ -1,0 +1,24 @@
+---
+source: libsql-server/src/namespace/meta_store.rs
+expression: rows.next().unwrap().unwrap()
+---
+{
+    Ok(
+        "job",
+    ): (
+        Integer,
+        1,
+    ),
+    Ok(
+        "target_namespace",
+    ): (
+        Text,
+        "ns3",
+    ),
+    Ok(
+        "status",
+    ): (
+        Text,
+        "enqueued",
+    ),
+}

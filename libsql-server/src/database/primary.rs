@@ -11,7 +11,7 @@ use crate::replication::primary::replication_logger_wal::ReplicationLoggerWalMan
 use super::Result;
 
 pub type PrimaryConnection = TrackedConnection<LibSqlConnection<ReplicationWal>>;
-type PrimaryConnectionMaker = MakeThrottledConnection<
+pub type PrimaryConnectionMaker = MakeThrottledConnection<
     MakeLibSqlConn<WalWrapper<Option<BottomlessWalWrapper>, ReplicationLoggerWalManager>>,
 >;
 
