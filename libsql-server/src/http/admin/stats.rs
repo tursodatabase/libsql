@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use hdrhistogram::Histogram;
 use itertools::Itertools;
 use serde::Serialize;
 
@@ -55,7 +56,7 @@ impl From<&Stats> for StatsResponse {
                 .iter()
                 .cloned()
                 .collect(),
-            queries: QueriesStatsResponse::from(stats),
+            queries: stats.into(),
         }
     }
 }
@@ -76,6 +77,19 @@ pub struct QueriesStatsPercentiles {
     pub p999: u64,
 }
 
+impl From<&Histogram<u32>> for QueriesStatsPercentiles {
+    fn from(hist: &Histogram<u32>) -> Self {
+        QueriesStatsPercentiles {
+            p50: hist.value_at_percentile(50.0),
+            p75: hist.value_at_percentile(75.0),
+            p90: hist.value_at_percentile(90.0),
+            p95: hist.value_at_percentile(95.0),
+            p99: hist.value_at_percentile(99.0),
+            p999: hist.value_at_percentile(99.9),
+        }
+    }
+}
+
 #[derive(Serialize)]
 pub struct QueriesStatsResponse {
     pub id: Option<Uuid>,
@@ -88,6 +102,7 @@ impl From<&Stats> for QueriesStatsResponse {
         let queries = stats.get_queries().read().unwrap();
         Self {
             id: queries.id(),
+            quantiles: queries.hist().as_ref().map(|h| h.into()),
             stats: queries
                 .stats()
                 .iter()
@@ -97,16 +112,6 @@ impl From<&Stats> for QueriesStatsResponse {
                     stat: v.clone(),
                 })
                 .collect_vec(),
-            quantiles: queries.hist().as_ref().map_or(None, |hist| {
-                Some(QueriesStatsPercentiles {
-                    p50: hist.value_at_percentile(50.0),
-                    p75: hist.value_at_percentile(75.0),
-                    p90: hist.value_at_percentile(90.0),
-                    p95: hist.value_at_percentile(95.0),
-                    p99: hist.value_at_percentile(99.0),
-                    p999: hist.value_at_percentile(99.9),
-                })
-            }),
         }
     }
 }
