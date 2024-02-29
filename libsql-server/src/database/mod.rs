@@ -3,11 +3,13 @@ use std::sync::Arc;
 
 use crate::connection::{MakeConnection, RequestContext};
 
-pub use self::primary::{PrimaryConnection, PrimaryDatabase};
+pub use self::primary::{PrimaryConnection, PrimaryConnectionMaker, PrimaryDatabase};
 pub use self::replica::{ReplicaConnection, ReplicaDatabase};
+pub use self::schema::{SchemaConnection, SchemaDatabase};
 
 mod primary;
 mod replica;
+mod schema;
 
 #[derive(Debug, Clone, serde::Deserialize, Copy)]
 #[serde(rename_all = "snake_case")]
@@ -39,6 +41,7 @@ pub type Result<T> = anyhow::Result<T>;
 pub enum Connection {
     Primary(PrimaryConnection),
     Replica(ReplicaConnection),
+    Schema(SchemaConnection),
 }
 
 impl fmt::Debug for Connection {
@@ -46,6 +49,7 @@ impl fmt::Debug for Connection {
         match self {
             Self::Primary(_) => write!(f, "Primary"),
             Self::Replica(_) => write!(f, "Replica"),
+            Self::Schema(_) => write!(f, "Schema"),
         }
     }
 }
@@ -78,6 +82,10 @@ impl crate::connection::Connection for Connection {
                 conn.execute_program(pgm, ctx, response_builder, replication_index)
                     .await
             }
+            Connection::Schema(conn) => {
+                conn.execute_program(pgm, ctx, response_builder, replication_index)
+                    .await
+            }
         }
     }
 
@@ -90,6 +98,7 @@ impl crate::connection::Connection for Connection {
         match self {
             Connection::Primary(conn) => conn.describe(sql, ctx, replication_index).await,
             Connection::Replica(conn) => conn.describe(sql, ctx, replication_index).await,
+            Connection::Schema(conn) => conn.describe(sql, ctx, replication_index).await,
         }
     }
 
@@ -97,6 +106,7 @@ impl crate::connection::Connection for Connection {
         match self {
             Connection::Primary(conn) => conn.is_autocommit().await,
             Connection::Replica(conn) => conn.is_autocommit().await,
+            Connection::Schema(conn) => conn.is_autocommit().await,
         }
     }
 
@@ -104,6 +114,7 @@ impl crate::connection::Connection for Connection {
         match self {
             Connection::Primary(conn) => conn.checkpoint().await,
             Connection::Replica(conn) => conn.checkpoint().await,
+            Connection::Schema(conn) => conn.checkpoint().await,
         }
     }
 
@@ -111,6 +122,7 @@ impl crate::connection::Connection for Connection {
         match self {
             Connection::Primary(conn) => conn.vacuum_if_needed().await,
             Connection::Replica(conn) => conn.vacuum_if_needed().await,
+            Connection::Schema(conn) => conn.vacuum_if_needed().await,
         }
     }
 
@@ -118,6 +130,7 @@ impl crate::connection::Connection for Connection {
         match self {
             Connection::Primary(conn) => conn.diagnostics(),
             Connection::Replica(conn) => conn.diagnostics(),
+            Connection::Schema(conn) => conn.diagnostics(),
         }
     }
 }
@@ -125,6 +138,7 @@ impl crate::connection::Connection for Connection {
 pub enum Database {
     Primary(PrimaryDatabase),
     Replica(ReplicaDatabase),
+    Schema(SchemaDatabase),
 }
 
 impl fmt::Debug for Database {
@@ -132,6 +146,7 @@ impl fmt::Debug for Database {
         match self {
             Self::Primary(_) => write!(f, "Primary"),
             Self::Replica(_) => write!(f, "Replica"),
+            Database::Schema(_) => write!(f, "Schema"),
         }
     }
 }
@@ -141,6 +156,7 @@ impl Database {
         match self {
             Database::Primary(db) => Arc::new(db.connection_maker().map(Connection::Primary)),
             Database::Replica(db) => Arc::new(db.connection_maker().map(Connection::Replica)),
+            Database::Schema(db) => Arc::new(db.connection_maker().map(Connection::Schema)),
         }
     }
 
@@ -148,6 +164,7 @@ impl Database {
         match self {
             Database::Primary(db) => db.destroy(),
             Database::Replica(db) => db.destroy(),
+            Database::Schema(db) => db.destroy(),
         }
     }
 
@@ -155,6 +172,7 @@ impl Database {
         match self {
             Database::Primary(db) => db.shutdown().await,
             Database::Replica(db) => db.shutdown().await,
+            Database::Schema(db) => db.shutdown().await,
         }
     }
 

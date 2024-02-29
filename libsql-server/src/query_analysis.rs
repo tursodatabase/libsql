@@ -8,7 +8,7 @@ use sqlite3_parser::lexer::sql::{Parser, ParserError};
 use crate::namespace::NamespaceName;
 
 /// A group of statements to be executed together.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Statement {
     pub stmt: String,
     pub kind: StmtKind,
@@ -26,7 +26,7 @@ impl Default for Statement {
 }
 
 /// Classify statement in categories of interest.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum StmtKind {
     /// The beginning of a transaction
     TxnBegin,
@@ -125,7 +125,10 @@ impl StmtKind {
                 savepoint_name: Some(_),
                 ..
             }) => Some(Self::Release),
-            Cmd::Stmt(Stmt::Attach { db_name, .. }) => Some(Self::Attach(
+            Cmd::Stmt(Stmt::Attach {
+                expr: Expr::Id(Id(db_name)),
+                ..
+            }) => Some(Self::Attach(
                 NamespaceName::from_string(db_name.to_string()).ok()?,
             )),
             Cmd::Stmt(Stmt::Detach(_)) => Some(Self::Detach),

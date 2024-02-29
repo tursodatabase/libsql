@@ -266,6 +266,10 @@ where
     pub fn is_autocommit(&self) -> bool {
         self.inner.is_autocommit.load(Ordering::SeqCst)
     }
+
+    pub async fn reset(&self) {
+        (*self.inner).stream.lock().await.reset();
+    }
 }
 
 #[derive(Debug)]

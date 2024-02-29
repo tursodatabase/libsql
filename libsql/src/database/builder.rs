@@ -52,7 +52,7 @@ impl Builder<()> {
                         version: None,
                     },
                     encryption_config: None,
-                    read_your_writes: false,
+                    read_your_writes: true,
                     periodic_sync: None,
                     http_request_callback: None
                 },
@@ -194,6 +194,10 @@ cfg_replication! {
 
         /// Set weather you want writes to be visible locally before the write query returns. This
         /// means that you will be able to read your own writes if this is set to `true`.
+        ///
+        /// # Default
+        ///
+        /// This defaults to `true`.
         pub fn read_your_writes(mut self, read_your_writes: bool) -> Builder<RemoteReplica> {
             self.inner.read_your_writes = read_your_writes;
             self

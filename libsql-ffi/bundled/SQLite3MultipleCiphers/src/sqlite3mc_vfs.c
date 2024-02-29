@@ -353,9 +353,15 @@ SQLITE_PRIVATE void sqlite3mcSetCodec(sqlite3* db, const char* zDbName, const ch
 ** This function returns a pointer to a buffer containing the encrypted
 ** page content. If a malloc fails, this function may return NULL.
 */
-void* libsql_pager_codec_impl(libsql_pghdr* pPg)
+int libsql_pager_codec_impl(libsql_pghdr* pPg, void **ret)
 {
+  int rc = SQLITE_NOMEM;
+  if (!pPg || !pPg->pPager) {
+    return SQLITE_MISUSE_BKPT;
+  }
+
   sqlite3_file* pFile = sqlite3PagerFile(pPg->pPager);
+
   void* aData = 0;
   if (pFile->pMethods == &mcIoMethodsGlobal1 || 
       pFile->pMethods == &mcIoMethodsGlobal2 || 
@@ -376,7 +382,12 @@ void* libsql_pager_codec_impl(libsql_pghdr* pPg)
   {
     aData = (char*) pPg->pData;
   }
-  return aData;
+
+  if (aData) {
+    *ret = aData;
+    rc = SQLITE_OK;
+  }
+  return rc;
 }
 
 /*

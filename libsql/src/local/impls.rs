@@ -48,17 +48,19 @@ impl Conn for LibsqlConnection {
         })
     }
 
-    fn is_autocommit(&self) -> bool {
+    async fn is_autocommit(&self) -> bool {
         self.conn.is_autocommit()
     }
 
-    fn changes(&self) -> u64 {
+    async fn changes(&self) -> u64 {
         self.conn.changes()
     }
 
-    fn last_insert_rowid(&self) -> i64 {
+    async fn last_insert_rowid(&self) -> i64 {
         self.conn.last_insert_rowid()
     }
+
+    async fn reset(&self) {}
 }
 
 impl Drop for LibsqlConnection {
