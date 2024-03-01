@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, RwLock, Weak};
 
+use chrono::{DateTime, DurationRound, Utc};
 use hdrhistogram::Histogram;
 use metrics::{counter, gauge, histogram, increment_counter};
 use serde::{Deserialize, Serialize};
@@ -9,7 +10,7 @@ use std::collections::{BTreeSet, HashMap};
 use tokio::io::AsyncWriteExt;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
-use tokio::time::Duration;
+use tokio::time::{Duration, Instant};
 use tracing::debug;
 use uuid::Uuid;
 
@@ -93,14 +94,17 @@ pub struct QueriesStats {
     stats: HashMap<String, QueryStats>,
     #[serde(skip)]
     hist: Option<Histogram<u32>>,
+    #[serde(skip)]
+    expires_at: Option<Instant>,
 }
 
 impl QueriesStats {
-    fn new() -> Arc<RwLock<Self>> {
+    fn new(expires_at: Instant) -> Self {
         let mut this = QueriesStats::default();
         this.id = Some(Uuid::new_v4());
         this.hist = Histogram::<u32>::new(3).ok();
-        Arc::new(RwLock::new(this))
+        this.expires_at = Some(expires_at);
+        this
     }
 
     fn register_query(&mut self, sql: &String, stat: QueryStats) {
@@ -161,6 +165,10 @@ impl QueriesStats {
 
     pub(crate) fn hist(&self) -> &Option<Histogram<u32>> {
         &self.hist
+    }
+
+    pub(crate) fn expired(&self) -> bool {
+        self.expires_at.map_or(false, |exp| exp < Instant::now())
     }
 }
 
@@ -233,7 +241,7 @@ impl Stats {
 
         let (update_sender, update_receiver) = mpsc::channel(256);
 
-        this.queries = QueriesStats::new();
+        this.queries = Arc::new(RwLock::new(QueriesStats::new(next_hour())));
         this.namespace = namespace;
         this.sender = Some(update_sender);
 
@@ -397,7 +405,11 @@ impl Stats {
     }
 
     fn register_query(&self, sql: &String, stat: QueryStats) {
-        self.queries.write().unwrap().register_query(sql, stat)
+        let mut queries = self.queries.write().unwrap();
+        if queries.expired() {
+            *queries = QueriesStats::new(next_hour());
+        }
+        queries.register_query(sql, stat)
     }
 
     fn add_top_query(&self, query: TopQuery) {
@@ -503,4 +515,12 @@ async fn try_persist_stats(stats: Weak<Stats>, path: &Path) -> anyhow::Result<()
     file.flush().await?;
     tokio::fs::rename(temp_path, path).await?;
     Ok(())
+}
+
+fn next_hour() -> Instant {
+    let utc_now = Utc::now();
+    let next_hour = (utc_now + chrono::Duration::hours(1))
+        .duration_trunc(chrono::Duration::hours(1))
+        .unwrap();
+    Instant::now() + (next_hour - utc_now).to_std().unwrap()
 }

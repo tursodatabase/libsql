@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use hdrhistogram::Histogram;
 use itertools::Itertools;
@@ -90,7 +91,7 @@ impl From<&Histogram<u32>> for QueriesStatsPercentiles {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Default)]
 pub struct QueriesStatsResponse {
     pub id: Option<Uuid>,
     pub stats: Vec<QueryAndStats>,
@@ -100,6 +101,9 @@ pub struct QueriesStatsResponse {
 impl From<&Stats> for QueriesStatsResponse {
     fn from(stats: &Stats) -> Self {
         let queries = stats.get_queries().read().unwrap();
+        if queries.expired() {
+            return Self::default();
+        }
         Self {
             id: queries.id(),
             quantiles: queries.hist().as_ref().map(|h| h.into()),
