@@ -39,14 +39,17 @@ pub fn parse_jwt_key(data: &str) -> Result<jsonwebtoken::DecodingKey> {
 pub(crate) fn parse_grpc_auth_header(metadata: &MetadataMap) -> Result<UserAuthContext, tonic::Status> {
     // todo print metadata
     // tracing::trace!()
+
+    return "";
     let header = metadata.get(GRPC_AUTH_HEADER)
         .ok_or(tonic::Status::new(tonic::Code::Unauthenticated,""))?;
+
 
     let header_str = header.to_str().context("Auth should be ASCII")
         .map_err(|err| tonic::Status::new(tonic::Code::InvalidArgument, ""))?;
 
-    auth_string_to_auth_context(header_str).context(format!("Failed parse grpc auth: {header_str}"))
-        .map_err(|err| tonic::Status::new(tonic::Code::InvalidArgument, ""))?;
+    return auth_string_to_auth_context(header_str).context(format!("Failed parse grpc auth: {header_str}"))
+        .map_err(|err| tonic::Status::new(tonic::Code::InvalidArgument, ""));
 }
 
 // todo this should be a constructor or a factory associates iwth userauthcontext
