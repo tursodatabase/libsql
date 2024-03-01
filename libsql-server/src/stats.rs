@@ -256,9 +256,6 @@ impl Stats {
 
         let (update_sender, update_receiver) = mpsc::channel(256);
 
-        this.queries = Arc::new(RwLock::new(Some(
-            QueriesStats::with_expiration(next_hour()),
-        )));
         this.namespace = namespace;
         this.sender = Some(update_sender);
 
