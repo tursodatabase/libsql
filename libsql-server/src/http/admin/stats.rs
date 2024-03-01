@@ -106,24 +106,25 @@ impl From<&Stats> for Option<QueriesStatsResponse> {
     fn from(stats: &Stats) -> Self {
         let queries = stats.get_queries().read().unwrap();
         if queries.as_ref().map_or(true, |q| q.expired()) {
-            return Self::default();
+            Self::default()
+        } else {
+            let queries = queries.as_ref().unwrap();
+            Some(QueriesStatsResponse {
+                id: queries.id(),
+                created_at: queries.created_at().timestamp() as u64,
+                count: queries.count(),
+                elapsed: QueriesLatencyStats::from(queries.hist(), &queries.elapsed()),
+                stats: queries
+                    .stats()
+                    .iter()
+                    .map(|(k, v)| QueryAndStats {
+                        query: k.clone(),
+                        elapsed_ms: v.elapsed.as_millis() as u64,
+                        stat: v.clone(),
+                    })
+                    .collect_vec(),
+            })
         }
-        let queries = queries.as_ref().unwrap();
-        Some(QueriesStatsResponse {
-            id: queries.id(),
-            created_at: queries.created_at().timestamp() as u64,
-            count: queries.count(),
-            elapsed: QueriesLatencyStats::from(queries.hist(), &queries.elapsed()),
-            stats: queries
-                .stats()
-                .iter()
-                .map(|(k, v)| QueryAndStats {
-                    query: k.clone(),
-                    elapsed_ms: v.elapsed.as_millis() as u64,
-                    stat: v.clone(),
-                })
-                .collect_vec(),
-        })
     }
 }
 
