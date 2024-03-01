@@ -24,7 +24,7 @@ use crate::namespace::meta_store::MetaStoreHandle;
 use crate::query_analysis::{StmtKind, TxnStatus};
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
 use crate::replication::FrameNo;
-use crate::stats::Stats;
+use crate::stats::{Stats, StatsUpdateMessage};
 use crate::Result;
 
 use super::program::{DescribeCol, DescribeParam, DescribeResponse, Vm};
@@ -549,54 +549,19 @@ impl From<TransactionState> for TxnStatus {
         }
     }
 }
+
 fn update_stats(stats: &Stats, sql: String, stmt: &rusqlite::Statement, elapsed: Duration) {
-    histogram!("libsql_server_statement_execution_time", elapsed);
-    let elapsed = elapsed.as_millis() as u64;
     let rows_read = stmt.get_status(StatementStatus::RowsRead) as u64;
     let rows_written = stmt.get_status(StatementStatus::RowsWritten) as u64;
-
-    if rows_read >= 10_000 || rows_written >= 1_000 {
-        let sql = if sql.len() >= 512 {
-            &sql[..512]
-        } else {
-            &sql[..]
-        };
-
-        tracing::info!(
-            "high read ({}) or write ({}) query: {}",
-            rows_read,
-            rows_written,
-            sql
-        );
-    }
-
     let mem_used = stmt.get_status(StatementStatus::MemUsed) as u64;
-    histogram!("libsql_server_statement_mem_used_bytes", mem_used as f64);
-    let rows_read = if rows_read == 0 && rows_written == 0 {
-        1
-    } else {
-        rows_read
-    };
-    stats.inc_rows_read(rows_read);
-    stats.inc_rows_written(rows_written);
-    let weight = rows_read + rows_written;
-    if stats.qualifies_as_top_query(weight) {
-        stats.add_top_query(crate::stats::TopQuery::new(
-            sql.clone(),
-            rows_read,
-            rows_written,
-        ));
-    }
-    if stats.qualifies_as_slowest_query(elapsed) {
-        stats.add_slowest_query(crate::stats::SlowestQuery::new(
-            sql.clone(),
-            elapsed,
-            rows_read,
-            rows_written,
-        ));
-    }
 
-    stats.update_query_metrics(rows_read, rows_written, mem_used, elapsed)
+    stats.send(StatsUpdateMessage {
+        sql,
+        elapsed,
+        rows_read,
+        rows_written,
+        mem_used,
+    });
 }
 
 impl<W: Wal> Connection<W> {
