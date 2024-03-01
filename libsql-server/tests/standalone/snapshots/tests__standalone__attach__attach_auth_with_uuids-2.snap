@@ -1,0 +1,23 @@
+---
+source: libsql-server/tests/standalone/attach.rs
+expression: rows.next().await
+---
+Ok(
+    Some(
+        Row {
+            cols: [
+                Col {
+                    name: Some(
+                        "x",
+                    ),
+                    decltype: None,
+                },
+            ],
+            inner: [
+                Integer {
+                    value: 43,
+                },
+            ],
+        },
+    ),
+)
