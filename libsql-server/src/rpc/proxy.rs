@@ -334,9 +334,9 @@ impl ProxyService {
             )))?,
         };
 
-        let context = parse_grpc_auth_header(req.metadata())?;
-
+        
         let auth = if let Some(auth) = auth {
+            let context = parse_grpc_auth_header(req.metadata())?;
             auth.authenticate(context)?
         } else {
             Authenticated::from_proxy_grpc_request(req)?

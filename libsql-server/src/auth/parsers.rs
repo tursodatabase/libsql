@@ -37,10 +37,7 @@ pub fn parse_jwt_key(data: &str) -> Result<jsonwebtoken::DecodingKey> {
 }
 
 pub(crate) fn parse_grpc_auth_header(metadata: &MetadataMap) -> Result<UserAuthContext, tonic::Status> {
-    // todo print metadata
-    // tracing::trace!()
-
-    return "";
+// todo fix error messages and chaining
     let header = metadata.get(GRPC_AUTH_HEADER)
         .ok_or(tonic::Status::new(tonic::Code::Unauthenticated,""))?;
 
