@@ -1,0 +1,15 @@
+---
+source: libsql-server/tests/standalone/attach.rs
+assertion_line: 289
+expression: "main_conn.execute(format!(\"ATTACH DATABASE {} as bar\", attach_db_id).as_str(),\n            ()).await.unwrap_err()"
+---
+Sqlite3ParserError(
+    BadNumber(
+        Some(
+            (
+                1,
+                31,
+            ),
+        ),
+    ),
+)

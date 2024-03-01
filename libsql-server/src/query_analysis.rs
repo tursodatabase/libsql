@@ -128,9 +128,16 @@ impl StmtKind {
             Cmd::Stmt(Stmt::Attach {
                 expr: Expr::Id(Id(db_name)),
                 ..
-            }) => Some(Self::Attach(
-                NamespaceName::from_string(db_name.to_string()).ok()?,
-            )),
+            }) => {
+                let db_name = db_name
+                    .strip_prefix('"')
+                    .unwrap_or(db_name)
+                    .strip_suffix('"')
+                    .unwrap_or(db_name);
+                Some(Self::Attach(
+                    NamespaceName::from_string(db_name.to_string()).ok()?,
+                ))
+            }
             Cmd::Stmt(Stmt::Detach(_)) => Some(Self::Detach),
             _ => None,
         }
