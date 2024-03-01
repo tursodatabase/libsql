@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use hdrhistogram::Histogram;
 use itertools::Itertools;
@@ -68,7 +69,8 @@ impl From<Stats> for StatsResponse {
 }
 
 #[derive(Serialize)]
-pub struct QueriesStatsPercentiles {
+pub struct QueriesLatencyStats {
+    pub sum: u64,
     pub p50: u64,
     pub p75: u64,
     pub p90: u64,
@@ -77,9 +79,10 @@ pub struct QueriesStatsPercentiles {
     pub p999: u64,
 }
 
-impl From<&Histogram<u32>> for QueriesStatsPercentiles {
-    fn from(hist: &Histogram<u32>) -> Self {
-        QueriesStatsPercentiles {
+impl QueriesLatencyStats {
+    fn from(hist: &Histogram<u32>, sum: &Duration) -> Self {
+        QueriesLatencyStats {
+            sum: sum.as_millis() as u64,
             p50: hist.value_at_percentile(50.0),
             p75: hist.value_at_percentile(75.0),
             p90: hist.value_at_percentile(90.0),
@@ -94,9 +97,8 @@ impl From<&Histogram<u32>> for QueriesStatsPercentiles {
 pub struct QueriesStatsResponse {
     pub id: Option<Uuid>,
     pub count: Option<u64>,
-    pub elapsed_ms: u64,
     pub stats: Vec<QueryAndStats>,
-    pub quantiles: Option<QueriesStatsPercentiles>,
+    pub elapsed: Option<QueriesLatencyStats>,
 }
 
 impl From<&Stats> for QueriesStatsResponse {
@@ -104,9 +106,11 @@ impl From<&Stats> for QueriesStatsResponse {
         let queries = stats.get_queries().read().unwrap();
         Self {
             id: queries.id(),
-            quantiles: queries.hist().as_ref().map(|h| h.into()),
             count: queries.count(),
-            elapsed_ms: queries.elapsed().as_millis() as u64,
+            elapsed: queries
+                .hist()
+                .as_ref()
+                .map(|h| QueriesLatencyStats::from(h, queries.elapsed())),
             stats: queries
                 .stats()
                 .iter()
