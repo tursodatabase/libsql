@@ -89,9 +89,11 @@ pub struct QueriesStats {
     #[serde(default)]
     id: Option<Uuid>,
     #[serde(default)]
-    stats_threshold: AtomicU64,
-    #[serde(default)]
     stats: HashMap<String, QueryStats>,
+    #[serde(skip)]
+    elapsed: Duration,
+    #[serde(skip)]
+    stats_threshold: u64,
     #[serde(skip)]
     hist: Option<Histogram<u32>>,
     #[serde(skip)]
@@ -108,6 +110,8 @@ impl QueriesStats {
     }
 
     fn register_query(&mut self, sql: &String, stat: QueryStats) {
+        self.elapsed += stat.elapsed;
+
         if let Some(hist) = self.hist.as_mut() {
             let _ = hist.record(stat.elapsed.as_millis() as u64);
         }
@@ -118,7 +122,7 @@ impl QueriesStats {
         };
 
         debug!("query: {}, elapsed: {:?}", sql, aggregated.elapsed);
-        if (aggregated.elapsed.as_micros() as u64) < self.stats_threshold.load(Ordering::Relaxed) {
+        if (aggregated.elapsed.as_micros() as u64) < self.stats_threshold {
             return;
         }
 
@@ -143,8 +147,7 @@ impl QueriesStats {
 
     fn update_threshold(&mut self) {
         if let Some((_, v)) = self.min() {
-            self.stats_threshold
-                .store(v.elapsed.as_micros() as u64, Ordering::Relaxed);
+            self.stats_threshold = v.elapsed.as_micros() as u64;
         }
     }
 
@@ -169,6 +172,14 @@ impl QueriesStats {
 
     pub(crate) fn expired(&self) -> bool {
         self.expires_at.map_or(false, |exp| exp < Instant::now())
+    }
+
+    pub(crate) fn elapsed(&self) -> &Duration {
+        &self.elapsed
+    }
+
+    pub(crate) fn count(&self) -> Option<u64> {
+        self.hist.as_ref().map(|h| h.len() as u64)
     }
 }
 
