@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::future::Future;
 use std::sync::Arc;
 
-use crate::connection::{Connection, MakeConnection, RequestContext};
+use crate::connection::{MakeConnection, RequestContext};
 use crate::hrana;
 
 use super::db_factory::MakeConnectionExtractor;
@@ -23,8 +23,8 @@ pub async fn handle_index() -> hyper::Response<hyper::Body> {
         .unwrap()
 }
 
-pub(crate) async fn handle_execute<D: Connection>(
-    MakeConnectionExtractor(factory): MakeConnectionExtractor<D>,
+pub(crate) async fn handle_execute(
+    MakeConnectionExtractor(factory): MakeConnectionExtractor,
     ctx: RequestContext,
     req: hyper::Request<hyper::Body>,
 ) -> crate::Result<hyper::Response<hyper::Body>> {
@@ -56,8 +56,8 @@ pub(crate) async fn handle_execute<D: Connection>(
     Ok(res)
 }
 
-pub(crate) async fn handle_batch<D: Connection>(
-    MakeConnectionExtractor(factory): MakeConnectionExtractor<D>,
+pub(crate) async fn handle_batch(
+    MakeConnectionExtractor(factory): MakeConnectionExtractor,
     ctx: RequestContext,
     req: hyper::Request<hyper::Body>,
 ) -> crate::Result<hyper::Response<hyper::Body>> {

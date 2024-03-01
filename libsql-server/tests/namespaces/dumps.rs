@@ -52,7 +52,7 @@ fn load_namespace_from_dump_from_url() {
         assert_snapshot!(resp.body_string().await.unwrap());
 
         let foo =
-            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
+            Database::open_remote_with_connector("http://foo.primary:8080", "dummy_token", TurmoilConnector)?;
         let foo_conn = foo.connect()?;
         let mut rows = foo_conn.query("select count(*) from test", ()).await?;
         assert!(matches!(
@@ -121,7 +121,7 @@ fn load_namespace_from_dump_from_file() {
         );
 
         let foo =
-            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
+            Database::open_remote_with_connector("http://foo.primary:8080", "dummy_token", TurmoilConnector)?;
         let foo_conn = foo.connect()?;
         let mut rows = foo_conn.query("select count(*) from test", ()).await?;
         assert!(matches!(
@@ -171,7 +171,7 @@ fn load_namespace_from_no_commit() {
 
         // namespace doesn't exist
         let foo =
-            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
+            Database::open_remote_with_connector("http://foo.primary:8080", "dummy_token", TurmoilConnector)?;
         let foo_conn = foo.connect()?;
         assert!(foo_conn
             .query("select count(*) from test", ())
@@ -220,7 +220,7 @@ fn load_namespace_from_no_txn() {
 
         // namespace doesn't exist
         let foo =
-            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
+            Database::open_remote_with_connector("http://foo.primary:8080", "dummy_token", TurmoilConnector)?;
         let foo_conn = foo.connect()?;
         assert!(foo_conn
             .query("select count(*) from test", ())
@@ -248,7 +248,7 @@ fn export_dump() {
         assert_eq!(resp.status(), StatusCode::OK);
 
         let foo =
-            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
+            Database::open_remote_with_connector("http://foo.primary:8080", "dummy_token", TurmoilConnector)?;
         let foo_conn = foo.connect()?;
         foo_conn.execute("create table test (x)", ()).await?;
         foo_conn.execute("insert into test values (42)", ()).await?;

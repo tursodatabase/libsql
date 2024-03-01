@@ -145,7 +145,7 @@ fn sync_many_replica() {
     let mut sim = Builder::new().build();
     make_cluster(&mut sim, NUM_REPLICA, true);
     sim.client("client", async {
-        let db = Database::open_remote_with_connector("http://primary:8080", "dummy-auth", TurmoilConnector)?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "dummy_token", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -271,7 +271,7 @@ fn large_proxy_query() {
                 .unwrap();
         }
 
-        let db = Database::open_remote_with_connector("http://replica0:8080", "", TurmoilConnector)
+        let db = Database::open_remote_with_connector("http://replica0:8080", "dummy_token", TurmoilConnector)
             .unwrap();
         let conn = db.connect().unwrap();
 

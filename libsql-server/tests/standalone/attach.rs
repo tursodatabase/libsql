@@ -1,24 +1,12 @@
-use base64::Engine;
 use insta::assert_debug_snapshot;
-use jsonwebtoken::EncodingKey;
 use libsql::Database;
-use ring::signature::{Ed25519KeyPair, KeyPair};
 
-use crate::common::{http::Client, net::TurmoilConnector};
+use crate::{
+    common::{http::Client, net::TurmoilConnector},
+    standalone::utils::{encode, key_pair},
+};
 
 use super::make_standalone_server;
-
-fn key_pair() -> (EncodingKey, Ed25519KeyPair) {
-    let doc = Ed25519KeyPair::generate_pkcs8(&ring::rand::SystemRandom::new()).unwrap();
-    let encoding_key = EncodingKey::from_ed_der(doc.as_ref());
-    let pair = Ed25519KeyPair::from_pkcs8(doc.as_ref()).unwrap();
-    (encoding_key, pair)
-}
-
-fn encode<T: serde::Serialize>(claims: &T, key: &EncodingKey) -> String {
-    let header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::EdDSA);
-    jsonwebtoken::encode(&header, &claims, key).unwrap()
-}
 
 #[test]
 fn attach_no_auth() {
@@ -45,7 +33,7 @@ fn attach_no_auth() {
             .unwrap();
 
         let foo_db =
-            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
+            Database::open_remote_with_connector("http://foo.primary:8080", "dummy_token", TurmoilConnector)?;
         let foo_conn = foo_db.connect().unwrap();
         foo_conn
             .execute("CREATE TABLE foo_table (x)", ())
@@ -57,7 +45,7 @@ fn attach_no_auth() {
             .unwrap();
 
         let bar_db =
-            Database::open_remote_with_connector("http://bar.primary:8080", "", TurmoilConnector)?;
+            Database::open_remote_with_connector("http://bar.primary:8080", "dummy_token", TurmoilConnector)?;
         let bar_conn = bar_db.connect().unwrap();
         bar_conn
             .execute("CREATE TABLE bar_table (x)", ())
@@ -92,9 +80,8 @@ fn attach_auth() {
     sim.client("test", async {
         let client = Client::new();
 
-        let (enc, pair) = key_pair();
+        let (enc, jwt_key) = key_pair();
 
-        let jwt_key = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(pair.public_key().as_ref());
         assert!(client
             .post(
                 "http://primary:9090/v1/namespaces/foo/create",
@@ -191,6 +178,34 @@ fn attach_auth() {
         let txn = foo_conn.transaction().await.unwrap();
         txn.execute("ATTACH DATABASE bar as bar", ()).await.unwrap();
         let mut rows = txn.query("SELECT * FROM bar.bar_table", ()).await.unwrap();
+        // succeeds!
+        assert_debug_snapshot!(rows.next().await);
+
+        // mixed claims
+        let claims = serde_json::json!({
+            "id": "foo",
+            "p": {
+                "roa": {
+                    "ns": ["bar"]
+                }
+            }
+        });
+        let token = encode(&claims, &enc);
+
+        let foo_db = Database::open_remote_with_connector(
+            "http://foo.primary:8080",
+            &token,
+            TurmoilConnector,
+        )?;
+        let foo_conn = foo_db.connect().unwrap();
+        let txn = foo_conn.transaction().await.unwrap();
+        txn.execute("ATTACH DATABASE bar as attached", ())
+            .await
+            .unwrap();
+        let mut rows = txn
+            .query("SELECT * FROM attached.bar_table", ())
+            .await
+            .unwrap();
         // succeeds!
         assert_debug_snapshot!(rows.next().await);
 

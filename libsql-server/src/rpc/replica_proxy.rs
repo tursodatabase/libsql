@@ -6,26 +6,23 @@ use libsql_replication::rpc::proxy::{
 use tokio_stream::StreamExt;
 use tonic::{transport::Channel, Request, Status};
 
-use crate::{
-    auth::{
-        parsers::parse_grpc_auth_header, Auth, Jwt,
-        UserAuthStrategy,
-    },
-    namespace::{NamespaceStore, ReplicaNamespaceMaker},
-};
+
+use crate::auth::parsers::parse_grpc_auth_header;
+use crate::auth::{user_auth_strategies::UserAuthContext, Auth, Jwt, UserAuthStrategy};
+use crate::namespace::NamespaceStore;
 
 pub struct ReplicaProxyService {
     client: ProxyClient<Channel>,
     user_auth_strategy: Auth,
     disable_namespaces: bool,
-    namespaces: NamespaceStore<ReplicaNamespaceMaker>,
+    namespaces: NamespaceStore,
 }
 
 impl ReplicaProxyService {
     pub fn new(
         channel: Channel,
         uri: Uri,
-        namespaces: NamespaceStore<ReplicaNamespaceMaker>,
+        namespaces: NamespaceStore,
         user_auth_strategy: Auth,
         disable_namespaces: bool,
     ) -> Self {

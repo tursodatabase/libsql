@@ -20,8 +20,8 @@ pub struct RpcClientConfig<C = HttpConnector> {
 }
 
 impl<C: Connector> RpcClientConfig<C> {
-    pub(crate) async fn configure(self) -> anyhow::Result<(Channel, tonic::transport::Uri)> {
-        let uri = tonic::transport::Uri::from_maybe_shared(self.remote_url)?;
+    pub(crate) async fn configure(&self) -> anyhow::Result<(Channel, tonic::transport::Uri)> {
+        let uri = tonic::transport::Uri::from_maybe_shared(self.remote_url.clone())?;
         let mut builder = Channel::builder(uri.clone());
         if let Some(ref tls_config) = self.tls_config {
             let cert_pem = std::fs::read_to_string(&tls_config.cert)?;
@@ -38,7 +38,8 @@ impl<C: Connector> RpcClientConfig<C> {
             builder = builder.tls_config(tls_config)?;
         }
 
-        let channel = builder.connect_with_connector_lazy(self.connector.map_err(Into::into));
+        let channel =
+            builder.connect_with_connector_lazy(self.connector.clone().map_err(Into::into));
 
         Ok((channel, uri))
     }

@@ -11,17 +11,16 @@ use tokio::sync::oneshot;
 use tokio_tungstenite::tungstenite;
 use tungstenite::protocol::frame::coding::CloseCode;
 
-use crate::database::Database;
-use crate::namespace::{MakeNamespace, NamespaceName};
+use crate::namespace::NamespaceName;
 
 use super::super::{Encoding, ProtocolError, Version};
 use super::handshake::WebSocket;
 use super::{handshake, proto, session, Server, Upgrade};
 
 /// State of a Hrana connection.
-struct Conn<F: MakeNamespace> {
+struct Conn {
     conn_id: u64,
-    server: Arc<Server<F>>,
+    server: Arc<Server>,
     ws: WebSocket,
     ws_closed: bool,
     /// The version of the protocol that has been negotiated in the WebSocket handshake.
@@ -29,7 +28,7 @@ struct Conn<F: MakeNamespace> {
     /// The encoding of messages that has been negotiated in the WebSocket handshake.
     encoding: Encoding,
     /// After a successful authentication, this contains the session-level state of the connection.
-    session: Option<session::Session<<F::Database as Database>::Connection>>,
+    session: Option<session::Session>,
     /// Join set for all tasks that were spawned to handle the connection.
     join_set: tokio::task::JoinSet<()>,
     /// Future responses to requests that we have received but are evaluating asynchronously.
@@ -47,8 +46,8 @@ struct ResponseFuture {
     response_rx: futures::future::Fuse<oneshot::Receiver<Result<proto::Response>>>,
 }
 
-pub(super) async fn handle_tcp<F: MakeNamespace>(
-    server: Arc<Server<F>>,
+pub(super) async fn handle_tcp(
+    server: Arc<Server>,
     socket: Box<dyn crate::net::Conn>,
     conn_id: u64,
 ) -> Result<()> {
@@ -67,8 +66,8 @@ pub(super) async fn handle_tcp<F: MakeNamespace>(
     handle_ws(server, ws, version, encoding, conn_id, namespace).await
 }
 
-pub(super) async fn handle_upgrade<F: MakeNamespace>(
-    server: Arc<Server<F>>,
+pub(super) async fn handle_upgrade(
+    server: Arc<Server>,
     upgrade: Upgrade,
     conn_id: u64,
 ) -> Result<()> {
@@ -87,8 +86,8 @@ pub(super) async fn handle_upgrade<F: MakeNamespace>(
     handle_ws(server, ws, version, encoding, conn_id, namespace).await
 }
 
-async fn handle_ws<F: MakeNamespace>(
-    server: Arc<Server<F>>,
+async fn handle_ws(
+    server: Arc<Server>,
     ws: WebSocket,
     version: Version,
     encoding: Encoding,
@@ -160,10 +159,7 @@ async fn handle_ws<F: MakeNamespace>(
     Ok(())
 }
 
-async fn handle_msg<F: MakeNamespace>(
-    conn: &mut Conn<F>,
-    client_msg: tungstenite::Message,
-) -> Result<bool> {
+async fn handle_msg(conn: &mut Conn, client_msg: tungstenite::Message) -> Result<bool> {
     match client_msg {
         tungstenite::Message::Text(client_msg) => {
             if conn.encoding != Encoding::Json {
@@ -197,10 +193,7 @@ async fn handle_msg<F: MakeNamespace>(
     }
 }
 
-async fn handle_client_msg<F: MakeNamespace>(
-    conn: &mut Conn<F>,
-    client_msg: proto::ClientMsg,
-) -> Result<bool> {
+async fn handle_client_msg(conn: &mut Conn, client_msg: proto::ClientMsg) -> Result<bool> {
     tracing::trace!("Received client msg: {:?}", client_msg);
     match client_msg {
         proto::ClientMsg::None => bail!(ProtocolError::NoneClientMsg),
@@ -212,10 +205,7 @@ async fn handle_client_msg<F: MakeNamespace>(
     }
 }
 
-async fn handle_hello_msg<F: MakeNamespace>(
-    conn: &mut Conn<F>,
-    jwt: Option<String>,
-) -> Result<bool> {
+async fn handle_hello_msg(conn: &mut Conn, jwt: Option<String>) -> Result<bool> {
     let hello_res = match conn.session.as_mut() {
         None => {
             session::handle_initial_hello(&conn.server, conn.version, jwt, conn.namespace.clone())
@@ -246,8 +236,8 @@ async fn handle_hello_msg<F: MakeNamespace>(
     }
 }
 
-async fn handle_request_msg<F: MakeNamespace>(
-    conn: &mut Conn<F>,
+async fn handle_request_msg(
+    conn: &mut Conn,
     request_id: i32,
     request: proto::Request,
 ) -> Result<bool> {
@@ -319,7 +309,7 @@ fn downcast_error(err: anyhow::Error) -> Result<proto::Error> {
     }
 }
 
-async fn send_msg<F: MakeNamespace>(conn: &mut Conn<F>, msg: &proto::ServerMsg) -> Result<()> {
+async fn send_msg(conn: &mut Conn, msg: &proto::ServerMsg) -> Result<()> {
     let msg = match conn.encoding {
         Encoding::Json => {
             let msg =
@@ -337,7 +327,7 @@ async fn send_msg<F: MakeNamespace>(conn: &mut Conn<F>, msg: &proto::ServerMsg) 
         .context("Could not send message to the WebSocket")
 }
 
-async fn close<F: MakeNamespace>(conn: &mut Conn<F>, code: CloseCode, reason: String) {
+async fn close(conn: &mut Conn, code: CloseCode, reason: String) {
     if conn.ws_closed {
         return;
     }

@@ -12,13 +12,12 @@ use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 use tokio::time::Duration;
 use tokio_stream::StreamExt;
 
-use crate::database::PrimaryDatabase;
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};
 
-use super::meta_store::MetaStore;
-use super::{MakeNamespace, NamespaceBottomlessDbId, NamespaceName, RestoreOption};
+use super::meta_store::MetaStoreHandle;
+use super::{Namespace, NamespaceBottomlessDbId, NamespaceConfig, NamespaceName, RestoreOption};
 
 type Result<T> = crate::Result<T, ForkError>;
 
@@ -56,11 +55,11 @@ async fn write_frame(frame: &FrameBorrowed, temp_file: &mut tokio::fs::File) -> 
 pub struct ForkTask<'a> {
     pub base_path: Arc<Path>,
     pub logger: Arc<ReplicationLogger>,
-    pub dest_namespace: NamespaceName,
-    pub make_namespace: &'a dyn MakeNamespace<Database = PrimaryDatabase>,
+    pub to_namespace: NamespaceName,
+    pub to_config: MetaStoreHandle,
     pub restore_to: Option<PointInTimeRestore>,
     pub bottomless_db_id: NamespaceBottomlessDbId,
-    pub meta_store: &'a MetaStore,
+    pub ns_config: &'a NamespaceConfig,
 }
 
 pub struct PointInTimeRestore {
@@ -68,10 +67,10 @@ pub struct PointInTimeRestore {
     pub replicator_options: bottomless::replicator::Options,
 }
 
-impl ForkTask<'_> {
-    pub async fn fork(self) -> Result<super::Namespace<PrimaryDatabase>> {
+impl<'a> ForkTask<'a> {
+    pub async fn fork(self) -> Result<super::Namespace> {
         let base_path = self.base_path.clone();
-        let dest_namespace = self.dest_namespace.clone();
+        let dest_namespace = self.to_namespace.clone();
         match self.try_fork().await {
             Err(e) => {
                 let _ =
@@ -83,7 +82,7 @@ impl ForkTask<'_> {
         }
     }
 
-    async fn try_fork(self) -> Result<super::Namespace<PrimaryDatabase>> {
+    async fn try_fork(self) -> Result<super::Namespace> {
         // until what index to replicate
         let base_path = self.base_path.clone();
         let temp_dir = BLOCKING_RT
@@ -99,25 +98,18 @@ impl ForkTask<'_> {
             Self::restore_from_log_file(&self.logger, db_path).await?;
         }
 
-        let dest_path = self
-            .base_path
-            .join("dbs")
-            .join(self.dest_namespace.as_str());
+        let dest_path = self.base_path.join("dbs").join(self.to_namespace.as_str());
         tokio::fs::rename(temp_dir.path(), dest_path).await?;
 
-        self.make_namespace
-            .create(
-                self.dest_namespace.clone(),
-                RestoreOption::Latest,
-                self.bottomless_db_id,
-                // Forking works only on primary and
-                // PrimaryNamespaceMaker::create ignores
-                // reset_cb param
-                Box::new(|_op| {}),
-                self.meta_store,
-            )
-            .await
-            .map_err(|e| ForkError::CreateNamespace(Box::new(e)))
+        Namespace::from_config(
+            self.ns_config,
+            self.to_config.clone(),
+            RestoreOption::Latest,
+            &self.to_namespace,
+            Box::new(|_op| {}),
+        )
+        .await
+        .map_err(|e| ForkError::CreateNamespace(Box::new(e)))
     }
 
     /// Restores the database state from a local log file.

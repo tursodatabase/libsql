@@ -1,12 +1,11 @@
 #![allow(clippy::type_complexity, clippy::too_many_arguments)]
 
-use std::future::Future;
 use std::path::{Path, PathBuf};
-use std::pin::Pin;
 use std::str::FromStr;
 use std::sync::{Arc, Weak};
 
 use crate::connection::{Connection, MakeConnection};
+use crate::database::DatabaseKind;
 use crate::error::Error;
 use crate::metrics::DIRTY_STARTUP;
 use crate::migration::maybe_migrate;
@@ -19,6 +18,7 @@ use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLog;
 use crate::rpc::replication_log::ReplicationLogService;
 use crate::rpc::replication_log_proxy::ReplicationLogProxyService;
 use crate::rpc::run_rpc_server;
+use crate::schema_migration::Scheduler;
 use crate::stats::Stats;
 use anyhow::Context as AnyhowContext;
 use auth::Auth;
@@ -28,10 +28,7 @@ use config::{
 use http::user::UserApi;
 use hyper::client::HttpConnector;
 use hyper_rustls::HttpsConnector;
-use namespace::{
-    MakeNamespace, NamespaceBottomlessDbId, NamespaceName, NamespaceStore, PrimaryNamespaceConfig,
-    PrimaryNamespaceMaker, ReplicaNamespaceConfig, ReplicaNamespaceMaker,
-};
+use namespace::{NamespaceConfig, NamespaceName};
 use net::Connector;
 use once_cell::sync::Lazy;
 use rusqlite::ffi::{sqlite3_config, SQLITE_CONFIG_PCACHE2};
@@ -43,6 +40,7 @@ use url::Url;
 use utils::services::idle_shutdown::IdleShutdownKicker;
 
 use self::config::MetaStoreConfig;
+use self::namespace::NamespaceStore;
 use self::net::AddrIncoming;
 use self::replication::script_backup_manager::{CommandHandler, ScriptBackupManager};
 
@@ -69,6 +67,7 @@ mod query;
 mod query_analysis;
 mod query_result_builder;
 mod replication;
+mod schema_migration;
 mod stats;
 #[cfg(test)]
 mod test;
@@ -129,8 +128,8 @@ impl<C, A, D> Default for Server<C, A, D> {
     }
 }
 
-struct Services<M: MakeNamespace, A, P, S, C> {
-    namespaces: NamespaceStore<M>,
+struct Services<A, P, S, C> {
+    namespace_store: NamespaceStore,
     idle_shutdown_kicker: Option<IdleShutdownKicker>,
     proxy_service: P,
     replication_service: S,
@@ -144,9 +143,8 @@ struct Services<M: MakeNamespace, A, P, S, C> {
     shutdown: Arc<Notify>,
 }
 
-impl<M, A, P, S, C> Services<M, A, P, S, C>
+impl<A, P, S, C> Services<A, P, S, C>
 where
-    M: MakeNamespace,
     A: crate::net::Accept,
     P: Proxy,
     S: ReplicationLog,
@@ -157,7 +155,7 @@ where
             http_acceptor: self.user_api_config.http_acceptor,
             hrana_ws_acceptor: self.user_api_config.hrana_ws_acceptor,
             user_auth_strategy: self.user_auth_strategy,
-            namespaces: self.namespaces.clone(),
+            namespaces: self.namespace_store.clone(),
             idle_shutdown_kicker: self.idle_shutdown_kicker.clone(),
             proxy_service: self.proxy_service,
             replication_service: self.replication_service,
@@ -182,7 +180,7 @@ where
             join_set.spawn(http::admin::run(
                 acceptor,
                 user_http_service,
-                self.namespaces,
+                self.namespace_store,
                 connector,
                 disable_metrics,
                 shutdown,
@@ -311,7 +309,7 @@ where
         &self,
         join_set: &mut JoinSet<anyhow::Result<()>>,
         stats_receiver: mpsc::Receiver<(NamespaceName, Weak<Stats>)>,
-        namespaces: NamespaceStore<impl MakeNamespace>,
+        namespaces: NamespaceStore,
     ) -> anyhow::Result<()> {
         match self.heartbeat_config {
             Some(ref config) => {
@@ -351,6 +349,31 @@ where
         Ok(())
     }
 
+    fn make_services<P: Proxy, L: ReplicationLog>(
+        self,
+        namespace_store: NamespaceStore,
+        idle_shutdown_kicker: Option<IdleShutdownKicker>,
+        proxy_service: P,
+        replication_service: L,
+        user_auth_strategy: Auth,
+        shutdown: Arc<Notify>,
+    ) -> Services<A, P, L, D> {
+        Services {
+            namespace_store,
+            idle_shutdown_kicker,
+            proxy_service,
+            replication_service,
+            user_api_config: self.user_api_config,
+            admin_api_config: self.admin_api_config,
+            disable_namespaces: self.disable_namespaces,
+            disable_default_namespace: self.disable_default_namespace,
+            db_config: self.db_config,
+            user_auth_strategy,
+            path: self.path.clone(),
+            shutdown,
+        }
+    }
+
     pub async fn start(mut self) -> anyhow::Result<()> {
         static INIT: std::sync::Once = std::sync::Once::new();
         let mut join_set = JoinSet::new();
@@ -379,103 +402,191 @@ where
         let idle_shutdown_kicker = self.setup_shutdown();
 
         let extensions = self.db_config.validate_extensions()?;
-        let namespace_store_shutdown_fut: Pin<Box<dyn Future<Output = Result<()>> + Send>>;
         let user_auth_strategy = self.user_api_config.auth_strategy.clone();
 
         let service_shutdown = Arc::new(Notify::new());
-        match self.rpc_client_config {
-            Some(rpc_config) => {
-                let (stats_sender, stats_receiver) = mpsc::channel(8);
-                let replica = Replica {
-                    rpc_config,
-                    stats_sender,
-                    extensions,
-                    db_config: self.db_config.clone(),
-                    base_path: self.path.clone(),
-                    user_auth_strategy: user_auth_strategy.clone(),
-                    disable_namespaces: self.disable_namespaces,
-                    max_active_namespaces: self.max_active_namespaces,
-                    meta_store_config: self.meta_store_config.clone(),
-                    max_concurrent_connections: self.max_concurrent_connections,
-                };
-                let (namespaces, proxy_service, replication_service) = replica.configure().await?;
-                self.rpc_client_config = None;
-                self.spawn_monitoring_tasks(&mut join_set, stats_receiver, namespaces.clone())?;
-                namespace_store_shutdown_fut = {
-                    let namespaces = namespaces.clone();
-                    Box::pin(async move { namespaces.shutdown().await })
-                };
+        let db_kind = if self.rpc_client_config.is_some() {
+            DatabaseKind::Replica
+        } else {
+            DatabaseKind::Primary
+        };
 
-                let services = Services {
-                    namespaces,
-                    idle_shutdown_kicker,
-                    proxy_service,
-                    replication_service,
-                    user_api_config: self.user_api_config,
-                    admin_api_config: self.admin_api_config,
-                    disable_namespaces: self.disable_namespaces,
-                    disable_default_namespace: self.disable_default_namespace,
-                    db_config: self.db_config,
-                    user_auth_strategy,
-                    path: self.path.clone(),
-                    shutdown: service_shutdown.clone(),
-                };
-
-                services.configure(&mut join_set);
+        let scripted_backup = match self.db_config.snapshot_exec {
+            Some(ref command) => {
+                let (scripted_backup, script_backup_task) =
+                    ScriptBackupManager::new(&self.path, CommandHandler::new(command.to_string()))
+                        .await?;
+                join_set.spawn(script_backup_task.run());
+                Some(scripted_backup)
             }
-            None => {
-                let (stats_sender, stats_receiver) = mpsc::channel(8);
+            None => None,
+        };
 
-                let primary = Primary {
-                    rpc_config: self.rpc_server_config,
-                    db_config: self.db_config.clone(),
-                    idle_shutdown_kicker: idle_shutdown_kicker.clone(),
-                    stats_sender,
-                    db_is_dirty,
-                    extensions,
-                    base_path: self.path.clone(),
-                    disable_namespaces: self.disable_namespaces,
-                    max_active_namespaces: self.max_active_namespaces,
-                    join_set: &mut join_set,
-                    user_auth_strategy: user_auth_strategy.clone(),
-                    meta_store_config: self.meta_store_config.clone(),
-                    max_concurrent_connections: self.max_concurrent_connections,
-                };
+        let (channel, uri) = match self.rpc_client_config {
+            Some(ref config) => {
+                let (channel, uri) = config.configure().await?;
+                (Some(channel), Some(uri))
+            }
+            None => (None, None),
+        };
 
-                let (namespaces, proxy_service, replication_service) = primary.configure().await?;
-                self.rpc_server_config = None;
-                self.spawn_monitoring_tasks(&mut join_set, stats_receiver, namespaces.clone())?;
-                namespace_store_shutdown_fut = {
-                    let namespaces = namespaces.clone();
-                    Box::pin(async move { namespaces.shutdown().await })
-                };
+        let (scheduler_sender, scheduler_receiver) = mpsc::channel(128);
 
-                let services = Services {
-                    namespaces,
-                    idle_shutdown_kicker,
-                    proxy_service,
-                    replication_service,
-                    user_api_config: self.user_api_config,
-                    admin_api_config: self.admin_api_config,
-                    disable_namespaces: self.disable_namespaces,
-                    disable_default_namespace: self.disable_default_namespace,
-                    db_config: self.db_config,
-                    user_auth_strategy,
-                    path: self.path.clone(),
-                    shutdown: service_shutdown.clone(),
-                };
+        let (stats_sender, stats_receiver) = mpsc::channel(8);
+        let ns_config = NamespaceConfig {
+            db_kind,
+            base_path: self.path.clone(),
+            max_log_size: self.db_config.max_log_size,
+            db_is_dirty,
+            max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
+            bottomless_replication: self.db_config.bottomless_replication.clone(),
+            extensions,
+            stats_sender: stats_sender.clone(),
+            max_response_size: self.db_config.max_response_size,
+            max_total_response_size: self.db_config.max_total_response_size,
+            checkpoint_interval: self.db_config.checkpoint_interval,
+            encryption_config: self.db_config.encryption_config.clone(),
+            max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
+            scripted_backup,
+            max_concurrent_requests: self.db_config.max_concurrent_requests,
+            channel: channel.clone(),
+            uri: uri.clone(),
+            migration_scheduler: scheduler_sender.into(),
+        };
 
-                services.configure(&mut join_set);
+        let namespace_store: NamespaceStore = NamespaceStore::new(
+            db_kind.is_replica(),
+            self.db_config.snapshot_at_shutdown,
+            self.max_active_namespaces,
+            &self.path,
+            self.meta_store_config.clone(),
+            ns_config,
+        )
+        .await?;
+
+        let scheduler = Scheduler::new(namespace_store.clone());
+
+        join_set.spawn(async move {
+            scheduler.run(scheduler_receiver).await;
+            Ok(())
+        });
+
+        self.spawn_monitoring_tasks(&mut join_set, stats_receiver, namespace_store.clone())?;
+
+        // eagerly load the default namespace when namespaces are disabled
+        if self.disable_namespaces && db_kind.is_primary() {
+            namespace_store
+                .create(
+                    NamespaceName::default(),
+                    namespace::RestoreOption::Latest,
+                    Default::default(),
+                )
+                .await?;
+        }
+
+        // if namespaces are enabled, then bottomless must have set DB ID
+        if !self.disable_namespaces {
+            if let Some(bottomless) = &self.db_config.bottomless_replication {
+                if bottomless.db_id.is_none() {
+                    anyhow::bail!("bottomless replication with namespaces requires a DB ID");
+                }
             }
         }
 
+        // configure rpc server
+        if let Some(config) = self.rpc_server_config.take() {
+            let proxy_service =
+                ProxyService::new(namespace_store.clone(), None, self.disable_namespaces);
+            // Garbage collect proxy clients every 30 seconds
+            join_set.spawn({
+                let clients = proxy_service.clients();
+                async move {
+                    loop {
+                        tokio::time::sleep(Duration::from_secs(30)).await;
+                        rpc::proxy::garbage_collect(&mut *clients.write().await).await;
+                    }
+                }
+            });
+            join_set.spawn(run_rpc_server(
+                proxy_service,
+                config.acceptor,
+                config.tls_config,
+                idle_shutdown_kicker.clone(),
+                namespace_store.clone(),
+                self.disable_namespaces,
+            ));
+        }
+
+        let shutdown = self.shutdown.clone();
+        let base_path = self.path.clone();
+        // setup user-facing rpc services
+        match db_kind {
+            DatabaseKind::Primary => {
+                let replication_svc = ReplicationLogService::new(
+                    namespace_store.clone(),
+                    idle_shutdown_kicker.clone(),
+                    Some(user_auth_strategy.clone()),
+                    self.disable_namespaces,
+                    true,
+                );
+
+                let proxy_svc = ProxyService::new(
+                    namespace_store.clone(),
+                    Some(user_auth_strategy.clone()),
+                    self.disable_namespaces,
+                );
+
+                // Garbage collect proxy clients every 30 seconds
+                join_set.spawn({
+                    let clients = proxy_svc.clients();
+                    async move {
+                        loop {
+                            tokio::time::sleep(Duration::from_secs(30)).await;
+                            rpc::proxy::garbage_collect(&mut *clients.write().await).await;
+                        }
+                    }
+                });
+
+                self.make_services(
+                    namespace_store.clone(),
+                    idle_shutdown_kicker,
+                    proxy_svc,
+                    replication_svc,
+                    user_auth_strategy.clone(),
+                    service_shutdown.clone(),
+                )
+                .configure(&mut join_set);
+            }
+            DatabaseKind::Replica => {
+                let replication_svc =
+                    ReplicationLogProxyService::new(channel.clone().unwrap(), uri.clone().unwrap());
+                let proxy_svc = ReplicaProxyService::new(
+                    channel.clone().unwrap(),
+                    uri.clone().unwrap(),
+                    namespace_store.clone(),
+                    user_auth_strategy.clone(),
+                    self.disable_namespaces,
+                );
+
+                self.make_services(
+                    namespace_store.clone(),
+                    idle_shutdown_kicker,
+                    proxy_svc,
+                    replication_svc,
+                    user_auth_strategy,
+                    service_shutdown.clone(),
+                )
+                .configure(&mut join_set);
+            }
+        };
+
         tokio::select! {
-            _ = self.shutdown.notified() => {
+            _ = shutdown.notified() => {
                 join_set.shutdown().await;
                 service_shutdown.notify_waiters();
-                namespace_store_shutdown_fut.await?;
+                namespace_store.shutdown().await?;
                 // clean shutdown, remove sentinel file
-                std::fs::remove_file(sentinel_file_path(&self.path))?;
+                std::fs::remove_file(sentinel_file_path(&base_path))?;
                 tracing::info!("sqld was shutdown gracefully. Bye!");
             }
             Some(res) = join_set.join_next() => {
@@ -492,199 +603,5 @@ where
         self.idle_shutdown_timeout.map(|d| {
             IdleShutdownKicker::new(d, self.initial_idle_shutdown_timeout, shutdown_notify)
         })
-    }
-}
-
-struct Primary<'a, A> {
-    rpc_config: Option<RpcServerConfig<A>>,
-    db_config: DbConfig,
-    idle_shutdown_kicker: Option<IdleShutdownKicker>,
-    stats_sender: StatsSender,
-    db_is_dirty: bool,
-    extensions: Arc<[PathBuf]>,
-    base_path: Arc<Path>,
-    disable_namespaces: bool,
-    max_active_namespaces: usize,
-    join_set: &'a mut JoinSet<anyhow::Result<()>>,
-    meta_store_config: MetaStoreConfig,
-    max_concurrent_connections: usize,
-    user_auth_strategy: Auth,
-}
-
-impl<A> Primary<'_, A>
-where
-    A: Accept,
-{
-    async fn configure(
-        mut self,
-    ) -> anyhow::Result<(
-        NamespaceStore<PrimaryNamespaceMaker>,
-        ProxyService,
-        ReplicationLogService,
-    )> {
-        let scripted_backup = match self.db_config.snapshot_exec {
-            Some(command) => {
-                let (scripted_backup, script_backup_task) =
-                    ScriptBackupManager::new(&self.base_path, CommandHandler::new(command)).await?;
-                self.join_set.spawn(script_backup_task.run());
-                Some(scripted_backup)
-            }
-            None => None,
-        };
-
-        let conf = PrimaryNamespaceConfig {
-            base_path: self.base_path.clone(),
-            max_log_size: self.db_config.max_log_size,
-            db_is_dirty: self.db_is_dirty,
-            max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
-            bottomless_replication: self.db_config.bottomless_replication.clone(),
-            extensions: self.extensions,
-            stats_sender: self.stats_sender.clone(),
-            max_response_size: self.db_config.max_response_size,
-            max_total_response_size: self.db_config.max_total_response_size,
-            checkpoint_interval: self.db_config.checkpoint_interval,
-            encryption_config: self.db_config.encryption_config.clone(),
-            max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
-            scripted_backup,
-            max_concurrent_requests: self.db_config.max_concurrent_requests,
-        };
-
-        let factory = PrimaryNamespaceMaker::new(conf);
-        let namespaces = NamespaceStore::new(
-            factory,
-            false,
-            self.db_config.snapshot_at_shutdown,
-            self.max_active_namespaces,
-            &self.base_path,
-            self.meta_store_config,
-        )
-        .await?;
-
-        // eagerly load the default namespace when namespaces are disabled
-        if self.disable_namespaces {
-            namespaces
-                .create(
-                    NamespaceName::default(),
-                    namespace::RestoreOption::Latest,
-                    NamespaceBottomlessDbId::NotProvided,
-                )
-                .await?;
-        }
-
-        // if namespaces are enabled, then bottomless must have set DB ID
-        if !self.disable_namespaces {
-            if let Some(bottomless) = &self.db_config.bottomless_replication {
-                if bottomless.db_id.is_none() {
-                    anyhow::bail!("bottomless replication with namespaces requires a DB ID");
-                }
-            }
-        }
-
-        if let Some(config) = self.rpc_config.take() {
-            let proxy_service =
-                ProxyService::new(namespaces.clone(), None, self.disable_namespaces);
-            // Garbage collect proxy clients every 30 seconds
-            self.join_set.spawn({
-                let clients = proxy_service.clients();
-                async move {
-                    loop {
-                        tokio::time::sleep(Duration::from_secs(30)).await;
-                        rpc::proxy::garbage_collect(&mut *clients.write().await).await;
-                    }
-                }
-            });
-            self.join_set.spawn(run_rpc_server(
-                proxy_service,
-                config.acceptor,
-                config.tls_config,
-                self.idle_shutdown_kicker.clone(),
-                namespaces.clone(),
-                self.disable_namespaces,
-            ));
-        }
-
-        let logger_service = ReplicationLogService::new(
-            namespaces.clone(),
-            self.idle_shutdown_kicker,
-            Some(self.user_auth_strategy.clone()),
-            self.disable_namespaces,
-            true,
-        );
-
-        let proxy_service = ProxyService::new(
-            namespaces.clone(),
-            Some(self.user_auth_strategy),
-            self.disable_namespaces,
-        );
-        // Garbage collect proxy clients every 30 seconds
-        self.join_set.spawn({
-            let clients = proxy_service.clients();
-            async move {
-                loop {
-                    tokio::time::sleep(Duration::from_secs(30)).await;
-                    rpc::proxy::garbage_collect(&mut *clients.write().await).await;
-                }
-            }
-        });
-        Ok((namespaces, proxy_service, logger_service))
-    }
-}
-
-struct Replica<C> {
-    rpc_config: RpcClientConfig<C>,
-    stats_sender: StatsSender,
-    extensions: Arc<[PathBuf]>,
-    db_config: DbConfig,
-    base_path: Arc<Path>,
-    disable_namespaces: bool,
-    max_active_namespaces: usize,
-    meta_store_config: MetaStoreConfig,
-    max_concurrent_connections: usize,
-    user_auth_strategy: Auth,
-}
-
-impl<C: Connector> Replica<C> {
-    async fn configure(
-        self,
-    ) -> anyhow::Result<(
-        NamespaceStore<impl MakeNamespace>,
-        impl Proxy,
-        impl ReplicationLog,
-    )> {
-        let (channel, uri) = self.rpc_config.configure().await?;
-
-        let conf = ReplicaNamespaceConfig {
-            channel: channel.clone(),
-            uri: uri.clone(),
-            extensions: self.extensions.clone(),
-            stats_sender: self.stats_sender.clone(),
-            base_path: self.base_path.clone(),
-            max_response_size: self.db_config.max_response_size,
-            max_total_response_size: self.db_config.max_total_response_size,
-            encryption_config: self.db_config.encryption_config.clone(),
-            max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
-            max_concurrent_requests: self.db_config.max_concurrent_requests,
-        };
-
-        let factory = ReplicaNamespaceMaker::new(conf);
-        let namespaces = NamespaceStore::new(
-            factory,
-            true,
-            false,
-            self.max_active_namespaces,
-            &self.base_path,
-            self.meta_store_config,
-        )
-        .await?;
-        let replication_service = ReplicationLogProxyService::new(channel.clone(), uri.clone());
-        let proxy_service = ReplicaProxyService::new(
-            channel,
-            uri,
-            namespaces.clone(),
-            self.user_auth_strategy.clone(),
-            self.disable_namespaces,
-        );
-
-        Ok((namespaces, proxy_service, replication_service))
     }
 }

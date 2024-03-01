@@ -87,18 +87,8 @@ fn validate_jwt(
     match jsonwebtoken::decode::<Token>(jwt, jwt_key, &validation).map(|t| t.claims) {
         Ok(Token { id, a, p, .. }) => {
             // This is legacy: when nothing is specified, then it's full access
-            if p.is_none() && id.is_none() && a.is_none() {
-                return Ok(Authenticated::FullAccess);
-            } else {
-                let mut auth = p.unwrap_or_default();
-
-                // We only allow tokens if they contains a ns and a perm
-                if let Some((ns, a)) = id.zip(a) {
-                    auth.merge_legacy(ns, a);
-                }
-
-                Ok(Authenticated::Authorized(auth.into()))
-            }
+            let auth = p.unwrap_or_default();
+            auth.merge_legacy(id, a)
         }
         Err(error) => Err(match error.kind() {
             ErrorKind::InvalidToken

@@ -32,13 +32,12 @@ use tower_http::{compression::CompressionLayer, cors};
 use crate::auth::parsers::auth_string_to_auth_context;
 use crate::auth::{Auth, Authenticated, Jwt};
 use crate::connection::{Connection, RequestContext};
-use crate::database::Database;
 use crate::error::Error;
 use crate::hrana;
 use crate::http::user::db_factory::MakeConnectionExtractorPath;
 use crate::http::user::types::HttpQuery;
 use crate::metrics::LEGACY_HTTP_CALL;
-use crate::namespace::{MakeNamespace, NamespaceStore};
+use crate::namespace::NamespaceStore;
 use crate::net::Accept;
 use crate::query::{self, Query};
 use crate::query_analysis::{predict_final_state, Statement, TxnStatus};
@@ -126,9 +125,9 @@ fn parse_queries(queries: Vec<QueryObject>) -> crate::Result<Vec<Query>> {
     Ok(out)
 }
 
-async fn handle_query<C: Connection>(
+async fn handle_query(
     ctx: RequestContext,
-    MakeConnectionExtractor(connection_maker): MakeConnectionExtractor<C>,
+    MakeConnectionExtractor(connection_maker): MakeConnectionExtractor,
     Json(query): Json<HttpQuery>,
 ) -> Result<axum::response::Response, Error> {
     LEGACY_HTTP_CALL.increment(1);
@@ -148,8 +147,8 @@ async fn handle_query<C: Connection>(
     Ok(res.into_response())
 }
 
-async fn show_console<F: MakeNamespace>(
-    AxumState(AppState { enable_console, .. }): AxumState<AppState<F>>,
+async fn show_console(
+    AxumState(AppState { enable_console, .. }): AxumState<AppState>,
 ) -> impl IntoResponse {
     if enable_console {
         Html(std::include_str!("console.html")).into_response()
@@ -163,8 +162,8 @@ async fn handle_health() -> Response<Body> {
     Response::new(Body::empty())
 }
 
-async fn handle_upgrade<F: MakeNamespace>(
-    AxumState(AppState { upgrade_tx, .. }): AxumState<AppState<F>>,
+async fn handle_upgrade(
+    AxumState(AppState { upgrade_tx, .. }): AxumState<AppState>,
     req: Request<Body>,
 ) -> impl IntoResponse {
     if !hyper_tungstenite::is_upgrade_request(&req) {
@@ -198,11 +197,9 @@ async fn handle_fallback() -> impl IntoResponse {
     (StatusCode::NOT_FOUND).into_response()
 }
 
-async fn handle_hrana_pipeline<F: MakeNamespace>(
-    AxumState(state): AxumState<AppState<F>>,
-    MakeConnectionExtractorPath(connection_maker): MakeConnectionExtractorPath<
-        <F::Database as Database>::Connection,
-    >,
+async fn handle_hrana_pipeline(
+    AxumState(state): AxumState<AppState>,
+    MakeConnectionExtractorPath(connection_maker): MakeConnectionExtractorPath,
     ctx: RequestContext,
     axum::extract::Path((_, version)): axum::extract::Path<(String, String)>,
     req: Request<Body>,
@@ -227,37 +224,23 @@ async fn handle_hrana_pipeline<F: MakeNamespace>(
 
 /// Router wide state that each request has access too via
 /// axum's `State` extractor.
-pub(crate) struct AppState<F: MakeNamespace> {
+#[derive(Clone)]
+pub(crate) struct AppState {
     user_auth_strategy: Auth,
-    namespaces: NamespaceStore<F>,
+    namespaces: NamespaceStore,
     upgrade_tx: mpsc::Sender<hrana::ws::Upgrade>,
-    hrana_http_srv: Arc<hrana::http::Server<<F::Database as Database>::Connection>>,
+    hrana_http_srv: Arc<hrana::http::Server>,
     enable_console: bool,
     disable_default_namespace: bool,
     disable_namespaces: bool,
     path: Arc<Path>,
 }
 
-impl<F: MakeNamespace> Clone for AppState<F> {
-    fn clone(&self) -> Self {
-        Self {
-            user_auth_strategy: self.user_auth_strategy.clone(),
-            namespaces: self.namespaces.clone(),
-            upgrade_tx: self.upgrade_tx.clone(),
-            hrana_http_srv: self.hrana_http_srv.clone(),
-            enable_console: self.enable_console,
-            disable_default_namespace: self.disable_default_namespace,
-            disable_namespaces: self.disable_namespaces,
-            path: self.path.clone(),
-        }
-    }
-}
-
-pub struct UserApi<M: MakeNamespace, A, P, S> {
+pub struct UserApi<A, P, S> {
     pub user_auth_strategy: Auth,
     pub http_acceptor: Option<A>,
     pub hrana_ws_acceptor: Option<A>,
-    pub namespaces: NamespaceStore<M>,
+    pub namespaces: NamespaceStore,
     pub idle_shutdown_kicker: Option<IdleShutdownKicker>,
     pub proxy_service: P,
     pub replication_service: S,
@@ -270,17 +253,13 @@ pub struct UserApi<M: MakeNamespace, A, P, S> {
     pub shutdown: Arc<Notify>,
 }
 
-impl<M, A, P, S> UserApi<M, A, P, S>
+impl<A, P, S> UserApi<A, P, S>
 where
-    M: MakeNamespace,
     A: Accept,
     P: Proxy,
     S: ReplicationLog,
 {
-    pub fn configure(
-        self,
-        join_set: &mut JoinSet<anyhow::Result<()>>,
-    ) -> Arc<hrana::http::Server<<<M as MakeNamespace>::Database as Database>::Connection>> {
+    pub fn configure(self, join_set: &mut JoinSet<anyhow::Result<()>>) -> Arc<hrana::http::Server> {
         let (hrana_accept_tx, hrana_accept_rx) = mpsc::channel(8);
         let (hrana_upgrade_tx, hrana_upgrade_rx) = mpsc::channel(8);
         let hrana_http_srv = Arc::new(hrana::http::Server::new(self.self_url.clone()));
@@ -340,11 +319,9 @@ where
 
             macro_rules! handle_hrana {
                 ($endpoint:expr, $version:expr, $encoding:expr,) => {{
-                    async fn handle_hrana<F: MakeNamespace>(
-                        AxumState(state): AxumState<AppState<F>>,
-                        MakeConnectionExtractor(connection_maker): MakeConnectionExtractor<
-                            <F::Database as Database>::Connection,
-                        >,
+                    async fn handle_hrana(
+                        AxumState(state): AxumState<AppState>,
+                        MakeConnectionExtractor(connection_maker): MakeConnectionExtractor,
                         ctx: RequestContext,
                         req: Request<Body>,
                     ) -> Result<Response<Body>, Error> {
@@ -471,15 +448,12 @@ where
 
 /// Axum authenticated extractor
 #[tonic::async_trait]
-impl<M> FromRequestParts<AppState<M>> for Authenticated
-where
-    M: MakeNamespace,
-{
+impl FromRequestParts<AppState> for Authenticated {
     type Rejection = Error;
 
     async fn from_request_parts(
         parts: &mut Parts,
-        state: &AppState<M>,
+        state: &AppState,
     ) -> Result<Self, Self::Rejection> {
         let ns = db_factory::namespace_from_headers(
             &parts.headers,
@@ -506,8 +480,8 @@ where
     }
 }
 
-impl<F: MakeNamespace> FromRef<AppState<F>> for Auth {
-    fn from_ref(input: &AppState<F>) -> Self {
+impl FromRef<AppState> for Auth {
+    fn from_ref(input: &AppState) -> Self {
         input.user_auth_strategy.clone()
     }
 }

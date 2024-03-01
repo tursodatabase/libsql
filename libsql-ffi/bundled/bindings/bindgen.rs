@@ -23,6 +23,7 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 
+pub const __GNUC_VA_LIST: i32 = 1;
 pub const SQLITE_VERSION: &[u8; 7] = b"3.44.0\0";
 pub const SQLITE_VERSION_NUMBER: i32 = 3044000;
 pub const SQLITE_SOURCE_ID: &[u8; 85] =
@@ -499,8 +500,8 @@ pub const FTS5_TOKENIZE_DOCUMENT: i32 = 4;
 pub const FTS5_TOKENIZE_AUX: i32 = 8;
 pub const FTS5_TOKEN_COLOCATED: i32 = 1;
 pub const WAL_SAVEPOINT_NDATA: i32 = 4;
-pub type __gnuc_va_list = __builtin_va_list;
 pub type va_list = __builtin_va_list;
+pub type __gnuc_va_list = __builtin_va_list;
 extern "C" {
     pub static sqlite3_version: [::std::os::raw::c_char; 0usize];
 }
@@ -2261,11 +2262,7 @@ pub struct sqlite3_module {
             pzErr: *mut *mut ::std::os::raw::c_char,
         ) -> ::std::os::raw::c_int,
     >,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct libsql_module {
-    pub iVersion: ::std::os::raw::c_int,
+    pub reserved: [::std::option::Option<unsafe extern "C" fn()>; 5usize],
     pub xPreparedSql: ::std::option::Option<
         unsafe extern "C" fn(
             arg1: *mut sqlite3_vtab_cursor,
@@ -2328,16 +2325,6 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn libsql_create_module(
-        db: *mut sqlite3,
-        zName: *const ::std::os::raw::c_char,
-        p: *const sqlite3_module,
-        pLibsql: *const libsql_module,
-        pClientData: *mut ::std::os::raw::c_void,
-        xDestroy: ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void)>,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
     pub fn sqlite3_drop_modules(
         db: *mut sqlite3,
         azKeep: *mut *const ::std::os::raw::c_char,
@@ -2347,7 +2334,6 @@ extern "C" {
 #[derive(Debug, Copy, Clone)]
 pub struct sqlite3_vtab {
     pub pModule: *const sqlite3_module,
-    pub pLibsqlModule: *const libsql_module,
     pub nRef: ::std::os::raw::c_int,
     pub zErrMsg: *mut ::std::os::raw::c_char,
 }

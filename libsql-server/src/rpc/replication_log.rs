@@ -22,7 +22,7 @@ use uuid::Uuid;
 use crate::auth::Jwt;
 use crate::auth::{parsers::parse_grpc_auth_header, Auth};
 use crate::connection::config::DatabaseConfig;
-use crate::namespace::{NamespaceName, NamespaceStore, PrimaryNamespaceMaker};
+use crate::namespace::{NamespaceName, NamespaceStore};
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 use crate::stats::Stats;
@@ -31,7 +31,7 @@ use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 use super::extract_namespace;
 
 pub struct ReplicationLogService {
-    namespaces: NamespaceStore<PrimaryNamespaceMaker>,
+    namespaces: NamespaceStore,
     idle_shutdown_layer: Option<IdleShutdownKicker>,
     user_auth_strategy: Option<Auth>,
     disable_namespaces: bool,
@@ -47,7 +47,7 @@ pub const MAX_FRAMES_PER_BATCH: usize = 1024;
 
 impl ReplicationLogService {
     pub fn new(
-        namespaces: NamespaceStore<PrimaryNamespaceMaker>,
+        namespaces: NamespaceStore,
         idle_shutdown_layer: Option<IdleShutdownKicker>,
         user_auth_strategy: Option<Auth>,
         disable_namespaces: bool,
@@ -150,14 +150,21 @@ impl ReplicationLogService {
     > {
         let (logger, config, version, stats, config_changed) = self
             .namespaces
-            .with(namespace, |ns| {
-                let logger = ns.db.wal_manager.wrapped().logger().clone();
+            .with(namespace, |ns| -> Result<_, Status> {
+                let logger = ns
+                    .db
+                    .as_primary()
+                    .ok_or_else(|| Status::invalid_argument("not a primary"))?
+                    .wal_manager
+                    .wrapped()
+                    .logger()
+                    .clone();
                 let config_changed = ns.config_changed();
                 let config = ns.config();
                 let version = ns.config_version();
                 let stats = ns.stats();
 
-                (logger, config, version, stats, config_changed)
+                Ok((logger, config, version, stats, config_changed))
             })
             .await
             .map_err(|e| {
@@ -166,7 +173,7 @@ impl ReplicationLogService {
                 } else {
                     Status::internal(e.to_string())
                 }
-            })?;
+            })??;
 
         if verify_session {
             self.verify_session_token(req, version)?;

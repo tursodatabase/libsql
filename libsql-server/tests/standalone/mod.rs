@@ -18,6 +18,8 @@ use libsql_server::config::{AdminApiConfig, UserApiConfig};
 use common::net::{init_tracing, TestServer, TurmoilConnector};
 
 mod attach;
+mod auth;
+mod utils;
 
 async fn make_standalone_server() -> Result<(), Box<dyn std::error::Error>> {
     init_tracing();
@@ -49,7 +51,7 @@ fn basic_query() {
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "dummy-token", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -75,7 +77,7 @@ fn basic_metrics() {
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "dummy-token", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -121,7 +123,7 @@ fn primary_serializability() {
         let notify = notify.clone();
         async move {
             let db =
-                Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+                Database::open_remote_with_connector("http://primary:8080", "dummy-token", TurmoilConnector)?;
             let conn = db.connect()?;
             conn.execute("create table test (x)", ()).await?;
             conn.execute("insert into test values (12)", ()).await?;
@@ -135,7 +137,7 @@ fn primary_serializability() {
     sim.client("reader", {
         async move {
             let db =
-                Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+                Database::open_remote_with_connector("http://primary:8080", "dummy-token", TurmoilConnector)?;
             let conn = db.connect()?;
 
             notify.notified().await;
@@ -166,7 +168,7 @@ fn execute_transaction() {
         let notify = notify.clone();
         async move {
             let db =
-                Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+                Database::open_remote_with_connector("http://primary:8080", "dummy-token", TurmoilConnector)?;
             let conn = db.connect()?;
 
             conn.execute("create table test (x)", ()).await?;
@@ -192,7 +194,7 @@ fn execute_transaction() {
     sim.client("reader", {
         async move {
             let db =
-                Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+                Database::open_remote_with_connector("http://primary:8080", "dummy-token", TurmoilConnector)?;
             let conn = db.connect()?;
 
             notify.notified().await;
@@ -232,7 +234,7 @@ fn basic_query_fail() {
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "dummy-token", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -258,7 +260,7 @@ fn begin_commit() {
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "dummy-token", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -294,7 +296,7 @@ fn begin_rollback() {
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "dummy-token", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -331,29 +333,29 @@ fn is_autocommit() {
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "dummy-token", TurmoilConnector)?;
         let conn = db.connect()?;
 
-        assert!(conn.is_autocommit());
+        assert!(conn.is_autocommit().await);
         conn.execute("create table test (x)", ()).await?;
 
         conn.execute("begin;", ()).await?;
-        assert!(!conn.is_autocommit());
+        assert!(!conn.is_autocommit().await);
         conn.execute("insert into test values (12);", ()).await?;
         conn.execute("commit;", ()).await?;
-        assert!(conn.is_autocommit());
+        assert!(conn.is_autocommit().await);
 
         // make an explicit transaction
         {
             let tx = conn.transaction().await?;
-            assert!(!tx.is_autocommit());
-            assert!(conn.is_autocommit()); // connection is still autocommit
+            assert!(!tx.is_autocommit().await);
+            assert!(conn.is_autocommit().await); // connection is still autocommit
 
             tx.execute("insert into test values (12);", ()).await?;
             // transaction rolls back
         }
 
-        assert!(conn.is_autocommit());
+        assert!(conn.is_autocommit().await);
 
         let mut rows = conn.query("select count(*) from test", ()).await?;
         assert_eq!(
@@ -374,7 +376,7 @@ fn random_rowid() {
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "dummy-token", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute(

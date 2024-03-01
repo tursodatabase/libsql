@@ -8,7 +8,7 @@ use super::UserAuthContext;
 
 pub fn parse_http_basic_auth_arg(arg: &str) -> Result<Option<String>> {
     if arg == "always" {
-        return Ok(None);
+        return Ok(Some("always".to_string()));
     }
 
     let Some((scheme, param)) = arg.split_once(':') else {
@@ -37,12 +37,16 @@ pub fn parse_jwt_key(data: &str) -> Result<jsonwebtoken::DecodingKey> {
 }
 
 pub(crate) fn parse_grpc_auth_header(metadata: &MetadataMap) -> Result<UserAuthContext, tonic::Status> {
+    // todo print metadata
+    // tracing::trace!()
+    let header = metadata.get(GRPC_AUTH_HEADER)
+        .ok_or(tonic::Status::new(tonic::Code::Unauthenticated,""))?;
 
-    metadata.get(GRPC_AUTH_HEADER)
-        .map(|v| v.to_str().expect("Auth should be ASCII")) // fixme we should not use expect
-        .and_then(|auth_str| auth_string_to_auth_context(auth_str).ok())
-        .context("Failed to parse grpc auth header")
-        .map_err(|err| tonic::Status::new(tonic::Code::InvalidArgument, format!("{}", err)))
+    let header_str = header.to_str().context("Auth should be ASCII")
+        .map_err(|err| tonic::Status::new(tonic::Code::InvalidArgument, ""))?;
+
+    auth_string_to_auth_context(header_str).context(format!("Failed parse grpc auth: {header_str}"))
+        .map_err(|err| tonic::Status::new(tonic::Code::InvalidArgument, ""))?;
 }
 
 // todo this should be a constructor or a factory associates iwth userauthcontext
@@ -89,6 +93,8 @@ mod tests {
 
     use crate::auth::{parse_http_auth_header, AuthError};
 
+    use super::parse_http_basic_auth_arg;
+
     #[test]
     fn parse_http_auth_header_returns_auth_header_param_when_valid() {
         assert_eq!(
@@ -128,6 +134,12 @@ mod tests {
             parse_http_auth_header("basic", &HeaderValue::from_str("Bearer abc").ok()).unwrap_err(),
             AuthError::HttpAuthHeaderUnsupportedScheme
         )
+    }
+
+    #[test]
+    fn parse_http_auth_arg_always() {
+        let out = parse_http_basic_auth_arg("always").unwrap();
+        assert_eq!(out, Some("always".to_string()));
     }
 }
 

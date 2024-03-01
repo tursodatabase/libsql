@@ -4,21 +4,17 @@ use axum::extract::FromRequestParts;
 use crate::{
     auth::{parsers::auth_string_to_auth_context, Jwt, Auth},
     connection::RequestContext,
-    namespace::MakeNamespace,
 };
 
 use super::{db_factory, AppState};
 
 #[async_trait::async_trait]
-impl<F> FromRequestParts<AppState<F>> for RequestContext
-where
-    F: MakeNamespace,
-{
+impl FromRequestParts<AppState> for RequestContext {
     type Rejection = crate::error::Error;
 
     async fn from_request_parts(
         parts: &mut axum::http::request::Parts,
-        state: &AppState<F>,
+        state: &AppState,
     ) -> std::result::Result<Self, Self::Rejection> {
 
         // start todo this block is same as the one in mod.rs
@@ -45,6 +41,10 @@ where
 
     // end todo
 
-        Ok(Self::new(auth, namespace, state.namespaces.meta_store()))
+        Ok(Self::new(
+            auth,
+            namespace,
+            state.namespaces.meta_store().clone(),
+        ))
     }
 }

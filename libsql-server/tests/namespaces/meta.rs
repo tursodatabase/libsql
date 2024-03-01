@@ -37,7 +37,7 @@ fn replicated_config() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.primary:8080",
-                "",
+                "dummy_token",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;
@@ -49,7 +49,7 @@ fn replicated_config() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.replica1:8080",
-                "",
+                "dummy_token",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;
@@ -85,7 +85,7 @@ fn meta_store() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.primary:8080",
-                "",
+                "dummy_token",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;
@@ -107,7 +107,7 @@ fn meta_store() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.primary:8080",
-                "",
+                "dummy_token",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;
@@ -129,7 +129,7 @@ fn meta_store() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.primary:8080",
-                "",
+                "dummy_token",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;
@@ -165,7 +165,7 @@ fn meta_attach() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.primary:8080",
-                "",
+                "dummy_token",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;
@@ -177,7 +177,7 @@ fn meta_attach() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.primary:8080",
-                "",
+                "dummy_token",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;
@@ -200,7 +200,7 @@ fn meta_attach() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.primary:8080",
-                "",
+                "dummy_token",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;
