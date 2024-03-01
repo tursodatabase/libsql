@@ -96,6 +96,7 @@ impl QueriesLatencyStats {
 #[derive(Serialize, Default)]
 pub struct QueriesStatsResponse {
     pub id: Uuid,
+    pub created_at: u64,
     pub count: u64,
     pub stats: Vec<QueryAndStats>,
     pub elapsed: QueriesLatencyStats,
@@ -110,6 +111,7 @@ impl From<&Stats> for Option<QueriesStatsResponse> {
         let queries = queries.as_ref().unwrap();
         Some(QueriesStatsResponse {
             id: queries.id(),
+            created_at: queries.created_at().timestamp() as u64,
             count: queries.count(),
             elapsed: QueriesLatencyStats::from(queries.hist(), &queries.elapsed()),
             stats: queries

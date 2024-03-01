@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, RwLock, Weak};
 
-use chrono::{DurationRound, Utc};
+use chrono::{DateTime, DurationRound, Utc};
 use hdrhistogram::Histogram;
 use metrics::{counter, gauge, histogram, increment_counter};
 use serde::{Deserialize, Serialize};
@@ -91,6 +91,7 @@ pub struct QueriesStats {
     stats_threshold: u64,
     hist: Histogram<u32>,
     expires_at: Option<Instant>,
+    created_at: DateTime<Utc>,
 }
 
 impl QueriesStats {
@@ -102,6 +103,7 @@ impl QueriesStats {
             stats_threshold: 0,
             hist: Histogram::<u32>::new(3).unwrap(),
             expires_at: None,
+            created_at: Utc::now(),
         }
     }
 
@@ -178,6 +180,10 @@ impl QueriesStats {
 
     pub(crate) fn count(&self) -> u64 {
         self.hist.len() as u64
+    }
+
+    pub(crate) fn created_at(&self) -> &DateTime<Utc> {
+        &self.created_at
     }
 }
 
