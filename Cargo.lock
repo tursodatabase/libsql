@@ -2165,6 +2165,7 @@ checksum = "765c9198f173dd59ce26ff9f95ef0aafd0a0fe01fb9d72841bc5066a4c06511d"
 dependencies = [
  "base64",
  "byteorder",
+ "crossbeam-channel",
  "flate2",
  "nom",
  "num-traits",
@@ -2794,6 +2795,7 @@ dependencies = [
  "futures",
  "futures-core",
  "hashbrown 0.14.3",
+ "hdrhistogram",
  "hmac",
  "http-body",
  "hyper",

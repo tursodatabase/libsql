@@ -2,14 +2,15 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, RwLock, Weak};
 
+use chrono::{DateTime, DurationRound, Utc};
+use hdrhistogram::Histogram;
 use metrics::{counter, gauge, histogram, increment_counter};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap};
 use tokio::io::AsyncWriteExt;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
-use tokio::time::Duration;
-use tracing::debug;
+use tokio::time::{Duration, Instant};
 use uuid::Uuid;
 
 use crate::namespace::NamespaceName;
@@ -83,31 +84,46 @@ impl QueryStats {
     }
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct QueriesStats {
-    #[serde(default)]
-    id: Option<Uuid>,
-    #[serde(default)]
-    stats_threshold: AtomicU64,
-    #[serde(default)]
+    id: Uuid,
     stats: HashMap<String, QueryStats>,
+    elapsed: Duration,
+    stats_threshold: u64,
+    hist: Histogram<u32>,
+    expires_at: Option<Instant>,
+    created_at: DateTime<Utc>,
 }
 
 impl QueriesStats {
-    fn new() -> Arc<RwLock<Self>> {
-        let mut this = QueriesStats::default();
-        this.id = Some(Uuid::new_v4());
-        Arc::new(RwLock::new(this))
+    fn new() -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            stats: HashMap::new(),
+            elapsed: Duration::default(),
+            stats_threshold: 0,
+            hist: Histogram::<u32>::new(3).unwrap(),
+            expires_at: None,
+            created_at: Utc::now(),
+        }
+    }
+
+    fn with_expiration(expires_at: Instant) -> Self {
+        let mut this = Self::new();
+        this.expires_at = Some(expires_at);
+        this
     }
 
     fn register_query(&mut self, sql: &String, stat: QueryStats) {
+        self.elapsed += stat.elapsed;
+        let _ = self.hist.record(stat.elapsed.as_millis() as u64);
+
         let (aggregated, new) = match self.stats.get(sql) {
             Some(aggregated) => (aggregated.merge(&stat), false),
             None => (stat, true),
         };
 
-        debug!("query: {}, elapsed: {:?}", sql, aggregated.elapsed);
-        if (aggregated.elapsed.as_micros() as u64) < self.stats_threshold.load(Ordering::Relaxed) {
+        if (aggregated.elapsed.as_micros() as u64) < self.stats_threshold {
             return;
         }
 
@@ -132,8 +148,7 @@ impl QueriesStats {
 
     fn update_threshold(&mut self) {
         if let Some((_, v)) = self.min() {
-            self.stats_threshold
-                .store(v.elapsed.as_micros() as u64, Ordering::Relaxed);
+            self.stats_threshold = v.elapsed.as_micros() as u64;
         }
     }
 
@@ -144,12 +159,32 @@ impl QueriesStats {
         }
     }
 
-    pub(crate) fn id(&self) -> Option<Uuid> {
+    pub(crate) fn id(&self) -> Uuid {
         self.id
     }
 
     pub(crate) fn stats(&self) -> &HashMap<String, QueryStats> {
         &self.stats
+    }
+
+    pub(crate) fn hist(&self) -> &Histogram<u32> {
+        &self.hist
+    }
+
+    pub(crate) fn expired(&self) -> bool {
+        self.expires_at.map_or(false, |exp| exp < Instant::now())
+    }
+
+    pub(crate) fn elapsed(&self) -> &Duration {
+        &self.elapsed
+    }
+
+    pub(crate) fn count(&self) -> u64 {
+        self.hist.len() as u64
+    }
+
+    pub(crate) fn created_at(&self) -> &DateTime<Utc> {
+        &self.created_at
     }
 }
 
@@ -199,7 +234,7 @@ pub struct Stats {
     #[serde(default)]
     query_latency: AtomicU64,
     #[serde(skip)]
-    queries: Arc<RwLock<QueriesStats>>,
+    queries: Arc<RwLock<Option<QueriesStats>>>,
 }
 
 impl Stats {
@@ -222,7 +257,6 @@ impl Stats {
 
         let (update_sender, update_receiver) = mpsc::channel(256);
 
-        this.queries = QueriesStats::new();
         this.namespace = namespace;
         this.sender = Some(update_sender);
 
@@ -381,12 +415,16 @@ impl Stats {
         self.query_latency.load(Ordering::Relaxed)
     }
 
-    pub(crate) fn get_queries(&self) -> &Arc<RwLock<QueriesStats>> {
+    pub(crate) fn get_queries(&self) -> &Arc<RwLock<Option<QueriesStats>>> {
         &self.queries
     }
 
     fn register_query(&self, sql: &String, stat: QueryStats) {
-        self.queries.write().unwrap().register_query(sql, stat)
+        let mut queries = self.queries.write().unwrap();
+        if queries.as_ref().map_or(true, |q| q.expired()) {
+            *queries = Some(QueriesStats::with_expiration(next_hour()))
+        }
+        queries.as_mut().unwrap().register_query(sql, stat)
     }
 
     fn add_top_query(&self, query: TopQuery) {
@@ -492,4 +530,12 @@ async fn try_persist_stats(stats: Weak<Stats>, path: &Path) -> anyhow::Result<()
     file.flush().await?;
     tokio::fs::rename(temp_path, path).await?;
     Ok(())
+}
+
+fn next_hour() -> Instant {
+    let utc_now = Utc::now();
+    let next_hour = (utc_now + chrono::Duration::hours(1))
+        .duration_trunc(chrono::Duration::hours(1))
+        .unwrap();
+    Instant::now() + (next_hour - utc_now).to_std().unwrap()
 }

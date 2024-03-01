@@ -1,5 +1,7 @@
 use std::sync::Arc;
+use std::time::Duration;
 
+use hdrhistogram::Histogram;
 use itertools::Itertools;
 use serde::Serialize;
 
@@ -26,7 +28,7 @@ pub struct StatsResponse {
     pub embedded_replica_frames_replicated: u64,
     pub query_count: u64,
     pub elapsed_ms: u64,
-    pub queries: QueriesStatsResponse,
+    pub queries: Option<QueriesStatsResponse>,
 }
 
 impl From<&Stats> for StatsResponse {
@@ -55,7 +57,7 @@ impl From<&Stats> for StatsResponse {
                 .iter()
                 .cloned()
                 .collect(),
-            queries: QueriesStatsResponse::from(stats),
+            queries: stats.into(),
         }
     }
 }
@@ -66,26 +68,62 @@ impl From<Stats> for StatsResponse {
     }
 }
 
-#[derive(Serialize)]
-pub struct QueriesStatsResponse {
-    pub id: Option<Uuid>,
-    pub stats: Vec<QueryAndStats>,
+#[derive(Serialize, Default)]
+pub struct QueriesLatencyStats {
+    pub sum: u64,
+    pub p50: u64,
+    pub p75: u64,
+    pub p90: u64,
+    pub p95: u64,
+    pub p99: u64,
+    pub p999: u64,
 }
 
-impl From<&Stats> for QueriesStatsResponse {
+impl QueriesLatencyStats {
+    fn from(hist: &Histogram<u32>, sum: &Duration) -> Self {
+        QueriesLatencyStats {
+            sum: sum.as_millis() as u64,
+            p50: hist.value_at_percentile(50.0),
+            p75: hist.value_at_percentile(75.0),
+            p90: hist.value_at_percentile(90.0),
+            p95: hist.value_at_percentile(95.0),
+            p99: hist.value_at_percentile(99.0),
+            p999: hist.value_at_percentile(99.9),
+        }
+    }
+}
+
+#[derive(Serialize, Default)]
+pub struct QueriesStatsResponse {
+    pub id: Uuid,
+    pub created_at: u64,
+    pub count: u64,
+    pub stats: Vec<QueryAndStats>,
+    pub elapsed: QueriesLatencyStats,
+}
+
+impl From<&Stats> for Option<QueriesStatsResponse> {
     fn from(stats: &Stats) -> Self {
         let queries = stats.get_queries().read().unwrap();
-        Self {
-            id: queries.id(),
-            stats: queries
-                .stats()
-                .iter()
-                .map(|(k, v)| QueryAndStats {
-                    query: k.clone(),
-                    elapsed_ms: v.elapsed.as_millis() as u64,
-                    stat: v.clone(),
-                })
-                .collect_vec(),
+        if queries.as_ref().map_or(true, |q| q.expired()) {
+            Self::default()
+        } else {
+            let queries = queries.as_ref().unwrap();
+            Some(QueriesStatsResponse {
+                id: queries.id(),
+                created_at: queries.created_at().timestamp() as u64,
+                count: queries.count(),
+                elapsed: QueriesLatencyStats::from(queries.hist(), &queries.elapsed()),
+                stats: queries
+                    .stats()
+                    .iter()
+                    .map(|(k, v)| QueryAndStats {
+                        query: k.clone(),
+                        elapsed_ms: v.elapsed.as_millis() as u64,
+                        stat: v.clone(),
+                    })
+                    .collect_vec(),
+            })
         }
     }
 }
