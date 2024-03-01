@@ -28,7 +28,7 @@ pub struct StatsResponse {
     pub embedded_replica_frames_replicated: u64,
     pub query_count: u64,
     pub elapsed_ms: u64,
-    pub queries: QueriesStatsResponse,
+    pub queries: Option<QueriesStatsResponse>,
 }
 
 impl From<&Stats> for StatsResponse {
@@ -68,7 +68,7 @@ impl From<Stats> for StatsResponse {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Default)]
 pub struct QueriesLatencyStats {
     pub sum: u64,
     pub p50: u64,
@@ -95,25 +95,23 @@ impl QueriesLatencyStats {
 
 #[derive(Serialize, Default)]
 pub struct QueriesStatsResponse {
-    pub id: Option<Uuid>,
-    pub count: Option<u64>,
+    pub id: Uuid,
+    pub count: u64,
     pub stats: Vec<QueryAndStats>,
-    pub elapsed: Option<QueriesLatencyStats>,
+    pub elapsed: QueriesLatencyStats,
 }
 
-impl From<&Stats> for QueriesStatsResponse {
+impl From<&Stats> for Option<QueriesStatsResponse> {
     fn from(stats: &Stats) -> Self {
         let queries = stats.get_queries().read().unwrap();
-        if queries.expired() {
+        if queries.as_ref().map_or(true, |q| q.expired()) {
             return Self::default();
         }
-        Self {
+        let queries = queries.as_ref().unwrap();
+        Some(QueriesStatsResponse {
             id: queries.id(),
             count: queries.count(),
-            elapsed: queries
-                .hist()
-                .as_ref()
-                .map(|h| QueriesLatencyStats::from(h, queries.elapsed())),
+            elapsed: QueriesLatencyStats::from(queries.hist(), &queries.elapsed()),
             stats: queries
                 .stats()
                 .iter()
@@ -123,7 +121,7 @@ impl From<&Stats> for QueriesStatsResponse {
                     stat: v.clone(),
                 })
                 .collect_vec(),
-        }
+        })
     }
 }
 

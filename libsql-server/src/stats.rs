@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, RwLock, Weak};
 
-use chrono::{DateTime, DurationRound, Utc};
+use chrono::{DurationRound, Utc};
 use hdrhistogram::Histogram;
 use metrics::{counter, gauge, histogram, increment_counter};
 use serde::{Deserialize, Serialize};
@@ -11,7 +11,6 @@ use tokio::io::AsyncWriteExt;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 use tokio::time::{Duration, Instant};
-use tracing::debug;
 use uuid::Uuid;
 
 use crate::namespace::NamespaceName;
@@ -84,44 +83,43 @@ impl QueryStats {
     }
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct QueriesStats {
-    #[serde(default)]
-    id: Option<Uuid>,
-    #[serde(default)]
+    id: Uuid,
     stats: HashMap<String, QueryStats>,
-    #[serde(skip)]
     elapsed: Duration,
-    #[serde(skip)]
     stats_threshold: u64,
-    #[serde(skip)]
-    hist: Option<Histogram<u32>>,
-    #[serde(skip)]
+    hist: Histogram<u32>,
     expires_at: Option<Instant>,
 }
 
 impl QueriesStats {
-    fn new(expires_at: Instant) -> Self {
-        let mut this = QueriesStats::default();
-        this.id = Some(Uuid::new_v4());
-        this.hist = Histogram::<u32>::new(3).ok();
+    fn new() -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            stats: HashMap::new(),
+            elapsed: Duration::default(),
+            stats_threshold: 0,
+            hist: Histogram::<u32>::new(3).unwrap(),
+            expires_at: None,
+        }
+    }
+
+    fn with_expiration(expires_at: Instant) -> Self {
+        let mut this = Self::new();
         this.expires_at = Some(expires_at);
         this
     }
 
     fn register_query(&mut self, sql: &String, stat: QueryStats) {
         self.elapsed += stat.elapsed;
-
-        if let Some(hist) = self.hist.as_mut() {
-            let _ = hist.record(stat.elapsed.as_millis() as u64);
-        }
+        let _ = self.hist.record(stat.elapsed.as_millis() as u64);
 
         let (aggregated, new) = match self.stats.get(sql) {
             Some(aggregated) => (aggregated.merge(&stat), false),
             None => (stat, true),
         };
 
-        debug!("query: {}, elapsed: {:?}", sql, aggregated.elapsed);
         if (aggregated.elapsed.as_micros() as u64) < self.stats_threshold {
             return;
         }
@@ -158,7 +156,7 @@ impl QueriesStats {
         }
     }
 
-    pub(crate) fn id(&self) -> Option<Uuid> {
+    pub(crate) fn id(&self) -> Uuid {
         self.id
     }
 
@@ -166,7 +164,7 @@ impl QueriesStats {
         &self.stats
     }
 
-    pub(crate) fn hist(&self) -> &Option<Histogram<u32>> {
+    pub(crate) fn hist(&self) -> &Histogram<u32> {
         &self.hist
     }
 
@@ -178,8 +176,8 @@ impl QueriesStats {
         &self.elapsed
     }
 
-    pub(crate) fn count(&self) -> Option<u64> {
-        self.hist.as_ref().map(|h| h.len() as u64)
+    pub(crate) fn count(&self) -> u64 {
+        self.hist.len() as u64
     }
 }
 
@@ -229,7 +227,7 @@ pub struct Stats {
     #[serde(default)]
     query_latency: AtomicU64,
     #[serde(skip)]
-    queries: Arc<RwLock<QueriesStats>>,
+    queries: Arc<RwLock<Option<QueriesStats>>>,
 }
 
 impl Stats {
@@ -252,7 +250,9 @@ impl Stats {
 
         let (update_sender, update_receiver) = mpsc::channel(256);
 
-        this.queries = Arc::new(RwLock::new(QueriesStats::new(next_hour())));
+        this.queries = Arc::new(RwLock::new(Some(
+            QueriesStats::with_expiration(next_hour()),
+        )));
         this.namespace = namespace;
         this.sender = Some(update_sender);
 
@@ -411,16 +411,16 @@ impl Stats {
         self.query_latency.load(Ordering::Relaxed)
     }
 
-    pub(crate) fn get_queries(&self) -> &Arc<RwLock<QueriesStats>> {
+    pub(crate) fn get_queries(&self) -> &Arc<RwLock<Option<QueriesStats>>> {
         &self.queries
     }
 
     fn register_query(&self, sql: &String, stat: QueryStats) {
         let mut queries = self.queries.write().unwrap();
-        if queries.expired() {
-            *queries = QueriesStats::new(next_hour());
+        if queries.as_ref().map_or(true, |q| q.expired()) {
+            *queries = Some(QueriesStats::with_expiration(next_hour()))
         }
-        queries.register_query(sql, stat)
+        queries.as_mut().unwrap().register_query(sql, stat)
     }
 
     fn add_top_query(&self, query: TopQuery) {
