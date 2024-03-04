@@ -9,6 +9,7 @@ use std::time::{Duration, Instant};
 use crate::common::http::Client;
 use crate::common::net::{init_tracing, SimServer, TestServer, TurmoilAcceptor, TurmoilConnector};
 use crate::common::snapshot_metrics;
+use bytes::Bytes;
 use libsql::Database;
 use libsql_server::config::{AdminApiConfig, DbConfig, RpcServerConfig, UserApiConfig};
 use serde_json::json;
@@ -182,6 +183,105 @@ fn execute_batch() {
             INSERT INTO user (id) VALUES (2);", // COMMIT;",
         )
         .await?;
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn embedded_replica_with_encryption() {
+    let mut sim = Builder::new().build();
+
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_host = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let client = Client::new();
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let path = tmp_embedded_path.join("embedded");
+        let db = Database::open_with_remote_sync_connector(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080",
+            "",
+            TurmoilConnector,
+            false,
+            Some(libsql::EncryptionConfig::new(
+                libsql::Cipher::SQLCipher,
+                Bytes::from_static(b"SecretKey"),
+            )),
+        )
+        .await?;
+
+        let n = db.sync().await?;
+        assert_eq!(n, None);
+
+        let conn = db.connect()?;
+
+        conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
+            .await?;
+
+        let n = db.sync().await?;
+        assert_eq!(n, Some(1));
+
+        let err = conn
+            .execute("INSERT INTO user(id) VALUES (1), (1)", ())
+            .await
+            .unwrap_err();
+
+        let libsql::Error::RemoteSqliteFailure(code, extended_code, _) = err else {
+            panic!()
+        };
+
+        assert_eq!(code, 3);
+        assert_eq!(extended_code, 1555);
+
+        let snapshot = snapshot_metrics();
+
+        for (key, (_, _, val)) in snapshot.snapshot() {
+            if key.kind() == metrics_util::MetricKind::Counter
+                && key.key().name() == "libsql_client_version"
+            {
+                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(8));
+                let label = key.key().labels().next().unwrap();
+                assert!(label.value().starts_with("libsql-rpc-"));
+            }
+        }
+
+        snapshot.assert_counter("libsql_server_user_http_response", 8);
+
+        drop(conn);
+        drop(db);
+
+        let db = Database::open_with_remote_sync_connector(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080",
+            "",
+            TurmoilConnector,
+            false,
+            Some(libsql::EncryptionConfig::new(
+                libsql::Cipher::SQLCipher,
+                Bytes::from_static(b"SecretKey"),
+            )),
+        )
+        .await?;
+        let conn = db.connect()?;
+        let mut res = conn.query("SELECT id FROM user", ()).await?;
+        let row = res.next().await?;
+        assert!(row.is_some());
+
+        assert_eq!(1, row.unwrap().get::<i32>(0)?);
+
+        let row = res.next().await?;
+        assert!(row.is_none());
 
         Ok(())
     });
