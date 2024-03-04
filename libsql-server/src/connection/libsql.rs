@@ -20,7 +20,7 @@ use crate::query::Query;
 use crate::query_analysis::{StmtKind, TxnStatus};
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
 use crate::replication::FrameNo;
-use crate::stats::Stats;
+use crate::stats::{Stats, StatsUpdateMessage};
 use crate::Result;
 
 use super::config::DatabaseConfigStore;
@@ -462,6 +462,20 @@ impl From<TransactionState> for TxnStatus {
     }
 }
 
+fn update_stats(stats: &Stats, sql: String, stmt: &rusqlite::Statement, elapsed: Duration) {
+    let rows_read = stmt.get_status(StatementStatus::RowsRead) as u64;
+    let rows_written = stmt.get_status(StatementStatus::RowsWritten) as u64;
+    let mem_used = stmt.get_status(StatementStatus::MemUsed) as u64;
+
+    stats.send(StatsUpdateMessage {
+        sql,
+        elapsed,
+        rows_read,
+        rows_written,
+        mem_used,
+    });
+}
+
 impl<W: WalHook> Connection<W> {
     fn new(
         path: &Path,
@@ -734,7 +748,12 @@ impl<W: WalHook> Connection<W> {
 
         drop(qresult);
 
-        self.update_stats(query.stmt.stmt.clone(), &stmt, Instant::now() - start);
+        update_stats(
+            &self.stats,
+            query.stmt.stmt.clone(),
+            &stmt,
+            Instant::now() - start,
+        );
 
         Ok((affected_row_count, last_insert_rowid))
     }
@@ -770,42 +789,6 @@ impl<W: WalHook> Connection<W> {
         }
         VACUUM_COUNT.increment(1);
         Ok(())
-    }
-
-    fn update_stats(&self, sql: String, stmt: &rusqlite::Statement, elapsed: Duration) {
-        histogram!("libsql_server_statement_execution_time", elapsed);
-        let elapsed = elapsed.as_millis() as u64;
-        let rows_read = stmt.get_status(StatementStatus::RowsRead) as u64;
-        let rows_written = stmt.get_status(StatementStatus::RowsWritten) as u64;
-        let mem_used = stmt.get_status(StatementStatus::MemUsed) as u64;
-        histogram!("libsql_server_statement_mem_used_bytes", mem_used as f64);
-        let rows_read = if rows_read == 0 && rows_written == 0 {
-            1
-        } else {
-            rows_read
-        };
-        self.stats.inc_rows_read(rows_read);
-        self.stats.inc_rows_written(rows_written);
-        let weight = rows_read + rows_written;
-        if self.stats.qualifies_as_top_query(weight) {
-            self.stats.add_top_query(crate::stats::TopQuery::new(
-                sql.clone(),
-                rows_read,
-                rows_written,
-            ));
-        }
-        if self.stats.qualifies_as_slowest_query(elapsed) {
-            self.stats
-                .add_slowest_query(crate::stats::SlowestQuery::new(
-                    sql.clone(),
-                    elapsed,
-                    rows_read,
-                    rows_written,
-                ));
-        }
-
-        self.stats
-            .update_query_metrics(rows_read, rows_written, mem_used, elapsed)
     }
 
     fn describe(&self, sql: &str) -> crate::Result<DescribeResponse> {
