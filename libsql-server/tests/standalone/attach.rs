@@ -1,5 +1,6 @@
 use insta::assert_debug_snapshot;
 use libsql::Database;
+use uuid::Uuid;
 
 use crate::{
     common::{http::Client, net::TurmoilConnector},
@@ -209,6 +210,99 @@ fn attach_auth() {
         // succeeds!
         assert_debug_snapshot!(rows.next().await);
 
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn attach_auth_with_uuids() {
+    let mut sim = turmoil::Builder::new().build();
+
+    sim.host("primary", make_standalone_server);
+
+    sim.client("test", async {
+        let client = Client::new();
+
+        let (enc, jwt_key) = key_pair();
+
+        let main_db_id = Uuid::new_v4();
+        let attach_db_id = Uuid::new_v4();
+
+        assert!(client
+            .post(
+                format!("http://primary:9090/v1/namespaces/{}/create", main_db_id).as_str(),
+                serde_json::json!({ "jwt_key": jwt_key })
+            )
+            .await
+            .unwrap()
+            .status()
+            .is_success());
+        assert!(client
+            .post(
+                format!("http://primary:9090/v1/namespaces/{}/create", attach_db_id).as_str(),
+                serde_json::json!({ "allow_attach": true, "jwt_key": jwt_key })
+            )
+            .await
+            .unwrap()
+            .status()
+            .is_success());
+
+        let claims = serde_json::json!({
+            "p": {
+                "rw": {
+                    "ns": [main_db_id, attach_db_id]
+                },
+                "roa": {
+                    "ns": [attach_db_id]
+                }
+            }
+        });
+        let token = encode(&claims, &enc);
+
+        let attach_conn = Database::open_remote_with_connector(
+            format!("http://{}.primary:8080", attach_db_id).as_str(),
+            &token,
+            TurmoilConnector,
+        )?
+        .connect()
+        .unwrap();
+        attach_conn
+            .execute("CREATE TABLE bar_table (x)", ())
+            .await
+            .unwrap();
+        attach_conn
+            .execute("insert into bar_table values (43)", ())
+            .await
+            .unwrap();
+
+        let main_conn = Database::open_remote_with_connector(
+            format!("http://{}.primary:8080", main_db_id).as_str(),
+            &token,
+            TurmoilConnector,
+        )?
+        .connect()
+        .unwrap();
+
+        // fails: namespace is uuid, hence needs to be wrapped in quotes
+        assert_debug_snapshot!(main_conn
+            .execute(
+                "ATTACH DATABASE ae308915-caca-480f-a6b4-9f9f9dc84b11 as bar",
+                ()
+            )
+            .await
+            .unwrap_err());
+
+        let txn = main_conn.transaction().await.unwrap();
+        txn.execute(
+            format!("ATTACH DATABASE \"{}\" as bar", attach_db_id).as_str(),
+            (),
+        )
+        .await
+        .unwrap();
+        let mut rows = txn.query("SELECT * FROM bar.bar_table", ()).await.unwrap();
+        assert_debug_snapshot!(rows.next().await);
         Ok(())
     });
 

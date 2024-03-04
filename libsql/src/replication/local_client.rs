@@ -1,8 +1,12 @@
-use std::pin::Pin;
 use std::path::Path;
+use std::pin::Pin;
 
-use futures::{TryStreamExt, StreamExt};
-use libsql_replication::{replicator::{ReplicatorClient, Error}, frame::{Frame, FrameNo}, meta::WalIndexMeta};
+use futures::{StreamExt, TryStreamExt};
+use libsql_replication::{
+    frame::{Frame, FrameNo},
+    meta::WalIndexMeta,
+    replicator::{Error, ReplicatorClient},
+};
 use tokio_stream::Stream;
 
 use crate::replication::Frames;
@@ -16,12 +20,9 @@ pub struct LocalClient {
 
 impl LocalClient {
     pub(crate) async fn new(path: &Path) -> anyhow::Result<Self> {
-        let mut meta = WalIndexMeta::open(path.parent().unwrap()).await?;
+        let mut meta = WalIndexMeta::open_prefixed(path).await?;
         meta.init_default();
-        Ok(Self {
-            frames: None,
-            meta,
-        })
+        Ok(Self { frames: None, meta })
     }
 
     /// Load `frames` into the client. The caller must ensure that client was flushed before
@@ -51,8 +52,8 @@ impl ReplicatorClient for LocalClient {
             Some(f @ Frames::Snapshot(_)) => {
                 self.frames.replace(f);
                 Err(Error::NeedSnapshot)
-            },
-            None => Ok(Box::pin(tokio_stream::empty()))
+            }
+            None => Ok(Box::pin(tokio_stream::empty())),
         }
     }
 
@@ -60,7 +61,7 @@ impl ReplicatorClient for LocalClient {
     /// NeedSnapshot error
     async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
         match self.frames.take() {
-            Some(Frames::Snapshot(frames)) => { 
+            Some(Frames::Snapshot(frames)) => {
                 let size_after = frames.header().size_after.get();
                 let stream = async_stream::try_stream! {
                     let s = frames.into_stream_mut().map_err(|e| Error::Client(Box::new(e))).peekable();
@@ -74,8 +75,8 @@ impl ReplicatorClient for LocalClient {
                 };
 
                 Ok(Box::pin(stream))
-            },
-            Some(Frames::Vec(_)) | None => Ok(Box::pin(tokio_stream::empty()))
+            }
+            Some(Frames::Vec(_)) | None => Ok(Box::pin(tokio_stream::empty())),
         }
     }
 
@@ -102,7 +103,9 @@ mod test {
     #[tokio::test]
     async fn snapshot_stream_commited() {
         let tmp = tempdir().unwrap();
-        let snapshot = SnapshotFile::open("assets/test/snapshot.snap", None).await.unwrap();
+        let snapshot = SnapshotFile::open("assets/test/snapshot.snap", None)
+            .await
+            .unwrap();
         let mut client = LocalClient::new(&tmp.path().join("data")).await.unwrap();
         client.load_frames(Frames::Snapshot(snapshot));
         let mut s = client.snapshot().await.unwrap();

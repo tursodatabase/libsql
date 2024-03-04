@@ -183,4 +183,12 @@ impl Database {
             None
         }
     }
+
+    pub(crate) fn as_schema(&self) -> Option<&SchemaDatabase> {
+        if let Self::Schema(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
 }

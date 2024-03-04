@@ -2,12 +2,15 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, RwLock, Weak};
 
-use metrics::{counter, gauge, increment_counter};
+use chrono::{DateTime, DurationRound, Utc};
+use hdrhistogram::Histogram;
+use metrics::{counter, gauge, histogram, increment_counter};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 use tokio::io::AsyncWriteExt;
+use tokio::sync::mpsc;
 use tokio::task::JoinSet;
-use tokio::time::Duration;
+use tokio::time::{Duration, Instant};
 use uuid::Uuid;
 
 use crate::namespace::NamespaceName;
@@ -23,7 +26,7 @@ pub struct TopQuery {
 }
 
 impl TopQuery {
-    pub fn new(query: String, rows_read: u64, rows_written: u64) -> Self {
+    fn new(query: String, rows_read: u64, rows_written: u64) -> Self {
         Self {
             weight: rows_read + rows_written,
             rows_read,
@@ -42,7 +45,7 @@ pub struct SlowestQuery {
 }
 
 impl SlowestQuery {
-    pub fn new(query: String, elapsed_ms: u64, rows_read: u64, rows_written: u64) -> Self {
+    fn new(query: String, elapsed_ms: u64, rows_read: u64, rows_written: u64) -> Self {
         Self {
             elapsed_ms,
             query,
@@ -52,10 +55,154 @@ impl SlowestQuery {
     }
 }
 
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+pub struct QueryStats {
+    #[serde(skip)]
+    pub elapsed: Duration,
+    pub count: u64,
+    pub rows_written: u64,
+    pub rows_read: u64,
+}
+
+impl QueryStats {
+    fn new(elapsed: Duration, rows_read: u64, rows_written: u64) -> Self {
+        Self {
+            elapsed,
+            count: 1,
+            rows_read,
+            rows_written,
+        }
+    }
+
+    fn merge(&self, another: &QueryStats) -> Self {
+        Self {
+            elapsed: self.elapsed + another.elapsed,
+            count: self.count + another.count,
+            rows_read: self.rows_read + another.rows_read,
+            rows_written: self.rows_written + another.rows_written,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct QueriesStats {
+    id: Uuid,
+    stats: HashMap<String, QueryStats>,
+    elapsed: Duration,
+    stats_threshold: u64,
+    hist: Histogram<u32>,
+    expires_at: Option<Instant>,
+    created_at: DateTime<Utc>,
+}
+
+impl QueriesStats {
+    fn new() -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            stats: HashMap::new(),
+            elapsed: Duration::default(),
+            stats_threshold: 0,
+            hist: Histogram::<u32>::new(3).unwrap(),
+            expires_at: None,
+            created_at: Utc::now(),
+        }
+    }
+
+    fn with_expiration(expires_at: Instant) -> Self {
+        let mut this = Self::new();
+        this.expires_at = Some(expires_at);
+        this
+    }
+
+    fn register_query(&mut self, sql: &String, stat: QueryStats) {
+        self.elapsed += stat.elapsed;
+        let _ = self.hist.record(stat.elapsed.as_millis() as u64);
+
+        let (aggregated, new) = match self.stats.get(sql) {
+            Some(aggregated) => (aggregated.merge(&stat), false),
+            None => (stat, true),
+        };
+
+        if (aggregated.elapsed.as_micros() as u64) < self.stats_threshold {
+            return;
+        }
+
+        self.stats.insert(sql.clone(), aggregated);
+
+        if !new || self.stats.len() <= 30 {
+            return;
+        }
+
+        while self.stats.len() > 30 {
+            self.pop()
+        }
+
+        self.update_threshold();
+    }
+
+    fn min(&self) -> Option<(&String, &QueryStats)> {
+        self.stats
+            .iter()
+            .min_by(|a, b| a.1.elapsed.cmp(&b.1.elapsed))
+    }
+
+    fn update_threshold(&mut self) {
+        if let Some((_, v)) = self.min() {
+            self.stats_threshold = v.elapsed.as_micros() as u64;
+        }
+    }
+
+    fn pop(&mut self) {
+        let min = self.min();
+        if let Some(min) = min {
+            self.stats.remove(&min.0.clone());
+        }
+    }
+
+    pub(crate) fn id(&self) -> Uuid {
+        self.id
+    }
+
+    pub(crate) fn stats(&self) -> &HashMap<String, QueryStats> {
+        &self.stats
+    }
+
+    pub(crate) fn hist(&self) -> &Histogram<u32> {
+        &self.hist
+    }
+
+    pub(crate) fn expired(&self) -> bool {
+        self.expires_at.map_or(false, |exp| exp < Instant::now())
+    }
+
+    pub(crate) fn elapsed(&self) -> &Duration {
+        &self.elapsed
+    }
+
+    pub(crate) fn count(&self) -> u64 {
+        self.hist.len() as u64
+    }
+
+    pub(crate) fn created_at(&self) -> &DateTime<Utc> {
+        &self.created_at
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct StatsUpdateMessage {
+    pub sql: String,
+    pub elapsed: Duration,
+    pub rows_read: u64,
+    pub rows_written: u64,
+    pub mem_used: u64,
+}
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Stats {
     #[serde(skip)]
     namespace: NamespaceName,
+    #[serde(skip)]
+    sender: Option<mpsc::Sender<StatsUpdateMessage>>,
 
     #[serde(default)]
     id: Option<Uuid>,
@@ -82,6 +229,12 @@ pub struct Stats {
     slowest_queries: Arc<RwLock<BTreeSet<SlowestQuery>>>,
     #[serde(default)]
     embedded_replica_frames_replicated: AtomicU64,
+    #[serde(default)]
+    query_count: AtomicU64,
+    #[serde(default)]
+    query_latency: AtomicU64,
+    #[serde(skip)]
+    queries: Arc<RwLock<Option<QueriesStats>>>,
 }
 
 impl Stats {
@@ -102,7 +255,11 @@ impl Stats {
             this.id = Some(Uuid::new_v4());
         }
 
+        let (update_sender, update_receiver) = mpsc::channel(256);
+
         this.namespace = namespace;
+        this.sender = Some(update_sender);
+
         let this = Arc::new(this);
 
         join_set.spawn(spawn_stats_persist_thread(
@@ -110,17 +267,90 @@ impl Stats {
             stats_path.to_path_buf(),
         ));
 
+        join_set.spawn(spawn_stats_thread(Arc::downgrade(&this), update_receiver));
+
         Ok(this)
     }
 
+    pub fn send(&self, msg: StatsUpdateMessage) {
+        if let Some(sender) = &self.sender {
+            let _ = sender.blocking_send(msg);
+        }
+    }
+
+    pub fn update(&self, msg: StatsUpdateMessage) {
+        let sql = msg.sql;
+        let rows_read = msg.rows_read;
+        let rows_written = msg.rows_written;
+        let mem_used = msg.mem_used;
+        let elapsed = msg.elapsed;
+        let elapsed_ms = elapsed.as_millis() as u64;
+        let rows_read = if rows_read == 0 && rows_written == 0 {
+            1
+        } else {
+            rows_read
+        };
+        let weight = rows_read + rows_written;
+
+        histogram!("libsql_server_statement_execution_time", elapsed);
+        histogram!("libsql_server_statement_mem_used_bytes", mem_used as f64);
+
+        if rows_read >= 10_000 || rows_written >= 1_000 {
+            let sql = if sql.len() >= 512 {
+                &sql[..512]
+            } else {
+                &sql[..]
+            };
+
+            tracing::info!(
+                "high read ({}) or write ({}) query: {}",
+                rows_read,
+                rows_written,
+                sql
+            );
+        }
+
+        self.inc_rows_read(rows_read);
+        self.inc_rows_written(rows_written);
+        self.inc_query(elapsed_ms);
+        self.register_query(
+            &sql,
+            crate::stats::QueryStats::new(elapsed, rows_read, rows_written),
+        );
+        if self.qualifies_as_top_query(weight) {
+            self.add_top_query(crate::stats::TopQuery::new(
+                sql.clone(),
+                rows_read,
+                rows_written,
+            ));
+        }
+        if self.qualifies_as_slowest_query(elapsed_ms) {
+            self.add_slowest_query(crate::stats::SlowestQuery::new(
+                sql.clone(),
+                elapsed_ms,
+                rows_read,
+                rows_written,
+            ));
+        }
+
+        self.update_query_metrics(rows_read, rows_written, mem_used, elapsed_ms)
+    }
+
     /// increments the number of written rows by n
-    pub fn inc_rows_written(&self, n: u64) {
+    fn inc_rows_written(&self, n: u64) {
         counter!("libsql_server_rows_written", n, "namespace" => self.namespace.to_string());
         self.rows_written.fetch_add(n, Ordering::Relaxed);
     }
 
+    fn inc_query(&self, ms: u64) {
+        counter!("libsql_server_query_count", 1, "namespace" => self.namespace.to_string());
+        counter!("libsql_server_query_latency", ms, "namespace" => self.namespace.to_string());
+        self.query_count.fetch_add(1, Ordering::Relaxed);
+        self.query_latency.fetch_add(ms, Ordering::Relaxed);
+    }
+
     /// increments the number of read rows by n
-    pub fn inc_rows_read(&self, n: u64) {
+    fn inc_rows_read(&self, n: u64) {
         counter!("libsql_server_rows_read", n, "namespace" => self.namespace.to_string());
         self.rows_read.fetch_add(n, Ordering::Relaxed);
     }
@@ -131,17 +361,17 @@ impl Stats {
     }
 
     /// returns the total number of rows read since this database was created
-    pub fn rows_read(&self) -> u64 {
+    pub(crate) fn rows_read(&self) -> u64 {
         self.rows_read.load(Ordering::Relaxed)
     }
 
     /// returns the total number of rows written since this database was created
-    pub fn rows_written(&self) -> u64 {
+    pub(crate) fn rows_written(&self) -> u64 {
         self.rows_written.load(Ordering::Relaxed)
     }
 
     /// returns the total number of bytes used by the database (excluding uncheckpointed WAL entries)
-    pub fn storage_bytes_used(&self) -> u64 {
+    pub(crate) fn storage_bytes_used(&self) -> u64 {
         self.storage_bytes_used.load(Ordering::Relaxed)
     }
 
@@ -177,7 +407,27 @@ impl Stats {
         self.current_frame_no.load(Ordering::Relaxed)
     }
 
-    pub(crate) fn add_top_query(&self, query: TopQuery) {
+    pub(crate) fn get_query_count(&self) -> u64 {
+        self.query_count.load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn get_query_latency(&self) -> u64 {
+        self.query_latency.load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn get_queries(&self) -> &Arc<RwLock<Option<QueriesStats>>> {
+        &self.queries
+    }
+
+    fn register_query(&self, sql: &String, stat: QueryStats) {
+        let mut queries = self.queries.write().unwrap();
+        if queries.as_ref().map_or(true, |q| q.expired()) {
+            *queries = Some(QueriesStats::with_expiration(next_hour()))
+        }
+        queries.as_mut().unwrap().register_query(sql, stat)
+    }
+
+    fn add_top_query(&self, query: TopQuery) {
         let mut top_queries = self.top_queries.write().unwrap();
         tracing::debug!(
             "top query: {},{}:{}",
@@ -193,7 +443,7 @@ impl Stats {
         }
     }
 
-    pub(crate) fn qualifies_as_top_query(&self, weight: u64) -> bool {
+    fn qualifies_as_top_query(&self, weight: u64) -> bool {
         weight >= self.top_query_threshold.load(Ordering::Relaxed)
     }
 
@@ -206,7 +456,7 @@ impl Stats {
         self.top_query_threshold.store(0, Ordering::Relaxed);
     }
 
-    pub(crate) fn add_slowest_query(&self, query: SlowestQuery) {
+    fn add_slowest_query(&self, query: SlowestQuery) {
         let mut slowest_queries = self.slowest_queries.write().unwrap();
         tracing::debug!("slowest query: {}: {}", query.elapsed_ms, query.query);
         slowest_queries.insert(query);
@@ -219,7 +469,7 @@ impl Stats {
         }
     }
 
-    pub(crate) fn qualifies_as_slowest_query(&self, elapsed_ms: u64) -> bool {
+    fn qualifies_as_slowest_query(&self, elapsed_ms: u64) -> bool {
         elapsed_ms >= self.slowest_query_threshold.load(Ordering::Relaxed)
     }
 
@@ -234,13 +484,7 @@ impl Stats {
 
     // TOOD: Update these metrics with namespace labels in the future so we can localize
     // issues to a specific namespace.
-    pub(crate) fn update_query_metrics(
-        &self,
-        rows_read: u64,
-        rows_written: u64,
-        mem_used: u64,
-        elapsed: u64,
-    ) {
+    fn update_query_metrics(&self, rows_read: u64, rows_written: u64, mem_used: u64, elapsed: u64) {
         increment_counter!("libsql_server_query_count");
         counter!("libsql_server_query_latency", elapsed);
         counter!("libsql_server_query_rows_read", rows_read);
@@ -248,8 +492,20 @@ impl Stats {
         counter!("libsql_server_query_mem_used", mem_used);
     }
 
-    pub fn id(&self) -> Option<Uuid> {
+    pub(crate) fn id(&self) -> Option<Uuid> {
         self.id
+    }
+}
+
+async fn spawn_stats_thread(
+    stats: Weak<Stats>,
+    mut receiver: mpsc::Receiver<StatsUpdateMessage>,
+) -> anyhow::Result<()> {
+    loop {
+        match (receiver.recv().await, stats.upgrade()) {
+            (Some(msg), Some(stats)) => stats.update(msg),
+            _ => return Ok(()),
+        }
     }
 }
 
@@ -274,4 +530,12 @@ async fn try_persist_stats(stats: Weak<Stats>, path: &Path) -> anyhow::Result<()
     file.flush().await?;
     tokio::fs::rename(temp_path, path).await?;
     Ok(())
+}
+
+fn next_hour() -> Instant {
+    let utc_now = Utc::now();
+    let next_hour = (utc_now + chrono::Duration::hours(1))
+        .duration_trunc(chrono::Duration::hours(1))
+        .unwrap();
+    Instant::now() + (next_hour - utc_now).to_std().unwrap()
 }

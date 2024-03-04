@@ -10,7 +10,7 @@ expression: stmt.query(()).unwrap().next().unwrap().unwrap()
         1,
     ),
     Ok(
-        "schema_name",
+        "schema",
     ): (
         Text,
         "schema1",
@@ -20,5 +20,11 @@ expression: stmt.query(()).unwrap().next().unwrap().unwrap()
     ): (
         Text,
         "{\"steps\":[{\"cond\":null,\"query\":{\"stmt\":{\"stmt\":\"SELECT * FROM test;\",\"kind\":\"Read\",\"is_iud\":false,\"is_insert\":false,\"attach_info\":null},\"params\":{\"Positional\":[]},\"want_rows\":true}}]}",
+    ),
+    Ok(
+        "status",
+    ): (
+        Integer,
+        0,
     ),
 }

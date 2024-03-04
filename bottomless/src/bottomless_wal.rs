@@ -1,6 +1,7 @@
 use std::ffi::c_int;
 use std::sync::{Arc, Mutex};
 
+use crate::completion_progress::SavepointTracker;
 use libsql_sys::ffi::{SQLITE_BUSY, SQLITE_IOERR_WRITE};
 use libsql_sys::wal::wrapper::{WalWrapper, WrapWal};
 use libsql_sys::wal::{
@@ -26,6 +27,14 @@ impl BottomlessWalWrapper {
         match &mut *lock {
             Some(replicator) => Ok(f(replicator)),
             None => Err(Error::new(SQLITE_IOERR_WRITE)),
+        }
+    }
+
+    pub fn backup_savepoint(&self) -> Option<SavepointTracker> {
+        let lock = self.replicator.lock().unwrap();
+        match &*lock {
+            None => None,
+            Some(replicator) => Some(replicator.savepoint()),
         }
     }
 
@@ -162,10 +171,10 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
         {
             let runtime = tokio::runtime::Handle::current();
             self.try_with_replicator(|replicator| {
-                let _prev = replicator.new_generation();
-                if let Err(e) =
-                    runtime.block_on(async move { replicator.snapshot_main_db_file().await })
-                {
+                if let Err(e) = runtime.block_on(async move {
+                    replicator.new_generation().await;
+                    replicator.snapshot_main_db_file().await
+                }) {
                     tracing::error!("Failed to snapshot the main db file during checkpoint: {e}");
                     return Err(Error::new(SQLITE_IOERR_WRITE));
                 }

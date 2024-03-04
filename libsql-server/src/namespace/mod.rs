@@ -40,7 +40,7 @@ use crate::database::{
 use crate::error::LoadDumpError;
 use crate::replication::script_backup_manager::ScriptBackupManager;
 use crate::replication::{FrameNo, ReplicationLogger};
-use crate::schema_migration::SchedulerHandle;
+use crate::schema::{setup_migration_table, SchedulerHandle};
 use crate::stats::Stats;
 use crate::{
     run_periodic_checkpoint, StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT,
@@ -361,6 +361,20 @@ impl Namespace {
         .await?;
         let connection_maker = Arc::new(connection_maker);
 
+        if meta_store_handle.get().shared_schema_name.is_some() {
+            let conn = connection_maker.create().await?;
+            join_set.spawn_blocking(move || {
+                conn.with_raw(|conn| -> crate::Result<()> {
+                    setup_migration_table(conn)?;
+                    // TODO: if there are pending jobs, we should block writes
+                    Ok(())
+                })
+                .unwrap();
+
+                Ok(())
+            });
+        }
+
         if let Some(checkpoint_interval) = ns_config.checkpoint_interval {
             join_set.spawn(run_periodic_checkpoint(
                 connection_maker.clone(),
@@ -454,7 +468,8 @@ impl Namespace {
                             Error::InvalidMetaFile
                             | Error::Io(_)
                             | Error::InvalidLogId
-                            | Error::FailedToCommit(_) => {
+                            | Error::FailedToCommit(_)
+                            | Error::InvalidReplicationPath => {
                                 // We retry from last frame index?
                                 tracing::warn!("non-fatal replication error, retrying from last commit index: {err}");
                             },
@@ -841,7 +856,7 @@ pub async fn init_bottomless_replicator(
     let (action, did_recover) = replicator.restore(generation, timestamp).await?;
     match action {
         bottomless::replicator::RestoreAction::SnapshotMainDbFile => {
-            replicator.new_generation();
+            replicator.new_generation().await;
             if let Some(_handle) = replicator.snapshot_main_db_file().await? {
                 tracing::trace!("got snapshot handle after restore with generation upgrade");
             }

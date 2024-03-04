@@ -25,6 +25,20 @@ async fn connection_drops_before_statements() {
 }
 
 #[tokio::test]
+async fn file_prefix_open() {
+    let tempdir = std::env::temp_dir();
+
+    let path = tempdir.join("prefixeddata.db");
+
+    let path = format!("file:{}", path.display());
+
+    let db = Database::open(path).unwrap();
+    let conn = db.connect().unwrap();
+    let _stmt = conn.prepare("SELECT 1").await.unwrap();
+    drop(conn);
+}
+
+#[tokio::test]
 async fn connection_query() {
     let conn = setup().await;
     let _ = conn
