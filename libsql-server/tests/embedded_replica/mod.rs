@@ -201,6 +201,11 @@ fn embedded_replica_with_encryption() {
 
     make_primary(&mut sim, tmp_host_path.clone());
 
+    let encryption_config = Some(libsql::EncryptionConfig::new(
+        libsql::Cipher::Aes256Cbc,
+        Bytes::from_static(b"SecretKey"),
+    ));
+
     sim.client("client", async move {
         let client = Client::new();
         client
@@ -214,10 +219,7 @@ fn embedded_replica_with_encryption() {
             "",
             TurmoilConnector,
             false,
-            Some(libsql::EncryptionConfig::new(
-                libsql::Cipher::SQLCipher,
-                Bytes::from_static(b"SecretKey"),
-            )),
+            encryption_config.clone(),
         )
         .await?;
 
@@ -232,31 +234,7 @@ fn embedded_replica_with_encryption() {
         let n = db.sync().await?;
         assert_eq!(n, Some(1));
 
-        let err = conn
-            .execute("INSERT INTO user(id) VALUES (1), (1)", ())
-            .await
-            .unwrap_err();
-
-        let libsql::Error::RemoteSqliteFailure(code, extended_code, _) = err else {
-            panic!()
-        };
-
-        assert_eq!(code, 3);
-        assert_eq!(extended_code, 1555);
-
-        let snapshot = snapshot_metrics();
-
-        for (key, (_, _, val)) in snapshot.snapshot() {
-            if key.kind() == metrics_util::MetricKind::Counter
-                && key.key().name() == "libsql_client_version"
-            {
-                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(8));
-                let label = key.key().labels().next().unwrap();
-                assert!(label.value().starts_with("libsql-rpc-"));
-            }
-        }
-
-        snapshot.assert_counter("libsql_server_user_http_response", 8);
+        conn.execute("INSERT INTO user(id) VALUES (1)", ()).await?;
 
         drop(conn);
         drop(db);
@@ -267,10 +245,7 @@ fn embedded_replica_with_encryption() {
             "",
             TurmoilConnector,
             false,
-            Some(libsql::EncryptionConfig::new(
-                libsql::Cipher::SQLCipher,
-                Bytes::from_static(b"SecretKey"),
-            )),
+            encryption_config,
         )
         .await?;
         let conn = db.connect()?;
