@@ -1,8 +1,0 @@
----
-source: libsql-server/tests/hrana/batch.rs
-assertion_line: 32
-expression: resp.json_value().await.unwrap()
----
-{
-  "error": "Internal Error: `auth header not found`"
-}
