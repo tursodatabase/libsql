@@ -203,6 +203,20 @@ fn setup_connection(conn: &rusqlite::Connection) -> Result<()> {
         (),
     )?;
 
+    // create a trigger that removes the task from enqueued tasks whenever it's status was updated.
+    // The assumption is that the status of the task is only ever updated if work on it is
+    // finished.
+    conn.execute(
+        "
+        CREATE TEMPORARY TRIGGER IF NOT EXISTS remove_from_enqueued_tasks 
+        AFTER UPDATE OF status ON migration_job_pending_tasks
+        BEGIN
+            DELETE FROM enqueued_tasks WHERE task_id = old.task_id;
+        END
+        ",
+        (),
+    )?;
+
     Ok(())
 }
 
@@ -425,11 +439,6 @@ impl MetaStoreInner {
         txn.execute(
             "UPDATE migration_job_pending_tasks SET status = ?, error = ? WHERE task_id = ?",
             (task.status as u64, error, task.task_id),
-        )?;
-        // remove task from pending tasks
-        txn.execute(
-            "DELETE FROM enqueued_tasks WHERE task_id = ?",
-            [task.task_id],
         )?;
         txn.commit()?;
         Ok(())
