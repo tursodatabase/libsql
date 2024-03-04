@@ -2,7 +2,7 @@ use anyhow::Context;
 use axum::extract::FromRequestParts;
 
 use crate::{
-    auth::{parsers::auth_string_to_auth_context, Jwt, Auth},
+    auth::{parsers::auth_string_to_auth_context, Auth, Jwt, UserAuthContext},
     connection::RequestContext,
 };
 
@@ -29,20 +29,23 @@ impl FromRequestParts<AppState> for RequestContext {
             .with(namespace.clone(), |ns| ns.jwt_key())
             .await??;
 
-        let header = parts.headers.get(hyper::header::AUTHORIZATION).context("auth header not found")?;
-        let header_str = header.to_str().context("non ASCII auth token")?;
-        let context = auth_string_to_auth_context(header_str).context("auth header parsing failed")?;
+    // todo think how to decide if the particular auth stragegy even needs a context?
+    // we need it to understand whether to treat absence of auth header as error or not
+        let context = parts.headers
+        .get(hyper::header::AUTHORIZATION).context("auth header not found") // todo this context is swallowed for now, gotta fix that but not with panicking
+        .and_then(|h| h.to_str().context("non ascii auth token"))
+        .and_then(|t| auth_string_to_auth_context(t))
+        .unwrap_or(UserAuthContext{scheme: None, token: None});
 
-        let auth = namespace_jwt_key
+
+        let authenticated = namespace_jwt_key
         .map(Jwt::new)
         .map(Auth::new)
         .unwrap_or_else(|| state.user_auth_strategy.clone())
-        .authenticate(context)?;
-
-    // end todo
+        .authenticate(context)?;            
 
         Ok(Self::new(
-            auth,
+            authenticated,
             namespace,
             state.namespaces.meta_store().clone(),
         ))

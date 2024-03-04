@@ -466,21 +466,20 @@ impl FromRequestParts<AppState> for Authenticated {
             .with(ns.clone(), |ns| ns.jwt_key())
             .await??;
 
-        
-        let auth = namespace_jwt_key
-        .map(Jwt::new)
-        .map(Auth::new)
-        .unwrap_or_else(|| state.user_auth_strategy.clone());
-    
-    // todo julian chain these three instead of short circuit
-    // not all auth strategies need those
+    // todo think how to decide if the particular auth stragegy even needs a context?
+    // we need it to understand whether to treat absence of auth header as error or not
         let context = parts.headers
-            .get(hyper::header::AUTHORIZATION).context("auth header not found")
+            .get(hyper::header::AUTHORIZATION).context("auth header not found") // todo this context is swallowed for now, gotta fix that but not with panicking
             .and_then(|h| h.to_str().context("non ascii auth token"))
             .and_then(|t| auth_string_to_auth_context(t))
             .unwrap_or(UserAuthContext{scheme: None, token: None});
 
-        let authenticated = auth.authenticate(context)?;
+
+        let authenticated = namespace_jwt_key
+        .map(Jwt::new)
+        .map(Auth::new)
+        .unwrap_or_else(|| state.user_auth_strategy.clone())
+        .authenticate(context)?;
         Ok(authenticated)
     }
 }
