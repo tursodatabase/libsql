@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use tokio::sync::{mpsc, oneshot};
 
 use crate::connection::program::Program;
@@ -19,7 +21,7 @@ impl SchedulerHandle {
     pub(crate) async fn register_migration_task(
         &self,
         schema: crate::namespace::NamespaceName,
-        migration: Program,
+        migration: Arc<Program>,
     ) -> Result<i64, Error> {
         let (ret, rcv) = oneshot::channel();
         let msg = SchedulerMessage::ScheduleMigration {

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use tokio::sync::oneshot;
 
 use crate::connection::program::Program;
@@ -8,7 +10,7 @@ use super::error::Error;
 pub enum SchedulerMessage {
     ScheduleMigration {
         schema: NamespaceName,
-        migration: Program,
+        migration: Arc<Program>,
         ret: oneshot::Sender<Result<i64, Error>>,
     },
 }

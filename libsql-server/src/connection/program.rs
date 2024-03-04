@@ -87,22 +87,22 @@ pub struct DescribeCol {
     pub decltype: Option<String>,
 }
 
-pub struct Vm<B, F, S> {
+pub struct Vm<'a, B, F, S> {
     results: Vec<bool>,
     builder: B,
-    program: Program,
+    program: &'a Program,
     current_step: usize,
     should_block: F,
     update_stats: S,
 }
 
-impl<B, F, S> Vm<B, F, S>
+impl<'a, B, F, S> Vm<'a, B, F, S>
 where
     B: QueryResultBuilder,
     F: Fn(&StmtKind) -> (bool, Option<String>),
     S: Fn(String, &rusqlite::Statement, Duration),
 {
-    pub fn new(builder: B, program: Program, should_block: F, update_stats: S) -> Self {
+    pub fn new(builder: B, program: &'a Program, should_block: F, update_stats: S) -> Self {
         Self {
             results: Vec::with_capacity(program.steps().len()),
             builder,

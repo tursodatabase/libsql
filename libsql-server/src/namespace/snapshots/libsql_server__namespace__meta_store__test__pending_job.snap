@@ -1,0 +1,37 @@
+---
+source: libsql-server/src/namespace/meta_store.rs
+expression: meta_store.get_next_pending_job().await.unwrap().unwrap()
+---
+MigrationJob {
+    schema: schema1,
+    status: WaitingDryRun,
+    job_id: 1,
+    migration: Program {
+        steps: [
+            Step {
+                cond: None,
+                query: Query {
+                    stmt: Statement {
+                        stmt: "create table test (x)",
+                        kind: DDL,
+                        is_iud: false,
+                        is_insert: false,
+                        attach_info: None,
+                    },
+                    params: Positional(
+                        [],
+                    ),
+                    want_rows: true,
+                },
+            },
+        ],
+    },
+    progress: [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+    ],
+}

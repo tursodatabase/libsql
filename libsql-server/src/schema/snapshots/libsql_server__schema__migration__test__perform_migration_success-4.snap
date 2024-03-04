@@ -1,0 +1,30 @@
+---
+source: libsql-server/src/schema/migration.rs
+expression: row
+---
+{
+    Ok(
+        "job_id",
+    ): (
+        Integer,
+        1,
+    ),
+    Ok(
+        "status",
+    ): (
+        Integer,
+        4,
+    ),
+    Ok(
+        "migration",
+    ): (
+        Text,
+        "{\"steps\":[{\"cond\":null,\"query\":{\"stmt\":{\"stmt\":\"CREATE TABLE test (x, y)\",\"kind\":\"DDL\",\"is_iud\":false,\"is_insert\":false,\"attach_info\":null},\"params\":{\"Positional\":[]},\"want_rows\":true}}]}",
+    ),
+    Ok(
+        "error",
+    ): (
+        Null,
+        (),
+    ),
+}

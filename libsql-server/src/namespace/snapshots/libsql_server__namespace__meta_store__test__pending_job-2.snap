@@ -1,0 +1,24 @@
+---
+source: libsql-server/src/namespace/meta_store.rs
+expression: tasks
+---
+[
+    MigrationTask {
+        namespace: ns1,
+        status: Enqueued,
+        job_id: 1,
+        task_id: 1,
+    },
+    MigrationTask {
+        namespace: ns2,
+        status: Enqueued,
+        job_id: 1,
+        task_id: 2,
+    },
+    MigrationTask {
+        namespace: ns3,
+        status: Enqueued,
+        job_id: 1,
+        task_id: 3,
+    },
+]

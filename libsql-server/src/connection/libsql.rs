@@ -642,7 +642,7 @@ impl<W: Wal> Connection<W> {
 
         let mut vm = Vm::new(
             builder,
-            pgm,
+            &pgm,
             move |stmt_kind| {
                 let should_block = match stmt_kind {
                     StmtKind::Read | StmtKind::TxnBegin => config.block_reads,

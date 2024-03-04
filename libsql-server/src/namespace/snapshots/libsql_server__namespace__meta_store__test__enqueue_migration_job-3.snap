@@ -4,7 +4,13 @@ expression: rows.next().unwrap().unwrap()
 ---
 {
     Ok(
-        "job",
+        "task_id",
+    ): (
+        Integer,
+        2,
+    ),
+    Ok(
+        "job_id",
     ): (
         Integer,
         1,
@@ -18,7 +24,13 @@ expression: rows.next().unwrap().unwrap()
     Ok(
         "status",
     ): (
-        Text,
-        "enqueued",
+        Integer,
+        0,
+    ),
+    Ok(
+        "error",
+    ): (
+        Null,
+        (),
     ),
 }
