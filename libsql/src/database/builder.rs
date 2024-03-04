@@ -114,6 +114,8 @@ cfg_core! {
         }
 
         /// Set an encryption config that will encrypt the local database.
+        #[cfg(feature = "encryption")]
+        #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
         pub fn encryption_config(
             mut self,
             encryption_config: EncryptionConfig,
@@ -183,14 +185,21 @@ cfg_replication! {
             self
         }
 
-        /// Set an encryption key that will encrypt the local database.
-        pub fn encryption_config(
+        /// Set an encryption key that will encrypt the local database. This will default to
+        /// `AES256CBC` encryption cipher.
+        #[cfg(feature = "encryption")]
+        #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
+        pub fn encryption_key(
             mut self,
-            encryption_config: EncryptionConfig,
+            encryption_key: impl Into<bytes::Bytes>,
         ) -> Builder<RemoteReplica> {
-            self.inner.encryption_config = Some(encryption_config.into());
+            self.inner.encryption_config = Some(EncryptionConfig {
+                cipher: libsql_sys::Cipher::Aes256Cbc,
+                encryption_key: encryption_key.into()
+            });
             self
         }
+
 
         /// Set weather you want writes to be visible locally before the write query returns. This
         /// means that you will be able to read your own writes if this is set to `true`.

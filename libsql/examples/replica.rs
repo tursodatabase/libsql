@@ -1,4 +1,4 @@
-use libsql::{Builder, Cipher, EncryptionConfig, Value};
+use libsql::{Builder, Value};
 use std::time::Duration;
 
 #[tokio::main]
@@ -21,12 +21,8 @@ async fn main() {
         .replace("libsql", "https");
 
     let db = if cfg!(feature = "encryption") {
-        let encryption_config = EncryptionConfig {
-            cipher: Cipher::Aes256Cbc,
-            encryption_key: "s3cr3t".into(),
-        };
         Builder::new_remote_replica(db_file.path(), url, auth_token)
-            .encryption_config(encryption_config)
+            .encryption_key("s3cr3t")
             .build()
             .await
             .unwrap()
