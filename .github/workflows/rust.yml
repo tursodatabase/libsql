@@ -2,7 +2,7 @@ name: Rust
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "v0.23", "libsql-server-release-v0.22" ]
   pull_request:
   merge_group:
     branches: [ "main" ]
