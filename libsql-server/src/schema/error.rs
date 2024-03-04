@@ -1,7 +1,7 @@
 use axum::response::IntoResponse;
 use hyper::StatusCode;
 
-use crate::error::ResponseError;
+use crate::{error::ResponseError, namespace::NamespaceName};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -13,6 +13,12 @@ pub enum Error {
     CorruptedJobStatus(serde_json::Error),
     #[error("sqlite error: {0}")]
     Sqlite(#[from] rusqlite::Error),
+    #[error("`{0}` is not a schema database")]
+    NotASchema(NamespaceName),
+    #[error("schema `{0}` doesn't exist")]
+    SchemaDoesntExist(NamespaceName),
+    #[error("A migration job is already in progress for `{0}`")]
+    MigrationJobAlreadyInProgress(NamespaceName),
 }
 
 impl ResponseError for Error {}

@@ -1,4 +1,3 @@
-use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -9,7 +8,6 @@ use moka::future::Cache;
 use tokio::time::{Duration, Instant};
 
 use crate::auth::Authenticated;
-use crate::config::MetaStoreConfig;
 use crate::connection::config::DatabaseConfig;
 use crate::error::Error;
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
@@ -48,11 +46,9 @@ impl NamespaceStore {
         allow_lazy_creation: bool,
         snapshot_at_shutdown: bool,
         max_active_namespaces: usize,
-        base_path: &Path,
-        meta_store_config: MetaStoreConfig,
         config: NamespaceConfig,
+        metadata: MetaStore,
     ) -> crate::Result<Self> {
-        let metadata = MetaStore::new(meta_store_config, base_path).await?;
         tracing::trace!("Max active namespaces: {max_active_namespaces}");
         let store = Cache::<NamespaceName, NamespaceEntry>::builder()
             .async_eviction_listener(move |name, ns, cause| {
