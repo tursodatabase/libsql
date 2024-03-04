@@ -39,6 +39,7 @@ pub async fn run_rpc_server<A: crate::net::Accept>(
         idle_shutdown_layer.clone(),
         None,
         disable_namespaces,
+        false,
     );
 
     // tracing::info!("serving write proxy server at {addr}");

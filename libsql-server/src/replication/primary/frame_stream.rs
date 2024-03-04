@@ -7,6 +7,7 @@ use futures::{FutureExt, Stream};
 use libsql_replication::frame::{Frame, FrameNo};
 
 use crate::replication::{LogReadError, ReplicationLogger};
+use crate::stats::Stats;
 use crate::BLOCKING_RT;
 
 /// Streams frames from the replication log starting at `current_frame_no`.
@@ -25,6 +26,7 @@ pub struct FrameStream {
     logger_closed_fut: BoxFuture<'static, ()>,
     /// whether a stream is in-between transactions (last frame ended a transaction)
     transaction_boundary: bool,
+    stats: Option<Arc<Stats>>,
 }
 
 impl FrameStream {
@@ -33,6 +35,7 @@ impl FrameStream {
         current_frameno: FrameNo,
         wait_for_more: bool,
         max_frames: Option<usize>,
+        stats: Option<Arc<Stats>>,
     ) -> crate::Result<Self> {
         let max_available_frame_no = *logger.new_frame_notifier.subscribe().borrow();
         let mut sub = logger.closed_signal.subscribe();
@@ -50,6 +53,7 @@ impl FrameStream {
             max_frames,
             logger_closed_fut,
             transaction_boundary: false,
+            stats,
         })
     }
 
@@ -129,6 +133,11 @@ impl Stream for FrameStream {
                     self.transaction_boundary = frame.header().size_after != 0;
                     self.transition_state_next_frame();
                     tracing::trace!("sending frame_no {}", frame.header().frame_no);
+
+                    if let Some(stats) = &self.stats {
+                        stats.inc_embedded_replica_frames_replicated();
+                    }
+
                     Poll::Ready(Some(Ok(frame)))
                 }
 

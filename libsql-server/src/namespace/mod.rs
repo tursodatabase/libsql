@@ -654,6 +654,10 @@ impl<T: Database> Namespace<T> {
         self.db.shutdown().await?;
         Ok(())
     }
+
+    pub(crate) fn stats(&self) -> Arc<Stats> {
+        self.stats.clone()
+    }
 }
 
 pub struct ReplicaNamespaceConfig {

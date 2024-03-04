@@ -127,8 +127,9 @@ impl ForkTask<'_> {
         if let Some(end_frame_no) = end_frame_no {
             let mut next_frame_no = 0;
             while next_frame_no < end_frame_no {
-                let mut streamer = FrameStream::new(logger.clone(), next_frame_no, false, None)
-                    .map_err(|e| ForkError::LogRead(e.into()))?;
+                let mut streamer =
+                    FrameStream::new(logger.clone(), next_frame_no, false, None, None)
+                        .map_err(|e| ForkError::LogRead(e.into()))?;
                 while let Some(res) = streamer.next().await {
                     match res {
                         Ok(frame) => {
