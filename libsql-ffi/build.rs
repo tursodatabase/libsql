@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 const LIB_NAME: &str = "libsql";
-const BUNDLED_DIR: &str = "/Users/julian/src/github.com/Shopify/libsql/libsql-ffi/bundled";
+const BUNDLED_DIR: &str = "bundled";
 const SQLITE_DIR: &str = "../libsql-sqlite3";
 
 fn main() {
