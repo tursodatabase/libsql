@@ -130,6 +130,8 @@ jobs:
       env:
         LIBSQL_EXPERIMENTAL_PAGER: 1000
       run: cargo nextest run
+    - name: embedded replica encryption tests
+      run: cargo test -F test-encryption --package libsql-server --test tests embedded_replica
 
   # test-rust-wasm:
   #   runs-on: ubuntu-latest
