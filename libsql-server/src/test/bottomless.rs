@@ -51,11 +51,7 @@ async fn configure_server(
             snapshot_exec: None,
             checkpoint_interval: Some(Duration::from_secs(3)),
             snapshot_at_shutdown: false,
-<<<<<<< HEAD
-=======
-            encryption_key: None,
             max_concurrent_requests: 128,
->>>>>>> 63a707798a (Add --max-concurrent-requests flag (#1030))
         },
         admin_api_config: None,
         disable_namespaces: true,
