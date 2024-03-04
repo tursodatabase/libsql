@@ -90,7 +90,7 @@ aws-sdk-s3 = "0.28"
 env_logger = "0.10"
 hyper = { version = "0.14", features = ["client"] }
 insta = { version = "1.26.0", features = ["json"] }
-libsql = { path = "../libsql/", features = ["encryption"]}
+libsql = { path = "../libsql/"}
 libsql-client = { version = "0.6.5", default-features = false, features = ["reqwest_backend"] }
 proptest = "1.0.0"
 rand = "0.8.5"
@@ -111,3 +111,4 @@ debug-tools = ["console-subscriber", "rusqlite/trace", "tokio/tracing"]
 wasm-udfs = ["rusqlite/libsql-wasm-experimental"]
 unix-excl-vfs = ["libsql-sys/unix-excl-vfs"]
 encryption = ["dep:aes", "dep:cbc", "libsql-sys/encryption", "libsql_replication/encryption", "bottomless/encryption"]
+test-encryption = ["libsql/encryption"]

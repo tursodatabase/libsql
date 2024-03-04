@@ -9,7 +9,6 @@ use std::time::{Duration, Instant};
 use crate::common::http::Client;
 use crate::common::net::{init_tracing, SimServer, TestServer, TurmoilAcceptor, TurmoilConnector};
 use crate::common::snapshot_metrics;
-use bytes::Bytes;
 use libsql::Database;
 use libsql_server::config::{AdminApiConfig, DbConfig, RpcServerConfig, UserApiConfig};
 use serde_json::json;
@@ -191,7 +190,10 @@ fn execute_batch() {
 }
 
 #[test]
+#[cfg(feature = "test-encryption")]
 fn embedded_replica_with_encryption() {
+    use bytes::Bytes;
+
     let mut sim = Builder::new().build();
 
     let tmp_embedded = tempdir().unwrap();
@@ -215,7 +217,7 @@ fn embedded_replica_with_encryption() {
             TurmoilConnector,
             false,
             Some(libsql::EncryptionConfig::new(
-                libsql::Cipher::SQLCipher,
+                libsql::Cipher::Aes256Cbc,
                 Bytes::from_static(b"SecretKey"),
             )),
         )
@@ -258,6 +260,10 @@ fn embedded_replica_with_encryption() {
 
         snapshot.assert_counter("libsql_server_user_http_response", 8);
 
+        conn.execute("INSERT INTO user(id) VALUES (1)", ())
+            .await
+            .unwrap();
+
         drop(conn);
         drop(db);
 
@@ -268,11 +274,14 @@ fn embedded_replica_with_encryption() {
             TurmoilConnector,
             false,
             Some(libsql::EncryptionConfig::new(
-                libsql::Cipher::SQLCipher,
+                libsql::Cipher::Aes256Cbc,
                 Bytes::from_static(b"SecretKey"),
             )),
         )
         .await?;
+
+        db.sync().await.unwrap();
+
         let conn = db.connect()?;
         let mut res = conn.query("SELECT id FROM user", ()).await?;
         let row = res.next().await?;
