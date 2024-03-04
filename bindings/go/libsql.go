@@ -7,8 +7,6 @@ package libsql
 #cgo CFLAGS: -I../c/include
 #cgo LDFLAGS: -L../../target/release
 #cgo LDFLAGS: -lsql_experimental
-#cgo LDFLAGS: -L../../libsql-sqlite3/.libs
-#cgo LDFLAGS: -lsqlite3
 #cgo LDFLAGS: -lm
 #include <libsql.h>
 #include <stdlib.h>
