@@ -5,7 +5,7 @@ use libsql_server::hrana_proto::{Batch, BatchStep, Stmt};
 use crate::common::http::Client;
 use crate::common::net::TurmoilConnector;
 
-#[test]
+#[test] 
 fn sample_request() {
     let mut sim = turmoil::Builder::new().build();
     sim.host("primary", super::make_standalone_server);

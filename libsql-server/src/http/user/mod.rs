@@ -30,7 +30,7 @@ use tonic::transport::Server;
 use tower_http::{compression::CompressionLayer, cors};
 
 use crate::auth::parsers::auth_string_to_auth_context;
-use crate::auth::{Auth, Authenticated, Jwt};
+use crate::auth::{Auth, Authenticated, Jwt, UserAuthContext};
 use crate::connection::{Connection, RequestContext};
 use crate::error::Error;
 use crate::hrana;
@@ -460,23 +460,28 @@ impl FromRequestParts<AppState> for Authenticated {
             state.disable_default_namespace,
             state.disable_namespaces,
         )?;
-
+// todo get rid of duplication - this and replication_log.rs
         let namespace_jwt_key = state
             .namespaces
             .with(ns.clone(), |ns| ns.jwt_key())
             .await??;
 
-        let header = parts.headers.get(hyper::header::AUTHORIZATION).context("auth header not found")?;
-        let header_str = header.to_str().context("non ASCII auth token")?;
-        let context = auth_string_to_auth_context(header_str).context("auth header parsing failed")?;
-
+        
         let auth = namespace_jwt_key
-            .map(Jwt::new)
-            .map(Auth::new)
-            .unwrap_or_else(|| state.user_auth_strategy.clone())
-            .authenticate(context)?;
+        .map(Jwt::new)
+        .map(Auth::new)
+        .unwrap_or_else(|| state.user_auth_strategy.clone());
+    
+    // todo julian chain these three instead of short circuit
+    // not all auth strategies need those
+        let context = parts.headers
+            .get(hyper::header::AUTHORIZATION).context("auth header not found")
+            .and_then(|h| h.to_str().context("non ascii auth token"))
+            .and_then(|t| auth_string_to_auth_context(t))
+            .unwrap_or(UserAuthContext{scheme: None, token: None});
 
-        Ok(auth)
+        let authenticated = auth.authenticate(context)?;
+        Ok(authenticated)
     }
 }
 

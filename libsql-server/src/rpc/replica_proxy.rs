@@ -8,7 +8,7 @@ use tonic::{transport::Channel, Request, Status};
 
 
 use crate::auth::parsers::parse_grpc_auth_header;
-use crate::auth::{user_auth_strategies::UserAuthContext, Auth, Jwt, UserAuthStrategy};
+use crate::auth::{Auth, Jwt, UserAuthStrategy};
 use crate::namespace::NamespaceStore;
 
 pub struct ReplicaProxyService {
@@ -48,17 +48,12 @@ impl ReplicaProxyService {
 
         match namespace_jwt_key {
             Ok(Ok(Some(key))) => {
-                let authenticated =
-                    Jwt::new(key).authenticate(auth_context)?;
+                let authenticated = Jwt::new(key).authenticate(auth_context)?;
                 authenticated.upgrade_grpc_request(req);
-
                 Ok(())
             }
-            Ok(Ok(None)) => {
-                let authenticated = self
-                    .user_auth_strategy
-                    .authenticate(auth_context)?;
-
+            Ok(Ok(None)) => { // non jwt auth, we don't know if context matches it
+                let authenticated = self.user_auth_strategy.authenticate(auth_context)?;
                 authenticated.upgrade_grpc_request(req);
                 Ok(())
             }
