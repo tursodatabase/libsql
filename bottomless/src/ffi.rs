@@ -5,6 +5,7 @@ pub use sqld_libsql_bindings::ffi::{
 };
 
 #[repr(C)]
+#[allow(non_camel_case_types)]
 pub struct bottomless_methods {
     pub methods: libsql_wal_methods,
     pub underlying_methods: *const libsql_wal_methods,
