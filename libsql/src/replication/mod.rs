@@ -144,7 +144,7 @@ impl EmbeddedReplicator {
                         tokio::time::sleep(sync_duration).await;
                     }
                 }
-                .instrument(tracing::info_span!("periodic_sync")),
+                .instrument(tracing::info_span!("sync_interval")),
             );
 
             replicator.bg_abort = Some(Arc::new(DropAbort(jh.abort_handle())));

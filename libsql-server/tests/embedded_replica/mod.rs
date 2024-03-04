@@ -738,7 +738,7 @@ fn freeze() {
 }
 
 #[test]
-fn periodic_sync() {
+fn sync_interval() {
     let mut sim = Builder::new().build();
 
     let tmp_embedded = tempdir().unwrap();
@@ -761,7 +761,7 @@ fn periodic_sync() {
             "".to_string(),
         )
         .connector(TurmoilConnector)
-        .periodic_sync(Duration::from_millis(100))
+        .sync_interval(Duration::from_millis(100))
         .build()
         .await?;
 

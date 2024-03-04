@@ -53,7 +53,7 @@ impl Database {
         endpoint: String,
         auth_token: String,
         encryption_config: Option<EncryptionConfig>,
-        periodic_sync: Option<std::time::Duration>,
+        sync_interval: Option<std::time::Duration>,
     ) -> Result<Database> {
         Self::open_http_sync_internal(
             connector,
@@ -63,7 +63,7 @@ impl Database {
             None,
             false,
             encryption_config,
-            periodic_sync,
+            sync_interval,
             None,
         )
         .await
@@ -79,7 +79,7 @@ impl Database {
         version: Option<String>,
         read_your_writes: bool,
         encryption_config: Option<EncryptionConfig>,
-        periodic_sync: Option<std::time::Duration>,
+        sync_interval: Option<std::time::Duration>,
         http_request_callback: Option<crate::util::HttpRequestCallback>,
     ) -> Result<Database> {
         use std::path::PathBuf;
@@ -103,7 +103,7 @@ impl Database {
             .map_err(|e| crate::errors::Error::ConnectionFailed(e.to_string()))?;
 
         let replicator =
-            EmbeddedReplicator::with_remote(client, path, 1000, encryption_config, periodic_sync)
+            EmbeddedReplicator::with_remote(client, path, 1000, encryption_config, sync_interval)
                 .await?;
 
         db.replication_ctx = Some(ReplicationContext {
