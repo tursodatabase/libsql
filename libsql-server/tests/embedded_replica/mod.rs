@@ -248,6 +248,7 @@ fn embedded_replica_with_encryption() {
             encryption_config,
         )
         .await?;
+        let n = db.sync().await?;
         let conn = db.connect()?;
         let mut res = conn.query("SELECT id FROM user", ()).await?;
         let row = res.next().await?;
