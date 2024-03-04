@@ -1,4 +1,5 @@
 use crate::backup::WalCopier;
+use crate::completion_progress::{CompletionProgress, SavepointTracker};
 use crate::read::BatchReader;
 use crate::uuid_utils::decode_unix_timestamp;
 use crate::wal::WalFileReader;
@@ -24,6 +25,7 @@ use std::sync::Arc;
 use tokio::fs::{File, OpenOptions};
 use tokio::io::AsyncWriteExt;
 use tokio::sync::watch::{channel, Receiver, Sender};
+use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 use tokio::task::JoinSet;
 use tokio::time::Duration;
@@ -65,6 +67,8 @@ pub struct Replicator {
     max_frames_per_batch: usize,
     s3_upload_max_parallelism: usize,
     join_set: JoinSet<()>,
+    upload_progress: Arc<Mutex<CompletionProgress>>,
+    last_uploaded_frame_no: Receiver<u32>,
 }
 
 #[derive(Debug)]
@@ -317,27 +321,31 @@ impl Replicator {
             })
         };
 
+        let (upload_progress, last_uploaded_frame_no) = CompletionProgress::new(0);
+        let upload_progress = Arc::new(Mutex::new(upload_progress));
         let _s3_upload = {
             let client = client.clone();
             let bucket = options.bucket_name.clone();
             let max_parallelism = options.s3_upload_max_parallelism;
+            let upload_progress = upload_progress.clone();
             join_set.spawn(async move {
                 let sem = Arc::new(tokio::sync::Semaphore::new(max_parallelism));
                 let mut join_set = JoinSet::new();
-                while let Some(fdesc) = frames_inbox.recv().await {
-                    tracing::trace!("Received S3 upload request: {}", fdesc);
+                while let Some(req) = frames_inbox.recv().await {
+                    tracing::trace!("Received S3 upload request: {}", req.path);
                     let start = Instant::now();
                     let sem = sem.clone();
                     let permit = sem.acquire_owned().await.unwrap();
                     let client = client.clone();
                     let bucket = bucket.clone();
+                    let upload_progress = upload_progress.clone();
                     join_set.spawn(async move {
-                        let fpath = format!("{}/{}", bucket, fdesc);
+                        let fpath = format!("{}/{}", bucket, req.path);
                         let body = ByteStream::from_path(&fpath).await.unwrap();
                         if let Err(e) = client
                             .put_object()
                             .bucket(bucket)
-                            .key(fdesc)
+                            .key(req.path)
                             .body(body)
                             .send()
                             .await
@@ -347,6 +355,10 @@ impl Replicator {
                             tokio::fs::remove_file(&fpath).await.unwrap();
                             let elapsed = Instant::now() - start;
                             tracing::debug!("Uploaded to S3: {} in {:?}", fpath, elapsed);
+                        }
+                        if let Some(frames) = req.frames {
+                            let mut up = upload_progress.lock().await;
+                            up.update(*frames.start(), *frames.end());
                         }
                         drop(permit);
                     });
@@ -375,6 +387,8 @@ impl Replicator {
             max_frames_per_batch: options.max_frames_per_batch,
             s3_upload_max_parallelism: options.s3_upload_max_parallelism,
             join_set,
+            upload_progress,
+            last_uploaded_frame_no,
         })
     }
 
@@ -464,6 +478,24 @@ impl Replicator {
         } else {
             Ok(false)
         }
+    }
+
+    async fn reset_wal_tracker(&self) {
+        let mut lock = self.upload_progress.lock().await;
+        lock.reset();
+    }
+
+    pub fn savepoint(&self) -> SavepointTracker {
+        if let Some(tx) = &self.flush_trigger {
+            let _ = tx.send(());
+        }
+        SavepointTracker::new(
+            self.generation.clone(),
+            self.snapshot_waiter.clone(),
+            self.next_frame_no.clone(),
+            self.last_uploaded_frame_no.clone(),
+            self.db_path.clone(),
+        )
     }
 
     /// Waits until the commit for a given frame_no or higher was given.
@@ -556,7 +588,8 @@ impl Replicator {
     }
 
     // Starts a new generation for this replicator instance
-    pub fn new_generation(&mut self) -> Option<Uuid> {
+    pub async fn new_generation(&mut self) -> Option<Uuid> {
+        self.reset_wal_tracker().await;
         let curr = Self::generate_generation();
         let prev = self.set_generation(curr);
         if let Some(prev) = prev {
@@ -1211,6 +1244,10 @@ impl Replicator {
         }
 
         db.shutdown().await?;
+        {
+            let mut guard = self.upload_progress.lock().await;
+            guard.update(1, last_frame);
+        }
 
         if applied_wal_frame {
             tracing::info!("WAL file has been applied onto database file in generation {}. Requesting snapshot.", generation);

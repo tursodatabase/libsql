@@ -841,7 +841,7 @@ pub async fn init_bottomless_replicator(
     let (action, did_recover) = replicator.restore(generation, timestamp).await?;
     match action {
         bottomless::replicator::RestoreAction::SnapshotMainDbFile => {
-            replicator.new_generation();
+            replicator.new_generation().await;
             if let Some(_handle) = replicator.snapshot_main_db_file().await? {
                 tracing::trace!("got snapshot handle after restore with generation upgrade");
             }
