@@ -40,7 +40,7 @@ impl From<&Stats> for StatsResponse {
             storage_bytes_used: stats.storage_bytes_used(),
             write_requests_delegated: stats.write_requests_delegated(),
             replication_index: stats.get_current_frame_no(),
-            embedded_replica_frames_replicated: 0,
+            embedded_replica_frames_replicated: stats.get_embedded_replica_frames_replicated(),
             query_count: stats.get_query_count(),
             elapsed_ms: stats.get_query_latency(),
             top_queries: stats

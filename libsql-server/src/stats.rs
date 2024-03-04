@@ -376,6 +376,18 @@ impl Stats {
     }
 
     /// increments the number of the write requests which were delegated from a replica to primary
+    pub fn inc_embedded_replica_frames_replicated(&self) {
+        increment_counter!("libsql_server_embedded_replica_frames_replicated", "namespace" => self.namespace.to_string());
+        self.embedded_replica_frames_replicated
+            .fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn get_embedded_replica_frames_replicated(&self) -> u64 {
+        self.embedded_replica_frames_replicated
+            .load(Ordering::Relaxed)
+    }
+
+    /// increments the number of the write requests which were delegated from a replica to primary
     pub fn inc_write_requests_delegated(&self) {
         increment_counter!("libsql_server_write_requests_delegated", "namespace" => self.namespace.to_string());
         self.write_requests_delegated
