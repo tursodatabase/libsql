@@ -100,7 +100,7 @@ impl MigrationJob {
 #[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq, Eq)]
 #[repr(u64)]
 pub enum MigrationTaskStatus {
-    /// The task was enqueued, and shoudl perform a dry run
+    /// The task was enqueued, and should perform a dry run
     Enqueued = 0,
     /// The dry run was successfull
     DryRunSuccess = 1,
@@ -152,6 +152,14 @@ impl MigrationTaskStatus {
     #[must_use]
     pub fn is_enqueued(&self) -> bool {
         matches!(self, Self::Enqueued)
+    }
+
+    pub(super) fn finished_states() -> &'static [Self] {
+        &[Self::Success, Self::Failure]
+    }
+
+    pub(super) fn is_finished(&self) -> bool {
+        Self::finished_states().iter().any(|s| s == self)
     }
 }
 

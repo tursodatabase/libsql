@@ -5,6 +5,7 @@ pub mod replication_wal;
 mod store;
 
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Weak};
 
 use anyhow::Context as _;
@@ -40,7 +41,7 @@ use crate::database::{
 use crate::error::LoadDumpError;
 use crate::replication::script_backup_manager::ScriptBackupManager;
 use crate::replication::{FrameNo, ReplicationLogger};
-use crate::schema::{setup_migration_table, SchedulerHandle};
+use crate::schema::{has_pending_migration_task, setup_migration_table, SchedulerHandle};
 use crate::stats::Stats;
 use crate::{
     run_periodic_checkpoint, StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT,
@@ -236,6 +237,7 @@ impl Namespace {
         db_path: &Path,
         name: &NamespaceName,
         restore_option: RestoreOption,
+        block_writes: Arc<AtomicBool>,
         join_set: &mut JoinSet<anyhow::Result<()>>,
     ) -> crate::Result<(PrimaryConnectionMaker, ReplicationWalManager, Arc<Stats>)> {
         let db_config = meta_store_handle.get();
@@ -306,6 +308,7 @@ impl Namespace {
             auto_checkpoint,
             logger.new_frame_notifier.subscribe(),
             ns_config.encryption_config.clone(),
+            block_writes,
         )
         .await?
         .throttled(
@@ -350,29 +353,33 @@ impl Namespace {
 
         tokio::fs::create_dir_all(&db_path).await?;
 
+        let block_writes = Arc::new(AtomicBool::new(false));
         let (connection_maker, wal_manager, stats) = Self::make_primary_connection_maker(
             ns_config,
             &meta_store_handle,
             &db_path,
             &name,
             restore_option,
+            block_writes.clone(),
             &mut join_set,
         )
         .await?;
         let connection_maker = Arc::new(connection_maker);
 
         if meta_store_handle.get().shared_schema_name.is_some() {
+            let block_writes = block_writes.clone();
             let conn = connection_maker.create().await?;
-            join_set.spawn_blocking(move || {
+            tokio::task::spawn_blocking(move || {
                 conn.with_raw(|conn| -> crate::Result<()> {
                     setup_migration_table(conn)?;
-                    // TODO: if there are pending jobs, we should block writes
+                    if has_pending_migration_task(conn)? {
+                        block_writes.store(true, Ordering::SeqCst);
+                    }
                     Ok(())
                 })
-                .unwrap();
-
-                Ok(())
-            });
+            })
+            .await
+            .unwrap()?;
         }
 
         if let Some(checkpoint_interval) = ns_config.checkpoint_interval {
@@ -387,6 +394,7 @@ impl Namespace {
             db: Database::Primary(PrimaryDatabase {
                 wal_manager,
                 connection_maker,
+                block_writes,
             }),
             name,
             stats,
@@ -608,6 +616,7 @@ impl Namespace {
             &db_path,
             &name,
             restore_option,
+            Arc::new(AtomicBool::new(false)), // this is always false for schema
             &mut join_set,
         )
         .await?;
