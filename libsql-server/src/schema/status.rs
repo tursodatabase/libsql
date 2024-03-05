@@ -97,7 +97,7 @@ impl MigrationJob {
 }
 
 /// Represents the status of a migration task
-#[derive(Debug, Serialize, Deserialize, Copy, Clone)]
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq, Eq)]
 #[repr(u64)]
 pub enum MigrationTaskStatus {
     /// The task was enqueued, and shoudl perform a dry run
@@ -144,6 +144,14 @@ impl MigrationTaskStatus {
 
         // don't forget to update that!
         6
+    }
+
+    /// Returns `true` if the migration task status is [`Enqueued`].
+    ///
+    /// [`Enqueued`]: MigrationTaskStatus::Enqueued
+    #[must_use]
+    pub fn is_enqueued(&self) -> bool {
+        matches!(self, Self::Enqueued)
     }
 }
 
