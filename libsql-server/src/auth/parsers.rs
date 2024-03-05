@@ -36,7 +36,6 @@ pub fn parse_jwt_key(data: &str) -> Result<jsonwebtoken::DecodingKey> {
     }
 }
 
-// this could be try_from trait
 pub(crate) fn parse_grpc_auth_header(
     metadata: &MetadataMap,
 ) -> Result<UserAuthContext, tonic::Status> {
