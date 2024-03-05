@@ -1,7 +1,7 @@
 use std::ffi::{c_int, c_void};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
@@ -385,7 +385,6 @@ struct Connection<T> {
     state: Arc<TxnState<T>>,
     // current txn slot if any
     slot: Option<Arc<TxnSlot<T>>>,
-    #[allow(dead_code)]
     block_writes: Arc<AtomicBool>,
 }
 
@@ -650,6 +649,7 @@ impl<W: Wal> Connection<W> {
             .lock()
             .conn
             .transaction_state(Some(DatabaseName::Main))?;
+        let block_writes = this.lock().block_writes.clone();
 
         let mut vm = Vm::new(
             builder,
@@ -657,7 +657,11 @@ impl<W: Wal> Connection<W> {
             move |stmt_kind| {
                 let should_block = match stmt_kind {
                     StmtKind::Read | StmtKind::TxnBegin => config.block_reads,
-                    StmtKind::Write => config.block_reads || config.block_writes,
+                    StmtKind::Write => {
+                        config.block_reads
+                            || config.block_writes
+                            || block_writes.load(Ordering::SeqCst)
+                    }
                     StmtKind::DDL => {
                         config.block_reads || config.block_writes || config.block_ddl()
                     }
