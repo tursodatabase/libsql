@@ -13,16 +13,14 @@ use libsql_sys::wal::{
 };
 use parking_lot::Mutex;
 use prost::Message;
-use rusqlite::OptionalExtension;
 use tokio::sync::oneshot;
 use tokio::sync::{
     mpsc,
     watch::{self, Receiver, Sender},
 };
 
+use crate::config::BottomlessConfig;
 use crate::connection::config::DatabaseConfig;
-use crate::connection::program::Program;
-use crate::schema::{MigrationJobStatus, MigrationTaskStatus};
 use crate::{
     config::MetaStoreConfig, connection::libsql::open_conn_active_checkpoint, error::Error, Result,
 };
@@ -34,8 +32,9 @@ type ChangeMsg = (
     Arc<DatabaseConfig>,
     oneshot::Sender<Result<()>>,
 );
-type WalManager = WalWrapper<Option<BottomlessWalWrapper>, Sqlite3WalManager>;
-type Connection = libsql_sys::Connection<WrappedWal<Option<BottomlessWalWrapper>, Sqlite3Wal>>;
+type MetaStoreWalManager = WalWrapper<Option<BottomlessWalWrapper>, Sqlite3WalManager>;
+pub type MetaStoreConnection =
+    libsql_sys::Connection<WrappedWal<Option<BottomlessWalWrapper>, Sqlite3Wal>>;
 
 #[derive(Clone)]
 pub struct MetaStore {
@@ -64,90 +63,13 @@ struct InnerConfig {
     config: Arc<DatabaseConfig>,
 }
 
-#[derive(Debug, Clone)]
-pub struct MigrationJob {
-    schema: NamespaceName,
-    status: MigrationJobStatus,
-    job_id: i64,
-    migration: Arc<Program>,
-    progress: [usize; MigrationTaskStatus::num_variants()],
-}
-
-impl MigrationJob {
-    /// Returns the number of tasks in the given progress state
-    pub(crate) fn progress(&self, status: MigrationTaskStatus) -> usize {
-        self.progress[status as usize]
-    }
-
-    pub(crate) fn progress_mut(&mut self, status: MigrationTaskStatus) -> &mut usize {
-        &mut self.progress[status as usize]
-    }
-
-    /// Returns true if all the tasks are in the given status
-    pub(crate) fn progress_all(&self, status: MigrationTaskStatus) -> bool {
-        for (i, count) in self.progress.iter().enumerate() {
-            if i != status as usize && *count > 0 {
-                return false;
-            }
-        }
-
-        true
-    }
-
-    pub(crate) fn job_id(&self) -> i64 {
-        self.job_id
-    }
-
-    pub(crate) fn migration(&self) -> Arc<Program> {
-        self.migration.clone()
-    }
-
-    pub(crate) fn status(&self) -> &MigrationJobStatus {
-        &self.status
-    }
-
-    pub(crate) fn status_mut(&mut self) -> &mut MigrationJobStatus {
-        &mut self.status
-    }
-
-    pub(crate) fn schema(&self) -> NamespaceName {
-        self.schema.clone()
-    }
-}
-
-#[derive(Debug)]
-pub struct MigrationTask {
-    pub(crate) namespace: NamespaceName,
-    pub(crate) status: MigrationTaskStatus,
-    pub(crate) job_id: i64,
-    pub(crate) task_id: i64,
-}
-
-impl MigrationTask {
-    pub(crate) fn namespace(&self) -> NamespaceName {
-        self.namespace.clone()
-    }
-
-    pub(crate) fn job_id(&self) -> i64 {
-        self.job_id
-    }
-
-    pub(crate) fn status(&self) -> &MigrationTaskStatus {
-        &self.status
-    }
-
-    pub(crate) fn status_mut(&mut self) -> &mut MigrationTaskStatus {
-        &mut self.status
-    }
-}
-
 struct MetaStoreInner {
     // TODO(lucio): Use a concurrent hashmap so we don't block connection creation
     // when we are updating the config. The config si already synced via the watch
     // channel.
     configs: HashMap<NamespaceName, Sender<InnerConfig>>,
-    conn: Connection,
-    wal_manager: WalManager,
+    conn: MetaStoreConnection,
+    wal_manager: MetaStoreWalManager,
 }
 
 fn setup_connection(conn: &rusqlite::Connection) -> Result<()> {
@@ -171,111 +93,90 @@ fn setup_connection(conn: &rusqlite::Connection) -> Result<()> {
         ",
         (),
     )?;
-    // this table contains all the migration jobs
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS migration_jobs (
-            job_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            schema TEXT NOT NULL,
-            migration TEXT NOT NULL,
-            status INTEGER
-        )
-        ",
-        (),
-    )?;
-    // this table contains a list of all the that need to be performed for each migration job
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS migration_job_pending_tasks (
-            task_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            job_id INTEGER,
-            target_namespace TEXT NOT NULL,
-            status INTEGER,
-            error TEXT,
-            FOREIGN KEY (job_id) REFERENCES migration_jobs (job_id)
-        )
-        ",
-        (),
-    )?;
-    // This temporary table hold the list of tasks that are currently being processed
-    conn.execute(
-        "
-        CREATE TEMPORARY TABLE IF NOT EXISTS enqueued_tasks (task_id)
-        ",
-        (),
-    )?;
-
-    // create a trigger that removes the task from enqueued tasks whenever it's status was updated.
-    // The assumption is that the status of the task is only ever updated if work on it is
-    // finished.
-    conn.execute(
-        "
-        CREATE TEMPORARY TRIGGER IF NOT EXISTS remove_from_enqueued_tasks 
-        AFTER UPDATE OF status ON migration_job_pending_tasks
-        BEGIN
-            DELETE FROM enqueued_tasks WHERE task_id = old.task_id;
-        END
-        ",
-        (),
-    )?;
 
     Ok(())
 }
 
-impl MetaStoreInner {
-    async fn new(base_path: &Path, mut config: MetaStoreConfig) -> Result<Self> {
-        let db_path = base_path.join("metastore");
-        tokio::fs::create_dir_all(&db_path).await?;
-        let replicator = match config.bottomless.take() {
-            Some(config) => {
-                let options = bottomless::replicator::Options {
-                    create_bucket_if_not_exists: true,
-                    verify_crc: true,
-                    use_compression: CompressionKind::None,
-                    encryption_config: None,
-                    aws_endpoint: Some(config.bucket_endpoint),
-                    access_key_id: Some(config.access_key_id),
-                    secret_access_key: Some(config.secret_access_key),
-                    region: Some(config.region),
-                    db_id: Some(config.backup_id),
-                    bucket_name: config.bucket_name,
-                    max_frames_per_batch: 10_000,
-                    max_batch_interval: config.backup_interval,
-                    s3_upload_max_parallelism: 32,
-                    s3_max_retries: 10,
-                };
-                let mut replicator = bottomless::replicator::Replicator::with_options(
-                    db_path.join("data").to_str().unwrap(),
-                    options,
-                )
-                .await?;
-                let (action, _did_recover) = replicator.restore(None, None).await?;
-                // TODO: this logic should probably be moved to bottomless.
-                match action {
-                    bottomless::replicator::RestoreAction::SnapshotMainDbFile => {
-                        replicator.new_generation().await;
-                        if let Some(_handle) = replicator.snapshot_main_db_file().await? {
-                            tracing::trace!(
-                                "got snapshot handle after restore with generation upgrade"
-                            );
-                        }
-                        // Restoration process only leaves the local WAL file if it was
-                        // detected to be newer than its remote counterpart.
-                        replicator.maybe_replicate_wal().await?
+pub async fn metastore_connection_maker(
+    config: Option<BottomlessConfig>,
+    base_path: &Path,
+) -> crate::Result<(
+    impl Fn() -> crate::Result<MetaStoreConnection>,
+    MetaStoreWalManager,
+)> {
+    let db_path = base_path.join("metastore");
+    tokio::fs::create_dir_all(&db_path).await?;
+    let replicator = match config {
+        Some(config) => {
+            let options = bottomless::replicator::Options {
+                create_bucket_if_not_exists: true,
+                verify_crc: true,
+                use_compression: CompressionKind::None,
+                encryption_config: None,
+                aws_endpoint: Some(config.bucket_endpoint),
+                access_key_id: Some(config.access_key_id),
+                secret_access_key: Some(config.secret_access_key),
+                region: Some(config.region),
+                db_id: Some(config.backup_id),
+                bucket_name: config.bucket_name,
+                max_frames_per_batch: 10_000,
+                max_batch_interval: config.backup_interval,
+                s3_upload_max_parallelism: 32,
+                s3_max_retries: 10,
+            };
+            let mut replicator = bottomless::replicator::Replicator::with_options(
+                db_path.join("data").to_str().unwrap(),
+                options,
+            )
+            .await?;
+            let (action, _did_recover) = replicator.restore(None, None).await?;
+            // TODO: this logic should probably be moved to bottomless.
+            match action {
+                bottomless::replicator::RestoreAction::SnapshotMainDbFile => {
+                    replicator.new_generation().await;
+                    if let Some(_handle) = replicator.snapshot_main_db_file().await? {
+                        tracing::trace!(
+                            "got snapshot handle after restore with generation upgrade"
+                        );
                     }
-                    bottomless::replicator::RestoreAction::ReuseGeneration(gen) => {
-                        replicator.set_generation(gen);
-                    }
+                    // Restoration process only leaves the local WAL file if it was
+                    // detected to be newer than its remote counterpart.
+                    replicator.maybe_replicate_wal().await?
                 }
-
-                Some(replicator)
+                bottomless::replicator::RestoreAction::ReuseGeneration(gen) => {
+                    replicator.set_generation(gen);
+                }
             }
-            None => None,
-        };
 
-        let wal_manager = WalWrapper::new(
-            replicator.map(|b| BottomlessWalWrapper::new(Arc::new(std::sync::Mutex::new(Some(b))))),
-            Sqlite3WalManager::default(),
-        );
-        let conn = open_conn_active_checkpoint(&db_path, wal_manager.clone(), None, 1000, None)?;
+            Some(replicator)
+        }
+        None => None,
+    };
+
+    let wal_manager = WalWrapper::new(
+        replicator.map(|b| BottomlessWalWrapper::new(Arc::new(std::sync::Mutex::new(Some(b))))),
+        Sqlite3WalManager::default(),
+    );
+
+    let maker = {
+        let wal_manager = wal_manager.clone();
+        move || {
+            let conn =
+                open_conn_active_checkpoint(&db_path, wal_manager.clone(), None, 1000, None)?;
+            Ok(conn)
+        }
+    };
+
+    Ok((maker, wal_manager))
+}
+
+impl MetaStoreInner {
+    async fn new(
+        base_path: &Path,
+        conn: MetaStoreConnection,
+        wal_manager: MetaStoreWalManager,
+        config: MetaStoreConfig,
+    ) -> Result<Self> {
         setup_connection(&conn)?;
         let mut this = MetaStoreInner {
             configs: Default::default(),
@@ -331,199 +232,6 @@ impl MetaStoreInner {
         txn.commit()?;
 
         Ok(())
-    }
-
-    /// Create a migration task, and returns the jobn id
-    fn register_schema_migration_task(
-        &mut self,
-        schema: &NamespaceName,
-        migration: &Program,
-    ) -> Result<i64> {
-        let txn = self.conn.transaction()?;
-
-        // get the config for the schema and validate that it's actually a schema
-        let mut stmt =
-            txn.prepare("SELECT namespace, config FROM namespace_configs where namespace = ?")?;
-        let mut rows = stmt.query([schema.as_str()])?;
-        let Some(row) = rows.next()? else {
-            todo!("no such schema")
-        };
-        let config_bytes = row.get_ref(1)?.as_blob().unwrap();
-        let config = DatabaseConfig::from(&metadata::DatabaseConfig::decode(config_bytes)?);
-        if !config.is_shared_schema {
-            todo!("not a shared schema table");
-        }
-
-        drop(rows);
-
-        stmt.finalize()?;
-
-        let migration_serialized = serde_json::to_string(&migration).unwrap();
-        txn.execute(
-            "INSERT INTO migration_jobs (schema, migration, status) VALUES (?, ?, ?)",
-            (
-                schema.as_str(),
-                &migration_serialized,
-                MigrationJobStatus::WaitingDryRun as u64,
-            ),
-        )?;
-        let job_id = txn.last_insert_rowid();
-
-        txn.execute(
-            "
-            INSERT INTO
-                migration_job_pending_tasks (job_id, target_namespace, status)
-            SELECT job_id, namespace, status
-                FROM shared_schema_links 
-                CROSS JOIN (SELECT ? as job_id, ? as status)
-            WHERE shared_schema_name = ?",
-            (
-                job_id,
-                MigrationTaskStatus::Enqueued as u64,
-                schema.as_ref(),
-            ),
-        )?;
-
-        txn.commit()?;
-
-        Ok(job_id)
-    }
-
-    /// returns a batch of tasks for job_id that are in the passed status
-    fn get_next_pending_migration_tasks_batch(
-        &mut self,
-        job_id: i64,
-        status: MigrationTaskStatus,
-        limit: usize,
-    ) -> crate::Result<Vec<MigrationTask>> {
-        let txn = self
-            .conn
-            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-        let tasks = txn
-            .prepare(
-                "SELECT task_id, target_namespace, status, job_id 
-                FROM migration_job_pending_tasks 
-                WHERE job_id = ? AND status = ? AND task_id NOT IN (select * from enqueued_tasks)
-                LIMIT ?",
-            )?
-            .query_map((job_id, status as u64, limit), |row| {
-                let task_id = row.get::<_, i64>(0)?;
-                let namespace = NamespaceName::from_string(row.get::<_, String>(1)?).unwrap();
-                let status = MigrationTaskStatus::from_int(row.get::<_, u64>(2)?);
-                let job_id = row.get::<_, i64>(3)?;
-                Ok(MigrationTask {
-                    namespace,
-                    status,
-                    job_id,
-                    task_id,
-                })
-            })?
-            .map(|r| r.map_err(Into::into))
-            .collect::<crate::Result<Vec<_>>>()?;
-
-        for task in tasks.iter() {
-            txn.execute("INSERT INTO enqueued_tasks VALUES (?)", [task.task_id])?;
-        }
-
-        txn.commit()?;
-        Ok(tasks)
-    }
-
-    fn update_task_status(
-        &mut self,
-        task: MigrationTask,
-        error: Option<String>,
-    ) -> crate::Result<()> {
-        assert!(error.is_none() || task.status.is_failure());
-        let txn = self.conn.transaction()?;
-        txn.execute(
-            "UPDATE migration_job_pending_tasks SET status = ?, error = ? WHERE task_id = ?",
-            (task.status as u64, error, task.task_id),
-        )?;
-        txn.commit()?;
-        Ok(())
-    }
-
-    /// Attempt to set the job to DryRunSuccess.
-    /// Checks that:
-    /// - current state is WaitinForDryRun
-    /// - all tasks are DryRunSuccess
-    fn job_step_dry_run_success(&self, mut job: MigrationJob) -> crate::Result<MigrationJob> {
-        let row_changed = self.conn.execute("
-            WITH tasks AS (SELECT * FROM migration_job_pending_tasks WHERE job_id = ?1)
-                UPDATE migration_jobs 
-                SET status = ?2
-                WHERE job_id = ?1
-                    AND status = ?3
-                    AND (SELECT count(*) from tasks) = (SELECT count(*) FROM tasks WHERE status = ?4)",
-            (
-                job.job_id,
-                MigrationJobStatus::DryRunSuccess as u64,
-                MigrationJobStatus::WaitingDryRun as u64,
-                MigrationTaskStatus::DryRunSuccess as u64))?;
-
-        if row_changed == 0 {
-            return Ok(job);
-        }
-
-        job.status = MigrationJobStatus::DryRunSuccess;
-
-        Ok(job)
-    }
-
-    fn update_job_status(&self, job_id: i64, status: MigrationJobStatus) -> crate::Result<()> {
-        self.conn.execute(
-            "UPDATE migration_jobs SET status = ? WHERE job_id = ?",
-            (status as u64, job_id),
-        )?;
-        Ok(())
-    }
-
-    fn get_next_pending_migration_job(&mut self) -> crate::Result<Option<MigrationJob>> {
-        let mut job = self
-            .conn
-            .query_row(
-                "SELECT job_id, status, migration, schema
-            FROM migration_jobs
-            WHERE status != ? AND status != ?
-            LIMIT 1",
-                (
-                    MigrationJobStatus::RunSuccess as u64,
-                    MigrationJobStatus::RunFailure as u64,
-                ),
-                |row| {
-                    let job_id = row.get::<_, i64>(0)?;
-                    let status = MigrationJobStatus::from_int(row.get::<_, u64>(1)?);
-                    let migration = serde_json::from_str(row.get_ref(2)?.as_str()?).unwrap();
-                    let schema = NamespaceName::from_string(row.get::<_, String>(3)?).unwrap();
-                    Ok(MigrationJob {
-                        schema,
-                        job_id,
-                        status,
-                        migration,
-                        progress: Default::default(),
-                    })
-                },
-            )
-            .optional()?;
-
-        if let Some(ref mut job) = job {
-            self.conn
-                .prepare(
-                    "
-                SELECT status, count(*)
-                FROM migration_job_pending_tasks 
-                WHERE job_id = ?
-                GROUP BY status",
-                )?
-                .query_map([job.job_id], |row| {
-                    job.progress[row.get::<_, usize>(0)?] = row.get::<_, usize>(1)?;
-                    Ok(())
-                })?
-                .collect::<Result<(), rusqlite::Error>>()?;
-        }
-
-        Ok(job)
     }
 
     #[tracing::instrument(skip(self))]
@@ -640,10 +348,17 @@ fn try_process(
 }
 
 impl MetaStore {
-    #[tracing::instrument(skip(config, base_path))]
-    pub async fn new(config: MetaStoreConfig, base_path: &Path) -> Result<Self> {
+    #[tracing::instrument(skip(config, base_path, conn, wal_manager))]
+    pub async fn new(
+        config: MetaStoreConfig,
+        base_path: &Path,
+        conn: MetaStoreConnection,
+        wal_manager: MetaStoreWalManager,
+    ) -> Result<Self> {
         let (changes_tx, mut changes_rx) = mpsc::channel(256);
-        let inner = Arc::new(Mutex::new(MetaStoreInner::new(base_path, config).await?));
+        let inner = Arc::new(Mutex::new(
+            MetaStoreInner::new(base_path, conn, wal_manager, config).await?,
+        ));
 
         tokio::spawn({
             let inner = inner.clone();
@@ -736,83 +451,6 @@ impl MetaStore {
 
         Ok(())
     }
-
-    pub async fn register_schema_migration(
-        &self,
-        schema: NamespaceName,
-        migration: Arc<Program>,
-    ) -> crate::Result<i64> {
-        let inner = self.inner.clone();
-        let job_id = tokio::task::spawn_blocking(move || {
-            inner
-                .lock()
-                .register_schema_migration_task(&schema, &migration)
-        })
-        .await
-        .unwrap()?;
-
-        Ok(job_id)
-    }
-
-    pub(crate) async fn job_step_dry_run_success(
-        &self,
-        job: MigrationJob,
-    ) -> crate::Result<MigrationJob> {
-        let inner = self.inner.clone();
-
-        let job = tokio::task::spawn_blocking(move || inner.lock().job_step_dry_run_success(job))
-            .await
-            .unwrap()?;
-
-        Ok(job)
-    }
-
-    pub(crate) async fn update_task_status(
-        &self,
-        task: MigrationTask,
-        error: Option<String>,
-    ) -> crate::Result<()> {
-        let inner = self.inner.clone();
-        tokio::task::spawn_blocking(move || inner.lock().update_task_status(task, error))
-            .await
-            .unwrap()?;
-
-        Ok(())
-    }
-
-    pub(crate) async fn get_next_pending_job(&self) -> crate::Result<Option<MigrationJob>> {
-        let inner = self.inner.clone();
-        tokio::task::spawn_blocking(move || inner.lock().get_next_pending_migration_job())
-            .await
-            .unwrap()
-    }
-
-    pub(crate) async fn get_next_pending_migration_tasks_batch(
-        &self,
-        job_id: i64,
-        status: MigrationTaskStatus,
-        limit: usize,
-    ) -> crate::Result<Vec<MigrationTask>> {
-        let inner = self.inner.clone();
-        tokio::task::spawn_blocking(move || {
-            inner
-                .lock()
-                .get_next_pending_migration_tasks_batch(job_id, status, limit)
-        })
-        .await
-        .unwrap()
-    }
-
-    pub(crate) async fn update_job_status(
-        &self,
-        job_id: i64,
-        status: MigrationJobStatus,
-    ) -> crate::Result<()> {
-        let inner = self.inner.clone();
-        tokio::task::spawn_blocking(move || inner.lock().update_job_status(job_id, status))
-            .await
-            .unwrap()
-    }
 }
 
 impl MetaStoreHandle {
@@ -904,162 +542,5 @@ impl MetaStoreHandle {
         };
 
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use insta::assert_debug_snapshot;
-    use tempfile::tempdir;
-
-    use super::*;
-
-    async fn register_schema(meta_store: &MetaStore, schema: &'static str) {
-        meta_store
-            .handle(schema.into())
-            .store(DatabaseConfig {
-                is_shared_schema: true,
-                ..Default::default()
-            })
-            .await
-            .unwrap();
-    }
-
-    async fn register_shared(meta_store: &MetaStore, name: &'static str, schema: &'static str) {
-        meta_store
-            .handle(name.into())
-            .store(DatabaseConfig {
-                shared_schema_name: Some(schema.into()),
-                ..Default::default()
-            })
-            .await
-            .unwrap();
-    }
-
-    #[tokio::test]
-    async fn enqueue_migration_job() {
-        let tmp = tempdir().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path())
-            .await
-            .unwrap();
-        // create 2 shared schema tables
-        register_schema(&meta_store, "schema1").await;
-        register_schema(&meta_store, "schema2").await;
-
-        // create namespaces
-        register_shared(&meta_store, "ns1", "schema1").await;
-        register_shared(&meta_store, "ns2", "schema2").await;
-        register_shared(&meta_store, "ns3", "schema1").await;
-
-        let mut lock = meta_store.inner.lock();
-        // create a migration task
-        lock.register_schema_migration_task(
-            &"schema1".into(),
-            &Program::seq(&["select * from test"]),
-        )
-        .unwrap();
-        let mut stmt = lock.conn.prepare("select * from migration_jobs").unwrap();
-        assert_debug_snapshot!(stmt.query(()).unwrap().next().unwrap().unwrap());
-        stmt.finalize().unwrap();
-
-        let mut stmt = lock
-            .conn
-            .prepare("select * from migration_job_pending_tasks")
-            .unwrap();
-        let mut rows = stmt.query(()).unwrap();
-        assert_debug_snapshot!(rows.next().unwrap().unwrap());
-        assert_debug_snapshot!(rows.next().unwrap().unwrap());
-        assert!(rows.next().unwrap().is_none());
-    }
-
-    #[tokio::test]
-    async fn schema_doesnt_exist() {
-        let tmp = tempdir().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path())
-            .await
-            .unwrap();
-        // FIXME: the actual error reported here is a shitty constraint error, we should make the
-        // necessary checks beforehand, and return a nice error message.
-        assert!(meta_store
-            .handle("ns1".into())
-            .store(DatabaseConfig {
-                shared_schema_name: Some("schema1".into()),
-                ..Default::default()
-            })
-            .await
-            .is_err());
-    }
-
-    #[tokio::test]
-    async fn pending_job() {
-        let tmp = tempdir().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path())
-            .await
-            .unwrap();
-
-        register_schema(&meta_store, "schema1").await;
-        register_shared(&meta_store, "ns1", "schema1").await;
-        register_shared(&meta_store, "ns2", "schema1").await;
-        register_shared(&meta_store, "ns3", "schema1").await;
-
-        let job_id = meta_store
-            .register_schema_migration(
-                "schema1".into(),
-                Program::seq(&["create table test (x)"]).into(),
-            )
-            .await
-            .unwrap();
-
-        assert_debug_snapshot!(meta_store.get_next_pending_job().await.unwrap().unwrap());
-
-        let mut tasks = meta_store
-            .get_next_pending_migration_tasks_batch(job_id, MigrationTaskStatus::Enqueued, 10)
-            .await
-            .unwrap();
-        assert_debug_snapshot!(tasks);
-
-        let mut task = tasks.pop().unwrap();
-        task.status = MigrationTaskStatus::Success;
-        meta_store.update_task_status(task, None).await.unwrap();
-
-        assert_debug_snapshot!(meta_store.get_next_pending_job().await.unwrap().unwrap());
-    }
-
-    #[tokio::test]
-    async fn step_job_dry_run_success() {
-        let tmp = tempdir().unwrap();
-        let meta_store = MetaStore::new(Default::default(), tmp.path())
-            .await
-            .unwrap();
-
-        register_schema(&meta_store, "schema1").await;
-        register_shared(&meta_store, "ns1", "schema1").await;
-        register_shared(&meta_store, "ns2", "schema1").await;
-        register_shared(&meta_store, "ns3", "schema1").await;
-        meta_store
-            .register_schema_migration(
-                "schema1".into(),
-                Program::seq(&["create table test (x)"]).into(),
-            )
-            .await
-            .unwrap();
-
-        let job = meta_store.get_next_pending_job().await.unwrap().unwrap();
-        let job = meta_store.job_step_dry_run_success(job).await.unwrap();
-
-        // the job status wasn't updated: there are still tasks that need dry run
-        assert_eq!(job.status, MigrationJobStatus::WaitingDryRun);
-
-        let tasks = meta_store
-            .get_next_pending_migration_tasks_batch(job.job_id, MigrationTaskStatus::Enqueued, 10)
-            .await
-            .unwrap();
-        for mut task in tasks {
-            task.status = MigrationTaskStatus::DryRunSuccess;
-            meta_store.update_task_status(task, None).await.unwrap();
-        }
-
-        let job = meta_store.job_step_dry_run_success(job).await.unwrap();
-        assert_eq!(job.status, MigrationJobStatus::DryRunSuccess);
     }
 }

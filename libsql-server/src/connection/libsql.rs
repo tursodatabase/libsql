@@ -945,7 +945,7 @@ mod test {
 
     use crate::auth::Authenticated;
     use crate::connection::Connection as _;
-    use crate::namespace::meta_store::MetaStore;
+    use crate::namespace::meta_store::{metastore_connection_maker, MetaStore};
     use crate::namespace::NamespaceName;
     use crate::query_result_builder::test::{test_driver, TestBuilder};
     use crate::query_result_builder::QueryResultBuilder;
@@ -1169,10 +1169,11 @@ mod test {
         .unwrap();
 
         let conn = make_conn.make_connection().await.unwrap();
+        let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path())
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
                 .await
                 .unwrap(),
         );

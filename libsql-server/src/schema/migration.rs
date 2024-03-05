@@ -1,9 +1,9 @@
 use rusqlite::Savepoint;
 
 use crate::connection::program::{Program, Vm};
-use crate::namespace::meta_store::MigrationTask;
 use crate::query_result_builder::QueryResultBuilder;
 
+use super::status::MigrationTask;
 use super::{Error, MigrationTaskStatus};
 
 pub fn setup_migration_table(conn: &mut rusqlite::Connection) -> Result<(), Error> {
@@ -87,7 +87,7 @@ pub fn perform_migration<B: QueryResultBuilder>(
     }
 }
 
-pub(super) fn update_task_status(
+pub(super) fn update_db_task_status(
     conn: &rusqlite::Connection,
     job_id: i64,
     status: MigrationTaskStatus,

@@ -1,6 +1,6 @@
 ---
-source: libsql-server/src/namespace/meta_store.rs
-expression: meta_store.get_next_pending_job().await.unwrap().unwrap()
+source: libsql-server/src/schema/db.rs
+expression: get_next_pending_migration_job(&mut conn).unwrap().unwrap()
 ---
 MigrationJob {
     schema: schema1,
@@ -27,11 +27,11 @@ MigrationJob {
         ],
     },
     progress: [
-        3,
+        2,
         0,
         0,
         0,
-        0,
+        1,
         0,
     ],
 }

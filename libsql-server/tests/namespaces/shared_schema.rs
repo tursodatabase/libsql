@@ -14,9 +14,28 @@ async fn get_schema_version(conn: &Connection) -> i64 {
     rows.next().await.unwrap().unwrap().get::<i64>(0).unwrap()
 }
 
+async fn check_schema(ns: &str) -> Vec<String> {
+    let db = Database::open_remote_with_connector(
+        format!("http://{ns}.primary:8080"),
+        String::new(),
+        TurmoilConnector,
+    )
+    .unwrap();
+    let conn = db.connect().unwrap();
+    let mut rows = conn.query("SELECT * from sqlite_schema", ()).await.unwrap();
+    let mut out = Vec::new();
+    while let Some(row) = rows.next().await.unwrap() {
+        out.push(format!("{row:?}"));
+    }
+
+    out
+}
+
 #[test]
 fn perform_schema_migration() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(100000))
+        .build();
     let tmp = tempdir().unwrap();
     make_primary(&mut sim, tmp.path().to_path_buf());
 
@@ -59,23 +78,6 @@ fn perform_schema_migration() {
 
         while get_schema_version(&schema_conn).await == schema_version_before {
             tokio::time::sleep(Duration::from_millis(100)).await;
-        }
-
-        async fn check_schema(ns: &str) -> Vec<String> {
-            let db = Database::open_remote_with_connector(
-                format!("http://{ns}.primary:8080"),
-                String::new(),
-                TurmoilConnector,
-            )
-            .unwrap();
-            let conn = db.connect().unwrap();
-            let mut rows = conn.query("SELECT * from sqlite_schema", ()).await.unwrap();
-            let mut out = Vec::new();
-            while let Some(row) = rows.next().await.unwrap() {
-                out.push(format!("{row:?}"));
-            }
-
-            out
         }
 
         // all schemas are the same
