@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use libsql_replication::rpc::metadata;
 use prost::Message;
 use rusqlite::{params, OptionalExtension};
@@ -24,13 +25,13 @@ pub(super) fn setup_schema(conn: &mut rusqlite::Connection) -> Result<(), Error>
                 schema TEXT NOT NULL,
                 migration TEXT NOT NULL,
                 status INTEGER,
-                finished BOOLEAN GENERATED ALWAYS AS (status = {} OR status = {})
+                finished BOOLEAN GENERATED ALWAYS AS ({})
             )
             ",
-            // TODO: also handle abort when we get there
-            // we use format here, because params are not allowed GENERATED expression
-            MigrationJobStatus::RunSuccess as u64,
-            MigrationJobStatus::RunFailure as u64
+            MigrationJobStatus::finished_states()
+                .into_iter()
+                .map(|s| format!("status = {}", *s as u64))
+                .join(" OR ")
         ),
         (),
     )?;
@@ -71,6 +72,19 @@ pub(super) fn setup_schema(conn: &mut rusqlite::Connection) -> Result<(), Error>
 
     txn.commit()?;
     Ok(())
+}
+
+pub(crate) fn has_pending_migration_jobs(
+    conn: &rusqlite::Connection,
+    schema: &NamespaceName,
+) -> Result<bool, Error> {
+    let has_pending = conn.query_row(
+        "SELECT count(1) FROM migration_jobs WHERE schema = ? AND finished = false",
+        [schema.as_str()],
+        |row| Ok(row.get::<_, usize>(0)? != 0),
+    )?;
+
+    Ok(has_pending)
 }
 
 /// Create a migration job, and returns the job_id
@@ -373,7 +387,11 @@ mod test {
             .unwrap();
     }
 
-    async fn register_shared(meta_store: &MetaStore, name: &'static str, schema: &'static str) {
+    async fn register_shared(
+        meta_store: &MetaStore,
+        name: &'static str,
+        schema: &'static str,
+    ) -> crate::Result<()> {
         meta_store
             .handle(name.into())
             .store(DatabaseConfig {
@@ -381,7 +399,6 @@ mod test {
                 ..Default::default()
             })
             .await
-            .unwrap();
     }
 
     #[tokio::test]
@@ -392,17 +409,24 @@ mod test {
         let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
             .await
             .unwrap();
+        let mut conn = maker().unwrap();
+        setup_schema(&mut conn).unwrap();
+
         // create 2 shared schema tables
         register_schema(&meta_store, "schema1").await;
         register_schema(&meta_store, "schema2").await;
 
         // create namespaces
-        register_shared(&meta_store, "ns1", "schema1").await;
-        register_shared(&meta_store, "ns2", "schema2").await;
-        register_shared(&meta_store, "ns3", "schema1").await;
+        register_shared(&meta_store, "ns1", "schema1")
+            .await
+            .unwrap();
+        register_shared(&meta_store, "ns2", "schema2")
+            .await
+            .unwrap();
+        register_shared(&meta_store, "ns3", "schema1")
+            .await
+            .unwrap();
 
-        let mut conn = maker().unwrap();
-        setup_schema(&mut conn).unwrap();
         register_schema_migration_job(
             &mut conn,
             &"schema1".into(),
@@ -452,14 +476,19 @@ mod test {
         let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
             .await
             .unwrap();
-
-        register_schema(&meta_store, "schema1").await;
-        register_shared(&meta_store, "ns1", "schema1").await;
-        register_shared(&meta_store, "ns2", "schema1").await;
-        register_shared(&meta_store, "ns3", "schema1").await;
-
         let mut conn = maker().unwrap();
         setup_schema(&mut conn).unwrap();
+
+        register_schema(&meta_store, "schema1").await;
+        register_shared(&meta_store, "ns1", "schema1")
+            .await
+            .unwrap();
+        register_shared(&meta_store, "ns2", "schema1")
+            .await
+            .unwrap();
+        register_shared(&meta_store, "ns3", "schema1")
+            .await
+            .unwrap();
 
         let job_id = register_schema_migration_job(
             &mut conn,
@@ -494,14 +523,20 @@ mod test {
         let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
             .await
             .unwrap();
-
-        register_schema(&meta_store, "schema1").await;
-        register_shared(&meta_store, "ns1", "schema1").await;
-        register_shared(&meta_store, "ns2", "schema1").await;
-        register_shared(&meta_store, "ns3", "schema1").await;
-
         let mut conn = maker().unwrap();
         setup_schema(&mut conn).unwrap();
+
+        register_schema(&meta_store, "schema1").await;
+        register_shared(&meta_store, "ns1", "schema1")
+            .await
+            .unwrap();
+        register_shared(&meta_store, "ns2", "schema1")
+            .await
+            .unwrap();
+        register_shared(&meta_store, "ns3", "schema1")
+            .await
+            .unwrap();
+
         register_schema_migration_job(
             &mut conn,
             &"schema1".into(),
@@ -539,12 +574,11 @@ mod test {
         let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
             .await
             .unwrap();
+        let mut conn = maker().unwrap();
+        setup_schema(&mut conn).unwrap();
 
         register_schema(&meta_store, "schema1").await;
         register_schema(&meta_store, "schema2").await;
-
-        let mut conn = maker().unwrap();
-        setup_schema(&mut conn).unwrap();
 
         let job_id = register_schema_migration_job(
             &mut conn,
@@ -581,5 +615,60 @@ mod test {
             &Program::seq(&["create table test (x)"]).into(),
         )
         .unwrap();
+    }
+
+    #[tokio::test]
+    async fn has_pending_migration() {
+        let tmp = tempdir().unwrap();
+        let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
+        let conn = maker().unwrap();
+        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+            .await
+            .unwrap();
+        let mut conn = maker().unwrap();
+        setup_schema(&mut conn).unwrap();
+
+        register_schema(&meta_store, "schema").await;
+
+        let job_id = register_schema_migration_job(
+            &mut conn,
+            &"schema".into(),
+            &Program::seq(&["create table test (c)"]),
+        )
+        .unwrap();
+
+        assert!(super::has_pending_migration_jobs(&conn, &"schema".into()).unwrap());
+
+        update_job_status(&mut conn, job_id, MigrationJobStatus::RunSuccess).unwrap();
+        assert!(!super::has_pending_migration_jobs(&conn, &"schema".into()).unwrap());
+    }
+
+    #[tokio::test]
+    async fn attempt_to_create_db_during_migration() {
+        let tmp = tempdir().unwrap();
+        let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
+        let conn = maker().unwrap();
+        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+            .await
+            .unwrap();
+        let mut conn = maker().unwrap();
+        setup_schema(&mut conn).unwrap();
+
+        register_schema(&meta_store, "schema").await;
+
+        let job_id = register_schema_migration_job(
+            &mut conn,
+            &"schema".into(),
+            &Program::seq(&["create table test (c)"]),
+        )
+        .unwrap();
+
+        assert_debug_snapshot!(register_shared(&meta_store, "ns", "schema")
+            .await
+            .unwrap_err());
+
+        update_job_status(&mut conn, job_id, MigrationJobStatus::RunSuccess).unwrap();
+
+        assert!(register_shared(&meta_store, "ns", "schema").await.is_ok());
     }
 }
