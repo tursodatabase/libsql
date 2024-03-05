@@ -6,7 +6,6 @@ use libsql_replication::rpc::proxy::{
 use tokio_stream::StreamExt;
 use tonic::{transport::Channel, Request, Status};
 
-
 use crate::auth::parsers::parse_grpc_auth_header;
 use crate::auth::{Auth, Jwt, UserAuthStrategy};
 use crate::namespace::NamespaceStore;
@@ -43,7 +42,7 @@ impl ReplicaProxyService {
             .with(namespace.clone(), |ns| ns.jwt_key())
             .await;
 
-            //todo julian figure this out
+        //todo julian figure this out
         let auth_context = parse_grpc_auth_header(req.metadata())?;
 
         match namespace_jwt_key {
@@ -52,16 +51,15 @@ impl ReplicaProxyService {
                 authenticated.upgrade_grpc_request(req);
                 Ok(())
             }
-            Ok(Ok(None)) => { // non jwt auth, we don't know if context matches it
+            Ok(Ok(None)) => {
+                // non jwt auth, we don't know if context matches it
                 let authenticated = self.user_auth_strategy.authenticate(auth_context)?;
                 authenticated.upgrade_grpc_request(req);
                 Ok(())
             }
             Err(e) => match e.as_ref() {
                 crate::error::Error::NamespaceDoesntExist(_) => {
-                    let authenticated = self
-                        .user_auth_strategy
-                        .authenticate(auth_context)?;
+                    let authenticated = self.user_auth_strategy.authenticate(auth_context)?;
 
                     authenticated.upgrade_grpc_request(req);
                     Ok(())

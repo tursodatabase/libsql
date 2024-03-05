@@ -37,13 +37,20 @@ pub fn parse_jwt_key(data: &str) -> Result<jsonwebtoken::DecodingKey> {
 }
 
 // this could be try_from trait
-pub(crate) fn parse_grpc_auth_header(metadata: &MetadataMap) -> Result<UserAuthContext, tonic::Status> {
-
+pub(crate) fn parse_grpc_auth_header(
+    metadata: &MetadataMap,
+) -> Result<UserAuthContext, tonic::Status> {
     return metadata
-        .get(GRPC_AUTH_HEADER).context("auth header not found")
+        .get(GRPC_AUTH_HEADER)
+        .context("auth header not found")
         .and_then(|h| h.to_str().context("non ascii auth token"))
         .and_then(|t| t.try_into())
-        .map_err(|e| tonic::Status::new(tonic::Code::InvalidArgument,format!("Failed parse grpc auth: {e}"))); 
+        .map_err(|e| {
+            tonic::Status::new(
+                tonic::Code::InvalidArgument,
+                format!("Failed parse grpc auth: {e}"),
+            )
+        });
 }
 
 pub fn parse_http_auth_header<'a>(
@@ -125,4 +132,3 @@ mod tests {
         assert_eq!(out, Some("always".to_string()));
     }
 }
-

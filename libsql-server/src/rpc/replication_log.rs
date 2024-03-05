@@ -71,7 +71,6 @@ impl ReplicationLogService {
         req: &tonic::Request<T>,
         namespace: NamespaceName,
     ) -> Result<(), Status> {
-
         // todo duplicate code
         let namespace_jwt_key = self
             .namespaces
@@ -93,7 +92,7 @@ impl ReplicationLogService {
                 e
             )))?,
         };
-        
+
         if let Some(auth) = auth {
             let user_credential = parse_grpc_auth_header(req.metadata())?;
             auth.authenticate(user_credential)?;

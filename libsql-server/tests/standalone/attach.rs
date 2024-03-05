@@ -33,8 +33,11 @@ fn attach_no_auth() {
             .await
             .unwrap();
 
-        let foo_db =
-            Database::open_remote_with_connector("http://foo.primary:8080", "dummy_token", TurmoilConnector)?;
+        let foo_db = Database::open_remote_with_connector(
+            "http://foo.primary:8080",
+            "dummy_token",
+            TurmoilConnector,
+        )?;
         let foo_conn = foo_db.connect().unwrap();
         foo_conn
             .execute("CREATE TABLE foo_table (x)", ())
@@ -45,8 +48,11 @@ fn attach_no_auth() {
             .await
             .unwrap();
 
-        let bar_db =
-            Database::open_remote_with_connector("http://bar.primary:8080", "dummy_token", TurmoilConnector)?;
+        let bar_db = Database::open_remote_with_connector(
+            "http://bar.primary:8080",
+            "dummy_token",
+            TurmoilConnector,
+        )?;
         let bar_conn = bar_db.connect().unwrap();
         bar_conn
             .execute("CREATE TABLE bar_table (x)", ())

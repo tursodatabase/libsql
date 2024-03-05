@@ -360,8 +360,11 @@ fn replica_primary_reset() {
     });
 
     sim.client("client", async move {
-        let primary =
-            Database::open_remote_with_connector("http://primary:8080", "dummy_token", TurmoilConnector)?;
+        let primary = Database::open_remote_with_connector(
+            "http://primary:8080",
+            "dummy_token",
+            TurmoilConnector,
+        )?;
         let conn = primary.connect()?;
 
         // insert a few valued into the primary
@@ -521,9 +524,12 @@ fn replica_no_resync_on_restart() {
     sim.client("client", async {
         // seed database
         {
-            let db =
-                Database::open_remote_with_connector("http://primary:8080", "dummy_token", TurmoilConnector)
-                    .unwrap();
+            let db = Database::open_remote_with_connector(
+                "http://primary:8080",
+                "dummy_token",
+                TurmoilConnector,
+            )
+            .unwrap();
             let conn = db.connect().unwrap();
             conn.execute("create table test (x)", ()).await.unwrap();
             for _ in 0..500 {
@@ -624,8 +630,12 @@ fn replicate_with_snapshots() {
             .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
             .await?;
 
-        let db = Database::open_remote_with_connector("http://primary:8080", "dummy_token", TurmoilConnector)
-            .unwrap();
+        let db = Database::open_remote_with_connector(
+            "http://primary:8080",
+            "dummy_token",
+            TurmoilConnector,
+        )
+        .unwrap();
         let conn = db.connect().unwrap();
         conn.execute("create table test (x)", ()).await.unwrap();
         // insert enough to trigger snapshot creation.

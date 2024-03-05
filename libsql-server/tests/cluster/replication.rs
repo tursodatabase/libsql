@@ -213,9 +213,12 @@ fn replica_lazy_creation() {
     });
 
     sim.client("client", async move {
-        let db =
-            Database::open_remote_with_connector("http://test.replica:8080", "dummy_token", TurmoilConnector)
-                .unwrap();
+        let db = Database::open_remote_with_connector(
+            "http://test.replica:8080",
+            "dummy_token",
+            TurmoilConnector,
+        )
+        .unwrap();
         let conn = db.connect().unwrap();
         assert_debug_snapshot!(conn.execute("create table test (x)", ()).await.unwrap_err());
         let primary_http = Client::new();

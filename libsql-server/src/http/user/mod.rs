@@ -459,24 +459,28 @@ impl FromRequestParts<AppState> for Authenticated {
             state.disable_default_namespace,
             state.disable_namespaces,
         )?;
-// todo get rid of duplication - this and replication_log.rs
+        // todo get rid of duplication - this and replication_log.rs
         let namespace_jwt_key = state
             .namespaces
             .with(ns.clone(), |ns| ns.jwt_key())
             .await??;
 
-        let context = parts.headers
-            .get(hyper::header::AUTHORIZATION).context("auth header not found") // todo this context is swallowed for now, gotta fix that but not with panicking
+        let context = parts
+            .headers
+            .get(hyper::header::AUTHORIZATION)
+            .context("auth header not found") // todo this context is swallowed for now, gotta fix that but not with panicking
             .and_then(|h| h.to_str().context("non ascii auth token"))
             .and_then(|t| t.try_into())
-            .unwrap_or(UserAuthContext{scheme: None, token: None});
-
+            .unwrap_or(UserAuthContext {
+                scheme: None,
+                token: None,
+            });
 
         let authenticated = namespace_jwt_key
-        .map(Jwt::new)
-        .map(Auth::new)
-        .unwrap_or_else(|| state.user_auth_strategy.clone())
-        .authenticate(context)?;
+            .map(Jwt::new)
+            .map(Auth::new)
+            .unwrap_or_else(|| state.user_auth_strategy.clone())
+            .authenticate(context)?;
         Ok(authenticated)
     }
 }

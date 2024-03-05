@@ -7,11 +7,9 @@ pub struct HttpBasic {
 }
 
 impl UserAuthStrategy for HttpBasic {
-
     fn authenticate(&self, context: UserAuthContext) -> Result<Authenticated, AuthError> {
-        
         tracing::trace!("executing http basic auth");
-        
+
         // NOTE: this naive comparison may leak information about the `expected_value`
         // using a timing attack
         let expected_value = self.credential.trim_end_matches('=');
@@ -20,7 +18,6 @@ impl UserAuthStrategy for HttpBasic {
             Some(s) => s.contains(expected_value),
             None => expected_value.is_empty(),
         };
-        
 
         if creds_match {
             return Ok(Authenticated::FullAccess);
