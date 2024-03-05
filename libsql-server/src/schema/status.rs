@@ -168,7 +168,7 @@ pub enum MigrationJobStatus {
 }
 
 impl MigrationJobStatus {
-    pub fn from_int(i: u64) -> Self {
+    pub(crate) fn from_int(i: u64) -> Self {
         match i {
             0 => Self::WaitingDryRun,
             1 => Self::DryRunSuccess,
@@ -179,6 +179,11 @@ impl MigrationJobStatus {
             6 => Self::WaitingSchemaUpdate,
             _ => panic!(),
         }
+    }
+
+    /// Returns a list of MigrationJobStatus considered finished states.
+    pub(crate) fn finished_states() -> &'static [Self] {
+        &[Self::RunSuccess, Self::RunFailure]
     }
 
     /// Returns `true` if the migration job status is [`WaitingRun`].

@@ -29,7 +29,7 @@
 //! manner as the dry-run, except for the fact that the migration is actually committed.
 //! - If all tasks are successfull, then the scheduler performs the migration on the schema, and
 //! update the job's state to it's final state, `RunSuccess`.
-mod db;
+pub(crate) mod db;
 mod error;
 mod handle;
 mod message;

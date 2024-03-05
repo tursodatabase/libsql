@@ -324,6 +324,11 @@ fn try_process(
 
     if let Some(schema) = config.shared_schema_name.as_ref() {
         let tx = inner.conn.transaction()?;
+        if let Some(ref schema) = config.shared_schema_name {
+            if crate::schema::db::has_pending_migration_jobs(&tx, schema)? {
+                return Err(crate::Error::PendingMigrationOnSchema(schema.clone()));
+            }
+        }
         tx.execute(
             "INSERT OR REPLACE INTO namespace_configs (namespace, config) VALUES (?1, ?2)",
             rusqlite::params![namespace.as_str(), config_encoded],
