@@ -20,6 +20,20 @@ pub fn setup_migration_table(conn: &mut rusqlite::Connection) -> Result<(), Erro
     Ok(())
 }
 
+pub fn has_pending_migration_task(conn: &rusqlite::Connection) -> Result<bool, Error> {
+    Ok(conn.query_row(
+        "SELECT COUNT(*) FROM __libsql_migration_tasks WHERE status != ? AND status != ?",
+        (
+            MigrationTaskStatus::Success as u64,
+            MigrationTaskStatus::Failure as u64,
+        ),
+        |row| {
+            let count: i64 = row.get(0)?;
+            Ok(count > 0)
+        },
+    )?)
+}
+
 pub fn enqueue_migration_task(
     conn: &rusqlite::Connection,
     task: &MigrationTask,

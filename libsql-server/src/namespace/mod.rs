@@ -41,7 +41,7 @@ use crate::database::{
 use crate::error::LoadDumpError;
 use crate::replication::script_backup_manager::ScriptBackupManager;
 use crate::replication::{FrameNo, ReplicationLogger};
-use crate::schema::{setup_migration_table, SchedulerHandle};
+use crate::schema::{has_pending_migration_task, setup_migration_table, SchedulerHandle};
 use crate::stats::Stats;
 use crate::{
     run_periodic_checkpoint, StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT,
@@ -367,11 +367,14 @@ impl Namespace {
         let connection_maker = Arc::new(connection_maker);
 
         if meta_store_handle.get().shared_schema_name.is_some() {
+            let block_writes = block_writes.clone();
             let conn = connection_maker.create().await?;
             join_set.spawn_blocking(move || {
                 conn.with_raw(|conn| -> crate::Result<()> {
                     setup_migration_table(conn)?;
-                    // TODO: if there are pending jobs, we should block writes
+                    if has_pending_migration_task(conn)? {
+                        block_writes.store(true, std::sync::atomic::Ordering::SeqCst);
+                    }
                     Ok(())
                 })
                 .unwrap();
