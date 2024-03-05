@@ -5,7 +5,7 @@ pub mod replication_wal;
 mod store;
 
 use std::path::{Path, PathBuf};
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Weak};
 
 use anyhow::Context as _;
@@ -369,18 +369,17 @@ impl Namespace {
         if meta_store_handle.get().shared_schema_name.is_some() {
             let block_writes = block_writes.clone();
             let conn = connection_maker.create().await?;
-            join_set.spawn_blocking(move || {
+            tokio::task::spawn_blocking(move || {
                 conn.with_raw(|conn| -> crate::Result<()> {
                     setup_migration_table(conn)?;
                     if has_pending_migration_task(conn)? {
-                        block_writes.store(true, std::sync::atomic::Ordering::SeqCst);
+                        block_writes.store(true, Ordering::SeqCst);
                     }
                     Ok(())
                 })
-                .unwrap();
-
-                Ok(())
-            });
+            })
+            .await
+            .unwrap()?;
         }
 
         if let Some(checkpoint_interval) = ns_config.checkpoint_interval {

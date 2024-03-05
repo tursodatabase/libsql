@@ -1,3 +1,5 @@
+use itertools::Itertools;
+use once_cell::sync::Lazy;
 use rusqlite::Savepoint;
 
 use crate::connection::program::{Program, Vm};
@@ -7,30 +9,33 @@ use super::status::MigrationTask;
 use super::{Error, MigrationTaskStatus};
 
 pub fn setup_migration_table(conn: &mut rusqlite::Connection) -> Result<(), Error> {
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS __libsql_migration_tasks (
-            job_id INTEGER PRIMARY KEY,
-            status INTEGER,
-            migration TEXT NOT NULL,
-            error TEXT
-        )",
-        (),
-    )?;
+    static TASKS_TABLE_QUERY: Lazy<String> = Lazy::new(|| {
+        format!(
+            "CREATE TABLE IF NOT EXISTS __libsql_migration_tasks (
+                job_id INTEGER PRIMARY KEY,
+                status INTEGER,
+                migration TEXT NOT NULL,
+                error TEXT,
+                finished BOOLEAN GENERATED ALWAYS AS ({})
+
+            )",
+            MigrationTaskStatus::finished_states()
+                .iter()
+                .map(|s| format!("status = {}", *s as u64))
+                .join(" OR ")
+        )
+    });
+
+    conn.execute(&*TASKS_TABLE_QUERY, ())?;
 
     Ok(())
 }
 
 pub fn has_pending_migration_task(conn: &rusqlite::Connection) -> Result<bool, Error> {
     Ok(conn.query_row(
-        "SELECT COUNT(*) FROM __libsql_migration_tasks WHERE status != ? AND status != ?",
-        (
-            MigrationTaskStatus::Success as u64,
-            MigrationTaskStatus::Failure as u64,
-        ),
-        |row| {
-            let count: i64 = row.get(0)?;
-            Ok(count > 0)
-        },
+        "SELECT COUNT(1) FROM __libsql_migration_tasks WHERE finished = false",
+        (),
+        |row| Ok(row.get::<_, usize>(0)? != 0),
     )?)
 }
 

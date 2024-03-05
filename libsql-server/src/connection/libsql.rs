@@ -366,6 +366,7 @@ impl LibSqlConnection<libsql_sys::wal::Sqlite3Wal> {
             QueryBuilderConfig::default(),
             rcv,
             Default::default(),
+            Default::default(),
         )
         .unwrap();
 
@@ -634,22 +635,20 @@ impl<W: Wal> Connection<W> {
         pgm: Program,
         mut builder: B,
     ) -> Result<B> {
-        let (config, stats) = {
+        let (config, stats, block_writes, previous_state) = {
             let lock = this.lock();
             let config = lock.config_store.get();
             let stats = lock.stats.clone();
+            let block_writes = lock.block_writes.clone();
+            let previous_state = lock.conn.transaction_state(Some(DatabaseName::Main));
 
-            (config, stats)
+            (config, stats, block_writes, previous_state)
         };
 
         let txn_timeout = config.txn_timeout.unwrap_or(TXN_TIMEOUT);
 
         builder.init(&this.lock().builder_config)?;
-        let mut previous_state = this
-            .lock()
-            .conn
-            .transaction_state(Some(DatabaseName::Main))?;
-        let block_writes = this.lock().block_writes.clone();
+        let mut previous_state = previous_state?;
 
         let mut vm = Vm::new(
             builder,
@@ -977,6 +976,7 @@ mod test {
             current_frame_no_receiver: watch::channel(None).1,
             state: Default::default(),
             slot: None,
+            block_writes: Default::default(),
         };
 
         let conn = Arc::new(Mutex::new(conn));
@@ -1011,6 +1011,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            Default::default(),
         )
         .await
         .unwrap();
@@ -1053,6 +1054,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            Default::default(),
         )
         .await
         .unwrap();
@@ -1100,6 +1102,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            Default::default(),
         )
         .await
         .unwrap();
@@ -1179,6 +1182,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            Default::default(),
         )
         .await
         .unwrap();
