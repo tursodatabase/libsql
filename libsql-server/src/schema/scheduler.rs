@@ -302,6 +302,7 @@ impl Scheduler {
 
                     match task.status() {
                         MigrationTaskStatus::Enqueued => {
+                            block_writes.store(true, std::sync::atomic::Ordering::SeqCst);
                             enqueue_migration_task(&txn, &task, &migration).unwrap();
                         }
                         MigrationTaskStatus::DryRunSuccess if job_status.is_waiting_run() => {
