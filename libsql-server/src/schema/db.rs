@@ -1,14 +1,15 @@
 use libsql_replication::rpc::metadata;
 use prost::Message;
-use rusqlite::OptionalExtension;
+use rusqlite::{params, OptionalExtension};
 
 use crate::connection::config::DatabaseConfig;
 use crate::connection::program::Program;
 use crate::namespace::NamespaceName;
+use crate::schema::status::{MigrationJobProgress, MigrationJobSummary};
 
 use super::{
     status::{MigrationJob, MigrationTask},
-    Error, MigrationJobStatus, MigrationTaskStatus,
+    Error, MigrationDetails, MigrationJobStatus, MigrationSummary, MigrationTaskStatus,
 };
 
 pub(super) fn setup_schema(conn: &mut rusqlite::Connection) -> Result<(), Error> {
@@ -281,6 +282,75 @@ pub(super) fn get_next_pending_migration_job(
     }
 
     Ok(job)
+}
+
+pub fn get_migration_details(
+    conn: &mut rusqlite::Connection,
+    schema: NamespaceName,
+    job_id: u64,
+) -> crate::Result<MigrationDetails> {
+    let status = conn.query_row(
+        "SELECT status
+            FROM migration_jobs
+            WHERE schema = ? AND job_id = ?",
+        params![schema.as_str(), job_id],
+        |r| {
+            let status: Option<u64> = r.get(0)?;
+            Ok(status.map(MigrationJobStatus::from_int))
+        },
+    )?;
+    let mut stmt = conn.prepare(
+        "SELECT target_namespace, status, error
+            FROM migration_job_pending_tasks
+            WHERE job_id = ?",
+    )?;
+    let rows = stmt.query([job_id])?.mapped(|r| {
+        let target_namespace = r.get(0)?;
+        let status: Option<u64> = r.get(1)?;
+        let error: Option<String> = r.get(2)?;
+        Ok(MigrationJobProgress {
+            namespace: target_namespace,
+            status: status.map(MigrationJobStatus::from_int),
+            error,
+        })
+    });
+    let mut progress = Vec::new();
+    for row in rows {
+        progress.push(row?);
+    }
+    Ok(MigrationDetails {
+        job_id,
+        status,
+        progress,
+    })
+}
+
+pub fn get_migrations_summary(
+    conn: &mut rusqlite::Connection,
+    schema: NamespaceName,
+) -> crate::Result<MigrationSummary> {
+    let schema_version: i64 = conn.query_row("PRAGMA schema_version;", (), |r| r.get(0))?;
+    let mut stmt = conn.prepare(
+        "SELECT job_id, status
+            FROM migration_jobs
+            WHERE schema = ?
+            ORDER BY job_id DESC",
+    )?;
+    let rows = stmt.query([schema.as_str()])?.mapped(|r| {
+        let status: Option<u64> = r.get(1)?;
+        Ok(MigrationJobSummary {
+            job_id: r.get(0)?,
+            status: status.map(MigrationJobStatus::from_int),
+        })
+    });
+    let mut migrations = Vec::new();
+    for row in rows {
+        migrations.push(row?);
+    }
+    Ok(MigrationSummary {
+        schema_version,
+        migrations,
+    })
 }
 
 #[cfg(test)]

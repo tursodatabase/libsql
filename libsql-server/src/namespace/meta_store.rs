@@ -21,6 +21,7 @@ use tokio::sync::{
 
 use crate::config::BottomlessConfig;
 use crate::connection::config::DatabaseConfig;
+use crate::schema::{MigrationDetails, MigrationSummary};
 use crate::{
     config::MetaStoreConfig, connection::libsql::open_conn_active_checkpoint, error::Error, Result,
 };
@@ -450,6 +451,35 @@ impl MetaStore {
         }
 
         Ok(())
+    }
+
+    pub async fn get_migrations_summary(
+        &self,
+        schema: NamespaceName,
+    ) -> crate::Result<MigrationSummary> {
+        let inner = self.inner.clone();
+        let summary = tokio::task::spawn_blocking(move || {
+            let mut lock = inner.lock();
+            crate::schema::get_migrations_summary(&mut lock.conn, schema)
+        })
+        .await
+        .unwrap()?;
+        Ok(summary)
+    }
+
+    pub async fn get_migration_details(
+        &self,
+        schema: NamespaceName,
+        job_id: u64,
+    ) -> crate::Result<MigrationDetails> {
+        let inner = self.inner.clone();
+        let summary = tokio::task::spawn_blocking(move || {
+            let mut lock = inner.lock();
+            crate::schema::get_migration_details(&mut lock.conn, schema, job_id)
+        })
+        .await
+        .unwrap()?;
+        Ok(summary)
     }
 }
 
