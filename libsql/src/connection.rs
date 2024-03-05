@@ -16,11 +16,11 @@ pub(crate) trait Conn {
 
     async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction>;
 
-    async fn is_autocommit(&self) -> bool;
+    fn is_autocommit(&self) -> bool;
 
-    async fn changes(&self) -> u64;
+    fn changes(&self) -> u64;
 
-    async fn last_insert_rowid(&self) -> i64;
+    fn last_insert_rowid(&self) -> i64;
 
     async fn reset(&self);
 }
@@ -100,18 +100,18 @@ impl Connection {
     }
 
     /// Check weather libsql is in `autocommit` or not.
-    pub async fn is_autocommit(&self) -> bool {
-        self.conn.is_autocommit().await
+    pub fn is_autocommit(&self) -> bool {
+        self.conn.is_autocommit()
     }
 
     /// Check the amount of changes the last query created.
-    pub async fn changes(&self) -> u64 {
-        self.conn.changes().await
+    pub fn changes(&self) -> u64 {
+        self.conn.changes()
     }
 
     /// Check the last inserted row id.
-    pub async fn last_insert_rowid(&self) -> i64 {
-        self.conn.last_insert_rowid().await
+    pub fn last_insert_rowid(&self) -> i64 {
+        self.conn.last_insert_rowid()
     }
 
     pub async fn reset(&self) {

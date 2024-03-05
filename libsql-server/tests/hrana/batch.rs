@@ -134,17 +134,17 @@ fn affected_rows_and_last_rowid() {
 
         let r = conn.execute("insert into t(x) values('a');", ()).await?;
         assert_eq!(r, 1, "1st row inserted");
-        assert_eq!(conn.last_insert_rowid().await, 1, "1st row id");
+        assert_eq!(conn.last_insert_rowid(), 1, "1st row id");
 
         let r = conn
             .execute("insert into t(x) values('b'),('c');", ())
             .await?;
         assert_eq!(r, 2, "2nd and 3rd rows inserted");
-        assert_eq!(conn.last_insert_rowid().await, 3, "3rd row id");
+        assert_eq!(conn.last_insert_rowid(), 3, "3rd row id");
 
         let r = conn.execute("update t set x = 'd';", ()).await?;
         assert_eq!(r, 3, "all three rows updated");
-        assert_eq!(conn.last_insert_rowid().await, 3, "last row id unchanged");
+        assert_eq!(conn.last_insert_rowid(), 3, "last row id unchanged");
 
         Ok(())
     });
