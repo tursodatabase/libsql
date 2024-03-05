@@ -392,6 +392,7 @@ impl Namespace {
             db: Database::Primary(PrimaryDatabase {
                 wal_manager,
                 connection_maker,
+                block_writes,
             }),
             name,
             stats,

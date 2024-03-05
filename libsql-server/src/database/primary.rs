@@ -1,4 +1,5 @@
 use bottomless::SavepointTracker;
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 use bottomless::bottomless_wal::BottomlessWalWrapper;
@@ -19,6 +20,7 @@ pub type PrimaryConnectionMaker = MakeThrottledConnection<
 pub struct PrimaryDatabase {
     pub wal_manager: ReplicationWalManager,
     pub connection_maker: Arc<PrimaryConnectionMaker>,
+    pub block_writes: Arc<AtomicBool>,
 }
 
 impl PrimaryDatabase {
