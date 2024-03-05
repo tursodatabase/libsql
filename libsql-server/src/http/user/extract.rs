@@ -29,8 +29,6 @@ impl FromRequestParts<AppState> for RequestContext {
             .with(namespace.clone(), |ns| ns.jwt_key())
             .await??;
 
-    // todo think how to decide if the particular auth stragegy even needs a context?
-    // we need it to understand whether to treat absence of auth header as error or not
         let context = parts.headers
         .get(hyper::header::AUTHORIZATION).context("auth header not found") // todo this context is swallowed for now, gotta fix that but not with panicking
         .and_then(|h| h.to_str().context("non ascii auth token"))
