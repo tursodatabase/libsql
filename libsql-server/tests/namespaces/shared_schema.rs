@@ -85,6 +85,18 @@ fn perform_schema_migration() {
         assert_debug_snapshot!(check_schema("ns2").await);
         assert_debug_snapshot!(check_schema("schema").await);
 
+        let resp = client
+            .get("http://primary:9090/v1/namespaces/schema/migrations")
+            .await
+            .unwrap()
+            .body_string()
+            .await
+            .unwrap();
+        assert_eq!(
+            resp,
+            r#"{"schema_version":1,"migrations":[{"job_id":1,"status":"RunSuccess"}]}"#
+        );
+
         Ok(())
     });
 

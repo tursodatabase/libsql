@@ -387,15 +387,14 @@ impl MetaStoreInner {
         schema: NamespaceName,
         job_id: u64,
     ) -> crate::Result<MigrationDetails> {
-        let (status, migration) = self.conn.query_row(
-            "SELECT status, migration
+        let status = self.conn.query_row(
+            "SELECT status
             FROM migration_jobs
             WHERE schema = ? AND job_id = ?",
             params![schema.as_str(), job_id],
             |r| {
                 let status: Option<u64> = r.get(0)?;
-                let migration: String = r.get(1)?;
-                Ok((status.map(MigrationJobStatus::from_int), migration))
+                Ok(status.map(MigrationJobStatus::from_int))
             },
         )?;
         let mut stmt = self.conn.prepare(
@@ -419,7 +418,6 @@ impl MetaStoreInner {
         }
         Ok(MigrationDetails {
             job_id,
-            migration,
             status,
             progress,
         })
@@ -430,7 +428,7 @@ impl MetaStoreInner {
             .conn
             .query_row("PRAGMA schema_version;", (), |r| r.get(0))?;
         let mut stmt = self.conn.prepare(
-            "SELECT job_id, status, migration
+            "SELECT job_id, status
             FROM migration_jobs
             WHERE schema = ?
             ORDER BY job_id DESC",
@@ -440,7 +438,6 @@ impl MetaStoreInner {
             Ok(MigrationJobSummary {
                 job_id: r.get(0)?,
                 status: status.map(MigrationJobStatus::from_int),
-                migration: r.get(3)?,
             })
         });
         let mut migrations = Vec::new();
@@ -923,13 +920,11 @@ pub struct MigrationSummary {
 pub struct MigrationJobSummary {
     pub job_id: u64,
     pub status: Option<MigrationJobStatus>,
-    pub migration: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MigrationDetails {
     pub job_id: u64,
-    pub migration: String,
     pub status: Option<MigrationJobStatus>,
     pub progress: Vec<MigrationJobProgress>,
 }
