@@ -5,6 +5,7 @@ pub mod replication_wal;
 mod store;
 
 use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Weak};
 
 use anyhow::Context as _;
@@ -236,6 +237,7 @@ impl Namespace {
         db_path: &Path,
         name: &NamespaceName,
         restore_option: RestoreOption,
+        block_writes: Arc<AtomicBool>,
         join_set: &mut JoinSet<anyhow::Result<()>>,
     ) -> crate::Result<(PrimaryConnectionMaker, ReplicationWalManager, Arc<Stats>)> {
         let db_config = meta_store_handle.get();
@@ -306,6 +308,7 @@ impl Namespace {
             auto_checkpoint,
             logger.new_frame_notifier.subscribe(),
             ns_config.encryption_config.clone(),
+            block_writes,
         )
         .await?
         .throttled(
@@ -350,12 +353,14 @@ impl Namespace {
 
         tokio::fs::create_dir_all(&db_path).await?;
 
+        let block_writes = Arc::new(AtomicBool::new(false));
         let (connection_maker, wal_manager, stats) = Self::make_primary_connection_maker(
             ns_config,
             &meta_store_handle,
             &db_path,
             &name,
             restore_option,
+            block_writes.clone(),
             &mut join_set,
         )
         .await?;
@@ -608,6 +613,7 @@ impl Namespace {
             &db_path,
             &name,
             restore_option,
+            Arc::new(AtomicBool::new(false)), // this is always false for schema
             &mut join_set,
         )
         .await?;

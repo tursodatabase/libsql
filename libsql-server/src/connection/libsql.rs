@@ -1,6 +1,7 @@
 use std::ffi::{c_int, c_void};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
@@ -45,6 +46,7 @@ pub struct MakeLibSqlConn<T: WalManager> {
     /// return sqlite busy. To mitigate that, we hold on to one connection
     _db: Option<LibSqlConnection<T::Wal>>,
     encryption_config: Option<EncryptionConfig>,
+    block_writes: Arc<AtomicBool>,
 }
 
 impl<T> MakeLibSqlConn<T>
@@ -64,6 +66,7 @@ where
         auto_checkpoint: u32,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         encryption_config: Option<EncryptionConfig>,
+        block_writes: Arc<AtomicBool>,
     ) -> Result<Self> {
         let mut this = Self {
             db_path,
@@ -78,6 +81,7 @@ where
             state: Default::default(),
             wal_manager,
             encryption_config,
+            block_writes,
         };
 
         let db = this.try_create_db().await?;
@@ -130,6 +134,7 @@ where
             },
             self.current_frame_no_receiver.clone(),
             self.state.clone(),
+            self.block_writes.clone(),
         )
         .await
     }
@@ -289,6 +294,7 @@ where
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
+        block_writes: Arc<AtomicBool>,
     ) -> crate::Result<Self>
     where
         T: WalManager<Wal = W> + Send + 'static,
@@ -303,6 +309,7 @@ where
                 builder_config,
                 current_frame_no_receiver,
                 state,
+                block_writes,
             )?;
             let namespace = path
                 .as_ref()
@@ -378,6 +385,8 @@ struct Connection<T> {
     state: Arc<TxnState<T>>,
     // current txn slot if any
     slot: Option<Arc<TxnSlot<T>>>,
+    #[allow(dead_code)]
+    block_writes: Arc<AtomicBool>,
 }
 
 impl<T> std::fmt::Debug for Connection<T> {
@@ -574,6 +583,7 @@ impl<W: Wal> Connection<W> {
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
+        block_writes: Arc<AtomicBool>,
     ) -> Result<Self> {
         let conn = open_conn_active_checkpoint(
             path,
@@ -603,6 +613,7 @@ impl<W: Wal> Connection<W> {
             current_frame_no_receiver,
             state,
             slot: None,
+            block_writes,
         };
 
         for ext in extensions.iter() {
