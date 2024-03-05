@@ -22,7 +22,7 @@ use crate::auth::parse_jwt_key;
 use crate::connection::config::DatabaseConfig;
 use crate::error::{Error, LoadDumpError};
 use crate::hrana;
-use crate::namespace::meta_store::MigrationSummary;
+use crate::namespace::meta_store::{MigrationDetails, MigrationSummary};
 use crate::namespace::{DumpStream, NamespaceName, NamespaceStore, RestoreOption};
 use crate::net::Connector;
 use crate::LIBSQL_PAGE_SIZE;
@@ -139,6 +139,10 @@ where
         .route(
             "/v1/namespaces/:namespace/migrations",
             get(handle_get_migrations),
+        )
+        .route(
+            "/v1/namespaces/:namespace/migrations/:job_id",
+            get(handle_get_migration_details),
         )
         .with_state(Arc::new(AppState {
             namespaces,
@@ -431,6 +435,26 @@ async fn handle_get_migrations<C: Connector>(
 
     let meta_store = app_state.namespaces.meta_store();
     let summary = meta_store.get_migrations_summary(schema).await?;
+
+    Ok(Json(summary))
+}
+
+async fn handle_get_migration_details<C: Connector>(
+    State(app_state): State<Arc<AppState<C>>>,
+    Path((namespace, job_id)): Path<(String, u64)>,
+) -> crate::Result<Json<MigrationDetails>> {
+    let schema = NamespaceName::from_string(namespace)?;
+    {
+        // validate if this is a valid target for the request
+        let store = app_state.namespaces.config_store(schema.clone()).await?;
+        let config = (*store.get()).clone();
+        if !config.is_shared_schema {
+            return Err(Error::InvalidNamespace);
+        }
+    }
+
+    let meta_store = app_state.namespaces.meta_store();
+    let summary = meta_store.get_migration_details(schema, job_id).await?;
 
     Ok(Json(summary))
 }

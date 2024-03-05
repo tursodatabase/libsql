@@ -13,7 +13,7 @@ use libsql_sys::wal::{
 };
 use parking_lot::Mutex;
 use prost::Message;
-use rusqlite::OptionalExtension;
+use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use tokio::sync::oneshot;
 use tokio::sync::{
@@ -382,6 +382,49 @@ impl MetaStoreInner {
         Ok(())
     }
 
+    fn get_migration_details(
+        &mut self,
+        schema: NamespaceName,
+        job_id: u64,
+    ) -> crate::Result<MigrationDetails> {
+        let (status, migration) = self.conn.query_row(
+            "SELECT status, migration
+            FROM migration_jobs
+            WHERE schema = ? AND job_id = ?",
+            params![schema.as_str(), job_id],
+            |r| {
+                let status: Option<u64> = r.get(0)?;
+                let migration: String = r.get(1)?;
+                Ok((status.map(MigrationJobStatus::from_int), migration))
+            },
+        )?;
+        let mut stmt = self.conn.prepare(
+            "SELECT target_namespace, status, error
+            FROM migration_job_pending_tasks
+            WHERE job_id = ?",
+        )?;
+        let rows = stmt.query([job_id])?.mapped(|r| {
+            let target_namespace = r.get(0)?;
+            let status: Option<u64> = r.get(1)?;
+            let error: Option<String> = r.get(2)?;
+            Ok(MigrationJobProgress {
+                namespace: target_namespace,
+                status: status.map(MigrationJobStatus::from_int),
+                error,
+            })
+        });
+        let mut progress = Vec::new();
+        for row in rows {
+            progress.push(row?);
+        }
+        Ok(MigrationDetails {
+            job_id,
+            migration,
+            status,
+            progress,
+        })
+    }
+
     fn get_migrations_summary(&mut self, schema: NamespaceName) -> crate::Result<MigrationSummary> {
         let schema_version: i64 = self
             .conn
@@ -687,6 +730,19 @@ impl MetaStore {
         Ok(summary)
     }
 
+    pub async fn get_migration_details(
+        &self,
+        schema: NamespaceName,
+        job_id: u64,
+    ) -> crate::Result<MigrationDetails> {
+        let inner = self.inner.clone();
+        let summary =
+            tokio::task::spawn_blocking(move || inner.lock().get_migration_details(schema, job_id))
+                .await
+                .unwrap()?;
+        Ok(summary)
+    }
+
     pub async fn register_schema_migration(
         &self,
         schema: NamespaceName,
@@ -862,11 +918,27 @@ pub struct MigrationSummary {
     pub schema_version: i64,
     pub migrations: Vec<MigrationJobSummary>,
 }
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MigrationJobSummary {
     pub job_id: u64,
     pub status: Option<MigrationJobStatus>,
     pub migration: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MigrationDetails {
+    pub job_id: u64,
+    pub migration: String,
+    pub status: Option<MigrationJobStatus>,
+    pub progress: Vec<MigrationJobProgress>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MigrationJobProgress {
+    pub namespace: String,
+    pub status: Option<MigrationJobStatus>,
+    pub error: Option<String>,
 }
 
 #[cfg(test)]
