@@ -279,20 +279,18 @@ impl Scheduler {
 
         // enqueue some work
         if let Some(mut task) = self.current_batch.pop() {
-            let connection_maker = self
-                .namespace_store
-                .with(task.namespace(), |ns| {
-                    ns.db
-                        .as_primary()
-                        .expect("attempting to perform schema migration on non-primary database")
-                        .connection_maker()
-                        .clone()
-                })
-                .await
-                .unwrap();
+            let (connection_maker, block_writes) =
+                self.namespace_store
+                    .with(task.namespace(), |ns| {
+                        let db = ns.db.as_primary().expect(
+                            "attempting to perform schema migration on non-primary database",
+                        );
+                        (db.connection_maker().clone(), db.block_writes.clone())
+                    })
+                    .await
+                    .unwrap();
 
             let connection = connection_maker.create().await.unwrap();
-
             let migration = job.migration();
             let job_status = *job.status();
             self.workers.spawn_blocking(move || {
@@ -316,6 +314,13 @@ impl Scheduler {
                     txn.commit().unwrap();
 
                     *task.status_mut() = new_status;
+
+                    if *task.status() == MigrationTaskStatus::Success
+                        || *task.status() == MigrationTaskStatus::Failure
+                    {
+                        block_writes.store(false, std::sync::atomic::Ordering::SeqCst);
+                    }
+
                     WorkResult::Task {
                         old_status,
                         task,
