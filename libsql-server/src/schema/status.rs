@@ -189,3 +189,29 @@ impl MigrationJobStatus {
         matches!(self, Self::WaitingRun)
     }
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MigrationSummary {
+    pub schema_version: i64,
+    pub migrations: Vec<MigrationJobSummary>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MigrationJobSummary {
+    pub job_id: u64,
+    pub status: Option<MigrationJobStatus>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MigrationDetails {
+    pub job_id: u64,
+    pub status: Option<MigrationJobStatus>,
+    pub progress: Vec<MigrationJobProgress>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MigrationJobProgress {
+    pub namespace: String,
+    pub status: Option<MigrationJobStatus>,
+    pub error: Option<String>,
+}

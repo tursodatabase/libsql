@@ -37,9 +37,10 @@ mod migration;
 mod scheduler;
 mod status;
 
+pub use db::{get_migration_details, get_migrations_summary};
 pub use error::Error;
 pub use handle::SchedulerHandle;
 pub use message::SchedulerMessage;
 pub use migration::*;
 pub use scheduler::Scheduler;
-pub use status::{MigrationJob, MigrationJobStatus, MigrationTask, MigrationTaskStatus};
+pub use status::{MigrationDetails, MigrationJobStatus, MigrationSummary, MigrationTaskStatus};

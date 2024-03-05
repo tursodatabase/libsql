@@ -22,9 +22,9 @@ use crate::auth::parse_jwt_key;
 use crate::connection::config::DatabaseConfig;
 use crate::error::{Error, LoadDumpError};
 use crate::hrana;
-use crate::namespace::meta_store::{MigrationDetails, MigrationSummary};
 use crate::namespace::{DumpStream, NamespaceName, NamespaceStore, RestoreOption};
 use crate::net::Connector;
+use crate::schema::{MigrationDetails, MigrationSummary};
 use crate::LIBSQL_PAGE_SIZE;
 
 pub mod stats;

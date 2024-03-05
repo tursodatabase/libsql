@@ -31,6 +31,11 @@ async fn check_schema(ns: &str) -> Vec<String> {
     out
 }
 
+async fn http_get(url: &str) -> String {
+    let client = Client::new();
+    client.get(url).await.unwrap().body_string().await.unwrap()
+}
+
 #[test]
 fn perform_schema_migration() {
     let mut sim = Builder::new()
@@ -85,17 +90,14 @@ fn perform_schema_migration() {
         assert_debug_snapshot!(check_schema("ns2").await);
         assert_debug_snapshot!(check_schema("schema").await);
 
-        let resp = client
-            .get("http://primary:9090/v1/namespaces/schema/migrations")
-            .await
-            .unwrap()
-            .body_string()
-            .await
-            .unwrap();
+        let resp = http_get("http://primary:9090/v1/namespaces/schema/migrations").await;
         assert_eq!(
             resp,
-            r#"{"schema_version":1,"migrations":[{"job_id":1,"status":"RunSuccess"}]}"#
+            r#"{"schema_version":4,"migrations":[{"job_id":1,"status":"RunSuccess"}]}"#
         );
+
+        let resp = http_get("http://primary:9090/v1/namespaces/schema/migrations/1").await;
+        assert_eq!(resp, r#"{"job_id":1,"status":"RunSuccess","progress":[{"namespace":"ns1","status":"RunSuccess","error":null},{"namespace":"ns2","status":"RunSuccess","error":null}]}"#);
 
         Ok(())
     });
