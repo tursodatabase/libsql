@@ -42,4 +42,4 @@ pub use handle::SchedulerHandle;
 pub use message::SchedulerMessage;
 pub use migration::*;
 pub use scheduler::Scheduler;
-pub use status::{MigrationJobStatus, MigrationTaskStatus};
+pub use status::{MigrationJob, MigrationJobStatus, MigrationTask, MigrationTaskStatus};

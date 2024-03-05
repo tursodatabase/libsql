@@ -23,6 +23,8 @@ use tokio::sync::{
 
 use crate::config::BottomlessConfig;
 use crate::connection::config::DatabaseConfig;
+use crate::connection::program::Program;
+use crate::schema::{MigrationJob, MigrationJobStatus, MigrationTask, MigrationTaskStatus};
 use crate::{
     config::MetaStoreConfig, connection::libsql::open_conn_active_checkpoint, error::Error, Result,
 };
@@ -354,13 +356,13 @@ impl MetaStoreInner {
     fn job_step_dry_run_success(&self, mut job: MigrationJob) -> crate::Result<MigrationJob> {
         let row_changed = self.conn.execute("
             WITH tasks AS (SELECT * FROM migration_job_pending_tasks WHERE job_id = ?1)
-                UPDATE migration_jobs 
+                UPDATE migration_jobs
                 SET status = ?2
                 WHERE job_id = ?1
                     AND status = ?3
                     AND (SELECT count(*) from tasks) = (SELECT count(*) FROM tasks WHERE status = ?4)",
             (
-                job.job_id,
+                job.job_id(),
                 MigrationJobStatus::DryRunSuccess as u64,
                 MigrationJobStatus::WaitingDryRun as u64,
                 MigrationTaskStatus::DryRunSuccess as u64))?;
