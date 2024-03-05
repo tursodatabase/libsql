@@ -1,7 +1,7 @@
 use rusqlite::Savepoint;
 
 use crate::connection::program::{Program, Vm};
-use crate::query_result_builder::QueryResultBuilder;
+use crate::query_result_builder::{IgnoreResult, QueryResultBuilder};
 
 use super::status::MigrationTask;
 use super::{Error, MigrationTaskStatus};
@@ -27,25 +27,24 @@ pub fn enqueue_migration_task(
 ) -> Result<(), Error> {
     let migration = serde_json::to_string(migration).unwrap();
     conn.execute(
-        "INSERT INTO __libsql_migration_tasks (job_id, status, migration) VALUES (?, ?, ?)",
+        "INSERT OR IGNORE INTO __libsql_migration_tasks (job_id, status, migration) VALUES (?, ?, ?)",
         (task.job_id(), *task.status() as u64, &migration),
     )?;
+
     Ok(())
 }
 
-pub fn step_migration_task_run(
-    conn: &rusqlite::Connection,
-    task: &MigrationTask,
-) -> Result<(), Error> {
+/// set the task status to `Run` if its current state is `DryRunSuccess`
+pub fn step_migration_task_run(conn: &rusqlite::Connection, job_id: i64) -> Result<(), Error> {
     conn.execute(
         "
-        UPDATE __libsql_migration_tasks
-        SET status = ?
-        WHERE job_id = ? AND status = ?
-        ",
+            UPDATE __libsql_migration_tasks
+            SET status = ?
+            WHERE job_id = ? AND status = ?
+            ",
         (
-            task.job_id(),
             MigrationTaskStatus::Run as u64,
+            job_id,
             MigrationTaskStatus::DryRunSuccess as u64,
         ),
     )?;
@@ -53,14 +52,69 @@ pub fn step_migration_task_run(
     Ok(())
 }
 
+fn get_task_infos(
+    conn: &rusqlite::Connection,
+    job_id: i64,
+) -> Result<(MigrationTaskStatus, Option<Program>, Option<String>), Error> {
+    Ok(conn.query_row(
+        "SELECT status, migration, error FROM __libsql_migration_tasks WHERE job_id = ?",
+        [job_id],
+        |row| {
+            let status = MigrationTaskStatus::from_int(row.get::<_, u64>(0)?);
+            let (migration, error) = match status {
+                MigrationTaskStatus::Enqueued | MigrationTaskStatus::Run => {
+                    let migration: Program =
+                        serde_json::from_str(row.get_ref(1)?.as_str()?).unwrap();
+                    (Some(migration), None)
+                }
+                MigrationTaskStatus::DryRunSuccess | MigrationTaskStatus::Success => (None, None),
+                MigrationTaskStatus::DryRunFailure | MigrationTaskStatus::Failure => {
+                    let error = row.get::<_, Option<String>>(2)?;
+                    (None, error)
+                }
+            };
+
+            Ok((status, migration, error))
+        },
+    )?)
+}
+
+pub(super) fn step_task(
+    txn: &mut rusqlite::Transaction,
+    job_id: i64,
+) -> Result<(MigrationTaskStatus, Option<String>), Error> {
+    let (current_state, migration, error) = get_task_infos(txn, job_id)?;
+
+    match current_state {
+        MigrationTaskStatus::DryRunSuccess | MigrationTaskStatus::DryRunFailure => {
+            Ok((current_state, error))
+        }
+        MigrationTaskStatus::Run | MigrationTaskStatus::Enqueued => {
+            // TODO: use proper builder
+            let (ret, new_status) = perform_migration(
+                txn,
+                migration.as_ref().unwrap(),
+                current_state.is_enqueued(),
+                IgnoreResult,
+            );
+            let error = ret.err().map(|e| e.to_string());
+            update_db_task_status(txn, job_id, new_status, error.as_deref())?;
+
+            Ok((new_status, error))
+        }
+        // final state, nothing to do but report
+        MigrationTaskStatus::Success | MigrationTaskStatus::Failure => Ok((current_state, error)),
+    }
+}
+
 pub fn perform_migration<B: QueryResultBuilder>(
-    conn: &mut rusqlite::Transaction,
+    txn: &mut rusqlite::Transaction,
     migration: &Program,
     dry_run: bool,
     builder: B,
 ) -> (Result<B, Error>, MigrationTaskStatus) {
     // todo error handling is sketchy, improve
-    let mut savepoint = conn.savepoint().unwrap();
+    let mut savepoint = txn.savepoint().unwrap();
     match try_perform_migration(&mut savepoint, migration, builder) {
         Ok(b) => {
             let status = if dry_run {
@@ -118,4 +172,78 @@ fn try_perform_migration<B: QueryResultBuilder>(
     }
 
     Ok(vm.into_builder())
+}
+
+#[cfg(test)]
+mod test {
+    use insta::assert_debug_snapshot;
+    use libsql_sys::wal::Sqlite3WalManager;
+    use tempfile::tempdir;
+
+    use crate::connection::libsql::open_conn_active_checkpoint;
+    use crate::namespace::NamespaceName;
+
+    use super::*;
+
+    #[test]
+    fn already_performed_task_is_not_reexecuted() {
+        let tmp = tempdir().unwrap();
+
+        let mut conn =
+            open_conn_active_checkpoint(tmp.path(), Sqlite3WalManager::default(), None, 1000, None)
+                .unwrap();
+        setup_migration_table(&mut conn).unwrap();
+
+        let task = MigrationTask {
+            namespace: NamespaceName::default(),
+            status: MigrationTaskStatus::Success,
+            job_id: 1,
+            task_id: 1,
+        };
+        enqueue_migration_task(&conn, &task, &Program::seq(&["create table test (x)"])).unwrap();
+        let mut txn = conn.transaction().unwrap();
+        let (status, error) = step_task(&mut txn, 1).unwrap();
+        txn.commit().unwrap();
+
+        assert!(error.is_none());
+        assert_eq!(status, MigrationTaskStatus::Success);
+
+        // The migration should not have been performed, since we declared that it was already
+        // successfully executed.
+        let schema = conn
+            .prepare("select * from sqlite_schema")
+            .unwrap()
+            .query_map((), |r| Ok(format!("{r:?}")))
+            .unwrap()
+            .collect::<Vec<_>>();
+        assert_debug_snapshot!(schema);
+    }
+
+    #[test]
+    fn ignore_task_enqueue_if_already_exists() {
+        let tmp = tempdir().unwrap();
+
+        let mut conn =
+            open_conn_active_checkpoint(tmp.path(), Sqlite3WalManager::default(), None, 1000, None)
+                .unwrap();
+        setup_migration_table(&mut conn).unwrap();
+
+        let task = MigrationTask {
+            namespace: NamespaceName::default(),
+            status: MigrationTaskStatus::Success,
+            job_id: 1,
+            task_id: 1,
+        };
+        enqueue_migration_task(&conn, &task, &Program::seq(&["create table test (x)"])).unwrap();
+
+        let task = MigrationTask {
+            namespace: NamespaceName::default(),
+            status: MigrationTaskStatus::Enqueued,
+            job_id: 1,
+            task_id: 1,
+        };
+        enqueue_migration_task(&conn, &task, &Program::seq(&["create table test (x)"])).unwrap();
+        let (status, _, _) = get_task_infos(&conn, 1).unwrap();
+        assert_eq!(status, MigrationTaskStatus::Success);
+    }
 }

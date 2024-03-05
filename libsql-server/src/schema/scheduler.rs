@@ -19,7 +19,7 @@ use super::db::{
 use super::error::Error;
 use super::migration::enqueue_migration_task;
 use super::status::{MigrationJob, MigrationTask};
-use super::{perform_migration, MigrationTaskStatus, SchedulerMessage};
+use super::{perform_migration, step_task, MigrationTaskStatus, SchedulerMessage};
 
 pub struct Scheduler {
     namespace_store: NamespaceStore,
@@ -89,8 +89,10 @@ impl Scheduler {
                                 .as_mut()
                                 .expect("processing task result, but job is missing");
 
-                            *current_job.progress_mut(old_status) -= 1;
-                            *current_job.progress_mut(new_status) += 1;
+                            if old_status != new_status {
+                                *current_job.progress_mut(old_status) -= 1;
+                                *current_job.progress_mut(new_status) += 1;
+                            }
 
                             // we have more work if:
                             // - the current batch has more tasks to enqueue
@@ -300,29 +302,20 @@ impl Scheduler {
                 connection.with_raw(move |conn| {
                     let mut txn = conn.transaction().unwrap();
 
-                    let is_dry_run = match task.status() {
+                    match task.status() {
                         MigrationTaskStatus::Enqueued => {
                             enqueue_migration_task(&txn, &task, &migration).unwrap();
-                            true
                         }
                         MigrationTaskStatus::DryRunSuccess if job_status.is_waiting_run() => {
-                            step_migration_task_run(&txn, &task).unwrap();
-                            false
+                            step_migration_task_run(&txn, task.job_id()).unwrap();
                         }
                         _ => unreachable!("expected task status to be `enqueued` or `run`"),
-                    };
-                    let (ret, status) =
-                        perform_migration(&mut txn, &migration, is_dry_run, IgnoreResult);
-                    let error = ret.err().map(|e| e.to_string());
-                    super::migration::update_db_task_status(
-                        &txn,
-                        task.job_id(),
-                        status,
-                        error.as_deref(),
-                    )
-                    .unwrap();
-                    *task.status_mut() = status;
+                    }
+
+                    let (new_status, error) = step_task(&mut txn, task.job_id()).unwrap();
                     txn.commit().unwrap();
+
+                    *task.status_mut() = new_status;
                     WorkResult::Task {
                         old_status,
                         task,
