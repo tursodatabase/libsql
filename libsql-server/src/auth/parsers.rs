@@ -36,32 +36,15 @@ pub fn parse_jwt_key(data: &str) -> Result<jsonwebtoken::DecodingKey> {
     }
 }
 
+// this could be try_from trait
 pub(crate) fn parse_grpc_auth_header(metadata: &MetadataMap) -> Result<UserAuthContext, tonic::Status> {
-// todo fix error messages and chaining
-    let header = metadata.get(GRPC_AUTH_HEADER)
-        .ok_or(tonic::Status::new(tonic::Code::Unauthenticated,""))?;
 
-
-    let header_str = header.to_str().context("Auth should be ASCII")
-        .map_err(|err| tonic::Status::new(tonic::Code::InvalidArgument, ""))?;
-
-    return auth_string_to_auth_context(header_str).context(format!("Failed parse grpc auth: {header_str}"))
-        .map_err(|err| tonic::Status::new(tonic::Code::InvalidArgument, ""));
+    return metadata
+        .get(GRPC_AUTH_HEADER).context("auth header not found")
+        .and_then(|h| h.to_str().context("non ascii auth token"))
+        .and_then(|t| t.try_into())
+        .map_err(|e| tonic::Status::new(tonic::Code::InvalidArgument,format!("Failed parse grpc auth: {e}"))); 
 }
-
-// todo this should be a constructor or a factory associates iwth userauthcontext
-pub fn auth_string_to_auth_context(
-    auth_string: &str,
-) -> Result<UserAuthContext> {
-
-    let(scheme, token) = auth_string.split_once(' ').context("malformed auth header string")?;
-    
-    Ok(UserAuthContext{
-        scheme: Some(scheme.into()), 
-        token: Some(token.into()),
-    })
-}
-
 
 pub fn parse_http_auth_header<'a>(
     expected_scheme: &str,
