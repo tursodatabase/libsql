@@ -336,26 +336,26 @@ fn is_autocommit() {
         let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
-        assert!(conn.is_autocommit().await);
+        assert!(conn.is_autocommit());
         conn.execute("create table test (x)", ()).await?;
 
         conn.execute("begin;", ()).await?;
-        assert!(!conn.is_autocommit().await);
+        assert!(!conn.is_autocommit());
         conn.execute("insert into test values (12);", ()).await?;
         conn.execute("commit;", ()).await?;
-        assert!(conn.is_autocommit().await);
+        assert!(conn.is_autocommit());
 
         // make an explicit transaction
         {
             let tx = conn.transaction().await?;
-            assert!(!tx.is_autocommit().await);
-            assert!(conn.is_autocommit().await); // connection is still autocommit
+            assert!(!tx.is_autocommit());
+            assert!(conn.is_autocommit()); // connection is still autocommit
 
             tx.execute("insert into test values (12);", ()).await?;
             // transaction rolls back
         }
 
-        assert!(conn.is_autocommit().await);
+        assert!(conn.is_autocommit());
 
         let mut rows = conn.query("select count(*) from test", ()).await?;
         assert_eq!(
