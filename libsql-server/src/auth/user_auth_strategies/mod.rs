@@ -9,11 +9,19 @@ pub use jwt::Jwt;
 use super::{AuthError, Authenticated};
 
 pub struct UserAuthContext {
-    pub scheme: Option<String>,
-    pub token: Option<String>,
+    scheme: Option<String>,
+    token: Option<String>,
 }
 
 impl UserAuthContext {
+    pub fn scheme(&self) -> &Option<String> {
+        &self.scheme
+    }
+
+    pub fn token(&self) -> &Option<String> {
+        &self.token
+    }
+
     pub fn empty() -> UserAuthContext{
         UserAuthContext{scheme: None, token: None}
     }
@@ -30,11 +38,11 @@ impl UserAuthContext {
         UserAuthContext{scheme: Some("Bearer".into()), token: token}
     }
 
-    fn new(scheme: &str, token: &str) -> UserAuthContext {
+    pub fn new(scheme: &str, token: &str) -> UserAuthContext {
         UserAuthContext{scheme: Some(scheme.into()), token: Some(token.into())}
     }
 
-    fn from_auth_str(auth_string: &str) -> Result<Self, AuthError> {
+    pub fn from_auth_str(auth_string: &str) -> Result<Self, AuthError> {
         let (scheme, token) = auth_string
             .split_once(' ')
             .ok_or(AuthError::AuthStringMalformed)?; 
@@ -42,13 +50,6 @@ impl UserAuthContext {
     }
 }
 
-impl TryFrom<&str> for UserAuthContext {
-    type Error = AuthError;
-
-    fn try_from(auth_string: &str) -> Result<Self, AuthError> {
-        UserAuthContext::from_auth_str(auth_string)
-    }
-}
 pub trait UserAuthStrategy: Sync + Send {
     fn authenticate(&self, context: UserAuthContext) -> Result<Authenticated, AuthError>;
 }
