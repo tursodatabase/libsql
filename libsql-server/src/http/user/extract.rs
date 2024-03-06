@@ -21,7 +21,7 @@ impl FromRequestParts<AppState> for RequestContext {
             state.disable_default_namespace,
             state.disable_namespaces,
         )?;
-
+        // todo dupe #auth
         let namespace_jwt_key = state
             .namespaces
             .with(namespace.clone(), |ns| ns.jwt_key())

@@ -312,7 +312,7 @@ impl ProxyService {
         req: &mut tonic::Request<T>,
     ) -> Result<RequestContext, tonic::Status> {
         let namespace = super::extract_namespace(self.disable_namespaces, req)?;
-
+        // todo dupe #auth
         let namespace_jwt_key = self
             .namespaces
             .with(namespace.clone(), |ns| ns.jwt_key())

@@ -71,6 +71,7 @@ pub(super) async fn handle_initial_hello(
     jwt: Option<String>,
     namespace: NamespaceName,
 ) -> Result<Session> {
+    // todo dupe #auth
     let namespace_jwt_key = server
         .namespaces
         .with(namespace.clone(), |ns| ns.jwt_key())
@@ -107,6 +108,7 @@ pub(super) async fn handle_repeated_hello(
             min_version: Version::Hrana2,
         })
     }
+    // todo dupe #auth
     let namespace_jwt_key = server
         .namespaces
         .with(namespace.clone(), |ns| ns.jwt_key())
