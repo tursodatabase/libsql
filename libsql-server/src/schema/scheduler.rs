@@ -311,51 +311,55 @@ impl Scheduler {
             // we block the writes before enqueuing the task, it makes testing predictable
             if *task.status() == MigrationTaskStatus::Enqueued {
                 block_writes.store(true, std::sync::atomic::Ordering::SeqCst);
-                // once writes are blocked, we can call for backup synchronization
-                task.backup_sync = self
-                    .namespace_store
-                    .with(task.namespace(), move |ns| {
-                        let db = ns.db.as_primary().expect(
-                            "attempting to perform schema migration on non-primary database",
-                        );
-                        db.backup_savepoint().unwrap()
-                    })
-                    .await
-                    .unwrap();
             }
 
-            self.workers.spawn_blocking(move || {
+            let store = self.namespace_store.clone();
+            self.workers.spawn(async move {
                 let old_status = *task.status();
                 // move the permit inside of the closure, so that it gets dropped when the work is done.
                 let _permit = permit;
-                connection.with_raw(move |conn| {
-                    let mut txn = conn.transaction().unwrap();
+                if task.status().is_enqueued() {
+                    // once writes are blocked, we can call for backup synchronization
+                    task.backup_sync = store
+                        .with(task.namespace(), move |ns| {
+                            let db = ns.db.as_primary().expect(
+                                "attempting to perform schema migration on non-primary database",
+                            );
+                            db.backup_savepoint().unwrap()
+                        })
+                    .await
+                        .unwrap();
+                }
+                tokio::task::spawn_blocking(move || {
+                    connection.with_raw(move |conn| {
+                        let mut txn = conn.transaction().unwrap();
 
-                    match task.status() {
-                        MigrationTaskStatus::Enqueued => {
-                            enqueue_migration_task(&txn, &task, &migration).unwrap();
+                        match task.status() {
+                            MigrationTaskStatus::Enqueued => {
+                                enqueue_migration_task(&txn, &task, &migration).unwrap();
+                            }
+                            MigrationTaskStatus::DryRunSuccess if job_status.is_waiting_run() => {
+                                step_migration_task_run(&txn, task.job_id()).unwrap();
+                            }
+                            _ => unreachable!("expected task status to be `enqueued` or `run`"),
                         }
-                        MigrationTaskStatus::DryRunSuccess if job_status.is_waiting_run() => {
-                            step_migration_task_run(&txn, task.job_id()).unwrap();
+
+                        let (new_status, error) = step_task(&mut txn, task.job_id()).unwrap();
+                        txn.commit().unwrap();
+
+                        *task.status_mut() = new_status;
+
+                        if task.status().is_finished() {
+                            block_writes.store(false, std::sync::atomic::Ordering::SeqCst);
                         }
-                        _ => unreachable!("expected task status to be `enqueued` or `run`"),
-                    }
 
-                    let (new_status, error) = step_task(&mut txn, task.job_id()).unwrap();
-                    txn.commit().unwrap();
-
-                    *task.status_mut() = new_status;
-
-                    if task.status().is_finished() {
-                        block_writes.store(false, std::sync::atomic::Ordering::SeqCst);
-                    }
-
-                    WorkResult::Task {
-                        old_status,
-                        task,
-                        error,
-                    }
-                })
+                        WorkResult::Task {
+                            old_status,
+                            task,
+                            error,
+                        }
+                    })
+                }).await.unwrap()
             });
         } else {
             // there is still a job, but the queue is empty, it means that we are waiting for the
