@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use bottomless::SavepointTracker;
 use serde::{Deserialize, Serialize};
 
 use crate::{connection::program::Program, namespace::NamespaceName};
@@ -36,6 +37,7 @@ pub struct MigrationJob {
     pub(super) status: MigrationJobStatus,
     pub(super) job_id: i64,
     pub(super) migration: Arc<Program>,
+    pub(super) backup_sync: Option<Arc<SavepointTracker>>,
     pub(super) progress: [usize; MigrationTaskStatus::num_variants()],
 }
 
@@ -83,16 +85,24 @@ impl MigrationJob {
     pub(super) fn count_pending_tasks(&self) -> usize {
         match self.status() {
             MigrationJobStatus::WaitingDryRun => self.progress(MigrationTaskStatus::Enqueued),
-            MigrationJobStatus::DryRunSuccess => 0,
-            MigrationJobStatus::DryRunFailure => 0,
             MigrationJobStatus::WaitingRun => {
                 self.progress(MigrationTaskStatus::DryRunSuccess)
                     + self.progress(MigrationTaskStatus::Run)
             }
+            MigrationJobStatus::DryRunSuccess => 0,
+            MigrationJobStatus::DryRunFailure => 0,
             MigrationJobStatus::RunSuccess => 0,
             MigrationJobStatus::RunFailure => 0,
-            MigrationJobStatus::WaitingSchemaUpdate => 1, // waiting only for schema update
+            MigrationJobStatus::WaitingTransition => 0,
         }
+    }
+
+    pub(crate) async fn wait_for_backup(&mut self) -> crate::Result<()> {
+        if let Some(mut savepoint) = self.backup_sync.take() {
+            let savepoint = Arc::get_mut(&mut savepoint).unwrap();
+            savepoint.confirmed().await?;
+        }
+        Ok(())
     }
 }
 
@@ -159,7 +169,7 @@ impl MigrationTaskStatus {
     }
 
     pub(super) fn is_finished(&self) -> bool {
-        Self::finished_states().iter().any(|s| s == self)
+        Self::finished_states().contains(self)
     }
 }
 
@@ -179,8 +189,8 @@ pub enum MigrationJobStatus {
     RunSuccess = 4,
     /// something fucked up
     RunFailure = 5,
-    /// transient state, waiting for schema to be updated
-    WaitingSchemaUpdate = 6,
+    /// transient state: waiting for state transitionning
+    WaitingTransition = 6,
 }
 
 impl MigrationJobStatus {
@@ -192,7 +202,7 @@ impl MigrationJobStatus {
             3 => Self::WaitingRun,
             4 => Self::RunSuccess,
             5 => Self::RunFailure,
-            6 => Self::WaitingSchemaUpdate,
+            6 => Self::WaitingTransition,
             _ => panic!(),
         }
     }
@@ -202,12 +212,24 @@ impl MigrationJobStatus {
         &[Self::RunSuccess, Self::RunFailure]
     }
 
+    pub(crate) fn is_finished(&self) -> bool {
+        Self::finished_states().contains(self)
+    }
+
     /// Returns `true` if the migration job status is [`WaitingRun`].
     ///
     /// [`WaitingRun`]: MigrationJobStatus::WaitingRun
     #[must_use]
     pub fn is_waiting_run(&self) -> bool {
         matches!(self, Self::WaitingRun)
+    }
+
+    /// Returns `true` if the migration job status is [`DryRunSuccess`].
+    ///
+    /// [`DryRunSuccess`]: MigrationJobStatus::DryRunSuccess
+    #[must_use]
+    pub fn is_dry_run_success(&self) -> bool {
+        matches!(self, Self::DryRunSuccess)
     }
 }
 

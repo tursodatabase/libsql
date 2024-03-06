@@ -54,12 +54,12 @@ impl PrimaryDatabase {
         Ok(())
     }
 
-    pub fn backup_savepoint(&self) -> Result<Option<SavepointTracker>> {
+    pub fn backup_savepoint(&self) -> Option<SavepointTracker> {
         if let Some(wal) = self.wal_manager.wrapper() {
             if let Some(savepoint) = wal.backup_savepoint() {
-                return Ok(Some(savepoint));
+                return Some(savepoint);
             }
         }
-        Ok(None)
+        None
     }
 }

@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use parking_lot::Mutex;
+use rusqlite::TransactionBehavior;
 use tokio::sync::{mpsc, OwnedSemaphorePermit, Semaphore};
+use tokio::task;
 use tokio::task::JoinSet;
 
 use crate::connection::program::Program;
@@ -74,18 +76,6 @@ impl Scheduler {
             }
             Some(res) = self.workers.join_next(), if !self.workers.is_empty() => {
                 match res {
-                    // TODO: handle schema update failure
-                    Ok(WorkResult::Schema { job_id }) => {
-                        let job = self.current_job.take().unwrap();
-                        assert_eq!(job.job_id(), job_id);
-                        with_conn_async(self.migration_db.clone(), move |conn| {
-                            update_job_status(conn, job_id, MigrationJobStatus::RunSuccess)
-                        })
-                        .await
-                            .unwrap();
-                        // the current job is finished, try to pop next one out of the queue:
-                        self.has_work = true;
-                    }
                     Ok(WorkResult::Task { old_status, task, error }) => {
                         let new_status = *task.status();
                         with_conn_async(self.migration_db.clone(), move |conn| {
@@ -107,6 +97,15 @@ impl Scheduler {
                         let in_flight = MAX_CONCCURENT_JOBS - self.permits.available_permits();
                         let pending_tasks = current_job.count_pending_tasks();
                         self.has_work = !self.current_batch.is_empty() || (pending_tasks == 0 && in_flight == 0) || pending_tasks > in_flight;
+                    }
+                    Ok(WorkResult::Job { status }) => {
+                        if status.is_finished() {
+                            self.current_job.take();
+                        } else {
+                            *self.current_job.as_mut().unwrap().status_mut() = status;
+                        }
+
+                        self.has_work = true;
                     }
                     Err(_e) => {
                         todo!("migration task panicked");
@@ -169,20 +168,50 @@ impl Scheduler {
                     // todo: it may be worthwhile to check that all the db state reflects our
                     // vision of the tasks progress here
                     // also if we wanted to abort before the run, now would be the right place
+                    // TODO: move to function
+                    self.workers.spawn({
+                        let job_id = job.job_id();
+                        let old_status = *job.status();
+                        let migration_db = self.migration_db.clone();
+                        let store = self.namespace_store.clone();
+                        let schema = job.schema();
+                        async move {
+                            let mut status = with_conn_async(migration_db,
+                                move |conn| job_step_dry_run_success(conn, job_id)
+                            )
+                                .await
+                                .unwrap()
+                                .unwrap_or(old_status);
 
-                    *job = with_conn_async(self.migration_db.clone(), {
-                        let job = job.clone();
-                        move |conn| job_step_dry_run_success(conn, job)
-                    })
-                    .await
-                    .unwrap();
+                            if status.is_dry_run_success() {
+                                let savepoint = store
+                                    .with(schema, |ns| {
+                                        ns.db
+                                            .as_schema()
+                                            .expect("expected database to be a schema database")
+                                            .backup_savepoint()
+                                    })
+                                .await
+                                    .unwrap();
 
-                    if matches!(job.status(), MigrationJobStatus::DryRunSuccess) {
-                        // todo!("notify dry run success")
-                        // nothing more to do in this call, return early and let next call enqueue
-                        // step the job
-                        return;
-                    }
+                                if let Some(mut savepoint) = savepoint {
+                                    if let Err(e) = savepoint.confirmed().await {
+                                        tracing::error!("failed to backup metastore after state change on job {job_id}: {e}");
+                                        status = MigrationJobStatus::WaitingRun;
+                                    }
+                                }
+
+                                // todo!("notify dry run success")
+                                // nothing more to do in this call, return early and let next call enqueue
+                                // step the job
+                            }
+
+                            WorkResult::Job { status }
+                        }});
+
+                    *job.status_mut() = MigrationJobStatus::WaitingTransition;
+                    self.has_work = false;
+                    return;
                 }
             }
             MigrationJobStatus::DryRunSuccess => {
@@ -192,7 +221,14 @@ impl Scheduler {
                 })
                 .await
                 .unwrap();
-                *job.status_mut() = MigrationJobStatus::WaitingRun;
+                let new_status = match job.wait_for_backup().await {
+                    Ok(_) => MigrationJobStatus::WaitingRun,
+                    Err(_backup_err) => {
+                        // todo!("backup for schema db failed because: {}", _backup_err);
+                        MigrationJobStatus::DryRunFailure
+                    }
+                };
+                *job.status_mut() = new_status;
             }
             MigrationJobStatus::DryRunFailure => todo!(),
             MigrationJobStatus::WaitingRun => {
@@ -219,41 +255,63 @@ impl Scheduler {
                     // todo: make sure that the next job is not a job for the same namesapce:
                     // prevent job to be enqueue for a schema if there is still onging work for
                     // that schema
-                    let job_id = job.job_id();
-                    let migration = job.migration();
-                    self.workers.spawn_blocking(move || {
-                        let _perm = permit;
-                        connection.connection().with_raw(|conn| {
-                            let mut txn = conn.transaction().unwrap();
-                            let schema_version = txn
-                                .query_row("PRAGMA schema_version", (), |row| row.get::<_, i64>(0))
-                                .unwrap();
+                    // todo move to func
+                    self.workers.spawn({
+                        let job_id = job.job_id();
+                        let migration = job.migration();
+                        let migration_db = self.migration_db.clone();
+                        async move {
+                            let _perm = permit;
+                            tokio::task::spawn_blocking(move || {
+                                connection.connection().with_raw(|conn| {
+                                    let mut txn = conn.transaction().unwrap();
+                                    let schema_version = txn
+                                        .query_row("PRAGMA schema_version", (), |row| {
+                                            row.get::<_, i64>(0)
+                                        })
+                                        .unwrap();
 
-                            if schema_version != job_id {
-                                // todo: use proper builder and collect errors
-                                let (ret, _status) = perform_migration(
-                                    &mut txn,
-                                    &migration,
-                                    false,
-                                    IgnoreResult,
-                                    &QueryBuilderConfig::default(),
-                                );
-                                let _error = ret.err().map(|e| e.to_string());
-                                txn.pragma_update(None, "schema_version", job_id).unwrap();
-                                // update schema version to job_id?
-                                txn.commit().unwrap();
-                            }
+                                    if schema_version != job_id {
+                                        // todo: use proper builder and collect errors
+                                        let (ret, _status) = perform_migration(
+                                            &mut txn,
+                                            &migration,
+                                            false,
+                                            IgnoreResult,
+                                            &QueryBuilderConfig::default(),
+                                        );
+                                        let _error = ret.err().map(|e| e.to_string());
+                                        txn.pragma_update(None, "schema_version", job_id).unwrap();
+                                        // update schema version to job_id?
+                                        txn.commit().unwrap();
+                                    }
+                                });
 
-                            WorkResult::Schema { job_id }
-                        })
+                                {
+                                    let mut conn = migration_db.lock();
+                                    update_job_status(
+                                        &mut conn,
+                                        job_id,
+                                        MigrationJobStatus::RunSuccess,
+                                    )
+                                    .unwrap();
+                                }
+
+                                WorkResult::Job {
+                                    status: MigrationJobStatus::RunSuccess,
+                                }
+                            })
+                            .await
+                            .unwrap()
+                        }
                     });
                     // do not enqueue anything until the schema migration is complete
                     self.has_work = false;
-                    *job.status_mut() = MigrationJobStatus::WaitingSchemaUpdate;
+                    *job.status_mut() = MigrationJobStatus::WaitingTransition;
                     return;
                 }
             }
-            MigrationJobStatus::WaitingSchemaUpdate => {
+            MigrationJobStatus::WaitingTransition => {
                 // just wait for schema update to return
                 // this is a transient state, and it's not persisted. It's only necessary to make
                 // the code more robust when there are spurious wakups that would cause to this
@@ -291,7 +349,7 @@ impl Scheduler {
         if let Some(mut task) = self.current_batch.pop() {
             let (connection_maker, block_writes) =
                 self.namespace_store
-                    .with(task.namespace(), |ns| {
+                    .with(task.namespace(), move |ns| {
                         let db = ns.db.as_primary().expect(
                             "attempting to perform schema migration on non-primary database",
                         );
@@ -300,7 +358,7 @@ impl Scheduler {
                     .await
                     .unwrap();
 
-            let connection = connection_maker.create().await.unwrap();
+            let mut connection = connection_maker.create().await.unwrap();
             let migration = job.migration();
             let job_status = *job.status();
 
@@ -309,38 +367,84 @@ impl Scheduler {
                 block_writes.store(true, std::sync::atomic::Ordering::SeqCst);
             }
 
-            self.workers.spawn_blocking(move || {
+            let store = self.namespace_store.clone();
+            self.workers.spawn(async move {
                 let old_status = *task.status();
                 // move the permit inside of the closure, so that it gets dropped when the work is done.
                 let _permit = permit;
-                connection.with_raw(move |conn| {
-                    let mut txn = conn.transaction().unwrap();
+                if task.status().is_enqueued() {
+                    // once writes are blocked, we first make sure that
+                    // there are no ongoing transactions...
+                    connection = task::spawn_blocking(move || {
+                        connection.with_raw(|conn| {
+                            conn.transaction_with_behavior(TransactionBehavior::Immediate)
+                                .unwrap();
+                        });
+                        connection
+                    })
+                    .await
+                    .unwrap();
+                }
 
-                    match task.status() {
-                        MigrationTaskStatus::Enqueued => {
-                            enqueue_migration_task(&txn, &task, &migration).unwrap();
+                let (mut task, error) = tokio::task::spawn_blocking(move || {
+                    connection.with_raw(move |conn| {
+                        let mut txn = conn.transaction().unwrap();
+
+                        match task.status() {
+                            MigrationTaskStatus::Enqueued => {
+                                enqueue_migration_task(&txn, &task, &migration).unwrap();
+                            }
+                            MigrationTaskStatus::DryRunSuccess if job_status.is_waiting_run() => {
+                                step_migration_task_run(&txn, task.job_id()).unwrap();
+                            }
+                            _ => unreachable!("expected task status to be `enqueued` or `run`"),
                         }
-                        MigrationTaskStatus::DryRunSuccess if job_status.is_waiting_run() => {
-                            step_migration_task_run(&txn, task.job_id()).unwrap();
+
+                        let (new_status, error) = step_task(&mut txn, task.job_id()).unwrap();
+                        txn.commit().unwrap();
+
+                        *task.status_mut() = new_status;
+
+                        if task.status().is_finished() {
+                            block_writes.store(false, std::sync::atomic::Ordering::SeqCst);
                         }
-                        _ => unreachable!("expected task status to be `enqueued` or `run`"),
-                    }
 
-                    let (new_status, error) = step_task(&mut txn, task.job_id()).unwrap();
-                    txn.commit().unwrap();
-
-                    *task.status_mut() = new_status;
-
-                    if task.status().is_finished() {
-                        block_writes.store(false, std::sync::atomic::Ordering::SeqCst);
-                    }
-
-                    WorkResult::Task {
-                        old_status,
-                        task,
-                        error,
-                    }
+                        (task, error)
+                    })
                 })
+                .await
+                .unwrap();
+
+                // ... then we're good to go and make sure that the current database state is
+                // in the backup
+                let savepoint =
+                    store
+                        .with(task.namespace(), move |ns| {
+                            ns.db.as_primary().expect(
+                            "attempting to perform schema migration on non-primary database",
+                        ).backup_savepoint()
+                        })
+                        .await
+                        .unwrap();
+
+                if let Some(mut savepoint) = savepoint {
+                    if let Err(e) = savepoint.confirmed().await {
+                        // if we fail to backup, then we rollback the reported to the old state.
+                        // The job will get re-scheduled, and we'll try to backup this time.
+                        tracing::error!(
+                            "failed to backup `{}`, rolling back to previous state ({:?}): {e}",
+                            task.namespace(),
+                            old_status
+                        );
+                        *task.status_mut() = old_status;
+                    }
+                }
+
+                WorkResult::Task {
+                    old_status,
+                    task,
+                    error,
+                }
             });
         } else {
             // there is still a job, but the queue is empty, it means that we are waiting for the
@@ -379,15 +483,14 @@ enum WorkResult {
         task: MigrationTask,
         error: Option<String>,
     },
-    Schema {
-        job_id: i64,
+    Job {
+        status: MigrationJobStatus,
     },
 }
 
 #[cfg(test)]
 mod test {
     use std::path::Path;
-
     use tempfile::tempdir;
 
     use crate::connection::config::DatabaseConfig;
@@ -396,6 +499,7 @@ mod test {
     use crate::namespace::{NamespaceConfig, RestoreOption};
     use crate::schema::SchedulerHandle;
 
+    use super::super::migration::has_pending_migration_task;
     use super::*;
 
     // FIXME: lots of coupling here, there whoudl be an easier way to test this.
@@ -537,9 +641,12 @@ mod test {
                 .await
                 .unwrap();
 
-            let block_write = store
+            let (block_write, ns_conn_maker) = store
                 .with("ns".into(), |ns| {
-                    ns.db.as_primary().unwrap().block_writes.clone()
+                    (
+                        ns.db.as_primary().unwrap().block_writes.clone(),
+                        ns.db.as_primary().unwrap().connection_maker(),
+                    )
                 })
                 .await
                 .unwrap();
@@ -562,12 +669,12 @@ mod test {
                 }
             }
 
-            // this is right before the task gets enqueued
+            let conn = ns_conn_maker.create().await.unwrap();
+
             assert!(!block_write.load(std::sync::atomic::Ordering::Relaxed));
-            // next step should enqueue the task
-            scheduler.step(&mut receiver).await;
-            // task returns and result is collected
-            scheduler.step(&mut receiver).await;
+            while conn.with_raw(|conn| !has_pending_migration_task(&conn).unwrap()) {
+                scheduler.step(&mut receiver).await;
+            }
             assert!(block_write.load(std::sync::atomic::Ordering::Relaxed));
 
             // at this point we drop everything and recreated the store (simultes a restart mid-task)
