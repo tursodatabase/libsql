@@ -45,6 +45,7 @@ pub struct MigrationJob {
     pub(super) status: MigrationJobStatus,
     pub(super) job_id: i64,
     pub(super) migration: Arc<Program>,
+    pub(super) backup_sync: Option<Arc<SavepointTracker>>,
     pub(super) progress: [usize; MigrationTaskStatus::num_variants()],
 }
 
@@ -102,6 +103,14 @@ impl MigrationJob {
             MigrationJobStatus::RunFailure => 0,
             MigrationJobStatus::WaitingSchemaUpdate => 1, // waiting only for schema update
         }
+    }
+
+    pub(crate) async fn wait_for_backup(&mut self) -> crate::Result<()> {
+        if let Some(mut savepoint) = self.backup_sync.take() {
+            let savepoint = Arc::get_mut(&mut savepoint).unwrap();
+            savepoint.confirmed().await?;
+        }
+        Ok(())
     }
 }
 

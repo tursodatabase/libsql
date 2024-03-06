@@ -182,6 +182,18 @@ impl Scheduler {
                     .unwrap();
 
                     if matches!(job.status(), MigrationJobStatus::DryRunSuccess) {
+                        let backup = self
+                            .namespace_store
+                            .with(job.schema.clone(), |ns| {
+                                ns.db
+                                    .as_schema()
+                                    .expect("expected database to be a schema database")
+                                    .backup_savepoint()
+                                    .unwrap()
+                            })
+                            .await
+                            .unwrap();
+                        job.backup_sync = backup.map(Arc::from);
                         // todo!("notify dry run success")
                         // nothing more to do in this call, return early and let next call enqueue
                         // step the job
@@ -196,7 +208,11 @@ impl Scheduler {
                 })
                 .await
                 .unwrap();
-                *job.status_mut() = MigrationJobStatus::WaitingRun;
+                let new_status = match job.wait_for_backup().await {
+                    Ok(_) => MigrationJobStatus::WaitingRun,
+                    Err(_) => MigrationJobStatus::DryRunFailure,
+                };
+                *job.status_mut() = new_status;
             }
             MigrationJobStatus::DryRunFailure => todo!(),
             MigrationJobStatus::WaitingRun => {
@@ -397,7 +413,9 @@ enum WorkResult {
 #[cfg(test)]
 mod test {
     use std::path::Path;
+    use std::time::Duration;
 
+    use crate::config::{BottomlessConfig, MetaStoreConfig};
     use tempfile::tempdir;
 
     use crate::connection::config::DatabaseConfig;
