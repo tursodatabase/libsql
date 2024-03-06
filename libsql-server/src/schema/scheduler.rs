@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use parking_lot::Mutex;
+use rusqlite::TransactionBehavior;
 use tokio::sync::{mpsc, OwnedSemaphorePermit, Semaphore};
+use tokio::task;
 use tokio::task::JoinSet;
 
 use crate::connection::program::Program;
@@ -322,7 +324,7 @@ impl Scheduler {
                     .await
                     .unwrap();
 
-            let connection = connection_maker.create().await.unwrap();
+            let mut connection = connection_maker.create().await.unwrap();
             let migration = job.migration();
             let job_status = *job.status();
 
@@ -337,7 +339,19 @@ impl Scheduler {
                 // move the permit inside of the closure, so that it gets dropped when the work is done.
                 let _permit = permit;
                 if task.status().is_enqueued() {
-                    // once writes are blocked, we can call for backup synchronization
+                    // once writes are blocked, we first make sure that
+                    // there are no ongoing transactions...
+                    connection = task::spawn_blocking(move || {
+                        connection.with_raw(|conn| {
+                            conn.transaction_with_behavior(TransactionBehavior::Immediate)
+                                .unwrap();
+                        });
+                        connection
+                    })
+                    .await
+                    .unwrap();
+                    // ... then we're good to go and make sure that the current database state is
+                    // in the backup
                     task.backup_sync = store
                         .with(task.namespace(), move |ns| {
                             ns.db.as_primary().expect(
