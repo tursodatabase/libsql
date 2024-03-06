@@ -476,15 +476,15 @@ impl MetaStore {
         &self,
         schema: NamespaceName,
         job_id: u64,
-    ) -> crate::Result<MigrationDetails> {
+    ) -> crate::Result<Option<MigrationDetails>> {
         let inner = self.inner.clone();
-        let summary = tokio::task::spawn_blocking(move || {
+        let details = tokio::task::spawn_blocking(move || {
             let mut lock = inner.lock();
             crate::schema::get_migration_details(&mut lock.conn, schema, job_id)
         })
         .await
         .unwrap()?;
-        Ok(summary)
+        Ok(details)
     }
 }
 

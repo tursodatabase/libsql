@@ -1,0 +1,9 @@
+---
+source: libsql-server/tests/namespaces/shared_schema.rs
+expression: "schema_conn.execute_batch(\"create table test (c); create table test (c)\").await.unwrap_err()"
+---
+Hrana(
+    Api(
+        "{\"error\":\"Internal Error: `migration error: An error occured executing the migration at step 2: table test already exists in CREATE TABLE test (c); at offset 13`\"}",
+    ),
+)

@@ -19,12 +19,18 @@ pub enum Error {
     SchemaDoesntExist(NamespaceName),
     #[error("A migration job is already in progress for `{0}`")]
     MigrationJobAlreadyInProgress(NamespaceName),
+    #[error("An error occured executing the migration at step {0}: {1}")]
+    MigrationError(usize, String),
 }
 
 impl ResponseError for Error {}
 
 impl IntoResponse for &Error {
     fn into_response(self) -> axum::response::Response {
-        self.format_err(StatusCode::INTERNAL_SERVER_ERROR)
+        match self {
+            // should that really be a bad request?
+            Error::MigrationError { .. } => self.format_err(StatusCode::BAD_REQUEST),
+            _ => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+        }
     }
 }

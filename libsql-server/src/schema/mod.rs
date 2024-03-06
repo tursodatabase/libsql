@@ -34,6 +34,7 @@ mod error;
 mod handle;
 mod message;
 mod migration;
+mod result_builder;
 mod scheduler;
 mod status;
 
