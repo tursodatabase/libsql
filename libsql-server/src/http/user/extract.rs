@@ -2,7 +2,7 @@ use anyhow::Context;
 use axum::extract::FromRequestParts;
 
 use crate::{
-    auth::{Auth, Jwt, UserAuthContext},
+    auth::{Auth, AuthError, Jwt, UserAuthContext},
     connection::RequestContext,
 };
 
@@ -29,10 +29,9 @@ impl FromRequestParts<AppState> for RequestContext {
 
         let context = parts
             .headers
-            .get(hyper::header::AUTHORIZATION)
-            .context("auth header not found") // todo this context is swallowed for now, gotta fix that but not with panicking
-            .and_then(|h| h.to_str().context("non ascii auth token"))
-            .and_then(|t| t.try_into())
+            .get(hyper::header::AUTHORIZATION).ok_or(AuthError::AuthHeaderNotFound)
+            .and_then(|h| h.to_str().map_err(|_|AuthError::AuthHeaderNonAscii))
+            .and_then(|t| t.try_into()) 
             .unwrap_or(UserAuthContext {
                 scheme: None,
                 token: None,

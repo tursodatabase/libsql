@@ -29,7 +29,7 @@ use tonic::transport::Server;
 
 use tower_http::{compression::CompressionLayer, cors};
 
-use crate::auth::{Auth, Authenticated, Jwt, UserAuthContext};
+use crate::auth::{Auth, AuthError, Authenticated, Jwt, UserAuthContext};
 use crate::connection::{Connection, RequestContext};
 use crate::error::Error;
 use crate::hrana;
@@ -467,10 +467,9 @@ impl FromRequestParts<AppState> for Authenticated {
 
         let context = parts
             .headers
-            .get(hyper::header::AUTHORIZATION)
-            .context("auth header not found") // todo this context is swallowed for now, gotta fix that but not with panicking
-            .and_then(|h| h.to_str().context("non ascii auth token"))
-            .and_then(|t| t.try_into())
+            .get(hyper::header::AUTHORIZATION).ok_or(AuthError::AuthHeaderNotFound)
+            .and_then(|h| h.to_str().map_err(|_|AuthError::AuthHeaderNonAscii))
+            .and_then(|t| t.try_into()) 
             .unwrap_or(UserAuthContext {
                 scheme: None,
                 token: None,

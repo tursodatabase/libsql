@@ -6,8 +6,6 @@ pub use disabled::Disabled;
 pub use http_basic::HttpBasic;
 pub use jwt::Jwt;
 
-use anyhow::Context;
-
 use super::{AuthError, Authenticated};
 
 pub struct UserAuthContext {
@@ -16,12 +14,12 @@ pub struct UserAuthContext {
 }
 
 impl TryFrom<&str> for UserAuthContext {
-    type Error = anyhow::Error;
+    type Error = AuthError;
 
-    fn try_from(auth_string: &str) -> Result<Self, Self::Error> {
+    fn try_from(auth_string: &str) -> Result<Self, AuthError> {
         let (scheme, token) = auth_string
             .split_once(' ')
-            .context("malformed auth string`")?;
+            .ok_or(AuthError::AuthStringMalformed)?; 
         Ok(UserAuthContext {
             scheme: Some(scheme.into()),
             token: Some(token.into()),

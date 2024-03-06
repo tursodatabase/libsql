@@ -22,6 +22,12 @@ pub enum AuthError {
     JwtExpired,
     #[error("The JWT is immature (not valid yet)")]
     JwtImmature,
+    #[error("Auth string does not conform to '<scheme> <token>' form")]
+    AuthStringMalformed,
+    #[error("Expected authorization header but none given")]
+    AuthHeaderNotFound,
+    #[error("Non-ASCII auth header")]
+    AuthHeaderNonAscii,
     #[error("Authentication failed")]
     Other,
 }
@@ -39,6 +45,9 @@ impl AuthError {
             Self::JwtInvalid => "AUTH_JWT_INVALID",
             Self::JwtExpired => "AUTH_JWT_EXPIRED",
             Self::JwtImmature => "AUTH_JWT_IMMATURE",
+            Self::AuthStringMalformed => "AUTH_HEADER_MALFORMED",
+            Self::AuthHeaderNotFound => "AUTH_HEADER_NOT_FOUND",
+            Self::AuthHeaderNonAscii => "AUTH_HEADER_MALFORMED",
             Self::Other => "AUTH_FAILED",
         }
     }
