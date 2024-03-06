@@ -21,6 +21,8 @@ pub enum Error {
     MigrationJobAlreadyInProgress(NamespaceName),
     #[error("An error occured executing the migration at step {0}: {1}")]
     MigrationError(usize, String),
+    #[error("migration is invalid: it contains transaction items (BEGIN, COMMIT, SAVEPOINT...) which are not allowed. The migration is already run within a transaction")]
+    MigrationContainsTransactionStatements,
 }
 
 impl ResponseError for Error {}
@@ -30,6 +32,9 @@ impl IntoResponse for &Error {
         match self {
             // should that really be a bad request?
             Error::MigrationError { .. } => self.format_err(StatusCode::BAD_REQUEST),
+            Error::MigrationContainsTransactionStatements { .. } => {
+                self.format_err(StatusCode::BAD_REQUEST)
+            }
             _ => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }

@@ -126,7 +126,7 @@ impl Scheduler {
                 migration,
                 ret,
             } => {
-                let res = self.register_migration_task(schema, migration).await;
+                let res = self.register_migration_job(schema, migration).await;
                 let _ = ret.send(res);
                 // it not necessary to raise the flag if we are currently processing a job: it
                 // prevents spurious wakeups, and the job will be picked up anyway.
@@ -349,7 +349,7 @@ impl Scheduler {
         }
     }
 
-    pub async fn register_migration_task(
+    pub async fn register_migration_job(
         &self,
         schema: NamespaceName,
         migration: Arc<Program>,
