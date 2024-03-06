@@ -16,7 +16,6 @@ impl FromRequestParts<AppState> for RequestContext {
         parts: &mut axum::http::request::Parts,
         state: &AppState,
     ) -> std::result::Result<Self, Self::Rejection> {
-        // start todo this block is same as the one in mod.rs
         let namespace = db_factory::namespace_from_headers(
             &parts.headers,
             state.disable_default_namespace,
