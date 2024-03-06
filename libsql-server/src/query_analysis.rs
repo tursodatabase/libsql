@@ -222,6 +222,14 @@ impl StmtKind {
     pub fn is_release(&self) -> bool {
         matches!(self, Self::Release)
     }
+
+    /// Returns true if this statement is a transaction related statement
+    pub(crate) fn is_txn(&self) -> bool {
+        matches!(
+            self,
+            Self::TxnEnd | Self::TxnBegin | Self::Release | Self::Savepoint
+        )
+    }
 }
 
 fn to_ascii_lower(s: &str) -> Cow<str> {

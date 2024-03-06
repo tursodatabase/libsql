@@ -45,3 +45,13 @@ pub use message::SchedulerMessage;
 pub use migration::*;
 pub use scheduler::Scheduler;
 pub use status::{MigrationDetails, MigrationJobStatus, MigrationSummary, MigrationTaskStatus};
+
+use crate::connection::program::Program;
+
+pub fn validate_migration(migration: &Program) -> Result<(), Error> {
+    if migration.steps().iter().any(|s| s.query.stmt.kind.is_txn()) {
+        Err(Error::MigrationContainsTransactionStatements)
+    } else {
+        Ok(())
+    }
+}
