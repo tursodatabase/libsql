@@ -50,6 +50,8 @@ impl State {
     pub fn step(&self, kind: StmtKind) -> State {
         use State;
 
+        tracing::trace!("parser step: {:?} to {:?}", self, kind);
+
         match (*self, kind) {
             (State::TxnReadOnly, StmtKind::TxnBegin)
             | (State::Txn, StmtKind::TxnBegin)
@@ -66,7 +68,14 @@ impl State {
             (State::Txn, StmtKind::Release) => State::Txn,
             (_, StmtKind::Release) => State::Invalid,
 
-            (state, StmtKind::Other | StmtKind::Write | StmtKind::Read | StmtKind::Attach | StmtKind::Detach) => state,
+            (
+                state,
+                StmtKind::Other
+                | StmtKind::Write
+                | StmtKind::Read
+                | StmtKind::Attach
+                | StmtKind::Detach,
+            ) => state,
             (State::Invalid, _) => State::Invalid,
 
             (State::Init, StmtKind::TxnBegin) => State::Txn,
@@ -131,12 +140,12 @@ fn should_execute_local(state: &mut State, stmts: &[parser::Statement]) -> Resul
         }
 
         (init, State::Invalid) => {
-            // Panic here because the connection has become invalid and it can no longer be
-            // used
-            panic!(
-                "replication connection has reached an invalid state, started with {:?}",
-                init
-            );
+            let err = Err(Error::InvalidParserState(format!("{:?}", init)));
+
+            // Reset state always back to init so the user can start over
+            *state = State::Init;
+
+            return err;
         }
 
         _ => false,

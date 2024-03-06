@@ -44,6 +44,8 @@ pub enum Error {
     InvalidUTF8Path,
     #[error("freeze is not supported in {0} mode.")]
     FreezeNotSupported(String),
+    #[error("connection has reached an invalid state, started with {0}")]
+    InvalidParserState(String),
 }
 
 #[cfg(feature = "hrana")]
