@@ -459,7 +459,7 @@ impl FromRequestParts<AppState> for Authenticated {
             state.disable_default_namespace,
             state.disable_namespaces,
         )?;
-        // todo get rid of duplication - this and replication_log.rs
+        // todo dupe #auth
         let namespace_jwt_key = state
             .namespaces
             .with(ns.clone(), |ns| ns.jwt_key())
@@ -470,10 +470,7 @@ impl FromRequestParts<AppState> for Authenticated {
             .get(hyper::header::AUTHORIZATION).ok_or(AuthError::AuthHeaderNotFound)
             .and_then(|h| h.to_str().map_err(|_|AuthError::AuthHeaderNonAscii))
             .and_then(|t| t.try_into()) 
-            .unwrap_or(UserAuthContext {
-                scheme: None,
-                token: None,
-            });
+            .unwrap_or(UserAuthContext::empty());
 
         let authenticated = namespace_jwt_key
             .map(Jwt::new)

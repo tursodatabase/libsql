@@ -13,6 +13,12 @@ pub struct UserAuthContext {
     pub token: Option<String>,
 }
 
+impl UserAuthContext {
+    pub fn empty() -> UserAuthContext{
+        UserAuthContext{scheme: None, token: None}
+    }
+}
+
 impl TryFrom<&str> for UserAuthContext {
     type Error = AuthError;
 

@@ -1,4 +1,3 @@
-use anyhow::Context;
 use axum::extract::FromRequestParts;
 
 use crate::{
@@ -32,10 +31,7 @@ impl FromRequestParts<AppState> for RequestContext {
             .get(hyper::header::AUTHORIZATION).ok_or(AuthError::AuthHeaderNotFound)
             .and_then(|h| h.to_str().map_err(|_|AuthError::AuthHeaderNonAscii))
             .and_then(|t| t.try_into()) 
-            .unwrap_or(UserAuthContext {
-                scheme: None,
-                token: None,
-            });
+            .unwrap_or(UserAuthContext::empty());
 
         let authenticated = namespace_jwt_key
             .map(Jwt::new)

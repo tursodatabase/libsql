@@ -23,10 +23,7 @@ mod tests {
     #[test]
     fn authenticates() {
         let strategy = Disabled::new();
-        let context = UserAuthContext {
-            scheme: None,
-            token: None,
-        };
+        let context = UserAuthContext::empty();
 
         assert!(matches!(
             strategy.authenticate(context).unwrap(),
