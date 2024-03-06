@@ -86,7 +86,11 @@ impl Scheduler {
                         // the current job is finished, try to pop next one out of the queue:
                         self.has_work = true;
                     }
-                    Ok(WorkResult::Task { old_status, task, error }) => {
+                    Ok(WorkResult::Task { old_status, mut task, error }) => {
+                        if let Err(_backup_err) = task.wait_for_backup().await {
+                            *task.status_mut() = MigrationTaskStatus::DryRunFailure
+                            // todo: any other actions?
+                        };
                         let new_status = *task.status();
                         with_conn_async(self.migration_db.clone(), move |conn| {
                             update_meta_task_status(conn, task, error)
@@ -289,17 +293,31 @@ impl Scheduler {
 
         // enqueue some work
         if let Some(mut task) = self.current_batch.pop() {
-            let (connection_maker, block_writes) =
+            let status = task.status().clone();
+            let (connection_maker, block_writes, backup) =
                 self.namespace_store
-                    .with(task.namespace(), |ns| {
+                    .with(task.namespace(), move |ns| {
                         let db = ns.db.as_primary().expect(
                             "attempting to perform schema migration on non-primary database",
                         );
-                        (db.connection_maker().clone(), db.block_writes.clone())
+                        let backup = if matches!(status, MigrationTaskStatus::Enqueued) {
+                            // Task is enqueued for dry run and no other database changes are
+                            // allowed until dry run completes. Snapshot a current state of backup
+                            // progress and save an awaiter.
+                            db.backup_savepoint().unwrap()
+                        } else {
+                            None
+                        };
+                        (
+                            db.connection_maker().clone(),
+                            db.block_writes.clone(),
+                            backup,
+                        )
                     })
                     .await
                     .unwrap();
 
+            task.backup_sync = backup;
             let connection = connection_maker.create().await.unwrap();
             let migration = job.migration();
             let job_status = *job.status();

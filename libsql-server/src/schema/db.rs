@@ -177,6 +177,7 @@ pub(super) fn get_next_pending_migration_tasks_batch(
                 status,
                 job_id,
                 task_id,
+                backup_sync: None,
             })
         })?
         .map(|r| r.map_err(Into::into))
