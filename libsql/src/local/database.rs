@@ -130,7 +130,7 @@ impl Database {
         let client = LocalClient::new(&path).await.unwrap();
 
         let replicator =
-            EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await;
+            EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await?;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,
@@ -173,7 +173,7 @@ impl Database {
         let client = LocalClient::new(&path).await.unwrap();
 
         let replicator =
-            EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await;
+            EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await?;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,
