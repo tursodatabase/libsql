@@ -895,3 +895,77 @@ fn sync_interval() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn errors_on_bad_replica() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(u64::MAX))
+        .build();
+
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_host = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let client = Client::new();
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let path = tmp_embedded_path.join("embedded");
+        let db = libsql::Builder::new_remote_replica(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080".to_string(),
+            "".to_string(),
+        )
+        .connector(TurmoilConnector)
+        .build()
+        .await?;
+
+        let conn = db.connect()?;
+
+        conn.execute("create table test (x)", ()).await?;
+
+        conn.execute("insert into test values (12)", ())
+            .await
+            .unwrap();
+
+        db.sync().await.unwrap();
+
+        drop(conn);
+        drop(db);
+
+        let wal_index_file = format!("{}-client_wal_index", path.to_str().unwrap());
+
+        std::fs::remove_file(wal_index_file).unwrap();
+
+        libsql::Builder::new_remote_replica(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080".to_string(),
+            "".to_string(),
+        )
+        .connector(TurmoilConnector)
+        .build()
+        .await
+        .unwrap_err();
+
+        std::fs::remove_file(&path).unwrap();
+
+        libsql::Builder::new_remote_replica(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080".to_string(),
+            "".to_string(),
+        )
+        .connector(TurmoilConnector)
+        .build()
+        .await
+        .unwrap();
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}

@@ -17,6 +17,12 @@ use super::DbType;
 ///     includes the ability to delegate writes to a remote primary.
 /// - `new_remote`/`Remote` creates a database that does not create anything locally but will
 ///     instead run all queries on the remote database. This is essentially the pure HTTP api.
+///
+/// # Note
+///
+/// Embedded replica's require a clean database (no database file) or a previously synced database or else it will
+/// throw an error to prevent any misuse. To work around this error a user can delete the database
+/// and let it resync and create the wal_index metadata file.
 pub struct Builder<T = ()> {
     inner: T,
 }

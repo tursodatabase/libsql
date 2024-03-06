@@ -477,7 +477,8 @@ impl Namespace {
                             | Error::Io(_)
                             | Error::InvalidLogId
                             | Error::FailedToCommit(_)
-                            | Error::InvalidReplicationPath => {
+                            | Error::InvalidReplicationPath
+                            | Error::RequiresCleanDatabase => {
                                 // We retry from last frame index?
                                 tracing::warn!("non-fatal replication error, retrying from last commit index: {err}");
                             },
