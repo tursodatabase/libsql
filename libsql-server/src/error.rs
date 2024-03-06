@@ -112,6 +112,8 @@ pub enum Error {
     Migration(#[from] crate::schema::Error),
     #[error("cannot create/update database config while there are pending migration on the shared schema `{0}`")]
     PendingMigrationOnSchema(NamespaceName),
+    #[error("couldn't find requested migration job")]
+    MigrationJobNotFound,
 }
 
 impl AsRef<Self> for Error {
@@ -192,6 +194,7 @@ impl IntoResponse for &Error {
             SharedSchemaCreationError(_) => self.format_err(StatusCode::BAD_REQUEST),
             Migration(e) => e.into_response(),
             PendingMigrationOnSchema(_) => self.format_err(StatusCode::BAD_REQUEST),
+            MigrationJobNotFound => self.format_err(StatusCode::NOT_FOUND),
         }
     }
 }

@@ -302,17 +302,23 @@ pub fn get_migration_details(
     conn: &mut rusqlite::Connection,
     schema: NamespaceName,
     job_id: u64,
-) -> crate::Result<MigrationDetails> {
-    let status = conn.query_row(
-        "SELECT status
+) -> crate::Result<Option<MigrationDetails>> {
+    let Some(status) = conn
+        .query_row(
+            "SELECT status
             FROM migration_jobs
             WHERE schema = ? AND job_id = ?",
-        params![schema.as_str(), job_id],
-        |r| {
-            let status: Option<u64> = r.get(0)?;
-            Ok(status.map(MigrationJobStatus::from_int))
-        },
-    )?;
+            params![schema.as_str(), job_id],
+            |r| {
+                let status: Option<u64> = r.get(0)?;
+                Ok(status.map(MigrationJobStatus::from_int))
+            },
+        )
+        .optional()?
+    else {
+        return Ok(None);
+    };
+
     let mut stmt = conn.prepare(
         "SELECT target_namespace, status, error
             FROM migration_job_pending_tasks
@@ -332,11 +338,11 @@ pub fn get_migration_details(
     for row in rows {
         progress.push(row?);
     }
-    Ok(MigrationDetails {
+    Ok(Some(MigrationDetails {
         job_id,
         status,
         progress,
-    })
+    }))
 }
 
 pub fn get_migrations_summary(

@@ -454,7 +454,9 @@ async fn handle_get_migration_details<C: Connector>(
     }
 
     let meta_store = app_state.namespaces.meta_store();
-    let summary = meta_store.get_migration_details(schema, job_id).await?;
-
-    Ok(Json(summary))
+    let details = meta_store.get_migration_details(schema, job_id).await?;
+    match details {
+        Some(details) => Ok(Json(details)),
+        None => Err(crate::Error::MigrationJobNotFound),
+    }
 }

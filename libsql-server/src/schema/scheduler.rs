@@ -8,7 +8,7 @@ use crate::connection::program::Program;
 use crate::connection::MakeConnection;
 use crate::namespace::meta_store::MetaStoreConnection;
 use crate::namespace::{NamespaceName, NamespaceStore};
-use crate::query_result_builder::IgnoreResult;
+use crate::query_result_builder::{IgnoreResult, QueryBuilderConfig};
 use crate::schema::db::{update_job_status, update_meta_task_status};
 use crate::schema::{step_migration_task_run, MigrationJobStatus};
 
@@ -231,8 +231,13 @@ impl Scheduler {
 
                             if schema_version != job_id {
                                 // todo: use proper builder and collect errors
-                                let (ret, _status) =
-                                    perform_migration(&mut txn, &migration, false, IgnoreResult);
+                                let (ret, _status) = perform_migration(
+                                    &mut txn,
+                                    &migration,
+                                    false,
+                                    IgnoreResult,
+                                    &QueryBuilderConfig::default(),
+                                );
                                 let _error = ret.err().map(|e| e.to_string());
                                 txn.pragma_update(None, "schema_version", job_id).unwrap();
                                 // update schema version to job_id?

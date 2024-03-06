@@ -3,8 +3,9 @@ use once_cell::sync::Lazy;
 use rusqlite::Savepoint;
 
 use crate::connection::program::{Program, Vm};
-use crate::query_result_builder::{IgnoreResult, QueryResultBuilder};
+use crate::query_result_builder::{IgnoreResult, QueryBuilderConfig, QueryResultBuilder};
 
+use super::result_builder::SchemaMigrationResultBuilder;
 use super::status::MigrationTask;
 use super::{Error, MigrationTaskStatus};
 
@@ -109,12 +110,12 @@ pub(super) fn step_task(
             Ok((current_state, error))
         }
         MigrationTaskStatus::Run | MigrationTaskStatus::Enqueued => {
-            // TODO: use proper builder
             let (ret, new_status) = perform_migration(
                 txn,
                 migration.as_ref().unwrap(),
                 current_state.is_enqueued(),
                 IgnoreResult,
+                &QueryBuilderConfig::default(),
             );
             let error = ret.err().map(|e| e.to_string());
             update_db_task_status(txn, job_id, new_status, error.as_deref())?;
@@ -131,11 +132,13 @@ pub fn perform_migration<B: QueryResultBuilder>(
     migration: &Program,
     dry_run: bool,
     builder: B,
+    config: &QueryBuilderConfig,
 ) -> (Result<B, Error>, MigrationTaskStatus) {
     // todo error handling is sketchy, improve
+    let builder = SchemaMigrationResultBuilder::new(builder);
     let mut savepoint = txn.savepoint().unwrap();
-    match try_perform_migration(&mut savepoint, migration, builder) {
-        Ok(b) => {
+    match try_perform_migration(&mut savepoint, migration, builder, config) {
+        Ok(builder) if builder.is_success() => {
             let status = if dry_run {
                 savepoint.rollback().unwrap();
                 drop(savepoint);
@@ -144,15 +147,26 @@ pub fn perform_migration<B: QueryResultBuilder>(
                 savepoint.commit().unwrap();
                 MigrationTaskStatus::Success
             };
-            (Ok(b), status)
+            (Ok(builder.into_inner()), status)
         }
-        Err(e) => {
+        Ok(builder) => {
+            assert!(!builder.is_success());
+            savepoint.rollback().unwrap();
+            drop(savepoint);
             let status = if dry_run {
-                savepoint.rollback().unwrap();
-                drop(savepoint);
                 MigrationTaskStatus::DryRunFailure
             } else {
-                savepoint.commit().unwrap();
+                MigrationTaskStatus::Failure
+            };
+            let (step, error) = builder.into_error();
+            (Err(Error::MigrationError(step, error)), status)
+        }
+        Err(e) => {
+            savepoint.rollback().unwrap();
+            drop(savepoint);
+            let status = if dry_run {
+                MigrationTaskStatus::DryRunFailure
+            } else {
                 MigrationTaskStatus::Failure
             };
             (Err(e), status)
@@ -177,8 +191,10 @@ pub(super) fn update_db_task_status(
 fn try_perform_migration<B: QueryResultBuilder>(
     savepoint: &mut Savepoint,
     migration: &Program,
-    builder: B,
+    mut builder: B,
+    config: &QueryBuilderConfig,
 ) -> Result<B, Error> {
+    builder.init(config).unwrap();
     let mut vm = Vm::new(
         builder, // todo use proper builder
         migration,
@@ -189,6 +205,8 @@ fn try_perform_migration<B: QueryResultBuilder>(
     while !vm.finished() {
         vm.step(savepoint).unwrap(); // return migration error
     }
+
+    vm.builder().finish(None, true).unwrap();
 
     Ok(vm.into_builder())
 }
