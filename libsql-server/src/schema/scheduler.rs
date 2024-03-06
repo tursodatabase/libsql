@@ -293,31 +293,17 @@ impl Scheduler {
 
         // enqueue some work
         if let Some(mut task) = self.current_batch.pop() {
-            let status = task.status().clone();
-            let (connection_maker, block_writes, backup) =
+            let (connection_maker, block_writes) =
                 self.namespace_store
                     .with(task.namespace(), move |ns| {
                         let db = ns.db.as_primary().expect(
                             "attempting to perform schema migration on non-primary database",
                         );
-                        let backup = if matches!(status, MigrationTaskStatus::Enqueued) {
-                            // Task is enqueued for dry run and no other database changes are
-                            // allowed until dry run completes. Snapshot a current state of backup
-                            // progress and save an awaiter.
-                            db.backup_savepoint().unwrap()
-                        } else {
-                            None
-                        };
-                        (
-                            db.connection_maker().clone(),
-                            db.block_writes.clone(),
-                            backup,
-                        )
+                        (db.connection_maker().clone(), db.block_writes.clone())
                     })
                     .await
                     .unwrap();
 
-            task.backup_sync = backup;
             let connection = connection_maker.create().await.unwrap();
             let migration = job.migration();
             let job_status = *job.status();
@@ -325,6 +311,17 @@ impl Scheduler {
             // we block the writes before enqueuing the task, it makes testing predictable
             if *task.status() == MigrationTaskStatus::Enqueued {
                 block_writes.store(true, std::sync::atomic::Ordering::SeqCst);
+                // once writes are blocked, we can call for backup synchronization
+                task.backup_sync = self
+                    .namespace_store
+                    .with(task.namespace(), move |ns| {
+                        let db = ns.db.as_primary().expect(
+                            "attempting to perform schema migration on non-primary database",
+                        );
+                        db.backup_savepoint().unwrap()
+                    })
+                    .await
+                    .unwrap();
             }
 
             self.workers.spawn_blocking(move || {
