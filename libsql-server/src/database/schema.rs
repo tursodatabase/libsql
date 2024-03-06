@@ -1,9 +1,11 @@
 #![allow(dead_code)]
 
+use bottomless::SavepointTracker;
 use std::sync::Arc;
 
 use crate::connection::program::Program;
 use crate::connection::{MakeConnection, RequestContext};
+use crate::namespace::replication_wal::ReplicationWalManager;
 use crate::namespace::NamespaceName;
 use crate::query_result_builder::QueryBuilderConfig;
 use crate::schema::{perform_migration, SchedulerHandle};
@@ -101,6 +103,7 @@ pub struct SchemaDatabase {
     migration_scheduler: SchedulerHandle,
     schema: NamespaceName,
     connection_maker: Arc<PrimaryConnectionMaker>,
+    wal_manager: ReplicationWalManager,
 }
 
 #[async_trait::async_trait]
@@ -122,11 +125,13 @@ impl SchemaDatabase {
         migration_scheduler: SchedulerHandle,
         schema: NamespaceName,
         connection_maker: PrimaryConnectionMaker,
+        wal_manager: ReplicationWalManager,
     ) -> Self {
         Self {
             connection_maker: connection_maker.into(),
             migration_scheduler,
             schema,
+            wal_manager,
         }
     }
 
@@ -140,5 +145,14 @@ impl SchemaDatabase {
 
     pub(crate) fn connection_maker(&self) -> Self {
         self.clone()
+    }
+
+    pub fn backup_savepoint(&self) -> crate::database::Result<Option<SavepointTracker>> {
+        if let Some(wal) = self.wal_manager.wrapper() {
+            if let Some(savepoint) = wal.backup_savepoint() {
+                return Ok(Some(savepoint));
+            }
+        }
+        Ok(None)
     }
 }

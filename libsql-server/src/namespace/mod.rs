@@ -610,7 +610,7 @@ impl Namespace {
 
         tokio::fs::create_dir_all(&db_path).await?;
 
-        let (connection_maker, _wal_manager, stats) = Self::make_primary_connection_maker(
+        let (connection_maker, wal_manager, stats) = Self::make_primary_connection_maker(
             ns_config,
             &meta_store_handle,
             &db_path,
@@ -626,6 +626,7 @@ impl Namespace {
                 ns_config.migration_scheduler.clone(),
                 name.clone(),
                 connection_maker,
+                wal_manager,
             )),
             name,
             tasks: join_set,
