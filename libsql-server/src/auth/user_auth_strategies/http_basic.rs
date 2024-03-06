@@ -45,10 +45,7 @@ mod tests {
 
     #[test]
     fn authenticates_with_valid_credential() {
-        let context = UserAuthContext {
-            scheme: Some("basic".into()),
-            token: Some(CREDENTIAL.into()),
-        };
+        let context = UserAuthContext::basic(CREDENTIAL);
 
         assert!(matches!(
             strategy().authenticate(context).unwrap(),
@@ -59,11 +56,7 @@ mod tests {
     #[test]
     fn authenticates_with_valid_trimmed_credential() {
         let credential = CREDENTIAL.trim_end_matches('=');
-
-        let context = UserAuthContext {
-            scheme: Some("basic".into()),
-            token: Some(credential.into()),
-        };
+        let context = UserAuthContext::basic(credential);
 
         assert!(matches!(
             strategy().authenticate(context).unwrap(),
@@ -73,10 +66,7 @@ mod tests {
 
     #[test]
     fn errors_when_credentials_do_not_match() {
-        let context = UserAuthContext {
-            token: Some("abc".into()),
-            scheme: Some("basic".into()),
-        };
+        let context = UserAuthContext::basic("abc");
 
         assert_eq!(
             strategy().authenticate(context).unwrap_err(),

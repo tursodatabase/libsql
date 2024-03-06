@@ -145,10 +145,7 @@ mod tests {
         };
         let token = encode(&token, &enc);
 
-        let context = UserAuthContext {
-            scheme: Some("bearer".into()),
-            token: token.into(),
-        };
+        let context = UserAuthContext::bearer(token.as_str());
 
         assert!(matches!(
             strategy(dec).authenticate(context).unwrap(),
@@ -167,10 +164,7 @@ mod tests {
         };
         let token = encode(&token, &enc);
 
-        let context = UserAuthContext {
-            scheme: Some("bearer".into()),
-            token: token.into(),
-        };
+        let context = UserAuthContext::bearer(token.as_str());
 
         let Authenticated::Authorized(a) = strategy(dec).authenticate(context).unwrap() else {
             panic!()
@@ -187,10 +181,7 @@ mod tests {
     #[test]
     fn errors_when_jwt_token_invalid() {
         let (_enc, dec) = key_pair();
-        let context = UserAuthContext {
-            scheme: Some("bearer".into()),
-            token: Some("abc".into()),
-        };
+        let context = UserAuthContext::bearer("abc");
 
         assert_eq!(
             strategy(dec).authenticate(context).unwrap_err(),
@@ -210,10 +201,7 @@ mod tests {
 
         let token = encode(&token, &enc);
 
-        let context = UserAuthContext {
-            scheme: Some("bearer".into()),
-            token: Some(token.into()),
-        };
+        let context = UserAuthContext::bearer(token.as_str());
 
         assert_eq!(
             strategy(dec).authenticate(context).unwrap_err(),
@@ -235,10 +223,7 @@ mod tests {
 
         let token = encode(&token, &enc);
 
-        let context = UserAuthContext {
-            scheme: Some("bearer".into()),
-            token: token.into(),
-        };
+        let context = UserAuthContext::bearer(token.as_str());
 
         let Authenticated::Authorized(a) = strategy(dec).authenticate(context).unwrap() else {
             panic!()
