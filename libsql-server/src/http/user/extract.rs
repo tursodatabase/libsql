@@ -28,9 +28,10 @@ impl FromRequestParts<AppState> for RequestContext {
 
         let context = parts
             .headers
-            .get(hyper::header::AUTHORIZATION).ok_or(AuthError::AuthHeaderNotFound)
-            .and_then(|h| h.to_str().map_err(|_|AuthError::AuthHeaderNonAscii))
-            .and_then(|t| UserAuthContext::from_auth_str(t)) 
+            .get(hyper::header::AUTHORIZATION)
+            .ok_or(AuthError::AuthHeaderNotFound)
+            .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
+            .and_then(|t| UserAuthContext::from_auth_str(t))
             .unwrap_or(UserAuthContext::empty());
 
         let authenticated = namespace_jwt_key

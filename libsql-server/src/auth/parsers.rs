@@ -40,9 +40,10 @@ pub(crate) fn parse_grpc_auth_header(
     metadata: &MetadataMap,
 ) -> Result<UserAuthContext, tonic::Status> {
     return metadata
-        .get(GRPC_AUTH_HEADER).ok_or(AuthError::AuthHeaderNotFound)
-        .and_then(|h| h.to_str().map_err(|_|AuthError::AuthHeaderNonAscii))
-        .and_then(|t| UserAuthContext::from_auth_str(t)) 
+        .get(GRPC_AUTH_HEADER)
+        .ok_or(AuthError::AuthHeaderNotFound)
+        .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
+        .and_then(|t| UserAuthContext::from_auth_str(t))
         .map_err(|e| {
             tonic::Status::new(
                 tonic::Code::InvalidArgument,

@@ -43,18 +43,22 @@ impl ReplicaProxyService {
             .with(namespace.clone(), |ns| ns.jwt_key())
             .await;
 
-        let namespace_jwt_key = jwt_result
-            .and_then(|s|s);
-
+        let namespace_jwt_key = jwt_result.and_then(|s| s);
 
         let auth_strategy = match namespace_jwt_key {
             Ok(Some(key)) => Ok(Auth::new(Jwt::new(key))),
-            Ok(None) | Err(crate::error::Error::NamespaceDoesntExist(_)) => Ok(self.user_auth_strategy.clone()),
-            Err(e) => Err(Status::internal(format!("Can't fetch jwt key for a namespace: {}", e))),
+            Ok(None) | Err(crate::error::Error::NamespaceDoesntExist(_)) => {
+                Ok(self.user_auth_strategy.clone())
+            }
+            Err(e) => Err(Status::internal(format!(
+                "Can't fetch jwt key for a namespace: {}",
+                e
+            ))),
         }?;
 
         let auth_context = parse_grpc_auth_header(req.metadata())?;
-        auth_strategy.authenticate(auth_context)?
+        auth_strategy
+            .authenticate(auth_context)?
             .upgrade_grpc_request(req);
         return Ok(());
     }
