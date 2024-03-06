@@ -189,7 +189,6 @@ impl Scheduler {
                                     .as_schema()
                                     .expect("expected database to be a schema database")
                                     .backup_savepoint()
-                                    .unwrap()
                             })
                             .await
                             .unwrap();
@@ -210,7 +209,10 @@ impl Scheduler {
                 .unwrap();
                 let new_status = match job.wait_for_backup().await {
                     Ok(_) => MigrationJobStatus::WaitingRun,
-                    Err(_) => MigrationJobStatus::DryRunFailure,
+                    Err(_backup_err) => {
+                        // todo!("backup for schema db failed because: {}", _backup_err);
+                        MigrationJobStatus::DryRunFailure
+                    }
                 };
                 *job.status_mut() = new_status;
             }
@@ -338,12 +340,11 @@ impl Scheduler {
                     // once writes are blocked, we can call for backup synchronization
                     task.backup_sync = store
                         .with(task.namespace(), move |ns| {
-                            let db = ns.db.as_primary().expect(
+                            ns.db.as_primary().expect(
                                 "attempting to perform schema migration on non-primary database",
-                            );
-                            db.backup_savepoint().unwrap()
+                            ).backup_savepoint()
                         })
-                    .await
+                        .await
                         .unwrap();
                 }
                 tokio::task::spawn_blocking(move || {
@@ -375,7 +376,9 @@ impl Scheduler {
                             error,
                         }
                     })
-                }).await.unwrap()
+                })
+                .await
+                .unwrap()
             });
         } else {
             // there is still a job, but the queue is empty, it means that we are waiting for the
@@ -422,9 +425,6 @@ enum WorkResult {
 #[cfg(test)]
 mod test {
     use std::path::Path;
-    use std::time::Duration;
-
-    use crate::config::{BottomlessConfig, MetaStoreConfig};
     use tempfile::tempdir;
 
     use crate::connection::config::DatabaseConfig;
