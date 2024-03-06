@@ -372,9 +372,9 @@ impl NamespaceStore {
 
         let db_config = Arc::new(db_config);
         let handle = self.inner.metadata.handle(namespace.clone());
-        handle.store(db_config).await?;
-        self.load_namespace(&namespace, handle, restore_option)
+        self.load_namespace(&namespace, handle.clone(), restore_option)
             .await?;
+        handle.store(db_config).await?;
 
         Ok(())
     }
