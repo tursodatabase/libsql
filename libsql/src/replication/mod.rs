@@ -158,7 +158,7 @@ impl EmbeddedReplicator {
         db_path: PathBuf,
         auto_checkpoint: u32,
         encryption_config: Option<EncryptionConfig>,
-    ) -> Self {
+    ) -> Result<Self> {
         let replicator = Arc::new(Mutex::new(
             Replicator::new(
                 Either::Right(client),
@@ -166,14 +166,13 @@ impl EmbeddedReplicator {
                 auto_checkpoint,
                 encryption_config,
             )
-            .await
-            .unwrap(),
+            .await?,
         ));
 
-        Self {
+        Ok(Self {
             replicator,
             bg_abort: None,
-        }
+        })
     }
 
     pub async fn sync_oneshot(&self) -> Result<Option<FrameNo>> {
