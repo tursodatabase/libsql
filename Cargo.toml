@@ -67,6 +67,24 @@ tag-namespace = "libsql-server"
 inherits = "release"
 lto = "thin"
 
-[profile.release.package.sql-experimental]
+# [profile.release.package.sql-experimental]
+# debug = false
+# strip = true
+# codegen-units = 1
+# opt-level = "z"
+# panic = "abort"
+
+[profile.cbindings]
 debug = false
 strip = true
+codegen-units = 1
+opt-level = "z"
+panic = "abort"
+lto = true
+debug-assertions = false
+overflow-checks = false
+rpath = false
+incremental = false
+inherits = "release"
+
+
