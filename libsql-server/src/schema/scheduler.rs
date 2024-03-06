@@ -90,9 +90,9 @@ impl Scheduler {
                     }
                     Ok(WorkResult::Task { old_status, mut task, error }) => {
                         if let Err(_backup_err) = task.wait_for_backup().await {
-                            *task.status_mut() = MigrationTaskStatus::DryRunFailure
+                            *task.status_mut() = MigrationTaskStatus::DryRunFailure;
                             // todo: any other actions?
-                        };
+                        }
                         let new_status = *task.status();
                         with_conn_async(self.migration_db.clone(), move |conn| {
                             update_meta_task_status(conn, task, error)
@@ -629,11 +629,13 @@ mod test {
         let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
             .await
             .unwrap();
-        let (sender, _receiver) = mpsc::channel(100);
+        let (sender, mut receiver) = mpsc::channel(100);
         let config = make_config(sender.clone().into(), tmp.path());
         let store = NamespaceStore::new(false, false, 10, config, meta_store)
             .await
             .unwrap();
+        let mut scheduler = Scheduler::new(store.clone(), maker().unwrap()).unwrap();
+        scheduler.step(&mut receiver).await;
 
         store
             .with("ns".into(), |ns| {
