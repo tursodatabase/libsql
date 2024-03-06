@@ -236,7 +236,6 @@ mod test {
             status: MigrationTaskStatus::Success,
             job_id: 1,
             task_id: 1,
-            backup_sync: None,
         };
         enqueue_migration_task(&conn, &task, &Program::seq(&["create table test (x)"])).unwrap();
         let mut txn = conn.transaction().unwrap();
@@ -271,7 +270,6 @@ mod test {
             status: MigrationTaskStatus::Success,
             job_id: 1,
             task_id: 1,
-            backup_sync: None,
         };
         enqueue_migration_task(&conn, &task, &Program::seq(&["create table test (x)"])).unwrap();
 
@@ -280,7 +278,6 @@ mod test {
             status: MigrationTaskStatus::Enqueued,
             job_id: 1,
             task_id: 1,
-            backup_sync: None,
         };
         enqueue_migration_task(&conn, &task, &Program::seq(&["create table test (x)"])).unwrap();
         let (status, _, _) = get_task_infos(&conn, 1).unwrap();

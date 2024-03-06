@@ -1,6 +1,5 @@
 ---
 source: libsql-server/src/schema/db.rs
-assertion_line: 481
 expression: tasks
 ---
 [
@@ -9,20 +8,17 @@ expression: tasks
         status: Enqueued,
         job_id: 1,
         task_id: 1,
-        backup_sync: None,
     },
     MigrationTask {
         namespace: ns2,
         status: Enqueued,
         job_id: 1,
         task_id: 2,
-        backup_sync: None,
     },
     MigrationTask {
         namespace: ns3,
         status: Enqueued,
         job_id: 1,
         task_id: 3,
-        backup_sync: None,
     },
 ]
