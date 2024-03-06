@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use bottomless::SavepointTracker;
 use serde::{Deserialize, Serialize};
 
 use crate::{connection::program::Program, namespace::NamespaceName};
@@ -10,6 +11,7 @@ pub struct MigrationTask {
     pub(crate) status: MigrationTaskStatus,
     pub(crate) job_id: i64,
     pub(crate) task_id: i64,
+    pub(crate) backup_sync: Option<SavepointTracker>,
 }
 
 impl MigrationTask {
@@ -27,6 +29,13 @@ impl MigrationTask {
 
     pub(crate) fn status_mut(&mut self) -> &mut MigrationTaskStatus {
         &mut self.status
+    }
+
+    pub(crate) async fn wait_for_backup(&mut self) -> crate::Result<()> {
+        if let Some(mut savepoint) = self.backup_sync.take() {
+            savepoint.confirmed().await?;
+        }
+        Ok(())
     }
 }
 
