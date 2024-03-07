@@ -339,6 +339,11 @@ fn build_multiple_ciphers(out_path: &Path) {
     cmake_opts.push("-DSQLITE_USE_URI=ON");
     cmake_opts.push("-DCMAKE_POSITION_INDEPENDENT_CODE=ON");
 
+    if cargo_build_target.contains("musl") {
+        cmake_opts.push("-DCMAKE_C_FLAGS=\"-U_FORTIFY_SOURCE\"");
+        cmake_opts.push("-DCMAKE_CXX_FLAGS=\"-U_FORTIFY_SOURCE\"");
+    }
+
     let mut cmake = Command::new("cmake");
     cmake.current_dir("bundled/SQLite3MultipleCiphers/build");
     cmake.args(cmake_opts.clone());
