@@ -34,4 +34,5 @@ MigrationJob {
         1,
         0,
     ],
+    task_error: None,
 }
