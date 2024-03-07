@@ -29,7 +29,7 @@ fn main() {
     }
 
     if std::env::var("LIBSQL_DEV").is_ok() {
-        make_amalgation();
+        make_amalgamation();
         build_multiple_ciphers(&out_path);
     }
 
@@ -56,7 +56,7 @@ fn main() {
     build_bundled(&out_dir, &out_path);
 }
 
-fn make_amalgation() {
+fn make_amalgamation() {
     let flags = ["-DSQLITE_ENABLE_COLUMN_METADATA=1"];
 
     Command::new("make")
