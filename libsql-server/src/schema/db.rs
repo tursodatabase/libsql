@@ -25,6 +25,7 @@ pub(super) fn setup_schema(conn: &mut rusqlite::Connection) -> Result<(), Error>
                 schema TEXT NOT NULL,
                 migration TEXT NOT NULL,
                 status INTEGER,
+                error TEXT,
                 finished BOOLEAN GENERATED ALWAYS AS ({})
             )
             ",
@@ -36,16 +37,21 @@ pub(super) fn setup_schema(conn: &mut rusqlite::Connection) -> Result<(), Error>
         (),
     )?;
     // this table contains a list of all the that need to be performed for each migration job
-    txn.execute(
+    txn.execute(&format!(
         "CREATE TABLE IF NOT EXISTS migration_job_pending_tasks (
             task_id INTEGER PRIMARY KEY AUTOINCREMENT,
             job_id INTEGER,
             target_namespace TEXT NOT NULL,
             status INTEGER,
             error TEXT,
+            finished BOOLEAN GENERATED ALWAYS AS ({}),
             FOREIGN KEY (job_id) REFERENCES migration_jobs (job_id)
         )
         ",
+        MigrationTaskStatus::finished_states()
+        .into_iter()
+        .map(|s| format!("status = {}", *s as u64))
+        .join(" OR ")),
         (),
     )?;
     // This temporary table hold the list of tasks that are currently being processed
@@ -190,10 +196,47 @@ pub(super) fn get_next_pending_migration_tasks_batch(
     Ok(tasks)
 }
 
+/// returns a batch of tasks that are not in a finished state
+pub(super) fn get_unfinished_task_batch(
+    conn: &mut rusqlite::Connection,
+    job_id: i64,
+    limit: usize,
+) -> Result<Vec<MigrationTask>, Error> {
+    let txn = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    let tasks = txn
+        .prepare(
+            "SELECT task_id, target_namespace, status, job_id 
+            FROM migration_job_pending_tasks 
+            WHERE job_id = ? AND finished = false AND task_id NOT IN (select * from enqueued_tasks)
+            LIMIT ?",
+        )?
+        .query_map((job_id, limit), |row| {
+            let task_id = row.get::<_, i64>(0)?;
+            let namespace = NamespaceName::from_string(row.get::<_, String>(1)?).unwrap();
+            let status = MigrationTaskStatus::from_int(row.get::<_, u64>(2)?);
+            let job_id = row.get::<_, i64>(3)?;
+            Ok(MigrationTask {
+                namespace,
+                status,
+                job_id,
+                task_id,
+            })
+        })?
+        .map(|r| r.map_err(Into::into))
+        .collect::<Result<Vec<_>, Error>>()?;
+
+    for task in tasks.iter() {
+        txn.execute("INSERT INTO enqueued_tasks VALUES (?)", [task.task_id])?;
+    }
+
+    txn.commit()?;
+    Ok(tasks)
+}
+
 pub(super) fn update_meta_task_status(
     conn: &mut rusqlite::Connection,
-    task: MigrationTask,
-    error: Option<String>,
+    task: &MigrationTask,
+    error: Option<&str>,
 ) -> Result<(), Error> {
     assert!(error.is_none() || task.status.is_failure());
     let txn = conn.transaction()?;
@@ -242,10 +285,11 @@ pub(super) fn update_job_status(
     conn: &mut rusqlite::Connection,
     job_id: i64,
     status: MigrationJobStatus,
+    error: Option<&str>,
 ) -> Result<(), Error> {
     conn.execute(
-        "UPDATE migration_jobs SET status = ? WHERE job_id = ?",
-        (status as u64, job_id),
+        "UPDATE migration_jobs SET status = ?, error = coalesce(?, error) WHERE job_id = ?",
+        (status as u64, error, job_id),
     )?;
     Ok(())
 }
@@ -275,6 +319,7 @@ pub(super) fn get_next_pending_migration_job(
                     status,
                     migration,
                     progress: Default::default(),
+                    task_error: None,
                 })
             },
         )
@@ -303,15 +348,16 @@ pub fn get_migration_details(
     schema: NamespaceName,
     job_id: u64,
 ) -> crate::Result<Option<MigrationDetails>> {
-    let Some(status) = conn
+    let Some((status, error)) = conn
         .query_row(
-            "SELECT status
+            "SELECT status, error
             FROM migration_jobs
             WHERE schema = ? AND job_id = ?",
             params![schema.as_str(), job_id],
             |r| {
-                let status: Option<u64> = r.get(0)?;
-                Ok(status.map(MigrationJobStatus::from_int))
+                let status = MigrationJobStatus::from_int(r.get::<_, u64>(0)?);
+                let error: Option<String> = r.get(1)?;
+                Ok((status, error))
             },
         )
         .optional()?
@@ -341,6 +387,7 @@ pub fn get_migration_details(
     Ok(Some(MigrationDetails {
         job_id,
         status,
+        error,
         progress,
     }))
 }
@@ -516,7 +563,7 @@ mod test {
 
         let mut task = tasks.pop().unwrap();
         *task.status_mut() = MigrationTaskStatus::Success;
-        update_meta_task_status(&mut conn, task, None).unwrap();
+        update_meta_task_status(&mut conn, &task, None).unwrap();
 
         assert_debug_snapshot!(get_next_pending_migration_job(&mut conn).unwrap().unwrap());
     }
@@ -565,7 +612,7 @@ mod test {
         .unwrap();
         for mut task in tasks {
             task.status = MigrationTaskStatus::DryRunSuccess;
-            update_meta_task_status(&mut conn, task, None).unwrap();
+            update_meta_task_status(&mut conn, &task, None).unwrap();
         }
 
         let status = job_step_dry_run_success(&mut conn, job.job_id()).unwrap();
@@ -612,7 +659,7 @@ mod test {
         )
         .unwrap();
 
-        update_job_status(&mut conn, job_id, MigrationJobStatus::RunSuccess).unwrap();
+        update_job_status(&mut conn, job_id, MigrationJobStatus::RunSuccess, None).unwrap();
 
         // job is finished, we can enqueue now
         register_schema_migration_job(
@@ -645,7 +692,7 @@ mod test {
 
         assert!(super::has_pending_migration_jobs(&conn, &"schema".into()).unwrap());
 
-        update_job_status(&mut conn, job_id, MigrationJobStatus::RunSuccess).unwrap();
+        update_job_status(&mut conn, job_id, MigrationJobStatus::RunSuccess, None).unwrap();
         assert!(!super::has_pending_migration_jobs(&conn, &"schema".into()).unwrap());
     }
 
@@ -673,7 +720,7 @@ mod test {
             .await
             .unwrap_err());
 
-        update_job_status(&mut conn, job_id, MigrationJobStatus::RunSuccess).unwrap();
+        update_job_status(&mut conn, job_id, MigrationJobStatus::RunSuccess, None).unwrap();
 
         assert!(register_shared(&meta_store, "ns", "schema").await.is_ok());
     }
