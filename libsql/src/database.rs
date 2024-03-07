@@ -592,3 +592,9 @@ fn connector() -> hyper_rustls::HttpsConnector<hyper::client::HttpConnector> {
         .enable_http1()
         .wrap_connector(http)
 }
+
+impl std::fmt::Debug for Database {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Database").finish()
+    }
+}
