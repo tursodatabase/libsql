@@ -5,6 +5,7 @@ use std::{collections::HashMap, fs::read_dir};
 
 use bottomless::bottomless_wal::BottomlessWalWrapper;
 use bottomless::replicator::CompressionKind;
+use bottomless::SavepointTracker;
 use futures_core::Future;
 use libsql_replication::rpc::metadata;
 use libsql_sys::wal::{
@@ -485,6 +486,14 @@ impl MetaStore {
         .await
         .unwrap()?;
         Ok(details)
+    }
+
+    pub fn backup_savepoint(&self) -> Option<SavepointTracker> {
+        let lock = self.inner.lock();
+        if let Some(wal) = lock.wal_manager.wrapper() {
+            return wal.backup_savepoint();
+        }
+        None
     }
 }
 
