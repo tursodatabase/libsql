@@ -307,8 +307,8 @@ async fn handle_create_namespace<C: Connector>(
     }
 
     if req.shared_schema_name.is_some() && req.dump_url.is_some() {
-        return Err(Error::SharedSchemaCreationError(
-            "shared schema database cannot be created from a dump".to_string(),
+        return Err(Error::SharedSchemaUsageError(
+            "database using shared schema database cannot be created from a dump".to_string(),
         ));
     }
 
