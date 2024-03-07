@@ -366,6 +366,11 @@ async fn handle_fork_namespace<C>(
     let to = NamespaceName::from_string(to)?;
     let from_store = app_state.namespaces.config_store(from.clone()).await?;
     let from_config = from_store.get();
+    if from_config.is_shared_schema {
+        return Err(Error::SharedSchemaUsageError(
+            "database cannot be forked from a shared schema".to_string(),
+        ));
+    }
     let to_config = (*from_config).clone();
     app_state
         .namespaces
