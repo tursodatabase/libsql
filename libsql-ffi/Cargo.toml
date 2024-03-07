@@ -6,6 +6,7 @@ build = "build.rs"
 license = "MIT"
 description = "Native bindings to libSQL"
 repository = "https://github.com/tursodatabase/libsql"
+exclude = ["bundled/SQLite3MultipleCiphers/build", "bundled/SQLite3MultipleCiphers/test"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
