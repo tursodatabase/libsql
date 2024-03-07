@@ -8,6 +8,7 @@ pub use jwt::Jwt;
 
 use super::{AuthError, Authenticated};
 
+#[derive(Debug)]
 pub struct UserAuthContext {
     scheme: Option<String>,
     token: Option<String>,

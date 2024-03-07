@@ -42,7 +42,7 @@ pub(crate) fn parse_grpc_auth_header(
     return metadata
         .get(GRPC_AUTH_HEADER)
         .ok_or(AuthError::AuthHeaderNotFound)
-        .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
+        .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii)) // this never happens, guaranteed at type level
         .and_then(|t| UserAuthContext::from_auth_str(t))
         .map_err(|e| {
             tonic::Status::new(
@@ -82,7 +82,32 @@ mod tests {
 
     use crate::auth::{parse_http_auth_header, AuthError};
 
-    use super::parse_http_basic_auth_arg;
+    use super::{parse_grpc_auth_header, parse_http_basic_auth_arg};
+
+    #[test]
+    fn parse_grpc_auth_header_returns_valid_context(){
+        let mut map = tonic::metadata::MetadataMap::new();
+        map.insert("x-authorization", "bearer 123".parse().unwrap());
+        let context = parse_grpc_auth_header(&map).unwrap();
+        assert_eq!(context.scheme().as_ref().unwrap(), "bearer");
+        assert_eq!(context.token().as_ref().unwrap(), "123");
+    }
+
+
+    #[test]
+    fn parse_grpc_auth_header_error_no_header(){
+        let map = tonic::metadata::MetadataMap::new();
+        let result = parse_grpc_auth_header(&map);
+        assert_eq!(result.unwrap_err().message(), "Failed parse grpc auth: Expected authorization header but none given");
+    }
+
+    #[test]
+    fn parse_grpc_auth_header_error_malformed_auth_str(){
+        let mut map = tonic::metadata::MetadataMap::new();
+        map.insert("x-authorization", "bearer123".parse().unwrap());
+        let result = parse_grpc_auth_header(&map);
+        assert_eq!(result.unwrap_err().message(), "Failed parse grpc auth: Auth string does not conform to '<scheme> <token>' form")
+    }
 
     #[test]
     fn parse_http_auth_header_returns_auth_header_param_when_valid() {
