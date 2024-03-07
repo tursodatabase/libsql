@@ -229,11 +229,17 @@ fn dry_run_failure() {
         client
             .post(
                 "http://primary:9090/v1/namespaces/ns1/create",
-                json!({"shared_schema_name": "schema" }),) .await .unwrap();
+                json!({"shared_schema_name": "schema" }),
+            )
+            .await
+            .unwrap();
         client
             .post(
                 "http://primary:9090/v1/namespaces/ns2/create",
-                json!({"shared_schema_name": "schema" }),) .await .unwrap();
+                json!({"shared_schema_name": "schema" }),
+            )
+            .await
+            .unwrap();
 
         let schema_db = Database::open_remote_with_connector(
             "http://schema.primary:8080",
@@ -242,13 +248,13 @@ fn dry_run_failure() {
         )
         .unwrap();
         let schema_conn = schema_db.connect().unwrap();
-        let schema_version_before = get_schema_version(&schema_conn).await;
+        let schema_version_before = get_schema_version("schema").await;
         schema_conn
             .execute_batch("create table test (c)")
             .await
             .unwrap();
 
-        while get_schema_version(&schema_conn).await == schema_version_before {
+        while get_schema_version("schema").await == schema_version_before {
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
 
@@ -259,7 +265,10 @@ fn dry_run_failure() {
         )
         .unwrap();
         let ns1_conn = ns1_db.connect().unwrap();
-        ns1_conn.execute("insert into test values (NULL)", ()).await.unwrap();
+        ns1_conn
+            .execute("insert into test values (NULL)", ())
+            .await
+            .unwrap();
 
         // we are creating a new table with a constraint on the column. when the dry run is
         // executed against the schema or ns2, it works, because test is empty there, but it should
@@ -270,14 +279,26 @@ fn dry_run_failure() {
             .unwrap();
 
         loop {
-            let resp = client.get("http://primary:9090/v1/namespaces/schema/migrations/2").await.unwrap().json_value().await.unwrap();
+            let resp = client
+                .get("http://primary:9090/v1/namespaces/schema/migrations/2")
+                .await
+                .unwrap()
+                .json_value()
+                .await
+                .unwrap();
             if resp["status"].as_str().unwrap() == "RunFailure" {
                 break;
             }
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
 
-        let resp = client.get("http://primary:9090/v1/namespaces/schema/migrations/2").await.unwrap().json_value().await.unwrap();
+        let resp = client
+            .get("http://primary:9090/v1/namespaces/schema/migrations/2")
+            .await
+            .unwrap()
+            .json_value()
+            .await
+            .unwrap();
         assert_json_snapshot!(resp);
 
         // all schemas are the same (test2 doesn't exist)

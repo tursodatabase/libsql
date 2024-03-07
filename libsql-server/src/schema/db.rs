@@ -37,8 +37,9 @@ pub(super) fn setup_schema(conn: &mut rusqlite::Connection) -> Result<(), Error>
         (),
     )?;
     // this table contains a list of all the that need to be performed for each migration job
-    txn.execute(&format!(
-        "CREATE TABLE IF NOT EXISTS migration_job_pending_tasks (
+    txn.execute(
+        &format!(
+            "CREATE TABLE IF NOT EXISTS migration_job_pending_tasks (
             task_id INTEGER PRIMARY KEY AUTOINCREMENT,
             job_id INTEGER,
             target_namespace TEXT NOT NULL,
@@ -48,10 +49,11 @@ pub(super) fn setup_schema(conn: &mut rusqlite::Connection) -> Result<(), Error>
             FOREIGN KEY (job_id) REFERENCES migration_jobs (job_id)
         )
         ",
-        MigrationTaskStatus::finished_states()
-        .into_iter()
-        .map(|s| format!("status = {}", *s as u64))
-        .join(" OR ")),
+            MigrationTaskStatus::finished_states()
+                .into_iter()
+                .map(|s| format!("status = {}", *s as u64))
+                .join(" OR ")
+        ),
         (),
     )?;
     // This temporary table hold the list of tasks that are currently being processed

@@ -60,7 +60,10 @@ pub fn enqueue_migration_task(
     Ok(())
 }
 
-pub fn abort_migration_task(conn: &rusqlite::Connection, task: &MigrationTask) -> Result<(), Error> {
+pub fn abort_migration_task(
+    conn: &rusqlite::Connection,
+    task: &MigrationTask,
+) -> Result<(), Error> {
     // there is a `NOT NULL` constraint on migration, but if we are aborting a task that wasn't
     // already enqueued, we need a placeholder. It's ok because we are never gonna try to run a
     // failed task migration.

@@ -90,7 +90,9 @@ impl MigrationJob {
                     + self.progress(MigrationTaskStatus::Run)
             }
             MigrationJobStatus::DryRunSuccess => 0,
-            MigrationJobStatus::DryRunFailure => self.progress.iter().sum::<usize>() - self.progress(MigrationTaskStatus::Failure),
+            MigrationJobStatus::DryRunFailure => {
+                self.progress.iter().sum::<usize>() - self.progress(MigrationTaskStatus::Failure)
+            }
             MigrationJobStatus::RunSuccess => 0,
             MigrationJobStatus::RunFailure => 0,
             MigrationJobStatus::WaitingTransition => 0,
