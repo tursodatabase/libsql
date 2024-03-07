@@ -174,40 +174,32 @@ impl Scheduler {
                         let old_status = *job.status();
                         let migration_db = self.migration_db.clone();
                         let store = self.namespace_store.clone();
-                        let schema = job.schema();
                         async move {
-                            let mut status = with_conn_async(migration_db,
-                                move |conn| job_step_dry_run_success(conn, job_id)
-                            )
-                                .await
-                                .unwrap()
-                                .unwrap_or(old_status);
+                            let mut status = with_conn_async(migration_db, move |conn| {
+                                job_step_dry_run_success(conn, job_id)
+                            })
+                            .await
+                            .unwrap()
+                            .unwrap_or(old_status);
 
                             if status.is_dry_run_success() {
-                                let savepoint = store
-                                    .with(schema, |ns| {
-                                        ns.db
-                                            .as_schema()
-                                            .expect("expected database to be a schema database")
-                                            .backup_savepoint()
-                                    })
-                                .await
-                                    .unwrap();
-
-                                if let Some(mut savepoint) = savepoint {
+                                if let Some(mut savepoint) = store.meta_store().backup_savepoint() {
                                     if let Err(e) = savepoint.confirmed().await {
-                                        tracing::error!("failed to backup metastore after state change on job {job_id}: {e}");
+                                        tracing::error!("failed to backup meta store: {e}");
+                                        // do not step the job, and schedule for retry.
+                                        // TODO: backoff?
+                                        // TODO: this is fine if we don't manage to get a backup here,
+                                        // then we'll restart in the previous state in case of restore,
+                                        // however, in case of restart we may not have a backup.
                                         status = MigrationJobStatus::WaitingRun;
                                     }
                                 }
-
                                 // todo!("notify dry run success")
-                                // nothing more to do in this call, return early and let next call enqueue
-                                // step the job
                             }
 
                             WorkResult::Job { status }
-                        }});
+                        }
+                    });
 
                     *job.status_mut() = MigrationJobStatus::WaitingTransition;
                     self.has_work = false;
@@ -216,19 +208,33 @@ impl Scheduler {
             }
             MigrationJobStatus::DryRunSuccess => {
                 let job_id = job.job_id();
-                with_conn_async(self.migration_db.clone(), move |conn| {
-                    update_job_status(conn, job_id, MigrationJobStatus::WaitingRun)
-                })
-                .await
-                .unwrap();
-                let new_status = match job.wait_for_backup().await {
-                    Ok(_) => MigrationJobStatus::WaitingRun,
-                    Err(_backup_err) => {
-                        // todo!("backup for schema db failed because: {}", _backup_err);
-                        MigrationJobStatus::DryRunFailure
+                let store = self.namespace_store.clone();
+                let migration_db = self.migration_db.clone();
+                self.workers.spawn(async move {
+                    with_conn_async(migration_db, move |conn| {
+                        update_job_status(conn, job_id, MigrationJobStatus::WaitingRun)
+                    })
+                    .await
+                    .unwrap();
+
+                    let mut status = MigrationJobStatus::WaitingRun;
+                    if let Some(mut savepoint) = store.meta_store().backup_savepoint() {
+                        if let Err(e) = savepoint.confirmed().await {
+                            tracing::error!("failed to backup meta store: {e}");
+                            // do not step the job, and schedule for retry.
+                            // TODO: backoff?
+                            // TODO: this is fine if we don't manage to get a backup here,
+                            // then we'll restart in the previous state in case of restore,
+                            // however, in case of restart we may not have a backup.
+                            status = MigrationJobStatus::DryRunSuccess;
+                        }
                     }
-                };
-                *job.status_mut() = new_status;
+
+                    WorkResult::Job { status }
+                });
+
+                *job.status_mut() = MigrationJobStatus::WaitingTransition;
+                self.has_work = false;
             }
             MigrationJobStatus::DryRunFailure => todo!(),
             MigrationJobStatus::WaitingRun => {
@@ -260,6 +266,8 @@ impl Scheduler {
                         let job_id = job.job_id();
                         let migration = job.migration();
                         let migration_db = self.migration_db.clone();
+                        let store = self.namespace_store.clone();
+                        let schema = job.schema();
                         async move {
                             let _perm = permit;
                             tokio::task::spawn_blocking(move || {
@@ -286,8 +294,29 @@ impl Scheduler {
                                         txn.commit().unwrap();
                                     }
                                 });
+                            }).await.unwrap();
 
-                                {
+
+                            // backup the schema
+                            let savepoint = store
+                                .with(schema, |ns| {
+                                    ns.db
+                                        .as_schema()
+                                        .expect("expected database to be a schema database")
+                                        .backup_savepoint()
+                                })
+                            .await
+                                .unwrap();
+
+                            if let Some(mut savepoint) = savepoint {
+                                if let Err(e) = savepoint.confirmed().await {
+                                    tracing::error!("failed to backup metastore after state change on job {job_id}: {e}");
+                                    // early return, we couldn't backup the schema
+                                    return WorkResult::Job { status: MigrationJobStatus::WaitingRun };
+                                }
+                            }
+
+                            tokio::task::spawn_blocking(move || {
                                     let mut conn = migration_db.lock();
                                     update_job_status(
                                         &mut conn,
@@ -295,14 +324,24 @@ impl Scheduler {
                                         MigrationJobStatus::RunSuccess,
                                     )
                                     .unwrap();
-                                }
-
-                                WorkResult::Job {
-                                    status: MigrationJobStatus::RunSuccess,
-                                }
                             })
                             .await
-                            .unwrap()
+                            .unwrap();
+
+                            let mut status = MigrationJobStatus::RunSuccess;
+                            if let Some(mut savepoint) = store.meta_store().backup_savepoint() {
+                                if let Err(e) = savepoint.confirmed().await {
+                                    tracing::error!("failed to backup meta store: {e}");
+                                    // do not step the job, and schedule for retry.
+                                    // TODO: backoff?
+                                    // TODO: this is fine if we don't manage to get a backup here,
+                                    // then we'll restart in the previous state in case of restore,
+                                    // however, in case of restart we may not have a backup.
+                                    status = MigrationJobStatus::WaitingRun;
+                                }
+                            }
+
+                            WorkResult::Job { status }
                         }
                     });
                     // do not enqueue anything until the schema migration is complete

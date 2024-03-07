@@ -274,7 +274,6 @@ pub(super) fn get_next_pending_migration_job(
                     job_id,
                     status,
                     migration,
-                    backup_sync: None,
                     progress: Default::default(),
                 })
             },

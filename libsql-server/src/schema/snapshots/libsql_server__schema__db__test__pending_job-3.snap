@@ -26,7 +26,6 @@ MigrationJob {
             },
         ],
     },
-    backup_sync: None,
     progress: [
         2,
         0,
