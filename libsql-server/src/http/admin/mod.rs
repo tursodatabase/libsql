@@ -306,6 +306,12 @@ async fn handle_create_namespace<C: Connector>(
         config.jwt_key = Some(jwt_key);
     }
 
+    if req.shared_schema_name.is_some() && req.dump_url.is_some() {
+        return Err(Error::SharedSchemaCreationError(
+            "shared schema database cannot be created from a dump".to_string(),
+        ));
+    }
+
     if let Some(ns) = req.shared_schema_name {
         if req.shared_schema {
             return Err(Error::SharedSchemaCreationError(
