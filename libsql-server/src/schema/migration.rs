@@ -27,8 +27,15 @@ pub fn setup_migration_table(conn: &mut rusqlite::Connection) -> Result<(), Erro
         )
     });
 
-    conn.execute(&*TASKS_TABLE_QUERY, ())?;
-
+    let tx = conn.transaction()?;
+    let schema_version =
+        tx.pragma_query_value(None, "schema_version", |row| Ok(row.get::<_, u64>(0)?))?;
+    tx.execute(&*TASKS_TABLE_QUERY, ())?;
+    // We have to make sure schema_version is not changed in case this db is a fork of shared schema
+    // or a namespace that links to shared schema.
+    // It is ok to do this because we're the only connection to that database at this point.
+    tx.pragma_update(None, "schema_version", schema_version)?;
+    tx.commit()?;
     Ok(())
 }
 
