@@ -107,6 +107,8 @@ pub enum Error {
     ProstDecode(#[from] prost::DecodeError),
     #[error("Shared schema error: {0}")]
     SharedSchemaCreationError(String),
+    #[error("Shared schema usage error: {0}")]
+    SharedSchemaUsageError(String),
 
     #[error("migration error: {0}")]
     Migration(#[from] crate::schema::Error),
@@ -192,6 +194,7 @@ impl IntoResponse for &Error {
             Ref(this) => this.as_ref().into_response(),
             ProstDecode(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             SharedSchemaCreationError(_) => self.format_err(StatusCode::BAD_REQUEST),
+            SharedSchemaUsageError(_) => self.format_err(StatusCode::BAD_REQUEST),
             Migration(e) => e.into_response(),
             PendingMigrationOnSchema(_) => self.format_err(StatusCode::BAD_REQUEST),
             MigrationJobNotFound => self.format_err(StatusCode::NOT_FOUND),
