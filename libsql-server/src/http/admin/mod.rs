@@ -364,18 +364,19 @@ async fn handle_fork_namespace<C>(
     let timestamp = req.map(|v| v.timestamp);
     let from = NamespaceName::from_string(from)?;
     let to = NamespaceName::from_string(to)?;
+    let from_store = app_state.namespaces.config_store(from.clone()).await?;
+    let from_config = from_store.get();
+    if from_config.is_shared_schema {
+        return Err(Error::SharedSchemaUsageError(
+            "database cannot be forked from a shared schema".to_string(),
+        ));
+    }
+    let to_config = (*from_config).clone();
     app_state
         .namespaces
-        .fork(from.clone(), to.clone(), timestamp)
+        .fork(from, to, to_config, timestamp)
         .await?;
-    let from_store = app_state.namespaces.config_store(from).await?;
-    let from_config = from_store.get();
-    let to_store = app_state.namespaces.config_store(to).await?;
-    let mut to_config = (*to_store.get()).clone();
-    to_config.max_db_pages = from_config.max_db_pages;
-    to_config.heartbeat_url = from_config.heartbeat_url.clone();
-    to_config.shared_schema_name = from_config.shared_schema_name.clone();
-    to_store.store(to_config).await?;
+
     Ok(())
 }
 

@@ -552,9 +552,6 @@ impl Namespace {
     ) -> crate::Result<Namespace> {
         let from_config = from_config.get();
         match ns_config.db_kind {
-            DatabaseKind::Primary if from_config.is_shared_schema => {
-                panic!("forking schema not supported");
-            }
             DatabaseKind::Primary => {
                 let bottomless_db_id = NamespaceBottomlessDbId::from_config(&from_config);
                 let restore_to = if let Some(timestamp) = timestamp {
@@ -573,10 +570,6 @@ impl Namespace {
                 } else {
                     None
                 };
-
-                // fork share config with original db
-                to_config.store(from_config).await?;
-
                 let fork_task = ForkTask {
                     base_path: ns_config.base_path.clone(),
                     to_namespace: to_ns,

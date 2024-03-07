@@ -31,8 +31,9 @@ use super::NamespaceName;
 
 type ChangeMsg = (
     NamespaceName,
-    Arc<DatabaseConfig>,
+    Option<Arc<DatabaseConfig>>,
     oneshot::Sender<Result<()>>,
+    bool, // flush
 );
 type MetaStoreWalManager = WalWrapper<Option<BottomlessWalWrapper>, Sqlite3WalManager>;
 pub type MetaStoreConnection =
@@ -294,27 +295,43 @@ impl MetaStoreInner {
 /// Handles config change updates by inserting them into the database and in-memory
 /// cache of configs.
 fn process(msg: ChangeMsg, inner: Arc<Mutex<MetaStoreInner>>) {
-    let (namespace, config, ret_chan) = msg;
-
+    let (namespace, config, ret_chan, flush) = msg;
     let mut inner = inner.lock();
-    let ret = try_process(&mut *inner, &namespace, &config);
+    if let Some(config) = config {
+        let ret = if flush {
+            try_process(&mut *inner, &namespace, &config)
+        } else {
+            Ok(())
+        };
+        let configs = &mut inner.configs;
+        if let Some(config_watch) = configs.get_mut(&namespace) {
+            let new_version = config_watch.borrow().version.wrapping_add(1);
 
-    let configs = &mut inner.configs;
-    if let Some(config_watch) = configs.get_mut(&namespace) {
-        let new_version = config_watch.borrow().version.wrapping_add(1);
-
-        config_watch.send_modify(|c| {
-            *c = InnerConfig {
-                version: new_version,
-                config,
-            };
-        });
+            config_watch.send_modify(|c| {
+                *c = InnerConfig {
+                    version: new_version,
+                    config,
+                };
+            });
+        } else {
+            let (tx, _) = watch::channel(InnerConfig { version: 0, config });
+            configs.insert(namespace, tx);
+        }
+        let _ = ret_chan.send(ret);
     } else {
-        let (tx, _) = watch::channel(InnerConfig { version: 0, config });
-        configs.insert(namespace, tx);
+        let ret = if flush {
+            let configs = &mut inner.configs;
+            if let Some(config_watch) = configs.get_mut(&namespace) {
+                let config = config_watch.subscribe().borrow().clone();
+                try_process(&mut *inner, &namespace, &config.config)
+            } else {
+                Ok(())
+            }
+        } else {
+            Ok(())
+        };
+        let _ = ret_chan.send(ret);
     }
-
-    let _ = ret_chan.send(ret);
 }
 
 fn try_process(
@@ -557,30 +574,46 @@ impl MetaStoreHandle {
         }
     }
 
+    pub async fn flush(&self) -> Result<()> {
+        self.store_and_maybe_flush(None, true).await
+    }
+
     pub async fn store(&self, new_config: impl Into<Arc<DatabaseConfig>>) -> Result<()> {
+        self.store_and_maybe_flush(Some(new_config.into()), true)
+            .await
+    }
+
+    pub async fn store_and_maybe_flush(
+        &self,
+        new_config: Option<Arc<DatabaseConfig>>,
+        flush: bool,
+    ) -> Result<()> {
         match &self.inner {
             HandleState::Internal(config) => {
-                *config.lock() = new_config.into();
+                if let Some(c) = new_config {
+                    *config.lock() = c;
+                }
             }
             HandleState::External(changes_tx, config) => {
-                let new_config = new_config.into();
                 tracing::debug!(?new_config, "storing new namespace config");
                 let mut c = config.clone();
                 // ack the current value.
                 c.borrow_and_update();
                 let changed = c.changed();
+                let wait_for_change = new_config.is_some();
 
                 let (snd, rcv) = oneshot::channel();
                 changes_tx
-                    .send((self.namespace.clone(), new_config, snd))
+                    .send((self.namespace.clone(), new_config, snd, flush))
                     .await
                     .map_err(|e| Error::MetaStoreUpdateFailure(e.into()))?;
 
                 rcv.await??;
-                changed
-                    .await
-                    .map_err(|e| Error::MetaStoreUpdateFailure(e.into()))?;
-
+                if wait_for_change {
+                    changed
+                        .await
+                        .map_err(|e| Error::MetaStoreUpdateFailure(e.into()))?;
+                }
                 tracing::debug!("done storing new namespace config");
             }
         };

@@ -194,6 +194,7 @@ impl NamespaceStore {
         &self,
         from: NamespaceName,
         to: NamespaceName,
+        to_config: DatabaseConfig,
         timestamp: Option<NaiveDateTime>,
     ) -> crate::Result<()> {
         if self.inner.has_shutdown.load(Ordering::Relaxed) {
@@ -251,18 +252,22 @@ impl NamespaceStore {
             should_delete: true,
         };
 
+        let handle = self.inner.metadata.handle(to.clone());
+        handle
+            .store_and_maybe_flush(Some(to_config.into()), false)
+            .await?;
         let to_ns = Namespace::fork(
             &self.inner.config,
             from_ns,
             from_config,
             to.clone(),
-            self.inner.metadata.handle(to.clone()),
+            handle.clone(),
             timestamp,
         )
         .await?;
 
         to_lock.replace(to_ns);
-
+        handle.flush().await?;
         // defuse
         bomb.should_delete = false;
 
