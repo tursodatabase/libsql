@@ -573,10 +573,6 @@ impl Namespace {
                 } else {
                     None
                 };
-
-                // fork share config with original db
-                to_config.store(from_config).await?;
-
                 let fork_task = ForkTask {
                     base_path: ns_config.base_path.clone(),
                     to_namespace: to_ns,
