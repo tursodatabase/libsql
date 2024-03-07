@@ -543,7 +543,7 @@ mod test {
 
     // FIXME: lots of coupling here, there whoudl be an easier way to test this.
     #[tokio::test]
-    async fn writes_blocked_while_writing() {
+    async fn writes_blocked_while_performing_migration() {
         let tmp = tempdir().unwrap();
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let conn = maker().unwrap();
@@ -580,9 +580,12 @@ mod test {
             .await
             .unwrap();
 
-        let block_write = store
+        let (block_write, ns_conn_maker) = store
             .with("ns".into(), |ns| {
-                ns.db.as_primary().unwrap().block_writes.clone()
+                (
+                    ns.db.as_primary().unwrap().block_writes.clone(),
+                    ns.db.as_primary().unwrap().connection_maker(),
+                )
             })
             .await
             .unwrap();
@@ -608,7 +611,12 @@ mod test {
         // this is right before the task gets enqueued
         assert!(!block_write.load(std::sync::atomic::Ordering::Relaxed));
         // next step should enqueue the task
-        scheduler.step(&mut receiver).await;
+        let conn = ns_conn_maker.create().await.unwrap();
+
+        assert!(!block_write.load(std::sync::atomic::Ordering::Relaxed));
+        while conn.with_raw(|conn| !has_pending_migration_task(&conn).unwrap()) {
+            scheduler.step(&mut receiver).await;
+        }
         assert!(block_write.load(std::sync::atomic::Ordering::Relaxed));
 
         while scheduler.current_job.is_some() {
