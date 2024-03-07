@@ -1,5 +1,5 @@
 use hyper::StatusCode;
-use insta::assert_debug_snapshot;
+use insta::{assert_debug_snapshot, assert_json_snapshot};
 use libsql::Database;
 use serde_json::json;
 use tempfile::tempdir;
@@ -201,6 +201,89 @@ fn migration_contains_txn_statements() {
             .unwrap();
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
         assert_debug_snapshot!(resp.json_value().await.unwrap());
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn dry_run_failure() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(100000))
+        .build();
+    let tmp = tempdir().unwrap();
+    make_primary(&mut sim, tmp.path().to_path_buf());
+
+    sim.client("client", async {
+        let client = Client::new();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/schema/create",
+                json!({"shared_schema": true }),
+            )
+            .await
+            .unwrap();
+
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/ns1/create",
+                json!({"shared_schema_name": "schema" }),) .await .unwrap();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/ns2/create",
+                json!({"shared_schema_name": "schema" }),) .await .unwrap();
+
+        let schema_db = Database::open_remote_with_connector(
+            "http://schema.primary:8080",
+            String::new(),
+            TurmoilConnector,
+        )
+        .unwrap();
+        let schema_conn = schema_db.connect().unwrap();
+        let schema_version_before = get_schema_version(&schema_conn).await;
+        schema_conn
+            .execute_batch("create table test (c)")
+            .await
+            .unwrap();
+
+        while get_schema_version(&schema_conn).await == schema_version_before {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+
+        let ns1_db = Database::open_remote_with_connector(
+            "http://ns1.primary:8080",
+            String::new(),
+            TurmoilConnector,
+        )
+        .unwrap();
+        let ns1_conn = ns1_db.connect().unwrap();
+        ns1_conn.execute("insert into test values (NULL)", ()).await.unwrap();
+
+        // we are creating a new table with a constraint on the column. when the dry run is
+        // executed against the schema or ns2, it works, because test is empty there, but it should
+        // fail on ns1, because it test contains a row with NULL.
+        schema_conn
+            .execute_batch("create table test2 (c NOT NULL); insert into test2 select * from test")
+            .await
+            .unwrap();
+
+        loop {
+            let resp = client.get("http://primary:9090/v1/namespaces/schema/migrations/2").await.unwrap().json_value().await.unwrap();
+            if resp["status"].as_str().unwrap() == "RunFailure" {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+
+        let resp = client.get("http://primary:9090/v1/namespaces/schema/migrations/2").await.unwrap().json_value().await.unwrap();
+        assert_json_snapshot!(resp);
+
+        // all schemas are the same (test2 doesn't exist)
+        assert_debug_snapshot!(check_schema("ns1").await);
+        assert_debug_snapshot!(check_schema("ns2").await);
+        assert_debug_snapshot!(check_schema("schema").await);
 
         Ok(())
     });
