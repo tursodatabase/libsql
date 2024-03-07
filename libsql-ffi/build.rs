@@ -529,6 +529,16 @@ mod bindings {
         let host_arch = std::env::var("HOST").unwrap();
         let is_cross_compiling = target_arch != host_arch;
 
+        if !cfg!(feature = "wasmtime-bindings") {
+            bindings = bindings
+                .blocklist_function("run_wasm")
+                .blocklist_function("libsql_run_wasm")
+                .blocklist_function("libsql_wasm_engine_new")
+                .blocklist_function("libsql_compile_wasm_module")
+                .blocklist_function("libsql_free_wasm_module")
+                .blocklist_function("libsql_wasm_engine_free");
+        }
+
         // Note that when generating the bundled file, we're essentially always
         // cross compiling.
         if generating_bundled_bindings() || is_cross_compiling {
