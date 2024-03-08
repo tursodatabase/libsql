@@ -28,6 +28,12 @@ expression: stmt.query(()).unwrap().next().unwrap().unwrap()
         0,
     ),
     Ok(
+        "error",
+    ): (
+        Null,
+        (),
+    ),
+    Ok(
         "finished",
     ): (
         Integer,

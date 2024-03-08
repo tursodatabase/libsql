@@ -33,4 +33,10 @@ expression: rows.next().unwrap().unwrap()
         Null,
         (),
     ),
+    Ok(
+        "finished",
+    ): (
+        Integer,
+        0,
+    ),
 }

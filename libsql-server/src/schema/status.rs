@@ -37,6 +37,8 @@ pub struct MigrationJob {
     pub(super) job_id: i64,
     pub(super) migration: Arc<Program>,
     pub(super) progress: [usize; MigrationTaskStatus::num_variants()],
+    /// error info for the task that failed the job
+    pub(super) task_error: Option<(i64, String, NamespaceName)>,
 }
 
 impl MigrationJob {
@@ -88,7 +90,9 @@ impl MigrationJob {
                     + self.progress(MigrationTaskStatus::Run)
             }
             MigrationJobStatus::DryRunSuccess => 0,
-            MigrationJobStatus::DryRunFailure => 0,
+            MigrationJobStatus::DryRunFailure => {
+                self.progress.iter().sum::<usize>() - self.progress(MigrationTaskStatus::Failure)
+            }
             MigrationJobStatus::RunSuccess => 0,
             MigrationJobStatus::RunFailure => 0,
             MigrationJobStatus::WaitingTransition => 0,
@@ -221,6 +225,14 @@ impl MigrationJobStatus {
     pub fn is_dry_run_success(&self) -> bool {
         matches!(self, Self::DryRunSuccess)
     }
+
+    /// Returns `true` if the migration job status is [`DryRunFailure`].
+    ///
+    /// [`DryRunFailure`]: MigrationJobStatus::DryRunFailure
+    #[must_use]
+    pub fn is_dry_run_failure(&self) -> bool {
+        matches!(self, Self::DryRunFailure)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -238,7 +250,9 @@ pub struct MigrationJobSummary {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MigrationDetails {
     pub job_id: u64,
-    pub status: Option<MigrationJobStatus>,
+    pub status: MigrationJobStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
     pub progress: Vec<MigrationJobProgress>,
 }
 

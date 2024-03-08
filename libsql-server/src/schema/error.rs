@@ -23,6 +23,8 @@ pub enum Error {
     MigrationError(usize, String),
     #[error("migration is invalid: it contains transaction items (BEGIN, COMMIT, SAVEPOINT...) which are not allowed. The migration is already run within a transaction")]
     MigrationContainsTransactionStatements,
+    #[error("an error occured while backing up the meta store")]
+    MetaStoreBackupFailure,
 }
 
 impl ResponseError for Error {}
