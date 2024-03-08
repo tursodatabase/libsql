@@ -1,6 +1,6 @@
 use hyper::StatusCode;
 use insta::assert_debug_snapshot;
-use libsql::{Connection, Database};
+use libsql::Database;
 use serde_json::json;
 use tempfile::tempdir;
 use tokio::time::Duration;
@@ -10,7 +10,22 @@ use crate::common::{http::Client, net::TurmoilConnector};
 
 use super::make_primary;
 
-async fn get_schema_version(conn: &Connection) -> i64 {
+macro_rules! assert_all_eq {
+    ($first:expr, $( $rest:expr ),+ $(,)?) => {
+        $(
+            assert_eq!($first, $rest);
+        )+
+    };
+}
+
+async fn get_schema_version(ns: &str) -> i64 {
+    let db = Database::open_remote_with_connector(
+        format!("http://{ns}.primary:8080"),
+        String::new(),
+        TurmoilConnector,
+    )
+    .unwrap();
+    let conn = db.connect().unwrap();
     let mut rows = conn.query("PRAGMA schema_version", ()).await.unwrap();
     rows.next().await.unwrap().unwrap().get::<i64>(0).unwrap()
 }
@@ -72,14 +87,14 @@ fn perform_schema_migration() {
             TurmoilConnector,
         )
         .unwrap();
+        let schema_version_before = get_schema_version("schema").await;
         let schema_conn = schema_db.connect().unwrap();
-        let schema_version_before = get_schema_version(&schema_conn).await;
         schema_conn
             .execute("create table test (c)", ())
             .await
             .unwrap();
 
-        while get_schema_version(&schema_conn).await == schema_version_before {
+        while get_schema_version("schema").await == schema_version_before {
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
 
@@ -87,6 +102,10 @@ fn perform_schema_migration() {
         assert_debug_snapshot!(check_schema("ns1").await);
         assert_debug_snapshot!(check_schema("ns2").await);
         assert_debug_snapshot!(check_schema("schema").await);
+
+        // check all schema versions are same as primary schema db
+        let expected_schema_version = 1;
+        assert_all_eq!(expected_schema_version, get_schema_version("schema").await, get_schema_version("ns1").await, get_schema_version("ns2").await);
 
         let resp = http_get("http://primary:9090/v1/namespaces/schema/migrations").await;
         assert_eq!(
