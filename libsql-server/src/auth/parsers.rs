@@ -42,7 +42,7 @@ pub(crate) fn parse_grpc_auth_header(
     return metadata
         .get(GRPC_AUTH_HEADER)
         .ok_or(AuthError::AuthHeaderNotFound)
-        .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii)) // this never happens, guaranteed at type level
+        .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
         .and_then(|t| UserAuthContext::from_auth_str(t))
         .map_err(|e| {
             tonic::Status::new(
@@ -101,6 +101,17 @@ mod tests {
             result.unwrap_err().message(),
             "Failed parse grpc auth: Expected authorization header but none given"
         );
+    }
+
+    #[test]
+    fn parse_grpc_auth_header_error_non_ascii() {
+        let mut map = tonic::metadata::MetadataMap::new();
+        map.insert("x-authorization", "bearer I❤NY".parse().unwrap());
+        let result = parse_grpc_auth_header(&map);
+        assert_eq!(
+            result.unwrap_err().message(),
+            "Failed parse grpc auth: Non-ASCII auth header"
+        )
     }
 
     #[test]
