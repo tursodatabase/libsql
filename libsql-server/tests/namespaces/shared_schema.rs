@@ -47,6 +47,22 @@ async fn check_schema(ns: &str) -> Vec<String> {
     out
 }
 
+async fn check_data(ns: &str) -> Vec<String> {
+    let db = Database::open_remote_with_connector(
+        format!("http://{ns}.primary:8080"),
+        String::new(),
+        TurmoilConnector,
+    )
+    .unwrap();
+    let conn = db.connect().unwrap();
+    let mut rows = conn.query("SELECT * from test", ()).await.unwrap();
+    let mut out = Vec::new();
+    while let Some(row) = rows.next().await.unwrap() {
+        out.push(format!("{row:?}"));
+    }
+    out
+}
+
 async fn http_get(url: &str) -> String {
     let client = Client::new();
     client.get(url).await.unwrap().body_string().await.unwrap()
@@ -336,6 +352,242 @@ fn dry_run_failure() {
         assert_debug_snapshot!(check_schema("ns1").await);
         assert_debug_snapshot!(check_schema("ns2").await);
         assert_debug_snapshot!(check_schema("schema").await);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn perform_data_migration() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(100000))
+        .build();
+    let tmp = tempdir().unwrap();
+    make_primary(&mut sim, tmp.path().to_path_buf());
+
+    sim.client("client", async {
+        let client = Client::new();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/schema/create",
+                json!({"shared_schema": true }),
+            )
+            .await
+            .unwrap();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/ns1/create",
+                json!({"shared_schema_name": "schema" }),
+            )
+            .await
+            .unwrap();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/ns2/create",
+                json!({"shared_schema_name": "schema" }),
+            )
+            .await
+            .unwrap();
+
+        let schema_db = Database::open_remote_with_connector(
+            "http://schema.primary:8080",
+            String::new(),
+            TurmoilConnector,
+        )
+        .unwrap();
+        let schema_version_before = get_schema_version("schema").await;
+        let schema_conn = schema_db.connect().unwrap();
+        schema_conn
+            .execute("create table test (c)", ())
+            .await
+            .unwrap();
+        schema_conn
+            .execute("insert into test values (42)", ())
+            .await
+            .unwrap();
+
+        while get_schema_version("schema").await == schema_version_before {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+
+        let get_row = |ns: String| async move {
+            let db = Database::open_remote_with_connector(
+                format!("http://{ns}.primary:8080"),
+                String::new(),
+                TurmoilConnector,
+            )
+            .unwrap();
+            let conn = db.connect().unwrap();
+            let mut rows = conn.query("SELECT * from test", ()).await.unwrap();
+            rows.next().await.unwrap().unwrap().get::<i64>(0).unwrap()
+        };
+
+        assert_all_eq!(
+            42,
+            get_row("ns1".to_string()).await,
+            get_row("ns2".to_string()).await,
+            get_row("schema".to_string()).await
+        );
+
+        // new db added to the linked schema also should have the data
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/ns3/create",
+                json!({"shared_schema_name": "schema" }),
+            )
+            .await
+            .unwrap();
+        assert_eq!(42, get_row("ns3".to_string()).await);
+
+        // new insertions in the schema db should be propagated to all
+        schema_conn
+            .execute("insert into test values (43)", ())
+            .await
+            .unwrap();
+        assert_debug_snapshot!(check_data("ns1").await);
+        assert_debug_snapshot!(check_data("ns2").await);
+        assert_debug_snapshot!(check_data("ns3").await);
+        assert_debug_snapshot!(check_data("schema").await);
+
+        // updates and deletes should be propagated
+        schema_conn
+            .execute("update test set c = 50 where c = 42", ())
+            .await
+            .unwrap();
+        schema_conn
+            .execute("delete from test where c = 43", ())
+            .await
+            .unwrap();
+
+        let get_row = |ns: String| async move {
+            let db = Database::open_remote_with_connector(
+                format!("http://{ns}.primary:8080"),
+                String::new(),
+                TurmoilConnector,
+            )
+            .unwrap();
+            let conn = db.connect().unwrap();
+            let mut rows = conn.query("SELECT * from test", ()).await.unwrap();
+            rows.next().await.unwrap().unwrap().get::<i64>(0).unwrap()
+        };
+
+        assert_all_eq!(
+            50,
+            get_row("ns1".to_string()).await,
+            get_row("ns2".to_string()).await,
+            get_row("ns3".to_string()).await,
+            get_row("schema".to_string()).await
+        );
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn conflicting_data_migration() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(100000))
+        .build();
+    let tmp = tempdir().unwrap();
+    make_primary(&mut sim, tmp.path().to_path_buf());
+
+    sim.client("client", async {
+        let client = Client::new();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/schema/create",
+                json!({"shared_schema": true }),
+            )
+            .await
+            .unwrap();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/ns1/create",
+                json!({"shared_schema_name": "schema" }),
+            )
+            .await
+            .unwrap();
+
+        let schema_conn = Database::open_remote_with_connector(
+            "http://schema.primary:8080",
+            String::new(),
+            TurmoilConnector,
+        )
+        .unwrap()
+        .connect()
+        .unwrap();
+        let schema_version_before = get_schema_version("schema").await;
+        schema_conn
+            .execute("create table test (c)", ())
+            .await
+            .unwrap();
+        schema_conn
+            .execute("insert into test values (42)", ())
+            .await
+            .unwrap();
+
+        while get_schema_version("schema").await == schema_version_before {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+
+        assert_debug_snapshot!(check_data("ns1").await);
+        assert_debug_snapshot!(check_data("schema").await);
+
+        let ns1_conn = Database::open_remote_with_connector(
+            "http://ns1.primary:8080",
+            String::new(),
+            TurmoilConnector,
+        )
+        .unwrap()
+        .connect()
+        .unwrap();
+
+        // insert some data and try to create a conflicting index
+        ns1_conn
+            .execute("insert into test values (42)", ())
+            .await
+            .unwrap();
+
+        // create unique index on the column
+        schema_conn
+            .execute("create unique index idx on test (c)", ())
+            .await
+            .unwrap();
+
+        loop {
+            let resp = client
+                .get("http://primary:9090/v1/namespaces/schema/migrations/3")
+                .await
+                .unwrap()
+                .json_value()
+                .await
+                .unwrap();
+            if resp["status"].as_str().unwrap() == "RunFailure" {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+
+        let resp = client
+            .get("http://primary:9090/v1/namespaces/schema/migrations/3")
+            .await
+            .unwrap()
+            .json_value()
+            .await
+            .unwrap();
+        assert_json_snapshot!(resp);
+
+        // query if ns1 has zero index
+        let mut rows = ns1_conn
+            .query("select count(*) from sqlite_schema where type='index'", ())
+            .await
+            .unwrap();
+        let c = rows.next().await.unwrap().unwrap().get::<i64>(0).unwrap();
+        assert_eq!(c, 0);
 
         Ok(())
     });
