@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Weak};
 
-use anyhow::Context as _;
+use anyhow::{Context as _, Error};
 use bottomless::replicator::Options;
 use bytes::Bytes;
 use chrono::NaiveDateTime;
@@ -570,16 +570,21 @@ impl Namespace {
                 } else {
                     None
                 };
+
+                let logger = match &from_ns.db {
+                    Database::Primary(db) => db.wal_manager.wrapped().logger(),
+                    Database::Schema(db) => db.wal_manager.wrapped().logger(),
+                    _ => {
+                        return Err(crate::Error::Fork(ForkError::Internal(Error::msg(
+                            "Invalid source database type for fork",
+                        ))));
+                    }
+                };
+
                 let fork_task = ForkTask {
                     base_path: ns_config.base_path.clone(),
                     to_namespace: to_ns,
-                    logger: from_ns
-                        .db
-                        .as_primary()
-                        .unwrap()
-                        .wal_manager
-                        .wrapped()
-                        .logger(),
+                    logger,
                     restore_to,
                     bottomless_db_id,
                     to_config,
