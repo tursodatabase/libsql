@@ -27,7 +27,7 @@ pub struct StatsResponse {
     pub slowest_queries: Vec<SlowestQuery>,
     pub embedded_replica_frames_replicated: u64,
     pub query_count: u64,
-    pub elapsed_ms: u64,
+    pub elapsed_ms: f64,
     pub queries: Option<QueriesStatsResponse>,
 }
 
@@ -42,7 +42,7 @@ impl From<&Stats> for StatsResponse {
             replication_index: stats.get_current_frame_no(),
             embedded_replica_frames_replicated: stats.get_embedded_replica_frames_replicated(),
             query_count: stats.get_query_count(),
-            elapsed_ms: stats.get_query_latency(),
+            elapsed_ms: stats.get_query_latency() as f64 / 1_000.0,
             top_queries: stats
                 .top_queries()
                 .read()
@@ -70,25 +70,25 @@ impl From<Stats> for StatsResponse {
 
 #[derive(Serialize, Default)]
 pub struct QueriesLatencyStats {
-    pub sum: u64,
-    pub p50: u64,
-    pub p75: u64,
-    pub p90: u64,
-    pub p95: u64,
-    pub p99: u64,
-    pub p999: u64,
+    pub sum: f64,
+    pub p50: f64,
+    pub p75: f64,
+    pub p90: f64,
+    pub p95: f64,
+    pub p99: f64,
+    pub p999: f64,
 }
 
 impl QueriesLatencyStats {
     fn from(hist: &Histogram<u32>, sum: &Duration) -> Self {
         QueriesLatencyStats {
-            sum: sum.as_millis() as u64,
-            p50: hist.value_at_percentile(50.0),
-            p75: hist.value_at_percentile(75.0),
-            p90: hist.value_at_percentile(90.0),
-            p95: hist.value_at_percentile(95.0),
-            p99: hist.value_at_percentile(99.0),
-            p999: hist.value_at_percentile(99.9),
+            sum: sum.as_micros() as f64 / 1000.0,
+            p50: hist.value_at_percentile(50.0) as f64 / 1000.0,
+            p75: hist.value_at_percentile(75.0) as f64 / 1000.0,
+            p90: hist.value_at_percentile(90.0) as f64 / 1000.0,
+            p95: hist.value_at_percentile(95.0) as f64 / 1000.0,
+            p99: hist.value_at_percentile(99.0) as f64 / 1000.0,
+            p999: hist.value_at_percentile(99.9) as f64 / 1000.0,
         }
     }
 }
@@ -119,7 +119,7 @@ impl From<&Stats> for Option<QueriesStatsResponse> {
                     .iter()
                     .map(|(k, v)| QueryAndStats {
                         query: k.clone(),
-                        elapsed_ms: v.elapsed.as_millis() as u64,
+                        elapsed_ms: v.elapsed.as_micros() as f64 / 1000.0,
                         stat: v.clone(),
                     })
                     .collect_vec(),
@@ -131,7 +131,7 @@ impl From<&Stats> for Option<QueriesStatsResponse> {
 #[derive(Serialize)]
 pub struct QueryAndStats {
     pub query: String,
-    pub elapsed_ms: u64,
+    pub elapsed_ms: f64,
     #[serde(flatten)]
     pub stat: QueryStats,
 }
