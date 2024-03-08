@@ -1,6 +1,8 @@
 use std::fmt;
 use std::sync::Arc;
 
+use bottomless::SavepointTracker;
+
 use crate::connection::{MakeConnection, RequestContext};
 
 pub use self::primary::{PrimaryConnection, PrimaryConnectionMaker, PrimaryDatabase};
@@ -189,6 +191,14 @@ impl Database {
             Some(v)
         } else {
             None
+        }
+    }
+
+    pub(crate) fn backup_savepoint(&self) -> Option<SavepointTracker> {
+        match self {
+            Database::Primary(db) => db.backup_savepoint(),
+            Database::Replica(_) => None,
+            Database::Schema(db) => db.backup_savepoint(),
         }
     }
 }

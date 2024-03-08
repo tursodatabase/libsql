@@ -28,6 +28,10 @@ impl MigrationTask {
     pub(crate) fn status_mut(&mut self) -> &mut MigrationTaskStatus {
         &mut self.status
     }
+
+    pub fn task_id(&self) -> i64 {
+        self.task_id
+    }
 }
 
 #[derive(Debug, Clone)]
