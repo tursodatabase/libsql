@@ -42,7 +42,7 @@ pub(crate) fn parse_grpc_auth_header(
     return metadata
         .get(GRPC_AUTH_HEADER)
         .ok_or(AuthError::AuthHeaderNotFound)
-        .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii)) // this never happens, guaranteed at type level
+        .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
         .and_then(|t| UserAuthContext::from_auth_str(t))
         .map_err(|e| {
             tonic::Status::new(
@@ -85,7 +85,7 @@ mod tests {
     use super::{parse_grpc_auth_header, parse_http_basic_auth_arg};
 
     #[test]
-    fn parse_grpc_auth_header_returns_valid_context(){
+    fn parse_grpc_auth_header_returns_valid_context() {
         let mut map = tonic::metadata::MetadataMap::new();
         map.insert("x-authorization", "bearer 123".parse().unwrap());
         let context = parse_grpc_auth_header(&map).unwrap();
@@ -93,20 +93,36 @@ mod tests {
         assert_eq!(context.token().as_ref().unwrap(), "123");
     }
 
-
     #[test]
-    fn parse_grpc_auth_header_error_no_header(){
+    fn parse_grpc_auth_header_error_no_header() {
         let map = tonic::metadata::MetadataMap::new();
         let result = parse_grpc_auth_header(&map);
-        assert_eq!(result.unwrap_err().message(), "Failed parse grpc auth: Expected authorization header but none given");
+        assert_eq!(
+            result.unwrap_err().message(),
+            "Failed parse grpc auth: Expected authorization header but none given"
+        );
     }
 
     #[test]
-    fn parse_grpc_auth_header_error_malformed_auth_str(){
+    fn parse_grpc_auth_header_error_non_ascii() {
+        let mut map = tonic::metadata::MetadataMap::new();
+        map.insert("x-authorization", "bearer I❤NY".parse().unwrap());
+        let result = parse_grpc_auth_header(&map);
+        assert_eq!(
+            result.unwrap_err().message(),
+            "Failed parse grpc auth: Non-ASCII auth header"
+        )
+    }
+
+    #[test]
+    fn parse_grpc_auth_header_error_malformed_auth_str() {
         let mut map = tonic::metadata::MetadataMap::new();
         map.insert("x-authorization", "bearer123".parse().unwrap());
         let result = parse_grpc_auth_header(&map);
-        assert_eq!(result.unwrap_err().message(), "Failed parse grpc auth: Auth string does not conform to '<scheme> <token>' form")
+        assert_eq!(
+            result.unwrap_err().message(),
+            "Failed parse grpc auth: Auth string does not conform to '<scheme> <token>' form"
+        )
     }
 
     #[test]
