@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 use futures_core::future::BoxFuture;
@@ -70,6 +71,7 @@ impl MakeWriteProxyConn {
             DEFAULT_AUTO_CHECKPOINT,
             applied_frame_no_receiver.clone(),
             encryption_config.clone(),
+            Arc::new(AtomicBool::new(false)), // this is always false for write proxy
         )
         .await?;
 

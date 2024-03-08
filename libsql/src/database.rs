@@ -259,7 +259,7 @@ cfg_replication! {
             version: Option<String>,
             read_your_writes: bool,
             encryption_config: Option<EncryptionConfig>,
-            periodic_sync: Option<std::time::Duration>,
+            sync_interval: Option<std::time::Duration>,
         ) -> Result<Database> {
             let https = connector();
 
@@ -271,7 +271,7 @@ cfg_replication! {
                 version,
                 read_your_writes,
                 encryption_config,
-                periodic_sync
+                sync_interval
             ).await
         }
 
@@ -284,7 +284,7 @@ cfg_replication! {
             version: Option<String>,
             read_your_writes: bool,
             encryption_config: Option<EncryptionConfig>,
-            periodic_sync: Option<std::time::Duration>,
+            sync_interval: Option<std::time::Duration>,
         ) -> Result<Database>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
@@ -308,7 +308,7 @@ cfg_replication! {
                 version,
                 read_your_writes,
                 encryption_config.clone(),
-                periodic_sync,
+                sync_interval,
                 None
             ).await?;
 
@@ -591,4 +591,10 @@ fn connector() -> hyper_rustls::HttpsConnector<hyper::client::HttpConnector> {
         .https_or_http()
         .enable_http1()
         .wrap_connector(http)
+}
+
+impl std::fmt::Debug for Database {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Database").finish()
+    }
 }

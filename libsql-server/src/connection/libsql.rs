@@ -1,6 +1,7 @@
 use std::ffi::{c_int, c_void};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
@@ -45,6 +46,7 @@ pub struct MakeLibSqlConn<T: WalManager> {
     /// return sqlite busy. To mitigate that, we hold on to one connection
     _db: Option<LibSqlConnection<T::Wal>>,
     encryption_config: Option<EncryptionConfig>,
+    block_writes: Arc<AtomicBool>,
 }
 
 impl<T> MakeLibSqlConn<T>
@@ -64,6 +66,7 @@ where
         auto_checkpoint: u32,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         encryption_config: Option<EncryptionConfig>,
+        block_writes: Arc<AtomicBool>,
     ) -> Result<Self> {
         let mut this = Self {
             db_path,
@@ -78,6 +81,7 @@ where
             state: Default::default(),
             wal_manager,
             encryption_config,
+            block_writes,
         };
 
         let db = this.try_create_db().await?;
@@ -130,6 +134,7 @@ where
             },
             self.current_frame_no_receiver.clone(),
             self.state.clone(),
+            self.block_writes.clone(),
         )
         .await
     }
@@ -289,6 +294,7 @@ where
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
+        block_writes: Arc<AtomicBool>,
     ) -> crate::Result<Self>
     where
         T: WalManager<Wal = W> + Send + 'static,
@@ -303,6 +309,7 @@ where
                 builder_config,
                 current_frame_no_receiver,
                 state,
+                block_writes,
             )?;
             let namespace = path
                 .as_ref()
@@ -359,6 +366,7 @@ impl LibSqlConnection<libsql_sys::wal::Sqlite3Wal> {
             QueryBuilderConfig::default(),
             rcv,
             Default::default(),
+            Default::default(),
         )
         .unwrap();
 
@@ -378,6 +386,7 @@ struct Connection<T> {
     state: Arc<TxnState<T>>,
     // current txn slot if any
     slot: Option<Arc<TxnSlot<T>>>,
+    block_writes: Arc<AtomicBool>,
 }
 
 impl<T> std::fmt::Debug for Connection<T> {
@@ -574,6 +583,7 @@ impl<W: Wal> Connection<W> {
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
+        block_writes: Arc<AtomicBool>,
     ) -> Result<Self> {
         let conn = open_conn_active_checkpoint(
             path,
@@ -603,6 +613,7 @@ impl<W: Wal> Connection<W> {
             current_frame_no_receiver,
             state,
             slot: None,
+            block_writes,
         };
 
         for ext in extensions.iter() {
@@ -624,21 +635,20 @@ impl<W: Wal> Connection<W> {
         pgm: Program,
         mut builder: B,
     ) -> Result<B> {
-        let (config, stats) = {
+        let (config, stats, block_writes, previous_state) = {
             let lock = this.lock();
             let config = lock.config_store.get();
             let stats = lock.stats.clone();
+            let block_writes = lock.block_writes.clone();
+            let previous_state = lock.conn.transaction_state(Some(DatabaseName::Main));
 
-            (config, stats)
+            (config, stats, block_writes, previous_state)
         };
 
         let txn_timeout = config.txn_timeout.unwrap_or(TXN_TIMEOUT);
 
         builder.init(&this.lock().builder_config)?;
-        let mut previous_state = this
-            .lock()
-            .conn
-            .transaction_state(Some(DatabaseName::Main))?;
+        let mut previous_state = previous_state?;
 
         let mut vm = Vm::new(
             builder,
@@ -646,7 +656,11 @@ impl<W: Wal> Connection<W> {
             move |stmt_kind| {
                 let should_block = match stmt_kind {
                     StmtKind::Read | StmtKind::TxnBegin => config.block_reads,
-                    StmtKind::Write => config.block_reads || config.block_writes,
+                    StmtKind::Write => {
+                        config.block_reads
+                            || config.block_writes
+                            || block_writes.load(Ordering::SeqCst)
+                    }
                     StmtKind::DDL => {
                         config.block_reads || config.block_writes || config.block_ddl()
                     }
@@ -945,7 +959,7 @@ mod test {
 
     use crate::auth::Authenticated;
     use crate::connection::Connection as _;
-    use crate::namespace::meta_store::MetaStore;
+    use crate::namespace::meta_store::{metastore_connection_maker, MetaStore};
     use crate::namespace::NamespaceName;
     use crate::query_result_builder::test::{test_driver, TestBuilder};
     use crate::query_result_builder::QueryResultBuilder;
@@ -962,6 +976,7 @@ mod test {
             current_frame_no_receiver: watch::channel(None).1,
             state: Default::default(),
             slot: None,
+            block_writes: Default::default(),
         };
 
         let conn = Arc::new(Mutex::new(conn));
@@ -996,6 +1011,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            Default::default(),
         )
         .await
         .unwrap();
@@ -1038,6 +1054,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            Default::default(),
         )
         .await
         .unwrap();
@@ -1085,6 +1102,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            Default::default(),
         )
         .await
         .unwrap();
@@ -1164,15 +1182,17 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            Default::default(),
         )
         .await
         .unwrap();
 
         let conn = make_conn.make_connection().await.unwrap();
+        let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path())
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
                 .await
                 .unwrap(),
         );

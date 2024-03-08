@@ -87,6 +87,7 @@ impl<'a> From<&'a rusqlite::Column<'a>> for Column<'a> {
 pub struct QueryBuilderConfig {
     pub max_size: Option<u64>,
     pub max_total_size: Option<u64>,
+    // FIXME: this has absolutely nothing to do here.
     pub auto_checkpoint: u32,
     pub encryption_config: Option<EncryptionConfig>,
 }

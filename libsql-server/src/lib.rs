@@ -9,6 +9,7 @@ use crate::database::DatabaseKind;
 use crate::error::Error;
 use crate::metrics::DIRTY_STARTUP;
 use crate::migration::maybe_migrate;
+use crate::namespace::meta_store::{metastore_connection_maker, MetaStore};
 use crate::net::Accept;
 use crate::pager::{make_pager, PAGER_CACHE_SIZE};
 use crate::rpc::proxy::rpc::proxy_server::Proxy;
@@ -454,17 +455,28 @@ where
             migration_scheduler: scheduler_sender.into(),
         };
 
+        let (metastore_conn_maker, meta_store_wal_manager) =
+            metastore_connection_maker(self.meta_store_config.bottomless.clone(), &self.path)
+                .await?;
+        let meta_conn = metastore_conn_maker()?;
+        let meta_store = MetaStore::new(
+            self.meta_store_config.clone(),
+            &self.path,
+            meta_conn,
+            meta_store_wal_manager,
+        )
+        .await?;
         let namespace_store: NamespaceStore = NamespaceStore::new(
             db_kind.is_replica(),
             self.db_config.snapshot_at_shutdown,
             self.max_active_namespaces,
-            &self.path,
-            self.meta_store_config.clone(),
             ns_config,
+            meta_store,
         )
         .await?;
 
-        let scheduler = Scheduler::new(namespace_store.clone());
+        let meta_conn = metastore_conn_maker()?;
+        let scheduler = Scheduler::new(namespace_store.clone(), meta_conn)?;
 
         join_set.spawn(async move {
             scheduler.run(scheduler_receiver).await;

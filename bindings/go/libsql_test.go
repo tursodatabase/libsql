@@ -459,7 +459,7 @@ func testSync(t *testing.T, connect func(dbPath, primaryUrl, authToken string) *
 func TestAutoSync(t *testing.T) {
 	syncInterval := 1 * time.Second
 	testSync(t, func(dbPath, primaryUrl, authToken string) *Connector {
-		options := []Option{WithReadYourWrites(false), WithAutoSync(syncInterval)}
+		options := []Option{WithReadYourWrites(false), WithSyncInterval(syncInterval)}
 		if authToken != "" {
 			options = append(options, WithAuthToken(authToken))
 		}

@@ -27,6 +27,10 @@ pub enum Error {
     FailedToCommit(std::io::Error),
     #[error("Invalid replication path")]
     InvalidReplicationPath,
+    #[error(
+        "Can not sync a database without a wal_index, please delete the database and attempt again"
+    )]
+    RequiresCleanDatabase,
 }
 
 #[repr(C)]
@@ -85,6 +89,13 @@ impl WalIndexMeta {
         let wal_index_file = format!("{}-client_wal_index", file_name.to_str().unwrap());
 
         let path = db_path.with_file_name(wal_index_file);
+
+        // If there is no database or there exists a database AND a wal index file
+        // then allow the embedded replica to be created. If Neither of those conditions are met
+        // for example a database without a index file then we throw this error.
+        if !(!db_path.exists() || path.exists()) {
+            return Err(Error::RequiresCleanDatabase);
+        }
 
         let mut file = tokio::fs::OpenOptions::new()
             .create(true)

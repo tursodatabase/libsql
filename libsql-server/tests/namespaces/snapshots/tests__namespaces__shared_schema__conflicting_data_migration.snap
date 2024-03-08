@@ -1,0 +1,7 @@
+---
+source: libsql-server/tests/namespaces/shared_schema.rs
+expression: "check_data(\"ns1\").await"
+---
+[
+    "Row { cols: [Col { name: Some(\"c\"), decltype: None }], inner: [Integer { value: 42 }] }",
+]

@@ -29,16 +29,29 @@
 //! manner as the dry-run, except for the fact that the migration is actually committed.
 //! - If all tasks are successfull, then the scheduler performs the migration on the schema, and
 //! update the job's state to it's final state, `RunSuccess`.
+pub(crate) mod db;
 mod error;
 mod handle;
 mod message;
 mod migration;
+mod result_builder;
 mod scheduler;
 mod status;
 
+pub use db::{get_migration_details, get_migrations_summary};
 pub use error::Error;
 pub use handle::SchedulerHandle;
 pub use message::SchedulerMessage;
 pub use migration::*;
 pub use scheduler::Scheduler;
-pub use status::{MigrationJobStatus, MigrationTaskStatus};
+pub use status::{MigrationDetails, MigrationJobStatus, MigrationSummary, MigrationTaskStatus};
+
+use crate::connection::program::Program;
+
+pub fn validate_migration(migration: &Program) -> Result<(), Error> {
+    if migration.steps().iter().any(|s| s.query.stmt.kind.is_txn()) {
+        Err(Error::MigrationContainsTransactionStatements)
+    } else {
+        Ok(())
+    }
+}

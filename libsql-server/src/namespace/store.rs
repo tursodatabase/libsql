@@ -1,4 +1,3 @@
-use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -9,7 +8,6 @@ use moka::future::Cache;
 use tokio::time::{Duration, Instant};
 
 use crate::auth::Authenticated;
-use crate::config::MetaStoreConfig;
 use crate::connection::config::DatabaseConfig;
 use crate::error::Error;
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
@@ -48,11 +46,9 @@ impl NamespaceStore {
         allow_lazy_creation: bool,
         snapshot_at_shutdown: bool,
         max_active_namespaces: usize,
-        base_path: &Path,
-        meta_store_config: MetaStoreConfig,
         config: NamespaceConfig,
+        metadata: MetaStore,
     ) -> crate::Result<Self> {
-        let metadata = MetaStore::new(meta_store_config, base_path).await?;
         tracing::trace!("Max active namespaces: {max_active_namespaces}");
         let store = Cache::<NamespaceName, NamespaceEntry>::builder()
             .async_eviction_listener(move |name, ns, cause| {
@@ -198,6 +194,7 @@ impl NamespaceStore {
         &self,
         from: NamespaceName,
         to: NamespaceName,
+        to_config: DatabaseConfig,
         timestamp: Option<NaiveDateTime>,
     ) -> crate::Result<()> {
         if self.inner.has_shutdown.load(Ordering::Relaxed) {
@@ -255,18 +252,22 @@ impl NamespaceStore {
             should_delete: true,
         };
 
+        let handle = self.inner.metadata.handle(to.clone());
+        handle
+            .store_and_maybe_flush(Some(to_config.into()), false)
+            .await?;
         let to_ns = Namespace::fork(
             &self.inner.config,
             from_ns,
             from_config,
             to.clone(),
-            self.inner.metadata.handle(to.clone()),
+            handle.clone(),
             timestamp,
         )
         .await?;
 
         to_lock.replace(to_ns);
-
+        handle.flush().await?;
         // defuse
         bomb.should_delete = false;
 
@@ -365,6 +366,12 @@ impl NamespaceStore {
         restore_option: RestoreOption,
         db_config: DatabaseConfig,
     ) -> crate::Result<()> {
+        if let Some(shared_schema_name) = &db_config.shared_schema_name {
+            return self
+                .fork(shared_schema_name.clone(), namespace, db_config, None)
+                .await;
+        };
+
         // With namespaces disabled, the default namespace can be auto-created,
         // otherwise it's an error.
         // FIXME: move the default namespace check out of this function.

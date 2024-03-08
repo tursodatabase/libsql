@@ -339,6 +339,11 @@ fn build_multiple_ciphers(out_path: &Path) {
     cmake_opts.push("-DSQLITE_USE_URI=ON");
     cmake_opts.push("-DCMAKE_POSITION_INDEPENDENT_CODE=ON");
 
+    if cargo_build_target.contains("musl") {
+        cmake_opts.push("-DCMAKE_C_FLAGS=\"-U_FORTIFY_SOURCE\"");
+        cmake_opts.push("-DCMAKE_CXX_FLAGS=\"-U_FORTIFY_SOURCE\"");
+    }
+
     let mut cmake = Command::new("cmake");
     cmake.current_dir("bundled/SQLite3MultipleCiphers/build");
     cmake.args(cmake_opts.clone());
@@ -523,6 +528,16 @@ mod bindings {
         let target_arch = std::env::var("TARGET").unwrap();
         let host_arch = std::env::var("HOST").unwrap();
         let is_cross_compiling = target_arch != host_arch;
+
+        if !cfg!(feature = "wasmtime-bindings") {
+            bindings = bindings
+                .blocklist_function("run_wasm")
+                .blocklist_function("libsql_run_wasm")
+                .blocklist_function("libsql_wasm_engine_new")
+                .blocklist_function("libsql_compile_wasm_module")
+                .blocklist_function("libsql_free_wasm_module")
+                .blocklist_function("libsql_wasm_engine_free");
+        }
 
         // Note that when generating the bundled file, we're essentially always
         // cross compiling.

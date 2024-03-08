@@ -17,6 +17,12 @@ use super::DbType;
 ///     includes the ability to delegate writes to a remote primary.
 /// - `new_remote`/`Remote` creates a database that does not create anything locally but will
 ///     instead run all queries on the remote database. This is essentially the pure HTTP api.
+///
+/// # Note
+///
+/// Embedded replica's require a clean database (no database file) or a previously synced database or else it will
+/// throw an error to prevent any misuse. To work around this error a user can delete the database
+/// and let it resync and create the wal_index metadata file.
 pub struct Builder<T = ()> {
     inner: T,
 }
@@ -53,7 +59,7 @@ impl Builder<()> {
                     },
                     encryption_config: None,
                     read_your_writes: true,
-                    periodic_sync: None,
+                    sync_interval: None,
                     http_request_callback: None
                 },
             }
@@ -157,7 +163,7 @@ cfg_replication! {
         remote: Remote,
         encryption_config: Option<EncryptionConfig>,
         read_your_writes: bool,
-        periodic_sync: Option<std::time::Duration>,
+        sync_interval: Option<std::time::Duration>,
         http_request_callback: Option<crate::util::HttpRequestCallback>,
     }
 
@@ -206,8 +212,8 @@ cfg_replication! {
         /// Set the duration at which the replicator will automatically call `sync` in the
         /// background. The sync will continue for the duration that the resulted `Database`
         /// type is alive for, once it is dropped the background task will get dropped and stop.
-        pub fn periodic_sync(mut self, duration: std::time::Duration) -> Builder<RemoteReplica> {
-            self.inner.periodic_sync = Some(duration);
+        pub fn sync_interval(mut self, duration: std::time::Duration) -> Builder<RemoteReplica> {
+            self.inner.sync_interval = Some(duration);
             self
         }
 
@@ -239,7 +245,7 @@ cfg_replication! {
                     },
                 encryption_config,
                 read_your_writes,
-                periodic_sync,
+                sync_interval,
                 http_request_callback
             } = self.inner;
 
@@ -266,7 +272,7 @@ cfg_replication! {
                 version,
                 read_your_writes,
                 encryption_config.clone(),
-                periodic_sync,
+                sync_interval,
                 http_request_callback
             )
             .await?;

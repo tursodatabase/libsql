@@ -146,15 +146,15 @@ impl Conn for HttpConnection<HttpSender> {
         })
     }
 
-    async fn is_autocommit(&self) -> bool {
+    fn is_autocommit(&self) -> bool {
         self.is_autocommit()
     }
 
-    async fn changes(&self) -> u64 {
+    fn changes(&self) -> u64 {
         self.affected_row_count()
     }
 
-    async fn last_insert_rowid(&self) -> i64 {
+    fn last_insert_rowid(&self) -> i64 {
         self.last_insert_rowid()
     }
 
@@ -277,15 +277,15 @@ impl Conn for HranaStream<HttpSender> {
         todo!("sounds like nested transactions innit?")
     }
 
-    async fn is_autocommit(&self) -> bool {
+    fn is_autocommit(&self) -> bool {
         false // for streams this method is callable only when we're within explicit transaction
     }
 
-    async fn changes(&self) -> u64 {
+    fn changes(&self) -> u64 {
         self.affected_row_count()
     }
 
-    async fn last_insert_rowid(&self) -> i64 {
+    fn last_insert_rowid(&self) -> i64 {
         self.last_insert_rowid()
     }
 
