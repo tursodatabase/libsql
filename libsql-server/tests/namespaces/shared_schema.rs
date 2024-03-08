@@ -116,6 +116,37 @@ fn perform_schema_migration() {
         let resp = http_get("http://primary:9090/v1/namespaces/schema/migrations/1").await;
         assert_eq!(resp, r#"{"job_id":1,"status":"RunSuccess","progress":[{"namespace":"ns1","status":"RunSuccess","error":null},{"namespace":"ns2","status":"RunSuccess","error":null}]}"#);
 
+        // we add a new namespace and expect it to have the same schema version and schema
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/ns3/create",
+                json!({"shared_schema_name": "schema" }),
+            )
+            .await
+            .unwrap();
+        assert_debug_snapshot!(check_schema("ns3").await);
+        assert_eq!(expected_schema_version, get_schema_version("ns3").await);
+
+        // we will perform a new migration and expect the new and old databases to have same schema
+        schema_conn
+            .execute("create table test2 (c)", ())
+            .await
+            .unwrap();
+
+        while get_schema_version("schema").await == schema_version_before {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+
+        // all schemas are the same
+        assert_debug_snapshot!(check_schema("ns1").await);
+        assert_debug_snapshot!(check_schema("ns2").await);
+        assert_debug_snapshot!(check_schema("ns3").await);
+        assert_debug_snapshot!(check_schema("schema").await);
+
+        // check all schema versions are same as primary schema db
+        let expected_schema_version = 2;
+        assert_all_eq!(expected_schema_version, get_schema_version("schema").await, get_schema_version("ns1").await, get_schema_version("ns2").await, get_schema_version("ns3").await);
+
         Ok(())
     });
 
