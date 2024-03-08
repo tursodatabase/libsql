@@ -343,10 +343,27 @@ async fn handle_create_namespace<C: Connector>(
         config.max_db_pages = max_db_size.as_u64() / LIBSQL_PAGE_SIZE;
     }
 
-    app_state
-        .namespaces
-        .create(namespace.clone(), dump, config)
-        .await?;
+    match &config.shared_schema_name {
+        None => {
+            app_state
+                .namespaces
+                .create(namespace.clone(), dump, config)
+                .await?;
+        }
+        Some(shared_schema_name) => {
+            app_state
+                .namespaces
+                .fork(
+                    shared_schema_name.clone(),
+                    namespace.clone(),
+                    config.clone(),
+                    None,
+                )
+                .await?;
+            let to_store = app_state.namespaces.config_store(namespace).await?;
+            to_store.store(config).await?;
+        }
+    };
 
     Ok(())
 }
