@@ -267,7 +267,7 @@ pub(super) fn job_step_dry_run_success(
         SET status = ?2
         WHERE job_id = ?1
         AND (status = ?3 OR status = ?2)
-        AND (SELECT count(1) from tasks) = (SELECT count(1) FROM tasks WHERE status = ?4 OR status = ?2)",
+        AND (SELECT count(1) from tasks) = (SELECT count(1) FROM tasks WHERE status = ?4)",
         (
             job_id,
             MigrationJobStatus::DryRunSuccess as u64,
