@@ -1,0 +1,8 @@
+---
+source: libsql-server/tests/namespaces/shared_schema.rs
+expression: "check_schema(\"schema\").await"
+---
+[
+    "Row { cols: [Col { name: Some(\"type\"), decltype: Some(\"TEXT\") }, Col { name: Some(\"name\"), decltype: Some(\"TEXT\") }, Col { name: Some(\"tbl_name\"), decltype: Some(\"TEXT\") }, Col { name: Some(\"rootpage\"), decltype: Some(\"INT\") }, Col { name: Some(\"sql\"), decltype: Some(\"TEXT\") }], inner: [Text { value: \"table\" }, Text { value: \"test\" }, Text { value: \"test\" }, Integer { value: 2 }, Text { value: \"CREATE TABLE test (c)\" }] }",
+    "Row { cols: [Col { name: Some(\"type\"), decltype: Some(\"TEXT\") }, Col { name: Some(\"name\"), decltype: Some(\"TEXT\") }, Col { name: Some(\"tbl_name\"), decltype: Some(\"TEXT\") }, Col { name: Some(\"rootpage\"), decltype: Some(\"INT\") }, Col { name: Some(\"sql\"), decltype: Some(\"TEXT\") }], inner: [Text { value: \"table\" }, Text { value: \"test2\" }, Text { value: \"test2\" }, Integer { value: 3 }, Text { value: \"CREATE TABLE test2 (c)\" }] }",
+]
