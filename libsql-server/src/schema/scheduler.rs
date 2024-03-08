@@ -746,9 +746,9 @@ mod test {
 
         // step until we get a response
         loop {
-            tokio::select! {
-                _ = &mut rcv => break,
-                _ = scheduler.step(&mut receiver) => {},
+            scheduler.step(&mut receiver).await;
+            if rcv.try_recv().is_ok() {
+                break;
             }
         }
 
@@ -854,9 +854,9 @@ mod test {
 
             // step until we get a response
             loop {
-                tokio::select! {
-                    _ = &mut rcv => break,
-                    _ = scheduler.step(&mut receiver) => {},
+                scheduler.step(&mut receiver).await;
+                if rcv.try_recv().is_ok() {
+                    break;
                 }
             }
 
