@@ -343,10 +343,7 @@ async fn handle_create_namespace<C: Connector>(
         config.max_db_pages = max_db_size.as_u64() / LIBSQL_PAGE_SIZE;
     }
 
-    app_state
-        .namespaces
-        .create(namespace.clone(), dump, config)
-        .await?;
+    app_state.namespaces.create(namespace, dump, config).await?;
 
     Ok(())
 }

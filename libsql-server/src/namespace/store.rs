@@ -366,6 +366,12 @@ impl NamespaceStore {
         restore_option: RestoreOption,
         db_config: DatabaseConfig,
     ) -> crate::Result<()> {
+        if let Some(shared_schema_name) = &db_config.shared_schema_name {
+            return self
+                .fork(shared_schema_name.clone(), namespace, db_config, None)
+                .await;
+        };
+
         // With namespaces disabled, the default namespace can be auto-created,
         // otherwise it's an error.
         // FIXME: move the default namespace check out of this function.
