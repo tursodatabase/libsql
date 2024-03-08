@@ -106,7 +106,7 @@ pub struct SchemaDatabase {
     migration_scheduler: SchedulerHandle,
     schema: NamespaceName,
     connection_maker: Arc<PrimaryConnectionMaker>,
-    wal_manager: ReplicationWalManager,
+    pub wal_manager: ReplicationWalManager,
 }
 
 #[async_trait::async_trait]
