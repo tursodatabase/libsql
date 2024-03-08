@@ -87,7 +87,7 @@ impl State {
     }
 }
 
-/// Given a an initial state and an array of queries, attempts to predict what the final state will
+/// Given an initial state and an array of queries, attempts to predict what the final state will
 /// be
 fn predict_final_state<'a>(
     mut state: State,
@@ -271,7 +271,7 @@ impl Conn for RemoteConnection {
             .results
             .into_iter()
             .next()
-            .expect("Expected atleast one result");
+            .expect("Expected at least one result");
 
         let affected_row_count = match result.row_result {
             Some(RowResult::Row(row)) => {
@@ -480,7 +480,7 @@ impl Stmt for RemoteStatement {
             .results
             .into_iter()
             .next()
-            .expect("Expected atleast one result");
+            .expect("Expected at least one result");
 
         let affected_row_count = match result.row_result {
             Some(RowResult::Row(row)) => {
@@ -514,7 +514,7 @@ impl Stmt for RemoteStatement {
             .results
             .into_iter()
             .next()
-            .expect("Expected atleast one result");
+            .expect("Expected at least one result");
 
         let rows = match result.row_result {
             Some(RowResult::Row(row)) => {
