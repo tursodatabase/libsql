@@ -5,6 +5,7 @@ mod meta;
 mod shared_schema;
 
 use std::path::PathBuf;
+use std::time::Duration;
 
 use crate::common::http::Client;
 use crate::common::net::{init_tracing, SimServer, TestServer, TurmoilAcceptor, TurmoilConnector};
@@ -47,7 +48,9 @@ fn make_primary(sim: &mut Sim, path: PathBuf) {
 
 #[test]
 fn fork_namespace() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
     make_primary(&mut sim, tmp.path().to_path_buf());
 
@@ -103,7 +106,9 @@ fn fork_namespace() {
 
 #[test]
 fn delete_namespace() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
     make_primary(&mut sim, tmp.path().to_path_buf());
 

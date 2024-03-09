@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use libsql::Database;
 
 use crate::{
@@ -9,7 +11,9 @@ use super::make_standalone_server;
 
 #[test]
 fn jwt_auth_namespace_access() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     sim.host("primary", make_standalone_server);
 

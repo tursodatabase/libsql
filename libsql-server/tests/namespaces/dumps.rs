@@ -1,4 +1,5 @@
 use std::convert::Infallible;
+use std::time::Duration;
 
 use hyper::{service::make_service_fn, Body, Response, StatusCode};
 use insta::{assert_json_snapshot, assert_snapshot};
@@ -21,7 +22,9 @@ fn load_namespace_from_dump_from_url() {
     INSERT INTO test VALUES(42);
     COMMIT;"#;
 
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
     make_primary(&mut sim, tmp.path().to_path_buf());
 
@@ -75,7 +78,9 @@ fn load_namespace_from_dump_from_file() {
     INSERT INTO test VALUES(42);
     COMMIT;"#;
 
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
     let tmp_path = tmp.path().to_path_buf();
 
@@ -144,7 +149,9 @@ fn load_namespace_from_no_commit() {
     INSERT INTO test VALUES(42);
     "#;
 
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
     let tmp_path = tmp.path().to_path_buf();
 
@@ -193,7 +200,9 @@ fn load_namespace_from_no_txn() {
     COMMIT;
     "#;
 
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
     let tmp_path = tmp.path().to_path_buf();
 
@@ -235,7 +244,9 @@ fn load_namespace_from_no_txn() {
 
 #[test]
 fn export_dump() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
 
     make_primary(&mut sim, tmp.path().to_path_buf());

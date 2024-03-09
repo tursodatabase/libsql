@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use insta::assert_json_snapshot;
 use libsql::{params, Database};
 use libsql_server::hrana_proto::{Batch, BatchStep, Stmt};
@@ -7,7 +9,9 @@ use crate::common::net::TurmoilConnector;
 
 #[test]
 fn sample_request() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
         let batch = Batch {
@@ -39,7 +43,9 @@ fn sample_request() {
 
 #[test]
 fn execute_individual_statements() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
         let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
@@ -65,7 +71,9 @@ fn execute_individual_statements() {
 
 #[test]
 fn execute_batch() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
         let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
@@ -99,7 +107,9 @@ fn execute_batch() {
 
 #[test]
 fn multistatement_query() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
         let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
@@ -120,7 +130,9 @@ fn multistatement_query() {
 
 #[test]
 fn affected_rows_and_last_rowid() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
         let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
