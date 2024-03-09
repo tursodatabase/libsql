@@ -2,6 +2,7 @@ mod fork;
 pub mod meta_store;
 mod name;
 pub mod replication_wal;
+mod schema_lock;
 mod store;
 
 use std::path::{Path, PathBuf};
