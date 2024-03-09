@@ -112,7 +112,7 @@ pub enum Error {
 
     #[error("migration error: {0}")]
     Migration(#[from] crate::schema::Error),
-    #[error("cannot create/update database config while there are pending migration on the shared schema `{0}`")]
+    #[error("cannot create/update/delete database config while there are pending migration on the shared schema `{0}`")]
     PendingMigrationOnSchema(NamespaceName),
     #[error("couldn't find requested migration job")]
     MigrationJobNotFound,

@@ -104,6 +104,7 @@ impl NamespaceStore {
         }
 
         // destroy on-disk database and backups
+        // FIXME: this is blocking
         let db_config = self
             .inner
             .metadata
