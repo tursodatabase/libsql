@@ -259,15 +259,15 @@ pub(super) fn update_meta_task_status(
 pub(super) fn job_step_dry_run_success(
     conn: &mut rusqlite::Connection,
     job_id: i64,
-) -> Result<Option<MigrationJobStatus>, Error> {
+) -> Result<(), Error> {
     let row_changed = conn.execute(
         "
         WITH tasks AS (SELECT * FROM migration_job_pending_tasks WHERE job_id = ?1)
         UPDATE migration_jobs 
         SET status = ?2
         WHERE job_id = ?1
-        AND status = ?3
-        AND (SELECT count(1) from tasks) = (SELECT count(1) FROM tasks WHERE status = ?4 OR status = ?2)",
+        AND (status = ?3 OR status = ?2)
+        AND (SELECT count(1) from tasks) = (SELECT count(1) FROM tasks WHERE status = ?4)",
         (
             job_id,
             MigrationJobStatus::DryRunSuccess as u64,
@@ -277,10 +277,10 @@ pub(super) fn job_step_dry_run_success(
     )?;
 
     if row_changed == 0 {
-        return Ok(None);
+        return Err(Error::CantStepJobDryRunSuccess);
     }
 
-    Ok(Some(MigrationJobStatus::DryRunSuccess))
+    Ok(())
 }
 
 pub(super) fn update_job_status(
@@ -600,10 +600,10 @@ mod test {
         .unwrap();
 
         let job = get_next_pending_migration_job(&mut conn).unwrap().unwrap();
-        let status = job_step_dry_run_success(&mut conn, job.job_id()).unwrap();
-
-        // the job status wasn't updated: there are still tasks that need dry run
-        assert!(status.is_none());
+        assert!(matches!(
+            job_step_dry_run_success(&mut conn, job.job_id()).unwrap_err(),
+            Error::CantStepJobDryRunSuccess
+        ));
 
         let tasks = get_next_pending_migration_tasks_batch(
             &mut conn,
@@ -617,8 +617,7 @@ mod test {
             update_meta_task_status(&mut conn, &task, None).unwrap();
         }
 
-        let status = job_step_dry_run_success(&mut conn, job.job_id()).unwrap();
-        assert_eq!(status.unwrap(), MigrationJobStatus::DryRunSuccess);
+        job_step_dry_run_success(&mut conn, job.job_id()).unwrap();
     }
 
     #[tokio::test]

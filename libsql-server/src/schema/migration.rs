@@ -6,7 +6,6 @@ use crate::connection::program::{Program, Vm};
 use crate::query_result_builder::{IgnoreResult, QueryBuilderConfig, QueryResultBuilder};
 
 use super::result_builder::SchemaMigrationResultBuilder;
-use super::status::MigrationTask;
 use super::{Error, MigrationTaskStatus};
 
 pub fn setup_migration_table(conn: &mut rusqlite::Connection) -> Result<(), Error> {
@@ -48,27 +47,25 @@ pub fn has_pending_migration_task(conn: &rusqlite::Connection) -> Result<bool, E
 
 pub fn enqueue_migration_task(
     conn: &rusqlite::Connection,
-    task: &MigrationTask,
+    job_id: i64,
+    status: MigrationTaskStatus,
     migration: &Program,
 ) -> Result<(), Error> {
     let migration = serde_json::to_string(migration).unwrap();
     conn.execute(
         "INSERT OR IGNORE INTO __libsql_migration_tasks (job_id, status, migration) VALUES (?, ?, ?)",
-        (task.job_id(), *task.status() as u64, &migration),
+        (job_id, status as u64, &migration),
     )?;
 
     Ok(())
 }
 
-pub fn abort_migration_task(
-    conn: &rusqlite::Connection,
-    task: &MigrationTask,
-) -> Result<(), Error> {
+pub fn abort_migration_task(conn: &rusqlite::Connection, job_id: i64) -> Result<(), Error> {
     // there is a `NOT NULL` constraint on migration, but if we are aborting a task that wasn't
     // already enqueued, we need a placeholder. It's ok because we are never gonna try to run a
     // failed task migration.
     conn.execute("INSERT OR REPLACE INTO __libsql_migration_tasks (job_id, status, error, migration) VALUES (?, ?, ?, ?)",
-    (task.job_id, MigrationTaskStatus::Failure as u64, "aborted", "aborted"))?;
+    (job_id, MigrationTaskStatus::Failure as u64, "aborted", "aborted"))?;
 
     Ok(())
 }
@@ -238,6 +235,7 @@ mod test {
 
     use crate::connection::libsql::open_conn_active_checkpoint;
     use crate::namespace::NamespaceName;
+    use crate::schema::status::MigrationTask;
 
     use super::*;
 
@@ -256,7 +254,13 @@ mod test {
             job_id: 1,
             task_id: 1,
         };
-        enqueue_migration_task(&conn, &task, &Program::seq(&["create table test (x)"])).unwrap();
+        enqueue_migration_task(
+            &conn,
+            task.job_id(),
+            *task.status(),
+            &Program::seq(&["create table test (x)"]),
+        )
+        .unwrap();
         let mut txn = conn.transaction().unwrap();
         let (status, error) = step_task(&mut txn, 1).unwrap();
         txn.commit().unwrap();
@@ -290,7 +294,13 @@ mod test {
             job_id: 1,
             task_id: 1,
         };
-        enqueue_migration_task(&conn, &task, &Program::seq(&["create table test (x)"])).unwrap();
+        enqueue_migration_task(
+            &conn,
+            task.job_id(),
+            *task.status(),
+            &Program::seq(&["create table test (x)"]),
+        )
+        .unwrap();
 
         let task = MigrationTask {
             namespace: NamespaceName::default(),
@@ -298,7 +308,13 @@ mod test {
             job_id: 1,
             task_id: 1,
         };
-        enqueue_migration_task(&conn, &task, &Program::seq(&["create table test (x)"])).unwrap();
+        enqueue_migration_task(
+            &conn,
+            task.job_id(),
+            *task.status(),
+            &Program::seq(&["create table test (x)"]),
+        )
+        .unwrap();
         let (status, _, _) = get_task_infos(&conn, 1).unwrap();
         assert_eq!(status, MigrationTaskStatus::Success);
     }
