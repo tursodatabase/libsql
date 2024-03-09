@@ -69,7 +69,9 @@ fn make_primary(sim: &mut Sim, path: PathBuf) {
 
 #[test]
 fn embedded_replica() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     let tmp_embedded = tempdir().unwrap();
     let tmp_host = tempdir().unwrap();
@@ -140,7 +142,9 @@ fn embedded_replica() {
 
 #[test]
 fn execute_batch() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     let tmp_embedded = tempdir().unwrap();
     let tmp_host = tempdir().unwrap();
@@ -194,7 +198,9 @@ fn execute_batch() {
 fn embedded_replica_with_encryption() {
     use bytes::Bytes;
 
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     let tmp_embedded = tempdir().unwrap();
     let tmp_host = tempdir().unwrap();
@@ -300,7 +306,9 @@ fn embedded_replica_with_encryption() {
 
 #[test]
 fn replica_primary_reset() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
 
     let notify = Arc::new(Notify::new());
@@ -687,7 +695,9 @@ fn replicate_with_snapshots() {
 
 #[test]
 fn read_your_writes() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     let tmp_embedded = tempdir().unwrap();
     let tmp_host = tempdir().unwrap();
@@ -730,7 +740,9 @@ fn read_your_writes() {
 
 #[test]
 fn proxy_write_returning_row() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     let tmp_embedded = tempdir().unwrap();
     let tmp_host = tempdir().unwrap();
@@ -848,7 +860,9 @@ fn freeze() {
 
 #[test]
 fn sync_interval() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     let tmp_embedded = tempdir().unwrap();
     let tmp_host = tempdir().unwrap();

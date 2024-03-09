@@ -84,7 +84,9 @@ pub fn make_cluster(sim: &mut Sim, num_replica: usize, disable_namespaces: bool)
 
 #[test]
 fn proxy_write() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     make_cluster(&mut sim, 1, true);
 
     sim.client("client", async {
@@ -116,7 +118,9 @@ fn proxy_write() {
 #[test]
 #[ignore = "libsql client doesn't reuse the stream yet, so we can't do RYW"]
 fn replica_read_write() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     make_cluster(&mut sim, 1, true);
 
     sim.client("client", async {
@@ -142,7 +146,9 @@ fn replica_read_write() {
 #[test]
 fn sync_many_replica() {
     const NUM_REPLICA: usize = 10;
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     make_cluster(&mut sim, NUM_REPLICA, true);
     sim.client("client", async {
         let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
@@ -214,7 +220,9 @@ fn sync_many_replica() {
 
 #[test]
 fn create_namespace() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     make_cluster(&mut sim, 0, false);
 
     sim.client("client", async {

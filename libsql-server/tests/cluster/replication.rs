@@ -146,7 +146,9 @@ fn apply_partial_snapshot() {
 
 #[test]
 fn replica_lazy_creation() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     let prim_tmp = tempfile::tempdir().unwrap();
 
