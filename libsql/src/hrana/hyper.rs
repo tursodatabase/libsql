@@ -16,6 +16,7 @@ use http::{HeaderValue, StatusCode};
 use hyper::body::HttpBody;
 use std::io::ErrorKind;
 use std::sync::Arc;
+use tracing::log;
 
 pub type ByteStream = Box<dyn Stream<Item = std::io::Result<Bytes>> + Send + Sync + Unpin>;
 
@@ -85,7 +86,11 @@ impl HttpSend for HttpSender {
     }
 
     fn oneshot(self, url: Arc<str>, auth: Arc<str>, body: String) {
-        tokio::spawn(self.send(url, auth, body));
+        if let Ok(rt) = tokio::runtime::Handle::try_current() {
+            rt.spawn(self.send(url, auth, body));
+        } else {
+            log::warn!("tried to send request to `{url}` while no runtime was available");
+        }
     }
 }
 
@@ -141,7 +146,13 @@ impl Conn for HttpConnection<HttpSender> {
             close: Some(Box::new(|| {
                 // make sure that Hrana connection is closed and all uncommitted changes
                 // are rolled back when we're about to drop the transaction
-                drop(tokio::task::spawn(async move { tx.rollback().await }));
+                if let Ok(rt) = tokio::runtime::Handle::try_current() {
+                    // transaction will rollback automatically after timeout on the server side
+                    // this is gracefull rollback on best-effort basis
+                    rt.spawn(async move {
+                        let _ = tx.rollback().await;
+                    });
+                }
             })),
         })
     }
