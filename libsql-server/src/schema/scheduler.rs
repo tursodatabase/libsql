@@ -731,6 +731,7 @@ async fn step_job_run_success(
 
 #[cfg(test)]
 mod test {
+    use insta::assert_debug_snapshot;
     use std::path::Path;
     use tempfile::tempdir;
 
@@ -951,5 +952,76 @@ mod test {
             })
             .await
             .unwrap();
+    }
+
+    #[tokio::test]
+    async fn cant_delete_namespace_while_pending_job() {
+        let tmp = tempdir().unwrap();
+        let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
+        let conn = maker().unwrap();
+        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+            .await
+            .unwrap();
+        let (sender, mut receiver) = mpsc::channel(100);
+        let config = make_config(sender.clone().into(), tmp.path());
+        let store = NamespaceStore::new(false, false, 10, config, meta_store)
+            .await
+            .unwrap();
+        let mut scheduler = Scheduler::new(store.clone(), maker().unwrap()).unwrap();
+
+        store
+            .create(
+                "schema".into(),
+                RestoreOption::Latest,
+                DatabaseConfig {
+                    is_shared_schema: true,
+                    ..Default::default()
+                },
+            )
+            .await
+            .unwrap();
+        store
+            .create(
+                "ns".into(),
+                RestoreOption::Latest,
+                DatabaseConfig {
+                    shared_schema_name: Some("schema".into()),
+                    ..Default::default()
+                },
+            )
+            .await
+            .unwrap();
+
+        let (snd, _rcv) = tokio::sync::oneshot::channel();
+        sender
+            .send(SchedulerMessage::ScheduleMigration {
+                schema: "schema".into(),
+                migration: Program::seq(&["create table test (c)"]).into(),
+                ret: snd,
+            })
+            .await
+            .unwrap();
+
+        while !super::super::db::has_pending_migration_jobs(
+            &scheduler.migration_db.lock(),
+            &"schema".into(),
+        )
+        .unwrap()
+        {
+            scheduler.step(&mut receiver).await.unwrap();
+        }
+
+        assert_debug_snapshot!(store.destroy("ns".into()).await.unwrap_err());
+
+        while super::super::db::has_pending_migration_jobs(
+            &scheduler.migration_db.lock(),
+            &"schema".into(),
+        )
+        .unwrap()
+        {
+            scheduler.step(&mut receiver).await.unwrap();
+        }
+
+        store.destroy("ns".into()).await.unwrap();
     }
 }
