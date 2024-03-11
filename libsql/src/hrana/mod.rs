@@ -134,8 +134,11 @@ where
             )),
             Some(Err(e)) => Err(e),
             Some(Ok(stmt)) => {
+                // if we're already in transaction scope (non-autocommit) or we're starting
+                // a transaction, we DON'T want to close the stream
                 let in_tx_scope = !stream.is_autocommit()
                     || matches!(stmt.kind, StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly);
+                // if we're at COMMIT/ROLLBACK statement, we DO want to close the stream
                 let close_stream = !in_tx_scope || matches!(stmt.kind, StmtKind::TxnEnd);
                 let inner = Stmt::new(stmt.stmt, want_rows);
                 Ok(Statement {

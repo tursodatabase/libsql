@@ -89,7 +89,7 @@ impl HttpSend for HttpSender {
         if let Ok(rt) = tokio::runtime::Handle::try_current() {
             rt.spawn(self.send(url, auth, body));
         } else {
-            log::warn!("tried to send request to `{url}` while no runtime was available");
+            tracing::warn!("tried to send request to `{url}` while no runtime was available");
         }
     }
 }
