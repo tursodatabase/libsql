@@ -46,6 +46,8 @@ pub enum Error {
     FreezeNotSupported(String),
     #[error("connection has reached an invalid state, started with {0}")]
     InvalidParserState(String),
+    #[error("TLS error: {0}")]
+    InvalidTlsConfiguration(std::io::Error),
 }
 
 #[cfg(feature = "hrana")]
