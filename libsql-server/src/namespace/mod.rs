@@ -5,9 +5,10 @@ pub mod replication_wal;
 mod store;
 
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Weak};
 
-use anyhow::Context as _;
+use anyhow::{Context as _, Error};
 use bottomless::replicator::Options;
 use bytes::Bytes;
 use chrono::NaiveDateTime;
@@ -40,7 +41,7 @@ use crate::database::{
 use crate::error::LoadDumpError;
 use crate::replication::script_backup_manager::ScriptBackupManager;
 use crate::replication::{FrameNo, ReplicationLogger};
-use crate::schema::{setup_migration_table, SchedulerHandle};
+use crate::schema::{has_pending_migration_task, setup_migration_table, SchedulerHandle};
 use crate::stats::Stats;
 use crate::{
     run_periodic_checkpoint, StatsSender, BLOCKING_RT, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT,
@@ -236,6 +237,7 @@ impl Namespace {
         db_path: &Path,
         name: &NamespaceName,
         restore_option: RestoreOption,
+        block_writes: Arc<AtomicBool>,
         join_set: &mut JoinSet<anyhow::Result<()>>,
     ) -> crate::Result<(PrimaryConnectionMaker, ReplicationWalManager, Arc<Stats>)> {
         let db_config = meta_store_handle.get();
@@ -306,6 +308,7 @@ impl Namespace {
             auto_checkpoint,
             logger.new_frame_notifier.subscribe(),
             ns_config.encryption_config.clone(),
+            block_writes,
         )
         .await?
         .throttled(
@@ -350,29 +353,33 @@ impl Namespace {
 
         tokio::fs::create_dir_all(&db_path).await?;
 
+        let block_writes = Arc::new(AtomicBool::new(false));
         let (connection_maker, wal_manager, stats) = Self::make_primary_connection_maker(
             ns_config,
             &meta_store_handle,
             &db_path,
             &name,
             restore_option,
+            block_writes.clone(),
             &mut join_set,
         )
         .await?;
         let connection_maker = Arc::new(connection_maker);
 
         if meta_store_handle.get().shared_schema_name.is_some() {
+            let block_writes = block_writes.clone();
             let conn = connection_maker.create().await?;
-            join_set.spawn_blocking(move || {
+            tokio::task::spawn_blocking(move || {
                 conn.with_raw(|conn| -> crate::Result<()> {
                     setup_migration_table(conn)?;
-                    // TODO: if there are pending jobs, we should block writes
+                    if has_pending_migration_task(conn)? {
+                        block_writes.store(true, Ordering::SeqCst);
+                    }
                     Ok(())
                 })
-                .unwrap();
-
-                Ok(())
-            });
+            })
+            .await
+            .unwrap()?;
         }
 
         if let Some(checkpoint_interval) = ns_config.checkpoint_interval {
@@ -387,6 +394,7 @@ impl Namespace {
             db: Database::Primary(PrimaryDatabase {
                 wal_manager,
                 connection_maker,
+                block_writes,
             }),
             name,
             stats,
@@ -469,7 +477,8 @@ impl Namespace {
                             | Error::Io(_)
                             | Error::InvalidLogId
                             | Error::FailedToCommit(_)
-                            | Error::InvalidReplicationPath => {
+                            | Error::InvalidReplicationPath
+                            | Error::RequiresCleanDatabase => {
                                 // We retry from last frame index?
                                 tracing::warn!("non-fatal replication error, retrying from last commit index: {err}");
                             },
@@ -543,9 +552,6 @@ impl Namespace {
     ) -> crate::Result<Namespace> {
         let from_config = from_config.get();
         match ns_config.db_kind {
-            DatabaseKind::Primary if from_config.is_shared_schema => {
-                panic!("forking schema not supported");
-            }
             DatabaseKind::Primary => {
                 let bottomless_db_id = NamespaceBottomlessDbId::from_config(&from_config);
                 let restore_to = if let Some(timestamp) = timestamp {
@@ -565,19 +571,20 @@ impl Namespace {
                     None
                 };
 
-                // fork share config with original db
-                to_config.store(from_config).await?;
+                let logger = match &from_ns.db {
+                    Database::Primary(db) => db.wal_manager.wrapped().logger(),
+                    Database::Schema(db) => db.wal_manager.wrapped().logger(),
+                    _ => {
+                        return Err(crate::Error::Fork(ForkError::Internal(Error::msg(
+                            "Invalid source database type for fork",
+                        ))));
+                    }
+                };
 
                 let fork_task = ForkTask {
                     base_path: ns_config.base_path.clone(),
                     to_namespace: to_ns,
-                    logger: from_ns
-                        .db
-                        .as_primary()
-                        .unwrap()
-                        .wal_manager
-                        .wrapped()
-                        .logger(),
+                    logger,
                     restore_to,
                     bottomless_db_id,
                     to_config,
@@ -602,12 +609,13 @@ impl Namespace {
 
         tokio::fs::create_dir_all(&db_path).await?;
 
-        let (connection_maker, _wal_manager, stats) = Self::make_primary_connection_maker(
+        let (connection_maker, wal_manager, stats) = Self::make_primary_connection_maker(
             ns_config,
             &meta_store_handle,
             &db_path,
             &name,
             restore_option,
+            Arc::new(AtomicBool::new(false)), // this is always false for schema
             &mut join_set,
         )
         .await?;
@@ -617,6 +625,7 @@ impl Namespace {
                 ns_config.migration_scheduler.clone(),
                 name.clone(),
                 connection_maker,
+                wal_manager,
             )),
             name,
             tasks: join_set,

@@ -366,7 +366,7 @@ pub mod test {
     use crate::auth::Authenticated;
     use crate::connection::libsql::LibSqlConnection;
     use crate::connection::program::Program;
-    use crate::namespace::meta_store::MetaStore;
+    use crate::namespace::meta_store::{metastore_connection_maker, MetaStore};
     use crate::namespace::NamespaceName;
     use crate::query_result_builder::test::{
         fsm_builder_driver, random_transition, TestBuilder, ValidateTraceBuilder,
@@ -389,10 +389,11 @@ pub mod test {
         let tmp = tempdir().unwrap();
         let conn = LibSqlConnection::new_test(tmp.path());
         let (snd, rcv) = mpsc::channel(1);
+        let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
             Authenticated::Anonymous,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path())
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
                 .await
                 .unwrap(),
         );
@@ -414,10 +415,11 @@ pub mod test {
         let tmp = tempdir().unwrap();
         let conn = LibSqlConnection::new_test(tmp.path());
         let (snd, rcv) = mpsc::channel(1);
+        let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path())
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
                 .await
                 .unwrap(),
         );
@@ -435,10 +437,11 @@ pub mod test {
         let tmp = tempdir().unwrap();
         let conn = LibSqlConnection::new_test(tmp.path());
         let (snd, rcv) = mpsc::channel(1);
+        let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path())
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
                 .await
                 .unwrap(),
         );
@@ -458,10 +461,11 @@ pub mod test {
         let tmp = tempdir().unwrap();
         let conn = LibSqlConnection::new_test(tmp.path());
         let (snd, rcv) = mpsc::channel(1);
+        let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path())
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
                 .await
                 .unwrap(),
         );
@@ -514,10 +518,11 @@ pub mod test {
         let tmp = tempdir().unwrap();
         let conn = LibSqlConnection::new_test(tmp.path());
         let (snd, rcv) = mpsc::channel(2);
+        let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path())
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
                 .await
                 .unwrap(),
         );
@@ -540,10 +545,11 @@ pub mod test {
         let tmp = tempdir().unwrap();
         let conn = LibSqlConnection::new_test(tmp.path());
         let (snd, rcv) = mpsc::channel(1);
+        let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path())
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
                 .await
                 .unwrap(),
         );
@@ -566,10 +572,11 @@ pub mod test {
         let tmp = tempdir().unwrap();
         let conn = LibSqlConnection::new_test(tmp.path());
         let (snd, rcv) = mpsc::channel(1);
+        let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path())
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
                 .await
                 .unwrap(),
         );
@@ -594,10 +601,11 @@ pub mod test {
         let tmp = tempdir().unwrap();
         let conn = LibSqlConnection::new_test(tmp.path());
         let (snd, rcv) = mpsc::channel(1);
+        let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path())
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
                 .await
                 .unwrap(),
         );

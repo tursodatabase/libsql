@@ -24,6 +24,7 @@ use crate::error::{Error, LoadDumpError};
 use crate::hrana;
 use crate::namespace::{DumpStream, NamespaceName, NamespaceStore, RestoreOption};
 use crate::net::Connector;
+use crate::schema::{MigrationDetails, MigrationSummary};
 use crate::LIBSQL_PAGE_SIZE;
 
 pub mod stats;
@@ -135,6 +136,14 @@ where
         )
         .route("/v1/diagnostics", get(handle_diagnostics))
         .route("/metrics", get(handle_metrics))
+        .route(
+            "/v1/namespaces/:namespace/migrations",
+            get(handle_get_migrations),
+        )
+        .route(
+            "/v1/namespaces/:namespace/migrations/:job_id",
+            get(handle_get_migration_details),
+        )
         .with_state(Arc::new(AppState {
             namespaces,
             connector,
@@ -297,6 +306,12 @@ async fn handle_create_namespace<C: Connector>(
         config.jwt_key = Some(jwt_key);
     }
 
+    if req.shared_schema_name.is_some() && req.dump_url.is_some() {
+        return Err(Error::SharedSchemaUsageError(
+            "database using shared schema database cannot be created from a dump".to_string(),
+        ));
+    }
+
     if let Some(ns) = req.shared_schema_name {
         if req.shared_schema {
             return Err(Error::SharedSchemaCreationError(
@@ -328,10 +343,7 @@ async fn handle_create_namespace<C: Connector>(
         config.max_db_pages = max_db_size.as_u64() / LIBSQL_PAGE_SIZE;
     }
 
-    app_state
-        .namespaces
-        .create(namespace.clone(), dump, config)
-        .await?;
+    app_state.namespaces.create(namespace, dump, config).await?;
 
     Ok(())
 }
@@ -349,18 +361,19 @@ async fn handle_fork_namespace<C>(
     let timestamp = req.map(|v| v.timestamp);
     let from = NamespaceName::from_string(from)?;
     let to = NamespaceName::from_string(to)?;
+    let from_store = app_state.namespaces.config_store(from.clone()).await?;
+    let from_config = from_store.get();
+    if from_config.is_shared_schema {
+        return Err(Error::SharedSchemaUsageError(
+            "database cannot be forked from a shared schema".to_string(),
+        ));
+    }
+    let to_config = (*from_config).clone();
     app_state
         .namespaces
-        .fork(from.clone(), to.clone(), timestamp)
+        .fork(from, to, to_config, timestamp)
         .await?;
-    let from_store = app_state.namespaces.config_store(from).await?;
-    let from_config = from_store.get();
-    let to_store = app_state.namespaces.config_store(to).await?;
-    let mut to_config = (*to_store.get()).clone();
-    to_config.max_db_pages = from_config.max_db_pages;
-    to_config.heartbeat_url = from_config.heartbeat_url.clone();
-    to_config.shared_schema_name = from_config.shared_schema_name.clone();
-    to_store.store(to_config).await?;
+
     Ok(())
 }
 
@@ -408,4 +421,46 @@ async fn handle_delete_namespace<C>(
         .destroy(NamespaceName::from_string(namespace)?)
         .await?;
     Ok(())
+}
+
+async fn handle_get_migrations<C: Connector>(
+    State(app_state): State<Arc<AppState<C>>>,
+    Path(namespace): Path<String>,
+) -> crate::Result<Json<MigrationSummary>> {
+    let schema = NamespaceName::from_string(namespace)?;
+    {
+        // validate if this is a valid target for the request
+        let store = app_state.namespaces.config_store(schema.clone()).await?;
+        let config = (*store.get()).clone();
+        if !config.is_shared_schema {
+            return Err(Error::InvalidNamespace);
+        }
+    }
+
+    let meta_store = app_state.namespaces.meta_store();
+    let summary = meta_store.get_migrations_summary(schema).await?;
+
+    Ok(Json(summary))
+}
+
+async fn handle_get_migration_details<C: Connector>(
+    State(app_state): State<Arc<AppState<C>>>,
+    Path((namespace, job_id)): Path<(String, u64)>,
+) -> crate::Result<Json<MigrationDetails>> {
+    let schema = NamespaceName::from_string(namespace)?;
+    {
+        // validate if this is a valid target for the request
+        let store = app_state.namespaces.config_store(schema.clone()).await?;
+        let config = (*store.get()).clone();
+        if !config.is_shared_schema {
+            return Err(Error::InvalidNamespace);
+        }
+    }
+
+    let meta_store = app_state.namespaces.meta_store();
+    let details = meta_store.get_migration_details(schema, job_id).await?;
+    match details {
+        Some(details) => Ok(Json(details)),
+        None => Err(crate::Error::MigrationJobNotFound),
+    }
 }

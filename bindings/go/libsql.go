@@ -87,10 +87,10 @@ func WithEncryption(key string) Option {
 	})
 }
 
-func WithAutoSync(interval time.Duration) Option {
+func WithSyncInterval(interval time.Duration) Option {
 	return option(func(o *config) error {
 		if o.syncInterval != nil {
-			return fmt.Errorf("auto sync already set")
+			return fmt.Errorf("sync interval already set")
 		}
 		o.syncInterval = &interval
 		return nil

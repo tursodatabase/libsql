@@ -53,7 +53,7 @@ impl Database {
         endpoint: String,
         auth_token: String,
         encryption_config: Option<EncryptionConfig>,
-        periodic_sync: Option<std::time::Duration>,
+        sync_interval: Option<std::time::Duration>,
     ) -> Result<Database> {
         Self::open_http_sync_internal(
             connector,
@@ -63,7 +63,7 @@ impl Database {
             None,
             false,
             encryption_config,
-            periodic_sync,
+            sync_interval,
             None,
             None,
         )
@@ -80,7 +80,7 @@ impl Database {
         version: Option<String>,
         read_your_writes: bool,
         encryption_config: Option<EncryptionConfig>,
-        periodic_sync: Option<std::time::Duration>,
+        sync_interval: Option<std::time::Duration>,
         http_request_callback: Option<crate::util::HttpRequestCallback>,
         namespace: Option<String>
     ) -> Result<Database> {
@@ -106,7 +106,7 @@ impl Database {
             .map_err(|e| crate::errors::Error::ConnectionFailed(e.to_string()))?;
 
         let replicator =
-            EmbeddedReplicator::with_remote(client, path, 1000, encryption_config, periodic_sync)
+            EmbeddedReplicator::with_remote(client, path, 1000, encryption_config, sync_interval)
                 .await?;
 
         db.replication_ctx = Some(ReplicationContext {
@@ -133,7 +133,7 @@ impl Database {
         let client = LocalClient::new(&path).await.unwrap();
 
         let replicator =
-            EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await;
+            EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await?;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,
@@ -177,7 +177,7 @@ impl Database {
         let client = LocalClient::new(&path).await.unwrap();
 
         let replicator =
-            EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await;
+            EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await?;
 
         db.replication_ctx = Some(ReplicationContext {
             replicator,

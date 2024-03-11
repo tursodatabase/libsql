@@ -1,6 +1,6 @@
 [package]
 name = "libsql"
-version = "0.2.0"
+version = "0.3.1"
 edition = "2021"
 description = "libSQL library: the main gateway for interacting with the database"
 repository = "https://github.com/tursodatabase/libsql"
@@ -11,7 +11,7 @@ tracing = { version = "0.1.37", default-features = false }
 thiserror = "1.0.40"
 
 futures = { version = "0.3.28", optional = true }
-libsql-sys = { version = "0.3", path = "../libsql-sys", features = ["hrana"], optional = true }
+libsql-sys = { version = "0.4", path = "../libsql-sys", features = ["hrana"], optional = true }
 tokio = { version = "1.29.1", features = ["sync"], optional = true }
 tokio-util = { version = "0.7", features = ["io-util", "codec"], optional = true }
 parking_lot = { version = "0.12.1", optional = true }
@@ -39,7 +39,7 @@ zerocopy = { version = "0.7.28", optional = true }
 sqlite3-parser = { package = "libsql-sqlite3-parser", path = "../vendored/sqlite3-parser", version = "0.11", optional = true }
 fallible-iterator = { version = "0.3", optional = true }
 
-libsql_replication = { version = "0.2", path = "../libsql-replication", optional = true }
+libsql_replication = { version = "0.3", path = "../libsql-replication", optional = true }
 async-stream = { version = "0.3.5", optional = true }
 
 [dev-dependencies]
@@ -127,5 +127,4 @@ name = "benchmark"
 harness = false
 
 [package.metadata.docs.rs]
-all-features = true
 rustdoc-args = ["--cfg", "docsrs"]

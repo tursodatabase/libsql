@@ -116,7 +116,7 @@ impl QueriesStats {
 
     fn register_query(&mut self, sql: &String, stat: QueryStats) {
         self.elapsed += stat.elapsed;
-        let _ = self.hist.record(stat.elapsed.as_millis() as u64);
+        let _ = self.hist.record(stat.elapsed.as_micros() as u64);
 
         let (aggregated, new) = match self.stats.get(sql) {
             Some(aggregated) => (aggregated.merge(&stat), false),
@@ -312,7 +312,7 @@ impl Stats {
 
         self.inc_rows_read(rows_read);
         self.inc_rows_written(rows_written);
-        self.inc_query(elapsed_ms);
+        self.inc_query(elapsed);
         self.register_query(
             &sql,
             crate::stats::QueryStats::new(elapsed, rows_read, rows_written),
@@ -342,11 +342,12 @@ impl Stats {
         self.rows_written.fetch_add(n, Ordering::Relaxed);
     }
 
-    fn inc_query(&self, ms: u64) {
+    fn inc_query(&self, d: Duration) {
+        let micros = d.as_micros() as u64;
         counter!("libsql_server_query_count", 1, "namespace" => self.namespace.to_string());
-        counter!("libsql_server_query_latency", ms, "namespace" => self.namespace.to_string());
+        counter!("libsql_server_query_latency", micros / 1000, "namespace" => self.namespace.to_string());
         self.query_count.fetch_add(1, Ordering::Relaxed);
-        self.query_latency.fetch_add(ms, Ordering::Relaxed);
+        self.query_latency.fetch_add(micros, Ordering::Relaxed);
     }
 
     /// increments the number of read rows by n

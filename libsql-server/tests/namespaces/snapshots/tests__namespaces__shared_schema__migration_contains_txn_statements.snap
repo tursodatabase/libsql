@@ -1,0 +1,9 @@
+---
+source: libsql-server/tests/namespaces/shared_schema.rs
+expression: "schema_conn.execute_batch(\"begin; create table test (c)\").await.unwrap_err()"
+---
+Hrana(
+    Api(
+        "{\"error\":\"Internal Error: `migration error: migration is invalid: it contains transaction items (BEGIN, COMMIT, SAVEPOINT...) which are not allowed. The migration is already run within a transaction`\"}",
+    ),
+)

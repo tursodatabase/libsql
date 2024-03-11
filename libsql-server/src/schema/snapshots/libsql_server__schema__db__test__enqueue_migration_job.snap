@@ -1,5 +1,5 @@
 ---
-source: libsql-server/src/namespace/meta_store.rs
+source: libsql-server/src/schema/db.rs
 expression: stmt.query(()).unwrap().next().unwrap().unwrap()
 ---
 {
@@ -23,6 +23,18 @@ expression: stmt.query(()).unwrap().next().unwrap().unwrap()
     ),
     Ok(
         "status",
+    ): (
+        Integer,
+        0,
+    ),
+    Ok(
+        "error",
+    ): (
+        Null,
+        (),
+    ),
+    Ok(
+        "finished",
     ): (
         Integer,
         0,

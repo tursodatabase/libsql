@@ -1,0 +1,7 @@
+---
+source: libsql-server/tests/namespaces/shared_schema.rs
+expression: resp.json_value().await.unwrap()
+---
+Object {
+    "error": String("couldn't find requested migration job"),
+}

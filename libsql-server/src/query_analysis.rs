@@ -153,6 +153,7 @@ impl StmtKind {
             // special case for `encoding` - it's effectively readonly for connections
             // that already created a database, which is always the case for sqld
             "encoding" => Some(Self::Read),
+            "schema_version" if body.is_none() => Some(Self::Read),
             // always ok to be served by primary
             "defer_foreign_keys" | "foreign_keys" | "foreign_key_list" | "foreign_key_check" | "collation_list"
             | "data_version" | "freelist_count" | "integrity_check" | "legacy_file_format"
@@ -180,7 +181,6 @@ impl StmtKind {
             | "read_uncommitted"
             | "recursive_triggers"
             | "reverse_unordered_selects"
-            | "schema_version"
             | "secure_delete"
             | "soft_heap_limit"
             | "synchronous"
@@ -221,6 +221,14 @@ impl StmtKind {
     #[must_use]
     pub fn is_release(&self) -> bool {
         matches!(self, Self::Release)
+    }
+
+    /// Returns true if this statement is a transaction related statement
+    pub(crate) fn is_txn(&self) -> bool {
+        matches!(
+            self,
+            Self::TxnEnd | Self::TxnBegin | Self::Release | Self::Savepoint
+        )
     }
 }
 
