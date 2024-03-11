@@ -6,7 +6,11 @@ use tempfile::tempdir;
 use tokio::time::Duration;
 use turmoil::Builder;
 
-use crate::common::{http::Client, net::TurmoilConnector};
+use crate::common::{
+    auth::{encode, key_pair},
+    http::Client,
+    net::TurmoilConnector,
+};
 
 use super::make_primary;
 
@@ -588,6 +592,80 @@ fn conflicting_data_migration() {
             .unwrap();
         let c = rows.next().await.unwrap().unwrap().get::<i64>(0).unwrap();
         assert_eq!(c, 0);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn disable_ddl() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(100000))
+        .build();
+    let tmp = tempdir().unwrap();
+    make_primary(&mut sim, tmp.path().to_path_buf());
+
+    sim.client("client", async {
+        let (encoding_key, validation_key) = key_pair();
+        let client = Client::new();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/schema/create",
+                json!({"shared_schema": true, "jwt_key": validation_key.clone()}),
+            )
+            .await
+            .unwrap();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/ns1/create",
+                json!({"shared_schema_name": "schema", "jwt_key": validation_key.clone() }),
+            )
+            .await
+            .unwrap();
+
+        {
+            let claims = serde_json::json!( {
+                "p": {
+                    "rw": {
+                        "ns": ["schema", "ns1"],
+                    }
+                }
+            });
+            let token = encode(&claims, &encoding_key);
+            let conn = Database::open_remote_with_connector(
+                "http://ns1.primary:8080",
+                token.clone(),
+                TurmoilConnector,
+            )
+            .unwrap()
+            .connect()
+            .unwrap();
+
+            assert_debug_snapshot!(conn.execute("create table test (x)", ()).await.unwrap_err());
+        }
+
+        {
+            let claims = serde_json::json!( {
+                "p": {
+                    "ddl": {
+                        "ns": ["ns1"],
+                    }
+                }
+            });
+            let token = encode(&claims, &encoding_key);
+            let conn = Database::open_remote_with_connector(
+                "http://ns1.primary:8080",
+                token.clone(),
+                TurmoilConnector,
+            )
+            .unwrap()
+            .connect()
+            .unwrap();
+
+            assert_debug_snapshot!(conn.execute("create table test (x)", ()).await.unwrap());
+        }
 
         Ok(())
     });

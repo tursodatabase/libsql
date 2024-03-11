@@ -2,10 +2,9 @@ use std::time::Duration;
 
 use libsql::Database;
 
-use crate::{
-    common::{http::Client, net::TurmoilConnector},
-    standalone::utils::{encode, key_pair},
-};
+use crate::common::auth::{encode, key_pair};
+use crate::common::http::Client;
+use crate::common::net::TurmoilConnector;
 
 use super::make_standalone_server;
 

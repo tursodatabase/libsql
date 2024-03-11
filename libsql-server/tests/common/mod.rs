@@ -9,6 +9,7 @@ use metrics_util::{
     CompositeKey, MetricKind,
 };
 
+pub mod auth;
 pub mod http;
 pub mod net;
 

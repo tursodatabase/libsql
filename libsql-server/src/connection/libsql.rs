@@ -28,6 +28,7 @@ use crate::replication::FrameNo;
 use crate::stats::{Stats, StatsUpdateMessage};
 use crate::Result;
 
+use super::config::DatabaseConfig;
 use super::program::{DescribeCol, DescribeParam, DescribeResponse, Vm};
 use super::{MakeConnection, Program, RequestContext};
 
@@ -661,9 +662,7 @@ impl<W: Wal> Connection<W> {
                             || config.block_writes
                             || block_writes.load(Ordering::SeqCst)
                     }
-                    StmtKind::DDL => {
-                        config.block_reads || config.block_writes || config.block_ddl()
-                    }
+                    StmtKind::DDL => config.block_reads || config.block_writes,
                     StmtKind::TxnEnd
                     | StmtKind::Release
                     | StmtKind::Savepoint
@@ -839,9 +838,9 @@ impl<W: Wal> Connection<W> {
     }
 }
 
-fn check_program_auth(ctx: &RequestContext, pgm: &Program) -> Result<()> {
+fn check_program_auth(ctx: &RequestContext, pgm: &Program, config: &DatabaseConfig) -> Result<()> {
     for step in pgm.steps() {
-        match step.query.stmt.kind {
+        match &step.query.stmt.kind {
             StmtKind::TxnBegin
             | StmtKind::TxnEnd
             | StmtKind::Read
@@ -849,8 +848,11 @@ fn check_program_auth(ctx: &RequestContext, pgm: &Program) -> Result<()> {
             | StmtKind::Release => {
                 ctx.auth.has_right(&ctx.namespace, Permission::Read)?;
             }
+            StmtKind::DDL if config.shared_schema_name.is_some() => {
+                ctx.auth().ddl_permitted(&ctx.namespace)?;
+            }
             StmtKind::DDL | StmtKind::Write => {
-                ctx.auth.has_right(&ctx.namespace, Permission::Write)?;
+                ctx.auth().has_right(&ctx.namespace, Permission::Write)?;
             }
             StmtKind::Attach(ref ns) => {
                 ctx.auth.has_right(ns, Permission::AttachRead)?;
@@ -894,7 +896,7 @@ where
     ) -> Result<B> {
         PROGRAM_EXEC_COUNT.increment(1);
 
-        check_program_auth(&ctx, &pgm)?;
+        check_program_auth(&ctx, &pgm, &self.inner.lock().config_store.get())?;
         let conn = self.inner.clone();
         CONN_RT
             .spawn_blocking(move || Connection::run(conn, pgm, builder))
