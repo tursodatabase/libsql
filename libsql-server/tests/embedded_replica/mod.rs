@@ -69,14 +69,14 @@ fn make_primary(sim: &mut Sim, path: PathBuf) {
 
 #[test]
 fn embedded_replica() {
-    let mut sim = Builder::new()
-        .simulation_duration(Duration::from_secs(1000))
-        .build();
-
     let tmp_embedded = tempdir().unwrap();
     let tmp_host = tempdir().unwrap();
     let tmp_embedded_path = tmp_embedded.path().to_owned();
     let tmp_host_path = tmp_host.path().to_owned();
+
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     make_primary(&mut sim, tmp_host_path.clone());
 

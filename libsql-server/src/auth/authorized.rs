@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use hashbrown::HashSet;
+use once_cell::sync::Lazy;
 
 use crate::namespace::NamespaceName;
 
@@ -91,22 +92,14 @@ impl Authorized {
     }
 
     fn can_write_ns(&self, name: &NamespaceName) -> bool {
-        if let Some(Scopes {
-            namespaces: Some(ref ns),
-            ..
-        }) = self.read_write
-        {
-            if ns.contains(name) {
+        if let Some(ref scope) = self.read_write {
+            if scope.contains(name) {
                 return true;
             }
         }
 
-        if let Some(Scopes {
-            namespaces: Some(ref ns),
-            ..
-        }) = self.read_write_attach
-        {
-            if ns.contains(name) {
+        if let Some(ref scope) = self.read_write_attach {
+            if scope.contains(name) {
                 return true;
             }
         }
@@ -119,22 +112,14 @@ impl Authorized {
             return true;
         }
 
-        if let Some(Scopes {
-            namespaces: Some(ref ns),
-            ..
-        }) = self.read_only
-        {
-            if ns.contains(name) {
+        if let Some(ref scope) = self.read_only {
+            if scope.contains(name) {
                 return true;
             }
         }
 
-        if let Some(Scopes {
-            namespaces: Some(ref ns),
-            ..
-        }) = self.read_only_attach
-        {
-            if ns.contains(name) {
+        if let Some(ref scope) = self.read_only_attach {
+            if scope.contains(name) {
                 return true;
             }
         }
@@ -167,22 +152,14 @@ impl Authorized {
     }
 
     fn can_attach_ns(&self, name: &NamespaceName) -> bool {
-        if let Some(Scopes {
-            namespaces: Some(ref ns),
-            ..
-        }) = self.read_only_attach
-        {
-            if ns.contains(name) {
+        if let Some(ref scope) = self.read_only_attach {
+            if scope.contains(name) {
                 return true;
             }
         }
 
-        if let Some(Scopes {
-            namespaces: Some(ref ns),
-            ..
-        }) = self.read_write_attach
-        {
-            if ns.contains(name) {
+        if let Some(ref scope) = self.read_write_attach {
+            if scope.contains(name) {
                 return true;
             }
         }
@@ -195,6 +172,8 @@ impl Authorized {
 pub struct Scopes {
     #[serde(rename = "ns", default)]
     pub namespaces: Option<HashSet<NamespaceName>>,
+    #[serde(rename = "tags", default)]
+    pub tags: Option<HashSet<String>>,
 }
 
 impl Scopes {
@@ -208,9 +187,49 @@ impl Scopes {
     }
 
     fn contains(&self, name: &NamespaceName) -> bool {
+        static GID: Lazy<Option<String>> = Lazy::new(|| std::env::var("LIBSQL_GID").ok());
         match self.namespaces {
-            Some(ref map) => map.contains(name),
+            Some(ref set) if set.contains(name) => return true,
+            _ => (),
+        };
+
+        // the only tag supported right now is the gid tag. In the future, tags will be dynamically
+        // settable per-namespace
+        match GID.as_ref().zip(self.tags.as_ref()) {
+            Some((gid, tags)) => tags.contains(gid),
             None => false,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn gid_claim() {
+        std::env::set_var("LIBSQL_GID", "my_group");
+
+        let auth = Authorized {
+            read_only: Some(Scopes {
+                namespaces: None,
+                tags: Some(["my_group".to_string()].into_iter().collect()),
+            }),
+            ..Default::default()
+        };
+
+        assert!(auth.has_right(Scope::Namespace("ns".into()), Permission::Read));
+        assert!(!auth.has_right(Scope::Namespace("ns".into()), Permission::Write));
+
+        let auth = Authorized {
+            read_only: Some(Scopes {
+                namespaces: None,
+                tags: Some(["other_group".to_string()].into_iter().collect()),
+            }),
+            ..Default::default()
+        };
+
+        assert!(!auth.has_right(Scope::Namespace("ns".into()), Permission::Read));
+        assert!(!auth.has_right(Scope::Namespace("ns".into()), Permission::Write));
     }
 }
