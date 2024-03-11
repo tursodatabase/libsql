@@ -31,13 +31,6 @@ pub struct DatabaseConfig {
     pub shared_schema_name: Option<NamespaceName>,
 }
 
-impl DatabaseConfig {
-    #[inline]
-    pub fn block_ddl(&self) -> bool {
-        self.shared_schema_name.is_some()
-    }
-}
-
 const fn default_max_size() -> u64 {
     bytesize::ByteSize::pb(1000).as_u64() / LIBSQL_PAGE_SIZE
 }

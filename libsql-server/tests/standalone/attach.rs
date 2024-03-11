@@ -4,10 +4,9 @@ use insta::assert_debug_snapshot;
 use libsql::Database;
 use uuid::Uuid;
 
-use crate::{
-    common::{http::Client, net::TurmoilConnector},
-    standalone::utils::{encode, key_pair},
-};
+use crate::common::auth::{encode, key_pair};
+use crate::common::http::Client;
+use crate::common::net::TurmoilConnector;
 
 use super::make_standalone_server;
 

@@ -71,4 +71,14 @@ impl Authenticated {
             Authenticated::FullAccess => Ok(()),
         }
     }
+
+    pub(crate) fn ddl_permitted(&self, namespace: &NamespaceName) -> crate::Result<()> {
+        match self {
+            Authenticated::Authorized(a) if a.ddl_permitted(namespace) => Ok(()),
+            Authenticated::FullAccess => Ok(()),
+            _ => Err(crate::Error::NotAuthorized(format!(
+                "DDL statements not permitted on namespace {namespace}"
+            ))),
+        }
+    }
 }

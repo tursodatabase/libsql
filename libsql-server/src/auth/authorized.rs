@@ -16,6 +16,9 @@ pub struct Authorized {
     pub read_only_attach: Option<Scopes>,
     #[serde(rename = "rwa", default)]
     pub read_write_attach: Option<Scopes>,
+    /// DDL override allows ddl statement to be executed on shared_schema databases
+    #[serde(rename = "ddl", default)]
+    pub ddl_override: Option<Scopes>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -37,6 +40,13 @@ impl Authorized {
             && self.read_only.is_none()
             && self.read_only_attach.is_none()
             && self.read_write_attach.is_none()
+    }
+
+    pub fn ddl_permitted(&self, name: &NamespaceName) -> bool {
+        match self.ddl_override {
+            Some(ref scope) => scope.contains(name),
+            None => false,
+        }
     }
 
     pub fn merge_legacy(
@@ -195,5 +205,12 @@ impl Scopes {
             .map(|nss| nss.iter().cloned().map(|ns| Scope::Namespace(ns)))
             .into_iter()
             .flatten()
+    }
+
+    fn contains(&self, name: &NamespaceName) -> bool {
+        match self.namespaces {
+            Some(ref map) => map.contains(name),
+            None => false,
+        }
     }
 }
