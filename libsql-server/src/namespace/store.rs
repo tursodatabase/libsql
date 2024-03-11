@@ -15,6 +15,7 @@ use crate::namespace::{NamespaceBottomlessDbId, NamespaceBottomlessDbIdInit, Nam
 use crate::stats::Stats;
 
 use super::meta_store::{MetaStore, MetaStoreHandle};
+use super::schema_lock::SchemaLocksRegistry;
 use super::{Namespace, NamespaceConfig, ResetCb, ResetOp, RestoreOption};
 
 type NamespaceEntry = Arc<RwLock<Option<Namespace>>>;
@@ -39,6 +40,7 @@ pub struct NamespaceStoreInner {
     has_shutdown: AtomicBool,
     snapshot_at_shutdown: bool,
     pub config: NamespaceConfig,
+    schema_locks: SchemaLocksRegistry,
 }
 
 impl NamespaceStore {
@@ -80,6 +82,7 @@ impl NamespaceStore {
                 has_shutdown: AtomicBool::new(false),
                 snapshot_at_shutdown,
                 config,
+                schema_locks: Default::default(),
             }),
         })
     }
@@ -368,6 +371,12 @@ impl NamespaceStore {
         db_config: DatabaseConfig,
     ) -> crate::Result<()> {
         if let Some(shared_schema_name) = &db_config.shared_schema_name {
+            // we hold a lock for the duration of the namespace creation
+            let _lock = self
+                .inner
+                .schema_locks
+                .acquire_shared(shared_schema_name.clone())
+                .await;
             return self
                 .fork(shared_schema_name.clone(), namespace, db_config, None)
                 .await;
@@ -418,5 +427,9 @@ impl NamespaceStore {
 
     pub(crate) fn meta_store(&self) -> &MetaStore {
         &self.inner.metadata
+    }
+
+    pub(crate) fn schema_locks(&self) -> &SchemaLocksRegistry {
+        &self.inner.schema_locks
     }
 }

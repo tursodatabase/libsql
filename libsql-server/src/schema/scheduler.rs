@@ -381,6 +381,13 @@ impl Scheduler {
         schema: NamespaceName,
         migration: Arc<Program>,
     ) -> Result<i64, Error> {
+        // acquire an exclusive lock to the schema before enqueueing to ensure that no namespaces
+        // are still being created before we register the migration
+        let _lock = self
+            .namespace_store
+            .schema_locks()
+            .acquire_exlusive(schema.clone())
+            .await;
         with_conn_async(self.migration_db.clone(), move |conn| {
             register_schema_migration_job(conn, &schema, &migration)
         })
@@ -1023,5 +1030,63 @@ mod test {
         }
 
         store.destroy("ns".into()).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn schema_locks() {
+        let tmp = tempdir().unwrap();
+        let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
+        let conn = maker().unwrap();
+        let meta_store = MetaStore::new(Default::default(), tmp.path(), conn, manager)
+            .await
+            .unwrap();
+        let (sender, _receiver) = mpsc::channel(100);
+        let config = make_config(sender.clone().into(), tmp.path());
+        let store = NamespaceStore::new(false, false, 10, config, meta_store)
+            .await
+            .unwrap();
+        let scheduler = Scheduler::new(store.clone(), maker().unwrap()).unwrap();
+
+        store
+            .create(
+                "schema".into(),
+                RestoreOption::Latest,
+                DatabaseConfig {
+                    is_shared_schema: true,
+                    ..Default::default()
+                },
+            )
+            .await
+            .unwrap();
+
+        {
+            let _lock = store.schema_locks().acquire_shared("schema".into()).await;
+            let fut = scheduler.register_migration_job(
+                "schema".into(),
+                Program::seq(&["create table test (x)"]).into(),
+            );
+            // we can't acquire the lock
+            assert!(tokio::time::timeout(std::time::Duration::from_secs(1), fut)
+                .await
+                .is_err());
+        }
+
+        {
+            // simulate an ongoing migration registration
+            let _lock = store.schema_locks().acquire_exlusive("schema".into()).await;
+
+            let fut = store.create(
+                "some_namespace".into(),
+                RestoreOption::Latest,
+                DatabaseConfig {
+                    shared_schema_name: Some("schema".into()),
+                    ..Default::default()
+                },
+            );
+            // we can't acquire the lock
+            assert!(tokio::time::timeout(std::time::Duration::from_secs(1), fut)
+                .await
+                .is_err());
+        }
     }
 }
