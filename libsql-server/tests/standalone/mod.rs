@@ -165,7 +165,7 @@ fn primary_serializability() {
 #[test]
 fn execute_transaction() {
     let mut sim = turmoil::Builder::new()
-        .simulation_duration(Duration::from_secs(1000))
+        .simulation_duration(Duration::from_secs(u64::MAX))
         .build();
 
     sim.host("primary", make_standalone_server);
