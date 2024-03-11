@@ -588,7 +588,7 @@ fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnect
 
     Ok(hyper_rustls::HttpsConnectorBuilder::new()
         .with_native_roots()
-        .map_err(Error::InvalidTlsConfiguration)?
+        .map_err(crate::Error::InvalidTlsConfiguration)?
         .https_or_http()
         .enable_http1()
         .wrap_connector(http))
