@@ -9,7 +9,7 @@ use super::common;
 use std::{sync::Arc, time::Duration};
 
 use insta::assert_debug_snapshot;
-use libsql::{Database, Value};
+use libsql::{params, Connection, Database, Value};
 use tempfile::tempdir;
 use tokio::sync::Notify;
 
@@ -163,7 +163,6 @@ fn primary_serializability() {
 }
 
 #[test]
-#[ignore = "transaction not yet implemented with the libsql client."]
 fn execute_transaction() {
     let mut sim = turmoil::Builder::new()
         .simulation_duration(Duration::from_secs(1000))
@@ -456,4 +455,52 @@ fn dirty_startup_dont_prevent_namespace_creation() {
     });
 
     sim.run().unwrap();
+}
+
+#[test]
+fn row_count() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+
+    sim.host("primary", make_standalone_server);
+
+    sim.client("test", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        conn.execute("CREATE TABLE test(a int, b int);", ()).await?;
+        conn.execute("BEGIN;", ()).await?;
+        insert_rows(&conn, 0, 10).await?;
+        insert_rows_with_args(&conn, 10, 10).await?;
+        assert_rows_count(&conn, 20).await?;
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+async fn insert_rows(conn: &Connection, start: u32, count: u32) -> libsql::Result<()> {
+    for i in start..(start + count) {
+        conn.execute(&format!("INSERT INTO test(a, b) VALUES({i},'{i}')"), ())
+            .await?;
+    }
+    Ok(())
+}
+
+async fn insert_rows_with_args(conn: &Connection, start: u32, count: u32) -> libsql::Result<()> {
+    for i in start..(start + count) {
+        let mut stmt = conn.prepare("INSERT INTO test(a, b) VALUES(?,?)").await?;
+        stmt.execute(params![i, i]).await?;
+    }
+    Ok(())
+}
+
+async fn assert_rows_count(conn: &Connection, expected: u32) -> libsql::Result<()> {
+    let mut q = conn.query("SELECT COUNT(*) FROM test", ()).await?;
+    let row = q.next().await?.unwrap();
+    let count: u32 = row.get(0)?;
+    assert_eq!(count, expected);
+    Ok(())
 }
