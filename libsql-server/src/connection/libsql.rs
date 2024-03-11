@@ -15,7 +15,6 @@ use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus, TransactionS
 use tokio::sync::{watch, Notify};
 use tokio::time::{Duration, Instant};
 
-use crate::auth::Permission;
 use crate::connection::TXN_TIMEOUT;
 use crate::error::Error;
 use crate::metrics::{
@@ -28,8 +27,9 @@ use crate::replication::FrameNo;
 use crate::stats::{Stats, StatsUpdateMessage};
 use crate::Result;
 
-use super::config::DatabaseConfig;
-use super::program::{DescribeCol, DescribeParam, DescribeResponse, Vm};
+use super::program::{
+    check_describe_auth, check_program_auth, DescribeCol, DescribeParam, DescribeResponse, Vm,
+};
 use super::{MakeConnection, Program, RequestContext};
 
 pub struct MakeLibSqlConn<T: WalManager> {
@@ -836,42 +836,6 @@ impl<W: Wal> Connection<W> {
     fn is_autocommit(&self) -> bool {
         self.conn.is_autocommit()
     }
-}
-
-fn check_program_auth(ctx: &RequestContext, pgm: &Program, config: &DatabaseConfig) -> Result<()> {
-    for step in pgm.steps() {
-        match &step.query.stmt.kind {
-            StmtKind::TxnBegin
-            | StmtKind::TxnEnd
-            | StmtKind::Read
-            | StmtKind::Savepoint
-            | StmtKind::Release => {
-                ctx.auth.has_right(&ctx.namespace, Permission::Read)?;
-            }
-            StmtKind::DDL if config.shared_schema_name.is_some() => {
-                ctx.auth().ddl_permitted(&ctx.namespace)?;
-            }
-            StmtKind::DDL | StmtKind::Write => {
-                ctx.auth().has_right(&ctx.namespace, Permission::Write)?;
-            }
-            StmtKind::Attach(ref ns) => {
-                ctx.auth.has_right(ns, Permission::AttachRead)?;
-                if !ctx.meta_store.handle(ns.clone()).get().allow_attach {
-                    return Err(Error::NotAuthorized(format!(
-                        "Namespace `{ns}` doesn't allow attach"
-                    )));
-                }
-            }
-            StmtKind::Detach => (),
-        }
-    }
-
-    Ok(())
-}
-
-fn check_describe_auth(ctx: RequestContext) -> Result<()> {
-    ctx.auth().has_right(ctx.namespace(), Permission::Read)?;
-    Ok(())
 }
 
 /// We use a different runtime to run the connection, because long running tasks block turmoil

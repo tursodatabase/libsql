@@ -672,3 +672,69 @@ fn disable_ddl() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn check_migration_perms() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(100000))
+        .build();
+    let tmp = tempdir().unwrap();
+    make_primary(&mut sim, tmp.path().to_path_buf());
+
+    sim.client("client", async {
+        let (encoding_key, validation_key) = key_pair();
+        let client = Client::new();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/schema/create",
+                json!({"shared_schema": true, "jwt_key": validation_key.clone()}),
+            )
+            .await
+            .unwrap();
+        {
+            let claims = serde_json::json!( {
+                "p": {
+                    "ro": {
+                        "ns": ["schema"],
+                    }
+                }
+            });
+            let token = encode(&claims, &encoding_key);
+            let conn = Database::open_remote_with_connector(
+                "http://schema.primary:8080",
+                token.clone(),
+                TurmoilConnector,
+            )
+            .unwrap()
+            .connect()
+            .unwrap();
+
+            assert_debug_snapshot!(conn.execute("create table test (x)", ()).await.unwrap_err());
+        }
+
+        {
+            let claims = serde_json::json!( {
+                "p": {
+                    "rw": {
+                        "ns": ["schema"],
+                    }
+                }
+            });
+            let token = encode(&claims, &encoding_key);
+            let conn = Database::open_remote_with_connector(
+                "http://schema.primary:8080",
+                token.clone(),
+                TurmoilConnector,
+            )
+            .unwrap()
+            .connect()
+            .unwrap();
+
+            assert_debug_snapshot!(conn.execute("create table test (x)", ()).await.unwrap());
+        }
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
