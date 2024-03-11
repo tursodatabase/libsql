@@ -626,6 +626,7 @@ impl Namespace {
                 name.clone(),
                 connection_maker,
                 wal_manager,
+                meta_store_handle.clone(),
             )),
             name,
             tasks: join_set,

@@ -1,0 +1,5 @@
+---
+source: libsql-server/tests/namespaces/shared_schema.rs
+expression: "conn.execute(\"create table test (x)\", ()).await.unwrap()"
+---
+0

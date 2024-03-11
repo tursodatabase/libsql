@@ -1,0 +1,9 @@
+---
+source: libsql-server/tests/namespaces/shared_schema.rs
+expression: "conn.execute(\"create table test (x)\", ()).await.unwrap_err()"
+---
+Hrana(
+    Api(
+        "{\"error\":\"Internal Error: `Not authorized to execute query: Current session doesn't not have Write permission to namespace schema`\"}",
+    ),
+)
