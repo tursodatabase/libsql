@@ -12,7 +12,7 @@ impl WalFrameHeader {
     pub const SIZE: usize = 24;
 
     /// In multi-page transactions, only the last page in the transaction contains
-    /// the size_after_transaction field. If it's zero, it means it's an uncommited
+    /// the size_after_transaction field. If it's zero, it means it's an uncommitted
     /// page.
     pub fn is_committed(&self) -> bool {
         self.size_after() != 0
