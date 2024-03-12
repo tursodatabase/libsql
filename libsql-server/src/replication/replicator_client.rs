@@ -134,9 +134,9 @@ impl ReplicatorClient for Client {
                 match f.timestamp {
                     Some(ts_millis) => {
                         if let Some(ts_millis) = NaiveDateTime::from_timestamp_millis(ts_millis) {
-                            let commited_at =
+                            let committed_at =
                                 DateTime::<Utc>::from_naive_utc_and_offset(ts_millis, Utc);
-                            let lat = Utc::now() - commited_at;
+                            let lat = Utc::now() - committed_at;
                             match lat.to_std() {
                                 Ok(lat) => {
                                     // we can record negative values if the clocks are out-of-sync. There is not

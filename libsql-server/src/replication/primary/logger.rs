@@ -79,7 +79,7 @@ pub struct LogFile {
     uncommitted_checksum: u64,
 
     /// checksum of the last committed frame
-    commited_checksum: u64,
+    committed_checksum: u64,
 
     /// Encryption layer
     encryption: Option<FrameEncryptor>,
@@ -139,21 +139,21 @@ impl LogFile {
             last_compact_instant: Instant::now(),
             uncommitted_frame_count: 0,
             uncommitted_checksum: 0,
-            commited_checksum: 0,
+            committed_checksum: 0,
             encryption,
             encryption_buf,
         };
 
         if file_end == 0 {
             this.write_header()?;
-        } else if let Some(last_commited) = this.last_commited_frame_no() {
+        } else if let Some(last_committed) = this.last_committed_frame_no() {
             // file is not empty, the starting checksum is the checksum from the last entry
-            let last_frame = this.frame(last_commited)?;
-            this.commited_checksum = last_frame.header().checksum.get();
+            let last_frame = this.frame(last_committed)?;
+            this.committed_checksum = last_frame.header().checksum.get();
             this.uncommitted_checksum = last_frame.header().checksum.get();
         } else {
             // file contains no entry, start with the initial checksum from the file header.
-            this.commited_checksum = this.header.start_checksum.get();
+            this.committed_checksum = this.header.start_checksum.get();
             this.uncommitted_checksum = this.header.start_checksum.get();
         }
 
@@ -179,7 +179,7 @@ impl LogFile {
     pub fn commit(&mut self) -> anyhow::Result<()> {
         self.header.frame_count += self.uncommitted_frame_count.into();
         self.uncommitted_frame_count = 0;
-        self.commited_checksum = self.uncommitted_checksum;
+        self.committed_checksum = self.uncommitted_checksum;
         self.write_header()?;
 
         Ok(())
@@ -187,7 +187,7 @@ impl LogFile {
 
     pub(crate) fn rollback(&mut self) {
         self.uncommitted_frame_count = 0;
-        self.uncommitted_checksum = self.commited_checksum;
+        self.uncommitted_checksum = self.committed_checksum;
     }
 
     pub fn write_header(&mut self) -> anyhow::Result<()> {
@@ -383,7 +383,7 @@ impl LogFile {
         let new_header = LogFileHeader {
             start_frame_no: (self.header.last_frame_no().unwrap() + 1).into(),
             frame_count: 0.into(),
-            start_checksum: self.commited_checksum.into(),
+            start_checksum: self.committed_checksum.into(),
             ..self.header
         };
         new_log_file.header = new_header;
@@ -415,7 +415,7 @@ impl LogFile {
         Ok(frame.into())
     }
 
-    fn last_commited_frame_no(&self) -> Option<FrameNo> {
+    fn last_committed_frame_no(&self) -> Option<FrameNo> {
         if self.header.frame_count.get() == 0 {
             None
         } else {

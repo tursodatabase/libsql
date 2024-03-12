@@ -263,7 +263,7 @@ impl Database {
         let mut previous_fno = None;
         loop {
             let new_fno = self.sync_oneshot().await?;
-            tracing::trace!("New commited fno: {new_fno:?}");
+            tracing::trace!("New committed fno: {new_fno:?}");
             if new_fno == previous_fno {
                 break;
             } else {

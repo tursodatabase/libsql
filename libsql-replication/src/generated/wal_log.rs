@@ -22,7 +22,7 @@ pub struct HelloResponse {
     /// / id of the replicated log
     #[prost(string, tag = "3")]
     pub log_id: ::prost::alloc::string::String,
-    /// / string-encoded Uuid v4 token for the current session, changes on each restart, and must be passed in subsequent requests header.string
+    /// / string-encoded Uuid v4 token for the current session, changes on each restart, and must be passed in subsequent requests `header.string`
     /// / If the header session token fails to match the current session token, a NO_HELLO error is returned
     #[prost(bytes = "bytes", tag = "4")]
     pub session_token: ::prost::bytes::Bytes,
@@ -37,7 +37,7 @@ pub struct Frame {
     #[prost(bytes = "bytes", tag = "1")]
     pub data: ::prost::bytes::Bytes,
     /// if this frames is a commit frame, then this can be set
-    /// to the time when the transaction was commited
+    /// to the time when the transaction was committed
     #[prost(int64, optional, tag = "2")]
     pub timestamp: ::core::option::Option<i64>,
 }

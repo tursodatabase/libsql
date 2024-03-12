@@ -101,7 +101,7 @@ mod test {
     use super::*;
 
     #[tokio::test]
-    async fn snapshot_stream_commited() {
+    async fn snapshot_stream_committed() {
         let tmp = tempdir().unwrap();
         let snapshot = SnapshotFile::open("assets/test/snapshot.snap", None)
             .await
