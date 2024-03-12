@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 		goto quit;
 	}
 
-	retval = libsql_execute(conn, "SELECT 1", &rows, &err);
+	retval = libsql_query(conn, "SELECT 1", &rows, &err);
 	if (retval != 0) {
 		fprintf(stderr, "%s\n", err);
 		goto quit;
