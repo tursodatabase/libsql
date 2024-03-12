@@ -189,8 +189,10 @@ fn attach_auth() {
 
         // mixed claims
         let claims = serde_json::json!({
-            "id": "foo",
             "p": {
+                "rw": {
+                    "ns": ["foo"]
+                },
                 "roa": {
                     "ns": ["bar"]
                 }
