@@ -28,7 +28,7 @@ use super::{
     abort_migration_task, perform_migration, step_task, MigrationTaskStatus, SchedulerMessage,
 };
 
-const MAX_CONCCURENT_JOBS: usize = 10;
+const MAX_CONCURRENT: usize = 10;
 
 pub struct Scheduler {
     namespace_store: NamespaceStore,
@@ -57,7 +57,7 @@ impl Scheduler {
             // initialized to true to kickoff the queue
             has_work: true,
             migration_db: Arc::new(Mutex::new(conn)),
-            permits: Arc::new(Semaphore::new(MAX_CONCCURENT_JOBS)),
+            permits: Arc::new(Semaphore::new(MAX_CONCURRENT)),
         })
     }
 
@@ -119,7 +119,7 @@ impl Scheduler {
                         // - the current batch has more tasks to enqueue
                         // - the remaining number of pending tasks is greater than the amount of in-flight tasks: we can enqueue more
                         // - there's no more in-flight nor pending tasks for the job: we need to step the job
-                        let in_flight = MAX_CONCCURENT_JOBS - self.permits.available_permits();
+                        let in_flight = MAX_CONCURRENT - self.permits.available_permits();
                         let pending_tasks = current_job.count_pending_tasks();
                         self.has_work = !self.current_batch.is_empty() || (pending_tasks == 0 && in_flight == 0) || pending_tasks > in_flight;
                     }

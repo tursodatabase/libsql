@@ -22,9 +22,9 @@ pub static REQUESTS_PROXIED: Lazy<Counter> = Lazy::new(|| {
     describe_counter!(NAME, "number of proxied requests");
     register_counter!(NAME)
 });
-pub static CONCCURENT_CONNECTIONS_COUNT: Lazy<Gauge> = Lazy::new(|| {
+pub static CONCURRENT_CONNECTIONS_COUNT: Lazy<Gauge> = Lazy::new(|| {
     const NAME: &str = "libsql_server_concurrent_connections";
-    describe_gauge!(NAME, "number of conccurent connections");
+    describe_gauge!(NAME, "number of concurrent connections");
     register_gauge!(NAME)
 });
 pub static NAMESPACE_LOAD_LATENCY: Lazy<Histogram> = Lazy::new(|| {
