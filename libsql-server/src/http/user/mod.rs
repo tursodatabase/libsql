@@ -10,7 +10,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::Context;
-use axum::extract::{FromRef, FromRequest, FromRequestParts, State as AxumState};
+use axum::extract::{FromRef, FromRequest, FromRequestParts, Path as AxumPath, State as AxumState};
 use axum::http::request::Parts;
 use axum::http::HeaderValue;
 use axum::response::{Html, IntoResponse};
@@ -30,7 +30,7 @@ use tonic::transport::Server;
 use tower_http::{compression::CompressionLayer, cors};
 
 use crate::auth::user_auth_strategies::UserAuthContext;
-use crate::auth::{Auth, Authenticated, Jwt};
+use crate::auth::{Auth, Authenticated, Jwt, Permission};
 use crate::connection::{Connection, RequestContext};
 use crate::error::Error;
 use crate::hrana;
@@ -45,6 +45,7 @@ use crate::query_result_builder::QueryResultBuilder;
 use crate::rpc::proxy::rpc::proxy_server::{Proxy, ProxyServer};
 use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLog;
 use crate::rpc::ReplicationLogServer;
+use crate::schema::{MigrationDetails, MigrationSummary};
 use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 use crate::version;
 
@@ -399,6 +400,8 @@ where
                     "/dev/:namespace/v:version/pipeline",
                     post(handle_hrana_pipeline),
                 )
+                .route("/v1/jobs", get(handle_get_migrations))
+                .route("/v1/jobs/:job_id", get(handle_get_migration_details))
                 .with_state(state);
 
             // Merge the grpc based axum router into our regular http router
@@ -512,5 +515,58 @@ where
         axum::Json::from_request(req, state)
             .await
             .map(|t| Json(t.0))
+    }
+}
+
+async fn handle_get_migrations(
+    AxumState(app_state): AxumState<AppState>,
+    ctx: RequestContext,
+) -> crate::Result<axum::Json<MigrationSummary>> {
+    ctx.auth().has_right(ctx.namespace(), Permission::Read)?;
+    {
+        // validate if this is a valid target for the request
+        let store = app_state
+            .namespaces
+            .config_store(ctx.namespace().clone())
+            .await?;
+        let config = (*store.get()).clone();
+        if !config.is_shared_schema {
+            return Err(Error::InvalidNamespace);
+        }
+    }
+
+    let meta_store = app_state.namespaces.meta_store();
+    let summary = meta_store
+        .get_migrations_summary(ctx.namespace().clone())
+        .await?;
+
+    Ok(axum::Json(summary))
+}
+
+async fn handle_get_migration_details(
+    AxumState(app_state): AxumState<AppState>,
+    AxumPath(job_id): AxumPath<u64>,
+    ctx: RequestContext,
+) -> crate::Result<axum::Json<MigrationDetails>> {
+    ctx.auth().has_right(ctx.namespace(), Permission::Read)?;
+    {
+        // validate if this is a valid target for the request
+        let store = app_state
+            .namespaces
+            .config_store(ctx.namespace().clone())
+            .await?;
+        let config = (*store.get()).clone();
+        if !config.is_shared_schema {
+            return Err(Error::InvalidNamespace);
+        }
+    }
+
+    let meta_store = app_state.namespaces.meta_store();
+    let details = meta_store
+        .get_migration_details(ctx.namespace().clone(), job_id)
+        .await?;
+    match details {
+        Some(details) => Ok(axum::Json(details)),
+        None => Err(crate::Error::MigrationJobNotFound),
     }
 }

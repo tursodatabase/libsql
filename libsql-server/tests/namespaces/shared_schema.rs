@@ -127,13 +127,13 @@ fn perform_schema_migration() {
         let expected_schema_version = 1;
         assert_all_eq!(expected_schema_version, get_schema_version("schema").await, get_schema_version("ns1").await, get_schema_version("ns2").await);
 
-        let resp = http_get("http://primary:9090/v1/namespaces/schema/migrations").await;
+        let resp = http_get("http://schema.primary:8080/v1/jobs").await;
         assert_eq!(
             resp,
             r#"{"schema_version":4,"migrations":[{"job_id":1,"status":"RunSuccess"}]}"#
         );
 
-        let resp = http_get("http://primary:9090/v1/namespaces/schema/migrations/1").await;
+        let resp = http_get("http://schema.primary:8080/v1/jobs/1").await;
         assert_eq!(resp, r#"{"job_id":1,"status":"RunSuccess","progress":[{"namespace":"ns1","status":"RunSuccess","error":null},{"namespace":"ns2","status":"RunSuccess","error":null}]}"#);
 
         // we add a new namespace and expect it to have the same schema version and schema
@@ -204,7 +204,7 @@ fn no_job_created_when_migration_job_is_invalid() {
             .unwrap_err());
 
         let resp = client
-            .get("http://primary:9090/v1/namespaces/schema/migrations/1")
+            .get("http://schema.primary:8080/v1/jobs/1")
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
@@ -247,7 +247,7 @@ fn migration_contains_txn_statements() {
             .unwrap_err());
 
         let resp = client
-            .get("http://primary:9090/v1/namespaces/schema/migrations/1")
+            .get("http://schema.primary:8080/v1/jobs/1")
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
@@ -331,7 +331,7 @@ fn dry_run_failure() {
 
         loop {
             let resp = client
-                .get("http://primary:9090/v1/namespaces/schema/migrations/2")
+                .get("http://schema.primary:8080/v1/jobs/2")
                 .await
                 .unwrap()
                 .json_value()
@@ -344,7 +344,7 @@ fn dry_run_failure() {
         }
 
         let resp = client
-            .get("http://primary:9090/v1/namespaces/schema/migrations/2")
+            .get("http://schema.primary:8080/v1/jobs/2")
             .await
             .unwrap()
             .json_value()
@@ -564,7 +564,7 @@ fn conflicting_data_migration() {
 
         loop {
             let resp = client
-                .get("http://primary:9090/v1/namespaces/schema/migrations/3")
+                .get("http://schema.primary:8080/v1/jobs/3")
                 .await
                 .unwrap()
                 .json_value()
@@ -577,7 +577,7 @@ fn conflicting_data_migration() {
         }
 
         let resp = client
-            .get("http://primary:9090/v1/namespaces/schema/migrations/3")
+            .get("http://schema.primary:8080/v1/jobs/3")
             .await
             .unwrap()
             .json_value()
