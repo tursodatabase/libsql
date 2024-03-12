@@ -9,7 +9,7 @@ use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::replication_wal::ReplicationWalManager;
 use crate::namespace::NamespaceName;
 use crate::query_result_builder::QueryBuilderConfig;
-use crate::schema::{perform_migration, validate_migration, SchedulerHandle};
+use crate::schema::{perform_migration, validate_migration, MigrationJobStatus, SchedulerHandle};
 
 use super::primary::PrimaryConnectionMaker;
 use super::PrimaryConnection;
@@ -69,10 +69,34 @@ impl crate::connection::Connection for SchemaConnection {
             .unwrap()?;
 
             // if dry run is successfull, enqueue
-            self.migration_scheduler
+            let mut handle = self
+                .migration_scheduler
                 .register_migration_task(self.schema.clone(), migration)
                 .await?;
-            // TODO here wait for dry run to be executed on all dbs
+
+            handle
+                .wait_for(|status| match status {
+                    MigrationJobStatus::DryRunSuccess
+                    | MigrationJobStatus::DryRunFailure
+                    | MigrationJobStatus::RunSuccess
+                    | MigrationJobStatus::RunFailure => true,
+                    _ => false,
+                })
+                .await;
+
+            match self
+                .migration_scheduler
+                .get_job_status(handle.job_id())
+                .await?
+            {
+                (MigrationJobStatus::DryRunFailure, Some(err)) => {
+                    Err(crate::schema::Error::DryRunFailure(err))?
+                }
+                (MigrationJobStatus::RunFailure, Some(err)) => {
+                    Err(crate::schema::Error::MigrationFailure(err))?
+                }
+                _ => (),
+            }
 
             Ok(builder)
         }

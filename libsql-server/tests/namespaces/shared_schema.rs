@@ -324,10 +324,10 @@ fn dry_run_failure() {
         // we are creating a new table with a constraint on the column. when the dry run is
         // executed against the schema or ns2, it works, because test is empty there, but it should
         // fail on ns1, because it test contains a row with NULL.
-        schema_conn
+        assert_debug_snapshot!(schema_conn
             .execute_batch("create table test2 (c NOT NULL); insert into test2 select * from test")
             .await
-            .unwrap();
+            .unwrap_err());
 
         loop {
             let resp = client
@@ -557,10 +557,10 @@ fn conflicting_data_migration() {
             .unwrap();
 
         // create unique index on the column
-        schema_conn
+        assert_debug_snapshot!(schema_conn
             .execute("create unique index idx on test (c)", ())
             .await
-            .unwrap();
+            .unwrap_err());
 
         loop {
             let resp = client
