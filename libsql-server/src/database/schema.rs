@@ -145,12 +145,30 @@ impl SchemaDatabase {
         }
     }
 
-    pub(crate) async fn shutdown(&self) -> Result<(), anyhow::Error> {
-        todo!()
+    pub(crate) async fn shutdown(self) -> Result<(), anyhow::Error> {
+        self.wal_manager
+            .wrapped()
+            .logger()
+            .closed_signal
+            .send_replace(true);
+        let wal_manager = self.wal_manager;
+        if let Some(mut replicator) = tokio::task::spawn_blocking(move || {
+            wal_manager.wrapper().as_ref().and_then(|r| r.shutdown())
+        })
+        .await?
+        {
+            replicator.shutdown_gracefully().await?;
+        }
+
+        Ok(())
     }
 
     pub(crate) fn destroy(&self) {
-        todo!()
+        self.wal_manager
+            .wrapped()
+            .logger()
+            .closed_signal
+            .send_replace(true);
     }
 
     pub(crate) fn connection_maker(&self) -> Self {
