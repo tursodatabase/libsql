@@ -35,6 +35,10 @@ pub enum Error {
     CantStepJobDryRunSuccess,
     #[error("failed to backup namespace {0}: {1}")]
     NamespaceBackupFailure(NamespaceName, BoxError),
+    #[error("migration dry run failed: {0}")]
+    DryRunFailure(String),
+    #[error("migration failed: {0}")]
+    MigrationFailure(String),
 }
 
 impl ResponseError for Error {}

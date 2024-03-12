@@ -22,6 +22,7 @@ use super::db::{
     job_step_dry_run_success, register_schema_migration_job, setup_schema,
 };
 use super::error::Error;
+use super::handle::JobHandle;
 use super::migration::enqueue_migration_task;
 use super::status::{MigrationJob, MigrationTask};
 use super::{
@@ -41,6 +42,7 @@ pub struct Scheduler {
     current_job: Option<MigrationJob>,
     has_work: bool,
     permits: Arc<Semaphore>,
+    event_notifier: tokio::sync::broadcast::Sender<(i64, MigrationJobStatus)>,
 }
 
 impl Scheduler {
@@ -58,6 +60,7 @@ impl Scheduler {
             has_work: true,
             migration_db: Arc::new(Mutex::new(conn)),
             permits: Arc::new(Semaphore::new(MAX_CONCURRENT)),
+            event_notifier: tokio::sync::broadcast::Sender::new(32),
         })
     }
 
@@ -124,14 +127,18 @@ impl Scheduler {
                         self.has_work = !self.current_batch.is_empty() || (pending_tasks == 0 && in_flight == 0) || pending_tasks > in_flight;
                     }
                     Ok(WorkResult::Job { status }) => {
-                        if status.is_finished() {
-                            self.current_job.take();
+                        let job_id = if status.is_finished() {
+                            let job = self.current_job.take().unwrap();
+                            job.job_id
                         } else {
-                            *self.current_job
+                            let current_job = self.current_job
                                 .as_mut()
-                                .expect("job is missing, but got status update for that job")
-                                .status_mut() = status;
-                        }
+                                .expect("job is missing, but got status update for that job");
+                            *current_job.status_mut() = status;
+                            current_job.job_id()
+                        };
+
+                        let _ = self.event_notifier.send((job_id, status));
 
                         self.has_work = true;
                     }
@@ -154,10 +161,14 @@ impl Scheduler {
                 ret,
             } => {
                 let res = self.register_migration_job(schema, migration).await;
-                let _ = ret.send(res);
+                let _ = ret.send(res.map(|id| JobHandle::new(id, self.event_notifier.subscribe())));
                 // it not necessary to raise the flag if we are currently processing a job: it
                 // prevents spurious wakeups, and the job will be picked up anyway.
                 self.has_work = self.current_job.is_none();
+            }
+            SchedulerMessage::GetJobStatus { job_id, ret } => {
+                let res = self.get_job_status(job_id).await;
+                let _ = ret.send(res);
             }
         }
     }
@@ -390,6 +401,16 @@ impl Scheduler {
             .await;
         with_conn_async(self.migration_db.clone(), move |conn| {
             register_schema_migration_job(conn, &schema, &migration)
+        })
+        .await
+    }
+
+    async fn get_job_status(
+        &self,
+        job_id: i64,
+    ) -> Result<(MigrationJobStatus, Option<String>), Error> {
+        with_conn_async(self.migration_db.clone(), move |conn| {
+            super::db::get_job_status(conn, job_id)
         })
         .await
     }

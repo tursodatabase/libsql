@@ -726,3 +726,18 @@ mod test {
         assert!(register_shared(&meta_store, "ns", "schema").await.is_ok());
     }
 }
+
+pub(crate) fn get_job_status(
+    conn: &rusqlite::Connection,
+    job_id: i64,
+) -> Result<(MigrationJobStatus, Option<String>), Error> {
+    Ok(conn.query_row(
+        "SELECT status, error FROM migration_jobs WHERE job_id = ? LIMIT 1",
+        [job_id],
+        |row| {
+            let status = MigrationJobStatus::from_int(row.get(0)?);
+            let error: Option<String> = row.get(1)?;
+            Ok((status, error))
+        },
+    )?)
+}
