@@ -1166,10 +1166,10 @@ mod test {
         assert!((wait_time..wait_time + epsilon).contains(&elapsed));
     }
 
-    /// The goal of this test is to run many conccurent transaction and hopefully catch a bug in
+    /// The goal of this test is to run many concurrent transaction and hopefully catch a bug in
     /// the lock stealing code. If this test becomes flaky check out the lock stealing code.
     #[tokio::test]
-    async fn test_many_conccurent() {
+    async fn test_many_concurrent() {
         let tmp = tempdir().unwrap();
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),

@@ -42,7 +42,7 @@ struct SnapshotStoreInner {
     /// path to the temporary directory
     snapshots_path: PathBuf,
     temp_path: PathBuf,
-    // TODO: use a pool to allow conccurent read and writes.
+    // TODO: use a pool to allow concurrent read and writes.
     conn: Mutex<libsql_sys::Connection<Sqlite3Wal>>,
 }
 
