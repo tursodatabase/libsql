@@ -1449,7 +1449,11 @@ impl FromClause {
         }
     }
 
-    pub(crate) fn push(&mut self, table: SelectTable, jc: Option<JoinConstraint>) {
+    pub(crate) fn push(
+        &mut self,
+        table: SelectTable,
+        jc: Option<JoinConstraint>,
+    ) -> Result<(), ParserError> {
         let op = self.op.take();
         if let Some(op) = op {
             let jst = JoinedSelectTable {
@@ -1463,11 +1467,17 @@ impl FromClause {
                 self.joins = Some(vec![jst]);
             }
         } else {
-            debug_assert!(jc.is_none());
+            if jc.is_some() {
+                return Err(ParserError::Custom(
+                    "a JOIN clause is required before ON".to_string(),
+                ));
+            }
             debug_assert!(self.select.is_none());
             debug_assert!(self.joins.is_none());
             self.select = Some(Box::new(table));
         }
+
+        Ok(())
     }
 
     pub(crate) fn push_op(&mut self, op: JoinOperator) {
