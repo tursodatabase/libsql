@@ -87,7 +87,6 @@ replication = [
   "dep:tonic",
   "dep:tonic-web",
   "dep:tower-http",
-  "dep:tower",
   "dep:hyper-rustls",
   "dep:futures",
   "dep:libsql_replication",
@@ -113,7 +112,6 @@ remote = [
   "dep:tokio",
   "dep:futures",
   "dep:bitflags",
-  "dep:tower",
   "dep:hyper-rustls",
 ]
 wasm = ["hrana"]
