@@ -11,7 +11,7 @@ use super::{Error, MigrationTaskStatus};
 pub fn setup_migration_table(conn: &mut rusqlite::Connection) -> Result<(), Error> {
     static TASKS_TABLE_QUERY: Lazy<String> = Lazy::new(|| {
         format!(
-            "CREATE TABLE IF NOT EXISTS __libsql_migration_tasks (
+            "CREATE TABLE IF NOT EXISTS sqlite3_libsql_tasks (
                 job_id INTEGER PRIMARY KEY,
                 status INTEGER,
                 migration TEXT NOT NULL,
@@ -39,7 +39,7 @@ pub fn setup_migration_table(conn: &mut rusqlite::Connection) -> Result<(), Erro
 
 pub fn has_pending_migration_task(conn: &rusqlite::Connection) -> Result<bool, Error> {
     Ok(conn.query_row(
-        "SELECT COUNT(1) FROM __libsql_migration_tasks WHERE finished = false",
+        "SELECT COUNT(1) FROM sqlite3_libsql_tasks WHERE finished = false",
         (),
         |row| Ok(row.get::<_, usize>(0)? != 0),
     )?)
@@ -53,7 +53,7 @@ pub fn enqueue_migration_task(
 ) -> Result<(), Error> {
     let migration = serde_json::to_string(migration).unwrap();
     conn.execute(
-        "INSERT OR IGNORE INTO __libsql_migration_tasks (job_id, status, migration) VALUES (?, ?, ?)",
+        "INSERT OR IGNORE INTO sqlite3_libsql_tasks (job_id, status, migration) VALUES (?, ?, ?)",
         (job_id, status as u64, &migration),
     )?;
 
@@ -64,7 +64,7 @@ pub fn abort_migration_task(conn: &rusqlite::Connection, job_id: i64) -> Result<
     // there is a `NOT NULL` constraint on migration, but if we are aborting a task that wasn't
     // already enqueued, we need a placeholder. It's ok because we are never gonna try to run a
     // failed task migration.
-    conn.execute("INSERT OR REPLACE INTO __libsql_migration_tasks (job_id, status, error, migration) VALUES (?, ?, ?, ?)",
+    conn.execute("INSERT OR REPLACE INTO sqlite3_libsql_tasks (job_id, status, error, migration) VALUES (?, ?, ?, ?)",
     (job_id, MigrationTaskStatus::Failure as u64, "aborted", "aborted"))?;
 
     Ok(())
@@ -74,7 +74,7 @@ pub fn abort_migration_task(conn: &rusqlite::Connection, job_id: i64) -> Result<
 pub fn step_migration_task_run(conn: &rusqlite::Connection, job_id: i64) -> Result<(), Error> {
     conn.execute(
         "
-            UPDATE __libsql_migration_tasks
+            UPDATE sqlite3_libsql_tasks
             SET status = ?
             WHERE job_id = ? AND status = ?
             ",
@@ -93,7 +93,7 @@ fn get_task_infos(
     job_id: i64,
 ) -> Result<(MigrationTaskStatus, Option<Program>, Option<String>), Error> {
     Ok(conn.query_row(
-        "SELECT status, migration, error FROM __libsql_migration_tasks WHERE job_id = ?",
+        "SELECT status, migration, error FROM sqlite3_libsql_tasks WHERE job_id = ?",
         [job_id],
         |row| {
             let status = MigrationTaskStatus::from_int(row.get::<_, u64>(0)?);
@@ -197,7 +197,7 @@ pub(super) fn update_db_task_status(
     error: Option<&str>,
 ) -> Result<(), Error> {
     conn.execute(
-        "UPDATE __libsql_migration_tasks SET status = ?, error = ? WHERE job_id = ?",
+        "UPDATE sqlite3_libsql_tasks SET status = ?, error = ? WHERE job_id = ?",
         (status as u64, error, job_id),
     )?;
 
