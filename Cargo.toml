@@ -15,13 +15,14 @@ members = [
   "vendored/sqlite3-parser",
 
   "xtask",
-  "tools/rebuild-log",
 ]
 
 exclude = [
     "./libsql-sqlite3/ext/crr",
     "./libsql-sqlite3/ext/libsql-wasi",
-  "libsql-shell",
+    "libsql-shell",
+    "tools/rebuild-log",
+    "tools/fuzz",
 ]
 
 [profile.release]

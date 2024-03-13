@@ -3881,14 +3881,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rebuild-log"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "zerocopy",
-]
-
-[[package]]
 name = "redox_syscall"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
