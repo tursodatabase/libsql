@@ -144,7 +144,7 @@ impl EmbeddedReplicator {
                         tokio::time::sleep(sync_duration).await;
                     }
                 }
-                .instrument(tracing::info_span!("periodic_sync")),
+                .instrument(tracing::info_span!("sync_interval")),
             );
 
             replicator.bg_abort = Some(Arc::new(DropAbort(jh.abort_handle())));
@@ -158,7 +158,7 @@ impl EmbeddedReplicator {
         db_path: PathBuf,
         auto_checkpoint: u32,
         encryption_config: Option<EncryptionConfig>,
-    ) -> Self {
+    ) -> Result<Self> {
         let replicator = Arc::new(Mutex::new(
             Replicator::new(
                 Either::Right(client),
@@ -166,14 +166,13 @@ impl EmbeddedReplicator {
                 auto_checkpoint,
                 encryption_config,
             )
-            .await
-            .unwrap(),
+            .await?,
         ));
 
-        Self {
+        Ok(Self {
             replicator,
             bg_abort: None,
-        }
+        })
     }
 
     pub async fn sync_oneshot(&self) -> Result<Option<FrameNo>> {

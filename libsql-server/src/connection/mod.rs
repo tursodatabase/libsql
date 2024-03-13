@@ -11,7 +11,7 @@ use tonic::metadata::BinaryMetadataValue;
 use crate::auth::Authenticated;
 use crate::error::Error;
 use crate::metrics::{
-    CONCCURENT_CONNECTIONS_COUNT, CONNECTION_ALIVE_DURATION, CONNECTION_CREATE_TIME,
+    CONCURRENT_CONNECTIONS_COUNT, CONNECTION_ALIVE_DURATION, CONNECTION_CREATE_TIME,
 };
 use crate::namespace::meta_store::MetaStore;
 use crate::namespace::NamespaceName;
@@ -365,7 +365,7 @@ impl<F: MakeConnection> MakeConnection for MakeThrottledConnection<F> {
 
         let inner = self.connection_maker.create().await?;
 
-        CONCCURENT_CONNECTIONS_COUNT.increment(1.0);
+        CONCURRENT_CONNECTIONS_COUNT.increment(1.0);
         CONNECTION_CREATE_TIME.record(before_create.elapsed());
 
         Ok(TrackedConnection {
@@ -386,7 +386,7 @@ pub struct TrackedConnection<DB> {
 
 impl<T> Drop for TrackedConnection<T> {
     fn drop(&mut self) {
-        CONCCURENT_CONNECTIONS_COUNT.decrement(1.0);
+        CONCURRENT_CONNECTIONS_COUNT.decrement(1.0);
         CONNECTION_ALIVE_DURATION.record(self.created_at.elapsed());
     }
 }

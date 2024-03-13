@@ -1,0 +1,21 @@
+---
+source: libsql-server/tests/namespaces/shared_schema.rs
+expression: resp
+---
+{
+  "job_id": 2,
+  "status": "RunFailure",
+  "error": "task 3 for namespace `ns1` failed with error: An error occured executing the migration at step 2: NOT NULL constraint failed: test2.c",
+  "progress": [
+    {
+      "namespace": "ns1",
+      "status": "RunFailure",
+      "error": "aborted"
+    },
+    {
+      "namespace": "ns2",
+      "status": "RunFailure",
+      "error": "aborted"
+    }
+  ]
+}

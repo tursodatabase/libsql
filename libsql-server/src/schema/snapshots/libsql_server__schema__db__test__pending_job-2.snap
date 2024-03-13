@@ -1,5 +1,5 @@
 ---
-source: libsql-server/src/namespace/meta_store.rs
+source: libsql-server/src/schema/db.rs
 expression: tasks
 ---
 [

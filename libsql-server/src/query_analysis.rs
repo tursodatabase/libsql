@@ -153,6 +153,7 @@ impl StmtKind {
             // special case for `encoding` - it's effectively readonly for connections
             // that already created a database, which is always the case for sqld
             "encoding" => Some(Self::Read),
+            "schema_version" if body.is_none() => Some(Self::Read),
             // always ok to be served by primary
             "defer_foreign_keys" | "foreign_keys" | "foreign_key_list" | "foreign_key_check" | "collation_list"
             | "data_version" | "freelist_count" | "integrity_check" | "legacy_file_format"
@@ -180,7 +181,6 @@ impl StmtKind {
             | "read_uncommitted"
             | "recursive_triggers"
             | "reverse_unordered_selects"
-            | "schema_version"
             | "secure_delete"
             | "soft_heap_limit"
             | "synchronous"
@@ -221,6 +221,14 @@ impl StmtKind {
     #[must_use]
     pub fn is_release(&self) -> bool {
         matches!(self, Self::Release)
+    }
+
+    /// Returns true if this statement is a transaction related statement
+    pub(crate) fn is_txn(&self) -> bool {
+        matches!(
+            self,
+            Self::TxnEnd | Self::TxnBegin | Self::Release | Self::Savepoint
+        )
     }
 }
 
@@ -324,15 +332,41 @@ impl Statement {
         // on the heap:
         // - https://github.com/gwenn/lemon-rs/issues/8
         // - https://github.com/gwenn/lemon-rs/pull/19
-        let mut parser = Box::new(Parser::new(s.as_bytes()).peekable());
+        let mut parser = Some(Box::new(Parser::new(s.as_bytes()).peekable()));
         let mut stmt_count = 0;
         std::iter::from_fn(move || {
+            // temporary macro to catch panic from the parser, until we fix it.
+            macro_rules! parse {
+                ($parser:expr, |$arg:ident| $b:block) => {{
+                    let Some(mut p) = $parser.take() else {
+                        return None;
+                    };
+                    match std::panic::catch_unwind(|| {
+                        let ret = {
+                            let $arg = &mut p.as_mut();
+                            $b
+                        };
+                        (ret, p)
+                    }) {
+                        Ok((ret, parser)) => {
+                            $parser = Some(parser);
+                            ret
+                        }
+                        Err(_) => {
+                            return Some(Err(anyhow::anyhow!("unexpected parser error")));
+                        }
+                    }
+                }};
+            }
+
             stmt_count += 1;
-            match parser.next() {
+            let next = parse!(parser, |p| { p.next() });
+
+            match next {
                 Ok(Some(cmd)) => Some(parse_inner(
                     s,
                     stmt_count,
-                    parser.peek().map_or(true, |o| o.is_some()),
+                    parse!(parser, |p| { p.peek().map_or(true, |o| o.is_some()) }),
                     cmd,
                 )),
                 Ok(None) => None,

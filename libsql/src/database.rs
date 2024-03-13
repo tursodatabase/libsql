@@ -141,7 +141,7 @@ cfg_replication! {
             auth_token: String,
             encryption_config: Option<EncryptionConfig>,
         ) -> Result<Database> {
-            let https = connector();
+            let https = connector()?;
 
             Self::open_with_local_sync_remote_writes_connector(
                 db_path,
@@ -200,7 +200,7 @@ cfg_replication! {
             token: impl Into<String>,
             encryption_config: Option<EncryptionConfig>,
         ) -> Result<Database> {
-            let https = connector();
+            let https = connector()?;
 
             Self::open_with_remote_sync_connector(db_path, url, token, https, false, encryption_config).await
         }
@@ -217,7 +217,7 @@ cfg_replication! {
             token: impl Into<String>,
             encryption_config: Option<EncryptionConfig>,
         ) -> Result<Database> {
-            let https = connector();
+            let https = connector()?;
 
             Self::open_with_remote_sync_connector(db_path, url, token, https, true, encryption_config).await
         }
@@ -259,9 +259,9 @@ cfg_replication! {
             version: Option<String>,
             read_your_writes: bool,
             encryption_config: Option<EncryptionConfig>,
-            periodic_sync: Option<std::time::Duration>,
+            sync_interval: Option<std::time::Duration>,
         ) -> Result<Database> {
-            let https = connector();
+            let https = connector()?;
 
             Self::open_with_remote_sync_connector_internal(
                 db_path,
@@ -271,7 +271,7 @@ cfg_replication! {
                 version,
                 read_your_writes,
                 encryption_config,
-                periodic_sync
+                sync_interval
             ).await
         }
 
@@ -284,7 +284,7 @@ cfg_replication! {
             version: Option<String>,
             read_your_writes: bool,
             encryption_config: Option<EncryptionConfig>,
-            periodic_sync: Option<std::time::Duration>,
+            sync_interval: Option<std::time::Duration>,
         ) -> Result<Database>
         where
             C: tower::Service<http::Uri> + Send + Clone + Sync + 'static,
@@ -308,7 +308,7 @@ cfg_replication! {
                 version,
                 read_your_writes,
                 encryption_config.clone(),
-                periodic_sync,
+                sync_interval,
                 None
             ).await?;
 
@@ -385,7 +385,7 @@ cfg_remote! {
         /// Open a remote based HTTP database using libsql's hrana protocol.
         #[deprecated = "Use the new `Builder` to construct `Database`"]
         pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
-            let https = connector();
+            let https = connector()?;
 
             Self::open_remote_with_connector_internal(url, auth_token, https, None)
         }
@@ -396,7 +396,7 @@ cfg_remote! {
             auth_token: impl Into<String>,
             version: impl Into<String>,
         ) -> Result<Self> {
-            let https = connector();
+            let https = connector()?;
 
             Self::open_remote_with_connector_internal(url, auth_token, https, Some(version.into()))
         }
@@ -581,14 +581,21 @@ impl Database {
 }
 
 #[cfg(any(feature = "replication", feature = "remote"))]
-fn connector() -> hyper_rustls::HttpsConnector<hyper::client::HttpConnector> {
+fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
     let mut http = hyper::client::HttpConnector::new();
     http.enforce_http(false);
     http.set_nodelay(true);
 
-    hyper_rustls::HttpsConnectorBuilder::new()
+    Ok(hyper_rustls::HttpsConnectorBuilder::new()
         .with_native_roots()
+        .map_err(crate::Error::InvalidTlsConfiguration)?
         .https_or_http()
         .enable_http1()
-        .wrap_connector(http)
+        .wrap_connector(http))
+}
+
+impl std::fmt::Debug for Database {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Database").finish()
+    }
 }

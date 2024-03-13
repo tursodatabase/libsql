@@ -69,12 +69,14 @@ fn make_primary(sim: &mut Sim, path: PathBuf) {
 
 #[test]
 fn embedded_replica() {
-    let mut sim = Builder::new().build();
-
     let tmp_embedded = tempdir().unwrap();
     let tmp_host = tempdir().unwrap();
     let tmp_embedded_path = tmp_embedded.path().to_owned();
     let tmp_host_path = tmp_host.path().to_owned();
+
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     make_primary(&mut sim, tmp_host_path.clone());
 
@@ -140,7 +142,9 @@ fn embedded_replica() {
 
 #[test]
 fn execute_batch() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     let tmp_embedded = tempdir().unwrap();
     let tmp_host = tempdir().unwrap();
@@ -194,7 +198,9 @@ fn execute_batch() {
 fn embedded_replica_with_encryption() {
     use bytes::Bytes;
 
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     let tmp_embedded = tempdir().unwrap();
     let tmp_host = tempdir().unwrap();
@@ -300,7 +306,9 @@ fn embedded_replica_with_encryption() {
 
 #[test]
 fn replica_primary_reset() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
 
     let notify = Arc::new(Notify::new());
@@ -697,7 +705,9 @@ fn replicate_with_snapshots() {
 
 #[test]
 fn read_your_writes() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     let tmp_embedded = tempdir().unwrap();
     let tmp_host = tempdir().unwrap();
@@ -740,7 +750,9 @@ fn read_your_writes() {
 
 #[test]
 fn proxy_write_returning_row() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     let tmp_embedded = tempdir().unwrap();
     let tmp_host = tempdir().unwrap();
@@ -857,8 +869,10 @@ fn freeze() {
 }
 
 #[test]
-fn periodic_sync() {
-    let mut sim = Builder::new().build();
+fn sync_interval() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     let tmp_embedded = tempdir().unwrap();
     let tmp_host = tempdir().unwrap();
@@ -880,7 +894,7 @@ fn periodic_sync() {
             "dummy_token".to_string(),
         )
         .connector(TurmoilConnector)
-        .periodic_sync(Duration::from_millis(100))
+        .sync_interval(Duration::from_millis(100))
         .build()
         .await?;
 
@@ -899,6 +913,80 @@ fn periodic_sync() {
         let row = rows.next().await.unwrap().unwrap();
 
         assert_eq!(row.get::<u64>(0).unwrap(), 12);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn errors_on_bad_replica() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(u64::MAX))
+        .build();
+
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_host = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let client = Client::new();
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let path = tmp_embedded_path.join("embedded");
+        let db = libsql::Builder::new_remote_replica(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080".to_string(),
+            "".to_string(),
+        )
+        .connector(TurmoilConnector)
+        .build()
+        .await?;
+
+        let conn = db.connect()?;
+
+        conn.execute("create table test (x)", ()).await?;
+
+        conn.execute("insert into test values (12)", ())
+            .await
+            .unwrap();
+
+        db.sync().await.unwrap();
+
+        drop(conn);
+        drop(db);
+
+        let wal_index_file = format!("{}-client_wal_index", path.to_str().unwrap());
+
+        std::fs::remove_file(wal_index_file).unwrap();
+
+        libsql::Builder::new_remote_replica(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080".to_string(),
+            "".to_string(),
+        )
+        .connector(TurmoilConnector)
+        .build()
+        .await
+        .unwrap_err();
+
+        std::fs::remove_file(&path).unwrap();
+
+        libsql::Builder::new_remote_replica(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080".to_string(),
+            "".to_string(),
+        )
+        .connector(TurmoilConnector)
+        .build()
+        .await
+        .unwrap();
 
         Ok(())
     });

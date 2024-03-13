@@ -1,0 +1,9 @@
+---
+source: libsql-server/src/schema/migration.rs
+expression: schema
+---
+[
+    Ok(
+        "{Ok(\"type\"): (Text, \"table\"), Ok(\"name\"): (Text, \"sqlite3_libsql_tasks\"), Ok(\"tbl_name\"): (Text, \"sqlite3_libsql_tasks\"), Ok(\"rootpage\"): (Integer, 2), Ok(\"sql\"): (Text, \"CREATE TABLE sqlite3_libsql_tasks (\\n                job_id INTEGER PRIMARY KEY,\\n                status INTEGER,\\n                migration TEXT NOT NULL,\\n                error TEXT,\\n                finished BOOLEAN GENERATED ALWAYS AS (status = 4 OR status = 5)\\n            )\")}",
+    ),
+]

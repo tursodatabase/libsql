@@ -44,6 +44,10 @@ pub enum Error {
     InvalidUTF8Path,
     #[error("freeze is not supported in {0} mode.")]
     FreezeNotSupported(String),
+    #[error("connection has reached an invalid state, started with {0}")]
+    InvalidParserState(String),
+    #[error("TLS error: {0}")]
+    InvalidTlsConfiguration(std::io::Error),
 }
 
 #[cfg(feature = "hrana")]

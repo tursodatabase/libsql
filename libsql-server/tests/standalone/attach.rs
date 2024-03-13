@@ -1,17 +1,20 @@
+use std::time::Duration;
+
 use insta::assert_debug_snapshot;
 use libsql::Database;
 use uuid::Uuid;
 
-use crate::{
-    common::{http::Client, net::TurmoilConnector},
-    standalone::utils::{encode, key_pair},
-};
+use crate::common::auth::{encode, key_pair};
+use crate::common::http::Client;
+use crate::common::net::TurmoilConnector;
 
 use super::make_standalone_server;
 
 #[test]
 fn attach_no_auth() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     sim.host("primary", make_standalone_server);
 
@@ -80,7 +83,9 @@ fn attach_no_auth() {
 
 #[test]
 fn attach_auth() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     sim.host("primary", make_standalone_server);
 
@@ -190,8 +195,10 @@ fn attach_auth() {
 
         // mixed claims
         let claims = serde_json::json!({
-            "id": "foo",
             "p": {
+                "rw": {
+                    "ns": ["foo"]
+                },
                 "roa": {
                     "ns": ["bar"]
                 }
@@ -224,7 +231,9 @@ fn attach_auth() {
 
 #[test]
 fn attach_auth_with_uuids() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     sim.host("primary", make_standalone_server);
 

@@ -5,7 +5,9 @@ use libsql::{params, Database, TransactionBehavior};
 
 #[test]
 fn transaction_commit_and_rollback() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
         let db = Database::open_remote_with_connector(
@@ -51,7 +53,9 @@ fn transaction_commit_and_rollback() {
 
 #[test]
 fn multiple_concurrent_transactions() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
         let db = Database::open_remote_with_connector(

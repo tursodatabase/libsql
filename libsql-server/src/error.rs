@@ -2,7 +2,11 @@ use axum::response::IntoResponse;
 use hyper::StatusCode;
 use tonic::metadata::errors::InvalidMetadataValueBytes;
 
-use crate::{auth::AuthError, namespace::ForkError, query_result_builder::QueryResultBuilderError};
+use crate::{
+    auth::AuthError,
+    namespace::{ForkError, NamespaceName},
+    query_result_builder::QueryResultBuilderError,
+};
 
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, thiserror::Error)]
@@ -103,9 +107,15 @@ pub enum Error {
     ProstDecode(#[from] prost::DecodeError),
     #[error("Shared schema error: {0}")]
     SharedSchemaCreationError(String),
+    #[error("Shared schema usage error: {0}")]
+    SharedSchemaUsageError(String),
 
     #[error("migration error: {0}")]
     Migration(#[from] crate::schema::Error),
+    #[error("cannot create/update/delete database config while there are pending migration on the shared schema `{0}`")]
+    PendingMigrationOnSchema(NamespaceName),
+    #[error("couldn't find requested migration job")]
+    MigrationJobNotFound,
 }
 
 impl AsRef<Self> for Error {
@@ -184,7 +194,10 @@ impl IntoResponse for &Error {
             Ref(this) => this.as_ref().into_response(),
             ProstDecode(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             SharedSchemaCreationError(_) => self.format_err(StatusCode::BAD_REQUEST),
+            SharedSchemaUsageError(_) => self.format_err(StatusCode::BAD_REQUEST),
             Migration(e) => e.into_response(),
+            PendingMigrationOnSchema(_) => self.format_err(StatusCode::BAD_REQUEST),
+            MigrationJobNotFound => self.format_err(StatusCode::NOT_FOUND),
         }
     }
 }

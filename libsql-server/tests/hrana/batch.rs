@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use insta::assert_json_snapshot;
 use libsql::{params, Database};
 use libsql_server::hrana_proto::{Batch, BatchStep, Stmt};
@@ -7,7 +9,9 @@ use crate::common::net::TurmoilConnector;
 
 #[test]
 fn sample_request() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
         let batch = Batch {
@@ -39,7 +43,9 @@ fn sample_request() {
 
 #[test]
 fn execute_individual_statements() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
         let db = Database::open_remote_with_connector(
@@ -69,7 +75,9 @@ fn execute_individual_statements() {
 
 #[test]
 fn execute_batch() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
         let db = Database::open_remote_with_connector(
@@ -107,7 +115,9 @@ fn execute_batch() {
 
 #[test]
 fn multistatement_query() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
         let db = Database::open_remote_with_connector(
@@ -132,7 +142,9 @@ fn multistatement_query() {
 
 #[test]
 fn affected_rows_and_last_rowid() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
         let db = Database::open_remote_with_connector(
@@ -150,17 +162,17 @@ fn affected_rows_and_last_rowid() {
 
         let r = conn.execute("insert into t(x) values('a');", ()).await?;
         assert_eq!(r, 1, "1st row inserted");
-        assert_eq!(conn.last_insert_rowid().await, 1, "1st row id");
+        assert_eq!(conn.last_insert_rowid(), 1, "1st row id");
 
         let r = conn
             .execute("insert into t(x) values('b'),('c');", ())
             .await?;
         assert_eq!(r, 2, "2nd and 3rd rows inserted");
-        assert_eq!(conn.last_insert_rowid().await, 3, "3rd row id");
+        assert_eq!(conn.last_insert_rowid(), 3, "3rd row id");
 
         let r = conn.execute("update t set x = 'd';", ()).await?;
         assert_eq!(r, 3, "all three rows updated");
-        assert_eq!(conn.last_insert_rowid().await, 3, "last row id unchanged");
+        assert_eq!(conn.last_insert_rowid(), 3, "last row id unchanged");
 
         Ok(())
     });

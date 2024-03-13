@@ -407,7 +407,7 @@ pub unsafe extern "C" fn libsql_bind_blob(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn libsql_execute_stmt(
+pub unsafe extern "C" fn libsql_query_stmt(
     stmt: libsql_stmt_t,
     out_rows: *mut libsql_rows_t,
     out_err_msg: *mut *const std::ffi::c_char,
@@ -431,6 +431,25 @@ pub unsafe extern "C" fn libsql_execute_stmt(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn libsql_execute_stmt(
+    stmt: libsql_stmt_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if stmt.is_null() {
+        set_err_msg("Null statement".to_string(), out_err_msg);
+        return 1;
+    }
+    let stmt = stmt.get_ref_mut();
+    match RT.block_on(stmt.stmt.execute(stmt.params.clone())) {
+        Ok(_) => 0,
+        Err(e) => {
+            set_err_msg(format!("Error executing statement: {}", e), out_err_msg);
+            2
+        }
+    }
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn libsql_free_stmt(stmt: libsql_stmt_t) {
     if stmt.is_null() {
         return;
@@ -439,7 +458,7 @@ pub unsafe extern "C" fn libsql_free_stmt(stmt: libsql_stmt_t) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn libsql_execute(
+pub unsafe extern "C" fn libsql_query(
     conn: libsql_connection_t,
     sql: *const std::ffi::c_char,
     out_rows: *mut libsql_rows_t,
@@ -465,6 +484,30 @@ pub unsafe extern "C" fn libsql_execute(
         }
     };
     0
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_execute(
+    conn: libsql_connection_t,
+    sql: *const std::ffi::c_char,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    let sql = unsafe { std::ffi::CStr::from_ptr(sql) };
+    let sql = match sql.to_str() {
+        Ok(sql) => sql,
+        Err(e) => {
+            set_err_msg(format!("Wrong SQL: {}", e), out_err_msg);
+            return 1;
+        }
+    };
+    let conn = conn.get_ref();
+    match RT.block_on(conn.execute(sql, ())) {
+        Ok(_) => 0,
+        Err(e) => {
+            set_err_msg(format!("Error executing statement: {}", e), out_err_msg);
+            2
+        }
+    }
 }
 
 #[no_mangle]
@@ -578,13 +621,13 @@ pub unsafe extern "C" fn libsql_column_type(
 #[no_mangle]
 pub unsafe extern "C" fn libsql_changes(conn: libsql_connection_t) -> u64 {
     let conn = conn.get_ref();
-    RT.block_on(conn.changes())
+    conn.changes()
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn libsql_last_insert_rowid(conn: libsql_connection_t) -> i64 {
     let conn = conn.get_ref();
-    RT.block_on(conn.last_insert_rowid())
+    conn.last_insert_rowid()
 }
 
 #[no_mangle]

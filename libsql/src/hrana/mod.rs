@@ -134,7 +134,12 @@ where
             )),
             Some(Err(e)) => Err(e),
             Some(Ok(stmt)) => {
-                let close_stream = !matches!(stmt.kind, StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly);
+                // if we're already in transaction scope (non-autocommit) or we're starting
+                // a transaction, we DON'T want to close the stream
+                let in_tx_scope = !stream.is_autocommit()
+                    || matches!(stmt.kind, StmtKind::TxnBegin | StmtKind::TxnBeginReadOnly);
+                // if we're at COMMIT/ROLLBACK statement, we DO want to close the stream
+                let close_stream = !in_tx_scope || matches!(stmt.kind, StmtKind::TxnEnd);
                 let inner = Stmt::new(stmt.stmt, want_rows);
                 Ok(Statement {
                     stream,
@@ -370,7 +375,8 @@ fn into_value2(value: proto::Value) -> crate::Value {
 }
 
 pub(crate) fn unwrap_err(batch_res: BatchResult) -> crate::Result<()> {
-    batch_res.step_errors
+    batch_res
+        .step_errors
         .into_iter()
         .find_map(|e| e)
         .map(|e| Err(crate::Error::Hrana(Box::new(HranaError::Api(e.message)))))

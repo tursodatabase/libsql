@@ -297,6 +297,12 @@ async fn handle_create_namespace<C: Connector>(
         config.jwt_key = Some(jwt_key);
     }
 
+    if req.shared_schema_name.is_some() && req.dump_url.is_some() {
+        return Err(Error::SharedSchemaUsageError(
+            "database using shared schema database cannot be created from a dump".to_string(),
+        ));
+    }
+
     if let Some(ns) = req.shared_schema_name {
         if req.shared_schema {
             return Err(Error::SharedSchemaCreationError(
@@ -328,10 +334,7 @@ async fn handle_create_namespace<C: Connector>(
         config.max_db_pages = max_db_size.as_u64() / LIBSQL_PAGE_SIZE;
     }
 
-    app_state
-        .namespaces
-        .create(namespace.clone(), dump, config)
-        .await?;
+    app_state.namespaces.create(namespace, dump, config).await?;
 
     Ok(())
 }
@@ -349,18 +352,19 @@ async fn handle_fork_namespace<C>(
     let timestamp = req.map(|v| v.timestamp);
     let from = NamespaceName::from_string(from)?;
     let to = NamespaceName::from_string(to)?;
+    let from_store = app_state.namespaces.config_store(from.clone()).await?;
+    let from_config = from_store.get();
+    if from_config.is_shared_schema {
+        return Err(Error::SharedSchemaUsageError(
+            "database cannot be forked from a shared schema".to_string(),
+        ));
+    }
+    let to_config = (*from_config).clone();
     app_state
         .namespaces
-        .fork(from.clone(), to.clone(), timestamp)
+        .fork(from, to, to_config, timestamp)
         .await?;
-    let from_store = app_state.namespaces.config_store(from).await?;
-    let from_config = from_store.get();
-    let to_store = app_state.namespaces.config_store(to).await?;
-    let mut to_config = (*to_store.get()).clone();
-    to_config.max_db_pages = from_config.max_db_pages;
-    to_config.heartbeat_url = from_config.heartbeat_url.clone();
-    to_config.shared_schema_name = from_config.shared_schema_name.clone();
-    to_store.store(to_config).await?;
+
     Ok(())
 }
 
@@ -399,13 +403,20 @@ where
     }
 }
 
+#[derive(Deserialize, Default)]
+struct DeleteNamespaceReq {
+    #[serde(default)]
+    pub keep_backup: bool,
+}
+
 async fn handle_delete_namespace<C>(
     State(app_state): State<Arc<AppState<C>>>,
     Path(namespace): Path<String>,
+    Json(req): Json<DeleteNamespaceReq>,
 ) -> crate::Result<()> {
     app_state
         .namespaces
-        .destroy(NamespaceName::from_string(namespace)?)
+        .destroy(NamespaceName::from_string(namespace)?, !req.keep_backup)
         .await?;
     Ok(())
 }

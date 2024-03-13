@@ -87,10 +87,10 @@ func WithEncryption(key string) Option {
 	})
 }
 
-func WithAutoSync(interval time.Duration) Option {
+func WithSyncInterval(interval time.Duration) Option {
 	return option(func(o *config) error {
 		if o.syncInterval != nil {
-			return fmt.Errorf("auto sync already set")
+			return fmt.Errorf("sync interval already set")
 		}
 		o.syncInterval = &interval
 		return nil
@@ -462,22 +462,27 @@ func (c *conn) BeginTx(ctx context.Context, opts sqldriver.TxOptions) (sqldriver
 	return &tx{c}, nil
 }
 
-func (c *conn) executeNoArgs(query string) (C.libsql_rows_t, error) {
+func (c *conn) executeNoArgs(query string, exec bool) (C.libsql_rows_t, error) {
 	queryCString := C.CString(query)
 	defer C.free(unsafe.Pointer(queryCString))
 
 	var rows C.libsql_rows_t
 	var errMsg *C.char
-	statusCode := C.libsql_execute(c.nativePtr, queryCString, &rows, &errMsg)
+	var statusCode C.int
+	if exec {
+		statusCode = C.libsql_execute(c.nativePtr, queryCString, &errMsg)
+	} else {
+		statusCode = C.libsql_query(c.nativePtr, queryCString, &rows, &errMsg)
+	}
 	if statusCode != 0 {
 		return nil, libsqlError(fmt.Sprint("failed to execute query ", query), statusCode, errMsg)
 	}
 	return rows, nil
 }
 
-func (c *conn) execute(query string, args []sqldriver.NamedValue) (C.libsql_rows_t, error) {
+func (c *conn) execute(query string, args []sqldriver.NamedValue, exec bool) (C.libsql_rows_t, error) {
 	if len(args) == 0 {
-		return c.executeNoArgs(query)
+		return c.executeNoArgs(query, exec)
 	}
 	queryCString := C.CString(query)
 	defer C.free(unsafe.Pointer(queryCString))
@@ -527,7 +532,11 @@ func (c *conn) execute(query string, args []sqldriver.NamedValue) (C.libsql_rows
 	}
 
 	var rows C.libsql_rows_t
-	statusCode = C.libsql_execute_stmt(stmt, &rows, &errMsg)
+	if exec {
+		statusCode = C.libsql_execute_stmt(stmt, &errMsg)
+	} else {
+		statusCode = C.libsql_query_stmt(stmt, &rows, &errMsg)
+	}
 	if statusCode != 0 {
 		return nil, libsqlError(fmt.Sprint("failed to execute query ", query), statusCode, errMsg)
 	}
@@ -548,7 +557,7 @@ func (r execResult) RowsAffected() (int64, error) {
 }
 
 func (c *conn) ExecContext(ctx context.Context, query string, args []sqldriver.NamedValue) (sqldriver.Result, error) {
-	rows, err := c.execute(query, args)
+	rows, err := c.execute(query, args, true)
 	if err != nil {
 		return nil, err
 	}
@@ -746,7 +755,7 @@ func (r *rows) Next(dest []sqldriver.Value) error {
 }
 
 func (c *conn) QueryContext(ctx context.Context, query string, args []sqldriver.NamedValue) (sqldriver.Rows, error) {
-	rowsNativePtr, err := c.execute(query, args)
+	rowsNativePtr, err := c.execute(query, args, false)
 	if err != nil {
 		return nil, err
 	}

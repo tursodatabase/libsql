@@ -1,7 +1,10 @@
 use chrono::{DateTime, Utc};
 
 use crate::{
-    auth::{AuthError, Authenticated, Authorized, Permission},
+    auth::{
+        authenticated::LegacyAuth, AuthError, Authenticated, Authorized,
+        Permission,
+    },
     namespace::NamespaceName,
 };
 
@@ -86,9 +89,14 @@ fn validate_jwt(
 
     match jsonwebtoken::decode::<Token>(jwt, jwt_key, &validation).map(|t| t.claims) {
         Ok(Token { id, a, p, .. }) => {
-            // This is legacy: when nothing is specified, then it's full access
-            let auth = p.unwrap_or_default();
-            auth.merge_legacy(id, a)
+            if p.is_some() {
+                Ok(Authenticated::Authorized(p.unwrap_or_default().into()))
+            } else {
+                Ok(Authenticated::Legacy(LegacyAuth {
+                    namespace: id,
+                    perm: a.unwrap_or(Permission::Write),
+                }))
+            }
         }
         Err(error) => Err(match error.kind() {
             ErrorKind::InvalidToken
@@ -149,7 +157,10 @@ mod tests {
 
         assert!(matches!(
             strategy(dec).authenticate(context).unwrap(),
-            Authenticated::FullAccess
+            Authenticated::Legacy(LegacyAuth {
+                namespace: None,
+                perm: Permission::Write
+            })
         ))
     }
 
@@ -166,16 +177,12 @@ mod tests {
 
         let context = UserAuthContext::bearer(token.as_str());
 
-        let Authenticated::Authorized(a) = strategy(dec).authenticate(context).unwrap() else {
+        let Authenticated::Legacy(a) = strategy(dec).authenticate(context).unwrap() else {
             panic!()
         };
 
-        let mut perms = a.perms_iter();
-        assert_eq!(
-            perms.next().unwrap(),
-            (Scope::Namespace(NamespaceName::default()), Permission::Read)
-        );
-        assert!(perms.next().is_none());
+        assert_eq!(a.namespace, Some(NamespaceName::default()));
+        assert_eq!(a.perm, Permission::Read);
     }
 
     #[test]
@@ -230,13 +237,6 @@ mod tests {
         };
 
         let mut perms = a.perms_iter();
-        assert_eq!(
-            perms.next().unwrap(),
-            (
-                Scope::Namespace(NamespaceName::from_string("foobar".into()).unwrap()),
-                Permission::Read
-            )
-        );
         assert_eq!(
             perms.next().unwrap(),
             (

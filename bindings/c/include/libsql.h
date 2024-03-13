@@ -72,11 +72,15 @@ int libsql_bind_string(libsql_stmt_t stmt, int idx, const char *value, const cha
 
 int libsql_bind_blob(libsql_stmt_t stmt, int idx, const unsigned char *value, int value_len, const char **out_err_msg);
 
-int libsql_execute_stmt(libsql_stmt_t stmt, libsql_rows_t *out_rows, const char **out_err_msg);
+int libsql_query_stmt(libsql_stmt_t stmt, libsql_rows_t *out_rows, const char **out_err_msg);
+
+int libsql_execute_stmt(libsql_stmt_t stmt, const char **out_err_msg);
 
 void libsql_free_stmt(libsql_stmt_t stmt);
 
-int libsql_execute(libsql_connection_t conn, const char *sql, libsql_rows_t *out_rows, const char **out_err_msg);
+int libsql_query(libsql_connection_t conn, const char *sql, libsql_rows_t *out_rows, const char **out_err_msg);
+
+int libsql_execute(libsql_connection_t conn, const char *sql, const char **out_err_msg);
 
 void libsql_free_rows(libsql_rows_t res);
 

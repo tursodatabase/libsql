@@ -1,6 +1,7 @@
 use std::ffi::{c_int, c_void};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
@@ -14,7 +15,6 @@ use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus, TransactionS
 use tokio::sync::{watch, Notify};
 use tokio::time::{Duration, Instant};
 
-use crate::auth::Permission;
 use crate::connection::TXN_TIMEOUT;
 use crate::error::Error;
 use crate::metrics::{
@@ -27,7 +27,9 @@ use crate::replication::FrameNo;
 use crate::stats::{Stats, StatsUpdateMessage};
 use crate::Result;
 
-use super::program::{DescribeCol, DescribeParam, DescribeResponse, Vm};
+use super::program::{
+    check_describe_auth, check_program_auth, DescribeCol, DescribeParam, DescribeResponse, Vm,
+};
 use super::{MakeConnection, Program, RequestContext};
 
 pub struct MakeLibSqlConn<T: WalManager> {
@@ -45,6 +47,7 @@ pub struct MakeLibSqlConn<T: WalManager> {
     /// return sqlite busy. To mitigate that, we hold on to one connection
     _db: Option<LibSqlConnection<T::Wal>>,
     encryption_config: Option<EncryptionConfig>,
+    block_writes: Arc<AtomicBool>,
 }
 
 impl<T> MakeLibSqlConn<T>
@@ -64,6 +67,7 @@ where
         auto_checkpoint: u32,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         encryption_config: Option<EncryptionConfig>,
+        block_writes: Arc<AtomicBool>,
     ) -> Result<Self> {
         let mut this = Self {
             db_path,
@@ -78,6 +82,7 @@ where
             state: Default::default(),
             wal_manager,
             encryption_config,
+            block_writes,
         };
 
         let db = this.try_create_db().await?;
@@ -130,6 +135,7 @@ where
             },
             self.current_frame_no_receiver.clone(),
             self.state.clone(),
+            self.block_writes.clone(),
         )
         .await
     }
@@ -289,6 +295,7 @@ where
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
+        block_writes: Arc<AtomicBool>,
     ) -> crate::Result<Self>
     where
         T: WalManager<Wal = W> + Send + 'static,
@@ -303,6 +310,7 @@ where
                 builder_config,
                 current_frame_no_receiver,
                 state,
+                block_writes,
             )?;
             let namespace = path
                 .as_ref()
@@ -359,6 +367,7 @@ impl LibSqlConnection<libsql_sys::wal::Sqlite3Wal> {
             QueryBuilderConfig::default(),
             rcv,
             Default::default(),
+            Default::default(),
         )
         .unwrap();
 
@@ -378,6 +387,7 @@ struct Connection<T> {
     state: Arc<TxnState<T>>,
     // current txn slot if any
     slot: Option<Arc<TxnSlot<T>>>,
+    block_writes: Arc<AtomicBool>,
 }
 
 impl<T> std::fmt::Debug for Connection<T> {
@@ -574,6 +584,7 @@ impl<W: Wal> Connection<W> {
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
+        block_writes: Arc<AtomicBool>,
     ) -> Result<Self> {
         let conn = open_conn_active_checkpoint(
             path,
@@ -603,6 +614,7 @@ impl<W: Wal> Connection<W> {
             current_frame_no_receiver,
             state,
             slot: None,
+            block_writes,
         };
 
         for ext in extensions.iter() {
@@ -624,21 +636,20 @@ impl<W: Wal> Connection<W> {
         pgm: Program,
         mut builder: B,
     ) -> Result<B> {
-        let (config, stats) = {
+        let (config, stats, block_writes, previous_state) = {
             let lock = this.lock();
             let config = lock.config_store.get();
             let stats = lock.stats.clone();
+            let block_writes = lock.block_writes.clone();
+            let previous_state = lock.conn.transaction_state(Some(DatabaseName::Main));
 
-            (config, stats)
+            (config, stats, block_writes, previous_state)
         };
 
         let txn_timeout = config.txn_timeout.unwrap_or(TXN_TIMEOUT);
 
         builder.init(&this.lock().builder_config)?;
-        let mut previous_state = this
-            .lock()
-            .conn
-            .transaction_state(Some(DatabaseName::Main))?;
+        let mut previous_state = previous_state?;
 
         let mut vm = Vm::new(
             builder,
@@ -646,10 +657,12 @@ impl<W: Wal> Connection<W> {
             move |stmt_kind| {
                 let should_block = match stmt_kind {
                     StmtKind::Read | StmtKind::TxnBegin => config.block_reads,
-                    StmtKind::Write => config.block_reads || config.block_writes,
-                    StmtKind::DDL => {
-                        config.block_reads || config.block_writes || config.block_ddl()
+                    StmtKind::Write => {
+                        config.block_reads
+                            || config.block_writes
+                            || block_writes.load(Ordering::SeqCst)
                     }
+                    StmtKind::DDL => config.block_reads || config.block_writes,
                     StmtKind::TxnEnd
                     | StmtKind::Release
                     | StmtKind::Savepoint
@@ -825,39 +838,6 @@ impl<W: Wal> Connection<W> {
     }
 }
 
-fn check_program_auth(ctx: &RequestContext, pgm: &Program) -> Result<()> {
-    for step in pgm.steps() {
-        match step.query.stmt.kind {
-            StmtKind::TxnBegin
-            | StmtKind::TxnEnd
-            | StmtKind::Read
-            | StmtKind::Savepoint
-            | StmtKind::Release => {
-                ctx.auth.has_right(&ctx.namespace, Permission::Read)?;
-            }
-            StmtKind::DDL | StmtKind::Write => {
-                ctx.auth.has_right(&ctx.namespace, Permission::Write)?;
-            }
-            StmtKind::Attach(ref ns) => {
-                ctx.auth.has_right(ns, Permission::AttachRead)?;
-                if !ctx.meta_store.handle(ns.clone()).get().allow_attach {
-                    return Err(Error::NotAuthorized(format!(
-                        "Namespace `{ns}` doesn't allow attach"
-                    )));
-                }
-            }
-            StmtKind::Detach => (),
-        }
-    }
-
-    Ok(())
-}
-
-fn check_describe_auth(ctx: RequestContext) -> Result<()> {
-    ctx.auth().has_right(ctx.namespace(), Permission::Read)?;
-    Ok(())
-}
-
 /// We use a different runtime to run the connection, because long running tasks block turmoil
 static CONN_RT: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
     tokio::runtime::Builder::new_multi_thread()
@@ -880,7 +860,7 @@ where
     ) -> Result<B> {
         PROGRAM_EXEC_COUNT.increment(1);
 
-        check_program_auth(&ctx, &pgm)?;
+        check_program_auth(&ctx, &pgm, &self.inner.lock().config_store.get())?;
         let conn = self.inner.clone();
         CONN_RT
             .spawn_blocking(move || Connection::run(conn, pgm, builder))
@@ -945,7 +925,7 @@ mod test {
 
     use crate::auth::Authenticated;
     use crate::connection::Connection as _;
-    use crate::namespace::meta_store::MetaStore;
+    use crate::namespace::meta_store::{metastore_connection_maker, MetaStore};
     use crate::namespace::NamespaceName;
     use crate::query_result_builder::test::{test_driver, TestBuilder};
     use crate::query_result_builder::QueryResultBuilder;
@@ -962,6 +942,7 @@ mod test {
             current_frame_no_receiver: watch::channel(None).1,
             state: Default::default(),
             slot: None,
+            block_writes: Default::default(),
         };
 
         let conn = Arc::new(Mutex::new(conn));
@@ -996,6 +977,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            Default::default(),
         )
         .await
         .unwrap();
@@ -1038,6 +1020,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            Default::default(),
         )
         .await
         .unwrap();
@@ -1085,6 +1068,7 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            Default::default(),
         )
         .await
         .unwrap();
@@ -1148,10 +1132,10 @@ mod test {
         assert!((wait_time..wait_time + epsilon).contains(&elapsed));
     }
 
-    /// The goal of this test is to run many conccurent transaction and hopefully catch a bug in
+    /// The goal of this test is to run many concurrent transaction and hopefully catch a bug in
     /// the lock stealing code. If this test becomes flaky check out the lock stealing code.
     #[tokio::test]
-    async fn test_many_conccurent() {
+    async fn test_many_concurrent() {
         let tmp = tempdir().unwrap();
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
@@ -1164,15 +1148,17 @@ mod test {
             DEFAULT_AUTO_CHECKPOINT,
             watch::channel(None).1,
             None,
+            Default::default(),
         )
         .await
         .unwrap();
 
         let conn = make_conn.make_connection().await.unwrap();
+        let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
             NamespaceName::default(),
-            MetaStore::new(Default::default(), tmp.path())
+            MetaStore::new(Default::default(), tmp.path(), maker().unwrap(), manager)
                 .await
                 .unwrap(),
         );

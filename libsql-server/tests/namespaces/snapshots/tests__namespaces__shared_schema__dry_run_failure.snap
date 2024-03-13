@@ -1,0 +1,9 @@
+---
+source: libsql-server/tests/namespaces/shared_schema.rs
+expression: "schema_conn.execute_batch(\"create table test2 (c NOT NULL); insert into test2 select * from test\").await.unwrap_err()"
+---
+Hrana(
+    Api(
+        "{\"error\":\"Internal Error: `migration error: migration dry run failed: task 3 for namespace `ns1` failed with error: An error occured executing the migration at step 2: NOT NULL constraint failed: test2.c`\"}",
+    ),
+)

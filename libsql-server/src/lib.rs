@@ -7,8 +7,8 @@ use std::sync::{Arc, Weak};
 use crate::connection::{Connection, MakeConnection};
 use crate::database::DatabaseKind;
 use crate::error::Error;
-use crate::metrics::DIRTY_STARTUP;
 use crate::migration::maybe_migrate;
+use crate::namespace::meta_store::{metastore_connection_maker, MetaStore};
 use crate::net::Accept;
 use crate::pager::{make_pager, PAGER_CACHE_SIZE};
 use crate::rpc::proxy::rpc::proxy_server::Proxy;
@@ -244,29 +244,6 @@ where
     }
 }
 
-fn sentinel_file_path(path: &Path) -> PathBuf {
-    path.join(".sentinel")
-}
-
-/// initialize the sentinel file. This file is created at the beginning of the process, and is
-/// deleted at the end, on a clean exit. If the file is present when we start the process, this
-/// means that the database was not shutdown properly, and might need repair. This function return
-/// `true` if the database is dirty and needs repair.
-fn init_sentinel_file(path: &Path) -> anyhow::Result<bool> {
-    let path = sentinel_file_path(path);
-    if path.try_exists()? {
-        DIRTY_STARTUP.increment(1);
-        tracing::warn!(
-            "sentinel file found: sqld was not shutdown gracefully, namespaces will be recovered."
-        );
-        return Ok(true);
-    }
-
-    std::fs::File::create(path)?;
-
-    Ok(false)
-}
-
 fn init_version_file(db_path: &Path) -> anyhow::Result<()> {
     // try to detect the presence of the data file at the root of db_path. If it's there, it's a
     // pre-0.18.0 database and needs to be migrated
@@ -398,7 +375,6 @@ where
         init_version_file(&self.path)?;
         maybe_migrate(&self.path)?;
         self.init_sqlite_globals();
-        let db_is_dirty = init_sentinel_file(&self.path)?;
         let idle_shutdown_kicker = self.setup_shutdown();
 
         let extensions = self.db_config.validate_extensions()?;
@@ -437,7 +413,6 @@ where
             db_kind,
             base_path: self.path.clone(),
             max_log_size: self.db_config.max_log_size,
-            db_is_dirty,
             max_log_duration: self.db_config.max_log_duration.map(Duration::from_secs_f32),
             bottomless_replication: self.db_config.bottomless_replication.clone(),
             extensions,
@@ -454,17 +429,28 @@ where
             migration_scheduler: scheduler_sender.into(),
         };
 
+        let (metastore_conn_maker, meta_store_wal_manager) =
+            metastore_connection_maker(self.meta_store_config.bottomless.clone(), &self.path)
+                .await?;
+        let meta_conn = metastore_conn_maker()?;
+        let meta_store = MetaStore::new(
+            self.meta_store_config.clone(),
+            &self.path,
+            meta_conn,
+            meta_store_wal_manager,
+        )
+        .await?;
         let namespace_store: NamespaceStore = NamespaceStore::new(
             db_kind.is_replica(),
             self.db_config.snapshot_at_shutdown,
             self.max_active_namespaces,
-            &self.path,
-            self.meta_store_config.clone(),
             ns_config,
+            meta_store,
         )
         .await?;
 
-        let scheduler = Scheduler::new(namespace_store.clone());
+        let meta_conn = metastore_conn_maker()?;
+        let scheduler = Scheduler::new(namespace_store.clone(), meta_conn)?;
 
         join_set.spawn(async move {
             scheduler.run(scheduler_receiver).await;
@@ -518,7 +504,6 @@ where
         }
 
         let shutdown = self.shutdown.clone();
-        let base_path = self.path.clone();
         // setup user-facing rpc services
         match db_kind {
             DatabaseKind::Primary => {
@@ -585,8 +570,6 @@ where
                 join_set.shutdown().await;
                 service_shutdown.notify_waiters();
                 namespace_store.shutdown().await?;
-                // clean shutdown, remove sentinel file
-                std::fs::remove_file(sentinel_file_path(&base_path))?;
                 tracing::info!("sqld was shutdown gracefully. Bye!");
             }
             Some(res) = join_set.join_next() => {
