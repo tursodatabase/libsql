@@ -489,7 +489,10 @@ impl Replicator {
         tracing::debug!(
             "calling for backup savepoint for `{}` on generation `{}`, frame no.: {}",
             self.db_name,
-            self.generation().unwrap(),
+            match self.generation() {
+                Ok(gen) => gen.to_string(),
+                _ => "".to_string(),
+            },
             self.next_frame_no() - 1
         );
         if let Some(tx) = &self.flush_trigger {
