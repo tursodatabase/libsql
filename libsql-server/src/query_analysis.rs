@@ -332,15 +332,41 @@ impl Statement {
         // on the heap:
         // - https://github.com/gwenn/lemon-rs/issues/8
         // - https://github.com/gwenn/lemon-rs/pull/19
-        let mut parser = Box::new(Parser::new(s.as_bytes()).peekable());
+        let mut parser = Some(Box::new(Parser::new(s.as_bytes()).peekable()));
         let mut stmt_count = 0;
         std::iter::from_fn(move || {
+            // temporary macro to catch panic from the parser, until we fix it.
+            macro_rules! parse {
+                ($parser:expr, |$arg:ident| $b:block) => {{
+                    let Some(mut p) = $parser.take() else {
+                        return None;
+                    };
+                    match std::panic::catch_unwind(|| {
+                        let ret = {
+                            let $arg = &mut p.as_mut();
+                            $b
+                        };
+                        (ret, p)
+                    }) {
+                        Ok((ret, parser)) => {
+                            $parser = Some(parser);
+                            ret
+                        }
+                        Err(_) => {
+                            return Some(Err(anyhow::anyhow!("unexpected parser error")));
+                        }
+                    }
+                }};
+            }
+
             stmt_count += 1;
-            match parser.next() {
+            let next = parse!(parser, |p| { p.next() });
+
+            match next {
                 Ok(Some(cmd)) => Some(parse_inner(
                     s,
                     stmt_count,
-                    parser.peek().map_or(true, |o| o.is_some()),
+                    parse!(parser, |p| { p.peek().map_or(true, |o| o.is_some()) }),
                     cmd,
                 )),
                 Ok(None) => None,
