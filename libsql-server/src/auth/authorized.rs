@@ -104,6 +104,13 @@ impl Authorized {
             }
         }
 
+        // ddl override implies write
+        if let Some(ref scope) = self.ddl_override {
+            if scope.contains(name) {
+                return true;
+            }
+        }
+
         false
     }
 
