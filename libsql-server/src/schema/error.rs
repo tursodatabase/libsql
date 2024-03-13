@@ -39,6 +39,8 @@ pub enum Error {
     DryRunFailure(String),
     #[error("migration failed: {0}")]
     MigrationFailure(String),
+    #[error("Error executing migration: {0}")]
+    MigrationExecuteError(Box<crate::Error>),
 }
 
 impl ResponseError for Error {}
@@ -51,6 +53,7 @@ impl IntoResponse for &Error {
             Error::MigrationContainsTransactionStatements { .. } => {
                 self.format_err(StatusCode::BAD_REQUEST)
             }
+            Error::MigrationExecuteError(e) => e.as_ref().into_response(),
             _ => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }

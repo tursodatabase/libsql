@@ -223,10 +223,10 @@ fn try_perform_migration<B: QueryResultBuilder>(
     );
 
     while !vm.finished() {
-        vm.step(savepoint).unwrap(); // return migration error
+        vm.step(savepoint).map_err(|e| Error::MigrationExecuteError(e.into()))?; // return migration error
     }
 
-    vm.builder().finish(None, true).unwrap();
+    vm.builder().finish(None, true).map_err(|e| Error::MigrationExecuteError(crate::Error::from(e).into()))?;
 
     Ok(vm.into_builder())
 }
