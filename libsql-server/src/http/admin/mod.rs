@@ -403,13 +403,20 @@ where
     }
 }
 
+#[derive(Deserialize, Default)]
+struct DeleteNamespaceReq {
+    #[serde(default)]
+    pub keep_backup: bool,
+}
+
 async fn handle_delete_namespace<C>(
     State(app_state): State<Arc<AppState<C>>>,
     Path(namespace): Path<String>,
+    Json(req): Json<DeleteNamespaceReq>,
 ) -> crate::Result<()> {
     app_state
         .namespaces
-        .destroy(NamespaceName::from_string(namespace)?)
+        .destroy(NamespaceName::from_string(namespace)?, !req.keep_backup)
         .await?;
     Ok(())
 }

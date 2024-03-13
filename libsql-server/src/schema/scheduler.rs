@@ -1039,7 +1039,7 @@ mod test {
             scheduler.step(&mut receiver).await.unwrap();
         }
 
-        assert_debug_snapshot!(store.destroy("ns".into()).await.unwrap_err());
+        assert_debug_snapshot!(store.destroy("ns".into(), true).await.unwrap_err());
 
         while super::super::db::has_pending_migration_jobs(
             &scheduler.migration_db.lock(),
@@ -1050,7 +1050,7 @@ mod test {
             scheduler.step(&mut receiver).await.unwrap();
         }
 
-        store.destroy("ns".into()).await.unwrap();
+        store.destroy("ns".into(), true).await.unwrap();
     }
 
     #[tokio::test]
