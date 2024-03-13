@@ -10,12 +10,12 @@ async fn main() {
 
     let auth_token = std::env::var("LIBSQL_AUTH_TOKEN").unwrap_or_else(|_| {
         println!("Using empty token since LIBSQL_TOKEN was not set");
-        "".to_string()
+        "x".to_string()
     });
 
     let url = std::env::var("LIBSQL_URL")
         .unwrap_or_else(|_| {
-            println!("Using empty token since LIBSQL_URL was not set");
+            println!("Using http://localhost:8080 LIBSQL_URL was not set");
             "http://localhost:8080".to_string()
         })
         .replace("libsql", "https");
