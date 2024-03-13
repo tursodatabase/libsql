@@ -60,10 +60,16 @@ impl SavepointTracker {
         let last_frame_no = self.next_frame_no.load(Ordering::SeqCst) - 1;
         let frame_no = *self.receiver.wait_for(|fno| *fno >= last_frame_no).await?;
         let generation = self.confirm_snapshotted().await?;
-        Ok(BackupThreshold {
+        let t = BackupThreshold {
             generation: generation.as_ref().map(Uuid::to_string),
             frame_no,
-        })
+        };
+        tracing::debug!(
+            "confirmed backup savepoint for generation `{:?}`, frame no.: {}",
+            t.generation,
+            t.frame_no
+        );
+        Ok(t)
     }
 }
 

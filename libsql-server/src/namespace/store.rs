@@ -91,7 +91,7 @@ impl NamespaceStore {
         self.inner.metadata.exists(namespace)
     }
 
-    pub async fn destroy(&self, namespace: NamespaceName) -> crate::Result<()> {
+    pub async fn destroy(&self, namespace: NamespaceName, prune_all: bool) -> crate::Result<()> {
         if self.inner.has_shutdown.load(Ordering::Relaxed) {
             return Err(Error::NamespaceStoreShutdown);
         }
@@ -117,7 +117,7 @@ impl NamespaceStore {
             &self.inner.config,
             &namespace,
             &db_config,
-            true,
+            prune_all,
             bottomless_db_id_init,
         )
         .await?;
@@ -185,7 +185,7 @@ impl NamespaceStore {
                         }
                     }
                     ResetOp::Destroy(ns) => {
-                        if let Err(e) = this.destroy(ns.clone()).await {
+                        if let Err(e) = this.destroy(ns.clone(), false).await {
                             tracing::error!("error destroying namesace `{ns}`: {e}",);
                         }
                     }

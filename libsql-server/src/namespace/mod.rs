@@ -131,25 +131,26 @@ impl Namespace {
         let ns_path = ns_config.base_path.join("dbs").join(name.as_str());
         match ns_config.db_kind {
             DatabaseKind::Primary => {
-                if prune_all {
-                    if let Some(ref options) = ns_config.bottomless_replication {
-                        let bottomless_db_id = match bottomless_db_id_init {
-                            NamespaceBottomlessDbIdInit::Provided(db_id) => db_id,
-                            NamespaceBottomlessDbIdInit::FetchFromConfig => {
-                                NamespaceBottomlessDbId::from_config(&db_config)
-                            }
-                        };
-                        let options =
-                            make_bottomless_options(options, bottomless_db_id, name.clone());
-                        let replicator = bottomless::replicator::Replicator::with_options(
-                            ns_path.join("data").to_str().unwrap(),
-                            options,
-                        )
-                        .await?;
+                if let Some(ref options) = ns_config.bottomless_replication {
+                    let bottomless_db_id = match bottomless_db_id_init {
+                        NamespaceBottomlessDbIdInit::Provided(db_id) => db_id,
+                        NamespaceBottomlessDbIdInit::FetchFromConfig => {
+                            NamespaceBottomlessDbId::from_config(&db_config)
+                        }
+                    };
+                    let options = make_bottomless_options(options, bottomless_db_id, name.clone());
+                    let replicator = bottomless::replicator::Replicator::with_options(
+                        ns_path.join("data").to_str().unwrap(),
+                        options,
+                    )
+                    .await?;
+                    if prune_all {
                         let delete_all = replicator.delete_all(None).await?;
-
                         // perform hard deletion in the background
                         tokio::spawn(delete_all.commit());
+                    } else {
+                        // for soft delete make sure that local db is fully backed up
+                        replicator.savepoint().confirmed().await?;
                     }
                 }
             }
