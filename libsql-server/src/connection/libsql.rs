@@ -20,6 +20,7 @@ use crate::error::Error;
 use crate::metrics::{
     DESCRIBE_COUNT, PROGRAM_EXEC_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT, WRITE_TXN_DURATION,
 };
+use crate::namespace::ResolveNamespacePathFn;
 use crate::namespace::meta_store::MetaStoreHandle;
 use crate::query_analysis::{StmtKind, TxnStatus};
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
@@ -48,6 +49,7 @@ pub struct MakeLibSqlConn<T: WalManager> {
     _db: Option<LibSqlConnection<T::Wal>>,
     encryption_config: Option<EncryptionConfig>,
     block_writes: Arc<AtomicBool>,
+    resolve_attach_path: ResolveNamespacePathFn,
 }
 
 impl<T> MakeLibSqlConn<T>
@@ -68,6 +70,7 @@ where
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         encryption_config: Option<EncryptionConfig>,
         block_writes: Arc<AtomicBool>,
+        resolve_attach_path: ResolveNamespacePathFn,
     ) -> Result<Self> {
         let mut this = Self {
             db_path,
@@ -83,6 +86,7 @@ where
             wal_manager,
             encryption_config,
             block_writes,
+            resolve_attach_path,
         };
 
         let db = this.try_create_db().await?;
@@ -136,6 +140,7 @@ where
             self.current_frame_no_receiver.clone(),
             self.state.clone(),
             self.block_writes.clone(),
+            self.resolve_attach_path.clone(),
         )
         .await
     }
@@ -296,6 +301,7 @@ where
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
         block_writes: Arc<AtomicBool>,
+        resolve_attach_path: ResolveNamespacePathFn,
     ) -> crate::Result<Self>
     where
         T: WalManager<Wal = W> + Send + 'static,
@@ -311,6 +317,7 @@ where
                 current_frame_no_receiver,
                 state,
                 block_writes,
+                resolve_attach_path,
             )?;
             let namespace = path
                 .as_ref()
@@ -368,6 +375,7 @@ impl LibSqlConnection<libsql_sys::wal::Sqlite3Wal> {
             rcv,
             Default::default(),
             Default::default(),
+            Arc::new(|_| unreachable!())
         )
         .unwrap();
 
@@ -388,6 +396,7 @@ struct Connection<T> {
     // current txn slot if any
     slot: Option<Arc<TxnSlot<T>>>,
     block_writes: Arc<AtomicBool>,
+    resolve_attach_path: ResolveNamespacePathFn,
 }
 
 impl<T> std::fmt::Debug for Connection<T> {
@@ -585,6 +594,7 @@ impl<W: Wal> Connection<W> {
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
         state: Arc<TxnState<W>>,
         block_writes: Arc<AtomicBool>,
+        resolve_attach_path: ResolveNamespacePathFn,
     ) -> Result<Self> {
         let conn = open_conn_active_checkpoint(
             path,
@@ -615,6 +625,7 @@ impl<W: Wal> Connection<W> {
             state,
             slot: None,
             block_writes,
+            resolve_attach_path,
         };
 
         for ext in extensions.iter() {
@@ -636,14 +647,15 @@ impl<W: Wal> Connection<W> {
         pgm: Program,
         mut builder: B,
     ) -> Result<B> {
-        let (config, stats, block_writes, previous_state) = {
+        let (config, stats, block_writes, previous_state, resolve_attach_path) = {
             let lock = this.lock();
             let config = lock.config_store.get();
             let stats = lock.stats.clone();
             let block_writes = lock.block_writes.clone();
             let previous_state = lock.conn.transaction_state(Some(DatabaseName::Main));
+            let resolve_attach_path = lock.resolve_attach_path.clone();
 
-            (config, stats, block_writes, previous_state)
+            (config, stats, block_writes, previous_state, resolve_attach_path)
         };
 
         let txn_timeout = config.txn_timeout.unwrap_or(TXN_TIMEOUT);
@@ -676,6 +688,7 @@ impl<W: Wal> Connection<W> {
                 )
             },
             move |sql, stmt, elapsed| update_stats(&stats, sql, stmt, elapsed),
+            resolve_attach_path,
         );
 
         let mut has_timeout = false;
@@ -943,6 +956,7 @@ mod test {
             state: Default::default(),
             slot: None,
             block_writes: Default::default(),
+            resolve_attach_path: Arc::new(|_| unreachable!()),
         };
 
         let conn = Arc::new(Mutex::new(conn));
@@ -978,6 +992,7 @@ mod test {
             watch::channel(None).1,
             None,
             Default::default(),
+            Arc::new(|_| unreachable!()),
         )
         .await
         .unwrap();
@@ -1021,6 +1036,7 @@ mod test {
             watch::channel(None).1,
             None,
             Default::default(),
+            Arc::new(|_| unreachable!())
         )
         .await
         .unwrap();
@@ -1069,6 +1085,7 @@ mod test {
             watch::channel(None).1,
             None,
             Default::default(),
+            Arc::new(|_| unreachable!()),
         )
         .await
         .unwrap();
@@ -1149,6 +1166,7 @@ mod test {
             watch::channel(None).1,
             None,
             Default::default(),
+            Arc::new(|_| unreachable!()),
         )
         .await
         .unwrap();

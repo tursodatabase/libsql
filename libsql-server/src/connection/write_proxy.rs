@@ -20,6 +20,7 @@ use crate::connection::program::{DescribeCol, DescribeParam};
 use crate::error::Error;
 use crate::metrics::{REPLICA_LOCAL_EXEC_MISPREDICT, REPLICA_LOCAL_PROGRAM_EXEC};
 use crate::namespace::meta_store::MetaStoreHandle;
+use crate::namespace::ResolveNamespacePathFn;
 use crate::query_analysis::TxnStatus;
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
 use crate::replication::FrameNo;
@@ -58,6 +59,7 @@ impl MakeWriteProxyConn {
         max_total_response_size: u64,
         primary_replication_index: Option<FrameNo>,
         encryption_config: Option<EncryptionConfig>,
+        resolve_attach_path: ResolveNamespacePathFn,
     ) -> crate::Result<Self> {
         let client = ProxyClient::with_origin(channel, uri);
         let make_read_only_conn = MakeLibSqlConn::new(
@@ -72,6 +74,7 @@ impl MakeWriteProxyConn {
             applied_frame_no_receiver.clone(),
             encryption_config.clone(),
             Arc::new(AtomicBool::new(false)), // this is always false for write proxy
+            resolve_attach_path,
         )
         .await?;
 
