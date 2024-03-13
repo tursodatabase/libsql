@@ -219,14 +219,17 @@ fn try_perform_migration<B: QueryResultBuilder>(
         migration,
         |_| (false, None),
         |_, _, _| (),
-        Arc::new(|_: &NamespaceName| Err(crate::Error::AttachInMigration))
+        Arc::new(|_: &NamespaceName| Err(crate::Error::AttachInMigration)),
     );
 
     while !vm.finished() {
-        vm.step(savepoint).map_err(|e| Error::MigrationExecuteError(e.into()))?; // return migration error
+        vm.step(savepoint)
+            .map_err(|e| Error::MigrationExecuteError(e.into()))?; // return migration error
     }
 
-    vm.builder().finish(None, true).map_err(|e| Error::MigrationExecuteError(crate::Error::from(e).into()))?;
+    vm.builder()
+        .finish(None, true)
+        .map_err(|e| Error::MigrationExecuteError(crate::Error::from(e).into()))?;
 
     Ok(vm.into_builder())
 }

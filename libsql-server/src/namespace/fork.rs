@@ -61,7 +61,7 @@ pub struct ForkTask<'a> {
     pub restore_to: Option<PointInTimeRestore>,
     pub bottomless_db_id: NamespaceBottomlessDbId,
     pub ns_config: &'a NamespaceConfig,
-    pub resolve_attach: ResolveNamespacePathFn
+    pub resolve_attach: ResolveNamespacePathFn,
 }
 
 pub struct PointInTimeRestore {

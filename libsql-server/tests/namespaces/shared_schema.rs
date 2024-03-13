@@ -856,13 +856,14 @@ fn attach_in_migration_is_forbidden() {
             String::new(),
             TurmoilConnector,
         )
-            .unwrap()
-            .connect()
-            .unwrap();
+        .unwrap()
+        .connect()
+        .unwrap();
 
-        assert_debug_snapshot!(
-            conn.execute_batch("ATTACH ns as attached; create table test (c)").await.unwrap_err()
-        );
+        assert_debug_snapshot!(conn
+            .execute_batch("ATTACH ns as attached; create table test (c)")
+            .await
+            .unwrap_err());
 
         Ok(())
     });

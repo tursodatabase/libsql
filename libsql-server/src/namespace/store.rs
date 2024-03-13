@@ -17,7 +17,7 @@ use crate::stats::Stats;
 
 use super::meta_store::{MetaStore, MetaStoreHandle};
 use super::schema_lock::SchemaLocksRegistry;
-use super::{Namespace, NamespaceConfig, ResetCb, ResetOp, RestoreOption, ResolveNamespacePathFn};
+use super::{Namespace, NamespaceConfig, ResetCb, ResetOp, ResolveNamespacePathFn, RestoreOption};
 
 type NamespaceEntry = Arc<RwLock<Option<Namespace>>>;
 
@@ -338,10 +338,12 @@ impl NamespaceStore {
             Arc::new({
                 let store = self.clone();
                 move |ns: &NamespaceName| {
-                    tokio::runtime::Handle::current().block_on(store.with(ns.clone(), |ns| ns.path.clone()))
-                } 
+                    tokio::runtime::Handle::current()
+                        .block_on(store.with(ns.clone(), |ns| ns.path.clone()))
+                }
             })
-        }).clone()
+        })
+        .clone()
     }
 
     async fn load_namespace(

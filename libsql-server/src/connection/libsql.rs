@@ -20,8 +20,8 @@ use crate::error::Error;
 use crate::metrics::{
     DESCRIBE_COUNT, PROGRAM_EXEC_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT, WRITE_TXN_DURATION,
 };
-use crate::namespace::ResolveNamespacePathFn;
 use crate::namespace::meta_store::MetaStoreHandle;
+use crate::namespace::ResolveNamespacePathFn;
 use crate::query_analysis::{StmtKind, TxnStatus};
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
 use crate::replication::FrameNo;
@@ -375,7 +375,7 @@ impl LibSqlConnection<libsql_sys::wal::Sqlite3Wal> {
             rcv,
             Default::default(),
             Default::default(),
-            Arc::new(|_| unreachable!())
+            Arc::new(|_| unreachable!()),
         )
         .unwrap();
 
@@ -655,7 +655,13 @@ impl<W: Wal> Connection<W> {
             let previous_state = lock.conn.transaction_state(Some(DatabaseName::Main));
             let resolve_attach_path = lock.resolve_attach_path.clone();
 
-            (config, stats, block_writes, previous_state, resolve_attach_path)
+            (
+                config,
+                stats,
+                block_writes,
+                previous_state,
+                resolve_attach_path,
+            )
         };
 
         let txn_timeout = config.txn_timeout.unwrap_or(TXN_TIMEOUT);
@@ -1036,7 +1042,7 @@ mod test {
             watch::channel(None).1,
             None,
             Default::default(),
-            Arc::new(|_| unreachable!())
+            Arc::new(|_| unreachable!()),
         )
         .await
         .unwrap();

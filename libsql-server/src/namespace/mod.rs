@@ -57,7 +57,8 @@ use self::replication_wal::{make_replication_wal, ReplicationWalManager};
 pub use self::store::NamespaceStore;
 
 pub type ResetCb = Box<dyn Fn(ResetOp) + Send + Sync + 'static>;
-pub type ResolveNamespacePathFn = Arc<dyn Fn(&NamespaceName) -> crate::Result<Arc<Path>> + Sync + Send + 'static>;
+pub type ResolveNamespacePathFn =
+    Arc<dyn Fn(&NamespaceName) -> crate::Result<Arc<Path>> + Sync + Send + 'static>;
 
 pub enum ResetOp {
     Reset(NamespaceName),
@@ -108,13 +109,34 @@ impl Namespace {
     ) -> crate::Result<Self> {
         match ns_config.db_kind {
             DatabaseKind::Primary if db_config.get().is_shared_schema => {
-                Self::new_schema(ns_config, name.clone(), db_config, restore_option, resolve_attach_path).await
+                Self::new_schema(
+                    ns_config,
+                    name.clone(),
+                    db_config,
+                    restore_option,
+                    resolve_attach_path,
+                )
+                .await
             }
             DatabaseKind::Primary => {
-                Self::new_primary(ns_config, name.clone(), db_config, restore_option, resolve_attach_path).await
+                Self::new_primary(
+                    ns_config,
+                    name.clone(),
+                    db_config,
+                    restore_option,
+                    resolve_attach_path,
+                )
+                .await
             }
             DatabaseKind::Replica => {
-                Self::new_replica(ns_config, name.clone(), db_config, reset, resolve_attach_path).await
+                Self::new_replica(
+                    ns_config,
+                    name.clone(),
+                    db_config,
+                    reset,
+                    resolve_attach_path,
+                )
+                .await
             }
         }
     }
@@ -226,7 +248,15 @@ impl Namespace {
         resolve_attach_path: ResolveNamespacePathFn,
     ) -> crate::Result<Self> {
         // FIXME: make that truly atomic. explore the idea of using temp directories, and it's implications
-        match Self::try_new_primary(config, name.clone(), meta_store_handle, restore_option, resolve_attach_path).await {
+        match Self::try_new_primary(
+            config,
+            name.clone(),
+            meta_store_handle,
+            restore_option,
+            resolve_attach_path,
+        )
+        .await
+        {
             Ok(ns) => Ok(ns),
             Err(e) => {
                 let path = config.base_path.join("dbs").join(name.as_str());
@@ -543,7 +573,7 @@ impl Namespace {
             config.max_total_response_size,
             primary_current_replicatio_index,
             config.encryption_config.clone(),
-            resolve_attach_path, 
+            resolve_attach_path,
         )
         .await?
         .throttled(

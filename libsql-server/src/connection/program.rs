@@ -182,11 +182,7 @@ where
         Ok(enabled)
     }
 
-    fn prepare_attach_query(
-        &self,
-        attached: &str,
-        attached_alias: &str,
-    ) -> crate::Result<String> {
+    fn prepare_attach_query(&self, attached: &str, attached_alias: &str) -> crate::Result<String> {
         let attached = attached.strip_prefix('"').unwrap_or(attached);
         let attached = attached.strip_suffix('"').unwrap_or(attached);
         let attached = NamespaceName::from_string(attached.into())?;
