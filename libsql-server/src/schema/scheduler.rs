@@ -862,7 +862,6 @@ mod test {
             db_kind: DatabaseKind::Primary,
             base_path: path.to_path_buf().into(),
             max_log_size: 1000000000,
-            db_is_dirty: false,
             max_log_duration: None,
             extensions: Arc::new([]),
             stats_sender: tokio::sync::mpsc::channel(1).0,

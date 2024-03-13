@@ -93,6 +93,7 @@ pub struct Namespace {
     tasks: JoinSet<anyhow::Result<()>>,
     stats: Arc<Stats>,
     db_config_store: MetaStoreHandle,
+    path: Arc<Path>,
 }
 
 impl Namespace {
@@ -184,6 +185,7 @@ impl Namespace {
             self.checkpoint().await?;
         }
         self.db.shutdown().await?;
+        let _ = tokio::fs::remove_file(self.path.join(".sentinel")).await;
         Ok(())
     }
 
@@ -245,7 +247,15 @@ impl Namespace {
         let db_config = meta_store_handle.get();
         let bottomless_db_id = NamespaceBottomlessDbId::from_config(&db_config);
         // FIXME: figure how to to it per-db
-        let mut is_dirty = ns_config.db_is_dirty;
+        let mut is_dirty = {
+            let sentinel_path = db_path.join(".sentinel");
+            if sentinel_path.try_exists()? {
+                true
+            } else {
+                tokio::fs::File::create(&sentinel_path).await?;
+                false
+            }
+        };
 
         // FIXME: due to a bug in logger::checkpoint_db we call regular checkpointing code
         // instead of our virtual WAL one. It's a bit tangled to fix right now, because
@@ -401,6 +411,7 @@ impl Namespace {
             name,
             stats,
             db_config_store: meta_store_handle,
+            path: db_path.into(),
         })
     }
 
@@ -541,6 +552,7 @@ impl Namespace {
             name,
             stats,
             db_config_store: meta_store_handle,
+            path: db_path.into(),
         })
     }
 
@@ -634,6 +646,7 @@ impl Namespace {
             tasks: join_set,
             stats,
             db_config_store: meta_store_handle,
+            path: db_path.into(),
         })
     }
 }
@@ -644,7 +657,6 @@ pub struct NamespaceConfig {
     // Common config
     pub(crate) base_path: Arc<Path>,
     pub(crate) max_log_size: u64,
-    pub(crate) db_is_dirty: bool,
     pub(crate) max_log_duration: Option<Duration>,
     pub(crate) extensions: Arc<[PathBuf]>,
     pub(crate) stats_sender: StatsSender,
