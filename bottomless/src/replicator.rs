@@ -6,7 +6,7 @@ use crate::wal::WalFileReader;
 use anyhow::{anyhow, bail};
 use arc_swap::ArcSwapOption;
 use async_compression::tokio::write::{GzipEncoder, ZstdEncoder};
-use aws_sdk_s3::config::{Credentials, Region};
+use aws_sdk_s3::config::{BehaviorVersion, Credentials, Region};
 use aws_sdk_s3::error::SdkError;
 use aws_sdk_s3::operation::get_object::builders::GetObjectFluentBuilder;
 use aws_sdk_s3::operation::get_object::GetObjectError;
@@ -117,7 +117,7 @@ pub struct Options {
 
 impl Options {
     pub async fn client_config(&self) -> Result<Config> {
-        let mut loader = aws_config::from_env();
+        let mut loader = aws_config::defaults(BehaviorVersion::latest());
         if let Some(endpoint) = self.aws_endpoint.as_deref() {
             loader = loader.endpoint_url(endpoint);
         }
@@ -132,7 +132,7 @@ impl Options {
         let secret_access_key = self.secret_access_key.clone().ok_or(anyhow!(
             "LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY was not set"
         ))?;
-        let conf = aws_sdk_s3::config::Builder::from(&loader.load().await)
+        let builder = aws_sdk_s3::config::Builder::from(&loader.load().await)
             .force_path_style(true)
             .region(Region::new(region))
             .credentials_provider(Credentials::new(
@@ -145,9 +145,9 @@ impl Options {
             .retry_config(
                 aws_sdk_s3::config::retry::RetryConfig::standard()
                     .with_max_attempts(self.s3_max_retries),
-            )
-            .build();
-        Ok(conf)
+            );
+
+        Ok(builder.build())
     }
 
     pub fn from_env() -> Result<Self> {
@@ -1010,7 +1010,7 @@ impl Replicator {
                 request = request.marker(marker);
             }
             let response = request.send().await.ok()?;
-            let objs = response.contents()?;
+            let objs = response.contents();
             if objs.is_empty() {
                 tracing::debug!("no objects found in bucket");
                 break;
@@ -1408,13 +1408,11 @@ impl Replicator {
                 list_request = list_request.marker(marker);
             }
             let response = list_request.send().await?;
-            let objs = match response.contents() {
-                Some(objs) => objs,
-                None => {
-                    tracing::debug!("No objects found in generation {}", generation);
-                    break;
-                }
-            };
+            let objs = response.contents();
+            if objs.is_empty() {
+                tracing::debug!("No objects found in generation {}", generation);
+                break;
+            }
             let mut last_received_frame_no = 0;
             for obj in objs {
                 let key = obj
@@ -1467,7 +1465,7 @@ impl Replicator {
                 let frame = self.get_object(key.into()).send().await?;
                 let mut reader = BatchReader::new(
                     first_frame_no,
-                    tokio_util::io::StreamReader::new(frame.body),
+                    frame.body.into_async_read(),
                     self.page_size,
                     compression_kind,
                 );
@@ -1495,8 +1493,7 @@ impl Replicator {
             }
             next_marker = response
                 .is_truncated()
-                .then(|| objs.last().map(|elem| elem.key().unwrap().to_string()))
-                .flatten();
+                .and_then(|_| objs.last().map(|elem| elem.key().unwrap().to_string()));
             if next_marker.is_none() {
                 tracing::trace!("Restored DB from S3 backup using generation {}", generation);
                 break;
@@ -1557,7 +1554,7 @@ impl Replicator {
     }
 
     fn try_get_last_frame_no(response: ListObjectsOutput, frame_no: &mut u32) -> Option<String> {
-        let objs = response.contents()?;
+        let objs = response.contents();
         let mut last_key = None;
         for obj in objs.iter() {
             last_key = Some(obj.key()?);
@@ -1770,13 +1767,11 @@ impl DeleteAll {
             }
 
             let response = list_request.send().await?;
-            let prefixes = match response.common_prefixes() {
-                Some(prefixes) => prefixes,
-                None => {
-                    tracing::debug!("no generations found to delete");
-                    return Ok(0);
-                }
-            };
+            let prefixes = response.common_prefixes();
+            if prefixes.is_empty() {
+                tracing::debug!("no generations found to delete");
+                return Ok(0);
+            }
 
             for prefix in prefixes {
                 if let Some(prefix) = &prefix.prefix {
@@ -1829,12 +1824,10 @@ impl DeleteAll {
             }
 
             let response = list_request.send().await?;
-            let objs = match response.contents() {
-                Some(prefixes) => prefixes,
-                None => {
-                    return Ok(());
-                }
-            };
+            let objs = response.contents();
+            if objs.is_empty() {
+                return Ok(());
+            }
 
             for obj in objs {
                 if let Some(key) = obj.key() {
