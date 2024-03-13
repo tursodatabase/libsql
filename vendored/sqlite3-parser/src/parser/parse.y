@@ -622,26 +622,26 @@ seltablist(A) ::= stl_prefix(A) fullname(Y) as(Z) indexed_opt(I)
                   on_using(N). {
     let st = SelectTable::Table(Y, Z, I);
     let jc = N;
-    A.push(st, jc);
+    A.push(st, jc)?;
 }
 seltablist(A) ::= stl_prefix(A) fullname(Y) LP exprlist(E) RP as(Z)
                   on_using(N). {
     let st = SelectTable::TableCall(Y, E, Z);
     let jc = N;
-    A.push(st, jc);
+    A.push(st, jc)?;
 }
 %ifndef SQLITE_OMIT_SUBQUERY
   seltablist(A) ::= stl_prefix(A) LP select(S) RP
                     as(Z) on_using(N). {
     let st = SelectTable::Select(S, Z);
     let jc = N;
-    A.push(st, jc);
+    A.push(st, jc)?;
   }
   seltablist(A) ::= stl_prefix(A) LP seltablist(F) RP
                     as(Z) on_using(N). {
     let st = SelectTable::Sub(F, Z);
     let jc = N;
-    A.push(st, jc);
+    A.push(st, jc)?;
   }
 %endif  SQLITE_OMIT_SUBQUERY
 
