@@ -5,6 +5,7 @@ mod meta;
 mod shared_schema;
 
 use std::path::PathBuf;
+use std::time::Duration;
 
 use crate::common::http::Client;
 use crate::common::net::{init_tracing, SimServer, TestServer, TurmoilAcceptor, TurmoilConnector};
@@ -47,7 +48,9 @@ fn make_primary(sim: &mut Sim, path: PathBuf) {
 
 #[test]
 fn fork_namespace() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
     make_primary(&mut sim, tmp.path().to_path_buf());
 
@@ -57,11 +60,8 @@ fn fork_namespace() {
             .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
             .await?;
 
-        let foo = Database::open_remote_with_connector(
-            "http://foo.primary:8080",
-            "dummy_token",
-            TurmoilConnector,
-        )?;
+        let foo =
+            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
         let foo_conn = foo.connect()?;
 
         foo_conn.execute("create table test (c)", ()).await?;
@@ -71,11 +71,8 @@ fn fork_namespace() {
             .post("http://primary:9090/v1/namespaces/foo/fork/bar", ())
             .await?;
 
-        let bar = Database::open_remote_with_connector(
-            "http://bar.primary:8080",
-            "dummy_token",
-            TurmoilConnector,
-        )?;
+        let bar =
+            Database::open_remote_with_connector("http://bar.primary:8080", "", TurmoilConnector)?;
         let bar_conn = bar.connect()?;
 
         // what's in foo is in bar as well
@@ -109,7 +106,9 @@ fn fork_namespace() {
 
 #[test]
 fn delete_namespace() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
     make_primary(&mut sim, tmp.path().to_path_buf());
 
@@ -119,11 +118,8 @@ fn delete_namespace() {
             .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
             .await?;
 
-        let foo = Database::open_remote_with_connector(
-            "http://foo.primary:8080",
-            "dummy_token",
-            TurmoilConnector,
-        )?;
+        let foo =
+            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
         let foo_conn = foo.connect()?;
         foo_conn.execute("create table test (c)", ()).await?;
 

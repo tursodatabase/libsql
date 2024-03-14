@@ -15,6 +15,7 @@ use crate::namespace::{NamespaceBottomlessDbId, NamespaceBottomlessDbIdInit, Nam
 use crate::stats::Stats;
 
 use super::meta_store::{MetaStore, MetaStoreHandle};
+use super::schema_lock::SchemaLocksRegistry;
 use super::{Namespace, NamespaceConfig, ResetCb, ResetOp, RestoreOption};
 
 type NamespaceEntry = Arc<RwLock<Option<Namespace>>>;
@@ -39,6 +40,7 @@ pub struct NamespaceStoreInner {
     has_shutdown: AtomicBool,
     snapshot_at_shutdown: bool,
     pub config: NamespaceConfig,
+    schema_locks: SchemaLocksRegistry,
 }
 
 impl NamespaceStore {
@@ -80,6 +82,7 @@ impl NamespaceStore {
                 has_shutdown: AtomicBool::new(false),
                 snapshot_at_shutdown,
                 config,
+                schema_locks: Default::default(),
             }),
         })
     }
@@ -88,7 +91,7 @@ impl NamespaceStore {
         self.inner.metadata.exists(namespace)
     }
 
-    pub async fn destroy(&self, namespace: NamespaceName) -> crate::Result<()> {
+    pub async fn destroy(&self, namespace: NamespaceName, prune_all: bool) -> crate::Result<()> {
         if self.inner.has_shutdown.load(Ordering::Relaxed) {
             return Err(Error::NamespaceStoreShutdown);
         }
@@ -104,6 +107,7 @@ impl NamespaceStore {
         }
 
         // destroy on-disk database and backups
+        // FIXME: this is blocking
         let db_config = self
             .inner
             .metadata
@@ -113,7 +117,7 @@ impl NamespaceStore {
             &self.inner.config,
             &namespace,
             &db_config,
-            true,
+            prune_all,
             bottomless_db_id_init,
         )
         .await?;
@@ -181,7 +185,7 @@ impl NamespaceStore {
                         }
                     }
                     ResetOp::Destroy(ns) => {
-                        if let Err(e) = this.destroy(ns.clone()).await {
+                        if let Err(e) = this.destroy(ns.clone(), false).await {
                             tracing::error!("error destroying namesace `{ns}`: {e}",);
                         }
                     }
@@ -367,6 +371,12 @@ impl NamespaceStore {
         db_config: DatabaseConfig,
     ) -> crate::Result<()> {
         if let Some(shared_schema_name) = &db_config.shared_schema_name {
+            // we hold a lock for the duration of the namespace creation
+            let _lock = self
+                .inner
+                .schema_locks
+                .acquire_shared(shared_schema_name.clone())
+                .await;
             return self
                 .fork(shared_schema_name.clone(), namespace, db_config, None)
                 .await;
@@ -417,5 +427,9 @@ impl NamespaceStore {
 
     pub(crate) fn meta_store(&self) -> &MetaStore {
         &self.inner.metadata
+    }
+
+    pub(crate) fn schema_locks(&self) -> &SchemaLocksRegistry {
+        &self.inner.schema_locks
     }
 }

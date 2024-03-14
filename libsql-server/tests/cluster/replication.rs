@@ -91,7 +91,7 @@ fn apply_partial_snapshot() {
     sim.client("client", async move {
         let primary = libsql::Database::open_remote_with_connector(
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )
         .unwrap();
@@ -146,7 +146,9 @@ fn apply_partial_snapshot() {
 
 #[test]
 fn replica_lazy_creation() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     let prim_tmp = tempfile::tempdir().unwrap();
 
@@ -213,12 +215,9 @@ fn replica_lazy_creation() {
     });
 
     sim.client("client", async move {
-        let db = Database::open_remote_with_connector(
-            "http://test.replica:8080",
-            "dummy_token",
-            TurmoilConnector,
-        )
-        .unwrap();
+        let db =
+            Database::open_remote_with_connector("http://test.replica:8080", "", TurmoilConnector)
+                .unwrap();
         let conn = db.connect().unwrap();
         assert_debug_snapshot!(conn.execute("create table test (x)", ()).await.unwrap_err());
         let primary_http = Client::new();

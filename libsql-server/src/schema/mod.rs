@@ -13,7 +13,7 @@
 //! - The scheduler gets a batch of task in the `Enqueued` state from the database, and schedules
 //! them on for a dry-run on the its worker pool.
 //! - When a task is in `Enqueued` state, it is first enqueued to the database's own queue (a table
-//! named `__libsql_migration_tasks`), and it is set to `Enqueued`. The scheduler then performs a
+//! named `sqlite3_libsql_tasks`), and it is set to `Enqueued`. The scheduler then performs a
 //! dry run on the migration on that database, setting the outcome of the dry-run to the databases
 //! queue in the same transaction. If the dry-run was successfull, the status is set to
 //! `DryRunSuccessfull`, otherwise, it is set to `DryRunFailure`, and the error message is saved.

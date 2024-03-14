@@ -79,7 +79,7 @@ pub trait ReplicatorClient {
     async fn commit_frame_no(&mut self, frame_no: FrameNo) -> Result<(), Error>;
     /// Returns the currently committed replication index
     fn committed_frame_no(&self) -> Option<FrameNo>;
-    /// rollback the client to previously commited index.
+    /// rollback the client to previously committed index.
     fn rollback(&mut self);
 }
 
@@ -154,7 +154,7 @@ enum ReplicatorState {
 }
 
 impl<C: ReplicatorClient> Replicator<C> {
-    /// Creates a repicator for the db file pointed at by `db_path`
+    /// Creates a replicator for the db file pointed at by `db_path`
     pub async fn new(
         client: C,
         db_path: PathBuf,
@@ -302,7 +302,7 @@ impl<C: ReplicatorClient> Replicator<C> {
                     return Ok(());
                 }
                 Err(Error::SnapshotPending) => {
-                    tracing::info!("snaphot not ready yet, waiting 1s...");
+                    tracing::info!("snapshot not ready yet, waiting 1s...");
                     tokio::time::sleep(Duration::from_secs(1)).await;
                 }
                 Err(e) => return Err(e),

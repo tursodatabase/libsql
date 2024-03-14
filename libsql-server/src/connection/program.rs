@@ -4,11 +4,15 @@ use std::time::{Duration, Instant};
 
 use metrics::{histogram, increment_counter};
 
+use crate::auth::Permission;
 use crate::error::Error;
 use crate::metrics::{READ_QUERY_COUNT, WRITE_QUERY_COUNT};
 use crate::query::Query;
 use crate::query_analysis::StmtKind;
 use crate::query_result_builder::QueryResultBuilder;
+
+use super::config::DatabaseConfig;
+use super::RequestContext;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Program {
@@ -334,4 +338,44 @@ fn value_size(val: &rusqlite::types::ValueRef) -> usize {
         ValueRef::Text(s) => s.len(),
         ValueRef::Blob(b) => b.len(),
     }
+}
+
+pub fn check_program_auth(
+    ctx: &RequestContext,
+    pgm: &Program,
+    config: &DatabaseConfig,
+) -> crate::Result<()> {
+    for step in pgm.steps() {
+        match &step.query.stmt.kind {
+            StmtKind::TxnBegin
+            | StmtKind::TxnEnd
+            | StmtKind::Read
+            | StmtKind::Savepoint
+            | StmtKind::Release => {
+                ctx.auth.has_right(&ctx.namespace, Permission::Read)?;
+            }
+            StmtKind::DDL if config.shared_schema_name.is_some() => {
+                ctx.auth().ddl_permitted(&ctx.namespace)?;
+            }
+            StmtKind::DDL | StmtKind::Write => {
+                ctx.auth().has_right(&ctx.namespace, Permission::Write)?;
+            }
+            StmtKind::Attach(ref ns) => {
+                ctx.auth.has_right(ns, Permission::AttachRead)?;
+                if !ctx.meta_store.handle(ns.clone()).get().allow_attach {
+                    return Err(Error::NotAuthorized(format!(
+                        "Namespace `{ns}` doesn't allow attach"
+                    )));
+                }
+            }
+            StmtKind::Detach => (),
+        }
+    }
+
+    Ok(())
+}
+
+pub fn check_describe_auth(ctx: RequestContext) -> crate::Result<()> {
+    ctx.auth().has_right(ctx.namespace(), Permission::Read)?;
+    Ok(())
 }

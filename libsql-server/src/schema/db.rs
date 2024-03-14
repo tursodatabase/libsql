@@ -20,7 +20,7 @@ pub(super) fn setup_schema(conn: &mut rusqlite::Connection) -> Result<(), Error>
     // this table contains all the migration jobs
     txn.execute(
         &format!(
-            "CREATE TABLE IF NOT EXISTS migration_jobs (
+            "CREATE TABLE IF NOT EXISTS jobs (
                 job_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 schema TEXT NOT NULL,
                 migration TEXT NOT NULL,
@@ -39,14 +39,14 @@ pub(super) fn setup_schema(conn: &mut rusqlite::Connection) -> Result<(), Error>
     // this table contains a list of all the that need to be performed for each migration job
     txn.execute(
         &format!(
-            "CREATE TABLE IF NOT EXISTS migration_job_pending_tasks (
+            "CREATE TABLE IF NOT EXISTS pending_tasks (
             task_id INTEGER PRIMARY KEY AUTOINCREMENT,
             job_id INTEGER,
             target_namespace TEXT NOT NULL,
             status INTEGER,
             error TEXT,
             finished BOOLEAN GENERATED ALWAYS AS ({}),
-            FOREIGN KEY (job_id) REFERENCES migration_jobs (job_id)
+            FOREIGN KEY (job_id) REFERENCES jobs (job_id)
         )
         ",
             MigrationTaskStatus::finished_states()
@@ -70,7 +70,7 @@ pub(super) fn setup_schema(conn: &mut rusqlite::Connection) -> Result<(), Error>
     txn.execute(
         "
         CREATE TEMPORARY TRIGGER IF NOT EXISTS remove_from_enqueued_tasks 
-        AFTER UPDATE OF status ON migration_job_pending_tasks
+        AFTER UPDATE OF status ON pending_tasks
         BEGIN
             DELETE FROM enqueued_tasks WHERE task_id = old.task_id;
         END
@@ -87,7 +87,7 @@ pub(crate) fn has_pending_migration_jobs(
     schema: &NamespaceName,
 ) -> Result<bool, Error> {
     let has_pending = conn.query_row(
-        "SELECT count(1) FROM migration_jobs WHERE schema = ? AND finished = false",
+        "SELECT count(1) FROM jobs WHERE schema = ? AND finished = false",
         [schema.as_str()],
         |row| Ok(row.get::<_, usize>(0)? != 0),
     )?;
@@ -122,12 +122,13 @@ pub(super) fn register_schema_migration_job(
     stmt.finalize()?;
 
     let migration_serialized = serde_json::to_string(&migration).unwrap();
-    // this query inserts the new job in migration_jobs only if there are no other unfinnished
+    // this query inserts the new job in jobs only if there are no other unfinnished
     // tasks for that schema
-    let row_changed = txn.execute("
-        INSERT INTO migration_jobs (schema, migration, status)
+    let row_changed = txn.execute(
+        "
+        INSERT INTO jobs (schema, migration, status)
         SELECT ?1, ?2, ?3 
-        WHERE NOT (SELECT COUNT(1) FROM (SELECT 0 from migration_jobs WHERE schema = ?1 AND finished = false))
+        WHERE NOT (SELECT COUNT(1) FROM (SELECT 0 from jobs WHERE schema = ?1 AND finished = false))
         ",
         (
             schema.as_str(),
@@ -141,7 +142,7 @@ pub(super) fn register_schema_migration_job(
         txn.execute(
             "
             INSERT INTO
-            migration_job_pending_tasks (job_id, target_namespace, status)
+            pending_tasks (job_id, target_namespace, status)
             SELECT job_id, namespace, status
             FROM shared_schema_links 
             CROSS JOIN (SELECT ? as job_id, ? as status)
@@ -171,7 +172,7 @@ pub(super) fn get_next_pending_migration_tasks_batch(
     let tasks = txn
         .prepare(
             "SELECT task_id, target_namespace, status, job_id 
-            FROM migration_job_pending_tasks 
+            FROM pending_tasks 
             WHERE job_id = ? AND status = ? AND task_id NOT IN (select * from enqueued_tasks)
             LIMIT ?",
         )?
@@ -208,7 +209,7 @@ pub(super) fn get_unfinished_task_batch(
     let tasks = txn
         .prepare(
             "SELECT task_id, target_namespace, status, job_id 
-            FROM migration_job_pending_tasks 
+            FROM pending_tasks 
             WHERE job_id = ? AND finished = false AND task_id NOT IN (select * from enqueued_tasks)
             LIMIT ?",
         )?
@@ -243,7 +244,7 @@ pub(super) fn update_meta_task_status(
     assert!(error.is_none() || task.status.is_failure());
     let txn = conn.transaction()?;
     txn.execute(
-        "UPDATE migration_job_pending_tasks SET status = ?, error = ? WHERE task_id = ?",
+        "UPDATE pending_tasks SET status = ?, error = ? WHERE task_id = ?",
         (task.status as u64, error, task.task_id),
     )?;
     txn.commit()?;
@@ -259,15 +260,15 @@ pub(super) fn update_meta_task_status(
 pub(super) fn job_step_dry_run_success(
     conn: &mut rusqlite::Connection,
     job_id: i64,
-) -> Result<Option<MigrationJobStatus>, Error> {
+) -> Result<(), Error> {
     let row_changed = conn.execute(
         "
-        WITH tasks AS (SELECT * FROM migration_job_pending_tasks WHERE job_id = ?1)
-        UPDATE migration_jobs 
+        WITH tasks AS (SELECT * FROM pending_tasks WHERE job_id = ?1)
+        UPDATE jobs 
         SET status = ?2
         WHERE job_id = ?1
-        AND status = ?3
-        AND (SELECT count(1) from tasks) = (SELECT count(1) FROM tasks WHERE status = ?4 OR status = ?2)",
+        AND (status = ?3 OR status = ?2)
+        AND (SELECT count(1) from tasks) = (SELECT count(1) FROM tasks WHERE status = ?4)",
         (
             job_id,
             MigrationJobStatus::DryRunSuccess as u64,
@@ -277,10 +278,10 @@ pub(super) fn job_step_dry_run_success(
     )?;
 
     if row_changed == 0 {
-        return Ok(None);
+        return Err(Error::CantStepJobDryRunSuccess);
     }
 
-    Ok(Some(MigrationJobStatus::DryRunSuccess))
+    Ok(())
 }
 
 pub(super) fn update_job_status(
@@ -290,7 +291,7 @@ pub(super) fn update_job_status(
     error: Option<&str>,
 ) -> Result<(), Error> {
     conn.execute(
-        "UPDATE migration_jobs SET status = ?, error = coalesce(?, error) WHERE job_id = ?",
+        "UPDATE jobs SET status = ?, error = coalesce(?, error) WHERE job_id = ?",
         (status as u64, error, job_id),
     )?;
     Ok(())
@@ -303,7 +304,7 @@ pub(super) fn get_next_pending_migration_job(
     let mut job = txn
         .query_row(
             "SELECT job_id, status, migration, schema
-            FROM migration_jobs
+            FROM jobs
             WHERE status != ? AND status != ?
             LIMIT 1",
             (
@@ -331,7 +332,7 @@ pub(super) fn get_next_pending_migration_job(
         txn.prepare(
             "
                 SELECT status, count(1)
-                FROM migration_job_pending_tasks 
+                FROM pending_tasks 
                 WHERE job_id = ?
                 GROUP BY status",
         )?
@@ -353,7 +354,7 @@ pub fn get_migration_details(
     let Some((status, error)) = conn
         .query_row(
             "SELECT status, error
-            FROM migration_jobs
+            FROM jobs
             WHERE schema = ? AND job_id = ?",
             params![schema.as_str(), job_id],
             |r| {
@@ -369,7 +370,7 @@ pub fn get_migration_details(
 
     let mut stmt = conn.prepare(
         "SELECT target_namespace, status, error
-            FROM migration_job_pending_tasks
+            FROM pending_tasks
             WHERE job_id = ?",
     )?;
     let rows = stmt.query([job_id])?.mapped(|r| {
@@ -401,7 +402,7 @@ pub fn get_migrations_summary(
     let schema_version: i64 = conn.query_row("PRAGMA schema_version;", (), |r| r.get(0))?;
     let mut stmt = conn.prepare(
         "SELECT job_id, status
-            FROM migration_jobs
+            FROM jobs
             WHERE schema = ?
             ORDER BY job_id DESC",
     )?;
@@ -489,13 +490,11 @@ mod test {
         )
         .unwrap();
 
-        let mut stmt = conn.prepare("select * from migration_jobs").unwrap();
+        let mut stmt = conn.prepare("select * from jobs").unwrap();
         assert_debug_snapshot!(stmt.query(()).unwrap().next().unwrap().unwrap());
         stmt.finalize().unwrap();
 
-        let mut stmt = conn
-            .prepare("select * from migration_job_pending_tasks")
-            .unwrap();
+        let mut stmt = conn.prepare("select * from pending_tasks").unwrap();
         let mut rows = stmt.query(()).unwrap();
         assert_debug_snapshot!(rows.next().unwrap().unwrap());
         assert_debug_snapshot!(rows.next().unwrap().unwrap());
@@ -600,10 +599,10 @@ mod test {
         .unwrap();
 
         let job = get_next_pending_migration_job(&mut conn).unwrap().unwrap();
-        let status = job_step_dry_run_success(&mut conn, job.job_id()).unwrap();
-
-        // the job status wasn't updated: there are still tasks that need dry run
-        assert!(status.is_none());
+        assert!(matches!(
+            job_step_dry_run_success(&mut conn, job.job_id()).unwrap_err(),
+            Error::CantStepJobDryRunSuccess
+        ));
 
         let tasks = get_next_pending_migration_tasks_batch(
             &mut conn,
@@ -617,8 +616,7 @@ mod test {
             update_meta_task_status(&mut conn, &task, None).unwrap();
         }
 
-        let status = job_step_dry_run_success(&mut conn, job.job_id()).unwrap();
-        assert_eq!(status.unwrap(), MigrationJobStatus::DryRunSuccess);
+        job_step_dry_run_success(&mut conn, job.job_id()).unwrap();
     }
 
     #[tokio::test]
@@ -726,4 +724,19 @@ mod test {
 
         assert!(register_shared(&meta_store, "ns", "schema").await.is_ok());
     }
+}
+
+pub(crate) fn get_job_status(
+    conn: &rusqlite::Connection,
+    job_id: i64,
+) -> Result<(MigrationJobStatus, Option<String>), Error> {
+    Ok(conn.query_row(
+        "SELECT status, error FROM jobs WHERE job_id = ? LIMIT 1",
+        [job_id],
+        |row| {
+            let status = MigrationJobStatus::from_int(row.get(0)?);
+            let error: Option<String> = row.get(1)?;
+            Ok((status, error))
+        },
+    )?)
 }

@@ -6,7 +6,11 @@ use tempfile::tempdir;
 use tokio::time::Duration;
 use turmoil::Builder;
 
-use crate::common::{http::Client, net::TurmoilConnector};
+use crate::common::{
+    auth::{encode, key_pair},
+    http::Client,
+    net::TurmoilConnector,
+};
 
 use super::make_primary;
 
@@ -123,13 +127,13 @@ fn perform_schema_migration() {
         let expected_schema_version = 1;
         assert_all_eq!(expected_schema_version, get_schema_version("schema").await, get_schema_version("ns1").await, get_schema_version("ns2").await);
 
-        let resp = http_get("http://primary:9090/v1/namespaces/schema/migrations").await;
+        let resp = http_get("http://schema.primary:8080/v1/jobs").await;
         assert_eq!(
             resp,
             r#"{"schema_version":4,"migrations":[{"job_id":1,"status":"RunSuccess"}]}"#
         );
 
-        let resp = http_get("http://primary:9090/v1/namespaces/schema/migrations/1").await;
+        let resp = http_get("http://schema.primary:8080/v1/jobs/1").await;
         assert_eq!(resp, r#"{"job_id":1,"status":"RunSuccess","progress":[{"namespace":"ns1","status":"RunSuccess","error":null},{"namespace":"ns2","status":"RunSuccess","error":null}]}"#);
 
         // we add a new namespace and expect it to have the same schema version and schema
@@ -200,7 +204,7 @@ fn no_job_created_when_migration_job_is_invalid() {
             .unwrap_err());
 
         let resp = client
-            .get("http://primary:9090/v1/namespaces/schema/migrations/1")
+            .get("http://schema.primary:8080/v1/jobs/1")
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
@@ -243,7 +247,7 @@ fn migration_contains_txn_statements() {
             .unwrap_err());
 
         let resp = client
-            .get("http://primary:9090/v1/namespaces/schema/migrations/1")
+            .get("http://schema.primary:8080/v1/jobs/1")
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
@@ -320,14 +324,14 @@ fn dry_run_failure() {
         // we are creating a new table with a constraint on the column. when the dry run is
         // executed against the schema or ns2, it works, because test is empty there, but it should
         // fail on ns1, because it test contains a row with NULL.
-        schema_conn
+        assert_debug_snapshot!(schema_conn
             .execute_batch("create table test2 (c NOT NULL); insert into test2 select * from test")
             .await
-            .unwrap();
+            .unwrap_err());
 
         loop {
             let resp = client
-                .get("http://primary:9090/v1/namespaces/schema/migrations/2")
+                .get("http://schema.primary:8080/v1/jobs/2")
                 .await
                 .unwrap()
                 .json_value()
@@ -340,7 +344,7 @@ fn dry_run_failure() {
         }
 
         let resp = client
-            .get("http://primary:9090/v1/namespaces/schema/migrations/2")
+            .get("http://schema.primary:8080/v1/jobs/2")
             .await
             .unwrap()
             .json_value()
@@ -553,14 +557,14 @@ fn conflicting_data_migration() {
             .unwrap();
 
         // create unique index on the column
-        schema_conn
+        assert_debug_snapshot!(schema_conn
             .execute("create unique index idx on test (c)", ())
             .await
-            .unwrap();
+            .unwrap_err());
 
         loop {
             let resp = client
-                .get("http://primary:9090/v1/namespaces/schema/migrations/3")
+                .get("http://schema.primary:8080/v1/jobs/3")
                 .await
                 .unwrap()
                 .json_value()
@@ -573,7 +577,7 @@ fn conflicting_data_migration() {
         }
 
         let resp = client
-            .get("http://primary:9090/v1/namespaces/schema/migrations/3")
+            .get("http://schema.primary:8080/v1/jobs/3")
             .await
             .unwrap()
             .json_value()
@@ -588,6 +592,146 @@ fn conflicting_data_migration() {
             .unwrap();
         let c = rows.next().await.unwrap().unwrap().get::<i64>(0).unwrap();
         assert_eq!(c, 0);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn disable_ddl() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(100000))
+        .build();
+    let tmp = tempdir().unwrap();
+    make_primary(&mut sim, tmp.path().to_path_buf());
+
+    sim.client("client", async {
+        let (encoding_key, validation_key) = key_pair();
+        let client = Client::new();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/schema/create",
+                json!({"shared_schema": true, "jwt_key": validation_key.clone()}),
+            )
+            .await
+            .unwrap();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/ns1/create",
+                json!({"shared_schema_name": "schema", "jwt_key": validation_key.clone() }),
+            )
+            .await
+            .unwrap();
+
+        {
+            let claims = serde_json::json!( {
+                "p": {
+                    "rw": {
+                        "ns": ["schema", "ns1"],
+                    }
+                }
+            });
+            let token = encode(&claims, &encoding_key);
+            let conn = Database::open_remote_with_connector(
+                "http://ns1.primary:8080",
+                token.clone(),
+                TurmoilConnector,
+            )
+            .unwrap()
+            .connect()
+            .unwrap();
+
+            assert_debug_snapshot!(conn.execute("create table test (x)", ()).await.unwrap_err());
+        }
+
+        {
+            let claims = serde_json::json!( {
+                "p": {
+                    "ddl": {
+                        "ns": ["ns1"],
+                    }
+                }
+            });
+            let token = encode(&claims, &encoding_key);
+            let conn = Database::open_remote_with_connector(
+                "http://ns1.primary:8080",
+                token.clone(),
+                TurmoilConnector,
+            )
+            .unwrap()
+            .connect()
+            .unwrap();
+
+            assert_debug_snapshot!(conn.execute("create table test (x)", ()).await.unwrap());
+        }
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn check_migration_perms() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(100000))
+        .build();
+    let tmp = tempdir().unwrap();
+    make_primary(&mut sim, tmp.path().to_path_buf());
+
+    sim.client("client", async {
+        let (encoding_key, validation_key) = key_pair();
+        let client = Client::new();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/schema/create",
+                json!({"shared_schema": true, "jwt_key": validation_key.clone()}),
+            )
+            .await
+            .unwrap();
+        {
+            let claims = serde_json::json!( {
+                "p": {
+                    "ro": {
+                        "ns": ["schema"],
+                    }
+                }
+            });
+            let token = encode(&claims, &encoding_key);
+            let conn = Database::open_remote_with_connector(
+                "http://schema.primary:8080",
+                token.clone(),
+                TurmoilConnector,
+            )
+            .unwrap()
+            .connect()
+            .unwrap();
+
+            assert_debug_snapshot!(conn.execute("create table test (x)", ()).await.unwrap_err());
+        }
+
+        {
+            let claims = serde_json::json!( {
+                "p": {
+                    "rw": {
+                        "ns": ["schema"],
+                    }
+                }
+            });
+            let token = encode(&claims, &encoding_key);
+            let conn = Database::open_remote_with_connector(
+                "http://schema.primary:8080",
+                token.clone(),
+                TurmoilConnector,
+            )
+            .unwrap()
+            .connect()
+            .unwrap();
+
+            assert_debug_snapshot!(conn.execute("create table test (x)", ()).await.unwrap());
+        }
 
         Ok(())
     });

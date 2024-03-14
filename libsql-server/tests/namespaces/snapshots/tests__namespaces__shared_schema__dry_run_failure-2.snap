@@ -1,8 +1,21 @@
 ---
 source: libsql-server/tests/namespaces/shared_schema.rs
-expression: "check_schema(\"ns1\").await"
+expression: resp
 ---
-[
-    "Row { cols: [Col { name: Some(\"type\"), decltype: Some(\"TEXT\") }, Col { name: Some(\"name\"), decltype: Some(\"TEXT\") }, Col { name: Some(\"tbl_name\"), decltype: Some(\"TEXT\") }, Col { name: Some(\"rootpage\"), decltype: Some(\"INT\") }, Col { name: Some(\"sql\"), decltype: Some(\"TEXT\") }], inner: [Text { value: \"table\" }, Text { value: \"__libsql_migration_tasks\" }, Text { value: \"__libsql_migration_tasks\" }, Integer { value: 2 }, Text { value: \"CREATE TABLE __libsql_migration_tasks (\\n                job_id INTEGER PRIMARY KEY,\\n                status INTEGER,\\n                migration TEXT NOT NULL,\\n                error TEXT,\\n                finished BOOLEAN GENERATED ALWAYS AS (status = 4 OR status = 5)\\n            )\" }] }",
-    "Row { cols: [Col { name: Some(\"type\"), decltype: Some(\"TEXT\") }, Col { name: Some(\"name\"), decltype: Some(\"TEXT\") }, Col { name: Some(\"tbl_name\"), decltype: Some(\"TEXT\") }, Col { name: Some(\"rootpage\"), decltype: Some(\"INT\") }, Col { name: Some(\"sql\"), decltype: Some(\"TEXT\") }], inner: [Text { value: \"table\" }, Text { value: \"test\" }, Text { value: \"test\" }, Integer { value: 3 }, Text { value: \"CREATE TABLE test (c)\" }] }",
-]
+{
+  "job_id": 2,
+  "status": "RunFailure",
+  "error": "task 3 for namespace `ns1` failed with error: An error occured executing the migration at step 2: NOT NULL constraint failed: test2.c",
+  "progress": [
+    {
+      "namespace": "ns1",
+      "status": "RunFailure",
+      "error": "aborted"
+    },
+    {
+      "namespace": "ns2",
+      "status": "RunFailure",
+      "error": "aborted"
+    }
+  ]
+}

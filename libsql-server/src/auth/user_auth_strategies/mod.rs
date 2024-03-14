@@ -67,5 +67,8 @@ impl UserAuthContext {
 }
 
 pub trait UserAuthStrategy: Sync + Send {
-    fn authenticate(&self, context: UserAuthContext) -> Result<Authenticated, AuthError>;
+    fn authenticate(
+        &self,
+        context: Result<UserAuthContext, AuthError>,
+    ) -> Result<Authenticated, AuthError>;
 }

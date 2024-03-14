@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 
 use crate::{
-    auth::{AuthError, Authenticated, Authorized, Permission},
+    auth::{authenticated::LegacyAuth, AuthError, Authenticated, Authorized, Permission},
     namespace::NamespaceName,
 };
 
@@ -12,20 +12,25 @@ pub struct Jwt {
 }
 
 impl UserAuthStrategy for Jwt {
-    fn authenticate(&self, context: UserAuthContext) -> Result<Authenticated, AuthError> {
+    fn authenticate(
+        &self,
+        context: Result<UserAuthContext, AuthError>,
+    ) -> Result<Authenticated, AuthError> {
         tracing::trace!("executing jwt auth");
 
-        let Some(scheme) = context.scheme else {
+        let ctx = context?;
+
+        let UserAuthContext {
+            scheme: Some(scheme),
+            token: Some(token),
+        } = ctx
+        else {
             return Err(AuthError::HttpAuthHeaderInvalid);
         };
 
         if !scheme.eq_ignore_ascii_case("bearer") {
             return Err(AuthError::HttpAuthHeaderUnsupportedScheme);
         }
-
-        let Some(token) = context.token else {
-            return Err(AuthError::HttpAuthHeaderInvalid);
-        };
 
         return validate_jwt(&self.key, &token);
     }
@@ -86,9 +91,14 @@ fn validate_jwt(
 
     match jsonwebtoken::decode::<Token>(jwt, jwt_key, &validation).map(|t| t.claims) {
         Ok(Token { id, a, p, .. }) => {
-            // This is legacy: when nothing is specified, then it's full access
-            let auth = p.unwrap_or_default();
-            auth.merge_legacy(id, a)
+            if p.is_some() {
+                Ok(Authenticated::Authorized(p.unwrap_or_default().into()))
+            } else {
+                Ok(Authenticated::Legacy(LegacyAuth {
+                    namespace: id,
+                    perm: a.unwrap_or(Permission::Write),
+                }))
+            }
         }
         Err(error) => Err(match error.kind() {
             ErrorKind::InvalidToken
@@ -145,11 +155,14 @@ mod tests {
         };
         let token = encode(&token, &enc);
 
-        let context = UserAuthContext::bearer(token.as_str());
+        let context = Ok(UserAuthContext::bearer(token.as_str()));
 
         assert!(matches!(
             strategy(dec).authenticate(context).unwrap(),
-            Authenticated::FullAccess
+            Authenticated::Legacy(LegacyAuth {
+                namespace: None,
+                perm: Permission::Write
+            })
         ))
     }
 
@@ -164,24 +177,20 @@ mod tests {
         };
         let token = encode(&token, &enc);
 
-        let context = UserAuthContext::bearer(token.as_str());
+        let context = Ok(UserAuthContext::bearer(token.as_str()));
 
-        let Authenticated::Authorized(a) = strategy(dec).authenticate(context).unwrap() else {
+        let Authenticated::Legacy(a) = strategy(dec).authenticate(context).unwrap() else {
             panic!()
         };
 
-        let mut perms = a.perms_iter();
-        assert_eq!(
-            perms.next().unwrap(),
-            (Scope::Namespace(NamespaceName::default()), Permission::Read)
-        );
-        assert!(perms.next().is_none());
+        assert_eq!(a.namespace, Some(NamespaceName::default()));
+        assert_eq!(a.perm, Permission::Read);
     }
 
     #[test]
     fn errors_when_jwt_token_invalid() {
         let (_enc, dec) = key_pair();
-        let context = UserAuthContext::bearer("abc");
+        let context = Ok(UserAuthContext::bearer("abc"));
 
         assert_eq!(
             strategy(dec).authenticate(context).unwrap_err(),
@@ -201,7 +210,7 @@ mod tests {
 
         let token = encode(&token, &enc);
 
-        let context = UserAuthContext::bearer(token.as_str());
+        let context = Ok(UserAuthContext::bearer(token.as_str()));
 
         assert_eq!(
             strategy(dec).authenticate(context).unwrap_err(),
@@ -223,20 +232,13 @@ mod tests {
 
         let token = encode(&token, &enc);
 
-        let context = UserAuthContext::bearer(token.as_str());
+        let context = Ok(UserAuthContext::bearer(token.as_str()));
 
         let Authenticated::Authorized(a) = strategy(dec).authenticate(context).unwrap() else {
             panic!()
         };
 
         let mut perms = a.perms_iter();
-        assert_eq!(
-            perms.next().unwrap(),
-            (
-                Scope::Namespace(NamespaceName::from_string("foobar".into()).unwrap()),
-                Permission::Read
-            )
-        );
         assert_eq!(
             perms.next().unwrap(),
             (

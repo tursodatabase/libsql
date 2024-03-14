@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use libsql::Database;
 use serde_json::json;
 use tempfile::tempdir;
@@ -9,7 +11,9 @@ use super::make_primary;
 
 #[test]
 fn replicated_config() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     crate::cluster::make_cluster(&mut sim, 1, false);
 
@@ -37,7 +41,7 @@ fn replicated_config() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.primary:8080",
-                "dummy_token",
+                "",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;
@@ -49,7 +53,7 @@ fn replicated_config() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.replica1:8080",
-                "dummy_token",
+                "",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;
@@ -65,7 +69,9 @@ fn replicated_config() {
 
 #[test]
 fn meta_store() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
     make_primary(&mut sim, tmp.path().to_path_buf());
 
@@ -85,7 +91,7 @@ fn meta_store() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.primary:8080",
-                "dummy_token",
+                "",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;
@@ -107,7 +113,7 @@ fn meta_store() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.primary:8080",
-                "dummy_token",
+                "",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;
@@ -129,7 +135,7 @@ fn meta_store() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.primary:8080",
-                "dummy_token",
+                "",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;
@@ -145,7 +151,9 @@ fn meta_store() {
 
 #[test]
 fn meta_attach() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
     make_primary(&mut sim, tmp.path().to_path_buf());
 
@@ -165,7 +173,7 @@ fn meta_attach() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.primary:8080",
-                "dummy_token",
+                "",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;
@@ -177,7 +185,7 @@ fn meta_attach() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.primary:8080",
-                "dummy_token",
+                "",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;
@@ -200,7 +208,7 @@ fn meta_attach() {
         {
             let foo = Database::open_remote_with_connector(
                 "http://foo.primary:8080",
-                "dummy_token",
+                "",
                 TurmoilConnector,
             )?;
             let foo_conn = foo.connect()?;

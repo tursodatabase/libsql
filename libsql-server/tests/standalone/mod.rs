@@ -9,7 +9,7 @@ use super::common;
 use std::{sync::Arc, time::Duration};
 
 use insta::assert_debug_snapshot;
-use libsql::{Database, Value};
+use libsql::{params, Connection, Database, Value};
 use tempfile::tempdir;
 use tokio::sync::Notify;
 
@@ -19,7 +19,6 @@ use common::net::{init_tracing, TestServer, TurmoilConnector};
 
 mod attach;
 mod auth;
-mod utils;
 
 async fn make_standalone_server() -> Result<(), Box<dyn std::error::Error>> {
     init_tracing();
@@ -46,16 +45,14 @@ async fn make_standalone_server() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn basic_query() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -76,16 +73,14 @@ fn basic_query() {
 
 #[test]
 fn basic_metrics() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -122,7 +117,9 @@ fn basic_metrics() {
 
 #[test]
 fn primary_serializability() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     sim.host("primary", make_standalone_server);
     let notify = Arc::new(Notify::new());
@@ -130,11 +127,8 @@ fn primary_serializability() {
     sim.client("writer", {
         let notify = notify.clone();
         async move {
-            let db = Database::open_remote_with_connector(
-                "http://primary:8080",
-                "dummy-token",
-                TurmoilConnector,
-            )?;
+            let db =
+                Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
             let conn = db.connect()?;
             conn.execute("create table test (x)", ()).await?;
             conn.execute("insert into test values (12)", ()).await?;
@@ -147,11 +141,8 @@ fn primary_serializability() {
 
     sim.client("reader", {
         async move {
-            let db = Database::open_remote_with_connector(
-                "http://primary:8080",
-                "dummy-token",
-                TurmoilConnector,
-            )?;
+            let db =
+                Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
             let conn = db.connect()?;
 
             notify.notified().await;
@@ -162,83 +153,6 @@ fn primary_serializability() {
                 rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
                 Value::Integer(1)
             ));
-
-            Ok(())
-        }
-    });
-
-    sim.run().unwrap();
-}
-
-#[test]
-#[ignore = "transaction not yet implemented with the libsql client."]
-fn execute_transaction() {
-    let mut sim = turmoil::Builder::new().build();
-
-    sim.host("primary", make_standalone_server);
-    let notify = Arc::new(Notify::new());
-
-    sim.client("writer", {
-        let notify = notify.clone();
-        async move {
-            let db = Database::open_remote_with_connector(
-                "http://primary:8080",
-                "dummy-token",
-                TurmoilConnector,
-            )?;
-            let conn = db.connect()?;
-
-            conn.execute("create table test (x)", ()).await?;
-
-            let txn = conn.transaction().await?;
-            txn.execute("insert into test values (42)", ()).await?;
-
-            notify.notify_waiters();
-            notify.notified().await;
-            // we can read our write:
-            let mut rows = txn.query("select count(*) from test", ()).await?;
-            assert!(matches!(
-                rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
-                Value::Integer(1)
-            ));
-            txn.commit().await?;
-            notify.notify_waiters();
-
-            Ok(())
-        }
-    });
-
-    sim.client("reader", {
-        async move {
-            let db = Database::open_remote_with_connector(
-                "http://primary:8080",
-                "dummy-token",
-                TurmoilConnector,
-            )?;
-            let conn = db.connect()?;
-
-            notify.notified().await;
-            // at this point we should not see the written row.
-            let mut rows = conn.query("select count(*) from test", ()).await?;
-            assert!(matches!(
-                rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
-                Value::Integer(0)
-            ));
-            notify.notify_waiters();
-
-            let txn = conn.transaction().await?;
-            txn.execute("insert into test values (42)", ()).await?;
-
-            notify.notify_waiters();
-            notify.notified().await;
-
-            // now we can read the inserted row
-            let mut rows = conn.query("select count(*) from test", ()).await?;
-            assert!(matches!(
-                rows.next().await.unwrap().unwrap().get_value(0).unwrap(),
-                Value::Integer(1)
-            ));
-            notify.notify_waiters();
 
             Ok(())
         }
@@ -249,16 +163,14 @@ fn execute_transaction() {
 
 #[test]
 fn basic_query_fail() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -279,16 +191,14 @@ fn basic_query_fail() {
 
 #[test]
 fn begin_commit() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -319,16 +229,14 @@ fn begin_commit() {
 }
 #[test]
 fn begin_rollback() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -360,16 +268,14 @@ fn begin_rollback() {
 
 #[test]
 fn is_autocommit() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         assert!(conn.is_autocommit());
@@ -407,16 +313,14 @@ fn is_autocommit() {
 
 #[test]
 fn random_rowid() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute(
@@ -433,7 +337,9 @@ fn random_rowid() {
 
 #[test]
 fn dirty_startup_dont_prevent_namespace_creation() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
 
     sim.host("primary", || async {
         init_tracing();
@@ -476,4 +382,52 @@ fn dirty_startup_dont_prevent_namespace_creation() {
     });
 
     sim.run().unwrap();
+}
+
+#[test]
+fn row_count() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+
+    sim.host("primary", make_standalone_server);
+
+    sim.client("test", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        conn.execute("CREATE TABLE test(a int, b int);", ()).await?;
+        conn.execute("BEGIN;", ()).await?;
+        insert_rows(&conn, 0, 10).await?;
+        insert_rows_with_args(&conn, 10, 10).await?;
+        assert_rows_count(&conn, 20).await?;
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+async fn insert_rows(conn: &Connection, start: u32, count: u32) -> libsql::Result<()> {
+    for i in start..(start + count) {
+        conn.execute(&format!("INSERT INTO test(a, b) VALUES({i},'{i}')"), ())
+            .await?;
+    }
+    Ok(())
+}
+
+async fn insert_rows_with_args(conn: &Connection, start: u32, count: u32) -> libsql::Result<()> {
+    for i in start..(start + count) {
+        let mut stmt = conn.prepare("INSERT INTO test(a, b) VALUES(?,?)").await?;
+        stmt.execute(params![i, i]).await?;
+    }
+    Ok(())
+}
+
+async fn assert_rows_count(conn: &Connection, expected: u32) -> libsql::Result<()> {
+    let mut q = conn.query("SELECT COUNT(*) FROM test", ()).await?;
+    let row = q.next().await?.unwrap();
+    let count: u32 = row.get(0)?;
+    assert_eq!(count, expected);
+    Ok(())
 }

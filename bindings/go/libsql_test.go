@@ -1197,7 +1197,7 @@ func TestExec(t *testing.T) {
 
 func TestExecWithQuery(t *testing.T) {
 	runMemoryAndFileTests(t, func(t *testing.T, db *sql.DB) {
-		if _, err := db.ExecContext(context.Background(), "SELECT 1"); err != nil {
+		if _, err := db.QueryContext(context.Background(), "SELECT 1"); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -1209,7 +1209,7 @@ func TestErrorExec(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error")
 		}
-		if err.Error() != "failed to execute query CREATE TABLES test (id INTEGER, name TEXT)\nerror code = 1: Error executing statement: SQLite failure: `near \"TABLES\": syntax error`" {
+		if err.Error() != "failed to execute query CREATE TABLES test (id INTEGER, name TEXT)\nerror code = 2: Error executing statement: SQLite failure: `near \"TABLES\": syntax error`" {
 			t.Fatal("unexpected error:", err)
 		}
 	})

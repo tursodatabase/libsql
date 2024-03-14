@@ -486,6 +486,15 @@ impl Replicator {
     }
 
     pub fn savepoint(&self) -> SavepointTracker {
+        tracing::debug!(
+            "calling for backup savepoint for `{}` on generation `{}`, frame no.: {}",
+            self.db_name,
+            match self.generation() {
+                Ok(gen) => gen.to_string(),
+                _ => "".to_string(),
+            },
+            self.next_frame_no() - 1
+        );
         if let Some(tx) = &self.flush_trigger {
             let _ = tx.send(());
         }

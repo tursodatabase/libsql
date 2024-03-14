@@ -1,0 +1,7 @@
+---
+source: libsql-server/src/schema/scheduler.rs
+expression: "store.destroy(\"ns\".into()).await.unwrap_err()"
+---
+PendingMigrationOnSchema(
+    schema,
+)

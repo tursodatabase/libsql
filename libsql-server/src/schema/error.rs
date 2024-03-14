@@ -3,6 +3,8 @@ use hyper::StatusCode;
 
 use crate::{error::ResponseError, namespace::NamespaceName};
 
+type BoxError = Box<dyn std::error::Error + Send + Sync + 'static>;
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("failed to register migration job: {0}")]
@@ -25,6 +27,18 @@ pub enum Error {
     MigrationContainsTransactionStatements,
     #[error("an error occured while backing up the meta store")]
     MetaStoreBackupFailure,
+    #[error("Failed to load namespace: {0}")]
+    NamespaceLoad(BoxError),
+    #[error("Failed to connect to namespace `{0}`: {1}")]
+    FailedToConnect(NamespaceName, BoxError),
+    #[error("Failed to step the job to `DryRunSuccess`")]
+    CantStepJobDryRunSuccess,
+    #[error("failed to backup namespace {0}: {1}")]
+    NamespaceBackupFailure(NamespaceName, BoxError),
+    #[error("migration dry run failed: {0}")]
+    DryRunFailure(String),
+    #[error("migration failed: {0}")]
+    MigrationFailure(String),
 }
 
 impl ResponseError for Error {}

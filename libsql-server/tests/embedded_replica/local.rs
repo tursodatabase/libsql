@@ -33,11 +33,8 @@ fn local_sync_with_writes() {
 
         let _path = tmp_embedded_path.join("embedded");
 
-        let primary = Database::open_remote_with_connector(
-            "http://foo.primary:8080",
-            "dummy_token",
-            TurmoilConnector,
-        )?;
+        let primary =
+            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
         let conn = primary.connect()?;
 
         // Do enough writes to ensure that we can force the server to write some snapshots
@@ -70,7 +67,7 @@ fn local_sync_with_writes() {
         let db = Database::open_with_local_sync_remote_writes_connector(
             tmp_host_path.join("embedded").to_str().unwrap(),
             "http://foo.primary:8080".to_string(),
-            "dummy_token".to_string(),
+            "".to_string(),
             TurmoilConnector,
             None,
         )

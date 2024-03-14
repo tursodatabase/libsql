@@ -1,4 +1,5 @@
 use std::convert::Infallible;
+use std::time::Duration;
 
 use hyper::{service::make_service_fn, Body, Response, StatusCode};
 use insta::{assert_json_snapshot, assert_snapshot};
@@ -21,7 +22,9 @@ fn load_namespace_from_dump_from_url() {
     INSERT INTO test VALUES(42);
     COMMIT;"#;
 
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
     make_primary(&mut sim, tmp.path().to_path_buf());
 
@@ -51,11 +54,8 @@ fn load_namespace_from_dump_from_url() {
         assert_eq!(resp.status(), 200);
         assert_snapshot!(resp.body_string().await.unwrap());
 
-        let foo = Database::open_remote_with_connector(
-            "http://foo.primary:8080",
-            "dummy_token",
-            TurmoilConnector,
-        )?;
+        let foo =
+            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
         let foo_conn = foo.connect()?;
         let mut rows = foo_conn.query("select count(*) from test", ()).await?;
         assert!(matches!(
@@ -78,7 +78,9 @@ fn load_namespace_from_dump_from_file() {
     INSERT INTO test VALUES(42);
     COMMIT;"#;
 
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
     let tmp_path = tmp.path().to_path_buf();
 
@@ -123,11 +125,8 @@ fn load_namespace_from_dump_from_file() {
             resp.json::<serde_json::Value>().await.unwrap_or_default()
         );
 
-        let foo = Database::open_remote_with_connector(
-            "http://foo.primary:8080",
-            "dummy_token",
-            TurmoilConnector,
-        )?;
+        let foo =
+            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
         let foo_conn = foo.connect()?;
         let mut rows = foo_conn.query("select count(*) from test", ()).await?;
         assert!(matches!(
@@ -150,7 +149,9 @@ fn load_namespace_from_no_commit() {
     INSERT INTO test VALUES(42);
     "#;
 
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
     let tmp_path = tmp.path().to_path_buf();
 
@@ -176,11 +177,8 @@ fn load_namespace_from_no_commit() {
         );
 
         // namespace doesn't exist
-        let foo = Database::open_remote_with_connector(
-            "http://foo.primary:8080",
-            "dummy_token",
-            TurmoilConnector,
-        )?;
+        let foo =
+            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
         let foo_conn = foo.connect()?;
         assert!(foo_conn
             .query("select count(*) from test", ())
@@ -202,7 +200,9 @@ fn load_namespace_from_no_txn() {
     COMMIT;
     "#;
 
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
     let tmp_path = tmp.path().to_path_buf();
 
@@ -228,11 +228,8 @@ fn load_namespace_from_no_txn() {
         assert_json_snapshot!(resp.json_value().await.unwrap());
 
         // namespace doesn't exist
-        let foo = Database::open_remote_with_connector(
-            "http://foo.primary:8080",
-            "dummy_token",
-            TurmoilConnector,
-        )?;
+        let foo =
+            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
         let foo_conn = foo.connect()?;
         assert!(foo_conn
             .query("select count(*) from test", ())
@@ -247,7 +244,9 @@ fn load_namespace_from_no_txn() {
 
 #[test]
 fn export_dump() {
-    let mut sim = Builder::new().build();
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     let tmp = tempdir().unwrap();
 
     make_primary(&mut sim, tmp.path().to_path_buf());
@@ -259,11 +258,8 @@ fn export_dump() {
             .await?;
         assert_eq!(resp.status(), StatusCode::OK);
 
-        let foo = Database::open_remote_with_connector(
-            "http://foo.primary:8080",
-            "dummy_token",
-            TurmoilConnector,
-        )?;
+        let foo =
+            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
         let foo_conn = foo.connect()?;
         foo_conn.execute("create table test (x)", ()).await?;
         foo_conn.execute("insert into test values (42)", ()).await?;

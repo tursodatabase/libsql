@@ -260,7 +260,7 @@ cfg_replication! {
             let connector = if let Some(connector) = connector {
                 connector
             } else {
-                let https = super::connector();
+                let https = super::connector()?;
                 use tower::ServiceExt;
 
                 let svc = https
@@ -330,7 +330,7 @@ cfg_replication! {
                 let connector = if let Some(connector) = connector {
                     connector
                 } else {
-                    let https = super::connector();
+                    let https = super::connector()?;
                     use tower::ServiceExt;
 
                     let svc = https
@@ -394,7 +394,7 @@ cfg_remote! {
             let connector = if let Some(connector) = connector {
                 connector
             } else {
-                let https = super::connector();
+                let https = super::connector()?;
                 use tower::ServiceExt;
 
                 let svc = https

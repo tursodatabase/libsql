@@ -5,14 +5,12 @@ use libsql::{params, Database, TransactionBehavior};
 
 #[test]
 fn transaction_commit_and_rollback() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy_token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         // initialize tables
@@ -51,14 +49,12 @@ fn transaction_commit_and_rollback() {
 
 #[test]
 fn multiple_concurrent_transactions() {
-    let mut sim = turmoil::Builder::new().build();
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy_token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
         conn.execute_batch(r#"create table t(x text);"#).await?;
 
@@ -116,11 +112,7 @@ fn transaction_timeout() {
         .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy_token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         // initialize tables

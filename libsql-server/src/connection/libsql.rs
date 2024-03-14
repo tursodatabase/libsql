@@ -15,7 +15,6 @@ use rusqlite::{DatabaseName, ErrorCode, OpenFlags, StatementStatus, TransactionS
 use tokio::sync::{watch, Notify};
 use tokio::time::{Duration, Instant};
 
-use crate::auth::Permission;
 use crate::connection::TXN_TIMEOUT;
 use crate::error::Error;
 use crate::metrics::{
@@ -28,7 +27,9 @@ use crate::replication::FrameNo;
 use crate::stats::{Stats, StatsUpdateMessage};
 use crate::Result;
 
-use super::program::{DescribeCol, DescribeParam, DescribeResponse, Vm};
+use super::program::{
+    check_describe_auth, check_program_auth, DescribeCol, DescribeParam, DescribeResponse, Vm,
+};
 use super::{MakeConnection, Program, RequestContext};
 
 pub struct MakeLibSqlConn<T: WalManager> {
@@ -661,9 +662,7 @@ impl<W: Wal> Connection<W> {
                             || config.block_writes
                             || block_writes.load(Ordering::SeqCst)
                     }
-                    StmtKind::DDL => {
-                        config.block_reads || config.block_writes || config.block_ddl()
-                    }
+                    StmtKind::DDL => config.block_reads || config.block_writes,
                     StmtKind::TxnEnd
                     | StmtKind::Release
                     | StmtKind::Savepoint
@@ -839,39 +838,6 @@ impl<W: Wal> Connection<W> {
     }
 }
 
-fn check_program_auth(ctx: &RequestContext, pgm: &Program) -> Result<()> {
-    for step in pgm.steps() {
-        match step.query.stmt.kind {
-            StmtKind::TxnBegin
-            | StmtKind::TxnEnd
-            | StmtKind::Read
-            | StmtKind::Savepoint
-            | StmtKind::Release => {
-                ctx.auth.has_right(&ctx.namespace, Permission::Read)?;
-            }
-            StmtKind::DDL | StmtKind::Write => {
-                ctx.auth.has_right(&ctx.namespace, Permission::Write)?;
-            }
-            StmtKind::Attach(ref ns) => {
-                ctx.auth.has_right(ns, Permission::AttachRead)?;
-                if !ctx.meta_store.handle(ns.clone()).get().allow_attach {
-                    return Err(Error::NotAuthorized(format!(
-                        "Namespace `{ns}` doesn't allow attach"
-                    )));
-                }
-            }
-            StmtKind::Detach => (),
-        }
-    }
-
-    Ok(())
-}
-
-fn check_describe_auth(ctx: RequestContext) -> Result<()> {
-    ctx.auth().has_right(ctx.namespace(), Permission::Read)?;
-    Ok(())
-}
-
 /// We use a different runtime to run the connection, because long running tasks block turmoil
 static CONN_RT: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
     tokio::runtime::Builder::new_multi_thread()
@@ -894,7 +860,7 @@ where
     ) -> Result<B> {
         PROGRAM_EXEC_COUNT.increment(1);
 
-        check_program_auth(&ctx, &pgm)?;
+        check_program_auth(&ctx, &pgm, &self.inner.lock().config_store.get())?;
         let conn = self.inner.clone();
         CONN_RT
             .spawn_blocking(move || Connection::run(conn, pgm, builder))
@@ -1166,10 +1132,10 @@ mod test {
         assert!((wait_time..wait_time + epsilon).contains(&elapsed));
     }
 
-    /// The goal of this test is to run many conccurent transaction and hopefully catch a bug in
+    /// The goal of this test is to run many concurrent transaction and hopefully catch a bug in
     /// the lock stealing code. If this test becomes flaky check out the lock stealing code.
     #[tokio::test]
-    async fn test_many_conccurent() {
+    async fn test_many_concurrent() {
         let tmp = tempdir().unwrap();
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
