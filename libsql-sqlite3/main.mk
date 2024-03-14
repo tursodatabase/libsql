@@ -74,6 +74,7 @@ LIBOBJ+= vdbe.o parse.o \
          select.o sqlite3rbu.o status.o stmt.o \
          table.o threads.o tokenize.o treeview.o trigger.o \
          update.o upsert.o userauth.o util.o vacuum.o \
+	 vector.o \
          vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
 	 vdbetrace.o vdbevtab.o \
          wal.o walker.o where.o wherecode.o whereexpr.o \
@@ -169,6 +170,7 @@ SRC = \
   $(TOP)/src/upsert.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vacuum.c \
+  $(TOP)/src/vector.c \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/vdbe.h \
   $(TOP)/src/vdbeapi.c \

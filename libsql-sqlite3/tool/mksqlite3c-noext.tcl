@@ -347,6 +347,7 @@ foreach file {
    trigger.c
    update.c
    vacuum.c
+   vector.c
    vtab.c
    wherecode.c
    whereexpr.c

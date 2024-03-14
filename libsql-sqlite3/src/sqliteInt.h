@@ -5085,6 +5085,7 @@ FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,u8,u8);
 void sqlite3QuoteValue(StrAccum*,sqlite3_value*);
 void sqlite3RegisterBuiltinFunctions(void);
 void sqlite3RegisterDateTimeFunctions(void);
+void sqlite3RegisterVectorFunctions(void);
 void sqlite3RegisterJsonFunctions(void);
 void sqlite3RegisterPerConnectionBuiltinFunctions(sqlite3*);
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_JSON)
