@@ -1,8 +1,11 @@
+use std::sync::Arc;
+
 use itertools::Itertools;
 use once_cell::sync::Lazy;
 use rusqlite::Savepoint;
 
 use crate::connection::program::{Program, Vm};
+use crate::namespace::NamespaceName;
 use crate::query_result_builder::{IgnoreResult, QueryBuilderConfig, QueryResultBuilder};
 
 use super::result_builder::SchemaMigrationResultBuilder;
@@ -216,13 +219,17 @@ fn try_perform_migration<B: QueryResultBuilder>(
         migration,
         |_| (false, None),
         |_, _, _| (),
+        Arc::new(|_: &NamespaceName| Err(crate::Error::AttachInMigration)),
     );
 
     while !vm.finished() {
-        vm.step(savepoint).unwrap(); // return migration error
+        vm.step(savepoint)
+            .map_err(|e| Error::MigrationExecuteError(e.into()))?; // return migration error
     }
 
-    vm.builder().finish(None, true).unwrap();
+    vm.builder()
+        .finish(None, true)
+        .map_err(|e| Error::MigrationExecuteError(crate::Error::from(e).into()))?;
 
     Ok(vm.into_builder())
 }

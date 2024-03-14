@@ -118,6 +118,8 @@ pub enum Error {
     MigrationJobNotFound,
     #[error("cannot delete `{0}` because databases are still refering to it")]
     HasLinkedDbs(NamespaceName),
+    #[error("ATTACH is not permitted in migration scripts")]
+    AttachInMigration,
 }
 
 impl AsRef<Self> for Error {
@@ -201,6 +203,7 @@ impl IntoResponse for &Error {
             PendingMigrationOnSchema(_) => self.format_err(StatusCode::BAD_REQUEST),
             MigrationJobNotFound => self.format_err(StatusCode::NOT_FOUND),
             HasLinkedDbs(_) => self.format_err(StatusCode::BAD_REQUEST),
+            AttachInMigration => self.format_err(StatusCode::BAD_REQUEST),
         }
     }
 }

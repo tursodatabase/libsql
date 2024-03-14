@@ -824,3 +824,49 @@ fn schema_deletion() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn attach_in_migration_is_forbidden() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(100000))
+        .build();
+    let tmp = tempdir().unwrap();
+    make_primary(&mut sim, tmp.path().to_path_buf());
+
+    sim.client("client", async {
+        let client = Client::new();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/schema/create",
+                json!({"shared_schema": true }),
+            )
+            .await
+            .unwrap();
+
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/ns/create",
+                json!({"allow_attach": true }),
+            )
+            .await
+            .unwrap();
+
+        let conn = Database::open_remote_with_connector(
+            "http://schema.primary:8080",
+            String::new(),
+            TurmoilConnector,
+        )
+        .unwrap()
+        .connect()
+        .unwrap();
+
+        assert_debug_snapshot!(conn
+            .execute_batch("ATTACH ns as attached; create table test (c)")
+            .await
+            .unwrap_err());
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}

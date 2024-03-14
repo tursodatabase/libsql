@@ -1,0 +1,9 @@
+---
+source: libsql-server/tests/namespaces/shared_schema.rs
+expression: "conn.execute_batch(\"ATTACH ns as attached; create table test (c)\").await.unwrap_err()"
+---
+Hrana(
+    Api(
+        "{\"error\":\"Internal Error: `migration error: Error executing migration: ATTACH is not permitted in migration scripts`\"}",
+    ),
+)

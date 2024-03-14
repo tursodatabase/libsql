@@ -57,6 +57,8 @@ use self::replication_wal::{make_replication_wal, ReplicationWalManager};
 pub use self::store::NamespaceStore;
 
 pub type ResetCb = Box<dyn Fn(ResetOp) + Send + Sync + 'static>;
+pub type ResolveNamespacePathFn =
+    Arc<dyn Fn(&NamespaceName) -> crate::Result<Arc<Path>> + Sync + Send + 'static>;
 
 pub enum ResetOp {
     Reset(NamespaceName),
@@ -103,16 +105,38 @@ impl Namespace {
         restore_option: RestoreOption,
         name: &NamespaceName,
         reset: ResetCb,
+        resolve_attach_path: ResolveNamespacePathFn,
     ) -> crate::Result<Self> {
         match ns_config.db_kind {
             DatabaseKind::Primary if db_config.get().is_shared_schema => {
-                Self::new_schema(ns_config, name.clone(), db_config, restore_option).await
+                Self::new_schema(
+                    ns_config,
+                    name.clone(),
+                    db_config,
+                    restore_option,
+                    resolve_attach_path,
+                )
+                .await
             }
             DatabaseKind::Primary => {
-                Self::new_primary(ns_config, name.clone(), db_config, restore_option).await
+                Self::new_primary(
+                    ns_config,
+                    name.clone(),
+                    db_config,
+                    restore_option,
+                    resolve_attach_path,
+                )
+                .await
             }
             DatabaseKind::Replica => {
-                Self::new_replica(ns_config, name.clone(), db_config, reset).await
+                Self::new_replica(
+                    ns_config,
+                    name.clone(),
+                    db_config,
+                    reset,
+                    resolve_attach_path,
+                )
+                .await
             }
         }
     }
@@ -221,9 +245,18 @@ impl Namespace {
         name: NamespaceName,
         meta_store_handle: MetaStoreHandle,
         restore_option: RestoreOption,
+        resolve_attach_path: ResolveNamespacePathFn,
     ) -> crate::Result<Self> {
         // FIXME: make that truly atomic. explore the idea of using temp directories, and it's implications
-        match Self::try_new_primary(config, name.clone(), meta_store_handle, restore_option).await {
+        match Self::try_new_primary(
+            config,
+            name.clone(),
+            meta_store_handle,
+            restore_option,
+            resolve_attach_path,
+        )
+        .await
+        {
             Ok(ns) => Ok(ns),
             Err(e) => {
                 let path = config.base_path.join("dbs").join(name.as_str());
@@ -243,6 +276,7 @@ impl Namespace {
         restore_option: RestoreOption,
         block_writes: Arc<AtomicBool>,
         join_set: &mut JoinSet<anyhow::Result<()>>,
+        resolve_attach_path: ResolveNamespacePathFn,
     ) -> crate::Result<(PrimaryConnectionMaker, ReplicationWalManager, Arc<Stats>)> {
         let db_config = meta_store_handle.get();
         let bottomless_db_id = NamespaceBottomlessDbId::from_config(&db_config);
@@ -321,6 +355,7 @@ impl Namespace {
             logger.new_frame_notifier.subscribe(),
             ns_config.encryption_config.clone(),
             block_writes,
+            resolve_attach_path,
         )
         .await?
         .throttled(
@@ -359,6 +394,7 @@ impl Namespace {
         name: NamespaceName,
         meta_store_handle: MetaStoreHandle,
         restore_option: RestoreOption,
+        resolve_attach_path: ResolveNamespacePathFn,
     ) -> crate::Result<Self> {
         let mut join_set = JoinSet::new();
         let db_path = ns_config.base_path.join("dbs").join(name.as_str());
@@ -374,6 +410,7 @@ impl Namespace {
             restore_option,
             block_writes.clone(),
             &mut join_set,
+            resolve_attach_path,
         )
         .await?;
         let connection_maker = Arc::new(connection_maker);
@@ -415,12 +452,13 @@ impl Namespace {
         })
     }
 
-    #[tracing::instrument(skip(config, reset, meta_store_handle))]
+    #[tracing::instrument(skip(config, reset, meta_store_handle, resolve_attach_path))]
     async fn new_replica(
         config: &NamespaceConfig,
         name: NamespaceName,
         meta_store_handle: MetaStoreHandle,
         reset: ResetCb,
+        resolve_attach_path: ResolveNamespacePathFn,
     ) -> crate::Result<Self> {
         tracing::debug!("creating replica namespace");
         let db_path = config.base_path.join("dbs").join(name.as_str());
@@ -535,6 +573,7 @@ impl Namespace {
             config.max_total_response_size,
             primary_current_replicatio_index,
             config.encryption_config.clone(),
+            resolve_attach_path,
         )
         .await?
         .throttled(
@@ -563,6 +602,7 @@ impl Namespace {
         to_ns: NamespaceName,
         to_config: MetaStoreHandle,
         timestamp: Option<NaiveDateTime>,
+        resolve_attach: ResolveNamespacePathFn,
     ) -> crate::Result<Namespace> {
         let from_config = from_config.get();
         match ns_config.db_kind {
@@ -603,6 +643,7 @@ impl Namespace {
                     bottomless_db_id,
                     to_config,
                     ns_config,
+                    resolve_attach,
                 };
 
                 let ns = fork_task.fork().await?;
@@ -617,6 +658,7 @@ impl Namespace {
         name: NamespaceName,
         meta_store_handle: MetaStoreHandle,
         restore_option: RestoreOption,
+        resolve_attach_path: ResolveNamespacePathFn,
     ) -> crate::Result<Namespace> {
         let mut join_set = JoinSet::new();
         let db_path = ns_config.base_path.join("dbs").join(name.as_str());
@@ -631,6 +673,7 @@ impl Namespace {
             restore_option,
             Arc::new(AtomicBool::new(false)), // this is always false for schema
             &mut join_set,
+            resolve_attach_path,
         )
         .await?;
 
