@@ -60,11 +60,8 @@ fn fork_namespace() {
             .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
             .await?;
 
-        let foo = Database::open_remote_with_connector(
-            "http://foo.primary:8080",
-            "",
-            TurmoilConnector,
-        )?;
+        let foo =
+            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
         let foo_conn = foo.connect()?;
 
         foo_conn.execute("create table test (c)", ()).await?;
@@ -74,11 +71,8 @@ fn fork_namespace() {
             .post("http://primary:9090/v1/namespaces/foo/fork/bar", ())
             .await?;
 
-        let bar = Database::open_remote_with_connector(
-            "http://bar.primary:8080",
-            "",
-            TurmoilConnector,
-        )?;
+        let bar =
+            Database::open_remote_with_connector("http://bar.primary:8080", "", TurmoilConnector)?;
         let bar_conn = bar.connect()?;
 
         // what's in foo is in bar as well
@@ -124,11 +118,8 @@ fn delete_namespace() {
             .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
             .await?;
 
-        let foo = Database::open_remote_with_connector(
-            "http://foo.primary:8080",
-            "",
-            TurmoilConnector,
-        )?;
+        let foo =
+            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
         let foo_conn = foo.connect()?;
         foo_conn.execute("create table test (c)", ()).await?;
 

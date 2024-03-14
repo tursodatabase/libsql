@@ -90,22 +90,15 @@ fn proxy_write() {
     make_cluster(&mut sim, 1, true);
 
     sim.client("client", async {
-        let db = Database::open_remote_with_connector(
-            "http://replica0:8080",
-            "dummy-auth",
-            TurmoilConnector,
-        )?;
+        let db =
+            Database::open_remote_with_connector("http://replica0:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
         conn.execute("insert into test values (12)", ()).await?;
 
         // assert that the primary got the write
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-auth",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
         let mut rows = conn.query("select count(*) from test", ()).await?;
 
@@ -131,11 +124,8 @@ fn replica_read_write() {
     make_cluster(&mut sim, 1, true);
 
     sim.client("client", async {
-        let db = Database::open_remote_with_connector(
-            "http://replica0:8080",
-            "dummy-auth",
-            TurmoilConnector,
-        )?;
+        let db =
+            Database::open_remote_with_connector("http://replica0:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -161,11 +151,7 @@ fn sync_many_replica() {
         .build();
     make_cluster(&mut sim, NUM_REPLICA, true);
     sim.client("client", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -215,7 +201,7 @@ fn sync_many_replica() {
         for i in 0..NUM_REPLICA {
             let db = Database::open_remote_with_connector(
                 format!("http://replica{i}:8080"),
-                "dummy-auth",
+                "",
                 TurmoilConnector,
             )?;
             let conn = db.connect()?;
@@ -240,11 +226,8 @@ fn create_namespace() {
     make_cluster(&mut sim, 0, false);
 
     sim.client("client", async {
-        let db = Database::open_remote_with_connector(
-            "http://foo.primary:8080",
-            "dummy-auth",
-            TurmoilConnector,
-        )?;
+        let db =
+            Database::open_remote_with_connector("http://foo.primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         let Err(e) = conn.execute("create table test (x)", ()).await else {
@@ -284,12 +267,8 @@ fn large_proxy_query() {
     make_cluster(&mut sim, 1, true);
 
     sim.client("client", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-auth",
-            TurmoilConnector,
-        )
-        .unwrap();
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)
+            .unwrap();
         let conn = db.connect().unwrap();
 
         conn.execute("create table test (x)", ()).await.unwrap();
@@ -299,12 +278,8 @@ fn large_proxy_query() {
                 .unwrap();
         }
 
-        let db = Database::open_remote_with_connector(
-            "http://replica0:8080",
-            "",
-            TurmoilConnector,
-        )
-        .unwrap();
+        let db = Database::open_remote_with_connector("http://replica0:8080", "", TurmoilConnector)
+            .unwrap();
         let conn = db.connect().unwrap();
 
         conn.execute_batch("begin immediate; select * from test limit (4000)")

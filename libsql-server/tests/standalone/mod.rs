@@ -52,11 +52,7 @@ fn basic_query() {
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -84,11 +80,7 @@ fn basic_metrics() {
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -135,11 +127,8 @@ fn primary_serializability() {
     sim.client("writer", {
         let notify = notify.clone();
         async move {
-            let db = Database::open_remote_with_connector(
-                "http://primary:8080",
-                "dummy-token",
-                TurmoilConnector,
-            )?;
+            let db =
+                Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
             let conn = db.connect()?;
             conn.execute("create table test (x)", ()).await?;
             conn.execute("insert into test values (12)", ()).await?;
@@ -152,11 +141,8 @@ fn primary_serializability() {
 
     sim.client("reader", {
         async move {
-            let db = Database::open_remote_with_connector(
-                "http://primary:8080",
-                "dummy-token",
-                TurmoilConnector,
-            )?;
+            let db =
+                Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
             let conn = db.connect()?;
 
             notify.notified().await;
@@ -184,11 +170,7 @@ fn basic_query_fail() {
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -216,11 +198,7 @@ fn begin_commit() {
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -258,11 +236,7 @@ fn begin_rollback() {
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
@@ -301,11 +275,7 @@ fn is_autocommit() {
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         assert!(conn.is_autocommit());
@@ -350,11 +320,7 @@ fn random_rowid() {
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "dummy-token",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute(

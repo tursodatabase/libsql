@@ -96,11 +96,7 @@ fn replica_restart() {
 
     sim.client("client", async move {
         let http = Client::new();
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         // insert a few valued into the primary
@@ -265,11 +261,7 @@ fn primary_regenerate_log_no_replica_restart() {
 
     sim.client("client", async move {
         let http = Client::new();
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         // insert a few valued into the primary
@@ -474,11 +466,7 @@ fn primary_regenerate_log_with_replica_restart() {
 
     sim.client("client", async move {
         let http = Client::new();
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         // insert a few valued into the primary

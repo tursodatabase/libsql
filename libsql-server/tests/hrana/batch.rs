@@ -48,11 +48,7 @@ fn execute_individual_statements() {
         .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table t(x text)", ()).await?;
@@ -80,11 +76,7 @@ fn execute_batch() {
         .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute_batch(
@@ -120,11 +112,7 @@ fn multistatement_query() {
         .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
         let mut rows = conn
             .query("select 1 + ?; select 'abc';", params![1])
@@ -147,11 +135,7 @@ fn affected_rows_and_last_rowid() {
         .build();
     sim.host("primary", super::make_standalone_server);
     sim.client("client", async {
-        let db = Database::open_remote_with_connector(
-            "http://primary:8080",
-            "",
-            TurmoilConnector,
-        )?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute(
