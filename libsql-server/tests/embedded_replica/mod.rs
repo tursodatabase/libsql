@@ -983,3 +983,55 @@ fn errors_on_bad_replica() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn malformed_database() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(u64::MAX))
+        .build();
+
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_host = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let client = Client::new();
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let path = tmp_embedded_path.join("embedded");
+        let db = libsql::Builder::new_remote_replica(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080".to_string(),
+            "".to_string(),
+        )
+        .connector(TurmoilConnector)
+        .build()
+        .await?;
+
+        let conn = db.connect()?;
+
+        let dir = env!("CARGO_MANIFEST_DIR").to_string();
+
+        let file = std::fs::read_to_string(dir + "/output.sql").unwrap();
+
+        let sqls = file.lines();
+
+        for sql in sqls {
+            eprintln!("{:?}", sql);
+            if !sql.starts_with("--") {
+                conn.execute(sql, ()).await.unwrap();
+            }
+        }
+
+        db.sync().await.unwrap();
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
