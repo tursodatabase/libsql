@@ -10,7 +10,7 @@ async fn main() {
 
     let auth_token = std::env::var("LIBSQL_AUTH_TOKEN").unwrap_or_else(|_| {
         println!("Using empty token since LIBSQL_TOKEN was not set");
-        "x".to_string()
+        "".to_string()
     });
 
     let url = std::env::var("LIBSQL_URL")

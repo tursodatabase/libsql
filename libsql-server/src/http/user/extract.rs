@@ -16,7 +16,7 @@ impl FromRequestParts<AppState> for RequestContext {
         state: &AppState,
     ) -> std::result::Result<Self, Self::Rejection> {
         let namespace = db_factory::namespace_from_headers(
-            &parts.headers, 
+            &parts.headers,
             state.disable_default_namespace,
             state.disable_namespaces,
         )?;
