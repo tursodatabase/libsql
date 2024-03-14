@@ -1,0 +1,5 @@
+---
+source: libsql-server/tests/namespaces/shared_schema.rs
+expression: resp.body_string().await.unwrap()
+---
+"{\"error\":\"Namespace `ns1` doesn't exist\"}"
