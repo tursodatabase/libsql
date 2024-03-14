@@ -36,20 +36,12 @@ pub fn parse_jwt_key(data: &str) -> Result<jsonwebtoken::DecodingKey> {
     }
 }
 
-pub(crate) fn parse_grpc_auth_header(
-    metadata: &MetadataMap,
-) -> Result<UserAuthContext, tonic::Status> {
-    return metadata
+pub(crate) fn parse_grpc_auth_header(metadata: &MetadataMap) -> Result<UserAuthContext, AuthError> {
+    metadata
         .get(GRPC_AUTH_HEADER)
         .ok_or(AuthError::AuthHeaderNotFound)
         .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
         .and_then(|t| UserAuthContext::from_auth_str(t))
-        .map_err(|e| {
-            tonic::Status::new(
-                tonic::Code::InvalidArgument,
-                format!("Failed parse grpc auth: {e}"),
-            )
-        });
 }
 
 pub fn parse_http_auth_header<'a>(
@@ -98,8 +90,8 @@ mod tests {
         let map = tonic::metadata::MetadataMap::new();
         let result = parse_grpc_auth_header(&map);
         assert_eq!(
-            result.unwrap_err().message(),
-            "Failed parse grpc auth: Expected authorization header but none given"
+            result.unwrap_err().to_string(),
+            "Expected authorization header but none given"
         );
     }
 
@@ -108,10 +100,7 @@ mod tests {
         let mut map = tonic::metadata::MetadataMap::new();
         map.insert("x-authorization", "bearer I❤NY".parse().unwrap());
         let result = parse_grpc_auth_header(&map);
-        assert_eq!(
-            result.unwrap_err().message(),
-            "Failed parse grpc auth: Non-ASCII auth header"
-        )
+        assert_eq!(result.unwrap_err().to_string(), "Non-ASCII auth header")
     }
 
     #[test]
@@ -120,8 +109,8 @@ mod tests {
         map.insert("x-authorization", "bearer123".parse().unwrap());
         let result = parse_grpc_auth_header(&map);
         assert_eq!(
-            result.unwrap_err().message(),
-            "Failed parse grpc auth: Auth string does not conform to '<scheme> <token>' form"
+            result.unwrap_err().to_string(),
+            "Auth string does not conform to '<scheme> <token>' form"
         )
     }
 

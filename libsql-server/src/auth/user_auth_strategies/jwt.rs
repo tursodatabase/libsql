@@ -1,10 +1,7 @@
 use chrono::{DateTime, Utc};
 
 use crate::{
-    auth::{
-        authenticated::LegacyAuth, AuthError, Authenticated, Authorized,
-        Permission,
-    },
+    auth::{authenticated::LegacyAuth, AuthError, Authenticated, Authorized, Permission},
     namespace::NamespaceName,
 };
 
