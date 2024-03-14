@@ -141,30 +141,37 @@ table_option_set(A) ::= .    {A = TableOptions::NONE;}
 table_option_set(A) ::= table_option(A).
 table_option_set(A) ::= table_option_set(X) COMMA table_option(Y). {A = X|Y;}
 table_option(A) ::= WITHOUT nm(X). {
-  if "rowid".eq_ignore_ascii_case(&X.0) {
+  let name = X;
+  if "rowid".eq_ignore_ascii_case(&name.0) {
     A = TableOptions::WITHOUT_ROWID;
   }else{
-    A = TableOptions::NONE;
-    let msg = format!("unknown table option: {}", &X);
+    // A = TableOptions::NONE;
+    let msg = format!("unknown table option: {name}");
     self.ctx.sqlite3_error_msg(&msg);
+    return Err(ParserError::Custom(msg));
   }
 }
 table_option(A) ::= nm(X) nm(Y). {
-  if "random".eq_ignore_ascii_case(&X.0) && "rowid".eq_ignore_ascii_case(&Y.0) {
+  let random = X;
+  let rowid = Y;
+  if "random".eq_ignore_ascii_case(&random.0) && "rowid".eq_ignore_ascii_case(&rowid.0) {
     A = TableOptions::RANDOM_ROWID;
   }else{
-    A = TableOptions::NONE;
-    let msg = format!("unknown table option: {} {}", &X, &Y);
+    // A = TableOptions::NONE;
+    let msg = format!("unknown table option: {random} {rowid}");
     self.ctx.sqlite3_error_msg(&msg);
+    return Err(ParserError::Custom(msg));
   }
 }
 table_option(A) ::= nm(X). {
-  if "strict".eq_ignore_ascii_case(&X.0) {
+  let name = X;
+  if "strict".eq_ignore_ascii_case(&name.0) {
     A = TableOptions::STRICT;
   }else{
-    A = TableOptions::NONE;
-    let msg = format!("unknown table option: {}", &X);
+    // A = TableOptions::NONE;
+    let msg = format!("unknown table option: {name}");
     self.ctx.sqlite3_error_msg(&msg);
+    return Err(ParserError::Custom(msg));
   }
 }
 %type columnlist {Vec<ColumnDefinition>}
