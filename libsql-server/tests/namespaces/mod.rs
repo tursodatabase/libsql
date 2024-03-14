@@ -62,7 +62,7 @@ fn fork_namespace() {
 
         let foo = Database::open_remote_with_connector(
             "http://foo.primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let foo_conn = foo.connect()?;
@@ -76,7 +76,7 @@ fn fork_namespace() {
 
         let bar = Database::open_remote_with_connector(
             "http://bar.primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let bar_conn = bar.connect()?;
@@ -126,7 +126,7 @@ fn delete_namespace() {
 
         let foo = Database::open_remote_with_connector(
             "http://foo.primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let foo_conn = foo.connect()?;

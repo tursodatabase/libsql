@@ -35,7 +35,7 @@ fn local_sync_with_writes() {
 
         let primary = Database::open_remote_with_connector(
             "http://foo.primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let conn = primary.connect()?;
@@ -70,7 +70,7 @@ fn local_sync_with_writes() {
         let db = Database::open_with_local_sync_remote_writes_connector(
             tmp_host_path.join("embedded").to_str().unwrap(),
             "http://foo.primary:8080".to_string(),
-            "dummy_token".to_string(),
+            "".to_string(),
             TurmoilConnector,
             None,
         )

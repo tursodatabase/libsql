@@ -50,7 +50,7 @@ fn execute_individual_statements() {
     sim.client("client", async {
         let db = Database::open_remote_with_connector(
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let conn = db.connect()?;
@@ -82,7 +82,7 @@ fn execute_batch() {
     sim.client("client", async {
         let db = Database::open_remote_with_connector(
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let conn = db.connect()?;
@@ -122,7 +122,7 @@ fn multistatement_query() {
     sim.client("client", async {
         let db = Database::open_remote_with_connector(
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let conn = db.connect()?;
@@ -149,7 +149,7 @@ fn affected_rows_and_last_rowid() {
     sim.client("client", async {
         let db = Database::open_remote_with_connector(
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let conn = db.connect()?;

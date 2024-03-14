@@ -163,7 +163,7 @@ fn sync_many_replica() {
     sim.client("client", async {
         let db = Database::open_remote_with_connector(
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let conn = db.connect()?;
@@ -301,7 +301,7 @@ fn large_proxy_query() {
 
         let db = Database::open_remote_with_connector(
             "http://replica0:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )
         .unwrap();

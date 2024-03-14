@@ -90,7 +90,7 @@ fn embedded_replica() {
         let db = Database::open_with_remote_sync_connector(
             path.to_str().unwrap(),
             "http://foo.primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
             false,
             None,
@@ -163,7 +163,7 @@ fn execute_batch() {
         let db = Database::open_with_remote_sync_connector(
             path.to_str().unwrap(),
             "http://foo.primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
             false,
             None,
@@ -370,7 +370,7 @@ fn replica_primary_reset() {
     sim.client("client", async move {
         let primary = Database::open_remote_with_connector(
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let conn = primary.connect()?;
@@ -387,7 +387,7 @@ fn replica_primary_reset() {
         let replica = Database::open_with_remote_sync_connector(
             tmp.path().join("data").display().to_string(),
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
             false,
             None,
@@ -446,7 +446,7 @@ fn replica_primary_reset() {
         let replica = Database::open_with_remote_sync_connector(
             tmp.path().join("data").display().to_string(),
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
             false,
             None,
@@ -534,7 +534,7 @@ fn replica_no_resync_on_restart() {
         {
             let db = Database::open_remote_with_connector(
                 "http://primary:8080",
-                "dummy_token",
+                "",
                 TurmoilConnector,
             )
             .unwrap();
@@ -554,7 +554,7 @@ fn replica_no_resync_on_restart() {
             let db = Database::open_with_remote_sync_connector(
                 db_path.display().to_string(),
                 "http://primary:8080",
-                "dummy_token",
+                "",
                 TurmoilConnector,
                 false,
                 None,
@@ -570,7 +570,7 @@ fn replica_no_resync_on_restart() {
             let db = Database::open_with_remote_sync_connector(
                 db_path.display().to_string(),
                 "http://primary:8080",
-                "dummy_token",
+                "",
                 TurmoilConnector,
                 false,
                 None,
@@ -640,7 +640,7 @@ fn replicate_with_snapshots() {
 
         let db = Database::open_remote_with_connector(
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )
         .unwrap();
@@ -657,7 +657,7 @@ fn replicate_with_snapshots() {
         let db = Database::open_with_remote_sync_connector(
             tmp.path().join("data").display().to_string(),
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
             false,
             None,
@@ -726,7 +726,7 @@ fn read_your_writes() {
         let db = Database::open_with_remote_sync_connector(
             path.to_str().unwrap(),
             "http://foo.primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
             true,
             None,
@@ -771,7 +771,7 @@ fn proxy_write_returning_row() {
         let db = Database::open_with_remote_sync_connector(
             path.to_str().unwrap(),
             "http://foo.primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
             true,
             None,
@@ -818,7 +818,7 @@ fn freeze() {
         let db = Database::open_with_remote_sync_connector(
             path.to_str().unwrap(),
             "http://foo.primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
             true,
             None,
@@ -841,7 +841,7 @@ fn freeze() {
         let db = Database::open_with_remote_sync_connector(
             path.to_str().unwrap(),
             "http://foo.primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
             true,
             None,
@@ -891,7 +891,7 @@ fn sync_interval() {
         let db = libsql::Builder::new_remote_replica(
             path.to_str().unwrap(),
             "http://foo.primary:8080".to_string(),
-            "dummy_token".to_string(),
+            "".to_string(),
         )
         .connector(TurmoilConnector)
         .sync_interval(Duration::from_millis(100))

@@ -56,7 +56,7 @@ fn load_namespace_from_dump_from_url() {
 
         let foo = Database::open_remote_with_connector(
             "http://foo.primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let foo_conn = foo.connect()?;
@@ -130,7 +130,7 @@ fn load_namespace_from_dump_from_file() {
 
         let foo = Database::open_remote_with_connector(
             "http://foo.primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let foo_conn = foo.connect()?;
@@ -185,7 +185,7 @@ fn load_namespace_from_no_commit() {
         // namespace doesn't exist
         let foo = Database::open_remote_with_connector(
             "http://foo.primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let foo_conn = foo.connect()?;
@@ -239,7 +239,7 @@ fn load_namespace_from_no_txn() {
         // namespace doesn't exist
         let foo = Database::open_remote_with_connector(
             "http://foo.primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let foo_conn = foo.connect()?;
@@ -272,7 +272,7 @@ fn export_dump() {
 
         let foo = Database::open_remote_with_connector(
             "http://foo.primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let foo_conn = foo.connect()?;

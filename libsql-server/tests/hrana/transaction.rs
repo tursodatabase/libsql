@@ -12,7 +12,7 @@ fn transaction_commit_and_rollback() {
     sim.client("client", async {
         let db = Database::open_remote_with_connector(
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let conn = db.connect()?;
@@ -60,7 +60,7 @@ fn multiple_concurrent_transactions() {
     sim.client("client", async {
         let db = Database::open_remote_with_connector(
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let conn = db.connect()?;
@@ -122,7 +122,7 @@ fn transaction_timeout() {
     sim.client("client", async {
         let db = Database::open_remote_with_connector(
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let conn = db.connect()?;

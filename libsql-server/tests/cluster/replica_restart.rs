@@ -98,7 +98,7 @@ fn replica_restart() {
         let http = Client::new();
         let db = Database::open_remote_with_connector(
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let conn = db.connect()?;
@@ -267,7 +267,7 @@ fn primary_regenerate_log_no_replica_restart() {
         let http = Client::new();
         let db = Database::open_remote_with_connector(
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let conn = db.connect()?;
@@ -476,7 +476,7 @@ fn primary_regenerate_log_with_replica_restart() {
         let http = Client::new();
         let db = Database::open_remote_with_connector(
             "http://primary:8080",
-            "dummy_token",
+            "",
             TurmoilConnector,
         )?;
         let conn = db.connect()?;

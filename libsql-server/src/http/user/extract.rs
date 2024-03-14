@@ -16,7 +16,7 @@ impl FromRequestParts<AppState> for RequestContext {
         state: &AppState,
     ) -> std::result::Result<Self, Self::Rejection> {
         let namespace = db_factory::namespace_from_headers(
-            &parts.headers,
+            &parts.headers, 
             state.disable_default_namespace,
             state.disable_namespaces,
         )?;
@@ -31,8 +31,7 @@ impl FromRequestParts<AppState> for RequestContext {
             .get(hyper::header::AUTHORIZATION)
             .ok_or(AuthError::AuthHeaderNotFound)
             .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
-            .and_then(|t| UserAuthContext::from_auth_str(t))
-            .unwrap_or(UserAuthContext::empty());
+            .and_then(|t| UserAuthContext::from_auth_str(t));
 
         let authenticated = namespace_jwt_key
             .map(Jwt::new)

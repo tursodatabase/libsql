@@ -81,7 +81,7 @@ pub(super) async fn handle_initial_hello(
         .map(Jwt::new)
         .map(Auth::new)
         .unwrap_or(server.user_auth_strategy.clone())
-        .authenticate(UserAuthContext::bearer_opt(jwt))
+        .authenticate(Ok(UserAuthContext::bearer_opt(jwt)))
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
 
     Ok(Session {
@@ -115,7 +115,7 @@ pub(super) async fn handle_repeated_hello(
         .map(Jwt::new)
         .map(Auth::new)
         .unwrap_or_else(|| server.user_auth_strategy.clone())
-        .authenticate(UserAuthContext::bearer_opt(jwt))
+        .authenticate(Ok(UserAuthContext::bearer_opt(jwt)))
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
 
     Ok(())

@@ -94,7 +94,7 @@ impl ReplicationLogService {
         };
 
         if let Some(auth) = auth {
-            let user_credential = parse_grpc_auth_header(req.metadata())?;
+            let user_credential = parse_grpc_auth_header(req.metadata());
             auth.authenticate(user_credential)?;
         }
 

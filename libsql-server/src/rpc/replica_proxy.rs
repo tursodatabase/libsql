@@ -56,7 +56,7 @@ impl ReplicaProxyService {
             ))),
         }?;
 
-        let auth_context = parse_grpc_auth_header(req.metadata())?;
+        let auth_context = parse_grpc_auth_header(req.metadata());
         auth_strategy
             .authenticate(auth_context)?
             .upgrade_grpc_request(req);
