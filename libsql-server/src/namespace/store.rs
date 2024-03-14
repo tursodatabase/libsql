@@ -95,6 +95,15 @@ impl NamespaceStore {
         if self.inner.has_shutdown.load(Ordering::Relaxed) {
             return Err(Error::NamespaceStoreShutdown);
         }
+
+        // destroy on-disk database and backups
+        // FIXME: this is blocking
+        let db_config = self
+            .inner
+            .metadata
+            .remove(namespace.clone())?
+            .ok_or_else(|| crate::Error::NamespaceDoesntExist(namespace.to_string()))?;
+
         let mut bottomless_db_id_init = NamespaceBottomlessDbIdInit::FetchFromConfig;
         if let Some(ns) = self.inner.store.remove(&namespace).await {
             // deallocate in-memory resources
@@ -106,13 +115,6 @@ impl NamespaceStore {
             }
         }
 
-        // destroy on-disk database and backups
-        // FIXME: this is blocking
-        let db_config = self
-            .inner
-            .metadata
-            .remove(namespace.clone())?
-            .ok_or_else(|| crate::Error::NamespaceDoesntExist(namespace.to_string()))?;
         Namespace::cleanup(
             &self.inner.config,
             &namespace,
