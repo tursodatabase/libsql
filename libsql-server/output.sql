@@ -301,9 +301,11 @@ BEGIN;
 SAVEPOINT trx57;
 SELECT type, sql FROM sqlite_master WHERE (type = 'table' OR (type = 'index' AND sql IS NOT NULL)) AND lower (tbl_name) = 'strapi_transfer_tokens';
 RELEASE trx57;
-PRAGMA foreign_keys;
-SAVEPOINT trx58;
-CREATE TABLE `_knex_temp_alter605` (`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL, `name` varchar(255) NULL, `description` varchar(255) NULL, `access_key` varchar(255) NULL, `last_used_at` datetime NULL, `expires_at` datetime NULL, `lifespan` bigint NULL, `created_at` datetime NULL, `updated_at` datetime NULL, `created_by_id` integer NULL, `updated_by_id` integer NULL, CONSTRAINT `strapi_transfer_tokens_created_by_id_fk` FOREIGN KEY (`created_by_id`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL, CONSTRAINT `strapi_transfer_tokens_updated_by_id_fk` FOREIGN KEY (`updated_by_id`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL, CONSTRAINT `strapi_transfer_tokens_created_by_id_fk` FOREIGN KEY (`created_by_id`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL)
+--PRAGMA foreign_keys;
+--SAVEPOINT trx58;
+CREATE TABLE foobar (name varchar(255));
+--CREATE TABLE `_knex_temp_alter605` (`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL, `name` varchar(255) NULL, `description` varchar(255) NULL, `access_key` varchar(255) NULL, `last_used_at` datetime NULL, `expires_at` datetime NULL, `lifespan` bigint NULL, `created_at` datetime NULL, `updated_at` datetime NULL, `created_by_id` integer NULL, `updated_by_id` integer NULL)
+--RELEASE trx58;
 --INSERT INTO "_knex_temp_alter605" SELECT * FROM "strapi_transfer_tokens";
 --DROP TABLE "strapi_transfer_tokens";
 --ALTER TABLE "_knex_temp_alter605" RENAME TO "strapi_transfer_tokens";
