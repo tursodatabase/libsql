@@ -42,7 +42,7 @@ rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = 
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.11.1"
+cargo-dist-version = "0.8.2"
 # CI backends to support
 ci = ["github"]
 # The installers to generate for each app
@@ -61,6 +61,9 @@ create-release = true
 pr-run-mode = "plan"
 # A prefix git tags must include for cargo-dist to care about them
 tag-namespace = "libsql-server"
+
+[workspace.metadata.dist.github-custom-runners]
+aarch64-apple-darwin = "macos-14"
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
