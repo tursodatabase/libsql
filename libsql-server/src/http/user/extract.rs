@@ -1,7 +1,7 @@
 use axum::extract::FromRequestParts;
 
 use crate::{
-    auth::{Jwt, UserAuthContext, UserAuthStrategy},
+    auth::{Auth, AuthError, Jwt, UserAuthContext},
     connection::RequestContext,
 };
 
@@ -20,25 +20,27 @@ impl FromRequestParts<AppState> for RequestContext {
             state.disable_default_namespace,
             state.disable_namespaces,
         )?;
-
+        // todo dupe #auth
         let namespace_jwt_key = state
             .namespaces
             .with(namespace.clone(), |ns| ns.jwt_key())
             .await??;
 
-        let auth_header = parts.headers.get(hyper::header::AUTHORIZATION);
+        let context = parts
+            .headers
+            .get(hyper::header::AUTHORIZATION)
+            .ok_or(AuthError::AuthHeaderNotFound)
+            .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
+            .and_then(|t| UserAuthContext::from_auth_str(t));
 
-        let auth = match namespace_jwt_key {
-            Some(key) => Jwt::new(key).authenticate(UserAuthContext {
-                user_credential: auth_header.cloned(),
-            })?,
-            None => state.user_auth_strategy.authenticate(UserAuthContext {
-                user_credential: auth_header.cloned(),
-            })?,
-        };
+        let authenticated = namespace_jwt_key
+            .map(Jwt::new)
+            .map(Auth::new)
+            .unwrap_or_else(|| state.user_auth_strategy.clone())
+            .authenticate(context)?;
 
         Ok(Self::new(
-            auth,
+            authenticated,
             namespace,
             state.namespaces.meta_store().clone(),
         ))

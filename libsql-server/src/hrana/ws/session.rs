@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Result};
-use axum::http::HeaderValue;
 use futures::future::BoxFuture;
 use tokio::sync::{mpsc, oneshot};
 
@@ -72,21 +71,17 @@ pub(super) async fn handle_initial_hello(
     jwt: Option<String>,
     namespace: NamespaceName,
 ) -> Result<Session> {
+    // todo dupe #auth
     let namespace_jwt_key = server
         .namespaces
         .with(namespace.clone(), |ns| ns.jwt_key())
         .await??;
 
-    // Convert jwt token into a HeaderValue to be compatible with UserAuthStrategy
-    let user_credential = jwt
-        .clone()
-        .and_then(|t| HeaderValue::from_str(&format!("Bearer {t}")).ok());
-
     let auth = namespace_jwt_key
         .map(Jwt::new)
         .map(Auth::new)
         .unwrap_or(server.user_auth_strategy.clone())
-        .authenticate(UserAuthContext { user_credential })
+        .authenticate(Ok(UserAuthContext::bearer_opt(jwt)))
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
 
     Ok(Session {
@@ -110,21 +105,17 @@ pub(super) async fn handle_repeated_hello(
             min_version: Version::Hrana2,
         })
     }
+    // todo dupe #auth
     let namespace_jwt_key = server
         .namespaces
         .with(namespace.clone(), |ns| ns.jwt_key())
         .await??;
 
-    // Convert jwt token into a HeaderValue to be compatible with UserAuthStrategy
-    let user_credential = jwt
-        .clone()
-        .and_then(|t| HeaderValue::from_str(&format!("Bearer {t}")).ok());
-
     session.auth = namespace_jwt_key
         .map(Jwt::new)
         .map(Auth::new)
         .unwrap_or_else(|| server.user_auth_strategy.clone())
-        .authenticate(UserAuthContext { user_credential })
+        .authenticate(Ok(UserAuthContext::bearer_opt(jwt)))
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
 
     Ok(())

@@ -27,7 +27,10 @@ impl Auth {
         }
     }
 
-    pub fn authenticate(&self, context: UserAuthContext) -> Result<Authenticated, AuthError> {
+    pub fn authenticate(
+        &self,
+        context: Result<UserAuthContext, AuthError>,
+    ) -> Result<Authenticated, AuthError> {
         self.user_strategy.authenticate(context)
     }
 }

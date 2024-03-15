@@ -4,6 +4,8 @@ use anyhow::{bail, Context as _, Result};
 use axum::http::HeaderValue;
 use tonic::metadata::MetadataMap;
 
+use super::UserAuthContext;
+
 pub fn parse_http_basic_auth_arg(arg: &str) -> Result<Option<String>> {
     if arg == "always" {
         return Ok(Some("always".to_string()));
@@ -34,11 +36,12 @@ pub fn parse_jwt_key(data: &str) -> Result<jsonwebtoken::DecodingKey> {
     }
 }
 
-pub(crate) fn parse_grpc_auth_header(metadata: &MetadataMap) -> Option<HeaderValue> {
+pub(crate) fn parse_grpc_auth_header(metadata: &MetadataMap) -> Result<UserAuthContext, AuthError> {
     metadata
         .get(GRPC_AUTH_HEADER)
-        .map(|v| v.to_bytes().expect("Auth should always be ASCII"))
-        .map(|v| HeaderValue::from_maybe_shared(v).expect("Should already be valid header"))
+        .ok_or(AuthError::AuthHeaderNotFound)
+        .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
+        .and_then(|t| UserAuthContext::from_auth_str(t))
 }
 
 pub fn parse_http_auth_header<'a>(
@@ -71,7 +74,45 @@ mod tests {
 
     use crate::auth::{parse_http_auth_header, AuthError};
 
-    use super::parse_http_basic_auth_arg;
+    use super::{parse_grpc_auth_header, parse_http_basic_auth_arg};
+
+    #[test]
+    fn parse_grpc_auth_header_returns_valid_context() {
+        let mut map = tonic::metadata::MetadataMap::new();
+        map.insert("x-authorization", "bearer 123".parse().unwrap());
+        let context = parse_grpc_auth_header(&map).unwrap();
+        assert_eq!(context.scheme().as_ref().unwrap(), "bearer");
+        assert_eq!(context.token().as_ref().unwrap(), "123");
+    }
+
+    #[test]
+    fn parse_grpc_auth_header_error_no_header() {
+        let map = tonic::metadata::MetadataMap::new();
+        let result = parse_grpc_auth_header(&map);
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Expected authorization header but none given"
+        );
+    }
+
+    #[test]
+    fn parse_grpc_auth_header_error_non_ascii() {
+        let mut map = tonic::metadata::MetadataMap::new();
+        map.insert("x-authorization", "bearer I❤NY".parse().unwrap());
+        let result = parse_grpc_auth_header(&map);
+        assert_eq!(result.unwrap_err().to_string(), "Non-ASCII auth header")
+    }
+
+    #[test]
+    fn parse_grpc_auth_header_error_malformed_auth_str() {
+        let mut map = tonic::metadata::MetadataMap::new();
+        map.insert("x-authorization", "bearer123".parse().unwrap());
+        let result = parse_grpc_auth_header(&map);
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Auth string does not conform to '<scheme> <token>' form"
+        )
+    }
 
     #[test]
     fn parse_http_auth_header_returns_auth_header_param_when_valid() {
