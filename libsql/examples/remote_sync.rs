@@ -32,6 +32,7 @@ async fn main() {
     let auth_token = std::env::var("LIBSQL_AUTH_TOKEN").unwrap_or("".to_string());
 
     let db = match Builder::new_remote_replica(db_path, sync_url, auth_token)
+    .namespace("alphabravo")
         .build()
         .await
     {
