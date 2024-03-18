@@ -12,6 +12,7 @@ use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 use tokio::time::Duration;
 use tokio_stream::StreamExt;
 
+use crate::namespace::ResolveNamespacePathFn;
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};
@@ -60,6 +61,7 @@ pub struct ForkTask<'a> {
     pub restore_to: Option<PointInTimeRestore>,
     pub bottomless_db_id: NamespaceBottomlessDbId,
     pub ns_config: &'a NamespaceConfig,
+    pub resolve_attach: ResolveNamespacePathFn,
 }
 
 pub struct PointInTimeRestore {
@@ -107,6 +109,7 @@ impl<'a> ForkTask<'a> {
             RestoreOption::Latest,
             &self.to_namespace,
             Box::new(|_op| {}),
+            self.resolve_attach.clone(),
         )
         .await
         .map_err(|e| ForkError::CreateNamespace(Box::new(e)))

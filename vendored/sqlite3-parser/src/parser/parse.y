@@ -141,30 +141,37 @@ table_option_set(A) ::= .    {A = TableOptions::NONE;}
 table_option_set(A) ::= table_option(A).
 table_option_set(A) ::= table_option_set(X) COMMA table_option(Y). {A = X|Y;}
 table_option(A) ::= WITHOUT nm(X). {
-  if "rowid".eq_ignore_ascii_case(&X.0) {
+  let name = X;
+  if "rowid".eq_ignore_ascii_case(&name.0) {
     A = TableOptions::WITHOUT_ROWID;
   }else{
-    A = TableOptions::NONE;
-    let msg = format!("unknown table option: {}", &X);
+    // A = TableOptions::NONE;
+    let msg = format!("unknown table option: {name}");
     self.ctx.sqlite3_error_msg(&msg);
+    return Err(ParserError::Custom(msg));
   }
 }
 table_option(A) ::= nm(X) nm(Y). {
-  if "random".eq_ignore_ascii_case(&X.0) && "rowid".eq_ignore_ascii_case(&Y.0) {
+  let random = X;
+  let rowid = Y;
+  if "random".eq_ignore_ascii_case(&random.0) && "rowid".eq_ignore_ascii_case(&rowid.0) {
     A = TableOptions::RANDOM_ROWID;
   }else{
-    A = TableOptions::NONE;
-    let msg = format!("unknown table option: {} {}", &X, &Y);
+    // A = TableOptions::NONE;
+    let msg = format!("unknown table option: {random} {rowid}");
     self.ctx.sqlite3_error_msg(&msg);
+    return Err(ParserError::Custom(msg));
   }
 }
 table_option(A) ::= nm(X). {
-  if "strict".eq_ignore_ascii_case(&X.0) {
+  let name = X;
+  if "strict".eq_ignore_ascii_case(&name.0) {
     A = TableOptions::STRICT;
   }else{
-    A = TableOptions::NONE;
-    let msg = format!("unknown table option: {}", &X);
+    // A = TableOptions::NONE;
+    let msg = format!("unknown table option: {name}");
     self.ctx.sqlite3_error_msg(&msg);
+    return Err(ParserError::Custom(msg));
   }
 }
 %type columnlist {Vec<ColumnDefinition>}
@@ -622,26 +629,26 @@ seltablist(A) ::= stl_prefix(A) fullname(Y) as(Z) indexed_opt(I)
                   on_using(N). {
     let st = SelectTable::Table(Y, Z, I);
     let jc = N;
-    A.push(st, jc);
+    A.push(st, jc)?;
 }
 seltablist(A) ::= stl_prefix(A) fullname(Y) LP exprlist(E) RP as(Z)
                   on_using(N). {
     let st = SelectTable::TableCall(Y, E, Z);
     let jc = N;
-    A.push(st, jc);
+    A.push(st, jc)?;
 }
 %ifndef SQLITE_OMIT_SUBQUERY
   seltablist(A) ::= stl_prefix(A) LP select(S) RP
                     as(Z) on_using(N). {
     let st = SelectTable::Select(S, Z);
     let jc = N;
-    A.push(st, jc);
+    A.push(st, jc)?;
   }
   seltablist(A) ::= stl_prefix(A) LP seltablist(F) RP
                     as(Z) on_using(N). {
     let st = SelectTable::Sub(F, Z);
     let jc = N;
-    A.push(st, jc);
+    A.push(st, jc)?;
   }
 %endif  SQLITE_OMIT_SUBQUERY
 

@@ -738,3 +738,135 @@ fn check_migration_perms() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn schema_deletion() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(100000))
+        .build();
+    let tmp = tempdir().unwrap();
+    make_primary(&mut sim, tmp.path().to_path_buf());
+
+    sim.client("client", async {
+        let client = Client::new();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/schema/create",
+                json!({"shared_schema": true }),
+            )
+            .await
+            .unwrap();
+
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/ns1/create",
+                json!({"shared_schema_name": "schema" }),
+            )
+            .await
+            .unwrap();
+
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/ns2/create",
+                json!({"shared_schema_name": "schema" }),
+            )
+            .await
+            .unwrap();
+
+        let resp = client
+            .delete("http://primary:9090/v1/namespaces/schema", json!({}))
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+
+        let resp = client
+            .delete("http://primary:9090/v1/namespaces/ns1", json!({}))
+            .await
+            .unwrap();
+        assert!(resp.status().is_success());
+
+        let resp = client
+            .delete("http://primary:9090/v1/namespaces/schema", json!({}))
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+
+        let resp = client
+            .delete("http://primary:9090/v1/namespaces/ns2", json!({}))
+            .await
+            .unwrap();
+        assert!(resp.status().is_success());
+
+        let resp = client
+            .delete("http://primary:9090/v1/namespaces/schema", json!({}))
+            .await
+            .unwrap();
+        assert!(resp.status().is_success());
+
+        let resp = client
+            .get("http://primary:9090/v1/namespaces/schema/config")
+            .await
+            .unwrap();
+        assert_debug_snapshot!(resp.body_string().await.unwrap());
+        let resp = client
+            .get("http://primary:9090/v1/namespaces/ns1/config")
+            .await
+            .unwrap();
+        assert_debug_snapshot!(resp.body_string().await.unwrap());
+        let resp = client
+            .get("http://primary:9090/v1/namespaces/ns2/config")
+            .await
+            .unwrap();
+        assert_debug_snapshot!(resp.body_string().await.unwrap());
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn attach_in_migration_is_forbidden() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(100000))
+        .build();
+    let tmp = tempdir().unwrap();
+    make_primary(&mut sim, tmp.path().to_path_buf());
+
+    sim.client("client", async {
+        let client = Client::new();
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/schema/create",
+                json!({"shared_schema": true }),
+            )
+            .await
+            .unwrap();
+
+        client
+            .post(
+                "http://primary:9090/v1/namespaces/ns/create",
+                json!({"allow_attach": true }),
+            )
+            .await
+            .unwrap();
+
+        let conn = Database::open_remote_with_connector(
+            "http://schema.primary:8080",
+            String::new(),
+            TurmoilConnector,
+        )
+        .unwrap()
+        .connect()
+        .unwrap();
+
+        assert_debug_snapshot!(conn
+            .execute_batch("ATTACH ns as attached; create table test (c)")
+            .await
+            .unwrap_err());
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}

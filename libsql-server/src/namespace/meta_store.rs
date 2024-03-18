@@ -431,12 +431,18 @@ impl MetaStore {
             tracing::debug!("removed namespace `{}` from meta store", namespace);
             let config = sender.borrow().clone();
             let tx = guard.conn.transaction()?;
+            if config.config.is_shared_schema {
+                if crate::schema::db::schema_has_linked_dbs(&tx, &namespace)? {
+                    return Err(crate::Error::HasLinkedDbs(namespace.clone()));
+                }
+            }
             if let Some(ref shared_schema) = config.config.shared_schema_name {
                 if crate::schema::db::has_pending_migration_jobs(&tx, shared_schema)? {
                     return Err(crate::Error::PendingMigrationOnSchema(
                         shared_schema.clone(),
                     ));
                 }
+
                 tx.execute(
                     "DELETE FROM shared_schema_links WHERE shared_schema_name = ? AND namespace = ?",
                     (shared_schema.as_str(), namespace.as_str()),

@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -7,6 +6,7 @@ use metrics::{histogram, increment_counter};
 use crate::auth::Permission;
 use crate::error::Error;
 use crate::metrics::{READ_QUERY_COUNT, WRITE_QUERY_COUNT};
+use crate::namespace::{NamespaceName, ResolveNamespacePathFn};
 use crate::query::Query;
 use crate::query_analysis::StmtKind;
 use crate::query_result_builder::QueryResultBuilder;
@@ -98,6 +98,7 @@ pub struct Vm<'a, B, F, S> {
     current_step: usize,
     should_block: F,
     update_stats: S,
+    resolve_attach_path: ResolveNamespacePathFn,
 }
 
 impl<'a, B, F, S> Vm<'a, B, F, S>
@@ -106,7 +107,13 @@ where
     F: Fn(&StmtKind) -> (bool, Option<String>),
     S: Fn(String, &rusqlite::Statement, Duration),
 {
-    pub fn new(builder: B, program: &'a Program, should_block: F, update_stats: S) -> Self {
+    pub fn new(
+        builder: B,
+        program: &'a Program,
+        should_block: F,
+        update_stats: S,
+        resolve_attach_path: ResolveNamespacePathFn,
+    ) -> Self {
         Self {
             results: Vec::with_capacity(program.steps().len()),
             builder,
@@ -114,6 +121,7 @@ where
             current_step: 0,
             should_block,
             update_stats,
+            resolve_attach_path,
         }
     }
 
@@ -174,30 +182,14 @@ where
         Ok(enabled)
     }
 
-    fn prepare_attach_query(
-        &self,
-        conn: &rusqlite::Connection,
-        attached: &str,
-        attached_alias: &str,
-    ) -> crate::Result<String> {
+    fn prepare_attach_query(&self, attached: &str, attached_alias: &str) -> crate::Result<String> {
         let attached = attached.strip_prefix('"').unwrap_or(attached);
         let attached = attached.strip_suffix('"').unwrap_or(attached);
-        if attached.contains('/') {
-            return Err(Error::Internal(format!(
-                "Invalid attached database name: {attached:?}"
-            )));
-        }
-        let path = PathBuf::from(conn.path().unwrap_or("."));
-        let dbs_path = path
-            .parent()
-            .unwrap_or_else(|| std::path::Path::new(".."))
-            .parent()
-            .unwrap_or_else(|| std::path::Path::new(".."))
-            .canonicalize()
-            .unwrap_or_else(|_| std::path::PathBuf::from(".."));
+        let attached = NamespaceName::from_string(attached.into())?;
+        let path = (self.resolve_attach_path)(&attached)?;
         let query = format!(
             "ATTACH DATABASE 'file:{}?mode=ro' AS \"{attached_alias}\"",
-            dbs_path.join(attached).join("data").display()
+            path.join("data").display()
         );
         tracing::trace!("ATTACH rewritten to: {query}");
         Ok(query)
@@ -218,7 +210,7 @@ where
             match &self.current_step().query.stmt.attach_info {
                 Some((attached, attached_alias)) => {
                     // nope nope nope: only builder error should return
-                    let query = self.prepare_attach_query(conn, attached, attached_alias)?;
+                    let query = self.prepare_attach_query(attached, attached_alias)?;
                     conn.prepare(&query)?
                 }
                 None => {

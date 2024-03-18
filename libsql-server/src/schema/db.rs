@@ -95,6 +95,19 @@ pub(crate) fn has_pending_migration_jobs(
     Ok(has_pending)
 }
 
+pub(crate) fn schema_has_linked_dbs(
+    conn: &rusqlite::Connection,
+    schema: &NamespaceName,
+) -> Result<bool, Error> {
+    let has_linked = conn.query_row(
+        "SELECT count(1) FROM (SELECT 0 FROM shared_schema_links WHERE shared_schema_name = ? LIMIT 1)",
+        [schema.as_str()],
+        |row| Ok(row.get::<_, usize>(0)? != 0),
+    )?;
+
+    Ok(has_linked)
+}
+
 /// Create a migration job, and returns the job_id
 pub(super) fn register_schema_migration_job(
     conn: &mut rusqlite::Connection,

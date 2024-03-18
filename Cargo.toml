@@ -62,6 +62,9 @@ pr-run-mode = "plan"
 # A prefix git tags must include for cargo-dist to care about them
 tag-namespace = "libsql-server"
 
+[workspace.metadata.dist.github-custom-runners]
+aarch64-apple-darwin = "macos-14"
+
 # The profile that 'cargo dist' will build with
 [profile.dist]
 inherits = "release"

@@ -5,6 +5,7 @@ use async_lock::RwLock;
 use chrono::NaiveDateTime;
 use futures::TryFutureExt;
 use moka::future::Cache;
+use once_cell::sync::OnceCell;
 use tokio::time::{Duration, Instant};
 
 use crate::auth::Authenticated;
@@ -16,7 +17,7 @@ use crate::stats::Stats;
 
 use super::meta_store::{MetaStore, MetaStoreHandle};
 use super::schema_lock::SchemaLocksRegistry;
-use super::{Namespace, NamespaceConfig, ResetCb, ResetOp, RestoreOption};
+use super::{Namespace, NamespaceConfig, ResetCb, ResetOp, ResolveNamespacePathFn, RestoreOption};
 
 type NamespaceEntry = Arc<RwLock<Option<Namespace>>>;
 
@@ -95,6 +96,15 @@ impl NamespaceStore {
         if self.inner.has_shutdown.load(Ordering::Relaxed) {
             return Err(Error::NamespaceStoreShutdown);
         }
+
+        // destroy on-disk database and backups
+        // FIXME: this is blocking
+        let db_config = self
+            .inner
+            .metadata
+            .remove(namespace.clone())?
+            .ok_or_else(|| crate::Error::NamespaceDoesntExist(namespace.to_string()))?;
+
         let mut bottomless_db_id_init = NamespaceBottomlessDbIdInit::FetchFromConfig;
         if let Some(ns) = self.inner.store.remove(&namespace).await {
             // deallocate in-memory resources
@@ -106,13 +116,6 @@ impl NamespaceStore {
             }
         }
 
-        // destroy on-disk database and backups
-        // FIXME: this is blocking
-        let db_config = self
-            .inner
-            .metadata
-            .remove(namespace.clone())?
-            .ok_or_else(|| crate::Error::NamespaceDoesntExist(namespace.to_string()))?;
         Namespace::cleanup(
             &self.inner.config,
             &namespace,
@@ -163,6 +166,7 @@ impl NamespaceStore {
             restore_option,
             &namespace,
             self.make_reset_cb(),
+            self.resolve_attach_fn(),
         )
         .await?;
 
@@ -267,6 +271,7 @@ impl NamespaceStore {
             to.clone(),
             handle.clone(),
             timestamp,
+            self.resolve_attach_fn(),
         )
         .await?;
 
@@ -327,6 +332,20 @@ impl NamespaceStore {
         .await
     }
 
+    fn resolve_attach_fn(&self) -> ResolveNamespacePathFn {
+        static FN: OnceCell<ResolveNamespacePathFn> = OnceCell::new();
+        FN.get_or_init(|| {
+            Arc::new({
+                let store = self.clone();
+                move |ns: &NamespaceName| {
+                    tokio::runtime::Handle::current()
+                        .block_on(store.with(ns.clone(), |ns| ns.path.clone()))
+                }
+            })
+        })
+        .clone()
+    }
+
     async fn load_namespace(
         &self,
         namespace: &NamespaceName,
@@ -342,6 +361,7 @@ impl NamespaceStore {
                     restore_option,
                     &namespace,
                     self.make_reset_cb(),
+                    self.resolve_attach_fn(),
                 )
                 .await?;
                 tracing::info!("loaded namespace: `{namespace}`");

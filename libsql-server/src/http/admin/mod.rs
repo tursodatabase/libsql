@@ -412,11 +412,16 @@ struct DeleteNamespaceReq {
 async fn handle_delete_namespace<C>(
     State(app_state): State<Arc<AppState<C>>>,
     Path(namespace): Path<String>,
-    Json(req): Json<DeleteNamespaceReq>,
+    payload: Option<Json<DeleteNamespaceReq>>,
 ) -> crate::Result<()> {
+    let prune_all = match payload {
+        Some(req) => !req.keep_backup,
+        None => true,
+    };
+
     app_state
         .namespaces
-        .destroy(NamespaceName::from_string(namespace)?, !req.keep_backup)
+        .destroy(NamespaceName::from_string(namespace)?, prune_all)
         .await?;
     Ok(())
 }
