@@ -349,21 +349,17 @@ fn try_process(
             }
         }
         tx.execute(
-            "INSERT OR REPLACE INTO namespace_configs (namespace, config) VALUES (?1, ?2) ON CONFLICT(namespace) DO UPDATE SET config=excluded.config",
+            "INSERT INTO namespace_configs (namespace, config) VALUES (?1, ?2) ON CONFLICT(namespace) DO UPDATE SET config=excluded.config",
             rusqlite::params![namespace.as_str(), config_encoded],
         )?;
         tx.execute(
-            "DELETE FROM shared_schema_links WHERE namespace = ?",
-            rusqlite::params![namespace.as_str()],
-        )?;
-        tx.execute(
-            "INSERT OR REPLACE INTO shared_schema_links (shared_schema_name, namespace) VALUES (?1, ?2)",
+            "INSERT INTO shared_schema_links (shared_schema_name, namespace) VALUES (?1, ?2) ON CONFLICT(shared_schema_name, namespace) DO UPDATE SET namespace=excluded.namespace",
             rusqlite::params![schema.as_str(), namespace.as_str()],
         )?;
         tx.commit()?;
     } else {
         inner.conn.execute(
-            "INSERT OR REPLACE INTO namespace_configs (namespace, config) VALUES (?1, ?2) ON CONFLICT(namespace) DO UPDATE SET config=excluded.config",
+            "INSERT INTO namespace_configs (namespace, config) VALUES (?1, ?2) ON CONFLICT(namespace) DO UPDATE SET config=excluded.config",
             rusqlite::params![namespace.as_str(), config_encoded],
         )?;
     }
