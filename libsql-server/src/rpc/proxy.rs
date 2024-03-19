@@ -603,7 +603,10 @@ impl Proxy for ProxyService {
                 }
             })?;
 
-        let conn = connection_maker.create().await.unwrap();
+        let conn = connection_maker
+            .create()
+            .await
+            .map_err(|e| tonic::Status::unavailable(format!("Unable to create DB: {:?}", e)))?;
 
         let stream = make_proxy_stream(conn, ctx, req.into_inner());
 
