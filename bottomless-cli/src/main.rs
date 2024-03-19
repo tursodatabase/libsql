@@ -106,6 +106,11 @@ enum Commands {
         #[clap(long, short)]
         verbose: bool,
     },
+    #[clap(about = "Generate and upload a snapshot for a given generation or timestamp")]
+    Snapshot {
+        #[clap(long, short)]
+        generation: Option<uuid::Uuid>,
+    },
 }
 
 async fn run() -> Result<()> {
@@ -273,6 +278,44 @@ async fn run() -> Result<()> {
                 "rm command cannot be run without parameters; see -h or --help for details"
             ),
         },
+        Commands::Snapshot { generation } => {
+            tokio::fs::create_dir_all(&database_dir).await?;
+            let generation = if let Some(gen) = generation {
+                gen
+            } else if let Some(gen) = client.latest_generation_before(None).await {
+                gen
+            } else {
+                println!("no generation to snapshot found; nothing to do");
+                return Ok(());
+            };
+            // snapshots mark the state of the DB at the beginning of the generation, therefore
+            // snapshot at generation N is a final state of database at generation N-1. This can
+            // be later used for fast restore: restore from generation N = snapshot + all WAL frames
+            // from that generation.
+            let parent = if let Some(parent) = client.get_dependency(&generation).await? {
+                parent
+            } else {
+                println!("cannot create a snapshot at the beginning of the generation {}: parent generation not found", generation);
+                return Ok(());
+            };
+            client.restore(Some(parent.clone()), None).await?;
+            println!(
+                "restored database at the start of generation {}: preparing snapshot...",
+                generation
+            );
+            let db_path = PathBuf::from(&database);
+            if let Err(e) = verify_db(&db_path) {
+                println!("Verification failed: {e}");
+                std::process::exit(1)
+            } else {
+                println!("verification succeeded");
+                client.set_generation(generation.clone());
+                client.snapshot_main_db_file(true).await?;
+                client.wait_until_snapshotted().await?;
+                println!("snapshot uploaded for generation: {}", generation);
+                tokio::fs::remove_dir_all(&database_dir).await?;
+            }
+        }
     };
     Ok(())
 }
