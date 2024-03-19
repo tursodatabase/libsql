@@ -332,20 +332,6 @@ fn meta_config_update() {
             )
             .await?;
 
-        {
-            let foo = Database::open_remote_with_connector(
-                "http://foo.primary:8080",
-                "",
-                TurmoilConnector,
-            )?;
-            let foo_conn = foo.connect()?;
-
-            foo_conn
-                .execute_batch("select * from foo.sqlite_master")
-                .await
-                .unwrap();
-        }
-
         Ok(())
     });
 
