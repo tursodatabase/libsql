@@ -763,7 +763,7 @@ mod test {
         .unwrap();
         assert!(!conn.is_autocommit().await.unwrap());
         assert!(matches!(
-            dbg!(builder.into_ret())[0],
+            builder.into_ret()[0],
             Err(Error::LibSqlTxTimeout)
         ));
     }
