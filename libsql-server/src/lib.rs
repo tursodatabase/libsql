@@ -570,6 +570,13 @@ where
                 join_set.shutdown().await;
                 service_shutdown.notify_waiters();
                 namespace_store.shutdown().await?;
+
+                // Flag that can be set to ensure shutdown never completes for
+                // testing purposes.
+                if std::env::var("LIBSQL_DELAY_SHUTDOWN").is_ok() {
+                    std::future::pending::<()>().await;
+                }
+
                 tracing::info!("sqld was shutdown gracefully. Bye!");
             }
             Some(res) = join_set.join_next() => {

@@ -306,6 +306,10 @@ impl NamespaceStore {
     where
         Fun: FnOnce(&Namespace) -> R + 'static,
     {
+        if self.inner.has_shutdown.load(Ordering::Relaxed) {
+            return Err(Error::NamespaceStoreShutdown);
+        }
+
         if namespace != NamespaceName::default()
             && !self.inner.metadata.exists(&namespace)
             && !self.inner.allow_lazy_creation
@@ -421,6 +425,7 @@ impl NamespaceStore {
     }
 
     pub async fn shutdown(self) -> crate::Result<()> {
+        println!("setting shutdown to true");
         self.inner.has_shutdown.store(true, Ordering::Relaxed);
         for (_name, entry) in self.inner.store.iter() {
             let mut lock = entry.write().await;
