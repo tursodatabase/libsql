@@ -202,18 +202,6 @@ where
     fn frames_in_wal(&self) -> u32 {
         self.wrapper.frames_in_wal(&self.wrapped)
     }
-
-    fn db_file(&self) -> &super::Sqlite3File {
-        self.wrapped.db_file()
-    }
-
-    fn backfilled(&self) -> u32 {
-        self.wrapped.backfilled()
-    }
-
-    fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
-        self.wrapper.frame_page_no(&self.wrapped, frame_no)
-    }
 }
 
 /// Trait implemented by implementor that only need to wrap around another Wal implementation.
@@ -356,8 +344,6 @@ pub trait WrapWal<W: Wal> {
         manager.close(wrapped, db, sync_flags, scratch)
     }
 
-    fn frame_page_no(&self, wrapped: &W, frame_no: NonZeroU32) -> Option<NonZeroU32> {
-        wrapped.frame_page_no(frame_no)
     }
 }
 
