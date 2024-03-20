@@ -587,8 +587,8 @@ impl Proxy for ProxyService {
                     .db
                     .as_primary()
                     .expect("invalid call to stream_exec: not a primary")
-                    .wal_manager
-                    .wrapped()
+                    .wal_wrapper
+                    .wrapper()
                     .logger()
                     .new_frame_notifier
                     .subscribe();
@@ -693,8 +693,8 @@ impl Proxy for ProxyService {
                     .db
                     .as_primary()
                     .unwrap()
-                    .wal_manager
-                    .wrapped()
+                    .wal_wrapper
+                    .wrapper()
                     .logger()
                     .new_frame_notifier
                     .subscribe();

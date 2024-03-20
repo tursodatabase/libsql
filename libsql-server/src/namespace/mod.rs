@@ -17,7 +17,8 @@ use enclose::enclose;
 use futures_core::{Future, Stream};
 use hyper::Uri;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
-use libsql_sys::wal::{Sqlite3WalManager, WalManager};
+use libsql_sys::wal::wrapper::WrapWal;
+use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager, WalManager};
 use libsql_sys::EncryptionConfig;
 use parking_lot::Mutex;
 use rusqlite::ErrorCode;
@@ -53,7 +54,7 @@ pub use fork::ForkError;
 use self::fork::{ForkTask, PointInTimeRestore};
 use self::meta_store::MetaStoreHandle;
 pub use self::name::NamespaceName;
-use self::replication_wal::{make_replication_wal, ReplicationWalManager};
+use self::replication_wal::{make_replication_wal_wrapper, ReplicationWalWrapper};
 pub use self::store::NamespaceStore;
 
 pub type ResetCb = Box<dyn Fn(ResetOp) + Send + Sync + 'static>;
@@ -277,7 +278,7 @@ impl Namespace {
         block_writes: Arc<AtomicBool>,
         join_set: &mut JoinSet<anyhow::Result<()>>,
         resolve_attach_path: ResolveNamespacePathFn,
-    ) -> crate::Result<(PrimaryConnectionMaker, ReplicationWalManager, Arc<Stats>)> {
+    ) -> crate::Result<(PrimaryConnectionMaker, ReplicationWalWrapper, Arc<Stats>)> {
         let db_config = meta_store_handle.get();
         let bottomless_db_id = NamespaceBottomlessDbId::from_config(&db_config);
         // FIXME: figure how to to it per-db
@@ -342,10 +343,10 @@ impl Namespace {
         )
         .await?;
 
-        let wal_manager = make_replication_wal(bottomless_replicator, logger.clone());
+        let wal_wrapper = make_replication_wal_wrapper(bottomless_replicator, logger.clone());
         let connection_maker = MakeLibSqlConn::new(
             db_path.to_path_buf(),
-            wal_manager.clone(),
+            wal_wrapper.clone(),
             stats.clone(),
             meta_store_handle.clone(),
             ns_config.extensions.clone(),
@@ -376,7 +377,7 @@ impl Namespace {
                 load_dump(
                     &db_path,
                     dump,
-                    wal_manager.clone(),
+                    wal_wrapper.clone().map_wal(),
                     ns_config.encryption_config.clone(),
                 )
                 .await?;
@@ -386,7 +387,7 @@ impl Namespace {
 
         join_set.spawn(run_periodic_compactions(logger.clone()));
 
-        Ok((connection_maker, wal_manager, stats))
+        Ok((connection_maker, wal_wrapper, stats))
     }
 
     async fn try_new_primary(
@@ -402,7 +403,7 @@ impl Namespace {
         tokio::fs::create_dir_all(&db_path).await?;
 
         let block_writes = Arc::new(AtomicBool::new(false));
-        let (connection_maker, wal_manager, stats) = Self::make_primary_connection_maker(
+        let (connection_maker, wal_wrapper, stats) = Self::make_primary_connection_maker(
             ns_config,
             &meta_store_handle,
             &db_path,
@@ -441,7 +442,7 @@ impl Namespace {
         Ok(Self {
             tasks: join_set,
             db: Database::Primary(PrimaryDatabase {
-                wal_manager,
+                wal_wrapper,
                 connection_maker,
                 block_writes,
             }),
@@ -626,8 +627,8 @@ impl Namespace {
                 };
 
                 let logger = match &from_ns.db {
-                    Database::Primary(db) => db.wal_manager.wrapped().logger(),
-                    Database::Schema(db) => db.wal_manager.wrapped().logger(),
+                    Database::Primary(db) => db.wal_wrapper.wrapper().logger(),
+                    Database::Schema(db) => db.wal_wrapper.wrapper().logger(),
                     _ => {
                         return Err(crate::Error::Fork(ForkError::Internal(Error::msg(
                             "Invalid source database type for fork",
@@ -799,22 +800,21 @@ pub enum RestoreOption {
 const WASM_TABLE_CREATE: &str =
     "CREATE TABLE libsql_wasm_func_table (name text PRIMARY KEY, body text) WITHOUT ROWID;";
 
-async fn load_dump<S, C>(
+async fn load_dump<S, W>(
     db_path: &Path,
     dump: S,
-    wal_manager: C,
+    wal_wrapper: W,
     encryption_config: Option<EncryptionConfig>,
 ) -> crate::Result<(), LoadDumpError>
 where
     S: Stream<Item = std::io::Result<Bytes>> + Unpin,
-    C: WalManager + Clone + Send + 'static,
-    C::Wal: Send + 'static,
+    W: WrapWal<Sqlite3Wal> + Clone + Send + 'static,
 {
     let mut retries = 0;
     // there is a small chance we fail to acquire the lock right away, so we perform a few retries
     let conn = loop {
         let db_path = db_path.to_path_buf();
-        let wal_manager = wal_manager.clone();
+        let wal_manager = Sqlite3WalManager::default().wrap(wal_wrapper.clone());
 
         let encryption_config = encryption_config.clone();
         match tokio::task::spawn_blocking(move || {
