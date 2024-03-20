@@ -173,7 +173,7 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
             self.try_with_replicator(|replicator| {
                 if let Err(e) = runtime.block_on(async move {
                     replicator.new_generation().await;
-                    replicator.snapshot_main_db_file().await
+                    replicator.snapshot_main_db_file(false).await
                 }) {
                     tracing::error!("Failed to snapshot the main db file during checkpoint: {e}");
                     return Err(Error::new(SQLITE_IOERR_WRITE));

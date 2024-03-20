@@ -126,6 +126,7 @@ pub async fn metastore_connection_maker(
                 max_batch_interval: config.backup_interval,
                 s3_upload_max_parallelism: 32,
                 s3_max_retries: 10,
+                skip_snapshot: false,
             };
             let mut replicator = bottomless::replicator::Replicator::with_options(
                 db_path.join("data").to_str().unwrap(),
@@ -137,7 +138,7 @@ pub async fn metastore_connection_maker(
             match action {
                 bottomless::replicator::RestoreAction::SnapshotMainDbFile => {
                     replicator.new_generation().await;
-                    if let Some(_handle) = replicator.snapshot_main_db_file().await? {
+                    if let Some(_handle) = replicator.snapshot_main_db_file(true).await? {
                         tracing::trace!(
                             "got snapshot handle after restore with generation upgrade"
                         );
