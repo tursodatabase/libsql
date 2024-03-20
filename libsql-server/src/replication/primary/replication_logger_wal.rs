@@ -236,7 +236,6 @@ impl Wal for ReplicationLoggerWal {
         in_wal: Option<&mut i32>,
         backfilled: Option<&mut i32>,
     ) -> Result<()> {
-        //self.inject_replication_index(db)?;
         self.inner.checkpoint(
             db,
             mode,
@@ -283,6 +282,7 @@ impl Wal for ReplicationLoggerWal {
 }
 
 impl ReplicationLoggerWal {
+    #[allow(dead_code)]
     fn inject_replication_index(&mut self, db: &mut Sqlite3Db) -> Result<()> {
         let data = &mut [0; LIBSQL_PAGE_SIZE as _];
         // We retreive the freshest version of page 1. Either most recent page 1 is in the WAL, or
