@@ -762,10 +762,7 @@ mod test {
         )
         .unwrap();
         assert!(!conn.is_autocommit().await.unwrap());
-        assert!(matches!(
-            builder.into_ret()[0],
-            Err(Error::LibSqlTxTimeout)
-        ));
+        assert!(matches!(builder.into_ret()[0], Err(Error::LibSqlTxTimeout)));
     }
 
     #[tokio::test]
