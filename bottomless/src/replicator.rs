@@ -1322,6 +1322,14 @@ impl Replicator {
                 );
                 match wal_pages.cmp(&last_consistent_frame) {
                     std::cmp::Ordering::Equal => {
+                        if local_counter == [0u8; 4] && wal_pages == 0 {
+                            if self.get_dependency(&generation).await?.is_some() {
+                                // empty generation and empty local state, but we have a dependency
+                                // to previous generation: restore required
+                                return Ok(None);
+                            }
+                        }
+
                         tracing::info!(
                             "Remote generation is up-to-date, reusing it in this session"
                         );
