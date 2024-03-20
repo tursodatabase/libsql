@@ -1,4 +1,5 @@
 use std::ffi::{c_int, CStr};
+use std::marker::PhantomData;
 use std::num::NonZeroU32;
 
 use super::{BusyHandler, CheckpointCallback, Sqlite3File, Vfs, Wal, WalManager};
@@ -32,6 +33,124 @@ where
 pub struct WrappedWal<T, W> {
     wrapper: T,
     wrapped: W,
+}
+
+pub struct WalRef<T, W> {
+    wrapper: *mut T,
+    wrapped: *mut W,
+}
+
+impl<T: WrapWal<W>, W: Wal> Wal for WalRef<T, W> {
+    fn limit(&mut self, size: i64) {
+        unsafe { (&mut *self.wrapper).limit(&mut *self.wrapped, size) }
+    }
+
+    fn begin_read_txn(&mut self) -> super::Result<bool> {
+        unsafe { (&mut *self.wrapper).begin_read_txn(&mut *self.wrapped) }
+    }
+
+    fn end_read_txn(&mut self) {
+        unsafe { (&mut *self.wrapper).end_read_txn(&mut *self.wrapped) }
+    }
+
+    fn find_frame(&mut self, page_no: NonZeroU32) -> super::Result<Option<NonZeroU32>> {
+        unsafe { (&mut *self.wrapper).find_frame(&mut *self.wrapped, page_no) }
+    }
+
+    fn read_frame(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> super::Result<()> {
+        unsafe { (&mut *self.wrapper).read_frame(&mut *self.wrapped, frame_no, buffer) }
+    }
+
+    fn db_size(&self) -> u32 {
+        unsafe { (&*self.wrapper).db_size(&*self.wrapped) }
+    }
+
+    fn begin_write_txn(&mut self) -> super::Result<()> {
+        unsafe { (&mut *self.wrapper).begin_write_txn(&mut *self.wrapped) }
+    }
+
+    fn end_write_txn(&mut self) -> super::Result<()> {
+        unsafe { (&mut *self.wrapper).end_write_txn(&mut *self.wrapped) }
+    }
+
+    fn undo<U: super::UndoHandler>(&mut self, handler: Option<&mut U>) -> super::Result<()> {
+        unsafe { (&mut *self.wrapper).undo(&mut *self.wrapped, handler) }
+    }
+
+    fn savepoint(&mut self, rollback_data: &mut [u32]) {
+        unsafe { (&mut *self.wrapper).savepoint(&mut *self.wrapped, rollback_data) }
+    }
+
+    fn savepoint_undo(&mut self, rollback_data: &mut [u32]) -> super::Result<()> {
+        unsafe { (&mut *self.wrapper).savepoint_undo(&mut *self.wrapped, rollback_data) }
+    }
+
+    fn insert_frames(
+        &mut self,
+        page_size: c_int,
+        page_headers: &mut super::PageHeaders,
+        size_after: u32,
+        is_commit: bool,
+        sync_flags: c_int,
+    ) -> super::Result<usize> {
+        unsafe {
+            (&mut *self.wrapper).insert_frames(
+                &mut *self.wrapped,
+                page_size,
+                page_headers,
+                size_after,
+                is_commit,
+                sync_flags,
+            )
+        }
+    }
+
+    fn checkpoint(
+        &mut self,
+        db: &mut super::Sqlite3Db,
+        mode: super::CheckpointMode,
+        busy_handler: Option<&mut dyn BusyHandler>,
+        sync_flags: u32,
+        // temporary scratch buffer
+        buf: &mut [u8],
+        checkpoint_cb: Option<&mut dyn CheckpointCallback>,
+        in_wal: Option<&mut i32>,
+        backfilled: Option<&mut i32>,
+    ) -> super::Result<()> {
+        unsafe {
+            (&mut *self.wrapper).checkpoint(
+                &mut *self.wrapped,
+                db,
+                mode,
+                busy_handler,
+                sync_flags,
+                buf,
+                checkpoint_cb,
+                in_wal,
+                backfilled,
+            )
+        }
+    }
+
+    fn exclusive_mode(&mut self, op: c_int) -> super::Result<()> {
+        unsafe { (&mut *self.wrapper).exclusive_mode(&mut *self.wrapped, op) }
+    }
+
+    fn uses_heap_memory(&self) -> bool {
+        unsafe { (&*self.wrapper).uses_heap_memory(&*self.wrapped) }
+    }
+
+    fn set_db(&mut self, db: &mut super::Sqlite3Db) {
+        unsafe { (&mut *self.wrapper).set_db(&mut *self.wrapped, db) }
+    }
+
+    fn callback(&self) -> i32 {
+        unsafe { (&*self.wrapper).callback(&*self.wrapped) }
+    }
+
+    fn frames_in_wal(&self) -> u32 {
+        unsafe { (&*self.wrapper).frames_in_wal(&*self.wrapped) }
+    }
 }
 
 impl<T, U> WalManager for WalWrapper<T, U>
@@ -202,18 +321,6 @@ where
     fn frames_in_wal(&self) -> u32 {
         self.wrapper.frames_in_wal(&self.wrapped)
     }
-
-    fn db_file(&self) -> &super::Sqlite3File {
-        self.wrapped.db_file()
-    }
-
-    fn backfilled(&self) -> u32 {
-        self.wrapped.backfilled()
-    }
-
-    fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
-        self.wrapper.frame_page_no(&self.wrapped, frame_no)
-    }
 }
 
 /// Trait implemented by implementor that only need to wrap around another Wal implementation.
@@ -356,8 +463,273 @@ pub trait WrapWal<W: Wal> {
         manager.close(wrapped, db, sync_flags, scratch)
     }
 
-    fn frame_page_no(&self, wrapped: &W, frame_no: NonZeroU32) -> Option<NonZeroU32> {
-        wrapped.frame_page_no(frame_no)
+    fn then<T>(self, other: T) -> Then<Self, T, W>
+    where
+        Self: Sized,
+    {
+        Then(self, other, PhantomData)
+    }
+}
+
+/// Safety: we don't own a W
+unsafe impl<A: Send, B: Send, W> Send for Then<A, B, W> {}
+
+/// Safety: we don't own a W
+unsafe impl<A: Sync, B: Sync, W> Sync for Then<A, B, W> {}
+
+pub struct Then<A, B, W>(A, B, PhantomData<W>);
+
+impl<A: Clone, B: Clone, W> Clone for Then<A, B, W> {
+    fn clone(&self) -> Self {
+        Self(self.0.clone(), self.1.clone(), PhantomData)
+    }
+}
+
+impl<A, B, W> Then<A, B, W> {
+    pub fn wrapped(&self) -> &B {
+        &self.1
+    }
+
+    pub fn wrapper(&self) -> &A {
+        &self.0
+    }
+
+    pub fn map_wal<T>(self) -> Then<A, B, T> {
+        Then(self.0, self.1, PhantomData)
+    }
+}
+
+/// A Wrapper implementation that delegates everything to the wrapped wal
+#[derive(Debug, Clone, Copy)]
+pub struct PassthroughWalWrapper;
+
+impl<W: Wal> WrapWal<W> for PassthroughWalWrapper {}
+
+impl<A, B, W> WrapWal<W> for Then<A, B, W>
+where
+    A: WrapWal<WalRef<B, W>>,
+    B: WrapWal<W>,
+    W: Wal,
+{
+    fn limit(&mut self, wrapped: &mut W, size: i64) {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+
+        self.0.limit(&mut r, size)
+    }
+
+    fn begin_read_txn(&mut self, wrapped: &mut W) -> super::Result<bool> {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+
+        self.0.begin_read_txn(&mut r)
+    }
+
+    fn end_read_txn(&mut self, wrapped: &mut W) {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+        self.0.end_read_txn(&mut r)
+    }
+
+    fn find_frame(
+        &mut self,
+        wrapped: &mut W,
+        page_no: NonZeroU32,
+    ) -> super::Result<Option<NonZeroU32>> {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+        self.0.find_frame(&mut r, page_no)
+    }
+
+    fn read_frame(
+        &mut self,
+        wrapped: &mut W,
+        frame_no: NonZeroU32,
+        buffer: &mut [u8],
+    ) -> super::Result<()> {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+        self.0.read_frame(&mut r, frame_no, buffer)
+    }
+
+    fn db_size(&self, wrapped: &W) -> u32 {
+        let r = WalRef {
+            wrapper: &self.1 as *const B as *mut B,
+            wrapped: wrapped as *const W as *mut W,
+        };
+        self.0.db_size(&r)
+    }
+
+    fn begin_write_txn(&mut self, wrapped: &mut W) -> super::Result<()> {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+        self.0.begin_write_txn(&mut r)
+    }
+
+    fn end_write_txn(&mut self, wrapped: &mut W) -> super::Result<()> {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+        self.0.end_write_txn(&mut r)
+    }
+
+    fn undo<U: super::UndoHandler>(
+        &mut self,
+        wrapped: &mut W,
+        handler: Option<&mut U>,
+    ) -> super::Result<()> {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+        self.0.undo(&mut r, handler)
+    }
+
+    fn savepoint(&mut self, wrapped: &mut W, rollback_data: &mut [u32]) {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+        self.0.savepoint(&mut r, rollback_data)
+    }
+
+    fn savepoint_undo(&mut self, wrapped: &mut W, rollback_data: &mut [u32]) -> super::Result<()> {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+        self.0.savepoint_undo(&mut r, rollback_data)
+    }
+
+    fn insert_frames(
+        &mut self,
+        wrapped: &mut W,
+        page_size: std::ffi::c_int,
+        page_headers: &mut super::PageHeaders,
+        size_after: u32,
+        is_commit: bool,
+        sync_flags: std::ffi::c_int,
+    ) -> super::Result<usize> {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+        self.0.insert_frames(
+            &mut r,
+            page_size,
+            page_headers,
+            size_after,
+            is_commit,
+            sync_flags,
+        )
+    }
+
+    fn checkpoint(
+        &mut self,
+        wrapped: &mut W,
+        db: &mut super::Sqlite3Db,
+        mode: super::CheckpointMode,
+        busy_handler: Option<&mut dyn BusyHandler>,
+        sync_flags: u32,
+        // temporary scratch buffer
+        buf: &mut [u8],
+        checkpoint_cb: Option<&mut dyn CheckpointCallback>,
+        in_wal: Option<&mut i32>,
+        backfilled: Option<&mut i32>,
+    ) -> super::Result<()> {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+        self.0.checkpoint(
+            &mut r,
+            db,
+            mode,
+            busy_handler,
+            sync_flags,
+            buf,
+            checkpoint_cb,
+            in_wal,
+            backfilled,
+        )
+    }
+
+    fn exclusive_mode(&mut self, wrapped: &mut W, op: std::ffi::c_int) -> super::Result<()> {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+        self.0.exclusive_mode(&mut r, op)
+    }
+
+    fn uses_heap_memory(&self, wrapped: &W) -> bool {
+        let r = WalRef {
+            wrapper: &self.1 as *const B as *mut B,
+            wrapped: wrapped as *const W as *mut W,
+        };
+        self.0.uses_heap_memory(&r)
+    }
+
+    fn set_db(&mut self, wrapped: &mut W, db: &mut super::Sqlite3Db) {
+        let mut r = WalRef {
+            wrapper: &mut self.1,
+            wrapped,
+        };
+        self.0.set_db(&mut r, db)
+    }
+
+    fn callback(&self, wrapped: &W) -> i32 {
+        let r = WalRef {
+            wrapper: &self.1 as *const B as *mut B,
+            wrapped: wrapped as *const W as *mut W,
+        };
+        self.0.callback(&r)
+    }
+
+    fn frames_in_wal(&self, wrapped: &W) -> u32 {
+        let r = WalRef {
+            wrapper: &self.1 as *const B as *mut B,
+            wrapped: wrapped as *const W as *mut W,
+        };
+        self.0.frames_in_wal(&r)
+    }
+
+    fn open<M: WalManager<Wal = W>>(
+        &self,
+        manager: &M,
+        vfs: &mut Vfs,
+        file: &mut Sqlite3File,
+        no_shm_mode: c_int,
+        max_log_size: i64,
+        db_path: &CStr,
+    ) -> super::Result<W> {
+        // FIXME: this is bypassing the wrappers
+        manager.open(vfs, file, no_shm_mode, max_log_size, db_path)
+    }
+
+    fn close<M: WalManager<Wal = W>>(
+        &mut self,
+        manager: &M,
+        wrapped: &mut W,
+        db: &mut super::Sqlite3Db,
+        sync_flags: c_int,
+        scratch: Option<&mut [u8]>,
+    ) -> super::Result<()> {
+        // FIXME: this is bypassing the wrappers
+        manager.close(wrapped, db, sync_flags, scratch)
     }
 }
 

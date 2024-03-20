@@ -869,11 +869,11 @@ pub fn checkpoint_db(data_path: &Path) -> anyhow::Result<()> {
 mod test {
     use std::collections::HashSet;
 
-    use libsql_sys::wal::Sqlite3WalManager;
+    use libsql_sys::wal::{Sqlite3WalManager, WalManager};
 
     use super::*;
     use crate::connection::libsql::open_conn;
-    use crate::replication::primary::replication_logger_wal::ReplicationLoggerWalManager;
+    use crate::replication::primary::replication_logger_wal::ReplicationLoggerWalWrapper;
     use crate::DEFAULT_AUTO_CHECKPOINT;
 
     #[tokio::test]
@@ -1072,7 +1072,7 @@ mod test {
         );
         let mut conn = open_conn(
             tmp.path(),
-            ReplicationLoggerWalManager::new(logger),
+            Sqlite3WalManager::default().wrap(ReplicationLoggerWalWrapper::new(logger)),
             None,
             None,
         )

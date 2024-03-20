@@ -6,7 +6,7 @@ use std::sync::Arc;
 use crate::connection::program::{check_program_auth, Program};
 use crate::connection::{MakeConnection, RequestContext};
 use crate::namespace::meta_store::MetaStoreHandle;
-use crate::namespace::replication_wal::ReplicationWalManager;
+use crate::namespace::replication_wal::ReplicationWalWrapper;
 use crate::namespace::NamespaceName;
 use crate::query_result_builder::QueryBuilderConfig;
 use crate::schema::{perform_migration, validate_migration, MigrationJobStatus, SchedulerHandle};
@@ -133,7 +133,7 @@ pub struct SchemaDatabase {
     migration_scheduler: SchedulerHandle,
     schema: NamespaceName,
     connection_maker: Arc<PrimaryConnectionMaker>,
-    pub wal_manager: ReplicationWalManager,
+    pub wal_wrapper: ReplicationWalWrapper,
     config: MetaStoreHandle,
 }
 
@@ -157,27 +157,27 @@ impl SchemaDatabase {
         migration_scheduler: SchedulerHandle,
         schema: NamespaceName,
         connection_maker: PrimaryConnectionMaker,
-        wal_manager: ReplicationWalManager,
+        wal_wrapper: ReplicationWalWrapper,
         config: MetaStoreHandle,
     ) -> Self {
         Self {
             connection_maker: connection_maker.into(),
             migration_scheduler,
             schema,
-            wal_manager,
+            wal_wrapper,
             config,
         }
     }
 
     pub(crate) async fn shutdown(self) -> Result<(), anyhow::Error> {
-        self.wal_manager
-            .wrapped()
+        self.wal_wrapper
+            .wrapper()
             .logger()
             .closed_signal
             .send_replace(true);
-        let wal_manager = self.wal_manager;
+        let wal_manager = self.wal_wrapper;
         if let Some(mut replicator) = tokio::task::spawn_blocking(move || {
-            wal_manager.wrapper().as_ref().and_then(|r| r.shutdown())
+            wal_manager.wrapped().as_ref().and_then(|r| r.shutdown())
         })
         .await?
         {
@@ -188,8 +188,8 @@ impl SchemaDatabase {
     }
 
     pub(crate) fn destroy(&self) {
-        self.wal_manager
-            .wrapped()
+        self.wal_wrapper
+            .wrapper()
             .logger()
             .closed_signal
             .send_replace(true);
@@ -200,7 +200,7 @@ impl SchemaDatabase {
     }
 
     pub fn backup_savepoint(&self) -> Option<SavepointTracker> {
-        if let Some(wal) = self.wal_manager.wrapper() {
+        if let Some(wal) = self.wal_wrapper.wrapped() {
             if let Some(savepoint) = wal.backup_savepoint() {
                 return Some(savepoint);
             }
