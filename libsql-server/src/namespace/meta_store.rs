@@ -349,7 +349,7 @@ fn try_process(
             }
         }
         tx.execute(
-            "INSERT OR REPLACE INTO namespace_configs (namespace, config) VALUES (?1, ?2)",
+            "INSERT INTO namespace_configs (namespace, config) VALUES (?1, ?2) ON CONFLICT(namespace) DO UPDATE SET config=excluded.config",
             rusqlite::params![namespace.as_str(), config_encoded],
         )?;
         tx.execute(
@@ -363,7 +363,7 @@ fn try_process(
         tx.commit()?;
     } else {
         inner.conn.execute(
-            "INSERT OR REPLACE INTO namespace_configs (namespace, config) VALUES (?1, ?2)",
+            "INSERT INTO namespace_configs (namespace, config) VALUES (?1, ?2) ON CONFLICT(namespace) DO UPDATE SET config=excluded.config",
             rusqlite::params![namespace.as_str(), config_encoded],
         )?;
     }
