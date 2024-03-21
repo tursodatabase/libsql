@@ -121,7 +121,7 @@ impl ReplicationLoggerWalWrapper {
         self.buffer.clear();
     }
 
-    pub fn logger(&self) -> Arc<ReplicationLogger> {
+    pub(crate) fn logger(&self) -> Arc<ReplicationLogger> {
         self.logger.clone()
     }
 }
