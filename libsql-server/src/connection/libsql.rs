@@ -417,8 +417,9 @@ impl<W: Wal> Connection<W> {
         );
 
         unsafe {
-            extern "C" fn do_nothing(_: *mut c_void, _: c_int) -> c_int {
-                1
+            const MAX_RETRIES: c_int = 8;
+            extern "C" fn do_nothing(_: *mut c_void, n: c_int) -> c_int {
+                (n < MAX_RETRIES) as _
             }
             libsql_sys::ffi::sqlite3_busy_handler(
                 conn.handle(),

@@ -120,6 +120,10 @@ impl ReplicationLoggerWalWrapper {
         self.logger.log_file.write().rollback();
         self.buffer.clear();
     }
+
+    pub(crate) fn logger(&self) -> Arc<ReplicationLogger> {
+        self.logger.clone()
+    }
 }
 
 #[cfg(test)]

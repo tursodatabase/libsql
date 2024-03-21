@@ -258,6 +258,7 @@ impl WrapWal<Sqlite3Wal> for ManagedConnectionWalWrapper {
         } else {
             mode
         };
+        tracing::debug!("attempted checkpoint mode: {mode:?}");
         let ret = wrapped.checkpoint(
             db,
             mode,
