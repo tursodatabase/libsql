@@ -988,12 +988,14 @@ async fn run_storage_monitor(
             // initialize a connection here, and keep it alive for the entirety of the program. If we
             // fail to open it, we wait for `duration` and try again later.
             match open_conn(&db_path, Sqlite3WalManager::new(), Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), encryption_config) {
-                Ok(conn) => {
-                    let page_count = conn.query_row("pragma page_count;", [], |row| { row.get::<usize, u64>(0) });
-                    let freelist_count = conn.query_row("pragma freelist_count;", [], |row| { row.get::<usize, u64>(0) });
-                    if let (Ok(page_count), Ok(freelist_count)) = (page_count, freelist_count) {
-                        let storage_bytes_used = (page_count - freelist_count) * 4096;
-                        stats.set_storage_bytes_used(storage_bytes_used);
+                Ok(mut conn) => {
+                    if let Ok(tx) = conn.transaction() {
+                        let page_count = tx.query_row("pragma page_count;", [], |row| { row.get::<usize, u64>(0) });
+                        let freelist_count = tx.query_row("pragma freelist_count;", [], |row| { row.get::<usize, u64>(0) });
+                        if let (Ok(page_count), Ok(freelist_count)) = (page_count, freelist_count) {
+                            let storage_bytes_used = (page_count - freelist_count) * 4096;
+                            stats.set_storage_bytes_used(storage_bytes_used);
+                        }
                     }
                 },
                 Err(e) => {
