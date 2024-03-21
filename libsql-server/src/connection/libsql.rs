@@ -499,10 +499,11 @@ impl<W: Wal> Connection<W> {
 
         let mut has_timeout = false;
         while !vm.finished() {
-            let conn = this.lock();
+            let mut conn = this.lock();
 
             if conn.forced_rollback {
                 has_timeout = true;
+                conn.forced_rollback = false;
             }
 
             // once there was a timeout, invalidate all the program steps
@@ -980,5 +981,92 @@ mod test {
         tokio::time::timeout(Duration::from_secs(60), join_all)
             .await
             .expect("timed out running connections");
+    }
+
+    #[tokio::test]
+    /// verify that releasing a txn before the timeout
+    async fn force_rollback_reset() {
+        let tmp = tempdir().unwrap();
+        let make_conn = MakeLibSqlConn::new(
+            tmp.path().into(),
+            PassthroughWalWrapper,
+            Default::default(),
+            MetaStoreHandle::load(tmp.path()).unwrap(),
+            Arc::new([]),
+            100000000,
+            100000000,
+            DEFAULT_AUTO_CHECKPOINT,
+            watch::channel(None).1,
+            None,
+            Default::default(),
+            Arc::new(|_| unreachable!()),
+        )
+        .await
+        .unwrap();
+
+        let conn1 = make_conn.make_connection().await.unwrap();
+        tokio::task::spawn_blocking({
+            let conn = conn1.clone();
+            move || {
+                let builder = Connection::run(
+                    conn.inner.clone(),
+                    Program::seq(&["BEGIN IMMEDIATE"]),
+                    TestBuilder::default(),
+                )
+                .unwrap();
+                assert!(!conn.inner.lock().is_autocommit());
+                assert!(builder.into_ret()[0].is_ok());
+            }
+        })
+        .await
+        .unwrap();
+
+        let conn2 = make_conn.make_connection().await.unwrap();
+        tokio::task::spawn_blocking({
+            let conn = conn2.clone();
+            move || {
+                let before = Instant::now();
+                let builder = Connection::run(
+                    conn.inner.clone(),
+                    Program::seq(&["BEGIN IMMEDIATE"]),
+                    TestBuilder::default(),
+                )
+                .unwrap();
+                assert!(!conn.inner.lock().is_autocommit());
+                assert!(builder.into_ret()[0].is_ok());
+                before.elapsed()
+            }
+        })
+        .await
+        .unwrap();
+
+        tokio::time::sleep(TXN_TIMEOUT * 2).await;
+
+        tokio::task::spawn_blocking({
+            let conn = conn1.clone();
+            move || {
+                let builder = Connection::run(
+                    conn.inner.clone(),
+                    Program::seq(&["SELECT 1;"]),
+                    TestBuilder::default(),
+                )
+                .unwrap();
+                assert!(conn.inner.lock().is_autocommit());
+                // timeout
+                assert!(builder.into_ret()[0].is_err());
+
+                let builder = Connection::run(
+                    conn.inner.clone(),
+                    Program::seq(&["SELECT 1;"]),
+                    TestBuilder::default(),
+                )
+                .unwrap();
+                assert!(conn.inner.lock().is_autocommit());
+                // state reset
+                assert!(builder.into_ret()[0].is_ok());
+            }
+        })
+        .await
+        .unwrap();
     }
 }
