@@ -3,6 +3,7 @@ name: Nemesis Tests
 on:
   schedule:
     - cron: '* */4 * * *'
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
