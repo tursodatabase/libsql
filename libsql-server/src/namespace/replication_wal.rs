@@ -10,9 +10,6 @@ use crate::replication::ReplicationLogger;
 
 pub type ReplicationWalWrapper =
     Then<ReplicationLoggerWalWrapper, Option<BottomlessWalWrapper>, ManagedConnectionWal>;
-// pub type ReplicationWalManager =
-//     WalWrapper<Option<BottomlessWalWrapper>, ReplicationLoggerWalWrapper>;
-// pub type ReplicationWal = WrappedWal<Option<BottomlessWalWrapper>, ReplicationLoggerWal>;
 
 pub fn make_replication_wal_wrapper(
     bottomless: Option<Replicator>,

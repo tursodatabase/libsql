@@ -193,4 +193,16 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
 
         Ok(())
     }
+
+    fn close<M: libsql_sys::wal::WalManager<Wal = T>>(
+        &mut self,
+        manager: &M,
+        wrapped: &mut T,
+        db: &mut libsql_sys::wal::Sqlite3Db,
+        sync_flags: c_int,
+        _scratch: Option<&mut [u8]>,
+    ) -> libsql_sys::wal::Result<()> {
+        // prevent unmonitored checkpoints
+        manager.close(wrapped, db, sync_flags, None)
+    }
 }
