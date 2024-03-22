@@ -9,7 +9,7 @@ use hashbrown::HashMap;
 use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
 use libsql_sys::wal::{CheckpointMode, Sqlite3Wal, Wal};
 use metrics::atomics::AtomicU64;
-use parking_lot::Mutex;
+use parking_lot::{Mutex, MutexGuard};
 use rusqlite::ErrorCode;
 
 use super::libsql::Connection;
@@ -18,6 +18,13 @@ use super::TXN_TIMEOUT;
 pub type ConnId = u64;
 
 pub type ManagedConnectionWal = WrappedWal<ManagedConnectionWalWrapper, Sqlite3Wal>;
+
+#[derive(Copy, Clone, Debug)]
+struct Slot {
+    id: ConnId,
+    started_at: Instant,
+    state: SlotState,
+}
 
 #[derive(Clone)]
 struct Abort(Arc<dyn Fn() + Send + Sync + 'static>);
@@ -74,13 +81,15 @@ pub struct ConnectionManagerInner {
     /// When a slot becomes available, the connection allowed to make progress is put here
     /// the connection currently holding the lock
     /// bool: acquired
-    current: Mutex<Option<(ConnId, Instant, bool)>>,
+    current: Mutex<Option<Slot>>,
     /// map of registered connections
     abort_handle: Mutex<HashMap<ConnId, Abort>>,
     /// threads waiting to acquire the lock
     /// todo: limit how many can be push
     write_queue: crossbeam::deque::Injector<(ConnId, Unparker)>,
     txn_timeout_duration: Duration,
+    /// the time we are given to acquire a transaction after we were given a slot
+    acquire_timeout_duration: Duration,
     next_conn_id: AtomicU64,
     sync_token: AtomicU64,
 }
@@ -92,6 +101,7 @@ impl Default for ConnectionManagerInner {
             abort_handle: Default::default(),
             write_queue: Default::default(),
             txn_timeout_duration: TXN_TIMEOUT,
+            acquire_timeout_duration: Duration::from_millis(15),
             next_conn_id: Default::default(),
             sync_token: AtomicU64::new(0),
         }
@@ -133,7 +143,7 @@ impl ManagedConnectionWalWrapper {
                     extended_code: 517, // stale read
                 });
             }
-            if current.map_or(true, |(id, _, _)| id != self.id) && !enqueued {
+            if current.as_mut().map_or(true, |slot| slot.id != self.id) && !enqueued {
                 self.manager
                     .write_queue
                     .push((self.id, parker.unparker().clone()));
@@ -141,11 +151,16 @@ impl ManagedConnectionWalWrapper {
                 tracing::debug!("enqueued");
             }
             match *current {
-                Some((id, started_at, acquired)) => {
+                Some(ref mut slot) => {
+                    tracing::debug!("current slot: {slot:?}");
                     // this is us, the previous connection put us here when it closed the
                     // transaction
-                    if id == self.id {
-                        assert!(!acquired);
+                    if slot.id == self.id {
+                        assert!(
+                            slot.state.is_notified() || slot.state.is_failure(),
+                            "{slot:?}"
+                        );
+                        slot.state = SlotState::Acquiring;
                         tracing::debug!(
                             line = line!(),
                             "got lock after: {:?}",
@@ -154,81 +169,124 @@ impl ManagedConnectionWalWrapper {
                         break;
                     } else {
                         // not us, maybe we need to steal the lock?
+                        let since_started = slot.started_at.elapsed();
+                        let deadline = slot.started_at + self.manager.txn_timeout_duration;
+                        match slot.state {
+                            SlotState::Acquired => {
+                                if since_started >= self.manager.txn_timeout_duration {
+                                    let id = slot.id;
+                                    drop(current);
+                                    let handle = {
+                                        self.manager
+                                            .inner
+                                            .abort_handle
+                                            .lock()
+                                            .get(&id)
+                                            .unwrap()
+                                            .clone()
+                                    };
+                                    // the guard must be dropped before rolling back, or end write txn will
+                                    // deadlock
+                                    tracing::debug!("forcing rollback of {id}");
+                                    handle.abort();
+                                    tracing::debug!(line = line!(), "parking");
+                                    parker.park();
+                                    tracing::debug!(line = line!(), "unparked");
+                                } else {
+                                    // otherwise we wait for the txn to timeout, or to be unparked by it
+                                    let deadline =
+                                        slot.started_at + self.manager.inner.txn_timeout_duration;
+                                    drop(current);
+                                    tracing::debug!(line = line!(), "parking");
+                                    parker.park_deadline(deadline);
+                                    tracing::debug!(
+                                        line = line!(),
+                                        "before_deadline?: {:?}",
+                                        Instant::now() < deadline
+                                    );
+                                }
+                            }
+                            // we may want to limit how long a lock takes to go from notified
+                            // to acquiring
+                            SlotState::Acquiring | SlotState::Notified => {
+                                drop(current);
+                                tracing::debug!(line = line!(), "parking");
+                                parker.park_deadline(deadline);
+                                tracing::debug!(
+                                    line = line!(),
+                                    "unparked after before_deadline?: {:?}",
+                                    Instant::now() < deadline
+                                );
+                            }
+                            SlotState::Failure => {
+                                if since_started >= self.manager.inner.acquire_timeout_duration {
+                                    // the connection failed to acquire a transaction during the grace
+                                    // period. schedule the next transaction
+                                    match self.schedule_next(&mut current) {
+                                        Some(id) if id == self.id => {
+                                            current.as_mut().unwrap().state = SlotState::Acquiring;
+                                            break;
+                                        }
+                                        Some(_) => {
+                                            drop(current);
+                                            tracing::debug!(line = line!(), "parking");
+                                            parker.park();
+                                            tracing::debug!(line = line!(), "unparked");
+                                        }
+                                        None => {
+                                            *current = Some(Slot {
+                                                id: self.id,
+                                                started_at: Instant::now(),
+                                                state: SlotState::Acquiring,
+                                            });
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    tracing::trace!("noticed failure from id={}, parking until end of grace period", slot.id);
+                                    let deadline = slot.started_at
+                                        + self.manager.inner.acquire_timeout_duration;
+                                    drop(current);
+                                    tracing::debug!(line = line!(), "parking");
+                                    parker.park_deadline(deadline);
+                                    tracing::debug!(
+                                        line = line!(),
+                                        "unparked after before_deadline?: {:?}",
+                                        Instant::now() < deadline
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+                None => match self.schedule_next(&mut current) {
+                    Some(id) if id == self.id => {
+                        current.as_mut().unwrap().state = SlotState::Acquiring;
+                        break;
+                    }
+                    Some(_) => {
                         drop(current);
-                        if started_at.elapsed() >= self.manager.inner.txn_timeout_duration {
-                            let handle = {
-                                self.manager
-                                    .inner
-                                    .abort_handle
-                                    .lock()
-                                    .get(&id)
-                                    .unwrap()
-                                    .clone()
-                            };
-                            // the guard must be dropped before rolling back, or end write txn will
-                            // deadlock
-                            tracing::debug!("forcing rollback of {id}");
-                            handle.abort();
-                            parker.park();
-                            tracing::debug!(line = line!(), "unparked");
-                        } else {
-                            // otherwise we wait for the txn to timeout, or to be unparked by it
-                            let before = Instant::now();
-                            let deadline = started_at + self.manager.inner.txn_timeout_duration;
-                            parker.park_deadline(
-                                started_at + self.manager.inner.txn_timeout_duration,
-                            );
-                            tracing::debug!(
-                                line = line!(),
-                                "unparked after: {:?}, before_deadline: {:?}",
-                                before.elapsed(),
-                                Instant::now() < deadline
-                            );
-                        }
+                        tracing::debug!(line = line!(), "parking");
+                        parker.park();
+                        tracing::debug!(line = line!(), "unparked");
                     }
-                }
-                None => {
-                    let next = loop {
-                        match self.manager.write_queue.steal() {
-                            Steal::Empty => break None,
-                            Steal::Success(item) => break Some(item),
-                            Steal::Retry => (),
-                        }
-                    };
-
-                    match next {
-                        Some((id, _)) if id == self.id => {
-                            // this is us!
-                            *current = Some((self.id, Instant::now(), false));
-                            tracing::debug!("got lock after: {:?}", enqueued_at.elapsed());
-                            break;
-                        }
-                        Some((id, unpaker)) => {
-                            tracing::debug!(line = line!(), "unparking id={id}");
-                            *current = Some((id, Instant::now(), false));
-                            drop(current);
-                            unpaker.unpark();
-                            parker.park();
-                        }
-                        None => unreachable!(),
+                    None => {
+                        *current = Some(Slot {
+                            id: self.id,
+                            started_at: Instant::now(),
+                            state: SlotState::Acquiring,
+                        })
                     }
-                }
+                },
             }
         }
 
         Ok(())
     }
 
-    #[tracing::instrument(skip(self))]
-    fn release(&self) {
-        let mut current = self.manager.current.lock();
-        let Some((id, started_at, _)) = current.take() else {
-            unreachable!("no lock to release")
-        };
-
-        assert_eq!(id, self.id);
-
-        tracing::debug!("transaction finished after {:?}", started_at.elapsed());
+    #[tracing::instrument(skip(self, current))]
+    #[track_caller]
+    fn schedule_next(&self, current: &mut MutexGuard<Option<Slot>>) -> Option<ConnId> {
         let next = loop {
             match self.manager.write_queue.steal() {
                 Steal::Empty => break None,
@@ -237,13 +295,64 @@ impl ManagedConnectionWalWrapper {
             }
         };
 
-        if let Some((id, unparker)) = next {
-            tracing::debug!(line = line!(), "unparking id={id}");
-            *current = Some((id, Instant::now(), false));
-            unparker.unpark()
-        } else {
-            *current = None;
+        match next {
+            Some((id, unpaker)) => {
+                tracing::debug!(line = line!(), "unparking id={id}");
+                **current = Some(Slot {
+                    id,
+                    started_at: Instant::now(),
+                    state: SlotState::Notified,
+                });
+                unpaker.unpark();
+                Some(id)
+            }
+            None => None,
         }
+    }
+
+    #[tracing::instrument(skip(self))]
+    #[track_caller]
+    fn release(&self) {
+        let mut current = self.manager.current.lock();
+        let Some(slot) = current.take() else {
+            unreachable!("no lock to release")
+        };
+
+        assert_eq!(slot.id, self.id);
+
+        tracing::debug!("transaction finished after {:?}", slot.started_at.elapsed());
+        match self.schedule_next(&mut current) {
+            Some(_) => (),
+            None => {
+                *current = None;
+            }
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+enum SlotState {
+    Notified,
+    Acquiring,
+    Acquired,
+    Failure,
+}
+
+impl SlotState {
+    /// Returns `true` if the slot state is [`Notified`].
+    ///
+    /// [`Notified`]: SlotState::Notified
+    #[must_use]
+    fn is_notified(&self) -> bool {
+        matches!(self, Self::Notified)
+    }
+
+    /// Returns `true` if the slot state is [`Failure`].
+    ///
+    /// [`Failure`]: SlotState::Failure
+    #[must_use]
+    fn is_failure(&self) -> bool {
+        matches!(self, Self::Failure)
     }
 }
 
@@ -256,7 +365,7 @@ impl WrapWal<Sqlite3Wal> for ManagedConnectionWalWrapper {
             Ok(_) => {
                 tracing::debug!("transaction acquired");
                 let mut lock = self.manager.current.lock();
-                lock.as_mut().unwrap().2 = true;
+                lock.as_mut().unwrap().state = SlotState::Acquired;
 
                 Ok(())
             }
@@ -266,6 +375,8 @@ impl WrapWal<Sqlite3Wal> for ManagedConnectionWalWrapper {
                     tracing::debug!("error acquiring lock, releasing: {e}");
                     self.release();
                 } else {
+                    let mut lock = self.manager.current.lock();
+                    lock.as_mut().unwrap().state = SlotState::Failure;
                     tracing::debug!("error acquiring lock: {e}");
                 }
                 Err(e)
@@ -289,6 +400,7 @@ impl WrapWal<Sqlite3Wal> for ManagedConnectionWalWrapper {
     ) -> libsql_sys::wal::Result<()> {
         let before = Instant::now();
         self.acquire()?;
+        self.manager.current.lock().as_mut().unwrap().state = SlotState::Acquired;
 
         let mode = if rand::random::<f32>() < 0.1 {
             CheckpointMode::Truncate
@@ -336,7 +448,14 @@ impl WrapWal<Sqlite3Wal> for ManagedConnectionWalWrapper {
         wrapped.end_read_txn();
         {
             let current = self.manager.current.lock();
-            if let Some((id, _, true)) = *current {
+            // end read will only close the write txn if we actually acquired one, so only release
+            // if the slot acquire the transaction lock
+            if let Some(Slot {
+                id,
+                state: SlotState::Acquired,
+                ..
+            }) = *current
+            {
                 // releasing read transaction releases the write lock (see wal.c)
                 if id == self.id {
                     drop(current);
@@ -368,11 +487,13 @@ impl WrapWal<Sqlite3Wal> for ManagedConnectionWalWrapper {
         let before = Instant::now();
         let ret = manager.close(wrapped, db, sync_flags, None);
         {
-            tracing::debug!(line = line!(), "unparked");
             let current = self.manager.current.lock();
-            if let Some((id, _, _)) = *current {
+            if let Some(slot @ Slot { id, .. }) = *current {
                 if id == self.id {
-                    tracing::debug!("connection closed without releasing lock");
+                    tracing::debug!(
+                        id = self.id,
+                        "connection closed without releasing lock: {slot:?}"
+                    );
                     drop(current);
                     self.release()
                 }
@@ -380,7 +501,7 @@ impl WrapWal<Sqlite3Wal> for ManagedConnectionWalWrapper {
         }
 
         self.manager.inner.abort_handle.lock().remove(&self.id);
-        tracing::debug!("closed in {:?}", before.elapsed());
+        tracing::debug!(id = self.id, "closed in {:?}", before.elapsed());
         ret
     }
 }
