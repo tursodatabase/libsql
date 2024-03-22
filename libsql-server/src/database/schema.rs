@@ -37,9 +37,19 @@ impl crate::connection::Connection for SchemaConnection {
         replication_index: Option<crate::replication::FrameNo>,
     ) -> crate::Result<B> {
         if migration.is_read_only() {
-            self.connection
+            let res = self
+                .connection
                 .execute_program(migration, ctx, builder, replication_index)
-                .await
+                .await;
+
+            // If the query was okay, verify if the connection is left in a txn state
+            if res.is_ok() && !self.connection.is_autocommit().await {
+                return Err(crate::Error::Migration(
+                    crate::schema::Error::ConnectionInTxnState,
+                ));
+            }
+
+            res
         } else {
             check_program_auth(&ctx, &migration, &self.config.get())?;
             let connection = self.connection.clone();
@@ -68,18 +78,18 @@ impl crate::connection::Connection for SchemaConnection {
                         Ok(ret?)
                     });
 
-                    // If the query was okay, verify if the connection is left in a txn state
-                    if res.is_ok() && !connection.is_autocommit() {
-                        return Err(crate::Error::Migration(
-                            crate::schema::Error::ConnectionInTxnState,
-                        ));
-                    }
-
                     res
                 }
             })
             .await
             .unwrap()?;
+
+            // If the query was okay, verify if the connection is left in a txn state
+            if !self.connection.is_autocommit().await {
+                return Err(crate::Error::Migration(
+                    crate::schema::Error::ConnectionInTxnState,
+                ));
+            }
 
             // if dry run is successfull, enqueue
             let mut handle = self
