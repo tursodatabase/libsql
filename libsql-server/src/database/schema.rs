@@ -48,10 +48,14 @@ impl crate::connection::Connection for SchemaConnection {
             let builder = tokio::task::spawn_blocking({
                 let migration = migration.clone();
                 move || {
-                    connection.with_raw(|conn| -> crate::Result<_> {
+                    let res = connection.with_raw(|conn| -> crate::Result<_> {
                         let mut txn = conn
                             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
-                            .unwrap();
+                            .map_err(|_| {
+                                crate::Error::Migration(
+                                    crate::schema::Error::InteractiveTxnNotAllowed,
+                                )
+                            })?;
                         // TODO: pass proper config
                         let (ret, _) = perform_migration(
                             &mut txn,
@@ -62,7 +66,16 @@ impl crate::connection::Connection for SchemaConnection {
                         );
                         txn.rollback().unwrap();
                         Ok(ret?)
-                    })
+                    });
+
+                    // If the query was okay, verify if the connection is left in a txn state
+                    if res.is_ok() && !connection.is_autocommit() {
+                        return Err(crate::Error::Migration(
+                            crate::schema::Error::ConnectionInTxnState,
+                        ));
+                    }
+
+                    res
                 }
             })
             .await
