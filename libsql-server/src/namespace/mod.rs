@@ -454,6 +454,7 @@ impl Namespace {
     }
 
     #[tracing::instrument(skip(config, reset, meta_store_handle, resolve_attach_path))]
+    #[async_recursion::async_recursion]
     async fn new_replica(
         config: &NamespaceConfig,
         name: NamespaceName,
@@ -489,8 +490,18 @@ impl Namespace {
             Err(libsql_replication::replicator::Error::Meta(
                 libsql_replication::meta::Error::LogIncompatible,
             )) => {
-                tracing::error!("trying to replicate incompatible logs, reseting replica");
-                (reset)(ResetOp::Reset(name.clone()));
+                tracing::error!(
+                    "trying to replicate incompatible logs, reseting replica and nuking db dir"
+                );
+                std::fs::remove_dir_all(&db_path).unwrap();
+                return Self::new_replica(
+                    config,
+                    name,
+                    meta_store_handle,
+                    reset,
+                    resolve_attach_path,
+                )
+                .await;
             }
             Err(e) => Err(e)?,
             Ok(_) => (),
