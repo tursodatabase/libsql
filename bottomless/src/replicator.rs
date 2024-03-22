@@ -487,6 +487,7 @@ impl Replicator {
                     Err(_) => true,
                 })
                 .await?;
+            tracing::debug!("done waiting");
             match res.deref() {
                 Ok(_) => Ok(true),
                 Err(e) => Err(anyhow!("Failed snapshot generation {}: {}", generation, e)),
@@ -923,6 +924,7 @@ impl Replicator {
             let _ = self.snapshot_notifier.send(Ok(self.generation().ok()));
             return Ok(None);
         }
+        tracing::debug!("snapshotting db file");
         if !self.main_db_exists_and_not_empty().await {
             let generation = self.generation()?;
             tracing::debug!(
@@ -1561,6 +1563,9 @@ impl Replicator {
         };
 
         let (action, recovered) = self.restore_from(generation, timestamp).await?;
+
+        let _ = self.snapshot_notifier.send(Ok(Some(generation)));
+
         tracing::info!(
             "Restoring from generation {generation}: action={action:?}, recovered={recovered}"
         );
