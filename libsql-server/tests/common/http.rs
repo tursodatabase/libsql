@@ -48,6 +48,10 @@ impl Client {
             .body(body)?;
         let resp = self.0.request(request).await?;
 
+        if resp.status().is_server_error() {
+            anyhow::bail!("request was not successful {:?}", resp.status());
+        }
+
         Ok(Response(resp))
     }
 

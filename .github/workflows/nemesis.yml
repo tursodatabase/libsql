@@ -3,6 +3,7 @@ name: Nemesis Tests
 on:
   schedule:
     - cron: '* */4 * * *'
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -14,6 +15,7 @@ env:
 jobs:
   test-nemesis:
     runs-on: ubuntu-latest
+    if: github.repository == 'tursodatabase/libsql'
     name: Run Nemesis Tests
     env:
       RUSTFLAGS: -D warnings

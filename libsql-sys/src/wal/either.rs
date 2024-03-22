@@ -182,27 +182,6 @@ where
             Either::Right(r) => r.frames_in_wal(),
         }
     }
-
-    fn backfilled(&self) -> u32 {
-        match self {
-            Either::Left(l) => l.backfilled(),
-            Either::Right(r) => r.backfilled(),
-        }
-    }
-
-    fn db_file(&self) -> &super::Sqlite3File {
-        match self {
-            Either::Left(l) => l.db_file(),
-            Either::Right(r) => r.db_file(),
-        }
-    }
-
-    fn frame_page_no(&self, frame_no: std::num::NonZeroU32) -> Option<std::num::NonZeroU32> {
-        match self {
-            Either::Left(l) => l.frame_page_no(frame_no),
-            Either::Right(r) => r.frame_page_no(frame_no),
-        }
-    }
 }
 
 impl<L, R> WalManager for Either<L, R>

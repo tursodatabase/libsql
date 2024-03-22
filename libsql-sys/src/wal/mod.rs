@@ -190,7 +190,6 @@ pub trait Wal {
     fn find_frame(&mut self, page_no: NonZeroU32) -> Result<Option<NonZeroU32>>;
     /// reads frame `frame_no` into buffer.
     fn read_frame(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> Result<()>;
-    fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32>;
 
     fn db_size(&self) -> u32;
 
@@ -238,6 +237,4 @@ pub trait Wal {
     fn callback(&self) -> i32;
 
     fn frames_in_wal(&self) -> u32;
-    fn backfilled(&self) -> u32;
-    fn db_file(&self) -> &Sqlite3File;
 }

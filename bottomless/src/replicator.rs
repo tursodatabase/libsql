@@ -69,6 +69,7 @@ pub struct Replicator {
     join_set: JoinSet<()>,
     upload_progress: Arc<Mutex<CompletionProgress>>,
     last_uploaded_frame_no: Receiver<u32>,
+    skip_snapshot: bool,
 }
 
 #[derive(Debug)]
@@ -113,6 +114,8 @@ pub struct Options {
     pub s3_upload_max_parallelism: usize,
     /// Max number of retries for S3 operations
     pub s3_max_retries: u32,
+    /// Skip snapshot upload per checkpoint.
+    pub skip_snapshot: bool,
 }
 
 impl Options {
@@ -202,6 +205,17 @@ impl Options {
                 other
             ),
         };
+        let skip_snapshot = match env_var_or("LIBSQL_BOTTOMLESS_SKIP_SNAPSHOT", false)
+            .to_lowercase()
+            .as_ref()
+        {
+            "yes" | "true" | "1" | "y" | "t" => true,
+            "no" | "false" | "0" | "n" | "f" => false,
+            other => bail!(
+                "Invalid LIBSQL_BOTTOMLESS_SKIP_SNAPSHOT environment variable: {}",
+                other
+            ),
+        };
         let s3_max_retries = env_var_or("LIBSQL_BOTTOMLESS_S3_MAX_RETRIES", 10).parse::<u32>()?;
         let cipher = match encryption_cipher {
             Some(cipher) => Cipher::from_str(&cipher)?,
@@ -226,6 +240,7 @@ impl Options {
             region,
             bucket_name,
             s3_max_retries,
+            skip_snapshot,
         })
     }
 }
@@ -386,6 +401,7 @@ impl Replicator {
             encryption_config: options.encryption_config,
             max_frames_per_batch: options.max_frames_per_batch,
             s3_upload_max_parallelism: options.s3_upload_max_parallelism,
+            skip_snapshot: options.skip_snapshot,
             join_set,
             upload_progress,
             last_uploaded_frame_no,
@@ -901,7 +917,12 @@ impl Replicator {
     // Sends the main database file to S3 - if -wal file is present, it's replicated
     // too - it means that the local file was detected to be newer than its remote
     // counterpart.
-    pub async fn snapshot_main_db_file(&mut self) -> Result<Option<JoinHandle<()>>> {
+    pub async fn snapshot_main_db_file(&mut self, force: bool) -> Result<Option<JoinHandle<()>>> {
+        if self.skip_snapshot && !force {
+            tracing::trace!("database snapshot skipped");
+            let _ = self.snapshot_notifier.send(Ok(self.generation().ok()));
+            return Ok(None);
+        }
         if !self.main_db_exists_and_not_empty().await {
             let generation = self.generation()?;
             tracing::debug!(
@@ -1301,6 +1322,14 @@ impl Replicator {
                 );
                 match wal_pages.cmp(&last_consistent_frame) {
                     std::cmp::Ordering::Equal => {
+                        if local_counter == [0u8; 4] && wal_pages == 0 {
+                            if self.get_dependency(&generation).await?.is_some() {
+                                // empty generation and empty local state, but we have a dependency
+                                // to previous generation: restore required
+                                return Ok(None);
+                            }
+                        }
+
                         tracing::info!(
                             "Remote generation is up-to-date, reusing it in this session"
                         );

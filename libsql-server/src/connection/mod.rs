@@ -24,6 +24,7 @@ use crate::Result;
 use self::program::{Cond, DescribeResponse, Program, Step};
 
 pub mod config;
+pub mod connection_manager;
 pub mod dump;
 pub mod libsql;
 pub mod program;

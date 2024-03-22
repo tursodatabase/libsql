@@ -387,7 +387,7 @@ pub mod test {
     #[tokio::test]
     async fn invalid_request() {
         let tmp = tempdir().unwrap();
-        let conn = LibSqlConnection::new_test(tmp.path());
+        let conn = LibSqlConnection::new_test(tmp.path()).await;
         let (snd, rcv) = mpsc::channel(1);
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
@@ -413,7 +413,7 @@ pub mod test {
     #[tokio::test]
     async fn request_stream_dropped() {
         let tmp = tempdir().unwrap();
-        let conn = LibSqlConnection::new_test(tmp.path());
+        let conn = LibSqlConnection::new_test(tmp.path()).await;
         let (snd, rcv) = mpsc::channel(1);
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
@@ -435,7 +435,7 @@ pub mod test {
     #[tokio::test]
     async fn perform_query_simple() {
         let tmp = tempdir().unwrap();
-        let conn = LibSqlConnection::new_test(tmp.path());
+        let conn = LibSqlConnection::new_test(tmp.path()).await;
         let (snd, rcv) = mpsc::channel(1);
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
@@ -459,7 +459,7 @@ pub mod test {
     #[tokio::test]
     async fn single_query_split_response() {
         let tmp = tempdir().unwrap();
-        let conn = LibSqlConnection::new_test(tmp.path());
+        let conn = LibSqlConnection::new_test(tmp.path()).await;
         let (snd, rcv) = mpsc::channel(1);
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
@@ -516,7 +516,7 @@ pub mod test {
     #[tokio::test]
     async fn request_interupted() {
         let tmp = tempdir().unwrap();
-        let conn = LibSqlConnection::new_test(tmp.path());
+        let conn = LibSqlConnection::new_test(tmp.path()).await;
         let (snd, rcv) = mpsc::channel(2);
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
@@ -543,7 +543,7 @@ pub mod test {
     #[tokio::test]
     async fn perform_multiple_queries() {
         let tmp = tempdir().unwrap();
-        let conn = LibSqlConnection::new_test(tmp.path());
+        let conn = LibSqlConnection::new_test(tmp.path()).await;
         let (snd, rcv) = mpsc::channel(1);
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
@@ -570,7 +570,7 @@ pub mod test {
     #[tokio::test]
     async fn query_number_less_than_previous_query() {
         let tmp = tempdir().unwrap();
-        let conn = LibSqlConnection::new_test(tmp.path());
+        let conn = LibSqlConnection::new_test(tmp.path()).await;
         let (snd, rcv) = mpsc::channel(1);
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
@@ -599,7 +599,7 @@ pub mod test {
     #[tokio::test]
     async fn describe() {
         let tmp = tempdir().unwrap();
-        let conn = LibSqlConnection::new_test(tmp.path());
+        let conn = LibSqlConnection::new_test(tmp.path()).await;
         let (snd, rcv) = mpsc::channel(1);
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
