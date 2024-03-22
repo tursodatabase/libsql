@@ -1,4 +1,5 @@
 use std::ops::Deref;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -81,6 +82,7 @@ pub struct ConnectionManagerInner {
     write_queue: crossbeam::deque::Injector<(ConnId, Unparker)>,
     txn_timeout_duration: Duration,
     next_conn_id: AtomicU64,
+    sync_token: AtomicU64,
 }
 
 impl Default for ConnectionManagerInner {
@@ -91,6 +93,7 @@ impl Default for ConnectionManagerInner {
             write_queue: Default::default(),
             txn_timeout_duration: TXN_TIMEOUT,
             next_conn_id: Default::default(),
+            sync_token: AtomicU64::new(0),
         }
     }
 }
@@ -103,10 +106,7 @@ pub struct ManagedConnectionWalWrapper {
 
 impl ManagedConnectionWalWrapper {
     pub(crate) fn new(manager: ConnectionManager) -> Self {
-        let id = manager
-            .inner
-            .next_conn_id
-            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let id = manager.inner.next_conn_id.fetch_add(1, Ordering::SeqCst);
         Self { id, manager }
     }
 
@@ -114,10 +114,11 @@ impl ManagedConnectionWalWrapper {
         self.id
     }
 
-    fn acquire(&self) {
+    fn acquire(&self) -> libsql_sys::wal::Result<()> {
         let parker = Parker::new();
         let mut enqueued = false;
         let enqueued_at = Instant::now();
+        let sync_token = self.manager.sync_token.load(Ordering::SeqCst);
         loop {
             let mut current = self.manager.current.lock();
             // if current is not currently us, and we havent enqueued yet, then enqueue
@@ -126,12 +127,18 @@ impl ManagedConnectionWalWrapper {
             // - we tried to acquire the lock during the previous iteration, but the underlying
             // method returned an error and we had to retry immediately, by re-entering this
             // function.
+            if self.manager.sync_token.load(Ordering::SeqCst) != sync_token {
+                return Err(rusqlite::ffi::Error {
+                    code: ErrorCode::DatabaseBusy,
+                    extended_code: 517, // stale read
+                });
+            }
             if current.map_or(true, |(id, _, _)| id != self.id) && !enqueued {
                 self.manager
                     .write_queue
                     .push((self.id, parker.unparker().clone()));
-                tracing::debug!("enqueued");
                 enqueued = true;
+                tracing::debug!("enqueued");
             }
             match *current {
                 Some((id, started_at, acquired)) => {
@@ -208,6 +215,8 @@ impl ManagedConnectionWalWrapper {
                 }
             }
         }
+
+        Ok(())
     }
 
     #[tracing::instrument(skip(self))]
@@ -242,7 +251,7 @@ impl WrapWal<Sqlite3Wal> for ManagedConnectionWalWrapper {
     #[tracing::instrument(skip_all, fields(id = self.id))]
     fn begin_write_txn(&mut self, wrapped: &mut Sqlite3Wal) -> libsql_sys::wal::Result<()> {
         tracing::debug!("begin write");
-        self.acquire();
+        self.acquire()?;
         match wrapped.begin_write_txn() {
             Ok(_) => {
                 tracing::debug!("transaction acquired");
@@ -279,12 +288,25 @@ impl WrapWal<Sqlite3Wal> for ManagedConnectionWalWrapper {
         backfilled: Option<&mut i32>,
     ) -> libsql_sys::wal::Result<()> {
         let before = Instant::now();
-        self.acquire();
+        self.acquire()?;
+
         let mode = if rand::random::<f32>() < 0.1 {
             CheckpointMode::Truncate
         } else {
             mode
         };
+
+        if mode as i32 >= CheckpointMode::Restart as i32 {
+            tracing::debug!("forcing queue sync");
+            self.manager.sync_token.fetch_add(1, Ordering::SeqCst);
+            let queue_len = self.manager.write_queue.len();
+            for _ in 0..queue_len {
+                let (id, unparker) = self.manager.write_queue.steal().success().unwrap();
+                tracing::debug!("forcing queue sync for id={id}");
+                unparker.unpark();
+            }
+        }
+
         tracing::debug!("attempted checkpoint mode: {mode:?}");
         let ret = wrapped.checkpoint(
             db,
@@ -341,16 +363,16 @@ impl WrapWal<Sqlite3Wal> for ManagedConnectionWalWrapper {
         wrapped: &mut Sqlite3Wal,
         db: &mut libsql_sys::wal::Sqlite3Db,
         sync_flags: std::ffi::c_int,
-        scratch: Option<&mut [u8]>,
+        _scratch: Option<&mut [u8]>,
     ) -> libsql_sys::wal::Result<()> {
         let before = Instant::now();
-        let ret = manager.close(wrapped, db, sync_flags, scratch);
+        let ret = manager.close(wrapped, db, sync_flags, None);
         {
             tracing::debug!(line = line!(), "unparked");
             let current = self.manager.current.lock();
             if let Some((id, _, _)) = *current {
                 if id == self.id {
-                    tracing::error!("connection closed without releasing lock");
+                    tracing::debug!("connection closed without releasing lock");
                     drop(current);
                     self.release()
                 }
