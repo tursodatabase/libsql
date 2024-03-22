@@ -933,7 +933,7 @@ fn errors_on_bad_replica() {
         let db = libsql::Builder::new_remote_replica(
             path.to_str().unwrap(),
             "http://foo.primary:8080".to_string(),
-            "dummy_token".to_string(),
+            "".to_string(),
         )
         .connector(TurmoilConnector)
         .build()
