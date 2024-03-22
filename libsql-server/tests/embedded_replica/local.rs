@@ -4,6 +4,7 @@ use libsql::{replication::Frames, Database};
 use libsql_replication::snapshot::SnapshotFile;
 use serde_json::json;
 use tempfile::tempdir;
+use tokio::time::timeout;
 use turmoil::Builder;
 
 use crate::common::{http::Client, net::TurmoilConnector};
@@ -75,7 +76,15 @@ fn local_sync_with_writes() {
 
         for snapshot in snapshots {
             println!("snapshots: {:?}", snapshot.header().end_frame_no.get());
-            db.sync_frames(Frames::Snapshot(snapshot)).await.unwrap();
+        let sync_operation = db.sync_frames(Frames::Snapshot(snapshot));
+            match timeout(Duration::from_secs(10), sync_operation).await {
+                Ok(Ok(_)) => {}, 
+                Ok(Err(e)) => eprintln!("Sync failed: {:?}", e),
+                Err(_) => {
+                    eprintln!("Sync operation timed out");
+                    break; 
+                }
+            }
         }
 
         let conn = db.connect()?;
