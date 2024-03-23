@@ -1,6 +1,8 @@
 //! Tests for sqld in cluster mode
 #![allow(deprecated)]
 
+use std::sync::{Arc, Mutex};
+
 use super::common;
 
 use insta::assert_snapshot;
@@ -8,7 +10,7 @@ use libsql::{Database, Value};
 use libsql_server::config::{AdminApiConfig, RpcClientConfig, RpcServerConfig, UserApiConfig};
 use serde_json::json;
 use tempfile::tempdir;
-use tokio::{task::JoinSet, time::Duration};
+use tokio::{sync::Notify, task::JoinSet, time::Duration};
 use turmoil::{Builder, Sim};
 
 use common::net::{init_tracing, TestServer, TurmoilAcceptor, TurmoilConnector};
@@ -18,11 +20,19 @@ use crate::common::{http::Client, net::SimServer, snapshot_metrics};
 mod replica_restart;
 mod replication;
 
-pub fn make_cluster(sim: &mut Sim, num_replica: usize, disable_namespaces: bool) {
+pub fn make_cluster(
+    sim: &mut Sim,
+    num_replica: usize,
+    disable_namespaces: bool,
+) -> Arc<Mutex<Option<Arc<Notify>>>> {
+    let shutdown_primary = Arc::new(Mutex::new(None));
+    let shutdown_primary_clone = shutdown_primary.clone();
+
     init_tracing();
     let tmp = tempdir().unwrap();
     sim.host("primary", move || {
         let path = tmp.path().to_path_buf();
+        let shutdown_primary = shutdown_primary.clone();
         async move {
             let server = TestServer {
                 path: path.into(),
@@ -42,6 +52,8 @@ pub fn make_cluster(sim: &mut Sim, num_replica: usize, disable_namespaces: bool)
                 disable_default_namespace: !disable_namespaces,
                 ..Default::default()
             };
+
+            *shutdown_primary.lock().unwrap() = Some(server.shutdown.clone());
 
             server.start_sim(8080).await?;
 
@@ -80,6 +92,8 @@ pub fn make_cluster(sim: &mut Sim, num_replica: usize, disable_namespaces: bool)
             }
         });
     }
+
+    shutdown_primary_clone
 }
 
 #[test]
@@ -108,6 +122,45 @@ fn proxy_write() {
         ));
 
         snapshot_metrics().assert_gauge("libsql_server_current_frame_no", 2.0);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn proxy_write_retry() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(u64::MAX))
+        .build();
+    let shutdown_primary_handle = make_cluster(&mut sim, 1, true);
+
+    sim.client("client", async move {
+        let db =
+            Database::open_remote_with_connector("http://replica0:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        std::env::set_var("LIBSQL_DELAY_SHUTDOWN", "1");
+
+        conn.execute("create table test (x)", ()).await.unwrap();
+
+        {
+            let shutdown_handle = shutdown_primary_handle.lock().unwrap();
+
+            shutdown_handle
+                .as_ref()
+                .expect("no shutdown handle")
+                .notify_waiters();
+
+            tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+        }
+
+        std::env::remove_var("LIBSQL_DELAY_SHUTDOWN");
+
+        conn.execute("insert into test values (12)", ())
+            .await
+            .unwrap();
 
         Ok(())
     });
