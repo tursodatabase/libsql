@@ -42,8 +42,8 @@ impl crate::connection::Connection for SchemaConnection {
                 .execute_program(migration, ctx, builder, replication_index)
                 .await;
 
-            // If the query was okay, verify if the connection is left in a txn state
-            if res.is_ok() && !self.connection.is_autocommit().await? {
+            // If the query was okay, verify if the connection is not in a txn state
+            if res.is_ok() && self.connection.is_autocommit().await? {
                 return Err(crate::Error::Migration(
                     crate::schema::Error::ConnectionInTxnState,
                 ));
@@ -83,13 +83,6 @@ impl crate::connection::Connection for SchemaConnection {
             })
             .await
             .unwrap()?;
-
-            // If the query was okay, verify if the connection is left in a txn state
-            if !self.connection.is_autocommit().await? {
-                return Err(crate::Error::Migration(
-                    crate::schema::Error::ConnectionInTxnState,
-                ));
-            }
 
             // if dry run is successfull, enqueue
             let mut handle = self
