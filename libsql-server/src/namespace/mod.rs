@@ -248,6 +248,8 @@ impl Namespace {
         restore_option: RestoreOption,
         resolve_attach_path: ResolveNamespacePathFn,
     ) -> crate::Result<Self> {
+        let db_path: Arc<Path> = config.base_path.join("dbs").join(name.as_str()).into();
+        let fresh_namespace = !db_path.try_exists()?;
         // FIXME: make that truly atomic. explore the idea of using temp directories, and it's implications
         match Self::try_new_primary(
             config,
@@ -255,17 +257,19 @@ impl Namespace {
             meta_store_handle,
             restore_option,
             resolve_attach_path,
+            db_path.clone(),
         )
         .await
         {
-            Ok(ns) => Ok(ns),
-            Err(e) => {
-                let path = config.base_path.join("dbs").join(name.as_str());
-                if let Err(e) = tokio::fs::remove_dir_all(path).await {
-                    tracing::error!("failed to clean dirty namespace: {e}");
+            Ok(this) => Ok(this),
+            Err(e) if fresh_namespace => {
+                tracing::error!("an error occured while deleting creating namespace, cleaning...");
+                if let Err(e) = tokio::fs::remove_dir_all(&db_path).await {
+                    tracing::error!("failed to remove dirty namespace directory: {e}")
                 }
                 Err(e)
             }
+            Err(e) => Err(e),
         }
     }
 
@@ -396,9 +400,9 @@ impl Namespace {
         meta_store_handle: MetaStoreHandle,
         restore_option: RestoreOption,
         resolve_attach_path: ResolveNamespacePathFn,
+        db_path: Arc<Path>,
     ) -> crate::Result<Self> {
         let mut join_set = JoinSet::new();
-        let db_path = ns_config.base_path.join("dbs").join(name.as_str());
 
         tokio::fs::create_dir_all(&db_path).await?;
 
