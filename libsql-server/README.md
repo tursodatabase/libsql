@@ -80,7 +80,7 @@ and run `sqld` with `--enable-bottomless-replication` parameter:
 sqld --http-listen-addr=127.0.0.1:8000 --enable-bottomless-replication
 ```
 
-[bottomless replication subproject]: ./bottomless
+[bottomless replication subproject]: ../bottomless
 [SQLite WAL]: https://www.sqlite.org/wal.html
 
 ### Configuration
