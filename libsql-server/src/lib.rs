@@ -505,6 +505,7 @@ where
             ));
         }
 
+        let shutdown_timeout = self.shutdown_timeout.clone();
         let shutdown = self.shutdown.clone();
         // setup user-facing rpc services
         match db_kind {
@@ -577,7 +578,7 @@ where
                     Ok::<_, crate::Error>(())
                 };
 
-                match tokio::time::timeout(std::time::Duration::from_secs(30), shutdown).await {
+                match tokio::time::timeout(shutdown_timeout, shutdown).await {
                     Ok(Ok(())) =>  {
                         tracing::info!("sqld was shutdown gracefully. Bye!");
                     }
