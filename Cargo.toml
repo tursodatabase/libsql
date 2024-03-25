@@ -28,6 +28,7 @@ exclude = [
 [profile.release]
 codegen-units = 1
 panic = "unwind"
+lto = true
 
 [workspace.dependencies]
 rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = "0.30", default-features = false, features = [
@@ -69,4 +70,25 @@ aarch64-apple-darwin = "macos-14"
 [profile.dist]
 inherits = "release"
 lto = "thin"
+
+# [profile.release.package.sql-experimental]
+# debug = false
+# strip = true
+# codegen-units = 1
+# opt-level = "z"
+# panic = "abort"
+
+[profile.cbindings]
+debug = false
+strip = true
+codegen-units = 1
+opt-level = "z"
+panic = "abort"
+lto = true
+debug-assertions = false
+overflow-checks = false
+rpath = false
+incremental = false
+inherits = "release"
+
 
