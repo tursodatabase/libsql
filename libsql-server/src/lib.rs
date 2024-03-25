@@ -104,6 +104,7 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub max_active_namespaces: usize,
     pub meta_store_config: MetaStoreConfig,
     pub max_concurrent_connections: usize,
+    pub shutdown_timeout: std::time::Duration,
 }
 
 impl<C, A, D> Default for Server<C, A, D> {
@@ -124,6 +125,7 @@ impl<C, A, D> Default for Server<C, A, D> {
             max_active_namespaces: 100,
             meta_store_config: Default::default(),
             max_concurrent_connections: 128,
+            shutdown_timeout: Duration::from_secs(30),
         }
     }
 }
