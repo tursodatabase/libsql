@@ -2705,6 +2705,7 @@ dependencies = [
  "http",
  "hyper",
  "hyper-rustls 0.25.0",
+ "libsql-hrana",
  "libsql-sqlite3-parser",
  "libsql-sys",
  "libsql_replication",
@@ -2751,6 +2752,17 @@ dependencies = [
  "bindgen",
  "cc",
  "libsql-wasmtime-bindings",
+]
+
+[[package]]
+name = "libsql-hrana"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "bytes",
+ "prost",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2821,6 +2833,7 @@ dependencies = [
  "jsonwebtoken",
  "libsql",
  "libsql-client",
+ "libsql-hrana",
  "libsql-rusqlite",
  "libsql-sqlite3-parser",
  "libsql-sys",
@@ -2891,14 +2904,10 @@ dependencies = [
 name = "libsql-sys"
 version = "0.4.0"
 dependencies = [
- "base64",
  "bytes",
  "libsql-ffi",
  "libsql-rusqlite",
  "once_cell",
- "prost",
- "serde",
- "serde_json",
  "tracing",
  "zerocopy",
 ]

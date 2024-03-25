@@ -3,7 +3,7 @@ use crate::hrana::stream::HranaStream;
 use crate::hrana::{HttpSend, Result};
 use crate::parser::StmtKind;
 use crate::TransactionBehavior;
-use libsql_sys::hrana::proto::{ExecuteStreamReq, StreamRequest};
+use libsql_hrana::proto::{ExecuteStreamReq, StreamRequest};
 
 #[derive(Debug, Clone)]
 pub(crate) struct HttpTransaction<T>
