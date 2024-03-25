@@ -114,9 +114,7 @@ async fn configure_server(
         initial_idle_shutdown_timeout: None,
         rpc_server_config: None,
         rpc_client_config: None,
-        shutdown: Default::default(),
-        meta_store_config: Default::default(),
-        max_concurrent_connections: 128,
+        ..Default::default()
     }
 }
 
