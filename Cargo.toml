@@ -10,11 +10,12 @@ members = [
   "bottomless-cli",
   "libsql-replication",
   "libsql-ffi",
+  "libsql-hrana",
 
   "vendored/rusqlite",
   "vendored/sqlite3-parser",
 
-  "xtask",
+  "xtask", "libsql-hrana",
 ]
 
 exclude = [

@@ -221,18 +221,6 @@ impl Wal for InjectorWal {
     fn frames_in_wal(&self) -> u32 {
         self.inner.frames_in_wal()
     }
-
-    fn db_file(&self) -> &Sqlite3File {
-        self.inner.db_file()
-    }
-
-    fn backfilled(&self) -> u32 {
-        self.inner.backfilled()
-    }
-
-    fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
-        self.inner.frame_page_no(frame_no)
-    }
 }
 
 /// Turn a list of `WalFrame` into a list of PgHdr.

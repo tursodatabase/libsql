@@ -36,7 +36,7 @@ use crate::{
     params::IntoParams,
     TransactionBehavior,
 };
-use libsql_sys::hrana::proto::{Batch, Stmt};
+use libsql_hrana::proto::{Batch, Stmt};
 
 pub use crate::wasm::rows::Rows;
 

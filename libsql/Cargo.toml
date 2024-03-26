@@ -11,7 +11,8 @@ tracing = { version = "0.1.37", default-features = false }
 thiserror = "1.0.40"
 
 futures = { version = "0.3.28", optional = true }
-libsql-sys = { version = "0.4", path = "../libsql-sys", features = ["hrana"], optional = true }
+libsql-sys = { version = "0.4", path = "../libsql-sys", optional = true }
+libsql-hrana = { version = "0.1", path = "../libsql-hrana", optional = true }
 tokio = { version = "1.29.1", features = ["sync"], optional = true }
 tokio-util = { version = "0.7", features = ["io-util", "codec"], optional = true }
 parking_lot = { version = "0.12.1", optional = true }
@@ -101,7 +102,7 @@ hrana = [
   "dep:tokio",
   "dep:tokio-util",
   "dep:bytes",
-  "libsql-sys",
+  "dep:libsql-hrana",
 ]
 serde = ["dep:serde"]
 remote = [

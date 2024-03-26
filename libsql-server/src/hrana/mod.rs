@@ -6,7 +6,7 @@ pub mod http;
 mod result_builder;
 pub mod stmt;
 pub mod ws;
-pub use libsql_sys::hrana::proto;
+pub use libsql_hrana::proto;
 
 #[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub enum Version {

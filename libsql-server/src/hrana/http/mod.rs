@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use bytes::Bytes;
 use futures::stream::Stream;
-use libsql_sys::hrana::proto;
+use libsql_hrana::proto;
 use parking_lot::Mutex;
 use serde::{de::DeserializeOwned, Serialize};
 use std::pin::Pin;

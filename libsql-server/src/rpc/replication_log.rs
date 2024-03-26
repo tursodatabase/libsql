@@ -155,8 +155,8 @@ impl ReplicationLogService {
                     .db
                     .as_primary()
                     .ok_or_else(|| Status::invalid_argument("not a primary"))?
-                    .wal_manager
-                    .wrapped()
+                    .wal_wrapper
+                    .wrapper()
                     .logger()
                     .clone();
                 let config_changed = ns.config_changed();

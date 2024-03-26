@@ -2,23 +2,17 @@ use bottomless::SavepointTracker;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
-use bottomless::bottomless_wal::BottomlessWalWrapper;
-use libsql_sys::wal::wrapper::WalWrapper;
-
 use crate::connection::libsql::{LibSqlConnection, MakeLibSqlConn};
 use crate::connection::{MakeThrottledConnection, TrackedConnection};
-use crate::namespace::replication_wal::{ReplicationWal, ReplicationWalManager};
-use crate::replication::primary::replication_logger_wal::ReplicationLoggerWalManager;
+use crate::namespace::replication_wal::ReplicationWalWrapper;
 
 use super::Result;
 
-pub type PrimaryConnection = TrackedConnection<LibSqlConnection<ReplicationWal>>;
-pub type PrimaryConnectionMaker = MakeThrottledConnection<
-    MakeLibSqlConn<WalWrapper<Option<BottomlessWalWrapper>, ReplicationLoggerWalManager>>,
->;
+pub type PrimaryConnection = TrackedConnection<LibSqlConnection<ReplicationWalWrapper>>;
+pub type PrimaryConnectionMaker = MakeThrottledConnection<MakeLibSqlConn<ReplicationWalWrapper>>;
 
 pub struct PrimaryDatabase {
-    pub wal_manager: ReplicationWalManager,
+    pub wal_wrapper: ReplicationWalWrapper,
     pub connection_maker: Arc<PrimaryConnectionMaker>,
     pub block_writes: Arc<AtomicBool>,
 }
@@ -29,22 +23,22 @@ impl PrimaryDatabase {
     }
 
     pub fn destroy(self) {
-        self.wal_manager
-            .wrapped()
+        self.wal_wrapper
+            .wrapper()
             .logger()
             .closed_signal
             .send_replace(true);
     }
 
     pub async fn shutdown(self) -> Result<()> {
-        self.wal_manager
-            .wrapped()
+        self.wal_wrapper
+            .wrapper()
             .logger()
             .closed_signal
             .send_replace(true);
-        let wal_manager = self.wal_manager;
+        let wal_wrapper = self.wal_wrapper;
         if let Some(mut replicator) = tokio::task::spawn_blocking(move || {
-            wal_manager.wrapper().as_ref().and_then(|r| r.shutdown())
+            wal_wrapper.wrapped().as_ref().and_then(|r| r.shutdown())
         })
         .await?
         {
@@ -55,7 +49,7 @@ impl PrimaryDatabase {
     }
 
     pub fn backup_savepoint(&self) -> Option<SavepointTracker> {
-        if let Some(wal) = self.wal_manager.wrapper() {
+        if let Some(wal) = self.wal_wrapper.wrapped() {
             if let Some(savepoint) = wal.backup_savepoint() {
                 return Some(savepoint);
             }

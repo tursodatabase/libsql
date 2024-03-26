@@ -415,30 +415,4 @@ impl Wal for Sqlite3Wal {
             wal.hdr.mxFrame
         }
     }
-
-    fn db_file(&self) -> &Sqlite3File {
-        unsafe {
-            let ptr = &mut (*(self.inner.pData as *mut sqlite3_wal)).pDbFd;
-            std::mem::transmute(ptr)
-        }
-    }
-
-    fn backfilled(&self) -> u32 {
-        unsafe {
-            let ptr = &mut (*(self.inner.pData as *mut sqlite3_wal));
-            if ptr.apWiData.is_null() {
-                panic!("unititialized wal")
-            }
-            return libsql_ffi::sqlite3_wal_backfilled(ptr) as _;
-        }
-    }
-
-    /// ported from wal.c
-    /// returns the page_no corresponding to a given frame_no
-    fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
-        unsafe {
-            let ptr = &mut (*(self.inner.pData as *mut sqlite3_wal));
-            NonZeroU32::new(libsql_ffi::sqlite3_wal_frame_page_no(ptr, frame_no.get()))
-        }
-    }
 }

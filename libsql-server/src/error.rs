@@ -210,9 +210,7 @@ impl IntoResponse for &Error {
 
 impl From<std::io::Error> for Error {
     fn from(value: std::io::Error) -> Self {
-        let backtrace = std::backtrace::Backtrace::force_capture();
-
-        tracing::error!("IO error reported: {}, {:?}", value, backtrace);
+        tracing::error!("IO error reported: {:?}", value);
 
         Error::IOError(value)
     }
