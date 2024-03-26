@@ -426,7 +426,7 @@ unset -nocomplain ::text
 #
 #     Then test that blob writes that take place inside of a
 #     transaction are not visible to external connections until
-#     after the transaction is commited and the blob channel 
+#     after the transaction is committed and the blob channel
 #     closed.
 #
 #     This test does not work with the "memsubsys1" configuration.

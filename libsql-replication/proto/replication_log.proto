@@ -18,7 +18,7 @@ message HelloResponse {
     uint64 generation_start_index = 2;
     /// id of the replicated log
     string log_id = 3;
-    /// string-encoded Uuid v4 token for the current session, changes on each restart, and must be passed in subsequent requests header.string
+    /// string-encoded Uuid v4 token for the current session, changes on each restart, and must be passed in subsequent requests `header.string`
     /// If the header session token fails to match the current session token, a NO_HELLO error is returned
     bytes session_token = 4;
     optional uint64 current_replication_index = 5;
@@ -28,7 +28,7 @@ message HelloResponse {
 message Frame {
     bytes data = 1;
     // if this frames is a commit frame, then this can be set
-    // to the time when the transaction was commited
+    // to the time when the transaction was committed
     optional int64 timestamp = 2;
 }
 
