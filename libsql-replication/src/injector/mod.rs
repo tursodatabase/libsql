@@ -1,6 +1,6 @@
-use std::collections::VecDeque;
 use std::path::Path;
 use std::sync::Arc;
+use std::{collections::VecDeque, path::PathBuf};
 
 use parking_lot::Mutex;
 use rusqlite::OpenFlags;
@@ -33,6 +33,11 @@ pub struct Injector {
     // connection must be dropped before the hook context
     connection: Arc<Mutex<libsql_sys::Connection<InjectorWal>>>,
     biggest_uncommitted_seen: FrameNo,
+
+    // Connection config items used to recreate the injection connection
+    path: PathBuf,
+    encryption_config: Option<libsql_sys::EncryptionConfig>,
+    auto_checkpoint: u32,
 }
 
 /// Methods from this trait are called before and after performing a frame injection.
@@ -46,17 +51,19 @@ impl Injector {
         auto_checkpoint: u32,
         encryption_config: Option<libsql_sys::EncryptionConfig>,
     ) -> Result<Self, Error> {
+        let path = path.as_ref().to_path_buf();
+
         let buffer = FrameBuffer::default();
         let wal_manager = InjectorWalManager::new(buffer.clone());
         let connection = libsql_sys::Connection::open(
-            path,
+            &path,
             OpenFlags::SQLITE_OPEN_READ_WRITE
                 | OpenFlags::SQLITE_OPEN_CREATE
                 | OpenFlags::SQLITE_OPEN_URI
                 | OpenFlags::SQLITE_OPEN_NO_MUTEX,
             wal_manager,
             auto_checkpoint,
-            encryption_config,
+            encryption_config.clone(),
         )?;
 
         Ok(Self {
@@ -65,6 +72,10 @@ impl Injector {
             capacity,
             connection: Arc::new(Mutex::new(connection)),
             biggest_uncommitted_seen: 0,
+
+            path,
+            encryption_config,
+            auto_checkpoint,
         })
     }
 
@@ -161,7 +172,24 @@ impl Injector {
     }
 
     fn begin_txn(&mut self) -> Result<(), Error> {
-        let conn = self.connection.lock();
+        let mut conn = self.connection.lock();
+
+        {
+            let wal_manager = InjectorWalManager::new(self.buffer.clone());
+            let new_conn = libsql_sys::Connection::open(
+                &self.path,
+                OpenFlags::SQLITE_OPEN_READ_WRITE
+                    | OpenFlags::SQLITE_OPEN_CREATE
+                    | OpenFlags::SQLITE_OPEN_URI
+                    | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+                wal_manager,
+                self.auto_checkpoint,
+                self.encryption_config.clone(),
+            )?;
+
+            let _ = std::mem::replace(&mut *conn, new_conn);
+        }
+
         conn.pragma_update(None, "writable_schema", "true")?;
 
         let mut stmt = conn.prepare_cached("BEGIN IMMEDIATE")?;

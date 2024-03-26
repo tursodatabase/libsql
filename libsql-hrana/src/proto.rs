@@ -247,6 +247,15 @@ pub struct StmtResult {
     #[serde(default, with = "option_u64_as_str")]
     #[prost(uint64, optional, tag = "5")]
     pub replication_index: Option<u64>,
+    #[prost(uint64, tag = "6")]
+    #[serde(default)]
+    pub rows_read: u64,
+    #[prost(uint64, tag = "7")]
+    #[serde(default)]
+    pub rows_written: u64,
+    #[prost(double, tag = "8")]
+    #[serde(default)]
+    pub query_duration_ms: f64,
 }
 
 #[derive(Clone, Deserialize, Serialize, prost::Message)]
@@ -280,6 +289,33 @@ impl Batch {
                 condition: None,
                 stmt,
             }],
+            replication_index: None,
+        }
+    }
+    pub fn transactional<T: IntoIterator<Item = Stmt>>(stmts: T) -> Self {
+        let mut steps = Vec::new();
+        steps.push(BatchStep {
+            condition: None,
+            stmt: Stmt::new("BEGIN TRANSACTION", false),
+        });
+        let mut count = 0u32;
+        for (step, stmt) in stmts.into_iter().enumerate() {
+            count += 1;
+            let condition = Some(BatchCond::Ok { step: step as u32 });
+            steps.push(BatchStep { condition, stmt });
+        }
+        steps.push(BatchStep {
+            condition: Some(BatchCond::Ok { step: count }),
+            stmt: Stmt::new("COMMIT", false),
+        });
+        steps.push(BatchStep {
+            condition: Some(BatchCond::Not {
+                cond: Box::new(BatchCond::Ok { step: count + 1 }),
+            }),
+            stmt: Stmt::new("ROLLBACK", false),
+        });
+        Batch {
+            steps,
             replication_index: None,
         }
     }

@@ -6,7 +6,8 @@ use crate::wal::WalFileReader;
 use anyhow::{anyhow, bail};
 use arc_swap::ArcSwapOption;
 use async_compression::tokio::write::{GzipEncoder, ZstdEncoder};
-use aws_sdk_s3::config::{Credentials, Region};
+use aws_config::BehaviorVersion;
+use aws_sdk_s3::config::{Credentials, Region, SharedCredentialsProvider};
 use aws_sdk_s3::error::SdkError;
 use aws_sdk_s3::operation::get_object::builders::GetObjectFluentBuilder;
 use aws_sdk_s3::operation::get_object::GetObjectError;
@@ -15,7 +16,7 @@ use aws_sdk_s3::operation::list_objects::ListObjectsOutput;
 use aws_sdk_s3::primitives::ByteStream;
 use aws_sdk_s3::{Client, Config};
 use bytes::{Buf, Bytes};
-use chrono::{NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use libsql_sys::{Cipher, EncryptionConfig};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -121,7 +122,7 @@ pub struct Options {
 
 impl Options {
     pub async fn client_config(&self) -> Result<Config> {
-        let mut loader = aws_config::from_env();
+        let mut loader = aws_config::SdkConfig::builder();
         if let Some(endpoint) = self.aws_endpoint.as_deref() {
             loader = loader.endpoint_url(endpoint);
         }
@@ -136,23 +137,28 @@ impl Options {
         let secret_access_key = self.secret_access_key.clone().ok_or(anyhow!(
             "LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY was not set"
         ))?;
-        let session_token = self.session_token.clone();
-        let conf = aws_sdk_s3::config::Builder::from(&loader.load().await)
-            .force_path_style(true)
+        let session_token: Option<String> = self.session_token.clone();
+        let conf = loader
+            .behavior_version(BehaviorVersion::latest())
             .region(Region::new(region))
-            .credentials_provider(Credentials::new(
+            .credentials_provider(SharedCredentialsProvider::new(Credentials::new(
                 access_key_id,
                 secret_access_key,
                 session_token,
                 None,
                 "Static",
-            ))
+            )))
             .retry_config(
                 aws_sdk_s3::config::retry::RetryConfig::standard()
                     .with_max_attempts(self.s3_max_retries),
             )
             .build();
-        Ok(conf)
+
+        let s3_config = aws_sdk_s3::config::Builder::from(&conf)
+            .force_path_style(true)
+            .build();
+
+        Ok(s3_config)
     }
 
     pub fn from_env() -> Result<Self> {
@@ -184,6 +190,7 @@ impl Options {
         );
         let access_key_id = env_var("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID").ok();
         let secret_access_key = env_var("LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY").ok();
+        let session_token = env_var("LIBSQL_BOTTOMLESS_AWS_SESSION_TOKEN").ok();
         let region = env_var("LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION").ok();
         let max_frames_per_batch =
             env_var_or("LIBSQL_BOTTOMLESS_BATCH_MAX_FRAMES", 10000).parse::<usize>()?;
@@ -1026,7 +1033,7 @@ impl Replicator {
         tracing::debug!("last generation before");
         let mut next_marker: Option<String> = None;
         let prefix = format!("{}-", self.db_name);
-        let threshold = timestamp.map(|ts| ts.timestamp() as u64);
+        let threshold = timestamp.map(|ts| ts.and_utc().timestamp() as u64);
         loop {
             let mut request = self.list_objects().prefix(prefix.clone());
             if threshold.is_none() {
@@ -1036,7 +1043,7 @@ impl Replicator {
                 request = request.marker(marker);
             }
             let response = request.send().await.ok()?;
-            let objs = response.contents()?;
+            let objs = response.contents();
             if objs.is_empty() {
                 tracing::debug!("no objects found in bucket");
                 break;
@@ -1156,7 +1163,7 @@ impl Replicator {
         tracing::debug!("restoring from");
         if let Some(tombstone) = self.get_tombstone().await? {
             if let Some(timestamp) = Self::generation_to_timestamp(&generation) {
-                if tombstone.timestamp() as u64 >= timestamp.to_unix().0 {
+                if tombstone.and_utc().timestamp() as u64 >= timestamp.to_unix().0 {
                     bail!(
                         "Couldn't restore from generation {}. Database '{}' has been tombstoned at {}.",
                         generation,
@@ -1442,13 +1449,14 @@ impl Replicator {
                 list_request = list_request.marker(marker);
             }
             let response = list_request.send().await?;
-            let objs = match response.contents() {
-                Some(objs) => objs,
-                None => {
-                    tracing::debug!("No objects found in generation {}", generation);
-                    break;
-                }
-            };
+
+            let objs = response.contents();
+
+            if objs.is_empty() {
+                tracing::debug!("No objects found in generation {}", generation);
+                break;
+            }
+
             let mut last_received_frame_no = 0;
             for obj in objs {
                 let key = obj
@@ -1485,7 +1493,7 @@ impl Replicator {
                     }
                 }
                 if let Some(threshold) = utc_time.as_ref() {
-                    match NaiveDateTime::from_timestamp_opt(timestamp as i64, 0) {
+                    match DateTime::from_timestamp(timestamp as i64, 0).map(|t| t.naive_utc()) {
                         Some(timestamp) => {
                             if &timestamp > threshold {
                                 tracing::info!("Frame batch {} has timestamp more recent than expected {}. Stopping recovery.", key, timestamp);
@@ -1501,7 +1509,7 @@ impl Replicator {
                 let frame = self.get_object(key.into()).send().await?;
                 let mut reader = BatchReader::new(
                     first_frame_no,
-                    tokio_util::io::StreamReader::new(frame.body),
+                    frame.body.into_async_read(),
                     self.page_size,
                     compression_kind,
                 );
@@ -1529,6 +1537,11 @@ impl Replicator {
             }
             next_marker = response
                 .is_truncated()
+                // This previously was not optional but when upgrading to the s3 sdk to 1.0 we must
+                // check for this situation, defaulting to true to stop the search seems safe. From
+                // https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html#API_ListObjects_ResponseSyntax
+                // it looks like this value is always set.
+                .unwrap_or(true)
                 .then(|| objs.last().map(|elem| elem.key().unwrap().to_string()))
                 .flatten();
             if next_marker.is_none() {
@@ -1594,9 +1607,9 @@ impl Replicator {
     }
 
     fn try_get_last_frame_no(response: ListObjectsOutput, frame_no: &mut u32) -> Option<String> {
-        let objs = response.contents()?;
+        let objs = response.contents();
         let mut last_key = None;
-        for obj in objs.iter() {
+        for obj in objs {
             last_key = Some(obj.key()?);
             if let Some(key) = last_key {
                 if let Some((_, last_frame_no, _, _)) = Self::parse_frame_range(key) {
@@ -1724,7 +1737,7 @@ impl Replicator {
             .bucket(&self.bucket)
             .key(key)
             .body(ByteStream::from(
-                threshold.timestamp().to_be_bytes().to_vec(),
+                threshold.and_utc().timestamp().to_be_bytes().to_vec(),
             ))
             .send()
             .await?;
@@ -1752,7 +1765,7 @@ impl Replicator {
                 let mut buf = [0u8; 8];
                 out.body.collect().await?.copy_to_slice(&mut buf);
                 let timestamp = i64::from_be_bytes(buf);
-                let tombstone = NaiveDateTime::from_timestamp_opt(timestamp, 0);
+                let tombstone = DateTime::from_timestamp(timestamp, 0).map(|t| t.naive_utc());
                 Ok(tombstone)
             }
             Err(SdkError::ServiceError(se)) => match se.into_err() {
@@ -1807,20 +1820,19 @@ impl DeleteAll {
             }
 
             let response = list_request.send().await?;
-            let prefixes = match response.common_prefixes() {
-                Some(prefixes) => prefixes,
-                None => {
-                    tracing::debug!("no generations found to delete");
-                    return Ok(0);
-                }
-            };
+            let prefixes = response.common_prefixes();
+
+            if prefixes.is_empty() {
+                tracing::debug!("no generations found to delete");
+                return Ok(0);
+            }
 
             for prefix in prefixes {
                 if let Some(prefix) = &prefix.prefix {
                     let prefix = &prefix[self.db_name.len() + 1..prefix.len() - 1];
                     let uuid = Uuid::try_parse(prefix)?;
                     if let Some(datetime) = Replicator::generation_to_timestamp(&uuid) {
-                        if datetime.to_unix().0 >= self.threshold.timestamp() as u64 {
+                        if datetime.to_unix().0 >= self.threshold.and_utc().timestamp() as u64 {
                             continue;
                         }
                         tracing::debug!("Removing generation {}", uuid);
@@ -1866,12 +1878,11 @@ impl DeleteAll {
             }
 
             let response = list_request.send().await?;
-            let objs = match response.contents() {
-                Some(prefixes) => prefixes,
-                None => {
-                    return Ok(());
-                }
-            };
+            let objs = response.contents();
+
+            if objs.is_empty() {
+                return Ok(());
+            }
 
             for obj in objs {
                 if let Some(key) = obj.key() {

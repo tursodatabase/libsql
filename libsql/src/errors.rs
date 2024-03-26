@@ -48,6 +48,8 @@ pub enum Error {
     InvalidParserState(String),
     #[error("TLS error: {0}")]
     InvalidTlsConfiguration(std::io::Error),
+    #[error("Transactional batch error: {0}")]
+    TransactionalBatchError(String),
 }
 
 #[cfg(feature = "hrana")]

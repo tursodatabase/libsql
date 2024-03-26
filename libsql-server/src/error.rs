@@ -1,5 +1,5 @@
 use axum::response::IntoResponse;
-use hyper::StatusCode;
+use hyper::{header::ToStrError, StatusCode};
 use tonic::metadata::errors::InvalidMetadataValueBytes;
 
 use crate::{
@@ -68,6 +68,8 @@ pub enum Error {
     NamespaceAlreadyExist(String),
     #[error("Invalid namespace")]
     InvalidNamespace,
+    #[error("Invalid namespace bytes: `{0}`")]
+    InvalidNamespaceBytes(#[from] ToStrError),
     #[error("Replica meta error: {0}")]
     ReplicaMetaError(#[from] libsql_replication::meta::Error),
     #[error("Replicator error: {0}")]
@@ -120,6 +122,8 @@ pub enum Error {
     HasLinkedDbs(NamespaceName),
     #[error("ATTACH is not permitted in migration scripts")]
     AttachInMigration,
+    #[error("join failure: {0}")]
+    RuntimeTaskJoinError(#[from] tokio::task::JoinError),
 }
 
 impl AsRef<Self> for Error {
@@ -180,6 +184,7 @@ impl IntoResponse for &Error {
             PrimaryConnectionTimeout => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             NamespaceAlreadyExist(_) => self.format_err(StatusCode::BAD_REQUEST),
             InvalidNamespace => self.format_err(StatusCode::BAD_REQUEST),
+            InvalidNamespaceBytes(_) => self.format_err(StatusCode::BAD_REQUEST),
             LoadDumpError(e) => e.into_response(),
             InvalidMetadataBytes(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             ReplicaRestoreError => self.format_err(StatusCode::BAD_REQUEST),
@@ -204,6 +209,7 @@ impl IntoResponse for &Error {
             MigrationJobNotFound => self.format_err(StatusCode::NOT_FOUND),
             HasLinkedDbs(_) => self.format_err(StatusCode::BAD_REQUEST),
             AttachInMigration => self.format_err(StatusCode::BAD_REQUEST),
+            RuntimeTaskJoinError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }

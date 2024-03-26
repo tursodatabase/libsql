@@ -12,6 +12,12 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    services:
+      sqld:
+        image: ghcr.io/tursodatabase/libsql-server:latest
+        ports:
+          - 8080:8080
+
     steps:
     - uses: actions/checkout@v3
 
@@ -47,9 +53,25 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: ${{ runner.os }}-cargo-
 
-    - name: Build crates
-      run: cargo build --release
+    - name: Build sql-experimental
+      run: cargo b -j16 --release -p sql-experimental
 
-    - name: Run Go bindings tests
-      working-directory: bindings/go
-      run: LD_LIBRARY_PATH=../../target/release go test
+    - name: go-libsql checkout
+      uses: actions/checkout@v3
+      with:
+        repository: tursodatabase/go-libsql
+        ref: "main"
+        path: "go-libsql"
+
+    - name: Copy sql-experimental library to go-libsql
+      run: cp target/release/libsql_experimental.a go-libsql/lib/darwin_amd64/
+           && cp target/release/libsql_experimental.a go-libsql/lib/darwin_arm64/
+           && cp target/release/libsql_experimental.a go-libsql/lib/linux_amd64/
+           && cp target/release/libsql_experimental.a go-libsql/lib/linux_arm64/
+           && cp bindings/c/include/libsql.h go-libsql/lib/include/
+
+    - name: Run go-libsql tests
+      working-directory: go-libsql
+      run: go test -v -count=1 ./...
+      env:
+        LIBSQL_PRIMARY_URL: "http://127.0.0.1:8080"

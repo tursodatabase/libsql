@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Error, Result};
 use futures::future::BoxFuture;
 use tokio::sync::{mpsc, oneshot};
 
@@ -20,6 +20,29 @@ pub struct Session {
     streams: HashMap<i32, StreamHandle>,
     sqls: HashMap<i32, String>,
     cursors: HashMap<i32, i32>,
+}
+
+impl Session {
+    pub fn new(auth: Authenticated, version: Version) -> Self {
+        Self {
+            auth,
+            version,
+            streams: HashMap::new(),
+            sqls: HashMap::new(),
+            cursors: HashMap::new(),
+        }
+    }
+
+    pub fn update_auth(&mut self, auth: Authenticated) -> Result<(), Error> {
+        if self.version < Version::Hrana2 {
+            bail!(ProtocolError::NotSupported {
+                what: "Repeated hello message",
+                min_version: Version::Hrana2,
+            })
+        }
+        self.auth = auth;
+        Ok(())
+    }
 }
 
 struct StreamHandle {
@@ -65,60 +88,22 @@ pub enum ResponseError {
     Batch(batch::BatchError),
 }
 
-pub(super) async fn handle_initial_hello(
+pub(super) async fn handle_hello(
     server: &Server,
-    version: Version,
     jwt: Option<String>,
     namespace: NamespaceName,
-) -> Result<Session> {
-    // todo dupe #auth
+) -> Result<Authenticated> {
     let namespace_jwt_key = server
         .namespaces
         .with(namespace.clone(), |ns| ns.jwt_key())
         .await??;
 
-    let auth = namespace_jwt_key
-        .map(Jwt::new)
-        .map(Auth::new)
-        .unwrap_or(server.user_auth_strategy.clone())
-        .authenticate(Ok(UserAuthContext::bearer_opt(jwt)))
-        .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
-
-    Ok(Session {
-        auth,
-        version,
-        streams: HashMap::new(),
-        sqls: HashMap::new(),
-        cursors: HashMap::new(),
-    })
-}
-
-pub(super) async fn handle_repeated_hello(
-    server: &Server,
-    session: &mut Session,
-    jwt: Option<String>,
-    namespace: NamespaceName,
-) -> Result<()> {
-    if session.version < Version::Hrana2 {
-        bail!(ProtocolError::NotSupported {
-            what: "Repeated hello message",
-            min_version: Version::Hrana2,
-        })
-    }
-    // todo dupe #auth
-    let namespace_jwt_key = server
-        .namespaces
-        .with(namespace.clone(), |ns| ns.jwt_key())
-        .await??;
-
-    session.auth = namespace_jwt_key
+    namespace_jwt_key
         .map(Jwt::new)
         .map(Auth::new)
         .unwrap_or_else(|| server.user_auth_strategy.clone())
         .authenticate(Ok(UserAuthContext::bearer_opt(jwt)))
-        .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
-
-    Ok(())
+        .map_err(|err| anyhow!(ResponseError::Auth { source: err }))
 }
 
 pub(super) async fn handle_request(

@@ -4,7 +4,7 @@ use anyhow::Result;
 use async_compression::tokio::bufread::{GzipDecoder, ZstdDecoder};
 use std::io::ErrorKind;
 use std::pin::Pin;
-use tokio::io::{AsyncRead, AsyncReadExt, BufReader};
+use tokio::io::{AsyncBufRead, AsyncRead, AsyncReadExt, BufReader};
 
 type AsyncByteReader = dyn AsyncRead + Send + Sync;
 
@@ -16,21 +16,24 @@ pub struct BatchReader {
 impl BatchReader {
     pub fn new(
         init_frame_no: u32,
-        content_stream: impl AsyncRead + Send + Sync + 'static,
+        content_stream: impl AsyncBufRead + Send + Sync + 'static,
         page_size: usize,
         use_compression: CompressionKind,
     ) -> Self {
-        let reader = BufReader::with_capacity(page_size + WalFrameHeader::SIZE, content_stream);
         BatchReader {
             next_frame_no: init_frame_no,
             reader: match use_compression {
-                CompressionKind::None => Box::pin(reader),
+                CompressionKind::None => {
+                    let reader =
+                        BufReader::with_capacity(page_size + WalFrameHeader::SIZE, content_stream);
+                    Box::pin(reader)
+                }
                 CompressionKind::Gzip => {
-                    let gzip = GzipDecoder::new(reader);
+                    let gzip = GzipDecoder::new(content_stream);
                     Box::pin(gzip)
                 }
                 CompressionKind::Zstd => {
-                    let zstd = ZstdDecoder::new(reader);
+                    let zstd = ZstdDecoder::new(content_stream);
                     Box::pin(zstd)
                 }
             },

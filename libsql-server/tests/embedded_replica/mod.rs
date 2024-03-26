@@ -126,13 +126,13 @@ fn embedded_replica() {
             if key.kind() == metrics_util::MetricKind::Counter
                 && key.key().name() == "libsql_client_version"
             {
-                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(8));
+                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(6));
                 let label = key.key().labels().next().unwrap();
                 assert!(label.value().starts_with("libsql-rpc-"));
             }
         }
 
-        snapshot.assert_counter("libsql_server_user_http_response", 8);
+        snapshot.assert_counter("libsql_server_user_http_response", 6);
 
         Ok(())
     });
@@ -258,13 +258,13 @@ fn embedded_replica_with_encryption() {
             if key.kind() == metrics_util::MetricKind::Counter
                 && key.key().name() == "libsql_client_version"
             {
-                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(8));
+                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(6));
                 let label = key.key().labels().next().unwrap();
                 assert!(label.value().starts_with("libsql-rpc-"));
             }
         }
 
-        snapshot.assert_counter("libsql_server_user_http_response", 8);
+        snapshot.assert_counter("libsql_server_user_http_response", 6);
 
         conn.execute("INSERT INTO user(id) VALUES (1)", ())
             .await
@@ -980,6 +980,147 @@ fn errors_on_bad_replica() {
 
         Ok(())
     });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn malformed_database() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(u64::MAX))
+        .build();
+
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_host = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let client = Client::new();
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let path = tmp_embedded_path.join("embedded");
+        let db = libsql::Builder::new_remote_replica(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080".to_string(),
+            "".to_string(),
+        )
+        .read_your_writes(true)
+        .connector(TurmoilConnector)
+        .build()
+        .await?;
+
+        let conn = db.connect()?;
+
+        let dir = env!("CARGO_MANIFEST_DIR").to_string();
+
+        let file = std::fs::read_to_string(dir + "/output.sql").unwrap();
+
+        let sqls = file.lines();
+
+        for sql in sqls {
+            if !sql.starts_with("--") {
+                conn.execute(sql, ()).await.unwrap();
+            }
+        }
+
+        db.sync().await.unwrap();
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn txn_bug_issue_1283() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(u64::MAX))
+        .build();
+
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_host = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let path = tmp_embedded_path.join("embedded");
+
+        let client = Client::new();
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let db_url = "http://foo.primary:8080";
+        let replica = libsql::Builder::new_remote_replica(
+            path.to_str().unwrap(),
+            db_url.to_string(),
+            String::new(),
+        )
+        .connector(TurmoilConnector)
+        .build()
+        .await
+        .unwrap();
+
+        let remote = libsql::Builder::new_remote(db_url.to_string(), String::new())
+            .connector(TurmoilConnector)
+            .build()
+            .await
+            .unwrap();
+
+        let replica_conn_1 = replica.connect().unwrap();
+        let replica_conn_2 = replica.connect().unwrap();
+
+        // Not really an embedded replica test but good to check this for remote connections too
+        let remote_conn_1 = remote.connect().unwrap();
+        let remote_conn_2 = remote.connect().unwrap();
+
+        let remote_task_1 = tokio::task::spawn(async move { db_work(remote_conn_1).await });
+        let remote_task_2 = tokio::task::spawn(async move { db_work(remote_conn_2).await });
+
+        let (task_1_res, task_2_res) = tokio::join!(remote_task_1, remote_task_2);
+        let remote_task_1_res = task_1_res.unwrap();
+        let remote_task_2_res = task_2_res.unwrap();
+
+        // Everything works as expected in case of remote connections.
+        assert!(remote_task_1_res.is_ok());
+        assert!(remote_task_2_res.is_ok());
+
+        let replica_task_1 = tokio::task::spawn(async move { db_work(replica_conn_1).await });
+        let replica_task_2 = tokio::task::spawn(async move { db_work(replica_conn_2).await });
+
+        let (task_1_res, task_2_res) = tokio::join!(replica_task_1, replica_task_2);
+        let replica_task_1_res = task_1_res.unwrap();
+        let replica_task_2_res = task_2_res.unwrap();
+
+        if replica_task_1_res.is_err() {
+            panic!("Task 1 failed: {:?}", replica_task_1_res);
+        }
+        if replica_task_2_res.is_err() {
+            panic!("Task 2 failed: {:?}", replica_task_2_res);
+        }
+
+        // One of these concurrent tasks fail currently. Both tasks should succeed.
+        assert!(replica_task_1_res.is_ok());
+        assert!(replica_task_2_res.is_ok());
+
+        Ok(())
+    });
+
+    async fn db_work(conn: libsql::Connection) -> Result<(), anyhow::Error> {
+        let tx = conn.transaction().await?;
+        // Some business logic here...
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        tx.execute("SELECT 1", ()).await?;
+        tx.commit().await?;
+        Ok(())
+    }
 
     sim.run().unwrap();
 }

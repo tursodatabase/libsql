@@ -72,7 +72,10 @@ type BatchResponse = Array<QueryResult>|Error
 type QueryResult = {
     results: {
         columns: Array<string>,
-        rows: Array<Array<Value>>
+        rows: Array<Array<Value>>,
+        rows_read: uint64,
+        rows_written: uint64,
+        query_duration_ms: double
     }
 }
 

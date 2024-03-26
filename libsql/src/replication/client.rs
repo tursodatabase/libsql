@@ -47,6 +47,7 @@ impl Client {
         auth_token: impl AsRef<str>,
         version: Option<&str>,
         http_request_callback: Option<HttpRequestCallback>,
+        maybe_namespace: Option<String>,
     ) -> anyhow::Result<Self> {
         let ver = version.unwrap_or(env!("CARGO_PKG_VERSION"));
 
@@ -58,7 +59,14 @@ impl Client {
             .try_into()
             .context("Invalid auth token must be ascii")?;
 
-        let ns = split_namespace(origin.host().unwrap()).unwrap_or_else(|_| "default".to_string());
+        let ns = if let Some(ns_from_arg) = maybe_namespace {
+            ns_from_arg
+        } else if let Ok(ns_from_host) = split_namespace(origin.host().unwrap()) {
+            ns_from_host
+        } else {
+            "default".to_string()
+        };
+        
         let namespace = BinaryMetadataValue::from_bytes(ns.as_bytes());
 
         let channel = GrpcChannel::new(connector, http_request_callback);
@@ -88,6 +96,10 @@ impl Client {
             replication,
             proxy,
         })
+    }
+
+    pub fn new_client_id(&mut self) {
+        self.client_id = Uuid::new_v4();
     }
 
     pub fn client_id(&self) -> String {
@@ -124,7 +136,10 @@ impl GrpcChannel {
         connector: ConnectorService,
         http_request_callback: Option<HttpRequestCallback>,
     ) -> Self {
-        let client = hyper::Client::builder().build(connector);
+        let client = hyper::Client::builder()
+            .pool_idle_timeout(None)
+            .pool_max_idle_per_host(3)
+            .build(connector);
         let client = GrpcWebClientService::new(client);
 
         let classifier = GrpcErrorsAsFailures::new().with_success(GrpcCode::FailedPrecondition);

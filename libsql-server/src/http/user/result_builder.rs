@@ -1,5 +1,6 @@
 use std::io;
 use std::ops::{Deref, DerefMut};
+use std::time::Duration;
 
 use rusqlite::types::ValueRef;
 use serde::{Serialize, Serializer};
@@ -305,6 +306,25 @@ impl QueryResultBuilder for JsonHttpPayloadBuilder {
 
     fn into_ret(self) -> Self::Ret {
         self.buffer.into_inner()
+    }
+
+    fn add_stats(&mut self, rows_read: u64, rows_written: u64, duration: Duration) {
+        let _ =
+            self.formatter
+                .serialize_key_value(&mut self.buffer, "rows_read", &rows_read, false);
+        let _ = self.formatter.serialize_key_value(
+            &mut self.buffer,
+            "rows_written",
+            &rows_written,
+            false,
+        );
+
+        let _ = self.formatter.serialize_key_value(
+            &mut self.buffer,
+            "query_duration_ms",
+            &(duration.as_micros() as f64 / 1_000.0),
+            false,
+        );
     }
 }
 

@@ -264,6 +264,7 @@ fn copy_multiple_ciphers(out_dir: &str, out_path: &Path) {
 }
 
 fn build_multiple_ciphers(out_path: &Path) {
+    let target = env::var("TARGET").unwrap();
     let bindgen_rs_path = if cfg!(feature = "session") {
         "bundled/bindings/session_bindgen.rs"
     } else {
@@ -298,12 +299,8 @@ fn build_multiple_ciphers(out_path: &Path) {
 
     let mut cmake_opts: Vec<&str> = vec![];
 
-    let cargo_build_target = env::var("CARGO_BUILD_TARGET").unwrap_or_default();
-    let cross_cc_var_name = format!("CC_{}", cargo_build_target.replace("-", "_"));
-    let cross_cc = env::var(&cross_cc_var_name).ok();
-
-    let cross_cxx_var_name = format!("CXX_{}", cargo_build_target.replace("-", "_"));
-    let cross_cxx = env::var(&cross_cxx_var_name).ok();
+    let cc = env("CC");
+    let cxx = env("CXX");
 
     let toolchain_path = sqlite3mc_build_dir.join("toolchain.cmake");
     let cmake_toolchain_opt = format!("-DCMAKE_TOOLCHAIN_FILE=toolchain.cmake");
@@ -315,20 +312,22 @@ fn build_multiple_ciphers(out_path: &Path) {
         .open(toolchain_path.clone())
         .unwrap();
 
-    if let Some(ref cc) = cross_cc {
+    if let Some(ref cc) = cc {
+        let cc = cc.clone().into_string().unwrap();
         if cc.contains("aarch64") && cc.contains("linux") {
             cmake_opts.push(&cmake_toolchain_opt);
             writeln!(toolchain_file, "set(CMAKE_SYSTEM_NAME \"Linux\")").unwrap();
             writeln!(toolchain_file, "set(CMAKE_SYSTEM_PROCESSOR \"arm64\")").unwrap();
         }
     }
-    if let Some(cc) = cross_cc {
+    if let Some(cc) = cc {
+        let cc = cc.into_string().unwrap();
         writeln!(toolchain_file, "set(CMAKE_C_COMPILER {})", cc).unwrap();
     }
-    if let Some(cxx) = cross_cxx {
+    if let Some(cxx) = cxx {
+        let cxx = cxx.into_string().unwrap();
         writeln!(toolchain_file, "set(CMAKE_CXX_COMPILER {})", cxx).unwrap();
     }
-
     cmake_opts.push("-DCMAKE_BUILD_TYPE=Release");
     cmake_opts.push("-DSQLITE3MC_STATIC=ON");
     cmake_opts.push("-DCODEC_TYPE=AES256");
@@ -340,7 +339,7 @@ fn build_multiple_ciphers(out_path: &Path) {
     cmake_opts.push("-DSQLITE_USE_URI=ON");
     cmake_opts.push("-DCMAKE_POSITION_INDEPENDENT_CODE=ON");
 
-    if cargo_build_target.contains("musl") {
+    if target.contains("musl") {
         cmake_opts.push("-DCMAKE_C_FLAGS=\"-U_FORTIFY_SOURCE\"");
         cmake_opts.push("-DCMAKE_CXX_FLAGS=\"-U_FORTIFY_SOURCE\"");
     }

@@ -1024,8 +1024,11 @@ separated by a semicolon is not supported.
 type StmtResult = {
     "cols": Array<Col>,
     "rows": Array<Array<Value>>,
-    "affected_row_count": uint32,
+    "affected_row_count": uint64,
     "last_insert_rowid": string | null,
+    "rows_read": uint64,
+    "rows_written": uint64,
+    "query_duration_ms": double,
 }
 
 type Col = {

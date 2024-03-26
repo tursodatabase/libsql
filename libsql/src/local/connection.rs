@@ -161,6 +161,62 @@ impl Connection {
         Ok(())
     }
 
+    fn execute_transactional_batch_inner<S>(&self, sql: S) -> Result<()>
+        where
+            S: Into<String>,
+    {
+        let sql = sql.into();
+        let mut sql = sql.as_str();
+        while !sql.is_empty() {
+            let stmt = self.prepare(sql)?;
+
+            let tail = stmt.tail();
+            let stmt_sql = if tail == 0 || tail >= sql.len() {
+                sql
+            } else {
+                &sql[..tail]
+            };
+            let prefix_count = stmt_sql
+                .chars()
+                .take_while(|c| c.is_whitespace())
+                .count();
+            let stmt_sql = &stmt_sql[prefix_count..];
+            if stmt_sql.starts_with("BEGIN") || stmt_sql.starts_with("COMMIT") || stmt_sql.starts_with("ROLLBACK") || stmt_sql.starts_with("END") {
+                return Err(Error::TransactionalBatchError("Transactions forbidden inside transactional batch".to_string()));
+            }
+
+            if !stmt.inner.raw_stmt.is_null() {
+                stmt.step()?;
+            }
+
+            if tail == 0 || tail >= sql.len() {
+                break;
+            }
+
+            sql = &sql[tail..];
+        }
+
+        Ok(())
+    }
+
+    pub fn execute_transactional_batch<S>(&self, sql: S) -> Result<()>
+    where
+        S: Into<String>,
+    {
+        self.execute("BEGIN TRANSACTION", Params::None)?;
+
+        match self.execute_transactional_batch_inner(sql) {
+            Ok(_) => {
+                self.execute("COMMIT", Params::None)?;
+                Ok(())
+            }
+            Err(e) => {
+                self.execute("ROLLBACK", Params::None)?;
+                Err(e)
+            }
+        }
+    }
+
     /// Execute the SQL statement synchronously.
     ///
     /// If you execute a SQL query statement (e.g. `SELECT` statement) that
@@ -225,6 +281,14 @@ impl Connection {
     #[cfg(feature = "replication")]
     pub(crate) fn writer(&self) -> Option<&crate::replication::Writer> {
         self.writer.as_ref()
+    }
+
+    #[cfg(feature = "replication")]
+    pub(crate) fn new_connection_writer(&self) -> Option<crate::replication::Writer> {
+        self.writer.as_ref().cloned().map(|mut w| {
+            w.new_client_id();
+            w
+        })
     }
 }
 

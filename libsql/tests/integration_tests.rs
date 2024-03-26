@@ -52,6 +52,145 @@ async fn connection_query() {
 }
 
 #[tokio::test]
+async fn connection_execute_transactional_batch_success() {
+    let conn = setup().await;
+
+    conn.execute_transactional_batch(
+        "CREATE TABLE foo(x INTEGER);
+         CREATE TABLE bar(y TEXT);",
+    )
+    .await
+    .unwrap();
+
+    let mut rows = conn
+        .query(
+            "SELECT
+                name
+            FROM
+                sqlite_schema
+            WHERE
+                type ='table' AND
+                name NOT LIKE 'sqlite_%';",
+            (),
+        )
+        .await
+        .unwrap();
+
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get::<String>(0).unwrap(), "users");
+
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get::<String>(0).unwrap(), "foo");
+
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get::<String>(0).unwrap(), "bar");
+
+    assert!(rows.next().await.unwrap().is_none());
+}
+
+#[tokio::test]
+async fn connection_execute_transactional_batch_fail() {
+    let conn = setup().await;
+
+    let res = conn
+        .execute_transactional_batch(
+            "CREATE TABLE unexpected_foo(x INTEGER);
+            CREATE TABLE sqlite_schema(y TEXT);
+         CREATE TABLE unexpected_bar(y TEXT);",
+        )
+        .await;
+    assert!(res.is_err());
+
+    let mut rows = conn
+        .query(
+            "SELECT
+                name
+            FROM
+                sqlite_schema
+            WHERE
+                type ='table' AND
+                name NOT LIKE 'sqlite_%';",
+            (),
+        )
+        .await
+        .unwrap();
+
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get::<String>(0).unwrap(), "users");
+
+    assert!(rows.next().await.unwrap().is_none());
+}
+
+#[tokio::test]
+async fn connection_execute_transactional_batch_transaction_fail() {
+    let conn = setup().await;
+
+    let res = conn
+        .execute_transactional_batch(
+            "BEGIN;
+        CREATE TABLE unexpected_foo(x INTEGER);
+        COMMIT;
+        CREATE TABLE sqlite_schema(y TEXT);
+        CREATE TABLE unexpected_bar(y TEXT);",
+        )
+        .await;
+    assert!(res.is_err());
+
+    let mut rows = conn
+        .query(
+            "SELECT
+                name
+            FROM
+                sqlite_schema
+            WHERE
+                type ='table' AND
+                name NOT LIKE 'sqlite_%';",
+            (),
+        )
+        .await
+        .unwrap();
+
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get::<String>(0).unwrap(), "users");
+
+    assert!(rows.next().await.unwrap().is_none());
+}
+
+#[tokio::test]
+async fn connection_execute_transactional_batch_transaction_incorrect() {
+    let conn = setup().await;
+
+    let res = conn
+        .execute_transactional_batch(
+            "COMMIT;
+        CREATE TABLE unexpected_foo(x INTEGER);
+        CREATE TABLE sqlite_schema(y TEXT);
+        CREATE TABLE unexpected_bar(y TEXT);",
+        )
+        .await;
+    assert!(res.is_err());
+
+    let mut rows = conn
+        .query(
+            "SELECT
+                name
+            FROM
+                sqlite_schema
+            WHERE
+                type ='table' AND
+                name NOT LIKE 'sqlite_%';",
+            (),
+        )
+        .await
+        .unwrap();
+
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get::<String>(0).unwrap(), "users");
+
+    assert!(rows.next().await.unwrap().is_none());
+}
+
+#[tokio::test]
 async fn connection_execute_batch() {
     let conn = setup().await;
 
