@@ -96,6 +96,7 @@ pub struct Options {
     pub aws_endpoint: Option<String>,
     pub access_key_id: Option<String>,
     pub secret_access_key: Option<String>,
+    pub session_token: Option<String>,
     pub region: Option<String>,
     pub db_id: Option<String>,
     /// Bucket directory name where all S3 objects are backed up. General schema is:
@@ -135,13 +136,14 @@ impl Options {
         let secret_access_key = self.secret_access_key.clone().ok_or(anyhow!(
             "LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY was not set"
         ))?;
+        let session_token = self.session_token.clone();
         let conf = aws_sdk_s3::config::Builder::from(&loader.load().await)
             .force_path_style(true)
             .region(Region::new(region))
             .credentials_provider(Credentials::new(
                 access_key_id,
                 secret_access_key,
-                None,
+                session_token,
                 None,
                 "Static",
             ))
@@ -182,6 +184,7 @@ impl Options {
         );
         let access_key_id = env_var("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID").ok();
         let secret_access_key = env_var("LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY").ok();
+        let session_token = env_var("LIBSQL_BOTTOMLESS_AWS_SESSION_TOKEN").ok();
         let region = env_var("LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION").ok();
         let max_frames_per_batch =
             env_var_or("LIBSQL_BOTTOMLESS_BATCH_MAX_FRAMES", 10000).parse::<usize>()?;
@@ -237,6 +240,7 @@ impl Options {
             aws_endpoint,
             access_key_id,
             secret_access_key,
+            session_token,
             region,
             bucket_name,
             s3_max_retries,
