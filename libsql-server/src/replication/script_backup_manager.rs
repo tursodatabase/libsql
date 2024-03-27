@@ -1,13 +1,13 @@
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::sync::Arc;
 
-use once_cell::sync::Lazy;
 use parking_lot::Mutex;
-use regex::Regex;
 use tokio::sync::Notify;
 use tokio::time::Duration;
+use uuid::Uuid;
 
 use crate::namespace::NamespaceName;
 
@@ -32,6 +32,7 @@ pub(crate) struct SnapshotEntry {
     namespace: NamespaceName,
     start_frame_no: FrameNo,
     end_frame_no: FrameNo,
+    log_id: Uuid,
     path: PathBuf,
     retries: u32,
 }
@@ -108,6 +109,7 @@ impl Handler for CommandHandler {
             .arg(entry.namespace.as_str())
             .arg(entry.start_frame_no.to_string())
             .arg(entry.end_frame_no.to_string())
+            .arg(entry.log_id.to_string())
             .output()
             .await?;
         if !output.status.success() {
@@ -171,27 +173,53 @@ fn make_snapshot_path(
     namespace: &NamespaceName,
     start_frame_no: FrameNo,
     end_frame_no: FrameNo,
+    log_id: Uuid,
 ) -> PathBuf {
     base_path.as_ref().join(format!(
-        "{namespace}:{start_frame_no:020x}-{end_frame_no:020x}.snap"
+        "{namespace}:{log_id}:{start_frame_no:020x}-{end_frame_no:020x}.snap"
     ))
 }
 
 fn parse_snapshot_path(path: PathBuf) -> Result<SnapshotEntry> {
-    static RE: Lazy<Regex> =
-        Lazy::new(|| Regex::new(r#"([\w-]+?):([0-9a-f]{20})-([0-9a-f]{20}).snap"#).unwrap());
+    // snapshot name format:
+    // <ns-name>:<log_id>:<startidx{20}>-<end-idx{20}>.snap
 
     let name = path
         .file_name()
         .and_then(|n| n.to_str())
         .ok_or_else(|| Error::InvalidSnapshotPath(path.clone()))?;
 
-    let captures = RE
-        .captures(name)
-        .ok_or_else(|| Error::InvalidSnapshotPath(path.clone()))?;
-    let namespace = NamespaceName::from_string(captures[1].to_string()).unwrap();
-    let start_frame_no = FrameNo::from_str_radix(&captures[2], 16).unwrap();
-    let end_frame_no = FrameNo::from_str_radix(&captures[3], 16).unwrap();
+    let Some(name) = name.strip_suffix(".snap") else {
+        return Err(Error::InvalidSnapshotPath(path.clone()));
+    };
+
+    // we reverse split because the namespace name is allowed any char
+    let mut split = name.rsplit(":");
+    let Some(range) = split.next() else {
+        return Err(Error::InvalidSnapshotPath(path.clone()));
+    };
+    let Some(log_id) = split.next() else {
+        return Err(Error::InvalidSnapshotPath(path.clone()));
+    };
+    let Some(namespace) = split.next() else {
+        return Err(Error::InvalidSnapshotPath(path.clone()));
+    };
+
+    let mut range_split = range.split("-");
+    let Some(start_str) = range_split.next() else {
+        return Err(Error::InvalidSnapshotPath(path.clone()));
+    };
+    let Some(end_str) = range_split.next() else {
+        return Err(Error::InvalidSnapshotPath(path.clone()));
+    };
+
+    let start_frame_no = FrameNo::from_str_radix(start_str, 16).unwrap();
+    let end_frame_no = FrameNo::from_str_radix(end_str, 16).unwrap();
+
+    let Ok(log_id) = Uuid::from_str(log_id) else {
+        return Err(Error::InvalidSnapshotPath(path.clone()));
+    };
+    let namespace = NamespaceName::from_string(namespace.to_string()).unwrap();
 
     Ok(SnapshotEntry {
         namespace,
@@ -199,6 +227,7 @@ fn parse_snapshot_path(path: PathBuf) -> Result<SnapshotEntry> {
         end_frame_no,
         path,
         retries: 0,
+        log_id,
     })
 }
 
@@ -245,8 +274,10 @@ impl ScriptBackupManager {
         start_frame_no: FrameNo,
         end_frame_no: FrameNo,
         src_path: &Path,
+        log_id: Uuid,
     ) -> crate::Result<()> {
-        let dst_path = make_snapshot_path(&self.path, &namespace, start_frame_no, end_frame_no);
+        let dst_path =
+            make_snapshot_path(&self.path, &namespace, start_frame_no, end_frame_no, log_id);
         tokio::fs::hard_link(src_path, &dst_path).await?;
         let entry = SnapshotEntry {
             namespace,
@@ -254,6 +285,7 @@ impl ScriptBackupManager {
             end_frame_no,
             path: dst_path,
             retries: 0,
+            log_id,
         };
         self.queue.lock().push(entry);
         self.notifier.notify_waiters();
@@ -277,12 +309,14 @@ mod test {
             end_frame_no in 0u64..u64::MAX,
             ){
             let namespace = NamespaceName::from_string(snapshot_name.to_string()).unwrap();
-            let path = make_snapshot_path("/test", &namespace, start_frame_no, end_frame_no);
+            let log_id =Uuid::now_v7();
+            let path = make_snapshot_path("/test", &namespace, start_frame_no, end_frame_no, log_id);
             let entry = parse_snapshot_path(path.clone()).unwrap();
             assert_eq!(entry.end_frame_no, end_frame_no);
             assert_eq!(entry.start_frame_no, start_frame_no);
             assert_eq!(entry.namespace, namespace);
             assert_eq!(entry.path, path);
+            assert_eq!(entry.log_id, log_id);
         }
     }
 
@@ -292,6 +326,7 @@ mod test {
             start_frame_no: start,
             end_frame_no: end,
             path: PathBuf::new(),
+            log_id: Uuid::now_v7(),
             retries: 0,
         }
     }
@@ -400,6 +435,7 @@ mod test {
                 entry.start_frame_no,
                 entry.end_frame_no,
                 &entry.path,
+                entry.log_id,
             )
             .await
             .unwrap();
@@ -411,6 +447,7 @@ mod test {
                 entry.start_frame_no,
                 entry.end_frame_no,
                 &entry.path,
+                entry.log_id,
             )
             .await
             .unwrap();
@@ -449,6 +486,7 @@ mod test {
                 entry.start_frame_no,
                 entry.end_frame_no,
                 &entry.path,
+                entry.log_id,
             )
             .await
             .unwrap();
@@ -482,6 +520,7 @@ mod test {
                 entry.start_frame_no,
                 entry.end_frame_no,
                 &entry.path,
+                entry.log_id,
             )
             .await
             .unwrap();
@@ -511,6 +550,7 @@ mod test {
                 entry.start_frame_no,
                 entry.end_frame_no,
                 &entry.path,
+                entry.log_id,
             )
             .await
             .unwrap();
@@ -522,6 +562,7 @@ mod test {
                 entry.start_frame_no,
                 entry.end_frame_no,
                 &entry.path,
+                entry.log_id,
             )
             .await
             .unwrap();
@@ -564,6 +605,7 @@ mod test {
                 entry.start_frame_no,
                 entry.end_frame_no,
                 &entry.path,
+                entry.log_id,
             )
             .await
             .unwrap();
