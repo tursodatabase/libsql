@@ -119,6 +119,8 @@ pub trait QueryResultBuilder: Send + 'static {
     fn begin_row(&mut self) -> Result<(), QueryResultBuilderError>;
     /// add value to current row
     fn add_row_value(&mut self, v: ValueRef) -> Result<(), QueryResultBuilderError>;
+    // TODO(lucio): undefault this so it can be implemented
+    fn add_stats(&mut self, rows_read: u64, rows_written: u64);
     /// finish current row
     fn finish_row(&mut self) -> Result<(), QueryResultBuilderError>;
     /// end adding rows
@@ -330,6 +332,8 @@ impl QueryResultBuilder for StepResultsBuilder {
     fn into_ret(self) -> Self::Ret {
         self.step_results
     }
+
+    fn add_stats(&mut self, _rows_read: u64, _rows_written: u64) {}
 }
 
 pub struct IgnoreResult;
@@ -393,6 +397,8 @@ impl QueryResultBuilder for IgnoreResult {
     }
 
     fn into_ret(self) -> Self::Ret {}
+
+    fn add_stats(&mut self, _rows_read: u64, _rows_written: u64) {}
 }
 
 // A builder that wraps another builder, but takes at most `n` steps
@@ -507,6 +513,10 @@ impl<B: QueryResultBuilder> QueryResultBuilder for Take<B> {
 
     fn into_ret(self) -> Self::Ret {
         self.inner.into_ret()
+    }
+
+    fn add_stats(&mut self, rows_read: u64, rows_written: u64) {
+        self.inner.add_stats(rows_read, rows_written);
     }
 }
 
@@ -627,6 +637,8 @@ pub mod test {
         fn into_ret(self) -> Self::Ret {
             self.steps
         }
+
+        fn add_stats(&mut self, _rows_read: u64, _rows_written: u64) {}
     }
 
     /// a dummy QueryResultBuilder that encodes the QueryResultBuilder FSM. It can be passed to a
@@ -881,6 +893,8 @@ pub mod test {
         fn into_ret(self) -> Self::Ret {
             assert_eq!(self.current, self.trace.len());
         }
+
+        fn add_stats(&mut self, _rows_read: u64, _rows_written: u64) {}
     }
 
     pub struct FsmQueryBuilder {
@@ -1015,6 +1029,8 @@ pub mod test {
         }
 
         fn into_ret(self) -> Self::Ret {}
+
+        fn add_stats(&mut self, _rows_read: u64, _rows_written: u64) {}
     }
 
     pub fn test_driver(iter: usize, f: impl Fn(FsmQueryBuilder) -> crate::Result<FsmQueryBuilder>) {
