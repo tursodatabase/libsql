@@ -1023,7 +1023,6 @@ fn malformed_database() {
         let sqls = file.lines();
 
         for sql in sqls {
-            eprintln!("{:?}", sql);
             if !sql.starts_with("--") {
                 conn.execute(sql, ()).await.unwrap();
             }
