@@ -3,6 +3,7 @@ pub mod http_basic;
 pub mod jwt;
 
 pub use disabled::Disabled;
+use hashbrown::HashMap;
 pub use http_basic::HttpBasic;
 pub use jwt::Jwt;
 
@@ -12,6 +13,7 @@ use super::{AuthError, Authenticated};
 pub struct UserAuthContext {
     scheme: Option<String>,
     token: Option<String>,
+    custom_fields: HashMap<Box<str>, String>
 }
 
 impl UserAuthContext {

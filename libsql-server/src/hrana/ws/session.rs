@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Result};
 use futures::future::BoxFuture;
-use s3s::auth;
 use tokio::sync::{mpsc, oneshot};
 
 use super::super::{batch, cursor, stmt, ProtocolError, Version};
@@ -72,6 +71,7 @@ pub(super) async fn handle_initial_hello(
     jwt: Option<String>,
     namespace: NamespaceName,
 ) -> Result<Session> {
+
     // todo dupe #auth
     let namespace_jwt_key = server
         .namespaces
@@ -82,10 +82,8 @@ pub(super) async fn handle_initial_hello(
         .map(Jwt::new)
         .map(Auth::new)
         .unwrap_or(server.user_auth_strategy.clone());
-
+ 
     let context:UserAuthContext = build_context(jwt, auth_strategy.user_strategy.required_fields());
-
-    // Ok(UserAuthContext::bearer_opt(jwt))
 
     let auth = auth_strategy
         .authenticate(Ok(context))
@@ -98,6 +96,10 @@ pub(super) async fn handle_initial_hello(
         sqls: HashMap::new(),
         cursors: HashMap::new(),
     })
+}
+
+fn build_context(jwt: Option<String>, required_fields: Vec<String>) -> UserAuthContext {
+    UserAuthContext::bearer_opt(jwt)
 }
 
 pub(super) async fn handle_repeated_hello(
