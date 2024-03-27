@@ -343,7 +343,9 @@ do_execsql_test 17.0 {
     INSERT INTO t2 VALUES('a aa aaa', 'b bb bbb');
   COMMIT;
 }
-do_execsql_test 17.1 { SELECT * FROM t2('y:a*') WHERE rowid BETWEEN 10 AND 20 }
+do_execsql_test 17.1 { 
+  SELECT * FROM t2('y:a*') WHERE rowid BETWEEN 10 AND 20 
+}
 do_execsql_test 17.2 {
   BEGIN;
     INSERT INTO t2 VALUES('a aa aaa', 'b bb bbb');

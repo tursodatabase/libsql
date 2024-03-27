@@ -398,6 +398,16 @@ static int fts5ConfigParseSpecial(
     return rc;
   }
 
+  if( sqlite3_strnicmp("tokendata", zCmd, nCmd)==0 ){
+    if( (zArg[0]!='0' && zArg[0]!='1') || zArg[1]!='\0' ){
+      *pzErr = sqlite3_mprintf("malformed tokendata=... directive");
+      rc = SQLITE_ERROR;
+    }else{
+      pConfig->bTokendata = (zArg[0]=='1');
+    }
+    return rc;
+  }
+
   *pzErr = sqlite3_mprintf("unrecognized option: \"%.*s\"", nCmd, zCmd);
   return SQLITE_ERROR;
 }

@@ -293,4 +293,39 @@ do_catchsql_test 7.2.5 {
   SELECT * FROM t1('abc') ORDER BY rank;
 } {1 {recursively defined fts5 content table}}
 
+#---------------------------------------------------------------------------
+# Check that if the content table is a view, and that view contains an
+# error, a reasonable error message is returned if the user tries to
+# read from the view via the fts5 table.
+#
+reset_db
+do_execsql_test 8.1 {
+  CREATE VIEW a1 AS 
+    SELECT 1 AS r, text_value(1) AS t
+      UNION ALL
+    SELECT 2 AS r, text_value(2) AS t;
+
+  CREATE VIRTUAL TABLE t1 USING fts5(t, content='a1', content_rowid='r');
+}
+
+foreach {tn sql} {
+  1 "SELECT * FROM t1"
+  2 "INSERT INTO t1(t1) VALUES('rebuild')"
+  3 "SELECT * FROM t1 WHERE rowid=1"
+} {
+  do_catchsql_test 8.2.$tn $sql {1 {no such function: text_value}}
+}
+
+proc text_value {i} {
+  if {$i==1} { return "one" }
+  if {$i==2} { return "two" }
+  return "many"
+}
+db func text_value text_value
+
+do_execsql_test 8.3.1 { SELECT * FROM t1 } {one two}
+do_execsql_test 8.3.2 { INSERT INTO t1(t1) VALUES('rebuild') }
+do_execsql_test 8.3.3 { SELECT * FROM t1 WHERE rowid=1 } {one}
+do_execsql_test 8.3.4 { SELECT rowid FROM t1('two') } {2}
+
 finish_test

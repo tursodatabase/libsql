@@ -7,6 +7,13 @@
 # definition used in src/ctime.c, run this script from
 # the checkout root. It generates src/ctime.c .
 #
+# Results are normally written into src/ctime.c.  But if an argument is
+# provided, results are written there instead.  Examples:
+#
+#    tclsh tool/mkctimec.tcl                ;# <-- results to src/ctime.c
+#
+#    tclsh tool/mkctimec.tcl /dev/tty       ;# <-- results to the terminal
+#
 
 
 set ::headWarning {/* DO NOT EDIT!
@@ -429,10 +436,15 @@ foreach v $value2_options {
 }]
 }
 
-set ctime_c "src/ctime.c"
+if {$argc>0} {
+  set destfile [lindex $argv 0]
+} else {
+  set destfile "[file dir [file dir [file normal $argv0]]]/src/ctime.c"
+  puts "Overwriting $destfile..."
+}
 
-if {[catch {set cfd [open $ctime_c w]}]!=0} {
-  puts stderr "File '$ctime_c' unwritable."
+if {[catch {set cfd [open $destfile w]}]!=0} {
+  puts stderr "File '$destfile' unwritable."
   exit 1;
 }
 

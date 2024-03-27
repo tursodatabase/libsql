@@ -8120,6 +8120,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_prefixes_init(sqlite3*,char**,const sqlite3_api_routines*);
 #endif
   extern int sqlite3_qpvtab_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_randomjson_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_regexp_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_remember_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_series_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -8152,6 +8153,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "prefixes",              sqlite3_prefixes_init             },
 #endif
     { "qpvtab",                sqlite3_qpvtab_init               },
+    { "randomjson",            sqlite3_randomjson_init           },
     { "regexp",                sqlite3_regexp_init               },
     { "remember",              sqlite3_remember_init             },
     { "series",                sqlite3_series_init               },

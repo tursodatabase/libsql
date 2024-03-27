@@ -1688,7 +1688,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           wasm.sqlite3_wasm_vfs_unlink(0, filename);
         }
       }
-    }/*sqlite3_js_vfs_create_file()*/)
+    }/*sqlite3_js_posix_create_file()*/)
 
   ////////////////////////////////////////////////////////////////////
     .t({
@@ -2605,28 +2605,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }
       }
     }/*kvvfs sanity checks*/)
-    .t({
-      name: 'kvvfs sqlite3_js_vfs_create_file()',
-      predicate: ()=>"kvvfs does not currently support this",
-      test: function(sqlite3){
-        let db;
-        try {
-          db = new this.JDb(this.kvvfsDbFile);
-          const exp = capi.sqlite3_js_db_export(db);
-          db.close();
-          this.kvvfsUnlink();
-          capi.sqlite3_js_vfs_create_file("kvvfs", this.kvvfsDbFile, exp);
-          db = new this.JDb(filename);
-          T.assert(6 === db.selectValue('select count(*) from kvvfs'));
-        }finally{
-          db.close();
-          this.kvvfsUnlink();
-        }
-        delete this.kvvfsDbFile;
-        delete this.kvvfsUnlink;
-        delete this.JDb;
-      }
-   }/*kvvfs sqlite3_js_vfs_create_file()*/)
   ;/* end kvvfs tests */
 
   ////////////////////////////////////////////////////////////////////////
@@ -2644,13 +2622,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         T.assert( 0 === rc /*void pointer*/ );
 
         // Commit hook...
+        T.assert( 0!=capi.sqlite3_get_autocommit(db) );
         db.exec("BEGIN; SELECT 1; COMMIT");
         T.assert(0 === countCommit,
                  "No-op transactions (mostly) do not trigger commit hook.");
         db.exec("BEGIN EXCLUSIVE; SELECT 1; COMMIT");
         T.assert(1 === countCommit,
                  "But EXCLUSIVE transactions do.");
-        db.transaction((d)=>{d.exec("create table t(a)");});
+        db.transaction((d)=>{
+          T.assert( 0==capi.sqlite3_get_autocommit(db) );
+          d.exec("create table t(a)");
+        });
         T.assert(2 === countCommit);
 
         // Rollback hook:

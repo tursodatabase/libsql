@@ -25,7 +25,10 @@ public interface PrepareMultiCallback extends CallbackProxy {
      sqlite3_prepare_multi() will _not_ finalize st - it is up
      to the call() implementation how st is handled.
 
-     Must return 0 on success or an SQLITE_... code on error.
+     Must return 0 on success or an SQLITE_... code on error. If it
+     throws, sqlite3_prepare_multi() will transform the exception into
+     a db-level error in order to retain the C-style error semantics
+     of the API.
 
      See the {@link Finalize} class for a wrapper which finalizes the
      statement after calling a proxy PrepareMultiCallback.
@@ -37,7 +40,7 @@ public interface PrepareMultiCallback extends CallbackProxy {
      any sqlite3_stmt passed to its callback.
   */
   public static final class Finalize implements PrepareMultiCallback {
-    private PrepareMultiCallback p;
+    private final PrepareMultiCallback p;
     /**
        p is the proxy to call() when this.call() is called.
     */

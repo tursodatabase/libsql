@@ -74,7 +74,7 @@
 # you don't need (for example BLT) by erasing or commenting out
 # the corresponding code.
 #
-AC_INIT([sqlite],[m4_esyscmd(cat VERSION | tr -d '\n')])
+AC_INIT([sqlite],m4_esyscmd(cat VERSION | tr -d '\n'))
 
 dnl Make sure the local VERSION file matches this configure script
 sqlite_version_sanity_check=`cat $srcdir/VERSION | tr -d '\n'`

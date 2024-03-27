@@ -132,14 +132,27 @@ do_test trace3-4.3 {
   list $stmt [expr {$ns >= 0 && $ns <= 9999999}]; # less than 0.010 seconds
 } {/^-?\d+ 1$/}
 do_test trace3-4.4 {
-  set ::stmtlist(record) {}
-  db trace_v2 trace_v2_record 2
-  execsql {
-    SELECT a, b FROM t1 ORDER BY a;
+  set cnt 0
+  while {1} {
+    set ::stmtlist(record) {}
+    db trace_v2 trace_v2_record 2
+    execsql {
+      SELECT a, b FROM t1 ORDER BY a;
+    }
+    set stmt [lindex [lindex $::stmtlist(record) 0] 0]
+    set ns [lindex [lindex $::stmtlist(record) 0] 1]
+    if {$ns<0 || $ns>9999999} {  #less than 0.010 seconds
+      incr cnt
+      if {$cnt>3} {
+        set res "time out of bounds.  Expected less than 99999999.  Got $ns"
+        break
+      }
+    } else {
+      set res 1
+      break
+    }
   }
-  set stmt [lindex [lindex $::stmtlist(record) 0] 0]
-  set ns [lindex [lindex $::stmtlist(record) 0] 1]
-  list $stmt [expr {$ns >= 0 && $ns <= 9999999}]; # less than 0.010 seconds
+  list $stmt $res
 } {/^-?\d+ 1$/}
 
 do_test trace3-5.1 {

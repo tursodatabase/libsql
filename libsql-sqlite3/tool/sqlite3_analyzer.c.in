@@ -19,8 +19,55 @@ INCLUDE sqlite3.c
 #endif
 INCLUDE $ROOT/src/tclsqlite.c
 
+#if defined(_WIN32)
+INCLUDE $ROOT/ext/consio/console_io.h
+INCLUDE $ROOT/ext/consio/console_io.c
+
+/* Substitute "puts" command.  Only these forms recognized:
+**
+**      puts STRING
+**      puts stderr STRING
+**      puts -nonewline STRING
+*/
+static int subst_puts(
+  void *NotUsed,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *const*objv
+){
+  FILE *pOut = stdout;
+  const char *zOut;
+  int addNewLine = 1;
+  if( objc==2 ){
+    zOut = Tcl_GetString(objv[1]);
+  }else if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?stderr|-nonewline? STRING");
+    return TCL_ERROR;
+  }else{
+    const char *zArg = Tcl_GetString(objv[1]);
+    if( zArg==0 ) return TCL_ERROR;
+    zOut = Tcl_GetString(objv[2]);
+    if( strcmp(zArg, "stderr")==0 ){
+      pOut = stderr;
+    }else if( strcmp(zArg, "-nonewline")==0 ){
+      addNewLine = 0;
+    }else{
+      Tcl_AppendResult(interp, "bad argument: ", zArg, 0);
+      return TCL_ERROR;
+    }
+  }
+  fPutsUtf8(zOut, pOut);
+  if( addNewLine ) fPutsUtf8("\n", pOut);
+  return TCL_OK;
+}
+#endif /* defined(_WIN32) */
+
 const char *sqlite3_analyzer_init_proc(Tcl_Interp *interp){
+#if defined(_WIN32)
+  Tcl_CreateObjCommand(interp, "puts", subst_puts, 0, 0);
+#else  
   (void)interp;
+#endif
   return
 BEGIN_STRING
 INCLUDE $ROOT/tool/spaceanal.tcl

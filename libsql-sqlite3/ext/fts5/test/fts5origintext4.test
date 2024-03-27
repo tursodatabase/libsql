@@ -1,0 +1,80 @@
+# 2023 November 22
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests focused on phrase queries.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5origintext4
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+# The tests below verify that a doclist-index is used to limit the number
+# of pages loaded into the cache. It does this by querying sqlite3_db_status()
+# for the amount of memory used by the pager cache.
+#
+# memsubsys1 effectively limits the page-cache to 24 pages. Which masks
+# the effect tested by the tests in this file. And "mmap" prevents the 
+# cache from being used, also preventing these tests from working.
+#
+if {[permutation]=="memsubsys1" || [permutation]=="mmap"} {
+  finish_test
+  return
+}
+
+sqlite3_fts5_register_origintext db
+do_execsql_test 1.0 {
+  PRAGMA page_size = 4096;
+  CREATE VIRTUAL TABLE ft USING fts5(
+      x, tokenize="origintext unicode61", tokendata=1
+  );
+}
+
+do_execsql_test 1.1 {
+  BEGIN;
+    INSERT INTO ft SELECT 'the first thing';
+
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<90000
+    )
+    INSERT INTO ft SELECT 'The second thing' FROM s;
+
+    INSERT INTO ft SELECT 'the first thing';
+  COMMIT;
+  INSERT INTO ft(ft) VALUES('optimize');
+}
+
+foreach {tn sql expr} {
+  1 { SELECT rowid FROM ft('the') }       {$mem > 250000}
+  2 { SELECT rowid FROM ft('first') }     {$mem <  50000}
+  3 { SELECT rowid FROM ft('the first') } {$mem <  50000}
+} {
+  db close
+  sqlite3 db test.db
+  sqlite3_fts5_register_origintext db
+
+  execsql $sql
+  do_test 1.2.$tn {
+    set mem [lindex [sqlite3_db_status db CACHE_USED 0] 1]
+    expr $expr
+  } 1
+}
+
+proc b {x} { string map [list "\0" "."] $x }
+db func b b
+# execsql_pp { SELECT segid, b(term), pgno from ft_idx }
+
+finish_test
+

@@ -36,6 +36,9 @@ do_execsql_test json101-1.2 {
 do_catchsql_test json101-1.3 {
   SELECT json_array(1,printf('%.1000c','x'),x'abcd',3);
 } {1 {JSON cannot hold BLOB values}}
+do_catchsql_test json101-1.3b {
+  SELECT jsonb_array(1,printf('%.1000c','x'),x'abcd',3);
+} {1 {JSON cannot hold BLOB values}}
 do_execsql_test json101-1.4 {
   SELECT json_array(-9223372036854775808,9223372036854775807,0,1,-1,
                     0.0, 1.0, -1.0, -1e99, +2e100,
@@ -47,36 +50,83 @@ do_execsql_test json101-1.4 {
                     'abcdefghijklmnopqrstuvwyxzABCDEFGHIJKLMNOPQRSTUVWXYZ',
                     99);
 } {[-9223372036854775808,9223372036854775807,0,1,-1,0.0,1.0,-1.0,-1.0e+99,2.0e+100,"one","two","three",4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,null,21,22,23,24,25,26,27,28,29,30,31,"abcdefghijklmnopqrstuvwyxzABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwyxzABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwyxzABCDEFGHIJKLMNOPQRSTUVWXYZ",99]}
+do_execsql_test json101-1.4b {
+  SELECT json(jsonb_array(-9223372036854775808,9223372036854775807,0,1,-1,
+                    0.0, 1.0, -1.0, -1e99, +2e100,
+                    'one','two','three',
+                    4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+                    19, NULL, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+                    'abcdefghijklmnopqrstuvwyxzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                    'abcdefghijklmnopqrstuvwyxzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                    'abcdefghijklmnopqrstuvwyxzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                    99));
+} {[-9223372036854775808,9223372036854775807,0,1,-1,0.0,1.0,-1.0,-1.0e+99,2.0e+100,"one","two","three",4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,null,21,22,23,24,25,26,27,28,29,30,31,"abcdefghijklmnopqrstuvwyxzABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwyxzABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwyxzABCDEFGHIJKLMNOPQRSTUVWXYZ",99]}
 
 do_execsql_test json101-2.1 {
   SELECT json_object('a',1,'b',2.5,'c',null,'d','String Test');
 } {{{"a":1,"b":2.5,"c":null,"d":"String Test"}}}
+do_execsql_test json101-2.1b {
+  SELECT json(jsonb_object('a',1,'b',2.5,'c',null,'d','String Test'));
+} {{{"a":1,"b":2.5,"c":null,"d":"String Test"}}}
 do_catchsql_test json101-2.2 {
   SELECT json_object('a',printf('%.1000c','x'),2,2.5);
 } {1 {json_object() labels must be TEXT}}
+do_catchsql_test json101-2.2b {
+  SELECT jsonb_object('a',printf('%.1000c','x'),2,2.5);
+} {1 {json_object() labels must be TEXT}}
+do_execsql_test json101-2.2.2 {
+  SELECT json_object('a',json_array('xyx',77,4.5),'x',2.5);
+} {{{"a":["xyx",77,4.5],"x":2.5}}}
+do_execsql_test json101-2.2.2b {
+  SELECT json(jsonb_object('a',json_array('xyx',77,4.5),'x',2.5));
+} {{{"a":["xyx",77,4.5],"x":2.5}}}
+do_execsql_test json101-2.2.3 {
+  SELECT json_object('a',jsonb_array('xyx',77,4.5),'x',2.5);
+} {{{"a":["xyx",77,4.5],"x":2.5}}}
+do_execsql_test json101-2.2.3b {
+  SELECT json(jsonb_object('a',jsonb_array('xyx',77,4.5),'x',2.5));
+} {{{"a":["xyx",77,4.5],"x":2.5}}}
 do_catchsql_test json101-2.3 {
   SELECT json_object('a',1,'b');
 } {1 {json_object() requires an even number of arguments}}
 do_catchsql_test json101-2.4 {
   SELECT json_object('a',printf('%.1000c','x'),'b',x'abcd');
 } {1 {JSON cannot hold BLOB values}}
+do_execsql_test json101-2.5 {
+  SELECT json_object('a',printf('%.10c','x'),'b',jsonb_array(1,2,3));
+} {{{"a":"xxxxxxxxxx","b":[1,2,3]}}}
 
 do_execsql_test json101-3.1 {
   SELECT json_replace('{"a":1,"b":2}','$.a','[3,4,5]');
 } {{{"a":"[3,4,5]","b":2}}}
+do_execsql_test json101-3.1b {
+  SELECT json(jsonb_replace('{"a":1,"b":2}','$.a','[3,4,5]'));
+} {{{"a":"[3,4,5]","b":2}}}
 do_execsql_test json101-3.2 {
   SELECT json_replace('{"a":1,"b":2}','$.a',json('[3,4,5]'));
+} {{{"a":[3,4,5],"b":2}}}
+do_execsql_test json101-3.2b {
+  SELECT json_replace('{"a":1,"b":2}','$.a',jsonb('[3,4,5]'));
 } {{{"a":[3,4,5],"b":2}}}
 do_execsql_test json101-3.3 {
   SELECT json_type(json_set('{"a":1,"b":2}','$.b','{"x":3,"y":4}'),'$.b');
 } {text}
+do_execsql_test json101-3.3b {
+  SELECT json_type(jsonb_set('{"a":1,"b":2}','$.b','{"x":3,"y":4}'),'$.b');
+} {text}
 do_execsql_test json101-3.4 {
   SELECT json_type(json_set('{"a":1,"b":2}','$.b',json('{"x":3,"y":4}')),'$.b');
 } {object}
+do_execsql_test json101-3.4b {
+  SELECT json_type(jsonb_set('{"a":1,"b":2}','$.b',jsonb('{"x":3,"y":4}')),'$.b');
+} {object}
 ifcapable vtab {
-do_execsql_test json101-3.5 {
-  SELECT fullkey, atom, '|' FROM json_tree(json_set('{}','$.x',123,'$.x',456));
-} {{$} {} | {$.x} 456 |}
+  do_execsql_test json101-3.5 {
+    SELECT fullkey, atom, '|' FROM json_tree(json_set('{}','$.x',123,'$.x',456));
+  } {{$} {} | {$.x} 456 |}
+  do_execsql_test json101-3.5b {
+    SELECT fullkey, atom, '|' FROM json_tree(jsonb_set('{}','$.x',123,'$.x',456));
+  } {{$} {} | {$.x} 456 |}
 }
 
 # Per rfc7159, any JSON value is allowed at the top level, and whitespace
@@ -129,6 +179,13 @@ do_execsql_test json101-4.10 {
   SELECT count(*) FROM j1 WHERE json_type(x) IN ('object','array');
   SELECT x FROM j1
    WHERE json_extract(x,'$')<>x
+     AND json_type(x) IN ('object','array');
+} {4}
+do_execsql_test json101-4.10b {
+  CREATE TABLE j1b AS SELECT jsonb(x) AS "x" FROM j1;
+  SELECT count(*) FROM j1b WHERE json_type(x) IN ('object','array');
+  SELECT json(x) FROM j1b
+   WHERE json_extract(x,'$')<>json(x)
      AND json_type(x) IN ('object','array');
 } {4}
 
@@ -258,10 +315,16 @@ do_execsql_test json101-5.1 {
 	}
    ]','https://adobe.github.io/Spry/samples/data_region/JSONDataSetSample.html');
    SELECT count(*) FROM j2;
-} {3}
+   CREATE TABLE j2b(id INTEGER PRIMARY KEY, json, src);
+   INSERT INTO J2b(id,json,src) SELECT id, jsonb(json), src FROM j2;
+   SELECT count(*) FROM j2b;
+} {3 3}
 
 do_execsql_test json101-5.2 {
   SELECT id, json_valid(json), json_type(json), '|' FROM j2 ORDER BY id;
+} {1 1 object | 2 1 object | 3 1 array |}
+do_execsql_test json101-5.2b {
+  SELECT id, json_valid(json,5), json_type(json), '|' FROM j2b ORDER BY id;
 } {1 1 object | 2 1 object | 3 1 array |}
 
 ifcapable !vtab {
@@ -274,6 +337,12 @@ ifcapable !vtab {
 do_execsql_test json101-5.3 {
   SELECT j2.rowid, jx.rowid, fullkey, path, key
     FROM j2, json_tree(j2.json) AS jx
+   WHERE fullkey!=(path || CASE WHEN typeof(key)=='integer' THEN '['||key||']'
+                                ELSE '.'||key END);
+} {}
+do_execsql_test json101-5.3b {
+  SELECT j2b.rowid, jx.rowid, fullkey, path, key
+    FROM j2b, json_tree(j2b.json) AS jx
    WHERE fullkey!=(path || CASE WHEN typeof(key)=='integer' THEN '['||key||']'
                                 ELSE '.'||key END);
 } {}
@@ -371,6 +440,13 @@ do_execsql_test json101-8.1 {
   UPDATE t8 SET b=json_array(a);
   SELECT b FROM t8;
 } {{["abc\u0001\u0002\u0003\u0004\u0005\u0006\u0007\b\t\n\u000b\f\r\u000e\u000f\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f !\"#xyz"]}}
+do_execsql_test json101-8.1b {
+  DROP TABLE IF EXISTS t8;
+  CREATE TABLE t8(a,b);
+  INSERT INTO t8(a) VALUES('abc' || char(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35) || 'xyz');
+  UPDATE t8 SET b=jsonb_array(a);
+  SELECT json(b) FROM t8;
+} {{["abc\u0001\u0002\u0003\u0004\u0005\u0006\u0007\b\t\n\u000b\f\r\u000e\u000f\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f !\"#xyz"]}}
 do_execsql_test json101-8.2 {
   SELECT a=json_extract(b,'$[0]') FROM t8;
 } {1}
@@ -401,7 +477,7 @@ do_execsql_test json101-9.4 {
   SELECT json_quote(null);
 } {"null"}
 do_catchsql_test json101-9.5 {
-  SELECT json_quote(x'30313233');
+  SELECT json_quote(x'3031323334');
 } {1 {JSON cannot hold BLOB values}}
 do_catchsql_test json101-9.6 {
   SELECT json_quote(123,456)
@@ -769,12 +845,21 @@ do_execsql_test json101-12.100 {
         }
      }');
 } {}
+
 do_execsql_test json101-12.110 {
   SELECT json_remove(x, '$.settings.layer2."dis.legomenon".forceDisplay')
     FROM t12;
 } {{{"settings":{"layer2":{"hapax.legomenon":{"forceDisplay":true,"transliterate":true,"add.footnote":true,"summary.report":true},"dis.legomenon":{"transliterate":false,"add.footnote":false,"summary.report":true},"tris.legomenon":{"forceDisplay":true,"transliterate":false,"add.footnote":false,"summary.report":false}}}}}}
+do_execsql_test json101-12.110b {
+  SELECT json_remove(jsonb(x), '$.settings.layer2."dis.legomenon".forceDisplay')
+    FROM t12;
+} {{{"settings":{"layer2":{"hapax.legomenon":{"forceDisplay":true,"transliterate":true,"add.footnote":true,"summary.report":true},"dis.legomenon":{"transliterate":false,"add.footnote":false,"summary.report":true},"tris.legomenon":{"forceDisplay":true,"transliterate":false,"add.footnote":false,"summary.report":false}}}}}}
 do_execsql_test json101-12.120 {
   SELECT json_extract(x, '$.settings.layer2."tris.legomenon"."summary.report"')
+    FROM t12;
+} {0}
+do_execsql_test json101-12.120b {
+  SELECT json_extract(jsonb(x), '$.settings.layer2."tris.legomenon"."summary.report"')
     FROM t12;
 } {0}
 
@@ -840,16 +925,16 @@ do_execsql_test json101-14.170 {
 #
 do_execsql_test json101-15.100 {
   SELECT * FROM JSON_EACH('{"a":1, "b":2}');
-} {a 1 integer 1 2 {} {$.a} {$} b 2 integer 2 4 {} {$.b} {$}}
+} {a 1 integer 1 1 {} {$.a} {$} b 2 integer 2 5 {} {$.b} {$}}
 do_execsql_test json101-15.110 {
   SELECT xyz.* FROM JSON_EACH('{"a":1, "b":2}') AS xyz;
-} {a 1 integer 1 2 {} {$.a} {$} b 2 integer 2 4 {} {$.b} {$}}
+} {a 1 integer 1 1 {} {$.a} {$} b 2 integer 2 5 {} {$.b} {$}}
 do_execsql_test json101-15.120 {
   SELECT * FROM (JSON_EACH('{"a":1, "b":2}'));
-} {a 1 integer 1 2 {} {$.a} {$} b 2 integer 2 4 {} {$.b} {$}}
+} {a 1 integer 1 1 {} {$.a} {$} b 2 integer 2 5 {} {$.b} {$}}
 do_execsql_test json101-15.130 {
   SELECT xyz.* FROM (JSON_EACH('{"a":1, "b":2}')) AS xyz;
-} {a 1 integer 1 2 {} {$.a} {$} b 2 integer 2 4 {} {$.b} {$}}
+} {a 1 integer 1 1 {} {$.a} {$} b 2 integer 2 5 {} {$.b} {$}}
 
 # 2019-11-10
 # Mailing list bug report on the handling of surrogate pairs
@@ -889,7 +974,7 @@ do_execsql_test json101-18.4 {
 } {6}
 do_catchsql_test json101-18.5 {
   SELECT json_extract('{"":8}', '$.');
-} {1 {JSON path error near ''}}
+} {1 {bad JSON path: '$.'}}
 
 # 2022-08-29 https://sqlite.org/forum/forumpost/9b9e4716c0d7bbd1
 # This is not a problem specifically with JSON functions.  It is
@@ -1054,6 +1139,29 @@ do_execsql_test json101-23.2 {
     FROM (SELECT json_set('[]','$[#]',0,'$[#]',1) AS j);
 } {{[0,1]} 0 1}
 
-
+# Insert/Set/Replace where the path specifies substructure that
+# does not yet exist
+#
+proc tx x {return [string map [list ( \173 ) \175 ' \042 < \133 > \135] $x]}
+foreach {id start path ins set repl} {
+  1 {{}}       {$.a.b.c}     ('a':('b':('c':9)))      ('a':('b':('c':9)))      ()
+  2 {{a:4}}    {$.a.b.c}     ('a':4)                  ('a':4)                  ('a':4)
+  3 {{a:{}}}   {$.a.b.c}     ('a':('b':('c':9)))      ('a':('b':('c':9)))      ('a':())
+  4 {[0,1,2]}  {$[3].a[0].b} <0,1,2,('a':<('b':9)>)>  <0,1,2,('a':<('b':9)>)>  <0,1,2>
+  5 {[0,1,2]}  {$[1].a[0].b} <0,1,2>                  <0,1,2>                  <0,1,2>
+  6 {[0,{},2]} {$[1].a[0].b} <0,('a':<('b':9)>),2>    <0,('a':<('b':9)>),2>    <0,(),2>
+  7 {[0,1,2]}  {$[3][0].b}   <0,1,2,<('b':9)>>        <0,1,2,<('b':9)>>        <0,1,2>
+  8 {[0,1,2]}  {$[1][0].b}   <0,1,2>                  <0,1,2>                  <0,1,2>
+} {
+  do_execsql_test json101-24.$id.insert {
+    SELECT json_insert($start,$path,9);
+  } [list [tx $ins]]
+  do_execsql_test json101-24.$id.set {
+    SELECT json_set($start,$path,9);
+  } [list [tx $set]]
+  do_execsql_test json101-24.$id.replace {
+    SELECT json_replace($start,$path,9);
+  } [list [tx $repl]]
+}
 
 finish_test

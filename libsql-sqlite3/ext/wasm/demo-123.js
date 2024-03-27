@@ -20,7 +20,7 @@
      the main (UI) thread.
   */
   let logHtml;
-  if(self.window === self /* UI thread */){
+  if(globalThis.window === globalThis /* UI thread */){
     console.log("Running demo from main UI thread.");
     logHtml = function(cssClass,...args){
       const ln = document.createElement('div');
@@ -250,7 +250,7 @@
   }/*demo1()*/;
 
   log("Loading and initializing sqlite3 module...");
-  if(self.window!==self) /*worker thread*/{
+  if(globalThis.window!==globalThis) /*worker thread*/{
     /*
       If sqlite3.js is in a directory other than this script, in order
       to get sqlite3.js to resolve sqlite3.wasm properly, we have to
@@ -262,19 +262,20 @@
       that's not needed.
 
       URL arguments passed as part of the filename via importScripts()
-      are simply lost, and such scripts see the self.location of
+      are simply lost, and such scripts see the globalThis.location of
       _this_ script.
     */
     let sqlite3Js = 'sqlite3.js';
-    const urlParams = new URL(self.location.href).searchParams;
+    const urlParams = new URL(globalThis.location.href).searchParams;
     if(urlParams.has('sqlite3.dir')){
       sqlite3Js = urlParams.get('sqlite3.dir') + '/' + sqlite3Js;
     }
     importScripts(sqlite3Js);
   }
-  self.sqlite3InitModule({
-    // We can redirect any stdout/stderr from the module
-    // like so...
+  globalThis.sqlite3InitModule({
+    /* We can redirect any stdout/stderr from the module like so, but
+       note that doing so makes use of Emscripten-isms, not
+       well-defined sqlite APIs. */
     print: log,
     printErr: error
   }).then(function(sqlite3){

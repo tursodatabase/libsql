@@ -141,7 +141,7 @@ void sqlite3ErrorClear(sqlite3 *db){
 */
 void sqlite3SystemError(sqlite3 *db, int rc){
   if( rc==SQLITE_IOERR_NOMEM ) return;
-#ifdef SQLITE_USE_SEH
+#if defined(SQLITE_USE_SEH) && !defined(SQLITE_OMIT_WAL)
   if( rc==SQLITE_IOERR_IN_PAGE ){
     int ii;
     int iErr;

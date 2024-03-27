@@ -350,7 +350,7 @@
                 eControls.classList.remove('hidden');
                 break;
             case 'stdout': log(msg.data); break;
-            case 'stdout': logErr(msg.data); break;
+            case 'stderr': logErr(msg.data); break;
             case 'run-start':
                 eControls.disabled = true;
                 log("Running speedtest1 with argv =",msg.data.join(' '));

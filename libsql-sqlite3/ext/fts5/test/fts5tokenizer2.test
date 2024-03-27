@@ -1,0 +1,89 @@
+# 2023 Nov 03
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests focusing on the built-in fts5 tokenizers. 
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5tokenizer2
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+sqlite3_fts5_create_tokenizer db tst get_tst_tokenizer
+proc get_tst_tokenizer {args} {
+  return "tst_tokenizer"
+}
+proc tst_tokenizer {flags txt} {
+  set token ""
+  set lTok [list]
+
+  foreach c [split $txt {}] {
+    if {$token==""} {
+      append token $c
+    } else {
+      set t1 [string is upper $token]
+      set t2 [string is upper $c]
+
+      if {$t1!=$t2} {
+        lappend lTok $token
+        set token ""
+      }
+      append token $c
+    }
+  }
+  if {$token!=""} { lappend lTok $token }
+
+  set iOff 0
+  foreach t $lTok {
+    set n [string length $t]
+    sqlite3_fts5_token $t $iOff [expr $iOff+$n]
+    incr iOff $n
+  }
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(t, tokenize=tst);
+}
+
+do_execsql_test 1.1 {
+  INSERT INTO t1 VALUES('AAdontBBmess');
+}
+
+do_execsql_test 1.2 {
+  SELECT snippet(t1, 0, '>', '<', '...', 4) FROM t1('BB');
+} {AAdont>BB<mess}
+
+do_execsql_test 1.3 {
+  SELECT highlight(t1, 0, '>', '<') FROM t1('BB');
+} {AAdont>BB<mess}
+
+do_execsql_test 1.4 {
+  SELECT highlight(t1, 0, '>', '<') FROM t1('AA');
+} {>AA<dontBBmess}
+
+do_execsql_test 1.5 {
+  SELECT highlight(t1, 0, '>', '<') FROM t1('dont');
+} {AA>dont<BBmess}
+
+do_execsql_test 1.6 {
+  SELECT highlight(t1, 0, '>', '<') FROM t1('mess');
+} {AAdontBB>mess<}
+
+do_execsql_test 1.7 {
+  SELECT highlight(t1, 0, '>', '<') FROM t1('BB mess');
+} {AAdont>BBmess<}
+
+
+finish_test

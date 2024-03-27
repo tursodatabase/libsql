@@ -315,7 +315,6 @@ void sqlite3VtabUnlockList(sqlite3 *db){
 
   if( p ){
     db->pDisconnect = 0;
-    sqlite3ExpirePreparedStatements(db, 0);
     do {
       VTable *pNext = p->pNext;
       sqlite3VtabUnlock(p);

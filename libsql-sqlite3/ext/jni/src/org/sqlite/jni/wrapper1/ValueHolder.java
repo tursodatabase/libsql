@@ -9,13 +9,13 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file contains a set of tests for the sqlite3 JNI bindings.
+** This file contains the ValueHolder utility class.
 */
 package org.sqlite.jni.wrapper1;
 
 /**
    A helper class which simply holds a single value. Its primary use
-   is for communicating values out of anonymous classes, as doing so
+   is for communicating values out of anonymous callbacks, as doing so
    requires a "final" reference.
 */
 public class ValueHolder<T> {

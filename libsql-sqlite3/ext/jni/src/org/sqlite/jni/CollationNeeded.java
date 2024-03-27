@@ -21,8 +21,9 @@ public interface CollationNeededCallback extends CallbackProxy {
      Has the same semantics as the C-level sqlite3_create_collation()
      callback.
 
-     <p>If it throws, the exception message is passed on to the db and
-     the exception is suppressed.
+     <p>Because the C API has no mechanism for reporting errors
+     from this callbacks, any exceptions thrown by this callback
+     are suppressed.
   */
-  int call(sqlite3 db, int eTextRep, String collationName);
+  void call(sqlite3 db, int eTextRep, String collationName);
 }

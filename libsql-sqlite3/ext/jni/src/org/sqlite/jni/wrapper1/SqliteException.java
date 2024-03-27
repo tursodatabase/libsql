@@ -12,7 +12,7 @@
 ** This file is part of the wrapper1 interface for sqlite3.
 */
 package org.sqlite.jni.wrapper1;
-import static org.sqlite.jni.capi.CApi.*;
+import org.sqlite.jni.capi.CApi;
 import org.sqlite.jni.capi.sqlite3;
 
 /**
@@ -22,10 +22,10 @@ import org.sqlite.jni.capi.sqlite3;
    and C via JNI.
 */
 public final class SqliteException extends java.lang.RuntimeException {
-  int errCode = SQLITE_ERROR;
-  int xerrCode = SQLITE_ERROR;
-  int errOffset = -1;
-  int sysErrno = 0;
+  private int errCode = CApi.SQLITE_ERROR;
+  private int xerrCode = CApi.SQLITE_ERROR;
+  private int errOffset = -1;
+  private int sysErrno = 0;
 
   /**
      Records the given error string and uses SQLITE_ERROR for both the
@@ -38,28 +38,31 @@ public final class SqliteException extends java.lang.RuntimeException {
   /**
      Uses sqlite3_errstr(sqlite3ResultCode) for the error string and
      sets both the error code and extended error code to the given
-     value.
+     value. This approach includes no database-level information and
+     systemErrno() will be 0, so is intended only for use with sqlite3
+     APIs for which a result code is not an error but which the
+     higher-level wrapper should treat as one.
   */
   public SqliteException(int sqlite3ResultCode){
-    super(sqlite3_errstr(sqlite3ResultCode));
+    super(CApi.sqlite3_errstr(sqlite3ResultCode));
     errCode = xerrCode = sqlite3ResultCode;
   }
 
   /**
      Records the current error state of db (which must not be null and
-     must refer to an opened db object). Note that this does NOT close
+     must refer to an opened db object). Note that this does not close
      the db.
 
-     Design note: closing the db on error is likely only useful during
+     Design note: closing the db on error is really only useful during
      a failed db-open operation, and the place(s) where that can
      happen are inside this library, not client-level code.
   */
   SqliteException(sqlite3 db){
-    super(sqlite3_errmsg(db));
-    errCode = sqlite3_errcode(db);
-    xerrCode = sqlite3_extended_errcode(db);
-    errOffset = sqlite3_error_offset(db);
-    sysErrno = sqlite3_system_errno(db);
+    super(CApi.sqlite3_errmsg(db));
+    errCode = CApi.sqlite3_errcode(db);
+    xerrCode = CApi.sqlite3_extended_errcode(db);
+    errOffset = CApi.sqlite3_error_offset(db);
+    sysErrno = CApi.sqlite3_system_errno(db);
   }
 
   /**
@@ -71,7 +74,7 @@ public final class SqliteException extends java.lang.RuntimeException {
   }
 
   public SqliteException(Sqlite.Stmt stmt){
-    this( stmt.db() );
+    this(stmt.getDb());
   }
 
   public int errcode(){ return errCode; }

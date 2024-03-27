@@ -582,6 +582,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
             bNextPage = 1;
           }else{
             iOff += dbdataGetVarintU32(&pCsr->aPage[iOff], &nPayload);
+            if( nPayload>0x7fffff00 ) nPayload &= 0x3fff;
           }
     
           /* If this is a leaf intkey cell, load the rowid */

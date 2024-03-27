@@ -19,7 +19,8 @@ package org.sqlite.jni.capi;
 public interface CommitHookCallback extends CallbackProxy {
   /**
      Works as documented for the C-level sqlite3_commit_hook()
-     callback.  Must not throw.
+     callback. If it throws, the exception is translated into
+     a db-level error.
   */
   int call();
 }
