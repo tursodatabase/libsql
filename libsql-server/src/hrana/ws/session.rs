@@ -15,8 +15,8 @@ use crate::namespace::NamespaceName;
 
 /// Session-level state of an authenticated Hrana connection.
 pub struct Session {
-    auth: Authenticated,
-    version: Version,
+    pub auth: Authenticated,
+    pub version: Version,
     streams: HashMap<i32, StreamHandle>,
     sqls: HashMap<i32, String>,
     cursors: HashMap<i32, i32>,
