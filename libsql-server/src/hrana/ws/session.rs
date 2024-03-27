@@ -92,7 +92,7 @@ pub(super) async fn handle_hello(
     let auth_strategy = namespace_jwt_key
         .map(Jwt::new)
         .map(Auth::new)
-        .unwrap_or(server.user_auth_strategy.clone());
+        .unwrap_or_else(|| server.user_auth_strategy.clone());
 
     let context: UserAuthContext = build_context(jwt, &auth_strategy.strategy.required_fields());
 
