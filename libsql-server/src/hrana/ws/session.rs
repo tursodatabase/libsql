@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Result};
 use futures::future::BoxFuture;
+use s3s::auth;
 use tokio::sync::{mpsc, oneshot};
 
 use super::super::{batch, cursor, stmt, ProtocolError, Version};
@@ -77,11 +78,17 @@ pub(super) async fn handle_initial_hello(
         .with(namespace.clone(), |ns| ns.jwt_key())
         .await??;
 
-    let auth = namespace_jwt_key
+    let auth_strategy = namespace_jwt_key
         .map(Jwt::new)
         .map(Auth::new)
-        .unwrap_or(server.user_auth_strategy.clone())
-        .authenticate(Ok(UserAuthContext::bearer_opt(jwt)))
+        .unwrap_or(server.user_auth_strategy.clone());
+
+    let context:UserAuthContext = build_context(jwt, auth_strategy.user_strategy.required_fields());
+
+    // Ok(UserAuthContext::bearer_opt(jwt))
+
+    let auth = auth_strategy
+        .authenticate(Ok(context))
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
 
     Ok(Session {

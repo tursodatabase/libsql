@@ -67,8 +67,12 @@ impl UserAuthContext {
 }
 
 pub trait UserAuthStrategy: Sync + Send {
+
+    fn required_fields(&self) -> Vec<String> {vec![]}
+
     fn authenticate(
         &self,
         context: Result<UserAuthContext, AuthError>,
     ) -> Result<Authenticated, AuthError>;
+
 }

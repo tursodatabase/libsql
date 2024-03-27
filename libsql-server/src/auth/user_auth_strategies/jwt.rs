@@ -34,6 +34,11 @@ impl UserAuthStrategy for Jwt {
 
         return validate_jwt(&self.key, &token);
     }
+
+    fn required_fields(&self) -> Vec<String> {vec!["authentication".to_string()]}
+
+    
+    
 }
 
 impl Jwt {
