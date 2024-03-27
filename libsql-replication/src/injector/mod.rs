@@ -138,7 +138,7 @@ impl Injector {
                 if let Some(e) = e.sqlite_error() {
                     if e.extended_code == LIBSQL_INJECT_OK {
                         // refresh schema
-                        connection.pragma_update(None, "writable_schema", "reset")?;
+                        // connection.pragma_update(None, "writable_schema", "reset")?;
                         let mut rollback = connection.prepare_cached("ROLLBACK")?;
                         let _ = rollback.execute(());
                         self.is_txn = false;
