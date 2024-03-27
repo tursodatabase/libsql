@@ -92,7 +92,7 @@ pub(super) async fn handle_hello(
     namespace_jwt_key
         .map(Jwt::new)
         .map(Auth::new)
-        .unwrap_or(server.user_auth_strategy.clone())
+        .unwrap_or_else(|| server.user_auth_strategy.clone())
         .authenticate(Ok(UserAuthContext::bearer_opt(jwt)))
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))
 }
