@@ -1009,6 +1009,7 @@ fn malformed_database() {
             "http://foo.primary:8080".to_string(),
             "".to_string(),
         )
+        .read_your_writes(true)
         .connector(TurmoilConnector)
         .build()
         .await?;
