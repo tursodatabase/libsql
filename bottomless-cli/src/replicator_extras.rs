@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use aws_sdk_s3::error::SdkError;
 use aws_sdk_s3::types::ObjectAttributes;
 use aws_sdk_s3::Client;
@@ -43,7 +43,7 @@ pub(crate) async fn detect_db(client: &Client, bucket: &str, namespace: &str) ->
         .await
         .ok()?;
 
-    let prefix = response.common_prefixes()?.first()?.prefix()?;
+    let prefix = response.common_prefixes().first()?.prefix()?;
     // 38 is the length of the uuid part
     if let Some('-') = prefix.chars().nth(prefix.len().saturating_sub(38)) {
         let ns_db = &prefix[..prefix.len().saturating_sub(38)];
@@ -71,7 +71,7 @@ impl Replicator {
         {
             Ok(attrs) => {
                 println!("\tmain database snapshot:");
-                println!("\t\tobject size:   {}", attrs.object_size());
+                println!("\t\tobject size:   {}", attrs.object_size().unwrap_or(0));
                 println!(
                     "\t\tlast modified: {}",
                     attrs
@@ -115,13 +115,13 @@ impl Replicator {
             }
 
             let response = list_request.send().await?;
-            let prefixes = match response.common_prefixes() {
-                Some(prefixes) => prefixes,
-                None => {
+            let prefixes = response.common_prefixes();
+            if prefixes.is_empty() {
+                if verbose {
                     println!("No generations found");
-                    return Ok(());
                 }
-            };
+                return Ok(());
+            }
 
             for prefix in prefixes {
                 if let Some(prefix) = &prefix.prefix {
@@ -198,15 +198,13 @@ impl Replicator {
             }
 
             let response = list_request.send().await?;
-            let objs = match response.contents() {
-                Some(prefixes) => prefixes,
-                None => {
-                    if verbose {
-                        println!("No objects found")
-                    }
-                    return Ok(());
+            let objs = response.contents();
+            if objs.is_empty() {
+                if verbose {
+                    println!("No objects found")
                 }
-            };
+                return Ok(());
+            }
 
             for obj in objs {
                 if let Some(key) = obj.key() {
@@ -234,7 +232,8 @@ impl Replicator {
     }
 
     pub(crate) async fn list_generation(&self, generation: uuid::Uuid) -> Result<()> {
-        self.client
+        if self
+            .client
             .list_objects()
             .bucket(&self.bucket)
             .prefix(format!("{}-{}/", &self.db_name, generation))
@@ -242,9 +241,10 @@ impl Replicator {
             .send()
             .await?
             .contents()
-            .ok_or_else(|| {
-                anyhow::anyhow!("Generation {} not found for {}", generation, &self.db_name)
-            })?;
+            .is_empty()
+        {
+            bail!("Generation {} not found for {}", generation, &self.db_name);
+        }
 
         let counter = self.get_remote_change_counter(&generation).await?;
         let consistent_frame = self.get_last_consistent_frame(&generation).await?;

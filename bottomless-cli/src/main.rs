@@ -1,4 +1,5 @@
 use anyhow::Result;
+use aws_config::BehaviorVersion;
 use aws_sdk_s3::Client;
 use bytes::Bytes;
 use chrono::NaiveDateTime;
@@ -190,7 +191,7 @@ async fn run() -> Result<()> {
         Some(db) => db,
         None => {
             let client = Client::from_conf({
-                let mut loader = aws_config::from_env();
+                let mut loader = aws_config::defaults(BehaviorVersion::latest());
                 if let Some(endpoint) = options.endpoint.clone() {
                     loader = loader.endpoint_url(endpoint);
                 }
