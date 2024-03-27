@@ -208,12 +208,18 @@ async fn handle_client_msg(conn: &mut Conn, client_msg: proto::ClientMsg) -> Res
 async fn handle_hello_msg(conn: &mut Conn, jwt: Option<String>) -> Result<bool> {
     let hello_res = match conn.session.as_mut() {
         None => {
-            session::handle_initial_hello(&conn.server, conn.version, jwt, conn.namespace.clone())
+            conn.session = session::handle_hello(&conn.server, jwt, conn.namespace.clone())
                 .await
-                .map(|session| conn.session = Some(session))
+                .map(|auth| session::Session::new(auth, conn.version))
+                .map(|s| Some(s))?;
+                Ok(())
         }
         Some(session) => {
-            session::handle_repeated_hello(&conn.server, session, jwt, conn.namespace.clone()).await
+            if session.version < Version::Hrana2 {
+                bail!(ProtocolError::NotSupported {what: "Repeated hello message", min_version: Version::Hrana2,})
+            }
+            session.auth = session::handle_hello(&conn.server, jwt, conn.namespace.clone()).await?;
+            Ok(())
         }
     };
 
