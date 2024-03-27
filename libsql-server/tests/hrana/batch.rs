@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use insta::assert_json_snapshot;
 use libsql::{params, Database};
+use libsql_hrana::proto::PipelineReqBody;
 use libsql_server::hrana_proto::{Batch, BatchStep, Stmt};
 
 use crate::common::http::Client;
@@ -157,6 +158,34 @@ fn affected_rows_and_last_rowid() {
         let r = conn.execute("update t set x = 'd';", ()).await?;
         assert_eq!(r, 3, "all three rows updated");
         assert_eq!(conn.last_insert_rowid(), 3, "last row id unchanged");
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn stats() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let req = serde_json::json!({
+            "requests": [
+                {"type": "execute", "stmt": { "sql": "CREATE TABLE foo (x INT)" }},
+                {"type": "execute", "stmt": { "sql": "INSERT INTO foo VALUES (42)"}},
+                {"type": "execute", "stmt": { "sql": "SELECT * FROM foo"}}
+            ]
+        });
+        let client = Client::new();
+
+        let resp = client
+            .post("http://primary:8080/v2/pipeline", req)
+            .await
+            .unwrap();
+        assert_json_snapshot!(resp.json_value().await.unwrap());
 
         Ok(())
     });

@@ -218,7 +218,7 @@ fn try_perform_migration<B: QueryResultBuilder>(
         builder, // todo use proper builder
         migration,
         |_| (false, None),
-        |_, _, _| (),
+        |_, _, _, _, _| (),
         Arc::new(|_: &NamespaceName| Err(crate::Error::AttachInMigration)),
     );
 

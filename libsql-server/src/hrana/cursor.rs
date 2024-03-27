@@ -268,4 +268,6 @@ impl QueryResultBuilder for CursorResultBuilder {
     }
 
     fn into_ret(self) {}
+
+    fn add_stats(&mut self, _rows_read: u64, _rows_written: u64) {}
 }

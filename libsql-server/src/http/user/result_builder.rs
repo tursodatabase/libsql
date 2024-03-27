@@ -306,6 +306,8 @@ impl QueryResultBuilder for JsonHttpPayloadBuilder {
     fn into_ret(self) -> Self::Ret {
         self.buffer.into_inner()
     }
+
+    fn add_stats(&mut self, _rows_read: u64, _rows_written: u64) {}
 }
 
 #[cfg(test)]

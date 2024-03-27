@@ -1026,6 +1026,8 @@ type StmtResult = {
     "rows": Array<Array<Value>>,
     "affected_row_count": uint32,
     "last_insert_rowid": string | null,
+    "rows_read": uint64,
+    "rows_written": uint64,
 }
 
 type Col = {

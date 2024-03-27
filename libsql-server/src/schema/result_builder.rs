@@ -103,4 +103,8 @@ impl<B: QueryResultBuilder> QueryResultBuilder for SchemaMigrationResultBuilder<
     fn into_ret(self) -> Self::Ret {
         self.inner.into_ret()
     }
+
+    fn add_stats(&mut self, rows_read: u64, rows_written: u64) {
+        self.inner.add_stats(rows_read, rows_written);
+    }
 }
