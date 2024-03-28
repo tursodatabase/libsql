@@ -19,8 +19,8 @@ const MAX_RETRIES_THRESHOLD: u32 = 64;
 pub enum Error {
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
-    #[error("Snaphot handler failure.\nstderr:\n{stderr}\nstdout:\n{stdout}")]
-    HandlerFailure { stderr: String, stdout: String },
+    #[error("Snaphot handler failure.")]
+    HandlerFailure,
     #[error("Could not parse snapshot path: {0}")]
     InvalidSnapshotPath(PathBuf),
 }
@@ -104,19 +104,17 @@ impl CommandHandler {
 
 impl Handler for CommandHandler {
     async fn handle(&mut self, entry: &SnapshotEntry) -> Result<()> {
-        let output = tokio::process::Command::new(&self.command)
+        let status = tokio::process::Command::new(&self.command)
             .arg(&entry.path)
             .arg(entry.namespace.as_str())
             .arg(entry.start_frame_no.to_string())
             .arg(entry.end_frame_no.to_string())
             .arg(entry.log_id.to_string())
-            .output()
+            .status()
             .await?;
-        if !output.status.success() {
-            return Err(Error::HandlerFailure {
-                stderr: String::from_utf8(output.stderr).unwrap_or_default(),
-                stdout: String::from_utf8(output.stdout).unwrap_or_default(),
-            });
+
+        if !status.success() {
+            return Err(Error::HandlerFailure);
         }
 
         Ok(())
@@ -416,10 +414,7 @@ mod test {
         impl Handler for FailHandler {
             async fn handle(&mut self, entry: &SnapshotEntry) -> Result<()> {
                 self.last_entry = Some(entry.clone());
-                Err(Error::HandlerFailure {
-                    stdout: String::new(),
-                    stderr: String::new(),
-                })
+                Err(Error::HandlerFailure)
             }
         }
 
@@ -501,10 +496,7 @@ mod test {
         impl Handler for FailHandler {
             async fn handle(&mut self, entry: &SnapshotEntry) -> Result<()> {
                 tokio::fs::remove_file(&entry.path).await.unwrap();
-                Err(Error::HandlerFailure {
-                    stdout: String::new(),
-                    stderr: String::new(),
-                })
+                Err(Error::HandlerFailure)
             }
         }
 
