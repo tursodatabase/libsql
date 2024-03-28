@@ -120,11 +120,15 @@ pub(super) async fn handle_repeated_hello(
         .with(namespace.clone(), |ns| ns.jwt_key())
         .await??;
 
-    session.auth = namespace_jwt_key
+        let auth_strategy = namespace_jwt_key
         .map(Jwt::new)
         .map(Auth::new)
-        .unwrap_or_else(|| server.user_auth_strategy.clone())
-        .authenticate(Ok(UserAuthContext::bearer_opt(jwt)))
+        .unwrap_or(server.user_auth_strategy.clone());
+ 
+    let context:UserAuthContext = build_context(jwt, auth_strategy.user_strategy.required_fields());
+
+    session.auth = auth_strategy
+        .authenticate(Ok(context))
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
 
     Ok(())

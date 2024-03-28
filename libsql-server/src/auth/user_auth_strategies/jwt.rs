@@ -23,6 +23,7 @@ impl UserAuthStrategy for Jwt {
         let UserAuthContext {
             scheme: Some(scheme),
             token: Some(token),
+            custom_fields: _
         } = ctx
         else {
             return Err(AuthError::HttpAuthHeaderInvalid);

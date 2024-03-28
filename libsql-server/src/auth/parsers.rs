@@ -36,7 +36,7 @@ pub fn parse_jwt_key(data: &str) -> Result<jsonwebtoken::DecodingKey> {
     }
 }
 
-pub(crate) fn parse_grpc_auth_header(metadata: &MetadataMap) -> Result<UserAuthContext, AuthError> {
+pub(crate) fn parse_grpc_auth_header(metadata: &MetadataMap, required_fields: Vec<String>) -> Result<UserAuthContext, AuthError> {
     metadata
         .get(GRPC_AUTH_HEADER)
         .ok_or(AuthError::AuthHeaderNotFound)

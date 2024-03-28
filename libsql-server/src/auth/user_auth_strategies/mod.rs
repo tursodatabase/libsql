@@ -29,6 +29,8 @@ impl UserAuthContext {
         UserAuthContext {
             scheme: None,
             token: None,
+            custom_fields: HashMap::new(),
+
         }
     }
 
@@ -36,6 +38,7 @@ impl UserAuthContext {
         UserAuthContext {
             scheme: Some("Basic".into()),
             token: Some(creds.into()),
+            custom_fields: HashMap::new(),
         }
     }
 
@@ -43,6 +46,7 @@ impl UserAuthContext {
         UserAuthContext {
             scheme: Some("Bearer".into()),
             token: Some(token.into()),
+            custom_fields: HashMap::new(),
         }
     }
 
@@ -50,6 +54,7 @@ impl UserAuthContext {
         UserAuthContext {
             scheme: Some("Bearer".into()),
             token: token,
+            custom_fields: HashMap::new(),
         }
     }
 
@@ -57,6 +62,7 @@ impl UserAuthContext {
         UserAuthContext {
             scheme: Some(scheme.into()),
             token: Some(token.into()),
+            custom_fields: HashMap::new(),
         }
     }
 
