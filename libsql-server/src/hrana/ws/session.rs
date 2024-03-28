@@ -71,7 +71,6 @@ pub(super) async fn handle_initial_hello(
     jwt: Option<String>,
     namespace: NamespaceName,
 ) -> Result<Session> {
-
     // todo dupe #auth
     let namespace_jwt_key = server
         .namespaces
@@ -82,8 +81,9 @@ pub(super) async fn handle_initial_hello(
         .map(Jwt::new)
         .map(Auth::new)
         .unwrap_or(server.user_auth_strategy.clone());
- 
-    let context:UserAuthContext = build_context(jwt, auth_strategy.user_strategy.required_fields());
+
+    let context: UserAuthContext =
+        build_context(jwt, &auth_strategy.user_strategy.required_fields());
 
     let auth = auth_strategy
         .authenticate(Ok(context))
@@ -98,7 +98,7 @@ pub(super) async fn handle_initial_hello(
     })
 }
 
-fn build_context(jwt: Option<String>, required_fields: Vec<String>) -> UserAuthContext {
+fn build_context(jwt: Option<String>, required_fields: &Vec<String>) -> UserAuthContext {
     UserAuthContext::bearer_opt(jwt)
 }
 
@@ -120,12 +120,13 @@ pub(super) async fn handle_repeated_hello(
         .with(namespace.clone(), |ns| ns.jwt_key())
         .await??;
 
-        let auth_strategy = namespace_jwt_key
+    let auth_strategy = namespace_jwt_key
         .map(Jwt::new)
         .map(Auth::new)
         .unwrap_or(server.user_auth_strategy.clone());
- 
-    let context:UserAuthContext = build_context(jwt, auth_strategy.user_strategy.required_fields());
+
+    let context: UserAuthContext =
+        build_context(jwt, &auth_strategy.user_strategy.required_fields());
 
     session.auth = auth_strategy
         .authenticate(Ok(context))

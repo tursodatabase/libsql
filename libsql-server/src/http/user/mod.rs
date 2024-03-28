@@ -469,17 +469,20 @@ impl FromRequestParts<AppState> for Authenticated {
             .await??;
 
         let auth = namespace_jwt_key
-        .map(Jwt::new)
-        .map(Auth::new)
-        .unwrap_or_else(|| state.user_auth_strategy.clone());
-    
-        let context = build_context(&parts.headers, auth.user_strategy.required_fields());
+            .map(Jwt::new)
+            .map(Auth::new)
+            .unwrap_or_else(|| state.user_auth_strategy.clone());
+
+        let context = build_context(&parts.headers, &auth.user_strategy.required_fields());
 
         Ok(auth.authenticate(Ok(context))?)
     }
 }
 
-fn build_context(headers: &hyper::HeaderMap<HeaderValue>, required_fields: Vec<String>) -> UserAuthContext {     
+fn build_context(
+    headers: &hyper::HeaderMap<HeaderValue>,
+    required_fields: &Vec<String>,
+) -> UserAuthContext {
     headers
         .get(hyper::header::AUTHORIZATION)
         .ok_or(AuthError::AuthHeaderNotFound)

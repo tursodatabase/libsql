@@ -13,7 +13,7 @@ use super::{AuthError, Authenticated};
 pub struct UserAuthContext {
     scheme: Option<String>,
     token: Option<String>,
-    custom_fields: HashMap<Box<str>, String>
+    custom_fields: HashMap<Box<str>, String>,
 }
 
 impl UserAuthContext {
@@ -30,7 +30,6 @@ impl UserAuthContext {
             scheme: None,
             token: None,
             custom_fields: HashMap::new(),
-
         }
     }
 
@@ -75,12 +74,12 @@ impl UserAuthContext {
 }
 
 pub trait UserAuthStrategy: Sync + Send {
-
-    fn required_fields(&self) -> Vec<String> {vec![]}
+    fn required_fields(&self) -> Vec<String> {
+        vec![]
+    }
 
     fn authenticate(
         &self,
         context: Result<UserAuthContext, AuthError>,
     ) -> Result<Authenticated, AuthError>;
-
 }

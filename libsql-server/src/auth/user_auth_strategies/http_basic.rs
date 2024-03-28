@@ -28,10 +28,10 @@ impl UserAuthStrategy for HttpBasic {
 
         Err(AuthError::BasicRejected)
     }
-    
-    fn required_fields(&self) -> Vec<String> {vec!["authentication".to_string()]}
-    
-    
+
+    fn required_fields(&self) -> Vec<String> {
+        vec!["authentication".to_string()]
+    }
 }
 
 impl HttpBasic {

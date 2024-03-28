@@ -23,7 +23,7 @@ impl UserAuthStrategy for Jwt {
         let UserAuthContext {
             scheme: Some(scheme),
             token: Some(token),
-            custom_fields: _
+            custom_fields: _,
         } = ctx
         else {
             return Err(AuthError::HttpAuthHeaderInvalid);
@@ -36,10 +36,9 @@ impl UserAuthStrategy for Jwt {
         return validate_jwt(&self.key, &token);
     }
 
-    fn required_fields(&self) -> Vec<String> {vec!["authentication".to_string()]}
-
-    
-    
+    fn required_fields(&self) -> Vec<String> {
+        vec!["authentication".to_string()]
+    }
 }
 
 impl Jwt {
