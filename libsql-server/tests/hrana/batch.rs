@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use insta::assert_json_snapshot;
 use libsql::{params, Database};
-use libsql_hrana::proto::PipelineReqBody;
 use libsql_server::hrana_proto::{Batch, BatchStep, Stmt};
 
 use crate::common::http::Client;
