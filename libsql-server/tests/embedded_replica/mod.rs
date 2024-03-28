@@ -1,6 +1,7 @@
 #![allow(deprecated)]
 
 mod local;
+mod restart;
 
 use std::path::PathBuf;
 use std::sync::Arc;
