@@ -1,4 +1,4 @@
-use std::borrow::{BorrowMut, Cow};
+use std::borrow::Cow;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -210,11 +210,9 @@ async fn handle_hello_msg(conn: &mut Conn, jwt: Option<String>) -> Result<bool> 
 
     let hello_res = match conn.session.as_mut() {
         None => auth
-                .map(|auth| session::Session::new(auth, conn.version))
-                .map(|s| {conn.session = Some(s)}),
-        Some(session) =>  auth
-            .map(|a| {session.update_auth(a)})
-            .and_then(|op| op)
+            .map(|auth| session::Session::new(auth, conn.version))
+            .map(|s| conn.session = Some(s)),
+        Some(session) => auth.map(|a| session.update_auth(a)).and_then(|op| op),
     };
 
     match hello_res {
