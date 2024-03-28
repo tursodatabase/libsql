@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Error, Result};
 use futures::future::BoxFuture;
 use tokio::sync::{mpsc, oneshot};
 
@@ -15,8 +15,8 @@ use crate::namespace::NamespaceName;
 
 /// Session-level state of an authenticated Hrana connection.
 pub struct Session {
-    pub auth: Authenticated,
-    pub version: Version,
+    auth: Authenticated,
+    version: Version,
     streams: HashMap<i32, StreamHandle>,
     sqls: HashMap<i32, String>,
     cursors: HashMap<i32, i32>,
@@ -32,6 +32,15 @@ impl Session {
             cursors: HashMap::new(),
         }
     }
+
+    pub fn update_auth(&mut self, auth: Authenticated) -> Result<(), Error>{
+        if self.version < Version::Hrana2 {
+            bail!(ProtocolError::NotSupported {what: "Repeated hello message", min_version: Version::Hrana2,})
+        }
+        self.auth = auth;
+        Ok(())
+    }
+
 }
 
 
