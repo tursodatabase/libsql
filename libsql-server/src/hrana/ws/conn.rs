@@ -208,12 +208,15 @@ async fn handle_client_msg(conn: &mut Conn, client_msg: proto::ClientMsg) -> Res
 async fn handle_hello_msg(conn: &mut Conn, jwt: Option<String>) -> Result<bool> {
     let auth = session::handle_hello(&conn.server, jwt, conn.namespace.clone()).await;
 
-    let hello_res = match conn.session.as_mut() {
-        None => auth
-            .map(|auth| session::Session::new(auth, conn.version))
-            .map(|s| conn.session = Some(s)),
-        Some(session) => auth.map(|a| session.update_auth(a)).and_then(|op| op),
-    };
+    let hello_res = auth.map(|a| {
+        if let Some(sess) = conn.session.as_mut(){
+            sess.update_auth(a)
+        } else {
+            conn.session = Some(session::Session::new(a, conn.version));
+            Ok(())
+        }
+    }).and_then(|o|o);
+        
 
     match hello_res {
         Ok(_) => {
