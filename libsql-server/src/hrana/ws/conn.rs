@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::borrow::{BorrowMut, Cow};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -206,21 +206,15 @@ async fn handle_client_msg(conn: &mut Conn, client_msg: proto::ClientMsg) -> Res
 }
 
 async fn handle_hello_msg(conn: &mut Conn, jwt: Option<String>) -> Result<bool> {
+    let auth = session::handle_hello(&conn.server, jwt, conn.namespace.clone()).await;
+
     let hello_res = match conn.session.as_mut() {
-        None => {
-            session::handle_hello(&conn.server, jwt, conn.namespace.clone())
-                .await
+        None => auth
                 .map(|auth| session::Session::new(auth, conn.version))
-                .map(|s| {conn.session = Some(s)})
-        }
-        Some(session) => {
-            if session.version < Version::Hrana2 {
-                bail!(ProtocolError::NotSupported {what: "Repeated hello message", min_version: Version::Hrana2,})
-            }
-            session::handle_hello(&conn.server, jwt, conn.namespace.clone())
-                .await
-                .map(|a| {session.auth = a})
-        }
+                .map(|s| {conn.session = Some(s)}),
+        Some(session) =>  auth
+            .map(|a| {session.update_auth(a)})
+            .and_then(|op| op)
     };
 
     match hello_res {
