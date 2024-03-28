@@ -24,25 +24,26 @@ pub struct Session {
 
 impl Session {
     pub fn new(auth: Authenticated, version: Version) -> Self {
-        Self { 
-            auth, 
-            version, 
-            streams: HashMap::new(), 
-            sqls: HashMap::new(), 
+        Self {
+            auth,
+            version,
+            streams: HashMap::new(),
+            sqls: HashMap::new(),
             cursors: HashMap::new(),
         }
     }
 
-    pub fn update_auth(&mut self, auth: Authenticated) -> Result<(), Error>{
+    pub fn update_auth(&mut self, auth: Authenticated) -> Result<(), Error> {
         if self.version < Version::Hrana2 {
-            bail!(ProtocolError::NotSupported {what: "Repeated hello message", min_version: Version::Hrana2,})
+            bail!(ProtocolError::NotSupported {
+                what: "Repeated hello message",
+                min_version: Version::Hrana2,
+            })
         }
         self.auth = auth;
         Ok(())
     }
-
 }
-
 
 struct StreamHandle {
     job_tx: mpsc::Sender<StreamJob>,
@@ -86,7 +87,6 @@ pub enum ResponseError {
     #[error(transparent)]
     Batch(batch::BatchError),
 }
-
 
 pub(super) async fn handle_hello(
     server: &Server,
