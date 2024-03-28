@@ -184,7 +184,11 @@ fn stats() {
             .post("http://primary:8080/v2/pipeline", req)
             .await
             .unwrap();
-        assert_json_snapshot!(resp.json_value().await.unwrap());
+
+        let mut json = resp.json_value().await.unwrap();
+        json.as_object_mut().unwrap().remove("baton");
+
+        assert_json_snapshot!(json);
 
         Ok(())
     });

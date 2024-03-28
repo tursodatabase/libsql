@@ -1,10 +1,8 @@
 ---
 source: libsql-server/tests/hrana/batch.rs
-expression: resp.json_value().await.unwrap()
+expression: json
 ---
 {
-  "baton": "Wz6RTjtGzHiFjH3Sc+BlVmKi4r2ThfF9s+WiO/6+wrfdM/SLWEtrz8Sm7AyxEqxn",
-  "base_url": null,
   "results": [
     {
       "type": "ok",
@@ -63,5 +61,6 @@ expression: resp.json_value().await.unwrap()
         }
       }
     }
-  ]
+  ],
+  "base_url": null
 }
