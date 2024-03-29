@@ -149,7 +149,7 @@ impl Wal for DurableWal {
         Ok(())
     }
 
-    fn frame_page_no(&self, frame_no: std::num::NonZeroU32) -> Option<std::num::NonZeroU32> {
+    fn frame_page_no(&mut self, frame_no: std::num::NonZeroU32) -> Option<std::num::NonZeroU32> {
         trace!("DurableWal::frame_page_no(frame_no: {:?})", frame_no);
         let rt = tokio::runtime::Handle::current();
         let frame_no = frame_no.get() as u64;
