@@ -39,9 +39,27 @@ message DbSizeResp {
   uint64 size = 1;
 }
 
+message FramesInWALReq {
+
+}
+
+message FramesInWALResp {
+  uint32 count = 1;
+}
+
+message FramePageNumReq {
+  uint64 frame_no = 1;
+}
+
+message FramePageNumResp {
+  uint64 page_no = 1;
+}
+
 service Storage {
   rpc InsertFrames(InsertFramesReq) returns (InsertFramesResp) {}
   rpc FindFrame(FindFrameReq) returns (FindFrameResp) {}
   rpc ReadFrame(ReadFrameReq) returns (ReadFrameResp) {}
   rpc DbSize(DbSizeReq) returns (DbSizeResp) {}
+  rpc FramesInWAL(FramesInWALReq) returns (FramesInWALResp) {}
+  rpc FramePageNum(FramePageNumReq) returns (FramePageNumResp) {}
 }

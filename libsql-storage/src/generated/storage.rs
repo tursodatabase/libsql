@@ -51,6 +51,27 @@ pub struct DbSizeResp {
     #[prost(uint64, tag = "1")]
     pub size: u64,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FramesInWalReq {}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FramesInWalResp {
+    #[prost(uint32, tag = "1")]
+    pub count: u32,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FramePageNumReq {
+    #[prost(uint64, tag = "1")]
+    pub frame_no: u64,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FramePageNumResp {
+    #[prost(uint64, tag = "1")]
+    pub page_no: u64,
+}
 /// Generated client implementations.
 pub mod storage_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
@@ -222,6 +243,56 @@ pub mod storage_client {
             req.extensions_mut().insert(GrpcMethod::new("storage.Storage", "DbSize"));
             self.inner.unary(req, path, codec).await
         }
+        pub async fn frames_in_wal(
+            &mut self,
+            request: impl tonic::IntoRequest<super::FramesInWalReq>,
+        ) -> std::result::Result<
+            tonic::Response<super::FramesInWalResp>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/storage.Storage/FramesInWAL",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("storage.Storage", "FramesInWAL"));
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn frame_page_num(
+            &mut self,
+            request: impl tonic::IntoRequest<super::FramePageNumReq>,
+        ) -> std::result::Result<
+            tonic::Response<super::FramePageNumResp>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/storage.Storage/FramePageNum",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("storage.Storage", "FramePageNum"));
+            self.inner.unary(req, path, codec).await
+        }
     }
 }
 /// Generated server implementations.
@@ -250,6 +321,17 @@ pub mod storage_server {
             &self,
             request: tonic::Request<super::DbSizeReq>,
         ) -> std::result::Result<tonic::Response<super::DbSizeResp>, tonic::Status>;
+        async fn frames_in_wal(
+            &self,
+            request: tonic::Request<super::FramesInWalReq>,
+        ) -> std::result::Result<tonic::Response<super::FramesInWalResp>, tonic::Status>;
+        async fn frame_page_num(
+            &self,
+            request: tonic::Request<super::FramePageNumReq>,
+        ) -> std::result::Result<
+            tonic::Response<super::FramePageNumResp>,
+            tonic::Status,
+        >;
     }
     #[derive(Debug)]
     pub struct StorageServer<T: Storage> {
@@ -491,6 +573,94 @@ pub mod storage_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = DbSizeSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/storage.Storage/FramesInWAL" => {
+                    #[allow(non_camel_case_types)]
+                    struct FramesInWALSvc<T: Storage>(pub Arc<T>);
+                    impl<T: Storage> tonic::server::UnaryService<super::FramesInWalReq>
+                    for FramesInWALSvc<T> {
+                        type Response = super::FramesInWalResp;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::FramesInWalReq>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as Storage>::frames_in_wal(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = FramesInWALSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/storage.Storage/FramePageNum" => {
+                    #[allow(non_camel_case_types)]
+                    struct FramePageNumSvc<T: Storage>(pub Arc<T>);
+                    impl<T: Storage> tonic::server::UnaryService<super::FramePageNumReq>
+                    for FramePageNumSvc<T> {
+                        type Response = super::FramePageNumResp;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::FramePageNumReq>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as Storage>::frame_page_num(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = FramePageNumSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
