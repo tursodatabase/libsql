@@ -475,7 +475,7 @@ impl FromRequestParts<AppState> for Authenticated {
 
         let context = build_context(&parts.headers, &auth.user_strategy.required_fields());
 
-        Ok(auth.authenticate(Ok(context))?)
+        Ok(auth.authenticate(context)?)
     }
 }
 

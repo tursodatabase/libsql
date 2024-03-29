@@ -34,7 +34,7 @@ impl FromRequestParts<AppState> for RequestContext {
         let context = super::build_context(&parts.headers, &auth.user_strategy.required_fields());
 
         Ok(Self::new(
-            auth.authenticate(Ok(context))?,
+            auth.authenticate(context)?,
             namespace,
             state.namespaces.meta_store().clone(),
         ))

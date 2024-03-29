@@ -86,7 +86,7 @@ pub(super) async fn handle_initial_hello(
         build_context(jwt, &auth_strategy.user_strategy.required_fields());
 
     let auth = auth_strategy
-        .authenticate(Ok(context))
+        .authenticate(context)
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
 
     Ok(Session {
@@ -133,7 +133,7 @@ pub(super) async fn handle_repeated_hello(
         build_context(jwt, &auth_strategy.user_strategy.required_fields());
 
     session.auth = auth_strategy
-        .authenticate(Ok(context))
+        .authenticate(context)
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
 
     Ok(())

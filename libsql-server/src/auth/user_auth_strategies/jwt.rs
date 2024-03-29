@@ -12,13 +12,8 @@ pub struct Jwt {
 }
 
 impl UserAuthStrategy for Jwt {
-    fn authenticate(
-        &self,
-        context: Result<UserAuthContext, AuthError>,
-    ) -> Result<Authenticated, AuthError> {
+    fn authenticate(&self, ctx: UserAuthContext) -> Result<Authenticated, AuthError> {
         tracing::trace!("executing jwt auth");
-
-        let ctx = context?;
         let auth_str = None
             .or_else(|| ctx.custom_fields.get("authorization"))
             .or_else(|| ctx.custom_fields.get("x-authorization"))
@@ -159,7 +154,7 @@ mod tests {
         };
         let token = encode(&token, &enc);
 
-        let context = Ok(UserAuthContext::bearer(token.as_str()));
+        let context = UserAuthContext::bearer(token.as_str());
 
         assert!(matches!(
             strategy(dec).authenticate(context).unwrap(),
@@ -181,8 +176,7 @@ mod tests {
         };
         let token = encode(&token, &enc);
 
-        let context = Ok(UserAuthContext::bearer(token.as_str()));
-
+        let context = UserAuthContext::bearer(token.as_str());
         let Authenticated::Legacy(a) = strategy(dec).authenticate(context).unwrap() else {
             panic!()
         };
@@ -194,7 +188,7 @@ mod tests {
     #[test]
     fn errors_when_jwt_token_invalid() {
         let (_enc, dec) = key_pair();
-        let context = Ok(UserAuthContext::bearer("abc"));
+        let context = UserAuthContext::bearer("abc");
 
         assert_eq!(
             strategy(dec).authenticate(context).unwrap_err(),
@@ -214,7 +208,7 @@ mod tests {
 
         let token = encode(&token, &enc);
 
-        let context = Ok(UserAuthContext::bearer(token.as_str()));
+        let context = UserAuthContext::bearer(token.as_str());
 
         assert_eq!(
             strategy(dec).authenticate(context).unwrap_err(),
@@ -236,7 +230,7 @@ mod tests {
 
         let token = encode(&token, &enc);
 
-        let context = Ok(UserAuthContext::bearer(token.as_str()));
+        let context = UserAuthContext::bearer(token.as_str());
 
         let Authenticated::Authorized(a) = strategy(dec).authenticate(context).unwrap() else {
             panic!()
