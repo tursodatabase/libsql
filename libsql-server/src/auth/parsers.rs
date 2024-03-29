@@ -1,4 +1,4 @@
-use crate::auth::{constants::GRPC_AUTH_HEADER, AuthError};
+use crate::auth::AuthError;
 
 use anyhow::{bail, Context as _, Result};
 use axum::http::HeaderValue;
@@ -40,11 +40,6 @@ pub(crate) fn parse_grpc_auth_header(
     metadata: &MetadataMap,
     required_fields: &Vec<String>,
 ) -> UserAuthContext {
-    // let mut context = metadata
-    //     .get(GRPC_AUTH_HEADER)
-    //     .ok_or(AuthError::AuthHeaderNotFound)
-    //     .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
-    //     .and_then(|t| UserAuthContext::from_auth_str(t));
     let mut context = UserAuthContext::empty();
     for field in required_fields.iter() {
         metadata
