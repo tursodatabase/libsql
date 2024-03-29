@@ -119,7 +119,6 @@ fn build_context(jwt: Option<String>, required_fields: &Vec<String>) -> UserAuth
     ctx
 }
 
-
 pub(super) async fn handle_request(
     server: &Server,
     session: &mut Session,
