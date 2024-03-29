@@ -37,9 +37,19 @@ impl crate::connection::Connection for SchemaConnection {
         replication_index: Option<crate::replication::FrameNo>,
     ) -> crate::Result<B> {
         if migration.is_read_only() {
-            self.connection
+            let res = self
+                .connection
                 .execute_program(migration, ctx, builder, replication_index)
-                .await
+                .await;
+
+            // If the query was okay, verify if the connection is not in a txn state
+            if res.is_ok() && self.connection.is_autocommit().await? {
+                return Err(crate::Error::Migration(
+                    crate::schema::Error::ConnectionInTxnState,
+                ));
+            }
+
+            res
         } else {
             check_program_auth(&ctx, &migration, &self.config.get())?;
             let connection = self.connection.clone();
@@ -48,10 +58,14 @@ impl crate::connection::Connection for SchemaConnection {
             let builder = tokio::task::spawn_blocking({
                 let migration = migration.clone();
                 move || {
-                    connection.with_raw(|conn| -> crate::Result<_> {
+                    let res = connection.with_raw(|conn| -> crate::Result<_> {
                         let mut txn = conn
                             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
-                            .unwrap();
+                            .map_err(|_| {
+                                crate::Error::Migration(
+                                    crate::schema::Error::InteractiveTxnNotAllowed,
+                                )
+                            })?;
                         // TODO: pass proper config
                         let (ret, _) = perform_migration(
                             &mut txn,
@@ -62,7 +76,9 @@ impl crate::connection::Connection for SchemaConnection {
                         );
                         txn.rollback().unwrap();
                         Ok(ret?)
-                    })
+                    });
+
+                    res
                 }
             })
             .await

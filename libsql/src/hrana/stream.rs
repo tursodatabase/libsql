@@ -3,7 +3,7 @@ use crate::hrana::proto::{Batch, BatchResult, DescribeResult, Stmt, StmtResult};
 use crate::hrana::{CursorResponseError, HranaError, HttpSend, Result};
 use bytes::{Bytes, BytesMut};
 use futures::Stream;
-use libsql_sys::hrana::proto::{
+use libsql_hrana::proto::{
     BatchStreamReq, CloseSqlStreamReq, CloseStreamReq, CloseStreamResp, DescribeStreamReq,
     GetAutocommitStreamReq, PipelineReqBody, PipelineRespBody, SequenceStreamReq,
     StoreSqlStreamReq, StreamRequest, StreamResponse, StreamResult,

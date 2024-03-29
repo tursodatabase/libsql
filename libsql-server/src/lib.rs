@@ -104,6 +104,7 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub max_active_namespaces: usize,
     pub meta_store_config: MetaStoreConfig,
     pub max_concurrent_connections: usize,
+    pub shutdown_timeout: std::time::Duration,
 }
 
 impl<C, A, D> Default for Server<C, A, D> {
@@ -124,6 +125,7 @@ impl<C, A, D> Default for Server<C, A, D> {
             max_active_namespaces: 100,
             meta_store_config: Default::default(),
             max_concurrent_connections: 128,
+            shutdown_timeout: Duration::from_secs(30),
         }
     }
 }
@@ -503,6 +505,7 @@ where
             ));
         }
 
+        let shutdown_timeout = self.shutdown_timeout.clone();
         let shutdown = self.shutdown.clone();
         // setup user-facing rpc services
         match db_kind {
@@ -567,10 +570,28 @@ where
 
         tokio::select! {
             _ = shutdown.notified() => {
-                join_set.shutdown().await;
-                service_shutdown.notify_waiters();
-                namespace_store.shutdown().await?;
-                tracing::info!("sqld was shutdown gracefully. Bye!");
+                let shutdown = async {
+                    join_set.shutdown().await;
+                    service_shutdown.notify_waiters();
+                    namespace_store.shutdown().await?;
+
+                    Ok::<_, crate::Error>(())
+                };
+
+                match tokio::time::timeout(shutdown_timeout, shutdown).await {
+                    Ok(Ok(())) =>  {
+                        tracing::info!("sqld was shutdown gracefully. Bye!");
+                    }
+                    Ok(Err(e)) => {
+                        tracing::error!("failed to shutdown gracefully: {}", e);
+                        std::process::exit(1);
+                    },
+                    Err(_) => {
+                        tracing::error!("shutdown timeout hit, forcefully shutting down");
+                        std::process::exit(1);
+                    },
+
+                }
             }
             Some(res) = join_set.join_next() => {
                 res??;

@@ -41,6 +41,10 @@ pub enum Error {
     MigrationFailure(String),
     #[error("Error executing migration: {0}")]
     MigrationExecuteError(Box<crate::Error>),
+    #[error("Interactive transactions are not allowed against a schema")]
+    InteractiveTxnNotAllowed,
+    #[error("Connection left in transaction state")]
+    ConnectionInTxnState,
 }
 
 impl ResponseError for Error {}
