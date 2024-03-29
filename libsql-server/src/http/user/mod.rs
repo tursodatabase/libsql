@@ -473,7 +473,7 @@ impl FromRequestParts<AppState> for Authenticated {
             .map(Auth::new)
             .unwrap_or_else(|| state.user_auth_strategy.clone());
 
-        let context = build_context(&parts.headers, &auth.user_strategy.required_fields());
+        let context = build_context(&parts.headers, &auth.strategy.required_fields());
 
         Ok(auth.authenticate(context)?)
     }

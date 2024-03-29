@@ -19,7 +19,7 @@ use tokio::time::Duration;
 use uuid::Uuid;
 
 use crate::auth::parsers::parse_grpc_auth_header;
-use crate::auth::{Auth, Authenticated, Jwt};
+use crate::auth::{Auth, Jwt, ProxyGrpc};
 use crate::connection::{Connection as _, RequestContext};
 use crate::database::Connection;
 use crate::namespace::NamespaceStore;
@@ -332,18 +332,13 @@ impl ProxyService {
                 "Error fetching jwt key for a namespace: {}",
                 e
             )))?,
-        };
+        }
+        .or_else(ProxyGrpc::new());
 
-        let auth = if let Some(auth) = auth {
-            let context =
-                parse_grpc_auth_header(req.metadata(), &auth.user_strategy.required_fields());
-            auth.authenticate(context)?
-        } else {
-            Authenticated::from_proxy_grpc_request(req)?
-        };
+        let context = parse_grpc_auth_header(req.metadata(), &auth.user_strategy.required_fields());
 
         Ok(RequestContext::new(
-            auth,
+            auth.authenticate(context)?,
             namespace,
             self.namespaces.meta_store().clone(),
         ))

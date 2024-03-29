@@ -1,17 +1,19 @@
 pub mod disabled;
 pub mod http_basic;
 pub mod jwt;
+pub mod proxy_grpc;
 
 pub use disabled::Disabled;
 use hashbrown::HashMap;
 pub use http_basic::HttpBasic;
 pub use jwt::Jwt;
+pub use proxy_grpc::ProxyGrpc;
 
 use super::{AuthError, Authenticated};
 
 #[derive(Debug)]
 pub struct UserAuthContext {
-    pub custom_fields: HashMap<Box<str>, String>, // todo, add aliases
+    pub custom_fields: HashMap<Box<str>, String>,
 }
 
 impl UserAuthContext {

@@ -82,8 +82,7 @@ pub(super) async fn handle_initial_hello(
         .map(Auth::new)
         .unwrap_or(server.user_auth_strategy.clone());
 
-    let context: UserAuthContext =
-        build_context(jwt, &auth_strategy.user_strategy.required_fields());
+    let context: UserAuthContext = build_context(jwt, &auth_strategy.strategy.required_fields());
 
     let auth = auth_strategy
         .authenticate(context)
@@ -129,8 +128,7 @@ pub(super) async fn handle_repeated_hello(
         .map(Auth::new)
         .unwrap_or(server.user_auth_strategy.clone());
 
-    let context: UserAuthContext =
-        build_context(jwt, &auth_strategy.user_strategy.required_fields());
+    let context: UserAuthContext = build_context(jwt, &auth_strategy.strategy.required_fields());
 
     session.auth = auth_strategy
         .authenticate(context)

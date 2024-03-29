@@ -31,7 +31,7 @@ impl FromRequestParts<AppState> for RequestContext {
             .map(Auth::new)
             .unwrap_or_else(|| state.user_auth_strategy.clone());
 
-        let context = super::build_context(&parts.headers, &auth.user_strategy.required_fields());
+        let context = super::build_context(&parts.headers, &auth.strategy.required_fields());
 
         Ok(Self::new(
             auth.authenticate(context)?,

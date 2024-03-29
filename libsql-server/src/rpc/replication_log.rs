@@ -94,8 +94,7 @@ impl ReplicationLogService {
         };
 
         if let Some(auth) = auth {
-            let context =
-                parse_grpc_auth_header(req.metadata(), &auth.user_strategy.required_fields());
+            let context = parse_grpc_auth_header(req.metadata(), &auth.strategy.required_fields());
             auth.authenticate(context)?;
         }
 
