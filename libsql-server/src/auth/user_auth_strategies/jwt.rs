@@ -12,27 +12,26 @@ pub struct Jwt {
 }
 
 impl UserAuthStrategy for Jwt {
-    fn authenticate(
-        &self,
-        context: Result<UserAuthContext, AuthError>,
-    ) -> Result<Authenticated, AuthError> {
+    fn authenticate(&self, ctx: UserAuthContext) -> Result<Authenticated, AuthError> {
         tracing::trace!("executing jwt auth");
+        let auth_str = None
+            .or_else(|| ctx.custom_fields.get("authorization"))
+            .or_else(|| ctx.custom_fields.get("x-authorization"))
+            .ok_or_else(|| AuthError::AuthHeaderNotFound)?;
 
-        let ctx = context?;
-
-        let UserAuthContext {
-            scheme: Some(scheme),
-            token: Some(token),
-        } = ctx
-        else {
-            return Err(AuthError::HttpAuthHeaderInvalid);
-        };
+        let (scheme, token) = auth_str
+            .split_once(' ')
+            .ok_or(AuthError::AuthStringMalformed)?;
 
         if !scheme.eq_ignore_ascii_case("bearer") {
             return Err(AuthError::HttpAuthHeaderUnsupportedScheme);
         }
 
         return validate_jwt(&self.key, &token);
+    }
+
+    fn required_fields(&self) -> Vec<String> {
+        vec!["authentication".to_string()]
     }
 }
 
@@ -155,7 +154,7 @@ mod tests {
         };
         let token = encode(&token, &enc);
 
-        let context = Ok(UserAuthContext::bearer(token.as_str()));
+        let context = UserAuthContext::bearer(token.as_str());
 
         assert!(matches!(
             strategy(dec).authenticate(context).unwrap(),
@@ -177,8 +176,7 @@ mod tests {
         };
         let token = encode(&token, &enc);
 
-        let context = Ok(UserAuthContext::bearer(token.as_str()));
-
+        let context = UserAuthContext::bearer(token.as_str());
         let Authenticated::Legacy(a) = strategy(dec).authenticate(context).unwrap() else {
             panic!()
         };
@@ -190,7 +188,7 @@ mod tests {
     #[test]
     fn errors_when_jwt_token_invalid() {
         let (_enc, dec) = key_pair();
-        let context = Ok(UserAuthContext::bearer("abc"));
+        let context = UserAuthContext::bearer("abc");
 
         assert_eq!(
             strategy(dec).authenticate(context).unwrap_err(),
@@ -210,7 +208,7 @@ mod tests {
 
         let token = encode(&token, &enc);
 
-        let context = Ok(UserAuthContext::bearer(token.as_str()));
+        let context = UserAuthContext::bearer(token.as_str());
 
         assert_eq!(
             strategy(dec).authenticate(context).unwrap_err(),
@@ -232,7 +230,7 @@ mod tests {
 
         let token = encode(&token, &enc);
 
-        let context = Ok(UserAuthContext::bearer(token.as_str()));
+        let context = UserAuthContext::bearer(token.as_str());
 
         let Authenticated::Authorized(a) = strategy(dec).authenticate(context).unwrap() else {
             panic!()
