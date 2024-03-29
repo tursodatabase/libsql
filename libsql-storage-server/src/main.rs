@@ -2,8 +2,9 @@ use anyhow::Result;
 use clap::Parser;
 use libsql_storage::rpc::storage_server::{Storage, StorageServer};
 use libsql_storage::rpc::{
-    DbSizeReq, DbSizeResp, FindFrameReq, FindFrameResp, InsertFramesReq, InsertFramesResp,
-    ReadFrameReq, ReadFrameResp,
+    DbSizeReq, DbSizeResp, FindFrameReq, FindFrameResp, FramePageNumReq, FramePageNumResp,
+    FramesInWalReq, FramesInWalResp, InsertFramesReq, InsertFramesResp, ReadFrameReq,
+    ReadFrameResp,
 };
 use libsql_storage_server::version::Version;
 use std::collections::BTreeMap;
@@ -11,8 +12,8 @@ use std::iter::Map;
 use std::net::SocketAddr;
 use std::sync::atomic::AtomicU32;
 use std::sync::{Arc, Mutex};
-use tonic::{transport::Server, Response};
-use tracing::trace;
+use tonic::{transport::Server, Request, Response, Status};
+use tracing::{error, trace};
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
 /// libSQL storage server
@@ -30,9 +31,16 @@ struct Cli {
 }
 
 #[derive(Default)]
+
+struct FrameData {
+    page_no: u64,
+    data: bytes::Bytes,
+}
+
+#[derive(Default)]
 struct FrameStore {
     // contains a frame data, key is the frame number
-    frames: BTreeMap<u64, bytes::Bytes>,
+    frames: BTreeMap<u64, FrameData>,
     // pages map contains the page number as a key and the list of frames for the page as a value
     pages: BTreeMap<u64, Vec<u64>>,
     max_frame_no: u64,
@@ -47,7 +55,13 @@ impl FrameStore {
     pub fn insert_frame(&mut self, page_no: u64, frame: bytes::Bytes) -> u64 {
         let frame_no = self.max_frame_no + 1;
         self.max_frame_no = frame_no;
-        self.frames.insert(frame_no, frame);
+        self.frames.insert(
+            frame_no,
+            FrameData {
+                page_no,
+                data: frame,
+            },
+        );
         self.pages
             .entry(page_no)
             .or_insert_with(Vec::new)
@@ -56,7 +70,7 @@ impl FrameStore {
     }
 
     pub fn read_frame(&self, frame_no: u64) -> Option<&bytes::Bytes> {
-        self.frames.get(&frame_no)
+        self.frames.get(&frame_no).map(|frame| &frame.data)
     }
 
     // given a page number, return the maximum frame for the page
@@ -65,11 +79,19 @@ impl FrameStore {
             .get(&page_no)
             .map(|frames| *frames.last().unwrap())
     }
+
+    // given a frame num, return the page number
+    pub fn frame_page_no(&self, frame_no: u64) -> Option<u64> {
+        self.frames.get(&frame_no).map(|frame| frame.page_no)
+    }
+
+    pub fn frames_in_wal(&self) -> u64 {
+        self.max_frame_no
+    }
 }
 
 #[derive(Default)]
 struct Service {
-    pages: Arc<Mutex<BTreeMap<u64, bytes::Bytes>>>,
     store: Arc<Mutex<FrameStore>>,
     db_size: AtomicU32,
 }
@@ -135,6 +157,28 @@ impl Storage for Service {
     ) -> Result<tonic::Response<DbSizeResp>, tonic::Status> {
         let size = self.db_size.load(std::sync::atomic::Ordering::SeqCst) as u64;
         Ok(Response::new(DbSizeResp { size }))
+    }
+
+    async fn frames_in_wal(
+        &self,
+        request: Request<FramesInWalReq>,
+    ) -> std::result::Result<Response<FramesInWalResp>, Status> {
+        Ok(Response::new(FramesInWalResp {
+            count: self.store.lock().unwrap().frames_in_wal() as u32,
+        }))
+    }
+
+    async fn frame_page_num(
+        &self,
+        request: Request<FramePageNumReq>,
+    ) -> std::result::Result<Response<FramePageNumResp>, Status> {
+        let frame_no = request.into_inner().frame_no;
+        if let Some(page_no) = self.store.lock().unwrap().frame_page_no(frame_no) {
+            Ok(Response::new(FramePageNumResp { page_no }))
+        } else {
+            error!("frame_page_num() failed for frame_no={}", frame_no);
+            Ok(Response::new(FramePageNumResp { page_no: 0 }))
+        }
     }
 }
 

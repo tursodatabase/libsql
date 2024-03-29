@@ -100,7 +100,7 @@ impl DurableWal {
 
 impl Wal for DurableWal {
     fn limit(&mut self, size: i64) {
-        todo!()
+        // no op, we go bottomless baby!
     }
 
     fn begin_read_txn(&mut self) -> Result<bool> {
@@ -150,7 +150,14 @@ impl Wal for DurableWal {
     }
 
     fn frame_page_no(&self, frame_no: std::num::NonZeroU32) -> Option<std::num::NonZeroU32> {
-        todo!()
+        trace!("DurableWal::frame_page_no(frame_no: {:?})", frame_no);
+        let rt = tokio::runtime::Handle::current();
+        let frame_no = frame_no.get() as u64;
+        let req = rpc::FramePageNumReq { frame_no };
+        let resp = self.client.frame_page_num(req);
+        let resp = tokio::task::block_in_place(|| rt.block_on(resp)).unwrap();
+        let page_no = resp.into_inner().page_no;
+        std::num::NonZeroU32::new(page_no as u32)
     }
 
     fn db_size(&self) -> u32 {
@@ -242,8 +249,13 @@ impl Wal for DurableWal {
         0
     }
 
-    fn frames_in_wal(&self) -> u32 {
-        0
+    fn frames_in_wal(&mut self) -> u32 {
+        trace!("DurableWal::frames_in_wal()");
+        let rt = tokio::runtime::Handle::current();
+        let req = rpc::FramesInWalReq {};
+        let resp = self.client.frames_in_wal(req);
+        let resp = tokio::task::block_in_place(|| rt.block_on(resp)).unwrap();
+        resp.into_inner().count
     }
 
     fn backfilled(&self) -> u32 {
