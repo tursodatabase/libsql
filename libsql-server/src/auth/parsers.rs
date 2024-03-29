@@ -40,11 +40,23 @@ pub(crate) fn parse_grpc_auth_header(
     metadata: &MetadataMap,
     required_fields: &Vec<String>,
 ) -> Result<UserAuthContext, AuthError> {
-    metadata
+    let mut context = metadata
         .get(GRPC_AUTH_HEADER)
         .ok_or(AuthError::AuthHeaderNotFound)
         .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
-        .and_then(|t| UserAuthContext::from_auth_str(t))
+        .and_then(|t| UserAuthContext::from_auth_str(t));
+
+    if let Ok(ref mut ctx) = context {
+        for field in required_fields.iter() {
+            metadata
+                .get(field)
+                .map(|header| header.to_str().ok())
+                .and_then(|r| r)
+                .map(|v| ctx.add_field(field.into(), v.into()));
+        }
+    }
+
+    context
 }
 
 pub fn parse_http_auth_header<'a>(
@@ -73,7 +85,6 @@ pub fn parse_http_auth_header<'a>(
 #[cfg(test)]
 mod tests {
     use axum::http::HeaderValue;
-    use hashbrown::HashMap;
     use hyper::header::AUTHORIZATION;
 
     use crate::auth::{parse_http_auth_header, AuthError};
@@ -84,10 +95,12 @@ mod tests {
     fn parse_grpc_auth_header_returns_valid_context() {
         let mut map = tonic::metadata::MetadataMap::new();
         map.insert("x-authorization", "bearer 123".parse().unwrap());
-        let required_fields = Vec::new();
+        let required_fields = vec!["x-authorization".into()];
         let context = parse_grpc_auth_header(&map, &required_fields).unwrap();
-        assert_eq!(context.scheme().as_ref().unwrap(), "bearer");
-        assert_eq!(context.token().as_ref().unwrap(), "123");
+        assert_eq!(
+            context.custom_fields.get("x-authorization"),
+            Some(&"bearer 123".to_string())
+        );
     }
 
     #[test]

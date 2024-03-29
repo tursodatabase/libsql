@@ -99,7 +99,11 @@ pub(super) async fn handle_initial_hello(
 }
 
 fn build_context(jwt: Option<String>, required_fields: &Vec<String>) -> UserAuthContext {
-    UserAuthContext::bearer_opt(jwt)
+    let mut ctx = UserAuthContext::empty();
+    if required_fields.contains(&"authorization".into()) && jwt.is_some() {
+        ctx.add_field("authorization".into(), jwt.unwrap());
+    }
+    ctx
 }
 
 pub(super) async fn handle_repeated_hello(

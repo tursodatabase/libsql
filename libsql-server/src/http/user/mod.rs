@@ -483,12 +483,21 @@ fn build_context(
     headers: &hyper::HeaderMap<HeaderValue>,
     required_fields: &Vec<String>,
 ) -> UserAuthContext {
-    headers
+    let mut ctx = headers
         .get(hyper::header::AUTHORIZATION)
         .ok_or(AuthError::AuthHeaderNotFound)
         .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
         .and_then(|t| UserAuthContext::from_auth_str(t))
-        .unwrap_or(UserAuthContext::empty())
+        .unwrap_or(UserAuthContext::empty());
+
+    for field in required_fields.iter() {
+        headers
+            .get(field)
+            .map(|h| h.to_str().ok())
+            .and_then(|t| t.map(|s| ctx.add_field(field.into(), s.into())));
+    }
+
+    ctx
 }
 
 impl FromRef<AppState> for Auth {

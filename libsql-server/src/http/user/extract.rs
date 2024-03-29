@@ -1,7 +1,7 @@
 use axum::extract::FromRequestParts;
 
 use crate::{
-    auth::{Auth, AuthError, Jwt, UserAuthContext},
+    auth::{Auth, Jwt},
     connection::RequestContext,
 };
 

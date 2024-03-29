@@ -13,15 +13,20 @@ impl UserAuthStrategy for HttpBasic {
     ) -> Result<Authenticated, AuthError> {
         tracing::trace!("executing http basic auth");
 
+        let ctx = context?;
+        let auth_str = None
+            .or_else(|| ctx.custom_fields.get("authorization"))
+            .or_else(|| ctx.custom_fields.get("x-authorization"));
+
+        let (_, token) = auth_str
+            .ok_or(AuthError::AuthHeaderNotFound)
+            .map(|s| s.split_once(' ').ok_or(AuthError::AuthStringMalformed))
+            .and_then(|o| o)?;
+
         // NOTE: this naive comparison may leak information about the `expected_value`
         // using a timing attack
         let expected_value = self.credential.trim_end_matches('=');
-
-        let creds_match = match context?.token {
-            Some(s) => s.contains(expected_value),
-            None => expected_value.is_empty(),
-        };
-
+        let creds_match = token.contains(expected_value);
         if creds_match {
             return Ok(Authenticated::FullAccess);
         }
@@ -30,7 +35,7 @@ impl UserAuthStrategy for HttpBasic {
     }
 
     fn required_fields(&self) -> Vec<String> {
-        vec!["authentication".to_string()]
+        vec!["authorization".to_string(), "x-authorization".to_string()]
     }
 }
 

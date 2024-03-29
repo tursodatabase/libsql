@@ -11,57 +11,31 @@ use super::{AuthError, Authenticated};
 
 #[derive(Debug)]
 pub struct UserAuthContext {
-    scheme: Option<String>,
-    token: Option<String>,
-    custom_fields: HashMap<Box<str>, String>,
+    pub custom_fields: HashMap<Box<str>, String>, // todo, add aliases
 }
 
 impl UserAuthContext {
-    pub fn scheme(&self) -> &Option<String> {
-        &self.scheme
-    }
-
-    pub fn token(&self) -> &Option<String> {
-        &self.token
-    }
-
     pub fn empty() -> UserAuthContext {
         UserAuthContext {
-            scheme: None,
-            token: None,
             custom_fields: HashMap::new(),
         }
     }
 
     pub fn basic(creds: &str) -> UserAuthContext {
         UserAuthContext {
-            scheme: Some("Basic".into()),
-            token: Some(creds.into()),
-            custom_fields: HashMap::new(),
+            custom_fields: HashMap::from([("authorization".into(), format!("Basic {creds}"))]),
         }
     }
 
     pub fn bearer(token: &str) -> UserAuthContext {
         UserAuthContext {
-            scheme: Some("Bearer".into()),
-            token: Some(token.into()),
-            custom_fields: HashMap::new(),
-        }
-    }
-
-    pub fn bearer_opt(token: Option<String>) -> UserAuthContext {
-        UserAuthContext {
-            scheme: Some("Bearer".into()),
-            token: token,
-            custom_fields: HashMap::new(),
+            custom_fields: HashMap::from([("authorization".into(), format!("Bearer {token}"))]),
         }
     }
 
     pub fn new(scheme: &str, token: &str) -> UserAuthContext {
         UserAuthContext {
-            scheme: Some(scheme.into()),
-            token: Some(token.into()),
-            custom_fields: HashMap::new(),
+            custom_fields: HashMap::from([("authorization".into(), format!("{scheme} {token}"))]),
         }
     }
 
@@ -70,6 +44,10 @@ impl UserAuthContext {
             .split_once(' ')
             .ok_or(AuthError::AuthStringMalformed)?;
         Ok(UserAuthContext::new(scheme, token))
+    }
+
+    pub fn add_field(&mut self, key: String, value: String) {
+        self.custom_fields.insert(key.into(), value.into());
     }
 }
 

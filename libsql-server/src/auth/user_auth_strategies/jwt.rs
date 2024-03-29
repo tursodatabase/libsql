@@ -19,15 +19,14 @@ impl UserAuthStrategy for Jwt {
         tracing::trace!("executing jwt auth");
 
         let ctx = context?;
+        let auth_str = None
+            .or_else(|| ctx.custom_fields.get("authorization"))
+            .or_else(|| ctx.custom_fields.get("x-authorization"))
+            .ok_or_else(|| AuthError::AuthHeaderNotFound)?;
 
-        let UserAuthContext {
-            scheme: Some(scheme),
-            token: Some(token),
-            custom_fields: _,
-        } = ctx
-        else {
-            return Err(AuthError::HttpAuthHeaderInvalid);
-        };
+        let (scheme, token) = auth_str
+            .split_once(' ')
+            .ok_or(AuthError::AuthStringMalformed)?;
 
         if !scheme.eq_ignore_ascii_case("bearer") {
             return Err(AuthError::HttpAuthHeaderUnsupportedScheme);
