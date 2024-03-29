@@ -9,7 +9,11 @@ impl UserAuthStrategy for ProxyGrpc {
         tracing::trace!("executing proxy grpc auth");
         let auth_str = None
             .or_else(|| ctx.custom_fields.get("proxy-authorization"))
-            .or_else(|| ctx.custom_fields.get("x-proxy-authorization"));
+            .or_else(|| ctx.custom_fields.get("x-proxy-authorization"))
+            .ok_or_else(|| AuthError::AuthProxyHeaderNotFound)?;
+
+        serde_json::from_str::<Authenticated>(&auth_str)
+            .map_err(|_| AuthError::AuthProxyHeaderInvalid)
     }
 
     fn required_fields(&self) -> Vec<String> {

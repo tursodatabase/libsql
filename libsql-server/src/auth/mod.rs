@@ -23,9 +23,9 @@ pub struct Auth {
 }
 
 impl Auth {
-    pub fn new(user_strategy: impl UserAuthStrategy + Send + Sync + 'static) -> Self {
+    pub fn new(strategy: impl UserAuthStrategy + Send + Sync + 'static) -> Self {
         Self {
-            strategy: Arc::new(user_strategy),
+            strategy: Arc::new(strategy),
         }
     }
 

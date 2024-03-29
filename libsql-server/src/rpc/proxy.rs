@@ -333,9 +333,9 @@ impl ProxyService {
                 e
             )))?,
         }
-        .or_else(ProxyGrpc::new());
+        .unwrap_or_else(|| Auth::new(ProxyGrpc::new()));
 
-        let context = parse_grpc_auth_header(req.metadata(), &auth.user_strategy.required_fields());
+        let context = parse_grpc_auth_header(req.metadata(), &auth.strategy.required_fields());
 
         Ok(RequestContext::new(
             auth.authenticate(context)?,
