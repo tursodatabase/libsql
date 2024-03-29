@@ -520,6 +520,7 @@ impl SnapshotBuilder {
                     self.header.start_frame_no.into(),
                     self.header.end_frame_no.into(),
                     file.file_path(),
+                    Uuid::from_u128(self.header.log_id.get()),
                 )
                 .await?;
         }
