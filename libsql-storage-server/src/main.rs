@@ -7,11 +7,13 @@ use libsql_storage::rpc::{
 };
 use libsql_storage_server::version::Version;
 use std::collections::BTreeMap;
+use std::iter::Map;
 use std::net::SocketAddr;
 use std::sync::atomic::AtomicU32;
 use std::sync::{Arc, Mutex};
 use tonic::{transport::Server, Response};
 use tracing::trace;
+use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
 /// libSQL storage server
 #[derive(Debug, Parser)]
@@ -28,8 +30,47 @@ struct Cli {
 }
 
 #[derive(Default)]
+struct FrameStore {
+    // contains a frame data, key is the frame number
+    frames: BTreeMap<u64, bytes::Bytes>,
+    // pages map contains the page number as a key and the list of frames for the page as a value
+    pages: BTreeMap<u64, Vec<u64>>,
+    max_frame_no: u64,
+}
+
+impl FrameStore {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    // inserts a new frame for the page number and returns the new frame value
+    pub fn insert_frame(&mut self, page_no: u64, frame: bytes::Bytes) -> u64 {
+        let frame_no = self.max_frame_no + 1;
+        self.max_frame_no = frame_no;
+        self.frames.insert(frame_no, frame);
+        self.pages
+            .entry(page_no)
+            .or_insert_with(Vec::new)
+            .push(frame_no);
+        frame_no
+    }
+
+    pub fn read_frame(&self, frame_no: u64) -> Option<&bytes::Bytes> {
+        self.frames.get(&frame_no)
+    }
+
+    // given a page number, return the maximum frame for the page
+    pub fn find_frame(&self, page_no: u64) -> Option<u64> {
+        self.pages
+            .get(&page_no)
+            .map(|frames| *frames.last().unwrap())
+    }
+}
+
+#[derive(Default)]
 struct Service {
     pages: Arc<Mutex<BTreeMap<u64, bytes::Bytes>>>,
+    store: Arc<Mutex<FrameStore>>,
     db_size: AtomicU32,
 }
 
@@ -47,10 +88,10 @@ impl Storage for Service {
     ) -> Result<tonic::Response<InsertFramesResp>, tonic::Status> {
         trace!("insert_frames()");
         let mut num_frames = 0;
+        let mut store = self.store.lock().unwrap();
         for frame in request.into_inner().frames {
-            let mut pages = self.pages.lock().unwrap();
             trace!("inserting frame for page {}", frame.page_no);
-            pages.insert(frame.page_no, frame.data.into());
+            store.insert_frame(frame.page_no, frame.data.into());
             num_frames += 1;
             self.db_size
                 .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
@@ -64,11 +105,9 @@ impl Storage for Service {
     ) -> Result<tonic::Response<FindFrameResp>, tonic::Status> {
         let page_no = request.into_inner().page_no;
         trace!("find_frame(page_no={})", page_no);
-        let pages = self.pages.lock().unwrap();
-        if pages.contains_key(&page_no) {
-            // We have 1:1 mapping between frames and pages to cheat a bit.
+        if let Some(frame_no) = self.store.lock().unwrap().find_frame(page_no) {
             Ok(Response::new(FindFrameResp {
-                frame_no: Some(page_no),
+                frame_no: Some(frame_no),
             }))
         } else {
             Ok(Response::new(FindFrameResp { frame_no: None }))
@@ -81,8 +120,7 @@ impl Storage for Service {
     ) -> Result<tonic::Response<ReadFrameResp>, tonic::Status> {
         let frame_no = request.into_inner().frame_no;
         trace!("read_frame(frame_no={})", frame_no);
-        let pages = self.pages.lock().unwrap();
-        if let Some(data) = pages.get(&frame_no) {
+        if let Some(data) = self.store.lock().unwrap().read_frame(frame_no) {
             Ok(Response::new(ReadFrameResp {
                 frame: Some(data.clone().into()),
             }))
@@ -102,14 +140,22 @@ impl Storage for Service {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt::init();
+    let filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("libsql_storage_server=trace"));
+    tracing::subscriber::set_global_default(
+        FmtSubscriber::builder().with_env_filter(filter).finish(),
+    )
+    .expect("setting default subscriber failed");
 
     let args = Cli::parse();
 
     let service = Service::default();
 
     println!("Starting libSQL storage server on {}", args.listen_addr);
-
+    trace!(
+        "(trace) Starting libSQL storage server on {}",
+        args.listen_addr
+    );
     Server::builder()
         .add_service(StorageServer::new(service))
         .serve(args.listen_addr)

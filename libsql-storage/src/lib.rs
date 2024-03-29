@@ -219,7 +219,8 @@ impl Wal for DurableWal {
         in_wal: Option<&mut i32>,
         backfilled: Option<&mut i32>,
     ) -> Result<()> {
-        todo!()
+        // checkpoint is a no op
+        Ok(())
     }
 
     fn exclusive_mode(&mut self, op: std::ffi::c_int) -> Result<()> {
@@ -242,7 +243,7 @@ impl Wal for DurableWal {
     }
 
     fn frames_in_wal(&self) -> u32 {
-        todo!()
+        0
     }
 
     fn backfilled(&self) -> u32 {
