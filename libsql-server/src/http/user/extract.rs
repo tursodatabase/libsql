@@ -24,19 +24,18 @@ impl FromRequestParts<AppState> for RequestContext {
         let namespace_jwt_key = state
             .namespaces
             .with(namespace.clone(), |ns| ns.jwt_key())
-            .await??;
+            .await
+            .and_then(|o|o)?;
 
         let auth = namespace_jwt_key
-            .map(Jwt::new)
-            .map(Auth::new)
+            .map(|key|Auth::new(Jwt::new(key)))
             .unwrap_or_else(|| state.user_auth_strategy.clone());
 
         let context = super::build_context(&parts.headers, &auth.strategy.required_fields());
 
-        Ok(Self::new(
-            auth.authenticate(context)?,
-            namespace,
-            state.namespaces.meta_store().clone(),
-        ))
+        auth.authenticate(context)
+        .map(|a| Self::new(a, namespace, state.namespaces.meta_store().clone()))
+        .map_err(|e|e.into())
+
     }
 }

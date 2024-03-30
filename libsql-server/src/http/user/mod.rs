@@ -469,13 +469,13 @@ impl FromRequestParts<AppState> for Authenticated {
             .await??;
 
         let auth = namespace_jwt_key
-            .map(Jwt::new)
-            .map(Auth::new)
+            .map(|key|Auth::new(Jwt::new(key)))
             .unwrap_or_else(|| state.user_auth_strategy.clone());
 
         let context = build_context(&parts.headers, &auth.strategy.required_fields());
 
-        Ok(auth.authenticate(context)?)
+        auth.authenticate(context)
+        .map_err(|e|e.into())
     }
 }
 
