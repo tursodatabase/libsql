@@ -468,20 +468,36 @@ impl FromRequestParts<AppState> for Authenticated {
             .with(ns.clone(), |ns| ns.jwt_key())
             .await??;
 
-        let context = parts
-            .headers
-            .get(hyper::header::AUTHORIZATION)
-            .ok_or(AuthError::AuthHeaderNotFound)
-            .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
-            .and_then(|t| UserAuthContext::from_auth_str(t));
+        let auth = namespace_jwt_key
+            .map(|key|Auth::new(Jwt::new(key)))
+            .unwrap_or_else(|| state.user_auth_strategy.clone());
 
-        let authenticated = namespace_jwt_key
-            .map(Jwt::new)
-            .map(Auth::new)
-            .unwrap_or_else(|| state.user_auth_strategy.clone())
-            .authenticate(context)?;
-        Ok(authenticated)
+        let context = build_context(&parts.headers, &auth.strategy.required_fields());
+
+        auth.authenticate(context)
+        .map_err(|e|e.into())
     }
+}
+
+fn build_context(
+    headers: &hyper::HeaderMap<HeaderValue>,
+    required_fields: &Vec<String>,
+) -> UserAuthContext {
+    let mut ctx = headers
+        .get(hyper::header::AUTHORIZATION)
+        .ok_or(AuthError::AuthHeaderNotFound)
+        .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
+        .and_then(|t| UserAuthContext::from_auth_str(t))
+        .unwrap_or(UserAuthContext::empty());
+
+    for field in required_fields.iter() {
+        headers
+            .get(field)
+            .map(|h| h.to_str().ok())
+            .and_then(|t| t.map(|s| ctx.add_field(field.into(), s.into())));
+    }
+
+    ctx
 }
 
 impl FromRef<AppState> for Auth {

@@ -3,6 +3,7 @@ use std::sync::Arc;
 use axum::extract::{FromRequestParts, Path};
 use hyper::http::request::Parts;
 use hyper::HeaderMap;
+use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
 
 use crate::auth::Authenticated;
 use crate::connection::MakeConnection;
@@ -46,18 +47,25 @@ pub fn namespace_from_headers(
         return Ok(NamespaceName::default());
     }
 
-    let host = headers
-        .get("host")
-        .ok_or_else(|| Error::InvalidHost("missing host header".into()))?
-        .as_bytes();
-    let host_str = std::str::from_utf8(host)
-        .map_err(|_| Error::InvalidHost("host header is not valid UTF-8".into()))?;
+    headers
+        .get(NAMESPACE_METADATA_KEY)
+        .ok_or(Error::InvalidNamespace)
+        .and_then(|h| h.to_str().map_err(|_| Error::InvalidNamespace))
+        .and_then(|n| NamespaceName::from_string(n.into()))
+        .or_else(|_| {
+            let host = headers
+                .get("host")
+                .ok_or_else(|| Error::InvalidHost("missing host header".into()))?
+                .as_bytes();
+            let host_str = std::str::from_utf8(host)
+                .map_err(|_| Error::InvalidHost("host header is not valid UTF-8".into()))?;
 
-    match split_namespace(host_str) {
-        Ok(ns) => Ok(ns),
-        Err(_) if !disable_default_namespace => Ok(NamespaceName::default()),
-        Err(e) => Err(e),
-    }
+            match split_namespace(host_str) {
+                Ok(ns) => Ok(ns),
+                Err(_) if !disable_default_namespace => Ok(NamespaceName::default()),
+                Err(e) => Err(e),
+            }
+        })
 }
 
 pub struct MakeConnectionExtractorPath(pub Arc<dyn MakeConnection<Connection = Connection>>);

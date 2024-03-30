@@ -75,27 +75,17 @@ impl ReplicationLogService {
         let namespace_jwt_key = self
             .namespaces
             .with(namespace.clone(), |ns| ns.jwt_key())
-            .await;
+            .await
+            .and_then(|o|o)
+            .map_err(|e|Status::internal(format!("Error fetching jwt key for a namespace: {}",e)))?;
 
-        let auth = match namespace_jwt_key {
-            Ok(Ok(Some(key))) => Some(Auth::new(Jwt::new(key))),
-            Ok(Ok(None)) => self.user_auth_strategy.clone(),
-            Err(e) => match e.as_ref() {
-                crate::error::Error::NamespaceDoesntExist(_) => self.user_auth_strategy.clone(),
-                _ => Err(Status::internal(format!(
-                    "Error fetching jwt key for a namespace: {}",
-                    e
-                )))?,
-            },
-            Ok(Err(e)) => Err(Status::internal(format!(
-                "Error fetching jwt key for a namespace: {}",
-                e
-            )))?,
-        };
+        let auth = namespace_jwt_key
+            .map(|key|Auth::new(Jwt::new(key)))
+            .or_else(|| self.user_auth_strategy.clone());
 
         if let Some(auth) = auth {
-            let user_credential = parse_grpc_auth_header(req.metadata());
-            auth.authenticate(user_credential)?;
+            let context = parse_grpc_auth_header(req.metadata(), &auth.strategy.required_fields());
+            auth.authenticate(context)?;
         }
 
         Ok(())
