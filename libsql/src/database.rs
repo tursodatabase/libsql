@@ -584,6 +584,7 @@ impl Database {
 #[cfg(any(feature = "replication", feature = "remote"))]
 fn connector() -> Result<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>> {
     let mut http = hyper::client::HttpConnector::new();
+    http.set_keepalive(std::time::Duration::from_secs(5).into());
     http.enforce_http(false);
     http.set_nodelay(true);
 
