@@ -73,7 +73,7 @@ impl WalManager for DurableWalManager {
 
 pub struct DurableWal {
     client: StorageClient<Channel>,
-    page_frames: SieveCache<std::num::NonZeroU32, std::num::NonZeroU32>,
+    page_frames: SieveCache<std::num::NonZeroU32, Vec<u8>>,
     db_size: u32,
 }
 
@@ -117,9 +117,6 @@ impl Wal for DurableWal {
         page_no: std::num::NonZeroU32,
     ) -> Result<Option<std::num::NonZeroU32>> {
         trace!("DurableWal::find_frame(page_no: {:?})", page_no);
-        if let Some(frame_no) = self.page_frames.get(&page_no) {
-            return Ok(Some(*frame_no));
-        }
         let rt = tokio::runtime::Handle::current();
         let req = rpc::FindFrameReq {
             page_no: page_no.get() as u64,
@@ -131,14 +128,16 @@ impl Wal for DurableWal {
             .frame_no
             .map(|page_no| std::num::NonZeroU32::new(page_no as u32))
             .flatten();
-        if let Some(frame_no) = frame_no {
-            self.page_frames.insert(page_no, frame_no);
-        }
         Ok(frame_no)
     }
 
     fn read_frame(&mut self, frame_no: std::num::NonZeroU32, buffer: &mut [u8]) -> Result<()> {
         trace!("DurableWal::read_frame(frame_no: {:?})", frame_no);
+        // check if the frame exists in the local cache
+        if let Some(frame) = self.page_frames.get(&frame_no) {
+            buffer.copy_from_slice(&frame);
+            return Ok(());
+        }
         let rt = tokio::runtime::Handle::current();
         let frame_no = frame_no.get() as u64;
         let req = rpc::ReadFrameReq { frame_no };
@@ -146,6 +145,8 @@ impl Wal for DurableWal {
         let resp = tokio::task::block_in_place(|| rt.block_on(resp)).unwrap();
         let frame = resp.into_inner().frame.unwrap();
         buffer.copy_from_slice(&frame);
+        self.page_frames
+            .insert(std::num::NonZeroU32::new(frame_no as u32).unwrap(), frame);
         Ok(())
     }
 
@@ -176,7 +177,8 @@ impl Wal for DurableWal {
     }
 
     fn undo<U: libsql_sys::wal::UndoHandler>(&mut self, handler: Option<&mut U>) -> Result<()> {
-        todo!()
+        // TODO: no op
+        Ok(())
     }
 
     fn savepoint(&mut self, rollback_data: &mut [u32]) {

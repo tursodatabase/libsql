@@ -112,8 +112,11 @@ impl Storage for Service {
         let mut num_frames = 0;
         let mut store = self.store.lock().unwrap();
         for frame in request.into_inner().frames {
-            trace!("inserting frame for page {}", frame.page_no);
-            store.insert_frame(frame.page_no, frame.data.into());
+            trace!(
+                "inserted for page {} frame {}",
+                frame.page_no,
+                store.insert_frame(frame.page_no, frame.data.into())
+            );
             num_frames += 1;
             self.db_size
                 .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
@@ -132,6 +135,7 @@ impl Storage for Service {
                 frame_no: Some(frame_no),
             }))
         } else {
+            error!("find_frame() failed for page_no={}", page_no);
             Ok(Response::new(FindFrameResp { frame_no: None }))
         }
     }
@@ -147,6 +151,7 @@ impl Storage for Service {
                 frame: Some(data.clone().into()),
             }))
         } else {
+            error!("read_frame() failed for frame_no={}", frame_no);
             Ok(Response::new(ReadFrameResp { frame: None }))
         }
     }
