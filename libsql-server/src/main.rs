@@ -242,6 +242,10 @@ struct Cli {
     /// empty on startup
     #[clap(long, env = "SQLD_ALLOW_METASTORE_RECOVERY")]
     allow_metastore_recovery: bool,
+
+    /// Shutdown timeout duration in seconds, defaults to 30 seconds.
+    #[clap(long, env = "SQLD_SHUTDOWN_TIMEOUT")]
+    shutdown_timeout: Option<u64>,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -647,6 +651,10 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
         max_active_namespaces: config.max_active_namespaces,
         meta_store_config,
         max_concurrent_connections: config.max_concurrent_connections,
+        shutdown_timeout: config
+            .shutdown_timeout
+            .map(Duration::from_secs)
+            .unwrap_or(Duration::from_secs(30)),
     })
 }
 

@@ -124,7 +124,7 @@ impl GrpcChannel {
         connector: ConnectorService,
         http_request_callback: Option<HttpRequestCallback>,
     ) -> Self {
-        let client = hyper::Client::builder().build(connector);
+        let client = hyper::Client::builder().pool_idle_timeout(None).pool_max_idle_per_host(3).build(connector);
         let client = GrpcWebClientService::new(client);
 
         let classifier = GrpcErrorsAsFailures::new().with_success(GrpcCode::FailedPrecondition);
