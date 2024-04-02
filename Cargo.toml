@@ -11,11 +11,12 @@ members = [
   "libsql-replication",
   "libsql-ffi",
   "libsql-hrana",
+  "libsql-wal",
 
   "vendored/rusqlite",
   "vendored/sqlite3-parser",
 
-  "xtask", "libsql-hrana",
+  "xtask", "libsql-hrana", "libsql-wal",
 ]
 
 exclude = [

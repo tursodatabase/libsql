@@ -1,0 +1,25 @@
+[package]
+name = "libsql-wal"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bytes = "1.6.0"
+fst = "0.4.7"
+hashbrown = "0.14.3"
+libsql-sys = { path = "../libsql-sys", features = ["rusqlite"] }
+memmap = "0.7.0"
+memoffset = "0.9.1"
+mmap = "0.1.1"
+nix = { version = "0.28.0", features = ["uio", "fs"] }
+parking_lot = "0.12.1"
+tokio = { version = "1.36.0", features = ["full"] }
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "time"] }
+walkdir = "2.5.0"
+zerocopy = { version = "0.7.32", features = ["derive"] }
+
+[dev-dependencies]
+tempfile = "3.10.1"
