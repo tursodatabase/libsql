@@ -1,5 +1,8 @@
+use libsql_sys::ffi::SQLITE_BUSY;
+use libsql_sys::rusqlite;
 use libsql_sys::wal::{Result, Vfs, Wal, WalManager};
 use sieve_cache::SieveCache;
+use std::sync::{Arc, Mutex};
 use tonic::transport::Channel;
 use tracing::trace;
 
@@ -11,11 +14,13 @@ pub mod rpc {
 use rpc::storage_client::StorageClient;
 
 #[derive(Clone)]
-pub struct DurableWalManager {}
+pub struct DurableWalManager {
+    lock_manager: Arc<Mutex<LockManager>>,
+}
 
 impl DurableWalManager {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(lock_manager: Arc<Mutex<LockManager>>) -> Self {
+        Self { lock_manager }
     }
 }
 
@@ -37,7 +42,7 @@ impl WalManager for DurableWalManager {
     ) -> Result<Self::Wal> {
         let db_path = db_path.to_str().unwrap();
         trace!("DurableWalManager::open(db_path: {})", db_path);
-        Ok(DurableWal::new())
+        Ok(DurableWal::new(self.lock_manager.clone()))
     }
 
     fn close(
@@ -75,10 +80,12 @@ pub struct DurableWal {
     client: StorageClient<Channel>,
     page_frames: SieveCache<std::num::NonZeroU32, Vec<u8>>,
     db_size: u32,
+    name: String,
+    lock_manager: Arc<Mutex<LockManager>>,
 }
 
 impl DurableWal {
-    fn new() -> Self {
+    fn new(lock_manager: Arc<Mutex<LockManager>>) -> Self {
         let rt = tokio::runtime::Handle::current();
         let client = StorageClient::connect("http://127.0.0.1:5002");
         let mut client = tokio::task::block_in_place(|| rt.block_on(client)).unwrap();
@@ -94,6 +101,8 @@ impl DurableWal {
             client,
             page_frames,
             db_size,
+            name: uuid::Uuid::new_v4().to_string(),
+            lock_manager,
         }
     }
 }
@@ -167,12 +176,29 @@ impl Wal for DurableWal {
     }
 
     fn begin_write_txn(&mut self) -> Result<()> {
-        trace!("DurableWal::begin_write_txn()");
+        let mut lock_manager = self.lock_manager.lock().unwrap();
+        if !lock_manager.lock("default".to_string(), self.name.clone()) {
+            trace!(
+                "DurableWal::begin_write_txn() lock = false, id = {}",
+                self.name
+            );
+            return Err(rusqlite::ffi::Error::new(SQLITE_BUSY));
+        };
+        trace!(
+            "DurableWal::begin_write_txn() lock = true, id = {}",
+            self.name
+        );
         Ok(())
     }
 
     fn end_write_txn(&mut self) -> Result<()> {
-        trace!("DurableWal::end_write_txn()");
+        // release lock
+        let mut lock_manager = self.lock_manager.lock().unwrap();
+        trace!(
+            "DurableWal::end_write_txn() id = {}, success = {}",
+            self.name,
+            lock_manager.unlock("default".to_string(), self.name.clone())
+        );
         Ok(())
     }
 
@@ -197,6 +223,7 @@ impl Wal for DurableWal {
         is_commit: bool,
         sync_flags: std::ffi::c_int,
     ) -> Result<usize> {
+        trace!("name = {}", self.name);
         trace!("DurableWal::insert_frames(page_size: {}, size_after: {}, is_commit: {}, sync_flags: {})", page_size, size_after, is_commit, sync_flags);
         let rt = tokio::runtime::Handle::current();
         let frames = page_headers
@@ -252,12 +279,13 @@ impl Wal for DurableWal {
     }
 
     fn frames_in_wal(&mut self) -> u32 {
-        trace!("DurableWal::frames_in_wal()");
         let rt = tokio::runtime::Handle::current();
         let req = rpc::FramesInWalReq {};
         let resp = self.client.frames_in_wal(req);
         let resp = tokio::task::block_in_place(|| rt.block_on(resp)).unwrap();
-        resp.into_inner().count
+        let count = resp.into_inner().count;
+        trace!("DurableWal::frames_in_wal() = {}", count);
+        count
     }
 
     fn backfilled(&self) -> u32 {
@@ -266,5 +294,39 @@ impl Wal for DurableWal {
 
     fn db_file(&self) -> &libsql_sys::wal::Sqlite3File {
         todo!()
+    }
+}
+
+pub struct LockManager {
+    locks: std::collections::HashMap<String, String>,
+}
+
+impl LockManager {
+    pub fn new() -> Self {
+        Self {
+            locks: std::collections::HashMap::new(),
+        }
+    }
+
+    pub fn lock(&mut self, namespace: String, wal_id: String) -> bool {
+        if let Some(lock) = self.locks.get(&namespace) {
+            if lock == &wal_id {
+                return true;
+            }
+            return false;
+        }
+        self.locks.insert(namespace, wal_id);
+        true
+    }
+
+    pub fn unlock(&mut self, namespace: String, wal_id: String) -> bool {
+        if let Some(lock) = self.locks.get(&namespace) {
+            if lock == &wal_id {
+                self.locks.remove(&namespace);
+                return true;
+            }
+            return false;
+        }
+        true
     }
 }

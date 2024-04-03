@@ -52,6 +52,7 @@ use crate::{
 
 use crate::namespace::fork::PointInTimeRestore;
 pub use fork::ForkError;
+use libsql_storage::LockManager;
 
 use self::fork::ForkTask;
 use self::meta_store::{MetaStore, MetaStoreHandle};
@@ -1018,6 +1019,7 @@ pub struct PrimaryNamespaceConfig {
     pub(crate) max_concurrent_connections: Arc<Semaphore>,
     pub(crate) scripted_backup: Option<ScriptBackupManager>,
     pub(crate) max_concurrent_requests: u64,
+    pub(crate) lock_manager: Arc<std::sync::Mutex<LockManager>>,
 }
 
 pub type DumpStream =
@@ -1149,7 +1151,11 @@ impl Namespace<PrimaryDatabase> {
         )
         .await?;
 
-        let wal_manager = make_replication_wal(bottomless_replicator, logger.clone());
+        let wal_manager = make_replication_wal(
+            bottomless_replicator,
+            logger.clone(),
+            config.lock_manager.clone(),
+        );
         let connection_maker: Arc<_> = MakeLibSqlConn::new(
             db_path.clone(),
             wal_manager.clone(),

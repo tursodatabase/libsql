@@ -2893,6 +2893,7 @@ name = "libsql-storage"
 version = "0.2.0"
 dependencies = [
  "libsql-sys",
+ "log",
  "prost",
  "prost-build",
  "sieve-cache",
@@ -2900,6 +2901,7 @@ dependencies = [
  "tonic",
  "tonic-build",
  "tracing",
+ "uuid",
 ]
 
 [[package]]

@@ -4,7 +4,7 @@ use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::str::FromStr;
-use std::sync::{Arc, Weak};
+use std::sync::{Arc, Mutex, Weak};
 
 use crate::connection::{Connection, MakeConnection};
 use crate::error::Error;
@@ -54,6 +54,7 @@ pub mod rpc;
 pub mod version;
 
 pub use hrana::proto as hrana_proto;
+use libsql_storage::LockManager;
 
 mod database;
 mod error;
@@ -547,6 +548,7 @@ where
             max_concurrent_connections: Arc::new(Semaphore::new(self.max_concurrent_connections)),
             scripted_backup,
             max_concurrent_requests: self.db_config.max_concurrent_requests,
+            lock_manager: Arc::new(Mutex::new(LockManager::new())),
         };
 
         let factory = PrimaryNamespaceMaker::new(conf);
