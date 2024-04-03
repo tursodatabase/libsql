@@ -90,7 +90,12 @@ pub struct DurableWal {
 impl DurableWal {
     fn new(lock_manager: Arc<Mutex<LockManager>>) -> Self {
         let rt = tokio::runtime::Handle::current();
-        let client = StorageClient::connect("http://127.0.0.1:5002");
+        // connect to ss on fly
+        // export LIBSQL_STORAGE_SERVER_ADDR=http://libsql-storage-server.internal:5002
+        let address = std::env::var("LIBSQL_STORAGE_SERVER_ADDR")
+            .unwrap_or("http://127.0.0.1:5002".to_string());
+        trace!("DurableWal::new() address = {}", address);
+        let client = StorageClient::connect(address);
         let mut client = tokio::task::block_in_place(|| rt.block_on(client)).unwrap();
 
         let req = rpc::DbSizeReq {};

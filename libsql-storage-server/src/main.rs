@@ -22,11 +22,7 @@ use tracing_subscriber::{EnvFilter, FmtSubscriber};
 #[command(about = "libSQL storage server", version = Version::default(), long_about = None)]
 struct Cli {
     /// The address and port the storage RPC protocol listens to. Example: `127.0.0.1:5002`.
-    #[clap(
-        long,
-        env = "LIBSQL_STORAGE_LISTEN_ADDR",
-        default_value = "0.0.0.0:5002"
-    )]
+    #[clap(long, env = "LIBSQL_STORAGE_LISTEN_ADDR", default_value = "[::]:5002")]
     listen_addr: SocketAddr,
 }
 
