@@ -11,8 +11,6 @@ internal_port = 5002
 processes = ["app"]
 protocol = "tcp"
 script_checks = []
-auto_stop_machines = true
-auto_start_machines = true
 [[services.ports]]
 port = 5002
 
