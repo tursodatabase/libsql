@@ -1,3 +1,5 @@
+// use libsql_sys::ffi::SQLITE_BUSY;
+// use libsql_sys::rusqlite;
 use libsql_sys::ffi::SQLITE_BUSY;
 use libsql_sys::rusqlite;
 use libsql_sys::wal::{Result, Vfs, Wal, WalManager};
@@ -5,6 +7,7 @@ use sieve_cache::SieveCache;
 use std::sync::{Arc, Mutex};
 use tonic::transport::Channel;
 use tracing::trace;
+use uuid::uuid;
 
 pub mod rpc {
     #![allow(clippy::all)]
@@ -77,7 +80,7 @@ impl WalManager for DurableWalManager {
 }
 
 pub struct DurableWal {
-    client: StorageClient<Channel>,
+    client: parking_lot::Mutex<StorageClient<Channel>>,
     page_frames: SieveCache<std::num::NonZeroU32, Vec<u8>>,
     db_size: u32,
     name: String,
@@ -98,7 +101,7 @@ impl DurableWal {
         let page_frames = SieveCache::new(1000).unwrap();
 
         Self {
-            client,
+            client: parking_lot::Mutex::new(client),
             page_frames,
             db_size,
             name: uuid::Uuid::new_v4().to_string(),
@@ -130,7 +133,8 @@ impl Wal for DurableWal {
         let req = rpc::FindFrameReq {
             page_no: page_no.get() as u64,
         };
-        let resp = self.client.find_frame(req);
+        let mut binding = self.client.lock();
+        let resp = binding.find_frame(req);
         let resp = tokio::task::block_in_place(|| rt.block_on(resp)).unwrap();
         let frame_no = resp
             .into_inner()
@@ -150,7 +154,8 @@ impl Wal for DurableWal {
         let rt = tokio::runtime::Handle::current();
         let frame_no = frame_no.get() as u64;
         let req = rpc::ReadFrameReq { frame_no };
-        let resp = self.client.read_frame(req);
+        let mut binding = self.client.lock();
+        let resp = binding.read_frame(req);
         let resp = tokio::task::block_in_place(|| rt.block_on(resp)).unwrap();
         let frame = resp.into_inner().frame.unwrap();
         buffer.copy_from_slice(&frame);
@@ -159,12 +164,13 @@ impl Wal for DurableWal {
         Ok(())
     }
 
-    fn frame_page_no(&mut self, frame_no: std::num::NonZeroU32) -> Option<std::num::NonZeroU32> {
+    fn frame_page_no(&self, frame_no: std::num::NonZeroU32) -> Option<std::num::NonZeroU32> {
         trace!("DurableWal::frame_page_no(frame_no: {:?})", frame_no);
         let rt = tokio::runtime::Handle::current();
         let frame_no = frame_no.get() as u64;
         let req = rpc::FramePageNumReq { frame_no };
-        let resp = self.client.frame_page_num(req);
+        let mut binding = self.client.lock();
+        let resp = binding.frame_page_num(req);
         let resp = tokio::task::block_in_place(|| rt.block_on(resp)).unwrap();
         let page_no = resp.into_inner().page_no;
         std::num::NonZeroU32::new(page_no as u32)
@@ -195,7 +201,7 @@ impl Wal for DurableWal {
         // release lock
         let mut lock_manager = self.lock_manager.lock().unwrap();
         trace!(
-            "DurableWal::end_write_txn() id = {}, success = {}",
+            "DurableWal::end_write_txn() id = {}, unlocked = {}",
             self.name,
             lock_manager.unlock("default".to_string(), self.name.clone())
         );
@@ -237,7 +243,8 @@ impl Wal for DurableWal {
             })
             .collect();
         let req = rpc::InsertFramesReq { frames };
-        let resp = self.client.insert_frames(req);
+        let mut binding = self.client.lock();
+        let resp = binding.insert_frames(req);
         let resp = tokio::task::block_in_place(|| rt.block_on(resp)).unwrap();
         self.db_size = size_after;
         Ok(resp.into_inner().num_frames as usize)
@@ -278,10 +285,11 @@ impl Wal for DurableWal {
         0
     }
 
-    fn frames_in_wal(&mut self) -> u32 {
+    fn frames_in_wal(&self) -> u32 {
         let rt = tokio::runtime::Handle::current();
         let req = rpc::FramesInWalReq {};
-        let resp = self.client.frames_in_wal(req);
+        let mut binding = self.client.lock();
+        let resp = binding.frames_in_wal(req);
         let resp = tokio::task::block_in_place(|| rt.block_on(resp)).unwrap();
         let count = resp.into_inner().count;
         trace!("DurableWal::frames_in_wal() = {}", count);

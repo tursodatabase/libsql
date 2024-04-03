@@ -176,7 +176,7 @@ where
         }
     }
 
-    fn frames_in_wal(&mut self) -> u32 {
+    fn frames_in_wal(&self) -> u32 {
         match self {
             Either::Left(l) => l.frames_in_wal(),
             Either::Right(r) => r.frames_in_wal(),
@@ -197,7 +197,7 @@ where
         }
     }
 
-    fn frame_page_no(&mut self, frame_no: std::num::NonZeroU32) -> Option<std::num::NonZeroU32> {
+    fn frame_page_no(&self, frame_no: std::num::NonZeroU32) -> Option<std::num::NonZeroU32> {
         match self {
             Either::Left(l) => l.frame_page_no(frame_no),
             Either::Right(r) => r.frame_page_no(frame_no),

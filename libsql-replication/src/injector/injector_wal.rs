@@ -218,7 +218,7 @@ impl Wal for InjectorWal {
         self.inner.callback()
     }
 
-    fn frames_in_wal(&mut self) -> u32 {
+    fn frames_in_wal(&self) -> u32 {
         self.inner.frames_in_wal()
     }
 
@@ -230,7 +230,7 @@ impl Wal for InjectorWal {
         self.inner.backfilled()
     }
 
-    fn frame_page_no(&mut self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
+    fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
         self.inner.frame_page_no(frame_no)
     }
 }

@@ -2894,6 +2894,7 @@ version = "0.2.0"
 dependencies = [
  "libsql-sys",
  "log",
+ "parking_lot",
  "prost",
  "prost-build",
  "sieve-cache",

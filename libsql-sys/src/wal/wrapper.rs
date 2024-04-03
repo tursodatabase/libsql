@@ -199,8 +199,8 @@ where
         self.wrapper.callback(&self.wrapped)
     }
 
-    fn frames_in_wal(&mut self) -> u32 {
-        self.wrapper.frames_in_wal(&mut self.wrapped)
+    fn frames_in_wal(&self) -> u32 {
+        self.wrapper.frames_in_wal(&self.wrapped)
     }
 
     fn db_file(&self) -> &super::Sqlite3File {
@@ -211,8 +211,8 @@ where
         self.wrapped.backfilled()
     }
 
-    fn frame_page_no(&mut self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
-        self.wrapper.frame_page_no(&mut self.wrapped, frame_no)
+    fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
+        self.wrapper.frame_page_no(&self.wrapped, frame_no)
     }
 }
 
@@ -329,7 +329,7 @@ pub trait WrapWal<W: Wal> {
         wrapped.callback()
     }
 
-    fn frames_in_wal(&self, wrapped: &mut W) -> u32 {
+    fn frames_in_wal(&self, wrapped: &W) -> u32 {
         wrapped.frames_in_wal()
     }
 
@@ -356,7 +356,7 @@ pub trait WrapWal<W: Wal> {
         manager.close(wrapped, db, sync_flags, scratch)
     }
 
-    fn frame_page_no(&mut self, wrapped: &mut W, frame_no: NonZeroU32) -> Option<NonZeroU32> {
+    fn frame_page_no(&self, wrapped: &W, frame_no: NonZeroU32) -> Option<NonZeroU32> {
         wrapped.frame_page_no(frame_no)
     }
 }
@@ -542,7 +542,7 @@ impl<T: WrapWal<W>, W: Wal> WrapWal<W> for Option<T> {
         }
     }
 
-    fn frames_in_wal(&self, wrapped: &mut W) -> u32 {
+    fn frames_in_wal(&self, wrapped: &W) -> u32 {
         match self {
             Some(t) => t.frames_in_wal(wrapped),
             None => wrapped.frames_in_wal(),

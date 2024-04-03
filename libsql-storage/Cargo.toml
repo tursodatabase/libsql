@@ -7,14 +7,15 @@ repository = "https://github.com/tursodatabase/libsql"
 license = "MIT"
 
 [dependencies]
-libsql-sys = { path = "../libsql-sys" }
+libsql-sys = { path = "../libsql-sys", features = ["rusqlite"] }
 prost = "0.12"
 sieve-cache = "0.1.4"
 tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs"] }
 tonic = { version = "0.10.0", features = ["tls"] }
 tracing = { version = "0.1.37", default-features = false }
-uuid = "1.7.0"
+uuid = { version = "1.7.0", features = ["v4"] }
 log = "0.4.20"
+parking_lot = "0.12.1"
 
 [dev-dependencies]
 prost-build = "0.12.0"

@@ -409,7 +409,7 @@ impl Wal for Sqlite3Wal {
         unsafe { (self.inner.methods.xCallback.unwrap())(self.inner.pData) }
     }
 
-    fn frames_in_wal(&mut self) -> u32 {
+    fn frames_in_wal(&self) -> u32 {
         unsafe {
             let wal = &*(self.inner.pData as *const sqlite3_wal);
             wal.hdr.mxFrame
@@ -435,7 +435,7 @@ impl Wal for Sqlite3Wal {
 
     /// ported from wal.c
     /// returns the page_no corresponding to a given frame_no
-    fn frame_page_no(&mut self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
+    fn frame_page_no(&self, frame_no: NonZeroU32) -> Option<NonZeroU32> {
         unsafe {
             let ptr = &mut (*(self.inner.pData as *mut sqlite3_wal));
             NonZeroU32::new(libsql_ffi::sqlite3_wal_frame_page_no(ptr, frame_no.get()))
