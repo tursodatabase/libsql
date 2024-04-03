@@ -25,7 +25,7 @@ struct Cli {
     #[clap(
         long,
         env = "LIBSQL_STORAGE_LISTEN_ADDR",
-        default_value = "127.0.0.1:5002"
+        default_value = "0.0.0.0:5002"
     )]
     listen_addr: SocketAddr,
 }
