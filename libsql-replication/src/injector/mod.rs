@@ -34,6 +34,7 @@ pub struct Injector {
     connection: Arc<Mutex<libsql_sys::Connection<InjectorWal>>>,
     biggest_uncommitted_seen: FrameNo,
 
+    // Connection config items used to recreate the injection connection
     path: PathBuf,
     encryption_config: Option<libsql_sys::EncryptionConfig>,
     auto_checkpoint: u32,
@@ -148,7 +149,7 @@ impl Injector {
                 if let Some(e) = e.sqlite_error() {
                     if e.extended_code == LIBSQL_INJECT_OK {
                         // refresh schema
-                        // connection.pragma_update(None, "writable_schema", "reset")?;
+                        connection.pragma_update(None, "writable_schema", "reset")?;
                         let mut rollback = connection.prepare_cached("ROLLBACK")?;
                         let _ = rollback.execute(());
                         self.is_txn = false;
