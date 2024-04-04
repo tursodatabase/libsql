@@ -22,9 +22,6 @@ pub struct PipelineRespBody {
     pub results: Vec<StreamResult>,
 }
 
-#[derive(Serialize, Deserialize, prost::Message)]
-pub struct Stats {}
-
 #[derive(Serialize, Deserialize, Default, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum StreamResult {
