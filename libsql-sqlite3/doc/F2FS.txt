@@ -71,7 +71,7 @@ Assumptions:
 2. If the system fails before the F2FS_IOC_COMMIT_ATOMIC_WRITE is
    completed, then following a reboot the database file is in the
    state that it was in before F2FS_IOC_START_ATOMIC_WRITE was invoked.
-   Or, if the write was commited right before the system failed, in a 
+   Or, if the write was committed right before the system failed, in a
    state indicating that all write() calls were successfully committed
    to persistent storage before the failure occurred.
 
