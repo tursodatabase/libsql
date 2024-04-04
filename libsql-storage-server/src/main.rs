@@ -1,6 +1,6 @@
 mod store;
 
-use crate::store::Store;
+use crate::store::FrameStore;
 use anyhow::Result;
 use clap::Parser;
 use libsql_storage::rpc::storage_server::{Storage, StorageServer};
@@ -37,7 +37,7 @@ struct FrameData {
 }
 
 #[derive(Default)]
-struct FrameStore {
+struct InMemFrameStore {
     // contains a frame data, key is the frame number
     frames: BTreeMap<u64, FrameData>,
     // pages map contains the page number as a key and the list of frames for the page as a value
@@ -45,13 +45,13 @@ struct FrameStore {
     max_frame_no: u64,
 }
 
-impl FrameStore {
+impl InMemFrameStore {
     pub fn new() -> Self {
         Self::default()
     }
 }
 
-impl Store for FrameStore {
+impl FrameStore for InMemFrameStore {
     // inserts a new frame for the page number and returns the new frame value
     fn insert_frame(&mut self, page_no: u64, frame: bytes::Bytes) -> u64 {
         let frame_no = self.max_frame_no + 1;
@@ -93,7 +93,7 @@ impl Store for FrameStore {
 
 #[derive(Default)]
 struct Service {
-    store: Arc<Mutex<FrameStore>>,
+    store: Arc<Mutex<InMemFrameStore>>,
     db_size: AtomicU32,
 }
 
