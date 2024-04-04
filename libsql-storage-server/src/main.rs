@@ -147,7 +147,12 @@ impl FrameStore for RedisFrameStore {
         let frame_no = redis::cmd("GET").arg(page_key).query(&mut con);
         match frame_no {
             Ok(frame_no) => Some(frame_no),
-            Err(_) => None,
+            Err(e) => {
+                if !is_nil_response(&e) {
+                    error!("find_frame() failed for page_no={} with err={}", page_no, e);
+                }
+                None
+            }
         }
     }
 
@@ -167,8 +172,13 @@ impl FrameStore for RedisFrameStore {
         let namespace = "default";
         let max_frame_key = format!("{}/max_frame_no", namespace);
         let mut con = self.client.get_connection().unwrap();
-        let max_frame_no = redis::cmd("GET").arg(max_frame_key.clone()).query(&mut con);
-        max_frame_no.unwrap_or_else(|_| 0) as u64
+        let result = redis::cmd("GET").arg(max_frame_key.clone()).query(&mut con);
+        result.unwrap_or_else(|e| {
+            if !is_nil_response(&e) {
+                error!("frames_in_wal() failed with err={}", e);
+            }
+            0
+        }) as u64
     }
 }
 
@@ -295,4 +305,8 @@ async fn main() -> Result<()> {
         .await?;
 
     Ok(())
+}
+
+fn is_nil_response(e: &redis::RedisError) -> bool {
+    e.to_string().contains("response was nil")
 }
