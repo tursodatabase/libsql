@@ -1,3 +1,6 @@
+mod store;
+
+use crate::store::Store;
 use anyhow::Result;
 use clap::Parser;
 use libsql_storage::rpc::storage_server::{Storage, StorageServer};
@@ -46,9 +49,11 @@ impl FrameStore {
     pub fn new() -> Self {
         Self::default()
     }
+}
 
+impl Store for FrameStore {
     // inserts a new frame for the page number and returns the new frame value
-    pub fn insert_frame(&mut self, page_no: u64, frame: bytes::Bytes) -> u64 {
+    fn insert_frame(&mut self, page_no: u64, frame: bytes::Bytes) -> u64 {
         let frame_no = self.max_frame_no + 1;
         self.max_frame_no = frame_no;
         self.frames.insert(
@@ -65,23 +70,23 @@ impl FrameStore {
         frame_no
     }
 
-    pub fn read_frame(&self, frame_no: u64) -> Option<&bytes::Bytes> {
+    fn read_frame(&self, frame_no: u64) -> Option<&bytes::Bytes> {
         self.frames.get(&frame_no).map(|frame| &frame.data)
     }
 
     // given a page number, return the maximum frame for the page
-    pub fn find_frame(&self, page_no: u64) -> Option<u64> {
+    fn find_frame(&self, page_no: u64) -> Option<u64> {
         self.pages
             .get(&page_no)
             .map(|frames| *frames.last().unwrap())
     }
 
     // given a frame num, return the page number
-    pub fn frame_page_no(&self, frame_no: u64) -> Option<u64> {
+    fn frame_page_no(&self, frame_no: u64) -> Option<u64> {
         self.frames.get(&frame_no).map(|frame| frame.page_no)
     }
 
-    pub fn frames_in_wal(&self) -> u64 {
+    fn frames_in_wal(&self) -> u64 {
         self.max_frame_no
     }
 }
