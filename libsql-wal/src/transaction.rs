@@ -1,6 +1,8 @@
 use std::ops::Deref;
 use std::sync::{Arc, atomic::Ordering};
 
+use crossbeam::deque::Injector;
+use crossbeam::sync::Unparker;
 use fst::map::Map;
 use parking_lot::Mutex;
 
@@ -25,8 +27,16 @@ impl Deref for Transaction {
 pub struct ReadTransaction {
     /// Max frame number that this transaction can read
     pub max_frame_no: u64,
+    pub db_size: u32,
     /// The log to which we have a read lock
     pub log: Arc<Log>,
+}
+
+impl Clone for ReadTransaction {
+    fn clone(&self) -> Self {
+        self.log.read_locks.fetch_add(1, Ordering::SeqCst);
+        Self { max_frame_no: self.max_frame_no, log: self.log.clone(),  db_size: self.db_size }
+    }
 }
 
 impl Drop for ReadTransaction {
@@ -40,6 +50,7 @@ pub struct WriteTransaction {
     pub id: u64,
     /// id of the transaction currently holding the lock
     pub lock: Arc<Mutex<Option<u64>>>,
+    pub waiters: Arc<Injector<Unparker>>,
     pub index: Option<Map<Vec<u8>>>,
     pub next_frame_no: u64,
     pub next_offset: u32,
@@ -76,6 +87,17 @@ impl WriteTransaction {
                 lock.take();
             }
             _ => (),
+        }
+
+        loop {
+            match self.waiters.steal() {
+                crossbeam::deque::Steal::Empty => break,
+                crossbeam::deque::Steal::Success(unparker) => {
+                    unparker.unpark();
+                    break
+                },
+                crossbeam::deque::Steal::Retry => (),
+            }
         }
 
         tracing::debug!(id=self.id, "lock released");

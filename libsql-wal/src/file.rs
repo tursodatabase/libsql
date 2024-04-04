@@ -14,7 +14,7 @@ pub trait FileExt {
     fn read_exact_at(&self, buf: &mut [u8], offset: u64) -> Result<()>;
 
     fn cursor(&self, offset: u64) -> Cursor<Self> where Self: Sized {
-        Cursor { file: self, offset }
+        Cursor { file: self, offset, count: 0 }
     }
 }
 
@@ -57,12 +57,19 @@ impl FileExt for File {
 pub struct Cursor<'a, T> {
     file: &'a T,
     offset: u64,
+    count: u64,
+}
+
+impl<'a, T> Cursor<'a, T> {
+    pub fn count(&self) -> u64 {
+        self.count
+    }
 }
 
 impl<'a, T: FileExt> Write for Cursor<'a, T> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let count = self.file.write_at(buf, self.offset)?;
-        self.offset += count as u64;
+        let count = self.file.write_at(buf, self.offset + self.count)?;
+        self.count += count as u64;
         Ok(count)
     }
 

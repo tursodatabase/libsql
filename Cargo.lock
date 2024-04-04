@@ -181,9 +181,9 @@ dependencies = [
 
 [[package]]
 name = "arc-swap"
-version = "1.6.0"
+version = "1.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bddcadddf5e9015d310179a59bb28c4d4b9920ad0f11e8e14dbadf654890c9a6"
+checksum = "69f7f8c3906b62b754cd5326047894316021dcfe5a194c8ea52bdd94934a3457"
 
 [[package]]
 name = "arrayvec"
@@ -2940,7 +2940,9 @@ dependencies = [
 name = "libsql-wal"
 version = "0.1.0"
 dependencies = [
+ "arc-swap",
  "bytes",
+ "crossbeam",
  "fst",
  "hashbrown 0.14.3",
  "libsql-sys",

@@ -6,3 +6,4 @@ pub mod wal;
 pub mod transaction;
 pub mod registry;
 pub mod name;
+pub mod error;
