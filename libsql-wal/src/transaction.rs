@@ -62,6 +62,7 @@ impl WriteTransaction {
     /// enter the lock critical section
     pub fn enter<R>(&mut self, f: impl FnOnce(&mut Self) -> R) -> R {
         if self.is_commited {
+            tracing::error!("transaction already commited");
             todo!("txn has already been commited");
         }
 

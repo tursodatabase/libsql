@@ -27,6 +27,7 @@ fn enable_libsql_logging() {
 
 fn main() {
     tracing_subscriber::registry()
+        // .with(fmt::layer())
         .with(fmt::layer()
             .with_span_events(FmtSpan::CLOSE))
         .with(EnvFilter::from_default_env())
@@ -49,7 +50,7 @@ fn main() {
 
     let _ = conn.execute("select * from test", ());
     let mut handles = Vec::new();
-    for w in 0..1000 {
+    for w in 0..100 {
         let handle = std::thread::spawn({
             let wal_manager = wal_manager.clone();
             let db_path = db_path.clone();
@@ -59,7 +60,7 @@ fn main() {
                 let conn = libsql_sys::Connection::open(db_path, OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, wal_manager, 100000, None).unwrap();
     
                 conn.execute("create table if not exists test (c)", ()).unwrap();
-                for _i in 0..100 {
+                for _i in 0..10_000 {
                     conn.execute("insert into test values (randomblob(90))", ()).unwrap();
                 }
                 conn.query_row("select count(0) from test", (), |r| {

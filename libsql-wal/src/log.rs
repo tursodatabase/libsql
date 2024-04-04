@@ -143,6 +143,7 @@ impl Log {
     }
 
     /// Returns the db size and the last commited frame_no
+    #[tracing::instrument(skip_all)]
     pub fn begin_read_infos(&self) -> (u64, u32){
         let header = self.header.lock();
         (header.last_commited_frame_no.get(), header.db_size.get())
@@ -232,12 +233,9 @@ impl Log {
             if let Some(size_after) = size_after {
                 if let Some(index) = txn.index.take() {
                     let last_frame_no = txn.next_frame_no - 1;
-                    let header = {
-                        let mut lock = self.header.lock();
-                        lock.last_commited_frame_no = last_frame_no.into();
-                        lock.db_size = size_after.into();
-                        *lock
-                    };
+                    let mut header = { *self.header.lock() };
+                    header.last_commited_frame_no = last_frame_no.into();
+                    header.db_size = size_after.into();
 
                     if !commit_frame_written {
                         // need to patch the last frame header
@@ -247,6 +245,9 @@ impl Log {
                     self.file.write_all_at(header.as_bytes(), 0).unwrap();
                     // self.file.sync_data().unwrap();
                     self.index.segments.write().push((last_frame_no, index));
+                    // set the header last, so that a transaction does not witness a write before
+                    // it's actually committed.
+                    *self.header.lock() = header;
                 }
 
                 txn.is_commited = true;

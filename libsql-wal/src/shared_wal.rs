@@ -5,9 +5,11 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
+use libsql_sys::ffi::Sqlite3DbHeader;
 use libsql_sys::wal::PageHeaders;
 use parking_lot::{RwLock, Mutex};
 use arc_swap::ArcSwap;
+use zerocopy::{FromBytes};
 
 use crate::error::Error;
 use crate::file::FileExt;
@@ -15,7 +17,8 @@ use crate::log::SealedLog;
 use crate::name::NamespaceName;
 use crate::registry::WalRegistry;
 use crate::transaction::{ReadTransaction, WriteTransaction};
-use crate::{log::Log, transaction::Transaction};
+use crate::{log::Log};
+use crate::transaction::Transaction;
 
 pub struct SharedWal {
     pub current: ArcSwap<Log>,
@@ -34,11 +37,14 @@ impl SharedWal {
         self.current.load().db_size()
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn begin_read(&self) -> ReadTransaction {
         // FIXME: this is not enough to just increment the counter, we must make sure that the log
         // is not sealed. If the log is sealed, retry with the current log
         loop {
             let current = self.current.load();
+            // FIXME: This function comes up a lot more than in should in profiling. I suspect that
+            // this is caused by those expensive loads here
             current.read_locks.fetch_add(1, Ordering::SeqCst);
             if current.sealed.load(Ordering::SeqCst) {
                 continue;
@@ -109,7 +115,7 @@ impl SharedWal {
 
     pub fn read_frame(&self, tx: &Transaction, page_no: u32, buffer: &mut [u8]) {
         match tx.log.find_frame(page_no, tx) {
-            Some((_, offset)) => return tx.log.read_page_offset(offset, buffer),
+            Some((_, offset)) => tx.log.read_page_offset(offset, buffer),
             None => {
                 // locate in segments
                 if !self.read_from_segments(page_no, tx.max_frame_no, buffer) {
@@ -119,7 +125,14 @@ impl SharedWal {
             },
         }
 
-        assert!(u64::from_be_bytes(buffer[4096 - 8..].try_into().unwrap()) <= tx.max_frame_no)
+        if page_no == 1 {
+            let header = Sqlite3DbHeader::read_from_prefix(&buffer).unwrap();
+            tracing::info!(db_size = header.db_size.get(), "read page 1");
+        }
+
+        let frame_no = u64::from_be_bytes(buffer[4096 - 8..].try_into().unwrap());
+        tracing::trace!(frame_no, tx = tx.max_frame_no, "read page");
+        assert!(frame_no <= tx.max_frame_no);
     }
 
     fn read_from_segments(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> bool {
