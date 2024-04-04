@@ -2,6 +2,7 @@ mod store;
 
 use crate::store::FrameStore;
 use anyhow::Result;
+use bytes::Bytes;
 use clap::Parser;
 use libsql_storage::rpc::storage_server::{Storage, StorageServer};
 use libsql_storage::rpc::{
@@ -10,7 +11,9 @@ use libsql_storage::rpc::{
     ReadFrameResp,
 };
 use libsql_storage_server::version::Version;
+use redis::{Client, Commands};
 use std::collections::BTreeMap;
+use std::fmt::format;
 use std::iter::Map;
 use std::net::SocketAddr;
 use std::sync::atomic::AtomicU32;
@@ -70,8 +73,8 @@ impl FrameStore for InMemFrameStore {
         frame_no
     }
 
-    fn read_frame(&self, frame_no: u64) -> Option<&bytes::Bytes> {
-        self.frames.get(&frame_no).map(|frame| &frame.data)
+    fn read_frame(&self, frame_no: u64) -> Option<bytes::Bytes> {
+        self.frames.get(&frame_no).map(|frame| frame.data.clone())
     }
 
     // given a page number, return the maximum frame for the page
@@ -91,15 +94,95 @@ impl FrameStore for InMemFrameStore {
     }
 }
 
-#[derive(Default)]
+struct RedisFrameStore {
+    client: Client,
+}
+
+impl RedisFrameStore {
+    pub fn new(client: Client) -> Self {
+        Self { client }
+    }
+}
+
+impl FrameStore for RedisFrameStore {
+    fn insert_frame(&mut self, page_no: u64, frame: Bytes) -> u64 {
+        let namespace = "default";
+        let max_frame_key = format!("{}/max_frame_no", namespace);
+        let mut con = self.client.get_connection().unwrap();
+        let max_frame_no: i64 = redis::cmd("INCR")
+            .arg(max_frame_key.clone())
+            .query(&mut con)
+            .unwrap();
+        let frame_key = format!("f/{}/{}", namespace, max_frame_no);
+        redis::cmd("HSET")
+            .arg(frame_key)
+            .arg("f")
+            .arg(frame.to_vec())
+            .arg("p")
+            .arg(page_no)
+            .execute(&mut con);
+        let page_key = format!("p/{}/{}", namespace, page_no);
+        redis::cmd("SET")
+            .arg(page_key)
+            .arg(max_frame_no)
+            .execute(&mut con);
+        max_frame_no as u64
+    }
+
+    fn read_frame(&self, frame_no: u64) -> Option<Bytes> {
+        let namespace = "default";
+        let frame_key = format!("f/{}/{}", namespace, frame_no);
+        let mut con = self.client.get_connection().unwrap();
+        let frame: Vec<u8> = redis::cmd("HGET")
+            .arg(frame_key)
+            .arg("f")
+            .query(&mut con)
+            .unwrap();
+        Some(Bytes::from(frame))
+    }
+
+    fn find_frame(&self, page_no: u64) -> Option<u64> {
+        let page_key = format!("p/{}/{}", "default", page_no);
+        let mut con = self.client.get_connection().unwrap();
+        let frame_no = redis::cmd("GET").arg(page_key).query(&mut con);
+        match frame_no {
+            Ok(frame_no) => Some(frame_no),
+            Err(_) => None,
+        }
+    }
+
+    fn frame_page_no(&self, frame_no: u64) -> Option<u64> {
+        let namespace = "default";
+        let frame_key = format!("f/{}/{}", namespace, frame_no);
+        let mut con = self.client.get_connection().unwrap();
+        let page_no: i64 = redis::cmd("HGET")
+            .arg(frame_key)
+            .arg("p")
+            .query(&mut con)
+            .unwrap();
+        Some(page_no as u64)
+    }
+
+    fn frames_in_wal(&self) -> u64 {
+        let namespace = "default";
+        let max_frame_key = format!("{}/max_frame_no", namespace);
+        let mut con = self.client.get_connection().unwrap();
+        let max_frame_no = redis::cmd("GET").arg(max_frame_key.clone()).query(&mut con);
+        max_frame_no.unwrap_or_else(|_| 0) as u64
+    }
+}
+
 struct Service {
-    store: Arc<Mutex<InMemFrameStore>>,
+    store: Arc<Mutex<RedisFrameStore>>,
     db_size: AtomicU32,
 }
 
 impl Service {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(client: Client) -> Self {
+        Self {
+            store: Arc::new(Mutex::new(RedisFrameStore::new(client))),
+            db_size: AtomicU32::new(0),
+        }
     }
 }
 
@@ -198,8 +281,8 @@ async fn main() -> Result<()> {
     .expect("setting default subscriber failed");
 
     let args = Cli::parse();
-
-    let service = Service::default();
+    let client = Client::open("redis://127.0.0.1/").unwrap();
+    let service = Service::new(client);
 
     println!("Starting libSQL storage server on {}", args.listen_addr);
     trace!(
