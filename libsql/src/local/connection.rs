@@ -226,6 +226,14 @@ impl Connection {
     pub(crate) fn writer(&self) -> Option<&crate::replication::Writer> {
         self.writer.as_ref()
     }
+
+    #[cfg(feature = "replication")]
+    pub(crate) fn new_connection_writer(&self) -> Option<crate::replication::Writer> {
+        self.writer.as_ref().cloned().map(|mut w| {
+            w.new_client_id();
+            w
+        })
+    }
 }
 
 impl fmt::Debug for Connection {
