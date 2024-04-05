@@ -3,7 +3,6 @@ use std::os::unix::prelude::OsStrExt;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 
-use fst::Streamer;
 use libsql_sys::wal::{Wal, WalManager};
 
 use crate::name::NamespaceName;
@@ -186,10 +185,8 @@ impl Wal for LibsqlWal {
         match self.tx {
             Some(Transaction::Write(ref mut tx)) => {
                 assert!(!tx.is_commited());
-                if let Some((handler, index)) = handler.zip(tx.index.as_ref()) {
-                    let mut keys = index.keys();
-                    while let Some(key) = keys.next() {
-                        let page_no = u32::from_be_bytes(key.try_into().unwrap());
+                if let Some(handler) = handler {
+                    for (page_no, _) in tx.index_iter() {
                         if let Err(e) = handler.handle_undo(page_no) {
                             tracing::debug!("undo handler error: {e}");
                             break
@@ -197,7 +194,7 @@ impl Wal for LibsqlWal {
                     }
                 }
                 
-                self.shared.reset_tx(tx);
+                tx.reset(0);
 
                 tracing::debug!("rolled back tx");
 
@@ -208,13 +205,28 @@ impl Wal for LibsqlWal {
     }
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
-    fn savepoint(&mut self, _rollback_data: &mut [u32]) {
-        todo!()
+    fn savepoint(&mut self, rollback_data: &mut [u32]) {
+        match self.tx {
+            Some(Transaction::Write(ref mut tx)) => {
+                let id = tx.savepoint() as u32;
+                rollback_data[0] = id;
+            }
+            _ => {
+                // if we don't have a write tx, we always point to the beginning of the tx
+                rollback_data[0] = 0;
+            }
+        }
     }
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
-    fn savepoint_undo(&mut self, _rollback_data: &mut [u32]) -> libsql_sys::wal::Result<()> {
-        todo!()
+    fn savepoint_undo(&mut self, rollback_data: &mut [u32]) -> libsql_sys::wal::Result<()> {
+        match self.tx {
+            Some(Transaction::Write(ref mut tx)) => {
+                tx.reset(rollback_data[0] as usize);
+                Ok(())
+            }
+            _ => Ok(())
+        }
     }
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]

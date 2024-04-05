@@ -1,17 +1,17 @@
+use std::fs::File;
 use std::io::{IoSlice, Write};
 use std::mem::size_of;
-use std::fs::File;
 use std::path::Path;
-use std::sync::atomic::{AtomicU64, AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use fst::map::OpBuilder;
-use parking_lot::{RwLock, Mutex};
-use fst::{map::Map, Streamer, MapBuilder};
+use fst::{map::Map, MapBuilder, Streamer};
+use parking_lot::{Mutex, RwLock};
 use zerocopy::byteorder::little_endian::{U32, U64};
-use zerocopy::{AsBytes, FromZeroes, FromBytes};
+use zerocopy::{AsBytes, FromBytes, FromZeroes};
 
 use crate::file::FileExt;
-use crate::transaction::{WriteTransaction, ReadTransaction};
+use crate::transaction::{Transaction, WriteTransaction};
 
 pub struct Log {
     index: LogIndex,
@@ -40,11 +40,11 @@ impl LogIndex {
         let key = page_no.to_be_bytes();
         for (frame_no, index) in segs.iter().rev() {
             if *frame_no > max_frame_no {
-                continue
+                continue;
             }
 
             if let Some(value) = index.get(key) {
-                return Some(index_entry_split(value))
+                return Some(index_entry_split(value));
             }
         }
 
@@ -100,7 +100,7 @@ struct FrameHeader {
 #[derive(Debug, zerocopy::AsBytes, zerocopy::FromBytes, zerocopy::FromZeroes)]
 struct Frame {
     header: FrameHeader,
-    data: [u8; 4096]
+    data: [u8; 4096],
 }
 
 fn byte_offset(offset: u32) -> u64 {
@@ -144,7 +144,7 @@ impl Log {
 
     /// Returns the db size and the last commited frame_no
     #[tracing::instrument(skip_all)]
-    pub fn begin_read_infos(&self) -> (u64, u32){
+    pub fn begin_read_infos(&self) -> (u64, u32) {
         let header = self.header.lock();
         (header.last_commited_frame_no.get(), header.db_size.get())
     }
@@ -162,21 +162,26 @@ impl Log {
         self.header.lock().db_size.get()
     }
 
-    #[tracing::instrument(skip(self, pages, txn))]
+    #[tracing::instrument(skip(self, pages, tx))]
     pub fn insert_pages<'a>(
         &self,
         pages: impl Iterator<Item = (u32, &'a [u8])>,
         size_after: Option<u32>,
-        txn: &mut WriteTransaction,
-        ) {
+        tx: &mut WriteTransaction,
+    ) {
         assert!(!self.sealed.load(Ordering::SeqCst));
-        txn.enter(move |txn| {
+        tx.enter(move |tx| {
             let mut new_index = fst::map::MapBuilder::memory();
             let mut pages = pages.peekable();
             let mut commit_frame_written = false;
+            let current_savepoint = tx.savepoints.last_mut().unwrap();
             while let Some((page_no, page)) = pages.next() {
                 tracing::trace!(page_no, "inserting page");
-                match txn.index.as_ref().and_then(|i| i.get(&page_no.to_be_bytes())) {
+                match current_savepoint
+                    .index
+                    .as_ref()
+                    .and_then(|i| i.get(&page_no.to_be_bytes()))
+                {
                     Some(x) => {
                         let header = FrameHeader {
                             page_no: page_no.into(),
@@ -185,12 +190,11 @@ impl Log {
                         };
                         // there is already an occurence of this page in the current transaction, replace it
                         let (_, offset) = index_entry_split(x);
-                        let slices = &[
-                            IoSlice::new(header.as_bytes()),
-                            IoSlice::new(page),
-                        ];
+                        let slices = &[IoSlice::new(header.as_bytes()), IoSlice::new(page)];
 
-                        self.file.write_at_vectored(slices, byte_offset(offset) as u64).unwrap();
+                        self.file
+                            .write_at_vectored(slices, byte_offset(offset) as u64)
+                            .unwrap();
                     }
                     None => {
                         let size_after = if let Some(size) = size_after {
@@ -205,7 +209,7 @@ impl Log {
                             page_no: page_no.into(),
                             size_after: size_after.into(),
                         };
-                        let frame_no = txn.next_frame_no;
+                        let frame_no = tx.next_frame_no;
                         let frame_no_bytes = frame_no.to_be_bytes();
                         let slices = &[
                             IoSlice::new(header.as_bytes()),
@@ -214,57 +218,93 @@ impl Log {
                             // at the end of the page
                             IoSlice::new(&frame_no_bytes),
                         ];
-                        txn.next_frame_no += 1;
-                        let offset = txn.next_offset;
-                        txn.next_offset += 1;
-                        self.file.write_at_vectored(slices, byte_offset(offset)).unwrap();
-                        new_index.insert(page_no.to_be_bytes(), index_entry_merge(offset, (frame_no - self.header.lock().start_frame_no.get()) as u32)).unwrap();
+                        tx.next_frame_no += 1;
+                        let offset = tx.next_offset;
+                        tx.next_offset += 1;
+                        self.file
+                            .write_at_vectored(slices, byte_offset(offset))
+                            .unwrap();
+                        new_index
+                            .insert(
+                                page_no.to_be_bytes(),
+                                index_entry_merge(
+                                    offset,
+                                    (frame_no - self.header.lock().start_frame_no.get()) as u32,
+                                ),
+                            )
+                            .unwrap();
                     }
                 }
-
             }
 
-            if let Some(ref old_index) = txn.index {
-                txn.index = Some(merge_indexes(old_index, &new_index.into_map()));
+            if let Some(ref old_index) = current_savepoint.index {
+                let indexes = &[old_index, &new_index.into_map()];
+                current_savepoint.index = Some(merge_indexes(indexes.iter().map(|x| *x)));
             } else {
-                txn.index = Some(new_index.into_map());
+                current_savepoint.index = Some(new_index.into_map());
             }
 
             if let Some(size_after) = size_after {
-                if let Some(index) = txn.index.take() {
-                    let last_frame_no = txn.next_frame_no - 1;
-                    let mut header = { *self.header.lock() };
-                    header.last_commited_frame_no = last_frame_no.into();
-                    header.db_size = size_after.into();
+                if tx.savepoints.len() == 1 && tx.savepoints.last().unwrap().index.is_none() {
+                    // nothing to do
+                } else {
+                    let indexes = tx.savepoints.iter().filter_map(|i| i.index.as_ref());
+                    let merged = merge_indexes(indexes);
+                    if !merged.is_empty() {
+                        let last_frame_no = tx.next_frame_no - 1;
+                        let mut header = { *self.header.lock() };
+                        header.last_commited_frame_no = last_frame_no.into();
+                        header.db_size = size_after.into();
 
-                    if !commit_frame_written {
-                        // need to patch the last frame header
-                        self.patch_frame_size_after(txn.next_offset - 1, size_after);
+                        if !commit_frame_written {
+                            // need to patch the last frame header
+                            self.patch_frame_size_after(tx.next_offset - 1, size_after);
+                        }
+
+                        self.file.write_all_at(header.as_bytes(), 0).unwrap();
+                        // self.file.sync_data().unwrap();
+                        self.index.segments.write().push((last_frame_no, merged));
+                        // set the header last, so that a transaction does not witness a write before
+                        // it's actually committed.
+                        *self.header.lock() = header;
                     }
-
-                    self.file.write_all_at(header.as_bytes(), 0).unwrap();
-                    // self.file.sync_data().unwrap();
-                    self.index.segments.write().push((last_frame_no, index));
-                    // set the header last, so that a transaction does not witness a write before
-                    // it's actually committed.
-                    *self.header.lock() = header;
                 }
 
-                txn.is_commited = true;
+                tx.is_commited = true;
             }
-
         })
     }
 
     fn patch_frame_size_after(&self, offset: u32, size_after: u32) {
         let offset = byte_offset(offset) + memoffset::offset_of!(FrameHeader, size_after) as u64;
-        self.file.write_all_at(&size_after.to_le_bytes(), offset).unwrap()
+        self.file
+            .write_all_at(&size_after.to_le_bytes(), offset)
+            .unwrap()
     }
 
     /// return the offset of the frame for page_no, with frame_no no larger that max_frame_no, if
     /// it exists
-    pub fn find_frame(&self, page_no: u32, tx: &ReadTransaction) -> Option<(u64, u32)> {
-        self.index.locate(page_no, tx.max_frame_no).map(|(frame_no_offset, offset)| (self.header.lock().start_frame_no.get() + frame_no_offset as u64, offset))
+    pub fn find_frame(&self, page_no: u32, tx: &Transaction) -> Option<(u64, u32)> {
+        // TODO: ensure that we are looking in the same log as the passed transaction
+        // this is a write transaction, check the transient index for request page
+        if let Transaction::Write(ref tx) = tx {
+            if let Some((frame_no_offset, offset)) = tx.find_frame(page_no) {
+                return Some((
+                    self.header.lock().start_frame_no.get() + frame_no_offset as u64,
+                    offset,
+                ));
+            }
+        }
+
+        // not a write tx, or page is not in write tx, look into the log
+        self.index
+            .locate(page_no, tx.max_frame_no)
+            .map(|(frame_no_offset, offset)| {
+                (
+                    self.header.lock().start_frame_no.get() + frame_no_offset as u64,
+                    offset,
+                )
+            })
     }
 
     /// reads the page conainted in frame at offset into buf
@@ -278,13 +318,20 @@ impl Log {
     #[allow(dead_code)]
     fn frame_header_at(&self, offset: u32) -> FrameHeader {
         let mut header = FrameHeader::new_zeroed();
-        self.file.read_exact_at(header.as_bytes_mut(), byte_offset(offset)).unwrap();
+        self.file
+            .read_exact_at(header.as_bytes_mut(), byte_offset(offset))
+            .unwrap();
         header
     }
 
     #[tracing::instrument(skip_all)]
     pub fn seal(&self) -> SealedLog {
-        assert!(self.sealed.compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed).is_ok(), "attempt to seal an already sealed log");
+        assert!(
+            self.sealed
+                .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
+                .is_ok(),
+            "attempt to seal an already sealed log"
+        );
         let mut header = self.header.lock();
         let index_offset = header.last_commited_frame_no.get() - header.start_frame_no.get();
         let index_byte_offset = byte_offset(index_offset as u32);
@@ -332,7 +379,7 @@ impl SealedLog {
 
     pub fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> bool {
         if self.header().last_commited_frame_no.get() > max_frame_no {
-            return false
+            return false;
         }
 
         let index = self.index();
@@ -347,16 +394,13 @@ impl SealedLog {
     }
 }
 
-fn merge_indexes(old: &Map<Vec<u8>>, new: &Map<Vec<u8>>) -> Map<Vec<u8>> {
-    let mut union = fst::map::OpBuilder::new()
-        .add(old)
-        .add(new) .union();
-
+fn merge_indexes<'a>(indexes: impl Iterator<Item = &'a Map<Vec<u8>>>) -> Map<Vec<u8>> {
+    let mut union = indexes.collect::<OpBuilder>().union();
     let mut builder = MapBuilder::memory();
 
     while let Some((key, vals)) = union.next() {
-        assert_eq!(vals.len(), 1);
-        builder.insert(key, vals[0].value).unwrap();
+        let max = vals.iter().max_by_key(|x| x.index).unwrap();
+        builder.insert(key, max.value).unwrap();
     }
 
     builder.into_map()

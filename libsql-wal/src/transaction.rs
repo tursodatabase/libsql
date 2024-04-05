@@ -3,10 +3,11 @@ use std::sync::{Arc, atomic::Ordering};
 
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
-use fst::map::Map;
+use fst::Streamer;
+use fst::map::{Map, OpBuilder};
 use parking_lot::Mutex;
 
-use crate::log::Log;
+use crate::log::{Log, index_entry_split};
 
 pub enum Transaction {
     Write(WriteTransaction),
@@ -46,12 +47,18 @@ impl Drop for ReadTransaction {
     }
 }
 
+pub struct Savepoint {
+    pub next_offset: u32,
+    pub next_frame_no: u64,
+    pub index: Option<Map<Vec<u8>>>,
+}
+
 pub struct WriteTransaction {
     pub id: u64,
     /// id of the transaction currently holding the lock
     pub lock: Arc<Mutex<Option<u64>>>,
     pub waiters: Arc<Injector<Unparker>>,
-    pub index: Option<Map<Vec<u8>>>,
+    pub savepoints: Vec<Savepoint>,
     pub next_frame_no: u64,
     pub next_offset: u32,
     pub is_commited: bool,
@@ -77,6 +84,38 @@ impl WriteTransaction {
             Some(_) => todo!("lock stolen"),
             None => todo!("not a transaction"),
         }
+    }
+
+    pub fn savepoint(&mut self) -> usize {
+        let savepoint_id = self.savepoints.len();
+        self.savepoints.push(Savepoint { next_offset: self.next_offset, next_frame_no: self.next_frame_no, index: None });
+        savepoint_id
+    }
+
+    pub fn reset(&mut self, savepoint_id: usize) {
+        if savepoint_id >= self.savepoints.len() {
+            panic!("savepoint doesn't exist");
+        }
+
+        self.savepoints.drain(savepoint_id + 1..).count();
+        self.next_frame_no = self.savepoints.last().unwrap().next_frame_no;
+        self.next_offset = self.savepoints.last().unwrap().next_offset;
+    }
+
+    /// Returns an iterator over the current transaction index key/values
+    pub fn index_iter(&self) -> impl Iterator<Item = (u32, u64)> + '_ {
+        let iter = self.savepoints.iter().filter_map(|s| s.index.as_ref());
+        let mut union = iter.collect::<OpBuilder>().union();
+        std::iter::from_fn(move || {
+            match union.next() {
+                Some((key, vals)) => {
+                    let key = u32::from_be_bytes(key.try_into().unwrap());
+                    let val = vals.iter().max_by_key(|i| i.index).unwrap().value;
+                    Some((key, val))
+                },
+                None => None,
+            }
+        })
     }
 
     #[tracing::instrument(skip(self))]
@@ -108,6 +147,17 @@ impl WriteTransaction {
 
     pub fn is_commited(&self) -> bool {
         self.is_commited
+    }
+
+    pub(crate) fn find_frame(&self, page_no: u32) -> Option<(u32, u32)> {
+        let iter = self.savepoints.iter().rev().filter_map(|s| s.index.as_ref());
+        for index in iter {
+            if let Some(val) = index.get(page_no.to_be_bytes()) {
+                return Some(index_entry_split(val))
+            }
+        }
+
+        None
     }
 }
 
