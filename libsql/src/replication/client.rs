@@ -98,6 +98,10 @@ impl Client {
         })
     }
 
+    pub fn new_client_id(&mut self) {
+        self.client_id = Uuid::new_v4();
+    }
+
     pub fn client_id(&self) -> String {
         self.client_id.to_string()
     }
@@ -132,7 +136,10 @@ impl GrpcChannel {
         connector: ConnectorService,
         http_request_callback: Option<HttpRequestCallback>,
     ) -> Self {
-        let client = hyper::Client::builder().pool_idle_timeout(None).pool_max_idle_per_host(3).build(connector);
+        let client = hyper::Client::builder()
+            .pool_idle_timeout(None)
+            .pool_max_idle_per_host(3)
+            .build(connector);
         let client = GrpcWebClientService::new(client);
 
         let classifier = GrpcErrorsAsFailures::new().with_success(GrpcCode::FailedPrecondition);

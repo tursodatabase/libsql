@@ -94,6 +94,10 @@ impl Writer {
     pub(crate) fn replicator(&self) -> Option<&EmbeddedReplicator> {
         self.replicator.as_ref()
     }
+
+    pub(crate) fn new_client_id(&mut self) {
+        self.client.new_client_id()
+    }
 }
 
 #[derive(Clone)]
