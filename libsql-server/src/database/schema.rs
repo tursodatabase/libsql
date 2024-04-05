@@ -43,7 +43,7 @@ impl crate::connection::Connection for SchemaConnection {
                 .await;
 
             // If the query was okay, verify if the connection is not in a txn state
-            if res.is_ok() && self.connection.is_autocommit().await? {
+            if res.is_ok() && !self.connection.is_autocommit().await? {
                 return Err(crate::Error::Migration(
                     crate::schema::Error::ConnectionInTxnState,
                 ));
