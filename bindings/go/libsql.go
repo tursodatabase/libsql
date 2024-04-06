@@ -219,9 +219,6 @@ func openEmbeddedReplicaConnector(dbPath, primaryUrl, authToken string, readYour
 			}
 		}()
 	}
-	if err != nil {
-		return nil, err
-	}
 	return &Connector{nativeDbPtr: nativeDbPtr, closeCh: closeCh, closeAckCh: closeAckCh}, nil
 }
 
