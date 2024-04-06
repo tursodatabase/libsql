@@ -19,15 +19,16 @@ import (
 	sqldriver "database/sql/driver"
 	"errors"
 	"fmt"
-	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
-	"github.com/libsql/sqlite-antlr4-parser/sqliteparser"
-	"github.com/libsql/sqlite-antlr4-parser/sqliteparserutils"
 	"io"
 	"net/url"
 	"regexp"
 	"strings"
 	"time"
 	"unsafe"
+
+	"github.com/antlr/antlr4/runtime/Go/antlr/v4"
+	"github.com/libsql/sqlite-antlr4-parser/sqliteparser"
+	"github.com/libsql/sqlite-antlr4-parser/sqliteparserutils"
 )
 
 func init() {
