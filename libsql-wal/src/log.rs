@@ -1,7 +1,8 @@
 use std::fs::File;
 use std::io::{IoSlice, Write};
 use std::mem::size_of;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use fst::map::OpBuilder;
@@ -14,12 +15,13 @@ use crate::file::FileExt;
 use crate::transaction::{Transaction, WriteTransaction};
 
 pub struct Log {
+    path: PathBuf,
     index: LogIndex,
     header: Mutex<LogHeader>,
     file: File,
     /// Read lock count on this Log. Each begin_read increments the count of readers on the current
     /// lock
-    pub read_locks: AtomicU64,
+    pub read_locks: Arc<AtomicU64>,
     pub sealed: AtomicBool,
 }
 
@@ -129,10 +131,11 @@ impl Log {
         log_file.write_all_at(header.as_bytes(), 0).unwrap();
 
         Self {
+            path: path.to_path_buf(),
             index: LogIndex::default(),
             header: Mutex::new(header),
             file: log_file,
-            read_locks: AtomicU64::new(0),
+            read_locks: Arc::new(AtomicU64::new(0)),
             sealed: AtomicBool::default(),
         }
     }
@@ -344,7 +347,7 @@ impl Log {
 
         tracing::debug!("log sealed");
 
-        SealedLog::open(&self.file)
+        SealedLog::open(&self.file, self.path.clone(), self.read_locks.clone())
     }
 }
 
@@ -354,13 +357,23 @@ fn page_offset(offset: u32) -> u64 {
 
 /// an immutable, sealed, memory mapped log file.
 pub struct SealedLog {
+    pub read_locks: Arc<AtomicU64>,
+    path: PathBuf,
     map: memmap::Mmap,
 }
 
 impl SealedLog {
-    pub fn open(file: &File) -> Self {
+    pub fn open(file: &File, path: PathBuf, read_locks: Arc<AtomicU64>) -> Self {
         let map = unsafe { memmap::Mmap::map(file).unwrap() };
-        Self { map }
+        Self { map, path, read_locks }
+    }
+
+    pub fn into_path(self) -> PathBuf {
+        self.path
+    }
+
+    pub fn path(&self) -> &Path {
+        &self.path
     }
 
     pub fn header(&self) -> LogHeader {
@@ -377,6 +390,11 @@ impl SealedLog {
         Map::new(&self.map[index_offset..index_offset + index_size]).unwrap()
     }
 
+    pub fn read_offset(&self, offset: u32) -> &[u8] {
+        let page_offset = page_offset(offset) as usize;
+        &self.map[page_offset..page_offset + 4096]
+    }
+
     pub fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> bool {
         if self.header().last_commited_frame_no.get() > max_frame_no {
             return false;
@@ -385,8 +403,7 @@ impl SealedLog {
         let index = self.index();
         if let Some(value) = index.get(page_no.to_be_bytes()) {
             let (_, offset) = index_entry_split(value);
-            let page_offset = page_offset(offset) as usize;
-            buf.copy_from_slice(&self.map[page_offset..page_offset + 4096]);
+            buf.copy_from_slice(self.read_offset(offset));
             return true;
         }
 

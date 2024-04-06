@@ -2,10 +2,13 @@ use std::collections::VecDeque;
 use std::fs::File;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use std::time::Instant;
 
 use arc_swap::ArcSwap;
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
+use fst::Streamer;
+use fst::map::OpBuilder;
 use libsql_sys::ffi::Sqlite3DbHeader;
 use libsql_sys::wal::PageHeaders;
 use parking_lot::{Mutex, RwLock};
@@ -13,7 +16,7 @@ use zerocopy::FromBytes;
 
 use crate::error::Error;
 use crate::file::FileExt;
-use crate::log::Log;
+use crate::log::{Log, index_entry_split};
 use crate::log::SealedLog;
 use crate::name::NamespaceName;
 use crate::registry::WalRegistry;
@@ -54,6 +57,7 @@ impl SharedWal {
                 max_frame_no,
                 log: current.clone(),
                 db_size,
+                created_at: Instant::now()
             };
         }
     }
@@ -165,6 +169,48 @@ impl SharedWal {
         // TODO: use config for max log size
         if tx.is_commited() && current.len() > 1000 {
             self.registry.swap_current(self, tx);
+        }
+
+        // TODO: remove, stupid strategy for tests
+        // ok, we still hold a write txn
+        if self.segments.read().len() > 10 {
+            self.checkpoint()
+        }
+    }
+
+    pub fn checkpoint(&self) {
+        let mut segs = self.segments.upgradable_read();
+        let indexes = segs.iter().take_while(|s| s.read_locks.load(Ordering::SeqCst) == 0).map(|s| s.index()).collect::<Vec<_>>();
+
+        // nothing to checkpoint rn
+        if indexes.is_empty() {
+            return
+        }
+
+        dbg!(indexes.len());
+
+        let mut union = indexes.iter().collect::<OpBuilder>().union();
+        while let Some((k, v)) = union.next() {
+            let page_no = u32::from_be_bytes(k.try_into().unwrap());
+            let v = v.iter().max_by_key(|i| i.index).unwrap();
+            let seg = &segs[v.index];
+            let (_, offset) = index_entry_split(v.value);
+            self.db_file.write_all_at(seg.read_offset(offset), (page_no as u64 - 1) * 4096).unwrap();
+        }
+
+        self.db_file.sync_all().unwrap();
+
+        let seg_count = indexes.len();
+
+        drop(union);
+        drop(indexes);
+
+        let paths = segs.with_upgraded(|segs| {
+            segs.drain(..seg_count).map(|s| s.into_path()).collect::<Vec<_>>()
+        });
+
+        for path in paths {
+            std::fs::remove_file(path).unwrap();
         }
     }
 }

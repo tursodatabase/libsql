@@ -1,5 +1,6 @@
 use std::ops::Deref;
 use std::sync::{Arc, atomic::Ordering};
+use std::time::Instant;
 
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
@@ -12,6 +13,25 @@ use crate::log::{Log, index_entry_split};
 pub enum Transaction {
     Write(WriteTransaction),
     Read(ReadTransaction),
+}
+
+impl Transaction {
+    pub fn as_write_mut(&mut self) -> Option<&mut WriteTransaction> {
+        if let Self::Write(ref mut v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    pub(crate) fn commit(&mut self) {
+        match self {
+            Transaction::Write(tx) => {
+                tx.is_commited = true;
+            },
+            Transaction::Read(_) => (),
+        }
+    }
 }
 
 impl Deref for Transaction {
@@ -31,12 +51,13 @@ pub struct ReadTransaction {
     pub db_size: u32,
     /// The log to which we have a read lock
     pub log: Arc<Log>,
+    pub created_at: Instant,
 }
 
 impl Clone for ReadTransaction {
     fn clone(&self) -> Self {
         self.log.read_locks.fetch_add(1, Ordering::SeqCst);
-        Self { max_frame_no: self.max_frame_no, log: self.log.clone(),  db_size: self.db_size }
+        Self { max_frame_no: self.max_frame_no, log: self.log.clone(),  db_size: self.db_size, created_at: self.created_at }
     }
 }
 

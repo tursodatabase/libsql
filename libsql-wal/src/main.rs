@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::Path, time::Instant};
 use std::sync::Arc;
 
 use libsql_sys::rusqlite::{OpenFlags, self};
@@ -38,7 +38,7 @@ fn main() {
     std::fs::create_dir_all(&path).unwrap();
     let registry = Arc::new(WalRegistry::new(path.join("wals")));
     let wal_manager = LibsqlWalManager {
-        registry,
+        registry: registry.clone(),
         namespace: "test".into(),
         next_conn_id: Default::default(),
     };
@@ -60,11 +60,13 @@ fn main() {
                 let _enter = span.enter();
                 let mut conn = libsql_sys::Connection::open(db_path, OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, wal_manager, 100000, None).unwrap();
                 for _i in 0..10_000 {
+                    let before = Instant::now();
                     let tx = conn.transaction().unwrap();
                     tx.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()).unwrap();
                     tx.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()).unwrap();
                     tx.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()).unwrap();
                     tx.commit().unwrap();
+                    println!("time: {:?}", before.elapsed().as_micros());
                 }
             }
         });
@@ -81,6 +83,10 @@ fn main() {
         dbg!(r);
         Ok(())
     }).unwrap();
+
+    drop(conn);
+
+    registry.shutdown();
 
     // let lines = std::io::stdin().lines();
     // for line in lines {

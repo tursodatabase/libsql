@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 use std::fs::OpenOptions;
 use std::sync::Arc;
 use std::path::{PathBuf, Path};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crossbeam::deque::Injector;
 use hashbrown::HashMap;
@@ -14,11 +15,12 @@ use crate::file::FileExt;
 use crate::log::{SealedLog, Log};
 use crate::name::NamespaceName;
 use crate::shared_wal::SharedWal;
-use crate::transaction::WriteTransaction;
+use crate::transaction::{WriteTransaction, Transaction};
 
 /// Wal Registry maintains a set of shared Wal, and their respective set of files.
 pub struct WalRegistry {
     path: PathBuf,
+    shutdown: AtomicBool,
     openned: RwLock<HashMap<NamespaceName, Arc<SharedWal>>>,
 }
 
@@ -28,10 +30,15 @@ impl WalRegistry {
         Self {
             path,
             openned: Default::default(),
+            shutdown: Default::default(),
         }
     }
 
     pub fn open(self: Arc<Self>, namespace: NamespaceName, db_path: &Path) -> Arc<SharedWal> {
+        if self.shutdown.load(Ordering::SeqCst) {
+            todo!("open after shutdown");
+        }
+
         let mut openned = self.openned.upgradable_read();
         if let Some(entry) = openned.get(&namespace) {
             return entry.clone();
@@ -50,7 +57,7 @@ impl WalRegistry {
                 continue
             }
             let file = OpenOptions::new().read(true).open(entry.path()).unwrap();
-            let sealed = SealedLog::open(&file);
+            let sealed = SealedLog::open(&file, entry.path().to_path_buf(), Default::default());
             segments.push_back(sealed);
         }
 
@@ -116,5 +123,19 @@ impl WalRegistry {
         // place the new log
         shared.current.swap(Arc::new(log));
         tracing::debug!("current log swapped");
+    }
+
+    pub fn shutdown(&self) {
+        self.shutdown.store(true, Ordering::SeqCst);
+        let mut openned = self.openned.write();
+        for (_, shared) in openned.drain() {
+            let mut tx = Transaction::Read(shared.begin_read());
+            shared.upgrade(&mut tx).unwrap();
+            tx.commit();
+            self.swap_current(&shared, &mut tx.as_write_mut().unwrap());
+            shared.current.load().seal();
+            drop(tx);
+            shared.checkpoint();
+        }
     }
 }

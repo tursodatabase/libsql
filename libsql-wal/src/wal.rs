@@ -54,11 +54,12 @@ impl WalManager for LibsqlWalManager {
 
     fn close(
         &self,
-        _wal: &mut Self::Wal,
+        wal: &mut Self::Wal,
         _db: &mut libsql_sys::wal::Sqlite3Db,
         _sync_flags: std::ffi::c_int,
         _scratch: Option<&mut [u8]>,
     ) -> libsql_sys::wal::Result<()> {
+        wal.end_read_txn();
         Ok(())
     }
 
@@ -260,6 +261,7 @@ impl Wal for LibsqlWal {
         _in_wal: Option<&mut i32>,
         _backfilled: Option<&mut i32>,
     ) -> libsql_sys::wal::Result<()> {
+        self.shared.checkpoint();
         Ok(())
     }
 
