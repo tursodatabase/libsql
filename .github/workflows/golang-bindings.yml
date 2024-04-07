@@ -47,8 +47,8 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: ${{ runner.os }}-cargo-
 
-    - name: Build crates
-      run: cargo build --release
+    - name: Build sql-experimental
+      run: cargo b -j16 --release -p sql-experimental
 
     - name: Run Go bindings tests
       working-directory: bindings/go
