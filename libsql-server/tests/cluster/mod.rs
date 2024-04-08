@@ -212,6 +212,23 @@ fn sync_many_replica() {
             ));
         }
 
+        let client = Client::new();
+
+        let stats = client
+            .get("http://primary:9090/v1/namespaces/default/stats")
+            .await?
+            .json_value()
+            .await
+            .unwrap();
+
+        let stat = stats
+            .get("embedded_replica_frames_replicated")
+            .unwrap()
+            .as_u64()
+            .unwrap();
+
+        assert_eq!(stat, 0);
+
         Ok(())
     });
 
