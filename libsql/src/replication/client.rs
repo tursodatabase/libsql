@@ -59,11 +59,14 @@ impl Client {
             .try_into()
             .context("Invalid auth token must be ascii")?;
 
-
-        let ns = maybe_namespace.unwrap_or_else(||
-            split_namespace(origin.host().unwrap())
-            .unwrap_or_else(|_| "default".to_string())
-        );
+        let ns = if let Some(ns_from_arg) = maybe_namespace
+        {
+            ns_from_arg
+        } else if let Ok(ns_from_host) = split_namespace(origin.host().unwrap()) {
+            ns_from_host
+        } else {
+            "default".to_string()
+        };
         
         let namespace = BinaryMetadataValue::from_bytes(ns.as_bytes());
 
