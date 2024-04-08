@@ -11,7 +11,7 @@ use fst::Streamer;
 use fst::map::OpBuilder;
 use libsql_sys::ffi::Sqlite3DbHeader;
 use libsql_sys::wal::PageHeaders;
-use parking_lot::{Mutex, RwLock};
+use parking_lot::{Mutex, RwLock, MutexGuard};
 use zerocopy::FromBytes;
 
 use crate::error::Error;
@@ -23,14 +23,20 @@ use crate::registry::WalRegistry;
 use crate::transaction::Transaction;
 use crate::transaction::{ReadTransaction, Savepoint, WriteTransaction};
 
+#[derive(Default)]
+pub struct WalLock {
+    pub tx_id: Mutex<Option<u64>>,
+    pub reserved: Mutex<Option<u64>>,
+    pub next_tx_id: AtomicU64,
+    pub waiters: Injector<(Unparker, u64)>,
+}
+
 pub struct SharedWal {
     pub current: ArcSwap<Log>,
     pub segments: RwLock<VecDeque<SealedLog>>,
+    pub wal_lock: Arc<WalLock>,
     /// Current transaction id
-    pub tx_id: Arc<Mutex<Option<u64>>>,
-    pub next_tx_id: AtomicU64,
     pub db_file: File,
-    pub waiters: Arc<Injector<Unparker>>,
     pub namespace: NamespaceName,
     pub registry: Arc<WalRegistry>,
 }
@@ -41,7 +47,7 @@ impl SharedWal {
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn begin_read(&self) -> ReadTransaction {
+    pub fn begin_read(&self, conn_id: u64) -> ReadTransaction {
         // FIXME: this is not enough to just increment the counter, we must make sure that the log
         // is not sealed. If the log is sealed, retry with the current log
         loop {
@@ -57,58 +63,54 @@ impl SharedWal {
                 max_frame_no,
                 log: current.clone(),
                 db_size,
-                created_at: Instant::now()
+                created_at: Instant::now(),
+                conn_id,
+                pages_read: 0,
             };
         }
     }
 
+    /// Upgrade a read transaction to a write transaction
     pub fn upgrade(&self, tx: &mut Transaction) -> Result<(), Error> {
-        match tx {
-            Transaction::Write(_) => todo!("already in a write transaction"),
-            Transaction::Read(read_tx) => {
-                loop {
-                    let mut lock = self.tx_id.lock();
+        let before = Instant::now();
+        loop {
+            match tx {
+                Transaction::Write(_) => todo!("already in a write transaction"),
+                Transaction::Read(read_tx) => {
+                    {
+                        let mut reserved = self.wal_lock.reserved.lock();
+                        match *reserved {
+                            // we have already reserved the slot, go ahead and try to acquire
+                            Some(id) if id == read_tx.conn_id => {
+                                tracing::trace!("taking reserved slot");
+                                reserved.take();
+                                let lock = self.wal_lock.tx_id.lock();
+                                let write_tx = self.acquire_write(read_tx, lock, reserved)?;
+                                *tx = Transaction::Write(write_tx);
+                                println!("upgraded: {}", before.elapsed().as_micros());
+                                return Ok(())
+                            }
+                            _ => (),
+                        }
+                    }
+
+                    let lock = self.wal_lock.tx_id.lock();
                     match *lock {
-                        Some(id) => {
-                            // FIXME this is not ver fair, always enqueue to the queue before acquiring
-                            // lock
+                        None if self.wal_lock.waiters.is_empty() => {
+                            let write_tx = self.acquire_write(read_tx, lock, self.wal_lock.reserved.lock())?;
+                            *tx = Transaction::Write(write_tx);
+                            println!("upgraded: {}", before.elapsed().as_micros());
+                            return Ok(())
+                        }
+                        Some(_) | None => {
                             tracing::trace!(
-                                "txn currently held by {id}, registering to wait queue"
+                                "txn currently held by another connection, registering to wait queue"
                             );
                             let parker = crossbeam::sync::Parker::new();
                             let unpaker = parker.unparker().clone();
-                            self.waiters.push(unpaker);
+                            self.wal_lock.waiters.push((unpaker, read_tx.conn_id));
                             drop(lock);
                             parker.park();
-                        }
-                        None => {
-                            let id = self.next_tx_id.fetch_add(1, Ordering::Relaxed);
-                            // we read two fields in the header. There is no risk that a transaction commit in
-                            // between the two reads because this would require that:
-                            // 1) there would be a running txn
-                            // 2) that transaction held the lock to tx_id (be in a transaction critical section)
-                            let current = self.current.load();
-                            let last_commited = current.last_commited();
-                            if read_tx.max_frame_no != last_commited {
-                                return Err(Error::BusySnapshot);
-                            }
-                            let next_offset = current.frames_in_log() as u32;
-                            *lock = Some(id);
-                            *tx = Transaction::Write(WriteTransaction {
-                                id,
-                                lock: self.tx_id.clone(),
-                                savepoints: vec![Savepoint {
-                                    next_offset,
-                                    next_frame_no: last_commited + 1,
-                                    index: None,
-                                }],
-                                next_frame_no: last_commited + 1,
-                                next_offset,
-                                is_commited: false,
-                                read_tx: read_tx.clone(),
-                                waiters: self.waiters.clone(),
-                            });
-                            return Ok(());
                         }
                     }
                 }
@@ -116,7 +118,48 @@ impl SharedWal {
         }
     }
 
-    pub fn read_frame(&self, tx: &Transaction, page_no: u32, buffer: &mut [u8]) {
+    fn acquire_write(
+        &self,
+        read_tx: &ReadTransaction,
+        mut tx_id_lock: MutexGuard<Option<u64>>,
+        mut reserved: MutexGuard<Option<u64>>,
+        ) -> Result<WriteTransaction, Error> {
+        let id = self.wal_lock.next_tx_id.fetch_add(1, Ordering::Relaxed);
+        // we read two fields in the header. There is no risk that a transaction commit in
+        // between the two reads because this would require that:
+        // 1) there would be a running txn
+        // 2) that transaction held the lock to tx_id (be in a transaction critical section)
+        let current = self.current.load();
+        let last_commited = current.last_commited();
+        if read_tx.max_frame_no != last_commited {
+            if read_tx.pages_read <= 1 {
+                // this transaction hasn't read anything yet, it will retry to
+                // acquire the lock, reserved the slot so that it can make
+                // progress quickly
+                tracing::debug!("reserving tx slot");
+                reserved.replace(read_tx.conn_id);
+            }
+            return Err(Error::BusySnapshot);
+        }
+        let next_offset = current.frames_in_log() as u32;
+        *tx_id_lock = Some(id);
+
+        Ok(WriteTransaction {
+            id,
+            wal_lock: self.wal_lock.clone(),
+            savepoints: vec![Savepoint {
+                next_offset,
+                next_frame_no: last_commited + 1,
+                index: None,
+            }],
+            next_frame_no: last_commited + 1,
+            next_offset,
+            is_commited: false,
+            read_tx: read_tx.clone(),
+        })
+    }
+
+    pub fn read_frame(&self, tx: &mut Transaction, page_no: u32, buffer: &mut [u8]) {
         match tx.log.find_frame(page_no, tx) {
             Some((_, offset)) => tx.log.read_page_offset(offset, buffer),
             None => {
@@ -130,6 +173,9 @@ impl SharedWal {
             }
         }
 
+        tx.pages_read += 1;
+
+        // TODO: debug
         if page_no == 1 {
             let header = Sqlite3DbHeader::read_from_prefix(&buffer).unwrap();
             tracing::info!(db_size = header.db_size.get(), "read page 1");
@@ -163,13 +209,18 @@ impl SharedWal {
         pages: &mut PageHeaders,
         size_after: u32,
     ) {
+        let before = Instant::now();
         let current = self.current.load();
         current.insert_pages(pages.iter(), (size_after != 0).then_some(size_after), tx);
+
+        println!("before_swap: {}", before.elapsed().as_micros());
 
         // TODO: use config for max log size
         if tx.is_commited() && current.len() > 1000 {
             self.registry.swap_current(self, tx);
         }
+
+        println!("inserted: {}", before.elapsed().as_micros());
 
         // TODO: remove, stupid strategy for tests
         // ok, we still hold a write txn

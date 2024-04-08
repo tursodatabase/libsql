@@ -54,6 +54,7 @@ impl FileExt for File {
     }
 }
 
+#[derive(Debug)]
 pub struct Cursor<'a, T> {
     file: &'a T,
     offset: u64,

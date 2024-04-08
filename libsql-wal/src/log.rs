@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{IoSlice, Write};
+use std::io::{IoSlice, Write, BufWriter};
 use std::mem::size_of;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -339,7 +339,9 @@ impl Log {
         let index_offset = header.last_commited_frame_no.get() - header.start_frame_no.get();
         let index_byte_offset = byte_offset(index_offset as u32);
         let mut cursor = self.file.cursor(index_byte_offset);
-        self.index.merge_all(&mut cursor);
+        let mut writer = BufWriter::new(&mut cursor);
+        self.index.merge_all(&mut writer);
+        writer.into_inner().unwrap();
         header.index_offset = index_byte_offset.into();
         header.index_size = cursor.count().into();
         self.file.write_all_at(header.as_bytes(), 0).unwrap();

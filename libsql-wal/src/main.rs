@@ -1,3 +1,4 @@
+use std::ffi::{c_void, c_int};
 use std::{path::Path, time::Instant};
 use std::sync::Arc;
 
@@ -25,9 +26,9 @@ fn enable_libsql_logging() {
 
 fn main() {
     tracing_subscriber::registry()
-        // .with(fmt::layer())
-        .with(fmt::layer()
-            .with_span_events(FmtSpan::CLOSE))
+        .with(fmt::layer())
+        // .with(fmt::layer()
+        //     .with_span_events(FmtSpan::CLOSE))
         .with(EnvFilter::from_default_env())
         .init();
 
@@ -59,7 +60,14 @@ fn main() {
                 let span = tracing::span!(Level::TRACE, "conn", w);
                 let _enter = span.enter();
                 let mut conn = libsql_sys::Connection::open(db_path, OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, wal_manager, 100000, None).unwrap();
-                for _i in 0..10_000 {
+                unsafe {
+                    extern "C" fn do_nothing_handler(_: *mut c_void, _: c_int) -> c_int {
+                        1
+                    }
+
+                    libsql_sys::ffi::sqlite3_busy_handler(conn.handle(), Some(do_nothing_handler), std::ptr::null_mut());
+                }
+                for _i in 0..1000 {
                     let before = Instant::now();
                     let tx = conn.transaction().unwrap();
                     tx.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()).unwrap();

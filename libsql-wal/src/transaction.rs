@@ -1,14 +1,12 @@
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 use std::sync::{Arc, atomic::Ordering};
 use std::time::Instant;
 
-use crossbeam::deque::Injector;
-use crossbeam::sync::Unparker;
 use fst::Streamer;
 use fst::map::{Map, OpBuilder};
-use parking_lot::Mutex;
 
 use crate::log::{Log, index_entry_split};
+use crate::shared_wal::WalLock;
 
 pub enum Transaction {
     Write(WriteTransaction),
@@ -45,6 +43,15 @@ impl Deref for Transaction {
     }
 }
 
+impl DerefMut for Transaction {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        match self {
+            Transaction::Write(ref mut tx) => tx,
+            Transaction::Read(ref mut tx) => tx,
+        }
+    }
+}
+
 pub struct ReadTransaction {
     /// Max frame number that this transaction can read
     pub max_frame_no: u64,
@@ -52,12 +59,16 @@ pub struct ReadTransaction {
     /// The log to which we have a read lock
     pub log: Arc<Log>,
     pub created_at: Instant,
+    pub conn_id: u64,
+    /// number of pages read by this transaction. This is used to determine whether a write lock
+    /// will be re-acquired.
+    pub pages_read: usize,
 }
 
 impl Clone for ReadTransaction {
     fn clone(&self) -> Self {
         self.log.read_locks.fetch_add(1, Ordering::SeqCst);
-        Self { max_frame_no: self.max_frame_no, log: self.log.clone(),  db_size: self.db_size, created_at: self.created_at }
+        Self { max_frame_no: self.max_frame_no, log: self.log.clone(),  db_size: self.db_size, created_at: self.created_at, conn_id: self.conn_id, pages_read: self.pages_read }
     }
 }
 
@@ -77,8 +88,7 @@ pub struct Savepoint {
 pub struct WriteTransaction {
     pub id: u64,
     /// id of the transaction currently holding the lock
-    pub lock: Arc<Mutex<Option<u64>>>,
-    pub waiters: Arc<Injector<Unparker>>,
+    pub wal_lock: Arc<WalLock>,
     pub savepoints: Vec<Savepoint>,
     pub next_frame_no: u64,
     pub next_offset: u32,
@@ -94,8 +104,8 @@ impl WriteTransaction {
             todo!("txn has already been commited");
         }
 
-        let lock = self.lock.clone();
-        let g = lock.lock();
+        let wal_lock = self.wal_lock.clone();
+        let g = wal_lock.tx_id.lock();
         match *g {
             // we still hold the lock, we can proceed
             Some(id) if self.id == id => {
@@ -141,8 +151,9 @@ impl WriteTransaction {
 
     #[tracing::instrument(skip(self))]
     pub fn downgrade(self) -> ReadTransaction {
-        let Self { id, lock, read_tx, .. } = self;
-        let mut lock = lock.lock();
+        tracing::trace!("downgrading write transaction");
+        let Self { id, wal_lock, read_tx, .. } = self;
+        let mut lock = wal_lock.tx_id.lock();
         match *lock {
             Some(lock_id) if lock_id == id => {
                 lock.take();
@@ -150,10 +161,20 @@ impl WriteTransaction {
             _ => (),
         }
 
+        if let Some(id) = *wal_lock.reserved.lock() {
+            tracing::trace!("tx already reserved by {id}");
+            return read_tx;
+        }
+
         loop {
-            match self.waiters.steal() {
-                crossbeam::deque::Steal::Empty => break,
-                crossbeam::deque::Steal::Success(unparker) => {
+            match wal_lock.waiters.steal() {
+                crossbeam::deque::Steal::Empty => {
+                    tracing::trace!("no connection waiting");
+                    break
+                },
+                crossbeam::deque::Steal::Success((unparker, id)) => {
+                    tracing::trace!("waking up {id}");
+                    wal_lock.reserved.lock().replace(id);
                     unparker.unpark();
                     break
                 },
@@ -187,5 +208,11 @@ impl Deref for WriteTransaction {
 
     fn deref(&self) -> &Self::Target {
         &self.read_tx
+    }
+}
+
+impl DerefMut for WriteTransaction {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.read_tx
     }
 }

@@ -4,8 +4,8 @@ use std::fs::OpenOptions;
 use std::sync::Arc;
 use std::path::{PathBuf, Path};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Instant;
 
-use crossbeam::deque::Injector;
 use hashbrown::HashMap;
 use libsql_sys::ffi::Sqlite3DbHeader;
 use parking_lot::RwLock;
@@ -83,10 +83,8 @@ impl WalRegistry {
         let shared = Arc::new(SharedWal {
             current,
             segments: RwLock::new(segments),
-            tx_id: Default::default(),
-            next_tx_id: Default::default(),
+            wal_lock: Default::default(),
             db_file,
-            waiters: Arc::new(Injector::new()),
             registry: self.clone(),
             namespace: namespace.clone(),
         });
@@ -100,10 +98,12 @@ impl WalRegistry {
 
     #[tracing::instrument(skip_all)]
     pub fn swap_current(&self, shared: &SharedWal, tx: &WriteTransaction) {
+        let before = Instant::now();
         assert!(tx.is_commited());
         // at this point we must hold a lock to a commited transation. 
         // First, we'll acquire the lock to the current transaction to make sure no one steals it from us:
-        let lock = shared.tx_id.lock();
+        let lock = shared.wal_lock.tx_id.lock();
+        println!("lock_acquired: {}", before.elapsed().as_micros());
         // Make sure that we still own the transaction:
         if lock.is_none() || lock.unwrap() != tx.id {
             return
@@ -114,14 +114,19 @@ impl WalRegistry {
         let start_frame_no = current.last_commited() + 1;
         let path = self.path.join(shared.namespace.as_str()).join(format!("{}:{start_frame_no:020}.log", shared.namespace));
         let log = Log::create(&path, start_frame_no, current.db_size());
+        println!("log_created: {}", before.elapsed().as_micros());
         // seal the old log and add it to the list
         let sealed = current.seal();
+        println!("log_sealed: {}", before.elapsed().as_micros());
         {
+            // this lock is too long to acquire. use a ring buffer
             shared.segments.write().push_back(sealed);
+            println!("segment_written: {}", before.elapsed().as_micros());
         }
 
         // place the new log
         shared.current.swap(Arc::new(log));
+        println!("log_swapped: {}", before.elapsed().as_micros());
         tracing::debug!("current log swapped");
     }
 
@@ -129,7 +134,7 @@ impl WalRegistry {
         self.shutdown.store(true, Ordering::SeqCst);
         let mut openned = self.openned.write();
         for (_, shared) in openned.drain() {
-            let mut tx = Transaction::Read(shared.begin_read());
+            let mut tx = Transaction::Read(shared.begin_read(u64::MAX));
             shared.upgrade(&mut tx).unwrap();
             tx.commit();
             self.swap_current(&shared, &mut tx.as_write_mut().unwrap());
