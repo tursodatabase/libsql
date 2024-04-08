@@ -228,7 +228,7 @@ cfg_replication! {
 
         }
 
-        pub fn namespace<T>(mut self, namespace: T) -> Builder<RemoteReplica> 
+        pub fn namespace<T>(mut self, namespace: T) -> Builder<RemoteReplica>
         where T: Into<String>{
             self.inner.namespace = Some(namespace.into());
             self
