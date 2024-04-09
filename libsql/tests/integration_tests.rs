@@ -411,11 +411,11 @@ async fn deserialize_row() {
     let conn = db.connect().unwrap();
     let _ = conn
         .execute(
-            "CREATE TABLE users (id INTEGER, name TEXT, score REAL, data BLOB, age INTEGER)",
+            "CREATE TABLE users (id INTEGER, name TEXT, score REAL, data BLOB, age INTEGER, status TEXT, wrapper TEXT)",
             (),
         )
         .await;
-    conn.execute("INSERT INTO users (id, name, score, data, age) VALUES (123, 'potato', 42.0, X'deadbeef', NULL)", ())
+    conn.execute("INSERT INTO users (id, name, score, data, age, status, wrapper) VALUES (123, 'potato', 42.0, X'deadbeef', NULL, 'Draft', 'Published')", ())
     .await
     .unwrap();
 
@@ -429,7 +429,19 @@ async fn deserialize_row() {
         data: Vec<u8>,
         age: Option<i64>,
         none: Option<()>,
+        status: Status,
+        wrapper: Wrapper,
     }
+
+    #[derive(Deserialize, Debug, PartialEq)]
+    enum Status {
+        Draft,
+        Published,
+    }
+
+    #[derive(Deserialize, Debug, PartialEq)]
+    #[serde(transparent)]
+    struct Wrapper(Status);
 
     let row = conn
         .query("SELECT * FROM users", ())
@@ -445,5 +457,7 @@ async fn deserialize_row() {
     assert_eq!(data.score, 42.0);
     assert_eq!(data.data, vec![0xde, 0xad, 0xbe, 0xef]);
     assert_eq!(data.age, None);
-    assert_eq!(data.none, None)
+    assert_eq!(data.none, None);
+    assert_eq!(data.status, Status::Draft);
+    assert_eq!(data.wrapper, Wrapper(Status::Published));
 }
