@@ -47,8 +47,7 @@ pub fn namespace_from_headers(
         return Ok(NamespaceName::default());
     }
 
-    let result = 
-    if let Some(metadata) = headers.get(NAMESPACE_METADATA_KEY) {
+    let result = if let Some(metadata) = headers.get(NAMESPACE_METADATA_KEY) {
         metadata
             .to_str()
             .map_err(|s| Error::InvalidNamespaceBytes(s))

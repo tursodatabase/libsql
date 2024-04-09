@@ -59,8 +59,7 @@ impl Client {
             .try_into()
             .context("Invalid auth token must be ascii")?;
 
-        let ns = if let Some(ns_from_arg) = maybe_namespace
-        {
+        let ns = if let Some(ns_from_arg) = maybe_namespace {
             ns_from_arg
         } else if let Ok(ns_from_host) = split_namespace(origin.host().unwrap()) {
             ns_from_host
