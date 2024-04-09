@@ -518,9 +518,9 @@ impl LogFileHeader {
         }
     }
 
-    fn sqld_version(&self) -> Version {
-        Version(self.sqld_version.map(Into::into))
-    }
+    // fn sqld_version(&self) -> Version {
+    //     Version(self.sqld_version.map(Into::into))
+    // }
 }
 
 #[derive(Debug)]
@@ -588,7 +588,9 @@ impl ReplicationLogger {
                 // there is no database; nothing to recover
                 false
             }
-        } else if header.version.get() < 2 || header.sqld_version() != Version::current() {
+        } else if header.version.get() < 2
+        /* || header.sqld_version() != Version::current() */
+        {
             tracing::info!("replication log version not compatible with current sqld version, recovering from database file.");
             true
         } else if fresh && data_path.exists() {
