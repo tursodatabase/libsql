@@ -3,14 +3,18 @@ use std::{path::Path, time::Instant};
 use std::sync::Arc;
 
 use libsql_sys::rusqlite::{OpenFlags, self};
+use libsql_sys::wal::Sqlite3WalManager;
+// use libsql_sys::wal::Sqlite3WalManager;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::wal::LibsqlWalManager;
 
 use tracing::Level;
-use tracing_subscriber::{EnvFilter, fmt::{self, format::FmtSpan}, prelude::*};
+use tracing_flame::FlameLayer;
+use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::{EnvFilter, fmt};
 
 fn enable_libsql_logging() {
-    use std::ffi::c_int;
     use std::sync::Once;
     static ONCE: Once = Once::new();
 
@@ -25,11 +29,13 @@ fn enable_libsql_logging() {
 }
 
 fn main() {
+    let (flame_layer, _guard) = FlameLayer::with_file("./tracing.folded").unwrap();
     tracing_subscriber::registry()
         .with(fmt::layer())
         // .with(fmt::layer()
         //     .with_span_events(FmtSpan::CLOSE))
         .with(EnvFilter::from_default_env())
+        .with(flame_layer)
         .init();
 
     enable_libsql_logging();
@@ -45,7 +51,8 @@ fn main() {
     };
 
     let db_path: Arc<Path> = path.join("data").into();
-    let conn = libsql_sys::Connection::open(db_path.clone(), OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, wal_manager.clone(), 100000, None).unwrap();
+    // let conn = libsql_sys::Connection::open(db_path.clone(), OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, wal_manager.clone(), 100000, None).unwrap();
+    let conn = libsql_sys::Connection::open(db_path.clone(), OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, Sqlite3WalManager::default(), 100000, None).unwrap();
   
     let _ = conn.execute("CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB(16), c BLOB(16), d BLOB(400));", ());
     let _ = conn.execute("CREATE INDEX i1 ON t1(b);", ());
@@ -59,22 +66,24 @@ fn main() {
             move || {
                 let span = tracing::span!(Level::TRACE, "conn", w);
                 let _enter = span.enter();
-                let mut conn = libsql_sys::Connection::open(db_path, OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, wal_manager, 100000, None).unwrap();
-                unsafe {
-                    extern "C" fn do_nothing_handler(_: *mut c_void, _: c_int) -> c_int {
-                        1
-                    }
-
-                    libsql_sys::ffi::sqlite3_busy_handler(conn.handle(), Some(do_nothing_handler), std::ptr::null_mut());
-                }
+                // let mut conn = libsql_sys::Connection::open(db_path, OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, wal_manager, 100000, None).unwrap();
+                let mut conn = libsql_sys::Connection::open(db_path.clone(), OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, Sqlite3WalManager::default(), 1000, None).unwrap();
+                // unsafe {
+                //     extern "C" fn do_nothing_handler(_: *mut c_void, _: c_int) -> c_int {
+                //         1
+                //     }
+                //
+                //     libsql_sys::ffi::sqlite3_busy_handler(conn.handle(), Some(do_nothing_handler), std::ptr::null_mut());
+                // }
                 for _i in 0..1000 {
                     let before = Instant::now();
-                    let tx = conn.transaction().unwrap();
+                    let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate).unwrap();
+                    println!("write_acquired: {:?}", before.elapsed().as_micros());
                     tx.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()).unwrap();
                     tx.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()).unwrap();
                     tx.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()).unwrap();
                     tx.commit().unwrap();
-                    println!("time: {:?}", before.elapsed().as_micros());
+                   println!("time: {:?}", before.elapsed().as_micros());
                 }
             }
         });

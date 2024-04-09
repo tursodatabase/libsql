@@ -2954,6 +2954,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "tracing",
+ "tracing-flame",
  "tracing-subscriber",
  "walkdir",
  "zerocopy",
@@ -5347,6 +5348,17 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d686ec1c0f384b1277f097b2f279a2ecc11afe8c133c1aabf036a27cb4cd206e"
 dependencies = [
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "tracing-flame"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0bae117ee14789185e129aaee5d93750abe67fdc5a9a62650452bfe4e122a3a9"
+dependencies = [
+ "lazy_static",
  "tracing",
  "tracing-subscriber",
 ]

@@ -2,6 +2,7 @@ use std::ffi::OsStr;
 use std::os::unix::prelude::OsStrExt;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
+use std::time::Instant;
 
 use libsql_sys::wal::{Wal, WalManager};
 
@@ -134,8 +135,10 @@ impl Wal for LibsqlWal {
         buffer: &mut [u8],
     ) -> libsql_sys::wal::Result<()> {
         tracing::trace!(page_no, "reading frame");
+        let before = Instant::now();
         let tx = self.tx.as_mut().unwrap();
         self.shared.read_frame(tx, page_no.get(), buffer);
+//        println!("read_page: {}", before.elapsed().as_millis());1
         Ok(())
     }
 
@@ -152,12 +155,14 @@ impl Wal for LibsqlWal {
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn begin_write_txn(&mut self) -> libsql_sys::wal::Result<()> {
         tracing::trace!("begin write");
+        let before = Instant::now();
         match self.tx.as_mut() {
             Some(tx) => {
                 self.shared.upgrade(tx).map_err(Into::into)?;
+                println!("write_acquired: {}", before.elapsed().as_micros());
                 tracing::debug!("write lock acquired");
             }
-            None => todo!("shoudl acquire read txn first"),
+            None => todo!("should acquire read txn first"),
         }
 
         Ok(())
@@ -261,7 +266,7 @@ impl Wal for LibsqlWal {
         _in_wal: Option<&mut i32>,
         _backfilled: Option<&mut i32>,
     ) -> libsql_sys::wal::Result<()> {
-        self.shared.checkpoint();
+        // self.shared.segments.checkpoint();
         Ok(())
     }
 

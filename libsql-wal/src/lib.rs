@@ -7,3 +7,4 @@ pub mod transaction;
 pub mod registry;
 pub mod name;
 pub mod error;
+pub mod segment_list;

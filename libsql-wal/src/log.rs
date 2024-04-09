@@ -4,6 +4,7 @@ use std::mem::size_of;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::time::Instant;
 
 use fst::map::OpBuilder;
 use fst::{map::Map, MapBuilder, Streamer};
@@ -33,12 +34,12 @@ impl Drop for Log {
 
 #[derive(Default)]
 struct LogIndex {
-    segments: RwLock<Vec<(u64, Map<Vec<u8>>)>>,
+    savepoints: RwLock<Vec<(u64, Map<Vec<u8>>)>>,
 }
 
 impl LogIndex {
     fn locate(&self, page_no: u32, max_frame_no: u64) -> Option<(u32, u32)> {
-        let segs = self.segments.read();
+        let segs = self.savepoints.read();
         let key = page_no.to_be_bytes();
         for (frame_no, index) in segs.iter().rev() {
             if *frame_no > max_frame_no {
@@ -55,7 +56,7 @@ impl LogIndex {
 
     #[tracing::instrument(skip_all)]
     fn merge_all<W: Write>(&self, writer: W) {
-        let segs = self.segments.read();
+        let segs = self.savepoints.read();
         let mut union = segs.iter().map(|(_, m)| m).collect::<OpBuilder>().union();
         let mut builder = MapBuilder::new(writer).unwrap();
         while let Some((key, entries)) = union.next() {
@@ -172,13 +173,16 @@ impl Log {
         size_after: Option<u32>,
         tx: &mut WriteTransaction,
     ) {
+        let before = Instant::now();
         assert!(!self.sealed.load(Ordering::SeqCst));
         tx.enter(move |tx| {
+//            println!("enter_txn_ctx: {}", before.elapsed().as_micros());1
             let mut new_index = fst::map::MapBuilder::memory();
             let mut pages = pages.peekable();
             let mut commit_frame_written = false;
             let current_savepoint = tx.savepoints.last_mut().unwrap();
             while let Some((page_no, page)) = pages.next() {
+                let in_loop = Instant::now();
                 tracing::trace!(page_no, "inserting page");
                 match current_savepoint
                     .index
@@ -195,9 +199,12 @@ impl Log {
                         let (_, offset) = index_entry_split(x);
                         let slices = &[IoSlice::new(header.as_bytes()), IoSlice::new(page)];
 
+//                        println!("replace_before: {}", in_loop.elapsed().as_micros());1
+
                         self.file
                             .write_at_vectored(slices, byte_offset(offset) as u64)
                             .unwrap();
+//                        println!("replace_after: {}", in_loop.elapsed().as_micros());1
                     }
                     None => {
                         let size_after = if let Some(size) = size_after {
@@ -224,9 +231,11 @@ impl Log {
                         tx.next_frame_no += 1;
                         let offset = tx.next_offset;
                         tx.next_offset += 1;
+//                        println!("insert_before: {}", in_loop.elapsed().as_micros());1
                         self.file
                             .write_at_vectored(slices, byte_offset(offset))
                             .unwrap();
+//                        println!("insert_after: {}", in_loop.elapsed().as_micros());1
                         new_index
                             .insert(
                                 page_no.to_be_bytes(),
@@ -239,6 +248,8 @@ impl Log {
                     }
                 }
             }
+
+//            println!("write_pages: {}", before.elapsed().as_micros());1
 
             if let Some(ref old_index) = current_savepoint.index {
                 let indexes = &[old_index, &new_index.into_map()];
@@ -266,7 +277,7 @@ impl Log {
 
                         self.file.write_all_at(header.as_bytes(), 0).unwrap();
                         // self.file.sync_data().unwrap();
-                        self.index.segments.write().push((last_frame_no, merged));
+                        self.index.savepoints.write().push((last_frame_no, merged));
                         // set the header last, so that a transaction does not witness a write before
                         // it's actually committed.
                         *self.header.lock() = header;
@@ -275,7 +286,10 @@ impl Log {
 
                 tx.is_commited = true;
             }
-        })
+        });
+
+//        println!("full_insert: {}", before.elapsed().as_micros());1
+
     }
 
     fn patch_frame_size_after(&self, offset: u32, size_after: u32) {
@@ -329,6 +343,7 @@ impl Log {
 
     #[tracing::instrument(skip_all)]
     pub fn seal(&self) -> SealedLog {
+        let before = Instant::now();
         assert!(
             self.sealed
                 .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
@@ -336,16 +351,17 @@ impl Log {
             "attempt to seal an already sealed log"
         );
         let mut header = self.header.lock();
+//        println!("header_locked: {}", before.elapsed().as_micros());1
         let index_offset = header.last_commited_frame_no.get() - header.start_frame_no.get();
         let index_byte_offset = byte_offset(index_offset as u32);
         let mut cursor = self.file.cursor(index_byte_offset);
         let mut writer = BufWriter::new(&mut cursor);
         self.index.merge_all(&mut writer);
         writer.into_inner().unwrap();
+//        println!("index_merged: {}", before.elapsed().as_micros());1
         header.index_offset = index_byte_offset.into();
         header.index_size = cursor.count().into();
         self.file.write_all_at(header.as_bytes(), 0).unwrap();
-        self.file.sync_data().unwrap();
 
         tracing::debug!("log sealed");
 
@@ -362,16 +378,13 @@ pub struct SealedLog {
     pub read_locks: Arc<AtomicU64>,
     path: PathBuf,
     map: memmap::Mmap,
+    checkpointed: AtomicBool,
 }
 
 impl SealedLog {
     pub fn open(file: &File, path: PathBuf, read_locks: Arc<AtomicU64>) -> Self {
         let map = unsafe { memmap::Mmap::map(file).unwrap() };
-        Self { map, path, read_locks }
-    }
-
-    pub fn into_path(self) -> PathBuf {
-        self.path
+        Self { map, path, read_locks, checkpointed: false.into() }
     }
 
     pub fn path(&self) -> &Path {
@@ -382,6 +395,9 @@ impl SealedLog {
         LogHeader::read_from_prefix(&self.map[..]).unwrap()
     }
 
+    // TODO: building the Map on each call could be costly (maybe?), find a way to cache it and
+    // return a ref. It will likely require some unsafe, since the index references the mmaped log,
+    // owned by self.
     pub fn index(&self) -> Map<&[u8]> {
         let header = self.header();
         let index_offset = header.index_offset.get() as usize;
@@ -410,6 +426,20 @@ impl SealedLog {
         }
 
         false
+    }
+
+    pub(crate) fn checkpointed(&self) {
+        self.checkpointed.store(true, Ordering::SeqCst);
+    }
+}
+
+impl Drop for SealedLog {
+    fn drop(&mut self) {
+        if self.checkpointed.load(Ordering::SeqCst) {
+            if let Err(e) = std::fs::remove_file(self.path()) {
+                tracing::error!("failed to remove log file: {e}");
+            }
+        }
     }
 }
 

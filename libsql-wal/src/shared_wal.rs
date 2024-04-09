@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use std::fs::File;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -7,19 +6,17 @@ use std::time::Instant;
 use arc_swap::ArcSwap;
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
-use fst::Streamer;
-use fst::map::OpBuilder;
 use libsql_sys::ffi::Sqlite3DbHeader;
 use libsql_sys::wal::PageHeaders;
-use parking_lot::{Mutex, RwLock, MutexGuard};
+use parking_lot::{Mutex, MutexGuard};
 use zerocopy::FromBytes;
 
 use crate::error::Error;
 use crate::file::FileExt;
-use crate::log::{Log, index_entry_split};
-use crate::log::SealedLog;
+use crate::log::Log;
 use crate::name::NamespaceName;
 use crate::registry::WalRegistry;
+use crate::segment_list::SegmentList;
 use crate::transaction::Transaction;
 use crate::transaction::{ReadTransaction, Savepoint, WriteTransaction};
 
@@ -33,7 +30,7 @@ pub struct WalLock {
 
 pub struct SharedWal {
     pub current: ArcSwap<Log>,
-    pub segments: RwLock<VecDeque<SealedLog>>,
+    pub segments: SegmentList,
     pub wal_lock: Arc<WalLock>,
     /// Current transaction id
     pub db_file: File,
@@ -87,7 +84,7 @@ impl SharedWal {
                                 let lock = self.wal_lock.tx_id.lock();
                                 let write_tx = self.acquire_write(read_tx, lock, reserved)?;
                                 *tx = Transaction::Write(write_tx);
-                                println!("upgraded: {}", before.elapsed().as_micros());
+//                                println!("upgraded: {}", before.elapsed().as_micros());1
                                 return Ok(())
                             }
                             _ => (),
@@ -99,7 +96,7 @@ impl SharedWal {
                         None if self.wal_lock.waiters.is_empty() => {
                             let write_tx = self.acquire_write(read_tx, lock, self.wal_lock.reserved.lock())?;
                             *tx = Transaction::Write(write_tx);
-                            println!("upgraded: {}", before.elapsed().as_micros());
+//                            println!("upgraded: {}", before.elapsed().as_micros());1
                             return Ok(())
                         }
                         Some(_) | None => {
@@ -164,7 +161,7 @@ impl SharedWal {
             Some((_, offset)) => tx.log.read_page_offset(offset, buffer),
             None => {
                 // locate in segments
-                if !self.read_from_segments(page_no, tx.max_frame_no, buffer) {
+                if !self.segments.read_page(page_no, tx.max_frame_no, buffer) {
                     // read from db_file
                     self.db_file
                         .read_exact_at(buffer, (page_no as u64 - 1) * 4096)
@@ -186,22 +183,6 @@ impl SharedWal {
         assert!(frame_no <= tx.max_frame_no);
     }
 
-    fn read_from_segments(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> bool {
-        let segs = self.segments.read();
-        let mut prev_seg = u64::MAX;
-        for (i, seg) in segs.iter().rev().enumerate() {
-            let last = seg.header().last_commited_frame_no.get();
-            assert!(prev_seg > last);
-            prev_seg = last;
-            if seg.read_page(page_no, max_frame_no, buf) {
-                tracing::trace!("found {page_no} in segment {i}");
-                return true;
-            }
-        }
-
-        false
-    }
-
     #[tracing::instrument(skip_all, fields(tx_id = tx.id))]
     pub fn insert_frames(
         &self,
@@ -213,55 +194,22 @@ impl SharedWal {
         let current = self.current.load();
         current.insert_pages(pages.iter(), (size_after != 0).then_some(size_after), tx);
 
-        println!("before_swap: {}", before.elapsed().as_micros());
+       // println!("before_swap: {}", before.elapsed().as_micros());1
 
         // TODO: use config for max log size
         if tx.is_commited() && current.len() > 1000 {
+            let before_inserted = Instant::now();
             self.registry.swap_current(self, tx);
+//            println!("inserted: {}", before_inserted.elapsed().as_micros());1
         }
 
-        println!("inserted: {}", before.elapsed().as_micros());
 
         // TODO: remove, stupid strategy for tests
         // ok, we still hold a write txn
-        if self.segments.read().len() > 10 {
-            self.checkpoint()
+        if self.segments.len() > 10 {
+            self.segments.checkpoint(&self.db_file)
         }
-    }
-
-    pub fn checkpoint(&self) {
-        let mut segs = self.segments.upgradable_read();
-        let indexes = segs.iter().take_while(|s| s.read_locks.load(Ordering::SeqCst) == 0).map(|s| s.index()).collect::<Vec<_>>();
-
-        // nothing to checkpoint rn
-        if indexes.is_empty() {
-            return
-        }
-
-        dbg!(indexes.len());
-
-        let mut union = indexes.iter().collect::<OpBuilder>().union();
-        while let Some((k, v)) = union.next() {
-            let page_no = u32::from_be_bytes(k.try_into().unwrap());
-            let v = v.iter().max_by_key(|i| i.index).unwrap();
-            let seg = &segs[v.index];
-            let (_, offset) = index_entry_split(v.value);
-            self.db_file.write_all_at(seg.read_offset(offset), (page_no as u64 - 1) * 4096).unwrap();
-        }
-
-        self.db_file.sync_all().unwrap();
-
-        let seg_count = indexes.len();
-
-        drop(union);
-        drop(indexes);
-
-        let paths = segs.with_upgraded(|segs| {
-            segs.drain(..seg_count).map(|s| s.into_path()).collect::<Vec<_>>()
-        });
-
-        for path in paths {
-            std::fs::remove_file(path).unwrap();
-        }
+        
+        println!("full_insert: {}", before.elapsed().as_micros());
     }
 }

@@ -19,6 +19,7 @@ nix = { version = "0.28.0", features = ["uio", "fs"] }
 parking_lot = "0.12.1"
 tokio = { version = "1.36.0", features = ["full"] }
 tracing = "0.1.40"
+tracing-flame = "0.2.0"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "time"] }
 walkdir = "2.5.0"
 zerocopy = { version = "0.7.32", features = ["derive"] }

@@ -1,5 +1,4 @@
 #![allow(dead_code, unused_variables, unreachable_code)]
-use std::collections::VecDeque;
 use std::fs::OpenOptions;
 use std::sync::Arc;
 use std::path::{PathBuf, Path};
@@ -14,6 +13,7 @@ use zerocopy::{FromZeroes, AsBytes};
 use crate::file::FileExt;
 use crate::log::{SealedLog, Log};
 use crate::name::NamespaceName;
+use crate::segment_list::SegmentList;
 use crate::shared_wal::SharedWal;
 use crate::transaction::{WriteTransaction, Transaction};
 
@@ -50,7 +50,7 @@ impl WalRegistry {
             .sort_by_file_name()
             .into_iter();
 
-        let mut segments = VecDeque::new();
+        let segments = SegmentList::default();
         for entry in dir {
             let entry = entry.unwrap();
             if entry.path().extension().map(|e| e.to_str().unwrap() != "log").unwrap_or(true) {
@@ -58,13 +58,14 @@ impl WalRegistry {
             }
             let file = OpenOptions::new().read(true).open(entry.path()).unwrap();
             let sealed = SealedLog::open(&file, entry.path().to_path_buf(), Default::default());
-            segments.push_back(sealed);
+            segments.push_log(sealed);
         }
 
-        let (db_size, start_frame_no) = segments.back().map(|log| { 
-                    let header = log.header();
-                    (header.db_size.get(), header.last_commited_frame_no.get() + 1)
-                }).unwrap_or((0, 0));
+        let (db_size, start_frame_no) = segments.with_head(|log| {
+            let header = log.header();
+            (header.db_size.get(), header.last_commited_frame_no.get() + 1)
+        }).unwrap_or((0, 0));
+
         let current_path = path.join(format!("{namespace}:{start_frame_no:020}.log"));
         let current = arc_swap::ArcSwap::new(Arc::new(Log::create(&current_path, start_frame_no, db_size)));
 
@@ -82,7 +83,7 @@ impl WalRegistry {
         
         let shared = Arc::new(SharedWal {
             current,
-            segments: RwLock::new(segments),
+            segments,
             wal_lock: Default::default(),
             db_file,
             registry: self.clone(),
@@ -103,7 +104,7 @@ impl WalRegistry {
         // at this point we must hold a lock to a commited transation. 
         // First, we'll acquire the lock to the current transaction to make sure no one steals it from us:
         let lock = shared.wal_lock.tx_id.lock();
-        println!("lock_acquired: {}", before.elapsed().as_micros());
+//        println!("lock_acquired: {}", before.elapsed().as_micros());1
         // Make sure that we still own the transaction:
         if lock.is_none() || lock.unwrap() != tx.id {
             return
@@ -114,19 +115,18 @@ impl WalRegistry {
         let start_frame_no = current.last_commited() + 1;
         let path = self.path.join(shared.namespace.as_str()).join(format!("{}:{start_frame_no:020}.log", shared.namespace));
         let log = Log::create(&path, start_frame_no, current.db_size());
-        println!("log_created: {}", before.elapsed().as_micros());
+//        println!("log_created: {}", before.elapsed().as_micros());1
         // seal the old log and add it to the list
         let sealed = current.seal();
-        println!("log_sealed: {}", before.elapsed().as_micros());
+//        println!("log_sealed: {}", before.elapsed().as_micros());1
         {
-            // this lock is too long to acquire. use a ring buffer
-            shared.segments.write().push_back(sealed);
-            println!("segment_written: {}", before.elapsed().as_micros());
+            shared.segments.push_log(sealed);
+//            println!("segment_written: {}", before.elapsed().as_micros());1
         }
 
         // place the new log
         shared.current.swap(Arc::new(log));
-        println!("log_swapped: {}", before.elapsed().as_micros());
+//        println!("log_swapped: {}", before.elapsed().as_micros());1
         tracing::debug!("current log swapped");
     }
 
@@ -140,7 +140,7 @@ impl WalRegistry {
             self.swap_current(&shared, &mut tx.as_write_mut().unwrap());
             shared.current.load().seal();
             drop(tx);
-            shared.checkpoint();
+            shared.segments.checkpoint(&shared.db_file);
         }
     }
 }
