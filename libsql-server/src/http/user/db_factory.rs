@@ -51,7 +51,7 @@ pub fn namespace_from_headers(
     if let Some(metadata) = headers.get(NAMESPACE_METADATA_KEY) {
         metadata
             .to_str()
-            .map_err(|_| Error::InvalidNamespace)
+            .map_err(|s| Error::InvalidNamespaceBytes(s))
             .and_then(|ns| NamespaceName::from_string(ns.into()))
     } else {
         headers
