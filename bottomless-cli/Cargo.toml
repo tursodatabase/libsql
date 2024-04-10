@@ -12,9 +12,9 @@ description = "Command-line interface for bottomless replication for libSQL"
 [dependencies]
 anyhow = "1.0.66"
 async-compression = { version = "0.4.4", features = ["tokio", "gzip", "zstd"] }
-aws-config = "0.55"
-aws-sdk-s3 = "0.28"
-aws-smithy-types = "0.55"
+aws-config = "1"
+aws-sdk-s3 = "1"
+aws-smithy-types = "1"
 bottomless = { version = "0", path = "../bottomless" }
 bytes = "1"
 chrono = "0.4.23"
