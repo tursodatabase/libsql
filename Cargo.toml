@@ -29,7 +29,6 @@ exclude = [
 [profile.release]
 codegen-units = 1
 panic = "unwind"
-debug = true
 
 [workspace.dependencies]
 rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = "0.30", default-features = false, features = [
