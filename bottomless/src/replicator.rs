@@ -6,6 +6,7 @@ use crate::wal::WalFileReader;
 use anyhow::{anyhow, bail};
 use arc_swap::ArcSwapOption;
 use async_compression::tokio::write::{GzipEncoder, ZstdEncoder};
+use aws_config::BehaviorVersion;
 use aws_sdk_s3::config::{Credentials, Region, SharedCredentialsProvider};
 use aws_sdk_s3::error::SdkError;
 use aws_sdk_s3::operation::get_object::builders::GetObjectFluentBuilder;
@@ -136,6 +137,7 @@ impl Options {
             "LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY was not set"
         ))?;
         let conf = loader
+            .behavior_version(BehaviorVersion::latest())
             .region(Region::new(region))
             .credentials_provider(SharedCredentialsProvider::new(Credentials::new(
                 access_key_id,
