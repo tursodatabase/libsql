@@ -1,10 +1,9 @@
-use std::ffi::{c_void, c_int};
+use std::ffi::c_int;
 use std::{path::Path, time::Instant};
 use std::sync::Arc;
 
 use libsql_sys::rusqlite::{OpenFlags, self};
 use libsql_sys::wal::Sqlite3WalManager;
-// use libsql_sys::wal::Sqlite3WalManager;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::wal::LibsqlWalManager;
 
@@ -59,7 +58,7 @@ fn main() {
     let _ = conn.execute("CREATE INDEX i2 ON t1(c);", ());
 
     let mut handles = Vec::new();
-    for w in 0..50 {
+    for w in 0..1 {
         let handle = std::thread::spawn({
             let wal_manager = wal_manager.clone();
             let db_path = db_path.clone();
@@ -75,15 +74,15 @@ fn main() {
                 //
                 //     libsql_sys::ffi::sqlite3_busy_handler(conn.handle(), Some(do_nothing_handler), std::ptr::null_mut());
                 // }
-                for _i in 0..1000 {
+                for _i in 0..1000000 {
                     let before = Instant::now();
                     let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate).unwrap();
-                    println!("write_acquired: {:?}", before.elapsed().as_micros());
+                    // println!("write_acquired: {:?}", before.elapsed().as_micros());
                     tx.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()).unwrap();
                     tx.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()).unwrap();
                     tx.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()).unwrap();
                     tx.commit().unwrap();
-                   println!("time: {:?}", before.elapsed().as_micros());
+                   // println!("time: {:?}", before.elapsed().as_micros());
                 }
             }
         });
@@ -97,7 +96,6 @@ fn main() {
     }
 
     conn.query_row("select count(0) from t1", (), |r| {
-        dbg!(r);
         Ok(())
     }).unwrap();
 

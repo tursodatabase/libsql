@@ -1,0 +1,13 @@
+PRAGMA auto_vacuum=OFF;
+PRAGMA page_size = 1024;
+CREATE TABLE t1(a, b, c);
+INSERT INTO t1 VALUES(1, 2, 3);PRAGMA page_sizePRAGMA page_sizeSELECT * FROM t1PRAGMA page_size = 1024;
+VACUUM;
+ALTER TABLE t1 ADD COLUMN d;
+UPDATE t1 SET d = randomblob(1000);PRAGMA page_sizePRAGMA page_sizeSELECT * FROM t1SELECT count(*), md5sum(a), md5sum(b), md5sum(c) FROM abcPRAGMA page_sizePRAGMA page_sizePRAGMA page_size=1024;
+CREATE TABLE abc(a, b, c);
+INSERT INTO abc VALUES(1, 2, 3);
+INSERT INTO abc VALUES(4, 5, 6);SELECT * FROM abcSELECT * FROM abcPRAGMA page_size = 2048;
+VACUUM;SELECT * FROM abcSELECT * FROM abcPRAGMA page_size=16384;
+VACUUM;SELECT * FROM abcPRAGMA page_size=1024;
+VACUUM;SELECT * FROM abc

@@ -1,0 +1,20 @@
+PRAGMA cache_size = 10;
+PRAGMA default_cache_size = 10;
+CREATE TABLE t1(a, b, PRIMARY KEY(a, b));
+INSERT INTO t1 VALUES(randstr(400,400),randstr(400,400));
+INSERT INTO t1 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 2
+INSERT INTO t1 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 4
+INSERT INTO t1 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 8
+INSERT INTO t1 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 16
+INSERT INTO t1 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 32PRAGMA auto_vacuum = 1;
+PRAGMA cache_size = 10;
+BEGIN;
+CREATE TABLE abc(a);
+INSERT INTO abc VALUES(randstr(1100,1100)); -- Page 4 is overflow
+INSERT INTO abc VALUES(randstr(1100,1100)); -- Page 5 is overflowINSERT INTO abc VALUES(randstr(100,100));SELECT md5sum(a, b) FROM t1PRAGMA auto_vacuum = 1;
+BEGIN;
+CREATE TABLE abc(a);
+INSERT INTO abc VALUES(randstr(1100,1100)); -- Page 4 is overflow
+INSERT INTO abc VALUES(randstr(1100,1100)); -- Page 5 is overflowPRAGMA integrity_checkINSERT INTO abc VALUES(randstr(100,100));SELECT md5sum(a, b) FROM t1CREATE TABLE t2 AS SELECT * FROM t1;
+PRAGMA temp_store = memory;COMMIT;
+PRAGMA cache_size = 10;SELECT * FROM t1 WHERE rowid IN (1, 5, 10, 15, 20)PRAGMA cache_size = 10;

@@ -1,0 +1,2 @@
+PRAGMA journal_mode = walCREATE TABLE t1(a, b)CREATE INDEX i1 ON t1(a)CREATE INDEX i2 ON t1(b)INSERT INTO t1 VALUES(randomblob(w), randomblob(x))
+PRAGMA integrity_checkPRAGMA integrity_checkPRAGMA journal_mode = WALPRAGMA integrity_checkSELECT count(*) FROM t1 WHERE a!=bSELECT count(*) FROM t1 WHERE a!=b

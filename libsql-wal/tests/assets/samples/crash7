@@ -1,0 +1,1 @@
+SELECT count(*), md5sum(a), md5sum(b), md5sum(c) FROM abc

@@ -159,7 +159,7 @@ impl Wal for LibsqlWal {
         match self.tx.as_mut() {
             Some(tx) => {
                 self.shared.upgrade(tx).map_err(Into::into)?;
-                println!("write_acquired: {}", before.elapsed().as_micros());
+                // println!("write_acquired: {}", before.elapsed().as_micros());
                 tracing::debug!("write lock acquired");
             }
             None => todo!("should acquire read txn first"),

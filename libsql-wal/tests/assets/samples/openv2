@@ -1,0 +1,1 @@
+CREATE TABLE t1(x)SELECT name FROM sqlite_masterSELECT * FROM sqlite_master

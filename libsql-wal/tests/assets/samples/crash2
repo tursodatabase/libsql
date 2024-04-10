@@ -1,0 +1,5 @@
+PRAGMA integrity_checkSELECT count(*), md5sum(a), md5sum(b), md5sum(c) FROM abcINSERT INTO abc SELECT * FROM abc;
+INSERT INTO abc SELECT * FROM abc;
+INSERT INTO abc SELECT * FROM abc;
+INSERT INTO abc SELECT * FROM abc;
+INSERT INTO abc SELECT * FROM abc;

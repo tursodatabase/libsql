@@ -180,7 +180,7 @@ impl SharedWal {
 
         let frame_no = u64::from_be_bytes(buffer[4096 - 8..].try_into().unwrap());
         tracing::trace!(frame_no, tx = tx.max_frame_no, "read page");
-        assert!(frame_no <= tx.max_frame_no);
+        assert!(frame_no <= tx.max_frame_no());
     }
 
     #[tracing::instrument(skip_all, fields(tx_id = tx.id))]
@@ -210,6 +210,6 @@ impl SharedWal {
             self.segments.checkpoint(&self.db_file)
         }
         
-        println!("full_insert: {}", before.elapsed().as_micros());
+        // println!("full_insert: {}", before.elapsed().as_micros());
     }
 }

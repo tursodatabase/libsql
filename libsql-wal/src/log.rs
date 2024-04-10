@@ -10,7 +10,7 @@ use fst::map::OpBuilder;
 use fst::{map::Map, MapBuilder, Streamer};
 use parking_lot::{Mutex, RwLock};
 use zerocopy::byteorder::little_endian::{U32, U64};
-use zerocopy::{AsBytes, FromBytes, FromZeroes};
+use zerocopy::{AsBytes, FromZeroes};
 
 use crate::file::FileExt;
 use crate::transaction::{Transaction, WriteTransaction};
@@ -365,7 +365,7 @@ impl Log {
 
         tracing::debug!("log sealed");
 
-        SealedLog::open(&self.file, self.path.clone(), self.read_locks.clone())
+        SealedLog::open(self.file.try_clone().unwrap(), self.path.clone(), self.read_locks.clone())
     }
 }
 
@@ -376,43 +376,49 @@ fn page_offset(offset: u32) -> u64 {
 /// an immutable, sealed, memory mapped log file.
 pub struct SealedLog {
     pub read_locks: Arc<AtomicU64>,
+    header: LogHeader,
+    file: File,
+    index: Map<Vec<u8>>,
     path: PathBuf,
-    map: memmap::Mmap,
     checkpointed: AtomicBool,
 }
 
 impl SealedLog {
-    pub fn open(file: &File, path: PathBuf, read_locks: Arc<AtomicU64>) -> Self {
-        let map = unsafe { memmap::Mmap::map(file).unwrap() };
-        Self { map, path, read_locks, checkpointed: false.into() }
+    pub fn open(file: File, path: PathBuf, read_locks: Arc<AtomicU64>) -> Self {
+        let mut header: LogHeader = LogHeader::new_zeroed();
+        file.read_exact_at(header.as_bytes_mut(), 0).unwrap();
+
+        let index_offset = header.index_offset.get();
+        let index_len = header.index_size.get();
+        if index_offset == 0 {
+            todo!("log not sealed");
+        }
+
+        let mut slice = vec![0; index_len as usize];
+        file.read_exact_at(&mut slice, index_offset).unwrap();
+        let index = Map::new(slice).unwrap();
+        Self { file, path, read_locks, checkpointed: false.into(), index, header }
     }
 
     pub fn path(&self) -> &Path {
         &self.path
     }
 
-    pub fn header(&self) -> LogHeader {
-        LogHeader::read_from_prefix(&self.map[..]).unwrap()
+    pub fn header(&self) -> &LogHeader {
+        &self.header
     }
 
     // TODO: building the Map on each call could be costly (maybe?), find a way to cache it and
     // return a ref. It will likely require some unsafe, since the index references the mmaped log,
     // owned by self.
-    pub fn index(&self) -> Map<&[u8]> {
-        let header = self.header();
-        let index_offset = header.index_offset.get() as usize;
-        let index_size = header.index_size.get() as usize;
-        if index_offset == 0 {
-            panic!("unsealed log");
-        }
-        Map::new(&self.map[index_offset..index_offset + index_size]).unwrap()
+    pub fn index(&self) -> &Map<Vec<u8>> {
+        &self.index
     }
 
-    pub fn read_offset(&self, offset: u32) -> &[u8] {
+    pub fn read_offset(&self, offset: u32, buf: &mut [u8]) {
         let page_offset = page_offset(offset) as usize;
-        &self.map[page_offset..page_offset + 4096]
+        self.file.read_exact_at(buf, page_offset as _).unwrap();
     }
-
     pub fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> bool {
         if self.header().last_commited_frame_no.get() > max_frame_no {
             return false;
@@ -421,7 +427,7 @@ impl SealedLog {
         let index = self.index();
         if let Some(value) = index.get(page_no.to_be_bytes()) {
             let (_, offset) = index_entry_split(value);
-            buf.copy_from_slice(self.read_offset(offset));
+            self.read_offset(offset, buf);
             return true;
         }
 
@@ -436,6 +442,7 @@ impl SealedLog {
 impl Drop for SealedLog {
     fn drop(&mut self) {
         if self.checkpointed.load(Ordering::SeqCst) {
+            // todo: recycle?;
             if let Err(e) = std::fs::remove_file(self.path()) {
                 tracing::error!("failed to remove log file: {e}");
             }

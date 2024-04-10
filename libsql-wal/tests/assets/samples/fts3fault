@@ -1,0 +1,14 @@
+BEGIN;
+INSERT INTO t1 VALUES('registers the FTS3 module');
+INSERT INTO t1 VALUES('various support functions');ALTER TABLE t1 RENAME TO t2CREATE VIRTUAL TABLE t3 USING fts4;INSERT INTO t3(t3) VALUES('nodesize=50')BEGININSERT INTO t3 VALUES('aaa' || i)
+COMMITSELECT * FROM t3 WHERE t3 MATCH 'x'SELECT count(rowid) FROM t3 WHERE t3 MATCH 'aa*'CREATE VIRTUAL TABLE t4 USING fts4; 
+INSERT INTO t4 VALUES('The British Government called on');
+INSERT INTO t4 VALUES('as pesetas then became much');SELECT content FROM t4SELECT optimize(t4) FROM t4 LIMIT 1CREATE VIRTUAL TABLE t5 USING fts4; 
+INSERT INTO t5 VALUES('The British Government called on');
+INSERT INTO t5 VALUES('as pesetas then became much');BEGIN;
+INSERT INTO t5 VALUES('influential in shaping his future outlook');
+INSERT INTO t5 VALUES('might be acceptable to the British electorate');SELECT rowid FROM t5 WHERE t5 MATCH 'british'CREATE VIRTUAL TABLE t6 USING fts4SELECT rowid FROM t6DROP TABLE t6CREATE VIRTUAL TABLE t1 USING fts4(a, b, matchinfo=fts3)CREATE VIRTUAL TABLE t1 USING fts4(a, b, matchinfo=fs3)CREATE VIRTUAL TABLE t1 USING fts4(a, b, matchnfo=fts3)CREATE VIRTUAL TABLE t8 USING fts4SELECT mit(matchinfo(t8, 'x')) FROM t8 WHERE t8 MATCH 'a b c'SELECT mit(matchinfo(t8, 's')) FROM t8 WHERE t8 MATCH 'a b c'SELECT mit(matchinfo(t8, 'a')) FROM t8 WHERE t8 MATCH 'a b c'SELECT mit(matchinfo(t8, 'l')) FROM t8 WHERE t8 MATCH 'a b c'CREATE VIRTUAL TABLE t9 USING fts4(tokenize=porter);
+INSERT INTO t9 VALUES(
+'this record is used toooooooooooooooooooooooooooooooooooooo try to'
+);
+SELECT offsets(t9) FROM t9 WHERE t9 MATCH 'to*';SELECT offsets(t9) FROM t9 WHERE t9 MATCH 'to*'

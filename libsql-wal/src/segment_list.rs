@@ -92,17 +92,21 @@ impl SegmentList {
             return
         }
 
-        // dbg!(segs.len());
+        let size_after = segs.first().unwrap().log.header().db_size.get();
+        // fixme: there shouldn't be a 0 size after log
+        // if size_after == 0 {
+        //     return
+        // }
 
-        let indexes = segs.iter().map(|s| s.log.index()).collect::<Vec<_>>();
-
-        let mut union = indexes.iter().collect::<OpBuilder>().union();
+        let mut union = segs.iter().map(|s| s.log.index()).collect::<OpBuilder>().union();
+        let mut buf = [0; 4096];
         while let Some((k, v)) = union.next() {
             let page_no = u32::from_be_bytes(k.try_into().unwrap());
             let v = v.iter().min_by_key(|i| i.index).unwrap();
             let seg = &segs[v.index];
             let (_, offset) = index_entry_split(v.value);
-            db_file.write_all_at(seg.log.read_offset(offset), (page_no as u64 - 1) * 4096).unwrap();
+            seg.log.read_offset(offset, &mut buf);
+            db_file.write_all_at(&buf, (page_no as u64 - 1) * 4096).unwrap();
         }
 
         db_file.sync_all().unwrap();
@@ -120,13 +124,14 @@ impl SegmentList {
         }
 
         drop(union);
-        drop(indexes);
 
         self.len.fetch_sub(segs.len(), Ordering::Relaxed);
 
         for seg in segs {
             seg.log.checkpointed();
         }
+
+        db_file.set_len(size_after as u64 * 4096).unwrap();
 
         self.checkpointing.store(false, Ordering::SeqCst);
 //        println!("full_checkpoint: {}", before.elapsed().as_micros());1

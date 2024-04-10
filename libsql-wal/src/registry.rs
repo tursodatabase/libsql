@@ -34,6 +34,7 @@ impl WalRegistry {
         }
     }
 
+    #[tracing::instrument(skip(self, db_path))]
     pub fn open(self: Arc<Self>, namespace: NamespaceName, db_path: &Path) -> Arc<SharedWal> {
         if self.shutdown.load(Ordering::SeqCst) {
             todo!("open after shutdown");
@@ -57,14 +58,14 @@ impl WalRegistry {
                 continue
             }
             let file = OpenOptions::new().read(true).open(entry.path()).unwrap();
-            let sealed = SealedLog::open(&file, entry.path().to_path_buf(), Default::default());
+            let sealed = SealedLog::open(file, entry.path().to_path_buf(), Default::default());
             segments.push_log(sealed);
         }
 
         let (db_size, start_frame_no) = segments.with_head(|log| {
             let header = log.header();
             (header.db_size.get(), header.last_commited_frame_no.get() + 1)
-        }).unwrap_or((0, 0));
+        }).unwrap_or((1, 0));
 
         let current_path = path.join(format!("{namespace}:{start_frame_no:020}.log"));
         let current = arc_swap::ArcSwap::new(Arc::new(Log::create(&current_path, start_frame_no, db_size)));

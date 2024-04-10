@@ -1,0 +1,25 @@
+PRAGMA journal_mode = walPRAGMA main.journal_mode = walPRAGMA main.journal_modePRAGMA page_size = 1024PRAGMA journal_mode = walCREATE TABLE t1(a, b)SELECT * FROM sqlite_masterPRAGMA journal_mode = walINSERT INTO t1 VALUES(1, 2)PRAGMA journal_mode = persistSELECT * FROM t1SELECT * FROM t1PRAGMA main.journal_modePRAGMA main.journal_mode = walSELECT * FROM t1PRAGMA main.journal_modePRAGMA journal_mode = deletePRAGMA main.journal_modeBEGIN;
+SELECT * FROM t1;PRAGMA main.journal_modePRAGMA main.journal_modePRAGMA main.journal_modePRAGMA main.journal_modePRAGMA main.journal_mode = walBEGIN;
+CREATE TABLE t1(a, b);
+INSERT INTO t1 VALUES(1, 2);
+COMMIT;
+SELECT * FROM t1;
+PRAGMA main.journal_mode;PRAGMA main.journal_mode = walINSERT INTO t1 VALUES(3, 4);
+SELECT * FROM t1;
+PRAGMA main.journal_mode;PRAGMA main.journal_modePRAGMA main.journal_mode = walBEGIN;
+CREATE TABLE t1(a, b);
+INSERT INTO t1 VALUES(1, 2);
+COMMIT;
+SELECT * FROM t1;
+PRAGMA main.journal_mode;PRAGMA main.journal_mode = walINSERT INTO t1 VALUES(3, 4);
+SELECT * FROM t1;
+PRAGMA main.journal_mode;PRAGMA temp.journal_modePRAGMA temp.journal_mode = walBEGIN;
+CREATE TEMP TABLE t1(a, b);
+INSERT INTO t1 VALUES(1, 2);
+COMMIT;
+SELECT * FROM t1;
+PRAGMA temp.journal_mode;PRAGMA temp.journal_mode = walINSERT INTO t1 VALUES(3, 4);
+SELECT * FROM t1;
+PRAGMA temp.journal_mode;PRAGMA journal_mode = WAL;
+CREATE TABLE t1(a, b);PRAGMA two.journal_mode=WAL;
+PRAGMA two.journal_mode;PRAGMA main.journal_mode

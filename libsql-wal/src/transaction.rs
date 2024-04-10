@@ -21,6 +21,13 @@ impl Transaction {
             None
         }
     }
+    
+    pub fn max_frame_no(&self) -> u64 {
+        match self {
+            Transaction::Write(w) => w.next_frame_no - 1,
+            Transaction::Read(read) => read.max_frame_no,
+        }
+    }
 
     pub(crate) fn commit(&mut self) {
         match self {

@@ -1,0 +1,1 @@
+SELECT x, y FROM t1PRAGMA integrity_checkPRAGMA incremental_vacuumSELECT count(*) FROM t1

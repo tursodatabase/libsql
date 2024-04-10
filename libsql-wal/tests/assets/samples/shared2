@@ -1,0 +1,20 @@
+BEGIN;
+CREATE TABLE numbers(a PRIMARY KEY, b);
+INSERT INTO numbers(oid) VALUES(NULL);
+INSERT INTO numbers(oid) SELECT NULL FROM numbers;
+INSERT INTO numbers(oid) SELECT NULL FROM numbers;
+INSERT INTO numbers(oid) SELECT NULL FROM numbers;
+INSERT INTO numbers(oid) SELECT NULL FROM numbers;
+INSERT INTO numbers(oid) SELECT NULL FROM numbers;
+INSERT INTO numbers(oid) SELECT NULL FROM numbers;
+UPDATE numbers set a = oid, b = 'abcdefghijklmnopqrstuvwxyz0123456789';
+COMMIT;pragma read_uncommitted = 1;SELECT count(*) FROM numbersBEGIN;
+DELETE FROM numbers;ROLLBACK;SELECT count(*) FROM numbersDELETE FROM numbers;INSERT INTO numbers VALUES(1, 'Medium length text field');
+INSERT INTO numbers VALUES(2, 'Medium length text field');
+INSERT INTO numbers VALUES(3, 'Medium length text field');
+INSERT INTO numbers VALUES(4, 'Medium length text field');
+BEGIN;
+DELETE FROM numbers WHERE (a%2)=0;ROLLBACKBEGIN;
+INSERT INTO numbers VALUES(5, 'Medium length text field');
+INSERT INTO numbers VALUES(6, 'Medium length text field');ROLLBACKCREATE TABLE t0(a, b);
+CREATE TABLE t1(a, b DEFAULT 'hello world');SELECT a, b FROM t0INSERT INTO t1(a) VALUES(1)CREATE TABLE t2(a, b, c)CREATE INDEX i1 ON t2(a)

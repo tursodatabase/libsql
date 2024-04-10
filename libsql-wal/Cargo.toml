@@ -1,3 +1,4 @@
+workspace = { members = ["tests/assets/aggregator"] }
 [package]
 name = "libsql-wal"
 version = "0.1.0"
@@ -25,4 +26,9 @@ walkdir = "2.5.0"
 zerocopy = { version = "0.7.32", features = ["derive"] }
 
 [dev-dependencies]
+criterion = "0.5.1"
 tempfile = "3.10.1"
+
+[[bench]]
+name = "benchmarks"
+harness = false

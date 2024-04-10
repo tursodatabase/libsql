@@ -1,0 +1,38 @@
+CREATE VIRTUAL TABLE t1 USING fts3(x);
+INSERT INTO t1(t1) VALUES('nodesize=24');
+BEGIN;
+INSERT INTO t1 VALUES('Is the night chilly and dark?');
+INSERT INTO t1 VALUES('The night is chilly, but not dark.');
+INSERT INTO t1 VALUES('The thin gray cloud is spread on high,');
+INSERT INTO t1 VALUES('It covers but not hides the sky.');
+COMMIT;
+SELECT count(*)>0 FROM t1_segments;INSERT INTO t1(t1) VALUES('nodesize=24');
+BEGIN;
+INSERT INTO t1 VALUES('The moon is behind, and at the full;');
+INSERT INTO t1 VALUES('And yet she looks both small and dull.');
+INSERT INTO t1 VALUES('The night is chill, the cloud is gray:');
+INSERT INTO t1 VALUES('''T is a month before the month of May,');
+INSERT INTO t1 VALUES('And the Spring comes slowly up this way.');
+INSERT INTO t1 VALUES('The lovely lady, Christabel,');
+INSERT INTO t1 VALUES('Whom her father loves so well,');
+INSERT INTO t1 VALUES('What makes her in the wood so late,');
+INSERT INTO t1 VALUES('A furlong from the castle gate?');
+INSERT INTO t1 VALUES('She had dreams all yesternight');
+INSERT INTO t1 VALUES('Of her own betrothed knight;');
+INSERT INTO t1 VALUES('And she in the midnight wood will pray');
+INSERT INTO t1 VALUES('For the weal of her lover that''s far away.');
+COMMIT;INSERT INTO t1(t1) VALUES('optimize');
+SELECT substr(hex(root), 1, 2) FROM t1_segdir;DELETE FROM t1_segments WHERE blockid = left_child
+INSERT INTO t1_segments VALUES(left_child, NULL)
+CREATE VIRTUAL TABLE t3 USING fts3(x);
+INSERT INTO t3(t3) VALUES('nodesize=24');
+INSERT INTO t3(t3) VALUES('maxpending=100');CREATE VIRTUAL TABLE t4 USING fts3(x);
+INSERT INTO t4(t4) VALUES('nodesize=24');INSERT INTO t4 VALUES('extra!')INSERT INTO t4 VALUES('more extra!')CREATE VIRTUAL TABLE t5 USING fts3(x)SELECT count(*) FROM t5_segdirSELECT count(*) FROM t5_segdirCREATE VIRTUAL TABLE t7 USING fts3(a, b, c);
+INSERT INTO t7 VALUES('A', 'B', 'C');
+UPDATE t7 SET docid = 5;
+SELECT docid, * FROM t7;INSERT INTO t7 VALUES('D', 'E', 'F');
+UPDATE t7 SET docid = 1 WHERE docid = 6;
+SELECT docid, * FROM t7;CREATE VIRTUAL TABLE xx USING fts3INSERT INTO xx(xx) VALUES('optimize')CREATE VIRTUAL TABLE xx USING fts3;
+INSERT INTO xx VALUES('one two three');
+INSERT INTO xx VALUES('four five six');
+DELETE FROM xx WHERE docid = 1;SELECT * FROM xx WHERE xx MATCH 'two'

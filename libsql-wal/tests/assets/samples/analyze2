@@ -1,0 +1,44 @@
+CREATE TABLE t1(x PRIMARY KEY)INSERT INTO t1 VALUES(i)
+ANALYZE;
+SELECT * FROM sqlite_stat2;DELETE FROM t1 WHERe x>9;
+ANALYZE;
+SELECT tbl, idx, group_concat(sample, ' ') FROM sqlite_stat2;DELETE FROM t1 WHERE x>8;
+ANALYZE;
+SELECT * FROM sqlite_stat2;DELETE FROM t1;
+ANALYZE;
+SELECT * FROM sqlite_stat2;BEGIN;
+DROP TABLE t1;
+CREATE TABLE t1(x, y);
+CREATE INDEX t1_x ON t1(x);
+CREATE INDEX t1_y ON t1(y);INSERT INTO t1 VALUES(i, i)
+INSERT INTO t1 VALUES(str, str)
+SELECT tbl,idx,group_concat(sample,' ') 
+FROM sqlite_stat2 
+WHERE idx = 't1_x' 
+GROUP BY tbl,idxSELECT tbl,idx,group_concat(sample,' ') 
+FROM sqlite_stat2 
+WHERE idx = 't1_y' 
+GROUP BY tbl,idxCREATE TABLE t3(a COLLATE nocase, b)CREATE INDEX t3a ON t3(a)CREATE INDEX t3b ON t3(b)INSERT INTO t3 VALUES(str, str)
+SELECT tbl,idx,group_concat(sample,' ') 
+FROM sqlite_stat2 
+WHERE idx = 't3a' 
+GROUP BY tbl,idxSELECT tbl,idx,group_concat(sample,' ') 
+FROM sqlite_stat2 
+WHERE idx = 't3b' 
+GROUP BY tbl,idxCREATE TABLE t4(x COLLATE test_collate)CREATE INDEX t4x ON t4(x)INSERT INTO t4 VALUES(str)
+SELECT tbl,idx,group_concat(sample,' ') 
+FROM sqlite_stat2 
+WHERE tbl = 't4' 
+GROUP BY tbl,idxDROP TABLE IF EXISTS t4;
+CREATE TABLE t5(a, b); CREATE INDEX t5i ON t5(a, b);
+CREATE TABLE t6(a, b); CREATE INDEX t6i ON t6(a, b);INSERT INTO t5 VALUES(ii, ii);
+INSERT INTO t6 VALUES(ii/10, ii/10);
+CREATE TABLE master AS 
+SELECT * FROM sqlite_master WHERE name LIKE 'sqlite_stat%'PRAGMA writable_schema = 1;
+DELETE FROM sqlite_master WHERE tbl_name = 'sqlite_stat2';PRAGMA writable_schema = 1;
+DELETE FROM sqlite_master WHERE tbl_name = 'sqlite_stat1';PRAGMA writable_schema = 1;
+INSERT INTO sqlite_master SELECT * FROM master;DELETE FROM sqlite_stat1;
+DELETE FROM sqlite_stat2;PRAGMA writable_schema = 1;
+DELETE FROM sqlite_master WHERE tbl_name = 'sqlite_stat1';PRAGMA writable_schema = 1;
+DELETE FROM sqlite_master WHERE tbl_name = 'sqlite_stat2';PRAGMA writable_schema = 1;
+INSERT INTO sqlite_master SELECT * FROM master;SELECT count(*) FROM t5SELECT count(*) FROM t5SELECT count(*) FROM t5SELECT count(*) FROM t5SELECT * FROM sqlite_masterSELECT * FROM sqlite_masterDELETE FROM sqlite_stat2SELECT * FROM sqlite_masterSELECT * FROM sqlite_masterSELECT * FROM sqlite_master

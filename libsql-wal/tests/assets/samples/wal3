@@ -1,0 +1,52 @@
+PRAGMA cache_size = 2000;
+PRAGMA page_size = 1024;
+PRAGMA auto_vacuum = off;
+PRAGMA synchronous = normal;
+PRAGMA journal_mode = WAL;
+PRAGMA wal_autocheckpoint = 0;
+BEGIN;
+CREATE TABLE t1(x);
+INSERT INTO t1 VALUES( a_string(800) );                  /*    1 */
+INSERT INTO t1 SELECT a_string(800) FROM t1;             /*    2 */
+INSERT INTO t1 SELECT a_string(800) FROM t1;             /*    4 */
+INSERT INTO t1 SELECT a_string(800) FROM t1;             /*    8 */
+INSERT INTO t1 SELECT a_string(800) FROM t1;             /*   16 */
+INSERT INTO t1 SELECT a_string(800) FROM t1;             /*   32 */
+INSERT INTO t1 SELECT a_string(800) FROM t1;             /*   64 */
+INSERT INTO t1 SELECT a_string(800) FROM t1;             /*  128*/
+INSERT INTO t1 SELECT a_string(800) FROM t1;             /*  256 */
+INSERT INTO t1 SELECT a_string(800) FROM t1;             /*  512 */
+INSERT INTO t1 SELECT a_string(800) FROM t1;             /* 1024 */
+INSERT INTO t1 SELECT a_string(800) FROM t1;             /* 2048 */
+INSERT INTO t1 SELECT a_string(800) FROM t1 LIMIT 1970;  /* 4018 */
+COMMIT;
+PRAGMA cache_size = 10;UPDATE t1 SET x = str WHERE rowid = i
+BEGIN;
+INSERT INTO t1 SELECT a_string(800) FROM t1 LIMIT 100;
+ROLLBACK;
+PRAGMA integrity_check;SELECT count(*) FROM t1SELECT x FROM t1 WHERE rowid = i
+PRAGMA integrity_checkSELECT count(*) FROM t1SELECT x FROM t1 WHERE rowid = i
+PRAGMA integrity_checkPRAGMA journal_mode = WALCREATE TABLE x(y);
+INSERT INTO x VALUES('z');
+PRAGMA wal_checkpoint;SELECT * FROM xSELECT * FROM xPRAGMA journal_mode = WAL;
+CREATE TABLE t1(a, b);
+INSERT INTO t1 VALUES(1, 2);
+INSERT INTO t1 VALUES(3, 4);SELECT * FROM t1SELECT * FROM t1PRAGMA journal_mode = WALCREATE TABLE t1(a, b);
+INSERT INTO t1 VALUES('o', 't');
+INSERT INTO t1 VALUES('t', 'f');BEGIN ; SELECT * FROM t1PRAGMA wal_checkpointBEGIN;
+SELECT * FROM t1;COMMITPRAGMA wal_checkpointBEGIN;
+SELECT * FROM t1;PRAGMA journal_mode = WALCREATE TABLE t1(a, b);
+INSERT INTO t1 VALUES('h', 'h');
+INSERT INTO t1 VALUES('l', 'b');PRAGMA wal_checkpointINSERT INTO t1 VALUES('b', 'c');PRAGMA wal_checkpointINSERT INTO t1 VALUES('n', 'o');PRAGMA journal_mode = WAL;
+CREATE TABLE blue(red PRIMARY KEY, green);SELECT * FROM blueINSERT INTO blue VALUES(1, 2)INSERT INTO blue VALUES(3, 4)SELECT * FROM blueINSERT INTO blue VALUES(5, 6)SELECT * FROM bluePRAGMA journal_mode = WAL;
+CREATE TABLE b(c);
+INSERT INTO b VALUES('Tehran');
+INSERT INTO b VALUES('Qom');
+INSERT INTO b VALUES('Markazi');
+PRAGMA wal_checkpoint;SELECT * FROM bSELECT * FROM bINSERT INTO b VALUES('Qazvin')INSERT INTO b VALUES('Gilan');
+INSERT INTO b VALUES('Ardabil');SELECT * FROM bSELECT * FROM bPRAGMA page_size = 1024;
+PRAGMA journal_mode = WAL;
+CREATE TABLE whoami(x);
+INSERT INTO whoami VALUES('nobody');UPDATE whoami SET x = c
+BEGIN;
+SELECT * FROM whoamiSELECT * FROM whoamiPRAGMA wal_checkpointPRAGMA wal_checkpoint

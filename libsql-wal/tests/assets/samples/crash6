@@ -1,0 +1,9 @@
+PRAGMA auto_vacuum=OFF;
+PRAGMA page_size=2048;
+BEGIN;
+CREATE TABLE abc AS SELECT 1 AS a, 2 AS b, 3 AS c;
+COMMIT;SELECT count(*), md5sum(a), md5sum(b), md5sum(c) FROM abcCREATE TABLE abc(a, b, c)INSERT INTO abc SELECT * FROM abc;
+INSERT INTO abc SELECT * FROM abc;
+INSERT INTO abc SELECT * FROM abc;
+INSERT INTO abc SELECT * FROM abc;
+INSERT INTO abc SELECT * FROM abc;
