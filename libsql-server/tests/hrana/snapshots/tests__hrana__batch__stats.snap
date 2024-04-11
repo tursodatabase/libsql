@@ -1,0 +1,66 @@
+---
+source: libsql-server/tests/hrana/batch.rs
+expression: json
+---
+{
+  "results": [
+    {
+      "type": "ok",
+      "response": {
+        "type": "execute",
+        "result": {
+          "cols": [],
+          "rows": [],
+          "affected_row_count": 0,
+          "last_insert_rowid": null,
+          "replication_index": "1",
+          "rows_read": 1,
+          "rows_written": 2
+        }
+      }
+    },
+    {
+      "type": "ok",
+      "response": {
+        "type": "execute",
+        "result": {
+          "cols": [],
+          "rows": [],
+          "affected_row_count": 1,
+          "last_insert_rowid": "1",
+          "replication_index": "2",
+          "rows_read": 0,
+          "rows_written": 1
+        }
+      }
+    },
+    {
+      "type": "ok",
+      "response": {
+        "type": "execute",
+        "result": {
+          "cols": [
+            {
+              "name": "x",
+              "decltype": "INT"
+            }
+          ],
+          "rows": [
+            [
+              {
+                "type": "integer",
+                "value": "42"
+              }
+            ]
+          ],
+          "affected_row_count": 0,
+          "last_insert_rowid": null,
+          "replication_index": "2",
+          "rows_read": 1,
+          "rows_written": 0
+        }
+      }
+    }
+  ],
+  "base_url": null
+}
