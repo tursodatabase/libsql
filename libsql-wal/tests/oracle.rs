@@ -44,7 +44,9 @@ fn run_test_sample(path: &Path) -> Result {
     )
     .unwrap();
 
-    let mut sqlite_results = run_script(&sqlite_conn, &script).collect::<Vec<_>>();
+    let sqlite_results = run_script(&sqlite_conn, &script).collect::<Vec<_>>();
+    let _ = sqlite_conn.execute("ROLLBACK", ());
+    let _ = sqlite_conn.execute("VACUUM", ());
     drop(sqlite_conn);
     
     std::fs::rename(tmp.path().join("test/data"), tmp.path().join("sqlite-data")).unwrap();
@@ -67,6 +69,8 @@ fn run_test_sample(path: &Path) -> Result {
     .unwrap();
 
     let libsql_results = run_script(&libsql_conn, &script).collect::<Vec<_>>();
+    let _ = libsql_conn.execute("ROLLBACK", ());
+    let _ = libsql_conn.execute("VACUUM", ());
     for (a, b) in sqlite_results.iter().zip(libsql_results.iter()) {
         assert_eq!(a, b)
     }
@@ -81,7 +85,8 @@ fn run_test_sample(path: &Path) -> Result {
     }) {
         Ok(_) => (),
         Err(e) => {
-            println!("{:?}", tmp.into_path());
+            let path = tmp.into_path();
+            std::fs::rename(path, "failure").unwrap();
             std::panic::resume_unwind(e)
         },
     }
@@ -117,7 +122,7 @@ fn compare_db_files(db1: &Path, db2: &Path) {
 fn run_script<'a, T: Wal>(conn: &'a Connection<T>, script: &'a str) -> impl Iterator<Item = String> + 'a {
     let mut stmts = split_statements(conn, script);
     std::iter::from_fn(move || {
-        let stmt = stmts.next()?;
+        let stmt = dbg!(stmts.next()?);
         let mut stmt = conn.prepare(&stmt).unwrap();
         Some(stmt.query(()).unwrap().mapped(|r| Ok(format!("{r:?}"))).map(|r| r.unwrap_or_else(|e| e.to_string())).collect::<String>())
     })
