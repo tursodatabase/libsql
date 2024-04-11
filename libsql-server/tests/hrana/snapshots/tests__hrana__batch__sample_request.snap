@@ -10,7 +10,9 @@ expression: resp.json_value().await.unwrap()
         "rows": [],
         "affected_row_count": 0,
         "last_insert_rowid": null,
-        "replication_index": null
+        "replication_index": null,
+        "rows_read": 1,
+        "rows_written": 2
       }
     ],
     "step_errors": [

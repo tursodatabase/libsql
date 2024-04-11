@@ -247,6 +247,10 @@ pub struct StmtResult {
     #[serde(default, with = "option_u64_as_str")]
     #[prost(uint64, optional, tag = "5")]
     pub replication_index: Option<u64>,
+    #[prost(uint64, tag = "6")]
+    pub rows_read: u64,
+    #[prost(uint64, tag = "7")]
+    pub rows_written: u64,
 }
 
 #[derive(Clone, Deserialize, Serialize, prost::Message)]

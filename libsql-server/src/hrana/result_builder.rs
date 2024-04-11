@@ -25,6 +25,8 @@ pub struct SingleStatementBuilder {
     max_response_size: u64,
     max_total_response_size: u64,
     last_frame_no: Option<FrameNo>,
+    rows_read: u64,
+    rows_written: u64,
 }
 
 struct SizeFormatter {
@@ -243,8 +245,15 @@ impl QueryResultBuilder for SingleStatementBuilder {
                 affected_row_count: std::mem::take(&mut self.affected_row_count),
                 last_insert_rowid: std::mem::take(&mut self.last_insert_rowid),
                 replication_index: self.last_frame_no,
+                rows_read: self.rows_read,
+                rows_written: self.rows_written,
             }),
         }
+    }
+
+    fn add_stats(&mut self, rows_read: u64, rows_written: u64) {
+        self.rows_read = self.rows_read.wrapping_add(rows_read);
+        self.rows_written = self.rows_written.wrapping_add(rows_written);
     }
 }
 
@@ -364,5 +373,9 @@ impl QueryResultBuilder for HranaBatchProtoBuilder {
             step_errors: self.step_errors,
             replication_index: self.last_frame_no,
         }
+    }
+
+    fn add_stats(&mut self, rows_read: u64, rows_written: u64) {
+        self.stmt_builder.add_stats(rows_read, rows_written);
     }
 }
