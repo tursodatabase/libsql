@@ -1694,7 +1694,7 @@ dependencies = [
  "futures-core",
  "prost",
  "prost-types",
- "tonic",
+ "tonic 0.10.2",
  "tracing-core",
 ]
 
@@ -1715,7 +1715,7 @@ dependencies = [
  "thread_local",
  "tokio",
  "tokio-stream",
- "tonic",
+ "tonic 0.10.2",
  "tracing",
  "tracing-core",
  "tracing-subscriber",
@@ -3226,7 +3226,7 @@ dependencies = [
  "tokio-stream",
  "tokio-test",
  "tokio-util",
- "tonic",
+ "tonic 0.11.0",
  "tonic-web",
  "tower",
  "tower-http 0.4.4",
@@ -3376,7 +3376,7 @@ dependencies = [
  "tokio-stream",
  "tokio-tungstenite",
  "tokio-util",
- "tonic",
+ "tonic 0.11.0",
  "tonic-web",
  "tower",
  "tower-http 0.3.5",
@@ -3460,7 +3460,7 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tokio-util",
- "tonic",
+ "tonic 0.11.0",
  "tonic-build",
  "tracing",
  "uuid",
@@ -5624,24 +5624,51 @@ dependencies = [
  "percent-encoding",
  "pin-project",
  "prost",
- "rustls 0.21.10",
- "rustls-native-certs 0.6.3",
- "rustls-pemfile 1.0.4",
  "tokio",
- "tokio-rustls 0.24.1",
  "tokio-stream",
  "tower",
  "tower-layer",
  "tower-service",
  "tracing",
- "webpki-roots 0.25.3",
+]
+
+[[package]]
+name = "tonic"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "76c4eb7a4e9ef9d4763600161f12f5070b92a578e1b634db88a6887844c91a13"
+dependencies = [
+ "async-stream",
+ "async-trait",
+ "axum",
+ "base64",
+ "bytes",
+ "h2",
+ "http 0.2.11",
+ "http-body 0.4.6",
+ "hyper",
+ "hyper-timeout",
+ "percent-encoding",
+ "pin-project",
+ "prost",
+ "rustls-native-certs 0.7.0",
+ "rustls-pemfile 2.1.1",
+ "rustls-pki-types",
+ "tokio",
+ "tokio-rustls 0.25.0",
+ "tokio-stream",
+ "tower",
+ "tower-layer",
+ "tower-service",
+ "tracing",
+ "webpki-roots 0.26.1",
 ]
 
 [[package]]
 name = "tonic-build"
-version = "0.10.2"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d021fc044c18582b9a2408cd0dd05b1596e3ecdb5c4df822bb0183545683889"
+checksum = "be4ef6dd70a610078cb4e338a0f79d06bc759ff1b22d2120c2ff02ae264ba9c2"
 dependencies = [
  "prettyplease",
  "proc-macro2",
@@ -5652,9 +5679,9 @@ dependencies = [
 
 [[package]]
 name = "tonic-web"
-version = "0.10.2"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fddb2a37b247e6adcb9f239f4e5cefdcc5ed526141a416b943929f13aea2cce"
+checksum = "dc3b0e1cedbf19fdfb78ef3d672cb9928e0a91a9cb4629cc0c916e8cff8aaaa1"
 dependencies = [
  "base64",
  "bytes",
@@ -5663,7 +5690,7 @@ dependencies = [
  "hyper",
  "pin-project",
  "tokio-stream",
- "tonic",
+ "tonic 0.11.0",
  "tower-http 0.4.4",
  "tower-layer",
  "tower-service",
