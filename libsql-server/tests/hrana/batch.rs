@@ -163,3 +163,63 @@ fn affected_rows_and_last_rowid() {
 
     sim.run().unwrap();
 }
+
+#[test]
+fn stats() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let req = serde_json::json!({
+            "requests": [
+                {"type": "execute", "stmt": { "sql": "CREATE TABLE foo (x INT)" }},
+                {"type": "execute", "stmt": { "sql": "INSERT INTO foo VALUES (42)"}},
+                {"type": "execute", "stmt": { "sql": "SELECT * FROM foo"}}
+            ]
+        });
+        let client = Client::new();
+
+        let resp = client
+            .post("http://primary:8080/v2/pipeline", req)
+            .await
+            .unwrap();
+
+        let mut json = resp.json_value().await.unwrap();
+        json.as_object_mut().unwrap().remove("baton");
+
+        assert_json_snapshot!(json);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn stats_legacy() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let req = serde_json::json!({
+            "statements": [
+                "CREATE TABLE foo (x INT)",
+                "INSERT INTO foo VALUES (42)",
+                "SELECT * FROM foo"
+            ]
+        });
+        let client = Client::new();
+
+        let resp = client.post("http://primary:8080/", req).await.unwrap();
+
+        let json = resp.json_value().await.unwrap();
+
+        assert_json_snapshot!(json);
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}

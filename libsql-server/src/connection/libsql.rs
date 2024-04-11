@@ -11,7 +11,7 @@ use metrics::histogram;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use rusqlite::ffi::SQLITE_BUSY;
-use rusqlite::{ErrorCode, OpenFlags, StatementStatus};
+use rusqlite::{ErrorCode, OpenFlags};
 use tokio::sync::watch;
 use tokio::time::{Duration, Instant};
 
@@ -375,11 +375,14 @@ pub(super) struct Connection<W> {
     forced_rollback: bool,
 }
 
-fn update_stats(stats: &Stats, sql: String, stmt: &rusqlite::Statement, elapsed: Duration) {
-    let rows_read = stmt.get_status(StatementStatus::RowsRead) as u64;
-    let rows_written = stmt.get_status(StatementStatus::RowsWritten) as u64;
-    let mem_used = stmt.get_status(StatementStatus::MemUsed) as u64;
-
+fn update_stats(
+    stats: &Stats,
+    sql: String,
+    rows_read: u64,
+    rows_written: u64,
+    mem_used: u64,
+    elapsed: Duration,
+) {
     stats.send(StatsUpdateMessage {
         sql,
         elapsed,
@@ -493,7 +496,9 @@ impl<W: Wal> Connection<W> {
                     should_block.then(|| config.block_reason.clone()).flatten(),
                 )
             },
-            move |sql, stmt, elapsed| update_stats(&stats, sql, stmt, elapsed),
+            move |sql, rows_read, rows_written, mem_used, elapsed| {
+                update_stats(&stats, sql, rows_read, rows_written, mem_used, elapsed)
+            },
             resolve_attach_path,
         );
 
