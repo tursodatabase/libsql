@@ -251,6 +251,8 @@ pub struct StmtResult {
     pub rows_read: u64,
     #[prost(uint64, tag = "7")]
     pub rows_written: u64,
+    #[prost(double, tag = "8")]
+    pub query_duration_ms: f64,
 }
 
 #[derive(Clone, Deserialize, Serialize, prost::Message)]

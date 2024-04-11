@@ -3,6 +3,7 @@ use rusqlite::types::ValueRef;
 use std::mem::take;
 use std::sync::Arc;
 use std::task;
+use std::time::Duration;
 use tokio::sync::{mpsc, oneshot};
 
 use crate::connection::program::Program;
@@ -269,5 +270,5 @@ impl QueryResultBuilder for CursorResultBuilder {
 
     fn into_ret(self) {}
 
-    fn add_stats(&mut self, _rows_read: u64, _rows_written: u64) {}
+    fn add_stats(&mut self, _rows_read: u64, _rows_written: u64, _duration: Duration) {}
 }
