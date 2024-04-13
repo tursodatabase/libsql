@@ -257,20 +257,9 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    /// Sync until caught up with primary
-    // FIXME: there is no guarantee this ever returns!
+    /// Sync with primary
     pub async fn sync(&self) -> Result<Option<FrameNo>> {
-        let mut previous_fno = None;
-        loop {
-            let new_fno = self.sync_oneshot().await?;
-            tracing::trace!("New commited fno: {new_fno:?}");
-            if new_fno == previous_fno {
-                break;
-            } else {
-                previous_fno = new_fno;
-            }
-        }
-        Ok(previous_fno)
+        Ok(self.sync_oneshot().await?)
     }
 
     #[cfg(feature = "replication")]
