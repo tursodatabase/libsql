@@ -58,7 +58,9 @@ impl Client {
             .try_into()
             .context("Invalid auth token must be ascii")?;
 
-        let ns = split_namespace(origin.host().unwrap()).unwrap_or_else(|_| "default".to_string());
+        let host = origin.host().context("Invalid host or origin")?;
+
+        let ns = split_namespace(host).unwrap_or_else(|_| "default".to_string());
         let namespace = BinaryMetadataValue::from_bytes(ns.as_bytes());
 
         let channel = GrpcChannel::new(connector, http_request_callback);
