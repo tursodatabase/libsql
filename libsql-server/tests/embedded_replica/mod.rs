@@ -126,13 +126,13 @@ fn embedded_replica() {
             if key.kind() == metrics_util::MetricKind::Counter
                 && key.key().name() == "libsql_client_version"
             {
-                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(8));
+                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(6));
                 let label = key.key().labels().next().unwrap();
                 assert!(label.value().starts_with("libsql-rpc-"));
             }
         }
 
-        snapshot.assert_counter("libsql_server_user_http_response", 8);
+        snapshot.assert_counter("libsql_server_user_http_response", 6);
 
         Ok(())
     });
@@ -258,13 +258,13 @@ fn embedded_replica_with_encryption() {
             if key.kind() == metrics_util::MetricKind::Counter
                 && key.key().name() == "libsql_client_version"
             {
-                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(8));
+                assert_eq!(val, &metrics_util::debugging::DebugValue::Counter(6));
                 let label = key.key().labels().next().unwrap();
                 assert!(label.value().starts_with("libsql-rpc-"));
             }
         }
 
-        snapshot.assert_counter("libsql_server_user_http_response", 8);
+        snapshot.assert_counter("libsql_server_user_http_response", 6);
 
         conn.execute("INSERT INTO user(id) VALUES (1)", ())
             .await
