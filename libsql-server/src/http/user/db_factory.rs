@@ -47,28 +47,33 @@ pub fn namespace_from_headers(
         return Ok(NamespaceName::default());
     }
 
-    let result = if let Some(metadata) = headers.get(NAMESPACE_METADATA_KEY) {
-        metadata
-            .to_str()
-            .map_err(|s| Error::InvalidNamespaceBytes(s))
-            .and_then(|ns| NamespaceName::from_string(ns.into()))
-    } else {
-        headers
-            .get("host")
-            .ok_or_else(|| Error::InvalidHost("missing host header".into()))
-            .and_then(|res| Ok(res.as_bytes()))
-            .and_then(|host| {
-                std::str::from_utf8(host)
-                    .map_err(|_| Error::InvalidHost("host header is not valid UTF-8".into()))
-            })
-            .and_then(|host_str| split_namespace(host_str))
-    };
-
-    if result.is_err() && !disable_default_namespace {
+    if let Some(from_metadata) = headers.get(NAMESPACE_METADATA_KEY) {
+        try_namespace_from_metadata(from_metadata)
+    } else if let Some(from_host) = headers.get("host"){
+        try_namespace_from_host(from_host, disable_default_namespace)
+    } else if !disable_default_namespace {
         Ok(NamespaceName::default())
     } else {
-        result
+        Err(Error::InvalidHost("missing host header".into()))
     }
+}
+
+fn try_namespace_from_host(from_host: &axum::http::HeaderValue, disable_default_namespace: bool) -> Result<NamespaceName, Error> {
+    std::str::from_utf8(from_host.as_bytes())
+        .map_err(|_| Error::InvalidHost("host header is not valid UTF-8".into()))
+        .and_then(|h| 
+            match split_namespace(h) {
+                Err(_) if !disable_default_namespace => Ok(NamespaceName::default()),
+                r => r
+            }
+        )
+}
+
+fn try_namespace_from_metadata(metadata: &axum::http::HeaderValue) -> Result<NamespaceName, Error> {
+    metadata
+        .to_str()
+        .map_err(|s| Error::InvalidNamespaceBytes(s))
+        .and_then(|ns| NamespaceName::from_string(ns.into()))
 }
 
 pub struct MakeConnectionExtractorPath(pub Arc<dyn MakeConnection<Connection = Connection>>);
