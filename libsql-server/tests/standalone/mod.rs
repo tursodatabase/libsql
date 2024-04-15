@@ -52,7 +52,7 @@ fn basic_query() {
     sim.host("primary", make_standalone_server);
 
     sim.client("test", async {
-        let db = Database::open_remote_with_connector("https://primary:8080", "", TurmoilConnector)?;
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
