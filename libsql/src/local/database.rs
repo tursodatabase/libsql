@@ -130,7 +130,9 @@ impl Database {
         let mut db = Database::open(&db_path, flags)?;
 
         let path = PathBuf::from(db_path);
-        let client = LocalClient::new(&path).await.unwrap();
+        let client = LocalClient::new(&path)
+            .await
+            .map_err(|e| crate::Error::Replication(e.into()))?;
 
         let replicator =
             EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await?;
@@ -171,10 +173,12 @@ impl Database {
             http_request_callback,
             None,
         )
-        .unwrap();
+        .map_err(|e| crate::Error::Replication(e.into()))?;
 
         let path = PathBuf::from(db_path);
-        let client = LocalClient::new(&path).await.unwrap();
+        let client = LocalClient::new(&path)
+            .await
+            .map_err(|e| crate::Error::Replication(e.into()))?;
 
         let replicator =
             EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await?;
