@@ -49,10 +49,10 @@ fn basic_query() {
         .simulation_duration(Duration::from_secs(1000))
         .build();
 
-    sim.host("ns.primary", make_standalone_server);
+    sim.host("primary", make_standalone_server);
 
-    sim.client("ns.test", async {
-        let db = Database::open_remote_with_connector("https://ns.primary:8080", "", TurmoilConnector)?;
+    sim.client("test", async {
+        let db = Database::open_remote_with_connector("https://primary:8080", "", TurmoilConnector)?;
         let conn = db.connect()?;
 
         conn.execute("create table test (x)", ()).await?;
