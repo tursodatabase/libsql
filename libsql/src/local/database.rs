@@ -90,6 +90,14 @@ impl Database {
 
         let endpoint = coerce_url_scheme(endpoint);
         let remote = crate::replication::client::Client::new(
+            connector.clone(),
+            endpoint.as_str().try_into().unwrap(),
+            auth_token.clone(),
+            version.as_deref(),
+            http_request_callback.clone(),
+        )
+        .unwrap();
+        let secondary_remote = crate::replication::client::Client::new(
             connector,
             endpoint.as_str().try_into().unwrap(),
             auth_token,
@@ -98,7 +106,7 @@ impl Database {
         )
         .unwrap();
         let path = PathBuf::from(db_path);
-        let client = RemoteClient::new(remote.clone(), &path)
+        let client = RemoteClient::new(remote.clone(), secondary_remote, &path)
             .await
             .map_err(|e| crate::errors::Error::ConnectionFailed(e.to_string()))?;
 
