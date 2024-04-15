@@ -1,8 +1,7 @@
 use std::ffi::OsStr;
 use std::os::unix::prelude::OsStrExt;
-use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
-use std::time::Instant;
+use std::sync::Arc;
 
 use libsql_sys::wal::{Wal, WalManager};
 
@@ -39,8 +38,14 @@ impl WalManager for LibsqlWalManager {
         db_path: &std::ffi::CStr,
     ) -> libsql_sys::wal::Result<Self::Wal> {
         let db_path = OsStr::from_bytes(&db_path.to_bytes());
-        let shared = self.registry.clone().open(db_path.as_ref());
-        let conn_id = self.next_conn_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let shared = self
+            .registry
+            .clone()
+            .open(db_path.as_ref())
+            .map_err(Into::into)?;
+        let conn_id = self
+            .next_conn_id
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         Ok(LibsqlWal {
             last_read_frame_no: None,
             tx: None,
@@ -79,7 +84,8 @@ impl WalManager for LibsqlWalManager {
     fn destroy(self)
     where
         Self: Sized,
-    { }
+    {
+    }
 }
 
 impl Wal for LibsqlWal {
@@ -131,10 +137,10 @@ impl Wal for LibsqlWal {
         buffer: &mut [u8],
     ) -> libsql_sys::wal::Result<()> {
         tracing::trace!(page_no, "reading frame");
-        let before = Instant::now();
         let tx = self.tx.as_mut().unwrap();
-        self.shared.read_frame(tx, page_no.get(), buffer);
-//        println!("read_page: {}", before.elapsed().as_millis());1
+        self.shared
+            .read_frame(tx, page_no.get(), buffer)
+            .map_err(Into::into)?;
         Ok(())
     }
 
@@ -151,11 +157,9 @@ impl Wal for LibsqlWal {
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn begin_write_txn(&mut self) -> libsql_sys::wal::Result<()> {
         tracing::trace!("begin write");
-        let before = Instant::now();
         match self.tx.as_mut() {
             Some(tx) => {
                 self.shared.upgrade(tx).map_err(Into::into)?;
-                // println!("write_acquired: {}", before.elapsed().as_micros());
                 tracing::debug!("write lock acquired");
             }
             None => todo!("should acquire read txn first"),
@@ -170,10 +174,10 @@ impl Wal for LibsqlWal {
         match self.tx.take() {
             Some(Transaction::Write(tx)) => {
                 self.tx = Some(Transaction::Read(tx.downgrade()));
-            },
+            }
             other => {
                 self.tx = other;
-            },
+            }
         }
 
         Ok(())
@@ -191,18 +195,18 @@ impl Wal for LibsqlWal {
                     for (page_no, _) in tx.index_iter() {
                         if let Err(e) = handler.handle_undo(page_no) {
                             tracing::debug!("undo handler error: {e}");
-                            break
+                            break;
                         }
                     }
                 }
-                
+
                 tx.reset(0);
 
                 tracing::debug!("rolled back tx");
 
                 Ok(())
-            },
-            _ => Ok(())
+            }
+            _ => Ok(()),
         }
     }
 
@@ -227,7 +231,7 @@ impl Wal for LibsqlWal {
                 tx.reset(rollback_data[0] as usize);
                 Ok(())
             }
-            _ => Ok(())
+            _ => Ok(()),
         }
     }
 
@@ -243,7 +247,9 @@ impl Wal for LibsqlWal {
         assert_eq!(page_size, 4096);
         match self.tx.as_mut() {
             Some(Transaction::Write(ref mut tx)) => {
-                self.shared.insert_frames(tx, page_headers, size_after);
+                self.shared
+                    .insert_frames(tx, page_headers, size_after)
+                    .map_err(Into::into)?;
             }
             _ => todo!("no write transaction"),
         }
@@ -278,7 +284,7 @@ impl Wal for LibsqlWal {
     }
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
-    fn set_db(&mut self, _db: &mut libsql_sys::wal::Sqlite3Db) { }
+    fn set_db(&mut self, _db: &mut libsql_sys::wal::Sqlite3Db) {}
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn callback(&self) -> i32 {

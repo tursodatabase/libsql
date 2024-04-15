@@ -1,6 +1,6 @@
-use std::{marker::PhantomData, ffi::c_int};
 use std::path::Path;
 use std::str::FromStr;
+use std::{ffi::c_int, marker::PhantomData};
 
 use crate::wal::{ffi::make_wal_manager, Wal, WalManager};
 
@@ -239,7 +239,8 @@ impl<W: Wal> Connection<W> {
                     conn.handle(),
                     std::ptr::null(),
                     38, // SQLITE_FCNTL_RESERVE_BYTES
-                    &mut size as *mut _ as *mut _);
+                    &mut size as *mut _ as *mut _,
+                );
             }
 
             if !cfg!(feature = "encryption") && encryption_config.is_some() {

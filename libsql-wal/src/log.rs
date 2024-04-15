@@ -1,10 +1,9 @@
 use std::fs::File;
-use std::io::{IoSlice, Write, BufWriter};
+use std::io::{BufWriter, IoSlice, Write};
 use std::mem::size_of;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::time::Instant;
+use std::sync::Arc;
 
 use fst::map::OpBuilder;
 use fst::{map::Map, MapBuilder, Streamer};
@@ -12,6 +11,7 @@ use parking_lot::{Mutex, RwLock};
 use zerocopy::byteorder::little_endian::{U32, U64};
 use zerocopy::{AsBytes, FromZeroes};
 
+use crate::error::Result;
 use crate::file::FileExt;
 use crate::transaction::{Transaction, WriteTransaction};
 
@@ -55,16 +55,21 @@ impl LogIndex {
     }
 
     #[tracing::instrument(skip_all)]
-    fn merge_all<W: Write>(&self, writer: W) {
+    fn merge_all<W: Write>(&self, writer: W) -> Result<()> {
         let segs = self.savepoints.read();
         let mut union = segs.iter().map(|(_, m)| m).collect::<OpBuilder>().union();
-        let mut builder = MapBuilder::new(writer).unwrap();
+        let mut builder = MapBuilder::new(writer)?;
         while let Some((key, entries)) = union.next() {
-            let value = entries.iter().max_by_key(|e| e.index).unwrap().value;
-            builder.insert(key, value).unwrap();
+            let value = entries
+                .iter()
+                .max_by_key(|e| e.index)
+                .expect("non empty entry")
+                .value;
+            builder.insert(key, value)?;
         }
 
-        builder.finish().unwrap();
+        builder.finish()?;
+        Ok(())
     }
 }
 
@@ -113,32 +118,31 @@ fn byte_offset(offset: u32) -> u64 {
 impl Log {
     /// Create a new log from the given path and metadata. The file pointed to by path must not
     /// exist.
-    pub fn create(path: &Path, start_frame_no: u64, db_size: u32) -> Self {
+    pub fn create(path: &Path, start_frame_no: u64, db_size: u32) -> Result<Self> {
         let log_file = std::fs::OpenOptions::new()
             .create_new(true)
             .write(true)
             .read(true)
-            .open(path)
-            .unwrap();
+            .open(path)?;
 
         let header = LogHeader {
             start_frame_no: start_frame_no.into(),
-            last_commited_frame_no: start_frame_no.into(),
+            last_commited_frame_no: 0.into(),
             db_size: db_size.into(),
             index_offset: 0.into(),
             index_size: 0.into(),
         };
 
-        log_file.write_all_at(header.as_bytes(), 0).unwrap();
+        log_file.write_all_at(header.as_bytes(), 0)?;
 
-        Self {
+        Ok(Self {
             path: path.to_path_buf(),
             index: LogIndex::default(),
             header: Mutex::new(header),
             file: log_file,
             read_locks: Arc::new(AtomicU64::new(0)),
             sealed: AtomicBool::default(),
-        }
+        })
     }
 
     pub fn len(&self) -> usize {
@@ -172,17 +176,14 @@ impl Log {
         pages: impl Iterator<Item = (u32, &'a [u8])>,
         size_after: Option<u32>,
         tx: &mut WriteTransaction,
-    ) {
-        let before = Instant::now();
+    ) -> Result<()> {
         assert!(!self.sealed.load(Ordering::SeqCst));
         tx.enter(move |tx| {
-//            println!("enter_txn_ctx: {}", before.elapsed().as_micros());1
             let mut new_index = fst::map::MapBuilder::memory();
             let mut pages = pages.peekable();
             let mut commit_frame_written = false;
-            let current_savepoint = tx.savepoints.last_mut().unwrap();
+            let current_savepoint = tx.savepoints.last_mut().expect("no savepoints initialized");
             while let Some((page_no, page)) = pages.next() {
-                let in_loop = Instant::now();
                 tracing::trace!(page_no, "inserting page");
                 match current_savepoint
                     .index
@@ -199,12 +200,8 @@ impl Log {
                         let (_, offset) = index_entry_split(x);
                         let slices = &[IoSlice::new(header.as_bytes()), IoSlice::new(page)];
 
-//                        println!("replace_before: {}", in_loop.elapsed().as_micros());1
-
                         self.file
-                            .write_at_vectored(slices, byte_offset(offset) as u64)
-                            .unwrap();
-//                        println!("replace_after: {}", in_loop.elapsed().as_micros());1
+                            .write_at_vectored(slices, byte_offset(offset) as u64)?;
                     }
                     None => {
                         let size_after = if let Some(size) = size_after {
@@ -231,39 +228,38 @@ impl Log {
                         tx.next_frame_no += 1;
                         let offset = tx.next_offset;
                         tx.next_offset += 1;
-//                        println!("insert_before: {}", in_loop.elapsed().as_micros());1
-                        self.file
-                            .write_at_vectored(slices, byte_offset(offset))
-                            .unwrap();
-//                        println!("insert_after: {}", in_loop.elapsed().as_micros());1
-                        new_index
-                            .insert(
-                                page_no.to_be_bytes(),
-                                index_entry_merge(
-                                    offset,
-                                    (frame_no - self.header.lock().start_frame_no.get()) as u32,
-                                ),
-                            )
-                            .unwrap();
+                        self.file.write_at_vectored(slices, byte_offset(offset))?;
+                        new_index.insert(
+                            page_no.to_be_bytes(),
+                            index_entry_merge(
+                                offset,
+                                (frame_no - self.header.lock().start_frame_no.get()) as u32,
+                            ),
+                        )?;
                     }
                 }
             }
 
-//            println!("write_pages: {}", before.elapsed().as_micros());1
-
             if let Some(ref old_index) = current_savepoint.index {
                 let indexes = &[old_index, &new_index.into_map()];
-                current_savepoint.index = Some(merge_indexes(indexes.iter().map(|x| *x)));
+                current_savepoint.index = Some(merge_indexes(indexes.iter().map(|x| *x))?);
             } else {
                 current_savepoint.index = Some(new_index.into_map());
             }
 
             if let Some(size_after) = size_after {
-                if tx.savepoints.len() == 1 && tx.savepoints.last().unwrap().index.is_none() {
+                if tx.savepoints.len() == 1
+                    && tx
+                        .savepoints
+                        .last()
+                        .expect("missing savepoint")
+                        .index
+                        .is_none()
+                {
                     // nothing to do
                 } else {
                     let indexes = tx.savepoints.iter().filter_map(|i| i.index.as_ref());
-                    let merged = merge_indexes(indexes);
+                    let merged = merge_indexes(indexes)?;
                     if !merged.is_empty() {
                         let last_frame_no = tx.next_frame_no - 1;
                         let mut header = { *self.header.lock() };
@@ -272,10 +268,10 @@ impl Log {
 
                         if !commit_frame_written {
                             // need to patch the last frame header
-                            self.patch_frame_size_after(tx.next_offset - 1, size_after);
+                            self.patch_frame_size_after(tx.next_offset - 1, size_after)?;
                         }
 
-                        self.file.write_all_at(header.as_bytes(), 0).unwrap();
+                        self.file.write_all_at(header.as_bytes(), 0)?;
                         // self.file.sync_data().unwrap();
                         self.index.savepoints.write().push((last_frame_no, merged));
                         // set the header last, so that a transaction does not witness a write before
@@ -286,17 +282,17 @@ impl Log {
 
                 tx.is_commited = true;
             }
-        });
 
-//        println!("full_insert: {}", before.elapsed().as_micros());1
+            Ok(())
+        })
 
+        //        println!("full_insert: {}", before.elapsed().as_micros());1
     }
 
-    fn patch_frame_size_after(&self, offset: u32, size_after: u32) {
+    fn patch_frame_size_after(&self, offset: u32, size_after: u32) -> Result<()> {
         let offset = byte_offset(offset) + memoffset::offset_of!(FrameHeader, size_after) as u64;
-        self.file
-            .write_all_at(&size_after.to_le_bytes(), offset)
-            .unwrap()
+        self.file.write_all_at(&size_after.to_le_bytes(), offset)?;
+        Ok(())
     }
 
     /// return the offset of the frame for page_no, with frame_no no larger that max_frame_no, if
@@ -326,24 +322,24 @@ impl Log {
 
     /// reads the page conainted in frame at offset into buf
     #[tracing::instrument(skip(self, buf))]
-    pub fn read_page_offset(&self, offset: u32, buf: &mut [u8]) {
+    pub fn read_page_offset(&self, offset: u32, buf: &mut [u8]) -> Result<()> {
         tracing::trace!("read page");
         debug_assert_eq!(buf.len(), 4096);
-        self.file.read_exact_at(buf, page_offset(offset)).unwrap()
+        self.file.read_exact_at(buf, page_offset(offset))?;
+
+        Ok(())
     }
 
     #[allow(dead_code)]
-    fn frame_header_at(&self, offset: u32) -> FrameHeader {
+    fn frame_header_at(&self, offset: u32) -> Result<FrameHeader> {
         let mut header = FrameHeader::new_zeroed();
         self.file
-            .read_exact_at(header.as_bytes_mut(), byte_offset(offset))
-            .unwrap();
-        header
+            .read_exact_at(header.as_bytes_mut(), byte_offset(offset))?;
+        Ok(header)
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn seal(&self) -> SealedLog {
-        let before = Instant::now();
+    pub fn seal(&self) -> Result<SealedLog> {
         assert!(
             self.sealed
                 .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
@@ -351,21 +347,24 @@ impl Log {
             "attempt to seal an already sealed log"
         );
         let mut header = self.header.lock();
-//        println!("header_locked: {}", before.elapsed().as_micros());1
         let index_offset = header.last_commited_frame_no.get() - header.start_frame_no.get();
         let index_byte_offset = byte_offset(index_offset as u32);
         let mut cursor = self.file.cursor(index_byte_offset);
         let mut writer = BufWriter::new(&mut cursor);
-        self.index.merge_all(&mut writer);
+        self.index.merge_all(&mut writer)?;
         writer.into_inner().unwrap();
-//        println!("index_merged: {}", before.elapsed().as_micros());1
         header.index_offset = index_byte_offset.into();
         header.index_size = cursor.count().into();
-        self.file.write_all_at(header.as_bytes(), 0).unwrap();
+        self.file.write_all_at(header.as_bytes(), 0)?;
 
         tracing::debug!("log sealed");
 
-        SealedLog::open(self.file.try_clone().unwrap(), self.path.clone(), self.read_locks.clone())
+        Ok(SealedLog::open(
+            self.file.try_clone()?,
+            self.path.clone(),
+            self.read_locks.clone(),
+        )?
+        .expect("log is not empty"))
     }
 }
 
@@ -384,20 +383,34 @@ pub struct SealedLog {
 }
 
 impl SealedLog {
-    pub fn open(file: File, path: PathBuf, read_locks: Arc<AtomicU64>) -> Self {
+    pub fn open(file: File, path: PathBuf, read_locks: Arc<AtomicU64>) -> Result<Option<Self>> {
         let mut header: LogHeader = LogHeader::new_zeroed();
-        file.read_exact_at(header.as_bytes_mut(), 0).unwrap();
+        file.read_exact_at(header.as_bytes_mut(), 0)?;
 
         let index_offset = header.index_offset.get();
         let index_len = header.index_size.get();
         if index_offset == 0 {
-            todo!("log not sealed");
+            return Self::recover(file, header);
         }
 
         let mut slice = vec![0; index_len as usize];
-        file.read_exact_at(&mut slice, index_offset).unwrap();
-        let index = Map::new(slice).unwrap();
-        Self { file, path, read_locks, checkpointed: false.into(), index, header }
+        file.read_exact_at(&mut slice, index_offset)?;
+        let index = Map::new(slice)?;
+        Ok(Some(Self {
+            file,
+            path,
+            read_locks,
+            checkpointed: false.into(),
+            index,
+            header,
+        }))
+    }
+
+    fn recover(_file: File, header: LogHeader) -> Result<Option<Self>> {
+        if header.last_commited_frame_no.get() == 0 {
+            return Ok(None);
+        }
+        todo!();
     }
 
     pub fn path(&self) -> &Path {
@@ -415,23 +428,26 @@ impl SealedLog {
         &self.index
     }
 
-    pub fn read_offset(&self, offset: u32, buf: &mut [u8]) {
+    pub fn read_offset(&self, offset: u32, buf: &mut [u8]) -> Result<()> {
         let page_offset = page_offset(offset) as usize;
-        self.file.read_exact_at(buf, page_offset as _).unwrap();
+        self.file.read_exact_at(buf, page_offset as _)?;
+
+        Ok(())
     }
-    pub fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> bool {
+
+    pub fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> Result<bool> {
         if self.header().last_commited_frame_no.get() > max_frame_no {
-            return false;
+            return Ok(false);
         }
 
         let index = self.index();
         if let Some(value) = index.get(page_no.to_be_bytes()) {
             let (_, offset) = index_entry_split(value);
-            self.read_offset(offset, buf);
-            return true;
+            self.read_offset(offset, buf)?;
+            return Ok(true);
         }
 
-        false
+        Ok(false)
     }
 
     pub(crate) fn checkpointed(&self) {
@@ -450,14 +466,17 @@ impl Drop for SealedLog {
     }
 }
 
-fn merge_indexes<'a>(indexes: impl Iterator<Item = &'a Map<Vec<u8>>>) -> Map<Vec<u8>> {
+fn merge_indexes<'a>(indexes: impl Iterator<Item = &'a Map<Vec<u8>>>) -> Result<Map<Vec<u8>>> {
     let mut union = indexes.collect::<OpBuilder>().union();
     let mut builder = MapBuilder::memory();
 
     while let Some((key, vals)) = union.next() {
-        let max = vals.iter().max_by_key(|x| x.index).unwrap();
-        builder.insert(key, max.value).unwrap();
+        let max = vals
+            .iter()
+            .max_by_key(|x| x.index)
+            .expect("entry should be non empty");
+        builder.insert(key, max.value)?;
     }
 
-    builder.into_map()
+    Ok(builder.into_map())
 }

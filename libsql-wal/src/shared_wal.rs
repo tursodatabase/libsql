@@ -6,12 +6,10 @@ use std::time::Instant;
 use arc_swap::ArcSwap;
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
-use libsql_sys::ffi::Sqlite3DbHeader;
 use libsql_sys::wal::PageHeaders;
 use parking_lot::{Mutex, MutexGuard};
-use zerocopy::FromBytes;
 
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::file::FileExt;
 use crate::log::Log;
 use crate::name::NamespaceName;
@@ -68,11 +66,10 @@ impl SharedWal {
     }
 
     /// Upgrade a read transaction to a write transaction
-    pub fn upgrade(&self, tx: &mut Transaction) -> Result<(), Error> {
-        let before = Instant::now();
+    pub fn upgrade(&self, tx: &mut Transaction) -> Result<()> {
         loop {
             match tx {
-                Transaction::Write(_) => todo!("already in a write transaction"),
+                Transaction::Write(_) => unreachable!("already in a write transaction"),
                 Transaction::Read(read_tx) => {
                     {
                         let mut reserved = self.wal_lock.reserved.lock();
@@ -84,8 +81,8 @@ impl SharedWal {
                                 let lock = self.wal_lock.tx_id.lock();
                                 let write_tx = self.acquire_write(read_tx, lock, reserved)?;
                                 *tx = Transaction::Write(write_tx);
-//                                println!("upgraded: {}", before.elapsed().as_micros());1
-                                return Ok(())
+                                //                                println!("upgraded: {}", before.elapsed().as_micros());1
+                                return Ok(());
                             }
                             _ => (),
                         }
@@ -94,10 +91,11 @@ impl SharedWal {
                     let lock = self.wal_lock.tx_id.lock();
                     match *lock {
                         None if self.wal_lock.waiters.is_empty() => {
-                            let write_tx = self.acquire_write(read_tx, lock, self.wal_lock.reserved.lock())?;
+                            let write_tx =
+                                self.acquire_write(read_tx, lock, self.wal_lock.reserved.lock())?;
                             *tx = Transaction::Write(write_tx);
-//                            println!("upgraded: {}", before.elapsed().as_micros());1
-                            return Ok(())
+                            //                            println!("upgraded: {}", before.elapsed().as_micros());1
+                            return Ok(());
                         }
                         Some(_) | None => {
                             tracing::trace!(
@@ -120,7 +118,7 @@ impl SharedWal {
         read_tx: &ReadTransaction,
         mut tx_id_lock: MutexGuard<Option<u64>>,
         mut reserved: MutexGuard<Option<u64>>,
-        ) -> Result<WriteTransaction, Error> {
+    ) -> Result<WriteTransaction> {
         let id = self.wal_lock.next_tx_id.fetch_add(1, Ordering::Relaxed);
         // we read two fields in the header. There is no risk that a transaction commit in
         // between the two reads because this would require that:
@@ -156,31 +154,29 @@ impl SharedWal {
         })
     }
 
-    pub fn read_frame(&self, tx: &mut Transaction, page_no: u32, buffer: &mut [u8]) {
+    pub fn read_frame(&self, tx: &mut Transaction, page_no: u32, buffer: &mut [u8]) -> Result<()> {
         match tx.log.find_frame(page_no, tx) {
-            Some((_, offset)) => tx.log.read_page_offset(offset, buffer),
+            Some((_, offset)) => tx.log.read_page_offset(offset, buffer)?,
             None => {
                 // locate in segments
-                if !self.segments.read_page(page_no, tx.max_frame_no, buffer) {
+                if !self.segments.read_page(page_no, tx.max_frame_no, buffer)? {
                     // read from db_file
                     self.db_file
-                        .read_exact_at(buffer, (page_no as u64 - 1) * 4096)
-                        .unwrap();
+                        .read_exact_at(buffer, (page_no as u64 - 1) * 4096)?;
                 }
             }
         }
 
         tx.pages_read += 1;
 
-        // TODO: debug
-        if page_no == 1 {
-            let header = Sqlite3DbHeader::read_from_prefix(&buffer).unwrap();
-            tracing::info!(db_size = header.db_size.get(), "read page 1");
-        }
-
         let frame_no = u64::from_be_bytes(buffer[4096 - 8..].try_into().unwrap());
         tracing::trace!(frame_no, tx = tx.max_frame_no, "read page");
-        assert!(dbg!(frame_no) <= dbg!(tx.max_frame_no()));
+        assert!(
+            frame_no <= tx.max_frame_no(),
+            "read frame out of transaction boundaries"
+        );
+
+        Ok(())
     }
 
     #[tracing::instrument(skip_all, fields(tx_id = tx.id))]
@@ -189,27 +185,21 @@ impl SharedWal {
         tx: &mut WriteTransaction,
         pages: &mut PageHeaders,
         size_after: u32,
-    ) {
-        let before = Instant::now();
+    ) -> Result<()> {
         let current = self.current.load();
-        current.insert_pages(pages.iter(), (size_after != 0).then_some(size_after), tx);
-
-       // println!("before_swap: {}", before.elapsed().as_micros());1
+        current.insert_pages(pages.iter(), (size_after != 0).then_some(size_after), tx)?;
 
         // TODO: use config for max log size
         if tx.is_commited() && current.len() > 1000 {
-            let before_inserted = Instant::now();
-            self.registry.swap_current(self, tx);
-//            println!("inserted: {}", before_inserted.elapsed().as_micros());1
+            self.registry.swap_current(self, tx)?;
         }
-
 
         // TODO: remove, stupid strategy for tests
         // ok, we still hold a write txn
         if self.segments.len() > 10 {
-            self.segments.checkpoint(&self.db_file)
+            self.segments.checkpoint(&self.db_file)?;
         }
-        
-        // println!("full_insert: {}", before.elapsed().as_micros());
+
+        Ok(())
     }
 }

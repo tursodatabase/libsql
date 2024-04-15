@@ -13,8 +13,15 @@ pub trait FileExt {
 
     fn read_exact_at(&self, buf: &mut [u8], offset: u64) -> Result<()>;
 
-    fn cursor(&self, offset: u64) -> Cursor<Self> where Self: Sized {
-        Cursor { file: self, offset, count: 0 }
+    fn cursor(&self, offset: u64) -> Cursor<Self>
+    where
+        Self: Sized,
+    {
+        Cursor {
+            file: self,
+            offset,
+            count: 0,
+        }
     }
 }
 
@@ -33,21 +40,22 @@ impl FileExt for File {
         Ok(nix::sys::uio::pwritev(self, bufs, offset as _)?)
     }
 
-
     fn write_at(&self, buf: &[u8], offset: u64) -> Result<usize> {
         Ok(nix::sys::uio::pwrite(self, buf, offset as _)?)
     }
 
     fn read_exact_at(&self, buf: &mut [u8], offset: u64) -> Result<()> {
         let mut read = 0;
-        
+
         while read != buf.len() {
             let n = nix::sys::uio::pread(self, &mut buf[read..], (offset + read as u64) as _)?;
             if n == 0 {
-                return Err(io::Error::new(ErrorKind::UnexpectedEof, "unexpected end-of-file"))
+                return Err(io::Error::new(
+                    ErrorKind::UnexpectedEof,
+                    "unexpected end-of-file",
+                ));
             }
             read += n;
-
         }
 
         Ok(())
@@ -78,4 +86,3 @@ impl<'a, T: FileExt> Write for Cursor<'a, T> {
         Ok(())
     }
 }
-

@@ -2942,6 +2942,7 @@ version = "0.1.0"
 dependencies = [
  "arc-swap",
  "bytes",
+ "criterion",
  "crossbeam",
  "fst",
  "hashbrown 0.14.3",
@@ -2952,6 +2953,7 @@ dependencies = [
  "nix 0.28.0",
  "parking_lot",
  "tempfile",
+ "thiserror",
  "tokio",
  "tracing",
  "tracing-flame",
@@ -4952,18 +4954,18 @@ checksum = "222a222a5bfe1bba4a77b45ec488a741b3cb8872e5e499451fd7d0129c9c7c3d"
 
 [[package]]
 name = "thiserror"
-version = "1.0.56"
+version = "1.0.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d54378c645627613241d077a3a79db965db602882668f9136ac42af9ecb730ad"
+checksum = "03468839009160513471e86a034bb2c5c0e4baae3b43f79ffc55c4a5427b3297"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.56"
+version = "1.0.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa0faa943b50f3db30a20aa7e265dbc66076993efed8463e8de414e5d06d3471"
+checksum = "c61f3ba182994efc43764a46c018c347bc492c79f024e705f46567b418f6d4f7"
 dependencies = [
  "proc-macro2",
  "quote",

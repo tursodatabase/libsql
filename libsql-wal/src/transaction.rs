@@ -1,11 +1,11 @@
 use std::ops::{Deref, DerefMut};
-use std::sync::{Arc, atomic::Ordering};
+use std::sync::{atomic::Ordering, Arc};
 use std::time::Instant;
 
-use fst::Streamer;
 use fst::map::{Map, OpBuilder};
+use fst::Streamer;
 
-use crate::log::{Log, index_entry_split};
+use crate::log::{index_entry_split, Log};
 use crate::shared_wal::WalLock;
 
 pub enum Transaction {
@@ -21,7 +21,7 @@ impl Transaction {
             None
         }
     }
-    
+
     pub fn max_frame_no(&self) -> u64 {
         match self {
             Transaction::Write(w) => w.next_frame_no - 1,
@@ -33,7 +33,7 @@ impl Transaction {
         match self {
             Transaction::Write(tx) => {
                 tx.is_commited = true;
-            },
+            }
             Transaction::Read(_) => (),
         }
     }
@@ -75,7 +75,14 @@ pub struct ReadTransaction {
 impl Clone for ReadTransaction {
     fn clone(&self) -> Self {
         self.log.read_locks.fetch_add(1, Ordering::SeqCst);
-        Self { max_frame_no: self.max_frame_no, log: self.log.clone(),  db_size: self.db_size, created_at: self.created_at, conn_id: self.conn_id, pages_read: self.pages_read }
+        Self {
+            max_frame_no: self.max_frame_no,
+            log: self.log.clone(),
+            db_size: self.db_size,
+            created_at: self.created_at,
+            conn_id: self.conn_id,
+            pages_read: self.pages_read,
+        }
     }
 }
 
@@ -115,9 +122,7 @@ impl WriteTransaction {
         let g = wal_lock.tx_id.lock();
         match *g {
             // we still hold the lock, we can proceed
-            Some(id) if self.id == id => {
-                f(self)
-            },
+            Some(id) if self.id == id => f(self),
             // Somebody took the lock from us
             Some(_) => todo!("lock stolen"),
             None => todo!("not a transaction"),
@@ -126,40 +131,48 @@ impl WriteTransaction {
 
     pub fn savepoint(&mut self) -> usize {
         let savepoint_id = self.savepoints.len();
-        self.savepoints.push(Savepoint { next_offset: self.next_offset, next_frame_no: self.next_frame_no, index: None });
+        self.savepoints.push(Savepoint {
+            next_offset: self.next_offset,
+            next_frame_no: self.next_frame_no,
+            index: None,
+        });
         savepoint_id
     }
 
     pub fn reset(&mut self, savepoint_id: usize) {
         if savepoint_id >= self.savepoints.len() {
-            panic!("savepoint doesn't exist");
+            unreachable!("savepoint doesn't exist");
         }
 
         self.savepoints.drain(savepoint_id + 1..).count();
-        self.next_frame_no = self.savepoints.last().unwrap().next_frame_no;
-        self.next_offset = self.savepoints.last().unwrap().next_offset;
+        let last_savepoint = self.savepoints.last().unwrap();
+        self.next_frame_no = last_savepoint.next_frame_no;
+        self.next_offset = last_savepoint.next_offset;
     }
 
     /// Returns an iterator over the current transaction index key/values
     pub fn index_iter(&self) -> impl Iterator<Item = (u32, u64)> + '_ {
         let iter = self.savepoints.iter().filter_map(|s| s.index.as_ref());
         let mut union = iter.collect::<OpBuilder>().union();
-        std::iter::from_fn(move || {
-            match union.next() {
-                Some((key, vals)) => {
-                    let key = u32::from_be_bytes(key.try_into().unwrap());
-                    let val = vals.iter().max_by_key(|i| i.index).unwrap().value;
-                    Some((key, val))
-                },
-                None => None,
+        std::iter::from_fn(move || match union.next() {
+            Some((key, vals)) => {
+                let key = u32::from_be_bytes(key.try_into().unwrap());
+                let val = vals.iter().max_by_key(|i| i.index).unwrap().value;
+                Some((key, val))
             }
+            None => None,
         })
     }
 
     #[tracing::instrument(skip(self))]
     pub fn downgrade(self) -> ReadTransaction {
         tracing::trace!("downgrading write transaction");
-        let Self { id, wal_lock, read_tx, .. } = self;
+        let Self {
+            id,
+            wal_lock,
+            read_tx,
+            ..
+        } = self;
         let mut lock = wal_lock.tx_id.lock();
         match *lock {
             Some(lock_id) if lock_id == id => {
@@ -177,19 +190,19 @@ impl WriteTransaction {
             match wal_lock.waiters.steal() {
                 crossbeam::deque::Steal::Empty => {
                     tracing::trace!("no connection waiting");
-                    break
-                },
+                    break;
+                }
                 crossbeam::deque::Steal::Success((unparker, id)) => {
                     tracing::trace!("waking up {id}");
                     wal_lock.reserved.lock().replace(id);
                     unparker.unpark();
-                    break
-                },
+                    break;
+                }
                 crossbeam::deque::Steal::Retry => (),
             }
         }
 
-        tracing::debug!(id=self.id, "lock released");
+        tracing::debug!(id = self.id, "lock released");
 
         read_tx
     }
@@ -199,10 +212,14 @@ impl WriteTransaction {
     }
 
     pub(crate) fn find_frame(&self, page_no: u32) -> Option<(u32, u32)> {
-        let iter = self.savepoints.iter().rev().filter_map(|s| s.index.as_ref());
+        let iter = self
+            .savepoints
+            .iter()
+            .rev()
+            .filter_map(|s| s.index.as_ref());
         for index in iter {
             if let Some(val) = index.get(page_no.to_be_bytes()) {
-                return Some(index_entry_split(val))
+                return Some(index_entry_split(val));
             }
         }
 

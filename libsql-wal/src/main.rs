@@ -2,7 +2,7 @@ use std::ffi::c_int;
 use std::path::Path;
 use std::sync::Arc;
 
-use libsql_sys::rusqlite::{OpenFlags, self};
+use libsql_sys::rusqlite::{self, OpenFlags};
 use libsql_wal::name::NamespaceName;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::wal::LibsqlWalManager;
@@ -10,7 +10,7 @@ use libsql_wal::wal::LibsqlWalManager;
 use tracing_flame::FlameLayer;
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::{EnvFilter, fmt};
+use tracing_subscriber::{fmt, EnvFilter};
 
 fn enable_libsql_logging() {
     use std::sync::Once;
@@ -41,20 +41,33 @@ fn main() {
     let path = std::env::args().nth(1).unwrap();
     let path = <str as AsRef<Path>>::as_ref(path.as_str());
     let resolver = |path: &Path| {
-        let name = path.parent().unwrap().file_name().unwrap().to_str().unwrap();
+        let name = path
+            .parent()
+            .unwrap()
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap();
         NamespaceName::from_string(name.to_string())
     };
     std::fs::create_dir_all(&path).unwrap();
-    let registry = Arc::new(WalRegistry::new(path.join("wals"), resolver));
+    let registry = Arc::new(WalRegistry::new(path.join("wals"), resolver).unwrap());
     let wal_manager = LibsqlWalManager {
         registry: registry.clone(),
         next_conn_id: Default::default(),
     };
 
     let db_path: Arc<Path> = path.join("data").into();
-    let conn = libsql_sys::Connection::open(db_path.clone(), OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, wal_manager.clone(), 100000, None).unwrap();
+    let conn = libsql_sys::Connection::open(
+        db_path.clone(),
+        OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
+        wal_manager.clone(),
+        100000,
+        None,
+    )
+    .unwrap();
     // let conn = libsql_sys::Connection::open(db_path.clone(), OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, Sqlite3WalManager::default(), 100000, None).unwrap();
-    //  
+    //
     // let _ = conn.execute("CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB(16), c BLOB(16), d BLOB(400));", ());
     // let _ = conn.execute("CREATE INDEX i1 ON t1(b);", ());
     // let _ = conn.execute("CREATE INDEX i2 ON t1(c);", ());
@@ -117,5 +130,5 @@ fn main() {
     }
 
     drop(conn);
-    registry.shutdown();
+    registry.shutdown().unwrap();
 }

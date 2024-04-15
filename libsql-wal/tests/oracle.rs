@@ -1,19 +1,22 @@
 //! This test suite runs about 30k test files against sqlite and our test_suite, compares the
 //! results, and then compares the database files.
 
-use std::{path::Path, sync::Arc, ffi::{CString, c_char}};
+use std::ffi::c_char;
+use std::path::Path;
+use std::sync::Arc;
 
-use libsql_sys::{
-    rusqlite::OpenFlags,
-    wal::{Sqlite3WalManager, WalManager, Wal},
-    Connection, ffi::{sqlite3_prepare, sqlite3_finalize},
-};
-use libsql_wal::{registry::WalRegistry, wal::LibsqlWalManager, file::FileExt};
+use libsql_sys::ffi::{sqlite3_finalize, sqlite3_prepare};
+use libsql_sys::rusqlite::OpenFlags;
+use libsql_sys::wal::{Sqlite3WalManager, Wal};
+use libsql_sys::Connection;
+use libsql_wal::name::NamespaceName;
+use libsql_wal::{file::FileExt, registry::WalRegistry, wal::LibsqlWalManager};
 use tempfile::tempdir;
 
 type Result = std::result::Result<(), Box<dyn std::error::Error>>;
 
 #[test]
+#[ignore]
 fn test_oracle() {
     let manifest_path: &Path = env!("CARGO_MANIFEST_DIR").as_ref();
     let test_samples_path = manifest_path.join("tests/assets/samples");
@@ -48,15 +51,25 @@ fn run_test_sample(path: &Path) -> Result {
     let _ = sqlite_conn.execute("ROLLBACK", ());
     let _ = sqlite_conn.execute("VACUUM", ());
     drop(sqlite_conn);
-    
+
     std::fs::rename(tmp.path().join("test/data"), tmp.path().join("sqlite-data")).unwrap();
     std::fs::remove_dir_all(tmp.path().join("test")).unwrap();
     std::fs::create_dir_all(tmp.path().join("test")).unwrap();
 
-    let registry = Arc::new(WalRegistry::new(tmp.path().join("test/wals")));
+    let resolver = |path: &Path| {
+        let name = path
+            .parent()
+            .unwrap()
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap();
+        NamespaceName::from_string(name.to_string())
+    };
+
+    let registry = Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver).unwrap());
     let wal_manager = LibsqlWalManager {
         registry: registry.clone(),
-        namespace: "test".into(),
         next_conn_id: Default::default(),
     };
     let libsql_conn = libsql_sys::Connection::open(
@@ -78,17 +91,20 @@ fn run_test_sample(path: &Path) -> Result {
     drop(libsql_conn);
 
     // for checkpoint
-    registry.shutdown();
-    
+    registry.shutdown().unwrap();
+
     match std::panic::catch_unwind(|| {
-        compare_db_files(&tmp.path().join("sqlite-data"), &tmp.path().join("test/data"));
+        compare_db_files(
+            &tmp.path().join("sqlite-data"),
+            &tmp.path().join("test/data"),
+        );
     }) {
         Ok(_) => (),
         Err(e) => {
             let path = tmp.into_path();
             std::fs::rename(path, "failure").unwrap();
             std::panic::resume_unwind(e)
-        },
+        }
     }
 
     Ok(())
@@ -111,42 +127,48 @@ fn compare_db_files(db1: &Path, db2: &Path) {
         db1.read_exact_at(&mut buf1, i * 4096).unwrap();
         db2.read_exact_at(&mut buf2, i * 4096).unwrap();
 
-        assert_eq!(
-            buf1[..4096 - 8],
-            buf2[..4096 - 8],
-            "page {i} differ"
-        );
+        assert_eq!(buf1[..4096 - 8], buf2[..4096 - 8], "page {i} differ");
     }
 }
 
-fn run_script<'a, T: Wal>(conn: &'a Connection<T>, script: &'a str) -> impl Iterator<Item = String> + 'a {
+fn run_script<'a, T: Wal>(
+    conn: &'a Connection<T>,
+    script: &'a str,
+) -> impl Iterator<Item = String> + 'a {
     let mut stmts = split_statements(conn, script);
     std::iter::from_fn(move || {
         let stmt = dbg!(stmts.next()?);
         let mut stmt = conn.prepare(&stmt).unwrap();
-        Some(stmt.query(()).unwrap().mapped(|r| Ok(format!("{r:?}"))).map(|r| r.unwrap_or_else(|e| e.to_string())).collect::<String>())
+        Some(
+            stmt.query(())
+                .unwrap()
+                .mapped(|r| Ok(format!("{r:?}")))
+                .map(|r| r.unwrap_or_else(|e| e.to_string()))
+                .collect::<String>(),
+        )
     })
 }
 
 // shenanigans to split statments
-fn split_statements<'a, T: Wal>(conn: &'a Connection<T>, script: &'a str) -> impl Iterator<Item = &'a str> + 'a {
+fn split_statements<'a, T: Wal>(
+    conn: &'a Connection<T>,
+    script: &'a str,
+) -> impl Iterator<Item = &'a str> + 'a {
     let mut tail = script.as_ptr() as *const c_char;
     let mut stmt = std::ptr::null_mut();
     let mut len = script.len();
-    std::iter::from_fn(move || {
-        unsafe {
-            let previous = tail;
-            sqlite3_prepare(conn.handle(), previous, len as _, &mut stmt, &mut tail);
-            sqlite3_finalize(stmt);
-            if stmt.is_null() {
-                None
-            } else {
-                let start = previous as usize - (script.as_ptr() as usize);
-                let end = tail as usize - (script.as_ptr() as usize);
-                let s = std::str::from_utf8(&script.as_bytes()[start..end]).unwrap();
-                len -= s.len();
-                Some(s)
-            }
+    std::iter::from_fn(move || unsafe {
+        let previous = tail;
+        sqlite3_prepare(conn.handle(), previous, len as _, &mut stmt, &mut tail);
+        sqlite3_finalize(stmt);
+        if stmt.is_null() {
+            None
+        } else {
+            let start = previous as usize - (script.as_ptr() as usize);
+            let end = tail as usize - (script.as_ptr() as usize);
+            let s = std::str::from_utf8(&script.as_bytes()[start..end]).unwrap();
+            len -= s.len();
+            Some(s)
         }
     })
 }

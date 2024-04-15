@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use criterion::{criterion_group, criterion_main, Criterion, Bencher};
-use libsql_sys::Connection;
-use libsql_sys::wal::{Wal, Sqlite3WalManager, Sqlite3Wal};
+use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use libsql_sys::rusqlite::{self, OpenFlags};
+use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager, Wal};
+use libsql_sys::Connection;
 use libsql_wal::wal::LibsqlWal;
 use libsql_wal::{registry::WalRegistry, wal::LibsqlWalManager};
 use tempfile::tempdir;
@@ -53,7 +53,7 @@ fn with_libsql_conn(f: impl FnOnce(&mut Connection<LibsqlWal>)) {
         100000,
         None,
     )
-        .unwrap();
+    .unwrap();
 
     f(&mut conn)
 }
@@ -67,7 +67,7 @@ fn with_sqlite_conn(f: impl FnOnce(&mut Connection<Sqlite3Wal>)) {
         100000,
         None,
     )
-        .unwrap();
+    .unwrap();
 
     f(&mut conn)
 }
@@ -107,11 +107,11 @@ fn random_inserts<W: Wal>(conn: &mut Connection<W>) {
 }
 
 fn random_read<W: Wal>(conn: &mut Connection<W>) {
-    let tx = conn
-        .transaction()
-        .unwrap();
+    let tx = conn.transaction().unwrap();
     // println!("write_acquired: {:?}", before.elapsed().as_micros());
-    let mut stmt = tx.prepare("SELECT * FROM t1 WHERE a>abs((random()%5000000)) LIMIT 10;").unwrap();
+    let mut stmt = tx
+        .prepare("SELECT * FROM t1 WHERE a>abs((random()%5000000)) LIMIT 10;")
+        .unwrap();
     stmt.query(()).unwrap().mapped(|_r| Ok(())).count();
     stmt.query(()).unwrap().mapped(|_r| Ok(())).count();
     stmt.query(()).unwrap().mapped(|_r| Ok(())).count();

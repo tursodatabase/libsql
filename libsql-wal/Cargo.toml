@@ -1,4 +1,3 @@
-workspace = { members = ["tests/assets/aggregator"] }
 [package]
 name = "libsql-wal"
 version = "0.1.0"
@@ -18,6 +17,7 @@ memoffset = "0.9.1"
 mmap = "0.1.1"
 nix = { version = "0.28.0", features = ["uio", "fs"] }
 parking_lot = "0.12.1"
+thiserror = "1.0.58"
 tokio = { version = "1.36.0", features = ["full"] }
 tracing = "0.1.40"
 tracing-flame = "0.2.0"
