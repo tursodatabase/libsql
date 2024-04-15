@@ -49,7 +49,7 @@ pub fn namespace_from_headers(
 
     if let Some(from_metadata) = headers.get(NAMESPACE_METADATA_KEY) {
         try_namespace_from_metadata(from_metadata)
-    } else if let Some(from_host) = headers.get("host"){
+    } else if let Some(from_host) = headers.get("host") {
         try_namespace_from_host(from_host, disable_default_namespace)
     } else if !disable_default_namespace {
         Ok(NamespaceName::default())
@@ -58,15 +58,16 @@ pub fn namespace_from_headers(
     }
 }
 
-fn try_namespace_from_host(from_host: &axum::http::HeaderValue, disable_default_namespace: bool) -> Result<NamespaceName, Error> {
+fn try_namespace_from_host(
+    from_host: &axum::http::HeaderValue,
+    disable_default_namespace: bool,
+) -> Result<NamespaceName, Error> {
     std::str::from_utf8(from_host.as_bytes())
         .map_err(|_| Error::InvalidHost("host header is not valid UTF-8".into()))
-        .and_then(|h| 
-            match split_namespace(h) {
-                Err(_) if !disable_default_namespace => Ok(NamespaceName::default()),
-                r => r
-            }
-        )
+        .and_then(|h| match split_namespace(h) {
+            Err(_) if !disable_default_namespace => Ok(NamespaceName::default()),
+            r => r,
+        })
 }
 
 fn try_namespace_from_metadata(metadata: &axum::http::HeaderValue) -> Result<NamespaceName, Error> {
