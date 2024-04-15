@@ -33,7 +33,22 @@ fn sample_request() {
             )
             .await
             .unwrap();
-        assert_json_snapshot!(resp.json_value().await.unwrap());
+
+        let mut json = resp.json_value().await.unwrap();
+
+        for result in json["result"]["step_results"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+        {
+            result
+                .as_object_mut()
+                .unwrap()
+                .remove("query_duration_ms")
+                .expect("expected query_duration_ms");
+        }
+
+        assert_json_snapshot!(json);
 
         Ok(())
     });
@@ -188,6 +203,14 @@ fn stats() {
         let mut json = resp.json_value().await.unwrap();
         json.as_object_mut().unwrap().remove("baton");
 
+        for results in json["results"].as_array_mut().unwrap().iter_mut() {
+            results["response"]["result"]
+                .as_object_mut()
+                .unwrap()
+                .remove("query_duration_ms")
+                .expect("expected query_duration_ms");
+        }
+
         assert_json_snapshot!(json);
 
         Ok(())
@@ -214,7 +237,15 @@ fn stats_legacy() {
 
         let resp = client.post("http://primary:8080/", req).await.unwrap();
 
-        let json = resp.json_value().await.unwrap();
+        let mut json = resp.json_value().await.unwrap();
+
+        for result in json.as_array_mut().unwrap() {
+            result["results"]
+                .as_object_mut()
+                .unwrap()
+                .remove("query_duration_ms")
+                .expect("expected query_duration_ms");
+        }
 
         assert_json_snapshot!(json);
 
