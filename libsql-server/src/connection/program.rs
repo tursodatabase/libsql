@@ -289,7 +289,8 @@ where
             query_duration,
         );
 
-        self.builder.add_stats(rows_read, rows_written);
+        self.builder
+            .add_stats(rows_read, rows_written, query_duration);
 
         Ok((affected_row_count, last_insert_rowid))
     }

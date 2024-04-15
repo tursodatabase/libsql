@@ -516,7 +516,7 @@ impl QueryResultBuilder for ExecuteResultsBuilder {
         self.output.unwrap()
     }
 
-    fn add_stats(&mut self, _rows_read: u64, _rows_written: u64) {}
+    fn add_stats(&mut self, _rows_read: u64, _rows_written: u64, _duration: Duration) {}
 }
 
 pub struct TimeoutConnection {

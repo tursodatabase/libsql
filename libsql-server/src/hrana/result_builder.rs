@@ -1,6 +1,7 @@
 use std::fmt::{self, Write as _};
 use std::io;
 use std::sync::atomic::Ordering;
+use std::time::Duration;
 
 use bytes::Bytes;
 use rusqlite::types::ValueRef;
@@ -27,6 +28,7 @@ pub struct SingleStatementBuilder {
     last_frame_no: Option<FrameNo>,
     rows_read: u64,
     rows_written: u64,
+    query_duration_ms: f64,
 }
 
 struct SizeFormatter {
@@ -247,13 +249,15 @@ impl QueryResultBuilder for SingleStatementBuilder {
                 replication_index: self.last_frame_no,
                 rows_read: self.rows_read,
                 rows_written: self.rows_written,
+                query_duration_ms: self.query_duration_ms,
             }),
         }
     }
 
-    fn add_stats(&mut self, rows_read: u64, rows_written: u64) {
+    fn add_stats(&mut self, rows_read: u64, rows_written: u64, duration: Duration) {
         self.rows_read = self.rows_read.wrapping_add(rows_read);
         self.rows_written = self.rows_written.wrapping_add(rows_written);
+        self.query_duration_ms = self.query_duration_ms + (duration.as_micros() as f64 / 1_000.0);
     }
 }
 
@@ -375,7 +379,8 @@ impl QueryResultBuilder for HranaBatchProtoBuilder {
         }
     }
 
-    fn add_stats(&mut self, rows_read: u64, rows_written: u64) {
-        self.stmt_builder.add_stats(rows_read, rows_written);
+    fn add_stats(&mut self, rows_read: u64, rows_written: u64, duration: Duration) {
+        self.stmt_builder
+            .add_stats(rows_read, rows_written, duration);
     }
 }

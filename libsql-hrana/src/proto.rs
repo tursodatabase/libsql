@@ -248,9 +248,14 @@ pub struct StmtResult {
     #[prost(uint64, optional, tag = "5")]
     pub replication_index: Option<u64>,
     #[prost(uint64, tag = "6")]
+    #[serde(default)]
     pub rows_read: u64,
     #[prost(uint64, tag = "7")]
+    #[serde(default)]
     pub rows_written: u64,
+    #[prost(double, tag = "8")]
+    #[serde(default)]
+    pub query_duration_ms: f64,
 }
 
 #[derive(Clone, Deserialize, Serialize, prost::Message)]

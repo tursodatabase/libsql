@@ -74,7 +74,8 @@ type QueryResult = {
         columns: Array<string>,
         rows: Array<Array<Value>>,
         rows_read: uint64,
-        rows_written: uint64
+        rows_written: uint64,
+        query_duration_ms: double
     }
 }
 

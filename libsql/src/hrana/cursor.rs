@@ -136,6 +136,7 @@ where
                 replication_index: None,
                 rows_read: 0,
                 rows_written: 0,
+                query_duration_ms: 0.0,
             };
             step_results.push(Some(step_res));
         }
