@@ -17,29 +17,43 @@ use crate::segment_list::SegmentList;
 use crate::shared_wal::SharedWal;
 use crate::transaction::{WriteTransaction, Transaction};
 
+/// Translates a path to a namespace name
+pub trait NamespaceResolver {
+    fn resolve(&self, path: &Path) -> NamespaceName;
+}
+
+impl<F: Fn(&Path) -> NamespaceName + Send + Sync + 'static> NamespaceResolver for F {
+    fn resolve(&self, path: &Path) -> NamespaceName {
+        (self)(path)
+    }
+}
+
 /// Wal Registry maintains a set of shared Wal, and their respective set of files.
 pub struct WalRegistry {
     path: PathBuf,
     shutdown: AtomicBool,
     openned: RwLock<HashMap<NamespaceName, Arc<SharedWal>>>,
+    resolver: Box<dyn NamespaceResolver + Send + Sync + 'static>
 }
 
 impl WalRegistry {
-    pub fn new(path: PathBuf) -> Self {
+    pub fn new(path: PathBuf, resolver: impl NamespaceResolver + Send + Sync + 'static) -> Self {
         std::fs::create_dir_all(&path).unwrap();
         Self {
             path,
             openned: Default::default(),
             shutdown: Default::default(),
+            resolver: Box::new(resolver),
         }
     }
 
     #[tracing::instrument(skip(self, db_path))]
-    pub fn open(self: Arc<Self>, namespace: NamespaceName, db_path: &Path) -> Arc<SharedWal> {
+    pub fn open(self: Arc<Self>, db_path: &Path) -> Arc<SharedWal> {
         if self.shutdown.load(Ordering::SeqCst) {
             todo!("open after shutdown");
         }
 
+        let namespace = self.resolver.resolve(db_path);
         let mut openned = self.openned.upgradable_read();
         if let Some(entry) = openned.get(&namespace) {
             return entry.clone();

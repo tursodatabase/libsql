@@ -6,7 +6,6 @@ use std::time::Instant;
 
 use libsql_sys::wal::{Wal, WalManager};
 
-use crate::name::NamespaceName;
 use crate::registry::WalRegistry;
 use crate::shared_wal::SharedWal;
 use crate::transaction::Transaction;
@@ -14,7 +13,6 @@ use crate::transaction::Transaction;
 #[derive(Clone)]
 pub struct LibsqlWalManager {
     pub registry: Arc<WalRegistry>,
-    pub namespace: NamespaceName,
     pub next_conn_id: Arc<AtomicU64>,
 }
 
@@ -23,7 +21,6 @@ pub struct LibsqlWal {
     tx: Option<Transaction>,
     shared: Arc<SharedWal>,
     conn_id: u64,
-    namespace: NamespaceName,
 }
 
 impl WalManager for LibsqlWalManager {
@@ -42,14 +39,13 @@ impl WalManager for LibsqlWalManager {
         db_path: &std::ffi::CStr,
     ) -> libsql_sys::wal::Result<Self::Wal> {
         let db_path = OsStr::from_bytes(&db_path.to_bytes());
-        let shared = self.registry.clone().open(self.namespace.clone(), db_path.as_ref());
+        let shared = self.registry.clone().open(db_path.as_ref());
         let conn_id = self.next_conn_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         Ok(LibsqlWal {
             last_read_frame_no: None,
             tx: None,
             shared,
             conn_id,
-            namespace: self.namespace.clone(),
         })
     }
 
@@ -90,7 +86,7 @@ impl Wal for LibsqlWal {
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn limit(&mut self, _size: i64) {}
 
-    #[tracing::instrument(skip_all, fields(id = self.conn_id, ns = self.namespace.as_str()))]
+    #[tracing::instrument(skip_all, fields(id = self.conn_id, ns = self.shared.namespace.as_str()))]
     fn begin_read_txn(&mut self) -> libsql_sys::wal::Result<bool> {
         tracing::trace!("begin read");
         let tx = self.shared.begin_read(self.conn_id);

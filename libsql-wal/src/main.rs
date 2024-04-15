@@ -1,13 +1,12 @@
 use std::ffi::c_int;
-use std::{path::Path, time::Instant};
+use std::path::Path;
 use std::sync::Arc;
 
 use libsql_sys::rusqlite::{OpenFlags, self};
-use libsql_sys::wal::Sqlite3WalManager;
+use libsql_wal::name::NamespaceName;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::wal::LibsqlWalManager;
 
-use tracing::Level;
 use tracing_flame::FlameLayer;
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -41,11 +40,14 @@ fn main() {
 
     let path = std::env::args().nth(1).unwrap();
     let path = <str as AsRef<Path>>::as_ref(path.as_str());
+    let resolver = |path: &Path| {
+        let name = path.parent().unwrap().file_name().unwrap().to_str().unwrap();
+        NamespaceName::from_string(name.to_string())
+    };
     std::fs::create_dir_all(&path).unwrap();
-    let registry = Arc::new(WalRegistry::new(path.join("wals")));
+    let registry = Arc::new(WalRegistry::new(path.join("wals"), resolver));
     let wal_manager = LibsqlWalManager {
         registry: registry.clone(),
-        namespace: "test".into(),
         next_conn_id: Default::default(),
     };
 
