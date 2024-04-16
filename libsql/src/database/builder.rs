@@ -228,6 +228,7 @@ cfg_replication! {
 
         }
 
+        /// Set the namespace that will be communicated to remote replica in the http header.
         pub fn namespace(mut self, namespace: impl Into<String>) -> Builder<RemoteReplica>
         {
             self.inner.namespace = Some(namespace.into());
