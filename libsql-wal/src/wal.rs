@@ -108,7 +108,7 @@ impl Wal for LibsqlWal {
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn end_read_txn(&mut self) {
-        let tx = match self.tx.take() {
+        match self.tx.take() {
             Some(Transaction::Read(tx)) => tx,
             Some(Transaction::Write(tx)) => tx.downgrade(),
             None => return,
@@ -279,7 +279,7 @@ impl Wal for LibsqlWal {
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn uses_heap_memory(&self) -> bool {
-        false
+        true
     }
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]

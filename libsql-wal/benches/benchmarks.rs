@@ -1,9 +1,11 @@
+use std::path::Path;
 use std::sync::Arc;
 
 use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use libsql_sys::rusqlite::{self, OpenFlags};
 use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager, Wal};
 use libsql_sys::Connection;
+use libsql_wal::name::NamespaceName;
 use libsql_wal::wal::LibsqlWal;
 use libsql_wal::{registry::WalRegistry, wal::LibsqlWalManager};
 use tempfile::tempdir;
@@ -39,10 +41,13 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
 fn with_libsql_conn(f: impl FnOnce(&mut Connection<LibsqlWal>)) {
     let tmp = tempdir().unwrap();
-    let registry = Arc::new(WalRegistry::new(tmp.path().join("wals")));
+    let resolver = |path: &Path| {
+        NamespaceName::from_string("test".into())
+    };
+
+    let registry = Arc::new(WalRegistry::new(tmp.path().join("wals"), resolver).unwrap());
     let wal_manager = LibsqlWalManager {
         registry: registry.clone(),
-        namespace: "test".into(),
         next_conn_id: Default::default(),
     };
 

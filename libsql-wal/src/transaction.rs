@@ -1,11 +1,9 @@
+use std::collections::BTreeMap;
 use std::ops::{Deref, DerefMut};
 use std::sync::{atomic::Ordering, Arc};
 use std::time::Instant;
 
-use fst::map::{Map, OpBuilder};
-use fst::Streamer;
-
-use crate::log::{index_entry_split, Log};
+use crate::log::Log;
 use crate::shared_wal::WalLock;
 
 pub enum Transaction {
@@ -96,7 +94,22 @@ impl Drop for ReadTransaction {
 pub struct Savepoint {
     pub next_offset: u32,
     pub next_frame_no: u64,
-    pub index: Option<Map<Vec<u8>>>,
+    pub index: BTreeMap<u32, u32>,
+}
+
+/// The savepoints must be passed from most recent to oldest
+pub fn merge_savepoints<'a>(savepoints: impl Iterator<Item= &'a BTreeMap<u32, u32>>, out: &mut BTreeMap<u32, Vec<u32>>) {
+    for savepoint in savepoints {
+        for (k, v) in savepoint.iter() {
+            let entry = out.entry(*k).or_default();
+            match entry.last() {
+                Some(i) if i >= v => continue,
+                _ =>  {
+                    entry.push(*v);
+                }
+            }
+        }
+    }
 }
 
 pub struct WriteTransaction {
@@ -134,7 +147,7 @@ impl WriteTransaction {
         self.savepoints.push(Savepoint {
             next_offset: self.next_offset,
             next_frame_no: self.next_frame_no,
-            index: None,
+            index: BTreeMap::new(),
         });
         savepoint_id
     }
@@ -152,16 +165,17 @@ impl WriteTransaction {
 
     /// Returns an iterator over the current transaction index key/values
     pub fn index_iter(&self) -> impl Iterator<Item = (u32, u64)> + '_ {
-        let iter = self.savepoints.iter().filter_map(|s| s.index.as_ref());
-        let mut union = iter.collect::<OpBuilder>().union();
-        std::iter::from_fn(move || match union.next() {
-            Some((key, vals)) => {
-                let key = u32::from_be_bytes(key.try_into().unwrap());
-                let val = vals.iter().max_by_key(|i| i.index).unwrap().value;
-                Some((key, val))
-            }
-            None => None,
-        })
+        [].into_iter()
+        // let iter = self.savepoints.iter().filter_map(|s| s.index.as_ref());
+        // let mut union = iter.collect::<OpBuilder>().union();
+        // std::iter::from_fn(move || match union.next() {
+        //     Some((key, vals)) => {
+        //         let key = u32::from_be_bytes(key.try_into().unwrap());
+        //         let val = vals.iter().max_by_key(|i| i.index).unwrap().value;
+        //         Some((key, val))
+        //     }
+        //     None => None,
+        // })
     }
 
     #[tracing::instrument(skip(self))]
@@ -211,15 +225,15 @@ impl WriteTransaction {
         self.is_commited
     }
 
-    pub(crate) fn find_frame(&self, page_no: u32) -> Option<(u32, u32)> {
+    pub(crate) fn find_frame_offset(&self, page_no: u32) -> Option<u32> {
         let iter = self
             .savepoints
             .iter()
             .rev()
-            .filter_map(|s| s.index.as_ref());
+            .map(|s| &s.index);
         for index in iter {
-            if let Some(val) = index.get(page_no.to_be_bytes()) {
-                return Some(index_entry_split(val));
+            if let Some(val) = index.get(&page_no) {
+                return Some(*val);
             }
         }
 
@@ -238,5 +252,26 @@ impl Deref for WriteTransaction {
 impl DerefMut for WriteTransaction {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.read_tx
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::collections::BTreeMap;
+
+    use super::merge_savepoints;
+
+    #[test]
+    fn test_merge_savepoints() {
+        let first = [(1, 1), (3, 2)].into_iter().collect::<BTreeMap<_, _>>();
+        let second = [(1, 3), (4, 6)].into_iter().collect::<BTreeMap<_, _>>();
+
+        let mut out = BTreeMap::new();
+        merge_savepoints([first, second].iter().rev(), &mut out);
+
+        let mut iter = out.into_iter();
+        assert_eq!(iter.next(), Some((1, vec![3])));
+        assert_eq!(iter.next(), Some((3, vec![2])));
+        assert_eq!(iter.next(), Some((4, vec![6])));
     }
 }

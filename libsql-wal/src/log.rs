@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::{BufWriter, IoSlice, Write};
 use std::mem::size_of;
@@ -6,15 +7,14 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 
-use fst::map::OpBuilder;
-use fst::{map::Map, MapBuilder, Streamer};
+use fst::{map::Map, MapBuilder};
 use parking_lot::{Mutex, RwLock};
 use zerocopy::byteorder::little_endian::{U32, U64};
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
 use crate::file::FileExt;
-use crate::transaction::{Transaction, WriteTransaction};
+use crate::transaction::{Transaction, WriteTransaction, merge_savepoints};
 
 pub struct Log {
     path: PathBuf,
@@ -35,38 +35,24 @@ impl Drop for Log {
 
 #[derive(Default)]
 struct LogIndex {
-    savepoints: RwLock<Vec<(u64, Map<Vec<u8>>)>>,
+    start_frame_no: u64,
+    index: RwLock<BTreeMap<u32, Vec<u32>>>,
 }
 
 impl LogIndex {
-    fn locate(&self, page_no: u32, max_frame_no: u64) -> Option<(u32, u32)> {
-        let segs = self.savepoints.read();
-        let key = page_no.to_be_bytes();
-        for (frame_no, index) in segs.iter().rev() {
-            if *frame_no > max_frame_no {
-                continue;
-            }
-
-            if let Some(value) = index.get(key) {
-                return Some(index_entry_split(value));
-            }
-        }
-
-        None
+    fn locate(&self, page_no: u32, max_frame_no: u64) -> Option<u32> {
+        let index = self.index.read();
+        let offsets = index.get(&page_no)?;
+        offsets.iter().rev().find(|fno| self.start_frame_no + **fno as u64 <= max_frame_no).copied()
     }
 
     #[tracing::instrument(skip_all)]
     fn merge_all<W: Write>(&self, writer: W) -> Result<()> {
-        let segs = self.savepoints.read();
-        let mut union = segs.iter().map(|(_, m)| m).collect::<OpBuilder>().union();
+        let index = self.index.read();
         let mut builder = MapBuilder::new(writer)?;
-        while let Some((key, entries)) = union.next() {
-            let value = entries
-                .iter()
-                .max_by_key(|e| e.index)
-                .expect("non empty entry")
-                .value;
-            builder.insert(key, value)?;
+        for (key, entries) in index.iter() {
+            let offset = *entries.last().unwrap();
+            builder.insert(key.to_be_bytes(), offset as u64)?;
         }
 
         builder.finish()?;
@@ -120,11 +106,6 @@ pub fn index_entry_split(k: u64) -> (u32, u32) {
     let offset = (k & u32::MAX as u64) as u32;
     let frame_no = (k >> 32) as u32;
     (frame_no, offset)
-}
-
-/// split the index entry value into it's components: (frame_no, offset)
-fn index_entry_merge(offset: u32, frame_no_offset: u32) -> u64 {
-    (frame_no_offset as u64) << 32 | offset as u64
 }
 
 #[repr(C)]
@@ -210,7 +191,6 @@ impl Log {
     ) -> Result<()> {
         assert!(!self.sealed.load(Ordering::SeqCst));
         tx.enter(move |tx| {
-            let mut new_index = fst::map::MapBuilder::memory();
             let mut pages = pages.peekable();
             // let mut commit_frame_written = false;
             let current_savepoint = tx.savepoints.last_mut().expect("no savepoints initialized");
@@ -268,23 +248,11 @@ impl Log {
                         let offset = tx.next_offset;
                         tx.next_offset += 1;
                         self.file.write_at_vectored(slices, byte_offset(offset))?;
-                        new_index.insert(
-                            page_no.to_be_bytes(),
-                            index_entry_merge(
-                                offset,
-                                (frame_no - self.header.lock().start_frame_no.get()) as u32,
-                            ),
-                        )?;
+                        current_savepoint.index.insert(page_no, offset);
                     }
                 // }
             // }
 
-            if let Some(ref old_index) = current_savepoint.index {
-                let indexes = &[old_index, &new_index.into_map()];
-                current_savepoint.index = Some(merge_indexes(indexes.iter().map(|x| *x))?);
-            } else {
-                current_savepoint.index = Some(new_index.into_map());
-            }
 
             if let Some(size_after) = size_after {
                 if tx.savepoints.len() == 1
@@ -293,26 +261,27 @@ impl Log {
                         .last()
                         .expect("missing savepoint")
                         .index
-                        .is_none()
+                        .is_empty()
                 {
                     // nothing to do
                 } else {
-                    let indexes = tx.savepoints.iter().filter_map(|i| i.index.as_ref());
-                    let merged = merge_indexes(indexes)?;
-                    if !merged.is_empty() {
+                    // let indexes = tx.savepoints.iter().map(|i| i.index);
+                    // let merged = merge_indexes(indexes)?;
+                    if tx.savepoints.iter().any(|s| !s.index.is_empty()) {
                         let last_frame_no = tx.next_frame_no - 1;
                         let mut header = { *self.header.lock() };
                         header.last_commited_frame_no = last_frame_no.into();
                         header.db_size = size_after.into();
-
+                    
                         // if !commit_frame_written {
                         //     // need to patch the last frame header
                         //     self.patch_frame_size_after(tx.next_offset - 1, size_after)?;
                         // }
-
+                    
                         self.file.write_all_at(header.as_bytes(), 0)?;
                         // self.file.sync_data().unwrap();
-                        self.index.savepoints.write().push((last_frame_no, merged));
+                        let savepoints = tx.savepoints.iter().rev().map(|s| &s.index);
+                        merge_savepoints(savepoints, &mut self.index.index.write());
                         // set the header last, so that a transaction does not witness a write before
                         // it's actually committed.
                         *self.header.lock() = header;
@@ -324,39 +293,21 @@ impl Log {
 
             Ok(())
         })
-
-        //        println!("full_insert: {}", before.elapsed().as_micros());1
     }
-
-    // fn patch_frame_size_after(&self, offset: u32, size_after: u32) -> Result<()> {
-    //     let offset = byte_offset(offset) + memoffset::offset_of!(FrameHeader, size_after) as u64;
-    //     self.file.write_all_at(&size_after.to_le_bytes(), offset)?;
-    //     Ok(())
-    // }
 
     /// return the offset of the frame for page_no, with frame_no no larger that max_frame_no, if
     /// it exists
-    pub fn find_frame(&self, page_no: u32, tx: &Transaction) -> Option<(u64, u32)> {
+    pub fn find_frame(&self, page_no: u32, tx: &Transaction) -> Option<u32> {
         // TODO: ensure that we are looking in the same log as the passed transaction
         // this is a write transaction, check the transient index for request page
         if let Transaction::Write(ref tx) = tx {
-            if let Some((frame_no_offset, offset)) = tx.find_frame(page_no) {
-                return Some((
-                    self.header.lock().start_frame_no.get() + frame_no_offset as u64,
-                    offset,
-                ));
+            if let Some(offset) = tx.find_frame_offset(page_no) {
+                return Some(offset);
             }
         }
 
         // not a write tx, or page is not in write tx, look into the log
-        self.index
-            .locate(page_no, tx.max_frame_no)
-            .map(|(frame_no_offset, offset)| {
-                (
-                    self.header.lock().start_frame_no.get() + frame_no_offset as u64,
-                    offset,
-                )
-            })
+        self.index.locate(page_no, tx.max_frame_no)
     }
 
     /// reads the page conainted in frame at offset into buf
@@ -481,7 +432,7 @@ impl SealedLog {
 
         let index = self.index();
         if let Some(value) = index.get(page_no.to_be_bytes()) {
-            let (f, offset) = index_entry_split(value);
+            let (_f, offset) = index_entry_split(value);
             self.read_offset(offset, buf)?;
 
             return Ok(true);
@@ -504,19 +455,4 @@ impl Drop for SealedLog {
             }
         }
     }
-}
-
-fn merge_indexes<'a>(indexes: impl Iterator<Item = &'a Map<Vec<u8>>>) -> Result<Map<Vec<u8>>> {
-    let mut union = indexes.collect::<OpBuilder>().union();
-    let mut builder = MapBuilder::memory();
-
-    while let Some((key, vals)) = union.next() {
-        let max = vals
-            .iter()
-            .max_by_key(|x| x.index)
-            .expect("entry should be non empty");
-        builder.insert(key, max.value)?;
-    }
-
-    Ok(builder.into_map())
 }

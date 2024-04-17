@@ -1,6 +1,6 @@
 
   CREATE TABLE t1(a,b,c,d,e, PRIMARY KEY(a,b,c,d,e));
-  SELECT * FROM t1 WHERE a=? AND b=? AND c=? AND d=? AND e=?;
+  SELECT * FROM t1 WHERE a=12 AND b=23 AND c=42 AND d=18 AND e=1;
 
 
   CREATE TABLE "a" (

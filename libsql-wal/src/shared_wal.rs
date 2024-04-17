@@ -1,5 +1,6 @@
+use std::collections::BTreeMap;
 use std::fs::File;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering, AtomicBool};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -146,7 +147,7 @@ impl SharedWal {
             savepoints: vec![Savepoint {
                 next_offset,
                 next_frame_no,
-                index: None,
+                index: BTreeMap::new(),
             }],
             next_frame_no,
             next_offset,
@@ -158,7 +159,7 @@ impl SharedWal {
     #[tracing::instrument(skip(self, tx, buffer))]
     pub fn read_frame(&self, tx: &mut Transaction, page_no: u32, buffer: &mut [u8]) -> Result<()> {
         match tx.log.find_frame(page_no, tx) {
-            Some((_fno, offset)) => {
+            Some(offset) => {
                 tx.log.read_page_offset(offset, buffer)? },
             None => {
                 // locate in segments

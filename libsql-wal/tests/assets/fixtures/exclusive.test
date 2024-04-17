@@ -7,10 +7,8 @@
     INSERT INTO t4 VALUES('Wilson', 1964);
 
 
-  PRAGMA locking_mode = EXCLUSIVE;
   SELECT * FROM t4;
 
 
-  PRAGMA locking_mode = EXCLUSIVE;
   SELECT * FROM sqlite_master;
 

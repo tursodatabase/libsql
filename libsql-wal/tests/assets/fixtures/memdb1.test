@@ -60,7 +60,6 @@
     CREATE TABLE t2(x, y);
   
 
-    PRAGMA locking_mode = exclusive;
     SELECT * FROM t1
   
 
