@@ -1,0 +1,24 @@
+
+  CREATE TABLE t1(a, b);
+  PRAGMA journal_mode = WAL;
+  ATTACH 'test.db2' AS two;
+  CREATE TABLE two.t2(a, b);
+
+ PRAGMA main.journal_mode 
+ PRAGMA two.journal_mode  
+ PRAGMA two.journal_mode = DELETE 
+ INSERT INTO t1 DEFAULT VALUES 
+ PRAGMA main.journal_mode  
+ PRAGMA journal_mode  
+ PRAGMA journal_mode = WAL 
+ ATTACH 'test.db2' AS two  
+ PRAGMA main.journal_mode  
+ PRAGMA two.journal_mode   
+ INSERT INTO two.t2 DEFAULT VALUES 
+ PRAGMA two.journal_mode   
+ PRAGMA journal_mode = DELETE 
+ PRAGMA main.journal_mode 
+ PRAGMA two.journal_mode 
+ PRAGMA journal_mode = WAL 
+ PRAGMA main.journal_mode 
+ PRAGMA two.journal_mode 

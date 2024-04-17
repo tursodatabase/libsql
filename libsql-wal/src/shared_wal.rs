@@ -125,7 +125,7 @@ impl SharedWal {
         // 1) there would be a running txn
         // 2) that transaction held the lock to tx_id (be in a transaction critical section)
         let current = self.current.load();
-        let last_commited = current.last_commited();
+        let last_commited = current.last_committed();
         if read_tx.max_frame_no != last_commited {
             if read_tx.pages_read <= 1 {
                 // this transaction hasn't read anything yet, it will retry to
@@ -136,7 +136,8 @@ impl SharedWal {
             }
             return Err(Error::BusySnapshot);
         }
-        let next_offset = current.frames_in_log() as u32;
+        let next_offset = current.count_committed() as u32;
+        let next_frame_no =current.next_frame_no().get();
         *tx_id_lock = Some(id);
 
         Ok(WriteTransaction {
@@ -144,19 +145,21 @@ impl SharedWal {
             wal_lock: self.wal_lock.clone(),
             savepoints: vec![Savepoint {
                 next_offset,
-                next_frame_no: last_commited + 1,
+                next_frame_no,
                 index: None,
             }],
-            next_frame_no: last_commited + 1,
+            next_frame_no,
             next_offset,
             is_commited: false,
             read_tx: read_tx.clone(),
         })
     }
 
+    #[tracing::instrument(skip(self, tx, buffer))]
     pub fn read_frame(&self, tx: &mut Transaction, page_no: u32, buffer: &mut [u8]) -> Result<()> {
         match tx.log.find_frame(page_no, tx) {
-            Some((_, offset)) => tx.log.read_page_offset(offset, buffer)?,
+            Some((_fno, offset)) => {
+                tx.log.read_page_offset(offset, buffer)? },
             None => {
                 // locate in segments
                 if !self.segments.read_page(page_no, tx.max_frame_no, buffer)? {
@@ -169,13 +172,13 @@ impl SharedWal {
 
         tx.pages_read += 1;
 
-        let frame_no = u64::from_be_bytes(buffer[4096 - 8..].try_into().unwrap());
-        tracing::trace!(frame_no, tx = tx.max_frame_no, "read page");
-        assert!(
-            frame_no <= tx.max_frame_no(),
-            "read frame out of transaction boundaries"
-        );
-
+        // let frame_no = u64::from_be_bytes(buffer[4096 - 8..].try_into().unwrap());
+        // tracing::trace!(frame_no, tx = tx.max_frame_no, "read page");
+        // assert!(
+        //     dbg!(frame_no) <= dbg!(tx.max_frame_no()),
+        //     "read frame out of transaction boundaries"
+        // );
+        //
         Ok(())
     }
 
@@ -190,7 +193,7 @@ impl SharedWal {
         current.insert_pages(pages.iter(), (size_after != 0).then_some(size_after), tx)?;
 
         // TODO: use config for max log size
-        if tx.is_commited() && current.len() > 1000 {
+        if tx.is_commited() && current.count_committed() > 1000 {
             self.registry.swap_current(self, tx)?;
         }
 

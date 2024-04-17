@@ -1,0 +1,13 @@
+
+  BEGIN;
+    CREATE TABLE t6(a, b);
+    INSERT INTO t6 VALUES(1, 2);
+    SAVEPOINT one;
+      INSERT INTO t6 VALUES(3, 4);
+    ROLLBACK TO one;
+    SELECT * FROM t6;
+  ROLLBACK;
+
+
+  CREATE TABLE t6(a, b);
+

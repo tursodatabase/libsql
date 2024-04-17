@@ -1,0 +1,3 @@
+
+    PRAGMA encoding = 'utf16';
+  

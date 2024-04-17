@@ -1,8 +1,0 @@
-SELECT tbl_name FROM sqlite_master;SELECT tbl_name FROM sqlite_master;SELECT * FROM abcSELECT * FROM abcSELECT * FROM abc ORDER BY a DESC;SELECT name, tbl_name FROM sqlite_master ORDER BY name;
-SELECT * FROM abc;SELECT count(*) FROM abcSELECT min(
-(oid == a) AND 'String value ' || a == b AND a == length(c) 
-) FROM abc;SELECT count(*) FROM abcSELECT min(
-(oid == a) AND 'String value ' || a == b AND a == length(c) 
-) FROM abc;SELECT count(*) FROM abcSELECT min(
-(oid == a) AND 'String value ' || a == b AND a == length(c) 
-) FROM abc;SELECT a, b, c FROM abcSELECT a, b, c FROM abcPRAGMA cache_size = 10SELECT a, count(*) FROM abc GROUP BY a;SELECT a, count(*) FROM abc GROUP BY a;SELECT a, count(*) FROM abc GROUP BY a;SELECT a, count(*) FROM abc GROUP BY a;SELECT a, count(*) FROM abc GROUP BY a;SELECT a, count(*) FROM abc GROUP BY a;SELECT * FROM abcSELECT a, count(*) FROM abc GROUP BY a;SELECT name, tbl_name FROM sqlite_master;SELECT name, tbl_name FROM sqlite_master;SELECT name, tbl_name FROM sqlite_master;SELECT * FROM def, ghi WHERE d = g;SELECT * FROM v1 WHERE d = g;SELECT * FROM tbl2, def WHERE d = x;SELECT * FROM tbl2, def WHERE d = x;SELECT * FROM ghi

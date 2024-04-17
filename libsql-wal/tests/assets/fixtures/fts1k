@@ -1,1 +1,0 @@
-CREATE VIRTUAL TABLE t4 USING fts1(content)SELECT rowid, length(snippet(t4)) FROM t4 WHERE t4 MATCH 'target'

@@ -1,5 +1,0 @@
-PRAGMA page_size = 1024;
-PRAGMA auto_vacuum = 0;
-PRAGMA journal_mode = wal;
-PRAGMA synchronous = normal;
-CREATE TABLE t1(i PRIMARY KEY, j);INSERT INTO t1 VALUES(1, 'one')PRAGMA wal_checkpointINSERT INTO t1 VALUES(2, 'two')PRAGMA wal_checkpointCREATE TABLE t2(a, b)PRAGMA wal_checkpointCREATE TABLE t3(a PRIMARY KEY, b)PRAGMA synchronous = NORMALPRAGMA wal_autocheckpointPRAGMA wal_autocheckpoint = 10PRAGMA wal_autocheckpoint

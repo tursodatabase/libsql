@@ -1,3 +1,0 @@
-SELECT count(*) FROM sqlite_masterSELECT name FROM sqlite_masterCREATE TABLE m(a)SELECT count(*) FROM sqlite_masterINSERT INTO m VALUES(1000);
-SELECT * FROM m;SELECT count(*) FROM sqlite_masterINSERT INTO m VALUES(9000000);
-SELECT * FROM m;

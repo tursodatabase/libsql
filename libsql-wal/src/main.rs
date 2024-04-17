@@ -119,6 +119,9 @@ fn main() {
     let lines = std::io::stdin().lines();
     for line in lines {
         let line = line.unwrap();
+        if line.trim().is_empty() {
+            continue
+        }
         if line.trim() == "quit" {
             break;
         }

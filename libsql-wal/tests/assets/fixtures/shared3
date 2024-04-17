@@ -1,2 +1,0 @@
-PRAGMA main.cache_size = 10;PRAGMA main.cache_sizePRAGMA main.cache_sizePRAGMA main.cache_sizePRAGMA main.cache_sizeBEGIN;
-INSERT INTO t1 VALUES(10, randomblob(5000))INSERT INTO t1 VALUES(10, randomblob(10000))

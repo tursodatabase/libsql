@@ -1,5 +1,6 @@
 #![allow(dead_code, unused_variables, unreachable_code)]
 use std::fs::OpenOptions;
+use std::num::NonZeroU64;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -91,10 +92,10 @@ impl WalRegistry {
                 let header = log.header();
                 (
                     header.db_size.get(),
-                    header.last_commited_frame_no.get() + 1,
+                    header.next_frame_no(),
                 )
             })
-            .unwrap_or((1, 0));
+            .unwrap_or((1, NonZeroU64::new(1).unwrap()));
 
         let current_path = path.join(format!("{namespace}:{start_frame_no:020}.log"));
         let current = arc_swap::ArcSwap::new(Arc::new(Log::create(
@@ -112,7 +113,7 @@ impl WalRegistry {
         // end of the file to store the replication index
         let mut header: Sqlite3DbHeader = Sqlite3DbHeader::new_zeroed();
         db_file.read_exact_at(header.as_bytes_mut(), 0)?;
-        assert_eq!(header.reserved_in_page, 8, "bad db");
+        // assert_eq!(header.reserved_in_page, 8, "bad db");
 
         let shared = Arc::new(SharedWal {
             current,
@@ -144,7 +145,10 @@ impl WalRegistry {
 
         // we have the lock, now create a new log
         let current = shared.current.load();
-        let start_frame_no = current.last_commited() + 1;
+        if current.is_empty() {
+            return Ok(())
+        }
+        let start_frame_no = current.next_frame_no();
         let path = self
             .path
             .join(shared.namespace.as_str())

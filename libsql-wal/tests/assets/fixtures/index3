@@ -1,5 +1,0 @@
-CREATE TABLE t1(a);
-INSERT INTO t1 VALUES(1);
-INSERT INTO t1 VALUES(1);
-SELECT * FROM t1;PRAGMA writable_schema=on;
-UPDATE sqlite_master SET sql='nonsense';

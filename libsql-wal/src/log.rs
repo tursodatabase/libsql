@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::{BufWriter, IoSlice, Write};
 use std::mem::size_of;
+use std::num::NonZeroU64;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
@@ -85,6 +86,35 @@ pub struct LogHeader {
     index_size: U64,
 }
 
+impl LogHeader {
+    fn is_empty(&self) -> bool {
+        self.last_commited_frame_no.get() == 0
+    }
+
+    fn count_committed(&self) -> usize {
+        self.last_commited_frame_no.get().checked_sub(self.start_frame_no.get() - 1).unwrap_or(0) as usize
+    }
+
+    fn last_committed(&self) -> u64 {
+        // either the current log is empty, and the start frame_no is the last frame_no commited on
+        // the previous log (start_frame_no - 1), or it's the last committed frame_no from this
+        // log.
+        if self.is_empty() {
+            self.start_frame_no.get() - 1
+        } else {
+            self.last_commited_frame_no.get()
+        }
+    }
+
+    pub(crate) fn next_frame_no(&self) -> NonZeroU64 {
+        if self.is_empty() {
+            NonZeroU64::new(self.start_frame_no.get()).unwrap()
+        } else {
+            NonZeroU64::new(self.last_commited_frame_no.get() + 1).unwrap()
+        }
+    }
+}
+
 /// split the index entry value into it's components: (frame_no, offset)
 pub fn index_entry_split(k: u64) -> (u32, u32) {
     let offset = (k & u32::MAX as u64) as u32;
@@ -118,7 +148,7 @@ fn byte_offset(offset: u32) -> u64 {
 impl Log {
     /// Create a new log from the given path and metadata. The file pointed to by path must not
     /// exist.
-    pub fn create(path: &Path, start_frame_no: u64, db_size: u32) -> Result<Self> {
+    pub fn create(path: &Path, start_frame_no: NonZeroU64, db_size: u32) -> Result<Self> {
         let log_file = std::fs::OpenOptions::new()
             .create_new(true)
             .write(true)
@@ -126,7 +156,7 @@ impl Log {
             .open(path)?;
 
         let header = LogHeader {
-            start_frame_no: start_frame_no.into(),
+            start_frame_no: start_frame_no.get().into(),
             last_commited_frame_no: 0.into(),
             db_size: db_size.into(),
             index_offset: 0.into(),
@@ -145,25 +175,26 @@ impl Log {
         })
     }
 
-    pub fn len(&self) -> usize {
-        let header = self.header.lock();
-        (header.last_commited_frame_no.get() - header.start_frame_no.get()) as usize
+    pub fn is_empty(&self) -> bool {
+        self.count_committed() == 0
     }
-
     /// Returns the db size and the last commited frame_no
     #[tracing::instrument(skip_all)]
     pub fn begin_read_infos(&self) -> (u64, u32) {
         let header = self.header.lock();
-        (header.last_commited_frame_no.get(), header.db_size.get())
+        (header.last_committed(), header.db_size.get())
     }
 
-    pub fn last_commited(&self) -> u64 {
-        self.header.lock().last_commited_frame_no.get()
+    pub fn last_committed(&self) -> u64 {
+        self.header.lock().last_committed()
     }
 
-    pub fn frames_in_log(&self) -> u64 {
-        let header = self.header.lock();
-        header.last_commited_frame_no.get() - header.start_frame_no.get()
+    pub fn next_frame_no(&self) -> NonZeroU64 {
+        self.header.lock().next_frame_no()
+    }
+
+    pub fn count_committed(&self) -> usize {
+        self.header.lock().count_committed()
     }
 
     pub fn db_size(&self) -> u32 {
@@ -181,36 +212,44 @@ impl Log {
         tx.enter(move |tx| {
             let mut new_index = fst::map::MapBuilder::memory();
             let mut pages = pages.peekable();
-            let mut commit_frame_written = false;
+            // let mut commit_frame_written = false;
             let current_savepoint = tx.savepoints.last_mut().expect("no savepoints initialized");
             while let Some((page_no, page)) = pages.next() {
                 tracing::trace!(page_no, "inserting page");
-                match current_savepoint
-                    .index
-                    .as_ref()
-                    .and_then(|i| i.get(&page_no.to_be_bytes()))
-                {
-                    Some(x) => {
-                        let header = FrameHeader {
-                            page_no: page_no.into(),
-                            // set the size_after if it's the last frame in a commit batch
-                            size_after: 0.into(),
-                        };
-                        // there is already an occurence of this page in the current transaction, replace it
-                        let (_, offset) = index_entry_split(x);
-                        let slices = &[IoSlice::new(header.as_bytes()), IoSlice::new(page)];
-
-                        self.file
-                            .write_at_vectored(slices, byte_offset(offset) as u64)?;
-                    }
-                    None => {
+                // match current_savepoint
+                //     .index
+                //     .as_ref()
+                //     .and_then(|i| i.get(&page_no.to_be_bytes()))
+                // {
+                //     Some(x) => {
+                //         let header = FrameHeader {
+                //             page_no: page_no.into(),
+                //             // set the size_after if it's the last frame in a commit batch
+                //             size_after: 0.into(),
+                //         };
+                //         // there is already an occurence of this page in the current transaction, replace it
+                //         let (fno_offset, offset) = index_entry_split(x);
+                //         let fno = self.header.lock().start_frame_no.get() + fno_offset as u64;
+                //         let fno_bytes = &fno.to_be_bytes()[..];
+                //         let slices = &[
+                //             IoSlice::new(header.as_bytes()),
+                //             IoSlice::new(&page[..4096 - 8]),
+                //             // store the replication index in big endian as per SQLite convention,
+                //             // at the end of the page
+                //             IoSlice::new(fno_bytes),
+                //         ];
+                //
+                //         self.file
+                //             .write_at_vectored(slices, byte_offset(offset) as u64)?;
+                //     }
+                //     None => {
                         let size_after = if let Some(size) = size_after {
                             pages.peek().is_none().then_some(size).unwrap_or(0)
                         } else {
                             0
                         };
 
-                        commit_frame_written = size_after != 0;
+                        // commit_frame_written = size_after != 0;
 
                         let header = FrameHeader {
                             page_no: page_no.into(),
@@ -237,8 +276,8 @@ impl Log {
                             ),
                         )?;
                     }
-                }
-            }
+                // }
+            // }
 
             if let Some(ref old_index) = current_savepoint.index {
                 let indexes = &[old_index, &new_index.into_map()];
@@ -266,10 +305,10 @@ impl Log {
                         header.last_commited_frame_no = last_frame_no.into();
                         header.db_size = size_after.into();
 
-                        if !commit_frame_written {
-                            // need to patch the last frame header
-                            self.patch_frame_size_after(tx.next_offset - 1, size_after)?;
-                        }
+                        // if !commit_frame_written {
+                        //     // need to patch the last frame header
+                        //     self.patch_frame_size_after(tx.next_offset - 1, size_after)?;
+                        // }
 
                         self.file.write_all_at(header.as_bytes(), 0)?;
                         // self.file.sync_data().unwrap();
@@ -289,11 +328,11 @@ impl Log {
         //        println!("full_insert: {}", before.elapsed().as_micros());1
     }
 
-    fn patch_frame_size_after(&self, offset: u32, size_after: u32) -> Result<()> {
-        let offset = byte_offset(offset) + memoffset::offset_of!(FrameHeader, size_after) as u64;
-        self.file.write_all_at(&size_after.to_le_bytes(), offset)?;
-        Ok(())
-    }
+    // fn patch_frame_size_after(&self, offset: u32, size_after: u32) -> Result<()> {
+    //     let offset = byte_offset(offset) + memoffset::offset_of!(FrameHeader, size_after) as u64;
+    //     self.file.write_all_at(&size_after.to_le_bytes(), offset)?;
+    //     Ok(())
+    // }
 
     /// return the offset of the frame for page_no, with frame_no no larger that max_frame_no, if
     /// it exists
@@ -347,8 +386,8 @@ impl Log {
             "attempt to seal an already sealed log"
         );
         let mut header = self.header.lock();
-        let index_offset = header.last_commited_frame_no.get() - header.start_frame_no.get();
-        let index_byte_offset = byte_offset(index_offset as u32);
+        let index_offset = header.count_committed() as u32;
+        let index_byte_offset = byte_offset(index_offset);
         let mut cursor = self.file.cursor(index_byte_offset);
         let mut writer = BufWriter::new(&mut cursor);
         self.index.merge_all(&mut writer)?;
@@ -442,8 +481,9 @@ impl SealedLog {
 
         let index = self.index();
         if let Some(value) = index.get(page_no.to_be_bytes()) {
-            let (_, offset) = index_entry_split(value);
+            let (f, offset) = index_entry_split(value);
             self.read_offset(offset, buf)?;
+
             return Ok(true);
         }
 

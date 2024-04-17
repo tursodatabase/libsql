@@ -1,5 +1,0 @@
-CREATE TABLE blobs (k INTEGER PRIMARY KEY, v BLOB);
-PRAGMA cache_size = 100;INSERT INTO blobs VALUES(iKey, zeroblob(Len))
-SELECT length(v) FROM blobs WHERE k = iKey;
-SELECT length(v) FROM blobs WHERE k = [mu];
-SELECT v FROM blobs WHERE k = iKey

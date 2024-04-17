@@ -16,7 +16,7 @@ members = [
   "vendored/sqlite3-parser",
 
   "xtask", "libsql-hrana",
-  "libsql-wal",
+  "libsql-wal"
 ]
 
 exclude = [

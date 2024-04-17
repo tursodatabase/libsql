@@ -1,4 +1,0 @@
-CREATE TABLE xy(x COLLATE "reverse sort", y COLLATE binary);
-INSERT INTO xy VALUES('one', 'one');
-INSERT INTO xy VALUES('two', 'two');
-INSERT INTO xy VALUES('three', 'three');SELECT x FROM xy ORDER BY xSELECT y FROM xy ORDER BY yCREATE INDEX xy_i ON xy(x)SELECT x, x < 'seven' FROM xy ORDER BY xSELECT y, y < 'seven' FROM xy ORDER BY xSELECT y, y COLLATE "reverse sort" < 'seven' FROM xy ORDER BY xSELECT y FROM xy ORDER BY ySELECT y FROM xy ORDER BY y COLLATE "reverse sort"SELECT y COLLATE "reverse sort" AS aaa FROM xy ORDER BY aaaCREATE INDEX xy_i2 ON xy(y COLLATE "reverse sort");REINDEX "reverse sort"PRAGMA integrity_checkREINDEX "reverse sort"PRAGMA integrity_check

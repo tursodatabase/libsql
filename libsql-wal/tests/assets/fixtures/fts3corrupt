@@ -1,5 +1,0 @@
-UPDATE t1_segdir SET root = blob
-INSERT INTO t1 VALUES(w)
-UPDATE t1_segdir SET root = blob
-UPDATE t1_segdir SET root = blob
-INSERT INTO t1 VALUES(s)

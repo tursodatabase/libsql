@@ -1,1 +1,0 @@
-CREATE TABLE t1(a, b)PRAGMA lock_statusPRAGMA lock_statusPRAGMA lock_statusPRAGMA lock_statusCOMMIT

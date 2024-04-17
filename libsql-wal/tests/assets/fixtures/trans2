@@ -1,8 +1,0 @@
-PRAGMA cache_size=100;
-CREATE TABLE t1(
-id INTEGER PRIMARY KEY,
-u1 TEXT UNIQUE,
-z BLOB NOT NULL,
-u2 TEXT UNIQUE
-);INSERT INTO t1 VALUES(id,u1,zeroblob(z),u2)
-SELECT md5sum(u1), md5sum(u2) FROM t1 ORDER BY idSELECT md5sum(u1), md5sum(u2) FROM t1 ORDER BY idSELECT md5sum(u1), md5sum(u2) FROM t1 ORDER BY idSELECT md5sum(u1), md5sum(u2) FROM t1 ORDER BY idSELECT md5sum(u1), md5sum(u2) FROM t1 ORDER BY idSELECT md5sum(u1), md5sum(u2) FROM t1 ORDER BY idSELECT md5sum(u1), md5sum(u2) FROM t1 ORDER BY idSELECT md5sum(u1), md5sum(u2) FROM t1 ORDER BY idSELECT md5sum(u1), md5sum(u2) FROM t1 ORDER BY id

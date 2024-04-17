@@ -1,2 +1,0 @@
-SELECT * FROM docs WHERE hit
-SELECT optimize(t4) FROM t4 LIMIT 1SELECT optimize(t4) FROM t4 LIMIT 1

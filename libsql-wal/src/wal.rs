@@ -96,10 +96,10 @@ impl Wal for LibsqlWal {
     fn begin_read_txn(&mut self) -> libsql_sys::wal::Result<bool> {
         tracing::trace!("begin read");
         let tx = self.shared.begin_read(self.conn_id);
-        let invalidate_cache = self
-            .last_read_frame_no
+        let invalidate_cache = self.last_read_frame_no
             .map(|idx| tx.max_frame_no != idx)
             .unwrap_or(true);
+        self.last_read_frame_no = Some(tx.max_frame_no);
         self.tx = Some(Transaction::Read(tx));
 
         tracing::debug!(invalidate_cache, "read started");
@@ -115,8 +115,6 @@ impl Wal for LibsqlWal {
         };
 
         tracing::trace!("end read tx");
-
-        self.last_read_frame_no = Some(tx.max_frame_no);
     }
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
@@ -173,6 +171,7 @@ impl Wal for LibsqlWal {
         tracing::trace!("end write");
         match self.tx.take() {
             Some(Transaction::Write(tx)) => {
+                self.last_read_frame_no = Some(tx.next_frame_no - 1);
                 self.tx = Some(Transaction::Read(tx.downgrade()));
             }
             other => {
@@ -280,7 +279,7 @@ impl Wal for LibsqlWal {
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn uses_heap_memory(&self) -> bool {
-        true
+        false
     }
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]

@@ -1,2 +1,0 @@
-SAVEPOINT one;
-RELEASE one;

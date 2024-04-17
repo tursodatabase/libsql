@@ -1,2 +1,0 @@
-PRAGMA encoding = "UTF-16le";
-CREATE VIRTUAL TABLE t1 USING fts3(content);PRAGMA encodingINSERT INTO t1 (rowid, content) VALUES(1, 'one')SELECT content FROM t1 WHERE rowid = 1SELECT content FROM t1 WHERE rowid = 2SELECT content FROM t1 WHERE rowid = 3SELECT content FROM t1 WHERE rowid = 4SELECT content FROM t1 WHERE rowid = 5
