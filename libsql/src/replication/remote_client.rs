@@ -17,7 +17,6 @@ use zerocopy::FromBytes;
 /// A remote replicator client, that pulls frames over RPC
 pub struct RemoteClient {
     remote: super::client::Client,
-    secondary_remote: super::client::Client,
     meta: WalIndexMeta,
     last_received: Option<FrameNo>,
     session_token: Option<Bytes>,
@@ -28,11 +27,10 @@ pub struct RemoteClient {
 }
 
 impl RemoteClient {
-    pub(crate) async fn new(remote: super::client::Client, secondary_remote: super::client::Client, path: &Path) -> anyhow::Result<Self> {
+    pub(crate) async fn new(remote: super::client::Client, path: &Path) -> anyhow::Result<Self> {
         let meta = WalIndexMeta::open_prefixed(path).await?;
         Ok(Self {
             remote,
-            secondary_remote,
             last_received: meta.current_frame_no(),
             meta,
             session_token: None,
@@ -83,11 +81,12 @@ impl ReplicatorClient for RemoteClient {
         let log_offset_req = self.make_request(LogOffset {
             next_offset: self.next_offset(),
         });
+        let mut client_clone = self.remote.clone();
         let hello_fut = self.remote.replication.hello(hello_req);
         let (hello, frames) = if self.session_token.is_some() {
             let (hello, frames) = tokio::join!(
                 hello_fut,
-                self.secondary_remote.replication.batch_log_entries(log_offset_req)
+                client_clone.replication.batch_log_entries(log_offset_req)
             );
             (hello, Some(frames))
         } else {
