@@ -8,7 +8,6 @@ use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
 use libsql_sys::wal::{BusyHandler, CheckpointCallback, Sqlite3WalManager, Wal, WalManager};
 use libsql_sys::EncryptionConfig;
 use metrics::histogram;
-use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use rusqlite::ffi::SQLITE_BUSY;
 use rusqlite::{ErrorCode, OpenFlags};
@@ -23,7 +22,7 @@ use crate::query_analysis::StmtKind;
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
 use crate::replication::FrameNo;
 use crate::stats::{Stats, StatsUpdateMessage};
-use crate::Result;
+use crate::{Result, BLOCKING_RT};
 
 use super::connection_manager::{
     ConnectionManager, ManagedConnectionWal, ManagedConnectionWalWrapper,
@@ -609,14 +608,6 @@ impl<W: Wal> Connection<W> {
     }
 }
 
-/// We use a different runtime to run the connection, because long running tasks block turmoil
-static CONN_RT: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
-    tokio::runtime::Builder::new_multi_thread()
-        .enable_time()
-        .build()
-        .unwrap()
-});
-
 #[async_trait::async_trait]
 impl<W> super::Connection for LibSqlConnection<W>
 where
@@ -633,7 +624,7 @@ where
 
         check_program_auth(&ctx, &pgm, &self.inner.lock().config_store.get())?;
         let conn = self.inner.clone();
-        CONN_RT
+        BLOCKING_RT
             .spawn_blocking(move || Connection::run(conn, pgm, builder))
             .await
             .unwrap()
