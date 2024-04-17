@@ -3197,7 +3197,7 @@ dependencies = [
 
 [[package]]
 name = "libsql"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -3263,7 +3263,7 @@ dependencies = [
 
 [[package]]
 name = "libsql-hrana"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "base64",
  "bytes",
@@ -3440,7 +3440,7 @@ dependencies = [
 
 [[package]]
 name = "libsql_replication"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "aes",
  "arbitrary",
