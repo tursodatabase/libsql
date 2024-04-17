@@ -1,6 +1,7 @@
 use std::sync::Once;
 
 cfg_replication!(
+    use http::uri::InvalidUri;
     use crate::database::EncryptionConfig;
     use libsql_replication::frame::FrameNo;
 
@@ -91,20 +92,18 @@ impl Database {
         let endpoint = coerce_url_scheme(endpoint);
         let remote = crate::replication::client::Client::new(
             connector.clone(),
-            endpoint.as_str().try_into().unwrap(),
+            endpoint.as_str().try_into().map_err(|e: InvalidUri| crate::Error::Replication(e.into()))?,
             auth_token.clone(),
             version.as_deref(),
             http_request_callback.clone(),
-        )
-        .unwrap();
+        ).map_err(|e| crate::Error::Replication(e.into()))?;
         let secondary_remote = crate::replication::client::Client::new(
             connector,
-            endpoint.as_str().try_into().unwrap(),
+            endpoint.as_str().try_into().map_err(|e: InvalidUri| crate::Error::Replication(e.into()))?,
             auth_token,
             version.as_deref(),
             http_request_callback,
-        )
-        .unwrap();
+        ).map_err(|e| crate::Error::Replication(e.into()))?;
         let path = PathBuf::from(db_path);
         let client = RemoteClient::new(remote.clone(), secondary_remote, &path)
             .await
@@ -172,7 +171,7 @@ impl Database {
         let endpoint = coerce_url_scheme(endpoint);
         let remote = crate::replication::client::Client::new(
             connector,
-            endpoint.as_str().try_into().unwrap(),
+            endpoint.as_str().try_into().map_err(|e: InvalidUri| crate::Error::Replication(e.into()))?,
             auth_token,
             version.as_deref(),
             http_request_callback,
