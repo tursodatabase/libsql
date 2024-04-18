@@ -14,7 +14,7 @@ use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
 use crate::file::FileExt;
-use crate::transaction::{Transaction, WriteTransaction, merge_savepoints};
+use crate::transaction::{merge_savepoints, Transaction, WriteTransaction};
 
 pub struct Log {
     path: PathBuf,
@@ -43,7 +43,11 @@ impl LogIndex {
     fn locate(&self, page_no: u32, max_frame_no: u64) -> Option<u32> {
         let index = self.index.read();
         let offsets = index.get(&page_no)?;
-        offsets.iter().rev().find(|fno| self.start_frame_no + **fno as u64 <= max_frame_no).copied()
+        offsets
+            .iter()
+            .rev()
+            .find(|fno| self.start_frame_no + **fno as u64 <= max_frame_no)
+            .copied()
     }
 
     #[tracing::instrument(skip_all)]
@@ -78,7 +82,10 @@ impl LogHeader {
     }
 
     fn count_committed(&self) -> usize {
-        self.last_commited_frame_no.get().checked_sub(self.start_frame_no.get() - 1).unwrap_or(0) as usize
+        self.last_commited_frame_no
+            .get()
+            .checked_sub(self.start_frame_no.get() - 1)
+            .unwrap_or(0) as usize
     }
 
     fn last_committed(&self) -> u64 {
@@ -223,36 +230,35 @@ impl Log {
                 //             .write_at_vectored(slices, byte_offset(offset) as u64)?;
                 //     }
                 //     None => {
-                        let size_after = if let Some(size) = size_after {
-                            pages.peek().is_none().then_some(size).unwrap_or(0)
-                        } else {
-                            0
-                        };
+                let size_after = if let Some(size) = size_after {
+                    pages.peek().is_none().then_some(size).unwrap_or(0)
+                } else {
+                    0
+                };
 
-                        // commit_frame_written = size_after != 0;
+                // commit_frame_written = size_after != 0;
 
-                        let header = FrameHeader {
-                            page_no: page_no.into(),
-                            size_after: size_after.into(),
-                        };
-                        let frame_no = tx.next_frame_no;
-                        let frame_no_bytes = frame_no.to_be_bytes();
-                        let slices = &[
-                            IoSlice::new(header.as_bytes()),
-                            IoSlice::new(&page[..4096 - 8]),
-                            // store the replication index in big endian as per SQLite convention,
-                            // at the end of the page
-                            IoSlice::new(&frame_no_bytes),
-                        ];
-                        tx.next_frame_no += 1;
-                        let offset = tx.next_offset;
-                        tx.next_offset += 1;
-                        self.file.write_at_vectored(slices, byte_offset(offset))?;
-                        current_savepoint.index.insert(page_no, offset);
-                    }
-                // }
+                let header = FrameHeader {
+                    page_no: page_no.into(),
+                    size_after: size_after.into(),
+                };
+                let frame_no = tx.next_frame_no;
+                let frame_no_bytes = frame_no.to_be_bytes();
+                let slices = &[
+                    IoSlice::new(header.as_bytes()),
+                    IoSlice::new(&page[..4096 - 8]),
+                    // store the replication index in big endian as per SQLite convention,
+                    // at the end of the page
+                    IoSlice::new(&frame_no_bytes),
+                ];
+                tx.next_frame_no += 1;
+                let offset = tx.next_offset;
+                tx.next_offset += 1;
+                self.file.write_at_vectored(slices, byte_offset(offset))?;
+                current_savepoint.index.insert(page_no, offset);
+            }
             // }
-
+            // }
 
             if let Some(size_after) = size_after {
                 if tx.savepoints.len() == 1
@@ -272,12 +278,12 @@ impl Log {
                         let mut header = { *self.header.lock() };
                         header.last_commited_frame_no = last_frame_no.into();
                         header.db_size = size_after.into();
-                    
+
                         // if !commit_frame_written {
                         //     // need to patch the last frame header
                         //     self.patch_frame_size_after(tx.next_offset - 1, size_after)?;
                         // }
-                    
+
                         self.file.write_all_at(header.as_bytes(), 0)?;
                         // self.file.sync_data().unwrap();
                         let savepoints = tx.savepoints.iter().rev().map(|s| &s.index);

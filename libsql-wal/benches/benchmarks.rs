@@ -41,9 +41,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
 fn with_libsql_conn(f: impl FnOnce(&mut Connection<LibsqlWal>)) {
     let tmp = tempdir().unwrap();
-    let resolver = |path: &Path| {
-        NamespaceName::from_string("test".into())
-    };
+    let resolver = |path: &Path| NamespaceName::from_string("test".into());
 
     let registry = Arc::new(WalRegistry::new(tmp.path().join("wals"), resolver).unwrap());
     let wal_manager = LibsqlWalManager {

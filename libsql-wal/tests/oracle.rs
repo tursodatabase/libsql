@@ -8,15 +8,15 @@ use std::path::Path;
 use std::sync::Arc;
 
 use libsql_sys::ffi::{sqlite3_finalize, sqlite3_prepare};
-use libsql_sys::rusqlite::{OpenFlags, self};
+use libsql_sys::rusqlite::{self, OpenFlags};
 use libsql_sys::wal::{Sqlite3WalManager, Wal};
 use libsql_sys::Connection;
 use libsql_wal::name::NamespaceName;
 use libsql_wal::{file::FileExt, registry::WalRegistry, wal::LibsqlWalManager};
 use once_cell::sync::Lazy;
-use rand_chacha::ChaCha8Rng;
 use rand_chacha::rand_core::{RngCore, SeedableRng};
-use regex::{Regex, Captures};
+use rand_chacha::ChaCha8Rng;
+use regex::{Captures, Regex};
 use tempfile::tempdir;
 
 type Result = std::result::Result<(), Box<dyn std::error::Error>>;
@@ -49,7 +49,6 @@ fn test_oracle() {
             if entry.path().file_name().unwrap().to_str().unwrap() != filter {
                 continue;
             }
-
         }
         if entry.file_type().is_file() {
             run_test_sample(entry.path()).unwrap();
@@ -87,11 +86,7 @@ fn run_test_sample(path: &Path) -> Result {
     std::env::set_current_dir(tmp.path().join("test")).unwrap();
 
     let resolver = |path: &Path| {
-        let name = path
-            .file_name()
-            .unwrap()
-            .to_str()
-            .unwrap();
+        let name = path.file_name().unwrap().to_str().unwrap();
         NamespaceName::from_string(name.to_string())
     };
 
@@ -116,7 +111,10 @@ fn run_test_sample(path: &Path) -> Result {
 
     for ((a, _), (b, _)) in sqlite_results.iter().zip(libsql_results.iter()) {
         if a != b {
-            panic!("sqlite and libsql output differ:\n{}", PrintScript(sqlite_results, libsql_results));
+            panic!(
+                "sqlite and libsql output differ:\n{}",
+                PrintScript(sqlite_results, libsql_results)
+            );
         }
     }
 
@@ -194,15 +192,15 @@ fn run_script<'a, T: Wal>(
         }
         let mut stmt = conn.prepare(&stmt_str).unwrap();
 
-        let ret = 
-            stmt.query(())
-                .unwrap()
-                .mapped(|r| Ok(format!("{r:?}")))
-                .map(|r| {
-                    // let _ = r.as_ref().map_err(|e| assert!(!matches!(e.sqlite_error_code().unwrap(), ErrorCode::DatabaseCorrupt)));
-                    r.unwrap_or_else(|e| e.to_string())
-                })
-                .collect::<String>();
+        let ret = stmt
+            .query(())
+            .unwrap()
+            .mapped(|r| Ok(format!("{r:?}")))
+            .map(|r| {
+                // let _ = r.as_ref().map_err(|e| assert!(!matches!(e.sqlite_error_code().unwrap(), ErrorCode::DatabaseCorrupt)));
+                r.unwrap_or_else(|e| e.to_string())
+            })
+            .collect::<String>();
 
         Some((ret, stmt_str.to_string()))
     })
@@ -225,7 +223,7 @@ fn patch_attach(s: &str) {
 fn patch_randomness<'a>(s: &'a str, rng: &'a mut ChaCha8Rng) -> Cow<'a, str> {
     static RE_RND: Lazy<Regex> = Lazy::new(|| Regex::new(r#"randomblob\((\d+)\)"#).unwrap());
     // static RE_STR: Lazy<Regex> = Lazy::new(|| Regex::new(r#"randomstr\((\d+), (\d+)\)"#).unwrap());
-    RE_RND.replace_all(s, |cap: &Captures| { 
+    RE_RND.replace_all(s, |cap: &Captures| {
         let len = cap[1].parse::<usize>().unwrap();
         let mut data = vec![0; len];
         rng.fill_bytes(&mut data);

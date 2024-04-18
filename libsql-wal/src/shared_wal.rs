@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::fs::File;
-use std::sync::atomic::{AtomicU64, Ordering, AtomicBool};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -138,7 +138,7 @@ impl SharedWal {
             return Err(Error::BusySnapshot);
         }
         let next_offset = current.count_committed() as u32;
-        let next_frame_no =current.next_frame_no().get();
+        let next_frame_no = current.next_frame_no().get();
         *tx_id_lock = Some(id);
 
         Ok(WriteTransaction {
@@ -159,8 +159,7 @@ impl SharedWal {
     #[tracing::instrument(skip(self, tx, buffer))]
     pub fn read_frame(&self, tx: &mut Transaction, page_no: u32, buffer: &mut [u8]) -> Result<()> {
         match tx.log.find_frame(page_no, tx) {
-            Some(offset) => {
-                tx.log.read_page_offset(offset, buffer)? },
+            Some(offset) => tx.log.read_page_offset(offset, buffer)?,
             None => {
                 // locate in segments
                 if !self.segments.read_page(page_no, tx.max_frame_no, buffer)? {

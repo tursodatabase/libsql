@@ -90,10 +90,7 @@ impl WalRegistry {
         let (db_size, start_frame_no) = segments
             .with_head(|log| {
                 let header = log.header();
-                (
-                    header.db_size.get(),
-                    header.next_frame_no(),
-                )
+                (header.db_size.get(), header.next_frame_no())
             })
             .unwrap_or((1, NonZeroU64::new(1).unwrap()));
 
@@ -146,7 +143,7 @@ impl WalRegistry {
         // we have the lock, now create a new log
         let current = shared.current.load();
         if current.is_empty() {
-            return Ok(())
+            return Ok(());
         }
         let start_frame_no = current.next_frame_no();
         let path = self

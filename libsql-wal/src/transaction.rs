@@ -98,13 +98,16 @@ pub struct Savepoint {
 }
 
 /// The savepoints must be passed from most recent to oldest
-pub fn merge_savepoints<'a>(savepoints: impl Iterator<Item= &'a BTreeMap<u32, u32>>, out: &mut BTreeMap<u32, Vec<u32>>) {
+pub fn merge_savepoints<'a>(
+    savepoints: impl Iterator<Item = &'a BTreeMap<u32, u32>>,
+    out: &mut BTreeMap<u32, Vec<u32>>,
+) {
     for savepoint in savepoints {
         for (k, v) in savepoint.iter() {
             let entry = out.entry(*k).or_default();
             match entry.last() {
                 Some(i) if i >= v => continue,
-                _ =>  {
+                _ => {
                     entry.push(*v);
                 }
             }
@@ -226,11 +229,7 @@ impl WriteTransaction {
     }
 
     pub(crate) fn find_frame_offset(&self, page_no: u32) -> Option<u32> {
-        let iter = self
-            .savepoints
-            .iter()
-            .rev()
-            .map(|s| &s.index);
+        let iter = self.savepoints.iter().rev().map(|s| &s.index);
         for index in iter {
             if let Some(val) = index.get(&page_no) {
                 return Some(*val);

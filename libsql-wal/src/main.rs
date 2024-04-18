@@ -69,12 +69,22 @@ fn main() {
         None,
     )
     .unwrap();
-    let conn = libsql_sys::Connection::open(db_path.clone(), OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, Sqlite3WalManager::default(), 100000, None).unwrap();
+    let conn = libsql_sys::Connection::open(
+        db_path.clone(),
+        OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
+        Sqlite3WalManager::default(),
+        100000,
+        None,
+    )
+    .unwrap();
     //
-    let _ = conn.execute("CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB(16), c BLOB(16), d BLOB(400));", ());
+    let _ = conn.execute(
+        "CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB(16), c BLOB(16), d BLOB(400));",
+        (),
+    );
     let _ = conn.execute("CREATE INDEX i1 ON t1(b);", ());
     let _ = conn.execute("CREATE INDEX i2 ON t1(c);", ());
-    
+
     let mut handles = Vec::new();
     for w in 0..50 {
         let handle = std::thread::spawn({
@@ -84,45 +94,57 @@ fn main() {
                 let span = tracing::span!(Level::TRACE, "conn", w);
                 let _enter = span.enter();
                 // let mut conn = libsql_sys::Connection::open(db_path, OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, wal_manager, 100000, None).unwrap();
-                let mut conn = libsql_sys::Connection::open(db_path.clone(), OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, Sqlite3WalManager::default(), 1000, None).unwrap();
+                let mut conn = libsql_sys::Connection::open(
+                    db_path.clone(),
+                    OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
+                    Sqlite3WalManager::default(),
+                    1000,
+                    None,
+                )
+                .unwrap();
                 unsafe {
                     extern "C" fn do_nothing_handler(_: *mut c_void, _: c_int) -> c_int {
                         1
                     }
-                
-                    libsql_sys::ffi::sqlite3_busy_handler(conn.handle(), Some(do_nothing_handler), std::ptr::null_mut());
+
+                    libsql_sys::ffi::sqlite3_busy_handler(
+                        conn.handle(),
+                        Some(do_nothing_handler),
+                        std::ptr::null_mut(),
+                    );
                 }
                 for _i in 0..1000 {
                     let before = Instant::now();
-                    let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate).unwrap();
+                    let tx = conn
+                        .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+                        .unwrap();
                     // println!("write_acquired: {:?}", before.elapsed().as_micros());
                     tx.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()).unwrap();
                     tx.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()).unwrap();
                     tx.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()).unwrap();
                     tx.commit().unwrap();
-                   // println!("time: {:?}", before.elapsed().as_micros());
+                    // println!("time: {:?}", before.elapsed().as_micros());
                 }
             }
         });
-    
+
         handles.push(handle);
     }
-    
+
     let before = Instant::now();
     for handle in handles {
         handle.join().unwrap();
     }
     println!("inserted in {:?}", before.elapsed());
-    
+
     let before = Instant::now();
     conn.query_row("select count(0) from t1", (), |r| {
         dbg!(r);
         Ok(())
-    }).unwrap();
+    })
+    .unwrap();
 
     println!("query in {:?}", before.elapsed());
-    
-    
 
     // let lines = std::io::stdin().lines();
     // for line in lines {

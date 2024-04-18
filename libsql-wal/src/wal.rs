@@ -96,7 +96,8 @@ impl Wal for LibsqlWal {
     fn begin_read_txn(&mut self) -> libsql_sys::wal::Result<bool> {
         tracing::trace!("begin read");
         let tx = self.shared.begin_read(self.conn_id);
-        let invalidate_cache = self.last_read_frame_no
+        let invalidate_cache = self
+            .last_read_frame_no
             .map(|idx| tx.max_frame_no != idx)
             .unwrap_or(true);
         self.last_read_frame_no = Some(tx.max_frame_no);
