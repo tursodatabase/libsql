@@ -49,7 +49,7 @@ impl WalRegistry<StdFs> {
 }
 
 impl<FS: FileSystem> WalRegistry<FS> {
-    fn new_with_fs(
+    pub fn new_with_fs(
         fs: FS,
         path: PathBuf,
         resolver: impl NamespaceResolver + Send + Sync + 'static,

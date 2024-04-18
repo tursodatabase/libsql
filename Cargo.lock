@@ -2954,6 +2954,7 @@ dependencies = [
  "nix 0.28.0",
  "once_cell",
  "parking_lot",
+ "rand 0.8.5",
  "rand_chacha",
  "regex",
  "tempfile",

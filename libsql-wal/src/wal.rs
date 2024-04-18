@@ -191,7 +191,6 @@ impl<FS: FileSystem> Wal for LibsqlWal<FS> {
     ) -> libsql_sys::wal::Result<()> {
         match self.tx {
             Some(Transaction::Write(ref mut tx)) => {
-                assert!(!tx.is_commited());
                 if let Some(handler) = handler {
                     for (page_no, _) in tx.index_iter() {
                         if let Err(e) = handler.handle_undo(page_no) {
