@@ -86,3 +86,35 @@ impl<'a, T: FileExt> Write for Cursor<'a, T> {
         Ok(())
     }
 }
+
+#[derive(Debug)]
+pub struct BufCopy<W> {
+    w: W,
+    buf: Vec<u8>,
+}
+
+impl<W> BufCopy<W> {
+    pub fn new(w: W) -> Self {
+        Self {
+            w,
+            buf: Vec::new(),
+        }
+    }
+
+    pub fn into_parts(self) -> (W, Vec<u8>) {
+        let Self { w, buf} = self;
+        (w, buf)
+    }
+}
+
+impl<W: Write> Write for BufCopy<W> {
+    fn write(&mut self, buf: &[u8]) -> Result<usize> {
+        let count = self.w.write(buf)?;
+        self.buf.extend_from_slice(&buf[..count]);
+        Ok(count)
+    }
+
+    fn flush(&mut self) -> Result<()> {
+        self.w.flush()
+    }
+}

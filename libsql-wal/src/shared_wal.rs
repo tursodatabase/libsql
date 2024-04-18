@@ -7,7 +7,6 @@ use std::time::Instant;
 use arc_swap::ArcSwap;
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
-use libsql_sys::ffi::Sqlite3DbHeader;
 use libsql_sys::wal::PageHeaders;
 use parking_lot::{Mutex, MutexGuard};
 

@@ -79,7 +79,7 @@ impl WalRegistry {
             {
                 continue;
             }
-            let file = OpenOptions::new().read(true).open(entry.path())?;
+            let file = OpenOptions::new().read(true).write(true).open(entry.path())?;
             if let Some(sealed) =
                 SealedLog::open(file, entry.path().to_path_buf(), Default::default())?
             {

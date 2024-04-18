@@ -7,13 +7,14 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 
+use fst::Streamer;
 use fst::{map::Map, MapBuilder};
 use parking_lot::{Mutex, RwLock};
 use zerocopy::byteorder::little_endian::{U32, U64};
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
-use crate::file::FileExt;
+use crate::file::{FileExt, BufCopy};
 use crate::transaction::{merge_savepoints, Transaction, WriteTransaction};
 
 pub struct Log {
@@ -118,8 +119,8 @@ pub fn index_entry_split(k: u64) -> (u32, u32) {
 #[repr(C)]
 #[derive(Debug, zerocopy::AsBytes, zerocopy::FromBytes, zerocopy::FromZeroes)]
 struct FrameHeader {
-    page_no: U32,
-    size_after: U32,
+    pub page_no: U32,
+    pub size_after: U32,
 }
 
 #[repr(C)]
@@ -390,8 +391,10 @@ impl SealedLog {
             return Ok(None)
         }
 
+        // This happens in case of crash: the log is not empty, but it wasn't sealed. We need to
+        // recover the index, and seal the log.
         if index_offset == 0 {
-            return Self::recover(file, header);
+            return Self::recover(file, path, header).map(Some);
         }
 
         let mut slice = vec![0; index_len as usize];
@@ -407,8 +410,34 @@ impl SealedLog {
         }))
     }
 
-    fn recover(_file: File, _header: LogHeader) -> Result<Option<Self>> {
-        todo!();
+    fn recover(file: File, path: PathBuf, mut header: LogHeader) -> Result<Self> {
+        tracing::trace!("recovering unsealed log at {path:?}");
+        let mut index = BTreeMap::new();
+        assert!(!header.is_empty());
+        let mut frame_header = FrameHeader::new_zeroed();
+        for i in 0..header.count_committed() {
+            let offset = byte_offset(i as u32);
+            file.read_exact_at(frame_header.as_bytes_mut(), offset)?;
+            index.insert(frame_header.page_no.get(), i as u32);
+        }
+
+        let index_offset = header.count_committed() as u32;
+        let index_byte_offset = byte_offset(index_offset);
+        let cursor = file.cursor(index_byte_offset);
+        let writer = BufCopy::new(cursor);
+        let mut writer = BufWriter::new(writer);
+        let mut builder = MapBuilder::new(&mut writer)?;
+        for (k, v) in index.into_iter() {
+            builder.insert(k.to_be_bytes(), v as u64).unwrap();
+        }
+        builder.finish().unwrap();
+        let (cursor, index_bytes) = writer.into_inner().unwrap().into_parts();
+        header.index_offset = index_byte_offset.into();
+        header.index_size = cursor.count().into();
+        file.write_all_at(header.as_bytes(), 0)?;
+        let index = Map::new(index_bytes).unwrap();
+
+        Ok(SealedLog { read_locks: Default::default(), header, file, index, path, checkpointed: false.into() })
     }
 
     pub fn path(&self) -> &Path {
