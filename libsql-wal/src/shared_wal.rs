@@ -55,7 +55,9 @@ impl<FS: FileSystem> SharedWal<FS> {
                 continue;
             }
             let (max_frame_no, db_size) = current.begin_read_infos();
+            let id = self.wal_lock.next_tx_id.fetch_add(1, Ordering::Relaxed);
             return ReadTransaction {
+                id,
                 max_frame_no,
                 log: current.clone(),
                 db_size,
@@ -120,7 +122,6 @@ impl<FS: FileSystem> SharedWal<FS> {
         mut tx_id_lock: MutexGuard<Option<u64>>,
         mut reserved: MutexGuard<Option<u64>>,
     ) -> Result<WriteTransaction<FS::File>> {
-        let id = self.wal_lock.next_tx_id.fetch_add(1, Ordering::Relaxed);
         // we read two fields in the header. There is no risk that a transaction commit in
         // between the two reads because this would require that:
         // 1) there would be a running txn
@@ -139,10 +140,9 @@ impl<FS: FileSystem> SharedWal<FS> {
         }
         let next_offset = current.count_committed() as u32;
         let next_frame_no = current.next_frame_no().get();
-        *tx_id_lock = Some(id);
+        *tx_id_lock = Some(read_tx.id);
 
         Ok(WriteTransaction {
-            id,
             wal_lock: self.wal_lock.clone(),
             savepoints: vec![Savepoint {
                 next_offset,
@@ -172,6 +172,7 @@ impl<FS: FileSystem> SharedWal<FS> {
         }
 
         tx.pages_read += 1;
+
 
         // let frame_no = u64::from_be_bytes(buffer[4096 - 8..].try_into().unwrap());
         // tracing::trace!(frame_no, tx = tx.max_frame_no, "read page");

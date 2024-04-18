@@ -58,6 +58,7 @@ impl<F> DerefMut for Transaction<F> {
 }
 
 pub struct ReadTransaction<F> {
+    pub id: u64,
     /// Max frame number that this transaction can read
     pub max_frame_no: u64,
     pub db_size: u32,
@@ -74,6 +75,7 @@ impl<F> Clone for ReadTransaction<F> {
     fn clone(&self) -> Self {
         self.log.read_locks.fetch_add(1, Ordering::SeqCst);
         Self {
+            id: self.id,
             max_frame_no: self.max_frame_no,
             log: self.log.clone(),
             db_size: self.db_size,
@@ -116,7 +118,6 @@ pub fn merge_savepoints<'a>(
 }
 
 pub struct WriteTransaction<F> {
-    pub id: u64,
     /// id of the transaction currently holding the lock
     pub wal_lock: Arc<WalLock>,
     pub savepoints: Vec<Savepoint>,
@@ -161,6 +162,7 @@ impl<F> WriteTransaction<F> {
         }
 
         self.savepoints.drain(savepoint_id + 1..).count();
+        self.savepoints[savepoint_id].index.clear();
         let last_savepoint = self.savepoints.last().unwrap();
         self.next_frame_no = last_savepoint.next_frame_no;
         self.next_offset = last_savepoint.next_offset;
@@ -185,14 +187,13 @@ impl<F> WriteTransaction<F> {
     pub fn downgrade(self) -> ReadTransaction<F> {
         tracing::trace!("downgrading write transaction");
         let Self {
-            id,
             wal_lock,
             read_tx,
             ..
         } = self;
         let mut lock = wal_lock.tx_id.lock();
         match *lock {
-            Some(lock_id) if lock_id == id => {
+            Some(lock_id) if lock_id == read_tx.id => {
                 lock.take();
             }
             _ => (),
@@ -219,7 +220,7 @@ impl<F> WriteTransaction<F> {
             }
         }
 
-        tracing::debug!(id = self.id, "lock released");
+        tracing::debug!(id = read_tx.id, "lock released");
 
         read_tx
     }

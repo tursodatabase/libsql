@@ -1,9 +1,10 @@
+use std::ffi::c_int;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering::Relaxed};
 use std::fs::File;
 use std::path::Path;
 
-use libsql_sys::rusqlite::OpenFlags;
+use libsql_sys::rusqlite::{OpenFlags, ErrorCode, self};
 use libsql_wal::{fs::{FileSystem, StdFs, file::FileExt}, registry::WalRegistry, wal::LibsqlWalManager, name::NamespaceName};
 use parking_lot::Mutex;
 use rand::{Rng, SeedableRng};
@@ -78,8 +79,38 @@ impl FileSystem for FlakyFs {
     }
 }
 
+macro_rules! assert_not_corrupt {
+    ($($e:expr,)*) => {
+        $(
+            match $e {
+                Ok(_) => (),
+                Err(e) => {
+                    match e.sqlite_error() {
+                        Some(e) if e.code == ErrorCode::DatabaseCorrupt => panic!("db corrupt"),
+                        _ => ()
+                    }
+                }
+            };
+        )*
+    };
+}
+
+fn enable_libsql_logging() {
+    use std::sync::Once;
+    static ONCE: Once = Once::new();
+
+    fn libsql_log(code: c_int, msg: &str) {
+        println!("sqlite error {code}: {msg}");
+    }
+
+    ONCE.call_once(|| unsafe {
+        rusqlite::trace::config_log(Some(libsql_log)).unwrap();
+    });
+}
+
 #[test]
 fn flaky_fs() {
+    enable_libsql_logging();
     let seed = rand::thread_rng().gen();
     println!("seed: {seed}");
     let enabled = Arc::new(AtomicBool::new(false));
@@ -118,15 +149,21 @@ fn flaky_fs() {
     enabled.store(true, Relaxed);
 
     for _ in 0..50_000 {
-        let _ = conn.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ());
-        let _ = conn.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ());
-        let _ = conn.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ());
+        assert_not_corrupt! {
+            conn.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()),
+            conn.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()),
+            conn.execute("REPLACE INTO t1 VALUES(abs(random() % 5000000), randomblob(16), randomblob(16), randomblob(400));", ()),
+        }
+
         let mut stmt = conn
             .prepare("SELECT * FROM t1 WHERE a>abs((random()%5000000)) LIMIT 10;")
             .unwrap();
-        let _ = stmt.query(()).map(|r| r.mapped(|_r| Ok(())).count());
-        let _ = stmt.query(()).map(|r| r.mapped(|_r| Ok(())).count());
-        let _ = stmt.query(()).map(|r| r.mapped(|_r| Ok(())).count());
+
+        assert_not_corrupt! {
+            stmt.query(()).map(|r| r.mapped(|_r| Ok(())).count()),
+            stmt.query(()).map(|r| r.mapped(|_r| Ok(())).count()),
+            stmt.query(()).map(|r| r.mapped(|_r| Ok(())).count()),
+        }
     }
 
     enabled.store(false, Relaxed);

@@ -147,7 +147,9 @@ impl<FS: FileSystem> Wal for LibsqlWal<FS> {
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn db_size(&self) -> u32 {
         let db_size = match self.tx.as_ref() {
-            Some(tx) => tx.db_size,
+            Some(tx) => {
+                tx.db_size
+            },
             None => 0,
         };
         tracing::trace!(db_size, "db_size");
@@ -191,6 +193,10 @@ impl<FS: FileSystem> Wal for LibsqlWal<FS> {
     ) -> libsql_sys::wal::Result<()> {
         match self.tx {
             Some(Transaction::Write(ref mut tx)) => {
+                if tx.is_commited() {
+                    return Ok(())
+                }
+                // assert!(!tx.is_commited());
                 if let Some(handler) = handler {
                     for (page_no, _) in tx.index_iter() {
                         if let Err(e) = handler.handle_undo(page_no) {

@@ -334,14 +334,9 @@ impl<F: FileExt> Log<F> {
         Ok(header)
     }
 
+    /// It is expected that sealing is performed under a write lock
     #[tracing::instrument(skip_all)]
     pub fn seal(&self) -> Result<Option<SealedLog<F>>> {
-        assert!(
-            self.sealed
-                .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
-                .is_ok(),
-            "attempt to seal an already sealed log"
-        );
         let mut header = self.header.lock();
         let index_offset = header.count_committed() as u32;
         let index_byte_offset = byte_offset(index_offset);
@@ -352,14 +347,24 @@ impl<F: FileExt> Log<F> {
         header.index_offset = index_byte_offset.into();
         header.index_size = cursor.count().into();
         self.file.write_all_at(header.as_bytes(), 0)?;
-
-        tracing::debug!("log sealed");
-
-        Ok(SealedLog::open(
+        let sealed = SealedLog::open(
             self.file.clone(),
             self.path.clone(),
             self.read_locks.clone(),
-        )?)
+        )?;
+
+        // we only flip the sealed mark when no more error can occur, or we risk to deadlock a read
+        // transaction waiting for a more recent version of the log that is never going to arrive
+        assert!(
+            self.sealed
+                .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
+                .is_ok(),
+            "attempt to seal an already sealed log"
+        );
+
+        tracing::debug!("log sealed");
+
+        Ok(sealed)
     }
 }
 

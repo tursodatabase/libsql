@@ -41,8 +41,7 @@ fn main() {
     enable_libsql_logging();
 
     let path = std::env::args().nth(1).unwrap();
-    let path = <str as AsRef<Path>>::as_ref(path.as_str());
-    let resolver = |path: &Path| {
+    let path = <str as AsRef<Path>>::as_ref(path.as_str()); let resolver = |path: &Path| {
         let name = path
             .parent()
             .unwrap()
