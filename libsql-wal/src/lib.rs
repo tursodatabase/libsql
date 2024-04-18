@@ -1,5 +1,5 @@
 pub mod error;
-pub mod file;
+pub mod fs;
 pub mod log;
 pub mod name;
 pub mod registry;

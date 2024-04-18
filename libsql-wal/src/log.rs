@@ -13,10 +13,10 @@ use zerocopy::byteorder::little_endian::{U32, U64};
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
-use crate::file::{BufCopy, FileExt};
+use crate::fs::file::{FileExt, BufCopy};
 use crate::transaction::{merge_savepoints, Transaction, WriteTransaction};
 
-pub struct Log<F = File> {
+pub struct Log<F> {
     path: PathBuf,
     index: LogIndex,
     header: Mutex<LogHeader>,
@@ -194,7 +194,7 @@ impl<F: FileExt> Log<F> {
         &self,
         pages: impl Iterator<Item = (u32, &'a [u8])>,
         size_after: Option<u32>,
-        tx: &mut WriteTransaction,
+        tx: &mut WriteTransaction<F>,
     ) -> Result<()> {
         assert!(!self.sealed.load(Ordering::SeqCst));
         tx.enter(move |tx| {
@@ -303,7 +303,7 @@ impl<F: FileExt> Log<F> {
 
     /// return the offset of the frame for page_no, with frame_no no larger that max_frame_no, if
     /// it exists
-    pub fn find_frame(&self, page_no: u32, tx: &Transaction) -> Option<u32> {
+    pub fn find_frame(&self, page_no: u32, tx: &Transaction<F>) -> Option<u32> {
         // TODO: ensure that we are looking in the same log as the passed transaction
         // this is a write transaction, check the transient index for request page
         if let Transaction::Write(ref tx) = tx {

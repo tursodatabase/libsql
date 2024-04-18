@@ -1,5 +1,4 @@
 #![allow(dead_code, unused_variables, unreachable_code)]
-use std::fs::OpenOptions;
 use std::num::NonZeroU64;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -12,7 +11,8 @@ use parking_lot::RwLock;
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
-use crate::file::FileExt;
+use crate::fs::file::FileExt;
+use crate::fs::{FileSystem, StdFs};
 use crate::log::{Log, SealedLog};
 use crate::name::NamespaceName;
 use crate::segment_list::SegmentList;
@@ -31,20 +31,32 @@ impl<F: Fn(&Path) -> NamespaceName + Send + Sync + 'static> NamespaceResolver fo
 }
 
 /// Wal Registry maintains a set of shared Wal, and their respective set of files.
-pub struct WalRegistry {
+pub struct WalRegistry<FS: FileSystem> {
+    fs: FS,
     path: PathBuf,
     shutdown: AtomicBool,
-    openned: RwLock<HashMap<NamespaceName, Arc<SharedWal>>>,
+    openned: RwLock<HashMap<NamespaceName, Arc<SharedWal<FS>>>>,
     resolver: Box<dyn NamespaceResolver + Send + Sync + 'static>,
 }
 
-impl WalRegistry {
+impl WalRegistry<StdFs> {
     pub fn new(
         path: PathBuf,
         resolver: impl NamespaceResolver + Send + Sync + 'static,
     ) -> Result<Self> {
-        std::fs::create_dir_all(&path)?;
+        Self::new_with_fs(StdFs, path, resolver)
+    }
+}
+
+impl<FS: FileSystem> WalRegistry<FS> {
+    fn new_with_fs(
+        fs: FS,
+        path: PathBuf,
+        resolver: impl NamespaceResolver + Send + Sync + 'static,
+    ) -> Result<Self> {
+        fs.create_dir_all(&path)?;
         Ok(Self {
+            fs,
             path,
             openned: Default::default(),
             shutdown: Default::default(),
@@ -53,7 +65,7 @@ impl WalRegistry {
     }
 
     #[tracing::instrument(skip(self, db_path))]
-    pub fn open(self: Arc<Self>, db_path: &Path) -> Result<Arc<SharedWal>> {
+    pub fn open(self: Arc<Self>, db_path: &Path) -> Result<Arc<SharedWal<FS>>> {
         if self.shutdown.load(Ordering::SeqCst) {
             todo!("open after shutdown");
         }
@@ -65,7 +77,7 @@ impl WalRegistry {
         }
 
         let path = self.path.join(namespace.as_str());
-        std::fs::create_dir_all(&path)?;
+        self.fs.create_dir_all(&path)?;
         let dir = walkdir::WalkDir::new(&path).sort_by_file_name().into_iter();
 
         let segments = SegmentList::default();
@@ -79,10 +91,9 @@ impl WalRegistry {
             {
                 continue;
             }
-            let file = OpenOptions::new()
-                .read(true)
-                .write(true)
-                .open(entry.path())?;
+
+            let file = self.fs.open(true, true, true, entry.path())?;
+
             if let Some(sealed) =
                 SealedLog::open(file.into(), entry.path().to_path_buf(), Default::default())?
             {
@@ -90,10 +101,7 @@ impl WalRegistry {
             }
         }
 
-        let db_file = std::fs::OpenOptions::new()
-            .read(true)
-            .write(true)
-            .open(db_path)?;
+        let db_file = self.fs.open(false, true, true, db_path)?;
 
         // If this is a fresh database, we want to patch the header value for reserved space at the
         // end of the file to store the replication index
@@ -111,11 +119,7 @@ impl WalRegistry {
 
         let current_path = path.join(format!("{namespace}:{start_frame_no:020}.log"));
 
-        let log_file = std::fs::OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .read(true)
-            .open(&current_path)?;
+        let log_file = self.fs.open(true, true, true, &current_path)?;
 
         let current = arc_swap::ArcSwap::new(Arc::new(Log::create(
             log_file,
@@ -143,7 +147,7 @@ impl WalRegistry {
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn swap_current(&self, shared: &SharedWal, tx: &WriteTransaction) -> Result<()> {
+    pub fn swap_current(&self, shared: &SharedWal<FS>, tx: &WriteTransaction<FS::File>) -> Result<()> {
         let before = Instant::now();
         assert!(tx.is_commited());
         // at this point we must hold a lock to a commited transaction.
@@ -164,11 +168,7 @@ impl WalRegistry {
             .join(shared.namespace.as_str())
             .join(format!("{}:{start_frame_no:020}.log", shared.namespace));
 
-        let log_file = std::fs::OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .read(true)
-            .open(&path)?;
+        let log_file = self.fs.open(true, true, true, &path)?;
         
         let log = Log::create(log_file, path, start_frame_no, current.db_size())?;
         if let Some(sealed) = current.seal()? {

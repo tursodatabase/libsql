@@ -6,13 +6,13 @@ use std::time::Instant;
 use crate::log::Log;
 use crate::shared_wal::WalLock;
 
-pub enum Transaction {
-    Write(WriteTransaction),
-    Read(ReadTransaction),
+pub enum Transaction<F> {
+    Write(WriteTransaction<F>),
+    Read(ReadTransaction<F>),
 }
 
-impl Transaction {
-    pub fn as_write_mut(&mut self) -> Option<&mut WriteTransaction> {
+impl<F> Transaction<F> {
+    pub fn as_write_mut(&mut self) -> Option<&mut WriteTransaction<F>> {
         if let Self::Write(ref mut v) = self {
             Some(v)
         } else {
@@ -37,8 +37,8 @@ impl Transaction {
     }
 }
 
-impl Deref for Transaction {
-    type Target = ReadTransaction;
+impl<F> Deref for Transaction<F> {
+    type Target = ReadTransaction<F>;
 
     fn deref(&self) -> &Self::Target {
         match self {
@@ -48,7 +48,7 @@ impl Deref for Transaction {
     }
 }
 
-impl DerefMut for Transaction {
+impl<F> DerefMut for Transaction<F> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match self {
             Transaction::Write(ref mut tx) => tx,
@@ -57,12 +57,12 @@ impl DerefMut for Transaction {
     }
 }
 
-pub struct ReadTransaction {
+pub struct ReadTransaction<F> {
     /// Max frame number that this transaction can read
     pub max_frame_no: u64,
     pub db_size: u32,
     /// The log to which we have a read lock
-    pub log: Arc<Log>,
+    pub log: Arc<Log<F>>,
     pub created_at: Instant,
     pub conn_id: u64,
     /// number of pages read by this transaction. This is used to determine whether a write lock
@@ -70,7 +70,7 @@ pub struct ReadTransaction {
     pub pages_read: usize,
 }
 
-impl Clone for ReadTransaction {
+impl<F> Clone for ReadTransaction<F> {
     fn clone(&self) -> Self {
         self.log.read_locks.fetch_add(1, Ordering::SeqCst);
         Self {
@@ -84,7 +84,7 @@ impl Clone for ReadTransaction {
     }
 }
 
-impl Drop for ReadTransaction {
+impl<F> Drop for ReadTransaction<F> {
     fn drop(&mut self) {
         // FIXME: if the count drops to 0, register for compaction.
         self.log.read_locks.fetch_sub(1, Ordering::SeqCst);
@@ -115,7 +115,7 @@ pub fn merge_savepoints<'a>(
     }
 }
 
-pub struct WriteTransaction {
+pub struct WriteTransaction<F> {
     pub id: u64,
     /// id of the transaction currently holding the lock
     pub wal_lock: Arc<WalLock>,
@@ -123,10 +123,10 @@ pub struct WriteTransaction {
     pub next_frame_no: u64,
     pub next_offset: u32,
     pub is_commited: bool,
-    pub read_tx: ReadTransaction,
+    pub read_tx: ReadTransaction<F>,
 }
 
-impl WriteTransaction {
+impl<F> WriteTransaction<F> {
     /// enter the lock critical section
     pub fn enter<R>(&mut self, f: impl FnOnce(&mut Self) -> R) -> R {
         if self.is_commited {
@@ -182,7 +182,7 @@ impl WriteTransaction {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn downgrade(self) -> ReadTransaction {
+    pub fn downgrade(self) -> ReadTransaction<F> {
         tracing::trace!("downgrading write transaction");
         let Self {
             id,
@@ -240,15 +240,15 @@ impl WriteTransaction {
     }
 }
 
-impl Deref for WriteTransaction {
-    type Target = ReadTransaction;
+impl<F> Deref for WriteTransaction<F> {
+    type Target = ReadTransaction<F>;
 
     fn deref(&self) -> &Self::Target {
         &self.read_tx
     }
 }
 
-impl DerefMut for WriteTransaction {
+impl<F> DerefMut for WriteTransaction<F> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.read_tx
     }

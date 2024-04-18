@@ -13,6 +13,10 @@ pub trait FileExt {
 
     fn read_exact_at(&self, buf: &mut [u8], offset: u64) -> Result<()>;
 
+    fn sync_all(&self) -> Result<()>;
+
+    fn set_len(&self, len: u64) -> Result<()>;
+
     fn cursor(&self, offset: u64) -> Cursor<Self>
     where
         Self: Sized,
@@ -59,6 +63,14 @@ impl FileExt for File {
         }
 
         Ok(())
+    }
+
+    fn sync_all(&self) -> Result<()> {
+        std::fs::File::sync_all(self)
+    }
+
+    fn set_len(&self, len: u64) -> Result<()> {
+        std::fs::File::set_len(self, len)
     }
 }
 

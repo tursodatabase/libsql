@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::fs::File;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
@@ -11,7 +10,8 @@ use libsql_sys::wal::PageHeaders;
 use parking_lot::{Mutex, MutexGuard};
 
 use crate::error::{Error, Result};
-use crate::file::FileExt;
+use crate::fs::FileSystem;
+use crate::fs::file::FileExt;
 use crate::log::Log;
 use crate::name::NamespaceName;
 use crate::registry::WalRegistry;
@@ -27,23 +27,23 @@ pub struct WalLock {
     pub waiters: Injector<(Unparker, u64)>,
 }
 
-pub struct SharedWal {
-    pub current: ArcSwap<Log>,
-    pub segments: SegmentList,
+pub struct SharedWal<FS: FileSystem> {
+    pub current: ArcSwap<Log<FS::File>>,
+    pub segments: SegmentList<FS::File>,
     pub wal_lock: Arc<WalLock>,
     /// Current transaction id
-    pub db_file: File,
+    pub db_file: FS::File,
     pub namespace: NamespaceName,
-    pub registry: Arc<WalRegistry>,
+    pub registry: Arc<WalRegistry<FS>>,
 }
 
-impl SharedWal {
+impl<FS: FileSystem> SharedWal<FS> {
     pub fn db_size(&self) -> u32 {
         self.current.load().db_size()
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn begin_read(&self, conn_id: u64) -> ReadTransaction {
+    pub fn begin_read(&self, conn_id: u64) -> ReadTransaction<FS::File> {
         // FIXME: this is not enough to just increment the counter, we must make sure that the log
         // is not sealed. If the log is sealed, retry with the current log
         loop {
@@ -67,7 +67,7 @@ impl SharedWal {
     }
 
     /// Upgrade a read transaction to a write transaction
-    pub fn upgrade(&self, tx: &mut Transaction) -> Result<()> {
+    pub fn upgrade(&self, tx: &mut Transaction<FS::File>) -> Result<()> {
         loop {
             match tx {
                 Transaction::Write(_) => unreachable!("already in a write transaction"),
@@ -116,10 +116,10 @@ impl SharedWal {
 
     fn acquire_write(
         &self,
-        read_tx: &ReadTransaction,
+        read_tx: &ReadTransaction<FS::File>,
         mut tx_id_lock: MutexGuard<Option<u64>>,
         mut reserved: MutexGuard<Option<u64>>,
-    ) -> Result<WriteTransaction> {
+    ) -> Result<WriteTransaction<FS::File>> {
         let id = self.wal_lock.next_tx_id.fetch_add(1, Ordering::Relaxed);
         // we read two fields in the header. There is no risk that a transaction commit in
         // between the two reads because this would require that:
@@ -157,7 +157,7 @@ impl SharedWal {
     }
 
     #[tracing::instrument(skip(self, tx, buffer))]
-    pub fn read_frame(&self, tx: &mut Transaction, page_no: u32, buffer: &mut [u8]) -> Result<()> {
+    pub fn read_frame(&self, tx: &mut Transaction<FS::File>, page_no: u32, buffer: &mut [u8]) -> Result<()> {
         match tx.log.find_frame(page_no, tx) {
             Some(offset) => tx.log.read_page_offset(offset, buffer)?,
             None => {
@@ -186,7 +186,7 @@ impl SharedWal {
     #[tracing::instrument(skip_all, fields(tx_id = tx.id))]
     pub fn insert_frames(
         &self,
-        tx: &mut WriteTransaction,
+        tx: &mut WriteTransaction<FS::File>,
         pages: &mut PageHeaders,
         size_after: u32,
     ) -> Result<()> {

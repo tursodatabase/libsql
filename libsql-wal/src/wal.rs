@@ -5,25 +5,26 @@ use std::sync::Arc;
 
 use libsql_sys::wal::{Wal, WalManager};
 
+use crate::fs::FileSystem;
 use crate::registry::WalRegistry;
 use crate::shared_wal::SharedWal;
 use crate::transaction::Transaction;
 
 #[derive(Clone)]
-pub struct LibsqlWalManager {
-    pub registry: Arc<WalRegistry>,
+pub struct LibsqlWalManager<FS: FileSystem> {
+    pub registry: Arc<WalRegistry<FS>>,
     pub next_conn_id: Arc<AtomicU64>,
 }
 
-pub struct LibsqlWal {
+pub struct LibsqlWal<FS: FileSystem> {
     last_read_frame_no: Option<u64>,
-    tx: Option<Transaction>,
-    shared: Arc<SharedWal>,
+    tx: Option<Transaction<FS::File>>,
+    shared: Arc<SharedWal<FS>>,
     conn_id: u64,
 }
 
-impl WalManager for LibsqlWalManager {
-    type Wal = LibsqlWal;
+impl<FS: FileSystem> WalManager for LibsqlWalManager<FS> {
+    type Wal = LibsqlWal<FS>;
 
     fn use_shared_memory(&self) -> bool {
         false
@@ -88,7 +89,7 @@ impl WalManager for LibsqlWalManager {
     }
 }
 
-impl Wal for LibsqlWal {
+impl<FS: FileSystem> Wal for LibsqlWal<FS> {
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn limit(&mut self, _size: i64) {}
 
