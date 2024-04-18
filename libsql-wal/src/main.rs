@@ -41,7 +41,8 @@ fn main() {
     enable_libsql_logging();
 
     let path = std::env::args().nth(1).unwrap();
-    let path = <str as AsRef<Path>>::as_ref(path.as_str()); let resolver = |path: &Path| {
+    let path = <str as AsRef<Path>>::as_ref(path.as_str());
+    let resolver = |path: &Path| {
         let name = path
             .parent()
             .unwrap()
@@ -91,7 +92,14 @@ fn main() {
             move || {
                 let span = tracing::span!(Level::TRACE, "conn", w);
                 let _enter = span.enter();
-                let mut conn = libsql_sys::Connection::open(db_path, OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, wal_manager, 100000, None).unwrap();
+                let mut conn = libsql_sys::Connection::open(
+                    db_path,
+                    OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
+                    wal_manager,
+                    100000,
+                    None,
+                )
+                .unwrap();
                 // let mut conn = libsql_sys::Connection::open(
                 //     db_path.clone(),
                 //     OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,

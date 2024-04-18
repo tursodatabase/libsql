@@ -1,11 +1,16 @@
 use std::ffi::c_int;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering::Relaxed};
 use std::fs::File;
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering::Relaxed};
+use std::sync::Arc;
 
-use libsql_sys::rusqlite::{OpenFlags, ErrorCode, self};
-use libsql_wal::{fs::{FileSystem, StdFs, file::FileExt}, registry::WalRegistry, wal::LibsqlWalManager, name::NamespaceName};
+use libsql_sys::rusqlite::{self, ErrorCode, OpenFlags};
+use libsql_wal::{
+    fs::{file::FileExt, FileSystem, StdFs},
+    name::NamespaceName,
+    registry::WalRegistry,
+    wal::LibsqlWalManager,
+};
 use parking_lot::Mutex;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
@@ -25,19 +30,23 @@ struct FlakyFile {
 
 impl FileExt for FlakyFile {
     fn write_all_at(&self, buf: &[u8], offset: u64) -> std::io::Result<()> {
-        self.fs.with_random_failure(|| self.inner.write_all_at(buf, offset))
+        self.fs
+            .with_random_failure(|| self.inner.write_all_at(buf, offset))
     }
 
     fn write_at_vectored(&self, bufs: &[std::io::IoSlice], offset: u64) -> std::io::Result<usize> {
-        self.fs.with_random_failure(|| self.inner.write_at_vectored(bufs, offset))
+        self.fs
+            .with_random_failure(|| self.inner.write_at_vectored(bufs, offset))
     }
 
     fn write_at(&self, buf: &[u8], offset: u64) -> std::io::Result<usize> {
-        self.fs.with_random_failure(|| self.inner.write_at(buf, offset))
+        self.fs
+            .with_random_failure(|| self.inner.write_at(buf, offset))
     }
 
     fn read_exact_at(&self, buf: &mut [u8], offset: u64) -> std::io::Result<()> {
-        self.fs.with_random_failure(|| self.inner.read_exact_at(buf, offset))
+        self.fs
+            .with_random_failure(|| self.inner.read_exact_at(buf, offset))
     }
 
     fn sync_all(&self) -> std::io::Result<()> {
@@ -64,12 +73,16 @@ impl FileSystem for FlakyFs {
     type File = FlakyFile;
 
     fn create_dir_all(&self, path: &std::path::Path) -> std::io::Result<()> {
-        self.with_random_failure(|| {
-            StdFs.create_dir_all(path)
-        })
+        self.with_random_failure(|| StdFs.create_dir_all(path))
     }
 
-    fn open(&self, create_new: bool, read: bool, write: bool, path: &std::path::Path) -> std::io::Result<Self::File> {
+    fn open(
+        &self,
+        create_new: bool,
+        read: bool,
+        write: bool,
+        path: &std::path::Path,
+    ) -> std::io::Result<Self::File> {
         self.with_random_failure(|| {
             Ok(FlakyFile {
                 inner: StdFs.open(create_new, read, write, path)?,
@@ -124,7 +137,8 @@ fn flaky_fs() {
         let name = path.file_name().unwrap().to_str().unwrap();
         NamespaceName::from_string(name.to_string())
     };
-    let registry = Arc::new(WalRegistry::new_with_fs(fs, tmp.path().join("test/wals"), resolver).unwrap());
+    let registry =
+        Arc::new(WalRegistry::new_with_fs(fs, tmp.path().join("test/wals"), resolver).unwrap());
     let wal_manager = LibsqlWalManager {
         registry: registry.clone(),
         next_conn_id: Default::default(),
@@ -168,7 +182,14 @@ fn flaky_fs() {
 
     enabled.store(false, Relaxed);
 
-    conn.pragma_query(None, "integrity_check", |r| {dbg!(r); Ok(())}).unwrap();
-    conn.query_row("select count(0) from t1", (), |r| { dbg!(r); Ok(()) }).unwrap();
-
+    conn.pragma_query(None, "integrity_check", |r| {
+        dbg!(r);
+        Ok(())
+    })
+    .unwrap();
+    conn.query_row("select count(0) from t1", (), |r| {
+        dbg!(r);
+        Ok(())
+    })
+    .unwrap();
 }

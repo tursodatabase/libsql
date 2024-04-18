@@ -187,9 +187,7 @@ impl<F> WriteTransaction<F> {
     pub fn downgrade(self) -> ReadTransaction<F> {
         tracing::trace!("downgrading write transaction");
         let Self {
-            wal_lock,
-            read_tx,
-            ..
+            wal_lock, read_tx, ..
         } = self;
         let mut lock = wal_lock.tx_id.lock();
         match *lock {

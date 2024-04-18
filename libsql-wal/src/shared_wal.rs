@@ -10,8 +10,8 @@ use libsql_sys::wal::PageHeaders;
 use parking_lot::{Mutex, MutexGuard};
 
 use crate::error::{Error, Result};
-use crate::fs::FileSystem;
 use crate::fs::file::FileExt;
+use crate::fs::FileSystem;
 use crate::log::Log;
 use crate::name::NamespaceName;
 use crate::registry::WalRegistry;
@@ -157,7 +157,12 @@ impl<FS: FileSystem> SharedWal<FS> {
     }
 
     #[tracing::instrument(skip(self, tx, buffer))]
-    pub fn read_frame(&self, tx: &mut Transaction<FS::File>, page_no: u32, buffer: &mut [u8]) -> Result<()> {
+    pub fn read_frame(
+        &self,
+        tx: &mut Transaction<FS::File>,
+        page_no: u32,
+        buffer: &mut [u8],
+    ) -> Result<()> {
         match tx.log.find_frame(page_no, tx) {
             Some(offset) => tx.log.read_page_offset(offset, buffer)?,
             None => {
@@ -172,7 +177,6 @@ impl<FS: FileSystem> SharedWal<FS> {
         }
 
         tx.pages_read += 1;
-
 
         // let frame_no = u64::from_be_bytes(buffer[4096 - 8..].try_into().unwrap());
         // tracing::trace!(frame_no, tx = tx.max_frame_no, "read page");

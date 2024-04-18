@@ -136,6 +136,8 @@ impl PageHeaders {
         PageHdrIter::new(self.as_ptr(), 4096)
     }
 
+    /// # Safety
+    /// don't use that if you're not sure this will not corrupt the db
     pub unsafe fn iter_mut(&mut self) -> PageHdrIterMut {
         PageHdrIterMut::new(self.as_mut_ptr(), 4096)
     }

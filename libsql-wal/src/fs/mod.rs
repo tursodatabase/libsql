@@ -9,7 +9,13 @@ pub trait FileSystem {
     type File: FileExt;
 
     fn create_dir_all(&self, path: &Path) -> io::Result<()>;
-    fn open(&self, create_new: bool, read: bool, write: bool, path: &Path) -> io::Result<Self::File>;
+    fn open(
+        &self,
+        create_new: bool,
+        read: bool,
+        write: bool,
+        path: &Path,
+    ) -> io::Result<Self::File>;
 }
 
 #[derive(Default, Debug, Clone, Copy)]
@@ -22,8 +28,17 @@ impl FileSystem for StdFs {
         std::fs::create_dir_all(path)
     }
 
-    fn open(&self, create_new: bool, read: bool, write: bool, path: &Path) -> io::Result<Self::File> {
-        std::fs::OpenOptions::new().create_new(create_new).read(read).write(write).open(path)
+    fn open(
+        &self,
+        create_new: bool,
+        read: bool,
+        write: bool,
+        path: &Path,
+    ) -> io::Result<Self::File> {
+        std::fs::OpenOptions::new()
+            .create_new(create_new)
+            .read(read)
+            .write(write)
+            .open(path)
     }
 }
-

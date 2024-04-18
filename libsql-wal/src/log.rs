@@ -13,7 +13,7 @@ use zerocopy::byteorder::little_endian::{U32, U64};
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
-use crate::fs::file::{FileExt, BufCopy};
+use crate::fs::file::{BufCopy, FileExt};
 use crate::transaction::{merge_savepoints, Transaction, WriteTransaction};
 
 pub struct Log<F> {
@@ -136,7 +136,12 @@ fn byte_offset(offset: u32) -> u64 {
 impl<F: FileExt> Log<F> {
     /// Create a new log from the given path and metadata. The file pointed to by path must not
     /// exist.
-    pub fn create(log_file: F, path: PathBuf, start_frame_no: NonZeroU64, db_size: u32) -> Result<Self> {
+    pub fn create(
+        log_file: F,
+        path: PathBuf,
+        start_frame_no: NonZeroU64,
+        db_size: u32,
+    ) -> Result<Self> {
         // let log_file = std::fs::OpenOptions::new()
         //     .create_new(true)
         //     .write(true)

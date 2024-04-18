@@ -299,14 +299,14 @@ fn build_multiple_ciphers(out_path: &Path) {
     let mut cmake_opts: Vec<&str> = vec![];
 
     let cargo_build_target = env::var("CARGO_BUILD_TARGET").unwrap_or_default();
-    let cross_cc_var_name = format!("CC_{}", cargo_build_target.replace("-", "_"));
-    let cross_cc = env::var(&cross_cc_var_name).ok();
+    let cross_cc_var_name = format!("CC_{}", cargo_build_target.replace('-', "_"));
+    let cross_cc = env::var(cross_cc_var_name).ok();
 
-    let cross_cxx_var_name = format!("CXX_{}", cargo_build_target.replace("-", "_"));
-    let cross_cxx = env::var(&cross_cxx_var_name).ok();
+    let cross_cxx_var_name = format!("CXX_{}", cargo_build_target.replace('-', "_"));
+    let cross_cxx = env::var(cross_cxx_var_name).ok();
 
     let toolchain_path = sqlite3mc_build_dir.join("toolchain.cmake");
-    let cmake_toolchain_opt = format!("-DCMAKE_TOOLCHAIN_FILE=toolchain.cmake");
+    let cmake_toolchain_opt = "-DCMAKE_TOOLCHAIN_FILE=toolchain.cmake".to_string();
 
     let mut toolchain_file = OpenOptions::new()
         .create(true)
@@ -364,8 +364,8 @@ fn build_multiple_ciphers(out_path: &Path) {
 
     let mut make = Command::new("cmake");
     make.current_dir(sqlite3mc_build_dir.clone());
-    make.args(&["--build", "."]);
-    make.args(&["--config", "Release"]);
+    make.args(["--build", "."]);
+    make.args(["--config", "Release"]);
     if !make.status().unwrap().success() {
         panic!("Failed to run make");
     }

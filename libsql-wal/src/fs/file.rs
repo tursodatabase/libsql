@@ -106,14 +106,11 @@ pub struct BufCopy<W> {
 
 impl<W> BufCopy<W> {
     pub fn new(w: W) -> Self {
-        Self {
-            w,
-            buf: Vec::new(),
-        }
+        Self { w, buf: Vec::new() }
     }
 
     pub fn into_parts(self) -> (W, Vec<u8>) {
-        let Self { w, buf} = self;
+        let Self { w, buf } = self;
         (w, buf)
     }
 }

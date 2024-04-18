@@ -113,9 +113,11 @@ impl<FS: FileSystem> WalRegistry<FS> {
                 let header = log.header();
                 (header.db_size.get(), header.next_frame_no())
             })
-            .unwrap_or((header.db_size.get(),
-            // this should be the last frame_no in the db
-            NonZeroU64::new(1).unwrap()));
+            .unwrap_or((
+                header.db_size.get(),
+                // this should be the last frame_no in the db
+                NonZeroU64::new(1).unwrap(),
+            ));
 
         let current_path = path.join(format!("{namespace}:{start_frame_no:020}.log"));
 
@@ -147,7 +149,11 @@ impl<FS: FileSystem> WalRegistry<FS> {
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn swap_current(&self, shared: &SharedWal<FS>, tx: &WriteTransaction<FS::File>) -> Result<()> {
+    pub fn swap_current(
+        &self,
+        shared: &SharedWal<FS>,
+        tx: &WriteTransaction<FS::File>,
+    ) -> Result<()> {
         let before = Instant::now();
         assert!(tx.is_commited());
         // at this point we must hold a lock to a commited transaction.
@@ -169,7 +175,7 @@ impl<FS: FileSystem> WalRegistry<FS> {
             .join(format!("{}:{start_frame_no:020}.log", shared.namespace));
 
         let log_file = self.fs.open(true, true, true, &path)?;
-        
+
         let log = Log::create(log_file, path, start_frame_no, current.db_size())?;
         if let Some(sealed) = current.seal()? {
             shared.segments.push_log(sealed);
