@@ -4,7 +4,6 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use libsql_sys::rusqlite::{self, OpenFlags};
-use libsql_sys::wal::Sqlite3WalManager;
 use libsql_wal::name::NamespaceName;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::wal::LibsqlWalManager;

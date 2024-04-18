@@ -13,11 +13,12 @@ pub enum Error {
 
 impl Into<libsql_sys::ffi::Error> for Error {
     fn into(self) -> libsql_sys::ffi::Error {
-        // tracing::error!("wal error: {self}");
         let code = match self {
             Error::BusySnapshot => libsql_sys::ffi::SQLITE_BUSY_SNAPSHOT,
-            Error::Io(_) => libsql_sys::ffi::SQLITE_IOERR_WRITE,
-            Error::IndexError(_) => libsql_sys::ffi::SQLITE_IOERR_WRITE,
+            e => {
+                tracing::error!("wal error: {e}");
+                libsql_sys::ffi::SQLITE_IOERR_WRITE
+            }
         };
 
         libsql_sys::ffi::Error::new(code)

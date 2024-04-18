@@ -87,20 +87,6 @@ impl WalRegistry {
             }
         }
 
-        let (db_size, start_frame_no) = segments
-            .with_head(|log| {
-                let header = log.header();
-                (header.db_size.get(), header.next_frame_no())
-            })
-            .unwrap_or((1, NonZeroU64::new(1).unwrap()));
-
-        let current_path = path.join(format!("{namespace}:{start_frame_no:020}.log"));
-        let current = arc_swap::ArcSwap::new(Arc::new(Log::create(
-            &current_path,
-            start_frame_no,
-            db_size,
-        )?));
-
         let db_file = std::fs::OpenOptions::new()
             .read(true)
             .write(true)
@@ -110,6 +96,21 @@ impl WalRegistry {
         // end of the file to store the replication index
         let mut header: Sqlite3DbHeader = Sqlite3DbHeader::new_zeroed();
         db_file.read_exact_at(header.as_bytes_mut(), 0)?;
+
+        let (db_size, start_frame_no) = segments
+            .with_head(|log| {
+                let header = log.header();
+                (header.db_size.get(), header.next_frame_no())
+            })
+            .unwrap_or((header.db_size.get(), NonZeroU64::new(1).unwrap()));
+
+        let current_path = path.join(format!("{namespace}:{start_frame_no:020}.log"));
+        let current = arc_swap::ArcSwap::new(Arc::new(Log::create(
+            &current_path,
+            start_frame_no,
+            db_size,
+        )?));
+
         // assert_eq!(header.reserved_in_page, 8, "bad db");
 
         let shared = Arc::new(SharedWal {
@@ -152,8 +153,7 @@ impl WalRegistry {
             .join(format!("{}:{start_frame_no:020}.log", shared.namespace));
         let log = Log::create(&path, start_frame_no, current.db_size())?;
         // seal the old log and add it to the list
-        let sealed = current.seal()?;
-        {
+        if let Some(sealed) = current.seal()? {
             shared.segments.push_log(sealed);
         }
 

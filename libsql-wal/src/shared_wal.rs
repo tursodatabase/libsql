@@ -1,12 +1,13 @@
 use std::collections::BTreeMap;
 use std::fs::File;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
 use arc_swap::ArcSwap;
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
+use libsql_sys::ffi::Sqlite3DbHeader;
 use libsql_sys::wal::PageHeaders;
 use parking_lot::{Mutex, MutexGuard};
 
@@ -164,6 +165,7 @@ impl SharedWal {
                 // locate in segments
                 if !self.segments.read_page(page_no, tx.max_frame_no, buffer)? {
                     // read from db_file
+                    tracing::trace!(page_no, "reading from main file");
                     self.db_file
                         .read_exact_at(buffer, (page_no as u64 - 1) * 4096)?;
                 }

@@ -335,7 +335,7 @@ impl Log {
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn seal(&self) -> Result<SealedLog> {
+    pub fn seal(&self) -> Result<Option<SealedLog>> {
         assert!(
             self.sealed
                 .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
@@ -359,8 +359,7 @@ impl Log {
             self.file.try_clone()?,
             self.path.clone(),
             self.read_locks.clone(),
-        )?
-        .expect("log is not empty"))
+        )?)
     }
 }
 
@@ -385,6 +384,12 @@ impl SealedLog {
 
         let index_offset = header.index_offset.get();
         let index_len = header.index_size.get();
+
+        if header.is_empty() {
+            std::fs::remove_file(path)?;
+            return Ok(None)
+        }
+
         if index_offset == 0 {
             return Self::recover(file, header);
         }
@@ -402,10 +407,7 @@ impl SealedLog {
         }))
     }
 
-    fn recover(_file: File, header: LogHeader) -> Result<Option<Self>> {
-        if header.last_commited_frame_no.get() == 0 {
-            return Ok(None);
-        }
+    fn recover(_file: File, _header: LogHeader) -> Result<Option<Self>> {
         todo!();
     }
 
