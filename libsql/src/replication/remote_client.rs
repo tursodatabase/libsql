@@ -62,14 +62,8 @@ impl RemoteClient {
     pub fn last_handshake_replication_index(&self) -> Option<u64> {
         self.last_handshake_replication_index
     }
-}
 
-#[async_trait::async_trait]
-impl ReplicatorClient for RemoteClient {
-    type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
-
-    /// Perform handshake with remote
-    async fn handshake(&mut self) -> Result<(), Error> {
+    async fn do_handshake(&mut self) -> Result<(), Error> {
         tracing::info!("Attempting to perform handshake with primary.");
         if self.dirty {
             self.prefetched_batch_log_entries = None;
@@ -119,8 +113,7 @@ impl ReplicatorClient for RemoteClient {
         Ok(())
     }
 
-    /// Return a stream of frames to apply to the database
-    async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+    async fn do_next_frames(&mut self) -> Result<<Self as ReplicatorClient>::FrameStream, Error> {
         let frames = match self.prefetched_batch_log_entries.take() {
             Some(frames) => frames,
             None => {
@@ -151,9 +144,7 @@ impl ReplicatorClient for RemoteClient {
         Ok(Box::pin(stream))
     }
 
-    /// Return a snapshot for the current replication index. Called after next_frame has returned a
-    /// NeedSnapshot error
-    async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+    async fn do_snapshot(&mut self) -> Result<<Self as ReplicatorClient>::FrameStream, Error> {
         let req = self.make_request(LogOffset {
             next_offset: self.next_offset(),
         });
@@ -176,6 +167,39 @@ impl ReplicatorClient for RemoteClient {
         }
 
         Ok(Box::pin(frames))
+    }
+}
+
+#[async_trait::async_trait]
+impl ReplicatorClient for RemoteClient {
+    type FrameStream = Pin<Box<dyn Stream<Item = Result<Frame, Error>> + Send + 'static>>;
+
+    /// Perform handshake with remote
+    async fn handshake(&mut self) -> Result<(), Error> {
+        let res = self.do_handshake().await;
+        if let Err(e) = &res {
+            tracing::warn!("Handshake failed: {:?}", e);
+        }
+        res
+    }
+
+    /// Return a stream of frames to apply to the database
+    async fn next_frames(&mut self) -> Result<Self::FrameStream, Error> {
+        let frames = self.do_next_frames().await;
+        if let Err(e) = &frames {
+            tracing::warn!("Fetching frames failed: {:?}", e);
+        }
+        frames
+    }
+
+    /// Return a snapshot for the current replication index. Called after next_frame has returned a
+    /// NeedSnapshot error
+    async fn snapshot(&mut self) -> Result<Self::FrameStream, Error> {
+        let snapshot = self.do_snapshot().await;
+        if let Err(e) = &snapshot {
+            tracing::warn!("Fetching snapshot failed: {:?}", e);
+        }
+        snapshot
     }
 
     /// set the new commit frame_no
