@@ -69,14 +69,14 @@ fn main() {
         None,
     )
     .unwrap();
-    let conn = libsql_sys::Connection::open(
-        db_path.clone(),
-        OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
-        Sqlite3WalManager::default(),
-        100000,
-        None,
-    )
-    .unwrap();
+    // let conn = libsql_sys::Connection::open(
+    //     db_path.clone(),
+    //     OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
+    //     Sqlite3WalManager::default(),
+    //     100000,
+    //     None,
+    // )
+    // .unwrap();
     //
     let _ = conn.execute(
         "CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB(16), c BLOB(16), d BLOB(400));",
@@ -93,15 +93,15 @@ fn main() {
             move || {
                 let span = tracing::span!(Level::TRACE, "conn", w);
                 let _enter = span.enter();
-                // let mut conn = libsql_sys::Connection::open(db_path, OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, wal_manager, 100000, None).unwrap();
-                let mut conn = libsql_sys::Connection::open(
-                    db_path.clone(),
-                    OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
-                    Sqlite3WalManager::default(),
-                    1000,
-                    None,
-                )
-                .unwrap();
+                let mut conn = libsql_sys::Connection::open(db_path, OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE, wal_manager, 100000, None).unwrap();
+                // let mut conn = libsql_sys::Connection::open(
+                //     db_path.clone(),
+                //     OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
+                //     Sqlite3WalManager::default(),
+                //     1000,
+                //     None,
+                // )
+                // .unwrap();
                 unsafe {
                     extern "C" fn do_nothing_handler(_: *mut c_void, _: c_int) -> c_int {
                         1
@@ -114,7 +114,7 @@ fn main() {
                     );
                 }
                 for _i in 0..1000 {
-                    let before = Instant::now();
+                    // let before = Instant::now();
                     let tx = conn
                         .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
                         .unwrap();

@@ -27,16 +27,30 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     });
 
     with_sqlite_conn(|conn| {
+        prepare_for_random_reads(conn);
         c.bench_function("sqlite3 random reads", |b| {
             bench_random_reads(conn, b);
         });
     });
 
     with_libsql_conn(|conn| {
+        prepare_for_random_reads(conn);
         c.bench_function("libsql random reads", |b| {
             bench_random_reads(conn, b);
         });
     });
+}
+
+fn prepare_for_random_reads<W: Wal>(conn: &mut Connection<W>) {
+    let _ = conn.execute(
+        "CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB(16), c BLOB(16), d BLOB(400));",
+        (),
+    );
+    let _ = conn.execute("CREATE INDEX i1 ON t1(b);", ());
+    let _ = conn.execute("CREATE INDEX i2 ON t1(c);", ());
+    for _ in 0..20_000 {
+        random_inserts(conn);
+    }
 }
 
 fn with_libsql_conn(f: impl FnOnce(&mut Connection<LibsqlWal>)) {
@@ -76,15 +90,6 @@ fn with_sqlite_conn(f: impl FnOnce(&mut Connection<Sqlite3Wal>)) {
 }
 
 fn bench_random_reads<W: Wal>(conn: &mut Connection<W>, bencher: &mut Bencher<'_>) {
-    let _ = conn.execute(
-        "CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB(16), c BLOB(16), d BLOB(400));",
-        (),
-    );
-    let _ = conn.execute("CREATE INDEX i1 ON t1(b);", ());
-    let _ = conn.execute("CREATE INDEX i2 ON t1(c);", ());
-    for _ in 0..20_000 {
-        random_inserts(conn);
-    }
     bencher.iter(|| random_read(conn));
 }
 
