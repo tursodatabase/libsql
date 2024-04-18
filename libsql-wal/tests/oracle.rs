@@ -2,13 +2,13 @@
 //! results, and then compares the database files.
 
 use std::borrow::Cow;
-use std::ffi::{c_char, c_int};
+use std::ffi::c_char;
 use std::fmt::Display;
 use std::path::Path;
 use std::sync::Arc;
 
 use libsql_sys::ffi::{sqlite3_finalize, sqlite3_prepare};
-use libsql_sys::rusqlite::{self, OpenFlags};
+use libsql_sys::rusqlite::OpenFlags;
 use libsql_sys::wal::{Sqlite3WalManager, Wal};
 use libsql_sys::Connection;
 use libsql_wal::name::NamespaceName;
@@ -21,23 +21,9 @@ use tempfile::tempdir;
 
 type Result = std::result::Result<(), Box<dyn std::error::Error>>;
 
-fn enable_libsql_logging() {
-    use std::sync::Once;
-    static ONCE: Once = Once::new();
-
-    fn libsql_log(code: c_int, msg: &str) {
-        println!("sqlite error {code}: {msg}");
-    }
-
-    ONCE.call_once(|| unsafe {
-        rusqlite::trace::config_log(Some(libsql_log)).unwrap();
-    });
-}
 
 #[test]
-// #[ignore]
 fn test_oracle() {
-    // enable_libsql_logging();
     let manifest_path: &Path = env!("CARGO_MANIFEST_DIR").as_ref();
     let test_samples_path = manifest_path.join("tests/assets/fixtures");
 

@@ -87,7 +87,6 @@ impl<'a, T: FileExt> Write for Cursor<'a, T> {
     }
 }
 
-#[derive(Debug)]
 pub struct BufCopy<W> {
     w: W,
     buf: Vec<u8>,

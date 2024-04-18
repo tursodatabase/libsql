@@ -7,28 +7,27 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 
-use fst::Streamer;
 use fst::{map::Map, MapBuilder};
 use parking_lot::{Mutex, RwLock};
 use zerocopy::byteorder::little_endian::{U32, U64};
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
-use crate::file::{FileExt, BufCopy};
+use crate::file::{BufCopy, FileExt};
 use crate::transaction::{merge_savepoints, Transaction, WriteTransaction};
 
-pub struct Log {
+pub struct Log<F = File> {
     path: PathBuf,
     index: LogIndex,
     header: Mutex<LogHeader>,
-    file: File,
+    file: Arc<F>,
     /// Read lock count on this Log. Each begin_read increments the count of readers on the current
     /// lock
     pub read_locks: Arc<AtomicU64>,
     pub sealed: AtomicBool,
 }
 
-impl Drop for Log {
+impl<F> Drop for Log<F> {
     fn drop(&mut self) {
         // todo: if reader is 0 and log is sealed, register for compaction.
     }
@@ -134,16 +133,16 @@ fn byte_offset(offset: u32) -> u64 {
     (size_of::<LogHeader>() + (offset as usize) * size_of::<Frame>()) as u64
 }
 
-impl Log {
+impl<F: FileExt> Log<F> {
     /// Create a new log from the given path and metadata. The file pointed to by path must not
     /// exist.
-    pub fn create(path: &Path, start_frame_no: NonZeroU64, db_size: u32) -> Result<Self> {
-        let log_file = std::fs::OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .read(true)
-            .open(path)?;
-
+    pub fn create(log_file: F, path: PathBuf, start_frame_no: NonZeroU64, db_size: u32) -> Result<Self> {
+        // let log_file = std::fs::OpenOptions::new()
+        //     .create_new(true)
+        //     .write(true)
+        //     .read(true)
+        //     .open(path)?;
+        //
         let header = LogHeader {
             start_frame_no: start_frame_no.get().into(),
             last_commited_frame_no: 0.into(),
@@ -158,7 +157,7 @@ impl Log {
             path: path.to_path_buf(),
             index: LogIndex::default(),
             header: Mutex::new(header),
-            file: log_file,
+            file: log_file.into(),
             read_locks: Arc::new(AtomicU64::new(0)),
             sealed: AtomicBool::default(),
         })
@@ -336,7 +335,7 @@ impl Log {
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn seal(&self) -> Result<Option<SealedLog>> {
+    pub fn seal(&self) -> Result<Option<SealedLog<F>>> {
         assert!(
             self.sealed
                 .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
@@ -349,7 +348,7 @@ impl Log {
         let mut cursor = self.file.cursor(index_byte_offset);
         let mut writer = BufWriter::new(&mut cursor);
         self.index.merge_all(&mut writer)?;
-        writer.into_inner().unwrap();
+        writer.into_inner().map_err(|e| e.into_parts().0)?;
         header.index_offset = index_byte_offset.into();
         header.index_size = cursor.count().into();
         self.file.write_all_at(header.as_bytes(), 0)?;
@@ -357,7 +356,7 @@ impl Log {
         tracing::debug!("log sealed");
 
         Ok(SealedLog::open(
-            self.file.try_clone()?,
+            self.file.clone(),
             self.path.clone(),
             self.read_locks.clone(),
         )?)
@@ -369,17 +368,17 @@ fn page_offset(offset: u32) -> u64 {
 }
 
 /// an immutable, sealed, memory mapped log file.
-pub struct SealedLog {
+pub struct SealedLog<F = File> {
     pub read_locks: Arc<AtomicU64>,
     header: LogHeader,
-    file: File,
+    file: Arc<F>,
     index: Map<Vec<u8>>,
     path: PathBuf,
     checkpointed: AtomicBool,
 }
 
-impl SealedLog {
-    pub fn open(file: File, path: PathBuf, read_locks: Arc<AtomicU64>) -> Result<Option<Self>> {
+impl<F: FileExt> SealedLog<F> {
+    pub fn open(file: Arc<F>, path: PathBuf, read_locks: Arc<AtomicU64>) -> Result<Option<Self>> {
         let mut header: LogHeader = LogHeader::new_zeroed();
         file.read_exact_at(header.as_bytes_mut(), 0)?;
 
@@ -388,7 +387,7 @@ impl SealedLog {
 
         if header.is_empty() {
             std::fs::remove_file(path)?;
-            return Ok(None)
+            return Ok(None);
         }
 
         // This happens in case of crash: the log is not empty, but it wasn't sealed. We need to
@@ -410,7 +409,7 @@ impl SealedLog {
         }))
     }
 
-    fn recover(file: File, path: PathBuf, mut header: LogHeader) -> Result<Self> {
+    fn recover(file: Arc<F>, path: PathBuf, mut header: LogHeader) -> Result<Self> {
         tracing::trace!("recovering unsealed log at {path:?}");
         let mut index = BTreeMap::new();
         assert!(!header.is_empty());
@@ -431,13 +430,23 @@ impl SealedLog {
             builder.insert(k.to_be_bytes(), v as u64).unwrap();
         }
         builder.finish().unwrap();
-        let (cursor, index_bytes) = writer.into_inner().unwrap().into_parts();
+        let (cursor, index_bytes) = writer
+            .into_inner()
+            .map_err(|e| e.into_parts().0)?
+            .into_parts();
         header.index_offset = index_byte_offset.into();
         header.index_size = cursor.count().into();
         file.write_all_at(header.as_bytes(), 0)?;
         let index = Map::new(index_bytes).unwrap();
 
-        Ok(SealedLog { read_locks: Default::default(), header, file, index, path, checkpointed: false.into() })
+        Ok(SealedLog {
+            read_locks: Default::default(),
+            header,
+            file,
+            index,
+            path,
+            checkpointed: false.into(),
+        })
     }
 
     pub fn path(&self) -> &Path {
@@ -483,11 +492,11 @@ impl SealedLog {
     }
 }
 
-impl Drop for SealedLog {
+impl<F> Drop for SealedLog<F> {
     fn drop(&mut self) {
         if self.checkpointed.load(Ordering::SeqCst) {
             // todo: recycle?;
-            if let Err(e) = std::fs::remove_file(self.path()) {
+            if let Err(e) = std::fs::remove_file(&self.path) {
                 tracing::error!("failed to remove log file: {e}");
             }
         }
