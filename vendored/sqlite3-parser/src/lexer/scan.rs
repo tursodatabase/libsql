@@ -92,6 +92,10 @@ impl<S: Splitter> Scanner<S> {
         self.line = 1;
         self.column = 1;
     }
+
+    pub(crate) fn offset(&self) -> usize {
+        self.offset
+    }
 }
 
 type ScanResult<'input, TokenType, Error> =

@@ -19,7 +19,7 @@ expression: stmt.query(()).unwrap().next().unwrap().unwrap()
         "migration",
     ): (
         Text,
-        "{\"steps\":[{\"cond\":null,\"query\":{\"stmt\":{\"stmt\":\"SELECT * FROM test;\",\"kind\":\"Read\",\"is_iud\":false,\"is_insert\":false,\"attach_info\":null},\"params\":{\"Positional\":[]},\"want_rows\":true}}]}",
+        "{\"steps\":[{\"cond\":null,\"query\":{\"stmt\":{\"stmt\":\"select * from test\",\"kind\":\"Read\",\"is_iud\":false,\"is_insert\":false,\"attach_info\":null},\"params\":{\"Positional\":[]},\"want_rows\":true}}]}",
     ),
     Ok(
         "status",

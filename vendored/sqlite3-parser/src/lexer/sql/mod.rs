@@ -54,6 +54,9 @@ impl<'input> Parser<'input> {
     pub fn column(&self) -> usize {
         self.scanner.column()
     }
+    pub fn offset(&self) -> usize {
+        self.scanner.offset()
+    }
 }
 
 /*
