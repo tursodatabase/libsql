@@ -3,6 +3,7 @@ use std::sync::Arc;
 use axum::extract::{FromRequestParts, Path};
 use hyper::http::request::Parts;
 use hyper::HeaderMap;
+use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
 
 use crate::auth::Authenticated;
 use crate::connection::MakeConnection;
@@ -46,18 +47,34 @@ pub fn namespace_from_headers(
         return Ok(NamespaceName::default());
     }
 
-    let host = headers
-        .get("host")
-        .ok_or_else(|| Error::InvalidHost("missing host header".into()))?
-        .as_bytes();
-    let host_str = std::str::from_utf8(host)
-        .map_err(|_| Error::InvalidHost("host header is not valid UTF-8".into()))?;
-
-    match split_namespace(host_str) {
-        Ok(ns) => Ok(ns),
-        Err(_) if !disable_default_namespace => Ok(NamespaceName::default()),
-        Err(e) => Err(e),
+    if let Some(from_metadata) = headers.get(NAMESPACE_METADATA_KEY) {
+        try_namespace_from_metadata(from_metadata)
+    } else if let Some(from_host) = headers.get("host") {
+        try_namespace_from_host(from_host, disable_default_namespace)
+    } else if !disable_default_namespace {
+        Ok(NamespaceName::default())
+    } else {
+        Err(Error::InvalidHost("missing host header".into()))
     }
+}
+
+fn try_namespace_from_host(
+    from_host: &axum::http::HeaderValue,
+    disable_default_namespace: bool,
+) -> Result<NamespaceName, Error> {
+    std::str::from_utf8(from_host.as_bytes())
+        .map_err(|_| Error::InvalidHost("host header is not valid UTF-8".into()))
+        .and_then(|h| match split_namespace(h) {
+            Err(_) if !disable_default_namespace => Ok(NamespaceName::default()),
+            r => r,
+        })
+}
+
+fn try_namespace_from_metadata(metadata: &axum::http::HeaderValue) -> Result<NamespaceName, Error> {
+    metadata
+        .to_str()
+        .map_err(|s| Error::InvalidNamespaceBytes(s))
+        .and_then(|ns| NamespaceName::from_string(ns.into()))
 }
 
 pub struct MakeConnectionExtractorPath(pub Arc<dyn MakeConnection<Connection = Connection>>);

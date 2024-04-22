@@ -47,6 +47,7 @@ impl Client {
         auth_token: impl AsRef<str>,
         version: Option<&str>,
         http_request_callback: Option<HttpRequestCallback>,
+        maybe_namespace: Option<String>,
     ) -> anyhow::Result<Self> {
         let ver = version.unwrap_or(env!("CARGO_PKG_VERSION"));
 
@@ -58,9 +59,14 @@ impl Client {
             .try_into()
             .context("Invalid auth token must be ascii")?;
 
-        let host = origin.host().context("Invalid host or origin")?;
-
-        let ns = split_namespace(host).unwrap_or_else(|_| "default".to_string());
+        let ns = if let Some(ns_from_arg) = maybe_namespace {
+            ns_from_arg
+        } else if let Ok(ns_from_host) = split_namespace(origin.host().unwrap()) {
+            ns_from_host
+        } else {
+            "default".to_string()
+        };
+        
         let namespace = BinaryMetadataValue::from_bytes(ns.as_bytes());
 
         let channel = GrpcChannel::new(connector, http_request_callback);

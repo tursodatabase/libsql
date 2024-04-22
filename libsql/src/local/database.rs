@@ -66,6 +66,7 @@ impl Database {
             encryption_config,
             sync_interval,
             None,
+            None,
         )
         .await
     }
@@ -82,6 +83,7 @@ impl Database {
         encryption_config: Option<EncryptionConfig>,
         sync_interval: Option<std::time::Duration>,
         http_request_callback: Option<crate::util::HttpRequestCallback>,
+        namespace: Option<String>
     ) -> Result<Database> {
         use std::path::PathBuf;
 
@@ -99,6 +101,7 @@ impl Database {
             auth_token.clone(),
             version.as_deref(),
             http_request_callback.clone(),
+            namespace,
         )
         .map_err(|e| crate::Error::Replication(e.into()))?;
         let path = PathBuf::from(db_path);
@@ -175,6 +178,7 @@ impl Database {
             auth_token,
             version.as_deref(),
             http_request_callback,
+            None,
         )
         .map_err(|e| crate::Error::Replication(e.into()))?;
 
