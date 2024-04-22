@@ -196,7 +196,7 @@ impl<FS: FileSystem> Wal for LibsqlWal<FS> {
                 }
                 // assert!(!tx.is_commited());
                 if let Some(handler) = handler {
-                    for (page_no, _) in tx.index_iter() {
+                    for page_no in tx.index_page_iter() {
                         if let Err(e) = handler.handle_undo(page_no) {
                             tracing::debug!("undo handler error: {e}");
                             break;

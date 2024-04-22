@@ -168,9 +168,8 @@ impl<F> WriteTransaction<F> {
         self.next_offset = last_savepoint.next_offset;
     }
 
-    /// Returns an iterator over the current transaction index key/values
-    pub fn index_iter(&self) -> impl Iterator<Item = (u32, u64)> + '_ {
-        [].into_iter()
+    pub fn index_page_iter(&self) -> impl Iterator<Item = u32> + '_ {
+        self.savepoints.iter().map(|s| s.index.keys().copied()).flatten()
         // let iter = self.savepoints.iter().filter_map(|s| s.index.as_ref());
         // let mut union = iter.collect::<OpBuilder>().union();
         // std::iter::from_fn(move || match union.next() {
