@@ -5,7 +5,7 @@
 ```
 docker run --name some-sqld -p 8080:8080 -ti \ 
     -e SQLD_NODE=primary \
-    ghcr.io/tursodatabase/libsql-server:main
+    ghcr.io/tursodatabase/libsql-server:latest
 ```
 
 ## Launch a replica instance
@@ -14,7 +14,7 @@ docker run --name some-sqld -p 8080:8080 -ti \
 docker run --name some-sqld-replica -p 8081:8080 -ti 
     -e SQLD_NODE=replica \
     -e SQLD_PRIMARY_URL=https://<host>:<port> \
-    ghcr.io/tursodatabase/libsql-server:main
+    ghcr.io/tursodatabase/libsql-server:lastest
 ````
 
 ## Running on Apple Silicon
@@ -23,7 +23,7 @@ docker run --name some-sqld-replica -p 8081:8080 -ti
 docker run --name some-sqld  -p 8080:8080 -ti \ 
     -e SQLD_NODE=primary \
     --platform linux/amd64 \
-    ghcr.io/tursodatabase/libsql-server:main
+    ghcr.io/tursodatabase/libsql-server:latest
 ```
 
 _Note: the latest images for arm64 are available under the tag
@@ -46,7 +46,7 @@ mount on your local disk.
 docker run --name some-sqld -ti \
     -v ./.data/libsql \
     -e SQLD_NODE=primary \ 
-    ghcr.io/tursodatabase/libsql-server:main
+    ghcr.io/tursodatabase/libsql-server:latest
 ```
 
 ## Environment variables
@@ -98,7 +98,7 @@ Simple docker compose for local development:
 version: "3"
 services:
   db:
-    image: ghcr.io/tursodatabase/libsql-server:main
+    image: ghcr.io/tursodatabase/libsql-server:latest
     platform: linux/amd64
     ports:
       - "8080:8080"
