@@ -117,19 +117,29 @@ pub fn index_entry_split(k: u64) -> (u32, u32) {
 
 #[repr(C)]
 #[derive(Debug, zerocopy::AsBytes, zerocopy::FromBytes, zerocopy::FromZeroes)]
-struct FrameHeader {
+pub struct FrameHeader {
     pub page_no: U32,
     pub size_after: U32,
+    pub frame_no: U64,
 }
 
 #[repr(C)]
 #[derive(Debug, zerocopy::AsBytes, zerocopy::FromBytes, zerocopy::FromZeroes)]
-struct Frame {
+pub struct Frame {
     header: FrameHeader,
     data: [u8; 4096],
 }
 
-fn byte_offset(offset: u32) -> u64 {
+impl Frame {
+    pub fn data(&self) -> &[u8] {
+        &self.data
+    }
+    pub fn header(&self) -> &FrameHeader {
+        &self.header
+    }
+}
+
+fn frame_offset(offset: u32) -> u64 {
     (size_of::<LogHeader>() + (offset as usize) * size_of::<Frame>()) as u64
 }
 
@@ -142,12 +152,6 @@ impl<F: FileExt> Log<F> {
         start_frame_no: NonZeroU64,
         db_size: u32,
     ) -> Result<Self> {
-        // let log_file = std::fs::OpenOptions::new()
-        //     .create_new(true)
-        //     .write(true)
-        //     .read(true)
-        //     .open(path)?;
-        //
         let header = LogHeader {
             start_frame_no: start_frame_no.get().into(),
             last_commited_frame_no: 0.into(),
@@ -243,23 +247,20 @@ impl<F: FileExt> Log<F> {
 
                 // commit_frame_written = size_after != 0;
 
+                let frame_no = tx.next_frame_no;
                 let header = FrameHeader {
                     page_no: page_no.into(),
                     size_after: size_after.into(),
+                    frame_no: frame_no.into(),
                 };
-                let frame_no = tx.next_frame_no;
-                let frame_no_bytes = frame_no.to_be_bytes();
                 let slices = &[
                     IoSlice::new(header.as_bytes()),
-                    IoSlice::new(&page[..4096 - 8]),
-                    // store the replication index in big endian as per SQLite convention,
-                    // at the end of the page
-                    IoSlice::new(&frame_no_bytes),
+                    IoSlice::new(&page),
                 ];
                 tx.next_frame_no += 1;
                 let offset = tx.next_offset;
                 tx.next_offset += 1;
-                self.file.write_at_vectored(slices, byte_offset(offset))?;
+                self.file.write_at_vectored(slices, frame_offset(offset))?;
                 current_savepoint.index.insert(page_no, offset);
             }
             // }
@@ -335,7 +336,7 @@ impl<F: FileExt> Log<F> {
     fn frame_header_at(&self, offset: u32) -> Result<FrameHeader> {
         let mut header = FrameHeader::new_zeroed();
         self.file
-            .read_exact_at(header.as_bytes_mut(), byte_offset(offset))?;
+            .read_exact_at(header.as_bytes_mut(), frame_offset(offset))?;
         Ok(header)
     }
 
@@ -344,7 +345,7 @@ impl<F: FileExt> Log<F> {
     pub fn seal(&self) -> Result<Option<SealedLog<F>>> {
         let mut header = self.header.lock();
         let index_offset = header.count_committed() as u32;
-        let index_byte_offset = byte_offset(index_offset);
+        let index_byte_offset = frame_offset(index_offset);
         let mut cursor = self.file.cursor(index_byte_offset);
         let mut writer = BufWriter::new(&mut cursor);
         self.index.merge_all(&mut writer)?;
@@ -371,10 +372,19 @@ impl<F: FileExt> Log<F> {
 
         Ok(sealed)
     }
+
+    pub fn last_committed_frame_no(&self) -> u64 {
+        let header = self.header.lock();
+        if header.last_commited_frame_no.get() == 0 {
+            header.start_frame_no.get()
+        } else {
+            header.last_commited_frame_no.get()
+        }
+    }
 }
 
 fn page_offset(offset: u32) -> u64 {
-    byte_offset(offset) + size_of::<FrameHeader>() as u64
+    frame_offset(offset) + size_of::<FrameHeader>() as u64
 }
 
 /// an immutable, sealed, memory mapped log file.
@@ -396,6 +406,7 @@ impl<F: FileExt> SealedLog<F> {
         let index_len = header.index_size.get();
 
         if header.is_empty() {
+            dbg!(&header);
             std::fs::remove_file(path)?;
             return Ok(None);
         }
@@ -425,13 +436,13 @@ impl<F: FileExt> SealedLog<F> {
         assert!(!header.is_empty());
         let mut frame_header = FrameHeader::new_zeroed();
         for i in 0..header.count_committed() {
-            let offset = byte_offset(i as u32);
+            let offset = frame_offset(i as u32);
             file.read_exact_at(frame_header.as_bytes_mut(), offset)?;
             index.insert(frame_header.page_no.get(), i as u32);
         }
 
         let index_offset = header.count_committed() as u32;
-        let index_byte_offset = byte_offset(index_offset);
+        let index_byte_offset = frame_offset(index_offset);
         let cursor = file.cursor(index_byte_offset);
         let writer = BufCopy::new(cursor);
         let mut writer = BufWriter::new(writer);
@@ -474,10 +485,16 @@ impl<F: FileExt> SealedLog<F> {
         &self.index
     }
 
-    pub fn read_offset(&self, offset: u32, buf: &mut [u8]) -> Result<()> {
+    pub fn read_page_offset(&self, offset: u32, buf: &mut [u8]) -> Result<()> {
         let page_offset = page_offset(offset) as usize;
         self.file.read_exact_at(buf, page_offset as _)?;
 
+        Ok(())
+    }
+
+    pub fn read_frame_offset(&self, offset: u32, frame: &mut Frame) -> Result<()> {
+        let offset = frame_offset(offset);
+        self.file.read_exact_at(frame.as_bytes_mut(), offset as _)?;
         Ok(())
     }
 
@@ -489,7 +506,7 @@ impl<F: FileExt> SealedLog<F> {
         let index = self.index();
         if let Some(value) = index.get(page_no.to_be_bytes()) {
             let (_f, offset) = index_entry_split(value);
-            self.read_offset(offset, buf)?;
+            self.read_page_offset(offset, buf)?;
 
             return Ok(true);
         }

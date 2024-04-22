@@ -211,4 +211,9 @@ impl<FS: FileSystem> SharedWal<FS> {
 
         Ok(())
     }
+
+    pub fn last_committed_frame_no(&self) -> u64 {
+        let current = self.current.load();
+        current.last_committed_frame_no()
+    }
 }

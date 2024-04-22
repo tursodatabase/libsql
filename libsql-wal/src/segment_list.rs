@@ -3,10 +3,13 @@ use std::sync::Arc;
 
 use arc_swap::ArcSwapOption;
 use fst::{map::OpBuilder, Streamer};
+use libsql_sys::ffi::Sqlite3DbHeader;
+use memoffset::offset_of;
+use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
 use crate::fs::file::FileExt;
-use crate::log::{index_entry_split, SealedLog};
+use crate::log::{index_entry_split, Frame, SealedLog};
 
 struct SegmentLink<F> {
     log: SealedLog<F>,
@@ -115,15 +118,24 @@ impl<F> SegmentList<F> {
             .map(|s| s.log.index())
             .collect::<OpBuilder>()
             .union();
-        let mut buf = [0; 4096];
+        let mut buf = Frame::new_box_zeroed();
+        let mut last_replication_index = 0;
         while let Some((k, v)) = union.next() {
             let page_no = u32::from_be_bytes(k.try_into().unwrap());
             let v = v.iter().min_by_key(|i| i.index).unwrap();
             let seg = &segs[v.index];
             let (_, offset) = index_entry_split(v.value);
-            seg.log.read_offset(offset, &mut buf)?;
-            db_file.write_all_at(&buf, (page_no as u64 - 1) * 4096)?;
+            seg.log.read_frame_offset(offset, &mut buf)?;
+            assert_eq!(buf.header().page_no.get(), page_no);
+            last_replication_index = last_replication_index.max(buf.header().frame_no.get());
+            db_file.write_all_at(&buf.data(), (page_no as u64 - 1) * 4096)?;
         }
+
+        let last_replication_index = zerocopy::byteorder::big_endian::U64::new(last_replication_index);
+        db_file.write_all_at(
+            last_replication_index.as_bytes(),
+            offset_of!(Sqlite3DbHeader, replication_index) as _,
+        )?;
 
         db_file.sync_all()?;
 
