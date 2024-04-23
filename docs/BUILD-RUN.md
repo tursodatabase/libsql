@@ -19,7 +19,7 @@ Use the `--help` flag to discover how to change its runtime behavior.
 ## Query sqld
 
 You can query sqld using one of the provided [client
-libraries](../#client-libraries).
+libraries](../libsql-server#client-libraries).
 
 You can also use the [turso cli](https://docs.turso.tech/reference/turso-cli) to connect to the sqld instance:
 ```
