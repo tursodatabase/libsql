@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package frame_server;
+
+message RegisterSegmentHeader {
+    bytes namespace_name = 1;
+    uint64 start_frame_no = 2;
+    uint64 end_frame_no = 3;
+}
+
+message SegmentChunk {
+    bytes data = 1;
+}
+
+message SegmentStream {
+    oneof payload {
+        RegisterSegmentHeader   header = 1;
+        SegmentChunk            chunk = 2;
+    }
+}
+
+message StatusRequest {
+    bytes namespace = 1;
+}
+
+message StatusResponse {
+    bytes namespace = 1;
+    uint64 durable_index = 2;
+}
+
+message RestoreRequest {
+    bytes namespace = 1;
+    uint64 start_frame_no = 2;
+}
+
+service FrameServer {
+    rpc Statuses(stream StatusRequest) returns (stream StatusResponse) { }
+    rpc StoreSegment(stream SegmentStream) returns (StatusResponse) { }
+    rpc Restore(RestoreRequest) returns (stream SegmentStream) { }
+}
