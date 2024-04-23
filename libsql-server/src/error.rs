@@ -122,6 +122,8 @@ pub enum Error {
     HasLinkedDbs(NamespaceName),
     #[error("ATTACH is not permitted in migration scripts")]
     AttachInMigration,
+    #[error("join failure: {0}")]
+    RuntimeTaskJoinError(#[from] tokio::task::JoinError),
 }
 
 impl AsRef<Self> for Error {
@@ -207,6 +209,7 @@ impl IntoResponse for &Error {
             MigrationJobNotFound => self.format_err(StatusCode::NOT_FOUND),
             HasLinkedDbs(_) => self.format_err(StatusCode::BAD_REQUEST),
             AttachInMigration => self.format_err(StatusCode::BAD_REQUEST),
+            RuntimeTaskJoinError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }
