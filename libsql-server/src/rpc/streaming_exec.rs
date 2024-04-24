@@ -1,6 +1,7 @@
 use std::future::poll_fn;
 use std::sync::Arc;
 use std::task::Poll;
+use std::time::Duration;
 
 use futures_core::future::BoxFuture;
 use futures_core::Stream;
@@ -355,6 +356,8 @@ impl QueryResultBuilder for StreamResponseBuilder {
     }
 
     fn into_ret(self) -> Self::Ret {}
+
+    fn add_stats(&mut self, _rows_read: u64, _rows_written: u64, _duration: Duration) {}
 }
 
 #[cfg(test)]

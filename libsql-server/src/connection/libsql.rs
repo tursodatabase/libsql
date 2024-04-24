@@ -8,10 +8,9 @@ use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
 use libsql_sys::wal::{BusyHandler, CheckpointCallback, Sqlite3WalManager, Wal, WalManager};
 use libsql_sys::EncryptionConfig;
 use metrics::histogram;
-use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use rusqlite::ffi::SQLITE_BUSY;
-use rusqlite::{ErrorCode, OpenFlags, StatementStatus};
+use rusqlite::{ErrorCode, OpenFlags};
 use tokio::sync::watch;
 use tokio::time::{Duration, Instant};
 
@@ -23,7 +22,7 @@ use crate::query_analysis::StmtKind;
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
 use crate::replication::FrameNo;
 use crate::stats::{Stats, StatsUpdateMessage};
-use crate::Result;
+use crate::{Result, BLOCKING_RT};
 
 use super::connection_manager::{
     ConnectionManager, ManagedConnectionWal, ManagedConnectionWalWrapper,
@@ -375,11 +374,14 @@ pub(super) struct Connection<W> {
     forced_rollback: bool,
 }
 
-fn update_stats(stats: &Stats, sql: String, stmt: &rusqlite::Statement, elapsed: Duration) {
-    let rows_read = stmt.get_status(StatementStatus::RowsRead) as u64;
-    let rows_written = stmt.get_status(StatementStatus::RowsWritten) as u64;
-    let mem_used = stmt.get_status(StatementStatus::MemUsed) as u64;
-
+fn update_stats(
+    stats: &Stats,
+    sql: String,
+    rows_read: u64,
+    rows_written: u64,
+    mem_used: u64,
+    elapsed: Duration,
+) {
     stats.send(StatsUpdateMessage {
         sql,
         elapsed,
@@ -493,7 +495,9 @@ impl<W: Wal> Connection<W> {
                     should_block.then(|| config.block_reason.clone()).flatten(),
                 )
             },
-            move |sql, stmt, elapsed| update_stats(&stats, sql, stmt, elapsed),
+            move |sql, rows_read, rows_written, mem_used, elapsed| {
+                update_stats(&stats, sql, rows_read, rows_written, mem_used, elapsed)
+            },
             resolve_attach_path,
         );
 
@@ -604,14 +608,6 @@ impl<W: Wal> Connection<W> {
     }
 }
 
-/// We use a different runtime to run the connection, because long running tasks block turmoil
-static CONN_RT: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
-    tokio::runtime::Builder::new_multi_thread()
-        .enable_time()
-        .build()
-        .unwrap()
-});
-
 #[async_trait::async_trait]
 impl<W> super::Connection for LibSqlConnection<W>
 where
@@ -628,7 +624,7 @@ where
 
         check_program_auth(&ctx, &pgm, &self.inner.lock().config_store.get())?;
         let conn = self.inner.clone();
-        CONN_RT
+        BLOCKING_RT
             .spawn_blocking(move || Connection::run(conn, pgm, builder))
             .await
             .unwrap()

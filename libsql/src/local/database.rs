@@ -1,6 +1,7 @@
 use std::sync::Once;
 
 cfg_replication!(
+    use http::uri::InvalidUri;
     use crate::database::EncryptionConfig;
     use libsql_replication::frame::FrameNo;
 
@@ -65,6 +66,7 @@ impl Database {
             encryption_config,
             sync_interval,
             None,
+            None,
         )
         .await
     }
@@ -81,6 +83,7 @@ impl Database {
         encryption_config: Option<EncryptionConfig>,
         sync_interval: Option<std::time::Duration>,
         http_request_callback: Option<crate::util::HttpRequestCallback>,
+        namespace: Option<String>
     ) -> Result<Database> {
         use std::path::PathBuf;
 
@@ -90,13 +93,17 @@ impl Database {
 
         let endpoint = coerce_url_scheme(endpoint);
         let remote = crate::replication::client::Client::new(
-            connector,
-            endpoint.as_str().try_into().unwrap(),
-            auth_token,
+            connector.clone(),
+            endpoint
+                .as_str()
+                .try_into()
+                .map_err(|e: InvalidUri| crate::Error::Replication(e.into()))?,
+            auth_token.clone(),
             version.as_deref(),
-            http_request_callback,
+            http_request_callback.clone(),
+            namespace,
         )
-        .unwrap();
+        .map_err(|e| crate::Error::Replication(e.into()))?;
         let path = PathBuf::from(db_path);
         let client = RemoteClient::new(remote.clone(), &path)
             .await
@@ -127,7 +134,9 @@ impl Database {
         let mut db = Database::open(&db_path, flags)?;
 
         let path = PathBuf::from(db_path);
-        let client = LocalClient::new(&path).await.unwrap();
+        let client = LocalClient::new(&path)
+            .await
+            .map_err(|e| crate::Error::Replication(e.into()))?;
 
         let replicator =
             EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await?;
@@ -162,15 +171,21 @@ impl Database {
         let endpoint = coerce_url_scheme(endpoint);
         let remote = crate::replication::client::Client::new(
             connector,
-            endpoint.as_str().try_into().unwrap(),
+            endpoint
+                .as_str()
+                .try_into()
+                .map_err(|e: InvalidUri| crate::Error::Replication(e.into()))?,
             auth_token,
             version.as_deref(),
             http_request_callback,
+            None,
         )
-        .unwrap();
+        .map_err(|e| crate::Error::Replication(e.into()))?;
 
         let path = PathBuf::from(db_path);
-        let client = LocalClient::new(&path).await.unwrap();
+        let client = LocalClient::new(&path)
+            .await
+            .map_err(|e| crate::Error::Replication(e.into()))?;
 
         let replicator =
             EmbeddedReplicator::with_local(client, path, 1000, encryption_config).await?;
@@ -257,20 +272,9 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    /// Sync until caught up with primary
-    // FIXME: there is no guarantee this ever returns!
+    /// Sync with primary
     pub async fn sync(&self) -> Result<Option<FrameNo>> {
-        let mut previous_fno = None;
-        loop {
-            let new_fno = self.sync_oneshot().await?;
-            tracing::trace!("New commited fno: {new_fno:?}");
-            if new_fno == previous_fno {
-                break;
-            } else {
-                previous_fno = new_fno;
-            }
-        }
-        Ok(previous_fno)
+        Ok(self.sync_oneshot().await?)
     }
 
     #[cfg(feature = "replication")]

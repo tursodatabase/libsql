@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::query_result_builder::QueryResultBuilder;
 
 pub struct SchemaMigrationResultBuilder<B> {
@@ -102,5 +104,9 @@ impl<B: QueryResultBuilder> QueryResultBuilder for SchemaMigrationResultBuilder<
 
     fn into_ret(self) -> Self::Ret {
         self.inner.into_ret()
+    }
+
+    fn add_stats(&mut self, rows_read: u64, rows_written: u64, duration: Duration) {
+        self.inner.add_stats(rows_read, rows_written, duration);
     }
 }

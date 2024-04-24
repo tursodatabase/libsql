@@ -515,6 +515,8 @@ impl QueryResultBuilder for ExecuteResultsBuilder {
     fn into_ret(self) -> Self::Ret {
         self.output.unwrap()
     }
+
+    fn add_stats(&mut self, _rows_read: u64, _rows_written: u64, _duration: Duration) {}
 }
 
 pub struct TimeoutConnection {
@@ -635,20 +637,24 @@ impl Proxy for ProxyService {
                 }
             })?;
 
-        let lock = self.clients.upgradable_read().await;
-        let conn = match lock.get(&client_id) {
-            Some(conn) => conn.clone(),
-            None => {
-                tracing::debug!("connected: {client_id}");
-                match connection_maker.create().await {
-                    Ok(conn) => {
-                        assert!(conn.is_primary());
-                        let conn = Arc::new(TimeoutConnection::new(conn));
-                        let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
-                        lock.insert(client_id, conn.clone());
-                        conn
+        let conn = {
+            let lock = self.clients.upgradable_read().await;
+            match lock.get(&client_id) {
+                Some(conn) => conn.clone(),
+                None => {
+                    tracing::debug!("connected: {client_id}");
+                    match connection_maker.create().await {
+                        Ok(conn) => {
+                            assert!(conn.is_primary());
+                            let conn = Arc::new(TimeoutConnection::new(conn));
+                            let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
+                            lock.insert(client_id, conn.clone());
+                            conn
+                        }
+                        Err(e) => {
+                            return Err(tonic::Status::new(tonic::Code::Internal, e.to_string()))
+                        }
                     }
-                    Err(e) => return Err(tonic::Status::new(tonic::Code::Internal, e.to_string())),
                 }
             }
         };

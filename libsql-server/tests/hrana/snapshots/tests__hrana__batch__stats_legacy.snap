@@ -1,0 +1,36 @@
+---
+source: libsql-server/tests/hrana/batch.rs
+expression: json
+---
+[
+  {
+    "results": {
+      "columns": [],
+      "rows": [],
+      "rows_read": 1,
+      "rows_written": 2
+    }
+  },
+  {
+    "results": {
+      "columns": [],
+      "rows": [],
+      "rows_read": 0,
+      "rows_written": 1
+    }
+  },
+  {
+    "results": {
+      "columns": [
+        "x"
+      ],
+      "rows": [
+        [
+          42
+        ]
+      ],
+      "rows_read": 1,
+      "rows_written": 0
+    }
+  }
+]

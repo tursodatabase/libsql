@@ -6,6 +6,7 @@ use chrono::NaiveDateTime;
 use futures::TryFutureExt;
 use moka::future::Cache;
 use once_cell::sync::OnceCell;
+use tokio::task::JoinSet;
 use tokio::time::{Duration, Instant};
 
 use crate::auth::Authenticated;
@@ -421,13 +422,22 @@ impl NamespaceStore {
     }
 
     pub async fn shutdown(self) -> crate::Result<()> {
+        let mut set = JoinSet::new();
         self.inner.has_shutdown.store(true, Ordering::Relaxed);
+
         for (_name, entry) in self.inner.store.iter() {
+            let snapshow_at_shutdown = self.inner.snapshot_at_shutdown;
             let mut lock = entry.write().await;
             if let Some(ns) = lock.take() {
-                ns.shutdown(self.inner.snapshot_at_shutdown).await?;
+                set.spawn(async move {
+                    ns.shutdown(snapshow_at_shutdown).await?;
+                    Ok::<_, anyhow::Error>(())
+                });
             }
         }
+
+        while let Some(_) = set.join_next().await.transpose()?.transpose()? {}
+
         self.inner.metadata.shutdown().await?;
         self.inner.store.invalidate_all();
         self.inner.store.run_pending_tasks().await;
