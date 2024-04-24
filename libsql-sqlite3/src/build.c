@@ -1887,7 +1887,7 @@ void sqlite3AddPrimaryKey(
 #endif
   }else{
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, onError, 0,
-                           0, sortOrder, 0, SQLITE_IDXTYPE_PRIMARYKEY);
+                           0, sortOrder, 0, SQLITE_IDXTYPE_PRIMARYKEY, 0);
     pList = 0;
   }
 
@@ -2388,7 +2388,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     assert( pParse->pNewTable==pTab );
     pTab->iPKey = -1;
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
-                       SQLITE_IDXTYPE_PRIMARYKEY);
+                       SQLITE_IDXTYPE_PRIMARYKEY, 0);
     if( pParse->nErr ){
       pTab->tabFlags &= ~TF_WithoutRowid;
       return;
@@ -3933,7 +3933,8 @@ void sqlite3CreateIndex(
   Expr *pPIWhere,    /* WHERE clause for partial indices */
   int sortOrder,     /* Sort order of primary key when pList==NULL */
   int ifNotExist,    /* Omit error if index already exists */
-  u8 idxType         /* The index type */
+  u8 idxType,        /* The index type */
+  IdList *pUsing     /* Using */
 ){
   Table *pTab = 0;     /* Table to be indexed */
   Index *pIndex = 0;   /* The index to be created */
