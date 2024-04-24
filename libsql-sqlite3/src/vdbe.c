@@ -239,6 +239,9 @@ static void test_trace_breakpoint(int pc, Op *pOp, Vdbe *v){
 /* Return true if the cursor was opened using the OP_OpenSorter opcode. */
 #define isSorter(x) ((x)->eCurType==CURTYPE_SORTER)
 
+/* Return true if the cursor is of type CURYTPE_VECTOR_IDX. */
+#define isVectorIdx(x) ((x)->eCurType==CURTYPE_VECTOR_IDX)
+
 /*
 ** Allocate VdbeCursor number iCur.  Return a pointer to it.  Return NULL
 ** if we run out of memory.
