@@ -2642,6 +2642,7 @@ struct FKey {
 ** for the rowid at the end.
 */
 struct KeyInfo {
+  char *zIndexName;   /* Name of the index.  Might be NULL */
   u32 nRef;           /* Number of references to this KeyInfo object */
   u8 enc;             /* Text encoding - one of the SQLITE_UTF* values */
   u16 nKeyField;      /* Number of key columns in the index */

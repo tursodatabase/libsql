@@ -5563,6 +5563,7 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
   }
   if( pKey ){
     assert( sqlite3KeyInfoIsWriteable(pKey) );
+    pKey->zIndexName = pIdx->zName;
     for(i=0; i<nCol; i++){
       const char *zColl = pIdx->azColl[i];
       pKey->aColl[i] = zColl==sqlite3StrBINARY ? 0 :
