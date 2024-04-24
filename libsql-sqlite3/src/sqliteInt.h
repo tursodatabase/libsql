@@ -5092,6 +5092,7 @@ void sqlite3QuoteValue(StrAccum*,sqlite3_value*);
 void sqlite3RegisterBuiltinFunctions(void);
 void sqlite3RegisterDateTimeFunctions(void);
 void sqlite3RegisterJsonFunctions(void);
+void sqlite3RegisterVectorFunctions(void);
 void sqlite3RegisterPerConnectionBuiltinFunctions(sqlite3*);
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_JSON)
   int sqlite3JsonTableFunctions(sqlite3*);
