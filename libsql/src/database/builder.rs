@@ -132,8 +132,9 @@ cfg_core! {
         /// Build the local database.
         pub async fn build(self) -> Result<Database> {
             let db = if self.inner.path == std::path::Path::new(":memory:") {
+                let db = crate::local::Database::open(":memory:", crate::OpenFlags::default())?;
                 Database {
-                    db_type: DbType::Memory,
+                    db_type: DbType::Memory { db } ,
                 }
             } else {
                 let path = self
