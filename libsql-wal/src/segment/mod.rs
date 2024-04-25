@@ -16,6 +16,7 @@ pub mod sealed;
 pub struct SegmentHeader {
     start_frame_no: U64,
     last_commited_frame_no: U64,
+    /// size of the database in pages
     db_size: U32,
     /// byte offset of the index. If 0, then the index wasn't written, and must be recovered.
     /// If non-0, the segment is sealed, and must not be written to anymore
