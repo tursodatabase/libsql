@@ -148,4 +148,3 @@ fn frame_offset(offset: u32) -> u64 {
 fn page_offset(offset: u32) -> u64 {
     frame_offset(offset) + size_of::<FrameHeader>() as u64
 }
-
