@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 nix = { version = "0.28.0", features = ["uio", "fs"] }
+zerocopy = { version = "0.7.32", features = ["derive", "alloc"] }
