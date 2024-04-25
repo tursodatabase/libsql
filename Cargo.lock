@@ -3458,6 +3458,7 @@ dependencies = [
 name = "libsql-wal"
 version = "0.1.0"
 dependencies = [
+ "arc-swap",
  "fst",
  "libsql-sys",
  "memoffset 0.9.1",
