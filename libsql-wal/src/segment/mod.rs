@@ -7,6 +7,8 @@ use zerocopy::AsBytes;
 
 use crate::error::{Error, Result};
 
+pub mod sealed;
+
 #[repr(C)]
 #[derive(Debug, zerocopy::AsBytes, zerocopy::FromBytes, zerocopy::FromZeroes, Clone, Copy)]
 pub struct SegmentHeader {
