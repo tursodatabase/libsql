@@ -7,4 +7,3 @@ edition = "2021"
 
 [dependencies]
 nix = { version = "0.28.0", features = ["uio", "fs"] }
-
