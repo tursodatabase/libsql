@@ -8,6 +8,7 @@ use zerocopy::AsBytes;
 
 use crate::error::{Error, Result};
 
+pub mod list;
 pub mod sealed;
 
 #[repr(C)]

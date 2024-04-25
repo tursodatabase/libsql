@@ -1,15 +1,18 @@
 use std::collections::BTreeMap;
 use std::io::BufWriter;
-use std::path::{PathBuf, Path};
-use std::sync::{atomic::{AtomicU64, AtomicBool, Ordering}, Arc};
+use std::path::{Path, PathBuf};
+use std::sync::{
+    atomic::{AtomicBool, AtomicU64, Ordering},
+    Arc,
+};
 
 use fst::{Map, MapBuilder};
-use zerocopy::{FromZeroes, AsBytes};
+use zerocopy::{AsBytes, FromZeroes};
 
-use crate::fs::file::{FileExt, BufCopy};
 use crate::error::Result;
+use crate::fs::file::{BufCopy, FileExt};
 
-use super::{SegmentHeader, page_offset, Frame, FrameHeader, frame_offset};
+use super::{frame_offset, page_offset, Frame, FrameHeader, SegmentHeader};
 
 /// an immutable, wal segment
 pub struct SealedSegment<F> {
