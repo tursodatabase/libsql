@@ -91,7 +91,7 @@ impl<F> SegmentList<F> {
         let mut segs = Vec::new();
         let mut current = self.head.load();
         // This is the last element in the list that is not part of the segments to be
-        // checkpointed. All the folowing segments will be checkpointed. After checkpoint, we set
+        // checkpointed. All the folowign segments will be checkpointed. After checkpoint, we set
         // this link's next to None.
         let mut last_untaken = None;
         // find the longest chain of segments that can be checkpointed, iow, segments that do not have
