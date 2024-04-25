@@ -34,7 +34,7 @@ cfg_core! {
 
 enum DbType {
     #[cfg(feature = "core")]
-    Memory,
+    Memory { db: crate::local::Database },
     #[cfg(feature = "core")]
     File {
         path: String,
@@ -60,7 +60,7 @@ impl fmt::Debug for DbType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             #[cfg(feature = "core")]
-            Self::Memory => write!(f, "Memory"),
+            Self::Memory { .. } => write!(f, "Memory"),
             #[cfg(feature = "core")]
             Self::File { .. } => write!(f, "File"),
             #[cfg(feature = "replication")]
@@ -83,8 +83,10 @@ cfg_core! {
         /// Open an in-memory libsql database.
         #[deprecated = "Use the new `Builder` to construct `Database`"]
         pub fn open_in_memory() -> Result<Self> {
+            let db = crate::local::Database::open(":memory:", OpenFlags::default())?;
+
             Ok(Database {
-                db_type: DbType::Memory,
+                db_type: DbType::Memory { db },
             })
         }
 
@@ -462,10 +464,9 @@ impl Database {
     pub fn connect(&self) -> Result<Connection> {
         match &self.db_type {
             #[cfg(feature = "core")]
-            DbType::Memory => {
+            DbType::Memory { db } => {
                 use crate::local::impls::LibsqlConnection;
 
-                let db = crate::local::Database::open(":memory:", OpenFlags::default())?;
                 let conn = db.connect()?;
 
                 let conn = std::sync::Arc::new(LibsqlConnection { conn });
