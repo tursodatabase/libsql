@@ -16,7 +16,7 @@ use aws_sdk_s3::operation::list_objects::ListObjectsOutput;
 use aws_sdk_s3::primitives::ByteStream;
 use aws_sdk_s3::{Client, Config};
 use bytes::{Buf, Bytes};
-use chrono::{NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use libsql_sys::{Cipher, EncryptionConfig};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -1029,7 +1029,7 @@ impl Replicator {
         tracing::debug!("last generation before");
         let mut next_marker: Option<String> = None;
         let prefix = format!("{}-", self.db_name);
-        let threshold = timestamp.map(|ts| ts.timestamp() as u64);
+        let threshold = timestamp.map(|ts| ts.and_utc().timestamp() as u64);
         loop {
             let mut request = self.list_objects().prefix(prefix.clone());
             if threshold.is_none() {
@@ -1159,7 +1159,7 @@ impl Replicator {
         tracing::debug!("restoring from");
         if let Some(tombstone) = self.get_tombstone().await? {
             if let Some(timestamp) = Self::generation_to_timestamp(&generation) {
-                if tombstone.timestamp() as u64 >= timestamp.to_unix().0 {
+                if tombstone.and_utc().timestamp() as u64 >= timestamp.to_unix().0 {
                     bail!(
                         "Couldn't restore from generation {}. Database '{}' has been tombstoned at {}.",
                         generation,
@@ -1489,7 +1489,7 @@ impl Replicator {
                     }
                 }
                 if let Some(threshold) = utc_time.as_ref() {
-                    match NaiveDateTime::from_timestamp_opt(timestamp as i64, 0) {
+                    match DateTime::from_timestamp(timestamp as i64, 0).map(|t| t.naive_utc()) {
                         Some(timestamp) => {
                             if &timestamp > threshold {
                                 tracing::info!("Frame batch {} has timestamp more recent than expected {}. Stopping recovery.", key, timestamp);
@@ -1733,7 +1733,7 @@ impl Replicator {
             .bucket(&self.bucket)
             .key(key)
             .body(ByteStream::from(
-                threshold.timestamp().to_be_bytes().to_vec(),
+                threshold.and_utc().timestamp().to_be_bytes().to_vec(),
             ))
             .send()
             .await?;
@@ -1761,7 +1761,7 @@ impl Replicator {
                 let mut buf = [0u8; 8];
                 out.body.collect().await?.copy_to_slice(&mut buf);
                 let timestamp = i64::from_be_bytes(buf);
-                let tombstone = NaiveDateTime::from_timestamp_opt(timestamp, 0);
+                let tombstone = DateTime::from_timestamp(timestamp, 0).map(|t| t.naive_utc());
                 Ok(tombstone)
             }
             Err(SdkError::ServiceError(se)) => match se.into_err() {
@@ -1828,7 +1828,7 @@ impl DeleteAll {
                     let prefix = &prefix[self.db_name.len() + 1..prefix.len() - 1];
                     let uuid = Uuid::try_parse(prefix)?;
                     if let Some(datetime) = Replicator::generation_to_timestamp(&uuid) {
-                        if datetime.to_unix().0 >= self.threshold.timestamp() as u64 {
+                        if datetime.to_unix().0 >= self.threshold.and_utc().timestamp() as u64 {
                             continue;
                         }
                         tracing::debug!("Removing generation {}", uuid);

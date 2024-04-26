@@ -6,5 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+arc-swap = "1.7.1"
+fst = "0.4.7"
+libsql-sys = { path = "../libsql-sys", features = ["rusqlite"] }
+memoffset = "0.9.1"
 nix = { version = "0.28.0", features = ["uio", "fs"] }
-
+thiserror = "1.0.58"
+tracing = "0.1.40"
+zerocopy = { version = "0.7.32", features = ["derive", "alloc"] }

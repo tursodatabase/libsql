@@ -30,7 +30,9 @@ fn uuid_to_datetime(uuid: &uuid::Uuid) -> chrono::NaiveDateTime {
         .as_ref()
         .map(uuid::Timestamp::to_unix)
         .unwrap_or_default();
-    chrono::NaiveDateTime::from_timestamp_millis((seconds * 1000) as i64).unwrap()
+    chrono::DateTime::from_timestamp_millis((seconds * 1000) as i64)
+        .unwrap()
+        .naive_utc()
 }
 
 pub(crate) async fn detect_db(client: &Client, bucket: &str, namespace: &str) -> Option<String> {
