@@ -3463,6 +3463,7 @@ dependencies = [
  "libsql-sys",
  "memoffset 0.9.1",
  "nix 0.28.0",
+ "parking_lot",
  "thiserror",
  "tracing",
  "zerocopy",
