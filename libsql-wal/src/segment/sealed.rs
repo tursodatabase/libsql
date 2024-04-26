@@ -125,7 +125,7 @@ impl<F: FileExt> SealedSegment<F> {
     }
 
     pub fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> Result<bool> {
-        if self.header().last_commited_frame_no.get() > max_frame_no {
+        if self.header().start_frame_no.get() > max_frame_no {
             return Ok(false);
         }
 
