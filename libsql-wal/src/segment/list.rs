@@ -11,13 +11,13 @@ use crate::error::Result;
 use crate::fs::file::FileExt;
 use crate::segment::{sealed::SealedSegment, Frame};
 
-struct SegmentLink<F> {
+struct SegmentNode<F> {
     segment: SealedSegment<F>,
-    next: ArcSwapOption<SegmentLink<F>>,
+    next: ArcSwapOption<SegmentNode<F>>,
 }
 
 pub struct SegmentList<F> {
-    head: ArcSwapOption<SegmentLink<F>>,
+    head: ArcSwapOption<SegmentNode<F>>,
     len: AtomicUsize,
     /// Whether the segment list is already being checkpointed
     checkpointing: AtomicBool,
@@ -36,7 +36,7 @@ impl<F> Default for SegmentList<F> {
 impl<F> SegmentList<F> {
     /// Prepend the list with the passed sealed segment
     pub fn push_log(&self, segment: SealedSegment<F>) {
-        let segment = Arc::new(SegmentLink {
+        let segment = Arc::new(SegmentNode {
             segment,
             next: self.head.load().clone().into(),
         });
