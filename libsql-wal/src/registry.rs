@@ -101,8 +101,6 @@ impl<FS: FileSystem> WalRegistry<FS> {
 
         let db_file = self.fs.open(false, true, true, db_path)?;
 
-        // If this is a fresh database, we want to patch the header value for reserved space at the
-        // end of the file to store the replication index
         let mut header: Sqlite3DbHeader = Sqlite3DbHeader::new_zeroed();
         db_file.read_exact_at(header.as_bytes_mut(), 0)?;
 

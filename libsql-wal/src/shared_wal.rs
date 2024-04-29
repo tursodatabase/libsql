@@ -20,6 +20,13 @@ use crate::transaction::{ReadTransaction, Savepoint, Transaction, WriteTransacti
 #[derive(Default)]
 pub struct WalLock {
     tx_id: Mutex<Option<u64>>,
+    /// When a writer is popped from the write queue, its write transaction may not be reading from the most recent
+    /// snapshot. In this case, we return `SQLITE_BUSY_SNAPHSOT` to the caller. If no reads were performed
+    /// with that transaction before upgrading, then the caller will call us back immediately after re-acquiring
+    /// a read mark.
+    /// Without the reserved slot, the writer would be re-enqueued, a writer before it would be inserted,
+    /// and we'd find ourselves in the initial situation. Instead, we use the reserved slot to bypass the queue when the 
+    /// writer tried to re-acquire the write lock.
     reserved: Mutex<Option<u64>>,
     next_tx_id: AtomicU64,
     waiters: Injector<(Unparker, u64)>,
@@ -44,10 +51,10 @@ impl<FS: FileSystem> SharedWal<FS> {
         // is not sealed. If the segment is sealed, retry with the current segment
         loop {
             let current = self.current.load();
-            current.inc_reader_count();
             if current.is_sealed() {
                 continue;
             }
+            current.inc_reader_count();
             let (max_frame_no, db_size) =
                 current.with_header(|header| (header.last_committed(), header.db_size()));
             let id = self.wal_lock.next_tx_id.fetch_add(1, Ordering::Relaxed);
