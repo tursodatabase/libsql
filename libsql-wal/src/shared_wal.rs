@@ -19,19 +19,18 @@ use crate::transaction::{ReadTransaction, Savepoint, Transaction, WriteTransacti
 
 #[derive(Default)]
 pub struct WalLock {
-    pub tx_id: Mutex<Option<u64>>,
-    pub reserved: Mutex<Option<u64>>,
-    pub next_tx_id: AtomicU64,
-    pub waiters: Injector<(Unparker, u64)>,
+    tx_id: Mutex<Option<u64>>,
+    reserved: Mutex<Option<u64>>,
+    next_tx_id: AtomicU64,
+    waiters: Injector<(Unparker, u64)>,
 }
 
 pub struct SharedWal<FS: FileSystem> {
-    pub current: ArcSwap<CurrentSegment<FS::File>>,
-    pub wal_lock: Arc<WalLock>,
-    /// Current transaction id
-    pub db_file: FS::File,
-    pub namespace: NamespaceName,
-    pub registry: Arc<WalRegistry<FS>>,
+    current: ArcSwap<CurrentSegment<FS::File>>,
+    wal_lock: Arc<WalLock>,
+    db_file: FS::File,
+    namespace: NamespaceName,
+    registry: Arc<WalRegistry<FS>>,
 }
 
 impl<FS: FileSystem> SharedWal<FS> {
@@ -45,8 +44,6 @@ impl<FS: FileSystem> SharedWal<FS> {
         // is not sealed. If the segment is sealed, retry with the current segment
         loop {
             let current = self.current.load();
-            // FIXME: This function comes up a lot more than in should in profiling. I suspect that
-            // this is caused by those expensive loads here
             current.inc_reader_count();
             if current.is_sealed() {
                 continue;
@@ -82,7 +79,6 @@ impl<FS: FileSystem> SharedWal<FS> {
                                 let lock = self.wal_lock.tx_id.lock();
                                 let write_tx = self.acquire_write(read_tx, lock, reserved)?;
                                 *tx = Transaction::Write(write_tx);
-                                //                                println!("upgraded: {}", before.elapsed().as_micros());1
                                 return Ok(());
                             }
                             _ => (),
@@ -95,7 +91,6 @@ impl<FS: FileSystem> SharedWal<FS> {
                             let write_tx =
                                 self.acquire_write(read_tx, lock, self.wal_lock.reserved.lock())?;
                             *tx = Transaction::Write(write_tx);
-                            //                            println!("upgraded: {}", before.elapsed().as_micros());1
                             return Ok(());
                         }
                         Some(_) | None => {
@@ -131,6 +126,9 @@ impl<FS: FileSystem> SharedWal<FS> {
                 // this transaction hasn't read anything yet, it will retry to
                 // acquire the lock, reserved the slot so that it can make
                 // progress quickly
+                // TODO: is it possible that we upgrade the read lock ourselves, so we don't need
+                // that reserved stuff anymore? If nothing was read, just upgrade the read,
+                // otherwise return snapshot busy and let the connection do the cleanup.
                 tracing::debug!("reserving tx slot");
                 reserved.replace(read_tx.conn_id);
             }
@@ -180,13 +178,6 @@ impl<FS: FileSystem> SharedWal<FS> {
 
         tx.pages_read += 1;
 
-        // let frame_no = u64::from_be_bytes(buffer[4096 - 8..].try_into().unwrap());
-        // tracing::trace!(frame_no, tx = tx.max_frame_no, "read page");
-        // assert!(
-        //     dbg!(frame_no) <= dbg!(tx.max_frame_no()),
-        //     "read frame out of transaction boundaries"
-        // );
-        //
         Ok(())
     }
 
