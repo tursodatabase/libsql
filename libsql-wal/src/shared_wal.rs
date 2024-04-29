@@ -105,8 +105,8 @@ impl<FS: FileSystem> SharedWal<FS> {
                                 "txn currently held by another connection, registering to wait queue"
                             );
                             let parker = crossbeam::sync::Parker::new();
-                            let unpaker = parker.unparker().clone();
-                            self.wal_lock.waiters.push((unpaker, read_tx.conn_id));
+                            let unparker = parker.unparker().clone();
+                            self.wal_lock.waiters.push((unparker, read_tx.conn_id));
                             drop(lock);
                             parker.park();
                         }
