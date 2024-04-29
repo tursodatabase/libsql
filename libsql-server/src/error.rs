@@ -172,7 +172,7 @@ impl IntoResponse for &Error {
             InvalidBatchStep(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             NotAuthorized(_) => self.format_err(StatusCode::UNAUTHORIZED),
             ReplicatorExited => self.format_err(StatusCode::SERVICE_UNAVAILABLE),
-            DbCreateTimeout => self.format_err(StatusCode::SERVICE_UNAVAILABLE),
+            DbCreateTimeout => self.format_err(StatusCode::TOO_MANY_REQUESTS),
             BuilderError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             Blocked(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             Json(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
