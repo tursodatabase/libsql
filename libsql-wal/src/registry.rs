@@ -4,8 +4,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use hashbrown::HashMap;
+use hashbrown::hash_map::Entry;
 use libsql_sys::ffi::Sqlite3DbHeader;
-use parking_lot::RwLock;
+use parking_lot::{RwLock, Condvar, Mutex, RwLockUpgradableReadGuard};
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
@@ -28,12 +29,20 @@ impl<F: Fn(&Path) -> NamespaceName + Send + Sync + 'static> NamespaceResolver fo
     }
 }
 
+enum Slot<FS: FileSystem> {
+    Wal(Arc<SharedWal<FS>>),
+    /// Only a single thread is allowed to instantiate the wal. The first thread to acquire an
+    /// entry in the registry map puts a building slot. Other connections will wait for the mutex
+    /// to turn to true, after the slot has been updated to contain the wal
+    Building(Arc<(Condvar, Mutex<bool>)>),
+}
+
 /// Wal Registry maintains a set of shared Wal, and their respective set of files.
 pub struct WalRegistry<FS: FileSystem> {
     fs: FS,
     path: PathBuf,
     shutdown: AtomicBool,
-    opened: RwLock<HashMap<NamespaceName, Arc<SharedWal<FS>>>>,
+    opened: RwLock<HashMap<NamespaceName, Slot<FS>>>,
     resolver: Box<dyn NamespaceResolver + Send + Sync + 'static>,
 }
 
@@ -69,11 +78,57 @@ impl<FS: FileSystem> WalRegistry<FS> {
         }
 
         let namespace = self.resolver.resolve(db_path);
-        let mut opened = self.opened.upgradable_read();
-        if let Some(entry) = opened.get(&namespace) {
-            return Ok(entry.clone());
-        }
+        loop {
+            let mut opened = self.opened.upgradable_read();
+            if let Some(entry) = opened.get(&namespace) {
+                match entry {
+                    Slot::Wal(wal) => return Ok(wal.clone()),
+                    Slot::Building(cond) => {
+                        let cond = cond.clone();
+                        drop(opened);
+                        cond.0.wait_while(&mut cond.1.lock(), |ready: &mut bool| !*ready);
+                        // the slot was updated: try again
+                        continue;
+                    },
+                }
+            }
 
+            // another thread may have got the slot first, just retry if that's the case
+            let Ok(notifier) = opened.with_upgraded(|map| {
+                match map.entry(namespace.clone()) {
+                    Entry::Occupied(_) => {
+                        Err(())
+                    },
+                    Entry::Vacant(entry) => {
+                        let notifier = Arc::new((Condvar::new(), Mutex::new(false)));
+                        entry.insert(Slot::Building(notifier.clone()));
+                        Ok(notifier)
+                    },
+                }
+            }) else { continue };
+
+            // if try_open succedded, then the slot was updated and contains the shared wal, if it
+            // failed we need to remove the slot. Either way, notify all waiters
+            let ret = self.clone().try_open(&namespace, db_path, &mut opened);
+            if ret.is_err() {
+                opened.with_upgraded(|map| {
+                    map.remove(&namespace);
+                })
+            }
+
+            *notifier.1.lock() = true;
+            notifier.0.notify_all();
+
+            return ret
+        }
+    }
+
+    fn try_open(
+        self: Arc<Self>, 
+        namespace: &NamespaceName,
+        db_path: &Path,
+        opened: &mut RwLockUpgradableReadGuard<HashMap<NamespaceName, Slot<FS>>>,
+        ) -> Result<Arc<SharedWal<FS>>> {
         let path = self.path.join(namespace.as_str());
         self.fs.create_dir_all(&path)?;
         let dir = walkdir::WalkDir::new(&path).sort_by_file_name().into_iter();
@@ -83,9 +138,9 @@ impl<FS: FileSystem> WalRegistry<FS> {
             let entry = entry.map_err(|e| e.into_io_error().unwrap())?;
             if entry
                 .path()
-                .extension()
-                .map(|e| e.to_str().unwrap() != "seg")
-                .unwrap_or(true)
+                    .extension()
+                    .map(|e| e.to_str().unwrap() != "seg")
+                    .unwrap_or(true)
             {
                 continue;
             }
@@ -109,22 +164,22 @@ impl<FS: FileSystem> WalRegistry<FS> {
                 let header = segment.header();
                 (header.db_size(), header.next_frame_no())
             })
-            .unwrap_or((
+        .unwrap_or((
                 header.db_size.get(),
                 NonZeroU64::new(header.replication_index.get() + 1)
-                    .unwrap_or(NonZeroU64::new(1).unwrap()),
-            ));
+                .unwrap_or(NonZeroU64::new(1).unwrap()),
+        ));
 
         let current_path = path.join(format!("{namespace}:{next_frame_no:020}.seg"));
 
         let segment_file = self.fs.open(true, true, true, &current_path)?;
 
         let current = arc_swap::ArcSwap::new(Arc::new(CurrentSegment::create(
-            segment_file,
-            current_path,
-            next_frame_no,
-            db_size,
-            tail.into(),
+                    segment_file,
+                    current_path,
+                    next_frame_no,
+                    db_size,
+                    tail.into(),
         )?));
 
         let shared = Arc::new(SharedWal {
@@ -136,10 +191,12 @@ impl<FS: FileSystem> WalRegistry<FS> {
         });
 
         opened.with_upgraded(|opened| {
-            opened.insert(namespace.clone(), shared.clone());
+            opened.insert(namespace.clone(), Slot::Wal(shared.clone()));
         });
 
-        Ok(shared)
+        return Ok(shared)
+
+
     }
 
     #[tracing::instrument(skip_all)]
@@ -164,8 +221,8 @@ impl<FS: FileSystem> WalRegistry<FS> {
         let start_frame_no = current.next_frame_no();
         let path = self
             .path
-            .join(shared.namespace.as_str())
-            .join(format!("{}:{start_frame_no:020}.seg", shared.namespace));
+            .join(shared.namespace().as_str())
+            .join(format!("{}:{start_frame_no:020}.seg", shared.namespace()));
 
         let segment_file = self.fs.open(true, true, true, &path)?;
 
@@ -194,6 +251,10 @@ impl<FS: FileSystem> WalRegistry<FS> {
         self.shutdown.store(true, Ordering::SeqCst);
         let mut opened = self.opened.write();
         for (_, shared) in opened.drain() {
+            let Slot::Wal(shared) = shared else {
+                // TODO: figure out what to do when the wal is being opened
+                continue
+            };
             let mut tx = Transaction::Read(shared.begin_read(u64::MAX));
             shared.upgrade(&mut tx)?;
             tx.commit();
