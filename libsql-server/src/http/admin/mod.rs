@@ -186,7 +186,7 @@ async fn handle_get_config<C: Connector>(
         heartbeat_url: config.heartbeat_url.clone().map(|u| u.into()),
         jwt_key: config.jwt_key.clone(),
         allow_attach: config.allow_attach,
-        txn_timeout_s: config.txn_timeout.map(|d| d.as_millis() as u64),
+        txn_timeout_s: config.txn_timeout.map(|d| d.as_secs() as u64),
     };
 
     Ok(Json(resp))
