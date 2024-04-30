@@ -25,7 +25,7 @@ pub struct WalLock {
     /// with that transaction before upgrading, then the caller will call us back immediately after re-acquiring
     /// a read mark.
     /// Without the reserved slot, the writer would be re-enqueued, a writer before it would be inserted,
-    /// and we'd find ourselves in the initial situation. Instead, we use the reserved slot to bypass the queue when the 
+    /// and we'd find ourselves in the initial situation. Instead, we use the reserved slot to bypass the queue when the
     /// writer tried to re-acquire the write lock.
     pub(crate) reserved: Mutex<Option<u64>>,
     next_tx_id: AtomicU64,
@@ -123,7 +123,7 @@ impl<FS: FileSystem> SharedWal<FS> {
         // 2) that transaction held the lock to tx_id (be in a transaction critical section)
         let current = self.current.load();
         let last_commited = current.last_committed();
-        if read_tx.max_frame_no != last_commited  || current.is_sealed() {
+        if read_tx.max_frame_no != last_commited || current.is_sealed() {
             if read_tx.pages_read <= 1 {
                 // this transaction hasn't read anything yet, it will retry to
                 // acquire the lock, reserved the slot so that it can make
