@@ -1,3 +1,11 @@
+//! Libsql-wal is organized as a linked list of segments. Frames are appended to the head segments,
+//! and eventually, the head segment is swapped for a new empty one. The previous head segment is
+//! sealed and becomes immutable. The head segment is represented by the `CurrentSegment` type, and
+//! the sealed segments by the `SealedSegment` type.
+//!
+//! When a reader starts a transaction, it record the head segment current frame_no. This is the
+//! maximum frame_no that this reader is allowed to read. The reader also keeps a reference to the
+//! head segment at the moment it was created.
 #![allow(dead_code)]
 use std::mem::size_of;
 use std::num::NonZeroU64;
@@ -8,6 +16,7 @@ use zerocopy::AsBytes;
 
 use crate::error::{Error, Result};
 
+pub mod current;
 pub mod list;
 pub mod sealed;
 

@@ -7,11 +7,15 @@ edition = "2021"
 
 [dependencies]
 arc-swap = "1.7.1"
+bytes = "1.6.0"
+crossbeam = "0.8.4"
 fst = "0.4.7"
+hashbrown = "0.14.3"
 libsql-sys = { path = "../libsql-sys", features = ["rusqlite"] }
 memoffset = "0.9.1"
 nix = { version = "0.28.0", features = ["uio", "fs"] }
 parking_lot = "0.12.1"
 thiserror = "1.0.58"
 tracing = "0.1.40"
+walkdir = "2.5.0"
 zerocopy = { version = "0.7.32", features = ["derive", "alloc"] }
