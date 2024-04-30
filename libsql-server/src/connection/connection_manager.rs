@@ -69,10 +69,13 @@ impl Deref for ConnectionManager {
     }
 }
 
-impl Default for ConnectionManager {
-    fn default() -> Self {
+impl ConnectionManager {
+    pub fn new(txn_timeout_duration: Duration) -> ConnectionManager {
         Self {
-            inner: Default::default(),
+            inner: Arc::new(ConnectionManagerInner {
+                txn_timeout_duration,
+                ..Default::default()
+            }),
         }
     }
 }

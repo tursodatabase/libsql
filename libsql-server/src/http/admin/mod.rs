@@ -186,6 +186,7 @@ async fn handle_get_config<C: Connector>(
         heartbeat_url: config.heartbeat_url.clone().map(|u| u.into()),
         jwt_key: config.jwt_key.clone(),
         allow_attach: config.allow_attach,
+        txn_timeout_s: config.txn_timeout.map(|d| d.as_millis() as u64),
     };
 
     Ok(Json(resp))
@@ -232,6 +233,8 @@ struct HttpDatabaseConfig {
     jwt_key: Option<String>,
     #[serde(default)]
     allow_attach: bool,
+    #[serde(default)]
+    txn_timeout_s: Option<u64>,
 }
 
 async fn handle_post_config<C>(
@@ -252,6 +255,7 @@ async fn handle_post_config<C>(
     config.block_writes = req.block_writes;
     config.block_reason = req.block_reason;
     config.allow_attach = req.allow_attach;
+    config.txn_timeout = req.txn_timeout_s.map(Duration::from_secs);
     if let Some(size) = req.max_db_size {
         config.max_db_pages = size.as_u64() / LIBSQL_PAGE_SIZE;
     }
