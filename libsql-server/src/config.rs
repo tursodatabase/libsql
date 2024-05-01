@@ -180,6 +180,8 @@ pub struct HeartbeatConfig {
 pub struct MetaStoreConfig {
     pub bottomless: Option<BottomlessConfig>,
     pub allow_recover_from_fs: bool,
+    /// Destroy the metastore if there is a restore error
+    pub destroy_on_error: bool,
 }
 
 #[derive(Debug, Clone)]

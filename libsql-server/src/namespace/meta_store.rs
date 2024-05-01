@@ -291,6 +291,7 @@ impl MetaStoreInner {
 
                 Err(e) => {
                     tracing::error!("meta store restore failed: {}", e);
+
                     return Err(Error::from(e));
                 }
             }
@@ -399,7 +400,58 @@ impl MetaStore {
         wal_manager: MetaStoreWalManager,
     ) -> Result<Self> {
         let (changes_tx, mut changes_rx) = mpsc::channel(256);
-        let inner = Arc::new(MetaStoreInner::new(base_path, conn, wal_manager, config).await?);
+
+        let destroy_on_error = config.destroy_on_error;
+
+        let inner = match MetaStoreInner::new(base_path, conn, wal_manager, config.clone()).await {
+            Ok(inner) => inner,
+            Err(e) => {
+                if destroy_on_error {
+                    let db_path = base_path.join("metastore");
+
+                    tracing::info!(
+                        "meta store set to destroy on restore error, removing metastore db path folder ({:?})", db_path
+                    );
+
+                    if let Err(e) = std::fs::remove_dir_all(&db_path) {
+                        tracing::error!("failed to remove base path({:?}): {}", &db_path, e);
+                    }
+
+                    if let Err(e) = std::fs::create_dir_all(&db_path) {
+                        tracing::error!(
+                            "failed to create meta store base path: {:?} with {}",
+                            &db_path,
+                            e
+                        );
+                    }
+
+                    if let Err(e) = std::fs::File::create(db_path.join("data")) {
+                        tracing::error!(
+                            "failed to create `data` file in {:?} with: {}",
+                            &db_path,
+                            e
+                        );
+                    }
+
+                    let (maker, wal) =
+                        metastore_connection_maker(config.bottomless.clone(), base_path).await?;
+
+                    let conn = maker()?;
+
+                    tracing::info!("recreating metastore and restoring with fresh data");
+
+                    let inner = MetaStoreInner::new(base_path, conn, wal, config).await?;
+
+                    tracing::info!("metastore destroy on error successful");
+
+                    inner
+                } else {
+                    return Err(e);
+                }
+            }
+        };
+
+        let inner = Arc::new(inner);
 
         tokio::spawn({
             let inner = inner.clone();
