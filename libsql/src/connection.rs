@@ -12,6 +12,8 @@ pub(crate) trait Conn {
 
     async fn execute_batch(&self, sql: &str) -> Result<()>;
 
+    async fn execute_transactional_batch(&self, sql: &str) -> Result<()>;
+
     async fn prepare(&self, sql: &str) -> Result<Statement>;
 
     async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction>;
@@ -55,6 +57,12 @@ impl Connection {
     pub async fn execute_batch(&self, sql: &str) -> Result<()> {
         tracing::trace!("executing batch `{}`", sql);
         self.conn.execute_batch(sql).await
+    }
+
+    /// Execute a batch set of statements atomically in a transaction.
+    pub async fn execute_transactional_batch(&self, sql: &str) -> Result<()> {
+        tracing::trace!("executing batch transactional `{}`", sql);
+        self.conn.execute_transactional_batch(sql).await
     }
 
     /// Execute sql query provided some type that implements [`IntoParams`] returning

@@ -161,6 +161,13 @@ impl Connection {
         Ok(())
     }
 
+    pub fn execute_transactional_batch<S>(&self, sql: S) -> Result<()>
+    where
+        S: Into<String>,
+    {
+        todo!("haaawk")
+    }
+
     /// Execute the SQL statement synchronously.
     ///
     /// If you execute a SQL query statement (e.g. `SELECT` statement) that

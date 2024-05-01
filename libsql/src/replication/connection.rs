@@ -321,6 +321,10 @@ impl Conn for RemoteConnection {
         Ok(())
     }
 
+    async fn execute_transactional_batch(&self, sql: &str) -> Result<()> {
+        todo!("haaawk")
+    }
+
     async fn prepare(&self, sql: &str) -> Result<Statement> {
         let stmt = RemoteStatement::prepare(self.clone(), sql).await?;
 

@@ -121,6 +121,10 @@ impl Conn for HttpConnection<HttpSender> {
         self.current_stream().execute_batch(sql).await
     }
 
+    async fn execute_transactional_batch(&self, sql: &str) -> crate::Result<()> {
+        self.current_stream().execute_transactional_batch(sql).await
+    }
+
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
         let stream = self.current_stream().clone();
         let stmt = crate::hrana::Statement::new(stream, sql.to_string(), true)?;
@@ -271,6 +275,10 @@ impl Conn for HranaStream<HttpSender> {
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
         unwrap_err(res)
+    }
+
+    async fn execute_transactional_batch(&self, sql: &str) -> crate::Result<()> {
+        todo!("haaawk")
     }
 
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
