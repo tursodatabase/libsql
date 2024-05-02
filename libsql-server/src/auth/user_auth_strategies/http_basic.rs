@@ -7,26 +7,28 @@ pub struct HttpBasic {
 }
 
 impl UserAuthStrategy for HttpBasic {
-    fn authenticate(
-        &self,
-        context: Result<UserAuthContext, AuthError>,
-    ) -> Result<Authenticated, AuthError> {
+    fn authenticate(&self, ctx: UserAuthContext) -> Result<Authenticated, AuthError> {
         tracing::trace!("executing http basic auth");
+        let auth_str = ctx.custom_fields.get("authorization")
+            .or_else(|| ctx.custom_fields.get("x-authorization"));
+
+        let (_, token) = auth_str
+            .ok_or(AuthError::AuthHeaderNotFound)
+            .map(|s| s.split_once(' ').ok_or(AuthError::AuthStringMalformed))
+            .and_then(|o| o)?;
 
         // NOTE: this naive comparison may leak information about the `expected_value`
         // using a timing attack
         let expected_value = self.credential.trim_end_matches('=');
-
-        let creds_match = match context?.token {
-            Some(s) => s.contains(expected_value),
-            None => expected_value.is_empty(),
-        };
-
+        let creds_match = token.contains(expected_value);
         if creds_match {
             return Ok(Authenticated::FullAccess);
         }
-
         Err(AuthError::BasicRejected)
+    }
+
+    fn required_fields(&self) -> Vec<String> {
+        vec!["authorization".to_string(), "x-authorization".to_string()]
     }
 }
 
@@ -48,7 +50,7 @@ mod tests {
 
     #[test]
     fn authenticates_with_valid_credential() {
-        let context = Ok(UserAuthContext::basic(CREDENTIAL));
+        let context = UserAuthContext::basic(CREDENTIAL);
 
         assert!(matches!(
             strategy().authenticate(context).unwrap(),
@@ -59,7 +61,7 @@ mod tests {
     #[test]
     fn authenticates_with_valid_trimmed_credential() {
         let credential = CREDENTIAL.trim_end_matches('=');
-        let context = Ok(UserAuthContext::basic(credential));
+        let context = UserAuthContext::basic(credential);
 
         assert!(matches!(
             strategy().authenticate(context).unwrap(),
@@ -69,7 +71,7 @@ mod tests {
 
     #[test]
     fn errors_when_credentials_do_not_match() {
-        let context = Ok(UserAuthContext::basic("abc"));
+        let context = UserAuthContext::basic("abc");
 
         assert_eq!(
             strategy().authenticate(context).unwrap_err(),
