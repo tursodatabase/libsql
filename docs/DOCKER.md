@@ -60,6 +60,21 @@ docker run --name some-sqld -ti \
     ghcr.io/tursodatabase/libsql-server:latest
 ```
 
+## Authentication
+
+### `SQLD_HTTP_AUTH`
+
+Specifies legacy HTTP basic authentication. The argument must be in format `basic:$PARAM`,
+where `$PARAM` is base64-encoded string `$USERNAME:$PASSWORD`.
+
+### `SQLD_AUTH_JWT_KEY_FILE`
+
+Path to a file with a JWT decoding key used to authenticate clients in the Hrana and HTTP
+APIs. The key is either a PKCS#8-encoded Ed25519 public key in PEM, or just plain bytes of
+the Ed25519 public key in URL-safe base64.
+
+You can also pass the key directly in the env variable SQLD_AUTH_JWT_KEY.
+
 ## Environment variables
 
 ### `SQLD_NODE`
@@ -100,7 +115,6 @@ container networking level.
 Defines the GRPC listen address and port for sqld. Primarily used for
 inter-node communication. Recommended to leave this on default.
 
-
 ## Docker Compose
 
 Simple docker compose for local development:
@@ -119,3 +133,7 @@ services:
     volumes:
       - ./data/libsql:/var/lib/sqld
 ```
+
+## Additional configuration
+
+Make sure to check the [SQL daemon source](https://github.com/tursodatabase/libsql/blob/7781b01/libsql-server/src/main.rs#L37-L249) for an up-to-date list of configuration.
