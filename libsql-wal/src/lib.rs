@@ -5,3 +5,4 @@ pub mod registry;
 pub mod segment;
 pub mod shared_wal;
 pub mod transaction;
+pub mod wal;
