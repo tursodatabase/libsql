@@ -16,7 +16,7 @@ This libSQL API is an experimental, batteries-included library built on top of S
 * [Rust](core) 
 * [Python](https://github.com/libsql/libsql-experimental-python)
 * [JavaScript](https://github.com/libsql/libsql-experimental-node)
-* [Go](bindings/go) (wip)
+* [Go](https://github.com/libsql/go-libsql)
 * [C](bindings/c) (wip)
 
 ## License
