@@ -446,7 +446,7 @@ pub unsafe extern "C" fn libsql_execute_stmt(
             set_err_msg(format!("Error executing statement: {}", e), out_err_msg);
             2
         }
-    }
+    }let end_time = start_time.elapsed();
 }
 
 #[no_mangle]
@@ -472,13 +472,19 @@ pub unsafe extern "C" fn libsql_query(
             return 1;
         }
     };
+    let start_time = std::time::Instant::now();
     let conn = conn.get_ref();
     match RT.block_on(conn.query(sql, ())) {
         Ok(rows) => {
+            let end_time = start_time.elapsed(); // Calculate elapsed time
+            println!("Query execution time: {:?}", end_time);
+            
             let rows = Box::leak(Box::new(libsql_rows { result: rows }));
             *out_rows = libsql_rows_t::from(rows);
         }
         Err(e) => {
+            let end_time = start_time.elapsed(); // Calculate elapsed time
+            println!("Query execution failed. Time elapsed: {:?}", end_time);
             set_err_msg(format!("Error executing statement: {}", e), out_err_msg);
             return 1;
         }
