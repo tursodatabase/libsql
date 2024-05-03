@@ -72,7 +72,8 @@ mod tests {
     use axum::http::HeaderValue;
     use hyper::header::AUTHORIZATION;
 
-    use crate::auth::{parse_http_auth_header, AuthError};
+    use crate::auth::user_auth_strategies::jwt::Token;
+    use crate::auth::{parse_http_auth_header, parse_jwt_key, AuthError};
 
     use super::{parse_grpc_auth_header, parse_http_basic_auth_arg};
 
@@ -159,5 +160,56 @@ mod tests {
     fn parse_http_auth_arg_always() {
         let out = parse_http_basic_auth_arg("always").unwrap();
         assert_eq!(out, Some("always".to_string()));
+    }
+
+    const EXAMPLE_JWT_PUBLIC_KEY: &str = include_str!("../../assets/test/auth/example1.pem");
+    const EXAMPLE_JWT_PRIVATE_KEY: &str = include_str!("../../assets/test/auth/example1.key");
+    const EXAMPLE_JWT: &str = include_str!("../../assets/test/auth/example1.jwt");
+
+    #[test]
+    fn parse_jwt_key_single_pem() {
+        let key = parse_jwt_key(EXAMPLE_JWT_PUBLIC_KEY);
+        assert!(key.is_ok());
+
+        let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::EdDSA);
+        validation.required_spec_claims.remove("exp");
+        let decoded = jsonwebtoken::decode::<Token>(&EXAMPLE_JWT, &key.unwrap(), &validation);
+
+        assert!(matches!(
+            decoded,
+            Ok(jsonwebtoken::TokenData {
+                header: _,
+                claims: _
+            })
+        ));
+
+        let jsonwebtoken::TokenData { header, claims } = decoded.unwrap();
+        assert_eq!(header.alg, jsonwebtoken::Algorithm::EdDSA);
+
+        let claims = format!("{:?}", claims);
+        assert_eq!(claims, "Token { id: None, a: None, p: Some(Authorized { read_only: Some(Scopes { namespaces: Some({example1c, example1a, example1b}), tags: None }), read_write: None, read_only_attach: None, read_write_attach: None, ddl_override: None }), exp: Some(+33713-01-29T21:47:33Z) }");
+    }
+
+    #[test]
+    fn parse_jwt_key_fail_when_private_key() {
+        let key = parse_jwt_key(EXAMPLE_JWT_PRIVATE_KEY);
+        assert!(key.is_err());
+        assert_eq!(
+            key.err().unwrap().to_string(),
+            "Received a private key, but a public key is expected"
+        );
+    }
+
+    #[test]
+    fn parse_jwt_key_fail_when_non_key_pem() {
+        let key = parse_jwt_key(
+            "-----BEGIN CERTIFICATE-----\nMIIKLwIBAzCCCesGCSqGSIb3DQE\n-----END CERTIFICATE-----\n",
+        );
+
+        assert!(key.is_err());
+        assert_eq!(
+            key.err().unwrap().to_string(),
+            "Key is in unsupported PEM format"
+        );
     }
 }

@@ -43,7 +43,7 @@ impl Jwt {
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
-struct Token {
+pub(crate) struct Token {
     #[serde(default)]
     id: Option<NamespaceName>,
     #[serde(default)]
