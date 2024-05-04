@@ -15,6 +15,7 @@ use tracing_subscriber::prelude::*;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::Layer;
 
+use libsql_server::auth::user_auth_strategies::jwt::DecodingKeyContainer;
 use libsql_server::config::{
     AdminApiConfig, BottomlessConfig, DbConfig, HeartbeatConfig, MetaStoreConfig, RpcClientConfig,
     RpcServerConfig, TlsConfig, UserApiConfig,
@@ -61,8 +62,11 @@ struct Cli {
     /// APIs. The key is either a PKCS#8-encoded Ed25519 public key in PEM, or just plain bytes of
     /// the Ed25519 public key in URL-safe base64.
     ///
+    /// It is possible to provide multiple JWT decoding keys in a single file by concatenating them
+    /// together. All decoding keys will be tried when parsing incoming JWT's.
+    ///
     /// You can also pass the key directly in the env variable SQLD_AUTH_JWT_KEY.
-    #[clap(long, env = "SQLD_AUTH_JWT_KEY_FILE")]
+    #[clap(long, env = "SQLD_AUTH_JWT_KEY_FILE", num_args = 1..)]
     auth_jwt_key_file: Option<PathBuf>,
     /// Specifies legacy HTTP basic authentication. The argument must be in format "basic:$PARAM",
     /// where $PARAM is base64-encoded string "$USERNAME:$PASSWORD".
@@ -380,7 +384,7 @@ async fn make_user_auth_strategy(config: &Cli) -> anyhow::Result<Auth> {
     };
 
     if let Some(jwt_key) = auth_jwt_key.as_deref() {
-        let jwt_key: jsonwebtoken::DecodingKey =
+        let jwt_key: DecodingKeyContainer =
             parse_jwt_key(jwt_key).context("Could not parse JWT decoding key")?;
         tracing::info!("Using JWT-based authentication");
         return Ok(Auth::new(user_auth_strategies::Jwt::new(jwt_key)));

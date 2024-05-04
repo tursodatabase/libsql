@@ -1,3 +1,4 @@
+use crate::auth::user_auth_strategies::jwt::DecodingKeyContainer;
 use crate::auth::{constants::GRPC_AUTH_HEADER, AuthError};
 
 use anyhow::{bail, Context as _, Result};
@@ -22,16 +23,27 @@ pub fn parse_http_basic_auth_arg(arg: &str) -> Result<Option<String>> {
     }
 }
 
-pub fn parse_jwt_key(data: &str) -> Result<jsonwebtoken::DecodingKey> {
-    if data.starts_with("-----BEGIN PUBLIC KEY-----") {
-        jsonwebtoken::DecodingKey::from_ed_pem(data.as_bytes())
-            .context("Could not decode Ed25519 public key from PEM")
-    } else if data.starts_with("-----BEGIN PRIVATE KEY-----") {
-        bail!("Received a private key, but a public key is expected")
-    } else if data.starts_with("-----BEGIN") {
-        bail!("Key is in unsupported PEM format")
+pub fn parse_jwt_key(data: &str) -> Result<DecodingKeyContainer> {
+    if data.starts_with("-----BEGIN") {
+        let pems = pem::parse_many(data).context("Could not parse many certificates from PEM")?;
+
+        let keys: Result<Vec<_>, _> = pems
+            .iter()
+            .map(|pem| match pem.tag() {
+                "PUBLIC KEY" => jsonwebtoken::DecodingKey::from_ed_pem(pem.to_string().as_bytes())
+                    .context("Could not decode Ed25519 public key from PEM"),
+                "PRIVATE KEY" => bail!("Received a private key, but a public key is expected"),
+                _ => bail!("Key is in unsupported PEM format"),
+            })
+            .collect();
+
+        keys.map(|keys| match keys.len() {
+            1 => DecodingKeyContainer::Single(keys[0].clone()),
+            _ => DecodingKeyContainer::Multiple(keys),
+        })
     } else {
         jsonwebtoken::DecodingKey::from_ed_components(data)
+            .map(|v| DecodingKeyContainer::Single(v)) // Only supports a single key
             .map_err(|e| anyhow::anyhow!("Could not decode Ed25519 public key from base64: {e}"))
     }
 }
@@ -72,7 +84,8 @@ mod tests {
     use axum::http::HeaderValue;
     use hyper::header::AUTHORIZATION;
 
-    use crate::auth::user_auth_strategies::jwt::Token;
+    use crate::auth::authorized::Scopes;
+    use crate::auth::user_auth_strategies::jwt::{DecodingKeyContainer, Token};
     use crate::auth::{parse_http_auth_header, parse_jwt_key, AuthError};
 
     use super::{parse_grpc_auth_header, parse_http_basic_auth_arg};
@@ -165,15 +178,20 @@ mod tests {
     const EXAMPLE_JWT_PUBLIC_KEY: &str = include_str!("../../assets/test/auth/example1.pem");
     const EXAMPLE_JWT_PRIVATE_KEY: &str = include_str!("../../assets/test/auth/example1.key");
     const EXAMPLE_JWT: &str = include_str!("../../assets/test/auth/example1.jwt");
+    const EXAMPLE3_JWT: &str = include_str!("../../assets/test/auth/example3.jwt");
+    const MULTI_JWT_PUBLIC_KEY: &str = include_str!("../../assets/test/auth/combined123.pem");
 
     #[test]
     fn parse_jwt_key_single_pem() {
         let key = parse_jwt_key(EXAMPLE_JWT_PUBLIC_KEY);
-        assert!(key.is_ok());
+        assert!(matches!(key, Ok(DecodingKeyContainer::Single(_))));
 
+        let DecodingKeyContainer::Single(key) = key.unwrap() else {
+            panic!("Assertion should have already failed");
+        };
         let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::EdDSA);
         validation.required_spec_claims.remove("exp");
-        let decoded = jsonwebtoken::decode::<Token>(&EXAMPLE_JWT, &key.unwrap(), &validation);
+        let decoded = jsonwebtoken::decode::<Token>(&EXAMPLE_JWT, &key, &validation);
 
         assert!(matches!(
             decoded,
@@ -186,8 +204,83 @@ mod tests {
         let jsonwebtoken::TokenData { header, claims } = decoded.unwrap();
         assert_eq!(header.alg, jsonwebtoken::Algorithm::EdDSA);
 
-        let claims = format!("{:?}", claims);
-        assert_eq!(claims, "Token { id: None, a: None, p: Some(Authorized { read_only: Some(Scopes { namespaces: Some({example1c, example1a, example1b}), tags: None }), read_write: None, read_only_attach: None, read_write_attach: None, ddl_override: None }), exp: Some(+33713-01-29T21:47:33Z) }");
+        assert!(claims.p.is_some());
+        let Some(authorized) = claims.p else {
+            panic!("Assertion should have already failed");
+        };
+
+        let scopes: Scopes =
+            serde_json::from_str(r##"{"ns":["example1a","example1b","example1c"]}"##)
+                .expect("JSON failed to parse");
+        assert_eq!(authorized.read_only, Some(scopes));
+    }
+
+    #[test]
+    fn parse_jwt_key_multiple_pems() {
+        let key = parse_jwt_key(MULTI_JWT_PUBLIC_KEY);
+        assert!(matches!(key, Ok(DecodingKeyContainer::Multiple(_))));
+
+        let DecodingKeyContainer::Multiple(keys) = key.unwrap() else {
+            panic!("Assertion should have already failed");
+        };
+        let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::EdDSA);
+        validation.required_spec_claims.remove("exp");
+        let decoded = jsonwebtoken::decode::<Token>(&EXAMPLE_JWT, &keys[0], &validation);
+
+        assert!(matches!(
+            decoded,
+            Ok(jsonwebtoken::TokenData {
+                header: _,
+                claims: _
+            })
+        ));
+
+        let jsonwebtoken::TokenData { header, claims } = decoded.unwrap();
+        assert_eq!(header.alg, jsonwebtoken::Algorithm::EdDSA);
+
+        assert!(claims.p.is_some());
+        let Some(authorized) = claims.p else {
+            panic!("Assertion should have already failed");
+        };
+
+        let scopes: Scopes =
+            serde_json::from_str(r##"{"ns":["example1a","example1b","example1c"]}"##)
+                .expect("JSON failed to parse");
+        assert_eq!(authorized.read_only, Some(scopes));
+
+        let decoded = jsonwebtoken::decode::<Token>(&EXAMPLE3_JWT, &keys[2], &validation);
+
+        assert!(matches!(
+            decoded,
+            Ok(jsonwebtoken::TokenData {
+                header: _,
+                claims: _
+            })
+        ));
+
+        let jsonwebtoken::TokenData { header, claims } = decoded.unwrap();
+        assert_eq!(header.alg, jsonwebtoken::Algorithm::EdDSA);
+
+        assert!(claims.p.is_some());
+        let Some(authorized) = claims.p else {
+            panic!("Assertion should have already failed");
+        };
+
+        let scopes: Scopes = serde_json::from_str(r##"{"ns":["example3e","example3f"]}"##)
+            .expect("JSON failed to parse");
+        assert_eq!(authorized.read_only, Some(scopes));
+    }
+
+    #[test]
+    fn parse_jwt_key_fail_when_multiple_contains_private_key() {
+        let key = parse_jwt_key(
+            format!("{}\n{}", MULTI_JWT_PUBLIC_KEY, EXAMPLE_JWT_PRIVATE_KEY).as_str(),
+        );
+        assert!(key.is_err());
+        assert_eq!(
+            key.err().unwrap().to_string(),
+            "Received a private key, but a public key is expected"
+        );
     }
 
     #[test]
@@ -209,7 +302,7 @@ mod tests {
         assert!(key.is_err());
         assert_eq!(
             key.err().unwrap().to_string(),
-            "Key is in unsupported PEM format"
+            "Could not parse many certificates from PEM"
         );
     }
 }

@@ -7,8 +7,13 @@ use crate::{
 
 use super::{UserAuthContext, UserAuthStrategy};
 
+pub enum DecodingKeyContainer {
+    Single(jsonwebtoken::DecodingKey),
+    Multiple(Vec<jsonwebtoken::DecodingKey>),
+}
+
 pub struct Jwt {
-    key: jsonwebtoken::DecodingKey,
+    key: DecodingKeyContainer,
 }
 
 impl UserAuthStrategy for Jwt {
@@ -32,13 +37,16 @@ impl UserAuthStrategy for Jwt {
             return Err(AuthError::HttpAuthHeaderUnsupportedScheme);
         }
 
-        return validate_jwt(&self.key, &token);
+        match &self.key {
+            DecodingKeyContainer::Single(key) => validate_jwt(&key, &token),
+            DecodingKeyContainer::Multiple(keys) => validate_any_jwt(&keys, &token),
+        }
     }
 }
 
 impl Jwt {
-    pub fn new(key: jsonwebtoken::DecodingKey) -> Self {
-        Self { key }
+    pub fn new(key: DecodingKeyContainer) -> Self {
+        Self { key: key }
     }
 }
 
@@ -49,7 +57,7 @@ pub(crate) struct Token {
     #[serde(default)]
     a: Option<Permission>,
     #[serde(default)]
-    p: Option<Authorized>,
+    pub(crate) p: Option<Authorized>,
     #[serde(with = "jwt_time", default)]
     exp: Option<DateTime<Utc>>,
 }
@@ -78,6 +86,20 @@ mod jwt_time {
             })
             .transpose()
     }
+}
+
+fn validate_any_jwt(
+    jwt_keys: &Vec<jsonwebtoken::DecodingKey>,
+    jwt: &str,
+) -> Result<Authenticated, AuthError> {
+    for (index, jwt_key) in jwt_keys.iter().enumerate() {
+        let result = validate_jwt(&jwt_key, jwt);
+        if result.is_ok() || index == jwt_keys.len() - 1 {
+            return result;
+        }
+    }
+
+    Err(AuthError::Other)
 }
 
 fn validate_jwt(
@@ -127,7 +149,11 @@ mod tests {
     use super::*;
 
     fn strategy(dec: jsonwebtoken::DecodingKey) -> Jwt {
-        Jwt::new(dec)
+        Jwt::new(DecodingKeyContainer::Single(dec))
+    }
+
+    fn strategy_with_multiple(multi_dec: Vec<jsonwebtoken::DecodingKey>) -> Jwt {
+        Jwt::new(DecodingKeyContainer::Multiple(multi_dec))
     }
 
     fn key_pair() -> (jsonwebtoken::EncodingKey, jsonwebtoken::DecodingKey) {
@@ -136,6 +162,23 @@ mod tests {
         let pair = Ed25519KeyPair::from_pkcs8(doc.as_ref()).unwrap();
         let decoding_key = DecodingKey::from_ed_der(pair.public_key().as_ref());
         (encoding_key, decoding_key)
+    }
+
+    fn key_pairs(
+        size: usize,
+    ) -> (
+        Vec<jsonwebtoken::EncodingKey>,
+        Vec<jsonwebtoken::DecodingKey>,
+    ) {
+        let mut multi_enc = Vec::new();
+        let mut multi_dec = Vec::new();
+
+        for _ in 0..size {
+            let (enc, dec) = key_pair();
+            multi_enc.push(enc);
+            multi_dec.push(dec);
+        }
+        (multi_enc, multi_dec)
     }
 
     fn encode<T: Serialize>(claims: &T, key: &EncodingKey) -> String {
@@ -254,5 +297,97 @@ mod tests {
             )
         );
         assert!(perms.next().is_none());
+    }
+
+    #[test]
+    fn multi_keys() {
+        let (multi_enc, multi_dec) = key_pairs(3);
+        let token = serde_json::json!({
+            "p": {
+                "rw": { "ns": ["foo"] },
+            },
+        });
+
+        let strategy = strategy_with_multiple(multi_dec);
+        for enc in multi_enc.iter() {
+            let token = encode(&token, &enc);
+
+            let context = Ok(UserAuthContext::bearer(token.as_str()));
+
+            let Authenticated::Authorized(a) = strategy.authenticate(context).unwrap() else {
+                panic!()
+            };
+
+            assert_eq!(
+                a.perms_iter().next().unwrap(),
+                (
+                    Scope::Namespace(NamespaceName::from_string("foo".into()).unwrap()),
+                    Permission::Write
+                )
+            );
+        }
+    }
+
+    #[test]
+    fn multi_keys_but_all_fail() {
+        let (_, multi_dec) = key_pairs(3);
+        let (enc, _) = key_pair();
+        let token = serde_json::json!({
+            "p": {
+                "rw": { "ns": ["foo"] },
+            },
+        });
+        let token = encode(&token, &enc);
+
+        let context = Ok(UserAuthContext::bearer(token.as_str()));
+
+        assert_eq!(
+            strategy_with_multiple(multi_dec)
+                .authenticate(context)
+                .unwrap_err(),
+            AuthError::JwtInvalid
+        );
+    }
+
+    #[test]
+    fn multi_keys_but_first_expired() {
+        let (multi_enc, multi_dec) = key_pairs(3);
+        let token = Token {
+            id: None,
+            a: None,
+            p: None,
+            exp: Some(Utc::now() - Duration::from_secs(5 * 60)),
+        };
+        let token = encode(&token, &multi_enc[0]);
+
+        let context = Ok(UserAuthContext::bearer(token.as_str()));
+
+        assert_eq!(
+            strategy_with_multiple(multi_dec)
+                .authenticate(context)
+                .unwrap_err(),
+            AuthError::JwtInvalid
+        );
+    }
+
+    #[test]
+    fn multi_keys_but_last_expired() {
+        let (multi_enc, multi_dec) = key_pairs(3);
+        let token = Token {
+            id: None,
+            a: None,
+            p: None,
+            exp: Some(Utc::now() - Duration::from_secs(5 * 60)),
+        };
+        let token = encode(&token, &multi_enc[2]);
+
+        let context = Ok(UserAuthContext::bearer(token.as_str()));
+
+        assert_eq!(
+            strategy_with_multiple(multi_dec)
+                .authenticate(context)
+                .unwrap_err(),
+            AuthError::JwtExpired
+        );
     }
 }

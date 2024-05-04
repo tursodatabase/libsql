@@ -46,6 +46,7 @@ moka = { version = "0.12.1", features = ["future", "sync"] }
 nix = { version = "0.26.2", features = ["fs"] }
 once_cell = "1.17.0"
 parking_lot = "0.12.1"
+pem = "3.0.4"
 pin-project-lite = "0.2.13"
 priority-queue = "1.3"
 prost = "0.12"
