@@ -72,6 +72,13 @@ impl Writer {
             })
             .collect();
 
+        self.execute_steps(steps).await
+    }
+
+    pub(crate) async fn execute_steps(
+        &self,
+        steps: Vec<Step>,
+    ) -> anyhow::Result<ExecuteResults> {
         self.client
             .execute_program(ProgramReq {
                 client_id: self.client.client_id(),
