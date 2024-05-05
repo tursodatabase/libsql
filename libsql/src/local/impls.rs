@@ -26,6 +26,10 @@ impl Conn for LibsqlConnection {
         self.conn.execute_batch(sql)
     }
 
+    async fn execute_transactional_batch(&self, sql: &str) -> Result<()> {
+        self.conn.execute_transactional_batch(sql)
+    }
+
     async fn prepare(&self, sql: &str) -> Result<Statement> {
         let sql = sql.to_string();
 
