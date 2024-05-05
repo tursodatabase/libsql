@@ -278,8 +278,7 @@ impl<W: Wal> Connection<W> {
 
         #[cfg(not(feature = "rusqlite"))]
         let conn = unsafe {
-            use std::os::unix::ffi::OsStrExt;
-            let path = std::ffi::CString::new(path.as_ref().as_os_str().as_bytes())
+            let path = std::ffi::CString::new(path.as_ref().as_os_str().as_encoded_bytes())
                 .map_err(|_| crate::error::Error::Bug("invalid database path"))?;
             let mut conn: *mut crate::ffi::sqlite3 = std::ptr::null_mut();
             // We pass a pointer to the WAL methods data to the database connection. This means
