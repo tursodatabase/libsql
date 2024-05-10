@@ -40,6 +40,8 @@ To get started with the libSQL API:
 * [Python](https://github.com/libsql/libsql-experimental-python) (experimental)
 * [Go](https://github.com/libsql/go-libsql)
 * [C](bindings/c) (experimental)
+* [PHP](https://github.com/darkterminal/libsql-client-php)
+
 
 To build the SQLite-compatible C library and tools, run:
 
