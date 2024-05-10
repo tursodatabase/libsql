@@ -119,6 +119,7 @@ pub async fn metastore_connection_maker(
                 aws_endpoint: Some(config.bucket_endpoint),
                 access_key_id: Some(config.access_key_id),
                 secret_access_key: Some(config.secret_access_key),
+                session_token: config.session_token,
                 region: Some(config.region),
                 db_id: Some(config.backup_id),
                 bucket_name: config.bucket_name,
