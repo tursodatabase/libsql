@@ -40,6 +40,8 @@ To get started with the libSQL API:
 * [Python](https://github.com/libsql/libsql-experimental-python) (experimental)
 * [Go](https://github.com/libsql/go-libsql)
 * [C](bindings/c) (experimental)
+
+Community Drivers:
 * [PHP](https://github.com/darkterminal/libsql-client-php)
 
 
