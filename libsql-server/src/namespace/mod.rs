@@ -440,6 +440,7 @@ impl Namespace {
             join_set.spawn(run_periodic_checkpoint(
                 connection_maker.clone(),
                 checkpoint_interval,
+                name.clone(),
             ));
         }
 
