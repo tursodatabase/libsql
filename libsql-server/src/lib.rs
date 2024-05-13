@@ -191,9 +191,11 @@ where
     }
 }
 
+#[tracing::instrument(skip(connection_maker))]
 async fn run_periodic_checkpoint<C>(
     connection_maker: Arc<C>,
     period: Duration,
+    namespace_name: NamespaceName,
 ) -> anyhow::Result<()>
 where
     C: MakeConnection,
