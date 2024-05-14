@@ -369,6 +369,15 @@ fn try_process(
         )?;
     }
 
+    if let Err(e) = checkpoint(&inner.conn) {
+        tracing::warn!("failed to checkpoint metastore: {e}");
+    }
+
+    Ok(())
+}
+
+fn checkpoint(conn: &rusqlite::Connection) -> Result<()> {
+    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)", ())?;
     Ok(())
 }
 
