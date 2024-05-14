@@ -46,7 +46,7 @@ rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = 
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
 cargo-dist-version = "0.14.1"
 # CI backends to support
-ci = ["github"]
+ci = "github"
 # The installers to generate for each app
 installers = ["shell", "homebrew"]
 # A GitHub repo to push Homebrew formulas to
