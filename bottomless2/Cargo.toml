@@ -1,0 +1,16 @@
+[package]
+name = "bottomless2"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aws-sdk-s3 = "1.28.0"
+parking_lot = "0.12.2"
+thiserror = "1.0.60"
+tokio = { version = "1.37.0", features = ["full"] }
+tokio-stream = "0.1.15"
+libsql-wal = { path = "../libsql-wal/" }
+chrono = "0.4.38"
+tracing = "0.1.40"
