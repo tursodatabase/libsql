@@ -127,6 +127,10 @@ where
             "/v1/namespaces/:namespace/create",
             post(handle_create_namespace),
         )
+        .route(
+            "/v1/namespaces/:namespace/checkpoint",
+            post(handle_checkpoint),
+        )
         .route("/v1/namespaces/:namespace", delete(handle_delete_namespace))
         .route("/v1/namespaces/:namespace/stats", get(stats::handle_stats))
         .route(
@@ -427,5 +431,13 @@ async fn handle_delete_namespace<C>(
         .namespaces
         .destroy(NamespaceName::from_string(namespace)?, prune_all)
         .await?;
+    Ok(())
+}
+
+async fn handle_checkpoint<C>(
+    State(app_state): State<Arc<AppState<C>>>,
+    Path(namespace): Path<NamespaceName>,
+) -> crate::Result<()> {
+    app_state.namespaces.checkpoint(namespace).await?;
     Ok(())
 }
