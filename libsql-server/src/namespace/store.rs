@@ -131,6 +131,19 @@ impl NamespaceStore {
         Ok(())
     }
 
+    pub async fn checkpoint(&self, namespace: NamespaceName) -> crate::Result<()> {
+        let entry = self
+            .inner
+            .store
+            .get_with(namespace.clone(), async { Default::default() })
+            .await;
+        let lock = entry.read().await;
+        if let Some(ns) = &*lock {
+            ns.checkpoint().await?;
+        }
+        Ok(())
+    }
+
     pub async fn reset(
         &self,
         namespace: NamespaceName,
