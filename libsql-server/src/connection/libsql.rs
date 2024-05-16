@@ -551,7 +551,18 @@ impl<W: Wal> Connection<W> {
     fn checkpoint(&self) -> Result<()> {
         let start = Instant::now();
         self.conn
-            .query_row("PRAGMA wal_checkpoint(TRUNCATE)", (), |_| Ok(()))?;
+            .query_row("PRAGMA wal_checkpoint(TRUNCATE)", (), |row| {
+                let status: i32 = row.get(0)?;
+                let wal_frames: i32 = row.get(1)?;
+                let moved_frames: i32 = row.get(2)?;
+                tracing::info!(
+                    "WAL checkpoint successful, status: {}, WAL frames: {}, moved frames: {}",
+                    status,
+                    wal_frames,
+                    moved_frames
+                );
+                Ok(())
+            })?;
         WAL_CHECKPOINT_COUNT.increment(1);
         histogram!("libsql_server_wal_checkpoint_time", start.elapsed());
         Ok(())
