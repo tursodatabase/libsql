@@ -477,6 +477,30 @@ impl Replicator {
         self.use_compression
     }
 
+    pub async fn is_snapshotted(&mut self) -> Result<bool> {
+        if let Ok(generation) = self.generation() {
+            if !self.main_db_exists_and_not_empty().await {
+                tracing::debug!("Not snapshotting, the main db file does not exist or is empty");
+                let _ = self.snapshot_notifier.send(Ok(Some(generation)));
+                return Ok(false);
+            }
+            tracing::debug!("waiting for generation snapshot {} to complete", generation);
+            let current = self.snapshot_waiter.borrow();
+            let snapshotted = match &*current {
+                Ok(Some(gen)) => *gen == generation,
+                Ok(None) => false,
+                Err(_) => false,
+            };
+
+            Ok(snapshotted)
+        } else {
+            Ok(false)
+        }
+    }
+
+    /// FIXME: I'm pretty sure that this function is buggy. First of all we don't check the output
+    /// of that function in the wal, second of all, we assume that an error means that we have
+    /// snapshotted. This whole stuff is a mess.
     pub async fn wait_until_snapshotted(&mut self) -> Result<bool> {
         if let Ok(generation) = self.generation() {
             if !self.main_db_exists_and_not_empty().await {
