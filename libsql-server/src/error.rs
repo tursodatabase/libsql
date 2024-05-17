@@ -6,6 +6,7 @@ use crate::{
     auth::AuthError,
     namespace::{ForkError, NamespaceName},
     query_result_builder::QueryResultBuilderError,
+    schema,
 };
 
 #[allow(clippy::enum_variant_names)]
@@ -158,7 +159,10 @@ impl IntoResponse for &Error {
         match self {
             FailedToParse(_) => self.format_err(StatusCode::BAD_REQUEST),
             AuthError(_) => self.format_err(StatusCode::UNAUTHORIZED),
-            Anyhow(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            Anyhow(e) => match e.downcast_ref::<schema::Error>() {
+                Some(e) => e.into_response(),
+                None => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            },
             LibSqlInvalidQueryParams(_) => self.format_err(StatusCode::BAD_REQUEST),
             LibSqlTxTimeout => self.format_err(StatusCode::BAD_REQUEST),
             LibSqlTxBusy => self.format_err(StatusCode::TOO_MANY_REQUESTS),
