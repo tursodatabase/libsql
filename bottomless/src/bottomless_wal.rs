@@ -137,9 +137,9 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
                     replicator.skip_snapshot_for_current_generation();
                     return Err(Error::new(SQLITE_BUSY));
                 }
-                
+
                 let fut = tokio::time::timeout(std::time::Duration::from_secs(1), replicator.wait_until_committed(last_known_frame));
-                
+
                 match runtime.block_on(fut) {
                     Ok(Ok(_)) => (),
                     Ok(Err(e)) => {
