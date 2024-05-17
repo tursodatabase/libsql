@@ -14,3 +14,4 @@ tokio-stream = "0.1.15"
 libsql-wal = { path = "../libsql-wal/" }
 chrono = "0.4.38"
 tracing = "0.1.40"
+priority-queue = "2.0.2"

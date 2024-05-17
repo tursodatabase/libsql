@@ -1,14 +1,23 @@
+use std::sync::Arc;
+
 use crate::storage::Storage;
 use crate::Result;
-use crate::{NamespaceName, StoreSegmentRequest};
+use crate::StoreSegmentRequest;
+
+/// A request, with an id
+#[derive(Debug)]
+pub(crate) struct IndexedRequest<C> {
+    pub(crate) request: StoreSegmentRequest<C>,
+    pub(crate) id: u64,
+}
 
 /// A storage Job to be performed
+#[derive(Debug)]
 pub(crate) struct Job<S: Storage> {
-    storage: S,
-    namespace: NamespaceName,
+    pub(crate) storage: Arc<S>,
     /// Segment to store.
-    /// TODO: implement request batching (merge segment and send).
-    request: StoreSegmentRequest<S::Config>,
+    // TODO: implement request batching (merge segment and send).
+    pub(crate) request: IndexedRequest<S::Config>,
 }
 
 impl<S: Storage> Job<S> {
@@ -25,7 +34,7 @@ impl<S: Storage> Job<S> {
 
 pub(crate) struct JobResult<S: Storage> {
     /// The job that was performed
-    job: Job<S>,
+    pub(crate) job: Job<S>,
     /// The outcome of the job: the new durable index, or an error.
-    result: Result<u64>,
+    pub(crate) result: Result<u64>,
 }
