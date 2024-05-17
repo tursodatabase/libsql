@@ -137,22 +137,34 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
                     replicator.skip_snapshot_for_current_generation();
                     return Err(Error::new(SQLITE_BUSY));
                 }
-                if let Err(e) = runtime.block_on(replicator.wait_until_committed(last_known_frame))
-                {
-                    tracing::error!(
-                        "Failed to wait for S3 replicator to confirm {} frames backup: {}",
-                        last_known_frame,
-                        e
-                    );
-                    return Err(Error::new(SQLITE_IOERR_WRITE));
+
+                let fut = tokio::time::timeout(
+                    std::time::Duration::from_secs(1),
+                    replicator.wait_until_committed(last_known_frame),
+                );
+
+                match runtime.block_on(fut) {
+                    Ok(Ok(_)) => (),
+                    Ok(Err(e)) => {
+                        tracing::error!(
+                            "Failed to wait for S3 replicator to confirm {} frames backup: {}",
+                            last_known_frame,
+                            e
+                        );
+                        return Err(Error::new(SQLITE_IOERR_WRITE));
+                    }
+                    Err(_) => {
+                        tracing::error!(
+                            "timed out waiting for S3 replicator to confirm committed frames."
+                        );
+                        return Err(Error::new(SQLITE_BUSY));
+                    }
                 }
                 tracing::debug!("commited after {:?}", before.elapsed());
-                if let Err(e) = runtime.block_on(replicator.wait_until_snapshotted()) {
-                    tracing::error!(
-                        "Failed to wait for S3 replicator to confirm database snapshot backup: {}",
-                        e
-                    );
-                    return Err(Error::new(SQLITE_IOERR_WRITE));
+                let snapshotted = runtime.block_on(replicator.is_snapshotted());
+                if !snapshotted {
+                    tracing::warn!("previous generation not snapshotted, skipping checkpoint");
+                    return Err(Error::new(SQLITE_BUSY));
                 }
                 tracing::debug!("snapshotted after {:?}", before.elapsed());
 
