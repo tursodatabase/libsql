@@ -138,7 +138,10 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
                     return Err(Error::new(SQLITE_BUSY));
                 }
 
-                let fut = tokio::time::timeout(std::time::Duration::from_secs(1), replicator.wait_until_committed(last_known_frame));
+                let fut = tokio::time::timeout(
+                    std::time::Duration::from_secs(1),
+                    replicator.wait_until_committed(last_known_frame),
+                );
 
                 match runtime.block_on(fut) {
                     Ok(Ok(_)) => (),
@@ -151,27 +154,17 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
                         return Err(Error::new(SQLITE_IOERR_WRITE));
                     }
                     Err(_) => {
-                        tracing::error!("timed out waiting for S3 replicator to confirm committed frames.");
+                        tracing::error!(
+                            "timed out waiting for S3 replicator to confirm committed frames."
+                        );
                         return Err(Error::new(SQLITE_BUSY));
-
                     }
                 }
                 tracing::debug!("commited after {:?}", before.elapsed());
                 let snapshotted = runtime.block_on(replicator.is_snapshotted());
-                match snapshotted {
-                    Ok(true) => (),
-                    Ok(false) => {
-                        tracing::warn!("previous generation not snapshotted, skipping checkpoint");
-                        return Err(Error::new(SQLITE_BUSY));
-                    }
-                    Err(e) => {
-
-                        tracing::error!(
-                            "Failed to wait for S3 replicator to confirm database snapshot backup: {}",
-                            e
-                        );
-                        return Err(Error::new(SQLITE_IOERR_WRITE));
-                    },
+                if !snapshotted {
+                    tracing::warn!("previous generation not snapshotted, skipping checkpoint");
+                    return Err(Error::new(SQLITE_BUSY));
                 }
                 tracing::debug!("snapshotted after {:?}", before.elapsed());
 

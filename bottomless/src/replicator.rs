@@ -477,24 +477,21 @@ impl Replicator {
         self.use_compression
     }
 
-    pub async fn is_snapshotted(&mut self) -> Result<bool> {
+    pub async fn is_snapshotted(&mut self) -> bool {
         if let Ok(generation) = self.generation() {
             if !self.main_db_exists_and_not_empty().await {
                 tracing::debug!("Not snapshotting, the main db file does not exist or is empty");
                 let _ = self.snapshot_notifier.send(Ok(Some(generation)));
-                return Ok(false);
+                return false;
             }
             tracing::debug!("waiting for generation snapshot {} to complete", generation);
             let current = self.snapshot_waiter.borrow();
-            let snapshotted = match &*current {
+            match &*current {
                 Ok(Some(gen)) => *gen == generation,
-                Ok(None) => false,
-                Err(_) => false,
-            };
-
-            Ok(snapshotted)
+                _ => false,
+            }
         } else {
-            Ok(false)
+            false
         }
     }
 
