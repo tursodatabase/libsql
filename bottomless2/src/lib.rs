@@ -71,7 +71,7 @@ impl<S: Storage + 'static> BottomlessLoop<S> {
                         Err(e) => {
                             // job panicked. report and exit process. The program is crippled, from
                             // now on, so we just exit, and hope to restart on a fresh state.
-                            tracing::error!("fatal error: bottomless job panicked: {e}");
+                            tracing::error!("fatal error: bottomles job panicked: {e}");
                             std::process::exit(1);
                         }
                     }
