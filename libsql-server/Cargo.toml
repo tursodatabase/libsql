@@ -1,6 +1,6 @@
 [package]
 name = "libsql-server"
-version = "0.24.8"
+version = "0.24.9"
 edition = "2021"
 default-run = "sqld"
 
