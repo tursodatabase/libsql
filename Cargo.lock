@@ -1315,6 +1315,7 @@ dependencies = [
  "chrono",
  "libsql-wal",
  "parking_lot",
+ "priority-queue 2.0.2",
  "thiserror",
  "tokio",
  "tokio-stream",
@@ -3403,7 +3404,7 @@ dependencies = [
  "once_cell",
  "parking_lot",
  "pin-project-lite",
- "priority-queue",
+ "priority-queue 1.4.0",
  "proptest",
  "prost",
  "rand",
@@ -4283,6 +4284,17 @@ checksum = "a0bda9164fe05bc9225752d54aae413343c36f684380005398a6a8fde95fe785"
 dependencies = [
  "autocfg",
  "indexmap 1.9.3",
+]
+
+[[package]]
+name = "priority-queue"
+version = "2.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "509354d8a769e8d0b567d6821b84495c60213162761a732d68ce87c964bd347f"
+dependencies = [
+ "autocfg",
+ "equivalent",
+ "indexmap 2.2.6",
 ]
 
 [[package]]

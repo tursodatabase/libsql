@@ -1,5 +1,6 @@
 #![allow(dead_code, unused_variables, async_fn_in_trait)]
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Duration;
 
 use chrono::{DateTime, Utc};
@@ -65,7 +66,7 @@ impl<S: Storage + 'static> BottomlessLoop<S> {
                             if shutting_down {
                                 tracing::info!("processed job, {} jobs remaining", self.in_flight_futs.len());
                             }
-                            self.scheduler.report(job_result);
+                            self.scheduler.report(job_result).await;
                         }
                         Err(e) => {
                             // job panicked. report and exit process. The program is crippled, from
@@ -118,7 +119,10 @@ pub struct Bottomless<C> {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum Error {}
+pub enum Error {
+    #[error("an error occured while storing a segment: {0}")]
+    Store(String),
+}
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
@@ -164,8 +168,10 @@ impl<C> Bottomless<C> {
 }
 
 // TODO: comes from libsql-server, when everything comes together
-pub struct NamespaceName;
+#[derive(Hash, PartialEq, Eq, Clone, Debug)]
+pub struct NamespaceName(Arc<str>);
 
+#[derive(Debug)]
 pub struct StoreSegmentRequest<C> {
     namespace: NamespaceName,
     start_frame_no: u64,
