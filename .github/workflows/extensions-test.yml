@@ -20,7 +20,7 @@ jobs:
     name: CR SQLite C Tests
 
     steps:
-      - uses: hecrj/setup-rust-action@v1
+      - uses: hecrj/setup-rust-action@v2
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: build libsql
@@ -44,7 +44,7 @@ jobs:
     name: CR SQLite Rust Tests
 
     steps:
-      - uses: hecrj/setup-rust-action@v1
+      - uses: hecrj/setup-rust-action@v2
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: build libsql
@@ -61,7 +61,7 @@ jobs:
     name: Extensions Tests
 
     steps:
-      - uses: hecrj/setup-rust-action@v1
+      - uses: hecrj/setup-rust-action@v2
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: build libsql and ffi bindings
