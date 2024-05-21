@@ -4,6 +4,7 @@ use std::path::Path;
 use anyhow::Context;
 use semver::Version as SemVer;
 
+#[allow(dead_code)]
 enum Version {
     Pre0_18,
     Named(SemVer),

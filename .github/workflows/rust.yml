@@ -21,7 +21,7 @@ jobs:
     env:
       RUSTFLAGS: -D warnings
     steps:
-      - uses: hecrj/setup-rust-action@v1
+      - uses: hecrj/setup-rust-action@v2
 
       - name: Checkout
         uses: actions/checkout@v3
@@ -86,7 +86,7 @@ jobs:
     env:
       RUSTFLAGS: -D warnings
     steps:
-    - uses: hecrj/setup-rust-action@v1
+    - uses: hecrj/setup-rust-action@v2
 
     # needed because we run out of disk space during tests
     - name: Free Disk Space (Ubuntu)
@@ -138,7 +138,7 @@ jobs:
     runs-on: windows-latest
     name: Windows checks
     steps:
-      - uses: hecrj/setup-rust-action@v1
+      - uses: hecrj/setup-rust-action@v2
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -164,7 +164,7 @@ jobs:
   #   env:
   #     RUSTFLAGS: -D warnings
   #   steps:
-  #     - uses: hecrj/setup-rust-action@v1
+  #     - uses: hecrj/setup-rust-action@v2
   #       with:
   #         targets: [wasm32-unknown-unknown]
 
