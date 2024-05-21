@@ -78,6 +78,7 @@ impl TryFrom<query::Value> for serde_json::Value {
 
 /// Encodes a query response rows into json
 #[derive(Debug, Serialize)]
+#[allow(dead_code)]
 struct RowsResponse {
     columns: Vec<String>,
     rows: Vec<Vec<serde_json::Value>>,
