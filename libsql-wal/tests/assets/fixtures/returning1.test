@@ -1,0 +1,225 @@
+
+  CREATE TABLE t1(a INTEGER PRIMARY KEY,b,c DEFAULT 'pax');
+  INSERT INTO t1(b) VALUES(10),('happy'),(NULL) RETURNING a,b,c;
+
+
+  SELECT * FROM t1;
+
+
+  INSERT INTO t1(b,c) VALUES(5,99) RETURNING b,c,a,rowid;
+
+
+  SELECT * FROM t1;
+
+
+  INSERT INTO t1 DEFAULT VALUES RETURNING *;
+
+
+  SELECT * FROM t1;
+
+
+  CREATE TABLE t2(x,y,z);
+  INSERT INTO t2 VALUES(11,12,13),(21,'b','c'),(31,'b-value',4.75);
+
+
+  INSERT INTO t1 SELECT * FROM t2 RETURNING *;
+
+
+  SELECT *, '|' FROM t1;
+
+
+  UPDATE t1 SET c='bellum' WHERE c='pax' RETURNING rowid, b, '|';
+
+
+  SELECT *, '|' FROM t1;
+
+
+  DELETE FROM t1 WHERE c='bellum' RETURNING rowid, *, '|';
+
+
+  SELECT *, '|' FROM t1;
+
+
+  CREATE TABLE t4(a INT, b INT DEFAULT 1234, c INT DEFAULT -16);
+  CREATE UNIQUE INDEX t4a ON t4(a);
+  INSERT INTO t4(a,b,c) VALUES(1,2,3);
+
+
+  INSERT INTO t4(a,b,c) VALUES(1,22,33)
+  ON CONFLICT(a) DO UPDATE SET b=44
+  RETURNING *;
+
+
+  SELECT * FROM t4;
+
+
+  DELETE FROM t4;
+  INSERT INTO t4 VALUES(1,2,3),(4,5,6),(7,8,9);
+
+
+  INSERT INTO t4(a,b,c) VALUES(2,3,4),(4,5,6),(5,6,7)
+  ON CONFLICT(a) DO UPDATE SET b=100
+  RETURNING *, '|';
+
+
+  CREATE TABLE t1(xyz);
+  CREATE TABLE t2(a as (1+1), b);
+
+
+  UPDATE t2 SET b='123' WHERE b='abc' RETURNING (SELECT b FROM t1);
+
+
+  INSERT INTO t2(b) VALUES('abc');
+
+
+  UPDATE t2 SET b='123' WHERE b='abc' RETURNING (SELECT b FROM t1);
+
+
+  INSERT INTO t2(b) VALUES('abc');
+  INSERT INTO t1(xyz) VALUES(1);
+  UPDATE t2 SET b='123' WHERE b='abc' RETURNING b;
+
+
+  INSERT INTO t2(b) VALUES('abc');
+  UPDATE t2 SET b='123' WHERE b='abc' RETURNING (SELECT b FROM t1);
+
+
+  CREATE TABLE t1(a INT, b INT);
+  CREATE TABLE t2(x INT, y INT);
+  INSERT INTO t1(a,b) VALUES(1,2);
+  INSERT INTO t2(x,y) VALUES(1,30);
+
+
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b,c);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t2 VALUES(3,40);
+
+
+  CREATE TABLE t1_a(a, b);
+  CREATE VIEW t1 AS SELECT a, b FROM t1_a;
+
+  INSERT INTO t1_a VALUES('x', 'y');
+  INSERT INTO t1_a VALUES('x', 'y');
+  INSERT INTO t1_a VALUES('x', 'y');
+
+  CREATE TABLE log(op, r, a, b);
+
+
+  CREATE TRIGGER tr1 INSTEAD OF INSERT ON t1 BEGIN
+    INSERT INTO log VALUES('insert', new.rowid, new.a, new.b);
+  END;
+  CREATE TRIGGER tr2 INSTEAD OF UPDATE ON t1 BEGIN
+    INSERT INTO log VALUES('update', new.rowid, new.a, new.b);
+  END;
+
+
+  SELECT * FROM log;
+
+
+  CREATE TEMP TABLE t1(a,b);
+  CREATE TEMP TABLE t2(c,d);
+  CREATE TEMP TABLE t3(e,f);
+  CREATE TEMP TABLE log(op,x,y);
+  CREATE TEMP TRIGGER t1r1 AFTER INSERT ON t1 BEGIN
+     INSERT INTO log(op,x,y) VALUES('I1',new.a,new.b);
+  END;
+  CREATE TEMP TRIGGER t1r2 BEFORE DELETE ON t1 BEGIN
+     INSERT INTO log(op,x,y) VALUES('D1',old.a,old.b);
+  END;
+  CREATE TEMP TRIGGER t2r3 AFTER UPDATE ON t1 BEGIN
+     INSERT INTO log(op,x,y) VALUES('U1',new.a,new.b);
+  END;
+  CREATE TEMP TRIGGER t2r1 BEFORE INSERT ON t2 BEGIN
+     INSERT INTO log(op,x,y) VALUES('I2',new.c,new.d);
+  END;
+  CREATE TEMP TRIGGER t3r1 AFTER DELETE ON t3 BEGIN
+     INSERT INTO log(op,x,y) VALUES('D3',old.e,old.f);
+  END;
+  CREATE TEMP TRIGGER t3r2 BEFORE UPDATE ON t3 BEGIN
+     INSERT INTO log(op,x,y) VALUES('U3',new.e,new.f);
+  END;
+  INSERT INTO t1(a,b) VALUES(1,2),('happy','glad') RETURNING a, b, '|';
+
+
+  UPDATE t1 SET b=9 WHERE a=1 RETURNING a, b, 'x';
+
+
+  DELETE FROM t1 WHERE a<>'xray' RETURNING a, b, '@';
+
+
+  SELECT * FROM log;
+  DELETE FROM log;
+
+
+  INSERT INTO t2 VALUES('bravo','charlie') RETURNING d, c, 'z';
+
+
+  SELECT * FROM log;
+  DELETE FROM log;
+
+
+  INSERT INTO t3(e) VALUES(1),(2),(3) RETURNING 'I', e;
+  UPDATE t3 SET f=e+100 RETURNING 'U', e, f;
+  DELETE FROM t3 WHERE f>100 RETURNING 'D', e, f;
+
+
+  SELECT * FROM log;
+  DELETE FROM log;
+
+
+  CREATE TEMP TABLE t1(a,b);
+  CREATE TRIGGER r1 BEFORE INSERT ON t1 BEGIN SELECT 1; END;
+  DELETE FROM t1 RETURNING *;
+  DROP TRIGGER r1;
+  INSERT INTO t1 VALUES(5,30);
+
+
+  SELECT * FROM t1;
+
+
+  CREATE VIRTUAL TABLE t1 USING rtree(a, b, c);
+  CREATE TABLE t2(x);
+
+
+  INSERT INTO t1(a,b,c) VALUES(1,2,3) 
+  RETURNING (SELECT b FROM t2);
+
+
+  PRAGMA foreign_keys(1);
+  CREATE TABLE Parent(id INTEGER PRIMARY KEY);
+  CREATE TABLE Child(id INTEGER PRIMARY KEY, parent_id INTEGER REFERENCES Parent(id));
+
+
+  CREATE TABLE t1(x REAL);
+  INSERT INTO t1(x) VALUES(5.0) RETURNING x, affinity(x);
+
+
+  UPDATE t1 SET x=x+1 RETURNING x, affinity(x);
+
+
+  DELETE FROM t1 RETURNING x, affinity(x);
+
+
+  CREATE TABLE t1(a,b,c);
+  INSERT INTO t1 VALUES(1,2,3),('a','b','c');
+  CREATE TEMP TABLE t2(x,y,z);
+  INSERT INTO t2 SELECT * FROM t1 RETURNING *;
+
+
+  SELECT * FROM t2;
+
+
+  CREATE TABLE bug(id INTEGER PRIMARY KEY NOT NULL, x);
+  INSERT INTO bug(id,x) VALUES(20, NULL);
+  UPDATE bug SET x=NULL WHERE id = 20 RETURNING quote(x), x IS NULL;
+
+
+  CREATE TABLE v0(c1 INT);
+  CREATE VIEW view_2(c1) AS SELECT CASE WHEN c1 COLLATE TRUE THEN TRUE ELSE TRUE END FROM v0;
+  CREATE TRIGGER x1 INSTEAD OF INSERT ON view_2 BEGIN SELECT true; END;
+
+
+  DROP TABLE IF EXISTS t1;CREATE TABLE t1(a);
+  CREATE TRIGGER r1 AFTER UPDATE ON t1 BEGIN VALUES(0); END;
+

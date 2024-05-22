@@ -1,0 +1,31 @@
+
+  CREATE TABLE t16(x DEFAULT(max(1)));
+  INSERT INTO t16(x) VALUES(123);
+  SELECT rowid, x FROM t16;
+
+
+  DROP TABLE t16;
+  CREATE TABLE t16(x DEFAULT(abs(1)));
+  INSERT INTO t16(rowid) VALUES(4);
+  SELECT rowid, x FROM t16;
+
+
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a TEXT);
+  INSERT INTO t1(a) VALUES(1),(2);
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(x TEXT, y TEXT);
+  INSERT INTO t2(x,y) VALUES(3,4);
+  DROP TABLE IF EXISTS t3;
+  CREATE TABLE t3 AS
+    SELECT a AS p, coalesce(y,a) AS q FROM t1 LEFT JOIN t2 ON a=x;
+  SELECT p, q, '|' FROM t3 ORDER BY p;
+
+
+  COMMIT;
+  PRAGMA integrity_check;
+
+
+  CREATE TABLE t19 AS SELECT * FROM sqlite_master;
+  SELECT name FROM t19 ORDER BY name;
+

@@ -1,0 +1,4 @@
+
+  CREATE TABLE t2(a, b, c REAL, d, e, PRIMARY KEY(a,b)) WITHOUT ROWID;
+  CREATE UNIQUE INDEX t2c ON t2(c);
+

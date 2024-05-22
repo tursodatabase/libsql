@@ -1,0 +1,9 @@
+
+  CREATE TABLE t1(i INTEGER PRIMARY KEY, a, b);
+  CREATE INDEX i1 ON t1(b);
+  CREATE TABLE t2(x, y);
+
+
+  INSERT INTO t1 VALUES(25, 25, 25);
+  INSERT INTO t2 VALUES(25, 'a'), (25, 'b'), (25, 'c');
+

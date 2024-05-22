@@ -1,0 +1,28 @@
+
+  CREATE VIRTUAL TABLE x1 USING tcl(vtab_command);
+
+
+  CREATE TABLE t1x(i INTEGER PRIMARY KEY, a, b);
+  INSERT INTO t1x VALUES(1, 'one', 1);
+  INSERT INTO t1x VALUES(2, 'two', 2);
+  INSERT INTO t1x VALUES(3, 'three', 3);
+  INSERT INTO t1x VALUES(4, 'four', 4);
+
+
+  CREATE VIRTUAL TABLE VirtualTableA USING tcl(vtab_command);
+  CREATE VIRTUAL TABLE VirtualTableB USING tcl(vtab_command);
+
+ SELECT primarykey FROM VirtualTableA 
+
+  SELECT * FROM 
+  VirtualTableA a CROSS JOIN VirtualTableB b ON b.PrimaryKey=a.PrimaryKey
+  WHERE a.ColumnA IN ('ValueA', 'ValueB') AND a.FlagA=0
+
+
+  SELECT * FROM 
+  VirtualTableA a CROSS JOIN VirtualTableB b ON b.PrimaryKey=a.PrimaryKey
+  WHERE a.FlagA=0 AND a.ColumnA IN ('ValueA', 'ValueB') 
+
+
+  CREATE VIRTUAL TABLE x1 USING tcl(vtab_command);
+
