@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::io::BufWriter;
+use std::mem::size_of;
 use std::path::{Path, PathBuf};
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, Ordering},
@@ -10,7 +11,8 @@ use fst::{Map, MapBuilder};
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
-use crate::fs::file::{BufCopy, FileExt};
+use crate::io::buf::IoBufMut;
+use crate::io::file::{BufCopy, FileExt};
 
 use super::{frame_offset, page_offset, Frame, FrameHeader, SegmentHeader};
 
@@ -22,6 +24,31 @@ pub struct SealedSegment<F> {
     index: Map<Vec<u8>>,
     path: PathBuf,
     checkpointed: AtomicBool,
+}
+
+impl<F> std::fmt::Debug for SealedSegment<F> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SealedSegment")
+            .field("read_locks", &self.read_locks)
+            .field("header", &self.header)
+            .field("index", &self.index)
+            .field("path", &self.path)
+            .field("checkpointed", &self.checkpointed)
+            .finish()
+    }
+}
+
+impl<F> SealedSegment<F> {
+    pub fn empty(f: F) -> Self {
+        Self {
+            read_locks: Default::default(),
+            header: SegmentHeader::new_zeroed(),
+            file: Arc::new(f),
+            index: Map::default(),
+            path: PathBuf::new(),
+            checkpointed: Default::default(),
+        }
+    }
 }
 
 impl<F: FileExt> SealedSegment<F> {
@@ -103,14 +130,6 @@ impl<F: FileExt> SealedSegment<F> {
         &self.path
     }
 
-    pub fn header(&self) -> &SegmentHeader {
-        &self.header
-    }
-
-    pub fn index(&self) -> &Map<Vec<u8>> {
-        &self.index
-    }
-
     pub fn read_page_offset(&self, offset: u32, buf: &mut [u8]) -> Result<()> {
         let page_offset = page_offset(offset) as usize;
         self.file.read_exact_at(buf, page_offset as _)?;
@@ -141,6 +160,38 @@ impl<F: FileExt> SealedSegment<F> {
 
     pub(crate) fn checkpointed(&self) {
         self.checkpointed.store(true, Ordering::SeqCst);
+    }
+}
+
+impl<F> SealedSegment<F> {
+    pub fn index(&self) -> &Map<Vec<u8>> {
+        &self.index
+    }
+
+    pub fn header(&self) -> &SegmentHeader {
+        &self.header
+    }
+
+    pub async fn read_page_offset_async<B>(&self, offset: u32, buf: B) -> (B, Result<()>)
+    where
+        B: IoBufMut + Send + 'static,
+        F: FileExt,
+    {
+        assert_eq!(buf.bytes_total(), 4096);
+        let page_offset = page_offset(offset) as usize;
+        let (buf, ret) = self.file.read_exact_at_async(buf, page_offset as _).await;
+        (buf, ret.map_err(Into::into))
+    }
+
+    pub async fn read_frame_offset_async<B>(&self, offset: u32, buf: B) -> (B, Result<()>)
+    where
+        B: IoBufMut + Send + 'static,
+        F: FileExt,
+    {
+        assert_eq!(buf.bytes_total(), size_of::<Frame>());
+        let frame_offset = frame_offset(offset);
+        let (buf, ret) = self.file.read_exact_at_async(buf, frame_offset as _).await;
+        (buf, ret.map_err(Into::into))
     }
 }
 

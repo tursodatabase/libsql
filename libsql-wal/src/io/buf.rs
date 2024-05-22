@@ -98,7 +98,7 @@ impl<T> ZeroCopyBuf<T> {
     pub fn new_init(inner: T) -> Self {
         Self {
             inner: MaybeUninit::new(inner),
-            init: size_of::<T>()
+            init: size_of::<T>(),
         }
     }
 
@@ -119,9 +119,7 @@ impl<T> ZeroCopyBuf<T> {
     /// panics if the inner type is uninitialized
     pub fn get_ref(&self) -> &T {
         assert!(self.is_init());
-        unsafe {
-            self.inner.assume_init_ref()
-        }
+        unsafe { self.inner.assume_init_ref() }
     }
 
     pub fn deinit(&mut self) {
@@ -149,7 +147,33 @@ unsafe impl<T: AsBytes + Unpin + 'static> IoBufMut for ZeroCopyBuf<T> {
     }
 
     unsafe fn set_init(&mut self, pos: usize) {
-        assert!(pos < size_of::<T>());
+        assert!(pos <= size_of::<T>());
         self.init = pos
+    }
+}
+
+unsafe impl IoBufMut for Vec<u8> {
+    fn stable_mut_ptr(&mut self) -> *mut u8 {
+        self.as_mut_ptr()
+    }
+
+    unsafe fn set_init(&mut self, init_len: usize) {
+        if self.len() < init_len {
+            self.set_len(init_len);
+        }
+    }
+}
+
+unsafe impl IoBuf for Vec<u8> {
+    fn stable_ptr(&self) -> *const u8 {
+        self.as_ptr()
+    }
+
+    fn bytes_init(&self) -> usize {
+        self.len()
+    }
+
+    fn bytes_total(&self) -> usize {
+        self.capacity()
     }
 }

@@ -1,7 +1,9 @@
 use std::{path::Path, sync::Arc};
 
 use libsql_sys::rusqlite::OpenFlags;
-use libsql_wal::{name::NamespaceName, registry::WalRegistry, wal::LibsqlWalManager};
+use libsql_wal::name::NamespaceName;
+use libsql_wal::registry::WalRegistry;
+use libsql_wal::wal::LibsqlWalManager;
 use tempfile::tempdir;
 
 #[test]
@@ -11,11 +13,9 @@ fn transaction_rollback() {
         let name = path.file_name().unwrap().to_str().unwrap();
         NamespaceName::from_string(name.to_string())
     };
-    let registry = Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver).unwrap());
-    let wal_manager = LibsqlWalManager {
-        registry: registry.clone(),
-        next_conn_id: Default::default(),
-    };
+
+    let registry = Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver, ()).unwrap());
+    let wal_manager = LibsqlWalManager::new(registry.clone());
 
     let mut conn1 = libsql_sys::Connection::open(
         tmp.path().join("test/data").clone(),
@@ -86,11 +86,8 @@ fn transaction_savepoints() {
         let name = path.file_name().unwrap().to_str().unwrap();
         NamespaceName::from_string(name.to_string())
     };
-    let registry = Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver).unwrap());
-    let wal_manager = LibsqlWalManager {
-        registry: registry.clone(),
-        next_conn_id: Default::default(),
-    };
+    let registry = Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver, ()).unwrap());
+    let wal_manager = LibsqlWalManager::new(registry.clone());
 
     let mut conn = libsql_sys::Connection::open(
         tmp.path().join("test/data").clone(),

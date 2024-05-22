@@ -3,7 +3,7 @@
 use std::future::Future;
 
 use super::Storage;
-use crate::{bottomless::Result, name::NamespaceName, fs::file::FileExt};
+use crate::{bottomless::Result, io::file::FileExt, name::NamespaceName};
 
 pub struct S3Storage {}
 

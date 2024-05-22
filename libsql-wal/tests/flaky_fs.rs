@@ -1,12 +1,13 @@
 use std::ffi::c_int;
 use std::fs::File;
+use std::future::ready;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering::Relaxed};
 use std::sync::Arc;
 
 use libsql_sys::rusqlite::{self, ErrorCode, OpenFlags};
 use libsql_wal::{
-    fs::{file::FileExt, FileSystem},
+    io::{file::FileExt, Io},
     name::NamespaceName,
     registry::WalRegistry,
     wal::LibsqlWalManager,
@@ -17,7 +18,7 @@ use rand_chacha::ChaCha8Rng;
 use tempfile::tempdir;
 
 #[derive(Clone)]
-struct FlakyFs {
+struct FlakyIo {
     p_failure: f32,
     rng: Arc<Mutex<rand_chacha::ChaCha8Rng>>,
     enabled: Arc<AtomicBool>,
@@ -25,7 +26,7 @@ struct FlakyFs {
 
 struct FlakyFile {
     inner: File,
-    fs: FlakyFs,
+    fs: FlakyIo,
 }
 
 impl FileExt for FlakyFile {
@@ -56,9 +57,33 @@ impl FileExt for FlakyFile {
     fn set_len(&self, len: u64) -> std::io::Result<()> {
         self.fs.with_random_failure(|| self.inner.set_len(len))
     }
+
+    fn len(&self) -> std::io::Result<u64> {
+        self.inner.len()
+    }
+
+    fn read_exact_at_async<B: libsql_wal::io::buf::IoBufMut + Send + 'static>(
+        &self,
+        _buf: B,
+        _offset: u64,
+    ) -> impl std::future::Future<Output = (B, std::io::Result<()>)> + Send {
+        todo!();
+        #[allow(unreachable_code)]
+        ready((_buf, Ok(())))
+    }
+
+    fn write_all_at_async<B: libsql_wal::io::buf::IoBuf + Send + 'static>(
+        &self,
+        _buf: B,
+        _offset: u64,
+    ) -> impl std::future::Future<Output = (B, std::io::Result<()>)> + Send {
+        todo!();
+        #[allow(unreachable_code)]
+        ready((_buf, Ok(())))
+    }
 }
 
-impl FlakyFs {
+impl FlakyIo {
     fn with_random_failure<R>(&self, f: impl FnOnce() -> std::io::Result<R>) -> std::io::Result<R> {
         let r = self.rng.lock().gen_range(0.0..1.0);
         if self.enabled.load(Relaxed) && r <= self.p_failure {
@@ -69,8 +94,9 @@ impl FlakyFs {
     }
 }
 
-impl FileSystem for FlakyFs {
+impl Io for FlakyIo {
     type File = FlakyFile;
+    type TempFile = FlakyFile;
 
     fn create_dir_all(&self, path: &std::path::Path) -> std::io::Result<()> {
         self.with_random_failure(|| std::fs::create_dir_all(path))
@@ -94,6 +120,18 @@ impl FileSystem for FlakyFs {
                 fs: self.clone(),
             })
         })
+    }
+
+    fn tempfile(&self) -> std::io::Result<Self::TempFile> {
+        todo!()
+    }
+
+    fn now(&self) -> chrono::prelude::DateTime<chrono::prelude::Utc> {
+        todo!()
+    }
+
+    fn uuid(&self) -> uuid::Uuid {
+        todo!()
     }
 }
 
@@ -132,7 +170,7 @@ fn flaky_fs() {
     let seed = rand::thread_rng().gen();
     println!("seed: {seed}");
     let enabled = Arc::new(AtomicBool::new(false));
-    let fs = FlakyFs {
+    let fs = FlakyIo {
         p_failure: 0.1,
         rng: Arc::new(Mutex::new(ChaCha8Rng::seed_from_u64(seed))),
         enabled: enabled.clone(),
@@ -143,11 +181,8 @@ fn flaky_fs() {
         NamespaceName::from_string(name.to_string())
     };
     let registry =
-        Arc::new(WalRegistry::new_with_fs(fs, tmp.path().join("test/wals"), resolver).unwrap());
-    let wal_manager = LibsqlWalManager {
-        registry: registry.clone(),
-        next_conn_id: Default::default(),
-    };
+        Arc::new(WalRegistry::new_with_fs(fs, tmp.path().join("test/wals"), resolver, ()).unwrap());
+    let wal_manager = LibsqlWalManager::new(registry.clone());
 
     let conn = libsql_sys::Connection::open(
         tmp.path().join("test/data").clone(),

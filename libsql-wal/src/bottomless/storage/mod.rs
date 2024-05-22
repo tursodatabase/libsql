@@ -6,12 +6,13 @@ use tokio::io::AsyncWrite;
 use uuid::Uuid;
 
 use super::Result;
-use crate::fs::file::FileExt;
+use crate::io::file::FileExt;
 use crate::name::NamespaceName;
 
 mod fs;
 mod s3;
 
+#[derive(Debug)]
 pub struct SegmentMeta {
     pub namespace: NamespaceName,
     pub segment_id: Uuid,
@@ -30,7 +31,7 @@ pub struct RestoreOptions {
 }
 
 pub struct DbMeta {
-    max_frame_no: u64,
+    pub max_frame_no: u64,
 }
 
 pub trait Storage: Send + Sync + 'static {
@@ -48,7 +49,7 @@ pub trait Storage: Send + Sync + 'static {
 
     /// Fetch a segment for `namespace` containing `frame_no`, and writes it to `dest`.
     async fn fetch_segment(
-        &self, 
+        &self,
         _config: &Self::Config,
         _namespace: NamespaceName,
         _frame_no: u64,
@@ -85,4 +86,39 @@ pub trait Storage: Send + Sync + 'static {
 
     /// Returns the default configuration for this storage
     fn default_config(&self) -> Arc<Self::Config>;
+}
+
+impl<T: Storage> Storage for Arc<T> {
+    type Config = T::Config;
+
+    fn store(
+        &self,
+        config: &Self::Config,
+        meta: SegmentMeta,
+        segment_data: impl FileExt,
+        segment_index: Vec<u8>,
+    ) -> impl Future<Output = Result<()>> + Send {
+        self.as_ref()
+            .store(config, meta, segment_data, segment_index)
+    }
+
+    async fn fetch_segment(
+        &self,
+        config: &Self::Config,
+        namespace: NamespaceName,
+        frame_no: u64,
+        dest: impl AsyncWrite,
+    ) -> Result<()> {
+        self.as_ref()
+            .fetch_segment(config, namespace, frame_no, dest)
+            .await
+    }
+
+    async fn meta(&self, config: &Self::Config, namespace: NamespaceName) -> Result<DbMeta> {
+        self.as_ref().meta(config, namespace).await
+    }
+
+    fn default_config(&self) -> Arc<Self::Config> {
+        self.as_ref().default_config()
+    }
 }

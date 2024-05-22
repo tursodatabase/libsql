@@ -8,11 +8,11 @@ use memoffset::offset_of;
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
-use crate::fs::file::FileExt;
+use crate::io::file::FileExt;
 use crate::segment::{sealed::SealedSegment, Frame};
 
 struct SegmentNode<F> {
-    segment: SealedSegment<F>,
+    segment: Arc<SealedSegment<F>>,
     next: ArcSwapOption<SegmentNode<F>>,
 }
 
@@ -35,7 +35,7 @@ impl<F> Default for SegmentList<F> {
 
 impl<F> SegmentList<F> {
     /// Prepend the list with the passed sealed segment
-    pub fn push_log(&self, segment: SealedSegment<F>) {
+    pub fn push_log(&self, segment: Arc<SealedSegment<F>>) {
         let segment = Arc::new(SegmentNode {
             segment,
             next: self.head.load().clone().into(),

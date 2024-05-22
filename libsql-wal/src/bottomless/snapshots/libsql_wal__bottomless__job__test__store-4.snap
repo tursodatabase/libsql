@@ -1,0 +1,5 @@
+---
+source: libsql-wal/src/bottomless/job.rs
+expression: data.len()
+---
+8268

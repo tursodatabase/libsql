@@ -3,9 +3,9 @@ use std::collections::{HashMap, VecDeque};
 
 use tokio::sync::mpsc;
 
-use crate::name::NamespaceName;
 use super::job::{IndexedRequest, Job, JobResult};
 use super::StoreSegmentRequest;
+use crate::name::NamespaceName;
 
 struct NamespaceRequests<C, F> {
     requests: VecDeque<IndexedRequest<C, F>>,

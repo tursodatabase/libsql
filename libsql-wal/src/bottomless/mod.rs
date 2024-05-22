@@ -6,9 +6,9 @@ use chrono::{DateTime, Utc};
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::{JoinHandle, JoinSet};
 
-use crate::fs::FileSystem;
-use crate::segment::sealed::SealedSegment;
+use crate::io::Io;
 use crate::name::NamespaceName;
+use crate::segment::sealed::SealedSegment;
 
 use self::job::JobResult;
 use self::scheduler::Scheduler;
@@ -25,20 +25,20 @@ pub mod storage;
 ///
 /// On shutdown, attempts to empty the queue, and flush the receiver. When the last handle of the
 /// receiver is dropped, and the queue is empty, exit.
-pub struct BottomlessLoop<S: Storage, FS: FileSystem> {
-    receiver: mpsc::Receiver<StoreSegmentRequest<S::Config, SealedSegment<FS::File>>>,
-    scheduler: Scheduler<S::Config, SealedSegment<FS::File>>,
+pub struct BottomlessLoop<S: Storage, FS: Io> {
+    receiver: mpsc::Receiver<StoreSegmentRequest<S::Config, Arc<SealedSegment<FS::File>>>>,
+    scheduler: Scheduler<S::Config, Arc<SealedSegment<FS::File>>>,
     storage: Arc<S>,
     filesystem: Arc<FS>,
     max_in_flight: usize,
-    in_flight_futs: JoinSet<JobResult<S::Config, SealedSegment<FS::File>>>,
+    in_flight_futs: JoinSet<JobResult<S::Config, Arc<SealedSegment<FS::File>>>>,
     force_shutdown: oneshot::Receiver<()>,
 }
 
 impl<S, FS> BottomlessLoop<S, FS>
 where
-    FS: FileSystem,
-    S: Storage + 'static
+    FS: Io,
+    S: Storage + 'static,
 {
     /// Schedules durability jobs. This loop is not allowed to fail, or lose jobs.
     /// A job is prepared by calling `Scheduler::prepare(..)`. The job is spawned, and it returns a
@@ -63,7 +63,8 @@ where
                     .scheduler
                     .schedule()
                     .expect("scheduler has work, but didn't return a job");
-                self.in_flight_futs.spawn(job.perform(self.storage.clone(), self.filesystem.clone()));
+                self.in_flight_futs
+                    .spawn(job.perform(self.storage.clone(), self.filesystem.clone()));
             }
 
             tokio::select! {
@@ -80,7 +81,7 @@ where
                         Err(e) => {
                             // job panicked. report and exit process. The program is crippled, from
                             // now on, so we just exit, and hope to restart on a fresh state.
-                            tracing::error!("fatal error: bottomles job panicked: {e}");
+                            tracing::error!("fatal error: bottomless job panicked: {e}");
                             std::process::exit(1);
                         }
                     }

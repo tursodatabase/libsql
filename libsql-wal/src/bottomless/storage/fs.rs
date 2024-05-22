@@ -16,7 +16,7 @@ impl Storage for FsStorage {
         &self,
         config: &Self::Config,
         meta: super::SegmentMeta,
-        segment_data: impl crate::fs::file::FileExt,
+        segment_data: impl crate::io::file::FileExt,
         segment_index: Vec<u8>,
     ) -> impl Future<Output = Result<()>> + Send {
         todo!();
