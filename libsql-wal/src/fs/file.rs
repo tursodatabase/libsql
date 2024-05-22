@@ -1,7 +1,10 @@
 use std::fs::File;
+use std::future::Future;
 use std::io::{self, ErrorKind, IoSlice, Result, Write};
 
-pub trait FileExt {
+use super::buf::{IoBufMut, IoBuf};
+
+pub trait FileExt: Send + Sync + 'static {
     fn write_all_at(&self, buf: &[u8], offset: u64) -> Result<()>;
     fn write_at_vectored(&self, bufs: &[IoSlice], offset: u64) -> Result<usize>;
     fn write_at(&self, buf: &[u8], offset: u64) -> Result<usize>;
@@ -22,6 +25,9 @@ pub trait FileExt {
             count: 0,
         }
     }
+
+    fn read_exact_at_async<B: IoBufMut + Send + 'static>(&self, buf: B, offset: u64) -> impl Future<Output = (B, Result<()>)> + Send;
+    fn write_all_at_async<B: IoBuf + Send + 'static>(&self, buf: B, offset: u64) -> impl Future<Output = (B, Result<()>)> + Send;
 }
 
 impl FileExt for File {
@@ -66,6 +72,35 @@ impl FileExt for File {
 
     fn set_len(&self, len: u64) -> Result<()> {
         std::fs::File::set_len(self, len)
+    }
+
+    async fn read_exact_at_async<B: IoBufMut + Send + 'static>(&self, mut buf: B, offset: u64) -> (B, Result<()>) {
+        let file = self.try_clone().unwrap();
+        let (buffer, ret) = tokio::task::spawn_blocking(move || {
+            // let mut read = 0;
+
+            let chunk = unsafe {
+                let len = buf.bytes_total() - buf.bytes_init();
+                let ptr = buf.stable_mut_ptr().offset(buf.bytes_init() as _);
+                std::slice::from_raw_parts_mut(ptr, len)
+            };
+
+            let ret = file.read_exact_at(chunk, offset);
+            (buf, ret)
+        }).await.unwrap();
+
+        (buffer, ret)
+    }
+
+    async fn write_all_at_async<B: IoBuf + Send + 'static>(&self, buf: B, offset: u64) -> (B, Result<()>) {
+        let file = self.try_clone().unwrap();
+        let (buffer, ret) = tokio::task::spawn_blocking(move || {
+            let buffer = unsafe { std::slice::from_raw_parts(buf.stable_ptr() , buf.bytes_init()) };
+            let ret = file.write_all_at(buffer, offset);
+            (buf, ret)
+        }).await.unwrap();
+
+        (buffer, ret)
     }
 }
 
