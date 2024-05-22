@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
 use tokio::io::AsyncWrite;
 
-use crate::storage::Storage;
-use crate::NamespaceName;
-use crate::Result;
+use super::storage::Storage;
+use super::NamespaceName;
+use super::Result;
 
 /// Restore a Namespace from bottomless
 pub struct BottomlessRestore<C> {
