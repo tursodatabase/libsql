@@ -731,7 +731,7 @@ static int doWalCallbacks(sqlite3 *db){
 ** schema change has occurred.  That detail is handled by the
 ** outer sqlite3_step() wrapper procedure.
 */
-static int sqlite3Step(Vdbe *p){
+static int sqlite3Step(Vdbe *p, u64 preempt_after_steps){
   sqlite3 *db;
   int rc;
 
@@ -823,7 +823,7 @@ static int sqlite3Step(Vdbe *p){
 #endif /* SQLITE_OMIT_EXPLAIN */
   {
     db->nVdbeExec++;
-    rc = sqlite3VdbeExec(p);
+    rc = sqlite3VdbeExec(p, preempt_after_steps);
     db->nVdbeExec--;
   }
 
@@ -873,7 +873,7 @@ end_of_step:
 ** sqlite3Step() to do most of the work.  If a schema error occurs,
 ** call sqlite3Reprepare() and try again.
 */
-int sqlite3_step(sqlite3_stmt *pStmt){
+int libsql_step(sqlite3_stmt *pStmt, sqlite_uint64 preempt_after_steps){
   int rc = SQLITE_OK;      /* Result from sqlite3Step() */
   Vdbe *v = (Vdbe*)pStmt;  /* the prepared statement */
   int cnt = 0;             /* Counter to prevent infinite loop of reprepares */
@@ -884,7 +884,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   }
   db = v->db;
   sqlite3_mutex_enter(db->mutex);
-  while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
+  while( (rc = sqlite3Step(v, preempt_after_steps))==SQLITE_SCHEMA
          && cnt++ < SQLITE_MAX_SCHEMA_RETRY ){
     int savedPc = v->pc;
     rc = sqlite3Reprepare(v);
@@ -920,6 +920,10 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   }
   sqlite3_mutex_leave(db->mutex);
   return rc;
+}
+
+int sqlite3_step(sqlite3_stmt *pStmt) {
+  return libsql_step(pStmt, LIBSQL_NEVER_PREEMPT);
 }
 
 

@@ -68,7 +68,7 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
   if( v->pc>4 ){
     v->pc = 4;
     assert( v->aOp[v->pc].opcode==OP_NotExists );
-    rc = sqlite3VdbeExec(v);
+    rc = sqlite3VdbeExec(v, LIBSQL_NEVER_PREEMPT);
   }else{
     rc = sqlite3_step(p->pStmt);
   }
