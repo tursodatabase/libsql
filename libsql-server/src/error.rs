@@ -1,5 +1,5 @@
 use axum::response::IntoResponse;
-use hyper::{header::ToStrError, StatusCode};
+use hyper::StatusCode;
 use tonic::metadata::errors::InvalidMetadataValueBytes;
 
 use crate::{
@@ -69,7 +69,7 @@ pub enum Error {
     #[error("Invalid namespace")]
     InvalidNamespace,
     #[error("Invalid namespace bytes: `{0}`")]
-    InvalidNamespaceBytes(#[from] ToStrError),
+    InvalidNamespaceBytes(Box<dyn std::error::Error + Sync + Send + 'static>),
     #[error("Replica meta error: {0}")]
     ReplicaMetaError(#[from] libsql_replication::meta::Error),
     #[error("Replicator error: {0}")]

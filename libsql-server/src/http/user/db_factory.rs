@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use axum::extract::{FromRequestParts, Path};
+use base64::prelude::*;
 use hyper::http::request::Parts;
 use hyper::HeaderMap;
 use libsql_replication::rpc::replication::NAMESPACE_METADATA_KEY;
@@ -73,8 +74,13 @@ fn try_namespace_from_host(
 fn try_namespace_from_metadata(metadata: &axum::http::HeaderValue) -> Result<NamespaceName, Error> {
     metadata
         .to_str()
-        .map_err(|s| Error::InvalidNamespaceBytes(s))
-        .and_then(|ns| NamespaceName::from_string(ns.into()))
+        .map_err(|s| Error::InvalidNamespaceBytes(Box::new(s)))
+        .and_then(|encoded| {
+            BASE64_STANDARD_NO_PAD
+                .decode(encoded)
+                .map_err(|e| Error::InvalidNamespaceBytes(Box::new(e)))
+        })
+        .and_then(|ns| NamespaceName::from_bytes(ns.into()))
 }
 
 pub struct MakeConnectionExtractorPath(pub Arc<dyn MakeConnection<Connection = Connection>>);
