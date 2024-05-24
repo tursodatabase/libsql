@@ -1,0 +1,8 @@
+
+  CREATE TABLE t1(a INT, b INT, c INT);
+  CREATE INDEX i1 ON t1(a, b);
+
+
+  CREATE TABLE t3(a, b, c);
+  CREATE INDEX i3 ON t3(a, b);
+

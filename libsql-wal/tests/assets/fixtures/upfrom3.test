@@ -1,0 +1,26 @@
+
+  CREATE TABLE u1(a, b, c, PRIMARY KEY(b, c)) WITHOUT ROWID;
+  INSERT INTO u1 VALUES(0, 0, 0);
+  INSERT INTO u1 VALUES(1, 0, 1);
+  INSERT INTO u1 VALUES(2, 1, 0);
+  INSERT INTO u1 VALUES(3, 1, 1);
+
+
+  CREATE TABLE map(f, t);
+  INSERT INTO map VALUES(0, 10);
+  INSERT INTO map VALUES(1, 11);
+  UPDATE u1 SET c=t FROM map WHERE c=f;
+  SELECT * FROM u1 ORDER BY a;
+
+
+  UPDATE u1 SET b=t FROM map WHERE b=f;
+  SELECT * FROM u1 ORDER BY a;
+
+
+  CREATE TABLE map2(o1, o2, n1, n2);
+  INSERT INTO map2 VALUES
+    (10, 10, 50, 50), (10, 11, 50, 60), 
+    (11, 10, 60, 50), (11, 11, 60, 60);
+  UPDATE u1 SET b=n1, c=n2 FROM map2 WHERE b=o1 AND c=o2;
+  SELECT * FROM u1 ORDER BY a;
+

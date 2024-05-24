@@ -1,0 +1,48 @@
+
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(x, y);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t1 VALUES(3, 4);
+  INSERT INTO t2 VALUES('a', 'b');
+  INSERT INTO t2 VALUES('c', 'd');
+  INSERT INTO t2 VALUES('e', 'f');
+
+
+    CREATE VIRTUAL TABLE ft USING fts5(a);
+    INSERT INTO ft VALUES('abc');
+    INSERT INTO ft VALUES('def');
+    INSERT INTO ft VALUES('ghi');
+  
+
+  CREATE TABLE x1(a, b);
+  CREATE TABLE x2(c, d);
+
+  WITH s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000)
+  INSERT INTO x1 SELECT i, i FROM s;
+  INSERT INTO x2 SELECT a, b FROM x1;
+
+
+  CREATE TABLE rt1 (id INTEGER PRIMARY KEY, x1, x2);
+  CREATE TABLE rt2 (id, x1, x2);
+
+
+    CREATE TABLE t1(x, y);
+    CREATE TRIGGER tr1 AFTER DELETE ON t1 BEGIN
+      SELECT 1;
+    END;
+    INSERT INTO t1 VALUES(1, 2);
+  
+
+    DELETE FROM t1 WHERE x=1;
+  
+
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  INSERT INTO t1 VALUES(3, 'three');
+  INSERT INTO t1 VALUES(4, 'four');
+  INSERT INTO t1 VALUES(5, 'five');
+  INSERT INTO t1 VALUES(6, 'six');
+  INSERT INTO t1 VALUES(7, 'seven');
+  INSERT INTO t1 VALUES(8, 'eight');
+

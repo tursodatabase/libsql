@@ -1,0 +1,96 @@
+
+  CREATE TEMP VIEW v1temp AS SELECT a, b FROM t1;
+  SELECT * FROM v1temp ORDER BY a;
+
+
+    SELECT name, type FROM pragma_table_list('v1');
+  
+
+  CREATE TABLE t9(x INTEGER);
+  CREATE VIEW v9a AS SELECT x FROM t9;
+  CREATE VIEW v9b AS SELECT * FROM t9;
+  CREATE VIEW v9c(x) AS SELECT x FROM t9;
+  CREATE VIEW v9d(x) AS SELECT * FROM t9;
+
+
+  PRAGMA table_info(v9a);
+
+
+  PRAGMA table_info(v9b);
+
+
+  PRAGMA table_info(v9c);
+
+
+  PRAGMA table_info(v9d);
+
+
+  CREATE VIEW x1 AS SELECT 123 AS '', 234 AS '', 345 AS '';
+  SELECT * FROM x1;
+
+
+  CREATE TABLE t16(a, b, c UNIQUE);
+  INSERT INTO t16 VALUES(1, 1, 1);
+  INSERT INTO t16 VALUES(2, 2, 2);
+  INSERT INTO t16 VALUES(3, 3, 3);
+  CREATE VIEW v16 AS SELECT max(a) AS mx, min(b) AS mn FROM t16 GROUP BY c;
+
+  SELECT * FROM v16 AS one, v16 AS two WHERE one.mx=1;
+
+
+  WITH v17(x,y) AS (SELECT max(a), min(b) FROM t16 GROUP BY c)
+  SELECT * FROM v17 AS one, v17 AS two WHERE one.x=1;
+
+
+  CREATE TABLE t0(c0 TEXT, c1);
+  INSERT INTO t0(c0, c1) VALUES (-1, 0);
+  CREATE VIEW v0(c0, c1) AS SELECT t0.c0, AVG(t0.c1) FROM t0;
+
+
+  SELECT c0, typeof(c0), c1, typeof(c1) FROM v0;
+
+ SELECT c0<c1 FROM v0 
+ SELECT c1<c0 FROM v0 
+
+  SELECT 1 FROM v0 WHERE c1<c0
+
+
+  SELECT 1 FROM v0 WHERE c0<c1
+
+ 
+  SELECT c0<c1 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) 
+
+ 
+  SELECT c1<c0 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) 
+
+
+  SELECT 1 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) WHERE c1<c0
+
+
+  SELECT 1 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) WHERE c0<c1
+
+
+  CREATE TABLE t0(c0 TEXT);
+  CREATE VIEW v0(c0) AS SELECT t0.c0 FROM t0;
+  INSERT INTO t0(c0) VALUES ('0');
+
+
+  SELECT 0 IN (c0) FROM t0;
+
+
+  SELECT 0 IN (c0) FROM (SELECT c0 FROM t0);
+
+
+  CREATE TABLE t0(a INT, b TEXT);
+
+  INSERT INTO t0 VALUES(1,'one');
+
+  CREATE VIEW t1      AS SELECT a, b FROM t0 UNION ALL SELECT 2, 2;
+  CREATE VIEW t2(a,b) AS SELECT a, b FROM t0 UNION ALL SELECT 2, 2;
+
+
+    PRAGMA table_info = t1;
+  
+
+    PRAGMA table_info = t2;
+  

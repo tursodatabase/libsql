@@ -1,0 +1,6 @@
+ CREATE VIRTUAL TABLE t1 USING fts4 
+ CREATE VIRTUAL TABLE t1 USING fts4 
+ SELECT count(*) FROM t1_segdir; 
+ INSERT INTO t1(t1) VALUES('optimize') 
+ SELECT count(*) FROM t1_segdir; 
+ CREATE VIRTUAL TABLE t2 USING fts4; 

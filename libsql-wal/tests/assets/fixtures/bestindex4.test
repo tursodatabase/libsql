@@ -1,0 +1,4 @@
+
+  CREATE VIRTUAL TABLE x1 USING tcl(vtab_command);
+  CREATE TABLE t1 (x INT PRIMARY KEY);
+
