@@ -3,6 +3,16 @@
 
 #include <stdint.h>
 
+#define LIBSQL_INT 1
+
+#define LIBSQL_FLOAT 2
+
+#define LIBSQL_TEXT 3
+
+#define LIBSQL_BLOB 4
+
+#define LIBSQL_NULL 5
+
 typedef struct libsql_connection libsql_connection;
 
 typedef struct libsql_database libsql_database;
