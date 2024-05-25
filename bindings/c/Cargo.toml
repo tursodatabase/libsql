@@ -13,6 +13,16 @@ cbindgen = "0.24.0"
 [dependencies]
 bytes = "1.5.0"
 lazy_static = "1.4.0"
-libsql = { path = "../../libsql", features = ["encryption"] }
 tokio = { version = "1.29.1", features = [ "rt-multi-thread" ] }
 hyper-rustls = { version = "0.25", features = ["webpki-roots"]}
+
+[target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
+libsql = { path = "../../libsql", features = ["encryption"] }
+
+# Disable encryption for ios and android targets
+[target.'cfg(any(target_os = "ios", target_os = "android"))'.dependencies]
+libsql = { path = "../../libsql"}
+
+
+[profile.release]
+strip = "symbols"
