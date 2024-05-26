@@ -1,3 +1,9 @@
+pub const LIBSQL_INT: i8 = 1;
+pub const LIBSQL_FLOAT: i8 = 2;
+pub const LIBSQL_TEXT: i8 = 3;
+pub const LIBSQL_BLOB: i8 = 4;
+pub const LIBSQL_NULL: i8 = 5;
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct blob {
