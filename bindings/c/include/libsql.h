@@ -76,6 +76,8 @@ int libsql_query_stmt(libsql_stmt_t stmt, libsql_rows_t *out_rows, const char **
 
 int libsql_execute_stmt(libsql_stmt_t stmt, const char **out_err_msg);
 
+int libsql_reset_stmt(libsql_stmt_t stmt, const char **out_err_msg);
+
 void libsql_free_stmt(libsql_stmt_t stmt);
 
 int libsql_query(libsql_connection_t conn, const char *sql, libsql_rows_t *out_rows, const char **out_err_msg);
