@@ -1,0 +1,14 @@
+
+    PRAGMA encoding = 'utf16';
+    ATTACH 'test.db2' AS aux;
+    SELECT * FROM t2;
+  
+
+    ATTACH 'test.db4' AS aux;
+    SELECT * FROM t4;
+  
+
+    ATTACH 'test.db3' AS aux;
+    SELECT * FROM t3;
+    SELECT * FROM t2;
+  

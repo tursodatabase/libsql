@@ -3,6 +3,16 @@
 
 #include <stdint.h>
 
+#define LIBSQL_INT 1
+
+#define LIBSQL_FLOAT 2
+
+#define LIBSQL_TEXT 3
+
+#define LIBSQL_BLOB 4
+
+#define LIBSQL_NULL 5
+
 typedef struct libsql_connection libsql_connection;
 
 typedef struct libsql_database libsql_database;
@@ -75,6 +85,8 @@ int libsql_bind_blob(libsql_stmt_t stmt, int idx, const unsigned char *value, in
 int libsql_query_stmt(libsql_stmt_t stmt, libsql_rows_t *out_rows, const char **out_err_msg);
 
 int libsql_execute_stmt(libsql_stmt_t stmt, const char **out_err_msg);
+
+int libsql_reset_stmt(libsql_stmt_t stmt, const char **out_err_msg);
 
 void libsql_free_stmt(libsql_stmt_t stmt);
 

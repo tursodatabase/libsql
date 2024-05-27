@@ -1,0 +1,65 @@
+ 
+    SELECT level, string_agg(idx, ' ') FROM t1_segdir GROUP BY level 
+  
+ 
+    SELECT level, group_concat(idx, ' ') FROM t1_segdir GROUP BY level 
+  
+ 
+    SELECT level, string_agg(idx, ' ') FROM t1_segdir GROUP BY level 
+  
+ 
+    SELECT level, string_agg(idx, ' ') FROM t2_segdir GROUP BY level 
+  
+ 
+    INSERT INTO t2(t2) VALUES('merge=1000000,2');
+    SELECT level, group_concat(idx, ' ') FROM t2_segdir GROUP BY level 
+  
+
+    SELECT quote(value) FROM t4_stat WHERE rowid=1
+  
+
+    DELETE FROM t4_stat WHERE rowid=1;
+    INSERT INTO t4(t4) VALUES('merge=1,12');
+    SELECT level, string_agg(idx, ' ') FROM t4_segdir GROUP BY level;
+  
+
+    SELECT level, group_concat(idx, ' ') FROM t1_segdir GROUP BY level;
+  
+
+    INSERT INTO t1(t1) VALUES('merge=1,5');
+    INSERT INTO t1(t1) VALUES('merge=1,5');
+    SELECT level, string_agg(idx, ' ') FROM t1_segdir GROUP BY level;
+  
+SELECT quote(value) from t1_stat WHERE rowid=1
+SELECT quote(value) from t1_stat WHERE rowid=1
+
+    SELECT level, group_concat(idx, ' ') FROM t1_segdir GROUP BY level;
+    SELECT quote(value) from t1_stat WHERE rowid=1;
+  
+
+    INSERT INTO t1(t1) VALUES('merge=1,6');
+    INSERT INTO t1(t1) VALUES('merge=1,6');
+    SELECT level, group_concat(idx, ' ') FROM t1_segdir GROUP BY level;
+    SELECT quote(value) from t1_stat WHERE rowid=1;
+  
+
+    SELECT level, group_concat(idx, ' ') FROM t1_segdir GROUP BY level;
+    SELECT quote(value) from t1_stat WHERE rowid=1;
+  
+
+    INSERT INTO t1(t1) VALUES('merge=1,6');
+    SELECT level, string_agg(idx, ' ') FROM t1_segdir GROUP BY level;
+    SELECT quote(value) from t1_stat WHERE rowid=1;
+  
+
+    SELECT level, group_concat(idx, ' ') FROM t1_segdir GROUP BY level
+  
+
+  CREATE VIRTUAL TABLE t1 USING fts4(a, order=DESC);
+  INSERT INTO t1(a) VALUES (0);
+  INSERT INTO t1(a) VALUES (0);
+  UPDATE t1 SET a = NULL;
+
+
+  INSERT INTO t1(t1) VALUES('merge=1,4');
+

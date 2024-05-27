@@ -1,0 +1,31 @@
+
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, d);
+
+  CREATE VIEW v1 AS SELECT * FROM t1, t2;
+  CREATE VIEW v2 AS SELECT * FROM t1, t2;
+
+  CREATE VIEW vA AS
+    SELECT * FROM v1, (
+      SELECT * FROM t1 LEFT JOIN t2 ON (a=c)
+    )
+    UNION ALL
+    SELECT * FROM v1, v2
+
+
+  SELECT 1 FROM vA, vA, vA, vA, vA, vA, vA, vA, vA, vA
+
+
+  CREATE TABLE y1(a INTEGER, b);
+  CREATE TABLE y2(c INTEGER, d);
+
+  CREATE TABLE x3_a(a INTEGER PRIMARY KEY, b TEXT);
+  CREATE TABLE x3_b(c INTEGER PRIMARY KEY, d TEXT);
+
+
+
+  SELECT * FROM y1 CROSS JOIN y2 WHERE y1.a=y2.c AND y2.c IN (
+    SELECT a FROM x3_a UNION ALL
+    SELECT c FROM x3_b ORDER BY 1
+  )
+

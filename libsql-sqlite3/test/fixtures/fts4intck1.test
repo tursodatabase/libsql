@@ -1,0 +1,22 @@
+
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT, c TEXT AS (slang(b)));
+  INSERT INTO t1(b) VALUES('the quick fox jumps over the lazy brown dog');
+  SELECT c FROM t1;
+
+
+  CREATE VIRTUAL TABLE t2 USING fts4(content="t1", c);
+  INSERT INTO t2(t2) VALUES('rebuild');
+  SELECT docid FROM t2 WHERE t2 MATCH 'deh';
+
+
+  PRAGMA integrity_check(t2);
+
+
+  PRAGMA integrity_check(t2);
+
+
+  PRAGMA integrity_check(t2);
+
+
+  PRAGMA integrity_check(t2);
+

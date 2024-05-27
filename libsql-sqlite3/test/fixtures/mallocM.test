@@ -1,0 +1,6 @@
+
+  CREATE TABLE t1(x);
+
+ SELECT instr(x'', x'') 
+ SELECT instr(x'12345678', x'') 
+ SELECT instr(x'', x'1234') 

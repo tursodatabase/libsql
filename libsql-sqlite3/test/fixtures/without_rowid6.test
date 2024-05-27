@@ -1,0 +1,89 @@
+
+  CREATE TABLE t1(a,b,c,d,e, PRIMARY KEY(a,b,c,a,b,c,d,a,b,c)) WITHOUT ROWID;
+  CREATE INDEX t1a ON t1(b, b);
+  WITH RECURSIVE
+    c(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM c WHERE i<1000)
+  INSERT INTO t1(a,b,c,d,e) SELECT i, i+1000, printf('x%dy',i), 0, 0 FROM c;
+  ANALYZE;
+
+
+  SELECT c FROM t1 WHERE a=123;
+
+
+  SELECT c FROM t1 WHERE b=1123;
+
+
+  SELECT c FROM t1 ORDER BY a DESC LIMIT 5;
+
+
+  SELECT c FROM t1 ORDER BY b LIMIT 5;
+
+
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(
+    a UNIQUE,
+    b UNIQUE,
+    c UNIQUE,
+    PRIMARY KEY(b)
+  ) WITHOUT ROWID;
+  INSERT INTO t1(a,b,c) VALUES(1,8,3),(4,5,6),(7,2,9);
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+
+
+  EXPLAIN QUERY PLAN
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+
+
+  PRAGMA index_list(t1);
+
+
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(
+    a UNIQUE,
+    b PRIMARY KEY,
+    c UNIQUE,
+    UNIQUE(b)
+  ) WITHOUT ROWID;
+  INSERT INTO t1(a,b,c) VALUES(1,8,3),(4,5,6),(7,2,9);
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+
+
+  EXPLAIN QUERY PLAN
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+
+
+  PRAGMA index_list(t1);
+
+
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(
+    a UNIQUE,
+    b UNIQUE PRIMARY KEY,
+    c UNIQUE
+  ) WITHOUT ROWID;
+  INSERT INTO t1(a,b,c) VALUES(1,8,3),(4,5,6),(7,2,9);
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+
+
+  EXPLAIN QUERY PLAN
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+
+
+  PRAGMA index_list(t1);
+
+
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a,b,c,
+    UNIQUE(b,c),
+    PRIMARY KEY(b,c)
+  ) WITHOUT ROWID;
+  INSERT INTO t1(a,b,c) VALUES(1,8,3),(4,5,6),(7,2,9);
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+
+
+  EXPLAIN QUERY PLAN
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+
+
+  PRAGMA index_list(t1);
+

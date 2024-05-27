@@ -1,0 +1,18 @@
+
+  CREATE TABLE blobs(k INTEGER PRIMARY KEY, v BLOB);
+  INSERT INTO blobs VALUES(1, zeroblob(100));
+  INSERT INTO blobs VALUES(2, zeroblob(100));
+
+
+  INSERT INTO blobs VALUES(3, 42);
+  INSERT INTO blobs VALUES(4, 54.4);
+  INSERT INTO blobs VALUES(5, NULL);
+
+
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.t1(a INTEGER PRIMARY KEY, b);
+
+  INSERT INTO t1 VALUES(4, 'hello');
+  INSERT INTO aux.t1 VALUES(4, 'world');
+

@@ -1,0 +1,59 @@
+
+  CREATE TABLE t301(a INTEGER PRIMARY KEY,b,c);
+  CREATE INDEX t301c ON t301(c);
+  INSERT INTO t301 VALUES(1,2,3);
+  INSERT INTO t301 VALUES(2,2,3);
+  CREATE TABLE t302(x, y);
+  INSERT INTO t302 VALUES(4,5);
+  ANALYZE;
+
+
+  SELECT * FROM t301 WHERE c=3 AND a IS NULL;
+
+
+  SELECT * FROM t301 WHERE c=3 AND a IS NOT NULL;
+
+
+  CREATE TABLE t400(a INTEGER PRIMARY KEY, b, c);
+  CREATE TABLE t401(p INTEGER PRIMARY KEY, q, r);
+  CREATE TABLE t402(x INTEGER PRIMARY KEY, y, z);
+  EXPLAIN QUERY PLAN
+  SELECT * FROM t400, t401, t402 WHERE t402.z GLOB 'abc*';
+
+
+  EXPLAIN QUERY PLAN
+  SELECT * FROM t400, t401, t402 WHERE t401.r GLOB 'abc*';
+
+
+  EXPLAIN QUERY PLAN
+  SELECT * FROM t400, t401, t402 WHERE t400.c GLOB 'abc*';
+
+
+  CREATE TABLE aaa (id INTEGER PRIMARY KEY, type INTEGER,
+                    fk INTEGER DEFAULT NULL, parent INTEGER,
+                    position INTEGER, title LONGVARCHAR,
+                    keyword_id INTEGER, folder_type TEXT,
+                    dateAdded INTEGER, lastModified INTEGER);
+  CREATE INDEX aaa_111 ON aaa (fk, type);
+  CREATE INDEX aaa_222 ON aaa (parent, position);
+  CREATE INDEX aaa_333 ON aaa (fk, lastModified);
+  CREATE TABLE bbb (id INTEGER PRIMARY KEY, type INTEGER,
+                    fk INTEGER DEFAULT NULL, parent INTEGER,
+                    position INTEGER, title LONGVARCHAR,
+                    keyword_id INTEGER, folder_type TEXT,
+                    dateAdded INTEGER, lastModified INTEGER);
+  CREATE INDEX bbb_111 ON bbb (fk, type);
+  CREATE INDEX bbb_222 ON bbb (parent, position);
+  CREATE INDEX bbb_333 ON bbb (fk, lastModified);
+
+
+  CREATE TABLE t71(x1 INTEGER PRIMARY KEY, y1);
+  CREATE TABLE t72(x2 INTEGER PRIMARY KEY, y2);
+  CREATE TABLE t73(x3, y3);
+  CREATE TABLE t74(x4, y4);
+  INSERT INTO t71 VALUES(123,234);
+  INSERT INTO t72 VALUES(234,345);
+  INSERT INTO t73 VALUES(123,234);
+  INSERT INTO t74 VALUES(234,345);
+  INSERT INTO t74 VALUES(234,678);
+

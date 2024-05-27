@@ -27,6 +27,7 @@ use crate::replication::FrameNo;
 use crate::stats::Stats;
 use crate::{Result, DEFAULT_AUTO_CHECKPOINT};
 
+use super::connection_manager::InnerWalManager;
 use super::libsql::{LibSqlConnection, MakeLibSqlConn};
 use super::program::DescribeResponse;
 use super::{Connection, RequestContext};
@@ -60,6 +61,7 @@ impl MakeWriteProxyConn {
         primary_replication_index: Option<FrameNo>,
         encryption_config: Option<EncryptionConfig>,
         resolve_attach_path: ResolveNamespacePathFn,
+        make_wal_manager:  Arc<dyn Fn() -> InnerWalManager + Send + Sync + 'static>,
     ) -> crate::Result<Self> {
         let client = ProxyClient::with_origin(channel, uri);
         let make_read_only_conn = MakeLibSqlConn::new(
@@ -75,6 +77,7 @@ impl MakeWriteProxyConn {
             encryption_config.clone(),
             Arc::new(AtomicBool::new(false)), // this is always false for write proxy
             resolve_attach_path,
+            make_wal_manager,
         )
         .await?;
 

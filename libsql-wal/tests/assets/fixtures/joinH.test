@@ -1,0 +1,140 @@
+
+  CREATE TABLE t1(a INT);
+  CREATE TABLE t2(b INT);
+  INSERT INTO t2(b) VALUES(NULL);
+
+
+  SELECT DISTINCT a FROM t1 FULL JOIN t2 ON true WHERE (b ISNULL);
+
+
+  SELECT a FROM t1 FULL JOIN t2 ON true;
+
+
+  SELECT a FROM t1 FULL JOIN t2 ON true WHERE (b ISNULL);
+
+
+  SELECT DISTINCT a FROM t1 FULL JOIN t2 ON true;
+
+
+  CREATE TABLE r3(x);
+  CREATE TABLE r4(y INTEGER PRIMARY KEY);
+  INSERT INTO r4 VALUES(55);
+
+
+  SELECT 'value!' FROM r3 FULL JOIN r4 ON (y=x);
+
+
+  SELECT 'value!' FROM r3 FULL JOIN r4 ON (y=x) WHERE +y=55;
+
+
+  CREATE TABLE t0 (c0);
+  CREATE TABLE t1 (c0);
+  CREATE TABLE t2 (c0 , c1 , c2 , UNIQUE (c0), UNIQUE (c2 DESC));
+  INSERT INTO t2 VALUES ('x', 'y', 'z');
+  ANALYZE;
+  CREATE VIEW v0(c0) AS SELECT FALSE;
+
+
+  CREATE TABLE t1(a,b,c,d,e,f,g,h,PRIMARY KEY(a,b,c)) WITHOUT ROWID;
+  CREATE TABLE t2(i, j);
+  INSERT INTO t2 VALUES(10, 20);
+
+
+  SELECT (d IS NULL) FROM t1 RIGHT JOIN t2 ON (j=33);
+
+
+  CREATE INDEX i1 ON t1( (d IS NULL), d );
+
+
+  SELECT (d IS NULL) FROM t1 RIGHT JOIN t2 ON (j=33);
+
+
+  CREATE TABLE t0(w);
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(y);
+  CREATE TABLE t3(z);
+  INSERT INTO t3 VALUES('t3val');
+
+
+  SELECT * FROM t1 INNER JOIN t2 ON (0) RIGHT OUTER JOIN t3;
+
+
+  SELECT * FROM t1 INNER JOIN t2 ON (0) FULL OUTER JOIN t3;
+
+
+  SELECT * FROM t3 LEFT JOIN t2 ON (0);
+
+
+  SELECT * FROM t0 RIGHT JOIN t1 INNER JOIN t2 ON (0) RIGHT JOIN t3
+
+
+  SELECT * FROM t0 RIGHT JOIN t1 INNER JOIN t2 ON (0)
+
+
+  CREATE TABLE t1(a INT);
+  CREATE TABLE t2(b INT);
+  INSERT INTO t1 VALUES(3);
+  SELECT CASE WHEN t2.b THEN 0 ELSE 1 END FROM t1 LEFT JOIN t2 ON true;
+
+
+  SELECT * FROM t1 LEFT JOIN t2 ON true WHERE CASE WHEN t2.b THEN 0 ELSE 1 END;
+
+
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c);
+  CREATE TABLE t3(d);
+
+  INSERT INTO t1 VALUES ('a', 'a');
+  INSERT INTO t2 VALUES ('ddd');
+  INSERT INTO t3 VALUES(1234);
+
+
+  SELECT t2.rowid FROM t1 JOIN (t2 JOIN t3);
+
+
+  UPDATE t1 SET b = t2.rowid FROM t2, t3;
+
+ 
+  SELECT * FROM t1
+
+
+  CREATE TABLE x1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE x2(c, d);
+  CREATE TABLE x3(rowid, _rowid_);
+
+  CREATE TABLE x4(rowid, _rowid_, oid);
+
+  INSERT INTO x1 VALUES(1000, 'thousand');
+  INSERT INTO x2 VALUES('c', 'd');
+  INSERT INTO x3(oid, rowid, _rowid_) VALUES(43, 'hello', 'world');
+  INSERT INTO x4(oid, rowid, _rowid_) VALUES('forty three', 'hello', 'world');
+
+
+  SELECT x3.oid FROM x1 JOIN (x2 JOIN x3 ON c='c')
+
+
+  SELECT x3.rowid FROM x1 JOIN (x2 JOIN x3 ON c='c')
+
+
+  SELECT x4.oid FROM x1 JOIN (x2 JOIN x4 ON c='c')
+
+
+  CREATE TABLE x1(a);
+  CREATE TABLE x2(b);
+  CREATE TABLE x3(c);
+
+  CREATE TABLE wo1(a PRIMARY KEY, b) WITHOUT ROWID;
+  CREATE TABLE wo2(a PRIMARY KEY, rowid) WITHOUT ROWID;
+  CREATE TABLE wo3(a PRIMARY KEY, b) WITHOUT ROWID;
+
+
+  INSERT INTO x1(rowid, a) VALUES(101, 'A');
+  INSERT INTO x2(rowid, b) VALUES(55, 'B');
+  SELECT * FROM x1 NATURAL JOIN x2;
+
+
+  INSERT INTO wo1(a, b) VALUES('mya', 'myb');
+  INSERT INTO wo2(a, rowid) VALUES('mypk', 'myrowid');
+  INSERT INTO wo3(a, b) VALUES('MYA', 'MYB');
+  INSERT INTO x3(rowid, c) VALUES(99, 'x3B');
+

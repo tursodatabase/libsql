@@ -1,0 +1,43 @@
+
+  CREATE VIRTUAL TABLE t1 USING tcl('vtab_cmd');
+  CREATE TABLE t1x(a INTEGER, b TEXT, c REAL);
+  INSERT INTO t1x VALUES(1, 2, 3);
+  INSERT INTO t1x VALUES(4, 5, 6);
+  INSERT INTO t1x VALUES(7, 8, 9);
+
+  CREATE VIRTUAL TABLE t2 USING tcl('vtab_simple');
+  CREATE TABLE t2x(x INTEGER);
+  INSERT INTO t2x VALUES(1);
+
+
+  DELETE FROM t1x;
+  INSERT INTO t1x VALUES('a', 'b', 'c');
+
+ SELECT * FROM t1 
+ SELECT * FROM t1 WHERE (a, b) != ('a', 'b'); 
+
+  DELETE FROM t1x;
+  INSERT INTO t1x VALUES(7, 8, 9);
+
+ SELECT * FROM t1 
+ SELECT * FROM t1 WHERE (a, b) != (7, '8') 
+ SELECT * FROM t1 WHERE a!=7 OR b!='8' 
+ SELECT * FROM t1 WHERE a!=7 OR b!='8' 
+
+  CREATE TABLE t3(a INTEGER, b TEXT);
+  INSERT INTO t3 VALUES(45, 46);
+
+ SELECT * FROM t3 WHERE (a, b) != (45, 46); 
+ SELECT * FROM t3 WHERE (a, b) != ('45', '46'); 
+ SELECT * FROM t3 WHERE (a, b) == (45, 46); 
+ SELECT * FROM t3 WHERE (a, b) == ('45', '46'); 
+
+  CREATE TABLE t4x(a INTEGER);
+  INSERT INTO t4x VALUES(245);
+  CREATE VIRTUAL TABLE t4 USING tcl('vtab_simple_integer');
+
+ SELECT rowid, * FROM t4 WHERE x=245; 
+ SELECT rowid, * FROM t4 WHERE x='245'; 
+ SELECT rowid, * FROM t4 WHERE x!=245; 
+ SELECT rowid, * FROM t4 WHERE x!='245'; 
+ SELECT rowid, * FROM t4 WHERE rowid!=1 OR x!='245'; 

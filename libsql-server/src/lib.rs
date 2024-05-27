@@ -28,6 +28,8 @@ use config::{
 use http::user::UserApi;
 use hyper::client::HttpConnector;
 use hyper_rustls::HttpsConnector;
+use libsql_sys::wal::Sqlite3WalManager;
+use libsql_sys::wal::either::Either;
 use namespace::{NamespaceConfig, NamespaceName};
 use net::Connector;
 use once_cell::sync::Lazy;
@@ -413,6 +415,7 @@ where
         let (scheduler_sender, scheduler_receiver) = mpsc::channel(128);
 
         let (stats_sender, stats_receiver) = mpsc::channel(8);
+        let make_wal_manager = Arc::new(|| Either::Left(Sqlite3WalManager::default()));
         let ns_config = NamespaceConfig {
             db_kind,
             base_path: self.path.clone(),
@@ -431,6 +434,7 @@ where
             channel: channel.clone(),
             uri: uri.clone(),
             migration_scheduler: scheduler_sender.into(),
+            make_wal_manager,
         };
 
         let (metastore_conn_maker, meta_store_wal_manager) =

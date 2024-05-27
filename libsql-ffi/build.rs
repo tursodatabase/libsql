@@ -303,7 +303,7 @@ fn build_multiple_ciphers(out_path: &Path) {
     let cxx = env("CXX");
 
     let toolchain_path = sqlite3mc_build_dir.join("toolchain.cmake");
-    let cmake_toolchain_opt = format!("-DCMAKE_TOOLCHAIN_FILE=toolchain.cmake");
+    let cmake_toolchain_opt = "-DCMAKE_TOOLCHAIN_FILE=toolchain.cmake".to_string();
 
     let mut toolchain_file = OpenOptions::new()
         .create(true)
@@ -363,8 +363,8 @@ fn build_multiple_ciphers(out_path: &Path) {
 
     let mut make = Command::new("cmake");
     make.current_dir(sqlite3mc_build_dir.clone());
-    make.args(&["--build", "."]);
-    make.args(&["--config", "Release"]);
+    make.args(["--build", "."]);
+    make.args(["--config", "Release"]);
     if !make.status().unwrap().success() {
         panic!("Failed to run make");
     }

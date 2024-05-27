@@ -1,0 +1,35 @@
+
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, t TEXT);
+  INSERT INTO t1 VALUES(-1, randomblob(30));
+  INSERT INTO t1 VALUES(-2, randomblob(30));
+  INSERT INTO t1 VALUES(-3, randomblob(30));
+  INSERT INTO t1 VALUES(-4, randomblob(30));
+  INSERT INTO t1 VALUES(-5, randomblob(30));
+  INSERT INTO t1 VALUES(-6, randomblob(30));
+
+
+  CREATE TABLE t2(a TEXT, b INTEGER PRIMARY KEY);
+  INSERT INTO t2 VALUES(randomblob(30), 43);
+  INSERT INTO t2 VALUES(randomblob(30), 44);
+  INSERT INTO t2 VALUES(randomblob(30), 45);
+
+
+  CREATE TABLE t3(i INTEGER PRIMARY KEY, j TEXT, k TEXT);
+  INSERT INTO t3 VALUES(1, randomblob(30), randomblob(30));
+  INSERT INTO t3 VALUES(2, randomblob(30), randomblob(30));
+  SELECT * FROM t3 WHERE i=1;
+
+
+  UPDATE t3 SET k = 'xyz' WHERE i=1;
+  SELECT * FROM t3 WHERE i=1;
+
+
+  SELECT * FROM t3 WHERE i=1;
+
+
+  UPDATE t3 SET j = 'xyz' WHERE i=2;
+  SELECT * FROM t3 WHERE i=2;
+
+
+  SELECT * FROM t3 WHERE i=2;
+

@@ -450,6 +450,20 @@ pub unsafe extern "C" fn libsql_execute_stmt(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn libsql_reset_stmt(
+    stmt: libsql_stmt_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    if stmt.is_null() {
+        set_err_msg("Null statement".to_string(), out_err_msg);
+        return 1;
+    }
+    let stmt = stmt.get_ref_mut();
+    stmt.params.clear();
+    0
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn libsql_free_stmt(stmt: libsql_stmt_t) {
     if stmt.is_null() {
         return;
@@ -596,19 +610,19 @@ pub unsafe extern "C" fn libsql_column_type(
     let row = row.get_ref();
     match row.get_value(col) {
         Ok(libsql::Value::Null) => {
-            *out_type = 5 as i32;
+            *out_type = types::LIBSQL_NULL as i32;
         }
         Ok(libsql::Value::Text(_)) => {
-            *out_type = 3 as i32;
+            *out_type = types::LIBSQL_TEXT as i32;
         }
         Ok(libsql::Value::Integer(_)) => {
-            *out_type = 1 as i32;
+            *out_type = types::LIBSQL_INT as i32;
         }
         Ok(libsql::Value::Real(_)) => {
-            *out_type = 2 as i32;
+            *out_type = types::LIBSQL_FLOAT as i32;
         }
         Ok(libsql::Value::Blob(_)) => {
-            *out_type = 4 as i32;
+            *out_type = types::LIBSQL_BLOB as i32;
         }
         Err(e) => {
             set_err_msg(format!("Error fetching value: {e}"), out_err_msg);

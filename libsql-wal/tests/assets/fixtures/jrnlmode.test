@@ -1,0 +1,22 @@
+ INSERT INTO t2 VALUES(456) 
+ SELECT * FROM t1, t2 
+ PRAGMA journal_mode=PERSIST 
+ PRAGMA journal_mode=TRUNCATE 
+ PRAGMA journal_mode=PERSIST 
+ PRAGMA journal_mode=DELETE 
+ PRAGMA journal_mode=TRUNCATE 
+ CREATE TABLE t3(z) 
+ BEGIN IMMEDIATE 
+ PRAGMA journal_mode=DELETE 
+ COMMIT 
+ PRAGMA journal_mode=DELETE 
+ PRAGMA journal_mode=TRUNCATE 
+ CREATE TABLE t4(w) 
+ BEGIN IMMEDIATE 
+ PRAGMA journal_mode=DELETE 
+ COMMIT 
+ PRAGMA journal_mode=DELETE 
+
+  CREATE TABLE tx(a);
+  PRAGMA journal_mode = off;
+
