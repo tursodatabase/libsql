@@ -363,6 +363,22 @@ where
         let mut inner = self.inner.lock();
         f(&mut inner.conn)
     }
+
+    pub async fn execute<B: QueryResultBuilder>(
+        &self,
+        pgm: Program,
+        ctx: RequestContext,
+        builder: B,
+    ) -> Result<(B, Program)> {
+        PROGRAM_EXEC_COUNT.increment(1);
+
+        check_program_auth(&ctx, &pgm, &self.inner.lock().config_store.get())?;
+        let conn = self.inner.clone();
+        BLOCKING_RT
+            .spawn_blocking(move || Connection::run(conn, pgm, builder))
+            .await
+            .unwrap()
+    }
 }
 
 pub(super) struct Connection<W> {
@@ -633,15 +649,7 @@ where
         builder: B,
         _replication_index: Option<FrameNo>,
     ) -> Result<B> {
-        PROGRAM_EXEC_COUNT.increment(1);
-
-        check_program_auth(&ctx, &pgm, &self.inner.lock().config_store.get())?;
-        let conn = self.inner.clone();
-        BLOCKING_RT
-            .spawn_blocking(move || Connection::run(conn, pgm, builder))
-            .await
-            .unwrap()
-            .map(|(b, _)| b)
+        self.execute(pgm, ctx, builder).await.map(|(b, _)| b)
     }
 
     async fn describe(
