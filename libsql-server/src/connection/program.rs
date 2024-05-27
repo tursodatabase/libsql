@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use metrics::{histogram, increment_counter};
@@ -17,14 +16,12 @@ use super::RequestContext;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Program {
-    pub steps: Arc<Vec<Step>>,
+    pub steps: Vec<Step>,
 }
 
 impl Program {
     pub fn new(steps: Vec<Step>) -> Self {
-        Self {
-            steps: Arc::new(steps),
-        }
+        Self { steps }
     }
 
     pub fn is_read_only(&self) -> bool {
