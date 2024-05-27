@@ -3,7 +3,7 @@ use std::fmt;
 use bytes::Bytes;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
-pub struct NamespaceName(Bytes);
+pub struct NamespaceName(pub Bytes);
 
 impl fmt::Debug for NamespaceName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

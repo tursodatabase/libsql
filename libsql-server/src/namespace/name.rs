@@ -14,6 +14,12 @@ impl fmt::Debug for NamespaceName {
     }
 }
 
+impl Into<libsql_wal::name::NamespaceName> for NamespaceName {
+    fn into(self) -> libsql_wal::name::NamespaceName {
+        libsql_wal::name::NamespaceName(self.0)
+    }
+}
+
 impl Default for NamespaceName {
     fn default() -> Self {
         Self(Bytes::from_static(b"default"))

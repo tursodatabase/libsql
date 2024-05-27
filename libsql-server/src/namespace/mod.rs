@@ -32,6 +32,7 @@ use uuid::Uuid;
 
 use crate::auth::parse_jwt_key;
 use crate::connection::config::DatabaseConfig;
+use crate::connection::connection_manager::InnerWalManager;
 use crate::connection::libsql::{open_conn, MakeLibSqlConn};
 use crate::connection::write_proxy::MakeWriteProxyConn;
 use crate::connection::Connection;
@@ -361,6 +362,7 @@ impl Namespace {
             ns_config.encryption_config.clone(),
             block_writes,
             resolve_attach_path,
+            ns_config.make_wal_manager.clone(),
         )
         .await?
         .throttled(
@@ -591,6 +593,7 @@ impl Namespace {
             primary_current_replicatio_index,
             config.encryption_config.clone(),
             resolve_attach_path,
+            config.make_wal_manager.clone(),
         )
         .await?
         .throttled(
@@ -737,6 +740,7 @@ pub struct NamespaceConfig {
     pub(crate) bottomless_replication: Option<bottomless::replicator::Options>,
     pub(crate) scripted_backup: Option<ScriptBackupManager>,
     pub(crate) migration_scheduler: SchedulerHandle,
+    pub(crate) make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
 }
 
 pub type DumpStream =
