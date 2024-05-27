@@ -15,7 +15,7 @@ use crate::query_result_builder::QueryResultBuilder;
 use super::config::DatabaseConfig;
 use super::RequestContext;
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Program {
     pub steps: Arc<Vec<Step>>,
 }
