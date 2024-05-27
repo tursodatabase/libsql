@@ -461,7 +461,7 @@ impl<W: Wal> Connection<W> {
         this: Arc<Mutex<Self>>,
         pgm: Program,
         mut builder: B,
-    ) -> Result<B> {
+    ) -> Result<(B, Program)> {
         let (config, stats, block_writes, resolve_attach_path) = {
             let lock = this.lock();
             let config = lock.config_store.get();
@@ -532,7 +532,7 @@ impl<W: Wal> Connection<W> {
             vm.builder().finish(current_fno, is_autocommit)?;
         }
 
-        Ok(vm.into_builder())
+        Ok((vm.into_builder(), pgm))
     }
 
     fn rollback(&self) {
@@ -641,6 +641,7 @@ where
             .spawn_blocking(move || Connection::run(conn, pgm, builder))
             .await
             .unwrap()
+            .map(|(b, _)| b)
     }
 
     async fn describe(
@@ -761,7 +762,8 @@ mod test {
             Program::seq(&["BEGIN IMMEDIATE"]),
             TestBuilder::default(),
         )
-        .unwrap();
+        .unwrap()
+        .0;
         assert!(!conn.inner.lock().conn.is_autocommit());
 
         tokio::time::sleep(Duration::from_secs(1)).await;
@@ -771,7 +773,8 @@ mod test {
             Program::seq(&["create table test (c)"]),
             TestBuilder::default(),
         )
-        .unwrap();
+        .unwrap()
+        .0;
         assert!(!conn.is_autocommit().await.unwrap());
         assert!(matches!(builder.into_ret()[0], Err(Error::LibSqlTxTimeout)));
     }
@@ -807,7 +810,8 @@ mod test {
                     Program::seq(&["BEGIN IMMEDIATE"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 let ret = &builder.into_ret()[0];
                 assert!(
                     (ret.is_ok() && !conn.inner.lock().conn.is_autocommit())
@@ -856,7 +860,8 @@ mod test {
                     Program::seq(&["BEGIN IMMEDIATE"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 assert!(!conn.inner.lock().is_autocommit());
                 assert!(builder.into_ret()[0].is_ok());
             }
@@ -874,7 +879,8 @@ mod test {
                     Program::seq(&["BEGIN IMMEDIATE"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 assert!(!conn.inner.lock().is_autocommit());
                 assert!(builder.into_ret()[0].is_ok());
                 before.elapsed()
@@ -892,7 +898,8 @@ mod test {
                     Program::seq(&["COMMIT"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 assert!(conn.inner.lock().is_autocommit());
                 assert!(builder.into_ret()[0].is_ok());
             }
@@ -1022,7 +1029,8 @@ mod test {
                     Program::seq(&["BEGIN IMMEDIATE"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 assert!(!conn.inner.lock().is_autocommit());
                 assert!(builder.into_ret()[0].is_ok());
             }
@@ -1040,7 +1048,8 @@ mod test {
                     Program::seq(&["BEGIN IMMEDIATE"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 assert!(!conn.inner.lock().is_autocommit());
                 assert!(builder.into_ret()[0].is_ok());
                 before.elapsed()
@@ -1059,7 +1068,8 @@ mod test {
                     Program::seq(&["SELECT 1;"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 assert!(conn.inner.lock().is_autocommit());
                 // timeout
                 assert!(builder.into_ret()[0].is_err());
@@ -1069,7 +1079,8 @@ mod test {
                     Program::seq(&["SELECT 1;"]),
                     TestBuilder::default(),
                 )
-                .unwrap();
+                .unwrap()
+                .0;
                 assert!(conn.inner.lock().is_autocommit());
                 // state reset
                 assert!(builder.into_ret()[0].is_ok());
