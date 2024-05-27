@@ -31,7 +31,7 @@ impl SchemaConnection {
 impl crate::connection::Connection for SchemaConnection {
     async fn execute_program<B: crate::query_result_builder::QueryResultBuilder>(
         &self,
-        migration: Program,
+        mut migration: Program,
         ctx: RequestContext,
         builder: B,
         replication_index: Option<crate::replication::FrameNo>,
@@ -53,7 +53,7 @@ impl crate::connection::Connection for SchemaConnection {
         } else {
             check_program_auth(&ctx, &migration, &self.config.get())?;
             let connection = self.connection.clone();
-            validate_migration(&migration)?;
+            validate_migration(&mut migration)?;
             let migration = Arc::new(migration);
             let builder = tokio::task::spawn_blocking({
                 let migration = migration.clone();

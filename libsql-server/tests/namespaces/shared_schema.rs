@@ -241,13 +241,17 @@ fn migration_contains_txn_statements() {
         )
         .unwrap();
         let schema_conn = schema_db.connect().unwrap();
+        schema_conn
+            .execute_batch("begin; create table test1 (c);commit")
+            .await
+            .unwrap();
         assert_debug_snapshot!(schema_conn
             .execute_batch("begin; create table test (c)")
             .await
             .unwrap_err());
 
         let resp = client
-            .get("http://schema.primary:8080/v1/jobs/1")
+            .get("http://schema.primary:8080/v1/jobs/2")
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
