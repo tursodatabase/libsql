@@ -30,8 +30,6 @@ use crate::replication::FrameNo;
 use crate::rpc::streaming_exec::make_proxy_stream;
 
 pub mod rpc {
-    use std::sync::Arc;
-
     use anyhow::Context;
     pub use libsql_replication::rpc::proxy::*;
 
@@ -223,14 +221,8 @@ pub mod rpc {
 
     impl From<connection::program::Program> for Program {
         fn from(pgm: connection::program::Program) -> Self {
-            // TODO: use unwrap_or_clone when stable
-            let steps = match Arc::try_unwrap(pgm.steps) {
-                Ok(steps) => steps,
-                Err(arc) => (*arc).clone(),
-            };
-
             Self {
-                steps: steps.into_iter().map(|s| s.into()).collect(),
+                steps: pgm.steps.into_iter().map(|s| s.into()).collect(),
             }
         }
     }

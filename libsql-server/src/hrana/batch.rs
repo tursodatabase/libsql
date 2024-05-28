@@ -1,6 +1,5 @@
 use anyhow::{anyhow, bail, Result};
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use crate::connection::program::{Cond, Program, Step};
 use crate::connection::{Connection, RequestContext};
@@ -140,9 +139,7 @@ pub fn proto_sequence_to_program(sql: &str) -> Result<Program> {
             Step { cond, query }
         })
         .collect();
-    Ok(Program {
-        steps: Arc::new(steps),
-    })
+    Ok(Program { steps })
 }
 
 pub async fn execute_sequence(

@@ -14,6 +14,7 @@ itertools = "0.10"
 tempfile = "3.3"
 wabt = "0.10.0"
 hex = "0.4.3"
+rustc-hash = "1"
 
 [features]
 default = []

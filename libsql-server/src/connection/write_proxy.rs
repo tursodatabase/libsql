@@ -461,10 +461,7 @@ impl Connection for WriteProxyConnection<RpcStream> {
             // We know that this program won't perform any writes. We attempt to run it on the
             // replica. If it leaves an open transaction, then this program is an interactive
             // transaction, so we rollback the replica, and execute again on the primary.
-            let builder = self
-                .read_conn
-                .execute_program(pgm.clone(), ctx.clone(), builder, replication_index)
-                .await?;
+            let (builder, pgm) = self.read_conn.execute(pgm, ctx.clone(), builder).await?;
             if !self.read_conn.is_autocommit().await? {
                 REPLICA_LOCAL_EXEC_MISPREDICT.increment(1);
                 self.read_conn.rollback(ctx.clone()).await?;

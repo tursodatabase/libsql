@@ -47,8 +47,34 @@ pub use scheduler::Scheduler;
 pub use status::{MigrationDetails, MigrationJobStatus, MigrationSummary, MigrationTaskStatus};
 
 use crate::connection::program::Program;
+use crate::query::{Params, Query};
+use crate::query_analysis::{Statement, StmtKind};
 
-pub fn validate_migration(migration: &Program) -> Result<(), Error> {
+pub fn validate_migration(migration: &mut Program) -> Result<(), Error> {
+    if !migration.steps.is_empty()
+        && matches!(migration.steps[0].query.stmt.kind, StmtKind::TxnBegin)
+    {
+        if !matches!(
+            migration.steps.last().map(|s| &s.query.stmt.kind),
+            Some(&StmtKind::TxnEnd)
+        ) {
+            return Err(Error::MigrationContainsTransactionStatements);
+        }
+        migration.steps[0].query = Query {
+            stmt: Statement::parse("PRAGMA max_page_count")
+                .next()
+                .unwrap()
+                .unwrap(),
+            params: Params::empty(),
+            want_rows: false,
+        };
+        while let Some(step) = migration.steps.last() {
+            if !matches!(step.query.stmt.kind, StmtKind::TxnEnd) {
+                break;
+            }
+            migration.steps.pop();
+        }
+    }
     if migration.steps().iter().any(|s| s.query.stmt.kind.is_txn()) {
         Err(Error::MigrationContainsTransactionStatements)
     } else {
