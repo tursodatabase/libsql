@@ -11,7 +11,7 @@ use fst::MapBuilder;
 use parking_lot::{Mutex, RwLock};
 use zerocopy::{AsBytes, FromZeroes};
 
-use crate::fs::file::FileExt;
+use crate::io::file::FileExt;
 use crate::segment::{frame_offset, page_offset, sealed::SealedSegment};
 use crate::transaction::{Transaction, WriteTransaction};
 

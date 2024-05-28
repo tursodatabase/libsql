@@ -10,8 +10,8 @@ use libsql_sys::wal::PageHeaders;
 use parking_lot::{Mutex, MutexGuard};
 
 use crate::error::{Error, Result};
-use crate::fs::file::FileExt;
-use crate::fs::FileSystem;
+use crate::io::file::FileExt;
+use crate::io::Io;
 use crate::name::NamespaceName;
 use crate::registry::WalRegistry;
 use crate::segment::current::CurrentSegment;
@@ -32,7 +32,7 @@ pub struct WalLock {
     pub(crate) waiters: Injector<(Unparker, u64)>,
 }
 
-pub struct SharedWal<FS: FileSystem> {
+pub struct SharedWal<FS: Io> {
     pub(crate) current: ArcSwap<CurrentSegment<FS::File>>,
     pub(crate) wal_lock: Arc<WalLock>,
     pub(crate) db_file: FS::File,
@@ -40,7 +40,7 @@ pub struct SharedWal<FS: FileSystem> {
     pub(crate) registry: Arc<WalRegistry<FS>>,
 }
 
-impl<FS: FileSystem> SharedWal<FS> {
+impl<FS: Io> SharedWal<FS> {
     pub fn db_size(&self) -> u32 {
         self.current.load().db_size()
     }
@@ -200,9 +200,9 @@ impl<FS: FileSystem> SharedWal<FS> {
 
         // TODO: remove, stupid strategy for tests
         // ok, we still hold a write txn
-        if current.tail().len() > 10 {
-            current.tail().checkpoint(&self.db_file)?;
-        }
+        // if current.tail().len() > 10 {
+        //     current.tail().checkpoint(&self.db_file)?;
+        // }
 
         Ok(())
     }

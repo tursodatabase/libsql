@@ -1,11 +1,14 @@
 #![allow(dead_code, unused_variables, async_fn_in_trait)]
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
 use chrono::{DateTime, Utc};
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::{JoinHandle, JoinSet};
+
+use crate::io::Io;
+use crate::name::NamespaceName;
+use crate::segment::sealed::SealedSegment;
 
 use self::job::JobResult;
 use self::scheduler::Scheduler;
@@ -22,15 +25,21 @@ pub mod storage;
 ///
 /// On shutdown, attempts to empty the queue, and flush the receiver. When the last handle of the
 /// receiver is dropped, and the queue is empty, exit.
-pub struct BottomlessLoop<S: Storage> {
-    receiver: mpsc::Receiver<StoreSegmentRequest<S::Config>>,
-    scheduler: Scheduler<S>,
+pub struct BottomlessLoop<S: Storage, FS: Io> {
+    receiver: mpsc::Receiver<StoreSegmentRequest<S::Config, Arc<SealedSegment<FS::File>>>>,
+    scheduler: Scheduler<S::Config, Arc<SealedSegment<FS::File>>>,
+    storage: Arc<S>,
+    filesystem: Arc<FS>,
     max_in_flight: usize,
-    in_flight_futs: JoinSet<JobResult<S>>,
+    in_flight_futs: JoinSet<JobResult<S::Config, Arc<SealedSegment<FS::File>>>>,
     force_shutdown: oneshot::Receiver<()>,
 }
 
-impl<S: Storage + 'static> BottomlessLoop<S> {
+impl<S, FS> BottomlessLoop<S, FS>
+where
+    FS: Io,
+    S: Storage + 'static,
+{
     /// Schedules durability jobs. This loop is not allowed to fail, or lose jobs.
     /// A job is prepared by calling `Scheduler::prepare(..)`. The job is spawned, and it returns a
     /// `JobResult`, which is then returned to the scheduler by calling `Scheduler::report(..)`.
@@ -54,7 +63,8 @@ impl<S: Storage + 'static> BottomlessLoop<S> {
                     .scheduler
                     .schedule()
                     .expect("scheduler has work, but didn't return a job");
-                self.in_flight_futs.spawn(job.perform());
+                self.in_flight_futs
+                    .spawn(job.perform(self.storage.clone(), self.filesystem.clone()));
             }
 
             tokio::select! {
@@ -108,9 +118,9 @@ pub struct BottomlessConfig<C> {
     config: C,
 }
 
-pub struct Bottomless<C> {
+pub struct Bottomless<C, S> {
     /// send request to the main loop
-    job_sender: mpsc::Sender<StoreSegmentRequest<C>>,
+    job_sender: mpsc::Sender<StoreSegmentRequest<C, S>>,
     /// receiver for the current max durable index
     durable_notifier: mpsc::Receiver<(NamespaceName, u64)>,
     /// join handle to the `BottomlessLoop`
@@ -120,19 +130,21 @@ pub struct Bottomless<C> {
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    #[error("io error: {0}")]
+    Io(#[from] std::io::Error),
     #[error("an error occured while storing a segment: {0}")]
     Store(String),
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
-impl<C> Bottomless<C> {
-    pub async fn new<S: Storage>(_storage: S) -> Result<Bottomless<S::Config>> {
+impl<C, F> Bottomless<C, F> {
+    pub async fn new<S: Storage>(_storage: S) -> Result<Bottomless<S::Config, F>> {
         todo!()
     }
     /// Send a request make a segment durable. Return a future that resolves when that segment
     /// becomes durable.
-    pub async fn store(&self, _request: StoreSegmentRequest<C>) {
+    pub async fn store(&self, _request: StoreSegmentRequest<C, F>) {
         assert!(
             !self.job_sender.is_closed(),
             "bottomless loop was closed before the handle was dropped"
@@ -167,20 +179,14 @@ impl<C> Bottomless<C> {
     }
 }
 
-// TODO: comes from libsql-server, when everything comes together
-#[derive(Hash, PartialEq, Eq, Clone, Debug)]
-pub struct NamespaceName(Arc<str>);
-
 #[derive(Debug)]
-pub struct StoreSegmentRequest<C> {
+pub struct StoreSegmentRequest<C, T> {
     namespace: NamespaceName,
-    start_frame_no: u64,
-    end_frame_no: u64,
     /// Path to the segment. Read-only for bottomless
-    segment_path: PathBuf,
+    segment: T,
     /// When this segment was created
     created_at: DateTime<Utc>,
     /// alternative configuration to use with the storage layer.
     /// e.g: S3 overrides
-    storage_config_override: Option<C>,
+    storage_config_override: Option<Arc<C>>,
 }

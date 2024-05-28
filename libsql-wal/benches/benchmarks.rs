@@ -5,7 +5,7 @@ use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use libsql_sys::rusqlite::{self, OpenFlags};
 use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager, Wal};
 use libsql_sys::Connection;
-use libsql_wal::fs::StdFs;
+use libsql_wal::io::StdIO;
 use libsql_wal::name::NamespaceName;
 use libsql_wal::wal::LibsqlWal;
 use libsql_wal::{registry::WalRegistry, wal::LibsqlWalManager};
@@ -54,15 +54,12 @@ fn prepare_for_random_reads<W: Wal>(conn: &mut Connection<W>) {
     }
 }
 
-fn with_libsql_conn(f: impl FnOnce(&mut Connection<LibsqlWal<StdFs>>)) {
+fn with_libsql_conn(f: impl FnOnce(&mut Connection<LibsqlWal<StdIO>>)) {
     let tmp = tempdir().unwrap();
     let resolver = |_: &Path| NamespaceName::from_string("test".into());
 
-    let registry = Arc::new(WalRegistry::new(tmp.path().join("wals"), resolver).unwrap());
-    let wal_manager = LibsqlWalManager {
-        registry: registry.clone(),
-        next_conn_id: Default::default(),
-    };
+    let registry = Arc::new(WalRegistry::new(tmp.path().join("wals"), resolver, ()).unwrap());
+    let wal_manager = LibsqlWalManager::new(registry.clone());
 
     let mut conn = libsql_sys::Connection::open(
         tmp.path().join("data"),

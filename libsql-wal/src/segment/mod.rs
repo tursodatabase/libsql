@@ -23,16 +23,16 @@ pub mod sealed;
 #[repr(C)]
 #[derive(Debug, zerocopy::AsBytes, zerocopy::FromBytes, zerocopy::FromZeroes, Clone, Copy)]
 pub struct SegmentHeader {
-    start_frame_no: U64,
-    last_commited_frame_no: U64,
+    pub start_frame_no: U64,
+    pub last_commited_frame_no: U64,
     /// size of the database in pages
-    db_size: U32,
+    pub db_size: U32,
     /// byte offset of the index. If 0, then the index wasn't written, and must be recovered.
     /// If non-0, the segment is sealed, and must not be written to anymore
-    index_offset: U64,
-    index_size: U64,
+    pub index_offset: U64,
+    pub index_size: U64,
     /// checksum of the header fields, excluding the checksum itself. This field must be the last
-    header_cheksum: U64,
+    pub header_cheksum: U64,
 }
 
 impl SegmentHeader {

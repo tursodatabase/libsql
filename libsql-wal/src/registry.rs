@@ -10,8 +10,8 @@ use parking_lot::{Condvar, Mutex, RwLock, RwLockUpgradableReadGuard};
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
-use crate::fs::file::FileExt;
-use crate::fs::{FileSystem, StdFs};
+use crate::io::file::FileExt;
+use crate::io::{Io, StdIO};
 use crate::name::NamespaceName;
 use crate::segment::list::SegmentList;
 use crate::segment::{current::CurrentSegment, sealed::SealedSegment};
@@ -19,7 +19,7 @@ use crate::shared_wal::SharedWal;
 use crate::transaction::{Transaction, WriteTransaction};
 
 /// Translates a path to a namespace name
-pub trait NamespaceResolver {
+pub trait NamespaceResolver: Send + Sync + 'static {
     fn resolve(&self, path: &Path) -> NamespaceName;
 }
 
@@ -29,7 +29,17 @@ impl<F: Fn(&Path) -> NamespaceName + Send + Sync + 'static> NamespaceResolver fo
     }
 }
 
-enum Slot<FS: FileSystem> {
+/// called on every segment on swap.
+pub trait SegmentSwapHandler<F>: Send + Sync + 'static {
+    fn handle_segment_swap(&self, namespace: NamespaceName, log: Arc<SealedSegment<F>>);
+}
+
+// ignore segments
+impl<F> SegmentSwapHandler<F> for () {
+    fn handle_segment_swap(&self, _namespace: NamespaceName, _log: Arc<SealedSegment<F>>) {}
+}
+
+enum Slot<FS: Io> {
     Wal(Arc<SharedWal<FS>>),
     /// Only a single thread is allowed to instantiate the wal. The first thread to acquire an
     /// entry in the registry map puts a building slot. Other connections will wait for the mutex
@@ -38,28 +48,31 @@ enum Slot<FS: FileSystem> {
 }
 
 /// Wal Registry maintains a set of shared Wal, and their respective set of files.
-pub struct WalRegistry<FS: FileSystem> {
+pub struct WalRegistry<FS: Io> {
     fs: FS,
     path: PathBuf,
     shutdown: AtomicBool,
     opened: RwLock<HashMap<NamespaceName, Slot<FS>>>,
     resolver: Box<dyn NamespaceResolver + Send + Sync + 'static>,
+    swap_handler: Box<dyn SegmentSwapHandler<FS::File>>,
 }
 
-impl WalRegistry<StdFs> {
+impl WalRegistry<StdIO> {
     pub fn new(
         path: PathBuf,
-        resolver: impl NamespaceResolver + Send + Sync + 'static,
+        resolver: impl NamespaceResolver,
+        swap_handler: impl SegmentSwapHandler<<StdIO as Io>::File>,
     ) -> Result<Self> {
-        Self::new_with_fs(StdFs(()), path, resolver)
+        Self::new_with_fs(StdIO(()), path, resolver, swap_handler)
     }
 }
 
-impl<FS: FileSystem> WalRegistry<FS> {
+impl<FS: Io> WalRegistry<FS> {
     pub fn new_with_fs(
         fs: FS,
         path: PathBuf,
         resolver: impl NamespaceResolver + Send + Sync + 'static,
+        swap_handler: impl SegmentSwapHandler<FS::File>,
     ) -> Result<Self> {
         fs.create_dir_all(&path)?;
         Ok(Self {
@@ -68,6 +81,7 @@ impl<FS: FileSystem> WalRegistry<FS> {
             opened: Default::default(),
             shutdown: Default::default(),
             resolver: Box::new(resolver),
+            swap_handler: Box::new(swap_handler),
         })
     }
 
@@ -130,6 +144,7 @@ impl<FS: FileSystem> WalRegistry<FS> {
     ) -> Result<Arc<SharedWal<FS>>> {
         let path = self.path.join(namespace.as_str());
         self.fs.create_dir_all(&path)?;
+        // TODO: handle that with abstract io
         let dir = walkdir::WalkDir::new(&path).sort_by_file_name().into_iter();
 
         let tail = SegmentList::default();
@@ -149,6 +164,9 @@ impl<FS: FileSystem> WalRegistry<FS> {
             if let Some(sealed) =
                 SealedSegment::open(file.into(), entry.path().to_path_buf(), Default::default())?
             {
+                let sealed = Arc::new(sealed);
+                self.swap_handler
+                    .handle_segment_swap(namespace.clone(), sealed.clone());
                 tail.push_log(sealed);
             }
         }
@@ -233,6 +251,9 @@ impl<FS: FileSystem> WalRegistry<FS> {
         // sealing must the last fallible operation, because we don't want to end up in a situation
         // where the current log is sealed and it wasn't swapped.
         if let Some(sealed) = current.seal()? {
+            let sealed = Arc::new(sealed);
+            self.swap_handler
+                .handle_segment_swap(shared.namespace.clone(), sealed.clone());
             new.tail().push_log(sealed);
         }
 

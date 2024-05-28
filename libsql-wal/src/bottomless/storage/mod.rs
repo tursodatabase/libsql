@@ -1,17 +1,24 @@
-use chrono::{DateTime, Utc};
-use tokio::io::{AsyncRead, AsyncWrite};
+use std::future::Future;
+use std::sync::Arc;
 
-use crate::NamespaceName;
-use crate::Result;
+use chrono::{DateTime, Utc};
+use tokio::io::AsyncWrite;
+use uuid::Uuid;
+
+use super::Result;
+use crate::io::file::FileExt;
+use crate::name::NamespaceName;
 
 mod fs;
 mod s3;
 
+#[derive(Debug)]
 pub struct SegmentMeta {
-    namespace: NamespaceName,
-    start_frame_no: u64,
-    end_frame_no: u64,
-    create_at: DateTime<Utc>,
+    pub namespace: NamespaceName,
+    pub segment_id: Uuid,
+    pub start_frame_no: u64,
+    pub end_frame_no: u64,
+    pub created_at: DateTime<Utc>,
 }
 
 pub struct RestoreRequest {}
@@ -24,20 +31,21 @@ pub struct RestoreOptions {
 }
 
 pub struct DbMeta {
-    max_frame_no: u64,
+    pub max_frame_no: u64,
 }
 
-pub trait Storage: Send + Sync {
+pub trait Storage: Send + Sync + 'static {
     /// Config type associated with the Storage
-    type Config: Send + Sync;
+    type Config: Send + Sync + 'static;
 
     /// Store `segment_data` with its associated `meta`
-    async fn store(
+    fn store(
         &self,
         config: &Self::Config,
         meta: SegmentMeta,
-        segment_data: impl AsyncRead,
-    ) -> Result<()>;
+        segment_data: impl FileExt,
+        segment_index: Vec<u8>,
+    ) -> impl Future<Output = Result<()>> + Send;
 
     /// Fetch a segment for `namespace` containing `frame_no`, and writes it to `dest`.
     async fn fetch_segment(
@@ -74,5 +82,43 @@ pub trait Storage: Send + Sync {
         _dest: impl AsyncWrite,
     ) -> Result<u64> {
         todo!("provide default restore implementation")
+    }
+
+    /// Returns the default configuration for this storage
+    fn default_config(&self) -> Arc<Self::Config>;
+}
+
+impl<T: Storage> Storage for Arc<T> {
+    type Config = T::Config;
+
+    fn store(
+        &self,
+        config: &Self::Config,
+        meta: SegmentMeta,
+        segment_data: impl FileExt,
+        segment_index: Vec<u8>,
+    ) -> impl Future<Output = Result<()>> + Send {
+        self.as_ref()
+            .store(config, meta, segment_data, segment_index)
+    }
+
+    async fn fetch_segment(
+        &self,
+        config: &Self::Config,
+        namespace: NamespaceName,
+        frame_no: u64,
+        dest: impl AsyncWrite,
+    ) -> Result<()> {
+        self.as_ref()
+            .fetch_segment(config, namespace, frame_no, dest)
+            .await
+    }
+
+    async fn meta(&self, config: &Self::Config, namespace: NamespaceName) -> Result<DbMeta> {
+        self.as_ref().meta(config, namespace).await
+    }
+
+    fn default_config(&self) -> Arc<Self::Config> {
+        self.as_ref().default_config()
     }
 }

@@ -5,25 +5,34 @@ use std::sync::Arc;
 
 use libsql_sys::wal::{Wal, WalManager};
 
-use crate::fs::FileSystem;
+use crate::io::Io;
 use crate::registry::WalRegistry;
 use crate::shared_wal::SharedWal;
 use crate::transaction::Transaction;
 
 #[derive(Clone)]
-pub struct LibsqlWalManager<FS: FileSystem> {
-    pub registry: Arc<WalRegistry<FS>>,
-    pub next_conn_id: Arc<AtomicU64>,
+pub struct LibsqlWalManager<FS: Io> {
+    registry: Arc<WalRegistry<FS>>,
+    next_conn_id: Arc<AtomicU64>,
 }
 
-pub struct LibsqlWal<FS: FileSystem> {
+impl<FS: Io> LibsqlWalManager<FS> {
+    pub fn new(registry: Arc<WalRegistry<FS>>) -> Self {
+        Self {
+            registry,
+            next_conn_id: Default::default(),
+        }
+    }
+}
+
+pub struct LibsqlWal<FS: Io> {
     last_read_frame_no: Option<u64>,
     tx: Option<Transaction<FS::File>>,
     shared: Arc<SharedWal<FS>>,
     conn_id: u64,
 }
 
-impl<FS: FileSystem> WalManager for LibsqlWalManager<FS> {
+impl<FS: Io> WalManager for LibsqlWalManager<FS> {
     type Wal = LibsqlWal<FS>;
 
     fn use_shared_memory(&self) -> bool {
@@ -43,7 +52,7 @@ impl<FS: FileSystem> WalManager for LibsqlWalManager<FS> {
             .registry
             .clone()
             .open(db_path.as_ref())
-            .map_err(Into::into)?;
+            .map_err(|e| dbg!(e.into()))?;
         let conn_id = self
             .next_conn_id
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -89,7 +98,7 @@ impl<FS: FileSystem> WalManager for LibsqlWalManager<FS> {
     }
 }
 
-impl<FS: FileSystem> Wal for LibsqlWal<FS> {
+impl<FS: Io> Wal for LibsqlWal<FS> {
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn limit(&mut self, _size: i64) {}
 
