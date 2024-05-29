@@ -135,6 +135,62 @@ impl FileExt for File {
     }
 }
 
+impl FileExt for Vec<u8> {
+    fn len(&self) -> io::Result<u64> {
+        Ok(self.len() as u64)
+    }
+
+    fn write_all_at(&self, _buf: &[u8], _offset: u64) -> Result<()> {
+        todo!()
+    }
+
+    fn write_at_vectored(&self, _bufs: &[IoSlice], _offset: u64) -> Result<usize> {
+        todo!()
+    }
+
+    fn write_at(&self, _buf: &[u8], _offset: u64) -> Result<usize> {
+        todo!()
+    }
+
+    fn read_exact_at(&self, _buf: &mut [u8], _offset: u64) -> Result<()> {
+        todo!()
+    }
+
+    fn sync_all(&self) -> Result<()> {
+        todo!()
+    }
+
+    fn set_len(&self, _len: u64) -> Result<()> {
+        todo!()
+    }
+
+    fn read_exact_at_async<B: IoBufMut + Send + 'static>(
+        &self,
+        mut buf: B,
+        offset: u64,
+    ) -> impl Future<Output = (B, Result<()>)> + Send {
+        let slice = &self[offset as usize..];
+
+        let chunk = unsafe {
+            let len = buf.bytes_total();
+            let ptr = buf.stable_mut_ptr();
+            std::slice::from_raw_parts_mut(ptr, len)
+        };
+
+        chunk.clone_from_slice(slice);
+
+        async move { (buf, Ok(())) }
+    }
+
+    async fn write_all_at_async<B: IoBuf + Send + 'static>(
+        &self,
+        _buf: B,
+        _offset: u64,
+    ) -> (B, Result<()>) {
+        todo!()
+    }
+}
+
 pub async fn async_read_all_to_vec<F: FileExt>(f: F) -> io::Result<Vec<u8>> {
     let out = Vec::with_capacity(f.len()? as _);
     let (out, ret) = f.read_exact_at_async(out, 0).await;
