@@ -212,6 +212,9 @@ struct Cli {
     /// S3 secret access key for the meta store backup
     #[clap(long, env = "SQLD_META_STORE_SECRET_ACCESS")]
     meta_store_secret_access_key: Option<String>,
+    /// S3 session token for the meta store backup
+    #[clap(long, env = "SQLD_META_STORE_SESSION_TOKEN")]
+    meta_store_session_token: Option<String>,
     /// S3 region for the metastore backup
     #[clap(long, env = "SQLD_META_STORE_REGION")]
     meta_store_region: Option<String>,
@@ -573,6 +576,7 @@ fn make_meta_store_config(config: &Cli) -> anyhow::Result<MetaStoreConfig> {
                 .meta_store_secret_access_key
                 .clone()
                 .context("missing meta store bucket secret access key")?,
+            session_token: config.meta_store_session_token.clone(),
             region: config
                 .meta_store_region
                 .clone()

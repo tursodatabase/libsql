@@ -184,6 +184,7 @@ pub struct MetaStoreConfig {
 pub struct BottomlessConfig {
     pub access_key_id: String,
     pub secret_access_key: String,
+    pub session_token: Option<String>,
     pub region: String,
     pub backup_id: String,
     pub bucket_name: String,
