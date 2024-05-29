@@ -125,7 +125,10 @@ impl<F> CurrentSegment<F> {
                 };
                 let slices = &[IoSlice::new(header.as_bytes()), IoSlice::new(&page)];
                 let offset = tx.next_offset;
-                debug_assert_eq!(self.header.lock().start_frame_no.get() + offset as u64, frame_no);
+                debug_assert_eq!(
+                    self.header.lock().start_frame_no.get() + offset as u64,
+                    frame_no
+                );
                 self.file.write_at_vectored(slices, frame_offset(offset))?;
                 current_savepoint.index.insert(page_no, offset);
                 tx.next_frame_no += 1;

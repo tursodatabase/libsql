@@ -251,7 +251,7 @@ struct Cli {
     shutdown_timeout: Option<u64>,
 
     #[clap(long)]
-    use_libsql_wal: bool
+    use_libsql_wal: bool,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -662,7 +662,7 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
             .shutdown_timeout
             .map(Duration::from_secs)
             .unwrap_or(Duration::from_secs(30)),
-            use_libsql_wal: config.use_libsql_wal,
+        use_libsql_wal: config.use_libsql_wal,
     })
 }
 

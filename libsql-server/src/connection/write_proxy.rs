@@ -61,7 +61,7 @@ impl MakeWriteProxyConn {
         primary_replication_index: Option<FrameNo>,
         encryption_config: Option<EncryptionConfig>,
         resolve_attach_path: ResolveNamespacePathFn,
-        make_wal_manager:  Arc<dyn Fn() -> InnerWalManager + Send + Sync + 'static>,
+        make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Send + Sync + 'static>,
     ) -> crate::Result<Self> {
         let client = ProxyClient::with_origin(channel, uri);
         let make_read_only_conn = MakeLibSqlConn::new(

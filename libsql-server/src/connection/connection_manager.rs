@@ -8,8 +8,8 @@ use crossbeam::sync::{Parker, Unparker};
 use hashbrown::HashMap;
 use libsql_sys::wal::either::Either;
 use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
-use libsql_sys::wal::{CheckpointMode, Sqlite3Wal, Wal, Sqlite3WalManager};
-use libsql_wal::fs::StdFs;
+use libsql_sys::wal::{CheckpointMode, Sqlite3Wal, Sqlite3WalManager, Wal};
+use libsql_wal::io::StdIO;
 use libsql_wal::wal::{LibsqlWal, LibsqlWalManager};
 use metrics::atomics::AtomicU64;
 use parking_lot::{Mutex, MutexGuard};
@@ -20,8 +20,8 @@ use super::TXN_TIMEOUT;
 
 pub type ConnId = u64;
 
-pub type InnerWalManager = Either<Sqlite3WalManager, LibsqlWalManager<StdFs>>;
-pub type InnerWal = Either<Sqlite3Wal, LibsqlWal<StdFs>>;
+pub type InnerWalManager = Either<Sqlite3WalManager, LibsqlWalManager<StdIO>>;
+pub type InnerWal = Either<Sqlite3Wal, LibsqlWal<StdIO>>;
 pub type ManagedConnectionWal = WrappedWal<ManagedConnectionWalWrapper, InnerWal>;
 
 #[derive(Copy, Clone, Debug)]

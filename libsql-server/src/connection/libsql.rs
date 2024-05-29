@@ -25,7 +25,7 @@ use crate::stats::{Stats, StatsUpdateMessage};
 use crate::{Result, BLOCKING_RT};
 
 use super::connection_manager::{
-    ConnectionManager, ManagedConnectionWal, ManagedConnectionWalWrapper, InnerWalManager,
+    ConnectionManager, InnerWalManager, ManagedConnectionWal, ManagedConnectionWalWrapper,
 };
 use super::program::{
     check_describe_auth, check_program_auth, DescribeCol, DescribeParam, DescribeResponse, Vm,

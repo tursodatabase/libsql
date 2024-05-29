@@ -1,6 +1,6 @@
+use std::marker::PhantomData;
 use std::path::Path;
 use std::str::FromStr;
-use std::marker::PhantomData;
 
 use crate::wal::{ffi::make_wal_manager, Wal, WalManager};
 

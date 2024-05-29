@@ -627,9 +627,11 @@ where
         })
     }
 
-    fn configure_wal_manager(&self) -> anyhow::Result<(
+    fn configure_wal_manager(
+        &self,
+    ) -> anyhow::Result<(
         Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
-        Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + Sync + 'static>>
+        Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + Sync + 'static>>,
     )> {
         let wal_path = self.path.join("wals");
 
@@ -653,7 +655,7 @@ where
                 anyhow::bail!("lisbl wal not supported in replica mode");
             }
 
-            let registry = Arc::new(WalRegistry::new(wal_path, |path: &Path| {
+            let namespace_resolver = |path: &Path| {
                 NamespaceName::from_string(
                     path.parent()
                         .unwrap()
@@ -665,28 +667,28 @@ where
                 )
                 .unwrap()
                 .into()
-            })?);
+            };
+
+            let registry = Arc::new(WalRegistry::new(wal_path, namespace_resolver, ())?);
 
             let wal = LibsqlWalManager::new(registry.clone());
             let shutdown_notify = self.shutdown.clone();
-            dbg!();
-            let shutdown_fut = Box::pin(
-                async move {
-                    dbg!();
-                    // shutdown_notify.notified().await;
-                    // tokio::task::spawn_blocking(move || {
-                    dbg!();
-                        // registry.shutdown()?;
-                    dbg!();
-                    // }).await.unwrap()?;
-                    Ok(())
-                });
+            let shutdown_fut = Box::pin(async move {
+                shutdown_notify.notified().await;
+                tokio::task::spawn_blocking(move || registry.shutdown())
+                    .await
+                    .unwrap()?;
+                Ok(())
+            });
 
             tracing::info!("using libsql wal");
             Ok((Arc::new(move || Either::Right(wal.clone())), shutdown_fut))
         } else {
             tracing::info!("using sqlite3 wal");
-            Ok((Arc::new(|| Either::Left(Sqlite3WalManager::default())), Box::pin(ready(Ok(())))))
+            Ok((
+                Arc::new(|| Either::Left(Sqlite3WalManager::default())),
+                Box::pin(ready(Ok(()))),
+            ))
         }
     }
 }
