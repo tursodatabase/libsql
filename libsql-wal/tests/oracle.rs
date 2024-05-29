@@ -79,19 +79,8 @@ fn run_test_sample(path: &Path) -> Result {
         NamespaceName::from_string(name.to_string())
     };
 
-<<<<<<< HEAD
     let registry = Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver, ()).unwrap());
     let wal_manager = LibsqlWalManager::new(registry.clone());
-||||||| parent of 8122c1c655 (integrate libsql-wal)
-    let registry = Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver).unwrap());
-    let wal_manager = LibsqlWalManager {
-        registry: registry.clone(),
-        next_conn_id: Default::default(),
-    };
-=======
-    let registry = Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver).unwrap());
-    let wal_manager = LibsqlWalManager::new(registry.clone());
->>>>>>> 8122c1c655 (integrate libsql-wal)
     let libsql_conn = libsql_sys::Connection::open(
         tmp.path().join("test/data").clone(),
         OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,

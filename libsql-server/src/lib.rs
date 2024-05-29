@@ -1,6 +1,7 @@
 #![allow(clippy::type_complexity, clippy::too_many_arguments)]
 
 use std::path::{Path, PathBuf};
+use std::pin::Pin;
 use std::str::FromStr;
 use std::sync::{Arc, Weak};
 
@@ -25,11 +26,13 @@ use auth::Auth;
 use config::{
     AdminApiConfig, DbConfig, HeartbeatConfig, RpcClientConfig, RpcServerConfig, UserApiConfig,
 };
+use futures::future::ready;
+use futures::Future;
 use http::user::UserApi;
 use hyper::client::HttpConnector;
 use hyper_rustls::HttpsConnector;
-use libsql_sys::wal::Sqlite3WalManager;
 use libsql_sys::wal::either::Either;
+use libsql_sys::wal::Sqlite3WalManager;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::wal::LibsqlWalManager;
 use namespace::{NamespaceConfig, NamespaceName};
@@ -422,7 +425,7 @@ where
         let (stats_sender, stats_receiver) = mpsc::channel(8);
 
         // chose the wal backend
-        let make_wal_manager = self.configure_wal_manager()?; 
+        let (make_wal_manager, registry_shutdown) = self.configure_wal_manager()?;
 
         let ns_config = NamespaceConfig {
             db_kind,
@@ -588,6 +591,7 @@ where
                     join_set.shutdown().await;
                     service_shutdown.notify_waiters();
                     namespace_store.shutdown().await?;
+                    registry_shutdown.await?;
 
                     Ok::<_, crate::Error>(())
                 };
@@ -623,14 +627,24 @@ where
         })
     }
 
-    fn configure_wal_manager(&self) -> anyhow::Result<Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>> {
+    fn configure_wal_manager(&self) -> anyhow::Result<(
+        Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
+        Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + Sync + 'static>>
+    )> {
         let wal_path = self.path.join("wals");
 
-        if wal_path.try_exists()? && !self.use_libsql_wal {
+        let enable_libsql_wal_test = {
+            let is_primary = self.rpc_server_config.is_some();
+            let is_libsql_wal_test = std::env::var("LIBSQL_WAL_TEST").is_ok();
+            is_primary && is_libsql_wal_test
+        };
+
+        let use_libsql_wal = self.use_libsql_wal || enable_libsql_wal_test;
+        if wal_path.try_exists()? && !use_libsql_wal {
             anyhow::bail!("database was previously setup to use libsql-wal");
         }
 
-        if self.use_libsql_wal {
+        if use_libsql_wal {
             if self.db_config.bottomless_replication.is_some() {
                 anyhow::bail!("bottomless not supported with libsql_wal");
             }
@@ -640,15 +654,39 @@ where
             }
 
             let registry = Arc::new(WalRegistry::new(wal_path, |path: &Path| {
-                NamespaceName::from_string(path.parent().unwrap().file_name().unwrap().to_str().unwrap().to_string()).unwrap().into()
+                NamespaceName::from_string(
+                    path.parent()
+                        .unwrap()
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .to_string(),
+                )
+                .unwrap()
+                .into()
             })?);
-            let wal = LibsqlWalManager::new(registry);
+
+            let wal = LibsqlWalManager::new(registry.clone());
+            let shutdown_notify = self.shutdown.clone();
+            dbg!();
+            let shutdown_fut = Box::pin(
+                async move {
+                    dbg!();
+                    // shutdown_notify.notified().await;
+                    // tokio::task::spawn_blocking(move || {
+                    dbg!();
+                        // registry.shutdown()?;
+                    dbg!();
+                    // }).await.unwrap()?;
+                    Ok(())
+                });
 
             tracing::info!("using libsql wal");
-            Ok(Arc::new(move || Either::Right(wal.clone())))
+            Ok((Arc::new(move || Either::Right(wal.clone())), shutdown_fut))
         } else {
             tracing::info!("using sqlite3 wal");
-            Ok(Arc::new(|| Either::Left(Sqlite3WalManager::default())))
+            Ok((Arc::new(|| Either::Left(Sqlite3WalManager::default())), Box::pin(ready(Ok(())))))
         }
     }
 }
