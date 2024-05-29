@@ -162,7 +162,25 @@ impl<FS: Io> SharedWal<FS> {
         buffer: &mut [u8],
     ) -> Result<()> {
         match tx.current.find_frame(page_no, tx) {
-            Some(offset) => tx.current.read_page_offset(offset, buffer)?,
+            Some(offset) => {
+                // some debug assertions to make sure invariants hold
+                #[cfg(debug_assertions)]
+                {
+                    if let Ok(header) = tx.current.frame_header_at(offset) {
+                        // the frame we got is not more recent than max frame_no
+                        assert!(
+                            header.frame_no() <= tx.max_frame_no(),
+                            "read frame is greater than max frame, {}, {}",
+                            header.frame_no(),
+                            tx.max_frame_no()
+                        );
+                        // the page we got is the page we asked for
+                        assert_eq!(header.page_no(), page_no);
+                    }
+                }
+
+                tx.current.read_page_offset(offset, buffer)?;
+            }
             None => {
                 // locate in segments
                 if !tx
