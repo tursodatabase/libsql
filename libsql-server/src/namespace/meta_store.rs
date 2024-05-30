@@ -372,9 +372,9 @@ fn try_process(
         )?;
     }
 
-    if let Err(e) = checkpoint(&conn) {
-        tracing::warn!("failed to checkpoint metastore: {e}");
-    }
+    // if let Err(e) = checkpoint(&conn) {
+    //     tracing::warn!("failed to checkpoint metastore: {e}");
+    // }
 
     Ok(())
 }
@@ -398,12 +398,46 @@ impl MetaStore {
         tokio::spawn({
             let inner = inner.clone();
             async move {
-                while let Some(msg) = changes_rx.recv().await {
-                    let inner = inner.clone();
-                    let jh = tokio::task::spawn_blocking(move || process(msg, inner));
+                let mut interval = tokio::time::interval(std::time::Duration::from_secs(1));
 
-                    if let Err(e) = jh.await {
-                        tracing::error!("error processing metastore update: {}", e);
+                loop {
+                    tokio::select! {
+                        msg = changes_rx.recv() => {
+                            let inner = inner.clone();
+
+                            if let Some(msg) = msg {
+                                let jh = tokio::task::spawn_blocking(move || process(msg, inner));
+
+                                if let Err(e) = jh.await {
+                                    tracing::error!("error processing metastore update: {}", e);
+                                }
+                            } else {
+                                 let jh = tokio::task::spawn_blocking(move || {
+                                    let conn = inner.conn.lock();
+                                    checkpoint(&conn)?;
+                                    Ok::<_, crate::Error>(())
+                                });
+
+                                if let Err(e) = jh.await {
+                                    tracing::error!("error processing metastore update: {}", e);
+                                }
+
+                                break;
+                            }
+                        }
+
+                        _ = interval.tick() => {
+                            let inner = inner.clone();
+                            let jh = tokio::task::spawn_blocking(move || {
+                                let conn = inner.conn.lock();
+                                checkpoint(&conn)?;
+                                Ok::<_, crate::Error>(())
+                            });
+
+                            if let Err(e) = jh.await {
+                                tracing::error!("error processing metastore update: {}", e);
+                            }
+                        }
                     }
                 }
             }
