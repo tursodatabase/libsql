@@ -3450,6 +3450,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "libsql-storage"
+version = "0.0.1"
+dependencies = [
+ "prost",
+ "prost-build",
+ "tonic 0.10.2",
+ "tonic-build 0.10.2",
+]
+
+[[package]]
 name = "libsql-sys"
 version = "0.5.0"
 dependencies = [
@@ -3535,7 +3545,7 @@ dependencies = [
  "tokio-stream",
  "tokio-util",
  "tonic 0.11.0",
- "tonic-build",
+ "tonic-build 0.11.0",
  "tracing",
  "uuid",
  "zerocopy",
@@ -5717,7 +5727,10 @@ dependencies = [
  "percent-encoding",
  "pin-project",
  "prost",
+ "rustls 0.21.12",
+ "rustls-pemfile 1.0.4",
  "tokio",
+ "tokio-rustls 0.24.1",
  "tokio-stream",
  "tower",
  "tower-layer",
@@ -5755,6 +5768,19 @@ dependencies = [
  "tower-service",
  "tracing",
  "webpki-roots 0.26.1",
+]
+
+[[package]]
+name = "tonic-build"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d021fc044c18582b9a2408cd0dd05b1596e3ecdb5c4df822bb0183545683889"
+dependencies = [
+ "prettyplease",
+ "proc-macro2",
+ "prost-build",
+ "quote",
+ "syn 2.0.66",
 ]
 
 [[package]]

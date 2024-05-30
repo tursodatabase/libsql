@@ -1,0 +1,15 @@
+[package]
+name = "libsql-storage"
+version = "0.0.1"
+edition = "2021"
+description = "libSQL WAL"
+repository = "https://github.com/tursodatabase/libsql"
+license = "MIT"
+
+[dependencies]
+prost = "0.12"
+tonic = { version = "0.10", features = ["tls"] }
+
+[dev-dependencies]
+prost-build = "0.12"
+tonic-build = "0.10"
