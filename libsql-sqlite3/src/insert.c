@@ -2691,6 +2691,9 @@ int sqlite3OpenTableAndIndices(
       *piDataCur = iIdxCur;
       p5 = 0;
     }
+    if( IsVectorIndex(pIdx)) {
+      op = OP_OpenVectorIdx;
+    }
     if( aToOpen==0 || aToOpen[i+1] ){
       sqlite3VdbeAddOp3(v, op, iIdxCur, pIdx->tnum, iDb);
       sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
