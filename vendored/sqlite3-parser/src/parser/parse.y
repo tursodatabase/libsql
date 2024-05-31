@@ -1088,9 +1088,9 @@ paren_exprlist(A) ::= LP exprlist(X) RP.  {A = X;}
 
 ///////////////////////////// The CREATE INDEX command ///////////////////////
 //
-cmd ::= createkw uniqueflag(U) INDEX ifnotexists(NE) fullname(X)
+cmd ::= createkw uniqueflag(U) INDEX ifnotexists(NE) fullname(X) indextype(T)
         ON nm(Y) LP sortlist(Z) RP where_opt(W). {
-  self.ctx.stmt = Some(Stmt::CreateIndex { unique: U, if_not_exists: NE, idx_name: X,
+  self.ctx.stmt = Some(Stmt::CreateIndex { unique: U, if_not_exists: NE, idx_type: T, idx_name: X,
                                             tbl_name: Y, columns: Z, where_clause: W });
 }
 
@@ -1098,6 +1098,9 @@ cmd ::= createkw uniqueflag(U) INDEX ifnotexists(NE) fullname(X)
 uniqueflag(A) ::= UNIQUE.  {A = true;}
 uniqueflag(A) ::= .        {A = false;}
 
+%type indextype {Option<Vec<Name>>}
+indextype(T) ::= USING idlist(L). {T = Some(L);}
+indextype(T) ::= .                {T = None;}
 
 // The eidlist non-terminal (Expression Id List) generates an ExprList
 // from a list of identifiers.  The identifier names are in ExprList.a[].zName.
