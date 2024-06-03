@@ -398,6 +398,7 @@ impl NamespaceStore {
         Ok(ns)
     }
 
+    #[tracing::instrument(skip_all, fields(namespace))]
     pub async fn create(
         &self,
         namespace: NamespaceName,
@@ -427,9 +428,13 @@ impl NamespaceStore {
 
         let db_config = Arc::new(db_config);
         let handle = self.inner.metadata.handle(namespace.clone());
+        tracing::debug!("storing db config");
         handle.store(db_config).await?;
+        tracing::debug!("completed storing db config, loading namespace");
         self.load_namespace(&namespace, handle, restore_option)
             .await?;
+
+        tracing::debug!("completed loading namespace");
 
         Ok(())
     }

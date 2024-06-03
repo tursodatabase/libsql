@@ -26,7 +26,10 @@ impl BottomlessWalWrapper {
     fn try_with_replicator<Ret>(&self, f: impl FnOnce(&mut Replicator) -> Ret) -> Result<Ret> {
         let mut lock = self.replicator.lock().unwrap();
         match &mut *lock {
-            Some(replicator) => Ok(f(replicator)),
+            Some(replicator) => {
+                let _span = tracing::info_span!("replicator", db_name = replicator.db_name);
+                Ok(f(replicator))
+            }
             None => Err(Error::new(SQLITE_IOERR_WRITE)),
         }
     }
