@@ -40,6 +40,7 @@ pub struct SharedWal<FS: Io> {
     pub(crate) registry: Arc<WalRegistry<FS>>,
     #[allow(dead_code)] // used by replication
     pub(crate) checkpointed_frame_no: AtomicU64,
+    pub(crate) new_frame_notifier: tokio::sync::watch::Sender<u64>,
 }
 
 impl<FS: Io> SharedWal<FS> {
@@ -227,7 +228,11 @@ impl<FS: Io> SharedWal<FS> {
         size_after: u32,
     ) -> Result<()> {
         let current = self.current.load();
-        current.insert_pages(pages.iter(), (size_after != 0).then_some(size_after), tx)?;
+        if let Some(last_committed) =
+            current.insert_pages(pages.iter(), (size_after != 0).then_some(size_after), tx)?
+        {
+            self.new_frame_notifier.send_replace(last_committed);
+        }
 
         // TODO: use config for max log size
         if tx.is_commited() && current.count_committed() > 1000 {

@@ -100,7 +100,7 @@ impl<F> CurrentSegment<F> {
         pages: impl Iterator<Item = (u32, &'a [u8])>,
         size_after: Option<u32>,
         tx: &mut WriteTransaction<F>,
-    ) -> Result<()>
+    ) -> Result<Option<u64>>
     where
         F: FileExt,
     {
@@ -151,10 +151,12 @@ impl<F> CurrentSegment<F> {
                     *self.header.lock() = header;
 
                     tx.is_commited = true;
-                }
+
+                    return Ok(Some(last_frame_no))
+                } 
             }
 
-            Ok(())
+            Ok(None)
         })
     }
 

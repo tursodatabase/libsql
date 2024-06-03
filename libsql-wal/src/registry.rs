@@ -199,6 +199,8 @@ impl<FS: Io> WalRegistry<FS> {
             tail.into(),
         )?));
 
+        let (new_frame_notifier, _) = tokio::sync::watch::channel(next_frame_no.get() - 1);
+
         let shared = Arc::new(SharedWal {
             current,
             wal_lock: Default::default(),
@@ -206,6 +208,7 @@ impl<FS: Io> WalRegistry<FS> {
             registry: self.clone(),
             namespace: namespace.clone(),
             checkpointed_frame_no: header.replication_index.get().into(),
+            new_frame_notifier,
         });
 
         opened.with_upgraded(|opened| {
