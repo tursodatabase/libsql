@@ -2,6 +2,10 @@
 name = "libsql-storage-server"
 version = "0.0.1"
 edition = "2021"
+description = "libSQL Storage Server"
+repository = "https://github.com/tursodatabase/libsql"
+license = "MIT"
+publish = false
 default-run = "libsql-storage-server"
 
 [[bin]]
