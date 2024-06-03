@@ -35,6 +35,7 @@ use libsql_sys::wal::either::Either;
 use libsql_sys::wal::Sqlite3WalManager;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::wal::LibsqlWalManager;
+use namespace::meta_store::MetaStoreHandle;
 use namespace::{NamespaceConfig, NamespaceName};
 use net::Connector;
 use once_cell::sync::Lazy;
@@ -94,7 +95,7 @@ pub(crate) static BLOCKING_RT: Lazy<Runtime> = Lazy::new(|| {
 });
 
 type Result<T, E = Error> = std::result::Result<T, E>;
-type StatsSender = mpsc::Sender<(NamespaceName, Weak<Stats>)>;
+type StatsSender = mpsc::Sender<(NamespaceName, MetaStoreHandle, Weak<Stats>)>;
 
 pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpConnector>> {
     pub path: Arc<Path>,
@@ -299,8 +300,7 @@ where
     fn spawn_monitoring_tasks(
         &self,
         join_set: &mut JoinSet<anyhow::Result<()>>,
-        stats_receiver: mpsc::Receiver<(NamespaceName, Weak<Stats>)>,
-        namespaces: NamespaceStore,
+        stats_receiver: mpsc::Receiver<(NamespaceName, MetaStoreHandle, Weak<Stats>)>,
     ) -> anyhow::Result<()> {
         match self.heartbeat_config {
             Some(ref config) => {
@@ -323,7 +323,6 @@ where
                             heartbeat_auth,
                             heartbeat_period,
                             stats_receiver,
-                            namespaces,
                         )
                         .await;
                         Ok(())
@@ -422,7 +421,7 @@ where
 
         let (scheduler_sender, scheduler_receiver) = mpsc::channel(128);
 
-        let (stats_sender, stats_receiver) = mpsc::channel(8);
+        let (stats_sender, stats_receiver) = mpsc::channel(1024);
 
         // chose the wal backend
         let (make_wal_manager, registry_shutdown) = self.configure_wal_manager()?;
@@ -476,7 +475,7 @@ where
             Ok(())
         });
 
-        self.spawn_monitoring_tasks(&mut join_set, stats_receiver, namespace_store.clone())?;
+        self.spawn_monitoring_tasks(&mut join_set, stats_receiver)?;
 
         // eagerly load the default namespace when namespaces are disabled
         if self.disable_namespaces && db_kind.is_primary() {

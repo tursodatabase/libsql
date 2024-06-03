@@ -346,6 +346,7 @@ impl Namespace {
         let stats = make_stats(
             &db_path,
             join_set,
+            meta_store_handle.clone(),
             ns_config.stats_sender.clone(),
             name.clone(),
             logger.new_frame_notifier.subscribe(),
@@ -591,6 +592,7 @@ impl Namespace {
         let stats = make_stats(
             &db_path,
             &mut join_set,
+            meta_store_handle.clone(),
             config.stats_sender.clone(),
             name.clone(),
             applied_frame_no_receiver.clone(),
@@ -784,6 +786,7 @@ fn make_bottomless_options(
 async fn make_stats(
     db_path: &Path,
     join_set: &mut JoinSet<anyhow::Result<()>>,
+    meta_store_handle: MetaStoreHandle,
     stats_sender: StatsSender,
     name: NamespaceName,
     mut current_frame_no: watch::Receiver<Option<FrameNo>>,
@@ -795,7 +798,7 @@ async fn make_stats(
     // the storage monitor is optional, so we ignore the error here.
     tracing::debug!("stats created, sending stats");
     let _ = stats_sender
-        .send((name.clone(), Arc::downgrade(&stats)))
+        .send((name.clone(), meta_store_handle, Arc::downgrade(&stats)))
         .await;
 
     join_set.spawn({
