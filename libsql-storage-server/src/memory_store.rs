@@ -4,7 +4,6 @@ use std::sync::Mutex;
 use crate::store::FrameData;
 use crate::store::FrameStore;
 use async_trait::async_trait;
-use bytes::Bytes;
 
 #[derive(Default)]
 pub(crate) struct InMemFrameStore {
@@ -16,7 +15,7 @@ struct InMemInternal {
     // contains a frame data, key is the frame number
     frames: BTreeMap<u64, FrameData>,
     // pages map contains the page number as a key and the list of frames for the page as a value
-    pages: BTreeMap<u64, Vec<u64>>,
+    pages: BTreeMap<u32, Vec<u64>>,
     max_frame_no: u64,
 }
 
@@ -29,7 +28,7 @@ impl InMemFrameStore {
 #[async_trait]
 impl FrameStore for InMemFrameStore {
     // inserts a new frame for the page number and returns the new frame value
-    async fn insert_frame(&self, _namespace: &str, page_no: u64, frame: Bytes) -> u64 {
+    async fn insert_frame(&self, _namespace: &str, page_no: u32, frame: bytes::Bytes) -> u64 {
         let mut inner = self.inner.lock().unwrap();
         let frame_no = inner.max_frame_no + 1;
         inner.max_frame_no = frame_no;
@@ -62,7 +61,7 @@ impl FrameStore for InMemFrameStore {
     }
 
     // given a page number, return the maximum frame for the page
-    async fn find_frame(&self, _namespace: &str, page_no: u64) -> Option<u64> {
+    async fn find_frame(&self, _namespace: &str, page_no: u32) -> Option<u64> {
         self.inner
             .lock()
             .unwrap()
@@ -72,7 +71,7 @@ impl FrameStore for InMemFrameStore {
     }
 
     // given a frame num, return the page number
-    async fn frame_page_no(&self, _namespace: &str, frame_no: u64) -> Option<u64> {
+    async fn frame_page_no(&self, _namespace: &str, frame_no: u64) -> Option<u32> {
         self.inner
             .lock()
             .unwrap()
