@@ -15,3 +15,4 @@ bytes = "1.5.0"
 lazy_static = "1.4.0"
 libsql = { path = "../../libsql", features = ["encryption"] }
 tokio = { version = "1.29.1", features = [ "rt-multi-thread" ] }
+hyper-rustls = { version = "0.25", features = ["webpki-roots"]}

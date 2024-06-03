@@ -56,11 +56,24 @@ int libsql_open_sync(const char *db_path,
                      libsql_database_t *out_db,
                      const char **out_err_msg);
 
+int libsql_open_sync_with_webpki(const char *db_path,
+                                 const char *primary_url,
+                                 const char *auth_token,
+                                 char read_your_writes,
+                                 const char *encryption_key,
+                                 libsql_database_t *out_db,
+                                 const char **out_err_msg);
+
 int libsql_open_ext(const char *url, libsql_database_t *out_db, const char **out_err_msg);
 
 int libsql_open_file(const char *url, libsql_database_t *out_db, const char **out_err_msg);
 
 int libsql_open_remote(const char *url, const char *auth_token, libsql_database_t *out_db, const char **out_err_msg);
+
+int libsql_open_remote_with_webpki(const char *url,
+                                   const char *auth_token,
+                                   libsql_database_t *out_db,
+                                   const char **out_err_msg);
 
 void libsql_close(libsql_database_t db);
 
