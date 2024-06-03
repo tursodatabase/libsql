@@ -325,7 +325,6 @@ mod test {
             }
 
             fn uuid(&self) -> Uuid {
-                dbg!();
                 Uuid::from_u128(0)
             }
         }

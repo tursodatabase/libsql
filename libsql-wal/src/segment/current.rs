@@ -60,7 +60,7 @@ impl<F> CurrentSegment<F> {
 
         Ok(Self {
             path: path.to_path_buf(),
-            index: SegmentIndex::default(),
+            index: SegmentIndex::new(start_frame_no.get()),
             header: Mutex::new(header),
             file: segment_file.into(),
             read_locks: Arc::new(AtomicU64::new(0)),
@@ -124,11 +124,15 @@ impl<F> CurrentSegment<F> {
                     frame_no: frame_no.into(),
                 };
                 let slices = &[IoSlice::new(header.as_bytes()), IoSlice::new(&page)];
-                tx.next_frame_no += 1;
                 let offset = tx.next_offset;
-                tx.next_offset += 1;
+                debug_assert_eq!(
+                    self.header.lock().start_frame_no.get() + offset as u64,
+                    frame_no
+                );
                 self.file.write_at_vectored(slices, frame_offset(offset))?;
                 current_savepoint.index.insert(page_no, offset);
+                tx.next_frame_no += 1;
+                tx.next_offset += 1;
             }
 
             if let Some(size_after) = size_after {
@@ -182,7 +186,7 @@ impl<F> CurrentSegment<F> {
     }
 
     #[allow(dead_code)]
-    fn frame_header_at(&self, offset: u32) -> Result<FrameHeader>
+    pub fn frame_header_at(&self, offset: u32) -> Result<FrameHeader>
     where
         F: FileExt,
     {
@@ -265,13 +269,18 @@ impl<F> Drop for CurrentSegment<F> {
 }
 
 /// TODO: implement spill-to-disk when txn is too large
-#[derive(Default)]
 struct SegmentIndex {
     start_frame_no: u64,
     index: RwLock<BTreeMap<u32, Vec<u32>>>,
 }
 
 impl SegmentIndex {
+    pub fn new(start_frame_no: u64) -> Self {
+        Self {
+            start_frame_no,
+            index: Default::default(),
+        }
+    }
     fn locate(&self, page_no: u32, max_frame_no: u64) -> Option<u32> {
         let index = self.index.read();
         let offsets = index.get(&page_no)?;

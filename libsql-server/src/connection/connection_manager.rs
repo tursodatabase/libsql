@@ -6,8 +6,11 @@ use std::time::{Duration, Instant};
 use crossbeam::deque::Steal;
 use crossbeam::sync::{Parker, Unparker};
 use hashbrown::HashMap;
+use libsql_sys::wal::either::Either;
 use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
-use libsql_sys::wal::{CheckpointMode, Sqlite3Wal, Wal};
+use libsql_sys::wal::{CheckpointMode, Sqlite3Wal, Sqlite3WalManager, Wal};
+use libsql_wal::io::StdIO;
+use libsql_wal::wal::{LibsqlWal, LibsqlWalManager};
 use metrics::atomics::AtomicU64;
 use parking_lot::{Mutex, MutexGuard};
 use rusqlite::ErrorCode;
@@ -17,7 +20,9 @@ use super::TXN_TIMEOUT;
 
 pub type ConnId = u64;
 
-pub type ManagedConnectionWal = WrappedWal<ManagedConnectionWalWrapper, Sqlite3Wal>;
+pub type InnerWalManager = Either<Sqlite3WalManager, LibsqlWalManager<StdIO>>;
+pub type InnerWal = Either<Sqlite3Wal, LibsqlWal<StdIO>>;
+pub type ManagedConnectionWal = WrappedWal<ManagedConnectionWalWrapper, InnerWal>;
 
 #[derive(Copy, Clone, Debug)]
 struct Slot {
@@ -359,9 +364,9 @@ impl SlotState {
     }
 }
 
-impl WrapWal<Sqlite3Wal> for ManagedConnectionWalWrapper {
+impl WrapWal<InnerWal> for ManagedConnectionWalWrapper {
     #[tracing::instrument(skip_all, fields(id = self.id))]
-    fn begin_write_txn(&mut self, wrapped: &mut Sqlite3Wal) -> libsql_sys::wal::Result<()> {
+    fn begin_write_txn(&mut self, wrapped: &mut InnerWal) -> libsql_sys::wal::Result<()> {
         tracing::debug!("begin write");
         self.acquire()?;
         match wrapped.begin_write_txn() {
@@ -390,7 +395,7 @@ impl WrapWal<Sqlite3Wal> for ManagedConnectionWalWrapper {
     #[tracing::instrument(skip_all, fields(id = self.id))]
     fn checkpoint(
         &mut self,
-        wrapped: &mut Sqlite3Wal,
+        wrapped: &mut InnerWal,
         db: &mut libsql_sys::wal::Sqlite3Db,
         mode: libsql_sys::wal::CheckpointMode,
         busy_handler: Option<&mut dyn libsql_sys::wal::BusyHandler>,
@@ -441,13 +446,13 @@ impl WrapWal<Sqlite3Wal> for ManagedConnectionWalWrapper {
     }
 
     #[tracing::instrument(skip_all, fields(id = self.id))]
-    fn begin_read_txn(&mut self, wrapped: &mut Sqlite3Wal) -> libsql_sys::wal::Result<bool> {
+    fn begin_read_txn(&mut self, wrapped: &mut InnerWal) -> libsql_sys::wal::Result<bool> {
         tracing::debug!("begin read txn");
         wrapped.begin_read_txn()
     }
 
     #[tracing::instrument(skip_all, fields(id = self.id))]
-    fn end_read_txn(&mut self, wrapped: &mut Sqlite3Wal) {
+    fn end_read_txn(&mut self, wrapped: &mut InnerWal) {
         wrapped.end_read_txn();
         {
             let current = self.manager.current.lock();
@@ -470,7 +475,7 @@ impl WrapWal<Sqlite3Wal> for ManagedConnectionWalWrapper {
     }
 
     #[tracing::instrument(skip_all, fields(id = self.id))]
-    fn end_write_txn(&mut self, wrapped: &mut Sqlite3Wal) -> libsql_sys::wal::Result<()> {
+    fn end_write_txn(&mut self, wrapped: &mut InnerWal) -> libsql_sys::wal::Result<()> {
         wrapped.end_write_txn()?;
         tracing::debug!("end write txn");
         self.release();
@@ -479,10 +484,10 @@ impl WrapWal<Sqlite3Wal> for ManagedConnectionWalWrapper {
     }
 
     #[tracing::instrument(skip_all, fields(id = self.id))]
-    fn close<M: libsql_sys::wal::WalManager<Wal = Sqlite3Wal>>(
+    fn close<M: libsql_sys::wal::WalManager<Wal = InnerWal>>(
         &mut self,
         manager: &M,
-        wrapped: &mut Sqlite3Wal,
+        wrapped: &mut InnerWal,
         db: &mut libsql_sys::wal::Sqlite3Db,
         sync_flags: std::ffi::c_int,
         _scratch: Option<&mut [u8]>,

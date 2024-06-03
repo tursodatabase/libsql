@@ -249,6 +249,9 @@ struct Cli {
     /// Shutdown timeout duration in seconds, defaults to 30 seconds.
     #[clap(long, env = "SQLD_SHUTDOWN_TIMEOUT")]
     shutdown_timeout: Option<u64>,
+
+    #[clap(long)]
+    use_libsql_wal: bool,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -659,6 +662,7 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
             .shutdown_timeout
             .map(Duration::from_secs)
             .unwrap_or(Duration::from_secs(30)),
+        use_libsql_wal: config.use_libsql_wal,
     })
 }
 
