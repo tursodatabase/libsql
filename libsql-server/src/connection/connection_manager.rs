@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 use crossbeam::deque::Steal;
 use crossbeam::sync::{Parker, Unparker};
 use hashbrown::HashMap;
-use libsql_sys::wal::any::Either;
+use libsql_sys::wal::either::Either;
 use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
 use libsql_sys::wal::{CheckpointMode, Sqlite3Wal, Sqlite3WalManager, Wal};
 use libsql_wal::io::StdIO;

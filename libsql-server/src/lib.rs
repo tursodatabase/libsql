@@ -31,7 +31,7 @@ use futures::Future;
 use http::user::UserApi;
 use hyper::client::HttpConnector;
 use hyper_rustls::HttpsConnector;
-use libsql_sys::wal::any::Either;
+use libsql_sys::wal::either::Either;
 use libsql_sys::wal::Sqlite3WalManager;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::wal::LibsqlWalManager;
@@ -682,11 +682,11 @@ where
             });
 
             tracing::info!("using libsql wal");
-            Ok((Arc::new(move || Either::Right(wal.clone())), shutdown_fut))
+            Ok((Arc::new(move || Either::B(wal.clone())), shutdown_fut))
         } else {
             tracing::info!("using sqlite3 wal");
             Ok((
-                Arc::new(|| Either::Left(Sqlite3WalManager::default())),
+                Arc::new(|| Either::A(Sqlite3WalManager::default())),
                 Box::pin(ready(Ok(()))),
             ))
         }
