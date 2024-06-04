@@ -16,7 +16,7 @@ path = "src/main.rs"
 anyhow = "1.0.66"
 bytes = "1.5.0"
 clap = { version = "4.0.23", features = ["derive", "env", "string"] }
-foundationdb = { version = "0.9.0", features = ["embedded-fdb-include", "fdb-7_3"] }
+foundationdb = { version = "0.9.0", features = ["embedded-fdb-include", "fdb-7_3"], optional = true }
 futures = "0.3.30"
 libsql-storage = { path = "../libsql-storage" }
 redis = "0.25.3"
@@ -26,6 +26,9 @@ tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 async-trait = "0.1.80"
 serde = "1.0.203"
+
+[features]
+foundation-db = ["foundationdb"]
 
 [dev-dependencies]
 
