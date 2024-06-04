@@ -108,6 +108,7 @@ impl Namespace {
         name: &NamespaceName,
         reset: ResetCb,
         resolve_attach_path: ResolveNamespacePathFn,
+        store: NamespaceStore,
     ) -> crate::Result<Self> {
         match ns_config.db_kind {
             DatabaseKind::Primary if db_config.get().is_shared_schema => {
@@ -137,6 +138,7 @@ impl Namespace {
                     db_config,
                     reset,
                     resolve_attach_path,
+                    store,
                 )
                 .await
             }
@@ -460,7 +462,7 @@ impl Namespace {
         })
     }
 
-    #[tracing::instrument(skip(config, reset, meta_store_handle, resolve_attach_path))]
+    #[tracing::instrument(skip_all, fields(name))]
     #[async_recursion::async_recursion]
     async fn new_replica(
         config: &NamespaceConfig,
@@ -468,6 +470,7 @@ impl Namespace {
         meta_store_handle: MetaStoreHandle,
         reset: ResetCb,
         resolve_attach_path: ResolveNamespacePathFn,
+        store: NamespaceStore,
     ) -> crate::Result<Self> {
         tracing::debug!("creating replica namespace");
         let db_path = config.base_path.join("dbs").join(name.as_str());
@@ -480,6 +483,7 @@ impl Namespace {
             rpc_client,
             &db_path,
             meta_store_handle.clone(),
+            store.clone(),
         )
         .await?;
         let applied_frame_no_receiver = client.current_frame_no_notifier.subscribe();
@@ -507,6 +511,7 @@ impl Namespace {
                     meta_store_handle,
                     reset,
                     resolve_attach_path,
+                    store,
                 )
                 .await;
             }
@@ -623,6 +628,7 @@ impl Namespace {
         to_config: MetaStoreHandle,
         timestamp: Option<NaiveDateTime>,
         resolve_attach: ResolveNamespacePathFn,
+        store: NamespaceStore,
     ) -> crate::Result<Namespace> {
         let from_config = from_config.get();
         match ns_config.db_kind {
@@ -664,6 +670,7 @@ impl Namespace {
                     to_config,
                     ns_config,
                     resolve_attach,
+                    store,
                 };
 
                 let ns = fork_task.fork().await?;

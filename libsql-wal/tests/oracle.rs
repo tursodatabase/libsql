@@ -119,7 +119,7 @@ fn run_test_sample(path: &Path) -> Result {
         Ok(_) => (),
         Err(e) => {
             let path = tmp.into_path();
-            std::fs::rename(dbg!(path), "./failure").unwrap();
+            std::fs::rename(path, "./failure").unwrap();
             std::panic::resume_unwind(e)
         }
     }

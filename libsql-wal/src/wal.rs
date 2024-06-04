@@ -52,7 +52,7 @@ impl<FS: Io> WalManager for LibsqlWalManager<FS> {
             .registry
             .clone()
             .open(db_path.as_ref())
-            .map_err(|e| dbg!(e.into()))?;
+            .map_err(|e| e.into())?;
         let conn_id = self
             .next_conn_id
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
