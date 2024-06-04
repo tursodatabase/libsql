@@ -19,7 +19,6 @@ use super::libsql::Connection;
 use super::TXN_TIMEOUT;
 
 pub type ConnId = u64;
-
 pub type InnerWalManager = Either<Sqlite3WalManager, LibsqlWalManager<StdIO>>;
 pub type InnerWal = Either<Sqlite3Wal, LibsqlWal<StdIO>>;
 pub type ManagedConnectionWal = WrappedWal<ManagedConnectionWalWrapper, InnerWal>;

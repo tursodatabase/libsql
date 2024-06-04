@@ -682,11 +682,11 @@ where
             });
 
             tracing::info!("using libsql wal");
-            Ok((Arc::new(move || Either::Right(wal.clone())), shutdown_fut))
+            Ok((Arc::new(move || Either::B(wal.clone())), shutdown_fut))
         } else {
             tracing::info!("using sqlite3 wal");
             Ok((
-                Arc::new(|| Either::Left(Sqlite3WalManager::default())),
+                Arc::new(|| Either::A(Sqlite3WalManager::default())),
                 Box::pin(ready(Ok(()))),
             ))
         }
