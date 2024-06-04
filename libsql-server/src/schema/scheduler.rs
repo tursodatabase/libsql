@@ -896,7 +896,7 @@ mod test {
             bottomless_replication: None,
             scripted_backup: None,
             migration_scheduler,
-            make_wal_manager: Arc::new(|| Either::Left(Sqlite3WalManager::default())),
+            make_wal_manager: Arc::new(|| Either::A(Sqlite3WalManager::default())),
         }
     }
 
