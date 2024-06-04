@@ -1,9 +1,13 @@
+mod fdb_store;
 mod memory_store;
+mod redis_store;
 mod service;
 mod store;
 
 use std::net::SocketAddr;
 
+use crate::fdb_store::FDBFrameStore;
+use crate::redis_store::RedisFrameStore;
 use anyhow::Result;
 use clap::Parser;
 use libsql_storage::rpc::storage_server::StorageServer;
@@ -44,8 +48,13 @@ async fn main() -> Result<()> {
 
     let args = Cli::parse();
     let service = match args.storage_type {
-        StorageType::Redis => Service::new(),
-        StorageType::FoundationDB => Service::new(),
+        StorageType::Redis => {
+            // export REDIS_ADDR=http://libsql-storage-server.internal:5002
+            let redis_addr =
+                std::env::var("REDIS_ADDRESS").unwrap_or("redis://127.0.0.1/".to_string());
+            Service::with_store(Box::new(RedisFrameStore::new(redis_addr)))
+        }
+        StorageType::FoundationDB => Service::with_store(Box::new(FDBFrameStore::new())),
         _ => Service::new(),
     };
 

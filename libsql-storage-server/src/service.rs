@@ -19,7 +19,7 @@ impl Service {
             db_size: AtomicU32::new(0),
         }
     }
-    #[allow(dead_code)]
+
     pub fn with_store(store: Box<dyn FrameStore + Send + Sync>) -> Self {
         Self {
             store,
