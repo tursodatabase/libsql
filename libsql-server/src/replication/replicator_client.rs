@@ -15,14 +15,14 @@ use tokio::sync::watch;
 use tokio_stream::{Stream, StreamExt};
 use tonic::metadata::{AsciiMetadataValue, BinaryMetadataValue};
 use tonic::transport::Channel;
-use tonic::{Code, Request};
+use tonic::{Code, Request, Status};
 
 use crate::connection::config::DatabaseConfig;
 use crate::metrics::{
     REPLICATION_LATENCY, REPLICATION_LATENCY_CACHE_MISS, REPLICATION_LATENCY_OUT_OF_SYNC,
 };
 use crate::namespace::meta_store::MetaStoreHandle;
-use crate::namespace::NamespaceName;
+use crate::namespace::{NamespaceName, NamespaceStore};
 use crate::replication::FrameNo;
 
 pub struct Client {
@@ -34,6 +34,7 @@ pub struct Client {
     meta_store_handle: MetaStoreHandle,
     // the primary current replication index, as reported by the last handshake
     pub primary_replication_index: Option<FrameNo>,
+    store: NamespaceStore,
 }
 
 impl Client {
@@ -42,6 +43,7 @@ impl Client {
         client: ReplicationLogClient<Channel>,
         path: &Path,
         meta_store_handle: MetaStoreHandle,
+        store: NamespaceStore,
     ) -> crate::Result<Self> {
         let (current_frame_no_notifier, _) = watch::channel(None);
         let meta = WalIndexMeta::open(path).await?;
@@ -54,6 +56,7 @@ impl Client {
             session_token: None,
             meta_store_handle,
             primary_replication_index: None,
+            store,
         })
     }
 
@@ -101,6 +104,18 @@ impl ReplicatorClient for Client {
         self.session_token.replace(hello.session_token.clone());
 
         if let Some(config) = &hello.config {
+            // HACK: if we load a shared schema db before the main schema is replicated,
+            // inserting the new database in the meta store will cause a foreign constraint Error
+            // because we have a constraint check that ensure shared schema dbs point to a valid
+            // main schema. To prevent that, we load the main schema first.
+            if let Some(ref name) = config.shared_schema_name {
+                let name = NamespaceName::from_string(name.clone())
+                    .map_err(|_| Status::new(Code::InvalidArgument, "invalid namespace name"))?;
+                self.store
+                    .with(name, |_| ())
+                    .await
+                    .map_err(|e| Status::new(Code::Internal, e.to_string()))?;
+            }
             self.meta_store_handle
                 .store(DatabaseConfig::from(config))
                 .await

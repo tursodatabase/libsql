@@ -181,6 +181,7 @@ impl NamespaceStore {
             &namespace,
             self.make_reset_cb(),
             self.resolve_attach_fn(),
+            self.clone(),
         )
         .await?;
 
@@ -286,6 +287,7 @@ impl NamespaceStore {
             handle.clone(),
             timestamp,
             self.resolve_attach_fn(),
+            self.clone(),
         )
         .await?;
 
@@ -376,6 +378,7 @@ impl NamespaceStore {
                     &namespace,
                     self.make_reset_cb(),
                     self.resolve_attach_fn(),
+                    self.clone(),
                 )
                 .await?;
                 tracing::info!("loaded namespace: `{namespace}`");
