@@ -2,8 +2,8 @@
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Frame {
-    #[prost(uint64, tag = "1")]
-    pub page_no: u64,
+    #[prost(uint32, tag = "1")]
+    pub page_no: u32,
     #[prost(bytes = "vec", tag = "2")]
     pub data: ::prost::alloc::vec::Vec<u8>,
 }
@@ -14,8 +14,6 @@ pub struct InsertFramesRequest {
     pub namespace: ::prost::alloc::string::String,
     #[prost(message, repeated, tag = "2")]
     pub frames: ::prost::alloc::vec::Vec<Frame>,
-    #[prost(uint64, tag = "3")]
-    pub max_frame_no: u64,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -28,8 +26,8 @@ pub struct InsertFramesResponse {
 pub struct FindFrameRequest {
     #[prost(string, tag = "1")]
     pub namespace: ::prost::alloc::string::String,
-    #[prost(uint64, tag = "2")]
-    pub page_no: u64,
+    #[prost(uint32, tag = "2")]
+    pub page_no: u32,
     #[prost(uint64, tag = "3")]
     pub max_frame_no: u64,
 }
@@ -88,8 +86,8 @@ pub struct FramePageNumRequest {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FramePageNumResponse {
-    #[prost(uint64, tag = "1")]
-    pub page_no: u64,
+    #[prost(uint32, tag = "1")]
+    pub page_no: u32,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

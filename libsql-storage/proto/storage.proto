@@ -3,14 +3,13 @@ syntax = "proto3";
 package storage;
 
 message Frame {
-  uint64 page_no = 1;
+  uint32 page_no = 1;
   bytes data = 2;
 }
 
 message InsertFramesRequest {
   string namespace = 1;
   repeated Frame frames = 2;
-  uint64 max_frame_no = 3;
 }
 
 message InsertFramesResponse {
@@ -19,7 +18,7 @@ message InsertFramesResponse {
 
 message FindFrameRequest {
   string namespace = 1;
-  uint64 page_no = 2;
+  uint32 page_no = 2;
   uint64 max_frame_no = 3;
 }
 
@@ -58,7 +57,7 @@ message FramePageNumRequest {
 }
 
 message FramePageNumResponse {
-  uint64 page_no = 1;
+  uint32 page_no = 1;
 }
 
 message DestroyRequest {
