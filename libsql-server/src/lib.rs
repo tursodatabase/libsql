@@ -31,7 +31,7 @@ use futures::Future;
 use http::user::UserApi;
 use hyper::client::HttpConnector;
 use hyper_rustls::HttpsConnector;
-use libsql_sys::wal::either::Either;
+use libsql_sys::wal::any::Either;
 use libsql_sys::wal::Sqlite3WalManager;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::wal::LibsqlWalManager;

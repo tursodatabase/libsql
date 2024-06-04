@@ -6,6 +6,7 @@ use crate::ffi::*;
 
 pub use sqlite3_wal::{Sqlite3Wal, Sqlite3WalManager};
 
+pub mod any;
 pub mod either;
 pub(crate) mod ffi;
 mod sqlite3_wal;

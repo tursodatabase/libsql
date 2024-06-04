@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 use crossbeam::deque::Steal;
 use crossbeam::sync::{Parker, Unparker};
 use hashbrown::HashMap;
-use libsql_sys::wal::either::Either;
+use libsql_sys::wal::any::Either;
 use libsql_sys::wal::wrapper::{WrapWal, WrappedWal};
 use libsql_sys::wal::{CheckpointMode, Sqlite3Wal, Sqlite3WalManager, Wal};
 use libsql_wal::io::StdIO;
@@ -19,7 +19,6 @@ use super::libsql::Connection;
 use super::TXN_TIMEOUT;
 
 pub type ConnId = u64;
-
 pub type InnerWalManager = Either<Sqlite3WalManager, LibsqlWalManager<StdIO>>;
 pub type InnerWal = Either<Sqlite3Wal, LibsqlWal<StdIO>>;
 pub type ManagedConnectionWal = WrappedWal<ManagedConnectionWalWrapper, InnerWal>;
