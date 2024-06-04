@@ -163,6 +163,7 @@ impl LogCompactor {
         scripted_backup: Option<ScriptBackupManager>,
         namespace: NamespaceName,
     ) -> anyhow::Result<Self> {
+        tracing::debug!("creating new log compactor");
         // a directory containing logs that need compaction
         let compact_queue_dir = db_path.join("to_compact");
         std::fs::create_dir_all(&compact_queue_dir)?;
@@ -175,9 +176,15 @@ impl LogCompactor {
         std::fs::create_dir_all(&tmp_path)?;
 
         let (sender, mut receiver) = mpsc::channel::<(LogFile, PathBuf)>(8);
+
+        tracing::debug!("making snapshot merger");
+
         let mut merger =
             SnapshotMerger::new(db_path, log_id, scripted_backup.clone(), namespace.clone())?;
         let db_path = db_path.to_path_buf();
+
+        tracing::debug!("gathering snapshots");
+
         // We gather pending snapshots here, so new snapshots don't interfere.
         let pending = pending_snapshots_list(&compact_queue_dir)?;
         // FIXME(marin): we somehow need to make this code more robust. How to deal with a
@@ -218,6 +225,8 @@ impl LogCompactor {
                 }
             }
         });
+
+        tracing::debug!("completed log compactor creation");
 
         Ok(Self { sender })
     }

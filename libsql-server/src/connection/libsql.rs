@@ -126,6 +126,7 @@ where
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn make_connection(&self) -> Result<LibSqlConnection<W>> {
         LibSqlConnection::new(
             self.db_path.clone(),

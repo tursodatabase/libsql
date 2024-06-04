@@ -276,6 +276,7 @@ impl Namespace {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     async fn make_primary_connection_maker(
         ns_config: &NamespaceConfig,
         meta_store_handle: &MetaStoreHandle,
@@ -315,12 +316,14 @@ impl Namespace {
                 let (replicator, did_recover) =
                     init_bottomless_replicator(db_path.join("data"), options, &restore_option)
                         .await?;
+                tracing::debug!("Completed init of bottomless replicator");
                 is_dirty |= did_recover;
                 Some(replicator)
             }
             None => None,
         };
 
+        tracing::debug!("Checking fresh db");
         let is_fresh_db = check_fresh_db(&db_path)?;
         // switch frame-count checkpoint to time-based one
         let auto_checkpoint = if ns_config.checkpoint_interval.is_some() {
@@ -340,9 +343,12 @@ impl Namespace {
             ns_config.encryption_config.clone(),
         )?);
 
+        tracing::debug!("sending stats");
+
         let stats = make_stats(
             &db_path,
             join_set,
+            meta_store_handle.clone(),
             ns_config.stats_sender.clone(),
             name.clone(),
             logger.new_frame_notifier.subscribe(),
@@ -350,7 +356,11 @@ impl Namespace {
         )
         .await?;
 
+        tracing::debug!("Making replication wal wrapper");
         let wal_wrapper = make_replication_wal_wrapper(bottomless_replicator, logger.clone());
+
+        tracing::debug!("Opening libsql connection");
+
         let connection_maker = MakeLibSqlConn::new(
             db_path.to_path_buf(),
             wal_wrapper.clone(),
@@ -374,6 +384,8 @@ impl Namespace {
             ns_config.max_concurrent_requests,
         );
 
+        tracing::debug!("Completed opening libsql connection");
+
         // this must happen after we create the connection maker. The connection maker old on a
         // connection to ensure that no other connection is closing while we try to open the dump.
         // that would cause a SQLITE_LOCKED error.
@@ -382,6 +394,7 @@ impl Namespace {
                 Err(LoadDumpError::LoadDumpExistingDb)?;
             }
             RestoreOption::Dump(dump) => {
+                tracing::debug!("Loading dump");
                 load_dump(
                     &db_path,
                     dump,
@@ -389,18 +402,22 @@ impl Namespace {
                     ns_config.encryption_config.clone(),
                 )
                 .await?;
+                tracing::debug!("Done loading dump");
             }
             _ => { /* other cases were already handled when creating bottomless */ }
         }
 
         join_set.spawn(run_periodic_compactions(logger.clone()));
 
+        tracing::debug!("Done making primary connection");
+
         Ok((connection_maker, wal_wrapper, stats))
     }
 
+    #[tracing::instrument(skip_all, fields(namespace))]
     async fn try_new_primary(
         ns_config: &NamespaceConfig,
-        name: NamespaceName,
+        namespace: NamespaceName,
         meta_store_handle: MetaStoreHandle,
         restore_option: RestoreOption,
         resolve_attach_path: ResolveNamespacePathFn,
@@ -415,7 +432,7 @@ impl Namespace {
             ns_config,
             &meta_store_handle,
             &db_path,
-            &name,
+            &namespace,
             restore_option,
             block_writes.clone(),
             &mut join_set,
@@ -444,9 +461,11 @@ impl Namespace {
             join_set.spawn(run_periodic_checkpoint(
                 connection_maker.clone(),
                 checkpoint_interval,
-                name.clone(),
+                namespace.clone(),
             ));
         }
+
+        tracing::debug!("Done making new primary");
 
         Ok(Self {
             tasks: join_set,
@@ -455,7 +474,7 @@ impl Namespace {
                 connection_maker,
                 block_writes,
             }),
-            name,
+            name: namespace,
             stats,
             db_config_store: meta_store_handle,
             path: db_path.into(),
@@ -578,6 +597,7 @@ impl Namespace {
         let stats = make_stats(
             &db_path,
             &mut join_set,
+            meta_store_handle.clone(),
             config.stats_sender.clone(),
             name.clone(),
             applied_frame_no_receiver.clone(),
@@ -773,16 +793,19 @@ fn make_bottomless_options(
 async fn make_stats(
     db_path: &Path,
     join_set: &mut JoinSet<anyhow::Result<()>>,
+    meta_store_handle: MetaStoreHandle,
     stats_sender: StatsSender,
     name: NamespaceName,
     mut current_frame_no: watch::Receiver<Option<FrameNo>>,
     encryption_config: Option<EncryptionConfig>,
 ) -> anyhow::Result<Arc<Stats>> {
+    tracing::debug!("creating stats type");
     let stats = Stats::new(name.clone(), db_path, join_set).await?;
 
     // the storage monitor is optional, so we ignore the error here.
+    tracing::debug!("stats created, sending stats");
     let _ = stats_sender
-        .send((name.clone(), Arc::downgrade(&stats)))
+        .send((name.clone(), meta_store_handle, Arc::downgrade(&stats)))
         .await;
 
     join_set.spawn({
@@ -806,6 +829,8 @@ async fn make_stats(
         Arc::downgrade(&stats),
         encryption_config,
     ));
+
+    tracing::debug!("done sending stats, and creating bg tasks");
 
     Ok(stats)
 }
