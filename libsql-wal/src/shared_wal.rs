@@ -215,7 +215,7 @@ impl<FS: Io> SharedWal<FS> {
 
         // TODO: use config for max log size
         if tx.is_commited() && current.count_committed() > 1000 {
-            self.registry.swap_current(self, tx)?;
+            self.swap_current(tx)?;
         }
 
         // TODO: remove, stupid strategy for tests
@@ -224,6 +224,9 @@ impl<FS: Io> SharedWal<FS> {
         //     current.tail().checkpoint(&self.db_file)?;
         // }
 
+    /// Swap the current log. A write lock must be held, but the transaction must be must be committed already.
+    fn swap_current(&self, tx: &mut WriteTransaction<FS::File>) -> Result<()> {
+        self.registry.swap_current(self, tx)?;
         Ok(())
     }
 
