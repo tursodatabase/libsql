@@ -194,7 +194,21 @@ impl<FS: Io> SharedWal<FS> {
                     tracing::trace!(page_no, "reading from main file");
                     self.db_file
                         .read_exact_at(buffer, (page_no as u64 - 1) * 4096)?;
+
                 }
+            }
+        }
+
+        // The replication index from page 1 must match that of the SharedWal
+        #[cfg(debug_assertions)]
+        {
+            use crossbeam::atomic::AtomicConsume;
+            use libsql_sys::ffi::Sqlite3DbHeader;
+            use zerocopy::FromBytes;
+
+            if page_no == 1 {
+                let header = Sqlite3DbHeader::read_from_prefix(buffer).unwrap();
+                assert_eq!(header.replication_index.get(), self.checkpointed_frame_no.load_consume());
             }
         }
 
