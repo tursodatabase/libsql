@@ -35,6 +35,15 @@ impl<F> Transaction<F> {
             Transaction::Read(_) => (),
         }
     }
+
+    pub(crate) fn end(self) {
+        match self {
+            Transaction::Write(tx) => {
+                tx.downgrade();
+            }
+            Transaction::Read(_) => (),
+        }
+    }
 }
 
 impl<F> Deref for Transaction<F> {

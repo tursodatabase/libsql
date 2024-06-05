@@ -119,12 +119,7 @@ impl<FS: Io> Wal for LibsqlWal<FS> {
 
     #[tracing::instrument(skip_all, fields(id = self.conn_id))]
     fn end_read_txn(&mut self) {
-        match self.tx.take() {
-            Some(Transaction::Read(tx)) => tx,
-            Some(Transaction::Write(tx)) => tx.downgrade(),
-            None => return,
-        };
-
+        self.tx.take().map(|tx| tx.end());
         tracing::trace!("end read tx");
     }
 
