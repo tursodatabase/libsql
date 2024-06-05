@@ -227,6 +227,18 @@ impl<FS: Io> SharedWal<FS> {
         Ok(())
     }
 
+    pub fn checkpoint(&self) -> Result<Option<u64>> {
+        let current = self.current.load();
+        match current.tail().checkpoint(&self.db_file)? {
+            Some(frame_no) => {
+                self.checkpointed_frame_no
+                    .store(frame_no, Ordering::Relaxed);
+                Ok(Some(frame_no))
+            }
+            None => Ok(None),
+        }
+    }
+
     pub fn last_committed_frame_no(&self) -> u64 {
         let current = self.current.load();
         current.last_committed_frame_no()
