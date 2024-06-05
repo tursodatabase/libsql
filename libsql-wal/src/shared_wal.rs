@@ -38,6 +38,8 @@ pub struct SharedWal<FS: Io> {
     pub(crate) db_file: FS::File,
     pub(crate) namespace: NamespaceName,
     pub(crate) registry: Arc<WalRegistry<FS>>,
+    #[allow(dead_code)] // used by replication
+    pub(crate) checkpointed_frame_no: AtomicU64,
 }
 
 impl<FS: Io> SharedWal<FS> {

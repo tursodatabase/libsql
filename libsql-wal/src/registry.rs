@@ -205,6 +205,7 @@ impl<FS: Io> WalRegistry<FS> {
             db_file,
             registry: self.clone(),
             namespace: namespace.clone(),
+            checkpointed_frame_no: header.replication_index.get().into(),
         });
 
         opened.with_upgraded(|opened| {
