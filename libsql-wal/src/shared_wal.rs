@@ -218,11 +218,8 @@ impl<FS: Io> SharedWal<FS> {
             self.swap_current(tx)?;
         }
 
-        // TODO: remove, stupid strategy for tests
-        // ok, we still hold a write txn
-        // if current.tail().len() > 10 {
-        //     current.tail().checkpoint(&self.db_file)?;
-        // }
+        Ok(())
+    }
 
     /// Swap the current log. A write lock must be held, but the transaction must be must be committed already.
     fn swap_current(&self, tx: &mut WriteTransaction<FS::File>) -> Result<()> {
