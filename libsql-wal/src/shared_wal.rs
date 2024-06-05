@@ -32,12 +32,12 @@ pub struct WalLock {
     pub(crate) waiters: Injector<(Unparker, u64)>,
 }
 
-pub struct SharedWal<FS: Io> {
-    pub(crate) current: ArcSwap<CurrentSegment<FS::File>>,
+pub struct SharedWal<IO: Io> {
+    pub(crate) current: ArcSwap<CurrentSegment<IO::File>>,
     pub(crate) wal_lock: Arc<WalLock>,
-    pub(crate) db_file: FS::File,
+    pub(crate) db_file: IO::File,
     pub(crate) namespace: NamespaceName,
-    pub(crate) registry: Arc<WalRegistry<FS>>,
+    pub(crate) registry: Arc<WalRegistry<IO>>,
     #[allow(dead_code)] // used by replication
     pub(crate) checkpointed_frame_no: AtomicU64,
     pub(crate) new_frame_notifier: tokio::sync::watch::Sender<u64>,
