@@ -1,6 +1,6 @@
+use std::mem::offset_of;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::mem::offset_of;
 
 use arc_swap::ArcSwapOption;
 use fst::{map::OpBuilder, Streamer};

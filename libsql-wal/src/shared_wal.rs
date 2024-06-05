@@ -194,7 +194,6 @@ impl<FS: Io> SharedWal<FS> {
                     tracing::trace!(page_no, "reading from main file");
                     self.db_file
                         .read_exact_at(buffer, (page_no as u64 - 1) * 4096)?;
-
                 }
             }
         }
@@ -208,7 +207,10 @@ impl<FS: Io> SharedWal<FS> {
 
             if page_no == 1 {
                 let header = Sqlite3DbHeader::read_from_prefix(buffer).unwrap();
-                assert_eq!(header.replication_index.get(), self.checkpointed_frame_no.load_consume());
+                assert_eq!(
+                    header.replication_index.get(),
+                    self.checkpointed_frame_no.load_consume()
+                );
             }
         }
 
@@ -260,5 +262,63 @@ impl<FS: Io> SharedWal<FS> {
 
     pub fn namespace(&self) -> &NamespaceName {
         &self.namespace
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::path::Path;
+
+    use crossbeam::atomic::AtomicConsume;
+    use libsql_sys::rusqlite::OpenFlags;
+    use tempfile::tempdir;
+
+    use crate::wal::LibsqlWalManager;
+
+    use super::*;
+
+    #[test]
+    fn checkpoint() {
+        let tmp = tempdir().unwrap();
+        let resolver = |path: &Path| {
+            let name = path.file_name().unwrap().to_str().unwrap();
+            NamespaceName::from_string(name.to_string())
+        };
+
+        let registry =
+            Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver, ()).unwrap());
+        let wal_manager = LibsqlWalManager::new(registry.clone());
+
+        let db_path = tmp.path().join("test/data");
+        let conn = libsql_sys::Connection::open(
+            db_path.clone(),
+            OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
+            wal_manager.clone(),
+            100000,
+            None,
+        )
+        .unwrap();
+
+        let shared = registry.open(&db_path).unwrap();
+
+        assert_eq!(shared.checkpointed_frame_no.load_consume(), 0);
+
+        conn.execute("create table test (x)", ()).unwrap();
+        conn.execute("insert into test values (12)", ()).unwrap();
+        conn.execute("insert into test values (12)", ()).unwrap();
+
+        assert_eq!(shared.checkpointed_frame_no.load_consume(), 0);
+
+        let mut tx = Transaction::Read(shared.begin_read(666));
+        shared.upgrade(&mut tx).unwrap();
+        tx.commit();
+        shared.swap_current(tx.as_write_mut().unwrap()).unwrap();
+        tx.end();
+
+        let frame_no = shared.checkpoint().unwrap().unwrap();
+        assert_eq!(frame_no, 4);
+        assert_eq!(shared.checkpointed_frame_no.load_consume(), 4);
+
+        assert!(shared.checkpoint().unwrap().is_none());
     }
 }
