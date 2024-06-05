@@ -1,10 +1,10 @@
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::mem::offset_of;
 
 use arc_swap::ArcSwapOption;
 use fst::{map::OpBuilder, Streamer};
 use libsql_sys::ffi::Sqlite3DbHeader;
-use memoffset::offset_of;
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;

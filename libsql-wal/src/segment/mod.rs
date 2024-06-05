@@ -9,8 +9,8 @@
 #![allow(dead_code)]
 use std::mem::size_of;
 use std::num::NonZeroU64;
+use std::mem::offset_of;
 
-use memoffset::offset_of;
 use zerocopy::byteorder::little_endian::{U32, U64};
 use zerocopy::AsBytes;
 

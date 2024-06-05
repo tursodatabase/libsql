@@ -14,7 +14,6 @@ crossbeam = "0.8.4"
 fst = "0.4.7"
 hashbrown = "0.14.3"
 libsql-sys = { path = "../libsql-sys", features = ["rusqlite"] }
-memoffset = "0.9.1"
 nix = { version = "0.28.0", features = ["uio", "fs"] }
 parking_lot = "0.12.1"
 priority-queue = "2.0.2"
