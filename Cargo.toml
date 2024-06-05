@@ -1,5 +1,6 @@
 [workspace]
 resolver = "2"
+default-members = ["libsql-server"]
 members = [
   "libsql",
   "bindings/c",

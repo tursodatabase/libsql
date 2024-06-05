@@ -195,7 +195,12 @@ impl IntoResponse for &Error {
             ConflictingRestoreParameters => self.format_err(StatusCode::BAD_REQUEST),
             Fork(e) => e.into_response(),
             FatalReplicationError => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
-            ReplicatorError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            ReplicatorError(e) => match e {
+                libsql_replication::replicator::Error::NamespaceDoesntExist => {
+                    self.format_err(StatusCode::NOT_FOUND)
+                }
+                _ => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            },
             ReplicaMetaError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             PrimaryStreamDisconnect => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             PrimaryStreamMisuse => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
