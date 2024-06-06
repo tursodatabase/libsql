@@ -18,7 +18,7 @@ use tokio_util::io::ReaderStream;
 use tower_http::trace::DefaultOnResponse;
 use url::Url;
 
-use crate::auth::parse_jwt_key;
+use crate::auth::parse_jwt_keys;
 use crate::connection::config::DatabaseConfig;
 use crate::error::{Error, LoadDumpError};
 use crate::hrana;
@@ -247,8 +247,8 @@ async fn handle_post_config<C>(
     Json(req): Json<HttpDatabaseConfig>,
 ) -> crate::Result<()> {
     if let Some(jwt_key) = req.jwt_key.as_deref() {
-        // Check that the jwt key is correct
-        parse_jwt_key(jwt_key)?;
+        // Check that the jwt keys are correct
+        parse_jwt_keys(jwt_key)?;
     }
     let store = app_state
         .namespaces
@@ -300,8 +300,8 @@ async fn handle_create_namespace<C: Connector>(
     let mut config = DatabaseConfig::default();
 
     if let Some(jwt_key) = req.jwt_key {
-        // Check that the jwt key is correct
-        parse_jwt_key(&jwt_key)?;
+        // Check that the jwt keys are correct
+        parse_jwt_keys(&jwt_key)?;
         config.jwt_key = Some(jwt_key);
     }
 

@@ -93,12 +93,12 @@ pub(super) async fn handle_hello(
     jwt: Option<String>,
     namespace: NamespaceName,
 ) -> Result<Authenticated> {
-    let namespace_jwt_key = server
+    let namespace_jwt_keys = server
         .namespaces
-        .with(namespace.clone(), |ns| ns.jwt_key())
+        .with(namespace.clone(), |ns| ns.jwt_keys())
         .await??;
 
-    namespace_jwt_key
+    namespace_jwt_keys
         .map(Jwt::new)
         .map(Auth::new)
         .unwrap_or_else(|| server.user_auth_strategy.clone())

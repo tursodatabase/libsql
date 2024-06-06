@@ -7,13 +7,8 @@ use crate::{
 
 use super::{UserAuthContext, UserAuthStrategy};
 
-pub enum DecodingKeyContainer {
-    Single(jsonwebtoken::DecodingKey),
-    Multiple(Vec<jsonwebtoken::DecodingKey>),
-}
-
 pub struct Jwt {
-    key: DecodingKeyContainer,
+    keys: Vec<jsonwebtoken::DecodingKey>,
 }
 
 impl UserAuthStrategy for Jwt {
@@ -37,16 +32,13 @@ impl UserAuthStrategy for Jwt {
             return Err(AuthError::HttpAuthHeaderUnsupportedScheme);
         }
 
-        match &self.key {
-            DecodingKeyContainer::Single(key) => validate_jwt(&key, &token),
-            DecodingKeyContainer::Multiple(keys) => validate_any_jwt(&keys, &token),
-        }
+        validate_any_jwt(&self.keys, &token)
     }
 }
 
 impl Jwt {
-    pub fn new(key: DecodingKeyContainer) -> Self {
-        Self { key: key }
+    pub fn new(keys: Vec<jsonwebtoken::DecodingKey>) -> Self {
+        Self { keys }
     }
 }
 
@@ -92,14 +84,14 @@ fn validate_any_jwt(
     jwt_keys: &Vec<jsonwebtoken::DecodingKey>,
     jwt: &str,
 ) -> Result<Authenticated, AuthError> {
-    for (index, jwt_key) in jwt_keys.iter().enumerate() {
-        let result = validate_jwt(&jwt_key, jwt);
-        if result.is_ok() || index == jwt_keys.len() - 1 {
-            return result;
+    for jwt_key in jwt_keys.iter() {
+        match validate_jwt(&jwt_key, jwt) {
+            Ok(result) => return Ok(result),
+            Err(AuthError::JwtInvalid) => continue, // Try another key
+            Err(other) => return Err(other), // For anything else, return the error immediately
         }
     }
-
-    Err(AuthError::Other)
+    Err(AuthError::JwtInvalid)
 }
 
 fn validate_jwt(
@@ -149,14 +141,14 @@ mod tests {
     use super::*;
 
     fn strategy(dec: jsonwebtoken::DecodingKey) -> Jwt {
-        Jwt::new(DecodingKeyContainer::Single(dec))
+        Jwt::new(vec![dec])
     }
 
     fn strategy_with_multiple(multi_dec: Vec<jsonwebtoken::DecodingKey>) -> Jwt {
-        Jwt::new(DecodingKeyContainer::Multiple(multi_dec))
+        Jwt::new(multi_dec)
     }
 
-    fn key_pair() -> (jsonwebtoken::EncodingKey, jsonwebtoken::DecodingKey) {
+    fn generate_key_pair() -> (jsonwebtoken::EncodingKey, jsonwebtoken::DecodingKey) {
         let doc = Ed25519KeyPair::generate_pkcs8(&ring::rand::SystemRandom::new()).unwrap();
         let encoding_key = EncodingKey::from_ed_der(doc.as_ref());
         let pair = Ed25519KeyPair::from_pkcs8(doc.as_ref()).unwrap();
@@ -164,7 +156,7 @@ mod tests {
         (encoding_key, decoding_key)
     }
 
-    fn key_pairs(
+    fn generate_key_pairs(
         size: usize,
     ) -> (
         Vec<jsonwebtoken::EncodingKey>,
@@ -174,7 +166,7 @@ mod tests {
         let mut multi_dec = Vec::new();
 
         for _ in 0..size {
-            let (enc, dec) = key_pair();
+            let (enc, dec) = generate_key_pair();
             multi_enc.push(enc);
             multi_dec.push(dec);
         }
@@ -189,7 +181,7 @@ mod tests {
     #[test]
     fn authenticates_valid_jwt_token_with_full_access() {
         // this is a full access token
-        let (enc, dec) = key_pair();
+        let (enc, dec) = generate_key_pair();
         let token = Token {
             id: None,
             a: None,
@@ -211,7 +203,7 @@ mod tests {
 
     #[test]
     fn authenticates_valid_jwt_token_with_read_only_access() {
-        let (enc, dec) = key_pair();
+        let (enc, dec) = generate_key_pair();
         let token = Token {
             id: Some(NamespaceName::default()),
             a: Some(Permission::Read),
@@ -232,7 +224,7 @@ mod tests {
 
     #[test]
     fn errors_when_jwt_token_invalid() {
-        let (_enc, dec) = key_pair();
+        let (_enc, dec) = generate_key_pair();
         let context = Ok(UserAuthContext::bearer("abc"));
 
         assert_eq!(
@@ -243,7 +235,7 @@ mod tests {
 
     #[test]
     fn expired_token() {
-        let (enc, dec) = key_pair();
+        let (enc, dec) = generate_key_pair();
         let token = Token {
             id: None,
             a: None,
@@ -263,7 +255,7 @@ mod tests {
 
     #[test]
     fn multi_scopes() {
-        let (enc, dec) = key_pair();
+        let (enc, dec) = generate_key_pair();
         let token = serde_json::json!({
             "id": "foobar",
             "a": "ro",
@@ -301,7 +293,7 @@ mod tests {
 
     #[test]
     fn multi_keys() {
-        let (multi_enc, multi_dec) = key_pairs(3);
+        let (multi_enc, multi_dec) = generate_key_pairs(3);
         let token = serde_json::json!({
             "p": {
                 "rw": { "ns": ["foo"] },
@@ -330,8 +322,8 @@ mod tests {
 
     #[test]
     fn multi_keys_but_all_fail() {
-        let (_, multi_dec) = key_pairs(3);
-        let (enc, _) = key_pair();
+        let (_, multi_dec) = generate_key_pairs(3);
+        let (enc, _) = generate_key_pair();
         let token = serde_json::json!({
             "p": {
                 "rw": { "ns": ["foo"] },
@@ -351,7 +343,7 @@ mod tests {
 
     #[test]
     fn multi_keys_but_first_expired() {
-        let (multi_enc, multi_dec) = key_pairs(3);
+        let (multi_enc, multi_dec) = generate_key_pairs(3);
         let token = Token {
             id: None,
             a: None,
@@ -366,13 +358,13 @@ mod tests {
             strategy_with_multiple(multi_dec)
                 .authenticate(context)
                 .unwrap_err(),
-            AuthError::JwtInvalid
+            AuthError::JwtExpired
         );
     }
 
     #[test]
     fn multi_keys_but_last_expired() {
-        let (multi_enc, multi_dec) = key_pairs(3);
+        let (multi_enc, multi_dec) = generate_key_pairs(3);
         let token = Token {
             id: None,
             a: None,

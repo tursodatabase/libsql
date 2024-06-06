@@ -40,12 +40,12 @@ impl ReplicaProxyService {
         // todo dupe #auth
         let jwt_result = self
             .namespaces
-            .with(namespace.clone(), |ns| ns.jwt_key())
+            .with(namespace.clone(), |ns| ns.jwt_keys())
             .await;
 
-        let namespace_jwt_key = jwt_result.and_then(|s| s);
+        let namespace_jwt_keys = jwt_result.and_then(|s| s);
 
-        let auth_strategy = match namespace_jwt_key {
+        let auth_strategy = match namespace_jwt_keys {
             Ok(Some(key)) => Ok(Auth::new(Jwt::new(key))),
             Ok(None) | Err(crate::error::Error::NamespaceDoesntExist(_)) => {
                 Ok(self.user_auth_strategy.clone())

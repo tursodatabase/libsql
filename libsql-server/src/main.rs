@@ -7,7 +7,7 @@ use anyhow::{bail, Context as _, Result};
 use bytesize::ByteSize;
 use clap::Parser;
 use hyper::client::HttpConnector;
-use libsql_server::auth::{parse_http_basic_auth_arg, parse_jwt_key, user_auth_strategies, Auth};
+use libsql_server::auth::{parse_http_basic_auth_arg, parse_jwt_keys, user_auth_strategies, Auth};
 // use mimalloc::MiMalloc;
 use tokio::sync::Notify;
 use tokio::time::Duration;
@@ -15,7 +15,6 @@ use tracing_subscriber::prelude::*;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::Layer;
 
-use libsql_server::auth::user_auth_strategies::jwt::DecodingKeyContainer;
 use libsql_server::config::{
     AdminApiConfig, BottomlessConfig, DbConfig, HeartbeatConfig, MetaStoreConfig, RpcClientConfig,
     RpcServerConfig, TlsConfig, UserApiConfig,
@@ -66,7 +65,7 @@ struct Cli {
     /// together. All decoding keys will be tried when parsing incoming JWT's.
     ///
     /// You can also pass the key directly in the env variable SQLD_AUTH_JWT_KEY.
-    #[clap(long, env = "SQLD_AUTH_JWT_KEY_FILE", num_args = 1..)]
+    #[clap(long, env = "SQLD_AUTH_JWT_KEY_FILE")]
     auth_jwt_key_file: Option<PathBuf>,
     /// Specifies legacy HTTP basic authentication. The argument must be in format "basic:$PARAM",
     /// where $PARAM is base64-encoded string "$USERNAME:$PASSWORD".
@@ -368,14 +367,14 @@ async fn make_user_auth_strategy(config: &Cli) -> anyhow::Result<Auth> {
         )));
     }
 
-    let auth_jwt_key = if let Some(ref file_path) = config.auth_jwt_key_file {
+    let auth_jwt_keys = if let Some(ref file_path) = config.auth_jwt_key_file {
         let data = tokio::fs::read_to_string(file_path)
             .await
-            .context("Could not read file with JWT key")?;
+            .context("Could not read file with JWT key(s)")?;
         Some(data)
     } else {
         match env::var("SQLD_AUTH_JWT_KEY") {
-            Ok(key) => Some(key),
+            Ok(keys) => Some(keys),
             Err(env::VarError::NotPresent) => None,
             Err(env::VarError::NotUnicode(_)) => {
                 bail!("Env variable SQLD_AUTH_JWT_KEY does not contain a valid Unicode value")
@@ -383,11 +382,11 @@ async fn make_user_auth_strategy(config: &Cli) -> anyhow::Result<Auth> {
         }
     };
 
-    if let Some(jwt_key) = auth_jwt_key.as_deref() {
-        let jwt_key: DecodingKeyContainer =
-            parse_jwt_key(jwt_key).context("Could not parse JWT decoding key")?;
+    if let Some(jwt_keys) = auth_jwt_keys.as_deref() {
+        let jwt_keys: Vec<jsonwebtoken::DecodingKey> =
+            parse_jwt_keys(jwt_keys).context("Could not parse JWT decoding key(s)")?;
         tracing::info!("Using JWT-based authentication");
-        return Ok(Auth::new(user_auth_strategies::Jwt::new(jwt_key)));
+        return Ok(Auth::new(user_auth_strategies::Jwt::new(jwt_keys)));
     }
 
     Ok(Auth::new(user_auth_strategies::Disabled::new()))
