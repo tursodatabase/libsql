@@ -234,7 +234,6 @@ pub(crate) struct AppState {
     enable_console: bool,
     disable_default_namespace: bool,
     disable_namespaces: bool,
-    path: Arc<Path>,
 }
 
 pub struct UserApi<A, P, S> {
@@ -315,7 +314,6 @@ where
                 namespaces: self.namespaces,
                 disable_default_namespace: self.disable_default_namespace,
                 disable_namespaces: self.disable_namespaces,
-                path: self.path,
             };
 
             macro_rules! handle_hrana {
