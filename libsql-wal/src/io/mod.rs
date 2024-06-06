@@ -5,7 +5,7 @@ use std::sync::Arc;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-use self::file::FileExt;
+pub use self::file::FileExt;
 
 pub mod buf;
 pub mod file;

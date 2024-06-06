@@ -1,27 +1,34 @@
 use std::future::Future;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use tokio::io::{AsyncWrite, AsyncWriteExt};
+use zerocopy::FromBytes;
 
 use crate::bottomless::{Error, Result};
-use crate::io::Io;
+use crate::io::{FileExt, Io};
 use crate::name::NamespaceName;
+use crate::segment::SegmentHeader;
 
 use super::Storage;
 
 pub struct FsStorage<I> {
     prefix: PathBuf,
-    io: I,
+    io: Arc<I>,
 }
 
 impl<I: Io> FsStorage<I> {
     fn new(prefix: PathBuf, io: I) -> Result<Self> {
         io.create_dir_all(&prefix.join("segments")).unwrap();
 
-        Ok(FsStorage { prefix, io })
+        Ok(FsStorage {
+            prefix,
+            io: Arc::new(io),
+        })
     }
 }
 
+// TODO(lucio): handle errors for fs module
 impl<I: Io> Storage for FsStorage<I> {
     type Config = ();
 
@@ -43,10 +50,12 @@ impl<I: Io> Storage for FsStorage<I> {
 
         let buf = Vec::with_capacity(segment_data.len().unwrap() as usize);
 
+        let f = self.io.open(true, true, true, &path).unwrap();
         async move {
             let (buf, res) = segment_data.read_exact_at_async(buf, 0).await;
 
-            tokio::fs::write(path, buf).await.unwrap();
+            let (_, res) = f.write_all_at_async(buf, 0).await;
+            res.unwrap();
 
             Ok(())
         }
@@ -77,7 +86,21 @@ impl<I: Io> Storage for FsStorage<I> {
             let end_frame: u64 = end_frame.parse().unwrap();
 
             if start_frame <= frame_no && end_frame >= frame_no {
-                let mut buf = tokio::fs::read(dir.path()).await.unwrap();
+                let file = self.io.open(true, true, false, &dir.path()).unwrap();
+
+                let buf = Vec::new();
+                let (mut buf, res) = file.read_exact_at_async(buf, 0).await;
+                res.unwrap();
+
+                // Assert the header from the segment matches the key in its path
+                let header = SegmentHeader::ref_from_prefix(&buf[..]).unwrap();
+                let start_frame_from_header = header.start_frame_no.get();
+                let end_frame_from_header = header.last_commited_frame_no.get();
+
+                // TOOD(lucio): convert these into errors before prod
+                assert_eq!(start_frame, start_frame_from_header);
+                assert_eq!(end_frame, end_frame_from_header);
+
                 tokio::pin!(dest);
                 dest.write_all(&mut buf[..]).await.unwrap();
 
