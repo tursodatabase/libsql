@@ -168,6 +168,7 @@ mod tests {
         assert_eq!(out, Some("always".to_string()));
     }
 
+    // Examples created via libsql-server/scripts/gen_jwt_test_assets.py
     const EXAMPLE_JWT_PUBLIC_KEY: &str = include_str!("../../assets/test/auth/example1.pem");
     const EXAMPLE_JWT_PRIVATE_KEY: &str = include_str!("../../assets/test/auth/example1.key");
     const EXAMPLE_JWT: &str = include_str!("../../assets/test/auth/example1.jwt");
