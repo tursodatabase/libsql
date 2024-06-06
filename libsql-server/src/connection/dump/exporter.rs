@@ -430,7 +430,7 @@ fn find_unused_str(haystack: &str, needle1: &str, needle2: &str) -> String {
     }
 }
 
-pub fn export_dump(mut db: rusqlite::Connection, writer: impl Write) -> anyhow::Result<()> {
+pub fn export_dump(db: &mut rusqlite::Connection, writer: impl Write) -> anyhow::Result<()> {
     let mut txn = db.transaction()?;
     txn.execute("PRAGMA writable_schema=ON", ())?;
     let savepoint = txn.savepoint_with_name("dump")?;
@@ -504,11 +504,11 @@ mod test {
     #[test]
     fn table_col_is_keyword() {
         let tmp = tempdir().unwrap();
-        let conn = Connection::open(tmp.path().join("data")).unwrap();
+        let mut conn = Connection::open(tmp.path().join("data")).unwrap();
         conn.execute(r#"create table test ("limit")"#, ()).unwrap();
 
         let mut out = Vec::new();
-        export_dump(conn, &mut out).unwrap();
+        export_dump(&mut conn, &mut out).unwrap();
 
         insta::assert_snapshot!(std::str::from_utf8(&out).unwrap());
     }

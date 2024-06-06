@@ -17,11 +17,8 @@ use enclose::enclose;
 use futures_core::{Future, Stream};
 use hyper::Uri;
 use libsql_replication::rpc::replication::replication_log_client::ReplicationLogClient;
-use libsql_sys::wal::wrapper::WrapWal;
-use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager, WalManager};
+use libsql_sys::wal::Sqlite3WalManager;
 use libsql_sys::EncryptionConfig;
-use parking_lot::Mutex;
-use rusqlite::ErrorCode;
 use tokio::io::AsyncBufReadExt;
 use tokio::sync::{watch, Semaphore};
 use tokio::task::JoinSet;
@@ -38,8 +35,8 @@ use crate::connection::write_proxy::MakeWriteProxyConn;
 use crate::connection::Connection;
 use crate::connection::MakeConnection;
 use crate::database::{
-    Database, DatabaseKind, PrimaryConnectionMaker, PrimaryDatabase, ReplicaDatabase,
-    SchemaDatabase,
+    Database, DatabaseKind, PrimaryConnection, PrimaryConnectionMaker, PrimaryDatabase,
+    ReplicaDatabase, SchemaDatabase,
 };
 use crate::error::LoadDumpError;
 use crate::replication::script_backup_manager::ScriptBackupManager;
@@ -394,14 +391,9 @@ impl Namespace {
                 Err(LoadDumpError::LoadDumpExistingDb)?;
             }
             RestoreOption::Dump(dump) => {
+                let conn = connection_maker.create().await?;
                 tracing::debug!("Loading dump");
-                load_dump(
-                    &db_path,
-                    dump,
-                    wal_wrapper.clone().map_wal(),
-                    ns_config.encryption_config.clone(),
-                )
-                .await?;
+                load_dump(dump, conn).await?;
                 tracing::debug!("Done loading dump");
             }
             _ => { /* other cases were already handled when creating bottomless */ }
@@ -852,50 +844,10 @@ pub enum RestoreOption {
 const WASM_TABLE_CREATE: &str =
     "CREATE TABLE libsql_wasm_func_table (name text PRIMARY KEY, body text) WITHOUT ROWID;";
 
-async fn load_dump<S, W>(
-    db_path: &Path,
-    dump: S,
-    wal_wrapper: W,
-    encryption_config: Option<EncryptionConfig>,
-) -> crate::Result<(), LoadDumpError>
+async fn load_dump<S>(dump: S, conn: PrimaryConnection) -> crate::Result<(), LoadDumpError>
 where
     S: Stream<Item = std::io::Result<Bytes>> + Unpin,
-    W: WrapWal<Sqlite3Wal> + Clone + Send + 'static,
 {
-    let mut retries = 0;
-    // there is a small chance we fail to acquire the lock right away, so we perform a few retries
-    let conn = loop {
-        let db_path = db_path.to_path_buf();
-        let wal_manager = Sqlite3WalManager::default().wrap(wal_wrapper.clone());
-
-        let encryption_config = encryption_config.clone();
-        match tokio::task::spawn_blocking(move || {
-            open_conn(&db_path, wal_manager, None, encryption_config)
-        })
-        .await?
-        {
-            Ok(conn) => {
-                break conn;
-            }
-            // Creating the loader database can, in rare occurrences, return sqlite busy,
-            // because of a race condition opening the monitor thread db. This is there to
-            // retry a bunch of times if that happens.
-            Err(rusqlite::Error::SqliteFailure(
-                rusqlite::ffi::Error {
-                    code: ErrorCode::DatabaseBusy,
-                    ..
-                },
-                _,
-            )) if retries < 10 => {
-                retries += 1;
-                tokio::time::sleep(Duration::from_millis(100)).await;
-            }
-            Err(e) => Err(e)?,
-        }
-    };
-
-    let conn = Arc::new(Mutex::new(conn));
-
     let mut reader = tokio::io::BufReader::new(StreamReader::new(dump));
     let mut curr = String::new();
     let mut line = String::new();
@@ -927,14 +879,14 @@ where
         if line.ends_with(';') {
             n_stmt += 1;
             // dump must be performd within a txn
-            if n_stmt > 2 && conn.lock().is_autocommit() {
+            if n_stmt > 2 && conn.is_autocommit().await.unwrap() {
                 return Err(LoadDumpError::NoTxn);
             }
 
             line = tokio::task::spawn_blocking({
                 let conn = conn.clone();
                 move || -> crate::Result<String, LoadDumpError> {
-                    conn.lock().execute(&line, ())?;
+                    conn.with_raw(|conn| conn.execute(&line, ()))?;
                     Ok(line)
                 }
             })
@@ -945,8 +897,15 @@ where
         }
     }
 
-    if !conn.lock().is_autocommit() {
-        let _ = conn.lock().execute("rollback", ());
+    if !conn.is_autocommit().await.unwrap() {
+        tokio::task::spawn_blocking({
+            let conn = conn.clone();
+            move || -> crate::Result<(), LoadDumpError> {
+                conn.with_raw(|conn| conn.execute("rollback", ()))?;
+                Ok(())
+            }
+        })
+        .await??;
         return Err(LoadDumpError::NoCommit);
     }
 

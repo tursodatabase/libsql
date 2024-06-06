@@ -1,8 +1,6 @@
 use std::env;
-use std::fs::OpenOptions;
-use std::io::{stdout, Write};
 use std::net::SocketAddr;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::{bail, Context as _, Result};
@@ -22,8 +20,8 @@ use libsql_server::config::{
     RpcServerConfig, TlsConfig, UserApiConfig,
 };
 use libsql_server::net::AddrIncoming;
+use libsql_server::version::Version;
 use libsql_server::Server;
-use libsql_server::{connection::dump::exporter::export_dump, version::Version};
 use libsql_sys::{Cipher, EncryptionConfig};
 
 // Use system allocator for now, seems like we are getting too much fragmentation.
@@ -139,9 +137,6 @@ struct Cli {
     /// `--max-log-size`.
     #[clap(long, env = "SQLD_MAX_LOG_DURATION")]
     max_log_duration: Option<f32>,
-
-    #[clap(subcommand)]
-    utils: Option<UtilsSubcommands>,
 
     /// The URL to send a server heartbeat `POST` request to.
     /// By default, the server doesn't send a heartbeat.
@@ -308,33 +303,6 @@ impl Cli {
         #[cfg(feature = "encryption")]
         eprintln!("\t- encryption at rest: {}", if self.encryption_key.is_some() { "enabled" } else { "disabled" });
     }
-}
-
-fn perform_dump(dump_path: Option<&Path>, db_path: &Path) -> anyhow::Result<()> {
-    let out: Box<dyn Write> = match dump_path {
-        Some(path) => {
-            let f = OpenOptions::new()
-                .create_new(true)
-                .write(true)
-                .open(path)
-                .with_context(|| format!("file `{}` already exists", path.display()))?;
-            Box::new(f)
-        }
-        None => Box::new(stdout()),
-    };
-    let conn = if cfg!(feature = "unix-excl-vfs") {
-        rusqlite::Connection::open_with_flags_and_vfs(
-            db_path.join("data"),
-            rusqlite::OpenFlags::default(),
-            "unix-excl",
-        )
-    } else {
-        rusqlite::Connection::open(db_path.join("data"))
-    }?;
-
-    export_dump(conn, out)?;
-
-    Ok(())
 }
 
 #[cfg(feature = "debug-tools")]
@@ -690,28 +658,9 @@ async fn main() -> Result<()> {
 
     let args = Cli::parse();
 
-    match args.utils {
-        Some(UtilsSubcommands::Dump { path, namespace }) => {
-            if let Some(ref path) = path {
-                eprintln!(
-                    "Dumping database {} to {}",
-                    args.db_path.display(),
-                    path.display()
-                );
-            }
-            let db_path = args.db_path.join("dbs").join(&namespace);
-            if !db_path.exists() {
-                bail!("no database for namespace `{namespace}`");
-            }
+    args.print_welcome_message();
+    let server = build_server(&args).await?;
+    server.start().await?;
 
-            perform_dump(path.as_deref(), &db_path)
-        }
-        None => {
-            args.print_welcome_message();
-            let server = build_server(&args).await?;
-            server.start().await?;
-
-            Ok(())
-        }
-    }
+    Ok(())
 }
