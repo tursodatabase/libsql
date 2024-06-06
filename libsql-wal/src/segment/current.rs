@@ -110,7 +110,14 @@ impl<F> CurrentSegment<F> {
             // let mut commit_frame_written = false;
             let current_savepoint = tx.savepoints.last_mut().expect("no savepoints initialized");
             while let Some((page_no, page)) = pages.next() {
-                tracing::trace!(page_no, "inserting page");
+                // optim: if the page is already present, overwrite its content
+                if let Some(offset) = current_savepoint.index.get(&page_no) {
+                    tracing::trace!(page_no, "recycling frame");
+                    self.file.write_all_at(page, page_offset(*offset))?;
+                    continue;
+                }
+
+                tracing::trace!(page_no, "inserting new frame");
                 let size_after = if let Some(size) = size_after {
                     pages.peek().is_none().then_some(size).unwrap_or(0)
                 } else {
@@ -130,7 +137,10 @@ impl<F> CurrentSegment<F> {
                     frame_no
                 );
                 self.file.write_at_vectored(slices, frame_offset(offset))?;
-                current_savepoint.index.insert(page_no, offset);
+                assert!(
+                    current_savepoint.index.insert(page_no, offset).is_none(),
+                    "existing frames should be recycled"
+                );
                 tx.next_frame_no += 1;
                 tx.next_offset += 1;
             }
