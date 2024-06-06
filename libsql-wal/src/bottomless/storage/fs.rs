@@ -4,23 +4,25 @@ use std::path::PathBuf;
 use tokio::io::{AsyncWrite, AsyncWriteExt};
 
 use crate::bottomless::{Error, Result};
+use crate::io::Io;
 use crate::name::NamespaceName;
 
 use super::Storage;
 
-pub struct FsStorage {
+pub struct FsStorage<I> {
     prefix: PathBuf,
+    io: I,
 }
 
-impl FsStorage {
-    fn new(prefix: PathBuf) -> Result<Self> {
-        std::fs::create_dir_all(prefix.join("segments")).unwrap();
+impl<I: Io> FsStorage<I> {
+    fn new(prefix: PathBuf, io: I) -> Result<Self> {
+        io.create_dir_all(&prefix.join("segments")).unwrap();
 
-        Ok(FsStorage { prefix })
+        Ok(FsStorage { prefix, io })
     }
 }
 
-impl Storage for FsStorage {
+impl<I: Io> Storage for FsStorage<I> {
     type Config = ();
 
     fn store(
@@ -105,13 +107,13 @@ mod tests {
     use uuid::Uuid;
 
     use super::*;
-    use crate::bottomless::Storage;
+    use crate::{bottomless::Storage, io::StdIO};
 
     #[tokio::test]
     async fn read_write() {
         let dir = std::env::temp_dir();
 
-        let fs = FsStorage::new(dir).unwrap();
+        let fs = FsStorage::new(dir, StdIO::default()).unwrap();
 
         let namespace = NamespaceName::from_string("".into());
         let segment = vec![0u8; 4096];
