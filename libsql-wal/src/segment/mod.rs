@@ -7,10 +7,10 @@
 //! maximum frame_no that this reader is allowed to read. The reader also keeps a reference to the
 //! head segment at the moment it was created.
 #![allow(dead_code)]
+use std::mem::offset_of;
 use std::mem::size_of;
 use std::num::NonZeroU64;
 
-use memoffset::offset_of;
 use zerocopy::byteorder::little_endian::{U32, U64};
 use zerocopy::AsBytes;
 

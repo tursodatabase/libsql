@@ -38,6 +38,8 @@ pub struct SharedWal<FS: Io> {
     pub(crate) db_file: FS::File,
     pub(crate) namespace: NamespaceName,
     pub(crate) registry: Arc<WalRegistry<FS>>,
+    #[allow(dead_code)] // used by replication
+    pub(crate) checkpointed_frame_no: AtomicU64,
 }
 
 impl<FS: Io> SharedWal<FS> {
@@ -196,6 +198,22 @@ impl<FS: Io> SharedWal<FS> {
             }
         }
 
+        // The replication index from page 1 must match that of the SharedWal
+        #[cfg(debug_assertions)]
+        {
+            use crossbeam::atomic::AtomicConsume;
+            use libsql_sys::ffi::Sqlite3DbHeader;
+            use zerocopy::FromBytes;
+
+            if page_no == 1 {
+                let header = Sqlite3DbHeader::read_from_prefix(buffer).unwrap();
+                assert_eq!(
+                    header.replication_index.get(),
+                    self.checkpointed_frame_no.load_consume()
+                );
+            }
+        }
+
         tx.pages_read += 1;
 
         Ok(())
@@ -213,16 +231,28 @@ impl<FS: Io> SharedWal<FS> {
 
         // TODO: use config for max log size
         if tx.is_commited() && current.count_committed() > 1000 {
-            self.registry.swap_current(self, tx)?;
+            self.swap_current(tx)?;
         }
 
-        // TODO: remove, stupid strategy for tests
-        // ok, we still hold a write txn
-        // if current.tail().len() > 10 {
-        //     current.tail().checkpoint(&self.db_file)?;
-        // }
-
         Ok(())
+    }
+
+    /// Swap the current log. A write lock must be held, but the transaction must be must be committed already.
+    fn swap_current(&self, tx: &mut WriteTransaction<FS::File>) -> Result<()> {
+        self.registry.swap_current(self, tx)?;
+        Ok(())
+    }
+
+    pub fn checkpoint(&self) -> Result<Option<u64>> {
+        let current = self.current.load();
+        match current.tail().checkpoint(&self.db_file)? {
+            Some(frame_no) => {
+                self.checkpointed_frame_no
+                    .store(frame_no, Ordering::Relaxed);
+                Ok(Some(frame_no))
+            }
+            None => Ok(None),
+        }
     }
 
     pub fn last_committed_frame_no(&self) -> u64 {
@@ -232,5 +262,63 @@ impl<FS: Io> SharedWal<FS> {
 
     pub fn namespace(&self) -> &NamespaceName {
         &self.namespace
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::path::Path;
+
+    use crossbeam::atomic::AtomicConsume;
+    use libsql_sys::rusqlite::OpenFlags;
+    use tempfile::tempdir;
+
+    use crate::wal::LibsqlWalManager;
+
+    use super::*;
+
+    #[test]
+    fn checkpoint() {
+        let tmp = tempdir().unwrap();
+        let resolver = |path: &Path| {
+            let name = path.file_name().unwrap().to_str().unwrap();
+            NamespaceName::from_string(name.to_string())
+        };
+
+        let registry =
+            Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver, ()).unwrap());
+        let wal_manager = LibsqlWalManager::new(registry.clone());
+
+        let db_path = tmp.path().join("test/data");
+        let conn = libsql_sys::Connection::open(
+            db_path.clone(),
+            OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
+            wal_manager.clone(),
+            100000,
+            None,
+        )
+        .unwrap();
+
+        let shared = registry.open(&db_path).unwrap();
+
+        assert_eq!(shared.checkpointed_frame_no.load_consume(), 0);
+
+        conn.execute("create table test (x)", ()).unwrap();
+        conn.execute("insert into test values (12)", ()).unwrap();
+        conn.execute("insert into test values (12)", ()).unwrap();
+
+        assert_eq!(shared.checkpointed_frame_no.load_consume(), 0);
+
+        let mut tx = Transaction::Read(shared.begin_read(666));
+        shared.upgrade(&mut tx).unwrap();
+        tx.commit();
+        shared.swap_current(tx.as_write_mut().unwrap()).unwrap();
+        tx.end();
+
+        let frame_no = shared.checkpoint().unwrap().unwrap();
+        assert_eq!(frame_no, 4);
+        assert_eq!(shared.checkpointed_frame_no.load_consume(), 4);
+
+        assert!(shared.checkpoint().unwrap().is_none());
     }
 }

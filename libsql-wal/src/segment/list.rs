@@ -1,10 +1,10 @@
+use std::mem::offset_of;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use arc_swap::ArcSwapOption;
 use fst::{map::OpBuilder, Streamer};
 use libsql_sys::ffi::Sqlite3DbHeader;
-use memoffset::offset_of;
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
@@ -77,7 +77,9 @@ impl<F> SegmentList<F> {
         Ok(false)
     }
 
-    pub fn checkpoint(&self, db_file: &F) -> Result<()>
+    /// Checkpoints as many segments as possible to the main db file, and return the checkpointed
+    /// frame_no, if anything was checkpointed
+    pub fn checkpoint(&self, db_file: &F) -> Result<Option<u64>>
     where
         F: FileExt,
     {
@@ -86,7 +88,7 @@ impl<F> SegmentList<F> {
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
             .is_err()
         {
-            return Ok(());
+            return Ok(None);
         }
         let mut segs = Vec::new();
         let mut current = self.head.load();
@@ -108,7 +110,7 @@ impl<F> SegmentList<F> {
 
         // nothing to checkpoint rn
         if segs.is_empty() {
-            return Ok(());
+            return Ok(None);
         }
 
         let size_after = segs.first().unwrap().segment.header().db_size();
@@ -123,8 +125,9 @@ impl<F> SegmentList<F> {
         while let Some((k, v)) = union.next() {
             let page_no = u32::from_be_bytes(k.try_into().unwrap());
             let v = v.iter().min_by_key(|i| i.index).unwrap();
-            let seg = &segs[v.index];
             let offset = v.value as u32;
+
+            let seg = &segs[v.index];
             seg.segment.read_frame_offset(offset, &mut buf)?;
             assert_eq!(buf.header().page_no(), page_no);
             last_replication_index = last_replication_index.max(buf.header().frame_no());
@@ -164,7 +167,7 @@ impl<F> SegmentList<F> {
 
         self.checkpointing.store(false, Ordering::SeqCst);
 
-        Ok(())
+        Ok(Some(last_replication_index.get()))
     }
 
     pub(crate) fn len(&self) -> usize {
