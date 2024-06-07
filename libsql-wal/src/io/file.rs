@@ -32,6 +32,13 @@ pub trait FileExt: Send + Sync + 'static {
         buf: B,
         offset: u64,
     ) -> impl Future<Output = (B, Result<()>)> + Send;
+
+    fn read_at_async<B: IoBufMut + Send + 'static>(
+        &self,
+        buf: B,
+        offset: u64
+    ) -> impl Future<Output = (B, Result<()>)> + Send;
+
     fn write_all_at_async<B: IoBuf + Send + 'static>(
         &self,
         buf: B,
@@ -133,6 +140,58 @@ impl FileExt for File {
     fn len(&self) -> io::Result<u64> {
         Ok(self.metadata()?.len())
     }
+
+    async fn read_at_async<B: IoBufMut + Send + 'static>(
+        &self,
+        mut buf: B,
+        offset: u64
+    ) -> (B, Result<()>) {
+        let file = self.try_clone().unwrap();
+        let (buffer, ret) = tokio::task::spawn_blocking(move || {
+            let buffer = unsafe { std::slice::from_raw_parts_mut(buf.stable_mut_ptr(), buf.bytes_total()) };
+            match nix::sys::uio::pread(file, buffer, offset as _) {
+                Ok(n) => {
+                    unsafe { buf.set_init(n); }
+                    (buf, Ok(()))
+                }
+                Err(e) => {
+                    (buf, Err(e))
+                }
+            }
+        })
+        .await
+        .unwrap();
+
+        (buffer, ret.map_err(|e| e.into()))
+    }
+}
+
+pub async fn copy<B, I, O>(src: &I, dst: &O, buffer: B) -> (B, Result<()>)
+    where I: FileExt,
+          O: FileExt,
+          B: IoBufMut + Send + 'static,
+{
+    let mut offset = 0;
+    let mut buffer = buffer;
+    loop {
+        let (buf, ret) = src.read_at_async(buffer, offset).await;
+        if ret.is_err() {
+            return (buf, ret);
+        }
+
+        let read = buf.bytes_init();
+        if read == 0 {
+            return (buf, Ok(()));
+        }
+
+        let (buf, ret) = dst.write_all_at_async(buf, offset).await;
+        if ret.is_err() {
+            return (buf, ret);
+        }
+
+        offset += read as u64;
+        buffer = buf;
+    }
 }
 
 pub async fn async_read_all_to_vec<F: FileExt>(f: F) -> io::Result<Vec<u8>> {
@@ -200,6 +259,7 @@ mod test {
     use std::io::Read;
 
     use tempfile::tempfile;
+    use zerocopy::AsBytes;
 
     use super::*;
 
@@ -243,5 +303,24 @@ mod test {
         ret.unwrap();
         assert_eq!(buf.len(), 50);
         assert!(buf.iter().all(|x| *x == 2));
+    }
+
+    #[tokio::test] 
+    async fn copy_async() {
+        let mut src = tempfile().unwrap();
+        let mut dst = tempfile().unwrap();
+
+        let data = (0..10000usize).into_iter().collect::<Vec<_>>();
+
+        src.write_all(data.as_bytes()).unwrap();
+
+        let (_buf, ret) = copy(&src, &dst, Vec::with_capacity(100)).await;
+        ret.unwrap();
+
+        let mut dest_content = Vec::new();
+        dst.read_to_end(&mut dest_content).unwrap();
+
+        assert_eq!(dest_content, data.as_bytes());
+
     }
 }
