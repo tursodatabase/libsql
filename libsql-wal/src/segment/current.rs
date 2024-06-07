@@ -9,14 +9,16 @@ use std::sync::{
 
 use fst::MapBuilder;
 use parking_lot::{Mutex, RwLock};
+use tokio_stream::Stream;
 use zerocopy::{AsBytes, FromZeroes};
 
+use crate::io::buf::ZeroCopyBuf;
 use crate::io::file::FileExt;
 use crate::segment::{frame_offset, page_offset, sealed::SealedSegment};
 use crate::transaction::{Transaction, WriteTransaction};
 
 use super::list::SegmentList;
-use super::{FrameHeader, SegmentHeader};
+use super::{Frame, FrameHeader, SegmentHeader};
 
 use crate::error::Result;
 
@@ -100,7 +102,7 @@ impl<F> CurrentSegment<F> {
         pages: impl Iterator<Item = (u32, &'a [u8])>,
         size_after: Option<u32>,
         tx: &mut WriteTransaction<F>,
-    ) -> Result<()>
+    ) -> Result<Option<u64>>
     where
         F: FileExt,
     {
@@ -161,10 +163,12 @@ impl<F> CurrentSegment<F> {
                     *self.header.lock() = header;
 
                     tx.is_commited = true;
+
+                    return Ok(Some(last_frame_no));
                 }
             }
 
-            Ok(())
+            Ok(None)
         })
     }
 
@@ -271,7 +275,35 @@ impl<F> CurrentSegment<F> {
     pub fn tail(&self) -> &Arc<SegmentList<F>> {
         &self.tail
     }
+
+    // todo: maybe return boxed frames?
+    pub fn rev_frame_stream(&self) -> impl Stream<Item = Result<Frame>> + '_
+    where
+        F: FileExt,
+    {
+        async_stream::try_stream! {
+            let (start_frame_no, last_committed) = {
+                let header = self.header.lock();
+                (header.start_frame_no.get(), header.last_commited_frame_no.get())
+            };
+            let mut next_offset = (last_committed - start_frame_no) as u32;
+            loop {
+                let byte_offset = frame_offset(next_offset);
+
+                let buf = ZeroCopyBuf::<Frame>::new_uninit();
+                let (buf, ret) = self.file.read_exact_at_async(buf, byte_offset).await;
+                ret?;
+                yield buf.into_inner();
+                if next_offset == 0 {
+                    break
+                } else {
+                    next_offset -= 1;
+                }
+            }
+        }
+    }
 }
+
 impl<F> Drop for CurrentSegment<F> {
     fn drop(&mut self) {
         // todo: if reader is 0 and segment is sealed, register for compaction.

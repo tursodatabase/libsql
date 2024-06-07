@@ -149,6 +149,10 @@ impl Frame {
     pub fn header(&self) -> &FrameHeader {
         &self.header
     }
+
+    pub fn header_mut(&mut self) -> &mut FrameHeader {
+        &mut self.header
+    }
 }
 
 fn frame_offset(offset: u32) -> u64 {

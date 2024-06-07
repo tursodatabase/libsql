@@ -122,6 +122,11 @@ impl<T> ZeroCopyBuf<T> {
         unsafe { self.inner.assume_init_ref() }
     }
 
+    pub fn into_inner(self) -> T {
+        assert!(self.is_init());
+        unsafe { self.inner.assume_init() }
+    }
+
     pub fn deinit(&mut self) {
         self.init = 0;
     }

@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 arc-swap = "1.7.1"
+async-stream = "0.3.5"
 bytes = "1.6.0"
 chrono = "0.4.38"
 crc32fast = "1.4.2"
@@ -20,6 +21,7 @@ priority-queue = "2.0.2"
 tempfile = "3.10.1"
 thiserror = "1.0.58"
 tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1.15"
 tracing = "0.1.40"
 uuid = { version = "1.8.0", features = ["v4"] }
 walkdir = "2.5.0"
