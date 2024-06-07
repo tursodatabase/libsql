@@ -260,3 +260,46 @@ unsafe impl IoBuf for Vec<u8> {
         self.capacity()
     }
 }
+
+pub(crate) struct SubChunkBuf<T> {
+    buf: T,
+    len: usize,
+}
+
+impl<T> SubChunkBuf<T> {
+    pub fn new(buf: T, len: usize) -> SubChunkBuf<T> {
+        SubChunkBuf { buf, len }
+    }
+
+    pub fn into_inner(self) -> T {
+        self.buf
+    }
+}
+
+unsafe impl<T: IoBuf> IoBuf for SubChunkBuf<T> {
+    fn stable_ptr(&self) -> *const u8 {
+        self.buf.stable_ptr()
+    }
+
+    fn bytes_init(&self) -> usize {
+        self.buf.bytes_init()
+    }
+
+    fn bytes_total(&self) -> usize {
+        if self.buf.bytes_total() < self.len {
+            self.buf.bytes_total()
+        } else {
+            self.len
+        }
+    }
+}
+
+unsafe impl<T: IoBufMut> IoBufMut for SubChunkBuf<T> {
+    fn stable_mut_ptr(&mut self) -> *mut u8 {
+        self.buf.stable_mut_ptr()
+    }
+
+    unsafe fn set_init(&mut self, pos: usize) {
+        self.buf.set_init(pos)
+    }
+}
