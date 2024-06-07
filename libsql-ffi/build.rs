@@ -28,7 +28,7 @@ fn main() {
 
     if std::env::var("LIBSQL_DEV").is_ok() {
         make_amalgamation();
-        build_multiple_ciphers(&out_path);
+        build_multiple_ciphers(&target, &out_path);
     }
 
     let bindgen_rs_path = if cfg!(feature = "session") {
@@ -47,7 +47,7 @@ fn main() {
     }
 
     if cfg!(feature = "multiple-ciphers") {
-        copy_multiple_ciphers(&out_dir, &out_path);
+        copy_multiple_ciphers(&target, &out_dir, &out_path);
         return;
     }
 
@@ -252,10 +252,10 @@ pub fn build_bundled(out_dir: &str, out_path: &Path) {
     println!("cargo:lib_dir={out_dir}");
 }
 
-fn copy_multiple_ciphers(out_dir: &str, out_path: &Path) {
+fn copy_multiple_ciphers(target: &str, out_dir: &str, out_path: &Path) {
     let dylib = format!("{out_dir}/sqlite3mc/libsqlite3mc_static.a");
     if !Path::new(&dylib).exists() {
-        build_multiple_ciphers(out_path);
+        build_multiple_ciphers(target, out_path);
     }
 
     std::fs::copy(dylib, format!("{out_dir}/libsqlite3mc.a")).unwrap();
@@ -263,7 +263,7 @@ fn copy_multiple_ciphers(out_dir: &str, out_path: &Path) {
     println!("cargo:rustc-link-search={out_dir}");
 }
 
-fn build_multiple_ciphers(out_path: &Path) {
+fn build_multiple_ciphers(target: &str, out_path: &Path) {
     let bindgen_rs_path = if cfg!(feature = "session") {
         "bundled/bindings/session_bindgen.rs"
     } else {
@@ -298,11 +298,12 @@ fn build_multiple_ciphers(out_path: &Path) {
 
     let mut cmake_opts: Vec<&str> = vec![];
 
-    let cargo_build_target = env::var("CARGO_BUILD_TARGET").unwrap_or_default();
-    let cross_cc_var_name = format!("CC_{}", cargo_build_target.replace("-", "_"));
+    let target_postfix = target.to_string().replace("-", "_");
+    let cross_cc_var_name = format!("CC_{}", target_postfix);
+    println!("cargo:warning=CC_var_name={}", cross_cc_var_name);
     let cross_cc = env::var(&cross_cc_var_name).ok();
 
-    let cross_cxx_var_name = format!("CXX_{}", cargo_build_target.replace("-", "_"));
+    let cross_cxx_var_name = format!("CXX_{}", target_postfix);
     let cross_cxx = env::var(&cross_cxx_var_name).ok();
 
     let toolchain_path = sqlite3mc_build_dir.join("toolchain.cmake");
@@ -340,7 +341,7 @@ fn build_multiple_ciphers(out_path: &Path) {
     cmake_opts.push("-DSQLITE_USE_URI=ON");
     cmake_opts.push("-DCMAKE_POSITION_INDEPENDENT_CODE=ON");
 
-    if cargo_build_target.contains("musl") {
+    if target.contains("musl") {
         cmake_opts.push("-DCMAKE_C_FLAGS=\"-U_FORTIFY_SOURCE\"");
         cmake_opts.push("-DCMAKE_CXX_FLAGS=\"-U_FORTIFY_SOURCE\"");
     }
