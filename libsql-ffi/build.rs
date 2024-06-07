@@ -288,12 +288,12 @@ fn build_multiple_ciphers(out_path: &Path) {
     )
     .unwrap();
 
-    let bundled_dir = fs::canonicalize(BUNDLED_DIR)
+    let bundled_dir = env::current_dir()
         .unwrap()
+        .join(BUNDLED_DIR)
         .join("SQLite3MultipleCiphers");
-
     let out_dir = env::var("OUT_DIR").unwrap();
-    let sqlite3mc_build_dir = fs::canonicalize(out_dir.clone()).unwrap().join("sqlite3mc");
+    let sqlite3mc_build_dir = env::current_dir().unwrap().join(out_dir).join("sqlite3mc");
     let _ = fs::remove_dir_all(sqlite3mc_build_dir.clone());
     fs::create_dir_all(sqlite3mc_build_dir.clone()).unwrap();
 
