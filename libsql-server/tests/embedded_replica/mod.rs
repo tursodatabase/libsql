@@ -14,6 +14,7 @@ use libsql_server::config::{AdminApiConfig, DbConfig, RpcServerConfig, UserApiCo
 use serde_json::json;
 use tempfile::tempdir;
 use tokio::sync::Notify;
+use tokio_stream::StreamExt;
 use turmoil::{Builder, Sim};
 
 fn enable_libsql_logging() {
@@ -186,6 +187,75 @@ fn execute_batch() {
             INSERT INTO user (id) VALUES (2);", // COMMIT;",
         )
         .await?;
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
+fn stream() {
+    let mut sim = Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+
+    let tmp_embedded = tempdir().unwrap();
+    let tmp_host = tempdir().unwrap();
+    let tmp_embedded_path = tmp_embedded.path().to_owned();
+    let tmp_host_path = tmp_host.path().to_owned();
+
+    make_primary(&mut sim, tmp_host_path.clone());
+
+    sim.client("client", async move {
+        let client = Client::new();
+        client
+            .post("http://primary:9090/v1/namespaces/foo/create", json!({}))
+            .await?;
+
+        let path = tmp_embedded_path.join("embedded");
+        let db = Database::open_with_remote_sync_connector(
+            path.to_str().unwrap(),
+            "http://foo.primary:8080",
+            "",
+            TurmoilConnector,
+            false,
+            None,
+        )
+        .await?;
+
+        let n = db.sync().await?;
+        assert_eq!(n, None);
+
+        let conn = db.connect()?;
+
+        conn.execute("CREATE TABLE user (id INTEGER NOT NULL PRIMARY KEY)", ())
+            .await?;
+
+        let n = db.sync().await?;
+        assert_eq!(n, Some(1));
+
+        conn.execute_batch(
+            "
+            INSERT INTO user (id) VALUES (2);
+            INSERT INTO user (id) VALUES (3);
+            INSERT INTO user (id) VALUES (4);
+            INSERT INTO user (id) VALUES (5);
+            ",
+        )
+        .await?;
+
+        db.sync().await.unwrap();
+
+        let rows = conn.query("select * from user", ()).await.unwrap();
+
+        let rows = rows
+            .into_stream()
+            .map(|r| r.unwrap().get::<u64>(0).unwrap())
+            .collect::<Vec<_>>()
+            .await;
+
+        assert_eq!(rows.len(), 4);
 
         Ok(())
     });
