@@ -40,7 +40,7 @@ impl<I: Io> Storage for FsStorage<I> {
         segment_index: Vec<u8>,
     ) -> impl Future<Output = Result<()>> + Send {
         let key = format!(
-            "{}-{}-{}.segment",
+            "{:019}-{:019}-{:019}.segment",
             meta.start_frame_no,
             meta.end_frame_no,
             meta.created_at.timestamp()
@@ -48,7 +48,7 @@ impl<I: Io> Storage for FsStorage<I> {
 
         let path = self.prefix.join("segments").join(key);
 
-        let buf = Vec::with_capacity(segment_data.len().unwrap() as usize);
+        let buf = vec![0u8; segment_data.len().unwrap() as usize];
 
         let f = self.io.open(true, true, true, &path).unwrap();
         async move {
@@ -86,9 +86,12 @@ impl<I: Io> Storage for FsStorage<I> {
             let end_frame: u64 = end_frame.parse().unwrap();
 
             if start_frame <= frame_no && end_frame >= frame_no {
-                let file = self.io.open(true, true, false, &dir.path()).unwrap();
+                dbg!(&dir.path());
+                let file = self.io.open(false, true, true, &dir.path()).unwrap();
 
-                let buf = Vec::new();
+                let len = file.len().unwrap();
+
+                let buf = vec![0u8; len as usize];
                 let (mut buf, res) = file.read_exact_at_async(buf, 0).await;
                 res.unwrap();
 
@@ -128,18 +131,31 @@ impl<I: Io> Storage for FsStorage<I> {
 mod tests {
     use chrono::Utc;
     use uuid::Uuid;
+    use zerocopy::AsBytes;
 
     use super::*;
     use crate::{bottomless::Storage, io::StdIO};
 
     #[tokio::test]
     async fn read_write() {
-        let dir = std::env::temp_dir();
+        let temp_dir = Uuid::new_v4().to_string();
+        let dir = std::env::temp_dir().join(temp_dir);
 
         let fs = FsStorage::new(dir, StdIO::default()).unwrap();
 
         let namespace = NamespaceName::from_string("".into());
-        let segment = vec![0u8; 4096];
+        let mut segment = vec![0u8; 4096];
+
+        let header = SegmentHeader {
+            start_frame_no: 0.into(),
+            last_commited_frame_no: 64.into(),
+            db_size: 0.into(),
+            index_offset: 0.into(),
+            index_size: 0.into(),
+            header_cheksum: 0.into(),
+        };
+
+        header.write_to_prefix(&mut segment[..]);
 
         fs.store(
             &(),
