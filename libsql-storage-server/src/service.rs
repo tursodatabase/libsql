@@ -34,21 +34,11 @@ impl Storage for Service {
         &self,
         request: Request<rpc::InsertFramesRequest>,
     ) -> Result<Response<rpc::InsertFramesResponse>, Status> {
-        let mut num_frames = 0;
         let request = request.into_inner();
-        let namespace = request.namespace;
-        for frame in request.frames.into_iter() {
-            trace!(
-                "inserted for page {} frame {}",
-                frame.page_no,
-                self.store
-                    .insert_frame(&namespace, frame.page_no, frame.data.into())
-                    .await
-            );
-            num_frames += 1;
-            self.db_size
-                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        }
+        let ns = request.namespace;
+        let frames = request.frames;
+        let max_frame_no = request.max_frame_no;
+        let num_frames = self.store.insert_frames(&ns, max_frame_no, frames).await as u32;
         Ok(Response::new(rpc::InsertFramesResponse { num_frames }))
     }
 

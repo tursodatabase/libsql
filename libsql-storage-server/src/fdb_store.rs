@@ -87,7 +87,7 @@ impl FrameStore for FDBFrameStore {
                 frame_no,
                 FrameData {
                     page_no: f.page_no,
-                    data: f.data,
+                    data: f.data.into(),
                 },
             )
             .await;

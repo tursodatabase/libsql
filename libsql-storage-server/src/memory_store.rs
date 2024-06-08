@@ -48,13 +48,28 @@ impl FrameStore for InMemFrameStore {
         frame_no
     }
 
-    async fn insert_frames(
-        &self,
-        _namespace: &str,
-        _max_frame_no: u64,
-        _frames: Vec<Frame>,
-    ) -> u64 {
-        todo!()
+    async fn insert_frames(&self, _namespace: &str, _max_frame_no: u64, frames: Vec<Frame>) -> u64 {
+        let mut inner = self.inner.lock().unwrap();
+        for frame in frames {
+            let frame_no = inner.max_frame_no + 1;
+            inner.max_frame_no = frame_no;
+            let page_no = frame.page_no;
+            inner.frames.insert(
+                frame_no,
+                FrameData {
+                    page_no,
+                    data: frame.data.into(),
+                },
+            );
+            inner
+                .pages
+                .entry(page_no)
+                .or_insert_with(Vec::new)
+                .push(frame_no);
+            tracing::trace!("inserted for page {} frame {}", page_no, frame_no)
+        }
+        let count = inner.max_frame_no;
+        count
     }
 
     async fn read_frame(&self, _namespace: &str, frame_no: u64) -> Option<bytes::Bytes> {
