@@ -97,6 +97,12 @@ pub(crate) static BLOCKING_RT: Lazy<Runtime> = Lazy::new(|| {
 type Result<T, E = Error> = std::result::Result<T, E>;
 type StatsSender = mpsc::Sender<(NamespaceName, MetaStoreHandle, Weak<Stats>)>;
 
+#[derive(clap::ValueEnum, PartialEq, Clone, Copy, Debug)]
+pub enum CustomWAL {
+    LibsqlWal,
+    DurableWal,
+}
+
 pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpConnector>> {
     pub path: Arc<Path>,
     pub db_config: DbConfig,
@@ -114,7 +120,7 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub meta_store_config: MetaStoreConfig,
     pub max_concurrent_connections: usize,
     pub shutdown_timeout: std::time::Duration,
-    pub use_libsql_wal: bool,
+    pub use_custom_wal: Option<CustomWAL>,
 }
 
 impl<C, A, D> Default for Server<C, A, D> {
@@ -136,7 +142,7 @@ impl<C, A, D> Default for Server<C, A, D> {
             meta_store_config: Default::default(),
             max_concurrent_connections: 128,
             shutdown_timeout: Duration::from_secs(30),
-            use_libsql_wal: false,
+            use_custom_wal: None,
         }
     }
 }
@@ -640,7 +646,8 @@ where
             is_primary && is_libsql_wal_test
         };
 
-        let use_libsql_wal = self.use_libsql_wal || enable_libsql_wal_test;
+        let use_libsql_wal = self.use_custom_wal.is_some() || enable_libsql_wal_test;
+
         if wal_path.try_exists()? && !use_libsql_wal {
             anyhow::bail!("database was previously setup to use libsql-wal");
         }

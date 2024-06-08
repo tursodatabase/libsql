@@ -21,6 +21,7 @@ use libsql_server::config::{
 };
 use libsql_server::net::AddrIncoming;
 use libsql_server::version::Version;
+use libsql_server::CustomWAL;
 use libsql_server::Server;
 use libsql_sys::{Cipher, EncryptionConfig};
 
@@ -245,8 +246,8 @@ struct Cli {
     #[clap(long, env = "SQLD_SHUTDOWN_TIMEOUT")]
     shutdown_timeout: Option<u64>,
 
-    #[clap(long)]
-    use_libsql_wal: bool,
+    #[clap(value_enum, long)]
+    use_custom_wal: Option<CustomWAL>,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -630,7 +631,7 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
             .shutdown_timeout
             .map(Duration::from_secs)
             .unwrap_or(Duration::from_secs(30)),
-        use_libsql_wal: config.use_libsql_wal,
+        use_custom_wal: config.use_custom_wal,
     })
 }
 
