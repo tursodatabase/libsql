@@ -5,6 +5,7 @@ use foundationdb::api::NetworkAutoStop;
 use foundationdb::tuple::pack;
 use foundationdb::tuple::unpack;
 use foundationdb::Transaction;
+use libsql_storage::rpc::Frame;
 use tracing::error;
 
 pub struct FDBFrameStore {
@@ -72,7 +73,7 @@ impl FrameStore for FDBFrameStore {
         frame_no
     }
 
-    async fn insert_frames(&self, namespace: &str, frames: Vec<FrameData>) -> u64 {
+    async fn insert_frames(&self, namespace: &str, max_frame_no: u64, frames: Vec<Frame>) -> u64 {
         let max_frame_key = format!("{}/max_frame_no", namespace);
         let db = foundationdb::Database::default().unwrap();
         let txn = db.create_trx().expect("unable to create transaction");

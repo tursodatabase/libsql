@@ -1,7 +1,7 @@
-use crate::store::FrameData;
 use crate::store::FrameStore;
 use async_trait::async_trait;
 use bytes::Bytes;
+use libsql_storage::rpc::Frame;
 use redis::{Client, Commands, RedisResult};
 use tracing::error;
 
@@ -49,10 +49,10 @@ impl FrameStore for RedisFrameStore {
         max_frame_no
     }
 
-    async fn insert_frames(&self, namespace: &str, frames: Vec<FrameData>) -> u64 {
+    async fn insert_frames(&self, namespace: &str, _max_frame_no: u64, frames: Vec<Frame>) -> u64 {
         let mut max_frame_no = 0;
         for f in frames {
-            max_frame_no = self.insert_frame(namespace, f.page_no, f.data).await;
+            max_frame_no = self.insert_frame(namespace, f.page_no, f.data.into()).await;
         }
         max_frame_no
     }

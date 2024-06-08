@@ -4,6 +4,7 @@ use std::sync::Mutex;
 use crate::store::FrameData;
 use crate::store::FrameStore;
 use async_trait::async_trait;
+use libsql_storage::rpc::Frame;
 
 #[derive(Default)]
 pub(crate) struct InMemFrameStore {
@@ -47,7 +48,12 @@ impl FrameStore for InMemFrameStore {
         frame_no
     }
 
-    async fn insert_frames(&self, _namespace: &str, _frames: Vec<FrameData>) -> u64 {
+    async fn insert_frames(
+        &self,
+        _namespace: &str,
+        _max_frame_no: u64,
+        _frames: Vec<Frame>,
+    ) -> u64 {
         todo!()
     }
 
