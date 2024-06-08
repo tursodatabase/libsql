@@ -4,8 +4,6 @@ use libsql_storage::rpc::Frame;
 
 #[async_trait]
 pub trait FrameStore: Send + Sync {
-    async fn insert_frame(&self, namespace: &str, page_no: u32, frame: bytes::Bytes) -> u64;
-    #[allow(dead_code)]
     async fn insert_frames(&self, namespace: &str, max_frame_no: u64, frames: Vec<Frame>) -> u64;
     async fn read_frame(&self, namespace: &str, frame_no: u64) -> Option<bytes::Bytes>;
     async fn find_frame(&self, namespace: &str, page_no: u32) -> Option<u64>;

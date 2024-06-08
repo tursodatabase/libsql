@@ -18,37 +18,6 @@ impl RedisFrameStore {
 
 #[async_trait]
 impl FrameStore for RedisFrameStore {
-    async fn insert_frame(&self, namespace: &str, page_no: u32, frame: bytes::Bytes) -> u64 {
-        let max_frame_key = format!("{}/max_frame_no", namespace);
-
-        let mut con = self.client.get_connection().unwrap();
-        // max_frame_key might change if another client inserts a frame, so do
-        // all this in a transaction!
-        let (max_frame_no,): (u64,) =
-            redis::transaction(&mut con, &[&max_frame_key], |con, pipe| {
-                let result: RedisResult<u64> = con.get(max_frame_key.clone());
-                if result.is_err() && !is_nil_response(result.as_ref().err().unwrap()) {
-                    return Err(result.err().unwrap());
-                }
-                let max_frame_no = result.unwrap_or(0) + 1;
-                let frame_key = format!("f/{}/{}", namespace, max_frame_no);
-                let page_key = format!("p/{}/{}", namespace, page_no);
-
-                pipe.hset::<String, &str, Vec<u8>>(frame_key.clone(), "f", frame.to_vec())
-                    .ignore()
-                    .hset::<String, &str, u32>(frame_key.clone(), "p", page_no)
-                    .ignore()
-                    .set::<String, u64>(page_key, max_frame_no)
-                    .ignore()
-                    .set::<String, u64>(max_frame_key.clone(), max_frame_no)
-                    .ignore()
-                    .get(max_frame_key.clone())
-                    .query(con)
-            })
-            .unwrap();
-        max_frame_no
-    }
-
     async fn insert_frames(&self, namespace: &str, _max_frame_no: u64, frames: Vec<Frame>) -> u64 {
         let mut max_frame_no = 0;
         let max_frame_key = format!("{}/max_frame_no", namespace);

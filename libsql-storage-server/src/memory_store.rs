@@ -29,25 +29,6 @@ impl InMemFrameStore {
 #[async_trait]
 impl FrameStore for InMemFrameStore {
     // inserts a new frame for the page number and returns the new frame value
-    async fn insert_frame(&self, _namespace: &str, page_no: u32, frame: bytes::Bytes) -> u64 {
-        let mut inner = self.inner.lock().unwrap();
-        let frame_no = inner.max_frame_no + 1;
-        inner.max_frame_no = frame_no;
-        inner.frames.insert(
-            frame_no,
-            FrameData {
-                page_no,
-                data: frame,
-            },
-        );
-        inner
-            .pages
-            .entry(page_no)
-            .or_insert_with(Vec::new)
-            .push(frame_no);
-        frame_no
-    }
-
     async fn insert_frames(&self, _namespace: &str, _max_frame_no: u64, frames: Vec<Frame>) -> u64 {
         let mut inner = self.inner.lock().unwrap();
         for frame in frames {
