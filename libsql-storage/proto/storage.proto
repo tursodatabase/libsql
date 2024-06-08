@@ -10,6 +10,7 @@ message Frame {
 message InsertFramesRequest {
   string namespace = 1;
   repeated Frame frames = 2;
+  uint64 max_frame_no = 3;
 }
 
 message InsertFramesResponse {

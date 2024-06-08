@@ -337,6 +337,7 @@ impl Wal for DurableWal {
         let req = rpc::InsertFramesRequest {
             namespace: self.namespace.clone(),
             frames: self.write_cache.values().cloned().collect(),
+            max_frame_no: 0,
         };
         self.write_cache.clear();
         let mut binding = self.client.clone();
