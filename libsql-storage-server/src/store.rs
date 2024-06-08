@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use bytes::Bytes;
 use libsql_storage::rpc::Frame;
 
 #[async_trait]
@@ -10,10 +9,4 @@ pub trait FrameStore: Send + Sync {
     async fn frame_page_no(&self, namespace: &str, frame_no: u64) -> Option<u32>;
     async fn frames_in_wal(&self, namespace: &str) -> u64;
     async fn destroy(&self, namespace: &str);
-}
-
-#[derive(Default)]
-pub struct FrameData {
-    pub(crate) page_no: u32,
-    pub(crate) data: Bytes,
 }

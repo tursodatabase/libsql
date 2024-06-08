@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 
-use crate::store::FrameData;
 use crate::store::FrameStore;
 use async_trait::async_trait;
 use libsql_storage::rpc::Frame;
@@ -14,7 +13,7 @@ pub(crate) struct InMemFrameStore {
 #[derive(Default)]
 struct InMemInternal {
     // contains a frame data, key is the frame number
-    frames: BTreeMap<u64, FrameData>,
+    frames: BTreeMap<u64, Frame>,
     // pages map contains the page number as a key and the list of frames for the page as a value
     pages: BTreeMap<u32, Vec<u64>>,
     max_frame_no: u64,
@@ -35,13 +34,7 @@ impl FrameStore for InMemFrameStore {
             let frame_no = inner.max_frame_no + 1;
             inner.max_frame_no = frame_no;
             let page_no = frame.page_no;
-            inner.frames.insert(
-                frame_no,
-                FrameData {
-                    page_no,
-                    data: frame.data.into(),
-                },
-            );
+            inner.frames.insert(frame_no, frame);
             inner
                 .pages
                 .entry(page_no)
@@ -59,7 +52,7 @@ impl FrameStore for InMemFrameStore {
             .unwrap()
             .frames
             .get(&frame_no)
-            .map(|frame| frame.data.clone())
+            .map(|frame| frame.data.clone().into())
     }
 
     // given a page number, return the maximum frame for the page

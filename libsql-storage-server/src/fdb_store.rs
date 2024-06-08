@@ -1,4 +1,3 @@
-use crate::store::FrameData;
 use crate::store::FrameStore;
 use async_trait::async_trait;
 use foundationdb::api::NetworkAutoStop;
@@ -39,7 +38,7 @@ impl FDBFrameStore {
         namespace: &str,
         txn: &Transaction,
         frame_no: u64,
-        frame: FrameData,
+        frame: Frame,
     ) {
         let frame_data_key = format!("{}/f/{}/f", namespace, frame_no);
         let frame_page_key = format!("{}/f/{}/p", namespace, frame_no);
@@ -61,16 +60,7 @@ impl FrameStore for FDBFrameStore {
 
         for f in frames {
             frame_no += 1;
-            self.insert_with_tx(
-                namespace,
-                &txn,
-                frame_no,
-                FrameData {
-                    page_no: f.page_no,
-                    data: f.data.into(),
-                },
-            )
-            .await;
+            self.insert_with_tx(namespace, &txn, frame_no, f).await;
         }
         txn.set(&max_frame_key.as_bytes(), &pack(&(frame_no)));
         txn.commit().await.expect("commit failed");
