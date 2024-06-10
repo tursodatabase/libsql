@@ -15,7 +15,7 @@ use zerocopy::{AsBytes, FromZeroes};
 use crate::io::buf::ZeroCopyBuf;
 use crate::io::file::FileExt;
 use crate::segment::{frame_offset, page_offset, sealed::SealedSegment};
-use crate::transaction::{Transaction, WriteTransaction};
+use crate::transaction::{Transaction, TxGuard};
 
 use super::list::SegmentList;
 use super::{Frame, FrameHeader, SegmentHeader};
@@ -101,13 +101,14 @@ impl<F> CurrentSegment<F> {
         &self,
         pages: impl Iterator<Item = (u32, &'a [u8])>,
         size_after: Option<u32>,
-        tx: &mut WriteTransaction<F>,
+        tx: &mut TxGuard<F>,
     ) -> Result<Option<u64>>
     where
         F: FileExt,
     {
         assert!(!self.sealed.load(Ordering::SeqCst));
-        tx.enter(move |tx| {
+        {
+            let tx = tx.deref_mut();
             let mut pages = pages.peekable();
             // let mut commit_frame_written = false;
             let current_savepoint = tx.savepoints.last_mut().expect("no savepoints initialized");
@@ -146,30 +147,29 @@ impl<F> CurrentSegment<F> {
                 tx.next_frame_no += 1;
                 tx.next_offset += 1;
             }
+        }
 
-            if let Some(size_after) = size_after {
-                if tx.not_empty() {
-                    let last_frame_no = tx.next_frame_no - 1;
-                    let mut header = { *self.header.lock() };
-                    header.last_commited_frame_no = last_frame_no.into();
-                    header.db_size = size_after.into();
-                    header.recompute_checksum();
+        if let Some(size_after) = size_after {
+            if tx.not_empty() {
+                let last_frame_no = tx.next_frame_no - 1;
+                let mut header = { *self.header.lock() };
+                header.last_commited_frame_no = last_frame_no.into();
+                header.db_size = size_after.into();
+                header.recompute_checksum();
 
-                    self.file.write_all_at(header.as_bytes(), 0)?;
-                    // self.file.sync_data().unwrap();
-                    tx.merge_savepoints(&mut self.index.index.write());
-                    // set the header last, so that a transaction does not witness a write before
-                    // it's actually committed.
-                    *self.header.lock() = header;
+                self.file.write_all_at(header.as_bytes(), 0)?;
+                // self.file.sync_data().unwrap();
+                tx.merge_savepoints(&mut self.index.index.write());
+                // set the header last, so that a transaction does not witness a write before
+                // it's actually committed.
+                *self.header.lock() = header;
 
-                    tx.is_commited = true;
+                tx.is_commited = true;
 
-                    return Ok(Some(last_frame_no));
-                }
+                return Ok(Some(last_frame_no));
             }
-
-            Ok(None)
-        })
+        }
+        Ok(None)
     }
 
     /// return the offset of the frame for page_no, with frame_no no larger that max_frame_no, if

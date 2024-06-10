@@ -6,7 +6,6 @@ use std::time::Instant;
 use arc_swap::ArcSwap;
 use crossbeam::deque::Injector;
 use crossbeam::sync::Unparker;
-use libsql_sys::wal::PageHeaders;
 use parking_lot::{Mutex, MutexGuard};
 
 use crate::error::{Error, Result};
@@ -15,11 +14,11 @@ use crate::io::Io;
 use crate::name::NamespaceName;
 use crate::registry::WalRegistry;
 use crate::segment::current::CurrentSegment;
-use crate::transaction::{ReadTransaction, Savepoint, Transaction, WriteTransaction};
+use crate::transaction::{ReadTransaction, Savepoint, Transaction, TxGuard, WriteTransaction};
 
 #[derive(Default)]
 pub struct WalLock {
-    pub(crate) tx_id: Mutex<Option<u64>>,
+    pub(crate) tx_id: Arc<Mutex<Option<u64>>>,
     /// When a writer is popped from the write queue, its write transaction may not be reading from the most recent
     /// snapshot. In this case, we return `SQLITE_BUSY_SNAPHSOT` to the caller. If no reads were performed
     /// with that transaction before upgrading, then the caller will call us back immediately after re-acquiring
@@ -43,13 +42,13 @@ pub struct SharedWal<IO: Io> {
     pub(crate) new_frame_notifier: tokio::sync::watch::Sender<u64>,
 }
 
-impl<FS: Io> SharedWal<FS> {
+impl<IO: Io> SharedWal<IO> {
     pub fn db_size(&self) -> u32 {
         self.current.load().db_size()
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn begin_read(&self, conn_id: u64) -> ReadTransaction<FS::File> {
+    pub fn begin_read(&self, conn_id: u64) -> ReadTransaction<IO::File> {
         // FIXME: this is not enough to just increment the counter, we must make sure that the segment
         // is not sealed. If the segment is sealed, retry with the current segment
         let current = self.current.load();
@@ -69,7 +68,7 @@ impl<FS: Io> SharedWal<FS> {
     }
 
     /// Upgrade a read transaction to a write transaction
-    pub fn upgrade(&self, tx: &mut Transaction<FS::File>) -> Result<()> {
+    pub fn upgrade(&self, tx: &mut Transaction<IO::File>) -> Result<()> {
         loop {
             match tx {
                 Transaction::Write(_) => unreachable!("already in a write transaction"),
@@ -116,10 +115,10 @@ impl<FS: Io> SharedWal<FS> {
 
     fn acquire_write(
         &self,
-        read_tx: &ReadTransaction<FS::File>,
+        read_tx: &ReadTransaction<IO::File>,
         mut tx_id_lock: MutexGuard<Option<u64>>,
         mut reserved: MutexGuard<Option<u64>>,
-    ) -> Result<WriteTransaction<FS::File>> {
+    ) -> Result<WriteTransaction<IO::File>> {
         // we read two fields in the header. There is no risk that a transaction commit in
         // between the two reads because this would require that:
         // 1) there would be a running txn
@@ -160,7 +159,7 @@ impl<FS: Io> SharedWal<FS> {
     #[tracing::instrument(skip(self, tx, buffer))]
     pub fn read_frame(
         &self,
-        tx: &mut Transaction<FS::File>,
+        tx: &mut Transaction<IO::File>,
         page_no: u32,
         buffer: &mut [u8],
     ) -> Result<()> {
@@ -221,29 +220,28 @@ impl<FS: Io> SharedWal<FS> {
     }
 
     #[tracing::instrument(skip_all, fields(tx_id = tx.id))]
-    pub fn insert_frames(
+    pub fn insert_frames<'a>(
         &self,
-        tx: &mut WriteTransaction<FS::File>,
-        pages: &mut PageHeaders,
-        size_after: u32,
+        tx: &mut WriteTransaction<IO::File>,
+        pages: impl Iterator<Item = (u32, &'a [u8])>,
+        size_after: Option<u32>,
     ) -> Result<()> {
         let current = self.current.load();
-        if let Some(last_committed) =
-            current.insert_pages(pages.iter(), (size_after != 0).then_some(size_after), tx)?
-        {
+        let mut tx = tx.lock();
+        if let Some(last_committed) = current.insert_pages(pages, size_after, &mut tx)? {
             self.new_frame_notifier.send_replace(last_committed);
         }
 
         // TODO: use config for max log size
         if tx.is_commited() && current.count_committed() > 1000 {
-            self.swap_current(tx)?;
+            self.swap_current(&tx)?;
         }
 
         Ok(())
     }
 
     /// Swap the current log. A write lock must be held, but the transaction must be must be committed already.
-    fn swap_current(&self, tx: &mut WriteTransaction<FS::File>) -> Result<()> {
+    fn swap_current(&self, tx: &TxGuard<IO::File>) -> Result<()> {
         self.registry.swap_current(self, tx)?;
         Ok(())
     }
@@ -316,8 +314,11 @@ mod test {
 
         let mut tx = Transaction::Read(shared.begin_read(666));
         shared.upgrade(&mut tx).unwrap();
-        tx.commit();
-        shared.swap_current(tx.as_write_mut().unwrap()).unwrap();
+        {
+            let mut tx = tx.as_write_mut().unwrap().lock();
+            tx.commit();
+            shared.swap_current(&tx).unwrap();
+        }
         tx.end();
 
         let frame_no = shared.checkpoint().unwrap().unwrap();
