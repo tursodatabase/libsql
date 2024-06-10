@@ -86,7 +86,6 @@ impl<I: Io> Storage for FsStorage<I> {
             let end_frame: u64 = end_frame.parse().unwrap();
 
             if start_frame <= frame_no && end_frame >= frame_no {
-                dbg!(&dir.path());
                 let file = self.io.open(false, true, true, &dir.path()).unwrap();
 
                 let len = file.len().unwrap();

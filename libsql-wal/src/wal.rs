@@ -257,7 +257,11 @@ impl<FS: Io> Wal for LibsqlWal<FS> {
         match self.tx.as_mut() {
             Some(Transaction::Write(ref mut tx)) => {
                 self.shared
-                    .insert_frames(tx, page_headers, size_after)
+                    .insert_frames(
+                        tx,
+                        page_headers.iter(),
+                        (size_after != 0).then_some(size_after),
+                    )
                     .map_err(Into::into)?;
             }
             _ => todo!("no write transaction"),
