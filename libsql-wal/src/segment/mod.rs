@@ -171,6 +171,11 @@ impl Frame {
     pub fn header_mut(&mut self) -> &mut FrameHeader {
         &mut self.header
     }
+
+    pub(crate) fn size_after(&self) -> Option<u32> {
+        let size_after = self.header().size_after.get();
+        (size_after != 0).then_some(size_after)
+    }
 }
 
 fn frame_offset(offset: u32) -> u64 {
