@@ -3470,6 +3470,7 @@ dependencies = [
  "libsql-hrana",
  "libsql-rusqlite",
  "libsql-sqlite3-parser",
+ "libsql-storage",
  "libsql-sys",
  "libsql-wal",
  "libsql_replication",

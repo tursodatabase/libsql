@@ -248,6 +248,13 @@ struct Cli {
 
     #[clap(value_enum, long)]
     use_custom_wal: Option<CustomWAL>,
+
+    #[clap(
+        long,
+        env = "LIBSQL_STORAGE_SERVER_ADDR",
+        default_value = "http://0.0.0.0:5002"
+    )]
+    storage_server_address: String,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -632,6 +639,7 @@ async fn build_server(config: &Cli) -> anyhow::Result<Server> {
             .map(Duration::from_secs)
             .unwrap_or(Duration::from_secs(30)),
         use_custom_wal: config.use_custom_wal,
+        storage_server_address: config.storage_server_address.clone(),
     })
 }
 

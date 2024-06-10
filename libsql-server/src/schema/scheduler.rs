@@ -778,7 +778,7 @@ async fn step_job_run_success(
 #[cfg(test)]
 mod test {
     use insta::assert_debug_snapshot;
-    use libsql_sys::wal::either::Either;
+    use libsql_sys::wal::either::Either3;
     use libsql_sys::wal::Sqlite3WalManager;
     use std::path::Path;
     use tempfile::tempdir;
@@ -896,7 +896,7 @@ mod test {
             bottomless_replication: None,
             scripted_backup: None,
             migration_scheduler,
-            make_wal_manager: Arc::new(|| Either::A(Sqlite3WalManager::default())),
+            make_wal_manager: Arc::new(|| Either3::A(Sqlite3WalManager::default())),
         }
     }
 

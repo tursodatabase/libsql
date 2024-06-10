@@ -31,7 +31,8 @@ use futures::Future;
 use http::user::UserApi;
 use hyper::client::HttpConnector;
 use hyper_rustls::HttpsConnector;
-use libsql_sys::wal::either::Either;
+use libsql_storage::{DurableWalManager, LockManager};
+use libsql_sys::wal::either::Either3;
 use libsql_sys::wal::Sqlite3WalManager;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::wal::LibsqlWalManager;
@@ -121,6 +122,7 @@ pub struct Server<C = HttpConnector, A = AddrIncoming, D = HttpsConnector<HttpCo
     pub max_concurrent_connections: usize,
     pub shutdown_timeout: std::time::Duration,
     pub use_custom_wal: Option<CustomWAL>,
+    pub storage_server_address: String,
 }
 
 impl<C, A, D> Default for Server<C, A, D> {
@@ -143,6 +145,7 @@ impl<C, A, D> Default for Server<C, A, D> {
             max_concurrent_connections: 128,
             shutdown_timeout: Duration::from_secs(30),
             use_custom_wal: None,
+            storage_server_address: Default::default(),
         }
     }
 }
@@ -638,63 +641,74 @@ where
         Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
         Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + Sync + 'static>>,
     )> {
-        let wal_path = self.path.join("wals");
+        if self.use_custom_wal.is_none() {
+            tracing::info!("using sqlite3 wal");
+            return Ok((
+                Arc::new(|| Either3::A(Sqlite3WalManager::default())),
+                Box::pin(ready(Ok(()))),
+            ));
+        };
 
+        let use_custom_wal = self.use_custom_wal.unwrap();
+
+        if use_custom_wal == CustomWAL::DurableWal {
+            tracing::info!("using durable wal");
+            let lock_manager = Arc::new(std::sync::Mutex::new(LockManager::new()));
+            let wal = DurableWalManager::new(lock_manager, self.storage_server_address.clone());
+            return Ok((
+                Arc::new(move || Either3::C(wal.clone())),
+                Box::pin(ready(Ok(()))),
+            ));
+        };
+
+        let wal_path = self.path.join("wals");
         let enable_libsql_wal_test = {
             let is_primary = self.rpc_server_config.is_some();
             let is_libsql_wal_test = std::env::var("LIBSQL_WAL_TEST").is_ok();
             is_primary && is_libsql_wal_test
         };
 
-        let use_libsql_wal = self.use_custom_wal.is_some() || enable_libsql_wal_test;
+        let use_libsql_wal = use_custom_wal == CustomWAL::LibsqlWal || enable_libsql_wal_test;
 
         if wal_path.try_exists()? && !use_libsql_wal {
             anyhow::bail!("database was previously setup to use libsql-wal");
         }
 
-        if use_libsql_wal {
-            if self.db_config.bottomless_replication.is_some() {
-                anyhow::bail!("bottomless not supported with libsql_wal");
-            }
-
-            if self.rpc_client_config.is_some() {
-                anyhow::bail!("lisbl wal not supported in replica mode");
-            }
-
-            let namespace_resolver = |path: &Path| {
-                NamespaceName::from_string(
-                    path.parent()
-                        .unwrap()
-                        .file_name()
-                        .unwrap()
-                        .to_str()
-                        .unwrap()
-                        .to_string(),
-                )
-                .unwrap()
-                .into()
-            };
-
-            let registry = Arc::new(WalRegistry::new(wal_path, namespace_resolver, ())?);
-
-            let wal = LibsqlWalManager::new(registry.clone());
-            let shutdown_notify = self.shutdown.clone();
-            let shutdown_fut = Box::pin(async move {
-                shutdown_notify.notified().await;
-                tokio::task::spawn_blocking(move || registry.shutdown())
-                    .await
-                    .unwrap()?;
-                Ok(())
-            });
-
-            tracing::info!("using libsql wal");
-            Ok((Arc::new(move || Either::B(wal.clone())), shutdown_fut))
-        } else {
-            tracing::info!("using sqlite3 wal");
-            Ok((
-                Arc::new(|| Either::A(Sqlite3WalManager::default())),
-                Box::pin(ready(Ok(()))),
-            ))
+        if self.db_config.bottomless_replication.is_some() {
+            anyhow::bail!("bottomless not supported with libsql_wal");
         }
+
+        if self.rpc_client_config.is_some() {
+            anyhow::bail!("lisbl wal not supported in replica mode");
+        }
+
+        let namespace_resolver = |path: &Path| {
+            NamespaceName::from_string(
+                path.parent()
+                    .unwrap()
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            )
+            .unwrap()
+            .into()
+        };
+
+        let registry = Arc::new(WalRegistry::new(wal_path, namespace_resolver, ())?);
+
+        let wal = LibsqlWalManager::new(registry.clone());
+        let shutdown_notify = self.shutdown.clone();
+        let shutdown_fut = Box::pin(async move {
+            shutdown_notify.notified().await;
+            tokio::task::spawn_blocking(move || registry.shutdown())
+                .await
+                .unwrap()?;
+            Ok(())
+        });
+
+        tracing::info!("using libsql wal");
+        Ok((Arc::new(move || Either3::B(wal.clone())), shutdown_fut))
     }
 }
