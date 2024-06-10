@@ -12,6 +12,7 @@ use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 use tokio::time::Duration;
 use tokio_stream::StreamExt;
 
+use crate::broadcaster::Broadcaster;
 use crate::namespace::ResolveNamespacePathFn;
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
@@ -66,6 +67,7 @@ pub struct ForkTask<'a> {
     pub ns_config: &'a NamespaceConfig,
     pub resolve_attach: ResolveNamespacePathFn,
     pub store: NamespaceStore,
+    pub broadcaster: Broadcaster,
 }
 
 pub struct PointInTimeRestore {
@@ -115,6 +117,7 @@ impl<'a> ForkTask<'a> {
             Box::new(|_op| {}),
             self.resolve_attach.clone(),
             self.store.clone(),
+            self.broadcaster,
         )
         .await
         .map_err(|e| ForkError::CreateNamespace(Box::new(e)))

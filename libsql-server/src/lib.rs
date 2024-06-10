@@ -54,6 +54,7 @@ use self::net::AddrIncoming;
 use self::replication::script_backup_manager::{CommandHandler, ScriptBackupManager};
 
 pub mod auth;
+mod broadcaster;
 pub mod config;
 pub mod connection;
 pub mod net;

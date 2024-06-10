@@ -16,6 +16,7 @@ use tokio_stream::StreamExt;
 use tonic::transport::Channel;
 use tonic::{Request, Streaming};
 
+use crate::broadcaster::Broadcaster;
 use crate::connection::program::{DescribeCol, DescribeParam};
 use crate::error::Error;
 use crate::metrics::{REPLICA_LOCAL_EXEC_MISPREDICT, REPLICA_LOCAL_PROGRAM_EXEC};
@@ -68,6 +69,7 @@ impl MakeWriteProxyConn {
             db_path.clone(),
             PassthroughWalWrapper,
             stats.clone(),
+            Broadcaster::default(),
             config_store.clone(),
             extensions.clone(),
             max_response_size,

@@ -10,6 +10,7 @@ use tokio::task::JoinSet;
 use tokio::time::{Duration, Instant};
 
 use crate::auth::Authenticated;
+use crate::broadcaster::UpdateSubscription;
 use crate::connection::config::DatabaseConfig;
 use crate::error::Error;
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
@@ -182,6 +183,7 @@ impl NamespaceStore {
             self.make_reset_cb(),
             self.resolve_attach_fn(),
             self.clone(),
+            Default::default(),
         )
         .await?;
 
@@ -288,6 +290,7 @@ impl NamespaceStore {
             timestamp,
             self.resolve_attach_fn(),
             self.clone(),
+            Default::default(),
         )
         .await?;
 
@@ -379,6 +382,7 @@ impl NamespaceStore {
                     self.make_reset_cb(),
                     self.resolve_attach_fn(),
                     self.clone(),
+                    Default::default(),
                 )
                 .await?;
                 tracing::info!("loaded namespace: `{namespace}`");
@@ -467,6 +471,23 @@ impl NamespaceStore {
 
     pub(crate) async fn stats(&self, namespace: NamespaceName) -> crate::Result<Arc<Stats>> {
         self.with(namespace, |ns| ns.stats.clone()).await
+    }
+
+    pub(crate) async fn subscribe(
+        &self,
+        namespace: NamespaceName,
+        table: String,
+    ) -> crate::Result<UpdateSubscription> {
+        self.with(namespace, |ns| ns.broadcaster.subscribe(table))
+            .await
+    }
+
+    pub(crate) async fn unsubscribe(&self, namespace: NamespaceName, table: String) {
+        if self.inner.store.contains_key(&namespace) {
+            _ = self
+                .with(namespace, |ns| ns.broadcaster.unsubscribe(table))
+                .await;
+        }
     }
 
     pub(crate) async fn config_store(

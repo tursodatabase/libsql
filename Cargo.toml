@@ -42,6 +42,7 @@ rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = 
     "modern_sqlite",
     "functions",
     "limits",
+    "hooks",
 ] }
 
 # Config for 'cargo dist'

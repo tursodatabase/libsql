@@ -14,6 +14,7 @@ use rusqlite::{ErrorCode, OpenFlags};
 use tokio::sync::watch;
 use tokio::time::{Duration, Instant};
 
+use crate::broadcaster::{BroadcastMsg, Broadcaster};
 use crate::error::Error;
 use crate::metrics::{DESCRIBE_COUNT, PROGRAM_EXEC_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT};
 use crate::namespace::meta_store::MetaStoreHandle;
@@ -36,6 +37,7 @@ pub struct MakeLibSqlConn<W> {
     db_path: PathBuf,
     wal_wrapper: W,
     stats: Arc<Stats>,
+    broadcaster: Broadcaster,
     config_store: MetaStoreHandle,
     extensions: Arc<[PathBuf]>,
     max_response_size: u64,
@@ -60,6 +62,7 @@ where
         db_path: PathBuf,
         wal_wrapper: W,
         stats: Arc<Stats>,
+        broadcaster: Broadcaster,
         config_store: MetaStoreHandle,
         extensions: Arc<[PathBuf]>,
         max_response_size: u64,
@@ -76,6 +79,7 @@ where
         let mut this = Self {
             db_path,
             stats,
+            broadcaster,
             config_store,
             extensions,
             max_response_size,
@@ -133,6 +137,7 @@ where
             self.extensions.clone(),
             self.wal_wrapper.clone(),
             self.stats.clone(),
+            self.broadcaster.clone(),
             self.config_store.clone(),
             QueryBuilderConfig {
                 max_size: Some(self.max_response_size),
@@ -177,6 +182,7 @@ impl LibSqlConnection<libsql_sys::wal::wrapper::PassthroughWalWrapper> {
             Arc::new([]),
             libsql_sys::wal::wrapper::PassthroughWalWrapper,
             Default::default(),
+            Broadcaster::default(),
             MetaStoreHandle::new_test(),
             QueryBuilderConfig::default(),
             tokio::sync::watch::channel(None).1,
@@ -312,6 +318,7 @@ where
         extensions: Arc<[PathBuf]>,
         wal_wrapper: W,
         stats: Arc<Stats>,
+        broadcaster: Broadcaster,
         config_store: MetaStoreHandle,
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
@@ -332,6 +339,7 @@ where
                     extensions,
                     wal,
                     stats,
+                    broadcaster,
                     config_store,
                     builder_config,
                     current_frame_no_receiver,
@@ -425,6 +433,7 @@ impl<W: Wal> Connection<W> {
         extensions: Arc<[PathBuf]>,
         wal_manager: T,
         stats: Arc<Stats>,
+        broadcaster: Broadcaster,
         config_store: MetaStoreHandle,
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
@@ -438,6 +447,28 @@ impl<W: Wal> Connection<W> {
             builder_config.auto_checkpoint,
             builder_config.encryption_config.clone(),
         )?;
+
+        if broadcaster.active() {
+            let update = broadcaster.clone();
+            conn.update_hook(Some(
+                move |action: rusqlite::hooks::Action, _: &_, table: &_, rowid| {
+                    let msg = BroadcastMsg::Change {
+                        action: action.into(),
+                        rowid,
+                    };
+                    update.notify(table, msg);
+                },
+            ));
+
+            let commit = broadcaster.clone();
+            conn.commit_hook(Some(move || {
+                commit.notify_all(BroadcastMsg::Commit);
+                false // allow commit to go through
+            }));
+
+            let rollback = broadcaster;
+            conn.rollback_hook(Some(move || rollback.notify_all(BroadcastMsg::Rollback)));
+        }
 
         let config = config_store.get();
         conn.pragma_update(None, "max_page_count", config.max_db_pages)?;
@@ -761,6 +792,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
+            Broadcaster::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
@@ -808,6 +840,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
+            Broadcaster::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
@@ -859,6 +892,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
+            Broadcaster::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
@@ -944,6 +978,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
+            Broadcaster::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
@@ -1030,6 +1065,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
+            Broadcaster::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
