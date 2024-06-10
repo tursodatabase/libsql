@@ -114,9 +114,7 @@ async fn configure_server(
         initial_idle_shutdown_timeout: None,
         rpc_server_config: None,
         rpc_client_config: None,
-        shutdown: Default::default(),
-        meta_store_config: Default::default(),
-        max_concurrent_connections: 128,
+        ..Default::default()
     }
 }
 
@@ -532,6 +530,7 @@ impl Drop for DbFileCleaner {
 
 /// Guardian struct used for cleaning up the test data from
 /// S3 bucket dir at the beginning and end of a test.
+#[allow(dead_code)]
 struct S3BucketCleaner(&'static str);
 
 impl S3BucketCleaner {

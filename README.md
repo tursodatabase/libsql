@@ -38,8 +38,12 @@ To get started with the libSQL API:
 * [JavaScript](https://github.com/libsql/libsql-experimental-node)
 * [Rust](libsql) 
 * [Python](https://github.com/libsql/libsql-experimental-python) (experimental)
-* [Go](bindings/go) (experimental)
+* [Go](https://github.com/libsql/go-libsql)
 * [C](bindings/c) (experimental)
+
+Community Drivers:
+* [PHP](https://github.com/darkterminal/libsql-client-php)
+
 
 To build the SQLite-compatible C library and tools, run:
 

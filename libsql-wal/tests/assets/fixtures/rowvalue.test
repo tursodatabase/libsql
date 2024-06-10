@@ -1,0 +1,440 @@
+
+  CREATE TABLE one(o);
+  INSERT INTO one VALUES(1);
+
+
+  CREATE TABLE t1(x, y);
+  INSERT INTO t1 VALUES(1, 1);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t1 VALUES(2, 3);
+  INSERT INTO t1 VALUES(2, 4);
+  INSERT INTO t1 VALUES(3, 5);
+  INSERT INTO t1 VALUES(3, 6);
+
+
+  CREATE TABLE hh(a, b, c);
+  INSERT INTO hh VALUES('abc', 1, 'i');
+  INSERT INTO hh VALUES('ABC', 1, 'ii');
+  INSERT INTO hh VALUES('def', 2, 'iii');
+  INSERT INTO hh VALUES('DEF', 2, 'iv');
+  INSERT INTO hh VALUES('GHI', 3, 'v');
+  INSERT INTO hh VALUES('ghi', 3, 'vi');
+
+  CREATE INDEX hh_ab ON hh(a, b); 
+
+
+  SELECT c FROM hh WHERE (a, b) = (SELECT 'abc', 1);
+
+
+  SELECT c FROM hh WHERE (a, b) = (SELECT 'abc' COLLATE nocase, 1);
+
+
+  SELECT c FROM hh WHERE a = (SELECT 'abc' COLLATE nocase) AND b = (SELECT 1);
+
+
+  SELECT c FROM hh WHERE +a = (SELECT 'abc' COLLATE nocase) AND b = (SELECT 1);
+
+
+  SELECT c FROM hh WHERE a = (SELECT 'abc') COLLATE nocase AND b = (SELECT 1);
+
+
+  SELECT c FROM hh WHERE (a COLLATE nocase, b) = (SELECT 'def', 2);
+
+
+  SELECT c FROM hh WHERE (a COLLATE nocase, b) IS NOT (SELECT 'def', 2);
+
+
+  SELECT c FROM hh WHERE (b, a) = (SELECT 2, 'def');
+
+
+  CREATE TABLE xy(i INTEGER PRIMARY KEY, j, k);
+  INSERT INTO xy VALUES(1, 1, 1);
+  INSERT INTO xy VALUES(2, 2, 2);
+  INSERT INTO xy VALUES(3, 3, 3);
+  INSERT INTO xy VALUES(4, 4, 4);
+
+
+  CREATE TABLE j1(a);
+
+
+  SELECT * FROM j1 WHERE (select min(a) FROM j1) IN (?, ?, ?)
+
+
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b, c);
+  INSERT INTO t2 VALUES(1, 1, 1);
+  INSERT INTO t2 VALUES(2, 2, 2);
+  INSERT INTO t2 VALUES(3, 3, 3);
+  INSERT INTO t2 VALUES(4, 4, 4);
+  INSERT INTO t2 VALUES(5, 5, 5);
+
+
+  CREATE TABLE dual(dummy); INSERT INTO dual(dummy) VALUES('X');
+  CREATE TABLE t3(a TEXT,b TEXT,c TEXT,d TEXT,e TEXT,f TEXT);
+  CREATE INDEX t3x ON t3(b,c,d,e,f);
+
+  SELECT a FROM t3
+    WHERE (c,d) IN (SELECT 'c','d' FROM dual)
+    AND (a,b,e) IN (SELECT 'a','b','d' FROM dual);
+
+
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INT,b INT); INSERT INTO t1 VALUES(1,2);
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(x INT,y INT); INSERT INTO t2 VALUES(3,4);
+  SELECT *,'x' FROM t1 LEFT JOIN t2 ON (a,b)=(x,y);
+
+
+  SELECT t1.*, t2.* FROM t2 RIGHT JOIN t1 ON (a,b)=(x,y);
+
+
+  SELECT t1.*, t2.* FROM t1 FULL JOIN t2 ON (a,b)=(x,y)
+   ORDER BY coalesce(a,x);
+
+
+  CREATE TABLE t12(x);
+  INSERT INTO t12 VALUES(2), (4);
+
+
+  SELECT 1 FROM t12 WHERE (1,x) BETWEEN (1,1) AND (3,3)
+
+
+  CREATE TABLE x1(a PRIMARY KEY, b);
+  CREATE TABLE x2(a INTEGER PRIMARY KEY, b);
+
+
+  CREATE TABLE t16a(a,b,c);
+  INSERT INTO t16a VALUES(1,2,3);
+  CREATE TABLE t16b(x);
+  INSERT INTO t16b(x) VALUES(1);
+  CREATE TRIGGER t16r AFTER UPDATE ON t16b BEGIN
+     UPDATE t16a SET (a,b,c)=(SELECT new.x,new.x+1,new.x+2);
+  END;
+  UPDATE t16b SET x=7;
+  SELECT * FROM t16a;
+
+
+  UPDATE t16b SET x=97;
+  SELECT * FROM t16a;
+
+
+  CREATE TABLE t16c(a, b, c, d, e);
+  INSERT INTO t16c VALUES(1, 'a', 'b', 'c', 'd');
+  CREATE TRIGGER t16c1 AFTER INSERT ON t16c BEGIN
+    UPDATE t16c SET (c, d) = (SELECT 'A', 'B'), (e, b) = (SELECT 'C', 'D')
+      WHERE a = new.a-1;
+  END;
+
+  SELECT * FROM t16c;
+
+
+  INSERT INTO t16c VALUES(2, 'w', 'x', 'y', 'z');
+  SELECT * FROM t16c;
+
+
+  DROP TRIGGER t16c1;
+  PRAGMA recursive_triggers = 1;
+  INSERT INTO t16c VALUES(3, 'i', 'ii', 'iii', 'iv');
+  CREATE TRIGGER t16c1 AFTER UPDATE ON t16c WHEN new.a>1 BEGIN
+    UPDATE t16c SET (e, d) = (
+      SELECT b, c FROM t16c WHERE a = new.a-1
+    ), (c, b) = (
+      SELECT d, e FROM t16c WHERE a = new.a-1
+    ) WHERE a = new.a-1;
+  END;
+
+  UPDATE t16c SET a=a WHERE a=3;
+  SELECT * FROM t16c;
+
+
+  CREATE TABLE b1(a, b);
+  CREATE TABLE b2(x);
+
+
+  SELECT * FROM b2 CROSS JOIN b1 
+  WHERE b2.x=b1.a AND (b1.a, 2) 
+  IN (VALUES(1, 2));
+
+
+  CREATE TABLE b3 ( a, b, PRIMARY KEY (a, b) );
+  CREATE TABLE b4 ( a );
+  CREATE TABLE b5 ( a, b );
+  INSERT INTO b3 VALUES (1, 1), (1, 2);
+  INSERT INTO b4 VALUES (1);
+  INSERT INTO b5 VALUES (1, 1), (1, 2);
+
+
+  SELECT * FROM b3 WHERE (SELECT b3.a, b3.b) IN ( SELECT a, b FROM b5 )
+
+
+  SELECT * FROM b3 WHERE (VALUES(b3.a, b3.b)) IN ( SELECT a, b FROM b5 );
+
+
+  SELECT * FROM b3 WHERE (b3.a, b3.b) IN ( SELECT a, b FROM b5 ); 
+
+
+  SELECT * FROM b3 JOIN b4 ON b4.a = b3.a
+  WHERE (SELECT b3.a, b3.b) IN ( SELECT a, b FROM b5 ); 
+
+
+  SELECT * FROM b3 JOIN b4 ON b4.a = b3.a
+  WHERE (VALUES(b3.a, b3.b)) IN ( SELECT a, b FROM b5 ); 
+
+
+  SELECT * FROM b3 JOIN b4 ON b4.a = b3.a
+  WHERE (b3.a, b3.b) IN ( SELECT a, b FROM b5 ); 
+
+
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY,b);
+  INSERT INTO t1(a,b) VALUES(1,11),(2,22),(3,33),(4,44);
+  SELECT * FROM t1 WHERE (a,b)>(0,0) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (a,b)>=(0,0) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (a,b)<(5,0) ORDER BY a DESC;
+
+
+  SELECT * FROM t1 WHERE (a,b)<=(5,0) ORDER BY a DESC;
+
+
+  SELECT * FROM t1 WHERE (a,b)>(3,0) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (a,b)>=(3,0) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (a,b)<(3,0) ORDER BY a DESC;
+
+
+  SELECT * FROM t1 WHERE (a,b)<=(3,0) ORDER BY a DESC;
+
+
+  SELECT * FROM t1 WHERE (a,b)>(3,32) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (a,b)>(3,33) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (a,b)>=(3,33) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (a,b)>=(3,34) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (a,b)<(3,34) ORDER BY a DESC;
+
+
+  SELECT * FROM t1 WHERE (a,b)<(3,33) ORDER BY a DESC;
+
+
+  SELECT * FROM t1 WHERE (a,b)<=(3,33) ORDER BY a DESC;
+
+
+  SELECT * FROM t1 WHERE (a,b)<=(3,32) ORDER BY a DESC;
+
+
+  SELECT * FROM t1 WHERE (0,0)<(a,b) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (0,0)<=(a,b) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (5,0)>(a,b) ORDER BY a DESC;
+
+
+  SELECT * FROM t1 WHERE (5,0)>=(a,b) ORDER BY a DESC;
+
+
+  SELECT * FROM t1 WHERE (3,0)<(a,b) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (3,0)<=(a,b) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (3,0)>(a,b) ORDER BY a DESC;
+
+
+  SELECT * FROM t1 WHERE (3,0)>=(a,b) ORDER BY a DESC;
+
+
+  SELECT * FROM t1 WHERE (3,32)<(a,b) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (3,33)<(a,b) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (3,33)<=(a,b) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (3,34)<=(a,b) ORDER BY a;
+
+
+  SELECT * FROM t1 WHERE (3,34)>(a,b) ORDER BY a DESC;
+
+
+  SELECT * FROM t1 WHERE (3,33)>(a,b) ORDER BY a DESC;
+
+
+  SELECT * FROM t1 WHERE (3,33)>=(a,b) ORDER BY a DESC;
+
+
+  SELECT * FROM t1 WHERE (3,32)>=(a,b) ORDER BY a DESC;
+
+
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a,b,PRIMARY KEY(b,b));
+  INSERT INTO t1 VALUES(1,2),(3,4),(5,6);
+  SELECT * FROM t1 WHERE (a,b) IN (VALUES(1,2));  
+
+
+  SELECT (SELECT 3,4 UNION SELECT 5,6 ORDER BY 1) IN (SELECT 3,4);
+  SELECT (SELECT 3,4 UNION SELECT 5,6 ORDER BY 1) IN (SELECT 5,6);
+  SELECT (SELECT 5,6 UNION SELECT 3,4 ORDER BY 1) IN (SELECT 3,4);
+  SELECT (SELECT 5,6 UNION SELECT 3,4 ORDER BY 1) IN (SELECT 5,6);
+  SELECT (SELECT 3,4 UNION SELECT 5,6 ORDER BY 1 DESC) IN (SELECT 3,4);
+  SELECT (SELECT 3,4 UNION SELECT 5,6 ORDER BY 1 DESC) IN (SELECT 5,6);
+  SELECT (SELECT 5,6 UNION SELECT 3,4 ORDER BY 1 DESC) IN (SELECT 3,4);
+  SELECT (SELECT 5,6 UNION SELECT 3,4 ORDER BY 1 DESC) IN (SELECT 5,6);
+
+
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(aa COLLATE NOCASE, bb);
+  INSERT INTO t0 VALUES('a', 'A');
+  SELECT (+bb,1) >= (aa, 1), (aa,1)<=(+bb,1) FROM t0;
+  SELECT 2 FROM t0 WHERE (+bb,1) >= (aa,1);
+  SELECT 3 FROM t0 WHERE (aa,1) <= (+bb,1);
+
+
+  SELECT (SELECT +bb,1) >= (aa, 1), (aa,1)<=(SELECT +bb,1) FROM t0;
+  SELECT 2 FROM t0 WHERE (SELECT +bb,1) >= (aa,1);
+  SELECT 3 FROM t0 WHERE (aa,1) <= (SELECT +bb,1);
+
+
+  DROP TABLE t0;
+  CREATE TABLE t0(c0 TEXT PRIMARY KEY);
+  INSERT INTO t0(c0) VALUES ('');
+  SELECT (t0.c0, TRUE) > (CAST(0 AS REAL), FALSE) FROM t0;
+  SELECT 2 FROM t0 WHERE (t0.c0, TRUE) > (CAST('' AS REAL), FALSE);
+
+
+  DROP TABLE t0;
+  CREATE TABLE t0(c0 UNIQUE);
+  INSERT INTO t0(c0) VALUES('a');
+  SELECT (t0.c0, 0) < ('B' COLLATE NOCASE, 0) FROM t0;
+  SELECT 2 FROM t0 WHERE (t0.c0, 0) < ('B' COLLATE NOCASE, 0);
+
+
+  SELECT ('B' COLLATE NOCASE, 0)> (t0.c0, 0) FROM t0;
+  SELECT 2 FROM t0 WHERE ('B' COLLATE NOCASE, 0)> (t0.c0, 0);
+
+
+  SELECT ('B', 0)> (t0.c0 COLLATE nocase, 0) FROM t0;
+  SELECT 2 FROM t0 WHERE ('B', 0)> (t0.c0 COLLATE nocase, 0);
+
+
+  SELECT (t0.c0 COLLATE nocase, 0) < ('B', 0) FROM t0;
+  SELECT 2 FROM t0 WHERE (t0.c0 COLLATE nocase, 0) < ('B', 0);
+
+
+  CREATE TABLE t0(c0);
+  CREATE TABLE t1(c1);
+  INSERT INTO t1(c1) VALUES (0);
+  SELECT (c0, x'') != (NULL, 0) FROM t1 LEFT JOIN t0;
+
+
+  SELECT 2 FROM t1 LEFT JOIN t0 ON (c0, x'') != (NULL, 0);
+
+
+  SELECT 21 FROM t0 RIGHT JOIN t1 ON (c0, x'') != (NULL, 0);
+
+
+  SELECT 3 FROM t1 LEFT JOIN t0 WHERE (c0, x'') != (NULL, 0);
+
+
+  SELECT 31 FROM t0 RIGHT JOIN t1 WHERE (c0, x'') != (NULL, 0);
+
+
+  CREATE TABLE t1(x, y, z);
+  CREATE TABLE t2(a, b);
+
+  INSERT INTO t1 VALUES(1000, 2000, 3000);
+  INSERT INTO t2 VALUES(NULL, NULL);
+
+
+  UPDATE t2 SET (a,b)=(
+    SELECT max( t1.x ) OVER( PARTITION BY sum( (SELECT t1.y) ) ), 2
+  )
+  FROM t1;
+
+
+  SELECT * FROM t2
+
+
+  CREATE TABLE t1(x INT PRIMARY KEY, y, z);
+  CREATE TABLE t2(a,b,c,d,e,PRIMARY KEY(a,b))WITHOUT ROWID;
+
+  UPDATE t2 SET (d,d,a)=(SELECT EXISTS(SELECT 1 IN(SELECT max( 1 IN(SELECT x ORDER BY 1)) OVER(PARTITION BY sum((SELECT y FROM t1 UNION SELECT x ORDER BY 1)))INTERSECT SELECT EXISTS(SELECT 1 FROM t1 UNION SELECT x ORDER BY 1) ORDER BY 1) ORDERa)|9 AS blob, 2, 3) FROM t1 WHERE x<a;
+
+
+  CREATE TABLE a(a1 PRIMARY KEY,a2);
+  INSERT INTO a VALUES(1,5);
+  CREATE TABLE b(b1 UNIQUE,b2);
+  SELECT * FROM a LEFT JOIN b ON b2=NULL AND b2=5 WHERE (b1,substr(b.b1,1,1))==(SELECT 1024,'b');
+
+
+  SELECT * FROM b RIGHT JOIN a ON b2=NULL AND b2=5 WHERE (b1,substr(b.b1,1,1))==(SELECT 1024,'b');
+
+
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(0);
+  CREATE TABLE t2(b,c,d);
+  INSERT INTO t2 VALUES(NULL,123,456);
+  SELECT * FROM t1 LEFT JOIN t2 ON b=NULL WHERE (c,d)==(SELECT 123, 456+a);
+
+
+  SELECT * FROM t2 RIGHT JOIN t1 ON b=NULL WHERE (c,d)==(SELECT 123, 456+a);
+
+
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT, c INT);
+  CREATE TABLE t2(d INTEGER PRIMARY KEY);
+  INSERT INTO t1(a,b,c) VALUES(500,654,456);
+  INSERT INTO t1(a,b,c) VALUES(501,655,456);
+  INSERT INTO t1(a,b,c) VALUES(502,654,122);
+  INSERT INTO t1(a,b,c) VALUES(503,654,221);
+  INSERT INTO t1(a,b,c) VALUES(601,654,122);
+  INSERT INTO t2(d) VALUES(456);
+  INSERT INTO t2(d) VALUES(122);
+  SELECT a FROM (
+    SELECT t1.a FROM t2, t1 
+    WHERE (987, t1.b) = ( SELECT 987, 654 ) AND t2.d=t1.c
+  ) AS t3
+  WHERE a=1234 OR a<=567;
+
+
+  CREATE TABLE t1(a INT, b INT PRIMARY KEY) WITHOUT ROWID;
+  INSERT INTO t1(a, b) VALUES (0, 1),(15,-7),(3,100);
+  ANALYZE;
+
+
+  SELECT * FROM t1 WHERE (b,a) BETWEEN (0,5) AND (99,-2);
+
+
+  SELECT * FROM t1 WHERE (b,a) BETWEEN (-8,5) AND (0,-2);
+
+
+  SELECT * FROM t1 WHERE (b,a) BETWEEN (3,5) AND (100,4);
+
+
+  SELECT * FROM t1 WHERE (b,a) BETWEEN (3,5) AND (100,2);
+
+
+  SELECT * FROM t1 WHERE (a,b) BETWEEN (-2,99) AND (1,0);
+
+
+  SELECT * FROM t1 WHERE (a,b) BETWEEN (14,99) AND (16,0);
+
+
+  SELECT * FROM t1 WHERE (a,b) BETWEEN (2,99) AND (4,0);
+

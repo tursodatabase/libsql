@@ -1,0 +1,5 @@
+ PRAGMA secure_delete = 0 
+ DELETE FROM t1 WHERE rowid = 1 
+ PRAGMA secure_delete = 1 
+ DELETE FROM t1 WHERE rowid = 1 
+ DELETE FROM t1 WHERE rowid>850 

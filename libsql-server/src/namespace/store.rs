@@ -6,6 +6,7 @@ use chrono::NaiveDateTime;
 use futures::TryFutureExt;
 use moka::future::Cache;
 use once_cell::sync::OnceCell;
+use tokio::task::JoinSet;
 use tokio::time::{Duration, Instant};
 
 use crate::auth::Authenticated;
@@ -130,6 +131,19 @@ impl NamespaceStore {
         Ok(())
     }
 
+    pub async fn checkpoint(&self, namespace: NamespaceName) -> crate::Result<()> {
+        let entry = self
+            .inner
+            .store
+            .get_with(namespace.clone(), async { Default::default() })
+            .await;
+        let lock = entry.read().await;
+        if let Some(ns) = &*lock {
+            ns.checkpoint().await?;
+        }
+        Ok(())
+    }
+
     pub async fn reset(
         &self,
         namespace: NamespaceName,
@@ -167,6 +181,7 @@ impl NamespaceStore {
             &namespace,
             self.make_reset_cb(),
             self.resolve_attach_fn(),
+            self.clone(),
         )
         .await?;
 
@@ -272,6 +287,7 @@ impl NamespaceStore {
             handle.clone(),
             timestamp,
             self.resolve_attach_fn(),
+            self.clone(),
         )
         .await?;
 
@@ -366,6 +382,7 @@ impl NamespaceStore {
                     &namespace,
                     self.make_reset_cb(),
                     self.resolve_attach_fn(),
+                    self.clone(),
                 )
                 .await?;
                 tracing::info!("loaded namespace: `{namespace}`");
@@ -388,6 +405,7 @@ impl NamespaceStore {
         Ok(ns)
     }
 
+    #[tracing::instrument(skip_all, fields(namespace))]
     pub async fn create(
         &self,
         namespace: NamespaceName,
@@ -417,22 +435,34 @@ impl NamespaceStore {
 
         let db_config = Arc::new(db_config);
         let handle = self.inner.metadata.handle(namespace.clone());
+        tracing::debug!("storing db config");
         handle.store(db_config).await?;
+        tracing::debug!("completed storing db config, loading namespace");
         self.load_namespace(&namespace, handle, restore_option)
             .await?;
+
+        tracing::debug!("completed loading namespace");
 
         Ok(())
     }
 
     pub async fn shutdown(self) -> crate::Result<()> {
-        println!("setting shutdown to true");
+        let mut set = JoinSet::new();
         self.inner.has_shutdown.store(true, Ordering::Relaxed);
+
         for (_name, entry) in self.inner.store.iter() {
+            let snapshow_at_shutdown = self.inner.snapshot_at_shutdown;
             let mut lock = entry.write().await;
             if let Some(ns) = lock.take() {
-                ns.shutdown(self.inner.snapshot_at_shutdown).await?;
+                set.spawn(async move {
+                    ns.shutdown(snapshow_at_shutdown).await?;
+                    Ok::<_, anyhow::Error>(())
+                });
             }
         }
+
+        while let Some(_) = set.join_next().await.transpose()?.transpose()? {}
+
         self.inner.metadata.shutdown().await?;
         self.inner.store.invalidate_all();
         self.inner.store.run_pending_tasks().await;

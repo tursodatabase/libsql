@@ -68,6 +68,8 @@ pub enum Error {
     NamespaceAlreadyExist(String),
     #[error("Invalid namespace")]
     InvalidNamespace,
+    #[error("Invalid namespace bytes: `{0}`")]
+    InvalidNamespaceBytes(Box<dyn std::error::Error + Sync + Send + 'static>),
     #[error("Replica meta error: {0}")]
     ReplicaMetaError(#[from] libsql_replication::meta::Error),
     #[error("Replicator error: {0}")]
@@ -120,6 +122,8 @@ pub enum Error {
     HasLinkedDbs(NamespaceName),
     #[error("ATTACH is not permitted in migration scripts")]
     AttachInMigration,
+    #[error("join failure: {0}")]
+    RuntimeTaskJoinError(#[from] tokio::task::JoinError),
 }
 
 impl AsRef<Self> for Error {
@@ -154,7 +158,10 @@ impl IntoResponse for &Error {
         match self {
             FailedToParse(_) => self.format_err(StatusCode::BAD_REQUEST),
             AuthError(_) => self.format_err(StatusCode::UNAUTHORIZED),
-            Anyhow(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            Anyhow(e) => match e.downcast_ref::<Error>() {
+                Some(err) => err.into_response(),
+                None => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            },
             LibSqlInvalidQueryParams(_) => self.format_err(StatusCode::BAD_REQUEST),
             LibSqlTxTimeout => self.format_err(StatusCode::BAD_REQUEST),
             LibSqlTxBusy => self.format_err(StatusCode::TOO_MANY_REQUESTS),
@@ -168,7 +175,7 @@ impl IntoResponse for &Error {
             InvalidBatchStep(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             NotAuthorized(_) => self.format_err(StatusCode::UNAUTHORIZED),
             ReplicatorExited => self.format_err(StatusCode::SERVICE_UNAVAILABLE),
-            DbCreateTimeout => self.format_err(StatusCode::SERVICE_UNAVAILABLE),
+            DbCreateTimeout => self.format_err(StatusCode::TOO_MANY_REQUESTS),
             BuilderError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             Blocked(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             Json(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
@@ -180,6 +187,7 @@ impl IntoResponse for &Error {
             PrimaryConnectionTimeout => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             NamespaceAlreadyExist(_) => self.format_err(StatusCode::BAD_REQUEST),
             InvalidNamespace => self.format_err(StatusCode::BAD_REQUEST),
+            InvalidNamespaceBytes(_) => self.format_err(StatusCode::BAD_REQUEST),
             LoadDumpError(e) => e.into_response(),
             InvalidMetadataBytes(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             ReplicaRestoreError => self.format_err(StatusCode::BAD_REQUEST),
@@ -187,7 +195,12 @@ impl IntoResponse for &Error {
             ConflictingRestoreParameters => self.format_err(StatusCode::BAD_REQUEST),
             Fork(e) => e.into_response(),
             FatalReplicationError => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
-            ReplicatorError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            ReplicatorError(e) => match e {
+                libsql_replication::replicator::Error::NamespaceDoesntExist => {
+                    self.format_err(StatusCode::NOT_FOUND)
+                }
+                _ => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            },
             ReplicaMetaError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             PrimaryStreamDisconnect => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             PrimaryStreamMisuse => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
@@ -204,6 +217,7 @@ impl IntoResponse for &Error {
             MigrationJobNotFound => self.format_err(StatusCode::NOT_FOUND),
             HasLinkedDbs(_) => self.format_err(StatusCode::BAD_REQUEST),
             AttachInMigration => self.format_err(StatusCode::BAD_REQUEST),
+            RuntimeTaskJoinError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }

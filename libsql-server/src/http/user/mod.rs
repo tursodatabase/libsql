@@ -78,6 +78,7 @@ impl TryFrom<query::Value> for serde_json::Value {
 
 /// Encodes a query response rows into json
 #[derive(Debug, Serialize)]
+#[allow(dead_code)]
 struct RowsResponse {
     columns: Vec<String>,
     rows: Vec<Vec<serde_json::Value>>,
@@ -233,7 +234,6 @@ pub(crate) struct AppState {
     enable_console: bool,
     disable_default_namespace: bool,
     disable_namespaces: bool,
-    path: Arc<Path>,
 }
 
 pub struct UserApi<A, P, S> {
@@ -314,7 +314,6 @@ where
                 namespaces: self.namespaces,
                 disable_default_namespace: self.disable_default_namespace,
                 disable_namespaces: self.disable_namespaces,
-                path: self.path,
             };
 
             macro_rules! handle_hrana {

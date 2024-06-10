@@ -21,7 +21,7 @@ jobs:
     env:
       RUSTFLAGS: -D warnings
     steps:
-      - uses: hecrj/setup-rust-action@v1
+      - uses: hecrj/setup-rust-action@v2
 
       - name: Checkout
         uses: actions/checkout@v3
@@ -86,7 +86,7 @@ jobs:
     env:
       RUSTFLAGS: -D warnings
     steps:
-    - uses: hecrj/setup-rust-action@v1
+    - uses: hecrj/setup-rust-action@v2
 
     # needed because we run out of disk space during tests
     - name: Free Disk Space (Ubuntu)
@@ -134,6 +134,29 @@ jobs:
       run: rm -rf libsql-ffi/bundled/SQLite3MultipleCiphers/build
     - name: embedded replica encryption tests
       run: cargo test -F test-encryption --package libsql-server --test tests embedded_replica
+  windows:
+    runs-on: windows-latest
+    name: Windows checks
+    steps:
+      - uses: hecrj/setup-rust-action@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Set up cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+      - name: check libsql remote
+        run: cargo check -p libsql --no-default-features -F remote
 
   # test-rust-wasm:
   #   runs-on: ubuntu-latest
@@ -141,7 +164,7 @@ jobs:
   #   env:
   #     RUSTFLAGS: -D warnings
   #   steps:
-  #     - uses: hecrj/setup-rust-action@v1
+  #     - uses: hecrj/setup-rust-action@v2
   #       with:
   #         targets: [wasm32-unknown-unknown]
 

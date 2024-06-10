@@ -1,6 +1,5 @@
 use anyhow::{anyhow, bail, Result};
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use crate::connection::program::{Cond, Program, Step};
 use crate::connection::{Connection, RequestContext};
@@ -25,6 +24,8 @@ pub enum BatchError {
     TransactionBusy,
     #[error("Response is too large")]
     ResponseTooLarge,
+    #[error("Schema migration error: {message}")]
+    SchemaError { message: String },
 }
 
 fn proto_cond_to_cond(
@@ -138,9 +139,7 @@ pub fn proto_sequence_to_program(sql: &str) -> Result<Program> {
             Step { cond, query }
         })
         .collect();
-    Ok(Program {
-        steps: Arc::new(steps),
-    })
+    Ok(Program { steps })
 }
 
 pub async fn execute_sequence(
@@ -198,6 +197,7 @@ impl BatchError {
             Self::TransactionTimeout => "TRANSACTION_TIMEOUT",
             Self::TransactionBusy => "TRANSACTION_BUSY",
             Self::ResponseTooLarge => "RESPONSE_TOO_LARGE",
+            Self::SchemaError { message: _ } => "SCHEMA_MIGRATION_ERROR",
         }
     }
 }

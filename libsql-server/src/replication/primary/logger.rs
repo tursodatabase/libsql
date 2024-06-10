@@ -445,14 +445,16 @@ fn atomic_rename(p1: impl AsRef<Path>, p2: impl AsRef<Path>) -> anyhow::Result<(
     use nix::libc::renamex_np;
     use nix::libc::RENAME_SWAP;
 
-    let p1 = CString::new(p1.as_ref().as_os_str().as_bytes())?;
-    let p2 = CString::new(p2.as_ref().as_os_str().as_bytes())?;
+    let cp1 = CString::new(p1.as_ref().as_os_str().as_bytes())?;
+    let cp2 = CString::new(p2.as_ref().as_os_str().as_bytes())?;
     unsafe {
-        let ret = renamex_np(p1.as_ptr(), p2.as_ptr(), RENAME_SWAP);
+        let ret = renamex_np(cp1.as_ptr(), cp2.as_ptr(), RENAME_SWAP);
 
         if ret != 0 {
             bail!(
-                "failed to perform snapshot file swap: {ret}, errno: {}",
+                "failed to perform snapshot file swap {} -> {}: {ret}, errno: {}",
+                p1.as_ref().display(),
+                p2.as_ref().display(),
                 std::io::Error::last_os_error()
             );
         }
@@ -473,7 +475,13 @@ fn atomic_rename(p1: impl AsRef<Path>, p2: impl AsRef<Path>) -> anyhow::Result<(
         p2.as_ref(),
         RenameFlags::RENAME_EXCHANGE,
     )
-    .context("failed to perform snapshot file swap")?;
+    .with_context(|| {
+        format!(
+            "failed to perform snapshot file swap {} -> {}",
+            p1.as_ref().display(),
+            p2.as_ref().display()
+        )
+    })?;
 
     Ok(())
 }
@@ -510,9 +518,9 @@ impl LogFileHeader {
         }
     }
 
-    fn sqld_version(&self) -> Version {
-        Version(self.sqld_version.map(Into::into))
-    }
+    // fn sqld_version(&self) -> Version {
+    //     Version(self.sqld_version.map(Into::into))
+    // }
 }
 
 #[derive(Debug)]
@@ -580,7 +588,9 @@ impl ReplicationLogger {
                 // there is no database; nothing to recover
                 false
             }
-        } else if header.version.get() < 2 || header.sqld_version() != Version::current() {
+        } else if header.version.get() < 2
+        /* || header.sqld_version() != Version::current() */
+        {
             tracing::info!("replication log version not compatible with current sqld version, recovering from database file.");
             true
         } else if fresh && data_path.exists() {
@@ -869,11 +879,11 @@ pub fn checkpoint_db(data_path: &Path) -> anyhow::Result<()> {
 mod test {
     use std::collections::HashSet;
 
-    use libsql_sys::wal::Sqlite3WalManager;
+    use libsql_sys::wal::{Sqlite3WalManager, WalManager};
 
     use super::*;
     use crate::connection::libsql::open_conn;
-    use crate::replication::primary::replication_logger_wal::ReplicationLoggerWalManager;
+    use crate::replication::primary::replication_logger_wal::ReplicationLoggerWalWrapper;
     use crate::DEFAULT_AUTO_CHECKPOINT;
 
     #[tokio::test]
@@ -1072,7 +1082,7 @@ mod test {
         );
         let mut conn = open_conn(
             tmp.path(),
-            ReplicationLoggerWalManager::new(logger),
+            Sqlite3WalManager::default().wrap(ReplicationLoggerWalWrapper::new(logger)),
             None,
             None,
         )

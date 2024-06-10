@@ -30,8 +30,6 @@ use crate::replication::FrameNo;
 use crate::rpc::streaming_exec::make_proxy_stream;
 
 pub mod rpc {
-    use std::sync::Arc;
-
     use anyhow::Context;
     pub use libsql_replication::rpc::proxy::*;
 
@@ -223,14 +221,8 @@ pub mod rpc {
 
     impl From<connection::program::Program> for Program {
         fn from(pgm: connection::program::Program) -> Self {
-            // TODO: use unwrap_or_clone when stable
-            let steps = match Arc::try_unwrap(pgm.steps) {
-                Ok(steps) => steps,
-                Err(arc) => (*arc).clone(),
-            };
-
             Self {
-                steps: steps.into_iter().map(|s| s.into()).collect(),
+                steps: pgm.steps.into_iter().map(|s| s.into()).collect(),
             }
         }
     }
@@ -515,6 +507,8 @@ impl QueryResultBuilder for ExecuteResultsBuilder {
     fn into_ret(self) -> Self::Ret {
         self.output.unwrap()
     }
+
+    fn add_stats(&mut self, _rows_read: u64, _rows_written: u64, _duration: Duration) {}
 }
 
 pub struct TimeoutConnection {
@@ -587,8 +581,8 @@ impl Proxy for ProxyService {
                     .db
                     .as_primary()
                     .expect("invalid call to stream_exec: not a primary")
-                    .wal_manager
-                    .wrapped()
+                    .wal_wrapper
+                    .wrapper()
                     .logger()
                     .new_frame_notifier
                     .subscribe();
@@ -635,20 +629,24 @@ impl Proxy for ProxyService {
                 }
             })?;
 
-        let lock = self.clients.upgradable_read().await;
-        let conn = match lock.get(&client_id) {
-            Some(conn) => conn.clone(),
-            None => {
-                tracing::debug!("connected: {client_id}");
-                match connection_maker.create().await {
-                    Ok(conn) => {
-                        assert!(conn.is_primary());
-                        let conn = Arc::new(TimeoutConnection::new(conn));
-                        let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
-                        lock.insert(client_id, conn.clone());
-                        conn
+        let conn = {
+            let lock = self.clients.upgradable_read().await;
+            match lock.get(&client_id) {
+                Some(conn) => conn.clone(),
+                None => {
+                    tracing::debug!("connected: {client_id}");
+                    match connection_maker.create().await {
+                        Ok(conn) => {
+                            assert!(conn.is_primary());
+                            let conn = Arc::new(TimeoutConnection::new(conn));
+                            let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
+                            lock.insert(client_id, conn.clone());
+                            conn
+                        }
+                        Err(e) => {
+                            return Err(tonic::Status::new(tonic::Code::Internal, e.to_string()))
+                        }
                     }
-                    Err(e) => return Err(tonic::Status::new(tonic::Code::Internal, e.to_string())),
                 }
             }
         };
@@ -696,8 +694,8 @@ impl Proxy for ProxyService {
                     .db
                     .as_primary()
                     .unwrap()
-                    .wal_manager
-                    .wrapped()
+                    .wal_wrapper
+                    .wrapper()
                     .logger()
                     .new_frame_notifier
                     .subscribe();

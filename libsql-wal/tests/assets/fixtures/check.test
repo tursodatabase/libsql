@@ -1,0 +1,90 @@
+
+  PRAGMA ignore_check_constraints=OFF;
+  PRAGMA integrity_check;
+
+
+  CREATE TABLE t810(a, CHECK( main.t810.a>0 ));
+  CREATE TABLE t811(b, CHECK( xyzzy.t811.b BETWEEN 5 AND 10 ));
+
+
+  CREATE TABLE t1(
+    a INTEGER PRIMARY KEY,
+    b INTEGER NOT NULL CONSTRAINT 'b-check' CHECK( b>a ),
+    c INTEGER NOT NULL CONSTRAINT 'c-check' CHECK( c>rowid*2 ),
+    d INTEGER NOT NULL CONSTRAINT 'd-check' CHECK( d BETWEEN b AND c )
+  );
+  INSERT INTO t1(a,b,c,d) VALUES(1,2,4,3),(2,4,6,5),(3,10,30,20);
+
+
+  CREATE TABLE t1(x);
+  CREATE VIEW v1(y) AS SELECT x FROM t1;
+  PRAGMA integrity_check;
+
+
+  CREATE TABLE t1 (Col0 CHECK(1 COLLATE BINARY BETWEEN 1 AND 1) ) ;
+
+
+  INSERT INTO t1 VALUES (NULL);
+
+
+  INSERT  INTO t1 VALUES (NULL);
+
+
+  CREATE TABLE t2(b, a CHECK(
+      CASE 'abc' COLLATE nocase WHEN a THEN 1 ELSE 0 END)
+  );
+
+
+  INSERT INTO t2(a) VALUES('abc');
+
+
+  INSERT INTO t2(b, a) VALUES(1, 'abc'||'');
+
+
+  INSERT INTO t2(b, a) VALUES(2, 'abc');
+
+
+  CREATE TABLE t1(a TEXT, CHECK(a=+a));
+  INSERT INTO t1(a) VALUES(NULL),('xyz'),(5),(x'303132'),(4.75);
+  SELECT quote(a) FROM t1 ORDER BY rowid;
+
+
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, CHECK(a<>+a));
+  INSERT INTO t1(a) VALUES(NULL);
+
+
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, CHECK(NOT(a=+a)));
+  INSERT INTO t1(a) VALUES(NULL);
+
+
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, CHECK(NOT(a<>+a)));
+  INSERT INTO t1(a) VALUES(NULL),('xyz'),(5),(x'303132'),(4.75);
+  SELECT quote(a) FROM t1 ORDER BY rowid;
+
+
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, CHECK(a BETWEEN 0 AND +a));
+  INSERT INTO t1(a) VALUES(NULL),('xyz'),(5),(x'303132'),(4.75);
+  SELECT quote(a) FROM t1 ORDER BY rowid;
+
+
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, CHECK(a NOT BETWEEN 0 AND +a));
+  INSERT INTO t1(a) VALUES(NULL);
+  SELECT quote(a) FROM t1 ORDER BY rowid;
+
+
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, CHECK(a BETWEEN +a AND 999999));
+  INSERT INTO t1(a) VALUES(NULL),(5);
+  SELECT quote(a) FROM t1 ORDER BY rowid;
+
+
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, CHECK(a NOT BETWEEN +a AND 999999));
+  INSERT INTO t1(a) VALUES(NULL);
+  SELECT quote(a) FROM t1 ORDER BY rowid;
+

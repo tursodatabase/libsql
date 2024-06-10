@@ -7,40 +7,42 @@ async fn main() {
     tracing_subscriber::fmt::init();
 
     // The local database path where the data will be stored.
-    let db_path = match std::env::var("LIBSQL_DB_PATH") {
-        Ok(path) => path,
-        Err(_) => {
+    let db_path = std::env::var("LIBSQL_DB_PATH")
+        .map_err(|_| {
             eprintln!(
                 "Please set the LIBSQL_DB_PATH environment variable to set to local database path."
-            );
-            return;
-        }
-    };
+            )
+        })
+        .unwrap();
 
     // The remote sync URL to use.
-    let sync_url = match std::env::var("LIBSQL_SYNC_URL") {
-        Ok(url) => url,
-        Err(_) => {
+    let sync_url = std::env::var("LIBSQL_SYNC_URL")
+        .map_err(|_| {
             eprintln!(
                 "Please set the LIBSQL_SYNC_URL environment variable to set to remote sync URL."
-            );
-            return;
-        }
-    };
+            )
+        })
+        .unwrap();
+
+    let namespace = std::env::var("LIBSQL_NAMESPACE").ok();
 
     // The authentication token to use.
     let auth_token = std::env::var("LIBSQL_AUTH_TOKEN").unwrap_or("".to_string());
 
-    let db = match Builder::new_remote_replica(db_path, sync_url, auth_token)
-        .build()
-        .await
-    {
+    let db_builder = if let Some(ns) = namespace {
+        Builder::new_remote_replica(db_path, sync_url, auth_token).namespace(&ns)
+    } else {
+        Builder::new_remote_replica(db_path, sync_url, auth_token)
+    };
+
+    let db = match db_builder.build().await {
         Ok(db) => db,
         Err(error) => {
             eprintln!("Error connecting to remote sync server: {}", error);
             return;
         }
     };
+
     let conn = db.connect().unwrap();
 
     print!("Syncing with remote database...");

@@ -1,0 +1,31 @@
+
+  CREATE TABLE t1(a INT UNIQUE, b INT);
+  INSERT INTO t1(a,b) VALUES('1','2');
+  SELECT * FROM t1 WHERE a='1' AND b='2';
+
+
+  DELETE FROM t1 WHERE a='1' AND b='2';
+
+
+  SELECT * FROM t1 WHERE a='1' AND b='2';
+
+
+  CREATE TABLE t11(a INTEGER PRIMARY KEY, b INT);
+  WITH RECURSIVE cnt(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM cnt WHERE x<20)
+    INSERT INTO t11(a,b) SELECT x, (x*17)%100 FROM cnt;
+  SELECT * FROM t11;
+
+
+  DELETE FROM t11 AS xyz
+   WHERE EXISTS(SELECT 1 FROM t11 WHERE t11.a>xyz.a AND t11.b<=xyz.b);
+  SELECT * FROM t11;
+
+
+  CREATE TABLE t0(vkey INTEGER, pkey INTEGER,c1 INTEGER);
+  INSERT INTO t0 VALUES(2,1,-20),(2,2,NULL),(2,3,0),(8,4,95);
+  DELETE FROM t0 WHERE NOT (
+    (t0.vkey <= t0.c1) AND
+    (t0.vkey <> (SELECT vkey FROM t0 ORDER BY vkey LIMIT 1 OFFSET 2))
+  );
+  SELECT * FROM t0;
+

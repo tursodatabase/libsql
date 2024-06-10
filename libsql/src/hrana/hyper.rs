@@ -7,7 +7,7 @@ use crate::hrana::{bind_params, unwrap_err, HranaError, HttpSend, Result};
 use crate::params::Params;
 use crate::transaction::Tx;
 use crate::util::ConnectorService;
-use crate::{Rows, Statement};
+use crate::{Error, Rows, Statement};
 use bytes::Bytes;
 use futures::future::BoxFuture;
 use futures::{Stream, TryStreamExt};
@@ -119,6 +119,10 @@ impl Conn for HttpConnection<HttpSender> {
 
     async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
         self.current_stream().execute_batch(sql).await
+    }
+
+    async fn execute_transactional_batch(&self, sql: &str) -> crate::Result<()> {
+        self.current_stream().execute_transactional_batch(sql).await
     }
 
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
@@ -268,6 +272,23 @@ impl Conn for HranaStream<HttpSender> {
         let close = !in_tx_scope || c.end_tx();
         let res = self
             .batch_inner(Batch::from_iter(stmts), close)
+            .await
+            .map_err(|e| crate::Error::Hrana(e.into()))?;
+        unwrap_err(res)
+    }
+
+    async fn execute_transactional_batch(&self, sql: &str) -> crate::Result<()> {
+        let mut stmts = Vec::new();
+        let parse = crate::parser::Statement::parse(sql);
+        for s in parse {
+            let s = s?;
+            if s.kind == crate::parser::StmtKind::TxnBegin || s.kind == crate::parser::StmtKind::TxnBeginReadOnly || s.kind == crate::parser::StmtKind::TxnEnd {
+                return Err(Error::TransactionalBatchError("Transactions forbidden inside transactional batch".to_string()));
+            }
+            stmts.push(Stmt::new(s.stmt, false));
+        }
+        let res = self
+            .batch_inner(Batch::transactional(stmts), true)
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
         unwrap_err(res)

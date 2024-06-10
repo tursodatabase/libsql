@@ -6,7 +6,7 @@ use std::sync::Arc;
 use crate::connection::program::{check_program_auth, Program};
 use crate::connection::{MakeConnection, RequestContext};
 use crate::namespace::meta_store::MetaStoreHandle;
-use crate::namespace::replication_wal::ReplicationWalManager;
+use crate::namespace::replication_wal::ReplicationWalWrapper;
 use crate::namespace::NamespaceName;
 use crate::query_result_builder::QueryBuilderConfig;
 use crate::schema::{perform_migration, validate_migration, MigrationJobStatus, SchedulerHandle};
@@ -31,27 +31,41 @@ impl SchemaConnection {
 impl crate::connection::Connection for SchemaConnection {
     async fn execute_program<B: crate::query_result_builder::QueryResultBuilder>(
         &self,
-        migration: Program,
+        mut migration: Program,
         ctx: RequestContext,
         builder: B,
         replication_index: Option<crate::replication::FrameNo>,
     ) -> crate::Result<B> {
         if migration.is_read_only() {
-            self.connection
+            let res = self
+                .connection
                 .execute_program(migration, ctx, builder, replication_index)
-                .await
+                .await;
+
+            // If the query was okay, verify if the connection is not in a txn state
+            if res.is_ok() && !self.connection.is_autocommit().await? {
+                return Err(crate::Error::Migration(
+                    crate::schema::Error::ConnectionInTxnState,
+                ));
+            }
+
+            res
         } else {
             check_program_auth(&ctx, &migration, &self.config.get())?;
             let connection = self.connection.clone();
-            validate_migration(&migration)?;
+            validate_migration(&mut migration)?;
             let migration = Arc::new(migration);
             let builder = tokio::task::spawn_blocking({
                 let migration = migration.clone();
                 move || {
-                    connection.with_raw(|conn| -> crate::Result<_> {
+                    let res = connection.with_raw(|conn| -> crate::Result<_> {
                         let mut txn = conn
                             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
-                            .unwrap();
+                            .map_err(|_| {
+                                crate::Error::Migration(
+                                    crate::schema::Error::InteractiveTxnNotAllowed,
+                                )
+                            })?;
                         // TODO: pass proper config
                         let (ret, _) = perform_migration(
                             &mut txn,
@@ -62,7 +76,9 @@ impl crate::connection::Connection for SchemaConnection {
                         );
                         txn.rollback().unwrap();
                         Ok(ret?)
-                    })
+                    });
+
+                    res
                 }
             })
             .await
@@ -133,7 +149,7 @@ pub struct SchemaDatabase {
     migration_scheduler: SchedulerHandle,
     schema: NamespaceName,
     connection_maker: Arc<PrimaryConnectionMaker>,
-    pub wal_manager: ReplicationWalManager,
+    pub wal_wrapper: ReplicationWalWrapper,
     config: MetaStoreHandle,
 }
 
@@ -157,27 +173,27 @@ impl SchemaDatabase {
         migration_scheduler: SchedulerHandle,
         schema: NamespaceName,
         connection_maker: PrimaryConnectionMaker,
-        wal_manager: ReplicationWalManager,
+        wal_wrapper: ReplicationWalWrapper,
         config: MetaStoreHandle,
     ) -> Self {
         Self {
             connection_maker: connection_maker.into(),
             migration_scheduler,
             schema,
-            wal_manager,
+            wal_wrapper,
             config,
         }
     }
 
     pub(crate) async fn shutdown(self) -> Result<(), anyhow::Error> {
-        self.wal_manager
-            .wrapped()
+        self.wal_wrapper
+            .wrapper()
             .logger()
             .closed_signal
             .send_replace(true);
-        let wal_manager = self.wal_manager;
+        let wal_manager = self.wal_wrapper;
         if let Some(mut replicator) = tokio::task::spawn_blocking(move || {
-            wal_manager.wrapper().as_ref().and_then(|r| r.shutdown())
+            wal_manager.wrapped().as_ref().and_then(|r| r.shutdown())
         })
         .await?
         {
@@ -188,8 +204,8 @@ impl SchemaDatabase {
     }
 
     pub(crate) fn destroy(&self) {
-        self.wal_manager
-            .wrapped()
+        self.wal_wrapper
+            .wrapper()
             .logger()
             .closed_signal
             .send_replace(true);
@@ -200,7 +216,7 @@ impl SchemaDatabase {
     }
 
     pub fn backup_savepoint(&self) -> Option<SavepointTracker> {
-        if let Some(wal) = self.wal_manager.wrapper() {
+        if let Some(wal) = self.wal_wrapper.wrapped() {
             if let Some(savepoint) = wal.backup_savepoint() {
                 return Some(savepoint);
             }

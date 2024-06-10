@@ -75,7 +75,7 @@ jobs:
 
   build-arm64:
     permissions: write-all
-    runs-on: buildjet-4vcpu-ubuntu-2204-arm
+    runs-on: buildjet-8vcpu-ubuntu-2204-arm
     env:
       platform: "linux/arm64"
     steps:

@@ -1,0 +1,180 @@
+
+  CREATE TABLE t181(a);
+  CREATE TABLE t182(b,c);
+  INSERT INTO t181 VALUES(1);
+  SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY c IS NULL;
+
+
+  SELECT DISTINCT a FROM t182 RIGHT JOIN t181 ON a=b ORDER BY c IS NULL;
+
+
+  SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY +c;
+
+
+  SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY c;
+
+
+  SELECT DISTINCT a FROM t182 RIGHT JOIN t181 ON a=b ORDER BY c;
+
+
+  INSERT INTO t181 VALUES(1),(1),(1),(1);
+  SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY +c;
+
+
+  SELECT DISTINCT a FROM t182 RIGHT JOIN t181 ON a=b ORDER BY +c;
+
+
+  INSERT INTO t181 VALUES(2);
+  SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY c IS NULL, +a;
+
+
+  INSERT INTO t181 VALUES(2);
+  SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY +a, +c IS NULL;
+
+
+  CREATE TABLE t191(a INT UNIQUE NOT NULL, b INT UNIQUE NOT NULL,c,d);
+  CREATE INDEX t191a ON t1(a);
+  CREATE INDEX t191b ON t1(b);
+  CREATE TABLE t192(x INTEGER PRIMARY KEY,y INT, z INT);
+
+  EXPLAIN QUERY PLAN
+  SELECT t191.rowid FROM t192, t191 WHERE (a=y OR b=y) AND x=?1;
+
+
+  CREATE TABLE t201(x);
+  CREATE TABLE t202(y, z);
+  INSERT INTO t201 VALUES('key');
+  INSERT INTO t202 VALUES('key', -1);
+  CREATE INDEX t202i ON t202(y, ifnull(z, 0));
+  SELECT count(*) FROM t201 LEFT JOIN t202 ON (x=y) WHERE ifnull(z, 0) >=0;
+
+
+  CREATE TABLE t12(a, b, c);
+  CREATE TABLE t13(x);
+  CREATE INDEX t12ab ON t12(b, a);
+  CREATE INDEX t12ac ON t12(c, a);
+
+  INSERT INTO t12 VALUES(4, 0, 1);
+  INSERT INTO t12 VALUES(4, 1, 0);
+  INSERT INTO t12 VALUES(5, 0, 1);
+  INSERT INTO t12 VALUES(5, 1, 0);
+
+  INSERT INTO t13 VALUES(1), (2), (3), (4);
+
+
+  SELECT * FROM t12 WHERE 
+  a = (SELECT * FROM (SELECT count(*) FROM t13 LIMIT 5) ORDER BY 1 LIMIT 10) 
+  AND (b=1 OR c=1);
+
+
+  CREATE TABLE t1(a INT);
+  CREATE INDEX t1a ON t1(a);
+  INSERT INTO t1(a) VALUES(NULL),(NULL),(42),(NULL),(NULL);
+  CREATE TABLE t2(dummy INT);
+  SELECT count(*) FROM t1 LEFT JOIN t2 ON a IS NOT NULL;
+
+
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY);
+  INSERT INTO t1(a) VALUES(1),(2),(3);
+  CREATE TABLE t2(x INTEGER PRIMARY KEY, y INT);
+  INSERT INTO t2(y) VALUES(2),(3);
+  SELECT * FROM t1, t2 WHERE a=y AND y=3;
+
+
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  INSERT INTO t1 VALUES(3, 'three');
+  INSERT INTO t1 VALUES(4, 'four');
+
+
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE UNIQUE INDEX i1 ON t1(c);
+  INSERT INTO t1 VALUES(1, 'one', 'i');
+  INSERT INTO t1 VALUES(2, 'two', 'ii');
+
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b, c);
+  CREATE UNIQUE INDEX i2 ON t2(c);
+  INSERT INTO t2 VALUES(1, 'one', 'i');
+  INSERT INTO t2 VALUES(2, 'two', 'ii');
+  INSERT INTO t2 VALUES(3, 'three', 'iii');
+
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema SET rootpage = (
+    SELECT rootpage FROM sqlite_schema WHERE name = 'i2'
+  ) WHERE name = 'i1';
+
+
+  CREATE TABLE t1(a PRIMARY KEY, b, c) WITHOUT ROWID;
+  CREATE UNIQUE INDEX i1 ON t1(c);
+  INSERT INTO t1 VALUES(1, 'one', 'i');
+  INSERT INTO t1 VALUES(2, 'two', 'ii');
+
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b, c);
+  CREATE UNIQUE INDEX i2 ON t2(c);
+  INSERT INTO t2 VALUES(1, 'one', 'i');
+  INSERT INTO t2 VALUES(2, 'two', 'ii');
+  INSERT INTO t2 VALUES(3, 'three', 'iii');
+
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema SET rootpage = (
+    SELECT rootpage FROM sqlite_schema WHERE name = 'i2'
+  ) WHERE name = 'i1';
+
+
+  CREATE TABLE t0(c0 INTEGER PRIMARY KEY, c1 TEXT);
+  INSERT INTO t0(c0, c1) VALUES (1, 'a');
+  CREATE TABLE t1(c0 INT PRIMARY KEY, c1 TEXT);
+  INSERT INTO t1(c0, c1) VALUES (1, 'a');
+  SELECT * FROM t0 WHERE '-1' BETWEEN 0 AND t0.c0;
+
+
+  SELECT * FROM t1 WHERE '-1' BETWEEN 0 AND t1.c0;
+
+
+  SELECT * FROM t0 WHERE '-1'>=0 AND '-1'<=t0.c0;
+
+
+  SELECT * FROM t1 WHERE '-1'>=0 AND '-1'<=t1.c0;
+
+
+  SELECT '-1' BETWEEN 0 AND t0.c0 FROM t0;
+
+
+  SELECT '-1' BETWEEN 0 AND t1.c0 FROM t1;
+
+
+  SELECT '-1'>=0 AND '-1'<=t0.c0 FROM t0;
+
+
+  SELECT '-1'>=0 AND '-1'<=t1.c0 FROM t1;
+
+
+    CREATE TABLE t1(a INTEGER PRIMARY KEY);
+    INSERT INTO t1(a) VALUES(9223372036854775807);
+    SELECT 1 FROM t1 WHERE a>=(9223372036854775807+1);
+  
+
+    SELECT a>=9223372036854775807+1 FROM t1;
+  
+
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT);
+  CREATE INDEX t1b ON t1(b,b,b,b,b,b,b,b,b,b,b,b,b);
+  INSERT INTO t1(a,b) VALUES(1,1),(15,2),(19,5);
+  UPDATE t1 SET b=999 WHERE a IN (SELECT 15) AND b IN (1,2);
+  SELECT * FROM t1;
+
+
+    SELECT DISTINCT 'xyz' FROM pragma_cache_size
+      WHERE rowid OR abs(0)
+      ORDER BY
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1;
+  

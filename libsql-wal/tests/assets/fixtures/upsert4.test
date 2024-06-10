@@ -1,0 +1,12 @@
+
+  CREATE TABLE v(x INTEGER);
+  CREATE TABLE hist(x INTEGER PRIMARY KEY, cnt INTEGER);
+  CREATE TRIGGER vt AFTER INSERT ON v BEGIN
+    INSERT INTO hist VALUES(new.x, 1) ON CONFLICT(x) DO
+      UPDATE SET cnt=cnt+1;
+  END;
+
+
+  INSERT INTO v VALUES(1), (4), (1), (5), (5), (8), (9), (1);
+  SELECT * FROM hist;
+

@@ -1,5 +1,6 @@
 [workspace]
 resolver = "2"
+default-members = ["libsql-server"]
 members = [
   "libsql",
   "bindings/c",
@@ -10,11 +11,15 @@ members = [
   "bottomless-cli",
   "libsql-replication",
   "libsql-ffi",
+  "libsql-hrana",
 
   "vendored/rusqlite",
   "vendored/sqlite3-parser",
 
-  "xtask",
+  "xtask", "libsql-hrana",
+  "libsql-wal",
+  "libsql-storage",
+  "libsql-storage-server",
 ]
 
 exclude = [
@@ -42,9 +47,9 @@ rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = 
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.11.1"
+cargo-dist-version = "0.14.1"
 # CI backends to support
-ci = ["github"]
+ci = "github"
 # The installers to generate for each app
 installers = ["shell", "homebrew"]
 # A GitHub repo to push Homebrew formulas to
@@ -52,7 +57,7 @@ tap = "libsql/homebrew-sqld"
 # Customize the Homebrew formula name
 formula = "sqld"
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu"]
+targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu"]
 # Publish jobs to run in CI
 publish-jobs = ["homebrew"]
 # Whether cargo-dist should create a Github Release or use an existing draft
@@ -61,9 +66,12 @@ create-release = true
 pr-run-mode = "plan"
 # A prefix git tags must include for cargo-dist to care about them
 tag-namespace = "libsql-server"
+# Whether to install an updater program
+install-updater = false
 
 [workspace.metadata.dist.github-custom-runners]
 aarch64-apple-darwin = "macos-14"
+aarch64-unknown-linux-gnu = "buildjet-8vcpu-ubuntu-2204-arm"
 
 # The profile that 'cargo dist' will build with
 [profile.dist]

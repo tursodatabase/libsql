@@ -1,7 +1,7 @@
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use metrics::{histogram, increment_counter};
+use rusqlite::StatementStatus;
 
 use crate::auth::Permission;
 use crate::error::Error;
@@ -14,16 +14,14 @@ use crate::query_result_builder::QueryResultBuilder;
 use super::config::DatabaseConfig;
 use super::RequestContext;
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Program {
-    pub steps: Arc<Vec<Step>>,
+    pub steps: Vec<Step>,
 }
 
 impl Program {
     pub fn new(steps: Vec<Step>) -> Self {
-        Self {
-            steps: Arc::new(steps),
-        }
+        Self { steps }
     }
 
     pub fn is_read_only(&self) -> bool {
@@ -105,7 +103,7 @@ impl<'a, B, F, S> Vm<'a, B, F, S>
 where
     B: QueryResultBuilder,
     F: Fn(&StmtKind) -> (bool, Option<String>),
-    S: Fn(String, &rusqlite::Statement, Duration),
+    S: Fn(String, u64, u64, u64, Duration),
 {
     pub fn new(
         builder: B,
@@ -274,11 +272,22 @@ where
 
         drop(qresult);
 
+        let query_duration = start.elapsed();
+
+        let rows_read = stmt.get_status(StatementStatus::RowsRead) as u64;
+        let rows_written = stmt.get_status(StatementStatus::RowsWritten) as u64;
+        let mem_used = stmt.get_status(StatementStatus::MemUsed) as u64;
+
         (self.update_stats)(
             self.current_step().query.stmt.stmt.clone(),
-            &stmt,
-            Instant::now() - start,
+            rows_read,
+            rows_written,
+            mem_used,
+            query_duration,
         );
+
+        self.builder
+            .add_stats(rows_read, rows_written, query_duration);
 
         Ok((affected_row_count, last_insert_rowid))
     }

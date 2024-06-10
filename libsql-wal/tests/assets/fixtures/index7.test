@@ -1,0 +1,97 @@
+
+  SELECT count(*) FROM t1;
+
+
+  INSERT INTO t1(a,b,c)
+     VALUES('abcde',1,101),('abdef',2,102),('xyz',3,103),('abcz',4,104);
+  SELECT c FROM t1 WHERE a NOT LIKE 'abc%' AND a=7 ORDER BY +b;
+
+
+  EXPLAIN QUERY PLAN
+  SELECT b FROM t1 WHERE a NOT LIKE 'abc%' AND a=7 ORDER BY +b;
+
+
+  DELETE FROM t1 WHERE c>=101;
+  DROP INDEX IF EXISTS bad1;
+
+
+  DROP INDEX t2a1;
+  UPDATE t2 SET a=b, b=b+10000;
+  SELECT b FROM t2 WHERE a=15;
+
+
+  CREATE INDEX t2a2 ON t2(a) WHERE a<100 OR a>200;
+  SELECT b FROM t2 WHERE a=15;
+  PRAGMA integrity_check;
+
+
+  EXPLAIN QUERY PLAN
+  SELECT b FROM t2 WHERE a=15;
+
+
+  SELECT b FROM t2 WHERE a=15 AND a<100;
+
+
+  EXPLAIN QUERY PLAN
+  SELECT b FROM t2 WHERE a=15 AND a<100;
+
+
+  SELECT b FROM t2 WHERE a=515 AND a>200;
+
+
+  EXPLAIN QUERY PLAN
+  SELECT b FROM t2 WHERE a=515 AND a>200;
+
+
+  CREATE TABLE t3(a,b PRIMARY KEY) without rowid;
+  INSERT INTO t3 SELECT value, value FROM nums WHERE value<200;
+  UPDATE t3 SET a=999 WHERE b%5!=0;
+  CREATE UNIQUE INDEX t3a ON t3(a) WHERE a<>999;
+
+
+  SELECT count(*) FROM t3 WHERE a=999;
+
+
+  VACUUM;
+  PRAGMA integrity_check;
+
+
+  CREATE INDEX t3b ON t3(b) WHERE xyzzy.t3.b BETWEEN 5 AND 10;
+                               /* ^^^^^-- ignored */
+  ANALYZE;
+  SELECT count(*) FROM t3 WHERE t3.b BETWEEN 5 AND 10;
+  SELECT stat+0 FROM sqlite_stat1 WHERE idx='t3b';
+
+
+  CREATE TABLE t5(a, b);
+  CREATE TABLE t4(c, d);
+  INSERT INTO t5 VALUES(1, 'xyz');
+  INSERT INTO t4 VALUES('abc', 'not xyz');
+  SELECT * FROM (SELECT * FROM t5 WHERE a=1 AND b='xyz'), t4 WHERE c='abc';
+
+
+  CREATE INDEX i4 ON t4(c) WHERE d='xyz';
+  SELECT * FROM (SELECT * FROM t5 WHERE a=1 AND b='xyz'), t4 WHERE c='abc';
+
+
+  CREATE VIEW v4 AS SELECT * FROM t4;
+  INSERT INTO t4 VALUES('def', 'xyz');
+  SELECT * FROM v4 WHERE d='xyz' AND c='def'
+
+
+  CREATE TABLE t6(x, y);
+  INSERT INTO t6 VALUES(1, 1);
+  INSERT INTO t6 VALUES(0, 0);
+  SELECT * FROM t6 WHERE y IS TRUE ORDER BY x;
+
+
+  CREATE INDEX i6 ON t6(x) WHERE y IS NOT TRUE;
+  SELECT * FROM t6 WHERE y IS TRUE ORDER BY x;
+
+
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+  CREATE INDEX t1y ON t1(y) WHERE y IS NOT NULL;
+  INSERT INTO t1(x) VALUES(1),(2);
+  ANALYZE;
+  EXPLAIN QUERY PLAN SELECT 1 FROM t1 WHERE y=5;
+

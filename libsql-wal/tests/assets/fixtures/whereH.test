@@ -1,0 +1,45 @@
+
+  CREATE TABLE t1(a,b,c,d);
+  CREATE INDEX t1abc ON t1(a,b,c);
+  CREATE INDEX t1bc ON t1(b,c);
+
+  DROP TABLE t1;
+  CREATE TABLE t1(a,b,c,d);
+  CREATE INDEX t1bc ON t1(b,c);
+  CREATE INDEX t1abc ON t1(a,b,c);
+
+  DROP TABLE t1;
+  CREATE TABLE t1(a,b,c,d,e);
+  CREATE INDEX t1cd ON t1(c,d);
+  CREATE INDEX t1bcd ON t1(b,c,d);
+  CREATE INDEX t1abcd ON t1(a,b,c,d);
+
+  DROP TABLE t1;
+  CREATE TABLE t1(a,b,c,d,e);
+  CREATE INDEX t1cd ON t1(c,d);
+  CREATE INDEX t1abcd ON t1(a,b,c,d);
+  CREATE INDEX t1bcd ON t1(b,c,d);
+
+  DROP TABLE t1;
+  CREATE TABLE t1(a,b,c,d,e);
+  CREATE INDEX t1bcd ON t1(b,c,d);
+  CREATE INDEX t1cd ON t1(c,d);
+  CREATE INDEX t1abcd ON t1(a,b,c,d);
+
+  DROP TABLE t1;
+  CREATE TABLE t1(a,b,c,d,e);
+  CREATE INDEX t1bcd ON t1(b,c,d);
+  CREATE INDEX t1abcd ON t1(a,b,c,d);
+  CREATE INDEX t1cd ON t1(c,d);
+
+  DROP TABLE t1;
+  CREATE TABLE t1(a,b,c,d,e);
+  CREATE INDEX t1abcd ON t1(a,b,c,d);
+  CREATE INDEX t1bcd ON t1(b,c,d);
+  CREATE INDEX t1cd ON t1(c,d);
+
+  DROP TABLE t1;
+  CREATE TABLE t1(a,b,c,d,e);
+  CREATE INDEX t1abcd ON t1(a,b,c,d);
+  CREATE INDEX t1cd ON t1(c,d);
+  CREATE INDEX t1bcd ON t1(b,c,d);

@@ -1,0 +1,142 @@
+
+  SELECT 123 AS x ORDER BY (SELECT x ORDER BY 1);
+
+
+  CREATE TABLE t14(a,b,c);
+  INSERT INTO t14 VALUES(1,2,3),(4,5,6);
+  SELECT * FROM t14 INTERSECT VALUES(3,2,1),(2,3,1),(1,2,3),(2,1,3);
+
+
+  SELECT * FROM t14 INTERSECT VALUES(1,2,3);
+
+
+  SELECT * FROM t14
+   UNION VALUES(3,2,1),(2,3,1),(1,2,3),(7,8,9),(4,5,6)
+   UNION SELECT * FROM t14 ORDER BY 1, 2, 3
+
+
+  SELECT * FROM t14
+   UNION VALUES(3,2,1)
+   UNION SELECT * FROM t14 ORDER BY 1, 2, 3
+
+
+  SELECT * FROM t14 EXCEPT VALUES(3,2,1),(2,3,1),(1,2,3),(2,1,3);
+
+
+  SELECT * FROM t14 EXCEPT VALUES(1,2,3)
+
+
+  SELECT * FROM t14 EXCEPT VALUES(1,2,3) EXCEPT VALUES(4,5,6)
+
+
+  SELECT * FROM t14 EXCEPT VALUES('a','b','c') EXCEPT VALUES(4,5,6)
+
+
+  SELECT * FROM t14 UNION ALL VALUES(3,2,1),(2,3,1),(1,2,3),(2,1,3);
+
+
+  SELECT (VALUES(1),(2),(3),(4))
+
+
+  SELECT (SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4)
+
+
+  VALUES(1) UNION VALUES(2);
+
+
+  VALUES(1),(2),(3) EXCEPT VALUES(2);
+
+
+  VALUES(1),(2),(3) EXCEPT VALUES(1),(3);
+
+
+  SELECT * FROM (SELECT 123), (SELECT 456) ON likely(0 OR 1) OR 0;
+
+
+  VALUES(1),(2),(3),(4) UNION ALL SELECT 5 LIMIT 99;
+
+
+  VALUES(1),(2),(3),(4) UNION ALL SELECT 5 LIMIT 3;
+
+
+  DROP TABLE IF EXISTS tx;
+  CREATE TABLE tx(id INTEGER PRIMARY KEY, a, b);
+  INSERT INTO tx(a,b) VALUES(33,456);
+  INSERT INTO tx(a,b) VALUES(33,789);
+
+  SELECT DISTINCT t0.id, t0.a, t0.b
+    FROM tx AS t0, tx AS t1
+   WHERE t0.a=t1.a AND t1.a=33 AND t0.b=456
+  UNION
+  SELECT DISTINCT t0.id, t0.a, t0.b
+    FROM tx AS t0, tx AS t1
+   WHERE t0.a=t1.a AND t1.a=33 AND t0.b=789
+   ORDER BY 1;
+
+
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,
+  PRIMARY KEY(a,b DESC)) WITHOUT ROWID;
+
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100)
+  INSERT INTO t1(a,b,c,d)
+    SELECT x%10, x/10, x, printf('xyz%dabc',x) FROM c;
+
+  SELECT t3.c FROM 
+    (SELECT a,max(b) AS m FROM t1 WHERE a>=5 GROUP BY a) AS t2
+    JOIN t1 AS t3
+  WHERE t2.a=t3.a AND t2.m=t3.b
+  ORDER BY t3.a;
+
+
+  SELECT t3.c FROM 
+    (SELECT a,max(b) AS m FROM t1 WHERE a>=5 GROUP BY a) AS t2
+    CROSS JOIN t1 AS t3
+  WHERE t2.a=t3.a AND t2.m=t3.b
+  ORDER BY t3.a;
+
+
+  SELECT t3.c FROM 
+    (SELECT a,max(b) AS m FROM t1 WHERE a>=5 GROUP BY a) AS t2
+    LEFT JOIN t1 AS t3
+  WHERE t2.a=t3.a AND t2.m=t3.b
+  ORDER BY t3.a;
+
+
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a int, b int);
+  INSERT INTO t1 VALUES(1,2),(1,18),(2,19);
+  SELECT x, y FROM (
+    SELECT 98 AS x, 99 AS y
+    UNION
+    SELECT a AS x, sum(b) AS y FROM t1 GROUP BY a
+  ) AS w WHERE y>=20
+  ORDER BY +x;
+
+
+  SELECT x, y FROM (
+    SELECT a AS x, sum(b) AS y FROM t1 GROUP BY a
+    UNION
+    SELECT 98 AS x, 99 AS y
+  ) AS w WHERE y>=20
+  ORDER BY +x;
+
+
+  CREATE VIEW v0(v0) AS WITH v0 AS(SELECT 0 v0) SELECT(SELECT min(v0) OVER()) FROM v0 GROUP BY v0;
+  SELECT *FROM v0 v1 JOIN v0 USING(v0) WHERE datetime(v0) = (v0.v0)AND v0 = 10;
+
+
+  CREATE VIEW t1(aa) AS
+     WITH t2(bb) AS (SELECT 123)
+     SELECT (SELECT min(bb) OVER()) FROM t2 GROUP BY bb;
+  SELECT * FROM t1;
+
+
+  SELECT * FROM t1 AS z1 JOIN t1 AS z2 USING(aa)
+   WHERE abs(z1.aa)=z2.aa AND z1.aa=123;
+
+
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(99);
+  SELECT sum((SELECT 1 FROM (SELECT 2 WHERE x IS NULL) WHERE 0)) FROM t1;
+

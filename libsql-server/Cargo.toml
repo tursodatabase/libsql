@@ -1,6 +1,6 @@
 [package]
 name = "libsql-server"
-version = "0.24.0"
+version = "0.24.14"
 edition = "2021"
 default-run = "sqld"
 
@@ -37,6 +37,7 @@ itertools = "0.10.5"
 jsonwebtoken = "9"
 libsql = { path = "../libsql/", optional = true }
 libsql_replication = { path = "../libsql-replication" }
+libsql-wal = { path = "../libsql-wal/" }
 metrics = "0.21.1"
 metrics-util = "0.15"
 metrics-exporter-prometheus = "0.12.2"
@@ -60,7 +61,8 @@ serde_json = { version = "1.0.91", features = ["preserve_order"] }
 md-5 = "0.10"
 sha2 = "0.10"
 sha256 = "1.1.3"
-libsql-sys = { path = "../libsql-sys", features = ["wal", "hrana"], default-features = false }
+libsql-sys = { path = "../libsql-sys", features = ["wal"], default-features = false }
+libsql-hrana = { path = "../libsql-hrana" }
 sqlite3-parser = { package = "libsql-sqlite3-parser", path = "../vendored/sqlite3-parser", version = "0.11.0", default-features = false, features = [ "YYNOERRORRECOVERY" ] }
 tempfile = "3.7.0"
 thiserror = "1.0.38"
@@ -68,8 +70,8 @@ tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "i
 tokio-stream = "0.1.11"
 tokio-tungstenite = "0.20"
 tokio-util = { version = "0.7.8", features = ["io", "io-util"] }
-tonic = { version = "0.10.0", features = ["tls"] }
-tonic-web = "0.10"
+tonic = { version = "0.11", features = ["tls"] }
+tonic-web = "0.11"
 tower = { version = "0.4.13", features = ["make"] }
 tower-http = { version = "0.3.5", features = ["compression-full", "cors", "trace"] }
 tracing = "0.1.37"
@@ -82,6 +84,8 @@ cbc = { version = "0.1.2", optional = true }
 zerocopy = { version = "0.7.28", features = ["derive", "alloc"] }
 hashbrown = { version = "0.14.3", features = ["serde"] }
 hdrhistogram = "7.5.4"
+crossbeam = "0.8.4"
+async-recursion = "1"
 
 [dev-dependencies]
 arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }

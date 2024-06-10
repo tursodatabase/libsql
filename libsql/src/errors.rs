@@ -18,6 +18,8 @@ pub enum Error {
     ToSqlConversionFailure(crate::BoxError),
     #[error("Sync is not supported in databases opened in {0} mode.")]
     SyncNotSupported(String), // Not in rusqlite
+    #[error("Loading extension is only supported in local databases.")]
+    LoadExtensionNotSupported, // Not in rusqlite
     #[error("Column not found: {0}")]
     ColumnNotFound(i32), // Not in rusqlite
     #[error("Hrana: `{0}`")]
@@ -48,6 +50,8 @@ pub enum Error {
     InvalidParserState(String),
     #[error("TLS error: {0}")]
     InvalidTlsConfiguration(std::io::Error),
+    #[error("Transactional batch error: {0}")]
+    TransactionalBatchError(String),
 }
 
 #[cfg(feature = "hrana")]

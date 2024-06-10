@@ -60,7 +60,8 @@ impl Builder<()> {
                     encryption_config: None,
                     read_your_writes: true,
                     sync_interval: None,
-                    http_request_callback: None
+                    http_request_callback: None,
+                    namespace: None
                 },
             }
         }
@@ -131,8 +132,9 @@ cfg_core! {
         /// Build the local database.
         pub async fn build(self) -> Result<Database> {
             let db = if self.inner.path == std::path::Path::new(":memory:") {
+                let db = crate::local::Database::open(":memory:", crate::OpenFlags::default())?;
                 Database {
-                    db_type: DbType::Memory,
+                    db_type: DbType::Memory { db } ,
                 }
             } else {
                 let path = self
@@ -165,6 +167,7 @@ cfg_replication! {
         read_your_writes: bool,
         sync_interval: Option<std::time::Duration>,
         http_request_callback: Option<crate::util::HttpRequestCallback>,
+        namespace: Option<String>,
     }
 
     /// Local replica configuration type in [`Builder`].
@@ -226,6 +229,13 @@ cfg_replication! {
 
         }
 
+        /// Set the namespace that will be communicated to remote replica in the http header.
+        pub fn namespace(mut self, namespace: impl Into<String>) -> Builder<RemoteReplica>
+        {
+            self.inner.namespace = Some(namespace.into());
+            self
+        }
+
         #[doc(hidden)]
         pub fn version(mut self, version: String) -> Builder<RemoteReplica> {
             self.inner.remote = self.inner.remote.version(version);
@@ -246,7 +256,8 @@ cfg_replication! {
                 encryption_config,
                 read_your_writes,
                 sync_interval,
-                http_request_callback
+                http_request_callback,
+                namespace
             } = self.inner;
 
             let connector = if let Some(connector) = connector {
@@ -273,7 +284,8 @@ cfg_replication! {
                 read_your_writes,
                 encryption_config.clone(),
                 sync_interval,
-                http_request_callback
+                http_request_callback,
+                namespace,
             )
             .await?;
 
@@ -339,7 +351,7 @@ cfg_replication! {
                     version,
                     flags,
                     encryption_config.clone(),
-                    http_request_callback
+                    http_request_callback,
                 )
                 .await?
             } else {

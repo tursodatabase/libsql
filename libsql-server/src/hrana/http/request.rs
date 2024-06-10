@@ -4,7 +4,7 @@ use bytesize::ByteSize;
 use super::super::{batch, stmt, ProtocolError, Version};
 use super::stream;
 use crate::connection::{Connection, RequestContext};
-use libsql_sys::hrana::proto;
+use libsql_hrana::proto;
 
 const MAX_SQL_COUNT: usize = 50;
 const MAX_STORED_SQL_SIZE: ByteSize = ByteSize::kb(5);
@@ -139,13 +139,13 @@ fn catch_stmt_error(err: anyhow::Error) -> anyhow::Error {
     match err.downcast::<stmt::StmtError>() {
         Ok(stmt_err) => anyhow!(StreamResponseError::Stmt(stmt_err)),
         Err(err) => match err.downcast::<crate::Error>() {
-            Ok(crate::Error::Migration(crate::schema::Error::MigrationError(_step, message))) => {
+            Ok(crate::Error::Migration(e)) => {
                 anyhow!(StreamResponseError::Stmt(stmt::StmtError::SqliteError {
                     source: rusqlite::ffi::Error {
                         code: rusqlite::ffi::ErrorCode::Unknown,
                         extended_code: 4242
                     },
-                    message
+                    message: e.to_string()
                 }))
             }
             Ok(err) => anyhow!(err),
@@ -157,7 +157,15 @@ fn catch_stmt_error(err: anyhow::Error) -> anyhow::Error {
 fn catch_batch_error(err: anyhow::Error) -> anyhow::Error {
     match err.downcast::<batch::BatchError>() {
         Ok(batch_err) => anyhow!(StreamResponseError::Batch(batch_err)),
-        Err(err) => err,
+        Err(err) => match err.downcast::<crate::Error>() {
+            Ok(crate::Error::Migration(e)) => {
+                anyhow!(StreamResponseError::Batch(batch::BatchError::SchemaError {
+                    message: e.to_string()
+                }))
+            }
+            Ok(err) => anyhow!(err),
+            Err(err) => err,
+        },
     }
 }
 

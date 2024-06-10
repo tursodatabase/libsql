@@ -1,0 +1,25 @@
+
+  CREATE TABLE t1(k TEXT UNIQUE, v INTEGER);
+  INSERT INTO t1 VALUES
+    ('aback', 1),
+    ('abaft', 2),
+    ('abandon', 3),
+    ('abandoned', 4),
+    ('abandoning', 5),
+    ('abandonment', 6),
+    ('abandons', 7),
+    ('abase', 8),
+    ('abased', 9),
+    ('abasement', 10),
+    ('abasements', 11),
+    ('abases', 12),
+    ('abash', 13),
+    ('abashed', 14),
+    ('abashes', 15),
+    ('abashing', 16),
+    ('abasing', 17),
+    ('abate', 18),
+    ('abated', 19),
+    ('abatement', 20),
+    ('abatements', 21);
+
