@@ -234,6 +234,7 @@ pub(crate) struct AppState {
     enable_console: bool,
     disable_default_namespace: bool,
     disable_namespaces: bool,
+    primary_url: Option<String>,
 }
 
 pub struct UserApi<A, P, S> {
@@ -249,6 +250,7 @@ pub struct UserApi<A, P, S> {
     pub max_response_size: u64,
     pub enable_console: bool,
     pub self_url: Option<String>,
+    pub primary_url: Option<String>,
     pub path: Arc<Path>,
     pub shutdown: Arc<Notify>,
 }
@@ -314,6 +316,7 @@ where
                 namespaces: self.namespaces,
                 disable_default_namespace: self.disable_default_namespace,
                 disable_namespaces: self.disable_namespaces,
+                primary_url: self.primary_url.clone(),
             };
 
             macro_rules! handle_hrana {

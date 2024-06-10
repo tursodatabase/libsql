@@ -72,6 +72,8 @@ struct Cli {
     /// sessions" in Hrana over HTTP.
     #[clap(long, env = "SQLD_HTTP_SELF_URL")]
     http_self_url: Option<String>,
+    #[clap(long, env = "SQLD_HTTP_PRIMARY_URL")]
+    http_primary_url: Option<String>,
 
     /// The address and port the inter-node RPC protocol listens to. Example: `0.0.0.0:5001`.
     #[clap(
@@ -418,6 +420,7 @@ async fn make_user_api_config(config: &Cli) -> anyhow::Result<UserApiConfig> {
         hrana_ws_acceptor,
         enable_http_console: config.enable_http_console,
         self_url: config.http_self_url.clone(),
+        primary_url: config.http_primary_url.clone(),
         auth_strategy,
     })
 }
