@@ -43,10 +43,10 @@ pub(crate) struct Job<C, T> {
 #[derive(Debug, AsBytes, FromZeroes, FromBytes)]
 #[repr(C)]
 pub struct CompactedSegmentDataHeader {
-    frame_count: lu64,
-    segment_id: lu128,
-    start_frame_no: lu64,
-    end_frame_no: lu64,
+    pub(crate) frame_count: lu64,
+    pub(crate) segment_id: lu128,
+    pub(crate) start_frame_no: lu64,
+    pub(crate) end_frame_no: lu64,
 }
 
 #[derive(Debug, AsBytes, FromZeroes, FromBytes)]
@@ -327,6 +327,10 @@ mod test {
             fn uuid(&self) -> Uuid {
                 Uuid::from_u128(0)
             }
+
+            fn hard_link(&self, src: &Path, dst: &Path) -> std::io::Result<()> {
+                todo!()
+            }
         }
 
         struct TestStorage {
@@ -369,7 +373,7 @@ mod test {
                 _config: &Self::Config,
                 _namespace: NamespaceName,
                 _frame_no: u64,
-                _dest: impl tokio::io::AsyncWrite,
+                _dest_path: &Path,
             ) -> Result<()> {
                 todo!()
             }
