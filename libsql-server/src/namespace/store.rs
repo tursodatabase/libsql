@@ -450,6 +450,8 @@ impl NamespaceStore {
         let mut set = JoinSet::new();
         self.inner.has_shutdown.store(true, Ordering::Relaxed);
 
+        println!("set shutdown");
+
         for (_name, entry) in self.inner.store.iter() {
             let snapshow_at_shutdown = self.inner.snapshot_at_shutdown;
             let mut lock = entry.write().await;

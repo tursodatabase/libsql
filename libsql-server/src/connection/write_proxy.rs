@@ -260,6 +260,7 @@ impl WriteProxyConnection<RpcStream> {
     }
 }
 
+#[derive(Debug)]
 struct RemoteConnection<R = Streaming<ExecResp>> {
     response_stream: R,
     request_sender: mpsc::Sender<ExecReq>,
@@ -276,9 +277,36 @@ impl RemoteConnection {
         let (request_sender, receiver) = mpsc::channel(1);
 
         let stream = tokio_stream::wrappers::ReceiverStream::new(receiver);
-        let mut req = Request::new(stream);
-        ctx.upgrade_grpc_request(&mut req);
-        let response_stream = client.stream_exec(req).await?.into_inner();
+
+        let retryable_stream = RetryableStream::new(stream);
+
+        let mut err: Option<tonic::Status> = None;
+
+        let response_stream = loop {
+            let stream = match retryable_stream.try_clone() {
+                Ok(s) => s,
+                Err(_) => {
+                    if let Some(e) = err.take() {
+                        return Err(e.into());
+                    } else {
+                        unreachable!("either weve gotten a valid stream or we have an error");
+                    }
+                }
+            };
+            let mut req = Request::new(stream);
+            ctx.upgrade_grpc_request(&mut req);
+
+            let res = client.stream_exec(req).await;
+
+            match dbg!(res) {
+                Ok(res_stream) => break res_stream.into_inner(),
+                Err(e) => {
+                    err = Some(e);
+
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                }
+            }
+        };
 
         Ok(Self {
             response_stream,
@@ -286,6 +314,54 @@ impl RemoteConnection {
             current_request_id: 0,
             builder_config,
         })
+    }
+}
+
+struct RetryableStream<S> {
+    inner: Arc<parking_lot::Mutex<RetryableStreamShared<S>>>,
+}
+
+struct RetryableStreamShared<S> {
+    been_polled: bool,
+    inner: S,
+}
+
+impl<S> RetryableStream<S> {
+    fn new(inner: S) -> Self {
+        Self {
+            inner: Arc::new(parking_lot::Mutex::new(RetryableStreamShared {
+                been_polled: false,
+                inner,
+            })),
+        }
+    }
+
+    fn try_clone(&self) -> Result<Self, ()> {
+        let lock = self.inner.lock();
+
+        if !dbg!(lock.been_polled) {
+            Ok(Self {
+                inner: self.inner.clone(),
+            })
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl<S> Stream for RetryableStream<S>
+where
+    S: Stream + Unpin,
+{
+    type Item = S::Item;
+
+    fn poll_next(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
+        let mut inner = self.inner.lock();
+        inner.been_polled = true;
+        std::pin::Pin::new(&mut inner.inner).poll_next(cx)
     }
 }
 

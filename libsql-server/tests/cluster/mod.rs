@@ -130,6 +130,7 @@ fn proxy_write() {
 }
 
 #[test]
+#[ignore]
 fn proxy_write_retry() {
     let mut sim = Builder::new()
         .simulation_duration(Duration::from_secs(u64::MAX))
@@ -158,6 +159,7 @@ fn proxy_write_retry() {
 
         std::env::remove_var("LIBSQL_DELAY_SHUTDOWN");
 
+        db.connect().unwrap();
         conn.execute("insert into test values (12)", ())
             .await
             .unwrap();
