@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::sync::Arc;
 
 use crate::params::{IntoParams, Params};
@@ -25,6 +26,14 @@ pub(crate) trait Conn {
     fn last_insert_rowid(&self) -> i64;
 
     async fn reset(&self);
+
+    fn enable_load_extension(&self, _onoff: bool) -> Result<()> {
+        Err(crate::Error::LoadExtensionNotSupported)
+    }
+
+    fn load_extension(&self, _dylib_path: &Path, _entry_point: Option<&str>) -> Result<()> {
+        Err(crate::Error::LoadExtensionNotSupported)
+    }
 }
 
 /// A connection to some libsql database, this can be a remote one or a local one.
@@ -124,5 +133,41 @@ impl Connection {
 
     pub async fn reset(&self) {
         self.conn.reset().await
+    }
+
+    /// Enable loading SQLite extensions from SQL queries and Rust API.
+    ///
+    /// See [`load_extension`](Connection::load_extension) documentation for more details.
+    pub fn load_extension_enable(&self) -> Result<()> {
+        self.conn.enable_load_extension(true)
+    }
+
+    /// Disable loading SQLite extensions from SQL queries and Rust API.
+    ///
+    /// See [`load_extension`](Connection::load_extension) documentation for more details.
+    pub fn load_extension_disable(&self) -> Result<()> {
+        self.conn.enable_load_extension(false)
+    }
+
+    /// Load a SQLite extension from a dynamic library at `dylib_path`, specifying optional
+    /// entry point `entry_point`.
+    ///
+    /// # Security
+    ///
+    /// Loading extensions from dynamic libraries is a potential security risk, as it allows
+    /// arbitrary code execution. Only load extensions that you trust.
+    ///
+    /// Extension loading is disabled by default. Please use the [`load_extension_enable`](Connection::load_extension_enable)
+    /// method to enable it. It's recommended to disable extension loading after you're done
+    /// loading extensions to avoid SQL injection attacks from loading extensions.
+    ///
+    /// See SQLite's documentation on `sqlite3_load_extension` for more information:
+    /// https://sqlite.org/c3ref/load_extension.html
+    pub fn load_extension<P: AsRef<Path>>(
+        &self,
+        dylib_path: P,
+        entry_point: Option<&str>,
+    ) -> Result<()> {
+        self.conn.load_extension(dylib_path.as_ref(), entry_point)
     }
 }
