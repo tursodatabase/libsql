@@ -3590,6 +3590,7 @@ version = "0.1.0"
 dependencies = [
  "arc-swap",
  "async-stream",
+ "bitflags 2.5.0",
  "bytes",
  "chrono",
  "crc32fast",
