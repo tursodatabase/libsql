@@ -2,6 +2,7 @@ pub mod db_factory;
 mod dump;
 mod extract;
 mod hrana_over_http_1;
+mod listen;
 mod result_builder;
 mod trace;
 mod types;
@@ -350,6 +351,7 @@ where
                 .route("/console", get(show_console))
                 .route("/health", get(handle_health))
                 .route("/dump", get(dump::handle_dump))
+                .route("/beta/listen", get(listen::handle_listen))
                 .route("/v1", get(hrana_over_http_1::handle_index))
                 .route("/v1/execute", post(hrana_over_http_1::handle_execute))
                 .route("/v1/batch", post(hrana_over_http_1::handle_batch))
