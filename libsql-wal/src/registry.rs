@@ -16,7 +16,7 @@ use crate::name::NamespaceName;
 use crate::segment::list::SegmentList;
 use crate::segment::{current::CurrentSegment, sealed::SealedSegment};
 use crate::shared_wal::SharedWal;
-use crate::transaction::{Transaction, WriteTransaction};
+use crate::transaction::{Transaction, TxGuard};
 
 /// Translates a path to a namespace name
 pub trait NamespaceResolver: Send + Sync + 'static {
@@ -219,19 +219,9 @@ impl<FS: Io> WalRegistry<FS> {
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn swap_current(
-        &self,
-        shared: &SharedWal<FS>,
-        tx: &WriteTransaction<FS::File>,
-    ) -> Result<()> {
+    pub fn swap_current(&self, shared: &SharedWal<FS>, tx: &TxGuard<FS::File>) -> Result<()> {
         assert!(tx.is_commited());
         // at this point we must hold a lock to a commited transaction.
-        // First, we'll acquire the lock to the current transaction to make sure no one steals it from us:
-        let lock = shared.wal_lock.tx_id.lock();
-        // Make sure that we still own the transaction:
-        if lock.is_none() || lock.unwrap() != tx.id {
-            return Ok(());
-        }
 
         let current = shared.current.load();
         if current.is_empty() {
@@ -279,8 +269,11 @@ impl<FS: Io> WalRegistry<FS> {
             };
             let mut tx = Transaction::Read(shared.begin_read(u64::MAX));
             shared.upgrade(&mut tx)?;
-            tx.commit();
-            self.swap_current(&shared, &mut tx.as_write_mut().unwrap())?;
+            {
+                let mut tx = tx.as_write_mut().unwrap().lock();
+                tx.commit();
+                self.swap_current(&shared, &tx)?;
+            }
             // The current segment will not be used anymore. It's empty, but we still seal it so that
             // the next startup doesn't find an unsealed segment.
             shared.current.load().seal()?;

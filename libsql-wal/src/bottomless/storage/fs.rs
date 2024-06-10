@@ -86,7 +86,6 @@ impl<I: Io> Storage for FsStorage<I> {
             let end_frame: u64 = end_frame.parse().unwrap();
 
             if start_frame <= frame_no && end_frame >= frame_no {
-                dbg!(&dir.path());
                 let file = self.io.open(false, true, true, &dir.path()).unwrap();
 
                 let len = file.len().unwrap();
@@ -153,6 +152,7 @@ mod tests {
             index_offset: 0.into(),
             index_size: 0.into(),
             header_cheksum: 0.into(),
+            flags: 0.into(),
         };
 
         header.write_to_prefix(&mut segment[..]);

@@ -3,6 +3,8 @@ use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 use std::time::Instant;
 
+use parking_lot::{ArcMutexGuard, RawMutex};
+
 use crate::segment::current::CurrentSegment;
 use crate::shared_wal::WalLock;
 
@@ -24,15 +26,6 @@ impl<F> Transaction<F> {
         match self {
             Transaction::Write(w) => w.next_frame_no - 1,
             Transaction::Read(read) => read.max_frame_no,
-        }
-    }
-
-    pub(crate) fn commit(&mut self) {
-        match self {
-            Transaction::Write(tx) => {
-                tx.is_commited = true;
-            }
-            Transaction::Read(_) => (),
         }
     }
 
@@ -136,29 +129,26 @@ pub struct WriteTransaction<F> {
     pub read_tx: ReadTransaction<F>,
 }
 
+pub struct TxGuard<'a, F> {
+    _lock: ArcMutexGuard<RawMutex, Option<u64>>,
+    inner: &'a mut WriteTransaction<F>,
+}
+
+impl<'a, F> Deref for TxGuard<'a, F> {
+    type Target = WriteTransaction<F>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl<'a, F> DerefMut for TxGuard<'a, F> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.inner
+    }
+}
+
 impl<F> WriteTransaction<F> {
-    /// enter the lock critical section
-    pub fn enter<R>(&mut self, f: impl FnOnce(&mut Self) -> R) -> R {
-        if self.is_commited {
-            tracing::error!("transaction already commited");
-            todo!("txn has already been commited");
-        }
-
-        let wal_lock = self.wal_lock.clone();
-        let g = wal_lock.tx_id.lock();
-        match *g {
-            // we still hold the lock, we can proceed
-            Some(id) if self.id == id => f(self),
-            // Somebody took the lock from us
-            Some(_) => todo!("lock stolen"),
-            None => todo!("not a transaction"),
-        }
-    }
-
-    pub fn not_empty(&self) -> bool {
-        self.savepoints.iter().any(|s| !s.index.is_empty())
-    }
-
     pub fn merge_savepoints(&self, out: &mut BTreeMap<u32, Vec<u32>>) {
         let savepoints = self.savepoints.iter().rev().map(|s| &s.index);
         merge_savepoints(savepoints, out);
@@ -172,6 +162,25 @@ impl<F> WriteTransaction<F> {
             index: BTreeMap::new(),
         });
         savepoint_id
+    }
+
+    pub fn lock(&mut self) -> TxGuard<F> {
+        if self.is_commited {
+            tracing::error!("transaction already commited");
+            todo!("txn has already been commited");
+        }
+
+        let g = self.wal_lock.tx_id.lock_arc();
+        match *g {
+            // we still hold the lock, we can proceed
+            Some(id) if self.id == id => TxGuard {
+                _lock: g,
+                inner: self,
+            },
+            // Somebody took the lock from us
+            Some(_) => todo!("lock stolen"),
+            None => todo!("not a transaction"),
+        }
     }
 
     pub fn reset(&mut self, savepoint_id: usize) {
@@ -191,16 +200,10 @@ impl<F> WriteTransaction<F> {
             .iter()
             .map(|s| s.index.keys().copied())
             .flatten()
-        // let iter = self.savepoints.iter().filter_map(|s| s.index.as_ref());
-        // let mut union = iter.collect::<OpBuilder>().union();
-        // std::iter::from_fn(move || match union.next() {
-        //     Some((key, vals)) => {
-        //         let key = u32::from_be_bytes(key.try_into().unwrap());
-        //         let val = vals.iter().max_by_key(|i| i.index).unwrap().value;
-        //         Some((key, val))
-        //     }
-        //     None => None,
-        // })
+    }
+
+    pub fn not_empty(&self) -> bool {
+        self.savepoints.iter().any(|s| !s.index.is_empty())
     }
 
     #[tracing::instrument(skip(self))]
@@ -256,6 +259,10 @@ impl<F> WriteTransaction<F> {
         }
 
         None
+    }
+
+    pub(crate) fn commit(&mut self) {
+        self.is_commited = true;
     }
 }
 
