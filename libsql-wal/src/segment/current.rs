@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::io::{BufWriter, IoSlice, Write};
 use std::num::NonZeroU64;
+use std::ops::DerefMut;
 use std::path::PathBuf;
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, Ordering},
@@ -12,8 +13,9 @@ use parking_lot::{Mutex, RwLock};
 use tokio_stream::Stream;
 use zerocopy::{AsBytes, FromZeroes};
 
-use crate::io::buf::ZeroCopyBuf;
+use crate::io::buf::{ZeroCopyBoxIoBuf, ZeroCopyBuf};
 use crate::io::file::FileExt;
+use crate::segment::SegmentFlags;
 use crate::segment::{frame_offset, page_offset, sealed::SealedSegment};
 use crate::transaction::{Transaction, TxGuard};
 
@@ -95,6 +97,77 @@ impl<F> CurrentSegment<F> {
 
     pub fn db_size(&self) -> u32 {
         self.header.lock().db_size.get()
+    }
+
+    /// insert a bunch of frames in the Wal. The frames needn't be ordered, therefore, on commit
+    /// the last frame no needs to be passed alongside the new size_after.
+    #[tracing::instrument(skip_all)]
+    pub async fn insert_frames(
+        &self,
+        frames: Vec<Box<Frame>>,
+        // (size_after, last_frame_no)
+        commit_data: Option<(u32, u64)>,
+        tx: &mut TxGuard<'_, F>,
+    ) -> Result<Vec<Box<Frame>>>
+    where
+        F: FileExt,
+    {
+        assert!(!self.sealed.load(Ordering::SeqCst));
+        {
+            let tx = tx.deref_mut();
+            // let mut commit_frame_written = false;
+            let current_savepoint = tx.savepoints.last_mut().expect("no savepoints initialized");
+            let mut frames = frame_list_to_option(frames);
+            for i in 0..frames.len() {
+                let offset = tx.next_offset;
+                let buf = ZeroCopyBoxIoBuf(frames[i].take().unwrap());
+                let (buf, ret) = self
+                    .file
+                    .write_all_at_async(buf, frame_offset(offset))
+                    .await;
+
+                ret?;
+
+                let frame = buf.0;
+
+                current_savepoint
+                    .index
+                    .insert(frame.header().page_no(), offset);
+                tx.next_offset += 1;
+                frames[i] = Some(frame);
+            }
+
+            if let Some((size_after, last_frame_no)) = commit_data {
+                if tx.not_empty() {
+                    let mut header = { *self.header.lock() };
+                    header.last_commited_frame_no = last_frame_no.into();
+                    header.db_size = size_after.into();
+                    // set frames unordered because there are no guarantees that we received frames
+                    // in order.
+                    header.set_flags(header.flags().union(SegmentFlags::FRAME_UNORDERED));
+                    header.recompute_checksum();
+
+                    let (header, ret) = self
+                        .file
+                        .write_all_at_async(ZeroCopyBuf::new_init(header), 0)
+                        .await;
+
+                    ret?;
+
+                    // self.file.sync_data().unwrap();
+                    tx.merge_savepoints(&mut self.index.index.write());
+                    // set the header last, so that a transaction does not witness a write before
+                    // it's actually committed.
+                    *self.header.lock() = header.into_inner();
+
+                    tx.is_commited = true;
+                }
+            }
+
+            let frames = options_to_frame_list(frames);
+
+            Ok(frames)
+        }
     }
 
     #[tracing::instrument(skip(self, pages, tx))]
@@ -303,6 +376,19 @@ impl<F> CurrentSegment<F> {
             }
         }
     }
+}
+
+fn frame_list_to_option(frames: Vec<Box<Frame>>) -> Vec<Option<Box<Frame>>> {
+    // this is safe because Option<Box<T>> and Box<T> are the same size and Frame is sized:
+    // https://doc.rust-lang.org/std/option/index.html#representation
+    unsafe { std::mem::transmute(frames) }
+}
+
+fn options_to_frame_list(frames: Vec<Option<Box<Frame>>>) -> Vec<Box<Frame>> {
+    debug_assert!(frames.iter().all(|f| f.is_some()));
+    // this is safe because Option<Box<T>> and Box<T> are the same size and Frame is sized:
+    // https://doc.rust-lang.org/std/option/index.html#representation
+    unsafe { std::mem::transmute(frames) }
 }
 
 impl<F> Drop for CurrentSegment<F> {
