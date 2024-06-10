@@ -153,6 +153,7 @@ mod tests {
             index_offset: 0.into(),
             index_size: 0.into(),
             header_cheksum: 0.into(),
+            flags: 0.into(),
         };
 
         header.write_to_prefix(&mut segment[..]);
