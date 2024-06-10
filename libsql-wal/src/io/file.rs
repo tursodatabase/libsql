@@ -27,11 +27,14 @@ pub trait FileExt: Send + Sync + 'static {
         }
     }
 
+    #[must_use]
     fn read_exact_at_async<B: IoBufMut + Send + 'static>(
         &self,
         buf: B,
         offset: u64,
     ) -> impl Future<Output = (B, Result<()>)> + Send;
+
+    #[must_use]
     fn write_all_at_async<B: IoBuf + Send + 'static>(
         &self,
         buf: B,
