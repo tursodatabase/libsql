@@ -52,6 +52,8 @@ pub enum Error {
     InvalidTlsConfiguration(std::io::Error),
     #[error("Transactional batch error: {0}")]
     TransactionalBatchError(String),
+    #[error("Invalid blob size, expected {0}")]
+    InvalidBlobSize(usize),
 }
 
 #[cfg(feature = "hrana")]
