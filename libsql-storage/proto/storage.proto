@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package storage;
+
+message Frame {
+  uint32 page_no = 1;
+  bytes data = 2;
+}
+
+message InsertFramesRequest {
+  string namespace = 1;
+  repeated Frame frames = 2;
+  uint64 max_frame_no = 3;
+}
+
+message InsertFramesResponse {
+  uint32 num_frames = 1;
+}
+
+message FindFrameRequest {
+  string namespace = 1;
+  uint32 page_no = 2;
+  uint64 max_frame_no = 3;
+}
+
+message FindFrameResponse {
+  optional uint64 frame_no = 1;
+}
+
+message ReadFrameRequest {
+  string namespace = 1;
+  uint64 frame_no = 2;
+}
+
+message ReadFrameResponse {
+  optional bytes frame = 1;
+}
+
+message DbSizeRequest {
+  string namespace = 1;
+}
+
+message DbSizeResponse {
+  uint64 size = 1;
+}
+
+message FramesInWALRequest {
+  string namespace = 1;
+}
+
+message FramesInWALResponse {
+  uint64 count = 1;
+}
+
+message FramePageNumRequest {
+  string namespace = 1;
+  uint64 frame_no = 2;
+}
+
+message FramePageNumResponse {
+  uint32 page_no = 1;
+}
+
+message DestroyRequest {
+  string namespace = 1;
+}
+
+message DestroyResponse {}
+
+service Storage {
+  rpc InsertFrames(InsertFramesRequest) returns (InsertFramesResponse) {}
+  rpc FindFrame(FindFrameRequest) returns (FindFrameResponse) {}
+  rpc ReadFrame(ReadFrameRequest) returns (ReadFrameResponse) {}
+  rpc DbSize(DbSizeRequest) returns (DbSizeResponse) {}
+  rpc FramesInWAL(FramesInWALRequest) returns (FramesInWALResponse) {}
+  rpc FramePageNum(FramePageNumRequest) returns (FramePageNumResponse) {}
+  rpc Destroy(DestroyRequest) returns (DestroyResponse) {}
+}

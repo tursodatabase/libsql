@@ -4,6 +4,7 @@ use std::sync::Arc;
 use bottomless::SavepointTracker;
 
 use crate::connection::{MakeConnection, RequestContext};
+use crate::replication::ReplicationLogger;
 
 pub use self::primary::{PrimaryConnection, PrimaryConnectionMaker, PrimaryDatabase};
 pub use self::replica::{ReplicaConnection, ReplicaDatabase};
@@ -175,6 +176,14 @@ impl Database {
             Database::Primary(db) => db.shutdown().await,
             Database::Replica(db) => db.shutdown().await,
             Database::Schema(db) => db.shutdown().await,
+        }
+    }
+
+    pub fn logger(&self) -> Option<Arc<ReplicationLogger>> {
+        match self {
+            Database::Primary(p) => Some(p.wal_wrapper.wrapper().logger()),
+            Database::Replica(_) => None,
+            Database::Schema(s) => Some(s.wal_wrapper.wrapper().logger()),
         }
     }
 

@@ -27,6 +27,7 @@ use crate::replication::FrameNo;
 use crate::stats::Stats;
 use crate::{Result, DEFAULT_AUTO_CHECKPOINT};
 
+use super::connection_manager::InnerWalManager;
 use super::libsql::{LibSqlConnection, MakeLibSqlConn};
 use super::program::DescribeResponse;
 use super::{Connection, RequestContext};
@@ -60,6 +61,7 @@ impl MakeWriteProxyConn {
         primary_replication_index: Option<FrameNo>,
         encryption_config: Option<EncryptionConfig>,
         resolve_attach_path: ResolveNamespacePathFn,
+        make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Send + Sync + 'static>,
     ) -> crate::Result<Self> {
         let client = ProxyClient::with_origin(channel, uri);
         let make_read_only_conn = MakeLibSqlConn::new(
@@ -75,6 +77,7 @@ impl MakeWriteProxyConn {
             encryption_config.clone(),
             Arc::new(AtomicBool::new(false)), // this is always false for write proxy
             resolve_attach_path,
+            make_wal_manager,
         )
         .await?;
 
@@ -461,10 +464,7 @@ impl Connection for WriteProxyConnection<RpcStream> {
             // We know that this program won't perform any writes. We attempt to run it on the
             // replica. If it leaves an open transaction, then this program is an interactive
             // transaction, so we rollback the replica, and execute again on the primary.
-            let builder = self
-                .read_conn
-                .execute_program(pgm.clone(), ctx.clone(), builder, replication_index)
-                .await?;
+            let (builder, pgm) = self.read_conn.execute(pgm, ctx.clone(), builder).await?;
             if !self.read_conn.is_autocommit().await? {
                 REPLICA_LOCAL_EXEC_MISPREDICT.increment(1);
                 self.read_conn.rollback(ctx.clone()).await?;

@@ -1,0 +1,8 @@
+
+  ATTACH 'test.db1' AS aux;
+  CREATE TABLE aux.t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO aux.t1 VALUES(1, NULL);
+  INSERT INTO aux.t1 VALUES(2, NULL);
+  INSERT INTO aux.t1 VALUES(9, NULL);
+  DETACH aux;
+

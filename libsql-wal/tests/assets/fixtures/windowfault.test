@@ -1,0 +1,42 @@
+
+  CREATE TABLE t1(a, b, c, d);
+  INSERT INTO t1 VALUES(1, 2, 3, 4);
+  INSERT INTO t1 VALUES(5, 6, 7, 8);
+  INSERT INTO t1 VALUES(9, 10, 11, 12);
+
+
+  PRAGMA page_size = 512;
+  PRAGMA cache_size = 2;
+  CREATE TABLE t(x INTEGER PRIMARY KEY, y TEXT);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1900
+  )
+  INSERT INTO t(y) SELECT 1500 FROM s;
+
+
+  CREATE TABLE t1(a, b, c, d);
+  CREATE TABLE t2(a, b, c, d);
+
+
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(c0 INTEGER UNIQUE);
+  INSERT INTO t0 VALUES(0);
+
+
+  CREATE TABLE t1(a, b, c);
+
+
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, a, b);
+  INSERT INTO t1 VALUES(1, '1', 'a');
+  INSERT INTO t1 VALUES(2, '22', 'b');
+  INSERT INTO t1 VALUES(3, '333', 'c');
+  INSERT INTO t1 VALUES(4, '4444', 'dddd');
+  INSERT INTO t1 VALUES(5, '55555', 'e');
+  INSERT INTO t1 VALUES(6, '666666', 'f');
+  INSERT INTO t1 VALUES(7, '7777777', 'gggggggggg');
+
+
+  SELECT group_concat(a, b) OVER (
+    ORDER BY id RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING
+  ) FROM t1
+

@@ -42,47 +42,47 @@ pub struct WalRef<T, W> {
 
 impl<T: WrapWal<W>, W: Wal> Wal for WalRef<T, W> {
     fn limit(&mut self, size: i64) {
-        unsafe { (&mut *self.wrapper).limit(&mut *self.wrapped, size) }
+        unsafe { (*self.wrapper).limit(&mut *self.wrapped, size) }
     }
 
     fn begin_read_txn(&mut self) -> super::Result<bool> {
-        unsafe { (&mut *self.wrapper).begin_read_txn(&mut *self.wrapped) }
+        unsafe { (*self.wrapper).begin_read_txn(&mut *self.wrapped) }
     }
 
     fn end_read_txn(&mut self) {
-        unsafe { (&mut *self.wrapper).end_read_txn(&mut *self.wrapped) }
+        unsafe { (*self.wrapper).end_read_txn(&mut *self.wrapped) }
     }
 
     fn find_frame(&mut self, page_no: NonZeroU32) -> super::Result<Option<NonZeroU32>> {
-        unsafe { (&mut *self.wrapper).find_frame(&mut *self.wrapped, page_no) }
+        unsafe { (*self.wrapper).find_frame(&mut *self.wrapped, page_no) }
     }
 
     fn read_frame(&mut self, frame_no: NonZeroU32, buffer: &mut [u8]) -> super::Result<()> {
-        unsafe { (&mut *self.wrapper).read_frame(&mut *self.wrapped, frame_no, buffer) }
+        unsafe { (*self.wrapper).read_frame(&mut *self.wrapped, frame_no, buffer) }
     }
 
     fn db_size(&self) -> u32 {
-        unsafe { (&*self.wrapper).db_size(&*self.wrapped) }
+        unsafe { (*self.wrapper).db_size(&*self.wrapped) }
     }
 
     fn begin_write_txn(&mut self) -> super::Result<()> {
-        unsafe { (&mut *self.wrapper).begin_write_txn(&mut *self.wrapped) }
+        unsafe { (*self.wrapper).begin_write_txn(&mut *self.wrapped) }
     }
 
     fn end_write_txn(&mut self) -> super::Result<()> {
-        unsafe { (&mut *self.wrapper).end_write_txn(&mut *self.wrapped) }
+        unsafe { (*self.wrapper).end_write_txn(&mut *self.wrapped) }
     }
 
     fn undo<U: super::UndoHandler>(&mut self, handler: Option<&mut U>) -> super::Result<()> {
-        unsafe { (&mut *self.wrapper).undo(&mut *self.wrapped, handler) }
+        unsafe { (*self.wrapper).undo(&mut *self.wrapped, handler) }
     }
 
     fn savepoint(&mut self, rollback_data: &mut [u32]) {
-        unsafe { (&mut *self.wrapper).savepoint(&mut *self.wrapped, rollback_data) }
+        unsafe { (*self.wrapper).savepoint(&mut *self.wrapped, rollback_data) }
     }
 
     fn savepoint_undo(&mut self, rollback_data: &mut [u32]) -> super::Result<()> {
-        unsafe { (&mut *self.wrapper).savepoint_undo(&mut *self.wrapped, rollback_data) }
+        unsafe { (*self.wrapper).savepoint_undo(&mut *self.wrapped, rollback_data) }
     }
 
     fn insert_frames(
@@ -94,7 +94,7 @@ impl<T: WrapWal<W>, W: Wal> Wal for WalRef<T, W> {
         sync_flags: c_int,
     ) -> super::Result<usize> {
         unsafe {
-            (&mut *self.wrapper).insert_frames(
+            (*self.wrapper).insert_frames(
                 &mut *self.wrapped,
                 page_size,
                 page_headers,
@@ -118,7 +118,7 @@ impl<T: WrapWal<W>, W: Wal> Wal for WalRef<T, W> {
         backfilled: Option<&mut i32>,
     ) -> super::Result<()> {
         unsafe {
-            (&mut *self.wrapper).checkpoint(
+            (*self.wrapper).checkpoint(
                 &mut *self.wrapped,
                 db,
                 mode,
@@ -133,23 +133,23 @@ impl<T: WrapWal<W>, W: Wal> Wal for WalRef<T, W> {
     }
 
     fn exclusive_mode(&mut self, op: c_int) -> super::Result<()> {
-        unsafe { (&mut *self.wrapper).exclusive_mode(&mut *self.wrapped, op) }
+        unsafe { (*self.wrapper).exclusive_mode(&mut *self.wrapped, op) }
     }
 
     fn uses_heap_memory(&self) -> bool {
-        unsafe { (&*self.wrapper).uses_heap_memory(&*self.wrapped) }
+        unsafe { (*self.wrapper).uses_heap_memory(&*self.wrapped) }
     }
 
     fn set_db(&mut self, db: &mut super::Sqlite3Db) {
-        unsafe { (&mut *self.wrapper).set_db(&mut *self.wrapped, db) }
+        unsafe { (*self.wrapper).set_db(&mut *self.wrapped, db) }
     }
 
     fn callback(&self) -> i32 {
-        unsafe { (&*self.wrapper).callback(&*self.wrapped) }
+        unsafe { (*self.wrapper).callback(&*self.wrapped) }
     }
 
     fn frames_in_wal(&self) -> u32 {
-        unsafe { (&*self.wrapper).frames_in_wal(&*self.wrapped) }
+        unsafe { (*self.wrapper).frames_in_wal(&*self.wrapped) }
     }
 }
 

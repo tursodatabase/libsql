@@ -1,13 +1,14 @@
 #![allow(dead_code)]
 
 use crate::params::Params;
+use crate::errors;
 
 use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
 
 use crate::TransactionBehavior;
 
 use libsql_sys::ffi;
-use std::{ffi::c_int, fmt, sync::Arc};
+use std::{ffi::c_int, fmt, path::Path, sync::Arc};
 
 /// A connection to a libSQL database.
 #[derive(Clone)]
@@ -161,6 +162,62 @@ impl Connection {
         Ok(())
     }
 
+    fn execute_transactional_batch_inner<S>(&self, sql: S) -> Result<()>
+        where
+            S: Into<String>,
+    {
+        let sql = sql.into();
+        let mut sql = sql.as_str();
+        while !sql.is_empty() {
+            let stmt = self.prepare(sql)?;
+
+            let tail = stmt.tail();
+            let stmt_sql = if tail == 0 || tail >= sql.len() {
+                sql
+            } else {
+                &sql[..tail]
+            };
+            let prefix_count = stmt_sql
+                .chars()
+                .take_while(|c| c.is_whitespace())
+                .count();
+            let stmt_sql = &stmt_sql[prefix_count..];
+            if stmt_sql.starts_with("BEGIN") || stmt_sql.starts_with("COMMIT") || stmt_sql.starts_with("ROLLBACK") || stmt_sql.starts_with("END") {
+                return Err(Error::TransactionalBatchError("Transactions forbidden inside transactional batch".to_string()));
+            }
+
+            if !stmt.inner.raw_stmt.is_null() {
+                stmt.step()?;
+            }
+
+            if tail == 0 || tail >= sql.len() {
+                break;
+            }
+
+            sql = &sql[tail..];
+        }
+
+        Ok(())
+    }
+
+    pub fn execute_transactional_batch<S>(&self, sql: S) -> Result<()>
+    where
+        S: Into<String>,
+    {
+        self.execute("BEGIN TRANSACTION", Params::None)?;
+
+        match self.execute_transactional_batch_inner(sql) {
+            Ok(_) => {
+                self.execute("COMMIT", Params::None)?;
+                Ok(())
+            }
+            Err(e) => {
+                self.execute("ROLLBACK", Params::None)?;
+                Err(e)
+            }
+        }
+    }
+
     /// Execute the SQL statement synchronously.
     ///
     /// If you execute a SQL query statement (e.g. `SELECT` statement) that
@@ -233,6 +290,48 @@ impl Connection {
             w.new_client_id();
             w
         })
+    }
+
+    pub fn enable_load_extension(&self, onoff: bool) -> Result<()> {
+        let err = unsafe { ffi::sqlite3_db_config(self.raw, ffi::SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, onoff as i32) };
+        match err {
+            ffi::SQLITE_OK => Ok(()),
+            _ => Err(errors::Error::SqliteFailure(err, errors::error_from_code(err))),
+        }
+    }
+
+    pub fn load_extension(
+        &self,
+        dylib_path: &Path,
+        entry_point: Option<&str>,
+    ) -> Result<()> {
+        let mut raw_err_msg: *mut std::ffi::c_char = std::ptr::null_mut();
+        let dylib_path = match dylib_path.to_str() {
+            Some(dylib_path) => {
+                std::ffi::CString::new(dylib_path).unwrap()
+            },
+            None => return Err(crate::Error::Misuse(format!(
+                "dylib path is not a valid utf8 string"
+            ))),
+        };
+        let err = match entry_point {
+            Some(entry_point) => {
+                let entry_point = std::ffi::CString::new(entry_point).unwrap();
+                unsafe { ffi::sqlite3_load_extension(self.raw, dylib_path.as_ptr(), entry_point.as_ptr(), &mut raw_err_msg) }
+            }
+            None => {
+                unsafe { ffi::sqlite3_load_extension(self.raw, dylib_path.as_ptr(), std::ptr::null(), &mut raw_err_msg) }
+            }
+        };
+        match err {
+            ffi::SQLITE_OK => Ok(()),
+            _ => {
+                let err_msg = unsafe { std::ffi::CStr::from_ptr(raw_err_msg) };
+                let err_msg = err_msg.to_string_lossy().to_string();
+                unsafe { ffi::sqlite3_free(raw_err_msg as *mut std::ffi::c_void) };
+                Err(errors::Error::SqliteFailure(err, err_msg))
+            }
+        }
     }
 }
 

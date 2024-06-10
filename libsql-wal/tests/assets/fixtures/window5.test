@@ -1,0 +1,21 @@
+
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(4, 'a');
+  INSERT INTO t1 VALUES(6, 'b');
+  INSERT INTO t1 VALUES(1, 'c');
+  INSERT INTO t1 VALUES(5, 'd');
+  INSERT INTO t1 VALUES(2, 'e');
+  INSERT INTO t1 VALUES(3, 'f');
+
+
+  SELECT win(a) OVER (ORDER BY b), median(a) OVER (ORDER BY b) FROM t1;
+
+
+  SELECT sumint(a) OVER (ORDER BY rowid) FROM t1 ORDER BY rowid;
+
+
+  SELECT sumint(a) OVER (ORDER BY rowid ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) FROM t1 ORDER BY rowid;
+
+
+  SELECT sum(a) FROM t1;
+

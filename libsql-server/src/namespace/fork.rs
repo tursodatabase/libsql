@@ -18,7 +18,10 @@ use crate::replication::{LogReadError, ReplicationLogger};
 use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};
 
 use super::meta_store::MetaStoreHandle;
-use super::{Namespace, NamespaceBottomlessDbId, NamespaceConfig, NamespaceName, RestoreOption};
+use super::{
+    Namespace, NamespaceBottomlessDbId, NamespaceConfig, NamespaceName, NamespaceStore,
+    RestoreOption,
+};
 
 type Result<T> = crate::Result<T, ForkError>;
 
@@ -62,6 +65,7 @@ pub struct ForkTask<'a> {
     pub bottomless_db_id: NamespaceBottomlessDbId,
     pub ns_config: &'a NamespaceConfig,
     pub resolve_attach: ResolveNamespacePathFn,
+    pub store: NamespaceStore,
 }
 
 pub struct PointInTimeRestore {
@@ -110,6 +114,7 @@ impl<'a> ForkTask<'a> {
             &self.to_namespace,
             Box::new(|_op| {}),
             self.resolve_attach.clone(),
+            self.store.clone(),
         )
         .await
         .map_err(|e| ForkError::CreateNamespace(Box::new(e)))

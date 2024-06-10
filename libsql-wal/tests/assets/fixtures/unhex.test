@@ -1,0 +1,9 @@
+
+  SELECT typeof( unhex('') ), length( unhex('') );
+
+
+  SELECT typeof( unhex(' ', ' -') ), length( unhex('-', ' -') );
+
+ SELECT typeof(unhex(NULL)) 
+ SELECT typeof(unhex(NULL, ' ')) 
+ SELECT typeof(unhex('1234', NULL)) 

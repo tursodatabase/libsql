@@ -16,7 +16,7 @@ use aws_sdk_s3::operation::list_objects::ListObjectsOutput;
 use aws_sdk_s3::primitives::ByteStream;
 use aws_sdk_s3::{Client, Config};
 use bytes::{Buf, Bytes};
-use chrono::{NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use libsql_sys::{Cipher, EncryptionConfig};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -97,6 +97,7 @@ pub struct Options {
     pub aws_endpoint: Option<String>,
     pub access_key_id: Option<String>,
     pub secret_access_key: Option<String>,
+    pub session_token: Option<String>,
     pub region: Option<String>,
     pub db_id: Option<String>,
     /// Bucket directory name where all S3 objects are backed up. General schema is:
@@ -136,13 +137,14 @@ impl Options {
         let secret_access_key = self.secret_access_key.clone().ok_or(anyhow!(
             "LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY was not set"
         ))?;
+        let session_token: Option<String> = self.session_token.clone();
         let conf = loader
             .behavior_version(BehaviorVersion::latest())
             .region(Region::new(region))
             .credentials_provider(SharedCredentialsProvider::new(Credentials::new(
                 access_key_id,
                 secret_access_key,
-                None,
+                session_token,
                 None,
                 "Static",
             )))
@@ -188,6 +190,7 @@ impl Options {
         );
         let access_key_id = env_var("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID").ok();
         let secret_access_key = env_var("LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY").ok();
+        let session_token = env_var("LIBSQL_BOTTOMLESS_AWS_SESSION_TOKEN").ok();
         let region = env_var("LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION").ok();
         let max_frames_per_batch =
             env_var_or("LIBSQL_BOTTOMLESS_BATCH_MAX_FRAMES", 10000).parse::<usize>()?;
@@ -243,6 +246,7 @@ impl Options {
             aws_endpoint,
             access_key_id,
             secret_access_key,
+            session_token,
             region,
             bucket_name,
             s3_max_retries,
@@ -477,6 +481,27 @@ impl Replicator {
         self.use_compression
     }
 
+    pub async fn is_snapshotted(&mut self) -> bool {
+        if let Ok(generation) = self.generation() {
+            if !self.main_db_exists_and_not_empty().await {
+                tracing::debug!("Not snapshotting, the main db file does not exist or is empty");
+                let _ = self.snapshot_notifier.send(Ok(Some(generation)));
+                return false;
+            }
+            tracing::debug!("waiting for generation snapshot {} to complete", generation);
+            let current = self.snapshot_waiter.borrow();
+            match &*current {
+                Ok(Some(gen)) => *gen == generation,
+                _ => false,
+            }
+        } else {
+            false
+        }
+    }
+
+    /// FIXME: I'm pretty sure that this function is buggy. First of all we don't check the output
+    /// of that function in the wal, second of all, we assume that an error means that we have
+    /// snapshotted. This whole stuff is a mess.
     pub async fn wait_until_snapshotted(&mut self) -> Result<bool> {
         if let Ok(generation) = self.generation() {
             if !self.main_db_exists_and_not_empty().await {
@@ -1029,7 +1054,7 @@ impl Replicator {
         tracing::debug!("last generation before");
         let mut next_marker: Option<String> = None;
         let prefix = format!("{}-", self.db_name);
-        let threshold = timestamp.map(|ts| ts.timestamp() as u64);
+        let threshold = timestamp.map(|ts| ts.and_utc().timestamp() as u64);
         loop {
             let mut request = self.list_objects().prefix(prefix.clone());
             if threshold.is_none() {
@@ -1159,7 +1184,7 @@ impl Replicator {
         tracing::debug!("restoring from");
         if let Some(tombstone) = self.get_tombstone().await? {
             if let Some(timestamp) = Self::generation_to_timestamp(&generation) {
-                if tombstone.timestamp() as u64 >= timestamp.to_unix().0 {
+                if tombstone.and_utc().timestamp() as u64 >= timestamp.to_unix().0 {
                     bail!(
                         "Couldn't restore from generation {}. Database '{}' has been tombstoned at {}.",
                         generation,
@@ -1489,7 +1514,7 @@ impl Replicator {
                     }
                 }
                 if let Some(threshold) = utc_time.as_ref() {
-                    match NaiveDateTime::from_timestamp_opt(timestamp as i64, 0) {
+                    match DateTime::from_timestamp(timestamp as i64, 0).map(|t| t.naive_utc()) {
                         Some(timestamp) => {
                             if &timestamp > threshold {
                                 tracing::info!("Frame batch {} has timestamp more recent than expected {}. Stopping recovery.", key, timestamp);
@@ -1733,7 +1758,7 @@ impl Replicator {
             .bucket(&self.bucket)
             .key(key)
             .body(ByteStream::from(
-                threshold.timestamp().to_be_bytes().to_vec(),
+                threshold.and_utc().timestamp().to_be_bytes().to_vec(),
             ))
             .send()
             .await?;
@@ -1761,7 +1786,7 @@ impl Replicator {
                 let mut buf = [0u8; 8];
                 out.body.collect().await?.copy_to_slice(&mut buf);
                 let timestamp = i64::from_be_bytes(buf);
-                let tombstone = NaiveDateTime::from_timestamp_opt(timestamp, 0);
+                let tombstone = DateTime::from_timestamp(timestamp, 0).map(|t| t.naive_utc());
                 Ok(tombstone)
             }
             Err(SdkError::ServiceError(se)) => match se.into_err() {
@@ -1828,7 +1853,7 @@ impl DeleteAll {
                     let prefix = &prefix[self.db_name.len() + 1..prefix.len() - 1];
                     let uuid = Uuid::try_parse(prefix)?;
                     if let Some(datetime) = Replicator::generation_to_timestamp(&uuid) {
-                        if datetime.to_unix().0 >= self.threshold.timestamp() as u64 {
+                        if datetime.to_unix().0 >= self.threshold.and_utc().timestamp() as u64 {
                             continue;
                         }
                         tracing::debug!("Removing generation {}", uuid);

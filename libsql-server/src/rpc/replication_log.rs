@@ -153,12 +153,8 @@ impl ReplicationLogService {
             .with(namespace, |ns| -> Result<_, Status> {
                 let logger = ns
                     .db
-                    .as_primary()
-                    .ok_or_else(|| Status::invalid_argument("not a primary"))?
-                    .wal_wrapper
-                    .wrapper()
                     .logger()
-                    .clone();
+                    .ok_or_else(|| Status::invalid_argument("not a primary"))?;
                 let config_changed = ns.config_changed();
                 let config = ns.config();
                 let version = ns.config_version();

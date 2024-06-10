@@ -131,6 +131,19 @@ impl NamespaceStore {
         Ok(())
     }
 
+    pub async fn checkpoint(&self, namespace: NamespaceName) -> crate::Result<()> {
+        let entry = self
+            .inner
+            .store
+            .get_with(namespace.clone(), async { Default::default() })
+            .await;
+        let lock = entry.read().await;
+        if let Some(ns) = &*lock {
+            ns.checkpoint().await?;
+        }
+        Ok(())
+    }
+
     pub async fn reset(
         &self,
         namespace: NamespaceName,
@@ -168,6 +181,7 @@ impl NamespaceStore {
             &namespace,
             self.make_reset_cb(),
             self.resolve_attach_fn(),
+            self.clone(),
         )
         .await?;
 
@@ -273,6 +287,7 @@ impl NamespaceStore {
             handle.clone(),
             timestamp,
             self.resolve_attach_fn(),
+            self.clone(),
         )
         .await?;
 
@@ -363,6 +378,7 @@ impl NamespaceStore {
                     &namespace,
                     self.make_reset_cb(),
                     self.resolve_attach_fn(),
+                    self.clone(),
                 )
                 .await?;
                 tracing::info!("loaded namespace: `{namespace}`");
@@ -385,6 +401,7 @@ impl NamespaceStore {
         Ok(ns)
     }
 
+    #[tracing::instrument(skip_all, fields(namespace))]
     pub async fn create(
         &self,
         namespace: NamespaceName,
@@ -414,9 +431,13 @@ impl NamespaceStore {
 
         let db_config = Arc::new(db_config);
         let handle = self.inner.metadata.handle(namespace.clone());
+        tracing::debug!("storing db config");
         handle.store(db_config).await?;
+        tracing::debug!("completed storing db config, loading namespace");
         self.load_namespace(&namespace, handle, restore_option)
             .await?;
+
+        tracing::debug!("completed loading namespace");
 
         Ok(())
     }

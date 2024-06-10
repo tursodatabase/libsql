@@ -292,6 +292,33 @@ impl Batch {
             replication_index: None,
         }
     }
+    pub fn transactional<T: IntoIterator<Item = Stmt>>(stmts: T) -> Self {
+        let mut steps = Vec::new();
+        steps.push(BatchStep {
+            condition: None,
+            stmt: Stmt::new("BEGIN TRANSACTION", false),
+        });
+        let mut count = 0u32;
+        for (step, stmt) in stmts.into_iter().enumerate() {
+            count += 1;
+            let condition = Some(BatchCond::Ok { step: step as u32 });
+            steps.push(BatchStep { condition, stmt });
+        }
+        steps.push(BatchStep {
+            condition: Some(BatchCond::Ok { step: count }),
+            stmt: Stmt::new("COMMIT", false),
+        });
+        steps.push(BatchStep {
+            condition: Some(BatchCond::Not {
+                cond: Box::new(BatchCond::Ok { step: count + 1 }),
+            }),
+            stmt: Stmt::new("ROLLBACK", false),
+        });
+        Batch {
+            steps,
+            replication_index: None,
+        }
+    }
 }
 
 impl FromIterator<Stmt> for Batch {

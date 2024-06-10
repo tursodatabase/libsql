@@ -3,10 +3,7 @@
 use std::str::FromStr;
 use std::sync::Arc;
 
-use libsql_replication::rpc::proxy::{
-    describe_result, query_result::RowResult, DescribeResult, ExecuteResults, ResultRows,
-    State as RemoteState,
-};
+use libsql_replication::rpc::proxy::{describe_result, query_result::RowResult, DescribeResult, ExecuteResults, ResultRows, State as RemoteState, Step, Query, Cond, OkCond, NotCond, Positional};
 use parking_lot::Mutex;
 
 use crate::parser;
@@ -207,6 +204,34 @@ impl RemoteConnection {
         Ok(res)
     }
 
+    pub(self) async fn execute_steps_remote(
+        &self,
+        steps: Vec<Step>,
+    ) -> Result<ExecuteResults> {
+        let Some(ref writer) = self.writer else {
+            return Err(Error::Misuse(
+                "Cannot delegate write in local replica mode.".into(),
+            ));
+        };
+        let res = writer
+            .execute_steps(steps)
+            .await
+            .map_err(|e| Error::WriteDelegation(e.into()))?;
+
+        {
+            let mut inner = self.inner.lock();
+            inner.state = RemoteState::try_from(res.state)
+                .expect("Invalid state enum")
+                .into();
+        }
+
+        if let Some(replicator) = writer.replicator() {
+            replicator.sync_oneshot().await?;
+        }
+
+        Ok(res)
+    }
+
     pub(self) async fn describe(&self, stmt: impl Into<String>) -> Result<DescribeResult> {
         let Some(ref writer) = self.writer else {
             return Err(Error::Misuse(
@@ -303,6 +328,108 @@ impl Conn for RemoteConnection {
         }
 
         let res = self.execute_remote(stmts, Params::None).await?;
+
+        for result in res.results {
+            match result.row_result {
+                Some(RowResult::Row(row)) => self.update_state(&row),
+                Some(RowResult::Error(e)) => {
+                    return Err(Error::RemoteSqliteFailure(
+                        e.code,
+                        e.extended_code,
+                        e.message,
+                    ))
+                }
+                None => panic!("unexpected empty result row"),
+            };
+        }
+
+        Ok(())
+    }
+
+    async fn execute_transactional_batch(&self, sql: &str) -> Result<()> {
+        let mut stmts = Vec::new();
+        let parse = crate::parser::Statement::parse(sql);
+        for s in parse {
+            let s = s?;
+            if s.kind == StmtKind::TxnBegin || s.kind == StmtKind::TxnBeginReadOnly || s.kind == StmtKind::TxnEnd {
+                    return Err(Error::TransactionalBatchError("Transactions forbidden inside transactional batch".to_string()));
+            }
+            stmts.push(s);
+        }
+
+        if self.should_execute_local(&stmts[..])? {
+            self.local.execute_transactional_batch(sql).await?;
+
+            if !self.maybe_execute_rollback().await? {
+                return Ok(());
+            }
+        }
+
+        let mut steps = Vec::with_capacity(stmts.len() + 3);
+        steps.push(Step {
+            query: Some(Query {
+                stmt: "BEGIN TRANSACTION".to_string(),
+                params: Some(libsql_replication::rpc::proxy::query::Params::Positional(Positional::default())),
+                ..Default::default()
+            }),
+            ..Default::default()
+        });
+        let count = stmts.len() as i64;
+        for (idx, stmt) in stmts.into_iter().enumerate() {
+            let step = Step {
+                cond: Some(Cond {
+                    cond: Some(libsql_replication::rpc::proxy::cond::Cond::Ok(OkCond {
+                        step: idx as i64,
+                        ..Default::default()
+                    })),
+                }),
+                query: Some(Query {
+                    stmt: stmt.stmt,
+                    params: Some(libsql_replication::rpc::proxy::query::Params::Positional(Positional::default())),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            };
+            steps.push(step);
+        }
+        steps.push(Step {
+            cond: Some(Cond {
+                cond: Some(libsql_replication::rpc::proxy::cond::Cond::Ok(OkCond {
+                    step: count,
+                    ..Default::default()
+                })),
+                ..Default::default()
+            }),
+            query: Some(Query {
+                stmt: "COMMIT".to_string(),
+                params: Some(libsql_replication::rpc::proxy::query::Params::Positional(Positional::default())),
+                ..Default::default()
+            }),
+            ..Default::default()
+        });
+        steps.push(Step {
+            cond: Some(Cond {
+                cond: Some(libsql_replication::rpc::proxy::cond::Cond::Not(Box::new(NotCond {
+                    cond: Some(Box::new(Cond{
+                        cond: Some(libsql_replication::rpc::proxy::cond::Cond::Ok(OkCond {
+                            step: count + 1,
+                            ..Default::default()
+                        })),
+                        ..Default::default()
+                    })),
+                    ..Default::default()
+                }))),
+                ..Default::default()
+            }),
+            query: Some(Query {
+                stmt: "ROLLBACK".to_string(),
+                params: Some(libsql_replication::rpc::proxy::query::Params::Positional(Positional::default())),
+                ..Default::default()
+            }),
+            ..Default::default()
+        });
+
+        let res = self.execute_steps_remote(steps).await?;
 
         for result in res.results {
             match result.row_result {
