@@ -51,7 +51,9 @@ impl Connection {
         match err {
             ffi::SQLITE_OK => {}
             _ => {
-                return Err(Error::ConnectionFailed(db_path));
+                return Err(Error::ConnectionFailed(format!(
+                    "Unable to open connection to local database {db_path}: {err}",
+                )));
             }
         }
 
