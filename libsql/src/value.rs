@@ -474,7 +474,7 @@ mod serde_ {
     use std::marker::PhantomData;
 
     use serde::de::value::SeqDeserializer;
-    use serde::de::{self, IntoDeserializer, Visitor};
+    use serde::de::{self, EnumAccess, IntoDeserializer, VariantAccess, Visitor};
     use serde::Deserialize;
     use serde::Deserializer;
 
@@ -631,7 +631,7 @@ mod serde_ {
         serde::forward_to_deserialize_any! {
             i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
                 bytes byte_buf unit_struct newtype_struct seq tuple tuple_struct
-                map struct enum identifier ignored_any
+                map struct identifier ignored_any
         }
 
         fn deserialize_unit<V>(self, visitor: V) -> std::result::Result<V::Value, Self::Error>
@@ -680,6 +680,85 @@ mod serde_ {
                 Value::Blob(b) => visitor.visit_seq(SeqDeserializer::new(b.into_iter())),
             }
         }
+
+        fn deserialize_enum<V>(
+            self,
+            _name: &'static str,
+            _variants: &'static [&'static str],
+            visitor: V,
+        ) -> std::result::Result<V::Value, Self::Error>
+        where
+            V: Visitor<'de>,
+        {
+            struct ValueEnumAccess(String);
+            impl<'de> EnumAccess<'de> for ValueEnumAccess {
+                type Error = de::value::Error;
+                type Variant = ValueVariantAccess;
+
+                fn variant_seed<V>(
+                    self,
+                    seed: V,
+                ) -> std::result::Result<(V::Value, Self::Variant), Self::Error>
+                where
+                    V: de::DeserializeSeed<'de>,
+                {
+                    seed.deserialize(self.0.into_deserializer())
+                        .map(|v| (v, ValueVariantAccess))
+                }
+            }
+
+            struct ValueVariantAccess;
+            impl<'de> VariantAccess<'de> for ValueVariantAccess {
+                type Error = de::value::Error;
+
+                fn unit_variant(self) -> std::result::Result<(), Self::Error> {
+                    Ok(())
+                }
+
+                fn newtype_variant_seed<T>(
+                    self,
+                    _seed: T,
+                ) -> std::result::Result<T::Value, Self::Error>
+                where
+                    T: de::DeserializeSeed<'de>,
+                {
+                    Err(de::Error::custom("newtype_variant not supported"))
+                }
+
+                fn tuple_variant<V>(
+                    self,
+                    _len: usize,
+                    _visitor: V,
+                ) -> std::result::Result<V::Value, Self::Error>
+                where
+                    V: Visitor<'de>,
+                {
+                    Err(de::Error::custom("tuple_variant not supported"))
+                }
+
+                fn struct_variant<V>(
+                    self,
+                    _fields: &'static [&'static str],
+                    _visitor: V,
+                ) -> std::result::Result<V::Value, Self::Error>
+                where
+                    V: Visitor<'de>,
+                {
+                    Err(de::Error::custom("struct_variant not supported"))
+                }
+            }
+
+            match self.value {
+                Value::Text(s) => visitor
+                    .visit_enum(ValueEnumAccess(s))
+                    .map_err(de::Error::custom),
+
+                _ => Err(de::Error::invalid_type(
+                    de::Unexpected::Other(&format!("{:?}", self.value)),
+                    &"a valid sqlite enum representation",
+                )),
+            }
+        }
     }
 
     impl<'de, E: de::Error> IntoDeserializer<'de, E> for Value {
@@ -706,6 +785,13 @@ mod serde_ {
                 T::deserialize(value.into_deserializer())
             }
 
+            #[derive(Deserialize, Debug, PartialEq)]
+            enum MyEnum {
+                A,
+                B,
+            }
+
+            assert_eq!(de::<MyEnum>(Value::Text("A".to_string())), Ok(MyEnum::A));
             assert_eq!(de::<()>(Value::Null), Ok(()));
             assert_eq!(de::<i64>(Value::Integer(123)), Ok(123));
             assert_eq!(de::<f64>(Value::Real(123.4)), Ok(123.4));
@@ -726,6 +812,7 @@ mod serde_ {
             assert!(de::<i64>(Value::Null).is_err());
             assert!(de::<Vec<u8>>(Value::Null).is_err());
             assert!(de::<f64>(Value::Blob(b"abc".to_vec())).is_err());
+            assert!(de::<MyEnum>(Value::Text("C".to_string())).is_err());
         }
     }
 }
