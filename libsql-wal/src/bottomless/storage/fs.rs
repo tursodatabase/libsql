@@ -48,13 +48,12 @@ impl<I: Io> Storage for FsStorage<I> {
 
         let path = self.prefix.join("segments").join(key);
 
-        let buf = Vec::with_capacity(segment_data.len().unwrap() as usize);
+        // TODO(lucio): think about how to configure this value
+        let buf = Vec::with_capacity(512);
 
         let f = self.io.open(true, true, true, &path).unwrap();
         async move {
-            let (buf, res) = segment_data.read_exact_at_async(buf, 0).await;
-
-            let (_, res) = f.write_all_at_async(buf, 0).await;
+            let (_buf, res) = segment_data.buf_copy(&f, buf).await;
             res.unwrap();
 
             Ok(())
