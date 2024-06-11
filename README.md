@@ -56,6 +56,7 @@ The comprehensive description can be found [here](libsql-sqlite3/doc/libsql_exte
 * [TypeScript / JS](https://github.com/tursodatabase/libsql-client-ts)
 * [Rust](libsql) 
 * [Go](https://github.com/tursodatabase/go-libsql)
+* [Go (no CGO)](https://github.com/tursodatabase/libsql-client-go)
 
 ### Experimental Drivers
 * [Python](https://github.com/tursodatabase/libsql-experimental-python) (experimental)
