@@ -12,12 +12,12 @@ use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 use tokio::time::Duration;
 use tokio_stream::StreamExt;
 
-use crate::broadcaster::Broadcaster;
 use crate::namespace::ResolveNamespacePathFn;
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};
 
+use super::broadcasters::BroadcasterHandle;
 use super::meta_store::MetaStoreHandle;
 use super::{
     Namespace, NamespaceBottomlessDbId, NamespaceConfig, NamespaceName, NamespaceStore,
@@ -67,7 +67,7 @@ pub struct ForkTask<'a> {
     pub ns_config: &'a NamespaceConfig,
     pub resolve_attach: ResolveNamespacePathFn,
     pub store: NamespaceStore,
-    pub broadcaster: Broadcaster,
+    pub broadcaster: BroadcasterHandle,
 }
 
 pub struct PointInTimeRestore {

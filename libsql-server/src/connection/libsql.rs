@@ -14,9 +14,9 @@ use rusqlite::{ErrorCode, OpenFlags};
 use tokio::sync::watch;
 use tokio::time::{Duration, Instant};
 
-use crate::broadcaster::Broadcaster;
 use crate::error::Error;
 use crate::metrics::{DESCRIBE_COUNT, PROGRAM_EXEC_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT};
+use crate::namespace::broadcasters::BroadcasterHandle;
 use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::ResolveNamespacePathFn;
 use crate::query_analysis::StmtKind;
@@ -37,7 +37,7 @@ pub struct MakeLibSqlConn<W> {
     db_path: PathBuf,
     wal_wrapper: W,
     stats: Arc<Stats>,
-    broadcaster: Broadcaster,
+    broadcaster: BroadcasterHandle,
     config_store: MetaStoreHandle,
     extensions: Arc<[PathBuf]>,
     max_response_size: u64,
@@ -62,7 +62,7 @@ where
         db_path: PathBuf,
         wal_wrapper: W,
         stats: Arc<Stats>,
-        broadcaster: Broadcaster,
+        broadcaster: BroadcasterHandle,
         config_store: MetaStoreHandle,
         extensions: Arc<[PathBuf]>,
         max_response_size: u64,
@@ -182,7 +182,7 @@ impl LibSqlConnection<libsql_sys::wal::wrapper::PassthroughWalWrapper> {
             Arc::new([]),
             libsql_sys::wal::wrapper::PassthroughWalWrapper,
             Default::default(),
-            Broadcaster::default(),
+            Default::default(),
             MetaStoreHandle::new_test(),
             QueryBuilderConfig::default(),
             tokio::sync::watch::channel(None).1,
@@ -318,7 +318,7 @@ where
         extensions: Arc<[PathBuf]>,
         wal_wrapper: W,
         stats: Arc<Stats>,
-        broadcaster: Broadcaster,
+        broadcaster: BroadcasterHandle,
         config_store: MetaStoreHandle,
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
@@ -433,7 +433,7 @@ impl<W: Wal> Connection<W> {
         extensions: Arc<[PathBuf]>,
         wal_manager: T,
         stats: Arc<Stats>,
-        broadcaster: Broadcaster,
+        broadcaster: BroadcasterHandle,
         config_store: MetaStoreHandle,
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
@@ -448,13 +448,11 @@ impl<W: Wal> Connection<W> {
             builder_config.encryption_config.clone(),
         )?;
 
-        if broadcaster.active() {
+        if let Some(broadcaster) = broadcaster.get() {
             let update = broadcaster.clone();
-            conn.update_hook(Some(
-                move |action: rusqlite::hooks::Action, _: &_, table: &_, _| {
-                    update.notify(table, action);
-                },
-            ));
+            conn.update_hook(Some(move |action: _, _: &_, table: &_, _| {
+                update.notify(table, action);
+            }));
 
             let commit = broadcaster.clone();
             conn.commit_hook(Some(move || {
@@ -788,7 +786,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
-            Broadcaster::default(),
+            Default::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
@@ -836,7 +834,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
-            Broadcaster::default(),
+            Default::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
@@ -888,7 +886,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
-            Broadcaster::default(),
+            Default::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
@@ -974,7 +972,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
-            Broadcaster::default(),
+            Default::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
@@ -1061,7 +1059,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
-            Broadcaster::default(),
+            Default::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,

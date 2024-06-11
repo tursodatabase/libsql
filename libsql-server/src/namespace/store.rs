@@ -18,6 +18,7 @@ use crate::metrics::NAMESPACE_LOAD_LATENCY;
 use crate::namespace::{NamespaceBottomlessDbId, NamespaceBottomlessDbIdInit, NamespaceName};
 use crate::stats::Stats;
 
+use super::broadcasters::{BroadcasterHandle, BroadcasterRegistry};
 use super::meta_store::{MetaStore, MetaStoreHandle};
 use super::schema_lock::SchemaLocksRegistry;
 use super::{Namespace, NamespaceConfig, ResetCb, ResetOp, ResolveNamespacePathFn, RestoreOption};
@@ -45,6 +46,7 @@ pub struct NamespaceStoreInner {
     snapshot_at_shutdown: bool,
     pub config: NamespaceConfig,
     schema_locks: SchemaLocksRegistry,
+    broadcasters: BroadcasterRegistry,
 }
 
 impl NamespaceStore {
@@ -87,6 +89,7 @@ impl NamespaceStore {
                 snapshot_at_shutdown,
                 config,
                 schema_locks: Default::default(),
+                broadcasters: Default::default(),
             }),
         })
     }
@@ -184,7 +187,7 @@ impl NamespaceStore {
             self.make_reset_cb(),
             self.resolve_attach_fn(),
             self.clone(),
-            Default::default(),
+            self.broadcaster(namespace.clone()),
         )
         .await?;
 
@@ -291,7 +294,7 @@ impl NamespaceStore {
             timestamp,
             self.resolve_attach_fn(),
             self.clone(),
-            Default::default(),
+            self.broadcaster(to),
         )
         .await?;
 
@@ -383,7 +386,7 @@ impl NamespaceStore {
                     self.make_reset_cb(),
                     self.resolve_attach_fn(),
                     self.clone(),
-                    Default::default(),
+                    self.broadcaster(namespace.clone()),
                 )
                 .await?;
                 tracing::info!("loaded namespace: `{namespace}`");
@@ -474,21 +477,20 @@ impl NamespaceStore {
         self.with(namespace, |ns| ns.stats.clone()).await
     }
 
-    pub(crate) async fn subscribe(
+    pub(crate) fn broadcaster(&self, namespace: NamespaceName) -> BroadcasterHandle {
+        self.inner.broadcasters.handle(namespace)
+    }
+
+    pub(crate) fn subscribe(
         &self,
         namespace: NamespaceName,
         table: String,
-    ) -> crate::Result<BroadcastStream<BroadcastMsg>> {
-        self.with(namespace, |ns| ns.broadcaster.subscribe(table))
-            .await
+    ) -> BroadcastStream<BroadcastMsg> {
+        self.inner.broadcasters.subscribe(namespace, table)
     }
 
     pub(crate) async fn unsubscribe(&self, namespace: NamespaceName, table: &String) {
-        if self.inner.store.contains_key(&namespace) {
-            _ = self
-                .with(namespace, |ns| ns.broadcaster.unsubscribe(table))
-                .await;
-        }
+        self.inner.broadcasters.unsubscribe(namespace, table);
     }
 
     pub(crate) async fn config_store(

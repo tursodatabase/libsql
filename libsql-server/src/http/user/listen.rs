@@ -108,9 +108,7 @@ async fn listen_stream(
             table: table.clone(),
         };
 
-        let mut stream = store
-            .subscribe(namespace.clone(), table.clone())
-            .await?;
+        let mut stream = store.subscribe(namespace.clone(), table.clone());
 
         while let Some(item) = stream.next().await  {
             match item {

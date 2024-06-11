@@ -1,10 +1,7 @@
 use std::{
     collections::{hash_map::Entry, HashMap},
     mem,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
+    sync::Arc,
 };
 
 use parking_lot::Mutex;
@@ -32,7 +29,6 @@ fn is_zero(num: &u64) -> bool {
 pub struct BroadcasterInner {
     state: Mutex<HashMap<String, BroadcastMsg>>,
     senders: Mutex<HashMap<String, broadcast::Sender<BroadcastMsg>>>,
-    active: AtomicBool,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -43,14 +39,7 @@ pub struct Broadcaster {
 impl Broadcaster {
     const BROADCAST_CAP: usize = 1024;
 
-    pub fn active(&self) -> bool {
-        self.inner.active.load(Ordering::Relaxed)
-    }
-
     pub fn notify(&self, table: &str, action: rusqlite::hooks::Action) {
-        if !self.active() {
-            return;
-        }
         let mut state = self.inner.state.lock();
         if let Some(entry) = state.get_mut(table) {
             Self::increment(entry, action);
@@ -71,9 +60,6 @@ impl Broadcaster {
     }
 
     pub fn commit(&self) {
-        if !self.active() {
-            return;
-        }
         let senders = self.inner.senders.lock();
         for (table, entry) in self.flush_changes() {
             if let Some(sender) = senders.get(&table) {
@@ -89,9 +75,6 @@ impl Broadcaster {
     }
 
     pub fn rollback(&self) {
-        if !self.active() {
-            return;
-        }
         self.flush_changes();
     }
 
@@ -101,7 +84,6 @@ impl Broadcaster {
             Entry::Vacant(entry) => {
                 let (sender, receiver) = broadcast::channel(Self::BROADCAST_CAP);
                 entry.insert(sender);
-                self.inner.active.store(true, Ordering::Relaxed);
                 receiver
             }
         };
@@ -109,15 +91,16 @@ impl Broadcaster {
         BroadcastStream::new(receiver)
     }
 
-    pub fn unsubscribe(&self, table: &String) {
+    pub fn unsubscribe(&self, table: &String) -> bool {
         let mut tables = self.inner.senders.lock();
         if let Some(sender) = tables.get(table) {
             if sender.receiver_count() == 0 {
                 tables.remove(table);
                 if tables.is_empty() {
-                    self.inner.active.store(false, Ordering::Relaxed);
+                    return false;
                 }
             }
         }
+        return true;
     }
 }
