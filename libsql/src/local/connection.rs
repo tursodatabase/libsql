@@ -1,13 +1,14 @@
 #![allow(dead_code)]
 
 use crate::params::Params;
+use crate::errors;
 
 use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
 
 use crate::TransactionBehavior;
 
 use libsql_sys::ffi;
-use std::{ffi::c_int, fmt, sync::Arc};
+use std::{ffi::c_int, fmt, path::Path, sync::Arc};
 
 /// A connection to a libSQL database.
 #[derive(Clone)]
@@ -289,6 +290,48 @@ impl Connection {
             w.new_client_id();
             w
         })
+    }
+
+    pub fn enable_load_extension(&self, onoff: bool) -> Result<()> {
+        let err = unsafe { ffi::sqlite3_db_config(self.raw, ffi::SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, onoff as i32) };
+        match err {
+            ffi::SQLITE_OK => Ok(()),
+            _ => Err(errors::Error::SqliteFailure(err, errors::error_from_code(err))),
+        }
+    }
+
+    pub fn load_extension(
+        &self,
+        dylib_path: &Path,
+        entry_point: Option<&str>,
+    ) -> Result<()> {
+        let mut raw_err_msg: *mut std::ffi::c_char = std::ptr::null_mut();
+        let dylib_path = match dylib_path.to_str() {
+            Some(dylib_path) => {
+                std::ffi::CString::new(dylib_path).unwrap()
+            },
+            None => return Err(crate::Error::Misuse(format!(
+                "dylib path is not a valid utf8 string"
+            ))),
+        };
+        let err = match entry_point {
+            Some(entry_point) => {
+                let entry_point = std::ffi::CString::new(entry_point).unwrap();
+                unsafe { ffi::sqlite3_load_extension(self.raw, dylib_path.as_ptr(), entry_point.as_ptr(), &mut raw_err_msg) }
+            }
+            None => {
+                unsafe { ffi::sqlite3_load_extension(self.raw, dylib_path.as_ptr(), std::ptr::null(), &mut raw_err_msg) }
+            }
+        };
+        match err {
+            ffi::SQLITE_OK => Ok(()),
+            _ => {
+                let err_msg = unsafe { std::ffi::CStr::from_ptr(raw_err_msg) };
+                let err_msg = err_msg.to_string_lossy().to_string();
+                unsafe { ffi::sqlite3_free(raw_err_msg as *mut std::ffi::c_void) };
+                Err(errors::Error::SqliteFailure(err, err_msg))
+            }
+        }
     }
 }
 

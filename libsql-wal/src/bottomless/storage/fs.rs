@@ -37,7 +37,7 @@ impl<I: Io> Storage for FsStorage<I> {
         segment_index: Vec<u8>,
     ) -> impl Future<Output = Result<()>> + Send {
         let key = format!(
-            "{}-{}-{}.segment",
+            "{:019}-{:019}-{:019}.segment",
             meta.start_frame_no,
             meta.end_frame_no,
             meta.created_at.timestamp()
@@ -140,8 +140,8 @@ mod tests {
 
     #[tokio::test]
     async fn read_write() {
-        let dir = tempdir().unwrap();
 
+        let dir = tempdir().unwrap();
         let fs = FsStorage::new(dir.path().into(), StdIO::default()).unwrap();
 
         let namespace = NamespaceName::from_string("".into());

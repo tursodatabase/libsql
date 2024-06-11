@@ -21,9 +21,9 @@ impl FromRequestParts<AppState> for RequestContext {
             state.disable_namespaces,
         )?;
         // todo dupe #auth
-        let namespace_jwt_key = state
+        let namespace_jwt_keys = state
             .namespaces
-            .with(namespace.clone(), |ns| ns.jwt_key())
+            .with(namespace.clone(), |ns| ns.jwt_keys())
             .await??;
 
         let context = parts
@@ -33,7 +33,7 @@ impl FromRequestParts<AppState> for RequestContext {
             .and_then(|h| h.to_str().map_err(|_| AuthError::AuthHeaderNonAscii))
             .and_then(|t| UserAuthContext::from_auth_str(t));
 
-        let authenticated = namespace_jwt_key
+        let authenticated = namespace_jwt_keys
             .map(Jwt::new)
             .map(Auth::new)
             .unwrap_or_else(|| state.user_auth_strategy.clone())

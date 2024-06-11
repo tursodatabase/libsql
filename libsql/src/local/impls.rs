@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, path::Path};
 use std::sync::Arc;
 
 use crate::{
@@ -65,6 +65,14 @@ impl Conn for LibsqlConnection {
     }
 
     async fn reset(&self) {}
+
+    fn enable_load_extension(&self, onoff: bool) -> Result<()> {
+        self.conn.enable_load_extension(onoff)
+    }
+
+    fn load_extension(&self, dylib_path: &Path, entry_point: Option<&str>) -> Result<()> {
+        self.conn.load_extension(dylib_path, entry_point)
+    }
 }
 
 impl Drop for LibsqlConnection {

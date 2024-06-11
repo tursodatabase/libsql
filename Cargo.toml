@@ -1,6 +1,5 @@
 [workspace]
 resolver = "2"
-default-members = ["libsql-server"]
 members = [
   "libsql",
   "bindings/c",
@@ -35,7 +34,7 @@ codegen-units = 1
 panic = "unwind"
 
 [workspace.dependencies]
-rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = "0.30", default-features = false, features = [
+rusqlite = { package = "libsql-rusqlite", path = "vendored/rusqlite", version = "0.31", default-features = false, features = [
     "libsql-experimental",
     "column_decltype",
     "load_extension",

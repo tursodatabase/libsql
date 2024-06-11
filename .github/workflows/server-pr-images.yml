@@ -69,6 +69,19 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Build and push Docker image with durable-wal
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}-durable-wal-${{ steps.get-short-sha.outputs.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            ENABLE_FEATURES=durable-wal
+
       - name: Echo image name
         run: |
           echo "Pushed: ${{ steps.meta.outputs.tags }}-${{ steps.get-short-sha.outputs.sha }}"
+          echo "Pushed: ${{ steps.meta.outputs.tags }}-durable-wal-${{ steps.get-short-sha.outputs.sha }}"

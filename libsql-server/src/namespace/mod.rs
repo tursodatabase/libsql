@@ -27,7 +27,7 @@ use tokio_util::io::StreamReader;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
-use crate::auth::parse_jwt_key;
+use crate::auth::parse_jwt_keys;
 use crate::connection::config::DatabaseConfig;
 use crate::connection::connection_manager::InnerWalManager;
 use crate::connection::libsql::{open_conn, MakeLibSqlConn};
@@ -222,11 +222,11 @@ impl Namespace {
         self.db_config_store.version()
     }
 
-    pub fn jwt_key(&self) -> crate::Result<Option<jsonwebtoken::DecodingKey>> {
+    pub fn jwt_keys(&self) -> crate::Result<Option<Vec<jsonwebtoken::DecodingKey>>> {
         let config = self.db_config_store.get();
         if let Some(jwt_key) = config.jwt_key.as_deref() {
             Ok(Some(
-                parse_jwt_key(jwt_key).context("Could not parse JWT decoding key")?,
+                parse_jwt_keys(jwt_key).context("Could not parse JWT decoding key(s)")?,
             ))
         } else {
             Ok(None)

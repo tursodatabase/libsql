@@ -305,12 +305,12 @@ impl ProxyService {
     ) -> Result<RequestContext, tonic::Status> {
         let namespace = super::extract_namespace(self.disable_namespaces, req)?;
         // todo dupe #auth
-        let namespace_jwt_key = self
+        let namespace_jwt_keys = self
             .namespaces
-            .with(namespace.clone(), |ns| ns.jwt_key())
+            .with(namespace.clone(), |ns| ns.jwt_keys())
             .await;
 
-        let auth = match namespace_jwt_key {
+        let auth = match namespace_jwt_keys {
             Ok(Ok(Some(key))) => Some(Auth::new(Jwt::new(key))),
             Ok(Ok(None)) => self.user_auth_strategy.clone(),
             Err(e) => match e.as_ref() {
