@@ -159,11 +159,8 @@ mod test {
             .execute("insert into test values (123)", ())
             .unwrap();
 
-        // FIXME(adhoc): stream is returning one frame too many, fix this asap.
-        for _ in 0..2 {
-            let frame = stream.next().await.unwrap().unwrap();
-            injector.insert_frame(Box::new(frame)).await.unwrap();
-        }
+        let frame = stream.next().await.unwrap().unwrap();
+        injector.insert_frame(Box::new(frame)).await.unwrap();
 
         replica_conn
             .query_row("select count(*) from test", (), |r| {
