@@ -64,6 +64,7 @@ The comprehensive description can be found [here](libsql-sqlite3/doc/libsql_exte
 
 ### Community Drivers
 * [PHP](https://github.com/tursodatabase/turso-client-php)
+* [D](https://github.com/pdenapo/libsql-d) (experimental, based on the C driver)
 
 ## Getting Started
 
