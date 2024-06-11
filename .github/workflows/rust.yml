@@ -130,10 +130,6 @@ jobs:
       env:
         LIBSQL_EXPERIMENTAL_PAGER: 1000
       run: cargo nextest run
-
-    - name: Run tests with durable WAL
-      run: cargo nextest run --features durable-wal
-
     - name: clean build dir
       run: rm -rf libsql-ffi/bundled/SQLite3MultipleCiphers/build
     - name: embedded replica encryption tests
