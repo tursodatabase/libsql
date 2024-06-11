@@ -169,9 +169,16 @@ pub struct LibSqlConnection<T> {
 #[cfg(test)]
 impl LibSqlConnection<libsql_sys::wal::wrapper::PassthroughWalWrapper> {
     pub async fn new_test(path: &Path) -> Self {
+        #[cfg(not(feature = "durable-wal"))]
+        use libsql_sys::wal::either::Either;
+        #[cfg(feature = "durable-wal")]
         use libsql_sys::wal::either::Either3;
         use libsql_sys::wal::Sqlite3WalManager;
 
+        #[cfg(not(feature = "durable-wal"))]
+        let wal = Arc::new(|| Either::A(Sqlite3WalManager::default()));
+        #[cfg(feature = "durable-wal")]
+        let wal = Arc::new(|| Either3::A(Sqlite3WalManager::default()));
         Self::new(
             path.to_owned(),
             Arc::new([]),
@@ -183,7 +190,7 @@ impl LibSqlConnection<libsql_sys::wal::wrapper::PassthroughWalWrapper> {
             Default::default(),
             Arc::new(|_| unreachable!()),
             ConnectionManager::new(TXN_TIMEOUT),
-            Arc::new(|| Either3::A(Sqlite3WalManager::default())),
+            wal,
         )
         .await
         .unwrap()
@@ -706,6 +713,9 @@ where
 #[cfg(test)]
 mod test {
     use itertools::Itertools;
+    #[cfg(not(feature = "durable-wal"))]
+    use libsql_sys::wal::either::Either;
+    #[cfg(feature = "durable-wal")]
     use libsql_sys::wal::either::Either3;
     use libsql_sys::wal::wrapper::PassthroughWalWrapper;
     use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager};
@@ -757,6 +767,10 @@ mod test {
     #[tokio::test]
     async fn txn_timeout_no_stealing() {
         let tmp = tempdir().unwrap();
+        #[cfg(not(feature = "durable-wal"))]
+        let wal = Arc::new(|| Either::A(Sqlite3WalManager::default()));
+        #[cfg(feature = "durable-wal")]
+        let wal = Arc::new(|| Either3::A(Sqlite3WalManager::default()));
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
             PassthroughWalWrapper,
@@ -770,7 +784,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
-            Arc::new(|| Either3::A(Sqlite3WalManager::default())),
+            wal,
         )
         .await
         .unwrap();
@@ -804,6 +818,10 @@ mod test {
     /// lock one after the other. All txn should eventually acquire the write lock
     async fn serialized_txn_timeouts() {
         let tmp = tempdir().unwrap();
+        #[cfg(not(feature = "durable-wal"))]
+        let wal = Arc::new(|| Either::A(Sqlite3WalManager::default()));
+        #[cfg(feature = "durable-wal")]
+        let wal = Arc::new(|| Either3::A(Sqlite3WalManager::default()));
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
             PassthroughWalWrapper,
@@ -817,7 +835,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
-            Arc::new(|| Either3::A(Sqlite3WalManager::default())),
+            wal,
         )
         .await
         .unwrap();
@@ -855,6 +873,10 @@ mod test {
     /// verify that releasing a txn before the timeout
     async fn release_before_timeout() {
         let tmp = tempdir().unwrap();
+        #[cfg(not(feature = "durable-wal"))]
+        let wal = Arc::new(|| Either::A(Sqlite3WalManager::default()));
+        #[cfg(feature = "durable-wal")]
+        let wal = Arc::new(|| Either3::A(Sqlite3WalManager::default()));
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
             PassthroughWalWrapper,
@@ -868,7 +890,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
-            Arc::new(|| Either3::A(Sqlite3WalManager::default())),
+            wal,
         )
         .await
         .unwrap();
@@ -940,6 +962,10 @@ mod test {
     #[tokio::test]
     async fn test_many_concurrent() {
         let tmp = tempdir().unwrap();
+        #[cfg(not(feature = "durable-wal"))]
+        let wal = Arc::new(|| Either::A(Sqlite3WalManager::default()));
+        #[cfg(feature = "durable-wal")]
+        let wal = Arc::new(|| Either3::A(Sqlite3WalManager::default()));
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
             PassthroughWalWrapper,
@@ -953,7 +979,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
-            Arc::new(|| Either3::A(Sqlite3WalManager::default())),
+            wal,
         )
         .await
         .unwrap();
@@ -1026,6 +1052,10 @@ mod test {
     /// verify that releasing a txn before the timeout
     async fn force_rollback_reset() {
         let tmp = tempdir().unwrap();
+        #[cfg(not(feature = "durable-wal"))]
+        let wal = Arc::new(|| Either::A(Sqlite3WalManager::default()));
+        #[cfg(feature = "durable-wal")]
+        let wal = Arc::new(|| Either3::A(Sqlite3WalManager::default()));
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
             PassthroughWalWrapper,
@@ -1039,7 +1069,7 @@ mod test {
             None,
             Default::default(),
             Arc::new(|_| unreachable!()),
-            Arc::new(|| Either3::A(Sqlite3WalManager::default())),
+            wal,
         )
         .await
         .unwrap();

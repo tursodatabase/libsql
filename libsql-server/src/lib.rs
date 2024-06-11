@@ -31,7 +31,11 @@ use futures::Future;
 use http::user::UserApi;
 use hyper::client::HttpConnector;
 use hyper_rustls::HttpsConnector;
+#[cfg(feature = "durable-wal")]
 use libsql_storage::{DurableWalManager, LockManager};
+#[cfg(not(feature = "durable-wal"))]
+use libsql_sys::wal::either::Either;
+#[cfg(feature = "durable-wal")]
 use libsql_sys::wal::either::Either3;
 use libsql_sys::wal::Sqlite3WalManager;
 use libsql_wal::registry::WalRegistry;
@@ -643,6 +647,12 @@ where
     )> {
         if self.use_custom_wal.is_none() {
             tracing::info!("using sqlite3 wal");
+            #[cfg(not(feature = "durable-wal"))]
+            return Ok((
+                Arc::new(|| Either::A(Sqlite3WalManager::default())),
+                Box::pin(ready(Ok(()))),
+            ));
+            #[cfg(feature = "durable-wal")]
             return Ok((
                 Arc::new(|| Either3::A(Sqlite3WalManager::default())),
                 Box::pin(ready(Ok(()))),
@@ -651,6 +661,7 @@ where
 
         let use_custom_wal = self.use_custom_wal.unwrap();
 
+        #[cfg(feature = "durable-wal")]
         if use_custom_wal == CustomWAL::DurableWal {
             tracing::info!("using durable wal");
             let lock_manager = Arc::new(std::sync::Mutex::new(LockManager::new()));
@@ -709,6 +720,9 @@ where
         });
 
         tracing::info!("using libsql wal");
-        Ok((Arc::new(move || Either3::B(wal.clone())), shutdown_fut))
+        #[cfg(not(feature = "durable-wal"))]
+        return Ok((Arc::new(move || Either::B(wal.clone())), shutdown_fut));
+        #[cfg(feature = "durable-wal")]
+        return Ok((Arc::new(move || Either3::B(wal.clone())), shutdown_fut));
     }
 }
