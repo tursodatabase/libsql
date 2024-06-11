@@ -63,6 +63,7 @@ pub mod ffi {
 #[cfg(feature = "api")]
 pub mod connection;
 pub mod error;
+pub mod name;
 #[cfg(feature = "api")]
 pub mod statement;
 #[cfg(feature = "api")]

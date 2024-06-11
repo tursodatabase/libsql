@@ -2,11 +2,11 @@ use std::path::Path;
 use std::sync::Arc;
 
 use criterion::{criterion_group, criterion_main, Bencher, Criterion};
+use libsql_sys::name::NamespaceName;
 use libsql_sys::rusqlite::{self, OpenFlags};
 use libsql_sys::wal::{Sqlite3Wal, Sqlite3WalManager, Wal};
 use libsql_sys::Connection;
 use libsql_wal::io::StdIO;
-use libsql_wal::name::NamespaceName;
 use libsql_wal::wal::LibsqlWal;
 use libsql_wal::{registry::WalRegistry, wal::LibsqlWalManager};
 use tempfile::tempdir;

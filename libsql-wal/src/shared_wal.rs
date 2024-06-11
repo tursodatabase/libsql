@@ -11,10 +11,10 @@ use parking_lot::{Mutex, MutexGuard};
 use crate::error::{Error, Result};
 use crate::io::file::FileExt;
 use crate::io::Io;
-use crate::name::NamespaceName;
 use crate::registry::WalRegistry;
 use crate::segment::current::CurrentSegment;
 use crate::transaction::{ReadTransaction, Savepoint, Transaction, TxGuard, WriteTransaction};
+use libsql_sys::name::NamespaceName;
 
 #[derive(Default)]
 pub struct WalLock {

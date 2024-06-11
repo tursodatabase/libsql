@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use super::Result;
 use crate::io::file::FileExt;
-use crate::name::NamespaceName;
+use libsql_sys::name::NamespaceName;
 
 mod fs;
 mod s3;

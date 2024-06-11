@@ -14,9 +14,9 @@ impl fmt::Debug for NamespaceName {
     }
 }
 
-impl Into<libsql_wal::name::NamespaceName> for NamespaceName {
-    fn into(self) -> libsql_wal::name::NamespaceName {
-        libsql_wal::name::NamespaceName(self.0)
+impl Into<libsql_sys::name::NamespaceName> for NamespaceName {
+    fn into(self) -> libsql_sys::name::NamespaceName {
+        libsql_sys::name::NamespaceName(self.0)
     }
 }
 

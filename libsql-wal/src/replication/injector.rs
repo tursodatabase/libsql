@@ -66,13 +66,13 @@ impl<'a, IO: Io> Injector<'a, IO> {
 mod test {
     use std::{path::Path, sync::Arc};
 
+    use libsql_sys::name::NamespaceName;
     use libsql_sys::rusqlite::OpenFlags;
     use tempfile::tempdir;
     use tokio_stream::StreamExt;
 
     use crate::{
-        name::NamespaceName, registry::WalRegistry, replication::replicator::Replicator,
-        wal::LibsqlWalManager,
+        registry::WalRegistry, replication::replicator::Replicator, wal::LibsqlWalManager,
     };
 
     use super::*;

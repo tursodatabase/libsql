@@ -197,11 +197,11 @@ mod test {
 
     use crate::io::file::{async_read_all_to_vec, FileExt};
     use crate::io::StdIO;
-    use crate::name::NamespaceName;
     use crate::registry::{SegmentSwapHandler, WalRegistry};
     use crate::segment::sealed::SealedSegment;
     use crate::segment::FrameHeader;
     use crate::wal::{LibsqlWal, LibsqlWalManager};
+    use libsql_sys::name::NamespaceName;
 
     use super::*;
 

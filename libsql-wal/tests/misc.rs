@@ -1,7 +1,7 @@
 use std::{path::Path, sync::Arc};
 
+use libsql_sys::name::NamespaceName;
 use libsql_sys::rusqlite::OpenFlags;
-use libsql_wal::name::NamespaceName;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::wal::LibsqlWalManager;
 use tempfile::tempdir;

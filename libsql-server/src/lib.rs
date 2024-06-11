@@ -669,22 +669,22 @@ where
             }
         }
 
+        let namespace_resolver = |path: &Path| {
+            NamespaceName::from_string(
+                path.parent()
+                    .unwrap()
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            )
+            .unwrap()
+            .into()
+        };
+
         match self.use_custom_wal {
             Some(CustomWAL::LibsqlWal) => {
-                let namespace_resolver = |path: &Path| {
-                    NamespaceName::from_string(
-                        path.parent()
-                            .unwrap()
-                            .file_name()
-                            .unwrap()
-                            .to_str()
-                            .unwrap()
-                            .to_string(),
-                    )
-                    .unwrap()
-                    .into()
-                };
-
                 let registry = Arc::new(WalRegistry::new(wal_path, namespace_resolver, ())?);
 
                 let wal = LibsqlWalManager::new(registry.clone());

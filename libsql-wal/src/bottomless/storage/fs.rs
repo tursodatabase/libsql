@@ -7,8 +7,8 @@ use zerocopy::FromBytes;
 
 use crate::bottomless::{Error, Result};
 use crate::io::{FileExt, Io};
-use crate::name::NamespaceName;
 use crate::segment::SegmentHeader;
+use libsql_sys::name::NamespaceName;
 
 use super::Storage;
 
