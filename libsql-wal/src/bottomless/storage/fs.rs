@@ -140,7 +140,6 @@ mod tests {
 
     #[tokio::test]
     async fn read_write() {
-
         let dir = tempdir().unwrap();
         let fs = FsStorage::new(dir.path().into(), StdIO::default()).unwrap();
 
