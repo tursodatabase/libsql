@@ -3482,6 +3482,7 @@ dependencies = [
  "nix 0.26.4",
  "once_cell",
  "parking_lot",
+ "pem",
  "pin-project-lite",
  "priority-queue 1.4.0",
  "proptest",
