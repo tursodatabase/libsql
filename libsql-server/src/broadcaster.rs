@@ -12,7 +12,7 @@ use serde::Serialize;
 use tokio::sync::broadcast::{self};
 use tokio_stream::wrappers::BroadcastStream;
 
-#[derive(Debug, Clone, Serialize, Default)]
+#[derive(Debug, Copy, Clone, Serialize, Default)]
 pub struct BroadcastMsg {
     #[serde(skip_serializing_if = "is_zero")]
     pub unknown: u64,
@@ -109,11 +109,11 @@ impl Broadcaster {
         BroadcastStream::new(receiver)
     }
 
-    pub fn unsubscribe(&self, table: String) {
+    pub fn unsubscribe(&self, table: &String) {
         let mut tables = self.inner.senders.lock();
-        if let Some(sender) = tables.get(&table) {
+        if let Some(sender) = tables.get(table) {
             if sender.receiver_count() == 0 {
-                tables.remove(&table);
+                tables.remove(table);
                 if tables.is_empty() {
                     self.inner.active.store(false, Ordering::Relaxed);
                 }

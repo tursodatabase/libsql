@@ -1,3 +1,5 @@
+use std::mem;
+
 use crate::broadcaster::BroadcastMsg;
 use crate::error::Error;
 use crate::{
@@ -75,6 +77,24 @@ enum AggregatorEvent {
     Changes(BroadcastMsg),
 }
 
+struct Subscription {
+    store: Option<NamespaceStore>,
+    namespace: NamespaceName,
+    table: String,
+}
+
+impl Drop for Subscription {
+    fn drop(&mut self) {
+        if let Some(store) = self.store.take() {
+            let namespace = mem::take(&mut self.namespace);
+            let table = mem::take(&mut self.table);
+            let _ = tokio::spawn(async move {
+                store.unsubscribe(namespace, &table).await;
+            });
+        }
+    }
+}
+
 async fn listen_stream(
     store: NamespaceStore,
     namespace: NamespaceName,
@@ -82,11 +102,17 @@ async fn listen_stream(
     actions: Vec<Action>,
 ) -> impl Stream<Item = crate::Result<AggregatorEvent>> {
     async_stream::try_stream! {
-        let mut subscription = store
+        let _sub = Subscription {
+            store: Some(store.clone()),
+            namespace: namespace.clone(),
+            table: table.clone(),
+        };
+
+        let mut stream = store
             .subscribe(namespace.clone(), table.clone())
             .await?;
 
-        while let Some(item) = subscription.next().await  {
+        while let Some(item) = stream.next().await  {
             match item {
                 Ok(msg) => if filter_actions(&msg, &actions) {
                     yield AggregatorEvent::Changes(msg);

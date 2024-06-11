@@ -324,7 +324,7 @@ impl NamespaceStore {
 
     pub async fn with<Fun, R>(&self, namespace: NamespaceName, f: Fun) -> crate::Result<R>
     where
-        Fun: FnOnce(&Namespace) -> R + 'static,
+        Fun: FnOnce(&Namespace) -> R,
     {
         if namespace != NamespaceName::default()
             && !self.inner.metadata.exists(&namespace)
@@ -483,7 +483,7 @@ impl NamespaceStore {
             .await
     }
 
-    pub(crate) async fn unsubscribe(&self, namespace: NamespaceName, table: String) {
+    pub(crate) async fn unsubscribe(&self, namespace: NamespaceName, table: &String) {
         if self.inner.store.contains_key(&namespace) {
             _ = self
                 .with(namespace, |ns| ns.broadcaster.unsubscribe(table))
