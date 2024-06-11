@@ -813,6 +813,8 @@ mod serde_ {
             assert!(de::<Vec<u8>>(Value::Null).is_err());
             assert!(de::<f64>(Value::Blob(b"abc".to_vec())).is_err());
             assert!(de::<MyEnum>(Value::Text("C".to_string())).is_err());
+
+            assert_eq!(de::<[u8; 2]>(Value::Blob(b"aa".to_vec())), Ok([97, 97]));
         }
     }
 }

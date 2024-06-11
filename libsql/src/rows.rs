@@ -221,6 +221,19 @@ impl FromValue for Vec<u8> {
 }
 impl Sealed for Vec<u8> {}
 
+impl<const N: usize> FromValue for [u8; N] {
+    fn from_sql(val: Value) -> Result<Self> {
+        match val {
+            Value::Null => Err(crate::Error::NullValue),
+            Value::Blob(blob) => blob
+                .try_into()
+                .map_err(|_| crate::Error::InvalidBlobSize(N)),
+            _ => unreachable!("invalid value type"),
+        }
+    }
+}
+impl<const N: usize> Sealed for [u8; N] {}
+
 impl FromValue for String {
     fn from_sql(val: Value) -> Result<Self> {
         match val {
