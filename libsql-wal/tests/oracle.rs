@@ -9,10 +9,10 @@ use std::path::Path;
 use std::sync::Arc;
 
 use libsql_sys::ffi::{sqlite3_finalize, sqlite3_prepare, Sqlite3DbHeader};
+use libsql_sys::name::NamespaceName;
 use libsql_sys::rusqlite::OpenFlags;
 use libsql_sys::wal::{Sqlite3WalManager, Wal};
 use libsql_sys::Connection;
-use libsql_wal::name::NamespaceName;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::wal::LibsqlWalManager;
 use once_cell::sync::Lazy;

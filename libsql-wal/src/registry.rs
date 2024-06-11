@@ -12,22 +12,11 @@ use zerocopy::{AsBytes, FromZeroes};
 use crate::error::Result;
 use crate::io::file::FileExt;
 use crate::io::{Io, StdIO};
-use crate::name::NamespaceName;
 use crate::segment::list::SegmentList;
 use crate::segment::{current::CurrentSegment, sealed::SealedSegment};
 use crate::shared_wal::SharedWal;
 use crate::transaction::{Transaction, TxGuard};
-
-/// Translates a path to a namespace name
-pub trait NamespaceResolver: Send + Sync + 'static {
-    fn resolve(&self, path: &Path) -> NamespaceName;
-}
-
-impl<F: Fn(&Path) -> NamespaceName + Send + Sync + 'static> NamespaceResolver for F {
-    fn resolve(&self, path: &Path) -> NamespaceName {
-        (self)(path)
-    }
-}
+use libsql_sys::name::{NamespaceName, NamespaceResolver};
 
 /// called on every segment on swap.
 pub trait SegmentSwapHandler<F>: Send + Sync + 'static {

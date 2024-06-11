@@ -5,7 +5,7 @@ use std::sync::Arc;
 use crate::bottomless::job::CompactedSegmentDataHeader;
 use crate::bottomless::{Error, Result};
 use crate::io::{FileExt, Io};
-use crate::name::NamespaceName;
+use libsql_sys::name::NamespaceName;
 
 use super::Storage;
 
