@@ -34,9 +34,9 @@ use hyper_rustls::HttpsConnector;
 #[cfg(feature = "durable-wal")]
 use libsql_storage::{DurableWalManager, LockManager};
 #[cfg(not(feature = "durable-wal"))]
-use libsql_sys::wal::either::Either;
+use libsql_sys::wal::either::Either as EitherWAL;
 #[cfg(feature = "durable-wal")]
-use libsql_sys::wal::either::Either3;
+use libsql_sys::wal::either::Either3 as EitherWAL;
 use libsql_sys::wal::Sqlite3WalManager;
 use libsql_wal::registry::WalRegistry;
 use libsql_wal::wal::LibsqlWalManager;
@@ -698,10 +698,7 @@ where
                 });
 
                 tracing::info!("using libsql wal");
-                #[cfg(not(feature = "durable-wal"))]
-                return Ok((Arc::new(move || Either::B(wal.clone())), shutdown_fut));
-                #[cfg(feature = "durable-wal")]
-                Ok((Arc::new(move || Either3::B(wal.clone())), shutdown_fut))
+                Ok((Arc::new(move || EitherWAL::B(wal.clone())), shutdown_fut))
             }
             #[cfg(feature = "durable-wal")]
             Some(CustomWAL::DurableWal) => {
@@ -709,20 +706,14 @@ where
                 let lock_manager = Arc::new(std::sync::Mutex::new(LockManager::new()));
                 let wal = DurableWalManager::new(lock_manager, self.storage_server_address.clone());
                 Ok((
-                    Arc::new(move || Either3::C(wal.clone())),
+                    Arc::new(move || EitherWAL::C(wal.clone())),
                     Box::pin(ready(Ok(()))),
                 ))
             }
             None => {
                 tracing::info!("using sqlite3 wal");
-                #[cfg(not(feature = "durable-wal"))]
-                return Ok((
-                    Arc::new(|| Either::A(Sqlite3WalManager::default())),
-                    Box::pin(ready(Ok(()))),
-                ));
-                #[cfg(feature = "durable-wal")]
                 Ok((
-                    Arc::new(|| Either3::A(Sqlite3WalManager::default())),
+                    Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
                     Box::pin(ready(Ok(()))),
                 ))
             }

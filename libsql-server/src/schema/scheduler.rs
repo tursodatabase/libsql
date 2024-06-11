@@ -779,9 +779,9 @@ async fn step_job_run_success(
 mod test {
     use insta::assert_debug_snapshot;
     #[cfg(not(feature = "durable-wal"))]
-    use libsql_sys::wal::either::Either;
+    use libsql_sys::wal::either::Either as EitherWAL;
     #[cfg(feature = "durable-wal")]
-    use libsql_sys::wal::either::Either3;
+    use libsql_sys::wal::either::Either3 as EitherWAL;
     use libsql_sys::wal::Sqlite3WalManager;
     use std::path::Path;
     use tempfile::tempdir;
@@ -881,10 +881,6 @@ mod test {
     }
 
     fn make_config(migration_scheduler: SchedulerHandle, path: &Path) -> NamespaceConfig {
-        #[cfg(not(feature = "durable-wal"))]
-        let wal = Arc::new(|| Either::A(Sqlite3WalManager::default()));
-        #[cfg(feature = "durable-wal")]
-        let wal = Arc::new(|| Either3::A(Sqlite3WalManager::default()));
         NamespaceConfig {
             db_kind: DatabaseKind::Primary,
             base_path: path.to_path_buf().into(),
@@ -903,7 +899,7 @@ mod test {
             bottomless_replication: None,
             scripted_backup: None,
             migration_scheduler,
-            make_wal_manager: wal,
+            make_wal_manager: Arc::new(|| EitherWAL::A(Sqlite3WalManager::default())),
         }
     }
 
