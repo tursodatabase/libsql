@@ -25,8 +25,12 @@ FROM chef AS builder
 COPY --from=planner /recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
-RUN cargo build -p libsql-server --release
-
+ARG ENABLE_FEATURES=""
+RUN if [ "$ENABLE_FEATURES" == "" ]; then \
+        cargo build -p libsql-server --release ; \
+    else \
+        cargo build -p libsql-server --features "$ENABLE_FEATURES" --release ; \
+    fi
 # runtime
 FROM debian:bullseye-slim
 RUN apt update

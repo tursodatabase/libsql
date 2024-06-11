@@ -38,6 +38,7 @@ jsonwebtoken = "9"
 libsql = { path = "../libsql/", optional = true }
 libsql_replication = { path = "../libsql-replication" }
 libsql-wal = { path = "../libsql-wal/" }
+libsql-storage = { path = "../libsql-storage", optional = true }
 metrics = "0.21.1"
 metrics-util = "0.15"
 metrics-exporter-prometheus = "0.12.2"
@@ -116,3 +117,4 @@ wasm-udfs = ["rusqlite/libsql-wasm-experimental"]
 unix-excl-vfs = ["libsql-sys/unix-excl-vfs"]
 encryption = ["dep:aes", "dep:cbc", "libsql-sys/encryption", "libsql_replication/encryption", "bottomless/encryption"]
 test-encryption = ["libsql/encryption"]
+durable-wal = ["libsql-storage"]
