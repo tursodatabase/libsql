@@ -131,7 +131,7 @@ mod tests {
     use std::io::Read;
 
     use chrono::Utc;
-    use tempfile::{tempdir, NamedTempFile};
+    use tempfile::tempdir;
     use uuid::Uuid;
     use zerocopy::{AsBytes, FromZeroes};
 
@@ -144,7 +144,7 @@ mod tests {
         let fs = FsStorage::new(dir.path().into(), StdIO::default()).unwrap();
 
         let namespace = NamespaceName::from_string("".into());
-        let mut segment = CompactedSegmentDataHeader {
+        let segment = CompactedSegmentDataHeader {
             start_frame_no: 0.into(),
             frame_count: 10.into(),
             segment_id: 0.into(),
