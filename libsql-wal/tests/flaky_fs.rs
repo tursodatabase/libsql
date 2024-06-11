@@ -133,6 +133,10 @@ impl Io for FlakyIo {
     fn uuid(&self) -> uuid::Uuid {
         todo!()
     }
+
+    fn hard_link(&self, _src: &Path, _dst: &Path) -> std::io::Result<()> {
+        todo!()
+    }
 }
 
 macro_rules! assert_not_corrupt {

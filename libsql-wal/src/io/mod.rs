@@ -27,6 +27,7 @@ pub trait Io: Send + Sync + 'static {
     fn tempfile(&self) -> io::Result<Self::TempFile>;
     fn now(&self) -> DateTime<Utc>;
     fn uuid(&self) -> Uuid;
+    fn hard_link(&self, src: &Path, dst: &Path) -> io::Result<()>;
 }
 
 #[derive(Default, Debug, Clone, Copy)]
@@ -65,6 +66,10 @@ impl Io for StdIO {
     fn uuid(&self) -> Uuid {
         Uuid::new_v4()
     }
+
+    fn hard_link(&self, src: &Path, dst: &Path) -> io::Result<()> {
+        std::fs::hard_link(src, dst)
+    }
 }
 
 impl<T: Io> Io for Arc<T> {
@@ -95,5 +100,9 @@ impl<T: Io> Io for Arc<T> {
 
     fn uuid(&self) -> Uuid {
         self.as_ref().uuid()
+    }
+
+    fn hard_link(&self, src: &Path, dst: &Path) -> io::Result<()> {
+        self.as_ref().hard_link(src, dst)
     }
 }
