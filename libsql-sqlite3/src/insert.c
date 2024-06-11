@@ -2691,11 +2691,12 @@ int sqlite3OpenTableAndIndices(
       *piDataCur = iIdxCur;
       p5 = 0;
     }
-    if( IsVectorIndex(pIdx)) {
-      op = OP_OpenVectorIdx;
-    }
     if( aToOpen==0 || aToOpen[i+1] ){
-      sqlite3VdbeAddOp3(v, op, iIdxCur, pIdx->tnum, iDb);
+      if( IsVectorIndex(pIdx)){
+        sqlite3VdbeAddOp3(v, OP_OpenVectorIdx, iIdxCur, pIdx->tnum, iDb);
+      }else{
+        sqlite3VdbeAddOp3(v, op, iIdxCur, pIdx->tnum, iDb);
+      }
       sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
       sqlite3VdbeChangeP5(v, p5);
       VdbeComment((v, "%s", pIdx->zName));
