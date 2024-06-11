@@ -14,7 +14,7 @@ use rusqlite::{ErrorCode, OpenFlags};
 use tokio::sync::watch;
 use tokio::time::{Duration, Instant};
 
-use crate::broadcaster::{BroadcastMsg, Broadcaster};
+use crate::broadcaster::Broadcaster;
 use crate::error::Error;
 use crate::metrics::{DESCRIBE_COUNT, PROGRAM_EXEC_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT};
 use crate::namespace::meta_store::MetaStoreHandle;
@@ -451,23 +451,19 @@ impl<W: Wal> Connection<W> {
         if broadcaster.active() {
             let update = broadcaster.clone();
             conn.update_hook(Some(
-                move |action: rusqlite::hooks::Action, _: &_, table: &_, rowid| {
-                    let msg = BroadcastMsg::Change {
-                        action: action.into(),
-                        rowid,
-                    };
-                    update.notify(table, msg);
+                move |action: rusqlite::hooks::Action, _: &_, table: &_, _| {
+                    update.notify(table, action);
                 },
             ));
 
             let commit = broadcaster.clone();
             conn.commit_hook(Some(move || {
-                commit.notify_all(BroadcastMsg::Commit);
+                commit.commit();
                 false // allow commit to go through
             }));
 
             let rollback = broadcaster;
-            conn.rollback_hook(Some(move || rollback.notify_all(BroadcastMsg::Rollback)));
+            conn.rollback_hook(Some(move || rollback.rollback()));
         }
 
         let config = config_store.get();

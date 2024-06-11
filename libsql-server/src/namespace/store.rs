@@ -8,9 +8,10 @@ use moka::future::Cache;
 use once_cell::sync::OnceCell;
 use tokio::task::JoinSet;
 use tokio::time::{Duration, Instant};
+use tokio_stream::wrappers::BroadcastStream;
 
 use crate::auth::Authenticated;
-use crate::broadcaster::UpdateSubscription;
+use crate::broadcaster::BroadcastMsg;
 use crate::connection::config::DatabaseConfig;
 use crate::error::Error;
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
@@ -477,7 +478,7 @@ impl NamespaceStore {
         &self,
         namespace: NamespaceName,
         table: String,
-    ) -> crate::Result<UpdateSubscription> {
+    ) -> crate::Result<BroadcastStream<BroadcastMsg>> {
         self.with(namespace, |ns| ns.broadcaster.subscribe(table))
             .await
     }

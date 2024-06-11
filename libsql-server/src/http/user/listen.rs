@@ -1,11 +1,4 @@
-use std::{
-    collections::HashMap,
-    mem,
-    pin::Pin,
-    task::{Context, Poll},
-};
-
-use crate::broadcaster::{Action, BroadcastMsg, UpdateSubscription};
+use crate::broadcaster::BroadcastMsg;
 use crate::error::Error;
 use crate::{
     auth::Authenticated,
@@ -22,6 +15,15 @@ use serde::{Deserialize, Serialize};
 use super::db_factory::namespace_from_headers;
 use super::AppState;
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Action {
+    UNKNOWN,
+    DELETE,
+    INSERT,
+    UPDATE,
+}
+
 #[derive(Deserialize)]
 pub struct ListenQuery {
     table: String,
@@ -33,7 +35,7 @@ pub(super) async fn handle_listen(
     AxumState(state): AxumState<AppState>,
     headers: HeaderMap,
     uri: Uri,
-    mut query: Query<ListenQuery>,
+    query: Query<ListenQuery>,
 ) -> crate::Result<Response> {
     let namespace = namespace_from_headers(
         &headers,
@@ -53,132 +55,59 @@ pub(super) async fn handle_listen(
             .unwrap());
     }
 
-    // TODO: validate table
-    let table = mem::take(&mut query.table);
-    let actions = mem::take(&mut query.action);
-
-    let stream =
-        SubscriptionAggregator::new(state.namespaces.clone(), namespace, table, actions).await?;
+    let stream = listen_stream(
+        state.namespaces.clone(),
+        namespace,
+        query.table.clone(),
+        query.action.clone(),
+    )
+    .await;
     Ok(JsonLines::new(stream).into_response())
 }
 
 static LAGGED_MSG: &str = "some changes were lost";
-
-type AggregatorState = HashMap<Action, u64>;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
 enum AggregatorEvent {
     Error(&'static str),
     #[serde(untagged)]
-    Changes(AggregatorState),
+    Changes(BroadcastMsg),
 }
 
-type AggregatorResult = Result<AggregatorEvent, Error>;
-type AggregatorPoll = Poll<Option<AggregatorResult>>;
-
-struct SubscriptionAggregator {
-    actions: Vec<Action>,
-    subscription: UpdateSubscription,
-    state: AggregatorState,
+async fn listen_stream(
     store: NamespaceStore,
     namespace: NamespaceName,
     table: String,
-    errored: bool,
-}
-
-impl SubscriptionAggregator {
-    async fn new(
-        store: NamespaceStore,
-        namespace: NamespaceName,
-        table: String,
-        actions: Vec<Action>,
-    ) -> crate::Result<Self> {
-        let subscription = store
+    actions: Vec<Action>,
+) -> impl Stream<Item = crate::Result<AggregatorEvent>> {
+    async_stream::try_stream! {
+        let mut subscription = store
             .subscribe(namespace.clone(), table.clone())
-            .await
-            .unwrap();
-        Ok(Self {
-            actions,
-            subscription,
-            state: HashMap::new(),
-            store,
-            namespace,
-            table,
-            errored: false,
-        })
-    }
-}
+            .await?;
 
-impl Drop for SubscriptionAggregator {
-    fn drop(&mut self) {
-        let namespace = mem::take(&mut self.namespace);
-        let table = mem::take(&mut self.table);
-        let store = self.store.clone();
-        tokio::spawn(async move { _ = store.unsubscribe(namespace, table).await });
-    }
-}
-
-impl Stream for SubscriptionAggregator {
-    type Item = AggregatorResult;
-
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
-        loop {
-            if let Some(poll) = self.poll_inner(cx) {
-                return poll;
+        while let Some(item) = subscription.next().await  {
+            match item {
+                Ok(msg) => if filter_actions(&msg, &actions) {
+                    yield AggregatorEvent::Changes(msg);
+                },
+                Err(_) => yield AggregatorEvent::Error(&LAGGED_MSG),
             }
         }
     }
 }
 
-impl SubscriptionAggregator {
-    fn poll_inner(self: &mut Self, cx: &mut Context) -> Option<AggregatorPoll> {
-        match self.subscription.inner.poll_next_unpin(cx) {
-            Poll::Pending => Some(Poll::Pending),
-            Poll::Ready(value) => match value {
-                None => Some(Poll::Ready(None)),
-                Some(result) => match result {
-                    Ok(item) => match item {
-                        BroadcastMsg::Change { action, .. } => self.register(action),
-                        BroadcastMsg::Rollback => self.clear(),
-                        BroadcastMsg::Commit => self.flush(),
-                    },
-                    Err(_) => self.error(),
-                },
-            },
+fn filter_actions(msg: &BroadcastMsg, actions: &Vec<Action>) -> bool {
+    for action in actions {
+        let count = match action {
+            Action::DELETE => msg.delete,
+            Action::INSERT => msg.insert,
+            Action::UPDATE => msg.update,
+            Action::UNKNOWN => msg.unknown,
+        };
+        if count > 0 {
+            return true;
         }
     }
-
-    fn flush(&mut self) -> Option<AggregatorPoll> {
-        self.errored = false;
-        if self.state.is_empty() {
-            return None;
-        }
-        let changes = mem::take(&mut self.state);
-        Some(Poll::Ready(Some(Ok(AggregatorEvent::Changes(changes)))))
-    }
-
-    fn error(&mut self) -> Option<AggregatorPoll> {
-        let errored = self.errored;
-        self.clear();
-        self.errored = true;
-        if errored {
-            return None;
-        }
-        Some(Poll::Ready(Some(Ok(AggregatorEvent::Error(&LAGGED_MSG)))))
-    }
-
-    fn register(&mut self, action: Action) -> Option<AggregatorPoll> {
-        if self.actions.is_empty() || self.actions.contains(&action) {
-            let total = self.state.entry(action).or_insert(0);
-            *total += 1;
-        }
-        None
-    }
-
-    fn clear(&mut self) -> Option<AggregatorPoll> {
-        self.errored = false;
-        self.state.clear();
-        None
-    }
+    actions.is_empty()
 }
