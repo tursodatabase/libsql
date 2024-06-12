@@ -57,6 +57,10 @@ impl BroadcasterHandle {
         self.registry.lock().get(&self.namespace).map(|b| b.clone())
     }
 
+    pub fn active(&self) -> bool {
+        self.registry.lock().contains_key(&self.namespace)
+    }
+
     pub fn handle(&self, namespace: NamespaceName) -> BroadcasterHandle {
         BroadcasterHandle {
             namespace,

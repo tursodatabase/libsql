@@ -408,6 +408,8 @@ pub(super) struct Connection<W> {
     block_writes: Arc<AtomicBool>,
     resolve_attach_path: ResolveNamespacePathFn,
     forced_rollback: bool,
+    broadcaster: BroadcasterHandle,
+    hooked: bool,
 }
 
 fn update_stats(
@@ -448,22 +450,6 @@ impl<W: Wal> Connection<W> {
             builder_config.encryption_config.clone(),
         )?;
 
-        if let Some(broadcaster) = broadcaster.get() {
-            let update = broadcaster.clone();
-            conn.update_hook(Some(move |action: _, _: &_, table: &_, _| {
-                update.notify(table, action);
-            }));
-
-            let commit = broadcaster.clone();
-            conn.commit_hook(Some(move || {
-                commit.commit();
-                false // allow commit to go through
-            }));
-
-            let rollback = broadcaster;
-            conn.rollback_hook(Some(move || rollback.rollback()));
-        }
-
         let config = config_store.get();
         conn.pragma_update(None, "max_page_count", config.max_db_pages)?;
         conn.set_limit(
@@ -492,6 +478,8 @@ impl<W: Wal> Connection<W> {
             block_writes,
             resolve_attach_path,
             forced_rollback: false,
+            broadcaster,
+            hooked: false,
         };
 
         for ext in extensions.iter() {
@@ -514,11 +502,13 @@ impl<W: Wal> Connection<W> {
         mut builder: B,
     ) -> Result<(B, Program)> {
         let (config, stats, block_writes, resolve_attach_path) = {
-            let lock = this.lock();
+            let mut lock = this.lock();
             let config = lock.config_store.get();
             let stats = lock.stats.clone();
             let block_writes = lock.block_writes.clone();
             let resolve_attach_path = lock.resolve_attach_path.clone();
+
+            lock.update_hooks();
 
             (config, stats, block_writes, resolve_attach_path)
         };
@@ -670,6 +660,39 @@ impl<W: Wal> Connection<W> {
     fn is_autocommit(&self) -> bool {
         self.conn.is_autocommit()
     }
+
+    fn update_hooks(&mut self) {
+        let (update_fn, commit_fn, rollback_fn) = if self.hooked {
+            if self.broadcaster.active() {
+                return;
+            }
+            self.hooked = false;
+            (None, None, None)
+        } else {
+            let Some(broadcaster) = self.broadcaster.get() else {
+                return;
+            };
+
+            let update = broadcaster.clone();
+            let update_fn = Some(move |action: _, _: &_, table: &_, _| {
+                update.notify(table, action);
+            });
+
+            let commit = broadcaster.clone();
+            let commit_fn = Some(move || {
+                commit.commit();
+                false // allow commit to go through
+            });
+
+            let rollback = broadcaster;
+            let rollback_fn = Some(move || rollback.rollback());
+            (update_fn, commit_fn, rollback_fn)
+        };
+
+        self.conn.update_hook(update_fn);
+        self.conn.commit_hook(commit_fn);
+        self.conn.rollback_hook(rollback_fn);
+    }
 }
 
 #[async_trait::async_trait]
@@ -758,6 +781,8 @@ mod test {
             block_writes: Default::default(),
             resolve_attach_path: Arc::new(|_| unreachable!()),
             forced_rollback: false,
+            broadcaster: Default::default(),
+            hooked: false,
         };
 
         let conn = Arc::new(Mutex::new(conn));
