@@ -489,7 +489,7 @@ impl NamespaceStore {
         self.inner.broadcasters.subscribe(namespace, table)
     }
 
-    pub(crate) async fn unsubscribe(&self, namespace: NamespaceName, table: &String) {
+    pub(crate) fn unsubscribe(&self, namespace: NamespaceName, table: &String) {
         self.inner.broadcasters.unsubscribe(namespace, table);
     }
 

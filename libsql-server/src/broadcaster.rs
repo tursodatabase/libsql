@@ -1,6 +1,5 @@
 use std::{
     collections::{hash_map::Entry, HashMap},
-    mem,
     sync::Arc,
 };
 
@@ -61,21 +60,15 @@ impl Broadcaster {
 
     pub fn commit(&self) {
         let senders = self.inner.senders.lock();
-        for (table, entry) in self.flush_changes() {
+        self.inner.state.lock().drain().for_each(|(table, entry)| {
             if let Some(sender) = senders.get(&table) {
-                _ = sender.send(entry);
+                let _ = sender.send(entry);
             }
-        }
-    }
-
-    pub fn flush_changes(&self) -> HashMap<String, BroadcastMsg> {
-        let mut changes = HashMap::new();
-        mem::swap(&mut changes, &mut *self.inner.state.lock());
-        changes
+        });
     }
 
     pub fn rollback(&self) {
-        self.flush_changes();
+        self.inner.state.lock().clear();
     }
 
     pub fn subscribe(&self, table: String) -> BroadcastStream<BroadcastMsg> {
