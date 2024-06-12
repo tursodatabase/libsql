@@ -38,7 +38,14 @@ fn main() {
     };
 
     let dir = env!("CARGO_MANIFEST_DIR");
-    std::fs::copy(format!("{dir}/{bindgen_rs_path}"), &out_path).unwrap();
+
+    Command::new("cp")
+        .arg("--no-preserve=mode,ownership")
+        .arg("-R")
+        .arg(format!("{dir}/{bindgen_rs_path}"))
+        .arg(&out_path)
+        .output()
+        .unwrap();
 
     println!("cargo:lib_dir={out_dir}");
 
