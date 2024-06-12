@@ -20,6 +20,7 @@ pub struct BroadcastMsg {
     pub update: u64,
 }
 
+#[inline(always)]
 fn is_zero(num: &u64) -> bool {
     *num == 0
 }
