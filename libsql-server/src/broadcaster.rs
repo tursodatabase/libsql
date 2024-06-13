@@ -1,5 +1,6 @@
 use std::{
-    collections::{hash_map::Entry, HashMap},
+    collections::{hash_map::Entry, BTreeMap, HashMap},
+    mem,
     sync::Arc,
 };
 
@@ -27,7 +28,7 @@ fn is_zero(num: &u64) -> bool {
 
 #[derive(Debug, Default)]
 pub struct BroadcasterInner {
-    state: Mutex<HashMap<String, BroadcastMsg>>,
+    state: Mutex<BTreeMap<String, BroadcastMsg>>,
     senders: Mutex<HashMap<String, broadcast::Sender<BroadcastMsg>>>,
 }
 
@@ -61,7 +62,10 @@ impl Broadcaster {
 
     pub fn commit(&self) {
         let senders = self.inner.senders.lock();
-        self.inner.state.lock().drain().for_each(|(table, entry)| {
+        let mut state = self.inner.state.lock();
+        let state = mem::take(&mut *state);
+
+        state.into_iter().for_each(|(table, entry)| {
             if let Some(sender) = senders.get(&table) {
                 let _ = sender.send(entry);
             }
