@@ -6613,6 +6613,16 @@ case OP_IdxDelete: {
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
+  if( isVectorIdx(pC) ) {
+    sqlite3VdbeIncrWriteCounter(p, pC);
+    r.pKeyInfo = pC->pKeyInfo;
+    r.nField = (u16)pOp->p3;
+    r.default_rc = 0;
+    r.aMem = &aMem[pOp->p2];
+    rc = vectorIndexDelete(pC->uc.pVecIdx, &r);
+    if( rc ) goto abort_due_to_error;
+    break;
+  }
   assert( pC->eCurType==CURTYPE_BTREE );
   sqlite3VdbeIncrWriteCounter(p, pC);
   pCrsr = pC->uc.pCursor;
