@@ -59,6 +59,7 @@ use self::net::AddrIncoming;
 use self::replication::script_backup_manager::{CommandHandler, ScriptBackupManager};
 
 pub mod auth;
+mod broadcaster;
 pub mod config;
 pub mod connection;
 pub mod net;
@@ -191,6 +192,7 @@ where
             max_response_size: self.db_config.max_response_size,
             enable_console: self.user_api_config.enable_http_console,
             self_url: self.user_api_config.self_url,
+            primary_url: self.user_api_config.primary_url,
             path: self.path.clone(),
             shutdown: self.shutdown.clone(),
         };

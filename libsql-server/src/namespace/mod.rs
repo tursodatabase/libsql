@@ -1,3 +1,4 @@
+pub mod broadcasters;
 mod fork;
 pub mod meta_store;
 mod name;
@@ -11,6 +12,7 @@ use std::sync::{Arc, Weak};
 
 use anyhow::{Context as _, Error};
 use bottomless::replicator::Options;
+use broadcasters::BroadcasterHandle;
 use bytes::Bytes;
 use chrono::NaiveDateTime;
 use enclose::enclose;
@@ -106,6 +108,7 @@ impl Namespace {
         reset: ResetCb,
         resolve_attach_path: ResolveNamespacePathFn,
         store: NamespaceStore,
+        broadcaster: BroadcasterHandle,
     ) -> crate::Result<Self> {
         match ns_config.db_kind {
             DatabaseKind::Primary if db_config.get().is_shared_schema => {
@@ -115,6 +118,7 @@ impl Namespace {
                     db_config,
                     restore_option,
                     resolve_attach_path,
+                    broadcaster,
                 )
                 .await
             }
@@ -125,6 +129,7 @@ impl Namespace {
                     db_config,
                     restore_option,
                     resolve_attach_path,
+                    broadcaster,
                 )
                 .await
             }
@@ -136,6 +141,7 @@ impl Namespace {
                     reset,
                     resolve_attach_path,
                     store,
+                    broadcaster,
                 )
                 .await
             }
@@ -247,6 +253,7 @@ impl Namespace {
         meta_store_handle: MetaStoreHandle,
         restore_option: RestoreOption,
         resolve_attach_path: ResolveNamespacePathFn,
+        broadcaster: BroadcasterHandle,
     ) -> crate::Result<Self> {
         let db_path: Arc<Path> = config.base_path.join("dbs").join(name.as_str()).into();
         let fresh_namespace = !db_path.try_exists()?;
@@ -258,6 +265,7 @@ impl Namespace {
             restore_option,
             resolve_attach_path,
             db_path.clone(),
+            broadcaster,
         )
         .await
         {
@@ -283,6 +291,7 @@ impl Namespace {
         block_writes: Arc<AtomicBool>,
         join_set: &mut JoinSet<anyhow::Result<()>>,
         resolve_attach_path: ResolveNamespacePathFn,
+        broadcaster: BroadcasterHandle,
     ) -> crate::Result<(PrimaryConnectionMaker, ReplicationWalWrapper, Arc<Stats>)> {
         let db_config = meta_store_handle.get();
         let bottomless_db_id = NamespaceBottomlessDbId::from_config(&db_config);
@@ -362,6 +371,7 @@ impl Namespace {
             db_path.to_path_buf(),
             wal_wrapper.clone(),
             stats.clone(),
+            broadcaster,
             meta_store_handle.clone(),
             ns_config.extensions.clone(),
             ns_config.max_response_size,
@@ -414,6 +424,7 @@ impl Namespace {
         restore_option: RestoreOption,
         resolve_attach_path: ResolveNamespacePathFn,
         db_path: Arc<Path>,
+        broadcaster: BroadcasterHandle,
     ) -> crate::Result<Self> {
         let mut join_set = JoinSet::new();
 
@@ -429,6 +440,7 @@ impl Namespace {
             block_writes.clone(),
             &mut join_set,
             resolve_attach_path,
+            broadcaster,
         )
         .await?;
         let connection_maker = Arc::new(connection_maker);
@@ -482,6 +494,7 @@ impl Namespace {
         reset: ResetCb,
         resolve_attach_path: ResolveNamespacePathFn,
         store: NamespaceStore,
+        broadcaster: BroadcasterHandle,
     ) -> crate::Result<Self> {
         tracing::debug!("creating replica namespace");
         let db_path = config.base_path.join("dbs").join(name.as_str());
@@ -523,6 +536,7 @@ impl Namespace {
                     reset,
                     resolve_attach_path,
                     store,
+                    broadcaster,
                 )
                 .await;
             }
@@ -603,6 +617,7 @@ impl Namespace {
             channel.clone(),
             uri.clone(),
             stats.clone(),
+            broadcaster,
             meta_store_handle.clone(),
             applied_frame_no_receiver,
             config.max_response_size,
@@ -641,6 +656,7 @@ impl Namespace {
         timestamp: Option<NaiveDateTime>,
         resolve_attach: ResolveNamespacePathFn,
         store: NamespaceStore,
+        broadcaster: BroadcasterHandle,
     ) -> crate::Result<Namespace> {
         let from_config = from_config.get();
         match ns_config.db_kind {
@@ -675,7 +691,7 @@ impl Namespace {
 
                 let fork_task = ForkTask {
                     base_path: ns_config.base_path.clone(),
-                    to_namespace: to_ns,
+                    to_namespace: to_ns.clone(),
                     logger,
                     restore_to,
                     bottomless_db_id,
@@ -683,6 +699,7 @@ impl Namespace {
                     ns_config,
                     resolve_attach,
                     store,
+                    broadcaster: broadcaster.handle(to_ns),
                 };
 
                 let ns = fork_task.fork().await?;
@@ -698,6 +715,7 @@ impl Namespace {
         meta_store_handle: MetaStoreHandle,
         restore_option: RestoreOption,
         resolve_attach_path: ResolveNamespacePathFn,
+        broadcaster: BroadcasterHandle,
     ) -> crate::Result<Namespace> {
         let mut join_set = JoinSet::new();
         let db_path = ns_config.base_path.join("dbs").join(name.as_str());
@@ -713,6 +731,7 @@ impl Namespace {
             Arc::new(AtomicBool::new(false)), // this is always false for schema
             &mut join_set,
             resolve_attach_path,
+            broadcaster,
         )
         .await?;
 
