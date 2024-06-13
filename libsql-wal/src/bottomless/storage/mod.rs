@@ -1,4 +1,5 @@
 use std::future::Future;
+use std::path::Path;
 use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
@@ -53,7 +54,7 @@ pub trait Storage: Send + Sync + 'static {
         _config: &Self::Config,
         _namespace: NamespaceName,
         _frame_no: u64,
-        _dest: impl AsyncWrite,
+        _dest_path: &Path,
     ) -> Result<()>;
 
     /// Fetch meta for `namespace`
@@ -107,10 +108,10 @@ impl<T: Storage> Storage for Arc<T> {
         config: &Self::Config,
         namespace: NamespaceName,
         frame_no: u64,
-        dest: impl AsyncWrite,
+        dest_path: &Path,
     ) -> Result<()> {
         self.as_ref()
-            .fetch_segment(config, namespace, frame_no, dest)
+            .fetch_segment(config, namespace, frame_no, dest_path)
             .await
     }
 

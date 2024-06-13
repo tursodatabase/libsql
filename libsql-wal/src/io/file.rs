@@ -172,17 +172,32 @@ impl FileExt for Vec<u8> {
         mut buf: B,
         offset: u64,
     ) -> impl Future<Output = (B, Result<()>)> + Send {
-        let slice = &self[offset as usize..];
+        async move {
+            let slice = &self[offset as usize..];
 
-        let chunk = unsafe {
-            let len = buf.bytes_total();
-            let ptr = buf.stable_mut_ptr();
-            std::slice::from_raw_parts_mut(ptr, len)
-        };
+            if slice.len() < buf.bytes_total() {
+                return (
+                    buf,
+                    Err(io::Error::new(ErrorKind::UnexpectedEof, "early eof")),
+                );
+            }
 
-        chunk.clone_from_slice(slice);
+            let chunk = unsafe {
+                let len = buf.bytes_total();
+                let ptr = buf.stable_mut_ptr();
+                std::slice::from_raw_parts_mut(ptr, len)
+            };
 
-        async move { (buf, Ok(())) }
+            debug_assert_eq!(chunk.len(), slice.len());
+
+            chunk.clone_from_slice(slice);
+
+            unsafe {
+                buf.set_init(chunk.len());
+            }
+
+            (buf, Ok(()))
+        }
     }
 
     async fn write_all_at_async<B: IoBuf + Send + 'static>(
