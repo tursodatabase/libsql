@@ -143,3 +143,13 @@ pub static SERVER_COUNT: Lazy<Gauge> = Lazy::new(|| {
     describe_gauge!(NAME, "a gauge counting the number of active servers");
     register_gauge!(NAME)
 });
+pub static LISTEN_EVENTS_SENT: Lazy<Counter> = Lazy::new(|| {
+    const NAME: &str = "libsql_server_listen_events_sent";
+    describe_counter!(NAME, "Number of listen events sent");
+    register_counter!(NAME)
+});
+pub static LISTEN_EVENTS_DROPPED: Lazy<Counter> = Lazy::new(|| {
+    const NAME: &str = "libsql_server_listen_events_dropped";
+    describe_counter!(NAME, "Number of listen events dropped");
+    register_counter!(NAME)
+});

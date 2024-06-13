@@ -1,5 +1,6 @@
 use crate::broadcaster::BroadcastMsg;
 use crate::error::Error;
+use crate::metrics::{LISTEN_EVENTS_DROPPED, LISTEN_EVENTS_SENT};
 use crate::{
     auth::Authenticated,
     namespace::{NamespaceName, NamespaceStore},
@@ -11,6 +12,7 @@ use axum_extra::{extract::Query, json_lines::JsonLines};
 use futures::{Stream, StreamExt};
 use hyper::HeaderMap;
 use serde::{Deserialize, Serialize};
+use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
 
 use super::db_factory::namespace_from_headers;
 use super::AppState;
@@ -105,9 +107,13 @@ async fn listen_stream(
         while let Some(item) = stream.next().await  {
             match item {
                 Ok(msg) => if filter_actions(&msg, &actions) {
+                    LISTEN_EVENTS_SENT.increment(1);
                     yield AggregatorEvent::Changes(msg);
                 },
-                Err(_) => yield AggregatorEvent::Error(&LAGGED_MSG),
+                Err(BroadcastStreamRecvError::Lagged(n)) => {
+                    LISTEN_EVENTS_DROPPED.increment(n as u64);
+                    yield AggregatorEvent::Error(&LAGGED_MSG);
+                },
             }
         }
     }
