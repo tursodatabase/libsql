@@ -98,12 +98,25 @@ pub(super) async fn handle_hello(
         .with(namespace.clone(), |ns| ns.jwt_keys())
         .await??;
 
-    namespace_jwt_keys
+    let auth_strategy = namespace_jwt_keys
         .map(Jwt::new)
         .map(Auth::new)
-        .unwrap_or_else(|| server.user_auth_strategy.clone())
-        .authenticate(Ok(UserAuthContext::bearer_opt(jwt)))
+        .unwrap_or_else(|| server.user_auth_strategy.clone());
+
+    let context: UserAuthContext =
+        build_context(jwt, &auth_strategy.user_strategy.required_fields());
+
+    auth_strategy
+        .authenticate(context)
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))
+}
+
+fn build_context(jwt: Option<String>, required_fields: &Vec<String>) -> UserAuthContext {
+    let mut ctx = UserAuthContext::empty();
+    if required_fields.contains(&"authorization".into()) && jwt.is_some() {
+        ctx.add_field("authorization".into(), jwt.unwrap());
+    }
+    ctx
 }
 
 pub(super) async fn handle_request(
