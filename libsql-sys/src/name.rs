@@ -1,6 +1,6 @@
-use std::fmt;
-
 use bytes::Bytes;
+use std::fmt;
+use std::path::Path;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct NamespaceName(pub Bytes);
@@ -47,5 +47,16 @@ impl NamespaceName {
 impl fmt::Display for NamespaceName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.as_str().fmt(f)
+    }
+}
+
+/// Translates a path to a namespace name
+pub trait NamespaceResolver: Send + Sync + 'static {
+    fn resolve(&self, path: &Path) -> NamespaceName;
+}
+
+impl<F: Fn(&Path) -> NamespaceName + Send + Sync + 'static> NamespaceResolver for F {
+    fn resolve(&self, path: &Path) -> NamespaceName {
+        (self)(path)
     }
 }

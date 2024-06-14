@@ -671,22 +671,22 @@ where
             }
         }
 
+        let namespace_resolver = |path: &Path| {
+            NamespaceName::from_string(
+                path.parent()
+                    .unwrap()
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            )
+            .unwrap()
+            .into()
+        };
+
         match self.use_custom_wal {
             Some(CustomWAL::LibsqlWal) => {
-                let namespace_resolver = |path: &Path| {
-                    NamespaceName::from_string(
-                        path.parent()
-                            .unwrap()
-                            .file_name()
-                            .unwrap()
-                            .to_str()
-                            .unwrap()
-                            .to_string(),
-                    )
-                    .unwrap()
-                    .into()
-                };
-
                 let registry = Arc::new(WalRegistry::new(wal_path, namespace_resolver, ())?);
 
                 let wal = LibsqlWalManager::new(registry.clone());
@@ -706,7 +706,11 @@ where
             Some(CustomWAL::DurableWal) => {
                 tracing::info!("using durable wal");
                 let lock_manager = Arc::new(std::sync::Mutex::new(LockManager::new()));
-                let wal = DurableWalManager::new(lock_manager, self.storage_server_address.clone());
+                let wal = DurableWalManager::new(
+                    lock_manager,
+                    namespace_resolver,
+                    self.storage_server_address.clone(),
+                );
                 Ok((
                     Arc::new(move || EitherWAL::C(wal.clone())),
                     Box::pin(ready(Ok(()))),

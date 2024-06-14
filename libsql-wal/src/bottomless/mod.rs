@@ -7,8 +7,8 @@ use tokio::sync::{mpsc, oneshot};
 use tokio::task::{JoinHandle, JoinSet};
 
 use crate::io::Io;
-use crate::name::NamespaceName;
 use crate::segment::sealed::SealedSegment;
+use libsql_sys::name::NamespaceName;
 
 use self::job::JobResult;
 use self::scheduler::Scheduler;
