@@ -5,9 +5,9 @@ use crate::{
     auth::Authenticated,
     namespace::{NamespaceName, NamespaceStore},
 };
+use axum::extract::State as AxumState;
 use axum::http::Uri;
-use axum::response::{IntoResponse, Response};
-use axum::{body::BoxBody, extract::State as AxumState};
+use axum::response::{IntoResponse, Redirect, Response};
 use axum_extra::{extract::Query, json_lines::JsonLines};
 use futures::{Stream, StreamExt};
 use hyper::HeaderMap;
@@ -50,11 +50,8 @@ pub(super) async fn handle_listen(
     }
 
     if let Some(primary_url) = state.primary_url {
-        return Ok(Response::builder()
-            .status(307)
-            .header("Location", primary_url + uri.path())
-            .body(BoxBody::default())
-            .unwrap());
+        let url = primary_url + uri.path_and_query().map_or("", |x| x.as_str());
+        return Ok(Redirect::temporary(&url).into_response());
     }
 
     let stream = listen_stream(
