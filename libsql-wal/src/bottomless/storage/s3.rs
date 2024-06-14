@@ -1,8 +1,7 @@
 //! S3 implementation of storage
 
-use std::{future::Future, path::Path};
 use libsql_sys::name::NamespaceName;
-
+use std::{future::Future, path::Path};
 
 use super::Storage;
 use crate::{bottomless::Result, io::file::FileExt};

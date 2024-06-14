@@ -706,7 +706,11 @@ where
             Some(CustomWAL::DurableWal) => {
                 tracing::info!("using durable wal");
                 let lock_manager = Arc::new(std::sync::Mutex::new(LockManager::new()));
-                let wal = DurableWalManager::new(lock_manager, self.storage_server_address.clone());
+                let wal = DurableWalManager::new(
+                    lock_manager,
+                    namespace_resolver,
+                    self.storage_server_address.clone(),
+                );
                 Ok((
                     Arc::new(move || EitherWAL::C(wal.clone())),
                     Box::pin(ready(Ok(()))),
