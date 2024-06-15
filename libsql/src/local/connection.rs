@@ -293,7 +293,9 @@ impl Connection {
     }
 
     pub fn enable_load_extension(&self, onoff: bool) -> Result<()> {
-        let err = unsafe { ffi::sqlite3_db_config(self.raw, ffi::SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, onoff as i32) };
+        // SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION configration verb accepts 2 additional parameters: an on/off flag and a pointer to an c_int where new state of the parameter will be written (or NULL if reporting back the setting is not needed)
+        // See: https://sqlite.org/c3ref/c_dbconfig_defensive.html#sqlitedbconfigenableloadextension
+        let err = unsafe { ffi::sqlite3_db_config(self.raw, ffi::SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, onoff as i32, std::ptr::null::<c_int>()) };
         match err {
             ffi::SQLITE_OK => Ok(()),
             _ => Err(errors::Error::SqliteFailure(err, errors::error_from_code(err))),
