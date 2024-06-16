@@ -17,6 +17,14 @@ async fn setup() -> Connection {
 }
 
 #[tokio::test]
+async fn enable_disable_extension() {
+    let db = Database::open(":memory:").unwrap();
+    let conn = db.connect().unwrap();
+    conn.load_extension_enable().unwrap();
+    conn.load_extension_disable().unwrap();
+}
+
+#[tokio::test]
 async fn connection_drops_before_statements() {
     let db = Database::open(":memory:").unwrap();
     let conn = db.connect().unwrap();
