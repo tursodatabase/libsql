@@ -8,14 +8,17 @@ use moka::future::Cache;
 use once_cell::sync::OnceCell;
 use tokio::task::JoinSet;
 use tokio::time::{Duration, Instant};
+use tokio_stream::wrappers::BroadcastStream;
 
 use crate::auth::Authenticated;
+use crate::broadcaster::BroadcastMsg;
 use crate::connection::config::DatabaseConfig;
 use crate::error::Error;
 use crate::metrics::NAMESPACE_LOAD_LATENCY;
 use crate::namespace::{NamespaceBottomlessDbId, NamespaceBottomlessDbIdInit, NamespaceName};
 use crate::stats::Stats;
 
+use super::broadcasters::{BroadcasterHandle, BroadcasterRegistry};
 use super::meta_store::{MetaStore, MetaStoreHandle};
 use super::schema_lock::SchemaLocksRegistry;
 use super::{Namespace, NamespaceConfig, ResetCb, ResetOp, ResolveNamespacePathFn, RestoreOption};
@@ -43,6 +46,7 @@ pub struct NamespaceStoreInner {
     snapshot_at_shutdown: bool,
     pub config: NamespaceConfig,
     schema_locks: SchemaLocksRegistry,
+    broadcasters: BroadcasterRegistry,
 }
 
 impl NamespaceStore {
@@ -85,6 +89,7 @@ impl NamespaceStore {
                 snapshot_at_shutdown,
                 config,
                 schema_locks: Default::default(),
+                broadcasters: Default::default(),
             }),
         })
     }
@@ -182,6 +187,7 @@ impl NamespaceStore {
             self.make_reset_cb(),
             self.resolve_attach_fn(),
             self.clone(),
+            self.broadcaster(namespace.clone()),
         )
         .await?;
 
@@ -288,6 +294,7 @@ impl NamespaceStore {
             timestamp,
             self.resolve_attach_fn(),
             self.clone(),
+            self.broadcaster(to),
         )
         .await?;
 
@@ -320,7 +327,7 @@ impl NamespaceStore {
 
     pub async fn with<Fun, R>(&self, namespace: NamespaceName, f: Fun) -> crate::Result<R>
     where
-        Fun: FnOnce(&Namespace) -> R + 'static,
+        Fun: FnOnce(&Namespace) -> R,
     {
         if namespace != NamespaceName::default()
             && !self.inner.metadata.exists(&namespace)
@@ -379,6 +386,7 @@ impl NamespaceStore {
                     self.make_reset_cb(),
                     self.resolve_attach_fn(),
                     self.clone(),
+                    self.broadcaster(namespace.clone()),
                 )
                 .await?;
                 tracing::info!("loaded namespace: `{namespace}`");
@@ -467,6 +475,22 @@ impl NamespaceStore {
 
     pub(crate) async fn stats(&self, namespace: NamespaceName) -> crate::Result<Arc<Stats>> {
         self.with(namespace, |ns| ns.stats.clone()).await
+    }
+
+    pub(crate) fn broadcaster(&self, namespace: NamespaceName) -> BroadcasterHandle {
+        self.inner.broadcasters.handle(namespace)
+    }
+
+    pub(crate) fn subscribe(
+        &self,
+        namespace: NamespaceName,
+        table: String,
+    ) -> BroadcastStream<BroadcastMsg> {
+        self.inner.broadcasters.subscribe(namespace, table)
+    }
+
+    pub(crate) fn unsubscribe(&self, namespace: NamespaceName, table: &String) {
+        self.inner.broadcasters.unsubscribe(namespace, table);
     }
 
     pub(crate) async fn config_store(

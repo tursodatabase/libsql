@@ -2,8 +2,8 @@ use chrono::{DateTime, Utc};
 use tokio::io::AsyncWrite;
 
 use super::storage::Storage;
-use super::NamespaceName;
 use super::Result;
+use libsql_sys::name::NamespaceName;
 
 /// Restore a Namespace from bottomless
 pub struct BottomlessRestore<C> {

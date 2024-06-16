@@ -62,6 +62,7 @@ pub struct UserApiConfig<A = AddrIncoming> {
     pub http_acceptor: Option<A>,
     pub enable_http_console: bool,
     pub self_url: Option<String>,
+    pub primary_url: Option<String>,
     pub auth_strategy: Auth,
 }
 
@@ -72,6 +73,7 @@ impl<A> Default for UserApiConfig<A> {
             http_acceptor: Default::default(),
             enable_http_console: Default::default(),
             self_url: Default::default(),
+            primary_url: Default::default(),
             auth_strategy: Auth::new(Disabled::new()),
         }
     }

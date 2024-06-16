@@ -16,6 +16,7 @@ use tokio::time::{Duration, Instant};
 
 use crate::error::Error;
 use crate::metrics::{DESCRIBE_COUNT, PROGRAM_EXEC_COUNT, VACUUM_COUNT, WAL_CHECKPOINT_COUNT};
+use crate::namespace::broadcasters::BroadcasterHandle;
 use crate::namespace::meta_store::MetaStoreHandle;
 use crate::namespace::ResolveNamespacePathFn;
 use crate::query_analysis::StmtKind;
@@ -36,6 +37,7 @@ pub struct MakeLibSqlConn<W> {
     db_path: PathBuf,
     wal_wrapper: W,
     stats: Arc<Stats>,
+    broadcaster: BroadcasterHandle,
     config_store: MetaStoreHandle,
     extensions: Arc<[PathBuf]>,
     max_response_size: u64,
@@ -60,6 +62,7 @@ where
         db_path: PathBuf,
         wal_wrapper: W,
         stats: Arc<Stats>,
+        broadcaster: BroadcasterHandle,
         config_store: MetaStoreHandle,
         extensions: Arc<[PathBuf]>,
         max_response_size: u64,
@@ -76,6 +79,7 @@ where
         let mut this = Self {
             db_path,
             stats,
+            broadcaster,
             config_store,
             extensions,
             max_response_size,
@@ -133,6 +137,7 @@ where
             self.extensions.clone(),
             self.wal_wrapper.clone(),
             self.stats.clone(),
+            self.broadcaster.clone(),
             self.config_store.clone(),
             QueryBuilderConfig {
                 max_size: Some(self.max_response_size),
@@ -179,6 +184,7 @@ impl LibSqlConnection<libsql_sys::wal::wrapper::PassthroughWalWrapper> {
             path.to_owned(),
             Arc::new([]),
             libsql_sys::wal::wrapper::PassthroughWalWrapper,
+            Default::default(),
             Default::default(),
             MetaStoreHandle::new_test(),
             QueryBuilderConfig::default(),
@@ -315,6 +321,7 @@ where
         extensions: Arc<[PathBuf]>,
         wal_wrapper: W,
         stats: Arc<Stats>,
+        broadcaster: BroadcasterHandle,
         config_store: MetaStoreHandle,
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
@@ -335,6 +342,7 @@ where
                     extensions,
                     wal,
                     stats,
+                    broadcaster,
                     config_store,
                     builder_config,
                     current_frame_no_receiver,
@@ -403,6 +411,8 @@ pub(super) struct Connection<W> {
     block_writes: Arc<AtomicBool>,
     resolve_attach_path: ResolveNamespacePathFn,
     forced_rollback: bool,
+    broadcaster: BroadcasterHandle,
+    hooked: bool,
 }
 
 fn update_stats(
@@ -428,6 +438,7 @@ impl<W: Wal> Connection<W> {
         extensions: Arc<[PathBuf]>,
         wal_manager: T,
         stats: Arc<Stats>,
+        broadcaster: BroadcasterHandle,
         config_store: MetaStoreHandle,
         builder_config: QueryBuilderConfig,
         current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
@@ -470,6 +481,8 @@ impl<W: Wal> Connection<W> {
             block_writes,
             resolve_attach_path,
             forced_rollback: false,
+            broadcaster,
+            hooked: false,
         };
 
         for ext in extensions.iter() {
@@ -492,11 +505,13 @@ impl<W: Wal> Connection<W> {
         mut builder: B,
     ) -> Result<(B, Program)> {
         let (config, stats, block_writes, resolve_attach_path) = {
-            let lock = this.lock();
+            let mut lock = this.lock();
             let config = lock.config_store.get();
             let stats = lock.stats.clone();
             let block_writes = lock.block_writes.clone();
             let resolve_attach_path = lock.resolve_attach_path.clone();
+
+            lock.update_hooks();
 
             (config, stats, block_writes, resolve_attach_path)
         };
@@ -648,6 +663,39 @@ impl<W: Wal> Connection<W> {
     fn is_autocommit(&self) -> bool {
         self.conn.is_autocommit()
     }
+
+    fn update_hooks(&mut self) {
+        let (update_fn, commit_fn, rollback_fn) = if self.hooked {
+            if self.broadcaster.active() {
+                return;
+            }
+            self.hooked = false;
+            (None, None, None)
+        } else {
+            let Some(broadcaster) = self.broadcaster.get() else {
+                return;
+            };
+
+            let update = broadcaster.clone();
+            let update_fn = Some(move |action: _, _: &_, table: &_, _| {
+                update.notify(table, action);
+            });
+
+            let commit = broadcaster.clone();
+            let commit_fn = Some(move || {
+                commit.commit();
+                false // allow commit to go through
+            });
+
+            let rollback = broadcaster;
+            let rollback_fn = Some(move || rollback.rollback());
+            (update_fn, commit_fn, rollback_fn)
+        };
+
+        self.conn.update_hook(update_fn);
+        self.conn.commit_hook(commit_fn);
+        self.conn.rollback_hook(rollback_fn);
+    }
 }
 
 #[async_trait::async_trait]
@@ -739,6 +787,8 @@ mod test {
             block_writes: Default::default(),
             resolve_attach_path: Arc::new(|_| unreachable!()),
             forced_rollback: false,
+            broadcaster: Default::default(),
+            hooked: false,
         };
 
         let conn = Arc::new(Mutex::new(conn));
@@ -766,6 +816,7 @@ mod test {
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
             PassthroughWalWrapper,
+            Default::default(),
             Default::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
@@ -813,6 +864,7 @@ mod test {
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
             PassthroughWalWrapper,
+            Default::default(),
             Default::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
@@ -864,6 +916,7 @@ mod test {
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
             PassthroughWalWrapper,
+            Default::default(),
             Default::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
@@ -950,6 +1003,7 @@ mod test {
             tmp.path().into(),
             PassthroughWalWrapper,
             Default::default(),
+            Default::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),
             100000000,
@@ -1035,6 +1089,7 @@ mod test {
         let make_conn = MakeLibSqlConn::new(
             tmp.path().into(),
             PassthroughWalWrapper,
+            Default::default(),
             Default::default(),
             MetaStoreHandle::load(tmp.path()).unwrap(),
             Arc::new([]),

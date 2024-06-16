@@ -1,9 +1,10 @@
 //! S3 implementation of storage
 
+use libsql_sys::name::NamespaceName;
 use std::{future::Future, path::Path};
 
 use super::Storage;
-use crate::{bottomless::Result, io::file::FileExt, name::NamespaceName};
+use crate::{bottomless::Result, io::file::FileExt};
 
 pub struct S3Storage {}
 

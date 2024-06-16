@@ -104,6 +104,7 @@ async fn configure_server(
             http_acceptor: Some(http_acceptor),
             enable_http_console: false,
             self_url: None,
+            primary_url: None,
             auth_strategy: Auth::new(Disabled::new()),
         },
         path: path.into().into(),

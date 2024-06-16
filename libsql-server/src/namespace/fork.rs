@@ -17,6 +17,7 @@ use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 use crate::{BLOCKING_RT, LIBSQL_PAGE_SIZE};
 
+use super::broadcasters::BroadcasterHandle;
 use super::meta_store::MetaStoreHandle;
 use super::{
     Namespace, NamespaceBottomlessDbId, NamespaceConfig, NamespaceName, NamespaceStore,
@@ -66,6 +67,7 @@ pub struct ForkTask<'a> {
     pub ns_config: &'a NamespaceConfig,
     pub resolve_attach: ResolveNamespacePathFn,
     pub store: NamespaceStore,
+    pub broadcaster: BroadcasterHandle,
 }
 
 pub struct PointInTimeRestore {
@@ -115,6 +117,7 @@ impl<'a> ForkTask<'a> {
             Box::new(|_op| {}),
             self.resolve_attach.clone(),
             self.store.clone(),
+            self.broadcaster,
         )
         .await
         .map_err(|e| ForkError::CreateNamespace(Box::new(e)))

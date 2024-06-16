@@ -59,6 +59,7 @@ use self::net::AddrIncoming;
 use self::replication::script_backup_manager::{CommandHandler, ScriptBackupManager};
 
 pub mod auth;
+mod broadcaster;
 pub mod config;
 pub mod connection;
 pub mod net;
@@ -191,6 +192,7 @@ where
             max_response_size: self.db_config.max_response_size,
             enable_console: self.user_api_config.enable_http_console,
             self_url: self.user_api_config.self_url,
+            primary_url: self.user_api_config.primary_url,
             path: self.path.clone(),
             shutdown: self.shutdown.clone(),
         };
@@ -669,22 +671,22 @@ where
             }
         }
 
+        let namespace_resolver = |path: &Path| {
+            NamespaceName::from_string(
+                path.parent()
+                    .unwrap()
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            )
+            .unwrap()
+            .into()
+        };
+
         match self.use_custom_wal {
             Some(CustomWAL::LibsqlWal) => {
-                let namespace_resolver = |path: &Path| {
-                    NamespaceName::from_string(
-                        path.parent()
-                            .unwrap()
-                            .file_name()
-                            .unwrap()
-                            .to_str()
-                            .unwrap()
-                            .to_string(),
-                    )
-                    .unwrap()
-                    .into()
-                };
-
                 let registry = Arc::new(WalRegistry::new(wal_path, namespace_resolver, ())?);
 
                 let wal = LibsqlWalManager::new(registry.clone());
@@ -704,7 +706,11 @@ where
             Some(CustomWAL::DurableWal) => {
                 tracing::info!("using durable wal");
                 let lock_manager = Arc::new(std::sync::Mutex::new(LockManager::new()));
-                let wal = DurableWalManager::new(lock_manager, self.storage_server_address.clone());
+                let wal = DurableWalManager::new(
+                    lock_manager,
+                    namespace_resolver,
+                    self.storage_server_address.clone(),
+                );
                 Ok((
                     Arc::new(move || EitherWAL::C(wal.clone())),
                     Box::pin(ready(Ok(()))),

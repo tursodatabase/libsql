@@ -5,7 +5,7 @@ use tokio::sync::mpsc;
 
 use super::job::{IndexedRequest, Job, JobResult};
 use super::StoreSegmentRequest;
-use crate::name::NamespaceName;
+use libsql_sys::name::NamespaceName;
 
 struct NamespaceRequests<C, F> {
     requests: VecDeque<IndexedRequest<C, F>>,
@@ -155,7 +155,7 @@ mod test {
     use chrono::Utc;
 
     use crate::bottomless::Error;
-    use crate::name::NamespaceName;
+    use libsql_sys::name::NamespaceName;
 
     use super::*;
 

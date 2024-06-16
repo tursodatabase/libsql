@@ -101,9 +101,9 @@ mod test {
     use libsql_sys::rusqlite::OpenFlags;
     use tempfile::tempdir;
 
-    use crate::name::NamespaceName;
     use crate::registry::WalRegistry;
     use crate::wal::LibsqlWalManager;
+    use libsql_sys::name::NamespaceName;
 
     use super::*;
 
