@@ -35,7 +35,6 @@ pub(crate) trait RemoteStorage: Send + Sync + 'static {
     fn upload(
         &self,
         file_path: &Path,
-        key: &str,
         meta: &SegmentMeta,
     ) -> impl Future<Output = Result<()>> + Send;
 
@@ -43,23 +42,17 @@ pub(crate) trait RemoteStorage: Send + Sync + 'static {
         &self,
         namespace: &NamespaceName,
         frame_no: u64,
-        out_folder: &Path,
     ) -> impl Future<Output = Result<Self::FetchStream>> + Send;
 }
 
 impl RemoteStorage for () {
     type FetchStream = tokio::io::Empty;
 
-    async fn upload(&self, _file_path: &Path, _key: &str, _meta: &SegmentMeta) -> Result<()> {
+    async fn upload(&self, _file_path: &Path, _meta: &SegmentMeta) -> Result<()> {
         Ok(())
     }
 
-    async fn fetch(
-        &self,
-        _namespace: &NamespaceName,
-        frame_no: u64,
-        _out_folder: &Path,
-    ) -> Result<Self::FetchStream> {
+    async fn fetch(&self, _namespace: &NamespaceName, frame_no: u64) -> Result<Self::FetchStream> {
         Err(Error::FrameNotFound(frame_no))
     }
 }
@@ -92,7 +85,7 @@ impl<I: Io, S: RemoteStorage> Storage for FsStorage<I, S> {
         let (_, res) = f.write_all_at_async(buf, 0).await;
         res?;
 
-        self.remote_storage.upload(&path, &key, &meta).await?;
+        self.remote_storage.upload(&path, &meta).await?;
 
         Ok(())
     }
@@ -149,10 +142,7 @@ impl<I: Io, S: RemoteStorage> Storage for FsStorage<I, S> {
 
         // TODO(lucio): fetch from remote storage
         let out_folder = PathBuf::new();
-        let reader = self
-            .remote_storage
-            .fetch(&namespace, frame_no, &out_folder)
-            .await?;
+        let reader = self.remote_storage.fetch(&namespace, frame_no).await?;
 
         // TODO(lucio): write buf reader content into the expected destination file then hard link
 
@@ -175,6 +165,7 @@ impl<I: Io, S: RemoteStorage> Storage for FsStorage<I, S> {
 }
 
 pub(super) fn parse_segment_file_name(name: &str) -> Result<(u64, u64)> {
+    tracing::debug!("parsing file name: {}", name);
     let key = name.split(".").next().unwrap();
     let mut comp = key.split("-");
 
