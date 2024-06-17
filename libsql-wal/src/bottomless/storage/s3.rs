@@ -8,7 +8,7 @@ use libsql_sys::name::NamespaceName;
 use tokio::io::AsyncBufRead;
 
 use super::{fs::RemoteStorage, SegmentMeta};
-use crate::bottomless::Result;
+use crate::bottomless::{Error, Result};
 
 pub struct S3Storage {
     client: Client,
@@ -46,7 +46,7 @@ impl S3Storage {
         client
             .create_bucket()
             .create_bucket_configuration(bucket_config)
-            .bucket("testfoobar")
+            .bucket(&config.bucket)
             .send()
             .await
             .unwrap();
@@ -60,12 +60,7 @@ impl RemoteStorage for S3Storage {
 
     async fn upload(&self, file_path: &Path, meta: &SegmentMeta) -> Result<()> {
         let folder_key = s3_folder_key(&self.config.cluster_id, &meta.namespace);
-        let key = format!(
-            "{:019}-{:019}-{:019}.segment",
-            meta.start_frame_no,
-            meta.end_frame_no,
-            meta.created_at.timestamp()
-        );
+        let key = super::fs::generate_key(&meta);
 
         let s3_key = format!("{}/segments/{}", folder_key, key);
 
@@ -121,7 +116,7 @@ impl RemoteStorage for S3Storage {
             }
         }
 
-        todo!("return error")
+        Err(Error::FrameNotFound(frame_no))
     }
 }
 
@@ -130,7 +125,7 @@ mod tests {
     use std::path::Path;
 
     use aws_config::{BehaviorVersion, Region, SdkConfig};
-    use aws_sdk_s3::config::{IntoShared, SharedCredentialsProvider};
+    use aws_sdk_s3::config::SharedCredentialsProvider;
     use chrono::Utc;
     use s3s::{
         auth::SimpleAuth,
@@ -199,5 +194,7 @@ mod tests {
             .unwrap();
 
         storage.fetch(&ns, 1).await.unwrap();
+
+        assert!(storage.fetch(&ns, 65).await.is_err());
     }
 }
