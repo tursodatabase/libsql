@@ -348,7 +348,7 @@ dependencies = [
  "fastrand 1.9.0",
  "hex",
  "http 0.2.12",
- "hyper",
+ "hyper 0.14.28",
  "ring 0.16.20",
  "time",
  "tokio",
@@ -379,7 +379,7 @@ dependencies = [
  "fastrand 2.1.0",
  "hex",
  "http 0.2.12",
- "hyper",
+ "hyper 0.14.28",
  "ring 0.17.8",
  "time",
  "tokio",
@@ -801,7 +801,7 @@ dependencies = [
  "fastrand 1.9.0",
  "http 0.2.12",
  "http-body 0.4.6",
- "hyper",
+ "hyper 0.14.28",
  "hyper-rustls 0.23.2",
  "lazy_static",
  "pin-project-lite",
@@ -846,7 +846,7 @@ dependencies = [
  "futures-core",
  "http 0.2.12",
  "http-body 0.4.6",
- "hyper",
+ "hyper 0.14.28",
  "once_cell",
  "percent-encoding",
  "pin-project-lite",
@@ -948,7 +948,7 @@ dependencies = [
  "http-body 0.4.6",
  "http-body 1.0.0",
  "httparse",
- "hyper",
+ "hyper 0.14.28",
  "hyper-rustls 0.24.2",
  "once_cell",
  "pin-project-lite",
@@ -1015,6 +1015,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "aws-smithy-types-convert"
+version = "0.60.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f280f434214856abace637b1f944d50ccca216814813acd195cdd7f206ce17f"
+dependencies = [
+ "aws-smithy-types 1.2.0",
+ "time",
+]
+
+[[package]]
 name = "aws-smithy-xml"
 version = "0.55.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1077,7 +1087,7 @@ dependencies = [
  "headers",
  "http 0.2.12",
  "http-body 0.4.6",
- "hyper",
+ "hyper 0.14.28",
  "itoa",
  "matchit 0.7.3",
  "memchr",
@@ -1089,7 +1099,7 @@ dependencies = [
  "serde_json",
  "serde_path_to_error",
  "serde_urlencoded",
- "sync_wrapper",
+ "sync_wrapper 0.1.2",
  "tokio",
  "tower",
  "tower-layer",
@@ -2952,13 +2962,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "hyper"
+version = "1.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe575dd17d0862a9a33781c8c4696a55c320909004a67a00fb286ba8b1bc496d"
+dependencies = [
+ "bytes",
+ "futures-channel",
+ "futures-util",
+ "http 1.1.0",
+ "http-body 1.0.0",
+ "httparse",
+ "httpdate",
+ "itoa",
+ "pin-project-lite",
+ "smallvec",
+ "tokio",
+]
+
+[[package]]
 name = "hyper-rustls"
 version = "0.23.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1788965e61b367cd03a62950836d5cd41560c3577d90e40e0819373194d1661c"
 dependencies = [
  "http 0.2.12",
- "hyper",
+ "hyper 0.14.28",
  "log",
  "rustls 0.20.9",
  "rustls-native-certs 0.6.3",
@@ -2973,7 +3002,7 @@ source = "git+https://github.com/rustls/hyper-rustls.git?rev=163b3f5#163b3f539a4
 dependencies = [
  "futures-util",
  "http 0.2.12",
- "hyper",
+ "hyper 0.14.28",
  "log",
  "rustls 0.21.12",
  "rustls-native-certs 0.6.3",
@@ -2989,7 +3018,7 @@ checksum = "ec3efd23720e2049821a693cbc7e65ea87c72f1c58ff2f9522ff332b1491e590"
 dependencies = [
  "futures-util",
  "http 0.2.12",
- "hyper",
+ "hyper 0.14.28",
  "log",
  "rustls 0.21.12",
  "rustls-native-certs 0.6.3",
@@ -3005,7 +3034,7 @@ checksum = "399c78f9338483cb7e630c8474b07268983c6bd5acee012e4211f9f7bb21b070"
 dependencies = [
  "futures-util",
  "http 0.2.12",
- "hyper",
+ "hyper 0.14.28",
  "log",
  "rustls 0.22.4",
  "rustls-native-certs 0.7.0",
@@ -3021,7 +3050,7 @@ version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbb958482e8c7be4bc3cf272a766a2b0bf1a6755e7a6ae777f017a31d11b13b1"
 dependencies = [
- "hyper",
+ "hyper 0.14.28",
  "pin-project-lite",
  "tokio",
  "tokio-io-timeout",
@@ -3033,7 +3062,7 @@ version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7cc7dcb1ab67cd336f468a12491765672e61a3b6b148634dbfe2fe8acd3fe7d9"
 dependencies = [
- "hyper",
+ "hyper 0.14.28",
  "pin-project-lite",
  "tokio",
  "tokio-tungstenite",
@@ -3352,7 +3381,7 @@ dependencies = [
  "fallible-iterator 0.3.0",
  "futures",
  "http 0.2.12",
- "hyper",
+ "hyper 0.14.28",
  "hyper-rustls 0.25.0",
  "libsql-hrana",
  "libsql-sqlite3-parser",
@@ -3474,7 +3503,7 @@ dependencies = [
  "hdrhistogram",
  "hmac",
  "http-body 0.4.6",
- "hyper",
+ "hyper 0.14.28",
  "hyper-rustls 0.24.1",
  "hyper-tungstenite",
  "insta",
@@ -3509,8 +3538,8 @@ dependencies = [
  "ring 0.17.8",
  "rustls 0.21.12",
  "rustls-pemfile 1.0.4",
- "s3s",
- "s3s-fs",
+ "s3s 0.8.1",
+ "s3s-fs 0.8.1",
  "semver",
  "serde",
  "serde_json",
@@ -3609,6 +3638,7 @@ dependencies = [
  "arc-swap",
  "async-stream",
  "aws-config 1.5.0",
+ "aws-credential-types 1.2.0",
  "aws-sdk-s3 1.35.0",
  "bitflags 2.5.0",
  "bytes",
@@ -3628,11 +3658,15 @@ dependencies = [
  "rand",
  "rand_chacha",
  "regex",
+ "s3s 0.10.1-dev",
+ "s3s-aws",
+ "s3s-fs 0.10.1-dev",
  "tempfile",
  "thiserror",
  "tokio",
  "tokio-stream",
  "tracing",
+ "tracing-subscriber",
  "uuid",
  "walkdir",
  "zerocopy",
@@ -3844,7 +3878,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d4fa7ce7c4862db464a37b0b31d89bca874562f034bd7993895572783d02950"
 dependencies = [
  "base64 0.21.7",
- "hyper",
+ "hyper 0.14.28",
  "indexmap 1.9.3",
  "ipnet",
  "metrics",
@@ -4822,7 +4856,7 @@ dependencies = [
  "h2",
  "http 0.2.12",
  "http-body 0.4.6",
- "hyper",
+ "hyper 0.14.28",
  "hyper-rustls 0.24.2",
  "ipnet",
  "js-sys",
@@ -4836,7 +4870,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_urlencoded",
- "sync_wrapper",
+ "sync_wrapper 0.1.2",
  "system-configuration",
  "tokio",
  "tokio-rustls 0.24.1",
@@ -5101,7 +5135,7 @@ dependencies = [
  "hmac",
  "http-body 0.4.6",
  "httparse",
- "hyper",
+ "hyper 0.14.28",
  "itoa",
  "memchr",
  "mime",
@@ -5120,6 +5154,68 @@ dependencies = [
  "transform-stream",
  "urlencoding",
  "zeroize",
+]
+
+[[package]]
+name = "s3s"
+version = "0.10.1-dev"
+source = "git+https://github.com/Nugine/s3s#b3c99e69136f2baf4caeb0a17af7317bf3a52f69"
+dependencies = [
+ "arrayvec",
+ "async-trait",
+ "atoi",
+ "base64-simd",
+ "bytes",
+ "bytestring",
+ "chrono",
+ "crc32c",
+ "crc32fast",
+ "digest",
+ "futures",
+ "hex-simd",
+ "hmac",
+ "http-body 1.0.0",
+ "http-body-util",
+ "httparse",
+ "hyper 1.3.1",
+ "itoa",
+ "memchr",
+ "mime",
+ "nom",
+ "nugine-rust-utils",
+ "numeric_cast",
+ "pin-project-lite",
+ "quick-xml 0.31.0",
+ "serde",
+ "serde_urlencoded",
+ "sha1",
+ "sha2",
+ "smallvec",
+ "sync_wrapper 1.0.1",
+ "thiserror",
+ "time",
+ "tokio",
+ "tracing",
+ "transform-stream",
+ "urlencoding",
+ "zeroize",
+]
+
+[[package]]
+name = "s3s-aws"
+version = "0.10.1-dev"
+source = "git+https://github.com/Nugine/s3s#b3c99e69136f2baf4caeb0a17af7317bf3a52f69"
+dependencies = [
+ "async-trait",
+ "aws-sdk-s3 1.35.0",
+ "aws-smithy-runtime-api",
+ "aws-smithy-types 1.2.0",
+ "aws-smithy-types-convert",
+ "hyper 1.3.1",
+ "s3s 0.10.1-dev",
+ "sync_wrapper 1.0.1",
+ "tracing",
+ "transform-stream",
 ]
 
 [[package]]
@@ -5142,10 +5238,39 @@ dependencies = [
  "nugine-rust-utils",
  "numeric_cast",
  "path-absolutize",
- "s3s",
+ "s3s 0.8.1",
  "serde_json",
  "sha1",
  "sha2",
+ "thiserror",
+ "time",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "tracing-error",
+ "transform-stream",
+ "uuid",
+]
+
+[[package]]
+name = "s3s-fs"
+version = "0.10.1-dev"
+source = "git+https://github.com/Nugine/s3s#b3c99e69136f2baf4caeb0a17af7317bf3a52f69"
+dependencies = [
+ "async-trait",
+ "base64-simd",
+ "bytes",
+ "chrono",
+ "crc32c",
+ "futures",
+ "hex-simd",
+ "md-5",
+ "mime",
+ "nugine-rust-utils",
+ "numeric_cast",
+ "path-absolutize",
+ "s3s 0.10.1-dev",
+ "serde_json",
  "thiserror",
  "time",
  "tokio",
@@ -5605,6 +5730,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2047c6ded9c721764247e62cd3b03c09ffc529b2ba5b10ec482ae507a4a70160"
 
 [[package]]
+name = "sync_wrapper"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7065abeca94b6a8a577f9bd45aa0867a2238b74e8eb67cf10d492bc39351394"
+
+[[package]]
 name = "system-configuration"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5914,7 +6045,7 @@ dependencies = [
  "h2",
  "http 0.2.12",
  "http-body 0.4.6",
- "hyper",
+ "hyper 0.14.28",
  "hyper-timeout",
  "percent-encoding",
  "pin-project",
@@ -5944,7 +6075,7 @@ dependencies = [
  "h2",
  "http 0.2.12",
  "http-body 0.4.6",
- "hyper",
+ "hyper 0.14.28",
  "hyper-timeout",
  "percent-encoding",
  "pin-project",
@@ -5998,7 +6129,7 @@ dependencies = [
  "bytes",
  "http 0.2.12",
  "http-body 0.4.6",
- "hyper",
+ "hyper 0.14.28",
  "pin-project",
  "tokio-stream",
  "tonic 0.11.0",
