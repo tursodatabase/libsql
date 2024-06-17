@@ -68,12 +68,7 @@ impl<I: Io, S: RemoteStorage> Storage for FsStorage<I, S> {
         segment_data: impl crate::io::file::FileExt,
         segment_index: Vec<u8>,
     ) -> Result<()> {
-        let key = format!(
-            "{:019}-{:019}-{:019}.segment",
-            meta.start_frame_no,
-            meta.end_frame_no,
-            meta.created_at.timestamp()
-        );
+        let key = generate_key(&meta);
 
         let path = self.prefix.join("segments").join(&key);
 
@@ -176,6 +171,15 @@ pub(super) fn parse_segment_file_name(name: &str) -> Result<(u64, u64)> {
     let end_frame: u64 = end_frame.parse().unwrap();
 
     Ok((start_frame, end_frame))
+}
+
+pub(super) fn generate_key(meta: &SegmentMeta) -> String {
+    format!(
+        "{:019}-{:019}-{:019}.segment",
+        meta.start_frame_no,
+        meta.end_frame_no,
+        meta.created_at.timestamp()
+    )
 }
 
 #[cfg(test)]
