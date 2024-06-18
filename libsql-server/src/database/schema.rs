@@ -92,8 +92,7 @@ impl crate::connection::Connection for SchemaConnection {
 
             handle
                 .wait_for(|status| match status {
-                    MigrationJobStatus::DryRunSuccess
-                    | MigrationJobStatus::DryRunFailure
+                    MigrationJobStatus::DryRunFailure
                     | MigrationJobStatus::RunSuccess
                     | MigrationJobStatus::RunFailure => true,
                     _ => false,
