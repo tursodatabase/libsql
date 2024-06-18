@@ -59,11 +59,15 @@ typedef struct AuxData AuxData;
 /* A cache of large TEXT or BLOB values in a VdbeCursor */
 typedef struct VdbeTxtBlbCache VdbeTxtBlbCache;
 
+/* Opaque type used in code in vector.c */
+typedef struct VectorIdxCursor VectorIdxCursor;
+
 /* Types of VDBE cursors */
 #define CURTYPE_BTREE       0
 #define CURTYPE_SORTER      1
 #define CURTYPE_VTAB        2
 #define CURTYPE_PSEUDO      3
+#define CURTYPE_VECTOR_IDX  64
 
 /*
 ** A VdbeCursor is an superclass (a wrapper) for various cursor objects:
@@ -117,6 +121,7 @@ struct VdbeCursor {
     BtCursor *pCursor;          /* CURTYPE_BTREE or _PSEUDO.  Btree cursor */
     sqlite3_vtab_cursor *pVCur; /* CURTYPE_VTAB.              Vtab cursor */
     VdbeSorter *pSorter;        /* CURTYPE_SORTER.            Sorter object */
+    VectorIdxCursor *pVecIdx;   /* CURTYPE_VECTOR_IDX.        Vector index cursor */
   } uc;
   KeyInfo *pKeyInfo;      /* Info about index keys needed by index cursors */
   u32 iHdrOffset;         /* Offset to next unparsed byte of the header */
@@ -678,6 +683,12 @@ int sqlite3VdbeSorterNext(sqlite3 *, const VdbeCursor *);
 int sqlite3VdbeSorterRewind(const VdbeCursor *, int *);
 int sqlite3VdbeSorterWrite(const VdbeCursor *, Mem *);
 int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int, int *);
+
+int vectorIndexCursorInit(sqlite3 *, VdbeCursor *, const char *);
+void vectorIndexCursorClose(sqlite3 *db, VdbeCursor *pCsr);
+int vectorIndexCreate(Parse*, Index*, IdList*);
+int vectorIndexInsert(VectorIdxCursor *, const BtreePayload *);
+int vectorIndexDelete(VectorIdxCursor *, const UnpackedRecord *);
 
 void sqlite3VdbeValueListFree(void*);
 
