@@ -51,6 +51,7 @@ pub struct BatchRows {
 }
 
 impl BatchRows {
+    #[allow(unused)]
     pub(crate) fn empty() -> Self {
         Self {
             inner: VecDeque::new(),
