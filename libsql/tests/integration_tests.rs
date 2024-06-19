@@ -276,7 +276,7 @@ async fn connection_execute_batch_newline() {
         ",
     )
     .await
-    .unwrap()
+    .unwrap();
 }
 
 #[tokio::test]

@@ -54,6 +54,12 @@ pub struct Rows {
 }
 
 impl Rows {
+    pub(crate) fn new(inner: impl RowsInner + Send + Sync + 'static) -> Self {
+        Self {
+            inner: Box::new(inner),
+        }
+    }
+
     /// Get the next [`Row`] returning an error if it failed and
     /// `None` if there are no more rows.
     #[allow(clippy::should_implement_trait)]

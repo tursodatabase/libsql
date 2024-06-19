@@ -121,6 +121,68 @@ fn execute_batch() {
 }
 
 #[test]
+fn execute_batch_returning() {
+    let mut sim = turmoil::Builder::new()
+        .simulation_duration(Duration::from_secs(1000))
+        .build();
+    sim.host("primary", super::make_standalone_server);
+    sim.client("client", async {
+        let db = Database::open_remote_with_connector("http://primary:8080", "", TurmoilConnector)?;
+        let conn = db.connect()?;
+
+        let mut batch_rows = conn
+            .execute_transactional_batch(
+                r#"
+        create table t(x text);
+        insert into t(x) values('hello; world') RETURNING *;
+        "#,
+            )
+            .await?;
+
+        batch_rows.next_stmt_row();
+
+        let mut rows = batch_rows.next_stmt_row().unwrap().unwrap();
+
+        assert!(batch_rows.next_stmt_row().is_none());
+
+        assert_eq!(rows.column_count(), 1);
+        assert_eq!(rows.column_name(0), Some("x"));
+        assert_eq!(
+            rows.next().await?.unwrap().get::<String>(0)?,
+            "hello; world"
+        );
+        assert!(rows.next().await?.is_none());
+
+        let mut batch_rows = conn
+            .execute_batch(
+                r#"
+        create table t2(x text);
+        insert into t2(x) values('hello; world') RETURNING *;
+        "#,
+            )
+            .await?;
+
+        batch_rows.next_stmt_row();
+
+        let mut rows = batch_rows.next_stmt_row().unwrap().unwrap();
+
+        assert!(batch_rows.next_stmt_row().is_none());
+
+        assert_eq!(rows.column_count(), 1);
+        assert_eq!(rows.column_name(0), Some("x"));
+        assert_eq!(
+            rows.next().await?.unwrap().get::<String>(0)?,
+            "hello; world"
+        );
+        assert!(rows.next().await?.is_none());
+
+        Ok(())
+    });
+
+    sim.run().unwrap();
+}
+
+#[test]
 fn multistatement_query() {
     let mut sim = turmoil::Builder::new()
         .simulation_duration(Duration::from_secs(1000))
