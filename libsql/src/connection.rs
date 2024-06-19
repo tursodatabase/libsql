@@ -58,6 +58,7 @@ impl BatchRows {
         }
     }
 
+    #[cfg(feature = "hrana")]
     pub(crate) fn new(rows: Vec<Option<Rows>>) -> Self {
         Self {
             inner: rows.into(),
@@ -65,6 +66,7 @@ impl BatchRows {
         }
     }
 
+    #[cfg(feature = "hrana")]
     pub(crate) fn new_skip_last(rows: Vec<Option<Rows>>, skip_last_amt: usize) -> Self {
         Self {
             inner: rows.into(),
