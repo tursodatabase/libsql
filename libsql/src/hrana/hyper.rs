@@ -1,4 +1,4 @@
-use crate::connection::Conn;
+use crate::connection::{BatchRows, Conn};
 use crate::hrana::connection::HttpConnection;
 use crate::hrana::proto::{Batch, Stmt};
 use crate::hrana::stream::HranaStream;
@@ -16,6 +16,8 @@ use http::{HeaderValue, StatusCode};
 use hyper::body::HttpBody;
 use std::io::ErrorKind;
 use std::sync::Arc;
+
+use super::StmtResultRows;
 
 pub type ByteStream = Box<dyn Stream<Item = std::io::Result<Bytes>> + Send + Sync + Unpin>;
 
@@ -117,11 +119,11 @@ impl Conn for HttpConnection<HttpSender> {
         self.current_stream().execute(sql, params).await
     }
 
-    async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
+    async fn execute_batch(&self, sql: &str) -> crate::Result<BatchRows> {
         self.current_stream().execute_batch(sql).await
     }
 
-    async fn execute_transactional_batch(&self, sql: &str) -> crate::Result<()> {
+    async fn execute_transactional_batch(&self, sql: &str) -> crate::Result<BatchRows> {
         self.current_stream().execute_transactional_batch(sql).await
     }
 
@@ -259,7 +261,7 @@ impl Conn for HranaStream<HttpSender> {
         }
     }
 
-    async fn execute_batch(&self, sql: &str) -> crate::Result<()> {
+    async fn execute_batch(&self, sql: &str) -> crate::Result<BatchRows> {
         let mut stmts = Vec::new();
         let parse = crate::parser::Statement::parse(sql);
         let mut c = TxScopeCounter::default();
@@ -274,16 +276,28 @@ impl Conn for HranaStream<HttpSender> {
             .batch_inner(Batch::from_iter(stmts), close)
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
-        unwrap_err(res)
+        unwrap_err(&res)?;
+        let rows = res
+            .step_results
+            .into_iter()
+            .map(|r| r.map(StmtResultRows::new).map(Rows::new))
+            .collect::<Vec<_>>();
+
+        Ok(BatchRows::new(rows))
     }
 
-    async fn execute_transactional_batch(&self, sql: &str) -> crate::Result<()> {
+    async fn execute_transactional_batch(&self, sql: &str) -> crate::Result<BatchRows> {
         let mut stmts = Vec::new();
         let parse = crate::parser::Statement::parse(sql);
         for s in parse {
             let s = s?;
-            if s.kind == crate::parser::StmtKind::TxnBegin || s.kind == crate::parser::StmtKind::TxnBeginReadOnly || s.kind == crate::parser::StmtKind::TxnEnd {
-                return Err(Error::TransactionalBatchError("Transactions forbidden inside transactional batch".to_string()));
+            if s.kind == crate::parser::StmtKind::TxnBegin
+                || s.kind == crate::parser::StmtKind::TxnBeginReadOnly
+                || s.kind == crate::parser::StmtKind::TxnEnd
+            {
+                return Err(Error::TransactionalBatchError(
+                    "Transactions forbidden inside transactional batch".to_string(),
+                ));
             }
             stmts.push(Stmt::new(s.stmt, false));
         }
@@ -291,7 +305,19 @@ impl Conn for HranaStream<HttpSender> {
             .batch_inner(Batch::transactional(stmts), true)
             .await
             .map_err(|e| crate::Error::Hrana(e.into()))?;
-        unwrap_err(res)
+        unwrap_err(&res)?;
+        let rows = res
+            .step_results
+            .into_iter()
+            // skip the first row since this is related to the already injected
+            // BEGIN statement.
+            .skip(1)
+            .map(|r| r.map(StmtResultRows::new).map(Rows::new))
+            .collect::<Vec<_>>();
+
+        // Skip the last row as well since this corresponds to the injected commit statement
+        // that the user never sees.
+        Ok(BatchRows::new_skip_last(rows, 2))
     }
 
     async fn prepare(&self, sql: &str) -> crate::Result<Statement> {
