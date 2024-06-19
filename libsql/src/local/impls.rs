@@ -103,9 +103,7 @@ impl Stmt for LibsqlStmt {
         let params = params.clone();
         let stmt = self.0.clone();
 
-        stmt.query(&params)
-            .map(LibsqlRows)
-            .map(|r| Rows { inner: Box::new(r) })
+        stmt.query(&params).map(LibsqlRows).map(Rows::new)
     }
 
     fn reset(&mut self) {

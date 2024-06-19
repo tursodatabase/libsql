@@ -673,9 +673,7 @@ impl Stmt for RemoteStatement {
             None => panic!("unexpected empty result row"),
         };
 
-        Ok(Rows {
-            inner: Box::new(RemoteRows(rows, 0)),
-        })
+        Ok(Rows::new(RemoteRows(rows, 0)))
     }
 
     fn reset(&mut self) {}

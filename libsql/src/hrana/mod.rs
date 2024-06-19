@@ -180,9 +180,7 @@ where
 {
     pub async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
         let rows = self.query_raw(params).await?;
-        Ok(super::Rows {
-            inner: Box::new(rows),
-        })
+        Ok(super::Rows::new(rows))
     }
 }
 

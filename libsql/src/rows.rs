@@ -50,7 +50,7 @@ pub(crate) trait RowsInner {
 
 /// A set of rows returned from a connection.
 pub struct Rows {
-    pub(crate) inner: Box<dyn RowsInner + Send + Sync>,
+    inner: Box<dyn RowsInner + Send + Sync>,
 }
 
 impl Rows {
