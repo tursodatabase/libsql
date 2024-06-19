@@ -1,5 +1,8 @@
 #![allow(clippy::type_complexity, clippy::too_many_arguments)]
 
+use std::alloc::Layout;
+use std::ffi::c_void;
+use std::mem::{align_of, size_of};
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::str::FromStr;
@@ -44,6 +47,7 @@ use namespace::meta_store::MetaStoreHandle;
 use namespace::{NamespaceConfig, NamespaceName};
 use net::Connector;
 use once_cell::sync::Lazy;
+use rusqlite::ffi::SQLITE_CONFIG_MALLOC;
 use rusqlite::ffi::{sqlite3_config, SQLITE_CONFIG_PCACHE2};
 use tokio::runtime::Runtime;
 use tokio::sync::{mpsc, Notify, Semaphore};
@@ -102,6 +106,9 @@ pub(crate) static BLOCKING_RT: Lazy<Runtime> = Lazy::new(|| {
 
 type Result<T, E = Error> = std::result::Result<T, E>;
 type StatsSender = mpsc::Sender<(NamespaceName, MetaStoreHandle, Weak<Stats>)>;
+
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 #[derive(clap::ValueEnum, PartialEq, Clone, Copy, Debug)]
 pub enum CustomWAL {
@@ -383,6 +390,8 @@ where
     pub async fn start(mut self) -> anyhow::Result<()> {
         static INIT: std::sync::Once = std::sync::Once::new();
         let mut join_set = JoinSet::new();
+
+        setup_sqlite_alloc();
 
         INIT.call_once(|| {
             if let Ok(size) = std::env::var("LIBSQL_EXPERIMENTAL_PAGER") {
@@ -724,5 +733,70 @@ where
                 ))
             }
         }
+    }
+}
+
+/// Setup sqlite to use the same allocator as sqld.
+/// the size of the allocation is stored as a usize before the returned pointer. A i32 would be
+/// sufficient, but we need the returned pointer to be aligned to 8
+fn setup_sqlite_alloc() {
+    use std::alloc::GlobalAlloc;
+
+    unsafe extern "C" fn malloc(size: i32) -> *mut c_void {
+        let size_total = size as usize + size_of::<usize>();
+        let layout = Layout::from_size_align(size_total, align_of::<usize>()).unwrap();
+        let ptr = GLOBAL.alloc(layout);
+        *(ptr as *mut usize) = size as usize;
+        ptr.offset(size_of::<usize>() as _) as *mut _
+    }
+
+    unsafe extern "C" fn free(ptr: *mut c_void) {
+        let orig_ptr = ptr.offset(-(size_of::<usize>() as isize));
+        let size = *(orig_ptr as *mut usize);
+        let layout = Layout::from_size_align(size as usize, align_of::<usize>()).unwrap();
+        GLOBAL.dealloc(orig_ptr as *mut _, layout);
+    }
+
+    unsafe extern "C" fn realloc(ptr: *mut c_void, new_size: i32) -> *mut c_void {
+        let orig_ptr = ptr.offset(-(size_of::<usize>() as isize));
+        let orig_size = *(orig_ptr as *mut usize);
+        let layout = Layout::from_size_align(orig_size, align_of::<usize>()).unwrap();
+        let new_ptr = GLOBAL.realloc(
+            orig_ptr as *mut _,
+            layout,
+            new_size as usize + size_of::<usize>(),
+        );
+        *(new_ptr as *mut usize) = new_size as usize;
+        new_ptr.offset(size_of::<usize>() as _) as *mut _
+    }
+
+    unsafe extern "C" fn size(ptr: *mut c_void) -> i32 {
+        let orig_ptr = ptr.offset(-(size_of::<usize>() as isize));
+        *(orig_ptr as *mut usize) as i32
+    }
+
+    unsafe extern "C" fn init(_: *mut c_void) -> i32 {
+        0
+    }
+
+    unsafe extern "C" fn shutdown(_: *mut c_void) {}
+
+    unsafe extern "C" fn roundup(n: i32) -> i32 {
+        (n as usize).next_multiple_of(align_of::<usize>()) as i32
+    }
+
+    let mem = rusqlite::ffi::sqlite3_mem_methods {
+        xMalloc: Some(malloc),
+        xFree: Some(free),
+        xRealloc: Some(realloc),
+        xSize: Some(size),
+        xRoundup: Some(roundup),
+        xInit: Some(init),
+        xShutdown: Some(shutdown),
+        pAppData: std::ptr::null_mut(),
+    };
+
+    unsafe {
+        sqlite3_config(SQLITE_CONFIG_MALLOC, &mem as *const _);
     }
 }
