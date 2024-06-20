@@ -2,7 +2,7 @@ use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use tokio::io::AsyncBufRead;
+use tokio::io::{AsyncBufRead, AsyncBufReadExt};
 
 use crate::bottomless::job::CompactedSegmentDataHeader;
 use crate::bottomless::{Error, Result};
@@ -30,7 +30,7 @@ impl<I: Io, S> FsStorage<I, S> {
 }
 
 pub(crate) trait RemoteStorage: Send + Sync + 'static {
-    type FetchStream: AsyncBufRead;
+    type FetchStream: AsyncBufRead + Unpin;
 
     fn upload(
         &self,
@@ -42,7 +42,7 @@ pub(crate) trait RemoteStorage: Send + Sync + 'static {
         &self,
         namespace: &NamespaceName,
         frame_no: u64,
-    ) -> impl Future<Output = Result<Self::FetchStream>> + Send;
+    ) -> impl Future<Output = Result<(String, Self::FetchStream)>> + Send;
 }
 
 impl RemoteStorage for () {
@@ -52,7 +52,11 @@ impl RemoteStorage for () {
         Ok(())
     }
 
-    async fn fetch(&self, _namespace: &NamespaceName, frame_no: u64) -> Result<Self::FetchStream> {
+    async fn fetch(
+        &self,
+        _namespace: &NamespaceName,
+        frame_no: u64,
+    ) -> Result<(String, Self::FetchStream)> {
         Err(Error::FrameNotFound(frame_no))
     }
 }
@@ -97,7 +101,7 @@ impl<I: Io, S: RemoteStorage> Storage for FsStorage<I, S> {
 
         // TODO(lucio): optimization would be to cache this list, since we update the files in the
         // store fn we can keep track without having to go to the OS each time.
-        let mut dirs = tokio::fs::read_dir(dir).await?;
+        let mut dirs = tokio::fs::read_dir(&dir).await?;
 
         while let Some(entry) = dirs.next_entry().await? {
             let file = entry.file_name();
@@ -136,14 +140,39 @@ impl<I: Io, S: RemoteStorage> Storage for FsStorage<I, S> {
         }
 
         // TODO(lucio): fetch from remote storage
-        let out_folder = PathBuf::new();
-        let reader = self.remote_storage.fetch(&namespace, frame_no).await?;
+        let (file_name, mut reader) = self.remote_storage.fetch(&namespace, frame_no).await?;
+
+        let file_path = dir.join(file_name);
+
+        let file = self.io.open(true, true, true, &file_path).unwrap();
 
         // TODO(lucio): write buf reader content into the expected destination file then hard link
 
-        // self.io.hard_link(&path, dest_path)?;
+        let mut offset = 0;
 
-        Err(Error::Store("".into()))
+        loop {
+            let buf = reader.fill_buf().await.unwrap();
+
+            // TODO: we need to copy here because the buffer needs to be passed by ownership
+            // we could probably write a ByteStream adapter that uses bytes instead. For now we
+            // can copy and take that hit.
+            let buf = Vec::from(buf);
+
+            if buf.is_empty() {
+                break;
+            }
+
+            let (buf, res) = file.write_all_at_async(buf, offset).await;
+            res?;
+
+            offset += buf.len() as u64;
+
+            reader.consume(buf.len());
+        }
+
+        self.io.hard_link(&file_path, dest_path)?;
+
+        Ok(())
     }
 
     async fn meta(

@@ -78,7 +78,11 @@ impl RemoteStorage for S3Storage {
         Ok(())
     }
 
-    async fn fetch(&self, namespace: &NamespaceName, frame_no: u64) -> Result<Self::FetchStream> {
+    async fn fetch(
+        &self,
+        namespace: &NamespaceName,
+        frame_no: u64,
+    ) -> Result<(String, Self::FetchStream)> {
         let folder_key = s3_folder_key(&self.config.cluster_id, &namespace);
         let s3_prefix = format!("{}/segments", folder_key);
 
@@ -111,7 +115,7 @@ impl RemoteStorage for S3Storage {
                         .unwrap();
 
                     let stream = out.body.into_async_read();
-                    return Ok(Box::pin(stream));
+                    return Ok((file_name.to_string(), Box::pin(stream)));
                 }
             }
         }
