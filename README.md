@@ -68,7 +68,7 @@ The comprehensive description can be found [here](libsql-sqlite3/doc/libsql_exte
 
 ### GUI Support
 libSQL support has been added to the following desktop GUI apps:
-* [Beekeeper Studio](https://beekeeperstudio.io) - MacOS, Windows, and Linux
+* [Beekeeper Studio](https://www.beekeeperstudio.io/db/libsql-client/) - MacOS, Windows, and Linux
 * [libSQL Studio](https://github.com/invisal/libsql-studio) - Runs in the browser
 
 ## Getting Started
