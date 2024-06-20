@@ -66,6 +66,11 @@ The comprehensive description can be found [here](libsql-sqlite3/doc/libsql_exte
 * [PHP](https://github.com/tursodatabase/turso-client-php)
 * [D](https://github.com/pdenapo/libsql-d) (experimental, based on the C driver)
 
+### GUI Support
+libSQL support has been added to the following desktop GUI apps:
+* [Beekeeper Studio](https://beekeeperstudio.io) - MacOS, Windows, and Linux
+* [libSQL Studio](https://github.com/invisal/libsql-studio) - Runs in the browser
+
 ## Getting Started
 
 The project provides two interfaces: the libSQL API, which supports all the features, and the SQLite C API for compatibility.
