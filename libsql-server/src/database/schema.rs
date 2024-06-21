@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-use bottomless::SavepointTracker;
 use std::sync::Arc;
 
 use crate::connection::program::{check_program_auth, Program};
@@ -191,12 +190,11 @@ impl SchemaDatabase {
             .closed_signal
             .send_replace(true);
         let wal_manager = self.wal_wrapper;
-        if let Some(mut replicator) = tokio::task::spawn_blocking(move || {
-            wal_manager.wrapped().as_ref().and_then(|r| r.shutdown())
-        })
-        .await?
-        {
-            replicator.shutdown_gracefully().await?;
+
+        if let Some(maybe_replicator) = wal_manager.wrapped().as_ref() {
+            if let Some(mut replicator) = maybe_replicator.shutdown().await {
+                replicator.shutdown_gracefully().await?;
+            }
         }
 
         Ok(())
@@ -214,11 +212,11 @@ impl SchemaDatabase {
         self.clone()
     }
 
-    pub fn backup_savepoint(&self) -> Option<SavepointTracker> {
+    pub(crate) fn replicator(
+        &self,
+    ) -> Option<Arc<tokio::sync::Mutex<Option<bottomless::replicator::Replicator>>>> {
         if let Some(wal) = self.wal_wrapper.wrapped() {
-            if let Some(savepoint) = wal.backup_savepoint() {
-                return Some(savepoint);
-            }
+            return Some(wal.replicator());
         }
         None
     }
