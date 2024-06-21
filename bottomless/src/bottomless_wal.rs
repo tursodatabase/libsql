@@ -1,13 +1,13 @@
 use std::ffi::c_int;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::Instant;
 
-use crate::completion_progress::SavepointTracker;
 use libsql_sys::ffi::{SQLITE_BUSY, SQLITE_IOERR_WRITE};
 use libsql_sys::wal::wrapper::{WalWrapper, WrapWal};
 use libsql_sys::wal::{
     BusyHandler, CheckpointCallback, CheckpointMode, Error, Result, Sqlite3Db, Wal,
 };
+use tokio::sync::Mutex;
 
 use crate::replicator::Replicator;
 
@@ -23,27 +23,12 @@ impl BottomlessWalWrapper {
         Self { replicator }
     }
 
-    fn try_with_replicator<Ret>(&self, f: impl FnOnce(&mut Replicator) -> Ret) -> Result<Ret> {
-        let mut lock = self.replicator.lock().unwrap();
-        match &mut *lock {
-            Some(replicator) => {
-                let _span = tracing::info_span!("replicator", db_name = replicator.db_name);
-                Ok(f(replicator))
-            }
-            None => Err(Error::new(SQLITE_IOERR_WRITE)),
-        }
+    pub fn replicator(&self) -> Arc<tokio::sync::Mutex<Option<Replicator>>> {
+        self.replicator.clone()
     }
 
-    pub fn backup_savepoint(&self) -> Option<SavepointTracker> {
-        let lock = self.replicator.lock().unwrap();
-        match &*lock {
-            None => None,
-            Some(replicator) => Some(replicator.savepoint()),
-        }
-    }
-
-    pub fn shutdown(&self) -> Option<Replicator> {
-        self.replicator.lock().unwrap().take()
+    pub async fn shutdown(&self) -> Option<Replicator> {
+        self.replicator.lock().await.take()
     }
 }
 
@@ -55,15 +40,23 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
     ) -> libsql_sys::wal::Result<()> {
         wrapped.savepoint_undo(rollback_data)?;
 
-        {
-            let last_valid_frame = rollback_data[0];
-            self.try_with_replicator(|replicator| {
-                let prev_valid_frame = replicator.peek_last_valid_frame();
-                tracing::trace!(
-                    "Savepoint: rolling back from frame {prev_valid_frame} to {last_valid_frame}",
-                );
-            })?;
-        }
+        let last_valid_frame = rollback_data[0];
+        let runtime = tokio::runtime::Handle::current();
+        runtime.block_on(async {
+            let mut guard = self.replicator.lock().await;
+            match &mut *guard {
+                Some(replicator) => {
+                    let prev_valid_frame = replicator.peek_last_valid_frame();
+                    tracing::trace!(
+                        "Savepoint: rolling back from frame {prev_valid_frame} to {last_valid_frame}",
+                    );
+                    Ok(())
+                }
+                None => {
+                    Err(Error::new(SQLITE_IOERR_WRITE))
+                }
+            }
+        })?;
 
         Ok(())
     }
@@ -82,15 +75,19 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
         let num_frames =
             wrapped.insert_frames(page_size, page_headers, size_after, is_commit, sync_flags)?;
 
-        self.try_with_replicator(|replicator| {
-            if let Err(e) = replicator.set_page_size(page_size as usize) {
-                tracing::error!("fatal error during backup: {e}, exiting");
-                std::process::abort()
+        let mut guard = self.replicator.blocking_lock();
+        match &mut *guard {
+            Some(replicator) => {
+                if let Err(e) = replicator.set_page_size(page_size as usize) {
+                    tracing::error!("fatal error during backup: {e}, exiting");
+                    std::process::abort()
+                }
+                replicator.register_last_valid_frame(last_valid_frame);
+                let new_valid_valid_frame_index = wrapped.frames_in_wal();
+                replicator.submit_frames(new_valid_valid_frame_index - last_valid_frame);
             }
-            replicator.register_last_valid_frame(last_valid_frame);
-            let new_valid_valid_frame_index = wrapped.frames_in_wal();
-            replicator.submit_frames(new_valid_valid_frame_index - last_valid_frame);
-        })?;
+            None => return Err(Error::new(SQLITE_IOERR_WRITE)),
+        }
 
         Ok(num_frames)
     }
@@ -128,52 +125,56 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
             }
         }
 
-        #[allow(clippy::await_holding_lock)]
-        // uncontended -> only gets called under a libSQL write lock
-        {
-            let runtime = tokio::runtime::Handle::current();
-            self.try_with_replicator(|replicator| {
-                let last_known_frame = replicator.last_known_frame();
-                replicator.request_flush();
-                if last_known_frame == 0 {
-                    tracing::debug!("No committed changes in this generation, not snapshotting");
-                    replicator.skip_snapshot_for_current_generation();
-                    return Err(Error::new(SQLITE_BUSY));
-                }
-
-                let fut = tokio::time::timeout(
-                    std::time::Duration::from_secs(1),
-                    replicator.wait_until_committed(last_known_frame),
-                );
-
-                match runtime.block_on(fut) {
-                    Ok(Ok(_)) => (),
-                    Ok(Err(e)) => {
-                        tracing::error!(
-                            "Failed to wait for S3 replicator to confirm {} frames backup: {}",
-                            last_known_frame,
-                            e
+        let runtime = tokio::runtime::Handle::current();
+        runtime.block_on(async {
+            let mut guard = self.replicator.lock().await;
+            match &mut *guard {
+                Some(replicator) => {
+                    let last_known_frame = replicator.last_known_frame();
+                    replicator.request_flush();
+                    if last_known_frame == 0 {
+                        tracing::debug!(
+                            "No committed changes in this generation, not snapshotting"
                         );
-                        return Err(Error::new(SQLITE_IOERR_WRITE));
-                    }
-                    Err(_) => {
-                        tracing::error!(
-                            "timed out waiting for S3 replicator to confirm committed frames."
-                        );
+                        replicator.skip_snapshot_for_current_generation();
                         return Err(Error::new(SQLITE_BUSY));
                     }
-                }
-                tracing::debug!("commited after {:?}", before.elapsed());
-                let snapshotted = runtime.block_on(replicator.is_snapshotted());
-                if !snapshotted {
-                    tracing::warn!("previous generation not snapshotted, skipping checkpoint");
-                    return Err(Error::new(SQLITE_BUSY));
-                }
-                tracing::debug!("snapshotted after {:?}", before.elapsed());
 
-                Ok(())
-            })??;
-        }
+                    let fut = tokio::time::timeout(
+                        std::time::Duration::from_secs(1),
+                        replicator.wait_until_committed(last_known_frame),
+                    );
+
+                    match fut.await {
+                        Ok(Ok(_)) => (),
+                        Ok(Err(e)) => {
+                            tracing::error!(
+                                "Failed to wait for S3 replicator to confirm {} frames backup: {}",
+                                last_known_frame,
+                                e
+                            );
+                            return Err(Error::new(SQLITE_IOERR_WRITE));
+                        }
+                        Err(_) => {
+                            tracing::error!(
+                                "timed out waiting for S3 replicator to confirm committed frames."
+                            );
+                            return Err(Error::new(SQLITE_BUSY));
+                        }
+                    }
+                    tracing::debug!("commited after {:?}", before.elapsed());
+                    let snapshotted = replicator.is_snapshotted().await;
+                    if !snapshotted {
+                        tracing::warn!("previous generation not snapshotted, skipping checkpoint");
+                        return Err(Error::new(SQLITE_BUSY));
+                    }
+                    tracing::debug!("snapshotted after {:?}", before.elapsed());
+
+                    Ok(())
+                }
+                None => Err(Error::new(SQLITE_IOERR_WRITE)),
+            }
+        })?;
 
         wrapped.checkpoint(
             db,
@@ -188,21 +189,22 @@ impl<T: Wal> WrapWal<T> for BottomlessWalWrapper {
 
         tracing::debug!("underlying checkpoint call after {:?}", before.elapsed());
 
-        #[allow(clippy::await_holding_lock)]
-        // uncontended -> only gets called under a libSQL write lock
-        {
-            let runtime = tokio::runtime::Handle::current();
-            self.try_with_replicator(|replicator| {
-                if let Err(e) = runtime.block_on(async move {
+        runtime.block_on(async {
+            let mut guard = self.replicator.lock().await;
+            match &mut *guard {
+                Some(replicator) => {
                     replicator.new_generation().await;
-                    replicator.snapshot_main_db_file(false).await
-                }) {
-                    tracing::error!("Failed to snapshot the main db file during checkpoint: {e}");
-                    return Err(Error::new(SQLITE_IOERR_WRITE));
+                    if let Err(e) = replicator.snapshot_main_db_file(false).await {
+                        tracing::error!(
+                            "Failed to snapshot the main db file during checkpoint: {e}"
+                        );
+                        return Err(Error::new(SQLITE_IOERR_WRITE));
+                    }
+                    Ok(())
                 }
-                Ok(())
-            })??;
-        }
+                None => Err(Error::new(SQLITE_IOERR_WRITE)),
+            }
+        })?;
 
         tracing::debug!("checkpoint finnished after {:?}", before.elapsed());
 

@@ -46,11 +46,17 @@ pub struct Scheduler {
 }
 
 impl Scheduler {
-    pub(crate) fn new(
+    pub(crate) async fn new(
         namespace_store: NamespaceStore,
         mut conn: MetaStoreConnection,
     ) -> crate::Result<Self> {
-        setup_schema(&mut conn)?;
+        let conn = tokio::task::spawn_blocking(move || -> crate::Result<_> {
+            setup_schema(&mut conn)?;
+            Ok(conn)
+        })
+        .await
+        .unwrap()?;
+
         Ok(Self {
             namespace_store,
             workers: Default::default(),
@@ -451,13 +457,16 @@ async fn try_step_task(
         }
     };
 
-    {
+    let (task, error) = tokio::task::spawn_blocking(move || {
         let mut conn = migration_db.lock();
         if let Err(e) = update_meta_task_status(&mut conn, &task, error.as_deref()) {
             tracing::error!("failed to update task status, retryng later: {e}");
             *task.status_mut() = old_status;
         }
-    }
+        (task, error)
+    })
+    .await
+    .unwrap();
 
     WorkResult::Task {
         old_status,
@@ -563,7 +572,7 @@ async fn backup_meta_store(
     })
     .await?;
 
-    if let Some(mut savepoint) = meta.backup_savepoint() {
+    if let Some(mut savepoint) = meta.backup_savepoint().await {
         if let Err(e) = savepoint.confirmed().await {
             tracing::error!("failed to backup meta store: {e}");
             // do not step the job, and schedule for retry.
@@ -580,14 +589,25 @@ async fn backup_meta_store(
 }
 
 async fn backup_namespace(store: &NamespaceStore, ns: NamespaceName) -> Result<(), Error> {
-    let (savepoint, conn_maker) = store
+    let (replicator, conn_maker) = store
         .with(ns.clone(), |ns| {
-            let sp = ns.db.backup_savepoint();
+            let replicator = ns.db.replicator();
             let conn_maker = ns.db.connection_maker();
-            (sp, conn_maker)
+            (replicator, conn_maker)
         })
         .await
         .map_err(|e| Error::NamespaceLoad(Box::new(e)))?;
+
+    let savepoint = match replicator {
+        Some(replicator) => {
+            let lock = replicator.lock().await;
+            match &*lock {
+                Some(replicator) => Some(replicator.savepoint()),
+                None => None,
+            }
+        }
+        None => None,
+    };
 
     conn_maker
         .create()
@@ -809,7 +829,9 @@ mod test {
         let store = NamespaceStore::new(false, false, 10, config, meta_store)
             .await
             .unwrap();
-        let mut scheduler = Scheduler::new(store.clone(), maker().unwrap()).unwrap();
+        let mut scheduler = Scheduler::new(store.clone(), maker().unwrap())
+            .await
+            .unwrap();
 
         store
             .create(
@@ -917,7 +939,9 @@ mod test {
             let store = NamespaceStore::new(false, false, 10, config, meta_store)
                 .await
                 .unwrap();
-            let mut scheduler = Scheduler::new(store.clone(), maker().unwrap()).unwrap();
+            let mut scheduler = Scheduler::new(store.clone(), maker().unwrap())
+                .await
+                .unwrap();
 
             store
                 .create(
@@ -1018,7 +1042,9 @@ mod test {
         let store = NamespaceStore::new(false, false, 10, config, meta_store)
             .await
             .unwrap();
-        let mut scheduler = Scheduler::new(store.clone(), maker().unwrap()).unwrap();
+        let mut scheduler = Scheduler::new(store.clone(), maker().unwrap())
+            .await
+            .unwrap();
 
         store
             .create(
@@ -1089,7 +1115,9 @@ mod test {
         let store = NamespaceStore::new(false, false, 10, config, meta_store)
             .await
             .unwrap();
-        let scheduler = Scheduler::new(store.clone(), maker().unwrap()).unwrap();
+        let scheduler = Scheduler::new(store.clone(), maker().unwrap())
+            .await
+            .unwrap();
 
         store
             .create(

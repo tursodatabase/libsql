@@ -493,7 +493,7 @@ where
         .await?;
 
         let meta_conn = metastore_conn_maker()?;
-        let scheduler = Scheduler::new(namespace_store.clone(), meta_conn)?;
+        let scheduler = Scheduler::new(namespace_store.clone(), meta_conn).await?;
 
         join_set.spawn(async move {
             scheduler.run(scheduler_receiver).await;

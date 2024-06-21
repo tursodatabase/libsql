@@ -159,7 +159,7 @@ pub async fn metastore_connection_maker(
     };
 
     let wal_manager = WalWrapper::new(
-        replicator.map(|b| BottomlessWalWrapper::new(Arc::new(std::sync::Mutex::new(Some(b))))),
+        replicator.map(|b| BottomlessWalWrapper::new(Arc::new(tokio::sync::Mutex::new(Some(b))))),
         Sqlite3WalManager::default(),
     );
 
@@ -182,7 +182,13 @@ impl MetaStoreInner {
         wal_manager: MetaStoreWalManager,
         config: MetaStoreConfig,
     ) -> Result<Self> {
-        setup_connection(&conn)?;
+        let conn = tokio::task::spawn_blocking(move || -> Result<_> {
+            setup_connection(&conn)?;
+            Ok(conn)
+        })
+        .await
+        .unwrap()?;
+
         let mut this = MetaStoreInner {
             configs: Default::default(),
             conn: conn.into(),
@@ -482,17 +488,14 @@ impl MetaStore {
     }
 
     pub(crate) async fn shutdown(&self) -> crate::Result<()> {
-        let replicator = self
-            .inner
-            .wal_manager
-            .wrapper()
-            .as_ref()
-            .and_then(|b| b.shutdown());
+        let replicator = self.inner.wal_manager.wrapper().as_ref();
 
-        if let Some(mut replicator) = replicator {
-            tracing::info!("Started meta store backup");
-            replicator.shutdown_gracefully().await?;
-            tracing::info!("meta store backed up");
+        if let Some(maybe_replicator) = replicator {
+            if let Some(mut replicator) = maybe_replicator.shutdown().await {
+                tracing::info!("Started meta store backup");
+                replicator.shutdown_gracefully().await?;
+                tracing::info!("meta store backed up");
+            }
         }
 
         Ok(())
@@ -527,9 +530,14 @@ impl MetaStore {
         Ok(details)
     }
 
-    pub fn backup_savepoint(&self) -> Option<SavepointTracker> {
+    pub async fn backup_savepoint(&self) -> Option<SavepointTracker> {
         if let Some(wal) = self.inner.wal_manager.wrapper() {
-            return wal.backup_savepoint();
+            let replicator = wal.replicator();
+            let lock = replicator.lock().await;
+            return match &*lock {
+                Some(replicator) => Some(replicator.savepoint()),
+                None => None,
+            };
         }
         None
     }
