@@ -1405,7 +1405,7 @@ impl Replicator {
 
         for algo in algos_to_try {
             let main_db_path = match algo {
-                CompressionKind::None => format!("{}-{}/db.db", self.db_name, generation),
+                CompressionKind::None => format!("{}-{}/db.raw", self.db_name, generation),
                 CompressionKind::Gzip => format!("{}-{}/db.gz", self.db_name, generation),
                 CompressionKind::Zstd => format!("{}-{}/db.zstd", self.db_name, generation),
             };
