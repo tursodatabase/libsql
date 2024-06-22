@@ -1,6 +1,7 @@
 /target
 .vscode/
 .idea/
+.direnv/
 *.sqld
 
 libsql-server/testrollbackrestore/**
