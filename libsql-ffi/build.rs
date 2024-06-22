@@ -463,18 +463,6 @@ mod bindings {
         }
     }
 
-    // Are we generating the bundled bindings? Used to avoid emitting things
-    // that would be problematic in bundled builds. This env var is set by
-    // `upgrade.sh`.
-    fn generating_bundled_bindings() -> bool {
-        // Hacky way to know if we're generating the bundled bindings
-        println!("cargo:rerun-if-env-changed=LIBSQLITE3_SYS_BUNDLING");
-        match std::env::var("LIBSQLITE3_SYS_BUNDLING") {
-            Ok(v) => v != "0",
-            Err(_) => false,
-        }
-    }
-
     pub fn write_to_out_dir(header: HeaderLocation, out_path: &Path) {
         let header: String = header.into();
         let mut output = Vec::new();
@@ -550,7 +538,7 @@ mod bindings {
 
         // Note that when generating the bundled file, we're essentially always
         // cross compiling.
-        if generating_bundled_bindings() || is_cross_compiling {
+        if is_cross_compiling {
             // Get rid of va_list, as it's not
             bindings = bindings
                 .blocklist_function("sqlite3_vmprintf")
