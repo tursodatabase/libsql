@@ -767,7 +767,8 @@ fn setup_sqlite_alloc() {
     unsafe extern "C" fn realloc(ptr: *mut c_void, new_size: i32) -> *mut c_void {
         let orig_ptr = ptr.offset(-(size_of::<usize>() as isize));
         let orig_size = *(orig_ptr as *mut usize);
-        let layout = Layout::from_size_align(orig_size, align_of::<usize>()).unwrap();
+        let layout =
+            Layout::from_size_align(orig_size + size_of::<usize>(), align_of::<usize>()).unwrap();
         let new_ptr = GLOBAL.realloc(
             orig_ptr as *mut _,
             layout,
