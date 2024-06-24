@@ -1,12 +1,15 @@
 use crate::local::{Connection, Statement};
 use crate::params::Params;
+use crate::rows::{RowInner, RowsInner};
 use crate::{errors, Error, Result};
 use crate::{Value, ValueRef};
 use libsql_sys::ValueType;
 
 use std::cell::RefCell;
+use std::collections::VecDeque;
 use std::ffi::c_char;
 use std::fmt;
+use std::sync::Arc;
 /// Query result rows.
 #[derive(Debug, Clone)]
 pub struct Rows {
@@ -180,10 +183,79 @@ impl fmt::Debug for Row {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct BatchedRows {
     /// Colname, decl_type
-    pub(crate) cols: Vec<(String, String)>,
-    pub(crate) rows: Vec<Vec<Value>>,
+    cols: Arc<Vec<(String, String)>>,
+    rows: VecDeque<Vec<Value>>,
+}
+
+impl BatchedRows {
+    pub fn new(cols: Vec<(String, String)>, rows: Vec<Vec<Value>>) -> Self {
+        Self {
+            cols: Arc::new(cols),
+            rows: rows.into(),
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl RowsInner for BatchedRows {
+    async fn next(&mut self) -> Result<Option<crate::Row>> {
+        let cols = self.cols.clone();
+        let row = self.rows.pop_front();
+
+        if let Some(row) = row {
+            Ok(Some(crate::Row {
+                inner: Box::new(BatchedRow { cols, row }),
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn column_count(&self) -> i32 {
+        todo!()
+    }
+
+    fn column_name(&self, idx: i32) -> Option<&str> {
+        todo!()
+    }
+
+    fn column_type(&self, idx: i32) -> Result<crate::value::ValueType> {
+        todo!()
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct BatchedRow {
+    cols: Arc<Vec<(String, String)>>,
+    row: Vec<Value>,
+}
+
+impl RowInner for BatchedRow {
+    fn column_value(&self, idx: i32) -> Result<Value> {
+        self.row
+            .get(idx as usize)
+            .cloned()
+            .ok_or(Error::InvalidColumnIndex)
+    }
+
+    fn column_name(&self, idx: i32) -> Option<&str> {
+        self.cols.get(idx as usize).map(|c| c.0.as_str())
+    }
+
+    fn column_str(&self, idx: i32) -> Result<&str> {
+        todo!()
+    }
+
+    fn column_type(&self, idx: i32) -> Result<crate::value::ValueType> {
+        todo!()
+    }
+
+    fn column_count(&self) -> usize {
+        todo!()
+    }
 }
 
 pub trait FromValue {
