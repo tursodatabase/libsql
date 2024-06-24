@@ -1,11 +1,13 @@
 #![allow(dead_code)]
 
+use crate::local::rows::BatchedRows;
 use crate::params::Params;
-use crate::errors;
+use crate::{connection::BatchRows, errors};
 
+use super::impls::LibsqlRows;
 use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
 
-use crate::TransactionBehavior;
+use crate::{TransactionBehavior, ValueType};
 
 use libsql_sys::ffi;
 use std::{ffi::c_int, fmt, path::Path, sync::Arc};
@@ -136,21 +138,66 @@ impl Connection {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string
     /// or if the underlying SQLite call fails.
-    pub fn execute_batch<S>(&self, sql: S) -> Result<()>
+    pub fn execute_batch<S>(&self, sql: S) -> Result<BatchRows>
     where
         S: Into<String>,
     {
         let sql = sql.into();
         let mut sql = sql.as_str();
 
+        let mut batch_rows = Vec::new();
+
         while !sql.is_empty() {
             let stmt = self.prepare(sql)?;
 
-            if !stmt.inner.raw_stmt.is_null() {
-                stmt.step()?;
-            }
+            let tail = if !stmt.inner.raw_stmt.is_null() {
+                let returned_rows = stmt.step()?;
 
-            let tail = stmt.tail();
+                let tail = stmt.tail();
+
+                if returned_rows {
+                    struct LibsqlBatchedRows {}
+
+                    let cols = stmt
+                        .columns()
+                        .iter()
+                        .map(|c| {
+                            let decl_type = c.decl_type().unwrap().to_string();
+
+                            (c.name.to_string(), decl_type)
+                        })
+                        .collect::<Vec<_>>();
+
+                    let rows_sys = Rows::new(stmt);
+
+                    // let mut batched_rows = BatchedRows {
+                    //     cols,
+                    //     rows: Vec::new(),
+                    // };
+
+                    let mut rows = Vec::new();
+
+                    while let Some(row) = rows_sys.next()? {
+                        let values = Vec::with_capacity(cols.len());
+
+                        for i in 0..cols.len() {
+                            let value = row.get_value(i as i32)?;
+
+                            values.push(value);
+                        }
+
+                        rows.push(values);
+                    }
+
+                    batch_rows.push(Some(BatchedRows { cols, rows }));
+                } else {
+                    batch_rows.push(None);
+                }
+
+                tail
+            } else {
+                stmt.tail()
+            };
 
             if tail == 0 || tail >= sql.len() {
                 break;
@@ -159,12 +206,12 @@ impl Connection {
             sql = &sql[tail..];
         }
 
-        Ok(())
+        Ok(BatchRows::new(batch_rows))
     }
 
     fn execute_transactional_batch_inner<S>(&self, sql: S) -> Result<()>
-        where
-            S: Into<String>,
+    where
+        S: Into<String>,
     {
         let sql = sql.into();
         let mut sql = sql.as_str();
@@ -177,13 +224,16 @@ impl Connection {
             } else {
                 &sql[..tail]
             };
-            let prefix_count = stmt_sql
-                .chars()
-                .take_while(|c| c.is_whitespace())
-                .count();
+            let prefix_count = stmt_sql.chars().take_while(|c| c.is_whitespace()).count();
             let stmt_sql = &stmt_sql[prefix_count..];
-            if stmt_sql.starts_with("BEGIN") || stmt_sql.starts_with("COMMIT") || stmt_sql.starts_with("ROLLBACK") || stmt_sql.starts_with("END") {
-                return Err(Error::TransactionalBatchError("Transactions forbidden inside transactional batch".to_string()));
+            if stmt_sql.starts_with("BEGIN")
+                || stmt_sql.starts_with("COMMIT")
+                || stmt_sql.starts_with("ROLLBACK")
+                || stmt_sql.starts_with("END")
+            {
+                return Err(Error::TransactionalBatchError(
+                    "Transactions forbidden inside transactional batch".to_string(),
+                ));
             }
 
             if !stmt.inner.raw_stmt.is_null() {
@@ -299,35 +349,53 @@ impl Connection {
     pub fn enable_load_extension(&self, onoff: bool) -> Result<()> {
         // SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION configration verb accepts 2 additional parameters: an on/off flag and a pointer to an c_int where new state of the parameter will be written (or NULL if reporting back the setting is not needed)
         // See: https://sqlite.org/c3ref/c_dbconfig_defensive.html#sqlitedbconfigenableloadextension
-        let err = unsafe { ffi::sqlite3_db_config(self.raw, ffi::SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, onoff as i32, std::ptr::null::<c_int>()) };
+        let err = unsafe {
+            ffi::sqlite3_db_config(
+                self.raw,
+                ffi::SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION,
+                onoff as i32,
+                std::ptr::null::<c_int>(),
+            )
+        };
         match err {
             ffi::SQLITE_OK => Ok(()),
-            _ => Err(errors::Error::SqliteFailure(err, errors::error_from_code(err))),
+            _ => Err(errors::Error::SqliteFailure(
+                err,
+                errors::error_from_code(err),
+            )),
         }
     }
 
-    pub fn load_extension(
-        &self,
-        dylib_path: &Path,
-        entry_point: Option<&str>,
-    ) -> Result<()> {
+    pub fn load_extension(&self, dylib_path: &Path, entry_point: Option<&str>) -> Result<()> {
         let mut raw_err_msg: *mut std::ffi::c_char = std::ptr::null_mut();
         let dylib_path = match dylib_path.to_str() {
-            Some(dylib_path) => {
-                std::ffi::CString::new(dylib_path).unwrap()
-            },
-            None => return Err(crate::Error::Misuse(format!(
-                "dylib path is not a valid utf8 string"
-            ))),
+            Some(dylib_path) => std::ffi::CString::new(dylib_path).unwrap(),
+            None => {
+                return Err(crate::Error::Misuse(format!(
+                    "dylib path is not a valid utf8 string"
+                )))
+            }
         };
         let err = match entry_point {
             Some(entry_point) => {
                 let entry_point = std::ffi::CString::new(entry_point).unwrap();
-                unsafe { ffi::sqlite3_load_extension(self.raw, dylib_path.as_ptr(), entry_point.as_ptr(), &mut raw_err_msg) }
+                unsafe {
+                    ffi::sqlite3_load_extension(
+                        self.raw,
+                        dylib_path.as_ptr(),
+                        entry_point.as_ptr(),
+                        &mut raw_err_msg,
+                    )
+                }
             }
-            None => {
-                unsafe { ffi::sqlite3_load_extension(self.raw, dylib_path.as_ptr(), std::ptr::null(), &mut raw_err_msg) }
-            }
+            None => unsafe {
+                ffi::sqlite3_load_extension(
+                    self.raw,
+                    dylib_path.as_ptr(),
+                    std::ptr::null(),
+                    &mut raw_err_msg,
+                )
+            },
         };
         match err {
             ffi::SQLITE_OK => Ok(()),
