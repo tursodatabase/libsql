@@ -4,9 +4,9 @@ use crate::{errors, Error, Result};
 use crate::{Value, ValueRef};
 use libsql_sys::ValueType;
 
-use std::fmt;
 use std::cell::RefCell;
 use std::ffi::c_char;
+use std::fmt;
 /// Query result rows.
 #[derive(Debug, Clone)]
 pub struct Rows {
@@ -165,7 +165,9 @@ impl fmt::Debug for Row {
                         ValueRef::Null => dbg_map.value(&(value_type, ())),
                         ValueRef::Integer(i) => dbg_map.value(&(value_type, i)),
                         ValueRef::Real(f) => dbg_map.value(&(value_type, f)),
-                        ValueRef::Text(s) => dbg_map.value(&(value_type, String::from_utf8_lossy(s))),
+                        ValueRef::Text(s) => {
+                            dbg_map.value(&(value_type, String::from_utf8_lossy(s)))
+                        }
                         ValueRef::Blob(b) => dbg_map.value(&(value_type, b.len())),
                     };
                 }
@@ -176,6 +178,12 @@ impl fmt::Debug for Row {
         }
         dbg_map.finish()
     }
+}
+
+pub(crate) struct BatchedRows {
+    /// Colname, decl_type
+    pub(crate) cols: Vec<(String, String)>,
+    pub(crate) rows: Vec<Vec<Value>>,
 }
 
 pub trait FromValue {
