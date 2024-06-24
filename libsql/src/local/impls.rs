@@ -24,8 +24,7 @@ impl Conn for LibsqlConnection {
     }
 
     async fn execute_batch(&self, sql: &str) -> Result<BatchRows> {
-        self.conn.execute_batch(sql)?;
-        Ok(BatchRows::empty())
+        self.conn.execute_batch(sql)
     }
 
     async fn execute_transactional_batch(&self, sql: &str) -> Result<BatchRows> {
