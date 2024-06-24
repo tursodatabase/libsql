@@ -5,7 +5,7 @@ use std::time::Instant;
 
 use parking_lot::{ArcMutexGuard, RawMutex};
 
-use crate::segment::current::CurrentSegment;
+use crate::segment::current::{CurrentSegment, SegmentIndex};
 use crate::shared_wal::WalLock;
 
 pub enum Transaction<F> {
@@ -102,19 +102,13 @@ pub struct Savepoint {
 }
 
 /// The savepoints must be passed from most recent to oldest
-pub fn merge_savepoints<'a>(
+pub(crate) fn merge_savepoints<'a>(
     savepoints: impl Iterator<Item = &'a BTreeMap<u32, u32>>,
-    out: &mut BTreeMap<u32, Vec<u32>>,
+    out: &SegmentIndex,
 ) {
     for savepoint in savepoints {
         for (k, v) in savepoint.iter() {
-            let entry = out.entry(*k).or_default();
-            match entry.last() {
-                Some(i) if i >= v => continue,
-                _ => {
-                    entry.push(*v);
-                }
-            }
+            out.insert(*k, *v);
         }
     }
 }
@@ -149,7 +143,7 @@ impl<'a, F> DerefMut for TxGuard<'a, F> {
 }
 
 impl<F> WriteTransaction<F> {
-    pub fn merge_savepoints(&self, out: &mut BTreeMap<u32, Vec<u32>>) {
+    pub(crate) fn merge_savepoints(&self, out: &SegmentIndex) {
         let savepoints = self.savepoints.iter().rev().map(|s| &s.index);
         merge_savepoints(savepoints, out);
     }
@@ -284,6 +278,8 @@ impl<F> DerefMut for WriteTransaction<F> {
 mod test {
     use std::collections::BTreeMap;
 
+    use crate::segment::current::SegmentIndex;
+
     use super::merge_savepoints;
 
     #[test]
@@ -291,12 +287,12 @@ mod test {
         let first = [(1, 1), (3, 2)].into_iter().collect::<BTreeMap<_, _>>();
         let second = [(1, 3), (4, 6)].into_iter().collect::<BTreeMap<_, _>>();
 
-        let mut out = BTreeMap::new();
-        merge_savepoints([first, second].iter().rev(), &mut out);
+        let out = SegmentIndex::new(0);
+        merge_savepoints([first, second].iter().rev(), &out);
 
-        let mut iter = out.into_iter();
-        assert_eq!(iter.next(), Some((1, vec![3])));
-        assert_eq!(iter.next(), Some((3, vec![2])));
-        assert_eq!(iter.next(), Some((4, vec![6])));
+        let mut iter = out.iter(0, 100);
+        assert_eq!(iter.next(), Some((1, 3, 3)));
+        assert_eq!(iter.next(), Some((3, 2, 2)));
+        assert_eq!(iter.next(), Some((4, 6, 6)));
     }
 }

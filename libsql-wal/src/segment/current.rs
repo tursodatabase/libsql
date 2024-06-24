@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::io::{BufWriter, IoSlice, Write};
 use std::num::NonZeroU64;
 use std::ops::DerefMut;
@@ -8,6 +7,7 @@ use std::sync::{
     Arc,
 };
 
+use crossbeam_skiplist::SkipMap;
 use fst::MapBuilder;
 use parking_lot::{Mutex, RwLock};
 use tokio_stream::Stream;
@@ -155,7 +155,7 @@ impl<F> CurrentSegment<F> {
                     ret?;
 
                     // self.file.sync_data().unwrap();
-                    tx.merge_savepoints(&mut self.index.index.write());
+                    tx.merge_savepoints(&self.index);
                     // set the header last, so that a transaction does not witness a write before
                     // it's actually committed.
                     *self.header.lock() = header.into_inner();
@@ -233,7 +233,7 @@ impl<F> CurrentSegment<F> {
 
                 self.file.write_all_at(header.as_bytes(), 0)?;
                 // self.file.sync_data().unwrap();
-                tx.merge_savepoints(&mut self.index.index.write());
+                tx.merge_savepoints(&self.index);
                 // set the header last, so that a transaction does not witness a write before
                 // it's actually committed.
                 *self.header.lock() = header;
@@ -350,29 +350,36 @@ impl<F> CurrentSegment<F> {
         &self.tail
     }
 
-    // todo: maybe return boxed frames?
-    pub fn rev_frame_stream(&self) -> impl Stream<Item = Result<Frame>> + '_
+    /// returns all the frames that changed between start_frame_no and the current commit index
+    pub(crate) fn frame_stream_from(
+        &self,
+        start_frame_no: u64,
+    ) -> impl Stream<Item = Result<Frame>> + '_
     where
         F: FileExt,
     {
-        async_stream::try_stream! {
-            let (start_frame_no, last_committed) = {
-                let header = self.header.lock();
-                (header.start_frame_no.get(), header.last_commited_frame_no.get())
-            };
-            let mut next_offset = (last_committed - start_frame_no) as u32;
-            loop {
-                let byte_offset = frame_offset(next_offset);
+        let (last_committed, size_after) = {
+            let header = self.header.lock();
+            (header.last_committed(), header.db_size.get())
+        };
 
+        // we get all frame offsets of pages that changed since start_frame_no
+        let mut iter = self.index.iter(start_frame_no, last_committed).peekable();
+
+        async_stream::try_stream! {
+            while let Some((_, offset, _)) = iter.next() {
+                let byte_offset = frame_offset(offset);
                 let buf = ZeroCopyBuf::<Frame>::new_uninit();
                 let (buf, ret) = self.file.read_exact_at_async(buf, byte_offset).await;
                 ret?;
-                yield buf.into_inner();
-                if next_offset == 0 {
-                    break
+                let mut frame = buf.into_inner();
+                let new_size_after = if iter.peek().is_none() {
+                    size_after
                 } else {
-                    next_offset -= 1;
-                }
+                    0
+                };
+                frame.header.set_size_after(new_size_after);
+                yield frame;
             }
         }
     }
@@ -398,9 +405,12 @@ impl<F> Drop for CurrentSegment<F> {
 }
 
 /// TODO: implement spill-to-disk when txn is too large
-struct SegmentIndex {
+/// TODO: optimize that data structure with something more custom. I can't find a wholy satisfying
+/// structure in the wild.
+pub(crate) struct SegmentIndex {
     start_frame_no: u64,
-    index: RwLock<BTreeMap<u32, Vec<u32>>>,
+    // TODO: measure perf, and consider using https://docs.rs/bplustree/latest/bplustree/
+    index: SkipMap<u32, RwLock<Vec<u32>>>,
 }
 
 impl SegmentIndex {
@@ -410,9 +420,10 @@ impl SegmentIndex {
             index: Default::default(),
         }
     }
+
     fn locate(&self, page_no: u32, max_frame_no: u64) -> Option<u32> {
-        let index = self.index.read();
-        let offsets = index.get(&page_no)?;
+        let offsets = self.index.get(&page_no)?;
+        let offsets = offsets.value().read();
         offsets
             .iter()
             .rev()
@@ -422,14 +433,102 @@ impl SegmentIndex {
 
     #[tracing::instrument(skip_all)]
     fn merge_all<W: Write>(&self, writer: W) -> Result<()> {
-        let index = self.index.read();
         let mut builder = MapBuilder::new(writer)?;
-        for (key, entries) in index.iter() {
-            let offset = *entries.last().unwrap();
-            builder.insert(key.to_be_bytes(), offset as u64)?;
+        let Some(mut entry) = self.index.front() else {
+            return Ok(());
+        };
+        loop {
+            let offset = *entry.value().read().last().unwrap();
+            builder.insert(entry.key().to_be_bytes(), offset as u64)?;
+            if !entry.move_next() {
+                break;
+            }
         }
 
         builder.finish()?;
         Ok(())
+    }
+
+    /// returns an iterator over (page_no, offset, frame_no), where the returned offset is the most
+    /// recent version of the page contained in start_frame_no..end_frame_no
+    /// This method assumes that the current segment is ordered.
+    pub(crate) fn iter(
+        &self,
+        start_frame_no: u64,
+        end_frame_no: u64,
+    ) -> impl Iterator<Item = (u32, u32, u64)> + '_ {
+        // todo: assert segment is sorted
+        let mut entry = self.index.front();
+        let mut fused = false;
+        let start_offset = (start_frame_no - self.start_frame_no) as u32;
+        let end_offset = (end_frame_no - self.start_frame_no) as u32;
+        std::iter::from_fn(move || loop {
+            if fused {
+                return None;
+            }
+            let entry = entry.as_mut()?;
+            let ret = {
+                let offsets = entry.value();
+                let offsets = offsets.read();
+                if offsets[0] > end_offset || *offsets.last().unwrap() < start_offset {
+                    drop(offsets);
+                    fused = !entry.move_next();
+                    continue;
+                }
+                let offset = *offsets.iter().rev().find(|x| **x <= end_offset).unwrap();
+                Some((*entry.key(), offset, self.start_frame_no + offset as u64))
+            };
+
+            fused = !entry.move_next();
+
+            return ret;
+        })
+    }
+
+    pub(crate) fn insert(&self, page_no: u32, offset: u32) {
+        let entry = self.index.get_or_insert(page_no, Default::default());
+        let mut offsets = entry.value().write();
+        if offsets.is_empty() || *offsets.last().unwrap() < offset {
+            offsets.push(offset);
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn index_iter() {
+        let index = SegmentIndex::new(42);
+        index.insert(1, 0);
+        index.insert(1, 3);
+        index.insert(2, 1);
+        index.insert(2, 2);
+        index.insert(3, 5);
+        index.insert(3, 15);
+        let mut iter = index.iter(42, 50);
+        assert_eq!(iter.next(), Some((1, 3, 42 + 3)));
+        assert_eq!(iter.next(), Some((2, 2, 42 + 2)));
+        assert_eq!(iter.next(), Some((3, 5, 42 + 5)));
+        assert_eq!(iter.next(), None);
+
+        let mut iter = index.iter(42, 100);
+        assert_eq!(iter.next(), Some((1, 3, 42 + 3)));
+        assert_eq!(iter.next(), Some((2, 2, 42 + 2)));
+        assert_eq!(iter.next(), Some((3, 15, 42 + 15)));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[should_panic]
+    #[test]
+    fn index_iter_out_of_bounds() {
+        let index = SegmentIndex::new(42);
+        index.insert(1, 0);
+        index.insert(1, 3);
+        index.insert(2, 1);
+        index.insert(2, 2);
+        assert_eq!(index.iter(1, 41).count(), 0);
+        assert_eq!(index.iter(43, 72).count(), 0);
     }
 }
