@@ -748,6 +748,11 @@ fn setup_sqlite_alloc() {
         let size_total = size as usize + size_of::<usize>();
         let layout = Layout::from_size_align(size_total, align_of::<usize>()).unwrap();
         let ptr = GLOBAL.alloc(layout);
+
+        if ptr.is_null() {
+            return std::ptr::null_mut();
+        }
+
         *(ptr as *mut usize) = size as usize;
         ptr.offset(size_of::<usize>() as _) as *mut _
     }
@@ -768,6 +773,11 @@ fn setup_sqlite_alloc() {
             layout,
             new_size as usize + size_of::<usize>(),
         );
+
+        if ptr.is_null() {
+            return std::ptr::null_mut();
+        }
+
         *(new_ptr as *mut usize) = new_size as usize;
         new_ptr.offset(size_of::<usize>() as _) as *mut _
     }
