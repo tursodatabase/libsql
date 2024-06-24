@@ -4,10 +4,9 @@ use crate::local::rows::BatchedRows;
 use crate::params::Params;
 use crate::{connection::BatchRows, errors};
 
-use super::impls::LibsqlRows;
 use super::{Database, Error, Result, Rows, RowsFuture, Statement, Transaction};
 
-use crate::{TransactionBehavior, ValueType};
+use crate::TransactionBehavior;
 
 use libsql_sys::ffi;
 use std::{ffi::c_int, fmt, path::Path, sync::Arc};
@@ -156,8 +155,6 @@ impl Connection {
                 let tail = stmt.tail();
 
                 if returned_rows {
-                    struct LibsqlBatchedRows {}
-
                     let cols = stmt
                         .columns()
                         .iter()
@@ -170,15 +167,10 @@ impl Connection {
 
                     let rows_sys = Rows::new(stmt);
 
-                    // let mut batched_rows = BatchedRows {
-                    //     cols,
-                    //     rows: Vec::new(),
-                    // };
-
                     let mut rows = Vec::new();
 
                     while let Some(row) = rows_sys.next()? {
-                        let values = Vec::with_capacity(cols.len());
+                        let mut values = Vec::with_capacity(cols.len());
 
                         for i in 0..cols.len() {
                             let value = row.get_value(i as i32)?;
@@ -189,7 +181,7 @@ impl Connection {
                         rows.push(values);
                     }
 
-                    batch_rows.push(Some(BatchedRows { cols, rows }));
+                    batch_rows.push(Some(crate::Rows::new(BatchedRows::new(cols, rows))));
                 } else {
                     batch_rows.push(None);
                 }
