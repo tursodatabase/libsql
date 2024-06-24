@@ -391,7 +391,9 @@ where
         static INIT: std::sync::Once = std::sync::Once::new();
         let mut join_set = JoinSet::new();
 
-        setup_sqlite_alloc();
+        if std::env::var("LIBSQL_SQLITE_MIMALLOC").is_ok() {
+            setup_sqlite_alloc();
+        }
 
         INIT.call_once(|| {
             if let Ok(size) = std::env::var("LIBSQL_EXPERIMENTAL_PAGER") {
