@@ -19,7 +19,9 @@
           with pkgs;
           mkShell {
             nativeBuildInputs = with pkgs; [
+              zig
               tcl
+              cmake
               gnumake
               clang
             ];
