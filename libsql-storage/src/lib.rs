@@ -135,6 +135,7 @@ pub struct DurableWal {
     client: StorageClient<Channel>,
     local_cache: LocalCache,
     lock_manager: Arc<Mutex<LockManager>>,
+    max_frame_no: u64,
 }
 
 impl DurableWal {
@@ -153,6 +154,7 @@ impl DurableWal {
             client,
             local_cache,
             lock_manager,
+            max_frame_no: Default::default(),
         }
     }
 
@@ -165,7 +167,7 @@ impl DurableWal {
         let req = rpc::FindFrameRequest {
             namespace: self.namespace.to_string(),
             page_no: page_no.get(),
-            max_frame_no: 0,
+            max_frame_no: self.max_frame_no,
         };
         let mut binding = self.client.clone();
         let resp = binding.find_frame(req).await.unwrap();
@@ -197,7 +199,10 @@ impl Wal for DurableWal {
         // TODO:
         // - create a read lock
         // - save the current max_frame_no for this txn
-        //
+        trace!("DurableWal::begin_read_txn()");
+        let rt = tokio::runtime::Handle::current();
+        let frame_no = tokio::task::block_in_place(|| rt.block_on(self.frames_count()));
+        self.max_frame_no = frame_no;
         Ok(true)
     }
 
@@ -205,6 +210,7 @@ impl Wal for DurableWal {
         trace!("DurableWal::end_read_txn()");
         // TODO: drop both read or write lock
         let mut lock_manager = self.lock_manager.lock().unwrap();
+        self.max_frame_no = 0;
         trace!(
             "DurableWal::end_read_txn() id = {}, unlocked = {}",
             self.conn_id,
@@ -222,6 +228,10 @@ impl Wal for DurableWal {
         page_no: std::num::NonZeroU32,
     ) -> Result<Option<std::num::NonZeroU32>> {
         trace!("DurableWal::find_frame()");
+        // if the max_frame_no is zero, then db is not initiated
+        if self.max_frame_no == 0 {
+            return Ok(None);
+        }
         let rt = tokio::runtime::Handle::current();
         // TODO: find_frame should account for `max_frame_no` of this txn
         let frame_no =
@@ -303,6 +313,7 @@ impl Wal for DurableWal {
 
     fn end_write_txn(&mut self) -> Result<()> {
         let mut lock_manager = self.lock_manager.lock().unwrap();
+        self.max_frame_no = 0;
         trace!(
             "DurableWal::end_write_txn() id = {}, unlocked = {}",
             self.conn_id,
@@ -369,7 +380,7 @@ impl Wal for DurableWal {
         let req = rpc::InsertFramesRequest {
             namespace: self.namespace.to_string(),
             frames,
-            max_frame_no: 0,
+            max_frame_no: self.max_frame_no,
         };
         let mut binding = self.client.clone();
         trace!("sending DurableWal::insert_frames() {:?}", req.frames.len());
