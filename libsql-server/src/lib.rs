@@ -111,8 +111,8 @@ type StatsSender = mpsc::Sender<(NamespaceName, MetaStoreHandle, Weak<Stats>)>;
 // static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 #[global_allocator]
-static GLOBAL: hipptrack::Allocator<mimalloc::MiMalloc> =
-    hipptrack::Allocator::from_allocator(mimalloc::MiMalloc);
+static GLOBAL: rheaper::Allocator<mimalloc::MiMalloc> =
+    rheaper::Allocator::from_allocator(mimalloc::MiMalloc);
 
 #[derive(clap::ValueEnum, PartialEq, Clone, Copy, Debug)]
 pub enum CustomWAL {

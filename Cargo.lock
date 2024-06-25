@@ -2770,15 +2770,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hashlink"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ba4ff7128dee98c7dc9794b6a411377e1404dba1c97deb8d1a55297bd25d8af"
-dependencies = [
- "hashbrown 0.14.5",
-]
-
-[[package]]
 name = "hdrhistogram"
 version = "7.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2857,24 +2848,6 @@ checksum = "1f7685beb53fc20efc2605f32f5d51e9ba18b8ef237961d1760169d2290d3bee"
 dependencies = [
  "outref",
  "vsimd",
-]
-
-[[package]]
-name = "hipptrack"
-version = "0.1.0"
-source = "git+https://github.com/MarinPostma/hipptrack.git?tag=v0.1.1#5f24248d62539241cad9e59e88291d4da7fc017f"
-dependencies = [
- "backtrace",
- "crc",
- "hashbrown 0.14.5",
- "itertools 0.13.0",
- "parking_lot",
- "rand",
- "rusqlite",
- "serde",
- "serde_json",
- "thread-id",
- "zerocopy",
 ]
 
 [[package]]
@@ -3482,7 +3455,7 @@ dependencies = [
  "doc-comment",
  "fallible-iterator 0.2.0",
  "fallible-streaming-iterator",
- "hashlink 0.8.4",
+ "hashlink",
  "lazy_static",
  "libsql-ffi",
  "regex",
@@ -3529,7 +3502,6 @@ dependencies = [
  "futures-core",
  "hashbrown 0.14.5",
  "hdrhistogram",
- "hipptrack",
  "hmac",
  "http-body 0.4.6",
  "hyper",
@@ -3564,6 +3536,7 @@ dependencies = [
  "rand",
  "regex",
  "reqwest",
+ "rheaper",
  "ring 0.17.8",
  "rustls 0.21.12",
  "rustls-pemfile 1.0.4",
@@ -3742,16 +3715,6 @@ dependencies = [
  "tracing",
  "uuid",
  "zerocopy",
-]
-
-[[package]]
-name = "libsqlite3-sys"
-version = "0.28.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c10584274047cb335c23d3e61bcef8e323adae7c5c8c760540f73610177fc3f"
-dependencies = [
- "pkg-config",
- "vcpkg",
 ]
 
 [[package]]
@@ -4947,6 +4910,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "rheaper"
+version = "0.2.0"
+source = "git+https://github.com/MarinPostma/rheaper.git?tag=v0.2.0#f51c0ab8722778d6640445e4f6bc58e0db50c7f5"
+dependencies = [
+ "backtrace",
+ "crc",
+ "hashbrown 0.14.5",
+ "itertools 0.13.0",
+ "parking_lot",
+ "rand",
+ "serde",
+ "serde_json",
+ "thread-id",
+ "zerocopy",
+]
+
+[[package]]
 name = "ring"
 version = "0.16.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4974,20 +4954,6 @@ dependencies = [
  "spin 0.9.8",
  "untrusted 0.9.0",
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "rusqlite"
-version = "0.31.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b838eba278d213a8beaf485bd313fd580ca4505a00d5871caeb1457c55322cae"
-dependencies = [
- "bitflags 2.5.0",
- "fallible-iterator 0.3.0",
- "fallible-streaming-iterator",
- "hashlink 0.9.1",
- "libsqlite3-sys",
- "smallvec",
 ]
 
 [[package]]
@@ -6453,12 +6419,6 @@ name = "valuable"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
-
-[[package]]
-name = "vcpkg"
-version = "0.2.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
 name = "vergen"
