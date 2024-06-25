@@ -420,8 +420,7 @@ int vectorIndexInsert(
   assert( sqlite3_value_type(rowid) == SQLITE_INTEGER );
   Vector v;
   vectorInitStatic(&v, VECTOR_TYPE_FLOAT32, sqlite3_value_blob(vec), sqlite3_value_bytes(vec));
-  diskAnnInsert(pCur->index, &v, sqlite3_value_int64(rowid));
-  return 0;
+  return diskAnnInsert(pCur->index, &v, sqlite3_value_int64(rowid));
 }
 
 int vectorIndexDelete(
