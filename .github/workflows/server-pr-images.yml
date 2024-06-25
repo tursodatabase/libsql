@@ -79,6 +79,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
+            BUILD_DEBUG=true
             ENABLE_FEATURES=durable-wal
 
       - name: Echo image name
