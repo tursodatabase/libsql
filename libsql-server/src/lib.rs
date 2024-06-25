@@ -107,8 +107,11 @@ pub(crate) static BLOCKING_RT: Lazy<Runtime> = Lazy::new(|| {
 type Result<T, E = Error> = std::result::Result<T, E>;
 type StatsSender = mpsc::Sender<(NamespaceName, MetaStoreHandle, Weak<Stats>)>;
 
+// #[global_allocator]
+// static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 #[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+static GLOBAL: hipptrack::Allocator<mimalloc::MiMalloc> = hipptrack::Allocator::from_allocator(mimalloc::MiMalloc);
 
 #[derive(clap::ValueEnum, PartialEq, Clone, Copy, Debug)]
 pub enum CustomWAL {
