@@ -89,7 +89,7 @@ hdrhistogram = "7.5.4"
 crossbeam = "0.8.4"
 async-recursion = "1"
 mimalloc = "0.1.42"
-hipptrack = { git = "https://github.com/MarinPostma/hipptrack.git", tag = "v0.1.0" }
+hipptrack = { git = "https://github.com/MarinPostma/hipptrack.git", tag = "v0.1.1" }
 tar = "0.4.41"
 
 [dev-dependencies]

@@ -2862,7 +2862,7 @@ dependencies = [
 [[package]]
 name = "hipptrack"
 version = "0.1.0"
-source = "git+https://github.com/MarinPostma/hipptrack.git?tag=v0.1.0#2886a4483ad9f1b59d82485229090453669dd1ed"
+source = "git+https://github.com/MarinPostma/hipptrack.git?tag=v0.1.1#5f24248d62539241cad9e59e88291d4da7fc017f"
 dependencies = [
  "backtrace",
  "crc",

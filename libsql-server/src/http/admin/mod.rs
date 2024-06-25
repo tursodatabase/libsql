@@ -150,6 +150,7 @@ where
         }))
         .route("/profile/heap/enable", post(enable_profile_heap))
         .route("/profile/heap/disable/:id", post(disable_profile_heap))
+        .route("/profile/heap/:id", delete(delete_profile_heap))
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
                 .on_request(trace_request)
@@ -498,4 +499,10 @@ async fn disable_profile_heap(Path(profile): Path<String>) -> impl axum::respons
     let body = StreamBody::new(stream);
 
     body
+}
+
+async fn delete_profile_heap(Path(profile): Path<String>) -> crate::Result<()> {
+    let profile_dir = PathBuf::from("heap_profile").join(&profile);
+    tokio::fs::remove_dir_all(&profile_dir).await?;
+    Ok(())
 }
