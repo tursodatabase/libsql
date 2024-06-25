@@ -686,6 +686,9 @@ int diskAnnInsert(
   u8 *pBuffer;
   int rc;
 
+  if (pVec->dims != pIndex->nVectorDims) {
+    return SQLITE_ERROR;
+  }
   if (diskAnnSelectRandom(pIndex, &nEntryRowid) != SQLITE_OK) {
     first = 1;
   }
