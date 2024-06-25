@@ -617,6 +617,7 @@ where
 
         tokio::select! {
             _ = shutdown.notified() => {
+                tracing::debug!("shutdown notification received");
                 let shutdown = async {
                     join_set.shutdown().await;
                     service_shutdown.notify_waiters();
@@ -639,6 +640,13 @@ where
                         std::process::exit(1);
                     },
 
+                }
+
+                // Flag that can be set to ensure shutdown never completes for
+                // testing purposes.
+                if std::env::var("LIBSQL_DELAY_SHUTDOWN").is_ok() {
+                    // std::future::pending::<()>().await;
+                    tokio::time::sleep(std::time::Duration::from_secs(30)).await;
                 }
             }
             Some(res) = join_set.join_next() => {

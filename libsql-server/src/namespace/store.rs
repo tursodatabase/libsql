@@ -329,6 +329,10 @@ impl NamespaceStore {
     where
         Fun: FnOnce(&Namespace) -> R,
     {
+        if self.inner.has_shutdown.load(Ordering::Relaxed) {
+            return Err(Error::NamespaceStoreShutdown);
+        }
+
         if namespace != NamespaceName::default()
             && !self.inner.metadata.exists(&namespace)
             && !self.inner.allow_lazy_creation
@@ -453,6 +457,8 @@ impl NamespaceStore {
     pub async fn shutdown(self) -> crate::Result<()> {
         let mut set = JoinSet::new();
         self.inner.has_shutdown.store(true, Ordering::Relaxed);
+
+        println!("set shutdown");
 
         for (_name, entry) in self.inner.store.iter() {
             let snapshow_at_shutdown = self.inner.snapshot_at_shutdown;
