@@ -56,3 +56,33 @@ do_execsql_test vector-130 {
 do_execsql_test vector-140 {
   SELECT vector('[]');
 } {{}}
+
+proc error_messages {sql} {
+  set ret ""
+  set stmt [sqlite3_prepare db $sql -1 dummy]
+  sqlite3_step $stmt
+  sqlite3_finalize $stmt
+  set ret [sqlite3_errmsg db]
+}
+
+do_test vector-func {
+  set ret [list]
+  lappend ret [error_messages {SELECT vector('')}]
+  lappend ret [error_messages {SELECT vector('test')}]
+  lappend ret [error_messages {SELECT vector('[1]]')}]
+  lappend ret [error_messages {SELECT vector('[[1]')}]
+  lappend ret [error_messages {SELECT vector('[1.1.1]')}]
+  lappend ret [error_messages {SELECT vector('[1.2')}]
+  lappend ret [error_messages {SELECT vector(x'0000000000')}]
+  lappend ret [error_messages {SELECT vector(x'')}]
+} [list {*}{
+  {invalid vector: doesn't start with '['}
+  {invalid vector: doesn't start with '['}
+  {malformed vector, extra data after closing ']'}
+  {invalid number: '[1'}
+  {invalid number: '1.1.1'}
+  {malformed vector, doesn't end with ']'}
+  {invalid f32 vector: 5 % 4 != 0}
+  {invalid f32 vector: zero length}
+}]
+

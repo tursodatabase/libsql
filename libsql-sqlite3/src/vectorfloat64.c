@@ -192,9 +192,9 @@ int vectorF64ParseBlob(
 ){
   const unsigned char *blob;
   double *elems = v->data;
-  char zErr[128];
   unsigned i;
   size_t len;
+  size_t vectorBytes;
 
   if( sqlite3_value_type(arg)!=SQLITE_BLOB ){
     *pzErr = sqlite3_mprintf("invalid vector: not a blob type");
@@ -206,16 +206,17 @@ int vectorF64ParseBlob(
     *pzErr = sqlite3_mprintf("invalid vector: zero length");
     goto error;
   }
-  len = sqlite3_value_bytes(arg) / sizeof(double);
+  vectorBytes = sqlite3_value_bytes(arg);
+  if (vectorBytes % 8 != 0) {
+    *pzErr = sqlite3_mprintf("invalid f64 vector: %d %% 8 != 0", vectorBytes);
+    goto error;
+  }
+  len = vectorBytes / sizeof(double);
   if (len > MAX_VECTOR_SZ) {
     *pzErr = sqlite3_mprintf("invalid vector: too large: %d", len);
     goto error;
   }
   for(i = 0; i < len; i++){
-    if( !blob ){
-      *pzErr = sqlite3_mprintf("malformed blob");
-      goto error;
-    }
     elems[i] = deserializeF64(blob);
     blob += sizeof(double);
   }

@@ -140,74 +140,78 @@ static int vectorParseText(
   Vector *v,
   char **pzErrMsg
 ){
-  char elBuf[MAX_FLOAT_CHAR_SZ];
+  // one more extra character in order to freely print data from elBuf with printf-like method; will be set to zero later
+  char elBuf[MAX_FLOAT_CHAR_SZ + 1];
   const unsigned char *zStr;
   float *elems = v->data;
-  char zErr[128];
   int bufidx = 0;
   int vecidx = 0;
   double el;
 
-  if( sqlite3_value_type(arg)!=SQLITE_TEXT ){
+  if (sqlite3_value_type(arg) != SQLITE_TEXT) {
     *pzErrMsg = sqlite3_mprintf("invalid vector: not a text type");
     goto error;
   }
 
-  memset(elBuf, 0, sizeof(elBuf));
-
   zStr = sqlite3_value_text(arg);
+  if (zStr == NULL) return 0;
 
   while (zStr && sqlite3Isspace(*zStr))
     zStr++;
 
-  if( zStr==0 ) return 0;
-
   if (*zStr != '[') {
-    sqlite3_snprintf(sizeof(zErr), zErr, "invalid vector: doesn't start with ']':");
+    *pzErrMsg = sqlite3_mprintf("invalid vector: doesn't start with '['");
     goto error;
   }
   zStr++;
 
-  while (zStr != NULL && *zStr != '\0' && *zStr != ']') {
-    char this = *zStr++;
+  // clear elBuf when we are ready to parse floats
+  memset(elBuf, 0, sizeof(elBuf));
+
+  for (; zStr != NULL && *zStr != '\0'; zStr++) {
+    char this = *zStr;
     if (sqlite3Isspace(this)) {
       continue;
     }
     if (this != ',' && this != ']') {
       elBuf[bufidx++] = this;
       if (bufidx > MAX_FLOAT_CHAR_SZ) {
-        char zErr[MAX_FLOAT_CHAR_SZ+100];
-        sqlite3_snprintf(sizeof(zErr), zErr, "float too big while parsing vector: %s...", elBuf);
-        return -1;
+        *pzErrMsg = sqlite3_mprintf("float too big while parsing vector: '%s'", elBuf);
+        goto error;
       }
-    } else {
-      if (sqlite3AtoF(elBuf, &el, bufidx, SQLITE_UTF8) <= 0) {
-        sqlite3_snprintf(sizeof(zErr), zErr, "invalid number: %s...", elBuf);
-        return -1;
-      }
-      bufidx = 0;
-      memset(elBuf, 0, sizeof(elBuf));
-      elems[vecidx++] = el;
-      if (vecidx >= MAX_VECTOR_SZ) {
-        sqlite3_snprintf(sizeof(zErr), zErr, "vector is larger than the maximum: (%d)", MAX_VECTOR_SZ);
-        return -1;
-      }
+      continue;
     }
-  }
-  if (bufidx != 0) {
+    // empty vector case: '[]'
+    if (this == ']' && vecidx == 0 && bufidx == 0) {
+      break;
+    }
     if (sqlite3AtoF(elBuf, &el, bufidx, SQLITE_UTF8) <= 0) {
-      sqlite3_snprintf(sizeof(zErr), zErr, "invalid number: %s...", elBuf);
-        return -1;
+      *pzErrMsg = sqlite3_mprintf("invalid number: '%s'", elBuf);
+      goto error;
     }
-    elems[vecidx++] = el;
     if (vecidx >= MAX_VECTOR_SZ) {
-      sqlite3_snprintf(sizeof(zErr), zErr, "vector is larger than the maximum: (%d)", MAX_VECTOR_SZ);
-        return -1;
+      *pzErrMsg = sqlite3_mprintf("vector is larger than the maximum: (%d)", MAX_VECTOR_SZ);
+      goto error;
+    }
+    // clear only first bufidx positions - all other are zero
+    memset(elBuf, 0, bufidx);
+    bufidx = 0;
+    elems[vecidx++] = el;
+    if (this == ']') {
+      break;
     }
   }
-  if (zStr && *zStr!= ']') {
-    sqlite3_snprintf(sizeof(zErr), zErr, "malformed vector, doesn't end with ']'");
-    return -1;
+  if (zStr != NULL && *zStr != ']') {
+    *pzErrMsg = sqlite3_mprintf("malformed vector, doesn't end with ']'");
+    goto error;
+  }
+  zStr++;
+
+  while (zStr && sqlite3Isspace(*zStr))
+    zStr++;
+  if (zStr != NULL && *zStr != '\0') {
+    *pzErrMsg = sqlite3_mprintf("malformed vector, extra data after closing ']'");
+    goto error;
   }
   v->dims = vecidx;
   return vecidx;
