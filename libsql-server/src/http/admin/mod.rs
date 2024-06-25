@@ -461,7 +461,7 @@ struct EnableHeapProfileRequest {
 
 async fn enable_profile_heap(Json(req): Json<EnableHeapProfileRequest>) -> crate::Result<String> {
     let path = tokio::task::spawn_blocking(move || {
-        hipptrack::enable_tracking(hipptrack::TrackerConfig {
+        rheaper::enable_tracking(rheaper::TrackerConfig {
             max_stack_depth: req.max_stack_depth.unwrap_or(30),
             max_trackers: req.max_trackers.unwrap_or(200),
             tracker_event_buffer_size: req.tracker_event_buffer_size.unwrap_or(5_000),
@@ -478,7 +478,7 @@ async fn enable_profile_heap(Json(req): Json<EnableHeapProfileRequest>) -> crate
 async fn disable_profile_heap(Path(profile): Path<String>) -> impl axum::response::IntoResponse {
     let (tx, rx) = tokio::sync::mpsc::channel::<bytes::Bytes>(1);
     tokio::task::spawn_blocking(move || {
-        hipptrack::disable_tracking();
+        rheaper::disable_tracking();
         let profile_dir = PathBuf::from("heap_profile").join(&profile);
         let sink =
             PollSender::new(tx).sink_map_err(|_| std::io::Error::from(ErrorKind::BrokenPipe));
