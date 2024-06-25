@@ -15,6 +15,9 @@ pub const Debug = struct {
             }),
             .path = path,
         };
+
+        path.addStepDependencies(&self.step);
+
         return self;
     }
 
@@ -23,36 +26,105 @@ pub const Debug = struct {
 
         const b = self.step.owner;
 
-        std.debug.print("{s}", .{self.path.getPath(b)});
+        std.debug.print("welp {s}\n", .{self.path.getPath(b)});
+    }
+};
+
+pub const Amalgamation = struct {
+    step: std.Build.Step,
+    lazy_paths: std.ArrayList(std.Build.LazyPath),
+    output_list: std.Build.GeneratedFile,
+    basename: []const u8,
+
+    pub fn create(b: *std.Build, basename: []const u8, lazy_paths: []const std.Build.LazyPath) *Amalgamation {
+        const self = b.allocator.create(Amalgamation) catch @panic("OOM");
+
+        self.* = .{
+            .step = std.Build.Step.init(.{
+                .id = .custom,
+                .name = "amalgamate files",
+                .owner = b,
+                .makeFn = make,
+            }),
+            .lazy_paths = undefined,
+            .basename = basename,
+            .output_list = .{ .step = &self.step },
+        };
+
+        var list = std.ArrayList(std.Build.LazyPath).init(b.allocator);
+
+        for (lazy_paths) |lp| {
+            list.append(lp) catch @panic("OOM");
+            lp.addStepDependencies(&self.step);
+        }
+
+        self.lazy_paths = list;
+
+        return self;
+    }
+
+    pub fn getOutput(self: *const Amalgamation) std.Build.LazyPath {
+        return .{ .generated = .{ .file = &self.output_list } };
+    }
+
+    pub fn make(step: *std.Build.Step, prog_node: std.Progress.Node) !void {
+        _ = prog_node;
+        const self: *Amalgamation = @fieldParentPtr("step", step);
+        const b = step.owner;
+
+        var man = b.graph.cache.obtain();
+        defer man.deinit();
+
+        var output = std.ArrayList(u8).init(b.allocator);
+        defer output.deinit();
+
+        for (self.lazy_paths.items) |lp| {
+            const file = try std.fs.cwd().readFileAlloc(
+                b.allocator,
+                lp.getPath2(b, step),
+                2 * 1024 * 1024,
+            );
+            defer b.allocator.free(file);
+
+            try std.fmt.format(output.writer(),
+                \\/* amalg:begin {s} */
+                \\
+            , .{lp.getPath(b)});
+
+            try output.appendSlice(file);
+
+            try std.fmt.format(output.writer(),
+                \\/* amalg:end {s} */
+                \\
+            , .{lp.getPath(b)});
+        }
+
+        man.hash.addBytes(output.items);
+
+        if (try step.cacheHit(&man)) {
+            const digest = man.final();
+            self.output_list.path = try b.cache_root.join(b.allocator, &.{ "o", &digest, self.basename });
+            return;
+        }
+
+        const digest = man.final();
+
+        const sub_path = b.pathJoin(&.{ "o", &digest, self.basename });
+        const sub_path_dirname = std.fs.path.dirname(sub_path).?;
+
+        try b.cache_root.handle.makePath(sub_path_dirname);
+        try b.cache_root.handle.writeFile(.{
+            .sub_path = sub_path,
+            .data = output.items,
+        });
+        self.output_list.path = try b.cache_root.join(b.allocator, &.{sub_path});
+        // try man.writeManifest();
     }
 };
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-
-    const lemon = b.addExecutable(.{
-        .name = "lemon",
-        .root_source_file = null,
-        .target = target,
-        .optimize = .ReleaseFast,
-    });
-    lemon.addCSourceFile(.{ .file = b.path("tool/lemon.c") });
-    lemon.linkLibC();
-
-    {
-        const run = b.addRunArtifact(lemon);
-        run.addArg("-DSQLITE_ENABLE_MATH_FUNCTIONS");
-        const parse = run.addPrefixedOutputDirectoryArg("-d", "parser");
-        run.addFileArg(b.path("src/parse.y"));
-
-        const debug = Debug.create(b, parse);
-        debug.step.dependOn(&run.step);
-
-        const step = b.step("gen-parse", "Generate parse files");
-        step.dependOn(&debug.step);
-        step.dependOn(&run.step);
-    }
 
     const sources = .{
         .sqlite3 = &.{
@@ -157,37 +229,17 @@ pub fn build(b: *std.Build) void {
                 "ext/fts3/fts3_unicode2.c",
                 "ext/fts3/fts3_write.c",
             },
-            .icu = &.{
-                "ext/icu/sqliteicu.h",
-                "ext/icu/icu.c",
-            },
-            .rtree = &.{
-                "ext/rtree/rtree.h",
-                "ext/rtree/rtree.c",
-                "ext/rtree/geopoly.c",
-            },
-            .session = &.{
-                "ext/session/sqlite3session.c",
-                "ext/session/sqlite3session.h",
-            },
-            .auth = &.{
-                "ext/userauth/userauth.c",
-                "ext/userauth/sqlite3userauth.h",
-            },
-            .rbu = &.{
-                "ext/rbu/sqlite3rbu.h",
-                "ext/rbu/sqlite3rbu.c",
-            },
-            .stmt = &.{
-                "ext/misc/stmt.c",
-            },
-            .wasm = &.{
-                "ext/udf/wasmedge_bindings.c",
-            },
+            .icu = &.{"ext/icu/icu.c"},
+            .rtree = &.{ "ext/rtree/rtree.c", "ext/rtree/geopoly.c" },
+            .session = &.{"ext/session/sqlite3session.c"},
+            .auth = &.{"ext/userauth/userauth.c"},
+            .rbu = &.{"ext/rbu/sqlite3rbu.c"},
+            .stmt = &.{"ext/misc/stmt.c"},
+            .wasm = &.{"ext/udf/wasmedge_bindings.c"},
         },
     };
 
-    const sqlite_header = b.addConfigHeader(
+    const sqlite_header_base = b.addConfigHeader(
         .{
             .include_path = "sqlite3.h",
             .style = .{ .cmake = b.path("src/sqlite.h.in") },
@@ -207,12 +259,8 @@ pub fn build(b: *std.Build) void {
         },
         .{
             .HAVE_DLFCN_H = null,
-
-            // Define to 1 if you have the `fdatasync' function.
-            .HAVE_FDATASYNC = 1,
-
-            // Define to 1 if you have the `gmtime_r' function.
-            .HAVE_GMTIME_R = 1,
+            .HAVE_FDATASYNC = 1, // Define to 1 if you have the `fdatasync' function.
+            .HAVE_GMTIME_R = 1, // Define to 1 if you have the `gmtime_r' function.
 
             .STDC_HEADERS = 1,
             .HAVE_STDINT_H = 1,
@@ -231,88 +279,101 @@ pub fn build(b: *std.Build) void {
             .HAVE_UINT8_T = 1,
             .HAVE_UINTPTR_T = 1,
 
-            // Define to 1 if you have the `isnan' function.
-            .HAVE_ISNAN = 1,
+            .HAVE_ISNAN = 1, // Define to 1 if you have the `isnan' function.
+            .HAVE_LOCALTIME_R = 1, // Define to 1 if you have the `localtime_r' function.
+            .HAVE_LOCALTIME_S = 1, // Define to 1 if you have the `localtime_s' function.
+            .HAVE_MALLOC_H = 1, // Define to 1 if you have the <malloc.h> header file.
+            .HAVE_MALLOC_USABLE_SIZE = 1, // Define to 1 if you have the `malloc_usable_size' function.
+            .HAVE_MEMORY_H = 1, // Define to 1 if you have the <memory.h> header file.
 
-            // Define to 1 if you have the `localtime_r' function.
-            .HAVE_LOCALTIME_R = 1,
-
-            // Define to 1 if you have the `localtime_s' function.
-            .HAVE_LOCALTIME_S = 1,
-
-            // Define to 1 if you have the <malloc.h> header file.
-            .HAVE_MALLOC_H = 1,
-
-            // Define to 1 if you have the `malloc_usable_size' function.
-            .HAVE_MALLOC_USABLE_SIZE = 1,
-
-            // Define to 1 if you have the <memory.h> header file.
-            .HAVE_MEMORY_H = 1,
-
-            // Define to 1 if you have the `pread' function.
-            .HAVE_PREAD = 1,
+            .HAVE_PREAD = 1, // Define to 1 if you have the `pread' function.
             .HAVE_PREAD64 = 1,
             .HAVE_PWRITE = 1,
             .HAVE_PWRITE64 = 1,
 
-            // Define to 1 if you have the `strchrnul' function.
-            .HAVE_STRCHRNUL = 1,
+            .HAVE_STRCHRNUL = 1, // Define to 1 if you have the `strchrnul' function.
+            .HAVE_STRINGS_H = 1, // Define to 1 if you have the <strings.h> header file.
+            .HAVE_STRING_H = 1, // Define to 1 if you have the <string.h> header file.
+            .HAVE_SYS_STAT_H = 1, // Define to 1 if you have the <sys/stat.h> header file.
+            .HAVE_SYS_TYPES_H = 1, // Define to 1 if you have the <sys/types.h> header file.
+            .HAVE_UNISTD_H = 1, // Define to 1 if you have the <unistd.h> header file.
+            .HAVE_USLEEP = 1, // Define to 1 if you have the `usleep' function.
+            .HAVE_UTIME = 1, // Define to 1 if you have the `utime' function.
+            .HAVE_ZLIB_H = 1, // Define to 1 if you have the <zlib.h> header file.
 
-            // Define to 1 if you have the <strings.h> header file.
-            .HAVE_STRINGS_H = 1,
-
-            // Define to 1 if you have the <string.h> header file.
-            .HAVE_STRING_H = 1,
-
-            // Define to 1 if you have the <sys/stat.h> header file.
-            .HAVE_SYS_STAT_H = 1,
-
-            // Define to 1 if you have the <sys/types.h> header file.
-            .HAVE_SYS_TYPES_H = 1,
-
-
-            // Define to 1 if you have the <unistd.h> header file.
-            .HAVE_UNISTD_H = 1,
-
-            // Define to 1 if you have the `usleep' function.
-            .HAVE_USLEEP = 1,
-
-            // Define to 1 if you have the `utime' function.
-            .HAVE_UTIME = 1,
-
-            // Define to 1 if you have the <zlib.h> header file.
-            .HAVE_ZLIB_H = 1,
-
-            // Define to the sub-directory in which libtool stores uninstalled libraries.
-            .LT_OBJDIR = null,
-
-            // Define to the address where bug reports for this package should be sent.
-            .PACKAGE_BUGREPORT = "",
-
-            // Define to the full name of this package.
-            .PACKAGE_NAME = "",
-
-            // Define to the full name and version of this package.
-            .PACKAGE_STRING = "",
-
-            // Define to the one symbol short name of this package.
-            .PACKAGE_TARNAME = "",
-
-            // Define to the home page for this package.
-            .PACKAGE_URL = "",
-
-            // Define to the version of this package.
-            .PACKAGE_VERSION = "",
-
-            // Number of bits in a file offset, on hosts where this is settable.
-            ._FILE_OFFSET_BITS = null,
-
-            // Define for large files, on AIX-style hosts.
-            ._LARGE_FILES = null,
+            .LT_OBJDIR = null, // Define to the sub-directory in which libtool stores uninstalled libraries.
+            .PACKAGE_BUGREPORT = "", // Define to the address where bug reports for this package should be sent.
+            .PACKAGE_NAME = "", // Define to the full name of this package.
+            .PACKAGE_STRING = "", // Define to the full name and version of this package.
+            .PACKAGE_TARNAME = "", // Define to the one symbol short name of this package.
+            .PACKAGE_URL = "", // Define to the home page for this package.
+            .PACKAGE_VERSION = "", // Define to the version of this package.
+            ._FILE_OFFSET_BITS = null, // Number of bits in a file offset, on hosts where this is settable.
+            ._LARGE_FILES = null, // Define for large files, on AIX-style hosts.
         },
     );
 
-    const debug = Debug.create(b, sqlite_header.getOutput());
+    const lemon = b.addExecutable(.{
+        .name = "lemon",
+        .root_source_file = null,
+        .target = target,
+        .optimize = .ReleaseFast,
+    });
+    lemon.addCSourceFile(.{ .file = b.path("tool/lemon.c") });
+    lemon.linkLibC();
+
+    const mkkeywordhash = b.addExecutable(.{
+        .name = "mkkeywordhash",
+        .root_source_file = null,
+        .target = target,
+        .optimize = .ReleaseFast,
+    });
+    mkkeywordhash.addCSourceFile(.{ .file = b.path("tool/mkkeywordhash.c") });
+    mkkeywordhash.linkLibC();
+
+    var parser = parser: {
+        const run = b.addRunArtifact(lemon);
+        run.addArg("-DSQLITE_ENABLE_MATH_FUNCTIONS");
+        const parser = run.addPrefixedOutputDirectoryArg("-d", ".");
+        run.addArg("-S");
+        run.addFileArg(b.path("src/parse.y"));
+        break :parser parser;
+    };
+
+    var keywordhash = b.addRunArtifact(mkkeywordhash);
+
+    const sqlite_header = Amalgamation.create(b, "sqlite3.h", &.{
+        sqlite_header_base.getOutput(),
+        b.path("src/page_header.h"),
+        b.path("src/wal.h"),
+    });
+
+    const debug = Debug.create(b, parser);
+    b.getInstallStep().dependOn(&debug.step);
+
+    const parser_vdbe = Amalgamation.create(b, "parse_vbde", &.{
+        parser.path(b, "parse.h"),
+        b.path("src/vdbe.c"),
+    });
+
+    const opcode_h = b.addSystemCommand(&.{"tclsh"});
+    opcode_h.addFileArg(b.path("tool/mkopcodeh.tcl"));
+    opcode_h.setStdIn(.{ .lazy_path = parser_vdbe.getOutput() });
+
+    const opcode_c = b.addSystemCommand(&.{"tclsh"});
+    opcode_c.addFileArg(b.path("tool/mkopcodec.tcl"));
+    opcode_c.addFileArg(opcode_h.captureStdOut());
+
+    const opcode = b.addWriteFiles();
+    _ = opcode.addCopyFile(keywordhash.captureStdOut(), "keywordhash.h");
+    _ = opcode.addCopyFile(opcode_h.captureStdOut(), "opcodes.h");
+    _ = opcode.addCopyFile(opcode_c.captureStdOut(), "opcodes.c");
+
+    const flags = &.{
+        "-g",
+        // "-DLIBSQL_ENABLE_WASM_RUNTIME",
+        "-DLIBSQL_OMIT_ALTERTABLE",
+    };
 
     const sqlite3 = b.addStaticLibrary(.{
         .name = "sqlite3",
@@ -321,16 +382,25 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     sqlite3.addIncludePath(b.path("src/"));
-    sqlite3.addIncludePath(b.path("."));
-    sqlite3.addConfigHeader(sqlite_header);
+    sqlite3.addIncludePath(opcode.getDirectory());
+    sqlite3.addIncludePath(parser);
+    sqlite3.addCSourceFile(.{
+        .file = parser.path(b, "parse.c"),
+        .flags = flags,
+    });
+    sqlite3.addIncludePath(sqlite_header.getOutput().dirname());
     sqlite3.addConfigHeader(sqlite_cfg);
-    sqlite3.addCSourceFiles(.{ .files = sources.sqlite3, .flags = &.{ "-g", "-DLIBSQL_ENABLE_WASM_RUNTIME" } });
+    sqlite3.addCSourceFiles(.{
+        .files = sources.sqlite3,
+        .flags = flags,
+    });
+    sqlite3.addCSourceFile(.{
+        .file = opcode.getDirectory().path(b, "opcodes.c"),
+        .flags = flags,
+    });
     sqlite3.linkLibC();
-
-    debug.step.dependOn(&sqlite_header.step);
 
     const install = b.addInstallArtifact(sqlite3, .{});
 
     b.getInstallStep().dependOn(&install.step);
-    b.getInstallStep().dependOn(&debug.step);
 }

@@ -153,7 +153,7 @@ extern "C" {
 #define SQLITE_VERSION_NUMBER ${sqlite_version_number}
 #define SQLITE_SOURCE_ID "${sqlite_source_id}"
 
-#define LIBSQL_VERSION ${libsql_version}"
+#define LIBSQL_VERSION "${libsql_version}"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
