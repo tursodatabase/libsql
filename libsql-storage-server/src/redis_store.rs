@@ -75,7 +75,7 @@ impl FrameStore for RedisFrameStore {
         }
     }
 
-    async fn find_frame(&self, namespace: &str, page_no: u32) -> Option<u64> {
+    async fn find_frame(&self, namespace: &str, page_no: u32, _max_frame_no: u64) -> Option<u64> {
         let page_key = format!("p/{}/{}", namespace, page_no);
         let mut con = self.client.get_connection().unwrap();
         let frame_no = con.get::<String, u64>(page_key.clone());

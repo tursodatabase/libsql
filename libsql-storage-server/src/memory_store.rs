@@ -53,7 +53,7 @@ impl FrameStore for InMemFrameStore {
             tracing::trace!("inserted for page {} frame {}", page_no, frame_no)
         }
         let count = inner.max_frame_no;
-        count
+        Ok(count)
     }
 
     async fn read_frame(&self, _namespace: &str, frame_no: u64) -> Option<bytes::Bytes> {
@@ -66,7 +66,7 @@ impl FrameStore for InMemFrameStore {
     }
 
     // given a page number, return the maximum frame for the page
-    async fn find_frame(&self, _namespace: &str, page_no: u32) -> Option<u64> {
+    async fn find_frame(&self, _namespace: &str, page_no: u32, _max_frame_no: u64) -> Option<u64> {
         self.inner
             .lock()
             .unwrap()
