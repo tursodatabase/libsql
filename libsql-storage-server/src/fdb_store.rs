@@ -89,12 +89,18 @@ impl FDBFrameStore {
 
 #[async_trait]
 impl FrameStore for FDBFrameStore {
-    async fn insert_frames(&self, namespace: &str, _max_frame_no: u64, frames: Vec<Frame>) -> u64 {
-        let max_frame_key = format!("{}/max_frame_no", namespace);
+    async fn insert_frames(
+        &self,
+        namespace: &str,
+        max_frame_no: u64,
+        frames: Vec<Frame>,
+    ) -> Result<u64, Error> {
         let db = foundationdb::Database::default().unwrap();
         let txn = db.create_trx().expect("unable to create transaction");
         let mut frame_no = self.get_max_frame_no(&txn, namespace).await;
-
+        if frame_no != max_frame_no {
+            return Err(WriteConflict);
+        }
         for f in frames {
             frame_no += 1;
             self.insert_with_tx(namespace, &txn, frame_no, f).await;
@@ -102,7 +108,7 @@ impl FrameStore for FDBFrameStore {
         let key = max_frame_key(namespace);
         txn.set(&key, &pack(&(frame_no)));
         txn.commit().await.expect("commit failed");
-        frame_no
+        Ok(frame_no)
     }
 
     async fn read_frame(&self, namespace: &str, frame_no: u64) -> Option<bytes::Bytes> {
@@ -116,23 +122,22 @@ impl FrameStore for FDBFrameStore {
         None
     }
 
-    async fn find_frame(&self, namespace: &str, page_no: u32) -> Option<u64> {
-        let page_key = format!("{}/p/{}", namespace, page_no);
+    #[tracing::instrument(skip(self))]
+    async fn find_frame(&self, namespace: &str, page_no: u32, max_frame_no: u64) -> Option<u64> {
+        if max_frame_no == 0 {
+            return None;
+        }
 
         let db = foundationdb::Database::default().unwrap();
         let txn = db.create_trx().expect("unable to create transaction");
-
-        let result = txn.get(&page_key.as_bytes(), false).await;
-        if let Err(e) = result {
-            error!("get failed: {:?}", e);
-            return None;
-        }
-        if let Ok(None) = result {
-            error!("page not found");
-            return None;
-        }
-        let frame_no: u64 = unpack(&result.unwrap().unwrap()).expect("failed to decode u64");
-        Some(frame_no)
+        let page_key = page_index_key(namespace, page_no, max_frame_no);
+        let result = txn
+            .get_key(&KeySelector::last_less_or_equal(&page_key), false)
+            .await;
+        let unpacked: (String, String, u32, u64) =
+            unpack(&result.unwrap().to_vec()).expect("failed to decode");
+        tracing::info!("got the frame_no = {:?}", unpacked);
+        return Some(unpacked.3);
     }
 
     async fn frame_page_no(&self, namespace: &str, frame_no: u64) -> Option<u32> {
@@ -146,7 +151,6 @@ impl FrameStore for FDBFrameStore {
                 .expect("frame not found"),
         )
         .expect("failed to decode u64");
-
         Some(page_no)
     }
 
