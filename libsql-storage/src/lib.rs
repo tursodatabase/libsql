@@ -374,8 +374,14 @@ impl Wal for DurableWal {
         let mut binding = self.client.clone();
         trace!("sending DurableWal::insert_frames() {:?}", req.frames.len());
         let resp = binding.insert_frames(req);
-        let resp = tokio::task::block_in_place(|| rt.block_on(resp)).unwrap();
-        Ok(resp.into_inner().num_frames as usize)
+        let resp = tokio::task::block_in_place(|| rt.block_on(resp));
+        if let Err(e) = resp {
+            if e.code() == tonic::Code::Aborted {
+                return Err(rusqlite::ffi::Error::new(SQLITE_BUSY));
+            }
+            return Err(rusqlite::ffi::Error::new(SQLITE_ABORT));
+        }
+        Ok(resp.unwrap().into_inner().num_frames as usize)
     }
 
     fn checkpoint(
