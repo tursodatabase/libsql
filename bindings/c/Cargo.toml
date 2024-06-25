@@ -24,5 +24,10 @@ libsql = { path = "../../libsql", features = ["encryption"] }
 libsql = { path = "../../libsql"}
 
 
-[profile.release]
-strip = "symbols"
+# The produced binaries are too large for mobiles
+# When compiling for iOS or Android, you should turn on symbol stripping, lto and cut debug symbols
+# [profile.release]
+# debug = false # Exclude debug symbols
+# strip = "symbols" # Exclude the rest of the symbols
+# # opt-level = "z" # Did not use this, but it equals C++'s optimize for size (O3?)
+# lto = true # Link time optimization, not sure what this does but it helps reduce the size
