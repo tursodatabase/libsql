@@ -3,6 +3,19 @@ use std::sync::Arc;
 
 use libsql_sys::rusqlite::{params, Connection, Error, Result};
 
+/// We use LocalCache to cache frames and transaction state. Each namespace gets its own cache
+/// which is currently stored in a SQLite DB file, along with the main database file.
+///
+/// Frames Cache:
+///     Frames are immutable. So we can cache all the frames locally, and it does not require them
+///     to be fetched from the storage server. We cache the frame data with frame_no being the key.
+///
+/// Transaction State:
+///     Whenever a transaction reads any pages from storage server, we cache them in the transaction
+///     state. Since we want to provide a consistent view of the database, for the next reads we can
+///     serve the pages from the cache. Any writes a transaction makes are cached too. At the time of
+///     commit they are removed from the cache and sent to the storage server.
+
 pub struct LocalCache {
     conn: Connection,
     path: Arc<Path>,
