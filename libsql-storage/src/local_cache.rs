@@ -22,10 +22,8 @@ impl LocalCache {
         self.conn.pragma_update(None, "synchronous", &"NORMAL")?;
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS frames (
-                namespace TEXT NOT NULL,
-                frame_no INTEGER NOT NULL,
-                data BLOB NOT NULL,
-                PRIMARY KEY (namespace, frame_no)
+                frame_no INTEGER PRIMARY KEY NOT NULL,
+                data BLOB NOT NULL
             )",
             [],
         )?;
@@ -41,19 +39,19 @@ impl LocalCache {
         Ok(())
     }
 
-    pub fn insert_frame(&self, namespace: &str, frame_no: u64, frame_data: &[u8]) -> Result<()> {
+    pub fn insert_frame(&self, frame_no: u64, frame_data: &[u8]) -> Result<()> {
         self.conn.execute(
-            "INSERT INTO frames (namespace, frame_no, data) VALUES (?1, ?2, ?3)",
-            params![namespace, frame_no, frame_data],
+            "INSERT INTO frames (frame_no, data) VALUES (?1, ?2)",
+            params![frame_no, frame_data],
         )?;
         Ok(())
     }
 
-    pub fn get_frame(&self, namespace: &str, frame_no: u64) -> Result<Option<Vec<u8>>> {
+    pub fn get_frame(&self, frame_no: u64) -> Result<Option<Vec<u8>>> {
         let mut stmt = self
             .conn
-            .prepare("SELECT data FROM frames WHERE namespace = ?1 AND frame_no = ?2")?;
-        match stmt.query_row(params![namespace, frame_no], |row| row.get(0)) {
+            .prepare("SELECT data FROM frames WHERE frame_no = ?1")?;
+        match stmt.query_row(params![frame_no], |row| row.get(0)) {
             Ok(frame_data) => Ok(Some(frame_data)),
             Err(Error::QueryReturnedNoRows) => Ok(None),
             Err(e) => Err(e),

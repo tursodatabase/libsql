@@ -254,10 +254,7 @@ impl Wal for DurableWal {
                 .unwrap()
                 .unwrap();
         // check if the frame exists in the local cache
-        if let Ok(Some(frame)) = self
-            .local_cache
-            .get_frame(self.namespace.as_str(), frame_no.into())
-        {
+        if let Ok(Some(frame)) = self.local_cache.get_frame(frame_no.into()) {
             trace!(
                 "DurableWal::read_frame(page_no: {:?}) -- read cache hit",
                 page_no
@@ -274,9 +271,7 @@ impl Wal for DurableWal {
         let resp = tokio::task::block_in_place(|| rt.block_on(resp)).unwrap();
         let frame = resp.into_inner().frame.unwrap();
         buffer.copy_from_slice(&frame);
-        let _ = self
-            .local_cache
-            .insert_frame(self.namespace.as_str(), frame_no.into(), &frame);
+        let _ = self.local_cache.insert_frame(frame_no.into(), &frame);
         Ok(())
     }
 
