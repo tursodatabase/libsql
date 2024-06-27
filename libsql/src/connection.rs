@@ -23,6 +23,8 @@ pub(crate) trait Conn {
 
     fn changes(&self) -> u64;
 
+    fn total_changes(&self) -> u64;
+
     fn last_insert_rowid(&self) -> i64;
 
     async fn reset(&self);
@@ -124,6 +126,11 @@ impl Connection {
     /// Check the amount of changes the last query created.
     pub fn changes(&self) -> u64 {
         self.conn.changes()
+    }
+
+    /// Check the total amount of changes the connection has done.
+    pub fn total_changes(&self) -> u64 {
+        self.conn.total_changes()
     }
 
     /// Check the last inserted row id.

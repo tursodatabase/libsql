@@ -31,6 +31,7 @@ pub struct RemoteConnection {
 struct Inner {
     state: State,
     changes: u64,
+    total_changes: u64,
     last_insert_rowid: i64,
 }
 
@@ -253,6 +254,7 @@ impl RemoteConnection {
             state.last_insert_rowid = *rowid;
         }
 
+        state.total_changes += row.affected_row_count;
         state.changes = row.affected_row_count;
     }
 
@@ -474,6 +476,10 @@ impl Conn for RemoteConnection {
 
     fn changes(&self) -> u64 {
         self.inner.lock().changes
+    }
+
+    fn total_changes(&self) -> u64 {
+        self.inner.lock().total_changes
     }
 
     fn last_insert_rowid(&self) -> i64 {
