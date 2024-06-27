@@ -34,6 +34,7 @@ pub struct RemoteConnection {
 struct Inner {
     state: State,
     changes: u64,
+    total_changes: u64,
     last_insert_rowid: i64,
 }
 
@@ -253,6 +254,7 @@ impl RemoteConnection {
             state.last_insert_rowid = *rowid;
         }
 
+        state.total_changes += row.affected_row_count;
         state.changes = row.affected_row_count;
     }
 
@@ -491,6 +493,10 @@ impl Conn for RemoteConnection {
         self.inner.lock().changes
     }
 
+    fn total_changes(&self) -> u64 {
+        self.inner.lock().total_changes
+    }
+
     fn last_insert_rowid(&self) -> i64 {
         self.inner.lock().last_insert_rowid
     }
@@ -674,6 +680,33 @@ impl Stmt for RemoteStatement {
         };
 
         Ok(Rows::new(RemoteRows(rows, 0)))
+    }
+
+    async fn run(&mut self, params: &Params) -> Result<()> {
+        if let Some(stmt) = &mut self.local_statement {
+            return stmt.run(params.clone()).await;
+        }
+
+        let res = self
+            .conn
+            .execute_remote(self.stmts.clone(), params.clone())
+            .await?;
+
+        for result in res.results {
+            match result.row_result {
+                Some(RowResult::Row(row)) => self.conn.update_state(&row),
+                Some(RowResult::Error(e)) => {
+                    return Err(Error::RemoteSqliteFailure(
+                        e.code,
+                        e.extended_code,
+                        e.message,
+                    ))
+                }
+                None => panic!("unexpected empty result row"),
+            };
+        }
+
+        Ok(())
     }
 
     fn reset(&mut self) {}

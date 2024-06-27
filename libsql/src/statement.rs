@@ -12,6 +12,8 @@ pub(crate) trait Stmt {
 
     async fn query(&mut self, params: &Params) -> Result<Rows>;
 
+    async fn run(&mut self, params: &Params) -> Result<()>;
+
     fn reset(&mut self);
 
     fn parameter_count(&self) -> usize;
@@ -42,6 +44,20 @@ impl Statement {
     pub async fn query(&mut self, params: impl IntoParams) -> Result<Rows> {
         tracing::trace!("query for prepared statement");
         self.inner.query(&params.into_params()?).await
+    }
+
+    /// Run a query on the statement.
+    ///
+    /// The `execute()` method returns an error if the query returns rows, which makes
+    /// it unsuitable for running any type of SQL queries. Similarly, the `query()` method
+    /// only works on SQL statements that return rows. Therefore, the `run()` method is
+    /// provided to execute any type of SQL statement.
+    ///
+    /// Note: This is an extension to the Rusqlite API.
+    pub async fn run(&mut self, params: impl IntoParams) -> Result<()> {
+        tracing::trace!("run for prepared statement");
+        self.inner.run(&params.into_params()?).await?;
+        Ok(())
     }
 
     /// Execute a query that returns the first [`Row`].
