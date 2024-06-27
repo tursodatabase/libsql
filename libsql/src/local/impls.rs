@@ -106,6 +106,13 @@ impl Stmt for LibsqlStmt {
         stmt.query(&params).map(LibsqlRows).map(Rows::new)
     }
 
+    async fn run(&mut self, params: &Params) -> Result<()> {
+        let params = params.clone();
+        let stmt = self.0.clone();
+
+        stmt.run(&params)
+    }
+
     fn reset(&mut self) {
         self.0.reset();
     }

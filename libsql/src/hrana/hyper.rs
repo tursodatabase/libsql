@@ -191,6 +191,10 @@ impl crate::statement::Stmt for crate::hrana::Statement<HttpSender> {
         self.query(params).await
     }
 
+    async fn run(&mut self, params: &Params) -> crate::Result<()> {
+        self.run(params).await
+    }
+
     fn reset(&mut self) {}
 
     fn parameter_count(&self) -> usize {
