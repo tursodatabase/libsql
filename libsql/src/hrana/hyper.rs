@@ -170,6 +170,10 @@ impl Conn for HttpConnection<HttpSender> {
         self.affected_row_count()
     }
 
+    fn total_changes(&self) -> u64 {
+        self.total_changes()
+    }
+
     fn last_insert_rowid(&self) -> i64 {
         self.last_insert_rowid()
     }
@@ -344,6 +348,10 @@ impl Conn for HranaStream<HttpSender> {
 
     fn changes(&self) -> u64 {
         self.affected_row_count()
+    }
+
+    fn total_changes(&self) -> u64 {
+        self.total_changes()
     }
 
     fn last_insert_rowid(&self) -> i64 {

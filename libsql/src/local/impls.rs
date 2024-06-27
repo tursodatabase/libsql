@@ -63,6 +63,10 @@ impl Conn for LibsqlConnection {
         self.conn.changes()
     }
 
+    fn total_changes(&self) -> u64 {
+        self.conn.total_changes()
+    }
+
     fn last_insert_rowid(&self) -> i64 {
         self.conn.last_insert_rowid()
     }
