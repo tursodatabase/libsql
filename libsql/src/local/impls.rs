@@ -1,6 +1,7 @@
-use std::{fmt, path::Path};
 use std::sync::Arc;
+use std::{fmt, path::Path};
 
+use crate::connection::BatchRows;
 use crate::{
     connection::Conn,
     params::Params,
@@ -22,12 +23,14 @@ impl Conn for LibsqlConnection {
         self.conn.execute(sql, params)
     }
 
-    async fn execute_batch(&self, sql: &str) -> Result<()> {
-        self.conn.execute_batch(sql)
+    async fn execute_batch(&self, sql: &str) -> Result<BatchRows> {
+        self.conn.execute_batch(sql)?;
+        Ok(BatchRows::empty())
     }
 
-    async fn execute_transactional_batch(&self, sql: &str) -> Result<()> {
-        self.conn.execute_transactional_batch(sql)
+    async fn execute_transactional_batch(&self, sql: &str) -> Result<BatchRows> {
+        self.conn.execute_transactional_batch(sql)?;
+        Ok(BatchRows::empty())
     }
 
     async fn prepare(&self, sql: &str) -> Result<Statement> {
@@ -100,9 +103,7 @@ impl Stmt for LibsqlStmt {
         let params = params.clone();
         let stmt = self.0.clone();
 
-        stmt.query(&params)
-            .map(LibsqlRows)
-            .map(|r| Rows { inner: Box::new(r) })
+        stmt.query(&params).map(LibsqlRows).map(Rows::new)
     }
 
     fn reset(&mut self) {

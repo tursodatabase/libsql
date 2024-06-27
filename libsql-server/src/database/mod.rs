@@ -1,7 +1,7 @@
 use std::fmt;
 use std::sync::Arc;
 
-use bottomless::SavepointTracker;
+use bottomless::replicator::Replicator;
 
 use crate::connection::{MakeConnection, RequestContext};
 use crate::replication::ReplicationLogger;
@@ -203,11 +203,11 @@ impl Database {
         }
     }
 
-    pub(crate) fn backup_savepoint(&self) -> Option<SavepointTracker> {
+    pub(crate) fn replicator(&self) -> Option<Arc<tokio::sync::Mutex<Option<Replicator>>>> {
         match self {
-            Database::Primary(db) => db.backup_savepoint(),
+            Database::Primary(db) => db.replicator(),
             Database::Replica(_) => None,
-            Database::Schema(db) => db.backup_savepoint(),
+            Database::Schema(db) => db.replicator(),
         }
     }
 }

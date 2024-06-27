@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::sync::Arc;
 
 use tokio::sync::watch;
@@ -41,50 +40,20 @@ impl<IO: Io> Replicator<IO> {
                 // in the current segment, frames are ordered by frame no, so we can start reading from
                 // the end until we hit the current frame_no
                 if self.next_frame_no >= current_start {
-                    let stream = current.rev_frame_stream();
-                    let mut size_after = 0;
+                    let stream = current.frame_stream_from(self.next_frame_no);
                     let mut new_current_frame_no = 0;
                     tokio::pin!(stream);
-                    let mut seen = HashSet::new();
                     loop {
                         match stream.try_next().await? {
-                            Some(mut frame) => {
-                                if size_after == 0 {
-                                    assert_ne!(
-                                        frame.header().size_after(),
-                                        0,
-                                        "first frame should be a commit frame"
-                                    );
-                                    size_after = frame.header().size_after();
-                                    new_current_frame_no = frame.header().frame_no();
-                                }
-
-                                let page_no = frame.header().page_no();
-                                if seen.contains(&page_no) {
-                                    continue;
-                                }
-
-                                seen.insert(page_no);
-
-                                // patch the size after so that the last frame in the batch is the
-                                // commit frame
-                                let new_size_after = if frame.header().frame_no() <= self.next_frame_no {
-                                    size_after
-                                } else {
-                                    0
-                                };
-                                frame.header_mut().set_size_after(new_size_after);
-
+                            Some(frame) => {
+                                new_current_frame_no = new_current_frame_no.max(frame.header().frame_no());
                                 yield frame;
-
-                                if new_size_after != 0 {
-                                    self.next_frame_no = new_current_frame_no + 1;
-                                    break
-                                }
                             }
                             None => break
                         }
                     }
+
+                    self.next_frame_no = new_current_frame_no + 1;
                 } else {
                     todo!("handle frame not in current log");
                 }
@@ -98,8 +67,10 @@ mod test {
     use std::path::Path;
     use std::time::Duration;
 
+    use insta::assert_debug_snapshot;
     use libsql_sys::rusqlite::OpenFlags;
     use tempfile::tempdir;
+    use tokio_stream::StreamExt;
 
     use crate::registry::WalRegistry;
     use crate::wal::LibsqlWalManager;
@@ -138,12 +109,10 @@ mod test {
         conn.execute("create table test (x)", ()).unwrap();
 
         let frame = stream.try_next().await.unwrap().unwrap();
-        assert_eq!(frame.header().frame_no(), 2);
-        assert_eq!(frame.header().size_after(), 0);
+        assert_debug_snapshot!(frame.header());
 
         let frame = stream.try_next().await.unwrap().unwrap();
-        assert_eq!(frame.header().frame_no(), 1);
-        assert_eq!(frame.header().size_after(), 2);
+        assert_debug_snapshot!(frame.header());
 
         // no more frames for now...
         assert!(
@@ -171,12 +140,10 @@ mod test {
         tokio::pin!(stream);
 
         let frame = stream.try_next().await.unwrap().unwrap();
-        assert_eq!(frame.header().frame_no(), 3);
-        assert_eq!(frame.header().size_after(), 0);
+        assert_debug_snapshot!(frame.header());
 
         let frame = stream.try_next().await.unwrap().unwrap();
-        assert_eq!(frame.header().frame_no(), 1);
-        assert_eq!(frame.header().size_after(), 2);
+        assert_debug_snapshot!(frame.header());
 
         // no more frames for now...
         assert!(

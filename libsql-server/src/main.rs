@@ -8,7 +8,6 @@ use bytesize::ByteSize;
 use clap::Parser;
 use hyper::client::HttpConnector;
 use libsql_server::auth::{parse_http_basic_auth_arg, parse_jwt_keys, user_auth_strategies, Auth};
-// use mimalloc::MiMalloc;
 use tokio::sync::Notify;
 use tokio::time::Duration;
 use tracing_subscriber::prelude::*;
@@ -24,10 +23,6 @@ use libsql_server::version::Version;
 use libsql_server::CustomWAL;
 use libsql_server::Server;
 use libsql_sys::{Cipher, EncryptionConfig};
-
-// Use system allocator for now, seems like we are getting too much fragmentation.
-// #[global_allocator]
-// static GLOBAL: MiMalloc = MiMalloc;
 
 /// SQL daemon
 #[derive(Debug, Parser)]

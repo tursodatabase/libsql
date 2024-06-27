@@ -66,6 +66,13 @@ The comprehensive description can be found [here](libsql-sqlite3/doc/libsql_exte
 * [PHP](https://github.com/tursodatabase/turso-client-php)
 * [D](https://github.com/pdenapo/libsql-d) (experimental, based on the C driver)
 
+### GUI Support
+* [Beekeeper Studio](https://www.beekeeperstudio.io/db/libsql-client/) &mdash; macOS, Windows, and Linux
+* [Outerbase](https://www.outerbase.com) &mdash; Runs in the browser
+* [TablePlus](https://tableplus.com) &mdash; macOS, Windows, and Linux
+* [Dataflare](https://dataflare.app) &mdash; Paid (with limited free version) macOS app
+* [libSQL Studio](https://github.com/invisal/libsql-studio) - Runs in the browser
+
 ## Getting Started
 
 The project provides two interfaces: the libSQL API, which supports all the features, and the SQLite C API for compatibility.

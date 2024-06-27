@@ -17,7 +17,8 @@ use crate::{params::Params, ValueType};
 use bytes::Bytes;
 use futures::{Stream, StreamExt};
 pub use libsql_hrana::proto;
-use libsql_hrana::proto::{Batch, BatchResult, Col, Stmt};
+use libsql_hrana::proto::{Batch, BatchResult, Col, Stmt, StmtResult};
+use std::collections::VecDeque;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -171,6 +172,7 @@ where
         Ok(rows)
     }
 }
+
 impl<T> Statement<T>
 where
     T: HttpSend,
@@ -178,9 +180,7 @@ where
 {
     pub async fn query(&mut self, params: &Params) -> crate::Result<super::Rows> {
         let rows = self.query_raw(params).await?;
-        Ok(super::Rows {
-            inner: Box::new(rows),
-        })
+        Ok(super::Rows::new(rows))
     }
 }
 
@@ -374,11 +374,58 @@ fn into_value2(value: proto::Value) -> crate::Value {
     }
 }
 
-pub(crate) fn unwrap_err(batch_res: BatchResult) -> crate::Result<()> {
+pub(crate) fn unwrap_err(batch_res: &BatchResult) -> crate::Result<()> {
     batch_res
         .step_errors
-        .into_iter()
-        .find_map(|e| e)
+        .iter()
+        .find_map(|e| e.clone())
         .map(|e| Err(crate::Error::Hrana(Box::new(HranaError::Api(e.message)))))
         .unwrap_or(Ok(()))
+}
+
+struct StmtResultRows {
+    cols: Arc<[Col]>,
+    rows: VecDeque<libsql_hrana::proto::Row>,
+}
+
+impl StmtResultRows {
+    pub(crate) fn new(stmt: StmtResult) -> Self {
+        Self {
+            rows: stmt.rows.into(),
+            cols: stmt.cols.into(),
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl RowsInner for StmtResultRows {
+    async fn next(&mut self) -> crate::Result<Option<super::Row>> {
+        let Some(row) = self.rows.pop_front() else {
+            return Ok(None);
+        };
+        let row = Row::new(self.cols.clone(), row.values);
+
+        Ok(Some(super::Row {
+            inner: Box::new(row),
+        }))
+    }
+
+    fn column_count(&self) -> i32 {
+        self.cols.len() as i32
+    }
+
+    fn column_name(&self, idx: i32) -> Option<&str> {
+        self.cols
+            .get(idx as usize)
+            .and_then(|r| r.name.as_ref())
+            .map(|n| n.as_str())
+    }
+
+    fn column_type(&self, idx: i32) -> crate::Result<ValueType> {
+        self.cols
+            .get(idx as usize)
+            .and_then(|r| r.decltype.as_ref())
+            .ok_or(crate::Error::InvalidColumnType)
+            .and_then(|v| v.parse().map_err(|_| crate::Error::InvalidColumnType))
+    }
 }

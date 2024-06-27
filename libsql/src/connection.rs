@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+use std::fmt;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -11,9 +13,9 @@ use crate::{Result, TransactionBehavior};
 pub(crate) trait Conn {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64>;
 
-    async fn execute_batch(&self, sql: &str) -> Result<()>;
+    async fn execute_batch(&self, sql: &str) -> Result<BatchRows>;
 
-    async fn execute_transactional_batch(&self, sql: &str) -> Result<()>;
+    async fn execute_transactional_batch(&self, sql: &str) -> Result<BatchRows>;
 
     async fn prepare(&self, sql: &str) -> Result<Statement>;
 
@@ -33,6 +35,61 @@ pub(crate) trait Conn {
 
     fn load_extension(&self, _dylib_path: &Path, _entry_point: Option<&str>) -> Result<()> {
         Err(crate::Error::LoadExtensionNotSupported)
+    }
+}
+
+/// A set of rows returned from `execute_batch`/`execute_transactional_batch`. It is essentially
+/// rows of rows for each statement in the batch call.
+///
+/// # Note
+///
+/// All rows will be materialized in memory, if you would like to stream them then use `query`
+/// instead as this is optimized better for memory usage.
+pub struct BatchRows {
+    inner: VecDeque<Option<Rows>>,
+    skip_last_amt: usize,
+}
+
+impl BatchRows {
+    #[allow(unused)]
+    pub(crate) fn empty() -> Self {
+        Self {
+            inner: VecDeque::new(),
+            skip_last_amt: 0,
+        }
+    }
+
+    #[cfg(feature = "hrana")]
+    pub(crate) fn new(rows: Vec<Option<Rows>>) -> Self {
+        Self {
+            inner: rows.into(),
+            skip_last_amt: 0,
+        }
+    }
+
+    #[cfg(feature = "hrana")]
+    pub(crate) fn new_skip_last(rows: Vec<Option<Rows>>, skip_last_amt: usize) -> Self {
+        Self {
+            inner: rows.into(),
+            skip_last_amt,
+        }
+    }
+
+    /// Get the next set of rows, it is wrapped in two options, if the first option returns `None`
+    /// then the set of batch statement results has ended. If the inner option returns `None` then
+    /// the statement was never executed (potentially due to a conditional).
+    pub fn next_stmt_row(&mut self) -> Option<Option<Rows>> {
+        if self.inner.len() <= self.skip_last_amt {
+            return None;
+        }
+
+        self.inner.pop_front()
+    }
+}
+
+impl fmt::Debug for BatchRows {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BatchRows").finish()
     }
 }
 
@@ -63,13 +120,23 @@ impl Connection {
     }
 
     /// Execute a batch set of statements.
-    pub async fn execute_batch(&self, sql: &str) -> Result<()> {
+    ///
+    /// # Return
+    ///
+    /// This returns a `BatchRows` currently only the `remote` connection supports this feature and
+    /// all other connection types will return an empty set always.
+    pub async fn execute_batch(&self, sql: &str) -> Result<BatchRows> {
         tracing::trace!("executing batch `{}`", sql);
         self.conn.execute_batch(sql).await
     }
 
     /// Execute a batch set of statements atomically in a transaction.
-    pub async fn execute_transactional_batch(&self, sql: &str) -> Result<()> {
+    ///
+    /// # Return
+    ///
+    /// This returns a `BatchRows` currently only the `remote` connection supports this feature and
+    /// all other connection types will return an empty set always.
+    pub async fn execute_transactional_batch(&self, sql: &str) -> Result<BatchRows> {
         tracing::trace!("executing batch transactional `{}`", sql);
         self.conn.execute_transactional_batch(sql).await
     }
