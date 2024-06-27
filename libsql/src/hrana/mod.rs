@@ -158,6 +158,14 @@ where
         Ok(result.affected_row_count as usize)
     }
 
+    pub async fn run(&mut self, params: &Params) -> crate::Result<()> {
+        let mut stmt = self.inner.clone();
+        bind_params(params.clone(), &mut stmt);
+
+        let _ = self.stream.execute_inner(stmt, self.close_stream).await?;
+        Ok(())
+    }
+
     pub(crate) async fn query_raw(
         &mut self,
         params: &Params,

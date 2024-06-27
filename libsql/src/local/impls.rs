@@ -105,6 +105,13 @@ impl Stmt for LibsqlStmt {
             .map(|r| Rows { inner: Box::new(r) })
     }
 
+    async fn run(&mut self, params: &Params) -> Result<()> {
+        let params = params.clone();
+        let stmt = self.0.clone();
+
+        stmt.run(&params)
+    }
+
     fn reset(&mut self) {
         self.0.reset();
     }
