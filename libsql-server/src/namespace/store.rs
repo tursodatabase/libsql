@@ -104,12 +104,17 @@ impl NamespaceStore {
         }
 
         // destroy on-disk database and backups
-        // FIXME: this is blocking
-        let db_config = self
-            .inner
-            .metadata
-            .remove(namespace.clone())?
-            .ok_or_else(|| crate::Error::NamespaceDoesntExist(namespace.to_string()))?;
+        let db_config = tokio::task::spawn_blocking({
+            let inner = self.inner.clone();
+            let namespace = namespace.clone();
+            move || {
+                inner
+                    .metadata
+                    .remove(namespace.clone())?
+                    .ok_or_else(|| crate::Error::NamespaceDoesntExist(namespace.to_string()))
+            }
+        })
+        .await??;
 
         let mut bottomless_db_id_init = NamespaceBottomlessDbIdInit::FetchFromConfig;
         if let Some(ns) = self.inner.store.remove(&namespace).await {
@@ -268,7 +273,11 @@ impl NamespaceStore {
         impl Drop for Bomb {
             fn drop(&mut self) {
                 if self.should_delete {
-                    if let Err(e) = self.store.remove(self.ns.clone()) {
+                    // we need to block in place because the inner connection may blocking, or
+                    // unsing tokio's blocking methods (bottomless), which would cause a panic.
+                    if let Err(e) =
+                        tokio::task::block_in_place(|| self.store.remove(self.ns.clone()))
+                    {
                         tracing::error!("failed to clean handle while forking: {e}");
                     }
                 }
