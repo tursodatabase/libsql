@@ -26,6 +26,7 @@ tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 async-trait = "0.1.80"
 serde = "1.0.203"
+thiserror = "1.0.61"
 
 [features]
 foundation-db = ["foundationdb"]

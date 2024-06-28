@@ -1,3 +1,4 @@
+mod errors;
 #[cfg(feature = "foundation-db")]
 mod fdb_store;
 mod memory_store;

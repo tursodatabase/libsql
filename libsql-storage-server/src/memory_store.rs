@@ -1,6 +1,8 @@
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 
+use crate::errors::Error;
+use crate::errors::Error::WriteConflict;
 use crate::store::FrameStore;
 use async_trait::async_trait;
 use libsql_storage::rpc::Frame;
@@ -28,8 +30,16 @@ impl InMemFrameStore {
 #[async_trait]
 impl FrameStore for InMemFrameStore {
     // inserts a new frame for the page number and returns the new frame value
-    async fn insert_frames(&self, _namespace: &str, _max_frame_no: u64, frames: Vec<Frame>) -> u64 {
+    async fn insert_frames(
+        &self,
+        _namespace: &str,
+        max_frame_no: u64,
+        frames: Vec<Frame>,
+    ) -> Result<u64, Error> {
         let mut inner = self.inner.lock().unwrap();
+        if inner.max_frame_no != max_frame_no {
+            return Err(WriteConflict);
+        }
         for frame in frames {
             let frame_no = inner.max_frame_no + 1;
             inner.max_frame_no = frame_no;
@@ -43,7 +53,7 @@ impl FrameStore for InMemFrameStore {
             tracing::trace!("inserted for page {} frame {}", page_no, frame_no)
         }
         let count = inner.max_frame_no;
-        count
+        Ok(count)
     }
 
     async fn read_frame(&self, _namespace: &str, frame_no: u64) -> Option<bytes::Bytes> {
@@ -56,7 +66,7 @@ impl FrameStore for InMemFrameStore {
     }
 
     // given a page number, return the maximum frame for the page
-    async fn find_frame(&self, _namespace: &str, page_no: u32) -> Option<u64> {
+    async fn find_frame(&self, _namespace: &str, page_no: u32, _max_frame_no: u64) -> Option<u64> {
         self.inner
             .lock()
             .unwrap()

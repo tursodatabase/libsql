@@ -1,3 +1,4 @@
+use crate::errors::Error;
 use crate::store::FrameStore;
 use async_trait::async_trait;
 use bytes::Bytes;
@@ -18,7 +19,12 @@ impl RedisFrameStore {
 
 #[async_trait]
 impl FrameStore for RedisFrameStore {
-    async fn insert_frames(&self, namespace: &str, _max_frame_no: u64, frames: Vec<Frame>) -> u64 {
+    async fn insert_frames(
+        &self,
+        namespace: &str,
+        _max_frame_no: u64,
+        frames: Vec<Frame>,
+    ) -> Result<u64, Error> {
         let mut max_frame_no = 0;
         let max_frame_key = format!("{}/max_frame_no", namespace);
         let mut con = self.client.get_connection().unwrap();
@@ -48,7 +54,7 @@ impl FrameStore for RedisFrameStore {
                 pipe.get(max_frame_key.clone()).query(con)
             })
             .unwrap();
-        max_frame_no
+        Ok(max_frame_no)
     }
 
     async fn read_frame(&self, namespace: &str, frame_no: u64) -> Option<Bytes> {
@@ -69,7 +75,7 @@ impl FrameStore for RedisFrameStore {
         }
     }
 
-    async fn find_frame(&self, namespace: &str, page_no: u32) -> Option<u64> {
+    async fn find_frame(&self, namespace: &str, page_no: u32, _max_frame_no: u64) -> Option<u64> {
         let page_key = format!("p/{}/{}", namespace, page_no);
         let mut con = self.client.get_connection().unwrap();
         let frame_no = con.get::<String, u64>(page_key.clone());

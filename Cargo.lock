@@ -3615,6 +3615,7 @@ dependencies = [
  "libsql-storage",
  "redis",
  "serde",
+ "thiserror",
  "tokio",
  "tonic 0.10.2",
  "tracing",
