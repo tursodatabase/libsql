@@ -1,6 +1,4 @@
-LD_LIBRARY_PATH := ../.libs/
 C_INCLUDE_PATH := ../
-
 all: simple_workload no_vectors
 
 diskanntest: diskanntest.c
@@ -13,7 +11,7 @@ simple_workload: diskanntest simple_workload.sql
 	@LD_LIBRARY_PATH=../.libs/ ./diskanntest simple_workload.sql test.db
 
 no_vectors.sql: 
-	@python3 gen_workload.py no_vectors 10000 10000 > no_vectors.sql
+	@python3 gen_workload.py no_vectors 100 100 > no_vectors.sql
 no_vectors: diskanntest no_vectors.sql
 	@rm test.db || exit 0
 	@LD_LIBRARY_PATH=../.libs/ ./diskanntest no_vectors.sql test.db

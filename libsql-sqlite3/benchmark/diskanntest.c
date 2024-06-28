@@ -1,8 +1,8 @@
-#include "parse.h"
-#include "opcodes.h"
-#include "src/sqliteInt.h"
-#include "src/vectorInt.h"
-#include "src/vdbeInt.h"
+#include "../parse.h"
+#include "../opcodes.h"
+#include "../src/sqliteInt.h"
+#include "../src/vectorInt.h"
+#include "../src/vdbeInt.h"
 #include "assert.h"
 #include "stdbool.h"
 #include "ctype.h"
@@ -101,6 +101,8 @@ int main(int argc, char* argv[]) {
     }
 
     if (strncmp(line, "---", 3) == 0) {
+      rc = sqlite3_wal_checkpoint_v2(db, 0, SQLITE_CHECKPOINT_FULL, 0, 0);
+      ensure(rc == 0, "failed to checkpoint db: %s\n", sqlite3_errmsg(db));
       // print & reset stat
       printf("%s (%s):\n", line + 3, argv[1]);
       if (total_selects > 0) {
@@ -130,6 +132,9 @@ int main(int argc, char* argv[]) {
     int count = create_query_template(line, template, (char**)&parameters, parameter_lengths, parameter_types);
     if (count > 0) {
       if (strcmp(template, prepared) != 0) {
+        if (statement) {
+          sqlite3_finalize(statement);
+        }
         // prepare statement
         memcpy(prepared, template, strlen(template) + 1);
         int rc = sqlite3_prepare_v2(db, template, strlen(template), &statement, 0);
@@ -139,6 +144,8 @@ int main(int argc, char* argv[]) {
 
       rc = sqlite3_reset(statement);
       ensure(rc == 0, "failed to reset prepared statement: %s", sqlite3_errmsg(db));
+      rc = sqlite3_clear_bindings(statement);
+      ensure(rc == 0, "failed to clear bindings for prepared statement: %s", sqlite3_errmsg(db));
 
       // bind parameters
       int i = 0;

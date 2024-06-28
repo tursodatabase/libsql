@@ -7,10 +7,11 @@ def no_vectors(n, q):
     print('PRAGMA journal_mode=WAL;')
     print(f'CREATE TABLE x ( id INTEGER PRIMARY KEY, value TEXT );')
     for i in range(n):
-        print(f'INSERT INTO x VALUES ({i}, {10 * i});')
+        vector = f"[{','.join(map(str, np.random.uniform(size=64)))}]"
+        print(f'INSERT INTO x VALUES ({i}, \'{vector}\');')
     print('---inserts')
     for i in range(q):
-        print(f'SELECT id, value FROM x WHERE id = {i};')
+        print(f'SELECT id, value FROM x WHERE id = {np.random.randint(n)};')
     print('---search')
 
 def simple_workload(dim, n, q):
