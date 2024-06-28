@@ -275,9 +275,9 @@ impl<F> CurrentSegment<F> {
     }
 
     async fn read_frame_offset_async<B>(&self, offset: u32, buf: B) -> (B, std::io::Result<()>)
-        where 
-            F: FileExt,
-            B: IoBufMut + Send + 'static,
+    where
+        F: FileExt,
+        B: IoBufMut + Send + 'static,
     {
         let byte_offset = frame_offset(offset);
         self.file.read_exact_at_async(buf, byte_offset).await
@@ -369,7 +369,8 @@ impl<F> CurrentSegment<F> {
     where
         F: FileExt,
     {
-        let (seg_start_frame_no, last_committed, db_size) = self.with_header(|h| (h.start_frame_no.get(), h.last_committed(), h.db_size()));
+        let (seg_start_frame_no, last_committed, db_size) =
+            self.with_header(|h| (h.start_frame_no.get(), h.last_committed(), h.db_size()));
         let replicated_until = seg_start_frame_no.max(start_frame_no);
 
         // TODO: optim, we could read less frames if we had a mapping from frame_no to page_no in
@@ -527,8 +528,8 @@ mod test {
     use tempfile::tempfile;
     use tokio_stream::StreamExt;
 
-    use crate::test::{TestEnv, seal_current_segment};
     use crate::io::FileExt;
+    use crate::test::{seal_current_segment, TestEnv};
 
     use super::*;
 
@@ -574,7 +575,8 @@ mod test {
 
         conn.execute("create table test (x)", ()).unwrap();
         for _ in 0..50 {
-            conn.execute("insert into test values (randomblob(256))", ()).unwrap();
+            conn.execute("insert into test values (randomblob(256))", ())
+                .unwrap();
         }
 
         let mut seen = RoaringBitmap::new();
@@ -595,7 +597,12 @@ mod test {
         shared.checkpoint().unwrap();
 
         let mut orig = Vec::new();
-        shared.db_file.try_clone().unwrap().read_to_end(&mut orig).unwrap();
+        shared
+            .db_file
+            .try_clone()
+            .unwrap()
+            .read_to_end(&mut orig)
+            .unwrap();
 
         let mut copy = Vec::new();
         tmp.read_to_end(&mut copy).unwrap();
@@ -612,13 +619,15 @@ mod test {
         conn.execute("create table test (x)", ()).unwrap();
 
         for _ in 0..50 {
-            conn.execute("insert into test values (randomblob(256))", ()).unwrap();
+            conn.execute("insert into test values (randomblob(256))", ())
+                .unwrap();
         }
 
         seal_current_segment(&shared);
 
         for _ in 0..50 {
-            conn.execute("insert into test values (randomblob(256))", ()).unwrap();
+            conn.execute("insert into test values (randomblob(256))", ())
+                .unwrap();
         }
 
         let mut seen = RoaringBitmap::new();

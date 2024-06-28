@@ -192,8 +192,6 @@ impl<F> SegmentList<F> {
             } else {
                 break;
             }
-            // this should not be necessary, there should not be many segments.
-            tokio::task::consume_budget().await;
         }
 
         let new_start_frame_no = segments
@@ -396,7 +394,8 @@ mod test {
         seal_current_segment(&shared);
 
         let mut seen = RoaringBitmap::new();
-        let (stream, replicated_until) = segment_list.stream_pages_from(last_offset, &mut seen).await;
+        let (stream, replicated_until) =
+            segment_list.stream_pages_from(last_offset, &mut seen).await;
         tokio::pin!(stream);
 
         assert_eq!(replicated_until, last_offset);

@@ -88,10 +88,7 @@ impl<I: Io> Storage for FsStorage<I> {
                     use crate::io::buf::ZeroCopyBuf;
 
                     let header_buf = ZeroCopyBuf::<CompactedSegmentDataHeader>::new_uninit();
-                    let file = self
-                        .io
-                        .open(false, true, false, &entry.path())
-                        .unwrap();
+                    let file = self.io.open(false, true, false, &entry.path()).unwrap();
                     let (header_buf, res) = file.read_exact_at_async(header_buf, 0).await;
                     res.unwrap();
 

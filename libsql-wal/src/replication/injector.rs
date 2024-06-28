@@ -85,11 +85,11 @@ mod test {
             let name = path.file_name().unwrap().to_str().unwrap();
             NamespaceName::from_string(name.to_string())
         };
-    
+
         let primary_registry =
             Arc::new(WalRegistry::new(primary_tmp.path().join("test/wals"), resolver, ()).unwrap());
         let primary_wal_manager = LibsqlWalManager::new(primary_registry.clone());
-    
+
         let db_path = primary_tmp.path().join("test/data");
         let primary_conn = libsql_sys::Connection::open(
             db_path.clone(),
@@ -99,26 +99,25 @@ mod test {
             None,
         )
         .unwrap();
-    
+
         let primary_shared = primary_registry.open(&db_path).unwrap();
-    
+
         let mut replicator = Replicator::new(primary_shared.clone(), 1);
         let stream = replicator.frame_stream();
-    
+
         tokio::pin!(stream);
-    
+
         // setup replica
         let replica_tmp = tempdir().unwrap();
         let resolver = |path: &Path| {
             let name = path.file_name().unwrap().to_str().unwrap();
             NamespaceName::from_string(name.to_string())
         };
-    
 
         let replica_registry =
             Arc::new(WalRegistry::new(replica_tmp.path().join("test/wals"), resolver, ()).unwrap());
         let replica_wal_manager = LibsqlWalManager::new(replica_registry.clone());
-    
+
         let db_path = replica_tmp.path().join("test/data");
         let replica_conn = libsql_sys::Connection::open(
             db_path.clone(),
@@ -128,30 +127,28 @@ mod test {
             None,
         )
         .unwrap();
-    
+
         let replica_shared = replica_registry.open(&db_path).unwrap();
-    
+
         let mut tx = crate::transaction::Transaction::Read(replica_shared.begin_read(42));
         replica_shared.upgrade(&mut tx).unwrap();
         let guard = tx.as_write_mut().unwrap().lock();
         let mut injector = Injector::new(replica_shared.clone(), guard, 10).unwrap();
-    
+
         primary_conn.execute("create table test (x)", ()).unwrap();
-    
 
         for _ in 0..2 {
             let frame = stream.next().await.unwrap().unwrap();
             injector.insert_frame(Box::new(frame)).await.unwrap();
         }
 
-    
         replica_conn
             .query_row("select count(*) from test", (), |r| {
                 assert_eq!(r.get_unwrap::<_, usize>(0), 0);
                 Ok(())
             })
             .unwrap();
-    
+
         primary_conn
             .execute("insert into test values (123)", ())
             .unwrap();
@@ -161,10 +158,10 @@ mod test {
         primary_conn
             .execute("insert into test values (123)", ())
             .unwrap();
-    
+
         let frame = stream.next().await.unwrap().unwrap();
         injector.insert_frame(Box::new(frame)).await.unwrap();
-    
+
         replica_conn
             .query_row("select count(*) from test", (), |r| {
                 assert_eq!(r.get_unwrap::<_, usize>(0), 3);

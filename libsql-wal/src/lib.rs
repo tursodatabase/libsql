@@ -17,7 +17,12 @@ pub(crate) mod test {
     use libsql_sys::{name::NamespaceName, rusqlite::OpenFlags};
     use tempfile::{tempdir, TempDir};
 
-    use crate::{io::StdIO, registry::WalRegistry, shared_wal::SharedWal, wal::{LibsqlWal, LibsqlWalManager}};
+    use crate::{
+        io::StdIO,
+        registry::WalRegistry,
+        shared_wal::SharedWal,
+        wal::{LibsqlWal, LibsqlWalManager},
+    };
 
     pub struct TestEnv {
         pub tmp: TempDir,
@@ -37,11 +42,7 @@ pub(crate) mod test {
                 Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver, ()).unwrap());
             let wal = LibsqlWalManager::new(registry.clone());
 
-            Self {
-                tmp,
-                registry,
-                wal,
-            }
+            Self { tmp, registry, wal }
         }
 
         pub fn shared(&self, namespace: &str) -> Arc<SharedWal<StdIO>> {
@@ -59,7 +60,7 @@ pub(crate) mod test {
                 100000,
                 None,
             )
-                .unwrap()
+            .unwrap()
         }
     }
 
