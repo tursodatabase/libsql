@@ -1,4 +1,5 @@
 const std = @import("std");
+const crab = @import("build.crab");
 
 pub const Debug = struct {
     step: std.Build.Step,
@@ -128,105 +129,35 @@ pub fn build(b: *std.Build) void {
 
     const sources = .{
         .sqlite3 = &.{
-            "src/alter.c",
-            "src/analyze.c",
-            "src/attach.c",
-            "src/auth.c",
-            "src/backup.c",
-            "src/bitvec.c",
-            "src/btmutex.c",
-            "src/btree.c",
-            "src/build.c",
-            "src/callback.c",
-            "src/complete.c",
-            "src/ctime.c",
-            "src/date.c",
-            "src/dbpage.c",
-            "src/dbstat.c",
-            "src/delete.c",
-            "src/expr.c",
-            "src/fault.c",
-            "src/fkey.c",
-            "src/func.c",
-            "src/global.c",
-            "src/hash.c",
-            "src/insert.c",
-            "src/json.c",
-            "src/legacy.c",
-            "src/loadext.c",
-            "src/main.c",
-            "src/malloc.c",
-            "src/mem0.c",
-            "src/mem1.c",
-            "src/mem2.c",
-            "src/mem3.c",
-            "src/mem5.c",
-            "src/memdb.c",
-            "src/memjournal.c",
-            "src/mutex.c",
-            "src/mutex_noop.c",
-            "src/mutex_unix.c",
-            "src/mutex_w32.c",
-            "src/notify.c",
-            "src/os.c",
-            "src/os_kv.c",
-            "src/os_unix.c",
-            "src/os_win.c",
-            "src/pager.c",
-            "src/pcache.c",
-            "src/pcache1.c",
-            "src/pragma.c",
-            "src/prepare.c",
-            "src/printf.c",
-            "src/random.c",
-            "src/resolve.c",
-            "src/rowset.c",
-            "src/select.c",
-            "src/status.c",
-            "src/table.c",
-            "src/threads.c",
-            "src/tokenize.c",
-            "src/treeview.c",
-            "src/trigger.c",
-            "src/utf.c",
-            "src/update.c",
-            "src/upsert.c",
-            "src/util.c",
-            "src/vacuum.c",
-            "src/vdbe.c",
-            "src/vdbeapi.c",
-            "src/vdbeaux.c",
-            "src/vdbeblob.c",
-            "src/vdbemem.c",
-            "src/vdbesort.c",
-            "src/vdbetrace.c",
-            "src/vdbevtab.c",
-            "src/vtab.c",
-            "src/wal.c",
-            "src/walker.c",
-            "src/where.c",
-            "src/wherecode.c",
-            "src/whereexpr.c",
-            "src/window.c",
+            "src/alter.c",      "src/analyze.c",    "src/attach.c",     "src/auth.c",
+            "src/backup.c",     "src/bitvec.c",     "src/btmutex.c",    "src/btree.c",
+            "src/build.c",      "src/callback.c",   "src/complete.c",   "src/ctime.c",
+            "src/date.c",       "src/dbpage.c",     "src/dbstat.c",     "src/delete.c",
+            "src/expr.c",       "src/fault.c",      "src/fkey.c",       "src/func.c",
+            "src/global.c",     "src/hash.c",       "src/insert.c",     "src/json.c",
+            "src/legacy.c",     "src/loadext.c",    "src/main.c",       "src/malloc.c",
+            "src/mem0.c",       "src/mem1.c",       "src/mem2.c",       "src/mem3.c",
+            "src/mem5.c",       "src/memdb.c",      "src/memjournal.c", "src/mutex.c",
+            "src/mutex_noop.c", "src/mutex_unix.c", "src/mutex_w32.c",  "src/notify.c",
+            "src/os.c",         "src/os_kv.c",      "src/os_unix.c",    "src/os_win.c",
+            "src/pager.c",      "src/pcache.c",     "src/pcache1.c",    "src/pragma.c",
+            "src/prepare.c",    "src/printf.c",     "src/random.c",     "src/resolve.c",
+            "src/rowset.c",     "src/select.c",     "src/status.c",     "src/table.c",
+            "src/threads.c",    "src/tokenize.c",   "src/treeview.c",   "src/trigger.c",
+            "src/utf.c",        "src/update.c",     "src/upsert.c",     "src/util.c",
+            "src/vacuum.c",     "src/vdbe.c",       "src/vdbeapi.c",    "src/vdbeaux.c",
+            "src/vdbeblob.c",   "src/vdbemem.c",    "src/vdbesort.c",   "src/vdbetrace.c",
+            "src/vdbevtab.c",   "src/vtab.c",       "src/wal.c",        "src/walker.c",
+            "src/where.c",      "src/wherecode.c",  "src/whereexpr.c",  "src/window.c",
         },
         .extensions = .{
             .fts3 = &.{
-                "ext/fts3/fts3.c",
-                "ext/fts3/fts3.h",
-                "ext/fts3/fts3Int.h",
-                "ext/fts3/fts3_aux.c",
-                "ext/fts3/fts3_expr.c",
-                "ext/fts3/fts3_hash.c",
-                "ext/fts3/fts3_hash.h",
-                "ext/fts3/fts3_icu.c",
-                "ext/fts3/fts3_porter.c",
-                "ext/fts3/fts3_snippet.c",
-                "ext/fts3/fts3_tokenizer.h",
-                "ext/fts3/fts3_tokenizer.c",
-                "ext/fts3/fts3_tokenizer1.c",
-                "ext/fts3/fts3_tokenize_vtab.c",
-                "ext/fts3/fts3_unicode.c",
-                "ext/fts3/fts3_unicode2.c",
+                "ext/fts3/fts3.c",            "ext/fts3/fts3_aux.c",
+                "ext/fts3/fts3_expr.c",       "ext/fts3/fts3_hash.c",
+                "ext/fts3/fts3_icu.c",        "ext/fts3/fts3_porter.c",
+                "ext/fts3/fts3_snippet.c",    "ext/fts3/fts3_tokenizer.c",
+                "ext/fts3/fts3_tokenizer1.c", "ext/fts3/fts3_tokenize_vtab.c",
+                "ext/fts3/fts3_unicode.c",    "ext/fts3/fts3_unicode2.c",
                 "ext/fts3/fts3_write.c",
             },
             .icu = &.{"ext/icu/icu.c"},
@@ -245,10 +176,10 @@ pub fn build(b: *std.Build) void {
             .style = .{ .cmake = b.path("src/sqlite.h.in") },
         },
         .{
+            .libsql_version = "0.2.3",
             .sqlite_version = "3.44.0",
             .sqlite_version_number = 3044000,
             .sqlite_source_id = "2023-11-01 11:23:50 17129ba1ff7f0daf37100ee82d507aef7827cf38de1866e2633096ae6ad8alt1",
-            .libsql_version = "0.2.3",
         },
     );
 
@@ -333,6 +264,7 @@ pub fn build(b: *std.Build) void {
 
     var parser = parser: {
         const run = b.addRunArtifact(lemon);
+        run.setCwd(b.path("tool/"));
         run.addArg("-DSQLITE_ENABLE_MATH_FUNCTIONS");
         const parser = run.addPrefixedOutputDirectoryArg("-d", ".");
         run.addArg("-S");
@@ -340,16 +272,23 @@ pub fn build(b: *std.Build) void {
         break :parser parser;
     };
 
+    var wasm_runtime = b.option(bool, "wasm-runtime", "Enable wasm runtime (default: false)") orelse false;
+    var icu = b.option(bool, "icu", "Enable icu extension (default: false)") orelse false;
+
     var keywordhash = b.addRunArtifact(mkkeywordhash);
 
-    const sqlite_header = Amalgamation.create(b, "sqlite3.h", &.{
-        sqlite_header_base.getOutput(),
-        b.path("src/page_header.h"),
-        b.path("src/wal.h"),
-    });
+    const sqlite_header = Amalgamation.create(
+        b,
+        "sqlite3.h",
+        &.{
+            sqlite_header_base.getOutput(),
+            b.path("src/page_header.h"),
+            b.path("src/wal.h"),
+        },
+    );
 
-    const debug = Debug.create(b, parser);
-    b.getInstallStep().dependOn(&debug.step);
+    // const debug = Debug.create(b, parser);
+    // b.getInstallStep().dependOn(&debug.step);
 
     const parser_vdbe = Amalgamation.create(b, "parse_vbde", &.{
         parser.path(b, "parse.h"),
@@ -364,15 +303,14 @@ pub fn build(b: *std.Build) void {
     opcode_c.addFileArg(b.path("tool/mkopcodec.tcl"));
     opcode_c.addFileArg(opcode_h.captureStdOut());
 
-    const opcode = b.addWriteFiles();
-    _ = opcode.addCopyFile(keywordhash.captureStdOut(), "keywordhash.h");
-    _ = opcode.addCopyFile(opcode_h.captureStdOut(), "opcodes.h");
-    _ = opcode.addCopyFile(opcode_c.captureStdOut(), "opcodes.c");
+    const generated = b.addWriteFiles();
+    _ = generated.addCopyFile(keywordhash.captureStdOut(), "keywordhash.h");
+    _ = generated.addCopyFile(opcode_h.captureStdOut(), "opcodes.h");
+    _ = generated.addCopyFile(opcode_c.captureStdOut(), "opcodes.c");
 
     const flags = &.{
         "-g",
-        // "-DLIBSQL_ENABLE_WASM_RUNTIME",
-        "-DLIBSQL_OMIT_ALTERTABLE",
+        if (wasm_runtime) "-DLIBSQL_ENABLE_WASM_RUNTIME" else "",
     };
 
     const sqlite3 = b.addStaticLibrary(.{
@@ -381,24 +319,52 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    sqlite3.addIncludePath(b.path("src/"));
-    sqlite3.addIncludePath(opcode.getDirectory());
-    sqlite3.addIncludePath(parser);
-    sqlite3.addCSourceFile(.{
-        .file = parser.path(b, "parse.c"),
-        .flags = flags,
+    sqlite3.addObject(object: {
+        const object = b.addObject(.{
+            .name = "sqlite3",
+            .target = target,
+            .optimize = optimize,
+        });
+        object.linkLibC();
+        object.addIncludePath(b.path("src/"));
+        object.addIncludePath(generated.getDirectory());
+        object.addIncludePath(parser);
+        object.addIncludePath(sqlite_header.getOutput().dirname());
+        object.addConfigHeader(sqlite_cfg);
+        object.addCSourceFile(.{
+            .file = generated.getDirectory().path(b, "opcodes.c"),
+            .flags = flags,
+        });
+        object.addCSourceFile(.{ .file = parser.path(b, "parse.c"), .flags = flags });
+        object.addCSourceFiles(.{ .files = sources.sqlite3, .flags = flags });
+
+        if (icu) {
+        }
+
+        if (wasm_runtime) {
+            _ = generated.addCopyFile(b.path("ext/udf/wasm_bindings.h"), "ext/udf/wasm_bindings.h");
+
+            const libsql_wasm = crab.addCargoBuildWithUserOptions(b, .{
+                .name = "liblibsql_wasm.a",
+                .manifest_path = b.path("crates/wasmtime-bindings/Cargo.toml"),
+                .cargo_args = &.{
+                    "--release",
+                    "--lib",
+                },
+            }, .{
+                .target = target,
+                .optimize = .ReleaseSafe,
+            });
+
+            object.addCSourceFile(.{
+                .file = b.path(sources.wasm),
+                .flags = flags ++ &.{"-DSQLITE_CORE"},
+            });
+            object.addObjectFile(libsql_wasm);
+        }
+
+        break :object object;
     });
-    sqlite3.addIncludePath(sqlite_header.getOutput().dirname());
-    sqlite3.addConfigHeader(sqlite_cfg);
-    sqlite3.addCSourceFiles(.{
-        .files = sources.sqlite3,
-        .flags = flags,
-    });
-    sqlite3.addCSourceFile(.{
-        .file = opcode.getDirectory().path(b, "opcodes.c"),
-        .flags = flags,
-    });
-    sqlite3.linkLibC();
 
     const install = b.addInstallArtifact(sqlite3, .{});
 
