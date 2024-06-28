@@ -14,7 +14,7 @@ wasmtime-wasi = "9.0"
 
 [lib]
 name = "libsql_wasm"
-crate-type = ["lib", "cdylib", "staticlib"]
+crate-type = ["staticlib"]
 doc = false
 test = false
 doctest = false
