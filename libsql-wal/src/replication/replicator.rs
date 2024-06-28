@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use roaring::RoaringBitmap;
 use tokio::sync::watch;
 use tokio_stream::{Stream, StreamExt};
 
@@ -24,38 +25,76 @@ impl<IO: Io> Replicator<IO> {
         }
     }
 
+    /// Stream frames from this replicator. The replicator will wait for new frames to become
+    /// available, and never return.
+    ///
+    /// The replicato keeps track of how much progress has been made by the replica, and will
+    /// attempt to find the next frames to send with following strategy:
+    /// - First, replicate as much as possible from the current log
+    /// - The, if we still haven't caught up with `self.start_frame_no`, we select the next frames
+    /// to replicate from tail of current.
+    /// - Finally, if we still haven't reached `self.start_frame_no`, read from durable storage
+    /// (todo: maybe the replica should read from durable storage directly?)
     pub fn frame_stream(&mut self) -> impl Stream<Item = Result<Frame>> + '_ {
         async_stream::try_stream! {
             loop {
-                let _most_recent_frame_no = *self
+                let most_recent_frame_no = *self
                     .new_frame_notifier
-                    .wait_for(|fno| *fno >= self.next_frame_no)
+                    .wait_for(|fno| *fno > self.next_frame_no)
                     .await
                     .expect("channel cannot be closed because we hold a ref to the sending end");
 
-                let current = self.shared.current.load();
-                let current_start = current.with_header(|h| h.start_frame_no.get());
+                let mut commit_frame_no = 0;
+                if most_recent_frame_no > self.next_frame_no {
+                    let current = self.shared.current.load();
+                    let mut seen = RoaringBitmap::new();
+                    let (stream, replicated_until, size_after) = current.frame_stream_from(self.next_frame_no, &mut seen);
+                    let should_replicate_from_tail = replicated_until != self.next_frame_no;
 
-                // we can read from the current segment.
-                // in the current segment, frames are ordered by frame no, so we can start reading from
-                // the end until we hit the current frame_no
-                if self.next_frame_no >= current_start {
-                    let stream = current.frame_stream_from(self.next_frame_no);
-                    let mut new_current_frame_no = 0;
-                    tokio::pin!(stream);
-                    loop {
-                        match stream.try_next().await? {
-                            Some(frame) => {
-                                new_current_frame_no = new_current_frame_no.max(frame.header().frame_no());
-                                yield frame;
+                    // replicate from current
+                    {
+                        tokio::pin!(stream);
+
+                        let mut stream = stream.peekable();
+
+                        loop {
+                            let Some(frame) = stream.next().await else { break };
+                            let mut frame = frame?;
+                            commit_frame_no = frame.header().frame_no().max(commit_frame_no);
+                            if stream.peek().await.is_none() && !should_replicate_from_tail {
+                                frame.header_mut().set_size_after(size_after);
+                                self.next_frame_no = commit_frame_no + 1;
                             }
-                            None => break
+
+                            yield frame
                         }
                     }
 
-                    self.next_frame_no = new_current_frame_no + 1;
-                } else {
-                    todo!("handle frame not in current log");
+
+                    // replicate from tail
+                    if should_replicate_from_tail {
+                        let (stream, replicated_until) = current.tail().stream_pages_from(self.next_frame_no, &mut seen).await;
+                        tokio::pin!(stream);
+                        let mut stream = stream.peekable();
+                        
+                        let should_replicate_from_durable = replicated_until != self.next_frame_no;
+
+                        loop {
+                            let Some(frame) = stream.next().await else { break };
+                            let mut frame = frame?;
+                            commit_frame_no = frame.header().frame_no().max(commit_frame_no);
+                            if stream.peek().await.is_none() && !should_replicate_from_durable {
+                                frame.header_mut().set_size_after(size_after);
+                                self.next_frame_no = commit_frame_no + 1;
+                            }
+
+                            yield frame
+                        }
+
+                        if should_replicate_from_durable {
+                            todo!("we need to fetch new segments from durable storage");
+                        }
+                    }
                 }
             }
         }
@@ -64,92 +103,111 @@ impl<IO: Io> Replicator<IO> {
 
 #[cfg(test)]
 mod test {
-    use std::path::Path;
     use std::time::Duration;
 
-    use insta::assert_debug_snapshot;
-    use libsql_sys::rusqlite::OpenFlags;
-    use tempfile::tempdir;
+    use tempfile::NamedTempFile;
+    use tokio::time::timeout;
     use tokio_stream::StreamExt;
 
-    use crate::registry::WalRegistry;
-    use crate::wal::LibsqlWalManager;
-    use libsql_sys::name::NamespaceName;
+    use crate::test::{seal_current_segment, TestEnv};
+    use crate::io::FileExt;
 
     use super::*;
 
     #[tokio::test]
     async fn stream_from_current_log() {
-        let tmp = tempdir().unwrap();
-        let resolver = |path: &Path| {
-            let name = path.file_name().unwrap().to_str().unwrap();
-            NamespaceName::from_string(name.to_string())
-        };
-
-        let registry =
-            Arc::new(WalRegistry::new(tmp.path().join("test/wals"), resolver, ()).unwrap());
-        let wal_manager = LibsqlWalManager::new(registry.clone());
-
-        let db_path = tmp.path().join("test/data");
-        let conn = libsql_sys::Connection::open(
-            db_path.clone(),
-            OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
-            wal_manager.clone(),
-            100000,
-            None,
-        )
-        .unwrap();
-
-        let shared = registry.open(&db_path).unwrap();
-
-        let mut replicator = Replicator::new(shared.clone(), 1);
-        let stream = replicator.frame_stream();
-        tokio::pin!(stream);
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
 
         conn.execute("create table test (x)", ()).unwrap();
 
-        let frame = stream.try_next().await.unwrap().unwrap();
-        assert_debug_snapshot!(frame.header());
+        for _ in 0..50 {
+            conn.execute("insert into test values (randomblob(128))", ()).unwrap();
+        }
 
-        let frame = stream.try_next().await.unwrap().unwrap();
-        assert_debug_snapshot!(frame.header());
+        let mut replicator = Replicator::new(shared.clone(), 1);
 
-        // no more frames for now...
-        assert!(
-            tokio::time::timeout(Duration::from_millis(100), stream.try_next())
-                .await
-                .is_err()
-        );
-
-        conn.execute("insert into test values (123)", ()).unwrap();
-
-        let frame = stream.try_next().await.unwrap().unwrap();
-        assert_eq!(frame.header().frame_no(), 3);
-        assert_eq!(frame.header().size_after(), 2);
-
-        // no more frames for now...
-        assert!(
-            tokio::time::timeout(Duration::from_millis(100), stream.try_next())
-                .await
-                .is_err()
-        );
-
-        let mut replicator = Replicator::new(shared, 1);
+        let tmp = NamedTempFile::new().unwrap();
         let stream = replicator.frame_stream();
-
         tokio::pin!(stream);
+        let mut last_frame_no = 0;
+        let mut size_after = 0;
+        loop {
+            let fut = timeout(Duration::from_millis(15), stream.next());
+            let Ok(Some(frame)) = fut.await else { break };
+            let frame = frame.unwrap();
+            // the last frame should commit
+            size_after = frame.header().size_after();
+            last_frame_no = last_frame_no.max(frame.header().frame_no());
+            let offset = (frame.header().page_no() - 1) * 4096;
+            tmp.as_file().write_all_at(frame.data(), offset as _).unwrap();
+        }
 
-        let frame = stream.try_next().await.unwrap().unwrap();
-        assert_debug_snapshot!(frame.header());
+        assert_eq!(size_after, 4);
+        assert_eq!(last_frame_no, 55);
 
-        let frame = stream.try_next().await.unwrap().unwrap();
-        assert_debug_snapshot!(frame.header());
+        {
+            let conn = libsql_sys::rusqlite::Connection::open(tmp.path()).unwrap();
+            conn.query_row("select count(0) from test", (), |row| {
+                let count = row.get_unwrap::<_, usize>(0);
+                assert_eq!(count, 50);
+                Ok(())
+            }).unwrap();
+        }
 
-        // no more frames for now...
-        assert!(
-            tokio::time::timeout(Duration::from_millis(100), stream.try_next())
-                .await
-                .is_err()
-        );
+        seal_current_segment(&shared);
+
+        for _ in 0..50 {
+            conn.execute("insert into test values (randomblob(128))", ()).unwrap();
+        }
+
+        let mut size_after = 0;
+        loop {
+            let fut = timeout(Duration::from_millis(15), stream.next());
+            let Ok(Some(frame)) = fut.await else { break };
+            let frame = frame.unwrap();
+            assert!(frame.header().frame_no() > last_frame_no);
+            size_after = frame.header().size_after();
+            // the last frame should commit
+            let offset = (frame.header().page_no() - 1) * 4096;
+            tmp.as_file().write_all_at(frame.data(), offset as _).unwrap();
+        }
+
+        assert_eq!(size_after, 6);
+
+        {
+            let conn = libsql_sys::rusqlite::Connection::open(tmp.path()).unwrap();
+            conn.query_row("select count(0) from test", (), |row| {
+                let count = row.get_unwrap::<_, usize>(0);
+                assert_eq!(count, 100);
+                Ok(())
+            }).unwrap();
+        }
+
+        // replicate everything from scratch again
+        {
+            let tmp = NamedTempFile::new().unwrap();
+            let mut replicator = Replicator::new(shared.clone(), 1);
+            let stream = replicator.frame_stream();
+
+            tokio::pin!(stream);
+
+            loop {
+                let fut = timeout(Duration::from_millis(15), stream.next());
+                let Ok(Some(frame)) = fut.await else { break };
+                let frame = frame.unwrap();
+                // the last frame should commit
+                let offset = (frame.header().page_no() - 1) * 4096;
+                tmp.as_file().write_all_at(frame.data(), offset as _).unwrap();
+            }
+
+            let conn = libsql_sys::rusqlite::Connection::open(tmp.path()).unwrap();
+            conn.query_row("select count(0) from test", (), |row| {
+                let count = row.get_unwrap::<_, usize>(0);
+                assert_eq!(count, 100);
+                Ok(())
+            }).unwrap();
+        }
     }
 }

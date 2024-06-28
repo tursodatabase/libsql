@@ -45,9 +45,9 @@ impl<I: Io> Storage for FsStorage<I> {
 
         let path = self.prefix.join("segments").join(key);
 
-        let buf = Vec::with_capacity(dbg!(segment_data.len().unwrap()) as usize);
+        let buf = Vec::with_capacity(segment_data.len().unwrap() as usize);
 
-        let f = self.io.open(true, false, true, dbg!(&path)).unwrap();
+        let f = self.io.open(true, false, true, &path).unwrap();
         async move {
             let (buf, res) = segment_data.read_exact_at_async(buf, 0).await;
 
@@ -90,7 +90,7 @@ impl<I: Io> Storage for FsStorage<I> {
                     let header_buf = ZeroCopyBuf::<CompactedSegmentDataHeader>::new_uninit();
                     let file = self
                         .io
-                        .open(false, true, false, dbg!(&entry.path()))
+                        .open(false, true, false, &entry.path())
                         .unwrap();
                     let (header_buf, res) = file.read_exact_at_async(header_buf, 0).await;
                     res.unwrap();

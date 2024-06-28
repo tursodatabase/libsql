@@ -110,7 +110,6 @@ impl<F> SegmentList<F> {
             current = link.next.load();
         }
 
-        dbg!(segs.len());
         // nothing to checkpoint rn
         if segs.is_empty() {
             return Ok(None);
@@ -322,7 +321,7 @@ mod test {
         let (stream, replicated_until) = segment_list.stream_pages_from(10, &mut seen).await;
         tokio::pin!(stream);
 
-        assert_eq!(replicated_until, 0);
+        assert_eq!(replicated_until, 10);
 
         while let Some(frame) = stream.next().await {
             let frame = frame.unwrap();
@@ -347,10 +346,10 @@ mod test {
         let current = shared.current.load();
         let segment_list = current.tail();
         let mut seen = RoaringBitmap::from_sorted_iter([1]).unwrap();
-        let (stream, replicated_until) = segment_list.stream_pages_from(0, &mut seen).await;
+        let (stream, replicated_until) = segment_list.stream_pages_from(1, &mut seen).await;
         tokio::pin!(stream);
 
-        assert_eq!(replicated_until, 0);
+        assert_eq!(replicated_until, 1);
 
         while let Some(frame) = stream.next().await {
             let frame = frame.unwrap();
@@ -375,10 +374,10 @@ mod test {
         let current = shared.current.load();
         let segment_list = current.tail();
         let mut seen = RoaringBitmap::new();
-        let (stream, replicated_until) = segment_list.stream_pages_from(0, &mut seen).await;
+        let (stream, replicated_until) = segment_list.stream_pages_from(1, &mut seen).await;
         tokio::pin!(stream);
 
-        assert_eq!(replicated_until, 0);
+        assert_eq!(replicated_until, 1);
 
         let mut tmp = tempfile().unwrap();
 

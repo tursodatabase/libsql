@@ -365,24 +365,23 @@ impl<F> CurrentSegment<F> {
         &'a self,
         start_frame_no: u64,
         seen: &'a mut RoaringBitmap,
-    ) -> (impl Stream<Item = Result<Frame>> + 'a, u64)
+    ) -> (impl Stream<Item = Result<Frame>> + 'a, u64, u32)
     where
         F: FileExt,
     {
-        let (seg_start_frame_no, last_committed) = self.with_header(|h| (h.start_frame_no.get(), h.last_committed()));
+        let (seg_start_frame_no, last_committed, db_size) = self.with_header(|h| (h.start_frame_no.get(), h.last_committed(), h.db_size()));
         let replicated_until = seg_start_frame_no.max(start_frame_no);
 
         // TODO: optim, we could read less frames if we had a mapping from frame_no to page_no in
         // the index
         let stream = async_stream::try_stream! {
             if !self.is_empty() {
-                let mut frame_offset = (dbg!(last_committed) - dbg!(seg_start_frame_no)) as u32;
+                let mut frame_offset = (last_committed - seg_start_frame_no) as u32;
                 loop {
                     let buf = ZeroCopyBuf::<Frame>::new_uninit();
                     let (buf, res) = self.read_frame_offset_async(frame_offset, buf).await;
                     res?;
 
-                    frame_offset -= 1;
 
                     let mut frame = buf.into_inner();
                     frame.header_mut().size_after = 0.into();
@@ -395,18 +394,19 @@ impl<F> CurrentSegment<F> {
 
                     if !seen.contains(page_no) {
                         seen.insert(page_no);
-                        dbg!(frame.header().page_no());
                         yield frame;
                     }
 
                     if frame_offset == 0 {
                         break
                     }
+
+                    frame_offset -= 1;
                 }
             }
         };
 
-        (stream, replicated_until)
+        (stream, replicated_until, db_size)
     }
 }
 
@@ -579,9 +579,10 @@ mod test {
 
         let mut seen = RoaringBitmap::new();
         let current = shared.current.load();
-        let (stream, replicated_until) = current.frame_stream_from(1, &mut seen);
+        let (stream, replicated_until, size_after) = current.frame_stream_from(1, &mut seen);
         tokio::pin!(stream);
         assert_eq!(replicated_until, 1);
+        assert_eq!(size_after, 6);
 
         let mut tmp = tempfile().unwrap();
         while let Some(frame) = stream.next().await {
@@ -623,9 +624,10 @@ mod test {
         let mut seen = RoaringBitmap::new();
         {
             let current = shared.current.load();
-            let (stream, replicated_until) = current.frame_stream_from(1, &mut seen);
+            let (stream, replicated_until, size_after) = current.frame_stream_from(1, &mut seen);
             tokio::pin!(stream);
             assert_eq!(replicated_until, 60);
+            assert_eq!(size_after, 9);
             assert_eq!(stream.fold(0, |count, _| count + 1).await, 6);
         }
         assert_debug_snapshot!(seen);
@@ -641,14 +643,15 @@ mod test {
 
         let mut seen = RoaringBitmap::new();
         let current = shared.current.load();
-        let (stream, replicated_until) = current.frame_stream_from(100, &mut seen);
+        let (stream, replicated_until, size_after) = current.frame_stream_from(100, &mut seen);
         tokio::pin!(stream);
         assert_eq!(replicated_until, 100);
         assert_eq!(stream.fold(0, |count, _| count + 1).await, 0);
+        assert_eq!(size_after, 2);
     }
 
     #[tokio::test]
-    async fn current_stream_empty_segement() {
+    async fn current_stream_empty_segment() {
         let env = TestEnv::new();
         let conn = env.open_conn("test");
         let shared = env.shared("test");
@@ -658,9 +661,10 @@ mod test {
 
         let mut seen = RoaringBitmap::new();
         let current = shared.current.load();
-        let (stream, replicated_until) = current.frame_stream_from(1, &mut seen);
+        let (stream, replicated_until, size_after) = current.frame_stream_from(1, &mut seen);
         tokio::pin!(stream);
         assert_eq!(replicated_until, 3);
+        assert_eq!(size_after, 2);
         assert_eq!(stream.fold(0, |count, _| count + 1).await, 0);
     }
 }
