@@ -20,7 +20,7 @@ int create_query_template(char* query, char* template, char** parameters, int* l
   int parameter = 0;
   char* parameter_start = 0;
 
-  if (strncmp(query, "CREATE", 5) == 0) {
+  if (strncmp(query, "INSERT", 6) != 0 && strncmp(query, "SELECT", 6) != 0) {
     return 0;
   }
   for (; *query != '\0'; query++) {
@@ -102,15 +102,15 @@ int main(int argc, char* argv[]) {
 
     if (strncmp(line, "---", 3) == 0) {
       // print & reset stat
-      printf("%s:\n", line + 3);
+      printf("%s (%s):\n", line + 3, argv[1]);
       if (total_selects > 0) {
-        printf("  select: %.2f ms (avg.), %d (count)\n", total_select_time / total_selects * 1000, total_selects);
+        printf("  select: %.2f micros (avg.), %d (count)\n", total_select_time / total_selects * 1000000, total_selects);
       }
       if (total_inserts > 0) {
-        printf("  insert: %.2f ms (avg.), %d (count)\n", total_insert_time / total_inserts * 1000, total_inserts);
+        printf("  insert: %.2f micros (avg.), %d (count)\n", total_insert_time / total_inserts * 1000000, total_inserts);
       }
       if (total_deletes > 0) {
-        printf("  delete: %.2f ms (avg.), %d (count)\n", total_delete_time / total_deletes * 1000, total_deletes);
+        printf("  delete: %.2f micros (avg.), %d (count)\n", total_delete_time / total_deletes * 1000000, total_deletes);
       }
       struct stat st;
       stat(argv[2], &st);
