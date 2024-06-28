@@ -5095,6 +5095,10 @@ int sqlite3SafetyCheckSickOrOk(sqlite3*);
 void sqlite3ChangeCookie(Parse*, int);
 With *sqlite3WithDup(sqlite3 *db, With *p);
 
+/* libsql parse functions */
+void libsql_create_function(Parse *pParse, Token *pName, Token *pLang, Token *pBody, int isBlob, int noErr);
+void libsql_drop_function(Parse *pParse, Token *pName, int noErr);
+
 #if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
 void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
 #endif
