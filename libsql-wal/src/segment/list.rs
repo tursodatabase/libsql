@@ -245,9 +245,9 @@ mod test {
 
     #[tokio::test]
     async fn stream_pages() {
-        let test = TestEnv::new();
-        let conn = test.open_conn("test");
-        let shared = test.shared("test");
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
 
         conn.execute("CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB(16));", ())
             .unwrap();
@@ -288,8 +288,8 @@ mod test {
 
         shared.checkpoint().unwrap();
         file.seek(std::io::SeekFrom::Start(0)).unwrap();
-        let mut replicated_bytes = Vec::new();
-        file.read_to_end(&mut replicated_bytes).unwrap();
+        let mut copy_ytes = Vec::new();
+        file.read_to_end(&mut copy_ytes).unwrap();
 
         let mut orig_bytes = Vec::new();
         shared
@@ -299,21 +299,14 @@ mod test {
             .read_to_end(&mut orig_bytes)
             .unwrap();
 
-        assert_eq!(replicated_bytes.len(), orig_bytes.len());
-        replicated_bytes
-            .iter()
-            .zip(orig_bytes)
-            .enumerate()
-            .for_each(|(i, (r, o))| {
-                assert_eq!(o, *r, "diff at: {i}");
-            });
+        assert_eq!(orig_bytes, copy_ytes);
     }
 
     #[tokio::test]
     async fn stream_pages_skip_before_start_fno() {
-        let test = TestEnv::new();
-        let conn = test.open_conn("test");
-        let shared = test.shared("test");
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
 
         conn.execute("CREATE TABLE test(x);", ()).unwrap();
 
@@ -339,9 +332,9 @@ mod test {
 
     #[tokio::test]
     async fn stream_pages_ignore_already_seen_pages() {
-        let test = TestEnv::new();
-        let conn = test.open_conn("test");
-        let shared = test.shared("test");
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
 
         conn.execute("CREATE TABLE test(x);", ()).unwrap();
 
@@ -367,9 +360,9 @@ mod test {
 
     #[tokio::test]
     async fn stream_pages_resume_replication() {
-        let test = TestEnv::new();
-        let conn = test.open_conn("test");
-        let shared = test.shared("test");
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
 
         conn.execute("CREATE TABLE test(x);", ()).unwrap();
 
@@ -417,8 +410,8 @@ mod test {
 
         shared.checkpoint().unwrap();
         tmp.seek(std::io::SeekFrom::Start(0)).unwrap();
-        let mut replicated_bytes = Vec::new();
-        tmp.read_to_end(&mut replicated_bytes).unwrap();
+        let mut copy_bytes = Vec::new();
+        tmp.read_to_end(&mut copy_bytes).unwrap();
 
         let mut orig_bytes = Vec::new();
         shared
@@ -428,21 +421,14 @@ mod test {
             .read_to_end(&mut orig_bytes)
             .unwrap();
 
-        assert_eq!(replicated_bytes.len(), orig_bytes.len());
-        replicated_bytes
-            .iter()
-            .zip(orig_bytes)
-            .enumerate()
-            .for_each(|(i, (r, o))| {
-                assert_eq!(o, *r, "diff at: {i}");
-            });
+        assert_eq!(copy_bytes, orig_bytes);
     }
 
     #[tokio::test]
     async fn stream_start_frame_no_before_sealed_segments() {
-        let test = TestEnv::new();
-        let conn = test.open_conn("test");
-        let shared = test.shared("test");
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
 
         conn.execute("CREATE TABLE test(x);", ()).unwrap();
 
