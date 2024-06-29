@@ -28,6 +28,7 @@
             ];
             buildInputs = with pkgs; [
               icu.dev
+              zlib.dev
             ];
           };
       }
