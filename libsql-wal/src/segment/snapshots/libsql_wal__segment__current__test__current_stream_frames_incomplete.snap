@@ -1,0 +1,5 @@
+---
+source: libsql-wal/src/segment/current.rs
+expression: seen
+---
+RoaringBitmap<[1, 2, 6, 7, 8, 9]>

@@ -10,10 +10,11 @@ use std::sync::{
 use crossbeam_skiplist::SkipMap;
 use fst::MapBuilder;
 use parking_lot::{Mutex, RwLock};
+use roaring::RoaringBitmap;
 use tokio_stream::Stream;
 use zerocopy::{AsBytes, FromZeroes};
 
-use crate::io::buf::{ZeroCopyBoxIoBuf, ZeroCopyBuf};
+use crate::io::buf::{IoBufMut, ZeroCopyBoxIoBuf, ZeroCopyBuf};
 use crate::io::file::FileExt;
 use crate::segment::SegmentFlags;
 use crate::segment::{frame_offset, page_offset, sealed::SealedSegment};
@@ -273,6 +274,15 @@ impl<F> CurrentSegment<F> {
         Ok(())
     }
 
+    async fn read_frame_offset_async<B>(&self, offset: u32, buf: B) -> (B, std::io::Result<()>)
+    where
+        F: FileExt,
+        B: IoBufMut + Send + 'static,
+    {
+        let byte_offset = frame_offset(offset);
+        self.file.read_exact_at_async(buf, byte_offset).await
+    }
+
     #[allow(dead_code)]
     pub fn frame_header_at(&self, offset: u32) -> Result<FrameHeader>
     where
@@ -351,37 +361,53 @@ impl<F> CurrentSegment<F> {
     }
 
     /// returns all the frames that changed between start_frame_no and the current commit index
-    pub(crate) fn frame_stream_from(
-        &self,
+    pub(crate) fn frame_stream_from<'a>(
+        &'a self,
         start_frame_no: u64,
-    ) -> impl Stream<Item = Result<Frame>> + '_
+        seen: &'a mut RoaringBitmap,
+    ) -> (impl Stream<Item = Result<Frame>> + 'a, u64, u32)
     where
         F: FileExt,
     {
-        let (last_committed, size_after) = {
-            let header = self.header.lock();
-            (header.last_committed(), header.db_size.get())
+        let (seg_start_frame_no, last_committed, db_size) =
+            self.with_header(|h| (h.start_frame_no.get(), h.last_committed(), h.db_size()));
+        let replicated_until = seg_start_frame_no.max(start_frame_no);
+
+        // TODO: optim, we could read less frames if we had a mapping from frame_no to page_no in
+        // the index
+        let stream = async_stream::try_stream! {
+            if !self.is_empty() {
+                let mut frame_offset = (last_committed - seg_start_frame_no) as u32;
+                loop {
+                    let buf = ZeroCopyBuf::<Frame>::new_uninit();
+                    let (buf, res) = self.read_frame_offset_async(frame_offset, buf).await;
+                    res?;
+
+
+                    let mut frame = buf.into_inner();
+                    frame.header_mut().size_after = 0.into();
+                    let page_no = frame.header().page_no();
+
+                    let frame_no = frame.header().frame_no();
+                    if frame_no < start_frame_no {
+                        break
+                    }
+
+                    if !seen.contains(page_no) {
+                        seen.insert(page_no);
+                        yield frame;
+                    }
+
+                    if frame_offset == 0 {
+                        break
+                    }
+
+                    frame_offset -= 1;
+                }
+            }
         };
 
-        // we get all frame offsets of pages that changed since start_frame_no
-        let mut iter = self.index.iter(start_frame_no, last_committed).peekable();
-
-        async_stream::try_stream! {
-            while let Some((_, offset, _)) = iter.next() {
-                let byte_offset = frame_offset(offset);
-                let buf = ZeroCopyBuf::<Frame>::new_uninit();
-                let (buf, ret) = self.file.read_exact_at_async(buf, byte_offset).await;
-                ret?;
-                let mut frame = buf.into_inner();
-                let new_size_after = if iter.peek().is_none() {
-                    size_after
-                } else {
-                    0
-                };
-                frame.header.set_size_after(new_size_after);
-                yield frame;
-            }
-        }
+        (stream, replicated_until, db_size)
     }
 }
 
@@ -496,6 +522,15 @@ impl SegmentIndex {
 
 #[cfg(test)]
 mod test {
+    use std::io::Read;
+
+    use insta::assert_debug_snapshot;
+    use tempfile::tempfile;
+    use tokio_stream::StreamExt;
+
+    use crate::io::FileExt;
+    use crate::test::{seal_current_segment, TestEnv};
+
     use super::*;
 
     #[test]
@@ -530,5 +565,115 @@ mod test {
         index.insert(2, 2);
         assert_eq!(index.iter(1, 41).count(), 0);
         assert_eq!(index.iter(43, 72).count(), 0);
+    }
+
+    #[tokio::test]
+    async fn current_stream_frames() {
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
+
+        conn.execute("create table test (x)", ()).unwrap();
+        for _ in 0..50 {
+            conn.execute("insert into test values (randomblob(256))", ())
+                .unwrap();
+        }
+
+        let mut seen = RoaringBitmap::new();
+        let current = shared.current.load();
+        let (stream, replicated_until, size_after) = current.frame_stream_from(1, &mut seen);
+        tokio::pin!(stream);
+        assert_eq!(replicated_until, 1);
+        assert_eq!(size_after, 6);
+
+        let mut tmp = tempfile().unwrap();
+        while let Some(frame) = stream.next().await {
+            let frame = frame.unwrap();
+            let offset = (frame.header().page_no() - 1) * 4096;
+            tmp.write_all_at(frame.data(), offset as _).unwrap();
+        }
+
+        seal_current_segment(&shared);
+        shared.checkpoint().unwrap();
+
+        let mut orig = Vec::new();
+        shared
+            .db_file
+            .try_clone()
+            .unwrap()
+            .read_to_end(&mut orig)
+            .unwrap();
+
+        let mut copy = Vec::new();
+        tmp.read_to_end(&mut copy).unwrap();
+
+        assert_eq!(copy, orig);
+    }
+
+    #[tokio::test]
+    async fn current_stream_frames_incomplete() {
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
+
+        conn.execute("create table test (x)", ()).unwrap();
+
+        for _ in 0..50 {
+            conn.execute("insert into test values (randomblob(256))", ())
+                .unwrap();
+        }
+
+        seal_current_segment(&shared);
+
+        for _ in 0..50 {
+            conn.execute("insert into test values (randomblob(256))", ())
+                .unwrap();
+        }
+
+        let mut seen = RoaringBitmap::new();
+        {
+            let current = shared.current.load();
+            let (stream, replicated_until, size_after) = current.frame_stream_from(1, &mut seen);
+            tokio::pin!(stream);
+            assert_eq!(replicated_until, 60);
+            assert_eq!(size_after, 9);
+            assert_eq!(stream.fold(0, |count, _| count + 1).await, 6);
+        }
+        assert_debug_snapshot!(seen);
+    }
+
+    #[tokio::test]
+    async fn current_stream_too_recent_frame_no() {
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
+
+        conn.execute("create table test (x)", ()).unwrap();
+
+        let mut seen = RoaringBitmap::new();
+        let current = shared.current.load();
+        let (stream, replicated_until, size_after) = current.frame_stream_from(100, &mut seen);
+        tokio::pin!(stream);
+        assert_eq!(replicated_until, 100);
+        assert_eq!(stream.fold(0, |count, _| count + 1).await, 0);
+        assert_eq!(size_after, 2);
+    }
+
+    #[tokio::test]
+    async fn current_stream_empty_segment() {
+        let env = TestEnv::new();
+        let conn = env.open_conn("test");
+        let shared = env.shared("test");
+
+        conn.execute("create table test (x)", ()).unwrap();
+        seal_current_segment(&shared);
+
+        let mut seen = RoaringBitmap::new();
+        let current = shared.current.load();
+        let (stream, replicated_until, size_after) = current.frame_stream_from(1, &mut seen);
+        tokio::pin!(stream);
+        assert_eq!(replicated_until, 3);
+        assert_eq!(size_after, 2);
+        assert_eq!(stream.fold(0, |count, _| count + 1).await, 0);
     }
 }

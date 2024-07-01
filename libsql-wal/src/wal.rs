@@ -143,7 +143,7 @@ impl<FS: Io> Wal for LibsqlWal<FS> {
         tracing::trace!(page_no, "reading frame");
         let tx = self.tx.as_mut().unwrap();
         self.shared
-            .read_frame(tx, page_no.get(), buffer)
+            .read_page(tx, page_no.get(), buffer)
             .map_err(Into::into)?;
         Ok(())
     }

@@ -4,12 +4,12 @@ expression: frame.header()
 ---
 FrameHeader {
     page_no: U32(
-        1,
+        2,
     ),
     size_after: U32(
-        0,
+        2,
     ),
     frame_no: U64(
-        1,
+        2,
     ),
 }
