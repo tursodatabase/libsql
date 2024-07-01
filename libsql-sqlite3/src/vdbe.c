@@ -815,8 +815,8 @@ static void inc_row_read(Vdbe *p, int count) {
 }
 
 static void inc_row_written(Vdbe *p, int count) {
-    u32 *read = &p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_WRITTEN - LIBSQL_STMTSTATUS_BASE];
-    *read = saturating_add(*read, count);
+    u32 *write = &p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_WRITTEN - LIBSQL_STMTSTATUS_BASE];
+    *write = saturating_add(*write, count);
 }
 
 /*
