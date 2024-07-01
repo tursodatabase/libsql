@@ -134,6 +134,8 @@ pub enum Error {
     Io(#[from] std::io::Error),
     #[error("an error occured while storing a segment: {0}")]
     Store(String),
+    #[error("unable to find the requested frame_no: {0}")]
+    FrameNotFound(u64),
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
