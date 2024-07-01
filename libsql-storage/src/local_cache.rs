@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use libsql_sys::rusqlite::{params, Connection, Error, Result};
+use libsql_sys::rusqlite::{ffi, params, Connection, Error, Result};
 
 /// We use LocalCache to cache frames and transaction state. Each namespace gets its own cache
 /// which is currently stored in a SQLite DB file, along with the main database file.
@@ -43,9 +43,10 @@ impl LocalCache {
 
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS transactions (
-                txn_id TEXT PRIMARY KEY NOT NULL,
+                txn_id TEXT NOT NULL,
                 page_no INTEGER NOT NULL,
-                data BLOB NOT NULL
+                data BLOB NOT NULL,
+                PRIMARY KEY (txn_id, page_no)
             )",
             [],
         )?;
@@ -53,11 +54,16 @@ impl LocalCache {
     }
 
     pub fn insert_frame(&self, frame_no: u64, frame_data: &[u8]) -> Result<()> {
-        self.conn.execute(
+        match self.conn.execute(
             "INSERT INTO frames (frame_no, data) VALUES (?1, ?2)",
             params![frame_no, frame_data],
-        )?;
-        Ok(())
+        ) {
+            Ok(_) => Ok(()),
+            Err(Error::SqliteFailure(e, _)) if e.code == ffi::ErrorCode::ConstraintViolation => {
+                Ok(())
+            }
+            Err(e) => Err(e.into()),
+        }
     }
 
     pub fn get_frame(&self, frame_no: u64) -> Result<Option<Vec<u8>>> {
@@ -73,7 +79,8 @@ impl LocalCache {
 
     pub fn insert_page(&self, txn_id: &str, page_no: u32, frame_data: &[u8]) -> Result<()> {
         self.conn.execute(
-            "INSERT INTO transactions (txn_id, page_no, data) VALUES (?1, ?2, ?3)",
+            "INSERT INTO transactions (txn_id, page_no, data) VALUES (?1, ?2, ?3)
+                 ON CONFLICT(txn_id, page_no) DO UPDATE SET data = ?3",
             params![txn_id, page_no, frame_data],
         )?;
         Ok(())
