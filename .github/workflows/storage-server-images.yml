@@ -55,7 +55,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          file: "{context}/libsql-storage-server/Dockerfile"
+          file: "./libsql-storage-server/Dockerfile"
 
       - name: Echo image name
         run: |
