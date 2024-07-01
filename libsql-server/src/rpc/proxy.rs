@@ -327,7 +327,11 @@ impl ProxyService {
         };
 
         let auth = if let Some(auth) = auth {
-            let context = parse_grpc_auth_header(req.metadata());
+            let context =
+                parse_grpc_auth_header(req.metadata(), &auth.user_strategy.required_fields())
+                    .map_err(|e| {
+                        tonic::Status::internal(format!("Error parsing auth header: {}", e))
+                    })?;
             auth.authenticate(context)?
         } else {
             Authenticated::from_proxy_grpc_request(req)?
