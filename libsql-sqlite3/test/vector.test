@@ -28,6 +28,13 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix vector
 
+do_execsql_test vector-integrity {
+  CREATE TABLE t_integrity( xv FLOAT32(3) );
+  CREATE INDEX t_integrity_idx USING diskann_cosine_ops ON t_integrity(xv);
+  INSERT INTO t_integrity(rowid,xv) VALUES(1, vector('[1,2,3]'));
+  PRAGMA integrity_check;
+} {{row 1 missing from index t_integrity_idx} {wrong # of entries in index t_integrity_idx}}
+
 do_execsql_test vector-100 {
   CREATE TABLE t1(
     xv FLOAT32(3)
@@ -85,4 +92,3 @@ do_test vector-func {
   {invalid f32 vector: 5 % 4 != 0}
   {invalid f32 vector: zero length}
 }]
-
