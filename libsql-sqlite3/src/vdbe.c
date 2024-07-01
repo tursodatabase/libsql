@@ -804,6 +804,21 @@ FuncDef *try_instantiate_wasm_function(sqlite3 *db, const char *pName, int nName
 int deregister_wasm_function(sqlite3 *db, const char *zName);
 #endif
 
+static u32 saturating_add(u32 lhs, u32 rhs) {
+    u64 sum = (u64)lhs + (u64)rhs;
+    return (u32)MIN(0xFFFFFFFF, sum);
+}
+
+static void inc_row_read(Vdbe *p, int count) {
+    u32 *read = &p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE];
+    *read = saturating_add(*read, count);
+}
+
+static void inc_row_written(Vdbe *p, int count) {
+    u32 *read = &p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_WRITTEN - LIBSQL_STMTSTATUS_BASE];
+    *read = saturating_add(*read, count);
+}
+
 /*
 ** Execute as much of a VDBE program as we can.
 ** This is the core of sqlite3_step(). 
@@ -3719,7 +3734,7 @@ case OP_Count: {         /* out2 */
     nEntry = 0;  /* Not needed.  Only used to silence a warning. */
     i64 nPages = 0;
     rc = sqlite3BtreeCount(db, pCrsr, &nEntry, &nPages);
-    p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE] += nPages;
+    inc_row_read(p, nPages);
     if( rc ) goto abort_due_to_error;
   }
   pOut = out2Prerelease(p, pOp);
@@ -4879,7 +4894,7 @@ case OP_SeekGT: {       /* jump, in3, group, ncycle */
       goto seek_not_found;
     }
   }
-  p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE]++;
+  inc_row_read(p, 1);
 #ifdef SQLITE_TEST
   sqlite3_search_count++;
 #endif
@@ -5449,7 +5464,7 @@ notExistsWithKey:
   pC->deferredMoveto = 0;
   VdbeBranchTaken(res!=0,2);
   pC->seekResult = res;
-  p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE]++;
+  inc_row_read(p, 1);
   if( res!=0 ){
     assert( rc==SQLITE_OK );
     if( pOp->p2==0 ){
@@ -5751,7 +5766,8 @@ case OP_Insert: {
 #endif
 
   assert( (pOp->p5 & OPFLAG_LASTROWID)==0 || (pOp->p5 & OPFLAG_NCHANGE)!=0 );
-  if (!pC->isEphemeral) p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_WRITTEN - LIBSQL_STMTSTATUS_BASE]++;
+  if (!pC->isEphemeral) inc_row_written(p, 1);
+  
   if( pOp->p5 & OPFLAG_NCHANGE ){
     p->nChange++;
     if( pOp->p5 & OPFLAG_LASTROWID ) db->lastRowid = x.nKey;
@@ -5945,7 +5961,7 @@ case OP_Delete: {
 
   /* Invoke the update-hook if required. */
   if( opflags & OPFLAG_NCHANGE ){
-    if (!pC->isEphemeral) p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_WRITTEN - LIBSQL_STMTSTATUS_BASE]++;
+    if (!pC->isEphemeral) inc_row_written(p, 1);
     p->nChange++;
     if( db->xUpdateCallback && ALWAYS(pTab!=0) && HasRowid(pTab) ){
       db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, pTab->zName,
@@ -6233,7 +6249,7 @@ case OP_Last: {              /* jump, ncycle */
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
   if( rc ) goto abort_due_to_error;
-  p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE]++;
+  inc_row_read(p, 1);
   if( pOp->p2>0 ){
     VdbeBranchTaken(res!=0,2);
     if( res ) goto jump_to_p2;
@@ -6343,7 +6359,7 @@ case OP_Rewind: {        /* jump, ncycle */
   }
   if( rc ) goto abort_due_to_error;
   pC->nullRow = (u8)res;
-  p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE]++;
+  inc_row_read(p, 1);
   if( pOp->p2>0 ){
     VdbeBranchTaken(res!=0,2);
     if( res ) goto jump_to_p2;
@@ -6449,7 +6465,7 @@ next_tail:
   if( rc==SQLITE_OK ){
     pC->nullRow = 0;
     p->aCounter[pOp->p5]++;
-    p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE]++;
+  inc_row_read(p, 1);
 #ifdef SQLITE_TEST
     sqlite3_search_count++;
 #endif
@@ -6501,7 +6517,7 @@ case OP_IdxInsert: {        /* in2 */
   pIn2 = &aMem[pOp->p2];
   assert( (pIn2->flags & MEM_Blob) || (pOp->p5 & OPFLAG_PREFORMAT) );
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
-  if (!pC->isEphemeral) p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_WRITTEN - LIBSQL_STMTSTATUS_BASE]++;
+  if (!pC->isEphemeral) inc_row_written(p, 1);
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pC->isTable==0 );
   rc = ExpandBlob(pIn2);
@@ -6902,7 +6918,7 @@ case OP_Clear: {
   rc = sqlite3BtreeClearTable(db->aDb[pOp->p2].pBt, (u32)pOp->p1, &nChange);
   if( pOp->p3 ){
     p->nChange += nChange;
-    p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_WRITTEN - LIBSQL_STMTSTATUS_BASE] += nChange;
+    inc_row_written(p, nChange);
     if( pOp->p3>0 ){
       assert( memIsValid(&aMem[pOp->p3]) );
       memAboutToChange(p, &aMem[pOp->p3]);
@@ -8489,7 +8505,7 @@ case OP_VNext: {   /* jump, ncycle */
   rc = pModule->xNext(pCur->uc.pVCur);
   sqlite3VtabImportErrmsg(p, pVtab);
   if( rc ) goto abort_due_to_error;
-  p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE]++;
+  inc_row_read(p, 1);
   res = pModule->xEof(pCur->uc.pVCur);
   VdbeBranchTaken(!res,2);
   if( !res ){
@@ -8611,8 +8627,8 @@ case OP_VUpdate: {
         p->errorAction = ((pOp->p5==OE_Replace) ? OE_Abort : pOp->p5);
       }
     }else{
-      p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_WRITTEN - LIBSQL_STMTSTATUS_BASE]++;
-      p->nChange++;
+        inc_row_written(p, 1);
+        p->nChange++;
     }
     if( rc ) goto abort_due_to_error;
   }
