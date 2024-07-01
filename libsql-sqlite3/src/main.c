@@ -44,6 +44,9 @@ static int sqlite3TestExtInit(sqlite3 *db){
 #ifdef SQLITE_ENABLE_FTS5
 int sqlite3Fts5Init(sqlite3*);
 #endif
+#ifndef SQLITE_OMIT_VECTOR
+int vectorVtabInit(sqlite3*);
+#endif
 #ifdef SQLITE_ENABLE_STMTVTAB
 int sqlite3StmtVtabInit(sqlite3*);
 #endif
@@ -60,6 +63,9 @@ static int (*const sqlite3BuiltinExtensions[])(sqlite3*) = {
 #endif
 #ifdef SQLITE_ENABLE_FTS5
   sqlite3Fts5Init,
+#endif
+#ifndef SQLITE_OMIT_VECTOR
+  vectorVtabInit,
 #endif
 #if defined(SQLITE_ENABLE_ICU) || defined(SQLITE_ENABLE_ICU_COLLATIONS)
   sqlite3IcuInit,

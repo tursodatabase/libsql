@@ -2042,6 +2042,8 @@ struct FuncDestructor {
 #define SQLITE_FUNC_BUILTIN  0x00800000 /* This is a built-in function */
 #define SQLITE_FUNC_ANYORDER 0x08000000 /* count/min/max aggregate */
 
+#define SQLITE_FUNC_VECTOR   0x10000000 /* This is a vector distance function. */
+
 /* Identifier numbers for each in-line function */
 #define INLINEFUNC_coalesce             0
 #define INLINEFUNC_implies_nonnull_row  1
@@ -2169,6 +2171,10 @@ struct FuncDestructor {
   {nArg, SQLITE_FUNC_BUILTIN|\
    SQLITE_FUNC_INTERNAL|SQLITE_UTF8|SQLITE_FUNC_CONSTANT, \
    0, 0, xFunc, 0, 0, 0, #zName, {0} }
+#define VECTOR_FUNCTION(zName, nArg, iArg, bNC, xFunc) \
+  {nArg, SQLITE_FUNC_BUILTIN|\
+   SQLITE_FUNC_VECTOR|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
+   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 
 
 /*
@@ -2636,6 +2642,7 @@ struct FKey {
 ** for the rowid at the end.
 */
 struct KeyInfo {
+  char *zIndexName;   /* Name of the index.  Might be NULL */
   u32 nRef;           /* Number of references to this KeyInfo object */
   u8 enc;             /* Text encoding - one of the SQLITE_UTF* values */
   u16 nKeyField;      /* Number of key columns in the index */
@@ -2766,7 +2773,7 @@ struct Index {
   u16 nKeyCol;             /* Number of columns forming the key */
   u16 nColumn;             /* Number of columns stored in the index */
   u8 onError;              /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
-  unsigned idxType:2;      /* 0:Normal 1:UNIQUE, 2:PRIMARY KEY, 3:IPK */
+  unsigned idxType:3;      /* 0:Normal 1:UNIQUE, 2:PRIMARY KEY, 3:IPK */
   unsigned bUnordered:1;   /* Use this index for == or IN queries only */
   unsigned uniqNotNull:1;  /* True if UNIQUE and NOT NULL for all columns */
   unsigned isResized:1;    /* True if resizeIndexObject() has been called */
@@ -2797,12 +2804,16 @@ struct Index {
 #define SQLITE_IDXTYPE_UNIQUE      1   /* Implements a UNIQUE constraint */
 #define SQLITE_IDXTYPE_PRIMARYKEY  2   /* Is the PRIMARY KEY for the table */
 #define SQLITE_IDXTYPE_IPK         3   /* INTEGER PRIMARY KEY index */
+#define SQLITE_IDXTYPE_VECTOR      4   /* Vector index */
 
 /* Return true if index X is a PRIMARY KEY index */
 #define IsPrimaryKeyIndex(X)  ((X)->idxType==SQLITE_IDXTYPE_PRIMARYKEY)
 
 /* Return true if index X is a UNIQUE index */
 #define IsUniqueIndex(X)      ((X)->onError!=OE_None)
+
+/* Return true if index X is a vector index */
+#define IsVectorIndex(X)  ((X)->idxType==SQLITE_IDXTYPE_VECTOR)
 
 /* The Index.aiColumn[] values are normally positive integer.  But
 ** there are some negative values that have special meaning:
@@ -4948,7 +4959,7 @@ void sqlite3ClearOnOrUsing(sqlite3*, OnOrUsing*);
 void sqlite3SrcListDelete(sqlite3*, SrcList*);
 Index *sqlite3AllocateIndexObject(sqlite3*,i16,int,char**);
 void sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
-                          Expr*, int, int, u8);
+                          Expr*, int, int, u8, IdList*);
 void sqlite3DropIndex(Parse*, SrcList*, int);
 int sqlite3Select(Parse*, Select*, SelectDest*);
 Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
@@ -5086,6 +5097,7 @@ void sqlite3QuoteValue(StrAccum*,sqlite3_value*);
 void sqlite3RegisterBuiltinFunctions(void);
 void sqlite3RegisterDateTimeFunctions(void);
 void sqlite3RegisterJsonFunctions(void);
+void sqlite3RegisterVectorFunctions(void);
 void sqlite3RegisterPerConnectionBuiltinFunctions(sqlite3*);
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_JSON)
   int sqlite3JsonTableFunctions(sqlite3*);

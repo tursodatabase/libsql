@@ -195,6 +195,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          sqlite3session.lo select.lo sqlite3rbu.lo status.lo stmt.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo userauth.lo upsert.lo util.lo vacuum.lo \
+         vector.lo vectordiskann.lo vectorfloat32.lo vectorfloat64.lo vectorvtab.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo vdbevtab.lo \
          wal.lo walker.lo wasmedge_bindings.lo where.lo wherecode.lo whereexpr.lo \
@@ -299,6 +300,12 @@ SRC = \
   $(TOP)/src/upsert.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vacuum.c \
+  $(TOP)/src/vector.c \
+  $(TOP)/src/vectorInt.h \
+  $(TOP)/src/vectordiskann.c \
+  $(TOP)/src/vectorfloat32.c \
+  $(TOP)/src/vectorfloat64.c \
+  $(TOP)/src/vectorvtab.c \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/vdbe.h \
   $(TOP)/src/vdbeapi.c \
@@ -577,6 +584,7 @@ HDR = \
    $(TOP)/src/sqliteLimit.h \
    $(TOP)/src/vdbe.h \
    $(TOP)/src/vdbeInt.h \
+   $(TOP)/src/vectorInt.h \
    $(TOP)/src/vxworks.h \
    $(TOP)/src/whereInt.h \
    sqlite_cfg.h
@@ -1102,6 +1110,21 @@ util.lo:	$(TOP)/src/util.c $(HDR)
 
 vacuum.lo:	$(TOP)/src/vacuum.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vacuum.c
+
+vector.lo:	$(TOP)/src/vector.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vector.c
+
+vectordiskann.lo:	$(TOP)/src/vectordiskann.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vectordiskann.c
+
+vectorfloat32.lo:	$(TOP)/src/vectorfloat32.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vectorfloat32.c
+
+vectorfloat64.lo:	$(TOP)/src/vectorfloat64.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vectorfloat64.c
+
+vectorvtab.lo:	$(TOP)/src/vectorvtab.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vectorvtab.c
 
 vdbe.lo:	$(TOP)/src/vdbe.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbe.c

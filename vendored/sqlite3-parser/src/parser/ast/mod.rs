@@ -179,6 +179,7 @@ pub enum Stmt {
     CreateIndex {
         unique: bool,
         if_not_exists: bool,
+        idx_type: Option<Vec<Name>>,
         idx_name: QualifiedName,
         tbl_name: Name,
         columns: Vec<SortedColumn>,
@@ -328,6 +329,7 @@ impl ToTokens for Stmt {
             Stmt::CreateIndex {
                 unique,
                 if_not_exists,
+                idx_type,
                 idx_name,
                 tbl_name,
                 columns,
@@ -342,6 +344,10 @@ impl ToTokens for Stmt {
                     s.append(TK_IF, None)?;
                     s.append(TK_NOT, None)?;
                     s.append(TK_EXISTS, None)?;
+                }
+                if let Some(idx_type) = idx_type {
+                    s.append(TK_USING, None)?;
+                    comma(idx_type, s)?;
                 }
                 idx_name.to_tokens(s)?;
                 s.append(TK_ON, None)?;

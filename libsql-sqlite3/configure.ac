@@ -698,6 +698,19 @@ else
 fi
 
 ##########
+# Do we want to support vector functions
+#
+AC_ARG_ENABLE(json, 
+AS_HELP_STRING([--disable-vector],[Disable vector functions]))
+AC_MSG_CHECKING([whether to support vector functions])
+if test "$enable_json" = "no"; then
+  AC_MSG_RESULT([no])
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_OMIT_VECTOR"
+else
+  AC_MSG_RESULT([yes])
+fi
+
+##########
 # Do we want to support WebAssembly runtime
 #
 AC_ARG_ENABLE(wasm_runtime, 

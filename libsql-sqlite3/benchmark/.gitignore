@@ -1,0 +1,5 @@
+diskanntest
+*.db
+*.db-shm
+*.db-wal
+*.sql

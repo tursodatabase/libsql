@@ -1,0 +1,94 @@
+# 2024-06-12
+#
+# Copyright 2024 the libSQL authors
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+#***********************************************************************
+# This file implements regression tests for libSQL library.  The
+# focus of this file is vector search.
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix vector
+
+do_execsql_test vector-integrity {
+  CREATE TABLE t_integrity( xv FLOAT32(3) );
+  CREATE INDEX t_integrity_idx USING diskann_cosine_ops ON t_integrity(xv);
+  INSERT INTO t_integrity(rowid,xv) VALUES(1, vector('[1,2,3]'));
+  PRAGMA integrity_check;
+} {{row 1 missing from index t_integrity_idx} {wrong # of entries in index t_integrity_idx}}
+
+do_execsql_test vector-100 {
+  CREATE TABLE t1(
+    xv FLOAT32(3)
+  );
+  CREATE INDEX t1_idx USING diskann_cosine_ops ON t1(xv);
+  INSERT INTO t1(rowid,xv) VALUES(1, vector('[1,2,3]'));
+  INSERT INTO t1(rowid,xv) VALUES(2, vector('[2,3,4]'));
+  INSERT INTO t1(rowid,xv) VALUES(3, vector('[5,6,7]'));
+} {}
+
+do_execsql_test vector-110 {
+  INSERT INTO t1(rowid,xv) VALUES(4, NULL);
+} {}
+
+do_execsql_test vector-120 {
+  DELETE FROM t1 WHERE rowid = 1;
+  DELETE FROM t1 WHERE rowid = 2;
+  DELETE FROM t1 WHERE rowid = 3;
+} {}
+
+do_execsql_test vector-130 {
+  INSERT INTO t1 (rowid) VALUES (9999);
+  UPDATE t1 SET xv = vector('[4,5,6]') WHERE rowid = 9999;
+} {}
+
+do_execsql_test vector-140 {
+  SELECT vector('[]');
+} {{}}
+
+proc error_messages {sql} {
+  set ret ""
+  set stmt [sqlite3_prepare db $sql -1 dummy]
+  sqlite3_step $stmt
+  sqlite3_finalize $stmt
+  set ret [sqlite3_errmsg db]
+}
+
+do_test vector-func {
+  set ret [list]
+  lappend ret [error_messages {SELECT vector('')}]
+  lappend ret [error_messages {SELECT vector('test')}]
+  lappend ret [error_messages {SELECT vector('[1]]')}]
+  lappend ret [error_messages {SELECT vector('[[1]')}]
+  lappend ret [error_messages {SELECT vector('[1.1.1]')}]
+  lappend ret [error_messages {SELECT vector('[1.2')}]
+  lappend ret [error_messages {SELECT vector(x'0000000000')}]
+  lappend ret [error_messages {SELECT vector(x'')}]
+} [list {*}{
+  {invalid vector: doesn't start with '['}
+  {invalid vector: doesn't start with '['}
+  {malformed vector, extra data after closing ']'}
+  {invalid number: '[1'}
+  {invalid number: '1.1.1'}
+  {malformed vector, doesn't end with ']'}
+  {invalid f32 vector: 5 % 4 != 0}
+  {invalid f32 vector: zero length}
+}]

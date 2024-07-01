@@ -399,7 +399,7 @@ ccons ::= NOT NULL onconf(R).    {sqlite3AddNotNull(pParse, R);}
 ccons ::= PRIMARY KEY sortorder(Z) onconf(R) autoinc(I).
                                  {sqlite3AddPrimaryKey(pParse,0,R,I,Z);}
 ccons ::= UNIQUE onconf(R).      {sqlite3CreateIndex(pParse,0,0,0,0,R,0,0,0,0,
-                                   SQLITE_IDXTYPE_UNIQUE);}
+                                   SQLITE_IDXTYPE_UNIQUE,0);}
 ccons ::= CHECK LP(A) expr(X) RP(B).  {sqlite3AddCheckConstraint(pParse,X,A.z,B.z);}
 ccons ::= REFERENCES nm(T) eidlist_opt(TA) refargs(R).
                                  {sqlite3CreateForeignKey(pParse,0,&T,TA,R);}
@@ -453,7 +453,7 @@ tcons ::= PRIMARY KEY LP sortlist(X) autoinc(I) RP onconf(R).
                                  {sqlite3AddPrimaryKey(pParse,X,R,I,0);}
 tcons ::= UNIQUE LP sortlist(X) RP onconf(R).
                                  {sqlite3CreateIndex(pParse,0,0,0,X,R,0,0,0,0,
-                                       SQLITE_IDXTYPE_UNIQUE);}
+                                       SQLITE_IDXTYPE_UNIQUE,0);}
 tcons ::= CHECK LP(A) expr(E) RP(B) onconf.
                                  {sqlite3AddCheckConstraint(pParse,E,A.z,B.z);}
 tcons ::= FOREIGN KEY LP eidlist(FA) RP
@@ -1448,11 +1448,15 @@ paren_exprlist(A) ::= LP exprlist(X) RP.  {A = X;}
 
 ///////////////////////////// The CREATE INDEX command ///////////////////////
 //
-cmd ::= createkw(S) uniqueflag(U) INDEX ifnotexists(NE) nm(X) dbnm(D)
+cmd ::= createkw(S) uniqueflag(U) INDEX ifnotexists(NE) nm(X) dbnm(D) indextype(T)
         ON nm(Y) LP sortlist(Z) RP where_opt(W). {
+  u8 idxType = SQLITE_IDXTYPE_APPDEF;
+  if( T.pUsing!=0 ){
+    idxType = SQLITE_IDXTYPE_VECTOR;
+  }
   sqlite3CreateIndex(pParse, &X, &D, 
                      sqlite3SrcListAppend(pParse,0,&Y,0), Z, U,
-                      &S, W, SQLITE_SO_ASC, NE, SQLITE_IDXTYPE_APPDEF);
+                      &S, W, SQLITE_SO_ASC, NE, idxType, T.pUsing);
   if( IN_RENAME_OBJECT && pParse->pNewIndex ){
     sqlite3RenameTokenMap(pParse, pParse->pNewIndex->zName, &Y);
   }
@@ -1462,6 +1466,9 @@ cmd ::= createkw(S) uniqueflag(U) INDEX ifnotexists(NE) nm(X) dbnm(D)
 uniqueflag(A) ::= UNIQUE.  {A = OE_Abort;}
 uniqueflag(A) ::= .        {A = OE_None;}
 
+%type indextype {OnOrUsing}
+indextype(T) ::= USING idlist(L). {T.pOn = 0; T.pUsing = L;}
+indextype(T) ::= .                {T.pOn = 0; T.pUsing = 0;}
 
 // The eidlist non-terminal (Expression Id List) generates an ExprList
 // from a list of identifiers.  The identifier names are in ExprList.a[].zName.

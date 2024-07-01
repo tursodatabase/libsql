@@ -1887,7 +1887,7 @@ void sqlite3AddPrimaryKey(
 #endif
   }else{
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, onError, 0,
-                           0, sortOrder, 0, SQLITE_IDXTYPE_PRIMARYKEY);
+                           0, sortOrder, 0, SQLITE_IDXTYPE_PRIMARYKEY, 0);
     pList = 0;
   }
 
@@ -2388,7 +2388,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     assert( pParse->pNewTable==pTab );
     pTab->iPKey = -1;
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
-                       SQLITE_IDXTYPE_PRIMARYKEY);
+                       SQLITE_IDXTYPE_PRIMARYKEY, 0);
     if( pParse->nErr ){
       pTab->tabFlags &= ~TF_WithoutRowid;
       return;
@@ -3933,7 +3933,8 @@ void sqlite3CreateIndex(
   Expr *pPIWhere,    /* WHERE clause for partial indices */
   int sortOrder,     /* Sort order of primary key when pList==NULL */
   int ifNotExist,    /* Omit error if index already exists */
-  u8 idxType         /* The index type */
+  u8 idxType,        /* The index type */
+  IdList *pUsing     /* Using */
 ){
   Table *pTab = 0;     /* Table to be indexed */
   Index *pIndex = 0;   /* The index to be created */
@@ -4258,6 +4259,12 @@ void sqlite3CreateIndex(
     pIndex->aSortOrder[i] = (u8)requestedSortOrder;
   }
 
+  if( idxType==SQLITE_IDXTYPE_VECTOR ){
+    if( vectorIndexCreate(pParse, pIndex, pUsing)< 0){
+      goto exit_create_index;
+    }
+  }
+
   /* Append the table key to the end of the index.  For WITHOUT ROWID
   ** tables (when pPk!=0) this will be the declared PRIMARY KEY.  For
   ** normal tables (when pPk==0) this will be the rowid.
@@ -4481,6 +4488,7 @@ void sqlite3CreateIndex(
 
   /* Clean up before exiting */
 exit_create_index:
+  if( pUsing ) sqlite3IdListDelete(db, pUsing);
   if( pIndex ) sqlite3FreeIndex(db, pIndex);
   if( pTab ){
     /* Ensure all REPLACE indexes on pTab are at the end of the pIndex list.
@@ -5563,6 +5571,7 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
   }
   if( pKey ){
     assert( sqlite3KeyInfoIsWriteable(pKey) );
+    pKey->zIndexName = pIdx->zName;
     for(i=0; i<nCol; i++){
       const char *zColl = pIdx->azColl[i];
       pKey->aColl[i] = zColl==sqlite3StrBINARY ? 0 :
