@@ -49,12 +49,13 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
+          context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}-${{ steps.get-short-sha.outputs.sha }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          file: {context}/libsql-storage-server/Dockerfile
+          file: "{context}/libsql-storage-server/Dockerfile"
 
       - name: Echo image name
         run: |
