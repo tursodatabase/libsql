@@ -690,7 +690,8 @@ void libsqlAlterAlterColumn(
   Parse *pParse,                  /* Parsing context */
   SrcList *pSrc,                  /* Table being altered.  pSrc->nSrc==1 */
   Token *pOld,                    /* Name of column being changed */
-  Token *pNew                     /* New column declaration */
+  Token *pNew,                    /* New column declaration */
+  int nNewSqlLength               /* New column declaration SQL string length (pNew.z is the start of the declaration) */
 ){
   sqlite3 *db = pParse->db;       /* Database connection */
   Table *pTab;                    /* Table being updated */
@@ -748,9 +749,7 @@ void libsqlAlterAlterColumn(
   }
   // NOTICE: this is the main difference in ALTER COLUMN compared to RENAME COLUMN,
   // we just take the whole new column declaration as it is.
-  // FIXME: the semicolon can also appear in the middle of the declaration when it's quoted,
-  // so we should check from the end.
-  pNew->n = sqlite3Strlen30(pNew->z);
+  pNew->n = nNewSqlLength;
   while (pNew->n > 0 && pNew->z[pNew->n - 1] == ';') pNew->n--;
   zNew = sqlite3DbStrNDup(db, pNew->z, pNew->n);
   if( !zNew ) goto exit_update_column;
