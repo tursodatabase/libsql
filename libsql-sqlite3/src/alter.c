@@ -1770,9 +1770,11 @@ renameColumnFunc_done:
 */
 static void alterColumnFunc(
   sqlite3_context *context,
-  int NotUsed,
+  int argc,
   sqlite3_value **argv
 ){
+  UNUSED_PARAMETER(argc);
+
   sqlite3 *db = sqlite3_context_db_handle(context);
   RenameCtx sCtx;
   const char *zSql = (const char*)sqlite3_value_text(argv[0]);
@@ -1795,7 +1797,6 @@ static void alterColumnFunc(
   sqlite3_xauth xAuth = db->xAuth;
 #endif
 
-  UNUSED_PARAMETER(NotUsed);
   if( zSql==0 ) return;
   if( zTable==0 ) return;
   if( zNew==0 ) return;
@@ -1848,9 +1849,10 @@ static void alterColumnFunc(
       }
     } else {
       rc = SQLITE_ERROR;
-      sParse.zErrMsg = sqlite3MPrintf(sParse.db, "Only ordinary tables can be altered, not ", IsView(sParse.pNewTable) ? "views" : "virtual tables");
-      goto alterColumnFunc_done;    }
-  } else if (sParse.pNewIndex) {
+      sParse.zErrMsg = sqlite3MPrintf(sParse.db, "Only ordinary tables can be altered, not %s", IsView(sParse.pNewTable) ? "views" : "virtual tables");
+      goto alterColumnFunc_done;
+    }
+  } else if( sParse.pNewIndex ){
     rc = SQLITE_ERROR;
     sParse.zErrMsg = sqlite3MPrintf(sParse.db, "Only ordinary tables can be altered, not indexes");
     goto alterColumnFunc_done;
