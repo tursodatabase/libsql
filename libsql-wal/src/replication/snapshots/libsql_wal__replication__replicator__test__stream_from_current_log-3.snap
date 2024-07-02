@@ -1,0 +1,15 @@
+---
+source: libsql-wal/src/replication/replicator.rs
+expression: frame.header()
+---
+FrameHeader {
+    page_no: U32(
+        1,
+    ),
+    size_after: U32(
+        0,
+    ),
+    frame_no: U64(
+        1,
+    ),
+}
