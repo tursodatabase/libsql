@@ -16,16 +16,6 @@
 */
 #include "sqliteInt.h"
 
-#ifdef SQLITE_ENABLE_FTS3
-# include "fts3.h"
-#endif
-#ifdef SQLITE_ENABLE_RTREE
-# include "rtree.h"
-#endif
-#if defined(SQLITE_ENABLE_ICU) || defined(SQLITE_ENABLE_ICU_COLLATIONS)
-# include "sqliteicu.h"
-#endif
-
 /*
 ** This is an extension initializer that is a no-op and always
 ** succeeds, except that it fails if the fault-simulation is set
@@ -41,6 +31,15 @@ static int sqlite3TestExtInit(sqlite3 *db){
 ** Forward declarations of external module initializer functions
 ** for modules that need them.
 */
+#ifdef SQLITE_ENABLE_FTS3
+int sqlite3Fts3Init(sqlite3*);
+#endif
+#ifdef SQLITE_ENABLE_RTREE
+int sqlite3RtreeInit(sqlite3*);
+#endif
+#if defined(SQLITE_ENABLE_ICU) || defined(SQLITE_ENABLE_ICU_COLLATIONS)
+int sqlite3IcuInit(sqlite3*);
+#endif
 #ifdef SQLITE_ENABLE_FTS5
 int sqlite3Fts5Init(sqlite3*);
 #endif
