@@ -1740,7 +1740,8 @@ cmd ::= ALTER TABLE fullname(X) RENAME kwcolumn_opt nm(Y) TO nm(Z). {
 }
 
 cmd ::= ALTER TABLE fullname(X) ALTER COLUMNKW columnname(Y) TO columnname(Z) carglist. {
-  libsqlAlterAlterColumn(pParse, X, &Y, &Z);
+  int definitionLength = (int)(pParse->sLastToken.z-Z.z) + pParse->sLastToken.n;
+  libsqlAlterAlterColumn(pParse, X, &Y, &Z, definitionLength);
 }
 
 kwcolumn_opt ::= .
