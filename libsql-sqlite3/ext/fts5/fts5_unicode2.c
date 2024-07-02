@@ -15,7 +15,7 @@
 ** DO NOT EDIT THIS MACHINE GENERATED FILE.
 */
 
-
+#include "fts5Int.h"
 #include <assert.h>
 
 
