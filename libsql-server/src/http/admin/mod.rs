@@ -408,6 +408,10 @@ where
                 return Err(LoadDumpError::DumpFileDoesntExist);
             }
 
+            if !path.is_file() {
+                return Err(LoadDumpError::NotAFile);
+            }
+
             let f = tokio::fs::File::open(path).await?;
 
             Ok(Box::new(ReaderStream::new(f)))

@@ -286,6 +286,8 @@ pub enum LoadDumpError {
     NoTxn,
     #[error("The dump should commit the transaction.")]
     NoCommit,
+    #[error("Path is not a file")]
+    NotAFile,
 }
 
 impl ResponseError for LoadDumpError {}
@@ -303,6 +305,7 @@ impl IntoResponse for &LoadDumpError {
             | UnsupportedUrlScheme(_)
             | NoTxn
             | NoCommit
+            | NotAFile
             | DumpFilePathNotAbsolute => self.format_err(StatusCode::BAD_REQUEST),
         }
     }
