@@ -264,9 +264,9 @@ static void openStatTable(
 typedef struct StatAccum StatAccum;
 typedef struct StatSample StatSample;
 struct StatSample {
-  tRowcnt *anEq;                  /* sqlite_stat4.nEq */
   tRowcnt *anDLt;                 /* sqlite_stat4.nDLt */
 #ifdef SQLITE_ENABLE_STAT4
+  tRowcnt *anEq;                  /* sqlite_stat4.nEq */
   tRowcnt *anLt;                  /* sqlite_stat4.nLt */
   union {
     i64 iRowid;                     /* Rowid in main table of the key */
@@ -424,9 +424,9 @@ static void statInit(
 
   /* Allocate the space required for the StatAccum object */
   n = sizeof(*p) 
-    + sizeof(tRowcnt)*nColUp                  /* StatAccum.anEq */
-    + sizeof(tRowcnt)*nColUp;                 /* StatAccum.anDLt */
+    + sizeof(tRowcnt)*nColUp;                    /* StatAccum.anDLt */
 #ifdef SQLITE_ENABLE_STAT4
+  n += sizeof(tRowcnt)*nColUp;                   /* StatAccum.anEq */
   if( mxSample ){
     n += sizeof(tRowcnt)*nColUp                  /* StatAccum.anLt */
       + sizeof(StatSample)*(nCol+mxSample)       /* StatAccum.aBest[], a[] */
@@ -447,9 +447,9 @@ static void statInit(
   p->nKeyCol = nKeyCol;
   p->nSkipAhead = 0;
   p->current.anDLt = (tRowcnt*)&p[1];
-  p->current.anEq = &p->current.anDLt[nColUp];
 
 #ifdef SQLITE_ENABLE_STAT4
+  p->current.anEq = &p->current.anDLt[nColUp];
   p->mxSample = p->nLimit==0 ? mxSample : 0;
   if( mxSample ){
     u8 *pSpace;                     /* Allocated space not yet assigned */
@@ -716,7 +716,9 @@ static void statPush(
 
   if( p->nRow==0 ){
     /* This is the first call to this function. Do initialization. */
+#ifdef SQLITE_ENABLE_STAT4
     for(i=0; i<p->nCol; i++) p->current.anEq[i] = 1;
+#endif
   }else{
     /* Second and subsequent calls get processed here */
 #ifdef SQLITE_ENABLE_STAT4
@@ -725,15 +727,17 @@ static void statPush(
 
     /* Update anDLt[], anLt[] and anEq[] to reflect the values that apply
     ** to the current row of the index. */
+#ifdef SQLITE_ENABLE_STAT4
     for(i=0; i<iChng; i++){
       p->current.anEq[i]++;
     }
+#endif
     for(i=iChng; i<p->nCol; i++){
       p->current.anDLt[i]++;
 #ifdef SQLITE_ENABLE_STAT4
       if( p->mxSample ) p->current.anLt[i] += p->current.anEq[i];
-#endif
       p->current.anEq[i] = 1;
+#endif
     }
   }
 
@@ -867,7 +871,9 @@ static void statGet(
       u64 iVal = (p->nRow + nDistinct - 1) / nDistinct;
       if( iVal==2 && p->nRow*10 <= nDistinct*11 ) iVal = 1;
       sqlite3_str_appendf(&sStat, " %llu", iVal);
+#ifdef SQLITE_ENABLE_STAT4
       assert( p->current.anEq[i] );
+#endif
     }
     sqlite3ResultStrAccum(context, &sStat);
   }
@@ -1555,6 +1561,16 @@ static void decodeIntArray(
 #endif
       while( z[0]!=0 && z[0]!=' ' ) z++;
       while( z[0]==' ' ) z++;
+    }
+
+    /* Set the bLowQual flag if the peak number of rows obtained
+    ** from a full equality match is so large that a full table scan
+    ** seems likely to be faster than using the index.
+    */
+    if( aLog[0] > 66              /* Index has more than 100 rows */
+     && aLog[0] <= aLog[nOut-1]   /* And only a single value seen */
+    ){
+      pIndex->bLowQual = 1;
     }
   }
 }

@@ -5294,7 +5294,7 @@ static u64 fts3ChecksumIndex(
 ** If an error occurs (e.g. an OOM or IO error), return an SQLite error 
 ** code. The final value of *pbOk is undefined in this case.
 */
-static int fts3IntegrityCheck(Fts3Table *p, int *pbOk){
+int sqlite3Fts3IntegrityCheck(Fts3Table *p, int *pbOk){
   int rc = SQLITE_OK;             /* Return code */
   u64 cksum1 = 0;                 /* Checksum based on FTS index contents */
   u64 cksum2 = 0;                 /* Checksum based on %_content contents */
@@ -5372,7 +5372,7 @@ static int fts3IntegrityCheck(Fts3Table *p, int *pbOk){
     sqlite3_finalize(pStmt);
   }
 
-  *pbOk = (cksum1==cksum2);
+  *pbOk = (rc==SQLITE_OK && cksum1==cksum2);
   return rc;
 }
 
@@ -5412,7 +5412,7 @@ static int fts3DoIntegrityCheck(
 ){
   int rc;
   int bOk = 0;
-  rc = fts3IntegrityCheck(p, &bOk);
+  rc = sqlite3Fts3IntegrityCheck(p, &bOk);
   if( rc==SQLITE_OK && bOk==0 ) rc = FTS_CORRUPT_VTAB;
   return rc;
 }

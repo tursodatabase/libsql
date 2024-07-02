@@ -1,0 +1,51 @@
+# 2023 Nov 23
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+ifcapable !fts5 { finish_test ; return }
+set ::testprefix fts5secure8
+
+proc sql_repeat {txt n} {
+  string repeat $txt $n
+}
+db func repeat sql_repeat
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x);
+
+  INSERT INTO ft(ft, rank) VALUES('pgsz', 64);
+
+  INSERT INTO ft(rowid, x) VALUES(100, 'hello world');
+  INSERT INTO ft(rowid, x) VALUES(200, 'one day');
+
+  BEGIN;
+    INSERT INTO ft(rowid, x) VALUES(45, 'one two three');
+    UPDATE ft SET x = repeat('hello world ', 500) WHERE rowid=100;
+  COMMIT
+}
+
+do_execsql_test 1.1 {
+  INSERT INTO ft(ft, rank) VALUES('secure-delete', 1);
+  DELETE FROM ft WHERE rowid=100;
+}
+
+do_execsql_test 1.2 {
+  PRAGMA integrity_check;
+} {ok}
+
+
+
+
+
+finish_test
+
+

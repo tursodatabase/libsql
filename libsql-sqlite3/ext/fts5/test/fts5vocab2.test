@@ -280,6 +280,30 @@ do_catchsql_test 5.2 {
   INSERT INTO t1 SELECT randomblob(3000) FROM v1
 } {1 {query aborted}}
 
+#-------------------------------------------------------------------------
+reset_db
+sqlite3_fts5_may_be_corrupt 1
+
+do_execsql_test 6.0 {
+  BEGIN TRANSACTION;
+    CREATE VIRTUAL TABLE t1 USING fts5(a,b unindexed,c,tokenize="porter ascii",tokendata=1);
+    REPLACE INTO t1_data VALUES(1,X'03090009');
+    REPLACE INTO t1_data VALUES(10,X'000000000103030003010101020101030101');
+    REPLACE INTO t1_data VALUES(137438953473,X'0000002e023061010202010162010203010163010204010167010601020201016801060102030101690106010204040606060808');
+    REPLACE INTO t1_data VALUES(274877906945,X'0000001f013067020802010202010168020803010203010169020804010204040909');
+    REPLACE INTO t1_data VALUES(412316860417,X'0000002e023061030202010162030203010163030204010167030601020201016803060102030101690306010204040606060808');
+  COMMIT;
+}
+
+do_execsql_test 6.1 {
+  CREATE VIRTUAL TABLE t3 USING fts5vocab('t1', 'row');
+}
+
+do_catchsql_test 6.2 {
+  SELECT * FROM t3;
+} {1 {database disk image is malformed}}
+
+sqlite3_fts5_may_be_corrupt 0
 
 finish_test
 

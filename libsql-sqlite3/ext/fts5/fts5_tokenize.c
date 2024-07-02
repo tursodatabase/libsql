@@ -229,6 +229,12 @@ static const unsigned char sqlite3Utf8Trans1[] = {
 
 #endif /* ifndef SQLITE_AMALGAMATION */
 
+#define FTS5_SKIP_UTF8(zIn) {                               \
+  if( ((unsigned char)(*(zIn++)))>=0xc0 ){                              \
+    while( (((unsigned char)*zIn) & 0xc0)==0x80 ){ zIn++; }             \
+  }                                                    \
+}
+
 typedef struct Unicode61Tokenizer Unicode61Tokenizer;
 struct Unicode61Tokenizer {
   unsigned char aTokenChar[128];  /* ASCII range token characters */
@@ -1264,6 +1270,7 @@ static int fts5PorterTokenize(
 typedef struct TrigramTokenizer TrigramTokenizer;
 struct TrigramTokenizer {
   int bFold;                      /* True to fold to lower-case */
+  int iFoldParam;                 /* Parameter to pass to Fts5UnicodeFold() */
 };
 
 /*
@@ -1290,6 +1297,7 @@ static int fts5TriCreate(
   }else{
     int i;
     pNew->bFold = 1;
+    pNew->iFoldParam = 0;
     for(i=0; rc==SQLITE_OK && i<nArg; i+=2){
       const char *zArg = azArg[i+1];
       if( 0==sqlite3_stricmp(azArg[i], "case_sensitive") ){
@@ -1298,10 +1306,21 @@ static int fts5TriCreate(
         }else{
           pNew->bFold = (zArg[0]=='0');
         }
+      }else if( 0==sqlite3_stricmp(azArg[i], "remove_diacritics") ){
+        if( (zArg[0]!='0' && zArg[0]!='1' && zArg[0]!='2') || zArg[1] ){
+          rc = SQLITE_ERROR;
+        }else{
+          pNew->iFoldParam = (zArg[0]!='0') ? 2 : 0;
+        }
       }else{
         rc = SQLITE_ERROR;
       }
     }
+
+    if( pNew->iFoldParam!=0 && pNew->bFold==0 ){
+      rc = SQLITE_ERROR;
+    }
+
     if( rc!=SQLITE_OK ){
       fts5TriDelete((Fts5Tokenizer*)pNew);
       pNew = 0;
@@ -1324,40 +1343,62 @@ static int fts5TriTokenize(
   TrigramTokenizer *p = (TrigramTokenizer*)pTok;
   int rc = SQLITE_OK;
   char aBuf[32];
+  char *zOut = aBuf;
+  int ii;
   const unsigned char *zIn = (const unsigned char*)pText;
   const unsigned char *zEof = &zIn[nText];
   u32 iCode;
+  int aStart[3];                  /* Input offset of each character in aBuf[] */
 
   UNUSED_PARAM(unusedFlags);
-  while( 1 ){
-    char *zOut = aBuf;
-    int iStart = zIn - (const unsigned char*)pText;
-    const unsigned char *zNext; 
 
-    READ_UTF8(zIn, zEof, iCode);
-    if( iCode==0 ) break;
-    zNext = zIn;
-    if( zIn<zEof ){
-      if( p->bFold ) iCode = sqlite3Fts5UnicodeFold(iCode, 0);
-      WRITE_UTF8(zOut, iCode);
+  /* Populate aBuf[] with the characters for the first trigram. */
+  for(ii=0; ii<3; ii++){
+    do {
+      aStart[ii] = zIn - (const unsigned char*)pText;
+      READ_UTF8(zIn, zEof, iCode);
+      if( iCode==0 ) return SQLITE_OK;
+      if( p->bFold ) iCode = sqlite3Fts5UnicodeFold(iCode, p->iFoldParam);
+    }while( iCode==0 );
+    WRITE_UTF8(zOut, iCode);
+  }
+
+  /* At the start of each iteration of this loop:
+  **
+  **  aBuf:      Contains 3 characters. The 3 characters of the next trigram.
+  **  zOut:      Points to the byte following the last character in aBuf.
+  **  aStart[3]: Contains the byte offset in the input text corresponding
+  **             to the start of each of the three characters in the buffer.
+  */
+  assert( zIn<=zEof );
+  while( 1 ){
+    int iNext;                    /* Start of character following current tri */
+    const char *z1;
+
+    /* Read characters from the input up until the first non-diacritic */
+    do {
+      iNext = zIn - (const unsigned char*)pText;
       READ_UTF8(zIn, zEof, iCode);
       if( iCode==0 ) break;
-    }else{
-      break;
-    }
-    if( zIn<zEof ){
-      if( p->bFold ) iCode = sqlite3Fts5UnicodeFold(iCode, 0);
-      WRITE_UTF8(zOut, iCode);
-      READ_UTF8(zIn, zEof, iCode);
-      if( iCode==0 ) break;
-      if( p->bFold ) iCode = sqlite3Fts5UnicodeFold(iCode, 0);
-      WRITE_UTF8(zOut, iCode);
-    }else{
-      break;
-    }
-    rc = xToken(pCtx, 0, aBuf, zOut-aBuf, iStart, iStart + zOut-aBuf);
-    if( rc!=SQLITE_OK ) break;
-    zIn = zNext;
+      if( p->bFold ) iCode = sqlite3Fts5UnicodeFold(iCode, p->iFoldParam);
+    }while( iCode==0 );
+
+    /* Pass the current trigram back to fts5 */
+    rc = xToken(pCtx, 0, aBuf, zOut-aBuf, aStart[0], iNext);
+    if( iCode==0 || rc!=SQLITE_OK ) break;
+
+    /* Remove the first character from buffer aBuf[]. Append the character
+    ** with codepoint iCode.  */
+    z1 = aBuf;
+    FTS5_SKIP_UTF8(z1);
+    memmove(aBuf, z1, zOut - z1);
+    zOut -= (z1 - aBuf);
+    WRITE_UTF8(zOut, iCode);
+
+    /* Update the aStart[] array */
+    aStart[0] = aStart[1];
+    aStart[1] = aStart[2];
+    aStart[2] = iNext;
   }
 
   return rc;
@@ -1380,7 +1421,9 @@ int sqlite3Fts5TokenizerPattern(
 ){
   if( xCreate==fts5TriCreate ){
     TrigramTokenizer *p = (TrigramTokenizer*)pTok;
-    return p->bFold ? FTS5_PATTERN_LIKE : FTS5_PATTERN_GLOB;
+    if( p->iFoldParam==0 ){
+      return p->bFold ? FTS5_PATTERN_LIKE : FTS5_PATTERN_GLOB;
+    }
   }
   return FTS5_PATTERN_NONE;
 }

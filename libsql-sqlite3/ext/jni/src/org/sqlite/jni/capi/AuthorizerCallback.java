@@ -20,7 +20,8 @@ import org.sqlite.jni.annotation.*;
 public interface AuthorizerCallback extends CallbackProxy {
   /**
      Must function as described for the C-level
-     sqlite3_set_authorizer() callback.
+     sqlite3_set_authorizer() callback. If it throws, the error is
+     converted to a db-level error and the exception is suppressed.
   */
   int call(int opId, @Nullable String s1, @Nullable String s2,
            @Nullable String s3, @Nullable String s4);

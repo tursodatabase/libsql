@@ -223,10 +223,12 @@ proc main {data} {
     Fts5ExtensionApi {
       set struct [get_fts5_struct $data "^struct Fts5ExtensionApi" "^.;"]
       set map [list]
+      set lKey [list]
       foreach {k v} [get_struct_members $data] {
         if {[string match x* $k]==0} continue
-        lappend map $k "<a href=#$k>$k</a>"
+        lappend lKey $k
       }
+      foreach k [lsort -decr $lKey] { lappend map $k "<a href=#$k>$k</a>" }
       output [string map $map $struct]
     }
 

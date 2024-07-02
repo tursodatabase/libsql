@@ -22,6 +22,7 @@ ifcapable !fts5 {
 }
 
 foreach_detail_mode $::testprefix {
+foreach_tokenizer_mode $::testprefix {
 
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a, b, c);
@@ -44,7 +45,7 @@ do_execsql_test 1.1 {
 #
 
 do_execsql_test 2.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x, y, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t1 USING fts5(x, y, detail=%DETAIL% %TOKENIZER%);
 }
 do_execsql_test 2.1 {
   INSERT INTO t1 VALUES('a b c', 'd e f');
@@ -73,8 +74,9 @@ do_execsql_test 2.4 {
 #-------------------------------------------------------------------------
 #
 reset_db
+sqlite3_fts5_register_origintext db
 do_execsql_test 3.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x,y, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t1 USING fts5(x,y, detail=%DETAIL% %TOKENIZER%);
 }
 foreach {i x y} {
    1  {g f d b f} {h h e i a}
@@ -97,8 +99,9 @@ foreach {i x y} {
 #-------------------------------------------------------------------------
 #
 reset_db
+sqlite3_fts5_register_origintext db
 do_execsql_test 4.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x,y, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t1 USING fts5(x,y, detail=%DETAIL% %TOKENIZER%);
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 foreach {i x y} {
@@ -121,8 +124,9 @@ foreach {i x y} {
 #-------------------------------------------------------------------------
 #
 reset_db
+sqlite3_fts5_register_origintext db
 do_execsql_test 5.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x,y, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t1 USING fts5(x,y, detail=%DETAIL% %TOKENIZER%);
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 foreach {i x y} {
@@ -145,8 +149,9 @@ foreach {i x y} {
 #-------------------------------------------------------------------------
 #
 reset_db
+sqlite3_fts5_register_origintext db
 do_execsql_test 6.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x,y, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t1 USING fts5(x,y, detail=%DETAIL% %TOKENIZER%);
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 
@@ -181,6 +186,7 @@ do_execsql_test 6.6 {
 #-------------------------------------------------------------------------
 #
 reset_db
+sqlite3_fts5_register_origintext db
 expr srand(0)
 do_execsql_test 7.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x,y,z);
@@ -222,6 +228,7 @@ for {set i 1} {$i <= 10} {incr i} {
 #-------------------------------------------------------------------------
 #
 reset_db
+sqlite3_fts5_register_origintext db
 do_execsql_test 8.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x, prefix="1,2,3");
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
@@ -236,6 +243,7 @@ do_execsql_test 8.1 {
 #-------------------------------------------------------------------------
 #
 reset_db
+sqlite3_fts5_register_origintext db
 
 expr srand(0)
 
@@ -280,8 +288,9 @@ for {set i 1} {$i <= 10} {incr i} {
 #-------------------------------------------------------------------------
 #
 reset_db
+sqlite3_fts5_register_origintext db
 do_execsql_test 10.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x,y, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t1 USING fts5(x,y, detail=%DETAIL% %TOKENIZER%);
 }
 set d10 {
    1  {g f d b f} {h h e i a}
@@ -314,19 +323,19 @@ do_execsql_test 10.4.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
 #-------------------------------------------------------------------------
 #
 do_catchsql_test 11.1 {
-  CREATE VIRTUAL TABLE t2 USING fts5(a, b, c, rank, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t2 USING fts5(a, b, c, rank, detail=%DETAIL% %TOKENIZER%);
 } {1 {reserved fts5 column name: rank}}
 do_catchsql_test 11.2 {
-  CREATE VIRTUAL TABLE rank USING fts5(a, b, c, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE rank USING fts5(a, b, c, detail=%DETAIL% %TOKENIZER%);
 } {1 {reserved fts5 table name: rank}}
 do_catchsql_test 11.3 {
-  CREATE VIRTUAL TABLE t2 USING fts5(a, b, c, rowid, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t2 USING fts5(a, b, c, rowid, detail=%DETAIL% %TOKENIZER%);
 } {1 {reserved fts5 column name: rowid}}
 
 #-------------------------------------------------------------------------
 #
 do_execsql_test 12.1 {
-  CREATE VIRTUAL TABLE t2 USING fts5(x,y, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t2 USING fts5(x,y, detail=%DETAIL% %TOKENIZER%);
 } {}
 
 do_catchsql_test 12.2 {
@@ -341,8 +350,9 @@ do_test 12.3 {
 #-------------------------------------------------------------------------
 #
 reset_db
+sqlite3_fts5_register_origintext db
 do_execsql_test 13.1 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t1 USING fts5(x, detail=%DETAIL% %TOKENIZER%);
   INSERT INTO t1(rowid, x) VALUES(1, 'o n e'), (2, 't w o');
 } {}
 
@@ -365,8 +375,9 @@ do_execsql_test 13.6 {
 #-------------------------------------------------------------------------
 #
 reset_db
+sqlite3_fts5_register_origintext db
 do_execsql_test 14.1 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x, y, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t1 USING fts5(x, y, detail=%DETAIL% %TOKENIZER%);
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
   WITH d(x,y) AS (
     SELECT NULL, 'xyz xyz xyz xyz xyz xyz'
@@ -449,8 +460,9 @@ do_catchsql_test 16.2 {
 #-------------------------------------------------------------------------
 #
 reset_db
+sqlite3_fts5_register_origintext db
 do_execsql_test 17.1 {
-  CREATE VIRTUAL TABLE b2 USING fts5(x, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE b2 USING fts5(x, detail=%DETAIL% %TOKENIZER%);
   INSERT INTO b2 VALUES('a');
   INSERT INTO b2 VALUES('b');
   INSERT INTO b2 VALUES('c');
@@ -466,8 +478,9 @@ do_test 17.2 {
 
 if {[string match n* %DETAIL%]==0} {
   reset_db
+  sqlite3_fts5_register_origintext db
   do_execsql_test 17.3 {
-    CREATE VIRTUAL TABLE c2 USING fts5(x, y, detail=%DETAIL%);
+    CREATE VIRTUAL TABLE c2 USING fts5(x, y, detail=%DETAIL% %TOKENIZER%);
     INSERT INTO c2 VALUES('x x x', 'x x x');
     SELECT rowid FROM c2 WHERE c2 MATCH 'y:x';
   } {1}
@@ -476,8 +489,9 @@ if {[string match n* %DETAIL%]==0} {
 #-------------------------------------------------------------------------
 #
 reset_db
+sqlite3_fts5_register_origintext db
 do_execsql_test 17.1 {
-  CREATE VIRTUAL TABLE uio USING fts5(ttt, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE uio USING fts5(ttt, detail=%DETAIL% %TOKENIZER%);
   INSERT INTO uio VALUES(NULL);
   INSERT INTO uio SELECT NULL FROM uio;
   INSERT INTO uio SELECT NULL FROM uio;
@@ -524,8 +538,8 @@ do_execsql_test 17.9 {
 #--------------------------------------------------------------------
 #
 do_execsql_test 18.1 {
-  CREATE VIRTUAL TABLE t1 USING fts5(a, b, detail=%DETAIL%);
-  CREATE VIRTUAL TABLE t2 USING fts5(c, d, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, detail=%DETAIL% %TOKENIZER%);
+  CREATE VIRTUAL TABLE t2 USING fts5(c, d, detail=%DETAIL% %TOKENIZER%);
   INSERT INTO t1 VALUES('abc*', NULL);
   INSERT INTO t2 VALUES(1, 'abcdefg');
 }
@@ -540,8 +554,9 @@ do_execsql_test 18.3 {
 # fts5 table in the temp schema.
 #
 reset_db
+sqlite3_fts5_register_origintext db
 do_execsql_test 19.0 {
-  CREATE VIRTUAL TABLE temp.t1 USING fts5(x, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE temp.t1 USING fts5(x, detail=%DETAIL% %TOKENIZER%);
   INSERT INTO t1 VALUES('x y z');
   INSERT INTO t1 VALUES('w x 1');
   SELECT rowid FROM t1 WHERE t1 MATCH 'x';
@@ -551,8 +566,9 @@ do_execsql_test 19.0 {
 # Test that 6 and 7 byte varints can be read.
 #
 reset_db
+sqlite3_fts5_register_origintext db
 do_execsql_test 20.0 {
-  CREATE VIRTUAL TABLE temp.tmp USING fts5(x, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE temp.tmp USING fts5(x, detail=%DETAIL% %TOKENIZER%);
 }
 set ::ids [list \
   0 [expr 1<<36] [expr 2<<36] [expr 1<<43] [expr 2<<43]
@@ -570,7 +586,7 @@ do_test 20.1 {
 #
 do_execsql_test 21.0 {
   CREATE TEMP TABLE t8(a, b);
-  CREATE VIRTUAL TABLE ft USING fts5(x, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE ft USING fts5(x, detail=%DETAIL% %TOKENIZER%);
 }
 
 do_execsql_test 21.1 {
@@ -581,7 +597,7 @@ do_execsql_test 21.1 {
 }
 
 do_execsql_test 22.0 {
-  CREATE VIRTUAL TABLE t9 USING fts5(x, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t9 USING fts5(x, detail=%DETAIL% %TOKENIZER%);
   INSERT INTO t9(rowid, x) VALUES(2, 'bbb');
   BEGIN;
     INSERT INTO t9(rowid, x) VALUES(1, 'aaa');
@@ -596,7 +612,7 @@ do_execsql_test 22.1 {
 
 #-------------------------------------------------------------------------
 do_execsql_test 23.0 {
-  CREATE VIRTUAL TABLE t10 USING fts5(x, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t10 USING fts5(x, detail=%DETAIL% %TOKENIZER%);
   CREATE TABLE t11(x);
 }
 do_execsql_test 23.1 {
@@ -608,7 +624,7 @@ do_execsql_test 23.2 {
 
 #-------------------------------------------------------------------------
 do_execsql_test 24.0 {
-  CREATE VIRTUAL TABLE t12 USING fts5(x, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t12 USING fts5(x, detail=%DETAIL% %TOKENIZER%);
   INSERT INTO t12 VALUES('aaaa');
 }
 do_execsql_test 24.1 {
@@ -617,6 +633,9 @@ do_execsql_test 24.1 {
     SELECT * FROM t12('aaaa');
     INSERT INTO t12 VALUES('aaaa');
   END;
+}
+execsql_pp {
+  SELECT rowid, hex(block) FROM t12_data
 }
 do_execsql_test 24.2 {
   INSERT INTO t12(t12) VALUES('integrity-check');
@@ -627,7 +646,7 @@ do_execsql_test 24.3 {
 
 #-------------------------------------------------------------------------
 do_execsql_test 25.0 {
-  CREATE VIRTUAL TABLE t13 USING fts5(x, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t13 USING fts5(x, detail=%DETAIL% %TOKENIZER%);
 }
 do_execsql_test 25.1 {
   BEGIN;
@@ -638,6 +657,7 @@ SELECT * FROM t13('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
 }
 
 
+}
 }
 
 expand_all_sql db

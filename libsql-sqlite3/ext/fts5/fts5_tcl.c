@@ -244,6 +244,9 @@ static int SQLITE_TCLAPI xF5tApi(
     { "xGetAuxdataInt",    1, "CLEAR" },              /* 15 */
     { "xPhraseForeach",    4, "IPHRASE COLVAR OFFVAR SCRIPT" }, /* 16 */
     { "xPhraseColumnForeach", 3, "IPHRASE COLVAR SCRIPT" }, /* 17 */
+
+    { "xQueryToken",       2, "IPHRASE ITERM" },      /* 18 */
+    { "xInstToken",        2, "IDX ITERM" },          /* 19 */
     { 0, 0, 0}
   };
 
@@ -495,6 +498,38 @@ static int SQLITE_TCLAPI xF5tApi(
           if( rc==TCL_BREAK ) rc = TCL_OK;
           break;
         }
+      }
+
+      break;
+    }
+
+    CASE(18, "xQueryToken") {
+      const char *pTerm = 0;
+      int nTerm = 0;
+      int iPhrase = 0;
+      int iTerm = 0;
+
+      if( Tcl_GetIntFromObj(interp, objv[2], &iPhrase) ) return TCL_ERROR;
+      if( Tcl_GetIntFromObj(interp, objv[3], &iTerm) ) return TCL_ERROR;
+      rc = p->pApi->xQueryToken(p->pFts, iPhrase, iTerm, &pTerm, &nTerm);
+      if( rc==SQLITE_OK ){
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(pTerm, nTerm));
+      }
+
+      break;
+    }
+
+    CASE(19, "xInstToken") {
+      const char *pTerm = 0;
+      int nTerm = 0;
+      int iIdx = 0;
+      int iTerm = 0;
+
+      if( Tcl_GetIntFromObj(interp, objv[2], &iIdx) ) return TCL_ERROR;
+      if( Tcl_GetIntFromObj(interp, objv[3], &iTerm) ) return TCL_ERROR;
+      rc = p->pApi->xInstToken(p->pFts, iIdx, iTerm, &pTerm, &nTerm);
+      if( rc==SQLITE_OK ){
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(pTerm, nTerm));
       }
 
       break;
@@ -1117,6 +1152,176 @@ static int SQLITE_TCLAPI f5tRegisterTok(
   return TCL_OK;
 }
 
+typedef struct OriginTextCtx OriginTextCtx;
+struct OriginTextCtx {
+  sqlite3 *db;
+  fts5_api *pApi;
+};
+
+typedef struct OriginTextTokenizer OriginTextTokenizer;
+struct OriginTextTokenizer {
+  Fts5Tokenizer *pTok;            /* Underlying tokenizer object */
+  fts5_tokenizer tokapi;          /* API implementation for pTok */
+};
+
+/*
+** Delete the OriginTextCtx object indicated by the only argument.
+*/
+static void f5tOrigintextTokenizerDelete(void *pCtx){
+  OriginTextCtx *p = (OriginTextCtx*)pCtx;
+  ckfree(p);
+}
+
+static int f5tOrigintextCreate(
+  void *pCtx, 
+  const char **azArg, 
+  int nArg, 
+  Fts5Tokenizer **ppOut
+){
+  OriginTextCtx *p = (OriginTextCtx*)pCtx;
+  OriginTextTokenizer *pTok = 0;
+  void *pTokCtx = 0;
+  int rc = SQLITE_OK;
+
+  pTok = (OriginTextTokenizer*)sqlite3_malloc(sizeof(OriginTextTokenizer));
+  if( pTok==0 ){
+    rc = SQLITE_NOMEM;
+  }else if( nArg<1 ){
+    rc = SQLITE_ERROR;
+  }else{
+    /* Locate the underlying tokenizer */
+    rc = p->pApi->xFindTokenizer(p->pApi, azArg[0], &pTokCtx, &pTok->tokapi);
+  }
+
+  /* Create the new tokenizer instance */
+  if( rc==SQLITE_OK ){
+    rc = pTok->tokapi.xCreate(pTokCtx, &azArg[1], nArg-1, &pTok->pTok);
+  }
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(pTok);
+    pTok = 0;
+  }
+  *ppOut = (Fts5Tokenizer*)pTok;
+  return rc;
+}
+
+static void f5tOrigintextDelete(Fts5Tokenizer *pTokenizer){
+  OriginTextTokenizer *p = (OriginTextTokenizer*)pTokenizer;
+  if( p->pTok ){
+    p->tokapi.xDelete(p->pTok);
+  }
+  sqlite3_free(p);
+}
+
+typedef struct OriginTextCb OriginTextCb;
+struct OriginTextCb {
+  void *pCtx;
+  const char *pText; 
+  int nText;
+  int (*xToken)(void *, int, const char *, int, int, int);
+
+  char *aBuf;                     /* Buffer to use */
+  int nBuf;                       /* Allocated size of aBuf[] */
+};
+
+static int xOriginToken(
+  void *pCtx,                     /* Copy of 2nd argument to xTokenize() */
+  int tflags,                     /* Mask of FTS5_TOKEN_* flags */
+  const char *pToken,             /* Pointer to buffer containing token */
+  int nToken,                     /* Size of token in bytes */
+  int iStart,                     /* Byte offset of token within input text */
+  int iEnd                        /* Byte offset of end of token within input */
+){
+  OriginTextCb *p = (OriginTextCb*)pCtx;
+  int ret = 0;
+
+  if( nToken==(iEnd-iStart) && 0==memcmp(pToken, &p->pText[iStart], nToken) ){
+    /* Token exactly matches document text. Pass it through as is. */
+    ret = p->xToken(p->pCtx, tflags, pToken, nToken, iStart, iEnd);
+  }else{
+    int nReq = nToken + 1 + (iEnd-iStart);
+    if( nReq>p->nBuf ){
+      sqlite3_free(p->aBuf);
+      p->aBuf = sqlite3_malloc(nReq*2);
+      if( p->aBuf==0 ) return SQLITE_NOMEM;
+      p->nBuf = nReq*2;
+    }
+
+    memcpy(p->aBuf, pToken, nToken);
+    p->aBuf[nToken] = '\0';
+    memcpy(&p->aBuf[nToken+1], &p->pText[iStart], iEnd-iStart);
+    ret = p->xToken(p->pCtx, tflags, p->aBuf, nReq, iStart, iEnd);
+  }
+
+  return ret;
+}
+
+
+static int f5tOrigintextTokenize(
+  Fts5Tokenizer *pTokenizer, 
+  void *pCtx,
+  int flags,                      /* Mask of FTS5_TOKENIZE_* flags */
+  const char *pText, int nText, 
+  int (*xToken)(void *, int, const char *, int, int, int)
+){
+  OriginTextTokenizer *p = (OriginTextTokenizer*)pTokenizer;
+  OriginTextCb cb;
+  int ret;
+
+  memset(&cb, 0, sizeof(cb));
+  cb.pCtx = pCtx;
+  cb.pText = pText;
+  cb.nText = nText;
+  cb.xToken = xToken;
+
+  ret = p->tokapi.xTokenize(p->pTok,(void*)&cb,flags,pText,nText,xOriginToken);
+  sqlite3_free(cb.aBuf);
+  return ret;
+}
+
+/*
+**      sqlite3_fts5_register_origintext DB
+**
+** Description...
+*/
+static int SQLITE_TCLAPI f5tRegisterOriginText(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db = 0;
+  fts5_api *pApi = 0;
+  int rc;
+  fts5_tokenizer tok = {0, 0, 0};
+  OriginTextCtx *pCtx = 0;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+  if( f5tDbAndApi(interp, objv[1], &db, &pApi) ) return TCL_ERROR;
+
+  pCtx = (OriginTextCtx*)ckalloc(sizeof(OriginTextCtx));
+  pCtx->db = db;
+  pCtx->pApi = pApi;
+
+  tok.xCreate = f5tOrigintextCreate;
+  tok.xDelete = f5tOrigintextDelete;
+  tok.xTokenize = f5tOrigintextTokenize;
+  rc = pApi->xCreateTokenizer(
+      pApi, "origintext", (void*)pCtx, &tok, f5tOrigintextTokenizerDelete
+  );
+
+  Tcl_ResetResult(interp);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
 /*
 ** Entry point.
 */
@@ -1133,7 +1338,8 @@ int Fts5tcl_Init(Tcl_Interp *interp){
     { "sqlite3_fts5_may_be_corrupt",     f5tMayBeCorrupt, 0 },
     { "sqlite3_fts5_token_hash",         f5tTokenHash, 0 },
     { "sqlite3_fts5_register_matchinfo", f5tRegisterMatchinfo, 0 },
-    { "sqlite3_fts5_register_fts5tokenize", f5tRegisterTok, 0 }
+    { "sqlite3_fts5_register_fts5tokenize", f5tRegisterTok, 0 },
+    { "sqlite3_fts5_register_origintext",f5tRegisterOriginText, 0 }
   };
   int i;
   F5tTokenizerContext *pContext;

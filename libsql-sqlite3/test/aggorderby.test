@@ -118,5 +118,45 @@ do_execsql_test aggorderby-8.2 {
   SELECT sum(DISTINCT x ORDER BY y) FROM c;
 } 6
 
+# Subtype information is transfered through the sorter for aggregates
+# that make use of subtype info.
+#
+do_execsql_test aggorderby-9.0 {
+  WITH c(x,y) AS (VALUES
+    ('{a:3}', 3),
+    ('[1,1]', 1),
+    ('[4,4]', 4),
+    ('{x:2}', 2))
+  SELECT json_group_array(json(x) ORDER BY y) FROM c;
+} {{[[1,1],{"x":2},{"a":3},[4,4]]}}
+do_execsql_test aggorderby-9.1 {
+  WITH c(x,y) AS (VALUES
+    ('[4,4]', 4),
+    ('{a:3}', 3),
+    ('[4,4]', 4),
+    ('[1,1]', 1),
+    ('[4,4]', 4),
+    ('{x:2}', 2))
+  SELECT json_group_array(DISTINCT json(x) ORDER BY y) FROM c;
+} {{[[1,1],{"x":2},{"a":3},[4,4]]}}
+do_execsql_test aggorderby-9.2 {
+  WITH c(x,y) AS (VALUES
+    ('{a:3}', 3),
+    ('[1,1]', 1),
+    ('[4,4]', 4),
+    ('{x:2}', 2))
+  SELECT json_group_array(json(x) ORDER BY json(x)) FROM c;
+} {{[[1,1],[4,4],{"a":3},{"x":2}]}}
+do_execsql_test aggorderby-9.3 {
+  WITH c(x,y) AS (VALUES
+    ('[4,4]', 4),
+    ('{a:3}', 3),
+    ('[4,4]', 4),
+    ('[1,1]', 1),
+    ('[4,4]', 4),
+    ('{x:2}', 2))
+  SELECT json_group_array(DISTINCT json(x) ORDER BY json(x)) FROM c;
+} {{[[1,1],[4,4],{"a":3},{"x":2}]}}
+
 
 finish_test

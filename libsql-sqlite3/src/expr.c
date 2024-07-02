@@ -1223,9 +1223,7 @@ void sqlite3ExprAddFunctionOrderBy(
   assert( ExprUseXList(pExpr) );
   if( pExpr->x.pList==0 || NEVER(pExpr->x.pList->nExpr==0) ){
     /* Ignore ORDER BY on zero-argument aggregates */
-    sqlite3ParserAddCleanup(pParse,
-        (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
-        pOrderBy);
+    sqlite3ParserAddCleanup(pParse, sqlite3ExprListDeleteGeneric, pOrderBy);
     return;
   }
   if( IsWindowFunc(pExpr) ){
@@ -1406,6 +1404,9 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
 void sqlite3ExprDelete(sqlite3 *db, Expr *p){
   if( p ) sqlite3ExprDeleteNN(db, p);
 }
+void sqlite3ExprDeleteGeneric(sqlite3 *db, void *p){
+  if( ALWAYS(p) ) sqlite3ExprDeleteNN(db, (Expr*)p);
+}
 
 /*
 ** Clear both elements of an OnOrUsing object
@@ -1431,9 +1432,7 @@ void sqlite3ClearOnOrUsing(sqlite3 *db, OnOrUsing *p){
 ** pExpr to the pParse->pConstExpr list with a register number of 0.
 */
 void sqlite3ExprDeferredDelete(Parse *pParse, Expr *pExpr){
-  sqlite3ParserAddCleanup(pParse,
-    (void(*)(sqlite3*,void*))sqlite3ExprDelete,
-    pExpr);
+  sqlite3ParserAddCleanup(pParse, sqlite3ExprDeleteGeneric, pExpr);
 }
 
 /* Invoke sqlite3RenameExprUnmap() and sqlite3ExprDelete() on the
@@ -2239,6 +2238,9 @@ static SQLITE_NOINLINE void exprListDeleteNN(sqlite3 *db, ExprList *pList){
 void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
   if( pList ) exprListDeleteNN(db, pList);
 }
+void sqlite3ExprListDeleteGeneric(sqlite3 *db, void *pList){
+  if( ALWAYS(pList) ) exprListDeleteNN(db, (ExprList*)pList);
+}
 
 /*
 ** Return the bitwise-OR of all Expr.flags fields in the given
@@ -2738,9 +2740,10 @@ int sqlite3ExprCanBeNull(const Expr *p){
     case TK_COLUMN:
       assert( ExprUseYTab(p) );
       return ExprHasProperty(p, EP_CanBeNull) ||
-             p->y.pTab==0 ||  /* Reference to column of index on expression */
+             NEVER(p->y.pTab==0) ||  /* Reference to column of index on expr */
              (p->iColumn>=0
               && p->y.pTab->aCol!=0 /* Possible due to prior error */
+              && ALWAYS(p->iColumn<p->y.pTab->nCol)
               && p->y.pTab->aCol[p->iColumn].notNull==0);
     default:
       return 1;
@@ -5322,8 +5325,10 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
   inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
   if( inReg!=target ){
     u8 op;
-    if( ALWAYS(pExpr)
-     && (ExprHasProperty(pExpr,EP_Subquery) || pExpr->op==TK_REGISTER)
+    Expr *pX = sqlite3ExprSkipCollateAndLikely(pExpr);
+    testcase( pX!=pExpr );
+    if( ALWAYS(pX)
+     && (ExprHasProperty(pX,EP_Subquery) || pX->op==TK_REGISTER)
     ){
       op = OP_Copy;
     }else{
@@ -6043,8 +6048,8 @@ int sqlite3ExprListCompare(const ExprList *pA, const ExprList *pB, int iTab){
 */
 int sqlite3ExprCompareSkip(Expr *pA,Expr *pB, int iTab){
   return sqlite3ExprCompare(0,
-             sqlite3ExprSkipCollateAndLikely(pA),
-             sqlite3ExprSkipCollateAndLikely(pB),
+             sqlite3ExprSkipCollate(pA),
+             sqlite3ExprSkipCollate(pB),
              iTab);
 }
 
@@ -6769,13 +6774,14 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
     case TK_AGG_FUNCTION: {
       if( (pNC->ncFlags & NC_InAggFunc)==0
        && pWalker->walkerDepth==pExpr->op2
+       && pExpr->pAggInfo==0
       ){
         /* Check to see if pExpr is a duplicate of another aggregate
         ** function that is already in the pAggInfo structure
         */
         struct AggInfo_func *pItem = pAggInfo->aFunc;
         for(i=0; i<pAggInfo->nFunc; i++, pItem++){
-          if( pItem->pFExpr==pExpr ) break;
+          if( NEVER(pItem->pFExpr==pExpr) ) break;
           if( sqlite3ExprCompare(0, pItem->pFExpr, pExpr, -1)==0 ){
             break;
           }
@@ -6818,6 +6824,8 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
               }else{
                 pItem->bOBPayload = 1;
               }
+              pItem->bUseSubtype =
+                    (pItem->pFunc->funcFlags & SQLITE_SUBTYPE)!=0;
             }else{
               pItem->iOBTab = -1;
             }

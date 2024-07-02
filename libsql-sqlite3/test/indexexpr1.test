@@ -616,4 +616,18 @@ do_execsql_test indexexpr1-2200 {
          ) v ON v.type = 0 AND v.tag = u.tag;
 } {7 100 8 101}
 
+# 2023-11-08 Forum post https://sqlite.org/forum/forumpost/68d284c86b082c3e
+#
+# Functions that return subtypes and that are indexed cannot be used to
+# cover function calls from the main table, since the indexed value does
+# not know the subtype.
+#
+reset_db
+do_execsql_test indexexpr1-2300 {
+  CREATE TABLE t1(x INT, y TEXT);
+  INSERT INTO t1(x,y) VALUES(1,'{b:5}');
+  CREATE INDEX t1j ON t1(json(y));
+  SELECT json_insert('{}', '$.a', json(y)) FROM t1;
+} {{{"a":{"b":5}}}}
+
 finish_test

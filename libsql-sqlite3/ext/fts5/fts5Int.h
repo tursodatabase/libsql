@@ -196,6 +196,7 @@ struct Fts5Config {
   char *zContent;                 /* content table */ 
   char *zContentRowid;            /* "content_rowid=" option value */ 
   int bColumnsize;                /* "columnsize=" option value (dflt==1) */
+  int bTokendata;                 /* "tokendata=" option value (dflt==0) */
   int eDetail;                    /* FTS5_DETAIL_XXX value */
   char *zContentExprlist;
   Fts5Tokenizer *pTok;
@@ -384,17 +385,19 @@ struct Fts5IndexIter {
 /*
 ** Values used as part of the flags argument passed to IndexQuery().
 */
-#define FTS5INDEX_QUERY_PREFIX     0x0001   /* Prefix query */
-#define FTS5INDEX_QUERY_DESC       0x0002   /* Docs in descending rowid order */
-#define FTS5INDEX_QUERY_TEST_NOIDX 0x0004   /* Do not use prefix index */
-#define FTS5INDEX_QUERY_SCAN       0x0008   /* Scan query (fts5vocab) */
+#define FTS5INDEX_QUERY_PREFIX      0x0001  /* Prefix query */
+#define FTS5INDEX_QUERY_DESC        0x0002  /* Docs in descending rowid order */
+#define FTS5INDEX_QUERY_TEST_NOIDX  0x0004  /* Do not use prefix index */
+#define FTS5INDEX_QUERY_SCAN        0x0008  /* Scan query (fts5vocab) */
 
 /* The following are used internally by the fts5_index.c module. They are
 ** defined here only to make it easier to avoid clashes with the flags
 ** above. */
-#define FTS5INDEX_QUERY_SKIPEMPTY  0x0010
-#define FTS5INDEX_QUERY_NOOUTPUT   0x0020
-#define FTS5INDEX_QUERY_SKIPHASH   0x0040
+#define FTS5INDEX_QUERY_SKIPEMPTY   0x0010
+#define FTS5INDEX_QUERY_NOOUTPUT    0x0020
+#define FTS5INDEX_QUERY_SKIPHASH    0x0040
+#define FTS5INDEX_QUERY_NOTOKENDATA 0x0080
+#define FTS5INDEX_QUERY_SCANONETERM 0x0100
 
 /*
 ** Create/destroy an Fts5Index object.
@@ -463,6 +466,10 @@ void *sqlite3Fts5StructureRef(Fts5Index*);
 void sqlite3Fts5StructureRelease(void*);
 int sqlite3Fts5StructureTest(Fts5Index*, void*);
 
+/*
+** Used by xInstToken():
+*/
+int sqlite3Fts5IterToken(Fts5IndexIter*, i64, int, int, const char**, int*);
 
 /*
 ** Insert or remove data to or from the index. Each time a document is 
@@ -539,6 +546,13 @@ int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
 
 int sqlite3Fts5IndexGetOrigin(Fts5Index *p, i64 *piOrigin);
 int sqlite3Fts5IndexContentlessDelete(Fts5Index *p, i64 iOrigin, i64 iRowid);
+
+void sqlite3Fts5IndexIterClearTokendata(Fts5IndexIter*);
+
+/* Used to populate hash tables for xInstToken in detail=none/column mode. */
+int sqlite3Fts5IndexIterWriteTokendata(
+    Fts5IndexIter*, const char*, int, i64 iRowid, int iCol, int iOff
+);
 
 /*
 ** End of interface to code in fts5_index.c.
@@ -645,6 +659,7 @@ void sqlite3Fts5HashScanNext(Fts5Hash*);
 int sqlite3Fts5HashScanEof(Fts5Hash*);
 void sqlite3Fts5HashScanEntry(Fts5Hash *,
   const char **pzTerm,            /* OUT: term (nul-terminated) */
+  int *pnTerm,                    /* OUT: Size of term in bytes */
   const u8 **ppDoclist,           /* OUT: pointer to doclist */
   int *pnDoclist                  /* OUT: size of doclist in bytes */
 );
@@ -770,6 +785,10 @@ void sqlite3Fts5ExprCheckPoslists(Fts5Expr*, i64);
 int sqlite3Fts5ExprClonePhrase(Fts5Expr*, int, Fts5Expr**);
 
 int sqlite3Fts5ExprPhraseCollist(Fts5Expr *, int, const u8 **, int *);
+
+int sqlite3Fts5ExprQueryToken(Fts5Expr*, int, int, const char**, int*);
+int sqlite3Fts5ExprInstToken(Fts5Expr*, i64, int, int, int, int, const char**, int*);
+void sqlite3Fts5ExprClearTokens(Fts5Expr*);
 
 /*******************************************
 ** The fts5_expr.c API above this point is used by the other hand-written
