@@ -20,7 +20,7 @@ def simple_workload(dim, n, q):
     q = int(q)
     print('PRAGMA journal_mode=WAL;')
     print(f'CREATE TABLE x ( id INTEGER PRIMARY KEY, embedding FLOAT32({dim}) );')
-    print(f'CREATE INDEX x_idx USING diskann_cosine_ops ON x( embedding );')
+    print(f'CREATE INDEX x_idx ON x( libsql_vector_idx(embedding) );')
     for i in range(n):
         vector = f"[{','.join(map(str, np.random.uniform(size=dim)))}]"
         print(f'INSERT INTO x VALUES ({i}, vector(\'{vector}\'));')

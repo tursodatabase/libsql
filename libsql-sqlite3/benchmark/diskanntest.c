@@ -176,13 +176,13 @@ int main(int argc, char* argv[]) {
         total_count = &total_inserts;
 
         rc = sqlite3_step(statement);
-        ensure(rc == SQLITE_DONE, "INSERT/DELETE query finished incorrectly: %s", sqlite3_errmsg(db));
-      } else if (strncmp(prepared, "INSERT", 6) == 0) {
+        ensure(rc == SQLITE_DONE, "INSERT query finished incorrectly: %s", sqlite3_errmsg(db));
+      } else if (strncmp(prepared, "DELETE", 6) == 0) {
         total_time = &total_delete_time;
         total_count = &total_deletes;
 
         rc = sqlite3_step(statement);
-        ensure(rc == SQLITE_DONE, "INSERT/DELETE query finished incorrectly: %s", sqlite3_errmsg(db));
+        ensure(rc == SQLITE_DONE, "DELETE query finished incorrectly: %s", sqlite3_errmsg(db));
       } else {
         ensure(false, "unexpected query type: %s\n", prepared);
       }
