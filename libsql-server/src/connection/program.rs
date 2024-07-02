@@ -274,8 +274,8 @@ where
 
         let query_duration = start.elapsed();
 
-        let rows_read = stmt.get_status(StatementStatus::RowsRead) as u64;
-        let rows_written = stmt.get_status(StatementStatus::RowsWritten) as u64;
+        let rows_read = stmt.get_status(StatementStatus::RowsRead) as u32 as u64;
+        let rows_written = stmt.get_status(StatementStatus::RowsWritten) as u32 as u64;
         let mem_used = stmt.get_status(StatementStatus::MemUsed) as u64;
 
         (self.update_stats)(

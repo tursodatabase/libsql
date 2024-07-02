@@ -499,6 +499,8 @@ pub const FTS5_TOKENIZE_DOCUMENT: i32 = 4;
 pub const FTS5_TOKENIZE_AUX: i32 = 8;
 pub const FTS5_TOKEN_COLOCATED: i32 = 1;
 pub const WAL_SAVEPOINT_NDATA: i32 = 4;
+pub type __gnuc_va_list = __builtin_va_list;
+pub type va_list = __builtin_va_list;
 extern "C" {
     pub static sqlite3_version: [::std::os::raw::c_char; 0usize];
 }
@@ -933,11 +935,25 @@ extern "C" {
         -> *mut ::std::os::raw::c_char;
 }
 extern "C" {
+    pub fn sqlite3_vmprintf(
+        arg1: *const ::std::os::raw::c_char,
+        arg2: va_list,
+    ) -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
     pub fn sqlite3_snprintf(
         arg1: ::std::os::raw::c_int,
         arg2: *mut ::std::os::raw::c_char,
         arg3: *const ::std::os::raw::c_char,
         ...
+    ) -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn sqlite3_vsnprintf(
+        arg1: ::std::os::raw::c_int,
+        arg2: *mut ::std::os::raw::c_char,
+        arg3: *const ::std::os::raw::c_char,
+        arg4: va_list,
     ) -> *mut ::std::os::raw::c_char;
 }
 extern "C" {
@@ -2481,6 +2497,13 @@ extern "C" {
     pub fn sqlite3_str_appendf(arg1: *mut sqlite3_str, zFormat: *const ::std::os::raw::c_char, ...);
 }
 extern "C" {
+    pub fn sqlite3_str_vappendf(
+        arg1: *mut sqlite3_str,
+        zFormat: *const ::std::os::raw::c_char,
+        arg2: va_list,
+    );
+}
+extern "C" {
     pub fn sqlite3_str_append(
         arg1: *mut sqlite3_str,
         zIn: *const ::std::os::raw::c_char,
@@ -3480,3 +3503,4 @@ extern "C" {
 extern "C" {
     pub static sqlite3_wal_manager: libsql_wal_manager;
 }
+pub type __builtin_va_list = *mut ::std::os::raw::c_char;
