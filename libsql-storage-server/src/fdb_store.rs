@@ -1,14 +1,49 @@
+use crate::errors::Error;
+use crate::errors::Error::WriteConflict;
 use crate::store::FrameStore;
 use async_trait::async_trait;
 use foundationdb::api::NetworkAutoStop;
 use foundationdb::tuple::pack;
 use foundationdb::tuple::unpack;
-use foundationdb::Transaction;
+use foundationdb::{KeySelector, Transaction};
 use libsql_storage::rpc::Frame;
 use tracing::error;
 
 pub struct FDBFrameStore {
     _network: NetworkAutoStop,
+}
+
+// Some information about how we map keys on Foundation DB.
+//
+// key: (<ns>, "f", <frame_no>, "f")                value: bytes (i.e. frame data)
+// key: (<ns>, "f", <frame_no>, "p")                value: u32 (stores page number)
+// key: (<ns>, "p", <page_no>)                      value: u64 (stores latest frame no of a page)
+// key: (<ns>, "pf", <page_no>, <frame_no>)         value: "" (empty string, this is used to keep track of page versions)
+// key: (<ns>, "max_frame_no")                      value: u64 (current max frame no of this ns)
+
+#[inline]
+fn frame_key(namespace: &str, frame_no: u64) -> Vec<u8> {
+    pack(&(namespace, "f", frame_no, "f"))
+}
+
+#[inline]
+fn frame_page_key(namespace: &str, frame_no: u64) -> Vec<u8> {
+    pack(&(namespace, "f", frame_no, "p"))
+}
+
+#[inline]
+fn page_key(namespace: &str, page_no: u32) -> Vec<u8> {
+    pack(&(namespace, "p", page_no))
+}
+
+#[inline]
+fn page_index_key(namespace: &str, page_no: u32, frame_no: u64) -> Vec<u8> {
+    pack(&(namespace, "pf", page_no, frame_no))
+}
+
+#[inline]
+fn max_frame_key(namespace: &str) -> Vec<u8> {
+    pack(&(namespace, "max_frame_no"))
 }
 
 impl FDBFrameStore {
@@ -18,18 +53,18 @@ impl FDBFrameStore {
     }
 
     async fn get_max_frame_no(&self, txn: &Transaction, namespace: &str) -> u64 {
-        let max_frame_key = format!("{}/max_frame_no", namespace);
-        let result = txn.get(&max_frame_key.as_bytes(), false).await;
+        let key = max_frame_key(namespace);
+        let result = txn.get(&key, false).await;
         if let Err(e) = result {
             error!("get failed: {:?}", e);
             return 0;
         }
         if let Ok(None) = result {
-            error!("page not found");
+            error!("max_frame_key not found");
             return 0;
         }
         let frame_no: u64 = unpack(&result.unwrap().unwrap()).expect("failed to decode u64");
-        tracing::info!("max_frame_no ({}) = {}", max_frame_key, frame_no);
+        tracing::info!("max_frame_no ({}) = {}", namespace, frame_no);
         frame_no
     }
 
@@ -40,77 +75,82 @@ impl FDBFrameStore {
         frame_no: u64,
         frame: Frame,
     ) {
-        let frame_data_key = format!("{}/f/{}/f", namespace, frame_no);
-        let frame_page_key = format!("{}/f/{}/p", namespace, frame_no);
-        let page_key = format!("{}/p/{}", namespace, frame.page_no);
+        let frame_data_key = frame_key(namespace, frame_no);
+        let frame_page_key = frame_page_key(namespace, frame_no);
+        let page_key = page_key(namespace, frame.page_no);
+        let page_frame_idx = page_index_key(namespace, frame.page_no, frame_no);
 
-        txn.set(&frame_data_key.as_bytes(), &frame.data);
-        txn.set(&frame_page_key.as_bytes(), &pack(&frame.page_no));
-        txn.set(&page_key.as_bytes(), &pack(&frame_no));
+        txn.set(&frame_data_key, &frame.data);
+        txn.set(&frame_page_key, &pack(&frame.page_no));
+        txn.set(&page_key, &pack(&frame_no));
+        txn.set(&page_frame_idx, &pack(&""));
     }
 }
 
 #[async_trait]
 impl FrameStore for FDBFrameStore {
-    async fn insert_frames(&self, namespace: &str, _max_frame_no: u64, frames: Vec<Frame>) -> u64 {
-        let max_frame_key = format!("{}/max_frame_no", namespace);
+    async fn insert_frames(
+        &self,
+        namespace: &str,
+        max_frame_no: u64,
+        frames: Vec<Frame>,
+    ) -> Result<u64, Error> {
         let db = foundationdb::Database::default().unwrap();
         let txn = db.create_trx().expect("unable to create transaction");
         let mut frame_no = self.get_max_frame_no(&txn, namespace).await;
-
+        if frame_no != max_frame_no {
+            return Err(WriteConflict);
+        }
         for f in frames {
             frame_no += 1;
             self.insert_with_tx(namespace, &txn, frame_no, f).await;
         }
-        txn.set(&max_frame_key.as_bytes(), &pack(&(frame_no)));
+        let key = max_frame_key(namespace);
+        txn.set(&key, &pack(&(frame_no)));
         txn.commit().await.expect("commit failed");
-        frame_no
+        Ok(frame_no)
     }
 
     async fn read_frame(&self, namespace: &str, frame_no: u64) -> Option<bytes::Bytes> {
-        let frame_key = format!("{}/f/{}/f", namespace, frame_no);
-
+        let key = frame_key(namespace, frame_no);
         let db = foundationdb::Database::default().unwrap();
         let txn = db.create_trx().expect("unable to create transaction");
-        let frame = txn.get(frame_key.as_bytes(), false).await;
+        let frame = txn.get(&key, false).await;
         if let Ok(Some(data)) = frame {
             return Some(data.to_vec().into());
         }
         None
     }
 
-    async fn find_frame(&self, namespace: &str, page_no: u32) -> Option<u64> {
-        let page_key = format!("{}/p/{}", namespace, page_no);
+    #[tracing::instrument(skip(self))]
+    async fn find_frame(&self, namespace: &str, page_no: u32, max_frame_no: u64) -> Option<u64> {
+        if max_frame_no == 0 {
+            return None;
+        }
 
         let db = foundationdb::Database::default().unwrap();
         let txn = db.create_trx().expect("unable to create transaction");
-
-        let result = txn.get(&page_key.as_bytes(), false).await;
-        if let Err(e) = result {
-            error!("get failed: {:?}", e);
-            return None;
-        }
-        if let Ok(None) = result {
-            error!("page not found");
-            return None;
-        }
-        let frame_no: u64 = unpack(&result.unwrap().unwrap()).expect("failed to decode u64");
-        Some(frame_no)
+        let page_key = page_index_key(namespace, page_no, max_frame_no);
+        let result = txn
+            .get_key(&KeySelector::last_less_or_equal(&page_key), false)
+            .await;
+        let unpacked: (String, String, u32, u64) =
+            unpack(&result.unwrap().to_vec()).expect("failed to decode");
+        tracing::info!("got the frame_no = {:?}", unpacked);
+        return Some(unpacked.3);
     }
 
     async fn frame_page_no(&self, namespace: &str, frame_no: u64) -> Option<u32> {
-        let frame_key = format!("{}/f/{}/p", namespace, frame_no);
-
+        let key = frame_page_key(namespace, frame_no);
         let db = foundationdb::Database::default().unwrap();
         let txn = db.create_trx().expect("unable to create transaction");
         let page_no: u32 = unpack(
-            &txn.get(&frame_key.as_bytes(), true)
+            &txn.get(&key, true)
                 .await
                 .expect("get failed")
                 .expect("frame not found"),
         )
         .expect("failed to decode u64");
-
         Some(page_no)
     }
 

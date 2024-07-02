@@ -13,6 +13,21 @@ cbindgen = "0.24.0"
 [dependencies]
 bytes = "1.5.0"
 lazy_static = "1.4.0"
-libsql = { path = "../../libsql", features = ["encryption"] }
 tokio = { version = "1.29.1", features = [ "rt-multi-thread" ] }
 hyper-rustls = { version = "0.25", features = ["webpki-roots"]}
+
+[target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
+libsql = { path = "../../libsql", features = ["encryption"] }
+
+# Disable encryption for ios and android targets
+[target.'cfg(any(target_os = "ios", target_os = "android"))'.dependencies]
+libsql = { path = "../../libsql"}
+
+
+# The produced binaries are too large for mobiles
+# When compiling for iOS or Android, you should turn on symbol stripping, lto and cut debug symbols
+# [profile.release]
+# debug = false # Exclude debug symbols
+# strip = "symbols" # Exclude the rest of the symbols
+# # opt-level = "z" # Did not use this, but it equals C++'s optimize for size (O3?)
+# lto = true # Link time optimization, not sure what this does but it helps reduce the size

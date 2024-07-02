@@ -38,7 +38,7 @@ jobs:
     strategy:
       matrix:
         os: 
-          - linux-x86_64
+          - ubuntu-latest
           - macos-14
           - ${{ needs.start-runner.outputs.label }}
         variant: 

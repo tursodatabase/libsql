@@ -1,20 +1,23 @@
 use anyhow::Context as _;
+use axum::body::StreamBody;
 use axum::extract::{FromRef, Path, State};
 use axum::routing::delete;
 use axum::Json;
 use chrono::NaiveDateTime;
-use futures::TryStreamExt;
+use futures::{SinkExt, StreamExt, TryStreamExt};
 use hyper::{Body, Request};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::cell::OnceCell;
+use std::convert::Infallible;
 use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Notify;
-use tokio_util::io::ReaderStream;
+use tokio_util::io::{CopyToBytes, ReaderStream, SinkWriter};
+use tokio_util::sync::PollSender;
 use tower_http::trace::DefaultOnResponse;
 use url::Url;
 
@@ -145,6 +148,9 @@ where
             user_http_server,
             metrics,
         }))
+        .route("/profile/heap/enable", post(enable_profile_heap))
+        .route("/profile/heap/disable/:id", post(disable_profile_heap))
+        .route("/profile/heap/:id", delete(delete_profile_heap))
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
                 .on_request(trace_request)
@@ -192,7 +198,6 @@ async fn handle_get_config<C: Connector>(
         allow_attach: config.allow_attach,
         txn_timeout_s: config.txn_timeout.map(|d| d.as_secs() as u64),
     };
-
     Ok(Json(resp))
 }
 
@@ -439,5 +444,65 @@ async fn handle_checkpoint<C>(
     Path(namespace): Path<NamespaceName>,
 ) -> crate::Result<()> {
     app_state.namespaces.checkpoint(namespace).await?;
+    Ok(())
+}
+
+#[derive(serde::Deserialize)]
+struct EnableHeapProfileRequest {
+    #[serde(default)]
+    max_stack_depth: Option<usize>,
+    #[serde(default)]
+    max_trackers: Option<usize>,
+    #[serde(default)]
+    tracker_event_buffer_size: Option<usize>,
+    #[serde(default)]
+    sample_rate: Option<f64>,
+}
+
+async fn enable_profile_heap(Json(req): Json<EnableHeapProfileRequest>) -> crate::Result<String> {
+    let path = tokio::task::spawn_blocking(move || {
+        rheaper::enable_tracking(rheaper::TrackerConfig {
+            max_stack_depth: req.max_stack_depth.unwrap_or(30),
+            max_trackers: req.max_trackers.unwrap_or(200),
+            tracker_event_buffer_size: req.tracker_event_buffer_size.unwrap_or(5_000),
+            sample_rate: req.sample_rate.unwrap_or(1.0),
+            profile_dir: PathBuf::from("heap_profile"),
+        })
+        .map_err(|e| crate::Error::Anyhow(anyhow::anyhow!("{e}")))
+    })
+    .await??;
+
+    Ok(path.file_name().unwrap().to_str().unwrap().to_string())
+}
+
+async fn disable_profile_heap(Path(profile): Path<String>) -> impl axum::response::IntoResponse {
+    let (tx, rx) = tokio::sync::mpsc::channel::<bytes::Bytes>(1);
+    tokio::task::spawn_blocking(move || {
+        rheaper::disable_tracking();
+        let profile_dir = PathBuf::from("heap_profile").join(&profile);
+        let sink =
+            PollSender::new(tx).sink_map_err(|_| std::io::Error::from(ErrorKind::BrokenPipe));
+        let writer = tokio_util::io::SyncIoBridge::new(SinkWriter::new(CopyToBytes::new(sink)));
+        let mut builder = tar::Builder::new(writer);
+        if let Err(e) = builder.append_dir_all(&profile, &profile_dir) {
+            tracing::error!("io error sending trace: {e}");
+            return;
+        }
+        if let Err(e) = builder.finish() {
+            tracing::error!("io error sending trace: {e}");
+            return;
+        }
+    });
+
+    let stream =
+        tokio_stream::wrappers::ReceiverStream::new(rx).map(|b| Result::<_, Infallible>::Ok(b));
+    let body = StreamBody::new(stream);
+
+    body
+}
+
+async fn delete_profile_heap(Path(profile): Path<String>) -> crate::Result<()> {
+    let profile_dir = PathBuf::from("heap_profile").join(&profile);
+    tokio::fs::remove_dir_all(&profile_dir).await?;
     Ok(())
 }

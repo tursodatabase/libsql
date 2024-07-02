@@ -170,6 +170,10 @@ impl Conn for HttpConnection<HttpSender> {
         self.affected_row_count()
     }
 
+    fn total_changes(&self) -> u64 {
+        self.total_changes()
+    }
+
     fn last_insert_rowid(&self) -> i64 {
         self.last_insert_rowid()
     }
@@ -189,6 +193,10 @@ impl crate::statement::Stmt for crate::hrana::Statement<HttpSender> {
 
     async fn query(&mut self, params: &Params) -> crate::Result<Rows> {
         self.query(params).await
+    }
+
+    async fn run(&mut self, params: &Params) -> crate::Result<()> {
+        self.run(params).await
     }
 
     fn reset(&mut self) {}
@@ -340,6 +348,10 @@ impl Conn for HranaStream<HttpSender> {
 
     fn changes(&self) -> u64 {
         self.affected_row_count()
+    }
+
+    fn total_changes(&self) -> u64 {
+        self.total_changes()
     }
 
     fn last_insert_rowid(&self) -> i64 {

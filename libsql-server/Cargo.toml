@@ -89,6 +89,8 @@ hdrhistogram = "7.5.4"
 crossbeam = "0.8.4"
 async-recursion = "1"
 mimalloc = "0.1.42"
+rheaper = { git = "https://github.com/MarinPostma/rheaper.git", tag = "v0.2.0", default-features = false, features = ["allocator"] }
+tar = "0.4.41"
 
 [dev-dependencies]
 arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }
