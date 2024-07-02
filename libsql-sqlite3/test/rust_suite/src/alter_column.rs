@@ -191,7 +191,7 @@ fn test_comment_in_the_end() {
 
     conn.execute("CREATE TABLE t(id)", ()).unwrap();
     conn.execute(
-        "ALTER TABLE t ALTER COLUMN id TO id CHECK(id < 5) -- explanation for alter command ",
+        "ALTER TABLE t ALTER COLUMN id TO id CHECK(id < 5); -- explanation for alter command ",
         (),
     )
     .unwrap();
