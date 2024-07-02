@@ -136,8 +136,18 @@ impl FrameStore for FDBFrameStore {
             .await;
         let unpacked: (String, String, u32, u64) =
             unpack(&result.unwrap().to_vec()).expect("failed to decode");
-        tracing::info!("got the frame_no = {:?}", unpacked);
-        return Some(unpacked.3);
+        // It is important to verify that the data we got from Foundation DB matches with what we
+        // want, since we are doing a range query.
+        //
+        // for example, say we searched for ('db_name42', 10, 20). If this page does not exist, then
+        // it could match with ('db_name41', 10, 20) or with ('db_name42', 9, 20) since it does
+        // lexicographic search.
+        if (namespace, "pf", page_no) == (&unpacked.0, &unpacked.1, unpacked.2) {
+            tracing::info!("got the frame_no = {:?}", unpacked);
+            Some(unpacked.3)
+        } else {
+            None
+        }
     }
 
     async fn frame_page_no(&self, namespace: &str, frame_no: u64) -> Option<u32> {
