@@ -2748,7 +2748,7 @@ void sqlite3VdbeFreeCursorNN(Vdbe *p, VdbeCursor *pCx){
 #endif
 #ifndef SQLITE_OMIT_VECTOR
     case CURTYPE_VECTOR_IDX: {
-      vectorIndexCursorClose(p->db, pCx);
+      vectorIndexCursorClose(p->db, pCx->uc.pVecIdx);
       break;
     }
 #endif

@@ -892,57 +892,21 @@ static int diskannFromDistanceOps(const char *zDistanceOps){
   return -1;
 }
 
-int diskAnnCreateIndex(
+int diskAnnInitIndex(
   sqlite3 *db,
   const char *zIdxName,
-  unsigned int nDims,
-  unsigned int nDistanceFunc
+  VectorIndexParameters *parameters
 ){
-  const char *zDistanceOps;
-  DiskAnnIndex *pIndex;
   sqlite3_stmt *pStmt;
+  char *zSql;
   int rc;
 
-  rc = vectorInternalTableInit(db);
+  zSql = sqlite3MPrintf(db, "CREATE TABLE IF NOT EXISTS %s_shadow (index_key INT, data BLOB)", zIdxName);
+  rc = sqlite3_exec(db, zSql, 0, 0, 0);
+  sqlite3DbFree(db, zSql);
   if( rc!=SQLITE_OK ){
     return rc;
   }
-  zDistanceOps = diskAnnToDistanceOps(nDistanceFunc);
-  if( zDistanceOps==NULL ){
-    return SQLITE_ERROR;
-  }
-  pIndex = sqlite3_malloc(sizeof(DiskAnnIndex));
-  if( pIndex == NULL ){
-    return SQLITE_NOMEM;
-  }
-  pIndex->db = db;
-  pIndex->zDb = strdup(db->aDb[0].zDbSName);
-  pIndex->zName = strdup(zIdxName);
-  pIndex->zShadow = sqlite3MPrintf(db, "%s_shadow", zIdxName);
-  pIndex->nDistanceFunc = nDistanceFunc;
-  pIndex->nBlockSize = DISKANN_BLOCK_SIZE >> DISKANN_BLOCK_SIZE_SHIFT;
-  pIndex->nVectorType = VECTOR_TYPE_FLOAT32;
-  pIndex->nVectorDims = nDims;
-
-  static const char zInsertSql[] =
-    "INSERT INTO libsql_vector_index "
-    "(type, name, vector_type, block_size, dims, distance_ops)"
-    "VALUES "
-    "(?, ?, ?, ?, ?, ?)";
-    
-  rc = sqlite3_prepare_v2(db, zInsertSql, -1, &pStmt, 0);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
-  sqlite3_bind_text(pStmt, 1, "diskann", -1, SQLITE_STATIC);
-  sqlite3_bind_text(pStmt, 2, zIdxName, -1, SQLITE_STATIC);
-  sqlite3_bind_text(pStmt, 3, diskAnnToVectorType(pIndex->nVectorType), -1, SQLITE_STATIC);
-  sqlite3_bind_int (pStmt, 4, DISKANN_BLOCK_SIZE >> DISKANN_BLOCK_SIZE_SHIFT);
-  sqlite3_bind_int (pStmt, 5, nDims);
-  sqlite3_bind_text(pStmt, 6, diskAnnToDistanceOps(pIndex->nDistanceFunc), -1, SQLITE_STATIC);
-  rc = sqlite3_step(pStmt);
-  sqlite3_finalize(pStmt);
-  diskAnnCloseIndex(pIndex);
   return rc;
 }
 
@@ -952,23 +916,52 @@ int diskAnnOpenIndex(
   DiskAnnIndex **ppIndex          /* OUT: Index */
 ){
   DiskAnnIndex *pIndex;
-  sqlite3_stmt *pStmt;
+  sqlite3_stmt *pStmt = 0;
   int rc = SQLITE_OK;
+  u8 *parametersBin;
+  int parametersBinLength;
+  VectorIndexParameters parameters;
 
-  static const char zInsertSql[] =
-    "SELECT vector_type, block_size, dims, distance_ops "
-    "FROM libsql_vector_index "
-    "WHERE type = ? AND name = ?";
-  rc = sqlite3_prepare_v2(db, zInsertSql, -1, &pStmt, 0);
-  if( rc!=SQLITE_OK ){
-    return rc;
+  static const char* zSelectSql = "SELECT metadata FROM " VECTOR_INDEX_GLOBAL_META_TABLE " WHERE name = ?";
+  static const char* zSelectSqlOld = "SELECT vector_type, block_size, dims, distance_ops FROM libsql_vector_index WHERE type = ? AND name = ?";
+  rc = sqlite3_prepare_v2(db, zSelectSql, -1, &pStmt, 0);
+  if( rc == SQLITE_OK ) {
+    sqlite3_bind_text(pStmt, 1, zIdxName, -1, SQLITE_STATIC);
   }
-  sqlite3_bind_text(pStmt, 1, "diskann", -1, SQLITE_STATIC);
-  sqlite3_bind_text(pStmt, 2, zIdxName, -1, SQLITE_STATIC);
-  if( sqlite3_step(pStmt)!=SQLITE_ROW ){
+  if( rc == SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+    parametersBin = (u8*)sqlite3_column_blob(pStmt, 0);
+    parametersBinLength = sqlite3_column_bytes(pStmt, 0);
+    if( deserializeVectorIndexParameters(&parameters, parametersBin, parametersBinLength) != 0 ){
+      rc = SQLITE_ERROR;
+      goto out_finalize_stmt;
+    }
+  } else {
+    if( pStmt ){
+      sqlite3_finalize(pStmt);
+    }
+    rc = sqlite3_prepare_v2(db, zSelectSqlOld, -1, &pStmt, 0);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+    sqlite3_bind_text(pStmt, 1, "diskann", -1, SQLITE_STATIC);
+    sqlite3_bind_text(pStmt, 2, zIdxName, -1, SQLITE_STATIC);
+    if( sqlite3_step(pStmt)!=SQLITE_ROW ){
+      rc = SQLITE_ERROR;
+      goto out_finalize_stmt;
+    }
+    parameters.formatVersion = 1;
+    parameters.indexType = VECTOR_DISKANN_INDEX;
+    parameters.vectorType = diskAnnFromVectorType(sqlite3_column_text(pStmt, 0));
+    parameters.vectorDimension = sqlite3_column_int(pStmt, 2);
+    parameters.metricType = diskannFromDistanceOps(sqlite3_column_text(pStmt, 3));
+    parameters.blockSize = sqlite3_column_int(pStmt, 1);
+  }
+
+  if( parameters.indexType != VECTOR_DISKANN_INDEX ){
     rc = SQLITE_ERROR;
     goto out_finalize_stmt;
   }
+
   pIndex = sqlite3_malloc(sizeof(DiskAnnIndex));
   if( pIndex == NULL ){
     rc = SQLITE_NOMEM;
@@ -978,15 +971,18 @@ int diskAnnOpenIndex(
   pIndex->zDb = strdup(db->aDb[0].zDbSName);
   pIndex->zName = strdup(zIdxName);
   pIndex->zShadow = sqlite3MPrintf(db, "%s_shadow", zIdxName);
-  pIndex->nVectorType = diskAnnFromVectorType(sqlite3_column_text(pStmt, 0));
-  pIndex->nBlockSize = sqlite3_column_int(pStmt, 1);
-  pIndex->nVectorDims = sqlite3_column_int(pStmt, 2);
-  pIndex->nDistanceFunc = diskannFromDistanceOps(sqlite3_column_text(pStmt, 3));
+  pIndex->nVectorType = parameters.vectorType;
+  pIndex->nBlockSize = parameters.blockSize;
+  pIndex->nVectorDims = parameters.vectorDimension;
+  pIndex->nDistanceFunc = parameters.metricType;
 
+  rc = SQLITE_OK;
   *ppIndex = pIndex;
 
 out_finalize_stmt:
-  sqlite3_finalize(pStmt);
+  if( pStmt ) {
+    sqlite3_finalize(pStmt);
+  }
   return rc;
 }
 

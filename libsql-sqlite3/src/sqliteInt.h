@@ -2709,7 +2709,6 @@ struct UnpackedRecord {
   u8 eqSeen;          /* True if an equality comparison has been seen */
 };
 
-
 /*
 ** Each SQL index is represented in memory by an
 ** instance of the following structure.
@@ -2773,7 +2772,7 @@ struct Index {
   u16 nKeyCol;             /* Number of columns forming the key */
   u16 nColumn;             /* Number of columns stored in the index */
   u8 onError;              /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
-  unsigned idxType:3;      /* 0:Normal 1:UNIQUE, 2:PRIMARY KEY, 3:IPK */
+  unsigned idxType:3;      /* 0:Normal 1:UNIQUE, 2:PRIMARY KEY, 3:IPK, 4:VECTOR INDEX */
   unsigned bUnordered:1;   /* Use this index for == or IN queries only */
   unsigned uniqNotNull:1;  /* True if UNIQUE and NOT NULL for all columns */
   unsigned isResized:1;    /* True if resizeIndexObject() has been called */

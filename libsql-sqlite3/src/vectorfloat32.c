@@ -48,13 +48,14 @@ void vectorF32Dump(Vector *pVec){
 ** Utility routines for vector serialization and deserialization
 **************************************************************************/
 
-static inline unsigned formatF32(float num, char *str){
-  char tmp[32];
+static inline unsigned formatF32(float num, char *str, int strLimit){
   if (isInteger(num)) {
-    return snprintf(tmp, 32, "%lld", (u64)num);
+    snprintf(str, strLimit, "%lld", (u64)num);
   } else {
-    return snprintf(tmp, 32, "%.6e", num);
+    snprintf(str, strLimit, "%.6e", num);
   }
+  // snprintf returns amount of bytes that would have been written if there will be enough space in the buffer - so we better not to use it at all
+  return strlen(str);
 }
 
 static inline unsigned serializeF32(unsigned char *mem, float num){
@@ -130,23 +131,25 @@ void vectorF32Deserialize(
   sqlite3_context *context,
   Vector *v
 ){
+  const int SINGLE_FLOAT_CHAR_LIMIT = 32;
   float *elems = v->data;
   unsigned bufSz;
   unsigned bufIdx = 0;
   char *z;
+  char tmp[SINGLE_FLOAT_CHAR_LIMIT];
 
-  bufSz = 2 + v->dims * 33;
+  assert( v->dims <= MAX_VECTOR_SZ );
+  bufSz = 2 + v->dims * (SINGLE_FLOAT_CHAR_LIMIT + 1); // plus comma
   z = contextMalloc(context, bufSz);
 
   if( z ){
     unsigned i;
 
     z[bufIdx++]= '[';
-    for (i = 0; i < v->dims; i++) { 
-      char tmp[12];
-      unsigned bytes = formatF32(elems[i], tmp);
+    for(i = 0; i < v->dims; i++){ 
+      unsigned bytes = formatF32(elems[i], tmp, sizeof(tmp));
       memcpy(&z[bufIdx], tmp, bytes);
-      bufIdx += strlen(tmp);
+      bufIdx += bytes;
       z[bufIdx++] = ',';
     }
     bufIdx--;
@@ -199,12 +202,12 @@ int vectorF32ParseBlob(
     goto error;
   }
   vectorBytes = sqlite3_value_bytes(arg);
-  if (vectorBytes % sizeof(float) != 0) {
-    *pzErr = sqlite3_mprintf("invalid f32 vector: %d %% 4 != 0", vectorBytes);
+  if( vectorBytes % sizeof(float) != 0 ){
+    *pzErr = sqlite3_mprintf("invalid f32 vector: %d %% %d != 0", vectorBytes, sizeof(float));
     goto error;
   }
   len = vectorBytes / sizeof(float);
-  if (len > MAX_VECTOR_SZ) {
+  if( len > MAX_VECTOR_SZ ){
     *pzErr = sqlite3_mprintf("invalid f32 vector: too large: %d", len);
     goto error;
   }

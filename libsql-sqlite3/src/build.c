@@ -23,6 +23,7 @@
 **     ROLLBACK
 */
 #include "sqliteInt.h"
+#include "signal.h"
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
 /*
@@ -4259,11 +4260,13 @@ void sqlite3CreateIndex(
     pIndex->aSortOrder[i] = (u8)requestedSortOrder;
   }
 
-  if( idxType==SQLITE_IDXTYPE_VECTOR ){
-    if( vectorIndexCreate(pParse, pIndex, pUsing)< 0){
-      goto exit_create_index;
-    }
+
+#ifndef SQLITE_OMIT_VECTOR
+  if( vectorIndexCreate(pParse, pIndex, pUsing) != SQLITE_OK ) {
+    goto exit_create_index;
   }
+  idxType = pIndex->idxType; // vectorIndexCreate can update idxType to 4 (VECTOR INDEX)
+#endif
 
   /* Append the table key to the end of the index.  For WITHOUT ROWID
   ** tables (when pPk!=0) this will be the declared PRIMARY KEY.  For
@@ -4488,7 +4491,6 @@ void sqlite3CreateIndex(
 
   /* Clean up before exiting */
 exit_create_index:
-  if( pUsing ) sqlite3IdListDelete(db, pUsing);
   if( pIndex ) sqlite3FreeIndex(db, pIndex);
   if( pTab ){
     /* Ensure all REPLACE indexes on pTab are at the end of the pIndex list.

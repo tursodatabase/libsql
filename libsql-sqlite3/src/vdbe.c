@@ -4201,6 +4201,7 @@ case OP_SetCookie: {
 case OP_OpenVectorIdx: {
   // TODO: Can we simplify this similar to OP_SorterOpen?
   KeyInfo *pKeyInfo = 0;
+  VectorIdxCursor* cursor;
   int nField = 0;
   if( pOp->p4type==P4_KEYINFO ){
     pKeyInfo = pOp->p4.pKeyInfo;
@@ -4210,6 +4211,12 @@ case OP_OpenVectorIdx: {
   }else if( pOp->p4type==P4_INT32 ){
     nField = pOp->p4.i;
   }
+  rc = vectorIndexCursorInit(db, &cursor, pKeyInfo->zIndexName);
+  if( rc ) {
+    goto abort_due_to_error;
+  }
+  // After we will allocate cursor Vdbe will record it and will try to close it at the disposal
+  // So, we need to ensure that no errors will occurred after successful cursor allocation
   VdbeCursor *pCur = allocateCursor(p, pOp->p1, nField, CURTYPE_VECTOR_IDX);
   if( pCur==0 ) goto no_mem;
   pCur->iDb = pOp->p3;
@@ -4218,8 +4225,7 @@ case OP_OpenVectorIdx: {
   pCur->pgnoRoot = pOp->p2;
   pCur->pKeyInfo = 0;
   pCur->isTable = 0;
-  rc = vectorIndexCursorInit(db, pCur, pKeyInfo->zIndexName);
-  if( rc ) goto abort_due_to_error;
+  pCur->uc.pVecIdx = cursor;
   break;
 }
 

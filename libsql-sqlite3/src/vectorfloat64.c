@@ -35,13 +35,14 @@
 ** Utility routines for debugging
 **************************************************************************/
 
-static inline unsigned formatF64(double num, char *str){
-  char tmp[32];
+static inline unsigned formatF64(double num, char *str, int strLimit){
   if (isInteger(num)) {
-    return snprintf(tmp, 32, "%lld", (u64)num);
+    snprintf(str, strLimit, "%lld", (u64)num);
   } else {
-    return snprintf(tmp, 32, "%.6e", num);
+    snprintf(str, strLimit, "%.6e", num);
   }
+  // snprintf returns amount of bytes that would have been written if there will be enough space in the buffer - so we better not to use it at all
+  return strlen(str);
 }
 
 void vectorF64Dump(Vector *pVec){
@@ -138,23 +139,25 @@ void vectorF64Deserialize(
   sqlite3_context *context,
   Vector *v
 ){
+  const int SINGLE_DOUBLE_CHAR_LIMIT = 32;
   double *elems = v->data;
   unsigned bufSz;
   unsigned bufIdx = 0;
   char *z;
+  char tmp[SINGLE_DOUBLE_CHAR_LIMIT];
 
-  bufSz = 2 + v->dims * 33;
+  assert( v->dims <= MAX_VECTOR_SZ );
+  bufSz = 2 + v->dims * (SINGLE_DOUBLE_CHAR_LIMIT + 1); // plus comma
   z = contextMalloc(context, bufSz);
 
   if( z ){
     unsigned i;
 
     z[bufIdx++]= '[';
-    for (i = 0; i < v->dims; i++) { 
-      char tmp[12];
-      unsigned bytes = formatF64(elems[i], tmp);
+    for(i = 0; i < v->dims; i++){ 
+      unsigned bytes = formatF64(elems[i], tmp, sizeof(tmp));
       memcpy(&z[bufIdx], tmp, bytes);
-      bufIdx += strlen(tmp);
+      bufIdx += bytes;
       z[bufIdx++] = ',';
     }
     bufIdx--;
@@ -207,12 +210,12 @@ int vectorF64ParseBlob(
     goto error;
   }
   vectorBytes = sqlite3_value_bytes(arg);
-  if (vectorBytes % 8 != 0) {
-    *pzErr = sqlite3_mprintf("invalid f64 vector: %d %% 8 != 0", vectorBytes);
+  if( vectorBytes % sizeof(double) != 0 ){
+    *pzErr = sqlite3_mprintf("invalid f64 vector: %d %% %d != 0", vectorBytes, sizeof(double));
     goto error;
   }
   len = vectorBytes / sizeof(double);
-  if (len > MAX_VECTOR_SZ) {
+  if( len > MAX_VECTOR_SZ ){
     *pzErr = sqlite3_mprintf("invalid vector: too large: %d", len);
     goto error;
   }
