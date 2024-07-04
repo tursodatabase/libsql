@@ -1,0 +1,97 @@
+# 2024-07-04
+#
+# Copyright 2024 the libSQL authors
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+#***********************************************************************
+# This file implements regression tests for libSQL library.  The
+# focus of this file is vector search.
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix vector
+
+do_execsql_test vector-1-inserts {
+  CREATE TABLE t1( xv FLOAT32(3) );
+  INSERT INTO t1(rowid,xv) VALUES(1, vector('[1,2,3]'));
+  INSERT INTO t1(rowid,xv) VALUES(2, vector('[2,3,4]'));
+  INSERT INTO t1(rowid,xv) VALUES(3, vector('[5,6,7]'));
+} {}
+
+do_execsql_test vector-1-func-valid {
+  SELECT vector_extract(vector('[]'));
+  SELECT vector_extract(vector(x''));
+  SELECT vector_extract(vector('  [  1  ,  2  ,  3  ]  '));
+  SELECT vector_extract(vector('[-1000000000000000000]'));
+  SELECT hex(vector('[1.10101010101010101010101010]'));
+  SELECT hex(vector32('[1.10101010101010101010101010]'));
+  SELECT hex(vector64('[1.10101010101010101010101010]'));
+  SELECT vector_extract(x'E6ED8C3F');
+  SELECT vector_extract(x'F37686C4BC9DF13F02');
+  SELECT vector_distance_cos('[1,1]', '[1,1]');
+  SELECT vector_distance_cos('[1,1]', '[-1,-1]');
+  SELECT vector_distance_cos('[1,1]', '[-1,1]');
+  SELECT vector_distance_cos('[1,2]', '[2,1]');
+} {
+  {[]} 
+  {[]} 
+  {[1,2,3]} 
+  {[-1e+18]} 
+  {E6ED8C3F} 
+  {E6ED8C3F} 
+  {F37686C4BC9DF13F02} 
+  {[1.10101]} 
+  {[1.10101]} 
+  {0.0} 
+  {2.0} 
+  {1.0} 
+  {0.200000002980232}
+}
+
+proc error_messages {sql} {
+  set ret ""
+  set stmt [sqlite3_prepare db $sql -1 dummy]
+  sqlite3_step $stmt
+  sqlite3_finalize $stmt
+  set ret [sqlite3_errmsg db]
+}
+
+do_test vector-1-func-errors {
+  set ret [list]
+  lappend ret [error_messages {SELECT vector('')}]
+  lappend ret [error_messages {SELECT vector('test')}]
+  lappend ret [error_messages {SELECT vector('[1]]')}]
+  lappend ret [error_messages {SELECT vector('[[1]')}]
+  lappend ret [error_messages {SELECT vector('[1.1.1]')}]
+  lappend ret [error_messages {SELECT vector('[1.2')}]
+  lappend ret [error_messages {SELECT vector(x'0000000000')}]
+  lappend ret [error_messages {SELECT vector_distance_cos('[1,2,3]', '[1,2]')}]
+  lappend ret [error_messages {SELECT vector_distance_cos(vector32('[1,2,3]'), vector64('[1,2,3]'))}]
+} [list {*}{
+  {invalid vector: doesn't start with '['}
+  {invalid vector: doesn't start with '['}
+  {malformed vector, extra data after closing ']'}
+  {invalid number: '[1'}
+  {invalid number: '1.1.1'}
+  {malformed vector, doesn't end with ']'}
+  {invalid binary vector: unexpected type: 0}
+  {vectors must have the same length}
+  {vectors must have the same type}
+}]
