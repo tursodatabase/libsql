@@ -18,7 +18,9 @@ typedef u32 VectorDims;
 */
 #define MAX_VECTOR_SZ 65536
 
-// Enumerate of supported vector types (0 omitted intentionally as we can use zero as "undefined" value)
+/*
+ * Enumerate of supported vector types (0 omitted intentionally as we can use zero as "undefined" value)
+*/
 #define VECTOR_TYPE_FLOAT32 1
 #define VECTOR_TYPE_FLOAT64 2
 
@@ -39,27 +41,37 @@ void vectorFree(Vector *v);
 int vectorParse(sqlite3_value *, Vector *, char **);
 void vectorInit(Vector *, VectorType, VectorDims, void *);
 
-// Dumps vector on the console (used only for debugging)
+/*
+ * Dumps vector on the console (used only for debugging)
+*/
 void vectorDump   (const Vector *v);
 void vectorF32Dump(const Vector *v);
 void vectorF64Dump(const Vector *v);
 
-// Converts vector to the text representation and write the result to the sqlite3_context
+/* 
+ * Converts vector to the text representation and write the result to the sqlite3_context
+*/
 void vectorMarshalToText   (sqlite3_context *, const Vector *);
 void vectorF32MarshalToText(sqlite3_context *, const Vector *);
 void vectorF64MarshalToText(sqlite3_context *, const Vector *);
 
-// Serializes vector to the blob in little-endian format according to the IEEE-754 standard
+/* 
+ * Serializes vector to the blob in little-endian format according to the IEEE-754 standard
+*/
 size_t vectorSerializeToBlob   (const Vector *, unsigned char *, size_t);
 size_t vectorF32SerializeToBlob(const Vector *, unsigned char *, size_t);
 size_t vectorF64SerializeToBlob(const Vector *, unsigned char *, size_t);
 
-// Deserializes vector from the blob in little-endian format according to the IEEE-754 standard
+/*
+ * Deserializes vector from the blob in little-endian format according to the IEEE-754 standard
+*/
 size_t vectorDeserializeFromBlob   (Vector *, const unsigned char *, size_t);
 size_t vectorF32DeserializeFromBlob(Vector *, const unsigned char *, size_t);
 size_t vectorF64DeserializeFromBlob(Vector *, const unsigned char *, size_t);
 
-// Calculates cosine distance between two vectors (vector must have same type and same dimensions)
+/* 
+ * Calculates cosine distance between two vectors (vector must have same type and same dimensions)
+*/
 float vectorDistanceCos    (const Vector *, const Vector *);
 float vectorF32DistanceCos (const Vector *, const Vector *);
 double vectorF64DistanceCos(const Vector *, const Vector *);
@@ -73,7 +85,9 @@ void vectorSerialize   (sqlite3_context *, const Vector *);
 void vectorF32Serialize(sqlite3_context *, const Vector *);
 void vectorF64Serialize(sqlite3_context *, const Vector *);
 
-// Parses Vector content from the blob; vector type and dimensions must be filled already
+/*
+ * Parses Vector content from the blob; vector type and dimensions must be filled already
+*/
 int vectorParseSqliteBlob   (sqlite3_value *, Vector *, char **);
 int vectorF32ParseSqliteBlob(sqlite3_value *, Vector *, char **);
 int vectorF64ParseSqliteBlob(sqlite3_value *, Vector *, char **);
