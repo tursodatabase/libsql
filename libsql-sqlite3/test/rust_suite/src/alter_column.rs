@@ -196,3 +196,13 @@ fn test_comment_in_the_end() {
     )
     .unwrap();
 }
+
+#[test]
+fn test_table_with_index() {
+    let conn = Connection::open_in_memory().unwrap();
+
+    conn.execute("CREATE TABLE t(id)", ()).unwrap();
+    conn.execute("CREATE INDEX i ON t(id)", ()).unwrap();
+    conn.execute("ALTER TABLE t ALTER COLUMN id TO id TEXT", ())
+        .unwrap();
+}

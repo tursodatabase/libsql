@@ -12,27 +12,34 @@ source $testdir/tester.tcl
 do_test libsql_alter-ok.1 {
   execsql {CREATE TABLE t1(x);}
   execsql {ALTER TABLE t1 ALTER COLUMN x TO x;}
-  execsql {SELECT sql FROM sqlite_master WHERE tbl_name = 't1';}
+  execsql {SELECT sql FROM sqlite_master WHERE name = 't1';}
 } {{CREATE TABLE t1(x)}}
 
 do_test libsql_alter-ok.2 {
   execsql {CREATE TABLE t2(x);}
   execsql {ALTER TABLE t2 ALTER COLUMN x TO x INTEGER DEFAULT(-1);}
-  execsql {SELECT sql FROM sqlite_master WHERE tbl_name = 't2';}
+  execsql {SELECT sql FROM sqlite_master WHERE name = 't2';}
 } {{CREATE TABLE t2(x INTEGER DEFAULT(-1))}}
 
 do_test libsql_alter-ok.3 {
   execsql {CREATE TABLE t3(x);}
   # NOTE: extra spaces in the end of ALTER COLUMN command
   execsql { ALTER TABLE t3 ALTER COLUMN x TO x INTEGER DEFAULT(-1);   }
-  execsql {SELECT sql FROM sqlite_master WHERE tbl_name = 't3';}
+  execsql {SELECT sql FROM sqlite_master WHERE name = 't3';}
 } {{CREATE TABLE t3(x INTEGER DEFAULT(-1))}}
 
 do_test libsql_alter-ok.4 {
   execsql {CREATE TABLE t4(x);}
   execsql { ALTER TABLE t4 ALTER COLUMN x TO x INTEGER DEFAULT(-1); -- explain alter command }
-  execsql {SELECT sql FROM sqlite_master WHERE tbl_name = 't4';}
+  execsql {SELECT sql FROM sqlite_master WHERE name = 't4';}
 } {{CREATE TABLE t4(x INTEGER DEFAULT(-1))}}
+
+do_test libsql_alter-ok.5 {
+  execsql {CREATE TABLE t5(x);}
+  execsql {CREATE INDEX t5_idx ON t5(x);}
+  execsql {ALTER TABLE t5 ALTER COLUMN x TO x TEXT}
+  execsql {SELECT sql FROM sqlite_master WHERE name = 't5';}
+} {{CREATE TABLE t5(x TEXT)}}
 
 reset_db
 do_test libsql_alter-err.1 {
