@@ -356,10 +356,6 @@ void vectorSerialize(
   sqlite3_context *context,
   const Vector *pVector
 ){
-  if( pVector->dims==0 ) {
-    sqlite3_result_null(context);
-    return;
-  }
   switch (pVector->type) {
     case VECTOR_TYPE_FLOAT32:
       vectorF32Serialize(context, pVector);

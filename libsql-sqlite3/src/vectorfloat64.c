@@ -49,7 +49,7 @@ void vectorF64Dump(const Vector *pVec){
 **************************************************************************/
 
 static inline unsigned formatF64(double value, char *pBuf, int nBufSize){
-  sqlite3_snprintf(nBufSize, pBuf, "%.!15g", value);
+  sqlite3_snprintf(nBufSize, pBuf, "%g", value);
   return strlen(pBuf);
 }
 
@@ -171,7 +171,9 @@ void vectorF64MarshalToText(
       iBuf += valueLength;
       pText[iBuf++] = ',';
     }
-    iBuf--;
+    if( pVector->dims > 0 ){
+      iBuf--;
+    }
     pText[iBuf++] = ']';
 
     sqlite3_result_text(context, pText, iBuf, sqlite3_free);

@@ -52,7 +52,7 @@ void vectorF32Dump(const Vector *pVec){
 **************************************************************************/
 
 static inline unsigned formatF32(float value, char *pBuf, int nBufSize){
-  sqlite3_snprintf(nBufSize, pBuf, "%.!15g", (double)value);
+  sqlite3_snprintf(nBufSize, pBuf, "%g", (double)value);
   return strlen(pBuf);
 }
 
@@ -127,14 +127,20 @@ void vectorF32Serialize(
   assert( pVector->dims <= MAX_VECTOR_SZ );
 
   nBlobSize = vectorDataSize(pVector->type, pVector->dims);
-  pBlob = sqlite3_malloc64(nBlobSize);
 
-  if( pBlob ){
-    vectorF32SerializeToBlob(pVector, pBlob, nBlobSize);
-    sqlite3_result_blob(context, (char*)pBlob, nBlobSize, sqlite3_free);
-  } else {
-    sqlite3_result_error_nomem(context);
+  if( nBlobSize == 0 ){
+    sqlite3_result_zeroblob(context, 0);
+    return;
   }
+
+  pBlob = sqlite3_malloc64(nBlobSize);
+  if( !pBlob ){
+    sqlite3_result_error_nomem(context);
+    return;
+  }
+
+  vectorF32SerializeToBlob(pVector, pBlob, nBlobSize);
+  sqlite3_result_blob(context, (char*)pBlob, nBlobSize, sqlite3_free);
 }
 
 void vectorF32MarshalToText(
@@ -163,7 +169,9 @@ void vectorF32MarshalToText(
       iBuf += valueLength;
       pText[iBuf++] = ',';
     }
-    iBuf--;
+    if( pVector->dims > 0 ){
+      iBuf--;
+    }
     pText[iBuf++] = ']';
 
     sqlite3_result_text(context, pText, iBuf, sqlite3_free);
