@@ -93,7 +93,7 @@ void vectorFree(Vector *pVector){
 }
 
 float vectorDistanceCos(const Vector *pVector1, const Vector *pVector2){
-  assert(v1->type == v2->type);
+  assert( pVector1->type == pVector2->type );
   switch (pVector1->type) {
     case VECTOR_TYPE_FLOAT32:
       return vectorF32DistanceCos(pVector1, pVector2);
@@ -122,7 +122,7 @@ static int vectorParseSqliteText(
   char valueBuf[MAX_FLOAT_CHAR_SZ + 1];
   int iBuf = 0;
 
-  assert( v->type == VECTOR_TYPE_FLOAT32 || v->type == VECTOR_TYPE_FLOAT64 );
+  assert( pVector->type == VECTOR_TYPE_FLOAT32 || pVector->type == VECTOR_TYPE_FLOAT64 );
 
   if( pVector->type == VECTOR_TYPE_FLOAT32 ){
     elemsFloat = pVector->data;

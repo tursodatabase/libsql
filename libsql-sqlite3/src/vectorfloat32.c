@@ -212,8 +212,8 @@ int vectorF32ParseSqliteBlob(
   float *elems = pVector->data;
   unsigned i;
 
-  assert( v->type == VECTOR_TYPE_FLOAT32 );
-  assert( 0 <= v->dims && v->dims <= MAX_VECTOR_SZ );
+  assert( pVector->type == VECTOR_TYPE_FLOAT32 );
+  assert( 0 <= pVector->dims && pVector->dims <= MAX_VECTOR_SZ );
 
   if( sqlite3_value_type(arg) != SQLITE_BLOB ){
     *pzErr = sqlite3_mprintf("invalid f32 vector: not a blob type");
