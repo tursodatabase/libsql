@@ -34,6 +34,13 @@ do_test libsql_alter-ok.4 {
   execsql {SELECT sql FROM sqlite_master WHERE tbl_name = 't4';}
 } {{CREATE TABLE t4(x INTEGER DEFAULT(-1))}}
 
+do_test libsql_alter-ok.5 {
+  execsql {CREATE TABLE t5(x);}
+  execsql {CREATE INDEX t5_idx ON t5(x);}
+  execsql {ALTER TABLE t5 ALTER COLUMN x TO x TEXT}
+  execsql {SELECT sql FROM sqlite_master WHERE tbl_name = 't5';}
+} {{CREATE TABLE t5(x TEXT)}}
+
 reset_db
 do_test libsql_alter-err.1 {
   execsql { CREATE TABLE t1(x); }
