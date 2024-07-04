@@ -24,6 +24,8 @@ typedef u32 VectorDims;
 #define VECTOR_TYPE_FLOAT32 1
 #define VECTOR_TYPE_FLOAT64 2
 
+#define VECTOR_FLAGS_STATIC 1
+
 /*
  * Object which represents a vector
  * data points to the memory which must be interpreted according to the vector type
