@@ -1,3 +1,5 @@
+LDLIBS += -lm
+
 ifndef CI_GCC
 CC:=gcc
 else
