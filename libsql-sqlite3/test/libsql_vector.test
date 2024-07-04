@@ -45,6 +45,7 @@ do_execsql_test vector-1-func-valid {
   SELECT hex(vector64('[1.10101010101010101010101010]'));
   SELECT vector_extract(x'E6ED8C3F');
   SELECT vector_extract(x'F37686C4BC9DF13F02');
+  SELECT vector_extract(vector(x'F37686C4BC9DF13F01'));
   SELECT vector_distance_cos('[1,1]', '[1,1]');
   SELECT vector_distance_cos('[1,1]', '[-1,-1]');
   SELECT vector_distance_cos('[1,1]', '[-1,1]');
@@ -59,6 +60,7 @@ do_execsql_test vector-1-func-valid {
   {F37686C4BC9DF13F02} 
   {[1.10101]} 
   {[1.10101]} 
+  {[-1075.72,1.88763]}
   {0.0} 
   {2.0} 
   {1.0} 
