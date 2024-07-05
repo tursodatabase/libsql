@@ -138,11 +138,11 @@ foreach file $filelist {
     # line when copying wal.h into sqlite3.h.
     if {[string match {*#include*[<"]page_header.h[>"]*} $line]} continue
 
-    regsub -- --VERS--           $line $zVersion line
-    regsub -- --VERSION-NUMBER-- $line $nVersion line
-    regsub -- --SOURCE-ID--      $line "$zSourceId" line
+    regsub -- {\$\{sqlite_version\}}        $line $zVersion line
+    regsub -- {\$\{sqlite_version_number\}} $line $nVersion line
+    regsub -- {\$\{sqlite_source_id\}}      $line "$zSourceId" line
 
-    regsub -- --LIBSQL-VERS--    $line $zLibSQLVersion line
+    regsub -- {\$\{libsql_version\}}        $line $zLibSQLVersion line
 
     if {[regexp $varpattern $line] && ![regexp {^ *typedef} $line]} {
       set line "SQLITE_API $line"
