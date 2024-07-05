@@ -10,7 +10,7 @@ use libsql_sys::EncryptionConfig;
 use metrics::histogram;
 use parking_lot::Mutex;
 use rusqlite::ffi::SQLITE_BUSY;
-use rusqlite::{ErrorCode, OpenFlags};
+use rusqlite::OpenFlags;
 use tokio::sync::watch;
 use tokio::time::{Duration, Instant};
 
@@ -34,28 +34,12 @@ use super::program::{
 use super::{MakeConnection, Program, RequestContext, TXN_TIMEOUT};
 
 pub struct MakeLibSqlConn<W> {
-    db_path: PathBuf,
-    wal_wrapper: W,
-    stats: Arc<Stats>,
-    broadcaster: BroadcasterHandle,
-    config_store: MetaStoreHandle,
-    extensions: Arc<[PathBuf]>,
-    max_response_size: u64,
-    max_total_response_size: u64,
-    auto_checkpoint: u32,
-    current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
-    connection_manager: ConnectionManager,
-    /// return sqlite busy. To mitigate that, we hold on to one connection
-    _db: Option<LibSqlConnection<W>>,
-    encryption_config: Option<EncryptionConfig>,
-    block_writes: Arc<AtomicBool>,
-    resolve_attach_path: ResolveNamespacePathFn,
-    make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
+    recv: async_channel::Receiver<Result<LibSqlConnection<W>>>,
 }
 
 impl<W> MakeLibSqlConn<W>
 where
-    W: WrapWal<ManagedConnectionWal> + Send + 'static + Clone,
+    W: WrapWal<ManagedConnectionWal> + Send + Sync + 'static + Clone,
 {
     #[allow(clippy::too_many_arguments)]
     pub async fn new(
@@ -76,60 +60,62 @@ where
     ) -> Result<Self> {
         let txn_timeout = config_store.get().txn_timeout.unwrap_or(TXN_TIMEOUT);
 
-        let mut this = Self {
-            db_path,
-            stats,
-            broadcaster,
-            config_store,
-            extensions,
-            max_response_size,
-            max_total_response_size,
-            auto_checkpoint,
-            current_frame_no_receiver,
-            _db: None,
-            wal_wrapper,
-            encryption_config,
-            block_writes,
-            resolve_attach_path,
-            connection_manager: ConnectionManager::new(txn_timeout),
-            make_wal_manager,
-        };
+        let (snd, recv) = async_channel::bounded(16);
+        tokio::spawn(async move {
+            let inner = MakeLibSqlConnInner {
+                db_path,
+                stats,
+                broadcaster,
+                config_store,
+                extensions,
+                max_response_size,
+                max_total_response_size,
+                auto_checkpoint,
+                current_frame_no_receiver,
+                wal_wrapper,
+                encryption_config,
+                block_writes,
+                resolve_attach_path,
+                connection_manager: ConnectionManager::new(txn_timeout),
+                make_wal_manager,
+            };
 
-        let db = this.try_create_db().await?;
-        this._db = Some(db);
-
-        Ok(this)
-    }
-
-    /// Tries to create a database, retrying if the database is busy.
-    async fn try_create_db(&self) -> Result<LibSqlConnection<W>> {
-        // try 100 times to acquire initial db connection.
-        let mut retries = 0;
-        loop {
-            match self.make_connection().await {
-                Ok(conn) => return Ok(conn),
-                Err(
-                    err @ Error::RusqliteError(rusqlite::Error::SqliteFailure(
-                        rusqlite::ffi::Error {
-                            code: ErrorCode::DatabaseBusy,
-                            ..
-                        },
-                        _,
-                    )),
-                ) => {
-                    if retries < 100 {
-                        tracing::warn!("Database file is busy, retrying...");
-                        retries += 1;
-                        tokio::time::sleep(Duration::from_millis(100)).await
-                    } else {
-                        Err(err)?;
-                    }
+            loop {
+                let conn = inner.make_connection().await;
+                if let Err(_) = snd.send(conn).await {
+                    break
                 }
-                Err(e) => Err(e)?,
             }
-        }
-    }
+        });
 
+        Ok(Self {
+            recv,
+        })
+    }
+}
+
+struct MakeLibSqlConnInner<W> {
+    db_path: PathBuf,
+    wal_wrapper: W,
+    stats: Arc<Stats>,
+    broadcaster: BroadcasterHandle,
+    config_store: MetaStoreHandle,
+    extensions: Arc<[PathBuf]>,
+    max_response_size: u64,
+    max_total_response_size: u64,
+    auto_checkpoint: u32,
+    current_frame_no_receiver: watch::Receiver<Option<FrameNo>>,
+    connection_manager: ConnectionManager,
+    encryption_config: Option<EncryptionConfig>,
+    block_writes: Arc<AtomicBool>,
+    resolve_attach_path: ResolveNamespacePathFn,
+    make_wal_manager: Arc<dyn Fn() -> InnerWalManager + Sync + Send + 'static>,
+}
+
+impl<W> MakeLibSqlConnInner<W>
+where
+    W: WrapWal<ManagedConnectionWal> + Send + 'static + Clone,
+{
     #[tracing::instrument(skip(self))]
     async fn make_connection(&self) -> Result<LibSqlConnection<W>> {
         LibSqlConnection::new(
@@ -163,7 +149,7 @@ where
     type Connection = LibSqlConnection<W>;
 
     async fn create(&self) -> Result<Self::Connection, Error> {
-        self.make_connection().await
+        self.recv.recv().await.expect("connection pool closed unexpectedly")
     }
 }
 
@@ -833,7 +819,7 @@ mod test {
         .unwrap();
 
         tokio::time::pause();
-        let conn = make_conn.make_connection().await.unwrap();
+        let conn = make_conn.create().await.unwrap();
         let _builder = Connection::run(
             conn.inner.clone(),
             Program::seq(&["BEGIN IMMEDIATE"]),
@@ -882,7 +868,7 @@ mod test {
 
         let mut set = JoinSet::new();
         for _ in 0..10 {
-            let conn = make_conn.make_connection().await.unwrap();
+            let conn = make_conn.create().await.unwrap();
             set.spawn_blocking(move || {
                 let builder = Connection::run(
                     conn.inner.clone(),
@@ -932,7 +918,7 @@ mod test {
         .await
         .unwrap();
 
-        let conn1 = make_conn.make_connection().await.unwrap();
+        let conn1 = make_conn.create().await.unwrap();
         tokio::task::spawn_blocking({
             let conn = conn1.clone();
             move || {
@@ -950,7 +936,7 @@ mod test {
         .await
         .unwrap();
 
-        let conn2 = make_conn.make_connection().await.unwrap();
+        let conn2 = make_conn.create().await.unwrap();
         let handle = tokio::task::spawn_blocking({
             let conn = conn2.clone();
             move || {
@@ -1018,7 +1004,7 @@ mod test {
         .await
         .unwrap();
 
-        let conn = make_conn.make_connection().await.unwrap();
+        let conn = make_conn.create().await.unwrap();
         let (maker, manager) = metastore_connection_maker(None, tmp.path()).await.unwrap();
         let ctx = RequestContext::new(
             Authenticated::FullAccess,
@@ -1039,7 +1025,7 @@ mod test {
             let ctx = ctx.clone();
             async move {
                 for _ in 0..1000 {
-                    let conn = maker.make_connection().await.unwrap();
+                    let conn = maker.create().await.unwrap();
                     let pgm = Program::seq(&["BEGIN IMMEDIATE", "INSERT INTO test VALUES (42)"]);
                     let res = conn
                         .execute_program(pgm, ctx.clone(), TestBuilder::default(), None)
@@ -1105,7 +1091,7 @@ mod test {
         .await
         .unwrap();
 
-        let conn1 = make_conn.make_connection().await.unwrap();
+        let conn1 = make_conn.create().await.unwrap();
         tokio::task::spawn_blocking({
             let conn = conn1.clone();
             move || {
@@ -1123,7 +1109,7 @@ mod test {
         .await
         .unwrap();
 
-        let conn2 = make_conn.make_connection().await.unwrap();
+        let conn2 = make_conn.create().await.unwrap();
         tokio::task::spawn_blocking({
             let conn = conn2.clone();
             move || {
