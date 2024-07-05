@@ -4,11 +4,9 @@
     <h1 align="center">libSQL</h1>
   </a>
 </p>
-
 <p align="center">
   <a href="https://turso.tech/libsql">libSQL</a> is an open source, open contribution fork of SQLite, created and maintained by <a href="https://turso.tech">Turso</a>.
 </p>
-
 <p align="center">
   <a href="/docs"><strong>libSQL Docs</strong></a> ·
   <a href="https://turso.tech/libsql-manifesto"><strong>libSQL Manifesto</strong></a> ·
