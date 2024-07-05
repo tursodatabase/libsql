@@ -145,11 +145,11 @@ void vectorF64Serialize(
   }
 }
 
+#define SINGLE_DOUBLE_CHAR_LIMIT 32
 void vectorF64MarshalToText(
   sqlite3_context *context,
   const Vector *pVector
 ){
-  const int SINGLE_DOUBLE_CHAR_LIMIT = 32;
   double *elems = pVector->data;
   size_t nBufSize;
   size_t iBuf = 0;

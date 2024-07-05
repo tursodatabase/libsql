@@ -143,11 +143,11 @@ void vectorF32Serialize(
   sqlite3_result_blob(context, (char*)pBlob, nBlobSize, sqlite3_free);
 }
 
+#define SINGLE_FLOAT_CHAR_LIMIT 32
 void vectorF32MarshalToText(
   sqlite3_context *context,
   const Vector *pVector
 ){
-  const int SINGLE_FLOAT_CHAR_LIMIT = 32;
   float *elems = pVector->data;
   size_t nBufSize;
   size_t iBuf = 0;
