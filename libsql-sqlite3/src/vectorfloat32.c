@@ -90,9 +90,8 @@ size_t vectorF32SerializeToBlob(
 
   for(i = 0; i < pVector->dims; i++){
     pPtr += serializeF32(pPtr, elems[i]);
-    len += sizeof(float);
   }
-  return len;
+  return sizeof(float) * pVector->dims;
 }
 
 size_t vectorF32DeserializeFromBlob(
@@ -106,7 +105,7 @@ size_t vectorF32DeserializeFromBlob(
   pVector->dims = nBlobSize / sizeof(float);
 
   assert( pVector->dims <= MAX_VECTOR_SZ );
-  assert( nBlobSize >= vectorDataSize(pVector->type, pVector->dims) );
+  assert( nBlobSize % 2 == 0 || pBlob[nBlobSize - 1] == VECTOR_TYPE_FLOAT32 );
 
   for(i = 0; i < pVector->dims; i++){
     elems[i] = deserializeF32(pBlob);
@@ -134,7 +133,7 @@ void vectorF32Serialize(
   }
 
   pBlob = sqlite3_malloc64(nBlobSize);
-  if( !pBlob ){
+  if( pBlob == NULL ){
     sqlite3_result_error_nomem(context);
     return;
   }
@@ -157,9 +156,10 @@ void vectorF32MarshalToText(
   assert( pVector->type == VECTOR_TYPE_FLOAT32 );
   assert( pVector->dims <= MAX_VECTOR_SZ );
 
+  // there is no trailing comma - so we allocating 1 more extra byte; but this is fine
   nBufSize = 2 + pVector->dims * (SINGLE_FLOAT_CHAR_LIMIT + 1 /* plus comma */);
   pText = sqlite3_malloc64(nBufSize);
-  if( pText ){
+  if( pText != NULL ){
     unsigned i;
 
     pText[iBuf++]= '[';
@@ -221,7 +221,7 @@ int vectorF32ParseSqliteBlob(
   }
 
   pBlob = sqlite3_value_blob(arg);
-  if( sqlite3_value_bytes(arg) < 4 * pVector->dims ){
+  if( sqlite3_value_bytes(arg) < sizeof(float) * pVector->dims ){
     *pzErr = sqlite3_mprintf("invalid f32 vector: not enough bytes for all dimensions");
     goto error;
   }

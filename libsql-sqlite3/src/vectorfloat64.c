@@ -86,7 +86,6 @@ size_t vectorF64SerializeToBlob(
 ){
   double *elems = pVector->data;
   unsigned char *pPtr = pBlob;
-  size_t len = 0;
   unsigned i;
 
   assert( pVector->type == VECTOR_TYPE_FLOAT64 );
@@ -95,9 +94,8 @@ size_t vectorF64SerializeToBlob(
 
   for (i = 0; i < pVector->dims; i++) {
     pPtr += serializeF64(pPtr, elems[i]);
-    len += sizeof(double);
   }
-  return len;
+  return sizeof(double) * pVector->dims;
 }
 
 size_t vectorF64DeserializeFromBlob(
@@ -111,7 +109,7 @@ size_t vectorF64DeserializeFromBlob(
   pVector->dims = nBlobSize / sizeof(double);
 
   assert( pVector->dims <= MAX_VECTOR_SZ );
-  assert( nBlobSize >= vectorDataSize(pVector->type, pVector->dims) );
+  assert( nBlobSize % 2 == 1 && pBlob[nBlobSize - 1] == VECTOR_TYPE_FLOAT64 );
 
   for(i = 0; i < pVector->dims; i++){
     elems[i] = deserializeF64(pBlob);
@@ -133,16 +131,22 @@ void vectorF64Serialize(
 
   // allocate one extra trailing byte with vector blob type metadata
   nBlobSize = vectorDataSize(pVector->type, pVector->dims) + 1;
-  pBlob = sqlite3_malloc64(nBlobSize);
 
-  if( pBlob ){
-    vectorF64SerializeToBlob(pVector, pBlob, nBlobSize - 1);
-    pBlob[nBlobSize - 1] = VECTOR_TYPE_FLOAT64;
-
-    sqlite3_result_blob(context, (char*)pBlob, nBlobSize, sqlite3_free);
-  } else {
-    sqlite3_result_error_nomem(context);
+  if( nBlobSize == 0 ){
+    sqlite3_result_zeroblob(context, 0);
+    return;
   }
+
+  pBlob = sqlite3_malloc64(nBlobSize);
+  if( pBlob == NULL ){
+    sqlite3_result_error_nomem(context);
+    return;
+  }
+
+  vectorF64SerializeToBlob(pVector, pBlob, nBlobSize - 1);
+  pBlob[nBlobSize - 1] = VECTOR_TYPE_FLOAT64;
+
+  sqlite3_result_blob(context, (char*)pBlob, nBlobSize, sqlite3_free);
 }
 
 #define SINGLE_DOUBLE_CHAR_LIMIT 32
@@ -159,9 +163,10 @@ void vectorF64MarshalToText(
   assert( pVector->type == VECTOR_TYPE_FLOAT64 );
   assert( pVector->dims <= MAX_VECTOR_SZ );
 
+  // there is no trailing comma - so we allocating 1 more extra byte; but this is fine
   nBufSize = 2 + pVector->dims * (SINGLE_DOUBLE_CHAR_LIMIT + 1 /* plus comma */);
   pText = sqlite3_malloc64(nBufSize);
-  if( pText ){
+  if( pText != NULL ){
     unsigned i;
 
     pText[iBuf++]= '[';
@@ -223,7 +228,7 @@ int vectorF64ParseSqliteBlob(
   }
 
   pBlob = sqlite3_value_blob(arg);
-  if( sqlite3_value_bytes(arg) < 8 * pVector->dims ){
+  if( sqlite3_value_bytes(arg) < sizeof(double) * pVector->dims ){
     *pzErr = sqlite3_mprintf("invalid f64 vector: not enough bytes for all dimensions");
     goto error;
   }

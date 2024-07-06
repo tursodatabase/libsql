@@ -83,7 +83,7 @@ static Vector* vectorContextAlloc(sqlite3_context *context, int type, int dims){
  * Free a Vector object and its data buffer allocated, unless the vector is static.
 */
 void vectorFree(Vector *pVector){
-  if( pVector==0 ){
+  if( pVector == NULL ){
     return;
   }
   if( pVector->flags & VECTOR_FLAGS_STATIC ){
@@ -138,7 +138,7 @@ static int vectorParseSqliteText(
   pzText = sqlite3_value_text(arg);
   if ( pzText == NULL ) return 0;
 
-  while( pzText && sqlite3Isspace(*pzText) )
+  while( sqlite3Isspace(*pzText) )
     pzText++;
 
   if( *pzText != '[' ){
@@ -187,19 +187,19 @@ static int vectorParseSqliteText(
       break;
     }
   }
-  while( pzText && sqlite3Isspace(*pzText) )
+  while( sqlite3Isspace(*pzText) )
     pzText++;
 
-  if( pzText != NULL && *pzText != ']' ){
+  if( *pzText != ']' ){
     *pzErrMsg = sqlite3_mprintf("malformed vector, doesn't end with ']'");
     goto error;
   }
   pzText++;
 
-  while( pzText && sqlite3Isspace(*pzText) )
+  while( sqlite3Isspace(*pzText) )
     pzText++;
   
-  if( pzText != NULL && *pzText != '\0' ){
+  if( *pzText != '\0' ){
     *pzErrMsg = sqlite3_mprintf("malformed vector, extra data after closing ']'");
     goto error;
   }
@@ -241,9 +241,9 @@ int detectBlobVectorParameters(sqlite3_value *arg, int *pType, int *pDims, char 
     *pType = VECTOR_TYPE_FLOAT32;
   }
   if( *pType == VECTOR_TYPE_FLOAT32 ){
-    *pDims = nBlobSize / 4;
+    *pDims = nBlobSize / sizeof(float);
   } else if( *pType == VECTOR_TYPE_FLOAT64 ){
-    *pDims = nBlobSize / 8;
+    *pDims = nBlobSize / sizeof(double);
   } else{
     *pzErrMsg = sqlite3_mprintf("invalid binary vector: unexpected type: %d", *pType);
     return -1;
@@ -405,7 +405,7 @@ static void vectorFuncHintedType(
   sqlite3_value **argv,
   int typeHint
 ){
-  char *pzErrMsg = 0;
+  char *pzErrMsg = NULL;
   Vector *pVector;
   int type, dims;
   if( argc < 1 ){
@@ -453,7 +453,7 @@ static void vectorExtractFunc(
   int argc,
   sqlite3_value **argv
 ){
-  char *pzErrMsg = 0;
+  char *pzErrMsg = NULL;
   Vector *pVector;
   unsigned i;
   int type, dims;
@@ -488,8 +488,8 @@ static void vectorDistanceCosFunc(
   int argc,
   sqlite3_value **argv
 ){
-  char *pzErrMsg = 0;
-  Vector *pVector1, *pVector2;
+  char *pzErrMsg = NULL;
+  Vector *pVector1 = NULL, *pVector2 = NULL;
   int type1, type2;
   int dims1, dims2;
   if( argc < 2 ) {
@@ -503,6 +503,14 @@ static void vectorDistanceCosFunc(
   if( detectVectorParameters(argv[1], 0, &type2, &dims2, &pzErrMsg) != 0 ){
     sqlite3_result_error(context, pzErrMsg, -1);
     sqlite3_free(pzErrMsg);
+    goto out_free;
+  }
+  if( type1 != type2 ){
+    sqlite3_result_error(context, "vectors must have the same type", -1);
+    goto out_free;
+  }
+  if( dims1 != dims2 ){
+    sqlite3_result_error(context, "vectors must have the same length", -1);
     goto out_free;
   }
   pVector1 = vectorContextAlloc(context, type1, dims1);
@@ -521,14 +529,6 @@ static void vectorDistanceCosFunc(
   if( vectorParse(argv[1], pVector2, &pzErrMsg)<0 ){
     sqlite3_result_error(context, pzErrMsg, -1);
     sqlite3_free(pzErrMsg);
-    goto out_free;
-  }
-  if( dims1 != dims2 ){
-    sqlite3_result_error(context, "vectors must have the same length", -1);
-    goto out_free;
-  }
-  if( type1 != type2 ){
-    sqlite3_result_error(context, "vectors must have the same type", -1);
     goto out_free;
   }
   sqlite3_result_double(context, vectorDistanceCos(pVector1, pVector2));
