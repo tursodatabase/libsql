@@ -31,7 +31,6 @@ impl<C, F> Default for NamespaceRequests<C, F> {
 /// ensures that all segments are present up to the max durable index.
 /// It is generic over C: the storage config type (for config overrides), and T, the segment type
 pub(crate) struct Scheduler<C, T> {
-    capacity: usize,
     /// notify new durability index for namespace
     durable_notifier: mpsc::Sender<(NamespaceName, u64)>,
     requests: HashMap<NamespaceName, NamespaceRequests<C, T>>,
@@ -40,9 +39,8 @@ pub(crate) struct Scheduler<C, T> {
 }
 
 impl<C, T> Scheduler<C, T> {
-    pub fn new(capacity: usize, durable_notifier: mpsc::Sender<(NamespaceName, u64)>) -> Self {
+    pub fn new(durable_notifier: mpsc::Sender<(NamespaceName, u64)>) -> Self {
         Self {
-            capacity,
             durable_notifier,
             requests: Default::default(),
             queue: Default::default(),
@@ -119,7 +117,7 @@ impl<C, T> Scheduler<C, T> {
                 }
             }
             Err(e) => {
-                tracing::error!("error processing request, re-enqueuing");
+                tracing::error!("error processing request, re-enqueuing: {e}");
                 // put it back at the front of the queue
                 requests.requests.push_front(result.job.request);
             }
@@ -154,7 +152,7 @@ impl<C, T> Scheduler<C, T> {
 mod test {
     use chrono::Utc;
 
-    use crate::bottomless::Error;
+    use crate::storage::Error;
     use libsql_sys::name::NamespaceName;
 
     use super::*;
@@ -162,7 +160,7 @@ mod test {
     #[tokio::test]
     async fn schedule_simple() {
         let (sender, mut receiver) = tokio::sync::mpsc::channel(10);
-        let mut scheduler = Scheduler::<(), ()>::new(5, sender);
+        let mut scheduler = Scheduler::<(), ()>::new(sender);
 
         let ns1 = NamespaceName::from("test1");
         let ns2 = NamespaceName::from("test2");
@@ -223,7 +221,7 @@ mod test {
     #[tokio::test]
     async fn job_error_reschedule() {
         let (sender, _) = tokio::sync::mpsc::channel(10);
-        let mut scheduler = Scheduler::<(), ()>::new(5, sender);
+        let mut scheduler = Scheduler::<(), ()>::new(sender);
 
         let ns1 = NamespaceName::from("test1");
         let ns2 = NamespaceName::from("test2");
@@ -262,7 +260,7 @@ mod test {
     #[tokio::test]
     async fn schedule_while_in_flight() {
         let (sender, _) = tokio::sync::mpsc::channel(10);
-        let mut scheduler = Scheduler::<(), ()>::new(5, sender);
+        let mut scheduler = Scheduler::<(), ()>::new(sender);
 
         let ns1 = NamespaceName::from("test1");
 

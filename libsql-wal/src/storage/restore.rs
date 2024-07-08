@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use tokio::io::AsyncWrite;
 
-use super::storage::Storage;
+use super::backend::Backend;
 use super::Result;
 use libsql_sys::name::NamespaceName;
 
@@ -23,7 +23,7 @@ impl<C> BottomlessRestore<C> {
 
     fn restore<S>(self, _storage: S, _dest: impl AsyncWrite) -> Result<()>
     where
-        S: Storage<Config = C>,
+        S: Backend<Config = C>,
     {
         todo!()
     }
