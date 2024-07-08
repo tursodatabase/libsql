@@ -7,6 +7,7 @@ use hashbrown::hash_map::Entry;
 use hashbrown::HashMap;
 use libsql_sys::ffi::Sqlite3DbHeader;
 use parking_lot::{Condvar, Mutex, RwLock, RwLockUpgradableReadGuard};
+use tokio::sync::Notify;
 use zerocopy::{AsBytes, FromZeroes};
 
 use crate::error::Result;
@@ -15,16 +16,16 @@ use crate::io::{Io, StdIO};
 use crate::segment::list::SegmentList;
 use crate::segment::{current::CurrentSegment, sealed::SealedSegment};
 use crate::shared_wal::SharedWal;
+use crate::storage::Storage;
 use crate::transaction::{Transaction, TxGuard};
-use libsql_sys::name::{NamespaceName, NamespaceResolver};
+use libsql_sys::name::NamespaceName;
 
-
-enum Slot<FS: Io> {
-    Wal(Arc<SharedWal<FS>>),
+enum Slot<IO: Io> {
+    Wal(Arc<SharedWal<IO>>),
     /// Only a single thread is allowed to instantiate the wal. The first thread to acquire an
     /// entry in the registry map puts a building slot. Other connections will wait for the mutex
     /// to turn to true, after the slot has been updated to contain the wal
-    Building(Arc<(Condvar, Mutex<bool>)>),
+    Building(Arc<(Condvar, Mutex<bool>)>, Arc<Notify>),
 }
 
 /// Wal Registry maintains a set of shared Wal, and their respective set of files.
@@ -59,6 +60,20 @@ impl<IO: Io, S> WalRegistry<IO, S> {
 
         Ok(registry)
     }
+
+    pub(crate) async fn get_async(&self, namespace: &NamespaceName) -> Option<Arc<SharedWal<IO>>> {
+        loop {
+            let notify = {
+                let lock = self.opened.read();
+                match lock.get(namespace) {
+                    Some(Slot::Wal(wal)) => return Some(wal.clone()),
+                    Some(Slot::Building(_, notify)) => notify.clone(),
+                    None => return None,
+                }
+            };
+
+            notify.notified().await
+        }
     }
 
 impl<IO, S> WalRegistry<IO, S>
@@ -81,7 +96,7 @@ where
             if let Some(entry) = opened.get(namespace) {
                 match entry {
                     Slot::Wal(wal) => return Ok(wal.clone()),
-                    Slot::Building(cond) => {
+                    Slot::Building(cond, _) => {
                         let cond = cond.clone();
                         drop(opened);
                         cond.0
@@ -93,14 +108,17 @@ where
             }
 
             // another thread may have got the slot first, just retry if that's the case
-            let Ok(notifier) = opened.with_upgraded(|map| match map.entry(namespace.clone()) {
-                Entry::Occupied(_) => Err(()),
-                Entry::Vacant(entry) => {
-                    let notifier = Arc::new((Condvar::new(), Mutex::new(false)));
-                    entry.insert(Slot::Building(notifier.clone()));
-                    Ok(notifier)
-                }
-            }) else {
+            let Ok((notifier, async_notifier)) =
+                opened.with_upgraded(|map| match map.entry(namespace.clone()) {
+                    Entry::Occupied(_) => Err(()),
+                    Entry::Vacant(entry) => {
+                        let notifier = Arc::new((Condvar::new(), Mutex::new(false)));
+                        let async_notifier = Arc::new(Notify::new());
+                        entry.insert(Slot::Building(notifier.clone(), async_notifier.clone()));
+                        Ok((notifier, async_notifier))
+                    }
+                })
+            else {
                 continue;
             };
 
@@ -109,12 +127,13 @@ where
             let ret = self.clone().try_open(&namespace, db_path, &mut opened);
             if ret.is_err() {
                 opened.with_upgraded(|map| {
-                    map.remove(&namespace);
+                    map.remove(namespace);
                 })
             }
 
             *notifier.1.lock() = true;
             notifier.0.notify_all();
+            async_notifier.notify_waiters();
 
             return ret;
         }
@@ -124,8 +143,8 @@ where
         self: Arc<Self>,
         namespace: &NamespaceName,
         db_path: &Path,
-        opened: &mut RwLockUpgradableReadGuard<HashMap<NamespaceName, Slot<FS>>>,
-    ) -> Result<Arc<SharedWal<FS>>> {
+        opened: &mut RwLockUpgradableReadGuard<HashMap<NamespaceName, Slot<IO>>>,
+    ) -> Result<Arc<SharedWal<IO>>> {
         let path = self.path.join(namespace.as_str());
         self.fs.create_dir_all(&path)?;
         // TODO: handle that with abstract io
