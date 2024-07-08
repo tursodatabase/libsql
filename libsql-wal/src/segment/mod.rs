@@ -7,14 +7,19 @@
 //! maximum frame_no that this reader is allowed to read. The reader also keeps a reference to the
 //! head segment at the moment it was created.
 #![allow(dead_code)]
+use std::future::Future;
+use std::io;
 use std::mem::offset_of;
 use std::mem::size_of;
 use std::num::NonZeroU64;
+use std::sync::Arc;
 
 use zerocopy::byteorder::little_endian::{U32, U64};
 use zerocopy::AsBytes;
 
 use crate::error::{Error, Result};
+use crate::io::buf::IoBufMut;
+use crate::io::FileExt;
 
 pub mod current;
 pub mod list;
@@ -119,6 +124,25 @@ impl SegmentHeader {
     }
 }
 
+pub trait Segment: Send + Sync + 'static {
+    fn compact(
+        &self,
+        out_file: &impl FileExt,
+        id: uuid::Uuid,
+    ) -> impl Future<Output = Result<Vec<u8>>> + Send;
+    fn start_frame_no(&self) -> u64;
+    fn last_committed(&self) -> u64;
+    fn index(&self) -> &fst::Map<Arc<[u8]>>;
+    fn read_page(&self, page_no: u32, max_frame_no: u64, buf: &mut [u8]) -> io::Result<bool>;
+    /// returns the number of readers currently holding a reference to this log.
+    /// The read count must monotonically decrease.
+    fn is_checkpointable(&self) -> bool;
+    /// The size of the database after applying this segment.
+    fn size_after(&self) -> u32;
+    async fn read_frame_offset_async<B>(&self, offset: u32, buf: B) -> (B, Result<()>)
+    where
+        B: IoBufMut + Send + 'static;
+}
 #[repr(C)]
 #[derive(Debug, zerocopy::AsBytes, zerocopy::FromBytes, zerocopy::FromZeroes)]
 pub struct FrameHeader {
