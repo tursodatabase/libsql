@@ -11,7 +11,6 @@ use parking_lot::{Mutex, MutexGuard};
 use crate::error::{Error, Result};
 use crate::io::file::FileExt;
 use crate::io::Io;
-use crate::registry::WalRegistry;
 use crate::segment::current::CurrentSegment;
 use crate::transaction::{ReadTransaction, Savepoint, Transaction, TxGuard, WriteTransaction};
 use libsql_sys::name::NamespaceName;
@@ -31,12 +30,16 @@ pub struct WalLock {
     pub(crate) waiters: Injector<(Unparker, u64)>,
 }
 
+pub(crate) trait SwapLog<IO: Io>: Sync + Send + 'static {
+    fn swap_current(&self, shared: &SharedWal<IO>, tx: &TxGuard<IO::File>) -> Result<()>;
+}
+
 pub struct SharedWal<IO: Io> {
     pub(crate) current: ArcSwap<CurrentSegment<IO::File>>,
     pub(crate) wal_lock: Arc<WalLock>,
     pub(crate) db_file: IO::File,
     pub(crate) namespace: NamespaceName,
-    pub(crate) registry: Arc<WalRegistry<IO>>,
+    pub(crate) registry: Arc<dyn SwapLog<IO>>,
     #[allow(dead_code)] // used by replication
     pub(crate) checkpointed_frame_no: AtomicU64,
     pub(crate) new_frame_notifier: tokio::sync::watch::Sender<u64>,
