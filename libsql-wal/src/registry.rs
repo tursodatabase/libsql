@@ -44,11 +44,7 @@ impl<S> WalRegistry<StdIO, S> {
 }
 
 impl<IO: Io, S> WalRegistry<IO, S> {
-    pub fn new_with_io(
-        io: IO,
-        path: PathBuf,
-        storage: S,
-    ) -> Result<Self> {
+    pub fn new_with_io(io: IO, path: PathBuf, storage: S) -> Result<Self> {
         io.create_dir_all(&path)?;
         let registry = Self {
             fs: io,

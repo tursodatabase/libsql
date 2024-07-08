@@ -27,7 +27,8 @@ use super::TXN_TIMEOUT;
 pub type ConnId = u64;
 #[cfg(feature = "durable-wal")]
 
-pub type InnerWalManager = Either3<Sqlite3WalManager, LibsqlWalManager<StdIO, NoStorage>, DurableWalManager>;
+pub type InnerWalManager =
+    Either3<Sqlite3WalManager, LibsqlWalManager<StdIO, NoStorage>, DurableWalManager>;
 #[cfg(feature = "durable-wal")]
 pub type InnerWal = Either3<Sqlite3Wal, LibsqlWal<StdIO>, DurableWal>;
 #[cfg(not(feature = "durable-wal"))]

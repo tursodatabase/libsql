@@ -33,13 +33,12 @@ pub struct NoStorage;
 impl Storage for NoStorage {
     type Segment = SealedSegment<std::fs::File>;
 
-    fn store(&self, _namespace: &NamespaceName, _seg: Self::Segment) { }
+    fn store(&self, _namespace: &NamespaceName, _seg: Self::Segment) {}
 
     fn durable_frame_no(&self, _namespace: &NamespaceName) -> u64 {
         u64::MAX
     }
 }
-
 
 #[doc(hidden)]
 #[derive(Debug)]
