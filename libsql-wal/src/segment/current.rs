@@ -34,7 +34,7 @@ pub struct CurrentSegment<F> {
     /// lock
     read_locks: Arc<AtomicU64>,
     sealed: AtomicBool,
-    tail: Arc<SegmentList<F>>,
+    tail: Arc<SegmentList<SealedSegment<F>>>,
 }
 
 impl<F> CurrentSegment<F> {
@@ -45,7 +45,7 @@ impl<F> CurrentSegment<F> {
         path: PathBuf,
         start_frame_no: NonZeroU64,
         db_size: u32,
-        tail: Arc<SegmentList<F>>,
+        tail: Arc<SegmentList<SealedSegment<F>>>,
     ) -> Result<Self>
     where
         F: FileExt,
@@ -356,7 +356,7 @@ impl<F> CurrentSegment<F> {
         self.sealed.load(Ordering::SeqCst)
     }
 
-    pub fn tail(&self) -> &Arc<SegmentList<F>> {
+    pub fn tail(&self) -> &Arc<SegmentList<SealedSegment<F>>> {
         &self.tail
     }
 
