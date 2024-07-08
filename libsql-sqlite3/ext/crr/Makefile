@@ -1,3 +1,4 @@
+# we need math.h for sqrt function in LIBSQL vector feature
 LDLIBS += -lm
 
 ifndef CI_GCC
